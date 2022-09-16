@@ -29,3 +29,11 @@ class Player {
 
 const player = new Player();
 player.draw();
+
+function animate() {
+  //this creates an animation loop
+  requestAnimationFrame(animate);
+  player.draw();
+}
+
+animate();
