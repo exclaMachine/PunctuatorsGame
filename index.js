@@ -6,9 +6,13 @@ canvas.height = innerHeight;
 
 class Player {
   constructor() {
+    console.log("this", this.height);
+    console.log("height", canvas.height - this.height);
     this.position = {
-      x: 200,
-      y: 200,
+      //   x: 200,
+      x: canvas.width / 2,
+      //   y: canvas.height - this.height - 10,
+      y: canvas.height,
     };
 
     this.velocity = {
@@ -17,8 +21,8 @@ class Player {
     };
 
     // this.image =
-    this.width = 100;
-    this.height = 100;
+    this.width = 50;
+    this.height = 50;
   }
 
   draw() {
