@@ -43,7 +43,39 @@ class Hero {
   }
 }
 
+// class Projectile {
+//   constructor({ position, velocity }) {
+//     this.position = position;
+//     this.velocity = velocity;
+//     this.radius = 3;
+//   }
+
+//   draw() {
+//     c.fillStyle = "red";
+//     c.fillRect(this.position.x, this.position.y, this.width, this.height);
+//   }
+
+//   update() {
+//     this.draw();
+//     this.position.x += this.velocity.x;
+//     this.position.y += this.velocity.y;
+//   }
+// }
+
 const player = new Hero();
+
+// const projectiles = [
+//   new Projectile({
+//     position: {
+//       x: player.position.x,
+//       y: player.position.y,
+//     },
+//     velocity: {
+//       x: 0,
+//       y: -3,
+//     },
+//   }),
+// ];
 player.draw();
 
 function animate() {
