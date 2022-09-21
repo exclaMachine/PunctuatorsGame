@@ -85,3 +85,22 @@ function animate() {
 }
 
 animate();
+
+//Need to fix the png so no white space
+addEventListener("keydown", ({ key }) => {
+  switch (key) {
+    case "a":
+      if (player.position.x >= 0) {
+        player.position.x -= 20;
+      }
+      break;
+    case "d":
+      if (player.position.x <= canvas.width - player.width) {
+        player.position.x += 20;
+      }
+      break;
+    case " ":
+      player.position.x += 20;
+      break;
+  }
+});
