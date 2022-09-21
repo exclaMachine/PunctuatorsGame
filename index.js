@@ -1,6 +1,17 @@
-const canvas = document.querySelector("canvas");
+// const canvas = document.querySelector("canvas");
+const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
-const image = document.getElementById("source");
+const periods = document.getElementsByClassName("fs");
+const period = document.getElementById("first");
+
+console.log("pers", periods);
+Array.from(periods).forEach((el) => {
+  console.log(el.getBoundingClientRect());
+});
+
+//Might be able to use Intersection Observer to make this more efficient
+// console.log("per", period.getBoundingClientRect());
+// console.log("per y", period.getBoundingClientRect().y);
 
 canvas.width = innerWidth;
 canvas.height = innerHeight;
@@ -75,6 +86,18 @@ class Projectile {
   }
 }
 
+class MovingSentence {
+  constructor({ position, velocity }) {
+    this.position = position;
+    this.velocity = velocity;
+  }
+
+  update() {
+    this.draw();
+    this.position.y += this.velocity.y;
+  }
+}
+
 const player = new Hero();
 
 const projectiles = [];
@@ -88,8 +111,20 @@ function animate() {
   player.update();
 
   projectiles.forEach((projectile, index) => {
-    //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
-    if (projectile.position.y + 10 <= 0) {
+    // console.log("test", projectile.position.x);
+    // console.log("in per", period.getBoundingClientRect().x);
+    if (
+      projectile.position.y <= period.getBoundingClientRect().y &&
+      projectile.position.x >= period.getBoundingClientRect().x &&
+      projectile.position.x <=
+        period.getBoundingClientRect().x + period.getBoundingClientRect().width
+    ) {
+      console.log("hit!");
+      setTimeout(() => {
+        projectiles.splice(index, 1);
+      }, 0);
+      //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
+    } else if (projectile.position.y + projectile.height <= 0) {
       setTimeout(() => {
         projectiles.splice(index, 1);
       }, 0);
@@ -97,23 +132,22 @@ function animate() {
       projectile.update();
     }
   });
+  //   console.log("proj", projectiles[0]?.position.y);
 }
 
-// player.update();
 animate();
 
-//Need to fix the png so no white space
 addEventListener("keydown", ({ key }) => {
   switch (key) {
     case "a":
       if (player.position.x >= 0) {
         // player.velocity.x = -5;
-        player.position.x -= 20;
+        player.position.x -= 10;
       }
       break;
     case "d":
       if (player.position.x <= canvas.width - player.width) {
-        player.position.x += 20;
+        player.position.x += 10;
       }
       break;
     case " ":
@@ -122,7 +156,6 @@ addEventListener("keydown", ({ key }) => {
           position: {
             x: player.position.x + player.width - 30,
             y: player.position.y,
-            // y: 100,
           },
           velocity: {
             x: 0,
