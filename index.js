@@ -1,17 +1,18 @@
-// const canvas = document.querySelector("canvas");
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
-const periods = document.getElementsByClassName("fs");
-const period = document.getElementById("first");
+// const period = document.getElementById("first");
 
-console.log("pers", periods);
+//This is an HTMLCollection
+const periods = document.getElementsByClassName("fs");
+
+let periodsArray = [];
 Array.from(periods).forEach((el) => {
   console.log(el.getBoundingClientRect());
+  periodsArray.push(el);
 });
 
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
-// console.log("per y", period.getBoundingClientRect().y);
 
 canvas.width = innerWidth;
 canvas.height = innerHeight;
@@ -113,24 +114,28 @@ function animate() {
   projectiles.forEach((projectile, index) => {
     // console.log("test", projectile.position.x);
     // console.log("in per", period.getBoundingClientRect().x);
-    if (
-      projectile.position.y <= period.getBoundingClientRect().y &&
-      projectile.position.x >= period.getBoundingClientRect().x &&
-      projectile.position.x <=
-        period.getBoundingClientRect().x + period.getBoundingClientRect().width
-    ) {
-      console.log("hit!");
-      setTimeout(() => {
-        projectiles.splice(index, 1);
-      }, 0);
-      //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
-    } else if (projectile.position.y + projectile.height <= 0) {
-      setTimeout(() => {
-        projectiles.splice(index, 1);
-      }, 0);
-    } else {
-      projectile.update();
-    }
+    periodsArray.forEach((period) => {
+      if (
+        projectile.position.y - projectile.height / 2 <=
+          period.getBoundingClientRect().y &&
+        projectile.position.x >= period.getBoundingClientRect().x &&
+        projectile.position.x <=
+          period.getBoundingClientRect().x +
+            period.getBoundingClientRect().width
+      ) {
+        console.log("hit!");
+        setTimeout(() => {
+          projectiles.splice(index, 1);
+        }, 0);
+        //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
+      } else if (projectile.position.y + projectile.height <= 0) {
+        setTimeout(() => {
+          projectiles.splice(index, 1);
+        }, 0);
+      } else {
+        projectile.update();
+      }
+    });
   });
   //   console.log("proj", projectiles[0]?.position.y);
 }
@@ -159,7 +164,7 @@ addEventListener("keydown", ({ key }) => {
           },
           velocity: {
             x: 0,
-            y: -5,
+            y: -10,
           },
         })
       );
