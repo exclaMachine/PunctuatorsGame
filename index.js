@@ -42,9 +42,7 @@ const addSpansAndIds = (string) => {
     }
   });
 
-  console.log("newstr2", newString);
   out1.innerHTML = newString.join("");
-  console.log("out", out1);
   button.setAttribute("class", "go-away");
   sentence.setAttribute("class", "go-away");
 
@@ -69,7 +67,6 @@ let nodeArr = [];
 function waitForElm(selector) {
   return new Promise((resolve) => {
     if (document.querySelector(selector)) {
-      console.log("in");
       return resolve(document.querySelector(selector));
     }
 
@@ -166,11 +163,16 @@ class Hero {
 // };
 
 class Projectile {
-  constructor({ position, velocity }) {
+  constructor({ position, velocity, type }) {
     this.position = position;
     this.velocity = velocity;
+    this.type = type;
     this.width = 3;
     this.height = 50;
+  }
+
+  weapon() {
+    console.log(this.type);
   }
 
   draw() {
@@ -201,6 +203,14 @@ const player = new Hero();
 
 const projectiles = [];
 
+// class Arrow extends Projectile {
+//   constructor({ position, velocity }) {
+//     super(position, velocity, "q");
+//   }
+// }
+
+// const arrow = new Arrow();
+
 function animate() {
   //this creates an animation loop
   requestAnimationFrame(animate);
@@ -214,7 +224,8 @@ function animate() {
     // console.log("in per", period.getBoundingClientRect().x);
     if (nodeArr) {
       nodeArr.forEach((period) => {
-        if (period.className === "p") {
+        // if (period.className === "p") {
+        if (period.className === projectile.type) {
           if (
             projectile.position.y - projectile.height / 2 <=
               period.getBoundingClientRect().y &&
@@ -259,7 +270,7 @@ addEventListener("keydown", ({ key }) => {
         player.position.x += 10;
       }
       break;
-    case " ":
+    case "ArrowUp":
       //   console.log("up");
       projectiles.push(
         new Projectile({
@@ -271,6 +282,8 @@ addEventListener("keydown", ({ key }) => {
             x: 0,
             y: -10,
           },
+          //need to add in player.type here, or player.weapon
+          type: "p",
         })
       );
       break;
