@@ -2,20 +2,107 @@ const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
 // const period = document.getElementById("first");
 
-//This is an HTMLCollection
-const periods = document.getElementsByClassName("fs");
+const sentence = document.getElementById("input-sentence");
+const button = document.getElementById("punc-button");
+const out1 = document.getElementById("output");
 
-let periodsArray = [];
-Array.from(periods).forEach((el) => {
-  console.log(el.getBoundingClientRect());
-  periodsArray.push(el);
-});
-console.log("arr", periodsArray);
+console.log("button", button);
+
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
 
 canvas.width = innerWidth;
 canvas.height = innerHeight;
+
+let punc = "!?;:'.,";
+
+const punctuationHashMap = new Map();
+
+//this is called chaining
+punctuationHashMap
+  .set("!", "e")
+  .set("?", "q")
+  .set(";", "sc")
+  .set(":", "c")
+  .set("'", "ap")
+  .set("*", "as")
+  .set(",", "co")
+  .set(".", "p");
+
+const addSpansAndIds = (string) => {
+  let newString = string.split("");
+
+  console.log("newstr1", newString);
+
+  newString.map((char, i) => {
+    if (punctuationHashMap.has(char)) {
+      newString[i] = `<span id="hidden-punc" class=\"${punctuationHashMap.get(
+        char
+      )}\">${char}</span>`;
+    }
+  });
+
+  console.log("newstr2", newString);
+  out1.innerHTML = newString.join("");
+  console.log("out", out1);
+  button.setAttribute("class", "go-away");
+  sentence.setAttribute("class", "go-away");
+
+  //This is an HTMLCollection //Need to wait for the spans to appear so this doesn't work
+  //   const periods = document.querySelectorAll(".p");
+  //   console.log({ periods });
+
+  //   let periodsArray = [];
+  //   Array.from(periods).forEach((el) => {
+  //     console.log(el.getBoundingClientRect());
+  //     periodsArray.push(el);
+  //   });
+  //   console.log("arr", periodsArray);
+
+  //   return newString.join("");
+};
+
+button.addEventListener("click", () => addSpansAndIds(sentence.value));
+
+let nodeArr = [];
+// https://stackoverflow.com/questions/5525071/how-to-wait-until-an-element-exists
+function waitForElm(selector) {
+  return new Promise((resolve) => {
+    if (document.querySelector(selector)) {
+      console.log("in");
+      return resolve(document.querySelector(selector));
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      //   console.log("mut", mutations[0].addedNodes);
+      let mutArr = mutations[0].addedNodes;
+      mutArr.forEach((el) => {
+        if (
+          el.className === "p" ||
+          el.className === "ap" ||
+          el.className === "e" ||
+          el.className === "q" ||
+          el.className === "sc" ||
+          el.className === "c" ||
+          el.className === "as" ||
+          el.className === "co"
+        ) {
+          nodeArr.push(el);
+        }
+      });
+
+      if (document.querySelector(selector)) {
+        resolve(document.querySelector(selector));
+        observer.disconnect();
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  });
+}
 
 class Hero {
   constructor() {
@@ -114,30 +201,33 @@ function animate() {
   projectiles.forEach((projectile, index) => {
     // console.log("test", projectile.position.x);
     // console.log("in per", period.getBoundingClientRect().x);
-    periodsArray.forEach((period) => {
-      if (
-        projectile.position.y - projectile.height / 2 <=
-          period.getBoundingClientRect().y &&
-        projectile.position.x >= period.getBoundingClientRect().x &&
-        projectile.position.x <=
-          period.getBoundingClientRect().x +
-            period.getBoundingClientRect().width
-      ) {
-        console.log("hit!");
-        setTimeout(() => {
-          projectiles.splice(index, 1);
-          period.removeAttribute("id");
-        }, 0);
-        console.log("per2", period);
-        //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
-      } else if (projectile.position.y + projectile.height <= 0) {
-        setTimeout(() => {
-          projectiles.splice(index, 1);
-        }, 0);
-      } else {
-        projectile.update();
-      }
-    });
+    if (nodeArr) {
+      nodeArr.forEach((period) => {
+        // periodsArray.forEach((period) => {
+        if (
+          projectile.position.y - projectile.height / 2 <=
+            period.getBoundingClientRect().y &&
+          projectile.position.x >= period.getBoundingClientRect().x &&
+          projectile.position.x <=
+            period.getBoundingClientRect().x +
+              period.getBoundingClientRect().width
+        ) {
+          console.log("hit!");
+          setTimeout(() => {
+            projectiles.splice(index, 1);
+            period.removeAttribute("id");
+          }, 0);
+          console.log("per2", period);
+          //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
+        } else if (projectile.position.y + projectile.height <= 0) {
+          setTimeout(() => {
+            projectiles.splice(index, 1);
+          }, 0);
+        } else {
+          projectile.update();
+        }
+      });
+    }
   });
   //   console.log("proj", projectiles[0]?.position.y);
 }
@@ -146,18 +236,19 @@ animate();
 
 addEventListener("keydown", ({ key }) => {
   switch (key) {
-    case "a":
+    case "ArrowLeft":
       if (player.position.x >= 0) {
         // player.velocity.x = -5;
         player.position.x -= 10;
       }
       break;
-    case "d":
+    case "ArrowRight":
       if (player.position.x <= canvas.width - player.width) {
         player.position.x += 10;
       }
       break;
     case " ":
+      console.log("up");
       projectiles.push(
         new Projectile({
           position: {
@@ -173,3 +264,7 @@ addEventListener("keydown", ({ key }) => {
       break;
   }
 });
+
+const elm = await waitForElm(".p");
+// console.log({ elm });
+console.log({ nodeArr });

@@ -24,8 +24,19 @@
         }
     </style>
 
+    <style>
+        .go-away {
+            display: none;
+        }
+    </style>
+<!--  -->
+    <input id="input-sentence" type="text" placeholder="Enter a sentence with punctuation">
+
+    <input type="button" id="punc-button" value="Take away the punctuation">
+
     <div id="sentence-container">
-        <h1 id="moving-sentence">here<span id="hidden-punc" class="fs">.</span> is a sentence<span id="hidden-punc" class="fs">.</span></h1>
+        <h1 id="output"></h1>
+        <!-- <h1 id="moving-sentence">here<span id="hidden-punc" class="p">.</span> is a sentence<span id="hidden-punc" class="p">.</span></h1> -->
     </div>
 <canvas id="background"></canvas>
 <script type="module" src="./index.js"></script>
