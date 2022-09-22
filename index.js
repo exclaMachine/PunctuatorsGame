@@ -63,7 +63,7 @@ const addSpansAndIds = (string) => {
 };
 
 button.addEventListener("click", () => addSpansAndIds(sentence.value));
-
+let nodeObj = {};
 let nodeArr = [];
 // https://stackoverflow.com/questions/5525071/how-to-wait-until-an-element-exists
 function waitForElm(selector) {
@@ -74,21 +74,31 @@ function waitForElm(selector) {
     }
 
     const observer = new MutationObserver((mutations) => {
-      //   console.log("mut", mutations[0].addedNodes);
+      console.log("mut", mutations[0].addedNodes);
       let mutArr = mutations[0].addedNodes;
       mutArr.forEach((el) => {
-        if (
-          el.className === "p" ||
-          el.className === "ap" ||
-          el.className === "e" ||
-          el.className === "q" ||
-          el.className === "sc" ||
-          el.className === "c" ||
-          el.className === "as" ||
-          el.className === "co"
-        ) {
+        // console.log("class", el.className);
+
+        if (el.className) {
+          //this does not work because the el loses it's position when changed into object
+          //   nodeObj[el.className] = el;
+          //   nodeArr.push(nodeObj);
           nodeArr.push(el);
         }
+
+        //this can be replaced with if (el.className)
+        // if (
+        //   el.className === "p" ||
+        //   el.className === "ap" ||
+        //   el.className === "e" ||
+        //   el.className === "q" ||
+        //   el.className === "sc" ||
+        //   el.className === "c" ||
+        //   el.className === "as" ||
+        //   el.className === "co"
+        // ) {
+        //   nodeArr.push(el);
+        // }
       });
 
       if (document.querySelector(selector)) {
@@ -145,6 +155,7 @@ class Hero {
   }
 }
 
+//this is what he uses in the video but so far seems unnecessary
 // const keys = {
 //   a: {
 //     pressed: false,
@@ -174,17 +185,17 @@ class Projectile {
   }
 }
 
-class MovingSentence {
-  constructor({ position, velocity }) {
-    this.position = position;
-    this.velocity = velocity;
-  }
+// class MovingSentence {
+//   constructor({ position, velocity }) {
+//     this.position = position;
+//     this.velocity = velocity;
+//   }
 
-  update() {
-    this.draw();
-    this.position.y += this.velocity.y;
-  }
-}
+//   update() {
+//     this.draw();
+//     this.position.y += this.velocity.y;
+//   }
+// }
 
 const player = new Hero();
 
@@ -203,28 +214,29 @@ function animate() {
     // console.log("in per", period.getBoundingClientRect().x);
     if (nodeArr) {
       nodeArr.forEach((period) => {
-        // periodsArray.forEach((period) => {
-        if (
-          projectile.position.y - projectile.height / 2 <=
-            period.getBoundingClientRect().y &&
-          projectile.position.x >= period.getBoundingClientRect().x &&
-          projectile.position.x <=
-            period.getBoundingClientRect().x +
-              period.getBoundingClientRect().width
-        ) {
-          console.log("hit!");
-          setTimeout(() => {
-            projectiles.splice(index, 1);
-            period.removeAttribute("id");
-          }, 0);
-          console.log("per2", period);
-          //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
-        } else if (projectile.position.y + projectile.height <= 0) {
-          setTimeout(() => {
-            projectiles.splice(index, 1);
-          }, 0);
-        } else {
-          projectile.update();
+        if (period.className === "p") {
+          if (
+            projectile.position.y - projectile.height / 2 <=
+              period.getBoundingClientRect().y &&
+            projectile.position.x >= period.getBoundingClientRect().x &&
+            projectile.position.x <=
+              period.getBoundingClientRect().x +
+                period.getBoundingClientRect().width
+          ) {
+            console.log("hit!");
+            setTimeout(() => {
+              projectiles.splice(index, 1);
+              period.removeAttribute("id");
+            }, 0);
+            //   console.log("per2", period.p);
+            //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
+          } else if (projectile.position.y + projectile.height <= 0) {
+            setTimeout(() => {
+              projectiles.splice(index, 1);
+            }, 0);
+          } else {
+            projectile.update();
+          }
         }
       });
     }
@@ -248,7 +260,7 @@ addEventListener("keydown", ({ key }) => {
       }
       break;
     case " ":
-      console.log("up");
+      //   console.log("up");
       projectiles.push(
         new Projectile({
           position: {
@@ -265,6 +277,7 @@ addEventListener("keydown", ({ key }) => {
   }
 });
 
+//can probably get rid of this sometime
 const elm = await waitForElm(".p");
 // console.log({ elm });
 console.log({ nodeArr });
