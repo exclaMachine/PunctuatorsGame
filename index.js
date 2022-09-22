@@ -10,7 +10,7 @@ Array.from(periods).forEach((el) => {
   console.log(el.getBoundingClientRect());
   periodsArray.push(el);
 });
-
+console.log("arr", periodsArray);
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
 
@@ -126,7 +126,9 @@ function animate() {
         console.log("hit!");
         setTimeout(() => {
           projectiles.splice(index, 1);
+          period.removeAttribute("id");
         }, 0);
+        console.log("per2", period);
         //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
       } else if (projectile.position.y + projectile.height <= 0) {
         setTimeout(() => {
