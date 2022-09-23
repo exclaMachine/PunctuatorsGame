@@ -6,8 +6,6 @@ const sentence = document.getElementById("input-sentence");
 const button = document.getElementById("punc-button");
 const out1 = document.getElementById("output");
 
-console.log("button", button);
-
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
 
@@ -71,13 +69,10 @@ function waitForElm(selector) {
     }
 
     const observer = new MutationObserver((mutations) => {
-      //   console.log("mut", mutations[0].addedNodes);
       let mutArr = mutations[0].addedNodes;
       mutArr.forEach((el) => {
-        // console.log("class", el.className);
-
         if (el.className) {
-          //this does not work because the el loses it's position when changed into object
+          //this does not work because the el loses its position when changed into object
           //   nodeObj[el.className] = el;
           //   nodeArr.push(nodeObj);
           nodeArr.push(el);
@@ -160,7 +155,7 @@ class FullStop extends Hero {
   }
 }
 
-//this is what he uses in the video but so far seems unnecessary
+//this is what he uses in the video for velocity but so far seems unnecessary
 // const keys = {
 //   a: {
 //     pressed: false,
@@ -170,6 +165,7 @@ class FullStop extends Hero {
 //   },
 // };
 
+//need to make this more generic and create a laser one
 class Projectile {
   constructor({ position, velocity }) {
     this.position = position;
@@ -226,11 +222,8 @@ function animate() {
   player.update();
 
   projectiles.forEach((projectile, index) => {
-    // console.log("test", projectile.position.x);
-    // console.log("in per", period.getBoundingClientRect().x);
     if (nodeArr) {
       nodeArr.forEach((punctuationSymbol) => {
-        // Need to make this dynamic
         // if (period.className === "p") {
         if (punctuationSymbol.className === player.symbol) {
           if (
@@ -247,7 +240,7 @@ function animate() {
               projectiles.splice(index, 1);
               punctuationSymbol.removeAttribute("id");
             }, 0);
-            //   console.log("per2", period.p);
+
             //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
           } else if (projectile.position.y + projectile.height <= 0) {
             setTimeout(() => {
