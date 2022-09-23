@@ -107,7 +107,13 @@ function waitForElm(selector) {
 }
 
 class Hero {
-  constructor(heroImage, symbol, playerNumber, projectileStartPositionX) {
+  constructor(
+    heroImage,
+    symbol,
+    playerNumber,
+    projectileStartPositionX,
+    projectileLength
+  ) {
     this.velocity = {
       x: 0,
       y: 0,
@@ -116,6 +122,7 @@ class Hero {
     this.symbol = symbol;
     this.playerNumber = playerNumber;
     this.projectileStartPositionX = projectileStartPositionX;
+    this.projectileLength = projectileLength;
 
     const image = new Image();
 
@@ -153,13 +160,13 @@ class Hero {
 
 class FullStop extends Hero {
   constructor() {
-    super("./images/fs.png", "period", 0, 30);
+    super("./images/fs.png", "period", 0, 30, 50);
   }
 }
 
 class CommaChameleon extends Hero {
-  constructor() {
-    super("./images/cc.png", "comma", 1, 70);
+  constructor(projectileLength) {
+    super("./images/cc.png", "comma", 1, 70, projectileLength);
   }
 }
 
@@ -179,7 +186,7 @@ class Projectile {
     this.position = position;
     this.velocity = velocity;
     this.width = 3;
-    this.height = 50;
+    this.height = player.projectileLength;
   }
 
   draw() {
@@ -210,7 +217,7 @@ class Projectile {
 // const player = new Hero("./images/fs.png", "period", 0);
 
 let player = new FullStop();
-let player2 = new CommaChameleon();
+let player2 = new CommaChameleon(100);
 
 const heroArray = [player, player2];
 
