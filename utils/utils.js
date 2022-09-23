@@ -48,3 +48,51 @@ export const addSpansAndIds = (
 
   //   return newString.join("");
 };
+
+
+let nodeObj = {};
+export let nodeArr = [];
+// https://stackoverflow.com/questions/5525071/how-to-wait-until-an-element-exists
+export const waitForElement = (selector) => {
+  return new Promise((resolve) => {
+    if (document.querySelector(selector)) {
+      return resolve(document.querySelector(selector));
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      let mutArr = mutations[0].addedNodes;
+      mutArr.forEach((el) => {
+        if (el.className) {
+          //this does not work because the el loses its position when changed into object
+          //   nodeObj[el.className] = el;
+          //   nodeArr.push(nodeObj);
+          nodeArr.push(el);
+        }
+
+        //this can be replaced with if (el.className)
+        // if (
+        //   el.className === "p" ||
+        //   el.className === "ap" ||
+        //   el.className === "e" ||
+        //   el.className === "q" ||
+        //   el.className === "sc" ||
+        //   el.className === "c" ||
+        //   el.className === "as" ||
+        //   el.className === "co"
+        // ) {
+        //   nodeArr.push(el);
+        // }
+      });
+
+      if (document.querySelector(selector)) {
+        resolve(document.querySelector(selector));
+        observer.disconnect();
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  });
+}
