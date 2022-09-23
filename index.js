@@ -107,13 +107,14 @@ function waitForElm(selector) {
 }
 
 class Hero {
-  constructor(heroImage, symbol) {
+  constructor(heroImage, symbol, playerNumber) {
     this.velocity = {
       x: 0,
       y: 0,
     };
     this.heroImage = heroImage;
     this.symbol = symbol;
+    this.playerNumber = playerNumber;
 
     const image = new Image();
 
@@ -151,7 +152,13 @@ class Hero {
 
 class FullStop extends Hero {
   constructor() {
-    super("./images/fs.png", "period");
+    super("./images/fs.png", "period", 0);
+  }
+}
+
+class CommaChameleon extends Hero {
+  constructor() {
+    super("./images/cc.png", "comma", 1);
   }
 }
 
@@ -199,9 +206,12 @@ class Projectile {
 //   }
 // }
 
-// const player = new Hero("./images/fs.png", "period");
+// const player = new Hero("./images/fs.png", "period", 0);
 
-const player = new FullStop();
+let player = new FullStop();
+let player2 = new CommaChameleon();
+
+const heroArray = [player, player2];
 
 const projectiles = [];
 
@@ -285,6 +295,13 @@ addEventListener("keydown", ({ key }) => {
         })
       );
       break;
+    case "ArrowDown":
+      // This is how you switcth characters
+      if (player.playerNumber === heroArray.length - 1) {
+        player = heroArray[0];
+      } else {
+        player = heroArray[player.playerNumber + 1];
+      }
   }
 });
 
