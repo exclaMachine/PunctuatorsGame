@@ -20,14 +20,14 @@ const punctuationHashMap = new Map();
 
 //this is called chaining
 punctuationHashMap
-  .set("!", "e")
-  .set("?", "q")
-  .set(";", "sc")
-  .set(":", "c")
-  .set("'", "ap")
-  .set("*", "as")
-  .set(",", "co")
-  .set(".", "p");
+  .set("!", "exclamation")
+  .set("?", "question")
+  .set(";", "semicolon")
+  .set(":", "colon")
+  .set("'", "apostrophe")
+  .set("*", "asterisk")
+  .set(",", "comma")
+  .set(".", "period");
 
 const addSpansAndIds = (string) => {
   let newString = string.split("");
@@ -71,7 +71,7 @@ function waitForElm(selector) {
     }
 
     const observer = new MutationObserver((mutations) => {
-      console.log("mut", mutations[0].addedNodes);
+      //   console.log("mut", mutations[0].addedNodes);
       let mutArr = mutations[0].addedNodes;
       mutArr.forEach((el) => {
         // console.log("class", el.className);
@@ -112,15 +112,17 @@ function waitForElm(selector) {
 }
 
 class Hero {
-  constructor() {
+  constructor(heroImage, symbol) {
     this.velocity = {
       x: 0,
       y: 0,
     };
+    this.heroImage = heroImage;
+    this.symbol = symbol;
 
     const image = new Image();
 
-    image.src = "./images/fs.png";
+    image.src = this.heroImage;
     image.onload = () => {
       const scale = 0.5;
       this.image = image;
@@ -152,6 +154,12 @@ class Hero {
   }
 }
 
+class FullStop extends Hero {
+  constructor() {
+    super("./images/fs.png", "period");
+  }
+}
+
 //this is what he uses in the video but so far seems unnecessary
 // const keys = {
 //   a: {
@@ -163,16 +171,11 @@ class Hero {
 // };
 
 class Projectile {
-  constructor({ position, velocity, type }) {
+  constructor({ position, velocity }) {
     this.position = position;
     this.velocity = velocity;
-    this.type = type;
     this.width = 3;
     this.height = 50;
-  }
-
-  weapon() {
-    console.log(this.type);
   }
 
   draw() {
@@ -187,6 +190,7 @@ class Projectile {
   }
 }
 
+// Maybe down the road can have the sentence move downward
 // class MovingSentence {
 //   constructor({ position, velocity }) {
 //     this.position = position;
@@ -199,7 +203,9 @@ class Projectile {
 //   }
 // }
 
-const player = new Hero();
+// const player = new Hero("./images/fs.png", "period");
+
+const player = new FullStop();
 
 const projectiles = [];
 
@@ -223,21 +229,23 @@ function animate() {
     // console.log("test", projectile.position.x);
     // console.log("in per", period.getBoundingClientRect().x);
     if (nodeArr) {
-      nodeArr.forEach((period) => {
+      nodeArr.forEach((punctuationSymbol) => {
+        // Need to make this dynamic
         // if (period.className === "p") {
-        if (period.className === projectile.type) {
+        if (punctuationSymbol.className === player.symbol) {
           if (
             projectile.position.y - projectile.height / 2 <=
-              period.getBoundingClientRect().y &&
-            projectile.position.x >= period.getBoundingClientRect().x &&
+              punctuationSymbol.getBoundingClientRect().y &&
+            projectile.position.x >=
+              punctuationSymbol.getBoundingClientRect().x &&
             projectile.position.x <=
-              period.getBoundingClientRect().x +
-                period.getBoundingClientRect().width
+              punctuationSymbol.getBoundingClientRect().x +
+                punctuationSymbol.getBoundingClientRect().width
           ) {
             console.log("hit!");
             setTimeout(() => {
               projectiles.splice(index, 1);
-              period.removeAttribute("id");
+              punctuationSymbol.removeAttribute("id");
             }, 0);
             //   console.log("per2", period.p);
             //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
@@ -271,7 +279,6 @@ addEventListener("keydown", ({ key }) => {
       }
       break;
     case "ArrowUp":
-      //   console.log("up");
       projectiles.push(
         new Projectile({
           position: {
@@ -282,15 +289,13 @@ addEventListener("keydown", ({ key }) => {
             x: 0,
             y: -10,
           },
-          //need to add in player.type here, or player.weapon
-          type: "p",
         })
       );
       break;
   }
 });
 
-//can probably get rid of this sometime
+//can probably get rid of this sometime, should probably change to span to capture any punctuation
 const elm = await waitForElm(".p");
 // console.log({ elm });
 console.log({ nodeArr });
