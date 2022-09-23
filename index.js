@@ -13,8 +13,9 @@ const out1 = document.getElementById("output");
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
 
-canvas.width = innerWidth;
-canvas.height = innerHeight;
+//31 accounts for the padding and height of the inputs. Need to fix for when that goes away
+canvas.width = innerWidth - button.height;
+canvas.height = innerHeight - 31;
 
 button.addEventListener("click", () =>
   addSpansAndIds(sentence.value, sentence, button, out1)
