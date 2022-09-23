@@ -275,6 +275,6 @@ addEventListener("keydown", ({ key }) => {
 });
 
 //can probably get rid of this sometime, should probably change to span to capture any punctuation
-const elm = await waitForElm(".p");
+const elm = await waitForElm("span");
 // console.log({ elm });
 console.log({ nodeArr });
