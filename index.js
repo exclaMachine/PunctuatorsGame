@@ -13,9 +13,9 @@ const out1 = document.getElementById("output");
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
 
-//31 accounts for the padding and height of the inputs. Need to fix for when that goes away
-canvas.width = innerWidth - button.height;
-canvas.height = innerHeight - 31;
+//number accounts for the padding and height of the inputs. Need to fix for when that goes away
+canvas.width = innerWidth - 4;
+canvas.height = innerHeight - 50;
 
 button.addEventListener("click", () =>
   addSpansAndIds(sentence.value, sentence, button, out1)
@@ -27,7 +27,8 @@ class Hero {
     symbol,
     playerNumber,
     projectileStartPositionX,
-    projectileLength
+    projectileLength,
+    projectileColor
   ) {
     this.velocity = {
       x: 0,
@@ -49,7 +50,7 @@ class Hero {
       this.height = image.height * scale;
       this.position = {
         x: canvas.width / 2 - this.width / 2,
-        y: canvas.height - this.height,
+        y: canvas.height - this.height + 20,
       };
     };
   }
@@ -75,13 +76,13 @@ class Hero {
 
 class FullStop extends Hero {
   constructor() {
-    super("./images/fs.png", "period", 0, 30, 50);
+    super("./images/fs.png", "period", 0, 30, 50, "red");
   }
 }
 
 class CommaChameleon extends Hero {
   constructor(projectileLength) {
-    super("./images/cc.png", "comma", 1, 70, projectileLength);
+    super("./images/cc.png", "comma", 1, 70, projectileLength, "pink");
   }
 }
 
