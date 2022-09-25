@@ -27,8 +27,7 @@ class Hero {
     symbol,
     playerNumber,
     projectileStartPositionX,
-    projectileLength,
-    projectileColor
+    projectileLength
   ) {
     this.velocity = {
       x: 0,
@@ -76,13 +75,13 @@ class Hero {
 
 class FullStop extends Hero {
   constructor() {
-    super("./images/fs.png", "period", 0, 30, 50, "red");
+    super("./images/fs.png", "period", 0, 30, 50);
   }
 }
 
 class CommaChameleon extends Hero {
   constructor(projectileLength) {
-    super("./images/cc.png", "comma", 1, 70, projectileLength, "pink");
+    super("./images/cc.png", "comma", 1, 70, projectileLength);
   }
 }
 
@@ -117,6 +116,29 @@ class Projectile {
   }
 }
 
+// class CommaTongue extends Projectile {
+class CommaTongue {
+  constructor({ position, velocity }) {
+    this.position = position;
+    this.velocity = velocity;
+    this.width = 5;
+    this.height = player.projectileLength;
+  }
+
+  //if I add color param can cut this out
+  draw() {
+    c.fillStyle = "pink";
+    c.fillRect(this.position.x, this.position.y, this.width, this.height);
+  }
+
+  update() {
+    this.draw();
+    this.height -= this.velocity.y;
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
+  }
+}
+
 // Maybe down the road can have the sentence move downward
 // class MovingSentence {
 //   constructor({ position, velocity }) {
@@ -139,14 +161,6 @@ const heroArray = [player, player2];
 
 const projectiles = [];
 
-// class Arrow extends Projectile {
-//   constructor({ position, velocity }) {
-//     super(position, velocity, "q");
-//   }
-// }
-
-// const arrow = new Arrow();
-
 function animate() {
   //this creates an animation loop
   requestAnimationFrame(animate);
@@ -158,8 +172,37 @@ function animate() {
   projectiles.forEach((projectile, index) => {
     if (nodeArr) {
       nodeArr.forEach((punctuationSymbol) => {
-        // if (period.className === "p") {
         if (punctuationSymbol.className === player.symbol) {
+          //Comma Chameleon
+          if (player.symbol === "comma") {
+            if (
+              projectile.position.y <=
+                punctuationSymbol.getBoundingClientRect().y &&
+              projectile.position.x >=
+                punctuationSymbol.getBoundingClientRect().x &&
+              projectile.position.x <=
+                punctuationSymbol.getBoundingClientRect().x +
+                  punctuationSymbol.getBoundingClientRect().width
+            ) {
+              console.log("hitTongue!");
+              setTimeout(() => {
+                //need to change the velocity of the y to +1
+                console.log("proj", projectiles);
+
+                // projectiles[index].velocity.y = 1;
+                projectiles.splice(index, 1);
+                punctuationSymbol.removeAttribute("id");
+              }, 0);
+            } else if (projectile.position.y <= 0) {
+              setTimeout(() => {
+                // projectiles[index].velocity.y = 1;
+                projectiles.splice(index, 1);
+              }, 0);
+            } else {
+              console.log("proj2", projectiles);
+              projectile.update();
+            }
+          }
           if (
             projectile.position.y - projectile.height / 2 <=
               punctuationSymbol.getBoundingClientRect().y &&
@@ -206,22 +249,42 @@ addEventListener("keydown", ({ key }) => {
       }
       break;
     case "ArrowUp":
-      projectiles.push(
-        new Projectile({
-          position: {
-            x:
-              player.position.x +
-              player.width -
-              player.projectileStartPositionX,
-            y: player.position.y,
-          },
-          velocity: {
-            x: 0,
-            y: -10,
-          },
-        })
-      );
-      break;
+      //Comma Chameleon
+      if (player === heroArray[1]) {
+        projectiles.push(
+          new CommaTongue({
+            position: {
+              x:
+                player.position.x +
+                player.width -
+                player.projectileStartPositionX,
+              y: player.position.y,
+            },
+            velocity: {
+              x: 0,
+              y: -1,
+            },
+          })
+        );
+        break;
+      } else {
+        projectiles.push(
+          new Projectile({
+            position: {
+              x:
+                player.position.x +
+                player.width -
+                player.projectileStartPositionX,
+              y: player.position.y,
+            },
+            velocity: {
+              x: 0,
+              y: -10,
+            },
+          })
+        );
+        break;
+      }
     case "ArrowDown":
       // This is how you switch characters
       if (player.playerNumber === heroArray.length - 1) {
