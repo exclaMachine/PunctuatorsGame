@@ -24,29 +24,33 @@ button.addEventListener("click", () =>
 class Hero {
   constructor(
     heroImage,
+    heroScale,
     symbol,
     playerNumber,
     projectileStartPositionX,
-    projectileLength
+    projectileLength,
+    projectileImage
   ) {
     this.velocity = {
       x: 0,
       y: 0,
     };
     this.heroImage = heroImage;
+    this.heroScale = heroScale;
     this.symbol = symbol;
     this.playerNumber = playerNumber;
     this.projectileStartPositionX = projectileStartPositionX;
     this.projectileLength = projectileLength;
+    this.projectileImage = projectileImage;
 
     const image = new Image();
 
     image.src = this.heroImage;
     image.onload = () => {
-      const scale = 0.5;
+      //   const scale = 0.5;
       this.image = image;
-      this.width = image.width * scale;
-      this.height = image.height * scale;
+      this.width = image.width * heroScale;
+      this.height = image.height * heroScale;
       this.position = {
         x: canvas.width / 2 - this.width / 2,
         y: canvas.height - this.height + 20,
@@ -75,13 +79,19 @@ class Hero {
 
 class FullStop extends Hero {
   constructor() {
-    super("./images/fs.png", "period", 0, 30, 50);
+    super("./images/fs.png", 0.5, "period", 0, 30, 50);
   }
 }
 
 class CommaChameleon extends Hero {
   constructor(projectileLength) {
-    super("./images/cc.png", "comma", 1, 70, projectileLength);
+    super("./images/cc.png", 0.5, "comma", 1, 70, projectileLength);
+  }
+}
+
+class QuestionMarkswoman extends Hero {
+  constructor() {
+    super("./images/qm.png", 0.7, "question", 2, 30, 50, "./images/Arrow.png");
   }
 }
 
@@ -102,11 +112,39 @@ class Projectile {
     this.velocity = velocity;
     this.width = 3;
     this.height = player.projectileLength;
+    this.projectileImage = player.projectileImage;
+    // console.log("is it here", this.projectileImage);
+
+    const projImage = new Image();
+
+    projImage.src = this.projectileImage;
+    // console.log("projI", projImage);
+
+    projImage.onload = () => {
+      const scale = 0.2;
+      this.projImage = projImage;
+      this.width = projImage.width * scale;
+      this.height = projImage.height * scale;
+      this.position = {
+        x: player.position.x + player.projectileStartPositionX,
+        y: player.position.y,
+      };
+    };
   }
 
   draw() {
-    c.fillStyle = "red";
-    c.fillRect(this.position.x, this.position.y, this.width, this.height);
+    if (this.projImage) {
+      c.drawImage(
+        this.projImage,
+        this.position.x,
+        this.position.y,
+        this.width,
+        this.height
+      );
+    } else {
+      c.fillStyle = "red";
+      c.fillRect(this.position.x, this.position.y, this.width, this.height);
+    }
   }
 
   update() {
@@ -156,8 +194,9 @@ class CommaTongue {
 
 let player = new FullStop();
 let player2 = new CommaChameleon(100);
+let player3 = new QuestionMarkswoman();
 
-const heroArray = [player, player2];
+const heroArray = [player, player2, player3];
 
 const projectiles = [];
 
@@ -283,6 +322,7 @@ addEventListener("keydown", ({ key }) => {
             },
           })
         );
+        console.log("pro Image", player.projectileImage);
         break;
       }
     case "ArrowDown":
