@@ -91,7 +91,7 @@ class CommaChameleon extends Hero {
 
 class QuestionMarkswoman extends Hero {
   constructor() {
-    super("./images/qm.png", 0.7, "question", 2, 30, 50, "./images/Arrow.png");
+    super("./images/qm.png", 0.7, "question", 2, 110, 50, "./images/Arrow.png");
   }
 }
 
@@ -301,7 +301,7 @@ addEventListener("keydown", ({ key }) => {
             },
             velocity: {
               x: 0,
-              y: -3,
+              y: -4,
             },
           })
         );
