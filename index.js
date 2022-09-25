@@ -176,7 +176,7 @@ function animate() {
           //Comma Chameleon
           if (player.symbol === "comma") {
             if (
-              projectile.position.y <=
+              projectile.position.y - player.projectileLength <=
                 punctuationSymbol.getBoundingClientRect().y &&
               projectile.position.x >=
                 punctuationSymbol.getBoundingClientRect().x &&
@@ -199,32 +199,32 @@ function animate() {
                 projectiles.splice(index, 1);
               }, 0);
             } else {
-              console.log("proj2", projectiles);
               projectile.update();
             }
-          }
-          if (
-            projectile.position.y - projectile.height / 2 <=
-              punctuationSymbol.getBoundingClientRect().y &&
-            projectile.position.x >=
-              punctuationSymbol.getBoundingClientRect().x &&
-            projectile.position.x <=
-              punctuationSymbol.getBoundingClientRect().x +
-                punctuationSymbol.getBoundingClientRect().width
-          ) {
-            console.log("hit!");
-            setTimeout(() => {
-              projectiles.splice(index, 1);
-              punctuationSymbol.removeAttribute("id");
-            }, 0);
-
-            //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
-          } else if (projectile.position.y + projectile.height <= 0) {
-            setTimeout(() => {
-              projectiles.splice(index, 1);
-            }, 0);
           } else {
-            projectile.update();
+            if (
+              projectile.position.y - projectile.height <=
+                punctuationSymbol.getBoundingClientRect().y &&
+              projectile.position.x >=
+                punctuationSymbol.getBoundingClientRect().x &&
+              projectile.position.x <=
+                punctuationSymbol.getBoundingClientRect().x +
+                  punctuationSymbol.getBoundingClientRect().width
+            ) {
+              console.log("hit!");
+              setTimeout(() => {
+                projectiles.splice(index, 1);
+                punctuationSymbol.removeAttribute("id");
+              }, 0);
+
+              //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
+            } else if (projectile.position.y + projectile.height <= 0) {
+              setTimeout(() => {
+                projectiles.splice(index, 1);
+              }, 0);
+            } else {
+              projectile.update();
+            }
           }
         }
       });
@@ -262,7 +262,7 @@ addEventListener("keydown", ({ key }) => {
             },
             velocity: {
               x: 0,
-              y: -1,
+              y: -3,
             },
           })
         );
