@@ -77,6 +77,14 @@ class Hero {
   }
 }
 
+/*heroImage,
+heroScale,
+symbol,
+playerNumber,
+projectileStartPositionX,
+projectileLength,
+projectileImage
+*/
 class FullStop extends Hero {
   constructor() {
     super("./images/fs.png", 0.5, "period", 0, 30, 50);
@@ -301,7 +309,7 @@ addEventListener("keydown", ({ key }) => {
             },
             velocity: {
               x: 0,
-              y: -4,
+              y: -10,
             },
           })
         );
