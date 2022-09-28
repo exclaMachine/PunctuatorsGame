@@ -198,13 +198,31 @@ class CommaTongue {
 //   }
 // }
 
-// const player = new Hero("./images/fs.png", "period", 0);
-
+// let player = new Hero("./images/fs.png", "period", 0);
 let player = new FullStop();
-let player2 = new CommaChameleon(100);
-let player3 = new QuestionMarkswoman();
 
-const heroArray = [player, player2, player3];
+let period = new FullStop();
+let comma = new CommaChameleon(100);
+let question = new QuestionMarkswoman();
+
+let availableHeroArray = [period, comma, question];
+
+// const heroArray = [player, player2, player3];
+// const chosenHeroArray = [];
+
+const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
+  //Need to match the properties of these two arrays
+  let filteredArr = heroesArray.filter((value) => {
+    for (let i = 0; i < punctuationInSentenceArray.length; i++) {
+      if (punctuationInSentenceArray[i].className) {
+        if (value.symbol === punctuationInSentenceArray[i].className) {
+          return value;
+        }
+      }
+    }
+  });
+  return filteredArr;
+};
 
 const projectiles = [];
 
@@ -297,7 +315,7 @@ addEventListener("keydown", ({ key }) => {
       break;
     case "ArrowUp":
       //Comma Chameleon
-      if (player === heroArray[1]) {
+      if (player === comma) {
         projectiles.push(
           new CommaTongue({
             position: {
@@ -335,14 +353,18 @@ addEventListener("keydown", ({ key }) => {
       }
     case "ArrowDown":
       // This is how you switch characters
-      if (player.playerNumber === heroArray.length - 1) {
-        player = heroArray[0];
+
+      if (player === chosenHeroArray[chosenHeroArray.length - 1]) {
+        player = chosenHeroArray[0];
       } else {
-        player = heroArray[player.playerNumber + 1];
+        player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
       }
   }
 });
 
 const elm = await waitForElement("span");
+const chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
+console.log({ chosenHeroArray });
+
 // console.log({ elm });
 console.log({ nodeArr });
