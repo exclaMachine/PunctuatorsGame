@@ -26,7 +26,6 @@ class Hero {
     heroImage,
     heroScale,
     symbol,
-    playerNumber,
     projectileStartPositionX,
     projectileLength,
     projectileImage
@@ -38,7 +37,6 @@ class Hero {
     this.heroImage = heroImage;
     this.heroScale = heroScale;
     this.symbol = symbol;
-    this.playerNumber = playerNumber;
     this.projectileStartPositionX = projectileStartPositionX;
     this.projectileLength = projectileLength;
     this.projectileImage = projectileImage;
@@ -80,26 +78,31 @@ class Hero {
 /*heroImage,
 heroScale,
 symbol,
-playerNumber,
 projectileStartPositionX,
 projectileLength,
 projectileImage
 */
 class FullStop extends Hero {
   constructor() {
-    super("./images/fs.png", 0.5, "period", 0, 30, 50);
+    super("./images/fs.png", 0.5, "period", 30, 50);
   }
 }
 
 class CommaChameleon extends Hero {
   constructor(projectileLength) {
-    super("./images/cc.png", 0.5, "comma", 1, 70, projectileLength);
+    super("./images/cc.png", 0.5, "comma", 70, projectileLength);
   }
 }
 
 class QuestionMarkswoman extends Hero {
   constructor() {
-    super("./images/qm.png", 0.7, "question", 2, 110, 50, "./images/Arrow.png");
+    super("./images/qm.png", 0.7, "question", 110, 50, "./images/Arrow.png");
+  }
+}
+
+class ExclaMachine extends Hero {
+  constructor() {
+    super("./images/EM.png", 0.6, "exclamation", 130, 50, 70);
   }
 }
 
@@ -204,8 +207,9 @@ let player = new FullStop();
 let period = new FullStop();
 let comma = new CommaChameleon(100);
 let question = new QuestionMarkswoman();
+let exclamation = new ExclaMachine();
 
-let availableHeroArray = [period, comma, question];
+let availableHeroArray = [period, comma, question, exclamation];
 
 // const heroArray = [player, player2, player3];
 // const chosenHeroArray = [];
