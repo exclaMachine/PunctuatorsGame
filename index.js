@@ -28,7 +28,8 @@ class Hero {
     symbol,
     projectileStartPositionX,
     projectileLength,
-    projectileImage
+    projectileImage,
+    projectileShootSound
   ) {
     this.velocity = {
       x: 0,
@@ -40,6 +41,13 @@ class Hero {
     this.projectileStartPositionX = projectileStartPositionX;
     this.projectileLength = projectileLength;
     this.projectileImage = projectileImage;
+    this.projectileShootSound = projectileShootSound;
+
+    this.sfx = {
+      shoot: new Howl({
+        src: [this.projectileShootSound],
+      }),
+    };
 
     const image = new Image();
 
@@ -54,6 +62,10 @@ class Hero {
         y: canvas.height - this.height + 20,
       };
     };
+  }
+
+  shootProjectileSound() {
+    this.sfx.shoot.play();
   }
 
   draw() {
@@ -80,11 +92,20 @@ heroScale,
 symbol,
 projectileStartPositionX,
 projectileLength,
-projectileImage
+projectileImage,
+projectileShootSound
 */
 class FullStop extends Hero {
   constructor() {
-    super("./images/fs.png", 0.5, "period", 30, 50);
+    super(
+      "./images/fs.png",
+      0.5,
+      "period",
+      30,
+      50,
+      undefined,
+      "./sounds/laser-bolt.mp3"
+    );
   }
 }
 
@@ -96,7 +117,15 @@ class CommaChameleon extends Hero {
 
 class QuestionMarkswoman extends Hero {
   constructor() {
-    super("./images/qm.png", 0.7, "question", 110, 50, "./images/Arrow.png");
+    super(
+      "./images/qm.png",
+      0.7,
+      "question",
+      110,
+      50,
+      "./images/Arrow.png",
+      "./sounds/arrow-shot.mp3"
+    );
   }
 }
 
@@ -212,7 +241,6 @@ let exclamation = new ExclaMachine();
 let availableHeroArray = [period, comma, question, exclamation];
 
 // const heroArray = [player, player2, player3];
-// const chosenHeroArray = [];
 
 const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
   //Need to match the properties of these two arrays
@@ -319,6 +347,8 @@ addEventListener("keydown", ({ key }) => {
       break;
     case "ArrowUp":
       //Comma Chameleon
+
+      player.shootProjectileSound();
       if (player === comma) {
         projectiles.push(
           new CommaTongue({
@@ -368,7 +398,3 @@ addEventListener("keydown", ({ key }) => {
 
 const elm = await waitForElement("span");
 const chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
-console.log({ chosenHeroArray });
-
-// console.log({ elm });
-console.log({ nodeArr });
