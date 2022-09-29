@@ -93,7 +93,7 @@ symbol,
 projectileStartPositionX,
 projectileLength,
 projectileImage,
-projectileShootSound
+projectileShootSound,
 */
 class FullStop extends Hero {
   constructor() {
@@ -101,9 +101,9 @@ class FullStop extends Hero {
       "./images/fs.png",
       0.5,
       "period",
-      30,
+      110,
       50,
-      undefined,
+      "./images/Laser.png",
       "./sounds/laser-bolt.mp3"
     );
   }
@@ -129,7 +129,7 @@ class QuestionMarkswoman extends Hero {
       "./images/qm.png",
       0.7,
       "question",
-      110,
+      120,
       50,
       "./images/Arrow.png",
       "./sounds/arrow-shot.mp3"
@@ -139,7 +139,14 @@ class QuestionMarkswoman extends Hero {
 
 class ExclaMachine extends Hero {
   constructor() {
-    super("./images/EM.png", 0.6, "exclamation", 130, 50, 70);
+    super(
+      "./images/EM.png",
+      0.6,
+      "exclamation",
+      130,
+      50,
+      "./images/EM_Belt.png"
+    );
   }
 }
 
@@ -189,10 +196,11 @@ class Projectile {
         this.width,
         this.height
       );
-    } else {
-      c.fillStyle = "red";
-      c.fillRect(this.position.x, this.position.y, this.width, this.height);
     }
+    // else {
+    //   c.fillStyle = "red";
+    //   c.fillRect(this.position.x, this.position.y, this.width, this.height);
+    // }
   }
 
   update() {
