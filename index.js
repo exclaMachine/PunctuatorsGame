@@ -29,7 +29,8 @@ class Hero {
     projectileStartPositionX,
     projectileLength,
     projectileImage,
-    projectileShootSound
+    projectileShootSound,
+    projectileScale
   ) {
     this.velocity = {
       x: 0,
@@ -42,6 +43,7 @@ class Hero {
     this.projectileLength = projectileLength;
     this.projectileImage = projectileImage;
     this.projectileShootSound = projectileShootSound;
+    this.projectileScale = projectileScale;
 
     this.sfx = {
       shoot: new Howl({
@@ -94,6 +96,7 @@ projectileStartPositionX,
 projectileLength,
 projectileImage,
 projectileShootSound,
+projectileScale
 */
 class FullStop extends Hero {
   constructor() {
@@ -104,7 +107,8 @@ class FullStop extends Hero {
       110,
       50,
       "./images/Laser.png",
-      "./sounds/laser-bolt.mp3"
+      "./sounds/laser-bolt.mp3",
+      0.2
     );
   }
 }
@@ -118,7 +122,8 @@ class CommaChameleon extends Hero {
       70,
       projectileLength,
       undefined,
-      "./sounds/lick.mp3"
+      "./sounds/lick.mp3",
+      0.2
     );
   }
 }
@@ -129,10 +134,11 @@ class QuestionMarkswoman extends Hero {
       "./images/qm.png",
       0.7,
       "question",
-      120,
+      126,
       50,
       "./images/Arrow.png",
-      "./sounds/arrow-shot.mp3"
+      "./sounds/arrow-shot.mp3",
+      0.2
     );
   }
 }
@@ -143,9 +149,11 @@ class ExclaMachine extends Hero {
       "./images/EM.png",
       0.6,
       "exclamation",
-      130,
+      118,
       50,
-      "./images/EM_Belt.png"
+      "./images/EM_Belt.png",
+      "./sounds/whoosh.mp3",
+      0.5
     );
   }
 }
@@ -176,7 +184,8 @@ class Projectile {
     // console.log("projI", projImage);
 
     projImage.onload = () => {
-      const scale = 0.2;
+      //   const scale = 0.2;
+      const scale = player.projectileScale;
       this.projImage = projImage;
       this.width = projImage.width * scale;
       this.height = projImage.height * scale;
