@@ -102,6 +102,7 @@ projectileImage,
 projectileShootSound,
 projectileScale,
 projectileSoundRate
+projectileSoundVolume
 */
 //create a function that makes him disappear when projectile shoots
 class Apostrophantom extends Hero {
