@@ -279,6 +279,8 @@ class CommaTongue {
 //   }
 // }
 
+let allPunctuationHit = new Set();
+
 // let player = new Hero("./images/fs.png", "period", 0);
 let player = new Hero("./images/Generic.png", 0.7);
 
@@ -331,7 +333,13 @@ function animate() {
                 punctuationSymbol.getBoundingClientRect().x +
                   punctuationSymbol.getBoundingClientRect().width
             ) {
-              console.log("hitTongue!");
+              // console.log("hitTongue!");
+              //end game logic
+              allPunctuationHit.add(punctuationSymbol);
+              if (allPunctuationHit.size === nodeArr.length) {
+                console.log("All Punctuation Hit!");
+              }
+
               setTimeout(() => {
                 //need to change the velocity of the y to +1
                 console.log("proj", projectiles);
@@ -358,7 +366,11 @@ function animate() {
                 punctuationSymbol.getBoundingClientRect().x +
                   punctuationSymbol.getBoundingClientRect().width
             ) {
-              console.log("hit!");
+              // console.log("hit!");
+              allPunctuationHit.add(punctuationSymbol);
+              if (allPunctuationHit.size === nodeArr.length) {
+                console.log("All Punctuation Hit!");
+              }
               setTimeout(() => {
                 projectiles.splice(index, 1);
                 punctuationSymbol.removeAttribute("id");
