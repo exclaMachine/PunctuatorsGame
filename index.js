@@ -111,7 +111,15 @@ class FullStop extends Hero {
 
 class CommaChameleon extends Hero {
   constructor(projectileLength) {
-    super("./images/cc.png", 0.5, "comma", 70, projectileLength);
+    super(
+      "./images/cc.png",
+      0.5,
+      "comma",
+      70,
+      projectileLength,
+      undefined,
+      "./sounds/lick.mp3"
+    );
   }
 }
 
