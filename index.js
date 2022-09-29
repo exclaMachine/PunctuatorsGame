@@ -30,7 +30,9 @@ class Hero {
     projectileLength,
     projectileImage,
     projectileShootSound,
-    projectileScale
+    projectileScale,
+    projectileSoundRate,
+    projectileSoundVolume
   ) {
     this.velocity = {
       x: 0,
@@ -44,10 +46,13 @@ class Hero {
     this.projectileImage = projectileImage;
     this.projectileShootSound = projectileShootSound;
     this.projectileScale = projectileScale;
+    this.projectileSoundRate = projectileSoundRate;
+    this.projectileSoundVolume = projectileSoundVolume;
 
     this.sfx = {
       shoot: new Howl({
         src: [this.projectileShootSound],
+        rate: this.projectileSoundRate,
       }),
     };
 
@@ -55,7 +60,6 @@ class Hero {
 
     image.src = this.heroImage;
     image.onload = () => {
-      //   const scale = 0.5;
       this.image = image;
       this.width = image.width * heroScale;
       this.height = image.height * heroScale;
@@ -96,7 +100,8 @@ projectileStartPositionX,
 projectileLength,
 projectileImage,
 projectileShootSound,
-projectileScale
+projectileScale,
+projectileSoundRate
 */
 //create a function that makes him disappear when projectile shoots
 class Apostrophantom extends Hero {
@@ -108,8 +113,9 @@ class Apostrophantom extends Hero {
       118,
       50,
       "./images/Ectoplasm.png",
-      "./sounds/whoosh.mp3",
-      0.2
+      "./sounds/spirit-sound.mp3",
+      0.2,
+      5.0
     );
   }
 }
