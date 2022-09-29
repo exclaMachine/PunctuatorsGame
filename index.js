@@ -9,6 +9,7 @@ const c = canvas.getContext("2d");
 const sentence = document.getElementById("input-sentence");
 const button = document.getElementById("punc-button");
 const out1 = document.getElementById("output");
+const footer = document.getElementById("footer");
 
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
@@ -18,7 +19,7 @@ canvas.width = innerWidth - 4;
 canvas.height = innerHeight - 50;
 
 button.addEventListener("click", () =>
-  addSpansAndIds(sentence.value, sentence, button, out1)
+  addSpansAndIds(sentence.value, sentence, button, out1, footer)
 );
 
 class Hero {

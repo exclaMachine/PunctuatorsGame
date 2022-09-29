@@ -17,7 +17,8 @@ export const addSpansAndIds = (
   string,
   typedSentence,
   button,
-  outputSentence
+  outputSentence,
+  footer
 ) => {
   let newString = string.split("");
 
@@ -34,6 +35,8 @@ export const addSpansAndIds = (
   outputSentence.innerHTML = newString.join("");
   button.setAttribute("class", "go-away");
   typedSentence.setAttribute("class", "go-away");
+  footer.innerHTML =
+    "Use the arrow keys to play (up=shoot, left & right=move, down=switch character)";
 
   //This is an HTMLCollection //Need to wait for the spans to appear so this doesn't work
   //   const periods = document.querySelectorAll(".p");
@@ -48,7 +51,6 @@ export const addSpansAndIds = (
 
   //   return newString.join("");
 };
-
 
 let nodeObj = {};
 export let nodeArr = [];
@@ -95,4 +97,4 @@ export const waitForElement = (selector) => {
       subtree: true,
     });
   });
-}
+};
