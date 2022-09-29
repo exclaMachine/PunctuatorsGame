@@ -98,16 +98,17 @@ projectileImage,
 projectileShootSound,
 projectileScale
 */
-class FullStop extends Hero {
+//create a function that makes him disappear when projectile shoots
+class Apostrophantom extends Hero {
   constructor() {
     super(
-      "./images/fs.png",
-      0.5,
-      "period",
-      110,
+      "./images/Apostrophantom.png",
+      0.8,
+      "apostrophe",
+      118,
       50,
-      "./images/Laser.png",
-      "./sounds/laser-bolt.mp3",
+      "./images/Ectoplasm.png",
+      "./sounds/whoosh.mp3",
       0.2
     );
   }
@@ -128,21 +129,6 @@ class CommaChameleon extends Hero {
   }
 }
 
-class QuestionMarkswoman extends Hero {
-  constructor() {
-    super(
-      "./images/qm.png",
-      0.7,
-      "question",
-      126,
-      50,
-      "./images/Arrow.png",
-      "./sounds/arrow-shot.mp3",
-      0.2
-    );
-  }
-}
-
 class ExclaMachine extends Hero {
   constructor() {
     super(
@@ -154,6 +140,36 @@ class ExclaMachine extends Hero {
       "./images/EM_Belt.png",
       "./sounds/whoosh.mp3",
       0.5
+    );
+  }
+}
+
+class FullStop extends Hero {
+  constructor() {
+    super(
+      "./images/fs.png",
+      0.5,
+      "period",
+      110,
+      50,
+      "./images/Laser.png",
+      "./sounds/laser-bolt.mp3",
+      0.2
+    );
+  }
+}
+
+class QuestionMarkswoman extends Hero {
+  constructor() {
+    super(
+      "./images/qm.png",
+      0.7,
+      "question",
+      126,
+      50,
+      "./images/Arrow.png",
+      "./sounds/arrow-shot.mp3",
+      0.2
     );
   }
 }
@@ -258,12 +274,13 @@ class CommaTongue {
 // let player = new Hero("./images/fs.png", "period", 0);
 let player = new Hero("./images/Generic.png", 0.7);
 
-let period = new FullStop();
+let apostrophe = new Apostrophantom();
 let comma = new CommaChameleon(100);
-let question = new QuestionMarkswoman();
 let exclamation = new ExclaMachine();
+let period = new FullStop();
+let question = new QuestionMarkswoman();
 
-let availableHeroArray = [period, comma, question, exclamation];
+let availableHeroArray = [period, comma, question, exclamation, apostrophe];
 
 // const heroArray = [player, player2, player3];
 
