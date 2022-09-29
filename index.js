@@ -247,7 +247,7 @@ class CommaTongue {
 // }
 
 // let player = new Hero("./images/fs.png", "period", 0);
-let player = new FullStop();
+let player = new Hero("./images/Generic.png", 0.7);
 
 let period = new FullStop();
 let comma = new CommaChameleon(100);
