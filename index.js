@@ -22,6 +22,12 @@ button.addEventListener("click", () =>
   addSpansAndIds(sentence.value, sentence, button, out1, footer)
 );
 
+const gameSfx = {
+  end: new Howl({
+    src: ["./sounds/success-fanfare-trumpets.mp3"],
+  }),
+};
+
 class Hero {
   constructor(
     heroImage,
@@ -337,11 +343,12 @@ function animate() {
               //end game logic
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === nodeArr.length) {
-                console.log("All Punctuation Hit!");
+                // console.log("All Punctuation Hit!");
+                gameSfx.end.play();
               }
 
               setTimeout(() => {
-                //need to change the velocity of the y to +1
+                //need to change the velocity of the y to +1. this could make the tongue retract. Maybe later
                 console.log("proj", projectiles);
 
                 // projectiles[index].velocity.y = 1;
@@ -369,7 +376,8 @@ function animate() {
               // console.log("hit!");
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === nodeArr.length) {
-                console.log("All Punctuation Hit!");
+                // console.log("All Punctuation Hit!");
+                gameSfx.end.play();
               }
               setTimeout(() => {
                 projectiles.splice(index, 1);
