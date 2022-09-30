@@ -36,7 +36,7 @@ export const addSpansAndIds = (
   button.setAttribute("class", "go-away");
   typedSentence.setAttribute("class", "go-away");
   footer.innerHTML =
-    "Use the arrow keys to play (up=shoot, left & right=move, down=switch character)";
+    "Use the arrow keys to play (up = shoot, left & right = move, down = switch character)";
 
   //This is an HTMLCollection //Need to wait for the spans to appear so this doesn't work
   //   const periods = document.querySelectorAll(".p");
