@@ -13,8 +13,10 @@ punctuationHashMap
   .set(",", "comma")
   .set(".", "period")
   .set('"', "quotes")
-  .set("(", "parenthesis left")
-  .set(")", "parenthesis right");
+  // .set("(", "parenthesis left")
+  // .set(")", "parenthesis right");
+  .set("(", "parenthesis")
+  .set(")", "parenthesis");
 
 export const addSpansAndIds = (
   string,

@@ -173,6 +173,21 @@ class FullStop extends Hero {
   }
 }
 
+class ParentsOfTheSeas extends Hero {
+  constructor() {
+    super(
+      "./images/Parents.png",
+      0.35,
+      "parenthesis",
+      50,
+      50,
+      "./images/Bubble.png",
+      undefined,
+      0.1
+    );
+  }
+}
+
 class QuestionMarkswoman extends Hero {
   constructor() {
     super(
@@ -309,6 +324,7 @@ let player = new Hero("./images/Generic.png", 0.7);
 let apostrophe = new Apostrophantom();
 let comma = new CommaChameleon(100);
 let exclamation = new ExclaMachine();
+let parenthesis = new ParentsOfTheSeas();
 let period = new FullStop();
 let question = new QuestionMarkswoman();
 let quotes = new QuetzalQuotel();
@@ -316,6 +332,7 @@ let quotes = new QuetzalQuotel();
 let availableHeroArray = [
   period,
   comma,
+  parenthesis,
   question,
   exclamation,
   apostrophe,
@@ -329,6 +346,8 @@ const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
   let filteredArr = heroesArray.filter((value) => {
     for (let i = 0; i < punctuationInSentenceArray.length; i++) {
       if (punctuationInSentenceArray[i].className) {
+        //tried to do this for left and right parenthesis, might need to come back to it
+        // if (value.symbol.includes(punctuationInSentenceArray[i].className)) {
         if (value.symbol === punctuationInSentenceArray[i].className) {
           return value;
         }
@@ -351,6 +370,8 @@ function animate() {
   projectiles.forEach((projectile, index) => {
     if (nodeArr) {
       nodeArr.forEach((punctuationSymbol) => {
+        //tried to do this for left and right parenthesis, might need to come back to it
+        // if (punctuationSymbol.className.includes(player.symbol)) {
         if (punctuationSymbol.className === player.symbol) {
           //Comma Chameleon
           if (player.symbol === "comma") {
