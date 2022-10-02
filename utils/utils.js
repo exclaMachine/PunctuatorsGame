@@ -11,7 +11,10 @@ punctuationHashMap
   .set("'", "apostrophe")
   .set("*", "asterisk")
   .set(",", "comma")
-  .set(".", "period");
+  .set(".", "period")
+  .set('"', "quotes")
+  .set("(", "parenthesis left")
+  .set(")", "parenthesis right");
 
 export const addSpansAndIds = (
   string,

@@ -188,6 +188,22 @@ class QuestionMarkswoman extends Hero {
   }
 }
 
+//need to fix with code or choose different font so we get smart quotes instead of dumb quotes https://www.fontshop.com/content/curly-quotes
+class QuetzalQuotel extends Hero {
+  constructor() {
+    super(
+      "./images/Qq.png",
+      0.7,
+      "quotes",
+      126,
+      50,
+      "./images/Feather.png",
+      undefined,
+      0.1
+    );
+  }
+}
+
 //this is what he uses in the video for velocity but so far seems unnecessary
 // const keys = {
 //   a: {
@@ -295,8 +311,16 @@ let comma = new CommaChameleon(100);
 let exclamation = new ExclaMachine();
 let period = new FullStop();
 let question = new QuestionMarkswoman();
+let quotes = new QuetzalQuotel();
 
-let availableHeroArray = [period, comma, question, exclamation, apostrophe];
+let availableHeroArray = [
+  period,
+  comma,
+  question,
+  exclamation,
+  apostrophe,
+  quotes,
+];
 
 // const heroArray = [player, player2, player3];
 
