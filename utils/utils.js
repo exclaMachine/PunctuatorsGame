@@ -103,3 +103,20 @@ export const waitForElement = (selector) => {
     });
   });
 };
+
+
+export const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
+  //Need to match the properties of these two arrays
+  let filteredArr = heroesArray.filter((value) => {
+    for (let i = 0; i < punctuationInSentenceArray.length; i++) {
+      if (punctuationInSentenceArray[i].className) {
+        //tried to do this for left and right parenthesis, might need to come back to it
+        // if (value.symbol.includes(punctuationInSentenceArray[i].className)) {
+        if (value.symbol === punctuationInSentenceArray[i].className) {
+          return value;
+        }
+      }
+    }
+  });
+  return filteredArr;
+};

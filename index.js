@@ -1,6 +1,7 @@
 import { addSpansAndIds } from "./utils/utils.js";
 import { waitForElement } from "./utils/utils.js";
 import { nodeArr } from "./utils/utils.js";
+import { heroToTheRescue } from "./utils/utils.js";
 
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
@@ -439,24 +440,6 @@ let availableHeroArray = [
   apostrophe,
   quotes,
 ];
-
-// const heroArray = [player, player2, player3];
-
-const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
-  //Need to match the properties of these two arrays
-  let filteredArr = heroesArray.filter((value) => {
-    for (let i = 0; i < punctuationInSentenceArray.length; i++) {
-      if (punctuationInSentenceArray[i].className) {
-        //tried to do this for left and right parenthesis, might need to come back to it
-        // if (value.symbol.includes(punctuationInSentenceArray[i].className)) {
-        if (value.symbol === punctuationInSentenceArray[i].className) {
-          return value;
-        }
-      }
-    }
-  });
-  return filteredArr;
-};
 
 const projectiles = [];
 
