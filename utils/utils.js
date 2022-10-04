@@ -13,6 +13,7 @@ punctuationHashMap
   .set(",", "comma")
   .set(".", "period")
   .set('"', "quotes")
+  .set("-", "hyphen")
   // .set("(", "parenthesis left")
   // .set(")", "parenthesis right");
   .set("(", "parenthesis")
@@ -103,7 +104,6 @@ export const waitForElement = (selector) => {
     });
   });
 };
-
 
 export const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
   //Need to match the properties of these two arrays

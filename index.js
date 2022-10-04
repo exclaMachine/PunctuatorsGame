@@ -205,6 +205,24 @@ class CommaChameleon extends Hero {
   }
 }
 
+class DrHyphenol extends Hero {
+  constructor() {
+    super(
+      "./images/Hyphenol_1.png",
+      0.6,
+      "hyphen",
+      118,
+      50,
+      "./images/Flask.png",
+      "./sounds/whoosh.mp3",
+      0.25,
+      undefined,
+      undefined,
+      "./images/Hyphenol_2.png"
+    );
+  }
+}
+
 class ExclaMachine extends Hero {
   constructor() {
     super(
@@ -428,6 +446,7 @@ let question = new QuestionMarkswoman();
 let quotes = new QuetzalQuotel();
 let colon = new SargeColon();
 let semicolon = new SemiColonel();
+let hyphen = new DrHyphenol();
 
 let availableHeroArray = [
   period,
@@ -439,12 +458,14 @@ let availableHeroArray = [
   exclamation,
   apostrophe,
   quotes,
+  hyphen,
 ];
 
 const projectiles = [];
 
 function animate() {
   //this creates an animation loop
+
   //Need this or else there will be multiple Full Stops
   c.fillStyle = "white";
   c.fillRect(0, 0, canvas.width, canvas.height);
