@@ -39,7 +39,8 @@ class Hero {
     projectileShootSound,
     projectileScale,
     projectileSoundRate,
-    projectileSoundVolume
+    projectileSoundVolume,
+    secondHeroImage
   ) {
     this.velocity = {
       x: 0,
@@ -55,6 +56,7 @@ class Hero {
     this.projectileScale = projectileScale;
     this.projectileSoundRate = projectileSoundRate;
     this.projectileSoundVolume = projectileSoundVolume;
+    this.secondHeroImage = secondHeroImage;
 
     this.sfx = {
       shoot: new Howl({
@@ -63,7 +65,9 @@ class Hero {
       }),
     };
 
+    //should put these in an array
     const image = new Image();
+    const image2 = new Image();
 
     image.src = this.heroImage;
     image.onload = () => {
@@ -75,6 +79,29 @@ class Hero {
         y: canvas.height - this.height + 20,
       };
     };
+
+    //this needs refactored
+    image2.src = this.secondHeroImage;
+    image2.onload = () => {
+      this.image2 = image2;
+      this.width = image2.width * heroScale;
+      this.height = image2.height * heroScale;
+      this.position = {
+        x: canvas.width / 2 - this.width / 2,
+        y: canvas.height - this.height + 20,
+      };
+    };
+
+    // this.imageArray = [image, image2];
+
+    // this.millSecondsPerImage = 100;
+    // this.currentTime = new Date().valueOf();
+
+    // this.imageToDraw =
+    //   this.imageArray[
+    //     Math.floor(this.currentTime / this.millSecondsPerImage) %
+    //       this.imageArray.length
+    //   ];
   }
 
   shootProjectileSound() {
@@ -91,9 +118,30 @@ class Hero {
     );
   }
 
+  draw2() {
+    console.log("hmm", this.image2);
+    c.save();
+    c.drawImage(
+      this.image2,
+      this.position.x,
+      this.position.y,
+      this.width,
+      this.height
+    );
+    c.restore();
+  }
+
   update() {
     if (this.image) {
       this.draw();
+      this.position.x += this.velocity.x;
+      this.position.y += this.velocity.y;
+    }
+  }
+
+  update2() {
+    if (this.image2) {
+      this.draw2();
       this.position.x += this.velocity.x;
       this.position.y += this.velocity.y;
     }
@@ -223,13 +271,16 @@ class SargeColon extends Hero {
   constructor() {
     super(
       "./images/Colon1.png",
-      0.7,
+      0.9,
       "colon",
       126,
       50,
       "./images/Colon_Wave.png",
       undefined,
-      0.1
+      0.1,
+      undefined,
+      undefined,
+      "./images/Colon.png"
     );
   }
 }
@@ -378,10 +429,11 @@ const projectiles = [];
 
 function animate() {
   //this creates an animation loop
-  requestAnimationFrame(animate);
   //Need this or else there will be multiple Full Stops
   c.fillStyle = "white";
   c.fillRect(0, 0, canvas.width, canvas.height);
+
+  requestAnimationFrame(animate);
   player.update();
 
   projectiles.forEach((projectile, index) => {
@@ -452,6 +504,12 @@ function animate() {
                 projectiles.splice(index, 1);
               }, 0);
             } else {
+              //hero disappears otherwise. Can use this for apostrophantom though
+              if (player.secondHeroImage) {
+                c.fillStyle = "white";
+                c.fillRect(0, 0, canvas.width, canvas.height);
+                player.update2();
+              }
               projectile.update();
             }
           }
@@ -514,6 +572,8 @@ addEventListener("keydown", ({ key }) => {
             },
           })
         );
+        // player.draw2();
+        // player.update2();
         console.log("pro Image", player.projectileImage);
         break;
       }
