@@ -11,6 +11,10 @@ const sentence = document.getElementById("input-sentence");
 const button = document.getElementById("punc-button");
 const out1 = document.getElementById("output");
 const footer = document.getElementById("footer");
+const start = document.getElementById("start");
+const banner = document.getElementById("banner");
+const endingMessage =
+  "You found all the punctuation! Refresh the page to play again!";
 
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
@@ -20,7 +24,7 @@ canvas.width = innerWidth - 4;
 canvas.height = innerHeight - 50;
 
 button.addEventListener("click", () =>
-  addSpansAndIds(sentence.value, sentence, button, out1, footer)
+  addSpansAndIds(sentence.value, sentence, button, out1, footer, banner, start)
 );
 
 const gameSfx = {
@@ -495,6 +499,7 @@ function animate() {
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === nodeArr.length) {
                 // console.log("All Punctuation Hit!");
+                start.setHTML(endingMessage);
                 gameSfx.end.play();
               }
 
@@ -528,6 +533,7 @@ function animate() {
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === nodeArr.length) {
                 // console.log("All Punctuation Hit!");
+                start.setHTML(endingMessage);
                 gameSfx.end.play();
               }
               setTimeout(() => {
@@ -615,6 +621,7 @@ addEventListener("keydown", ({ key }) => {
         break;
       }
     case "ArrowDown":
+      start.setHTML("");
       // This is how you switch characters
 
       if (player === chosenHeroArray[chosenHeroArray.length - 1]) {

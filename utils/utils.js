@@ -19,12 +19,15 @@ punctuationHashMap
   .set("(", "parenthesis")
   .set(")", "parenthesis");
 
+//should split this function and making the divs disapper into two functions
 export const addSpansAndIds = (
   string,
   typedSentence,
   button,
   outputSentence,
-  footer
+  footer,
+  banner,
+  start
 ) => {
   let newString = string.split("");
 
@@ -41,8 +44,10 @@ export const addSpansAndIds = (
   outputSentence.innerHTML = newString.join("");
   button.setAttribute("class", "go-away");
   typedSentence.setAttribute("class", "go-away");
+  banner.setAttribute("class", "go-away");
   footer.innerHTML =
     "Use the arrow keys to play (up = shoot, left & right = move, down = switch character)";
+  start.innerHTML = "Press the down arrow key to reveal your team!";
 
   //This is an HTMLCollection //Need to wait for the spans to appear so this doesn't work
   //   const periods = document.querySelectorAll(".p");
