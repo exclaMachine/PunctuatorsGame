@@ -80,17 +80,28 @@ class Hero {
       };
     };
 
-    //this needs refactored
-    image2.src = this.secondHeroImage;
-    image2.onload = () => {
-      this.image2 = image2;
-      this.width = image2.width * heroScale;
-      this.height = image2.height * heroScale;
-      this.position = {
-        x: canvas.width / 2 - this.width / 2,
-        y: canvas.height - this.height + 20,
+    if (this.heroImage === "white") {
+      image2.fillStyle = "white";
+      image2.fillRect(
+        this.position.x,
+        this.position.y,
+        this.width,
+        this.height
+      );
+    } else {
+      image2.src = this.secondHeroImage;
+      image2.onload = () => {
+        this.image2 = image2;
+        this.width = image2.width * heroScale;
+        this.height = image2.height * heroScale;
+        this.position = {
+          x: canvas.width / 2 - this.width / 2,
+          y: canvas.height - this.height + 20,
+        };
       };
-    };
+    }
+
+    //this needs refactored
 
     // this.imageArray = [image, image2];
 
@@ -171,7 +182,9 @@ class Apostrophantom extends Hero {
       "./images/Ectoplasm.png",
       "./sounds/spirit-sound.mp3",
       0.2,
-      5.0
+      5.0,
+      undefined,
+      "white"
     );
   }
 }
@@ -281,6 +294,24 @@ class SargeColon extends Hero {
       undefined,
       undefined,
       "./images/Colon.png"
+    );
+  }
+}
+
+class SemiColonel extends Hero {
+  constructor() {
+    super(
+      "./images/Semicolonel-profile.png",
+      0.9,
+      "semicolon",
+      100,
+      50,
+      "./images/Semicolonel.png",
+      undefined,
+      0.5,
+      undefined,
+      undefined,
+      "white"
     );
   }
 }
@@ -395,12 +426,14 @@ let period = new FullStop();
 let question = new QuestionMarkswoman();
 let quotes = new QuetzalQuotel();
 let colon = new SargeColon();
+let semicolon = new SemiColonel();
 
 let availableHeroArray = [
   period,
   colon,
   comma,
   parenthesis,
+  semicolon,
   question,
   exclamation,
   apostrophe,
