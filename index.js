@@ -219,6 +219,21 @@ class QuetzalQuotel extends Hero {
   }
 }
 
+class SargeColon extends Hero {
+  constructor() {
+    super(
+      "./images/Colon1.png",
+      0.7,
+      "colon",
+      126,
+      50,
+      "./images/Colon_Wave.png",
+      undefined,
+      0.1
+    );
+  }
+}
+
 //this is what he uses in the video for velocity but so far seems unnecessary
 // const keys = {
 //   a: {
@@ -328,9 +343,11 @@ let parenthesis = new ParentsOfTheSeas();
 let period = new FullStop();
 let question = new QuestionMarkswoman();
 let quotes = new QuetzalQuotel();
+let colon = new SargeColon();
 
 let availableHeroArray = [
   period,
+  colon,
   comma,
   parenthesis,
   question,
