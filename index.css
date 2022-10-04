@@ -30,6 +30,12 @@ h1 {
     font-family: 'Palanquin', sans-serif;
 }
 
+#subtitle {
+    margin: 50px;
+    position: fixed;
+    font-family: 'Palanquin', sans-serif;
+}
+
 body {
     margin: 0
 }
