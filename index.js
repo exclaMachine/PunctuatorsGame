@@ -521,13 +521,14 @@ function animate() {
             }
           } else {
             if (
+              //need to go through this more. Should be able to do .bottom but something up with padding
               projectile.position.y - projectile.height <=
                 punctuationSymbol.getBoundingClientRect().y &&
-              projectile.position.x >=
-                punctuationSymbol.getBoundingClientRect().x &&
+              projectile.position.x + projectile.width / 2 >=
+                punctuationSymbol.getBoundingClientRect().left &&
               projectile.position.x <=
-                punctuationSymbol.getBoundingClientRect().x +
-                  punctuationSymbol.getBoundingClientRect().width
+                punctuationSymbol.getBoundingClientRect().right -
+                  punctuationSymbol.getBoundingClientRect().width / 2
             ) {
               // console.log("hit!");
               allPunctuationHit.add(punctuationSymbol);
