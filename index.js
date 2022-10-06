@@ -663,6 +663,7 @@ shootButton.addEventListener("pointerdown", (e) => {
 //     // This is how you switch characters
 //     case "ArrowDown":
 switchButton.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
   start.setHTML("");
 
   if (player === chosenHeroArray[chosenHeroArray.length - 1]) {
