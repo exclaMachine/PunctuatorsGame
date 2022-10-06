@@ -48,7 +48,7 @@ export const addSpansAndIds = (
   banner.setAttribute("class", "go-away");
   // footer.innerHTML =
   //   "Use the arrow keys to play (up = shoot, left & right = move, down = switch character)";
-  start.innerHTML = "Press the down arrow key to reveal your team!";
+  start.innerHTML = "Press the Switch character button to reveal your team!";
   controls.setAttribute("class", "grid-container");
 
   //This is an HTMLCollection //Need to wait for the spans to appear so this doesn't work
