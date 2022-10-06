@@ -22,6 +22,33 @@ footer {
     width: 100vw;
 }
 
+.grid-container {
+    display: grid;
+    grid-template-areas:
+    ".    shoot  .    "
+    "left switch right";
+}
+
+#control-buttons > input {
+    padding: 5px;
+}
+
+#shoot-button {
+    grid-area: shoot;
+}
+
+#left-button {
+    grid-area: left;
+}
+
+#switch-button {
+    grid-area: switch;
+}
+
+#right-button {
+    grid-area: right;
+}
+
 h1 {
     /* color: red; */
     font-size: 80px;

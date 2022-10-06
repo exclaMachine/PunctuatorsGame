@@ -27,7 +27,8 @@ export const addSpansAndIds = (
   outputSentence,
   footer,
   banner,
-  start
+  start,
+  controls
 ) => {
   let newString = string.split("");
 
@@ -45,9 +46,10 @@ export const addSpansAndIds = (
   button.setAttribute("class", "go-away");
   typedSentence.setAttribute("class", "go-away");
   banner.setAttribute("class", "go-away");
-  footer.innerHTML =
-    "Use the arrow keys to play (up = shoot, left & right = move, down = switch character)";
+  // footer.innerHTML =
+  //   "Use the arrow keys to play (up = shoot, left & right = move, down = switch character)";
   start.innerHTML = "Press the down arrow key to reveal your team!";
+  controls.setAttribute("class", "grid-container");
 
   //This is an HTMLCollection //Need to wait for the spans to appear so this doesn't work
   //   const periods = document.querySelectorAll(".p");

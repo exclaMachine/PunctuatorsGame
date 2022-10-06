@@ -16,6 +16,12 @@ const banner = document.getElementById("banner");
 const endingMessage =
   "You found all the punctuation! Refresh the page to play again!";
 
+const controls = document.getElementById("control-buttons");
+const shootButton = document.getElementById("shoot-button");
+const leftButton = document.getElementById("left-button");
+const switchButton = document.getElementById("switch-button");
+const rightButton = document.getElementById("right-button");
+
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
 
@@ -24,7 +30,16 @@ canvas.width = innerWidth - 4;
 canvas.height = innerHeight - 50;
 
 button.addEventListener("click", () =>
-  addSpansAndIds(sentence.value, sentence, button, out1, footer, banner, start)
+  addSpansAndIds(
+    sentence.value,
+    sentence,
+    button,
+    out1,
+    footer,
+    banner,
+    start,
+    controls
+  )
 );
 
 const gameSfx = {
@@ -566,71 +581,72 @@ function animate() {
 
 animate();
 
-addEventListener("keydown", ({ key }) => {
-  switch (key) {
-    case "ArrowLeft":
-      if (player.position.x >= 0) {
-        // player.velocity.x = -5;
-        player.position.x -= 10;
-      }
-      break;
-    case "ArrowRight":
-      if (player.position.x <= canvas.width - player.width) {
-        player.position.x += 10;
-      }
-      break;
-    case "ArrowUp":
-      //Comma Chameleon
-
-      player.shootProjectileSound();
-      if (player === comma) {
-        projectiles.push(
-          new CommaTongue({
-            position: {
-              x:
-                player.position.x +
-                player.width -
-                player.projectileStartPositionX,
-              y: player.position.y,
-            },
-            velocity: {
-              x: 0,
-              y: -10,
-            },
-          })
-        );
-        break;
-      } else {
-        projectiles.push(
-          new Projectile({
-            position: {
-              x:
-                player.position.x +
-                player.width -
-                player.projectileStartPositionX,
-              y: player.position.y,
-            },
-            velocity: {
-              x: 0,
-              y: -10,
-            },
-          })
-        );
-        // player.draw2();
-        // player.update2();
-        console.log("pro Image", player.projectileImage);
-        break;
-      }
-    case "ArrowDown":
-      start.setHTML("");
-      // This is how you switch characters
-
-      if (player === chosenHeroArray[chosenHeroArray.length - 1]) {
-        player = chosenHeroArray[0];
-      } else {
-        player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
-      }
+// addEventListener("keydown", ({ key }) => {
+// switch (key) {
+//   case "ArrowLeft":
+leftButton.addEventListener("pointerdown", (e) => {
+  if (player.position.x >= 0) {
+    // player.velocity.x = -5;
+    player.position.x -= 10;
   }
+});
+// break;
+//     case "ArrowRight":
+
+rightButton.addEventListener("pointerdown", (e) => {
+  if (player.position.x <= canvas.width - player.width) {
+    player.position.x += 10;
+  }
+});
+//       break;
+//     case "ArrowUp":
+//       //Comma Chameleon
+shootButton.addEventListener("pointerdown", (e) => {
+  player.shootProjectileSound();
+  if (player === comma) {
+    projectiles.push(
+      new CommaTongue({
+        position: {
+          x: player.position.x + player.width - player.projectileStartPositionX,
+          y: player.position.y,
+        },
+        velocity: {
+          x: 0,
+          y: -10,
+        },
+      })
+    );
+    // break;
+  } else {
+    projectiles.push(
+      new Projectile({
+        position: {
+          x: player.position.x + player.width - player.projectileStartPositionX,
+          y: player.position.y,
+        },
+        velocity: {
+          x: 0,
+          y: -10,
+        },
+      })
+    );
+    // player.draw2();
+    // player.update2();
+  }
+});
+//         console.log("pro Image", player.projectileImage);
+//         break;
+//     // This is how you switch characters
+//     case "ArrowDown":
+switchButton.addEventListener("pointerdown", (e) => {
+  start.setHTML("");
+
+  if (player === chosenHeroArray[chosenHeroArray.length - 1]) {
+    player = chosenHeroArray[0];
+  } else {
+    player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
+  }
+  shootButton.setAttribute("value", `Shoot ${player.symbol}`);
 });
 
 const elm = await waitForElement("span");
