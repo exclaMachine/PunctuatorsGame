@@ -586,7 +586,8 @@ animate();
 leftButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   let interval = setInterval(() => {
-    if (player.position.x >= 0) {
+    //want them to be able to move off the screen a little hence the subtraction
+    if (player.position.x >= 0 - player.width / 2) {
       // player.velocity.x = -5;
       player.position.x -= 10;
     }
@@ -611,7 +612,7 @@ leftButton.addEventListener("pointerdown", (e) => {
 rightButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   let interval = setInterval(() => {
-    if (player.position.x <= canvas.width - player.width) {
+    if (player.position.x <= canvas.width - player.width / 2) {
       player.position.x += 10;
     }
   }, 50);
@@ -624,6 +625,7 @@ rightButton.addEventListener("pointerdown", (e) => {
 //     case "ArrowUp":
 //       //Comma Chameleon
 shootButton.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
   player.shootProjectileSound();
   if (player === comma) {
     projectiles.push(
