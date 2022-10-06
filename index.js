@@ -581,23 +581,45 @@ function animate() {
 
 animate();
 
+//https://stackoverflow.com/questions/69491293/how-to-do-a-work-when-mousedown-until-mouseup
+
+leftButton.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  let interval = setInterval(() => {
+    if (player.position.x >= 0) {
+      // player.velocity.x = -5;
+      player.position.x -= 10;
+    }
+  }, 50);
+  leftButton.addEventListener("pointerup", () => {
+    clearInterval(interval);
+  });
+});
+
 // addEventListener("keydown", ({ key }) => {
 // switch (key) {
 //   case "ArrowLeft":
-leftButton.addEventListener("pointerdown", (e) => {
-  if (player.position.x >= 0) {
-    // player.velocity.x = -5;
-    player.position.x -= 10;
-  }
-});
+// leftButton.addEventListener("pointerdown", (e) => {
+//   if (player.position.x >= 0) {
+//     // player.velocity.x = -5;
+//     player.position.x -= 10;
+//   }
+// });
 // break;
 //     case "ArrowRight":
 
 rightButton.addEventListener("pointerdown", (e) => {
-  if (player.position.x <= canvas.width - player.width) {
-    player.position.x += 10;
-  }
+  e.preventDefault();
+  let interval = setInterval(() => {
+    if (player.position.x <= canvas.width - player.width) {
+      player.position.x += 10;
+    }
+  }, 50);
+  rightButton.addEventListener("pointerup", () => {
+    clearInterval(interval);
+  });
 });
+
 //       break;
 //     case "ArrowUp":
 //       //Comma Chameleon
