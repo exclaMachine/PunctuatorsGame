@@ -1,7 +1,8 @@
 
 
    <div id="input-container" style="display:flex; justify-content: center; padding: 5px;">
-        <input style="width: 50%; border-radius: 4px; font-size: large; margin: 5px" id="input-sentence" type="text" placeholder="Enter a sentence with punctuation">
+    <!-- <input style="color: white; background-color: blueviolet; border-radius: 4px; margin: 5px" type="button" id="punc-button" value="Get random sentence"> -->
+        <input style="width: 70%; border-radius: 4px; font-size: large; margin: 5px" id="input-sentence" type="text" placeholder="Enter a sentence with punctuation">
         <input style="color: white; background-color: blueviolet; border-radius: 4px; margin: 5px" type="button" id="punc-button" value="Remove punctuation">
     </div>
 
@@ -14,14 +15,14 @@
 
     <div id="banner">
         <h1>Punctuators: The Game</h1>
-        <h2 id="subtitle">See their webcomic adventures <a href="https://www.webtoons.com/en/challenge/the-punctuators-super-powered-punctuation/list?title_no=318764" target="_blank">here</a> and then try...</h2>
+        <h5 id="subtitle">See their webcomic adventures <a href="https://www.webtoons.com/en/challenge/the-punctuators-super-powered-punctuation/list?title_no=318764" target="_blank">here</a> and then try...</h5>
     </div>
 
     <div id="control-buttons" class="go-away" style="position: fixed; bottom: 20; right: 30;">
-        <input style="color: white; background-color: blueviolet; border-radius: 4px; margin: 5px" type="button" id="shoot-button" value="Shoot">
-        <input style="color: white; background-color: blueviolet; border-radius: 4px; margin: 5px" type="button" id="left-button" value="Move left">
-        <input style="color: white; background-color: blueviolet; border-radius: 4px; margin: 5px" type="button" id="switch-button" value="Switch Character">
-        <input style="color: white; background-color: blueviolet; border-radius: 4px; margin: 5px" type="button" id="right-button" value="Move right">
+        <input type="button" id="shoot-button" value="Shoot">
+        <input type="button" id="left-button" value="Move left">
+        <input type="button" id="switch-button" value="Switch Character">
+        <input type="button" id="right-button" value="Move right">
     </div>
 
     <h2 id="start"></h2>
@@ -33,6 +34,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Palanquin:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="./index.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 
 <canvas id="background" style="border: 2px black solid"></canvas>
