@@ -22,6 +22,14 @@ footer {
     width: 100vw;
 }
 
+#input-sentence {
+    width: 70%;
+    border-radius: 4px;
+    font-size: large;
+    margin: 5px"
+}
+
+
 .grid-container {
     display: grid;
     grid-template-areas:
@@ -39,61 +47,83 @@ footer {
     }
     }
 
-/* @media screen and (max-width: 480px) {
-    #control-buttons > input {
-        color: white;
-        background-color: blue;
-        border-radius: 4px;
-        margin: 5px;
-        padding: 5px;
+
+
+
+    #shoot-button {
+        grid-area: shoot;
     }
-} */
+
+    #left-button {
+        grid-area: left;
+    }
+
+    #switch-button {
+        grid-area: switch;
+    }
+
+    #right-button {
+        grid-area: right;
+    }
+
+    h1 {
+        /* color: red; */
+        font-size: 70px;
+        margin: 40px;
+        position: fixed;
+        font-family: 'Palanquin', sans-serif;
+    }
 
 
+    #subtitle {
+        margin: 50px;
+        position: fixed;
+        font-family: 'Palanquin', sans-serif;
+    }
 
-#shoot-button {
-    grid-area: shoot;
-}
+    body {
+        margin: 0
+    }
 
-#left-button {
-    grid-area: left;
-}
+    #hidden-punc {
+        visibility: hidden;
+    }
 
-#switch-button {
-    grid-area: switch;
-}
+    .go-away {
+        display: none;
+    }
 
-#right-button {
-    grid-area: right;
-}
+    #start {
+        text-align: center;
+    }
 
-h1 {
-    /* color: red; */
-    font-size: 70px;
-    margin: 50px;
-    position: fixed;
-    font-family: 'Palanquin', sans-serif;
-}
+    @media screen and (max-width: 480px) {
 
+    h1 {
+        /* color: red; */
+        font-size: 50px;
+        margin: 50px;
+        position: fixed;
+        font-family: 'Palanquin', sans-serif;
+    }
 
-#subtitle {
-    margin: 50px;
-    position: fixed;
-    font-family: 'Palanquin', sans-serif;
-}
+    h5 {
+        font-size: 12px;
+    }
 
-body {
-    margin: 0
-}
+    #input-container {
+        flex-direction: column;
+    }
 
-#hidden-punc {
-    visibility: hidden;
- }
+    #input-sentence {
+            width: 100%;
+            border-radius: 4px;
+            font-size: large;
+            margin: 5px"
+        }
 
- .go-away {
-    display: none;
-}
-
-#start {
-    text-align: center;
-}
+        #output {
+            font-size: 30px;
+            margin: 50px 10px 10px 10px;
+        }
+    }
