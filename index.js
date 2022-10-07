@@ -214,7 +214,7 @@ class CommaChameleon extends Hero {
     super(
       "./images/cc.png",
       0.5,
-      "comma",
+      "Comma Chameleon",
       70,
       projectileLength,
       undefined,
@@ -229,7 +229,7 @@ class DrHyphenol extends Hero {
     super(
       "./images/Hyphenol_1.png",
       0.6,
-      "hyphen",
+      "Dr. Hyphenol",
       118,
       50,
       "./images/Flask.png",
@@ -247,7 +247,7 @@ class ExclaMachine extends Hero {
     super(
       "./images/EM.png",
       0.6,
-      "exclamation",
+      "Excla Machine",
       118,
       50,
       "./images/EM_Belt.png",
@@ -262,7 +262,7 @@ class FullStop extends Hero {
     super(
       "./images/fs.png",
       0.5,
-      "period",
+      "Full Stop",
       110,
       50,
       "./images/Laser.png",
@@ -277,7 +277,7 @@ class ParentsOfTheSeas extends Hero {
     super(
       "./images/Parents.png",
       0.35,
-      "parenthesis",
+      "Parents of the Seas",
       50,
       50,
       "./images/Bubble.png",
@@ -308,7 +308,7 @@ class QuetzalQuotel extends Hero {
     super(
       "./images/Qq.png",
       0.7,
-      "quotes",
+      "QuetzalQuotel",
       126,
       50,
       "./images/Feather.png",
@@ -323,7 +323,7 @@ class SargeColon extends Hero {
     super(
       "./images/Colon1.png",
       0.9,
-      "colon",
+      "Sergeant Colon",
       126,
       50,
       "./images/Colon_Wave.png",
@@ -341,7 +341,7 @@ class SemiColonel extends Hero {
     super(
       "./images/Semicolonel-profile.png",
       0.9,
-      "semicolon",
+      "Semicolonel",
       100,
       50,
       "./images/Semicolonel.png",
@@ -475,7 +475,7 @@ let availableHeroArray = [
   semicolon,
   question,
   exclamation,
-  Apostrophantom,
+  apostrophe,
   quotes,
   hyphen,
 ];
