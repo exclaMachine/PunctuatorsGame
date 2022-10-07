@@ -499,7 +499,7 @@ function animate() {
         // if (punctuationSymbol.className.includes(player.symbol)) {
         if (punctuationSymbol.className === player.symbol) {
           //Comma Chameleon
-          if (player.symbol === "comma") {
+          if (player.symbol === "Comma Chameleon") {
             if (
               projectile.position.y - player.projectileLength <=
                 punctuationSymbol.getBoundingClientRect().y &&
