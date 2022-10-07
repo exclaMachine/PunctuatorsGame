@@ -426,12 +426,18 @@ class CommaTongue {
     this.velocity = velocity;
     this.width = 5;
     this.height = player.projectileLength;
+    this.startYPosition = -40;
   }
 
   //if I add color param can cut this out
   draw() {
     c.fillStyle = "pink";
-    c.fillRect(this.position.x, this.position.y, this.width, this.height);
+    c.fillRect(
+      this.position.x,
+      this.position.y + this.startYPosition,
+      this.width,
+      this.height
+    );
   }
 
   update() {
