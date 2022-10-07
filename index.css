@@ -8,12 +8,25 @@ body {
     overflow: hidden;
 }
 
+#input-container {
+    display:flex;
+    justify-content: center;
+    padding: 5px;
+    width: 70%;
+    position: fixed;
+     margin: 250px 60px 60px 60px;
+}
+
+#banner {
+    position: fixed;
+    margin-top: 40px;
+}
+
 footer {
     color: blueviolet;
     font-family: 'Palanquin', sans-serif;
     text-transform: uppercase;
     position: fixed; bottom: 0;
-    margin: 5px;
 }
 
 #sentence-container {
@@ -42,7 +55,7 @@ footer {
     color: blueviolet
 }
 
-@media screen and (max-width: 1280px) {
+/* @media screen and (max-width: 1280px) { */
     #control-buttons > input {
         color: white;
         background-color: blueviolet;
@@ -51,7 +64,7 @@ footer {
         padding: 5px;
         touch-action: none;
     }
-    }
+    /* } */
 
 
 
@@ -78,8 +91,8 @@ footer {
 
     h1 {
         /* color: red; */
-        font-size: 70px;
-        margin: 40px;
+        font-size: 300%;
+        margin: 50px;
         position: fixed;
         font-family: 'Palanquin', sans-serif;
     }
@@ -89,6 +102,16 @@ footer {
         margin: 50px;
         position: fixed;
         font-family: 'Palanquin', sans-serif;
+    }
+
+
+    #punc-button {
+        margin: 5px;
+        font-family: 'Palanquin', sans-serif;
+        color: white;
+        padding: 2px;
+        background-color: blueviolet;
+        border-radius: 4px;
     }
 
     body {
