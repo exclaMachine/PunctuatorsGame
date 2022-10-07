@@ -5,7 +5,7 @@ const punctuationHashMap = new Map();
 //this is called chaining
 punctuationHashMap
   .set("!", "exclamation")
-  .set("?", "question")
+  .set("?", "Question Markswoman")
   .set(";", "semicolon")
   .set(":", "colon")
   .set("'", "apostrophe")

@@ -292,7 +292,7 @@ class QuestionMarkswoman extends Hero {
     super(
       "./images/qm.png",
       0.7,
-      "question",
+      "Question Markswoman",
       126,
       50,
       "./images/Arrow.png",
