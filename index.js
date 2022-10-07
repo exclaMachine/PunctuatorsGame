@@ -21,7 +21,7 @@ const shootButton = document.getElementById("shoot-button");
 const leftButton = document.getElementById("left-button");
 const switchButton = document.getElementById("switch-button");
 const rightButton = document.getElementById("right-button");
-
+const nameTag = document.getElementById("name-tag");
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
 
@@ -671,7 +671,8 @@ switchButton.addEventListener("pointerdown", (e) => {
   } else {
     player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
   }
-  shootButton.setAttribute("value", `Shoot ${player.symbol}`);
+  nameTag.setHTML(`${player.symbol}`);
+  // shootButton.setAttribute("value", `Shoot ${player.symbol}`);
 });
 
 const elm = await waitForElement("span");
