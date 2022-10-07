@@ -149,7 +149,6 @@ class Hero {
   }
 
   draw2() {
-    console.log("hmm", this.image2);
     c.save();
     c.drawImage(
       this.image2,
@@ -211,14 +210,17 @@ class Apostrophantom extends Hero {
 class CommaChameleon extends Hero {
   constructor(projectileLength) {
     super(
-      "./images/cc.png",
+      "./images/CC1.png",
       0.5,
       "Comma Chameleon",
       70,
       projectileLength,
       undefined,
       "./sounds/lick.mp3",
-      0.2
+      0.2,
+      undefined,
+      undefined,
+      "./images/cc.png"
     );
   }
 }
@@ -296,7 +298,10 @@ class QuestionMarkswoman extends Hero {
       50,
       "./images/Arrow.png",
       "./sounds/arrow-shot.mp3",
-      0.2
+      0.2,
+      undefined,
+      undefined,
+      "./images/QM2.png"
     );
   }
 }
@@ -531,6 +536,11 @@ function animate() {
                 projectiles.splice(index, 1);
               }, 0);
             } else {
+              if (player.secondHeroImage) {
+                c.fillStyle = "white";
+                c.fillRect(0, 0, canvas.width, canvas.height);
+                player.update2();
+              }
               projectile.update();
             }
           } else {
