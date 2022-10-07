@@ -38,6 +38,10 @@ footer {
     "left switch right";
 }
 
+#name-tag {
+    color: blueviolet
+}
+
 @media screen and (max-width: 1280px) {
     #control-buttons > input {
         color: white;

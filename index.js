@@ -37,7 +37,6 @@ button.addEventListener("click", () =>
     out1,
     footer,
     banner,
-    start,
     controls
   )
 );
@@ -664,7 +663,7 @@ shootButton.addEventListener("pointerdown", (e) => {
 //     case "ArrowDown":
 switchButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
-  start.setHTML("");
+  // start.setHTML("");
 
   if (player === chosenHeroArray[chosenHeroArray.length - 1]) {
     player = chosenHeroArray[0];
