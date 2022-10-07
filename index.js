@@ -196,7 +196,7 @@ class Apostrophantom extends Hero {
     super(
       "./images/Apostrophantom.png",
       0.8,
-      "apostrophe",
+      "Apostrophantom",
       118,
       50,
       "./images/Ectoplasm.png",
@@ -475,7 +475,7 @@ let availableHeroArray = [
   semicolon,
   question,
   exclamation,
-  apostrophe,
+  Apostrophantom,
   quotes,
   hyphen,
 ];

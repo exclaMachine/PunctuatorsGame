@@ -8,7 +8,7 @@ punctuationHashMap
   .set("?", "Question Markswoman")
   .set(";", "semicolon")
   .set(":", "colon")
-  .set("'", "apostrophe")
+  .set("'", "Apostrophantom")
   .set("*", "asterisk")
   .set(",", "comma")
   .set(".", "period")
