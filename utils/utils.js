@@ -74,10 +74,8 @@ export const waitForElement = (selector) => {
 
     const observer = new MutationObserver((mutations) => {
       let mutArr = mutations[0].addedNodes;
-      console.log({ mutArr });
       mutArr.forEach((el) => {
         if (el.className) {
-          console.log("el", el.id);
           //this does not work because the el loses its position when changed into object
           //   nodeObj[el.className] = el;
           //   nodeArr.push(nodeObj);
@@ -116,7 +114,6 @@ export const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
   //Need to match the properties of these two arrays
   let filteredArr = heroesArray.filter((value) => {
     for (let i = 0; i < punctuationInSentenceArray.length; i++) {
-      console.log("pucn", punctuationInSentenceArray[i]);
       if (punctuationInSentenceArray[i].id) {
         // if (punctuationInSentenceArray[i].className) {
         //tried to do this for left and right parenthesis, might need to come back to it

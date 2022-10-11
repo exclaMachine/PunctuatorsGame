@@ -536,7 +536,6 @@ function animate() {
 
                 // projectiles[index].velocity.y = 1;
                 projectiles.splice(index, 1);
-                // punctuationSymbol.removeAttribute("id");
                 punctuationSymbol.classList.remove("hidden-punc");
               }, 0);
             } else if (projectile.position.y <= 0) {
@@ -573,7 +572,6 @@ function animate() {
               setTimeout(() => {
                 projectiles.splice(index, 1);
                 punctuationSymbol.classList.remove("hidden-punc");
-                // punctuationSymbol.removeAttribute("id");
               }, 0);
 
               //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
@@ -691,7 +689,6 @@ switchButton.addEventListener("pointerdown", (e) => {
   } else {
     player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
   }
-  console.log({ player });
   nameTag.setHTML(`${player.symbol}`);
   // shootButton.setAttribute("value", `Shoot ${player.symbol}`);
 });
