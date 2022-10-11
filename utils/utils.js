@@ -4,20 +4,20 @@ const punctuationHashMap = new Map();
 
 //this is called chaining
 punctuationHashMap
-  .set("!", "Excla Machine")
-  .set("?", "Question Markswoman")
-  .set(";", "Semicolonel")
-  .set(":", "Sergeant Colon")
-  .set("'", "Apostrophantom")
-  .set("*", "Master Asterisk")
-  .set(",", "Comma Chameleon")
-  .set(".", "Full Stop")
-  .set('"', "QuetzalQuotel")
-  .set("-", "Dr. Hyphenol")
+  .set("!", "Excla Machine !")
+  .set("?", "Question Markswoman ?")
+  .set(";", "Semicolonel ;")
+  .set(":", "Sergeant Colon :")
+  .set("'", "Apostrophantom '")
+  .set("*", "Master Asterisk *")
+  .set(",", "Comma Chameleon ,")
+  .set(".", "Full Stop .")
+  .set('"', 'QuetzalQuotel "')
+  .set("-", "Dr. Hyphenol -")
   // .set("(", "parenthesis left")
   // .set(")", "parenthesis right");
-  .set("(", "Parents of the Seas")
-  .set(")", "Parents of the Seas");
+  .set("(", "Parents of the Seas ( )")
+  .set(")", "Parents of the Seas ( )");
 
 //should split this function and making the divs disapper into two functions
 export const addSpansAndIds = (

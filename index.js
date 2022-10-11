@@ -201,7 +201,7 @@ class Apostrophantom extends Hero {
     super(
       "./images/Apostrophantom.png",
       0.8,
-      "Apostrophantom",
+      "Apostrophantom '",
       "purple",
       118,
       50,
@@ -220,7 +220,7 @@ class CommaChameleon extends Hero {
     super(
       "./images/CC1.png",
       0.5,
-      "Comma Chameleon",
+      "Comma Chameleon ,",
       "pink",
       70,
       projectileLength,
@@ -239,7 +239,7 @@ class DrHyphenol extends Hero {
     super(
       "./images/Hyphenol_1.png",
       0.6,
-      "Dr. Hyphenol",
+      "Dr. Hyphenol -",
       "turquoise",
       118,
       50,
@@ -258,7 +258,7 @@ class ExclaMachine extends Hero {
     super(
       "./images/EM.png",
       0.6,
-      "Excla Machine",
+      "Excla Machine !",
       "yellow",
       118,
       50,
@@ -274,7 +274,7 @@ class FullStop extends Hero {
     super(
       "./images/fs.png",
       0.5,
-      "Full Stop",
+      "Full Stop .",
       "red",
       110,
       50,
@@ -290,7 +290,7 @@ class ParentsOfTheSeas extends Hero {
     super(
       "./images/Parents.png",
       0.35,
-      "Parents of the Seas",
+      "Parents of the Seas ( )",
       "lightblue",
       50,
       50,
@@ -306,7 +306,7 @@ class QuestionMarkswoman extends Hero {
     super(
       "./images/qm.png",
       0.7,
-      "Question Markswoman",
+      "Question Markswoman ?",
       "blue",
       126,
       50,
@@ -326,7 +326,7 @@ class QuetzalQuotel extends Hero {
     super(
       "./images/Qq.png",
       0.7,
-      "QuetzalQuotel",
+      'QuetzalQuotel "',
       "green",
       126,
       50,
@@ -342,7 +342,7 @@ class SargeColon extends Hero {
     super(
       "./images/Colon1.png",
       0.9,
-      "Sergeant Colon",
+      "Sergeant Colon :",
       "brown",
       126,
       50,
@@ -361,7 +361,7 @@ class SemiColonel extends Hero {
     super(
       "./images/Semicolonel-profile.png",
       0.9,
-      "Semicolonel",
+      "Semicolonel ;",
       "orange",
       100,
       50,
