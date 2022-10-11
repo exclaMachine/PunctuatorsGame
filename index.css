@@ -8,6 +8,12 @@ body {
     overflow: hidden;
 }
 
+:root {
+    --color: whitesmoke;
+}
+
+
+
 #input-container {
     display:flex;
     justify-content: center;
@@ -59,7 +65,8 @@ footer {
 }
 
 #name-tag {
-    color: blueviolet
+    color: var(--color);
+    text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
 }
 
 #control-buttons {

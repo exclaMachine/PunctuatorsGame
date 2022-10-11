@@ -7,6 +7,8 @@ const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
 // const period = document.getElementById("first");
 
+let root = document.documentElement;
+
 const sentence = document.getElementById("input-sentence");
 const button = document.getElementById("punc-button");
 const out1 = document.getElementById("output");
@@ -54,6 +56,7 @@ class Hero {
     heroImage,
     heroScale,
     symbol,
+    characterColor,
     projectileStartPositionX,
     projectileLength,
     projectileImage,
@@ -69,6 +72,7 @@ class Hero {
     };
     this.heroImage = heroImage;
     this.heroScale = heroScale;
+    this.characterColor = characterColor;
     this.symbol = symbol;
     this.projectileStartPositionX = projectileStartPositionX;
     this.projectileLength = projectileLength;
@@ -182,6 +186,7 @@ class Hero {
 /*heroImage,
 heroScale,
 symbol,
+characterColor,
 projectileStartPositionX,
 projectileLength,
 projectileImage,
@@ -197,6 +202,7 @@ class Apostrophantom extends Hero {
       "./images/Apostrophantom.png",
       0.8,
       "Apostrophantom",
+      "purple",
       118,
       50,
       "./images/Ectoplasm.png",
@@ -215,6 +221,7 @@ class CommaChameleon extends Hero {
       "./images/CC1.png",
       0.5,
       "Comma Chameleon",
+      "pink",
       70,
       projectileLength,
       undefined,
@@ -233,6 +240,7 @@ class DrHyphenol extends Hero {
       "./images/Hyphenol_1.png",
       0.6,
       "Dr. Hyphenol",
+      "turquoise",
       118,
       50,
       "./images/Flask.png",
@@ -251,6 +259,7 @@ class ExclaMachine extends Hero {
       "./images/EM.png",
       0.6,
       "Excla Machine",
+      "yellow",
       118,
       50,
       "./images/EM_Belt.png",
@@ -266,6 +275,7 @@ class FullStop extends Hero {
       "./images/fs.png",
       0.5,
       "Full Stop",
+      "red",
       110,
       50,
       "./images/Laser.png",
@@ -281,6 +291,7 @@ class ParentsOfTheSeas extends Hero {
       "./images/Parents.png",
       0.35,
       "Parents of the Seas",
+      "lightblue",
       50,
       50,
       "./images/Bubble.png",
@@ -296,6 +307,7 @@ class QuestionMarkswoman extends Hero {
       "./images/qm.png",
       0.7,
       "Question Markswoman",
+      "blue",
       126,
       50,
       "./images/Arrow.png",
@@ -315,6 +327,7 @@ class QuetzalQuotel extends Hero {
       "./images/Qq.png",
       0.7,
       "QuetzalQuotel",
+      "green",
       126,
       50,
       "./images/Feather.png",
@@ -330,6 +343,7 @@ class SargeColon extends Hero {
       "./images/Colon1.png",
       0.9,
       "Sergeant Colon",
+      "brown",
       126,
       50,
       "./images/Colon_Wave.png",
@@ -348,6 +362,7 @@ class SemiColonel extends Hero {
       "./images/Semicolonel-profile.png",
       0.9,
       "Semicolonel",
+      "orange",
       100,
       50,
       "./images/Semicolonel.png",
@@ -689,7 +704,11 @@ switchButton.addEventListener("pointerdown", (e) => {
   } else {
     player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
   }
+  console.log("col", player.characterColor);
   nameTag.setHTML(`${player.symbol}`);
+  // nameTag.style.color = `\"${player.characterColor}\"`;
+  root.style.setProperty("--color", player.characterColor);
+
   // shootButton.setAttribute("value", `Shoot ${player.symbol}`);
 });
 
