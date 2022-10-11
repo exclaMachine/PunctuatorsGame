@@ -35,9 +35,9 @@ export const addSpansAndIds = (
 
   newString.map((char, i) => {
     if (punctuationHashMap.has(char)) {
-      newString[i] = `<span id="hidden-punc" class=\"${punctuationHashMap.get(
+      newString[i] = `<span id=\"${punctuationHashMap.get(
         char
-      )}\">${char}</span>`;
+      )}\" class=\"hidden-punc\">${char}</span>`;
     }
   });
 
@@ -74,8 +74,10 @@ export const waitForElement = (selector) => {
 
     const observer = new MutationObserver((mutations) => {
       let mutArr = mutations[0].addedNodes;
+      console.log({ mutArr });
       mutArr.forEach((el) => {
         if (el.className) {
+          console.log("el", el.id);
           //this does not work because the el loses its position when changed into object
           //   nodeObj[el.className] = el;
           //   nodeArr.push(nodeObj);
@@ -114,10 +116,14 @@ export const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
   //Need to match the properties of these two arrays
   let filteredArr = heroesArray.filter((value) => {
     for (let i = 0; i < punctuationInSentenceArray.length; i++) {
-      if (punctuationInSentenceArray[i].className) {
+      console.log("pucn", punctuationInSentenceArray[i]);
+      if (punctuationInSentenceArray[i].id) {
+        // if (punctuationInSentenceArray[i].className) {
         //tried to do this for left and right parenthesis, might need to come back to it
         // if (value.symbol.includes(punctuationInSentenceArray[i].className)) {
-        if (value.symbol === punctuationInSentenceArray[i].className) {
+
+        // if (value.symbol === punctuationInSentenceArray[i].className) {
+        if (value.symbol === punctuationInSentenceArray[i].id) {
           return value;
         }
       }

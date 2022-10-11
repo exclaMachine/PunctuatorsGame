@@ -22,6 +22,8 @@ const leftButton = document.getElementById("left-button");
 const switchButton = document.getElementById("switch-button");
 const rightButton = document.getElementById("right-button");
 const nameTag = document.getElementById("name-tag");
+const hintButton = document.getElementById("hint-button");
+
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
 
@@ -507,7 +509,7 @@ function animate() {
       nodeArr.forEach((punctuationSymbol) => {
         //tried to do this for left and right parenthesis, might need to come back to it
         // if (punctuationSymbol.className.includes(player.symbol)) {
-        if (punctuationSymbol.className === player.symbol) {
+        if (punctuationSymbol.id === player.symbol) {
           //Comma Chameleon
           if (player.symbol === "Comma Chameleon") {
             if (
@@ -534,7 +536,8 @@ function animate() {
 
                 // projectiles[index].velocity.y = 1;
                 projectiles.splice(index, 1);
-                punctuationSymbol.removeAttribute("id");
+                // punctuationSymbol.removeAttribute("id");
+                punctuationSymbol.classList.remove("hidden-punc");
               }, 0);
             } else if (projectile.position.y <= 0) {
               setTimeout(() => {
@@ -560,7 +563,7 @@ function animate() {
                 punctuationSymbol.getBoundingClientRect().right -
                   punctuationSymbol.getBoundingClientRect().width / 2
             ) {
-              // console.log("hit!");
+              console.log("hit!");
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === nodeArr.length) {
                 // console.log("All Punctuation Hit!");
@@ -569,7 +572,8 @@ function animate() {
               }
               setTimeout(() => {
                 projectiles.splice(index, 1);
-                punctuationSymbol.removeAttribute("id");
+                punctuationSymbol.classList.remove("hidden-punc");
+                // punctuationSymbol.removeAttribute("id");
               }, 0);
 
               //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
@@ -680,14 +684,34 @@ shootButton.addEventListener("pointerdown", (e) => {
 switchButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   // start.setHTML("");
+  hintButton.setAttribute("class", "");
 
   if (player === chosenHeroArray[chosenHeroArray.length - 1]) {
     player = chosenHeroArray[0];
   } else {
     player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
   }
+  console.log({ player });
   nameTag.setHTML(`${player.symbol}`);
   // shootButton.setAttribute("value", `Shoot ${player.symbol}`);
+});
+
+hintButton.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+
+  //should I make it so it just shows all punctuation or just for character that is selected?
+  nodeArr.forEach((punctuationSymbol) => {
+    // punctuationSymbol.setAttribute("id", "highlighted-punc");
+
+    if (punctuationSymbol.className) {
+      punctuationSymbol.className += " highlighted-punc";
+
+      setTimeout(() => {
+        // punctuationSymbol.setAttribute("id", "");
+        punctuationSymbol.classList.remove("highlighted-punc");
+      }, 4000);
+    }
+  });
 });
 
 const elm = await waitForElement("span");

@@ -29,6 +29,13 @@ footer {
     position: fixed; bottom: 0;
 }
 
+#hint-button {
+    position: fixed;
+        bottom: 20;
+        left: 30;
+}
+
+
 #sentence-container {
     /* border: black solid 2px; */
     position: absolute;
@@ -55,6 +62,12 @@ footer {
     color: blueviolet
 }
 
+#control-buttons {
+    position: fixed;
+        bottom: 20;
+        right: 30;
+}
+
 /* @media screen and (max-width: 1280px) { */
     #control-buttons > input {
         color: white;
@@ -63,6 +76,7 @@ footer {
         margin: 5px;
         padding: 5px;
         touch-action: none;
+
     }
     /* } */
 
@@ -118,8 +132,16 @@ footer {
         margin: 0
     }
 
-    #hidden-punc {
+    .hidden-punc {
         visibility: hidden;
+        /* color: white; */
+    }
+
+    .highlighted-punc {
+        /* background-color: red; */
+        visibility: visible;
+        color: white;
+        border: dashed lightblue 3px;
     }
 
     .go-away {
