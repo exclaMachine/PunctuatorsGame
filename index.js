@@ -526,7 +526,7 @@ function animate() {
         // if (punctuationSymbol.className.includes(player.symbol)) {
         if (punctuationSymbol.id === player.symbol) {
           //Comma Chameleon
-          if (player.symbol === "Comma Chameleon") {
+          if (player.symbol === "Comma Chameleon ,") {
             if (
               projectile.position.y - player.projectileLength <=
                 punctuationSymbol.getBoundingClientRect().y &&
