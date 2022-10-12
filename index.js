@@ -1,6 +1,6 @@
 import { addSpansAndIds } from "./utils/utils.js";
 import { waitForElement } from "./utils/utils.js";
-import { nodeArr } from "./utils/utils.js";
+import { nodeArr, wordArray } from "./utils/utils.js";
 import { heroToTheRescue } from "./utils/utils.js";
 
 const canvas = document.getElementById("background");
@@ -704,7 +704,6 @@ switchButton.addEventListener("pointerdown", (e) => {
   } else {
     player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
   }
-  console.log("col", player.characterColor);
   nameTag.setHTML(`${player.symbol}`);
   // nameTag.style.color = `\"${player.characterColor}\"`;
   root.style.setProperty("--color", player.characterColor);
@@ -732,3 +731,42 @@ hintButton.addEventListener("pointerdown", (e) => {
 
 const elm = await waitForElement("span");
 const chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
+
+console.log({ wordArray });
+let newestArray = [];
+let asteriskList = [];
+
+let findAsterisk = (sentenceFragments) => {
+  sentenceFragments.forEach((fragment) => {
+    console.log("next sib", fragment.nextSibling.id);
+    if (fragment.nextSibling.id === "Master Asterisk *") {
+      asteriskList.push(fragment);
+    }
+  });
+};
+
+console.log(findAsterisk(wordArray));
+console.log({ asteriskList });
+
+//just need to fetch the definition of the words in the asterisk list and display this at the bottom
+
+let splitWords = (sentenceFragments) => {
+  sentenceFragments.forEach((fragment) => {
+    let words = fragment.data.split(" ");
+    words.map((word) => {
+      //will create "" after punctuation
+      if (word !== "") newestArray.push(word);
+    });
+  });
+};
+
+//could use this in the future for synonymouse and antonym
+splitWords(wordArray);
+// console.log({ newestArray });
+// console.log("apple?", newestArray[0]);
+
+let res = await fetch(
+  `https://api.dictionaryapi.dev/api/v2/entries/en/${newestArray[0]}`
+);
+let data = await res.json();
+console.log(data);

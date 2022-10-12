@@ -63,8 +63,8 @@ export const addSpansAndIds = (
   //   return newString.join("");
 };
 
-let nodeObj = {};
 export let nodeArr = [];
+export let wordArray = [];
 // https://stackoverflow.com/questions/5525071/how-to-wait-until-an-element-exists
 export const waitForElement = (selector) => {
   return new Promise((resolve) => {
@@ -80,6 +80,8 @@ export const waitForElement = (selector) => {
           //   nodeObj[el.className] = el;
           //   nodeArr.push(nodeObj);
           nodeArr.push(el);
+        } else {
+          wordArray.push(el);
         }
 
         //this can be replaced with if (el.className)
