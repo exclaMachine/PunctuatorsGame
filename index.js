@@ -750,7 +750,10 @@ let findAsterisk = (sentenceFragments) => {
   sentenceFragments.forEach((fragment) => {
     console.log("next sib", fragment.nextSibling.id);
     if (fragment.nextSibling.id === "Master Asterisk *") {
-      asteriskList.push(fragment);
+      // asteriskList.push(fragment);
+      let words = fragment.data.split(" ");
+      //push in only the last word and make its value linked to the asterisk span
+      asteriskList.push({ [words[words.length - 1]]: fragment });
     }
   });
 };
