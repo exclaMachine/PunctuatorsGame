@@ -697,7 +697,17 @@ shootButton.addEventListener("pointerdown", (e) => {
 switchButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   // start.setHTML("");
+
+  //This initially makes the hint button appear, should make it more specific down the road so can add more classes if needed
   hintButton.setAttribute("class", "");
+
+  //This code will make it so the tongue doesn't stay on the screen if comma chameleon is switched out. All other projectiles will stay though
+  if (
+    projectiles.length &&
+    projectiles[0]?.constructor?.name === "CommaTongue"
+  ) {
+    projectiles.length = 0;
+  }
 
   if (player === chosenHeroArray[chosenHeroArray.length - 1]) {
     player = chosenHeroArray[0];
