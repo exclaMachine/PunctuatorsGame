@@ -78,7 +78,8 @@ footer {
 /* @media screen and (max-width: 1280px) { */
     #control-buttons > input {
         color: white;
-        background-color: blueviolet;
+        text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
+        background-color: var(--color);
         border-radius: 4px;
         margin: 5px;
         padding: 5px;
@@ -86,9 +87,6 @@ footer {
 
     }
     /* } */
-
-
-
 
     #shoot-button {
         grid-area: shoot;
