@@ -192,8 +192,9 @@ projectileLength,
 projectileImage,
 projectileShootSound,
 projectileScale,
-projectileSoundRate
-projectileSoundVolume
+projectileSoundRate,
+projectileSoundVolume,
+secondHeroImage
 */
 //create a function that makes him disappear when projectile shoots
 class Apostrophantom extends Hero {
@@ -281,6 +282,25 @@ class FullStop extends Hero {
       "./images/Laser.png",
       "./sounds/laser-bolt.mp3",
       0.2
+    );
+  }
+}
+
+class MasterAsterisk extends Hero {
+  constructor() {
+    super(
+      "./images/Asterisk.png",
+      0.35,
+      "Master Asterisk *",
+      "gold",
+      50,
+      50,
+      "./images/Asterisk_Star.png",
+      undefined,
+      0.1,
+      1,
+      undefined,
+      "./images/Asterisk2.png"
     );
   }
 }
@@ -484,6 +504,7 @@ let allPunctuationHit = new Set();
 let player = new Hero("./images/Generic.png", 0.7);
 
 let apostrophe = new Apostrophantom();
+let asterisk = new MasterAsterisk();
 let comma = new CommaChameleon(100);
 let exclamation = new ExclaMachine();
 let parenthesis = new ParentsOfTheSeas();
@@ -505,6 +526,7 @@ let availableHeroArray = [
   apostrophe,
   quotes,
   hyphen,
+  asterisk,
 ];
 
 const projectiles = [];
@@ -577,7 +599,7 @@ function animate() {
                 punctuationSymbol.getBoundingClientRect().right -
                   punctuationSymbol.getBoundingClientRect().width / 2
             ) {
-              console.log("hit!");
+              // console.log("hit!");
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === nodeArr.length) {
                 // console.log("All Punctuation Hit!");
@@ -608,7 +630,6 @@ function animate() {
       });
     }
   });
-  //   console.log("proj", projectiles[0]?.position.y);
 }
 
 animate();
@@ -744,7 +765,8 @@ const chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
 
 console.log({ wordArray });
 let newestArray = [];
-let asteriskList = [];
+// let asteriskList = [];
+const asteriskMap = new Map();
 
 let findAsterisk = (sentenceFragments) => {
   sentenceFragments.forEach((fragment) => {
@@ -753,13 +775,15 @@ let findAsterisk = (sentenceFragments) => {
       // asteriskList.push(fragment);
       let words = fragment.data.split(" ");
       //push in only the last word and make its value linked to the asterisk span
-      asteriskList.push({ [words[words.length - 1]]: fragment });
+      // asteriskList.push({ [words[words.length - 1]]: fragment });
+      // asteriskList.push({ [fragment]: words[words.length - 1] });
+      asteriskMap.set(`${fragment}`, `${words[words.length - 1]}`);
     }
   });
 };
 
 console.log(findAsterisk(wordArray));
-console.log({ asteriskList });
+// console.log({ asteriskList });
 
 //just need to fetch the definition of the words in the asterisk list and display this at the bottom
 
