@@ -16,11 +16,33 @@
         <h5 id="subtitle">See their webcomic adventures <a href="https://www.webtoons.com/en/challenge/the-punctuators-super-powered-punctuation/list?title_no=318764" target="_blank">here</a></h5>
     </div>
 
+    <button data-modal-target="#modal" class="btn">How to Play</button>
+    <div class="modal" id="modal">
+        <div class="modal--header">
+            <div class="modal__title">How to Play</div>
+            <button data-close-button class="modal__close-button">&times;</button>
+        </div>
+        <div class="modal--body">
+            This game makes learning punctuation fun and can be a great tool in the classroom or at home! Currently the game is meant to be played between two people.
+            <br>
+            <br>
+            <strong>To play:</strong>
+            <br>
+            <ul>
+                <li>Player 1 will enter a sentence that includes one or more punctuation marks. No peeking, Player 2!</li>
+                <li>Player 2 will control the given characters with the buttons in the bottom right to shoot the punctuation back into the sentence.</li>
+                <li>If you get stuck, press the hint button in the bottom left and the remaining punctuation locations will be highlighted.</li>
+                <li>Once you find all the punctuation a message will appear with triumphant trumpets sounding 🎺</li>
+                <li>Refresh the page to play again, and this time have Player 2 write the sentence!</li>
+            </ul>
+        </div>
+    </div>
+
     <div id="input-container">
         <!-- <input style="color: white; background-color: blueviolet; border-radius: 4px; margin: 5px" type="button" id="punc-button" value="Get random sentence"> -->
-            <input id="input-sentence" type="text" placeholder="Enter sentence with punctuation">
-            <input type="button" id="punc-button" value="Remove punctuation">
-        </div>
+        <input id="input-sentence" type="text" placeholder="Enter sentence with punctuation">
+        <input type="button" id="punc-button" value="Remove punctuation">
+    </div>
 
     <div id="control-buttons" class="go-away">
         <h2 id="name-tag">Press the Switch character button to reveal your team!</h2>
@@ -33,6 +55,7 @@
     <h2 id="start"></h2>
 
     <input class="go-away" type="button" id="hint-button" value="Hint">
+    <div id="overlay"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js" integrity="sha512-6+YN/9o9BWrk6wSfGxQGpt3EUK6XeHi6yeHV+TYD2GR0Sj/cggRpXr1BrAQf0as6XslxomMUxXp2vIl+fv0QRA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">

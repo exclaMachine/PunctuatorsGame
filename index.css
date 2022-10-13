@@ -30,8 +30,7 @@ body {
 footer {
     color: blueviolet;
     font-family: 'Palanquin', sans-serif;
-    text-transform: uppercase;
-    position: fixed; bottom: 0;
+    position: fixed; bottom: 5;
 }
 
 #hint-button {
@@ -193,4 +192,84 @@ footer {
             font-size: 30px;
             margin: 50px 10px 10px 10px;
         }
+    }
+
+    .modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        /* use scale instead of display none because it allows smooth transition */
+        transform: translate(-50%, -50%) scale(0);
+        transition: 200ms ease-in-out;
+        border: 1px solid black;
+        border-radius: 10px;
+        z-index: 10;
+        background-color: white;
+        width: 500px;
+        max-width: 80%;
+    }
+
+    .modal.active {
+        transform: translate(-50%, -50%) scale(1);
+
+    }
+
+    .modal--header {
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid black;
+    }
+
+    .modal__title {
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+
+    .modal__close-button {
+        cursor: pointer;
+        border: none;
+        outline: none;
+        background: none;
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+
+    .modal--body {
+        padding: 10px 15px;
+    }
+
+    #overlay {
+        position: fixed;
+        opacity: 0;
+        transition: 200ms ease-in-out;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, .5);
+        pointer-events: none;
+    }
+
+    #overlay.active{
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .btn{
+        position: fixed;
+        top: 8%;
+        left: 90%;
+        transform: translate(-50%, -50%);
+        font-family: 'Palanquin', sans-serif;
+        color: white;
+        padding: 5px;
+        background-color: blueviolet;
+        border-radius: 4px;
+        text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
+    }
+
+    ul {
+        margin: 10px;
     }

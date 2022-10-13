@@ -26,6 +26,44 @@ const rightButton = document.getElementById("right-button");
 const nameTag = document.getElementById("name-tag");
 const hintButton = document.getElementById("hint-button");
 
+
+//https://www.youtube.com/watch?v=MBaw_6cPmAw
+const openModalButtons = document.querySelectorAll("[data-modal-target]");
+const closeModalButtons = document.querySelectorAll("[data-close-button]");
+const overlay = document.getElementById("overlay");
+
+openModalButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const modal = document.querySelector(button.dataset.modalTarget);
+    openModal(modal);
+  });
+});
+
+overlay.addEventListener("click", () => {
+  const modals = document.querySelectorAll(".modal.active");
+  modals.forEach((modal) => {
+    closeModal(modal);
+  });
+});
+
+let openModal = (modal) => {
+  if (modal === null) return;
+  modal.classList.add("active");
+  overlay.classList.add("active");
+};
+
+closeModalButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const modal = button.closest(".modal");
+    closeModal(modal);
+  });
+});
+
+let closeModal = (modal) => {
+  if (modal === null) return;
+  modal.classList.remove("active");
+  overlay.classList.remove("active");
+};
 //Might be able to use Intersection Observer to make this more efficient
 // console.log("per", period.getBoundingClientRect());
 
