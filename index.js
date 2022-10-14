@@ -9,6 +9,7 @@ const c = canvas.getContext("2d");
 
 let root = document.documentElement;
 
+const characterCount = document.getElementById("character-count");
 const sentence = document.getElementById("input-sentence");
 const button = document.getElementById("punc-button");
 const out1 = document.getElementById("output");
@@ -25,7 +26,6 @@ const switchButton = document.getElementById("switch-button");
 const rightButton = document.getElementById("right-button");
 const nameTag = document.getElementById("name-tag");
 const hintButton = document.getElementById("hint-button");
-
 
 //https://www.youtube.com/watch?v=MBaw_6cPmAw
 const openModalButtons = document.querySelectorAll("[data-modal-target]");
@@ -567,6 +567,8 @@ let availableHeroArray = [
   asterisk,
 ];
 
+characterCount.setHTML(`${availableHeroArray.length}`);
+
 const projectiles = [];
 
 function animate() {
@@ -793,12 +795,12 @@ hintButton.addEventListener("pointerdown", (e) => {
       setTimeout(() => {
         // punctuationSymbol.setAttribute("id", "");
         punctuationSymbol.classList.remove("highlighted-punc");
-      }, 4000);
+      }, 1000);
     }
   });
 });
 
-const elm = await waitForElement("span");
+const elm = await waitForElement(".hidden-punc");
 const chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
 
 console.log({ wordArray });
