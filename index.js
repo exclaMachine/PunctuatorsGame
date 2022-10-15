@@ -163,19 +163,6 @@ class Hero {
         };
       };
     }
-
-    //this needs refactored
-
-    // this.imageArray = [image, image2];
-
-    // this.millSecondsPerImage = 100;
-    // this.currentTime = new Date().valueOf();
-
-    // this.imageToDraw =
-    //   this.imageArray[
-    //     Math.floor(this.currentTime / this.millSecondsPerImage) %
-    //       this.imageArray.length
-    //   ];
   }
 
   shootProjectileSound() {
@@ -451,12 +438,10 @@ class Projectile {
     this.width = 3;
     this.height = player.projectileLength;
     this.projectileImage = player.projectileImage;
-    // console.log("is it here", this.projectileImage);
 
     const projImage = new Image();
 
     projImage.src = this.projectileImage;
-    // console.log("projI", projImage);
 
     projImage.onload = () => {
       //   const scale = 0.2;
@@ -481,10 +466,6 @@ class Projectile {
         this.height
       );
     }
-    // else {
-    //   c.fillStyle = "red";
-    //   c.fillRect(this.position.x, this.position.y, this.width, this.height);
-    // }
   }
 
   update() {
@@ -504,7 +485,6 @@ class CommaTongue {
     this.startYPosition = -40;
   }
 
-  //if I add color param can cut this out
   draw() {
     c.fillStyle = "pink";
     c.fillRect(
@@ -524,21 +504,9 @@ class CommaTongue {
 }
 
 // Maybe down the road can have the sentence move downward
-// class MovingSentence {
-//   constructor({ position, velocity }) {
-//     this.position = position;
-//     this.velocity = velocity;
-//   }
-
-//   update() {
-//     this.draw();
-//     this.position.y += this.velocity.y;
-//   }
-// }
 
 let allPunctuationHit = new Set();
 
-// let player = new Hero("./images/fs.png", "period", 0);
 let player = new Hero("./images/Generic.png", 0.7);
 
 let apostrophe = new Apostrophantom();
@@ -571,6 +539,8 @@ characterCount.setHTML(`${availableHeroArray.length}`);
 
 const projectiles = [];
 
+const PROJECTILE_HIT_MARGIN_OF_ERROR = 5;
+
 function animate() {
   //this creates an animation loop
 
@@ -587,16 +557,17 @@ function animate() {
         //tried to do this for left and right parenthesis, might need to come back to it
         // if (punctuationSymbol.className.includes(player.symbol)) {
         if (punctuationSymbol.id === player.symbol) {
-          //Comma Chameleon
+          // for Comma Chameleon. TODO refactor because only difference is projectileLength and code for when I add tongue retract
           if (player.symbol === "Comma Chameleon ,") {
             if (
               projectile.position.y - player.projectileLength <=
                 punctuationSymbol.getBoundingClientRect().y &&
-              projectile.position.x >=
-                punctuationSymbol.getBoundingClientRect().x &&
+              projectile.position.x + projectile.width >=
+                punctuationSymbol.getBoundingClientRect().left -
+                  PROJECTILE_HIT_MARGIN_OF_ERROR &&
               projectile.position.x <=
-                punctuationSymbol.getBoundingClientRect().x +
-                  punctuationSymbol.getBoundingClientRect().width
+                punctuationSymbol.getBoundingClientRect().right +
+                  PROJECTILE_HIT_MARGIN_OF_ERROR
             ) {
               // console.log("hitTongue!");
               //end game logic
@@ -609,7 +580,7 @@ function animate() {
 
               setTimeout(() => {
                 //need to change the velocity of the y to +1. this could make the tongue retract. Maybe later
-                console.log("proj", projectiles);
+                // console.log("proj", projectiles);
 
                 // projectiles[index].velocity.y = 1;
                 projectiles.splice(index, 1);
@@ -633,13 +604,15 @@ function animate() {
               //need to go through this more. Should be able to do .bottom but something up with padding
               projectile.position.y - projectile.height <=
                 punctuationSymbol.getBoundingClientRect().y &&
-              projectile.position.x + projectile.width / 2 >=
-                punctuationSymbol.getBoundingClientRect().left &&
+              projectile.position.x + projectile.width >=
+                punctuationSymbol.getBoundingClientRect().left -
+                  PROJECTILE_HIT_MARGIN_OF_ERROR &&
               projectile.position.x <=
-                punctuationSymbol.getBoundingClientRect().right -
-                  punctuationSymbol.getBoundingClientRect().width / 2
+                punctuationSymbol.getBoundingClientRect().right +
+                  PROJECTILE_HIT_MARGIN_OF_ERROR
             ) {
               // console.log("hit!");
+
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === nodeArr.length) {
                 // console.log("All Punctuation Hit!");
@@ -657,7 +630,7 @@ function animate() {
                 projectiles.splice(index, 1);
               }, 0);
             } else {
-              //hero disappears otherwise. Can use this for apostrophantom though
+              //hero disappears otherwise.
               if (player.secondHeroImage) {
                 c.fillStyle = "white";
                 c.fillRect(0, 0, canvas.width, canvas.height);
@@ -690,18 +663,6 @@ leftButton.addEventListener("pointerdown", (e) => {
   });
 });
 
-// addEventListener("keydown", ({ key }) => {
-// switch (key) {
-//   case "ArrowLeft":
-// leftButton.addEventListener("pointerdown", (e) => {
-//   if (player.position.x >= 0) {
-//     // player.velocity.x = -5;
-//     player.position.x -= 10;
-//   }
-// });
-// break;
-//     case "ArrowRight":
-
 rightButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   let interval = setInterval(() => {
@@ -714,9 +675,6 @@ rightButton.addEventListener("pointerdown", (e) => {
   });
 });
 
-//       break;
-//     case "ArrowUp":
-//       //Comma Chameleon
 shootButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   player.shootProjectileSound();
@@ -733,7 +691,6 @@ shootButton.addEventListener("pointerdown", (e) => {
         },
       })
     );
-    // break;
   } else {
     projectiles.push(
       new Projectile({
@@ -751,13 +708,9 @@ shootButton.addEventListener("pointerdown", (e) => {
     // player.update2();
   }
 });
-//         console.log("pro Image", player.projectileImage);
-//         break;
-//     // This is how you switch characters
-//     case "ArrowDown":
+
 switchButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
-  // start.setHTML("");
 
   //This initially makes the hint button appear, should make it more specific down the road so can add more classes if needed
   hintButton.setAttribute("class", "");
@@ -776,24 +729,18 @@ switchButton.addEventListener("pointerdown", (e) => {
     player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
   }
   nameTag.setHTML(`${player.symbol}`);
-  // nameTag.style.color = `\"${player.characterColor}\"`;
+  // nameTag.style.color = `\"${player.characterColor}\"`; this doesn't work
   root.style.setProperty("--color", player.characterColor);
-
-  // shootButton.setAttribute("value", `Shoot ${player.symbol}`);
 });
 
 hintButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
 
-  //should I make it so it just shows all punctuation or just for character that is selected?
   nodeArr.forEach((punctuationSymbol) => {
-    // punctuationSymbol.setAttribute("id", "highlighted-punc");
-
     if (punctuationSymbol.className) {
       punctuationSymbol.className += " highlighted-punc";
 
       setTimeout(() => {
-        // punctuationSymbol.setAttribute("id", "");
         punctuationSymbol.classList.remove("highlighted-punc");
       }, 1000);
     }
@@ -803,7 +750,7 @@ hintButton.addEventListener("pointerdown", (e) => {
 const elm = await waitForElement(".hidden-punc");
 const chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
 
-console.log({ wordArray });
+// console.log({ wordArray });
 let newestArray = [];
 // let asteriskList = [];
 const asteriskMap = new Map();
@@ -822,7 +769,7 @@ let findAsterisk = (sentenceFragments) => {
   });
 };
 
-console.log(findAsterisk(wordArray));
+// console.log(findAsterisk(wordArray));
 // console.log({ asteriskList });
 
 //just need to fetch the definition of the words in the asterisk list and display this at the bottom
@@ -846,4 +793,4 @@ let res = await fetch(
   `https://api.dictionaryapi.dev/api/v2/entries/en/${newestArray[0]}`
 );
 let data = await res.json();
-console.log(data);
+// console.log(data);
