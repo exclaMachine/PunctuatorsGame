@@ -35,7 +35,9 @@ export const addSpansAndIds = (
 
   newString.map((char, i) => {
     if (punctuationHashMap.has(char)) {
-      newString[i] = `<span id=\"${punctuationHashMap.get(
+      newString[
+        i
+      ] = `<span style=\"text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;\" id=\"${punctuationHashMap.get(
         char
       )}\" class=\"hidden-punc\">${char}</span>`;
     }
@@ -45,8 +47,7 @@ export const addSpansAndIds = (
   button.setAttribute("class", "go-away");
   typedSentence.setAttribute("class", "go-away");
   banner.setAttribute("class", "go-away");
-  // footer.innerHTML =
-  //   "Use the arrow keys to play (up = shoot, left & right = move, down = switch character)";
+
   controls.setAttribute("class", "grid-container");
 
   //This is an HTMLCollection //Need to wait for the spans to appear so this doesn't work
@@ -76,27 +77,10 @@ export const waitForElement = (selector) => {
       let mutArr = mutations[0].addedNodes;
       mutArr.forEach((el) => {
         if (el.className) {
-          //this does not work because the el loses its position when changed into object
-          //   nodeObj[el.className] = el;
-          //   nodeArr.push(nodeObj);
           nodeArr.push(el);
         } else {
           wordArray.push(el);
         }
-
-        //this can be replaced with if (el.className)
-        // if (
-        //   el.className === "p" ||
-        //   el.className === "ap" ||
-        //   el.className === "e" ||
-        //   el.className === "q" ||
-        //   el.className === "sc" ||
-        //   el.className === "c" ||
-        //   el.className === "as" ||
-        //   el.className === "co"
-        // ) {
-        //   nodeArr.push(el);
-        // }
       });
 
       if (document.querySelector(selector)) {

@@ -585,6 +585,8 @@ function animate() {
                 // projectiles[index].velocity.y = 1;
                 projectiles.splice(index, 1);
                 punctuationSymbol.classList.remove("hidden-punc");
+                console.log("color", player.characterColor);
+                punctuationSymbol.style.color = `${player.characterColor}`;
               }, 0);
             } else if (projectile.position.y <= 0) {
               setTimeout(() => {
@@ -612,6 +614,7 @@ function animate() {
                   PROJECTILE_HIT_MARGIN_OF_ERROR
             ) {
               // console.log("hit!");
+              punctuationSymbol.style.color = `${player.characterColor}`;
 
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === nodeArr.length) {
@@ -729,7 +732,6 @@ switchButton.addEventListener("pointerdown", (e) => {
     player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
   }
   nameTag.setHTML(`${player.symbol}`);
-  // nameTag.style.color = `\"${player.characterColor}\"`; this doesn't work
   root.style.setProperty("--color", player.characterColor);
 });
 
