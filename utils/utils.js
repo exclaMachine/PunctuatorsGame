@@ -37,7 +37,7 @@ export const addSpansAndIds = (
     if (punctuationHashMap.has(char)) {
       newString[
         i
-      ] = `<span style=\"text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;\" id=\"${punctuationHashMap.get(
+      ] = `<span id=\"${punctuationHashMap.get(
         char
       )}\" class=\"hidden-punc\">${char}</span>`;
     }

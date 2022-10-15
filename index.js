@@ -585,8 +585,9 @@ function animate() {
                 // projectiles[index].velocity.y = 1;
                 projectiles.splice(index, 1);
                 punctuationSymbol.classList.remove("hidden-punc");
-                console.log("color", player.characterColor);
                 punctuationSymbol.style.color = `${player.characterColor}`;
+                punctuationSymbol.style.textShadow =
+                  "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
               }, 0);
             } else if (projectile.position.y <= 0) {
               setTimeout(() => {
@@ -615,6 +616,8 @@ function animate() {
             ) {
               // console.log("hit!");
               punctuationSymbol.style.color = `${player.characterColor}`;
+              punctuationSymbol.style.textShadow =
+                "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
 
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === nodeArr.length) {

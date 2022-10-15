@@ -186,7 +186,7 @@ footer > div {
         /* background-color: red; */
         visibility: visible;
         color: white;
-        border: dashed lightblue 3px;
+        border: dashed lightblue 2px;
     }
 
     .go-away {
