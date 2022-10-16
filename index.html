@@ -1,25 +1,18 @@
+<html>
+<head>
+    <link rel="icon" type="image/png" href="/images/Third.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js" integrity="sha512-6+YN/9o9BWrk6wSfGxQGpt3EUK6XeHi6yeHV+TYD2GR0Sj/cggRpXr1BrAQf0as6XslxomMUxXp2vIl+fv0QRA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Palanquin:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="./index.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="./index.js" async></script>
 
+</head>
 
-
-
-
-    <div id="sentence-container">
-        <h1 id="output"></h1>
-        <!-- <h1 id="moving-sentence">here<span id="hidden-punc" class="p">.</span> is a sentence<span id="hidden-punc" class="p">.</span></h1> -->
-    </div>
-    <div>
-    <footer  id="footer">
-        <div>©2019-2022 Ty Rickers</div>
-        <div><a href="https://www.instagram.com/super_powered_punctuation/" class="fa fa-instagram" target="_blank"></a></div>
-        <div><a href="https://github.com/exclaMachine/PunctuatorsGame" class="fa fa-github" target="_blank"></a></div>
-    </footer>
-</div>
-
-    <div id="banner">
-        <h1>Punctuators: The Game</h1>
-        <h5 id="subtitle">See their webcomic adventures <a href="https://www.webtoons.com/en/challenge/the-punctuators-super-powered-punctuation/list?title_no=318764" target="_blank">here</a></h5>
-    </div>
-
+    <body>
     <button data-modal-target="#modal" class="btn">How to Play</button>
     <div class="modal" id="modal">
         <div class="modal--header">
@@ -42,6 +35,18 @@
         </div>
     </div>
 
+    <h2 id="start"></h2>
+
+    <div id="banner">
+        <h1>Punctuators: The Game</h1>
+        <h5 id="subtitle">See their webcomic adventures <a href="https://www.webtoons.com/en/challenge/the-punctuators-super-powered-punctuation/list?title_no=318764" target="_blank">here</a></h5>
+    </div>
+
+    <div id="sentence-container">
+        <h1 id="output"></h1>
+        <!-- <h1 id="moving-sentence">here<span id="hidden-punc" class="p">.</span> is a sentence<span id="hidden-punc" class="p">.</span></h1> -->
+    </div>
+
     <div id="input-container">
         <!-- <input style="color: white; background-color: blueviolet; border-radius: 4px; margin: 5px" type="button" id="punc-button" value="Get random sentence"> -->
         <input id="input-sentence" type="text" placeholder="Enter sentence with punctuation">
@@ -56,21 +61,17 @@
         <input class="control__button right" type="button" id="right-button" value="Move right">
     </div>
 
-    <h2 id="start"></h2>
-
     <input class="go-away" type="button" id="hint-button" value="Hint">
     <div id="overlay"></div>
 
-    <link rel="icon" type="image/png" href="/images/Third.png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js" integrity="sha512-6+YN/9o9BWrk6wSfGxQGpt3EUK6XeHi6yeHV+TYD2GR0Sj/cggRpXr1BrAQf0as6XslxomMUxXp2vIl+fv0QRA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Palanquin:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="./index.css" rel="stylesheet">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <footer  id="footer">
+        <div>©2019-2022 Ty Rickers</div>
+        <div><a href="https://www.instagram.com/super_powered_punctuation/" class="fa fa-instagram" target="_blank"></a></div>
+        <div><a href="https://github.com/exclaMachine/PunctuatorsGame" class="fa fa-github" target="_blank"></a></div>
+    </footer>
 
+    <canvas id="background" style="border: 2px black solid"></canvas>
 
-<canvas id="background" style="border: 2px black solid"></canvas>
+</body>
 
-<script type="module" src="./index.js"></script>
+</html>
