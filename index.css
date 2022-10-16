@@ -197,36 +197,35 @@ footer > div {
         text-align: center;
     }
 
-    @media screen and (max-width: 480px) {
+    /* @media screen and (max-width: 480px) {
 
-    h1 {
-        /* color: red; */
-        font-size: 50px;
-        margin: 50px;
-        position: fixed;
-        font-family: 'Palanquin', sans-serif;
-    }
-
-    h5 {
-        font-size: 12px;
-    }
-
-    #input-container {
-        flex-direction: column;
-    }
-
-    #input-sentence {
-            width: 100%;
-            border-radius: 4px;
-            font-size: large;
-            margin: 5px"
+        h1 {
+            font-size: 50px;
+            margin: 50px;
+            position: fixed;
+            font-family: 'Palanquin', sans-serif;
         }
 
-        #output {
-            font-size: 30px;
-            margin: 50px 10px 10px 10px;
+        h5 {
+            font-size: 12px;
         }
-    }
+
+        #input-container {
+            flex-direction: column;
+        }
+
+        #input-sentence {
+                width: 100%;
+                border-radius: 4px;
+                font-size: large;
+                margin: 5px"
+            }
+
+            #output {
+                font-size: 30px;
+                margin: 50px 10px 10px 10px;
+            }
+    } */
 
     .modal {
         position: fixed;
