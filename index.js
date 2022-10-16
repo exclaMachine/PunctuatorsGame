@@ -1,6 +1,6 @@
 import { addSpansAndIds } from "./utils/utils.js";
 import { waitForElement } from "./utils/utils.js";
-import { nodeArr, wordArray } from "./utils/utils.js";
+import { nodeArr, numberOfPunctuationArray } from "./utils/utils.js";
 import { heroToTheRescue } from "./utils/utils.js";
 
 const canvas = document.getElementById("background");
@@ -26,6 +26,7 @@ const switchButton = document.getElementById("switch-button");
 const rightButton = document.getElementById("right-button");
 const nameTag = document.getElementById("name-tag");
 const hintButton = document.getElementById("hint-button");
+const footNote = document.getElementById("footnote");
 
 //https://www.youtube.com/watch?v=MBaw_6cPmAw
 const openModalButtons = document.querySelectorAll("[data-modal-target]");
@@ -572,7 +573,7 @@ function animate() {
               // console.log("hitTongue!");
               //end game logic
               allPunctuationHit.add(punctuationSymbol);
-              if (allPunctuationHit.size === nodeArr.length) {
+              if (allPunctuationHit.size === numberOfPunctuationArray.length) {
                 // console.log("All Punctuation Hit!");
                 start.setHTML(endingMessage);
                 gameSfx.end.play();
@@ -620,13 +621,21 @@ function animate() {
                 "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
 
               allPunctuationHit.add(punctuationSymbol);
-              if (allPunctuationHit.size === nodeArr.length) {
+              if (allPunctuationHit.size === numberOfPunctuationArray.length) {
                 // console.log("All Punctuation Hit!");
                 start.setHTML(endingMessage);
                 gameSfx.end.play();
               }
               setTimeout(() => {
                 projectiles.splice(index, 1);
+                if (player.symbol === "Master Asterisk *") {
+                  if (punctuationSymbol.previousSibling === null) return;
+                  let words = punctuationSymbol.previousSibling.data.split(" ");
+
+                  let lastWord = words[words.length - 1];
+
+                  freeDictionaryFetchDefinition(lastWord);
+                }
                 punctuationSymbol.classList.remove("hidden-punc");
               }, 0);
 
@@ -755,47 +764,17 @@ hintButton.addEventListener("pointerdown", (e) => {
 const elm = await waitForElement(".hidden-punc");
 const chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
 
-// console.log({ wordArray });
-let newestArray = [];
-// let asteriskList = [];
-const asteriskMap = new Map();
+let freeDictionaryFetchDefinition = async (word) => {
+  let res = await fetch(
+    `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`
+  );
+  let data = await res.json();
 
-let findAsterisk = (sentenceFragments) => {
-  sentenceFragments.forEach((fragment) => {
-    console.log("next sib", fragment.nextSibling.id);
-    if (fragment.nextSibling.id === "Master Asterisk *") {
-      // asteriskList.push(fragment);
-      let words = fragment.data.split(" ");
-      //push in only the last word and make its value linked to the asterisk span
-      // asteriskList.push({ [words[words.length - 1]]: fragment });
-      // asteriskList.push({ [fragment]: words[words.length - 1] });
-      asteriskMap.set(`${fragment}`, `${words[words.length - 1]}`);
-    }
-  });
+  let definition;
+  if (!data[0]) {
+    definition = data.title;
+  } else {
+    definition = data[0].meanings[0].definitions[0].definition;
+  }
+  footNote.setHTML(`*${definition}`);
 };
-
-// console.log(findAsterisk(wordArray));
-// console.log({ asteriskList });
-
-//just need to fetch the definition of the words in the asterisk list and display this at the bottom
-
-let splitWords = (sentenceFragments) => {
-  sentenceFragments.forEach((fragment) => {
-    let words = fragment.data.split(" ");
-    words.map((word) => {
-      //will create "" after punctuation
-      if (word !== "") newestArray.push(word);
-    });
-  });
-};
-
-//could use this in the future for synonymouse and antonym
-splitWords(wordArray);
-// console.log({ newestArray });
-// console.log("apple?", newestArray[0]);
-
-let res = await fetch(
-  `https://api.dictionaryapi.dev/api/v2/entries/en/${newestArray[0]}`
-);
-let data = await res.json();
-// console.log(data);

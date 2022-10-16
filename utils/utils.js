@@ -35,9 +35,7 @@ export const addSpansAndIds = (
 
   newString.map((char, i) => {
     if (punctuationHashMap.has(char)) {
-      newString[
-        i
-      ] = `<span id=\"${punctuationHashMap.get(
+      newString[i] = `<span id=\"${punctuationHashMap.get(
         char
       )}\" class=\"hidden-punc\">${char}</span>`;
     }
@@ -65,7 +63,8 @@ export const addSpansAndIds = (
 };
 
 export let nodeArr = [];
-export let wordArray = [];
+export let numberOfPunctuationArray = [];
+
 // https://stackoverflow.com/questions/5525071/how-to-wait-until-an-element-exists
 export const waitForElement = (selector) => {
   return new Promise((resolve) => {
@@ -76,10 +75,9 @@ export const waitForElement = (selector) => {
     const observer = new MutationObserver((mutations) => {
       let mutArr = mutations[0].addedNodes;
       mutArr.forEach((el) => {
+        nodeArr.push(el);
         if (el.className) {
-          nodeArr.push(el);
-        } else {
-          wordArray.push(el);
+          numberOfPunctuationArray.push(el);
         }
       });
 
@@ -101,11 +99,10 @@ export const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
   let filteredArr = heroesArray.filter((value) => {
     for (let i = 0; i < punctuationInSentenceArray.length; i++) {
       if (punctuationInSentenceArray[i].id) {
-        // if (punctuationInSentenceArray[i].className) {
+        // if (punctuationInSentenceArray[i].id) {
         //tried to do this for left and right parenthesis, might need to come back to it
-        // if (value.symbol.includes(punctuationInSentenceArray[i].className)) {
+        // if (value.symbol.includes(punctuationInSentenceArray[i].id)) {
 
-        // if (value.symbol === punctuationInSentenceArray[i].className) {
         if (value.symbol === punctuationInSentenceArray[i].id) {
           return value;
         }
