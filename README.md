@@ -8,6 +8,7 @@ The Punctuators shoot on to a sentence of your creation to add back the removed 
 
 - Have one player enter in a sentence
 - Have the other character shoot with different heroes to add in the missing punctuation.
+- Master Asterisk has a special ability: If a word has an asterisk following it then he can create a footnote of its definition.
 
 ## The characters:
 
