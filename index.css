@@ -22,6 +22,10 @@ body {
      margin: 250px 60px 60px 60px;
 }
 
+#error-message {
+    color: red;
+}
+
 #banner {
     position: fixed;
     margin-top: 40px;

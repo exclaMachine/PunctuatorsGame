@@ -16,6 +16,7 @@ let root = document.documentElement;
 let CREATE_SENTENCE_COUNT = 1;
 let SWITCH_CASE_NUMBER = 2;
 
+const errorMessage = document.getElementById("error-message");
 const characterCount = document.getElementById("character-count");
 const sentence = document.getElementById("input-sentence");
 const removePuncButton = document.getElementById("punc-button");
@@ -80,7 +81,11 @@ let closeModal = (modal) => {
 canvas.width = innerWidth - 4;
 canvas.height = innerHeight - 50;
 
-removePuncButton.addEventListener("click", () =>
+removePuncButton.addEventListener("click", () => {
+  if (!sentence.value) {
+    return errorMessage.setHTML("Field cannot be blank");
+  }
+
   addSpansAndIds(
     sentence.value,
     sentence,
@@ -89,8 +94,9 @@ removePuncButton.addEventListener("click", () =>
     footer,
     banner,
     controls
-  )
-);
+  );
+  errorMessage.setHTML("");
+});
 
 //TODO incorporate when more self-made sentences are made. The too variables don't work if game restart involves refresh
 // createSentenceButton.addEventListener("click", () => {
