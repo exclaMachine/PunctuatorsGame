@@ -2,6 +2,10 @@ import { addSpansAndIds } from "./utils/utils.js";
 import { waitForElement } from "./utils/utils.js";
 import { nodeArr, numberOfPunctuationArray } from "./utils/utils.js";
 import { heroToTheRescue } from "./utils/utils.js";
+import {
+  createRandomMadLibSentence,
+  chooseRandomlyFromArray,
+} from "./SentenceFunc.js";
 
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
@@ -9,9 +13,13 @@ const c = canvas.getContext("2d");
 
 let root = document.documentElement;
 
+let CREATE_SENTENCE_COUNT = 1;
+let SWITCH_CASE_NUMBER = 2;
+
 const characterCount = document.getElementById("character-count");
 const sentence = document.getElementById("input-sentence");
-const button = document.getElementById("punc-button");
+const removePuncButton = document.getElementById("punc-button");
+const createSentenceButton = document.getElementById("create-sentence-button");
 const out1 = document.getElementById("output");
 const footer = document.getElementById("footer");
 const start = document.getElementById("start");
@@ -72,17 +80,32 @@ let closeModal = (modal) => {
 canvas.width = innerWidth - 4;
 canvas.height = innerHeight - 50;
 
-button.addEventListener("click", () =>
+removePuncButton.addEventListener("click", () =>
   addSpansAndIds(
     sentence.value,
     sentence,
-    button,
+    removePuncButton,
     out1,
     footer,
     banner,
     controls
   )
 );
+
+//TODO incorporate when more self-made sentences are made. The too variables don't work if game restart involves refresh
+// createSentenceButton.addEventListener("click", () => {
+//   if (CREATE_SENTENCE_COUNT === SWITCH_CASE_NUMBER) CREATE_SENTENCE_COUNT = 1;
+
+//   addSpansAndIds(
+//     createRandomMadLibSentence(CREATE_SENTENCE_COUNT),
+//     sentence,
+//     createSentenceButton,
+//     out1,
+//     footer,
+//     banner,
+//     controls
+//   );
+// });
 
 const gameSfx = {
   end: new Howl({
