@@ -290,6 +290,25 @@ class CommaChameleon extends Hero {
   }
 }
 
+class OctoThwarter extends Hero {
+  constructor(projectileLength) {
+    super(
+      "./images/Octo.png",
+      0.5,
+      "Octo-Thwarter #",
+      "turquoise",
+      110,
+      projectileLength,
+      undefined,
+      "./sounds/spray_paint.mp3",
+      0.1,
+      undefined,
+      undefined,
+      "./images/Octo2.png"
+    );
+  }
+}
+
 class DrHyphenol extends Hero {
   constructor() {
     super(
@@ -550,6 +569,7 @@ let quotes = new QuetzalQuotel();
 let colon = new SargeColon();
 let semicolon = new SemiColonel();
 let hyphen = new DrHyphenol();
+let hashtag = new OctoThwarter(100);
 
 let availableHeroArray = [
   period,
@@ -563,6 +583,7 @@ let availableHeroArray = [
   quotes,
   hyphen,
   asterisk,
+  hashtag,
 ];
 
 characterCount.setHTML(`${availableHeroArray.length}`);
@@ -588,7 +609,10 @@ function animate() {
         // if (punctuationSymbol.className.includes(player.symbol)) {
         if (punctuationSymbol.id === player.symbol) {
           // for Comma Chameleon. TODO refactor because only difference is projectileLength and code for when I add tongue retract
-          if (player.symbol === "Comma Chameleon ,") {
+          if (
+            player.symbol === "Comma Chameleon ," ||
+            player.symbol === "Octo-Thwarter #"
+          ) {
             if (
               projectile.position.y - player.projectileLength <=
                 punctuationSymbol.getBoundingClientRect().y &&
@@ -722,7 +746,7 @@ rightButton.addEventListener("pointerdown", (e) => {
 shootButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   player.shootProjectileSound();
-  if (player === comma) {
+  if (player === comma || player === hashtag) {
     projectiles.push(
       new CommaTongue({
         position: {

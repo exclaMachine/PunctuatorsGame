@@ -17,7 +17,8 @@ punctuationHashMap
   // .set("(", "parenthesis left")
   // .set(")", "parenthesis right");
   .set("(", "Parents of the Seas ( )")
-  .set(")", "Parents of the Seas ( )");
+  .set(")", "Parents of the Seas ( )")
+  .set("#", "Octo-Thwarter #");
 
 //should split this function and making the divs disapper into two functions
 export const addSpansAndIds = (
