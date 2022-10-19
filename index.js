@@ -370,7 +370,7 @@ class ParentsOfTheSeas extends Hero {
       50,
       50,
       "./images/Bubble.png",
-      undefined,
+      "./sounds/bubble.mp3",
       0.1
     );
   }
@@ -401,12 +401,12 @@ class QuetzalQuotel extends Hero {
     super(
       "./images/Qq.png",
       0.7,
-      'QuetzalQuotel "',
+      "QuetzalQuotel",
       "green",
       126,
       50,
       "./images/Feather.png",
-      undefined,
+      "./sounds/wings.mp3",
       0.1
     );
   }

@@ -12,7 +12,7 @@ punctuationHashMap
   .set("*", "Master Asterisk *")
   .set(",", "Comma Chameleon ,")
   .set(".", "Full Stop .")
-  .set('"', 'QuetzalQuotel "')
+  .set('"', "QuetzalQuotel")
   .set("-", "Dr. Hyphenol -")
   // .set("(", "parenthesis left")
   // .set(")", "parenthesis right");
