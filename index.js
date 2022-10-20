@@ -586,7 +586,7 @@ let availableHeroArray = [
   hashtag,
 ];
 
-characterCount.setHTML(`${availableHeroArray.length}`);
+// characterCount.setHTML(`${availableHeroArray.length}`);
 
 const projectiles = [];
 
@@ -814,7 +814,7 @@ hintButton.addEventListener("pointerdown", (e) => {
   });
 });
 
-const elm = await waitForElement(".hidden-punc");
+const elm = await waitForElement("span");
 const chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
 
 let freeDictionaryFetchDefinition = async (word) => {
