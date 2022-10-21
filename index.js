@@ -814,6 +814,81 @@ hintButton.addEventListener("pointerdown", (e) => {
   });
 });
 
+addEventListener("keydown", ({ key }) => {
+  switch (key) {
+    case "a":
+    case "ArrowLeft":
+      if (player.position.x >= 0 - player.width / 2) {
+        player.position.x -= 10;
+      }
+      break;
+
+    case "d":
+    case "ArrowRight":
+      if (player.position.x <= canvas.width - player.width / 2) {
+        player.position.x += 10;
+      }
+      break;
+
+    case "s":
+    case "ArrowDown":
+      hintButton.setAttribute("class", "");
+
+      if (
+        projectiles.length &&
+        projectiles[0]?.constructor?.name === "CommaTongue"
+      ) {
+        projectiles.length = 0;
+      }
+
+      if (player === chosenHeroArray[chosenHeroArray.length - 1]) {
+        player = chosenHeroArray[0];
+      } else {
+        player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
+      }
+      nameTag.setHTML(`${player.symbol}`);
+      root.style.setProperty("--color", player.characterColor);
+      break;
+
+    case "w":
+    case "ArrowUp":
+      player.shootProjectileSound();
+      if (player === comma || player === hashtag) {
+        projectiles.push(
+          new CommaTongue({
+            position: {
+              x:
+                player.position.x +
+                player.width -
+                player.projectileStartPositionX,
+              y: player.position.y,
+            },
+            velocity: {
+              x: 0,
+              y: -10,
+            },
+          })
+        );
+      } else {
+        projectiles.push(
+          new Projectile({
+            position: {
+              x:
+                player.position.x +
+                player.width -
+                player.projectileStartPositionX,
+              y: player.position.y,
+            },
+            velocity: {
+              x: 0,
+              y: -10,
+            },
+          })
+        );
+      }
+  }
+});
+
 const elm = await waitForElement("span");
 const chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
 
