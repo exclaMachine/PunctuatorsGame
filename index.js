@@ -339,7 +339,10 @@ class ExclaMachine extends Hero {
       50,
       "./images/EM_Belt.png",
       "./sounds/whoosh.mp3",
-      0.5
+      0.5,
+      undefined,
+      undefined,
+      "./images/EM_Belt2.png"
     );
   }
 }
