@@ -610,8 +610,7 @@ function animate() {
       nodeArr.forEach((punctuationSymbol) => {
         //tried to do this for left and right parenthesis, might need to come back to it
         // if (punctuationSymbol.className.includes(player.symbol)) {
-        let punctuationZero = punctuationSymbol[0];
-        if (punctuationZero.id === player.symbol) {
+        if (punctuationSymbol.id === player.symbol) {
           // for Comma Chameleon. TODO refactor because only difference is projectileLength and code for when I add tongue retract
           if (
             player.symbol === "Comma Chameleon ," ||
@@ -619,17 +618,17 @@ function animate() {
           ) {
             if (
               projectile.position.y - player.projectileLength <=
-                punctuationZero.getBoundingClientRect().y &&
+                punctuationSymbol.getBoundingClientRect().y &&
               projectile.position.x + projectile.width >=
-                punctuationZero.getBoundingClientRect().left -
+                punctuationSymbol.getBoundingClientRect().left -
                   PROJECTILE_HIT_MARGIN_OF_ERROR &&
               projectile.position.x <=
-                punctuationZero.getBoundingClientRect().right +
+                punctuationSymbol.getBoundingClientRect().right +
                   PROJECTILE_HIT_MARGIN_OF_ERROR
             ) {
               // console.log("hitTongue!");
               //end game logic
-              allPunctuationHit.add(punctuationZero);
+              allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === numberOfPunctuationArray.length) {
                 // console.log("All Punctuation Hit!");
                 start.setHTML(endingMessage);
@@ -642,9 +641,9 @@ function animate() {
 
                 // projectiles[index].velocity.y = 1;
                 projectiles.splice(index, 1);
-                punctuationZero.classList.remove("hidden-punc");
-                punctuationZero.style.color = `${player.characterColor}`;
-                punctuationZero.style.textShadow =
+                punctuationSymbol.classList.remove("hidden-punc");
+                punctuationSymbol.style.color = `${player.characterColor}`;
+                punctuationSymbol.style.textShadow =
                   "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
               }, 0);
             } else if (projectile.position.y <= 0) {
@@ -664,20 +663,20 @@ function animate() {
             if (
               //need to go through this more. Should be able to do .bottom but something up with padding
               projectile.position.y - projectile.height <=
-                punctuationZero.getBoundingClientRect().y &&
+                punctuationSymbol.getBoundingClientRect().y &&
               projectile.position.x + projectile.width >=
-                punctuationZero.getBoundingClientRect().left -
+                punctuationSymbol.getBoundingClientRect().left -
                   PROJECTILE_HIT_MARGIN_OF_ERROR &&
               projectile.position.x <=
-                punctuationZero.getBoundingClientRect().right +
+                punctuationSymbol.getBoundingClientRect().right +
                   PROJECTILE_HIT_MARGIN_OF_ERROR
             ) {
               // console.log("hit!");
-              punctuationZero.style.color = `${player.characterColor}`;
-              punctuationZero.style.textShadow =
+              punctuationSymbol.style.color = `${player.characterColor}`;
+              punctuationSymbol.style.textShadow =
                 "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
 
-              allPunctuationHit.add(punctuationZero);
+              allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === numberOfPunctuationArray.length) {
                 // console.log("All Punctuation Hit!");
                 start.setHTML(endingMessage);
@@ -686,14 +685,14 @@ function animate() {
               setTimeout(() => {
                 projectiles.splice(index, 1);
                 if (player.symbol === "Master Asterisk *") {
-                  if (punctuationZero.previousSibling === null) return;
-                  let words = punctuationZero.previousSibling.data.split(" ");
+                  if (punctuationSymbol.previousSibling === null) return;
+                  let words = punctuationSymbol.previousSibling.data.split(" ");
 
                   let lastWord = words[words.length - 1];
 
                   freeDictionaryFetchDefinition(lastWord);
                 }
-                punctuationZero.classList.remove("hidden-punc");
+                punctuationSymbol.classList.remove("hidden-punc");
               }, 0);
 
               //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
@@ -800,7 +799,7 @@ switchButton.addEventListener("pointerdown", (e) => {
   } else {
     player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
   }
-  nameTag.setHTML(`${player?.symbol}`);
+  nameTag.setHTML(`${player.symbol}`);
   root.style.setProperty("--color", player.characterColor);
 });
 
@@ -808,11 +807,11 @@ hintButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
 
   nodeArr.forEach((punctuationSymbol) => {
-    if (punctuationSymbol[0].className) {
-      punctuationSymbol[0].className += " highlighted-punc";
+    if (punctuationSymbol.className) {
+      punctuationSymbol.className += " highlighted-punc";
 
       setTimeout(() => {
-        punctuationSymbol[0].classList.remove("highlighted-punc");
+        punctuationSymbol.classList.remove("highlighted-punc");
       }, 1000);
     }
   });
