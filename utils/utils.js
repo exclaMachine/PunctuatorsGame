@@ -42,7 +42,11 @@ export const addSpansAndIds = (
     }
   });
 
-  outputSentence.innerHTML = newString.join("");
+  // let joinedString = newString.join("");
+  // console.log({ joinedString });
+
+  // outputSentence.innerHTML = newString.join("");
+  outputSentence.setHTML(newString.join(""));
   button.setAttribute("class", "go-away");
   typedSentence.setAttribute("class", "go-away");
   banner.setAttribute("class", "go-away");
@@ -74,11 +78,10 @@ export const waitForElement = (selector) => {
     }
 
     const observer = new MutationObserver((mutations) => {
-      let mutArr = mutations[0].addedNodes;
-      mutArr.forEach((el) => {
-        nodeArr.push(el);
-        if (el.className) {
-          numberOfPunctuationArray.push(el);
+      mutations.forEach((node) => {
+        nodeArr.push(node.addedNodes);
+        if (node.addedNodes[0].className) {
+          numberOfPunctuationArray.push(node.addedNodes[0]);
         }
       });
 
@@ -96,15 +99,17 @@ export const waitForElement = (selector) => {
 };
 
 export const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
+  // console.log("nodess", punctuationInSentenceArray[1][0].id);
   //Need to match the properties of these two arrays
   let filteredArr = heroesArray.filter((value) => {
     for (let i = 0; i < punctuationInSentenceArray.length; i++) {
-      if (punctuationInSentenceArray[i].id) {
+      if (punctuationInSentenceArray[i][0].id) {
+        // console.log("id", punctuationInSentenceArray[i].id);
         // if (punctuationInSentenceArray[i].id) {
         //tried to do this for left and right parenthesis, might need to come back to it
         // if (value.symbol.includes(punctuationInSentenceArray[i].id)) {
 
-        if (value.symbol === punctuationInSentenceArray[i].id) {
+        if (value.symbol === punctuationInSentenceArray[i][0].id) {
           return value;
         }
       }
