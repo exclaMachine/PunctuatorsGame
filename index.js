@@ -421,7 +421,7 @@ class QuestionMarkswoman extends Hero {
 class QuetzalQuotel extends Hero {
   constructor() {
     super(
-      "./images/Qq.png",
+      "./images/Qq_2.png",
       0.7,
       "QuetzalQuotel",
       "green",
@@ -429,7 +429,10 @@ class QuetzalQuotel extends Hero {
       50,
       "./images/Feather.png",
       "./sounds/wings.mp3",
-      0.1
+      0.1,
+      undefined,
+      undefined,
+      "./images/Qq.png"
     );
   }
 }
