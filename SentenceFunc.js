@@ -19,6 +19,8 @@ export const createRandomMadLibSentence = (sentenceCount) => {
 
   let ageArray = ["seven", "thirty", "seventy"];
 
+  let prepositionArray = ["behind", "above", "across"];
+
   console.log(Math.floor(Math.random() * vegetableArray.length));
 
   switch (sentenceCount) {
