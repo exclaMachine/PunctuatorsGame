@@ -1,4 +1,5 @@
 let punc = "!?;:'.,";
+const CAPITAL_LETTERS = /[A-Z]/g;
 
 const punctuationHashMap = new Map();
 
@@ -28,6 +29,10 @@ export const addSpansAndIds = (typedString, outputSentence) => {
       newString[i] = `<span id=\"${punctuationHashMap.get(
         char
       )}\" class=\"hidden-punc\">${char}</span>`;
+    } else if (CAPITAL_LETTERS.test(char)) {
+      newString[
+        i
+      ] = `<span id=\"Full Stop (Capitalize)\" class=\"capital-black-hole\">${char.toLowerCase()}</span>`;
     }
   });
   outputSentence.innerHTML = newString.join("");

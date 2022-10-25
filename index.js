@@ -355,6 +355,25 @@ class FullStop extends Hero {
   }
 }
 
+class FullStopGrenade extends Hero {
+  constructor() {
+    super(
+      "./images/FS_capital1.png",
+      0.5,
+      "Full Stop (Capitalize)",
+      "red",
+      110,
+      50,
+      "./images/Grenade.png",
+      "./sounds/whoosh.mp3",
+      0.2,
+      undefined,
+      undefined,
+      "./images/FS_capital2.png"
+    );
+  }
+}
+
 class MasterAsterisk extends Hero {
   constructor() {
     super(
@@ -552,6 +571,7 @@ let comma = new CommaChameleon(100);
 let exclamation = new ExclaMachine();
 let parenthesis = new ParentsOfTheSeas();
 let period = new FullStop();
+let capitalize = new FullStopGrenade();
 let question = new QuestionMarkswoman();
 let quotes = new QuetzalQuotel();
 let colon = new SargeColon();
@@ -561,6 +581,7 @@ let hashtag = new OctoThwarter(100);
 
 let availableHeroArray = [
   period,
+  capitalize,
   colon,
   comma,
   parenthesis,
@@ -598,8 +619,8 @@ function animate() {
         if (punctuationSymbol.id === player.symbol) {
           // for Comma Chameleon. TODO refactor because only difference is projectileLength and code for when I add tongue retract
           if (
-            player.symbol === "Comma Chameleon ," ||
-            player.symbol === "Octo-Thwarter #"
+            player.symbol === comma.symbol ||
+            player.symbol === hashtag.symbol
           ) {
             if (
               projectile.position.y - player.projectileLength <=
@@ -657,9 +678,14 @@ function animate() {
                   PROJECTILE_HIT_MARGIN_OF_ERROR
             ) {
               // console.log("hit!");
-              punctuationSymbol.style.color = `${player.characterColor}`;
-              punctuationSymbol.style.textShadow =
-                "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
+              if (punctuationSymbol.id == capitalize.symbol) {
+                punctuationSymbol.innerText =
+                  punctuationSymbol.innerText.toUpperCase();
+              } else {
+                punctuationSymbol.style.color = `${player.characterColor}`;
+                punctuationSymbol.style.textShadow =
+                  "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
+              }
 
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === numberOfPunctuationArray.length) {
@@ -669,7 +695,7 @@ function animate() {
               }
               setTimeout(() => {
                 projectiles.splice(index, 1);
-                if (player.symbol === "Master Asterisk *") {
+                if (player.symbol === asterisk.symbol) {
                   if (punctuationSymbol.previousSibling === null) return;
                   let words = punctuationSymbol.previousSibling.data.split(" ");
 
