@@ -20,19 +20,8 @@ punctuationHashMap
   .set(")", "Parents of the Seas ( )")
   .set("#", "Octo-Thwarter #");
 
-//should split this function and making the divs disapper into two functions
-export const addSpansAndIds = (
-  string,
-  typedSentence,
-  button,
-  outputSentence,
-  footer,
-  banner,
-  controls
-) => {
-  let newString = string.split("");
-
-  //   console.log("newstr1", newString);
+export const addSpansAndIds = (typedString, outputSentence) => {
+  let newString = typedString.split("");
 
   newString.map((char, i) => {
     if (punctuationHashMap.has(char)) {
@@ -41,26 +30,13 @@ export const addSpansAndIds = (
       )}\" class=\"hidden-punc\">${char}</span>`;
     }
   });
-
   outputSentence.innerHTML = newString.join("");
-  button.setAttribute("class", "go-away");
-  typedSentence.setAttribute("class", "go-away");
-  banner.setAttribute("class", "go-away");
+};
 
-  controls.setAttribute("class", "grid-container");
-
-  //This is an HTMLCollection //Need to wait for the spans to appear so this doesn't work
-  //   const periods = document.querySelectorAll(".p");
-  //   console.log({ periods });
-
-  //   let periodsArray = [];
-  //   Array.from(periods).forEach((el) => {
-  //     console.log(el.getBoundingClientRect());
-  //     periodsArray.push(el);
-  //   });
-  //   console.log("arr", periodsArray);
-
-  //   return newString.join("");
+export const setClassName = (newClass, ...elements) => {
+  elements.forEach((element) => {
+    element.className = newClass;
+  });
 };
 
 export let nodeArr = [];

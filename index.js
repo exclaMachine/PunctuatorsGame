@@ -2,10 +2,8 @@ import { addSpansAndIds } from "./utils/utils.js";
 import { waitForElement } from "./utils/utils.js";
 import { nodeArr, numberOfPunctuationArray } from "./utils/utils.js";
 import { heroToTheRescue } from "./utils/utils.js";
-import {
-  createRandomMadLibSentence,
-  chooseRandomlyFromArray,
-} from "./SentenceFunc.js";
+import { setClassName } from "./utils/utils.js";
+import { createRandomMadLibSentence } from "./SentenceFunc.js";
 
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
@@ -18,17 +16,17 @@ let SWITCH_CASE_NUMBER = 2;
 
 const errorMessage = document.getElementById("error-message");
 const characterCount = document.getElementById("character-count");
-const sentence = document.getElementById("input-sentence");
+const initialTypedSentence = document.getElementById("input-sentence");
 const removePuncButton = document.getElementById("punc-button");
 const createSentenceButton = document.getElementById("create-sentence-button");
 const out1 = document.getElementById("output");
 const footer = document.getElementById("footer");
 const start = document.getElementById("start");
-const banner = document.getElementById("banner");
+const startBanner = document.getElementById("banner");
 const endingMessage =
   "You found all the punctuation! Refresh the page to play again!";
 
-const controls = document.getElementById("control-buttons");
+const characterControls = document.getElementById("control-buttons");
 const shootButton = document.getElementById("shoot-button");
 const leftButton = document.getElementById("left-button");
 const switchButton = document.getElementById("switch-button");
@@ -82,19 +80,15 @@ canvas.width = innerWidth - 4;
 canvas.height = innerHeight - 50;
 
 removePuncButton.addEventListener("click", () => {
-  if (!sentence.value) {
+  if (!initialTypedSentence.value) {
     return errorMessage.setHTML("Field cannot be blank");
   }
 
-  addSpansAndIds(
-    sentence.value,
-    sentence,
-    removePuncButton,
-    out1,
-    footer,
-    banner,
-    controls
-  );
+  addSpansAndIds(initialTypedSentence.value, out1);
+
+  setClassName("go-away", initialTypedSentence, removePuncButton, startBanner);
+  setClassName("grid-container", characterControls);
+
   errorMessage.setHTML("");
 });
 
@@ -104,13 +98,11 @@ removePuncButton.addEventListener("click", () => {
 
 //   addSpansAndIds(
 //     createRandomMadLibSentence(CREATE_SENTENCE_COUNT),
-//     sentence,
-//     createSentenceButton,
 //     out1,
-//     footer,
-//     banner,
-//     controls
 //   );
+
+// setClassName("go-away", startBanner, createSentenceButton);
+// setClassName("grid-container", characterControls);
 // });
 
 const gameSfx = {
@@ -474,16 +466,6 @@ class SemiColonel extends Hero {
     );
   }
 }
-
-//this is what he uses in the video for velocity but so far seems unnecessary
-// const keys = {
-//   a: {
-//     pressed: false,
-//   },
-//   d: {
-//     pressed: false,
-//   },
-// };
 
 //need to make this more generic and create a laser one
 class Projectile {
