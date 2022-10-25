@@ -81,7 +81,7 @@ canvas.height = innerHeight - 50;
 
 removePuncButton.addEventListener("click", () => {
   if (!initialTypedSentence.value) {
-    return errorMessage.setHTML("Field cannot be blank");
+    return (errorMessage.innerText = "Field cannot be blank");
   }
 
   addSpansAndIds(initialTypedSentence.value, out1);
@@ -89,7 +89,7 @@ removePuncButton.addEventListener("click", () => {
   setClassName("go-away", initialTypedSentence, removePuncButton, startBanner);
   setClassName("grid-container", characterControls);
 
-  errorMessage.setHTML("");
+  errorMessage.innerText = "";
 });
 
 //TODO incorporate when more self-made sentences are made. The too variables don't work if game restart involves refresh
@@ -616,7 +616,7 @@ function animate() {
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === numberOfPunctuationArray.length) {
                 // console.log("All Punctuation Hit!");
-                start.setHTML(endingMessage);
+                start.innerText = endingMessage;
                 gameSfx.end.play();
               }
 
@@ -664,7 +664,7 @@ function animate() {
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === numberOfPunctuationArray.length) {
                 // console.log("All Punctuation Hit!");
-                start.setHTML(endingMessage);
+                start.innerText = endingMessage;
                 gameSfx.end.play();
               }
               setTimeout(() => {
@@ -784,7 +784,7 @@ switchButton.addEventListener("pointerdown", (e) => {
   } else {
     player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
   }
-  nameTag.setHTML(`${player.symbol}`);
+  nameTag.innerText = player.symbol;
   root.style.setProperty("--color", player.characterColor);
 });
 
@@ -834,7 +834,7 @@ addEventListener("keydown", ({ key }) => {
       } else {
         player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
       }
-      nameTag.setHTML(`${player.symbol}`);
+      nameTag.innerText = player.symbol;
       root.style.setProperty("--color", player.characterColor);
       break;
 
@@ -892,5 +892,6 @@ let freeDictionaryFetchDefinition = async (word) => {
   } else {
     definition = data[0].meanings[0].definitions[0].definition;
   }
-  footNote.setHTML(`*${definition}`);
+  // footNote.setHTML(`*${definition}`);
+  footNote.innerText = `*${definition}`;
 };
