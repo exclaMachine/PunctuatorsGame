@@ -684,7 +684,7 @@ function animate() {
                 setTimeout(() => {
                   punctuationSymbol.innerText =
                     punctuationSymbol.innerText.toUpperCase();
-                  setClassName("blackhole-spitout", punctuationSymbol);
+                  setClassName("blackhole-collapse", punctuationSymbol);
                 }, 1800);
               } else {
                 punctuationSymbol.style.color = `${player.characterColor}`;
