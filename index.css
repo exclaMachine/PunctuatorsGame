@@ -170,7 +170,7 @@ footer > div {
     .blackhole-expand {
         transition: 2s;
         display: inline-block;
-        transform: rotate(359deg);
+        transform: rotate(359deg) scale(0.75, 1);
         color: black;
     }
 
@@ -178,7 +178,6 @@ footer > div {
         content: "";
         display: inline-block;
         position: absolute;
-
         z-index: -100;
         width: 80px;
         height: 80px;
@@ -232,6 +231,7 @@ footer > div {
         /* background-color: red; */
         visibility: visible;
         color: white;
+        text-shadow: none;
         border: dashed lightblue 2px;
     }
 
