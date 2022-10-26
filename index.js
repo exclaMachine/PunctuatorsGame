@@ -679,8 +679,13 @@ function animate() {
             ) {
               // console.log("hit!");
               if (punctuationSymbol.id == capitalize.symbol) {
-                punctuationSymbol.innerText =
-                  punctuationSymbol.innerText.toUpperCase();
+                setClassName("blackhole-expand", punctuationSymbol);
+
+                setTimeout(() => {
+                  punctuationSymbol.innerText =
+                    punctuationSymbol.innerText.toUpperCase();
+                  setClassName("blackhole-spitout", punctuationSymbol);
+                }, 1800);
               } else {
                 punctuationSymbol.style.color = `${player.characterColor}`;
                 punctuationSymbol.style.textShadow =

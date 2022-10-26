@@ -157,7 +157,22 @@ footer > div {
         font-size: 300%;
         margin: 50px;
         position: fixed;
+        color: whitesmoke;
+        text-shadow:  1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
         font-family: 'Palanquin', sans-serif;
+    }
+
+    .blackhole-expand {
+        background-color: #000;
+        border-radius: 50%;
+        transition: 2s;
+        display: inline-block;
+        transform: rotate(359deg);
+    }
+
+
+    .blackhole-spitout {
+        transition: 2s;
     }
 
 
@@ -227,6 +242,8 @@ footer > div {
 
             #output {
                 font-size: 30px;
+                color: whitesmoke;
+                text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
                 margin: 50px 10px 10px 10px;
             }
     }
