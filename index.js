@@ -14,6 +14,9 @@ let root = document.documentElement;
 let CREATE_SENTENCE_COUNT = 1;
 let SWITCH_CASE_NUMBER = 2;
 
+const ENDING_MESSAGE1 = "You found all the punctuation and capital letters!";
+const ENDING_MESSAGE2 = "Refresh the page to play again!";
+
 const errorMessage = document.getElementById("error-message");
 const characterCount = document.getElementById("character-count");
 const initialTypedSentence = document.getElementById("input-sentence");
@@ -23,8 +26,9 @@ const out1 = document.getElementById("output");
 const footer = document.getElementById("footer");
 const start = document.getElementById("start");
 const startBanner = document.getElementById("banner");
-const endingMessage =
-  "You found all the punctuation! Refresh the page to play again!";
+
+const endingMessage1 = document.getElementById("ending_message_1");
+const endingMessage2 = document.getElementById("ending_message_2");
 
 const characterControls = document.getElementById("control-buttons");
 const shootButton = document.getElementById("shoot-button");
@@ -637,7 +641,8 @@ function animate() {
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === numberOfPunctuationArray.length) {
                 // console.log("All Punctuation Hit!");
-                start.innerText = endingMessage;
+                endingMessage1.innerText = ENDING_MESSAGE1;
+                endingMessage2.innerText = ENDING_MESSAGE2;
                 gameSfx.end.play();
               }
 
@@ -695,7 +700,8 @@ function animate() {
               allPunctuationHit.add(punctuationSymbol);
               if (allPunctuationHit.size === numberOfPunctuationArray.length) {
                 // console.log("All Punctuation Hit!");
-                start.innerText = endingMessage;
+                endingMessage1.innerText = ENDING_MESSAGE1;
+                endingMessage2.innerText = ENDING_MESSAGE2;
                 gameSfx.end.play();
               }
               setTimeout(() => {

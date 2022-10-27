@@ -243,6 +243,23 @@ footer > div {
         text-align: center;
     }
 
+    #ending-message-container {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 25%;
+        margin: 10%;
+    }
+
+    #ending-message-container > h2 {
+        /* position: absolute; */
+        color: blueviolet;
+        font-family: 'Palanquin', sans-serif;
+
+    }
+
+
+
     @media screen and (max-width: 480px) {
 
         h1 {
