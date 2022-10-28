@@ -44,8 +44,15 @@ const openModalButtons = document.querySelectorAll("[data-modal-target]");
 const closeModalButtons = document.querySelectorAll("[data-close-button]");
 const overlay = document.getElementById("overlay");
 
+const buttonSounds = {
+  clicky: new Howl({
+    src: ["./sounds/click.mp3"],
+  }),
+};
+
 openModalButtons.forEach((button) => {
   button.addEventListener("click", () => {
+    buttonSounds.clicky.play();
     const modal = document.querySelector(button.dataset.modalTarget);
     openModal(modal);
   });
@@ -84,6 +91,7 @@ canvas.width = innerWidth - 4;
 canvas.height = innerHeight - 50;
 
 removePuncButton.addEventListener("click", () => {
+  buttonSounds.clicky.play();
   if (!initialTypedSentence.value) {
     return (errorMessage.innerText = "Field cannot be blank");
   }
