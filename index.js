@@ -717,10 +717,17 @@ function animate() {
                 if (player.symbol === asterisk.symbol) {
                   if (punctuationSymbol.previousSibling === null) return;
                   let words = punctuationSymbol.previousSibling.data.split(" ");
-
-                  let lastWord = words[words.length - 1];
-
-                  freeDictionaryFetchDefinition(lastWord);
+                  let capital =
+                    punctuationSymbol.previousSibling.previousSibling;
+                  if (capital["id"] === capitalize.symbol) {
+                    let lastWord = `${capital["innerText"]}${
+                      words[words.length - 1]
+                    }`;
+                    freeDictionaryFetchDefinition(lastWord);
+                  } else {
+                    let lastWord = words[words.length - 1];
+                    freeDictionaryFetchDefinition(lastWord);
+                  }
                 }
                 punctuationSymbol.classList.remove("hidden-punc");
               }, 0);
