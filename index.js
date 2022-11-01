@@ -136,7 +136,8 @@ class Hero {
     projectileScale,
     projectileSoundRate,
     projectileSoundVolume,
-    secondHeroImage
+    secondHeroImage,
+    projectileHitSound
   ) {
     this.velocity = {
       x: 0,
@@ -154,11 +155,15 @@ class Hero {
     this.projectileSoundRate = projectileSoundRate;
     this.projectileSoundVolume = projectileSoundVolume;
     this.secondHeroImage = secondHeroImage;
+    this.projectileHitSound = projectileHitSound;
 
     this.sfx = {
       shoot: new Howl({
         src: [this.projectileShootSound],
         rate: this.projectileSoundRate,
+      }),
+      hit: new Howl({
+        src: [this.projectileHitSound],
       }),
     };
 
@@ -201,6 +206,10 @@ class Hero {
 
   shootProjectileSound() {
     this.sfx.shoot.play();
+  }
+
+  hitProjectileSound() {
+    this.sfx.hit.play();
   }
 
   draw() {
@@ -362,7 +371,11 @@ class FullStop extends Hero {
       50,
       "./images/Laser.png",
       "./sounds/laser-bolt.mp3",
-      0.2
+      0.2,
+      undefined,
+      undefined,
+      undefined,
+      "./sounds/projectile-hit/laser-hit.mp3"
     );
   }
 }
@@ -416,7 +429,11 @@ class ParentsOfTheSeas extends Hero {
       50,
       "./images/Bubble.png",
       "./sounds/bubble.mp3",
-      0.1
+      0.1,
+      undefined,
+      undefined,
+      undefined,
+      "./sounds/projectile-hit/bubble-hit.mp3"
     );
   }
 }
@@ -657,7 +674,7 @@ function animate() {
               setTimeout(() => {
                 //need to change the velocity of the y to +1. this could make the tongue retract. Maybe later
                 // console.log("proj", projectiles);
-
+                player.hitProjectileSound();
                 // projectiles[index].velocity.y = 1;
                 projectiles.splice(index, 1);
                 punctuationSymbol.classList.remove("hidden-punc");
@@ -714,6 +731,8 @@ function animate() {
               }
               setTimeout(() => {
                 projectiles.splice(index, 1);
+                player.hitProjectileSound();
+
                 if (player.symbol === asterisk.symbol) {
                   if (punctuationSymbol.previousSibling === null) return;
                   let words = punctuationSymbol.previousSibling.data.split(" ");
