@@ -413,7 +413,8 @@ class MasterAsterisk extends Hero {
       0.1,
       1,
       undefined,
-      "./images/Asterisk2.png"
+      "./images/Asterisk2.png",
+      "./sounds/projectile-hit/asterisk-hit.mp3"
     );
   }
 }
@@ -738,7 +739,7 @@ function animate() {
                   let words = punctuationSymbol.previousSibling.data.split(" ");
                   let capital =
                     punctuationSymbol.previousSibling.previousSibling;
-                  if (capital["id"] === capitalize.symbol) {
+                  if (capital?.id === capitalize.symbol) {
                     let lastWord = `${capital["innerText"]}${
                       words[words.length - 1]
                     }`;
