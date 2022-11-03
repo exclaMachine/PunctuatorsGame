@@ -890,7 +890,6 @@ addEventListener("keydown", ({ key }) => {
       }
       break;
 
-    case "s":
     case "ArrowDown":
       hintButton.setAttribute("class", "");
 
