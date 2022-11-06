@@ -4,6 +4,7 @@ import { nodeArr, numberOfPunctuationArray } from "./utils/utils.js";
 import { heroToTheRescue } from "./utils/utils.js";
 import { setClassName } from "./utils/utils.js";
 import { createRandomMadLibSentence } from "./SentenceFunc.js";
+import { surroundContractionWordsWithSpans } from "./utils/contractionFunc.js";
 
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
@@ -95,6 +96,8 @@ removePuncButton.addEventListener("click", () => {
   if (!initialTypedSentence.value) {
     return (errorMessage.innerText = "Field cannot be blank");
   }
+
+  // surroundContractionWordsWithSpans(initialTypedSentence.value);
 
   addSpansAndIds(initialTypedSentence.value, out1);
 
