@@ -97,9 +97,8 @@ removePuncButton.addEventListener("click", () => {
     return (errorMessage.innerText = "Field cannot be blank");
   }
 
-  // surroundContractionWordsWithSpans(initialTypedSentence.value);
-
-  addSpansAndIds(initialTypedSentence.value, out1);
+  let punctuated = addSpansAndIds(initialTypedSentence.value, out1);
+  surroundContractionWordsWithSpans(punctuated, out1);
 
   setClassName("go-away", initialTypedSentence, removePuncButton, startBanner);
   setClassName("grid-container", characterControls);

@@ -36,6 +36,7 @@ export const addSpansAndIds = (typedString, outputSentence) => {
     }
   });
   outputSentence.innerHTML = newString.join("");
+  return newString.join("");
 };
 
 export const setClassName = (newClass, ...elements) => {
