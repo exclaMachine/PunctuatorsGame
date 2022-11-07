@@ -1,37 +1,5 @@
 //Problem because these actually can't be done before punctuation because splitting will split the spans...
 
-const firstContractionWordSet = new Set([
-  "are",
-  "can",
-  "could",
-  "did",
-  "does",
-  "do",
-  "had",
-  "has",
-  "have",
-  "he",
-  "I",
-  "is",
-  "let",
-  "might",
-  "must",
-  "shall",
-  "she",
-  "should",
-  "that",
-  "there",
-  "they",
-  "we",
-  "were",
-  "what",
-  "where",
-  "who",
-  "will",
-  "would",
-  "you",
-]);
-
 const secondContractionWordSet = new Set([
   "not",
   "had",
@@ -129,7 +97,10 @@ export const surroundContractionWordsWithSpans = (
 
     if (
       (notSubsetOfFirstContractionWordSet.has(word) &&
-        words[index + 1] === "not") ||
+        (words[index + 1] === "not" ||
+          words[index + 1] === "not?" ||
+          words[index + 1] === "not." ||
+          words[index + 1] === "not!")) ||
       (hadWouldSubsetOfFirstContractionWordSet.has(word) &&
         (words[index + 1] === "had" || words[index + 1] === "would")) ||
       (willShallSubsetOfFirstContractionWordSet.has(word) &&
@@ -148,29 +119,7 @@ export const surroundContractionWordsWithSpans = (
         words[index + 1]
       }\" class=\"contraction\">${words[index + 1]}</span>`;
     }
-    // if (
-    //   firstContractionWordSet.has(word) &&
-    //   secondContractionWordSet.has(words[index + 1])
-    // ) {
-    //   if (
-    //     notSubsetOfFirstContractionWordSet.has(word) &&
-    //     words[index + 1] === "not"
-    //   ) {
-    //     words[index + 1] = `<span id=\"${
-    //       words[index + 1]
-    //     }\" class=\"contraction\"</span>`;
-    //   } else if (
-    //     hadWouldSubsetOfFirstContractionWordSet.has(word) &&
-    //     (words[index + 1] === "had" || words[index + 1] === "would")
-    //   ) {
-    //     words[index + 1] = `<span id=\"${
-    //       words[index + 1]
-    //     }\" class=\"contraction\"</span>`;
-    //   }
-    // }
   });
   let newSentence = words.join(" ");
   //   outputSentence.innerHTML = newSentence;
-
-  console.log({ newSentence });
 };
