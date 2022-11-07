@@ -39,7 +39,7 @@ const switchButton = document.getElementById("switch-button");
 const rightButton = document.getElementById("right-button");
 const nameTag = document.getElementById("name-tag");
 const hintButton = document.getElementById("hint-button");
-const footNote = document.querySelector(".footnote");
+const footNote = document.querySelector("#footnote");
 
 //https://www.youtube.com/watch?v=MBaw_6cPmAw
 const openModalButtons = document.querySelectorAll("[data-modal-target]");
@@ -756,6 +756,7 @@ function animate() {
                     freeDictionaryFetchDefinition(lastWord);
                   }
                 }
+                footNote.classList.remove("go-away");
                 punctuationSymbol.classList.remove("hidden-punc");
               }, 0);
 

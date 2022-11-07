@@ -383,7 +383,7 @@ footer > div {
         /* background-color: gold; */
     }
 
-    .footnote {
+    #footnote {
         background-image: linear-gradient(gold, white);
         padding: 0 5px 0 5px;
         margin-left: 20px;
