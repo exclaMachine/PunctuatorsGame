@@ -377,3 +377,15 @@ footer > div {
     ul {
         margin: 10px;
     }
+
+    #footnote--body {
+        background-image: linear-gradient(gold, white);
+        /* background-color: gold; */
+    }
+
+    .footnote {
+        background-image: linear-gradient(gold, white);
+        padding: 0 5px 0 5px;
+        margin-left: 20px;
+        border-radius: 5px;
+    }

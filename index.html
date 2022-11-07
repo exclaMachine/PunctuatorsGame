@@ -36,6 +36,15 @@
         </div>
     </div>
 
+    <div class="modal" id="aster">
+        <div class="modal--header">
+            <div id="footnote_title" class="modal__title"></div>
+            <button data-close-button class="modal__close-button">&times;</button>
+        </div>
+        <div id="footnote--body" class="modal--body">
+        </div>
+    </div>
+
     <h2 id="start"></h2>
 
     <div id="banner">
@@ -76,7 +85,7 @@
         <div>©2019-2022 Ty Rickers</div>
         <div><a href="https://www.instagram.com/super_powered_punctuation/" class="fa fa-instagram" target="_blank"></a></div>
         <div><a href="https://github.com/exclaMachine/PunctuatorsGame" class="fa fa-github" target="_blank"></a></div>
-        <div id="footnote"></div>
+        <button data-modal-target="#aster" class="footnote"></button>
     </footer>
 
     <canvas id="background" style="border: 2px black solid"></canvas>

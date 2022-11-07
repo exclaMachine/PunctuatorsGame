@@ -39,7 +39,7 @@ const switchButton = document.getElementById("switch-button");
 const rightButton = document.getElementById("right-button");
 const nameTag = document.getElementById("name-tag");
 const hintButton = document.getElementById("hint-button");
-const footNote = document.getElementById("footnote");
+const footNote = document.querySelector(".footnote");
 
 //https://www.youtube.com/watch?v=MBaw_6cPmAw
 const openModalButtons = document.querySelectorAll("[data-modal-target]");
@@ -970,6 +970,11 @@ let freeDictionaryFetchDefinition = async (word) => {
   } else {
     definition = data[0].meanings[0].definitions[0].definition;
   }
-  // footNote.setHTML(`*${definition}`);
-  footNote.innerText = `*${definition}`;
+
+  const footnoteTitle = document.getElementById("footnote_title");
+  const footnoteBody = document.getElementById("footnote--body");
+
+  footnoteBody.innerText = `*${definition}`;
+  footnoteTitle.innerText = `*${word}`;
+  footNote.innerText = `*${word}`;
 };
