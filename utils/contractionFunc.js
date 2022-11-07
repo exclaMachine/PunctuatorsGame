@@ -89,7 +89,6 @@ export const surroundContractionWordsWithSpans = (
   outputSentence
 ) => {
   let words = typedSentence.split(" ");
-  console.log(words);
   words.map((word, index) => {
     if (index === words.length - 1) return;
 
