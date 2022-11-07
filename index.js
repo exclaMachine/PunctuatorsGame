@@ -751,12 +751,13 @@ function animate() {
                       words[words.length - 1]
                     }`;
                     freeDictionaryFetchDefinition(lastWord);
+                    footNote.classList.remove("go-away");
                   } else {
                     let lastWord = words[words.length - 1];
                     freeDictionaryFetchDefinition(lastWord);
+                    footNote.classList.remove("go-away");
                   }
                 }
-                footNote.classList.remove("go-away");
                 punctuationSymbol.classList.remove("hidden-punc");
               }, 0);
 
@@ -964,6 +965,7 @@ let freeDictionaryFetchDefinition = async (word) => {
     `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`
   );
   let data = await res.json();
+  console.log({ data });
 
   let definition;
   if (!data[0]) {
