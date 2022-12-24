@@ -9,7 +9,7 @@ punctuationHashMap
   .set("?", "Question Markswoman ?")
   .set(";", "Semicolonel ;")
   .set(":", "Sergeant Colon :")
-  .set("'", "Apostrophantom '")
+  .set("\'", "Apostrophantom '")
   .set("*", "Master Asterisk *")
   .set(",", "Comma Chameleon ,")
   .set(".", "Full Stop .")
