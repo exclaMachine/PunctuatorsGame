@@ -9,7 +9,9 @@ punctuationHashMap
   .set("?", "Question Markswoman ?")
   .set(";", "Semicolonel ;")
   .set(":", "Sergeant Colon :")
-  .set("\'", "Apostrophantom '")
+  .set("'", "Apostrophantom '")
+  .set("‘", "Apostrophantom ‘")//u2018  https://stackoverflow.com/questions/57712081/javascript-regexp-dosnt-recognize-apostrophe-on-mobile-ios
+  .set("’", "Apostrophantom ’")//u2019
   .set("*", "Master Asterisk *")
   .set(",", "Comma Chameleon ,")
   .set(".", "Full Stop .")
