@@ -17,7 +17,7 @@ let SWITCH_CASE_NUMBER = 2;
 
 const ENDING_MESSAGE1 = "You found all the punctuation and capital letters!";
 const ENDING_MESSAGE2 = "Refresh the page to play again!";
-const PUNC_REGEX = /[\'\".,\/#!$%\^&\*;:{}=\-_`~()]/g;
+const PUNC_REGEX = /[\'\".,\/#!$%\^&\*;:{}=\-_`~()\‘\’\“\”]/g;
 
 const errorMessage = document.getElementById("error-message");
 const characterCount = document.getElementById("character-count");
