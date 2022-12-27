@@ -1,4 +1,4 @@
-//Problem because these actually can't be done before punctuation because splitting will split the spans...
+//Problem because these actually can't be done before punctuation because splitting will split the spans... and cause spaces in between. Not add spaces but split up spaces into own elements?
 
 const secondContractionWordSet = new Set([
   "not",
@@ -120,5 +120,5 @@ export const surroundContractionWordsWithSpans = (
     }
   });
   let newSentence = words.join(" ");
-  //   outputSentence.innerHTML = newSentence;
+  //outputSentence.innerHTML = newSentence;
 };

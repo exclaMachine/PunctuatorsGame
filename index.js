@@ -918,7 +918,7 @@ addEventListener("keydown", ({ key }) => {
       root.style.setProperty("--color", player.characterColor);
       break;
 
-    case "w":
+    //case "w":  This causes second animation to show if a w is typed in initial sentence
     case "ArrowUp":
       player.shootProjectileSound();
       if (player === comma || player === hashtag) {
