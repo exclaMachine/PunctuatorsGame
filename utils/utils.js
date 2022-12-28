@@ -1,3 +1,5 @@
+import { changeEmoticonsToEmojis } from "./emojiFunc.js";
+
 let punc = "!?;:'.,";
 const CAPITAL_LETTERS = /[A-Z]/g;
 
@@ -26,7 +28,9 @@ punctuationHashMap
   .set("#", "Octo-Thwarter #");
 
 export const addSpansAndIds = (typedString, outputSentence) => {
-  let newString = typedString.split("");
+  let emojified = changeEmoticonsToEmojis(typedString);
+
+  let newString = emojified.split("");
 
   newString.map((char, i) => {
     if (punctuationHashMap.has(char)) {
