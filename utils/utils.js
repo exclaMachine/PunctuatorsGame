@@ -2,6 +2,7 @@ import { changeEmoticonsToEmojis } from "./emojiFunc.js";
 
 let punc = "!?;:'.,";
 const CAPITAL_LETTERS = /[A-Z]/g;
+const SPACES = " ";
 
 const punctuationHashMap = new Map();
 
@@ -42,6 +43,9 @@ export const addSpansAndIds = (typedString, outputSentence) => {
         i
       ] = `<span id=\"Full Stop (Capitalize)\" class=\"capital-black-hole\">${char.toLowerCase()}</span>`;
     }
+    // else if (char === " ") {
+    //   newString[i] = `<span id=\"Spacel \" class=\"space\">${SPACES}</span>`;
+    // }
   });
   outputSentence.innerHTML = newString.join("");
   return newString.join("");
@@ -54,6 +58,7 @@ export const setClassName = (newClass, ...elements) => {
 };
 
 export let nodeArr = [];
+export let spaceArr = [];
 export let numberOfPunctuationArray = [];
 
 // https://stackoverflow.com/questions/5525071/how-to-wait-until-an-element-exists
@@ -66,9 +71,12 @@ export const waitForElement = (selector) => {
     const observer = new MutationObserver((mutations) => {
       let mutArr = mutations[0].addedNodes;
       mutArr.forEach((el) => {
-        nodeArr.push(el);
-        if (el.className) {
-          numberOfPunctuationArray.push(el);
+        if (el.className === "space") {
+          spaceArr.push(el);
+        } else {
+          nodeArr.push(el);
+
+          if (el.className) numberOfPunctuationArray.push(el);
         }
       });
 
