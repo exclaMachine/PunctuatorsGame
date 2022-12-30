@@ -84,6 +84,27 @@ const areSubsetOfFirstContractionWordSet = new Set([
   "you",
 ]);
 
+const secondContractionWordHashMap = new Map();
+
+secondContractionWordHashMap
+  .set("not", "🪢")
+  .set("had", "🧢")
+  .set("would", "🪵")
+  .set("is", "🧘")
+  .set("have", "⚔️")
+  .set("are", "🏴‍☠️")
+  .set("shall", "🧙‍♂️")
+  .set("will", "📄")
+  .set("am", "🕣")
+  .set("us", "🇺🇸");
+
+//try different approach where use array and surround words with unique characters (kanji) so no interference
+
+export const wrapContractionWithUniqueCharacter = (
+  typedSentence,
+  outputSentence
+) => {};
+
 export const surroundContractionWordsWithSpans = (
   typedSentence,
   outputSentence
