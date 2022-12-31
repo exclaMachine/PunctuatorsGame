@@ -32,6 +32,23 @@ const notSubsetOfFirstContractionWordSet = new Set([
   "were",
   "will",
   "would",
+  "Are",
+  "Can",
+  "Could",
+  "Did",
+  "Does",
+  "Do",
+  "Had",
+  "Has",
+  "Have",
+  "Is",
+  "Might",
+  "Must",
+  "Shall",
+  "Should",
+  "Were",
+  "Will",
+  "Would",
 ]);
 
 const hadWouldSubsetOfFirstContractionWordSet = new Set([
@@ -43,6 +60,13 @@ const hadWouldSubsetOfFirstContractionWordSet = new Set([
   "we",
   "who",
   "you",
+  "He",
+  "It",
+  "She",
+  "They",
+  "We",
+  "Who",
+  "You",
 ]);
 
 const willShallSubsetOfFirstContractionWordSet = new Set([
@@ -55,6 +79,14 @@ const willShallSubsetOfFirstContractionWordSet = new Set([
   "what",
   "who",
   "you",
+  "He",
+  "It",
+  "She",
+  "They",
+  "We",
+  "What",
+  "Who",
+  "You",
 ]);
 
 const isHasSubsetOfFirstContractionWordSet = new Set([
@@ -65,6 +97,13 @@ const isHasSubsetOfFirstContractionWordSet = new Set([
   "what",
   "where",
   "who",
+  "He",
+  "She",
+  "That",
+  "There",
+  "What",
+  "Where",
+  "Who",
 ]);
 
 const haveSubsetOfFirstContractionWordSet = new Set([
@@ -74,6 +113,11 @@ const haveSubsetOfFirstContractionWordSet = new Set([
   "what",
   "who",
   "you",
+  "They",
+  "We",
+  "What",
+  "Who",
+  "You",
 ]);
 
 const areSubsetOfFirstContractionWordSet = new Set([
@@ -82,6 +126,11 @@ const areSubsetOfFirstContractionWordSet = new Set([
   "what",
   "who",
   "you",
+  "They",
+  "We",
+  "What",
+  "Who",
+  "You",
 ]);
 
 const secondContractionWordHashMap = new Map();
@@ -98,7 +147,7 @@ secondContractionWordHashMap
   .set("am", "🕣")
   .set("us", "🇺🇸");
 
-//try different approach where use array and surround words with unique characters (kanji) so no interference
+//try different approach where use array and surround words with unique characters (emoji) so no interference with punc spans
 
 export const wrapContractionWithUniqueCharacter = (
   typedSentence,
