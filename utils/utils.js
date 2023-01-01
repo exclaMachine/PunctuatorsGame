@@ -30,9 +30,9 @@ punctuationHashMap
   .set("#", "Octo-Thwarter #");
 
 export const addSpansAndIds = (typedString, outputSentence) => {
-  let emojified = changeEmoticonsToEmojis(typedString);
+  let emojified2 = changeEmoticonsToEmojis(typedString);
 
-  let emojified2 = wrapContractionWithUniqueCharacter(emojified);
+  //let emojified2 = wrapContractionWithUniqueCharacter(emojified);
 
   let newString = emojified2.split("");
 
