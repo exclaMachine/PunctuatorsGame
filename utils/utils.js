@@ -1,4 +1,5 @@
 import { changeEmoticonsToEmojis } from "./emojiFunc.js";
+import { wrapContractionWithUniqueCharacter } from "./contractionFunc.js";
 
 let punc = "!?;:'.,";
 const CAPITAL_LETTERS = /[A-Z]/g;
@@ -31,7 +32,9 @@ punctuationHashMap
 export const addSpansAndIds = (typedString, outputSentence) => {
   let emojified = changeEmoticonsToEmojis(typedString);
 
-  let newString = emojified.split("");
+  let emojified2 = wrapContractionWithUniqueCharacter(emojified);
+
+  let newString = emojified2.split("");
 
   newString.map((char, i) => {
     if (punctuationHashMap.has(char)) {

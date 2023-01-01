@@ -136,7 +136,7 @@ const areSubsetOfFirstContractionWordSet = new Set([
 const secondContractionWordHashMap = new Map();
 
 secondContractionWordHashMap
-  .set("not", "🪢")
+  .set("not", "❗")
   .set("had", "🧢")
   .set("would", "🪵")
   .set("is", "🧘")
@@ -152,7 +152,42 @@ secondContractionWordHashMap
 export const wrapContractionWithUniqueCharacter = (
   typedSentence,
   outputSentence
-) => {};
+) => {
+  let words = typedSentence.split(" ");
+  words.map((word, index) => {
+    if (index === words.length - 1) return;
+
+    // word.toLowerCase();  need to work on capital somehow...
+
+    if (
+      (notSubsetOfFirstContractionWordSet.has(word) &&
+        (words[index + 1] === "not" ||
+          words[index + 1] === "not?" ||
+          words[index + 1] === "not." ||
+          words[index + 1] === "not!")) ||
+      (hadWouldSubsetOfFirstContractionWordSet.has(word) &&
+        (words[index + 1] === "had" || words[index + 1] === "would")) ||
+      (willShallSubsetOfFirstContractionWordSet.has(word) &&
+        (words[index + 1] === "will" || words[index + 1] === "shall")) ||
+      (isHasSubsetOfFirstContractionWordSet.has(word) &&
+        (words[index + 1] === "is" || words[index + 1] === "has")) ||
+      (word === "i" && words[index + 1] === "am") ||
+      (haveSubsetOfFirstContractionWordSet.has(word) &&
+        words[index + 1] === "have") ||
+      (word === "let" && words[index + 1] === "us") ||
+      ((word === "here" || word === "it" || word === "Here" || word === "It") &&
+        words[index + 1] === "is") ||
+      (areSubsetOfFirstContractionWordSet.has(word) &&
+        words[index + 1] === "are")
+    ) {
+      words[index + 1] = `${secondContractionWordHashMap.get(
+        words[index + 1]
+      )}${words[index + 1]}`;
+    }
+  });
+
+  return words.join(" ");
+};
 
 export const surroundContractionWordsWithSpans = (
   typedSentence,
