@@ -58,8 +58,6 @@ export const addSpansAndIds = (typedString, outputSentence) => {
   let newString = emojified2.split("");
 
   newString.map((char, i) => {
-    console.log(i, char);
-    console.log(secondContractionWordHashMap.get(char));
     if (punctuationHashMap.has(char)) {
       newString[i] = `<span id=\"${punctuationHashMap.get(
         char
