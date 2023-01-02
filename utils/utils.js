@@ -1,9 +1,29 @@
 import { changeEmoticonsToEmojis } from "./emojiFunc.js";
 import { wrapContractionWithUniqueCharacter } from "./contractionFunc.js";
 
+const secondContractionWordHashMap = new Map();
+
+//https://stackoverflow.com/questions/9907419/how-to-get-a-key-in-a-javascript-object-by-its-value
+function getKeyByValue(object, value) {
+  return Object.keys(object).find((key) => object[key] === value);
+}
+
+secondContractionWordHashMap
+  .set("not", "❗")
+  .set("had", "🧢")
+  .set("would", "🪵")
+  .set("is", "🧘")
+  .set("have", "⚔️")
+  .set("are", "🏴‍☠️")
+  .set("shall", "🧙‍♂️")
+  .set("will", "📄")
+  .set("am", "🕣")
+  .set("us", "🇺🇸");
+
 let punc = "!?;:'.,";
 const CAPITAL_LETTERS = /[A-Z]/g;
 const SPACES = " ";
+const ENDING_SECOND_CONTRACTION_WORD = /[.?!\s]/g;
 
 const punctuationHashMap = new Map();
 
@@ -34,9 +54,12 @@ export const addSpansAndIds = (typedString, outputSentence) => {
 
   //let emojified2 = wrapContractionWithUniqueCharacter(emojified);
 
+  //when you split an emoji it can be up to 5 different characters "🏴‍☠️" = '/uD83C' '/uDFF4' '' '☠' ''
   let newString = emojified2.split("");
 
   newString.map((char, i) => {
+    console.log(i, char);
+    console.log(secondContractionWordHashMap.get(char));
     if (punctuationHashMap.has(char)) {
       newString[i] = `<span id=\"${punctuationHashMap.get(
         char
@@ -48,6 +71,15 @@ export const addSpansAndIds = (typedString, outputSentence) => {
     }
     // else if (char === " ") {
     //   newString[i] = `<span id=\"Spacel \" class=\"space\">${SPACES}</span>`;
+    // } else if (secondContractionWordHashMap.get(char)) {
+    //   newString[i] = `<span id=\"${getKeyByValue(
+    //     secondContractionWordHashMap,
+    //     char
+    //   )}\">`;
+    //   while (!ENDING_SECOND_CONTRACTION_WORD.test(char[i + 1])) {
+    //     i++;
+    //   }
+    //   newString[i] = `${char}</span>`;
     // }
   });
   outputSentence.innerHTML = newString.join("");
