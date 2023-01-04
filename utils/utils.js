@@ -9,16 +9,16 @@ function getKeyByValue(object, value) {
 }
 
 secondContractionWordHashMap
-  .set("not", "❗")
-  .set("had", "🧢")
-  .set("would", "🪵")
-  .set("is", "🧘")
+  .set("¬", "not")
+  .set("had", "©")
+  .set("would", "°")
+  .set("is", "§")
   .set("have", "⚔️")
-  .set("are", "🏴‍☠️")
-  .set("shall", "🧙‍♂️")
-  .set("will", "📄")
-  .set("am", "🕣")
-  .set("us", "🇺🇸");
+  .set("are", "®")
+  .set("shall", "¦")
+  .set("will", "±")
+  .set("am", "µ")
+  .set("us", "¶");
 
 let punc = "!?;:'.,";
 const CAPITAL_LETTERS = /[A-Z]/g;
@@ -58,6 +58,7 @@ export const addSpansAndIds = (typedString, outputSentence) => {
   let newString = emojified2.split("");
 
   newString.map((char, i) => {
+    console.log(i, char);
     if (punctuationHashMap.has(char)) {
       newString[i] = `<span id=\"${punctuationHashMap.get(
         char
@@ -69,16 +70,17 @@ export const addSpansAndIds = (typedString, outputSentence) => {
     }
     // else if (char === " ") {
     //   newString[i] = `<span id=\"Spacel \" class=\"space\">${SPACES}</span>`;
-    // } else if (secondContractionWordHashMap.get(char)) {
-    //   newString[i] = `<span id=\"${getKeyByValue(
-    //     secondContractionWordHashMap,
-    //     char
-    //   )}\">`;
-    //   while (!ENDING_SECOND_CONTRACTION_WORD.test(char[i + 1])) {
-    //     i++;
-    //   }
-    //   newString[i] = `${char}</span>`;
     // }
+    else if (secondContractionWordHashMap.has(char)) {
+      console.log("in");
+      newString[i] = `<span id=\"${secondContractionWordHashMap.get(char)}\">`;
+      while (
+        !ENDING_SECOND_CONTRACTION_WORD.test(char[i] || i <= newString.length)
+      ) {
+        i++;
+      }
+      newString[i - 1] = `${char[i - 1]}</span>`;
+    }
   });
   outputSentence.innerHTML = newString.join("");
   return newString.join("");

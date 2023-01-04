@@ -136,16 +136,16 @@ const areSubsetOfFirstContractionWordSet = new Set([
 const secondContractionWordHashMap = new Map();
 
 secondContractionWordHashMap
-  .set("not", "❗")
-  .set("had", "🧢")
-  .set("would", "🪵")
-  .set("is", "🧘")
+  .set("not", "¬")
+  .set("had", "©")
+  .set("would", "°")
+  .set("is", "§")
   .set("have", "⚔️")
-  .set("are", "🏴‍☠️")
-  .set("shall", "🧙‍♂️")
-  .set("will", "📄")
-  .set("am", "🕣")
-  .set("us", "🇺🇸");
+  .set("are", "®")
+  .set("shall", "¦")
+  .set("will", "±")
+  .set("am", "µ")
+  .set("us", "¶");
 
 //try different approach where use array and surround words with unique characters (emoji) so no interference with punc spans
 
@@ -158,6 +158,7 @@ export const wrapContractionWithUniqueCharacter = (
     if (index === words.length - 1) return;
 
     // word.toLowerCase();  need to work on capital somehow...
+    let wrapperSymbol = secondContractionWordHashMap.get(words[index + 1]);
 
     if (
       (notSubsetOfFirstContractionWordSet.has(word) &&
@@ -180,9 +181,7 @@ export const wrapContractionWithUniqueCharacter = (
       (areSubsetOfFirstContractionWordSet.has(word) &&
         words[index + 1] === "are")
     ) {
-      words[index + 1] = `${secondContractionWordHashMap.get(
-        words[index + 1]
-      )}${words[index + 1]}`;
+      words[index + 1] = `${wrapperSymbol}${words[index + 1]}${wrapperSymbol}`;
     }
   });
 
