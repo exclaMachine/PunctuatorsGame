@@ -872,7 +872,7 @@ switchButton.addEventListener("pointerdown", (e) => {
 hintButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
 
-  nodeArr.forEach((punctuationSymbol) => {
+  numberOfPunctuationArray.forEach((punctuationSymbol) => {
     if (punctuationSymbol.className) {
       punctuationSymbol.className += " highlighted-punc";
 

@@ -9,16 +9,16 @@ function getKeyByValue(object, value) {
 }
 
 secondContractionWordHashMap
-  .set("¬", "not")
-  .set("©", "had")
-  .set("°", "would")
-  .set("§", "is")
-  .set("⚔️", "have")
-  .set("®", "are")
-  .set("¦", "shall")
-  .set("±", "will")
-  .set("µ", "am")
-  .set("¶", "us");
+  .set("¬", "not") //n't
+  .set("©", "had") //'d
+  .set("°", "would") //'d
+  .set("§", "is") //'s
+  .set("⚔️", "have") //'ve
+  .set("®", "are") //'re
+  .set("¦", "shall") //'ll
+  .set("±", "will") //'ll
+  .set("µ", "am") //'m
+  .set("¶", "us"); //'s
 
 let punc = "!?;:'.,";
 const CAPITAL_LETTERS = /[A-Z]/g;
@@ -50,9 +50,9 @@ punctuationHashMap
   .set("#", "Octo-Thwarter #");
 
 export const addSpansAndIds = (typedString, outputSentence) => {
-  let emojified2 = changeEmoticonsToEmojis(typedString);
+  let emojified = changeEmoticonsToEmojis(typedString);
 
-  //let emojified2 = wrapContractionWithUniqueCharacter(emojified);
+  let emojified2 = wrapContractionWithUniqueCharacter(emojified);
 
   //when you split an emoji it can be up to 5 different characters "🏴‍☠️" = '/uD83C' '/uDFF4' '' '☠' ''
   let newString = emojified2.split("");
@@ -66,17 +66,17 @@ export const addSpansAndIds = (typedString, outputSentence) => {
       newString[
         i
       ] = `<span id=\"Full Stop (Capitalize)\" class=\"capital-black-hole\">${char.toLowerCase()}</span>`;
+    } else if (char === " ") {
+      newString[i] = `<span id=\"Spacel \" class=\"space\">${SPACES}</span>`;
+    } else if (secondContractionWordHashMap.has(char)) {
+      if (ENDING_SECOND_CONTRACTION_WORD.test(newString[i + 1])) {
+        newString[i] = `</span>`;
+      } else {
+        newString[i] = `<span id=\"${secondContractionWordHashMap.get(
+          char
+        )}\">`;
+      }
     }
-    // else if (secondContractionWordHashMap.has(char)) {
-    //   if (ENDING_SECOND_CONTRACTION_WORD.test(newString[i + 1])) {
-    //     newString[i] = `</span>`;
-    //   } else {
-    //     newString[i] = `<span id=\"${secondContractionWordHashMap.get(
-    //       char
-    //     )}\">`;
-    //   }
-
-    // }
   });
   outputSentence.innerHTML = newString.join("");
   return newString.join("");
@@ -102,13 +102,13 @@ export const waitForElement = (selector) => {
     const observer = new MutationObserver((mutations) => {
       let mutArr = mutations[0].addedNodes;
       mutArr.forEach((el) => {
-        if (el.className === "space") {
-          spaceArr.push(el);
-        } else {
-          nodeArr.push(el);
+        nodeArr.push(el);
 
-          if (el.className) numberOfPunctuationArray.push(el);
-        }
+        if (
+          el.className === "hidden-punc" ||
+          el.className === "capital-black-hole"
+        )
+          numberOfPunctuationArray.push(el);
       });
 
       if (document.querySelector(selector)) {
