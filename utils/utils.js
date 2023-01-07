@@ -72,7 +72,9 @@ export const addSpansAndIds = (typedString, outputSentence) => {
       if (ENDING_SECOND_CONTRACTION_WORD.test(newString[i + 1])) {
         newString[i] = `</span>`;
       } else {
-        newString[i] = `<span id=\"${secondContractionWordHashMap.get(
+        newString[
+          i
+        ] = `<span id=\"Anacontraction\" class=\"${secondContractionWordHashMap.get(
           char
         )}\">`;
       }

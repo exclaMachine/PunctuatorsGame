@@ -7,3 +7,13 @@ export const addSpaceSpans = (typedString, outputSentence) => {
     }
   });
 };
+
+export const shortenContraction = (node) => {
+  switch (node.className) {
+    case "had":
+    case "would":
+      node.innerHTML = `<span id=\"Apostrophantom '\" class=\"hidden-punc\">‘</span>d`;
+      node.previousSibling.className = "shrink";
+      break;
+  }
+};

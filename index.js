@@ -46,6 +46,8 @@ const openModalButtons = document.querySelectorAll("[data-modal-target]");
 const closeModalButtons = document.querySelectorAll("[data-close-button]");
 const overlay = document.getElementById("overlay");
 
+console.log({ nodeArr });
+
 const buttonSounds = {
   clicky: new Howl({
     src: ["./sounds/click.mp3"],
