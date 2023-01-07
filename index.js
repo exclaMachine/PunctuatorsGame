@@ -274,6 +274,25 @@ projectileSoundVolume,
 secondHeroImage
 */
 //create a function that makes him disappear when projectile shoots
+class Anacontraction extends Hero {
+  constructor() {
+    super(
+      "./images/Ana.png",
+      0.8,
+      "Anacontraction",
+      "gold",
+      118,
+      50,
+      "./images/Ectoplasm.png",
+      undefined,
+      0.2,
+      5.0,
+      undefined,
+      "white"
+    );
+  }
+}
+
 class Apostrophantom extends Hero {
   constructor() {
     super(
