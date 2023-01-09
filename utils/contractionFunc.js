@@ -72,6 +72,7 @@ const hadWouldSubsetOfFirstContractionWordSet = new Set([
 
 const willShallSubsetOfFirstContractionWordSet = new Set([
   "he",
+  "i",
   "I",
   "it",
   "she",
@@ -141,7 +142,8 @@ secondContractionWordHashMap
   .set("had", "©")
   .set("would", "°")
   .set("is", "§")
-  .set("have", "⚔️")
+  .set("has", "§")
+  .set("have", "¢")
   .set("are", "®")
   .set("shall", "¦")
   .set("will", "±")
@@ -189,54 +191,20 @@ export const wrapContractionWithUniqueCharacter = (
   return words.join(" ");
 };
 
-export const surroundContractionWordsWithSpans = (
-  typedSentence,
-  outputSentence
-) => {
-  let words = typedSentence.split(" ");
-  words.map((word, index) => {
-    if (index === words.length - 1) return;
-
-    // word.toLowerCase();  need to work on capital somehow...
-
-    if (
-      (notSubsetOfFirstContractionWordSet.has(word) &&
-        (words[index + 1] === "not" ||
-          words[index + 1] === "not?" ||
-          words[index + 1] === "not." ||
-          words[index + 1] === "not!")) ||
-      (hadWouldSubsetOfFirstContractionWordSet.has(word) &&
-        (words[index + 1] === "had" || words[index + 1] === "would")) ||
-      (willShallSubsetOfFirstContractionWordSet.has(word) &&
-        (words[index + 1] === "will" || words[index + 1] === "shall")) ||
-      (isHasSubsetOfFirstContractionWordSet.has(word) &&
-        (words[index + 1] === "is" || words[index + 1] === "has")) ||
-      (word === "i" && words[index + 1] === "am") ||
-      (haveSubsetOfFirstContractionWordSet.has(word) &&
-        words[index + 1] === "have") ||
-      (word === "let" && words[index + 1] === "us") ||
-      ((word === "here" || word === "it") && words[index + 1] === "is") ||
-      (areSubsetOfFirstContractionWordSet.has(word) &&
-        words[index + 1] === "are")
-    ) {
-      words[index + 1] = `<span id=\"${
-        words[index + 1]
-      }\" class=\"contraction\">${words[index + 1]}</span>`;
-    }
-  });
-  let newSentence = words.join(" ");
-  //outputSentence.innerHTML = newSentence;
-};
-
 export const shortenContraction = (node, nodeArr) => {
   switch (node.className) {
     case "had":
     case "would":
-      node.outerHTML = `<span id=\"Apostrophantom '\">‘</span>d`;
       node.previousSibling.className = "shrink-space";
+      node.outerHTML = `<span id=\"Apostrophantom '\">‘</span>d`;
       break;
     case "is":
     case "us":
+      node.previousSibling.className = "shrink-space"; //this has to be called before change of outerHTML or doesn't work
+      node.outerHTML = `<span id=\"Apostrophantom '\">'</span>s`;
+      break;
+    case "shall":
+    case "will":
       node.previousSibling.className = "shrink-space"; //this has to be called before change of outerHTML or doesn't work
       node.outerHTML = `<span id=\"Apostrophantom '\">'</span>s`;
       break;

@@ -13,7 +13,8 @@ secondContractionWordHashMap
   .set("©", "had") //'d
   .set("°", "would") //'d
   .set("§", "is") //'s
-  .set("⚔️", "have") //'ve
+  .set("§", "has") //'s
+  .set("¢", "have") //'ve
   .set("®", "are") //'re
   .set("¦", "shall") //'ll
   .set("±", "will") //'ll

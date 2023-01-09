@@ -4,7 +4,6 @@ import { nodeArr, numberOfPunctuationArray } from "./utils/utils.js";
 import { heroToTheRescue } from "./utils/utils.js";
 import { setClassName } from "./utils/utils.js";
 import { createRandomMadLibSentence } from "./SentenceFunc.js";
-import { surroundContractionWordsWithSpans } from "./utils/contractionFunc.js";
 import { shortenContraction } from "./utils/contractionFunc.js";
 
 const canvas = document.getElementById("background");
@@ -18,7 +17,7 @@ let SWITCH_CASE_NUMBER = 2;
 
 const ENDING_MESSAGE1 = "You found all the punctuation and capital letters!";
 const ENDING_MESSAGE2 = "Refresh the page to play again!";
-const PUNC_REGEX = /[\'\".,\/#!$%\^&\*;:{}=\-_`~()\‘\’\“\”]/g;
+const PUNC_REGEX = /[\'\".,\/#!$%\^&\*;:{}?=\-_`~()\‘\’\“\”]/g;
 
 const errorMessage = document.getElementById("error-message");
 const characterCount = document.getElementById("character-count");
@@ -106,7 +105,6 @@ removePuncButton.addEventListener("click", () => {
   }
 
   let punctuated = addSpansAndIds(initialTypedSentence.value, out1);
-  surroundContractionWordsWithSpans(punctuated, out1);
 
   setClassName("go-away", initialTypedSentence, removePuncButton, startBanner);
   setClassName("grid-container", characterControls);
