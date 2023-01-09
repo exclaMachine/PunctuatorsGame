@@ -36,6 +36,14 @@ body {
     font-size: 0;
 }
 
+.hint-capital-underline {
+    text-decoration: underline red;
+}
+
+.hint-contraction-underline {
+    text-decoration: underline dotted gold;
+}
+
 /* #contraction-container {
     position: fixed;
     margin-top: 50px;

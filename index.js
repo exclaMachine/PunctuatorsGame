@@ -46,8 +46,6 @@ const openModalButtons = document.querySelectorAll("[data-modal-target]");
 const closeModalButtons = document.querySelectorAll("[data-close-button]");
 const overlay = document.getElementById("overlay");
 
-console.log({ nodeArr });
-
 const buttonSounds = {
   clicky: new Howl({
     src: ["./sounds/click.mp3"],
@@ -900,11 +898,23 @@ hintButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
 
   numberOfPunctuationArray.forEach((punctuationSymbol) => {
-    if (punctuationSymbol.className) {
+    if (punctuationSymbol.className === "hidden-punc") {
       punctuationSymbol.className += " highlighted-punc";
 
       setTimeout(() => {
         punctuationSymbol.classList.remove("highlighted-punc");
+      }, 1000);
+    } else if (punctuationSymbol.className === "capital-black-hole") {
+      punctuationSymbol.className += " hint-capital-underline";
+
+      setTimeout(() => {
+        punctuationSymbol.classList.remove("hint-capital-underline");
+      }, 1000);
+    } else if (punctuationSymbol.className) {
+      punctuationSymbol.className += " hint-contraction-underline";
+
+      setTimeout(() => {
+        punctuationSymbol.classList.remove("hint-contraction-underline");
       }, 1000);
     }
   });
