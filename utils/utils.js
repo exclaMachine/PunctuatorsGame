@@ -109,7 +109,8 @@ export const waitForElement = (selector) => {
 
         if (
           el.className === "hidden-punc" ||
-          el.className === "capital-black-hole"
+          el.className === "capital-black-hole" ||
+          el.id === "Anacontraction"
         )
           numberOfPunctuationArray.push(el);
       });

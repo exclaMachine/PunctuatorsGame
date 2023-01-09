@@ -200,13 +200,30 @@ export const shortenContraction = (node, nodeArr) => {
       break;
     case "is":
     case "us":
+    case "has":
       node.previousSibling.className = "shrink-space"; //this has to be called before change of outerHTML or doesn't work
       node.outerHTML = `<span id=\"Apostrophantom '\">'</span>s`;
       break;
     case "shall":
     case "will":
-      node.previousSibling.className = "shrink-space"; //this has to be called before change of outerHTML or doesn't work
-      node.outerHTML = `<span id=\"Apostrophantom '\">'</span>s`;
+      node.previousSibling.className = "shrink-space";
+      node.outerHTML = `<span id=\"Apostrophantom '\">'</span>ll`;
+      break;
+    case "not":
+      node.previousSibling.className = "shrink-space";
+      node.outerHTML = `n<span id=\"Apostrophantom '\">'</span>t`;
+      break;
+    case "am":
+      node.previousSibling.className = "shrink-space";
+      node.outerHTML = `<span id=\"Apostrophantom '\">'</span>m`;
+      break;
+    case "are":
+      node.previousSibling.className = "shrink-space";
+      node.outerHTML = `<span id=\"Apostrophantom '\">'</span>re`;
+      break;
+    case "have":
+      node.previousSibling.className = "shrink-space";
+      node.outerHTML = `<span id=\"Apostrophantom '\">'</span>ve`;
       break;
   }
 };
