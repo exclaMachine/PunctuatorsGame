@@ -5,6 +5,7 @@ import { heroToTheRescue } from "./utils/utils.js";
 import { setClassName } from "./utils/utils.js";
 import { createRandomMadLibSentence } from "./SentenceFunc.js";
 import { surroundContractionWordsWithSpans } from "./utils/contractionFunc.js";
+import { shortenContraction } from "./utils/contractionFunc.js";
 
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
@@ -278,7 +279,7 @@ class Anacontraction extends Hero {
   constructor() {
     super(
       "./images/Ana.png",
-      0.8,
+      0.3,
       "Anacontraction",
       "gold",
       118,
@@ -636,6 +637,7 @@ let colon = new SargeColon();
 let semicolon = new SemiColonel();
 let hyphen = new DrHyphenol();
 let hashtag = new OctoThwarter(100);
+let anacontraction = new Anacontraction();
 
 let availableHeroArray = [
   period,
@@ -651,6 +653,7 @@ let availableHeroArray = [
   hyphen,
   asterisk,
   hashtag,
+  anacontraction,
 ];
 
 // characterCount.setHTML(`${availableHeroArray.length}`);
@@ -782,6 +785,10 @@ function animate() {
                 punctuationSymbol.classList.remove("hidden-punc");
               }, 0);
 
+              if (player.symbol === anacontraction.symbol) {
+                shortenContraction(punctuationSymbol);
+              }
+
               //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
             } else if (projectile.position.y + projectile.height <= 0) {
               setTimeout(() => {
@@ -866,6 +873,7 @@ shootButton.addEventListener("pointerdown", (e) => {
     // player.update2();
   }
 });
+console.log("node2", nodeArr);
 
 switchButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();

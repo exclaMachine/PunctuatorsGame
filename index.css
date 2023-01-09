@@ -31,6 +31,20 @@ body {
     margin-top: 40px;
 }
 
+.shrink-space {
+    transition: font-size 1s;
+    font-size: 0;
+}
+
+/* #contraction-container {
+    position: fixed;
+    margin-top: 50px;
+}
+
+#contraction-check {
+    margin: 10px;
+} */
+
 footer {
     color: blueviolet;
     font-family: 'Palanquin', sans-serif;

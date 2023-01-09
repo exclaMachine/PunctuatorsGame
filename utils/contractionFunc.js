@@ -54,6 +54,7 @@ const notSubsetOfFirstContractionWordSet = new Set([
 const hadWouldSubsetOfFirstContractionWordSet = new Set([
   "he",
   "I",
+  "i",
   "it",
   "she",
   "they",
@@ -225,4 +226,19 @@ export const surroundContractionWordsWithSpans = (
   });
   let newSentence = words.join(" ");
   //outputSentence.innerHTML = newSentence;
+};
+
+export const shortenContraction = (node, nodeArr) => {
+  switch (node.className) {
+    case "had":
+    case "would":
+      node.outerHTML = `<span id=\"Apostrophantom '\">‘</span>d`;
+      node.previousSibling.className = "shrink-space";
+      break;
+    case "is":
+    case "us":
+      node.previousSibling.className = "shrink-space"; //this has to be called before change of outerHTML or doesn't work
+      node.outerHTML = `<span id=\"Apostrophantom '\">'</span>s`;
+      break;
+  }
 };
