@@ -271,12 +271,12 @@ projectileSoundVolume,
 secondHeroImage
 */
 //create a function that makes him disappear when projectile shoots
-class Anacontraction extends Hero {
+class AnacontractShine extends Hero {
   constructor() {
     super(
       "./images/Ana.png",
       0.3,
-      "Anacontraction",
+      "AnacontractShine",
       "gold",
       118,
       50,
@@ -633,7 +633,7 @@ let colon = new SargeColon();
 let semicolon = new SemiColonel();
 let hyphen = new DrHyphenol();
 let hashtag = new OctoThwarter(100);
-let anacontraction = new Anacontraction();
+let anacontraction = new AnacontractShine();
 
 let availableHeroArray = [
   period,

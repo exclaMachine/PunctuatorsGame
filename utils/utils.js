@@ -75,7 +75,7 @@ export const addSpansAndIds = (typedString, outputSentence) => {
       } else {
         newString[
           i
-        ] = `<span id=\"Anacontraction\" class=\"${secondContractionWordHashMap.get(
+        ] = `<span id=\"AnacontractShine\" class=\"${secondContractionWordHashMap.get(
           char
         )}\">`;
       }
@@ -110,7 +110,7 @@ export const waitForElement = (selector) => {
         if (
           el.className === "hidden-punc" ||
           el.className === "capital-black-hole" ||
-          el.id === "Anacontraction"
+          el.id === "AnacontractShine"
         )
           numberOfPunctuationArray.push(el);
       });
