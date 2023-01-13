@@ -192,6 +192,16 @@ export const wrapContractionWithUniqueCharacter = (
 };
 
 export const shortenContraction = (node, nodeArr) => {
+  //so far doesn't add span but don't know if I need them
+  if (
+    node.className === "not" &&
+    node.previousSibling.previousSibling.nodeValue === "will"
+  ) {
+    node.previousSibling.previousSibling.nodeValue = `won'`;
+    node.previousSibling.className = "shrink-space";
+    node.outerHTML = `t`;
+  }
+
   switch (node.className) {
     case "had":
     case "would":
