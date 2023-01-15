@@ -285,7 +285,8 @@ class AnacontractShine extends Hero {
       0.2,
       5.0,
       undefined,
-      "white"
+      "white",
+      "./sounds/projectile-hit/ana-eat.mp3"
     );
   }
 }
