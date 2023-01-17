@@ -4,7 +4,10 @@ import { nodeArr, numberOfPunctuationArray } from "./utils/utils.js";
 import { heroToTheRescue } from "./utils/utils.js";
 import { setClassName } from "./utils/utils.js";
 import { createRandomMadLibSentence } from "./SentenceFunc.js";
-import { shortenContraction } from "./utils/contractionFunc.js";
+import {
+  shortenContraction,
+  secondContractionWordSet,
+} from "./utils/contractionFunc.js";
 
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
@@ -911,7 +914,7 @@ hintButton.addEventListener("pointerdown", (e) => {
       setTimeout(() => {
         punctuationSymbol.classList.remove("hint-capital-underline");
       }, 1000);
-    } else if (punctuationSymbol.className) {
+    } else if (secondContractionWordSet.has(punctuationSymbol.className)) {
       punctuationSymbol.className += " hint-contraction-underline";
 
       setTimeout(() => {
