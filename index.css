@@ -411,3 +411,26 @@ footer > div {
         margin-left: 20px;
         border-radius: 5px;
     }
+
+    .speech-bubble {
+        font-size: 6vw;
+        word-spacing: 0.2rem;
+        margin: 0 auto;
+        background: white;
+        padding: 1rem;
+        border-bottom: 1vw solid #0e6dad;
+        position: relative;
+        line-height: 1.2rem;
+    }
+
+    .speech-bubble span {
+        opacity: 0;
+    }
+
+    .speech-bubble span.revealed {
+        opacity: 1;
+    }
+
+    .text span.green {
+        color: green;
+    }
