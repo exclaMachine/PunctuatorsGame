@@ -8,7 +8,7 @@ import {
   shortenContraction,
   secondContractionWordSet,
 } from "./utils/contractionFunc.js";
-
+import { textRevealSpeeds, changeTextToSpeechBubble } from "./speechbubble.js";
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
 // const period = document.getElementById("first");
@@ -21,6 +21,19 @@ let SWITCH_CASE_NUMBER = 2;
 const ENDING_MESSAGE1 = "You found all the punctuation and capital letters!";
 const ENDING_MESSAGE2 = "Refresh the page to play again!";
 const PUNC_REGEX = /[\'\".,\/#!$%\^&\*;:{}?=\-_`~()\‘\’\“\”]/g;
+let speechContainer = document.querySelector(".speech-bubble");
+
+let speechLineForWin = [
+  {
+    string: "You found all the punctuation and capital letters!!",
+    speed: textRevealSpeeds.normal,
+  },
+  {
+    string: "Refresh the page to play again!",
+    speed: textRevealSpeeds.fast,
+    classes: ["green"],
+  },
+];
 
 const errorMessage = document.getElementById("error-message");
 const characterCount = document.getElementById("character-count");
@@ -34,6 +47,9 @@ const startBanner = document.getElementById("banner");
 
 const endingMessage1 = document.getElementById("ending_message_1");
 const endingMessage2 = document.getElementById("ending_message_2");
+
+// endingMessage1.innerText = ENDING_MESSAGE1;
+// endingMessage2.innerText = ENDING_MESSAGE2;
 
 const characterControls = document.getElementById("control-buttons");
 const shootButton = document.getElementById("shoot-button");
@@ -700,6 +716,7 @@ function animate() {
                 // console.log("All Punctuation Hit!");
                 endingMessage1.innerText = ENDING_MESSAGE1;
                 endingMessage2.innerText = ENDING_MESSAGE2;
+                // changeTextToSpeechBubble(speechLineForWin, endingMessage1);
                 gameSfx.end.play();
               }
 
@@ -759,6 +776,7 @@ function animate() {
                 // console.log("All Punctuation Hit!");
                 endingMessage1.innerText = ENDING_MESSAGE1;
                 endingMessage2.innerText = ENDING_MESSAGE2;
+                // changeTextToSpeechBubble(speechLineForWin, endingMessage1);
                 gameSfx.end.play();
               }
               setTimeout(() => {

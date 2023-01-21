@@ -274,7 +274,6 @@ footer > div {
     }
 
     #ending-message-container > h2 {
-        /* position: absolute; */
         color: blueviolet;
         font-family: 'Palanquin', sans-serif;
         text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
@@ -413,12 +412,12 @@ footer > div {
     }
 
     .speech-bubble {
-        font-size: 6vw;
+        font-size: 1rem;
         word-spacing: 0.2rem;
         margin: 0 auto;
-        background: white;
+        /* background: white; */
         padding: 1rem;
-        border-bottom: 1vw solid #0e6dad;
+        /* border-bottom: 1vw solid #0e6dad; */
         position: relative;
         line-height: 1.2rem;
     }
