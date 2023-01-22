@@ -17,7 +17,7 @@ let root = document.documentElement;
 
 let CREATE_SENTENCE_COUNT = 1;
 let SWITCH_CASE_NUMBER = 2;
-
+let ENDING_REACHED = false;
 const ENDING_MESSAGE1 = "You found all the punctuation and capital letters!";
 const ENDING_MESSAGE2 = "Refresh the page to play again!";
 const PUNC_REGEX = /[\'\".,\/#!$%\^&\*;:{}?=\-_`~()\‘\’\“\”]/g;
@@ -26,7 +26,7 @@ let speechContainer = document.querySelector(".speech-bubble");
 let speechLineForWin = [
   {
     string: "You found all the punctuation and capital letters!!",
-    speed: textRevealSpeeds.normal,
+    speed: textRevealSpeeds.fast,
   },
   {
     string: "Refresh the page to play again!",
@@ -47,9 +47,6 @@ const startBanner = document.getElementById("banner");
 
 const endingMessage1 = document.getElementById("ending_message_1");
 const endingMessage2 = document.getElementById("ending_message_2");
-
-// endingMessage1.innerText = ENDING_MESSAGE1;
-// endingMessage2.innerText = ENDING_MESSAGE2;
 
 const characterControls = document.getElementById("control-buttons");
 const shootButton = document.getElementById("shoot-button");
@@ -712,11 +709,19 @@ function animate() {
               // console.log("hitTongue!");
               //end game logic
               allPunctuationHit.add(punctuationSymbol);
-              if (allPunctuationHit.size === numberOfPunctuationArray.length) {
-                // console.log("All Punctuation Hit!");
-                endingMessage1.innerText = ENDING_MESSAGE1;
-                endingMessage2.innerText = ENDING_MESSAGE2;
-                // changeTextToSpeechBubble(speechLineForWin, endingMessage1);
+              if (
+                allPunctuationHit.size === numberOfPunctuationArray.length &&
+                ENDING_REACHED === false
+              ) {
+                // console.log("All comma Punctuation Hit!");
+
+                changeTextToSpeechBubble(speechLineForWin, endingMessage1);
+                root.style.setProperty("--color", player.characterColor);
+                root.style.setProperty(
+                  "--speech-bubble-triangle",
+                  player.position.x
+                );
+                ENDING_REACHED = true;
                 gameSfx.end.play();
               }
 
@@ -772,11 +777,18 @@ function animate() {
               }
 
               allPunctuationHit.add(punctuationSymbol);
-              if (allPunctuationHit.size === numberOfPunctuationArray.length) {
+              if (
+                allPunctuationHit.size === numberOfPunctuationArray.length &&
+                ENDING_REACHED === false
+              ) {
                 // console.log("All Punctuation Hit!");
-                endingMessage1.innerText = ENDING_MESSAGE1;
-                endingMessage2.innerText = ENDING_MESSAGE2;
-                // changeTextToSpeechBubble(speechLineForWin, endingMessage1);
+                changeTextToSpeechBubble(speechLineForWin, endingMessage1);
+                root.style.setProperty("--color", player.characterColor);
+                root.style.setProperty(
+                  "--speech-bubble-triangle",
+                  player.position.x
+                );
+                ENDING_REACHED = true;
                 gameSfx.end.play();
               }
               setTimeout(() => {

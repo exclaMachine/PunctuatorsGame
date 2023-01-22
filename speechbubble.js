@@ -8,6 +8,7 @@ export let textRevealSpeeds = {
 };
 
 export let changeTextToSpeechBubble = (speechLines, htmlElement) => {
+  htmlElement.classList.add("speech-bubble");
   let letterArray = [];
   speechLines.forEach((line, index) => {
     if (index < speechLines.length - 1) {
