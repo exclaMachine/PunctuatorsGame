@@ -18,8 +18,6 @@ let root = document.documentElement;
 let CREATE_SENTENCE_COUNT = 1;
 let SWITCH_CASE_NUMBER = 2;
 let ENDING_REACHED = false;
-const ENDING_MESSAGE1 = "You found all the punctuation and capital letters!";
-const ENDING_MESSAGE2 = "Refresh the page to play again!";
 const PUNC_REGEX = /[\'\".,\/#!$%\^&\*;:{}?=\-_`~()\‘\’\“\”]/g;
 let speechContainer = document.querySelector(".speech-bubble");
 
@@ -716,11 +714,11 @@ function animate() {
                 // console.log("All comma Punctuation Hit!");
 
                 changeTextToSpeechBubble(speechLineForWin, endingMessage1);
-                root.style.setProperty("--color", player.characterColor);
                 root.style.setProperty(
                   "--speech-bubble-triangle",
                   player.position.x
                 );
+                root.style.setProperty("--color", player.characterColor);
                 ENDING_REACHED = true;
                 gameSfx.end.play();
               }
@@ -783,11 +781,11 @@ function animate() {
               ) {
                 // console.log("All Punctuation Hit!");
                 changeTextToSpeechBubble(speechLineForWin, endingMessage1);
-                root.style.setProperty("--color", player.characterColor);
                 root.style.setProperty(
                   "--speech-bubble-triangle",
                   player.position.x
                 );
+                root.style.setProperty("--color", player.characterColor);
                 ENDING_REACHED = true;
                 gameSfx.end.play();
               }
