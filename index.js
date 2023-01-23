@@ -716,7 +716,7 @@ function animate() {
                 changeTextToSpeechBubble(speechLineForWin, endingMessage1);
                 root.style.setProperty(
                   "--speech-bubble-triangle",
-                  player.position.x
+                  projectile.position.x
                 );
                 root.style.setProperty("--color", player.characterColor);
                 ENDING_REACHED = true;
@@ -783,7 +783,7 @@ function animate() {
                 changeTextToSpeechBubble(speechLineForWin, endingMessage1);
                 root.style.setProperty(
                   "--speech-bubble-triangle",
-                  player.position.x
+                  projectile.position.x
                 );
                 root.style.setProperty("--color", player.characterColor);
                 ENDING_REACHED = true;
