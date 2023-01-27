@@ -29,35 +29,18 @@ const wrapSpoonerismWithUniqueCharacter = (splitWordArray) => {
           VOWELS.includes(letterOfSecondWord)
         ) {
           if (VOWELS.includes(firstWord[j + 1])) {
-            firstWord = secondWord.splice(j); // need to think on this...
+            // firstWord = secondWord.splice(0, j) + firstWord.splice(j);
+            // secondWord = firstWord.splice(0, j) + secondWord.splice(j);
+            splitWordArray[i] = secondWord.splice(0, j) + firstWord.splice(j);
+            splitWordArray[i + 1] =
+              firstWord.splice(0, j) + secondWord.splice(j);
+            console.log({ splitWordArray });
           }
         }
       }
     }
 
-    // let firstWordOneLetterReplaced = await fetch(
-    //     `https://api.dictionaryapi.dev/api/v2/entries/en/${
-    //         secondWord[0] + spoonerWord.slice(1)
-    //     }`
-    //     );
-    //     let firstData = await firstWord.json();
-
-    //     let secondWordOneLetterReplaced = await fetch(
-    //         `https://api.dictionaryapi.dev/api/v2/entries/en/${
-    //             spoonerWord[0] + secondWord.slice(1)
-    //         }`
-    //         );
-    //         let secondData = await secondWord.json();
-
-    if (!firstData[0] || !secondData[0]) return;
-
-    if (firstData[0] && secondData[0]) {
-      splitWordArray[index] = `Ð${splitWordArray[index]}Ð`;
-      splitWordArray[index + 1] = `Ð${splitWordArray[index + 1]}Ð`;
-    }
-  }
-  console.log(secondWord[0] + spoonerWord.slice(1));
-  console.log(spoonerWord[0] + secondWord.slice(1));
+  return splitWordArray;
 };
 
-// console.log(wrapSpoonerismWithUniqueCharacter(["butt", "just", "cut", "go"]));
+console.log(wrapSpoonerismWithUniqueCharacter(["butt", "just", "cut", "go"]));
