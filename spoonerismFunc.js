@@ -33,7 +33,7 @@ const wrapSpoonerismWithUniqueCharacter = (splitWordArray) => {
         continue;
       } else if (
         !VOWELS.includes(letterOfFirstWord) &&
-        (VOWELS.includes(letterOfSecondWord) || letterOfSecondWord === 'y')
+        (VOWELS.includes(letterOfSecondWord) || letterOfSecondWord === "y")
       ) {
         if (VOWELS.includes(firstWord[j + 1])) {
           splitWordArray[i] = secondWord.slice(0, j) + firstWord.slice(j);
@@ -41,7 +41,7 @@ const wrapSpoonerismWithUniqueCharacter = (splitWordArray) => {
           console.log({ splitWordArray });
         }
       } else if (
-        (VOWELS.includes(letterOfFirstWord) || || letterOfFirstWord === 'y') &&
+        (VOWELS.includes(letterOfFirstWord) || letterOfFirstWord === "y") &&
         !VOWELS.includes(letterOfSecondWord)
       ) {
         if (VOWELS.includes(secondWord[j + 1])) {
