@@ -884,7 +884,7 @@ shootButton.addEventListener("pointerdown", (e) => {
         },
       })
     );
-  } else {
+  } else if (player.characterColor !== undefined) {
     projectiles.push(
       new Projectile({
         position: {
@@ -1006,7 +1006,7 @@ addEventListener("keydown", ({ key }) => {
             },
           })
         );
-      } else {
+      } else if (player.characterColor !== undefined) {
         projectiles.push(
           new Projectile({
             position: {
