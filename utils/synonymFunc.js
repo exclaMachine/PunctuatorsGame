@@ -1,3 +1,6 @@
+//create a way where the character isn't added until the game is won. Then they can change the words
+//after you fetch it should i save it as that
+
 const freeDictionaryFetchSynonyms = async (word) => {
   let res = await fetch(
     `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`
@@ -9,11 +12,14 @@ const freeDictionaryFetchSynonyms = async (word) => {
     return;
   } else if (data[0].meanings[0].definitions[0].synonyms.length > 0) {
     synonym = data[0].meanings[0].definitions[0].synonyms[0];
+    return synonym;
   } else {
     return;
   }
 };
 
-export const findAndSurroundSynonymWordsWithStrong = (typedSentence) => {
+export const findAndSurroundSynonymWordsWithUniqueCharacter = (
+  typedSentence
+) => {
   let words = typedSentence.split(" ");
 };
