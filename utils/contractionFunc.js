@@ -157,6 +157,7 @@ export const wrapContractionWithUniqueCharacter = (
   outputSentence
 ) => {
   let words = typedSentence.split(" ");
+
   words.map((word, index) => {
     if (index === words.length - 1) return;
 
