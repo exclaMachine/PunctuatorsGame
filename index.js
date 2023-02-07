@@ -288,7 +288,7 @@ secondHeroImage
 class AnacontractShine extends Hero {
   constructor() {
     super(
-      "./images/Ana.png",
+      "./images/Anacontractshine.png",
       0.3,
       "AnacontractShine",
       "gold",
