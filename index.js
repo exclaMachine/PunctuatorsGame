@@ -294,7 +294,7 @@ class AnacontractShine extends Hero {
       "gold",
       118,
       50,
-      "./images/Ectoplasm.png",
+      "./images/AnacontractshineEat.png",
       undefined,
       0.2,
       5.0,
