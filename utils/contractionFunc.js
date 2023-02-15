@@ -150,6 +150,10 @@ secondContractionWordHashMap
   .set("am", "µ")
   .set("us", "¶");
 
+const articleHashMap = new Map();
+
+articleHashMap.set("a", "¼").set("the", "½");
+
 //try different approach where use array and surround words with unique characters (emoji) so no interference with punc spans
 
 export const wrapContractionWithUniqueCharacter = (
@@ -163,7 +167,7 @@ export const wrapContractionWithUniqueCharacter = (
 
     // word.toLowerCase();  need to work on capital somehow...
     let wrapperSymbol = secondContractionWordHashMap.get(words[index + 1]);
-
+    let articleWrapper = articleHashMap.get(words[index]);
     if (
       (notSubsetOfFirstContractionWordSet.has(word) &&
         (words[index + 1] === "not" ||
@@ -186,6 +190,9 @@ export const wrapContractionWithUniqueCharacter = (
         words[index + 1] === "are")
     ) {
       words[index + 1] = `${wrapperSymbol}${words[index + 1]}${wrapperSymbol}`;
+    }
+    if (articleHashMap.has(word)) {
+      words[index] = `${articleWrapper}${words[index]}${articleWrapper}`;
     }
   });
 

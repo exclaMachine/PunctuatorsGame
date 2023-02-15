@@ -21,6 +21,9 @@ secondContractionWordHashMap
   .set("µ", "am") //'m
   .set("¶", "us"); //'s
 
+const articleHashMap = new Map();
+articleHashMap.set("¼", "a").set("½", "the");
+
 let punc = "!?;:'.,";
 const CAPITAL_LETTERS = /[A-Z]/g;
 const SPACES = " ";
@@ -54,7 +57,6 @@ export const addSpansAndIds = (typedString, outputSentence) => {
   let emojified = changeEmoticonsToEmojis(typedString);
 
   let emojified2 = wrapContractionWithUniqueCharacter(emojified);
-
   //when you split an emoji it can be up to 5 different characters "🏴‍☠️" = '/uD83C' '/uDFF4' '' '☠' ''
   let newString = emojified2.split("");
 
@@ -69,6 +71,14 @@ export const addSpansAndIds = (typedString, outputSentence) => {
       ] = `<span id=\"Full Stop (Capitalize)\" class=\"capital-black-hole\">${char.toLowerCase()}</span>`;
     } else if (char === " ") {
       newString[i] = `<span id=\"Spacel \" class=\"space\">${SPACES}</span>`;
+    } else if (articleHashMap.has(char)) {
+      if (ENDING_SECOND_CONTRACTION_WORD.test(newString[i + 1])) {
+        newString[i] = `</span>`;
+      } else {
+        newString[i] = `<span id=\"ArtTheTicker\" class=\"${articleHashMap.get(
+          char
+        )}\">`;
+      }
     } else if (secondContractionWordHashMap.has(char)) {
       if (ENDING_SECOND_CONTRACTION_WORD.test(newString[i + 1])) {
         newString[i] = `</span>`;
