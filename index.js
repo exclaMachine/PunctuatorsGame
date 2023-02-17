@@ -324,6 +324,25 @@ class Apostrophantom extends Hero {
   }
 }
 
+class ArtTheTickler extends Hero {
+  constructor() {
+    super(
+      "./images/Apostrophantom.png",
+      0.8,
+      "ArtTheTickler ",
+      "black",
+      118,
+      50,
+      "./images/Ectoplasm.png",
+      "./sounds/article-laughing.mp3",
+      0.2,
+      5.0,
+      undefined,
+      "white"
+    );
+  }
+}
+
 class CommaChameleon extends Hero {
   constructor(projectileLength) {
     super(
