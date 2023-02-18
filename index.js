@@ -327,7 +327,7 @@ class Apostrophantom extends Hero {
 class ArtTheTickler extends Hero {
   constructor() {
     super(
-      "./images/Apostrophantom.png",
+      "./images/Article.png",
       0.8,
       "ArtTheTickler ",
       "black",
@@ -338,7 +338,7 @@ class ArtTheTickler extends Hero {
       0.2,
       5.0,
       undefined,
-      "white"
+      "./images/Article2.png"
     );
   }
 }
