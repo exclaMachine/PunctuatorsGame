@@ -9,6 +9,7 @@ import {
   secondContractionWordSet,
 } from "./utils/contractionFunc.js";
 import { textRevealSpeeds, changeTextToSpeechBubble } from "./speechbubble.js";
+import { shakeAndBorderizeArticle } from "./articleFunc.js";
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
 // const period = document.getElementById("first");
@@ -328,17 +329,18 @@ class ArtTheTickler extends Hero {
   constructor() {
     super(
       "./images/Article.png",
-      0.8,
-      "ArtTheTickler ",
+      0.4,
+      "ArtTheTickler (Article)",
       "black",
       118,
       50,
       "./images/Ectoplasm.png",
-      "./sounds/article-laughing.mp3",
+      undefined,
       0.2,
       5.0,
       undefined,
-      "./images/Article2.png"
+      "./images/Article2.png",
+      "./sounds/article-laughing.mp3"
     );
   }
 }
@@ -668,6 +670,7 @@ let semicolon = new SemiColonel();
 let hyphen = new DrHyphenol();
 let hashtag = new OctoThwarter(100);
 let anacontraction = new AnacontractShine();
+let article = new ArtTheTickler();
 
 let availableHeroArray = [
   period,
@@ -684,6 +687,7 @@ let availableHeroArray = [
   asterisk,
   hashtag,
   anacontraction,
+  article,
 ];
 
 // characterCount.setHTML(`${availableHeroArray.length}`);
@@ -835,6 +839,9 @@ function animate() {
               if (player.symbol === anacontraction.symbol) {
                 shortenContraction(punctuationSymbol);
               }
+              if (player.symbol === article.symbol) {
+                shakeAndBorderizeArticle(punctuationSymbol);
+              }
 
               //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
             } else if (projectile.position.y + projectile.height <= 0) {
@@ -967,7 +974,15 @@ hintButton.addEventListener("pointerdown", (e) => {
       setTimeout(() => {
         punctuationSymbol.classList.remove("hint-contraction-underline");
       }, 1000);
-    }
+    } else if (
+      punctuationSymbol.className === "a" ||
+      punctuationSymbol.className === "the"
+    )
+      punctuationSymbol.className += " hint-article-underline";
+
+    setTimeout(() => {
+      punctuationSymbol.classList.remove("hint-article-underline");
+    }, 1000);
   });
 });
 

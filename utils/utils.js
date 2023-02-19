@@ -75,7 +75,9 @@ export const addSpansAndIds = (typedString, outputSentence) => {
       if (ENDING_SECOND_CONTRACTION_WORD.test(newString[i + 1])) {
         newString[i] = `</span>`;
       } else {
-        newString[i] = `<span id=\"ArtTheTicker\" class=\"${articleHashMap.get(
+        newString[
+          i
+        ] = `<span id=\"ArtTheTickler (Article)\" class=\"${articleHashMap.get(
           char
         )}\">`;
       }
@@ -120,7 +122,8 @@ export const waitForElement = (selector) => {
         if (
           el.className === "hidden-punc" ||
           el.className === "capital-black-hole" ||
-          el.id === "AnacontractShine"
+          el.id === "AnacontractShine" ||
+          el.id === "ArtTheTickler (Article)"
         )
           numberOfPunctuationArray.push(el);
       });
