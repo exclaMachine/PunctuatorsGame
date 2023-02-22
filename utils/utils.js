@@ -77,7 +77,7 @@ export const addSpansAndIds = (typedString, outputSentence) => {
       } else {
         newString[
           i
-        ] = `<span id=\"ArtTheTickler (Article)\" class=\"${articleHashMap.get(
+        ] = `<span id=\"Art The Tickler (Article)\" class=\"${articleHashMap.get(
           char
         )}\">`;
       }
@@ -123,7 +123,7 @@ export const waitForElement = (selector) => {
           el.className === "hidden-punc" ||
           el.className === "capital-black-hole" ||
           el.id === "AnacontractShine" ||
-          el.id === "ArtTheTickler (Article)"
+          el.id === "Art The Tickler (Article)"
         )
           numberOfPunctuationArray.push(el);
       });

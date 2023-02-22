@@ -330,7 +330,7 @@ class ArtTheTickler extends Hero {
     super(
       "./images/Article.png",
       0.4,
-      "ArtTheTickler (Article)",
+      "Art The Tickler (Article)",
       "black",
       118,
       50,
