@@ -1,8 +1,8 @@
 export const shakeAndBorderizeArticle = (node) => {
-  if (node.className === "article the") {
+  if (node.className === "the") {
     node.className = "laughing-article-the";
   }
-  if (node.className === "article a") {
+  if (node.className === "a") {
     node.className = "laughing-article-a";
   }
 };

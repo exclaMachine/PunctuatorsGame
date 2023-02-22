@@ -48,6 +48,16 @@ body {
 .hint-article-underline {
     text-decoration: underline black dashed;
 }
+
+.a {
+    border: none;
+}
+
+.laughing-article-a {
+    border: black solid 1px;
+
+}
+
 /* #contraction-container {
     position: fixed;
     margin-top: 50px;
