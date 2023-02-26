@@ -60,6 +60,8 @@ export const addSpansAndIds = (typedString, outputSentence) => {
   //when you split an emoji it can be up to 5 different characters "🏴‍☠️" = '/uD83C' '/uDFF4' '' '☠' ''
   let newString = emojified2.split("");
 
+  for (let i = 0; i < newString.length; i++) {}
+
   newString.map((char, i) => {
     if (punctuationHashMap.has(char)) {
       newString[i] = `<span id=\"${punctuationHashMap.get(
