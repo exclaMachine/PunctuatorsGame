@@ -335,9 +335,9 @@ class ArtTheTickler extends Hero {
       118,
       50,
       "./images/Ectoplasm.png",
-      undefined,
+      "./sounds/featherSwish.mp3",
       0.2,
-      5.0,
+      undefined,
       undefined,
       "./images/Article2.png",
       "./sounds/article-laughing.mp3"
