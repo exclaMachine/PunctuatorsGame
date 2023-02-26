@@ -1,5 +1,8 @@
 import { changeEmoticonsToEmojis } from "./emojiFunc.js";
-import { wrapContractionWithUniqueCharacter } from "./contractionFunc.js";
+import {
+  wrapContractionWithUniqueCharacter,
+  wrapContractionWithSpan,
+} from "./contractionFunc.js";
 
 const secondContractionWordHashMap = new Map();
 
@@ -56,13 +59,21 @@ punctuationHashMap
 export const addSpansAndIds = (typedString, outputSentence) => {
   let emojified = changeEmoticonsToEmojis(typedString);
 
-  let emojified2 = wrapContractionWithUniqueCharacter(emojified);
+  let emojified2 = wrapContractionWithSpan(emojified);
   //when you split an emoji it can be up to 5 different characters "🏴‍☠️" = '/uD83C' '/uDFF4' '' '☠' ''
   let newString = emojified2.split("");
 
-  for (let i = 0; i < newString.length; i++) {}
+  for (let i = 0; i < newString.length; i++) {
+    let char = newString[i];
 
-  newString.map((char, i) => {
+    if (char === "<") {
+      while (char !== "<") {
+        i++;
+      }
+      //now it makes it to the closing </span> so add 6 to get past
+      i += 6;
+    }
+
     if (punctuationHashMap.has(char)) {
       newString[i] = `<span id=\"${punctuationHashMap.get(
         char
@@ -94,7 +105,7 @@ export const addSpansAndIds = (typedString, outputSentence) => {
         )}\">`;
       }
     }
-  });
+  }
   outputSentence.innerHTML = newString.join("");
   return newString.join("");
 };

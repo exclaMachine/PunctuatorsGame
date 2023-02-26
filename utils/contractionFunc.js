@@ -186,10 +186,12 @@ export const wrapContractionWithSpan = (typedSentence, outputSentence) => {
       (areSubsetOfFirstContractionWordSet.has(word) &&
         words[index + 1] === "are")
     ) {
-      words[index + 1] = `<span>${words[index + 1]}</span>`;
+      words[index + 1] = `<span id=\"AnacontractShine\" class=\"${
+        words[index + 1]
+      }\">${words[index + 1]}</span>`;
     }
     if (articleHashMap.has(word)) {
-      words[index] = `${articleWrapper}${words[index]}${articleWrapper}`;
+      words[index] = `<span>${words[index]}</span>`;
     }
   });
 
