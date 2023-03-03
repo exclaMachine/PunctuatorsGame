@@ -1,28 +1,7 @@
 import { changeEmoticonsToEmojis } from "./emojiFunc.js";
-import { wrapContractionWithUniqueCharacter } from "./contractionFunc.js";
+import { wrapContractionWithSpan } from "./contractionFunc.js";
 
 const secondContractionWordHashMap = new Map();
-
-//https://stackoverflow.com/questions/9907419/how-to-get-a-key-in-a-javascript-object-by-its-value
-function getKeyByValue(object, value) {
-  return Object.keys(object).find((key) => object[key] === value);
-}
-
-secondContractionWordHashMap
-  .set("¬", "not") //n't
-  .set("©", "had") //'d
-  .set("°", "would") //'d
-  .set("§", "is") //'s
-  .set("§", "has") //'s
-  .set("¢", "have") //'ve
-  .set("®", "are") //'re
-  .set("¦", "shall") //'ll
-  .set("±", "will") //'ll
-  .set("µ", "am") //'m
-  .set("¶", "us"); //'s
-
-const articleHashMap = new Map();
-articleHashMap.set("¼", "a").set("½", "the");
 
 let punc = "!?;:'.,";
 const CAPITAL_LETTERS = /[A-Z]/g;
@@ -56,11 +35,22 @@ punctuationHashMap
 export const addSpansAndIds = (typedString, outputSentence) => {
   let emojified = changeEmoticonsToEmojis(typedString);
 
-  let emojified2 = wrapContractionWithUniqueCharacter(emojified);
+  let emojified2 = wrapContractionWithSpan(emojified);
   //when you split an emoji it can be up to 5 different characters "🏴‍☠️" = '/uD83C' '/uDFF4' '' '☠' ''
   let newString = emojified2.split("");
 
-  newString.map((char, i) => {
+  for (let i = 0; i < newString.length; i++) {
+    let char = newString[i];
+
+    if (newString[i] === "<") {
+      i++;
+      while (newString[i] !== "<") {
+        i++;
+      }
+      //now it makes it to the closing </span> so add 6 to get past
+      i += 6;
+    }
+
     if (punctuationHashMap.has(char)) {
       newString[i] = `<span id=\"${punctuationHashMap.get(
         char
@@ -71,28 +61,8 @@ export const addSpansAndIds = (typedString, outputSentence) => {
       ] = `<span id=\"Full Stop (Capitalize)\" class=\"capital-black-hole\">${char.toLowerCase()}</span>`;
     } else if (char === " ") {
       newString[i] = `<span id=\"Spacel \" class=\"space\">${SPACES}</span>`;
-    } else if (articleHashMap.has(char)) {
-      if (ENDING_SECOND_CONTRACTION_WORD.test(newString[i + 1])) {
-        newString[i] = `</span>`;
-      } else {
-        newString[
-          i
-        ] = `<span id=\"Art The Tickler (Article)\" class=\"${articleHashMap.get(
-          char
-        )}\">`;
-      }
-    } else if (secondContractionWordHashMap.has(char)) {
-      if (ENDING_SECOND_CONTRACTION_WORD.test(newString[i + 1])) {
-        newString[i] = `</span>`;
-      } else {
-        newString[
-          i
-        ] = `<span id=\"AnacontractShine\" class=\"${secondContractionWordHashMap.get(
-          char
-        )}\">`;
-      }
     }
-  });
+  }
   outputSentence.innerHTML = newString.join("");
   return newString.join("");
 };
