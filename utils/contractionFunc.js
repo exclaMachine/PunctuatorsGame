@@ -135,26 +135,7 @@ const areSubsetOfFirstContractionWordSet = new Set([
   "You",
 ]);
 
-const secondContractionWordHashMap = new Map();
-
-secondContractionWordHashMap
-  .set("not", "¬")
-  .set("had", "©")
-  .set("would", "°")
-  .set("is", "§")
-  .set("has", "§")
-  .set("have", "¢")
-  .set("are", "®")
-  .set("shall", "¦")
-  .set("will", "±")
-  .set("am", "µ")
-  .set("us", "¶");
-
-const articleHashMap = new Map();
-
-articleHashMap.set("a", "¼").set("the", "½");
-
-//try different approach where use array and surround words with unique characters (emoji) so no interference with punc spans
+const articleWordSet = new Set(["a", "the", "an"]);
 
 export const wrapContractionWithSpan = (typedSentence, outputSentence) => {
   let words = typedSentence.split(" ");
@@ -163,14 +144,9 @@ export const wrapContractionWithSpan = (typedSentence, outputSentence) => {
     if (index === words.length - 1) return;
 
     // word.toLowerCase();  need to work on capital somehow...
-    let wrapperSymbol = secondContractionWordHashMap.get(words[index + 1]);
-    let articleWrapper = articleHashMap.get(words[index]);
     if (
       (notSubsetOfFirstContractionWordSet.has(word) &&
-        (words[index + 1] === "not" ||
-          words[index + 1] === "not?" ||
-          words[index + 1] === "not." ||
-          words[index + 1] === "not!")) ||
+        words[index + 1] === "not") ||
       (hadWouldSubsetOfFirstContractionWordSet.has(word) &&
         (words[index + 1] === "had" || words[index + 1] === "would")) ||
       (willShallSubsetOfFirstContractionWordSet.has(word) &&
@@ -190,51 +166,10 @@ export const wrapContractionWithSpan = (typedSentence, outputSentence) => {
         words[index + 1]
       }\">${words[index + 1]}</span>`;
     }
-    if (articleHashMap.has(word)) {
-      words[index] = `<span>${words[index]}</span>`;
-    }
-  });
-
-  return words.join(" ");
-};
-
-export const wrapContractionWithUniqueCharacter = (
-  typedSentence,
-  outputSentence
-) => {
-  let words = typedSentence.split(" ");
-
-  words.map((word, index) => {
-    if (index === words.length - 1) return;
-
-    // word.toLowerCase();  need to work on capital somehow...
-    let wrapperSymbol = secondContractionWordHashMap.get(words[index + 1]);
-    let articleWrapper = articleHashMap.get(words[index]);
-    if (
-      (notSubsetOfFirstContractionWordSet.has(word) &&
-        (words[index + 1] === "not" ||
-          words[index + 1] === "not?" ||
-          words[index + 1] === "not." ||
-          words[index + 1] === "not!")) ||
-      (hadWouldSubsetOfFirstContractionWordSet.has(word) &&
-        (words[index + 1] === "had" || words[index + 1] === "would")) ||
-      (willShallSubsetOfFirstContractionWordSet.has(word) &&
-        (words[index + 1] === "will" || words[index + 1] === "shall")) ||
-      (isHasSubsetOfFirstContractionWordSet.has(word) &&
-        (words[index + 1] === "is" || words[index + 1] === "has")) ||
-      (word === "i" && words[index + 1] === "am") ||
-      (haveSubsetOfFirstContractionWordSet.has(word) &&
-        words[index + 1] === "have") ||
-      (word === "let" && words[index + 1] === "us") ||
-      ((word === "here" || word === "it" || word === "Here" || word === "It") &&
-        words[index + 1] === "is") ||
-      (areSubsetOfFirstContractionWordSet.has(word) &&
-        words[index + 1] === "are")
-    ) {
-      words[index + 1] = `${wrapperSymbol}${words[index + 1]}${wrapperSymbol}`;
-    }
-    if (articleHashMap.has(word)) {
-      words[index] = `${articleWrapper}${words[index]}${articleWrapper}`;
+    if (articleWordSet.has(word)) {
+      words[index] = `<span id=\"Art The Tickler (Article)\" class=\"${
+        words[index + 1]
+      }\">${words[index]}</span>`;
     }
   });
 
