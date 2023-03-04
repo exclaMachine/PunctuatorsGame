@@ -18,7 +18,7 @@ const freeDictionaryFetchSynonyms = async (word) => {
   }
 };
 
-const findAndSurroundSynonymWordsWithUniqueCharacter = (typedSentence) => {
+export const findAndSurroundSynonymWordsWithSpan = (typedSentence) => {
   let words = typedSentence.split(" ");
 
   words.map((word, index) => {
@@ -27,9 +27,9 @@ const findAndSurroundSynonymWordsWithUniqueCharacter = (typedSentence) => {
     if (freeDictionaryFetchSynonyms(word)) {
       words[
         index
-      ] = `<span id=\"SynonoMouse (synonym)\">${freeDictionaryFetchSynonyms(
+      ] = `<span id=\"SynonoMouse (synonym)\" class=\"${freeDictionaryFetchSynonyms(
         word
-      )}</span>`;
+      )}\">${word}</span>`;
     }
   });
 };
