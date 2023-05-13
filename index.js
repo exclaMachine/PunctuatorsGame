@@ -690,8 +690,6 @@ let availableHeroArray = [
   article,
 ];
 
-// characterCount.setHTML(`${availableHeroArray.length}`);
-
 const projectiles = [];
 
 const PROJECTILE_HIT_MARGIN_OF_ERROR = 5;
