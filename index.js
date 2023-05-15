@@ -286,6 +286,25 @@ projectileSoundVolume,
 secondHeroImage
 */
 //create a function that makes him disappear when projectile shoots
+class Ambigrambador extends Hero {
+  constructor() {
+    super(
+      "./images/Ambigram.png",
+      0.3,
+      "Ambigrambador",
+      "violet",
+      118,
+      50,
+      "./images/Colon_Wave.png",
+      undefined,
+      0.1,
+      5.0,
+      undefined,
+      "./images/Ambigram2.png"
+    );
+  }
+}
+
 class AnacontractShine extends Hero {
   constructor() {
     super(
