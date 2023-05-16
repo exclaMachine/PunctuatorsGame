@@ -596,6 +596,25 @@ class SemiColonel extends Hero {
   }
 }
 
+class WhiteKnight extends Hero {
+  constructor() {
+    super(
+      "./images/White_Knight_1.png",
+      0.5,
+      "White Knight",
+      "whitesmoke",
+      80,
+      50,
+      "images/Colon_Wave.png",
+      undefined,
+      0.2,
+      undefined,
+      undefined,
+      "./images/White_Knight_2.png"
+    );
+  }
+}
+
 //need to make this more generic and create a laser one
 class Projectile {
   constructor({ position, velocity }) {
