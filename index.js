@@ -709,6 +709,7 @@ let hyphen = new DrHyphenol();
 let hashtag = new OctoThwarter(100);
 let anacontraction = new AnacontractShine();
 let article = new ArtTheTickler();
+let ambigram = new Ambigrambador();
 
 let availableHeroArray = [
   period,
