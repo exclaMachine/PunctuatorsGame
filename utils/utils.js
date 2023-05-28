@@ -1,5 +1,6 @@
 import { changeEmoticonsToEmojis } from "./emojiFunc.js";
 import { wrapContractionWithSpan } from "./contractionFunc.js";
+import { findAndSurroundAmbigramWordsWithSpan } from "../AmbigramFunc.js";
 
 const secondContractionWordHashMap = new Map();
 
@@ -35,9 +36,13 @@ punctuationHashMap
 export const addSpansAndIds = (typedString, outputSentence) => {
   let emojified = changeEmoticonsToEmojis(typedString);
 
-  let emojified2 = wrapContractionWithSpan(emojified);
+  let contractionized = wrapContractionWithSpan(emojified);
   //when you split an emoji it can be up to 5 different characters "🏴‍☠️" = '/uD83C' '/uDFF4' '' '☠' ''
-  let newString = emojified2.split("");
+
+  // let ambigrambified = findAndSurroundAmbigramWordsWithSpan(contractionized);
+
+  let newString = contractionized.split("");
+  // let newString = ambigrambified.split("");
 
   for (let i = 0; i < newString.length; i++) {
     let char = newString[i];
