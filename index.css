@@ -288,12 +288,9 @@ footer > div {
         position: absolute;
         top: 20%;
         margin: 10%;
-        overflow-wrap: break-word;
-        word-wrap: break-word;
-        word-break: break-word;
     }
 
-    #ending-message-container > h2 {
+    #ending-message-container > h3 {
         color: white;
         font-family: 'Palanquin', sans-serif;
         text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
@@ -432,7 +429,7 @@ footer > div {
 
     .speech-bubble {
         color: white;
-        font-size: 1rem;
+        font-size: 1.3rem;
         word-spacing: 0.8rem;
         margin: 0 auto;
         background: var(--color);
@@ -441,6 +438,9 @@ footer > div {
         border-bottom: 0.5vw solid black;
         position: relative;
         line-height: 1.5rem;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        word-break: break-word;
     }
 
     .speech-bubble::after {
