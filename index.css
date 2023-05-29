@@ -432,7 +432,7 @@ footer > div {
 
     .speech-bubble {
         color: white;
-        font-size: 1.3rem;
+        font-size: 1rem;
         word-spacing: 0.8rem;
         margin: 0 auto;
         background: var(--color);
