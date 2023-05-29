@@ -288,13 +288,15 @@ footer > div {
         position: absolute;
         top: 20%;
         margin: 10%;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        word-break: break-word;
     }
 
     #ending-message-container > h2 {
         color: white;
         font-family: 'Palanquin', sans-serif;
         text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
-
     }
 
 
