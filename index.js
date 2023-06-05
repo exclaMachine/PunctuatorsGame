@@ -24,14 +24,15 @@ let speechContainer = document.querySelector(".speech-bubble");
 
 let speechLineForWin = [
   {
-    string: "You found all the punctuation and capital letters!!",
+    string:
+      "You found all the punctuation and capital letters!! Refresh the page to play again!",
     speed: textRevealSpeeds.fast,
   },
-  {
-    string: "Refresh the page to play again!",
-    speed: textRevealSpeeds.fast,
-    classes: ["green"],
-  },
+  // {
+  //   string: "Refresh the page to play again!",
+  //   speed: textRevealSpeeds.fast,
+  //   classes: ["green"],
+  // },
 ];
 
 const errorMessage = document.getElementById("error-message");
