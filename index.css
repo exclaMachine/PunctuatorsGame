@@ -274,9 +274,7 @@ footer > div {
         border: dashed lightblue 2px;
     }
 
-    .go-away {
-        display: none;
-    }
+
 
     #start {
         text-align: center;
@@ -297,6 +295,37 @@ footer > div {
     }
 
 
+    /* Button Styles */
+.refresh-game-btn {
+    position: absolute;
+    top: 50%;
+    right: 50%;
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    background-color: #FF5733;
+    color: white;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .refresh-game-btn:hover {
+    background-color: #FF8F66;
+  }
+
+  .refresh-game-btn:active {
+    background-color: #E6401B;
+  }
+
+
+  .go-away {
+    display: none;
+}
 
     @media screen and (max-width: 480px) {
 

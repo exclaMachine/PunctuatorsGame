@@ -24,8 +24,7 @@ let speechContainer = document.querySelector(".speech-bubble");
 
 let speechLineForWin = [
   {
-    string:
-      "You found all the punctuation and capital letters!! Refresh the page to play again!",
+    string: "You found all the punctuation and capital letters!!",
     speed: textRevealSpeeds.fast,
   },
   // {
@@ -46,7 +45,7 @@ const start = document.getElementById("start");
 const startBanner = document.getElementById("banner");
 
 const endingMessage1 = document.getElementById("ending_message_1");
-const endingMessage2 = document.getElementById("ending_message_2");
+const refreshButton = document.querySelector(".refresh-game-btn");
 
 const characterControls = document.getElementById("control-buttons");
 const shootButton = document.getElementById("shoot-button");
@@ -67,6 +66,11 @@ const buttonSounds = {
     src: ["./sounds/click.mp3"],
   }),
 };
+
+refreshButton.addEventListener("click", () => {
+  refreshButton.classList.add("go-away");
+  location.reload();
+});
 
 openModalButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -775,6 +779,8 @@ function animate() {
                 // console.log("All comma Punctuation Hit!");
 
                 changeTextToSpeechBubble(speechLineForWin, endingMessage1);
+
+                refreshButton.classList.remove("go-away");
                 root.style.setProperty(
                   "--speech-bubble-triangle",
                   projectile.position.x
@@ -842,6 +848,7 @@ function animate() {
               ) {
                 // console.log("All Punctuation Hit!");
                 changeTextToSpeechBubble(speechLineForWin, endingMessage1);
+                refreshButton.classList.remove("go-away");
                 root.style.setProperty(
                   "--speech-bubble-triangle",
                   projectile.position.x
