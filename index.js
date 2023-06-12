@@ -1011,7 +1011,7 @@ hintButton.addEventListener("pointerdown", (e) => {
       setTimeout(() => {
         punctuationSymbol.classList.remove("highlighted-punc");
       }, 1000);
-    } else if (punctuationSymbol.className === "capital-black-hole") {
+    } else if (punctuationSymbol.classList.contains("capital-black-hole")) {
       punctuationSymbol.className += " hint-capital-underline";
 
       setTimeout(() => {
@@ -1024,8 +1024,9 @@ hintButton.addEventListener("pointerdown", (e) => {
         punctuationSymbol.classList.remove("hint-contraction-underline");
       }, 1000);
     } else if (
-      punctuationSymbol.className === "a" ||
-      punctuationSymbol.className === "the"
+      punctuationSymbol.classList.contains("a") ||
+      punctuationSymbol.classList.contains("the") ||
+      punctuationSymbol.classList.contains("an")
     )
       punctuationSymbol.className += " hint-article-underline";
 
