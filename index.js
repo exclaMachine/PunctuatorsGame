@@ -885,9 +885,13 @@ function animate() {
                 shortenContraction(punctuationSymbol);
               }
               if (player.symbol === article.symbol) {
-                shakeAndBorderizeArticle(punctuationSymbol);
-              }
+                // shakeAndBorderizeArticle(punctuationSymbol);
 
+                punctuationSymbol.classList.add("giggling-text");
+                setTimeout(function () {
+                  text.classList.remove("giggling-text");
+                }, 900); // Remove the giggling effect after 0.3s * 3 iterations
+              }
               //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
             } else if (projectile.position.y + projectile.height <= 0) {
               setTimeout(() => {
