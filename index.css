@@ -23,6 +23,40 @@ body {
      margin: 250px 60px 60px 60px;
 }
 
+  .shine{
+    top: 80px;
+    font-weight: bold;
+    font-size: 300%;
+    margin: 50px;
+    position: fixed;
+  }
+
+  .shine {
+    background: #222 -webkit-gradient(linear, left top, right top, from(#222), to(#222), color-stop(0.5, #fff)) 0 0 no-repeat;
+    -webkit-background-size: 150px;
+    color: rgba(255, 255, 255, 0.3);
+    -webkit-background-clip: text;
+    -webkit-animation-name: shine;
+    -webkit-animation-duration: 5s;
+    -webkit-animation-iteration-count: infinite;
+    /* text-shadow: 0 0px 0px rgba(255, 255, 255, 0.5); */
+  }
+
+  @-webkit-keyframes shine {
+    0%, 10% {
+      background-position: -1000px;
+    }
+    20% {
+      background-position: top left;
+    }
+    90% {
+      background-position: top right;
+    }
+    100% {
+      background-position: 1000px;
+    }
+  }
+
 #error-message {
     color: red;
 }
@@ -233,15 +267,15 @@ footer > div {
         grid-area: hero;
     }
 
-    h1 {
-        /* color: red; */
+    /* h1 {
+        color: red;
         font-size: 300%;
         margin: 50px;
         position: fixed;
         color: whitesmoke;
         text-shadow:  1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
         font-family: 'Palanquin', sans-serif;
-    }
+    } */
 
     .capital-black-hole {
         position: relative;
@@ -369,12 +403,12 @@ footer > div {
 
     @media screen and (max-width: 480px) {
 
-        h1 {
+        /* h1 {
             font-size: 50px;
             margin: 50px;
             position: fixed;
             font-family: 'Palanquin', sans-serif;
-        }
+        } */
 
         h5 {
             font-size: 12px;
