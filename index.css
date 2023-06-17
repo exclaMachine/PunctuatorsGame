@@ -569,6 +569,18 @@ footer > div {
         color: green;
     }
 
+    .hint-capital-underline {
+        text-decoration: underline red;
+    }
+
+    .hint-contraction-underline {
+        text-decoration: underline dotted lightgreen;
+    }
+
+    .hint-article-underline {
+        text-decoration: underline black dashed;
+    }
+
     @media (prefers-reduced-motion: reduce) {
         *,
         ::before,
