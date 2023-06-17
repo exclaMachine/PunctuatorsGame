@@ -380,7 +380,7 @@ footer > div {
     font-weight: bold;
     text-align: center;
     text-decoration: none;
-    background-color: #FF5733;
+    background-color: #4CAF50;
     color: white;
     border-radius: 10px;
     border: none;
@@ -389,11 +389,11 @@ footer > div {
   }
 
   .refresh-game-btn:hover {
-    background-color: #FF8F66;
+    background-color: #45a049;
   }
 
   .refresh-game-btn:active {
-    background-color: #E6401B;
+    background-color: #3d8b3d;
   }
 
 
