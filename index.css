@@ -575,6 +575,7 @@ footer > div {
 
     .hint-contraction-underline {
         text-decoration: underline dotted lightgreen;
+        z-index: 999;
     }
 
     .hint-article-underline {
