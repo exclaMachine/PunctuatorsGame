@@ -267,15 +267,15 @@ footer > div {
         grid-area: hero;
     }
 
-    /* h1 {
-        color: red;
+    #output  {
+        /* color: red; */
         font-size: 300%;
         margin: 50px;
         position: fixed;
         color: whitesmoke;
         text-shadow:  1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
         font-family: 'Palanquin', sans-serif;
-    } */
+    }
 
     .capital-black-hole {
         position: relative;
@@ -403,12 +403,12 @@ footer > div {
 
     @media screen and (max-width: 480px) {
 
-        /* h1 {
+        #output {
             font-size: 50px;
             margin: 50px;
             position: fixed;
             font-family: 'Palanquin', sans-serif;
-        } */
+        }
 
         h5 {
             font-size: 12px;
