@@ -97,7 +97,7 @@ export const waitForElement = (selector) => {
         if (
           el.className === "hidden-punc" ||
           el.className === "capital-black-hole" ||
-          el.id === "AnacontractShine" ||
+          el.id === "ApostroPharaoh (Contraction)" ||
           el.id === "Art The Tickler (Article)"
         )
           numberOfPunctuationArray.push(el);

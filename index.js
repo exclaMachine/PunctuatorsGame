@@ -315,7 +315,7 @@ class AnacontractShine extends Hero {
     super(
       "./images/Anacontractshine.png",
       0.3,
-      "AnacontractShine",
+      "ApostroPharaoh (Contraction)",
       "lightgreen",
       118,
       50,
