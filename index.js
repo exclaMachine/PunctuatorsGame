@@ -313,13 +313,13 @@ class Ambigrambador extends Hero {
 class AnacontractShine extends Hero {
   constructor() {
     super(
-      "./images/Anacontractshine.png",
+      "./images/AnacontractshineEat2.png",
       0.3,
       "ApostroPharaoh (Contraction)",
       "lightgreen",
       118,
       50,
-      "./images/AnacontractshineEat.png",
+      "./images/AnacontractshineEat3.png",
       undefined,
       0.2,
       5.0,
