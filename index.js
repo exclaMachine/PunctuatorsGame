@@ -412,7 +412,7 @@ class DrHyphenol extends Hero {
     super(
       "./images/Hyphenol_1.png",
       0.6,
-      "Dr. Hyphenol -",
+      "Ms. Hyphen -",
       "turquoise",
       118,
       50,

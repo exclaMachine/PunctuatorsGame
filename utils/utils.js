@@ -26,7 +26,7 @@ punctuationHashMap
   .set('"', "QuetzalQuotel")
   .set("“", "QuetzalQuotel") //quick fix study. https://github.com/frankrausch/Typographizer
   .set("”", "QuetzalQuotel")
-  .set("-", "Dr. Hyphenol -")
+  .set("-", "Ms. Hyphen -")
   // .set("(", "parenthesis left")
   // .set(")", "parenthesis right");
   .set("(", "Parents of the Seas ( )")
