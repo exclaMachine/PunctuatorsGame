@@ -237,18 +237,22 @@ footer > div {
 
     #shoot-button {
         grid-area: shoot;
+        cursor: pointer;
     }
 
     #left-button {
         grid-area: left;
+        cursor: pointer;
     }
 
     #switch-button {
         grid-area: switch;
+        cursor: pointer;
     }
 
     #right-button {
         grid-area: right;
+        cursor: pointer;
     }
 
     #name-tag {
