@@ -15,7 +15,7 @@ function emphasizeVowelsWithSpan(sentence) {
         accentedVowel,
         `<span id="Dr. Ácuta">${accentedVowel}</span>`
       );
-    } else if (/[b-df-hj-np-tv-z]$/i.test(word)) {
+    } else if (/[b-df-hj-np-tv-z]([.,!?;:"'()\s]|$)/i.test(word)) {
       const lastVowelIndex = findLastVowelIndex(word);
       if (lastVowelIndex !== -1) {
         return (
@@ -63,6 +63,6 @@ function emphasizeVowelsWithSpan(sentence) {
   return emphasizedSentence;
 }
 
-const inputSentence = "El estrés es una respuesta natural del cuerpo.";
+const inputSentence = "El estrés es una respuesta natural. del cuerpo.";
 const emphasizedSentence = emphasizeVowelsWithSpan(inputSentence);
 console.log(emphasizedSentence);
