@@ -6,7 +6,7 @@ The Punctuators shoot on to a sentence of your creation to add back the removed 
 
 ## Instructions for two players:
 
-- Have one player enter in a sentence
+- Have one player type in a sentence
 - Have the other character shoot with different heroes to add in the missing punctuation.
 - Master Asterisk has a special ability: If a word has an asterisk following it then he can create a footnote of its definition.
 
@@ -23,3 +23,4 @@ The Punctuators shoot on to a sentence of your creation to add back the removed 
 9. Apostrophantom
 10. Master Asterisk
 11. Ms. Hyphen
+12. Apostropharaoh
