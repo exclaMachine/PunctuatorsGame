@@ -606,7 +606,7 @@ class WhiteKnight extends Hero {
     super(
       "./images/White_Knight_1.png",
       0.5,
-      "White Knight",
+      "Sir Dele of Dallying",
       "whitesmoke",
       80,
       50,
