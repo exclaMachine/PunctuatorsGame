@@ -393,7 +393,7 @@ class OctoThwarter extends Hero {
     super(
       "./images/Octo.png",
       0.5,
-      "Octo-Thwarter #",
+      "HashTagger #",
       "turquoise",
       110,
       projectileLength,

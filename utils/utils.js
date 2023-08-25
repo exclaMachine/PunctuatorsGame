@@ -31,7 +31,7 @@ punctuationHashMap
   // .set(")", "parenthesis right");
   .set("(", "Parents of the Seas ( )")
   .set(")", "Parents of the Seas ( )")
-  .set("#", "Octo-Thwarter #");
+  .set("#", "HashTagger #");
 
 export const addSpansAndIds = (typedString, outputSentence) => {
   let emojified = changeEmoticonsToEmojis(typedString);
