@@ -1040,6 +1040,7 @@ addEventListener("keydown", ({ key }) => {
   switch (key) {
     case "a":
     case "ArrowLeft":
+      if (chosenHeroArray.length === 0) return;
       if (player.position.x >= 0 - player.width / 2) {
         player.position.x -= 10;
       }
@@ -1047,6 +1048,7 @@ addEventListener("keydown", ({ key }) => {
 
     case "d":
     case "ArrowRight":
+      if (chosenHeroArray.length === 0) return;
       if (player.position.x <= canvas.width - player.width / 2) {
         player.position.x += 10;
       }
