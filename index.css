@@ -112,6 +112,16 @@ body {
     animation-iteration-count: 3;
   }
 
+  .rightside-up {
+    position: relative;
+    transform: rotate(180deg);
+}
+
+.upside-down {
+    transition: 1s;
+    display: inline-block;
+    transform: rotate(-180deg);
+}
 
 
 /* .laughing-article-a {
