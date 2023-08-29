@@ -1,5 +1,5 @@
 import { addSpansAndIds } from "./utils/utils.js";
-import { addSpansAndIdsForWordPlay } from "./utils/utils.js";
+// import { addSpansAndIdsForWordPlay } from "./utils/utils.js";
 import { waitForElement } from "./utils/utils.js";
 import { nodeArr, numberOfPunctuationArray } from "./utils/utils.js";
 import { heroToTheRescue } from "./utils/utils.js";
@@ -11,7 +11,7 @@ import {
 } from "./utils/contractionFunc.js";
 import { textRevealSpeeds, changeTextToSpeechBubble } from "./speechbubble.js";
 import { shakeAndBorderizeArticle } from "./articleFunc.js";
-import { makeAmbigram } from "./AmbigramFunc.js";
+// import { makeAmbigram } from "./AmbigramFunc.js";
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
 // const period = document.getElementById("first");
@@ -134,26 +134,26 @@ removePuncButton.addEventListener("click", () => {
   errorMessage.innerText = "";
 });
 
-doWordPlayButton.addEventListener("click", () => {
-  buttonSounds.clicky.play();
+// doWordPlayButton.addEventListener("click", () => {
+//   buttonSounds.clicky.play();
 
-  if (!initialTypedSentence.value) {
-    return (errorMessage.innerText = "Field cannot be blank");
-  }
+//   if (!initialTypedSentence.value) {
+//     return (errorMessage.innerText = "Field cannot be blank");
+//   }
 
-  addSpansAndIdsForWordPlay(initialTypedSentence.value, out1);
+//   addSpansAndIdsForWordPlay(initialTypedSentence.value, out1);
 
-  setClassName(
-    "go-away",
-    initialTypedSentence,
-    removePuncButton,
-    startBanner,
-    doWordPlayButton
-  );
-  setClassName("grid-container", characterControls);
+//   setClassName(
+//     "go-away",
+//     initialTypedSentence,
+//     removePuncButton,
+//     startBanner,
+//     doWordPlayButton
+//   );
+//   setClassName("grid-container", characterControls);
 
-  errorMessage.innerText = "";
-});
+//   errorMessage.innerText = "";
+// });
 
 //TODO incorporate when more self-made sentences are made. The too variables don't work if game restart involves refresh
 // createSentenceButton.addEventListener("click", () => {
@@ -861,18 +861,18 @@ function animate() {
                     punctuationSymbol.innerText.toUpperCase();
                   setClassName("blackhole-collapse", punctuationSymbol);
                 }, 1800);
-              } else if (
-                punctuationSymbol.id === ambigram.symbol
-                //&& punctuationSymbol.className === "rightside-up"
-              ) {
-                setClassName("upside-down", punctuationSymbol);
-                setTimeout(() => {
-                  punctuationSymbol.innerText = makeAmbigram(
-                    punctuationSymbol.innerText
-                  );
-                  setClassName("rightside-up", punctuationSymbol);
-                  punctuationSymbol.classList.remove("upside-down");
-                }, 1800);
+                // } else if (
+                //   punctuationSymbol.id === ambigram.symbol
+                //   //&& punctuationSymbol.className === "rightside-up"
+                // ) {
+                //   setClassName("upside-down", punctuationSymbol);
+                //   setTimeout(() => {
+                //     punctuationSymbol.innerText = makeAmbigram(
+                //       punctuationSymbol.innerText
+                //     );
+                //     setClassName("rightside-up", punctuationSymbol);
+                //     punctuationSymbol.classList.remove("upside-down");
+                //   }, 1800);
               } else {
                 punctuationSymbol.style.color = `${player.characterColor}`;
                 punctuationSymbol.style.textShadow =
