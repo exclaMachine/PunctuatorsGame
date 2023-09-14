@@ -470,6 +470,25 @@ class ExclaMachine extends Hero {
   }
 }
 
+class Foon extends Hero {
+  constructor() {
+    super(
+      "./images/Foon_.png",
+      0.6,
+      "Foon (Spoonerism)",
+      "green",
+      118,
+      50,
+      "./images/Foon_Projectile.png",
+      "./sounds/whoosh.mp3",
+      0.5,
+      undefined,
+      undefined,
+      "./images/Foon_2.png"
+    );
+  }
+}
+
 class FullStop extends Hero {
   constructor() {
     super(
