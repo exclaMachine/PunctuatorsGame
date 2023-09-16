@@ -1,6 +1,6 @@
 import { changeEmoticonsToEmojis } from "./emojiFunc.js";
 import { wrapContractionWithSpan } from "./contractionFunc.js";
-// import { findAndSurroundAmbigramWordsWithSpan } from "../AmbigramFunc.js";
+import { findAndSurroundAmbigramWordsWithSpan } from "../AmbigramFunc.js";
 
 const secondContractionWordHashMap = new Map();
 
@@ -69,26 +69,26 @@ export const addSpansAndIds = (typedString, outputSentence) => {
   return newString.join("");
 };
 
-// export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
-//   let ambigrambified = findAndSurroundAmbigramWordsWithSpan(typedString);
+export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
+  let ambigrambified = findAndSurroundAmbigramWordsWithSpan(typedString);
 
-//   let newString = ambigrambified.split("");
+  let newString = ambigrambified.split("");
 
-//   for (let i = 0; i < newString.length; i++) {
-//     let char = newString[i];
+  for (let i = 0; i < newString.length; i++) {
+    let char = newString[i];
 
-//     if (newString[i] === "<") {
-//       i++;
-//       while (newString[i] !== "<") {
-//         i++;
-//       }
-//       //now it makes it to the closing </span> so add 6 to get past
-//       i += 6;
-//     }
-//     outputSentence.innerHTML = newString.join("");
-//     return newString.join("");
-//   }
-// };
+    if (newString[i] === "<") {
+      i++;
+      while (newString[i] !== "<") {
+        i++;
+      }
+      //now it makes it to the closing </span> so add 6 to get past
+      i += 6;
+    }
+    outputSentence.innerHTML = newString.join("");
+    return newString.join("");
+  }
+};
 
 export const setClassName = (newClass, ...elements) => {
   elements.forEach((element) => {
