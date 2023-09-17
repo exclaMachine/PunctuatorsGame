@@ -14,6 +14,8 @@ export const getConsonantCluster = (word) => {
 };
 
 export const spoonerism = (sentence) => {
+  console.log("intitial", sentence);
+
   let placeholders = [];
   let tempSentence = sentence.replace(/<span[^>]*>(.*?)<\/span>/g, (match) => {
     placeholders.push(match);
@@ -71,8 +73,14 @@ export const spoonerism = (sentence) => {
       }
     }
   }
+  console.log("first", words.join(""));
+  let result = words.join("");
 
-  return words.join("");
+  placeholders.forEach((placeholder, index) => {
+    result = result.replace(`PLACEHOLDER${index}`, placeholder);
+  });
+
+  return result;
 };
 
 // Swap the word based on a consonant cluster
