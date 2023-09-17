@@ -1,6 +1,7 @@
 import { changeEmoticonsToEmojis } from "./emojiFunc.js";
 import { wrapContractionWithSpan } from "./contractionFunc.js";
 import { findAndSurroundAmbigramWordsWithSpan } from "../AmbigramFunc.js";
+import { spoonerism } from "../spoonerismFunc.js";
 
 const secondContractionWordHashMap = new Map();
 
@@ -72,11 +73,14 @@ export const addSpansAndIds = (typedString, outputSentence) => {
 export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
   let ambigrambified = findAndSurroundAmbigramWordsWithSpan(typedString);
 
-  let newString = ambigrambified.split("");
+  let sSpoonerizedString = spoonerism(ambigrambified);
+  //let newString = ambigrambified.split("");
+  let newString = sSpoonerizedString.split("");
 
   for (let i = 0; i < newString.length; i++) {
     let char = newString[i];
 
+    //Don't need this for wordplay because this is for individual letters not words
     if (newString[i] === "<") {
       i++;
       while (newString[i] !== "<") {
@@ -85,6 +89,7 @@ export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
       //now it makes it to the closing </span> so add 6 to get past
       i += 6;
     }
+
     outputSentence.innerHTML = newString.join("");
     return newString.join("");
   }
