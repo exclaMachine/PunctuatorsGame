@@ -8,6 +8,7 @@ The Punctuators shoot on to a sentence of your creation to add back the removed 
 
 - Have one player type in a sentence
 - Have the other character shoot with different heroes to add in the missing punctuation.
+- For 'Do Wordplay' words can be manipulated by the rivals of The Punctuators.
 - Master Asterisk has a special ability: If a word has an asterisk following it then he can create a footnote of its definition.
 
 ## The characters:
@@ -24,3 +25,5 @@ The Punctuators shoot on to a sentence of your creation to add back the removed 
 10. Master Asterisk
 11. Ms. Hyphen
 12. Apostropharaoh
+13. The Foon
+14. Ambigrambador
