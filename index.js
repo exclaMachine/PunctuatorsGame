@@ -12,7 +12,7 @@ import {
 import { textRevealSpeeds, changeTextToSpeechBubble } from "./speechbubble.js";
 import { shakeAndBorderizeArticle } from "./articleFunc.js";
 import { makeAmbigram } from "./AmbigramFunc.js";
-import { swapWord } from "./spoonerismFunc.js";
+//import { swapWord } from "./spoonerismFunc.js";
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
 // const period = document.getElementById("first");
@@ -36,6 +36,8 @@ let speechLineForWin = [
   //   classes: ["green"],
   // },
 ];
+
+let previousElement = null;
 
 const errorMessage = document.getElementById("error-message");
 const characterCount = document.getElementById("character-count");
@@ -902,29 +904,30 @@ function animate() {
                   punctuationSymbol.classList.remove("upside-down");
                 }, 1800);
               } else if (punctuationSymbol.id === foon.symbol) {
-                const spoonerisms = document.querySelectorAll(
-                  '[id="The Foon (Spoonerism)"]'
-                );
+                const swapClusters = () => {
+                  //const target = event.target;
 
-                if (spoonerisms.length === 2) {
-                  const [first, second] = spoonerisms;
+                  //if (target.id !== "The Foon (Spoonerism)") return;
+                  if (punctuationSymbol.id !== "The Foon (Spoonerism)") return;
 
-                  // Swap content
-                  const tempContent = first.textContent;
-                  first.textContent = swapWord(
-                    first.textContent,
-                    second.className
-                  );
-                  second.textContent = swapWord(
-                    second.textContent,
-                    first.className
-                  );
+                  if (previousElement) {
+                    const tempClass = punctuationSymbol.className;
+                    punctuationSymbol.className = previousElement.className;
+                    previousElement.className = tempClass;
 
-                  // Swap class names
-                  const tempClass = first.className;
-                  first.className = second.className;
-                  second.className = tempClass;
-                }
+                    const tempText = punctuationSymbol.textContent;
+                    punctuationSymbol.textContent = previousElement.textContent;
+                    previousElement.textContent = tempText;
+                    previousElement.style.textDecoration = "none";
+
+                    previousElement = null;
+                  } else {
+                    punctuationSymbol.style.textDecoration = "underline";
+                    previousElement = punctuationSymbol;
+                  }
+                };
+
+                swapClusters();
               } else {
                 punctuationSymbol.style.color = `${player.characterColor}`;
                 punctuationSymbol.style.textShadow =
