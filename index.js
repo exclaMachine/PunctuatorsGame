@@ -483,7 +483,7 @@ class Foon extends Hero {
   constructor() {
     super(
       "./images/Foon_.png",
-      0.4,
+      0.3,
       "The Foon (Spoonerism)",
       "green",
       118,
@@ -493,7 +493,8 @@ class Foon extends Hero {
       0.1,
       undefined,
       undefined,
-      "./images/Foon_2.png"
+      "./images/Foon_2.png",
+      "./sounds/foon_hit.mp3"
     );
   }
 }
