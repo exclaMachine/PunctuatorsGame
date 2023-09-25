@@ -38,6 +38,7 @@ let speechLineForWin = [
 ];
 
 let previousElement = null;
+let isAnimating = false; // Add a flag to check if the animation is currently in progress
 
 const errorMessage = document.getElementById("error-message");
 const characterCount = document.getElementById("character-count");
@@ -914,44 +915,22 @@ function animate() {
                   });
 
                 const swapClusters = async () => {
-                  //const target = event.target;
+                  if (isAnimating) return; // If an animation is in progress, return immediately to avoid processing
 
                   //if (target.id !== "The Foon (Spoonerism)") return;
                   if (punctuationSymbol.id !== "The Foon (Spoonerism)") return;
 
                   if (previousElement) {
-                    // Hide the actual elements
-                    punctuationSymbol.style.visibility = "hidden";
-                    previousElement.style.visibility = "hidden";
+                    isAnimating = true;
 
-                    // Create clones of the elements for the animation
-                    const targetClone = punctuationSymbol.cloneNode(true);
-                    const prevClone = previousElement.cloneNode(true);
+                    punctuationSymbol.classList.add("floatingUp");
+                    previousElement.classList.add("floatingUp");
 
-                    punctuationSymbol.parentNode.insertBefore(
-                      targetClone,
-                      punctuationSymbol
-                    );
-                    previousElement.parentNode.insertBefore(
-                      prevClone,
-                      previousElement
-                    );
-
-                    // Apply the "float up" animation to the clones
-                    targetClone.classList.add("floatingUp");
-                    prevClone.classList.add("floatingUp");
-
-                    // Wait for the animations to complete
                     await Promise.all([
-                      animationEnd("animationend", targetClone),
-                      animationEnd("animationend", prevClone),
+                      animationEnd("animationend", punctuationSymbol),
+                      animationEnd("animationend", previousElement),
                     ]);
 
-                    // Remove the clones after their animation
-                    targetClone.remove();
-                    prevClone.remove();
-
-                    // Swap the actual clusters
                     const tempClass = punctuationSymbol.className;
                     punctuationSymbol.className = previousElement.className;
                     previousElement.className = tempClass;
@@ -960,9 +939,8 @@ function animate() {
                     punctuationSymbol.textContent = previousElement.textContent;
                     previousElement.textContent = tempText;
 
-                    // Show the original elements with the "float down" animation
-                    punctuationSymbol.style.visibility = "visible";
-                    previousElement.style.visibility = "visible";
+                    punctuationSymbol.classList.remove("floatingUp");
+                    previousElement.classList.remove("floatingUp");
 
                     punctuationSymbol.classList.add("floatingDown");
                     previousElement.classList.add("floatingDown");
@@ -972,13 +950,13 @@ function animate() {
                       animationEnd("animationend", previousElement),
                     ]);
 
-                    // Remove the floatingDown class
                     punctuationSymbol.classList.remove("floatingDown");
                     previousElement.classList.remove("floatingDown");
 
+                    previousElement = null;
+                    isAnimating = false;
                     previousElement.style.textDecoration = "none";
                     // Reset for the next interaction
-                    previousElement = null;
                   } else {
                     punctuationSymbol.style.textDecoration = "underline";
                     previousElement = punctuationSymbol;
