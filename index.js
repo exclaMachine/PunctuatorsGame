@@ -923,14 +923,32 @@ function animate() {
                   if (previousElement) {
                     isAnimating = true;
 
-                    punctuationSymbol.classList.add("floatingUp");
-                    previousElement.classList.add("floatingUp");
+                    // Determine the direction of movement
+                    let targetUpwardAnimation, prevElemUpwardAnimation;
+                    if (
+                      punctuationSymbol.getBoundingClientRect().left <
+                      previousElement.getBoundingClientRect().left
+                    ) {
+                      targetUpwardAnimation = "floatingUpToRight";
+                      prevElemUpwardAnimation = "floatingUpToLeft";
+                    } else {
+                      targetUpwardAnimation = "floatingUpToLeft";
+                      prevElemUpwardAnimation = "floatingUpToRight";
+                    }
+
+                    punctuationSymbol.classList.add(targetUpwardAnimation);
+                    previousElement.classList.add(prevElemUpwardAnimation);
 
                     await Promise.all([
                       animationEnd("animationend", punctuationSymbol),
                       animationEnd("animationend", previousElement),
                     ]);
 
+                    // Cleanup the floatingUp animations
+                    punctuationSymbol.classList.remove(targetUpwardAnimation);
+                    previousElement.classList.remove(prevElemUpwardAnimation);
+
+                    // Swap the actual clusters
                     const tempClass = punctuationSymbol.className;
                     punctuationSymbol.className = previousElement.className;
                     previousElement.className = tempClass;
@@ -939,20 +957,27 @@ function animate() {
                     punctuationSymbol.textContent = previousElement.textContent;
                     previousElement.textContent = tempText;
 
-                    punctuationSymbol.classList.remove("floatingUp");
-                    previousElement.classList.remove("floatingUp");
+                    // Apply the "float down" animation based on direction
+                    let targetDownwardAnimation, prevElemDownwardAnimation;
+                    if (targetUpwardAnimation === "floatingUpToLeft") {
+                      targetDownwardAnimation = "floatingDownFromLeft";
+                      prevElemDownwardAnimation = "floatingDownFromRight";
+                    } else {
+                      targetDownwardAnimation = "floatingDownFromRight";
+                      prevElemDownwardAnimation = "floatingDownFromLeft";
+                    }
 
-                    punctuationSymbol.classList.add("floatingDown");
-                    previousElement.classList.add("floatingDown");
+                    punctuationSymbol.classList.add(targetDownwardAnimation);
+                    previousElement.classList.add(prevElemDownwardAnimation);
 
                     await Promise.all([
                       animationEnd("animationend", punctuationSymbol),
                       animationEnd("animationend", previousElement),
                     ]);
 
-                    punctuationSymbol.classList.remove("floatingDown");
-                    previousElement.classList.remove("floatingDown");
-
+                    // Clean up post-animation
+                    punctuationSymbol.classList.remove(targetDownwardAnimation);
+                    previousElement.classList.remove(prevElemDownwardAnimation);
                     previousElement = null;
                     isAnimating = false;
                     previousElement.style.textDecoration = "none";
