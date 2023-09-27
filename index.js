@@ -921,6 +921,10 @@ function animate() {
                   if (punctuationSymbol.id !== "The Foon (Spoonerism)") return;
 
                   if (previousElement) {
+                    if (previousElement === punctuationSymbol) {
+                      // Same element triggered in succession, so just return
+                      return;
+                    }
                     isAnimating = true;
 
                     // Determine the direction of movement
