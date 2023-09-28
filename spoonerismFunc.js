@@ -5,8 +5,6 @@ export const spoonerism = (sentence) => {
     return `PLACEHOLDER${placeholders.length - 1}`;
   });
 
-  let words = tempSentence.split(/\b/);
-
   const isConsonant = (ch) =>
     "aeiouAEIOU".indexOf(ch) === -1 && /[a-zA-Z]/.test(ch);
 
@@ -22,6 +20,8 @@ export const spoonerism = (sentence) => {
     return cluster;
   };
 
+  let words = tempSentence.split(" ");
+
   for (let i = 0; i < words.length; i++) {
     if (words[i].startsWith("PLACEHOLDER")) {
       continue;
@@ -31,7 +31,8 @@ export const spoonerism = (sentence) => {
       words[i].length &&
       words[i].toLowerCase() !== "the" &&
       words[i][0].toLowerCase() !== "q" &&
-      isConsonant(words[i][0])
+      isConsonant(words[i][0]) &&
+      words[i][0] !== "'"
     ) {
       let cluster = getConsonantCluster(words[i]);
       words[i] = words[i].replace(
@@ -41,7 +42,7 @@ export const spoonerism = (sentence) => {
     }
   }
 
-  let result = words.join("");
+  let result = words.join(" ");
 
   // Restoring placeholders with original content
   placeholders.forEach((placeholder, index) => {
@@ -50,5 +51,3 @@ export const spoonerism = (sentence) => {
 
   return result;
 };
-
-// export default spoonerism;
