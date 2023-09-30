@@ -11,7 +11,7 @@ export const spoonerism = (sentence) => {
   const getConsonantCluster = (word) => {
     let cluster = "";
     for (let ch of word) {
-      if (isConsonant(ch)) {
+      if (isConsonant(ch) && !(ch.toLowerCase() === "y" && cluster)) {
         cluster += ch;
       } else {
         break;
