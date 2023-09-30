@@ -167,16 +167,13 @@ body {
     display: inline-block;
 }
 
-
-/* .laughing-article-a {
-    border: black solid 1px;
-
+/* prevents highlighting of text on mobile */
+.noSelect {
+    user-select: none;       /* Standard syntax */
+    -webkit-user-select: none; /* Safari 3.1+ */
+    -moz-user-select: none;    /* Firefox 2+ */
+    -ms-user-select: none;     /* IE 10+ */
 }
-
-.laughing-article-the {
-    border: black solid 1px;
-} */
-
 
  #contraction-container {
     position: fixed;
