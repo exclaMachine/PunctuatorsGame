@@ -579,6 +579,26 @@ class ParentsOfTheSeas extends Hero {
   }
 }
 
+class Phonia extends Hero {
+  constructor() {
+    super(
+      "./images/Phonia.png",
+      0.35,
+      "Phonia (Homophones)",
+      "seagreen",
+      50,
+      50,
+      "./images/Bubble.png",
+      "./sounds/bubble.mp3",
+      0.1,
+      undefined,
+      undefined,
+      undefined,
+      "./sounds/projectile-hit/bubble-hit.mp3"
+    );
+  }
+}
+
 class QuestionMarkswoman extends Hero {
   constructor() {
     super(
