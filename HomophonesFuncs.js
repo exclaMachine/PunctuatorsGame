@@ -892,8 +892,10 @@ function wrapHomophones(sentence, homophones) {
 
   const wrapped = words.map((word) => {
     if (homophones[word]) {
-      const classList = homophones[word].join(" ");
-      return `<span class="${classList}">${word}</span>`;
+      const alternatives = [word, ...homophones[word]];
+      return `<span id="Phonia (Homophones)" data-homophones="${alternatives.join(
+        ","
+      )}" class="word-0">${word}</span>`;
     }
     return word;
   });
@@ -904,5 +906,3 @@ function wrapHomophones(sentence, homophones) {
 const sentence = "I’ll go to the aisle and buy some ale.";
 const wrappedSentence = wrapHomophones(sentence, homophones);
 console.log(wrappedSentence);
-
-// module.exports = homophones;
