@@ -2,6 +2,7 @@ import { changeEmoticonsToEmojis } from "./emojiFunc.js";
 import { wrapContractionWithSpan } from "./contractionFunc.js";
 import { findAndSurroundAmbigramWordsWithSpan } from "../AmbigramFunc.js";
 import { spoonerism } from "../spoonerismFunc.js";
+import { wrapHomophones } from "../HomophonesFuncs.js";
 
 const secondContractionWordHashMap = new Map();
 
@@ -71,10 +72,13 @@ export const addSpansAndIds = (typedString, outputSentence) => {
 };
 
 export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
+  //The order of this matters. More rare cases, like ambigrams, should go first
   let ambigrambified = findAndSurroundAmbigramWordsWithSpan(typedString);
 
-  let sSpoonerizedString = spoonerism(ambigrambified);
-  //let newString = ambigrambified.split("");
+  let sHomophonized = wrapHomophones(ambigrambified);
+
+  let sSpoonerizedString = spoonerism(sHomophonized);
+
   let newString = sSpoonerizedString.split("");
 
   for (let i = 0; i < newString.length; i++) {

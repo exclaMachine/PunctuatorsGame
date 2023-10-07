@@ -887,7 +887,13 @@ const homophones = {
   "": [],
 };
 
-function wrapHomophones(sentence, homophones) {
+export const wrapHomophones = (sentence) => {
+  let placeholders = [];
+  let tempSentence = sentence.replace(/<span[^>]*>(.*?)<\/span>/g, (match) => {
+    placeholders.push(match);
+    return `PLACEHOLDER${placeholders.length - 1}`;
+  });
+
   const words = sentence.split(/\b/); // Splitting by word boundary
 
   const wrapped = words.map((word) => {
@@ -901,8 +907,9 @@ function wrapHomophones(sentence, homophones) {
   });
 
   return wrapped.join("");
-}
+};
 
-const sentence = "I’ll go to the aisle and buy some ale.";
-const wrappedSentence = wrapHomophones(sentence, homophones);
-console.log(wrappedSentence);
+// const sentence = "I’ll go to the aisle and buy some ale.";
+// const sentence2 = "Let's see if I know what I'm doing";
+// const wrappedSentence = wrapHomophones(sentence, homophones);
+// console.log(wrappedSentence);

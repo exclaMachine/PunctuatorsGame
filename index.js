@@ -593,7 +593,7 @@ class Phonia extends Hero {
       0.1,
       undefined,
       undefined,
-      undefined,
+      "./images/Phonia.png",
       "./sounds/projectile-hit/bubble-hit.mp3"
     );
   }
@@ -791,6 +791,7 @@ let anacontraction = new AnacontractShine();
 let article = new ArtTheTickler();
 let ambigram = new Ambigrambador();
 let foon = new Foon();
+let phonia = new Phonia();
 
 let availableHeroArray = [
   period,
@@ -810,6 +811,7 @@ let availableHeroArray = [
   article,
   ambigram,
   foon,
+  phonia,
 ];
 
 const projectiles = [];
@@ -925,6 +927,23 @@ function animate() {
                   setClassName("rightside-up", punctuationSymbol);
                   punctuationSymbol.classList.remove("upside-down");
                 }, 1800);
+              } else if (punctuationSymbol.id === phonia.symbol) {
+                if (punctuationSymbol.hasAttribute("data-homophones")) {
+                  const span = punctuationSymbol;
+                  const homophonesList = span
+                    .getAttribute("data-homophones")
+                    .split(",");
+                  let currentIndex = parseInt(
+                    span.className.replace("word-", "")
+                  );
+
+                  // Get the next index, or loop back to 0 if we're at the last word
+                  let nextIndex = (currentIndex + 1) % homophonesList.length;
+
+                  // Update the content and class
+                  span.textContent = homophonesList[nextIndex];
+                  span.className = `word-${nextIndex}`;
+                }
               } else if (punctuationSymbol.id === foon.symbol) {
                 const animationEnd = (which, element) =>
                   new Promise((resolve) => {
