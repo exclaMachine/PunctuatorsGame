@@ -676,6 +676,25 @@ class SemiColonel extends Hero {
   }
 }
 
+class Spacel extends Hero {
+  constructor() {
+    super(
+      "./images/Spacel.png",
+      0.9,
+      "Space-el",
+      "violet",
+      126,
+      50,
+      "./images/Colon_Wave.png",
+      undefined,
+      0.1,
+      undefined,
+      undefined,
+      "./images/Spacel.png"
+    );
+  }
+}
+
 class WhiteKnight extends Hero {
   constructor() {
     super(
@@ -792,6 +811,7 @@ let article = new ArtTheTickler();
 let ambigram = new Ambigrambador();
 let foon = new Foon();
 let phonia = new Phonia();
+let spacel = new Spacel();
 
 let availableHeroArray = [
   period,
@@ -812,6 +832,7 @@ let availableHeroArray = [
   ambigram,
   foon,
   phonia,
+  spacel,
 ];
 
 const projectiles = [];
@@ -943,6 +964,15 @@ function animate() {
                   // Update the content and class
                   span.textContent = homophonesList[nextIndex];
                   span.className = `word-${nextIndex}`;
+                }
+              } else if (punctuationSymbol.id === spacel.symbol) {
+                if (punctuationSymbol.hasAttribute("data-splitwords")) {
+                  const [firstWord, secondWord] =
+                    punctuationSymbol.dataset.splitwords.split(" ");
+                  punctuationSymbol.textContent = `${firstWord} ${secondWord}`;
+
+                  // Remove the attribute so it doesn't split again on subsequent clicks
+                  punctuationSymbol.removeAttribute("data-splitwords");
                 }
               } else if (punctuationSymbol.id === foon.symbol) {
                 const animationEnd = (which, element) =>

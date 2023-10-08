@@ -3,6 +3,7 @@ import { wrapContractionWithSpan } from "./contractionFunc.js";
 import { findAndSurroundAmbigramWordsWithSpan } from "../AmbigramFunc.js";
 import { spoonerism } from "../spoonerismFunc.js";
 import { wrapHomophones } from "../HomophonesFuncs.js";
+import { protectedSplitWords } from "../SpanPlaceholder.js";
 
 const secondContractionWordHashMap = new Map();
 
@@ -77,7 +78,9 @@ export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
 
   let sHomophonized = wrapHomophones(ambigrambified);
 
-  let sSpoonerizedString = spoonerism(sHomophonized);
+  let sSpliterized = protectedSplitWords(sHomophonized);
+
+  let sSpoonerizedString = spoonerism(sSpliterized);
 
   let newString = sSpoonerizedString.split("");
 

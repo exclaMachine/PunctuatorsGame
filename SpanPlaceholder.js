@@ -1,3 +1,5 @@
+import { wrapSplitWords } from "./splitWords.js";
+
 function applySpanPlaceholders(text) {
   let placeholders = [];
   let tempText = text.replace(/<span[^>]*>(.*?)<\/span>/g, (match) => {
@@ -25,6 +27,7 @@ function withSpanPlaceholders(callback) {
 // Wrap each of your functions using `withSpanPlaceholders`
 // const protectedSpoonerism = withSpanPlaceholders(spoonerism);
 // const protectedWrapHomophones = withSpanPlaceholders(wrapHomophones);
+export const protectedSplitWords = withSpanPlaceholders(wrapSplitWords);
 
 // // Usage:
 // let result = protectedSpoonerism(sentence);

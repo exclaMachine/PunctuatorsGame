@@ -1,6 +1,6 @@
 const fs = require("fs");
 
-// Binary search implementation to check if a word is present in the words.txt file
+// Binary search implementation to check if a word is present in the words.txt file. TODO need to put in own file so not repeating
 function binarySearch(arr, val) {
   let left = 0;
   let right = arr.length - 1;
@@ -17,22 +17,32 @@ function binarySearch(arr, val) {
   return false;
 }
 
-// Function to create a JSON of words split into two valid words. Make spacel split words instead of putting them together
-function createWordsThatCanBeSplitJSON() {
-  const filename = "words_alpha.txt"; //Will probably change this
+function isValidSplit(firstWord, secondWord, words) {
+  if (
+    (firstWord.length === 1 && firstWord !== "a" && firstWord !== "i") ||
+    (secondWord.length === 1 && secondWord !== "a" && secondWord !== "i")
+  ) {
+    return false;
+  }
+  return binarySearch(words, firstWord) && binarySearch(words, secondWord);
+}
+
+// Function to create a JS file exporting words split into two valid words
+function createWordsThatCanBeSplitJS() {
+  //This is from http://wordlist.aspell.net/12dicts/
+  const filename = "2of12.txt";
   const words = fs.readFileSync(filename, "utf8").split("\n").filter(Boolean);
   const matchingWords = {};
 
   for (let word of words) {
-    let bestSplit = null; // To store the best split position
-    let bestDistanceToCenter = Infinity; // To store the distance to the center for the best split
+    let bestSplit = null;
+    let bestDistanceToCenter = Infinity;
 
     for (let i = 1; i < word.length; i++) {
-      // Starting from 1 because the minimum length for the first split word is 1
       const firstWord = word.slice(0, i);
       const secondWord = word.slice(i);
 
-      if (binarySearch(words, firstWord) && binarySearch(words, secondWord)) {
+      if (isValidSplit(firstWord, secondWord, words)) {
         const currentDistanceToCenter = Math.abs(word.length / 2 - i);
         if (currentDistanceToCenter < bestDistanceToCenter) {
           bestDistanceToCenter = currentDistanceToCenter;
@@ -41,18 +51,22 @@ function createWordsThatCanBeSplitJSON() {
       }
     }
 
-    // If we found a best split position, store the result
     if (bestSplit !== null) {
       const firstWord = word.slice(0, bestSplit);
       const secondWord = word.slice(bestSplit);
-      const wordWithSpan = `<span class="${firstWord}-${secondWord}">${word}</span>`;
+      const wordWithSpan = `<span id="Space-el" data-splitwords="${firstWord} ${secondWord}">${word}</span>`;
       matchingWords[word] = wordWithSpan;
     }
   }
 
-  fs.writeFileSync("wordsWithSplitClass.json", JSON.stringify(matchingWords));
-  console.log(`Successfully created wordsWithSplitClass.json!`);
+  const jsContent = `export const splitWords = ${JSON.stringify(
+    matchingWords,
+    null,
+    2
+  )};`;
+
+  fs.writeFileSync("splitWords.js", jsContent);
+  console.log(`Successfully created splitWords.js!`);
 }
 
-// Run the function
-//createWordsThatCanBeSplitJSON();
+createWordsThatCanBeSplitJS();
