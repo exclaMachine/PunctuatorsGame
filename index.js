@@ -484,7 +484,7 @@ class Foon extends Hero {
   constructor() {
     super(
       "./images/Foon_.png",
-      0.3,
+      0.35,
       "The Foon (Spoonerism)",
       "green",
       118,
@@ -593,7 +593,7 @@ class Phonia extends Hero {
       0.1,
       undefined,
       undefined,
-      "./images/Phonia.png",
+      "./images/Phonia2.png",
       "./sounds/projectile-hit/bubble-hit.mp3"
     );
   }
@@ -680,7 +680,7 @@ class Spacel extends Hero {
   constructor() {
     super(
       "./images/Spacel.png",
-      0.9,
+      0.5,
       "Space-el",
       "violet",
       126,
