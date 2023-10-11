@@ -690,7 +690,7 @@ class Spacel extends Hero {
       0.1,
       undefined,
       undefined,
-      "./images/Spacel.png"
+      "./images/Spacel2.png"
     );
   }
 }
