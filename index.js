@@ -686,7 +686,7 @@ class Spacel extends Hero {
       126,
       50,
       "./images/Colon_Wave.png",
-      undefined,
+      "./sounds/523467__tv_ling__perfect-fart.mp3",
       0.1,
       undefined,
       undefined,
