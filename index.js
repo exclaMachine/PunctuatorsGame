@@ -185,6 +185,23 @@ const gameSfx = {
 };
 
 class Hero {
+  /**
+   * Creates a new Hero.
+   * @param {string} heroImage - The image of the hero.
+   * @param {number} heroScale - The scale of the hero image.
+   * @param {string} symbol - The symbol for the hero.
+   * @param {string} characterColor - The color of the character's text.
+   * @param {number} projectileStartPositionX - The starting position X of the projectile.
+   * @param {number} projectileLength - The length of the projectile.
+   * @param {string} projectileImage - The image for the projectile.
+   * @param {string} projectileShootSound - The sound when the projectile is shot.
+   * @param {number} projectileScale - The scale of the projectile image.
+   * @param {number} [projectileSoundRate] - The rate of the projectile sound.
+   * @param {number} [projectileSoundVolume] - The volume of the projectile sound.
+   * @param {string} [secondHeroImage] - The second image of the hero.
+   * @param {string} projectileHitSound - The sound when the projectile hits.
+   */
+
   constructor(
     heroImage,
     heroScale,
@@ -312,19 +329,6 @@ class Hero {
   }
 }
 
-/*heroImage,
-heroScale,
-symbol,
-characterColor,
-projectileStartPositionX,
-projectileLength,
-projectileImage,
-projectileShootSound,
-projectileScale,
-projectileSoundRate,
-projectileSoundVolume,
-secondHeroImage
-*/
 //create a function that makes him disappear when projectile shoots
 class Ambigrambador extends Hero {
   constructor() {
