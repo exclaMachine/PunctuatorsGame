@@ -491,7 +491,7 @@ class Foon extends Hero {
       0.35,
       "The Foon (Spoonerism)",
       "green",
-      118,
+      70,
       50,
       "./images/Foon_Projectile.png",
       "./sounds/whoosh.mp3",
