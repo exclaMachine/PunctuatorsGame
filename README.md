@@ -2,7 +2,7 @@
 
 ## Game can be found [here](https://exclamachine.github.io/PunctuatorsGame)
 
-The Punctuators shoot on to a sentence of your creation to add back the removed punctuation!
+The Punctuators shoot on to a sentence of your creation to add back the removed punctuation! In the world of the Punctuators, there is The Narrative (what is happening at that moment in the world), and there is The Dialogue (what people say is happening in the world). However, only a select few are able to see and affect these two forces.
 
 ## Instructions for two players:
 
