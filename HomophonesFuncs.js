@@ -37,8 +37,8 @@ const homophones = {
   away: ["aweigh"],
   aweigh: ["away"],
   aye: ["eye", "I"],
-  eye: ["I"],
-  I: ["eye"],
+  eye: ["I", "aye"],
+  I: ["eye", "aye"],
   bail: ["bale"],
   bale: ["bail"],
   bait: ["bate"],
@@ -910,6 +910,8 @@ export const wrapHomophones = (sentence) => {
 };
 
 // const sentence = "I’ll go to the aisle and buy some ale.";
+// const sentence = '<span id="Ambigrambador">ad</span> add ade';
+
 // const sentence2 = "Let's see if I know what I'm doing";
 // const wrappedSentence = wrapHomophones(sentence, homophones);
 // console.log(wrappedSentence);
