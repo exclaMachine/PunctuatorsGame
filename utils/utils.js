@@ -3,7 +3,7 @@ import { wrapContractionWithSpan } from "./contractionFunc.js";
 import { findAndSurroundAmbigramWordsWithSpan } from "../AmbigramFunc.js";
 import { spoonerism } from "../spoonerismFunc.js";
 import { wrapHomophones } from "../HomophonesFuncs.js";
-import { protectedSplitWords } from "../SpanPlaceholder.js";
+import { protectedArticles, protectedSplitWords } from "../SpanPlaceholder.js";
 
 const secondContractionWordHashMap = new Map();
 
@@ -74,6 +74,8 @@ export const addSpansAndIds = (typedString, outputSentence) => {
 
 export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
   //The order of this matters. More rare cases, like ambigrams, should go first
+  //let articlized = protectedArticles(typedString);
+
   let ambigrambified = findAndSurroundAmbigramWordsWithSpan(typedString);
 
   let sHomophonized = wrapHomophones(ambigrambified);

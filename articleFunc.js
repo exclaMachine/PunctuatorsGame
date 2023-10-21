@@ -10,7 +10,7 @@ export const shakeAndBorderizeArticle = (node) => {
   }
 };
 
-function highlightAndClassifyArticles(str) {
+export const highlightAndClassifyArticles = (str) => {
   return str.replace(
     /\b(the|an|a)\b(\s*\w?)/gi,
     function (match, article, nextChar) {
@@ -35,7 +35,7 @@ function highlightAndClassifyArticles(str) {
           dataAlternate.charAt(0).toUpperCase() + dataAlternate.slice(1);
       }
 
-      return `<span data-alternate="${dataAlternate}">${article}</span>${nextChar}`;
+      return `<span id=\"Art The Tickler (Article)\" data-alternate="${dataAlternate}">${article}</span>${nextChar}`;
     }
   );
 }

@@ -1117,11 +1117,17 @@ function animate() {
               }
               if (player.symbol === article.symbol) {
                 // shakeAndBorderizeArticle(punctuationSymbol);
+                // const currentText = punctuationSymbol.textContent;
+                // const alternateText =
+                //   punctuationSymbol.getAttribute("data-alternate");
 
-                punctuationSymbol.classList.add("giggling-text");
-                setTimeout(function () {
-                  text.classList.remove("giggling-text");
-                }, 900); // Remove the giggling effect after 0.3s * 3 iterations
+                // punctuationSymbol.textContent = alternateText;
+                // punctuationSymbol.setAttribute("data-alternate", currentText);
+
+                  punctuationSymbol.classList.add("giggling-text");
+                  setTimeout(function () {
+                    text.classList.remove("giggling-text");
+                  }, 900); // Remove the giggling effect after 0.3s * 3 iterations
               }
               //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
             } else if (projectile.position.y + projectile.height <= 0) {

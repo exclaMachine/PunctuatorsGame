@@ -1,4 +1,5 @@
 import { wrapSplitWords } from "./splitWords.js";
+import { highlightAndClassifyArticles } from "./articleFunc.js";
 
 function applySpanPlaceholders(text) {
   let placeholders = [];
@@ -28,6 +29,9 @@ function withSpanPlaceholders(callback) {
 // const protectedSpoonerism = withSpanPlaceholders(spoonerism);
 // const protectedWrapHomophones = withSpanPlaceholders(wrapHomophones);
 export const protectedSplitWords = withSpanPlaceholders(wrapSplitWords);
+export const protectedArticles = withSpanPlaceholders(
+  highlightAndClassifyArticles
+);
 
 // // Usage:
 // let result = protectedSpoonerism(sentence);
