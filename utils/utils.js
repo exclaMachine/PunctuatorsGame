@@ -74,9 +74,9 @@ export const addSpansAndIds = (typedString, outputSentence) => {
 
 export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
   //The order of this matters. More rare cases, like ambigrams, should go first
-  //let articlized = protectedArticles(typedString);
+  let articlized = protectedArticles(typedString);
 
-  let ambigrambified = findAndSurroundAmbigramWordsWithSpan(typedString);
+  let ambigrambified = findAndSurroundAmbigramWordsWithSpan(articlized);
 
   let sHomophonized = wrapHomophones(ambigrambified);
 
@@ -129,8 +129,7 @@ export const waitForElement = (selector) => {
         if (
           el.className === "hidden-punc" ||
           el.className === "capital-black-hole" ||
-          el.id === "ApostroPharaoh (Contraction)" ||
-          el.id === "Art The Tickler (Article)"
+          el.id === "ApostroPharaoh (Contraction)"
         )
           numberOfPunctuationArray.push(el);
       });

@@ -166,11 +166,6 @@ export const wrapContractionWithSpan = (typedSentence, outputSentence) => {
         words[index + 1]
       }\">${words[index + 1]}</span>`;
     }
-    if (articleWordSet.has(word)) {
-      words[index] = `<span id=\"Art The Tickler (Article)\" class=\"${
-        words[index]
-      }\">${words[index]}</span>`;
-    }
   });
 
   return words.join(" ");

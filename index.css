@@ -71,19 +71,20 @@ body {
     font-size: 0;
 }
 
-.a {
+span[data-alternate="a"] {
     border: none;
     display: inline-block;
     transition: background-color 0.3s;
 }
 
-.an {
+span[data-alternate="an"] {
     border: none;
     display: inline-block;
     transition: background-color 0.3s;
 }
 
-.the {
+span[data-alternate="the"],
+span[data-alternate="The"] {
     border: none;
     display: inline-block;
     transition: background-color 0.3s;
