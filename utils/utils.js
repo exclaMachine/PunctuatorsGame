@@ -3,7 +3,11 @@ import { wrapContractionWithSpan } from "./contractionFunc.js";
 import { findAndSurroundAmbigramWordsWithSpan } from "../AmbigramFunc.js";
 import { spoonerism } from "../spoonerismFunc.js";
 import { wrapHomophones } from "../HomophonesFuncs.js";
-import { protectedArticles, protectedSplitWords } from "../SpanPlaceholder.js";
+import {
+  protectedArticles,
+  protectedSplitWords,
+  protectedWiteOutWords,
+} from "../SpanPlaceholder.js";
 
 const secondContractionWordHashMap = new Map();
 
@@ -82,7 +86,9 @@ export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
 
   let sSpliterized = protectedSplitWords(sHomophonized);
 
-  let sSpoonerizedString = spoonerism(sSpliterized);
+  let sWitedOut = protectedWiteOutWords(sSpliterized);
+
+  let sSpoonerizedString = spoonerism(sWitedOut);
 
   let newString = sSpoonerizedString.split("");
 
@@ -180,4 +186,4 @@ export const binarySearch = (arr, val) => {
     }
   }
   return false;
-}
+};

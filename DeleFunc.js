@@ -1,4 +1,6 @@
-const fs = require("fs");
+// const fs = require("fs");
+import witeOutWords from "./oneLessCharacterWordsWithSpan.js";
+
 //import { binarySearch } from "./utils/utils.js";
 
 const binarySearch = (arr, val) => {
@@ -17,30 +19,43 @@ const binarySearch = (arr, val) => {
   return false;
 };
 
-// Function to create a JSON of words with one character removed and their matching words in words.txt
-function createWordsWithOneLessCharacterJSON() {
-  const filename = "2of12.txt";
-  const words = fs.readFileSync(filename, "utf8").split("\n").filter(Boolean);
-  const matchingWords = {};
-  for (let word of words) {
-    for (let i = 0; i < word.length; i++) {
-      const alteredWord = word.slice(0, i) + word.slice(i + 1);
-      const alteredWordWithSpan =
-        word.slice(0, i) +
-        `<span id="Sir Dele of Dallying">${word[i]}</span>` +
-        word.slice(i + 1);
-      if (binarySearch(words, alteredWord)) {
-        //matchingWords[word] = alteredWord;
-        matchingWords[word] = alteredWordWithSpan;
-        break;
-      }
-    }
-  }
-  fs.writeFileSync(
-    "oneLessCharacterWordsWithSpan.json",
-    JSON.stringify(matchingWords)
-  );
-  console.log(`Successfully created oneLessCharacterWordsWithSpan.json!`);
-}
+// function createWordsWithOneLessCharacterJS() {
+//   const filename = "2of12.txt";
+//   const words = fs.readFileSync(filename, "utf8").split("\n").filter(Boolean);
+//   const matchingWords = {};
+//   for (let word of words) {
+//     for (let i = 0; i < word.length; i++) {
+//       const alteredWord = word.slice(0, i) + word.slice(i + 1);
+//       const alteredWordWithSpan =
+//         word.slice(0, i) +
+//         `<span id="Sir Dele of Dallying">${word[i]}</span>` +
+//         word.slice(i + 1);
+//       if (binarySearch(words, alteredWord)) {
+//         matchingWords[word] = alteredWordWithSpan;
+//         break;
+//       }
+//     }
+//   }
 
-createWordsWithOneLessCharacterJSON();
+//   const outputContent = `const witeOutWords = ${JSON.stringify(
+//     matchingWords
+//   )};\nexport default witeOutWords;`;
+
+//   fs.writeFileSync("oneLessCharacterWordsWithSpan.js", outputContent);
+//   console.log(`Successfully created oneLessCharacterWordsWithSpan.js!`);
+// }
+
+// For testing
+// createWordsWithOneLessCharacterJS();
+
+export const wrapWiteOutWords = (sentence) => {
+  const words = sentence.split(/\b/); // Splitting by word boundary
+
+  const splitted = words.map((word) => {
+    if (witeOutWords[word]) {
+      return witeOutWords[word];
+    }
+    return word;
+  });
+  return splitted.join("");
+};

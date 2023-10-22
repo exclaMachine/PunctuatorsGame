@@ -626,6 +626,11 @@ footer > div {
         background-color: black;
     }
 
+    .wite-out {
+        transition: 1s;
+        opacity: 0;
+    }
+
     @media (prefers-reduced-motion: reduce) {
         *,
         ::before,

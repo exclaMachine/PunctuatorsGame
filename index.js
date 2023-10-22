@@ -816,6 +816,7 @@ let ambigram = new Ambigrambador();
 let foon = new Foon();
 let phonia = new Phonia();
 let spacel = new Spacel();
+let dele = new WhiteKnight();
 
 let availableHeroArray = [
   period,
@@ -837,6 +838,7 @@ let availableHeroArray = [
   foon,
   phonia,
   spacel,
+  dele,
 ];
 
 const projectiles = [];
@@ -1066,6 +1068,8 @@ function animate() {
                 };
 
                 swapClusters();
+              } else if (punctuationSymbol.id === dele.symbol) {
+                punctuationSymbol.classList.add("wite-out");
               } else {
                 punctuationSymbol.style.color = `${player.characterColor}`;
                 punctuationSymbol.style.textShadow =
