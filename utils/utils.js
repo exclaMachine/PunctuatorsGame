@@ -164,3 +164,20 @@ export const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
   });
   return filteredArr;
 };
+
+// Binary search implementation to check if a word is present in the words.txt file
+export const binarySearch = (arr, val) => {
+  let left = 0;
+  let right = arr.length - 1;
+  while (left <= right) {
+    let mid = Math.floor((left + right) / 2);
+    if (arr[mid] === val) {
+      return true;
+    } else if (arr[mid] < val) {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+  return false;
+}
