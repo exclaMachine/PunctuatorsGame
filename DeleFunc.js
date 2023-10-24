@@ -45,7 +45,7 @@ const binarySearch = (arr, val) => {
 //   console.log(`Successfully created oneLessCharacterWordsWithSpan.js!`);
 // }
 
-// For testing
+// //For testing
 // createWordsWithOneLessCharacterJS();
 
 export const wrapWiteOutWords = (sentence) => {
