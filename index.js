@@ -836,6 +836,7 @@ let foon = new Foon();
 let phonia = new Phonia();
 let spacel = new Spacel();
 let dele = new WhiteKnight();
+let zana = new Zana();
 
 let availableHeroArray = [
   period,
