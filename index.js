@@ -718,6 +718,25 @@ class WhiteKnight extends Hero {
   }
 }
 
+class Zana extends Hero {
+  constructor() {
+    super(
+      "./images/Zana.png",
+      0.5,
+      "Zana (caret)",
+      "whitesmoke",
+      80,
+      50,
+      "images/Colon_Wave.png",
+      undefined,
+      0.2,
+      undefined,
+      undefined,
+      "./images/Zana2.png"
+    );
+  }
+}
+
 //need to make this more generic and create a laser one
 class Projectile {
   constructor({ position, velocity }) {
