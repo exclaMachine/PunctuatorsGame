@@ -859,6 +859,7 @@ let availableHeroArray = [
   phonia,
   spacel,
   dele,
+  zana,
 ];
 
 const projectiles = [];
@@ -999,6 +1000,25 @@ function animate() {
 
                   // Remove the attribute so it doesn't split again on subsequent clicks
                   punctuationSymbol.removeAttribute("data-splitwords");
+                }
+              } else if (punctuationSymbol.id === zana.symbol) {
+                const originalText = punctuationSymbol.textContent;
+                const alteredText = punctuationSymbol.dataset.caret;
+                let additionalLetter = "";
+
+                for (let i = 0; i < alteredText.length; i++) {
+                  if (originalText[i] !== alteredText[i]) {
+                    additionalLetter = alteredText[i];
+                    break;
+                  }
+                }
+
+                if (additionalLetter) {
+                  const newText = alteredText.replace(
+                    additionalLetter,
+                    `<sup class="superscript">${additionalLetter}</sup>`
+                  );
+                  punctuationSymbol.innerHTML = newText;
                 }
               } else if (punctuationSymbol.id === foon.symbol) {
                 const animationEnd = (which, element) =>

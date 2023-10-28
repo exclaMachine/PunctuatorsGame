@@ -5,6 +5,7 @@ import { spoonerism } from "../spoonerismFunc.js";
 import { wrapHomophones } from "../HomophonesFuncs.js";
 import {
   protectedArticles,
+  protectedCaretWords,
   protectedSplitWords,
   protectedWiteOutWords,
 } from "../SpanPlaceholder.js";
@@ -87,8 +88,9 @@ export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
   let sSpliterized = protectedSplitWords(sHomophonized);
 
   // let sWitedOut = protectedWiteOutWords(sSpliterized);
+  let sCareted = protectedCaretWords(sSpliterized);
 
-  let sSpoonerizedString = spoonerism(sSpliterized);
+  let sSpoonerizedString = spoonerism(sCareted);
 
   let newString = sSpoonerizedString.split("");
 

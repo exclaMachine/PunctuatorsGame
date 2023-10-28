@@ -631,6 +631,12 @@ footer > div {
         opacity: 0;
     }
 
+    .superscript {
+        vertical-align: super;
+        font-size: smaller;
+      }
+
+
     @media (prefers-reduced-motion: reduce) {
         *,
         ::before,

@@ -1,6 +1,7 @@
 import { wrapSplitWords } from "./splitWords.js";
 import { highlightAndClassifyArticles } from "./articleFunc.js";
 import { wrapWiteOutWords } from "./DeleFunc.js";
+import { wrapCaretWords } from "./CaretFunc.js";
 
 function applySpanPlaceholders(text) {
   let placeholders = [];
@@ -34,6 +35,8 @@ export const protectedArticles = withSpanPlaceholders(
   highlightAndClassifyArticles
 );
 export const protectedWiteOutWords = withSpanPlaceholders(wrapWiteOutWords);
+
+export const protectedCaretWords = withSpanPlaceholders(wrapCaretWords);
 
 // // Usage:
 // let result = protectedSpoonerism(sentence);
