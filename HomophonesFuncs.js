@@ -888,12 +888,13 @@ const homophones = {
 };
 
 export const wrapHomophones = (sentence) => {
-  let placeholders = [];
-  let tempSentence = sentence.replace(/<span[^>]*>(.*?)<\/span>/g, (match) => {
-    placeholders.push(match);
-    return `PLACEHOLDER${placeholders.length - 1}`;
-  });
+  // let placeholders = [];
+  // let tempSentence = sentence.replace(/<span[^>]*>(.*?)<\/span>/g, (match) => {
+  //   placeholders.push(match);
+  //   return `PLACEHOLDER${placeholders.length - 1}`;
+  // });
 
+  //const words = tempSentence.split(/\b/); // Splitting by word boundary
   const words = sentence.split(/\b/); // Splitting by word boundary
 
   const wrapped = words.map((word) => {

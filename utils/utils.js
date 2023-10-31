@@ -6,6 +6,7 @@ import { wrapHomophones } from "../HomophonesFuncs.js";
 import {
   protectedArticles,
   protectedCaretWords,
+  protectedHomophones,
   protectedSplitWords,
   protectedWiteOutWords,
 } from "../SpanPlaceholder.js";
@@ -83,7 +84,8 @@ export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
 
   let ambigrambified = findAndSurroundAmbigramWordsWithSpan(articlized);
 
-  let sHomophonized = wrapHomophones(ambigrambified);
+  // let sHomophonized = wrapHomophones(ambigrambified);
+  let sHomophonized = protectedHomophones(ambigrambified);
 
   let sSpliterized = protectedSplitWords(sHomophonized);
 

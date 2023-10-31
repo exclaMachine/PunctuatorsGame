@@ -2,15 +2,16 @@ import { wrapSplitWords } from "./splitWords.js";
 import { highlightAndClassifyArticles } from "./articleFunc.js";
 import { wrapWiteOutWords } from "./DeleFunc.js";
 import { wrapCaretWords } from "./CaretFunc.js";
+import { wrapHomophones } from "./HomophonesFuncs.js";
 
-function applySpanPlaceholders(text) {
+export const applySpanPlaceholders = (text) => {
   let placeholders = [];
   let tempText = text.replace(/<span[^>]*>(.*?)<\/span>/g, (match) => {
     placeholders.push(match);
     return `PLACEHOLDER${placeholders.length - 1}`;
   });
   return { tempText, placeholders };
-}
+};
 
 function restoreSpanPlaceholders(text, placeholders) {
   placeholders.forEach((placeholder, index) => {
@@ -37,6 +38,8 @@ export const protectedArticles = withSpanPlaceholders(
 export const protectedWiteOutWords = withSpanPlaceholders(wrapWiteOutWords);
 
 export const protectedCaretWords = withSpanPlaceholders(wrapCaretWords);
+
+export const protectedHomophones = withSpanPlaceholders(wrapHomophones);
 
 // // Usage:
 // let result = protectedSpoonerism(sentence);
