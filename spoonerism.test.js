@@ -32,4 +32,11 @@ describe("spoonerism function tests", () => {
       '<span id="The Foon (Spoonerism)" class="Tr">Tr</span>y <span id="The Foon (Spoonerism)" class="t">t</span>o <span id="The Foon (Spoonerism)" class="fl">fl</span>y'
     );
   });
+
+  test("should not create a span when there is only one consonant cluster", () => {
+    const sentence = "<span>plum</span> dog";
+    const expected = "<span>plum</span> dog"; // No change expected, no span should be created
+    const result = spoonerism(sentence);
+    expect(result).toBe(expected);
+  });
 });

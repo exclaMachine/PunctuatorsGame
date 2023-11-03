@@ -21,24 +21,31 @@ export const spoonerism = (sentence) => {
   };
 
   let words = tempSentence.split(" ");
+  let eligibleWordCount = words.reduce(
+    (count, word) => count + (word.startsWith("PLACEHOLDER") ? 0 : 1),
+    0
+  );
 
-  for (let i = 0; i < words.length; i++) {
-    if (words[i].startsWith("PLACEHOLDER")) {
-      continue;
-    }
+  // Only proceed if there is more than one eligible word
+  if (eligibleWordCount > 1) {
+    for (let i = 0; i < words.length; i++) {
+      if (words[i].startsWith("PLACEHOLDER")) {
+        continue;
+      }
 
-    if (
-      words[i].length &&
-      words[i].toLowerCase() !== "the" &&
-      words[i][0].toLowerCase() !== "q" &&
-      isConsonant(words[i][0]) &&
-      words[i][0] !== "'"
-    ) {
-      let cluster = getConsonantCluster(words[i]);
-      words[i] = words[i].replace(
-        cluster,
-        `<span id="The Foon (Spoonerism)" class="${cluster}">${cluster}</span>`
-      );
+      if (
+        words[i].length &&
+        words[i].toLowerCase() !== "the" &&
+        words[i][0].toLowerCase() !== "q" &&
+        isConsonant(words[i][0]) &&
+        words[i][0] !== "'"
+      ) {
+        let cluster = getConsonantCluster(words[i]);
+        words[i] = words[i].replace(
+          cluster,
+          `<span id="The Foon (Spoonerism)" class="${cluster}">${cluster}</span>`
+        );
+      }
     }
   }
 
