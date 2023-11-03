@@ -187,7 +187,6 @@ const homophones = {
   cymbal: ["symbol"],
   symbol: ["cymbal"],
   d: ["dee"],
-  dee: ["d"],
   dam: ["damn"],
   damn: ["dam"],
   days: ["daze"],
