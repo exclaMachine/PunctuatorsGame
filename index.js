@@ -727,9 +727,9 @@ class Zana extends Hero {
       "whitesmoke",
       80,
       50,
-      "images/Colon_Wave.png",
+      "images/Caret.png",
       undefined,
-      0.2,
+      0.05,
       undefined,
       undefined,
       "./images/Zana2.png"
