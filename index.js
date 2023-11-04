@@ -590,7 +590,7 @@ class Phonia extends Hero {
       0.35,
       "Phonia (Homophones)",
       "seagreen",
-      50,
+      100,
       50,
       "./images/Bubble.png",
       "./sounds/bubble.mp3",
