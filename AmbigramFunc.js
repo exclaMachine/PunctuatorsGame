@@ -1,7 +1,4 @@
 const ambigramPOJO = {
-  a: "e",
-  aa: "ee",
-  aal: "lee",
   aam: "wee",
   aas: "see",
   ab: "qe",
@@ -386,7 +383,6 @@ const ambigramPOJO = {
   nm: "wu",
   nol: "lou",
   nos: "sou",
-  not: "tou",
   now: "mou",
   np: "du",
   nr: "ju",
