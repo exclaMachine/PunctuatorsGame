@@ -83,7 +83,6 @@ const ambigramPOJO = {
   baw: "meq",
   bbs: "sqq",
   bd: "pq",
-  be: "aq",
   boys: "shoq",
   bol: "loq",
   bs: "sq",
