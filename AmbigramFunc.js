@@ -101,7 +101,6 @@ const ambigramPOJO = {
   dd: "pp",
   de: "ap",
   deal: "leap",
-  deer: "jaap",
   dey: "hap",
   deys: "shap",
   del: "lap",
