@@ -1109,7 +1109,47 @@ function animate() {
 
                 swapClusters();
               } else if (punctuationSymbol.id === dele.symbol) {
-                punctuationSymbol.classList.add("wite-out");
+                if (punctuationSymbol.getAttribute("data-handled") === "true")
+                  return;
+                punctuationSymbol.setAttribute("data-handled", "true");
+
+                // Get the word to change into from the data-wited-word attribute
+                const witedWord =
+                  punctuationSymbol.getAttribute("data-wited-word");
+                const originalWord = punctuationSymbol.textContent;
+                let indexToFadeOut = -1;
+
+                // Find the index of the letter that is different between the original word and the wited word
+                for (let i = 0; i < originalWord.length; i++) {
+                  if (witedWord.indexOf(originalWord[i]) === -1) {
+                    indexToFadeOut = i;
+                    break;
+                  }
+                }
+
+                // Split the word into parts: before, the letter to fade out, and after
+                const partBefore = originalWord.slice(0, indexToFadeOut);
+                const partAfter = originalWord.slice(indexToFadeOut + 1);
+                const letterToFadeOut = originalWord[indexToFadeOut];
+
+                // Wrap the letter to fade out in a span with the fade-out class
+                punctuationSymbol.innerHTML =
+                  partBefore +
+                  `<span class="fade-out">${letterToFadeOut}</span>` +
+                  partAfter;
+
+                // Wait for the next frame so the browser acknowledges the new span and then start the fade out
+                requestAnimationFrame(() => {
+                  const fadeOutSpan =
+                    punctuationSymbol.querySelector(".fade-out");
+                  fadeOutSpan.style.transition = "opacity 0.5s";
+                  fadeOutSpan.style.opacity = "0";
+
+                  // After the fade out transition, set the text to the wited word
+                  setTimeout(() => {
+                    punctuationSymbol.textContent = witedWord;
+                  }, 500); // This duration should match the CSS transition
+                });
               } else {
                 punctuationSymbol.style.color = `${player.characterColor}`;
                 punctuationSymbol.style.textShadow =

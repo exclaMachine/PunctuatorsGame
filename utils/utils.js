@@ -89,8 +89,8 @@ export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
 
   let sSpliterized = protectedSplitWords(sHomophonized);
 
-  // let sWitedOut = protectedWiteOutWords(sSpliterized);
-  let sCareted = protectedCaretWords(sSpliterized);
+  let sWitedOut = protectedWiteOutWords(sSpliterized);
+  let sCareted = protectedCaretWords(sWitedOut);
 
   let sSpoonerizedString = spoonerism(sCareted);
 

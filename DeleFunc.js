@@ -19,33 +19,36 @@ const binarySearch = (arr, val) => {
   return false;
 };
 
-// function createWordsWithOneLessCharacterJS() {
-//   const filename = "2of12.txt";
-//   const words = fs.readFileSync(filename, "utf8").split("\n").filter(Boolean);
-//   const matchingWords = {};
-//   for (let word of words) {
-//     for (let i = 0; i < word.length; i++) {
-//       const alteredWord = word.slice(0, i) + word.slice(i + 1);
-//       const alteredWordWithSpan =
-//         word.slice(0, i) +
-//         `<span id="Sir Dele of Dallying">${word[i]}</span>` +
-//         word.slice(i + 1);
-//       if (binarySearch(words, alteredWord)) {
-//         matchingWords[word] = alteredWordWithSpan;
-//         break;
-//       }
-//     }
-//   }
+function createWordsWithOneLessCharacterJS() {
+  const filename = "2of12.txt";
+  const words = fs.readFileSync(filename, "utf8").split("\n").filter(Boolean);
+  const matchingWords = {};
+  for (let word of words) {
+    if (word.length < 3) continue;
 
-//   const outputContent = `const witeOutWords = ${JSON.stringify(
-//     matchingWords
-//   )};\nexport default witeOutWords;`;
+    for (let i = 0; i < word.length; i++) {
+      const alteredWord = word.slice(0, i) + word.slice(i + 1);
+      if (binarySearch(words, alteredWord)) {
+        const wordWithSpan = `<span id="Sir Dele of Dallying" data-wited-word="${alteredWord}">${word}</span>`;
+        matchingWords[word] = wordWithSpan;
+        break;
+      }
+    }
+  }
 
-//   fs.writeFileSync("oneLessCharacterWordsWithSpan.js", outputContent);
-//   console.log(`Successfully created oneLessCharacterWordsWithSpan.js!`);
-// }
+  const outputContent = `const witeOutWords = ${JSON.stringify(
+    matchingWords,
+    null,
+    2
+  )};\nexport default witeOutWords;`;
 
-// //For testing
+  fs.writeFileSync("oneLessCharacterWordsWithSpan.js", outputContent);
+  console.log(
+    `Successfully created oneLessCharacterWordsWithSpan.js with formatted output!`
+  );
+}
+
+// For testing
 // createWordsWithOneLessCharacterJS();
 
 export const wrapWiteOutWords = (sentence) => {
