@@ -702,7 +702,7 @@ class Spacel extends Hero {
 class WhiteKnight extends Hero {
   constructor() {
     super(
-      "./images/White_Knight_1.png",
+      "./images/Whiteknight1.png",
       0.5,
       "Sir Dele of Dallying",
       "brown",
@@ -713,7 +713,7 @@ class WhiteKnight extends Hero {
       0.2,
       undefined,
       undefined,
-      "./images/White_Knight_2.png"
+      "./images/Whiteknight2.png"
     );
   }
 }
