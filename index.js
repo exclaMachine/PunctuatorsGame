@@ -705,7 +705,7 @@ class WhiteKnight extends Hero {
       "./images/White_Knight_1.png",
       0.5,
       "Sir Dele of Dallying",
-      "whitesmoke",
+      "brown",
       80,
       50,
       "images/Colon_Wave.png",
