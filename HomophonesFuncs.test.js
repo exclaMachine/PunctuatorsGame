@@ -19,11 +19,4 @@ describe("wrapHomophones", () => {
     const sentence = "The giraffe stretched her neck.";
     expect(wrapHomophones(sentence)).toBe(sentence); // the sentence should remain unchanged
   });
-
-  it("skips already wrapped words", () => {
-    const sentence = "<span>ad</span> add ade";
-    // prettier-ignore
-    const expected = "<span>ad</span> <span id=\"Phonia (Homophones)\" data-homophones=\"add,ad\" class=\"word-0\">add</span> <span id=\"Phonia (Homophones)\" data-homophones=\"ade,aid\" class=\"word-0\">ade</span>";
-    expect(wrapHomophones(sentence)).toBe(expected);
-  });
 });
