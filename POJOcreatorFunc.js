@@ -27,7 +27,6 @@ let AmbigramPairs = {
 let horPairs = {
   b: "d",
   d: "b",
-  f: "t", // kind of
   i: "i",
   l: "l",
   m: "m",
@@ -103,6 +102,27 @@ const VertMirror = (word, pairs) => {
   }
 
   let reversed = arr.join("");
+  //let reversed = arr.join("");
+
+  if (reversed === word) {
+    return false;
+  } else {
+    return reversed;
+  }
+};
+
+const HorizMirror = (word, pairs) => {
+  let arr = word.split("");
+
+  for (let i = 0; i < arr.length; i++) {
+    if (pairs[arr[i]] === undefined) {
+      return false;
+    } else {
+      arr[i] = pairs[arr[i]];
+    }
+  }
+
+  let reversed = arr.reverse().join("");
   //let reversed = arr.join("");
 
   if (reversed === word) {
@@ -207,7 +227,7 @@ function binarySearch(arr, value) {
 }
 
 const CreateJS = (jsName, typeOfJSFunction) => {
-  const filename = "words_alpha.txt";
+  const filename = "2of12.txt";
   const data = fs.readFileSync(filename, "utf8").split("\n");
   let typeOfWordObj = {};
 
@@ -216,6 +236,9 @@ const CreateJS = (jsName, typeOfJSFunction) => {
     let alteredWord;
     if (typeOfJSFunction === "mirror") {
       alteredWord = VertMirror(word, vertPairs);
+    }
+    if (typeOfJSFunction === "sideMirror") {
+      alteredWord = HorizMirror(word, horPairs);
     }
     if (typeOfJSFunction === "ambigram") {
       alteredWord = ambigram(word, AmbigramPairs);
@@ -246,6 +269,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
   console.log(`Successfully created ${jsName}!`);
 };
 
-CreateJS("ambigramPOJO.js", "ambigram");
+//CreateJS("ambigramPOJO.js", "ambigram");
+// CreateJS("todbotPOJO.js", "mirror");
+CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 
 //CreateJSON("todbotWithCapitals.json");
