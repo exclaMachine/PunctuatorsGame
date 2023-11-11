@@ -219,7 +219,7 @@ const homophones = {
   urn: ["earn"],
   em: ["m"],
   m: ["em"],
-  ewe: ["u", "yew", "you"],
+  ewe: ["yew", "you"],
   u: ["ewe", "yew", "you"],
   yew: ["ewe", "u", "you"],
   you: ["ewe", "u", "yew"],
