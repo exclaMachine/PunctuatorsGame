@@ -221,7 +221,7 @@ const homophones = {
   m: ["em"],
   ewe: ["yew", "you"],
   u: ["ewe", "yew", "you"],
-  yew: ["ewe", "u", "you"],
+  yew: ["ewe", "you"],
   you: ["ewe", "u", "yew"],
   facts: ["fax"],
   fax: ["facts"],
