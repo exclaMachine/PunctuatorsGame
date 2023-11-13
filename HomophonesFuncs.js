@@ -222,7 +222,7 @@ const homophones = {
   ewe: ["yew", "you"],
   u: ["ewe", "yew", "you"],
   yew: ["ewe", "you"],
-  you: ["ewe", "u", "yew"],
+  you: ["ewe", "yew"],
   facts: ["fax"],
   fax: ["facts"],
   fain: ["feign"],
