@@ -269,7 +269,6 @@ const homophones = {
   friar: ["fryer"],
   fryer: ["friar"],
   g: ["gee"],
-  gee: ["g"],
   gait: ["gate"],
   gate: ["gait"],
   gene: ["jean"],
