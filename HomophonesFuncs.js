@@ -491,7 +491,7 @@ const homophones = {
   none: ["nun"],
   nun: ["none"],
   o: ["oh", "owe"],
-  oh: ["o", "owe"],
+  oh: ["owe"],
   owe: ["o", "oh"],
   oar: ["or", "ore"],
   or: ["oar", "ore"],
