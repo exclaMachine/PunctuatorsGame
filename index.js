@@ -131,7 +131,7 @@ removePuncButton.addEventListener("click", () => {
   }
 
   let punctuated = addSpansAndIds(initialTypedSentence.value, out1);
-
+  mySong.stop();
   setClassName(
     "go-away",
     initialTypedSentence,
@@ -151,6 +151,7 @@ doWordPlayButton.addEventListener("click", () => {
     return (errorMessage.innerText = "Field cannot be blank");
   }
 
+  mySong.stop();
   addSpansAndIdsForWordPlay(initialTypedSentence.value, out1);
 
   setClassName(
@@ -183,6 +184,13 @@ const gameSfx = {
     src: ["./sounds/success-fanfare-trumpets.mp3"],
   }),
 };
+
+let mySong = new Howl({
+  src: ["./sounds/FourNote.mp3"],
+  autoplay: false, // or true, if you want it to play automatically
+  loop: true, // if you want the song to loop
+  volume: 0.5,
+});
 
 class Hero {
   /**
@@ -1233,6 +1241,7 @@ function animate() {
   });
 }
 
+mySong.play();
 animate();
 
 //https://stackoverflow.com/questions/69491293/how-to-do-a-work-when-mousedown-until-mouseup
