@@ -16,6 +16,7 @@
                 <select id="conversionType">
                     <option value="ipa">IPA</option>
                     <option value="shatner">Shatner</option>
+                    <option value="english">English</option>
                 </select>
             </li>
             <li class="button">
@@ -40,16 +41,55 @@
             TextToIPA.loadDict('../lib/ipadict.txt');
         };
 
+        const phoneticAlphToEnglishConversions = {
+            "eɪ": "ay",
+            "aɪ": "I",
+            "Aɪ": "I",
+            "oʊ": "O",
+            "aʊ": "ow",
+            "ɔɪ": "oy",
+            "ʧ": "ch",
+            "ʤ": "dg",
+            "ŋ": "ng",
+            "ʃ": "sh",
+            "ð": "TH",
+            "θ": "th",
+            "ɛ": "e",
+            "ʒ": "zh",
+            "æ": "a",
+            "ɪ": "i",
+            "u": "oo",
+            "o": "O",
+            "a": "A",
+            "ɔ": "aw",
+            "i": "ee",
+            "ə": "ə",
+            "ʊ": "oo",
+            "j": "y"
+        };
+
         function convertText() {
             var inputText = document.getElementById('ipa-in').value;
             var conversionType = document.getElementById('conversionType').value;
-            var outputText;
 
             if (conversionType === 'shatner') {
-                outputText = inputText.split(' ').join(', ');
+                var outputText = inputText.split(' ').join(', ');
                 document.getElementById('ipa-out').value = outputText;
             } else if (conversionType === 'ipa') {
                 ConverterForm.convert('ipa-in', 'ipa-out', 'ipa-err');
+            } else if (conversionType === 'english') {
+                // Perform IPA conversion first
+                ConverterForm.convert('ipa-in', 'ipa-out', 'ipa-err');
+
+                // Add a small delay to ensure IPA conversion is complete
+                setTimeout(function() {
+                    var ipaOutput = document.getElementById('ipa-out').value;
+                    var outputText = ipaOutput;
+                    for (let [ipa, eng] of Object.entries(phoneticAlphToEnglishConversions)) {
+                        outputText = outputText.split(ipa).join(eng);
+                    }
+                    document.getElementById('ipa-out').value = outputText;
+                }, 100);
             }
         }
     </script>
