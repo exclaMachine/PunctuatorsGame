@@ -12,6 +12,8 @@ The Punctuators shoot on to a sentence of your creation to add back the removed 
 - If there are any funny instances you can make with "Do Wordplay", they should be shared!
 - Master Asterisk has a special ability: If a word has an asterisk following it then he can create a footnote of its definition.
 
+-There's also a link called IPA at the bottom. This is to a function which allows you to create different pronunciations using the power of the International Phonetic Alphabet! I have a character called Dialexis who is a robot who changes the accents of the different characters of the Punctuators!
+
 ## The characters:
 
 1. Full Stop
