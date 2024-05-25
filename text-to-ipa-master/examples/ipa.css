@@ -32,6 +32,7 @@ select, button {
     background-color: #ffccff;
     color: #333;
     cursor: pointer;
+    margin-bottom: 10px; /* Added margin to space out elements */
 }
 
 button {
