@@ -1,0 +1,21 @@
+/* Base styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f7f7f7;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    color: #ff66cc;
+    text-align: center;
+}
+
+.tutorial-content {
+    padding: 20px;
+    margin: 0 auto;
+    max-width: 800px;
+    background-color: rgb(216, 232, 242);
+    border: 1
