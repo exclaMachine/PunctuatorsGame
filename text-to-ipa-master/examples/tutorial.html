@@ -101,8 +101,10 @@
             const accordionButtons = document.querySelectorAll(".accordion-button");
 
             accordionButtons.forEach(button => {
+                const content = button.nextElementSibling;
+                content.style.display = "none"; // Initially hide all accordion content
+
                 button.addEventListener("click", function() {
-                    const content = this.nextElementSibling;
                     content.style.display = content.style.display === "block" ? "none" : "block";
                 });
             });
