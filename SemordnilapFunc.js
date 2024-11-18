@@ -52,9 +52,9 @@ function findSemordnilaps() {
 }
 
 // For testing
-// findSemordnilaps();
+findSemordnilaps();
 
-export const wrapSemordnilaps = (sentence) => {
+const wrapSemordnilaps = (sentence) => {
   const words = sentence.split(/\b/); // Splitting by word boundary
 
   return words
