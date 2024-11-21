@@ -1,21 +1,9 @@
 const twoWordPalindromes = [
   {
-    "word1": "abut",
-    "middle": null,
-    "word2": "tuba",
-    "palindrome": "abut tuba"
-  },
-  {
-    "word1": "agar",
-    "middle": null,
-    "word2": "raga",
-    "palindrome": "agar raga"
-  },
-  {
-    "word1": "ah",
-    "middle": null,
+    "word1": "aha",
+    "middle": "a",
     "word2": "ha",
-    "palindrome": "ah ha"
+    "palindrome": "aha ha"
   },
   {
     "word1": "ah",
@@ -24,40 +12,22 @@ const twoWordPalindromes = [
     "palindrome": "ah aha"
   },
   {
-    "word1": "ajar",
-    "middle": null,
-    "word2": "raja",
-    "palindrome": "ajar raja"
-  },
-  {
-    "word1": "am",
-    "middle": null,
+    "word1": "amp",
+    "middle": "p",
     "word2": "ma",
-    "palindrome": "am ma"
+    "palindrome": "amp ma"
   },
   {
-    "word1": "animal",
-    "middle": null,
-    "word2": "lamina",
-    "palindrome": "animal lamina"
-  },
-  {
-    "word1": "are",
-    "middle": null,
+    "word1": "area",
+    "middle": "a",
     "word2": "era",
-    "palindrome": "are era"
+    "palindrome": "area era"
   },
   {
     "word1": "are",
     "middle": "s",
     "word2": "sera",
     "palindrome": "are sera"
-  },
-  {
-    "word1": "ate",
-    "middle": null,
-    "word2": "eta",
-    "palindrome": "ate eta"
   },
   {
     "word1": "ate",
@@ -78,40 +48,52 @@ const twoWordPalindromes = [
     "palindrome": "ate zeta"
   },
   {
-    "word1": "avid",
-    "middle": null,
-    "word2": "diva",
-    "palindrome": "avid diva"
-  },
-  {
-    "word1": "bad",
-    "middle": null,
+    "word1": "bade",
+    "middle": "e",
     "word2": "dab",
-    "palindrome": "bad dab"
+    "palindrome": "bade dab"
   },
   {
-    "word1": "bag",
-    "middle": null,
-    "word2": "gab",
-    "palindrome": "bag gab"
-  },
-  {
-    "word1": "ban",
-    "middle": null,
+    "word1": "band",
+    "middle": "d",
     "word2": "nab",
-    "palindrome": "ban nab"
+    "palindrome": "band nab"
   },
   {
-    "word1": "bard",
-    "middle": null,
-    "word2": "drab",
-    "palindrome": "bard drab"
+    "word1": "bane",
+    "middle": "e",
+    "word2": "nab",
+    "palindrome": "bane nab"
   },
   {
-    "word1": "bat",
-    "middle": null,
+    "word1": "bang",
+    "middle": "g",
+    "word2": "nab",
+    "palindrome": "bang nab"
+  },
+  {
+    "word1": "bank",
+    "middle": "k",
+    "word2": "nab",
+    "palindrome": "bank nab"
+  },
+  {
+    "word1": "bate",
+    "middle": "e",
     "word2": "tab",
-    "palindrome": "bat tab"
+    "palindrome": "bate tab"
+  },
+  {
+    "word1": "bath",
+    "middle": "h",
+    "word2": "tab",
+    "palindrome": "bath tab"
+  },
+  {
+    "word1": "bats",
+    "middle": "s",
+    "word2": "tab",
+    "palindrome": "bats tab"
   },
   {
     "word1": "bat",
@@ -120,52 +102,40 @@ const twoWordPalindromes = [
     "palindrome": "bat stab"
   },
   {
-    "word1": "bats",
-    "middle": null,
-    "word2": "stab",
-    "palindrome": "bats stab"
-  },
-  {
-    "word1": "bed",
-    "middle": null,
-    "word2": "deb",
-    "palindrome": "bed deb"
-  },
-  {
-    "word1": "bin",
-    "middle": null,
+    "word1": "bind",
+    "middle": "d",
     "word2": "nib",
-    "palindrome": "bin nib"
+    "palindrome": "bind nib"
   },
   {
-    "word1": "bog",
-    "middle": null,
+    "word1": "bogy",
+    "middle": "y",
     "word2": "gob",
-    "palindrome": "bog gob"
+    "palindrome": "bogy gob"
   },
   {
-    "word1": "brag",
-    "middle": null,
-    "word2": "garb",
-    "palindrome": "brag garb"
-  },
-  {
-    "word1": "bro",
-    "middle": null,
+    "word1": "brow",
+    "middle": "w",
     "word2": "orb",
-    "palindrome": "bro orb"
+    "palindrome": "brow orb"
   },
   {
-    "word1": "bud",
-    "middle": null,
-    "word2": "dub",
-    "palindrome": "bud dub"
-  },
-  {
-    "word1": "bun",
-    "middle": null,
+    "word1": "bung",
+    "middle": "g",
     "word2": "nub",
-    "palindrome": "bun nub"
+    "palindrome": "bung nub"
+  },
+  {
+    "word1": "bunk",
+    "middle": "k",
+    "word2": "nub",
+    "palindrome": "bunk nub"
+  },
+  {
+    "word1": "buns",
+    "middle": "s",
+    "word2": "nub",
+    "palindrome": "buns nub"
   },
   {
     "word1": "bun",
@@ -174,16 +144,10 @@ const twoWordPalindromes = [
     "palindrome": "bun snub"
   },
   {
-    "word1": "buns",
-    "middle": null,
-    "word2": "snub",
-    "palindrome": "buns snub"
-  },
-  {
-    "word1": "bur",
-    "middle": null,
-    "word2": "rub",
-    "palindrome": "bur rub"
+    "word1": "bunt",
+    "middle": "t",
+    "word2": "nub",
+    "palindrome": "bunt nub"
   },
   {
     "word1": "bur",
@@ -192,28 +156,76 @@ const twoWordPalindromes = [
     "palindrome": "bur drub"
   },
   {
+    "word1": "burg",
+    "middle": "g",
+    "word2": "rub",
+    "palindrome": "burg rub"
+  },
+  {
     "word1": "bur",
     "middle": "g",
     "word2": "grub",
     "palindrome": "bur grub"
   },
   {
-    "word1": "burg",
-    "middle": null,
+    "word1": "burl",
+    "middle": "l",
+    "word2": "rub",
+    "palindrome": "burl rub"
+  },
+  {
+    "word1": "burn",
+    "middle": "n",
+    "word2": "rub",
+    "palindrome": "burn rub"
+  },
+  {
+    "word1": "burp",
+    "middle": "p",
+    "word2": "rub",
+    "palindrome": "burp rub"
+  },
+  {
+    "word1": "burr",
+    "middle": "r",
+    "word2": "rub",
+    "palindrome": "burr rub"
+  },
+  {
+    "word1": "bury",
+    "middle": "y",
+    "word2": "rub",
+    "palindrome": "bury rub"
+  },
+  {
+    "word1": "burgh",
+    "middle": "h",
     "word2": "grub",
-    "palindrome": "burg grub"
+    "palindrome": "burgh grub"
   },
   {
-    "word1": "bus",
-    "middle": null,
+    "word1": "bush",
+    "middle": "h",
     "word2": "sub",
-    "palindrome": "bus sub"
+    "palindrome": "bush sub"
   },
   {
-    "word1": "but",
-    "middle": null,
-    "word2": "tub",
-    "palindrome": "but tub"
+    "word1": "buss",
+    "middle": "s",
+    "word2": "sub",
+    "palindrome": "buss sub"
+  },
+  {
+    "word1": "bust",
+    "middle": "t",
+    "word2": "sub",
+    "palindrome": "bust sub"
+  },
+  {
+    "word1": "busy",
+    "middle": "y",
+    "word2": "sub",
+    "palindrome": "busy sub"
   },
   {
     "word1": "but",
@@ -222,34 +234,40 @@ const twoWordPalindromes = [
     "palindrome": "but stub"
   },
   {
-    "word1": "cod",
-    "middle": null,
+    "word1": "butt",
+    "middle": "t",
+    "word2": "tub",
+    "palindrome": "butt tub"
+  },
+  {
+    "word1": "coda",
+    "middle": "a",
     "word2": "doc",
-    "palindrome": "cod doc"
+    "palindrome": "coda doc"
   },
   {
-    "word1": "dam",
-    "middle": null,
+    "word1": "code",
+    "middle": "e",
+    "word2": "doc",
+    "palindrome": "code doc"
+  },
+  {
+    "word1": "dame",
+    "middle": "e",
     "word2": "mad",
-    "palindrome": "dam mad"
+    "palindrome": "dame mad"
   },
   {
-    "word1": "debut",
-    "middle": null,
-    "word2": "tubed",
-    "palindrome": "debut tubed"
+    "word1": "damn",
+    "middle": "n",
+    "word2": "mad",
+    "palindrome": "damn mad"
   },
   {
-    "word1": "deem",
-    "middle": null,
-    "word2": "meed",
-    "palindrome": "deem meed"
-  },
-  {
-    "word1": "deer",
-    "middle": null,
-    "word2": "reed",
-    "palindrome": "deer reed"
+    "word1": "damp",
+    "middle": "p",
+    "word2": "mad",
+    "palindrome": "damp mad"
   },
   {
     "word1": "deer",
@@ -270,16 +288,16 @@ const twoWordPalindromes = [
     "palindrome": "deer greed"
   },
   {
-    "word1": "def",
-    "middle": null,
+    "word1": "deft",
+    "middle": "t",
     "word2": "fed",
-    "palindrome": "def fed"
+    "palindrome": "deft fed"
   },
   {
-    "word1": "dew",
-    "middle": null,
-    "word2": "wed",
-    "palindrome": "dew wed"
+    "word1": "defy",
+    "middle": "y",
+    "word2": "fed",
+    "palindrome": "defy fed"
   },
   {
     "word1": "dew",
@@ -288,10 +306,10 @@ const twoWordPalindromes = [
     "palindrome": "dew awed"
   },
   {
-    "word1": "dial",
-    "middle": null,
-    "word2": "laid",
-    "palindrome": "dial laid"
+    "word1": "dewy",
+    "middle": "y",
+    "word2": "wed",
+    "palindrome": "dewy wed"
   },
   {
     "word1": "dial",
@@ -301,21 +319,9 @@ const twoWordPalindromes = [
   },
   {
     "word1": "diaper",
-    "middle": null,
-    "word2": "repaid",
-    "palindrome": "diaper repaid"
-  },
-  {
-    "word1": "diaper",
     "middle": "p",
     "word2": "prepaid",
     "palindrome": "diaper prepaid"
-  },
-  {
-    "word1": "dim",
-    "middle": null,
-    "word2": "mid",
-    "palindrome": "dim mid"
   },
   {
     "word1": "dim",
@@ -324,28 +330,34 @@ const twoWordPalindromes = [
     "palindrome": "dim amid"
   },
   {
-    "word1": "dog",
-    "middle": null,
+    "word1": "dime",
+    "middle": "e",
+    "word2": "mid",
+    "palindrome": "dime mid"
+  },
+  {
+    "word1": "doge",
+    "middle": "e",
     "word2": "god",
-    "palindrome": "dog god"
+    "palindrome": "doge god"
   },
   {
-    "word1": "don",
-    "middle": null,
+    "word1": "dona",
+    "middle": "a",
     "word2": "nod",
-    "palindrome": "don nod"
+    "palindrome": "dona nod"
   },
   {
-    "word1": "doom",
-    "middle": null,
-    "word2": "mood",
-    "palindrome": "doom mood"
+    "word1": "done",
+    "middle": "e",
+    "word2": "nod",
+    "palindrome": "done nod"
   },
   {
-    "word1": "door",
-    "middle": null,
-    "word2": "rood",
-    "palindrome": "door rood"
+    "word1": "dong",
+    "middle": "g",
+    "word2": "nod",
+    "palindrome": "dong nod"
   },
   {
     "word1": "door",
@@ -355,15 +367,21 @@ const twoWordPalindromes = [
   },
   {
     "word1": "draw",
-    "middle": null,
-    "word2": "ward",
-    "palindrome": "draw ward"
-  },
-  {
-    "word1": "draw",
     "middle": "a",
     "word2": "award",
     "palindrome": "draw award"
+  },
+  {
+    "word1": "drawl",
+    "middle": "l",
+    "word2": "ward",
+    "palindrome": "drawl ward"
+  },
+  {
+    "word1": "drawn",
+    "middle": "n",
+    "word2": "ward",
+    "palindrome": "drawn ward"
   },
   {
     "word1": "draw",
@@ -372,34 +390,10 @@ const twoWordPalindromes = [
     "palindrome": "draw sward"
   },
   {
-    "word1": "drawer",
-    "middle": null,
+    "word1": "drawers",
+    "middle": "s",
     "word2": "reward",
-    "palindrome": "drawer reward"
-  },
-  {
-    "word1": "dray",
-    "middle": null,
-    "word2": "yard",
-    "palindrome": "dray yard"
-  },
-  {
-    "word1": "dual",
-    "middle": null,
-    "word2": "laud",
-    "palindrome": "dual laud"
-  },
-  {
-    "word1": "edit",
-    "middle": null,
-    "word2": "tide",
-    "palindrome": "edit tide"
-  },
-  {
-    "word1": "eel",
-    "middle": null,
-    "word2": "lee",
-    "palindrome": "eel lee"
+    "palindrome": "drawers reward"
   },
   {
     "word1": "eel",
@@ -415,12 +409,6 @@ const twoWordPalindromes = [
   },
   {
     "word1": "eh",
-    "middle": null,
-    "word2": "he",
-    "palindrome": "eh he"
-  },
-  {
-    "word1": "eh",
     "middle": "s",
     "word2": "she",
     "palindrome": "eh she"
@@ -432,16 +420,10 @@ const twoWordPalindromes = [
     "palindrome": "eh the"
   },
   {
-    "word1": "em",
-    "middle": null,
+    "word1": "emu",
+    "middle": "u",
     "word2": "me",
-    "palindrome": "em me"
-  },
-  {
-    "word1": "emir",
-    "middle": null,
-    "word2": "rime",
-    "palindrome": "emir rime"
+    "palindrome": "emu me"
   },
   {
     "word1": "emir",
@@ -462,22 +444,10 @@ const twoWordPalindromes = [
     "palindrome": "emir prime"
   },
   {
-    "word1": "emit",
-    "middle": null,
-    "word2": "time",
-    "palindrome": "emit time"
-  },
-  {
-    "word1": "ergo",
-    "middle": null,
+    "word1": "ergot",
+    "middle": "t",
     "word2": "ogre",
-    "palindrome": "ergo ogre"
-  },
-  {
-    "word1": "evil",
-    "middle": null,
-    "word2": "live",
-    "palindrome": "evil live"
+    "palindrome": "ergot ogre"
   },
   {
     "word1": "evil",
@@ -492,22 +462,22 @@ const twoWordPalindromes = [
     "palindrome": "evil olive"
   },
   {
-    "word1": "flog",
-    "middle": null,
-    "word2": "golf",
-    "palindrome": "flog golf"
-  },
-  {
-    "word1": "flow",
-    "middle": null,
+    "word1": "flown",
+    "middle": "n",
     "word2": "wolf",
-    "palindrome": "flow wolf"
+    "palindrome": "flown wolf"
   },
   {
-    "word1": "gal",
-    "middle": null,
+    "word1": "gala",
+    "middle": "a",
     "word2": "lag",
-    "palindrome": "gal lag"
+    "palindrome": "gala lag"
+  },
+  {
+    "word1": "gale",
+    "middle": "e",
+    "word2": "lag",
+    "palindrome": "gale lag"
   },
   {
     "word1": "gal",
@@ -516,16 +486,22 @@ const twoWordPalindromes = [
     "palindrome": "gal flag"
   },
   {
+    "word1": "gall",
+    "middle": "l",
+    "word2": "lag",
+    "palindrome": "gall lag"
+  },
+  {
     "word1": "gal",
     "middle": "s",
     "word2": "slag",
     "palindrome": "gal slag"
   },
   {
-    "word1": "gar",
-    "middle": null,
+    "word1": "garb",
+    "middle": "b",
     "word2": "rag",
-    "palindrome": "gar rag"
+    "palindrome": "garb rag"
   },
   {
     "word1": "gar",
@@ -546,46 +522,34 @@ const twoWordPalindromes = [
     "palindrome": "gar drag"
   },
   {
-    "word1": "gas",
-    "middle": null,
+    "word1": "gash",
+    "middle": "h",
     "word2": "sag",
-    "palindrome": "gas sag"
+    "palindrome": "gash sag"
   },
   {
-    "word1": "gel",
-    "middle": null,
+    "word1": "gasp",
+    "middle": "p",
+    "word2": "sag",
+    "palindrome": "gasp sag"
+  },
+  {
+    "word1": "geld",
+    "middle": "d",
     "word2": "leg",
-    "palindrome": "gel leg"
+    "palindrome": "geld leg"
   },
   {
-    "word1": "girt",
-    "middle": null,
+    "word1": "girth",
+    "middle": "h",
     "word2": "trig",
-    "palindrome": "girt trig"
+    "palindrome": "girth trig"
   },
   {
-    "word1": "gnat",
-    "middle": null,
-    "word2": "tang",
-    "palindrome": "gnat tang"
-  },
-  {
-    "word1": "got",
-    "middle": null,
-    "word2": "tog",
-    "palindrome": "got tog"
-  },
-  {
-    "word1": "gulp",
-    "middle": null,
-    "word2": "plug",
-    "palindrome": "gulp plug"
-  },
-  {
-    "word1": "gum",
-    "middle": null,
+    "word1": "gums",
+    "middle": "s",
     "word2": "mug",
-    "palindrome": "gum mug"
+    "palindrome": "gums mug"
   },
   {
     "word1": "gum",
@@ -594,22 +558,40 @@ const twoWordPalindromes = [
     "palindrome": "gum smug"
   },
   {
-    "word1": "gums",
-    "middle": null,
-    "word2": "smug",
-    "palindrome": "gums smug"
-  },
-  {
-    "word1": "gut",
-    "middle": null,
+    "word1": "guts",
+    "middle": "s",
     "word2": "tug",
-    "palindrome": "gut tug"
+    "palindrome": "guts tug"
   },
   {
-    "word1": "ho",
-    "middle": null,
+    "word1": "hob",
+    "middle": "b",
     "word2": "oh",
-    "palindrome": "ho oh"
+    "palindrome": "hob oh"
+  },
+  {
+    "word1": "hod",
+    "middle": "d",
+    "word2": "oh",
+    "palindrome": "hod oh"
+  },
+  {
+    "word1": "hoe",
+    "middle": "e",
+    "word2": "oh",
+    "palindrome": "hoe oh"
+  },
+  {
+    "word1": "hog",
+    "middle": "g",
+    "word2": "oh",
+    "palindrome": "hog oh"
+  },
+  {
+    "word1": "hon",
+    "middle": "n",
+    "word2": "oh",
+    "palindrome": "hon oh"
   },
   {
     "word1": "ho",
@@ -618,22 +600,34 @@ const twoWordPalindromes = [
     "palindrome": "ho ooh"
   },
   {
-    "word1": "hoop",
-    "middle": null,
+    "word1": "hop",
+    "middle": "p",
+    "word2": "oh",
+    "palindrome": "hop oh"
+  },
+  {
+    "word1": "hot",
+    "middle": "t",
+    "word2": "oh",
+    "palindrome": "hot oh"
+  },
+  {
+    "word1": "how",
+    "middle": "w",
+    "word2": "oh",
+    "palindrome": "how oh"
+  },
+  {
+    "word1": "hoops",
+    "middle": "s",
     "word2": "pooh",
-    "palindrome": "hoop pooh"
+    "palindrome": "hoops pooh"
   },
   {
-    "word1": "it",
-    "middle": null,
+    "word1": "its",
+    "middle": "s",
     "word2": "ti",
-    "palindrome": "it ti"
-  },
-  {
-    "word1": "keel",
-    "middle": null,
-    "word2": "leek",
-    "palindrome": "keel leek"
+    "palindrome": "its ti"
   },
   {
     "word1": "keel",
@@ -642,28 +636,10 @@ const twoWordPalindromes = [
     "palindrome": "keel sleek"
   },
   {
-    "word1": "keep",
-    "middle": null,
-    "word2": "peek",
-    "palindrome": "keep peek"
-  },
-  {
-    "word1": "know",
-    "middle": null,
+    "word1": "known",
+    "middle": "n",
     "word2": "wonk",
-    "palindrome": "know wonk"
-  },
-  {
-    "word1": "lager",
-    "middle": null,
-    "word2": "regal",
-    "palindrome": "lager regal"
-  },
-  {
-    "word1": "lap",
-    "middle": null,
-    "word2": "pal",
-    "palindrome": "lap pal"
+    "palindrome": "known wonk"
   },
   {
     "word1": "lap",
@@ -673,33 +649,15 @@ const twoWordPalindromes = [
   },
   {
     "word1": "leer",
-    "middle": null,
-    "word2": "reel",
-    "palindrome": "leer reel"
-  },
-  {
-    "word1": "leer",
     "middle": "c",
     "word2": "creel",
     "palindrome": "leer creel"
   },
   {
-    "word1": "leper",
-    "middle": null,
-    "word2": "repel",
-    "palindrome": "leper repel"
-  },
-  {
-    "word1": "lever",
-    "middle": null,
-    "word2": "revel",
-    "palindrome": "lever revel"
-  },
-  {
-    "word1": "liar",
-    "middle": null,
-    "word2": "rail",
-    "palindrome": "liar rail"
+    "word1": "leery",
+    "middle": "y",
+    "word2": "reel",
+    "palindrome": "leery reel"
   },
   {
     "word1": "liar",
@@ -715,21 +673,15 @@ const twoWordPalindromes = [
   },
   {
     "word1": "loop",
-    "middle": null,
-    "word2": "pool",
-    "palindrome": "loop pool"
-  },
-  {
-    "word1": "loop",
     "middle": "s",
     "word2": "spool",
     "palindrome": "loop spool"
   },
   {
-    "word1": "loot",
-    "middle": null,
-    "word2": "tool",
-    "palindrome": "loot tool"
+    "word1": "loopy",
+    "middle": "y",
+    "word2": "pool",
+    "palindrome": "loopy pool"
   },
   {
     "word1": "loot",
@@ -738,22 +690,10 @@ const twoWordPalindromes = [
     "palindrome": "loot stool"
   },
   {
-    "word1": "looter",
-    "middle": null,
-    "word2": "retool",
-    "palindrome": "looter retool"
-  },
-  {
-    "word1": "lop",
-    "middle": null,
+    "word1": "lope",
+    "middle": "e",
     "word2": "pol",
-    "palindrome": "lop pol"
-  },
-  {
-    "word1": "mar",
-    "middle": null,
-    "word2": "ram",
-    "palindrome": "mar ram"
+    "palindrome": "lope pol"
   },
   {
     "word1": "mar",
@@ -768,10 +708,34 @@ const twoWordPalindromes = [
     "palindrome": "mar dram"
   },
   {
+    "word1": "mare",
+    "middle": "e",
+    "word2": "ram",
+    "palindrome": "mare ram"
+  },
+  {
     "word1": "mar",
     "middle": "g",
     "word2": "gram",
     "palindrome": "mar gram"
+  },
+  {
+    "word1": "mark",
+    "middle": "k",
+    "word2": "ram",
+    "palindrome": "mark ram"
+  },
+  {
+    "word1": "marl",
+    "middle": "l",
+    "word2": "ram",
+    "palindrome": "marl ram"
+  },
+  {
+    "word1": "mart",
+    "middle": "t",
+    "word2": "ram",
+    "palindrome": "mart ram"
   },
   {
     "word1": "mar",
@@ -780,34 +744,28 @@ const twoWordPalindromes = [
     "palindrome": "mar tram"
   },
   {
-    "word1": "mart",
-    "middle": null,
-    "word2": "tram",
-    "palindrome": "mart tram"
-  },
-  {
-    "word1": "mat",
-    "middle": null,
+    "word1": "mate",
+    "middle": "e",
     "word2": "tam",
-    "palindrome": "mat tam"
+    "palindrome": "mate tam"
   },
   {
-    "word1": "may",
-    "middle": null,
+    "word1": "math",
+    "middle": "h",
+    "word2": "tam",
+    "palindrome": "math tam"
+  },
+  {
+    "word1": "matt",
+    "middle": "t",
+    "word2": "tam",
+    "palindrome": "matt tam"
+  },
+  {
+    "word1": "mayo",
+    "middle": "o",
     "word2": "yam",
-    "palindrome": "may yam"
-  },
-  {
-    "word1": "meet",
-    "middle": null,
-    "word2": "teem",
-    "palindrome": "meet teem"
-  },
-  {
-    "word1": "moor",
-    "middle": null,
-    "word2": "room",
-    "palindrome": "moor room"
+    "palindrome": "mayo yam"
   },
   {
     "word1": "moor",
@@ -823,21 +781,21 @@ const twoWordPalindromes = [
   },
   {
     "word1": "mot",
-    "middle": null,
-    "word2": "tom",
-    "palindrome": "mot tom"
-  },
-  {
-    "word1": "mot",
     "middle": "a",
     "word2": "atom",
     "palindrome": "mot atom"
   },
   {
-    "word1": "mu",
-    "middle": null,
-    "word2": "um",
-    "palindrome": "mu um"
+    "word1": "mote",
+    "middle": "e",
+    "word2": "tom",
+    "palindrome": "mote tom"
+  },
+  {
+    "word1": "moth",
+    "middle": "h",
+    "word2": "tom",
+    "palindrome": "moth tom"
   },
   {
     "word1": "mu",
@@ -852,6 +810,18 @@ const twoWordPalindromes = [
     "palindrome": "mu cum"
   },
   {
+    "word1": "mud",
+    "middle": "d",
+    "word2": "um",
+    "palindrome": "mud um"
+  },
+  {
+    "word1": "mug",
+    "middle": "g",
+    "word2": "um",
+    "palindrome": "mug um"
+  },
+  {
     "word1": "mu",
     "middle": "g",
     "word2": "gum",
@@ -862,6 +832,12 @@ const twoWordPalindromes = [
     "middle": "h",
     "word2": "hum",
     "palindrome": "mu hum"
+  },
+  {
+    "word1": "mum",
+    "middle": "m",
+    "word2": "um",
+    "palindrome": "mum um"
   },
   {
     "word1": "mu",
@@ -888,10 +864,10 @@ const twoWordPalindromes = [
     "palindrome": "mu yum"
   },
   {
-    "word1": "nap",
-    "middle": null,
+    "word1": "nape",
+    "middle": "e",
     "word2": "pan",
-    "palindrome": "nap pan"
+    "palindrome": "nape pan"
   },
   {
     "word1": "nap",
@@ -900,22 +876,16 @@ const twoWordPalindromes = [
     "palindrome": "nap span"
   },
   {
-    "word1": "net",
-    "middle": null,
-    "word2": "ten",
-    "palindrome": "net ten"
-  },
-  {
-    "word1": "new",
-    "middle": null,
+    "word1": "news",
+    "middle": "s",
     "word2": "wen",
-    "palindrome": "new wen"
+    "palindrome": "news wen"
   },
   {
-    "word1": "nip",
-    "middle": null,
-    "word2": "pin",
-    "palindrome": "nip pin"
+    "word1": "newt",
+    "middle": "t",
+    "word2": "wen",
+    "palindrome": "newt wen"
   },
   {
     "word1": "nip",
@@ -924,22 +894,22 @@ const twoWordPalindromes = [
     "palindrome": "nip spin"
   },
   {
-    "word1": "nit",
-    "middle": null,
+    "word1": "nite",
+    "middle": "e",
     "word2": "tin",
-    "palindrome": "nit tin"
-  },
-  {
-    "word1": "no",
-    "middle": null,
-    "word2": "on",
-    "palindrome": "no on"
+    "palindrome": "nite tin"
   },
   {
     "word1": "no",
     "middle": "c",
     "word2": "con",
     "palindrome": "no con"
+  },
+  {
+    "word1": "nod",
+    "middle": "d",
+    "word2": "on",
+    "palindrome": "nod on"
   },
   {
     "word1": "no",
@@ -966,16 +936,34 @@ const twoWordPalindromes = [
     "palindrome": "no ion"
   },
   {
+    "word1": "nor",
+    "middle": "r",
+    "word2": "on",
+    "palindrome": "nor on"
+  },
+  {
     "word1": "no",
     "middle": "s",
     "word2": "son",
     "palindrome": "no son"
   },
   {
+    "word1": "not",
+    "middle": "t",
+    "word2": "on",
+    "palindrome": "not on"
+  },
+  {
     "word1": "no",
     "middle": "t",
     "word2": "ton",
     "palindrome": "no ton"
+  },
+  {
+    "word1": "now",
+    "middle": "w",
+    "word2": "on",
+    "palindrome": "now on"
   },
   {
     "word1": "no",
@@ -990,22 +978,16 @@ const twoWordPalindromes = [
     "palindrome": "no yon"
   },
   {
-    "word1": "not",
-    "middle": null,
+    "word1": "note",
+    "middle": "e",
     "word2": "ton",
-    "palindrome": "not ton"
+    "palindrome": "note ton"
   },
   {
-    "word1": "now",
-    "middle": null,
-    "word2": "won",
-    "palindrome": "now won"
-  },
-  {
-    "word1": "nut",
-    "middle": null,
+    "word1": "nuts",
+    "middle": "s",
     "word2": "tun",
-    "palindrome": "nut tun"
+    "palindrome": "nuts tun"
   },
   {
     "word1": "nut",
@@ -1014,28 +996,28 @@ const twoWordPalindromes = [
     "palindrome": "nut stun"
   },
   {
-    "word1": "nuts",
-    "middle": null,
-    "word2": "stun",
-    "palindrome": "nuts stun"
-  },
-  {
-    "word1": "pacer",
-    "middle": null,
-    "word2": "recap",
-    "palindrome": "pacer recap"
-  },
-  {
-    "word1": "par",
-    "middle": null,
-    "word2": "rap",
-    "palindrome": "par rap"
-  },
-  {
     "word1": "par",
     "middle": "c",
     "word2": "crap",
     "palindrome": "par crap"
+  },
+  {
+    "word1": "pare",
+    "middle": "e",
+    "word2": "rap",
+    "palindrome": "pare rap"
+  },
+  {
+    "word1": "park",
+    "middle": "k",
+    "word2": "rap",
+    "palindrome": "park rap"
+  },
+  {
+    "word1": "part",
+    "middle": "t",
+    "word2": "rap",
+    "palindrome": "part rap"
   },
   {
     "word1": "par",
@@ -1051,33 +1033,39 @@ const twoWordPalindromes = [
   },
   {
     "word1": "part",
-    "middle": null,
-    "word2": "trap",
-    "palindrome": "part trap"
-  },
-  {
-    "word1": "part",
     "middle": "s",
     "word2": "strap",
     "palindrome": "part strap"
   },
   {
-    "word1": "pat",
-    "middle": null,
+    "word1": "party",
+    "middle": "y",
+    "word2": "trap",
+    "palindrome": "party trap"
+  },
+  {
+    "word1": "pate",
+    "middle": "e",
     "word2": "tap",
-    "palindrome": "pat tap"
+    "palindrome": "pate tap"
   },
   {
-    "word1": "pay",
-    "middle": null,
-    "word2": "yap",
-    "palindrome": "pay yap"
+    "word1": "path",
+    "middle": "h",
+    "word2": "tap",
+    "palindrome": "path tap"
   },
   {
-    "word1": "per",
-    "middle": null,
+    "word1": "perk",
+    "middle": "k",
     "word2": "rep",
-    "palindrome": "per rep"
+    "palindrome": "perk rep"
+  },
+  {
+    "word1": "perm",
+    "middle": "m",
+    "word2": "rep",
+    "palindrome": "perm rep"
   },
   {
     "word1": "per",
@@ -1086,22 +1074,34 @@ const twoWordPalindromes = [
     "palindrome": "per prep"
   },
   {
-    "word1": "pis",
-    "middle": null,
+    "word1": "pert",
+    "middle": "t",
+    "word2": "rep",
+    "palindrome": "pert rep"
+  },
+  {
+    "word1": "piss",
+    "middle": "s",
     "word2": "sip",
-    "palindrome": "pis sip"
+    "palindrome": "piss sip"
   },
   {
-    "word1": "pit",
-    "middle": null,
+    "word1": "pita",
+    "middle": "a",
     "word2": "tip",
-    "palindrome": "pit tip"
+    "palindrome": "pita tip"
   },
   {
-    "word1": "pot",
-    "middle": null,
-    "word2": "top",
-    "palindrome": "pot top"
+    "word1": "pith",
+    "middle": "h",
+    "word2": "tip",
+    "palindrome": "pith tip"
+  },
+  {
+    "word1": "pity",
+    "middle": "y",
+    "word2": "tip",
+    "palindrome": "pity tip"
   },
   {
     "word1": "pot",
@@ -1116,16 +1116,28 @@ const twoWordPalindromes = [
     "palindrome": "pot stop"
   },
   {
-    "word1": "pus",
-    "middle": null,
+    "word1": "push",
+    "middle": "h",
     "word2": "sup",
-    "palindrome": "pus sup"
+    "palindrome": "push sup"
   },
   {
-    "word1": "rat",
-    "middle": null,
+    "word1": "puss",
+    "middle": "s",
+    "word2": "sup",
+    "palindrome": "puss sup"
+  },
+  {
+    "word1": "rate",
+    "middle": "e",
     "word2": "tar",
-    "palindrome": "rat tar"
+    "palindrome": "rate tar"
+  },
+  {
+    "word1": "rats",
+    "middle": "s",
+    "word2": "tar",
+    "palindrome": "rats tar"
   },
   {
     "word1": "rat",
@@ -1134,82 +1146,40 @@ const twoWordPalindromes = [
     "palindrome": "rat star"
   },
   {
-    "word1": "rats",
-    "middle": null,
-    "word2": "star",
-    "palindrome": "rats star"
-  },
-  {
-    "word1": "raw",
-    "middle": null,
-    "word2": "war",
-    "palindrome": "raw war"
-  },
-  {
-    "word1": "rebut",
-    "middle": null,
-    "word2": "tuber",
-    "palindrome": "rebut tuber"
-  },
-  {
-    "word1": "redraw",
-    "middle": null,
+    "word1": "redrawn",
+    "middle": "n",
     "word2": "warder",
-    "palindrome": "redraw warder"
+    "palindrome": "redrawn warder"
   },
   {
-    "word1": "remit",
-    "middle": null,
-    "word2": "timer",
-    "palindrome": "remit timer"
-  },
-  {
-    "word1": "rot",
-    "middle": null,
+    "word1": "rote",
+    "middle": "e",
     "word2": "tor",
-    "palindrome": "rot tor"
+    "palindrome": "rote tor"
   },
   {
-    "word1": "saw",
-    "middle": null,
+    "word1": "sawn",
+    "middle": "n",
     "word2": "was",
-    "palindrome": "saw was"
+    "palindrome": "sawn was"
   },
   {
-    "word1": "spat",
-    "middle": null,
+    "word1": "spate",
+    "middle": "e",
     "word2": "taps",
-    "palindrome": "spat taps"
+    "palindrome": "spate taps"
   },
   {
-    "word1": "spot",
-    "middle": null,
-    "word2": "tops",
-    "palindrome": "spot tops"
-  },
-  {
-    "word1": "sway",
-    "middle": null,
-    "word2": "yaws",
-    "palindrome": "sway yaws"
-  },
-  {
-    "word1": "tort",
-    "middle": null,
+    "word1": "torte",
+    "middle": "e",
     "word2": "trot",
-    "palindrome": "tort trot"
+    "palindrome": "torte trot"
   },
   {
-    "word1": "trow",
-    "middle": null,
-    "word2": "wort",
-    "palindrome": "trow wort"
-  },
-  {
-    "word1": "way",
-    "middle": null,
+    "word1": "ways",
+    "middle": "s",
     "word2": "yaw",
-    "palindrome": "way yaw"
+    "palindrome": "ways yaw"
   }
 ];
 module.exports = twoWordPalindromes;

@@ -21,32 +21,17 @@ function findTwoWordPalindromes() {
   for (const word1 of Object.keys(semordnilaps)) {
     const reversedWord2 = semordnilaps[word1];
 
-    // Check direct palindrome formation (e.g., "live evil")
-    const directCandidate = word1 + reversedWord2;
-    if (isPalindrome(directCandidate)) {
-      const palindrome = word1 + " " + reversedWord2;
-      if (words.has(reversedWord2)) {
-        // Ensure reversedWord2 is valid
-        matchingPalindromes.push({
-          word1,
-          middle: null,
-          word2: reversedWord2,
-          palindrome,
-        });
-      }
-    }
-
-    // Check palindrome formation by adding a middle letter to the end of `word2` (e.g., "evil olive")
+    // Check palindrome formation by adding a middle letter to the end of `word1` (e.g., "bats tab")
     for (let middle of middleLetters) {
-      const possibleWord2 = reversedWord2 + middle; // Append middle letter to `word2`
-      if (words.has(possibleWord2)) {
-        // Validate `possibleWord2`
-        const spacedPhrase = word1 + " " + possibleWord2;
-        if (isPalindrome(word1 + possibleWord2)) {
+      const possibleWord1 = word1 + middle; // Append middle letter to `word1`
+      if (words.has(possibleWord1)) {
+        // Ensure `reversedWord2` is valid
+        const spacedPhrase = possibleWord1 + " " + reversedWord2;
+        if (isPalindrome(possibleWord1 + reversedWord2)) {
           matchingPalindromes.push({
-            word1,
+            word1: possibleWord1,
             middle,
-            word2: possibleWord2,
+            word2: reversedWord2,
             palindrome: spacedPhrase,
           });
         }
