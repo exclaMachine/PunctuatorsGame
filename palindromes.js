@@ -78,6 +78,6 @@ const palindromes = [
   "wow",
   "x",
   "y",
-  "z"
+  "z",
 ];
-export default palindromes;
+module.exports = palindromes;
