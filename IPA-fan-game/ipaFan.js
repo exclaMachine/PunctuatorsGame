@@ -26,13 +26,19 @@ class Player {
     this.radius = 15;
   }
 
-  //make this excla machine instead of a circle
+  //TODO make this excla machine instead of a circle
   draw() {
     c.beginPath();
     c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
     c.fillStyle = "yellow";
     c.fill();
     c.closePath();
+  }
+
+  update() {
+    this.draw();
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
   }
 }
 
@@ -94,5 +100,4 @@ window.addEventListener("keydown", ({ key }) => {
       player.velocity.x = 5;
       break;
   }
-  console.log(key);
 });
