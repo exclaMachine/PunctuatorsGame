@@ -79,11 +79,18 @@ map.forEach((row, i) => {
   });
 });
 
-boundaries.forEach((boundary) => {
-  boundary.draw();
-});
+function animate() {
+  requestAnimationFrame(animate);
+  c.clearRect(0, 0, canvas.width, canvas.height);
 
-player.draw();
+  boundaries.forEach((boundary) => {
+    boundary.draw();
+  });
+
+  player.update();
+}
+
+animate();
 
 window.addEventListener("keydown", ({ key }) => {
   switch (key) {
