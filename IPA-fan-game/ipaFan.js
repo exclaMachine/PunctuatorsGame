@@ -1,5 +1,5 @@
 const canvas = document.querySelector("canvas");
-const c = canvas.getContext("2d");
+const ctx = canvas.getContext("2d");
 
 canvas.width = innerWidth;
 canvas.height = innerHeight;
@@ -14,8 +14,8 @@ class Boundary {
   static height = 40;
 
   draw() {
-    c.fillStyle = "blue";
-    c.fillRect(this.position.x, this.position.y, this.width, this.height);
+    ctx.fillStyle = "blue";
+    ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
   }
 }
 
@@ -28,11 +28,39 @@ class Player {
 
   //TODO make this excla machine instead of a circle
   draw() {
-    c.beginPath();
-    c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
-    c.fillStyle = "yellow";
-    c.fill();
-    c.closePath();
+    ctx.beginPath();
+
+    // Center coordinates for the octagon
+    const centerX = this.position.x;
+    const centerY = this.position.y;
+
+    // Calculate the radius (distance from the center to a vertex)
+    const radius = 16;
+
+    // Calculate the angle between vertices
+    const angle = (Math.PI * 2) / 8; // 360 degrees divided by 8
+
+    // Rotate the octagon to make the bottom flat side
+    const rotationOffset = angle / 2;
+
+    // Move to the first vertex
+    ctx.moveTo(
+      centerX + radius * Math.cos(rotationOffset),
+      centerY + radius * Math.sin(rotationOffset)
+    );
+
+    // Loop to create the other 7 vertices
+    for (let i = 1; i <= 8; i++) {
+      const x = centerX + radius * Math.cos(i * angle + rotationOffset);
+      const y = centerY + radius * Math.sin(i * angle + rotationOffset);
+      ctx.lineTo(x, y);
+    }
+
+    ctx.closePath();
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+    ctx.fillStyle = "yellow";
+    ctx.fill();
   }
 
   update() {
@@ -98,7 +126,7 @@ map.forEach((row, i) => {
 
 function animate() {
   requestAnimationFrame(animate);
-  c.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   boundaries.forEach((boundary) => {
     boundary.draw();
