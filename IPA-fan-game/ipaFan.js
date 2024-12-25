@@ -23,7 +23,7 @@ class Player {
   constructor({ position, velocity }) {
     this.position = position;
     this.velocity = velocity;
-    this.radius = 15;
+    this.radius = 16;
   }
 
   //TODO make this excla machine instead of a circle
@@ -34,9 +34,6 @@ class Player {
     const centerX = this.position.x;
     const centerY = this.position.y;
 
-    // Calculate the radius (distance from the center to a vertex)
-    const radius = 16;
-
     // Calculate the angle between vertices
     const angle = (Math.PI * 2) / 8; // 360 degrees divided by 8
 
@@ -45,14 +42,14 @@ class Player {
 
     // Move to the first vertex
     ctx.moveTo(
-      centerX + radius * Math.cos(rotationOffset),
-      centerY + radius * Math.sin(rotationOffset)
+      centerX + this.radius * Math.cos(rotationOffset),
+      centerY + this.radius * Math.sin(rotationOffset)
     );
 
     // Loop to create the other 7 vertices
     for (let i = 1; i <= 8; i++) {
-      const x = centerX + radius * Math.cos(i * angle + rotationOffset);
-      const y = centerY + radius * Math.sin(i * angle + rotationOffset);
+      const x = centerX + this.radius * Math.cos(i * angle + rotationOffset);
+      const y = centerY + this.radius * Math.sin(i * angle + rotationOffset);
       ctx.lineTo(x, y);
     }
 
@@ -130,11 +127,24 @@ function animate() {
 
   boundaries.forEach((boundary) => {
     boundary.draw();
+
+    if (
+      player.position.y - player.radius + player.velocity.y <=
+        boundary.position.y + boundary.height &&
+      player.position.x + player.radius + player.velocity.x >=
+        boundary.position.x &&
+      player.position.y + player.radius + player.velocity.y >=
+        boundary.position.y &&
+      player.position.x - player.radius + player.velocity.x <=
+        boundary.position.x + boundary.width
+    ) {
+      //console.log("we are colliding");
+      player.velocity.x = 0;
+      player.velocity.y = 0;
+    }
   });
 
   player.update();
-  player.velocity.x = 0;
-  player.velocity.y = 0;
 
   if (keys.w.pressed && lastKey === "w") {
     player.velocity.y = -5;
