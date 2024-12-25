@@ -121,30 +121,22 @@ map.forEach((row, i) => {
   });
 });
 
+function circleCollidesWithRectangle({ octagon, rectangle }) {
+  return (
+    octagon.position.y - octagon.radius + octagon.velocity.y <=
+      rectangle.position.y + rectangle.height &&
+    octagon.position.x + octagon.radius + octagon.velocity.x >=
+      rectangle.position.x &&
+    octagon.position.y + octagon.radius + octagon.velocity.y >=
+      rectangle.position.y &&
+    octagon.position.x - octagon.radius + octagon.velocity.x <=
+      rectangle.position.x + rectangle.width
+  );
+}
+
 function animate() {
   requestAnimationFrame(animate);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  boundaries.forEach((boundary) => {
-    boundary.draw();
-
-    if (
-      player.position.y - player.radius + player.velocity.y <=
-        boundary.position.y + boundary.height &&
-      player.position.x + player.radius + player.velocity.x >=
-        boundary.position.x &&
-      player.position.y + player.radius + player.velocity.y >=
-        boundary.position.y &&
-      player.position.x - player.radius + player.velocity.x <=
-        boundary.position.x + boundary.width
-    ) {
-      //console.log("we are colliding");
-      player.velocity.x = 0;
-      player.velocity.y = 0;
-    }
-  });
-
-  player.update();
 
   if (keys.w.pressed && lastKey === "w") {
     player.velocity.y = -5;
@@ -155,6 +147,18 @@ function animate() {
   } else if (keys.d.pressed && lastKey === "d") {
     player.velocity.x = 5;
   }
+
+  boundaries.forEach((boundary) => {
+    boundary.draw();
+
+    if (circleCollidesWithRectangle({ octagon: player, rectangle: boundary })) {
+      //console.log("we are colliding");
+      player.velocity.x = 0;
+      player.velocity.y = 0;
+    }
+  });
+
+  player.update();
 }
 
 animate();
