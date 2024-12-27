@@ -9,6 +9,7 @@ class Boundary {
     this.position = position;
     this.width = 40;
     this.height = 40;
+    //this.image = image;
   }
   static width = 40;
   static height = 40;
@@ -16,6 +17,7 @@ class Boundary {
   draw() {
     ctx.fillStyle = "blue";
     ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
+    //ctx.drawImage(this.image, this.position.x, this.position.y);
   }
 }
 
@@ -105,6 +107,12 @@ const map = [
   ["-", " ", " ", " ", " ", " ", "-"],
   ["-", "-", "-", "-", "-", "-", "-"],
 ];
+
+function createImage(src) {
+  const image = new Image();
+  image.src = src;
+  return image;
+}
 
 map.forEach((row, i) => {
   row.forEach((symbol, j) => {
