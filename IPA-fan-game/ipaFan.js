@@ -5,19 +5,19 @@ canvas.width = innerWidth;
 canvas.height = innerHeight;
 
 class Boundary {
-  constructor({ position }) {
+  constructor({ position, image }) {
     this.position = position;
     this.width = 40;
     this.height = 40;
-    //this.image = image;
+    this.image = image;
   }
   static width = 40;
   static height = 40;
 
   draw() {
-    ctx.fillStyle = "blue";
-    ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
-    //ctx.drawImage(this.image, this.position.x, this.position.y);
+    //ctx.fillStyle = "blue";
+    //ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
+    ctx.drawImage(this.image, this.position.x, this.position.y);
   }
 }
 
@@ -100,11 +100,11 @@ let lastKey = "";
 
 const map = [
   ["-", "-", "-", "-", "-", "-", "-"],
-  ["-", " ", " ", " ", " ", " ", "-"],
-  ["-", " ", "-", " ", "-", " ", "-"],
-  ["-", " ", " ", " ", " ", " ", "-"],
-  ["-", " ", "-", " ", "-", " ", "-"],
-  ["-", " ", " ", " ", " ", " ", "-"],
+  ["|", " ", " ", " ", " ", " ", "|"],
+  ["|", " ", "-", " ", "-", " ", "|"],
+  ["|", " ", " ", " ", " ", " ", "|"],
+  ["|", " ", "-", " ", "-", " ", "|"],
+  ["|", " ", " ", " ", " ", " ", "|"],
   ["-", "-", "-", "-", "-", "-", "-"],
 ];
 
@@ -124,6 +124,18 @@ map.forEach((row, i) => {
               x: Boundary.width * j,
               y: Boundary.height * i,
             },
+            image: createImage("./img/pipeHorizontal.png"),
+          })
+        );
+        break;
+      case "|":
+        boundaries.push(
+          new Boundary({
+            position: {
+              x: Boundary.width * j,
+              y: Boundary.height * i,
+            },
+            image: createImage("./img/pipeVertical.png"),
           })
         );
         break;
