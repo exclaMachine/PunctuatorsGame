@@ -28,7 +28,6 @@ class Player {
     this.radius = 16;
   }
 
-  //TODO make this excla machine instead of a circle
   draw() {
     ctx.beginPath();
 
@@ -69,7 +68,34 @@ class Player {
   }
 }
 
+class IpaLetter {
+  constructor({ position, letter }) {
+    this.position = position; // Position on the map
+    this.radius = 16; // Size of the letter (like pellets in Pac-Man)
+    this.letter = letter; // The IPA letter
+    this.color = "white"; // Default color for the letters
+  }
+
+  draw(ctx) {
+    // Draw the letter as a circle
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    ctx.closePath();
+
+    // Draw the letter inside the circle
+    ctx.fillStyle = "black"; // Letter color
+    ctx.font = "16px Arial"; // Font size and style
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(this.letter, this.position.x, this.position.y);
+  }
+}
+
 const boundaries = [];
+const ipaLetters = [];
+
 const player = new Player({
   position: {
     x: Boundary.width * 1.5,
@@ -120,7 +146,6 @@ const map = [
   ["4", "-", "-", "-", "-", "-", "-", "-", "-", "-", "3"],
 ];
 
-// Additional cases (does not include the power up pellet that's inserted later in the vid)
 map.forEach((row, i) => {
   row.forEach((symbol, j) => {
     switch (symbol) {
@@ -304,14 +329,15 @@ map.forEach((row, i) => {
         );
         break;
       case ".":
-        // pellets.push(
-        //   new Pellet({
-        //     position: {
-        //       x: j * Boundary.width + Boundary.width / 2,
-        //       y: i * Boundary.height + Boundary.height / 2,
-        //     },
-        //   })
-        // );
+        ipaLetters.push(
+          new IpaLetter({
+            position: {
+              x: j * Boundary.width + Boundary.width / 2,
+              y: i * Boundary.height + Boundary.height / 2,
+            },
+            letter: "æ",
+          })
+        );
         break;
     }
   });
@@ -428,6 +454,10 @@ function animate() {
       player.velocity.x = 0;
       player.velocity.y = 0;
     }
+  });
+
+  ipaLetters.forEach((ipaLetter) => {
+    ipaLetter.draw(ctx);
   });
 
   player.update();
