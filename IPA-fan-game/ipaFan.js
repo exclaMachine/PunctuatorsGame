@@ -456,8 +456,18 @@ function animate() {
     }
   });
 
-  ipaLetters.forEach((ipaLetter) => {
+  ipaLetters.forEach((ipaLetter, index) => {
     ipaLetter.draw(ctx);
+
+    if (
+      Math.hypot(
+        ipaLetter.position.x - player.position.x,
+        ipaLetter.position.y - player.position.y
+      ) <
+      ipaLetter.radius + player.radius
+    ) {
+      ipaLetters.splice(index, 1);
+    }
   });
 
   player.update();
