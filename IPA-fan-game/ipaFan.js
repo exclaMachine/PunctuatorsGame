@@ -74,6 +74,7 @@ class Enemy {
     this.position = position;
     this.velocity = velocity;
     this.color = color;
+    this.prevCollisions = [];
     this.radius = 16;
   }
 
@@ -606,6 +607,25 @@ function animate() {
         collisions.push("down");
       }
     });
+
+    if (collisions.length > enemy.prevCollisions.length)
+      enemy.prevCollisions = collisions;
+
+    if (JSON.stringify(collisions) !== JSON.stringify(enemy.prevCollisions)) {
+      if (enemy.velocity.x > 0) enemy.prevCollisions.push("right");
+      else if (enemy.velocity.x < 0) enemy.prevCollisions.push("left");
+      else if (enemy.velocity.y < 0) enemy.prevCollisions.push("up");
+      else if (enemy.velocity.y > 0) enemy.prevCollisions.push("down");
+
+      const pathways = enemy.prevCollisions.filter((collision) => {
+        return !collisions.includes(collision);
+      });
+      console.log({ pathways });
+
+      const direction = pathways[Math.floor(Math.random() * pathways.length)];
+
+      console.log({ direction });
+    }
     console.log(collisions);
   });
 }
