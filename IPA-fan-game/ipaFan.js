@@ -70,12 +70,14 @@ class Player {
 }
 
 class Enemy {
+  static speed = 2;
   constructor({ position, velocity, color = "red" }) {
     this.position = position;
     this.velocity = velocity;
     this.color = color;
     this.prevCollisions = [];
     this.radius = 16;
+    this.speed = 2;
   }
 
   draw() {
@@ -152,7 +154,7 @@ const enemies = [
       y: Boundary.height * 1.5,
     },
     velocity: {
-      x: -5,
+      x: Enemy.speed,
       y: 0,
     },
   }),
@@ -407,15 +409,17 @@ map.forEach((row, i) => {
 });
 
 function circleCollidesWithRectangle({ octagon, rectangle }) {
+  //need this to calculate black space between octagon and boundary
+  const padding = Boundary.width / 2 - octagon.radius - 1;
   return (
     octagon.position.y - octagon.radius + octagon.velocity.y <=
-      rectangle.position.y + rectangle.height &&
+      rectangle.position.y + rectangle.height + padding &&
     octagon.position.x + octagon.radius + octagon.velocity.x >=
-      rectangle.position.x &&
+      rectangle.position.x - padding &&
     octagon.position.y + octagon.radius + octagon.velocity.y >=
-      rectangle.position.y &&
+      rectangle.position.y - padding &&
     octagon.position.x - octagon.radius + octagon.velocity.x <=
-      rectangle.position.x + rectangle.width
+      rectangle.position.x + rectangle.width + padding
   );
 }
 
@@ -549,7 +553,7 @@ function animate() {
           octagon: {
             ...enemy,
             velocity: {
-              x: 5,
+              x: enemy.speed,
               y: 0,
             },
           },
@@ -565,7 +569,7 @@ function animate() {
           octagon: {
             ...enemy,
             velocity: {
-              x: -5,
+              x: -enemy.speed,
               y: 0,
             },
           },
@@ -582,7 +586,7 @@ function animate() {
             ...enemy,
             velocity: {
               x: 0,
-              y: -5,
+              y: -enemy.speed,
             },
           },
           rectangle: boundary,
@@ -598,7 +602,7 @@ function animate() {
             ...enemy,
             velocity: {
               x: 0,
-              y: 5,
+              y: enemy.speed,
             },
           },
           rectangle: boundary,
@@ -628,20 +632,20 @@ function animate() {
 
       switch (direction) {
         case "down":
-          enemy.velocity.y = 5;
+          enemy.velocity.y = enemy.speed;
           enemy.velocity.x = 0;
           break;
         case "up":
-          enemy.velocity.y = -5;
+          enemy.velocity.y = -enemy.speed;
           enemy.velocity.x = 0;
           break;
         case "right":
           enemy.velocity.y = 0;
-          enemy.velocity.x = 5;
+          enemy.velocity.x = enemy.speed;
           break;
         case "left":
           enemy.velocity.y = 0;
-          enemy.velocity.x = -5;
+          enemy.velocity.x = -enemy.speed;
           break;
       }
       enemy.prevCollisions = [];
