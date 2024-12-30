@@ -625,6 +625,26 @@ function animate() {
       const direction = pathways[Math.floor(Math.random() * pathways.length)];
 
       console.log({ direction });
+
+      switch (direction) {
+        case "down":
+          enemy.velocity.y = 5;
+          enemy.velocity.x = 0;
+          break;
+        case "up":
+          enemy.velocity.y = -5;
+          enemy.velocity.x = 0;
+          break;
+        case "right":
+          enemy.velocity.y = 0;
+          enemy.velocity.x = 5;
+          break;
+        case "left":
+          enemy.velocity.y = 0;
+          enemy.velocity.x = -5;
+          break;
+      }
+      enemy.prevCollisions = [];
     }
     console.log(collisions);
   });
