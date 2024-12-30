@@ -456,7 +456,8 @@ function animate() {
     }
   });
 
-  ipaLetters.forEach((ipaLetter, index) => {
+  for (let i = ipaLetters.length - 1; i > 0; i--) {
+    const ipaLetter = ipaLetters[i];
     ipaLetter.draw(ctx);
 
     if (
@@ -466,9 +467,9 @@ function animate() {
       ) <
       ipaLetter.radius + player.radius
     ) {
-      ipaLetters.splice(index, 1);
+      ipaLetters.splice(i, 1);
     }
-  });
+  }
 
   player.update();
 }
