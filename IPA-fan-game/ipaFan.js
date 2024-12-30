@@ -70,9 +70,10 @@ class Player {
 }
 
 class Enemy {
-  constructor({ position, velocity, color = "blue" }) {
+  constructor({ position, velocity, color = "red" }) {
     this.position = position;
     this.velocity = velocity;
+    this.color = color;
     this.radius = 16;
   }
 
@@ -143,6 +144,18 @@ class IpaLetter {
 
 const boundaries = [];
 const ipaLetters = [];
+const enemies = [
+  new Enemy({
+    position: {
+      x: Boundary.width * 1.5 * 6,
+      y: Boundary.height * 1.5,
+    },
+    velocity: {
+      x: 0,
+      y: 0,
+    },
+  }),
+];
 
 const player = new Player({
   position: {
@@ -523,6 +536,10 @@ function animate() {
   }
 
   player.update();
+
+  enemies.forEach((ghost) => {
+    ghost.update();
+  });
 }
 
 animate();
