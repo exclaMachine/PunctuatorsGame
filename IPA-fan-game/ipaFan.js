@@ -423,8 +423,9 @@ function circleCollidesWithRectangle({ octagon, rectangle }) {
   );
 }
 
+let animationId;
 function animate() {
-  requestAnimationFrame(animate);
+  animationId = requestAnimationFrame(animate);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (keys.w.pressed && lastKey === "w") {
@@ -544,6 +545,16 @@ function animate() {
 
   enemies.forEach((enemy) => {
     enemy.update();
+
+    if (
+      Math.hypot(
+        enemy.position.x - player.position.x,
+        enemy.position.y - player.position.y
+      ) <
+      enemy.radius + player.radius
+    ) {
+      cancelAnimationFrame(animationId);
+    }
 
     const collisions = [];
     boundaries.forEach((boundary) => {
