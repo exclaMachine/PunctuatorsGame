@@ -71,7 +71,7 @@ class Player {
 class IpaLetter {
   constructor({ position, letter }) {
     this.position = position; // Position on the map
-    this.radius = 16; // Size of the letter (like pellets in Pac-Man)
+    this.radius = 8; // Size of the letter (like pellets in Pac-Man)
     this.letter = letter; // The IPA letter
     this.color = "white"; // Default color for the letters
   }
