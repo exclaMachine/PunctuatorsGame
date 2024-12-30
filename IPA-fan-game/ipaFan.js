@@ -158,6 +158,17 @@ const enemies = [
       y: 0,
     },
   }),
+  new Enemy({
+    position: {
+      x: Boundary.width * 2,
+      y: Boundary.height * 1.5 * 3,
+    },
+    velocity: {
+      x: Enemy.speed,
+      y: 0,
+    },
+    color: "pink",
+  }),
 ];
 
 const player = new Player({
