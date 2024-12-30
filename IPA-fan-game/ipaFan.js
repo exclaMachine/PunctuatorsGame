@@ -151,7 +151,7 @@ const enemies = [
       y: Boundary.height * 1.5,
     },
     velocity: {
-      x: 0,
+      x: -5,
       y: 0,
     },
   }),
@@ -537,8 +537,76 @@ function animate() {
 
   player.update();
 
-  enemies.forEach((ghost) => {
-    ghost.update();
+  enemies.forEach((enemy) => {
+    enemy.update();
+
+    const collisions = [];
+    boundaries.forEach((boundary) => {
+      if (
+        !collisions.includes("right") &&
+        circleCollidesWithRectangle({
+          octagon: {
+            ...enemy,
+            velocity: {
+              x: 5,
+              y: 0,
+            },
+          },
+          rectangle: boundary,
+        })
+      ) {
+        collisions.push("right");
+      }
+
+      if (
+        !collisions.includes("left") &&
+        circleCollidesWithRectangle({
+          octagon: {
+            ...enemy,
+            velocity: {
+              x: -5,
+              y: 0,
+            },
+          },
+          rectangle: boundary,
+        })
+      ) {
+        collisions.push("left");
+      }
+
+      if (
+        !collisions.includes("up") &&
+        circleCollidesWithRectangle({
+          octagon: {
+            ...enemy,
+            velocity: {
+              x: 0,
+              y: -5,
+            },
+          },
+          rectangle: boundary,
+        })
+      ) {
+        collisions.push("up");
+      }
+
+      if (
+        !collisions.includes("down") &&
+        circleCollidesWithRectangle({
+          octagon: {
+            ...enemy,
+            velocity: {
+              x: 0,
+              y: 5,
+            },
+          },
+          rectangle: boundary,
+        })
+      ) {
+        collisions.push("down");
+      }
+    });
+    console.log(collisions);
   });
 }
 
