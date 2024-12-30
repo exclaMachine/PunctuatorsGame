@@ -1,4 +1,5 @@
 const canvas = document.querySelector("canvas");
+const scoreEl = document.querySelector("#scoreEl");
 const ctx = canvas.getContext("2d");
 
 canvas.width = innerWidth;
@@ -68,6 +69,53 @@ class Player {
   }
 }
 
+class Enemy {
+  constructor({ position, velocity, color = "blue" }) {
+    this.position = position;
+    this.velocity = velocity;
+    this.radius = 16;
+  }
+
+  draw() {
+    ctx.beginPath();
+
+    // Center coordinates for the octagon
+    const centerX = this.position.x;
+    const centerY = this.position.y;
+
+    // Calculate the angle between vertices
+    const angle = (Math.PI * 2) / 8; // 360 degrees divided by 8
+
+    // Rotate the octagon to make the bottom flat side
+    const rotationOffset = angle / 2;
+
+    // Move to the first vertex
+    ctx.moveTo(
+      centerX + this.radius * Math.cos(rotationOffset),
+      centerY + this.radius * Math.sin(rotationOffset)
+    );
+
+    // Loop to create the other 7 vertices
+    for (let i = 1; i <= 8; i++) {
+      const x = centerX + this.radius * Math.cos(i * angle + rotationOffset);
+      const y = centerY + this.radius * Math.sin(i * angle + rotationOffset);
+      ctx.lineTo(x, y);
+    }
+
+    ctx.closePath();
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+    ctx.fillStyle = this.color;
+    ctx.fill();
+  }
+
+  update() {
+    this.draw();
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
+  }
+}
+
 class IpaLetter {
   constructor({ position, letter }) {
     this.position = position; // Position on the map
@@ -123,6 +171,7 @@ const keys = {
 };
 
 let lastKey = "";
+let score = 0;
 
 function createImage(src) {
   const image = new Image();
@@ -468,6 +517,8 @@ function animate() {
       ipaLetter.radius + player.radius
     ) {
       ipaLetters.splice(i, 1);
+      score += 10;
+      scoreEl.innerHTML = score;
     }
   }
 
