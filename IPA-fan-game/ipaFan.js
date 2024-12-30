@@ -145,8 +145,35 @@ class IpaLetter {
   }
 }
 
+class PowerUp {
+  constructor({ position, symbol }) {
+    this.position = position; // Position on the map
+    this.radius = 12; // Size of the symbol (like pellets in Pac-Man)
+    this.symbol = symbol; // The IPA symbol
+    this.color = "white"; // Default color for the symbols
+  }
+
+  draw(ctx) {
+    // Draw the symbol as a circle
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    ctx.closePath();
+
+    // Draw the symbol inside the circle
+    ctx.fillStyle = "black"; // Letter color
+    ctx.font = "16px Arial"; // Font size and style
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(this.symbol, this.position.x, this.position.y);
+  }
+}
+
 const boundaries = [];
 const ipaLetters = [];
+const powerUps = [];
+
 const enemies = [
   new Enemy({
     position: {
@@ -415,6 +442,17 @@ map.forEach((row, i) => {
           })
         );
         break;
+      case "p":
+        powerUps.push(
+          new PowerUp({
+            position: {
+              x: j * Boundary.width + Boundary.width / 2,
+              y: i * Boundary.height + Boundary.height / 2,
+            },
+            symbol: "!",
+          })
+        );
+        break;
     }
   });
 });
@@ -535,7 +573,7 @@ function animate() {
     }
   });
 
-  for (let i = ipaLetters.length - 1; i > 0; i--) {
+  for (let i = ipaLetters.length - 1; i >= 0; i--) {
     const ipaLetter = ipaLetters[i];
     ipaLetter.draw(ctx);
 
@@ -550,6 +588,23 @@ function animate() {
       score += 10;
       scoreEl.innerHTML = score;
     }
+  }
+
+  for (let i = powerUps.length - 1; i >= 0; i--) {
+    const powerUp = powerUps[i];
+    powerUp.draw(ctx);
+
+    // if (
+    //   Math.hypot(
+    //     ipaLetter.position.x - player.position.x,
+    //     ipaLetter.position.y - player.position.y
+    //   ) <
+    //   ipaLetter.radius + player.radius
+    // ) {
+    //   powerUps.splice(i, 1);
+    //   score += 10;
+    //   scoreEl.innerHTML = score;
+    // }
   }
 
   player.update();
