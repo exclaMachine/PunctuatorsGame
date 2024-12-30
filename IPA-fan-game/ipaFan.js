@@ -78,6 +78,7 @@ class Enemy {
     this.prevCollisions = [];
     this.radius = 16;
     this.speed = 2;
+    this.scared = false;
   }
 
   draw() {
@@ -109,7 +110,7 @@ class Enemy {
     ctx.closePath();
     ctx.strokeStyle = "black";
     ctx.stroke();
-    ctx.fillStyle = this.color;
+    ctx.fillStyle = this.scared ? "blue" : this.color;
     ctx.fill();
   }
 
@@ -594,17 +595,24 @@ function animate() {
     const powerUp = powerUps[i];
     powerUp.draw(ctx);
 
-    // if (
-    //   Math.hypot(
-    //     ipaLetter.position.x - player.position.x,
-    //     ipaLetter.position.y - player.position.y
-    //   ) <
-    //   ipaLetter.radius + player.radius
-    // ) {
-    //   powerUps.splice(i, 1);
-    //   score += 10;
-    //   scoreEl.innerHTML = score;
-    // }
+    if (
+      Math.hypot(
+        powerUp.position.x - player.position.x,
+        powerUp.position.y - player.position.y
+      ) <
+      powerUp.radius + player.radius
+    ) {
+      powerUps.splice(i, 1);
+
+      //make enemies scared TODO different powerups based on punctuation?
+      enemies.forEach((enemy) => {
+        enemy.scared = true;
+
+        setTimeout(() => {
+          enemy.scared = false;
+        }, 3000);
+      });
+    }
   }
 
   player.update();
