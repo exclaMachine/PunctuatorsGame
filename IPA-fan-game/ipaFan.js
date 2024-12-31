@@ -591,6 +591,24 @@ function animate() {
     }
   }
 
+  //detect collision between enemies and player
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const enemy = enemies[i];
+    if (
+      Math.hypot(
+        enemy.position.x - player.position.x,
+        enemy.position.y - player.position.y
+      ) <
+      enemy.radius + player.radius
+    ) {
+      if (enemy.scared) {
+        enemies.splice(i, 1);
+      } else {
+        cancelAnimationFrame(animationId);
+      }
+    }
+  }
+
   for (let i = powerUps.length - 1; i >= 0; i--) {
     const powerUp = powerUps[i];
     powerUp.draw(ctx);
@@ -619,17 +637,6 @@ function animate() {
 
   enemies.forEach((enemy) => {
     enemy.update();
-
-    if (
-      Math.hypot(
-        enemy.position.x - player.position.x,
-        enemy.position.y - player.position.y
-      ) <
-        enemy.radius + player.radius &&
-      !enemy.scared
-    ) {
-      cancelAnimationFrame(animationId);
-    }
 
     const collisions = [];
     boundaries.forEach((boundary) => {
