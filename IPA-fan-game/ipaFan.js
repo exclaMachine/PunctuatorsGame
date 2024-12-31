@@ -610,7 +610,7 @@ function animate() {
 
         setTimeout(() => {
           enemy.scared = false;
-        }, 3000);
+        }, 6000);
       });
     }
   }
@@ -625,7 +625,8 @@ function animate() {
         enemy.position.x - player.position.x,
         enemy.position.y - player.position.y
       ) <
-      enemy.radius + player.radius
+        enemy.radius + player.radius &&
+      !enemy.scared
     ) {
       cancelAnimationFrame(animationId);
     }
