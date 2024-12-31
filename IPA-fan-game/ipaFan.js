@@ -57,14 +57,31 @@ class Player {
     ctx.strokeStyle = "black";
     ctx.stroke();
 
-    // If the mouth is open, draw the black rectangle TODO update this to more than one frame
+    // Determine the mouth position based on velocity
+    let squareX = centerX; // Default to center
+    let squareY = centerY; // Default to center
+
+    const squareSize = this.radius; // Make the square 1/4th the size of the octagon
+    const squareOffset = this.radius / 1.5; // Offset to align the square with the corners
+
+    if (this.velocity.x < 0) {
+      // Moving left, place square in the lower-left corner
+      squareX -= squareOffset;
+      squareY += squareOffset;
+    } else {
+      // Default (moving right or stationary), place square in the lower-right corner
+      squareX += squareOffset;
+      squareY += squareOffset;
+    }
+
+    // If the mouth is open, draw the black rectangle
     if (this.isMouthOpen) {
       ctx.fillStyle = "black";
       ctx.fillRect(
-        centerX, // Start at the center horizontally
-        centerY, // Start at the center vertically
-        this.radius, // Width of the black rectangle
-        this.radius // Height of the black rectangle
+        squareX - squareSize / 2, // Adjust to center the square at the corner
+        squareY - squareSize / 2,
+        squareSize, // Width of the black rectangle
+        squareSize // Height of the black rectangle
       );
     }
   }
