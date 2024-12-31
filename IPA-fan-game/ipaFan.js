@@ -24,48 +24,65 @@ class Boundary {
 
 class Player {
   constructor({ position, velocity }) {
-    this.position = position;
-    this.velocity = velocity;
-    this.radius = 16;
+    this.position = position; // Position of the octagon's center
+    this.velocity = velocity; // Movement velocity
+    this.radius = 16; // Radius of the octagon
+    this.isMouthOpen = true; // Initial state of the mouth
+    this.mouthTimer = 0; // Timer to control mouth alternation
   }
 
   draw() {
-    ctx.beginPath();
-
-    // Center coordinates for the octagon
     const centerX = this.position.x;
     const centerY = this.position.y;
 
-    // Calculate the angle between vertices
-    const angle = (Math.PI * 2) / 8; // 360 degrees divided by 8
+    const sides = 8; // Number of sides for the octagon
+    const angle = (Math.PI * 2) / sides; // Angle between vertices
+    const rotationOffset = angle / 2; // Align the flat side at the bottom
 
-    // Rotate the octagon to make the bottom flat side
-    const rotationOffset = angle / 2;
+    ctx.beginPath();
 
-    // Move to the first vertex
-    ctx.moveTo(
-      centerX + this.radius * Math.cos(rotationOffset),
-      centerY + this.radius * Math.sin(rotationOffset)
-    );
+    // Draw the octagon
+    for (let i = 0; i <= sides; i++) {
+      const currentAngle = i * angle - rotationOffset;
 
-    // Loop to create the other 7 vertices
-    for (let i = 1; i <= 8; i++) {
-      const x = centerX + this.radius * Math.cos(i * angle + rotationOffset);
-      const y = centerY + this.radius * Math.sin(i * angle + rotationOffset);
-      ctx.lineTo(x, y);
+      const x = centerX + this.radius * Math.cos(currentAngle);
+      const y = centerY + this.radius * Math.sin(currentAngle);
+
+      ctx.lineTo(x, y); // Draw the octagon edge
     }
 
     ctx.closePath();
-    ctx.strokeStyle = "black";
-    ctx.stroke();
     ctx.fillStyle = "yellow";
     ctx.fill();
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+
+    // If the mouth is open, draw the black rectangle TODO update this to more than one frame
+    if (this.isMouthOpen) {
+      ctx.fillStyle = "black";
+      ctx.fillRect(
+        centerX, // Start at the center horizontally
+        centerY, // Start at the center vertically
+        this.radius, // Width of the black rectangle
+        this.radius // Height of the black rectangle
+      );
+    }
   }
 
   update() {
     this.draw();
+
+    // Update position
     this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
+
+    // Control mouth alternation
+    this.mouthTimer++;
+    if (this.mouthTimer > 15) {
+      // Change state every 15 frames
+      this.isMouthOpen = !this.isMouthOpen;
+      this.mouthTimer = 0;
+    }
   }
 }
 
