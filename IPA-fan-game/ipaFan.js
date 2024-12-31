@@ -609,6 +609,12 @@ function animate() {
     }
   }
 
+  //win condition
+  if (ipaLetters.length === 0) {
+    cancelAnimationFrame(animationId);
+    console.log("You Win!");
+  }
+
   for (let i = powerUps.length - 1; i >= 0; i--) {
     const powerUp = powerUps[i];
     powerUp.draw(ctx);
