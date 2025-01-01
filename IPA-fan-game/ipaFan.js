@@ -64,7 +64,11 @@ class Player {
     const squareSize = this.radius; // Make the square 1/4th the size of the octagon
     const squareOffset = this.radius / 1.5; // Offset to align the square with the corners
 
-    if (this.velocity.x < 0) {
+    if (this.velocity.y < 0) {
+      // Moving upward, place square in the upper-right corner
+      squareX += squareOffset;
+      squareY -= squareOffset;
+    } else if (this.velocity.x < 0) {
       // Moving left, place square in the lower-left corner
       squareX -= squareOffset;
       squareY += squareOffset;
