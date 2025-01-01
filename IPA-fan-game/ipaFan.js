@@ -158,6 +158,30 @@ class Player {
       }
     }
   }
+
+  moveRight(boundaries) {
+    for (let i = 0; i < boundaries.length; i++) {
+      const boundary = boundaries[i];
+      if (
+        circleCollidesWithRectangle({
+          octagon: {
+            ...this,
+            velocity: {
+              x: 5,
+              y: 0,
+            },
+          },
+          rectangle: boundary,
+        })
+      ) {
+        this.velocity.x = 0;
+        break;
+      } else {
+        this.velocity.x = 5;
+      }
+    }
+  }
+
   update() {
     this.draw();
 
@@ -591,26 +615,7 @@ function animate() {
   } else if (keys.s.pressed && lastKey === "s") {
     player.moveDown(boundaries);
   } else if (keys.d.pressed && lastKey === "d") {
-    for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i];
-      if (
-        circleCollidesWithRectangle({
-          octagon: {
-            ...player,
-            velocity: {
-              x: 5,
-              y: 0,
-            },
-          },
-          rectangle: boundary,
-        })
-      ) {
-        player.velocity.x = 0;
-        break;
-      } else {
-        player.velocity.x = 5;
-      }
-    }
+    player.moveRight(boundaries);
   }
 
   boundaries.forEach((boundary) => {
