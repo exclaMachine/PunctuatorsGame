@@ -2,6 +2,8 @@ const canvas = document.querySelector("canvas");
 const scoreEl = document.querySelector("#scoreEl");
 const ctx = canvas.getContext("2d");
 
+const SPEED = 200;
+
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
@@ -29,6 +31,10 @@ class Player {
     this.radius = 16; // Radius of the octagon
     this.isMouthOpen = true; // Initial state of the mouth
     this.mouthTimer = 0; // Timer to control mouth alternation
+    this.desiredDirection = {
+      x: 0,
+      y: 0,
+    };
   }
 
   draw() {
@@ -182,12 +188,93 @@ class Player {
     }
   }
 
-  update() {
+  move(direction) {
+    switch (direction) {
+      case "up":
+        this.desiredDirection = {
+          x: 0,
+          y: -1,
+        };
+        break;
+      case "down":
+        this.desiredDirection = {
+          x: 0,
+          y: 1,
+        };
+        break;
+      case "left":
+        this.desiredDirection = {
+          x: -1,
+          y: 0,
+        };
+        break;
+      case "right":
+        this.desiredDirection = {
+          x: 1,
+          y: 0,
+        };
+        break;
+    }
+  }
+
+  collision(boundaries) {
+    for (const boundary of boundaries) {
+      if (
+        circleCollidesWithRectangle({
+          octagon: this,
+          rectangle: boundary,
+        })
+      )
+        return true;
+    }
+    return false;
+  }
+
+  snapToGrid() {
+    const CELL_SIZE = 20;
+    this.position = {
+      x: Math.round(this.position.x / CELL_SIZE) * CELL_SIZE,
+      y: Math.round(this.position.y / CELL_SIZE) * CELL_SIZE,
+    };
+  }
+
+  isValidMove(boundaries) {
+    const PIXEL_BUFFER = 5;
+    for (const boundary of boundaries) {
+      if (
+        circleCollidesWithRectangle({
+          octagon: {
+            ...this,
+            velocity: {
+              x: this.desiredDirection.x * PIXEL_BUFFER,
+              y: this.desiredDirection.y * PIXEL_BUFFER,
+            },
+          },
+          rectangle: boundary,
+        })
+      )
+        return false;
+    }
+    return true;
+  }
+
+  update(delta, boundaries) {
     this.draw();
 
+    if (this.isValidMove(boundaries)) {
+      this.velocity.x = this.desiredDirection.x;
+      this.velocity.y = this.desiredDirection.y;
+    }
+
     // Update position
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
+    if (this.collision(boundaries)) {
+      this.velocity.x = 0;
+      this.velocity.y = 0;
+      this.snapToGrid();
+    } else {
+      this.position.x += this.velocity.x * delta * SPEED;
+      this.position.y += this.velocity.y * delta * SPEED;
+    }
 
     // Control mouth alternation
     this.mouthTimer++;
@@ -604,28 +691,34 @@ function circleCollidesWithRectangle({ octagon, rectangle }) {
 }
 
 let animationId;
+let prevMs = Date.now();
+
 function animate() {
   animationId = requestAnimationFrame(animate);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  const currentMs = Date.now();
+  const delta = (currentMs - prevMs) / 1000;
+  prevMs = currentMs;
+
   if (keys.w.pressed && lastKey === "w") {
-    player.moveUp(boundaries);
+    player.move("up");
   } else if (keys.a.pressed && lastKey === "a") {
-    player.moveLeft(boundaries);
+    player.move("left");
   } else if (keys.s.pressed && lastKey === "s") {
-    player.moveDown(boundaries);
+    player.move("down");
   } else if (keys.d.pressed && lastKey === "d") {
-    player.moveRight(boundaries);
+    player.move("right");
   }
 
   boundaries.forEach((boundary) => {
     boundary.draw();
 
-    if (circleCollidesWithRectangle({ octagon: player, rectangle: boundary })) {
-      //console.log("we are colliding");
-      player.velocity.x = 0;
-      player.velocity.y = 0;
-    }
+    // if (circleCollidesWithRectangle({ octagon: player, rectangle: boundary })) {
+    //   //console.log("we are colliding");
+    //   player.velocity.x = 0;
+    //   player.velocity.y = 0;
+    // }
   });
 
   for (let i = ipaLetters.length - 1; i >= 0; i--) {
@@ -693,7 +786,7 @@ function animate() {
     }
   }
 
-  player.update();
+  player.update(delta, boundaries);
 
   enemies.forEach((enemy) => {
     enemy.update();
@@ -777,11 +870,9 @@ function animate() {
       const pathways = enemy.prevCollisions.filter((collision) => {
         return !collisions.includes(collision);
       });
-      console.log({ pathways });
+      //console.log({ pathways });
 
       const direction = pathways[Math.floor(Math.random() * pathways.length)];
-
-      console.log({ direction });
 
       switch (direction) {
         case "down":
@@ -803,7 +894,7 @@ function animate() {
       }
       enemy.prevCollisions = [];
     }
-    console.log(collisions);
+    //console.log(collisions);
   });
 }
 
