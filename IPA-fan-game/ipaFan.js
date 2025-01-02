@@ -3,6 +3,7 @@ const scoreEl = document.querySelector("#scoreEl");
 const ctx = canvas.getContext("2d");
 
 const SPEED = 200;
+const GHOST_SPEED = 75;
 
 canvas.width = innerWidth;
 canvas.height = innerHeight;
@@ -331,7 +332,7 @@ class Enemy {
     ctx.fill();
   }
 
-  update() {
+  update(delta) {
     this.draw();
     this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
@@ -677,7 +678,7 @@ map.forEach((row, i) => {
 
 function circleCollidesWithRectangle({ octagon, rectangle }) {
   //need this to calculate black space between octagon and boundary
-  const padding = Boundary.width / 2 - octagon.radius - 1;
+  const padding = Boundary.width / 2 - octagon.radius - 2;
   return (
     octagon.position.y - octagon.radius + octagon.velocity.y <=
       rectangle.position.y + rectangle.height + padding &&
@@ -789,7 +790,7 @@ function animate() {
   player.update(delta, boundaries);
 
   enemies.forEach((enemy) => {
-    enemy.update();
+    enemy.update(delta);
 
     const collisions = [];
     boundaries.forEach((boundary) => {
