@@ -36,6 +36,7 @@ class Player {
       x: 0,
       y: 0,
     };
+    this.state = "active";
   }
 
   draw() {
@@ -167,9 +168,7 @@ class Player {
     return true;
   }
 
-  update(delta, boundaries) {
-    this.draw();
-
+  movePlayerWithInput(delta, boundaries) {
     if (this.isValidMove(boundaries)) {
       this.velocity.x = this.desiredDirection.x;
       this.velocity.y = this.desiredDirection.y;
@@ -191,6 +190,19 @@ class Player {
       // Change state every 15 frames
       this.isMouthOpen = !this.isMouthOpen;
       this.mouthTimer = 0;
+    }
+  }
+
+  update(delta, boundaries) {
+    this.draw();
+
+    switch (this.state) {
+      case "active":
+        this.movePlayerWithInput(delta, boundaries);
+        break;
+      case "initDeath":
+        this.state = "death";
+        break;
     }
   }
 }
