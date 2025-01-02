@@ -240,6 +240,27 @@ class Enemy {
     ctx.fill();
   }
 
+  collision(boundaries) {
+    for (const boundary of boundaries) {
+      if (
+        circleCollidesWithRectangle({
+          octagon: this,
+          rectangle: boundary,
+        })
+      )
+        return true;
+    }
+    return false;
+  }
+
+  snapToGrid() {
+    const CELL_SIZE = 20;
+    this.position = {
+      x: Math.round(this.position.x / CELL_SIZE) * CELL_SIZE,
+      y: Math.round(this.position.y / CELL_SIZE) * CELL_SIZE,
+    };
+  }
+
   update(delta) {
     this.draw();
     this.position.x += this.velocity.x;
