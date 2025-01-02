@@ -3,7 +3,7 @@ const scoreEl = document.querySelector("#scoreEl");
 const ctx = canvas.getContext("2d");
 
 const SPEED = 200;
-const GHOST_SPEED = 75;
+const ENEMY_SPEED = 75;
 
 canvas.width = innerWidth;
 canvas.height = innerHeight;
@@ -196,7 +196,7 @@ class Player {
 }
 
 class Enemy {
-  static speed = 2;
+  static speed = 1;
   constructor({ position, velocity, color = "red" }) {
     this.position = position;
     this.velocity = velocity;
@@ -205,6 +205,7 @@ class Enemy {
     this.radius = 16;
     this.speed = 2;
     this.scared = false;
+    this.previousValidMoves = [];
   }
 
   draw() {
@@ -261,10 +262,79 @@ class Enemy {
     };
   }
 
-  update(delta) {
+  gatherValidMoves(boundaries) {
+    const directions = [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 },
+    ];
+
+    //filter out the opposite direction
+    const validMoves = directions.filter((direction) => {
+      const oppositeDirection = { x: -this.velocity.x, y: -this.velocity.y };
+
+      return (
+        direction.x !== oppositeDirection.x ||
+        direction.y !== oppositeDirection.y
+      );
+    });
+
+    const PIXEL_BUFFER = 5;
+    for (const boundary of boundaries) {
+      for (const direction of directions) {
+        if (
+          circleCollidesWithRectangle({
+            octagon: {
+              ...this,
+              velocity: {
+                x: direction.x * PIXEL_BUFFER,
+                y: direction.y * PIXEL_BUFFER,
+              },
+            },
+            rectangle: boundary,
+          })
+        ) {
+          //splice out the direction from our validMoves array
+          validMoves.splice(
+            validMoves.findIndex(
+              (move) => move.x === direction.x && move.y === direction.y
+            ),
+            1
+          );
+        }
+      }
+    }
+    return validMoves;
+  }
+
+  update(delta, boundaries) {
     this.draw();
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
+    const validMoves = this.gatherValidMoves(boundaries);
+
+    if (
+      validMoves.length > 0 &&
+      validMoves.length !== this.previousValidMoves.length
+    ) {
+      //change ghosts velocity
+      const chosenMove =
+        validMoves[Math.floor(Math.random() * validMoves.length)];
+
+      this.velocity.x = chosenMove.x;
+      this.velocity.y = chosenMove.y;
+    }
+
+    // Update position
+    if (this.collision(boundaries)) {
+      this.velocity.x = 0;
+      this.velocity.y = 0;
+      this.snapToGrid();
+    } else {
+      this.position.x += this.velocity.x * delta * ENEMY_SPEED;
+      this.position.y += this.velocity.y * delta * ENEMY_SPEED;
+    }
+
+    this.previousValidMoves = validMoves;
   }
 }
 
@@ -333,17 +403,17 @@ const enemies = [
       y: 0,
     },
   }),
-  new Enemy({
-    position: {
-      x: Boundary.width * 2,
-      y: Boundary.height * 1.5 * 3,
-    },
-    velocity: {
-      x: Enemy.speed,
-      y: 0,
-    },
-    color: "pink",
-  }),
+  //   new Enemy({
+  //     position: {
+  //       x: Boundary.width * 2,
+  //       y: Boundary.height * 1.5 * 3,
+  //     },
+  //     velocity: {
+  //       x: Enemy.speed,
+  //       y: 0,
+  //     },
+  //     color: "pink",
+  //   }),
 ];
 
 const player = new Player({
@@ -719,7 +789,7 @@ function animate() {
   player.update(delta, boundaries);
 
   enemies.forEach((enemy) => {
-    enemy.update(delta);
+    enemy.update(delta, boundaries);
 
     const collisions = [];
     boundaries.forEach((boundary) => {
