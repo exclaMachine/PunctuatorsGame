@@ -193,6 +193,19 @@ class Player {
     }
   }
 
+  die() {
+    this.state = "initDeath";
+    gsap.to(this, {
+      radians: Math.PI - 0.00000001,
+      onComplete: () => {
+        setTimeout(() => {
+          game.init();
+        }, 750);
+      },
+    });
+    console.log("die");
+  }
+
   update(delta, boundaries) {
     this.draw();
 
@@ -218,6 +231,7 @@ class Enemy {
     this.speed = 2;
     this.scared = false;
     this.previousValidMoves = [];
+    this.state = "active";
   }
 
   draw() {
@@ -320,10 +334,8 @@ class Enemy {
     return validMoves;
   }
 
-  update(delta, boundaries) {
-    this.draw();
+  move(delta, boundaries) {
     const validMoves = this.gatherValidMoves(boundaries);
-
     if (
       validMoves.length > 0 &&
       validMoves.length !== this.previousValidMoves.length
@@ -347,6 +359,16 @@ class Enemy {
     }
 
     this.previousValidMoves = validMoves;
+  }
+
+  update(delta, boundaries) {
+    this.draw();
+
+    switch (this.state) {
+      case "active":
+        this.move(delta, boundaries);
+        break;
+    }
   }
 }
 
@@ -403,41 +425,48 @@ class PowerUp {
 const boundaries = [];
 const ipaLetters = [];
 const powerUps = [];
+let player = {};
+let enemies = [];
 
-const enemies = [
-  new Enemy({
-    position: {
-      x: Boundary.width * 1.5 * 6,
-      y: Boundary.height * 1.5,
-    },
-    velocity: {
-      x: Enemy.speed,
-      y: 0,
-    },
-  }),
-  //   new Enemy({
-  //     position: {
-  //       x: Boundary.width * 2,
-  //       y: Boundary.height * 1.5 * 3,
-  //     },
-  //     velocity: {
-  //       x: Enemy.speed,
-  //       y: 0,
-  //     },
-  //     color: "pink",
-  //   }),
-];
+const game = {
+  init() {
+    player = new Player({
+      position: {
+        x: Boundary.width * 1.5,
+        y: Boundary.height * 1.5,
+      },
+      velocity: {
+        x: 0,
+        y: 0,
+      },
+    });
+    enemies = [
+      new Enemy({
+        position: {
+          x: Boundary.width * 1.5 * 4,
+          y: Boundary.height * 1.5,
+        },
+        velocity: {
+          x: Enemy.speed,
+          y: 0,
+        },
+      }),
+      //   new Enemy({
+      //     position: {
+      //       x: Boundary.width * 2,
+      //       y: Boundary.height * 1.5 * 3,
+      //     },
+      //     velocity: {
+      //       x: Enemy.speed,
+      //       y: 0,
+      //     },
+      //     color: "pink",
+      //   }),
+    ];
+  },
+};
 
-const player = new Player({
-  position: {
-    x: Boundary.width * 1.5,
-    y: Boundary.height * 1.5,
-  },
-  velocity: {
-    x: 0,
-    y: 0,
-  },
-});
+game.init();
 
 const keys = {
   w: {
@@ -758,12 +787,18 @@ function animate() {
         enemy.position.x - player.position.x,
         enemy.position.y - player.position.y
       ) <
-      enemy.radius + player.radius
+        enemy.radius + player.radius &&
+      player.state === "active"
     ) {
       if (enemy.scared) {
         enemies.splice(i, 1);
       } else {
-        cancelAnimationFrame(animationId);
+        //cancelAnimationFrame(animationId);
+        player.die();
+        enemies.forEach((enemy) => {
+          enemy.state = "paused";
+        });
+        console.log("You lose");
       }
     }
   }
