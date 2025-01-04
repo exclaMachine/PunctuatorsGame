@@ -5,8 +5,9 @@ const ctx = canvas.getContext("2d");
 const SPEED = 200;
 const ENEMY_SPEED = 75;
 
+MAX_NUMBER_ROWS = 13;
 canvas.width = innerWidth;
-canvas.height = innerHeight;
+//canvas.height = innerHeight;
 
 class Boundary {
   constructor({ position, image }) {
@@ -24,6 +25,7 @@ class Boundary {
     ctx.drawImage(this.image, this.position.x, this.position.y);
   }
 }
+canvas.height = Boundary.height * 13;
 
 class Player {
   constructor({ position, velocity }) {
@@ -191,6 +193,10 @@ class Player {
       this.isMouthOpen = !this.isMouthOpen;
       this.mouthTimer = 0;
     }
+
+    //transport between sections
+    if (this.position.y + this.radius < 0) this.position.y = canvas.height;
+    else if (this.position.y - this.radius > canvas.height) this.position.y = 0;
   }
 
   die() {
@@ -493,7 +499,7 @@ function createImage(src) {
 }
 
 const map = [
-  ["1", "-", "-", "-", "-", "-", "-", "-", "-", "-", "2"],
+  ["1", "-", "-", "-", "]", ".", "[", "-", "-", "-", "2"],
   ["|", ".", ".", ".", ".", ".", ".", ".", ".", ".", "|"],
   ["|", ".", "b", ".", "[", "7", "]", ".", "b", ".", "|"],
   ["|", ".", ".", ".", ".", "_", ".", ".", ".", ".", "|"],
@@ -505,7 +511,7 @@ const map = [
   ["|", ".", ".", ".", ".", "^", ".", ".", ".", ".", "|"],
   ["|", ".", "b", ".", "[", "5", "]", ".", "b", ".", "|"],
   ["|", ".", ".", ".", ".", ".", ".", ".", ".", "p", "|"],
-  ["4", "-", "-", "-", "-", "-", "-", "-", "-", "-", "3"],
+  ["4", "-", "-", "-", "]", ".", "[", "-", "-", "-", "3"],
 ];
 
 map.forEach((row, i) => {
