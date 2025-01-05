@@ -798,6 +798,8 @@ function animate() {
     ) {
       if (enemy.scared) {
         enemies.splice(i, 1);
+        score += 50;
+        scoreEl.innerHTML = score;
       } else {
         //cancelAnimationFrame(animationId);
         player.die();
