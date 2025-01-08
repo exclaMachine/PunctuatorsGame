@@ -194,6 +194,10 @@ class Player {
       this.mouthTimer = 0;
     }
 
+    this.checkTransportOnVerticalAxis();
+  }
+
+  checkTransportOnVerticalAxis() {
     //transport between sections
     if (this.position.y + this.radius < 0) this.position.y = canvas.height;
     else if (this.position.y - this.radius > canvas.height) this.position.y = 0;
