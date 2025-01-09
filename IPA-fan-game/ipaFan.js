@@ -24,7 +24,7 @@ class Boundary {
     ctx.drawImage(this.image, this.position.x, this.position.y);
   }
 }
-canvas.height = Boundary.height * 13;
+canvas.height = Boundary.height * MAX_NUMBER_ROWS;
 canvas.width = Boundary.width * MAX_NUMBER_COLUMNS;
 
 class Player {
