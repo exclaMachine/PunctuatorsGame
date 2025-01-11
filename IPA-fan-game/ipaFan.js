@@ -19,8 +19,6 @@ class Boundary {
   static height = 40;
 
   draw() {
-    //ctx.fillStyle = "blue";
-    //ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
     ctx.drawImage(this.image, this.position.x, this.position.y);
   }
 }
@@ -1067,4 +1065,17 @@ window.addEventListener("keyup", ({ key }) => {
       keys.d.pressed = false;
       break;
   }
+});
+
+document.getElementById("up").addEventListener("pointerdown", () => {
+  player.move("up");
+});
+document.getElementById("down").addEventListener("pointerdown", () => {
+  player.move("down");
+});
+document.getElementById("left").addEventListener("pointerdown", () => {
+  player.move("left");
+});
+document.getElementById("right").addEventListener("pointerdown", () => {
+  player.move("right");
 });
