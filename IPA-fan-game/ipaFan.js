@@ -450,11 +450,43 @@ class PowerUp {
   }
 }
 
+class Item {
+  constructor({ position, imgSrc = "./img/cherry.png" }) {
+    this.position = position; // Position on the map
+    this.radius = 8; // Size of the symbol (like pellets in Pac-Man)
+    this.image = new Image(); // The IPA symbol
+    this.image.src = imgSrc;
+    this.loaded = false;
+
+    this.image.onload = () => {
+      this.loaded = true;
+    };
+
+    this.center = JSON.parse(JSON.stringify(position));
+    this.radians = 0;
+  }
+  draw() {
+    if (!this.loaded) return;
+
+    ctx.drawImage(
+      this.image,
+      this.position.x - this.image.width / 2,
+      this.position.y - this.image.height / 2
+    );
+
+    this.radians += 0.5;
+
+    this.position.x = this.center.x + Math.cos(this.radians);
+    this.position.y = this.center.y + Math.sin(this.radians);
+  }
+}
+
 const boundaries = [];
 const ipaLetters = [];
 const powerUps = [];
 let player = {};
 let enemies = [];
+let items = [];
 
 const game = {
   init() {
@@ -522,7 +554,7 @@ function createImage(src) {
 
 const map = [
   ["1", "-", "-", "-", "]", ".", "[", "-", "-", "-", "2"],
-  ["|", ".", ".", ".", ".", ".", ".", ".", ".", ".", "|"],
+  ["|", ".", ".", ".", ".", ".", ".", ".", ".", "I", "|"],
   ["|", ".", "b", ".", "[", "7", "]", ".", "b", ".", "|"],
   ["|", ".", ".", ".", ".", "_", ".", ".", ".", ".", "|"],
   ["|", ".", "[", "]", ".", ".", ".", "[", "]", ".", "|"],
@@ -532,7 +564,7 @@ const map = [
   ["|", ".", "[", "]", ".", ".", ".", "[", "]", ".", "|"],
   ["|", ".", ".", ".", ".", "^", ".", ".", ".", ".", "|"],
   ["|", ".", "b", ".", "[", "5", "]", ".", "b", ".", "|"],
-  ["|", ".", ".", ".", ".", ".", ".", ".", ".", "p", "|"],
+  ["|", "I", ".", ".", ".", ".", ".", ".", ".", "p", "|"],
   ["4", "-", "-", "-", "]", ".", "[", "-", "-", "-", "3"],
 ];
 
@@ -740,6 +772,16 @@ map.forEach((row, i) => {
           })
         );
         break;
+      case "I":
+        items.push(
+          new Item({
+            position: {
+              x: j * Boundary.width + Boundary.width / 2,
+              y: i * Boundary.height + Boundary.height / 2,
+            },
+          })
+        );
+        break;
     }
   });
 });
@@ -782,12 +824,6 @@ function animate() {
 
   boundaries.forEach((boundary) => {
     boundary.draw();
-
-    // if (circleCollidesWithRectangle({ octagon: player, rectangle: boundary })) {
-    //   //console.log("we are colliding");
-    //   player.velocity.x = 0;
-    //   player.velocity.y = 0;
-    // }
   });
 
   for (let i = ipaLetters.length - 1; i >= 0; i--) {
@@ -803,6 +839,24 @@ function animate() {
     ) {
       ipaLetters.splice(i, 1);
       score += 10;
+      scoreEl.innerHTML = score;
+    }
+  }
+
+  // for our items
+  for (let i = items.length - 1; 0 <= i; i--) {
+    const item = items[i];
+    item.draw();
+    // player collides with item
+    if (
+      Math.hypot(
+        item.position.x - player.position.x,
+        item.position.y - player.position.y
+      ) <
+      item.radius + player.radius
+    ) {
+      items.splice(i, 1);
+      score += 50;
       scoreEl.innerHTML = score;
     }
   }
