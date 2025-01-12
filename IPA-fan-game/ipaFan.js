@@ -1,3 +1,5 @@
+import { ipaWords } from "./ipa_words.js"; // Import IPA words from file
+
 const canvas = document.querySelector("canvas");
 const scoreEl = document.querySelector("#scoreEl");
 const ctx = canvas.getContext("2d");
@@ -401,7 +403,7 @@ class Enemy {
 class IpaLetter {
   constructor({ position, letter }) {
     this.position = position; // Position on the map
-    this.radius = 8; // Size of the letter (like pellets in Pac-Man)
+    this.radius = 9; // Size of the letter (like pellets in Pac-Man)
     this.letter = letter; // The IPA letter
     this.color = "white"; // Default color for the letters
   }
@@ -551,17 +553,28 @@ function createImage(src) {
 }
 
 const map = [
-  ["1", "-", "-", "-", "]", ".", "[", "-", "2"],
-  ["|", ".", ".", ".", ".", ".", ".", "I", "|"],
-  ["|", ".", "b", ".", "[", "7", "]", ".", "|"],
-  ["|", ".", ".", ".", ".", "_", ".", ".", "|"],
-  ["_", ".", "[", "]", ".", ".", ".", "[", "_"],
-  [".", ".", ".", ".", ".", "^", ".", ".", "."],
+  ["1", "-", "-", "-", "]", " ", "[", "-", "2"],
+  ["|", " ", " ", ".", " ", ".", " ", "I", "|"],
+  ["|", " ", "b", ".", "[", "7", "]", ".", "|"],
+  ["|", " ", ".", " ", ".", "_", " ", ".", "|"],
+  ["_", ".", "[", "]", " ", ".", " ", "[", "_"],
+  [" ", " ", ".", " ", ".", "^", ".", " ", "."],
   ["^", ".", "b", ".", "[", "+", "]", ".", "^"],
-  ["|", ".", ".", ".", ".", "_", ".", ".", "|"],
-  ["|", ".", "[", "]", ".", "p", ".", "[", "|"],
+  ["|", " ", ".", " ", ".", "_", ".", " ", "|"],
+  ["|", ".", "[", "]", ".", "p", " ", "[", "|"],
   ["4", "-", "-", "-", "]", ".", "[", "-", "3"],
 ];
+
+const randomWordKey =
+  Object.keys(ipaWords)[
+    Math.floor(Math.random() * Object.keys(ipaWords).length)
+  ];
+const ipaLettersArray = ipaWords[randomWordKey].split(" "); // Convert word's letters to an array
+let ipaIndex = 0; // Track current IPA letter
+
+// Debugging: Log the chosen word and its IPA letters
+console.log(`Chosen word: ${randomWordKey}`);
+console.log(`IPA letters array:`, ipaLettersArray);
 
 map.forEach((row, i) => {
   row.forEach((symbol, j) => {
@@ -746,13 +759,17 @@ map.forEach((row, i) => {
         );
         break;
       case ".":
+        // Place IPA letter or blank space
+        const letter =
+          ipaIndex < ipaLettersArray.length ? ipaLettersArray[ipaIndex] : " ";
+        ipaIndex++; // Move to the next letter
         ipaLetters.push(
           new IpaLetter({
             position: {
               x: j * Boundary.width + Boundary.width / 2,
               y: i * Boundary.height + Boundary.height / 2,
             },
-            letter: "æ",
+            letter: letter,
           })
         );
         break;
