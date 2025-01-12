@@ -16,8 +16,9 @@
   }
 
   #game-container {
-    width: 360px;
-    height: 640px;
+    width: 100%; /* Full width of the viewport */
+    max-width: 360px; /* Constrain to a fixed width for the game */
+    height: 80%; /* Use 80% of the viewport height */
     background-color: black;
     position: relative;
   }
@@ -27,21 +28,15 @@
     height: 100%; /* Match game-container height */
   }
 
-  #score-container {
-    color: white;
-    font-family: sans-serif;
-    font-size: 16px;
-    margin: 10px 0; /* Add some space above/below */
-  }
-
   #letters-container {
     display: flex;
     gap: 3px; /* Reduce space between boxes */
     padding: 5px;
     background-color: black;
-    width: 100%; /* Ensure the container stretches across the screen */
+    width: 100%; /* Stretch to the width of the screen */
+    max-width: 360px; /* Match the game-container width */
     box-sizing: border-box;
-    overflow-x: auto; /* Allow scrolling if the word is too long */
+    overflow-x: auto; /* Allow scrolling for long words */
   }
 
   .letter-box {
