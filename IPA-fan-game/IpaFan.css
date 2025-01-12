@@ -1,4 +1,35 @@
-#controls {
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: black;
+  }
+
+  #game-container {
+    width: 360px;
+    height: 640px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: black;
+    position: relative;
+  }
+
+  canvas {
+    width: 360px; /* Fixed size */
+    height: 640px; /* Fixed size */
+    border: 2px solid white;
+  }
+
+  #controls {
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
