@@ -43,6 +43,8 @@ function updateLettersUI() {
     box.textContent = letter || ""; // Display the letter
     lettersContainer.appendChild(box);
   });
+
+  enableLetterSelection(); // Enable selection after updating the UI
 }
 
 class Player {
@@ -1128,3 +1130,44 @@ document.body.addEventListener("pointerdown", (event) => {
     player.move("right");
   }
 });
+
+let firstSelectedIndex = null; // Track the first selected letter
+
+function enableLetterSelection() {
+  const letterBoxes = document.querySelectorAll(".letter-box");
+
+  letterBoxes.forEach((box, index) => {
+    box.addEventListener("click", () => {
+      // If the box is already correct, do nothing
+      if (box.classList.contains("correct")) return;
+
+      // If this box is already selected, deselect it
+      if (box.classList.contains("selected")) {
+        box.classList.remove("selected");
+        firstSelectedIndex = null;
+        return;
+      }
+
+      // If no letter is selected yet, select this one
+      if (firstSelectedIndex === null) {
+        box.classList.add("selected");
+        firstSelectedIndex = index;
+      } else {
+        // If a letter is already selected, swap with the current one
+        const firstBox = letterBoxes[firstSelectedIndex];
+        const secondBox = box;
+
+        // Swap the letters in the boxes
+        const temp = collectedLetters[firstSelectedIndex];
+        collectedLetters[firstSelectedIndex] = collectedLetters[index];
+        collectedLetters[index] = temp;
+
+        // Update the UI
+        updateLettersUI();
+
+        // Reset selection
+        firstSelectedIndex = null;
+      }
+    });
+  });
+}

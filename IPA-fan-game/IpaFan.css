@@ -55,3 +55,8 @@
   .letter-box.correct {
     border-color: green; /* Outline green if correct */
   }
+
+  .letter-box.selected {
+    border-color: yellow;
+    background-color: rgba(255, 255, 0, 0.2);
+  }
