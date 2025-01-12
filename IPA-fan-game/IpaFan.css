@@ -27,31 +27,28 @@
   canvas {
     width: 100%; /* Keep canvas responsive within the container */
     height: 100%;
-    border: 2px solid white;
   }
 
   #controls {
-    width: 100%;
-    max-width: 360px; /* Match the width of the game-container */
+    position: absolute;
+    bottom: 0; /* Align to the bottom of the map */
+    right: 0; /* Align to the right of the map */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: black;
-    margin-top: 10px;
+    gap: 5px; /* Space between the buttons */
   }
 
   #controls > div {
     display: flex;
-    justify-content: center;
-    width: 100%; /* Ensure full width for alignment */
-    margin: 5px 0;
+    gap: 5px; /* Space between the left, down, and right buttons */
   }
 
   button {
-    width: 60px;
-    height: 60px;
-    font-size: 20px;
+    width: 50px; /* Smaller size for buttons */
+    height: 50px;
+    font-size: 16px; /* Adjust font size for smaller buttons */
     border-radius: 10px;
     border: none;
     background-color: #ccc;
