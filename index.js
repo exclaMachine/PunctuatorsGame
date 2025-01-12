@@ -1241,7 +1241,7 @@ function animate() {
   });
 }
 
-mySong.play();
+//mySong.play();
 animate();
 
 //https://stackoverflow.com/questions/69491293/how-to-do-a-work-when-mousedown-until-mouseup
