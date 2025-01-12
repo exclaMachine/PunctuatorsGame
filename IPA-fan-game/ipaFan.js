@@ -27,6 +27,24 @@ class Boundary {
 canvas.height = Boundary.height * MAX_NUMBER_ROWS;
 canvas.width = Boundary.width * MAX_NUMBER_COLUMNS;
 
+function updateLettersUI() {
+  const lettersContainer = document.getElementById("letters-container");
+  lettersContainer.innerHTML = ""; // Clear existing boxes
+
+  collectedLetters.forEach((letter, index) => {
+    const box = document.createElement("div");
+    box.classList.add("letter-box");
+
+    // Check if the letter is in the correct position
+    if (ipaLettersArray[index] === letter) {
+      box.classList.add("correct");
+    }
+
+    box.textContent = letter || ""; // Display the letter
+    lettersContainer.appendChild(box);
+  });
+}
+
 class Player {
   constructor({ position, velocity }) {
     this.position = position; // Position of the octagon's center
@@ -487,6 +505,7 @@ const powerUps = [];
 let player = {};
 let enemies = [];
 let items = [];
+let collectedLetters = [];
 
 const game = {
   init() {
@@ -849,7 +868,13 @@ function animate() {
       ) <
       ipaLetter.radius + player.radius
     ) {
-      ipaLetters.splice(i, 1);
+      ipaLetters.splice(i, 1); // Remove the letter from the map
+
+      // Add only non-blank letters to collectedLetters
+      if (ipaLetter.letter.trim()) {
+        collectedLetters.push(ipaLetter.letter);
+      }
+      updateLettersUI(); // Update the letter boxes
       score += 10;
       scoreEl.innerHTML = score;
     }
@@ -1081,15 +1106,25 @@ window.addEventListener("keyup", ({ key }) => {
   }
 });
 
-document.getElementById("up").addEventListener("pointerdown", () => {
-  player.move("up");
-});
-document.getElementById("down").addEventListener("pointerdown", () => {
-  player.move("down");
-});
-document.getElementById("left").addEventListener("pointerdown", () => {
-  player.move("left");
-});
-document.getElementById("right").addEventListener("pointerdown", () => {
-  player.move("right");
+// Divide the screen into regions and listen for taps
+document.body.addEventListener("pointerdown", (event) => {
+  const screenHeight = window.innerHeight;
+  const screenWidth = window.innerWidth;
+  const tapX = event.clientX;
+  const tapY = event.clientY;
+
+  // Determine which region the tap falls into
+  if (tapY < screenHeight / 3) {
+    // Top third → Move up
+    player.move("up");
+  } else if (tapY > (2 * screenHeight) / 3) {
+    // Bottom third → Move down
+    player.move("down");
+  } else if (tapX < screenWidth / 2) {
+    // Middle third (left) → Move left
+    player.move("left");
+  } else {
+    // Middle third (right) → Move right
+    player.move("right");
+  }
 });

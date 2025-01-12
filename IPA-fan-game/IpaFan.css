@@ -5,57 +5,58 @@
   }
 
   body {
+    margin: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start; /* Keep everything starting at the top */
     height: 100vh;
     background-color: black;
-    overflow: hidden; /* Prevents scrolling on small screens */
+    overflow: hidden; /* Prevent scrolling */
   }
 
   #game-container {
     width: 360px;
-    height: 80%; /* Reserve space for controls below */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    height: 640px;
     background-color: black;
     position: relative;
   }
 
   canvas {
-    width: 100%; /* Keep canvas responsive within the container */
-    height: 100%;
+    width: 100%; /* Match game-container width */
+    height: 100%; /* Match game-container height */
   }
 
-  #controls {
-    position: absolute;
-    bottom: 0; /* Align to the bottom of the map */
-    right: 0; /* Align to the right of the map */
+  #score-container {
+    color: white;
+    font-family: sans-serif;
+    font-size: 16px;
+    margin: 10px 0; /* Add some space above/below */
+  }
+
+  #letters-container {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    gap: 3px; /* Reduce space between boxes */
+    padding: 5px;
+    background-color: black;
+    width: 100%; /* Ensure the container stretches across the screen */
+    box-sizing: border-box;
+    overflow-x: auto; /* Allow scrolling if the word is too long */
+  }
+
+  .letter-box {
+    width: 25px; /* Smaller size for longer words */
+    height: 25px;
+    border: 2px solid white;
+    display: flex;
     justify-content: center;
-    gap: 5px; /* Space between the buttons */
+    align-items: center;
+    font-size: 14px; /* Adjust font size for smaller boxes */
+    color: white;
+    background-color: black;
+    transition: border-color 0.3s;
   }
 
-  #controls > div {
-    display: flex;
-    gap: 5px; /* Space between the left, down, and right buttons */
-  }
-
-  button {
-    width: 50px; /* Smaller size for buttons */
-    height: 50px;
-    font-size: 16px; /* Adjust font size for smaller buttons */
-    border-radius: 10px;
-    border: none;
-    background-color: #ccc;
-    color: #333;
-    text-align: center;
-  }
-
-  button:active {
-    background-color: #aaa;
+  .letter-box.correct {
+    border-color: green; /* Outline green if correct */
   }
