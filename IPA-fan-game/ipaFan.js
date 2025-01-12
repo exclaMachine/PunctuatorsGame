@@ -45,6 +45,7 @@ function updateLettersUI() {
   });
 
   enableLetterSelection(); // Enable selection after updating the UI
+  checkWordCompletion();
 }
 
 class Player {
@@ -1170,4 +1171,30 @@ function enableLetterSelection() {
       }
     });
   });
+}
+
+function checkWordCompletion() {
+  // Ensure all collected letters are correct and in the correct order
+  const isComplete =
+    collectedLetters.length === ipaLettersArray.length &&
+    collectedLetters.every(
+      (letter, index) => letter === ipaLettersArray[index]
+    );
+
+  if (isComplete) {
+    const wordDisplay = document.createElement("div");
+    wordDisplay.id = "completed-word";
+    wordDisplay.style.position = "absolute";
+    wordDisplay.style.top = "50%";
+    wordDisplay.style.left = "50%";
+    wordDisplay.style.transform = "translate(-50%, -50%)";
+    wordDisplay.style.color = "white";
+    wordDisplay.style.fontSize = "24px";
+    wordDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+    wordDisplay.style.padding = "10px";
+    wordDisplay.style.borderRadius = "5px";
+    wordDisplay.innerText = `Word Completed: ${randomWordKey}`;
+
+    document.body.appendChild(wordDisplay);
+  }
 }
