@@ -10,6 +10,36 @@ const ENEMY_SPEED = 75;
 const MAX_NUMBER_ROWS = 10;
 const MAX_NUMBER_COLUMNS = 9;
 
+const enemySound = new Howl({
+  src: ["../sounds/featherSwish.mp3"],
+  loop: true,
+  volume: 0.5,
+});
+
+enemySound.on("load", () => {
+  console.log("Enemy sound loaded");
+});
+
+function throttle(func, limit) {
+  let lastFunc;
+  let lastRan;
+  return function (...args) {
+    const context = this;
+    if (!lastRan) {
+      func.apply(context, args);
+      lastRan = Date.now();
+    } else {
+      clearTimeout(lastFunc);
+      lastFunc = setTimeout(function () {
+        if (Date.now() - lastRan >= limit) {
+          func.apply(context, args);
+          lastRan = Date.now();
+        }
+      }, limit - (Date.now() - lastRan));
+    }
+  };
+}
+
 class Boundary {
   constructor({ position, image }) {
     this.position = position;
@@ -47,6 +77,25 @@ function updateLettersUI() {
   enableLetterSelection(); // Enable selection after updating the UI
   checkWordCompletion();
 }
+
+function calculatePlaybackRate(enemyY, playerY) {
+  const maxRate = 1.5; // Maximum pitch
+  const minRate = 0.5; // Minimum pitch
+  const rateRange = maxRate - minRate;
+
+  // Calculate the relative position
+  const screenHeight = canvas.height;
+  const relativePosition = (enemyY - playerY) / screenHeight;
+
+  // Map the relative position to a playback rate
+  return Math.max(minRate, Math.min(maxRate, 1 + relativePosition * rateRange));
+}
+
+function calculateDistance(x1, y1, x2, y2) {
+  return Math.hypot(x2 - x1, y2 - y1);
+}
+
+const proximityThreshold = 300; // Distance at which the sound starts
 
 class Player {
   constructor({ position, velocity }) {
@@ -525,8 +574,8 @@ const game = {
     enemies = [
       new Enemy({
         position: {
-          x: Boundary.width * 1.5 * 4,
-          y: Boundary.height * 1.5,
+          x: Boundary.width * 1.5 * 5,
+          y: Boundary.height * 6,
         },
         velocity: {
           x: Enemy.speed,
@@ -904,6 +953,55 @@ function animate() {
   //detect collision between enemies and player
   for (let i = enemies.length - 1; i >= 0; i--) {
     const enemy = enemies[i];
+
+    const updateEnemySound = throttle((enemy) => {
+      //Check if the enemy is still in the game
+      if (!enemies.includes(enemy)) {
+        console.log("here?");
+        return;
+      }
+
+      const distance = calculateDistance(
+        enemy.position.x,
+        enemy.position.y,
+        player.position.x,
+        player.position.y
+      );
+
+      //console.log(distance);
+
+      if (distance < proximityThreshold) {
+        if (!enemySound.playing()) enemySound.play();
+
+        // Calculate playback rate based on proximity
+        const maxRate = 2.0; // Maximum playback rate
+        const minRate = 0.8; // Minimum playback rate
+        const rate = Math.max(
+          minRate,
+          maxRate - (distance / proximityThreshold) * (maxRate - minRate)
+        );
+        enemySound.rate(rate);
+
+        // Stereo panning based on horizontal position
+        const relativePan =
+          (enemy.position.x - player.position.x) / canvas.width;
+        enemySound.stereo(relativePan);
+
+        // Volume adjustment based on proximity
+        const maxVolume = 0.5;
+        const minVolume = 0.1;
+        const volume = Math.max(
+          minVolume,
+          maxVolume - distance / proximityThreshold
+        );
+        enemySound.volume(volume);
+      } else {
+        enemySound.stop();
+      }
+    }, 200); // Update every 200ms
+
+    updateEnemySound(enemy);
+
     if (
       Math.hypot(
         enemy.position.x - player.position.x,
@@ -916,6 +1014,10 @@ function animate() {
         enemies.splice(i, 1);
         score += 50;
         scoreEl.innerHTML = score;
+        //enemySound.stop();
+        if (enemySound.playing()) {
+          enemySound.stop();
+        }
       } else {
         //cancelAnimationFrame(animationId);
         player.die();
