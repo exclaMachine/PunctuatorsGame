@@ -119,9 +119,11 @@ class Player {
     const angle = (Math.PI * 2) / sides; // Angle between vertices
     const rotationOffset = angle / 2; // Align the flat side at the bottom
 
+    const corners = []; // Store corner coordinates
+
     ctx.beginPath();
 
-    // Draw the octagon
+    // Draw the octagon and record corner positions
     for (let i = 0; i <= sides; i++) {
       const currentAngle = i * angle - rotationOffset;
 
@@ -129,12 +131,36 @@ class Player {
       const y = centerY + this.radius * Math.sin(currentAngle);
 
       ctx.lineTo(x, y); // Draw the octagon edge
+
+      if (i < sides) {
+        corners.push({ x, y }); // Record corners except for the closing point
+      }
     }
 
     ctx.closePath();
     ctx.fillStyle = "yellow";
     ctx.fill();
     ctx.strokeStyle = "black";
+    ctx.stroke();
+
+    // Draw the hashtag shape inside the octagon
+    ctx.beginPath();
+    // Draw horizontal lines
+    ctx.moveTo(corners[0].x, corners[0].y);
+    ctx.lineTo(corners[5].x, corners[5].y);
+
+    ctx.moveTo(corners[1].x, corners[1].y);
+    ctx.lineTo(corners[4].x, corners[4].y);
+
+    // Draw vertical lines
+    ctx.moveTo(corners[3].x, corners[3].y);
+    ctx.lineTo(corners[6].x, corners[6].y);
+
+    ctx.moveTo(corners[2].x, corners[2].y);
+    ctx.lineTo(corners[7].x, corners[7].y);
+
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 2; // Adjust line thickness if needed
     ctx.stroke();
 
     // Determine the mouth position based on velocity
