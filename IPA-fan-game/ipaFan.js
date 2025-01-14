@@ -10,13 +10,19 @@ const ENEMY_SPEED = 75;
 const MAX_NUMBER_ROWS = 10;
 const MAX_NUMBER_COLUMNS = 9;
 
-const enemySound = new Howl({
-  src: ["../sounds/featherSwish.mp3"],
-  loop: true,
-  volume: 0.5,
-});
+const sound = {
+  enemy: new Howl({
+    src: ["../sounds/featherSwish.mp3"],
+    loop: true,
+    volume: 0.5,
+  }),
+  eat: new Howl({
+    src: ["../sounds/projectile-hit/ana-eat.mp3"],
+    volume: 0.5,
+  }),
+};
 
-enemySound.on("load", () => {
+sound.enemy.on("load", () => {
   console.log("Enemy sound loaded");
 });
 
@@ -971,6 +977,7 @@ function animate() {
       item.radius + player.radius
     ) {
       items.splice(i, 1);
+      sound.eat.play();
       score += 50;
       scoreEl.innerHTML = score;
     }
@@ -997,7 +1004,7 @@ function animate() {
       //console.log(distance);
 
       if (distance < proximityThreshold) {
-        if (!enemySound.playing()) enemySound.play();
+        if (!sound.enemy.playing()) sound.enemy.play();
 
         // Calculate playback rate based on proximity
         const maxRate = 2.0; // Maximum playback rate
@@ -1006,12 +1013,12 @@ function animate() {
           minRate,
           maxRate - (distance / proximityThreshold) * (maxRate - minRate)
         );
-        enemySound.rate(rate);
+        sound.enemy.rate(rate);
 
         // Stereo panning based on horizontal position
         const relativePan =
           (enemy.position.x - player.position.x) / canvas.width;
-        enemySound.stereo(relativePan);
+        sound.enemy.stereo(relativePan);
 
         // Volume adjustment based on proximity
         const maxVolume = 0.5;
@@ -1020,9 +1027,9 @@ function animate() {
           minVolume,
           maxVolume - distance / proximityThreshold
         );
-        enemySound.volume(volume);
+        sound.enemy.volume(volume);
       } else {
-        enemySound.stop();
+        sound.enemy.stop();
       }
     }, 200); // Update every 200ms
 
@@ -1040,9 +1047,10 @@ function animate() {
         enemies.splice(i, 1);
         score += 50;
         scoreEl.innerHTML = score;
-        //enemySound.stop();
-        if (enemySound.playing()) {
-          enemySound.stop();
+        sound.eat.play();
+        //sound.enemy.stop();
+        if (sound.enemy.playing()) {
+          sound.enemy.stop();
         }
       } else {
         //cancelAnimationFrame(animationId);
