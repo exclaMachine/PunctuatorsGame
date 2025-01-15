@@ -656,16 +656,16 @@ function createImage(src) {
 }
 
 const map = [
-  ["^", " ", "[", "-", "]", ".", "[", "-", "2"],
+  ["^", ".", "[", "-", "]", ".", "[", "-", "2"],
   ["|", ".", ".", ".", ".", ".", ".", "I", "|"],
   ["|", ".", "b", ".", "[", "7", "]", ".", "|"],
   ["|", ".", ".", " ", " ", "_", " ", ".", "|"],
   ["_", ".", "[", "]", " ", ".", " ", "[", "3"],
-  [" ", ".", ".", " ", " ", "^", " ", " ", "."],
+  [" ", ".", ".", " ", " ", "^", " ", ".", "."],
   ["^", ".", "b", ".", "[", "+", "]", ".", "^"],
-  ["|", ".", ".", " ", " ", "_", " ", " ", "|"],
+  ["|", ".", ".", ".", " ", "_", " ", " ", "|"],
   ["|", ".", "1", "2", " ", "p", " ", "1", "8"],
-  ["_", " ", "4", "5", "]", ".", "[", "5", "3"],
+  ["_", ".", "4", "5", "]", ".", "[", "5", "3"],
 ];
 
 const randomWordKey =
@@ -673,7 +673,12 @@ const randomWordKey =
     Math.floor(Math.random() * Object.keys(ipaWords).length)
   ];
 const ipaLettersArray = ipaWords[randomWordKey].split(" "); // Convert word's letters to an array
+const totalPellets = 34; // Total spaces available for letters and blanks
+const letterCount = ipaLettersArray.length; // Number of IPA letters in the word
+const pelletsBetweenLetters = Math.floor(totalPellets / letterCount); // Blanks between each letter
+
 let ipaIndex = 0; // Track current IPA letter
+let blanksAdded = 0; // Track extra blanks added
 
 // Debugging: Log the chosen word and its IPA letters
 console.log(`Chosen word: ${randomWordKey}`);
@@ -861,11 +866,22 @@ map.forEach((row, i) => {
           })
         );
         break;
-      case ".":
-        // Place IPA letter or blank space
-        const letter =
-          ipaIndex < ipaLettersArray.length ? ipaLettersArray[ipaIndex] : " ";
-        ipaIndex++; // Move to the next letter
+      case ".": {
+        // Determine if we should place an IPA letter or a blank pellet
+        let letter;
+        // Check if we're still within the number of IPA letters
+        if (
+          blanksAdded === 0 ||
+          (blanksAdded >= pelletsBetweenLetters &&
+            ipaIndex < ipaLettersArray.length)
+        ) {
+          letter = ipaLettersArray[ipaIndex]; // Place the next IPA letter
+          ipaIndex++;
+          blanksAdded = 1;
+        } else {
+          letter = " "; // Add a blank pellet
+          blanksAdded++; // Count the blank added
+        }
         ipaLetters.push(
           new IpaLetter({
             position: {
@@ -876,6 +892,7 @@ map.forEach((row, i) => {
           })
         );
         break;
+      }
       case "p":
         powerUps.push(
           new PowerUp({
