@@ -1084,6 +1084,7 @@ function animate() {
   if (ipaLetters.length === 0) {
     cancelAnimationFrame(animationId);
     console.log("You Win!");
+    giveInstructions();
   }
 
   for (let i = powerUps.length - 1; i >= 0; i--) {
@@ -1343,7 +1344,26 @@ function enableLetterSelection() {
   });
 }
 
+function giveInstructions() {
+  const instructionDisplay = document.createElement("div");
+  instructionDisplay.id = "instructions";
+  instructionDisplay.style.position = "absolute";
+  instructionDisplay.style.top = "50%";
+  instructionDisplay.style.left = "50%";
+  instructionDisplay.style.transform = "translate(-50%, -50%)";
+  instructionDisplay.style.color = "white";
+  instructionDisplay.style.fontSize = "24px";
+  instructionDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+  instructionDisplay.style.padding = "10px";
+  instructionDisplay.style.borderRadius = "5px";
+  instructionDisplay.innerText = "Rearrange the IPA Letters at the top ";
+
+  document.body.appendChild(instructionDisplay);
+}
+
 function checkWordCompletion() {
+  let instructionDisplay = document.getElementById("instructions");
+
   // Ensure all collected letters are correct and in the correct order
   const isComplete =
     collectedLetters.length === ipaLettersArray.length &&
@@ -1352,6 +1372,7 @@ function checkWordCompletion() {
     );
 
   if (isComplete) {
+    if (instructionDisplay != null) instructionDisplay.remove();
     const wordDisplay = document.createElement("div");
     wordDisplay.id = "completed-word";
     wordDisplay.style.position = "absolute";
