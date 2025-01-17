@@ -1263,29 +1263,6 @@ window.addEventListener("keyup", ({ key }) => {
   }
 });
 
-// // Divide the screen into regions and listen for taps
-// document.body.addEventListener("pointerdown", (event) => {
-//   const screenHeight = window.innerHeight;
-//   const screenWidth = window.innerWidth;
-//   const tapX = event.clientX;
-//   const tapY = event.clientY;
-
-//   // Determine which region the tap falls into
-//   if (tapY < screenHeight / 3) {
-//     // Top third → Move up
-//     player.move("up");
-//   } else if (tapY > (2 * screenHeight) / 3) {
-//     // Bottom third → Move down
-//     player.move("down");
-//   } else if (tapX < screenWidth / 2) {
-//     // Middle third (left) → Move left
-//     player.move("left");
-//   } else {
-//     // Middle third (right) → Move right
-//     player.move("right");
-//   }
-// });
-
 // Add event listeners to arrow buttons
 document.getElementById("up-arrow").addEventListener("pointerdown", () => {
   player.move("up");
