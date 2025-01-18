@@ -1333,7 +1333,8 @@ function giveInstructions() {
   instructionDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
   instructionDisplay.style.padding = "10px";
   instructionDisplay.style.borderRadius = "5px";
-  instructionDisplay.innerText = "Rearrange the IPA Letters at the top ";
+  instructionDisplay.innerText =
+    "Rearrange the IPA Letters at the top to find the word! ";
 
   document.body.appendChild(instructionDisplay);
 }
