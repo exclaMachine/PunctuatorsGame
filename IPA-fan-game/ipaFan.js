@@ -1280,6 +1280,47 @@ document.getElementById("right-arrow").addEventListener("pointerdown", () => {
   player.move("right");
 });
 
+const TOUCH_THRESHOLD = 30; // Minimum swipe distance
+let touchStartX = 0;
+let touchStartY = 0;
+
+window.addEventListener("touchstart", (e) => {
+  touchStartX = e.changedTouches[0].pageX; // Record starting X position
+  touchStartY = e.changedTouches[0].pageY; // Record starting Y position
+});
+
+window.addEventListener("touchmove", (e) => {
+  const touchEndX = e.changedTouches[0].pageX;
+  const touchEndY = e.changedTouches[0].pageY;
+
+  const horizontalSwipeDistance = touchEndX - touchStartX; // Difference in X
+  const verticalSwipeDistance = touchEndY - touchStartY; // Difference in Y
+
+  // Check if swipe is mostly horizontal or vertical
+  if (Math.abs(horizontalSwipeDistance) > Math.abs(verticalSwipeDistance)) {
+    // Horizontal swipe
+    if (horizontalSwipeDistance > TOUCH_THRESHOLD) {
+      player.move("right"); // Swipe right
+    } else if (horizontalSwipeDistance < -TOUCH_THRESHOLD) {
+      player.move("left"); // Swipe left
+    }
+  } else {
+    // Vertical swipe
+    if (verticalSwipeDistance > TOUCH_THRESHOLD) {
+      player.move("down"); // Swipe down
+    } else if (verticalSwipeDistance < -TOUCH_THRESHOLD) {
+      player.move("up"); // Swipe up
+    }
+  }
+  // Reset starting position to prevent repeated triggers
+  touchStartX = touchEndX;
+  touchStartY = touchEndY;
+});
+
+// window.addEventListener("touchend", (e) => {
+//   console.log("end");
+// });
+
 let firstSelectedIndex = null; // Track the first selected letter
 
 function enableLetterSelection() {
