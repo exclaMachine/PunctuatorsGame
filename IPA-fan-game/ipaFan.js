@@ -1228,18 +1228,22 @@ animate();
 window.addEventListener("keydown", ({ key }) => {
   switch (key) {
     case "w":
+    case "ArrowUp":
       keys.w.pressed = true;
       lastKey = "w";
       break;
     case "a":
+    case "ArrowLeft":
       keys.a.pressed = true;
       lastKey = "a";
       break;
     case "s":
+    case "ArrowDown":
       keys.s.pressed = true;
       lastKey = "s";
       break;
     case "d":
+    case "ArrowRight":
       keys.d.pressed = true;
       lastKey = "d";
       break;
@@ -1249,15 +1253,19 @@ window.addEventListener("keydown", ({ key }) => {
 window.addEventListener("keyup", ({ key }) => {
   switch (key) {
     case "w":
+    case "ArrowUp":
       keys.w.pressed = false;
       break;
     case "a":
+    case "ArrowLeft":
       keys.a.pressed = false;
       break;
     case "s":
+    case "ArrowDown":
       keys.s.pressed = false;
       break;
     case "d":
+    case "ArrowRight":
       keys.d.pressed = false;
       break;
   }
@@ -1280,7 +1288,7 @@ document.getElementById("right-arrow").addEventListener("pointerdown", () => {
   player.move("right");
 });
 
-const TOUCH_THRESHOLD = 30; // Minimum swipe distance
+const TOUCH_THRESHOLD = 20; // Minimum swipe distance
 let touchStartX = 0;
 let touchStartY = 0;
 
