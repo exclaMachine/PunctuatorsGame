@@ -24,6 +24,10 @@ const sound = {
     src: ["../sounds/click.mp3"],
     volume: 0.5,
   }),
+  winner: new Howl({
+    src: ["../sounds/success-fanfare-trumpets.mp3"],
+    volume: 0.5,
+  }),
 };
 
 sound.enemy.on("load", () => {
@@ -1420,5 +1424,6 @@ function checkWordCompletion() {
     wordDisplay.innerText = `Word Completed: ${randomWordKey}`;
 
     document.body.appendChild(wordDisplay);
+    sound.winner.play();
   }
 }
