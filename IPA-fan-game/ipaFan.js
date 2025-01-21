@@ -20,6 +20,10 @@ const sound = {
     src: ["../sounds/projectile-hit/ana-eat.mp3"],
     volume: 0.5,
   }),
+  click: new Howl({
+    src: ["../sounds/click.mp3"],
+    volume: 0.5,
+  }),
 };
 
 sound.enemy.on("load", () => {
@@ -73,6 +77,7 @@ function updateLettersUI() {
 
     // Check if the letter is in the correct position
     if (ipaLettersArray[index] === letter) {
+      //TODO add correct sound
       box.classList.add("correct");
     }
 
@@ -84,18 +89,18 @@ function updateLettersUI() {
   checkWordCompletion();
 }
 
-function calculatePlaybackRate(enemyY, playerY) {
-  const maxRate = 1.5; // Maximum pitch
-  const minRate = 0.5; // Minimum pitch
-  const rateRange = maxRate - minRate;
+// function calculatePlaybackRate(enemyY, playerY) {
+//   const maxRate = 1.5; // Maximum pitch
+//   const minRate = 0.5; // Minimum pitch
+//   const rateRange = maxRate - minRate;
 
-  // Calculate the relative position
-  const screenHeight = canvas.height;
-  const relativePosition = (enemyY - playerY) / screenHeight;
+//   // Calculate the relative position
+//   const screenHeight = canvas.height;
+//   const relativePosition = (enemyY - playerY) / screenHeight;
 
-  // Map the relative position to a playback rate
-  return Math.max(minRate, Math.min(maxRate, 1 + relativePosition * rateRange));
-}
+//   // Map the relative position to a playback rate
+//   return Math.max(minRate, Math.min(maxRate, 1 + relativePosition * rateRange));
+// }
 
 function calculateDistance(x1, y1, x2, y2) {
   return Math.hypot(x2 - x1, y2 - y1);
@@ -1339,6 +1344,7 @@ function enableLetterSelection() {
       // If the box is already correct, do nothing
       if (box.classList.contains("correct")) return;
 
+      sound.click.play();
       // If this box is already selected, deselect it
       if (box.classList.contains("selected")) {
         box.classList.remove("selected");
