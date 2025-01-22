@@ -28,6 +28,10 @@ const sound = {
     src: ["../sounds/success-fanfare-trumpets.mp3"],
     volume: 0.5,
   }),
+  eatDot: new Howl({
+    src: ["../sounds/projectile-hit/bubble-hit.mp3"],
+    volume: 0.5,
+  }),
 };
 
 sound.enemy.on("load", () => {
@@ -81,7 +85,6 @@ function updateLettersUI() {
 
     // Check if the letter is in the correct position
     if (ipaLettersArray[index] === letter) {
-      //TODO add correct sound
       box.classList.add("correct");
     }
 
@@ -979,6 +982,7 @@ function animate() {
       ipaLetter.radius + player.radius
     ) {
       ipaLetters.splice(i, 1); // Remove the letter from the map
+      sound.eatDot.play();
 
       // Add only non-blank letters to collectedLetters
       if (ipaLetter.letter.trim()) {
