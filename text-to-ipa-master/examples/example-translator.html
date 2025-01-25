@@ -19,6 +19,7 @@
                     <option value="english">English</option>
                     <option value="german">German</option>
                     <option value="italian">Italian</option>
+                    <option value="russian">Russian</option>
                 </select>
             </li>
             <li class="button">
@@ -106,6 +107,31 @@
             ['h', '']
         ];
 
+        // Russian-specific mappings
+        const englishToRussianConversions = {
+            "ooo": "aw",
+            "TH": "d",
+            "th": "f",
+            "a": "A",
+            "uh": "aw",
+            "l": "L"
+        };
+
+        const russianInitialLetterConversion = [
+            ["w", "v"],
+            ["h", "KH"]
+        ];
+
+        const russianFinalLetterConversion = [
+            ["b", "p"],
+            ["d", "t"],
+            ["dg", "ch"],
+            ["g", "k"],
+            ["v", "f"],
+            ["z", "s"]
+        ];
+
+
         function removeRBeforeConsonantOrAtEnd(sentence) {
             return sentence.replace(/r([bcdfgjklmnopqstvxz\s\?\.\;\,\!\:]|$)/g, '$1');
         }
@@ -171,6 +197,37 @@
                         outputText = outputText.split(eng).join(ita);
                     }
                     outputText = italianAddSchwaBetweenConsonants(outputText);
+                    document.getElementById('ipa-out').value = outputText;
+                }, 100);
+            } else if (conversionType === 'russian') {
+                ConverterForm.convert('ipa-in', 'ipa-out', 'ipa-err');
+                setTimeout(function() {
+                    var ipaOutput = document.getElementById('ipa-out').value;
+                    var outputText = ipaOutput;
+
+                    // Convert IPA to English phonetic equivalents
+                    for (let [ipa, eng] of Object.entries(phoneticAlphToEnglishConversions)) {
+                        outputText = outputText.split(ipa).join(eng);
+                    }
+
+                    // Apply general Russian conversions
+                    for (let [key, value] of Object.entries(englishToRussianConversions)) {
+                        outputText = outputText.split(key).join(value);
+                    }
+
+                    // Replace initial letters for Russian accent
+                    for (let [initial, replacement] of russianInitialLetterConversion) {
+                        var regex = new RegExp(`\\b${initial}`, 'g');
+                        outputText = outputText.replace(regex, replacement);
+                    }
+
+                    // Replace final letters for Russian accent
+                    for (let [final, replacement] of russianFinalLetterConversion) {
+                        var regex = new RegExp(`${final}\\b`, 'g');
+                        outputText = outputText.replace(regex, replacement);
+                    }
+
+                    // Output the final result
                     document.getElementById('ipa-out').value = outputText;
                 }, 100);
             }
