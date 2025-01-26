@@ -69,3 +69,12 @@ ul {
         margin-top: 10px;
     }
 }
+
+.highlight-or {
+    color: red;
+    font-style: italic;
+    background-color: #ffe4e1; /* Light pink background for better visibility */
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: bold;
+}

@@ -26,7 +26,7 @@
                 <button type="button" id="js-ipa-submit" onClick="convertText()">Convert!</button>
             </li>
             <li>
-                <textarea readonly id="ipa-out" placeholder="Output goes here!" rows="4" cols="50"></textarea>
+                <div id="ipa-out" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: #f7f7f7; min-height: 80px;"></div>
             </li>
         </ul>
         <ul style="list-style-type: none;">
@@ -131,6 +131,16 @@
             ["z", "s"]
         ];
 
+        function styleORInOutput() {
+            const ipaOutElement = document.getElementById('ipa-out');
+            const textContent = ipaOutElement.textContent;
+
+            // Replace all occurrences of "OR" with styled HTML
+            const styledContent = textContent.replace(/OR/g, '<span class="highlight-or">OR</span>');
+
+            // Update the output with styled content
+            ipaOutElement.innerHTML = styledContent;
+        }
 
         function removeRBeforeConsonantOrAtEnd(sentence) {
             return sentence.replace(/r([bcdfgjklmnopqstvxz\s\?\.\;\,\!\:]|$)/g, '$1');
@@ -146,9 +156,21 @@
 
             if (conversionType === 'shatner') {
                 var outputText = inputText.split(' ').join(', ');
-                document.getElementById('ipa-out').value = outputText;
+                const ipaOutElement = document.getElementById('ipa-out');
+                ipaOutElement.textContent = outputText;
             } else if (conversionType === 'ipa') {
                 ConverterForm.convert('ipa-in', 'ipa-out', 'ipa-err');
+
+                // Delay to ensure the conversion completes before styling
+                setTimeout(function () {
+                    // Retrieve the raw output from the temporary hidden textarea
+                    const temporaryOutput = document.getElementById('ipa-out').value;
+
+                    // Update the actual output div with text content
+                    const ipaOutElement = document.getElementById('ipa-out');
+                    ipaOutElement.textContent = temporaryOutput;
+                    styleORInOutput();
+                }, 100);
             } else if (conversionType === 'english') {
                 ConverterForm.convert('ipa-in', 'ipa-out', 'ipa-err');
                 setTimeout(function() {
@@ -157,8 +179,10 @@
                     for (let [ipa, eng] of Object.entries(phoneticAlphToEnglishConversions)) {
                         outputText = outputText.split(ipa).join(eng);
                     }
-                    document.getElementById('ipa-out').value = outputText;
-                }, 100);
+                    const ipaOutElement = document.getElementById('ipa-out');
+                    ipaOutElement.textContent = outputText;
+                    styleORInOutput();
+                }, 200);
             } else if (conversionType === 'german') {
                 ConverterForm.convert('ipa-in', 'ipa-out', 'ipa-err');
                 setTimeout(function() {
@@ -178,8 +202,9 @@
                         var regex = new RegExp(`${final}\\b`, 'g');
                         outputText = outputText.replace(regex, replacement);
                     }
-                    outputText = removeRBeforeConsonantOrAtEnd(outputText);
-                    document.getElementById('ipa-out').value = outputText;
+                    const ipaOutElement = document.getElementById('ipa-out');
+                    ipaOutElement.textContent = outputText;
+                    styleORInOutput();
                 }, 100);
             } else if (conversionType === 'italian') {
                 ConverterForm.convert('ipa-in', 'ipa-out', 'ipa-err');
@@ -197,38 +222,37 @@
                         outputText = outputText.split(eng).join(ita);
                     }
                     outputText = italianAddSchwaBetweenConsonants(outputText);
-                    document.getElementById('ipa-out').value = outputText;
+                    const ipaOutElement = document.getElementById('ipa-out');
+                    ipaOutElement.textContent = outputText;
+                    styleORInOutput();
                 }, 100);
             } else if (conversionType === 'russian') {
                 ConverterForm.convert('ipa-in', 'ipa-out', 'ipa-err');
                 setTimeout(function() {
                     var ipaOutput = document.getElementById('ipa-out').value;
                     var outputText = ipaOutput;
-
                     // Convert IPA to English phonetic equivalents
                     for (let [ipa, eng] of Object.entries(phoneticAlphToEnglishConversions)) {
                         outputText = outputText.split(ipa).join(eng);
                     }
-
                     // Apply general Russian conversions
                     for (let [key, value] of Object.entries(englishToRussianConversions)) {
                         outputText = outputText.split(key).join(value);
                     }
-
                     // Replace initial letters for Russian accent
                     for (let [initial, replacement] of russianInitialLetterConversion) {
                         var regex = new RegExp(`\\b${initial}`, 'g');
                         outputText = outputText.replace(regex, replacement);
                     }
-
                     // Replace final letters for Russian accent
                     for (let [final, replacement] of russianFinalLetterConversion) {
                         var regex = new RegExp(`${final}\\b`, 'g');
                         outputText = outputText.replace(regex, replacement);
                     }
-
                     // Output the final result
-                    document.getElementById('ipa-out').value = outputText;
+                    const ipaOutElement = document.getElementById('ipa-out');
+                    ipaOutElement.textContent = outputText;
+                    styleORInOutput();
                 }, 100);
             }
         }
