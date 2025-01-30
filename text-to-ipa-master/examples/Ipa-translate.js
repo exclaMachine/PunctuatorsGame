@@ -143,6 +143,33 @@ function convertText() {
       ipaOutElement.textContent = outputText;
       styleORInOutput();
     }, 200);
+  } else if (conversionType === "french") {
+    ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
+    setTimeout(function () {
+      let ipaOutput = document.getElementById("ipa-out").value;
+      let outputText = ipaOutput;
+
+      // Convert IPA to English phonetic equivalents
+      for (let [ipa, eng] of Object.entries(phoneticAlphToEnglishConversions)) {
+        outputText = outputText.split(ipa).join(eng);
+      }
+
+      // Apply French-specific changes
+      const englishToFrenchConversions = {
+        TH: "d",
+        th: "t",
+        ooo: "O",
+        I: "Aee",
+        h: "",
+      };
+      for (let [key, value] of Object.entries(englishToFrenchConversions)) {
+        outputText = outputText.split(key).join(value);
+      }
+
+      // Set the final result in the output element
+      document.getElementById("ipa-out").textContent = outputText;
+      styleORInOutput();
+    }, 100);
   } else if (conversionType === "german") {
     ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
     setTimeout(function () {
