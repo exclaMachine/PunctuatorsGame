@@ -241,6 +241,16 @@ function convertText() {
       ipaOutElement.textContent = outputText;
       styleORInOutput();
     }, 100);
+  } else if (conversionType === "swedish") {
+    const englishToSwedishConversions = {
+      sw: "sv",
+    };
+
+    const swedishInitialLetterConversion = [
+      ["w", "v"],
+      ["dg", "y"],
+      ["kw", "kv"],
+    ];
   } else if (conversionType === "cockney") {
     ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
     setTimeout(function () {
