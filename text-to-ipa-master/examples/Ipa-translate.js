@@ -251,6 +251,35 @@ function convertText() {
       ["dg", "y"],
       ["kw", "kv"],
     ];
+
+    const swedishFinalLetterConversion = [["m", ""]];
+    ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
+    setTimeout(function () {
+      var ipaOutput = document.getElementById("ipa-out").value;
+      var outputText = ipaOutput;
+      // Convert IPA to English phonetic equivalents
+      for (let [ipa, eng] of Object.entries(phoneticAlphToEnglishConversions)) {
+        outputText = outputText.split(ipa).join(eng);
+      }
+      // Apply general Russian conversions
+      for (let [key, value] of Object.entries(englishToSwedishConversions)) {
+        outputText = outputText.split(key).join(value);
+      }
+      // Replace initial letters for Russian accent
+      for (let [initial, replacement] of swedishInitialLetterConversion) {
+        var regex = new RegExp(`\\b${initial}`, "g");
+        outputText = outputText.replace(regex, replacement);
+      }
+      // Replace final letters for Russian accent
+      for (let [final, replacement] of swedishFinalLetterConversion) {
+        var regex = new RegExp(`${final}\\b`, "g");
+        outputText = outputText.replace(regex, replacement);
+      }
+      // Output the final result
+      const ipaOutElement = document.getElementById("ipa-out");
+      ipaOutElement.textContent = outputText;
+      styleORInOutput();
+    }, 100);
   } else if (conversionType === "cockney") {
     ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
     setTimeout(function () {
