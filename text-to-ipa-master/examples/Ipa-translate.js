@@ -85,6 +85,22 @@ const russianFinalLetterConversion = [
   ["z", "s"],
 ];
 
+function convertToEnglishPhonetics(callback) {
+  ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
+  setTimeout(function () {
+    let ipaOutput = document.getElementById("ipa-out").value;
+    let outputText = ipaOutput;
+
+    // Convert IPA to English phonetic equivalents
+    for (let [ipa, eng] of Object.entries(phoneticAlphToEnglishConversions)) {
+      outputText = outputText.split(ipa).join(eng);
+    }
+
+    // Call the language-specific transformation function
+    callback(outputText);
+  }, 100);
+}
+
 function styleORInOutput() {
   const ipaOutElement = document.getElementById("ipa-out");
   const textContent = ipaOutElement.textContent;
@@ -118,6 +134,7 @@ function convertText() {
     var outputText = inputText.split(" ").join(", ");
     const ipaOutElement = document.getElementById("ipa-out");
     ipaOutElement.textContent = outputText;
+    return;
   } else if (conversionType === "ipa") {
     ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
 
@@ -144,17 +161,7 @@ function convertText() {
       styleORInOutput();
     }, 200);
   } else if (conversionType === "french") {
-    ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
-    setTimeout(function () {
-      let ipaOutput = document.getElementById("ipa-out").value;
-      let outputText = ipaOutput;
-
-      // Convert IPA to English phonetic equivalents
-      for (let [ipa, eng] of Object.entries(phoneticAlphToEnglishConversions)) {
-        outputText = outputText.split(ipa).join(eng);
-      }
-
-      // Apply French-specific changes
+    convertToEnglishPhonetics(function (outputText) {
       const englishToFrenchConversions = {
         TH: "d",
         th: "t",
@@ -166,10 +173,9 @@ function convertText() {
         outputText = outputText.split(key).join(value);
       }
 
-      // Set the final result in the output element
       document.getElementById("ipa-out").textContent = outputText;
       styleORInOutput();
-    }, 100);
+    });
   } else if (conversionType === "german") {
     ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
     setTimeout(function () {
@@ -253,6 +259,7 @@ function convertText() {
     ];
 
     const swedishFinalLetterConversion = [["m", ""]];
+
     ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
     setTimeout(function () {
       var ipaOutput = document.getElementById("ipa-out").value;
