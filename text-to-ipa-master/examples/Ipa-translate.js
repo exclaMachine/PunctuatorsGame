@@ -29,6 +29,7 @@ const phoneticAlphToEnglishConversions = {
   ʌ: "u",
   j: "y",
   ɚ: "er",
+  ɹ: "r",
 };
 
 const englishToItalianConversions = {
@@ -177,13 +178,7 @@ function convertText() {
       styleORInOutput();
     });
   } else if (conversionType === "german") {
-    ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
-    setTimeout(function () {
-      var ipaOutput = document.getElementById("ipa-out").value;
-      var outputText = ipaOutput;
-      for (let [ipa, eng] of Object.entries(phoneticAlphToEnglishConversions)) {
-        outputText = outputText.split(ipa).join(eng);
-      }
+    convertToEnglishPhonetics(function (outputText) {
       for (let [key, value] of Object.entries(tripleOtoTheDiphthong)) {
         outputText = outputText.split(key).join(value);
       }
@@ -195,10 +190,10 @@ function convertText() {
         var regex = new RegExp(`${final}\\b`, "g");
         outputText = outputText.replace(regex, replacement);
       }
-      const ipaOutElement = document.getElementById("ipa-out");
-      ipaOutElement.textContent = outputText;
+      outputText = removeRBeforeConsonantOrAtEnd(outputText); //non-rhotic
+      document.getElementById("ipa-out").textContent = outputText;
       styleORInOutput();
-    }, 100);
+    });
   } else if (conversionType === "italian") {
     ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
     setTimeout(function () {
