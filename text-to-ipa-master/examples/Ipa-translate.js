@@ -268,16 +268,7 @@ function convertText() {
       styleORInOutput();
     }, 100);
   } else if (conversionType === "cockney") {
-    ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
-    setTimeout(function () {
-      let ipaOutput = document.getElementById("ipa-out").value;
-      let outputText = ipaOutput;
-
-      // Convert IPA to English phonetic equivalents
-      for (let [ipa, eng] of Object.entries(phoneticAlphToEnglishConversions)) {
-        outputText = outputText.split(ipa).join(eng);
-      }
-
+    convertToEnglishPhonetics(function (outputText) {
       // Protect uppercase "OR" by replacing it with a placeholder
       const placeholder = "__PRTECTED__";
       outputText = outputText.replace(/\bOR\b/g, placeholder);
@@ -306,9 +297,9 @@ function convertText() {
       // Change "ooo" to "O"
       outputText = outputText.split("ooo").join("O");
 
-      // Remove "r" before a consonant or at the end of a word
-      const removeRRegex = /r([bcdfgjklmnpqstvxz\s?.;,!:]|$)/g;
-      outputText = outputText.replace(removeRRegex, "$1");
+      //   const removeRRegex = /r([bcdfgjklmnpqstvxz\s?.;,!:]|$)/g;
+      //   outputText = outputText.replace(removeRRegex, "$1");
+      outputText = removeRBeforeConsonantOrAtEnd(outputText); //non-rhotic
 
       // Restore protected "OR" placeholder
       outputText = outputText.replace(new RegExp(placeholder, "g"), "OR");
@@ -316,6 +307,6 @@ function convertText() {
       // Set the final result in the output element
       document.getElementById("ipa-out").textContent = outputText;
       styleORInOutput();
-    }, 100);
+    });
   }
 }
