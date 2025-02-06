@@ -243,14 +243,7 @@ function convertText() {
 
     const swedishFinalLetterConversion = [["m", ""]];
 
-    ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
-    setTimeout(function () {
-      var ipaOutput = document.getElementById("ipa-out").value;
-      var outputText = ipaOutput;
-      // Convert IPA to English phonetic equivalents
-      for (let [ipa, eng] of Object.entries(phoneticAlphToEnglishConversions)) {
-        outputText = outputText.split(ipa).join(eng);
-      }
+    convertToEnglishPhonetics(function (outputText) {
       for (let [key, value] of Object.entries(englishToSwedishConversions)) {
         outputText = outputText.split(key).join(value);
       }
@@ -266,7 +259,7 @@ function convertText() {
       const ipaOutElement = document.getElementById("ipa-out");
       ipaOutElement.textContent = outputText;
       styleORInOutput();
-    }, 100);
+    });
   } else if (conversionType === "cockney") {
     convertToEnglishPhonetics(function (outputText) {
       // Protect uppercase "OR" by replacing it with a placeholder
