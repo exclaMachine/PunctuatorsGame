@@ -260,6 +260,39 @@ function convertText() {
       ipaOutElement.textContent = outputText;
       styleORInOutput();
     });
+  } else if (conversionType === "swahili") {
+    const englishToSwahiliConversions = {
+      zh: "sh",
+      th: "t",
+      TH: "d",
+      t: "ts", //dentalized
+      ay: "e",
+      O: "aw",
+      r: "l",
+    };
+
+    convertToEnglishPhonetics(function (outputText) {
+      //remove the r before changing to an l
+      outputText = removeRBeforeConsonantOrAtEnd(outputText); //non-rhotic
+
+      for (let [key, value] of Object.entries(englishToSwahiliConversions)) {
+        outputText = outputText.split(key).join(value);
+      }
+
+      //   for (let [initial, replacement] of swahiliInitialLetterConversion) {
+      //     var regex = new RegExp(`\\b${initial}`, "g");
+      //     outputText = outputText.replace(regex, replacement);
+      //   }
+      //   for (let [final, replacement] of swahiliFinalLetterConversion) {
+      //     var regex = new RegExp(`${final}\\b`, "g");
+      //     outputText = outputText.replace(regex, replacement);
+      // }
+
+      // Output the final result
+      const ipaOutElement = document.getElementById("ipa-out");
+      ipaOutElement.textContent = outputText;
+      styleORInOutput();
+    });
   } else if (conversionType === "cockney") {
     convertToEnglishPhonetics(function (outputText) {
       // Protect uppercase "OR" by replacing it with a placeholder
