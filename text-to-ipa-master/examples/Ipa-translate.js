@@ -194,6 +194,33 @@ function convertText() {
       document.getElementById("ipa-out").textContent = outputText;
       styleORInOutput();
     });
+  } else if (conversionType === "hungarian") {
+    const englishToHungarianConversions = {
+      TH: "d",
+      th: "t",
+      O: "aw",
+      kw: "kv",
+      ee: "i",
+      ay: "e",
+    };
+
+    const hungarianInitialLetterConversion = [["w", "v"]];
+    outputText = removeRBeforeConsonantOrAtEnd(outputText); //non-rhotic
+
+    convertToEnglishPhonetics(function (outputText) {
+      for (let [key, value] of Object.entries(englishToHungarianConversions)) {
+        outputText = outputText.split(key).join(value);
+      }
+      for (let [initial, replacement] of hungarianInitialLetterConversion) {
+        var regex = new RegExp(`\\b${initial}`, "g");
+        outputText = outputText.replace(regex, replacement);
+      }
+
+      // Output the final result
+      const ipaOutElement = document.getElementById("ipa-out");
+      ipaOutElement.textContent = outputText;
+      styleORInOutput();
+    });
   } else if (conversionType === "italian") {
     ConverterForm.convert("ipa-in", "ipa-out", "ipa-err");
     setTimeout(function () {
