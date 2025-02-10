@@ -205,6 +205,11 @@ function convertText() {
     };
 
     const hungarianInitialLetterConversion = [["w", "v"]];
+
+    // Protect uppercase "OR" by replacing it with a placeholder
+    const placeholder = "__PRTECTED__";
+    outputText = outputText.replace(/\bOR\b/g, placeholder);
+
     outputText = removeRBeforeConsonantOrAtEnd(outputText); //non-rhotic
 
     convertToEnglishPhonetics(function (outputText) {
@@ -215,6 +220,9 @@ function convertText() {
         var regex = new RegExp(`\\b${initial}`, "g");
         outputText = outputText.replace(regex, replacement);
       }
+
+      // Restore protected "OR" placeholder
+      outputText = outputText.replace(new RegExp(placeholder, "g"), "OR");
 
       // Output the final result
       const ipaOutElement = document.getElementById("ipa-out");
