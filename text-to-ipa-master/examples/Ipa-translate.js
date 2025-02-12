@@ -249,6 +249,44 @@ function convertText() {
       ipaOutElement.textContent = outputText;
       styleORInOutput();
     }, 100);
+  } else if (conversionType === "japanese") {
+    const englishToJapaneseConversions = {
+      l: "r",
+      TH: "z",
+      th: "s",
+      zh: "sh",
+    };
+
+    // const swedishInitialLetterConversion = [
+    //   ["w", "v"],
+    //   ["dg", "y"],
+    //   ["kw", "kv"],
+    // ];
+
+    const japaneseFinalLetterConversion = [
+      ["b", "p"],
+      ["d", "t"],
+      ["g", "k"],
+    ];
+
+    convertToEnglishPhonetics(function (outputText) {
+      for (let [key, value] of Object.entries(englishToJapaneseConversions)) {
+        outputText = outputText.split(key).join(value);
+      }
+
+      outputText = removeRBeforeConsonantOrAtEnd(outputText); //non-rhotic
+
+      for (let [final, replacement] of japaneseFinalLetterConversion) {
+        var regex = new RegExp(`${final}\\b`, "g");
+        outputText = outputText.replace(regex, replacement);
+      }
+
+      outputText = italianAddSchwaBetweenConsonants(outputText);
+      // Output the final result
+      const ipaOutElement = document.getElementById("ipa-out");
+      ipaOutElement.textContent = outputText;
+      styleORInOutput();
+    });
   } else if (conversionType === "russian") {
     convertToEnglishPhonetics(function (outputText) {
       for (let [key, value] of Object.entries(englishToRussianConversions)) {
