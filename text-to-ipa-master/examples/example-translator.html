@@ -2,46 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Text to IPA Converter</title>
     <link rel="stylesheet" href="ipa.css">
 </head>
 <body>
-  <h1>Text to Pronunciation with Dialexis!</h1>
+    <h1>Text to Pronunciation with Dialexis</h1>
+
     <div id="js-text-to-ipa-form">
-        <ul style="list-style-type: none;">
-            <li>
-                <textarea id="ipa-in" placeholder="Write text here!" rows="4" cols="50"></textarea>
-            </li>
-            <li>
-                <select id="conversionType">
-                    <option value="ipa">IPA</option>
-                    <option value="cockney">Cockney</option>
-                    <option value="english">English</option>
-                    <option value="french">French</option>
-                    <option value="german">German</option>
-                    <option value="italian">Italian</option>
-                    <option value="russian">Russian</option>
-                    <option value="swedish">Swedish</option>
-                    <option value="shatner">Shatner</option>
-                </select>
-            </li>
-            <li class="button">
-                <button type="button" id="js-ipa-submit" onClick="convertText()">Convert!</button>
-            </li>
-            <li>
-                <div id="ipa-out" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: #f7f7f7; min-height: 80px;"></div>
-            </li>
-        </ul>
-        <ul style="list-style-type: none;">
-            <li>
-                <div id="ipa-err">
-                    <p>Errors will be displayed here.</p>
-                </div>
-            </li>
-        </ul>
+        <textarea id="ipa-in" placeholder="Write text here!" rows="4"></textarea>
+
+        <select id="conversionType">
+            <option value="ipa">IPA</option>
+            <option value="cockney">Cockney</option>
+            <option value="english">English</option>
+            <option value="french">French</option>
+            <option value="german">German</option>
+            <option value="italian">Italian</option>
+            <option value="russian">Russian</option>
+            <option value="swedish">Swedish</option>
+            <option value="shatner">Shatner</option>
+        </select>
+
+        <button type="button" id="js-ipa-submit" onClick="convertText()">Convert</button>
+
+        <div id="ipa-out"></div>
+        <div id="ipa-err"></div>
     </div>
-    <a href="images.html" target="_blank" style="display: inline-block; padding: 10px 20px; margin: 20px 0; background-color: #ff99cc; color: white; text-decoration: none; border-radius: 10px; font-family: 'Comic Sans MS', cursive, sans-serif;">View Comic</a>
-    <a href="tutorial.html" target="_blank" style="display: inline-block; padding: 10px 20px; margin: 20px 0; background-color: #ff99cc; color: white; text-decoration: none; border-radius: 10px; font-family: 'Comic Sans MS', cursive, sans-serif;">Tutorial</a>
+
+    <div class="button-container">
+        <a href="images.html" class="cta-button">View Comic</a>
+        <a href="tutorial.html" class="cta-button">Tutorial</a>
+    </div>
+
     <script src="../lib/text-to-ipa.js"></script>
     <script src="../lib/converter-form.js"></script>
     <script src="Ipa-translate.js"></script>
