@@ -14,7 +14,7 @@
 
 // NOTE: This program implies that the CMU IPA dictionary (http://people.umass.edu/nconstan/CMU-IPA/)
 // will be used to get IPA translations. This dictionary is by default included with this
-// program under the name 'ipadict.txt' in the `lib` directory. 
+// program under the name 'ipadict.txt' in the `lib` directory.
 // This _WILL NOT WORK_ with any other IPA dictionary.
 
 //      TextToIPA.loadDict(location)
@@ -42,23 +42,23 @@
 
 // Create a TextToIPA object only if one does not already exist. We create the
 // methods in a closure to avoid creating global variables.
-if (typeof TextToIPA !== 'object') {
+if (typeof TextToIPA !== "object") {
   TextToIPA = {};
 }
 
 (function () {
-  'use strict';
+  "use strict";
 
   // Objects
 
   // Create the ipadict if one does not currently exist. This is important,
   // as reloading the dict takes long, so if one already exists, let it be.
-  if (typeof TextToIPA._IPADict !== 'object') {
+  if (typeof TextToIPA._IPADict !== "object") {
     TextToIPA._IPADict = {};
   }
 
   // Create a constructor for an IPAWord that makes displaying them and
-  // associated errors much easier. 
+  // associated errors much easier.
   function IPAWord(error, text) {
     this.error = error;
     this.text = text;
@@ -67,9 +67,9 @@ if (typeof TextToIPA !== 'object') {
   // Functions
 
   // Parse the dictionary. Only used by `loadDict`.
-  if (typeof TextToIPA._parseDict !== 'function') {
+  if (typeof TextToIPA._parseDict !== "function") {
     TextToIPA._parseDict = function (lines) {
-      console.log('TextToIPA: Beginning parsing to dict...');
+      console.log("TextToIPA: Beginning parsing to dict...");
 
       // Fill out the IPA dict by
       // 1) regexing the word and it's corresponding IPA translation into an array
@@ -79,56 +79,51 @@ if (typeof TextToIPA !== 'object') {
         TextToIPA._IPADict[arr[0]] = arr[1];
       }
 
-      console.log('TextToIPA: Done parsing.');
+      console.log("TextToIPA: Done parsing.");
     };
   }
 
   // Load the dictionary. Can be on the local machine or from a GET request.
-  if (typeof TextToIPA.loadDict !== 'function') {
+  if (typeof TextToIPA.loadDict !== "function") {
     TextToIPA.loadDict = function (location) {
-      console.log('TextToIPA: Loading dict from ' + location + '...');
+      console.log("TextToIPA: Loading dict from " + location + "...");
 
-      if (typeof location !== 'string') {
-        console.log('TextToIPA Error: Location is not valid!');
+      if (typeof location !== "string") {
+        console.log("TextToIPA Error: Location is not valid!");
       } else {
-
         var txtFile = new XMLHttpRequest();
 
-        txtFile.open('GET', location, true);
+        txtFile.open("GET", location, true);
 
-        txtFile.onreadystatechange = function() {
+        txtFile.onreadystatechange = function () {
           // If document is ready to parse...
           if (txtFile.readyState == 4) {
             // And file is found...
             if (txtFile.status == 200 || txtFile.status == 0) {
               // Load up the ipa dict
-              TextToIPA._parseDict(txtFile.responseText.split('\n'));
+              TextToIPA._parseDict(txtFile.responseText.split("\n"));
             }
           }
         };
 
         txtFile.send(null);
-
       }
-
     };
-
   }
 
   // Lookup function to find an english word's corresponding IPA text
   // NOTE: This method implies that the CMU IPA dictionary (http://people.umass.edu/nconstan/CMU-IPA/)
   // has been loaded with loadDict(). This dictionary is by default included with this
   // program under the name 'ipadict.txt'. This _WILL NOT WORK_ with any other IPA dictionary.
-  if (typeof TextToIPA.lookup !== 'function') {
-
+  if (typeof TextToIPA.lookup !== "function") {
     TextToIPA.lookup = function (word) {
-
       if (Object.keys(TextToIPA._IPADict).length === 0) {
-        console.log('TextToIPA Error: No data in TextToIPA._IPADict. Did "TextToIPA.loadDict()" run?');
+        console.log(
+          'TextToIPA Error: No data in TextToIPA._IPADict. Did "TextToIPA.loadDict()" run?'
+        );
       } else {
         // It is possible to return undefined, so that case should not be ignored
-        if ( typeof TextToIPA._IPADict[word] != 'undefined' ) {
-
+        if (typeof TextToIPA._IPADict[word] != "undefined") {
           // Some words in english have multiple pronunciations (maximum of 4 in this dictionary)
           // Therefore we use a trick to get all of them
 
@@ -140,36 +135,31 @@ if (typeof TextToIPA !== 'object') {
           var text = TextToIPA._IPADict[word];
 
           // Iterate from 1 - 3. There are no more than 3 extra pronunciations.
-          for (var i = 1; i < 4; i++) {
-            // See if pronunciation i exists...
-            if ( typeof TextToIPA._IPADict[word + '(' + i + ')'] != 'undefined' ) {
-              // ...If it does we know that the error should be multi and the text
-              // is always itself plus the new pronunciation
-              error = 'multi';
-              text += ' OR ' + TextToIPA._IPADict[word + '(' + i + ')'];
-            // ...Otherwise no need to keep iterating
-            } else {
-              break;
-            }
-          }
+          // TR I do not want the ORs. Makes everything too cluttered
+          // for (var i = 1; i < 4; i++) {
+          //   // See if pronunciation i exists...
+          //   if ( typeof TextToIPA._IPADict[word + '(' + i + ')'] != 'undefined' ) {
+          //     // ...If it does we know that the error should be multi and the text
+          //     // is always itself plus the new pronunciation
+          //     error = 'multi';
+          //     text += ' OR ' + TextToIPA._IPADict[word + '(' + i + ')'];
+          //   // ...Otherwise no need to keep iterating
+          //   } else {
+          //     break;
+          //   }
+          // }
 
           // Return the new word
           return new IPAWord(error, text);
 
-        // Otherwise the word isn't in the dictionary
+          // Otherwise the word isn't in the dictionary
         } else {
-
-          return new IPAWord('undefined', word);
-
+          return new IPAWord("undefined", word);
         }
-
       }
-
     };
-
   }
-
-}());
+})();
 
 // Load dict
 // Could be intensive, might only want to load when necessary. Therefore it is commented out.
