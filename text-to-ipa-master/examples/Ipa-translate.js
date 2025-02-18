@@ -2,6 +2,11 @@ window.onload = function () {
   TextToIPA.loadDict("../lib/ipadict.txt");
 };
 
+//https://www.masswerk.at/mespeak/
+//https://itinerarium.github.io/phoneme-synthesis/
+
+//TODO trigger change of out put on any dropdown change
+
 const phoneticAlphToEnglishConversions = {
   eɪ: "ay",
   aɪ: "I",
@@ -31,6 +36,24 @@ const phoneticAlphToEnglishConversions = {
   ɚ: "er",
   ɹ: "r",
 };
+
+// Reverse the simplified-to-IPA map for conversion back
+const englishToIpaConversions = Object.fromEntries(
+  Object.entries(phoneticAlphToEnglishConversions).map(([ipa, simplified]) => [
+    simplified,
+    ipa,
+  ])
+);
+
+// Function to convert Simplified Pronunciation back to IPA
+function convertToIPA(simplifiedText) {
+  return simplifiedText.replace(
+    /ay|I|O|ow|oy|ch|dg|ng|sh|TH|th|e|zh|a|i|oo|A|aw|ee|ə|u|y|er|r/g,
+    (match) => {
+      return englishToIpaConversions[match] || match;
+    }
+  );
+}
 
 const englishToItalianConversions = {
   TH: "d",
@@ -191,6 +214,12 @@ function convertText() {
         outputText = outputText.replace(regex, replacement);
       }
       outputText = removeRBeforeConsonantOrAtEnd(outputText); //non-rhotic
+
+      // 🔹 Check dropdown and convert to IPA if selected
+      // if (document.getElementById("conversionSelect").value === "ipa") {
+      //   outputText = convertToIPA(outputText);
+      // }
+
       document.getElementById("ipa-out").textContent = outputText;
       styleORInOutput();
     });

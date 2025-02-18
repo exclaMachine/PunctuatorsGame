@@ -113,3 +113,45 @@ button:hover {
     border-radius: 3px;
     font-weight: bold;
 }
+
+/* Style for the dropdown container */
+label {
+    font-weight: bold;
+    font-size: 16px;
+    margin-right: 10px;
+    color: #333;
+}
+
+/* Style for the dropdown select box */
+#conversionSelect {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 2px solid #666;
+    background-color: #f8f8f8;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Hover and focus effects */
+#conversionSelect:hover,
+#conversionSelect:focus {
+    border-color: #007bff;
+    background-color: #e8f0fe;
+}
+
+/* Style for dropdown options */
+#conversionSelect option {
+    font-size: 16px;
+    padding: 5px;
+}
+
+/* Responsive Design: Center it for Mobile */
+@media (max-width: 600px) {
+    label, #conversionSelect {
+        display: block;
+        width: 100%;
+        text-align: center;
+    }
+}
