@@ -4,6 +4,7 @@ window.onload = function () {
 
 //https://www.masswerk.at/mespeak/
 //https://itinerarium.github.io/phoneme-synthesis/
+//https://ipa-reader.com/
 
 //TODO trigger change of out put on any dropdown change
 
@@ -38,22 +39,22 @@ const phoneticAlphToEnglishConversions = {
 };
 
 // Reverse the simplified-to-IPA map for conversion back
-const englishToIpaConversions = Object.fromEntries(
-  Object.entries(phoneticAlphToEnglishConversions).map(([ipa, simplified]) => [
-    simplified,
-    ipa,
-  ])
-);
+// const englishToIpaConversions = Object.fromEntries(
+//   Object.entries(phoneticAlphToEnglishConversions).map(([ipa, simplified]) => [
+//     simplified,
+//     ipa,
+//   ])
+// );
 
-// Function to convert Simplified Pronunciation back to IPA
-function convertToIPA(simplifiedText) {
-  return simplifiedText.replace(
-    /ay|I|O|ow|oy|ch|dg|ng|sh|TH|th|e|zh|a|i|oo|A|aw|ee|ə|u|y|er|r/g,
-    (match) => {
-      return englishToIpaConversions[match] || match;
-    }
-  );
-}
+// Function to convert Simplified Pronunciation back to IPA. Too many errors
+// function convertToIPA(simplifiedText) {
+//   return simplifiedText.replace(
+//     /ay|I|O|ow|oy|ch|dg|ng|sh|TH|th|e|zh|a|i|oo|A|aw|ee|ə|u|y|er|r/g,
+//     (match) => {
+//       return englishToIpaConversions[match] || match;
+//     }
+//   );
+// }
 
 const englishToItalianConversions = {
   TH: "d",
