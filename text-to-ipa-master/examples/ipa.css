@@ -1,11 +1,13 @@
 /* Base styling */
-body {
+html, body {
     font-family: Arial, sans-serif;
     background-color: #f7f7f7;
     color: #333;
     margin: 0;
-    padding: 20px;
+    padding: 0;
     text-align: center;
+    max-width: 100%;
+    overflow-x: hidden; /* Ensure no horizontal scrolling */
 }
 
 /* Title */
@@ -13,28 +15,33 @@ h1 {
     font-size: 24px;
     font-weight: bold;
     color: #333;
+    padding: 10px;
 }
 
 /* Form Container */
 #js-text-to-ipa-form {
-    max-width: 500px;
+    max-width: 100%;
+    width: 95%; /* Adjusted for mobile */
     margin: 0 auto;
     background-color: #fff;
-    padding: 20px;
+    padding: 15px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
     gap: 12px;
+    box-sizing: border-box; /* Ensures padding doesn't expand width */
 }
 
 /* Inputs and Buttons */
 textarea, select, button {
     width: 100%;
+    max-width: 100%; /* Prevents overflow */
     padding: 12px;
     font-size: 16px;
     border: 1px solid #ccc;
     border-radius: 6px;
+    box-sizing: border-box; /* Keeps elements inside their container */
 }
 
 /* Convert Button */
@@ -50,7 +57,7 @@ button:hover {
     background-color: #0056b3;
 }
 
-/* Output Container */
+/* Output Containers */
 #ipa-out, #ipa-err {
     padding: 10px;
     min-height: 60px;
@@ -58,6 +65,8 @@ button:hover {
     border-radius: 6px;
     background-color: #fafafa;
     text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word; /* Ensures long text doesn't overflow */
 }
 
 /* Error Styling */
@@ -71,6 +80,7 @@ button:hover {
     justify-content: center;
     gap: 10px;
     margin-top: 20px;
+    flex-wrap: wrap; /* Ensures buttons wrap properly on small screens */
 }
 
 /* Links */
@@ -83,6 +93,8 @@ button:hover {
     border-radius: 6px;
     transition: 0.2s;
     text-align: center;
+    width: 100%; /* Ensures buttons fit properly on mobile */
+    max-width: 250px; /* Prevents them from becoming too wide */
 }
 
 .cta-button:hover {
@@ -97,61 +109,21 @@ button:hover {
 
     #js-text-to-ipa-form {
         width: 100%;
+        padding: 10px;
+    }
+
+    textarea {
+        width: 100%;
     }
 
     .button-container {
         flex-direction: column;
         gap: 8px;
+        align-items: center;
     }
-}
 
-.highlight-or {
-    color: red;
-    font-style: italic;
-    background-color: #ffe4e1; /* Light pink background for better visibility */
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-weight: bold;
-}
-
-/* Style for the dropdown container */
-label {
-    font-weight: bold;
-    font-size: 16px;
-    margin-right: 10px;
-    color: #333;
-}
-
-/* Style for the dropdown select box */
-#conversionSelect {
-    padding: 10px;
-    font-size: 16px;
-    border-radius: 5px;
-    border: 2px solid #666;
-    background-color: #f8f8f8;
-    color: #333;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-}
-
-/* Hover and focus effects */
-#conversionSelect:hover,
-#conversionSelect:focus {
-    border-color: #007bff;
-    background-color: #e8f0fe;
-}
-
-/* Style for dropdown options */
-#conversionSelect option {
-    font-size: 16px;
-    padding: 5px;
-}
-
-/* Responsive Design: Center it for Mobile */
-@media (max-width: 600px) {
-    label, #conversionSelect {
-        display: block;
-        width: 100%;
-        text-align: center;
+    .cta-button {
+        width: 90%;
+        max-width: 250px;
     }
 }
