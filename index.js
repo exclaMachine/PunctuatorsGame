@@ -37,11 +37,6 @@ let speechLineForWin = [
   // },
 ];
 
-// Get the current year
-const year = new Date().getFullYear();
-// Insert it into the span
-document.getElementById("currentYear").textContent = year;
-
 let previousElement = null;
 let isAnimating = false; // Add a flag to check if the animation is currently in progress
 
