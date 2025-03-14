@@ -205,6 +205,30 @@ const RoundLetters = (word, pairs, dictionary) => {
   return false;
 };
 
+const RoundLettersMultiple = (word, pairs, dictionary) => {
+  let results = [];
+  for (let i = 0; i < word.length; i++) {
+    let char1 = word[i];
+    if (pairs[char1]) {
+      let wordVariant =
+        word.substring(0, i) + pairs[char1] + word.substring(i + 1);
+      for (let j = i + 1; j < word.length; j++) {
+        let char2 = word[j];
+        if (pairs[char2]) {
+          let alteredWord =
+            wordVariant.substring(0, j) +
+            pairs[char2] +
+            wordVariant.substring(j + 1);
+          if (dictionary.includes(alteredWord)) {
+            results.push(alteredWord);
+          }
+        }
+      }
+    }
+  }
+  return results.length > 0 ? results : false;
+};
+
 const CreateJSON = (jsonName) => {
   const filename = "words_alpha.txt";
   const data = fs.readFileSync(filename, "utf8").split("\n");
@@ -270,6 +294,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
       alteredWord = ambigram(word, AmbigramPairs);
     } else if (typeOfJSFunction === "roundLetters") {
       alteredWord = RoundLetters(word, roundedLetterPairs, data);
+    } else if (typeOfJSFunction === "roundLettersMulti") {
+      alteredWord = RoundLettersMultiple(word, roundedLetterPairs, data);
     }
     // let secondAlteredWord = VertCapitalMirror(word, vertPairs);
 
@@ -300,6 +326,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("ambigramPOJO.js", "ambigram");
 // CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
-CreateJS("roundLetters.js", "roundLetters");
+//CreateJS("roundLetters.js", "roundLetters");
+CreateJS("roundLettersMulti.js", "roundLettersMulti");
 
 //CreateJSON("todbotWithCapitals.json");
