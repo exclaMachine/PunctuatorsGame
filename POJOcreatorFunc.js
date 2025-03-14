@@ -69,6 +69,18 @@ let capVertPairs = {
   x: "x",
 };
 
+let roundedLetterPairs = {
+  a: "r", //A -> R
+  d: "o", //D -> O
+  e: "b", //E -> B
+  f: "p", //F -> P
+  h: "b", //H -> B
+  k: "r",
+  l: "c",
+  t: "j",
+  v: "u",
+};
+
 const ambigram = (word, pairs) => {
   let arr = word.split("");
 
@@ -179,6 +191,20 @@ function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.substring(1);
 }
 
+const RoundLetters = (word, pairs, dictionary) => {
+  for (let i = 0; i < word.length; i++) {
+    let char = word[i];
+    if (pairs[char]) {
+      let alteredWord =
+        word.substring(0, i) + pairs[char] + word.substring(i + 1);
+      if (dictionary.includes(alteredWord)) {
+        return alteredWord;
+      }
+    }
+  }
+  return false;
+};
+
 const CreateJSON = (jsonName) => {
   const filename = "words_alpha.txt";
   const data = fs.readFileSync(filename, "utf8").split("\n");
@@ -242,6 +268,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
     }
     if (typeOfJSFunction === "ambigram") {
       alteredWord = ambigram(word, AmbigramPairs);
+    } else if (typeOfJSFunction === "roundLetters") {
+      alteredWord = RoundLetters(word, roundedLetterPairs, data);
     }
     // let secondAlteredWord = VertCapitalMirror(word, vertPairs);
 
@@ -271,6 +299,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 
 //CreateJS("ambigramPOJO.js", "ambigram");
 // CreateJS("todbotPOJO.js", "mirror");
-CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+CreateJS("roundLetters.js", "roundLetters");
 
 //CreateJSON("todbotWithCapitals.json");
