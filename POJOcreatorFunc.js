@@ -79,6 +79,7 @@ let roundedLetterPairs = {
   l: "c",
   t: "j",
   v: "u",
+  y: "m",
 };
 
 const ambigram = (word, pairs) => {
@@ -326,7 +327,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("ambigramPOJO.js", "ambigram");
 // CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
-//CreateJS("roundLetters.js", "roundLetters");
-CreateJS("roundLettersMulti.js", "roundLettersMulti");
+CreateJS("roundLetters.js", "roundLetters");
+//CreateJS("roundLettersMulti.js", "roundLettersMulti");
 
 //CreateJSON("todbotWithCapitals.json");
