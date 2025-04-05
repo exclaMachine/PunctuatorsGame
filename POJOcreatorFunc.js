@@ -207,27 +207,32 @@ const RoundLetters = (word, pairs, dictionary) => {
 };
 
 const RoundLettersMultiple = (word, pairs, dictionary) => {
-  let results = [];
+  let results = new Set();
+  let indices = [];
+
+  // Find all indices of characters that can be changed
   for (let i = 0; i < word.length; i++) {
-    let char1 = word[i];
-    if (pairs[char1]) {
-      let wordVariant =
-        word.substring(0, i) + pairs[char1] + word.substring(i + 1);
-      for (let j = i + 1; j < word.length; j++) {
-        let char2 = word[j];
-        if (pairs[char2]) {
-          let alteredWord =
-            wordVariant.substring(0, j) +
-            pairs[char2] +
-            wordVariant.substring(j + 1);
-          if (dictionary.includes(alteredWord)) {
-            results.push(alteredWord);
-          }
-        }
-      }
+    if (pairs[word[i]]) {
+      indices.push(i);
     }
   }
-  return results.length > 0 ? results : false;
+
+  // Generate all combinations of changing at least two letters
+  const generateCombinations = (currentWord, index, changes) => {
+    if (changes >= 2 && dictionary.includes(currentWord)) {
+      results.add(currentWord);
+    }
+    for (let i = index; i < indices.length; i++) {
+      let newWord =
+        currentWord.substring(0, indices[i]) +
+        pairs[currentWord[indices[i]]] +
+        currentWord.substring(indices[i] + 1);
+      generateCombinations(newWord, i + 1, changes + 1);
+    }
+  };
+
+  generateCombinations(word, 0, 0);
+  return results.size > 0 ? Array.from(results) : false;
 };
 
 const CreateJSON = (jsonName) => {
