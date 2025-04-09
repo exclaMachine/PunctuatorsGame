@@ -650,6 +650,25 @@ class QuetzalQuotel extends Hero {
   }
 }
 
+class Roundabout extends Hero {
+  constructor() {
+    super(
+      "./images/Roundabout1.png",
+      0.5,
+      "RoundAbout",
+      "redorange",
+      80,
+      50,
+      "images/Colon_Wave.png",
+      undefined,
+      0.2,
+      undefined,
+      undefined,
+      "./images/Roundabout2.png"
+    );
+  }
+}
+
 class SargeColon extends Hero {
   constructor() {
     super(
