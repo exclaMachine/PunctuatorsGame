@@ -1,4 +1,4 @@
-const data = {
+const roundWords = {
   add: ["rod"],
   adman: ["roman"],
   baa: ["brr"],
@@ -113,4 +113,5 @@ const data = {
   yolk: ["mock"],
 };
 
-export default data;
+//export default data;
+module.exports = roundWords;

@@ -1,4 +1,5 @@
 const fs = require("fs");
+const roundWords = require("./roundLettersMulti.js");
 
 let AmbigramPairs = {
   a: "e",
@@ -333,6 +334,38 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 // CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
-CreateJS("roundLettersMulti.js", "roundLettersMulti");
+//CreateJS("roundLettersMulti.js", "roundLettersMulti");
 
 //CreateJSON("todbotWithCapitals.json");
+
+const CreateRoundedSpans = (inputData, outputFileName) => {
+  let spanMap = {};
+
+  for (const [original, transformed] of Object.entries(inputData)) {
+    if (Array.isArray(transformed)) {
+      for (const word of transformed) {
+        spanMap[
+          word
+        ] = `<span id="Roundabout" data-rounded-word="${word}">${original}</span>`;
+      }
+    } else {
+      spanMap[
+        transformed
+      ] = `<span id="Roundabout" data-rounded-word="${transformed}">${original}</span>`;
+    }
+  }
+
+  const output = `const roundedLetterSpans = ${JSON.stringify(
+    spanMap,
+    null,
+    2
+  )};\n\nexport default roundedLetterSpans;`;
+  fs.writeFileSync(outputFileName, output, "utf-8");
+  console.log(`Successfully created ${outputFileName}`);
+};
+
+// Example usage:
+// const roundSingle = require("./roundLetters.js").default;
+// const roundMulti = require("./roundLettersMulti.js").default;
+CreateRoundedSpans(roundWords, "RoundedSingleSpans.js");
+// CreateRoundedSpans(roundMulti, "RoundedMultiSpans.js");
