@@ -1,5 +1,6 @@
 const fs = require("fs");
 const roundWords = require("./roundLettersMulti.js");
+const roundWordsSingle = require("./roundLetters.js");
 
 let AmbigramPairs = {
   a: "e",
@@ -367,5 +368,5 @@ const CreateRoundedSpans = (inputData, outputFileName) => {
 // Example usage:
 // const roundSingle = require("./roundLetters.js").default;
 // const roundMulti = require("./roundLettersMulti.js").default;
-CreateRoundedSpans(roundWords, "RoundedSingleSpans.js");
+//CreateRoundedSpans(roundWordsSingle, "RoundedSpans.js");
 // CreateRoundedSpans(roundMulti, "RoundedMultiSpans.js");
