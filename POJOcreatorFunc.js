@@ -346,12 +346,12 @@ const CreateRoundedSpans = (inputData, outputFileName) => {
     if (Array.isArray(transformed)) {
       for (const word of transformed) {
         spanMap[
-          word
+          original
         ] = `<span id="Roundabout" data-rounded-word="${word}">${original}</span>`;
       }
     } else {
       spanMap[
-        transformed
+        original
       ] = `<span id="Roundabout" data-rounded-word="${transformed}">${original}</span>`;
     }
   }
@@ -369,4 +369,4 @@ const CreateRoundedSpans = (inputData, outputFileName) => {
 // const roundSingle = require("./roundLetters.js").default;
 // const roundMulti = require("./roundLettersMulti.js").default;
 //CreateRoundedSpans(roundWordsSingle, "RoundedSpans.js");
-// CreateRoundedSpans(roundMulti, "RoundedMultiSpans.js");
+//CreateRoundedSpans(roundWords, "RoundedMultiSpans.js");

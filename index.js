@@ -655,11 +655,11 @@ class Roundabout extends Hero {
     super(
       "./images/Roundabout1.png",
       0.5,
-      "RoundAbout",
-      "redorange",
+      "Roundabout",
+      "cyan",
       80,
       50,
-      "images/Colon_Wave.png",
+      "./images/Colon_Wave.png",
       undefined,
       0.2,
       undefined,
@@ -864,6 +864,7 @@ let phonia = new Phonia();
 let spacel = new Spacel();
 let dele = new WhiteKnight();
 let zana = new Zana();
+//let roundabout = new Roundabout();
 
 let availableHeroArray = [
   period,
@@ -887,6 +888,7 @@ let availableHeroArray = [
   spacel,
   dele,
   zana,
+  //roundabout,
 ];
 
 const projectiles = [];
@@ -1177,7 +1179,20 @@ function animate() {
                     punctuationSymbol.textContent = witedWord;
                   }, 500); // This duration should match the CSS transition
                 });
-              } else {
+              }
+              // else if (punctuationSymbol.id === roundabout.symbol) {
+              //   if (punctuationSymbol.getAttribute("data-handled") === "true")
+              //     return;
+              //   punctuationSymbol.setAttribute("data-handled", "true");
+
+              //   // Get the word to change into from the data-rounded-word attribute
+              //   const roundedWord =
+              //     punctuationSymbol.getAttribute("data-rounded-word");
+              //   const originalWord = punctuationSymbol.textContent;
+
+              //   // Make the word uppercase
+              // }
+              else {
                 punctuationSymbol.style.color = `${player.characterColor}`;
                 punctuationSymbol.style.textShadow =
                   "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";

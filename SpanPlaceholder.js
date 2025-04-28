@@ -1,7 +1,7 @@
 import { wrapSplitWords } from "./splitWords.js";
 import { highlightAndClassifyArticles } from "./articleFunc.js";
 import { wrapWiteOutWords } from "./DeleFunc.js";
-import { wrapCaretWords } from "./CaretFunc.js";
+import { wrapCaretWords, wrapRoundSpanWords } from "./CaretFunc.js";
 import { wrapHomophones } from "./HomophonesFuncs.js";
 
 export const applySpanPlaceholders = (text) => {
@@ -40,6 +40,8 @@ export const protectedWiteOutWords = withSpanPlaceholders(wrapWiteOutWords);
 export const protectedCaretWords = withSpanPlaceholders(wrapCaretWords);
 
 export const protectedHomophones = withSpanPlaceholders(wrapHomophones);
+
+export const protectedRounded = withSpanPlaceholders(wrapRoundSpanWords);
 
 // // Usage:
 // let result = protectedSpoonerism(sentence);
