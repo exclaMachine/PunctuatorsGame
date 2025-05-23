@@ -864,7 +864,7 @@ let phonia = new Phonia();
 let spacel = new Spacel();
 let dele = new WhiteKnight();
 let zana = new Zana();
-//let roundabout = new Roundabout();
+let roundabout = new Roundabout();
 
 let availableHeroArray = [
   period,
@@ -888,7 +888,7 @@ let availableHeroArray = [
   spacel,
   dele,
   zana,
-  //roundabout,
+  roundabout,
 ];
 
 const projectiles = [];
@@ -1179,20 +1179,38 @@ function animate() {
                     punctuationSymbol.textContent = witedWord;
                   }, 500); // This duration should match the CSS transition
                 });
-              }
-              // else if (punctuationSymbol.id === roundabout.symbol) {
-              //   if (punctuationSymbol.getAttribute("data-handled") === "true")
-              //     return;
-              //   punctuationSymbol.setAttribute("data-handled", "true");
+              } else if (punctuationSymbol.id === roundabout.symbol) {
+                if (punctuationSymbol.getAttribute("data-handled") === "true")
+                  return;
+                punctuationSymbol.setAttribute("data-handled", "true");
 
-              //   // Get the word to change into from the data-rounded-word attribute
-              //   const roundedWord =
-              //     punctuationSymbol.getAttribute("data-rounded-word");
-              //   const originalWord = punctuationSymbol.textContent;
+                /* 1 ─ collect values */
+                const roundedWord = punctuationSymbol.dataset.roundedWord;
+                const original = punctuationSymbol.textContent.trim();
 
-              //   // Make the word uppercase
-              // }
-              else {
+                /* 2 ─ show the existing word in CAPS */
+                punctuationSymbol.textContent = original.toUpperCase();
+
+                /* 3 ─ kick off the fade-out */
+                punctuationSymbol.classList.add("fade-phase");
+
+                /* 4 ─ when opacity transition ends, swap text & style */
+                punctuationSymbol.addEventListener(
+                  "transitionend",
+                  function onFade(e) {
+                    if (e.propertyName !== "opacity") return; // guard against width/height
+                    punctuationSymbol.removeEventListener(
+                      "transitionend",
+                      onFade
+                    );
+
+                    punctuationSymbol.textContent = roundedWord.toUpperCase(); // new word
+                    punctuationSymbol.classList.remove("fade-phase"); // fade back in
+                    punctuationSymbol.classList.add("rounded-word"); // give it style
+                  },
+                  { once: true } // run exactly once
+                );
+              } else {
                 punctuationSymbol.style.color = `${player.characterColor}`;
                 punctuationSymbol.style.textShadow =
                   "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
