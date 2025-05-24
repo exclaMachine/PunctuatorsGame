@@ -1184,32 +1184,18 @@ function animate() {
                   return;
                 punctuationSymbol.setAttribute("data-handled", "true");
 
-                /* 1 ─ collect values */
                 const roundedWord = punctuationSymbol.dataset.roundedWord;
-                const original = punctuationSymbol.textContent.trim();
+                const currentWord = punctuationSymbol.textContent.trim();
+                const flashDuration = 500; //  ❰❰  milliseconds to keep the CAPS word visible ❱❱
 
-                /* 2 ─ show the existing word in CAPS */
-                punctuationSymbol.textContent = original.toUpperCase();
+                /* STEP 1 – show original word in CAPS */
+                punctuationSymbol.textContent = currentWord.toUpperCase();
 
-                /* 3 ─ kick off the fade-out */
-                punctuationSymbol.classList.add("fade-phase");
-
-                /* 4 ─ when opacity transition ends, swap text & style */
-                punctuationSymbol.addEventListener(
-                  "transitionend",
-                  function onFade(e) {
-                    if (e.propertyName !== "opacity") return; // guard against width/height
-                    punctuationSymbol.removeEventListener(
-                      "transitionend",
-                      onFade
-                    );
-
-                    punctuationSymbol.textContent = roundedWord.toUpperCase(); // new word
-                    punctuationSymbol.classList.remove("fade-phase"); // fade back in
-                    punctuationSymbol.classList.add("rounded-word"); // give it style
-                  },
-                  { once: true } // run exactly once
-                );
+                /* STEP 2 – after flashDuration ms, swap to rounded word & style */
+                setTimeout(() => {
+                  punctuationSymbol.textContent = roundedWord.toUpperCase();
+                  punctuationSymbol.classList.add("rounded-word");
+                }, flashDuration);
               } else {
                 punctuationSymbol.style.color = `${player.characterColor}`;
                 punctuationSymbol.style.textShadow =

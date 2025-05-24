@@ -687,25 +687,25 @@ footer > div {
         font-size: smaller;
       }
 
-    /* 1 ─ basic animation helper added by JS */
-[data-rounded-word] {                 /* picks up only the spans we care about */
-    display: inline-block;              /* so opacity can animate */
-    transition: opacity .45s ease;
+/* applies to every element that owns data-rounded-word */
+[data-rounded-word]{
+    display:inline-block;
+    transition:
+        color            .6s ease,
+        background-color .6s ease,
+        transform        .6s ease;   /* for the optional “pop” */
   }
 
-  /* 2 ─ JS toggles this class while the word is fading out */
-  .fade-phase {
-    opacity: 0;
+  /* final look once the rounded word appears */
+  .rounded-word{
+    background:#ffd54f;
+    color:#222;
+    border-radius:.25em;
+    padding:0 .25em;
+    font-style:italic;
+    transform:scale(1.08);           /* remove if you don’t want the pop */
   }
 
-  /* 3 ─ NEW look for the final “rounded” word (customise as you like) */
-  .rounded-word {
-    background: #ffeb3b;
-    color: #222;
-    border-radius: .25em;
-    padding: 0 .25em;
-    font-style: italic;
-  }
 
 
 
