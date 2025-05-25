@@ -287,6 +287,7 @@ function binarySearch(arr, value) {
 const CreateJS = (jsName, typeOfJSFunction) => {
   const filename = "2of12.txt";
   const data = fs.readFileSync(filename, "utf8").split("\n");
+  const wordSet = new Set(data.map((w) => w.trim().toLowerCase()));
   let typeOfWordObj = {};
 
   for (let i = 0; i < data.length; i++) {
@@ -304,6 +305,11 @@ const CreateJS = (jsName, typeOfJSFunction) => {
       alteredWord = RoundLetters(word, roundedLetterPairs, data);
     } else if (typeOfJSFunction === "roundLettersMulti") {
       alteredWord = RoundLettersMultiple(word, roundedLetterPairs, data);
+    } else if (typeOfJSFunction === "alphabetical") {
+      let alphabetized = word.split("").sort().join("");
+      if (alphabetized !== word && wordSet.has(alphabetized)) {
+        alteredWord = alphabetized;
+      }
     }
     // let secondAlteredWord = VertCapitalMirror(word, vertPairs);
 
@@ -336,6 +342,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
+CreateJS("alphabeticalWords.js", "alphabetical");
 
 //CreateJSON("todbotWithCapitals.json");
 
