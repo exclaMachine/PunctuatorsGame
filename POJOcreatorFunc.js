@@ -310,6 +310,11 @@ const CreateJS = (jsName, typeOfJSFunction) => {
       if (alphabetized !== word && wordSet.has(alphabetized)) {
         alteredWord = alphabetized;
       }
+    } else if (typeOfJSFunction === "reverseAlphabetical") {
+      let reverseAlpha = word.split("").sort().reverse().join("");
+      if (reverseAlpha !== word && wordSet.has(reverseAlpha)) {
+        alteredWord = reverseAlpha;
+      }
     }
     // let secondAlteredWord = VertCapitalMirror(word, vertPairs);
 
@@ -342,7 +347,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
-CreateJS("alphabeticalWords.js", "alphabetical");
+//CreateJS("alphabeticalWords.js", "alphabetical");
+CreateJS("alphabeticalWordsReverse.js", "reverseAlphabetical");
 
 //CreateJSON("todbotWithCapitals.json");
 
