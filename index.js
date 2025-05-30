@@ -595,7 +595,7 @@ class Phonia extends Hero {
   constructor() {
     super(
       "./images/Phonia.png",
-      0.35,
+      0.3,
       "Phonia (Homophones)",
       "seagreen",
       100,
