@@ -654,7 +654,7 @@ class Roundabout extends Hero {
   constructor() {
     super(
       "./images/Roundabout1.png",
-      0.5,
+      0.4,
       "Roundabout",
       "cyan",
       80,
