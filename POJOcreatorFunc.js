@@ -289,45 +289,64 @@ const CreateJS = (jsName, typeOfJSFunction) => {
   const data = fs.readFileSync(filename, "utf8").split("\n");
   const wordSet = new Set(data.map((w) => w.trim().toLowerCase()));
   let typeOfWordObj = {};
+  if (typeOfJSFunction === "onlyConsonants") {
+    const vowels = /[aeiou]/gi;
 
-  for (let i = 0; i < data.length; i++) {
-    let word = data[i].trim();
-    let alteredWord;
-    if (typeOfJSFunction === "mirror") {
-      alteredWord = VertMirror(word, vertPairs);
-    }
-    if (typeOfJSFunction === "sideMirror") {
-      alteredWord = HorizMirror(word, horPairs);
-    }
-    if (typeOfJSFunction === "ambigram") {
-      alteredWord = ambigram(word, AmbigramPairs);
-    } else if (typeOfJSFunction === "roundLetters") {
-      alteredWord = RoundLetters(word, roundedLetterPairs, data);
-    } else if (typeOfJSFunction === "roundLettersMulti") {
-      alteredWord = RoundLettersMultiple(word, roundedLetterPairs, data);
-    } else if (typeOfJSFunction === "alphabetical") {
-      let alphabetized = word.split("").sort().join("");
-      if (alphabetized !== word && wordSet.has(alphabetized)) {
-        alteredWord = alphabetized;
+    for (let i = 0; i < data.length; i++) {
+      const word = data[i].trim().toLowerCase();
+      const key = word.replace(vowels, "");
+      if (!typeOfWordObj[key]) {
+        typeOfWordObj[key] = [];
       }
-    } else if (typeOfJSFunction === "reverseAlphabetical") {
-      let reverseAlpha = word.split("").sort().reverse().join("");
-      if (reverseAlpha !== word && wordSet.has(reverseAlpha)) {
-        alteredWord = reverseAlpha;
+      typeOfWordObj[key].push(word);
+    }
+
+    // Optional: Only keep keys with multiple entries
+    for (const key in typeOfWordObj) {
+      if (typeOfWordObj[key].length < 2) {
+        delete typeOfWordObj[key];
       }
     }
-    // let secondAlteredWord = VertCapitalMirror(word, vertPairs);
+  } else {
+    for (let i = 0; i < data.length; i++) {
+      let word = data[i].trim();
+      let alteredWord;
+      if (typeOfJSFunction === "mirror") {
+        alteredWord = VertMirror(word, vertPairs);
+      }
+      if (typeOfJSFunction === "sideMirror") {
+        alteredWord = HorizMirror(word, horPairs);
+      }
+      if (typeOfJSFunction === "ambigram") {
+        alteredWord = ambigram(word, AmbigramPairs);
+      } else if (typeOfJSFunction === "roundLetters") {
+        alteredWord = RoundLetters(word, roundedLetterPairs, data);
+      } else if (typeOfJSFunction === "roundLettersMulti") {
+        alteredWord = RoundLettersMultiple(word, roundedLetterPairs, data);
+      } else if (typeOfJSFunction === "alphabetical") {
+        let alphabetized = word.split("").sort().join("");
+        if (alphabetized !== word && wordSet.has(alphabetized)) {
+          alteredWord = alphabetized;
+        }
+      } else if (typeOfJSFunction === "reverseAlphabetical") {
+        let reverseAlpha = word.split("").sort().reverse().join("");
+        if (reverseAlpha !== word && wordSet.has(reverseAlpha)) {
+          alteredWord = reverseAlpha;
+        }
+      }
+      // let secondAlteredWord = VertCapitalMirror(word, vertPairs);
 
-    // if (secondAlteredWord) {
-    //   if (binarySearch(data, secondAlteredWord) !== -1) {
-    //     typeOfWordObj[capitalizeFirstLetter(word)] =
-    //       capitalizeFirstLetter(secondAlteredWord);
-    //   }
-    // }
+      // if (secondAlteredWord) {
+      //   if (binarySearch(data, secondAlteredWord) !== -1) {
+      //     typeOfWordObj[capitalizeFirstLetter(word)] =
+      //       capitalizeFirstLetter(secondAlteredWord);
+      //   }
+      // }
 
-    if (alteredWord) {
-      if (binarySearch(data, alteredWord) !== -1) {
-        typeOfWordObj[word] = alteredWord;
+      if (alteredWord) {
+        if (binarySearch(data, alteredWord) !== -1) {
+          typeOfWordObj[word] = alteredWord;
+        }
       }
     }
   }
@@ -348,7 +367,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
-CreateJS("alphabeticalWordsReverse.js", "reverseAlphabetical");
+//CreateJS("alphabeticalWordsReverse.js", "reverseAlphabetical");
+CreateJS("onlyConsonants.js", "onlyConsonants");
 
 //CreateJSON("todbotWithCapitals.json");
 
