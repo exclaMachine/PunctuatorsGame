@@ -307,6 +307,38 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         delete typeOfWordObj[key];
       }
     }
+  } else if (typeOfJSFunction === "alphabeticalNeighbors") {
+    for (let word of wordSet) {
+      let neighbors = new Set();
+
+      for (let i = 0; i < word.length; i++) {
+        let charCode = word.charCodeAt(i);
+
+        // Try replacing with previous letter
+        if (charCode > 97) {
+          // 'a'
+          let prev =
+            word.slice(0, i) +
+            String.fromCharCode(charCode - 1) +
+            word.slice(i + 1);
+          if (wordSet.has(prev)) neighbors.add(prev);
+        }
+
+        // Try replacing with next letter
+        if (charCode < 122) {
+          // 'z'
+          let next =
+            word.slice(0, i) +
+            String.fromCharCode(charCode + 1) +
+            word.slice(i + 1);
+          if (wordSet.has(next)) neighbors.add(next);
+        }
+      }
+
+      if (neighbors.size > 0) {
+        typeOfWordObj[word] = Array.from(neighbors);
+      }
+    }
   } else {
     for (let i = 0; i < data.length; i++) {
       let word = data[i].trim();
@@ -368,7 +400,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
 //CreateJS("alphabeticalWordsReverse.js", "reverseAlphabetical");
-CreateJS("onlyConsonants.js", "onlyConsonants");
+//CreateJS("onlyConsonants.js", "onlyConsonants");
+CreateJS("alphabeticalNeighbors.js", "alphabeticalNeighbors");
 
 //CreateJSON("todbotWithCapitals.json");
 
