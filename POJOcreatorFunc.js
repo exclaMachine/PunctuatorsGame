@@ -312,27 +312,19 @@ const CreateJS = (jsName, typeOfJSFunction) => {
       let neighbors = new Set();
 
       for (let i = 0; i < word.length; i++) {
-        let charCode = word.charCodeAt(i);
+        let char = word[i];
+        let prevChar =
+          char === "a" ? "z" : String.fromCharCode(char.charCodeAt(0) - 1);
+        let nextChar =
+          char === "z" ? "a" : String.fromCharCode(char.charCodeAt(0) + 1);
 
-        // Try replacing with previous letter
-        if (charCode > 97) {
-          // 'a'
-          let prev =
-            word.slice(0, i) +
-            String.fromCharCode(charCode - 1) +
-            word.slice(i + 1);
-          if (wordSet.has(prev)) neighbors.add(prev);
-        }
+        // Replace with previous character
+        let prevWord = word.slice(0, i) + prevChar + word.slice(i + 1);
+        if (wordSet.has(prevWord)) neighbors.add(prevWord);
 
-        // Try replacing with next letter
-        if (charCode < 122) {
-          // 'z'
-          let next =
-            word.slice(0, i) +
-            String.fromCharCode(charCode + 1) +
-            word.slice(i + 1);
-          if (wordSet.has(next)) neighbors.add(next);
-        }
+        // Replace with next character
+        let nextWord = word.slice(0, i) + nextChar + word.slice(i + 1);
+        if (wordSet.has(nextWord)) neighbors.add(nextWord);
       }
 
       if (neighbors.size > 0) {

@@ -1,5 +1,5 @@
 const data = {
-  a: ["b"],
+  a: ["z", "b"],
   abase: ["abate"],
   abasement: ["abatement"],
   abate: ["abase"],
@@ -2375,7 +2375,7 @@ const data = {
   yes: ["yet"],
   yet: ["yes"],
   yip: ["zip"],
-  z: ["y"],
+  z: ["y", "a"],
   zap: ["yap"],
   zip: ["yip"],
 };
