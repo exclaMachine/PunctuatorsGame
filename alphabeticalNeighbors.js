@@ -1,4 +1,4 @@
-const data = {
+const alphabeticalNeighbors = {
   a: ["z", "b"],
   abase: ["abate"],
   abasement: ["abatement"],
@@ -2380,4 +2380,21 @@ const data = {
   zip: ["yip"],
 };
 
-export default data;
+export const wrapAlphabetNeighbors = (sentence) => {
+  const words = sentence.split(/\b/); // word boundaries like punctuation, spaces
+
+  const wrapped = words.map((word) => {
+    const lower = word.toLowerCase();
+    if (alphabeticalNeighbors[lower]) {
+      const alternatives = [word, ...alphabeticalNeighbors[lower]];
+      return `<span id="Betar (Alphabet Neighbors)" data-alphabetical-neighbors="${alternatives.join(
+        ","
+      )}" class="word-0">${word}</span>`;
+    }
+    return word;
+  });
+
+  return wrapped.join("");
+};
+
+//export default data;

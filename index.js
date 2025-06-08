@@ -166,6 +166,8 @@ doWordPlayButton.addEventListener("click", () => {
   errorMessage.innerText = "";
 });
 
+//TODO Make a button to do alphabet work similar to addSpansAndIdsForWordPlay
+
 //TODO incorporate when more self-made sentences are made. The too variables don't work if game restart involves refresh
 // createSentenceButton.addEventListener("click", () => {
 //   if (CREATE_SENTENCE_COUNT === SWITCH_CASE_NUMBER) CREATE_SENTENCE_COUNT = 1;
