@@ -10,6 +10,7 @@ import {
   protectedSplitWords,
   protectedWiteOutWords,
   protectedRounded,
+  protectedAlphabetNeighbors,
 } from "../SpanPlaceholder.js";
 
 const secondContractionWordHashMap = new Map();
@@ -95,6 +96,8 @@ export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
   let sCareted = protectedCaretWords(sWitedOut);
 
   let sRounded = protectedRounded(sCareted);
+
+  //let sAlphabetNeighbors = protectedAlphabetNeighbors(sRounded);
 
   let sSpoonerizedString = spoonerism(sRounded);
 
