@@ -418,6 +418,25 @@ class ArtTheTickler extends Hero {
   }
 }
 
+class Betar extends Hero {
+  constructor() {
+    super(
+      "./images/Betar_1.png",
+      0.4,
+      "Betar",
+      "gray",
+      118,
+      50,
+      "./images/Ectoplasm.png",
+      "./sounds/featherSwish.mp3",
+      0.2,
+      undefined,
+      undefined,
+      "./images/Betar_2.png"
+    );
+  }
+}
+
 class CommaChameleon extends Hero {
   constructor(projectileLength) {
     super(
@@ -867,6 +886,7 @@ let spacel = new Spacel();
 let dele = new WhiteKnight();
 let zana = new Zana();
 let roundabout = new Roundabout();
+let betar = new Betar();
 
 let availableHeroArray = [
   period,
@@ -891,6 +911,7 @@ let availableHeroArray = [
   dele,
   zana,
   roundabout,
+  //betar
 ];
 
 const projectiles = [];
