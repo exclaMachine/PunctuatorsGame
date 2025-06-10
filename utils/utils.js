@@ -97,9 +97,9 @@ export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
 
   let sRounded = protectedRounded(sCareted);
 
-  //let sAlphabetNeighbors = protectedAlphabetNeighbors(sRounded);
+  let sAlphabetNeighbors = protectedAlphabetNeighbors(sRounded);
 
-  let sSpoonerizedString = spoonerism(sRounded);
+  let sSpoonerizedString = spoonerism(sAlphabetNeighbors);
 
   let newString = sSpoonerizedString.split("");
 

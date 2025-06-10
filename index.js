@@ -423,7 +423,7 @@ class Betar extends Hero {
     super(
       "./images/Betar_1.png",
       0.4,
-      "Betar",
+      "Betar (Alphabet Neighbors)",
       "gray",
       118,
       50,
@@ -911,7 +911,7 @@ let availableHeroArray = [
   dele,
   zana,
   roundabout,
-  //betar
+  betar,
 ];
 
 const projectiles = [];
@@ -1042,6 +1042,25 @@ function animate() {
 
                   // Update the content and class
                   span.textContent = homophonesList[nextIndex];
+                  span.className = `word-${nextIndex}`;
+                }
+              } else if (punctuationSymbol.id === betar.symbol) {
+                if (
+                  punctuationSymbol.hasAttribute("data-alphabetical-neighbors")
+                ) {
+                  const span = punctuationSymbol;
+                  const neighborsList = span
+                    .getAttribute("data-alphabetical-neighbors")
+                    .split(",");
+                  let currentIndex = parseInt(
+                    span.className.replace("word-", "")
+                  );
+
+                  // Get the next index, or loop back to 0 if we're at the last word
+                  let nextIndex = (currentIndex + 1) % neighborsList.length;
+
+                  // Update the content and class
+                  span.textContent = neighborsList[nextIndex];
                   span.className = `word-${nextIndex}`;
                 }
               } else if (punctuationSymbol.id === spacel.symbol) {
