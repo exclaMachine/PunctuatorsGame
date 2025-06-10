@@ -80,44 +80,58 @@ export const addSpansAndIds = (typedString, outputSentence) => {
   return newString.join("");
 };
 
-export const addSpansAndIdsForWordPlay = (typedString, outputSentence) => {
-  //The order of this matters. More rare cases, like ambigrams, should go first
-  let articlized = protectedArticles(typedString);
+export const addSpansAndIdsForWordPlay = (
+  typedString,
+  outputSentence,
+  mode
+) => {
+  let processed = protectedArticles(typedString); // Always apply articles first
 
-  let ambigrambified = findAndSurroundAmbigramWordsWithSpan(articlized);
+  // Apply transformation based on selected mode
+  switch (mode) {
+    case "ambigrams":
+      processed = findAndSurroundAmbigramWordsWithSpan(processed);
+      break;
+    case "homophones":
+      processed = protectedHomophones(processed);
+      break;
+    case "split":
+      processed = protectedSplitWords(processed);
+      break;
+    case "whiteOut":
+      processed = protectedWiteOutWords(processed);
+      break;
+    case "caret":
+      processed = protectedCaretWords(processed);
+      break;
+    case "rounded":
+      processed = protectedRounded(processed);
+      break;
+    case "alphabetNeighbors":
+      processed = protectedAlphabetNeighbors(processed);
+      break;
+    default:
+      // No additional wordplay besides articles and spoonerism
+      break;
+  }
 
-  // let sHomophonized = wrapHomophones(ambigrambified);
-  let sHomophonized = protectedHomophones(ambigrambified);
+  // Always apply spoonerism last
+  let final = spoonerism(processed);
 
-  let sSpliterized = protectedSplitWords(sHomophonized);
-
-  let sWitedOut = protectedWiteOutWords(sSpliterized);
-
-  let sCareted = protectedCaretWords(sWitedOut);
-
-  let sRounded = protectedRounded(sCareted);
-
-  let sAlphabetNeighbors = protectedAlphabetNeighbors(sRounded);
-
-  let sSpoonerizedString = spoonerism(sAlphabetNeighbors);
-
-  let newString = sSpoonerizedString.split("");
+  // Split and render to output
+  let newString = final.split("");
 
   for (let i = 0; i < newString.length; i++) {
-    let char = newString[i];
-
-    //Don't need this for wordplay because this is for individual letters not words
     if (newString[i] === "<") {
       i++;
       while (newString[i] !== "<") {
         i++;
       }
-      //now it makes it to the closing </span> so add 6 to get past
-      i += 6;
+      i += 6; // Skip past </span>
     }
 
     outputSentence.innerHTML = newString.join("");
-    return newString.join("");
+    return newString.join(""); // Optional: remove if you don't use return value
   }
 };
 

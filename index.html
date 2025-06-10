@@ -66,8 +66,18 @@
         <!-- <input style="color: white; background-color: blueviolet; border-radius: 4px; margin: 5px" type="button" id="punc-button" value="Get random sentence"> -->
         <div id="error-message"></div>
         <input id="input-sentence" type="text" maxlength="140" placeholder="Enter sentence with punctuation">
-        <input type="button" id="punc-button" value="Remove punctuation">
-        <input type="button" class="create-wordplay-button" value="Do Wordplay!">
+        <select id="wordPlayOptions">
+            <option value="alphabetNeighbors">Alphabet Neighbors</option>
+            <option value="ambigrams">Ambigrams</option>
+            <option value="caret">Caret</option>
+            <option value="homophones">Homophones</option>
+            <option value="rounded">Rounded</option>
+            <option value="split">Split</option>
+            <option value="whiteOut">White Out</option>
+            <option value="removePunc">Remove Punctuation</option>
+          </select>
+        <input type="button" id="punc-button" value="Do Wordplay">
+        <!-- <input type="button" class="create-wordplay-button" value="Do Wordplay!"> -->
         <!-- <input type="button" id="create-sentence-button" value="Create a sentence for me!"> -->
     </div>
 

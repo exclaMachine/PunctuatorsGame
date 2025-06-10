@@ -50,7 +50,8 @@ const footer = document.getElementById("footer");
 const start = document.getElementById("start");
 const startBanner = document.getElementById("banner");
 
-const doWordPlayButton = document.querySelector(".create-wordplay-button");
+const wordPlayOptions = document.getElementById("wordPlayOptions");
+//const doWordPlayButton = document.querySelector(".create-wordplay-button");
 
 const endingMessage1 = document.getElementById("ending_message_1");
 const refreshButton = document.querySelector(".refresh-game-btn");
@@ -126,41 +127,24 @@ removePuncButton.addEventListener("click", () => {
     return (errorMessage.innerText = "Field cannot be blank");
   }
 
-  if (!PUNC_REGEX.test(initialTypedSentence.value)) {
-    return (errorMessage.innerText = "Sentence must have punctuation!");
+  const selectedOption = wordPlayOptions.value;
+  if (selectedOption === "removePunc") {
+    if (!PUNC_REGEX.test(initialTypedSentence.value)) {
+      return (errorMessage.innerText = "Sentence must have punctuation!");
+    }
+    let punctuated = addSpansAndIds(initialTypedSentence.value, out1);
+  } else {
+    addSpansAndIdsForWordPlay(initialTypedSentence.value, out1, selectedOption);
   }
-
-  let punctuated = addSpansAndIds(initialTypedSentence.value, out1);
   mySong.stop();
   setClassName(
     "go-away",
     initialTypedSentence,
     removePuncButton,
     startBanner,
-    doWordPlayButton
+    wordPlayOptions
   );
-  setClassName("grid-container", characterControls);
 
-  errorMessage.innerText = "";
-});
-
-doWordPlayButton.addEventListener("click", () => {
-  buttonSounds.clicky.play();
-
-  if (!initialTypedSentence.value) {
-    return (errorMessage.innerText = "Field cannot be blank");
-  }
-
-  mySong.stop();
-  addSpansAndIdsForWordPlay(initialTypedSentence.value, out1);
-
-  setClassName(
-    "go-away",
-    initialTypedSentence,
-    removePuncButton,
-    startBanner,
-    doWordPlayButton
-  );
   setClassName("grid-container", characterControls);
 
   errorMessage.innerText = "";
