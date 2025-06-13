@@ -4,6 +4,7 @@ import { wrapWiteOutWords } from "./DeleFunc.js";
 import { wrapCaretWords, wrapRoundSpanWords } from "./CaretFunc.js";
 import { wrapHomophones } from "./HomophonesFuncs.js";
 import { wrapAlphabetNeighbors } from "./alphabeticalNeighbors.js";
+import { wrapAbjads } from "./onlyConsonants.js";
 
 export const applySpanPlaceholders = (text) => {
   let placeholders = [];
@@ -47,6 +48,8 @@ export const protectedRounded = withSpanPlaceholders(wrapRoundSpanWords);
 export const protectedAlphabetNeighbors = withSpanPlaceholders(
   wrapAlphabetNeighbors
 );
+
+export const protectedAbjads = withSpanPlaceholders(wrapAbjads);
 
 // // Usage:
 // let result = protectedSpoonerism(sentence);

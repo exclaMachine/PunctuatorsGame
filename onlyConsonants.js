@@ -1,4 +1,4 @@
-const data = {
+const abjad = {
   bck: ["aback", "back", "beck", "bock", "buck"],
   bcs: ["abacus", "because"],
   bft: ["abaft", "befit"],
@@ -5718,4 +5718,21 @@ const data = {
   zt: ["zeta", "zit"],
 };
 
-export default data;
+export const wrapAbjads = (sentence) => {
+  const words = sentence.split(/\b/); // word boundaries like punctuation, spaces
+
+  const wrapped = words.map((word) => {
+    const lower = word.toLowerCase();
+    if (abjad[lower]) {
+      const alternatives = [word, ...abjad[lower]];
+      return `<span id="Odd Jawed (Abjad)" data-adjad="${alternatives.join(
+        ","
+      )}" class="word-0">${word}</span>`;
+    }
+    return word;
+  });
+
+  return wrapped.join("");
+};
+
+//export default data;

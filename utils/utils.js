@@ -11,6 +11,7 @@ import {
   protectedWiteOutWords,
   protectedRounded,
   protectedAlphabetNeighbors,
+  protectedAbjads,
 } from "../SpanPlaceholder.js";
 
 const secondContractionWordHashMap = new Map();
@@ -21,6 +22,10 @@ const SPACES = " ";
 const ENDING_SECOND_CONTRACTION_WORD = /[.?!\s]/g;
 
 const punctuationHashMap = new Map();
+
+const RemoveVowels = (word) => {
+  return word.toLowerCase().replace(/[aeiou]/g, "");
+};
 
 //this is called chaining
 punctuationHashMap
@@ -85,6 +90,11 @@ export const addSpansAndIdsForWordPlay = (
   outputSentence,
   mode
 ) => {
+  if (mode === "abjads") {
+    typedString = RemoveVowels(typedString);
+    //RemoveVowels(typedString);
+  }
+
   let processed = protectedArticles(typedString); // Always apply articles first
 
   // Apply transformation based on selected mode
@@ -109,6 +119,9 @@ export const addSpansAndIdsForWordPlay = (
       break;
     case "alphabetNeighbors":
       processed = protectedAlphabetNeighbors(processed);
+      break;
+    case "abjads":
+      processed = protectedAbjads(processed);
       break;
     default:
       // No additional wordplay besides articles and spoonerism
