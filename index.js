@@ -884,18 +884,18 @@ let availableHeroArray = [
   apostrophe,
   quotes,
   hyphen,
+  betar,
   asterisk,
   hashtag,
   anacontraction,
-  article,
   ambigram,
-  foon,
   phonia,
   spacel,
   dele,
   zana,
   roundabout,
-  betar,
+  article,
+  foon,
 ];
 
 const projectiles = [];
