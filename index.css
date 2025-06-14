@@ -706,6 +706,50 @@ footer > div {
     transform:scale(1.08);           /* remove if you don’t want the pop */
   }
 
+  .letter {
+    display: inline-block;
+    position: relative;
+    width: 1ch;
+    height: 1.5em;
+    perspective: 600px;
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  .reel {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    animation: spin-reel 1.5s ease-in-out forwards;
+    transform-origin: center center;
+  }
+
+  .reel span {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    line-height: 1.5em;
+    font-size: inherit;
+    backface-visibility: hidden;
+  }
+
+  /* 3 faces spaced evenly in 3D space */
+  .reel span:nth-child(1) {
+    transform: rotateX(0deg) translateZ(0.75em);
+  }
+  .reel span:nth-child(2) {
+    transform: rotateX(120deg) translateZ(0.75em);
+  }
+  .reel span:nth-child(3) {
+    transform: rotateX(240deg) translateZ(0.75em);
+  }
+
+  @keyframes spin-reel {
+    0%   { transform: rotateX(0deg); }
+    100% { transform: rotateX(-720deg); }
+  }
 
 
 

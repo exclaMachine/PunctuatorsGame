@@ -70,6 +70,38 @@ const openModalButtons = document.querySelectorAll("[data-modal-target]");
 const closeModalButtons = document.querySelectorAll("[data-close-button]");
 const overlay = document.getElementById("overlay");
 
+function spinLetter(letterSpan, fromChar, toChar, callback) {
+  // Clean any previous content
+  letterSpan.innerHTML = "";
+
+  const reel = document.createElement("div");
+  reel.className = "reel";
+
+  const neighbors = getAlphabetNeighbors(fromChar);
+
+  for (let ch of neighbors) {
+    const face = document.createElement("span");
+    face.textContent = ch;
+    reel.appendChild(face);
+  }
+
+  letterSpan.appendChild(reel);
+
+  setTimeout(() => {
+    letterSpan.textContent = toChar;
+    if (callback) callback();
+  }, 900);
+}
+
+function getAlphabetNeighbors(letter) {
+  const code = letter.charCodeAt(0);
+  return [
+    String.fromCharCode(code === 122 ? 97 : code + 1), // next
+    letter,
+    String.fromCharCode(code === 97 ? 122 : code - 1), // previous
+  ];
+}
+
 const buttonSounds = {
   clicky: new Howl({
     src: ["./sounds/click.mp3"],
@@ -1029,24 +1061,70 @@ function animate() {
                   span.className = `word-${nextIndex}`;
                 }
               } else if (punctuationSymbol.id === betar.symbol) {
-                if (
-                  punctuationSymbol.hasAttribute("data-alphabetical-neighbors")
-                ) {
-                  const span = punctuationSymbol;
-                  const neighborsList = span
-                    .getAttribute("data-alphabetical-neighbors")
-                    .split(",");
-                  let currentIndex = parseInt(
-                    span.className.replace("word-", "")
-                  );
+                const span = punctuationSymbol;
 
-                  // Get the next index, or loop back to 0 if we're at the last word
-                  let nextIndex = (currentIndex + 1) % neighborsList.length;
-
-                  // Update the content and class
-                  span.textContent = neighborsList[nextIndex];
-                  span.className = `word-${nextIndex}`;
+                // Step 1: Store original word if not already done
+                if (!span.hasAttribute("data-original-word")) {
+                  span.setAttribute("data-original-word", span.textContent);
                 }
+
+                const originalWord = span.getAttribute("data-original-word");
+                const neighborsList = span
+                  .getAttribute("data-alphabetical-neighbors")
+                  .split(",");
+                let currentIndex =
+                  parseInt(span.className.replace("word-", "")) || 0;
+
+                // Step 2: Wrap letters in spans if not already wrapped
+                if (!span.querySelector(".letter")) {
+                  const letters = span.textContent
+                    .split("")
+                    .map((char) => `<span class="letter">${char}</span>`);
+                  span.innerHTML = letters.join("");
+                }
+
+                const letterSpans = span.querySelectorAll(".letter");
+
+                // Step 3: Determine if we're currently showing a neighbor or original
+                const currentWord = Array.from(letterSpans)
+                  .map((el) => el.textContent)
+                  .join("");
+
+                if (currentWord !== originalWord) {
+                  // Revert to original word
+                  for (let i = 0; i < originalWord.length; i++) {
+                    letterSpans[i].textContent = originalWord[i];
+                  }
+                  span.className = `word-${currentIndex}`;
+                  return;
+                }
+
+                // Step 4: Move to next neighbor word
+                const nextIndex = (currentIndex + 1) % neighborsList.length;
+                const nextWord = neighborsList[nextIndex];
+
+                // Step 5: Find the differing index
+                let diffIndex = -1;
+                for (let i = 0; i < originalWord.length; i++) {
+                  if (originalWord[i] !== nextWord[i]) {
+                    diffIndex = i;
+                    break;
+                  }
+                }
+
+                if (diffIndex === -1) return;
+
+                const changingSpan = letterSpans[diffIndex];
+                const fromChar = originalWord[diffIndex];
+                const toChar = nextWord[diffIndex];
+
+                spinLetter(changingSpan, fromChar, toChar, () => {
+                  // After spin finishes, update full word to new neighbor
+                  for (let i = 0; i < letterSpans.length; i++) {
+                    letterSpans[i].textContent = nextWord[i];
+                  }
+                  span.className = `word-${nextIndex}`;
+                });
               } else if (punctuationSymbol.id === spacel.symbol) {
                 if (punctuationSymbol.hasAttribute("data-splitwords")) {
                   const [firstWord, secondWord] =

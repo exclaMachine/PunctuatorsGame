@@ -2387,7 +2387,7 @@ export const wrapAlphabetNeighbors = (sentence) => {
     const lower = word.toLowerCase();
     if (alphabeticalNeighbors[lower]) {
       const alternatives = [word, ...alphabeticalNeighbors[lower]];
-      return `<span id="Betar (Alphabet Neighbors)" data-alphabetical-neighbors="${alternatives.join(
+      return `<span style="font-family: monospace" id="Betar (Alphabet Neighbors)" data-alphabetical-neighbors="${alternatives.join(
         ","
       )}" class="word-0">${word}</span>`;
     }
