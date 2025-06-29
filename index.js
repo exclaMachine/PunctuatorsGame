@@ -878,7 +878,7 @@ class CommaTongue {
 
 let allPunctuationHit = new Set();
 
-let player = new Hero("./images/Generic.png", 0.7);
+let player = new Hero("./images/Title_Page.png", 0.4);
 
 let apostrophe = new Apostrophantom();
 let asterisk = new MasterAsterisk();
