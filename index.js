@@ -153,6 +153,9 @@ let closeModal = (modal) => {
 canvas.width = innerWidth - 4;
 canvas.height = innerHeight - 50;
 
+//When the sentence is first loaded it shows the team. We set this to True and then any button pressed will just bring up first character
+let bRightAfterSentenceIsLoaded = false;
+
 removePuncButton.addEventListener("click", () => {
   buttonSounds.clicky.play();
   if (!initialTypedSentence.value) {
@@ -180,6 +183,7 @@ removePuncButton.addEventListener("click", () => {
   setClassName("grid-container", characterControls);
 
   errorMessage.innerText = "";
+  bRightAfterSentenceIsLoaded = true;
 });
 
 //TODO Make a button to do alphabet work similar to addSpansAndIdsForWordPlay
@@ -1387,6 +1391,27 @@ function animate() {
 animate();
 
 //https://stackoverflow.com/questions/69491293/how-to-do-a-work-when-mousedown-until-mouseup
+
+//Do not want the user to be able to move the title team page
+function doActionOnce() {
+  if (bRightAfterSentenceIsLoaded) {
+    bRightAfterSentenceIsLoaded = false;
+    //console.log("Action triggered!");
+
+    player = chosenHeroArray[0];
+    // Clean up event listeners
+    document.removeEventListener("keydown", handleFirstClickOrKeyPress);
+    document.removeEventListener("click", handleFirstClickOrKeyPress);
+  }
+}
+
+function handleFirstClickOrKeyPress() {
+  doActionOnce();
+}
+
+// Attach listeners
+document.addEventListener("keydown", handleFirstClickOrKeyPress);
+document.addEventListener("click", handleFirstClickOrKeyPress);
 
 leftButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
