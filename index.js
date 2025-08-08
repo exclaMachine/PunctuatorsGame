@@ -1531,6 +1531,22 @@ hintButton.addEventListener("pointerdown", (e) => {
       }, 1000);
     }
   });
+
+  if (nodeArr && numberOfPunctuationArray.length === 0) {
+    nodeArr.forEach((punctuationSymbol) => {
+      //if (punctuationSymbol.hasAttribute("id")) {
+      if (punctuationSymbol.id) {
+        //This is just generic for any of the wordplay ones
+        // or .hasAttribute("id")
+        console.log("hitn");
+        punctuationSymbol.setAttribute("data-hint", "1"); // value can be whatever
+
+        setTimeout(() => {
+          punctuationSymbol.removeAttribute("data-hint");
+        }, 1000);
+      }
+    });
+  }
 });
 
 addEventListener("keydown", ({ key }) => {

@@ -735,6 +735,11 @@ footer > div {
     backface-visibility: hidden;
   }
 
+  /* attribute selector targets only while data-hint is present */
+span[data-hint] {
+    text-decoration: underline dotted orange;
+  }
+
   /* 3 faces spaced evenly in 3D space */
   .reel span:nth-child(1) {
     transform: rotateX(0deg) translateZ(0.75em);
