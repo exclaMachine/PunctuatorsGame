@@ -1402,6 +1402,8 @@ function doActionOnce() {
     // Clean up event listeners
     document.removeEventListener("keydown", handleFirstClickOrKeyPress);
     document.removeEventListener("click", handleFirstClickOrKeyPress);
+
+    hintButton.setAttribute("class", "");
   }
 }
 
@@ -1478,7 +1480,6 @@ switchButton.addEventListener("pointerdown", (e) => {
   e.preventDefault();
 
   //This initially makes the hint button appear, should make it more specific down the road so can add more classes if needed
-  hintButton.setAttribute("class", "");
 
   //This code will make it so the tongue doesn't stay on the screen if comma chameleon is switched out. All other projectiles will stay though
   if (
@@ -1568,8 +1569,6 @@ addEventListener("keydown", ({ key }) => {
       break;
 
     case "ArrowDown":
-      hintButton.setAttribute("class", "");
-
       if (
         projectiles.length &&
         projectiles[0]?.constructor?.name === "CommaTongue"
