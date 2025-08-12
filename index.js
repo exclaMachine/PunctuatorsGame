@@ -113,10 +113,98 @@ refreshButton.addEventListener("click", () => {
   location.reload();
 });
 
+//Might be able to use Intersection Observer to make this more efficient
+// console.log("per", period.getBoundingClientRect());
+
+//number accounts for the padding and height of the inputs. Need to fix for when that goes away
+canvas.width = innerWidth - 4;
+canvas.height = innerHeight - 50;
+
+//When the sentence is first loaded it shows the team. We set this to True and then any button pressed will just bring up first character
+let bRightAfterSentenceIsLoaded = false;
+let dropDownSelection = "";
+
+removePuncButton.addEventListener("click", () => {
+  buttonSounds.clicky.play();
+  if (!initialTypedSentence.value) {
+    return (errorMessage.innerText = "Field cannot be blank");
+  }
+
+  let selectedOption = wordPlayOptions.value;
+  dropDownSelection = selectedOption;
+  if (selectedOption === "removePunc") {
+    if (!PUNC_REGEX.test(initialTypedSentence.value)) {
+      return (errorMessage.innerText = "Sentence must have punctuation!");
+    }
+    let punctuated = addSpansAndIds(initialTypedSentence.value, out1);
+  } else {
+    addSpansAndIdsForWordPlay(initialTypedSentence.value, out1, selectedOption);
+  }
+  mySong.stop();
+  setClassName(
+    "go-away",
+    initialTypedSentence,
+    removePuncButton,
+    startBanner,
+    wordPlayOptions
+  );
+
+  if (dropDownSelection === "alphabetNeighbors") {
+    updateCharacterModal("alphabetNeighbors");
+  }
+
+  setClassName("grid-container", characterControls);
+
+  errorMessage.innerText = "";
+  bRightAfterSentenceIsLoaded = true;
+});
+
+//const modal = document.querySelector(button.dataset.modalTarget);
+
+function updateCharacterModal(selection) {
+  const templates = {
+    alphabetNeighbors: `
+    <div class="char-modal">
+      <h2>Betar — Alphabet Neighbors</h2>
+      <p class="lead">
+        An alphabet neighbor is the letter directly before or after a letter in the alphabet
+        (with wrap-around: <code>a</code> ↔ <code>z</code>). Betar spins one letter to a neighbor
+        to form a real word.
+      </p>
+
+      <div class="example">
+        <div>Start</div><code>timer</code>
+        <div>Hit #1</div><code>tiler</code><small>(m → l)</small>
+      </div>
+
+      <ul class="tips">
+        <li>Only one letter changes per hit.</li>
+        <li>Neighbors wrap: <code>a</code> ↔ <code>z</code>.</li>
+        <li>Words alternate: original → neighbor → original → next neighbor…</li>
+      </ul>
+    </div>
+  `,
+  };
+
+  modal.innerHTML =
+    templates[selection] ??
+    `
+  <div class="char-modal">
+    <h2>Character Info</h2>
+    <p class="lead">Details for this character will appear here.</p>
+  </div>
+`;
+}
+
 openModalButtons.forEach((button) => {
   button.addEventListener("click", () => {
     buttonSounds.clicky.play();
     const modal = document.querySelector(button.dataset.modalTarget);
+    // if (dropDownSelection === "alphabetNeighbors") {
+    //   console.log("alph");
+    //   modal.innerHTML =
+    //     "An alphabet neighbor is the letter that is next to that letter in the alphabet. Betar uses this power to create new words";
+    // }
     openModal(modal);
   });
 });
@@ -146,45 +234,6 @@ let closeModal = (modal) => {
   modal.classList.remove("active");
   overlay.classList.remove("active");
 };
-//Might be able to use Intersection Observer to make this more efficient
-// console.log("per", period.getBoundingClientRect());
-
-//number accounts for the padding and height of the inputs. Need to fix for when that goes away
-canvas.width = innerWidth - 4;
-canvas.height = innerHeight - 50;
-
-//When the sentence is first loaded it shows the team. We set this to True and then any button pressed will just bring up first character
-let bRightAfterSentenceIsLoaded = false;
-
-removePuncButton.addEventListener("click", () => {
-  buttonSounds.clicky.play();
-  if (!initialTypedSentence.value) {
-    return (errorMessage.innerText = "Field cannot be blank");
-  }
-
-  const selectedOption = wordPlayOptions.value;
-  if (selectedOption === "removePunc") {
-    if (!PUNC_REGEX.test(initialTypedSentence.value)) {
-      return (errorMessage.innerText = "Sentence must have punctuation!");
-    }
-    let punctuated = addSpansAndIds(initialTypedSentence.value, out1);
-  } else {
-    addSpansAndIdsForWordPlay(initialTypedSentence.value, out1, selectedOption);
-  }
-  mySong.stop();
-  setClassName(
-    "go-away",
-    initialTypedSentence,
-    removePuncButton,
-    startBanner,
-    wordPlayOptions
-  );
-
-  setClassName("grid-container", characterControls);
-
-  errorMessage.innerText = "";
-  bRightAfterSentenceIsLoaded = true;
-});
 
 //TODO Make a button to do alphabet work similar to addSpansAndIdsForWordPlay
 

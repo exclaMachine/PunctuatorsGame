@@ -756,6 +756,52 @@ span[data-hint] {
     100% { transform: rotateX(-720deg); }
   }
 
+  .char-modal {
+    padding: 16px 18px;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+
+  .char-modal h2 {
+    margin: 0 0 8px;
+    font-size: 1.1rem;
+  }
+
+  .char-modal .lead {
+    margin: 0 0 12px;
+    opacity: 0.9;
+  }
+
+  .char-modal .example {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 6px 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    margin: 8px 0 10px;
+  }
+
+  .char-modal code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    padding: 0 6px;
+    border-radius: 6px;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
+
+  .char-modal .example small {
+    margin-left: 8px;
+    opacity: 0.75;
+  }
+
+  .char-modal .tips {
+    margin: 10px 0 0;
+    padding-left: 18px;
+  }
+
+  .char-modal .tips li { margin: 4px 0; }
+
+
 
 
     @media (prefers-reduced-motion: reduce) {
