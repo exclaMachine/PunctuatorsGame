@@ -152,6 +152,9 @@ removePuncButton.addEventListener("click", () => {
   if (dropDownSelection === "alphabetNeighbors") {
     updateCharacterModal("alphabetNeighbors");
   }
+  // else if (dropDownSelection === "rounded") {
+  //   updateCharacterModal("rounded");
+  // }
 
   setClassName("grid-container", characterControls);
 
