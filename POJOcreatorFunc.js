@@ -28,17 +28,17 @@ let AmbigramPairs = {
 
 let horPairs = {
   b: "d",
-  d: "b",
-  i: "i",
-  l: "l",
-  m: "m",
-  o: "o",
-  p: "q",
+  //d: "b",
+  //i: "i",
+  //l: "l",
+  //m: "m",
+  //o: "o",
+  //p: "q",
   q: "p",
-  t: "t",
-  v: "v",
-  w: "w",
-  x: "x",
+  //t: "t",
+  //v: "v",
+  //w: "w",
+  //x: "x",
 };
 
 let vertPairs = {
@@ -341,6 +341,9 @@ const CreateJS = (jsName, typeOfJSFunction) => {
       if (typeOfJSFunction === "SingleLetterVertMirror") {
         alteredWord = RoundLetters(word, vertPairs, data);
       }
+      if (typeOfJSFunction === "SingleLetterHorizMirror") {
+        alteredWord = RoundLetters(word, horPairs, data);
+      }
       if (typeOfJSFunction === "sideMirror") {
         alteredWord = HorizMirror(word, horPairs);
       }
@@ -397,7 +400,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("alphabeticalWordsReverse.js", "reverseAlphabetical");
 //CreateJS("onlyConsonants.js", "onlyConsonants");
 //CreateJS("alphabeticalNeighbors.js", "alphabeticalNeighbors");
-CreateJS("SingleLetterVertMirror.js", "SingleLetterVertMirror");
+//CreateJS("SingleLetterVertMirror.js", "SingleLetterVertMirror");
+CreateJS("SingleLetterHorizMirror.js", "SingleLetterHorizMirror");
 
 //CreateJSON("todbotWithCapitals.json");
 
