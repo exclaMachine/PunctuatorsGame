@@ -52,9 +52,9 @@ let vertPairs = {
   m: "w",
   //o: "o",
   p: "b",
-  q: "d",
-  t: "f",
-  w: "m",
+  //q: "d",
+  //t: "f",
+  //w: "m",
   //x: "x",
 };
 
@@ -400,8 +400,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("alphabeticalWordsReverse.js", "reverseAlphabetical");
 //CreateJS("onlyConsonants.js", "onlyConsonants");
 //CreateJS("alphabeticalNeighbors.js", "alphabeticalNeighbors");
-//CreateJS("SingleLetterVertMirror.js", "SingleLetterVertMirror");
-CreateJS("SingleLetterHorizMirror.js", "SingleLetterHorizMirror");
+CreateJS("SingleLetterVertMirror.js", "SingleLetterVertMirror");
+//CreateJS("SingleLetterHorizMirror.js", "SingleLetterHorizMirror");
 
 //CreateJSON("todbotWithCapitals.json");
 
