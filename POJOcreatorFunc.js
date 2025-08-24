@@ -51,7 +51,7 @@ let vertPairs = {
   //l: "l",
   m: "w",
   //o: "o",
-  p: "b",
+  //p: "b",
   //q: "d",
   //t: "f",
   //w: "m",
