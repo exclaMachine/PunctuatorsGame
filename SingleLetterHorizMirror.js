@@ -123,7 +123,6 @@ const data = {
   mob: "mod",
   outbid: "outdid",
   overbid: "overdid",
-  q: "p",
   rebid: "redid",
   rebound: "redound",
   rib: "rid",
