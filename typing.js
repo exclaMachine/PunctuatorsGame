@@ -1,4 +1,4 @@
-// typing.js — standalone Typing Game (reuses your sprites/SFX; no dependency on index.js)
+// typing.js — standalone Typing Game (refined spawn + second-sprite shoot anim)
 
 const CANVAS = document.getElementById("tg-canvas");
 const CTX = CANVAS.getContext("2d");
@@ -7,6 +7,7 @@ const HUD = {
   streak: document.getElementById("tg-streak"),
   count: document.getElementById("tg-count"),
 };
+const HERO_NAME_EL = document.getElementById("tg-hero-name");
 
 function fitCanvas() {
   const cssW = CANVAS.clientWidth,
@@ -15,11 +16,13 @@ function fitCanvas() {
   CANVAS.width = Math.floor(cssW * dpr);
   CANVAS.height = Math.floor(cssH * dpr);
   CTX.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // keep hero pinned to bottom-center on resize so offsets stay correct
+  //if (hero && hero.width) hero.centerBottom();
 }
 window.addEventListener("resize", fitCanvas);
 fitCanvas();
 
-/* ---------------- Hero / Projectile ---------------- */
+/* ---------- Hero / Projectiles ---------- */
 
 class Hero {
   constructor({
@@ -44,9 +47,7 @@ class Hero {
 
     this.image = new Image();
     this.image.src = heroImage;
-
     this.image2 = null;
-    // load second sprite if it’s a real path (ignore "white" sentinels)
     if (secondHeroImage && secondHeroImage !== "white") {
       this.image2 = new Image();
       this.image2.src = secondHeroImage;
@@ -56,7 +57,7 @@ class Hero {
     this.width = 0;
     this.height = 0;
     this.pos = { x: 0, y: 0 };
-    this.drawSecondFrame = false; // toggled while a shot is in-flight
+    this.drawSecondFrame = false;
 
     this.sfx = {
       shoot: shootSrc ? new Howl({ src: [shootSrc] }) : null,
@@ -95,13 +96,12 @@ class Projectile {
   constructor(hero) {
     this.vx = 0;
     this.vy = -10;
-    // NORMAL PROJECTILE SPAWN (matches your main game after image onload)
+    // NORMAL PROJECTILE SPAWN — use width - offset to match your desired alignment
     this.x = hero.pos.x + hero.projectileStartOffsetX;
     this.y = hero.pos.y;
     this.w = 3;
     this.h = 18;
     this.img = null;
-
     if (hero.projectileImage) {
       const im = new Image();
       im.src = hero.projectileImage;
@@ -130,7 +130,7 @@ class CommaTongue {
     this.vy = -10;
     this.w = 5;
     this.h = 100;
-    // TONGUE/PAINT SPAWN (uses width - offset in your main game)
+    // Tongue/paint spawn matches your main game rule
     this.x = hero.pos.x + hero.width - hero.projectileStartOffsetX;
     this.y = hero.pos.y;
   }
@@ -143,7 +143,8 @@ class CommaTongue {
   }
 }
 
-/* ---------------- Roster (mirrors your index.js) ---------------- */
+/* ---------- Roster (same as before; omitted here for brevity) ---------- */
+/* Paste the same HEROES array you already have (with secondHeroImage filled). */
 
 const HEROES = [
   // Full Stop
@@ -434,7 +435,7 @@ const HEROES = [
   },
 ];
 
-/* ---------------- Game State ---------------- */
+/* ---------- Game State ---------- */
 
 let hero = null;
 let projectile = null;
@@ -446,8 +447,8 @@ const STATE = {
   score: 0,
   streak: 0,
   count: 0,
-  wordY: 110, // target word Y
-  bufferY: 150, // typed buffer Y (under the word)
+  wordY: 110,
+  bufferY: 150,
   paused: false,
   canShoot: false,
 };
@@ -477,6 +478,8 @@ async function loadWords() {
 function chooseHero() {
   const spec = HEROES[(Math.random() * HEROES.length) | 0];
   hero = new Hero(spec);
+  HERO_NAME_EL.textContent = spec.symbol || "";
+  // re-center once the first frame has sized
   setTimeout(() => hero?.centerBottom(), 0);
 }
 
@@ -489,16 +492,12 @@ function nextWord() {
 
 function drawWordAndBuffer() {
   const cx = CANVAS.clientWidth / 2;
-
-  // Word
   CTX.save();
   CTX.fillStyle = "#111";
   CTX.textAlign = "center";
   CTX.textBaseline = "middle";
   CTX.font = "700 48px Palanquin, sans-serif";
   CTX.fillText(STATE.current, cx, STATE.wordY);
-
-  // Buffer
   CTX.font = "600 26px Palanquin, sans-serif";
   CTX.globalAlpha = 0.9;
   CTX.fillText(STATE.buffer || "…", cx, STATE.bufferY);
@@ -514,28 +513,24 @@ function flashHit() {
 }
 
 function update() {
-  // bg
   CTX.fillStyle = "#fff";
   CTX.fillRect(0, 0, CANVAS.clientWidth, CANVAS.clientHeight);
 
   drawWordAndBuffer();
 
-  // Draw hero (use second sprite while a projectile is active)
+  // second-sprite during shot
   if (hero) {
     hero.drawSecondFrame = Boolean(projectile && hero.image2);
     hero.draw();
   }
 
-  // Projectile
   if (projectile) {
     projectile.update();
     projectile.draw();
-
     const projTop =
       projectile instanceof CommaTongue
         ? projectile.y - projectile.h
         : projectile.y;
-
     if (projTop <= STATE.wordY) {
       projectile.vy = 0;
       hero?.hitSound();
@@ -555,7 +550,6 @@ function update() {
 function submitBuffer() {
   const typed = STATE.buffer.trim();
   STATE.buffer = "";
-
   if (!typed || !STATE.canShoot) return;
 
   if (typed.toLowerCase() === STATE.current.toLowerCase()) {
@@ -573,14 +567,13 @@ function submitBuffer() {
   }
 }
 
-/* ---------------- Input (typing only) ---------------- */
+/* ---------- Input (typing only) ---------- */
 
 window.addEventListener(
   "keydown",
   (e) => {
     const printable =
       e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
-
     if (
       printable ||
       e.key === "Backspace" ||
@@ -591,7 +584,6 @@ window.addEventListener(
       e.preventDefault();
       e.stopPropagation();
     }
-
     if (printable) {
       STATE.buffer += e.key;
       return;
@@ -612,7 +604,7 @@ window.addEventListener(
   true
 );
 
-/* ---------------- Boot ---------------- */
+/* ---------- Boot ---------- */
 
 (async function boot() {
   await loadWords();

@@ -18,3 +18,15 @@ html,body{ height:100%; margin:0; font-family:Palanquin,system-ui,sans-serif; ba
 }
 
 .tg-tip{ text-align:center; padding:.5rem 1rem; background:#0f1116; border-top:1px solid #222; }
+
+/* Show hero name on the black header, right side */
+.tg-hud { position: relative; } /* so absolute child anchors inside */
+.tg-hero-name-hud{
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #fff;
+  font-weight: 600;
+  pointer-events: none;
+}

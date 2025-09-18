@@ -130,6 +130,9 @@ removePuncButton.addEventListener("click", () => {
     return (errorMessage.innerText = "Field cannot be blank");
   }
 
+  // Hide Typing Game link once main game starts
+  const typingLink = document.getElementById("typing-game-link");
+
   let selectedOption = wordPlayOptions.value;
   dropDownSelection = selectedOption;
   if (selectedOption === "removePunc") {
@@ -146,7 +149,8 @@ removePuncButton.addEventListener("click", () => {
     initialTypedSentence,
     removePuncButton,
     startBanner,
-    wordPlayOptions
+    wordPlayOptions,
+    typingLink
   );
 
   if (dropDownSelection === "alphabetNeighbors") {
