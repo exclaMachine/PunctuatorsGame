@@ -477,7 +477,14 @@ async function loadWords() {
 
 function chooseHero() {
   const spec = HEROES[(Math.random() * HEROES.length) | 0];
+
   hero = new Hero(spec);
+
+  const nameEl = document.getElementById("tg-hero-name");
+  if (nameEl) nameEl.textContent = spec.symbol || "";
+
+  hero.vanishOnShoot = spec.secondHeroImage === "white";
+
   HERO_NAME_EL.textContent = spec.symbol || "";
   // re-center once the first frame has sized
   setTimeout(() => hero?.centerBottom(), 0);
@@ -520,8 +527,11 @@ function update() {
 
   // second-sprite during shot
   if (hero) {
-    hero.drawSecondFrame = Boolean(projectile && hero.image2);
-    hero.draw();
+    const hideNow = Boolean(projectile && hero.vanishOnShoot);
+    if (!hideNow) {
+      hero.drawSecondFrame = Boolean(projectile && hero.image2);
+      hero.draw();
+    }
   }
 
   if (projectile) {
