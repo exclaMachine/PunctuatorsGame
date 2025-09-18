@@ -801,6 +801,10 @@ span[data-hint] {
 
   .char-modal .tips li { margin: 4px 0; }
 
+/* Hide Typing Game link on touch-only devices (phones/tablets) */
+@media (hover: none) and (pointer: coarse) {
+    #typing-game-link { display: none !important; }
+  }
 
 
 
