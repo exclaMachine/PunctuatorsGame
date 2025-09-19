@@ -447,8 +447,8 @@ const STATE = {
   score: 0,
   streak: 0,
   count: 0,
-  wordY: 110,
-  bufferY: 150,
+  wordY: 50,
+  bufferY: 100,
   paused: false,
   canShoot: false,
 };
