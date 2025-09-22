@@ -8,6 +8,7 @@ const HUD = {
   count: document.getElementById("tg-count"),
 };
 const HERO_NAME_EL = document.getElementById("tg-hero-name");
+const copySfx = new Howl({ src: ["./sounds/click.mp3"], volume: 0.7 });
 
 function fitCanvas() {
   const cssW = CANVAS.clientWidth,
@@ -496,6 +497,28 @@ function chooseHero() {
   setTimeout(() => hero?.centerBottom(), 0);
 }
 
+function showCopiedToast() {
+  const el = document.getElementById("tg-copied");
+  if (!el) return;
+
+  // reset animation if it just ran
+  el.classList.remove("tg-hidden", "tg-copied--anim");
+  // force reflow so the animation restarts
+  void el.offsetWidth;
+  el.classList.add("tg-copied--anim");
+
+  // sound!
+  try {
+    copySfx.play();
+  } catch {}
+
+  // hide after animation
+  setTimeout(() => {
+    el.classList.add("tg-hidden");
+    el.classList.remove("tg-copied--anim");
+  }, 700);
+}
+
 function startShortcutLesson() {
   STATE.shortcutActive = true;
   STATE.shortcut.copied = false;
@@ -672,13 +695,12 @@ window.addEventListener(
       e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
 
     if (STATE.shortcutActive) {
-      // Accept Ctrl/⌘ + C and Ctrl/⌘ + V only (swallow everything else)
       const key = e.key.toLowerCase();
       const mod = e.ctrlKey || e.metaKey;
 
       if (mod && key === "c") {
         STATE.shortcut.copied = true;
-        // optional tiny feedback: flash the first slot frame, etc.
+        showCopiedToast(); // << add this line
         return;
       }
       if (mod && key === "v" && STATE.shortcut.copied) {

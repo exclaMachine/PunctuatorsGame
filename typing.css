@@ -61,3 +61,52 @@ html,body{ height:100%; margin:0; font-family:Palanquin,system-ui,sans-serif; ba
   background: #222; border-radius: 6px; padding: 0 6px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
+
+.tg-hidden { display: none; }
+
+/* Copied! toast */
+.tg-copied{
+  position:absolute;
+  left:50%; top:38%;
+  transform: translate(-50%,-50%) rotate(-8deg);
+  background: linear-gradient(180deg, #fff, #f7f7f7);
+  color:#111;
+  font-weight:900;
+  font-size: 40px;
+  line-height:1;
+  padding:.35em .6em;
+  border-radius:14px;
+  border:2px solid #111;
+  box-shadow: 0 8px 22px rgba(0,0,0,.25);
+  text-shadow: 1px 1px 0 #fff;
+  pointer-events:none;
+  opacity:0;
+}
+
+/* kick animation with class toggle */
+.tg-copied--anim{
+  animation: tgCopiedPop .65s ease-out forwards;
+}
+
+@keyframes tgCopiedPop{
+  0%   { transform: translate(-50%,-50%) rotate(-8deg) scale(.8); opacity:0; }
+  15%  { transform: translate(-50%,-50%) rotate(-8deg) scale(1.08); opacity:1; }
+  60%  { transform: translate(-50%,-68%) rotate(-6deg) scale(1.03); opacity:.95; }
+  100% { transform: translate(-50%,-86%) rotate(-4deg) scale(1.0);  opacity:0; }
+}
+
+/* optional: tiny screen flash ring for extra juice */
+.tg-copied::after{
+  content:"";
+  position:absolute; inset:-10px;
+  border-radius:18px;
+  border:3px solid rgba(255,210,0,.9);
+  filter: drop-shadow(0 0 10px rgba(255,210,0,.6));
+  opacity:0;
+  animation: tgCopiedRing .65s ease-out forwards;
+}
+@keyframes tgCopiedRing{
+  0%   { transform: scale(.7); opacity:0; }
+  30%  { transform: scale(1.05); opacity:.9; }
+  100% { transform: scale(1.25); opacity:0; }
+}
