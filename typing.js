@@ -451,6 +451,12 @@ const STATE = {
   bufferY: 100,
   paused: false,
   canShoot: false,
+  shortcutPending: false, // set right after a long word is typed correctly
+  shortcutActive: false, // true while we’re teaching copy/paste
+  shortcut: { copied: false, pasteCount: 0, slots: 2 },
+  // guarantees only one advance after a hit + keeps the long word for the lesson
+  advanceLock: false,
+  lessonWord: "",
 };
 
 async function loadWords() {
@@ -490,6 +496,21 @@ function chooseHero() {
   setTimeout(() => hero?.centerBottom(), 0);
 }
 
+function startShortcutLesson() {
+  STATE.shortcutActive = true;
+  STATE.shortcut.copied = false;
+  STATE.shortcut.pasteCount = 0;
+  const box = document.getElementById("tg-shortcut");
+  box && box.classList.remove("tg-hidden");
+}
+
+function endShortcutLesson() {
+  STATE.shortcutActive = false;
+  const box = document.getElementById("tg-shortcut");
+  box && box.classList.add("tg-hidden");
+  nextWord();
+}
+
 function nextWord() {
   STATE.current = STATE.words[(Math.random() * STATE.words.length) | 0];
   STATE.buffer = "";
@@ -512,6 +533,51 @@ function drawWordAndBuffer() {
   CTX.restore();
 }
 
+function drawShortcutSlots() {
+  if (!STATE.shortcutActive) return;
+
+  const cx = CANVAS.clientWidth / 2;
+  const y1 = STATE.wordY + 70;
+  const y2 = STATE.wordY + 120;
+
+  CTX.save();
+  CTX.strokeStyle = "#444";
+  CTX.lineWidth = 2;
+
+  // slot 1 frame
+  CTX.strokeRect(cx - 140, y1 - 22, 280, 44);
+  if (STATE.shortcut.pasteCount >= 1) {
+    CTX.fillStyle = "#111";
+    CTX.textAlign = "center";
+    CTX.textBaseline = "middle";
+    CTX.font = "700 32px Palanquin, sans-serif";
+    CTX.fillText(STATE.current, cx, y1);
+  }
+
+  // slot 2 frame
+  CTX.strokeRect(cx - 140, y2 - 22, 280, 44);
+  if (STATE.shortcut.pasteCount >= 2) {
+    CTX.fillStyle = "#111";
+    CTX.textAlign = "center";
+    CTX.textBaseline = "middle";
+    CTX.font = "700 32px Palanquin, sans-serif";
+    CTX.fillText(STATE.current, cx, y2);
+  }
+
+  const w = STATE.shortcutActive ? STATE.lessonWord : STATE.current;
+
+  // slot 1
+  if (STATE.shortcut.pasteCount >= 1) {
+    CTX.fillText(w, cx, y1);
+  }
+  // slot 2
+  if (STATE.shortcut.pasteCount >= 2) {
+    CTX.fillText(w, cx, y2);
+  }
+
+  CTX.restore();
+}
+
 function flashHit() {
   CTX.save();
   CTX.fillStyle = "rgba(156,255,180,0.25)";
@@ -524,6 +590,7 @@ function update() {
   CTX.fillRect(0, 0, CANVAS.clientWidth, CANVAS.clientHeight);
 
   drawWordAndBuffer();
+  drawShortcutSlots();
 
   // second-sprite during shot
   if (hero) {
@@ -542,13 +609,26 @@ function update() {
         ? projectile.y - projectile.h
         : projectile.y;
     if (projTop <= STATE.wordY) {
-      projectile.vy = 0;
-      hero?.hitSound();
-      flashHit();
-      setTimeout(() => {
-        projectile = null;
-      }, 60);
-      setTimeout(nextWord, 180);
+      if (!STATE.advanceLock) {
+        STATE.advanceLock = true; // << prevent double-advance
+        projectile.vy = 0;
+        hero?.hitSound();
+        flashHit();
+
+        setTimeout(() => {
+          projectile = null;
+        }, 60);
+        setTimeout(() => {
+          if (STATE.shortcutPending) {
+            STATE.shortcutPending = false;
+            startShortcutLesson(); // << do NOT change STATE.current here
+            STATE.advanceLock = false; // lesson is active; allow future advance
+          } else {
+            nextWord(); // normal flow
+            STATE.advanceLock = false;
+          }
+        }, 180);
+      }
     } else if (projTop <= -40) {
       projectile = null;
     }
@@ -561,6 +641,12 @@ function submitBuffer() {
   const typed = STATE.buffer.trim();
   STATE.buffer = "";
   if (!typed || !STATE.canShoot) return;
+
+  const isLong = STATE.current.length >= 9;
+  if (isLong) {
+    STATE.shortcutPending = true;
+    STATE.lessonWord = STATE.current; // lock the exact word we just typed
+  }
 
   if (typed.toLowerCase() === STATE.current.toLowerCase()) {
     STATE.score += 10 + STATE.streak * 2;
@@ -584,6 +670,32 @@ window.addEventListener(
   (e) => {
     const printable =
       e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+
+    if (STATE.shortcutActive) {
+      // Accept Ctrl/⌘ + C and Ctrl/⌘ + V only (swallow everything else)
+      const key = e.key.toLowerCase();
+      const mod = e.ctrlKey || e.metaKey;
+
+      if (mod && key === "c") {
+        STATE.shortcut.copied = true;
+        // optional tiny feedback: flash the first slot frame, etc.
+        return;
+      }
+      if (mod && key === "v" && STATE.shortcut.copied) {
+        if (STATE.shortcut.pasteCount < STATE.shortcut.slots) {
+          STATE.shortcut.pasteCount += 1;
+          if (STATE.shortcut.pasteCount >= STATE.shortcut.slots) {
+            // Small delay so they see the second paste appear
+            setTimeout(endShortcutLesson, 250);
+          }
+        }
+        return;
+      }
+
+      // While in the lesson, ignore normal typing keys
+      return;
+    }
+
     if (
       printable ||
       e.key === "Backspace" ||

@@ -30,3 +30,34 @@ html,body{ height:100%; margin:0; font-family:Palanquin,system-ui,sans-serif; ba
   font-weight: 600;
   pointer-events: none;
 }
+
+.tg-hidden { display: none; }
+
+.tg-main { position: relative; } /* ensure absolute children anchor to this area */
+
+.tg-shortcut{
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  background: #12141a;
+  color: #fff;
+  border: 1px solid #222;
+  border-radius: 10px;
+  padding: 10px 12px;
+  max-width: 260px;
+  z-index: 10;
+  box-shadow: 0 4px 14px rgba(0,0,0,.2);
+}
+
+.tg-shortcut-title{
+  font-weight: 700; margin-bottom: 6px;
+}
+
+.tg-shortcut-body{
+  font-size: 0.95rem; line-height: 1.35;
+}
+
+.tg-shortcut kbd{
+  background: #222; border-radius: 6px; padding: 0 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
