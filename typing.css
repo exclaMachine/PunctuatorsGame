@@ -110,3 +110,11 @@ html,body{ height:100%; margin:0; font-family:Palanquin,system-ui,sans-serif; ba
   30%  { transform: scale(1.05); opacity:.9; }
   100% { transform: scale(1.25); opacity:0; }
 }
+
+/* HUD small link for fallback download */
+#tg-vocab-download{
+    margin-left: 8px;
+    color: #9cc3ff;
+    text-decoration: none;
+  }
+  #tg-vocab-download:hover{ text-decoration: underline; }

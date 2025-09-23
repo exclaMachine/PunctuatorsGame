@@ -12,12 +12,17 @@
   <link rel="stylesheet" href="typing.css">
 </head>
 <body>
-  <header class="tg-hud">
-    <a class="tg-back" href="./">← Back</a>
-    <div>Score: <span id="tg-score">0</span></div>
-    <div>Streak: <span id="tg-streak">0</span></div>
-    <div>Word #: <span id="tg-count">0</span></div>
-  </header>
+    <header class="tg-hud">
+        <a class="tg-back" href="./">← Back</a>
+        <div>Score: <span id="tg-score">0</span></div>
+        <div>Streak: <span id="tg-streak">0</span></div>
+        <div>Word #: <span id="tg-count">0</span></div>
+
+        <!-- NEW: Saved count + fallback download link -->
+        <div>Saved: <span id="tg-saved-count">0</span></div>
+        <a id="tg-vocab-download" class="tg-hidden" download="vocabulary.txt">Download vocabulary.txt</a>
+      </header>
+
 
 
 <main class="tg-main">

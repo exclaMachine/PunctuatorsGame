@@ -9,6 +9,11 @@ const HUD = {
 };
 const HERO_NAME_EL = document.getElementById("tg-hero-name");
 const copySfx = new Howl({ src: ["./sounds/click.mp3"], volume: 0.7 });
+const saveSfx = new Howl({
+  src: ["./sounds/click.mp3"],
+  rate: 1.15,
+  volume: 0.7,
+});
 
 function fitCanvas() {
   const cssW = CANVAS.clientWidth,
@@ -22,6 +27,42 @@ function fitCanvas() {
 }
 window.addEventListener("resize", fitCanvas);
 fitCanvas();
+
+const IDB_DB = "tg-vocab";
+const IDB_STORE = "handles";
+
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+function idbGet(key) {
+  return idbOpen().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, "readonly");
+        const store = tx.objectStore(IDB_STORE);
+        const r = store.get(key);
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+      })
+  );
+}
+function idbSet(key, val) {
+  return idbOpen().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, "readwrite");
+        const store = tx.objectStore(IDB_STORE);
+        const r = store.put(val, key);
+        r.onsuccess = () => resolve();
+        r.onerror = () => reject(r.error);
+      })
+  );
+}
 
 /* ---------- Hero / Projectiles ---------- */
 
@@ -455,9 +496,11 @@ const STATE = {
   shortcutPending: false, // set right after a long word is typed correctly
   shortcutActive: false, // true while we’re teaching copy/paste
   shortcut: { copied: false, pasteCount: 0, slots: 2 },
-  // guarantees only one advance after a hit + keeps the long word for the lesson
-  advanceLock: false,
-  lessonWord: "",
+  savedCount: 0,
+  savedWords: new Set(), // fallback store
+  saveHandle: null, // File System Access API handle (when available)
+  advanceLock: false, // (from your earlier fix)
+  lessonWord: "", // (from your earlier fix)
 };
 
 async function loadWords() {
@@ -495,6 +538,205 @@ function chooseHero() {
   HERO_NAME_EL.textContent = spec.symbol || "";
   // re-center once the first frame has sized
   setTimeout(() => hero?.centerBottom(), 0);
+}
+
+async function restoreSavedHandle() {
+  try {
+    const h = await idbGet("vocabHandle");
+    if (!h) return;
+    // Ensure we have permission
+    const q = await h.queryPermission({ mode: "readwrite" });
+    if (q === "granted") {
+      STATE.saveHandle = h;
+      return;
+    }
+    if (q !== "denied") {
+      const p = await h.requestPermission({ mode: "readwrite" });
+      if (p === "granted") STATE.saveHandle = h;
+    }
+  } catch (e) {
+    console.warn("restoreSavedHandle failed:", e);
+  }
+}
+
+function updateSavedHUD() {
+  const el = document.getElementById("tg-saved-count");
+  if (el) el.textContent = STATE.savedCount;
+}
+
+// Fallback: rebuild a Blob URL for download link
+function refreshVocabDownloadLink() {
+  const link = document.getElementById("tg-vocab-download");
+  if (!link) return;
+  // If we’re using FS Access API, keep this hidden
+  if (STATE.saveHandle) {
+    link.classList.add("tg-hidden");
+    return;
+  }
+
+  const words = Array.from(STATE.savedWords);
+  if (words.length === 0) {
+    link.classList.add("tg-hidden");
+    return;
+  }
+
+  const blob = new Blob([words.join("\n") + "\n"], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.classList.remove("tg-hidden");
+
+  // Clean previous object URL on rebuild
+  if (link.dataset.url) URL.revokeObjectURL(link.dataset.url);
+  link.dataset.url = url;
+}
+
+async function saveCurrentWord() {
+  // Pick the word to save (locked during the lesson)
+  const word = (STATE.shortcutActive ? STATE.lessonWord : STATE.current) || "";
+  const w = word.trim();
+  if (!w) return;
+
+  // --- tiny IndexedDB helpers (scoped here so you don’t need extra globals) ---
+  const IDB_DB = "tg-vocab";
+  const IDB_STORE = "handles";
+
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(IDB_DB, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  function idbGet(key) {
+    return idbOpen().then(
+      (db) =>
+        new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE, "readonly");
+          const store = tx.objectStore(IDB_STORE);
+          const r = store.get(key);
+          r.onsuccess = () => resolve(r.result);
+          r.onerror = () => reject(r.error);
+        })
+    );
+  }
+  function idbSet(key, val) {
+    return idbOpen().then(
+      (db) =>
+        new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE, "readwrite");
+          const store = tx.objectStore(IDB_STORE);
+          const r = store.put(val, key);
+          r.onsuccess = () => resolve();
+          r.onerror = () => reject(r.error);
+        })
+    );
+  }
+  function idbDel(key) {
+    return idbOpen().then(
+      (db) =>
+        new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE, "readwrite");
+          const store = tx.objectStore(IDB_STORE);
+          const r = store.delete(key);
+          r.onsuccess = () => resolve();
+          r.onerror = () => reject(r.error);
+        })
+    );
+  }
+
+  async function appendLine(handle, line) {
+    // Ensure permission
+    try {
+      const q = await handle.queryPermission?.({ mode: "readwrite" });
+      if (q !== "granted") {
+        const p = await handle.requestPermission?.({ mode: "readwrite" });
+        if (p !== "granted") throw new Error("permission denied");
+      }
+    } catch (_) {
+      // Some Chrome builds don’t support queryPermission; continue to try writing.
+    }
+
+    // Append at EOF
+    const file = await handle.getFile();
+    const writable = await handle.createWritable({ keepExistingData: true });
+    await writable.seek(file.size);
+    await writable.write(line + "\n");
+    await writable.close();
+  }
+
+  // --- Preferred path: File System Access API (Chrome/Edge) ---
+  if ("showSaveFilePicker" in window) {
+    try {
+      // If we don’t have a handle this session, try to restore from IDB
+      if (!STATE.saveHandle) {
+        try {
+          const restored = await idbGet("vocabHandle");
+          if (restored) STATE.saveHandle = restored;
+        } catch (e) {
+          // ignore restore failures
+        }
+      }
+
+      // If still no handle, prompt once and remember it
+      if (!STATE.saveHandle) {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: "vocabulary.txt",
+          types: [
+            { description: "Text File", accept: { "text/plain": [".txt"] } },
+          ],
+        });
+        STATE.saveHandle = handle;
+        try {
+          await idbSet("vocabHandle", handle);
+        } catch (e) {}
+      }
+
+      // Append
+      try {
+        await appendLine(STATE.saveHandle, w);
+      } catch (err) {
+        // If append fails (file moved/perms changed), re-prompt once
+        console.warn("Append failed; re-prompting Save As…", err);
+        try {
+          await idbDel("vocabHandle");
+        } catch (e) {}
+        STATE.saveHandle = await window.showSaveFilePicker({
+          suggestedName: "vocabulary.txt",
+          types: [
+            { description: "Text File", accept: { "text/plain": [".txt"] } },
+          ],
+        });
+        try {
+          await idbSet("vocabHandle", STATE.saveHandle);
+        } catch (e) {}
+        await appendLine(STATE.saveHandle, w);
+      }
+
+      // HUD + SFX
+      STATE.savedCount += 1;
+      if (typeof updateSavedHUD === "function") updateSavedHUD();
+      try {
+        saveSfx?.play?.();
+      } catch {}
+      return;
+    } catch (err) {
+      // User canceled or API not usable → fall through to fallback
+      console.warn("Save picker error or canceled; using fallback:", err);
+    }
+  }
+
+  // --- Fallback path: accumulate in memory + offer download link ---
+  if (!STATE.savedWords.has(w)) {
+    STATE.savedWords.add(w);
+    STATE.savedCount += 1;
+    if (typeof updateSavedHUD === "function") updateSavedHUD();
+    if (typeof refreshVocabDownloadLink === "function")
+      refreshVocabDownloadLink();
+    try {
+      saveSfx?.play?.();
+    } catch {}
+  }
 }
 
 function showCopiedToast() {
@@ -694,6 +936,12 @@ window.addEventListener(
     const printable =
       e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
 
+    // If onboarding dialog is open, let the browser handle Enter/Esc; don't intercept
+    const _dlg = document.getElementById("tg-onboard");
+    if (_dlg && _dlg.open) {
+      return;
+    }
+
     if (STATE.shortcutActive) {
       const key = e.key.toLowerCase();
       const mod = e.ctrlKey || e.metaKey;
@@ -715,6 +963,14 @@ window.addEventListener(
       }
 
       // While in the lesson, ignore normal typing keys
+      return;
+    }
+
+    // Ctrl/⌘ + S — save current/lesson word
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      e.stopPropagation();
+      saveCurrentWord();
       return;
     }
 
@@ -752,6 +1008,7 @@ window.addEventListener(
 
 (async function boot() {
   await loadWords();
+  await restoreSavedHandle();
   chooseHero();
   nextWord();
   requestAnimationFrame(update);
