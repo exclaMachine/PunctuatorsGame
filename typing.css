@@ -118,3 +118,30 @@ html,body{ height:100%; margin:0; font-family:Palanquin,system-ui,sans-serif; ba
     text-decoration: none;
   }
   #tg-vocab-download:hover{ text-decoration: underline; }
+
+  /* Saved! toast */
+.tg-saved{
+    position:absolute;
+    left:50%; top:48%;
+    transform: translate(-50%,-50%) rotate(6deg);
+    background: linear-gradient(180deg, #eaffea, #d8ffd8);
+    color:#0b4f0b;
+    font-weight:900;
+    font-size: 36px;
+    line-height:1;
+    padding:.35em .6em;
+    border-radius:14px;
+    border:2px solid #0b4f0b;
+    box-shadow: 0 8px 22px rgba(0,0,0,.2);
+    pointer-events:none;
+    opacity:0;
+  }
+  .tg-saved--anim{
+    animation: tgSavedPop .65s ease-out forwards;
+  }
+  @keyframes tgSavedPop{
+    0%   { transform: translate(-50%,-50%) rotate(6deg) scale(.85); opacity:0; }
+    15%  { transform: translate(-50%,-50%) rotate(6deg) scale(1.08); opacity:1; }
+    60%  { transform: translate(-50%,-68%) rotate(4deg) scale(1.03); opacity:.95; }
+    100% { transform: translate(-50%,-86%) rotate(2deg) scale(1.0);  opacity:0; }
+  }

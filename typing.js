@@ -718,6 +718,7 @@ async function saveCurrentWord() {
       if (typeof updateSavedHUD === "function") updateSavedHUD();
       try {
         saveSfx?.play?.();
+        showSavedToast();
       } catch {}
       return;
     } catch (err) {
@@ -737,6 +738,21 @@ async function saveCurrentWord() {
       saveSfx?.play?.();
     } catch {}
   }
+}
+
+function showSavedToast() {
+  const el = document.getElementById("tg-saved");
+  if (!el) return;
+  el.classList.remove("tg-hidden", "tg-saved--anim");
+  void el.offsetWidth; // restart animation
+  el.classList.add("tg-saved--anim");
+  try {
+    saveSfx.play();
+  } catch {}
+  setTimeout(() => {
+    el.classList.add("tg-hidden");
+    el.classList.remove("tg-saved--anim");
+  }, 700);
 }
 
 function showCopiedToast() {
