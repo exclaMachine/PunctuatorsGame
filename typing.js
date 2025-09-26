@@ -503,6 +503,21 @@ const STATE = {
   lessonWord: "", // (from your earlier fix)
 };
 
+Object.assign(STATE, {
+  findLesson: {
+    active: false, // lesson running
+    finding: false, // player has pressed Ctrl/⌘+F and is typing
+    target: "", // the word to find (current word)
+    query: "", // player's find input
+    copies: 0, // how many hidden copies are in the jumble
+    area: { x: 0, y: 0, w: 0, h: 0 }, // draw region for the jumble
+    lines: [], // array of row strings (monospace layout)
+    charWidth: 0, // monospace character width in pixels
+    lineHeight: 22, // row step
+    font: '600 18px ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+  },
+});
+
 async function loadWords() {
   try {
     const txt = await fetch("./2of12.txt", { cache: "no-store" }).then((r) =>
@@ -740,6 +755,217 @@ async function saveCurrentWord() {
   }
 }
 
+function showFoundToast(text) {
+  const el = document.getElementById("tg-found");
+  if (!el) return;
+  el.textContent = text;
+  el.classList.remove("tg-hidden", "tg-found--anim");
+  void el.offsetWidth;
+  el.classList.add("tg-found--anim");
+  setTimeout(() => {
+    el.classList.add("tg-hidden");
+    el.classList.remove("tg-found--anim");
+  }, 700);
+}
+function showNoMatchToast() {
+  showFoundToast("No match");
+}
+
+function randInt(min, max) {
+  return ((Math.random() * (max - min + 1)) | 0) + min;
+}
+
+function startFindLesson() {
+  const FL = STATE.findLesson;
+  FL.active = true;
+  FL.finding = false;
+  FL.target = STATE.current;
+  FL.query = "";
+  FL.copies = ((Math.random() * 3) | 0) + 2; // 2–4
+
+  const margin = 24;
+  FL.area.x = margin;
+  FL.area.w = CANVAS.clientWidth - margin * 2;
+  FL.area.y = STATE.bufferY + 60;
+  FL.area.h = Math.min(260, CANVAS.clientHeight - FL.area.y - 40);
+
+  CTX.save();
+  CTX.font = FL.font;
+  FL.charWidth = CTX.measureText("M").width;
+  CTX.restore();
+
+  const cols = Math.max(10, Math.floor(FL.area.w / FL.charWidth) - 1);
+  const rows = Math.max(4, Math.floor(FL.area.h / FL.lineHeight));
+  const alphabet =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:,.<>/?";
+
+  FL.lines = new Array(rows).fill("").map(() => {
+    let s = "";
+    for (let i = 0; i < cols; i++)
+      s +=
+        Math.random() < 0.08
+          ? " "
+          : alphabet[(Math.random() * alphabet.length) | 0];
+    return s;
+  });
+
+  const tlen = FL.target.length,
+    used = new Set();
+  for (let c = 0; c < FL.copies; c++) {
+    const r = (Math.random() * rows) | 0;
+    const col = (Math.random() * Math.max(1, cols - tlen)) | 0;
+    const key = r + ":" + col;
+    if (used.has(key)) {
+      c--;
+      continue;
+    }
+    used.add(key);
+    const line = FL.lines[r];
+    FL.lines[r] = line.slice(0, col) + FL.target + line.slice(col + tlen);
+  }
+  FL.totalMatches = countOccurrences(FL.lines, FL.target);
+
+  const box = document.getElementById("tg-find");
+  if (box) box.classList.remove("tg-hidden");
+
+  // ensure the input is hidden until Ctrl/⌘+F
+  const input = document.getElementById("tg-find-input");
+  if (input) {
+    input.value = "";
+    input.classList.add("tg-hidden");
+  }
+
+  STATE.canShoot = false; // pause normal completion during the lesson
+  STATE.advanceLock = false; // safety
+}
+
+function endFindLesson(success = true) {
+  const FL = STATE.findLesson;
+  const box = document.getElementById("tg-find");
+  if (box) box.classList.add("tg-hidden");
+
+  const input = document.getElementById("tg-find-input");
+  if (input) {
+    input.blur();
+    input.value = "";
+    input.classList.add("tg-hidden");
+  }
+
+  const found = countOccurrences(FL.lines, FL.target);
+
+  // reset lesson state
+  FL.active = false;
+  FL.finding = false;
+  FL.query = "";
+  FL.lines = [];
+  FL.totalMatches = found;
+
+  // re-enable core gameplay and advance to a fresh word
+  STATE.buffer = "";
+  STATE.canShoot = true;
+  STATE.advanceLock = false;
+  if (typeof projectile !== "undefined") projectile = null;
+
+  showFoundToast(`${found} found`);
+  nextWord(); // pick a brand-new word right away
+}
+
+function initFindInput() {
+  const input = document.getElementById("tg-find-input");
+  if (!input) return;
+  input.addEventListener("input", () => {
+    STATE.findLesson.query = input.value;
+  });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      // success when query equals the word (case-insensitive)
+      if (
+        STATE.findLesson.query.trim().toLowerCase() ===
+        STATE.findLesson.target.toLowerCase()
+      ) {
+        endFindLesson(true);
+      } else {
+        showNoMatchToast();
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      // cancel typing but keep the lesson visible
+      input.blur();
+      input.classList.add("tg-hidden");
+      STATE.findLesson.finding = false;
+      STATE.findLesson.query = "";
+    }
+  });
+}
+
+// Draw the jumble box + highlights
+function drawFindLesson() {
+  const FL = STATE.findLesson;
+  if (!FL.active) return;
+
+  // Panel
+  CTX.save();
+  CTX.fillStyle = "#f7f7f7";
+  CTX.fillRect(FL.area.x, FL.area.y, FL.area.w, FL.area.h);
+  CTX.strokeStyle = "#ddd";
+  CTX.strokeRect(FL.area.x, FL.area.y, FL.area.w, FL.area.h);
+
+  // Text rows
+  CTX.font = FL.font;
+  CTX.fillStyle = "#222";
+  CTX.textAlign = "left";
+  CTX.textBaseline = "top";
+  for (let r = 0; r < FL.lines.length; r++) {
+    const y = FL.area.y + 6 + r * FL.lineHeight;
+    CTX.fillText(FL.lines[r], FL.area.x + 8, y);
+  }
+
+  // Highlights for current query
+  const q = FL.query.trim();
+  if (q) {
+    const tlen = q.length;
+    for (let r = 0; r < FL.lines.length; r++) {
+      const line = FL.lines[r];
+      let idx = 0;
+      while ((idx = line.toLowerCase().indexOf(q.toLowerCase(), idx)) !== -1) {
+        const x = FL.area.x + 8 + idx * FL.charWidth;
+        const y = FL.area.y + 6 + r * FL.lineHeight;
+        CTX.fillStyle =
+          q.toLowerCase() === FL.target.toLowerCase()
+            ? "rgba(255,235,59,0.85)" // full-strength highlight when exact match
+            : "rgba(255,235,59,0.5)"; // lighter while typing
+        CTX.fillRect(x - 2, y - 2, tlen * FL.charWidth + 4, FL.lineHeight);
+        idx += tlen;
+      }
+    }
+  }
+
+  // Tip / query indicator
+  CTX.fillStyle = "rgba(0,0,0,.55)";
+  CTX.font = "600 14px Palanquin, sans-serif";
+  CTX.textAlign = "right";
+  const tip = FL.finding
+    ? "Find: " + (FL.query || "…")
+    : "Press Ctrl/⌘+F to start finding";
+  CTX.fillText(tip, FL.area.x + FL.area.w - 8, FL.area.y + FL.area.h - 20);
+  CTX.restore();
+}
+
+function countOccurrences(lines, needle) {
+  const n = (needle || "").toLowerCase();
+  let count = 0;
+  for (const line of lines || []) {
+    let idx = 0,
+      low = line.toLowerCase();
+    while ((idx = low.indexOf(n, idx)) !== -1) {
+      count++;
+      idx += n.length;
+    }
+  }
+  return count;
+}
+
 function showSavedToast() {
   const el = document.getElementById("tg-saved");
   if (!el) return;
@@ -797,6 +1023,8 @@ function nextWord() {
   STATE.buffer = "";
   HUD.count.textContent = ++STATE.count;
   STATE.canShoot = true;
+  // 30% chance to run a Find lesson for this word (and skip normal firing until done)
+  if (Math.random() < 0.3) startFindLesson();
 }
 
 function drawWordAndBuffer() {
@@ -871,6 +1099,8 @@ function update() {
   CTX.fillRect(0, 0, CANVAS.clientWidth, CANVAS.clientHeight);
 
   drawWordAndBuffer();
+  drawFindLesson();
+
   drawShortcutSlots();
 
   // second-sprite during shot
@@ -952,9 +1182,33 @@ window.addEventListener(
     const printable =
       e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
 
-    // If onboarding dialog is open, let the browser handle Enter/Esc; don't intercept
-    const _dlg = document.getElementById("tg-onboard");
-    if (_dlg && _dlg.open) {
+    // === FIND LESSON INPUT FLOW ===
+    if (STATE.findLesson.active) {
+      const FL = STATE.findLesson;
+      const input = document.getElementById("tg-find-input");
+      const mod = e.ctrlKey || e.metaKey;
+      const key = e.key;
+
+      // When the input has focus, let it handle everything
+      if (input && document.activeElement === input) return;
+
+      // Ctrl/⌘ + F → show the input, focus it, start capturing
+      if (mod && key.toLowerCase() === "f") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (input) {
+          input.classList.remove("tg-hidden");
+          input.value = "";
+          input.focus();
+          FL.finding = true;
+          FL.query = "";
+        }
+        return;
+      }
+
+      // Swallow other keys while the lesson is visible
+      e.preventDefault();
+      e.stopPropagation();
       return;
     }
 
@@ -1025,6 +1279,7 @@ window.addEventListener(
 (async function boot() {
   await loadWords();
   await restoreSavedHandle();
+  initFindInput();
   chooseHero();
   nextWord();
   requestAnimationFrame(update);
