@@ -183,3 +183,24 @@ html,body{ height:100%; margin:0; font-family:Palanquin,system-ui,sans-serif; ba
     60%  { transform: translate(-50%,-68%) rotate(-4deg) scale(1.03); opacity:.95; }
     100% { transform: translate(-50%,-86%) rotate(-3deg) scale(1.0);  opacity:0; }
   }
+
+  /* Shortcuts dialog */
+#tg-help { border: none; padding: 0; background: transparent; }
+#tg-help::backdrop { background: rgba(0,0,0,.45); }
+
+.tg-help__card{
+  width: min(560px, 92vw);
+  background: #12141a;
+  color: #fff;
+  border: 1px solid #222;
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: 0 10px 36px rgba(0,0,0,.35);
+}
+.tg-help__list{ margin: 8px 0 14px 20px; line-height: 1.6; }
+.tg-help__list .muted{ opacity: .7; font-style: italic; }
+.tg-help__btn{
+  background: #4f7cff; color:#fff; border:none; padding:10px 14px;
+  border-radius:10px; cursor:pointer;
+}
+.tg-help__btn:hover{ filter:brightness(1.1); }

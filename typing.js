@@ -1042,6 +1042,32 @@ function drawWordAndBuffer() {
   CTX.restore();
 }
 
+function openShortcutsDialog() {
+  const dlg = document.getElementById("tg-help");
+  if (!dlg || !(dlg instanceof HTMLDialogElement)) return;
+  dlg.showModal();
+  const btn = document.getElementById("tg-help-close");
+  if (btn) setTimeout(() => btn.focus(), 0);
+
+  // click outside to close
+  dlg.addEventListener(
+    "click",
+    function onClick(e) {
+      const card = dlg.querySelector(".tg-help__card");
+      const r = card.getBoundingClientRect();
+      if (
+        e.clientX < r.left ||
+        e.clientX > r.right ||
+        e.clientY < r.top ||
+        e.clientY > r.bottom
+      ) {
+        dlg.close("ok");
+      }
+    },
+    { once: true }
+  );
+}
+
 function drawShortcutSlots() {
   if (!STATE.shortcutActive) return;
 
@@ -1182,6 +1208,26 @@ window.addEventListener(
     const printable =
       e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
 
+    // If shortcuts dialog is open, let it handle keys
+    const _help = document.getElementById("tg-help");
+    if (_help instanceof HTMLDialogElement && _help.open) {
+      return;
+    }
+
+    // Open shortcuts dialog on ? (Shift+/) OR Ctrl/Cmd + /
+    const isSlash = e.key === "/" || e.key === "?";
+    const mod = e.ctrlKey || e.metaKey;
+    if (
+      (isSlash && e.shiftKey && !e.altKey && !mod) || // presses '?' (Shift + /)
+      (isSlash && mod && !e.altKey)
+    ) {
+      // Ctrl+/ or Cmd+/
+      e.preventDefault();
+      e.stopPropagation();
+      openShortcutsDialog();
+      return;
+    }
+
     // === FIND LESSON INPUT FLOW ===
     if (STATE.findLesson.active) {
       const FL = STATE.findLesson;
@@ -1266,10 +1312,10 @@ window.addEventListener(
       submitBuffer();
       return;
     }
-    if (e.key === "Escape") {
-      STATE.paused = !STATE.paused;
-      if (!STATE.paused) requestAnimationFrame(update);
-    }
+    // if (e.key === "Escape") {
+    //   STATE.paused = !STATE.paused;
+    //   if (!STATE.paused) requestAnimationFrame(update);
+    // }
   },
   true
 );
