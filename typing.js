@@ -14,6 +14,7 @@ const saveSfx = new Howl({
   rate: 1.15,
   volume: 0.7,
 });
+const slashSfx = new Howl({ src: ["./sounds/whoosh.mp3"], volume: 0.9 });
 
 function fitCanvas() {
   const cssW = CANVAS.clientWidth,
@@ -517,6 +518,19 @@ Object.assign(STATE, {
     font: '600 18px ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
   },
 });
+Object.assign(STATE, {
+  cutLesson: {
+    active: false,
+    words: [], // falling words [{text,x,y,vy,w}]
+    targetCuts: 5, // how many to cut to finish
+    cutsMade: 0,
+    spawnEveryMs: 800, // spawn cadence
+    lastSpawn: 0,
+    maxOnScreen: 6, // cap concurrent words
+    area: { x: 0, y: 0, w: 0, h: 0 }, // draw bounds
+    font: "700 26px Palanquin, sans-serif",
+  },
+});
 
 async function loadWords() {
   try {
@@ -538,6 +552,118 @@ async function loadWords() {
       "oracle",
     ];
   }
+}
+function updateCutProgress() {
+  const el = document.getElementById("tg-cut-progress");
+  if (!el) return;
+  const CL = STATE.cutLesson;
+  el.textContent = `Cuts: ${CL.cutsMade}/${CL.targetCuts}`;
+}
+
+function spawnCutWord() {
+  const CL = STATE.cutLesson;
+  const txt = STATE.words[(Math.random() * STATE.words.length) | 0] || "word";
+  // monospace not required here; measure with current font
+  CTX.save();
+  CTX.font = CL.font;
+  const w = CTX.measureText(txt).width;
+  CTX.restore();
+
+  const pad = 20;
+  const x =
+    CL.area.x + pad + Math.random() * Math.max(20, CL.area.w - w - pad * 2);
+  CL.words.push({
+    text: txt,
+    x,
+    y: CL.area.y - 10, // enter from just above top of area
+    vy: 2.4 + Math.random() * 1.6,
+    w,
+  });
+}
+
+function startCutLesson() {
+  const CL = STATE.cutLesson;
+  CL.active = true;
+  CL.words = [];
+  CL.cutsMade = 0;
+  CL.lastSpawn = performance.now();
+
+  // falling zone: below your buffer line
+  const margin = 24;
+  CL.area.x = margin;
+  CL.area.w = CANVAS.clientWidth - margin * 2;
+  CL.area.y = STATE.bufferY + 60;
+  CL.area.h = Math.min(260, CANVAS.clientHeight - CL.area.y - 40);
+
+  // show prompt
+  const box = document.getElementById("tg-cut");
+  if (box) box.classList.remove("tg-hidden");
+  updateCutProgress();
+
+  // pause normal completion during the lesson
+  STATE.canShoot = false;
+  STATE.advanceLock = false;
+}
+
+function endCutLesson() {
+  const CL = STATE.cutLesson;
+  const box = document.getElementById("tg-cut");
+  if (box) box.classList.add("tg-hidden");
+
+  CL.active = false;
+  CL.words = [];
+
+  // re-enable core gameplay & advance to a fresh word
+  STATE.buffer = "";
+  STATE.canShoot = true;
+  STATE.advanceLock = false;
+  if (typeof projectile !== "undefined") projectile = null;
+
+  // toast (reuse your “Saved!”/“Copied!” vibe)
+  showFoundToast(`${CL.targetCuts} cut!`);
+  nextWord();
+}
+
+function drawCutLesson() {
+  const CL = STATE.cutLesson;
+  if (!CL.active) return;
+
+  // panel background (subtle)
+  CTX.save();
+  CTX.fillStyle = "#f7f7f7";
+  CTX.fillRect(CL.area.x, CL.area.y, CL.area.w, CL.area.h);
+  CTX.strokeStyle = "#ddd";
+  CTX.strokeRect(CL.area.x, CL.area.y, CL.area.w, CL.area.h);
+
+  // update spawn
+  const now = performance.now();
+  if (
+    CL.words.length < CL.maxOnScreen &&
+    now - CL.lastSpawn >= CL.spawnEveryMs
+  ) {
+    spawnCutWord();
+    CL.lastSpawn = now;
+  }
+
+  // advance & draw words
+  CTX.font = CL.font;
+  CTX.fillStyle = "#111";
+  CTX.textBaseline = "top";
+  CTX.textAlign = "left";
+
+  for (let i = CL.words.length - 1; i >= 0; i--) {
+    const w = CL.words[i];
+    w.y += w.vy;
+
+    // if it passes the bottom, recycle it (MVP: no fail state)
+    if (w.y > CL.area.y + CL.area.h) {
+      CL.words.splice(i, 1);
+      continue;
+    }
+
+    CTX.fillText(w.text, w.x, w.y);
+  }
+  CTX.restore();
 }
 
 function chooseHero() {
@@ -1025,6 +1151,10 @@ function nextWord() {
   STATE.canShoot = true;
   // 30% chance to run a Find lesson for this word (and skip normal firing until done)
   if (Math.random() < 0.3) startFindLesson();
+  // Kick off a Cut lesson ~25% of the time (and only if no other lesson is active)
+  if (!STATE.findLesson?.active && Math.random() < 0.25) {
+    startCutLesson();
+  }
 }
 
 function drawWordAndBuffer() {
@@ -1126,7 +1256,7 @@ function update() {
 
   drawWordAndBuffer();
   drawFindLesson();
-
+  drawCutLesson();
   drawShortcutSlots();
 
   // second-sprite during shot
@@ -1287,6 +1417,60 @@ window.addEventListener(
       e.preventDefault();
       e.stopPropagation();
       saveCurrentWord();
+      return;
+    }
+
+    // === CUT LESSON INPUT ===
+    if (STATE.cutLesson.active) {
+      const CL = STATE.cutLesson;
+      const mod = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+
+      // Only Ctrl/⌘+X performs a cut; swallow other keys
+      if (mod && key === "x") {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (CL.words.length) {
+          // pick the lowest word (closest to failing) to reward timing
+          let idx = 0,
+            bestY = -Infinity;
+          for (let i = 0; i < CL.words.length; i++) {
+            if (CL.words[i].y > bestY) {
+              bestY = CL.words[i].y;
+              idx = i;
+            }
+          }
+          const hit = CL.words.splice(idx, 1)[0];
+
+          // SFX + quick slash accent over the cut word
+          try {
+            slashSfx.play();
+          } catch {}
+          // quick visual slash
+          CTX.save();
+          CTX.strokeStyle = "#9cf";
+          CTX.lineWidth = 5;
+          CTX.beginPath();
+          CTX.moveTo(hit.x - 30, hit.y + 10);
+          CTX.lineTo(hit.x + hit.w + 30, hit.y - 20);
+          CTX.stroke();
+          CTX.restore();
+
+          CL.cutsMade += 1;
+          updateCutProgress();
+
+          if (CL.cutsMade >= CL.targetCuts) {
+            // tiny delay so the last slash is visible
+            setTimeout(endCutLesson, 180);
+          }
+        }
+        return;
+      }
+
+      // swallow everything else during the lesson
+      e.preventDefault();
+      e.stopPropagation();
       return;
     }
 
