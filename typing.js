@@ -529,6 +529,12 @@ Object.assign(STATE, {
     maxOnScreen: 6, // cap concurrent words
     area: { x: 0, y: 0, w: 0, h: 0 }, // draw bounds
     font: "700 26px Palanquin, sans-serif",
+    phase: "watch", // "watch" (waiting to cut target) -> "paste" (waiting to paste)
+    clipboard: "", // holds the cut target after a correct cut
+    target: "", // cache of the current word for this lesson
+    queue: [], // words scheduled to spawn (staggered)
+    spawnGapMs: 280, // base gap between spawns
+    spawnJitterMs: 150, // ± jitter per spawn
   },
 });
 
@@ -555,40 +561,88 @@ async function loadWords() {
 }
 function updateCutProgress() {
   const el = document.getElementById("tg-cut-progress");
-  if (!el) return;
+  const t = document.getElementById("tg-cut-target");
   const CL = STATE.cutLesson;
-  el.textContent = `Cuts: ${CL.cutsMade}/${CL.targetCuts}`;
+  if (t) t.textContent = CL.target || STATE.current || "";
+  if (!el) return;
+  el.textContent =
+    CL.phase === "watch"
+      ? "Step 1: Cut the target when it appears (Ctrl/⌘+X)"
+      : "Step 2: Paste it into the input (Ctrl/⌘+V)";
 }
 
-function spawnCutWord() {
+function buildCutQueue() {
   const CL = STATE.cutLesson;
-  const txt = STATE.words[(Math.random() * STATE.words.length) | 0] || "word";
-  // monospace not required here; measure with current font
+  const specs = [];
+  const pad = 20;
+
+  // measure with lesson font
   CTX.save();
   CTX.font = CL.font;
-  const w = CTX.measureText(txt).width;
+  const measure = (s) => CTX.measureText(s).width;
+
+  // 5 random words
+  for (let i = 0; i < 5; i++) {
+    const txt = STATE.words[(Math.random() * STATE.words.length) | 0] || "word";
+    const w = measure(txt);
+    const x =
+      CL.area.x + pad + Math.random() * Math.max(20, CL.area.w - w - pad * 2);
+    const y = CL.area.y - (20 + Math.random() * 120); // staggered entry height
+    specs.push({
+      text: txt,
+      x,
+      y,
+      vy: 2.2 + Math.random() * 1.6,
+      w,
+      isTarget: false,
+    });
+  }
+
+  // 1 target (current word)
+  const target = CL.target || STATE.current;
+  const tw = measure(target);
+  const tx =
+    CL.area.x + pad + Math.random() * Math.max(20, CL.area.w - tw - pad * 2);
+  const ty = CL.area.y - (20 + Math.random() * 120);
+  specs.push({
+    text: target,
+    x: tx,
+    y: ty,
+    vy: 2.2 + Math.random() * 1.6,
+    w: tw,
+    isTarget: true,
+  });
+
   CTX.restore();
 
-  const pad = 20;
-  const x =
-    CL.area.x + pad + Math.random() * Math.max(20, CL.area.w - w - pad * 2);
-  CL.words.push({
-    text: txt,
-    x,
-    y: CL.area.y - 10, // enter from just above top of area
-    vy: 2.4 + Math.random() * 1.6,
-    w,
-  });
+  // shuffle order so target arrival is unpredictable
+  for (let i = specs.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    [specs[i], specs[j]] = [specs[j], specs[i]];
+  }
+
+  // assign spawn times
+  const now = performance.now();
+  const q = [];
+  for (let i = 0; i < specs.length; i++) {
+    const jitter = (Math.random() * 2 - 1) * STATE.cutLesson.spawnJitterMs; // ± jitter
+    q.push({
+      ...specs[i],
+      spawnAt: now + i * STATE.cutLesson.spawnGapMs + jitter,
+    });
+  }
+  return q;
 }
 
 function startCutLesson() {
   const CL = STATE.cutLesson;
   CL.active = true;
+  CL.phase = "watch";
+  CL.clipboard = "";
+  CL.target = STATE.current; // lock current word
   CL.words = [];
-  CL.cutsMade = 0;
-  CL.lastSpawn = performance.now();
+  CL.queue = []; // << NEW
 
-  // falling zone: below your buffer line
   const margin = 24;
   CL.area.x = margin;
   CL.area.w = CANVAS.clientWidth - margin * 2;
@@ -600,7 +654,10 @@ function startCutLesson() {
   if (box) box.classList.remove("tg-hidden");
   updateCutProgress();
 
-  // pause normal completion during the lesson
+  // build staggered queue (6 items)
+  CL.queue = buildCutQueue(); // << NEW
+
+  // pause normal completion
   STATE.canShoot = false;
   STATE.advanceLock = false;
 }
@@ -610,17 +667,16 @@ function endCutLesson() {
   const box = document.getElementById("tg-cut");
   if (box) box.classList.add("tg-hidden");
 
+  // clear lesson-specific state
   CL.active = false;
+  CL.phase = "watch";
+  CL.clipboard = "";
+  CL.target = "";
   CL.words = [];
 
-  // re-enable core gameplay & advance to a fresh word
-  STATE.buffer = "";
+  // re-enable gameplay (player now has pasted the word; they can press Enter to shoot)
   STATE.canShoot = true;
   STATE.advanceLock = false;
-  if (typeof projectile !== "undefined") projectile = null;
-
-  // toast (reuse your “Saved!”/“Copied!” vibe)
-  showFoundToast(`${CL.targetCuts} cut!`);
   nextWord();
 }
 
@@ -628,24 +684,20 @@ function drawCutLesson() {
   const CL = STATE.cutLesson;
   if (!CL.active) return;
 
-  // panel background (subtle)
+  // panel
   CTX.save();
   CTX.fillStyle = "#f7f7f7";
   CTX.fillRect(CL.area.x, CL.area.y, CL.area.w, CL.area.h);
   CTX.strokeStyle = "#ddd";
   CTX.strokeRect(CL.area.x, CL.area.y, CL.area.w, CL.area.h);
 
-  // update spawn
+  // STAGGERED SPAWN: move due items from queue -> on-screen words
   const now = performance.now();
-  if (
-    CL.words.length < CL.maxOnScreen &&
-    now - CL.lastSpawn >= CL.spawnEveryMs
-  ) {
-    spawnCutWord();
-    CL.lastSpawn = now;
+  while (CL.queue.length && CL.queue[0].spawnAt <= now) {
+    CL.words.push(CL.queue.shift());
   }
 
-  // advance & draw words
+  // advance words
   CTX.font = CL.font;
   CTX.fillStyle = "#111";
   CTX.textBaseline = "top";
@@ -655,14 +707,22 @@ function drawCutLesson() {
     const w = CL.words[i];
     w.y += w.vy;
 
-    // if it passes the bottom, recycle it (MVP: no fail state)
     if (w.y > CL.area.y + CL.area.h) {
       CL.words.splice(i, 1);
-      continue;
+    } else {
+      CTX.fillText(w.text, w.x, w.y);
     }
-
-    CTX.fillText(w.text, w.x, w.y);
   }
+
+  // If target is gone and no target is queued → rebuild a fresh staggered queue
+  if (CL.phase === "watch") {
+    const targetOnScreen = CL.words.some((w) => w.isTarget);
+    const targetPending = CL.queue.some((w) => w.isTarget);
+    if (!targetOnScreen && !targetPending) {
+      CL.queue = buildCutQueue();
+    }
+  }
+
   CTX.restore();
 }
 
@@ -1426,28 +1486,32 @@ window.addEventListener(
       const mod = e.ctrlKey || e.metaKey;
       const key = e.key.toLowerCase();
 
-      // Only Ctrl/⌘+X performs a cut; swallow other keys
+      // CUT: only valid in "watch" phase and only when cutting the TARGET
       if (mod && key === "x") {
         e.preventDefault();
         e.stopPropagation();
 
-        if (CL.words.length) {
-          // pick the lowest word (closest to failing) to reward timing
-          let idx = 0,
-            bestY = -Infinity;
-          for (let i = 0; i < CL.words.length; i++) {
-            if (CL.words[i].y > bestY) {
-              bestY = CL.words[i].y;
-              idx = i;
-            }
-          }
-          const hit = CL.words.splice(idx, 1)[0];
+        if (CL.phase !== "watch") return;
 
-          // SFX + quick slash accent over the cut word
+        // find any visible TARGET word (pick the lowest so timing matters)
+        const targetLC = (CL.target || "").toLowerCase();
+        let idx = -1,
+          bestY = -Infinity;
+        for (let i = 0; i < CL.words.length; i++) {
+          const w = CL.words[i];
+          if (w.text.toLowerCase() === targetLC && w.y > bestY) {
+            bestY = w.y;
+            idx = i;
+          }
+        }
+
+        if (idx >= 0) {
+          const hit = CL.words.splice(idx, 1)[0];
           try {
             slashSfx.play();
           } catch {}
-          // quick visual slash
+
+          // quick visual slash accent
           CTX.save();
           CTX.strokeStyle = "#9cf";
           CTX.lineWidth = 5;
@@ -1457,18 +1521,34 @@ window.addEventListener(
           CTX.stroke();
           CTX.restore();
 
-          CL.cutsMade += 1;
+          // move to paste phase with the target on our clipboard
+          CL.clipboard = CL.target;
+          CL.phase = "paste";
           updateCutProgress();
-
-          if (CL.cutsMade >= CL.targetCuts) {
-            // tiny delay so the last slash is visible
-            setTimeout(endCutLesson, 180);
-          }
+          showFoundToast("Cut! Now press Ctrl/⌘+V");
+        } else {
+          // wrong word (no target present)
+          showFoundToast("Cut the target word!");
         }
         return;
       }
 
-      // swallow everything else during the lesson
+      // PASTE: only valid in "paste" phase
+      if (mod && key === "v") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (CL.phase !== "paste" || !CL.clipboard) return;
+
+        // paste into the typed buffer (replace whatever is there)
+        STATE.buffer = CL.clipboard;
+
+        showFoundToast("Pasted!");
+        // finish lesson; user can now press Enter/Space to shoot
+        setTimeout(endCutLesson, 320);
+        return;
+      }
+
+      // Swallow all other keys while lesson is active
       e.preventDefault();
       e.stopPropagation();
       return;
