@@ -538,6 +538,19 @@ Object.assign(STATE, {
   },
 });
 
+Object.assign(STATE, {
+  selectAllLesson: {
+    active: false,
+    phase: "select", // "select" -> "delete"
+    area: { x: 0, y: 0, w: 0, h: 0 },
+    lines: [], // rows of text covering the screen
+    font: '600 18px ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+    lineHeight: 22,
+    charWidth: 0,
+    selected: false, // turns on the blue highlight overlay
+  },
+});
+
 async function loadWords() {
   try {
     const txt = await fetch("./2of12.txt", { cache: "no-store" }).then((r) =>
@@ -723,6 +736,120 @@ function drawCutLesson() {
     }
   }
 
+  CTX.restore();
+}
+
+function updateSelectAllProgress() {
+  const el = document.getElementById("tg-select-progress");
+  if (!el) return;
+  const SL = STATE.selectAllLesson;
+  el.textContent =
+    SL.phase === "select"
+      ? "Step 1: Press Ctrl/⌘+A to select everything"
+      : "Step 2: Press Delete/Backspace to clear";
+}
+
+function startSelectAllLesson() {
+  const SL = STATE.selectAllLesson;
+  SL.active = true;
+  SL.phase = "select";
+  SL.selected = false;
+  SL.lines = [];
+
+  // Cover nearly the whole canvas (hide the target word)
+  const margin = 10;
+  SL.area.x = margin;
+  SL.area.y = margin;
+  SL.area.w = CANVAS.clientWidth - margin * 2;
+  SL.area.h = CANVAS.clientHeight - margin * 2;
+
+  // monospace metrics
+  CTX.save();
+  CTX.font = SL.font;
+  SL.charWidth = CTX.measureText("M").width;
+  CTX.restore();
+
+  // build dense “wall” of words
+  const cols = Math.max(10, Math.floor(SL.area.w / SL.charWidth) - 1);
+  const rows = Math.max(8, Math.floor(SL.area.h / SL.lineHeight));
+  const pool = STATE.words.length
+    ? STATE.words
+    : ["syntax", "vector", "oracle", "grammar", "palindrome", "punctuate"];
+
+  SL.lines = new Array(rows).fill("").map(() => {
+    // create a row of random words with spaces
+    let row = "";
+    while (row.length < cols) {
+      const w = pool[(Math.random() * pool.length) | 0];
+      if (row.length + w.length + 1 > cols) break;
+      row += (row ? " " : "") + w;
+    }
+    // pad with random chars if short
+    while (row.length < cols) row += Math.random() < 0.1 ? " " : "#";
+    return row.slice(0, cols);
+  });
+
+  // show the prompt
+  const box = document.getElementById("tg-select");
+  if (box) box.classList.remove("tg-hidden");
+  updateSelectAllProgress();
+
+  // pause normal completion while lesson runs
+  STATE.canShoot = false;
+  STATE.advanceLock = false;
+}
+
+function endSelectAllLesson() {
+  const SL = STATE.selectAllLesson;
+  const box = document.getElementById("tg-select");
+  if (box) box.classList.add("tg-hidden");
+
+  SL.active = false;
+  SL.lines = [];
+  SL.selected = false;
+  SL.phase = "select";
+
+  // resume normal play; now the word is visible again
+  STATE.canShoot = true;
+  STATE.advanceLock = false;
+
+  // small confirmation
+  showFoundToast("Cleared!");
+}
+
+function drawSelectAllLesson() {
+  const SL = STATE.selectAllLesson;
+  if (!SL.active) return;
+
+  // panel fill
+  CTX.save();
+  CTX.fillStyle = "#f0f0f0";
+  CTX.fillRect(SL.area.x, SL.area.y, SL.area.w, SL.area.h);
+  CTX.strokeStyle = "#ddd";
+  CTX.strokeRect(SL.area.x, SL.area.y, SL.area.w, SL.area.h);
+
+  // rows
+  CTX.font = SL.font;
+  CTX.fillStyle = "#222";
+  CTX.textAlign = "left";
+  CTX.textBaseline = "top";
+  const left = SL.area.x + 8;
+  for (let r = 0; r < SL.lines.length; r++) {
+    const y = SL.area.y + 6 + r * SL.lineHeight;
+    CTX.fillText(SL.lines[r], left, y);
+  }
+
+  // “selected” blue overlay when Ctrl/⌘+A is pressed
+  if (SL.selected) {
+    CTX.globalAlpha = 0.35;
+    CTX.fillStyle = "#9cc3ff";
+    CTX.fillRect(SL.area.x, SL.area.y, SL.area.w, SL.area.h);
+    CTX.globalAlpha = 1;
+    // subtle border
+    CTX.strokeStyle = "#3a78ff";
+    CTX.lineWidth = 3;
+    CTX.strokeRect(SL.area.x + 2, SL.area.y + 2, SL.area.w - 4, SL.area.h - 4);
+  }
   CTX.restore();
 }
 
@@ -1210,10 +1337,18 @@ function nextWord() {
   HUD.count.textContent = ++STATE.count;
   STATE.canShoot = true;
   // 30% chance to run a Find lesson for this word (and skip normal firing until done)
-  if (Math.random() < 0.3) startFindLesson();
+  if (Math.random() < 0.2) startFindLesson();
   // Kick off a Cut lesson ~25% of the time (and only if no other lesson is active)
   if (!STATE.findLesson?.active && Math.random() < 0.25) {
     startCutLesson();
+  }
+  // Example trigger ~20% of the time, only if no other lesson is running
+  if (
+    !STATE.findLesson?.active &&
+    !STATE.cutLesson?.active &&
+    Math.random() < 0.4
+  ) {
+    startSelectAllLesson();
   }
 }
 
@@ -1318,6 +1453,7 @@ function update() {
   drawFindLesson();
   drawCutLesson();
   drawShortcutSlots();
+  drawSelectAllLesson();
 
   // second-sprite during shot
   if (hero) {
@@ -1477,6 +1613,44 @@ window.addEventListener(
       e.preventDefault();
       e.stopPropagation();
       saveCurrentWord();
+      return;
+    }
+
+    // === SELECT-ALL LESSON INPUT ===
+    if (STATE.selectAllLesson.active) {
+      const SL = STATE.selectAllLesson;
+      const mod = e.ctrlKey || e.metaKey;
+      const key = e.key;
+
+      // Step 1: Ctrl/⌘ + A → mark as selected
+      if (mod && key.toLowerCase() === "a") {
+        e.preventDefault();
+        e.stopPropagation();
+        SL.selected = true;
+        SL.phase = "delete";
+        updateSelectAllProgress();
+        try {
+          copySfx.play();
+        } catch {} // click/confirm sound
+        showFoundToast("Selected!");
+        return;
+      }
+
+      // Step 2: Delete / Backspace → clear the overlay
+      if (key === "Delete" || key === "Backspace") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (SL.phase === "delete" && SL.selected) {
+          endSelectAllLesson();
+        } else {
+          showFoundToast("Press Ctrl/⌘+A first");
+        }
+        return;
+      }
+
+      // swallow everything else while the lesson is visible
+      e.preventDefault();
+      e.stopPropagation();
       return;
     }
 
