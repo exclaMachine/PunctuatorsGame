@@ -1360,7 +1360,7 @@ function drawWordAndBuffer() {
   CTX.textBaseline = "middle";
   CTX.font = "700 48px Palanquin, sans-serif";
   CTX.fillText(STATE.current, cx, STATE.wordY);
-  CTX.font = "600 26px Palanquin, sans-serif";
+  CTX.font = "600 48px Palanquin, sans-serif";
   CTX.globalAlpha = 0.9;
   CTX.fillText(STATE.buffer || "…", cx, STATE.bufferY);
   CTX.globalAlpha = 1;
