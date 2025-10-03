@@ -71,6 +71,26 @@ let capVertPairs = {
   x: "x",
 };
 
+//can use lowercase and uppercase and type in spongebob ex. hElLo yOu
+let capHorizPairs = {
+  a: "a",
+  b: "d",
+  d: "b",
+  h: "h",
+  i: "i",
+  l: "l",
+  m: "m",
+  o: "o",
+  p: "q",
+  q: "p",
+  t: "t",
+  u: "u",
+  v: "v",
+  w: "w",
+  x: "x",
+  y: "y",
+};
+
 let roundedLetterPairs = {
   a: "r", //A -> R
   d: "o", //D -> O
@@ -345,7 +365,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         alteredWord = RoundLetters(word, horPairs, data);
       }
       if (typeOfJSFunction === "sideMirror") {
-        alteredWord = HorizMirror(word, horPairs);
+        alteredWord = HorizMirror(word, capHorizPairs);
       }
       if (typeOfJSFunction === "ambigram") {
         alteredWord = ambigram(word, AmbigramPairs);
@@ -393,14 +413,14 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 
 //CreateJS("ambigramPOJO.js", "ambigram");
 // CreateJS("todbotPOJO.js", "mirror");
-//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
 //CreateJS("alphabeticalWordsReverse.js", "reverseAlphabetical");
 //CreateJS("onlyConsonants.js", "onlyConsonants");
 //CreateJS("alphabeticalNeighbors.js", "alphabeticalNeighbors");
-CreateJS("SingleLetterVertMirror.js", "SingleLetterVertMirror");
+//CreateJS("SingleLetterVertMirror.js", "SingleLetterVertMirror");
 //CreateJS("SingleLetterHorizMirror.js", "SingleLetterHorizMirror");
 
 //CreateJSON("todbotWithCapitals.json");
