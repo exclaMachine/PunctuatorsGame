@@ -48,7 +48,7 @@ let vertPairs = {
   c: "c",
   //d: "q",
   d: "d", //Only Cap
-  //e: "e", //Only Cap
+  e: "e", //Only Cap
   //f: "t",
   h: "h", //Only Cap
   i: "i", //Only Cap
@@ -80,14 +80,16 @@ let capVertPairs = {
 let capHorizPairs = {
   a: "a", //Cap
   b: "d",
-  d: "b",
+  d: "c", // Cap if there is a serif it could look like a incomplete D
   h: "h", //Cap
   i: "i",
+  j: "t", //Cap kind of cursive
   l: "l",
   m: "m",
   o: "o",
   p: "q",
-  q: "p",
+  //q: "p",
+  s: "z",
   t: "t",
   u: "u",
   v: "v",
@@ -417,8 +419,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 };
 
 //CreateJS("ambigramPOJO.js", "ambigram");
-CreateJS("todbotPOJOOnlyCapVert.js", "mirror");
-//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+//CreateJS("todbotPOJOOnlyCapVert.js", "mirror");
+CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
