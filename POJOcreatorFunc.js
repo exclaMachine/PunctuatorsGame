@@ -42,20 +42,24 @@ let horPairs = {
 };
 
 let vertPairs = {
-  //a: "a",
+  a: "a",
   b: "p",
-  //c: "c",
-  d: "q",
+  //b: "b", //Only Cap
+  c: "c",
+  //d: "q",
+  //e: "e", //Only Cap
   f: "t",
-  //k: "k",
-  //l: "l",
+  //h: "h", //Only Cap
+  //i: "i", //Only Cap
+  k: "k",
+  l: "l",
   m: "w",
-  //o: "o",
+  o: "o",
   //p: "b",
-  //q: "d",
+  q: "d",
   //t: "f",
   //w: "m",
-  //x: "x",
+  x: "x",
 };
 
 let capVertPairs = {
@@ -139,11 +143,11 @@ const VertMirror = (word, pairs) => {
   let reversed = arr.join("");
   //let reversed = arr.join("");
 
-  if (reversed === word) {
-    return false;
-  } else {
-    return reversed;
-  }
+  // if (reversed === word) {
+  //   return false;
+  // } else {
+  return reversed;
+  // }
 };
 
 const HorizMirror = (word, pairs) => {
@@ -202,11 +206,11 @@ const VertCapitalMirror = (word, pairs) => {
 
     let alteredWord = arr.join("");
 
-    if (alteredWord === word) {
-      return false;
-    } else {
-      return alteredWord;
-    }
+    // if (alteredWord === word) {
+    //   return false;
+    // } else {
+    return alteredWord;
+    // }
   }
 };
 
@@ -412,8 +416,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 };
 
 //CreateJS("ambigramPOJO.js", "ambigram");
-// CreateJS("todbotPOJO.js", "mirror");
-CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+CreateJS("todbotPOJO.js", "mirror");
+//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
