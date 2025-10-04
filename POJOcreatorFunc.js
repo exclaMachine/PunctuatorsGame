@@ -43,20 +43,21 @@ let horPairs = {
 
 let vertPairs = {
   a: "a",
-  b: "p",
-  //b: "b", //Only Cap
+  //b: "p",
+  b: "b", //Only Cap
   c: "c",
   //d: "q",
+  d: "d", //Only Cap
   //e: "e", //Only Cap
-  f: "t",
-  //h: "h", //Only Cap
-  //i: "i", //Only Cap
+  //f: "t",
+  h: "h", //Only Cap
+  i: "i", //Only Cap
   k: "k",
-  l: "l",
+  //l: "l",
   m: "w",
   o: "o",
   //p: "b",
-  q: "d",
+  //q: "d",
   //t: "f",
   //w: "m",
   x: "x",
@@ -77,10 +78,10 @@ let capVertPairs = {
 
 //can use lowercase and uppercase and type in spongebob ex. hElLo yOu
 let capHorizPairs = {
-  a: "a",
+  a: "a", //Cap
   b: "d",
   d: "b",
-  h: "h",
+  h: "h", //Cap
   i: "i",
   l: "l",
   m: "m",
@@ -416,7 +417,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 };
 
 //CreateJS("ambigramPOJO.js", "ambigram");
-CreateJS("todbotPOJO.js", "mirror");
+CreateJS("todbotPOJOOnlyCapVert.js", "mirror");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
