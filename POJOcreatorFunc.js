@@ -43,23 +43,23 @@ let horPairs = {
 
 let vertPairs = {
   a: "a",
-  //b: "p",
   b: "b", //Only Cap
   c: "c",
-  //d: "q",
   d: "d", //Only Cap
   e: "e", //Only Cap
-  //f: "t",
+  f: "t",
   h: "h", //Only Cap
   i: "i", //Only Cap
   k: "k",
-  //l: "l",
+  l: "l",
   m: "w",
   o: "o",
-  //p: "b",
-  //q: "d",
-  //t: "f",
-  //w: "m",
+  p: "b",
+  q: "d",
+  s: "z", //curvy Cap Z
+  t: "l", //Cap L with serif
+  u: "n", //without tail
+  v: "a", //Cap V with a dot in the middle
   x: "x",
 };
 
@@ -419,8 +419,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 };
 
 //CreateJS("ambigramPOJO.js", "ambigram");
-//CreateJS("todbotPOJOOnlyCapVert.js", "mirror");
-CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+CreateJS("todbotPOJO.js", "mirror");
+//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
