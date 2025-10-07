@@ -63,6 +63,24 @@ let vertPairs = {
   x: "x",
 };
 
+let hanglerAngles = {
+  b: "k", //add an angle to the bottom of a b and it looks like lower case k
+  c: "q",
+  //d: "r", //Cap D to cap R
+  //h: "a", //Cap
+  h: "m",
+  //i: "a", //cap I to A, if it's rotated
+  k: "t",
+  l: "y",
+  //m: "n",
+  //n: "l",
+  p: "e",
+  //r: "f", maybe
+  t: "x",
+  v: "w",
+  //y: "g",
+};
+
 let capVertPairs = {
   b: "b",
   c: "c",
@@ -366,7 +384,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         alteredWord = VertMirror(word, vertPairs);
       }
       if (typeOfJSFunction === "SingleLetterVertMirror") {
-        alteredWord = RoundLetters(word, vertPairs, data);
+        //alteredWord = RoundLetters(word, vertPairs, data);
+        alteredWord = RoundLetters(word, hanglerAngles, data);
       }
       if (typeOfJSFunction === "SingleLetterHorizMirror") {
         alteredWord = RoundLetters(word, horPairs, data);
@@ -419,7 +438,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 };
 
 //CreateJS("ambigramPOJO.js", "ambigram");
-CreateJS("todbotPOJO.js", "mirror");
+CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
