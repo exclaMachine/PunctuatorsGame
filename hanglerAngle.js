@@ -95,15 +95,14 @@ const data = {
   furl: "fury",
   gal: "gay",
   gorp: "gore",
-  h: "m",
   ha: "ma",
   had: "mad",
   hag: "mag",
   hah: "ham",
-  hail: "mail",
+  hail: "mail", //USE
   hake: "make",
   hale: "male",
-  hall: "mall",
+  hall: "mall", //USE
   hallow: "mallow",
   halt: "malt",
   hammy: "mammy",
