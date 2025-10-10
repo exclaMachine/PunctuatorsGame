@@ -48,12 +48,11 @@ const data = {
   bulb: "bulk",
   bunk: "bunt",
   burl: "bury",
-  c: "q",
   camp: "came",
   canker: "canter",
   carp: "care",
   carper: "career",
-  cask: "cast",
+  cask: "cast", //USE
   chimp: "chime",
   clan: "cyan",
   coat: "coax",
@@ -61,9 +60,9 @@ const data = {
   comp: "come",
   completion: "complexion",
   comply: "comely",
-  cook: "coot",
-  cookie: "cootie",
-  cover: "cower",
+  cook: "coot", //USE
+  cookie: "cootie", //USE
+  cover: "cower", //USE
   crimp: "crime",
   cup: "cue",
   damp: "dame",
@@ -90,9 +89,9 @@ const data = {
   flak: "flat",
   flat: "flax",
   flop: "floe",
-  fluke: "flute",
+  fluke: "flute", //USE
   fop: "foe",
-  fork: "fort",
+  fork: "fort", //USE
   furl: "fury",
   gal: "gay",
   gorp: "gore",
