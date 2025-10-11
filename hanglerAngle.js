@@ -108,27 +108,27 @@ const data = {
   hammy: "mammy",
   hanger: "manger",
   hap: "map",
-  hare: "mare",
+  hare: "mare", //USE
   hark: "mark",
-  harp: "hare",
+  harp: "hare", //USE
   harried: "married",
   harrow: "marrow",
-  harry: "marry",
+  harry: "marry", //USE
   harsh: "marsh",
   hart: "mart",
   hash: "mash",
   hast: "mast",
-  hat: "mat",
+  hat: "mat", //USE
   hatch: "match",
   hatching: "matching",
   hate: "mate",
   hath: "math",
   hatter: "matter",
-  haul: "maul",
+  haul: "maul", //USE
   hauler: "mauler",
   haven: "maven",
   haw: "maw",
-  hawkish: "mawkish",
+  hawkish: "mawkish", //USE
   hawkishness: "mawkishness",
   hay: "may",
   haze: "maze",
