@@ -132,7 +132,7 @@ const data = {
   hawkishness: "mawkishness",
   hay: "may",
   haze: "maze",
-  he: "me",
+  he: "me", //USE
   head: "mead",
   heal: "meal",
   hearken: "hearten",
@@ -149,11 +149,11 @@ const data = {
   hid: "mid",
   hidden: "midden",
   hike: "mike",
-  hill: "mill",
+  hill: "mill", //USE
   hilt: "milt",
   hind: "mind",
   hint: "mint",
-  hinter: "minter",
+  hinter: "minter", //USE
   hip: "hie",
   hire: "mire",
   hiss: "miss",
