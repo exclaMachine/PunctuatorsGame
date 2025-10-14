@@ -165,9 +165,9 @@ const data = {
   hold: "mold",
   holder: "molder",
   holding: "molding",
-  hole: "mole",
+  hole: "mole", //USE
   holly: "molly",
-  honey: "money",
+  honey: "money", //USE
   honk: "monk",
   hooch: "mooch",
   hood: "mood",
@@ -179,15 +179,15 @@ const data = {
   horn: "morn",
   host: "most",
   hot: "mot",
-  hotel: "motel",
+  hotel: "motel", //USE
   hound: "mound",
-  house: "mouse",
+  house: "mouse", //USE
   hove: "move",
   hover: "mover",
   how: "mow",
-  huddle: "muddle",
+  huddle: "muddle", //USE
   huff: "muff",
-  hug: "mug",
+  hug: "mug", //USE
   huh: "hum",
   hull: "mull",
   hum: "mum",
