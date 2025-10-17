@@ -197,14 +197,13 @@ const data = {
   hunch: "munch",
   hunk: "hunt",
   hunker: "hunter",
-  hush: "mush",
+  hush: "mush", //USE
   husk: "musk",
   huskiness: "muskiness",
-  husky: "musky",
+  husky: "musky", //USE
   hussy: "mussy",
-  k: "t",
   kale: "tale",
-  kart: "tart",
+  kart: "tart", //USE
   keen: "teen",
   ken: "ten",
   khan: "than",
