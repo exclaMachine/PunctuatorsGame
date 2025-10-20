@@ -215,14 +215,13 @@ const data = {
   kin: "tin",
   kine: "tine",
   king: "ting",
-  kingly: "tingly",
+  kingly: "tingly", //USE
   kipper: "tipper",
   kit: "tit",
   kook: "took",
   krill: "trill",
-  l: "y",
   la: "ya",
-  lack: "yack",
+  lack: "yack", //USE
   lake: "late",
   lam: "yam",
   lamp: "lame",
