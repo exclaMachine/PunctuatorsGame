@@ -231,12 +231,12 @@ const data = {
   law: "yaw",
   lea: "yea",
   learn: "yearn",
-  learning: "yearning",
+  learning: "yearning", //USE
   least: "yeast",
   let: "yet",
   like: "lite",
   likes: "yikes",
-  limp: "lime",
+  limp: "lime", //USE
   link: "lint",
   lip: "yip",
   lo: "yo",
