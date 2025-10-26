@@ -240,8 +240,8 @@ const data = {
   link: "lint",
   lip: "yip",
   lo: "yo",
-  look: "loot",
-  looker: "looter",
+  look: "loot", //USE
+  looker: "looter", //USE
   lore: "yore",
   lot: "lox",
   low: "yow",
