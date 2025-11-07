@@ -246,16 +246,16 @@ const data = {
   lot: "lox",
   low: "yow",
   luck: "yuck",
-  lucky: "yucky",
-  make: "mate",
+  lucky: "yucky", //USE
+  make: "mate", //USE
   making: "mating",
   mark: "mart",
-  mask: "mast",
+  mask: "mast", //USE
   masked: "masted",
-  masker: "master",
+  masker: "master", //USE
   mat: "max",
   meek: "meet",
-  mike: "mite",
+  mike: "mite", //USE
   milk: "milt",
   mink: "mint",
   mint: "minx",
