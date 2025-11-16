@@ -125,6 +125,6 @@ function CreateAnagramsJS(jsName, startLetters = null, opts = {}) {
   );
 }
 
-CreateAnagramsJS("anagrams.js", ["q"]);
+CreateAnagramsJS("anagrams.js", ["s"]);
 
 module.exports = { CreateAnagramsJS };

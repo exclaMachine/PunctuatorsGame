@@ -10,5 +10,2417 @@
   ],
   "toque": [
     "quote"
+  ],
+  "saber": [
+    "sabre"
+  ],
+  "sabre": [
+    "saber"
+  ],
+  "blase": [
+    "sable"
+  ],
+  "sable": [
+    "blase"
+  ],
+  "boast": [
+    "sabot"
+  ],
+  "sabot": [
+    "boast"
+  ],
+  "chaste": [
+    "sachet"
+  ],
+  "sachet": [
+    "chaste"
+  ],
+  "cask": [
+    "sack"
+  ],
+  "sack": [
+    "cask"
+  ],
+  "sacred": [
+    "scared"
+  ],
+  "scared": [
+    "sacred"
+  ],
+  "gas": [
+    "sag"
+  ],
+  "sag": [
+    "gas"
+  ],
+  "ages": [
+    "sage"
+  ],
+  "sage": [
+    "ages"
+  ],
+  "dais": [
+    "said"
+  ],
+  "said": [
+    "dais"
+  ],
+  "saint": [
+    "satin",
+    "stain"
+  ],
+  "satin": [
+    "saint",
+    "stain"
+  ],
+  "stain": [
+    "saint",
+    "satin"
+  ],
+  "instead": [
+    "sainted"
+  ],
+  "sainted": [
+    "instead"
+  ],
+  "nastily": [
+    "saintly"
+  ],
+  "saintly": [
+    "nastily"
+  ],
+  "sale": [
+    "seal"
+  ],
+  "seal": [
+    "sale"
+  ],
+  "salient": [
+    "saltine"
+  ],
+  "saltine": [
+    "salient"
+  ],
+  "last": [
+    "salt",
+    "slat"
+  ],
+  "salt": [
+    "last",
+    "slat"
+  ],
+  "slat": [
+    "last",
+    "salt"
+  ],
+  "desalt": [
+    "salted"
+  ],
+  "salted": [
+    "desalt"
+  ],
+  "saltiness": [
+    "stainless"
+  ],
+  "stainless": [
+    "saltiness"
+  ],
+  "salve": [
+    "slave"
+  ],
+  "slave": [
+    "salve"
+  ],
+  "salver": [
+    "slaver"
+  ],
+  "slaver": [
+    "salver"
+  ],
+  "mesa": [
+    "same",
+    "seam"
+  ],
+  "same": [
+    "mesa",
+    "seam"
+  ],
+  "seam": [
+    "mesa",
+    "same"
+  ],
+  "sang": [
+    "snag"
+  ],
+  "snag": [
+    "sang"
+  ],
+  "sanity": [
+    "satiny"
+  ],
+  "satiny": [
+    "sanity"
+  ],
+  "asp": [
+    "sap",
+    "spa"
+  ],
+  "sap": [
+    "asp",
+    "spa"
+  ],
+  "spa": [
+    "asp",
+    "sap"
+  ],
+  "panties": [
+    "sapient"
+  ],
+  "sapient": [
+    "panties"
+  ],
+  "airs": [
+    "sari"
+  ],
+  "sari": [
+    "airs"
+  ],
+  "mantissa": [
+    "satanism"
+  ],
+  "satanism": [
+    "mantissa"
+  ],
+  "east": [
+    "eats",
+    "sate",
+    "seat"
+  ],
+  "eats": [
+    "east",
+    "sate",
+    "seat"
+  ],
+  "sate": [
+    "east",
+    "eats",
+    "seat"
+  ],
+  "seat": [
+    "east",
+    "eats",
+    "sate"
+  ],
+  "sateen": [
+    "senate"
+  ],
+  "senate": [
+    "sateen"
+  ],
+  "satire": [
+    "striae"
+  ],
+  "striae": [
+    "satire"
+  ],
+  "racialist": [
+    "satirical"
+  ],
+  "satirical": [
+    "racialist"
+  ],
+  "satirist": [
+    "sitarist"
+  ],
+  "sitarist": [
+    "satirist"
+  ],
+  "artsy": [
+    "satyr",
+    "stray"
+  ],
+  "satyr": [
+    "artsy",
+    "stray"
+  ],
+  "stray": [
+    "artsy",
+    "satyr"
+  ],
+  "cause": [
+    "sauce"
+  ],
+  "sauce": [
+    "cause"
+  ],
+  "causer": [
+    "saucer"
+  ],
+  "saucer": [
+    "causer"
+  ],
+  "assuage": [
+    "sausage"
+  ],
+  "sausage": [
+    "assuage"
+  ],
+  "save": [
+    "vase"
+  ],
+  "vase": [
+    "save"
+  ],
+  "saviour": [
+    "various"
+  ],
+  "various": [
+    "saviour"
+  ],
+  "saw": [
+    "was"
+  ],
+  "was": [
+    "saw"
+  ],
+  "bucksaw": [
+    "sawbuck"
+  ],
+  "sawbuck": [
+    "bucksaw"
+  ],
+  "sawn": [
+    "swan"
+  ],
+  "swan": [
+    "sawn"
+  ],
+  "cleanse": [
+    "scalene"
+  ],
+  "scalene": [
+    "cleanse"
+  ],
+  "clasp": [
+    "scalp"
+  ],
+  "scalp": [
+    "clasp"
+  ],
+  "canst": [
+    "scant"
+  ],
+  "scant": [
+    "canst"
+  ],
+  "capsular": [
+    "scapular"
+  ],
+  "scapular": [
+    "capsular"
+  ],
+  "races": [
+    "scare"
+  ],
+  "scare": [
+    "races"
+  ],
+  "craps": [
+    "scarp",
+    "scrap"
+  ],
+  "scarp": [
+    "craps",
+    "scrap"
+  ],
+  "scrap": [
+    "craps",
+    "scarp"
+  ],
+  "cast": [
+    "scat"
+  ],
+  "scat": [
+    "cast"
+  ],
+  "descent": [
+    "scented"
+  ],
+  "scented": [
+    "descent"
+  ],
+  "respect": [
+    "scepter",
+    "specter"
+  ],
+  "scepter": [
+    "respect",
+    "specter"
+  ],
+  "specter": [
+    "respect",
+    "scepter"
+  ],
+  "catechism": [
+    "schematic"
+  ],
+  "schematic": [
+    "catechism"
+  ],
+  "scion": [
+    "sonic"
+  ],
+  "sonic": [
+    "scion"
+  ],
+  "scleroses": [
+    "scoreless"
+  ],
+  "scoreless": [
+    "scleroses"
+  ],
+  "coffers": [
+    "scoffer"
+  ],
+  "scoffer": [
+    "coffers"
+  ],
+  "copse": [
+    "scope"
+  ],
+  "scope": [
+    "copse"
+  ],
+  "courser": [
+    "scourer"
+  ],
+  "scourer": [
+    "courser"
+  ],
+  "parsec": [
+    "scrape",
+    "spacer"
+  ],
+  "scrape": [
+    "parsec",
+    "spacer"
+  ],
+  "spacer": [
+    "parsec",
+    "scrape"
+  ],
+  "censer": [
+    "screen"
+  ],
+  "screen": [
+    "censer"
+  ],
+  "crisp": [
+    "scrip"
+  ],
+  "scrip": [
+    "crisp"
+  ],
+  "cords": [
+    "scrod"
+  ],
+  "scrod": [
+    "cords"
+  ],
+  "castor": [
+    "costar",
+    "scrota"
+  ],
+  "costar": [
+    "castor",
+    "scrota"
+  ],
+  "scrota": [
+    "castor",
+    "costar"
+  ],
+  "cuffs": [
+    "scuff"
+  ],
+  "scuff": [
+    "cuffs"
+  ],
+  "chesty": [
+    "scythe"
+  ],
+  "scythe": [
+    "chesty"
+  ],
+  "debase": [
+    "seabed"
+  ],
+  "seabed": [
+    "debase"
+  ],
+  "seabird": [
+    "sidebar"
+  ],
+  "sidebar": [
+    "seabird"
+  ],
+  "seahorse": [
+    "seashore"
+  ],
+  "seashore": [
+    "seahorse"
+  ],
+  "leaser": [
+    "resale",
+    "reseal",
+    "sealer"
+  ],
+  "resale": [
+    "leaser",
+    "reseal",
+    "sealer"
+  ],
+  "reseal": [
+    "leaser",
+    "resale",
+    "sealer"
+  ],
+  "sealer": [
+    "leaser",
+    "resale",
+    "reseal"
+  ],
+  "encase": [
+    "seance"
+  ],
+  "seance": [
+    "encase"
+  ],
+  "sear": [
+    "sera"
+  ],
+  "sera": [
+    "sear"
+  ],
+  "chaser": [
+    "search"
+  ],
+  "search": [
+    "chaser"
+  ],
+  "research": [
+    "searcher"
+  ],
+  "searcher": [
+    "research"
+  ],
+  "disease": [
+    "seaside"
+  ],
+  "seaside": [
+    "disease"
+  ],
+  "ascent": [
+    "secant",
+    "stance"
+  ],
+  "secant": [
+    "ascent",
+    "stance"
+  ],
+  "stance": [
+    "ascent",
+    "secant"
+  ],
+  "resection": [
+    "secretion"
+  ],
+  "secretion": [
+    "resection"
+  ],
+  "ascertain": [
+    "sectarian"
+  ],
+  "sectarian": [
+    "ascertain"
+  ],
+  "coastline": [
+    "sectional"
+  ],
+  "sectional": [
+    "coastline"
+  ],
+  "corset": [
+    "escort",
+    "sector"
+  ],
+  "escort": [
+    "corset",
+    "sector"
+  ],
+  "sector": [
+    "corset",
+    "escort"
+  ],
+  "rescue": [
+    "secure"
+  ],
+  "secure": [
+    "rescue"
+  ],
+  "reseed": [
+    "seeder"
+  ],
+  "seeder": [
+    "reseed"
+  ],
+  "seer": [
+    "sere"
+  ],
+  "sere": [
+    "seer"
+  ],
+  "seething": [
+    "sheeting"
+  ],
+  "sheeting": [
+    "seething"
+  ],
+  "resell": [
+    "seller"
+  ],
+  "seller": [
+    "resell"
+  ],
+  "outsell": [
+    "sellout"
+  ],
+  "sellout": [
+    "outsell"
+  ],
+  "selves": [
+    "vessel"
+  ],
+  "vessel": [
+    "selves"
+  ],
+  "remains": [
+    "seminar"
+  ],
+  "seminar": [
+    "remains"
+  ],
+  "imposer": [
+    "promise",
+    "semipro"
+  ],
+  "promise": [
+    "imposer",
+    "semipro"
+  ],
+  "semipro": [
+    "imposer",
+    "promise"
+  ],
+  "senator": [
+    "treason"
+  ],
+  "treason": [
+    "senator"
+  ],
+  "senor": [
+    "snore"
+  ],
+  "snore": [
+    "senor"
+  ],
+  "reason": [
+    "senora"
+  ],
+  "senora": [
+    "reason"
+  ],
+  "nest": [
+    "sent"
+  ],
+  "sent": [
+    "nest"
+  ],
+  "lapse": [
+    "sepal"
+  ],
+  "sepal": [
+    "lapse"
+  ],
+  "paste": [
+    "septa",
+    "spate"
+  ],
+  "septa": [
+    "paste",
+    "spate"
+  ],
+  "spate": [
+    "paste",
+    "septa"
+  ],
+  "sepulcher": [
+    "sepulchre"
+  ],
+  "sepulchre": [
+    "sepulcher"
+  ],
+  "phrase": [
+    "seraph"
+  ],
+  "seraph": [
+    "phrase"
+  ],
+  "estrange": [
+    "sergeant"
+  ],
+  "sergeant": [
+    "estrange"
+  ],
+  "fries": [
+    "serif"
+  ],
+  "serif": [
+    "fries"
+  ],
+  "present": [
+    "serpent"
+  ],
+  "serpent": [
+    "present"
+  ],
+  "serve": [
+    "sever",
+    "verse"
+  ],
+  "sever": [
+    "serve",
+    "verse"
+  ],
+  "verse": [
+    "serve",
+    "sever"
+  ],
+  "revers": [
+    "server"
+  ],
+  "server": [
+    "revers"
+  ],
+  "receivables": [
+    "serviceable"
+  ],
+  "serviceable": [
+    "receivables"
+  ],
+  "servo": [
+    "verso"
+  ],
+  "verso": [
+    "servo"
+  ],
+  "retest": [
+    "setter",
+    "street",
+    "tester"
+  ],
+  "setter": [
+    "retest",
+    "street",
+    "tester"
+  ],
+  "street": [
+    "retest",
+    "setter",
+    "tester"
+  ],
+  "tester": [
+    "retest",
+    "setter",
+    "street"
+  ],
+  "letters": [
+    "settler",
+    "trestle"
+  ],
+  "settler": [
+    "letters",
+    "trestle"
+  ],
+  "trestle": [
+    "letters",
+    "settler"
+  ],
+  "setup": [
+    "upset"
+  ],
+  "upset": [
+    "setup"
+  ],
+  "resew": [
+    "sewer"
+  ],
+  "sewer": [
+    "resew"
+  ],
+  "news": [
+    "sewn"
+  ],
+  "sewn": [
+    "news"
+  ],
+  "hackles": [
+    "shackle"
+  ],
+  "shackle": [
+    "hackles"
+  ],
+  "dash": [
+    "shad"
+  ],
+  "shad": [
+    "dash"
+  ],
+  "heads": [
+    "shade"
+  ],
+  "shade": [
+    "heads"
+  ],
+  "dashing": [
+    "shading"
+  ],
+  "shading": [
+    "dashing"
+  ],
+  "gash": [
+    "shag"
+  ],
+  "shag": [
+    "gash"
+  ],
+  "hash": [
+    "shah"
+  ],
+  "shah": [
+    "hash"
+  ],
+  "leash": [
+    "shale"
+  ],
+  "shale": [
+    "leash"
+  ],
+  "hams": [
+    "mash",
+    "sham"
+  ],
+  "mash": [
+    "hams",
+    "sham"
+  ],
+  "sham": [
+    "hams",
+    "mash"
+  ],
+  "phase": [
+    "shape"
+  ],
+  "shape": [
+    "phase"
+  ],
+  "share": [
+    "shear"
+  ],
+  "shear": [
+    "share"
+  ],
+  "rasher": [
+    "sharer"
+  ],
+  "sharer": [
+    "rasher"
+  ],
+  "resharpen": [
+    "sharpener"
+  ],
+  "sharpener": [
+    "resharpen"
+  ],
+  "hast": [
+    "shat"
+  ],
+  "shat": [
+    "hast"
+  ],
+  "shattering": [
+    "straighten"
+  ],
+  "straighten": [
+    "shattering"
+  ],
+  "haves": [
+    "shave"
+  ],
+  "shave": [
+    "haves"
+  ],
+  "ashy": [
+    "shay"
+  ],
+  "shay": [
+    "ashy"
+  ],
+  "heaves": [
+    "sheave"
+  ],
+  "sheave": [
+    "heaves"
+  ],
+  "sheet": [
+    "these"
+  ],
+  "these": [
+    "sheet"
+  ],
+  "flesh": [
+    "shelf"
+  ],
+  "shelf": [
+    "flesh"
+  ],
+  "shier": [
+    "shire"
+  ],
+  "shire": [
+    "shier"
+  ],
+  "shiest": [
+    "thesis"
+  ],
+  "thesis": [
+    "shiest"
+  ],
+  "shiner": [
+    "shrine"
+  ],
+  "shrine": [
+    "shiner"
+  ],
+  "ownership": [
+    "shipowner"
+  ],
+  "shipowner": [
+    "ownership"
+  ],
+  "hist": [
+    "shit",
+    "this"
+  ],
+  "shit": [
+    "hist",
+    "this"
+  ],
+  "this": [
+    "hist",
+    "shit"
+  ],
+  "shiver": [
+    "shrive"
+  ],
+  "shrive": [
+    "shiver"
+  ],
+  "hose": [
+    "shoe"
+  ],
+  "shoe": [
+    "hose"
+  ],
+  "shoot": [
+    "sooth"
+  ],
+  "sooth": [
+    "shoot"
+  ],
+  "shooter": [
+    "soother"
+  ],
+  "soother": [
+    "shooter"
+  ],
+  "shooting": [
+    "soothing"
+  ],
+  "soothing": [
+    "shooting"
+  ],
+  "hops": [
+    "posh",
+    "shop"
+  ],
+  "posh": [
+    "hops",
+    "shop"
+  ],
+  "shop": [
+    "hops",
+    "posh"
+  ],
+  "horse": [
+    "shore"
+  ],
+  "shore": [
+    "horse"
+  ],
+  "host": [
+    "hots",
+    "shot"
+  ],
+  "hots": [
+    "host",
+    "shot"
+  ],
+  "shot": [
+    "host",
+    "hots"
+  ],
+  "gunshot": [
+    "shotgun"
+  ],
+  "shotgun": [
+    "gunshot"
+  ],
+  "shout": [
+    "south"
+  ],
+  "south": [
+    "shout"
+  ],
+  "shriek": [
+    "shrike"
+  ],
+  "shrike": [
+    "shriek"
+  ],
+  "brush": [
+    "shrub"
+  ],
+  "shrub": [
+    "brush"
+  ],
+  "kitsch": [
+    "shtick"
+  ],
+  "shtick": [
+    "kitsch"
+  ],
+  "shut": [
+    "thus",
+    "tush"
+  ],
+  "thus": [
+    "shut",
+    "tush"
+  ],
+  "tush": [
+    "shut",
+    "thus"
+  ],
+  "ides": [
+    "side"
+  ],
+  "side": [
+    "ides"
+  ],
+  "misread": [
+    "sidearm"
+  ],
+  "sidearm": [
+    "misread"
+  ],
+  "broadside": [
+    "sideboard"
+  ],
+  "sideboard": [
+    "broadside"
+  ],
+  "sidle": [
+    "slide"
+  ],
+  "slide": [
+    "sidle"
+  ],
+  "insane": [
+    "sienna"
+  ],
+  "sienna": [
+    "insane"
+  ],
+  "raiser": [
+    "sierra"
+  ],
+  "sierra": [
+    "raiser"
+  ],
+  "fist": [
+    "sift"
+  ],
+  "sift": [
+    "fist"
+  ],
+  "sifter": [
+    "strife"
+  ],
+  "strife": [
+    "sifter"
+  ],
+  "sign": [
+    "sing"
+  ],
+  "sing": [
+    "sign"
+  ],
+  "resign": [
+    "signer",
+    "singer"
+  ],
+  "signer": [
+    "resign",
+    "singer"
+  ],
+  "singer": [
+    "resign",
+    "signer"
+  ],
+  "ingest": [
+    "signet"
+  ],
+  "signet": [
+    "ingest"
+  ],
+  "signing": [
+    "singing"
+  ],
+  "singing": [
+    "signing"
+  ],
+  "signora": [
+    "soaring"
+  ],
+  "soaring": [
+    "signora"
+  ],
+  "origins": [
+    "signori"
+  ],
+  "signori": [
+    "origins"
+  ],
+  "license": [
+    "silence"
+  ],
+  "silence": [
+    "license"
+  ],
+  "enlist": [
+    "listen",
+    "silent",
+    "tinsel"
+  ],
+  "listen": [
+    "enlist",
+    "silent",
+    "tinsel"
+  ],
+  "silent": [
+    "enlist",
+    "listen",
+    "tinsel"
+  ],
+  "tinsel": [
+    "enlist",
+    "listen",
+    "silent"
+  ],
+  "oils": [
+    "silo",
+    "soil"
+  ],
+  "silo": [
+    "oils",
+    "soil"
+  ],
+  "soil": [
+    "oils",
+    "silo"
+  ],
+  "list": [
+    "silt",
+    "slit"
+  ],
+  "silt": [
+    "list",
+    "slit"
+  ],
+  "slit": [
+    "list",
+    "silt"
+  ],
+  "silty": [
+    "styli"
+  ],
+  "styli": [
+    "silty"
+  ],
+  "silver": [
+    "sliver"
+  ],
+  "sliver": [
+    "silver"
+  ],
+  "insecure": [
+    "sinecure"
+  ],
+  "sinecure": [
+    "insecure"
+  ],
+  "sinew": [
+    "swine"
+  ],
+  "swine": [
+    "sinew"
+  ],
+  "sink": [
+    "skin"
+  ],
+  "skin": [
+    "sink"
+  ],
+  "pis": [
+    "psi",
+    "sip"
+  ],
+  "psi": [
+    "pis",
+    "sip"
+  ],
+  "sip": [
+    "pis",
+    "psi"
+  ],
+  "rise": [
+    "sire"
+  ],
+  "sire": [
+    "rise"
+  ],
+  "reins": [
+    "resin",
+    "rinse",
+    "risen",
+    "siren"
+  ],
+  "resin": [
+    "reins",
+    "rinse",
+    "risen",
+    "siren"
+  ],
+  "rinse": [
+    "reins",
+    "resin",
+    "risen",
+    "siren"
+  ],
+  "risen": [
+    "reins",
+    "resin",
+    "rinse",
+    "siren"
+  ],
+  "siren": [
+    "reins",
+    "resin",
+    "rinse",
+    "risen"
+  ],
+  "resist": [
+    "sister"
+  ],
+  "sister": [
+    "resist"
+  ],
+  "its": [
+    "sit"
+  ],
+  "sit": [
+    "its"
+  ],
+  "astir": [
+    "sitar",
+    "stair",
+    "stria",
+    "tarsi"
+  ],
+  "sitar": [
+    "astir",
+    "stair",
+    "stria",
+    "tarsi"
+  ],
+  "stair": [
+    "astir",
+    "sitar",
+    "stria",
+    "tarsi"
+  ],
+  "stria": [
+    "astir",
+    "sitar",
+    "stair",
+    "tarsi"
+  ],
+  "tarsi": [
+    "astir",
+    "sitar",
+    "stair",
+    "stria"
+  ],
+  "ask": [
+    "ska"
+  ],
+  "ska": [
+    "ask"
+  ],
+  "skate": [
+    "stake",
+    "steak"
+  ],
+  "stake": [
+    "skate",
+    "steak"
+  ],
+  "steak": [
+    "skate",
+    "stake"
+  ],
+  "skater": [
+    "streak"
+  ],
+  "streak": [
+    "skater"
+  ],
+  "skating": [
+    "takings"
+  ],
+  "takings": [
+    "skating"
+  ],
+  "disk": [
+    "skid"
+  ],
+  "skid": [
+    "disk"
+  ],
+  "slain": [
+    "snail"
+  ],
+  "snail": [
+    "slain"
+  ],
+  "alms": [
+    "slam"
+  ],
+  "slam": [
+    "alms"
+  ],
+  "glans": [
+    "slang"
+  ],
+  "slang": [
+    "glans"
+  ],
+  "least": [
+    "slate",
+    "stale",
+    "steal"
+  ],
+  "slate": [
+    "least",
+    "stale",
+    "steal"
+  ],
+  "stale": [
+    "least",
+    "slate",
+    "steal"
+  ],
+  "steal": [
+    "least",
+    "slate",
+    "stale"
+  ],
+  "oversleep": [
+    "sleepover"
+  ],
+  "sleepover": [
+    "oversleep"
+  ],
+  "sleet": [
+    "steel"
+  ],
+  "steel": [
+    "sleet"
+  ],
+  "sleety": [
+    "steely"
+  ],
+  "steely": [
+    "sleety"
+  ],
+  "slept": [
+    "spelt"
+  ],
+  "spelt": [
+    "slept"
+  ],
+  "hustle": [
+    "sleuth"
+  ],
+  "sleuth": [
+    "hustle"
+  ],
+  "lights": [
+    "slight"
+  ],
+  "slight": [
+    "lights"
+  ],
+  "slime": [
+    "smile"
+  ],
+  "smile": [
+    "slime"
+  ],
+  "links": [
+    "slink"
+  ],
+  "slink": [
+    "links"
+  ],
+  "lisp": [
+    "slip"
+  ],
+  "slip": [
+    "lisp"
+  ],
+  "lose": [
+    "sloe",
+    "sole"
+  ],
+  "sloe": [
+    "lose",
+    "sole"
+  ],
+  "sole": [
+    "lose",
+    "sloe"
+  ],
+  "sloop": [
+    "spool"
+  ],
+  "spool": [
+    "sloop"
+  ],
+  "lost": [
+    "lots",
+    "slot"
+  ],
+  "lots": [
+    "lost",
+    "slot"
+  ],
+  "slot": [
+    "lost",
+    "lots"
+  ],
+  "lust": [
+    "slut"
+  ],
+  "slut": [
+    "lust"
+  ],
+  "maser": [
+    "reams",
+    "smear"
+  ],
+  "reams": [
+    "maser",
+    "smear"
+  ],
+  "smear": [
+    "maser",
+    "reams"
+  ],
+  "chrism": [
+    "smirch"
+  ],
+  "smirch": [
+    "chrism"
+  ],
+  "smite": [
+    "times"
+  ],
+  "times": [
+    "smite"
+  ],
+  "smother": [
+    "thermos"
+  ],
+  "thermos": [
+    "smother"
+  ],
+  "gums": [
+    "smug"
+  ],
+  "smug": [
+    "gums"
+  ],
+  "must": [
+    "smut"
+  ],
+  "smut": [
+    "must"
+  ],
+  "snake": [
+    "sneak"
+  ],
+  "sneak": [
+    "snake"
+  ],
+  "snap": [
+    "span"
+  ],
+  "span": [
+    "snap"
+  ],
+  "snatch": [
+    "stanch"
+  ],
+  "stanch": [
+    "snatch"
+  ],
+  "snip": [
+    "spin"
+  ],
+  "spin": [
+    "snip"
+  ],
+  "penis": [
+    "snipe",
+    "spine"
+  ],
+  "snipe": [
+    "penis",
+    "spine"
+  ],
+  "spine": [
+    "penis",
+    "snipe"
+  ],
+  "snoop": [
+    "spoon"
+  ],
+  "spoon": [
+    "snoop"
+  ],
+  "snow": [
+    "sown"
+  ],
+  "sown": [
+    "snow"
+  ],
+  "buns": [
+    "snub"
+  ],
+  "snub": [
+    "buns"
+  ],
+  "snug": [
+    "sung"
+  ],
+  "sung": [
+    "snug"
+  ],
+  "resold": [
+    "solder"
+  ],
+  "solder": [
+    "resold"
+  ],
+  "colitis": [
+    "solicit"
+  ],
+  "solicit": [
+    "colitis"
+  ],
+  "coalitionist": [
+    "solicitation"
+  ],
+  "solicitation": [
+    "coalitionist"
+  ],
+  "royalist": [
+    "solitary"
+  ],
+  "solitary": [
+    "royalist"
+  ],
+  "solute": [
+    "tousle"
+  ],
+  "tousle": [
+    "solute"
+  ],
+  "arson": [
+    "sonar"
+  ],
+  "sonar": [
+    "arson"
+  ],
+  "sorbet": [
+    "strobe"
+  ],
+  "strobe": [
+    "sorbet"
+  ],
+  "rose": [
+    "sore"
+  ],
+  "sore": [
+    "rose"
+  ],
+  "roast": [
+    "sorta"
+  ],
+  "sorta": [
+    "roast"
+  ],
+  "resort": [
+    "roster",
+    "sorter"
+  ],
+  "roster": [
+    "resort",
+    "sorter"
+  ],
+  "sorter": [
+    "resort",
+    "roster"
+  ],
+  "resound": [
+    "sounder"
+  ],
+  "sounder": [
+    "resound"
+  ],
+  "opus": [
+    "soup"
+  ],
+  "soup": [
+    "opus"
+  ],
+  "ours": [
+    "sour"
+  ],
+  "sour": [
+    "ours"
+  ],
+  "course": [
+    "source"
+  ],
+  "source": [
+    "course"
+  ],
+  "resow": [
+    "sower",
+    "swore",
+    "worse"
+  ],
+  "sower": [
+    "resow",
+    "swore",
+    "worse"
+  ],
+  "swore": [
+    "resow",
+    "sower",
+    "worse"
+  ],
+  "worse": [
+    "resow",
+    "sower",
+    "swore"
+  ],
+  "spake": [
+    "speak"
+  ],
+  "speak": [
+    "spake"
+  ],
+  "rasp": [
+    "spar"
+  ],
+  "spar": [
+    "rasp"
+  ],
+  "parse": [
+    "spare",
+    "spear"
+  ],
+  "spare": [
+    "parse",
+    "spear"
+  ],
+  "spear": [
+    "parse",
+    "spare"
+  ],
+  "parsley": [
+    "sparely"
+  ],
+  "sparely": [
+    "parsley"
+  ],
+  "passer": [
+    "sparse"
+  ],
+  "sparse": [
+    "passer"
+  ],
+  "past": [
+    "spat",
+    "taps"
+  ],
+  "spat": [
+    "past",
+    "taps"
+  ],
+  "taps": [
+    "past",
+    "spat"
+  ],
+  "respell": [
+    "speller"
+  ],
+  "speller": [
+    "respell"
+  ],
+  "herpes": [
+    "sphere"
+  ],
+  "sphere": [
+    "herpes"
+  ],
+  "piles": [
+    "spiel"
+  ],
+  "spiel": [
+    "piles"
+  ],
+  "spilt": [
+    "split"
+  ],
+  "split": [
+    "spilt"
+  ],
+  "plains": [
+    "spinal"
+  ],
+  "spinal": [
+    "plains"
+  ],
+  "instep": [
+    "spinet"
+  ],
+  "spinet": [
+    "instep"
+  ],
+  "calipers": [
+    "spiracle"
+  ],
+  "spiracle": [
+    "calipers"
+  ],
+  "aspire": [
+    "praise",
+    "spirea"
+  ],
+  "praise": [
+    "aspire",
+    "spirea"
+  ],
+  "spirea": [
+    "aspire",
+    "praise"
+  ],
+  "palsy": [
+    "splay"
+  ],
+  "splay": [
+    "palsy"
+  ],
+  "despoil": [
+    "spoiled"
+  ],
+  "spoiled": [
+    "despoil"
+  ],
+  "pistol": [
+    "spoilt"
+  ],
+  "spoilt": [
+    "pistol"
+  ],
+  "poser": [
+    "prose",
+    "ropes",
+    "spore"
+  ],
+  "prose": [
+    "poser",
+    "ropes",
+    "spore"
+  ],
+  "ropes": [
+    "poser",
+    "prose",
+    "spore"
+  ],
+  "spore": [
+    "poser",
+    "prose",
+    "ropes"
+  ],
+  "sport": [
+    "strop"
+  ],
+  "strop": [
+    "sport"
+  ],
+  "post": [
+    "spot",
+    "stop",
+    "tops"
+  ],
+  "spot": [
+    "post",
+    "stop",
+    "tops"
+  ],
+  "stop": [
+    "post",
+    "spot",
+    "tops"
+  ],
+  "tops": [
+    "post",
+    "spot",
+    "stop"
+  ],
+  "spotlight": [
+    "stoplight"
+  ],
+  "stoplight": [
+    "spotlight"
+  ],
+  "protest": [
+    "spotter"
+  ],
+  "spotter": [
+    "protest"
+  ],
+  "spout": [
+    "stoup"
+  ],
+  "stoup": [
+    "spout"
+  ],
+  "sprat": [
+    "strap",
+    "traps"
+  ],
+  "strap": [
+    "sprat",
+    "traps"
+  ],
+  "traps": [
+    "sprat",
+    "strap"
+  ],
+  "raspy": [
+    "spray"
+  ],
+  "spray": [
+    "raspy"
+  ],
+  "prayers": [
+    "sprayer"
+  ],
+  "sprayer": [
+    "prayers"
+  ],
+  "drapes": [
+    "spread"
+  ],
+  "spread": [
+    "drapes"
+  ],
+  "esprit": [
+    "priest",
+    "sprite",
+    "stripe"
+  ],
+  "priest": [
+    "esprit",
+    "sprite",
+    "stripe"
+  ],
+  "sprite": [
+    "esprit",
+    "priest",
+    "stripe"
+  ],
+  "stripe": [
+    "esprit",
+    "priest",
+    "sprite"
+  ],
+  "sprout": [
+    "stupor"
+  ],
+  "stupor": [
+    "sprout"
+  ],
+  "risque": [
+    "squire"
+  ],
+  "squire": [
+    "risque"
+  ],
+  "bast": [
+    "bats",
+    "stab"
+  ],
+  "bats": [
+    "bast",
+    "stab"
+  ],
+  "stab": [
+    "bast",
+    "bats"
+  ],
+  "restaff": [
+    "staffer"
+  ],
+  "staffer": [
+    "restaff"
+  ],
+  "antagonist": [
+    "stagnation"
+  ],
+  "stagnation": [
+    "antagonist"
+  ],
+  "stalk": [
+    "talks"
+  ],
+  "talks": [
+    "stalk"
+  ],
+  "dustpan": [
+    "standup"
+  ],
+  "standup": [
+    "dustpan"
+  ],
+  "pastel": [
+    "staple"
+  ],
+  "staple": [
+    "pastel"
+  ],
+  "plaster": [
+    "stapler"
+  ],
+  "stapler": [
+    "plaster"
+  ],
+  "arts": [
+    "rats",
+    "star",
+    "tsar"
+  ],
+  "rats": [
+    "arts",
+    "star",
+    "tsar"
+  ],
+  "star": [
+    "arts",
+    "rats",
+    "tsar"
+  ],
+  "tsar": [
+    "arts",
+    "rats",
+    "star"
+  ],
+  "aster": [
+    "stare"
+  ],
+  "stare": [
+    "aster"
+  ],
+  "arrest": [
+    "starer"
+  ],
+  "starer": [
+    "arrest"
+  ],
+  "starlet": [
+    "startle"
+  ],
+  "startle": [
+    "starlet"
+  ],
+  "restart": [
+    "starter"
+  ],
+  "starter": [
+    "restart"
+  ],
+  "state": [
+    "taste"
+  ],
+  "taste": [
+    "state"
+  ],
+  "stateless": [
+    "tasteless"
+  ],
+  "tasteless": [
+    "stateless"
+  ],
+  "statelessness": [
+    "tastelessness"
+  ],
+  "tastelessness": [
+    "statelessness"
+  ],
+  "statement": [
+    "testament"
+  ],
+  "testament": [
+    "statement"
+  ],
+  "astute": [
+    "statue"
+  ],
+  "statue": [
+    "astute"
+  ],
+  "ester": [
+    "reset",
+    "steer",
+    "terse"
+  ],
+  "reset": [
+    "ester",
+    "steer",
+    "terse"
+  ],
+  "steer": [
+    "ester",
+    "reset",
+    "terse"
+  ],
+  "terse": [
+    "ester",
+    "reset",
+    "steer"
+  ],
+  "inset": [
+    "stein"
+  ],
+  "stein": [
+    "inset"
+  ],
+  "notes": [
+    "onset",
+    "steno",
+    "stone"
+  ],
+  "onset": [
+    "notes",
+    "steno",
+    "stone"
+  ],
+  "steno": [
+    "notes",
+    "onset",
+    "stone"
+  ],
+  "stone": [
+    "notes",
+    "onset",
+    "steno"
+  ],
+  "pest": [
+    "step"
+  ],
+  "step": [
+    "pest"
+  ],
+  "astern": [
+    "sterna"
+  ],
+  "sterna": [
+    "astern"
+  ],
+  "steroid": [
+    "storied"
+  ],
+  "storied": [
+    "steroid"
+  ],
+  "stet": [
+    "test"
+  ],
+  "test": [
+    "stet"
+  ],
+  "stew": [
+    "west"
+  ],
+  "west": [
+    "stew"
+  ],
+  "rickets": [
+    "sticker"
+  ],
+  "sticker": [
+    "rickets"
+  ],
+  "itself": [
+    "stifle"
+  ],
+  "stifle": [
+    "itself"
+  ],
+  "islet": [
+    "stile"
+  ],
+  "stile": [
+    "islet"
+  ],
+  "stoat": [
+    "toast"
+  ],
+  "toast": [
+    "stoat"
+  ],
+  "egoist": [
+    "stogie"
+  ],
+  "stogie": [
+    "egoist"
+  ],
+  "callosity": [
+    "stoically"
+  ],
+  "stoically": [
+    "callosity"
+  ],
+  "stoker": [
+    "stroke"
+  ],
+  "stroke": [
+    "stoker"
+  ],
+  "oyster": [
+    "storey"
+  ],
+  "storey": [
+    "oyster"
+  ],
+  "restrain": [
+    "strainer"
+  ],
+  "strainer": [
+    "restrain"
+  ],
+  "artist": [
+    "strait",
+    "strati"
+  ],
+  "strait": [
+    "artist",
+    "strati"
+  ],
+  "strati": [
+    "artist",
+    "strait"
+  ],
+  "strapping": [
+    "trappings"
+  ],
+  "trappings": [
+    "strapping"
+  ],
+  "master": [
+    "stream"
+  ],
+  "stream": [
+    "master"
+  ],
+  "restrengthen": [
+    "strengthener"
+  ],
+  "strengthener": [
+    "restrengthen"
+  ],
+  "strew": [
+    "wrest"
+  ],
+  "wrest": [
+    "strew"
+  ],
+  "driest": [
+    "stride"
+  ],
+  "stride": [
+    "driest"
+  ],
+  "restring": [
+    "stringer"
+  ],
+  "stringer": [
+    "restring"
+  ],
+  "strut": [
+    "trust"
+  ],
+  "trust": [
+    "strut"
+  ],
+  "bust": [
+    "stub"
+  ],
+  "stub": [
+    "bust"
+  ],
+  "dust": [
+    "stud"
+  ],
+  "stud": [
+    "dust"
+  ],
+  "dusty": [
+    "study"
+  ],
+  "study": [
+    "dusty"
+  ],
+  "nuts": [
+    "stun"
+  ],
+  "stun": [
+    "nuts"
+  ],
+  "bus": [
+    "sub"
+  ],
+  "sub": [
+    "bus"
+  ],
+  "bustle": [
+    "sublet",
+    "subtle"
+  ],
+  "sublet": [
+    "bustle",
+    "subtle"
+  ],
+  "subtle": [
+    "bustle",
+    "sublet"
+  ],
+  "crocus": [
+    "succor"
+  ],
+  "succor": [
+    "crocus"
+  ],
+  "sue": [
+    "use"
+  ],
+  "use": [
+    "sue"
+  ],
+  "insult": [
+    "sunlit"
+  ],
+  "sunlit": [
+    "insult"
+  ],
+  "pus": [
+    "sup"
+  ],
+  "sup": [
+    "pus"
+  ],
+  "purse": [
+    "super"
+  ],
+  "super": [
+    "purse"
+  ],
+  "percussion": [
+    "supersonic"
+  ],
+  "supersonic": [
+    "percussion"
+  ],
+  "presume": [
+    "supreme"
+  ],
+  "supreme": [
+    "presume"
+  ],
+  "ruse": [
+    "sure",
+    "user"
+  ],
+  "sure": [
+    "ruse",
+    "user"
+  ],
+  "user": [
+    "ruse",
+    "sure"
+  ],
+  "suspender": [
+    "unpressed"
+  ],
+  "unpressed": [
+    "suspender"
+  ],
+  "luster": [
+    "result",
+    "rustle",
+    "sutler",
+    "ulster"
+  ],
+  "result": [
+    "luster",
+    "rustle",
+    "sutler",
+    "ulster"
+  ],
+  "rustle": [
+    "luster",
+    "result",
+    "sutler",
+    "ulster"
+  ],
+  "sutler": [
+    "luster",
+    "result",
+    "rustle",
+    "ulster"
+  ],
+  "ulster": [
+    "luster",
+    "result",
+    "rustle",
+    "sutler"
+  ],
+  "suture": [
+    "uterus"
+  ],
+  "uterus": [
+    "suture"
+  ],
+  "swap": [
+    "wasp"
+  ],
+  "wasp": [
+    "swap"
+  ],
+  "swat": [
+    "wast"
+  ],
+  "wast": [
+    "swat"
+  ],
+  "sway": [
+    "ways",
+    "yaws"
+  ],
+  "ways": [
+    "sway",
+    "yaws"
+  ],
+  "yaws": [
+    "sway",
+    "ways"
+  ],
+  "swear": [
+    "wares"
+  ],
+  "wares": [
+    "swear"
+  ],
+  "sweat": [
+    "waste"
+  ],
+  "waste": [
+    "sweat"
+  ],
+  "sweats": [
+    "wastes"
+  ],
+  "wastes": [
+    "sweats"
+  ],
+  "swelter": [
+    "wrestle"
+  ],
+  "wrestle": [
+    "swelter"
+  ],
+  "swing": [
+    "wings"
+  ],
+  "wings": [
+    "swing"
+  ],
+  "sword": [
+    "words"
+  ],
+  "words": [
+    "sword"
+  ],
+  "bestiary": [
+    "sybarite"
+  ],
+  "sybarite": [
+    "bestiary"
   ]
 }
