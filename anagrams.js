@@ -200,15 +200,15 @@ const data = {
   glean: ["angel", "angle"],
   anger: ["range"],
   range: ["anger"],
-  angry: ["rangy"],
+  angry: ["rangy"], //USE
   rangy: ["angry"],
-  animal: ["lamina", "manila"],
+  animal: ["lamina", "manila"], //USE
   lamina: ["animal", "manila"],
   manila: ["animal", "lamina"],
   ankh: ["hank", "khan"],
   hank: ["ankh", "khan"],
   khan: ["ankh", "hank"],
-  annoyed: ["anodyne"],
+  annoyed: ["anodyne"], //USE opposites
   anodyne: ["annoyed"],
   anoint: ["nation"],
   nation: ["anoint"],
@@ -222,13 +222,13 @@ const data = {
   gentian: ["antigen"],
   antler: ["learnt", "rental"],
   learnt: ["antler", "rental"],
-  rental: ["antler", "learnt"],
-  antsy: ["nasty", "tansy"],
+  rental: ["antler", "learnt"], //USE
+  antsy: ["nasty", "tansy"], //USE a little tansy (flower)
   nasty: ["antsy", "tansy"],
   tansy: ["antsy", "nasty"],
   any: ["nay"],
   nay: ["any"],
-  ape: ["pea"],
+  ape: ["pea"], //USE
   pea: ["ape"],
   aplenty: ["penalty"],
   penalty: ["aplenty"],
