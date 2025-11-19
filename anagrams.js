@@ -103,7 +103,7 @@ const data = {
   coeval: ["alcove"],
   ale: ["lea"],
   lea: ["ale"],
-  alert: ["alter", "later"],
+  alert: ["alter", "later"], //USE
   alter: ["alert", "later"],
   later: ["alert", "alter"],
   alga: ["gala"],
@@ -117,7 +117,7 @@ const data = {
   alit: ["tail", "tali"],
   tail: ["alit", "tali"],
   tali: ["alit", "tail"],
-  allegorist: ["legislator"],
+  allegorist: ["legislator"], //USE
   legislator: ["allegorist"],
   allergy: ["gallery", "largely", "regally"],
   gallery: ["allergy", "largely", "regally"],
@@ -131,7 +131,7 @@ const data = {
   loyal: ["alloy"],
   allure: ["laurel"],
   laurel: ["allure"],
-  alms: ["slam"],
+  alms: ["slam"], //USE
   slam: ["alms"],
   aloft: ["float"],
   float: ["aloft"],
