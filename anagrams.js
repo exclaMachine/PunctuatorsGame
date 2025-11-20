@@ -230,7 +230,7 @@ const data = {
   nay: ["any"],
   ape: ["pea"], //USE
   pea: ["ape"],
-  aplenty: ["penalty"],
+  aplenty: ["penalty"], //USE
   penalty: ["aplenty"],
   appal: ["papal"],
   papal: ["appal"],
@@ -245,7 +245,7 @@ const data = {
   tap: ["apt", "pat"],
   aptly: ["platy"],
   platy: ["aptly"],
-  arbiter: ["rarebit"],
+  arbiter: ["rarebit"], //USE rarebit is cheese sandwhich, arbiter of DOOM haha
   rarebit: ["arbiter"],
   arc: ["car"],
   car: ["arc"],
@@ -258,10 +258,10 @@ const data = {
   era: ["are", "ear"],
   argent: ["garnet"],
   garnet: ["argent"],
-  argon: ["groan", "organ"],
+  argon: ["groan", "organ"], //USE
   groan: ["argon", "organ"],
   organ: ["argon", "groan"],
-  argot: ["gator"],
+  argot: ["gator"], //USE
   gator: ["argot"],
   argue: ["auger"],
   auger: ["argue"],
@@ -269,12 +269,12 @@ const data = {
   raid: ["arid"],
   arise: ["raise"],
   raise: ["arise"],
-  arm: ["mar", "ram"],
+  arm: ["mar", "ram"], //USE
   mar: ["arm", "ram"],
   ram: ["arm", "mar"],
   armed: ["dream"],
   dream: ["armed"],
-  armpit: ["impart"],
+  armpit: ["impart"], //USE
   impart: ["armpit"],
   arrest: ["starer"],
   starer: ["arrest"],
