@@ -53,6 +53,7 @@ let vertPairs = {
   k: "k",
   l: "l",
   m: "w",
+  n: "n", //N looks like lowercase n flipped
   o: "o",
   p: "b",
   q: "d",
@@ -438,7 +439,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 };
 
 //CreateJS("ambigramPOJO.js", "ambigram");
-CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
+//CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
+CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");

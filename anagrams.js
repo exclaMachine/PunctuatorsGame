@@ -278,27 +278,27 @@ const data = {
   impart: ["armpit"],
   arrest: ["starer"],
   starer: ["arrest"],
-  arrogant: ["tarragon"],
+  arrogant: ["tarragon"], //USE
   tarragon: ["arrogant"],
-  arson: ["sonar"],
+  arson: ["sonar"], //USE
   sonar: ["arson"],
-  art: ["rat", "tar"],
+  art: ["rat", "tar"], //USE
   rat: ["art", "tar"],
   tar: ["art", "rat"],
-  arthroscope: ["crapshooter"],
+  arthroscope: ["crapshooter"], //USE
   crapshooter: ["arthroscope"],
   article: ["recital"],
   recital: ["article"],
-  artisan: ["tsarina"],
+  artisan: ["tsarina"], //USE
   tsarina: ["artisan"],
   artist: ["strait", "strati"],
   strait: ["artist", "strati"],
   strati: ["artist", "strait"],
-  arts: ["rats", "star", "tsar"],
+  arts: ["rats", "star", "tsar"], //USE
   rats: ["arts", "star", "tsar"],
   star: ["arts", "rats", "tsar"],
   tsar: ["arts", "rats", "star"],
-  artsy: ["satyr", "stray"],
+  artsy: ["satyr", "stray"], //USE
   satyr: ["artsy", "stray"],
   stray: ["artsy", "satyr"],
   arty: ["tray"],
@@ -308,17 +308,17 @@ const data = {
   stance: ["ascent", "secant"],
   ascertain: ["sectarian"],
   sectarian: ["ascertain"],
-  ascot: ["coast"],
+  ascot: ["coast"], //USE
   coast: ["ascot"],
   ash: ["has"],
   has: ["ash"],
-  ashore: ["hoarse"],
+  ashore: ["hoarse"], //USE
   hoarse: ["ashore"],
   ashy: ["shay"],
   shay: ["ashy"],
-  ask: ["ska"],
+  ask: ["ska"], //USE
   ska: ["ask"],
-  asleep: ["elapse", "please"],
+  asleep: ["elapse", "please"], //USE
   elapse: ["asleep", "please"],
   please: ["asleep", "elapse"],
   asp: ["sap", "spa"],
