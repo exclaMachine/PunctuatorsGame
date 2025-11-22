@@ -96,25 +96,32 @@ let capVertPairs = {
 };
 
 //can use lowercase and uppercase and type in spongebob ex. hElLo yOu
-let capHorizPairs = {
-  a: "a", //Cap
-  b: "d",
-  d: "c", // Cap if there is a serif it could look like a incomplete D
-  h: "h", //Cap
-  i: "i",
-  j: "t", //Cap kind of cursive
-  l: "l",
-  m: "m",
-  o: "o",
-  p: "q",
-  //q: "p",
-  s: "z",
-  t: "t",
-  u: "u",
-  v: "v",
-  w: "w",
-  x: "x",
-  y: "y",
+// each key -> array of *possible* mirror outputs
+let HorizPairs = {
+  a: ["a"], // a ↔ a
+  b: ["d", "cl"], // b ↔ d or cl
+  d: ["c", "cl"], // d ↔ c or cl
+  h: ["h", "rl"], // h ↔ h or rl
+  i: ["i"],
+  j: ["t"],
+  l: ["l"],
+  m: ["m"],
+  o: ["o"],
+  p: ["cj"], // p ↔ cj
+  s: ["z", "a"], // s ↔ z or a (cursive)
+  t: ["t"],
+  u: ["u"],
+  v: ["v"],
+  w: ["w"],
+  x: ["x"],
+  y: ["y"],
+
+  // digraph *inputs* as well (for the “vice versa” direction)
+  cl: ["b", "d"],
+  rl: ["h"],
+  cj: ["p"],
+  z: ["s"],
+  a_s: ["s"], // optional if you want a ↔ s; or just keep z↔s
 };
 
 let roundedLetterPairs = {
@@ -172,25 +179,67 @@ const VertMirror = (word, pairs) => {
   // }
 };
 
-const HorizMirror = (word, pairs) => {
-  let arr = word.split("");
+// word: original word (string)
+// pairs: object where key -> string | string[] (we’ll normalize to arrays)
+// wordSet: Set of valid dictionary words (from 2of12.txt)
+const HorizMirror = (word, pairs, wordSet) => {
+  const s = word.toLowerCase();
+  const len = s.length;
 
-  for (let i = 0; i < arr.length; i++) {
-    if (pairs[arr[i]] === undefined) {
-      return false;
+  // normalize pairs into a Map<string, string[]>
+  const map = new Map();
+  for (const key in pairs) {
+    const val = pairs[key];
+    if (Array.isArray(val)) {
+      map.set(key, val);
     } else {
-      arr[i] = pairs[arr[i]];
+      map.set(key, [val]);
     }
   }
 
-  let reversed = arr.reverse().join("");
-  //let reversed = arr.join("");
+  let found = null;
 
-  if (reversed === word) {
-    return false;
-  } else {
-    return reversed;
-  }
+  const dfs = (pos, segments) => {
+    if (found !== null) return; // early exit if we already found a valid word
+
+    if (pos === len) {
+      // finished scanning input; build mirrored word
+      const mirrored = segments.slice().reverse().join("");
+      if (wordSet.has(mirrored)) {
+        found = mirrored;
+      }
+      return;
+    }
+
+    // Try a 2-character chunk first (digraphs like "rl", "cl", "cj")
+    if (pos + 1 < len) {
+      const digraph = s.slice(pos, pos + 2);
+      if (map.has(digraph)) {
+        const outs = map.get(digraph);
+        for (const out of outs) {
+          dfs(pos + 2, segments.concat(out));
+          if (found !== null) return;
+        }
+      }
+    }
+
+    // Then try single-character mapping
+    const ch = s[pos];
+    if (map.has(ch)) {
+      const outs = map.get(ch);
+      for (const out of outs) {
+        dfs(pos + 1, segments.concat(out));
+        if (found !== null) return;
+      }
+    } else {
+      // no mapping for this character at all: this path is dead
+      return;
+    }
+  };
+
+  dfs(0, []);
+
+  return found || false;
 };
 
 const VertCapitalMirror = (word, pairs) => {
@@ -392,7 +441,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         alteredWord = RoundLetters(word, horPairs, data);
       }
       if (typeOfJSFunction === "sideMirror") {
-        alteredWord = HorizMirror(word, capHorizPairs);
+        alteredWord = HorizMirror(word, HorizPairs, wordSet);
       }
       if (typeOfJSFunction === "ambigram") {
         alteredWord = ambigram(word, AmbigramPairs);
@@ -440,8 +489,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 
 //CreateJS("ambigramPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
-CreateJS("todbotPOJO.js", "mirror");
-//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+//CreateJS("todbotPOJO.js", "mirror");
+CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
