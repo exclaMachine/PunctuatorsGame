@@ -98,28 +98,36 @@ let capVertPairs = {
 //can use lowercase and uppercase and type in spongebob ex. hElLo yOu
 // each key -> array of *possible* mirror outputs
 let HorizPairs = {
-  a: ["a"], // a ↔ a
-  b: ["d", "cl"], // b ↔ d or cl
-  d: ["c", "cl"], // d ↔ c or cl
-  h: ["h", "rl"], // h ↔ h or rl
+  a: ["a", "fl"], // a ↔ a or fl to A
+  b: ["d", "cl", "el"], // b ↔ d or cl to b, or El to B
+  d: ["c", "cl", "h"], // d ↔ c or cl to D
+  e: ["o"],
+  f: ["z"],
+  h: ["h", "rl"], // h ↔ h or rl to h
   i: ["i"],
   j: ["t"],
   l: ["l"],
-  m: ["m"],
+  m: ["m", "nn"],
   o: ["o"],
-  p: ["cj"], // p ↔ cj
+  p: ["cj", "ej"], // p ↔ cj
   s: ["z", "a"], // s ↔ z or a (cursive)
   t: ["t"],
   u: ["u"],
   v: ["v"],
-  w: ["w"],
+  w: ["w", "vv"],
   x: ["x"],
-  y: ["y"],
+  y: ["y", "lv"],
 
   // digraph *inputs* as well (for the “vice versa” direction)
   cl: ["b", "d"],
+  ej: ["p"],
+  el: ["b"],
+  fl: ["a"],
+  lv: ["y"],
+  nn: ["m"],
   rl: ["h"],
   cj: ["p"],
+  vv: ["w"],
   z: ["s"],
   a_s: ["s"], // optional if you want a ↔ s; or just keep z↔s
 };
