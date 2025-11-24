@@ -42,26 +42,31 @@ let horPairs = {
 };
 
 let vertPairs = {
-  a: "a",
-  b: "b", //Only Cap
-  c: "c",
-  d: "d", //Only Cap
-  e: "e", //Only Cap
-  f: "t",
-  h: "h", //Only Cap
-  i: "i", //Only Cap
-  k: "k",
-  l: "l",
-  m: "w",
-  n: "n", //N looks like lowercase n flipped
-  o: "o",
-  p: "b",
-  q: "d",
-  s: "z", //curvy Cap Z
-  t: "l", //Cap L with serif
-  u: "n", //without tail
-  v: "a", //Cap V with a dot in the middle
-  x: "x",
+  a: ["a"],
+  b: ["b"], // Only Cap visually
+  c: ["c"],
+  d: ["d"], // Only Cap visually
+  e: ["e", "o"], // E -> E, e -> o
+  f: ["t", "b"],
+  g: ["g", "c", "q"],
+  h: ["h"], // Only Cap visually
+  i: ["i", "l"], // Only Cap visually
+  j: ["l"],
+  k: ["k"],
+  l: ["l"],
+  m: ["w"],
+  n: ["n"], // N looks like lowercase n flipped
+  o: ["o"],
+  p: ["b"],
+  q: ["d"],
+  r: ["e"],
+  s: ["z", "a", "g"], // curvy Cap Z
+  t: ["l"], // Cap L with serif
+  u: ["n"], // without tail
+  v: ["a"], // Cap V with a dot in the middle
+  x: ["x"],
+  y: ["d"],
+  z: ["f"],
 };
 
 let hanglerAngles = {
@@ -166,25 +171,61 @@ const ambigram = (word, pairs) => {
   }
 };
 
-const VertMirror = (word, pairs) => {
-  let arr = word.split("");
+// word: string
+// pairs: { [char]: string | string[] }
+// wordSet: Set<string> or undefined
+const VertMirror = (word, pairs, wordSet) => {
+  const chars = word.split("");
 
-  for (let i = 0; i < arr.length; i++) {
-    if (pairs[arr[i]] === undefined) {
-      return false;
-    } else {
-      arr[i] = pairs[arr[i]];
-    }
+  // normalize pairs into { key: string[] }
+  const norm = {};
+  for (const key in pairs) {
+    const val = pairs[key];
+    norm[key] = Array.isArray(val) ? val : [val];
   }
 
-  let reversed = arr.join("");
-  //let reversed = arr.join("");
+  // If no wordSet is given, just use the first option per character
+  if (!wordSet) {
+    const out = [];
+    for (const ch of chars) {
+      if (!norm[ch]) return false;
+      out.push(norm[ch][0]);
+    }
+    return out.join("");
+  }
 
-  // if (reversed === word) {
-  //   return false;
-  // } else {
-  return reversed;
-  // }
+  // If wordSet exists, explore combinations until we find a real word
+  let found = null;
+
+  const dfs = (idx, acc) => {
+    if (found !== null) return; // early exit if we already found one
+
+    if (idx === chars.length) {
+      const candidate = acc.join("");
+      if (wordSet.has(candidate)) {
+        found = candidate;
+      }
+      return;
+    }
+
+    const ch = chars[idx];
+    const options = norm[ch];
+    if (!options) {
+      // this character has no mapping -> dead path
+      return;
+    }
+
+    for (const opt of options) {
+      acc.push(opt);
+      dfs(idx + 1, acc);
+      acc.pop();
+      if (found !== null) return;
+    }
+  };
+
+  dfs(0, []);
+
+  return found || false;
 };
 
 // word: original word (string)
@@ -497,8 +538,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 
 //CreateJS("ambigramPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
-//CreateJS("todbotPOJO.js", "mirror");
-CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+CreateJS("todbotPOJO.js", "mirror");
+//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
