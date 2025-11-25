@@ -800,7 +800,7 @@ const data = {
   gall: "gall",
   galleon: "galleon",
   galling: "galling",
-  gallon: "gallon",
+  gallon: "gallon", //USE
   gang: "gang",
   gangland: "gangland",
   ganglia: "ganglia",
@@ -817,7 +817,7 @@ const data = {
   geld: "geld",
   gelding: "gelding",
   gelid: "gelid",
-  gene: "gene",
+  gene: "gene", //USE
   genealogical: "genealogical",
   genial: "genial",
   genie: "genie",
@@ -839,7 +839,7 @@ const data = {
   gilt: "gill",
   gin: "gin",
   gingko: "gingko",
-  ginkgo: "ginkgo",
+  ginkgo: "ginkgo", //Would use this with biloba but all the memory hype is not science
   glace: "glace",
   glacial: "glacial",
   glad: "glad",
@@ -875,7 +875,7 @@ const data = {
   goggle: "goggle",
   going: "going",
   gold: "gold",
-  golden: "golden",
+  golden: "golden", //USE
   gonad: "gonad",
   gonadal: "gonadal",
   gondola: "gondola",
@@ -883,10 +883,9 @@ const data = {
   gong: "gong", //USE
   gonna: "gonna",
   goo: "goo",
-  good: "good",
+  good: "good", //USE
   gook: "gook",
   goon: "goon", //USE go on
-  h: "h",
   ha: "ha",
   hacienda: "hacienda",
   hack: "hack",
@@ -1083,7 +1082,6 @@ const data = {
   jogging: "logging",
   join: "loin",
   jolt: "loll",
-  k: "k",
   kabob: "kabob",
   kale: "kale",
   kaolin: "kaolin",
@@ -1123,14 +1121,13 @@ const data = {
   kneel: "kneel",
   knell: "knell",
   knelt: "knell",
-  knickknack: "knickknack",
+  knickknack: "knickknack", //USE
   knob: "knob",
-  knock: "knock",
+  knock: "knock", //USE
   knoll: "knoll",
   koala: "koala",
   kola: "kola",
   kook: "kook",
-  l: "l",
   la: "la",
   lab: "lab",
   label: "label",
@@ -1149,7 +1146,7 @@ const data = {
   ladle: "ladle",
   lag: "lag",
   lagoon: "lagoon",
-  laid: "laid",
+  laid: "laid", //USE
   lain: "lain",
   lake: "lake",
   lam: "law",
@@ -1272,7 +1269,6 @@ const data = {
   lop: "lob",
   lope: "lobe",
   lox: "lox",
-  m: "w",
   mad: "wad",
   madding: "wadding",
   made: "wade",
@@ -1420,7 +1416,6 @@ const data = {
   oxblood: "oxblood",
   oxen: "oxen",
   oxide: "oxide",
-  p: "b",
   pack: "back",
   packing: "backing",
   pad: "bad",
