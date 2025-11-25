@@ -361,7 +361,7 @@ const data = {
   caboodle: "caboodle",
   cacao: "cacao",
   cache: "cache",
-  cackle: "cackle",
+  cackle: "cackle", //USE
   cad: "cad",
   caddie: "caddie",
   cadence: "cadence",
@@ -415,8 +415,8 @@ const data = {
   challenging: "challenging",
   chance: "chance",
   chancel: "chancel",
-  change: "change",
-  changeable: "changeable",
+  change: "change", //USE
+  changeable: "changeable", //USE
   changeling: "changeling",
   channel: "channel",
   check: "check",
@@ -453,7 +453,7 @@ const data = {
   chock: "chock",
   chockablock: "chockablock",
   chocoholic: "chocoholic",
-  choice: "choice",
+  choice: "choice", //USE
   choke: "choke",
   ciao: "ciao",
   cicada: "cicada",
@@ -688,7 +688,6 @@ const data = {
   dour: "done", //USE
   drat: "deal", //USE
   dray: "dead",
-  e: "e",
   each: "each",
   eagle: "eagle",
   ebb: "ebb",
@@ -729,7 +728,7 @@ const data = {
   ending: "ending",
   engage: "engage",
   engaged: "engaged",
-  engaging: "engaging",
+  engaging: "engaging", //USE
   engine: "engine",
   enhance: "enhance",
   ennoble: "ennoble",
@@ -746,7 +745,6 @@ const data = {
   exhale: "exhale",
   exile: "exile",
   exiled: "exiled",
-  f: "t",
   fable: "table",
   fad: "tad",
   fag: "tag",
@@ -785,7 +783,6 @@ const data = {
   ford: "toed",
   four: "tone",
   frat: "teal",
-  g: "g",
   gab: "gab", //USE
   gabble: "gabble",
   gable: "gable",
