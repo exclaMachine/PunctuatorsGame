@@ -327,7 +327,7 @@ const data = {
   aspirant: ["partisan"],
   partisan: ["aspirant"],
   aspirate: ["parasite"],
-  parasite: ["aspirate"],
+  parasite: ["aspirate"], //USE
   aspire: ["praise", "spirea"],
   praise: ["aspire", "spirea"],
   spirea: ["aspire", "praise"],
@@ -356,7 +356,7 @@ const data = {
   moat: ["atom"],
   atone: ["oaten"],
   oaten: ["atone"],
-  atria: ["tiara"],
+  atria: ["tiara"], //USE kind of dark, but stole my atria
   tiara: ["atria"],
   atrial: ["lariat"],
   lariat: ["atrial"],
@@ -368,17 +368,17 @@ const data = {
   tentativeness: ["attentiveness"],
   attic: ["tacit"],
   tacit: ["attic"],
-  auction: ["caution"],
+  auction: ["caution"], //USE caution sign
   caution: ["auction"],
   augment: ["mutagen"],
   mutagen: ["augment"],
-  aunt: ["tuna"],
+  aunt: ["tuna"], //USE
   tuna: ["aunt"],
   avarice: ["caviare"],
   caviare: ["avarice"],
   avenger: ["engrave"],
   engrave: ["avenger"],
-  aver: ["rave"],
+  aver: ["rave"], //USE
   rave: ["aver"],
   avid: ["diva"],
   diva: ["avid"],
@@ -396,7 +396,7 @@ const data = {
   blabber: ["babbler"],
   backward: ["drawback"],
   drawback: ["backward"],
-  bacterial: ["calibrate"],
+  bacterial: ["calibrate"], //USE
   calibrate: ["bacterial"],
   bad: ["dab"],
   dab: ["bad"],
@@ -406,7 +406,7 @@ const data = {
   gable: ["bagel"],
   bake: ["beak"],
   beak: ["bake"],
-  baker: ["brake", "break"],
+  baker: ["brake", "break"], //USE they are in a vehicle
   brake: ["baker", "break"],
   break: ["baker", "brake"],
   baleen: ["enable"],
@@ -415,7 +415,7 @@ const data = {
   blare: ["baler", "blear"],
   blear: ["baler", "blare"],
   balm: ["lamb"],
-  lamb: ["balm"],
+  lamb: ["balm"], //USE lip lamb
   balsa: ["basal"],
   basal: ["balsa"],
   ban: ["nab"],

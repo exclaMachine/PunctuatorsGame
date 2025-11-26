@@ -2,28 +2,56 @@ const fs = require("fs");
 const roundWords = require("./roundLettersMulti.js");
 const roundWordsSingle = require("./roundLetters.js");
 
+// let AmbigramPairs = {
+//   a: ["e", "v", "h"], //Cap V and H
+//   b: ["q", "b"], //Cap B
+//   d: ["p", "d"], //Cap D
+//   e: ["a", "e"], //Cap E
+//   h: ["y", "h", "a"], //Cap H and A
+//   i: ["r", "e", "i"], //Cap I
+//   j: ["l", "r"],
+//   l: ["j", "l", "t"], //Cap T
+//   m: ["w", "uu"],
+//   n: ["u", "n"], //Cap N
+//   o: ["e", "o"],
+//   p: "d",
+//   q: "b",
+//   r: ["j", "d"], //Cap R -> d
+//   s: ["e", "s"],
+//   t: ["t", "l"], //Cap L
+//   u: "n",
+//   w: ["m", "nn"],
+//   x: ["x", "o"],
+//   y: ["h", "y"], //Cap Y
+//   z: "z",
+// };
+
 let AmbigramPairs = {
-  a: "e",
-  b: "q",
-  d: "p",
-  e: "a",
-  h: "y",
-  i: "i",
-  j: "r",
-  l: "l",
-  m: "w",
-  n: "u",
-  o: "o",
-  p: "d",
-  q: "b",
-  r: "j",
-  s: "s",
-  t: "t",
-  u: "n",
-  w: "m",
-  x: "x",
-  y: "h",
-  z: "z",
+  a: ["e", "v", "h"], // a ↔ e, v, h
+  b: ["q", "g", "e"], // b ↔ q; B to E
+  d: ["p", "g"], // d ↔ p
+  e: ["a", "e"], // e ↔ a
+  h: ["y", "h", "a"], // h ↔ y, a
+  i: ["r", "e", "i"], // i ↔ r, e
+  j: ["l", "r"], // j ↔ l, r
+  l: ["j", "l", "t"], // l ↔ j, t
+  m: ["w", "uu"], // m ↔ w, uu
+  n: ["u", "n"], // n ↔ u
+  o: ["e", "o"], // o ↔ e
+  p: ["d"], // p ↔ d
+  q: ["b"], // q ↔ b //Q and O?
+  r: ["j", "d"], // r ↔ j; R ↔ d
+  s: ["e", "s"], // s ↔ e //g and s could also be done
+  t: ["t", "l"], // t ↔ l
+  u: ["n"], // u ↔ n
+  w: ["m", "nn"], // w ↔ m, nn
+  x: ["x", "o"], // x ↔ o
+  y: ["h", "t"], // y ↔ h
+  z: ["z"], // z ↔ z
+
+  // --- digraph reverse mappings ---
+  uu: ["m"],
+  nn: ["w"],
 };
 
 let horPairs = {
@@ -150,25 +178,67 @@ let roundedLetterPairs = {
   y: "m",
 };
 
-const ambigram = (word, pairs) => {
-  let arr = word.split("");
+// Ambigram with arrays + digraph support + dictionary filtering
+const ambigram = (word, pairs, wordSet) => {
+  const lower = word.toLowerCase();
+  const len = lower.length;
 
-  for (let i = 0; i < arr.length; i++) {
-    if (pairs[arr[i]] === undefined) {
-      return false;
-    } else {
-      arr[i] = pairs[arr[i]];
+  // normalize pairs so every key maps to an array
+  const map = new Map();
+  for (let key in pairs) {
+    const val = pairs[key];
+    map.set(key, Array.isArray(val) ? val : [val]);
+  }
+
+  // if wordSet not provided, just use first mapping per letter
+  if (!wordSet) {
+    const out = [];
+    for (let i = 0; i < len; i++) {
+      const ch = lower[i];
+      if (!map.has(ch)) return false;
+      out.push(map.get(ch)[0]);
     }
+    return out.reverse().join("");
   }
 
-  let reversed = arr.reverse().join("");
-  //let reversed = arr.join("");
+  // DFS search: try all combos until one forms a valid dictionary word
+  let found = null;
 
-  if (reversed === word) {
-    return false;
-  } else {
-    return reversed;
-  }
+  const dfs = (pos, segments) => {
+    if (found) return;
+
+    if (pos === len) {
+      const candidate = segments.slice().reverse().join("");
+      if (wordSet.has(candidate)) {
+        found = candidate;
+      }
+      return;
+    }
+
+    // Try 2-letter input digraphs (like "uu", "nn") first
+    if (pos + 1 < len) {
+      const digraph = lower.slice(pos, pos + 2);
+      if (map.has(digraph)) {
+        for (const out of map.get(digraph)) {
+          dfs(pos + 2, segments.concat(out));
+          if (found) return;
+        }
+      }
+    }
+
+    // Try single-letter mapping
+    const ch = lower[pos];
+    if (!map.has(ch)) return;
+
+    for (const out of map.get(ch)) {
+      dfs(pos + 1, segments.concat(out));
+      if (found) return;
+    }
+  };
+
+  dfs(0, []);
+
+  return found || false;
 };
 
 // word: string
@@ -493,7 +563,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         alteredWord = HorizMirror(word, HorizPairs, wordSet);
       }
       if (typeOfJSFunction === "ambigram") {
-        alteredWord = ambigram(word, AmbigramPairs);
+        alteredWord = ambigram(word, AmbigramPairs, wordSet);
       } else if (typeOfJSFunction === "roundLetters") {
         alteredWord = RoundLetters(word, roundedLetterPairs, data);
       } else if (typeOfJSFunction === "roundLettersMulti") {
@@ -536,9 +606,9 @@ const CreateJS = (jsName, typeOfJSFunction) => {
   console.log(`Successfully created ${jsName}!`);
 };
 
-//CreateJS("ambigramPOJO.js", "ambigram");
+CreateJS("ambigramPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
-CreateJS("todbotPOJO.js", "mirror");
+//CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
