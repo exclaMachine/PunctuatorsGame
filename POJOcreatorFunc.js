@@ -41,7 +41,7 @@ let AmbigramPairs = {
   p: ["d"], // p ↔ d
   q: ["b"], // q ↔ b //Q and O?
   r: ["j", "d"], // r ↔ j; R ↔ d
-  s: ["e", "s"], // s ↔ e //g and s could also be done
+  s: ["e", "g", "s"], // s ↔ e //g and s could also be done
   t: ["t", "l"], // t ↔ l
   u: ["n"], // u ↔ n
   w: ["m", "nn"], // w ↔ m, nn
