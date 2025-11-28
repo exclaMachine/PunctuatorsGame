@@ -2,30 +2,6 @@ const fs = require("fs");
 const roundWords = require("./roundLettersMulti.js");
 const roundWordsSingle = require("./roundLetters.js");
 
-// let AmbigramPairs = {
-//   a: ["e", "v", "h"], //Cap V and H
-//   b: ["q", "b"], //Cap B
-//   d: ["p", "d"], //Cap D
-//   e: ["a", "e"], //Cap E
-//   h: ["y", "h", "a"], //Cap H and A
-//   i: ["r", "e", "i"], //Cap I
-//   j: ["l", "r"],
-//   l: ["j", "l", "t"], //Cap T
-//   m: ["w", "uu"],
-//   n: ["u", "n"], //Cap N
-//   o: ["e", "o"],
-//   p: "d",
-//   q: "b",
-//   r: ["j", "d"], //Cap R -> d
-//   s: ["e", "s"],
-//   t: ["t", "l"], //Cap L
-//   u: "n",
-//   w: ["m", "nn"],
-//   x: ["x", "o"],
-//   y: ["h", "y"], //Cap Y
-//   z: "z",
-// };
-
 let AmbigramPairs = {
   a: ["e", "v", "h"], // a ↔ e, v, h
   b: ["q", "g", "e"], // b ↔ q; B to E
@@ -133,8 +109,8 @@ let capVertPairs = {
 let HorizPairs = {
   a: ["a", "fl"], // a ↔ a or fl to A
   b: ["d", "cl", "el"], // b ↔ d or cl to b, or El to B
-  d: ["c", "cl", "h"], // d ↔ c or cl to D
-  e: ["o"],
+  d: ["c", "cl", "h", "s"], // d ↔ c or cl to D, cursive s to a d kind of works
+  e: ["o", "s"],
   f: ["z"],
   h: ["h", "rl"], // h ↔ h or rl to h
   i: ["i"],
