@@ -46,19 +46,22 @@ let horPairs = {
 };
 
 let NinetyDegreesClockWise = {
+  a: ["u"],
   b: ["w"],
   c: ["n"],
   d: ["u"],
   e: ["n", "m"],
-  h: ["i"],
+  h: ["i", "z"],
+  i: ["h", "n"],
   m: ["b"],
-  n: ["z", "s"],
+  n: ["z", "s", "i"],
   o: ["o", "e"],
   s: ["n"],
   t: ["t", "y"],
-  u: ["c"],
+  u: ["c", "e"],
   w: ["e"],
   x: ["x"],
+  y: ["y"],
   z: ["n"],
 };
 
@@ -132,6 +135,7 @@ let HorizPairs = {
   h: ["h", "rl"], // h ↔ h or rl to h
   i: ["i"],
   j: ["t"],
+  k: ["tl", "ti"], //capital T
   l: ["l"],
   m: ["m", "nn"],
   o: ["o"],

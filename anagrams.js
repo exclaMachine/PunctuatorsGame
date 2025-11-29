@@ -420,24 +420,24 @@ const data = {
   basal: ["balsa"],
   ban: ["nab"],
   nab: ["ban"],
-  bane: ["bean"],
+  bane: ["bean"], //USE
   bean: ["bane"],
   bar: ["bra"],
   bra: ["bar"],
-  barbed: ["dabber"],
+  barbed: ["dabber"], //USE
   dabber: ["barbed"],
   barbel: ["rabble"],
   rabble: ["barbel"],
   bard: ["brad", "drab"],
   brad: ["bard", "drab"],
   drab: ["bard", "brad"],
-  bare: ["bear", "brae"],
+  bare: ["bear", "brae"], //USE
   bear: ["bare", "brae"],
   brae: ["bare", "bear"],
   barely: ["barley", "bleary"],
   barley: ["barely", "bleary"],
-  bleary: ["barely", "barley"],
-  barn: ["bran"],
+  bleary: ["barely", "barley"], //USE
+  barn: ["bran"], //USE
   bran: ["barn"],
   barony: ["baryon"],
   baryon: ["barony"],
@@ -458,7 +458,7 @@ const data = {
   tablet: ["battle"],
   baud: ["daub"],
   daub: ["baud"],
-  beard: ["bread", "debar"],
+  beard: ["bread", "debar"], //USE
   bread: ["beard", "debar"],
   debar: ["beard", "bread"],
   bearded: ["breaded"],
@@ -468,16 +468,16 @@ const data = {
   rebate: ["beater", "berate"],
   bed: ["deb"],
   deb: ["bed"],
-  bedim: ["imbed"],
+  bedim: ["imbed"], //USE
   imbed: ["bedim"],
-  bedroom: ["boredom"],
+  bedroom: ["boredom"], //USE
   boredom: ["bedroom"],
-  begin: ["being", "binge"],
+  begin: ["being", "binge"], //USE
   being: ["begin", "binge"],
   binge: ["begin", "being"],
   behaviorism: ["misbehavior"],
   misbehavior: ["behaviorism"],
-  below: ["bowel", "elbow"],
+  below: ["bowel", "elbow"], // Illuminaut, just need to do an elbow movement, I feel some movement below...? I just need a bowel movement!
   bowel: ["below", "elbow"],
   elbow: ["below", "bowel"],
   bestiary: ["sybarite"],
