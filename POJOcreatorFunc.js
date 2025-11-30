@@ -2,6 +2,8 @@ const fs = require("fs");
 const roundWords = require("./roundLettersMulti.js");
 const roundWordsSingle = require("./roundLetters.js");
 
+let bIsOnlyChangedWords = false;
+
 let AmbigramPairs = {
   a: ["e", "v", "h"], // a ↔ e, v, h
   b: ["q", "g", "e"], // b ↔ q; B to E
@@ -470,10 +472,15 @@ const RoundLetters = (word, pairs, dictionary) => {
       let alteredWord =
         word.substring(0, i) + pairs[char] + word.substring(i + 1);
       if (dictionary.includes(alteredWord)) {
-        return alteredWord;
+        if (alteredWord === word && bIsOnlyChangedWords) {
+          return false;
+        } else {
+          return alteredWord;
+        }
       }
     }
   }
+
   return false;
 };
 
@@ -629,6 +636,10 @@ const CreateJS = (jsName, typeOfJSFunction) => {
       if (typeOfJSFunction === "SingleLetterVertSpeak") {
         alteredWord = RoundLetters(word, SymmetricAcrossVerticalPlane, data); //Roundletters can do the thing that needs done
       }
+      if (typeOfJSFunction === "SingleLetterVertSpeakOnlyChanged") {
+        bIsOnlyChangedWords = true;
+        alteredWord = RoundLetters(word, SymmetricAcrossVerticalPlane, data); //Roundletters can do the thing that needs done
+      }
       if (typeOfJSFunction === "sideMirror") {
         alteredWord = HorizMirror(word, HorizPairs, wordSet);
       }
@@ -680,10 +691,11 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
 //CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
-CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
+//CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
+CreateJS("SingleLetterVertSpeakPOJO.js", "SingleLetterVertSpeak");
 //CreateJS("NinetyDegreeCounterClockPOJO.js", "NinetyDegreeCounterClock");
 //CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
-//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
