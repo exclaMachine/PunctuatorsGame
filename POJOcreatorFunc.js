@@ -46,7 +46,7 @@ let horPairs = {
 };
 
 let NinetyDegreesClockWise = {
-  a: ["u"],
+  a: ["u", "a"], //capital A with lines extended
   b: ["w"],
   c: ["n"],
   d: ["u"],
@@ -60,6 +60,27 @@ let NinetyDegreesClockWise = {
   t: ["t", "y"],
   u: ["c", "e"],
   w: ["e"],
+  x: ["x"],
+  y: ["y"],
+  z: ["n"],
+};
+
+//There are actually for 90 degree rotation possibilites. You can have it be reversed like it is falling over and be reversed or if you rotate the book
+let NinetyDegreesCounterClockWise = {
+  a: ["u", "j", "a"], //capital A with lines extended],
+  b: ["m"],
+  c: ["u"],
+  d: ["n"],
+  e: ["u", "w"],
+  h: ["i", "z"],
+  i: ["h", "n"],
+  m: ["e"],
+  n: ["z", "s", "i"],
+  o: ["o", "e"],
+  s: ["n"],
+  t: ["t", "y"],
+  u: ["d"],
+  w: ["b"],
   x: ["x"],
   y: ["y"],
   z: ["n"],
@@ -552,6 +573,9 @@ const CreateJS = (jsName, typeOfJSFunction) => {
       if (typeOfJSFunction === "NinetyDegreeClockwise") {
         alteredWord = VertMirror(word, NinetyDegreesClockWise, wordSet);
       }
+      if (typeOfJSFunction === "NinetyDegreeCounterClockwise") {
+        alteredWord = HorizMirror(word, NinetyDegreesCounterClockWise, wordSet);
+      }
       if (typeOfJSFunction === "SingleLetterVertMirror") {
         //alteredWord = RoundLetters(word, vertPairs, data);
         alteredWord = RoundLetters(word, hanglerAngles, data);
@@ -609,7 +633,11 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("ambigramPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
 //CreateJS("todbotPOJO.js", "mirror");
-CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
+//CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
+CreateJS(
+  "NinetyDegreesCounterClockwisePOJO.js",
+  "NinetyDegreeCounterClockwise"
+);
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");

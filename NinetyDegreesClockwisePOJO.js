@@ -2,7 +2,7 @@ const data = {
   a: "u",
   an: "us",
   b: "w",
-  bio: "who",
+  bio: "who", //USE
   bit: "why",
   bob: "wow",
   boo: "woo",

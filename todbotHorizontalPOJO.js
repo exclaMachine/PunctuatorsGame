@@ -88,6 +88,7 @@ const data = {
   "jot": "tot",
   "just": "taut",
   "jut": "tut",
+  "k": "ti",
   "l": "l",
   "lave": "oval",
   "led": "sol",
