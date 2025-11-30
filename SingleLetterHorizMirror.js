@@ -1,7 +1,7 @@
 const data = {
   abjuration: "adjuration",
   abjure: "adjure",
-  absorb: "adsorb",
+  absorb: "adsorb", //USE
   absorbent: "adsorbent",
   absorption: "adsorption",
   arbor: "ardor",
@@ -34,7 +34,7 @@ const data = {
   beep: "deep",
   beer: "deer",
   befog: "defog",
-  belay: "delay",
+  belay: "delay", //USE
   bell: "dell",
   bent: "dent",
   bib: "bid",
@@ -45,7 +45,7 @@ const data = {
   bill: "dill",
   billy: "dilly",
   bin: "din",
-  bingo: "dingo",
+  bingo: "dingo", //USE
   bitch: "ditch",
   bitty: "ditty",
   bivalent: "divalent",
@@ -57,11 +57,11 @@ const data = {
   bogie: "dogie",
   bole: "dole",
   boll: "doll",
-  bolt: "dolt",
+  bolt: "dolt", //USE
   bone: "done",
   bong: "dong",
   boodle: "doodle",
-  boom: "doom",
+  boom: "doom", //USE
   boor: "door",
   both: "doth",
   bough: "dough",

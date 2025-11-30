@@ -152,10 +152,10 @@ let capVertPairs = {
 // each key -> array of *possible* mirror outputs
 let HorizPairs = {
   a: ["a", "fl"], // a ↔ a or fl to A
-  b: ["d", "cl", "el"], // b ↔ d or cl to b, or El to B
-  d: ["c", "cl", "h", "s"], // d ↔ c or cl to D, cursive s to a d kind of works
+  b: ["d", "cl", "el", "e"], // b ↔ d or cl to b, or El to B
+  d: ["c", "cl", "h", "s", "g"], // d ↔ c or cl to D, cursive s to a d kind of works
   e: ["o", "s"],
-  f: ["z"],
+  f: ["z", "t"],
   h: ["h", "rl"], // h ↔ h or rl to h
   i: ["i"],
   j: ["t"],
@@ -171,6 +171,40 @@ let HorizPairs = {
   w: ["w", "vv"],
   x: ["x"],
   y: ["y", "lv"],
+
+  // digraph *inputs* as well (for the “vice versa” direction)
+  cl: ["b", "d"],
+  ej: ["p"],
+  el: ["b"],
+  fl: ["a"],
+  lv: ["y"],
+  nn: ["m"],
+  rl: ["h"],
+  cj: ["p"],
+  vv: ["w"],
+  z: ["s"],
+  a_s: ["s"], // optional if you want a ↔ s; or just keep z↔s
+};
+
+//USE when Mr. Murmerer trying to talk in vertical, use this with single letter replacement
+let SymmetricAcrossVerticalPlane = {
+  a: ["a"], // a ↔ a or fl to A
+  b: ["d"], // b ↔ d or cl to b, or El to B
+  d: ["b"], // d ↔ c or cl to D, cursive s to a d kind of works
+  f: ["t"], //lowercase
+  h: ["h"], // h ↔ h or rl to h
+  i: ["i"],
+  j: ["t"],
+  l: ["l"],
+  m: ["m"],
+  o: ["o"],
+  p: ["q"], // p ↔ cj
+  t: ["t"],
+  u: ["u"],
+  v: ["v"],
+  w: ["w"],
+  x: ["x"],
+  y: ["y"],
 
   // digraph *inputs* as well (for the “vice versa” direction)
   cl: ["b", "d"],
@@ -579,7 +613,10 @@ const CreateJS = (jsName, typeOfJSFunction) => {
       if (typeOfJSFunction === "NinetyDegreeRise") {
         alteredWord = HorizMirror(word, NinetyDegreesCounterClockWise, wordSet);
       }
-      if (typeOfJSFunction === "NinetyDegreeFall") {
+      if (typeOfJSFunction === "NinetyDegreeCounterClock") {
+        alteredWord = VertMirror(word, NinetyDegreesCounterClockWise, wordSet);
+      }
+      if (typeOfJSFunction === "NinetyDegreeClockBack") {
         alteredWord = HorizMirror(word, NinetyDegreesClockWise, wordSet); //seen in reverse
       }
       if (typeOfJSFunction === "SingleLetterVertMirror") {
@@ -587,7 +624,10 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         alteredWord = RoundLetters(word, hanglerAngles, data);
       }
       if (typeOfJSFunction === "SingleLetterHorizMirror") {
-        alteredWord = RoundLetters(word, horPairs, data);
+        alteredWord = RoundLetters(word, horPairs, data); //Roundletters can do the thing that needs done
+      }
+      if (typeOfJSFunction === "SingleLetterVertSpeak") {
+        alteredWord = RoundLetters(word, SymmetricAcrossVerticalPlane, data); //Roundletters can do the thing that needs done
       }
       if (typeOfJSFunction === "sideMirror") {
         alteredWord = HorizMirror(word, HorizPairs, wordSet);
@@ -640,8 +680,9 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
 //CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
-CreateJS("NinetyDegreesFallPOJO.js", "NinetyDegreeFall");
-//CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeCounterFall");
+CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
+//CreateJS("NinetyDegreeCounterClockPOJO.js", "NinetyDegreeCounterClock");
+//CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
