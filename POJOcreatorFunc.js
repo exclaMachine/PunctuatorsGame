@@ -51,11 +51,13 @@ let NinetyDegreesClockWise = {
   c: ["n"],
   d: ["u"],
   e: ["n", "m"],
+  f: ["f"],
   h: ["i", "z"],
   i: ["h", "n"],
   m: ["b"],
   n: ["z", "s", "i"],
   o: ["o", "e"],
+  r: ["r"], //lowercase and slightly diagonal
   s: ["n"],
   t: ["t", "y"],
   u: ["c", "e"],
@@ -77,6 +79,7 @@ let NinetyDegreesCounterClockWise = {
   m: ["e"],
   n: ["z", "s", "i"],
   o: ["o", "e"],
+  r: ["r"], //lowercase and slightly diagonal
   s: ["n"],
   t: ["t", "y"],
   u: ["d"],
@@ -573,8 +576,11 @@ const CreateJS = (jsName, typeOfJSFunction) => {
       if (typeOfJSFunction === "NinetyDegreeClockwise") {
         alteredWord = VertMirror(word, NinetyDegreesClockWise, wordSet);
       }
-      if (typeOfJSFunction === "NinetyDegreeCounterClockwise") {
+      if (typeOfJSFunction === "NinetyDegreeRise") {
         alteredWord = HorizMirror(word, NinetyDegreesCounterClockWise, wordSet);
+      }
+      if (typeOfJSFunction === "NinetyDegreeFall") {
+        alteredWord = HorizMirror(word, NinetyDegreesClockWise, wordSet); //seen in reverse
       }
       if (typeOfJSFunction === "SingleLetterVertMirror") {
         //alteredWord = RoundLetters(word, vertPairs, data);
@@ -634,10 +640,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
 //CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
-CreateJS(
-  "NinetyDegreesCounterClockwisePOJO.js",
-  "NinetyDegreeCounterClockwise"
-);
+CreateJS("NinetyDegreesFallPOJO.js", "NinetyDegreeFall");
+//CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeCounterFall");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
