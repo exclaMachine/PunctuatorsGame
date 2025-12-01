@@ -190,9 +190,10 @@ let HorizPairs = {
 
 //USE when Mr. Murmerer trying to talk in vertical, use this with single letter replacement
 let SymmetricAcrossVerticalPlane = {
-  a: ["a"], // a ↔ a or fl to A
-  b: ["d"], // b ↔ d or cl to b, or El to B
-  d: ["b"], // d ↔ c or cl to D, cursive s to a d kind of works
+  a: ["a"], // a ↔ a
+  b: ["d"], // b ↔ d
+  d: ["b"], //
+  e: ["e"],
   f: ["t"], //lowercase
   h: ["h"], // h ↔ h or rl to h
   i: ["i"],
@@ -207,19 +208,6 @@ let SymmetricAcrossVerticalPlane = {
   w: ["w"],
   x: ["x"],
   y: ["y"],
-
-  // digraph *inputs* as well (for the “vice versa” direction)
-  cl: ["b", "d"],
-  ej: ["p"],
-  el: ["b"],
-  fl: ["a"],
-  lv: ["y"],
-  nn: ["m"],
-  rl: ["h"],
-  cj: ["p"],
-  vv: ["w"],
-  z: ["s"],
-  a_s: ["s"], // optional if you want a ↔ s; or just keep z↔s
 };
 
 let roundedLetterPairs = {
@@ -233,6 +221,61 @@ let roundedLetterPairs = {
   t: "j",
   v: "u",
   y: "m",
+};
+
+// word        : input word (string)
+// pairs       : your symmetric dictionary
+// wordSet     : a Set of valid words (lowercase) from 2of12.txt
+const VerticalSymmetry = (word, pairs, wordSet) => {
+  const lower = word.toLowerCase();
+  const len = lower.length;
+
+  // Normalize pairs into a Map: key -> array of possible outputs
+  const map = new Map();
+  for (let key in pairs) {
+    const val = pairs[key];
+    map.set(key, Array.isArray(val) ? val : [val]);
+  }
+
+  // We also need a quick lookup of allowed letters for final output
+  const allowedLetters = new Set(Object.keys(pairs));
+
+  // DFS search: try all mapping combinations
+  let found = null;
+
+  const dfs = (pos, segments) => {
+    if (found) return;
+
+    if (pos === len) {
+      const candidate = segments.join("");
+
+      // Rule #1: must be a real word
+      if (!wordSet.has(candidate)) return;
+
+      // Rule #2: candidate can ONLY contain letters from the symmetry key
+      for (let ch of candidate) {
+        if (!allowedLetters.has(ch)) return;
+      }
+
+      found = candidate;
+      return;
+    }
+
+    const ch = lower[pos];
+    if (!map.has(ch)) return; // no mapping at all → dead end
+
+    for (const out of map.get(ch)) {
+      segments.push(out);
+      dfs(pos + 1, segments);
+      segments.pop();
+
+      if (found) return;
+    }
+  };
+
+  dfs(0, []);
+
+  return found || false;
 };
 
 // Ambigram with arrays + digraph support + dictionary filtering
@@ -634,11 +677,11 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         alteredWord = RoundLetters(word, horPairs, data); //Roundletters can do the thing that needs done
       }
       if (typeOfJSFunction === "SingleLetterVertSpeak") {
-        alteredWord = RoundLetters(word, SymmetricAcrossVerticalPlane, data); //Roundletters can do the thing that needs done
-      }
-      if (typeOfJSFunction === "SingleLetterVertSpeakOnlyChanged") {
-        bIsOnlyChangedWords = true;
-        alteredWord = RoundLetters(word, SymmetricAcrossVerticalPlane, data); //Roundletters can do the thing that needs done
+        alteredWord = VerticalSymmetry(
+          word,
+          SymmetricAcrossVerticalPlane,
+          wordSet
+        ); //Roundletters can do the thing that needs done
       }
       if (typeOfJSFunction === "sideMirror") {
         alteredWord = HorizMirror(word, HorizPairs, wordSet);
@@ -695,7 +738,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 CreateJS("SingleLetterVertSpeakPOJO.js", "SingleLetterVertSpeak");
 //CreateJS("NinetyDegreeCounterClockPOJO.js", "NinetyDegreeCounterClock");
 //CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
-CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
