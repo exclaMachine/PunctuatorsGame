@@ -189,10 +189,11 @@ let HorizPairs = {
 };
 
 //USE when Mr. Murmerer trying to talk in vertical, use this with single letter replacement
+//Characters can use the less symmetrical ones like R to R. Do something with numbers
 let SymmetricAcrossVerticalPlane = {
   a: ["a"], // a ↔ a
-  b: ["d"], // b ↔ d
-  d: ["b"], //
+  b: ["d", "e"], // b ↔ d
+  d: ["b", "h"], //
   e: ["e"],
   f: ["t"], //lowercase
   h: ["h"], // h ↔ h or rl to h
@@ -200,14 +201,18 @@ let SymmetricAcrossVerticalPlane = {
   j: ["t"],
   l: ["l"],
   m: ["m"],
+  n: ["n"],
   o: ["o"],
   p: ["q"], // p ↔ cj
+  r: ["r"],
+  s: ["z"],
   t: ["t"],
   u: ["u"],
   v: ["v"],
   w: ["w"],
   x: ["x"],
   y: ["y"],
+  z: ["z"],
 };
 
 let roundedLetterPairs = {
