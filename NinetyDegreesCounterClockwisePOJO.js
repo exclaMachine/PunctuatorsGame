@@ -1,3 +1,13 @@
+//Exclamachine is straight up and falls down
+
+//S
+//e
+//n
+//s
+//e
+
+//o n I o n
+
 const data = {
   a: "u",
   ad: "nu",

@@ -740,10 +740,10 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
 //CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
-CreateJS("SingleLetterVertSpeakPOJO.js", "SingleLetterVertSpeak");
+//CreateJS("SingleLetterVertSpeakPOJO.js", "SingleLetterVertSpeak");
 //CreateJS("NinetyDegreeCounterClockPOJO.js", "NinetyDegreeCounterClock");
 //CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
-//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
