@@ -52,10 +52,11 @@ let NinetyDegreesClockWise = {
   b: ["w"],
   c: ["n"],
   d: ["u"],
-  e: ["n", "m"],
+  e: ["n", "m", "t"],
   f: ["f"],
   h: ["i", "z"],
   i: ["h", "n"],
+  j: ["u"],
   m: ["b"],
   n: ["z", "s", "i"],
   o: ["o", "e"],
@@ -64,6 +65,32 @@ let NinetyDegreesClockWise = {
   t: ["t", "y"],
   u: ["c", "e"],
   w: ["e"],
+  x: ["x"],
+  y: ["y"],
+  z: ["n"],
+};
+
+//flip vertical and then rotate clockwise 90 deg
+let rightAngles = {
+  a: ["a", "n", "u"], //Cap, fancy a is u, other is n
+  b: ["w"],
+  c: ["n"],
+  d: ["u"],
+  e: ["m", "t"], //t from Capital E
+  g: ["g"],
+  h: ["i", "l", "z"], //h to capital L
+  i: ["h", "n"],
+  j: ["u"],
+  l: ["t"],
+  m: ["e"],
+  n: ["s", "z", "c"], //maybe a capital C
+  o: ["o"],
+  q: ["q"], //capital Q
+  r: ["t"],
+  s: ["n"],
+  t: ["t", "f"], //Cap T to F
+  u: ["d"],
+  w: ["b"],
   x: ["x"],
   y: ["y"],
   z: ["n"],
@@ -671,6 +698,9 @@ const CreateJS = (jsName, typeOfJSFunction) => {
       if (typeOfJSFunction === "NinetyDegreeCounterClock") {
         alteredWord = VertMirror(word, NinetyDegreesCounterClockWise, wordSet);
       }
+      if (typeOfJSFunction === "90DegMirror") {
+        alteredWord = VertMirror(word, rightAngles, wordSet);
+      }
       if (typeOfJSFunction === "NinetyDegreeClockBack") {
         alteredWord = HorizMirror(word, NinetyDegreesClockWise, wordSet); //seen in reverse
       }
@@ -738,12 +768,13 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("ambigramPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
 //CreateJS("todbotPOJO.js", "mirror");
-//CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
-//CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
+CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
+CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
 //CreateJS("SingleLetterVertSpeakPOJO.js", "SingleLetterVertSpeak");
 //CreateJS("NinetyDegreeCounterClockPOJO.js", "NinetyDegreeCounterClock");
 //CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
-CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+CreateJS("RightAngleMirrorPOJO.js", "90DegMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
