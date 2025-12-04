@@ -124,16 +124,16 @@ let vertPairs = {
   c: ["c"],
   d: ["d"], // Only Cap visually
   e: ["e", "o"], // E -> E, e -> o
-  f: ["t", "b"],
+  f: ["t", "b"], //, "z" add this later to see difference
   g: ["g", "c", "q"],
   h: ["h"], // Only Cap visually
   i: ["i", "l"], // Only Cap visually
   j: ["l"],
   k: ["k"],
-  l: ["l"],
+  l: ["l"], //, "i", "t"
   m: ["w"],
   n: ["n"], // N looks like lowercase n flipped
-  o: ["o"],
+  o: ["o"], //, "e"
   p: ["b"],
   q: ["d"],
   r: ["e"],
@@ -373,124 +373,108 @@ const ambigram = (word, pairs, wordSet) => {
   return found || false;
 };
 
-// word: string
-// pairs: { [char]: string | string[] }
-// wordSet: Set<string> or undefined
+// word      : input word (string)
+// pairs     : mapping, values can be string or string[]
+// wordSet   : Set<string> of valid words from 2of12.txt (or undefined)
 const VertMirror = (word, pairs, wordSet) => {
-  const chars = word.split("");
+  const lower = word.toLowerCase();
+  const len = lower.length;
 
-  // normalize pairs into { key: string[] }
-  const norm = {};
+  // normalize pairs into key -> array of options
+  const map = new Map();
   for (const key in pairs) {
     const val = pairs[key];
-    norm[key] = Array.isArray(val) ? val : [val];
+    map.set(key, Array.isArray(val) ? val : [val]);
   }
 
-  // If no wordSet is given, just use the first option per character
-  if (!wordSet) {
-    const out = [];
-    for (const ch of chars) {
-      if (!norm[ch]) return false;
-      out.push(norm[ch][0]);
-    }
-    return out.join("");
-  }
+  const results = new Set();
 
-  // If wordSet exists, explore combinations until we find a real word
-  let found = null;
+  // DFS over positions, building all combinations
+  const dfs = (pos, segments) => {
+    if (pos === len) {
+      const candidate = segments.join("");
 
-  const dfs = (idx, acc) => {
-    if (found !== null) return; // early exit if we already found one
-
-    if (idx === chars.length) {
-      const candidate = acc.join("");
-      if (wordSet.has(candidate)) {
-        found = candidate;
+      if (!wordSet || wordSet.has(candidate)) {
+        results.add(candidate);
       }
       return;
     }
 
-    const ch = chars[idx];
-    const options = norm[ch];
-    if (!options) {
-      // this character has no mapping -> dead path
+    const ch = lower[pos];
+    if (!map.has(ch)) {
+      // no mapping for this character => dead path
       return;
     }
 
-    for (const opt of options) {
-      acc.push(opt);
-      dfs(idx + 1, acc);
-      acc.pop();
-      if (found !== null) return;
+    const outs = map.get(ch);
+    for (const out of outs) {
+      segments.push(out);
+      dfs(pos + 1, segments);
+      segments.pop();
     }
   };
 
   dfs(0, []);
 
-  return found || false;
+  if (results.size === 0) return false;
+  return Array.from(results); // you can sort if you want
 };
 
-// word: original word (string)
-// pairs: object where key -> string | string[] (we’ll normalize to arrays)
-// wordSet: Set of valid dictionary words (from 2of12.txt)
+// word: string
+// pairs: { [key: string]: string | string[] }
+// wordSet: Set<string> of valid words (from 2of12.txt)
 const HorizMirror = (word, pairs, wordSet) => {
   const s = word.toLowerCase();
   const len = s.length;
 
-  // normalize pairs into a Map<string, string[]>
+  // normalize pairs into Map<string, string[]>
   const map = new Map();
   for (const key in pairs) {
     const val = pairs[key];
-    if (Array.isArray(val)) {
-      map.set(key, val);
-    } else {
-      map.set(key, [val]);
-    }
+    map.set(key, Array.isArray(val) ? val : [val]);
   }
 
-  let found = null;
+  const results = new Set();
 
   const dfs = (pos, segments) => {
-    if (found !== null) return; // early exit if we already found a valid word
-
     if (pos === len) {
-      // finished scanning input; build mirrored word
+      // mirror across vertical axis: reverse glyph segments
       const mirrored = segments.slice().reverse().join("");
-      if (wordSet.has(mirrored)) {
-        found = mirrored;
+      if (!wordSet || wordSet.has(mirrored)) {
+        results.add(mirrored);
       }
       return;
     }
 
-    // Try a 2-character chunk first (digraphs like "rl", "cl", "cj")
+    // Try a 2-letter input chunk first (digraphs like "rl", "cl", "cj")
     if (pos + 1 < len) {
       const digraph = s.slice(pos, pos + 2);
       if (map.has(digraph)) {
-        const outs = map.get(digraph);
-        for (const out of outs) {
-          dfs(pos + 2, segments.concat(out));
-          if (found !== null) return;
+        for (const out of map.get(digraph)) {
+          segments.push(out);
+          dfs(pos + 2, segments);
+          segments.pop();
         }
       }
     }
 
-    // Then try single-character mapping
+    // Then try single-letter mapping
     const ch = s[pos];
-    if (map.has(ch)) {
-      const outs = map.get(ch);
-      for (const out of outs) {
-        dfs(pos + 1, segments.concat(out));
-        if (found !== null) return;
-      }
-    } else {
-      // no mapping for this character at all: this path is dead
-      return;
+    if (!map.has(ch)) return; // dead end if no mapping
+
+    for (const out of map.get(ch)) {
+      segments.push(out);
+      dfs(pos + 1, segments);
+      segments.pop();
     }
   };
 
   dfs(0, []);
 
-  return found || false;
+  if (results.size === 0) return false;
+
+  // convert to array; you can sort if you want deterministic order
+  return Array.from(results);
 };
 
 const VertCapitalMirror = (word, pairs) => {
@@ -687,7 +671,10 @@ const CreateJS = (jsName, typeOfJSFunction) => {
       let word = data[i].trim();
       let alteredWord;
       if (typeOfJSFunction === "mirror") {
-        alteredWord = VertMirror(word, vertPairs);
+        const mirroredList = VertMirror(word, vertPairs, wordSet);
+        if (mirroredList && mirroredList.length) {
+          typeOfWordObj[word] = mirroredList; // array of possibilities
+        }
       }
       if (typeOfJSFunction === "NinetyDegreeClockwise") {
         alteredWord = VertMirror(word, NinetyDegreesClockWise, wordSet);
@@ -719,7 +706,10 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         ); //Roundletters can do the thing that needs done
       }
       if (typeOfJSFunction === "sideMirror") {
-        alteredWord = HorizMirror(word, HorizPairs, wordSet);
+        const mirroredList = HorizMirror(word, HorizPairs, wordSet);
+        if (mirroredList && mirroredList.length) {
+          typeOfWordObj[word] = mirroredList; // array of possibilities
+        }
       }
       if (typeOfJSFunction === "ambigram") {
         alteredWord = ambigram(word, AmbigramPairs, wordSet);
@@ -767,14 +757,14 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 
 //CreateJS("ambigramPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
-//CreateJS("todbotPOJO.js", "mirror");
-CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
-CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
+CreateJS("todbotPOJO.js", "mirror");
+//CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
+//CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
 //CreateJS("SingleLetterVertSpeakPOJO.js", "SingleLetterVertSpeak");
 //CreateJS("NinetyDegreeCounterClockPOJO.js", "NinetyDegreeCounterClock");
 //CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
-//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
-CreateJS("RightAngleMirrorPOJO.js", "90DegMirror");
+CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+//CreateJS("RightAngleMirrorPOJO.js", "90DegMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");

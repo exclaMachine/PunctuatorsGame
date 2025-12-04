@@ -81,7 +81,7 @@ const data = {
   godly: "gouty",
   goo: "goo",
   got: "got",
-  gotta: "gotta",
+  gotta: "gotta", //USE
   h: "i",
   ha: "in",
   hag: "lag",
@@ -160,7 +160,7 @@ const data = {
   norm: "cote",
   nosy: "cony",
   not: "sot",
-  note: "soft",
+  note: "soft", //USE  Maybe there is a band at the football stadium. note to soft
   o: "o",
   oar: "oat",
   oat: "oat",
@@ -261,7 +261,7 @@ const data = {
   way: "bay",
   wham: "blue",
   who: "bio",
-  woo: "boo",
+  woo: "boo", //Maybe the crowd is booing and Mr. Murmerer uses the mirror again and makes it woo. It is just the wind blowing and there is a single leaf that blows by
   wool: "boot",
   wooly: "booty",
   wow: "bob",
