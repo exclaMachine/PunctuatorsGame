@@ -32,6 +32,22 @@ let AmbigramPairs = {
   nn: ["w"],
 };
 
+//right angle numbers
+let rightAngleNums = {
+  a: ["1", "4"],
+  e: ["9"],
+  h: ["1"],
+  l: ["1", "7"],
+  n: ["5"],
+  o: ["0"],
+  p: ["6"],
+  t: ["4", "7"],
+  u: ["2"],
+  v: ["7"],
+  y: ["2"],
+  w: ["3"], //Add digraphs next like 8 oo and 5 ju
+};
+
 let horPairs = {
   b: "d",
   //d: "b",
@@ -124,16 +140,16 @@ let vertPairs = {
   c: ["c"],
   d: ["d"], // Only Cap visually
   e: ["e", "o"], // E -> E, e -> o
-  f: ["t", "b"], //, "z" add this later to see difference
+  f: ["t", "b", "z"],
   g: ["g", "c", "q"],
   h: ["h"], // Only Cap visually
   i: ["i", "l"], // Only Cap visually
   j: ["l"],
   k: ["k"],
-  l: ["l"], //, "i", "t"
+  l: ["l", "i", "t"],
   m: ["w"],
   n: ["n"], // N looks like lowercase n flipped
-  o: ["o"], //, "e"
+  o: ["o", "e"], //
   p: ["b"],
   q: ["d"],
   r: ["e"],
@@ -308,6 +324,77 @@ const VerticalSymmetry = (word, pairs, wordSet) => {
   dfs(0, []);
 
   return found || false;
+};
+
+// word: string (lowercase)
+// pairs: { [letter]: string[] }
+const encodeRightAngle = (word, pairs) => {
+  const s = word.toLowerCase();
+  const len = s.length;
+
+  // normalize pairs so every value is an array
+  const map = {};
+  for (const ch in pairs) {
+    map[ch] = Array.isArray(pairs[ch]) ? pairs[ch] : [pairs[ch]];
+  }
+
+  const results = new Set();
+
+  const dfs = (pos, currentCode) => {
+    if (pos === len) {
+      if (currentCode.length > 0) {
+        results.add(currentCode);
+      }
+      return;
+    }
+
+    const ch = s[pos];
+    const options = map[ch];
+    if (!options) {
+      // this word can't be fully encoded
+      return;
+    }
+
+    for (const digit of options) {
+      dfs(pos + 1, currentCode + digit);
+    }
+  };
+
+  dfs(0, "");
+
+  return results.size ? Array.from(results) : false;
+};
+
+//const fs = require("fs");
+
+const CreateRightAngleJS = (jsName, pairs) => {
+  const filename = "2of12.txt";
+  const raw = fs.readFileSync(filename, "utf8").split("\n");
+  const words = raw.map((w) => w.trim().toLowerCase()).filter(Boolean);
+
+  const codeToWords = {};
+
+  for (const word of words) {
+    const codes = encodeRightAngle(word, pairs);
+    if (!codes) continue;
+
+    for (const code of codes) {
+      if (!codeToWords[code]) {
+        codeToWords[code] = [];
+      }
+      codeToWords[code].push(word);
+    }
+  }
+
+  // 🔥 No more "delete if length < 2"!
+  // If you EVER want that behavior again, it would go here.
+
+  const content =
+    `const data = ${JSON.stringify(codeToWords, null, 2)};\n\n` +
+    `export default data;`;
+
+  fs.writeFileSync(jsName, content, "utf-8");
+  console.log(`Successfully created ${jsName}!`);
 };
 
 // Ambigram with arrays + digraph support + dictionary filtering
@@ -677,19 +764,42 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         }
       }
       if (typeOfJSFunction === "NinetyDegreeClockwise") {
-        alteredWord = VertMirror(word, NinetyDegreesClockWise, wordSet);
+        const mirroredList = VertMirror(word, NinetyDegreesClockWise, wordSet);
+        if (mirroredList && mirroredList.length) {
+          typeOfWordObj[word] = mirroredList; // array of possibilities
+        }
       }
       if (typeOfJSFunction === "NinetyDegreeRise") {
-        alteredWord = HorizMirror(word, NinetyDegreesCounterClockWise, wordSet);
+        const mirroredList = HorizMirror(
+          word,
+          NinetyDegreesCounterClockWise,
+          wordSet
+        );
+        if (mirroredList && mirroredList.length) {
+          typeOfWordObj[word] = mirroredList; // array of possibilities
+        }
       }
       if (typeOfJSFunction === "NinetyDegreeCounterClock") {
-        alteredWord = VertMirror(word, NinetyDegreesCounterClockWise, wordSet);
+        const mirroredList = VertMirror(
+          word,
+          NinetyDegreesCounterClockWise,
+          wordSet
+        );
+        if (mirroredList && mirroredList.length) {
+          typeOfWordObj[word] = mirroredList; // array of possibilities
+        }
       }
       if (typeOfJSFunction === "90DegMirror") {
-        alteredWord = VertMirror(word, rightAngles, wordSet);
+        const mirroredList = VertMirror(word, rightAngles, wordSet);
+        if (mirroredList && mirroredList.length) {
+          typeOfWordObj[word] = mirroredList; // array of possibilities
+        }
       }
       if (typeOfJSFunction === "NinetyDegreeClockBack") {
-        alteredWord = HorizMirror(word, NinetyDegreesClockWise, wordSet); //seen in reverse
+        const mirroredList = HorizMirror(word, NinetyDegreesClockWise, wordSet);
+        if (mirroredList && mirroredList.length) {
+          typeOfWordObj[word] = mirroredList; // array of possibilities
+        }
       }
       if (typeOfJSFunction === "SingleLetterVertMirror") {
         //alteredWord = RoundLetters(word, vertPairs, data);
@@ -757,13 +867,13 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 
 //CreateJS("ambigramPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
-CreateJS("todbotPOJO.js", "mirror");
+//CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
 //CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
 //CreateJS("SingleLetterVertSpeakPOJO.js", "SingleLetterVertSpeak");
 //CreateJS("NinetyDegreeCounterClockPOJO.js", "NinetyDegreeCounterClock");
 //CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
-CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("RightAngleMirrorPOJO.js", "90DegMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
@@ -773,6 +883,7 @@ CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("alphabeticalNeighbors.js", "alphabeticalNeighbors");
 //CreateJS("SingleLetterVertMirror.js", "SingleLetterVertMirror");
 //CreateJS("SingleLetterHorizMirror.js", "SingleLetterHorizMirror");
+CreateRightAngleJS("rightAngleNums.js", rightAngleNums);
 
 //CreateJSON("todbotWithCapitals.json");
 

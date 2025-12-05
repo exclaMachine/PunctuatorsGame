@@ -503,12 +503,12 @@ const data = {
   parboil: ["bipolar"],
   biter: ["tribe"],
   tribe: ["biter"],
-  bizarre: ["brazier"],
+  bizarre: ["brazier"], //USE
   brazier: ["bizarre"],
   blase: ["sable"],
   sable: ["blase"],
   blearily: ["reliably"],
-  reliably: ["blearily"],
+  reliably: ["blearily"], //USE somewhat antonym
   bleat: ["table"],
   table: ["bleat"],
   bleep: ["plebe"],
@@ -525,31 +525,31 @@ const data = {
   bottler: ["blotter"],
   blow: ["bowl"],
   bowl: ["blow"],
-  blower: ["bowler"],
+  blower: ["bowler"], //USE
   bowler: ["blower"],
   blue: ["lube"],
   lube: ["blue"],
-  bluegill: ["gullible"],
+  bluegill: ["gullible"], //USE This could be the sharks name. What is the octopuses name
   gullible: ["bluegill"],
   blur: ["burl"],
   burl: ["blur"],
   board: ["broad"],
   broad: ["board"],
-  boast: ["sabot"],
+  boast: ["sabot"], //This could be the octopuses name. French and the t is silent. Wooden block shoe?
   sabot: ["boast"],
   boathouse: ["houseboat"],
   houseboat: ["boathouse"],
   bog: ["gob"],
   gob: ["bog"],
-  bogeyman: ["moneybag"],
+  bogeyman: ["moneybag"], //USE just clever
   moneybag: ["bogeyman"],
   boiler: ["reboil"],
   reboil: ["boiler"],
   bole: ["lobe"],
   lobe: ["bole"],
-  bolster: ["lobster"],
+  bolster: ["lobster"], //USE this is cool
   lobster: ["bolster"],
-  boner: ["borne"],
+  boner: ["borne"], //This could be a funny inside joke for the parents
   borne: ["boner"],
   bonus: ["bosun"],
   bosun: ["bonus"],
@@ -568,11 +568,11 @@ const data = {
   liberal: ["braille"],
   braise: ["rabies"],
   rabies: ["braise"],
-  brasserie: ["brassiere"],
+  brasserie: ["brassiere"], //French restaurant/braziere
   brassiere: ["brasserie"],
-  brawler: ["warbler"],
+  brawler: ["warbler"], //USE this could be funny. bird or just a singer
   warbler: ["brawler"],
-  braze: ["zebra"],
+  braze: ["zebra"], //USE welding could be cool
   zebra: ["braze"],
   breakout: ["outbreak"],
   outbreak: ["breakout"],
