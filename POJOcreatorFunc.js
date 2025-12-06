@@ -139,7 +139,7 @@ let vertPairs = {
   b: ["b"], // Only Cap visually
   c: ["c"],
   d: ["d"], // Only Cap visually
-  e: ["e", "o"], // E -> E, e -> o
+  e: ["e"], // E -> E, e -> o TODO  "o" add after
   f: ["t", "b", "z"],
   g: ["g", "c", "q"],
   h: ["h"], // Only Cap visually
@@ -149,7 +149,7 @@ let vertPairs = {
   l: ["l", "i", "t"],
   m: ["w"],
   n: ["n"], // N looks like lowercase n flipped
-  o: ["o", "e"], //
+  o: ["o"], //"e"
   p: ["b"],
   q: ["d"],
   r: ["e"],
@@ -265,10 +265,96 @@ let roundedLetterPairs = {
   f: "p", //F -> P
   h: "b", //H -> B
   k: "r",
-  l: "c",
+  l: "c", //what if I also change an l to a j by adding a dot at the top
   t: "j",
   v: "u",
   y: "m",
+};
+
+// cache for normalized mappings so we don't recompute for every call
+const _singleChangeCache = new WeakMap();
+
+function _getSingleChangeMapping(pairs) {
+  let cached = _singleChangeCache.get(pairs);
+  if (cached) return cached;
+
+  const singleMap = new Map(); // single char -> outputs[]
+  const digraphMap = new Map(); // 2-char key -> outputs[]
+  let hasDigraphs = false;
+
+  for (const key in pairs) {
+    const val = pairs[key];
+    const outputs = Array.isArray(val) ? val : [val];
+
+    if (key.length === 1) {
+      singleMap.set(key, outputs);
+    } else if (key.length === 2) {
+      digraphMap.set(key, outputs);
+      hasDigraphs = true;
+    }
+  }
+
+  const mapping = { singleMap, digraphMap, hasDigraphs };
+  _singleChangeCache.set(pairs, mapping);
+  return mapping;
+}
+
+/**
+ * SingleChange:
+ * Change exactly ONE unit (1 letter or 2-letter digraph) in `word`
+ * using `pairs`, and return all *different* words that exist in `wordSet`.
+ *
+ * Returns false if there are no different words, otherwise an array of words.
+ */
+const SingleChange = (word, pairs, wordSet) => {
+  const s = word.toLowerCase();
+  const len = s.length;
+  if (len === 0) return false;
+
+  const { singleMap, digraphMap, hasDigraphs } = _getSingleChangeMapping(pairs);
+  const results = new Set();
+
+  // quick bail-out if no chars in the word are mappable and no digraphs
+  let hasMappableChar = false;
+  for (let i = 0; i < len; i++) {
+    if (singleMap.has(s[i])) {
+      hasMappableChar = true;
+      break;
+    }
+  }
+  if (!hasMappableChar && !hasDigraphs) return false;
+
+  for (let i = 0; i < len; i++) {
+    // 1) digraph at position i (if we have any digraph keys)
+    if (hasDigraphs && i + 1 < len) {
+      const digraph = s.slice(i, i + 2);
+      const outs = digraphMap.get(digraph);
+      if (outs) {
+        for (const out of outs) {
+          const candidate = s.slice(0, i) + out + s.slice(i + 2);
+          // 🔑 must be different from original
+          if (candidate !== s && wordSet.has(candidate)) {
+            results.add(candidate);
+          }
+        }
+      }
+    }
+
+    // 2) single-character mapping at position i
+    const ch = s[i];
+    const outs = singleMap.get(ch);
+    if (!outs) continue;
+
+    for (const out of outs) {
+      const candidate = s.slice(0, i) + out + s.slice(i + 1);
+      // 🔑 must be different from original
+      if (candidate !== s && wordSet.has(candidate)) {
+        results.add(candidate);
+      }
+    }
+  }
+
+  return results.size ? Array.from(results) : false;
 };
 
 // word        : input word (string)
@@ -397,67 +483,63 @@ const CreateRightAngleJS = (jsName, pairs) => {
   console.log(`Successfully created ${jsName}!`);
 };
 
-// Ambigram with arrays + digraph support + dictionary filtering
+// Ambigram generator:
+// - supports multi-output pairs
+// - supports digraph input keys ("uu", "nn")
+// - supports multi-letter output segments
+// - produces ALL possible results (not just one)
+// - reverses segments (ambigram behavior)
+// - filters against wordSet if provided
 const ambigram = (word, pairs, wordSet) => {
   const lower = word.toLowerCase();
   const len = lower.length;
 
-  // normalize pairs so every key maps to an array
+  // Normalize pairs into Map<string, string[]>
   const map = new Map();
-  for (let key in pairs) {
+  for (const key in pairs) {
     const val = pairs[key];
     map.set(key, Array.isArray(val) ? val : [val]);
   }
 
-  // if wordSet not provided, just use first mapping per letter
-  if (!wordSet) {
-    const out = [];
-    for (let i = 0; i < len; i++) {
-      const ch = lower[i];
-      if (!map.has(ch)) return false;
-      out.push(map.get(ch)[0]);
-    }
-    return out.reverse().join("");
-  }
-
-  // DFS search: try all combos until one forms a valid dictionary word
-  let found = null;
+  const results = new Set();
 
   const dfs = (pos, segments) => {
-    if (found) return;
-
     if (pos === len) {
+      // Ambigram flips 180°, reversing glyph order
       const candidate = segments.slice().reverse().join("");
-      if (wordSet.has(candidate)) {
-        found = candidate;
+
+      if (!wordSet || wordSet.has(candidate)) {
+        results.add(candidate);
       }
       return;
     }
 
-    // Try 2-letter input digraphs (like "uu", "nn") first
+    // Try 2-letter input digraphs first (e.g. "uu", "nn")
     if (pos + 1 < len) {
       const digraph = lower.slice(pos, pos + 2);
       if (map.has(digraph)) {
         for (const out of map.get(digraph)) {
-          dfs(pos + 2, segments.concat(out));
-          if (found) return;
+          segments.push(out);
+          dfs(pos + 2, segments);
+          segments.pop();
         }
       }
     }
 
     // Try single-letter mapping
     const ch = lower[pos];
-    if (!map.has(ch)) return;
+    if (!map.has(ch)) return; // dead path if no mapping available
 
     for (const out of map.get(ch)) {
-      dfs(pos + 1, segments.concat(out));
-      if (found) return;
+      segments.push(out);
+      dfs(pos + 1, segments);
+      segments.pop();
     }
   };
 
   dfs(0, []);
 
-  return found || false;
+  return results.size ? Array.from(results) : false;
 };
 
 // word      : input word (string)
@@ -800,10 +882,11 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         if (mirroredList && mirroredList.length) {
           typeOfWordObj[word] = mirroredList; // array of possibilities
         }
-      }
-      if (typeOfJSFunction === "SingleLetterVertMirror") {
-        //alteredWord = RoundLetters(word, vertPairs, data);
-        alteredWord = RoundLetters(word, hanglerAngles, data);
+      } else if (typeOfJSFunction === "SingleLetterVertMirror") {
+        const list = SingleChange(word, vertPairs, wordSet);
+        if (list && list.length) {
+          typeOfWordObj[word] = list;
+        }
       }
       if (typeOfJSFunction === "SingleLetterHorizMirror") {
         alteredWord = RoundLetters(word, horPairs, data); //Roundletters can do the thing that needs done
@@ -822,9 +905,16 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         }
       }
       if (typeOfJSFunction === "ambigram") {
-        alteredWord = ambigram(word, AmbigramPairs, wordSet);
+        const list = ambigram(word, AmbigramPairs, wordSet);
+        if (list && list.length) {
+          typeOfWordObj[word] = list; // store the array of possibilities
+        }
       } else if (typeOfJSFunction === "roundLetters") {
-        alteredWord = RoundLetters(word, roundedLetterPairs, data);
+        const list = SingleChange(word, roundedLetterPairs, wordSet);
+        if (list && list.length) {
+          typeOfWordObj[word] = list;
+        }
+        //alteredWord = RoundLetters(word, roundedLetterPairs, data);
       } else if (typeOfJSFunction === "roundLettersMulti") {
         alteredWord = RoundLettersMultiple(word, roundedLetterPairs, data);
       } else if (typeOfJSFunction === "alphabetical") {
@@ -875,7 +965,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("RightAngleMirrorPOJO.js", "90DegMirror");
-//CreateJS("roundLetters.js", "roundLetters");
+CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
 //CreateJS("alphabeticalWordsReverse.js", "reverseAlphabetical");
@@ -883,7 +973,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("alphabeticalNeighbors.js", "alphabeticalNeighbors");
 //CreateJS("SingleLetterVertMirror.js", "SingleLetterVertMirror");
 //CreateJS("SingleLetterHorizMirror.js", "SingleLetterHorizMirror");
-CreateRightAngleJS("rightAngleNums.js", rightAngleNums);
+//CreateRightAngleJS("rightAngleNums.js", rightAngleNums);
 
 //CreateJSON("todbotWithCapitals.json");
 

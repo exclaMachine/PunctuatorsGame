@@ -597,7 +597,7 @@ const data = {
   burnt: ["brunt"],
   brush: ["shrub"],
   shrub: ["brush"],
-  brute: ["rebut", "tuber"],
+  brute: ["rebut", "tuber"], //USE turn someone into a potato. Use brute force
   rebut: ["brute", "tuber"],
   tuber: ["brute", "rebut"],
   bucksaw: ["sawbuck"],
