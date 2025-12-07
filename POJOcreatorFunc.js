@@ -263,12 +263,14 @@ let roundedLetterPairs = {
   d: "o", //D -> O
   e: "b", //E -> B
   f: "p", //F -> P
+  g: "o",
   h: "b", //H -> B
   k: "r",
-  l: "c", //what if I also change an l to a j by adding a dot at the top
-  t: "j",
+  l: ["c", "s", "j"], //what if I also change an l to a j by adding a dot at the top, curves to an s
+  t: ["j", "b"],
   v: "u",
-  y: "m",
+  x: "r",
+  y: "m",//TODO q -> g, y -> g
 };
 
 // cache for normalized mappings so we don't recompute for every call
