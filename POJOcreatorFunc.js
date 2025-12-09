@@ -258,6 +258,8 @@ let SymmetricAcrossVerticalPlane = {
   z: ["z"],
 };
 
+//could also do numbers
+//1->3,0, 2->3, 4->9, 5->8, 6->8, 7->9 I guess almost everything could go to an 8. Call 411
 let roundedLetterPairs = {
   a: "r", //A -> R
   d: "o", //D -> O

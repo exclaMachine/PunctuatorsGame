@@ -12,6 +12,7 @@ import {
   protectedRounded,
   protectedAlphabetNeighbors,
   protectedAbjads,
+  protectedAnagrams,
 } from "../SpanPlaceholder.js";
 
 const secondContractionWordHashMap = new Map();
@@ -101,6 +102,9 @@ export const addSpansAndIdsForWordPlay = (
   switch (mode) {
     case "ambigrams":
       processed = findAndSurroundAmbigramWordsWithSpan(processed);
+      break;
+    case "anagrams":
+      processed = protectedAnagrams(processed);
       break;
     case "homophones":
       processed = protectedHomophones(processed);

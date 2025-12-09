@@ -3,6 +3,7 @@ import { highlightAndClassifyArticles } from "./articleFunc.js";
 import { wrapWiteOutWords } from "./DeleFunc.js";
 import { wrapCaretWords, wrapRoundSpanWords } from "./CaretFunc.js";
 import { wrapHomophones } from "./HomophonesFuncs.js";
+import { wrapAnagrams } from "./anagrams.js";
 import { wrapAlphabetNeighbors } from "./alphabeticalNeighbors.js";
 import { wrapAbjads } from "./onlyConsonants.js";
 
@@ -42,6 +43,7 @@ export const protectedWiteOutWords = withSpanPlaceholders(wrapWiteOutWords);
 export const protectedCaretWords = withSpanPlaceholders(wrapCaretWords);
 
 export const protectedHomophones = withSpanPlaceholders(wrapHomophones);
+export const protectedAnagrams = withSpanPlaceholders(wrapAnagrams);
 
 export const protectedRounded = withSpanPlaceholders(wrapRoundSpanWords);
 

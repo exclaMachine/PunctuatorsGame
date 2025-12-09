@@ -620,29 +620,29 @@ const data = {
   snub: ["buns"],
   bur: ["rub"],
   rub: ["bur"],
-  burble: ["lubber", "rubble"],
+  burble: ["lubber", "rubble"], //continuous murmuring sound, clumsly person
   lubber: ["burble", "rubble"],
   rubble: ["burble", "lubber"],
-  burg: ["grub"],
+  burg: ["grub"], //town
   grub: ["burg"],
   bury: ["ruby"],
   ruby: ["bury"],
   bus: ["sub"],
-  sub: ["bus"],
+  sub: ["bus"], //They could turn a bus into a sub.. aha
   bust: ["stub"],
   stub: ["bust"],
-  bustle: ["sublet", "subtle"],
+  bustle: ["sublet", "subtle"], //subtle and bustle are kind of oppostites, but sublte is an adjective
   sublet: ["bustle", "subtle"],
   subtle: ["bustle", "sublet"],
   but: ["tub"],
   tub: ["but"],
   cackler: ["crackle"],
   crackle: ["cackler"],
-  cadre: ["cedar"],
+  cadre: ["cedar"], // small group of people specially trained for a particular purpose or profession
   cedar: ["cadre"],
-  cafe: ["face"],
+  cafe: ["face"], //could be funny
   face: ["cafe"],
-  caiman: ["maniac"],
+  caiman: ["maniac"], //this is fun
   maniac: ["caiman"],
   caliper: ["replica"],
   replica: ["caliper"],
@@ -654,17 +654,17 @@ const data = {
   cellar: ["caller", "recall"],
   recall: ["caller", "cellar"],
   calligraphy: ["graphically"],
-  graphically: ["calligraphy"],
-  callosity: ["stoically"],
+  graphically: ["calligraphy"], //this one is  cool
+  callosity: ["stoically"], //thickened and hardened part of the skin
   stoically: ["callosity"],
-  calm: ["clam"],
+  calm: ["clam"], //Could label all of these in the aquarium, just like the maniac caiman
   clam: ["calm"],
-  caner: ["crane", "nacre"],
+  caner: ["crane", "nacre"], //nacre mother of pearl
   crane: ["caner", "nacre"],
   nacre: ["caner", "crane"],
-  cannot: ["canton"],
+  cannot: ["canton"], //a subdivision of a country established for political or administrative purposes. they rejected the possibility of dividing the country into cantonsHeraldry a square charge smaller than a quarter and positioned in the upper (usually dexter) corner of a shield.
   canton: ["cannot"],
-  canoe: ["ocean"],
+  canoe: ["ocean"], //This is fun
   ocean: ["canoe"],
   canst: ["scant"],
   scant: ["canst"],
@@ -3394,6 +3394,22 @@ const data = {
   wits: ["wist"],
   wither: ["writhe"],
   writhe: ["wither"],
+};
+
+export const wrapAnagrams = (sentence) => {
+  const words = sentence.split(/\b/); // Splitting by word boundary
+
+  const wrapped = words.map((word) => {
+    if (data[word]) {
+      const alternatives = [word, ...data[word]];
+      return `<span id="Parents of the Seas ( )" data-anagrams="${alternatives.join(
+        ","
+      )}" class="word-0">${word}</span>`;
+    }
+    return word;
+  });
+
+  return wrapped.join("");
 };
 
 export default data;

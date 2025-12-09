@@ -1120,6 +1120,23 @@ function animate() {
                   span.textContent = homophonesList[nextIndex];
                   span.className = `word-${nextIndex}`;
                 }
+              } else if (punctuationSymbol.id === parenthesis.symbol) {
+                if (punctuationSymbol.hasAttribute("data-anagrams")) {
+                  const span = punctuationSymbol;
+                  const anagramList = span
+                    .getAttribute("data-anagrams")
+                    .split(",");
+                  let currentIndex = parseInt(
+                    span.className.replace("word-", "")
+                  );
+
+                  // Get the next index, or loop back to 0 if we're at the last word
+                  let nextIndex = (currentIndex + 1) % anagramList.length;
+
+                  // Update the content and class
+                  span.textContent = anagramList[nextIndex];
+                  span.className = `word-${nextIndex}`;
+                }
               } else if (punctuationSymbol.id === betar.symbol) {
                 const span = punctuationSymbol;
 
