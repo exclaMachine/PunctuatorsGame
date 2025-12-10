@@ -5,25 +5,31 @@ const roundWordsSingle = require("./roundLetters.js");
 let bIsOnlyChangedWords = false;
 
 let AmbigramPairs = {
-  a: ["e", "v", "h"], // a ↔ e, v, h
+  a: ["é", "e", "v", "h"], // a ↔ e, v, h
+  á: ["é", "e", "v", "h"],
   b: ["q", "g", "e"], // b ↔ q; B to E
   d: ["p", "g"], // d ↔ p
-  e: ["a", "e"], // e ↔ a
+  e: ["a", "á", "e", "é", "ó", "o"], // e ↔ a
+  é: ["é", "e", "a", "ó", "o"], //TODO should run abigram again because didn't have o
   h: ["y", "h", "a"], // h ↔ y, a
-  i: ["r", "e", "i"], // i ↔ r, e
+  i: ["r", "e", "i", "é", "í"], // i ↔ r, e
+  í: ["r", "e", "i", "é", "í"],
   j: ["l", "r"], // j ↔ l, r
   l: ["j", "l", "t"], // l ↔ j, t
   m: ["w", "uu"], // m ↔ w, uu
-  n: ["u", "n"], // n ↔ u
-  o: ["e", "o"], // o ↔ e
+  n: ["u", "n", "ñ", "ú"], // n ↔ u
+  ñ: ["ñ", "n", "u", "ú"],
+  o: ["e", "o", "é", "ó"], // o ↔ e
+  ó: ["ó", "o", "é", "e"],
   p: ["d"], // p ↔ d
   q: ["b"], // q ↔ b //Q and O?
   r: ["j", "d"], // r ↔ j; R ↔ d
-  s: ["e", "g", "s"], // s ↔ e //g and s could also be done
+  s: ["e", "g", "s", "é"], // s ↔ e //g and s could also be done
   t: ["t", "l"], // t ↔ l
-  u: ["n"], // u ↔ n
+  u: ["n", "ñ"], // u ↔ n
+  ú: ["n", "ñ"],
   w: ["m", "nn"], // w ↔ m, nn
-  x: ["x", "o"], // x ↔ o
+  x: ["x", "o", "ó"], // x ↔ o
   y: ["h", "t"], // y ↔ h
   z: ["z"], // z ↔ z
 
@@ -547,6 +553,95 @@ const ambigram = (word, pairs, wordSet) => {
   return results.size ? Array.from(results) : false;
 };
 
+// Cross-language ambigram:
+// - supports multi-output pairs
+// - supports digraph input keys ("uu", "nn")
+// - supports multi-letter output segments
+// - produces ALL possible results
+// - reverses segments (ambigram behavior)
+// - filters against targetSet (e.g., Spanish words)
+const ambigramCrossLang = (word, pairs, targetSet) => {
+  const lower = word.toLowerCase();
+  const len = lower.length;
+
+  // normalize pairs into Map<string, string[]>
+  const map = new Map();
+  for (const key in pairs) {
+    const val = pairs[key];
+    map.set(key, Array.isArray(val) ? val : [val]);
+  }
+
+  const results = new Set();
+
+  const dfs = (pos, segments) => {
+    if (pos === len) {
+      // 180° flip: reverse the glyph segments
+      const candidate = segments.slice().reverse().join("");
+      if (targetSet.has(candidate)) {
+        results.add(candidate);
+      }
+      return;
+    }
+
+    // Try 2-letter input digraphs first (like "uu", "nn")
+    if (pos + 1 < len) {
+      const digraph = lower.slice(pos, pos + 2);
+      if (map.has(digraph)) {
+        const outs = map.get(digraph);
+        for (const out of outs) {
+          segments.push(out);
+          dfs(pos + 2, segments);
+          segments.pop();
+        }
+      }
+    }
+
+    // Then try single-letter mapping
+    const ch = lower[pos];
+    if (!map.has(ch)) return; // dead path
+
+    const outs = map.get(ch);
+    for (const out of outs) {
+      segments.push(out);
+      dfs(pos + 1, segments);
+      segments.pop();
+    }
+  };
+
+  dfs(0, []);
+
+  return results.size ? Array.from(results) : false;
+};
+
+const CreateEnglishToSpanishAmbigramsJS = (jsName, pairs) => {
+  const engFile = "2of12.txt";
+  const espFile = "2of12Espagnol.txt";
+
+  const engRaw = fs.readFileSync(engFile, "utf8").split("\n");
+  const espRaw = fs.readFileSync(espFile, "utf8").split("\n");
+
+  const engWords = engRaw.map((w) => w.trim().toLowerCase()).filter(Boolean);
+  const espSet = new Set(
+    espRaw.map((w) => w.trim().toLowerCase()).filter(Boolean)
+  );
+
+  const typeOfWordObj = {};
+
+  for (const word of engWords) {
+    const list = ambigramCrossLang(word, pairs, espSet);
+    if (list && list.length) {
+      typeOfWordObj[word] = list; // array of Spanish words reachable by ambigram flip
+    }
+  }
+
+  const content =
+    `const data = ${JSON.stringify(typeOfWordObj, null, 2)};\n\n` +
+    `export default data;\n`;
+
+  fs.writeFileSync(jsName, content, "utf-8");
+  console.log(`Successfully created ${jsName}!`);
+};
+
 // word      : input word (string)
 // pairs     : mapping, values can be string or string[]
 // wordSet   : Set<string> of valid words from 2of12.txt (or undefined)
@@ -795,6 +890,7 @@ function binarySearch(arr, value) {
 
 const CreateJS = (jsName, typeOfJSFunction) => {
   const filename = "2of12.txt";
+  //const filename = "2of12Espagnol.txt"; //from https://github.com/ManiacDC/TypingAid/blob/master/Wordlists/Wordlist%20Spanish.txt
   const data = fs.readFileSync(filename, "utf8").split("\n");
   const wordSet = new Set(data.map((w) => w.trim().toLowerCase()));
   let typeOfWordObj = {};
@@ -961,6 +1057,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 };
 
 //CreateJS("ambigramPOJO.js", "ambigram");
+//CreateJS("ambigramSpanishPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
 //CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
@@ -970,7 +1067,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("RightAngleMirrorPOJO.js", "90DegMirror");
-CreateJS("roundLetters.js", "roundLetters");
+//CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
 //CreateJS("alphabeticalWordsReverse.js", "reverseAlphabetical");
@@ -979,6 +1076,10 @@ CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("SingleLetterVertMirror.js", "SingleLetterVertMirror");
 //CreateJS("SingleLetterHorizMirror.js", "SingleLetterHorizMirror");
 //CreateRightAngleJS("rightAngleNums.js", rightAngleNums);
+CreateEnglishToSpanishAmbigramsJS(
+  "englishToSpanishAmbigrams.js",
+  AmbigramPairs
+);
 
 //CreateJSON("todbotWithCapitals.json");
 
