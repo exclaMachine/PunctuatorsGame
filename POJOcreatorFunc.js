@@ -613,33 +613,55 @@ const ambigramCrossLang = (word, pairs, targetSet) => {
   return results.size ? Array.from(results) : false;
 };
 
-const CreateEnglishToSpanishAmbigramsJS = (jsName, pairs) => {
+// assumes AmbigramPairs is defined above
+// let AmbigramPairs = { ... };
+
+/**
+ * CreateEnglishToSpanishAmbigramsJS
+ *
+ * @param {string} jsName          - output JS filename
+ * @param {object} pairs           - AmbigramPairs mapping
+ * @param {string[]|null} startLetters - optional array of starting letters to process (e.g. ['a','b','c'])
+ */
+const CreateEnglishToSpanishAmbigramsJS = (
+  jsName,
+  pairs,
+  startLetters = null
+) => {
   const engFile = "2of12.txt";
   const espFile = "2of12Espagnol.txt";
 
-  const engRaw = fs.readFileSync(engFile, "utf8").split("\n");
-  const espRaw = fs.readFileSync(espFile, "utf8").split("\n");
+  const engRaw = fs.readFileSync(engFile, "utf8").split(/\r?\n/);
+  const espRaw = fs.readFileSync(espFile, "utf8").split(/\r?\n/);
 
-  const engWords = engRaw.map((w) => w.trim().toLowerCase()).filter(Boolean);
-  const espSet = new Set(
-    espRaw.map((w) => w.trim().toLowerCase()).filter(Boolean)
-  );
+  let engWords = engRaw.map((w) => w.trim().toLowerCase()).filter(Boolean);
+  const espWords = espRaw.map((w) => w.trim().toLowerCase()).filter(Boolean);
 
-  const typeOfWordObj = {};
+  const spanishSet = new Set(espWords);
+
+  // If doing chunks, filter English words by starting letter
+  if (startLetters && startLetters.length) {
+    const firstLetterSet = new Set(startLetters.map((c) => c.toLowerCase()));
+    engWords = engWords.filter((w) => firstLetterSet.has(w[0]));
+  }
+
+  const resultMap = {};
 
   for (const word of engWords) {
-    const list = ambigramCrossLang(word, pairs, espSet);
+    const list = ambigramCrossLang(word, pairs, spanishSet);
     if (list && list.length) {
-      typeOfWordObj[word] = list; // array of Spanish words reachable by ambigram flip
+      resultMap[word] = list; // array of Spanish words reachable by ambigram flip
     }
   }
 
   const content =
-    `const data = ${JSON.stringify(typeOfWordObj, null, 2)};\n\n` +
+    `const data = ${JSON.stringify(resultMap, null, 2)};\n\n` +
     `export default data;\n`;
 
   fs.writeFileSync(jsName, content, "utf-8");
-  console.log(`Successfully created ${jsName}!`);
+  console.log(
+    `Successfully created ${jsName}! Processed ${engWords.length} words.`
+  );
 };
 
 // word      : input word (string)
@@ -1076,9 +1098,15 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("SingleLetterVertMirror.js", "SingleLetterVertMirror");
 //CreateJS("SingleLetterHorizMirror.js", "SingleLetterHorizMirror");
 //CreateRightAngleJS("rightAngleNums.js", rightAngleNums);
+// CreateEnglishToSpanishAmbigramsJS(
+//   "englishToSpanishAmbigrams.js",
+//   AmbigramPairs
+// );
+// a–f
 CreateEnglishToSpanishAmbigramsJS(
-  "englishToSpanishAmbigrams.js",
-  AmbigramPairs
+  "englishToSpanishAmbigrams_e.js",
+  AmbigramPairs,
+  ["e"]
 );
 
 //CreateJSON("todbotWithCapitals.json");
