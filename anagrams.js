@@ -667,16 +667,16 @@ const data = {
   canoe: ["ocean"], //This is fun
   ocean: ["canoe"],
   canst: ["scant"],
-  scant: ["canst"],
-  canter: ["nectar", "recant", "trance"],
+  scant: ["canst"], //second person singular
+  canter: ["nectar", "recant", "trance"], //gait of a horse
   nectar: ["canter", "recant", "trance"],
   recant: ["canter", "nectar", "trance"],
   trance: ["canter", "nectar", "recant"],
-  cantor: ["carton"],
+  cantor: ["carton"], //person who sings
   carton: ["cantor"],
   cape: ["pace"],
   pace: ["cape"],
-  caper: ["crape", "pacer", "recap"],
+  caper: ["crape", "pacer", "recap"], //caper and recap could work
   crape: ["caper", "pacer", "recap"],
   pacer: ["caper", "crape", "recap"],
   recap: ["caper", "crape", "pacer"],
@@ -693,32 +693,32 @@ const data = {
   react: ["caret", "cater", "crate", "recta", "trace"],
   recta: ["caret", "cater", "crate", "react", "trace"],
   trace: ["caret", "cater", "crate", "react", "recta"],
-  caring: ["racing"],
+  caring: ["racing"], //could work
   racing: ["caring"],
-  carob: ["cobra"],
+  carob: ["cobra"], //Chocolate substitue
   cobra: ["carob"],
   carol: ["coral"],
   coral: ["carol"],
-  carom: ["macro"],
+  carom: ["macro"], //strike and rebound
   macro: ["carom"],
-  carp: ["crap"],
+  carp: ["crap"], //kids could like this
   crap: ["carp"],
   carpel: ["parcel", "placer"],
   parcel: ["carpel", "placer"],
   placer: ["carpel", "parcel"],
   cartel: ["claret", "rectal"],
-  claret: ["cartel", "rectal"],
+  claret: ["cartel", "rectal"], //red wine
   rectal: ["cartel", "claret"],
   carter: ["crater", "tracer"],
   crater: ["carter", "tracer"],
   tracer: ["carter", "crater"],
-  carthorse: ["orchestra"],
+  carthorse: ["orchestra"], //this is fun
   orchestra: ["carthorse"],
-  carve: ["crave"],
+  carve: ["crave"], //fun
   crave: ["carve"],
   carving: ["craving"],
   craving: ["carving"],
-  cask: ["sack"],
+  cask: ["sack"], //kind of dark
   sack: ["cask"],
   cast: ["scat"],
   scat: ["cast"],
@@ -735,12 +735,12 @@ const data = {
   causally: ["casually"],
   catalogue: ["coagulate"],
   coagulate: ["catalogue"],
-  catechism: ["schematic"],
+  catechism: ["schematic"], //questions and answers from christianity, don't think i'll use but is cool
   schematic: ["catechism"],
   caterer: ["retrace", "terrace"],
   retrace: ["caterer", "terrace"],
   terrace: ["caterer", "retrace"],
-  cattily: ["tacitly"],
+  cattily: ["tacitly"], //in a way that is understood or implied without being directly stated, they are kind of opposites
   tacitly: ["cattily"],
   cattiness: ["tacitness"],
   tacitness: ["cattiness"],
@@ -752,7 +752,7 @@ const data = {
   vacate: ["caveat"],
   cavern: ["craven"],
   craven: ["cavern"],
-  caviler: ["clavier"],
+  caviler: ["clavier"], //someone who nitpicks
   clavier: ["caviler"],
   ceder: ["creed"],
   creed: ["ceder"],
