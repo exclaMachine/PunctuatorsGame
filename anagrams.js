@@ -758,9 +758,9 @@ const data = {
   creed: ["ceder"],
   celandine: ["decennial"],
   decennial: ["celandine"],
-  cementer: ["cerement"],
+  cementer: ["cerement"], //cloth for wrapping a corpse
   cerement: ["cementer"],
-  censer: ["screen"],
+  censer: ["screen"], //where incense is burned
   screen: ["censer"],
   center: ["recent"],
   recent: ["center"],
@@ -770,7 +770,7 @@ const data = {
   uremic: ["cerium"],
   certifiable: ["rectifiable"],
   rectifiable: ["certifiable"],
-  certification: ["rectification"],
+  certification: ["rectification"], //could be something
   rectification: ["certification"],
   certify: ["rectify"],
   rectify: ["certify"],
@@ -780,23 +780,23 @@ const data = {
   miscue: ["cesium"],
   chain: ["china"],
   china: ["chain"],
-  chant: ["natch"],
+  chant: ["natch"], //naturally
   natch: ["chant"],
   charm: ["march"],
   march: ["charm"],
   charmer: ["marcher"],
-  marcher: ["charmer"],
+  marcher: ["charmer"], //could be something
   charterer: ["recharter"],
   recharter: ["charterer"],
-  chaser: ["search"],
+  chaser: ["search"], //chaser party
   search: ["chaser"],
-  chaste: ["sachet"],
+  chaste: ["sachet"], //small perfumed bag
   sachet: ["chaste"],
   chatter: ["ratchet"],
   ratchet: ["chatter"],
-  cheap: ["peach"],
+  cheap: ["peach"], //use as an adjective
   peach: ["cheap"],
-  cheat: ["teach"],
+  cheat: ["teach"], //this is good
   teach: ["cheat"],
   cheater: ["hectare", "reteach", "teacher"],
   hectare: ["cheater", "reteach", "teacher"],
@@ -804,9 +804,9 @@ const data = {
   teacher: ["cheater", "hectare", "reteach"],
   checker: ["recheck"],
   recheck: ["checker"],
-  chert: ["retch"],
+  chert: ["retch"], //hard rock
   retch: ["chert"],
-  chesty: ["scythe"],
+  chesty: ["scythe"], //don't know if i can use but kind of cool
   scythe: ["chesty"],
   chicle: ["cliche"],
   cliche: ["chicle"],
@@ -831,7 +831,7 @@ const data = {
   smirch: ["chrism"],
   chum: ["much"],
   much: ["chum"],
-  churl: ["lurch"],
+  churl: ["lurch"], //mean spirited person
   lurch: ["churl"],
   cider: ["cried"],
   cried: ["cider"],
