@@ -1104,9 +1104,9 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 // );
 // a–f
 CreateEnglishToSpanishAmbigramsJS(
-  "englishToSpanishAmbigrams_o.js",
+  "englishToSpanishAmbigrams_s.js",
   AmbigramPairs,
-  ["o"]
+  ["s"]
 );
 
 //CreateJSON("todbotWithCapitals.json");
