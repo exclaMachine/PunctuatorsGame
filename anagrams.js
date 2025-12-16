@@ -835,27 +835,27 @@ const data = {
   lurch: ["churl"],
   cider: ["cried"],
   cried: ["cider"],
-  cilantro: ["contrail"],
+  cilantro: ["contrail"], //trail of condensed water from plane
   contrail: ["cilantro"],
   cinders: ["discern", "rescind"],
   discern: ["cinders", "rescind"],
   rescind: ["cinders", "discern"],
-  circle: ["cleric"],
+  circle: ["cleric"], //this is cool
   cleric: ["circle"],
-  citadel: ["dialect"],
+  citadel: ["dialect"], //kind of like tower of babel
   dialect: ["citadel"],
-  citric: ["critic"],
+  citric: ["critic"], //is acid like
   critic: ["citric"],
   citrus: ["rustic"],
   rustic: ["citrus"],
-  civet: ["evict"],
+  civet: ["evict"], //carnivorous mammal
   evict: ["civet"],
   claimer: ["miracle", "reclaim"],
   miracle: ["claimer", "reclaim"],
   reclaim: ["claimer", "miracle"],
   clasp: ["scalp"],
   scalp: ["clasp"],
-  classwork: ["crosswalk"],
+  classwork: ["crosswalk"], //this is cool
   crosswalk: ["classwork"],
   clay: ["lacy"],
   lacy: ["clay"],
@@ -863,7 +863,7 @@ const data = {
   lance: ["clean"],
   cleaners: ["cleanser"],
   cleanser: ["cleaners"],
-  cleanse: ["scalene"],
+  cleanse: ["scalene"],//triangle
   scalene: ["cleanse"],
   cleat: ["eclat"],
   eclat: ["cleat"],
