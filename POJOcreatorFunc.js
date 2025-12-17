@@ -4,7 +4,7 @@ const roundWordsSingle = require("./roundLetters.js");
 
 let bIsOnlyChangedWords = false;
 
-let AmbigramPairs = {
+let AmbigramSpanishPairs = {
   a: ["é", "e", "v", "h"], // a ↔ e, v, h
   á: ["é", "e", "v", "h"],
   b: ["q", "g", "e"], // b ↔ q; B to E
@@ -23,19 +23,43 @@ let AmbigramPairs = {
   ó: ["ó", "o", "é", "e"],
   p: ["d"], // p ↔ d
   q: ["b"], // q ↔ b //Q and O?
-  r: ["j", "d"], // r ↔ j; R ↔ d
+  r: ["j", "d", "r"], // r ↔ j; R ↔ d
   s: ["e", "g", "s", "é"], // s ↔ e //g and s could also be done
   t: ["t", "l"], // t ↔ l
   u: ["n", "ñ"], // u ↔ n
   ú: ["n", "ñ"],
   w: ["m", "nn"], // w ↔ m, nn
   x: ["x", "o", "ó"], // x ↔ o
-  y: ["h", "t"], // y ↔ h
+  y: ["h", "t", "r"], // y ↔ h
   z: ["z"], // z ↔ z
 
   // --- digraph reverse mappings ---
   uu: ["m"],
   nn: ["w"],
+};
+
+let AmbigramPairs = {
+  a: ["e", "v", "h"], // a ↔ e, v, h
+  b: ["q", "g", "e"], // b ↔ q; B to E
+  d: ["p", "g"], // d ↔ p
+  e: ["a", "e"], // e ↔ a
+  h: ["y", "h", "a"], // h ↔ y, a
+  i: ["r", "e", "i"], // i ↔ r, e
+  j: ["l", "r"], // j ↔ l, r
+  l: ["j", "l", "t"], // l ↔ j, t
+  m: ["w", "uu"], // m ↔ w, uu
+  n: ["u", "n"], // n ↔ u
+  o: ["e", "o"], // o ↔ e
+  p: ["d"], // p ↔ d
+  q: ["b"], // q ↔ b //Q and O?
+  r: ["j", "d", "y"], // r ↔ j; R ↔ d
+  s: ["e", "g", "s"], // s ↔ e //g and s could also be done
+  t: ["t", "l"], // t ↔ l
+  u: ["n"], // u ↔ n
+  w: ["m", "nn"], // w ↔ m, nn
+  x: ["x", "o"], // x ↔ o
+  y: ["h", "t", "r"], // y ↔ h
+  z: ["z"], // z ↔ z
 };
 
 //right angle numbers
@@ -1078,7 +1102,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
   console.log(`Successfully created ${jsName}!`);
 };
 
-//CreateJS("ambigramPOJO.js", "ambigram");
+CreateJS("AmbigramPOJO.js", "ambigram");
 //CreateJS("ambigramSpanishPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
 //CreateJS("todbotPOJO.js", "mirror");
@@ -1103,11 +1127,11 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //   AmbigramPairs
 // );
 // a–f
-CreateEnglishToSpanishAmbigramsJS(
-  "englishToSpanishAmbigrams_t.js",
-  AmbigramPairs,
-  ["t"]
-);
+// CreateEnglishToSpanishAmbigramsJS(
+//   "englishToSpanishAmbigrams_x.js",
+//   AmbigramPairs,
+//   ["x"]
+// );
 
 //CreateJSON("todbotWithCapitals.json");
 

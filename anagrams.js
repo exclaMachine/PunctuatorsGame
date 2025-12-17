@@ -863,9 +863,9 @@ const data = {
   lance: ["clean"],
   cleaners: ["cleanser"],
   cleanser: ["cleaners"],
-  cleanse: ["scalene"],//triangle
+  cleanse: ["scalene"], //triangle
   scalene: ["cleanse"],
-  cleat: ["eclat"],
+  cleat: ["eclat"], //brilliant display or effect
   eclat: ["cleat"],
   clinker: ["crinkle"],
   crinkle: ["clinker"],
@@ -879,17 +879,17 @@ const data = {
   colt: ["clot"],
   cloud: ["could"],
   could: ["cloud"],
-  coal: ["cola"],
+  coal: ["cola"], //could be gross
   cola: ["coal"],
   coalitionist: ["solicitation"],
   solicitation: ["coalitionist"],
-  coastline: ["sectional"],
+  coastline: ["sectional"], //sectional couch?
   sectional: ["coastline"],
-  coat: ["taco"],
+  coat: ["taco"], //This could be funny
   taco: ["coat"],
   coattail: ["tailcoat"],
   tailcoat: ["coattail"],
-  cocaine: ["oceanic"],
+  cocaine: ["oceanic"], //not suitable for young readers
   oceanic: ["cocaine"],
   cockily: ["colicky"],
   colicky: ["cockily"],
