@@ -524,12 +524,12 @@ const CreateRightAngleJS = (jsName, pairs) => {
 // - supports multi-letter output segments
 // - produces ALL possible results (not just one)
 // - reverses segments (ambigram behavior)
-// - filters against wordSet if provided
+// - filters against wordSet
+// - SPECIAL RULE: if word starts with 'i', also run ambigram on word.slice(1)
 const ambigram = (word, pairs, wordSet) => {
   const lower = word.toLowerCase();
-  const len = lower.length;
 
-  // Normalize pairs into Map<string, string[]>
+  // normalize pairs into Map<string, string[]>
   const map = new Map();
   for (const key in pairs) {
     const val = pairs[key];
@@ -538,41 +538,51 @@ const ambigram = (word, pairs, wordSet) => {
 
   const results = new Set();
 
-  const dfs = (pos, segments) => {
-    if (pos === len) {
-      // Ambigram flips 180°, reversing glyph order
-      const candidate = segments.slice().reverse().join("");
+  const generateFor = (input) => {
+    const len = input.length;
 
-      if (!wordSet || wordSet.has(candidate)) {
-        results.add(candidate);
+    const dfs = (pos, segments) => {
+      if (pos === len) {
+        const candidate = segments.slice().reverse().join("");
+        if (!wordSet || wordSet.has(candidate)) {
+          results.add(candidate);
+        }
+        return;
       }
-      return;
-    }
 
-    // Try 2-letter input digraphs first (e.g. "uu", "nn")
-    if (pos + 1 < len) {
-      const digraph = lower.slice(pos, pos + 2);
-      if (map.has(digraph)) {
-        for (const out of map.get(digraph)) {
-          segments.push(out);
-          dfs(pos + 2, segments);
-          segments.pop();
+      // Try 2-letter input digraphs first (e.g. "uu", "nn")
+      if (pos + 1 < len) {
+        const digraph = input.slice(pos, pos + 2);
+        if (map.has(digraph)) {
+          for (const out of map.get(digraph)) {
+            segments.push(out);
+            dfs(pos + 2, segments);
+            segments.pop();
+          }
         }
       }
-    }
 
-    // Try single-letter mapping
-    const ch = lower[pos];
-    if (!map.has(ch)) return; // dead path if no mapping available
+      // Try single-letter mapping
+      const ch = input[pos];
+      if (!map.has(ch)) return;
 
-    for (const out of map.get(ch)) {
-      segments.push(out);
-      dfs(pos + 1, segments);
-      segments.pop();
-    }
+      for (const out of map.get(ch)) {
+        segments.push(out);
+        dfs(pos + 1, segments);
+        segments.pop();
+      }
+    };
+
+    dfs(0, []);
   };
 
-  dfs(0, []);
+  // 1) Normal ambigram on the full word
+  generateFor(lower);
+
+  // 2) Special: if the word starts with 'i', also ambigram the word without the leading 'i'
+  if (lower.startsWith("i") && lower.length > 1) {
+    generateFor(lower.slice(1));
+  }
 
   return results.size ? Array.from(results) : false;
 };
