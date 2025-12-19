@@ -48,8 +48,8 @@ let AmbigramPairs = {
   j: ["l", "r"], // j ↔ l, r
   l: ["j", "l", "t"], // l ↔ j, t
   m: ["w", "uu"], // m ↔ w, uu
-  n: ["u", "n"], // n ↔ u
-  o: ["e", "o"], // o ↔ e
+  n: ["u", "n", "o"], // n ↔ u
+  o: ["e", "o", "n"], // o ↔ e
   p: ["d"], // p ↔ d
   q: ["b"], // q ↔ b //Q and O?
   r: ["j", "d", "y"], // r ↔ j; R ↔ d
