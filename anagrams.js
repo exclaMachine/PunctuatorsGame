@@ -965,7 +965,7 @@ const data = {
   recook: ["cooker"],
   cool: ["loco"],
   loco: ["cool"],
-  coordinate: ["decoration"],
+  coordinate: ["decoration"], //this is cool
   decoration: ["coordinate"],
   copse: ["scope"],
   scope: ["copse"],
@@ -973,20 +973,20 @@ const data = {
   cupola: ["copula"],
   copulate: ["outplace"],
   outplace: ["copulate"],
-  cords: ["scrod"],
+  cords: ["scrod"], //type of fish
   scrod: ["cords"],
   cork: ["rock"],
   rock: ["cork"],
   corny: ["crony"],
-  crony: ["corny"],
-  coroner: ["crooner"],
+  crony: ["corny"], //this could be used
+  coroner: ["crooner"], //singer
   crooner: ["coroner"],
   corset: ["escort", "sector"],
   escort: ["corset", "sector"],
   sector: ["corset", "escort"],
-  costumer: ["customer"],
+  costumer: ["customer"], //USE
   customer: ["costumer"],
-  counter: ["recount", "trounce"],
+  counter: ["recount", "trounce"], //uSE
   recount: ["counter", "trounce"],
   trounce: ["counter", "recount"],
   course: ["source"],
@@ -997,7 +997,7 @@ const data = {
   outsource: ["courteous"],
   covert: ["vector"],
   vector: ["covert"],
-  craps: ["scarp", "scrap"],
+  craps: ["scarp", "scrap"], //steep bank or slope
   scarp: ["craps", "scrap"],
   scrap: ["craps", "scarp"],
   creation: ["reaction"],
@@ -1010,19 +1010,19 @@ const data = {
   direct: ["credit"],
   creditor: ["director"],
   director: ["creditor"],
-  creep: ["crepe"],
+  creep: ["crepe"], //USE
   crepe: ["creep"],
-  crenelation: ["intolerance"],
+  crenelation: ["intolerance"], //Battlements of a castle. THis is fun
   intolerance: ["crenelation"],
   crier: ["ricer"],
-  ricer: ["crier"],
-  crisp: ["scrip"],
+  ricer: ["crier"], //kitchen tool with small holes
+  crisp: ["scrip"], //piece of paper giving ownership
   scrip: ["crisp"],
-  crocus: ["succor"],
+  crocus: ["succor"], //a small, spring-flowering plant of the iris family, which grows from a corm and bears bright yellow, purple, or white flowers.
   succor: ["crocus"],
-  crud: ["curd"],
+  crud: ["curd"], //cheese crud haha
   curd: ["crud"],
-  cruel: ["lucre", "ulcer"],
+  cruel: ["lucre", "ulcer"], //money, especially when regarded as sordid or distasteful or gained in a dishonorable way. lucre gave me an ulcer
   lucre: ["cruel", "ulcer"],
   ulcer: ["cruel", "lucre"],
   cruelty: ["cutlery"],
