@@ -1027,12 +1027,12 @@ const data = {
   ulcer: ["cruel", "lucre"],
   cruelty: ["cutlery"],
   cutlery: ["cruelty"],
-  cruet: ["eruct", "truce"],
+  cruet: ["eruct", "truce"], //eruct = belch, scenario where there anagram wand powers backfired and they were trying to call a truce, cruet container for salt
   eruct: ["cruet", "truce"],
   truce: ["cruet", "eruct"],
-  cruse: ["curse"],
+  cruse: ["curse"], //earthenware pot
   curse: ["cruse"],
-  crusty: ["curtsy"],
+  crusty: ["curtsy"], //funny
   curtsy: ["crusty"],
   cuffs: ["scuff"],
   scuff: ["cuffs"],
@@ -1046,7 +1046,7 @@ const data = {
   diary: ["dairy"],
   dais: ["said"],
   said: ["dais"],
-  dale: ["deal", "lade", "lead"],
+  dale: ["deal", "lade", "lead"], //dale valley, lade= ship goods
   deal: ["dale", "lade", "lead"],
   lade: ["dale", "deal", "lead"],
   lead: ["dale", "deal", "lade"],
@@ -1061,20 +1061,20 @@ const data = {
   dander: ["darned"],
   darned: ["dander"],
   dandle: ["landed"],
-  landed: ["dandle"],
-  danger: ["gander", "garden"],
+  landed: ["dandle"], //move a baby up and down in a gentle way
+  danger: ["gander", "garden"], //garden turns into a goose which attacks them
   gander: ["danger", "garden"],
   garden: ["danger", "gander"],
   dangler: ["gnarled"],
-  gnarled: ["dangler"],
-  dare: ["dear", "read"],
+  gnarled: ["dangler"], //dangling modifier
+  dare: ["dear", "read"], //dare you to read it dear
   dear: ["dare", "read"],
   read: ["dare", "dear"],
   darer: ["drear"],
   drear: ["darer"],
   darner: ["errand"],
   errand: ["darner"],
-  dart: ["drat"],
+  dart: ["drat"], //could be fun with the mugger
   drat: ["dart"],
   darter: ["retard", "trader"],
   retard: ["darter", "trader"],
@@ -1083,15 +1083,15 @@ const data = {
   shad: ["dash"],
   dashing: ["shading"],
   shading: ["dashing"],
-  dateless: ["tasseled"],
+  dateless: ["tasseled"], //this is funny
   tasseled: ["dateless"],
   dater: ["trade", "tread"],
   trade: ["dater", "tread"],
   tread: ["dater", "trade"],
-  dawdle: ["waddle"],
+  dawdle: ["waddle"], //synonyms
   waddle: ["dawdle"],
   dawn: ["wand"],
-  wand: ["dawn"],
+  wand: ["dawn"],//could be the new name
   deaf: ["fade"],
   fade: ["deaf"],
   dealer: ["leader"],
