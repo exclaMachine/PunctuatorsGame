@@ -1091,7 +1091,7 @@ const data = {
   dawdle: ["waddle"], //synonyms
   waddle: ["dawdle"],
   dawn: ["wand"],
-  wand: ["dawn"],//could be the new name
+  wand: ["dawn"], //could be the new name
   deaf: ["fade"],
   fade: ["deaf"],
   dealer: ["leader"],
@@ -1102,12 +1102,12 @@ const data = {
   leading: ["dealing"],
   dealt: ["delta"],
   delta: ["dealt"],
-  dearth: ["hatred", "thread"],
+  dearth: ["hatred", "thread"], //scarcity or lack of something
   hatred: ["dearth", "thread"],
   thread: ["dearth", "hatred"],
   death: ["hated"],
   hated: ["death"],
-  debase: ["seabed"],
+  debase: ["seabed"], //could use
   seabed: ["debase"],
   debut: ["tubed"],
   tubed: ["debut"],
@@ -1116,13 +1116,13 @@ const data = {
   decimal: ["declaim", "medical"],
   declaim: ["decimal", "medical"],
   medical: ["decimal", "declaim"],
-  decimate: ["medicate"],
+  decimate: ["medicate"], //opposites
   medicate: ["decimate"],
   decimation: ["medication"],
   medication: ["decimation"],
   decree: ["recede"],
   recede: ["decree"],
-  deem: ["meed"],
+  deem: ["meed"], //deserved share or reward, could be max's vocab joke
   meed: ["deem"],
   deer: ["reed"],
   reed: ["deer"],
@@ -1136,17 +1136,17 @@ const data = {
   fielder: ["defiler"],
   definer: ["refined"],
   refined: ["definer"],
-  deflation: ["defoliant"],
+  deflation: ["defoliant"], //chemical that removes leaves from plants
   defoliant: ["deflation"],
   deflower: ["flowered"],
   flowered: ["deflower"],
-  deforest: ["forested"],
+  deforest: ["forested"], //opposites
   forested: ["deforest"],
-  defrost: ["frosted"],
+  defrost: ["frosted"], //opposites
   frosted: ["defrost"],
-  deification: ["edification"],
+  deification: ["edification"], //improvement of a person
   edification: ["deification"],
-  deify: ["edify"],
+  deify: ["edify"], //they could use this on illuminaut. rehabilitation
   edify: ["deify"],
   deli: ["idle", "lied"],
   idle: ["deli", "lied"],
