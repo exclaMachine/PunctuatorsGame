@@ -1157,38 +1157,38 @@ const data = {
   limited: ["delimit"],
   deliverer: ["redeliver"],
   redeliver: ["deliverer"],
-  delusion: ["unsoiled"],
+  delusion: ["unsoiled"], //delusion that you're unsoiled
   unsoiled: ["delusion"],
-  demanding: ["maddening"],
+  demanding: ["maddening"], //so demanding it's maddening
   maddening: ["demanding"],
-  demeanor: ["enamored"],
+  demeanor: ["enamored"], //demeanor tells me you're enamored
   enamored: ["demeanor"],
-  demo: ["dome", "mode"],
+  demo: ["dome", "mode"], //let's go to the dome for demo mode
   dome: ["demo", "mode"],
   mode: ["demo", "dome"],
-  demurrer: ["murderer"],
+  demurrer: ["murderer"], //an objection that an opponent's point is irrelevant or invalid, while granting the factual basis of the point.
   murderer: ["demurrer"],
   den: ["end"],
   end: ["den"],
-  denominate: ["emendation"],
+  denominate: ["emendation"], //the process of making a revision or correction to a tex
   emendation: ["denominate"],
-  denotation: ["detonation"],
+  denotation: ["detonation"], //the literal or primary meaning of a word, in contrast to the feelings or ideas that the word suggests. Deep
   detonation: ["denotation"],
-  dense: ["needs"],
+  dense: ["needs"], //This could be used with the below
   needs: ["dense"],
   density: ["destiny"],
   destiny: ["density"],
   dent: ["tend"],
   tend: ["dent"],
-  dentin: ["indent", "intend"],
+  dentin: ["indent", "intend"], //hard dense bony tissue forming the bulk of a tooth, beneath the enamel
   indent: ["dentin", "intend"],
   intend: ["dentin", "indent"],
   denture: ["tenured"],
   tenured: ["denture"],
-  depart: ["parted", "petard"],
+  depart: ["parted", "petard"], //We must depart with the petard. a small bomb made of a metal or wooden box filled with powder, used to blast down a door or to make a hole in a wall.
   parted: ["depart", "petard"],
   petard: ["depart", "parted"],
-  deposit: ["topside"],
+  deposit: ["topside"], //let's go topside
   topside: ["deposit"],
   deprave: ["pervade"],
   pervade: ["deprave"],
