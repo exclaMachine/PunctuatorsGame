@@ -1190,7 +1190,7 @@ const data = {
   petard: ["depart", "parted"],
   deposit: ["topside"], //let's go topside
   topside: ["deposit"],
-  deprave: ["pervade"],
+  deprave: ["pervade"], //(especially of a smell) spread through and be perceived in every part of.
   pervade: ["deprave"],
   depress: ["pressed"],
   pressed: ["depress"],
@@ -1201,29 +1201,29 @@ const data = {
   enraged: ["derange", "grandee", "grenade"],
   grandee: ["derange", "enraged", "grenade"],
   grenade: ["derange", "enraged", "grandee"],
-  desalt: ["salted"],
+  desalt: ["salted"], //andther DE one
   salted: ["desalt"],
-  descent: ["scented"],
+  descent: ["scented"], //DE
   scented: ["descent"],
-  deserts: ["dessert"],
+  deserts: ["dessert"], //this is fun
   dessert: ["deserts"],
-  designer: ["redesign", "resigned"],
+  designer: ["redesign", "resigned"], //fun
   redesign: ["designer", "resigned"],
   resigned: ["designer", "redesign"],
   desire: ["reside"],
   reside: ["desire"],
-  despoil: ["spoiled"],
+  despoil: ["spoiled"], //DE
   spoiled: ["despoil"],
   detail: ["dilate", "tailed"],
   dilate: ["detail", "tailed"],
   tailed: ["detail", "dilate"],
-  deuce: ["educe"],
+  deuce: ["educe"], //bring out or develop (something latent or potential).
   educe: ["deuce"],
   developer: ["redevelop"],
   redevelop: ["developer"],
   dew: ["wed"],
   wed: ["dew"],
-  dewiness: ["wideness"],
+  dewiness: ["wideness"], //dewiness is a fun word
   wideness: ["dewiness"],
   dial: ["laid"],
   laid: ["dial"],
@@ -1231,7 +1231,7 @@ const data = {
   matricide: ["diametric"],
   diaper: ["repaid"],
   repaid: ["diaper"],
-  diastole: ["isolated"],
+  diastole: ["isolated"], //the phase of the heartbeat when the heart muscle relaxes and allows the chambers to fill with blood.
   isolated: ["diastole"],
   dice: ["iced"],
   iced: ["dice"],
