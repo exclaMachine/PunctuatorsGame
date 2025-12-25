@@ -42,7 +42,8 @@ let AmbigramPairs = {
   a: ["e", "v", "h"], // a ↔ e, v, h
   b: ["q", "g", "e"], // b ↔ q; B to E
   d: ["p", "g"], // d ↔ p
-  e: ["a", "e"], // e ↔ a
+  e: ["a", "e", "d"], // e ↔ a
+  g: ["d", "g"],
   h: ["y", "h", "a"], // h ↔ y, a
   i: ["r", "e", "i"], // i ↔ r, e
   j: ["l", "r"], // j ↔ l, r
@@ -524,8 +525,13 @@ const CreateRightAngleJS = (jsName, pairs) => {
 // - supports multi-letter output segments
 // - produces ALL possible results (not just one)
 // - reverses segments (ambigram behavior)
-// - filters against wordSet
-// - SPECIAL RULE: if word starts with 'i', also run ambigram on word.slice(1)
+// - filters against wordSet if provided
+//
+// SPECIAL RULE for words starting with 'i':
+// - we do NOT require the leading 'i' to be mappable
+// - we ambigram the rest of the word (word.slice(1))
+// - for each flipped result R (word or not), we check "i" + R in wordSet
+// - if present, include "i"+R as a valid result
 const ambigram = (word, pairs, wordSet) => {
   const lower = word.toLowerCase();
 
@@ -538,19 +544,18 @@ const ambigram = (word, pairs, wordSet) => {
 
   const results = new Set();
 
-  const generateFor = (input) => {
+  // Generate all flipped outputs for an input string (no dictionary check here by default)
+  const generateFlips = (input, onCandidate) => {
     const len = input.length;
 
     const dfs = (pos, segments) => {
       if (pos === len) {
         const candidate = segments.slice().reverse().join("");
-        if (!wordSet || wordSet.has(candidate)) {
-          results.add(candidate);
-        }
+        onCandidate(candidate);
         return;
       }
 
-      // Try 2-letter input digraphs first (e.g. "uu", "nn")
+      // Try 2-letter digraph input keys first
       if (pos + 1 < len) {
         const digraph = input.slice(pos, pos + 2);
         if (map.has(digraph)) {
@@ -576,12 +581,25 @@ const ambigram = (word, pairs, wordSet) => {
     dfs(0, []);
   };
 
-  // 1) Normal ambigram on the full word
-  generateFor(lower);
+  // 1) Normal ambigram on the full word: only add if candidate is in wordSet
+  generateFlips(lower, (candidate) => {
+    if (!wordSet || wordSet.has(candidate)) {
+      results.add(candidate);
+    }
+  });
 
-  // 2) Special: if the word starts with 'i', also ambigram the word without the leading 'i'
-  if (lower.startsWith("i") && lower.length > 1) {
-    generateFor(lower.slice(1));
+  // 2) Special leading-'i' rule//TODO do this same thing but with d and ?
+  if (wordSet && lower.startsWith("i") && lower.length > 1) {
+    const rest = lower.slice(1);
+
+    // We generate flips for the rest WITHOUT requiring the rest-flip itself to be a word.
+    // Then we prepend 'i' and test that full form is a real word in wordSet.
+    generateFlips(rest, (flippedRest) => {
+      const withLeadingI = "i" + flippedRest;
+      if (wordSet.has(withLeadingI)) {
+        results.add(withLeadingI);
+      }
+    });
   }
 
   return results.size ? Array.from(results) : false;
