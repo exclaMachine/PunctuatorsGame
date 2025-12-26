@@ -170,7 +170,7 @@ let vertPairs = {
   b: ["b"], // Only Cap visually
   c: ["c"],
   d: ["d"], // Only Cap visually
-  e: ["e"], // E -> E, e -> o TODO  "o" add after
+  e: ["e", "o"], // E -> E, e -> o TODO  "o" add after
   f: ["t", "b", "z"],
   g: ["g", "c", "q"],
   h: ["h"], // Only Cap visually
@@ -180,7 +180,7 @@ let vertPairs = {
   l: ["l", "i", "t"],
   m: ["w"],
   n: ["n"], // N looks like lowercase n flipped
-  o: ["o"], //"e"
+  o: ["o", "e"], //"e"
   p: ["b"],
   q: ["d"],
   r: ["e"],
@@ -602,6 +602,20 @@ const ambigram = (word, pairs, wordSet) => {
     });
   }
 
+  //same thing as above but with question mark
+  if (wordSet && lower.startsWith("d") && lower.length > 1) {
+    const rest = lower.slice(1);
+
+    // We generate flips for the rest WITHOUT requiring the rest-flip itself to be a word.
+    // Then we prepend 'd' and test that full form is a real word in wordSet.
+    generateFlips(rest, (flippedRest) => {
+      const withLeadingD = "d" + flippedRest;
+      if (wordSet.has(withLeadingD)) {
+        results.add(withLeadingD);
+      }
+    });
+  }
+
   return results.size ? Array.from(results) : false;
 };
 
@@ -716,59 +730,20 @@ const CreateEnglishToSpanishAmbigramsJS = (
   );
 };
 
-// word      : input word (string)
-// pairs     : mapping, values can be string or string[]
-// wordSet   : Set<string> of valid words from 2of12.txt (or undefined)
+// VertMirror generator:
+// - supports multi-output pairs
+// - supports multi-letter output segments (if you ever add them)
+// - produces ALL possible results (not just one)
+// - DOES NOT reverse order (vertical/up-down reflection in your setup)
+// - filters against wordSet if provided
+//
+// SPECIAL RULE for words ending in 'b':
+// - we do NOT require the trailing 'b' to be mappable
+// - we vert-mirror the rest of the word (word.slice(0, -1))
+// - for each mirrored rest R (word or not), we check R + "b" in wordSet
+// - if present, include R+"b" as a valid result
 const VertMirror = (word, pairs, wordSet) => {
   const lower = word.toLowerCase();
-  const len = lower.length;
-
-  // normalize pairs into key -> array of options
-  const map = new Map();
-  for (const key in pairs) {
-    const val = pairs[key];
-    map.set(key, Array.isArray(val) ? val : [val]);
-  }
-
-  const results = new Set();
-
-  // DFS over positions, building all combinations
-  const dfs = (pos, segments) => {
-    if (pos === len) {
-      const candidate = segments.join("");
-
-      if (!wordSet || wordSet.has(candidate)) {
-        results.add(candidate);
-      }
-      return;
-    }
-
-    const ch = lower[pos];
-    if (!map.has(ch)) {
-      // no mapping for this character => dead path
-      return;
-    }
-
-    const outs = map.get(ch);
-    for (const out of outs) {
-      segments.push(out);
-      dfs(pos + 1, segments);
-      segments.pop();
-    }
-  };
-
-  dfs(0, []);
-
-  if (results.size === 0) return false;
-  return Array.from(results); // you can sort if you want
-};
-
-// word: string
-// pairs: { [key: string]: string | string[] }
-// wordSet: Set<string> of valid words (from 2of12.txt)
-const HorizMirror = (word, pairs, wordSet) => {
-  const s = word.toLowerCase();
-  const len = s.length;
 
   // normalize pairs into Map<string, string[]>
   const map = new Map();
@@ -779,45 +754,139 @@ const HorizMirror = (word, pairs, wordSet) => {
 
   const results = new Set();
 
-  const dfs = (pos, segments) => {
-    if (pos === len) {
-      // mirror across vertical axis: reverse glyph segments
-      const mirrored = segments.slice().reverse().join("");
-      if (!wordSet || wordSet.has(mirrored)) {
-        results.add(mirrored);
+  // Generate all vertical-mirror outputs for an input string (no reverse)
+  const generateMirrors = (input, onCandidate) => {
+    const len = input.length;
+
+    const dfs = (pos, segments) => {
+      if (pos === len) {
+        const candidate = segments.join(""); // no reverse for VertMirror
+        onCandidate(candidate);
+        return;
       }
-      return;
-    }
 
-    // Try a 2-letter input chunk first (digraphs like "rl", "cl", "cj")
-    if (pos + 1 < len) {
-      const digraph = s.slice(pos, pos + 2);
-      if (map.has(digraph)) {
-        for (const out of map.get(digraph)) {
-          segments.push(out);
-          dfs(pos + 2, segments);
-          segments.pop();
-        }
+      const ch = input[pos];
+      if (!map.has(ch)) return;
+
+      for (const out of map.get(ch)) {
+        segments.push(out);
+        dfs(pos + 1, segments);
+        segments.pop();
       }
-    }
+    };
 
-    // Then try single-letter mapping
-    const ch = s[pos];
-    if (!map.has(ch)) return; // dead end if no mapping
-
-    for (const out of map.get(ch)) {
-      segments.push(out);
-      dfs(pos + 1, segments);
-      segments.pop();
-    }
+    dfs(0, []);
   };
 
-  dfs(0, []);
+  // 1) Normal VertMirror on the full word: only add if candidate is in wordSet
+  generateMirrors(lower, (candidate) => {
+    if (!wordSet || wordSet.has(candidate)) {
+      results.add(candidate);
+    }
+  });
 
-  if (results.size === 0) return false;
+  // 2) Special trailing-'b' rule (b can represent a reflected '?')
+  if (wordSet && lower.endsWith("b") && lower.length > 1) {
+    const rest = lower.slice(0, -1);
 
-  // convert to array; you can sort if you want deterministic order
-  return Array.from(results);
+    // Mirror the rest without requiring it to be a word;
+    // then append 'b' and check membership.
+    generateMirrors(rest, (mirroredRest) => {
+      const withTrailingB = mirroredRest + "b";
+      if (wordSet.has(withTrailingB)) {
+        results.add(withTrailingB);
+      }
+    });
+  }
+
+  return results.size ? Array.from(results) : false;
+};
+
+// HorizMirror generator:
+// - supports multi-output pairs
+// - supports digraph input keys ("rl", "cl", etc.) if you have them
+// - supports multi-letter output segments
+// - produces ALL possible results (not just one)
+// - reverses segments (horizontal mirror behavior)
+// - filters against wordSet if provided
+//
+// SPECIAL RULE for words starting with 's':
+// - we do NOT require the leading 's' to be mappable
+// - we horiz-mirror the rest of the word (word.slice(1))
+// - for each mirrored rest R (word or not), we check "s" + R in wordSet
+// - if present, include "s"+R as a valid result
+const HorizMirror = (word, pairs, wordSet) => {
+  const lower = word.toLowerCase();
+
+  // normalize pairs into Map<string, string[]>
+  const map = new Map();
+  for (const key in pairs) {
+    const val = pairs[key];
+    map.set(key, Array.isArray(val) ? val : [val]);
+  }
+
+  const results = new Set();
+
+  // Generate all horizontal-mirror outputs for an input string.
+  // IMPORTANT: we reverse *segments* (not characters) at the end.
+  const generateMirrors = (input, onCandidate) => {
+    const len = input.length;
+
+    const dfs = (pos, segments) => {
+      if (pos === len) {
+        const candidate = segments.slice().reverse().join("");
+        onCandidate(candidate);
+        return;
+      }
+
+      // Try 2-letter input digraphs first (if present in your pairs)
+      if (pos + 1 < len) {
+        const digraph = input.slice(pos, pos + 2);
+        if (map.has(digraph)) {
+          for (const out of map.get(digraph)) {
+            segments.push(out);
+            dfs(pos + 2, segments);
+            segments.pop();
+          }
+        }
+      }
+
+      // Then try single-letter mapping
+      const ch = input[pos];
+      if (!map.has(ch)) return;
+
+      for (const out of map.get(ch)) {
+        segments.push(out);
+        dfs(pos + 1, segments);
+        segments.pop();
+      }
+    };
+
+    dfs(0, []);
+  };
+
+  // 1) Normal horiz mirror on the full word: only add if candidate is in wordSet
+  generateMirrors(lower, (candidate) => {
+    if (!wordSet || wordSet.has(candidate)) {
+      results.add(candidate);
+    }
+  });
+
+  // 2) Special leading-'s' rule (S can become ? at the far end in the mirror)
+  if (wordSet && lower.startsWith("s") && lower.length > 1) {
+    const rest = lower.slice(1);
+
+    // Mirror the rest without requiring it to be a word;
+    // then add leading 's' and check membership.
+    generateMirrors(rest, (mirroredRest) => {
+      const withLeadingS = "s" + mirroredRest;
+      if (wordSet.has(withLeadingS)) {
+        results.add(withLeadingS);
+      }
+    });
+  }
+
+  return results.size ? Array.from(results) : false;
 };
 
 const VertCapitalMirror = (word, pairs) => {
@@ -1130,10 +1199,10 @@ const CreateJS = (jsName, typeOfJSFunction) => {
   console.log(`Successfully created ${jsName}!`);
 };
 
-CreateJS("AmbigramPOJO.js", "ambigram");
+//CreateJS("AmbigramPOJO.js", "ambigram");
 //CreateJS("ambigramSpanishPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
-//CreateJS("todbotPOJO.js", "mirror");
+CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
 //CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
 //CreateJS("SingleLetterVertSpeakPOJO.js", "SingleLetterVertSpeak");
