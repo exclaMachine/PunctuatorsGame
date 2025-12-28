@@ -1255,7 +1255,7 @@ const data = {
   rimmed: ["dimmer"],
   dingo: ["doing"],
   doing: ["dingo"],
-  dingy: ["dying"],
+  dingy: ["dying"], //could be funny
   dying: ["dingy"],
   dire: ["ride"],
   ride: ["dire"],
@@ -1275,7 +1275,7 @@ const data = {
   skid: ["disk"],
   dissenter: ["tiredness"],
   tiredness: ["dissenter"],
-  divan: ["viand"],
+  divan: ["viand"], //an item of food
   viand: ["divan"],
   diver: ["drive"],
   drive: ["diver"],
@@ -1290,7 +1290,7 @@ const data = {
   god: ["dog"],
   dole: ["lode"],
   lode: ["dole"],
-  dolor: ["drool"],
+  dolor: ["drool"], //a state of great sorrow or distress
   drool: ["dolor"],
   dolt: ["told"],
   told: ["dolt"],
@@ -1307,11 +1307,11 @@ const data = {
   door: ["odor", "rood"],
   odor: ["door", "rood"],
   rood: ["door", "odor"],
-  dormancy: ["mordancy"],
+  dormancy: ["mordancy"], //a biting, sharp, or caustic quality in speech, thought, or style, often with a critical, harsh, or witty edge, like a sharp sting
   mordancy: ["dormancy"],
   dormant: ["mordant"],
   mordant: ["dormant"],
-  dotage: ["togaed"],
+  dotage: ["togaed"], //wearing a toga
   togaed: ["dotage"],
   dote: ["toed"],
   toed: ["dote"],
@@ -1324,7 +1324,7 @@ const data = {
   wonder: ["downer"],
   download: ["woodland"],
   woodland: ["download"],
-  dowry: ["rowdy", "wordy"],
+  dowry: ["rowdy", "wordy"], //rowdy and wordy
   rowdy: ["dowry", "wordy"],
   wordy: ["dowry", "rowdy"],
   dowser: ["drowse"],
