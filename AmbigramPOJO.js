@@ -599,7 +599,7 @@ const data = {
   lost: ["tent", "lent"],
   lot: ["let", "tot", "lot"],
   lots: ["stet", "slot"],
-  lousy: ["tenet"],
+  lousy: ["tenet"], //lousy belief
   low: ["met", "mot"],
   lower: ["jennet"],
   lube: ["dent"],
@@ -689,7 +689,7 @@ const data = {
   O: ["e", "o", "n"],
   o: ["e", "o", "n"],
   oar: ["den", "yen"],
-  oasis: ["sieve", "green"],
+  oasis: ["sieve", "green"], //green oasis
   oat: ["tee", "lee", "the", "tho", "ten"],
   oaten: ["oaten"],
   oats: ["glee", "glen"],

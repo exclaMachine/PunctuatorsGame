@@ -1238,14 +1238,14 @@ const data = {
   diddle: ["lidded"],
   lidded: ["diddle"],
   diddler: ["riddled"],
-  riddled: ["diddler"],
+  riddled: ["diddler"], //person who swindles
   diet: ["edit", "tide"],
   edit: ["diet", "tide"],
   tide: ["diet", "edit"],
   dieter: ["reedit", "tiered"],
   reedit: ["dieter", "tiered"],
   tiered: ["dieter", "reedit"],
-  dilly: ["idyll"],
+  dilly: ["idyll"], //dilly: an excellent example of a particular type of person or thing., an extremely happy, peaceful, or picturesque episode or scene, typically an idealized or unsustainable one.
   idyll: ["dilly"],
   dim: ["mid"],
   mid: ["dim"],
