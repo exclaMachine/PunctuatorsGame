@@ -44,11 +44,11 @@ let AmbigramPairs = {
   d: ["p", "g"], // d ↔ p
   e: ["a", "e", "d"], // e ↔ a
   g: ["d", "g"],
-  h: ["y", "h", "a"], // h ↔ y, a
+  h: ["y", "h", "a", "m"], // h ↔ y, a
   i: ["r", "e", "i"], // i ↔ r, e
   j: ["l", "r"], // j ↔ l, r
   l: ["j", "l", "t"], // l ↔ j, t
-  m: ["w", "uu"], // m ↔ w, uu
+  m: ["w", "uu", "h"], // m ↔ w, uu
   n: ["u", "n", "o"], // n ↔ u
   o: ["e", "o", "n", "a"], // o ↔ e
   p: ["d"], // p ↔ d
