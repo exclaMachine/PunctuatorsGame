@@ -43,7 +43,7 @@ let AmbigramPairs = {
   b: ["q", "g", "e"], // b ↔ q; B to E
   d: ["p", "g"], // d ↔ p
   e: ["a", "e", "d"], // e ↔ a
-  g: ["d", "g"],
+  g: ["d", "g", "s"],
   h: ["y", "h", "a", "m"], // h ↔ y, a
   i: ["r", "e", "i"], // i ↔ r, e
   j: ["l", "r"], // j ↔ l, r
