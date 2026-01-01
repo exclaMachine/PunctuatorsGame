@@ -42,10 +42,10 @@ let AmbigramPairs = {
   a: ["e", "v", "h", "o"], // a ↔ e, v, h
   b: ["q", "g", "e"], // b ↔ q; B to E
   d: ["p", "g"], // d ↔ p
-  e: ["a", "e", "d"], // e ↔ a
-  g: ["d", "g", "s"],
+  e: ["a", "e", "d", "b"], // e ↔ a
+  g: ["d", "g", "s", "b"],
   h: ["y", "h", "a", "m"], // h ↔ y, a
-  i: ["r", "e", "i"], // i ↔ r, e
+  i: ["r", "e", "i"], // i ↔ r, e TODO should add i to r
   j: ["l", "r"], // j ↔ l, r
   l: ["j", "l", "t"], // l ↔ j, t
   m: ["w", "uu", "h"], // m ↔ w, uu
@@ -57,6 +57,7 @@ let AmbigramPairs = {
   s: ["e", "g", "s"], // s ↔ e //g and s could also be done
   t: ["t", "l"], // t ↔ l
   u: ["n"], // u ↔ n
+  v: ["a"],
   w: ["m", "nn", "y"], // w ↔ m, nn
   x: ["x", "o"], // x ↔ o
   y: ["h", "t", "r", "w"], // y ↔ h
