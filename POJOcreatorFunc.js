@@ -45,15 +45,15 @@ let AmbigramPairs = {
   e: ["a", "e", "d", "b"], // e ↔ a
   g: ["d", "g", "s", "b"],
   h: ["y", "h", "a", "m"], // h ↔ y, a
-  i: ["r", "e", "i"], // i ↔ r, e TODO should add i to r
+  i: ["r", "e", "i"], // i ↔ r, e
   j: ["l", "r"], // j ↔ l, r
   l: ["j", "l", "t"], // l ↔ j, t
   m: ["w", "uu", "h"], // m ↔ w, uu
   n: ["u", "n", "o"], // n ↔ u
-  o: ["e", "o", "n", "a"], // o ↔ e
+  o: ["e", "o", "n", "a"], // o ↔ e TODO could still add q in future
   p: ["d"], // p ↔ d
-  q: ["b"], // q ↔ b //Q and O?
-  r: ["j", "d", "y"], // r ↔ j; R ↔ d
+  q: ["b"], // q ↔ b //Q and TODO O didn't get o because took to long
+  r: ["j", "d", "y"], // r ↔ j; R ↔ d TODO adding i took to long
   s: ["e", "g", "s"], // s ↔ e //g and s could also be done
   t: ["t", "l"], // t ↔ l
   u: ["n"], // u ↔ n

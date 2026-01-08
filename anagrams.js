@@ -1335,7 +1335,7 @@ const data = {
   redraft: ["drafter"],
   drag: ["grad"],
   grad: ["drag"],
-  drain: ["nadir"],
+  drain: ["nadir"], //lowest point in a person's fortune
   nadir: ["drain"],
   drainage: ["gardenia"],
   gardenia: ["drainage"],
@@ -1349,7 +1349,7 @@ const data = {
   redraw: ["drawer", "reward", "warder"],
   reward: ["drawer", "redraw", "warder"],
   warder: ["drawer", "redraw", "reward"],
-  dray: ["yard"],
+  dray: ["yard"], //a truck or cart for delivering beer barrels or other heavy loads, especially a low one without sides
   yard: ["dray"],
   dresser: ["redress"],
   redress: ["dresser"],
@@ -1370,7 +1370,7 @@ const data = {
   laud: ["dual"],
   dues: ["used"],
   used: ["dues"],
-  duffer: ["ruffed"],
+  duffer: ["ruffed"], //an incompetent or stupid person, especially an elderly one
   ruffed: ["duffer"],
   dune: ["nude"],
   nude: ["dune"],
@@ -1416,21 +1416,21 @@ const data = {
   eke: ["eek"],
   eel: ["lee"],
   lee: ["eel"],
-  eglantine: ["inelegant"],
+  eglantine: ["inelegant"], //type of rose
   inelegant: ["eglantine"],
-  egocentric: ["geocentric"],
+  egocentric: ["geocentric"], //we were very egocentric thinking we were geocentric
   geocentric: ["egocentric"],
   egocentrically: ["geocentrically"],
   geocentrically: ["egocentrically"],
   egoist: ["stogie"],
   stogie: ["egoist"],
   egret: ["greet"],
-  greet: ["egret"],
+  greet: ["egret"], //greet the egret, like a heron
   eh: ["he"],
   he: ["eh"],
   eighth: ["height"],
   height: ["eighth"],
-  elan: ["lane", "lean"],
+  elan: ["lane", "lean"], //energy style and entusiasm
   lane: ["elan", "lean"],
   lean: ["elan", "lane"],
   eland: ["laden"],
