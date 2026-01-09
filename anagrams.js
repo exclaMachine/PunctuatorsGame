@@ -1434,14 +1434,14 @@ const data = {
   lane: ["elan", "lean"],
   lean: ["elan", "lane"],
   eland: ["laden"],
-  laden: ["eland"],
+  laden: ["eland"], //antelope
   elastic: ["latices"],
   latices: ["elastic"],
-  elation: ["toenail"],
+  elation: ["toenail"], //this could be funny
   toenail: ["elation"],
   else: ["lees"],
   lees: ["else"],
-  elver: ["lever", "revel"],
+  elver: ["lever", "revel"], //a young eel
   lever: ["elver", "revel"],
   revel: ["elver", "lever"],
   em: ["me"],
@@ -1454,12 +1454,12 @@ const data = {
   regime: ["emigre"],
   emir: ["mire", "rime"],
   mire: ["emir", "rime"],
-  rime: ["emir", "mire"],
+  rime: ["emir", "mire"], //rime frost formed on cold objects
   emit: ["item", "mite", "time"],
   item: ["emit", "mite", "time"],
   mite: ["emit", "item", "time"],
   time: ["emit", "item", "mite"],
-  emitter: ["termite"],
+  emitter: ["termite"], //termite emitter
   termite: ["emitter"],
   emphasis: ["misshape"],
   misshape: ["emphasis"],
@@ -1481,9 +1481,9 @@ const data = {
   veneration: ["enervation"],
   enfold: ["fondle"],
   fondle: ["enfold"],
-  engram: ["manger"],
+  engram: ["manger"], //a hypothetical permanent change in the brain accounting for the existence of memory; a memory trace
   manger: ["engram"],
-  enigma: ["gamine"],
+  enigma: ["gamine"], //attractively boyish
   gamine: ["enigma"],
   enlarge: ["general", "gleaner"],
   general: ["enlarge", "gleaner"],
