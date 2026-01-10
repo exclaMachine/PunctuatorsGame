@@ -1485,7 +1485,7 @@ const data = {
   manger: ["engram"],
   enigma: ["gamine"], //attractively boyish
   gamine: ["enigma"],
-  enlarge: ["general", "gleaner"],
+  enlarge: ["general", "gleaner"], //someone who collects crops after harvest
   general: ["enlarge", "gleaner"],
   gleaner: ["enlarge", "general"],
   enlist: ["listen", "silent", "tinsel"],
@@ -1496,10 +1496,10 @@ const data = {
   genera: ["enrage"],
   enrol: ["loner"],
   loner: ["enrol"],
-  entirety: ["eternity"],
+  entirety: ["eternity"], //cool
   eternity: ["entirety"],
   entrap: ["parent"],
-  parent: ["entrap"],
+  parent: ["entrap"], //could use this
   enumeration: ["mountaineer"],
   mountaineer: ["enumeration"],
   eon: ["one"],
@@ -1516,24 +1516,24 @@ const data = {
   ranter: ["errant"],
   erst: ["rest"],
   rest: ["erst"],
-  esprit: ["priest", "sprite", "stripe"],
+  esprit: ["priest", "sprite", "stripe"], //the quality of being lively, vivacious, or witty. Could be one of the kids names sprite has esprit Max could use this one
   priest: ["esprit", "sprite", "stripe"],
   sprite: ["esprit", "priest", "stripe"],
   stripe: ["esprit", "priest", "sprite"],
-  ester: ["reset", "steer", "terse"],
+  ester: ["reset", "steer", "terse"], //ester could also be child name
   reset: ["ester", "steer", "terse"],
   steer: ["ester", "reset", "terse"],
   terse: ["ester", "reset", "steer"],
   estrange: ["sergeant"],
-  sergeant: ["estrange"],
-  estrus: ["russet"],
+  sergeant: ["estrange"], //sergeant no need to estrange them
+  estrus: ["russet"], //head of an animal
   russet: ["estrus"],
   etch: ["tech"],
   tech: ["etch"],
-  ether: ["there", "three"],
+  ether: ["there", "three"], //There an ether! Three!
   there: ["ether", "three"],
   three: ["ether", "there"],
-  ethological: ["theological"],
+  ethological: ["theological"], //science of animal behavior
   theological: ["ethological"],
   ethology: ["theology"],
   theology: ["ethology"],
@@ -1543,7 +1543,7 @@ const data = {
   roue: ["euro"],
   ever: ["veer"],
   veer: ["ever"],
-  evil: ["live", "veil", "vile"],
+  evil: ["live", "veil", "vile"], //you live behind a veil. You're vile and evil
   live: ["evil", "veil", "vile"],
   veil: ["evil", "live", "vile"],
   vile: ["evil", "live", "veil"],
@@ -1566,9 +1566,9 @@ const data = {
   reexport: ["exporter"],
   extra: ["taxer"],
   taxer: ["extra"],
-  faience: ["fiancee"],
+  faience: ["fiancee"], //glazed ceramic ware
   fiancee: ["faience"],
-  fain: ["naif"],
+  fain: ["naif"], //f: pleased or willing under the circumstances, n: naive or ingenuous
   naif: ["fain"],
   faker: ["freak"],
   freak: ["faker"],
