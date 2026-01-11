@@ -1598,7 +1598,7 @@ const data = {
   fryer: ["ferry"],
   ferule: ["refuel"],
   refuel: ["ferule"],
-  fidget: ["gifted"],
+  fidget: ["gifted"], //another of the kids names?
   gifted: ["fidget"],
   fief: ["fife"],
   fife: ["fief"],
@@ -1620,10 +1620,10 @@ const data = {
   filter: ["lifter", "trifle"],
   lifter: ["filter", "trifle"],
   trifle: ["filter", "lifter"],
-  filtration: ["flirtation"],
+  filtration: ["flirtation"], //How the parents meet. Filtration led to some flirtation
   flirtation: ["filtration"],
   finder: ["friend"],
-  friend: ["finder"],
+  friend: ["finder"], //could this be the wands name
   finger: ["fringe"],
   fringe: ["finger"],
   finisher: ["refinish"],
@@ -1644,7 +1644,7 @@ const data = {
   lift: ["flit"],
   flog: ["golf"],
   golf: ["flog"],
-  flow: ["fowl", "wolf"],
+  flow: ["fowl", "wolf"], //fowl to wolf is good
   fowl: ["flow", "wolf"],
   wolf: ["flow", "fowl"],
   flue: ["fuel"],
