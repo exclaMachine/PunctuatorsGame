@@ -231,16 +231,17 @@ let HorizPairs = {
   a: ["a", "fl"], // a ↔ a or fl to A
   b: ["d", "cl", "el", "e"], // b ↔ d or cl to b, or El to B
   d: ["c", "cl", "h", "s", "g"], // d ↔ c or cl to D, cursive s to a d kind of works
-  e: ["o", "s"],
+  e: ["o", "s", "l"],
   f: ["z", "t"],
   h: ["h", "rl"], // h ↔ h or rl to h
   i: ["i"],
   j: ["t"],
   k: ["tl", "ti"], //capital T
-  l: ["l"],
+  l: ["l", "e"],
   m: ["m", "nn"],
   o: ["o"],
   p: ["cj", "ej"], // p ↔ cj
+  r: ["r"], //capital R
   s: ["z", "a"], // s ↔ z or a (cursive)
   t: ["t"],
   u: ["u"],
@@ -1200,7 +1201,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
   console.log(`Successfully created ${jsName}!`);
 };
 
-CreateJS("AmbigramPOJO.js", "ambigram");
+//CreateJS("AmbigramPOJO.js", "ambigram");
 //CreateJS("ambigramSpanishPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
 //CreateJS("todbotPOJO.js", "mirror");
@@ -1209,7 +1210,7 @@ CreateJS("AmbigramPOJO.js", "ambigram");
 //CreateJS("SingleLetterVertSpeakPOJO.js", "SingleLetterVertSpeak");
 //CreateJS("NinetyDegreeCounterClockPOJO.js", "NinetyDegreeCounterClock");
 //CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
-//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+CreateJS("todbotHorizontalPOJO.js", "sideMirror");
 //CreateJS("RightAngleMirrorPOJO.js", "90DegMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");

@@ -1649,7 +1649,7 @@ const data = {
   wolf: ["flow", "fowl"],
   flue: ["fuel"],
   fuel: ["flue"],
-  fluster: ["restful"],
+  fluster: ["restful"], //could prob do something with this
   restful: ["fluster"],
   foal: ["loaf"],
   loaf: ["foal"],
@@ -1669,13 +1669,13 @@ const data = {
   from: ["form"],
   former: ["reform"],
   reform: ["former"],
-  forth: ["froth"],
+  forth: ["froth"], //go froth
   froth: ["forth"],
-  forward: ["froward"],
+  forward: ["froward"], // (of a person) difficult to deal with. Max could use
   froward: ["forward"],
-  forwardness: ["frowardness"],
+  forwardness: ["frowardness"], //same as above. forwardness: boldness or overfamiliarity in manner
   frowardness: ["forwardness"],
-  fount: ["futon"],
+  fount: ["futon"], //futon of knowledge
   futon: ["fount"],
   frantic: ["infarct"],
   infarct: ["frantic"],
