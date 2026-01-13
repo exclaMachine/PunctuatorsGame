@@ -241,7 +241,7 @@ let HorizPairs = {
   m: ["m", "nn"],
   o: ["o"],
   p: ["cj", "ej"], // p ↔ cj
-  r: ["r"], //capital R
+  r: ["r"], //capital R or cursive
   s: ["z", "a"], // s ↔ z or a (cursive)
   t: ["t"],
   u: ["u"],
