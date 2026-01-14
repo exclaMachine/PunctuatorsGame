@@ -1685,7 +1685,7 @@ const data = {
   reinfect: ["frenetic"],
   fretful: ["truffle"],
   truffle: ["fretful"],
-  fries: ["serif"],
+  fries: ["serif"], //could use this in serif book
   serif: ["fries"],
   gainer: ["regain"],
   regain: ["gainer"],
@@ -1693,7 +1693,7 @@ const data = {
   triage: ["gaiter"],
   gal: ["lag"],
   lag: ["gal"],
-  gamma: ["magma"],
+  gamma: ["magma"], //I'll diffuse these gamma rays into magma rays. That's not helping!
   magma: ["gamma"],
   gape: ["page"],
   page: ["gape"],
@@ -1708,7 +1708,7 @@ const data = {
   sag: ["gas"],
   gash: ["shag"],
   shag: ["gash"],
-  gateway: ["getaway"],
+  gateway: ["getaway"], //the gateway is our getaway
   getaway: ["gateway"],
   gatherer: ["regather"],
   regather: ["gatherer"],
@@ -1718,7 +1718,7 @@ const data = {
   rage: ["gear"],
   gel: ["leg"],
   leg: ["gel"],
-  gelatin: ["genital"],
+  gelatin: ["genital"], //this could be funny
   genital: ["gelatin"],
   gelid: ["glide"],
   glide: ["gelid"],
@@ -1728,7 +1728,7 @@ const data = {
   linage: ["genial"],
   genre: ["green"],
   green: ["genre"],
-  genuine: ["ingenue"],
+  genuine: ["ingenue"], //an innocent or unsophisticated young woman, especially in a play or film.
   ingenue: ["genuine"],
   germinal: ["malinger"],
   malinger: ["germinal"],
