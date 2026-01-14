@@ -1740,7 +1740,6 @@ const data = {
   gimpy: ["pigmy"],
   pigmy: ["gimpy"],
   ginger: ["nigger"],
-  nigger: ["ginger"],
   gingko: ["ginkgo"],
   ginkgo: ["gingko"],
   gird: ["grid"],
@@ -1760,20 +1759,20 @@ const data = {
   gristle: ["glister"],
   gnat: ["tang"],
   tang: ["gnat"],
-  gnu: ["gun"],
+  gnu: ["gun"], //He's got a gnu!
   gun: ["gnu"],
-  goat: ["toga"],
+  goat: ["toga"], //also funny
   toga: ["goat"],
   goiter: ["goitre"],
   goitre: ["goiter"],
-  goldmine: ["modeling"],
+  goldmine: ["modeling"], //modeling is a goldmine
   modeling: ["goldmine"],
   gory: ["gyro", "orgy"],
   gyro: ["gory", "orgy"],
   orgy: ["gory", "gyro"],
-  got: ["tog"],
+  got: ["tog"], //clothes. got tog?
   tog: ["got"],
-  grader: ["regard"],
+  grader: ["regard"], //grader regard kind of like greater regard
   regard: ["grader"],
   grained: ["reading"],
   reading: ["grained"],
@@ -1785,7 +1784,7 @@ const data = {
   ingrate: ["granite"],
   grantee: ["reagent"],
   reagent: ["grantee"],
-  grape: ["pager"],
+  grape: ["pager"], //will kids know what a pager is?
   pager: ["grape"],
   grate: ["great"],
   great: ["grate"],
