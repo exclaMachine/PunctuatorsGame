@@ -309,6 +309,12 @@ let roundedLetterPairs = {
   y: ["m", "g"],
 };
 
+//this could be the power of silly quilly
+let ligatures = {
+  a: ["cl", "ci", "tl"], //capital cursive a, reg A, ol
+  b: ["lb", "lo"],
+};
+
 // cache for normalized mappings so we don't recompute for every call
 const _singleChangeCache = new WeakMap();
 

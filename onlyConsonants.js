@@ -4193,7 +4193,7 @@ const abjad = {
   mcs: ["mucous", "mucus"],
   nb: ["nab", "nib", "nub"],
   ncll: ["nacelle", "nucleoli"],
-  nggr: ["nagger", "nigger"],
+  nggr: ["nagger"],
   nv: ["naive", "nave", "nevi", "nova", "novae"],
   nmbl: ["nameable", "nimble"],
   nmsk: ["namesake", "unmask"],

@@ -1739,7 +1739,6 @@ const data = {
   gliding: ["gilding"],
   gimpy: ["pigmy"],
   pigmy: ["gimpy"],
-  ginger: ["nigger"],
   gingko: ["ginkgo"],
   ginkgo: ["gingko"],
   gird: ["grid"],
