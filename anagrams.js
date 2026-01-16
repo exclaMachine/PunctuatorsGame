@@ -1799,7 +1799,7 @@ const data = {
   regroup: ["grouper"],
   grower: ["regrow"],
   regrow: ["grower"],
-  grown: ["wrong"],
+  grown: ["wrong"], //I'm all grown
   wrong: ["grown"],
   grudge: ["rugged"],
   rugged: ["grudge"],
@@ -1836,7 +1836,7 @@ const data = {
   overhang: ["hangover"],
   hanker: ["harken"],
   harken: ["hanker"],
-  haply: ["phyla"],
+  haply: ["phyla"], //by and chance; perhaps
   phyla: ["haply"],
   hardy: ["hydra"],
   hydra: ["hardy"],
@@ -1844,7 +1844,7 @@ const data = {
   hear: ["hare", "rhea"],
   rhea: ["hare", "hear"],
   hash: ["shah"],
-  shah: ["hash"],
+  shah: ["hash"], //monarch of iran
   hast: ["shat"],
   shat: ["hast"],
   hate: ["heat"],
@@ -1853,11 +1853,11 @@ const data = {
   threat: ["hatter"],
   haul: ["hula"],
   hula: ["haul"],
-  haunter: ["unearth"],
+  haunter: ["unearth"], //Something that persistently bothers or affects someone, often a memory or problem, need to verify this but is pretty cool
   unearth: ["haunter"],
   haves: ["shave"],
   shave: ["haves"],
-  hawser: ["rewash", "washer"],
+  hawser: ["rewash", "washer"], //a thick rope or cable for mooring or towing a ship
   rewash: ["hawser", "washer"],
   washer: ["hawser", "rewash"],
   headpin: ["pinhead"],
