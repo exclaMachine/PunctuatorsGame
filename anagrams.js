@@ -1803,7 +1803,7 @@ const data = {
   wrong: ["grown"],
   grudge: ["rugged"],
   rugged: ["grudge"],
-  gulp: ["plug"],
+  gulp: ["plug"], //need to gulp it
   plug: ["gulp"],
   gum: ["mug"],
   mug: ["gum"],
@@ -1872,10 +1872,10 @@ const data = {
   sheave: ["heaves"],
   heir: ["hire"],
   hire: ["heir"],
-  helot: ["hotel", "thole"],
+  helot: ["hotel", "thole"], //serf or slave
   hotel: ["helot", "thole"],
   thole: ["helot", "hotel"],
-  heptagon: ["pathogen"],
+  heptagon: ["pathogen"], //maybe
   pathogen: ["heptagon"],
   herein: ["inhere"],
   inhere: ["herein"],
@@ -1883,7 +1883,7 @@ const data = {
   hetero: ["hereto"],
   hernial: ["inhaler"],
   inhaler: ["hernial"],
-  hero: ["hoer"],
+  hero: ["hoer"], //one who uses a garden hoe
   hoer: ["hero"],
   heron: ["honer"],
   honer: ["heron"],
