@@ -1890,7 +1890,7 @@ const data = {
   herpes: ["sphere"],
   sphere: ["herpes"],
   hewer: ["where"],
-  where: ["hewer"],
+  where: ["hewer"], //a person who cuts wood or other materials
   hewn: ["when"],
   when: ["hewn"],
   hinge: ["neigh"],
@@ -1899,11 +1899,11 @@ const data = {
   thin: ["hint"],
   hip: ["phi"],
   phi: ["hip"],
-  hist: ["shit", "this"],
+  hist: ["shit", "this"], //archaic used to call for silence
   shit: ["hist", "this"],
   this: ["hist", "shit"],
-  histrionics: ["trichinosis"],
-  trichinosis: ["histrionics"],
+  histrionics: ["trichinosis"], //exaggerated dramatic behavior designed to attract attention. Infected with round worm. This could be one max uses
+  trichinosis: ["histrionics"], //I guess I need to stop with the histrionics, right?!(silence, explains) Oh histrionics can change to trichonosis(pause, explains). Please don't change histrionics to trichonosis
   hitter: ["tither"],
   tither: ["hitter"],
   ho: ["oh"],
@@ -1911,7 +1911,7 @@ const data = {
   holdup: ["uphold"],
   uphold: ["holdup"],
   holster: ["hostler"],
-  hostler: ["holster"],
+  hostler: ["holster"], //a man employed to look after the horses of people staying at an inn
   hoop: ["pooh"],
   pooh: ["hoop"],
   hops: ["posh", "shop"],
