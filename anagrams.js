@@ -1917,11 +1917,11 @@ const data = {
   hops: ["posh", "shop"],
   posh: ["hops", "shop"],
   shop: ["hops", "posh"],
-  hornet: ["throne"],
+  hornet: ["throne"], //Sit on my
   throne: ["hornet"],
   horse: ["shore"],
   shore: ["horse"],
-  hose: ["shoe"],
+  hose: ["shoe"], //put on my hose
   shoe: ["hose"],
   host: ["hots", "shot"],
   hots: ["host", "shot"],
@@ -1932,13 +1932,13 @@ const data = {
   potshot: ["hotspot"],
   housework: ["workhouse"],
   workhouse: ["housework"],
-  how: ["who"],
+  how: ["who"], //who, more importantly how
   who: ["how"],
   however: ["whoever"],
   whoever: ["however"],
   howsoever: ["whosoever"],
   whosoever: ["howsoever"],
-  hug: ["ugh"],
+  hug: ["ugh"], //give me a hug, ugh
   ugh: ["hug"],
   humidor: ["rhodium"],
   rhodium: ["humidor"],
@@ -1952,7 +1952,7 @@ const data = {
   sleuth: ["hustle"],
   hydrate: ["thready"],
   thready: ["hydrate"],
-  icecap: ["ipecac"],
+  icecap: ["ipecac"], //makes you throwup
   ipecac: ["icecap"],
   ides: ["side"],
   side: ["ides"],

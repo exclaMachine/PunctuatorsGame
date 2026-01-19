@@ -315,6 +315,8 @@ let ligatures = {
   b: ["lb", "lo"],
 };
 
+//TODO make a function that takes the letters of a word and sees what words it can make from them. Doesn't have to use all the letters
+
 // cache for normalized mappings so we don't recompute for every call
 const _singleChangeCache = new WeakMap();
 
