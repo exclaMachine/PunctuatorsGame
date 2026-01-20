@@ -1960,13 +1960,13 @@ const data = {
   idyl: ["idly"],
   idolater: ["tailored"],
   tailored: ["idolater"],
-  ignore: ["region"],
+  ignore: ["region"], //ignore that region
   region: ["ignore"],
   ikon: ["oink"],
   oink: ["ikon"],
   imam: ["maim"],
   maim: ["imam"],
-  importunate: ["permutation"],
+  importunate: ["permutation"], //persistent, especially to the point of annoyance or intrusion.
   permutation: ["importunate"],
   imposer: ["promise", "semipro"],
   promise: ["imposer", "semipro"],
@@ -1975,15 +1975,15 @@ const data = {
   permissible: ["impressible"],
   impression: ["permission"],
   permission: ["impression"],
-  impressive: ["permissive"],
+  impressive: ["permissive"], //kind of opposites
   permissive: ["impressive"],
   impressively: ["permissively"],
   permissively: ["impressively"],
   impressiveness: ["permissiveness"],
   permissiveness: ["impressiveness"],
-  impure: ["umpire"],
+  impure: ["umpire"], //hmmm
   umpire: ["impure"],
-  inapt: ["paint"],
+  inapt: ["paint"], //not suitable
   paint: ["inapt"],
   incest: ["insect"],
   insect: ["incest"],
@@ -1991,9 +1991,9 @@ const data = {
   procreation: ["incorporate"],
   incur: ["runic"],
   runic: ["incur"],
-  indiscreet: ["iridescent"],
-  iridescent: ["indiscreet"],
-  indiscreetly: ["iridescently"],
+  indiscreet: ["iridescent"], //this is fun. basically synonyms. This kind of works perfectly for the comic
+  iridescent: ["indiscreet"], //This could be the title for the book. Iridescent and indiscreet
+  indiscreetly: ["iridescently"], //even better
   iridescently: ["indiscreetly"],
   inert: ["inter", "niter"],
   inter: ["inert", "niter"],
@@ -2004,7 +2004,7 @@ const data = {
   interfile: ["infertile"],
   infidel: ["infield"],
   infield: ["infidel"],
-  ingest: ["signet"],
+  ingest: ["signet"], //signet ring
   signet: ["ingest"],
   ink: ["kin"],
   kin: ["ink"],
@@ -2014,7 +2014,7 @@ const data = {
   venation: ["innovate"],
   inroad: ["ordain"],
   ordain: ["inroad"],
-  insane: ["sienna"],
+  insane: ["sienna"], //color
   sienna: ["insane"],
   insecure: ["sinecure"],
   sinecure: ["insecure"],
