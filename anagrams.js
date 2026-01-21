@@ -2016,32 +2016,32 @@ const data = {
   ordain: ["inroad"],
   insane: ["sienna"], //color
   sienna: ["insane"],
-  insecure: ["sinecure"],
+  insecure: ["sinecure"], //a position requiring little or no work but giving the holder status or financial benefit.
   sinecure: ["insecure"],
   inset: ["stein"],
   stein: ["inset"],
   insole: ["lesion"],
   lesion: ["insole"],
-  instanter: ["transient"],
+  instanter: ["transient"], //at once; immediately.
   transient: ["instanter"],
   instead: ["sainted"],
   sainted: ["instead"],
   instep: ["spinet"],
   spinet: ["instep"],
-  insult: ["sunlit"],
+  insult: ["sunlit"], //like this
   sunlit: ["insult"],
   insure: ["ursine"],
   ursine: ["insure"],
-  intaglio: ["ligation"],
-  ligation: ["intaglio"],
-  integral: ["triangle"],
+  intaglio: ["ligation"], //a design incised or engraved into a material. can also be verb
+  ligation: ["intaglio"], //the joining of two DNA strands or other molecules by a phosphate ester linkage. This could be for Dr. Jective
+  integral: ["triangle"], //cool
   triangle: ["integral"],
   integrative: ["vinaigrette"],
   vinaigrette: ["integrative"],
-  interests: ["triteness"],
+  interests: ["triteness"], //lack of originality or freshness; dullness due to overuse. My interests became a triteness
   triteness: ["interests"],
-  interim: ["termini"],
-  termini: ["interim"],
+  interim: ["termini"], //in or for the intervening period; provisional or temporary.
+  termini: ["interim"], //a final points in space or time; an end or extremity.
   interlope: ["repletion"],
   repletion: ["interlope"],
   interpreter: ["reinterpret"],
