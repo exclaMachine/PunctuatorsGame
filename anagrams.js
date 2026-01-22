@@ -2042,7 +2042,7 @@ const data = {
   triteness: ["interests"],
   interim: ["termini"], //in or for the intervening period; provisional or temporary.
   termini: ["interim"], //a final points in space or time; an end or extremity.
-  interlope: ["repletion"],
+  interlope: ["repletion"], //the state of being completely full, satisfied, or abundantly supplied
   repletion: ["interlope"],
   interpreter: ["reinterpret"],
   reinterpret: ["interpreter"],
@@ -2050,13 +2050,13 @@ const data = {
   reduction: ["introduce"],
   intrude: ["untried"],
   untried: ["intrude"],
-  inure: ["urine"],
+  inure: ["urine"], //accustom (someone) to something, especially something unpleasant
   urine: ["inure"],
-  irately: ["reality"],
+  irately: ["reality"], //this could be something
   reality: ["irately"],
   irons: ["rosin"],
   rosin: ["irons"],
-  islet: ["stile"],
+  islet: ["stile"], //an arrangement of steps that allows people but not animals to climb over a fence or wall
   stile: ["islet"],
   it: ["ti"],
   ti: ["it"],
