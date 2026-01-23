@@ -2071,7 +2071,7 @@ const data = {
   kale: ["lake", "leak"],
   lake: ["kale", "leak"],
   leak: ["kale", "lake"],
-  kayo: ["okay"],
+  kayo: ["okay"], //knock out. Can do this with O.K. too. K.O.!
   okay: ["kayo"],
   keel: ["leek"],
   leek: ["keel"],
@@ -2079,7 +2079,7 @@ const data = {
   knee: ["keen"],
   keep: ["peek"],
   peek: ["keep"],
-  kepi: ["pike"],
+  kepi: ["pike"], //french military cap
   pike: ["kepi"],
   kiln: ["link"],
   link: ["kiln"],
@@ -2088,19 +2088,19 @@ const data = {
   kinship: ["pinkish"],
   pinkish: ["kinship"],
   kitchen: ["thicken"],
-  thicken: ["kitchen"],
+  thicken: ["kitchen"], //cool
   kite: ["tike"],
   tike: ["kite"],
-  kitsch: ["shtick"],
-  shtick: ["kitsch"],
+  kitsch: ["shtick"], //considered to be in poor taste but appreciated in an ironic or knowing wa
+  shtick: ["kitsch"], //a gimmick, comic routine, style of performance, etc. associated with a particular person.
   knead: ["naked"],
   naked: ["knead"],
   knitter: ["trinket"],
   trinket: ["knitter"],
   know: ["wonk"],
   wonk: ["know"],
-  labile: ["liable"],
-  liable: ["labile"],
+  labile: ["liable"], //liable to change; easily altered.
+  liable: ["labile"], //responsible by law; legally answerable.
   labor: ["lobar"],
   lobar: ["labor"],
   lain: ["nail"],
