@@ -2118,10 +2118,10 @@ const data = {
   lament: ["mantel", "mantle", "mental"],
   mantel: ["lament", "mantle", "mental"],
   mantle: ["lament", "mantel", "mental"],
-  mental: ["lament", "mantel", "mantle"],
+  mental: ["lament", "mantel", "mantle"], //could use
   lamp: ["palm"],
-  palm: ["lamp"],
-  lapin: ["plain"],
+  palm: ["lamp"], //palm read
+  lapin: ["plain"], //a bunny
   plain: ["lapin"],
   lapse: ["sepal"],
   sepal: ["lapse"],
@@ -2131,13 +2131,13 @@ const data = {
   late: ["tale", "teal"],
   tale: ["late", "teal"],
   teal: ["late", "tale"],
-  latent: ["talent"],
+  latent: ["talent"], //latent talent
   talent: ["latent"],
   latrine: ["ratline", "reliant", "retinal"],
-  ratline: ["latrine", "reliant", "retinal"],
+  ratline: ["latrine", "reliant", "retinal"], //a series of small ropes fastened across a sailing ship's shrouds like the rungs of a ladder, used for climbing the rigging.
   reliant: ["latrine", "ratline", "retinal"],
   retinal: ["latrine", "ratline", "reliant"],
-  latter: ["rattle"],
+  latter: ["rattle"], //the latter part is a rattle
   rattle: ["latter"],
   lattice: ["tactile"],
   tactile: ["lattice"],
@@ -2149,7 +2149,7 @@ const data = {
   vela: ["lave", "vale", "veal"],
   layering: ["yearling"],
   yearling: ["layering"],
-  layout: ["outlay"],
+  layout: ["outlay"], //an amount of money spent on something.
   outlay: ["layout"],
   layover: ["overlay"],
   overlay: ["layover"],
