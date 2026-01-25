@@ -1,3 +1,10 @@
+const BANNED_SUBSTRINGS = ["igger", "ew"]; // extend as needed
+
+const cleanWord = (w) => w.replace(/[^a-zA-Z]/g, "").toLowerCase();
+
+const containsBannedSubstring = (word) =>
+  BANNED_SUBSTRINGS.some((bad) => cleanWord(word).includes(bad));
+
 export const spoonerism = (sentence) => {
   let placeholders = [];
   let tempSentence = sentence.replace(/<span[^>]*>(.*?)<\/span>/g, (match) => {
@@ -29,6 +36,10 @@ export const spoonerism = (sentence) => {
   // Only proceed if there is more than one eligible word
   if (eligibleWordCount > 1) {
     for (let i = 0; i < words.length; i++) {
+      if (containsBannedSubstring(words[i])) {
+        continue;
+      }
+
       if (words[i].startsWith("PLACEHOLDER")) {
         continue;
       }

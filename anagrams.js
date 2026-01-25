@@ -2187,27 +2187,27 @@ const data = {
   mangle: ["legman"],
   lei: ["lie"],
   lie: ["lei"],
-  lemon: ["melon"],
+  lemon: ["melon"], //oh yeah, i've used this
   melon: ["lemon"],
-  lentil: ["lintel"],
+  lentil: ["lintel"], //a horizontal support of timber, stone, concrete, or steel across the top of a door or window.
   lintel: ["lentil"],
-  leper: ["repel"],
+  leper: ["repel"], //unfortunately appropriate
   repel: ["leper"],
   letters: ["settler", "trestle"],
   settler: ["letters", "trestle"],
   trestle: ["letters", "settler"],
-  levier: ["relive", "revile"],
+  levier: ["relive", "revile"], //one who collects taxes
   relive: ["levier", "revile"],
   revile: ["levier", "relive"],
   lewd: ["weld"],
   weld: ["lewd"],
-  license: ["silence"],
+  license: ["silence"], //license for silence
   silence: ["license"],
   lien: ["line"],
   line: ["lien"],
   lighter: ["relight"],
   relight: ["lighter"],
-  lights: ["slight"],
+  lights: ["slight"], //usable
   slight: ["lights"],
   lilt: ["till"],
   till: ["lilt"],
