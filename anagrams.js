@@ -2216,7 +2216,7 @@ const data = {
   limestone: ["milestone"],
   milestone: ["limestone"],
   limo: ["moil"],
-  moil: ["limo"],
+  moil: ["limo"], //hard work
   lineman: ["melanin"],
   melanin: ["lineman"],
   lineup: ["lupine"],
@@ -2243,19 +2243,19 @@ const data = {
   literal: ["tallier"],
   tallier: ["literal"],
   littoral: ["tortilla"],
-  tortilla: ["littoral"],
+  tortilla: ["littoral"], //a region lying along a shore
   livery: ["verily"],
   verily: ["livery"],
   loader: ["ordeal", "reload"],
   ordeal: ["loader", "reload"],
   reload: ["loader", "ordeal"],
   loge: ["ogle"],
-  ogle: ["loge"],
+  ogle: ["loge"], //ogle in the loge, a private box or enclosure in a theater.the front section of the first balcony in a theater.
   loiter: ["toiler"],
   toiler: ["loiter"],
   lone: ["noel"],
   noel: ["lone"],
-  lookout: ["outlook"],
+  lookout: ["outlook"], //possible use
   outlook: ["lookout"],
   loop: ["polo", "pool"],
   polo: ["loop", "pool"],
@@ -2276,13 +2276,13 @@ const data = {
   lost: ["lots", "slot"],
   lots: ["lost", "slot"],
   slot: ["lost", "lots"],
-  louver: ["velour"],
+  louver: ["velour"], //each of a set of angled slats or flat strips fixed or hung at regular intervals in a doo
   velour: ["louver"],
-  love: ["vole"],
+  love: ["vole"], //another animal attack
   vole: ["love"],
-  lovely: ["volley"],
+  lovely: ["volley"], //lovely volley
   volley: ["lovely"],
-  low: ["owl"],
+  low: ["owl"], //low owl
   owl: ["low"],
   lower: ["rowel"],
   rowel: ["lower"],
