@@ -2301,23 +2301,23 @@ const data = {
   luster: ["result", "rustle", "sutler", "ulster"],
   result: ["luster", "rustle", "sutler", "ulster"],
   rustle: ["luster", "result", "sutler", "ulster"],
-  sutler: ["luster", "result", "rustle", "ulster"],
-  ulster: ["luster", "result", "rustle", "sutler"],
+  sutler: ["luster", "result", "rustle", "ulster"], //a person who followed an army and sold provisions to the soldiers
+  ulster: ["luster", "result", "rustle", "sutler"], //a man's long, loose overcoat of rough cloth, typically with a belt at the back.
   lyre: ["rely"],
   rely: ["lyre"],
   macho: ["mocha"],
-  mocha: ["macho"],
+  mocha: ["macho"], //mocha man
   magenta: ["magnate"],
   magnate: ["magenta"],
-  magneto: ["megaton", "montage"],
+  magneto: ["megaton", "montage"], //time for a montage, magneto: a small electric generator
   megaton: ["magneto", "montage"],
   montage: ["magneto", "megaton"],
   maiden: ["median"],
   median: ["maiden"],
   mailed: ["medial"],
   medial: ["mailed"],
-  manege: ["menage"],
-  menage: ["manege"],
+  manege: ["menage"], //an arena or enclosed area in which horses and riders are trained.
+  menage: ["manege"], //the members of a household.
   manor: ["roman"],
   roman: ["manor"],
   manse: ["means"],
