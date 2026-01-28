@@ -2321,11 +2321,11 @@ const data = {
   manor: ["roman"],
   roman: ["manor"],
   manse: ["means"],
-  means: ["manse"],
+  means: ["manse"], //a person's house or home.
   mantis: ["matins"],
   matins: ["mantis"],
   mantissa: ["satanism"],
-  satanism: ["mantissa"],
+  satanism: ["mantissa"], //the part of a logarithm that follows the decimal point.
   many: ["myna"],
   myna: ["many"],
   mapper: ["pamper"],
@@ -2335,8 +2335,8 @@ const data = {
   mare: ["ream"],
   ream: ["mare"],
   marine: ["remain"],
-  remain: ["marine"],
-  marital: ["martial"],
+  remain: ["marin e"],
+  marital: ["martial"], //we know marital arts!
   martial: ["marital"],
   maritally: ["martially"],
   martially: ["maritally"],
@@ -2355,7 +2355,7 @@ const data = {
   meat: ["mate", "tame", "team"],
   tame: ["mate", "meat", "team"],
   team: ["mate", "meat", "tame"],
-  maunder: ["unarmed"],
+  maunder: ["unarmed"], //talk in a rambling manner.
   unarmed: ["maunder"],
   may: ["yam"],
   yam: ["may"],
