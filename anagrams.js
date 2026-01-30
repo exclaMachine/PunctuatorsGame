@@ -2359,31 +2359,31 @@ const data = {
   unarmed: ["maunder"],
   may: ["yam"],
   yam: ["may"],
-  mayor: ["moray"],
+  mayor: ["moray"], //could use this as a name. has a little mayors hat
   moray: ["mayor"],
-  meanly: ["namely"],
+  meanly: ["namely"], //something here
   namely: ["meanly"],
-  mechanics: ["mischance"],
+  mechanics: ["mischance"], //when he is training QM?
   mischance: ["mechanics"],
-  medalist: ["misdealt"],
+  medalist: ["misdealt"], //cool
   misdealt: ["medalist"],
   meet: ["mete", "teem"],
   mete: ["meet", "teem"],
   teem: ["meet", "mete"],
-  meeting: ["teeming"],
+  meeting: ["teeming"], //cool
   teeming: ["meeting"],
   merit: ["miter", "remit", "timer"],
-  miter: ["merit", "remit", "timer"],
+  miter: ["merit", "remit", "timer"], //a tall headdress worn by bishops and senior abbots as a symbol of office, tapering to a point at front and back with a deep cleft between. a joint made between two pieces of wood or other material at an angle of 90°, such that the line of junction bisects this angle.
   remit: ["merit", "miter", "timer"],
   timer: ["merit", "miter", "remit"],
-  merits: ["mister"],
+  merits: ["mister"], //cool
   mister: ["merits"],
   mesa: ["same", "seam"],
   same: ["mesa", "seam"],
   seam: ["mesa", "same"],
-  meteor: ["remote"],
+  meteor: ["remote"], //cool
   remote: ["meteor"],
-  midden: ["minded"],
+  midden: ["minded"], //a dunghill or refuse heap.
   minded: ["midden"],
   mien: ["mine"],
   mine: ["mien"],
