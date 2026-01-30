@@ -2391,16 +2391,16 @@ const data = {
   ragtime: ["migrate"],
   mildness: ["mindless"],
   mindless: ["mildness"],
-  minaret: ["raiment"],
-  raiment: ["minaret"],
+  minaret: ["raiment"], //a tall slender tower, typically part of a mosque,
+  raiment: ["minaret"], //clothing.
   minuet: ["minute"],
   minute: ["minuet"],
-  minutely: ["untimely"],
+  minutely: ["untimely"], //fun
   untimely: ["minutely"],
-  misaligned: ["misleading"],
+  misaligned: ["misleading"], //hmmm similar
   misleading: ["misaligned"],
   misdeal: ["mislead"],
-  mislead: ["misdeal"],
+  mislead: ["misdeal"], //also similar
   misread: ["sidearm"],
   sidearm: ["misread"],
   missioner: ["remission"],
@@ -2417,9 +2417,9 @@ const data = {
   moon: ["mono"],
   moor: ["room"],
   room: ["moor"],
-  mope: ["poem"],
+  mope: ["poem"], //fun
   poem: ["mope"],
-  moraine: ["romaine"],
+  moraine: ["romaine"], //a mass of rocks and sediment carried down and deposited by a glacier, typically as ridges at its edges or extremity.
   romaine: ["moraine"],
   morn: ["norm"],
   norm: ["morn"],
