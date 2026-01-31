@@ -2430,7 +2430,7 @@ const data = {
   mote: ["tome"],
   tome: ["mote"],
   motet: ["totem"],
-  totem: ["motet"],
+  totem: ["motet"], //a short piece of sacred choral music, typically polyphonic and unaccompanied.
   mounter: ["remount"],
   remount: ["mounter"],
   mu: ["um"],
@@ -2443,7 +2443,7 @@ const data = {
   ultimate: ["mutilate"],
   mutual: ["umlaut"],
   umlaut: ["mutual"],
-  namedrop: ["pomander"],
+  namedrop: ["pomander"], //a ball or perforated container of sweet-smelling substances such as herbs and spices, placed in a closet, drawer, or room to perfume the air or (formerly) carried as a supposed protection against infection.
   pomander: ["namedrop"],
   nap: ["pan"],
   pan: ["nap"],
@@ -2454,7 +2454,7 @@ const data = {
   rank: ["nark"],
   nary: ["yarn"],
   yarn: ["nary"],
-  nastily: ["saintly"],
+  nastily: ["saintly"], //great antonyms
   saintly: ["nastily"],
   nave: ["vane"],
   vane: ["nave"],
