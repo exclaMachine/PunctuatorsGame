@@ -2464,9 +2464,9 @@ const data = {
   thane: ["neath"],
   nebula: ["unable"],
   unable: ["nebula"],
-  neither: ["therein"],
+  neither: ["therein"], //maybe
   therein: ["neither"],
-  neon: ["none"],
+  neon: ["none"], //There's none. There's neon!
   none: ["neon"],
   nerd: ["rend"],
   rend: ["nerd"],
@@ -2507,7 +2507,7 @@ const data = {
   noes: ["nose"],
   nose: ["noes"],
   nope: ["open", "peon", "pone"],
-  open: ["nope", "peon", "pone"],
+  open: ["nope", "peon", "pone"], //open and nope
   peon: ["nope", "open", "pone"],
   pone: ["nope", "open", "peon"],
   north: ["thorn"],
@@ -2516,18 +2516,18 @@ const data = {
   ton: ["not"],
   notarial: ["rational"],
   rational: ["notarial"],
-  note: ["tone"],
+  note: ["tone"], //this is cool
   tone: ["note"],
   notes: ["onset", "steno", "stone"],
   onset: ["notes", "steno", "stone"],
   steno: ["notes", "onset", "stone"],
   stone: ["notes", "onset", "steno"],
-  now: ["own", "won"],
+  now: ["own", "won"], //possibilities
   own: ["now", "won"],
   won: ["now", "own"],
   nowhere: ["whereon"],
   whereon: ["nowhere"],
-  nuclear: ["unclear"],
+  nuclear: ["unclear"], //could be dark
   unclear: ["nuclear"],
   nudity: ["untidy"],
   untidy: ["nudity"],
@@ -2536,7 +2536,7 @@ const data = {
   nuts: ["stun"],
   stun: ["nuts"],
   observe: ["obverse", "verbose"],
-  obverse: ["observe", "verbose"],
+  obverse: ["observe", "verbose"], //the opposite or counterpart of a fact or truth. THis could be a max conversation
   verbose: ["observe", "obverse"],
   oho: ["ooh"],
   ooh: ["oho"],
