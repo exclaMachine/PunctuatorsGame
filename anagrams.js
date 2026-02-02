@@ -2546,7 +2546,7 @@ const data = {
   silo: ["oils", "soil"],
   soil: ["oils", "silo"],
   olive: ["voile"],
-  voile: ["olive"],
+  voile: ["olive"], //a thin, semitransparent fabric of cotton, wool, or silk
   opener: ["reopen"],
   reopen: ["opener"],
   opt: ["pot", "top"],
@@ -2557,12 +2557,12 @@ const data = {
   topic: ["optic", "picot"],
   optically: ["topically"],
   topically: ["optically"],
-  option: ["potion"],
+  option: ["potion"], //need an option
   potion: ["option"],
-  opus: ["soup"],
-  soup: ["opus"],
+  opus: ["soup"], //any artistic work, especially one on a large scale.
+  soup: ["opus"], //it's my opus. something that illuminaut says "Is that they best you have? dump soup on me?"
   ore: ["roe"],
-  roe: ["ore"],
+  roe: ["ore"], //eating some roe
   organist: ["roasting"],
   roasting: ["organist"],
   oriental: ["relation"],
@@ -2573,11 +2573,11 @@ const data = {
   throe: ["other"],
   others: ["throes"],
   throes: ["others"],
-  otter: ["torte"],
+  otter: ["torte"], //could be funny
   torte: ["otter"],
   ought: ["tough"],
   tough: ["ought"],
-  ours: ["sour"],
+  ours: ["sour"], //the world is ours
   sour: ["ours"],
   outdraw: ["outward"],
   outward: ["outdraw"],
@@ -3401,7 +3401,7 @@ export const wrapAnagrams = (sentence) => {
     if (data[word]) {
       const alternatives = [word, ...data[word]];
       return `<span id="Parents of the Seas ( )" data-anagrams="${alternatives.join(
-        ","
+        ",",
       )}" class="word-0">${word}</span>`;
     }
     return word;
