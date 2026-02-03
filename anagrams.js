@@ -2584,19 +2584,19 @@ const data = {
   outdrawn: ["untoward"],
   untoward: ["outdrawn"],
   outer: ["outre", "route"],
-  outre: ["outer", "route"],
+  outre: ["outer", "route"], //unusual and startling
   route: ["outer", "outre"],
   output: ["putout"],
   putout: ["output"],
   outsell: ["sellout"],
   sellout: ["outsell"],
   outside: ["tedious"],
-  tedious: ["outside"],
-  outtake: ["takeout"],
+  tedious: ["outside"], //cool
+  outtake: ["takeout"], //could be a blooper?
   takeout: ["outtake"],
   outwork: ["workout"],
   workout: ["outwork"],
-  over: ["rove"],
+  over: ["rove"], //if you rove it's never really over because there is no destination
   rove: ["over"],
   overate: ["overeat"],
   overeat: ["overate"],
@@ -2608,10 +2608,10 @@ const data = {
   overtake: ["takeover"],
   takeover: ["overtake"],
   overturn: ["turnover"],
-  turnover: ["overturn"],
+  turnover: ["overturn"], //could be funny with the pie version. might save this for homonyms though in terms of a sports turnover
   owe: ["woe"],
   woe: ["owe"],
-  owlet: ["towel"],
+  owlet: ["towel"], //could be cute
   towel: ["owlet"],
   ownership: ["shipowner"],
   shipowner: ["ownership"],
