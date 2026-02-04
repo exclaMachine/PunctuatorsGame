@@ -2627,11 +2627,11 @@ const data = {
   paltry: ["partly", "raptly"],
   partly: ["paltry", "raptly"],
   raptly: ["paltry", "partly"],
-  panel: ["penal", "plane"],
+  panel: ["penal", "plane"], //plane to a panel
   penal: ["panel", "plane"],
   plane: ["panel", "penal"],
-  panier: ["rapine"],
-  rapine: ["panier"],
+  panier: ["rapine"], //a basket, bag, box, or similar container, carried in pairs either slung over the back of a beast of burden
+  rapine: ["panier"], //the violent seizure of someone's property
   panties: ["sapient"],
   sapient: ["panties"],
   paperer: ["prepare"],
@@ -2644,18 +2644,19 @@ const data = {
   pear: ["pare", "rape", "reap"],
   rape: ["pare", "pear", "reap"],
   reap: ["pare", "pear", "rape"],
-  parental: ["paternal", "prenatal"],
+  parental: ["paternal", "prenatal"], //kind of cool how similar they are
   paternal: ["parental", "prenatal"],
   prenatal: ["parental", "paternal"],
   parer: ["raper"],
   raper: ["parer"],
   parley: ["pearly", "player", "replay"],
-  pearly: ["parley", "player", "replay"],
+  pearly: ["parley", "player", "replay"], //haha when i first saw this i thought it was pear-ly
   player: ["parley", "pearly", "replay"],
   replay: ["parley", "pearly", "player"],
-  parse: ["spare", "spear"],
-  spare: ["parse", "spear"],
-  spear: ["parse", "spare"],
+  parse: ["spare", "spear", "pears"],
+  spare: ["parse", "spear", "pears"],
+  spear: ["parse", "spare", "pears"],
+  pears: ["spare", "spear"],
   parsec: ["scrape", "spacer"],
   scrape: ["parsec", "spacer"],
   spacer: ["parsec", "scrape"],
@@ -2677,7 +2678,7 @@ const data = {
   spate: ["paste", "septa"],
   pastel: ["staple"],
   staple: ["pastel"],
-  pasty: ["patsy"],
+  pasty: ["patsy"], //could be one of the fish name
   patsy: ["pasty"],
   pate: ["peat", "tape"],
   peat: ["pate", "tape"],
