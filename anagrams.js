@@ -2683,18 +2683,18 @@ const data = {
   pate: ["peat", "tape"],
   peat: ["pate", "tape"],
   tape: ["pate", "peat"],
-  path: ["phat"],
+  path: ["phat"], //excellent
   phat: ["path"],
   pathos: ["potash"],
   potash: ["pathos"],
-  patina: ["pinata"],
+  patina: ["pinata"], //usable
   pinata: ["patina"],
-  patricide: ["pediatric"],
+  patricide: ["pediatric"], //dark
   pediatric: ["patricide"],
   patrol: ["portal"],
   portal: ["patrol"],
   patron: ["tarpon"],
-  tarpon: ["patron"],
+  tarpon: ["patron"], //fish
   patroness: ["transpose"],
   transpose: ["patroness"],
   pay: ["yap"],
@@ -2708,15 +2708,15 @@ const data = {
   spine: ["penis", "snipe"],
   per: ["rep"],
   rep: ["per"],
-  percale: ["replace"],
+  percale: ["replace"], //a closely woven fine cotton
   replace: ["percale"],
-  percussion: ["supersonic"],
+  percussion: ["supersonic"], //this is cool
   supersonic: ["percussion"],
   perfect: ["prefect"],
   prefect: ["perfect"],
   perform: ["preform"],
   preform: ["perform"],
-  peripatetic: ["precipitate"],
+  peripatetic: ["precipitate"], //traveling from place to place, in particular working or based in various places for relatively short periods.
   precipitate: ["peripatetic"],
   perish: ["reship"],
   reship: ["perish"],
@@ -2730,7 +2730,7 @@ const data = {
   step: ["pest"],
   pester: ["preset"],
   preset: ["pester"],
-  petaled: ["pleated"],
+  petaled: ["pleated"], //pleated pants
   pleated: ["petaled"],
   petitioner: ["repetition"],
   repetition: ["petitioner"],
@@ -2738,11 +2738,11 @@ const data = {
   shape: ["phase"],
   photographer: ["rephotograph"],
   rephotograph: ["photographer"],
-  phrase: ["seraph"],
+  phrase: ["seraph"], //interesting
   seraph: ["phrase"],
   pier: ["ripe"],
   ripe: ["pier"],
-  pierce: ["recipe"],
+  pierce: ["recipe"], //something here maybe
   recipe: ["pierce"],
   piles: ["spiel"],
   spiel: ["piles"],
