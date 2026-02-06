@@ -2760,19 +2760,19 @@ const data = {
   tip: ["pit"],
   plains: ["spinal"],
   spinal: ["plains"],
-  plaint: ["pliant"],
+  plaint: ["pliant"], //accusation
   pliant: ["plaint"],
-  planet: ["platen"],
-  platen: ["planet"],
+  planet: ["platen"], //maybe this could be space-el's planet. platen planet
+  platen: ["planet"], //the plate in a small letterpress printing press which presses the paper against the type
   planter: ["replant"],
   replant: ["planter"],
   plaster: ["stapler"],
   stapler: ["plaster"],
   platter: ["prattle"],
   prattle: ["platter"],
-  pointer: ["protein"],
+  pointer: ["protein"], //something?
   protein: ["pointer"],
-  polyester: ["proselyte"],
+  polyester: ["proselyte"], //a person who has converted from one opinion, religion, or party to another.
   proselyte: ["polyester"],
   pore: ["rope"],
   rope: ["pore"],
@@ -2800,7 +2800,7 @@ const data = {
   sprayer: ["prayers"],
   predate: ["tapered"],
   tapered: ["predate"],
-  predator: ["teardrop"],
+  predator: ["teardrop"], //cool
   teardrop: ["predator"],
   prescient: ["reinspect"],
   reinspect: ["prescient"],
