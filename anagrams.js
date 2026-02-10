@@ -2786,7 +2786,7 @@ const data = {
   spot: ["post", "stop", "tops"],
   stop: ["post", "spot", "tops"],
   tops: ["post", "spot", "stop"],
-  poster: ["presto"],
+  poster: ["presto"], //maybe
   presto: ["poster"],
   pouter: ["troupe"],
   troupe: ["pouter"],
@@ -2803,16 +2803,16 @@ const data = {
   predator: ["teardrop"], //cool
   teardrop: ["predator"],
   prescient: ["reinspect"],
-  reinspect: ["prescient"],
-  present: ["serpent"],
+  reinspect: ["prescient"], //having or showing knowledge of events before they take place
+  present: ["serpent"], //haha
   serpent: ["present"],
   presenter: ["represent"],
   represent: ["presenter"],
   presser: ["repress"],
   repress: ["presser"],
-  presume: ["supreme"],
+  presume: ["supreme"], //I presume you are the supreme leader
   supreme: ["presume"],
-  previous: ["viperous"],
+  previous: ["viperous"], //cool
   viperous: ["previous"],
   prey: ["pyre"],
   pyre: ["prey"],
