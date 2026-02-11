@@ -2828,9 +2828,9 @@ const data = {
   spotter: ["protest"],
   publisher: ["republish"],
   republish: ["publisher"],
-  puree: ["rupee"],
+  puree: ["rupee"], //fun
   rupee: ["puree"],
-  purine: ["unripe"],
+  purine: ["unripe"], //a colorless crystalline compound with basic properties, forming uric acid on oxidation
   unripe: ["purine"],
   purse: ["super"],
   super: ["purse"],
