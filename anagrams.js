@@ -2841,7 +2841,7 @@ const data = {
   quiet: ["quite"],
   quite: ["quiet"],
   quote: ["toque"],
-  toque: ["quote"],
+  toque: ["quote"], // a womans small hat
   races: ["scare"],
   scare: ["races"],
   racialist: ["satirical"],
@@ -2849,11 +2849,11 @@ const data = {
   racket: ["tacker"],
   tacker: ["racket"],
   rain: ["rani"],
-  rani: ["rain"],
+  rani: ["rain"], //a Hindu queen
   raiser: ["sierra"],
   sierra: ["raiser"],
   rant: ["tarn"],
-  tarn: ["rant"],
+  tarn: ["rant"], //a small mountain lake
   rapier: ["repair"],
   repair: ["rapier"],
   rare: ["rear"],
