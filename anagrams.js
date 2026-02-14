@@ -2858,7 +2858,7 @@ const data = {
   repair: ["rapier"],
   rare: ["rear"],
   rear: ["rare"],
-  rasher: ["sharer"],
+  rasher: ["sharer"], //thin slice of bacon
   sharer: ["rasher"],
   rasp: ["spar"],
   spar: ["rasp"],
@@ -2911,7 +2911,7 @@ const data = {
   repeater: ["repartee"],
   reprise: ["respire"],
   respire: ["reprise"],
-  rescue: ["secure"],
+  rescue: ["secure"], //synonyms?
   secure: ["rescue"],
   research: ["searcher"],
   searcher: ["research"],
