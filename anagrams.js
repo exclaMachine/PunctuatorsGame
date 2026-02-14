@@ -2945,10 +2945,10 @@ const data = {
   worse: ["resow", "sower", "swore"],
   resown: ["worsen"],
   worsen: ["resown"],
-  respect: ["scepter", "specter"],
+  respect: ["scepter", "specter"], //cool
   scepter: ["respect", "specter"],
   specter: ["respect", "scepter"],
-  respell: ["speller"],
+  respell: ["speller"], //This could be the name of one of the wands
   speller: ["respell"],
   restaff: ["staffer"],
   staffer: ["restaff"],
