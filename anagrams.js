@@ -2964,18 +2964,18 @@ const data = {
   tersely: ["restyle"],
   retain: ["retina"],
   retina: ["retain"],
-  retell: ["teller"],
+  retell: ["teller"], //other wand name?
   teller: ["retell"],
-  retest: ["setter", "street", "tester"],
+  retest: ["setter", "street", "tester"], //use the setter dog?
   setter: ["retest", "street", "tester"],
   street: ["retest", "setter", "tester"],
   tester: ["retest", "setter", "street"],
-  rethink: ["thinker"],
+  rethink: ["thinker"], //Other wand name?
   thinker: ["rethink"],
   retinae: ["trainee"],
   trainee: ["retinae"],
-  retinue: ["reunite", "uterine"],
-  reunite: ["retinue", "uterine"],
+  retinue: ["reunite", "uterine"], //reunite with retinue. a group of advisers, assistants, or others accompanying an important person.
+  reunite: ["retinue", "uterine"], // reunite with semicolonel and sarge?
   uterine: ["retinue", "reunite"],
   retrain: ["terrain", "trainer"],
   terrain: ["retrain", "trainer"],
