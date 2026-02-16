@@ -2985,7 +2985,7 @@ const data = {
   retrial: ["trailer"],
   trailer: ["retrial"],
   retry: ["terry"],
-  terry: ["retry"],
+  terry: ["retry"], //type of cloth
   return: ["turner"],
   turner: ["return"],
   reupholster: ["upholsterer"],
@@ -3004,23 +3004,23 @@ const data = {
   sticker: ["rickets"],
   riot: ["trio"],
   trio: ["riot"],
-  rise: ["sire"],
+  rise: ["sire"], //Hangler could say to illuminaut
   sire: ["rise"],
-  risque: ["squire"],
+  risque: ["squire"], //don't know where to put it but it's fun
   squire: ["risque"],
   rite: ["tier", "tire"],
   tier: ["rite", "tire"],
   tire: ["rite", "tier"],
-  rival: ["viral"],
+  rival: ["viral"], //potential
   viral: ["rival"],
-  roast: ["sorta"],
+  roast: ["sorta"], //fun
   sorta: ["roast"],
-  rogue: ["rouge"],
+  rogue: ["rouge"], //potential
   rouge: ["rogue"],
   roost: ["roots", "torso"],
   roots: ["roost", "torso"],
   torso: ["roost", "roots"],
-  rose: ["sore"],
+  rose: ["sore"], // i rose sore
   sore: ["rose"],
   rot: ["tor"],
   tor: ["rot"],
@@ -3032,14 +3032,14 @@ const data = {
   tour: ["rout"],
   rowdily: ["wordily"],
   wordily: ["rowdily"],
-  rowdiness: ["wordiness"],
+  rowdiness: ["wordiness"], //something to do with the kids
   wordiness: ["rowdiness"],
   royalist: ["solitary"],
   solitary: ["royalist"],
-  ruination: ["urination"],
+  ruination: ["urination"], //go with the pee in the ppol joke
   urination: ["ruination"],
-  rumba: ["umbra"],
-  umbra: ["rumba"],
+  rumba: ["umbra"], //the fully shaded inner region of a shadow cast by an opaque object, especially the area on the earth or moon experiencing the total phase of an eclipse.
+  umbra: ["rumba"], //could use this with the shadow cast by the thought bubble
   run: ["urn"],
   urn: ["run"],
   runt: ["turn"],
