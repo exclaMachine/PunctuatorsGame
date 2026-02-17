@@ -3092,7 +3092,7 @@ const data = {
   sidebar: ["seabird"],
   seahorse: ["seashore"], //usable
   seashore: ["seahorse"],
-  sear: ["sera"],
+  sear: ["sera"], //plural of serum
   sera: ["sear"],
   seer: ["sere"],
   sere: ["seer"],

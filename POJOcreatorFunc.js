@@ -124,7 +124,7 @@ let rightAngles = {
   b: ["w"],
   c: ["n"],
   d: ["u"],
-  e: ["m", "t"], //t from Capital E
+  e: ["m", "t", "n"], //t from Capital E, lower case e to n
   g: ["g"],
   h: ["i", "l", "z"], //h to capital L
   i: ["h", "n"],
@@ -134,7 +134,7 @@ let rightAngles = {
   n: ["s", "z", "c"], //maybe a capital C
   o: ["o"],
   q: ["q"], //capital Q
-  r: ["t"],
+  r: ["t"], //TODO kind of become a c, cursive r becomes a u
   s: ["n"],
   t: ["t", "f"], //Cap T to F
   u: ["d"],
@@ -702,7 +702,7 @@ const ambigramCrossLang = (word, pairs, targetSet) => {
 const CreateEnglishToSpanishAmbigramsJS = (
   jsName,
   pairs,
-  startLetters = null
+  startLetters = null,
 ) => {
   const engFile = "2of12.txt";
   const espFile = "2of12Espagnol.txt";
@@ -736,7 +736,7 @@ const CreateEnglishToSpanishAmbigramsJS = (
 
   fs.writeFileSync(jsName, content, "utf-8");
   console.log(
-    `Successfully created ${jsName}! Processed ${engWords.length} words.`
+    `Successfully created ${jsName}! Processed ${engWords.length} words.`,
   );
 };
 
@@ -1109,7 +1109,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         const mirroredList = HorizMirror(
           word,
           NinetyDegreesCounterClockWise,
-          wordSet
+          wordSet,
         );
         if (mirroredList && mirroredList.length) {
           typeOfWordObj[word] = mirroredList; // array of possibilities
@@ -1119,7 +1119,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         const mirroredList = VertMirror(
           word,
           NinetyDegreesCounterClockWise,
-          wordSet
+          wordSet,
         );
         if (mirroredList && mirroredList.length) {
           typeOfWordObj[word] = mirroredList; // array of possibilities
@@ -1149,7 +1149,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
         alteredWord = VerticalSymmetry(
           word,
           SymmetricAcrossVerticalPlane,
-          wordSet
+          wordSet,
         ); //Roundletters can do the thing that needs done
       }
       if (typeOfJSFunction === "sideMirror") {
@@ -1202,7 +1202,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
   const content = `const data = ${JSON.stringify(
     typeOfWordObj,
     null,
-    2
+    2,
   )};\n\nexport default data;`;
 
   fs.writeFileSync(jsName, content, "utf-8");
@@ -1218,8 +1218,8 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("SingleLetterVertSpeakPOJO.js", "SingleLetterVertSpeak");
 //CreateJS("NinetyDegreeCounterClockPOJO.js", "NinetyDegreeCounterClock");
 //CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
-CreateJS("todbotHorizontalPOJO.js", "sideMirror");
-//CreateJS("RightAngleMirrorPOJO.js", "90DegMirror");
+//CreateJS("todbotHorizontalPOJO.js", "sideMirror");
+CreateJS("RightAngleMirrorPOJO.js", "90DegMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
@@ -1248,21 +1248,19 @@ const CreateRoundedSpans = (inputData, outputFileName) => {
   for (const [original, transformed] of Object.entries(inputData)) {
     if (Array.isArray(transformed)) {
       for (const word of transformed) {
-        spanMap[
-          original
-        ] = `<span id="Roundabout" data-rounded-word="${word}">${original}</span>`;
+        spanMap[original] =
+          `<span id="Roundabout" data-rounded-word="${word}">${original}</span>`;
       }
     } else {
-      spanMap[
-        original
-      ] = `<span id="Roundabout" data-rounded-word="${transformed}">${original}</span>`;
+      spanMap[original] =
+        `<span id="Roundabout" data-rounded-word="${transformed}">${original}</span>`;
     }
   }
 
   const output = `const roundedLetterSpans = ${JSON.stringify(
     spanMap,
     null,
-    2
+    2,
   )};\n\nexport default roundedLetterSpans;`;
   fs.writeFileSync(outputFileName, output, "utf-8");
   console.log(`Successfully created ${outputFileName}`);
