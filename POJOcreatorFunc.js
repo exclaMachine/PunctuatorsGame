@@ -134,7 +134,7 @@ let rightAngles = {
   n: ["s", "z", "c"], //maybe a capital C
   o: ["o"],
   q: ["q"], //capital Q
-  r: ["t"], //TODO kind of become a c, cursive r becomes a u
+  r: ["t", "c", "u"], //TODO kind of become a c, cursive r becomes a u
   s: ["n"],
   t: ["t", "f"], //Cap T to F
   u: ["d"],
