@@ -3053,7 +3053,7 @@ const data = {
   sabre: ["saber"],
   sacred: ["scared"],
   scared: ["sacred"],
-  saint: ["satin", "stain"],
+  saint: ["satin", "stain"], //satin and stain
   satin: ["saint", "stain"],
   stain: ["saint", "satin"],
   sale: ["seal"],
@@ -3076,7 +3076,7 @@ const data = {
   striae: ["satire"],
   satirist: ["sitarist"],
   sitarist: ["satirist"],
-  save: ["vase"],
+  save: ["vase"], //save the vase!
   vase: ["save"],
   saviour: ["various"],
   various: ["saviour"],
@@ -3084,13 +3084,13 @@ const data = {
   was: ["saw"],
   sawn: ["swan"],
   swan: ["sawn"],
-  scion: ["sonic"],
+  scion: ["sonic"], //exclamachine. I am the sonic scion
   sonic: ["scion"],
   scleroses: ["scoreless"],
   scoreless: ["scleroses"],
   seabird: ["sidebar"],
   sidebar: ["seabird"],
-  seahorse: ["seashore"],
+  seahorse: ["seashore"], //usable
   seashore: ["seahorse"],
   sear: ["sera"],
   sera: ["sear"],
