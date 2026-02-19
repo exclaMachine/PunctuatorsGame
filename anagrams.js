@@ -3101,7 +3101,7 @@ const data = {
   selves: ["vessel"],
   vessel: ["selves"],
   senator: ["treason"],
-  treason: ["senator"],
+  treason: ["senator"], //that's cool. Maybe shows as a footnote on news
   senor: ["snore"],
   snore: ["senor"],
   sepulcher: ["sepulchre"],
@@ -3110,12 +3110,12 @@ const data = {
   sever: ["serve", "verse"],
   verse: ["serve", "sever"],
   servo: ["verso"],
-  verso: ["servo"],
+  verso: ["servo"], //a left-hand page of an open book, or the back of a loose document. the reverse of something such as a coin or painting.
   setup: ["upset"],
   upset: ["setup"],
   share: ["shear"],
   shear: ["share"],
-  shattering: ["straighten"],
+  shattering: ["straighten"], //Let's just straighten this...
   straighten: ["shattering"],
   sheet: ["these"],
   these: ["sheet"],
@@ -3126,17 +3126,17 @@ const data = {
   shiner: ["shrine"],
   shrine: ["shiner"],
   shiver: ["shrive"],
-  shrive: ["shiver"],
-  shoot: ["sooth"],
+  shrive: ["shiver"], //(of a priest) hear the confession of, assign penance to, and absolve (someone).
+  shoot: ["sooth"], //I'll shoot them
   sooth: ["shoot"],
   shooter: ["soother"],
   soother: ["shooter"],
-  shooting: ["soothing"],
+  shooting: ["soothing"], //same as above
   soothing: ["shooting"],
   shout: ["south"],
   south: ["shout"],
   shriek: ["shrike"],
-  shrike: ["shriek"],
+  shrike: ["shriek"], //a songbird with a strong sharply hook
   shut: ["thus", "tush"],
   thus: ["shut", "tush"],
   tush: ["shut", "thus"],
