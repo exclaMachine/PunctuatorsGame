@@ -3140,15 +3140,15 @@ const data = {
   shut: ["thus", "tush"],
   thus: ["shut", "tush"],
   tush: ["shut", "thus"],
-  sidle: ["slide"],
+  sidle: ["slide"], //walk in a furtive, unobtrusive, or timid manner, especially sideways or obliquel
   slide: ["sidle"],
   sifter: ["strife"],
   strife: ["sifter"],
-  sign: ["sing"],
+  sign: ["sing"], //usable
   sing: ["sign"],
   signing: ["singing"],
   singing: ["signing"],
-  signora: ["soaring"],
+  signora: ["soaring"], //cool
   soaring: ["signora"],
   silty: ["styli"],
   styli: ["silty"],
