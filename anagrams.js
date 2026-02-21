@@ -3165,17 +3165,17 @@ const data = {
   streak: ["skater"],
   skating: ["takings"],
   takings: ["skating"],
-  slain: ["snail"],
+  slain: ["snail"], //fun
   snail: ["slain"],
-  sleet: ["steel"],
+  sleet: ["steel"], //perhaps
   steel: ["sleet"],
   sleety: ["steely"],
   steely: ["sleety"],
   slept: ["spelt"],
   spelt: ["slept"],
-  slime: ["smile"],
+  slime: ["smile"], //give me a
   smile: ["slime"],
-  sloop: ["spool"],
+  sloop: ["spool"], //a small square-rigged sailing warship with two or three mast
   spool: ["sloop"],
   smite: ["times"],
   times: ["smite"],
@@ -3197,9 +3197,9 @@ const data = {
   sung: ["snug"],
   solute: ["tousle"],
   tousle: ["solute"],
-  sorbet: ["strobe"],
+  sorbet: ["strobe"], //have some strobe
   strobe: ["sorbet"],
-  spake: ["speak"],
+  spake: ["speak"], //archaic past of speak.
   speak: ["spake"],
   spilt: ["split"],
   split: ["spilt"],
