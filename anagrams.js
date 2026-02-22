@@ -3205,10 +3205,10 @@ const data = {
   split: ["spilt"],
   sport: ["strop"],
   strop: ["sport"],
-  spotlight: ["stoplight"],
+  spotlight: ["stoplight"], //could use
   stoplight: ["spotlight"],
-  spout: ["stoup"],
-  stoup: ["spout"],
+  spout: ["stoup"], //a basin for holy water, especially on the wall near the door of a Roman Catholic church
+  stoup: ["spout"], //stoup spout
   sprat: ["strap", "traps"],
   strap: ["sprat", "traps"],
   traps: ["sprat", "strap"],
@@ -3232,7 +3232,7 @@ const data = {
   test: ["stet"],
   stew: ["west"],
   west: ["stew"],
-  stoat: ["toast"],
+  stoat: ["toast"], //a small carnivorous mammal,
   toast: ["stoat"],
   stoker: ["stroke"],
   stroke: ["stoker"],
@@ -3288,10 +3288,10 @@ const data = {
   what: ["thaw"],
   theater: ["theatre", "thereat"],
   theatre: ["theater", "thereat"],
-  thereat: ["theater", "theatre"],
+  thereat: ["theater", "theatre"], //at that place.
   thew: ["whet"],
   whet: ["thew"],
-  thoracic: ["trochaic"],
+  thoracic: ["trochaic"], //trochee: a poetic foot consisting of one long or stressed syllable followed by one short or unstressed syllable.
   trochaic: ["thoracic"],
   throw: ["worth", "wroth"],
   worth: ["throw", "wroth"],
