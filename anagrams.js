@@ -3322,7 +3322,7 @@ const data = {
   varlet: ["travel"],
   tribune: ["turbine"],
   turbine: ["tribune"],
-  trout: ["tutor"],
+  trout: ["tutor"], //trout tutor. QM: You're like our trout tutor Max: trout are freshwater fish
   tutor: ["trout"],
   trow: ["wort"],
   wort: ["trow"],

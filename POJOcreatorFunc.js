@@ -167,6 +167,20 @@ let NinetyDegreesCounterClockWise = {
   z: ["n"],
 };
 
+//negative space within the letters, example is james joyce by john langdon
+let NegativeSpaceSingle = {
+  a: ["o"],
+  b: ["b"],
+  h: ["i"],
+  i: ["h"],
+  e: ["c", "i"],
+  j: ["j"],
+  m: ["y", "u"],
+  s: ["e"],
+};
+
+//should also make a negative space one where I can create letters between the letters
+
 let vertPairs = {
   a: ["a"],
   b: ["b"], // Only Cap visually
@@ -1100,6 +1114,12 @@ const CreateJS = (jsName, typeOfJSFunction) => {
           typeOfWordObj[word] = mirroredList; // array of possibilities
         }
       }
+      if (typeOfJSFunction === "negativeSpaceSingle") {
+        const mirroredList = VertMirror(word, NegativeSpaceSingle, wordSet);
+        if (mirroredList && mirroredList.length) {
+          typeOfWordObj[word] = mirroredList; // array of possibilities
+        }
+      }
       if (typeOfJSFunction === "NinetyDegreeClockwise") {
         const mirroredList = VertMirror(word, NinetyDegreesClockWise, wordSet);
         if (mirroredList && mirroredList.length) {
@@ -1213,6 +1233,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("AmbigramPOJO.js", "ambigram");
 //CreateJS("ambigramSpanishPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
+CreateJS("NegativeSpaceSingle.js", "negativeSpaceSingle");
 //CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
 //CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
@@ -1220,7 +1241,7 @@ const CreateJS = (jsName, typeOfJSFunction) => {
 //CreateJS("NinetyDegreeCounterClockPOJO.js", "NinetyDegreeCounterClock");
 //CreateJS("NinetyDegreesRisePOJO.js", "NinetyDegreeRise");
 //CreateJS("todbotHorizontalPOJO.js", "sideMirror");
-CreateJS("RightAngleMirrorPOJO.js", "90DegMirror");
+//CreateJS("RightAngleMirrorPOJO.js", "90DegMirror");
 //CreateJS("roundLetters.js", "roundLetters");
 //CreateJS("roundLettersMulti.js", "roundLettersMulti");
 //CreateJS("alphabeticalWords.js", "alphabetical");
