@@ -171,11 +171,14 @@ let NinetyDegreesCounterClockWise = {
 let NegativeSpaceSingle = {
   a: ["o"],
   b: ["b"],
+  d: ["l"],
+  g: ["e"],
   h: ["i"],
   i: ["h"],
   e: ["c", "i"],
   j: ["j"],
   m: ["y", "u"],
+  o: ["i", "v"],
   s: ["e"],
 };
 
