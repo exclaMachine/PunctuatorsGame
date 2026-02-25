@@ -3329,18 +3329,18 @@ const data = {
   troy: ["tyro"],
   tyro: ["troy"],
   tumbler: ["tumbrel"],
-  tumbrel: ["tumbler"],
+  tumbrel: ["tumbler"], //an open cart that tilted backward to empty out its load
   twiner: ["winter"],
   winter: ["twiner"],
   unaltered: ["unrelated"],
   unrelated: ["unaltered"],
   unbar: ["urban"],
   urban: ["unbar"],
-  underarm: ["unmarred"],
+  underarm: ["unmarred"], //fun
   unmarred: ["underarm"],
-  underside: ["undesired"],
+  underside: ["undesired"], //fun
   undesired: ["underside"],
-  unite: ["untie"],
+  unite: ["untie"], //opposites
   untie: ["unite"],
   unlit: ["until"],
   until: ["unlit"],
