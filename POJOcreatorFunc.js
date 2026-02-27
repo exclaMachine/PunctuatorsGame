@@ -172,6 +172,7 @@ let NegativeSpaceSingle = {
   a: ["o"],
   b: ["b"],
   d: ["l"],
+  e: ["e"],
   g: ["e"],
   h: ["i"],
   i: ["h"],
