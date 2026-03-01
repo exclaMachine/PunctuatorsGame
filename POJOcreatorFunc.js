@@ -180,6 +180,7 @@ let NegativeSpaceSingle = {
   e: ["c", "i"],
   j: ["j"],
   m: ["y", "u", "v"],
+  n: ["m"],
   o: ["i", "v"],
   u: ["o"],
   s: ["e"],
