@@ -171,8 +171,8 @@ let NinetyDegreesCounterClockWise = {
 let NegativeSpaceSingle = {
   a: ["o", "i"],
   b: ["b"],
-  d: ["l"],
-  e: ["e"],
+  d: ["l", "d"],
+  e: ["e", "c"],
   f: ["s"],
   g: ["e"],
   h: ["i"],
@@ -187,6 +187,8 @@ let NegativeSpaceSingle = {
 };
 
 //should also make a negative space one where I can create letters between the letters
+
+//TODO also possible to do rotated negative space. THere is an example online of reality:focus
 
 let vertPairs = {
   a: ["a"],
