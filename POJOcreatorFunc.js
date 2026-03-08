@@ -170,8 +170,8 @@ let NinetyDegreesCounterClockWise = {
 //negative space within the letters, example is james joyce by john langdon
 let NegativeSpaceSingle = {
   a: ["o", "i"],
-  b: ["b"],
-  d: ["l", "d"],
+  b: ["b", "i"],
+  d: ["l", "d", "i"],
   e: ["e", "c"],
   f: ["s"],
   g: ["e"],
