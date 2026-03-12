@@ -53,12 +53,12 @@ let AmbigramPairs = {
   o: ["e", "o", "n", "a"], // o ↔ e TODO could still add q in future
   p: ["d"], // p ↔ d
   q: ["b"], // q ↔ b //Q and TODO O didn't get o because took to long
-  r: ["j", "d", "y"], // r ↔ j; R ↔ d TODO adding i took to long
+  r: ["j", "d", "y", "w"], // r ↔ j; R ↔ d TODO adding i took to long, w is from sword bryan sanders
   s: ["e", "g", "s"], // s ↔ e //g and s could also be done
   t: ["t", "l"], // t ↔ l
   u: ["n"], // u ↔ n
   v: ["a"],
-  w: ["m", "nn", "y"], // w ↔ m, nn
+  w: ["m", "nn", "y", "r"], // w ↔ m, nn
   x: ["x", "o"], // x ↔ o
   y: ["h", "t", "r", "w"], // y ↔ h
   z: ["z"], // z ↔ z
@@ -1239,10 +1239,10 @@ const CreateJS = (jsName, typeOfJSFunction) => {
   console.log(`Successfully created ${jsName}!`);
 };
 
-//CreateJS("AmbigramPOJO.js", "ambigram");
+CreateJS("AmbigramPOJO.js", "ambigram");
 //CreateJS("ambigramSpanishPOJO.js", "ambigram");
 //CreateJS("hanglerAngle.js", "SingleLetterVertMirror");
-CreateJS("NegativeSpaceSingle.js", "negativeSpaceSingle");
+//CreateJS("NegativeSpaceSingle.js", "negativeSpaceSingle");
 //CreateJS("todbotPOJO.js", "mirror");
 //CreateJS("NinetyDegreesClockwisePOJO.js", "NinetyDegreeClockwise");
 //CreateJS("NinetyDegreesClockBackPOJO.js", "NinetyDegreeClockBack");
