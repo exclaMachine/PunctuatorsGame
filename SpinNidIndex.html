@@ -211,6 +211,7 @@
       <button id="brccw">↺ Rotate CCW</button>
       <button id="bsub">Enter ✓</button>
       <button id="bclr">⌫ Clear</button>
+      <button id="bplace">⊞ Place All</button>
     </div>
     <div class="status" id="st"></div>
   </div>
@@ -673,6 +674,23 @@ document.getElementById('brcw').onclick = () => { if (sC !== null) rot(sC, 1); }
 document.getElementById('brccw').onclick = () => { if (sC !== null) rot(sC, -1); };
 document.getElementById('bsub').onclick = submit;
 document.getElementById('bclr').onclick = () => { clearWord(); setSt('', ''); };
+
+function placeAll() {
+  const emptyCells = [];
+  for (let i = 0; i < GR * GR; i++) { if (!G[i]) emptyCells.push(i); }
+  // Shuffle empty cells
+  for (let i = emptyCells.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [emptyCells[i], emptyCells[j]] = [emptyCells[j], emptyCells[i]];
+  }
+  TH.forEach((def, i) => {
+    if (i < emptyCells.length) G[emptyCells[i]] = { d: def, ca: 0, ta: 0 };
+  });
+  TH = [];
+  sH = null; sC = null;
+  resolveWord(); rHand(); draw();
+}
+document.getElementById('bplace').onclick = placeAll;
 
 // ─── Hand tiles ───────────────────────────────────────────────────────────────
 function rHand() {
