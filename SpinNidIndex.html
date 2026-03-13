@@ -318,16 +318,24 @@ const RS = [
   [1, 3, 0, 2],
 ];
 
-const TILE_DEFS = [
-  { l: ['H', 'I', 'N', 'Z'], c: '#B5D4F4' },
-  { l: ['n', 'u', 's', 'c'], c: '#C0DD97' },
-  { l: ['m', 'w', 'E', 'B'], c: '#F5C4B3' },
-  { l: ['a', 'e', 'b', 'q'], c: '#CECBF6' },
-  { l: ['t', 'x', 'o', 'O'], c: '#9FE1CB' },
-  { l: ['L', 'T', 'j', 'r'], c: '#FAC775' },
-  { l: ['N', 'Z', 'n', 's'], c: '#F4C0D1' },
-  { l: ['A', 'V', 'y', 'R'], c: '#B5D4F4' },
-];
+const TILE_COLORS = ['#B5D4F4','#C0DD97','#F5C4B3','#CECBF6','#9FE1CB','#FAC775','#F4C0D1','#D4EAB5'];
+const AM_KEYS = Object.keys(AM);
+
+function makeTileDefs(count) {
+  const defs = [];
+  for (let i = 0; i < count; i++) {
+    const l = [];
+    while (l.length < 4) {
+      const pick = AM_KEYS[Math.floor(Math.random() * AM_KEYS.length)];
+      if (!l.includes(pick)) l.push(pick);
+    }
+    const c = TILE_COLORS[i % TILE_COLORS.length];
+    defs.push({ l, c });
+  }
+  return defs;
+}
+
+const TILE_DEFS = makeTileDefs(8);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const dk = () => matchMedia('(prefers-color-scheme:dark)').matches;
