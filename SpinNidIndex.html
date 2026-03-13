@@ -318,24 +318,29 @@ const RS = [
   [1, 3, 0, 2],
 ];
 
-const TILE_COLORS = ['#B5D4F4','#C0DD97','#F5C4B3','#CECBF6','#9FE1CB','#FAC775','#F4C0D1','#D4EAB5'];
+const TILE_COLORS = ['#B5D4F4','#C0DD97','#F5C4B3','#CECBF6','#9FE1CB','#FAC775','#F4C0D1','#D4EAB5','#F7E4B5'];
 const AM_KEYS = Object.keys(AM);
+const VOWELS = ['a', 'e', 'i', 'o', 'u'];
 
 function makeTileDefs(count) {
   const defs = [];
+  // Shuffle vowels so each is assigned to a random tile slot
+  const vowelPool = [...VOWELS].sort(() => Math.random() - 0.5);
   for (let i = 0; i < count; i++) {
     const l = [];
+    if (i < vowelPool.length) l.push(vowelPool[i]);
     while (l.length < 4) {
       const pick = AM_KEYS[Math.floor(Math.random() * AM_KEYS.length)];
       if (!l.includes(pick)) l.push(pick);
     }
-    const c = TILE_COLORS[i % TILE_COLORS.length];
-    defs.push({ l, c });
+    // Shuffle so the vowel isn't always in position 0
+    l.sort(() => Math.random() - 0.5);
+    defs.push({ l, c: TILE_COLORS[i % TILE_COLORS.length] });
   }
   return defs;
 }
 
-const TILE_DEFS = makeTileDefs(8);
+const TILE_DEFS = makeTileDefs(9);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const dk = () => matchMedia('(prefers-color-scheme:dark)').matches;
