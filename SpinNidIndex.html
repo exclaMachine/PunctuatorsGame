@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPIN NIDS</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4ef;
+    --bg2: #eceae2;
+    --bg3: #ffffff;
+    --text: #2c2c2a;
+    --text2: #5f5e5a;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --accent: #534ab7;
+    --accent-bg: #eeedfe;
+    --green: #0f6e56;
+    --green-bg: rgba(15,110,86,0.12);
+    --red: #a32d2d;
+    --red-bg: rgba(163,45,45,0.1);
+    --amber: #854f0b;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c;
+      --bg2: #2c2c2a;
+      --bg3: #242422;
+      --text: #d3d1c7;
+      --text2: #888780;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --accent: #afa9ec;
+      --accent-bg: #26215c;
+      --green: #5dcaa5;
+      --green-bg: rgba(93,202,165,0.15);
+      --red: #f09595;
+      --red-bg: rgba(240,149,149,0.12);
+      --amber: #ef9f27;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 12px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 18px;
+  }
+
+  .game-wrap {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 860px;
+  }
+
+  .left { flex: 0 0 auto; }
+  .right {
+    flex: 1;
+    min-width: 200px;
+    max-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  canvas { display: block; border-radius: 10px; border: 0.5px solid var(--border); cursor: pointer; }
+
+  /* --- Hand tiles --- */
+  .hand-label { font-size: 11px; color: var(--text2); margin: 10px 0 5px; }
+  .hand-row { display: flex; flex-wrap: wrap; gap: 7px; }
+
+  /* --- Controls --- */
+  .ctrls { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .mode-row { display: flex; gap: 6px; margin-top: 6px; }
+
+  button {
+    font-size: 12px;
+    padding: 6px 11px;
+    border: 0.5px solid var(--border2);
+    border-radius: 7px;
+    background: var(--bg3);
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.1s;
+  }
+  button:hover { background: var(--bg2); }
+  button.on {
+    background: var(--accent-bg);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* --- Word bar --- */
+  .word-bar {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 14px;
+    min-height: 50px;
+    font-family: 'Courier New', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 5px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  .word-bar .placeholder { font-size: 13px; font-weight: 400; color: var(--text2); letter-spacing: 0; font-family: inherit; }
+  .wl { display: inline-block; padding: 0 1px; border-radius: 3px; }
+  .wl.ok { color: var(--green); background: var(--green-bg); }
+  .wl.no { color: var(--red); background: var(--red-bg); }
+
+  .status { font-size: 12px; color: var(--text2); min-height: 18px; margin-top: 2px; }
+  .status.ok { color: var(--green); }
+  .status.err { color: var(--red); }
+  .status.warn { color: var(--amber); }
+
+  /* --- Found words --- */
+  .score { font-size: 13px; font-weight: 500; color: var(--text2); }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+  .chip {
+    font-size: 12px; padding: 2px 9px; border-radius: 10px;
+    background: var(--accent-bg); color: var(--accent);
+    font-family: monospace; font-weight: 500;
+  }
+
+  /* --- Mode selector --- */
+  .mode-section { border: 0.5px solid var(--border); border-radius: 9px; padding: 10px 12px; background: var(--bg3); }
+  .mode-section h3 { font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--text2); }
+  .mode-option { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 7px; cursor: pointer; }
+  .mode-option:last-child { margin-bottom: 0; }
+  .mode-option input[type=radio] { margin-top: 2px; accent-color: var(--accent); }
+  .mode-option .label { font-size: 12px; font-weight: 500; }
+  .mode-option .desc { font-size: 11px; color: var(--text2); }
+
+  /* --- Reference --- */
+  .ref {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 12px;
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.85;
+    font-family: monospace;
+  }
+  .ref b { font-family: -apple-system, sans-serif; font-size: 11px; font-weight: 500; color: var(--text); display: block; margin-bottom: 1px; }
+  .ref b:not(:first-child) { margin-top: 6px; }
+  kbd {
+    display: inline-block; padding: 1px 5px; border: 0.5px solid var(--border2);
+    border-radius: 4px; font-family: monospace; font-size: 10px; background: var(--bg3);
+  }
+
+  /* Loading overlay */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; z-index: 100;
+    font-size: 14px; color: var(--text2);
+  }
+  .spinner {
+    width: 28px; height: 28px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <span>Loading word list…</span>
+</div>
+
+<h1>Ambigram Word Game</h1>
+<p class="subtitle">Rotate tiles to transform letters — type words from the grid</p>
+
+<div class="game-wrap">
+  <div class="left">
+    <canvas id="gc"></canvas>
+    <div class="hand-label">Tile hand — click to select, then click empty cell to place</div>
+    <div class="hand-row" id="hand"></div>
+    <div class="ctrls">
+      <button id="brcw">↻ Rotate CW</button>
+      <button id="brccw">↺ Rotate CCW</button>
+      <button id="bsub">Enter ✓</button>
+      <button id="bclr">⌫ Clear</button>
+    </div>
+    <div class="status" id="st"></div>
+  </div>
+
+  <div class="right">
+    <div class="score" id="score">Score: 0</div>
+    <div class="word-bar" id="wb"><span class="placeholder">start typing…</span></div>
+    <div class="chips" id="chips"></div>
+
+    <div class="mode-section">
+      <h3>Difficulty mode</h3>
+      <label class="mode-option">
+        <input type="radio" name="mode" value="free" checked>
+        <div><div class="label">Free (beginner)</div><div class="desc">Any letter from anywhere on the board</div></div>
+      </label>
+      <label class="mode-option">
+        <input type="radio" name="mode" value="one-per-tile">
+        <div><div class="label">One per tile</div><div class="desc">Max one letter used from each tile</div></div>
+      </label>
+      <label class="mode-option">
+        <input type="radio" name="mode" value="adjacent">
+        <div><div class="label">Adjacent (classic)</div><div class="desc">Each letter must touch the previous one</div></div>
+      </label>
+    </div>
+
+    <div class="ref">
+      <b>Controls</b>
+      <kbd>Type</kbd> letters to build a word<br>
+      <kbd>Backspace</kbd> undo last letter<br>
+      <kbd>Enter</kbd> submit · <kbd>Esc</kbd> clear<br>
+      Click tile → select · <kbd>R</kbd> rotate CW<br>
+      <b>Letter colours</b>
+      <span style="color:var(--green)">green</span> = found in grid ·
+      <span style="color:var(--red)">red</span> = not on board<br>
+      <span style="color:var(--green)">● pip</span> = transformed by rotation
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Word list ───────────────────────────────────────────────────────────────
+let WORDS = new Set();
+
+async function loadWords() {
+  try {
+    const res = await fetch('./2of12.txt');
+    const text = await res.text();
+    text.split(/\r?\n/).forEach(w => { const t = w.trim().toLowerCase(); if (t) WORDS.add(t); });
+  } catch (e) {
+    console.error('Could not load words.txt:', e);
+  }
+  document.getElementById('loading').style.display = 'none';
+}
+
+function isValidWord(word) {
+  return WORDS.has(word.toLowerCase());
+}
+
+// ─── Canvas setup ────────────────────────────────────────────────────────────
+const CELL = 130, GR = 3;
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+const SZ = GR * CELL;
+const gc = document.getElementById('gc');
+gc.width = SZ * dpr; gc.height = SZ * dpr;
+gc.style.width = SZ + 'px'; gc.style.height = SZ + 'px';
+const C = gc.getContext('2d');
+C.scale(dpr, dpr);
+
+// ─── Ambigram map ────────────────────────────────────────────────────────────
+// letter -> [at 0°, at 90°CW, at 180°, at 270°CW]  null = invalid
+const AM = {
+  'a': ['a', null, 'e', null],  'e': ['e', null, 'a', null],
+  'b': ['b', null, 'q', null],  'q': ['q', null, 'b', null],
+  'c': ['c', 'n',  null, 'u'],  'u': ['u', 'c',  'n', 'D'],
+  'd': ['d', null, 'p', null],  'p': ['p', null, 'd', null],
+  'g': ['g', null, 'g', null],
+  'h': ['h', null, 'y', null],  'y': ['y', null, 'R', null],
+  'i': ['i', null, 'i', null],
+  'j': ['j', 'L',  'r', null],  'r': ['r', null, 'j', 'L'],
+  'l': ['l', null, 'l', null],
+  'm': ['m', null, 'w', 'E'],   'w': ['w', 'E',  'm', 'B'],
+  'n': ['n', 's',  'u', 's'],   's': ['s', null, 's', 'n'],
+  'o': ['o', 'o',  null, null],
+  't': ['t', 't',  't', 't'],   'x': ['x', 'x',  'x', 'x'],
+  'z': ['z', null, 'z', null],
+  'A': ['A', null, 'V', null],  'V': ['V', null, 'A', null],
+  'B': ['B', 'w',  null, null],
+  'C': ['C', null, 'D', null],  'D': ['D', null, 'C', null],
+  'E': ['E', 'm',  null, 'w'],
+  'H': ['H', 'I',  null, 'I'],  'I': ['I', null, null, 'H'],
+  'L': ['L', 'r',  'T', null],  'T': ['T', null, 'L', null],
+  'M': ['M', null, 'W', null],  'W': ['W', null, 'M', null],
+  'N': ['N', 'Z',  'N', 'Z'],   'Z': ['Z', 'N',  null, 'N'],
+  'O': ['O', null, 'O', 'O'],
+  'R': ['R', null, 'y', null],
+  'Y': ['Y', 'Y',  null, 'Y'],
+};
+
+// Quad slot remapping after N CW 90° steps
+// RS[n][q] = which base slot now occupies visual position q
+const RS = [
+  [0, 1, 2, 3],
+  [2, 0, 3, 1],
+  [3, 2, 1, 0],
+  [1, 3, 0, 2],
+];
+
+const TILE_DEFS = [
+  { l: ['H', 'I', 'N', 'Z'], c: '#B5D4F4' },
+  { l: ['n', 'u', 's', 'c'], c: '#C0DD97' },
+  { l: ['m', 'w', 'E', 'B'], c: '#F5C4B3' },
+  { l: ['a', 'e', 'b', 'q'], c: '#CECBF6' },
+  { l: ['t', 'x', 'o', 'O'], c: '#9FE1CB' },
+  { l: ['L', 'T', 'j', 'r'], c: '#FAC775' },
+  { l: ['N', 'Z', 'n', 's'], c: '#F4C0D1' },
+  { l: ['A', 'V', 'y', 'R'], c: '#B5D4F4' },
+];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const dk = () => matchMedia('(prefers-color-scheme:dark)').matches;
+const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+function gv(base, rot) {
+  const m = AM[base];
+  if (!m) return null;
+  return m[((rot % 4) + 4) % 4];
+}
+function grs(t) { return (((Math.round(t.ta / (Math.PI / 2))) % 4) + 4) % 4; }
+function geff(ci, q) {
+  const t = G[ci]; if (!t) return null;
+  return gv(t.d.l[RS[grs(t)][q]], grs(t));
+}
+function txy(i) { return { x: (i % GR) * CELL, y: Math.floor(i / GR) * CELL }; }
+
+function rrC(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+function rr(x, y, w, h, r) { rrC(C, x, y, w, h, r); }
+
+// ─── Game state ───────────────────────────────────────────────────────────────
+let G = new Array(GR * GR).fill(null);
+let TH = [...TILE_DEFS];
+let sH = null, sC = null, animReq = null;
+let FW = [], score = 0;
+let wordSeq = []; // [{letter, ci, q}]
+let pulses = {};  // "ci_q" -> 0..1
+
+// Difficulty mode
+let diffMode = 'free'; // 'free' | 'one-per-tile' | 'adjacent'
+document.querySelectorAll('input[name=mode]').forEach(r => {
+  r.addEventListener('change', () => { diffMode = r.value; resolveWord(); draw(); });
+});
+
+// ─── Matching logic ───────────────────────────────────────────────────────────
+function usedKeys() {
+  const s = new Set();
+  wordSeq.forEach(w => { if (w.ci !== null) s.add(w.ci + '_' + w.q); });
+  return s;
+}
+function usedTiles() {
+  const s = new Set();
+  wordSeq.forEach(w => { if (w.ci !== null) s.add(w.ci); });
+  return s;
+}
+
+function apPos(ci, q) {
+  return { row: Math.floor(ci / GR) * 2 + Math.floor(q / 2), col: (ci % GR) * 2 + (q % 2) };
+}
+function adjQuads(a, b) {
+  if (a.ci === b.ci && a.q === b.q) return false;
+  const A = apPos(a.ci, a.q), B = apPos(b.ci, b.q);
+  return Math.abs(A.row - B.row) <= 1 && Math.abs(A.col - B.col) <= 1;
+}
+
+function findQuad(letter, usedQ, usedT, prevItem) {
+  for (let ci = 0; ci < GR * GR; ci++) {
+    if (!G[ci]) continue;
+    if (Math.abs(G[ci].ca - G[ci].ta) > 0.05) continue;
+    if (diffMode === 'one-per-tile' && usedT.has(ci)) continue;
+    for (let q = 0; q < 4; q++) {
+      if (usedQ.has(ci + '_' + q)) continue;
+      if (geff(ci, q) !== letter) continue;
+      if (diffMode === 'adjacent' && prevItem && !adjQuads(prevItem, { ci, q })) continue;
+      return { ci, q };
+    }
+  }
+  return null;
+}
+
+function resolveWord() {
+  const newSeq = [];
+  const usedQ = new Set(), usedT = new Set();
+  wordSeq.forEach(w => {
+    const prev = newSeq.length ? newSeq[newSeq.length - 1] : null;
+    const prevItem = prev && prev.ci !== null ? { ci: prev.ci, q: prev.q } : null;
+    const match = findQuad(w.letter, usedQ, usedT, prevItem);
+    newSeq.push({ letter: w.letter, ci: match ? match.ci : null, q: match ? match.q : null });
+    if (match) { usedQ.add(match.ci + '_' + match.q); usedT.add(match.ci); }
+  });
+  wordSeq = newSeq;
+  updateWordDisplay();
+}
+
+function addLetter(letter) {
+  if (!AM[letter] && !AM[letter.toLowerCase()] && !AM[letter.toUpperCase()]) return;
+  const usedQ = usedKeys(), usedT = usedTiles();
+  const prev = wordSeq.length ? wordSeq[wordSeq.length - 1] : null;
+  const prevItem = prev && prev.ci !== null ? { ci: prev.ci, q: prev.q } : null;
+  const match = findQuad(letter, usedQ, usedT, prevItem);
+  wordSeq.push({ letter, ci: match ? match.ci : null, q: match ? match.q : null });
+  if (match) triggerPulse(match.ci, match.q);
+  updateWordDisplay();
+  draw();
+}
+
+function removeLetter() {
+  if (!wordSeq.length) return;
+  wordSeq.pop();
+  resolveWord();
+  draw();
+}
+
+function clearWord() {
+  wordSeq = [];
+  updateWordDisplay();
+  draw();
+}
+
+function updateWordDisplay() {
+  const wb = document.getElementById('wb');
+  if (!wordSeq.length) {
+    wb.innerHTML = '<span class="placeholder">start typing…</span>';
+    return;
+  }
+  wb.innerHTML = wordSeq.map(w =>
+    `<span class="wl ${w.ci !== null ? 'ok' : 'no'}">${w.letter}</span>`
+  ).join('');
+}
+
+// ─── Submit ───────────────────────────────────────────────────────────────────
+function submit() {
+  if (wordSeq.length < 2) { setSt('Need at least 2 letters', 'err'); return; }
+  const unmatched = wordSeq.filter(w => w.ci === null);
+  if (unmatched.length) {
+    setSt(`Letters not on board: ${unmatched.map(w => w.letter).join(', ')}`, 'err'); return;
+  }
+  const word = wordSeq.map(w => w.letter).join('');
+  if (FW.includes(word)) { setSt('Already found: ' + word, 'warn'); return; }
+  if (!isValidWord(word)) { setSt(`"${word}" is not in the word list`, 'err'); return; }
+  // Valid!
+  FW.push(word);
+  score += word.length * word.length;
+  document.getElementById('score').textContent = 'Score: ' + score;
+  const chip = document.createElement('div');
+  chip.className = 'chip'; chip.textContent = word;
+  document.getElementById('chips').appendChild(chip);
+  clearWord();
+  setSt(`✓ "${word}" +${word.length * word.length} pts`, 'ok');
+}
+
+function setSt(msg, type) {
+  const el = document.getElementById('st');
+  el.textContent = msg;
+  el.className = 'status' + (type ? ' ' + type : '');
+}
+
+// ─── Pulse animation ──────────────────────────────────────────────────────────
+function triggerPulse(ci, q) { pulses[ci + '_' + q] = 1.0; startAnim(); }
+
+// ─── Drawing ──────────────────────────────────────────────────────────────────
+function drawTile(t, ci) {
+  const { x: gx, y: gy } = txy(ci);
+  const ccx = gx + CELL / 2, ccy = gy + CELL / 2;
+  const a = t.ca, r = grs(t);
+  const snapped = Math.abs(a - t.ta) < 0.009;
+  const d = dk();
+
+  if (ci === sC) {
+    C.strokeStyle = d ? '#afa9ec' : '#534ab7'; C.lineWidth = 2.5;
+    rr(gx + 1, gy + 1, CELL - 2, CELL - 2, 11); C.stroke();
+  }
+
+  C.save(); C.translate(ccx, ccy); C.rotate(a);
+
+  C.fillStyle = t.d.c + (d ? '44' : '99');
+  rr(-CELL / 2 + 3, -CELL / 2 + 3, CELL - 6, CELL - 6, 9); C.fill();
+  C.strokeStyle = t.d.c; C.lineWidth = 2.5;
+  rr(-CELL / 2 + 3, -CELL / 2 + 3, CELL - 6, CELL - 6, 9); C.stroke();
+
+  C.strokeStyle = d ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.13)';
+  C.lineWidth = 1; C.beginPath();
+  C.moveTo(0, -CELL / 2 + 9); C.lineTo(0, CELL / 2 - 9);
+  C.moveTo(-CELL / 2 + 9, 0); C.lineTo(CELL / 2 - 9, 0); C.stroke();
+
+  // Origin dot
+  C.fillStyle = d ? 'rgba(255,255,255,0.88)' : 'rgba(20,20,20,0.68)';
+  C.beginPath(); C.arc(-CELL / 2 + 12, -CELL / 2 + 12, 5.5, 0, Math.PI * 2); C.fill();
+  [
+    [CELL / 2 - 12, -CELL / 2 + 12],
+    [-CELL / 2 + 12, CELL / 2 - 12],
+    [CELL / 2 - 12, CELL / 2 - 12]
+  ].forEach(([dx, dy]) => {
+    C.fillStyle = d ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
+    C.beginPath(); C.arc(dx, dy, 3, 0, Math.PI * 2); C.fill();
+  });
+
+  // Spinning: show base letters with tile
+  if (!snapped) {
+    const LP = [[-CELL / 4, -CELL / 4], [CELL / 4, -CELL / 4], [-CELL / 4, CELL / 4], [CELL / 4, CELL / 4]];
+    C.font = `700 ${Math.round(CELL * 0.22)}px 'Courier New', monospace`;
+    C.textAlign = 'center'; C.textBaseline = 'middle';
+    t.d.l.forEach((l, q) => {
+      C.fillStyle = d ? 'rgba(200,200,200,0.42)' : 'rgba(40,40,40,0.32)';
+      C.fillText(l, LP[q][0], LP[q][1]);
+    });
+  }
+  C.restore();
+
+  // Snapped: letters upright with effective readings
+  if (snapped) {
+    const matchedQuads = new Set();
+    wordSeq.forEach(w => { if (w.ci === ci && w.q !== null) matchedQuads.add(w.q); });
+
+    for (let q = 0; q < 4; q++) {
+      const lx = gx + (q % 2) * CELL / 2 + CELL / 4;
+      const ly = gy + Math.floor(q / 2) * CELL / 2 + CELL / 4;
+      const base = t.d.l[RS[r][q]];
+      const eff = gv(base, r);
+      const inWord = matchedQuads.has(q);
+      const pk = ci + '_' + q;
+      const pulse = pulses[pk] || 0;
+
+      if (inWord || pulse > 0) {
+        const alpha = inWord ? 0.3 : pulse * 0.3;
+        C.fillStyle = d ? `rgba(93,202,165,${alpha})` : `rgba(15,110,86,${alpha})`;
+        rrC(C, gx + (q % 2) * CELL / 2 + 5, gy + Math.floor(q / 2) * CELL / 2 + 5, CELL / 2 - 10, CELL / 2 - 10, 5);
+        C.fill();
+        if (pulse > 0.05) {
+          C.strokeStyle = d ? `rgba(93,202,165,${pulse * 0.7})` : `rgba(15,110,86,${pulse * 0.7})`;
+          C.lineWidth = 2 * pulse;
+          rrC(C, gx + (q % 2) * CELL / 2 + 4, gy + Math.floor(q / 2) * CELL / 2 + 4, CELL / 2 - 8, CELL / 2 - 8, 6);
+          C.stroke();
+        }
+      }
+
+      if (eff) {
+        C.fillStyle = inWord ? (d ? '#5dcaa5' : '#0f6e56') : (d ? '#d3d1c7' : '#2c2c2a');
+        C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
+        C.textAlign = 'center'; C.textBaseline = 'middle';
+        C.fillText(eff, lx, ly);
+        if (eff !== base) {
+          C.fillStyle = d ? 'rgba(93,202,165,0.9)' : 'rgba(15,110,86,0.8)';
+          C.beginPath();
+          C.arc(gx + (q % 2) * CELL / 2 + CELL / 2 - 9, gy + Math.floor(q / 2) * CELL / 2 + 10, 3.5, 0, Math.PI * 2);
+          C.fill();
+        }
+      } else {
+        // Invalid at this rotation
+        C.fillStyle = d ? 'rgba(160,160,160,0.18)' : 'rgba(0,0,0,0.09)';
+        C.font = `400 ${Math.round(CELL * 0.21)}px 'Courier New', monospace`;
+        C.textAlign = 'center'; C.textBaseline = 'middle';
+        C.fillText(base, lx, ly);
+        C.strokeStyle = d ? 'rgba(240,149,149,0.5)' : 'rgba(163,45,45,0.38)';
+        C.lineWidth = 1.5;
+        const s = CELL * 0.08;
+        C.beginPath();
+        C.moveTo(lx - s, ly - s); C.lineTo(lx + s, ly + s);
+        C.moveTo(lx + s, ly - s); C.lineTo(lx - s, ly + s);
+        C.stroke();
+      }
+    }
+  }
+}
+
+function draw() {
+  const d = dk();
+  C.clearRect(0, 0, SZ, SZ);
+  for (let i = 0; i < GR * GR; i++) {
+    const { x, y } = txy(i);
+    C.fillStyle = d ? '#2c2c2a' : '#f1efe8';
+    rr(x + 1, y + 1, CELL - 2, CELL - 2, 11); C.fill();
+    C.strokeStyle = d ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+    C.lineWidth = 0.5; rr(x + 0.5, y + 0.5, CELL - 1, CELL - 1, 11); C.stroke();
+    if (!G[i]) {
+      C.fillStyle = d ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+      C.font = '22px sans-serif'; C.textAlign = 'center'; C.textBaseline = 'middle';
+      C.fillText('+', x + CELL / 2, y + CELL / 2);
+    } else {
+      drawTile(G[i], i);
+    }
+  }
+}
+
+function startAnim() { if (animReq) return; animReq = requestAnimationFrame(animLoop); }
+function animLoop() {
+  let going = false;
+  for (const k in pulses) { pulses[k] *= 0.80; if (pulses[k] < 0.01) delete pulses[k]; else going = true; }
+  for (let i = 0; i < GR * GR; i++) {
+    const t = G[i]; if (!t) continue;
+    const diff = t.ta - t.ca;
+    if (Math.abs(diff) > 0.005) { t.ca += diff * 0.13; going = true; }
+    else t.ca = t.ta;
+  }
+  draw();
+  animReq = going ? requestAnimationFrame(animLoop) : null;
+}
+
+function rot(ci, dir) { if (!G[ci]) return; G[ci].ta += dir * Math.PI / 2; startAnim(); }
+
+// ─── Canvas click ─────────────────────────────────────────────────────────────
+gc.addEventListener('click', e => {
+  const rc = gc.getBoundingClientRect();
+  const px = (e.clientX - rc.left) * (SZ / rc.width);
+  const py = (e.clientY - rc.top) * (SZ / rc.height);
+  const col = Math.floor(px / CELL), row = Math.floor(py / CELL);
+  if (col < 0 || col >= GR || row < 0 || row >= GR) return;
+  const ci = row * GR + col;
+  if (sH !== null && !G[ci]) {
+    G[ci] = { d: TH[sH], ca: 0, ta: 0 };
+    TH.splice(sH, 1); sH = null; sC = null;
+    resolveWord();
+    rHand(); draw();
+  } else if (G[ci]) {
+    sC = (sC === ci) ? null : ci; draw();
+  } else {
+    sC = null; draw();
+  }
+});
+
+// ─── Keyboard ─────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'Enter') { e.preventDefault(); submit(); return; }
+  if (e.key === 'Escape') { clearWord(); setSt('', ''); return; }
+  if (e.key === 'Backspace') { e.preventDefault(); removeLetter(); return; }
+  if (e.key === 'r' && sC !== null && wordSeq.length === 0) { rot(sC, 1); return; }
+  if (e.key.length === 1) { e.preventDefault(); addLetter(e.key); }
+});
+
+// ─── Buttons ──────────────────────────────────────────────────────────────────
+document.getElementById('brcw').onclick = () => { if (sC !== null) rot(sC, 1); };
+document.getElementById('brccw').onclick = () => { if (sC !== null) rot(sC, -1); };
+document.getElementById('bsub').onclick = submit;
+document.getElementById('bclr').onclick = () => { clearWord(); setSt('', ''); };
+
+// ─── Hand tiles ───────────────────────────────────────────────────────────────
+function rHand() {
+  const hc = document.getElementById('hand');
+  hc.innerHTML = '';
+  const d = dk();
+  TH.forEach((def, i) => {
+    const cv = document.createElement('canvas');
+    const hs = 76;
+    cv.width = hs * dpr; cv.height = hs * dpr;
+    cv.style.cssText = `width:${hs}px;height:${hs}px;cursor:pointer;border-radius:7px;display:block;` +
+      `border:${i === sH ? '2px solid #534ab7' : '0.5px solid rgba(128,128,128,0.28)'}`;
+    const hx = cv.getContext('2d'); hx.scale(dpr, dpr);
+    hx.fillStyle = def.c + (d ? '55' : 'aa');
+    rrC(hx, 2, 2, hs - 4, hs - 4, 7); hx.fill();
+    hx.strokeStyle = d ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'; hx.lineWidth = 0.5;
+    hx.beginPath(); hx.moveTo(hs / 2, 4); hx.lineTo(hs / 2, hs - 4);
+    hx.moveTo(4, hs / 2); hx.lineTo(hs - 4, hs / 2); hx.stroke();
+    def.l.forEach((l, q) => {
+      hx.fillStyle = d ? '#d3d1c7' : '#2c2c2a';
+      hx.font = `700 16px 'Courier New', monospace`;
+      hx.textAlign = 'center'; hx.textBaseline = 'middle';
+      hx.fillText(l, (q % 2) * hs / 2 + hs / 4, Math.floor(q / 2) * hs / 2 + hs / 4);
+    });
+    hx.fillStyle = d ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.42)';
+    hx.beginPath(); hx.arc(10, 10, 3.5, 0, Math.PI * 2); hx.fill();
+    cv.addEventListener('click', () => { sH = i; sC = null; rHand(); draw(); });
+    hc.appendChild(cv);
+  });
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadWords().then(() => { rHand(); draw(); });
+</script>
+</body>
+</html>
