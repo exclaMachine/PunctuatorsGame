@@ -50,8 +50,10 @@ Each letter maps to what it reads as at `[0°, 90°CW, 180°, 270°CW]`. `null` 
 | m    | w    |
 | M    | W    |
 | n    | u    |
+| H    | H    |
 | N    | N    |
 | O    | O    |
+| Z    | Z    |
 | s    | s    |
 | t    | t    |
 | x    | x    |
