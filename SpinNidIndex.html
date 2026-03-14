@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPIN NIDS</title>
+<title>SPIN NIdS</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -198,8 +198,8 @@
   <span>Loading word list…</span>
 </div>
 
-<h1>Ambigram Word Game</h1>
-<p class="subtitle">Rotate tiles to transform letters — type words from the grid</p>
+<h1>SPIN NIdS: An Ambigram Word Game</h1>
+<p class="subtitle">Rotate tiles to transform letters — select words from the grid</p>
 
 <div class="game-wrap">
   <div class="left">
@@ -214,14 +214,14 @@
 
   <div class="right">
     <div class="score" id="score">Score: 0</div>
-    <div class="word-bar" id="wb"><span class="placeholder">start typing…</span></div>
+    <div class="word-bar" id="wb"><span class="placeholder">start selecting letters…</span></div>
     <div class="chips" id="chips"></div>
 
     <div class="mode-section">
       <h3>Difficulty mode</h3>
       <label class="mode-option">
         <input type="radio" name="mode" value="free" checked>
-        <div><div class="label">Free (beginner)</div><div class="desc">Any letter from anywhere on the board</div></div>
+        <div><div class="label">Any letter (beginner)</div><div class="desc">Any letter from anywhere on the board</div></div>
       </label>
       <label class="mode-option">
         <input type="radio" name="mode" value="one-per-tile">
@@ -229,7 +229,7 @@
       </label>
       <label class="mode-option">
         <input type="radio" name="mode" value="adjacent">
-        <div><div class="label">Adjacent (classic)</div><div class="desc">Each letter must touch the previous one</div></div>
+        <div><div class="label">Adjacent</div><div class="desc">Each letter must touch the previous one</div></div>
       </label>
       <label class="mode-option">
         <input type="radio" name="mode" value="destroy">
@@ -240,7 +240,7 @@
     <div class="ref" id="ref">
       <b>Controls</b>
       <span id="ref-input"></span>
-      Tap tile centre <kbd>↻</kbd> to rotate Clockwise<br>
+      Tap tile center <kbd>↻</kbd> to rotate Clockwise<br>
       <b>Letter colours</b>
       <span style="color:var(--green)">green</span> = found in grid ·
       <span style="color:var(--red)">red</span> = not on board<br>
@@ -501,7 +501,7 @@ function clearWord() {
 function updateWordDisplay() {
   const wb = document.getElementById('wb');
   if (!wordSeq.length) {
-    wb.innerHTML = '<span class="placeholder">start typing…</span>';
+    wb.innerHTML = '<span class="placeholder">start selecting letters…</span>';
     return;
   }
   wb.innerHTML = wordSeq.map(w =>
@@ -568,17 +568,6 @@ function drawTile(t, ci) {
   C.moveTo(0, -CELL / 2 + 9); C.lineTo(0, CELL / 2 - 9);
   C.moveTo(-CELL / 2 + 9, 0); C.lineTo(CELL / 2 - 9, 0); C.stroke();
 
-  // Origin dot
-  C.fillStyle = d ? 'rgba(255,255,255,0.88)' : 'rgba(20,20,20,0.68)';
-  C.beginPath(); C.arc(-CELL / 2 + 12, -CELL / 2 + 12, 5.5, 0, Math.PI * 2); C.fill();
-  [
-    [CELL / 2 - 12, -CELL / 2 + 12],
-    [-CELL / 2 + 12, CELL / 2 - 12],
-    [CELL / 2 - 12, CELL / 2 - 12]
-  ].forEach(([dx, dy]) => {
-    C.fillStyle = d ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
-    C.beginPath(); C.arc(dx, dy, 3, 0, Math.PI * 2); C.fill();
-  });
 
   // Spinning: show base letters with tile
   if (!snapped) {
