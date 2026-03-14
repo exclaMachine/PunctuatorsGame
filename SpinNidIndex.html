@@ -391,6 +391,8 @@ function rr(x, y, w, h, r) { rrC(C, x, y, w, h, r); }
 // ─── Game state ───────────────────────────────────────────────────────────────
 let G = new Array(GR * GR).fill(null);
 let animReq = null;
+let flipAnim = -1;   // 0..1 progress, -1 = idle
+let flipApplied = false;
 let FW = [], score = 0;
 let wordSeq = []; // [{letter, ci, q}]
 let pulses = {};  // "ci_q" -> 0..1
@@ -666,6 +668,14 @@ function drawTile(t, ci) {
 function draw() {
   const d = dk();
   C.clearRect(0, 0, SZ, SZ);
+  C.save();
+  if (flipAnim >= 0) {
+    const scaleX = Math.abs(Math.cos(flipAnim * Math.PI));
+    const scaleY = 1 - 0.07 * Math.sin(flipAnim * Math.PI);
+    C.translate(SZ / 2, SZ / 2);
+    C.scale(scaleX, scaleY);
+    C.translate(-SZ / 2, -SZ / 2);
+  }
   for (let i = 0; i < GR * GR; i++) {
     const { x, y } = txy(i);
     C.fillStyle = d ? '#2c2c2a' : '#f1efe8';
@@ -680,6 +690,7 @@ function draw() {
       drawTile(G[i], i);
     }
   }
+  C.restore();
 }
 
 function startAnim() { if (animReq) return; animReq = requestAnimationFrame(animLoop); }
@@ -691,6 +702,11 @@ function animLoop() {
     const diff = t.ta - t.ca;
     if (Math.abs(diff) > 0.005) { t.ca += diff * 0.13; going = true; }
     else t.ca = t.ta;
+  }
+  if (flipAnim >= 0) {
+    flipAnim = Math.min(flipAnim + 0.045, 1);
+    if (flipAnim >= 0.5 && !flipApplied) { doFlipH(); flipApplied = true; }
+    if (flipAnim < 1) going = true; else flipAnim = -1;
   }
   draw();
   animReq = going ? requestAnimationFrame(animLoop) : null;
@@ -709,20 +725,26 @@ const MH = {
   // null = no valid mirror reading (renders as blank)
 };
 
-function flipH() {
-  clearWord();
+function doFlipH() {
   const newG = new Array(GR * GR).fill(null);
   for (let row = 0; row < GR; row++) {
     for (let col = 0; col < GR; col++) {
       const t = G[row * GR + col];
       if (!t) continue;
       const newCi = row * GR + (GR - 1 - col);
-      // d.l is untouched — mirrored flag + negated angle handle everything at render time
       newG[newCi] = { d: t.d, ca: -t.ca, ta: -t.ta, destroyed: t.destroyed, mirrored: !t.mirrored };
     }
   }
   G = newG;
-  resolveWord(); draw();
+  resolveWord();
+}
+
+function flipH() {
+  if (flipAnim >= 0) return; // already flipping
+  clearWord();
+  flipAnim = 0;
+  flipApplied = false;
+  startAnim();
 }
 document.getElementById('bflip').onclick = flipH;
 
