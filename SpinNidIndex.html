@@ -55,10 +55,20 @@
   }
 
   h1 {
-    font-size: 22px;
-    font-weight: 500;
-    margin-bottom: 4px;
-    letter-spacing: -0.3px;
+    font-size: clamp(28px, 8vw, 42px);
+    font-weight: 700;
+    margin-bottom: 2px;
+    letter-spacing: 1px;
+    line-height: 1.1;
+  }
+  h1 .si { font-family: Georgia, 'Times New Roman', serif; }
+
+  h2 {
+    font-size: clamp(12px, 3.5vw, 16px);
+    font-weight: 400;
+    color: var(--text2);
+    margin-bottom: 6px;
+    letter-spacing: 0.2px;
   }
 
   .subtitle {
@@ -198,8 +208,9 @@
   <span>Loading word list…</span>
 </div>
 
-<h1>SPIN NIdS: An Ambigram Word Game</h1>
-<p class="subtitle">Rotate tiles to transform letters — select words from the grid</p>
+<h1>SP<span class="si">I</span>N N<span class="si">I</span>dS</h1>
+<h2>An Ambigram Word Game</h2>
+<p class="subtitle">Spin tiles to transform letters & make words from the grid!</p>
 
 <div class="game-wrap">
   <div class="left">
@@ -240,7 +251,7 @@
     <div class="ref" id="ref">
       <b>Controls</b>
       <span id="ref-input"></span>
-      Tap tile center <kbd>↻</kbd> to rotate Clockwise<br>
+      Tap center <kbd>↻</kbd> to rotate clockwise<br>
       <b>Letter colours</b>
       <span style="color:var(--green)">green</span> = found in grid ·
       <span style="color:var(--red)">red</span> = not on board<br>
