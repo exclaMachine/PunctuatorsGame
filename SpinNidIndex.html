@@ -204,12 +204,9 @@
 <div class="game-wrap">
   <div class="left">
     <canvas id="gc"></canvas>
-    <div class="hand-label">Tile hand — click to select, then click empty cell to place</div>
-    <div class="hand-row" id="hand"></div>
     <div class="ctrls">
       <button id="bsub">Enter ✓</button>
       <button id="bclr">⌫ Clear</button>
-      <button id="bplace">⊞ Place All</button>
     </div>
     <div class="status" id="st"></div>
   </div>
@@ -381,8 +378,7 @@ function rr(x, y, w, h, r) { rrC(C, x, y, w, h, r); }
 
 // ─── Game state ───────────────────────────────────────────────────────────────
 let G = new Array(GR * GR).fill(null);
-let TH = [...TILE_DEFS];
-let sH = null, animReq = null;
+let animReq = null;
 let FW = [], score = 0;
 let wordSeq = []; // [{letter, ci, q}]
 let pulses = {};  // "ci_q" -> 0..1
@@ -521,9 +517,7 @@ function submit() {
       if (w.ci === null || !G[w.ci]) return;
       G[w.ci].destroyed.add(w.q);
       if (G[w.ci].destroyed.size === 4) {
-        G[w.ci] = null;
-        TH.push(makeSingleTileDef());
-        rHand();
+        G[w.ci] = { d: makeSingleTileDef(), ca: 0, ta: 0, destroyed: new Set() };
       }
     });
   }
@@ -699,12 +693,7 @@ gc.addEventListener('click', e => {
   const col = Math.floor(px / CELL), row = Math.floor(py / CELL);
   if (col < 0 || col >= GR || row < 0 || row >= GR) return;
   const ci = row * GR + col;
-  if (sH !== null && !G[ci]) {
-    G[ci] = { d: TH[sH], ca: 0, ta: 0, destroyed: new Set() };
-    TH.splice(sH, 1); sH = null;
-    resolveWord();
-    rHand(); draw();
-  } else if (G[ci]) {
+  if (G[ci]) {
     const { x: tx, y: ty } = txy(ci);
     const cx = tx + CELL / 2, cy = ty + CELL / 2;
     if (Math.hypot(px - cx, py - cy) <= 18) {
@@ -733,54 +722,14 @@ document.addEventListener('keydown', e => {
 document.getElementById('bsub').onclick = submit;
 document.getElementById('bclr').onclick = () => { clearWord(); setSt('', ''); };
 
-function placeAll() {
-  const emptyCells = [];
-  for (let i = 0; i < GR * GR; i++) { if (!G[i]) emptyCells.push(i); }
-  // Shuffle empty cells
-  for (let i = emptyCells.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [emptyCells[i], emptyCells[j]] = [emptyCells[j], emptyCells[i]];
-  }
-  TH.forEach((def, i) => {
-    if (i < emptyCells.length) G[emptyCells[i]] = { d: def, ca: 0, ta: 0, destroyed: new Set() };
-  });
-  TH = [];
-  sH = null; sC = null;
-  resolveWord(); rHand(); draw();
-}
-document.getElementById('bplace').onclick = placeAll;
-
-// ─── Hand tiles ───────────────────────────────────────────────────────────────
-function rHand() {
-  const hc = document.getElementById('hand');
-  hc.innerHTML = '';
-  const d = dk();
-  TH.forEach((def, i) => {
-    const cv = document.createElement('canvas');
-    const hs = 76;
-    cv.width = hs * dpr; cv.height = hs * dpr;
-    cv.style.cssText = `width:${hs}px;height:${hs}px;cursor:pointer;border-radius:7px;display:block;` +
-      `border:${i === sH ? '2px solid #534ab7' : '0.5px solid rgba(128,128,128,0.28)'}`;
-    const hx = cv.getContext('2d'); hx.scale(dpr, dpr);
-    hx.fillStyle = def.c + (d ? '55' : 'aa');
-    rrC(hx, 2, 2, hs - 4, hs - 4, 7); hx.fill();
-    hx.strokeStyle = d ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'; hx.lineWidth = 0.5;
-    hx.beginPath(); hx.moveTo(hs / 2, 4); hx.lineTo(hs / 2, hs - 4);
-    hx.moveTo(4, hs / 2); hx.lineTo(hs - 4, hs / 2); hx.stroke();
-    def.l.forEach((l, q) => {
-      hx.fillStyle = d ? '#d3d1c7' : '#2c2c2a';
-      hx.font = `700 16px 'Courier New', monospace`;
-      hx.textAlign = 'center'; hx.textBaseline = 'middle';
-      hx.fillText(l, (q % 2) * hs / 2 + hs / 4, Math.floor(q / 2) * hs / 2 + hs / 4);
-    });
-    hx.fillStyle = d ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.42)';
-    hx.beginPath(); hx.arc(10, 10, 3.5, 0, Math.PI * 2); hx.fill();
-    cv.addEventListener('click', () => { sH = i; sC = null; rHand(); draw(); });
-    hc.appendChild(cv);
-  });
-}
-
 // ─── Init ─────────────────────────────────────────────────────────────────────
+function initBoard() {
+  const positions = [...Array(GR * GR).keys()].sort(() => Math.random() - 0.5);
+  TILE_DEFS.forEach((def, i) => {
+    G[positions[i]] = { d: def, ca: 0, ta: 0, destroyed: new Set() };
+  });
+}
+
 if (isTouch) {
   document.getElementById('ref-input').innerHTML =
     'Tap a letter to add it to your word<br>' +
@@ -794,7 +743,8 @@ if (isTouch) {
     '<kbd>Enter</kbd> submit · <kbd>Esc</kbd> clear<br>';
 }
 
-loadWords().then(() => { rHand(); draw(); });
+initBoard();
+loadWords().then(() => { draw(); });
 </script>
 </body>
 </html>
