@@ -207,8 +207,6 @@
     <div class="hand-label">Tile hand — click to select, then click empty cell to place</div>
     <div class="hand-row" id="hand"></div>
     <div class="ctrls">
-      <button id="brcw">↻ Rotate CW</button>
-      <button id="brccw">↺ Rotate CCW</button>
       <button id="bsub">Enter ✓</button>
       <button id="bclr">⌫ Clear</button>
       <button id="bplace">⊞ Place All</button>
@@ -246,7 +244,7 @@
       <kbd>Type</kbd> letters to build a word<br>
       <kbd>Backspace</kbd> undo last letter<br>
       <kbd>Enter</kbd> submit · <kbd>Esc</kbd> clear<br>
-      Click tile → select · <kbd>R</kbd> rotate CW<br>
+      Tap tile centre <kbd>↻</kbd> to rotate Clockwise<br>
       <b>Letter colours</b>
       <span style="color:var(--green)">green</span> = found in grid ·
       <span style="color:var(--red)">red</span> = not on board<br>
@@ -386,7 +384,7 @@ function rr(x, y, w, h, r) { rrC(C, x, y, w, h, r); }
 // ─── Game state ───────────────────────────────────────────────────────────────
 let G = new Array(GR * GR).fill(null);
 let TH = [...TILE_DEFS];
-let sH = null, sC = null, animReq = null;
+let sH = null, animReq = null;
 let FW = [], score = 0;
 let wordSeq = []; // [{letter, ci, q}]
 let pulses = {};  // "ci_q" -> 0..1
@@ -446,6 +444,25 @@ function resolveWord() {
   });
   wordSeq = newSeq;
   updateWordDisplay();
+}
+
+function addQuad(ci, q) {
+  const t = G[ci];
+  if (!t || Math.abs(t.ca - t.ta) > 0.05) return; // still spinning
+  if (t.destroyed && t.destroyed.has(q)) return;
+  const letter = geff(ci, q);
+  if (!letter) return; // invalid rotation
+  const usedQ = usedKeys();
+  if (usedQ.has(ci + '_' + q)) return; // already in word
+  if (diffMode === 'one-per-tile' && usedTiles().has(ci)) return;
+  if (diffMode === 'adjacent' && wordSeq.length > 0) {
+    const prev = wordSeq[wordSeq.length - 1];
+    if (prev.ci !== null && !adjQuads(prev, { ci, q })) return;
+  }
+  wordSeq.push({ letter, ci, q });
+  triggerPulse(ci, q);
+  updateWordDisplay();
+  draw();
 }
 
 function addLetter(letter) {
@@ -532,11 +549,6 @@ function drawTile(t, ci) {
   const a = t.ca, r = grs(t);
   const snapped = Math.abs(a - t.ta) < 0.009;
   const d = dk();
-
-  if (ci === sC) {
-    C.strokeStyle = d ? '#afa9ec' : '#534ab7'; C.lineWidth = 2.5;
-    rr(gx + 1, gy + 1, CELL - 2, CELL - 2, 11); C.stroke();
-  }
 
   C.save(); C.translate(ccx, ccy); C.rotate(a);
 
@@ -635,6 +647,15 @@ function drawTile(t, ci) {
       }
     }
   }
+
+  // Centre rotate button (always drawn on top, unrotated)
+  const btnR = 16;
+  C.fillStyle = d ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.10)';
+  C.beginPath(); C.arc(ccx, ccy, btnR, 0, Math.PI * 2); C.fill();
+  C.fillStyle = d ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)';
+  C.font = `${btnR + 2}px sans-serif`;
+  C.textAlign = 'center'; C.textBaseline = 'middle';
+  C.fillText('↻', ccx, ccy + 1);
 }
 
 function draw() {
@@ -682,13 +703,20 @@ gc.addEventListener('click', e => {
   const ci = row * GR + col;
   if (sH !== null && !G[ci]) {
     G[ci] = { d: TH[sH], ca: 0, ta: 0, destroyed: new Set() };
-    TH.splice(sH, 1); sH = null; sC = null;
+    TH.splice(sH, 1); sH = null;
     resolveWord();
     rHand(); draw();
   } else if (G[ci]) {
-    sC = (sC === ci) ? null : ci; draw();
-  } else {
-    sC = null; draw();
+    const { x: tx, y: ty } = txy(ci);
+    const cx = tx + CELL / 2, cy = ty + CELL / 2;
+    if (Math.hypot(px - cx, py - cy) <= 18) {
+      rot(ci, 1);
+    } else {
+      // Determine which quadrant was tapped
+      const qx = px - tx, qy = py - ty;
+      const q = (qx >= CELL / 2 ? 1 : 0) + (qy >= CELL / 2 ? 2 : 0);
+      addQuad(ci, q);
+    }
   }
 });
 
@@ -698,13 +726,11 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); submit(); return; }
   if (e.key === 'Escape') { clearWord(); setSt('', ''); return; }
   if (e.key === 'Backspace') { e.preventDefault(); removeLetter(); return; }
-  if (e.key === 'r' && sC !== null && wordSeq.length === 0) { rot(sC, 1); return; }
+
   if (e.key.length === 1) { e.preventDefault(); addLetter(e.key); }
 });
 
 // ─── Buttons ──────────────────────────────────────────────────────────────────
-document.getElementById('brcw').onclick = () => { if (sC !== null) rot(sC, 1); };
-document.getElementById('brccw').onclick = () => { if (sC !== null) rot(sC, -1); };
 document.getElementById('bsub').onclick = submit;
 document.getElementById('bclr').onclick = () => { clearWord(); setSt('', ''); };
 
