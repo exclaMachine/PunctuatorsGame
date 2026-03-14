@@ -291,7 +291,7 @@ const AM = {
   'l': ['l', null, 'l', null],
   'm': ['m', null, 'w', 'E'],   'w': ['w', 'E',  'm', 'B'],
   'n': ['n', 's',  'u', 's'],   's': ['s', 'n', 's', 'n'],
-  'o': ['o', 'o',  null, null],
+  'o': ['o', 'o',  'o', 'o'],
   't': ['t', 't',  't', 't'],   'x': ['x', 'x',  'x', 'x'],
   'z': ['z', null, 'z', null],
   'A': ['A', null, 'V', null],  'V': ['V', null, 'A', null],
@@ -302,9 +302,9 @@ const AM = {
   'L': ['L', 'r',  'T', null],  'T': ['T', null, 'L', null],
   'M': ['M', null, 'W', null],  'W': ['W', null, 'M', null],
   'N': ['N', 'Z',  'N', 'Z'],   'Z': ['Z', 'N',  'Z',  'N'],
-  'O': ['O', null, 'O', 'O'],
+  'O': ['O', 'O', 'O', 'O'],
   'R': ['R', null, 'y', null],
-  'Y': ['Y', 'Y',  null, 'Y'],
+  'Y': ['Y', 'Y',  'Y', 'Y'],
 };
 
 // Quad slot remapping after N CW 90° steps
@@ -632,14 +632,18 @@ function drawTile(t, ci) {
         C.textAlign = 'center'; C.textBaseline = 'middle';
         C.fillText(eff, lx, ly);
       } else if (base) {
-        // Invalid at this rotation/mirror — show faded base + red X
-        C.fillStyle = d ? 'rgba(160,160,160,0.18)' : 'rgba(0,0,0,0.09)';
-        C.font = `400 ${Math.round(CELL * 0.21)}px 'Courier New', monospace`;
+        // Invalid — draw base letter at its actual rotated orientation so user sees why
+        C.save();
+        C.translate(lx, ly);
+        C.rotate(r * Math.PI / 2);
+        C.fillStyle = d ? 'rgba(211,209,199,0.55)' : 'rgba(44,44,42,0.45)';
+        C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
         C.textAlign = 'center'; C.textBaseline = 'middle';
-        C.fillText(base, lx, ly);
-        C.strokeStyle = d ? 'rgba(240,149,149,0.5)' : 'rgba(163,45,45,0.38)';
-        C.lineWidth = 1.5;
-        const s = CELL * 0.08;
+        C.fillText(base, 0, 0);
+        C.restore();
+        C.strokeStyle = d ? 'rgba(240,149,149,0.9)' : 'rgba(163,45,45,0.8)';
+        C.lineWidth = 2;
+        const s = CELL * 0.09;
         C.beginPath();
         C.moveTo(lx - s, ly - s); C.lineTo(lx + s, ly + s);
         C.moveTo(lx + s, ly - s); C.lineTo(lx - s, ly + s);
