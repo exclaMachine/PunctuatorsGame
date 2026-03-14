@@ -243,7 +243,6 @@
       <b>Letter colours</b>
       <span style="color:var(--green)">green</span> = found in grid ·
       <span style="color:var(--red)">red</span> = not on board<br>
-      <span style="color:var(--green)">● pip</span> = transformed by rotation
     </div>
   </div>
 </div>
@@ -617,12 +616,6 @@ function drawTile(t, ci) {
         C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
         C.textAlign = 'center'; C.textBaseline = 'middle';
         C.fillText(eff, lx, ly);
-        if (eff !== base) {
-          C.fillStyle = d ? 'rgba(93,202,165,0.9)' : 'rgba(15,110,86,0.8)';
-          C.beginPath();
-          C.arc(gx + (q % 2) * CELL / 2 + CELL / 2 - 9, gy + Math.floor(q / 2) * CELL / 2 + 10, 3.5, 0, Math.PI * 2);
-          C.fill();
-        }
       } else {
         // Invalid at this rotation
         C.fillStyle = d ? 'rgba(160,160,160,0.18)' : 'rgba(0,0,0,0.09)';
