@@ -636,6 +636,7 @@ function drawTile(t, ci) {
         C.save();
         C.translate(lx, ly);
         C.rotate(r * Math.PI / 2);
+        if (t.mirrored) C.scale(-1, 1);
         C.fillStyle = d ? 'rgba(211,209,199,0.55)' : 'rgba(44,44,42,0.45)';
         C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
         C.textAlign = 'center'; C.textBaseline = 'middle';
