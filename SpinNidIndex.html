@@ -207,6 +207,7 @@
     <div class="ctrls">
       <button id="bsub">Enter ✓</button>
       <button id="bclr">⌫ Clear</button>
+      <button id="bflip">⟷ Flip</button>
     </div>
     <div class="status" id="st"></div>
   </div>
@@ -358,10 +359,22 @@ function gv(base, rot) {
   return m[((rot % 4) + 4) % 4];
 }
 function grs(t) { return (((Math.round(t.ta / (Math.PI / 2))) % 4) + 4) % 4; }
+
+// Maps visual quad position q → original base slot in d.l, accounting for rotation + mirror
+const MIRROR_SLOT = [1, 0, 3, 2]; // TL↔TR, BL↔BR
+function baseSlot(t, q) {
+  let s = RS[grs(t)][q];
+  if (t.mirrored) s = MIRROR_SLOT[s];
+  return s;
+}
+
 function geff(ci, q) {
   const t = G[ci]; if (!t) return null;
-  if (t.destroyed && t.destroyed.has(RS[grs(t)][q])) return null;
-  return gv(t.d.l[RS[grs(t)][q]], grs(t));
+  const s = baseSlot(t, q);
+  if (t.destroyed && t.destroyed.has(s)) return null;
+  const base = t.d.l[s];
+  const mBase = t.mirrored ? (MH.hasOwnProperty(base) ? MH[base] : null) : base;
+  return gv(mBase, grs(t));
 }
 function txy(i) { return { x: (i % GR) * CELL, y: Math.floor(i / GR) * CELL }; }
 
@@ -416,7 +429,7 @@ function findQuad(letter, usedQ, usedT, prevItem) {
     if (diffMode === 'one-per-tile' && usedT.has(ci)) continue;
     for (let q = 0; q < 4; q++) {
       if (usedQ.has(ci + '_' + q)) continue;
-      if (G[ci].destroyed && G[ci].destroyed.has(RS[grs(G[ci])][q])) continue;
+      if (G[ci].destroyed && G[ci].destroyed.has(baseSlot(G[ci], q))) continue;
       if (geff(ci, q) !== letter) continue;
       if (diffMode === 'adjacent' && prevItem && !adjQuads(prevItem, { ci, q })) continue;
       return { ci, q };
@@ -442,7 +455,7 @@ function resolveWord() {
 function addQuad(ci, q) {
   const t = G[ci];
   if (!t || Math.abs(t.ca - t.ta) > 0.05) return; // still spinning
-  if (t.destroyed && t.destroyed.has(RS[grs(t)][q])) return;
+  if (t.destroyed && t.destroyed.has(baseSlot(t, q))) return;
   const letter = geff(ci, q);
   if (!letter) return; // invalid rotation
   const usedQ = usedKeys();
@@ -514,9 +527,9 @@ function submit() {
   if (diffMode === 'destroy') {
     wordSeq.forEach(w => {
       if (w.ci === null || !G[w.ci]) return;
-      G[w.ci].destroyed.add(RS[grs(G[w.ci])][w.q]);
+      G[w.ci].destroyed.add(baseSlot(G[w.ci], w.q));
       if (G[w.ci].destroyed.size === 4) {
-        G[w.ci] = { d: makeSingleTileDef(), ca: 0, ta: 0, destroyed: new Set() };
+        G[w.ci] = { d: makeSingleTileDef(), ca: 0, ta: 0, destroyed: new Set(), mirrored: false };
       }
     });
   }
@@ -585,15 +598,17 @@ function drawTile(t, ci) {
     for (let q = 0; q < 4; q++) {
       const lx = gx + (q % 2) * CELL / 2 + CELL / 4;
       const ly = gy + Math.floor(q / 2) * CELL / 2 + CELL / 4;
-      if (t.destroyed && t.destroyed.has(RS[r][q])) {
+      const s = baseSlot(t, q);
+      if (t.destroyed && t.destroyed.has(s)) {
         // Destroyed quad — draw a burned-out blank
         C.fillStyle = d ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)';
         rrC(C, gx + (q % 2) * CELL / 2 + 5, gy + Math.floor(q / 2) * CELL / 2 + 5, CELL / 2 - 10, CELL / 2 - 10, 5);
         C.fill();
         continue;
       }
-      const base = t.d.l[RS[r][q]];
-      const eff = gv(base, r);
+      const base = t.d.l[s];
+      const mBase = t.mirrored ? (MH.hasOwnProperty(base) ? MH[base] : null) : base;
+      const eff = gv(mBase, r);
       const inWord = matchedQuads.has(q);
       const pk = ci + '_' + q;
       const pulse = pulses[pk] || 0;
@@ -616,8 +631,8 @@ function drawTile(t, ci) {
         C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
         C.textAlign = 'center'; C.textBaseline = 'middle';
         C.fillText(eff, lx, ly);
-      } else {
-        // Invalid at this rotation
+      } else if (base) {
+        // Invalid at this rotation/mirror — show faded base + red X
         C.fillStyle = d ? 'rgba(160,160,160,0.18)' : 'rgba(0,0,0,0.09)';
         C.font = `400 ${Math.round(CELL * 0.21)}px 'Courier New', monospace`;
         C.textAlign = 'center'; C.textBaseline = 'middle';
@@ -678,6 +693,34 @@ function animLoop() {
 
 function rot(ci, dir) { if (!G[ci]) return; G[ci].ta += dir * Math.PI / 2; startAnim(); }
 
+// ─── Horizontal mirror (left-right flip) ──────────────────────────────────────
+// Letters that are symmetric or transform when reflected across vertical axis
+const MH = {
+  // Symmetric — read the same mirrored
+  'A':'A', 'H':'H', 'I':'I', 'M':'M', 'O':'O', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y',
+  'i':'i', 'l':'l', 'm':'m', 'o':'o', 't':'t', 'u':'u', 'v':'v', 'w':'w', 'x':'x',
+  // Transform pairs
+  'b':'d', 'd':'b', 'p':'q', 'q':'p',
+  // null = no valid mirror reading (renders as blank)
+};
+
+function flipH() {
+  clearWord();
+  const newG = new Array(GR * GR).fill(null);
+  for (let row = 0; row < GR; row++) {
+    for (let col = 0; col < GR; col++) {
+      const t = G[row * GR + col];
+      if (!t) continue;
+      const newCi = row * GR + (GR - 1 - col);
+      // d.l is untouched — mirrored flag + negated angle handle everything at render time
+      newG[newCi] = { d: t.d, ca: -t.ca, ta: -t.ta, destroyed: t.destroyed, mirrored: !t.mirrored };
+    }
+  }
+  G = newG;
+  resolveWord(); draw();
+}
+document.getElementById('bflip').onclick = flipH;
+
 // ─── Canvas click ─────────────────────────────────────────────────────────────
 gc.addEventListener('click', e => {
   const rc = gc.getBoundingClientRect();
@@ -719,7 +762,7 @@ document.getElementById('bclr').onclick = () => { clearWord(); setSt('', ''); };
 function initBoard() {
   const positions = [...Array(GR * GR).keys()].sort(() => Math.random() - 0.5);
   TILE_DEFS.forEach((def, i) => {
-    G[positions[i]] = { d: def, ca: 0, ta: 0, destroyed: new Set() };
+    G[positions[i]] = { d: def, ca: 0, ta: 0, destroyed: new Set(), mirrored: false };
   });
 }
 
