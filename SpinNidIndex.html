@@ -235,6 +235,10 @@
         <input type="radio" name="mode" value="adjacent">
         <div><div class="label">Adjacent (classic)</div><div class="desc">Each letter must touch the previous one</div></div>
       </label>
+      <label class="mode-option">
+        <input type="radio" name="mode" value="destroy">
+        <div><div class="label">Destroy</div><div class="desc">Used letters are destroyed — clear a tile to spawn a new one</div></div>
+      </label>
     </div>
 
     <div class="ref">
@@ -341,6 +345,15 @@ function makeTileDefs(count) {
   return defs;
 }
 
+function makeSingleTileDef() {
+  const l = [];
+  while (l.length < 4) {
+    const pick = AM_KEYS[Math.floor(Math.random() * AM_KEYS.length)];
+    if (!l.includes(pick)) l.push(pick);
+  }
+  return { l, c: TILE_COLORS[Math.floor(Math.random() * TILE_COLORS.length)] };
+}
+
 const TILE_DEFS = makeTileDefs(9);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -355,6 +368,7 @@ function gv(base, rot) {
 function grs(t) { return (((Math.round(t.ta / (Math.PI / 2))) % 4) + 4) % 4; }
 function geff(ci, q) {
   const t = G[ci]; if (!t) return null;
+  if (t.destroyed && t.destroyed.has(q)) return null;
   return gv(t.d.l[RS[grs(t)][q]], grs(t));
 }
 function txy(i) { return { x: (i % GR) * CELL, y: Math.floor(i / GR) * CELL }; }
@@ -411,6 +425,7 @@ function findQuad(letter, usedQ, usedT, prevItem) {
     if (diffMode === 'one-per-tile' && usedT.has(ci)) continue;
     for (let q = 0; q < 4; q++) {
       if (usedQ.has(ci + '_' + q)) continue;
+      if (G[ci].destroyed && G[ci].destroyed.has(q)) continue;
       if (geff(ci, q) !== letter) continue;
       if (diffMode === 'adjacent' && prevItem && !adjQuads(prevItem, { ci, q })) continue;
       return { ci, q };
@@ -486,6 +501,17 @@ function submit() {
   const chip = document.createElement('div');
   chip.className = 'chip'; chip.textContent = word;
   document.getElementById('chips').appendChild(chip);
+  if (diffMode === 'destroy') {
+    wordSeq.forEach(w => {
+      if (w.ci === null || !G[w.ci]) return;
+      G[w.ci].destroyed.add(w.q);
+      if (G[w.ci].destroyed.size === 4) {
+        G[w.ci] = null;
+        TH.push(makeSingleTileDef());
+        rHand();
+      }
+    });
+  }
   clearWord();
   setSt(`✓ "${word}" +${word.length * word.length} pts`, 'ok');
 }
@@ -556,6 +582,13 @@ function drawTile(t, ci) {
     for (let q = 0; q < 4; q++) {
       const lx = gx + (q % 2) * CELL / 2 + CELL / 4;
       const ly = gy + Math.floor(q / 2) * CELL / 2 + CELL / 4;
+      if (t.destroyed && t.destroyed.has(q)) {
+        // Destroyed quad — draw a burned-out blank
+        C.fillStyle = d ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)';
+        rrC(C, gx + (q % 2) * CELL / 2 + 5, gy + Math.floor(q / 2) * CELL / 2 + 5, CELL / 2 - 10, CELL / 2 - 10, 5);
+        C.fill();
+        continue;
+      }
       const base = t.d.l[RS[r][q]];
       const eff = gv(base, r);
       const inWord = matchedQuads.has(q);
@@ -648,7 +681,7 @@ gc.addEventListener('click', e => {
   if (col < 0 || col >= GR || row < 0 || row >= GR) return;
   const ci = row * GR + col;
   if (sH !== null && !G[ci]) {
-    G[ci] = { d: TH[sH], ca: 0, ta: 0 };
+    G[ci] = { d: TH[sH], ca: 0, ta: 0, destroyed: new Set() };
     TH.splice(sH, 1); sH = null; sC = null;
     resolveWord();
     rHand(); draw();
@@ -684,7 +717,7 @@ function placeAll() {
     [emptyCells[i], emptyCells[j]] = [emptyCells[j], emptyCells[i]];
   }
   TH.forEach((def, i) => {
-    if (i < emptyCells.length) G[emptyCells[i]] = { d: def, ca: 0, ta: 0 };
+    if (i < emptyCells.length) G[emptyCells[i]] = { d: def, ca: 0, ta: 0, destroyed: new Set() };
   });
   TH = [];
   sH = null; sC = null;
