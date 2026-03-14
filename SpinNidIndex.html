@@ -239,11 +239,9 @@
       </label>
     </div>
 
-    <div class="ref">
+    <div class="ref" id="ref">
       <b>Controls</b>
-      <kbd>Type</kbd> letters to build a word<br>
-      <kbd>Backspace</kbd> undo last letter<br>
-      <kbd>Enter</kbd> submit · <kbd>Esc</kbd> clear<br>
+      <span id="ref-input"></span>
       Tap tile centre <kbd>↻</kbd> to rotate Clockwise<br>
       <b>Letter colours</b>
       <span style="color:var(--green)">green</span> = found in grid ·
@@ -721,13 +719,14 @@ gc.addEventListener('click', e => {
 });
 
 // ─── Keyboard ─────────────────────────────────────────────────────────────────
+const isTouch = navigator.maxTouchPoints > 0;
+
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.key === 'Enter') { e.preventDefault(); submit(); return; }
   if (e.key === 'Escape') { clearWord(); setSt('', ''); return; }
   if (e.key === 'Backspace') { e.preventDefault(); removeLetter(); return; }
-
-  if (e.key.length === 1) { e.preventDefault(); addLetter(e.key); }
+  if (!isTouch && e.key.length === 1) { e.preventDefault(); addLetter(e.key); }
 });
 
 // ─── Buttons ──────────────────────────────────────────────────────────────────
@@ -782,6 +781,19 @@ function rHand() {
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
+if (isTouch) {
+  document.getElementById('ref-input').innerHTML =
+    'Tap a letter to add it to your word<br>' +
+    '<kbd>↻</kbd> center rotates · buttons below submit/clear<br>';
+  document.querySelector('.word-bar .placeholder') &&
+    (document.querySelector('.word-bar .placeholder').textContent = 'tap letters to build a word…');
+} else {
+  document.getElementById('ref-input').innerHTML =
+    '<kbd>Type</kbd> letters to build a word<br>' +
+    '<kbd>Backspace</kbd> undo last letter<br>' +
+    '<kbd>Enter</kbd> submit · <kbd>Esc</kbd> clear<br>';
+}
+
 loadWords().then(() => { rHand(); draw(); });
 </script>
 </body>
