@@ -361,7 +361,7 @@ function gv(base, rot) {
 function grs(t) { return (((Math.round(t.ta / (Math.PI / 2))) % 4) + 4) % 4; }
 function geff(ci, q) {
   const t = G[ci]; if (!t) return null;
-  if (t.destroyed && t.destroyed.has(q)) return null;
+  if (t.destroyed && t.destroyed.has(RS[grs(t)][q])) return null;
   return gv(t.d.l[RS[grs(t)][q]], grs(t));
 }
 function txy(i) { return { x: (i % GR) * CELL, y: Math.floor(i / GR) * CELL }; }
@@ -417,7 +417,7 @@ function findQuad(letter, usedQ, usedT, prevItem) {
     if (diffMode === 'one-per-tile' && usedT.has(ci)) continue;
     for (let q = 0; q < 4; q++) {
       if (usedQ.has(ci + '_' + q)) continue;
-      if (G[ci].destroyed && G[ci].destroyed.has(q)) continue;
+      if (G[ci].destroyed && G[ci].destroyed.has(RS[grs(G[ci])][q])) continue;
       if (geff(ci, q) !== letter) continue;
       if (diffMode === 'adjacent' && prevItem && !adjQuads(prevItem, { ci, q })) continue;
       return { ci, q };
@@ -443,7 +443,7 @@ function resolveWord() {
 function addQuad(ci, q) {
   const t = G[ci];
   if (!t || Math.abs(t.ca - t.ta) > 0.05) return; // still spinning
-  if (t.destroyed && t.destroyed.has(q)) return;
+  if (t.destroyed && t.destroyed.has(RS[grs(t)][q])) return;
   const letter = geff(ci, q);
   if (!letter) return; // invalid rotation
   const usedQ = usedKeys();
@@ -515,7 +515,7 @@ function submit() {
   if (diffMode === 'destroy') {
     wordSeq.forEach(w => {
       if (w.ci === null || !G[w.ci]) return;
-      G[w.ci].destroyed.add(w.q);
+      G[w.ci].destroyed.add(RS[grs(G[w.ci])][w.q]);
       if (G[w.ci].destroyed.size === 4) {
         G[w.ci] = { d: makeSingleTileDef(), ca: 0, ta: 0, destroyed: new Set() };
       }
@@ -586,7 +586,7 @@ function drawTile(t, ci) {
     for (let q = 0; q < 4; q++) {
       const lx = gx + (q % 2) * CELL / 2 + CELL / 4;
       const ly = gy + Math.floor(q / 2) * CELL / 2 + CELL / 4;
-      if (t.destroyed && t.destroyed.has(q)) {
+      if (t.destroyed && t.destroyed.has(RS[r][q])) {
         // Destroyed quad — draw a burned-out blank
         C.fillStyle = d ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)';
         rrC(C, gx + (q % 2) * CELL / 2 + 5, gy + Math.floor(q / 2) * CELL / 2 + 5, CELL / 2 - 10, CELL / 2 - 10, 5);
