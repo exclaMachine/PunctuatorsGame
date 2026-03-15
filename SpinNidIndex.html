@@ -63,6 +63,12 @@
   }
   h1 .si { font-family: Georgia, 'Times New Roman', serif; }
 
+  @keyframes title-spin {
+    0%   { transform: rotateZ(0deg); }
+    100% { transform: rotateZ(180deg); }
+  }
+  h1 { animation: title-spin 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.3s 1 both; }
+
   h2 {
     font-size: clamp(12px, 3.5vw, 16px);
     font-weight: 400;
