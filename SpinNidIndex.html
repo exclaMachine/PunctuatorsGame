@@ -219,6 +219,7 @@
       <button id="bsub">Enter ✓</button>
       <button id="bclr">⌫ Clear</button>
       <button id="bflip">⟷ Flip</button>
+      <button id="bflipv">↕ Flip</button>
     </div>
     <div class="status" id="st"></div>
   </div>
@@ -371,21 +372,48 @@ function gv(base, rot) {
 }
 function grs(t) { return (((Math.round(t.ta / (Math.PI / 2))) % 4) + 4) % 4; }
 
-// Maps visual quad position q → original base slot in d.l, accounting for rotation + mirror
-const MIRROR_SLOT = [1, 0, 3, 2]; // TL↔TR, BL↔BR
+// Maps visual quad position q → original base slot in d.l, accounting for rotation + mirrors
+const MIRROR_SLOT   = [1, 0, 3, 2]; // H: TL↔TR, BL↔BR
+const MIRROR_SLOT_V = [2, 3, 0, 1]; // V: TL↔BL, TR↔BR
 function baseSlot(t, q) {
   let s = RS[grs(t)][q];
-  if (t.mirrored) s = MIRROR_SLOT[s];
+  if (t.mirrored)  s = MIRROR_SLOT[s];
+  if (t.mirroredV) s = MIRROR_SLOT_V[s];
   return s;
+}
+
+// Algebraically correct letter reading for any combination of rotation + mirrors.
+// Key identity: MV * R(180°) = MH, MH * R(180°) = MV, MH * MV = R(180°)
+// For r=1,3: flip negates rotation direction, so (4-r)%4 recovers the original reading.
+function effectiveLetter(base, r, mirroredH, mirroredV) {
+  if (!mirroredH && !mirroredV) return gv(base, r);
+  if (mirroredH && mirroredV) return gv(base, (r + 2) % 4); // H+V = 180° rotation
+  if (mirroredV) {
+    if (r === 0) return MV.hasOwnProperty(base) ? MV[base] : null;
+    if (r === 2) return MH.hasOwnProperty(base) ? MH[base] : null; // MV*R(180°) = MH
+    // r=1,3: try both equivalent D4 representations (MV∘R(4-r) and MH∘R(r))
+    const rd1 = gv(base, (4 - r) % 4);
+    if (rd1 !== null) return MV.hasOwnProperty(rd1) ? MV[rd1] : null;
+    const rd2 = gv(base, r);
+    if (!rd2) return null;
+    return MH.hasOwnProperty(rd2) ? MH[rd2] : null;
+  }
+  // mirroredH only
+  if (r === 0) return MH.hasOwnProperty(base) ? MH[base] : null;
+  if (r === 2) return MV.hasOwnProperty(base) ? MV[base] : null; // MH*R(180°) = MV
+  // r=1,3: try both equivalent D4 representations (MH∘R(4-r) and MV∘R(r))
+  const rd1 = gv(base, (4 - r) % 4);
+  if (rd1 !== null) return MH.hasOwnProperty(rd1) ? MH[rd1] : null;
+  const rd2 = gv(base, r);
+  if (!rd2) return null;
+  return MV.hasOwnProperty(rd2) ? MV[rd2] : null;
 }
 
 function geff(ci, q) {
   const t = G[ci]; if (!t) return null;
   const s = baseSlot(t, q);
   if (t.destroyed && t.destroyed.has(s)) return null;
-  const base = t.d.l[s];
-  const mBase = t.mirrored ? (MH.hasOwnProperty(base) ? MH[base] : null) : base;
-  return gv(mBase, grs(t));
+  return effectiveLetter(t.d.l[s], grs(t), t.mirrored, t.mirroredV);
 }
 function txy(i) { return { x: (i % GR) * CELL, y: Math.floor(i / GR) * CELL }; }
 
@@ -402,8 +430,8 @@ function rr(x, y, w, h, r) { rrC(C, x, y, w, h, r); }
 // ─── Game state ───────────────────────────────────────────────────────────────
 let G = new Array(GR * GR).fill(null);
 let animReq = null;
-let flipAnim = -1;   // 0..1 progress, -1 = idle
-let flipApplied = false;
+let flipAnim = -1,  flipApplied  = false;
+let flipVAnim = -1, flipVApplied = false;
 let FW = [], score = 0;
 let wordSeq = []; // [{letter, ci, q}]
 let pulses = {};  // "ci_q" -> 0..1
@@ -542,7 +570,7 @@ function submit() {
       if (w.ci === null || !G[w.ci]) return;
       G[w.ci].destroyed.add(baseSlot(G[w.ci], w.q));
       if (G[w.ci].destroyed.size === 4) {
-        G[w.ci] = { d: makeSingleTileDef(), ca: 0, ta: 0, destroyed: new Set(), mirrored: false };
+        G[w.ci] = { d: makeSingleTileDef(), ca: 0, ta: 0, destroyed: new Set(), mirrored: false, mirroredV: false };
       }
     });
   }
@@ -568,6 +596,8 @@ function drawTile(t, ci) {
   const d = dk();
 
   C.save(); C.translate(ccx, ccy); C.rotate(a);
+  if (t.mirrored)  C.scale(-1,  1);
+  if (t.mirroredV) C.scale( 1, -1);
 
   C.fillStyle = t.d.c + (d ? '44' : '99');
   rr(-CELL / 2 + 3, -CELL / 2 + 3, CELL - 6, CELL - 6, 9); C.fill();
@@ -580,7 +610,7 @@ function drawTile(t, ci) {
   C.moveTo(-CELL / 2 + 9, 0); C.lineTo(CELL / 2 - 9, 0); C.stroke();
 
 
-  // Spinning: show base letters with tile
+  // Spinning: show letters in their flipped positions
   if (!snapped) {
     const LP = [[-CELL / 4, -CELL / 4], [CELL / 4, -CELL / 4], [-CELL / 4, CELL / 4], [CELL / 4, CELL / 4]];
     C.font = `700 ${Math.round(CELL * 0.22)}px 'Courier New', monospace`;
@@ -609,8 +639,7 @@ function drawTile(t, ci) {
         continue;
       }
       const base = t.d.l[s];
-      const mBase = t.mirrored ? (MH.hasOwnProperty(base) ? MH[base] : null) : base;
-      const eff = gv(mBase, r);
+      const eff = effectiveLetter(base, r, t.mirrored, t.mirroredV);
       const inWord = matchedQuads.has(q);
       const pk = ci + '_' + q;
       const pulse = pulses[pk] || 0;
@@ -638,7 +667,8 @@ function drawTile(t, ci) {
         C.save();
         C.translate(lx, ly);
         C.rotate(r * Math.PI / 2);
-        if (t.mirrored) C.scale(-1, 1);
+        if (t.mirrored)  C.scale(-1,  1);
+        if (t.mirroredV) C.scale( 1, -1);
         C.fillStyle = d ? 'rgba(211,209,199,0.55)' : 'rgba(44,44,42,0.45)';
         C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
         C.textAlign = 'center'; C.textBaseline = 'middle';
@@ -672,9 +702,12 @@ function draw() {
   if (flipAnim >= 0) {
     const scaleX = Math.abs(Math.cos(flipAnim * Math.PI));
     const scaleY = 1 - 0.07 * Math.sin(flipAnim * Math.PI);
-    C.translate(SZ / 2, SZ / 2);
-    C.scale(scaleX, scaleY);
-    C.translate(-SZ / 2, -SZ / 2);
+    C.translate(SZ / 2, SZ / 2); C.scale(scaleX, scaleY); C.translate(-SZ / 2, -SZ / 2);
+  }
+  if (flipVAnim >= 0) {
+    const scaleY = Math.abs(Math.cos(flipVAnim * Math.PI));
+    const scaleX = 1 - 0.07 * Math.sin(flipVAnim * Math.PI);
+    C.translate(SZ / 2, SZ / 2); C.scale(scaleX, scaleY); C.translate(-SZ / 2, -SZ / 2);
   }
   for (let i = 0; i < GR * GR; i++) {
     const { x, y } = txy(i);
@@ -705,8 +738,13 @@ function animLoop() {
   }
   if (flipAnim >= 0) {
     flipAnim = Math.min(flipAnim + 0.045, 1);
-    if (flipAnim >= 0.5 && !flipApplied) { doFlipH(); flipApplied = true; }
+    if (flipAnim >= 0.5 && !flipApplied)  { doFlipH(); flipApplied = true; }
     if (flipAnim < 1) going = true; else flipAnim = -1;
+  }
+  if (flipVAnim >= 0) {
+    flipVAnim = Math.min(flipVAnim + 0.045, 1);
+    if (flipVAnim >= 0.5 && !flipVApplied) { doFlipV(); flipVApplied = true; }
+    if (flipVAnim < 1) going = true; else flipVAnim = -1;
   }
   draw();
   animReq = going ? requestAnimationFrame(animLoop) : null;
@@ -714,39 +752,52 @@ function animLoop() {
 
 function rot(ci, dir) { if (!G[ci]) return; G[ci].ta += dir * Math.PI / 2; startAnim(); }
 
-// ─── Horizontal mirror (left-right flip) ──────────────────────────────────────
-// Letters that are symmetric or transform when reflected across vertical axis
-const MH = {
-  // Symmetric — read the same mirrored
+// ─── Mirror maps ──────────────────────────────────────────────────────────────
+const MH = { // Horizontal (left-right)
   'A':'A', 'H':'H', 'I':'I', 'M':'M', 'O':'O', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y',
   'i':'i', 'l':'l', 'm':'m', 'o':'o', 't':'t', 'u':'u', 'v':'v', 'w':'w', 'x':'x',
-  // Transform pairs
   'b':'d', 'd':'b', 'p':'q', 'q':'p',
-  // null = no valid mirror reading (renders as blank)
+};
+const MV = { // Vertical (top-bottom)
+  'c': 'c', 'C':'C', 'D':'D', 'E':'E', 'H':'H', 'I':'I', 'K': 'K', 'O':'O', 'X':'X',
+  'l':'l', 'o':'o', 't':'t', 'x':'x',
+  'b':'p', 'p':'b', 'd':'q', 'q':'d',
+  'n':'u', 'u':'n', 'm':'w', 'w':'m',
+  'M':'W', 'W':'M',
 };
 
 function doFlipH() {
   const newG = new Array(GR * GR).fill(null);
   for (let row = 0; row < GR; row++) {
     for (let col = 0; col < GR; col++) {
-      const t = G[row * GR + col];
-      if (!t) continue;
-      const newCi = row * GR + (GR - 1 - col);
-      newG[newCi] = { d: t.d, ca: -t.ca, ta: -t.ta, destroyed: t.destroyed, mirrored: !t.mirrored };
+      const t = G[row * GR + col]; if (!t) continue;
+      newG[row * GR + (GR - 1 - col)] = { d: t.d, ca: -t.ca, ta: -t.ta, destroyed: t.destroyed, mirrored: !t.mirrored, mirroredV: t.mirroredV };
     }
   }
-  G = newG;
-  resolveWord();
+  G = newG; resolveWord();
+}
+
+function doFlipV() {
+  const newG = new Array(GR * GR).fill(null);
+  for (let row = 0; row < GR; row++) {
+    for (let col = 0; col < GR; col++) {
+      const t = G[row * GR + col]; if (!t) continue;
+      newG[(GR - 1 - row) * GR + col] = { d: t.d, ca: -t.ca, ta: -t.ta, destroyed: t.destroyed, mirrored: t.mirrored, mirroredV: !t.mirroredV };
+    }
+  }
+  G = newG; resolveWord();
 }
 
 function flipH() {
-  if (flipAnim >= 0) return; // already flipping
-  clearWord();
-  flipAnim = 0;
-  flipApplied = false;
-  startAnim();
+  if (flipAnim >= 0 || flipVAnim >= 0) return;
+  clearWord(); flipAnim = 0; flipApplied = false; startAnim();
 }
-document.getElementById('bflip').onclick = flipH;
+function flipV() {
+  if (flipAnim >= 0 || flipVAnim >= 0) return;
+  clearWord(); flipVAnim = 0; flipVApplied = false; startAnim();
+}
+document.getElementById('bflip').onclick  = flipH;
+document.getElementById('bflipv').onclick = flipV;
 
 // ─── Canvas click ─────────────────────────────────────────────────────────────
 gc.addEventListener('click', e => {
@@ -789,7 +840,7 @@ document.getElementById('bclr').onclick = () => { clearWord(); setSt('', ''); };
 function initBoard() {
   const positions = [...Array(GR * GR).keys()].sort(() => Math.random() - 0.5);
   TILE_DEFS.forEach((def, i) => {
-    G[positions[i]] = { d: def, ca: 0, ta: 0, destroyed: new Set(), mirrored: false };
+    G[positions[i]] = { d: def, ca: 0, ta: 0, destroyed: new Set(), mirrored: false, mirroredV: false };
   });
 }
 
