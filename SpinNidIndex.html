@@ -485,7 +485,16 @@ function resolveWord() {
   wordSeq.forEach(w => {
     const prev = newSeq.length ? newSeq[newSeq.length - 1] : null;
     const prevItem = prev && prev.ci !== null ? { ci: prev.ci, q: prev.q } : null;
-    const match = findQuad(w.letter, usedQ, usedT, prevItem);
+    // Prefer to keep the original (ci, q) if it's still valid
+    let match = null;
+    if (w.ci !== null && G[w.ci] && !usedQ.has(w.ci + '_' + w.q) &&
+        !(diffMode === 'one-per-tile' && usedT.has(w.ci)) &&
+        geff(w.ci, w.q) === w.letter &&
+        (diffMode !== 'adjacent' || !prevItem || adjQuads(prevItem, { ci: w.ci, q: w.q }))) {
+      match = { ci: w.ci, q: w.q };
+    } else {
+      match = findQuad(w.letter, usedQ, usedT, prevItem);
+    }
     newSeq.push({ letter: w.letter, ci: match ? match.ci : null, q: match ? match.q : null });
     if (match) { usedQ.add(match.ci + '_' + match.q); usedT.add(match.ci); }
   });
@@ -500,7 +509,14 @@ function addQuad(ci, q) {
   const letter = geff(ci, q);
   if (!letter) return; // invalid rotation
   const usedQ = usedKeys();
-  if (usedQ.has(ci + '_' + q)) return; // already in word
+  if (usedQ.has(ci + '_' + q)) {
+    // Deselect: remove this quad's entry from the word sequence then re-resolve
+    wordSeq = wordSeq.filter(w => !(w.ci === ci && w.q === q));
+    resolveWord();
+    updateWordDisplay();
+    draw();
+    return;
+  }
   if (diffMode === 'one-per-tile' && usedTiles().has(ci)) return;
   if (diffMode === 'adjacent' && wordSeq.length > 0) {
     const prev = wordSeq[wordSeq.length - 1];
@@ -846,8 +862,7 @@ function initBoard() {
 
 if (isTouch) {
   document.getElementById('ref-input').innerHTML =
-    'Tap a letter to add it to your word<br>' +
-    '<kbd>↻</kbd> center rotates · buttons below submit/clear<br>';
+    'Tap a letter to add it to your word.<br>';
   document.querySelector('.word-bar .placeholder') &&
     (document.querySelector('.word-bar .placeholder').textContent = 'tap letters to build a word…');
 } else {
