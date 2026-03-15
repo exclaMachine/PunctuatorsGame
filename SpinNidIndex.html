@@ -193,12 +193,19 @@
   @keyframes cf-front { 0%,38%{opacity:1} 48%,88%{opacity:0} 98%,100%{opacity:1} }
   @keyframes cf-back  { 0%,38%{opacity:0} 48%,88%{opacity:1} 98%,100%{opacity:0} }
 
-  /* Rotational: spin around Z-axis; cback is pre-rotated 180° so it reads right at midpoint */
+  /* Rotational: two consecutive 180° CW spins with a longer pause in between */
   .chip-rot .cback { transform: rotateZ(180deg); }
-  @keyframes rot-wrap { 0%,25%{transform:rotateZ(0deg)} 45%,55%{transform:rotateZ(180deg)} 75%,100%{transform:rotateZ(0deg)} }
-  .chip-rot         { animation: rot-wrap  3s ease-in-out infinite; }
-  .chip-rot .cfront { animation: cf-front  3s ease-in-out infinite; }
-  .chip-rot .cback  { animation: cf-back   3s ease-in-out infinite; }
+  @keyframes rot-wrap {
+    0%, 18%  { transform: rotateZ(0deg); }
+    33%      { transform: rotateZ(180deg); }
+    58%      { transform: rotateZ(180deg); }
+    73%, 100%{ transform: rotateZ(360deg); }
+  }
+  @keyframes cf-rot-front { 0%,21%{opacity:1} 30%,61%{opacity:0} 70%,100%{opacity:1} }
+  @keyframes cf-rot-back  { 0%,21%{opacity:0} 30%,61%{opacity:1} 70%,100%{opacity:0} }
+  .chip-rot         { animation: rot-wrap      4s ease-in-out infinite; }
+  .chip-rot .cfront { animation: cf-rot-front  4s ease-in-out infinite; }
+  .chip-rot .cback  { animation: cf-rot-back   4s ease-in-out infinite; }
 
   /* Mirror H: flip around Y-axis */
   .chip-mirh .cback { transform: perspective(200px) rotateY(180deg); }
