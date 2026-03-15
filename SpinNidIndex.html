@@ -170,24 +170,37 @@
     .chip-mirv { background: #0b2e25; color: #5dcaa5; }
   }
 
-  @keyframes chip-spin {
-    0%, 20%  { transform: rotate(0deg); }
-    45%, 55% { transform: rotate(180deg); }
-    80%, 100%{ transform: rotate(0deg); }
+  /* Two-face chip: cback is counter-rotated so it reads correctly when parent is at 180° */
+  .chip .cback {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: inherit; background: inherit; color: inherit;
+    opacity: 0;
   }
-  @keyframes chip-fliph {
-    0%, 25%  { transform: scaleX(1); }
-    40%, 60% { transform: scaleX(-1); }
-    75%, 100%{ transform: scaleX(1); }
-  }
-  @keyframes chip-flipv {
-    0%, 25%  { transform: scaleY(1); }
-    40%, 60% { transform: scaleY(-1); }
-    75%, 100%{ transform: scaleY(1); }
-  }
-  .chip-rot  { animation: chip-spin  2.4s ease-in-out infinite; }
-  .chip-mirh { animation: chip-fliph 2.8s ease-in-out infinite; }
-  .chip-mirv { animation: chip-flipv 2.8s ease-in-out infinite; }
+  /* Shared text crossfade — timed to swap when container is edge-on */
+  @keyframes cf-front { 0%,38%{opacity:1} 48%,88%{opacity:0} 98%,100%{opacity:1} }
+  @keyframes cf-back  { 0%,38%{opacity:0} 48%,88%{opacity:1} 98%,100%{opacity:0} }
+
+  /* Rotational: spin around Z-axis; cback is pre-rotated 180° so it reads right at midpoint */
+  .chip-rot .cback { transform: rotateZ(180deg); }
+  @keyframes rot-wrap { 0%,25%{transform:rotateZ(0deg)} 45%,55%{transform:rotateZ(180deg)} 75%,100%{transform:rotateZ(0deg)} }
+  .chip-rot         { animation: rot-wrap  3s ease-in-out infinite; }
+  .chip-rot .cfront { animation: cf-front  3s ease-in-out infinite; }
+  .chip-rot .cback  { animation: cf-back   3s ease-in-out infinite; }
+
+  /* Mirror H: flip around Y-axis */
+  .chip-mirh .cback { transform: perspective(200px) rotateY(180deg); }
+  @keyframes mirh-wrap { 0%,25%{transform:perspective(200px) rotateY(0deg)} 45%,55%{transform:perspective(200px) rotateY(180deg)} 75%,100%{transform:perspective(200px) rotateY(0deg)} }
+  .chip-mirh         { animation: mirh-wrap 3.5s ease-in-out infinite; }
+  .chip-mirh .cfront { animation: cf-front  3.5s ease-in-out infinite; }
+  .chip-mirh .cback  { animation: cf-back   3.5s ease-in-out infinite; }
+
+  /* Mirror V: flip around X-axis */
+  .chip-mirv .cback { transform: perspective(200px) rotateX(180deg); }
+  @keyframes mirv-wrap { 0%,25%{transform:perspective(200px) rotateX(0deg)} 45%,55%{transform:perspective(200px) rotateX(180deg)} 75%,100%{transform:perspective(200px) rotateX(0deg)} }
+  .chip-mirv         { animation: mirv-wrap 3.5s ease-in-out infinite; }
+  .chip-mirv .cfront { animation: cf-front  3.5s ease-in-out infinite; }
+  .chip-mirv .cback  { animation: cf-back   3.5s ease-in-out infinite; }
 
   /* --- Mode selector --- */
   .mode-section { border: 0.5px solid var(--border); border-radius: 9px; padding: 10px 12px; background: var(--bg3); }
@@ -648,18 +661,18 @@ function updateWordDisplay() {
 }
 
 // ─── Ambigram detection ───────────────────────────────────────────────────────
-// Returns 'rot' | 'mirh' | 'mirv' | null
+// Returns {type, match} or null
 function ambigramType(word) {
   const letters = word.split('');
   // Rotational 180°: reverse + AM[l][2] each letter → valid word
   const rotLetters = letters.slice().reverse().map(l => { const m = AM[l]; return m ? m[2] : null; });
-  if (rotLetters.every(l => l) && isValidWord(rotLetters.join(''))) return 'rot';
+  if (rotLetters.every(l => l) && isValidWord(rotLetters.join(''))) return { type: 'rot',  match: rotLetters.join('') };
   // Mirror H (left-right): reverse + MH each letter → valid word
   const mhLetters = letters.slice().reverse().map(l => MH[l] || null);
-  if (mhLetters.every(l => l) && isValidWord(mhLetters.join(''))) return 'mirh';
+  if (mhLetters.every(l => l) && isValidWord(mhLetters.join(''))) return { type: 'mirh', match: mhLetters.join('') };
   // Mirror V (top-bottom): same order + MV each letter → valid word
   const mvLetters = letters.map(l => MV[l] || null);
-  if (mvLetters.every(l => l) && isValidWord(mvLetters.join(''))) return 'mirv';
+  if (mvLetters.every(l => l) && isValidWord(mvLetters.join(''))) return { type: 'mirv', match: mvLetters.join('') };
   return null;
 }
 
@@ -676,7 +689,8 @@ function submit() {
   // Valid!
   FW.push(word);
   const base = word.length * word.length;
-  const ambi = ambigramType(word);
+  const ambiInfo = ambigramType(word);
+  const ambi = ambiInfo ? ambiInfo.type : null;
   const ambiBonus = ambi === 'rot' ? base : ambi ? Math.ceil(base * 0.5) : 0;
   const flipCount = (boardFlippedH ? 1 : 0) + (boardFlippedV ? 1 : 0);
   const flipBonus = flipCount === 2 ? base : flipCount === 1 ? Math.ceil(base * 0.5) : 0;
@@ -685,8 +699,16 @@ function submit() {
   document.getElementById('score').textContent = 'Score: ' + score;
   const chip = document.createElement('div');
   chip.className = 'chip' + (ambi ? ' chip-' + ambi : '');
-  const label = ambi === 'rot' ? ' ↻' : ambi === 'mirh' ? ' ↔' : ambi === 'mirv' ? ' ↕' : '';
-  chip.textContent = word + label;
+  if (ambi && ambiInfo.match) {
+    const icon = ambi === 'rot' ? '↻' : ambi === 'mirh' ? '↔' : '↕';
+    const front = document.createElement('span');
+    front.className = 'cfront'; front.textContent = word + ' ' + icon;
+    const back = document.createElement('span');
+    back.className = 'cback'; back.textContent = icon + ' ' + ambiInfo.match;
+    chip.append(front, back);
+  } else {
+    chip.textContent = word;
+  }
   document.getElementById('chips').appendChild(chip);
   if (diffMode === 'destroy') {
     wordSeq.forEach(w => {
