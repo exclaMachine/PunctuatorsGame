@@ -150,8 +150,20 @@
   .status.err { color: var(--red); }
   .status.warn { color: var(--amber); }
 
-  /* --- Found words --- */
-  .score { font-size: 13px; font-weight: 500; color: var(--text2); }
+  /* --- Score / timer / tier --- */
+  .score-bar { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .score { font-size: 13px; font-weight: 600; color: var(--text); }
+  .timer { font-size: 13px; font-weight: 500; color: var(--text2); font-variant-numeric: tabular-nums; }
+  .tier {
+    font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 8px;
+    background: var(--accent-bg); color: var(--accent); letter-spacing: 0.3px;
+  }
+  .tier.new-tier { animation: tier-pop 0.5s ease-out; }
+  @keyframes tier-pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.25); }
+    100% { transform: scale(1); }
+  }
   .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
   .chip {
     font-size: 12px; padding: 2px 9px; border-radius: 10px;
@@ -268,7 +280,11 @@
   </div>
 
   <div class="right">
-    <div class="score" id="score">Score: 0</div>
+    <div class="score-bar">
+      <div class="score" id="score">Score: 0</div>
+      <div class="timer" id="timer">0:00</div>
+      <div class="tier" id="tier" style="display:none"></div>
+    </div>
     <div class="word-bar" id="wb"><span class="placeholder">start selecting letters…</span></div>
     <div class="chips" id="chips"></div>
 
@@ -529,6 +545,41 @@ let flipAnim = -1,  flipApplied  = false;
 let boardFlippedH = false, boardFlippedV = false;
 let flipVAnim = -1, flipVApplied = false;
 let FW = [], score = 0;
+
+// ─── Timer / tier state ────────────────────────────────────────────────────────
+let timerStart = null, timerInterval = null, timerSecs = 0;
+const TIERS = [
+  { pts: 0,    name: 'Scribbler'   },
+  { pts: 10,   name: 'Dabbler'     },
+  { pts: 25,   name: 'Wordsmith'   },
+  { pts: 50,   name: 'Penslinger'  },
+  { pts: 100,  name: 'Typographer' },
+  { pts: 200,  name: 'Grammarian'  },
+  { pts: 350,  name: 'Lexicographer'},
+  { pts: 500,  name: 'Ambigram Ace'},
+];
+function getTier(pts) {
+  let t = TIERS[0];
+  for (const tier of TIERS) { if (pts >= tier.pts) t = tier; else break; }
+  return t;
+}
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const ss = String(s % 60).padStart(2, '0');
+  return m + ':' + ss;
+}
+function startTimer() {
+  if (timerStart !== null) return; // already running
+  timerStart = Date.now();
+  timerSecs = 0;
+  timerInterval = setInterval(() => {
+    timerSecs = Math.floor((Date.now() - timerStart) / 1000);
+    document.getElementById('timer').textContent = formatTime(timerSecs);
+  }, 500);
+}
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
 let wordSeq = []; // [{letter, ci, q}]
 let pulses = {};  // "ci_q" -> 0..1
 
@@ -695,8 +746,22 @@ function submit() {
   const flipCount = (boardFlippedH ? 1 : 0) + (boardFlippedV ? 1 : 0);
   const flipBonus = flipCount === 2 ? base : flipCount === 1 ? Math.ceil(base * 0.5) : 0;
   const bonus = ambiBonus + flipBonus;
+  startTimer();
+  const prevTier = getTier(score);
   score += base + bonus;
   document.getElementById('score').textContent = 'Score: ' + score;
+  // Update tier badge
+  const newTier = getTier(score);
+  const tierEl = document.getElementById('tier');
+  tierEl.style.display = '';
+  if (newTier.name !== tierEl.dataset.tier) {
+    tierEl.textContent = newTier.name;
+    tierEl.dataset.tier = newTier.name;
+    tierEl.classList.remove('new-tier');
+    void tierEl.offsetWidth; // reflow to restart animation
+    tierEl.classList.add('new-tier');
+    setTimeout(() => tierEl.classList.remove('new-tier'), 600);
+  }
   const chip = document.createElement('div');
   chip.className = 'chip' + (ambi ? ' chip-' + ambi : '');
   if (ambi && ambiInfo.match) {
@@ -723,7 +788,8 @@ function submit() {
   clearWord();
   const ambiMsg = ambi === 'rot' ? ' ↻ 2×' : ambi === 'mirh' ? ' ↔ 1.5×' : ambi === 'mirv' ? ' ↕ 1.5×' : '';
   const flipMsg = flipCount === 2 ? ' ⟲⟲ flipped 2×!' : flipCount === 1 ? ' ⟲ flipped 1.5×!' : '';
-  setSt(`✓ "${word}" +${base + bonus} pts${ambiMsg}${flipMsg}`, 'ok');
+  const tierMsg = newTier.name !== prevTier.name ? ` → ${newTier.name}!` : '';
+  setSt(`✓ "${word}" +${base + bonus} pts${ambiMsg}${flipMsg}${tierMsg}`, 'ok');
 }
 
 function setSt(msg, type) {
@@ -998,6 +1064,15 @@ function initBoard() {
   TILE_DEFS.forEach((def, i) => {
     G[positions[i]] = { d: def, ca: 0, ta: 0, destroyed: new Set(), mirrored: false, mirroredV: false };
   });
+  // Reset timer + tier
+  stopTimer();
+  timerStart = null; timerSecs = 0;
+  document.getElementById('timer').textContent = '0:00';
+  const tierEl = document.getElementById('tier');
+  tierEl.style.display = 'none'; tierEl.textContent = ''; tierEl.dataset.tier = '';
+  score = 0; FW = [];
+  document.getElementById('score').textContent = 'Score: 0';
+  document.getElementById('chips').innerHTML = '';
 }
 
 if (isTouch) {
