@@ -766,7 +766,14 @@ function animLoop() {
   animReq = going ? requestAnimationFrame(animLoop) : null;
 }
 
-function rot(ci, dir) { if (!G[ci]) return; G[ci].ta += dir * Math.PI / 2; startAnim(); }
+function rot(ci, dir) {
+  if (!G[ci]) return;
+  if (wordSeq.some(w => w.ci === ci)) {
+    wordSeq = wordSeq.filter(w => w.ci !== ci);
+    updateWordDisplay();
+  }
+  G[ci].ta += dir * Math.PI / 2; startAnim();
+}
 
 // ─── Mirror maps ──────────────────────────────────────────────────────────────
 const MH = { // Horizontal (left-right)
