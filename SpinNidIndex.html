@@ -157,7 +157,37 @@
     font-size: 12px; padding: 2px 9px; border-radius: 10px;
     background: var(--accent-bg); color: var(--accent);
     font-family: monospace; font-weight: 500;
+    display: inline-block;
   }
+
+  /* Ambigram chip variants */
+  .chip-rot  { background: #fdf3dc; color: #8a5f00; }
+  .chip-mirh { background: #f0eaff; color: #6230c2; }
+  .chip-mirv { background: #ddf6f0; color: #0a6648; }
+  @media (prefers-color-scheme: dark) {
+    .chip-rot  { background: #3a2e0a; color: #f0c040; }
+    .chip-mirh { background: #251950; color: #c4aeff; }
+    .chip-mirv { background: #0b2e25; color: #5dcaa5; }
+  }
+
+  @keyframes chip-spin {
+    0%, 20%  { transform: rotate(0deg); }
+    45%, 55% { transform: rotate(180deg); }
+    80%, 100%{ transform: rotate(0deg); }
+  }
+  @keyframes chip-fliph {
+    0%, 25%  { transform: scaleX(1); }
+    40%, 60% { transform: scaleX(-1); }
+    75%, 100%{ transform: scaleX(1); }
+  }
+  @keyframes chip-flipv {
+    0%, 25%  { transform: scaleY(1); }
+    40%, 60% { transform: scaleY(-1); }
+    75%, 100%{ transform: scaleY(1); }
+  }
+  .chip-rot  { animation: chip-spin  2.4s ease-in-out infinite; }
+  .chip-mirh { animation: chip-fliph 2.8s ease-in-out infinite; }
+  .chip-mirv { animation: chip-flipv 2.8s ease-in-out infinite; }
 
   /* --- Mode selector --- */
   .mode-section { border: 0.5px solid var(--border); border-radius: 9px; padding: 10px 12px; background: var(--bg3); }
@@ -564,6 +594,22 @@ function updateWordDisplay() {
   ).join('');
 }
 
+// ─── Ambigram detection ───────────────────────────────────────────────────────
+// Returns 'rot' | 'mirh' | 'mirv' | null
+function ambigramType(word) {
+  const letters = word.split('');
+  // Rotational 180°: reverse + AM[l][2] each letter → valid word
+  const rotLetters = letters.slice().reverse().map(l => { const m = AM[l]; return m ? m[2] : null; });
+  if (rotLetters.every(l => l) && isValidWord(rotLetters.join(''))) return 'rot';
+  // Mirror H (left-right): reverse + MH each letter → valid word
+  const mhLetters = letters.slice().reverse().map(l => MH[l] || null);
+  if (mhLetters.every(l => l) && isValidWord(mhLetters.join(''))) return 'mirh';
+  // Mirror V (top-bottom): same order + MV each letter → valid word
+  const mvLetters = letters.map(l => MV[l] || null);
+  if (mvLetters.every(l => l) && isValidWord(mvLetters.join(''))) return 'mirv';
+  return null;
+}
+
 // ─── Submit ───────────────────────────────────────────────────────────────────
 function submit() {
   if (wordSeq.length < 2) { setSt('Need at least 2 letters', 'err'); return; }
@@ -576,10 +622,15 @@ function submit() {
   if (!isValidWord(word)) { setSt(`"${word}" is not in the word list`, 'err'); return; }
   // Valid!
   FW.push(word);
-  score += word.length * word.length;
+  const base = word.length * word.length;
+  const ambi = ambigramType(word);
+  const bonus = ambi === 'rot' ? base : ambi ? Math.ceil(base * 0.5) : 0;
+  score += base + bonus;
   document.getElementById('score').textContent = 'Score: ' + score;
   const chip = document.createElement('div');
-  chip.className = 'chip'; chip.textContent = word;
+  chip.className = 'chip' + (ambi ? ' chip-' + ambi : '');
+  const label = ambi === 'rot' ? ' ↻' : ambi === 'mirh' ? ' ↔' : ambi === 'mirv' ? ' ↕' : '';
+  chip.textContent = word + label;
   document.getElementById('chips').appendChild(chip);
   if (diffMode === 'destroy') {
     wordSeq.forEach(w => {
@@ -591,7 +642,8 @@ function submit() {
     });
   }
   clearWord();
-  setSt(`✓ "${word}" +${word.length * word.length} pts`, 'ok');
+  const ambiMsg = ambi === 'rot' ? ' ↻ Rotational ambigram! 2×' : ambi === 'mirh' ? ' ↔ Mirror ambigram! 1.5×' : ambi === 'mirv' ? ' ↕ Mirror ambigram! 1.5×' : '';
+  setSt(`✓ "${word}" +${base + bonus} pts${ambiMsg}`, 'ok');
 }
 
 function setSt(msg, type) {
