@@ -513,6 +513,7 @@ function sndFlip() {
 let G = new Array(GR * GR).fill(null);
 let animReq = null;
 let flipAnim = -1,  flipApplied  = false;
+let boardFlippedH = false, boardFlippedV = false;
 let flipVAnim = -1, flipVApplied = false;
 let FW = [], score = 0;
 let wordSeq = []; // [{letter, ci, q}]
@@ -676,7 +677,10 @@ function submit() {
   FW.push(word);
   const base = word.length * word.length;
   const ambi = ambigramType(word);
-  const bonus = ambi === 'rot' ? base : ambi ? Math.ceil(base * 0.5) : 0;
+  const ambiBonus = ambi === 'rot' ? base : ambi ? Math.ceil(base * 0.5) : 0;
+  const flipCount = (boardFlippedH ? 1 : 0) + (boardFlippedV ? 1 : 0);
+  const flipBonus = flipCount === 2 ? base : flipCount === 1 ? Math.ceil(base * 0.5) : 0;
+  const bonus = ambiBonus + flipBonus;
   score += base + bonus;
   document.getElementById('score').textContent = 'Score: ' + score;
   const chip = document.createElement('div');
@@ -695,8 +699,9 @@ function submit() {
   }
   ambi ? sndAmbigram() : sndWord();
   clearWord();
-  const ambiMsg = ambi === 'rot' ? ' ↻ Rotational ambigram! 2×' : ambi === 'mirh' ? ' ↔ Mirror ambigram! 1.5×' : ambi === 'mirv' ? ' ↕ Mirror ambigram! 1.5×' : '';
-  setSt(`✓ "${word}" +${base + bonus} pts${ambiMsg}`, 'ok');
+  const ambiMsg = ambi === 'rot' ? ' ↻ 2×' : ambi === 'mirh' ? ' ↔ 1.5×' : ambi === 'mirv' ? ' ↕ 1.5×' : '';
+  const flipMsg = flipCount === 2 ? ' ⟲⟲ flipped 2×!' : flipCount === 1 ? ' ⟲ flipped 1.5×!' : '';
+  setSt(`✓ "${word}" +${base + bonus} pts${ambiMsg}${flipMsg}`, 'ok');
 }
 
 function setSt(msg, type) {
@@ -903,7 +908,7 @@ function doFlipH() {
       newG[row * GR + (GR - 1 - col)] = { d: t.d, ca: -t.ca, ta: -t.ta, destroyed: t.destroyed, mirrored: !t.mirrored, mirroredV: t.mirroredV };
     }
   }
-  G = newG; resolveWord();
+  boardFlippedH = !boardFlippedH; G = newG; resolveWord();
 }
 
 function doFlipV() {
@@ -914,7 +919,7 @@ function doFlipV() {
       newG[(GR - 1 - row) * GR + col] = { d: t.d, ca: -t.ca, ta: -t.ta, destroyed: t.destroyed, mirrored: t.mirrored, mirroredV: !t.mirroredV };
     }
   }
-  G = newG; resolveWord();
+  boardFlippedV = !boardFlippedV; G = newG; resolveWord();
 }
 
 function flipH() {
