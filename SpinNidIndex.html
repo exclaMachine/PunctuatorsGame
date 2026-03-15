@@ -262,6 +262,39 @@
     font-size: 14px; color: var(--text2);
   }
 
+  /* Mode select overlay */
+  #mode-select {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 150; backdrop-filter: blur(2px);
+  }
+  #mode-select.hidden { display: none; }
+  #mode-box {
+    background: var(--bg3); border-radius: 18px; padding: 32px 36px;
+    max-width: 360px; width: 92%;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+    text-align: center;
+  }
+  #mode-box h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
+  #mode-box p { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+  .ms-option {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--bg2); border: 1.5px solid transparent; border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 10px; cursor: pointer; text-align: left;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .ms-option:last-of-type { margin-bottom: 18px; }
+  .ms-option input[type=radio] { margin-top: 3px; accent-color: var(--accent); flex-shrink: 0; }
+  .ms-option.selected { border-color: var(--accent); background: var(--accent-bg); }
+  .ms-option .ms-label { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .ms-option .ms-desc { font-size: 12px; color: var(--text2); }
+  #ms-start {
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    padding: 13px 32px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%;
+    transition: opacity 0.15s;
+  }
+  #ms-start:hover { opacity: 0.85; }
+
   /* Win overlay */
   #win-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.55);
@@ -301,6 +334,30 @@
   <span>Loading word list…</span>
 </div>
 
+<div id="mode-select">
+  <div id="mode-box">
+    <h2>Choose Your Mode</h2>
+    <p>Pick a difficulty to start. Your mode is locked for the session.</p>
+    <label class="ms-option selected">
+      <input type="radio" name="ms-mode" value="free" checked>
+      <div><div class="ms-label">Any Letter <span style="color:var(--text2);font-weight:400">(Beginner)</span></div><div class="ms-desc">Use any letter from anywhere on the board</div></div>
+    </label>
+    <label class="ms-option">
+      <input type="radio" name="ms-mode" value="one-per-tile">
+      <div><div class="ms-label">One Per Tile</div><div class="ms-desc">Max one letter used from each tile per word</div></div>
+    </label>
+    <label class="ms-option">
+      <input type="radio" name="ms-mode" value="adjacent">
+      <div><div class="ms-label">Adjacent</div><div class="ms-desc">Each letter must touch the previous one</div></div>
+    </label>
+    <label class="ms-option">
+      <input type="radio" name="ms-mode" value="destroy">
+      <div><div class="ms-label">Destroy</div><div class="ms-desc">Used letters are destroyed — clear a tile to spawn a new one</div></div>
+    </label>
+    <button id="ms-start">Start Game</button>
+  </div>
+</div>
+
 <div id="win-overlay">
   <div id="win-box">
     <div id="win-trophy">🏆</div>
@@ -335,25 +392,7 @@
     <div class="word-bar" id="wb"><span class="placeholder">start selecting letters…</span></div>
     <div class="chips" id="chips"></div>
 
-    <div class="mode-section">
-      <h3>Difficulty mode</h3>
-      <label class="mode-option">
-        <input type="radio" name="mode" value="free" checked>
-        <div><div class="label">Any letter (beginner)</div><div class="desc">Any letter from anywhere on the board</div></div>
-      </label>
-      <label class="mode-option">
-        <input type="radio" name="mode" value="one-per-tile">
-        <div><div class="label">One per tile</div><div class="desc">Max one letter used from each tile</div></div>
-      </label>
-      <label class="mode-option">
-        <input type="radio" name="mode" value="adjacent">
-        <div><div class="label">Adjacent</div><div class="desc">Each letter must touch the previous one</div></div>
-      </label>
-      <label class="mode-option">
-        <input type="radio" name="mode" value="destroy">
-        <div><div class="label">Destroy</div><div class="desc">Used letters are destroyed — clear a tile to spawn a new one</div></div>
-      </label>
-    </div>
+    <div class="mode-section" id="active-mode-label"></div>
 
     <div class="ref" id="ref">
       <b>Controls</b>
@@ -631,11 +670,46 @@ let wordSeq = []; // [{letter, ci, q}]
 let pulses = {};  // "ci_q" -> 0..1
 let particles = []; // explosion particles for destroy mode
 
-// Difficulty mode
-let diffMode = 'free'; // 'free' | 'one-per-tile' | 'adjacent'
-document.querySelectorAll('input[name=mode]').forEach(r => {
-  r.addEventListener('change', () => { diffMode = r.value; resolveWord(); draw(); });
+// Difficulty mode — locked at game start
+let diffMode = 'free';
+const MODE_LABELS = {
+  'free':        'Any Letter (Beginner)',
+  'one-per-tile':'One Per Tile',
+  'adjacent':    'Adjacent',
+  'destroy':     'Destroy',
+};
+
+// Mode-select screen logic
+const msModeEl = document.getElementById('mode-select');
+document.querySelectorAll('.ms-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.ms-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    opt.querySelector('input[type=radio]').checked = true;
+  });
 });
+document.getElementById('ms-start').addEventListener('click', () => {
+  const chosen = document.querySelector('input[name=ms-mode]:checked');
+  diffMode = chosen ? chosen.value : 'free';
+  msModeEl.classList.add('hidden');
+  const lbl = document.getElementById('active-mode-label');
+  lbl.textContent = 'Mode: ' + MODE_LABELS[diffMode];
+  lbl.style.fontSize = '12px';
+  lbl.style.color = 'var(--text2)';
+  lbl.style.padding = '6px 0 0';
+  initBoard();
+  draw();
+});
+
+function showModeSelect() {
+  // Reset radio to free
+  document.querySelectorAll('.ms-option').forEach(o => o.classList.remove('selected'));
+  const freeOpt = document.querySelector('.ms-option');
+  if (freeOpt) freeOpt.classList.add('selected');
+  const freeRadio = document.querySelector('input[name=ms-mode][value=free]');
+  if (freeRadio) freeRadio.checked = true;
+  msModeEl.classList.remove('hidden');
+}
 
 // ─── Matching logic ───────────────────────────────────────────────────────────
 function usedKeys() {
@@ -853,14 +927,15 @@ function showWin() {
   const secs = timerSecs % 60;
   const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   document.getElementById('win-stats').innerHTML =
-    `You reached <strong>Ambigram Ace</strong> with <strong>${score} points</strong><br>in <strong>${timeStr}</strong> — you're a word wizard!`;
+    `You reached <strong>Ambigram Ace</strong> in <strong>${MODE_LABELS[diffMode]}</strong> mode<br>` +
+    `with <strong>${score} points</strong> in <strong>${timeStr}</strong> — you're a word wizard!`;
   document.getElementById('win-overlay').classList.add('visible');
 }
 
 document.getElementById('win-again').addEventListener('click', () => {
   document.getElementById('win-overlay').classList.remove('visible');
-  initBoard();
-  draw();
+  initBoard(); draw();
+  showModeSelect();
 });
 
 function setSt(msg, type) {
@@ -1237,8 +1312,7 @@ if (isTouch) {
     '<kbd>Enter</kbd> submit · <kbd>Esc</kbd> clear<br>';
 }
 
-initBoard();
-loadWords().then(() => { draw(); });
+loadWords().then(() => { initBoard(); draw(); });
 </script>
 </body>
 </html>
