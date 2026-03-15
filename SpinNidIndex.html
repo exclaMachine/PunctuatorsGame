@@ -261,6 +261,31 @@
     gap: 12px; z-index: 100;
     font-size: 14px; color: var(--text2);
   }
+
+  /* Win overlay */
+  #win-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  #win-overlay.visible { opacity: 1; pointer-events: auto; }
+  #win-box {
+    background: var(--bg3); border-radius: 18px; padding: 36px 40px;
+    text-align: center; max-width: 340px; width: 90%;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+    transform: scale(0.85); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #win-overlay.visible #win-box { transform: scale(1); }
+  #win-trophy { font-size: 56px; margin-bottom: 10px; }
+  #win-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; color: var(--accent); }
+  #win-stats { font-size: 14px; color: var(--text2); margin-bottom: 22px; line-height: 1.7; }
+  #win-again {
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    padding: 12px 28px; font-size: 16px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  #win-again:hover { opacity: 0.85; }
   .spinner {
     width: 28px; height: 28px; border: 2px solid var(--border);
     border-top-color: var(--accent); border-radius: 50%;
@@ -274,6 +299,15 @@
 <div id="loading">
   <div class="spinner"></div>
   <span>Loading word list…</span>
+</div>
+
+<div id="win-overlay">
+  <div id="win-box">
+    <div id="win-trophy">🏆</div>
+    <div id="win-title">Ambigram Ace!</div>
+    <div id="win-stats"></div>
+    <button id="win-again">Play Again</button>
+  </div>
 </div>
 
 <h1>SP<span class="si">I</span>N N<span class="si">I</span>dS</h1>
@@ -775,6 +809,9 @@ function submit() {
     void tierEl.offsetWidth; // reflow to restart animation
     tierEl.classList.add('new-tier');
     setTimeout(() => tierEl.classList.remove('new-tier'), 600);
+    if (newTier.name === 'Ambigram Ace') {
+      setTimeout(showWin, 800); // brief pause so the chip lands first
+    }
   }
   const chip = document.createElement('div');
   chip.className = 'chip' + (ambi ? ' chip-' + ambi : '');
@@ -783,7 +820,10 @@ function submit() {
     const front = document.createElement('span');
     front.className = 'cfront'; front.textContent = word + ' ' + icon;
     const back = document.createElement('span');
-    back.className = 'cback'; back.textContent = icon + ' ' + ambiInfo.match;
+    // mirv flips top↔bottom (X-axis), so left/right is unchanged — keep icon on right
+    // rot and mirh flip or spin such that the icon naturally leads the back word
+    back.className = 'cback';
+    back.textContent = ambi === 'mirv' ? ambiInfo.match + ' ' + icon : icon + ' ' + ambiInfo.match;
     chip.append(front, back);
   } else {
     chip.textContent = word;
@@ -806,6 +846,22 @@ function submit() {
   const tierMsg = newTier.name !== prevTier.name ? ` → ${newTier.name}!` : '';
   setSt(`✓ "${word}" +${base + bonus} pts${ambiMsg}${flipMsg}${tierMsg}`, 'ok');
 }
+
+function showWin() {
+  stopTimer();
+  const mins = Math.floor(timerSecs / 60);
+  const secs = timerSecs % 60;
+  const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+  document.getElementById('win-stats').innerHTML =
+    `You reached <strong>Ambigram Ace</strong> with <strong>${score} points</strong><br>in <strong>${timeStr}</strong> — you're a word wizard!`;
+  document.getElementById('win-overlay').classList.add('visible');
+}
+
+document.getElementById('win-again').addEventListener('click', () => {
+  document.getElementById('win-overlay').classList.remove('visible');
+  initBoard();
+  draw();
+});
 
 function setSt(msg, type) {
   const el = document.getElementById('st');
