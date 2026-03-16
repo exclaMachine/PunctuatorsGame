@@ -330,6 +330,32 @@
     transition: opacity 0.15s;
   }
   #win-again:hover { opacity: 0.85; }
+
+  /* Game over overlay */
+  #gameover-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  #gameover-overlay.visible { opacity: 1; pointer-events: auto; }
+  #gameover-box {
+    background: var(--bg3); border-radius: 18px; padding: 36px 40px;
+    text-align: center; max-width: 340px; width: 90%;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+    transform: scale(0.85); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #gameover-overlay.visible #gameover-box { transform: scale(1); }
+  #gameover-icon { font-size: 56px; margin-bottom: 10px; }
+  #gameover-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+  #gameover-msg { font-size: 14px; color: var(--text2); margin-bottom: 22px; line-height: 1.6; }
+  #gameover-btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    padding: 12px 28px; font-size: 16px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  #gameover-btn:hover { opacity: 0.85; }
+
   .spinner {
     width: 28px; height: 28px; border: 2px solid var(--border);
     border-top-color: var(--accent); border-radius: 50%;
@@ -375,6 +401,15 @@
     <div id="win-title">Ambigram Ace!</div>
     <div id="win-stats"></div>
     <button id="win-again">Play Again</button>
+  </div>
+</div>
+
+<div id="gameover-overlay">
+  <div id="gameover-box">
+    <div id="gameover-icon">🔤</div>
+    <div id="gameover-title">No More Words!</div>
+    <div id="gameover-msg">No valid words can be formed from the remaining letters.</div>
+    <button id="gameover-btn">Start New Game</button>
   </div>
 </div>
 
@@ -938,6 +973,7 @@ function submit() {
         G[w.ci] = { d: makeSingleTileDef(), ca: 0, ta: 0, destroyed: new Set(), mirrored: false, mirroredV: false };
       }
     });
+    setTimeout(checkDestroyViability, 400); // check after explosion settles
   }
   ambi ? sndAmbigram() : sndWord();
   clearWord();
@@ -963,6 +999,42 @@ document.getElementById('win-again').addEventListener('click', () => {
   initBoard(); draw();
   showModeSelect();
 });
+
+document.getElementById('gameover-btn').addEventListener('click', () => {
+  document.getElementById('gameover-overlay').classList.remove('visible');
+  initBoard(); draw();
+  showModeSelect();
+});
+
+// ─── Destroy mode viability check ─────────────────────────────────────────────
+function getAvailableLetters() {
+  const counts = new Map();
+  for (let ci = 0; ci < GR * GR; ci++) {
+    const t = G[ci]; if (!t) continue;
+    for (let q = 0; q < 4; q++) {
+      const eff = geff(ci, q);
+      if (!eff) continue;
+      const l = eff.toLowerCase();
+      counts.set(l, (counts.get(l) || 0) + 1);
+    }
+  }
+  return counts;
+}
+
+function checkDestroyViability() {
+  const avail = getAvailableLetters();
+  for (const word of WORDS) {
+    if (word.length < 2) continue;
+    const needed = new Map();
+    for (const c of word) needed.set(c, (needed.get(c) || 0) + 1);
+    let ok = true;
+    for (const [c, n] of needed) {
+      if ((avail.get(c) || 0) < n) { ok = false; break; }
+    }
+    if (ok) return; // at least one word is possible
+  }
+  document.getElementById('gameover-overlay').classList.add('visible');
+}
 
 function setSt(msg, type) {
   const el = document.getElementById('st');
