@@ -288,6 +288,53 @@
   .chip-mirv .cfront { animation: cf-front  3.5s ease-in-out infinite; }
   .chip-mirv .cback  { animation: cf-back   3.5s ease-in-out infinite; }
 
+  /* 90°/270° rotation pair: per-letter in-plane rotation animation */
+  .chip-rot90 { background: #fce8ff; color: #7a00aa; }
+  @media (prefers-color-scheme: dark) {
+    .chip-rot90 { background: #2a0a3a; color: #d980ff; }
+  }
+  .rl {
+    display: inline-block; position: relative;
+  }
+  .rl-f { display: inline; }
+  .rl-b {
+    position: absolute; top: 0; left: 0; right: 0; text-align: center;
+    transform: rotate(-90deg); opacity: 0;
+  }
+  /* 90° CW: letters spin clockwise out (+90°), partner spins in from -90° */
+  @keyframes rl-front-cw {
+    0%,25%   { transform: rotate(0deg);   opacity: 1; }
+    38%      { transform: rotate(90deg);  opacity: 0; }
+    62%      { transform: rotate(90deg);  opacity: 0; }
+    75%,100% { transform: rotate(0deg);   opacity: 1; }
+  }
+  @keyframes rl-back-cw {
+    0%,25%   { transform: rotate(-90deg); opacity: 0; }
+    38%,62%  { transform: rotate(0deg);   opacity: 1; }
+    75%,100% { transform: rotate(-90deg); opacity: 0; }
+  }
+  .chip-rot90 .rl-f { animation: rl-front-cw 4s ease-in-out infinite; animation-delay: calc(var(--i) * 0.15s); }
+  .chip-rot90 .rl-b { animation: rl-back-cw  4s ease-in-out infinite; animation-delay: calc(var(--i) * 0.15s); }
+
+  /* 270° CW (CCW): letters spin counter-clockwise out (-90°), partner spins in from +90° */
+  .chip-rot270 { background: #fce8ff; color: #7a00aa; }
+  @media (prefers-color-scheme: dark) {
+    .chip-rot270 { background: #2a0a3a; color: #d980ff; }
+  }
+  @keyframes rl-front-ccw {
+    0%,25%   { transform: rotate(0deg);    opacity: 1; }
+    38%      { transform: rotate(-90deg);  opacity: 0; }
+    62%      { transform: rotate(-90deg);  opacity: 0; }
+    75%,100% { transform: rotate(0deg);    opacity: 1; }
+  }
+  @keyframes rl-back-ccw {
+    0%,25%   { transform: rotate(90deg);  opacity: 0; }
+    38%,62%  { transform: rotate(0deg);   opacity: 1; }
+    75%,100% { transform: rotate(90deg);  opacity: 0; }
+  }
+  .chip-rot270 .rl-f { animation: rl-front-ccw 4s ease-in-out infinite; animation-delay: calc(var(--i) * 0.15s); }
+  .chip-rot270 .rl-b { animation: rl-back-ccw  4s ease-in-out infinite; animation-delay: calc(var(--i) * 0.15s); }
+
   /* --- Mode selector --- */
   .mode-section { border: 0.5px solid var(--border); border-radius: 9px; padding: 10px 12px; background: var(--bg3); }
   .mode-section h3 { font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--text2); }
@@ -531,7 +578,7 @@ let WORDS = new Set();
 
 async function loadWords() {
   try {
-    const res = await fetch('./2of12.txt');
+    const res = await fetch('./enable1.txt');
     const text = await res.text();
     text.split(/\r?\n/).forEach(w => { const t = w.trim().toLowerCase(); if (t) WORDS.add(t); });
   } catch (e) {
@@ -984,6 +1031,12 @@ function ambigramType(word) {
   // Mirror V (top-bottom): same order + MV each letter → valid word
   const mvLetters = letters.map(l => MV[l] || null);
   if (mvLetters.every(l => l) && isValidWord(mvLetters.join(''))) return { type: 'mirv', match: mvLetters.join('') };
+  // 90° CW rotation: same order, each letter at rot index 1 — preserve AM casing for display
+  const rot90 = letters.map(l => { const m = AM[l]; return (m && m[1]) || null; });
+  if (rot90.every(Boolean)) { const w = rot90.join(''); if (w.toLowerCase() !== word.toLowerCase() && isValidWord(w.toLowerCase())) return { type: 'rot90', match: w, icon: '↷' }; }
+  // 270° CW rotation: same order, each letter at rot index 3
+  const rot270 = letters.map(l => { const m = AM[l]; return (m && m[3]) || null; });
+  if (rot270.every(Boolean)) { const w = rot270.join(''); if (w.toLowerCase() !== word.toLowerCase() && isValidWord(w.toLowerCase())) return { type: 'rot270', match: w, icon: '↶' }; }
   return null;
 }
 
@@ -1027,7 +1080,18 @@ function submit() {
   }
   const chip = document.createElement('div');
   chip.className = 'chip' + (ambi ? ' chip-' + ambi : '');
-  if (ambi && ambiInfo.match) {
+  if (ambi === 'rot90' || ambi === 'rot270') {
+    // Per-letter rotation animation (CW for rot90, CCW for rot270)
+    [...word].forEach((ch, i) => {
+      const rl = document.createElement('span');
+      rl.className = 'rl'; rl.style.setProperty('--i', i);
+      const f = document.createElement('span'); f.className = 'rl-f'; f.textContent = ch;
+      const b = document.createElement('span'); b.className = 'rl-b'; b.textContent = ambiInfo.match[i];
+      rl.append(f, b); chip.appendChild(rl);
+    });
+    const ic = document.createElement('span'); ic.textContent = ' ' + ambiInfo.icon;
+    chip.appendChild(ic);
+  } else if (ambi && ambiInfo.match) {
     const icon = ambi === 'rot' ? '↻' : ambi === 'mirh' ? '↔' : '↕';
     const front = document.createElement('span');
     front.className = 'cfront'; front.textContent = word + ' ' + icon;
@@ -1054,7 +1118,7 @@ function submit() {
   }
   ambi ? sndAmbigram() : sndWord();
   clearWord();
-  const ambiMsg = ambi === 'rot' ? ' ↻ 2×' : ambi === 'mirh' ? ' ↔ 1.5×' : ambi === 'mirv' ? ' ↕ 1.5×' : '';
+  const ambiMsg = ambi === 'rot' ? ' ↻ 2×' : ambi === 'mirh' ? ' ↔ 1.5×' : ambi === 'mirv' ? ' ↕ 1.5×' : (ambi === 'rot90' || ambi === 'rot270') ? ` ${ambiInfo.icon} 1.5×` : '';
   const flipMsg = flipCount === 2 ? ' ⟲⟲ flipped 2×!' : flipCount === 1 ? ' ⟲ flipped 1.5×!' : '';
   const tierMsg = newTier.name !== prevTier.name ? ` → ${newTier.name}!` : '';
   setSt(`✓ "${word}" +${base + bonus} pts${ambiMsg}${flipMsg}${tierMsg}`, 'ok');
