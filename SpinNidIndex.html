@@ -3,7 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPIN NIdS</title>
+<title>Spin Nids — Ambigram Word Game</title>
+<meta name="description" content="Spin Nids is a free browser-based ambigram word game. Rotate tiles to transform letters using ambigram pairs and build words from the grid. One of the few word games built around ambigrams.">
+<meta name="keywords" content="ambigram word game, ambigram puzzle, rotating letter game, word tile game, ambigram game, spin nids">
+<link rel="canonical" href="https://exclamachine.github.io/PunctuatorsGame/spinnids">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://exclamachine.github.io/PunctuatorsGame/spinnids">
+<meta property="og:title" content="Spin Nids — Ambigram Word Game">
+<meta property="og:description" content="The only word game built around ambigrams. Rotate tiles to transform letters and build words from the grid. Free to play in your browser.">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spin Nids — Ambigram Word Game">
+<meta name="twitter:description" content="The only word game built around ambigrams. Rotate tiles to transform letters and build words from the grid. Free to play in your browser.">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -82,6 +94,44 @@
     color: var(--text2);
     margin-bottom: 18px;
   }
+  .seo-desc { display: none; }
+
+  /* About button */
+  #about-btn {
+    position: fixed; top: 14px; right: 16px; z-index: 90;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--bg2); border: 1.5px solid var(--border2);
+    color: var(--text2); font-size: 15px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+  }
+  #about-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* About modal */
+  #about-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 250; opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease; backdrop-filter: blur(2px);
+  }
+  #about-overlay.visible { opacity: 1; pointer-events: auto; }
+  #about-box {
+    background: var(--bg3); border-radius: 18px; padding: 32px 36px;
+    max-width: 400px; width: 92%; max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+    transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #about-overlay.visible #about-box { transform: scale(1); }
+  #about-box h3 { font-size: 18px; font-weight: 700; margin-bottom: 14px; color: var(--accent); }
+  #about-box p { font-size: 13px; color: var(--text2); line-height: 1.65; margin-bottom: 12px; }
+  #about-box ul { font-size: 13px; color: var(--text2); line-height: 1.8; padding-left: 18px; margin-bottom: 12px; }
+  #about-box strong { color: var(--text); }
+  #about-close {
+    margin-top: 8px; background: var(--accent); color: #fff; border: none;
+    border-radius: 10px; padding: 10px 24px; font-size: 14px; font-weight: 600;
+    cursor: pointer; width: 100%; transition: opacity 0.15s;
+  }
+  #about-close:hover { opacity: 0.85; }
 
   .game-wrap {
     display: flex;
@@ -413,9 +463,36 @@
   </div>
 </div>
 
+<button id="about-btn" title="About / How to play">?</button>
+
+<div id="about-overlay">
+  <div id="about-box">
+    <h3>What is Spin Nids?</h3>
+    <p>Spin Nids is an <strong>ambigram word game</strong>. Each tile on the grid holds four letters — one in each corner. Rotate a tile and its letters transform into their ambigram equivalents: <strong>n → u</strong>, <strong>m → w</strong>, <strong>d → p</strong>, and more.</p>
+    <h3>How to play</h3>
+    <ul>
+      <li>Type letters to build a word from the grid</li>
+      <li>Press <strong>Enter</strong> or the ✓ button to submit a word</li>
+      <li>Press <strong>⌫ Clear</strong> to clear your current word</li>
+      <li>Use <strong>⟷ Flip</strong> to mirror the tile hand</li>
+      <li>Drag tiles from the hand onto the grid</li>
+    </ul>
+    <h3>Modes</h3>
+    <ul>
+      <li><strong>Any Letter</strong> — use any letter anywhere (beginner)</li>
+      <li><strong>One Per Tile</strong> — max one letter per tile per word</li>
+      <li><strong>Adjacent</strong> — each letter must touch the previous one</li>
+      <li><strong>Destroy</strong> — used letters are destroyed; clear a tile to spawn a new one</li>
+    </ul>
+    <button id="about-close">Got it</button>
+  </div>
+</div>
+
 <h1>SP<span class="si">I</span>N N<span class="si">I</span>dS</h1>
 <h2>An Ambigram Word Game</h2>
 <p class="subtitle">Spin tiles to transform letters & make words from the grid!</p>
+<!-- Hidden from view but indexed by search engines -->
+<p class="seo-desc">Spin Nids is a free ambigram word game playable in your browser. Each tile holds four letters — rotate it and the letters transform into their ambigram equivalents. n becomes u, m becomes w, d becomes p. Spell words using the transformed grid in multiple difficulty modes, including a destroy mode where used letters vanish. One of the few word games built around ambigrams.</p>
 
 <div class="game-wrap">
   <div class="left">
@@ -1004,6 +1081,17 @@ document.getElementById('gameover-btn').addEventListener('click', () => {
   document.getElementById('gameover-overlay').classList.remove('visible');
   initBoard(); draw();
   showModeSelect();
+});
+
+document.getElementById('about-btn').addEventListener('click', () => {
+  document.getElementById('about-overlay').classList.add('visible');
+});
+document.getElementById('about-close').addEventListener('click', () => {
+  document.getElementById('about-overlay').classList.remove('visible');
+});
+document.getElementById('about-overlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('about-overlay'))
+    document.getElementById('about-overlay').classList.remove('visible');
 });
 
 // ─── Destroy mode viability check ─────────────────────────────────────────────
