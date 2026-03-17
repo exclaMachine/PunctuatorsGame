@@ -936,7 +936,7 @@ function addQuad(ci, q) {
 }
 
 function addLetter(letter) {
-  if (!AM[letter] && !AM[letter.toLowerCase()] && !AM[letter.toUpperCase()]) return;
+  if (!VALID_LETTERS.has(letter)) return;
   const usedQ = usedKeys(), usedT = usedTiles();
   const prev = wordSeq.length ? wordSeq[wordSeq.length - 1] : null;
   const prevItem = prev && prev.ci !== null ? { ci: prev.ci, q: prev.q } : null;
@@ -1393,11 +1393,19 @@ const MH = { // Horizontal (left-right)
 };
 const MV = { // Vertical (top-bottom)
   'c': 'c', 'C':'C', 'D':'D', 'E':'E', 'H':'H', 'I':'I', 'K': 'K', 'O':'O', 'X':'X',
-  'l':'l', 'o':'o', 't':'t', 'x':'x',
+  'k': 'k', 'l':'l', 'o':'o', 't':'f', 'x':'x',
   'b':'p', 'p':'b', 'd':'q', 'q':'d',
   'n':'u', 'u':'n', 'm':'w', 'w':'m',
   'M':'W', 'W':'M',
 };
+
+// All letters that can ever appear on the board (AM + mirror maps)
+const VALID_LETTERS = new Set([
+  ...Object.keys(AM),
+  ...Object.values(AM).flat().filter(Boolean),
+  ...Object.keys(MH), ...Object.values(MH),
+  ...Object.keys(MV), ...Object.values(MV),
+]);
 
 function doFlipH() {
   const newG = new Array(GR * GR).fill(null);
