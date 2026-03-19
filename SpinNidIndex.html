@@ -1094,7 +1094,7 @@ function ambigramType(word) {
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
 function submit() {
-  if (wordSeq.length < 2) { setSt('Need at least 2 letters', 'err'); return; }
+  if (wordSeq.length < 2) { sndInvalid(); shakeCanvas(); setSt('Need at least 2 letters', 'err'); return; }
   const unmatched = wordSeq.filter(w => w.ci === null);
   if (unmatched.length) {
     setSt(`Letters not on board: ${unmatched.map(w => w.letter).join(', ')}`, 'err'); return;
@@ -1536,15 +1536,15 @@ function rot(ci, dir) {
 
 // ─── Mirror maps ──────────────────────────────────────────────────────────────
 const MH = { // Horizontal (left-right)
-  'A':'A', 'D': 'C', 'H':'H', 'I':'I', 'M':'M', 'O':'O', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y',
-  'i':'i', 'l':'l', 'm':'m', 'o':'o', 't':'t', 'u':'u', 'v':'v', 'w':'w', 'x':'x',
+  'A':'A', 'D': 'C', 'H':'H', 'I':'I', 'M':'M', 'N': 'n', 'O':'O', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y',
+  'i':'i', 'l':'l', 'm':'m', 'n': 'N', 'o':'o', 't':'t', 'u':'N', 'v':'v', 'w':'w', 'x':'x',
   'b':'d', 'd':'b', 'p':'q', 'P': 'q', 'q':'p',
 };
 const MV = { // Vertical (top-bottom)
-  'c': 'c', 'C':'C', 'D':'D', 'E':'E', 'H':'H', 'I':'I', 'K': 'K', 'N': 'n', 'O':'O', 'X':'X',
+  'c': 'c', 'C':'C', 'D':'D', 'E':'E', 'H':'H', 'I':'I', 'K': 'K', 'N': 'n', 'O':'O', 'U': 'n', 'X':'X',
   'i': 'i', 'k': 'k', 'l':'l', 'n': 'N', 'o':'o', 'P': 'b', 't':'f', 'x':'x',
   'b':'p', 'p':'b', 'd':'q', 'q':'d',
-  'n':'u', 'u':'n', 'm':'w', 'w':'m',
+  'n':'u', 'u':'N', 'm':'w', 'w':'m',
   'M':'W', 'W':'M',
 };
 
