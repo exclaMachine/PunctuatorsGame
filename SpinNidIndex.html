@@ -1042,7 +1042,7 @@ function ambigramType(word) {
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
 function submit() {
-  if (wordSeq.length < 2) { setSt('Need at least 2 letters', 'err'); return; }
+  if (wordSeq.length < 2) { sndInvalid(); shakeCanvas(); setSt('Need at least 2 letters', 'err'); return; }
   const unmatched = wordSeq.filter(w => w.ci === null);
   if (unmatched.length) {
     setSt(`Letters not on board: ${unmatched.map(w => w.letter).join(', ')}`, 'err'); return;
