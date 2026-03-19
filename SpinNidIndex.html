@@ -617,18 +617,20 @@ const AM = {
   'i': ['i', null, 'i', null],
   'j': ['j', 'L',  'r', null],  'r': ['r', null, 'j', 'L'],
   'l': ['l', null, 'l', null],
-  'm': ['m', null, 'w', 'E'],   'w': ['w', 'E',  'm', 'B'],
+  'm': ['m', 'B', 'w', 'E'],   'w': ['w', 'E',  'm', 'B'],
   'n': ['n', 's',  'u', 's'],   's': ['s', 'u', 's', 'n'],
   'o': ['o', 'o',  'o', 'o'],
   't': ['t', 't',  't', 't'],   'x': ['x', 'x',  'x', 'x'],
   'z': ['z', 'N', 'z', 'N'],
   'A': ['A', null, 'V', null],  'V': ['V', null, 'A', null],
   'B': ['B', 'w',  'E', 'm'],
-  'C': ['C', null, 'D', 'u'],  'D': ['D', 'U', 'C', null],
-  'E': ['E', 'm',  null, 'w'], 'G': ['G', null,  null, 'U'],
+  'C': ['C', 'n', 'D', 'u'],  'D': ['D', 'U', 'C', 'n'],
+  'E': ['E', 'm',  'B', 'w'], 'F': ['F', 'm',  'J', null],
+  'G': ['G', null,  null, 'U'],
   'H': ['H', 'I',  'H',  'I'],  'I': ['I', 'H', 'I', 'H'],
+  'J': ['J', 'L', 'r', null],
   'L': ['L', 'r',  'T', null],  'T': ['T', null, 'L', 'r'],
-  'M': ['M', null, 'W', null],  'W': ['W', 'E', 'M', null],
+  'M': ['M', 'B', 'W', 'E'],  'W': ['W', 'E', 'M', 'B'],
   'N': ['N', 'Z',  'N', 'Z'],   'Z': ['Z', 'N',  'Z',  'N'],
   'O': ['O', 'O', 'O', 'O'], 'P': ['P', null, 'd', null],
   'R': ['R', null, 'y', null], 'S': ['S', 'u', 'S', 'n'],
@@ -864,6 +866,7 @@ let glyphMode = true;
 const glyphImg = new Image();
 glyphImg.src = './Alpha.png';
 glyphImg.onload = () => {
+  glyphCache.clear();
   const btn = document.getElementById('bglyph');
   btn.disabled = false;
   btn.title = 'Toggle hand-drawn glyphs';
@@ -872,8 +875,9 @@ glyphImg.onload = () => {
 };
 
 // Draw a single letter from the sprite sheet centered at (cx, cy) at given pixel size.
-// Sprite layout: a-z (indices 0-25) then A-Z (26-51), 7 columns × 8 rows, 128×128 per cell.
+// Sprite layout: a-z (indices 0-25) then A-Z (26-51), 7 columns × 8 rows, 32×32 per cell.
 // Returns false if the letter isn't in the sheet (multi-char, null, etc.) — caller falls back to fillText.
+const GLYPH_CELL = 32;
 const glyphCache = new Map();
 function drawGlyph(letter, cx, cy, size, color) {
   if (!glyphImg.complete || !glyphImg.naturalWidth || typeof letter !== 'string' || letter.length !== 1) return false;
@@ -888,12 +892,12 @@ function drawGlyph(letter, cx, cy, size, color) {
   let off = glyphCache.get(cacheKey);
   if (!off) {
     off = document.createElement('canvas');
-    off.width = off.height = 128;
+    off.width = off.height = GLYPH_CELL;
     const oc = off.getContext('2d');
-    oc.drawImage(glyphImg, col * 128, row * 128, 128, 128, 0, 0, 128, 128);
+    oc.drawImage(glyphImg, col * GLYPH_CELL, row * GLYPH_CELL, GLYPH_CELL, GLYPH_CELL, 0, 0, GLYPH_CELL, GLYPH_CELL);
     oc.globalCompositeOperation = 'source-in';
     oc.fillStyle = color;
-    oc.fillRect(0, 0, 128, 128);
+    oc.fillRect(0, 0, GLYPH_CELL, GLYPH_CELL);
     glyphCache.set(cacheKey, off);
   }
   C.save();
