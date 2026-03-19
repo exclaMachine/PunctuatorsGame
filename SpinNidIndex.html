@@ -860,12 +860,14 @@ let pulses = {};  // "ci_q" -> 0..1
 let particles = []; // explosion particles for destroy mode
 
 // ─── Glyph mode ──────────────────────────────────────────────────────────────
-let glyphMode = false;
+let glyphMode = true;
 const glyphImg = new Image();
 glyphImg.src = './Alpha.png';
 glyphImg.onload = () => {
-  document.getElementById('bglyph').disabled = false;
-  document.getElementById('bglyph').title = 'Toggle hand-drawn glyphs';
+  const btn = document.getElementById('bglyph');
+  btn.disabled = false;
+  btn.title = 'Toggle hand-drawn glyphs';
+  btn.classList.toggle('active', glyphMode);
   if (glyphMode) draw();
 };
 
