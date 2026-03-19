@@ -1291,6 +1291,13 @@ function explodeQuad(ci, q, letter) {
 }
 
 // ─── Drawing ──────────────────────────────────────────────────────────────────
+// Returns the CSS font string for a letter, overriding for specific letterforms.
+// g → Georgia (closed-loop double-story g), unless it came from a rotated b (open-tail Courier New).
+function letterFont(letter, size, base) {
+  if (letter === 'g' && base !== 'b') return `700 ${size}px 'Georgia', serif`;
+  return `700 ${size}px 'Courier New', monospace`;
+}
+
 function drawTile(t, ci) {
   const { x: gx, y: gy } = txy(ci);
   const ccx = gx + CELL / 2, ccy = gy + CELL / 2;
@@ -1316,14 +1323,15 @@ function drawTile(t, ci) {
   // Spinning: show letters in their flipped positions
   if (!snapped) {
     const LP = [[-CELL / 4, -CELL / 4], [CELL / 4, -CELL / 4], [-CELL / 4, CELL / 4], [CELL / 4, CELL / 4]];
-    C.font = `700 ${Math.round(CELL * 0.22)}px 'Courier New', monospace`;
     C.textAlign = 'center'; C.textBaseline = 'middle';
     t.d.l.forEach((l, q) => {
       const spinColor = d ? 'rgba(200,200,200,0.42)' : 'rgba(40,40,40,0.32)';
       C.fillStyle = spinColor;
       const spinSize = Math.round(CELL * 0.22);
-      if (!glyphMode || !drawGlyph(l, LP[q][0], LP[q][1], spinSize, spinColor))
+      if (!glyphMode || !drawGlyph(l, LP[q][0], LP[q][1], spinSize, spinColor)) {
+        C.font = letterFont(l, spinSize);
         C.fillText(l, LP[q][0], LP[q][1]);
+      }
     });
   }
   C.restore();
@@ -1375,14 +1383,14 @@ function drawTile(t, ci) {
           if (t.mirroredV) C.scale( 1, -1);
           if (!drawGlyph(base, 0, 0, glyphSize, effColor)) {
             C.fillStyle = effColor;
-            C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
+            C.font = letterFont(eff, glyphSize, base);
             C.textAlign = 'center'; C.textBaseline = 'middle';
             C.fillText(eff, 0, 0);
           }
           C.restore();
         } else {
           C.fillStyle = effColor;
-          C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
+          C.font = letterFont(eff, Math.round(CELL * 0.28), base);
           C.textAlign = 'center'; C.textBaseline = 'middle';
           C.fillText(eff, lx, ly);
         }
@@ -1395,11 +1403,12 @@ function drawTile(t, ci) {
         if (t.mirroredV) C.scale( 1, -1);
         const invalidColor = d ? 'rgba(211,209,199,0.55)' : 'rgba(44,44,42,0.45)';
         C.fillStyle = invalidColor;
-        C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
         C.textAlign = 'center'; C.textBaseline = 'middle';
         const glyphSize = Math.round(CELL * 0.28);
-        if (!glyphMode || !drawGlyph(base, 0, 0, glyphSize, invalidColor))
+        if (!glyphMode || !drawGlyph(base, 0, 0, glyphSize, invalidColor)) {
+          C.font = letterFont(base, glyphSize);
           C.fillText(base, 0, 0);
+        }
         C.restore();
         C.strokeStyle = d ? 'rgba(240,149,149,0.9)' : 'rgba(163,45,45,0.8)';
         C.lineWidth = 2;
