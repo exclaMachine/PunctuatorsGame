@@ -185,6 +185,8 @@
     transition: background 0.1s;
   }
   button:hover { background: var(--bg2); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   button.on {
     background: var(--accent-bg);
     color: var(--accent);
@@ -549,6 +551,7 @@
       <button id="bclr">⌫ Clear</button>
       <button id="bflip">⟷ Flip</button>
       <button id="bflipv">↕ Flip</button>
+      <button id="bglyph" disabled title="Waiting for glyphs.png…">✏ Glyphs</button>
     </div>
     <div class="status" id="st"></div>
   </div>
@@ -605,29 +608,30 @@ C.scale(dpr, dpr);
 // letter -> [at 0°, at 90°CW, at 180°, at 270°CW]  null = invalid
 const AM = {
   'a': ['a', null, 'e', null],  'e': ['e', null, 'a', null],
-  'b': ['b', null, 'q', null],  'q': ['q', null, 'b', null],
-  'c': ['c', 'n',  null, 'u'],  'u': ['u', 'c',  'n', 'D'],
-  'd': ['d', null, 'p', null],  'p': ['p', null, 'd', null],
-  'g': ['g', null, 'g', null],
+  'b': ['b', null, 'g', null],  'q': ['q', null, 'b', null],
+  'c': ['c', 'n',  null, 'u'],  'u': ['u', 's',  'n', 's'],
+  'd': ['d', null, 'p', null],
+  'f': ['f', null, 't', null], 'p': ['p', null, 'd', null],
+  'g': ['g', 'oo', 'g', 'oo'],
   'h': ['h', null, 'y', null],  'y': ['y', null, 'R', null],
   'i': ['i', null, 'i', null],
   'j': ['j', 'L',  'r', null],  'r': ['r', null, 'j', 'L'],
   'l': ['l', null, 'l', null],
   'm': ['m', null, 'w', 'E'],   'w': ['w', 'E',  'm', 'B'],
-  'n': ['n', 's',  'u', 's'],   's': ['s', 'n', 's', 'n'],
+  'n': ['n', 's',  'u', 's'],   's': ['s', 'u', 's', 'n'],
   'o': ['o', 'o',  'o', 'o'],
   't': ['t', 't',  't', 't'],   'x': ['x', 'x',  'x', 'x'],
-  'z': ['z', null, 'z', null],
+  'z': ['z', 'N', 'z', 'N'],
   'A': ['A', null, 'V', null],  'V': ['V', null, 'A', null],
-  'B': ['B', 'w',  null, null],
-  'C': ['C', null, 'D', null],  'D': ['D', null, 'C', null],
-  'E': ['E', 'm',  null, 'w'],
+  'B': ['B', 'w',  'E', 'm'],
+  'C': ['C', null, 'D', 'u'],  'D': ['D', 'U', 'C', null],
+  'E': ['E', 'm',  null, 'w'], 'G': ['G', null,  null, 'U'],
   'H': ['H', 'I',  'H',  'I'],  'I': ['I', 'H', 'I', 'H'],
-  'L': ['L', 'r',  'T', null],  'T': ['T', null, 'L', null],
-  'M': ['M', null, 'W', null],  'W': ['W', null, 'M', null],
+  'L': ['L', 'r',  'T', null],  'T': ['T', null, 'L', 'r'],
+  'M': ['M', null, 'W', null],  'W': ['W', 'E', 'M', null],
   'N': ['N', 'Z',  'N', 'Z'],   'Z': ['Z', 'N',  'Z',  'N'],
-  'O': ['O', 'O', 'O', 'O'],
-  'R': ['R', null, 'y', null],
+  'O': ['O', 'O', 'O', 'O'], 'P': ['P', null, 'd', null],
+  'R': ['R', null, 'y', null], 'S': ['S', 'u', 'S', 'n'],
   'Y': ['Y', 'Y',  null, 'Y'],
 };
 
@@ -855,6 +859,48 @@ let wordSeq = []; // [{letter, ci, q}]
 let pulses = {};  // "ci_q" -> 0..1
 let particles = []; // explosion particles for destroy mode
 
+// ─── Glyph mode ──────────────────────────────────────────────────────────────
+let glyphMode = false;
+const glyphImg = new Image();
+glyphImg.src = './Alpha.png';
+glyphImg.onload = () => {
+  document.getElementById('bglyph').disabled = false;
+  document.getElementById('bglyph').title = 'Toggle hand-drawn glyphs';
+  if (glyphMode) draw();
+};
+
+// Draw a single letter from the sprite sheet centered at (cx, cy) at given pixel size.
+// Sprite layout: a-z (indices 0-25) then A-Z (26-51), 7 columns × 8 rows, 128×128 per cell.
+// Returns false if the letter isn't in the sheet (multi-char, null, etc.) — caller falls back to fillText.
+const glyphCache = new Map();
+function drawGlyph(letter, cx, cy, size, color) {
+  if (!glyphImg.complete || !glyphImg.naturalWidth || typeof letter !== 'string' || letter.length !== 1) return false;
+  const code = letter.charCodeAt(0);
+  let idx;
+  if (code >= 97 && code <= 122) idx = code - 97;        // a–z → 0–25
+  else if (code >= 65 && code <= 90) idx = 26 + code - 65; // A–Z → 26–51
+  else return false;
+  const col = idx % 7, row = Math.floor(idx / 7);
+  // Cache tinted offscreen canvases to avoid re-creating them every frame
+  const cacheKey = letter + '|' + color;
+  let off = glyphCache.get(cacheKey);
+  if (!off) {
+    off = document.createElement('canvas');
+    off.width = off.height = 128;
+    const oc = off.getContext('2d');
+    oc.drawImage(glyphImg, col * 128, row * 128, 128, 128, 0, 0, 128, 128);
+    oc.globalCompositeOperation = 'source-in';
+    oc.fillStyle = color;
+    oc.fillRect(0, 0, 128, 128);
+    glyphCache.set(cacheKey, off);
+  }
+  C.save();
+  C.globalCompositeOperation = 'source-over';
+  C.drawImage(off, cx - size / 2, cy - size / 2, size, size);
+  C.restore();
+  return true;
+}
+
 // Difficulty mode — locked at game start
 let diffMode = 'free';
 const MODE_LABELS = {
@@ -1042,7 +1088,7 @@ function ambigramType(word) {
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
 function submit() {
-  if (wordSeq.length < 2) { sndInvalid(); shakeCanvas(); setSt('Need at least 2 letters', 'err'); return; }
+  if (wordSeq.length < 2) { setSt('Need at least 2 letters', 'err'); return; }
   const unmatched = wordSeq.filter(w => w.ci === null);
   if (unmatched.length) {
     setSt(`Letters not on board: ${unmatched.map(w => w.letter).join(', ')}`, 'err'); return;
@@ -1267,8 +1313,11 @@ function drawTile(t, ci) {
     C.font = `700 ${Math.round(CELL * 0.22)}px 'Courier New', monospace`;
     C.textAlign = 'center'; C.textBaseline = 'middle';
     t.d.l.forEach((l, q) => {
-      C.fillStyle = d ? 'rgba(200,200,200,0.42)' : 'rgba(40,40,40,0.32)';
-      C.fillText(l, LP[q][0], LP[q][1]);
+      const spinColor = d ? 'rgba(200,200,200,0.42)' : 'rgba(40,40,40,0.32)';
+      C.fillStyle = spinColor;
+      const spinSize = Math.round(CELL * 0.22);
+      if (!glyphMode || !drawGlyph(l, LP[q][0], LP[q][1], spinSize, spinColor))
+        C.fillText(l, LP[q][0], LP[q][1]);
     });
   }
   C.restore();
@@ -1309,10 +1358,28 @@ function drawTile(t, ci) {
       }
 
       if (eff) {
-        C.fillStyle = inWord ? (d ? '#5dcaa5' : '#0f6e56') : (d ? '#d3d1c7' : '#2c2c2a');
-        C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
-        C.textAlign = 'center'; C.textBaseline = 'middle';
-        C.fillText(eff, lx, ly);
+        const effColor = inWord ? (d ? '#5dcaa5' : '#0f6e56') : (d ? '#d3d1c7' : '#2c2c2a');
+        const glyphSize = Math.round(CELL * 0.28);
+        if (glyphMode) {
+          // Draw base glyph physically rotated — the ambigram reads correctly at this rotation
+          C.save();
+          C.translate(lx, ly);
+          C.rotate(r * Math.PI / 2);
+          if (t.mirrored)  C.scale(-1,  1);
+          if (t.mirroredV) C.scale( 1, -1);
+          if (!drawGlyph(base, 0, 0, glyphSize, effColor)) {
+            C.fillStyle = effColor;
+            C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
+            C.textAlign = 'center'; C.textBaseline = 'middle';
+            C.fillText(eff, 0, 0);
+          }
+          C.restore();
+        } else {
+          C.fillStyle = effColor;
+          C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
+          C.textAlign = 'center'; C.textBaseline = 'middle';
+          C.fillText(eff, lx, ly);
+        }
       } else if (base) {
         // Invalid — draw base letter at its actual rotated orientation so user sees why
         C.save();
@@ -1320,10 +1387,13 @@ function drawTile(t, ci) {
         C.rotate(r * Math.PI / 2);
         if (t.mirrored)  C.scale(-1,  1);
         if (t.mirroredV) C.scale( 1, -1);
-        C.fillStyle = d ? 'rgba(211,209,199,0.55)' : 'rgba(44,44,42,0.45)';
+        const invalidColor = d ? 'rgba(211,209,199,0.55)' : 'rgba(44,44,42,0.45)';
+        C.fillStyle = invalidColor;
         C.font = `700 ${Math.round(CELL * 0.28)}px 'Courier New', monospace`;
         C.textAlign = 'center'; C.textBaseline = 'middle';
-        C.fillText(base, 0, 0);
+        const glyphSize = Math.round(CELL * 0.28);
+        if (!glyphMode || !drawGlyph(base, 0, 0, glyphSize, invalidColor))
+          C.fillText(base, 0, 0);
         C.restore();
         C.strokeStyle = d ? 'rgba(240,149,149,0.9)' : 'rgba(163,45,45,0.8)';
         C.lineWidth = 2;
@@ -1451,13 +1521,13 @@ function rot(ci, dir) {
 
 // ─── Mirror maps ──────────────────────────────────────────────────────────────
 const MH = { // Horizontal (left-right)
-  'A':'A', 'H':'H', 'I':'I', 'M':'M', 'O':'O', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y',
+  'A':'A', 'D': 'C', 'H':'H', 'I':'I', 'M':'M', 'O':'O', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y',
   'i':'i', 'l':'l', 'm':'m', 'o':'o', 't':'t', 'u':'u', 'v':'v', 'w':'w', 'x':'x',
-  'b':'d', 'd':'b', 'p':'q', 'q':'p',
+  'b':'d', 'd':'b', 'p':'q', 'P': 'q', 'q':'p',
 };
 const MV = { // Vertical (top-bottom)
-  'c': 'c', 'C':'C', 'D':'D', 'E':'E', 'H':'H', 'I':'I', 'K': 'K', 'O':'O', 'X':'X',
-  'k': 'k', 'l':'l', 'o':'o', 't':'f', 'x':'x',
+  'c': 'c', 'C':'C', 'D':'D', 'E':'E', 'H':'H', 'I':'I', 'K': 'K', 'N': 'n', 'O':'O', 'X':'X',
+  'i': 'i', 'k': 'k', 'l':'l', 'n': 'N', 'o':'o', 'P': 'b', 't':'f', 'x':'x',
   'b':'p', 'p':'b', 'd':'q', 'q':'d',
   'n':'u', 'u':'n', 'm':'w', 'w':'m',
   'M':'W', 'W':'M',
@@ -1503,6 +1573,11 @@ function flipV() {
 }
 document.getElementById('bflip').onclick  = flipH;
 document.getElementById('bflipv').onclick = flipV;
+document.getElementById('bglyph').onclick = () => {
+  glyphMode = !glyphMode;
+  document.getElementById('bglyph').classList.toggle('active', glyphMode);
+  draw();
+};
 
 // ─── Canvas click ─────────────────────────────────────────────────────────────
 gc.addEventListener('click', e => {

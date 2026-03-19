@@ -4289,6 +4289,7 @@ ambience
 ambiences
 ambient
 ambients
+ambigram
 ambiguities
 ambiguity
 ambiguous
