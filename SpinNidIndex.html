@@ -866,7 +866,7 @@ let glyphMode = true;
 const glyphImg = new Image();
 glyphImg.src = './Alpha.png';
 glyphImg.onload = () => {
-  glyphCache.clear();
+
   const btn = document.getElementById('bglyph');
   btn.disabled = false;
   btn.title = 'Toggle hand-drawn glyphs';
@@ -878,7 +878,7 @@ glyphImg.onload = () => {
 // Sprite layout: a-z (indices 0-25) then A-Z (26-51), 7 columns × 8 rows, 32×32 per cell.
 // Returns false if the letter isn't in the sheet (multi-char, null, etc.) — caller falls back to fillText.
 const GLYPH_CELL = 32;
-const glyphCache = new Map();
+
 function drawGlyph(letter, cx, cy, size, color) {
   if (!glyphImg.complete || !glyphImg.naturalWidth || typeof letter !== 'string' || letter.length !== 1) return false;
   const code = letter.charCodeAt(0);
@@ -887,22 +887,13 @@ function drawGlyph(letter, cx, cy, size, color) {
   else if (code >= 65 && code <= 90) idx = 26 + code - 65; // A–Z → 26–51
   else return false;
   const col = idx % 7, row = Math.floor(idx / 7);
-  // Cache tinted offscreen canvases to avoid re-creating them every frame
-  const cacheKey = letter + '|' + color;
-  let off = glyphCache.get(cacheKey);
-  if (!off) {
-    off = document.createElement('canvas');
-    off.width = off.height = GLYPH_CELL;
-    const oc = off.getContext('2d');
-    oc.drawImage(glyphImg, col * GLYPH_CELL, row * GLYPH_CELL, GLYPH_CELL, GLYPH_CELL, 0, 0, GLYPH_CELL, GLYPH_CELL);
-    oc.globalCompositeOperation = 'source-in';
-    oc.fillStyle = color;
-    oc.fillRect(0, 0, GLYPH_CELL, GLYPH_CELL);
-    glyphCache.set(cacheKey, off);
-  }
+  // Extract alpha from color (rgba(..., a) → use as globalAlpha; hex → 1)
+  let alpha = 1;
+  const m = color.match(/rgba?\([^)]*,\s*([\d.]+)\)/);
+  if (m) alpha = parseFloat(m[1]);
   C.save();
-  C.globalCompositeOperation = 'source-over';
-  C.drawImage(off, cx - size / 2, cy - size / 2, size, size);
+  C.globalAlpha = alpha;
+  C.drawImage(glyphImg, col * GLYPH_CELL, row * GLYPH_CELL, GLYPH_CELL, GLYPH_CELL, cx - size / 2, cy - size / 2, size, size);
   C.restore();
   return true;
 }
@@ -1309,7 +1300,7 @@ function drawTile(t, ci) {
   if (t.mirrored)  C.scale(-1,  1);
   if (t.mirroredV) C.scale( 1, -1);
 
-  C.fillStyle = t.d.c + (d ? '44' : '99');
+  C.fillStyle = t.d.c + (d ? '28' : '55');
   rr(-CELL / 2 + 3, -CELL / 2 + 3, CELL - 6, CELL - 6, 9); C.fill();
   C.strokeStyle = t.d.c; C.lineWidth = 2.5;
   rr(-CELL / 2 + 3, -CELL / 2 + 3, CELL - 6, CELL - 6, 9); C.stroke();
