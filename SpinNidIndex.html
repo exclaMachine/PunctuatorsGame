@@ -864,8 +864,21 @@ let particles = []; // explosion particles for destroy mode
 // ─── Glyph mode ──────────────────────────────────────────────────────────────
 let glyphMode = true;
 const glyphImg = new Image();
+let glyphImgInv = null; // photo-negative version for dark mode
 glyphImg.src = './Alpha.png';
 glyphImg.onload = () => {
+  // Build an inverted (photo-negative) copy of the sprite sheet for dark mode
+  const w = glyphImg.naturalWidth, h = glyphImg.naturalHeight;
+  const inv = document.createElement('canvas');
+  inv.width = w; inv.height = h;
+  const ic = inv.getContext('2d');
+  ic.drawImage(glyphImg, 0, 0);          // draw original
+  ic.globalCompositeOperation = 'difference';
+  ic.fillStyle = '#fff';
+  ic.fillRect(0, 0, w, h);              // invert RGB (alpha goes to 1 everywhere)
+  ic.globalCompositeOperation = 'destination-in';
+  ic.drawImage(glyphImg, 0, 0);          // restore original alpha mask
+  glyphImgInv = inv;
 
   const btn = document.getElementById('bglyph');
   btn.disabled = false;
@@ -891,9 +904,10 @@ function drawGlyph(letter, cx, cy, size, color) {
   let alpha = 1;
   const m = color.match(/rgba?\([^)]*,\s*([\d.]+)\)/);
   if (m) alpha = parseFloat(m[1]);
+  const src = (dk() && glyphImgInv) ? glyphImgInv : glyphImg;
   C.save();
   C.globalAlpha = alpha;
-  C.drawImage(glyphImg, col * GLYPH_CELL, row * GLYPH_CELL, GLYPH_CELL, GLYPH_CELL, cx - size / 2, cy - size / 2, size, size);
+  C.drawImage(src, col * GLYPH_CELL, row * GLYPH_CELL, GLYPH_CELL, GLYPH_CELL, cx - size / 2, cy - size / 2, size, size);
   C.restore();
   return true;
 }
@@ -1527,7 +1541,7 @@ function rot(ci, dir) {
 
 // ─── Mirror maps ──────────────────────────────────────────────────────────────
 const MH = { // Horizontal (left-right)
-  'A':'A', 'D': 'C', 'H':'H', 'I':'I', 'M':'M', 'N': 'n', 'O':'O', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y',
+  'A':'A', 'D': 'C', 'F': 'Z', 'H':'H', 'I':'I', 'M':'M', 'N': 'n', 'O':'O', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y',
   'i':'i', 'l':'l', 'm':'m', 'n': 'N', 'o':'o', 't':'t', 'u':'N', 'v':'v', 'w':'w', 'x':'x',
   'b':'d', 'd':'b', 'p':'q', 'P': 'q', 'q':'p',
 };
