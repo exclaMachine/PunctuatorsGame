@@ -1980,6 +1980,15 @@ const isTouch = navigator.maxTouchPoints > 0;
 
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  // Let modals handle their own keyboard events
+  if (document.getElementById('about-overlay').classList.contains('visible')) {
+    if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); document.getElementById('about-overlay').classList.remove('visible'); }
+    return;
+  }
+  if (!document.getElementById('mode-select').classList.contains('hidden')) {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('ms-start').click(); }
+    return;
+  }
   if (e.key === 'Enter') { e.preventDefault(); submit(); return; }
   if (e.key === 'Escape') { clearWord(); setSt('', ''); return; }
   if (e.key === 'Backspace') { e.preventDefault(); removeLetter(); return; }
