@@ -526,15 +526,17 @@
   }
   #intro.fade-out { opacity: 0; pointer-events: none; }
   #intro-inner {
-    max-width: 480px; width: 100%;
+    max-width: min(560px, 94vw); width: 100%;
     text-align: center;
     display: flex; flex-direction: column; align-items: center;
   }
-  #intro-title { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
-  #intro-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.6; }
+  #intro-inner h1 { margin-bottom: 2px; }
+  #intro-inner h2 { margin-bottom: 12px; }
+  #intro-how { font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  #intro-sub { font-size: 13px; color: var(--text2); margin-bottom: 16px; line-height: 1.6; }
   .demo-board {
     display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 6px; width: 216px; margin-bottom: 12px; position: relative;
+    gap: 6px; width: min(264px, 78vw); margin-bottom: 12px; position: relative;
   }
   .demo-tile {
     aspect-ratio: 1; border-radius: 8px;
@@ -572,7 +574,7 @@
     background: var(--bg2); border: 1px solid var(--border);
     border-radius: 8px; padding: 7px 16px;
     font-size: 20px; font-weight: 700; letter-spacing: 3px;
-    min-height: 40px; width: 216px;
+    min-height: 40px; width: min(264px, 78vw);
     display: flex; align-items: center; justify-content: center;
     color: var(--accent); margin-bottom: 8px;
     transition: background 0.25s, color 0.25s, border-color 0.25s;
@@ -623,7 +625,9 @@
 <div id="intro">
   <button id="intro-skip">Skip →</button>
   <div id="intro-inner">
-    <div id="intro-title">How to Play</div>
+    <h1>SP<span class="si">I</span>N N<span class="si">I</span>dS</h1>
+    <h2>An Ambigram Word Game</h2>
+    <div id="intro-how">How to Play</div>
     <div id="intro-sub">Select letters from the grid to build words.<br>Rotate tiles to unlock new letters!</div>
     <div class="demo-board" id="demo-board">
       <div class="demo-tile" id="dt0" style="background:#B5D4F455"><span class="dq" id="dq00">s</span><span class="dq" id="dq01">a</span><span class="dq" id="dq02">t</span><span class="dq" id="dq03">e</span><div class="demo-dot"></div></div>
@@ -694,7 +698,7 @@
 
 <div id="about-overlay">
   <div id="about-box">
-    <h3>What is Spin Nids?</h3>
+    <h3>What is SPIN NIdS?</h3>
     <p>Spin Nids is an <strong>ambigram word game</strong>. Each tile on the grid holds four letters — one in each corner. Rotate a tile and its letters transform into their ambigram equivalents: <strong>n → u</strong>, <strong>m → w</strong>, <strong>d → p</strong>, and more.</p>
     <h3>How to play</h3>
     <ul>
