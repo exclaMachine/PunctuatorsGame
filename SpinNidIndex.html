@@ -142,7 +142,7 @@
     max-width: 860px;
   }
 
-  .left { flex: 0 0 auto; }
+  .left { flex: 0 0 auto; position: relative; }
   .right {
     flex: 1;
     min-width: 200px;
@@ -232,6 +232,44 @@
     0%   { transform: scale(1); }
     40%  { transform: scale(1.25); }
     100% { transform: scale(1); }
+  }
+
+  /* ── Board popup toasts ─────────────────────────────────── */
+  .board-popup {
+    position: absolute;
+    pointer-events: none;
+    font-family: Georgia, serif;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    padding: 6px 14px;
+    border-radius: 10px;
+    border: 2px solid currentColor;
+    background: var(--bg);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+    animation: popup-rise 2s ease-out forwards;
+    z-index: 100;
+  }
+  .board-popup.tier-popup {
+    font-size: 22px;
+    padding: 10px 22px;
+    border-radius: 14px;
+    animation: tier-rise 2.4s ease-out forwards;
+  }
+  @keyframes popup-rise {
+    0%   { opacity: 0; transform: rotate(var(--ang,0deg)) translateY(0px)   scale(0.5); }
+    12%  { opacity: 1; transform: rotate(var(--ang,0deg)) translateY(-10px)  scale(1.1); }
+    22%  { opacity: 1; transform: rotate(var(--ang,0deg)) translateY(-18px)  scale(1);   }
+    68%  { opacity: 1; transform: rotate(var(--ang,0deg)) translateY(-50px)  scale(1);   }
+    100% { opacity: 0; transform: rotate(var(--ang,0deg)) translateY(-90px)  scale(0.9); }
+  }
+  @keyframes tier-rise {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.5); }
+    15%  { opacity: 1; transform: translate(-50%,calc(-50% - 12px)) scale(1.08); }
+    30%  { opacity: 1; transform: translate(-50%,calc(-50% - 20px)) scale(1);    }
+    65%  { opacity: 1; transform: translate(-50%,calc(-50% - 20px)) scale(1);    }
+    100% { opacity: 0; transform: translate(-50%,calc(-50% - 55px)) scale(0.95); }
   }
   .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
   .chip {
@@ -1135,6 +1173,24 @@ function submit() {
       setTimeout(showWin, 800); // brief pause so the chip lands first
     }
   }
+  // ── Bonus popups ────────────────────────────────────────────────────────────
+  if (ambi) {
+    const ambiLabel =
+      ambi === 'rot'   ? '↻ Rotational Ambigram! ×2'  :
+      ambi === 'mirh'  ? '↔ Mirror Ambigram! ×1.5'    :
+      ambi === 'mirv'  ? '↕ Mirror Ambigram! ×1.5'    :
+      ambi === 'rot90' ? '↷ 90° Spin! ×1.5'           :
+                         '↶ 270° Spin! ×1.5';
+    const ambiColor = ambi === 'rot' ? '#5dcaa5' : '#4a9fd4';
+    showBoardPopup(ambiLabel, ambiColor, false);
+  }
+  if (flipCount) {
+    const flipLabel = flipCount === 2 ? '⟲⟲ Double Flip! ×2' : '⟲ Board Flipped! ×1.5';
+    setTimeout(() => showBoardPopup(flipLabel, '#b07ef0', false), ambi ? 220 : 0);
+  }
+  if (newTier.name !== prevTier.name) {
+    setTimeout(() => showBoardPopup('✦ ' + newTier.name + '!', '#e8c84a', true), 350);
+  }
   const chip = document.createElement('div');
   chip.className = 'chip' + (ambi ? ' chip-' + ambi : '');
   if (ambi === 'rot90' || ambi === 'rot270') {
@@ -1179,6 +1235,29 @@ function submit() {
   const flipMsg = flipCount === 2 ? ' ⟲⟲ flipped 2×!' : flipCount === 1 ? ' ⟲ flipped 1.5×!' : '';
   const tierMsg = newTier.name !== prevTier.name ? ` → ${newTier.name}!` : '';
   setSt(`✓ "${word}" +${base + bonus} pts${ambiMsg}${flipMsg}${tierMsg}`, 'ok');
+}
+
+function showBoardPopup(text, color, isTier) {
+  const canvas = document.getElementById('gc');
+  const leftEl  = document.querySelector('.left');
+  const cx = canvas.offsetLeft, cy = canvas.offsetTop;
+  const cw = canvas.offsetWidth, ch = canvas.offsetHeight;
+  const el = document.createElement('div');
+  el.className = 'board-popup' + (isTier ? ' tier-popup' : '');
+  el.textContent = text;
+  el.style.color = color;
+  el.style.borderColor = color;
+  if (isTier) {
+    el.style.left = (cx + cw / 2) + 'px';
+    el.style.top  = (cy + ch / 2) + 'px';
+  } else {
+    const ang = Math.random() * 24 - 12;
+    el.style.setProperty('--ang', ang + 'deg');
+    el.style.left = (cx + cw * 0.12 + Math.random() * cw * 0.72) + 'px';
+    el.style.top  = (cy + ch * 0.15 + Math.random() * ch * 0.55) + 'px';
+  }
+  leftEl.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
 }
 
 function showWin() {
@@ -1542,11 +1621,11 @@ function rot(ci, dir) {
 // ─── Mirror maps ──────────────────────────────────────────────────────────────
 const MH = { // Horizontal (left-right)
   'A':'A', 'D': 'C', 'F': 'Z', 'H':'H', 'I':'I', 'M':'M', 'N': 'n', 'O':'O', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y',
-  'i':'i', 'l':'l', 'm':'m', 'n': 'N', 'o':'o', 't':'t', 'u':'N', 'v':'v', 'w':'w', 'x':'x',
-  'b':'d', 'd':'b', 'p':'q', 'P': 'q', 'q':'p',
+  'i':'i', 'l':'l', 'm':'m', 'n': 'N', 'o':'o', 's': 'z', 't':'t', 'u':'N', 'v':'v', 'w':'w', 'x':'x',
+  'b':'d', 'd':'b', 'p':'q', 'P': 'q', 'q':'p', 'z':'s',
 };
 const MV = { // Vertical (top-bottom)
-  'c': 'c', 'C':'C', 'D':'D', 'E':'E', 'H':'H', 'I':'I', 'K': 'K', 'N': 'n', 'O':'O', 'U': 'n', 'X':'X',
+  'c': 'c', 'C':'C', 'D':'D', 'E':'E', 'H':'H', 'I':'I', 'K': 'K', 'N': 'n', 'O':'O', 'R': 't', 'U': 'n', 'X':'X',
   'i': 'i', 'k': 'k', 'l':'l', 'n': 'N', 'o':'o', 'P': 'b', 't':'f', 'x':'x',
   'b':'p', 'p':'b', 'd':'q', 'q':'d',
   'n':'u', 'u':'N', 'm':'w', 'w':'m',
