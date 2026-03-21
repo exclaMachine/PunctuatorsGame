@@ -512,9 +512,134 @@
     animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── Intro overlay ─────────────────────────────────────────────────────── */
+  #intro {
+    position: fixed; inset: 0; z-index: 500;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px;
+    transition: opacity 0.5s;
+  }
+  #intro.fade-out { opacity: 0; pointer-events: none; }
+  #intro-inner {
+    max-width: 480px; width: 100%;
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  #intro-title { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  #intro-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.6; }
+  .demo-board {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 6px; width: 216px; margin-bottom: 12px; position: relative;
+  }
+  .demo-tile {
+    aspect-ratio: 1; border-radius: 8px;
+    border: 1.5px solid var(--border);
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+    position: relative;
+    transform-origin: center center;
+  }
+  .demo-tile.spinning {
+    animation: demo-tile-spin 0.6s cubic-bezier(0.34,1.1,0.64,1) forwards;
+  }
+  @keyframes demo-tile-spin {
+    0%   { transform: rotate(0deg) scale(1); }
+    45%  { transform: rotate(95deg) scale(0.8); }
+    100% { transform: rotate(180deg) scale(1); }
+  }
+  .dq {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; line-height: 1;
+    color: rgba(44,44,42,0.5);
+    border-radius: 3px;
+    transition: background 0.18s, color 0.18s;
+    user-select: none;
+  }
+  @media (prefers-color-scheme: dark) { .dq { color: rgba(211,209,199,0.5); } }
+  .dq.sel { background: var(--accent-bg); color: var(--accent); }
+  .dq.flash { background: var(--green-bg); color: var(--green); }
+  .demo-dot {
+    position: absolute; top: 4px; left: 4px;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(44,44,42,0.25); pointer-events: none;
+  }
+  @media (prefers-color-scheme: dark) { .demo-dot { background: rgba(211,209,199,0.3); } }
+  #demo-word-bar {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 16px;
+    font-size: 20px; font-weight: 700; letter-spacing: 3px;
+    min-height: 40px; width: 216px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); margin-bottom: 8px;
+    transition: background 0.25s, color 0.25s, border-color 0.25s;
+  }
+  #demo-word-bar.ok { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+  #demo-label {
+    font-size: 13px; color: var(--text2);
+    min-height: 20px; margin-bottom: 18px;
+    transition: opacity 0.2s;
+  }
+  #demo-label.fading { opacity: 0; }
+  #intro-play-btn {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 10px; padding: 12px 32px;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    opacity: 0; transition: opacity 0.4s; pointer-events: none;
+  }
+  #intro-play-btn.vis { opacity: 1; pointer-events: auto; }
+  #intro-play-btn:hover { opacity: 0.85 !important; }
+  #intro-skip {
+    position: absolute; top: 16px; right: 16px;
+    background: none; border: 1px solid var(--border2);
+    border-radius: 8px; padding: 6px 14px;
+    font-size: 13px; color: var(--text2); cursor: pointer;
+  }
+  #intro-skip:hover { color: var(--text); background: var(--bg2); }
+  #demo-cursor {
+    position: fixed; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); pointer-events: none; z-index: 600;
+    transform: translate(-50%, -50%);
+    transition: left 0.32s cubic-bezier(0.4,0,0.2,1), top 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.2s;
+    box-shadow: 0 1px 6px rgba(83,74,183,0.4); opacity: 0;
+  }
+  #demo-cursor::after {
+    content: ''; position: absolute; inset: 4px;
+    border-radius: 50%; background: #fff; opacity: 0.7;
+  }
+  #demo-cursor.click-pulse { animation: cur-click 0.22s ease; }
+  @keyframes cur-click {
+    0%   { transform: translate(-50%,-50%) scale(1); }
+    50%  { transform: translate(-50%,-50%) scale(0.5); }
+    100% { transform: translate(-50%,-50%) scale(1); }
+  }
 </style>
 </head>
 <body>
+
+<div id="intro">
+  <button id="intro-skip">Skip →</button>
+  <div id="intro-inner">
+    <div id="intro-title">How to Play</div>
+    <div id="intro-sub">Select letters from the grid to build words.<br>Rotate tiles to unlock new letters!</div>
+    <div class="demo-board" id="demo-board">
+      <div class="demo-tile" id="dt0" style="background:#B5D4F455"><span class="dq" id="dq00">s</span><span class="dq" id="dq01">a</span><span class="dq" id="dq02">t</span><span class="dq" id="dq03">e</span><div class="demo-dot"></div></div>
+      <div class="demo-tile" id="dt1" style="background:#C0DD9755"><span class="dq" id="dq10">p</span><span class="dq" id="dq11">i</span><span class="dq" id="dq12">l</span><span class="dq" id="dq13">o</span><div class="demo-dot"></div></div>
+      <div class="demo-tile" id="dt2" style="background:#F5C4B355"><span class="dq" id="dq20">i</span><span class="dq" id="dq21">n</span><span class="dq" id="dq22">d</span><span class="dq" id="dq23">h</span><div class="demo-dot"></div></div>
+      <div class="demo-tile" id="dt3" style="background:#CECBF655"><span class="dq" id="dq30">n</span><span class="dq" id="dq31">m</span><span class="dq" id="dq32">e</span><span class="dq" id="dq33">t</span><div class="demo-dot"></div></div>
+      <div class="demo-tile" style="background:#9FE1CB55"><span class="dq">r</span><span class="dq">o</span><span class="dq">w</span><span class="dq">b</span><div class="demo-dot"></div></div>
+      <div class="demo-tile" style="background:#FAC77555"><span class="dq">d</span><span class="dq" id="dq51">f</span><span class="dq">g</span><span class="dq">c</span><div class="demo-dot"></div></div>
+      <div class="demo-tile" style="background:#F4C0D155"><span class="dq">h</span><span class="dq">k</span><span class="dq">v</span><span class="dq">j</span><div class="demo-dot"></div></div>
+      <div class="demo-tile" style="background:#D4EAB555"><span class="dq">l</span><span class="dq">t</span><span class="dq">x</span><span class="dq">q</span><div class="demo-dot"></div></div>
+      <div class="demo-tile" style="background:#F7E4B555"><span class="dq">z</span><span class="dq">y</span><span class="dq">w</span><span class="dq">v</span><div class="demo-dot"></div></div>
+    </div>
+    <div id="demo-word-bar"></div>
+    <div id="demo-label">Select letters to build a word…</div>
+    <button id="intro-play-btn">Play Now →</button>
+  </div>
+</div>
+<div id="demo-cursor"></div>
 
 <div id="loading">
   <div class="spinner"></div>
@@ -1886,6 +2011,157 @@ if (isTouch) {
     '<kbd>Enter</kbd> submit · <kbd>Esc</kbd> clear<br>';
 }
 
+// ─── Intro animation ─────────────────────────────────────────────────────────
+function dismissIntro() {
+  //localStorage.setItem('sn-intro-seen', '1');
+  const el  = document.getElementById('intro');
+  const cur = document.getElementById('demo-cursor');
+  if (!el) return;
+  el.classList.add('fade-out');
+  if (cur) cur.style.opacity = '0';
+  setTimeout(() => { el.remove(); if (cur) cur.remove(); }, 550);
+}
+
+function runIntro() {
+  //if (localStorage.getItem('sn-intro-seen')) { dismissIntro(); return; }
+
+  const cur = document.getElementById('demo-cursor');
+  const wb  = document.getElementById('demo-word-bar');
+  const lbl = document.getElementById('demo-label');
+  const btn = document.getElementById('intro-play-btn');
+  let timers = [];
+  let alive = true;
+
+  function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
+
+  function center(el) {
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+
+  function moveTo(el) {
+    const { x, y } = center(el);
+    cur.style.left = x + 'px';
+    cur.style.top  = y + 'px';
+  }
+
+  function clickQ(id) {
+    const el = document.getElementById(id);
+    moveTo(el);
+    cur.classList.remove('click-pulse');
+    void cur.offsetWidth;
+    cur.classList.add('click-pulse');
+    el.classList.add('sel');
+  }
+
+  function setLabel(text) {
+    lbl.classList.add('fading');
+    setTimeout(() => { if (!alive) return; lbl.textContent = text; lbl.classList.remove('fading'); }, 220);
+  }
+
+  document.getElementById('intro-skip').addEventListener('click', () => {
+    alive = false; timers.forEach(clearTimeout); dismissIntro();
+  });
+  btn.addEventListener('click', () => { alive = false; dismissIntro(); });
+
+  function resetBoard() {
+    document.querySelectorAll('#intro .dq').forEach(el => el.classList.remove('sel', 'flash'));
+    const t3 = document.getElementById('dt3');
+    t3.classList.remove('spinning');
+    void t3.offsetWidth; // reflow so animation resets cleanly
+    wb.classList.remove('ok');
+    wb.textContent = '';
+  }
+
+  function playAnim() {
+    if (!alive) return;
+    timers = [];
+    resetBoard();
+    lbl.textContent = 'Select letters to build a word…';
+    cur.style.opacity = '0';
+
+    const firstQ = document.getElementById('dq00');
+    const { x: fx, y: fy } = center(firstQ);
+    cur.style.transition = 'none';
+    cur.style.left = fx + 'px';
+    cur.style.top  = (fy + 44) + 'px';
+    requestAnimationFrame(() => {
+      if (!alive) return;
+      cur.style.transition = '';
+      at(300, () => { cur.style.opacity = '1'; moveTo(firstQ); });
+    });
+
+    // Phase 1: spell SPIN
+    at(700,  () => clickQ('dq00'));
+    at(860,  () => { wb.textContent = 's'; });
+    at(1300, () => clickQ('dq10'));
+    at(1460, () => { wb.textContent = 'sp'; });
+    at(1900, () => clickQ('dq20'));
+    at(2060, () => { wb.textContent = 'spi'; });
+    at(2500, () => clickQ('dq30'));
+    at(2660, () => { wb.textContent = 'spin'; });
+    at(3200, () => setLabel('Press Enter to submit!'));
+    at(3700, () => {
+      wb.classList.add('ok');
+      wb.textContent = '✓ spin +5';
+      ['dq00','dq10','dq20','dq30'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.remove('sel'); el.classList.add('flash');
+      });
+    });
+
+    // Phase 2: rotate the N tile
+    at(4450, () => {
+      wb.classList.remove('ok'); wb.textContent = '';
+      ['dq00','dq10','dq20','dq30'].forEach(id =>
+        document.getElementById(id).classList.remove('sel','flash')
+      );
+      setLabel('Rotate a tile to transform letters!');
+    });
+    at(5100, () => moveTo(document.getElementById('dt3')));
+    at(5550, () => {
+      cur.classList.remove('click-pulse');
+      void cur.offsetWidth;
+      cur.classList.add('click-pulse');
+      document.getElementById('dt3').classList.add('spinning');
+    });
+    at(6150, () => setLabel('n rotated 180° → u !'));
+
+    // Phase 3: spell FUN with the new u
+    at(7000, () => setLabel('Now use that u to spell a new word!'));
+    at(7500, () => clickQ('dq51'));  // f
+    at(7660, () => { wb.textContent = 'f'; });
+    at(8100, () => clickQ('dq30'));  // u (visually at BR of rotated tile)
+    at(8260, () => { wb.textContent = 'fu'; });
+    at(8700, () => clickQ('dq21'));  // n
+    at(8860, () => { wb.textContent = 'fun'; });
+    at(9400, () => setLabel('Press Enter to submit!'));
+    at(9900, () => {
+      wb.classList.add('ok');
+      wb.textContent = '✓ fun +3';
+      ['dq51','dq30','dq21'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.remove('sel'); el.classList.add('flash');
+      });
+    });
+
+    // Show Play button, then loop
+    at(10700, () => {
+      wb.classList.remove('ok'); wb.textContent = '';
+      ['dq51','dq30','dq21'].forEach(id =>
+        document.getElementById(id).classList.remove('sel','flash')
+      );
+      lbl.textContent = '';
+      cur.style.opacity = '0';
+      btn.classList.add('vis');
+    });
+    at(13000, () => playAnim());
+  }
+
+  playAnim();
+}
+
+runIntro();
 loadWords().then(() => { setupChallengeWord(); initBoard(); draw(); });
 </script>
 </body>
