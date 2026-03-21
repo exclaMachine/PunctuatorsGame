@@ -213,6 +213,8 @@
   .wl { display: inline-block; padding: 0 1px; border-radius: 3px; }
   .wl.ok { color: var(--green); background: var(--green-bg); }
   .wl.no { color: var(--red); background: var(--red-bg); }
+  .wl-georgia { font-family: 'Georgia', serif; }
+  .wl-trebuchet { font-family: 'Trebuchet MS', sans-serif; }
 
   .status { font-size: 12px; color: var(--text2); min-height: 18px; margin-top: 2px; }
   .status.ok { color: var(--green); }
@@ -1248,9 +1250,13 @@ function updateWordDisplay() {
     wb.innerHTML = '<span class="placeholder">start selecting letters…</span>';
     return;
   }
-  wb.innerHTML = wordSeq.map(w =>
-    `<span class="wl ${w.ci !== null ? 'ok' : 'no'}">${w.letter}</span>`
-  ).join('');
+  wb.innerHTML = wordSeq.map(w => {
+    const state = w.ci !== null ? 'ok' : 'no';
+    let extra = '';
+    if (w.letter === 'g') extra = ' wl-georgia';
+    else if (w.letter === 'i' || w.letter === 'l') extra = ' wl-trebuchet';
+    return `<span class="wl ${state}${extra}">${w.letter}</span>`;
+  }).join('');
 }
 
 // ─── Ambigram detection ───────────────────────────────────────────────────────
@@ -1648,6 +1654,7 @@ function explodeQuad(ci, q, letter) {
 // g → Georgia (closed-loop double-story g), unless it came from a rotated b (open-tail Courier New).
 function letterFont(letter, size, base) {
   if (letter === 'g' && base !== 'b') return `700 ${size}px 'Georgia', serif`;
+  if (letter === 'i' || letter === 'l') return `700 ${size}px 'Trebuchet MS', sans-serif`;
   return `700 ${size}px 'Courier New', monospace`;
 }
 
