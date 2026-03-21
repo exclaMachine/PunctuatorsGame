@@ -236,7 +236,7 @@
 
   /* ── Board popup toasts ─────────────────────────────────── */
   .board-popup {
-    position: absolute;
+    position: fixed;
     pointer-events: none;
     font-family: Georgia, serif;
     font-size: 17px;
@@ -801,7 +801,7 @@ const AM = {
   'z': ['z', 'N', 'z', 'N'],
   'A': ['A', null, 'V', null],  'V': ['V', null, 'A', null],
   'B': ['B', 'w',  'E', 'm'],
-  'C': ['C', 'n', 'D', 'u'],  'D': ['D', 'U', 'C', 'n'],
+  'C': ['C', 'n', 'D', 'u'],  'D': ['D', 'U', 'G', 'n'],
   'E': ['E', 'm',  'B', 'w'], 'F': ['F', 'm',  'J', null],
   'G': ['G', null,  null, 'U'],
   'H': ['H', 'I',  'H',  'I'],  'I': ['I', 'H', 'I', 'H'],
@@ -1503,25 +1503,29 @@ function updateChallengeHint() {
 }
 
 function showBoardPopup(text, color, isTier) {
-  const canvas = document.getElementById('gc');
-  const leftEl  = document.querySelector('.left');
-  const cx = canvas.offsetLeft, cy = canvas.offsetTop;
-  const cw = canvas.offsetWidth, ch = canvas.offsetHeight;
+  const cr = document.getElementById('gc').getBoundingClientRect();
   const el = document.createElement('div');
   el.className = 'board-popup' + (isTier ? ' tier-popup' : '');
   el.textContent = text;
   el.style.color = color;
   el.style.borderColor = color;
+  document.body.appendChild(el);
+  const ew = el.offsetWidth, eh = el.offsetHeight;
   if (isTier) {
-    el.style.left = (cx + cw / 2) + 'px';
-    el.style.top  = (cy + ch / 2) + 'px';
+    el.style.left = (cr.left + cr.width / 2) + 'px';
+    el.style.top  = (cr.top + cr.height / 2) + 'px';
   } else {
     const ang = Math.random() * 24 - 12;
     el.style.setProperty('--ang', ang + 'deg');
-    el.style.left = (cx + cw * 0.12 + Math.random() * cw * 0.72) + 'px';
-    el.style.top  = (cy + ch * 0.15 + Math.random() * ch * 0.55) + 'px';
+    // Clamp so rotation + 90px rise never clips the viewport edge
+    const hpad = ew * 0.18 + 12;
+    const minX = hpad, maxX = window.innerWidth - ew - hpad;
+    const minY = 100,  maxY = window.innerHeight - eh - 20;
+    const rawX = cr.left + cr.width  * 0.12 + Math.random() * cr.width  * 0.72;
+    const rawY = cr.top  + cr.height * 0.15 + Math.random() * cr.height * 0.55;
+    el.style.left = Math.max(minX, Math.min(maxX, rawX)) + 'px';
+    el.style.top  = Math.max(minY, Math.min(maxY, rawY)) + 'px';
   }
-  leftEl.appendChild(el);
   el.addEventListener('animationend', () => el.remove());
 }
 
@@ -1885,16 +1889,15 @@ function rot(ci, dir) {
 
 // ─── Mirror maps ──────────────────────────────────────────────────────────────
 const MH = { // Horizontal (left-right)
-  'A':'A', 'D': 'C', 'F': 'Z', 'H':'H', 'I':'I', 'M':'M', 'N': 'n', 'O':'O', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y',
-  'i':'i', 'l':'l', 'm':'m', 'n': 'N', 'o':'o', 's': 'z', 't':'t', 'u':'N', 'v':'v', 'w':'w', 'x':'x',
+  'A':'A', 'B': 'E', 'C': 'D', 'D': 'C', 'E': 'B', 'F': 'Z', 'G': 'D', 'H':'H', 'I':'I', 'J': 'l', 'M':'M', 'N': 'n', 'O':'O', 'S': 'Z', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y', 'Z': 'S',
+  'f': 't', 'g':'g', 'i':'i', 'j': 'i', 'l':'J', 'm':'m', 'n': 'N', 'o':'o', 's': 'z', 't':'t', 'u':'N', 'v':'v', 'w':'w', 'x':'x', 'y': 't',
   'b':'d', 'd':'b', 'p':'q', 'P': 'q', 'q':'p', 'z':'s',
 };
 const MV = { // Vertical (top-bottom)
-  'c': 'c', 'C':'C', 'D':'D', 'E':'E', 'H':'H', 'I':'I', 'K': 'K', 'N': 'n', 'O':'O', 'R': 't', 'U': 'n', 'X':'X',
-  'i': 'i', 'k': 'k', 'l':'l', 'n': 'N', 'o':'o', 'P': 'b', 't':'f', 'x':'x',
+  'A': 'V', 'B': 'B', 'c': 'c', 'C':'C', 'D':'D', 'E':'E', 'F': 'L', 'G': 'C', 'H':'H', 'I':'I', 'K': 'K', 'L': 'T', 'M': 'W', 'N': 'n', 'O':'O', 'P': 'q', 'R': 't', 'S': 'Z', 'U': 'n', 'V': 'A', 'W': 'M', 'X':'X', 'Y': 'h', 'Z': 'S',
+  'f': 't', 'g': 'g', 'i': 'i', 'k': 'k', 'l':'l', 'n': 'N', 'o':'o', 'P': 'b', 's': 'z','t':'f', 'x':'x', 'z': 's',
   'b':'p', 'p':'b', 'd':'q', 'q':'d',
   'n':'u', 'u':'N', 'm':'w', 'w':'m',
-  'M':'W', 'W':'M',
 };
 
 // All letters that can ever appear on the board (AM + mirror maps)
