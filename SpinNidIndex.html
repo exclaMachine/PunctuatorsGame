@@ -1299,7 +1299,7 @@ function submit() {
   if (wordSeq.length < 2) { sndInvalid(); shakeCanvas(); setSt('Need at least 2 letters', 'err'); return; }
   const unmatched = wordSeq.filter(w => w.ci === null);
   if (unmatched.length) {
-    setSt(`Letters not on board: ${unmatched.map(w => w.letter).join(', ')}`, 'err'); return;
+    sndInvalid(); shakeCanvas(); setSt(`Letters not on board: ${unmatched.map(w => w.letter).join(', ')}`, 'err'); return;
   }
   const word = wordSeq.map(w => w.letter).join('');
   if (FW.includes(word)) { sndDuplicate(); shakeCanvas(); setSt('Already found: ' + word, 'warn'); return; }
@@ -1940,7 +1940,7 @@ function rot(ci, dir) {
 // ─── Mirror maps ──────────────────────────────────────────────────────────────
 const MH = { // Horizontal (left-right)
   'A':'A', 'B': 'E', 'C': 'D', 'D': 'C', 'E': 'B', 'F': 'Z', 'G': 'D', 'H':'H', 'I':'I', 'J': 'l', 'M':'M', 'N': 'n', 'O':'O', 'S': 'Z', 'T':'T', 'U':'U', 'V':'V', 'W':'W', 'X':'X', 'Y':'Y', 'Z': 'S',
-  'f': 't', 'g':'g', 'i':'i', 'j': 'i', 'l':'J', 'm':'m', 'n': 'N', 'o':'o', 's': 'z', 't':'t', 'u':'N', 'v':'v', 'w':'w', 'x':'x', 'y': 't',
+  'a': 'b', 'e': 'g', 'f': 't', 'g':'g', 'i':'i', 'j': 'i', 'l':'J', 'm':'m', 'n': 'N', 'o':'o', 's': 'z', 't':'t', 'u':'N', 'v':'v', 'w':'w', 'x':'x', 'y': 't',
   'b':'d', 'd':'b', 'p':'q', 'P': 'q', 'q':'p', 'z':'s',
 };
 const MV = { // Vertical (top-bottom)
