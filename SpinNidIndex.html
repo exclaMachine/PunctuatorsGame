@@ -1570,18 +1570,8 @@ document.getElementById('win-keep-going').addEventListener('click', () => {
   document.getElementById('win-overlay').classList.remove('visible');
   winTarget += 500;
   scoreOffset = score;
-  challengeFound = false; challengeWord = null;
-  refreshTileDefs();
-  setupChallengeWord();
-  // Partial reset: new board, new tiers — keep score, FW, timer, mode
-  const positions = [...Array(GR * GR).keys()].sort(() => Math.random() - 0.5);
-  TILE_DEFS.forEach((def, i) => {
-    G[positions[i]] = { d: def, ca: 0, ta: 0, destroyed: new Set(), mirrored: false, mirroredV: false };
-  });
   const tierEl = document.getElementById('tier');
   tierEl.style.display = 'none'; tierEl.textContent = ''; tierEl.dataset.tier = '';
-  document.getElementById('chips').innerHTML = '';
-  updateChallengeHint();
   clearWord(); setSt('', '');
   draw();
 });
