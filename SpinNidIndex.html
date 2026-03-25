@@ -343,8 +343,11 @@
   .chip-mirv .cfront { animation: cf-front  3.5s ease-in-out infinite; }
   .chip-mirv .cback  { animation: cf-back   3.5s ease-in-out infinite; }
 
+  /* Silent 4s cycle animation so the chip element itself fires animationiteration for cycling */
+  @keyframes chip-cycle { from {} to {} }
+
   /* 90°/270° rotation pair: per-letter in-plane rotation animation */
-  .chip-rot90 { background: #fce8ff; color: #7a00aa; }
+  .chip-rot90 { background: #fce8ff; color: #7a00aa; animation: chip-cycle 4s linear infinite; }
   @media (prefers-color-scheme: dark) {
     .chip-rot90 { background: #2a0a3a; color: #d980ff; }
   }
@@ -372,7 +375,7 @@
   .chip-rot90 .rl-b { animation: rl-back-cw  4s ease-in-out infinite; animation-delay: calc(var(--i) * 0.15s); }
 
   /* 270° CW (CCW): letters spin counter-clockwise out (-90°), partner spins in from +90° */
-  .chip-rot270 { background: #fce8ff; color: #7a00aa; }
+  .chip-rot270 { background: #fce8ff; color: #7a00aa; animation: chip-cycle 4s linear infinite; }
   @media (prefers-color-scheme: dark) {
     .chip-rot270 { background: #2a0a3a; color: #d980ff; }
   }
@@ -1273,25 +1276,50 @@ function updateWordDisplay() {
 }
 
 // ─── Ambigram detection ───────────────────────────────────────────────────────
-// Returns {type, match} or null
-function ambigramType(word) {
+// Returns all {type, match} ambigram matches for a word
+function allAmbigramTypes(word) {
+  const results = [];
   const letters = word.split('');
-  // Rotational 180°: reverse + AM[l][2] each letter → valid word
   const rotLetters = letters.slice().reverse().map(l => { const m = AM[l]; return m ? m[2] : null; });
-  if (rotLetters.every(l => l) && isValidWord(rotLetters.join(''))) return { type: 'rot',  match: rotLetters.join('') };
-  // Mirror H (left-right): reverse + MH each letter → valid word
+  if (rotLetters.every(l => l) && isValidWord(rotLetters.join(''))) results.push({ type: 'rot',  match: rotLetters.join('') });
   const mhLetters = letters.slice().reverse().map(l => MH[l] || null);
-  if (mhLetters.every(l => l) && isValidWord(mhLetters.join(''))) return { type: 'mirh', match: mhLetters.join('') };
-  // Mirror V (top-bottom): same order + MV each letter → valid word
+  if (mhLetters.every(l => l) && isValidWord(mhLetters.join(''))) results.push({ type: 'mirh', match: mhLetters.join('') });
   const mvLetters = letters.map(l => MV[l] || null);
-  if (mvLetters.every(l => l) && isValidWord(mvLetters.join(''))) return { type: 'mirv', match: mvLetters.join('') };
-  // 90° CW rotation: same order, each letter at rot index 1 — preserve AM casing for display
+  if (mvLetters.every(l => l) && isValidWord(mvLetters.join(''))) results.push({ type: 'mirv', match: mvLetters.join('') });
   const rot90 = letters.map(l => { const m = AM[l]; return (m && m[1]) || null; });
-  if (rot90.every(Boolean)) { const w = rot90.join(''); if (w.toLowerCase() !== word.toLowerCase() && isValidWord(w.toLowerCase())) return { type: 'rot90', match: w, icon: '↷' }; }
-  // 270° CW rotation: same order, each letter at rot index 3
+  if (rot90.every(Boolean)) { const w = rot90.join(''); if (w.toLowerCase() !== word.toLowerCase() && isValidWord(w.toLowerCase())) results.push({ type: 'rot90', match: w, icon: '↷' }); }
   const rot270 = letters.map(l => { const m = AM[l]; return (m && m[3]) || null; });
-  if (rot270.every(Boolean)) { const w = rot270.join(''); if (w.toLowerCase() !== word.toLowerCase() && isValidWord(w.toLowerCase())) return { type: 'rot270', match: w, icon: '↶' }; }
-  return null;
+  if (rot270.every(Boolean)) { const w = rot270.join(''); if (w.toLowerCase() !== word.toLowerCase() && isValidWord(w.toLowerCase())) results.push({ type: 'rot270', match: w, icon: '↶' }); }
+  return results;
+}
+// Returns first {type, match} or null (used for bonus calculation)
+function ambigramType(word) { return allAmbigramTypes(word)[0] || null; }
+
+// ─── Build/update chip content for a given ambigram type ─────────────────────
+function setChipContent(chip, word, typeInfo) {
+  chip.className = 'chip' + (typeInfo ? ' chip-' + typeInfo.type : '');
+  chip.innerHTML = '';
+  if (typeInfo && (typeInfo.type === 'rot90' || typeInfo.type === 'rot270')) {
+    [...word].forEach((ch, i) => {
+      const rl = document.createElement('span');
+      rl.className = 'rl'; rl.style.setProperty('--i', i);
+      const f = document.createElement('span'); f.className = 'rl-f'; f.textContent = ch;
+      const b = document.createElement('span'); b.className = 'rl-b'; b.textContent = typeInfo.match[i];
+      rl.append(f, b); chip.appendChild(rl);
+    });
+    const ic = document.createElement('span'); ic.textContent = ' ' + typeInfo.icon;
+    chip.appendChild(ic);
+  } else if (typeInfo && typeInfo.match) {
+    const icon = typeInfo.type === 'rot' ? '↻' : typeInfo.type === 'mirh' ? '↔' : '↕';
+    const front = document.createElement('span');
+    front.className = 'cfront'; front.textContent = word + ' ' + icon;
+    const back = document.createElement('span');
+    back.className = 'cback';
+    back.textContent = typeInfo.type === 'mirv' ? typeInfo.match + ' ' + icon : icon + ' ' + typeInfo.match;
+    chip.append(front, back);
+  } else {
+    chip.textContent = word;
+  }
 }
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
@@ -1307,7 +1335,8 @@ function submit() {
   // Valid!
   FW.push(word);
   const base = word.length * word.length;
-  const ambiInfo = ambigramType(word);
+  const ambiTypes = allAmbigramTypes(word);
+  const ambiInfo = ambiTypes[0] || null;
   const ambi = ambiInfo ? ambiInfo.type : null;
   const ambiBonus = ambi === 'rot' ? base : ambi ? Math.ceil(base * 0.5) : 0;
   const flipCount = (boardFlippedH ? 1 : 0) + (boardFlippedV ? 1 : 0);
@@ -1358,32 +1387,21 @@ function submit() {
     setTimeout(() => showBoardPopup('⭐ Hidden Word! +' + hiddenBonus, '#e8c84a', false), (ambi || flipCount) ? 450 : 0);
   }
   const chip = document.createElement('div');
-  chip.className = 'chip' + (ambi ? ' chip-' + ambi : '');
-  if (ambi === 'rot90' || ambi === 'rot270') {
-    // Per-letter rotation animation (CW for rot90, CCW for rot270)
-    [...word].forEach((ch, i) => {
-      const rl = document.createElement('span');
-      rl.className = 'rl'; rl.style.setProperty('--i', i);
-      const f = document.createElement('span'); f.className = 'rl-f'; f.textContent = ch;
-      const b = document.createElement('span'); b.className = 'rl-b'; b.textContent = ambiInfo.match[i];
-      rl.append(f, b); chip.appendChild(rl);
-    });
-    const ic = document.createElement('span'); ic.textContent = ' ' + ambiInfo.icon;
-    chip.appendChild(ic);
-  } else if (ambi && ambiInfo.match) {
-    const icon = ambi === 'rot' ? '↻' : ambi === 'mirh' ? '↔' : '↕';
-    const front = document.createElement('span');
-    front.className = 'cfront'; front.textContent = word + ' ' + icon;
-    const back = document.createElement('span');
-    // mirv flips top↔bottom (X-axis), so left/right is unchanged — keep icon on right
-    // rot and mirh flip or spin such that the icon naturally leads the back word
-    back.className = 'cback';
-    back.textContent = ambi === 'mirv' ? ambiInfo.match + ' ' + icon : icon + ' ' + ambiInfo.match;
-    chip.append(front, back);
-  } else {
-    chip.textContent = word;
-  }
+  setChipContent(chip, word, ambiInfo);
   document.getElementById('chips').appendChild(chip);
+  if (ambiTypes.length > 1) {
+    const scheduleCycle = (idx) => {
+      // All chip types now have an animation on the chip element itself, so we always listen here.
+      // rot/mirh/mirv use their visual wrap animation; rot90/rot270 use the silent chip-cycle animation.
+      chip.addEventListener('animationiteration', () => {
+        if (!chip.isConnected) return;
+        const nextIdx = (idx + 1) % ambiTypes.length;
+        setChipContent(chip, word, ambiTypes[nextIdx]);
+        scheduleCycle(nextIdx);
+      }, { once: true });
+    };
+    scheduleCycle(0);
+  }
   if (diffMode === 'destroy') {
     wordSeq.forEach(w => {
       if (w.ci === null || !G[w.ci]) return;
@@ -2065,7 +2083,7 @@ if (isTouch) {
 
 // ─── Intro animation ─────────────────────────────────────────────────────────
 function dismissIntro() {
-  //localStorage.setItem('sn-intro-seen', '1');
+  localStorage.setItem('sn-intro-seen', '1');
   const el  = document.getElementById('intro');
   const cur = document.getElementById('demo-cursor');
   if (!el) return;
@@ -2075,7 +2093,7 @@ function dismissIntro() {
 }
 
 function runIntro() {
-  //if (localStorage.getItem('sn-intro-seen')) { dismissIntro(); return; }
+  if (localStorage.getItem('sn-intro-seen')) { dismissIntro(); return; }
 
   const cur = document.getElementById('demo-cursor');
   const wb  = document.getElementById('demo-word-bar');
