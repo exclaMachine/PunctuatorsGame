@@ -639,23 +639,12 @@
     <h2>An Ambigram Word Game</h2>
     <div id="intro-how">How to Play</div>
     <div id="intro-sub">Select letters from the grid to build words.<br>Rotate tiles to unlock new letters!</div>
-    <div class="demo-board" id="demo-board">
-      <div class="demo-tile" id="dt0" style="background:#B5D4F455"><span class="dq" id="dq00">s</span><span class="dq" id="dq01">a</span><span class="dq" id="dq02">t</span><span class="dq" id="dq03">e</span><div class="demo-dot"></div></div>
-      <div class="demo-tile" id="dt1" style="background:#C0DD9755"><span class="dq" id="dq10">p</span><span class="dq" id="dq11">i</span><span class="dq" id="dq12">l</span><span class="dq" id="dq13">o</span><div class="demo-dot"></div></div>
-      <div class="demo-tile" id="dt2" style="background:#F5C4B355"><span class="dq" id="dq20">i</span><span class="dq" id="dq21">n</span><span class="dq" id="dq22">d</span><span class="dq" id="dq23">h</span><div class="demo-dot"></div></div>
-      <div class="demo-tile" id="dt3" style="background:#CECBF655"><span class="dq" id="dq30">n</span><span class="dq" id="dq31">m</span><span class="dq" id="dq32">e</span><span class="dq" id="dq33">t</span><div class="demo-dot"></div></div>
-      <div class="demo-tile" style="background:#9FE1CB55"><span class="dq">r</span><span class="dq">o</span><span class="dq">w</span><span class="dq">b</span><div class="demo-dot"></div></div>
-      <div class="demo-tile" style="background:#FAC77555"><span class="dq">d</span><span class="dq" id="dq51">f</span><span class="dq">g</span><span class="dq">c</span><div class="demo-dot"></div></div>
-      <div class="demo-tile" style="background:#F4C0D155"><span class="dq">h</span><span class="dq">k</span><span class="dq">v</span><span class="dq">j</span><div class="demo-dot"></div></div>
-      <div class="demo-tile" style="background:#D4EAB555"><span class="dq">l</span><span class="dq">t</span><span class="dq">x</span><span class="dq">q</span><div class="demo-dot"></div></div>
-      <div class="demo-tile" style="background:#F7E4B555"><span class="dq">z</span><span class="dq">y</span><span class="dq">w</span><span class="dq">v</span><div class="demo-dot"></div></div>
-    </div>
+    <canvas id="intro-canvas" style="display:block;border-radius:10px;border:0.5px solid var(--border);margin-bottom:12px;"></canvas>
     <div id="demo-word-bar"></div>
     <div id="demo-label">Select letters to build a word…</div>
     <button id="intro-play-btn">Play Now →</button>
   </div>
 </div>
-<div id="demo-cursor"></div>
 
 <div id="loading">
   <div class="spinner"></div>
@@ -2117,150 +2106,241 @@ if (isTouch) {
 // ─── Intro animation ─────────────────────────────────────────────────────────
 function dismissIntro() {
   localStorage.setItem('sn-intro-seen', '1');
-  const el  = document.getElementById('intro');
-  const cur = document.getElementById('demo-cursor');
+  const el = document.getElementById('intro');
   if (!el) return;
   el.classList.add('fade-out');
-  if (cur) cur.style.opacity = '0';
-  setTimeout(() => { el.remove(); if (cur) cur.remove(); }, 550);
+  setTimeout(() => { el.remove(); }, 550);
 }
 
 function runIntro() {
   if (localStorage.getItem('sn-intro-seen')) { dismissIntro(); return; }
 
-  const cur = document.getElementById('demo-cursor');
+  // ── Canvas setup ──────────────────────────────────────────────────────────────
+  const ic = document.getElementById('intro-canvas');
+  const cssW = Math.min(264, Math.floor(window.innerWidth * 0.78));
+  const DPR  = Math.min(window.devicePixelRatio || 1, 2);
+  ic.width  = Math.round(cssW * DPR);
+  ic.height = Math.round(cssW * DPR);
+  ic.style.width  = cssW + 'px';
+  ic.style.height = cssW + 'px';
+  const ctx = ic.getContext('2d');
+  ctx.scale(DPR, DPR);
+  const DC = cssW / 3; // demo cell size
+
   const wb  = document.getElementById('demo-word-bar');
   const lbl = document.getElementById('demo-label');
   const btn = document.getElementById('intro-play-btn');
-  let timers = [];
-  let alive = true;
 
-  function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
+  // ── Tile data (matches original demo board) ────────────────────────────────
+  const IT = [
+    { l:['s','a','t','e'], c:'#B5D4F4' },
+    { l:['p','i','l','o'], c:'#C0DD97' },
+    { l:['i','n','d','h'], c:'#F5C4B3' },
+    { l:['n','m','e','t'], c:'#CECBF6' }, // tile 3 — the rotating N
+    { l:['r','o','w','b'], c:'#9FE1CB' },
+    { l:['d','f','g','c'], c:'#FAC775' },
+    { l:['h','k','v','j'], c:'#F4C0D1' },
+    { l:['l','t','x','q'], c:'#D4EAB5' },
+    { l:['z','y','w','v'], c:'#F7E4B5' },
+  ];
+  const RS = [[0,1,2,3],[2,0,3,1],[3,2,1,0],[1,3,0,2]]; // quad slot remapping per rotation step
 
-  function center(el) {
-    const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  // ── Animation state ───────────────────────────────────────────────────────
+  const iAng = new Array(9).fill(0);    // current visual angle (rad)
+  const iTgt = new Array(9).fill(0);    // target angle
+  const iSel = new Set();               // selected "ti_q" keys
+  let curX = 0, curY = 0, tgtX = 0, tgtY = 0;
+  let curAlpha = 0, tgtAlpha = 0, clickAnim = 0;
+  let wordOk = false;
+  let alive = true, timers = [], raf = null;
+
+  // ── Coordinate helpers ────────────────────────────────────────────────────
+  function tXY(ti)    { return { x:(ti%3)*DC, y:Math.floor(ti/3)*DC }; }
+  function qXY(ti, q) { const {x,y}=tXY(ti); return { x:x+(q%2===0?DC/4:3*DC/4), y:y+(q<2?DC/4:3*DC/4) }; }
+  function iStep(ti)  { return Math.round(iTgt[ti]/(Math.PI/2)) & 3; }
+  function iEff(ti,q) { const s=iStep(ti),b=IT[ti].l[RS[s][q]]; return (b&&AM[b])?(AM[b][s]||null):b; }
+
+  // Draw a glyph onto the intro canvas context (mirrors global drawGlyph but uses ctx)
+  function iGlyph(letter, cx, cy, size, alpha) {
+    if (!glyphImg.complete||!glyphImg.naturalWidth||typeof letter!=='string'||letter.length!==1) return false;
+    const code=letter.charCodeAt(0);
+    let idx;
+    if (code>=97&&code<=122)      idx=code-97;
+    else if (code>=65&&code<=90)  idx=26+code-65;
+    else return false;
+    const col=idx%7, row=Math.floor(idx/7);
+    const src=(dk()&&glyphImgInv)?glyphImgInv:glyphImg;
+    ctx.save();
+    if (alpha!==undefined) ctx.globalAlpha*=alpha;
+    ctx.drawImage(src,col*GLYPH_CELL,row*GLYPH_CELL,GLYPH_CELL,GLYPH_CELL,cx-size/2,cy-size/2,size,size);
+    ctx.restore();
+    return true;
   }
 
-  function moveTo(el) {
-    const { x, y } = center(el);
-    cur.style.left = x + 'px';
-    cur.style.top  = y + 'px';
+  // ── Render loop ───────────────────────────────────────────────────────────
+  function render() {
+    const d = dk();
+    curX+=(tgtX-curX)*0.14; curY+=(tgtY-curY)*0.14;
+    curAlpha+=(tgtAlpha-curAlpha)*0.14;
+    if (clickAnim>0) clickAnim=Math.max(0,clickAnim-0.06);
+    for (let i=0;i<9;i++) {
+      const diff=iTgt[i]-iAng[i];
+      iAng[i]=Math.abs(diff)<0.004?iTgt[i]:iAng[i]+diff*0.10;
+    }
+
+    ctx.clearRect(0,0,cssW,cssW);
+
+    for (let ti=0;ti<9;ti++) {
+      const {x:gx,y:gy}=tXY(ti), tile=IT[ti];
+      const ccx=gx+DC/2, ccy=gy+DC/2;
+      const ang=iAng[ti], step=iStep(ti);
+      const snapped=Math.abs(ang-iTgt[ti])<0.009;
+      const gSize=Math.round(DC*0.28);
+
+      // Cell background
+      ctx.fillStyle=d?'#2c2c2a':'#f1efe8';
+      rrC(ctx,gx+1,gy+1,DC-2,DC-2,11); ctx.fill();
+      ctx.strokeStyle=d?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.07)';
+      ctx.lineWidth=0.5; rrC(ctx,gx+0.5,gy+0.5,DC-1,DC-1,11); ctx.stroke();
+
+      // Rotating tile body
+      ctx.save();
+      ctx.translate(ccx,ccy); ctx.rotate(ang);
+      ctx.fillStyle=tile.c+(d?'28':'55');
+      rrC(ctx,-DC/2+3,-DC/2+3,DC-6,DC-6,9); ctx.fill();
+      ctx.strokeStyle=tile.c; ctx.lineWidth=2.5;
+      rrC(ctx,-DC/2+3,-DC/2+3,DC-6,DC-6,9); ctx.stroke();
+      ctx.strokeStyle=d?'rgba(255,255,255,0.18)':'rgba(0,0,0,0.13)';
+      ctx.lineWidth=1; ctx.beginPath();
+      ctx.moveTo(0,-DC/2+9); ctx.lineTo(0,DC/2-9);
+      ctx.moveTo(-DC/2+9,0); ctx.lineTo(DC/2-9,0); ctx.stroke();
+      // Origin dot
+      ctx.fillStyle=d?'rgba(255,255,255,0.3)':'rgba(0,0,0,0.25)';
+      ctx.beginPath(); ctx.arc(-DC/2+7,-DC/2+7,3,0,Math.PI*2); ctx.fill();
+      // Spinning: dim base letters
+      if (!snapped) {
+        const LP=[[-DC/4,-DC/4],[DC/4,-DC/4],[-DC/4,DC/4],[DC/4,DC/4]];
+        const sz=Math.round(DC*0.22), sc=d?'rgba(200,200,200,0.42)':'rgba(40,40,40,0.32)';
+        ctx.fillStyle=sc; ctx.textAlign='center'; ctx.textBaseline='middle';
+        tile.l.forEach((l,q) => {
+          if (glyphMode) { iGlyph(l,LP[q][0],LP[q][1],sz,0.38)||(ctx.fillStyle=sc,ctx.font=letterFont(l,sz),ctx.fillText(l,LP[q][0],LP[q][1])); }
+          else { ctx.font=letterFont(l,sz); ctx.fillText(l,LP[q][0],LP[q][1]); }
+        });
+      }
+      ctx.restore();
+
+      // Snapped: effective letters in world space
+      if (snapped) {
+        for (let q=0;q<4;q++) {
+          const lx=gx+(q%2)*DC/2+DC/4, ly=gy+Math.floor(q/2)*DC/2+DC/4;
+          const key=ti+'_'+q, inSel=iSel.has(key);
+          const base=IT[ti].l[RS[step][q]], eff=iEff(ti,q);
+          if (inSel) {
+            ctx.fillStyle=d?`rgba(93,202,165,${wordOk?0.55:0.30})`:`rgba(15,110,86,${wordOk?0.55:0.30})`;
+            rrC(ctx,gx+(q%2)*DC/2+5,gy+Math.floor(q/2)*DC/2+5,DC/2-10,DC/2-10,5); ctx.fill();
+          }
+          if (eff) {
+            const col=inSel?(d?'#5dcaa5':'#0f6e56'):(d?'#d3d1c7':'#2c2c2a');
+            ctx.save(); ctx.translate(lx,ly); ctx.rotate(step*Math.PI/2);
+            if (glyphMode) {
+              if (!iGlyph(base,0,0,gSize)) { ctx.fillStyle=col; ctx.font=letterFont(eff,gSize,base); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(eff,0,0); }
+            } else { ctx.fillStyle=col; ctx.font=letterFont(eff,gSize,base); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(eff,0,0); }
+            ctx.restore();
+          }
+        }
+      }
+
+      // Centre rotate button
+      const btnR=Math.round(DC*0.18);
+      ctx.fillStyle=d?'rgba(255,255,255,0.13)':'rgba(0,0,0,0.10)';
+      ctx.beginPath(); ctx.arc(ccx,ccy,btnR,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=d?'rgba(255,255,255,0.7)':'rgba(0,0,0,0.55)';
+      ctx.font=`${btnR+2}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('↻',ccx,ccy+1);
+    }
+
+    // Cursor dot
+    if (curAlpha>0.01) {
+      const accent=d?'#afa9ec':'#534ab7';
+      ctx.save(); ctx.globalAlpha=curAlpha;
+      if (clickAnim>0) {
+        ctx.globalAlpha=curAlpha*clickAnim*0.4;
+        ctx.beginPath(); ctx.arc(curX,curY,10+7*(1-clickAnim),0,Math.PI*2);
+        ctx.fillStyle=accent; ctx.fill(); ctx.globalAlpha=curAlpha;
+      }
+      ctx.beginPath(); ctx.arc(curX,curY,8,0,Math.PI*2); ctx.fillStyle=accent; ctx.fill();
+      ctx.beginPath(); ctx.arc(curX,curY,3.5,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.fill();
+      ctx.restore();
+    }
+
+    if (alive) raf=requestAnimationFrame(render);
   }
 
-  function clickQ(id) {
-    const el = document.getElementById(id);
-    moveTo(el);
-    cur.classList.remove('click-pulse');
-    void cur.offsetWidth;
-    cur.classList.add('click-pulse');
-    el.classList.add('sel');
-  }
-
+  // ── Timeline helpers ───────────────────────────────────────────────────────
+  function at(ms,fn) { const id=setTimeout(()=>{ if(alive)fn(); },ms); timers.push(id); }
+  function moveTo(ti,q) { const p=(q!==undefined)?qXY(ti,q):{x:tXY(ti).x+DC/2,y:tXY(ti).y+DC/2}; tgtX=p.x; tgtY=p.y; }
+  function clickAt(ti,q) { clickAnim=1; if(q!==undefined) iSel.add(ti+'_'+q); }
   function setLabel(text) {
     lbl.classList.add('fading');
-    setTimeout(() => { if (!alive) return; lbl.textContent = text; lbl.classList.remove('fading'); }, 220);
+    setTimeout(()=>{ if(alive){ lbl.textContent=text; lbl.classList.remove('fading'); } },220);
   }
 
-  document.getElementById('intro-skip').addEventListener('click', () => {
-    alive = false; timers.forEach(clearTimeout); dismissIntro();
-  });
-  btn.addEventListener('click', () => { alive = false; dismissIntro(); });
+  document.getElementById('intro-skip').addEventListener('click', ()=>{ alive=false; timers.forEach(clearTimeout); cancelAnimationFrame(raf); dismissIntro(); });
+  btn.addEventListener('click', ()=>{ alive=false; cancelAnimationFrame(raf); dismissIntro(); });
 
-  function resetBoard() {
-    document.querySelectorAll('#intro .dq').forEach(el => el.classList.remove('sel', 'flash'));
-    const t3 = document.getElementById('dt3');
-    t3.classList.remove('spinning');
-    void t3.offsetWidth; // reflow so animation resets cleanly
-    wb.classList.remove('ok');
-    wb.textContent = '';
-  }
-
+  // ── Animation sequence ─────────────────────────────────────────────────────
   function playAnim() {
     if (!alive) return;
-    timers = [];
-    resetBoard();
-    lbl.textContent = 'Select letters to build a word…';
-    cur.style.opacity = '0';
-
-    const firstQ = document.getElementById('dq00');
-    const { x: fx, y: fy } = center(firstQ);
-    cur.style.transition = 'none';
-    cur.style.left = fx + 'px';
-    cur.style.top  = (fy + 44) + 'px';
-    requestAnimationFrame(() => {
-      if (!alive) return;
-      cur.style.transition = '';
-      at(300, () => { cur.style.opacity = '1'; moveTo(firstQ); });
-    });
+    timers.forEach(clearTimeout); timers=[];
+    // Snap state clean for each loop
+    iSel.clear(); iAng[3]=0; iTgt[3]=0;
+    const s=qXY(0,0); curX=tgtX=s.x; curY=tgtY=s.y;
+    curAlpha=0; tgtAlpha=0; clickAnim=0; wordOk=false;
+    wb.classList.remove('ok'); wb.textContent='';
+    lbl.textContent='Select letters to build a word…';
 
     // Phase 1: spell SPIN
-    at(700,  () => clickQ('dq00'));
-    at(860,  () => { wb.textContent = 's'; });
-    at(1300, () => clickQ('dq10'));
-    at(1460, () => { wb.textContent = 'sp'; });
-    at(1900, () => clickQ('dq20'));
-    at(2060, () => { wb.textContent = 'spi'; });
-    at(2500, () => clickQ('dq30'));
-    at(2660, () => { wb.textContent = 'spin'; });
-    at(3200, () => setLabel('Press Enter to submit!'));
-    at(3700, () => {
-      wb.classList.add('ok');
-      wb.textContent = '✓ spin +5';
-      ['dq00','dq10','dq20','dq30'].forEach(id => {
-        const el = document.getElementById(id);
-        el.classList.remove('sel'); el.classList.add('flash');
-      });
-    });
+    at(300,  ()=>{ tgtAlpha=1; });
+    at(700,  ()=>clickAt(0,0));
+    at(860,  ()=>{ wb.textContent='s'; });
+    at(1000, ()=>moveTo(1,0));
+    at(1300, ()=>clickAt(1,0));
+    at(1460, ()=>{ wb.textContent='sp'; });
+    at(1600, ()=>moveTo(2,0));
+    at(1900, ()=>clickAt(2,0));
+    at(2060, ()=>{ wb.textContent='spi'; });
+    at(2200, ()=>moveTo(3,0));
+    at(2500, ()=>clickAt(3,0));
+    at(2660, ()=>{ wb.textContent='spin'; });
+    at(3200, ()=>setLabel('Press Enter to submit!'));
+    at(3700, ()=>{ wordOk=true; wb.classList.add('ok'); wb.textContent='✓ spin +5'; });
 
-    // Phase 2: rotate the N tile
-    at(4450, () => {
-      wb.classList.remove('ok'); wb.textContent = '';
-      ['dq00','dq10','dq20','dq30'].forEach(id =>
-        document.getElementById(id).classList.remove('sel','flash')
-      );
-      setLabel('Rotate a tile to transform letters!');
-    });
-    at(5100, () => moveTo(document.getElementById('dt3')));
-    at(5550, () => {
-      cur.classList.remove('click-pulse');
-      void cur.offsetWidth;
-      cur.classList.add('click-pulse');
-      document.getElementById('dt3').classList.add('spinning');
-    });
-    at(6150, () => setLabel('n rotated 180° → u !'));
+    // Phase 2: rotate tile 3 (N → U)
+    at(4450, ()=>{ iSel.clear(); wordOk=false; wb.classList.remove('ok'); wb.textContent=''; setLabel('Rotate a tile to transform letters!'); });
+    at(4800, ()=>moveTo(3));       // move cursor to tile 3 centre
+    at(5550, ()=>{ clickAnim=1; iTgt[3]=Math.PI; }); // trigger 180° rotation
+    at(6150, ()=>setLabel('n rotated 180° → u!'));
 
-    // Phase 3: spell FUN with the new u
-    at(7000, () => setLabel('Now use that u to spell a new word!'));
-    at(7500, () => clickQ('dq51'));  // f
-    at(7660, () => { wb.textContent = 'f'; });
-    at(8100, () => clickQ('dq30'));  // u (visually at BR of rotated tile)
-    at(8260, () => { wb.textContent = 'fu'; });
-    at(8700, () => clickQ('dq21'));  // n
-    at(8860, () => { wb.textContent = 'fun'; });
-    at(9400, () => setLabel('Press Enter to submit!'));
-    at(9900, () => {
-      wb.classList.add('ok');
-      wb.textContent = '✓ fun +3';
-      ['dq51','dq30','dq21'].forEach(id => {
-        const el = document.getElementById(id);
-        el.classList.remove('sel'); el.classList.add('flash');
-      });
-    });
+    // Phase 3: spell FUN using the new U
+    at(7000, ()=>setLabel('Now use that u to spell a new word!'));
+    at(7200, ()=>moveTo(5,1));
+    at(7500, ()=>clickAt(5,1));    // f  (tile 5, TR)
+    at(7660, ()=>{ wb.textContent='f'; });
+    at(7800, ()=>moveTo(3,3));
+    at(8100, ()=>clickAt(3,3));    // u  (tile 3, BR after 180°: slot 0 = n → AM['n'][2] = 'u')
+    at(8260, ()=>{ wb.textContent='fu'; });
+    at(8400, ()=>moveTo(2,1));
+    at(8700, ()=>clickAt(2,1));    // n  (tile 2, TR)
+    at(8860, ()=>{ wb.textContent='fun'; });
+    at(9400, ()=>setLabel('Press Enter to submit!'));
+    at(9900, ()=>{ wordOk=true; wb.classList.add('ok'); wb.textContent='✓ fun +3'; });
 
     // Show Play button, then loop
-    at(10700, () => {
-      wb.classList.remove('ok'); wb.textContent = '';
-      ['dq51','dq30','dq21'].forEach(id =>
-        document.getElementById(id).classList.remove('sel','flash')
-      );
-      lbl.textContent = '';
-      cur.style.opacity = '0';
-      btn.classList.add('vis');
-    });
-    at(13000, () => playAnim());
+    at(10700, ()=>{ iSel.clear(); wordOk=false; wb.classList.remove('ok'); wb.textContent=''; lbl.textContent=''; tgtAlpha=0; btn.classList.add('vis'); });
+    at(13000, ()=>playAnim());
   }
 
+  raf=requestAnimationFrame(render);
   playAnim();
 }
 
