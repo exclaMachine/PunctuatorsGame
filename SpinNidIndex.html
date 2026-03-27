@@ -2105,7 +2105,7 @@ if (isTouch) {
 
 // ─── Intro animation ─────────────────────────────────────────────────────────
 function dismissIntro() {
-  localStorage.setItem('sn-intro-seen', '1');
+  //localStorage.setItem('sn-intro-seen', '1');
   const el = document.getElementById('intro');
   if (!el) return;
   el.classList.add('fade-out');
@@ -2113,16 +2113,20 @@ function dismissIntro() {
 }
 
 function runIntro() {
-  if (localStorage.getItem('sn-intro-seen')) { dismissIntro(); return; }
+  //if (localStorage.getItem('sn-intro-seen')) { dismissIntro(); return; }
 
   // ── Canvas setup ──────────────────────────────────────────────────────────────
   const ic = document.getElementById('intro-canvas');
   const cssW = Math.min(264, Math.floor(window.innerWidth * 0.78));
   const DPR  = Math.min(window.devicePixelRatio || 1, 2);
+  const btnH = 40, bPad = 6, bGap = 4;
+  const btnW = (cssW - bPad*2 - bGap*4) / 5;
+  const btnCXs = Array.from({length:5}, (_,i) => bPad + i*(btnW+bGap) + btnW/2);
+  const btnCY  = cssW + btnH/2;
   ic.width  = Math.round(cssW * DPR);
-  ic.height = Math.round(cssW * DPR);
+  ic.height = Math.round((cssW + btnH) * DPR);
   ic.style.width  = cssW + 'px';
-  ic.style.height = cssW + 'px';
+  ic.style.height = (cssW + btnH) + 'px';
   const ctx = ic.getContext('2d');
   ctx.scale(DPR, DPR);
   const DC = cssW / 3; // demo cell size
@@ -2152,6 +2156,8 @@ function runIntro() {
   let curX = 0, curY = 0, tgtX = 0, tgtY = 0;
   let curAlpha = 0, tgtAlpha = 0, clickAnim = 0;
   let wordOk = false;
+  let iGM = true;           // intro-local glyph mode (independent of global glyphMode)
+  let iFlipH = -1, iFlipV = -1; // -1 = idle, 0..1 = animating
   let alive = true, timers = [], raf = null;
 
   // ── Coordinate helpers ────────────────────────────────────────────────────
@@ -2187,9 +2193,17 @@ function runIntro() {
       const diff=iTgt[i]-iAng[i];
       iAng[i]=Math.abs(diff)<0.004?iTgt[i]:iAng[i]+diff*0.10;
     }
+    if (iFlipH >= 0) { iFlipH = Math.min(1, iFlipH + 0.02); if (iFlipH >= 1) iFlipH = -1; }
+    if (iFlipV >= 0) { iFlipV = Math.min(1, iFlipV + 0.02); if (iFlipV >= 1) iFlipV = -1; }
 
-    ctx.clearRect(0,0,cssW,cssW);
+    ctx.clearRect(0,0,cssW,cssW+btnH);
 
+    ctx.save();
+    if (iFlipH >= 0 || iFlipV >= 0) {
+      const scaleX = iFlipH >= 0 ? Math.cos(iFlipH * 2 * Math.PI) : 1;
+      const scaleY = iFlipV >= 0 ? Math.cos(iFlipV * 2 * Math.PI) : 1;
+      ctx.translate(cssW/2, cssW/2); ctx.scale(scaleX, scaleY); ctx.translate(-cssW/2, -cssW/2);
+    }
     for (let ti=0;ti<9;ti++) {
       const {x:gx,y:gy}=tXY(ti), tile=IT[ti];
       const ccx=gx+DC/2, ccy=gy+DC/2;
@@ -2223,7 +2237,7 @@ function runIntro() {
         const sz=Math.round(DC*0.22), sc=d?'rgba(200,200,200,0.42)':'rgba(40,40,40,0.32)';
         ctx.fillStyle=sc; ctx.textAlign='center'; ctx.textBaseline='middle';
         tile.l.forEach((l,q) => {
-          if (glyphMode) { iGlyph(l,LP[q][0],LP[q][1],sz,0.38)||(ctx.fillStyle=sc,ctx.font=letterFont(l,sz),ctx.fillText(l,LP[q][0],LP[q][1])); }
+          if (iGM) { iGlyph(l,LP[q][0],LP[q][1],sz,0.38)||(ctx.fillStyle=sc,ctx.font=letterFont(l,sz),ctx.fillText(l,LP[q][0],LP[q][1])); }
           else { ctx.font=letterFont(l,sz); ctx.fillText(l,LP[q][0],LP[q][1]); }
         });
       }
@@ -2242,7 +2256,7 @@ function runIntro() {
           if (eff) {
             const col=inSel?(d?'#5dcaa5':'#0f6e56'):(d?'#d3d1c7':'#2c2c2a');
             ctx.save(); ctx.translate(lx,ly); ctx.rotate(step*Math.PI/2);
-            if (glyphMode) {
+            if (iGM) {
               if (!iGlyph(base,0,0,gSize)) { ctx.fillStyle=col; ctx.font=letterFont(eff,gSize,base); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(eff,0,0); }
             } else { ctx.fillStyle=col; ctx.font=letterFont(eff,gSize,base); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(eff,0,0); }
             ctx.restore();
@@ -2257,6 +2271,27 @@ function runIntro() {
       ctx.fillStyle=d?'rgba(255,255,255,0.7)':'rgba(0,0,0,0.55)';
       ctx.font=`${btnR+2}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText('↻',ccx,ccy+1);
+    }
+    ctx.restore();
+
+    // Button row
+    const bLabels = ['Enter ✓', '⌫ Clear', '⟷ Flip', '↕ Flip', '✏ Glyphs'];
+    ctx.fillStyle = d ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)';
+    ctx.fillRect(0, cssW, cssW, btnH);
+    ctx.strokeStyle = d ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)';
+    ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(0,cssW); ctx.lineTo(cssW,cssW); ctx.stroke();
+    const bh = 26, by0 = cssW + (btnH-bh)/2;
+    const bFontSz = Math.max(9, Math.round(cssW*0.038));
+    for (let i=0;i<5;i++) {
+      const bx = bPad + i*(btnW+bGap);
+      const isHover = curAlpha>0.3 && Math.abs(curX-btnCXs[i])<btnW/2+3 && Math.abs(curY-btnCY)<bh/2+4;
+      ctx.fillStyle = isHover ? (d?'#504e48':'#d6d4cc') : (d?'#3a3a38':'#e8e6df');
+      rrC(ctx,bx,by0,btnW,bh,5); ctx.fill();
+      ctx.strokeStyle = d?'rgba(255,255,255,0.13)':'rgba(0,0,0,0.18)';
+      ctx.lineWidth=0.8; rrC(ctx,bx,by0,btnW,bh,5); ctx.stroke();
+      ctx.fillStyle = d?'#c8c6bc':'#3a3a38';
+      ctx.font=`${bFontSz}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(bLabels[i], btnCXs[i], btnCY);
     }
 
     // Cursor dot
@@ -2279,6 +2314,7 @@ function runIntro() {
   // ── Timeline helpers ───────────────────────────────────────────────────────
   function at(ms,fn) { const id=setTimeout(()=>{ if(alive)fn(); },ms); timers.push(id); }
   function moveTo(ti,q) { const p=(q!==undefined)?qXY(ti,q):{x:tXY(ti).x+DC/2,y:tXY(ti).y+DC/2}; tgtX=p.x; tgtY=p.y; }
+  function moveToBt(n) { tgtX=btnCXs[n]; tgtY=btnCY; }
   function clickAt(ti,q) { clickAnim=1; if(q!==undefined) iSel.add(ti+'_'+q); }
   function setLabel(text) {
     lbl.classList.add('fading');
@@ -2292,14 +2328,15 @@ function runIntro() {
   function playAnim() {
     if (!alive) return;
     timers.forEach(clearTimeout); timers=[];
-    // Snap state clean for each loop
-    iSel.clear(); iAng[3]=0; iTgt[3]=0;
+    // Reset state for each loop
+    iSel.clear(); for(let i=0;i<9;i++){iAng[i]=0;iTgt[i]=0;}
     const s=qXY(0,0); curX=tgtX=s.x; curY=tgtY=s.y;
     curAlpha=0; tgtAlpha=0; clickAnim=0; wordOk=false;
+    iGM=true; iFlipH=-1; iFlipV=-1;
     wb.classList.remove('ok'); wb.textContent='';
     lbl.textContent='Select letters to build a word…';
 
-    // Phase 1: spell SPIN
+    // Phase 1: spell SPIN, then click Enter ✓
     at(300,  ()=>{ tgtAlpha=1; });
     at(700,  ()=>clickAt(0,0));
     at(860,  ()=>{ wb.textContent='s'; });
@@ -2312,32 +2349,50 @@ function runIntro() {
     at(2200, ()=>moveTo(3,0));
     at(2500, ()=>clickAt(3,0));
     at(2660, ()=>{ wb.textContent='spin'; });
-    at(3200, ()=>setLabel('Press Enter to submit!'));
-    at(3700, ()=>{ wordOk=true; wb.classList.add('ok'); wb.textContent='✓ spin +5'; });
+    at(2900, ()=>setLabel('Press Enter to submit!'));
+    at(3100, ()=>moveToBt(0));
+    at(3650, ()=>{ clickAnim=1; wordOk=true; wb.classList.add('ok'); wb.textContent='✓ spin +5'; });
 
     // Phase 2: rotate tile 3 (N → U)
-    at(4450, ()=>{ iSel.clear(); wordOk=false; wb.classList.remove('ok'); wb.textContent=''; setLabel('Rotate a tile to transform letters!'); });
-    at(4800, ()=>moveTo(3));       // move cursor to tile 3 centre
-    at(5550, ()=>{ clickAnim=1; iTgt[3]=Math.PI; }); // trigger 180° rotation
-    at(6150, ()=>setLabel('n rotated 180° → u!'));
+    at(4400, ()=>{ iSel.clear(); wordOk=false; wb.classList.remove('ok'); wb.textContent=''; setLabel('Rotate a tile to transform letters!'); });
+    at(4700, ()=>moveTo(3));
+    at(5450, ()=>{ clickAnim=1; iTgt[3]=Math.PI; });
+    at(6050, ()=>setLabel('n rotated 180° → u!'));
 
-    // Phase 3: spell FUN using the new U
-    at(7000, ()=>setLabel('Now use that u to spell a new word!'));
-    at(7200, ()=>moveTo(5,1));
-    at(7500, ()=>clickAt(5,1));    // f  (tile 5, TR)
-    at(7660, ()=>{ wb.textContent='f'; });
-    at(7800, ()=>moveTo(3,3));
-    at(8100, ()=>clickAt(3,3));    // u  (tile 3, BR after 180°: slot 0 = n → AM['n'][2] = 'u')
-    at(8260, ()=>{ wb.textContent='fu'; });
-    at(8400, ()=>moveTo(2,1));
-    at(8700, ()=>clickAt(2,1));    // n  (tile 2, TR)
-    at(8860, ()=>{ wb.textContent='fun'; });
-    at(9400, ()=>setLabel('Press Enter to submit!'));
-    at(9900, ()=>{ wordOk=true; wb.classList.add('ok'); wb.textContent='✓ fun +3'; });
+    // Phase 3: spell FUN, then click Enter ✓
+    at(6900, ()=>setLabel('Now use that u to spell a new word!'));
+    at(7100, ()=>moveTo(5,1));
+    at(7400, ()=>clickAt(5,1));
+    at(7560, ()=>{ wb.textContent='f'; });
+    at(7700, ()=>moveTo(3,3));
+    at(8000, ()=>clickAt(3,3));
+    at(8160, ()=>{ wb.textContent='fu'; });
+    at(8300, ()=>moveTo(2,1));
+    at(8600, ()=>clickAt(2,1));
+    at(8760, ()=>{ wb.textContent='fun'; });
+    at(9000, ()=>setLabel('Press Enter to submit!'));
+    at(9200, ()=>moveToBt(0));
+    at(9750, ()=>{ clickAnim=1; wordOk=true; wb.classList.add('ok'); wb.textContent='✓ fun +3'; });
+
+    // Phase 4: ⟷ Flip — cursor moves to button, clicks it
+    at(10500, ()=>{ iSel.clear(); wordOk=false; wb.classList.remove('ok'); wb.textContent=''; setLabel('⟷ Flip mirrors the board!'); });
+    at(10800, ()=>moveToBt(2));
+    at(11350, ()=>{ clickAnim=1; iFlipH=0; });
+
+    // Phase 5: ↕ Flip — cursor moves to button, clicks it
+    at(12900, ()=>setLabel('↕ Flip mirrors vertically!'));
+    at(13150, ()=>moveToBt(3));
+    at(13650, ()=>{ clickAnim=1; iFlipV=0; });
+
+    // Phase 6: ✏ Glyphs — cursor moves to button, clicks twice
+    at(15150, ()=>setLabel('✏ Glyphs toggles letter style!'));
+    at(15350, ()=>moveToBt(4));
+    at(15900, ()=>{ clickAnim=1; iGM=false; });
+    at(17200, ()=>{ clickAnim=1; iGM=true; });
 
     // Show Play button, then loop
-    at(10700, ()=>{ iSel.clear(); wordOk=false; wb.classList.remove('ok'); wb.textContent=''; lbl.textContent=''; tgtAlpha=0; btn.classList.add('vis'); });
-    at(13000, ()=>playAnim());
+    at(18100, ()=>{ lbl.textContent=''; tgtAlpha=0; btn.classList.add('vis'); });
+    at(21000, ()=>playAnim());
   }
 
   raf=requestAnimationFrame(render);
