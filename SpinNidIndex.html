@@ -842,7 +842,7 @@ function makeTileDefs(count) {
     if (i < vowelPool.length) l.push(vowelPool[i]);
     while (l.length < 4) {
       const pick = AM_KEYS[Math.floor(Math.random() * AM_KEYS.length)];
-      if (!l.includes(pick)) l.push(pick);
+      if (!l.some(x => x.toLowerCase() === pick.toLowerCase())) l.push(pick);
     }
     // Shuffle so the vowel isn't always in position 0
     l.sort(() => Math.random() - 0.5);
@@ -855,7 +855,7 @@ function makeSingleTileDef() {
   const l = [];
   while (l.length < 4) {
     const pick = AM_KEYS[Math.floor(Math.random() * AM_KEYS.length)];
-    if (!l.includes(pick)) l.push(pick);
+    if (!l.some(x => x.toLowerCase() === pick.toLowerCase())) l.push(pick);
   }
   return { l, c: TILE_COLORS[Math.floor(Math.random() * TILE_COLORS.length)] };
 }
