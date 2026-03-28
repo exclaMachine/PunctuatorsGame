@@ -817,7 +817,7 @@ const AM = {
   'N': ['N', 'Z',  'N', 'Z'],   'Z': ['Z', 'N',  'Z',  'N'],
   'O': ['O', 'O', 'O', 'O'], 'P': ['P', null, 'd', null],
   'R': ['R', null, 'y', null], 'S': ['S', 'u', 'S', 'n'],
-  'Y': ['Y', 'Y',  null, 'Y'],
+  'Y': ['Y', 'Y',  'h', 'Y'],
 };
 
 // Quad slot remapping after N CW 90° steps
@@ -1977,7 +1977,7 @@ const MV = { // Vertical (top-bottom)
   'A': 'V', 'B': 'B', 'c': 'c', 'C':'C', 'D':'D', 'E':'E', 'F': 'L', 'G': 'C', 'H':'H', 'I':'I', 'K': 'K', 'L': 'T', 'M': 'W', 'N': 'n', 'O':'O', 'P': 'q', 'R': 't', 'S': 'Z', 'U': 'n', 'V': 'A', 'W': 'M', 'X':'X', 'Y': 'h', 'Z': 'S',
   'f': 't', 'g': 'g', 'i': 'i', 'k': 'k', 'l':'l', 'n': 'N', 'o':'o', 'P': 'b', 's': 'z','t':'f', 'x':'x', 'z': 's',
   'b':'p', 'p':'b', 'd':'q', 'q':'d',
-  'n':'u', 'u':'N', 'm':'w', 'w':'m',
+  'n':'N', 'u':'N', 'm':'w', 'w':'m',
 };
 
 // All letters that can ever appear on the board (AM + mirror maps)
@@ -2191,7 +2191,7 @@ function runIntro() {
     if (clickAnim>0) clickAnim=Math.max(0,clickAnim-0.06);
     for (let i=0;i<9;i++) {
       const diff=iTgt[i]-iAng[i];
-      iAng[i]=Math.abs(diff)<0.004?iTgt[i]:iAng[i]+diff*0.10;
+      iAng[i]=Math.abs(diff)<0.004?iTgt[i]:iAng[i]+diff*0.065;
     }
     if (iFlipH >= 0) { iFlipH = Math.min(1, iFlipH + 0.02); if (iFlipH >= 1) iFlipH = -1; }
     if (iFlipV >= 0) { iFlipV = Math.min(1, iFlipV + 0.02); if (iFlipV >= 1) iFlipV = -1; }
@@ -2357,42 +2357,42 @@ function runIntro() {
     at(4400, ()=>{ iSel.clear(); wordOk=false; wb.classList.remove('ok'); wb.textContent=''; setLabel('Rotate a tile to transform letters!'); });
     at(4700, ()=>moveTo(3));
     at(5450, ()=>{ clickAnim=1; iTgt[3]=Math.PI; });
-    at(6050, ()=>setLabel('n rotated 180° → u!'));
+    at(6800, ()=>setLabel('n rotated 180° → u!'));
 
     // Phase 3: spell FUN, then click Enter ✓
-    at(6900, ()=>setLabel('Now use that u to spell a new word!'));
-    at(7100, ()=>moveTo(5,1));
-    at(7400, ()=>clickAt(5,1));
-    at(7560, ()=>{ wb.textContent='f'; });
-    at(7700, ()=>moveTo(3,3));
-    at(8000, ()=>clickAt(3,3));
-    at(8160, ()=>{ wb.textContent='fu'; });
-    at(8300, ()=>moveTo(2,1));
-    at(8600, ()=>clickAt(2,1));
-    at(8760, ()=>{ wb.textContent='fun'; });
-    at(9000, ()=>setLabel('Press Enter to submit!'));
-    at(9200, ()=>moveToBt(0));
-    at(9750, ()=>{ clickAnim=1; wordOk=true; wb.classList.add('ok'); wb.textContent='✓ fun +3'; });
+    at(8200, ()=>setLabel('Now use that u to spell a new word!'));
+    at(8400, ()=>moveTo(5,1));
+    at(8700, ()=>clickAt(5,1));
+    at(8860, ()=>{ wb.textContent='f'; });
+    at(9000, ()=>moveTo(3,3));
+    at(9300, ()=>clickAt(3,3));
+    at(9460, ()=>{ wb.textContent='fu'; });
+    at(9600, ()=>moveTo(2,1));
+    at(9900, ()=>clickAt(2,1));
+    at(10060, ()=>{ wb.textContent='fun'; });
+    at(10300, ()=>setLabel('Press Enter to submit!'));
+    at(10500, ()=>moveToBt(0));
+    at(11050, ()=>{ clickAnim=1; wordOk=true; wb.classList.add('ok'); wb.textContent='✓ fun +3'; });
 
     // Phase 4: ⟷ Flip — cursor moves to button, clicks it
-    at(10500, ()=>{ iSel.clear(); wordOk=false; wb.classList.remove('ok'); wb.textContent=''; setLabel('⟷ Flip mirrors the board!'); });
-    at(10800, ()=>moveToBt(2));
-    at(11350, ()=>{ clickAnim=1; iFlipH=0; });
+    at(11800, ()=>{ iSel.clear(); wordOk=false; wb.classList.remove('ok'); wb.textContent=''; setLabel('⟷ Flip mirrors the board!'); });
+    at(12100, ()=>moveToBt(2));
+    at(12650, ()=>{ clickAnim=1; iFlipH=0; });
 
     // Phase 5: ↕ Flip — cursor moves to button, clicks it
-    at(12900, ()=>setLabel('↕ Flip mirrors vertically!'));
-    at(13150, ()=>moveToBt(3));
-    at(13650, ()=>{ clickAnim=1; iFlipV=0; });
+    at(14200, ()=>setLabel('↕ Flip mirrors vertically!'));
+    at(14450, ()=>moveToBt(3));
+    at(14950, ()=>{ clickAnim=1; iFlipV=0; });
 
     // Phase 6: ✏ Glyphs — cursor moves to button, clicks twice
-    at(15150, ()=>setLabel('✏ Glyphs toggles letter style!'));
-    at(15350, ()=>moveToBt(4));
-    at(15900, ()=>{ clickAnim=1; iGM=false; });
-    at(17200, ()=>{ clickAnim=1; iGM=true; });
+    at(16450, ()=>setLabel('✏ Glyphs toggles letter style!'));
+    at(16650, ()=>moveToBt(4));
+    at(17200, ()=>{ clickAnim=1; iGM=false; });
+    at(18500, ()=>{ clickAnim=1; iGM=true; });
 
     // Show Play button, then loop
-    at(18100, ()=>{ lbl.textContent=''; tgtAlpha=0; btn.classList.add('vis'); });
-    at(21000, ()=>playAnim());
+    at(19400, ()=>{ lbl.textContent=''; tgtAlpha=0; btn.classList.add('vis'); });
+    at(22300, ()=>playAnim());
   }
 
   raf=requestAnimationFrame(render);
