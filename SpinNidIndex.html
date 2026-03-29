@@ -1360,7 +1360,9 @@ function submit() {
   const ambiTypes = allAmbigramTypes(word);
   const ambiInfo = ambiTypes[0] || null;
   const ambi = ambiInfo ? ambiInfo.type : null;
-  const ambiBonus = ambi === 'rot' ? base : ambi ? Math.ceil(base * 0.5) : 0;
+  const AMBI_MULT = [1, 2, 3, 5, 8, 13]; // multiplier by number of ambigram types (0–5)
+  const ambiN = ambiTypes.length;
+  const ambiBonus = ambiN > 0 ? base * (AMBI_MULT[Math.min(ambiN, 5)] - 1) : 0;
   const flipCount = (boardFlippedH ? 1 : 0) + (boardFlippedV ? 1 : 0);
   const flipBonus = flipCount === 2 ? base : flipCount === 1 ? Math.ceil(base * 0.5) : 0;
   const bonus = ambiBonus + flipBonus;
@@ -1388,12 +1390,21 @@ function submit() {
   // ── Bonus popups ────────────────────────────────────────────────────────────
   if (ambi) {
     const ambiLabel =
-      ambi === 'rot'   ? '↻ Rotational Ambigram! ×2'  :
-      ambi === 'mirh'  ? '↔ Mirror Ambigram! ×1.5'    :
-      ambi === 'mirv'  ? '↕ Mirror Ambigram! ×1.5'    :
-      ambi === 'rot90' ? '↷ 90° Spin! ×1.5'           :
-                         '↶ 270° Spin! ×1.5';
-    const ambiColor = ambi === 'rot' ? '#5dcaa5' : '#4a9fd4';
+      ambiN >= 5 ? '★ Ultimate Ambigram! ×13'       :
+      ambiN === 4 ? '✦✦✦✦ Quadruple Ambigram! ×8'  :
+      ambiN === 3 ? '✦✦✦ Triple Ambigram! ×5'       :
+      ambiN === 2 ? '✦✦ Double Ambigram! ×3'        :
+      ambi === 'rot'   ? '↻ Rotational Ambigram! ×2' :
+      ambi === 'mirh'  ? '↔ Mirror Ambigram! ×2'     :
+      ambi === 'mirv'  ? '↕ Mirror Ambigram! ×2'     :
+      ambi === 'rot90' ? '↷ 90° Spin! ×2'            :
+                         '↶ 270° Spin! ×2';
+    const ambiColor =
+      ambiN >= 5 ? '#ffc107' :
+      ambiN === 4 ? '#e91e63' :
+      ambiN === 3 ? '#9c27b0' :
+      ambiN === 2 ? '#ff9800' :
+      ambi === 'rot' ? '#5dcaa5' : '#4a9fd4';
     showBoardPopup(ambiLabel, ambiColor, false);
   }
   if (flipCount) {
@@ -1437,7 +1448,12 @@ function submit() {
   }
   ambiTypes.length ? sndAmbigramN(ambiTypes.length) : sndWord();
   clearWord();
-  const ambiMsg = ambi === 'rot' ? ' ↻ 2×' : ambi === 'mirh' ? ' ↔ 1.5×' : ambi === 'mirv' ? ' ↕ 1.5×' : (ambi === 'rot90' || ambi === 'rot270') ? ` ${ambiInfo.icon} 1.5×` : '';
+  const ambiMsg =
+    ambiN >= 5 ? ' ★ ultimate ×13' :
+    ambiN === 4 ? ' ✦✦✦✦ quad ×8'  :
+    ambiN === 3 ? ' ✦✦✦ triple ×5' :
+    ambiN === 2 ? ' ✦✦ double ×3'  :
+    ambiN === 1 ? ` ${ambi==='rot'?'↻':ambi==='mirh'?'↔':ambi==='mirv'?'↕':ambiInfo.icon} ×2` : '';
   const flipMsg = flipCount === 2 ? ' ⟲⟲ flipped 2×!' : flipCount === 1 ? ' ⟲ flipped 1.5×!' : '';
   const tierMsg = newTier.name !== prevTier.name ? ` → ${newTier.name}!` : '';
   const hiddenMsg = hiddenBonus ? ' ⭐ hidden word!' : '';
