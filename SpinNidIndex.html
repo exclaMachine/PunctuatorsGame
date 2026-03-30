@@ -833,19 +833,36 @@ const TILE_COLORS = ['#B5D4F4','#C0DD97','#F5C4B3','#CECBF6','#9FE1CB','#FAC775'
 const AM_KEYS = Object.keys(AM);
 const VOWELS = ['a', 'e', 'i', 'o', 'u'];
 
+// ── Debug seed mode ───────────────────────────────────────────────────────────
+// Local only (localhost / file://). Activate with ?seed or ?seed=N in the URL.
+// Produces the same board every run and sets hidden word to "ambigram".
+function _mulberry32(seed) {
+  return () => {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const _isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:';
+const _seedParam = new URLSearchParams(location.search).get('seed');
+const DEBUG_SEED = (_isLocal && _seedParam !== null) ? (parseInt(_seedParam, 10) || 42) : null;
+const rng = DEBUG_SEED !== null ? _mulberry32(DEBUG_SEED) : () => Math.random();
+if (DEBUG_SEED !== null) console.log('[DEBUG] Seed mode — seed:', DEBUG_SEED, '| hidden word: "ambigram"');
+
 function makeTileDefs(count) {
   const defs = [];
   // Shuffle vowels so each is assigned to a random tile slot
-  const vowelPool = [...VOWELS].sort(() => Math.random() - 0.5);
+  const vowelPool = [...VOWELS].sort(() => rng() - 0.5);
   for (let i = 0; i < count; i++) {
     const l = [];
     if (i < vowelPool.length) l.push(vowelPool[i]);
     while (l.length < 4) {
-      const pick = AM_KEYS[Math.floor(Math.random() * AM_KEYS.length)];
+      const pick = AM_KEYS[Math.floor(rng() * AM_KEYS.length)];
       if (!l.some(x => x.toLowerCase() === pick.toLowerCase())) l.push(pick);
     }
     // Shuffle so the vowel isn't always in position 0
-    l.sort(() => Math.random() - 0.5);
+    l.sort(() => rng() - 0.5);
     defs.push({ l, c: TILE_COLORS[i % TILE_COLORS.length] });
   }
   return defs;
@@ -854,10 +871,10 @@ function makeTileDefs(count) {
 function makeSingleTileDef() {
   const l = [];
   while (l.length < 4) {
-    const pick = AM_KEYS[Math.floor(Math.random() * AM_KEYS.length)];
+    const pick = AM_KEYS[Math.floor(rng() * AM_KEYS.length)];
     if (!l.some(x => x.toLowerCase() === pick.toLowerCase())) l.push(pick);
   }
-  return { l, c: TILE_COLORS[Math.floor(Math.random() * TILE_COLORS.length)] };
+  return { l, c: TILE_COLORS[Math.floor(rng() * TILE_COLORS.length)] };
 }
 
 const TILE_DEFS = makeTileDefs(9);
@@ -1499,8 +1516,13 @@ function setupChallengeWord() {
   }
   if (!candidates.length) return;
 
+  // In seed mode, always try "ambigram" first (bypasses the rot-quota filter)
+  if (DEBUG_SEED !== null && [...'ambigram'].every(l => revAM[l]?.length)) {
+    if (plantWord('ambigram', revAM)) { challengeWord = 'ambigram'; return; }
+  }
+
   // Shuffle and try up to 200 words until one plants successfully
-  candidates.sort(() => Math.random() - 0.5);
+  candidates.sort(() => rng() - 0.5);
   for (const word of candidates.slice(0, 200)) {
     if (plantWord(word, revAM)) { challengeWord = word; return; }
   }
@@ -1520,7 +1542,7 @@ function plantWord(word, revAM) {
 
   // Give each letter its own tile — no cross-tile rotation conflicts possible,
   // and duplicate letters (e.g. two 'i's) each get a separate tile guaranteed.
-  const tileOrder = [...Array(TILE_DEFS.length).keys()].sort(() => Math.random() - 0.5);
+  const tileOrder = [...Array(TILE_DEFS.length).keys()].sort(() => rng() - 0.5);
 
   for (let li = 0; li < word.length; li++) {
     const ti = tileOrder[li];
@@ -1533,7 +1555,7 @@ function plantWord(word, revAM) {
     const pool = isHidden
       ? (rotated.length ? rotated : visible)
       : (visible.length  ? visible  : rotated);
-    const { base, rot } = pool[Math.floor(Math.random() * pool.length)];
+    const { base, rot } = pool[Math.floor(rng() * pool.length)];
 
     // With one tile per letter there are no used slots — just write to the slot
     // that will be at visual quad 0 when the tile is at rotation `rot`.
@@ -2090,7 +2112,7 @@ document.getElementById('bclr').onclick = () => { clearWord(); setSt('', ''); };
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 function initBoard() {
-  const positions = [...Array(GR * GR).keys()].sort(() => Math.random() - 0.5);
+  const positions = [...Array(GR * GR).keys()].sort(() => rng() - 0.5);
   TILE_DEFS.forEach((def, i) => {
     G[positions[i]] = { d: def, ca: 0, ta: 0, destroyed: new Set(), mirrored: false, mirroredV: false };
   });
