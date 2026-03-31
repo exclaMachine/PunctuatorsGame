@@ -1555,7 +1555,12 @@ function plantWord(word, revAM) {
     const pool = isHidden
       ? (rotated.length ? rotated : visible)
       : (visible.length  ? visible  : rotated);
-    const { base, rot } = pool[Math.floor(rng() * pool.length)];
+    // Filter out pairs whose base would duplicate a letter already on this tile
+    const tileLetters = TILE_DEFS[ti].l;
+    const noDup = pool.filter(({base, rot}) =>
+      !tileLetters.some((l, idx) => idx !== RS[rot][0] && l.toLowerCase() === base.toLowerCase())
+    );
+    const { base, rot } = (noDup.length ? noDup : pool)[Math.floor(rng() * (noDup.length || pool.length))];
 
     // With one tile per letter there are no used slots — just write to the slot
     // that will be at visual quad 0 when the tile is at rotation `rot`.
