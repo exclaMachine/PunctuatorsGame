@@ -368,6 +368,8 @@ footer > div {
         margin: 50px;
         position: fixed;
         top: 110px; /* below nav (44px) + buttons (~64px) */
+        max-width: calc(100vw - 100px); /* stay within viewport (100px = 50px margin each side) */
+        overflow-wrap: break-word;
         color: whitesmoke;
         text-shadow:  1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
         font-family: 'Palanquin', sans-serif;
@@ -504,6 +506,8 @@ footer > div {
             margin: 50px;
             position: fixed;
             top: 110px;
+            max-width: calc(100vw - 100px);
+            overflow-wrap: break-word;
             font-family: 'Palanquin', sans-serif;
         }
 
