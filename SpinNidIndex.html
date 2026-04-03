@@ -63,7 +63,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px 12px;
+    padding: 64px 12px 20px; /* top: 44px nav + original 20px */
   }
 
   h1 {
@@ -98,7 +98,7 @@
 
   /* About button */
   #about-btn {
-    position: fixed; top: 14px; right: 16px; z-index: 90;
+    position: fixed; top: 58px; right: 16px; z-index: 90; /* 44px nav + 14px original */
     width: 30px; height: 30px; border-radius: 50%;
     background: var(--bg2); border: 1.5px solid var(--border2);
     color: var(--text2); font-size: 15px; font-weight: 700;
@@ -605,7 +605,7 @@
   #intro-play-btn.vis { opacity: 1; pointer-events: auto; }
   #intro-play-btn:hover { opacity: 0.85 !important; }
   #intro-skip {
-    position: absolute; top: 16px; right: 16px;
+    position: absolute; top: 60px; right: 16px; /* 44px nav + 16px original */
     background: none; border: 1px solid var(--border2);
     border-radius: 8px; padding: 6px 14px;
     font-size: 13px; color: var(--text2); cursor: pointer;
@@ -631,6 +631,7 @@
 </style>
 </head>
 <body>
+<script src="./nav.js"></script>
 
 <div id="intro">
   <button id="intro-skip">Skip →</button>

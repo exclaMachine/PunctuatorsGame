@@ -12,6 +12,30 @@
   <link rel="stylesheet" href="typing.css">
 </head>
 <body>
+    <script src="./nav.js"></script>
+
+    <!-- Mobile block: shown only on touch devices, hides rest of page -->
+    <style>
+      #mobile-block {
+        display: none;
+        position: fixed; inset: 0; z-index: 9000;
+        background: #0b0c10;
+        flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; padding: 32px 24px;
+        font-family: Palanquin, system-ui, sans-serif; color: #e8e8e8;
+      }
+      #mobile-block h2 { font-size: 1.4rem; margin-bottom: 12px; }
+      #mobile-block p  { font-size: 1rem; color: #888; line-height: 1.6; max-width: 300px; }
+      #mobile-block a  { display:inline-block; margin-top:24px; padding:10px 24px; background:#534ab7; color:#fff; border-radius:8px; text-decoration:none; font-weight:600; }
+      @media (hover: none) and (pointer: coarse) {
+        #mobile-block { display: flex; }
+      }
+    </style>
+    <div id="mobile-block">
+      <h2>Keyboard required</h2>
+      <p>The Typing Game needs a physical keyboard and isn't available on mobile.</p>
+      <a href="./">← Back to Punctuators</a>
+    </div>
     <header class="tg-hud">
         <a class="tg-back" href="./">← Back</a>
         <div>Score: <span id="tg-score">0</span></div>

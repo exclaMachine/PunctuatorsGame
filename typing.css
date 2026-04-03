@@ -1,6 +1,7 @@
 :root{ --bg:#0b0c10; --ink:#111; --hud:#12141a; --hudText:#e8e8e8; }
 *{ box-sizing:border-box; }
 html,body{ height:100%; margin:0; font-family:Palanquin,system-ui,sans-serif; background:var(--bg); color:var(--hudText); }
+body{ padding-top:44px; } /* offset for fixed nav */
 .tg-hud{
   display:flex; gap:1.25rem; align-items:center; justify-content:center;
   background:var(--hud); padding:.6rem 1rem; border-bottom:1px solid #222;
@@ -9,7 +10,7 @@ html,body{ height:100%; margin:0; font-family:Palanquin,system-ui,sans-serif; ba
 .tg-back{ margin-right:auto; color:#9cc3ff; text-decoration:none; }
 .tg-back:hover{ text-decoration:underline; }
 
-.tg-main{ position:relative; display:grid; place-items:center; height:calc(100% - 110px); }
+.tg-main{ position:relative; display:grid; place-items:center; height:calc(100% - 154px); } /* 110px original + 44px nav */
 #tg-canvas{ width:min(1100px, 95vw); height:min(70vh, 700px); border:2px solid #000; background:#fff; }
 
 .tg-typed{

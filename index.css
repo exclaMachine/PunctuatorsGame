@@ -278,8 +278,8 @@ footer > div {
 #hint-button {
     position: fixed;
     cursor: pointer;
-    top: 20;
-    left: 20;
+    top: 64px;
+    left: 20px;
     margin: 5px;
     font-family: 'Palanquin', sans-serif;
     color: white;
@@ -367,6 +367,7 @@ footer > div {
         font-size: 300%;
         margin: 50px;
         position: fixed;
+        top: 110px; /* below nav (44px) + buttons (~64px) */
         color: whitesmoke;
         text-shadow:  1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
         font-family: 'Palanquin', sans-serif;
@@ -502,6 +503,7 @@ footer > div {
             font-size: 50px;
             margin: 50px;
             position: fixed;
+            top: 110px;
             font-family: 'Palanquin', sans-serif;
         }
 
@@ -594,8 +596,8 @@ footer > div {
 
     .btn{
         position: fixed;
-        top: 20;
-        right: 20;
+        top: 64px;
+        right: 20px;
         /* transform: translate(-50%, -50%); */
         font-family: 'Palanquin', sans-serif;
         color: white;
