@@ -331,6 +331,9 @@ footer > div {
         color: white;
         text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
         background-color: var(--color);
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: manipulation;
         border-radius: 4px;
         margin: 5px;
         padding: 5px;
