@@ -16,6 +16,94 @@ const saveSfx = new Howl({
 });
 const slashSfx = new Howl({ src: ["./sounds/whoosh.mp3"], volume: 0.9 });
 
+// ─── Synthesized Sound Effects ────────────────────────────────────────────────
+let _AC = null;
+function ac() {
+  if (!_AC) _AC = new (window.AudioContext || window.webkitAudioContext)();
+  if (_AC.state === 'suspended') _AC.resume();
+  return _AC;
+}
+function tone(freq, dur, type = 'sine', vol = 0.20, t0 = 0) {
+  const ctx = ac(), o = ctx.createOscillator(), g = ctx.createGain();
+  o.connect(g); g.connect(ctx.destination);
+  o.type = type;
+  o.frequency.setValueAtTime(freq, ctx.currentTime + t0);
+  g.gain.setValueAtTime(0, ctx.currentTime + t0);
+  g.gain.linearRampToValueAtTime(vol, ctx.currentTime + t0 + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t0 + dur);
+  o.start(ctx.currentTime + t0);
+  o.stop(ctx.currentTime + t0 + dur + 0.01);
+}
+function sweep(f0, f1, dur, type = 'sine', vol = 0.16, t0 = 0) {
+  const ctx = ac(), o = ctx.createOscillator(), g = ctx.createGain();
+  o.connect(g); g.connect(ctx.destination);
+  o.type = type;
+  o.frequency.setValueAtTime(f0, ctx.currentTime + t0);
+  o.frequency.exponentialRampToValueAtTime(f1, ctx.currentTime + t0 + dur);
+  g.gain.setValueAtTime(vol, ctx.currentTime + t0);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t0 + dur);
+  o.start(ctx.currentTime + t0);
+  o.stop(ctx.currentTime + t0 + dur + 0.01);
+}
+
+// Each printable key: tight mechanical tap
+function sndKey() {
+  tone(1300, 0.04, 'square', 0.04);
+}
+
+// Backspace: short downward tick (reverse of key)
+function sndBackspace() {
+  sweep(620, 300, 0.07, 'sine', 0.07);
+}
+
+// Correct word: quick rising laser-ping then warm bell ring
+function sndCorrect() {
+  sweep(240, 960, 0.09, 'sine', 0.20);
+  tone(960, 0.32, 'triangle', 0.18, 0.07);
+  tone(1920, 0.18, 'sine', 0.09, 0.14);
+}
+
+// Wrong word: flat low thud + brief descending groan
+function sndWrong() {
+  tone(160, 0.14, 'sawtooth', 0.26);
+  sweep(300, 110, 0.22, 'triangle', 0.14, 0.06);
+}
+
+// New word appears: soft upward shimmer (subtle, non-intrusive)
+function sndNewWord() {
+  sweep(320, 580, 0.16, 'sine', 0.09);
+}
+
+// Streak milestone sounds — each one escalates in energy
+function sndStreak5() {
+  // Double bright ping — "nice!"
+  tone(1047, 0.18, 'sine', 0.20);
+  tone(1319, 0.22, 'sine', 0.20, 0.12);
+}
+function sndStreak10() {
+  // 3-note ascending arpeggio — "getting hot!"
+  [[880, 0], [1047, 0.10], [1319, 0.20]].forEach(([f, t]) => tone(f, 0.28, 'sine', 0.22, t));
+  tone(1568, 0.22, 'sine', 0.16, 0.30);
+}
+function sndStreak20() {
+  // Sweep + chord blast — "on fire!"
+  sweep(440, 1760, 0.20, 'sine', 0.18);
+  [880, 1047, 1319, 1568].forEach(f => tone(f, 0.40, 'sine', 0.14, 0.18));
+}
+function sndStreak30() {
+  // Full epic: bass-to-high sweep + chord explosion + shimmer
+  sweep(180, 1760, 0.30, 'sine', 0.20);
+  [1047, 1319, 1568, 2093].forEach(f => tone(f, 0.50, 'sine', 0.14, 0.28));
+  [[1568, 0.60], [2093, 0.70], [1568, 0.80], [2093, 0.90]].forEach(([f, t]) => tone(f, 0.14, 'triangle', 0.12, t));
+}
+function sndStreakMilestone(streak) {
+  if      (streak >= 30) sndStreak30();
+  else if (streak >= 20) sndStreak20();
+  else if (streak >= 10) sndStreak10();
+  else if (streak >=  5) sndStreak5();
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function fitCanvas() {
   const cssW = CANVAS.clientWidth,
     cssH = CANVAS.clientHeight;
@@ -1336,6 +1424,7 @@ function nextWord() {
   STATE.buffer = "";
   HUD.count.textContent = ++STATE.count;
   STATE.canShoot = true;
+  sndNewWord();
   // 30% chance to run a Find lesson for this word (and skip normal firing until done)
   if (Math.random() < 0.2) startFindLesson();
   // Kick off a Cut lesson ~25% of the time (and only if no other lesson is active)
@@ -1517,12 +1606,16 @@ function submitBuffer() {
     HUD.score.textContent = STATE.score;
     HUD.streak.textContent = STATE.streak;
 
+    sndCorrect();
+    if (STATE.streak % 5 === 0) sndStreakMilestone(STATE.streak);
+
     hero?.shootSound();
     projectile = hero?.useTongue ? new CommaTongue(hero) : new Projectile(hero);
     STATE.canShoot = false;
   } else {
     STATE.streak = 0;
     HUD.streak.textContent = STATE.streak;
+    sndWrong();
   }
 }
 
@@ -1740,10 +1833,12 @@ window.addEventListener(
     }
     if (printable) {
       STATE.buffer += e.key;
+      sndKey();
       return;
     }
     if (e.key === "Backspace") {
       STATE.buffer = STATE.buffer.slice(0, -1);
+      sndBackspace();
       return;
     }
     if (e.key === " " || e.key === "Enter") {
