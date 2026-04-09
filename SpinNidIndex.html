@@ -2211,50 +2211,55 @@ function runIntro() {
   let iFlipH = -1, iFlipV = -1; // -1 = idle, 0..1 = animating
   let alive = true, timers = [], raf = null;
 
-  // ── Background bouncers (last 3 sprites in Alpha.png) ────────────────────
-  // Alpha.png: 7 cols × 8 rows of 32×32 cells. Letters fill indices 0-51.
-  // The three custom sprites sit at indices 52, 53, 54 → row 7, cols 3, 4, 5.
-  const bgCanvas = document.getElementById('intro-bg');
-  const bgCtx = bgCanvas.getContext('2d');
-  const vw = window.innerWidth, vh = window.innerHeight;
-  bgCanvas.width = Math.round(vw * DPR); bgCanvas.height = Math.round(vh * DPR);
-  bgCanvas.style.width = vw + 'px'; bgCanvas.style.height = vh + 'px';
-  bgCtx.scale(DPR, DPR);
+  // ── Background bouncers (last 3 sprites in Alpha.png — mobile only) ───────
+  // Alpha.png: 7 cols × 8 rows of 32×32 cells. The three custom sprites sit
+  // at row 7, cols 4, 5, 6. Disabled on desktop to avoid performance issues.
+  const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  let tickBouncers = () => {}, drawBouncers = () => {};
 
-  const bSz = Math.round(Math.min(vw, vh) * 0.13);
-  const bouncers = [4, 5, 6].map((col, i) => ({
-    x:  vw * (0.15 + i * 0.3),
-    y:  vh * (0.2 + (i % 2) * 0.45),
-    vx: (i % 2 === 0 ? 0.9 : -1.1) + (i - 1) * 0.2,
-    vy: (i % 2 === 0 ? 0.7 : -0.85) + (i - 1) * 0.15,
-    angle: (i * Math.PI * 2) / 3,
-    spin: (i % 2 === 0 ? 1 : -1) * (0.018 + i * 0.007),
-    col, row: 7,
-    size: bSz,
-  }));
+  if (isMobile) {
+    const bgCanvas = document.getElementById('intro-bg');
+    const bgCtx = bgCanvas.getContext('2d');
+    const vw = window.innerWidth, vh = window.innerHeight;
+    bgCanvas.width = Math.round(vw * DPR); bgCanvas.height = Math.round(vh * DPR);
+    bgCanvas.style.width = vw + 'px'; bgCanvas.style.height = vh + 'px';
+    bgCtx.scale(DPR, DPR);
 
-  function tickBouncers() {
-    bouncers.forEach(b => {
-      b.x += b.vx; b.y += b.vy; b.angle += b.spin;
-      const sz2 = b.size / 2;
-      if (b.x - sz2 < 0)  { b.x = sz2;     b.vx =  Math.abs(b.vx); }
-      if (b.x + sz2 > vw) { b.x = vw - sz2; b.vx = -Math.abs(b.vx); }
-      if (b.y - sz2 < 0)  { b.y = sz2;     b.vy =  Math.abs(b.vy); }
-      if (b.y + sz2 > vh) { b.y = vh - sz2; b.vy = -Math.abs(b.vy); }
-    });
-  }
+    const bSz = Math.round(Math.min(vw, vh) * 0.13);
+    const bouncers = [4, 5, 6].map((col, i) => ({
+      x:  vw * (0.15 + i * 0.3),
+      y:  vh * (0.2 + (i % 2) * 0.45),
+      vx: (i % 2 === 0 ? 0.9 : -1.1) + (i - 1) * 0.2,
+      vy: (i % 2 === 0 ? 0.7 : -0.85) + (i - 1) * 0.15,
+      angle: (i * Math.PI * 2) / 3,
+      spin: (i % 2 === 0 ? 1 : -1) * (0.018 + i * 0.007),
+      col, row: 7,
+      size: bSz,
+    }));
 
-  function drawBouncers() {
-    bgCtx.clearRect(0, 0, vw, vh);
-    if (!glyphImg.complete || !glyphImg.naturalWidth) return;
-    bouncers.forEach(b => {
-      bgCtx.save();
-      bgCtx.globalAlpha = 0.15;
-      bgCtx.translate(b.x, b.y);
-      bgCtx.rotate(b.angle);
-      bgCtx.drawImage(glyphImg, b.col * GLYPH_CELL, b.row * GLYPH_CELL, GLYPH_CELL, GLYPH_CELL, -b.size / 2, -b.size / 2, b.size, b.size);
-      bgCtx.restore();
-    });
+    tickBouncers = function () {
+      bouncers.forEach(b => {
+        b.x += b.vx; b.y += b.vy; b.angle += b.spin;
+        const sz2 = b.size / 2;
+        if (b.x - sz2 < 0)  { b.x = sz2;      b.vx =  Math.abs(b.vx); }
+        if (b.x + sz2 > vw) { b.x = vw - sz2; b.vx = -Math.abs(b.vx); }
+        if (b.y - sz2 < 0)  { b.y = sz2;      b.vy =  Math.abs(b.vy); }
+        if (b.y + sz2 > vh) { b.y = vh - sz2; b.vy = -Math.abs(b.vy); }
+      });
+    };
+
+    drawBouncers = function () {
+      bgCtx.clearRect(0, 0, vw, vh);
+      if (!glyphImg.complete || !glyphImg.naturalWidth) return;
+      bouncers.forEach(b => {
+        bgCtx.save();
+        bgCtx.globalAlpha = 0.15;
+        bgCtx.translate(b.x, b.y);
+        bgCtx.rotate(b.angle);
+        bgCtx.drawImage(glyphImg, b.col * GLYPH_CELL, b.row * GLYPH_CELL, GLYPH_CELL, GLYPH_CELL, -b.size / 2, -b.size / 2, b.size, b.size);
+        bgCtx.restore();
+      });
+    };
   }
 
   // ── Coordinate helpers ────────────────────────────────────────────────────

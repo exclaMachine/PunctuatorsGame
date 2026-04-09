@@ -13,7 +13,6 @@
     { label: 'Punctuators', file: 'index.html' },
     { label: 'Typing Game', file: 'typing.html', desktopOnly: true },
     { label: 'Spin Nids',   file: 'SpinNidIndex.html' },
-    { label: 'IPA Fan',     file: 'IPA-fan-game/ipaFan.html' },
     { label: 'Webtoons',    href: 'https://www.webtoons.com/en/challenge/the-punctuators-super-powered-punctuation/list?title_no=318764', external: true },
     { label: 'Books',       href: 'https://a.co/d/aX8NZcc', external: true },
   ];
