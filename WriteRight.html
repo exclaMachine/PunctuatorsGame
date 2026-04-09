@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Write. Right? Draw it! 🎨</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fef6e4;
+      --paper: #fffef9;
+      --dark: #1a1a2e;
+      --noun-c: #16a34a;
+      --verb-c: #ea580c;
+      --prep-c: #2563eb;
+      --wild-c: #9333ea;
+      --noun-bg: #dcfce7;
+      --verb-bg: #ffedd5;
+      --prep-bg: #dbeafe;
+      --wild-bg: #f3e8ff;
+      --accent: #e11d48;
+      --shadow: 4px 4px 0 #1a1a2e;
+      --shadow-sm: 2px 2px 0 #1a1a2e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Patrick Hand', cursive;
+      background: var(--bg);
+      background-image: radial-gradient(#d4c5a9 1px, transparent 1px);
+      background-size: 24px 24px;
+      min-height: 100vh;
+    }
+    h1,h2,h3 { font-family: 'Bangers', cursive; letter-spacing: 2px; }
+    #app { max-width: 960px; margin: 0 auto; padding: 16px; padding-top: 60px; }
+
+    /* HEADER */
+    .header { text-align: center; padding: 12px 0 6px; }
+    .header h1 { font-size: 3rem; color: var(--dark); text-shadow: 3px 3px 0 var(--accent); line-height: 1; }
+    .header p  { font-size: .95rem; color: #555; margin-top: 4px; }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-block; padding: 10px 22px; border: 3px solid var(--dark);
+      border-radius: 8px; background: #fff; font-family: 'Bangers', cursive;
+      font-size: 1.2rem; letter-spacing: 1px; cursor: pointer; box-shadow: var(--shadow);
+      transition: transform .1s, box-shadow .1s;
+    }
+    .btn:hover  { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 var(--dark); }
+    .btn:active { transform: translate(2px,2px);   box-shadow: 2px 2px 0 var(--dark); }
+    .btn-accent { background: var(--accent);  color: #fff; }
+    .btn-green  { background: var(--noun-c);  color: #fff; }
+    .btn-noun   { background: var(--noun-bg); color: var(--noun-c); border-color: var(--noun-c); }
+    .btn-verb   { background: var(--verb-bg); color: var(--verb-c); border-color: var(--verb-c); }
+    .btn-prep   { background: var(--prep-bg); color: var(--prep-c); border-color: var(--prep-c); }
+    .btn-wild   { background: var(--wild-bg); color: var(--wild-c); border-color: var(--wild-c); }
+    .btn-sm  { padding: 6px 14px;   font-size: 1rem; }
+    .btn-lg  { padding: 14px 32px;  font-size: 1.5rem; }
+    .btn-sel { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--dark); background: var(--dark); color: #fff; }
+
+    /* SETUP */
+    .setup-box {
+      background: var(--paper); border: 3px solid var(--dark); border-radius: 16px;
+      padding: 28px; box-shadow: var(--shadow); max-width: 600px; margin: 24px auto;
+    }
+    .setup-box h2 { font-size: 1.8rem; margin-bottom: 16px; }
+    .pc-btns { display: flex; gap: 10px; margin-bottom: 24px; }
+    .pc-btns .btn { flex: 1; text-align: center; }
+    .pi-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .p-badge {
+      font-family: 'Bangers', cursive; font-size: 1.1rem; width: 36px; height: 36px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--dark); flex-shrink: 0;
+    }
+    input[type=text] {
+      flex:1; padding:8px 12px; border:2px solid var(--dark); border-radius:8px;
+      font-family:'Patrick Hand',cursive; font-size:1rem; background:#fff; min-width:120px;
+    }
+    input[type=text]:focus { outline:none; box-shadow:0 0 0 3px rgba(26,26,46,.15); }
+    .hint {
+      background:#fff3cd; border:2px solid #e6a817; border-radius:8px;
+      padding:10px 14px; font-size:.9rem; margin-top:16px;
+    }
+
+    /* SCOREBOARD */
+    .scoreboard { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+    .chip {
+      padding:6px 14px; border:2px solid var(--dark); border-radius:999px;
+      font-size:.95rem; background:#fff; box-shadow:var(--shadow-sm);
+      display:flex; align-items:center; gap:6px;
+    }
+    .chip.active { background:var(--dark); color:#fff; }
+    .chip .pts { font-family:'Bangers',cursive; font-size:1.1rem; }
+    .turn-banner {
+      text-align:center; border-radius:10px; padding:10px 16px; margin-bottom:14px;
+      font-family:'Bangers',cursive; font-size:1.4rem; letter-spacing:1px; color:#fff;
+    }
+    .deck-row { display:flex; gap:14px; align-items:center; font-size:.9rem; color:#666; margin-bottom:12px; }
+    .deck-row b { font-family:'Bangers',cursive; font-size:1.1rem; color:var(--dark); }
+    .notice { border-radius:8px; padding:8px 14px; margin-bottom:10px; font-size:.9rem; }
+    .n-info { background:#eff6ff; border:2px solid #3b82f6; color:#1e40af; }
+
+    /* SLOTS */
+    .slots-section { margin-bottom:18px; }
+    .slots-section h3 { font-size:1.1rem; margin-bottom:8px; color:#555; }
+    .slot-card {
+      background:var(--paper); border:3px solid var(--dark); border-radius:12px;
+      padding:12px 16px; margin-bottom:10px; box-shadow:var(--shadow-sm);
+      transition:border-color .15s, box-shadow .15s, transform .1s;
+    }
+    .slot-card.playable {
+      border-color:var(--accent); box-shadow:4px 4px 0 var(--accent); cursor:pointer;
+    }
+    .slot-card.playable:hover { transform:translateY(-2px); }
+    .slot-lbl { font-family:'Bangers',cursive; font-size:.78rem; letter-spacing:1px; color:#999; margin-bottom:8px; }
+    .slot-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .slot-pos {
+      border:2px dashed #bbb; border-radius:8px; padding:6px 10px;
+      min-width:72px; text-align:center; font-size:.82rem; color:#bbb;
+    }
+    .slot-pos.fn  { background:var(--noun-bg); border:2px solid var(--noun-c); color:var(--noun-c); }
+    .slot-pos.fv  { background:var(--verb-bg); border:2px solid var(--verb-c); color:var(--verb-c); }
+    .slot-pos.fp  { background:var(--prep-bg); border:2px solid var(--prep-c); color:var(--prep-c); }
+    .slot-pos.fw  { background:var(--wild-bg); border:2px solid var(--wild-c); color:var(--wild-c); }
+    .slot-pos.tgt { border:2px solid var(--accent); color:var(--accent); animation:pulse 1.4s infinite; }
+    .slot-pos .pl { font-size:.66rem; opacity:.7; display:block; }
+    .slot-pos .pw { font-weight:bold; font-size:.88rem; }
+    .conn { color:#bbb; font-size:.9rem; }
+    .slot-sent { font-size:.95rem; margin-top:8px; font-style:italic; color:#444; }
+
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+
+    /* HAND */
+    .hand-area {
+      background:var(--paper); border:3px solid var(--dark); border-radius:14px;
+      padding:16px; box-shadow:var(--shadow);
+    }
+    .hand-area h3 { font-size:1.05rem; margin-bottom:10px; color:#444; }
+    .hand-cards { display:flex; gap:12px; flex-wrap:wrap; }
+
+    /* CARDS */
+    .card {
+      width:134px; min-height:152px; border:3px solid var(--dark); border-radius:12px;
+      padding:10px; cursor:pointer; box-shadow:var(--shadow);
+      transition:transform .15s, box-shadow .15s; display:flex; flex-direction:column;
+      user-select:none;
+    }
+    .card:hover   { transform:translateY(-6px) rotate(-1deg); box-shadow:6px 10px 0 var(--dark); }
+    .card.sel     { transform:translateY(-10px); box-shadow:6px 12px 0 var(--dark); outline:3px solid var(--accent); }
+    .card.noun-c  { background:var(--noun-bg); }
+    .card.verb-c  { background:var(--verb-bg); }
+    .card.prep-c  { background:var(--prep-bg); }
+    .card.wild-c  { background:var(--wild-bg); }
+    .card.off     { opacity:.4; cursor:not-allowed; }
+    .card.off:hover { transform:none; box-shadow:var(--shadow); }
+    .c-badge {
+      font-family:'Bangers',cursive; font-size:.7rem; letter-spacing:1px;
+      padding:2px 7px; border-radius:999px; border:2px solid currentColor;
+      display:inline-block; margin-bottom:6px; align-self:flex-start;
+    }
+    .noun-c .c-badge { color:var(--noun-c); }
+    .verb-c .c-badge { color:var(--verb-c); }
+    .prep-c .c-badge { color:var(--prep-c); }
+    .wild-c .c-badge { color:var(--wild-c); }
+    .c-lbl  { font-size:.76rem; font-weight:bold; margin-bottom:8px; color:var(--dark); line-height:1.2; }
+    .c-opts { display:flex; flex-direction:column; gap:5px; flex:1; }
+    .c-word {
+      background:rgba(255,255,255,.7); border:1.5px solid var(--dark); border-radius:6px;
+      padding:4px 7px; font-size:.86rem; font-weight:bold; text-align:center;
+    }
+    .c-or  { text-align:center; font-size:.7rem; color:#999; }
+    .c-pts { font-family:'Bangers',cursive; font-size:.95rem; text-align:right; margin-top:6px; }
+
+    /* MODALS */
+    .modal-bg {
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
+      display:flex; align-items:center; justify-content:center; z-index:100; padding:16px;
+    }
+    .modal {
+      background:var(--paper); border:4px solid var(--dark); border-radius:18px;
+      padding:24px 28px; box-shadow:8px 8px 0 var(--dark); max-width:440px; width:100%; text-align:center;
+    }
+    .modal h2 { font-size:1.7rem; margin-bottom:6px; }
+    .modal p  { color:#555; font-size:.95rem; margin-bottom:12px; }
+    .w-choices { display:flex; flex-direction:column; gap:10px; }
+    .w-btn {
+      padding:14px; border:3px solid var(--dark); border-radius:10px;
+      font-family:'Patrick Hand',cursive; font-size:1.15rem; font-weight:bold;
+      cursor:pointer; box-shadow:var(--shadow-sm); transition:transform .1s; background:#fff;
+    }
+    .w-btn:hover { transform:translateY(-2px); }
+    .w-btn.wn { background:var(--noun-bg); color:var(--noun-c); border-color:var(--noun-c); }
+    .w-btn.wv { background:var(--verb-bg); color:var(--verb-c); border-color:var(--verb-c); }
+    .w-btn.wp { background:var(--prep-bg); color:var(--prep-c); border-color:var(--prep-c); }
+    .pos-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+    .wild-row { display:flex; gap:8px; margin-top:10px; }
+    .wild-row input { flex:1; }
+
+    /* DRAWING OVERLAY */
+    .draw-ov {
+      position:fixed; inset:0; background:#1a1a2e; z-index:200;
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    .draw-top {
+      background:#0f0f1e; color:#fff; padding:10px 14px;
+      display:flex; align-items:center; gap:12px; flex-shrink:0;
+      border-bottom:2px solid rgba(255,255,255,.1);
+    }
+    .draw-sent {
+      flex:1; font-family:'Bangers',cursive; font-size:1.2rem;
+      letter-spacing:1px; line-height:1.2; min-width:0;
+    }
+    .draw-timer { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+    .draw-timer-n {
+      font-family:'Bangers',cursive; font-size:2rem; color:#fff; min-width:2.2ch; text-align:center;
+    }
+    .draw-timer-n.urg { color:#fca5a5; }
+    .draw-canvas-wrap { flex:1; position:relative; background:#fff; overflow:hidden; }
+    #draw-canvas { position:absolute; inset:0; width:100%!important; height:100%!important; touch-action:none; cursor:crosshair; }
+    .draw-bar {
+      background:#0f0f1e; padding:9px 14px; display:flex; align-items:center;
+      gap:8px; flex-wrap:wrap; flex-shrink:0; border-top:2px solid rgba(255,255,255,.1);
+    }
+    .swatches { display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
+    .sw {
+      width:26px; height:26px; border-radius:50%; cursor:pointer; flex-shrink:0;
+      border:3px solid transparent; transition:transform .1s;
+    }
+    .sw:hover  { transform:scale(1.15); }
+    .sw.act    { border-color:#fff; transform:scale(1.2); }
+    .bar-div   { width:1px; height:24px; background:rgba(255,255,255,.25); flex-shrink:0; }
+    .sz-btns   { display:flex; gap:6px; align-items:center; }
+    .sz-dot {
+      border-radius:50%; background:#fff; cursor:pointer; flex-shrink:0;
+      border:2px solid transparent; transition:transform .1s;
+    }
+    .sz-dot.act { border-color:#f97316; transform:scale(1.2); }
+    .db {
+      padding:5px 11px; border:2px solid rgba(255,255,255,.4); border-radius:6px;
+      background:rgba(255,255,255,.08); color:#fff; font-family:'Patrick Hand',cursive;
+      font-size:.88rem; cursor:pointer; transition:background .1s; white-space:nowrap;
+    }
+    .db:hover  { background:rgba(255,255,255,.2); }
+    .db.act    { background:rgba(255,255,255,.3); border-color:#fff; }
+    .db-ml     { margin-left:auto; }
+    .draw-done-btn {
+      padding:8px 18px; background:var(--accent); color:#fff; border:2px solid rgba(255,255,255,.6);
+      border-radius:8px; font-family:'Bangers',cursive; font-size:1.1rem; letter-spacing:1px;
+      cursor:pointer; transition:background .1s; white-space:nowrap;
+    }
+    .draw-done-btn:hover { background:#be123c; }
+    .draw-done-btn.tu { animation:flash 1s infinite; }
+    @keyframes flash { 0%,100%{opacity:1}50%{opacity:.55} }
+
+    /* SCORE REVEAL */
+    .score-rv { text-align:center; max-width:500px; margin:0 auto; }
+    .pts-big {
+      font-family:'Bangers',cursive; font-size:4rem;
+      color:var(--accent); text-shadow:3px 3px 0 var(--dark); margin:16px 0;
+    }
+    .cards-sc { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:12px 0; }
+    .sc-chip  { padding:5px 12px; border:2px solid var(--dark); border-radius:999px; font-size:.86rem; }
+
+    /* END */
+    .end-sc { text-align:center; max-width:560px; margin:0 auto; }
+    .end-sc h2 { font-size:2.6rem; margin-bottom:6px; }
+    .final-tbl {
+      background:var(--paper); border:3px solid var(--dark); border-radius:14px;
+      padding:20px; margin:20px 0; box-shadow:var(--shadow);
+    }
+    .f-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px dashed #ccc; }
+    .f-row:last-child { border:none; }
+    .f-row .rk { font-family:'Bangers',cursive; font-size:1.8rem; margin-right:12px; color:#bbb; }
+    .f-row.w .rk { color:#e6a817; }
+    .f-row .pn { flex:1; font-size:1.1rem; text-align:left; }
+    .f-row .fp { font-family:'Bangers',cursive; font-size:1.8rem; color:var(--accent); }
+    .win-banner {
+      background:var(--dark); color:#fff; border-radius:10px; padding:14px 20px;
+      margin-bottom:14px; font-family:'Bangers',cursive; font-size:1.5rem;
+    }
+
+    @media(max-width:480px){
+      .header h1{font-size:2.3rem}
+      .card{width:112px}
+      .draw-sent{font-size:1rem}
+      .swatches{gap:4px}
+      .sw{width:22px;height:22px}
+    }
+  </style>
+</head>
+<body>
+<script src="./nav.js"></script>
+<div id="app"></div>
+<script>
+// ══════════════════════ WORD DATA ══════════════════════
+const WORDS = {
+  loud:      ['Screamed','Shouted','Crashed','Roared','Stomped','Bellowed','Clattered','Boomed'],
+  silent:    ['Tiptoed','Whispered','Floated','Glided','Crept','Sneaked','Drifted','Hovered'],
+  relaxing:  ['Slept','Lounged','Rested','Yawned','Daydreamed','Sighed','Napped','Dozed'],
+  movement:  ['Ran','Jumped','Spun','Rolled','Dashed','Leaped','Zoomed','Bounced'],
+  toy:       ['yo-yo','kite','balloon','frisbee','top','slinky','puppet','marbles'],
+  tool:      ['hammer','wrench','shovel','drill','saw','ladder','pliers','chisel'],
+  hero:      ['knight','wizard','firefighter','astronaut','samurai','ranger','paladin','champion'],
+  villain:   ['dragon','vampire','witch','pirate','bandit','warlock','troll','golem'],
+  fruit:     ['banana','watermelon','mango','pineapple','kiwi','durian','papaya','lychee'],
+  vegetable: ['carrot','broccoli','turnip','cucumber','cabbage','parsnip','leek','yam'],
+  creature:  ['unicorn','phoenix','griffin','kraken','centaur','chimera','wyvern','basilisk'],
+  animal:    ['elephant','penguin','flamingo','capybara','platypus','axolotl','narwhal','quokka'],
+};
+
+const CARD_DEFS = [
+  {type:'verb',label:'Loud or Silent',       catA:'loud',     catB:'silent',    pts:3},
+  {type:'verb',label:'Relaxing or Movement', catA:'relaxing', catB:'movement',  pts:3},
+  {type:'prep',label:'Before or After',      fxA:'Before',    fxB:'After',      pts:1},
+  {type:'prep',label:'Above or Below',       fxA:'Above',     fxB:'Below',      pts:1},
+  {type:'noun',label:'Toy or Tool',          catA:'toy',      catB:'tool',      pts:2},
+  {type:'noun',label:'Hero or Villain',      catA:'hero',     catB:'villain',   pts:2},
+  {type:'noun',label:'Fruit or Vegetable',   catA:'fruit',    catB:'vegetable', pts:2},
+  {type:'noun',label:'Creature or Animal',   catA:'creature', catB:'animal',    pts:2},
+  {type:'wild',label:'Wild Card!',                                               pts:4},
+];
+
+function buildDeck() {
+  const deck = []; let id = 0;
+  const rnd = a => a[Math.floor(Math.random()*a.length)];
+  CARD_DEFS.forEach(d => {
+    for (let i=0;i<2;i++) {  // 9 types × 2 copies = 18 cards
+      const oA = d.fxA ? d.fxA : (d.catA ? rnd(WORDS[d.catA]) : null);
+      const oB = d.fxB ? d.fxB : (d.catB ? rnd(WORDS[d.catB]) : null);
+      deck.push({id:id++, type:d.type, label:d.label, oA, oB, pts:d.pts});
+    }
+  });
+  return shuffle(deck);
+}
+
+function shuffle(a) {
+  a = [...a];
+  for (let i=a.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+// ══════════════════════ DRAW STATE ══════════════════════
+let DS = {drawing:false,lx:0,ly:0,color:'#1a1a2e',size:5,tool:'pen',hist:[]};
+
+// ══════════════════════ GAME STATE ══════════════════════
+let G = null;
+
+function newGame(names) {
+  const deck = buildDeck();
+  const players = names.map((name,i) => ({
+    id:i, name, hand:[], score:0,
+    color:['#ef4444','#3b82f6','#22c55e','#f97316'][i]
+  }));
+  players.forEach(p => { for(let j=0;j<3;j++) if(deck.length) p.hand.push(deck.pop()); });
+  G = {
+    phase:'game', players,
+    ci:0,   // currentPlayerIndex
+    deck, disc:[],
+    slots: players.map((_,i) => mkSlot(i+1)),   // ★ one slot per player
+    sc: players.length,                           // slot counter
+    selId:null, pendSlot:null, pendPos:null,
+    wildPos:null, wildWord:'',
+    doneSlot:null, lastCards:[], ptsEarned:0,
+    log:'', timerInt:null, timerSecs:60,
+  };
+}
+
+function mkSlot(id) {
+  return {id, pos:{n1:null,v:null,p:null,n2:null}, played:[], done:false};
+}
+
+// ★ Free play: card can go in any open matching position
+function canPlay(card, slot) {
+  if (slot.done) return false;
+  if (card.type==='wild') return Object.values(slot.pos).some(x=>!x);
+  const map = {noun:['n1','n2'], verb:['v'], prep:['p']};
+  return (map[card.type]||[]).some(k => !slot.pos[k]);
+}
+
+// For non-wild: first available matching position
+function targetPos(card, slot) {
+  if (card.type==='verb') return 'v';
+  if (card.type==='prep') return 'p';
+  if (card.type==='noun') return !slot.pos.n1 ? 'n1' : 'n2';
+  return null;
+}
+
+const posLabel = {n1:'NOUN 1', v:'VERB', p:'PREP', n2:'NOUN 2'};
+const posLong  = {n1:'noun', v:'verb', p:'preposition', n2:'noun'};
+
+function cp() { return G.players[G.ci]; }
+
+function buildSent(slot) {
+  const {n1,v,p,n2} = slot.pos;
+  const a1 = /^[aeiou]/i.test(n1||'') ? 'An':'A';
+  const a2 = /^[aeiou]/i.test(n2||'') ? 'an':'a';
+  return [(n1?`${a1} ${n1}`:'___'), (v||'___'), (p||'___'), (n2?`${a2} ${n2}`:'___')].join(' ');
+}
+
+// ══════════════════════ ACTIONS ══════════════════════
+function selectCard(cid) {
+  if (G.phase!=='game') return;
+  const card = cp().hand.find(c=>c.id===cid);
+  if (!card) return;
+  const valid = G.slots.filter(s=>canPlay(card,s));
+  if (!valid.length) { G.log="That card has no valid position right now!"; render(); return; }
+  G.selId = cid; G.log='';
+  if (valid.length===1) playTo(cid, valid[0].id);
+  else { G.log='Click a sentence to play this card there.'; render(); }
+}
+
+function selectSlot(sid) {
+  if (G.phase!=='game'||G.selId===null) return;
+  const card = cp().hand.find(c=>c.id===G.selId);
+  const slot = G.slots.find(s=>s.id===sid);
+  if (!card||!slot||!canPlay(card,slot)) { G.log="Can't play there!"; render(); return; }
+  playTo(G.selId, sid);
+}
+
+function playTo(cid, sid) {
+  G.pendSlot = sid;
+  const card = cp().hand.find(c=>c.id===cid);
+  const slot = G.slots.find(s=>s.id===sid);
+  if (card.type==='wild') {
+    const empties = ['n1','v','p','n2'].filter(k=>!slot.pos[k]);
+    G.wildPos  = empties.length===1 ? empties[0] : null;
+    G.wildWord = '';
+    G.phase = 'wild-choice';
+    render(); return;
+  }
+  G.pendPos = targetPos(card, slot);
+  G.phase = 'word-choice';
+  render();
+}
+
+function chooseWord(word) { commit(word); }
+
+function setWildPos(pos) { G.wildPos = pos; render(); }
+
+function commitWild() {
+  if (!G.wildPos) return;
+  const w = G.wildWord.trim(); if (!w) return;
+  G.pendPos = G.wildPos;
+  commit(w);
+}
+
+function commit(word) {
+  const player = cp();
+  const card = player.hand.find(c=>c.id===G.selId);
+  const slot  = G.slots.find(s=>s.id===G.pendSlot);
+
+  slot.pos[G.pendPos] = word;
+  slot.played.push({cid:card.id, pts:card.pts, word, by:player.id});
+  player.hand = player.hand.filter(c=>c.id!==G.selId);
+  G.disc.push(card);
+
+  // Refill hand
+  if (G.deck.length) {
+    player.hand.push(G.deck.pop());
+  } else if (G.disc.length) {
+    G.deck = shuffle(G.disc); G.disc = [];
+    if (G.deck.length) player.hand.push(G.deck.pop());
+  }
+
+  G.selId=null; G.pendSlot=null; G.pendPos=null; G.wildPos=null; G.wildWord='';
+
+  const full = ['n1','v','p','n2'].every(k=>slot.pos[k]);
+  if (full) {
+    slot.done = true;
+    G.doneSlot = slot;
+    G.ptsEarned = slot.played.reduce((s,c)=>s+c.pts,0);
+    DS = {drawing:false,lx:0,ly:0,color:'#1a1a2e',size:5,tool:'pen',hist:[]};
+    G.timerSecs = 60;
+    clearInterval(G.timerInt);
+    G.phase = 'drawing';
+    G.timerInt = setInterval(()=>{
+      G.timerSecs--;
+      if (G.timerSecs<=0) clearInterval(G.timerInt);
+      tickTimer();
+    },1000);
+  } else {
+    G.phase='game'; advTurn();
+  }
+  render();
+}
+
+function tickTimer() {
+  const n = document.getElementById('tn');
+  const a = document.getElementById('ta');
+  if (!n) return;
+  n.textContent = G.timerSecs;
+  n.className   = 'draw-timer-n' + (G.timerSecs<=10?' urg':'');
+  if (a) {
+    const r=16,c=2*Math.PI*r;
+    a.setAttribute('stroke-dasharray',`${(G.timerSecs/60)*c} ${c}`);
+    a.setAttribute('stroke',G.timerSecs>10?'#4ade80':'#fca5a5');
+  }
+  const btn = document.getElementById('dd-btn');
+  if (btn && G.timerSecs<=0) {
+    btn.textContent="⏰ Time's Up! Score Points";
+    btn.className='draw-done-btn tu';
+  }
+}
+
+function endDrawing() {
+  clearInterval(G.timerInt);
+  document.querySelectorAll('.draw-ov').forEach(e=>e.remove());
+  cp().score += G.ptsEarned;
+  G.lastCards = G.doneSlot ? [...G.doneSlot.played] : [];
+  // Replace completed slot with fresh one
+  G.sc++;
+  G.slots = G.slots.map(s => s.id===G.doneSlot.id ? mkSlot(G.sc) : s);
+  G.doneSlot = null;
+  G.phase = 'score-reveal';
+  render();
+}
+
+function ackScore() {
+  G.phase='game'; advTurn();
+  if (G.phase!=='end') {
+    const any = G.players.some(p=>p.hand.length>0)||G.deck.length>0;
+    if (!any) G.phase='end';
+  }
+  render();
+}
+
+function advTurn() {
+  G.ci = (G.ci+1) % G.players.length;
+  G.log = '';
+  const any = G.players.some(p=>p.hand.length>0)||G.deck.length>0;
+  if (!any) G.phase='end';
+}
+
+function skipTurn() { G.selId=null; G.log=''; advTurn(); if(G.phase!=='end')G.phase='game'; render(); }
+
+function cancelPlay() {
+  G.selId=null; G.pendSlot=null; G.pendPos=null;
+  G.wildPos=null; G.wildWord=''; G.phase='game'; G.log='';
+  render();
+}
+
+// ══════════════════════ CANVAS ══════════════════════
+function initCanvas() {
+  const cv = document.getElementById('draw-canvas');
+  if (!cv) return;
+  const wrap = cv.parentElement;
+  cv.width  = wrap.offsetWidth  || 800;
+  cv.height = wrap.offsetHeight || 500;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+  wireCanvas(cv);
+}
+
+function wireCanvas(cv) {
+  const ctx = cv.getContext('2d');
+  function pos(e) {
+    const r=cv.getBoundingClientRect();
+    const sx=cv.width/r.width, sy=cv.height/r.height;
+    const s=e.touches?e.touches[0]:e;
+    return {x:(s.clientX-r.left)*sx, y:(s.clientY-r.top)*sy};
+  }
+  function dn(e) {
+    e.preventDefault(); DS.drawing=true;
+    const p=pos(e); DS.lx=p.x; DS.ly=p.y;
+    DS.hist.push(ctx.getImageData(0,0,cv.width,cv.height));
+    if(DS.hist.length>20) DS.hist.shift();
+  }
+  function mv(e) {
+    e.preventDefault(); if(!DS.drawing) return;
+    const p=pos(e);
+    ctx.beginPath(); ctx.moveTo(DS.lx,DS.ly); ctx.lineTo(p.x,p.y);
+    ctx.strokeStyle = DS.tool==='eraser' ? '#fff' : DS.color;
+    ctx.lineWidth   = DS.tool==='eraser' ? DS.size*4 : DS.size;
+    ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+    DS.lx=p.x; DS.ly=p.y;
+  }
+  function up(e) { e.preventDefault(); DS.drawing=false; }
+  cv.addEventListener('pointerdown',dn);
+  cv.addEventListener('pointermove',mv);
+  cv.addEventListener('pointerup',up);
+  cv.addEventListener('pointerleave',up);
+  cv.addEventListener('touchstart',dn,{passive:false});
+  cv.addEventListener('touchmove',mv,{passive:false});
+  cv.addEventListener('touchend',up,{passive:false});
+}
+
+function setColor(c) {
+  DS.color=c; DS.tool='pen';
+  document.querySelectorAll('.sw').forEach(e=>e.classList.toggle('act',e.dataset.c===c));
+  document.querySelectorAll('[data-tool]').forEach(e=>e.classList.toggle('act',e.dataset.tool==='pen'));
+}
+function setSize(s) {
+  DS.size=s;
+  document.querySelectorAll('.sz-dot').forEach(e=>e.classList.toggle('act',+e.dataset.s===s));
+}
+function setTool(t) {
+  DS.tool=t;
+  document.querySelectorAll('[data-tool]').forEach(e=>e.classList.toggle('act',e.dataset.tool===t));
+}
+function clearCV() {
+  const cv=document.getElementById('draw-canvas');
+  if(!cv) return;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+}
+function undoCV() {
+  if(!DS.hist.length) return;
+  const cv=document.getElementById('draw-canvas');
+  if(!cv) return;
+  cv.getContext('2d').putImageData(DS.hist.pop(),0,0);
+}
+
+// ══════════════════════ RENDER ══════════════════════
+function render() {
+  const app=document.getElementById('app');
+  app.innerHTML='';
+  app.innerHTML=`<div class="header"><h1>WRITE. RIGHT? DRAW IT!</h1><p>✏️ The wild sentence drawing game</p></div>`;
+  if (!G) { rSetup(app); return; }
+  switch(G.phase) {
+    case 'game':        rGame(app);    break;
+    case 'word-choice': rWord(app);    break;
+    case 'wild-choice': rWild(app);    break;
+    case 'drawing':     rDraw(app);    break;
+    case 'score-reveal':rScore(app);   break;
+    case 'end':         rEnd(app);     break;
+  }
+}
+
+// ── Setup ──
+let SS = {n:2, names:['','','','']};
+function rSetup(app) {
+  const box=mk('div','setup-box');
+  box.innerHTML=`
+    <h2>🎮 Game Setup</h2>
+    <strong>How many players?</strong>
+    <div class="pc-btns" style="margin-top:8px">
+      ${[2,3,4].map(n=>`<button class="btn ${SS.n===n?'btn-sel':''}" onclick="setPC(${n})">${n} Players</button>`).join('')}
+    </div>
+    <div style="margin-top:16px">
+    ${Array.from({length:SS.n},(_,i)=>`
+      <div class="pi-row">
+        <div class="p-badge" style="background:${ ['#fee2e2','#dbeafe','#dcfce7','#fef3c7'][i]};border-color:${['#ef4444','#3b82f6','#22c55e','#f97316'][i]}">${i+1}</div>
+        <input type=text placeholder="Player ${i+1} name" value="${x(SS.names[i])}"
+          oninput="SS.names[${i}]=this.value" maxlength=20>
+      </div>`).join('')}
+    </div>
+    <div class="hint">
+      <strong>📌 Card rules:</strong> Play any matching card to any open slot position in any sentence — no set order!
+      Complete a sentence (Noun + Verb + Prep + Noun) to trigger the drawing round.
+    </div>
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn btn-accent btn-lg" onclick="go()">Start Game! 🚀</button>
+    </div>`;
+  app.appendChild(box);
+}
+function setPC(n) { SS.n=n; render(); }
+function go() {
+  const names = SS.names.slice(0,SS.n).map((n,i)=>n.trim()||`Player ${i+1}`);
+  newGame(names); render();
+}
+
+// ── Game ──
+function rGame(app) {
+  const player = cp();
+
+  // Scores
+  const sb=mk('div','scoreboard');
+  sb.innerHTML=G.players.map(p=>`
+    <div class="chip${p.id===G.ci?' active':''}">
+      <span style="color:${p.id===G.ci?'#fff':p.color}">${p.id===G.ci?'▶ ':''}${x(p.name)}</span>
+      <span class="pts">${p.score}pt${p.score!==1?'s':''}</span>
+    </div>`).join('');
+  app.appendChild(sb);
+
+  const tb=mk('div','turn-banner');
+  tb.style.background=player.color;
+  tb.textContent=`${player.name}'s Turn`;
+  app.appendChild(tb);
+
+  if (G.log) {
+    const n=mk('div','notice n-info'); n.textContent=G.log; app.appendChild(n);
+  }
+
+  const dr=mk('div','deck-row');
+  dr.innerHTML=`<b>📦</b>${G.deck.length} cards &nbsp; <b>🗑️</b>${G.disc.length} discarded`;
+  app.appendChild(dr);
+
+  // Slots
+  const selCard = G.selId!==null ? player.hand.find(c=>c.id===G.selId) : null;
+  const ss=mk('div','slots-section');
+  ss.innerHTML='<h3>🗒️ Active Sentences</h3>';
+
+  G.slots.forEach(slot=>{
+    const playable = selCard && canPlay(selCard, slot);
+    const sd=mk('div',`slot-card${playable?' playable':''}`);
+    if (playable) sd.onclick=()=>selectSlot(slot.id);
+
+    // Build position boxes
+    const rowParts = ['n1','v','p','n2'].map(k=>{
+      const val=slot.pos[k];
+      const lbl=posLabel[k];
+      if (val) {
+        const cls = k==='v'?'fv':k==='p'?'fp':'fn';
+        return `<div class="slot-pos ${cls}"><span class="pl">${lbl}</span><span class="pw">${x(val)}</span></div>`;
+      }
+      const isTgt = selCard && playable && (
+        selCard.type==='wild' ||
+        (selCard.type==='noun'&&(k==='n1'||k==='n2')) ||
+        (selCard.type==='verb'&&k==='v') ||
+        (selCard.type==='prep'&&k==='p')
+      );
+      return `<div class="slot-pos${isTgt?' tgt':''}"><span class="pl">${lbl}</span><span class="pw">?</span></div>`;
+    });
+
+    const filled=Object.values(slot.pos).filter(Boolean).length;
+    sd.innerHTML=`
+      <div class="slot-lbl">SENTENCE ${slot.id}${playable?' — click to play here':''}</div>
+      <div class="slot-row">${rowParts.join('<span class="conn">+</span>')}</div>
+      ${filled>0?`<div class="slot-sent">"${x(buildSent(slot))}"</div>`:''}`;
+    ss.appendChild(sd);
+  });
+  app.appendChild(ss);
+
+  // Hand
+  const ha=mk('div','hand-area');
+  ha.innerHTML=`<h3>🃏 ${x(player.name)}'s Hand</h3>`;
+  const hc=mk('div','hand-cards');
+  player.hand.forEach(card=>{
+    const isSel=card.id===G.selId;
+    const playable=G.slots.some(s=>canPlay(card,s));
+    const ce=mk('div',`card ${card.type}-c${isSel?' sel':''}${!playable?' off':''}`);
+    if(playable) ce.onclick=()=>selectCard(card.id);
+    ce.innerHTML=`
+      <div class="c-badge">${card.type.toUpperCase()}</div>
+      <div class="c-lbl">${x(card.label)}</div>
+      ${card.type==='wild'
+        ?`<div class="c-opts"><div class="c-word" style="padding:12px;text-align:center">✨ Any word!<br><small>Any open position</small></div></div>`
+        :`<div class="c-opts"><div class="c-word">${x(card.oA)}</div><div class="c-or">or</div><div class="c-word">${x(card.oB)}</div></div>`}
+      <div class="c-pts">${card.pts}pt${card.pts!==1?'s':''}</div>`;
+    hc.appendChild(ce);
+  });
+  ha.appendChild(hc);
+  const sr=mk('div',''); sr.style.cssText='text-align:right;margin-top:12px';
+  sr.innerHTML=`<button class="btn btn-sm" onclick="skipTurn()">⏭ Skip Turn</button>`;
+  ha.appendChild(sr);
+  app.appendChild(ha);
+}
+
+// ── Word choice ──
+function rWord(app) {
+  const card=cp().hand.find(c=>c.id===G.selId);
+  if(!card){G.phase='game';render();return;}
+  const pl=posLabel[G.pendPos]||'';
+  const tc=card.type;
+  const ov=mk('div','modal-bg');
+  ov.innerHTML=`
+    <div class="modal">
+      <h2>🎴 Choose a Word</h2>
+      <p>Playing <strong>${x(card.label)}</strong> as the <strong>${pl}</strong></p>
+      <div class="w-choices">
+        <button class="w-btn w${tc[0]}" onclick="chooseWord('${x(card.oA)}')" style="font-size:1.3rem;padding:18px">${x(card.oA)}</button>
+        <div style="text-align:center;color:#aaa;font-size:.85rem">or</div>
+        <button class="w-btn w${tc[0]}" onclick="chooseWord('${x(card.oB)}')" style="font-size:1.3rem;padding:18px">${x(card.oB)}</button>
+      </div>
+      <div style="margin-top:14px"><button class="btn btn-sm" onclick="cancelPlay()">↩ Cancel</button></div>
+    </div>`;
+  app.appendChild(ov);
+  rGame(app);
+}
+
+// ── Wild choice ──
+function rWild(app) {
+  const slot=G.slots.find(s=>s.id===G.pendSlot);
+  const emp=['n1','v','p','n2'].filter(k=>!slot.pos[k]);
+  const pClass={n1:'btn-noun',v:'btn-verb',p:'btn-prep',n2:'btn-noun'};
+  const ov=mk('div','modal-bg');
+  let body='';
+  if(emp.length>1 && !G.wildPos) {
+    body=`<p>Which position to fill?</p>
+      <div class="pos-grid">${emp.map(k=>`<button class="btn ${pClass[k]}" onclick="setWildPos('${k}')">${posLabel[k]}</button>`).join('')}</div>`;
+  } else {
+    const pos=G.wildPos||emp[0];
+    const typ=posLong[pos];
+    body=`
+      <p>Filling: <strong>${posLabel[pos]}</strong> — type any ${typ}:</p>
+      <div class="wild-row">
+        <input type=text id=wi placeholder="Enter a ${typ}…" maxlength=30
+          value="${x(G.wildWord)}" oninput="G.wildWord=this.value"
+          onkeydown="if(event.key==='Enter')commitWild()">
+        <button class="btn btn-wild btn-sm" onclick="commitWild()">Play!</button>
+      </div>
+      ${emp.length>1?`<div style="margin-top:8px"><button class="btn btn-sm" onclick="G.wildPos=null;render()">← Change</button></div>`:''}`;
+  }
+  ov.innerHTML=`
+    <div class="modal">
+      <h2>✨ Wild Card!</h2>${body}
+      <div style="margin-top:14px"><button class="btn btn-sm" onclick="cancelPlay()">↩ Cancel</button></div>
+    </div>`;
+  app.appendChild(ov);
+  if(G.wildPos||emp.length===1) setTimeout(()=>document.getElementById('wi')?.focus(),40);
+  rGame(app);
+}
+
+// ── Drawing screen ──
+function rDraw(app) {
+  const player=cp();
+  const sent=buildSent(G.doneSlot);
+  const r=16, c2pi=2*Math.PI*r;
+  const arc=(G.timerSecs/60)*c2pi;
+  const arcCol=G.timerSecs>10?'#4ade80':'#fca5a5';
+  const timesUp=G.timerSecs<=0;
+
+  const COLORS=['#1a1a2e','#ef4444','#3b82f6','#16a34a','#f97316','#9333ea','#eab308','#ec4899','#ffffff'];
+  const SIZES=[3,6,12,22];
+
+  const ov=document.createElement('div');
+  ov.className='draw-ov';
+  ov.innerHTML=`
+    <div class="draw-top">
+      <div class="draw-sent">🎨 <span style="color:${player.color}">${x(player.name)}</span> draws: "${x(sent)}"<br>
+        <span style="font-family:'Patrick Hand';font-size:.85rem;opacity:.7">No letters or numbers — others guess!</span>
+      </div>
+      <div class="draw-timer">
+        <svg width=40 height=40 viewBox="0 0 40 40" style="transform:rotate(-90deg)">
+          <circle cx=20 cy=20 r="${r}" fill=none stroke="rgba(255,255,255,.15)" stroke-width=4/>
+          <circle id=ta cx=20 cy=20 r="${r}" fill=none stroke="${arcCol}" stroke-width=4
+            stroke-dasharray="${arc} ${c2pi}" stroke-linecap=round/>
+        </svg>
+        <div id=tn class="draw-timer-n${timesUp?' urg':''}">${G.timerSecs}</div>
+      </div>
+    </div>
+
+    <div class="draw-canvas-wrap">
+      <canvas id="draw-canvas"></canvas>
+    </div>
+
+    <div class="draw-bar">
+      <div class="swatches">
+        ${COLORS.map(c=>`
+          <div class="sw${DS.color===c?' act':''}"
+            style="background:${c};${c==='#ffffff'?'border-color:#888;':''}"
+            data-c="${c}" onclick="setColor('${c}')"></div>`).join('')}
+      </div>
+      <div class="bar-div"></div>
+      <div class="sz-btns">
+        ${SIZES.map(s=>`
+          <div class="sz-dot${DS.size===s?' act':''}" data-s="${s}"
+            style="width:${Math.max(8,s*1.4)}px;height:${Math.max(8,s*1.4)}px"
+            onclick="setSize(${s})"></div>`).join('')}
+      </div>
+      <div class="bar-div"></div>
+      <button class="db${DS.tool==='eraser'?' act':''}" data-tool="eraser" onclick="setTool('eraser')">⬜ Eraser</button>
+      <button class="db" onclick="undoCV()">↩ Undo</button>
+      <button class="db" onclick="clearCV()">🗑 Clear</button>
+      <button id=dd-btn class="draw-done-btn${timesUp?' tu':''} db-ml" onclick="endDrawing()">
+        ${timesUp?"⏰ Time's Up! Score Points":"✅ Done Drawing"}
+      </button>
+    </div>`;
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>{ requestAnimationFrame(initCanvas); });
+}
+
+// ── Score reveal ──
+function rScore(app) {
+  const player=cp();
+  const sc=G.lastCards||[];
+  const s=mk('div','score-rv');
+  s.innerHTML=`
+    <h2>🏆 Points Scored!</h2>
+    <p style="margin-top:6px"><strong style="color:${player.color}">${x(player.name)}</strong> completed the sentence!</p>
+    <div class="pts-big">+${G.ptsEarned} pts</div>
+    <p style="color:#555;margin-bottom:8px">Cards in that sentence:</p>
+    <div class="cards-sc">
+      ${sc.map(c=>`<span class="sc-chip" style="background:#fff;border-color:${G.players[c.by]?.color||'#333'}">
+        "${x(c.word)}" +${c.pts}pt — ${x(G.players[c.by]?.name||'?')}
+      </span>`).join('')}
+    </div>
+    <p style="color:#555;margin-top:12px">${x(player.name)}'s total: <strong style="font-family:Bangers;font-size:1.4rem">${player.score}pts</strong></p>
+    <div style="margin-top:20px">
+      <button class="btn btn-green btn-lg" onclick="ackScore()">▶ Next Player's Turn</button>
+    </div>`;
+  app.appendChild(s);
+}
+
+// ── End ──
+function rEnd(app) {
+  const sorted=[...G.players].sort((a,b)=>b.score-a.score);
+  const s=mk('div','end-sc');
+  s.innerHTML=`
+    <h2>🎉 Game Over!</h2>
+    <div class="win-banner">🏆 ${x(sorted[0].name)} wins with ${sorted[0].score} points!</div>
+    <div class="final-tbl">
+      ${sorted.map((p,i)=>`
+        <div class="f-row${i===0?' w':''}">
+          <span class="rk">${['🥇','🥈','🥉','4️⃣'][i]}</span>
+          <span class="pn" style="color:${p.color}">${x(p.name)}</span>
+          <span class="fp">${p.score}pts</span>
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-accent btn-lg" onclick="resetGame()">🔄 Play Again</button>`;
+  app.appendChild(s);
+}
+
+function resetGame() {
+  if(G?.timerInt) clearInterval(G.timerInt);
+  document.querySelectorAll('.draw-ov').forEach(e=>e.remove());
+  G=null; render();
+}
+
+// ── Utils ──
+function mk(tag,cls) { const e=document.createElement(tag); if(cls)e.className=cls; return e; }
+function x(s) {
+  if(!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+render();
+</script>
+</body>
+</html>
