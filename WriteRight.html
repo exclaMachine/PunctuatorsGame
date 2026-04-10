@@ -361,7 +361,7 @@ function newGame(names) {
     slots: players.map((_,i) => mkSlot(i+1)),   // ★ one slot per player
     sc: players.length,                           // slot counter
     selId:null, pendSlot:null, pendPos:null,
-    wildPos:null, wildWord:'',
+    wildPos:null, wildWord:'', wordInput:'',
     doneSlot:null, lastCards:[], ptsEarned:0,
     log:'', timerInt:null, timerSecs:60,
   };
@@ -436,6 +436,10 @@ function playTo(cid, sid) {
 }
 
 function chooseWord(word) { commit(word); }
+function commitWord() {
+  const w = G.wordInput.trim(); if (!w) return;
+  commit(w);
+}
 
 function setWildPos(pos) { G.wildPos = pos; render(); }
 
@@ -464,7 +468,7 @@ function commit(word) {
     if (G.deck.length) player.hand.push(G.deck.pop());
   }
 
-  G.selId=null; G.pendSlot=null; G.pendPos=null; G.wildPos=null; G.wildWord='';
+  G.selId=null; G.pendSlot=null; G.pendPos=null; G.wildPos=null; G.wildWord=''; G.wordInput='';
 
   const full = ['n1','v','p','n2'].every(k=>slot.pos[k]);
   if (full) {
@@ -537,7 +541,7 @@ function skipTurn() { G.selId=null; G.log=''; advTurn(); if(G.phase!=='end')G.ph
 
 function cancelPlay() {
   G.selId=null; G.pendSlot=null; G.pendPos=null;
-  G.wildPos=null; G.wildWord=''; G.phase='game'; G.log='';
+  G.wildPos=null; G.wildWord=''; G.wordInput=''; G.phase='game'; G.log='';
   render();
 }
 
@@ -753,20 +757,29 @@ function rWord(app) {
   const card=cp().hand.find(c=>c.id===G.selId);
   if(!card){G.phase='game';render();return;}
   const pl=posLabel[G.pendPos]||'';
+  const typ=posLong[G.pendPos]||'word';
   const tc=card.type;
   const ov=mk('div','modal-bg');
   ov.innerHTML=`
     <div class="modal">
-      <h2>🎴 Choose a Word</h2>
-      <p>Playing <strong>${x(card.label)}</strong> as the <strong>${pl}</strong></p>
-      <div class="w-choices">
-        <button class="w-btn w${tc[0]}" onclick="chooseWord('${x(card.oA)}')" style="font-size:1.3rem;padding:18px">${x(card.oA)}</button>
+      <h2>🎴 Play a Word</h2>
+      <p>Playing <strong>${x(card.label)}</strong> as the <strong>${pl}</strong> — type any ${typ}:</p>
+      <div class="wild-row">
+        <input type=text id=wi placeholder="Enter a ${typ}…" maxlength=30
+          value="${x(G.wordInput)}" oninput="G.wordInput=this.value"
+          onkeydown="if(event.key==='Enter')commitWord()">
+        <button class="btn btn-accent btn-sm" onclick="commitWord()">Play!</button>
+      </div>
+      <div style="margin-top:10px;font-size:.8rem;color:#aaa">Examples:</div>
+      <div class="w-choices" style="margin-top:6px">
+        <button class="w-btn w${tc[0]}" onclick="G.wordInput='${x(card.oA)}';render()">${x(card.oA)}</button>
         <div style="text-align:center;color:#aaa;font-size:.85rem">or</div>
-        <button class="w-btn w${tc[0]}" onclick="chooseWord('${x(card.oB)}')" style="font-size:1.3rem;padding:18px">${x(card.oB)}</button>
+        <button class="w-btn w${tc[0]}" onclick="G.wordInput='${x(card.oB)}';render()">${x(card.oB)}</button>
       </div>
       <div style="margin-top:14px"><button class="btn btn-sm" onclick="cancelPlay()">↩ Cancel</button></div>
     </div>`;
   app.appendChild(ov);
+  setTimeout(()=>document.getElementById('wi')?.focus(),40);
   rGame(app);
 }
 
