@@ -489,7 +489,7 @@ function commit(word) {
     slot.done = true;
     G.doneSlot = slot;
     G.ptsEarned = slot.played.reduce((s,c)=>s+c.pts,0);
-    DS = {drawing:false,lx:0,ly:0,color:'#1a1a2e',size:5,tool:'pen',hist:[]};
+    DS = {drawing:false,lx:0,ly:0,color:'#1a1a2e',size:5,tool:'pen',hist:[],hasDrawn:false};
     G.timerSecs = 60;
     clearInterval(G.timerInt);
     G.phase = 'drawing';
@@ -525,9 +525,17 @@ function tickTimer() {
 function endDrawing() {
   clearInterval(G.timerInt);
   document.querySelectorAll('.draw-ov').forEach(e=>e.remove());
-  cp().score += G.ptsEarned;
+  G.drawerDrew = DS.hasDrawn;
+  G.drawerId   = G.ci;
+  if (DS.hasDrawn) {
+    cp().score += G.ptsEarned;
+  } else {
+    // Drawer didn't draw — split points evenly among everyone else
+    const others = G.players.filter(p => p.id !== cp().id);
+    const share = Math.floor(G.ptsEarned / others.length);
+    others.forEach(p => p.score += share);
+  }
   G.lastCards = G.doneSlot ? [...G.doneSlot.played] : [];
-  // Replace completed slot with fresh one
   G.sc++;
   G.slots = G.slots.map(s => s.id===G.doneSlot.id ? mkSlot(G.sc) : s);
   G.doneSlot = null;
@@ -580,7 +588,7 @@ function wireCanvas(cv) {
     return {x:(s.clientX-r.left)*sx, y:(s.clientY-r.top)*sy};
   }
   function dn(e) {
-    e.preventDefault(); DS.drawing=true;
+    e.preventDefault(); DS.drawing=true; DS.hasDrawn=true;
     const p=pos(e); DS.lx=p.x; DS.ly=p.y;
     DS.hist.push(ctx.getImageData(0,0,cv.width,cv.height));
     if(DS.hist.length>20) DS.hist.shift();
@@ -890,12 +898,22 @@ function rDraw(app) {
 
 // ── Score reveal ──
 function rScore(app) {
-  const player=cp();
-  const sc=G.lastCards||[];
-  const s=mk('div','score-rv');
+  const drawer = G.players[G.drawerId];
+  const sc = G.lastCards || [];
+  const s = mk('div','score-rv');
+  let headline, ptLine;
+  if (G.drawerDrew) {
+    headline = `<p style="margin-top:6px"><strong style="color:${drawer.color}">${x(drawer.name)}</strong> drew it — all points go to the drawer!</p>`;
+    ptLine   = `<p style="color:#555;margin-top:12px">${x(drawer.name)}'s total: <strong style="font-family:Bangers;font-size:1.4rem">${drawer.score}pts</strong></p>`;
+  } else {
+    const others = G.players.filter(p => p.id !== drawer.id);
+    const share  = Math.floor(G.ptsEarned / others.length);
+    headline = `<p style="margin-top:6px"><strong style="color:${drawer.color}">${x(drawer.name)}</strong> didn't draw — everyone else gets ${share} pts each!</p>`;
+    ptLine   = others.map(p=>`<p style="color:#555;margin-top:4px">${x(p.name)}: <strong style="font-family:Bangers;font-size:1.2rem">${p.score}pts</strong></p>`).join('');
+  }
   s.innerHTML=`
     <h2>🏆 Points Scored!</h2>
-    <p style="margin-top:6px"><strong style="color:${player.color}">${x(player.name)}</strong> completed the sentence!</p>
+    ${headline}
     <div class="pts-big">+${G.ptsEarned} pts</div>
     <p style="color:#555;margin-bottom:8px">Cards in that sentence:</p>
     <div class="cards-sc">
@@ -903,7 +921,7 @@ function rScore(app) {
         "${x(c.word)}" +${c.pts}pt — ${x(G.players[c.by]?.name||'?')}
       </span>`).join('')}
     </div>
-    <p style="color:#555;margin-top:12px">${x(player.name)}'s total: <strong style="font-family:Bangers;font-size:1.4rem">${player.score}pts</strong></p>
+    ${ptLine}
     <div style="margin-top:20px">
       <button class="btn btn-green btn-lg" onclick="ackScore()">▶ Next Player's Turn</button>
     </div>`;
