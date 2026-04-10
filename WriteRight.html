@@ -199,7 +199,7 @@
 
     /* DRAWING OVERLAY */
     .draw-ov {
-      position:fixed; inset:0; background:#1a1a2e; z-index:200;
+      position:fixed; inset:0; top:44px; background:#1a1a2e; z-index:200;
       display:flex; flex-direction:column; overflow:hidden;
     }
     .draw-top {
@@ -846,9 +846,7 @@ function rDraw(app) {
   ov.className='draw-ov';
   ov.innerHTML=`
     <div class="draw-top">
-      <div class="draw-sent">🎨 <span style="color:${player.color}">${x(player.name)}</span> draws: "${x(sent)}"<br>
-        <span style="font-family:'Patrick Hand';font-size:.85rem;opacity:.7">No letters or numbers — others guess!</span>
-      </div>
+      <div class="draw-sent">🎨 <span style="color:${player.color}">${x(player.name)}</span> — now draw: "<strong>${x(sent)}</strong>"</div>
       <div class="draw-timer">
         <svg width=40 height=40 viewBox="0 0 40 40" style="transform:rotate(-90deg)">
           <circle cx=20 cy=20 r="${r}" fill=none stroke="rgba(255,255,255,.15)" stroke-width=4/>
