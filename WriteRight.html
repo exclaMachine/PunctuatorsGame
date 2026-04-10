@@ -419,7 +419,8 @@ function selectCard(cid) {
   const card = cp().hand.find(c=>c.id===cid);
   if (!card) return;
   const valid = G.slots.filter(s=>canPlay(card,s));
-  if (!valid.length) { G.log="That card has no valid position right now!"; render(); return; }
+  if (!valid.length) { SFX.cancel(); G.log="That card has no valid position right now!"; render(); return; }
+  SFX.cardPick();
   G.selId = cid; G.log='';
   if (valid.length===1) playTo(cid, valid[0].id);
   else { G.log='Click a sentence to play this card there.'; render(); }
@@ -438,6 +439,7 @@ function playTo(cid, sid) {
   const card = cp().hand.find(c=>c.id===cid);
   const slot = G.slots.find(s=>s.id===sid);
   if (card.type==='wild') {
+    SFX.wildCard();
     const empties = ['n1','v','p','n2'].filter(k=>!slot.pos[k]);
     G.wildPos  = empties.length===1 ? empties[0] : null;
     G.wildWord = '';
@@ -484,8 +486,10 @@ function commit(word) {
 
   G.selId=null; G.pendSlot=null; G.pendPos=null; G.wildPos=null; G.wildWord=''; G.wordInput='';
 
+  SFX.cardPlay();
   const full = ['n1','v','p','n2'].every(k=>slot.pos[k]);
   if (full) {
+    SFX.sentenceComplete();
     slot.done = true;
     G.doneSlot = slot;
     G.ptsEarned = slot.played.reduce((s,c)=>s+c.pts,0);
@@ -496,6 +500,8 @@ function commit(word) {
     G.timerInt = setInterval(()=>{
       G.timerSecs--;
       if (G.timerSecs<=0) clearInterval(G.timerInt);
+      else if (G.timerSecs<=5) SFX.timerUrgent();
+      else if (G.timerSecs<=10) SFX.timerTick();
       tickTimer();
     },1000);
   } else {
@@ -528,8 +534,10 @@ function endDrawing() {
   G.drawerDrew = DS.hasDrawn;
   G.drawerId   = G.ci;
   if (DS.hasDrawn) {
+    SFX.scorePoints();
     cp().score += G.ptsEarned;
   } else {
+    SFX.noDrawPenalty();
     // Drawer didn't draw — split points evenly among everyone else
     const others = G.players.filter(p => p.id !== cp().id);
     const share = Math.floor(G.ptsEarned / others.length);
@@ -562,10 +570,85 @@ function advTurn() {
 function skipTurn() { G.selId=null; G.log=''; advTurn(); if(G.phase!=='end')G.phase='game'; render(); }
 
 function cancelPlay() {
+  SFX.cancel();
   G.selId=null; G.pendSlot=null; G.pendPos=null;
   G.wildPos=null; G.wildWord=''; G.wordInput=''; G.phase='game'; G.log='';
   render();
 }
+
+// ══════════════════════ SOUNDS ══════════════════════
+let _AC = null;
+function getAC() {
+  if (!_AC) _AC = new (window.AudioContext || window.webkitAudioContext)();
+  if (_AC.state === 'suspended') _AC.resume();
+  return _AC;
+}
+function _tone(ac, t, freq, type, dur, vol, endFreq) {
+  const osc = ac.createOscillator(), g = ac.createGain();
+  osc.connect(g); g.connect(ac.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t);
+  if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, t + dur * 0.75);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  osc.start(t); osc.stop(t + dur + 0.01);
+}
+const SFX = {
+  cardPick() {
+    const ac = getAC(), t = ac.currentTime;
+    _tone(ac, t, 660, 'sine', 0.08, 0.18, 900);
+  },
+  cardPlay() {
+    const ac = getAC(), t = ac.currentTime;
+    _tone(ac, t, 480, 'triangle', 0.14, 0.22, 260);
+  },
+  wildCard() {
+    const ac = getAC(), t = ac.currentTime;
+    [523,659,784,1047,1319].forEach((f,i) => _tone(ac, t+i*0.055, f, 'sine', 0.13, 0.2));
+  },
+  sentenceComplete() {
+    const ac = getAC(), t = ac.currentTime;
+    [[523,0],[659,0.1],[784,0.2],[1047,0.32]].forEach(([f,dt]) => _tone(ac, t+dt, f, 'sine', 0.22, 0.28));
+  },
+  drawStart() {
+    const ac = getAC(), t = ac.currentTime;
+    const buf = ac.createBuffer(1, ac.sampleRate*0.18, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i=0;i<d.length;i++) d[i] = (Math.random()*2-1)*(1-i/d.length);
+    const src = ac.createBufferSource(), g = ac.createGain();
+    const flt = ac.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=1800;
+    src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(ac.destination);
+    g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t+0.18);
+    src.start(t);
+  },
+  timerTick() {
+    const ac = getAC(), t = ac.currentTime;
+    _tone(ac, t, 880, 'square', 0.04, 0.06);
+  },
+  timerUrgent() {
+    const ac = getAC(), t = ac.currentTime;
+    _tone(ac, t, 1100, 'square', 0.06, 0.1);
+  },
+  scorePoints() {
+    const ac = getAC(), t = ac.currentTime;
+    _tone(ac, t,      880,  'sine', 0.1,  0.22);
+    _tone(ac, t+0.1,  1100, 'sine', 0.12, 0.22);
+    _tone(ac, t+0.22, 1320, 'sine', 0.18, 0.25);
+  },
+  noDrawPenalty() {
+    const ac = getAC(), t = ac.currentTime;
+    [[380,0],[300,0.18],[240,0.36],[190,0.54]].forEach(([f,dt]) => _tone(ac, t+dt, f, 'sawtooth', 0.2, 0.14));
+  },
+  gameOver() {
+    const ac = getAC(), t = ac.currentTime;
+    [[392,0],[392,0.12],[392,0.24],[311,0.18],[349,0.36],[392,0.54],[523,0.7]].forEach(
+      ([f,dt]) => _tone(ac, t+dt, f, 'square', 0.28, 0.16));
+  },
+  cancel() {
+    const ac = getAC(), t = ac.currentTime;
+    _tone(ac, t, 440, 'sine', 0.1, 0.12, 280);
+  },
+};
 
 // ══════════════════════ CANVAS ══════════════════════
 function initCanvas() {
@@ -893,6 +976,7 @@ function rDraw(app) {
     </div>`;
 
   document.body.appendChild(ov);
+  SFX.drawStart();
   requestAnimationFrame(()=>{ requestAnimationFrame(initCanvas); });
 }
 
@@ -930,6 +1014,7 @@ function rScore(app) {
 
 // ── End ──
 function rEnd(app) {
+  SFX.gameOver();
   const sorted=[...G.players].sort((a,b)=>b.score-a.score);
   const s=mk('div','end-sc');
   s.innerHTML=`
