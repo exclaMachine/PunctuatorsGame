@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Prescriptivist's Gauntlet</title>
+<style>
+/* ─── RESET & VARS ──────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:          #06030f;
+  --bg2:         #0c0820;
+  --bg3:         #110d26;
+  --border:      #251050;
+  --border2:     #381870;
+  --text:        #ece6ff;
+  --text-dim:    #7060a0;
+  --text-dimmer: #38265a;
+  --gold:        #d4a020;
+  --red:         #ef4444;
+  --green:       #22c55e;
+
+  --pos-noun:        #60a5fa;
+  --pos-verb:        #4ade80;
+  --pos-adjective:   #fbbf24;
+  --pos-adverb:      #fb923c;
+  --pos-pronoun:     #f87171;
+  --pos-article:     #94a3b8;
+  --pos-conjunction: #a78bfa;
+  --pos-preposition: #22d3ee;
+  --pos-other:       #4a5568;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* ─── GAME WRAPPER ──────────────────────────────────────── */
+#game {
+  width: 900px;
+  max-width: 100%;
+  position: relative;
+}
+
+/* ─── SCREENS ───────────────────────────────────────────── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ─── TITLE SCREEN ──────────────────────────────────────── */
+#title-screen {
+  border: 2px solid var(--border);
+  background: var(--bg2);
+  padding: 56px 50px;
+  text-align: center;
+}
+.title-main {
+  font: bold 32px/1.1 'Courier New', monospace;
+  color: var(--gold);
+  text-shadow: 0 0 24px #d4a02060;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+.title-sub {
+  color: var(--text-dim);
+  font: italic 15px 'Courier New', monospace;
+  margin-bottom: 32px;
+}
+.title-hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+.title-body {
+  font: 12px/2.2 'Courier New', monospace;
+  color: var(--text-dim);
+}
+.title-body strong { color: var(--text); font-weight: normal; }
+.title-start {
+  display: inline-block;
+  margin-top: 32px;
+  background: transparent;
+  border: 2px solid var(--border2);
+  color: var(--text);
+  font: bold 14px 'Courier New', monospace;
+  padding: 12px 40px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.title-start:hover { background: var(--border); border-color: #6d28d9; }
+
+/* ─── PLAYING SCREEN ────────────────────────────────────── */
+/* Top bar */
+#top-bar {
+  background: var(--bg2);
+  border: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 9px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.hp-row { display: flex; gap: 5px; }
+.heart { font-size: 16px; line-height: 1; transition: color .3s, text-shadow .3s; }
+.heart.on  { color: var(--red); text-shadow: 0 0 8px #ef444460; }
+.heart.off { color: var(--text-dimmer); }
+
+#round-info { color: var(--text-dim); font: 11px 'Courier New', monospace; }
+#score-info { color: var(--gold); font: bold 14px 'Courier New', monospace; margin-left: auto; }
+
+#toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font: 10px 'Courier New', monospace;
+  padding: 4px 12px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: color .2s, border-color .2s;
+}
+#toggle-btn:hover { color: var(--text); border-color: var(--text-dim); }
+
+/* Main layout */
+#main-row {
+  display: flex;
+  border: 2px solid var(--border);
+  border-top: none;
+  border-bottom: none;
+}
+
+/* Sentence panel */
+#sentence-panel {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 18px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+}
+.panel-label {
+  font: bold 10px 'Courier New', monospace;
+  color: var(--gold);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+/* Word chips */
+#chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 4px;
+  align-content: flex-start;
+  min-height: 74px;
+  margin-bottom: 14px;
+}
+.chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 8px 2px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  font: 13px/1.3 'Courier New', monospace;
+  cursor: default;
+  position: relative;
+  transition: border-color .15s;
+}
+.chip .word  { white-space: nowrap; }
+.chip .plbl  { font: 7px 'Courier New', monospace; opacity: .65; margin-top: 1px; letter-spacing: .5px; }
+
+/* POS styles */
+.chip.noun        { color: var(--pos-noun);        background: rgba(96,165,250,.08);  border-color: rgba(96,165,250,.18);  }
+.chip.verb        { color: var(--pos-verb);        background: rgba(74,222,128,.08);  border-color: rgba(74,222,128,.18);  }
+.chip.adjective   { color: var(--pos-adjective);   background: rgba(251,191,36,.08);  border-color: rgba(251,191,36,.18);  }
+.chip.adverb      { color: var(--pos-adverb);      background: rgba(251,146,60,.08);  border-color: rgba(251,146,60,.18);  }
+.chip.pronoun     { color: var(--pos-pronoun);     background: rgba(248,113,113,.08); border-color: rgba(248,113,113,.18); }
+.chip.article     { color: var(--pos-article);     background: rgba(148,163,184,.06); border-color: rgba(148,163,184,.14); }
+.chip.conjunction { color: var(--pos-conjunction); background: rgba(167,139,250,.08); border-color: rgba(167,139,250,.18); }
+.chip.preposition { color: var(--pos-preposition); background: rgba(34,211,238,.08);  border-color: rgba(34,211,238,.18);  }
+.chip.other       { color: var(--pos-other);       background: rgba(74,85,104,.06);   border-color: rgba(74,85,104,.12);   }
+
+/* Banned chip (its POS is outlawed by an active rule) */
+.chip.banned { border-color: rgba(239,68,68,.55) !important; box-shadow: 0 0 5px rgba(239,68,68,.2); }
+.chip.banned::after { content:'⚠'; font-size:7px; position:absolute; top:-5px; right:-4px; color:#ef4444; }
+
+/* POS legend */
+#legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.leg-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font: 10px 'Courier New', monospace;
+  color: var(--text-dim);
+}
+.leg-dot { width: 7px; height: 7px; border-radius: 2px; flex-shrink: 0; }
+
+/* Rules panel */
+#rules-panel {
+  width: 222px;
+  flex-shrink: 0;
+  background: var(--bg3);
+  padding: 16px 14px;
+  position: relative;
+  overflow: hidden;
+}
+#rules-panel.hidden .rules-body {
+  filter: blur(7px);
+  pointer-events: none;
+  user-select: none;
+}
+.rules-panel-lbl { font: bold 10px 'Courier New', monospace; color: var(--gold); letter-spacing: 3px; margin-bottom: 12px; }
+#rules-panel .rules-hidden-msg {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font: 11px 'Courier New', monospace;
+  color: var(--text-dimmer);
+  line-height: 1.8;
+  pointer-events: none;
+}
+#rules-panel.hidden .rules-hidden-msg { display: flex; }
+
+.rule-row { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.rule-pip { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.rule-txt { font: 11px/1.4 'Courier New', monospace; }
+.rules-none { font: 11px 'Courier New', monospace; color: var(--text-dimmer); }
+
+/* Input section */
+#input-section {
+  border: 2px solid var(--border);
+  border-top: none;
+  background: var(--bg2);
+  padding: 11px 16px;
+  display: flex;
+  gap: 10px;
+}
+#player-input {
+  flex: 1;
+  background: #090520;
+  border: 2px solid var(--border2);
+  color: var(--text);
+  font: 13px/1.6 'Courier New', monospace;
+  padding: 8px 12px;
+  resize: none;
+  height: 62px;
+  outline: none;
+  transition: border-color .2s;
+}
+#player-input::placeholder { color: var(--text-dimmer); }
+#player-input:focus:not(.err) { border-color: #5b21b6; }
+#player-input:disabled { opacity: .35; }
+#submit-btn {
+  background: var(--border);
+  color: #ddd6fe;
+  border: 2px solid var(--border2);
+  font: bold 11px/1 'Courier New', monospace;
+  padding: 0 18px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+#submit-btn:hover:not(:disabled) { background: #4c1d95; }
+#submit-btn:disabled { opacity: .3; cursor: default; }
+
+/* Feedback bar */
+#feedback-bar {
+  border: 2px solid var(--border);
+  border-top: none;
+  padding: 0 16px;
+  height: 0;
+  overflow: hidden;
+  transition: height .25s, padding .25s;
+  font: 12px/1 'Courier New', monospace;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#feedback-bar.show        { height: 48px; padding: 13px 16px; }
+#feedback-bar.fb-ok       { background: #001912; border-color: #166534; }
+#feedback-bar.fb-fail     { background: #180010; border-color: #7f1d1d; }
+#feedback-bar .fb-icon    { font-size: 18px; flex-shrink: 0; }
+#feedback-bar .fb-text    { flex: 1; }
+#feedback-bar .fb-pts     { margin-left: auto; flex-shrink: 0; }
+#feedback-bar .fb-viols   { color: #fca5a5; }
+#feedback-bar .fb-pts.ok  { color: #86efac; }
+#feedback-bar .fb-pts.bad { color: #fca5a5; }
+
+/* ─── RULE INTRO OVERLAY ────────────────────────────────── */
+#intro-overlay {
+  position: fixed; inset: 0;
+  background: rgba(6,3,15,.93);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+#intro-overlay.on { display: flex; }
+
+.decree {
+  width: 540px;
+  border: 2px solid;
+  overflow: hidden;
+  position: relative;
+}
+.decree-head {
+  padding: 14px 22px;
+  text-align: center;
+  font: bold 12px 'Courier New', monospace;
+  letter-spacing: 2px;
+  position: relative;
+}
+.decree-head .dsrc {
+  font: 11px 'Courier New', monospace;
+  letter-spacing: 1px;
+  margin-top: 5px;
+  opacity: .8;
+  font-weight: normal;
+}
+/* decorative corner marks */
+.decree-head::before, .decree-head::after {
+  content: '✦';
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  font-size: 16px;
+  opacity: .5;
+}
+.decree-head::before { left: 16px; }
+.decree-head::after  { right: 16px; }
+
+.decree-body {
+  background: var(--bg3);
+  padding: 22px 26px;
+}
+.decree-name {
+  font: bold 17px 'Courier New', monospace;
+  text-align: center;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.decree-desc {
+  font: 12px/1.7 'Courier New', monospace;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 18px;
+}
+.decree-hr { height: 1px; background: var(--border2); margin-bottom: 16px; }
+.decree-fact-lbl {
+  font: bold 10px 'Courier New', monospace;
+  color: var(--gold);
+  letter-spacing: 2px;
+  margin-bottom: 9px;
+}
+.decree-fact {
+  font: 12px/1.75 'Courier New', monospace;
+  color: #c8b8e8;
+  margin-bottom: 0;
+}
+.decree-footer {
+  background: rgba(0,0,0,.25);
+  padding: 13px;
+  text-align: center;
+}
+.decree-accept {
+  background: transparent;
+  border: 1px solid var(--text-dim);
+  color: var(--text);
+  font: bold 11px 'Courier New', monospace;
+  padding: 8px 26px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  animation: blink 1.1s step-end infinite;
+}
+.decree-accept:hover { background: var(--border); animation: none; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ─── END SCREENS ───────────────────────────────────────── */
+#game-over-screen, #victory-screen {
+  border: 2px solid var(--border);
+  background: var(--bg2);
+  padding: 60px 50px;
+  text-align: center;
+}
+.end-hed {
+  font: bold 50px 'Courier New', monospace;
+  letter-spacing: 3px;
+  margin-bottom: 18px;
+}
+.end-hed.bad  { color: var(--red);  text-shadow: 0 0 28px #ef444445; }
+.end-hed.good { color: var(--gold); text-shadow: 0 0 28px #d4a02045; }
+.end-sub { font: 14px/2 'Courier New', monospace; color: var(--text-dim); }
+.end-score { font: bold 22px 'Courier New', monospace; color: var(--gold); margin: 22px 0; }
+.end-btn {
+  display: inline-block;
+  background: transparent;
+  border: 2px solid var(--border2);
+  color: var(--text);
+  font: bold 13px 'Courier New', monospace;
+  padding: 11px 32px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: background .2s;
+}
+.end-btn:hover { background: var(--border); }
+</style>
+</head>
+<body>
+<div id="game">
+
+  <!-- ── TITLE ── -->
+  <div class="screen active" id="title-screen">
+    <div class="title-main">THE PRESCRIPTIVIST'S GAUNTLET</div>
+    <div class="title-sub">A game of criminal linguistics</div>
+    <hr class="title-hr">
+    <div class="title-body">
+      Professor Prescripta has outlawed parts of the English language.<br>
+      Each law is stolen from a <strong>real human language</strong>.<br>
+      A sentence will appear, tagged by part of speech.<br>
+      <strong>Transcribe it</strong> — rewriting it to obey all active laws.<br>
+      Submit to find out if you've complied. Laws stack over time.<br><br>
+      <strong>5 ♥</strong> &nbsp;·&nbsp; Up to <strong>12 laws</strong> &nbsp;·&nbsp; <strong>Hard mode:</strong> hide the rules
+    </div>
+    <button class="title-start" id="start-btn">[ BEGIN ]</button>
+  </div>
+
+  <!-- ── PLAYING ── -->
+  <div class="screen" id="playing-screen">
+
+    <div id="top-bar">
+      <div class="hp-row" id="hp-row"></div>
+      <div id="round-info">Round 1/2  ·  Laws 1/12</div>
+      <button id="toggle-btn">HIDE RULES</button>
+      <div id="score-info">SCORE: 0</div>
+    </div>
+
+    <div id="main-row">
+      <div id="sentence-panel">
+        <div class="panel-label">Original Sentence</div>
+        <div id="chips"></div>
+        <div id="legend"></div>
+      </div>
+      <div id="rules-panel">
+        <div class="rules-panel-lbl">Active Laws</div>
+        <div class="rules-body" id="rules-body">
+          <div class="rules-none" id="rules-none">None yet…</div>
+        </div>
+        <div class="rules-hidden-msg">Rules hidden.<br>Hard mode active.</div>
+      </div>
+    </div>
+
+    <div id="input-section">
+      <textarea id="player-input"
+        placeholder="Rewrite the sentence above while obeying all active laws… (Enter to submit)"
+        spellcheck="false" disabled></textarea>
+      <button id="submit-btn" disabled>SUBMIT ↵</button>
+    </div>
+
+    <div id="feedback-bar">
+      <span class="fb-icon"></span>
+      <span class="fb-text"></span>
+      <span class="fb-pts"></span>
+    </div>
+
+  </div>
+
+  <!-- ── GAME OVER ── -->
+  <div class="screen" id="game-over-screen">
+    <div class="end-hed bad">SILENCED!</div>
+    <div class="end-sub">Your tongue has been officially revoked.<br>Professor Prescripta reigns supreme.</div>
+    <div class="end-score" id="go-score">Final Score: 0</div>
+    <button class="end-btn" id="go-restart">[ TRY AGAIN ]</button>
+  </div>
+
+  <!-- ── VICTORY ── -->
+  <div class="screen" id="victory-screen">
+    <div class="end-hed good">UNBOUND!</div>
+    <div class="end-sub">You survived every decree.<br>Descriptivism prevails. Language belongs to the people.</div>
+    <div class="end-score" id="win-score">Final Score: 0</div>
+    <button class="end-btn" id="win-restart">[ PLAY AGAIN ]</button>
+  </div>
+
+</div><!-- /#game -->
+
+<!-- Rule intro overlay (outside #game so it covers everything) -->
+<div id="intro-overlay">
+  <div class="decree" id="decree-el">
+    <div class="decree-head" id="decree-head">
+      <div>⚠ &nbsp;NEW LAW DECREED&nbsp; ⚠</div>
+      <div class="dsrc" id="decree-src"></div>
+    </div>
+    <div class="decree-body">
+      <div class="decree-name"  id="decree-name"></div>
+      <div class="decree-desc"  id="decree-desc"></div>
+      <div class="decree-hr"></div>
+      <div class="decree-fact-lbl">✦ &nbsp;DID YOU KNOW?&nbsp; ✦</div>
+      <div class="decree-fact"  id="decree-fact"></div>
+    </div>
+    <div class="decree-footer">
+      <button class="decree-accept" id="decree-accept">[ ACCEPT YOUR FATE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- Compromise.js for client-side POS tagging -->
+<script src="https://unpkg.com/compromise/builds/compromise.min.js"></script>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════
+   THE PRESCRIPTIVIST'S GAUNTLET  –  v2
+   ═══════════════════════════════════════════════════ */
+
+// ── RULES ─────────────────────────────────────────────────
+const RULES = [
+  {
+    short: 'No letter "E"',
+    name:  'THE LETTER E IS HEREBY BANNED',
+    desc:  'The letter E (or e) may not appear anywhere in your response.',
+    fact:  'In 1969, French author Georges Perec wrote a 300-page novel called "La Disparition" without a single letter E — a technique called a LIPOGRAM. The English translation "A Void" also omits E. Ernest Vincent Wright\'s 1939 novel "Gadsby" did the same in English!',
+    src:   '🇫🇷 French Literary Tradition',
+    col:   '#f87171',
+    pos:   null,
+    check(t) { return t.split(/\s+/).filter(w => w && /[eE]/.test(w)); }
+  },
+  {
+    short: 'No a / an / the',
+    name:  'ARTICLES ARE OUTLAWED',
+    desc:  'The words "a", "an", and "the" are absolutely forbidden.',
+    fact:  'Russian has no articles whatsoever — "Я вижу кот" means "I see cat," with no "the" or "a." Context handles it. Over 40% of languages — Mandarin, Japanese, Turkish, Finnish — work exactly this way. English articles are the exception, not the rule!',
+    src:   '🇷🇺 Russian (& many others)',
+    col:   '#fb923c',
+    pos:   'article',
+    check(t) {
+      const b = new Set(['a','an','the']);
+      return t.split(/\s+/).filter(w => b.has(clean(w).toLowerCase()));
+    }
+  },
+  {
+    short: 'End words in vowels',
+    name:  'ALL WORDS MUST END IN VOWELS',
+    desc:  'Every word must end with A, E, I, O, or U.',
+    fact:  'Hawaiian is an open-syllable language — every syllable ends in a vowel. Its entire alphabet has only 13 letters. "Aloha," "mahalo," "ohana," "wiki" — every word ends in a vowel. This gives Hawaiian its flowing, musical quality unlike almost any European language.',
+    src:   '🌺 Hawaiian',
+    col:   '#4ade80',
+    pos:   null,
+    check(t) {
+      return t.split(/\s+/).filter(w => { const c=clean(w); return c.length>0 && !/[aeiouAEIOU]$/.test(c); });
+    }
+  },
+  {
+    short: 'No personal pronouns',
+    name:  'PERSONAL PRONOUNS ARE FORBIDDEN',
+    desc:  'I, you, he, she, it, we, they, me, him, her, us, them, my, your, his, its, our, their — all banned.',
+    fact:  'In Japanese and Mandarin Chinese, subjects are routinely dropped when context is clear — called "pro-drop." "行きます" (ikimasu) simply means "go" with no "I" required. About 70% of the world\'s languages allow or require this. English pronoun-dropping is the oddity!',
+    src:   '🇯🇵 Japanese / 🇨🇳 Mandarin',
+    col:   '#60a5fa',
+    pos:   'pronoun',
+    check(t) {
+      const b = new Set(['i','you','he','she','it','we','they','me','him','her','us','them','my','your','his','its','our','their']);
+      return t.split(/\s+/).filter(w => b.has(clean(w).toLowerCase()));
+    }
+  },
+  {
+    short: '≤ 5 letters per word',
+    name:  'WORD LENGTH LIMIT: 5 LETTERS',
+    desc:  'No word may contain more than 5 letters.',
+    fact:  'Toki Pona is a constructed language with only 137 words total. Every concept is expressed with short, combinable words: "soweli" = land animal, "telo" = liquid, "suno" = light. Its creator Sonja Lang argues that limiting vocabulary forces emotional and conceptual clarity.',
+    src:   '🌍 Toki Pona (Constructed Language)',
+    col:   '#c084fc',
+    pos:   null,
+    check(t) { return t.split(/\s+/).filter(w => clean(w).length > 5); }
+  },
+  {
+    short: 'No 3+ consonant clusters',
+    name:  'CONSONANT CLUSTERS ARE PROHIBITED',
+    desc:  'No three or more consonants may appear in a row within any word.',
+    fact:  'Most Polynesian languages (Maori, Samoan, Hawaiian) allow almost no consonant clusters — sounds alternate vowel-consonant. Compare to Georgian, where "გვფრცქვნი" (gvprtskvni, "to peel us") strings 6 consonants together. English "strengths" packs 7 letters around 1 vowel!',
+    src:   '🏝️ Maori vs. 🇬🇪 Georgian',
+    col:   '#2dd4bf',
+    pos:   null,
+    check(t) { return t.split(/\s+/).filter(w => /[bcdfghjklmnpqrstvwxyz]{3}/i.test(clean(w))); }
+  },
+  {
+    short: 'No conjunctions',
+    name:  'CONJUNCTIONS ARE OUTLAWED',
+    desc:  'And, but, or, nor, yet, so, for, because, although, though, while, however, since — all banned.',
+    fact:  'Ancient Greek and Latin used ASYNDETON — listing clauses with no conjunctions for dramatic effect. Caesar\'s "Veni, vidi, vici" uses no "and." Classical Chinese (文言文) rarely marks conjunctions explicitly. Modern Arabic poetry still favors asyndeton for its urgent, breathless rhythm.',
+    src:   '🏛️ Classical Latin / Ancient Greek',
+    col:   '#e879f9',
+    pos:   'conjunction',
+    check(t) {
+      const b = new Set(['and','but','or','nor','yet','so','for','because','although','though','while','however','since','unless','whether','as','if']);
+      return t.split(/\s+/).filter(w => b.has(clean(w).toLowerCase()));
+    }
+  },
+  {
+    short: 'No prepositions',
+    name:  'PREPOSITIONS ARE ABOLISHED',
+    desc:  'In, on, at, by, to, for, of, with, from, about, into, over, under, after, before, through, between, among, during, without, toward, near, past, until, upon, per, via, off, around, beside, across, along, against — all banned.',
+    fact:  'Latin, Ancient Greek, and Russian use CASE ENDINGS on nouns instead of prepositions. "Roma" = Rome (subject), "Romae" = of Rome, "Romam" = toward Rome. Finnish has 15 cases. The English possessive "'s" in "John\'s book" is a fossil of this ancient case system!',
+    src:   '🏛️ Latin / 🇫🇮 Finnish',
+    col:   '#f472b6',
+    pos:   'preposition',
+    check(t) {
+      const b = new Set(['in','on','at','by','to','for','of','with','from','about','into','over','under','after','before','through','between','among','during','without','toward','towards','near','past','until','upon','per','via','off','around','beside','across','along','against','within','beyond','beneath','below','above','behind','inside','outside','opposite']);
+      return t.split(/\s+/).filter(w => b.has(clean(w).toLowerCase()));
+    }
+  },
+  {
+    short: 'No -ly adverbs',
+    name:  'ADVERBS ARE HEREBY FORBIDDEN',
+    desc:  'No words ending in -ly, and no: very, really, quite, rather, extremely, absolutely, totally, barely, hardly, nearly, always, never, often, sometimes, already, still, just.',
+    fact:  'Mandarin Chinese has no "-ly" suffix. The same word (快, kuài) means both "quick" and "quickly" — grammatical role is determined by position, not form. Many Asian languages treat adjectives and adverbs as identical categories. English "-ly" is a quirk, not a universal!',
+    src:   '🇨🇳 Mandarin Chinese',
+    col:   '#a3e635',
+    pos:   'adverb',
+    check(t) {
+      const b = new Set(['very','really','quite','rather','extremely','absolutely','totally','barely','hardly','nearly','always','never','often','sometimes','already','still','just']);
+      return t.split(/\s+/).filter(w => { const c=clean(w).toLowerCase(); return /ly$/.test(c) || b.has(c); });
+    }
+  },
+  {
+    short: 'No abstract nouns',
+    name:  'ABSTRACT NOUNS ARE ELIMINATED',
+    desc:  'Words ending in -tion, -sion, -ness, -ity, -ment, -ism, -ance, -ence are banned.',
+    fact:  'The Pirahã language of the Amazon has been argued by linguist Daniel Everett to lack recursion and abstraction entirely. Speakers discuss only immediate, observable events — no creation myths, no numbers. His controversial 2005 paper ignited a war in linguistics that still rages today!',
+    src:   '🌿 Pirahã (Amazonian)',
+    col:   '#fbbf24',
+    pos:   null,
+    check(t) {
+      return t.split(/\s+/).filter(w => { const c=clean(w).toLowerCase(); return c.length>3 && /(?:tion|sion|ness|ment|ism|ance|ence)$/.test(c); });
+    }
+  },
+  {
+    short: 'No doubled letters',
+    name:  'CONSECUTIVE DUPLICATE LETTERS PROHIBITED',
+    desc:  'No word may contain two of the same letter appearing back-to-back (ll, tt, ss, nn, mm, pp, oo, ee, etc.).',
+    fact:  'Turkish has VOWEL HARMONY — every vowel in a word must belong to the same phonetic group (front/back). This forces all suffixes to adjust their vowels to match the root. Turkish speakers perceive doubled vowels of different types as "unharmonious" — a built-in aesthetic constraint!',
+    src:   '🇹🇷 Turkish / 🇯🇵 Japanese',
+    col:   '#38bdf8',
+    pos:   null,
+    check(t) { return t.split(/\s+/).filter(w => /([a-zA-Z])\1/i.test(clean(w))); }
+  },
+  {
+    short: 'No comparatives/superlatives',
+    name:  'COMPARISON IS ILLEGAL',
+    desc:  'Words ending in -er or -est (comparatives/superlatives) and the words more, most, less, least, better, worse, best, worst are banned.',
+    fact:  'Mandarin Chinese adjectives never change form — there is no "-er" or "-est" suffix. "More big" is expressed as "比较大" (bǐjiào dà, "relatively big"). In Japanese, Yoruba, and many other languages, adjectives are completely invariant. Morphological comparison is far from universal!',
+    src:   '🇨🇳 Mandarin Chinese / 🇨🇮 Yoruba',
+    col:   '#fb7185',
+    pos:   null,
+    check(t) {
+      const b = new Set(['more','most','less','least','better','worse','best','worst']);
+      return t.split(/\s+/).filter(w => { const c=clean(w).toLowerCase(); return b.has(c)||(c.length>3&&(/er$/.test(c)||/est$/.test(c))); });
+    }
+  }
+];
+
+// ── SENTENCE CORPUS ────────────────────────────────────────
+const SENTENCES = [
+  "The cat sat on the warm mat by the window.",
+  "She walked quickly through the ancient forest.",
+  "He never told his friends about the strange dream.",
+  "The government decided to increase the budget for education.",
+  "Birds sing beautifully in the morning garden.",
+  "My brother runs a small bakery in the old town.",
+  "They discovered a mysterious cave behind the waterfall.",
+  "The professor explained the theory to her students.",
+  "We need to solve this problem before it gets worse.",
+  "The sun slowly rose above the distant mountains.",
+  "She carefully placed the flowers on the table.",
+  "The children played happily in the park all afternoon.",
+  "He spent his evenings reading books about philosophy.",
+  "A gentle breeze moved through the tall trees.",
+  "The city never sleeps and always hums with energy.",
+  "My grandmother taught me to bake bread every Sunday.",
+  "The library contains thousands of books on every subject.",
+  "They traveled across the country to find their destiny.",
+  "The old clock on the wall ticked slowly.",
+  "She discovered that she had a talent for painting.",
+  "The dog chased the ball across the green field.",
+  "He wrote a letter to his old friend in Paris.",
+  "The market was full of fresh vegetables and fruits.",
+  "A clever fox outwitted the farmer and escaped into the woods.",
+  "The teacher asked her students a very difficult question.",
+  "We found an interesting solution to the ancient puzzle.",
+  "The moon rose quietly over the sleeping village.",
+  "He always carried a small notebook in his pocket.",
+  "The river flows gently past the old stone bridge.",
+  "She sang a beautiful song about freedom and hope.",
+  "The scientist announced her discovery to the world.",
+  "My father never missed a single day of work.",
+  "The train arrived at the station exactly on time.",
+  "They built a magnificent castle on top of the hill.",
+  "She found an old photograph under the dusty sofa.",
+  "The young artist painted brilliant colors on the wall.",
+  "He quietly read his book while the storm raged outside.",
+  "A small bird landed on the branch above my head.",
+  "The town celebrated its independence with a great feast.",
+  "She spoke three languages fluently and learned a fourth.",
+  "The explorer mapped every corner of the unknown territory.",
+  "My sister plays the piano in a jazz band.",
+  "The ocean stretched endlessly toward the horizon.",
+  "He told us a fascinating story about his childhood.",
+  "The mountain peak vanished into the thick clouds.",
+  "She runs a shelter for abandoned animals in the city.",
+  "The book contains many secrets about the ancient world.",
+  "They danced together under the light of the full moon.",
+  "The farmer harvested his crops before the first frost.",
+  "A large butterfly settled on the red flower.",
+  "He spent three years studying art in Italy.",
+  "The museum displayed beautiful paintings from the Renaissance.",
+  "She always remembered to call her mother on Sundays.",
+  "The wind carried the smell of rain across the valley.",
+  "He painted the walls a deep shade of blue.",
+  "She traveled to many countries before settling in France.",
+  "The old man fed the birds in the park every day.",
+  "A small boat drifted lazily down the calm river.",
+  "They finished building the wooden cabin just before winter.",
+  "The detective examined the clues left at the scene.",
+  "A purple cat watched the sunset from the rooftop.",
+  "The baker sold warm rolls from a basket on the street.",
+  "She learned to navigate by the stars on long voyages.",
+  "The children built a fort from cushions in the living room.",
+  "He grew tomatoes and herbs in his tiny apartment garden.",
+  "The musician played an old song no one had heard before.",
+  "She repaired the broken clock with tools borrowed from a neighbor.",
+  "The lighthouse keeper counted the ships that passed each night.",
+  "A fox watched the chickens from behind the old fence.",
+  "The librarian found a note tucked inside an ancient volume.",
+  "He walked to the post office and mailed the letter.",
+  "The twins baked a cake for their grandmother on her birthday.",
+  "A fisherman cast his net into the dark water below.",
+  "The cook added spices and stirred the pot on the fire.",
+  "She drew a map of the island and gave it to her brother.",
+  "The painter climbed the tall ladder and began her work.",
+  "A wolf howled far away and the horses grew nervous.",
+  "The carpenter measured the wood twice and cut it once.",
+  "They sat on the hill and watched the city lights below.",
+  "She kept a diary and wrote in it every single night.",
+  "The boy threw a stone into the pond and watched the ripples.",
+  "A traveler arrived at the inn late and asked for a room.",
+];
+
+// ── UTILITY ───────────────────────────────────────────────
+const clean = w => w.replace(/[^a-zA-Z]/g, '');
+
+// ── POS TAGGING ───────────────────────────────────────────
+let nlpReady = false;
+
+const WORD_MAP = (() => {
+  const m = {};
+  const set = (pos, words) => words.forEach(w => m[w] = pos);
+  set('article',     ['a','an','the']);
+  set('pronoun',     ['i','you','he','she','it','we','they','me','him','her','us','them','my','your','his','its','our','their','myself','yourself','himself','herself','itself','themselves','ourselves']);
+  set('conjunction', ['and','but','or','nor','yet','so','for','because','although','though','while','however','since','unless','whether','if','as']);
+  set('preposition', ['in','on','at','by','to','for','of','with','from','about','into','over','under','after','before','through','between','among','during','without','toward','towards','near','past','until','upon','per','via','off','around','beside','across','along','against','within','beyond','beneath','below','above','behind','inside','outside']);
+  set('adverb',      ['very','really','quite','rather','extremely','absolutely','totally','barely','hardly','nearly','always','never','often','sometimes','already','still','just','also','then','now','here','there','too','not','well','only','even','back','away','up','down','out','again','ever','never','soon','later','today','yesterday','tomorrow']);
+  set('verb',        ['is','are','was','were','be','been','being','have','has','had','do','does','did','will','would','shall','should','can','could','may','might','must','go','went','gone','come','came','run','ran','say','said','told','tell','make','made','take','took','know','knew','think','thought','see','saw','look','want','give','gave','get','got','find','found','call','keep','let','begin','began','show','hear','play','walk','move','live','bring','brought','feel','felt','put','stand','lose','pay','meet','sit','lay','set','learn','change','lead','speak','read','spend','grow','open','win','offer','remember','love','try','ask','need','seem','help','talk','start','turn','leave','left','arrive','decide','discover','watch','follow','stop','create','explain','announce','build','carry','flow','sing','dance','run','rise','rode','ride','add','climb','draw','throw','cast','measure','bake','feed','grew']);
+  return m;
+})();
+
+function fallbackTag(text) {
+  return text.split(/\s+/).filter(Boolean).map(token => {
+    const m = token.match(/^([^a-zA-Z]*)([a-zA-Z'-]+)([^a-zA-Z']*)$/);
+    if (!m) return { text: token, pre: '', post: '', pos: 'other' };
+    const [, pre, word, post] = m;
+    const lower = word.toLowerCase();
+    let pos = WORD_MAP[lower];
+    if (!pos) {
+      if (/ly$/.test(lower) && lower.length > 3) pos = 'adverb';
+      else pos = 'noun';
+    }
+    return { text: word, pre, post, pos };
+  });
+}
+
+function posFromTags(tags) {
+  if (!tags) return 'other';
+  const k = typeof tags === 'object' ? Object.keys(tags) : (Array.isArray(tags) ? tags : []);
+  if (k.includes('Pronoun'))     return 'pronoun';
+  if (k.includes('Article'))     return 'article';
+  if (k.includes('Conjunction')) return 'conjunction';
+  if (k.includes('Preposition')) return 'preposition';
+  if (k.includes('Adverb'))      return 'adverb';
+  if (k.includes('Adjective'))   return 'adjective';
+  if (k.includes('Verb'))        return 'verb';
+  if (k.includes('Noun'))        return 'noun';
+  return 'other';
+}
+
+function tagSentence(text) {
+  if (nlpReady) {
+    try {
+      const doc = nlp(text);
+      const sents = doc.json();
+      if (sents.length && sents[0].terms && sents[0].terms.length) {
+        return sents[0].terms.map(t => ({
+          text: t.text  || '',
+          pre:  t.pre   || '',
+          post: t.post  || '',
+          pos:  posFromTags(t.tags),
+        })).filter(t => t.text);
+      }
+    } catch(e) { /* fall through */ }
+  }
+  return fallbackTag(text);
+}
+
+// ── GAME STATE ─────────────────────────────────────────────
+const SC = { TITLE:0, PLAY:1, OVER:2, WIN:3 };
+let g = {};
+
+function initGame() {
+  g = {
+    sc: SC.TITLE,
+    hp: 5, score: 0,
+    rIdx: 0,           // index of *next* rule to introduce
+    active: [],        // active rules array
+    deck: shuffle([...SENTENCES]),
+    deckIdx: 0,
+    roundsDone: 0,
+    roundsNeeded: 2,
+    tokens: [],
+    rulesVisible: true,
+  };
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ── DOM REFS ───────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const elHpRow    = $('hp-row');
+const elRoundInfo= $('round-info');
+const elScoreInfo= $('score-info');
+const elChips    = $('chips');
+const elLegend   = $('legend');
+const elRulesBody= $('rules-body');
+const elRulesNone= $('rules-none');
+const elRulesPanel=$('rules-panel');
+const elInput    = $('player-input');
+const elSubmit   = $('submit-btn');
+const elFbBar    = $('feedback-bar');
+const elToggle   = $('toggle-btn');
+const elOverlay  = $('intro-overlay');
+const elDecree   = $('decree-el');
+const elDHead    = $('decree-head');
+const elDSrc     = $('decree-src');
+const elDName    = $('decree-name');
+const elDDesc    = $('decree-desc');
+const elDFact    = $('decree-fact');
+const elDAccept  = $('decree-accept');
+
+// ── UI HELPERS ─────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(name + '-screen').classList.add('active');
+}
+
+function updateTopBar() {
+  // HP
+  elHpRow.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const h = document.createElement('span');
+    h.className = 'heart ' + (i < g.hp ? 'on' : 'off');
+    h.textContent = '♥';
+    elHpRow.appendChild(h);
+  }
+  // Round + laws
+  elRoundInfo.textContent = `Round ${g.roundsDone + 1}/${g.roundsNeeded}  ·  Laws ${g.active.length}/${RULES.length}`;
+  // Score
+  elScoreInfo.textContent = `SCORE: ${g.score}`;
+}
+
+const POS_META = {
+  noun:        { label: 'noun',    color: '#60a5fa' },
+  verb:        { label: 'verb',    color: '#4ade80' },
+  adjective:   { label: 'adj',     color: '#fbbf24' },
+  adverb:      { label: 'adv',     color: '#fb923c' },
+  pronoun:     { label: 'pron',    color: '#f87171' },
+  article:     { label: 'art',     color: '#94a3b8' },
+  conjunction: { label: 'conj',   color: '#a78bfa' },
+  preposition: { label: 'prep',   color: '#22d3ee' },
+  other:       { label: '',        color: '#4a5568' },
+};
+
+function bannedPOSSet() {
+  return new Set(g.active.filter(r => r.pos).map(r => r.pos));
+}
+
+function renderChips(tokens) {
+  elChips.innerHTML = '';
+  const banned = bannedPOSSet();
+  const seen = new Set();
+
+  for (const tok of tokens) {
+    if (!tok.text) continue;
+    seen.add(tok.pos);
+
+    const chip = document.createElement('span');
+    chip.className = 'chip ' + tok.pos;
+    if (banned.has(tok.pos)) chip.classList.add('banned');
+
+    const wordSpan = document.createElement('span');
+    wordSpan.className = 'word';
+    wordSpan.textContent = (tok.pre || '') + tok.text + (tok.post || '');
+    chip.appendChild(wordSpan);
+
+    const meta = POS_META[tok.pos];
+    if (meta && meta.label) {
+      const lbl = document.createElement('span');
+      lbl.className = 'plbl';
+      lbl.textContent = meta.label;
+      chip.appendChild(lbl);
+    }
+    elChips.appendChild(chip);
+  }
+
+  // Legend — only show POS present in this sentence
+  elLegend.innerHTML = '';
+  for (const [key, meta] of Object.entries(POS_META)) {
+    if (!seen.has(key) || !meta.label) continue;
+    const item = document.createElement('span');
+    item.className = 'leg-item';
+    const dot = document.createElement('span');
+    dot.className = 'leg-dot';
+    dot.style.background = meta.color;
+    const lbl = document.createTextNode(meta.label);
+    item.appendChild(dot);
+    item.appendChild(lbl);
+    elLegend.appendChild(item);
+  }
+}
+
+function renderRules() {
+  // Clear old rule rows (keep the "none" div)
+  elRulesBody.querySelectorAll('.rule-row').forEach(el => el.remove());
+  elRulesNone.style.display = g.active.length ? 'none' : '';
+  g.active.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'rule-row';
+    const pip = document.createElement('span');
+    pip.className = 'rule-pip';
+    pip.style.background = r.col;
+    const txt = document.createElement('span');
+    txt.className = 'rule-txt';
+    txt.style.color = r.col;
+    txt.textContent = `${i + 1}. ${r.short}`;
+    row.appendChild(pip);
+    row.appendChild(txt);
+    elRulesBody.appendChild(row);
+  });
+}
+
+// ── RULE INTRO ─────────────────────────────────────────────
+function showRuleIntro(rule, onAccept) {
+  elDecree.style.borderColor = rule.col;
+  elDHead.style.background   = rule.col;
+  elDHead.style.color        = '#04010c';
+  // reset header text (keep the ✦ pseudo-elements via CSS)
+  elDHead.querySelector('div').textContent = '⚠  NEW LAW DECREED  ⚠';
+  elDSrc.textContent  = rule.src;
+  elDName.textContent = rule.name;
+  elDName.style.color = rule.col;
+  elDName.style.textShadow = `0 0 14px ${rule.col}70`;
+  elDDesc.textContent = rule.desc;
+  elDFact.textContent = rule.fact;
+  elOverlay.classList.add('on');
+
+  const handler = () => {
+    elOverlay.classList.remove('on');
+    elDAccept.removeEventListener('click', handler);
+    onAccept();
+  };
+  elDAccept.addEventListener('click', handler);
+}
+
+// ── SENTENCE LOADING ───────────────────────────────────────
+function nextSentence() {
+  if (g.deckIdx >= g.deck.length) { g.deck = shuffle([...SENTENCES]); g.deckIdx = 0; }
+  const text = g.deck[g.deckIdx++];
+  g.tokens = tagSentence(text);
+  renderChips(g.tokens);
+}
+
+// ── FEEDBACK ───────────────────────────────────────────────
+function showFeedback(ok, viols, pts) {
+  elFbBar.className = 'show ' + (ok ? 'fb-ok' : 'fb-fail');
+  elFbBar.querySelector('.fb-icon').textContent = ok ? '✓' : '✗';
+  if (ok) {
+    elFbBar.querySelector('.fb-text').textContent = 'Compliant. No violations detected.';
+    const p = elFbBar.querySelector('.fb-pts');
+    p.className = 'fb-pts ok'; p.textContent = `+${pts} pts`;
+  } else {
+    const shown = viols.slice(0, 5).map(v => `"${v}"`).join(', ');
+    const extra = viols.length > 5 ? ` +${viols.length - 5} more` : '';
+    elFbBar.querySelector('.fb-text').innerHTML =
+      `<span class="fb-viols">Violation: ${shown}${extra}</span>`;
+    const p = elFbBar.querySelector('.fb-pts');
+    p.className = 'fb-pts bad'; p.textContent = '−1 ♥';
+  }
+}
+
+function hideFeedback() { elFbBar.className = ''; }
+
+// ── GAME FLOW ──────────────────────────────────────────────
+function startRound() {
+  nextSentence();
+  renderRules();
+  updateTopBar();
+  hideFeedback();
+  elInput.value = '';
+  elInput.disabled = false;
+  elSubmit.disabled = false;
+  elInput.focus();
+}
+
+function checkViolations(text) {
+  return [...new Set(g.active.flatMap(r => r.check(text)))];
+}
+
+function doSubmit() {
+  const text = elInput.value.trim();
+  if (!text) return;
+  elInput.disabled = true;
+  elSubmit.disabled = true;
+
+  const viols = checkViolations(text);
+
+  if (viols.length) {
+    g.hp--;
+    showFeedback(false, viols, 0);
+    updateTopBar();
+    setTimeout(() => {
+      if (g.hp <= 0) {
+        $('go-score').textContent = `Final Score: ${g.score}`;
+        showScreen('game-over');
+      } else {
+        // New sentence, same rule level
+        elInput.value = '';
+        startRound();
+      }
+    }, 2200);
+  } else {
+    const pts = 10 + g.active.length * 5;
+    g.score += pts;
+    g.roundsDone++;
+    showFeedback(true, [], pts);
+    updateTopBar();
+
+    setTimeout(() => {
+      hideFeedback();
+      if (g.roundsDone >= g.roundsNeeded) {
+        g.rIdx++;
+        if (g.rIdx >= RULES.length) {
+          $('win-score').textContent = `Final Score: ${g.score}`;
+          showScreen('victory');
+        } else {
+          const nextRule = RULES[g.rIdx];
+          showRuleIntro(nextRule, () => {
+            g.active.push(nextRule);
+            g.roundsDone = 0;
+            startRound();
+          });
+        }
+      } else {
+        elInput.value = '';
+        startRound();
+      }
+    }, 1600);
+  }
+}
+
+// ── EVENTS ─────────────────────────────────────────────────
+$('start-btn').addEventListener('click', () => {
+  initGame();
+  showScreen('playing');
+  showRuleIntro(RULES[0], () => {
+    g.active.push(RULES[0]);
+    startRound();
+  });
+});
+
+$('go-restart').addEventListener('click', () => { initGame(); showScreen('title'); });
+$('win-restart').addEventListener('click', () => { initGame(); showScreen('title'); });
+
+elSubmit.addEventListener('click', doSubmit);
+elInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSubmit(); }
+});
+
+elToggle.addEventListener('click', () => {
+  g.rulesVisible = !g.rulesVisible;
+  elRulesPanel.classList.toggle('hidden', !g.rulesVisible);
+  elToggle.textContent = g.rulesVisible ? 'HIDE RULES' : 'SHOW RULES';
+});
+
+// ── INIT ───────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  nlpReady = (typeof nlp !== 'undefined');
+  if (!nlpReady) console.warn('Compromise.js unavailable — using fallback POS tagger.');
+  initGame();
+  showScreen('title');
+});
+</script>
+</body>
+</html>
