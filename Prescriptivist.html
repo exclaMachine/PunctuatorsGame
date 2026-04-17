@@ -842,7 +842,8 @@ function initGame() {
   g = {
     sc: SC.TITLE,
     hp: 5, score: 0,
-    rIdx: 0,           // index of *next* rule to introduce
+    rIdx: 0,           // index into ruleOrder for next rule to introduce
+    ruleOrder: shuffle([...RULES]),
     active: [],        // active rules array
     deck: shuffle([...SENTENCES]),
     deckIdx: 0,
@@ -900,7 +901,7 @@ function updateTopBar() {
     elHpRow.appendChild(h);
   }
   // Round + laws
-  elRoundInfo.textContent = `Round ${g.roundsDone + 1}/${g.roundsNeeded}  ·  Laws ${g.active.length}/${RULES.length}`;
+  elRoundInfo.textContent = `Round ${g.roundsDone + 1}/${g.roundsNeeded}  ·  Laws ${g.active.length}/${g.ruleOrder.length}`;
   // Score
   elScoreInfo.textContent = `SCORE: ${g.score}`;
 }
@@ -1144,11 +1145,11 @@ function doSubmit() {
       hideFeedback();
       if (g.roundsDone >= g.roundsNeeded) {
         g.rIdx++;
-        if (g.rIdx >= RULES.length) {
+        if (g.rIdx >= g.ruleOrder.length) {
           $('win-score').textContent = `Final Score: ${g.score}`;
           showScreen('victory');
         } else {
-          const nextRule = RULES[g.rIdx];
+          const nextRule = g.ruleOrder[g.rIdx];
           showRuleIntro(nextRule, () => {
             g.active.push(nextRule);
             g.roundsDone = 0;
@@ -1167,8 +1168,8 @@ function doSubmit() {
 $('start-btn').addEventListener('click', () => {
   initGame();
   showScreen('playing');
-  showRuleIntro(RULES[0], () => {
-    g.active.push(RULES[0]);
+  showRuleIntro(g.ruleOrder[0], () => {
+    g.active.push(g.ruleOrder[0]);
     startRound();
   });
 });
