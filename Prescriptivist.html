@@ -535,7 +535,8 @@ const RULES = [
     src:   '🇫🇷 French Literary Tradition',
     col:   '#f87171',
     pos:   null,
-    check(t) { return t.split(/\s+/).filter(w => w && /[eE]/.test(w)); }
+    check(t) { return t.split(/\s+/).filter(w => w && /[eE]/.test(w)); },
+    strip(w) { return w.replace(/e/g, ''); }           // remove every e
   },
   {
     short: 'No a / an / the',
@@ -548,7 +549,8 @@ const RULES = [
     check(t) {
       const b = new Set(['a','an','the']);
       return t.split(/\s+/).filter(w => b.has(clean(w).toLowerCase()));
-    }
+    },
+    strip(w) { return null; }                          // POS ban — player omits
   },
   {
     short: 'End words in vowels',
@@ -560,7 +562,8 @@ const RULES = [
     pos:   null,
     check(t) {
       return t.split(/\s+/).filter(w => { const c=clean(w); return c.length>0 && !/[aeiouAEIOU]$/.test(c); });
-    }
+    },
+    strip(w) { return null; }                          // structural — player substitutes
   },
   {
     short: 'No personal pronouns',
@@ -573,7 +576,8 @@ const RULES = [
     check(t) {
       const b = new Set(['i','you','he','she','it','we','they','me','him','her','us','them','my','your','his','its','our','their']);
       return t.split(/\s+/).filter(w => b.has(clean(w).toLowerCase()));
-    }
+    },
+    strip(w) { return null; }                          // POS ban — player omits
   },
   {
     short: '≤ 5 letters per word',
@@ -583,7 +587,8 @@ const RULES = [
     src:   '🌍 Toki Pona (Constructed Language)',
     col:   '#c084fc',
     pos:   null,
-    check(t) { return t.split(/\s+/).filter(w => clean(w).length > 5); }
+    check(t) { return t.split(/\s+/).filter(w => clean(w).length > 5); },
+    strip(w) { return null; }                          // structural — player substitutes
   },
   {
     short: 'No 3+ consonant clusters',
@@ -593,7 +598,8 @@ const RULES = [
     src:   '🏝️ Maori vs. 🇬🇪 Georgian',
     col:   '#2dd4bf',
     pos:   null,
-    check(t) { return t.split(/\s+/).filter(w => /[bcdfghjklmnpqrstvwxyz]{3}/i.test(clean(w))); }
+    check(t) { return t.split(/\s+/).filter(w => /[bcdfghjklmnpqrstvwxyz]{3}/i.test(clean(w))); },
+    strip(w) { return null; }                          // structural — player substitutes
   },
   {
     short: 'No conjunctions',
@@ -606,20 +612,22 @@ const RULES = [
     check(t) {
       const b = new Set(['and','but','or','nor','yet','so','for','because','although','though','while','however','since','unless','whether','as','if']);
       return t.split(/\s+/).filter(w => b.has(clean(w).toLowerCase()));
-    }
+    },
+    strip(w) { return null; }                          // POS ban — player omits
   },
   {
     short: 'No prepositions',
     name:  'PREPOSITIONS ARE ABOLISHED',
     desc:  'In, on, at, by, to, for, of, with, from, about, into, over, under, after, before, through, between, among, during, without, toward, near, past, until, upon, per, via, off, around, beside, across, along, against — all banned.',
-    fact:  'Latin, Ancient Greek, and Russian use CASE ENDINGS on nouns instead of prepositions. "Roma" = Rome (subject), "Romae" = of Rome, "Romam" = toward Rome. Finnish has 15 cases. The English possessive "'s" in "John\'s book" is a fossil of this ancient case system!',
+    fact:  'Latin, Ancient Greek, and Russian use CASE ENDINGS on nouns instead of prepositions. "Roma" = Rome (subject), "Romae" = of Rome, "Romam" = toward Rome. Finnish has 15 cases. The English possessive "s" in "John\'s book" is a fossil of this ancient case system!',
     src:   '🏛️ Latin / 🇫🇮 Finnish',
     col:   '#f472b6',
     pos:   'preposition',
     check(t) {
       const b = new Set(['in','on','at','by','to','for','of','with','from','about','into','over','under','after','before','through','between','among','during','without','toward','towards','near','past','until','upon','per','via','off','around','beside','across','along','against','within','beyond','beneath','below','above','behind','inside','outside','opposite']);
       return t.split(/\s+/).filter(w => b.has(clean(w).toLowerCase()));
-    }
+    },
+    strip(w) { return null; }                          // POS ban — player omits
   },
   {
     short: 'No -ly adverbs',
@@ -632,7 +640,8 @@ const RULES = [
     check(t) {
       const b = new Set(['very','really','quite','rather','extremely','absolutely','totally','barely','hardly','nearly','always','never','often','sometimes','already','still','just']);
       return t.split(/\s+/).filter(w => { const c=clean(w).toLowerCase(); return /ly$/.test(c) || b.has(c); });
-    }
+    },
+    strip(w) { return null; }                          // POS ban — player omits
   },
   {
     short: 'No abstract nouns',
@@ -644,7 +653,8 @@ const RULES = [
     pos:   null,
     check(t) {
       return t.split(/\s+/).filter(w => { const c=clean(w).toLowerCase(); return c.length>3 && /(?:tion|sion|ness|ment|ism|ance|ence)$/.test(c); });
-    }
+    },
+    strip(w) { return null; }                          // structural — player substitutes
   },
   {
     short: 'No doubled letters',
@@ -654,7 +664,8 @@ const RULES = [
     src:   '🇹🇷 Turkish / 🇯🇵 Japanese',
     col:   '#38bdf8',
     pos:   null,
-    check(t) { return t.split(/\s+/).filter(w => /([a-zA-Z])\1/i.test(clean(w))); }
+    check(t) { return t.split(/\s+/).filter(w => /([a-zA-Z])\1/i.test(clean(w))); },
+    strip(w) { return w.replace(/([a-z])\1+/g, '$1'); } // collapse doubled letters
   },
   {
     short: 'No comparatives/superlatives',
@@ -667,7 +678,8 @@ const RULES = [
     check(t) {
       const b = new Set(['more','most','less','least','better','worse','best','worst']);
       return t.split(/\s+/).filter(w => { const c=clean(w).toLowerCase(); return b.has(c)||(c.length>3&&(/er$/.test(c)||/est$/.test(c))); });
-    }
+    },
+    strip(w) { return null; }                          // structural — player substitutes
   }
 ];
 
@@ -1005,7 +1017,7 @@ function nextSentence() {
 }
 
 // ── FEEDBACK ───────────────────────────────────────────────
-function showFeedback(ok, viols, pts) {
+function showFeedback(ok, words, pts, label = 'Violation') {
   elFbBar.className = 'show ' + (ok ? 'fb-ok' : 'fb-fail');
   elFbBar.querySelector('.fb-icon').textContent = ok ? '✓' : '✗';
   if (ok) {
@@ -1013,10 +1025,10 @@ function showFeedback(ok, viols, pts) {
     const p = elFbBar.querySelector('.fb-pts');
     p.className = 'fb-pts ok'; p.textContent = `+${pts} pts`;
   } else {
-    const shown = viols.slice(0, 5).map(v => `"${v}"`).join(', ');
-    const extra = viols.length > 5 ? ` +${viols.length - 5} more` : '';
+    const shown = words.slice(0, 5).map(v => `"${v}"`).join(', ');
+    const extra = words.length > 5 ? ` +${words.length - 5} more` : '';
     elFbBar.querySelector('.fb-text').innerHTML =
-      `<span class="fb-viols">Violation: ${shown}${extra}</span>`;
+      `<span class="fb-viols">${label}: ${shown}${extra}</span>`;
     const p = elFbBar.querySelector('.fb-pts');
     p.className = 'fb-pts bad'; p.textContent = '−1 ♥';
   }
@@ -1040,11 +1052,70 @@ function checkViolations(text) {
   return [...new Set(g.active.flatMap(r => r.check(text)))];
 }
 
+// Returns words from the original sentence that are absent from the
+// player's submission in their required form. For each original word:
+//   • no violation → must appear verbatim (case-insensitive)
+//   • violation + strip() returns a string → must appear stripped
+//   • violation + strip() returns null → player freely omits/substitutes
+function checkCoverage(text) {
+  const submitted = new Set(
+    text.split(/\s+/).map(w => clean(w).toLowerCase()).filter(Boolean)
+  );
+  const missing = [];
+
+  for (const tok of g.tokens) {
+    if (!tok.text) continue;
+    const wordClean = clean(tok.text).toLowerCase();
+    if (!wordClean) continue;
+
+    const violatingRules = g.active.filter(r => r.check(tok.text).length > 0);
+
+    let required;
+    if (violatingRules.length === 0) {
+      required = wordClean;
+    } else {
+      // Apply each rule's strip in sequence; null means no canonical form
+      let result = wordClean;
+      let hasNull = false;
+      for (const r of violatingRules) {
+        const stripped = r.strip ? r.strip(result) : null;
+        if (stripped === null) { hasNull = true; break; }
+        result = stripped;
+      }
+      // If any rule gives null, or stripping leaves nothing, don't require it
+      required = (hasNull || !result) ? null : result;
+    }
+
+    if (required !== null && !submitted.has(required)) {
+      missing.push(tok.text);
+    }
+  }
+
+  return [...new Set(missing)];
+}
+
 function doSubmit() {
   const text = elInput.value.trim();
   if (!text) return;
   elInput.disabled = true;
   elSubmit.disabled = true;
+
+  const missing = checkCoverage(text);
+  if (missing.length) {
+    g.hp--;
+    showFeedback(false, missing, 0, 'Missing');
+    updateTopBar();
+    setTimeout(() => {
+      if (g.hp <= 0) {
+        $('go-score').textContent = `Final Score: ${g.score}`;
+        showScreen('game-over');
+      } else {
+        elInput.value = '';
+        startRound();
+      }
+    }, 2200);
+    return;
+  }
 
   const viols = checkViolations(text);
 
