@@ -517,7 +517,7 @@ body {
 </div>
 
 <!-- Compromise.js for client-side POS tagging -->
-<script src="https://unpkg.com/compromise/builds/compromise.min.js"></script>
+<script src="./lib/compromise.js"></script>
 
 <script>
 'use strict';
@@ -783,7 +783,8 @@ const WORD_MAP = (() => {
   set('conjunction', ['and','but','or','nor','yet','so','for','because','although','though','while','however','since','unless','whether','if','as']);
   set('preposition', ['in','on','at','by','to','for','of','with','from','about','into','over','under','after','before','through','between','among','during','without','toward','towards','near','past','until','upon','per','via','off','around','beside','across','along','against','within','beyond','beneath','below','above','behind','inside','outside']);
   set('adverb',      ['very','really','quite','rather','extremely','absolutely','totally','barely','hardly','nearly','always','never','often','sometimes','already','still','just','also','then','now','here','there','too','not','well','only','even','back','away','up','down','out','again','ever','never','soon','later','today','yesterday','tomorrow']);
-  set('verb',        ['is','are','was','were','be','been','being','have','has','had','do','does','did','will','would','shall','should','can','could','may','might','must','go','went','gone','come','came','run','ran','say','said','told','tell','make','made','take','took','know','knew','think','thought','see','saw','look','want','give','gave','get','got','find','found','call','keep','let','begin','began','show','hear','play','walk','move','live','bring','brought','feel','felt','put','stand','lose','pay','meet','sit','lay','set','learn','change','lead','speak','read','spend','grow','open','win','offer','remember','love','try','ask','need','seem','help','talk','start','turn','leave','left','arrive','decide','discover','watch','follow','stop','create','explain','announce','build','carry','flow','sing','dance','run','rise','rode','ride','add','climb','draw','throw','cast','measure','bake','feed','grew']);
+  set('verb',        ['is','are','was','were','be','been','being','have','has','had','do','does','did','will','would','shall','should','can','could','may','might','must','go','went','gone','come','came','run','ran','say','said','told','tell','make','made','take','took','know','knew','think','thought','see','saw','look','want','give','gave','get','got','find','found','call','keep','kept','let','begin','began','show','hear','play','walk','walked','move','live','bring','brought','feel','felt','put','stand','lose','pay','meet','sit','lay','set','learn','learned','learnt','change','lead','speak','spoke','read','spend','grow','grew','open','win','offer','remember','love','try','ask','need','seem','help','talk','start','turn','leave','left','arrive','decide','discover','discovered','watch','follow','stop','create','explain','announce','build','carry','flow','sing','sang','dance','rise','rose','rode','ride','add','climb','climbed','draw','throw','threw','cast','measure','bake','feed','fed','settle','settled','travel','traveled','announce','announced','display','displayed','repair','repaired','count','counted','finish','finished','built','carried','flowed','sang','danced','rose']);
+  set('noun',        ['butterfly','dragonfly','firefly','mayfly','gadfly','horsefly','blowfly','barfly','gadfly','lily','family','rally','ally','belly','folly','bully','jelly','tally','valley','reply','supply','italy','july']);
   return m;
 })();
 
@@ -795,7 +796,12 @@ function fallbackTag(text) {
     const lower = word.toLowerCase();
     let pos = WORD_MAP[lower];
     if (!pos) {
-      if (/ly$/.test(lower) && lower.length > 3) pos = 'adverb';
+      // -ly adverb: stem must end in a consonant (quick→quickly) and be ≥3 chars.
+      // This avoids compound words like "butterfly" where "fly" is a root, not a suffix.
+      if (/[^aeiou]ly$/.test(lower) && lower.length > 4) pos = 'adverb';
+      // Past-tense / participial verbs (-ed) and present participles / gerunds (-ing)
+      else if (/[a-z]ed$/.test(lower) && lower.length > 3) pos = 'verb';
+      else if (/[a-z]ing$/.test(lower) && lower.length > 4) pos = 'verb';
       else pos = 'noun';
     }
     return { text: word, pre, post, pos };
@@ -804,15 +810,19 @@ function fallbackTag(text) {
 
 function posFromTags(tags) {
   if (!tags) return 'other';
-  const k = typeof tags === 'object' ? Object.keys(tags) : (Array.isArray(tags) ? tags : []);
-  if (k.includes('Pronoun'))     return 'pronoun';
-  if (k.includes('Article'))     return 'article';
-  if (k.includes('Conjunction')) return 'conjunction';
-  if (k.includes('Preposition')) return 'preposition';
-  if (k.includes('Adverb'))      return 'adverb';
-  if (k.includes('Adjective'))   return 'adjective';
-  if (k.includes('Verb'))        return 'verb';
-  if (k.includes('Noun'))        return 'noun';
+  // v14.15.0 returns tags as an array; older versions used an object — handle both
+  const k = Array.isArray(tags) ? tags : (typeof tags === 'object' ? Object.keys(tags) : []);
+  if (k.includes('Pronoun'))                    return 'pronoun';
+  if (k.includes('Article') || k.includes('Determiner')) return 'article';
+  if (k.includes('Conjunction'))                return 'conjunction';
+  if (k.includes('Preposition'))                return 'preposition';
+  if (k.includes('Adverb'))                     return 'adverb';
+  if (k.some(t => ['Adjective','Comparative','Superlative'].includes(t))) return 'adjective';
+  if (k.some(t => ['Verb','PastTense','PresentTense','FutureTense','Infinitive',
+                   'Gerund','Participle','Auxiliary','Modal','Copula','Imperative',
+                   'Conjugation'].includes(t))) return 'verb';
+  if (k.some(t => ['Noun','Singular','Plural','ProperNoun','Person',
+                   'Place','Organization'].includes(t))) return 'noun';
   return 'other';
 }
 
