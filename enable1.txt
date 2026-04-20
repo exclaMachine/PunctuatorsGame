@@ -36056,11 +36056,8 @@ daggles
 daggling
 daglock
 daglocks
-dago
 dagoba
 dagobas
-dagoes
-dagos
 dags
 daguerreotype
 daguerreotyped
@@ -36389,8 +36386,6 @@ darker
 darkest
 darkey
 darkeys
-darkie
-darkies
 darking
 darkish
 darkle
@@ -36406,7 +36401,6 @@ darkroom
 darkrooms
 darks
 darksome
-darky
 darling
 darlingly
 darlingness
@@ -63303,8 +63297,6 @@ googolplexes
 googols
 gooier
 gooiest
-gook
-gooks
 gooky
 goombah
 goombahs
@@ -69697,12 +69689,9 @@ honked
 honker
 honkers
 honkey
-honkeys
 honkie
-honkies
 honking
 honks
-honky
 honor
 honorabilities
 honorability
@@ -81001,8 +80990,6 @@ kiester
 kiesters
 kif
 kifs
-kike
-kikes
 kilderkin
 kilderkins
 kilim
@@ -90983,14 +90970,12 @@ miche
 miched
 miches
 miching
-mick
 mickey
 mickeys
 mickle
 mickler
 mickles
 micklest
-micks
 micra
 micrified
 micrifies
@@ -98177,8 +98162,6 @@ niggardliness
 niggardlinesses
 niggardly
 niggards
-nigger
-niggers
 niggle
 niggled
 niggler
@@ -140747,15 +140730,12 @@ slushiness
 slushinesses
 slushing
 slushy
-slut
-sluts
 sluttier
 sluttiest
 sluttish
 sluttishly
 sluttishness
 sluttishnesses
-slutty
 sly
 slyboots
 slyer
@@ -143086,8 +143066,6 @@ spay
 spayed
 spaying
 spays
-spaz
-spazzes
 speak
 speakable
 speakeasies
@@ -143525,7 +143503,6 @@ sphygmomanometries
 sphygmomanometry
 sphygmus
 sphygmuses
-spic
 spica
 spicae
 spicas
@@ -143550,9 +143527,6 @@ spicily
 spiciness
 spicinesses
 spicing
-spick
-spicks
-spics
 spicula
 spiculae
 spicular
@@ -169395,8 +169369,6 @@ wests
 westward
 westwards
 wet
-wetback
-wetbacks
 wether
 wethers
 wetland
@@ -169978,7 +169950,6 @@ whopper
 whoppers
 whopping
 whops
-whore
 whored
 whoredom
 whoredoms
@@ -169988,7 +169959,6 @@ whoremaster
 whoremasters
 whoremonger
 whoremongers
-whores
 whoreson
 whoresons
 whoring
@@ -171126,8 +171096,6 @@ woozily
 wooziness
 woozinesses
 woozy
-wop
-wops
 word
 wordage
 wordages
