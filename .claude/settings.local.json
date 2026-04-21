@@ -3,7 +3,9 @@
     "allow": [
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(grep -ixE '^.{6,}$' /Users/tyrickers/Desktop/PunctuatorsGame/enable1.txt)",
+      "Bash(grep -iE '^.{6,}$' /Users/tyrickers/Desktop/PunctuatorsGame/enable1.txt)"
     ]
   }
 }
