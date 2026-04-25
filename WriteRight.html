@@ -55,6 +55,7 @@
     .btn-verb   { background: var(--verb-bg); color: var(--verb-c); border-color: var(--verb-c); }
     .btn-prep   { background: var(--prep-bg); color: var(--prep-c); border-color: var(--prep-c); }
     .btn-wild   { background: var(--wild-bg); color: var(--wild-c); border-color: var(--wild-c); }
+    .w-btn.wd   { background: var(--verb-bg); color: var(--verb-c); border-color: var(--verb-c); }
     .btn-sm  { padding: 6px 14px;   font-size: 1rem; }
     .btn-lg  { padding: 14px 32px;  font-size: 1.5rem; }
     .btn-sel { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--dark); background: var(--dark); color: #fff; }
@@ -307,40 +308,93 @@
 <script>
 // ══════════════════════ WORD DATA ══════════════════════
 const WORDS = {
-  loud:      ['Screamed','Shouted','Crashed','Roared','Stomped','Bellowed','Clattered','Boomed'],
-  silent:    ['Tiptoed','Whispered','Floated','Glided','Crept','Sneaked','Drifted','Hovered'],
-  relaxing:  ['Slept','Lounged','Rested','Yawned','Daydreamed','Sighed','Napped','Dozed'],
-  movement:  ['Ran','Jumped','Spun','Rolled','Dashed','Leaped','Zoomed','Bounced'],
-  toy:       ['yo-yo','kite','balloon','frisbee','top','slinky','puppet','marbles'],
-  tool:      ['hammer','wrench','shovel','drill','saw','ladder','pliers','chisel'],
-  hero:      ['knight','wizard','firefighter','astronaut','samurai','ranger','paladin','Excla Machine'],
-  villain:   ['dragon','vampire','witch','pirate','bandit','warlock','troll','golem'],
-  fruit:     ['banana','watermelon','mango','pineapple','kiwi','durian','papaya','lychee'],
-  vegetable: ['carrot','broccoli','turnip','cucumber','cabbage','parsnip','leek','yam'],
-  creature:  ['unicorn','phoenix','griffin','kraken','centaur','chimera','wyvern','basilisk'],
-  animal:    ['elephant','penguin','flamingo','capybara','platypus','axolotl','narwhal','quokka'],
+  // Noun categories
+  fruit:         ['apple','banana','mango','kiwi','peach','grape','lemon','pear','strawberry','pineapple'],
+  vegetable:     ['carrot','broccoli','potato','cabbage','turnip','leek','yam','beet','radish','parsnip'],
+  animal:        ['elephant','penguin','flamingo','capybara','platypus','axolotl','narwhal','quokka','sloth','pangolin'],
+  creature:      ['dragon','unicorn','griffin','kraken','centaur','chimera','wyvern','basilisk','phoenix','minotaur'],
+  drink:         ['coffee','lemonade','smoothie','milkshake','cider','tea','soda','juice','cocoa','kombucha'],
+  food:          ['pizza','sushi','taco','dumpling','waffle','pretzel','noodles','sandwich','burrito','kebab'],
+  vehicle:       ['bicycle','rocket','submarine','hovercraft','bulldozer','zeppelin','scooter','canoe','helicopter','skateboard'],
+  machine:       ['robot','blender','typewriter','catapult','generator','telescope','toaster','treadmill','vacuum','3D printer'],
+  friend:        ['neighbor','buddy','classmate','sidekick','pen pal','roommate','ally','companion','coworker','teammate'],
+  occupation:    ['plumber','chef','astronaut','juggler','blacksmith','florist','ranger','sculptor','librarian','cartographer'],
+  furniture:     ['sofa','bookshelf','hammock','armchair','wardrobe','bunk bed','rocking chair','ottoman','bean bag','futon'],
+  toy:           ['yo-yo','kite','frisbee','slinky','puppet','top','marbles','boomerang','jack-in-the-box','hula hoop'],
+  tool:          ['hammer','wrench','drill','shovel','chisel','pliers','saw','crowbar','level','screwdriver'],
+  weapon:        ['sword','bow','trident','dagger','crossbow','lance','staff','sling','nunchucks','flail'],
+  bug:           ['beetle','spider','firefly','caterpillar','grasshopper','dragonfly','mantis','moth','weevil','earwig'],
+  monster:       ['zombie','werewolf','gargoyle','cyclops','banshee','golem','swamp thing','lich','wendigo','imp'],
+  hero:          ['knight','wizard','firefighter','ranger','paladin','samurai','detective','superhero','Excla Machine','ninja'],
+  family:        ['grandma','cousin','uncle','sibling','nephew','aunt','toddler','twin','godparent','in-law'],
+  // Verb categories
+  mundane:       ['waited','yawned','fidgeted','scrolled','organized','dusted','sighed','shuffled','alphabetized','procrastinated'],
+  loud:          ['screamed','crashed','roared','stomped','bellowed','clattered','boomed','thundered','shrieked','exploded'],
+  silent:        ['tiptoed','glided','crept','sneaked','drifted','hovered','floated','slithered','slinked','padded'],
+  physical:      ['sprinted','jumped','somersaulted','wrestled','crawled','climbed','vaulted','skidded','cartwheeled','dived'],
+  communication: ['whispered','texted','announced','debated','gestured','narrated','lectured','gossiped','serenaded','negotiated'],
+  creating:      ['painted','sculpted','knitted','welded','programmed','composed','carved','designed','invented','tattooed'],
+  attack:        ['tackled','bonked','poked','launched','ambushed','flicked','charged','lobbed','karate-chopped','catapulted'],
+  compassionate: ['hugged','comforted','rescued','soothed','encouraged','sheltered','nursed','cheered','mentored','adopted'],
+  dance:         ['moonwalked','twirled','breakdanced','did the worm','waltzed','flossed','shuffled','did the robot','vogued','limbo-ed'],
 };
 
+// ♠/♣ Nouns get 2 copies (one per suit); ♦ Verbs and ♥ Preps get 1 copy each.
 const CARD_DEFS = [
-  {type:'verb',label:'Loud or Silent',       catA:'loud',     catB:'silent',    pts:3},
-  {type:'verb',label:'Relaxing or Movement', catA:'relaxing', catB:'movement',  pts:3},
-  {type:'prep',label:'Before or After',      fxA:'Before',    fxB:'After',      pts:1},
-  {type:'prep',label:'Above or Below',       fxA:'Above',     fxB:'Below',      pts:1},
-  {type:'noun',label:'Toy or Tool',          catA:'toy',      catB:'tool',      pts:2},
-  {type:'noun',label:'Hero or Villain',      catA:'hero',     catB:'villain',   pts:2},
-  {type:'noun',label:'Fruit or Vegetable',   catA:'fruit',    catB:'vegetable', pts:2},
-  {type:'noun',label:'Creature or Animal',   catA:'creature', catB:'animal',    pts:2},
-  {type:'wild',label:'Wild Card!',                                               pts:4},
+  // ♠ Spades & ♣ Clubs — Nouns (rank 2–10 → 1–9 pts)
+  {type:'noun', label:'Fruit or Vegetable',    catA:'fruit',      catB:'vegetable',  pts:1},
+  {type:'noun', label:'Animal or Creature',    catA:'animal',     catB:'creature',   pts:2},
+  {type:'noun', label:'Drink or Food',         catA:'drink',      catB:'food',       pts:3},
+  {type:'noun', label:'Vehicle or Machine',    catA:'vehicle',    catB:'machine',    pts:4},
+  {type:'noun', label:'Friend or Occupation',  catA:'friend',     catB:'occupation', pts:5},
+  {type:'noun', label:'Furniture or Toy',      catA:'furniture',  catB:'toy',        pts:6},
+  {type:'noun', label:'Tool or Weapon',        catA:'tool',       catB:'weapon',     pts:7},
+  {type:'noun', label:'Bug or Monster',        catA:'bug',        catB:'monster',    pts:8},
+  {type:'noun', label:'Hero or Family Member', catA:'hero',       catB:'family',     pts:9},
+  // ♦ Diamonds — Verbs (rank 2–10 → 1–9 pts)
+  {type:'verb', copies:1, label:'Mundane Action',       cat:'mundane',       pts:1},
+  {type:'verb', copies:1, label:'Loud Action',          cat:'loud',          pts:2},
+  {type:'verb', copies:1, label:'Silent Action',        cat:'silent',        pts:3},
+  {type:'verb', copies:1, label:'Physical Action',      cat:'physical',      pts:4},
+  {type:'verb', copies:1, label:'Communication Action', cat:'communication', pts:5},
+  {type:'verb', copies:1, label:'Creating Action',      cat:'creating',      pts:6},
+  {type:'verb', copies:1, label:'Attack Action',        cat:'attack',        pts:7},
+  {type:'verb', copies:1, label:'Compassionate Action', cat:'compassionate', pts:8},
+  {type:'verb', copies:1, label:'Dance Move',           cat:'dance',         pts:9},
+  // ♥ Hearts — Prepositions (rank 2–10 → 1–9 pts)
+  {type:'prep', copies:1, label:'Over or Through', fxA:'Over',   fxB:'Through', pts:1},
+  {type:'prep', copies:1, label:'Before or After', fxA:'Before', fxB:'After',   pts:2},
+  {type:'prep', copies:1, label:'Among or At',     fxA:'Among',  fxB:'At',      pts:3},
+  {type:'prep', copies:1, label:'In or Outside',   fxA:'In',     fxB:'Outside', pts:4},
+  {type:'prep', copies:1, label:'With or Without', fxA:'With',   fxB:'Without', pts:5},
+  {type:'prep', copies:1, label:'Above or Below',  fxA:'Above',  fxB:'Below',   pts:6},
+  {type:'prep', copies:1, label:'By or Around',    fxA:'By',     fxB:'Around',  pts:7},
+  {type:'prep', copies:1, label:'On or Off',       fxA:'On',     fxB:'Off',     pts:8},
+  {type:'prep', copies:1, label:'To or Behind',    fxA:'To',     fxB:'Behind',  pts:9},
 ];
+
+// Suit symbols per type (nouns get alternating ♠/♣)
+const SUIT_SYM = {noun:['♠','♣'], verb:['♦'], prep:['♥']};
 
 function buildDeck() {
   const deck = []; let id = 0;
-  const rnd = a => a[Math.floor(Math.random()*a.length)];
+  const rnd  = a => a[Math.floor(Math.random()*a.length)];
+  function rndTwo(a) {
+    const i=Math.floor(Math.random()*a.length);
+    let j=Math.floor(Math.random()*(a.length-1));
+    if(j>=i) j++;
+    return [a[i], a[j]];
+  }
   CARD_DEFS.forEach(d => {
-    for (let i=0;i<2;i++) {  // 9 types × 2 copies = 18 cards
-      const oA = d.fxA ? d.fxA : (d.catA ? rnd(WORDS[d.catA]) : null);
-      const oB = d.fxB ? d.fxB : (d.catB ? rnd(WORDS[d.catB]) : null);
-      deck.push({id:id++, type:d.type, label:d.label, oA, oB, pts:d.pts});
+    const copies = d.copies || 2;
+    const suits  = SUIT_SYM[d.type];
+    for (let i=0; i<copies; i++) {
+      let oA, oB;
+      if      (d.fxA)  { oA=d.fxA; oB=d.fxB; }
+      else if (d.cat)  { [oA,oB]=rndTwo(WORDS[d.cat]); }
+      else             { oA=rnd(WORDS[d.catA]); oB=rnd(WORDS[d.catB]); }
+      deck.push({id:id++, type:d.type, label:d.label, oA, oB, pts:d.pts,
+                 suit:suits[i%suits.length]});
     }
   });
   return shuffle(deck);
@@ -842,11 +896,12 @@ function rGame(app) {
     const ce=mk('div',`card ${card.type}-c${isSel?' sel':''}${!playable?' off':''}`);
     if(playable) ce.onclick=()=>selectCard(card.id);
     ce.innerHTML=`
-      <div class="c-badge">${card.type.toUpperCase()}</div>
+      <div class="c-badge">${card.suit} ${card.type.toUpperCase()}</div>
       <div class="c-lbl">${x(card.label)}</div>
-      ${card.type==='wild'
-        ?`<div class="c-opts"><div class="c-word" style="padding:12px;text-align:center">✨ Any word!<br><small>Any open position</small></div></div>`
-        :`<div class="c-opts"><div class="c-word">${x(card.oA)}</div><div class="c-or">or</div><div class="c-word">${x(card.oB)}</div></div>`}
+      <div class="c-opts">
+        <div class="c-word">${x(card.oA)}</div>
+        ${card.oB?`<div class="c-or">or</div><div class="c-word">${x(card.oB)}</div>`:''}
+      </div>
       <div class="c-pts">${card.pts}pt${card.pts!==1?'s':''}</div>`;
     hc.appendChild(ce);
   });
