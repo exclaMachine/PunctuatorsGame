@@ -8,7 +8,7 @@ const fs = require("fs");
 const path = require("path");
 
 // defaults (you can override by passing options if you want)
-const WORD_FILE = "2of12.txt";
+const WORD_FILE = "enable1.txt";
 const OUT_JSON = "anagrams.json"; // persistent store for merging
 const PROCESSED_FILE = "processed_anagrams.json"; // set of words already handled
 
@@ -121,7 +121,7 @@ function CreateAnagramsJS(jsName, startLetters = null, opts = {}) {
     (starts
       ? `Processed starting letters [${Array.from(starts).join(", ")}]`
       : "Processed all letters") +
-      ` | New anagram groups this run: ${groupsAdded} | Words in source: ${words.length}`
+      ` | New anagram groups this run: ${groupsAdded} | Words in source: ${words.length}`,
   );
 }
 
