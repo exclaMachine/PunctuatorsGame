@@ -819,7 +819,7 @@ const AM = {
   'E': ['E', 'm',  'B', 'w'], 'F': ['F', 'm',  'J', null],
   'G': ['G', null,  null, 'U'],
   'H': ['H', 'I',  'H',  'I'],  'I': ['I', 'H', 'I', 'H'],
-  'J': ['J', 'L', 'r', null],
+  'J': ['J', 'l', 'r', null],
   'L': ['L', 'r',  'T', null],  'T': ['T', null, 'L', 'r'],
   'M': ['M', 'B', 'W', 'E'],  'W': ['W', 'E', 'M', 'B'],
   'N': ['N', 'Z',  'N', 'Z'],   'Z': ['Z', 'N',  'Z',  'N'],
@@ -835,6 +835,13 @@ const RS = [
   [2, 0, 3, 1],
   [3, 2, 1, 0],
   [1, 3, 0, 2],
+];
+// Inverse of RS: RS_INV[r][base_slot] = visual quad q such that RS[r][q] === base_slot
+const RS_INV = [
+  [0, 1, 2, 3],
+  [1, 3, 0, 2],
+  [3, 2, 1, 0],
+  [2, 0, 3, 1],
 ];
 
 const TILE_COLORS = ['#B5D4F4','#C0DD97','#F5C4B3','#CECBF6','#9FE1CB','#FAC775','#F4C0D1','#D4EAB5','#F7E4B5'];
@@ -2040,12 +2047,32 @@ function animLoop() {
 
 function rot(ci, dir) {
   if (!G[ci]) return;
-  if (wordSeq.some(w => w.ci === ci)) {
-    wordSeq = wordSeq.filter(w => w.ci !== ci);
-    updateWordDisplay();
-  }
+  const t = G[ci];
   sndRotate();
-  G[ci].ta += dir * Math.PI / 2; startAnim();
+  if (wordSeq.some(w => w.ci === ci)) {
+    const r_old = grs(t);
+    t.ta += dir * Math.PI / 2;
+    const r_new = grs(t);
+    wordSeq = wordSeq.map(w => {
+      if (w.ci !== ci) return w;
+      // Find the base slot the user selected at the old rotation + mirror state
+      let s = RS[r_old][w.q];
+      if (t.mirrored)  s = MIRROR_SLOT[s];
+      if (t.mirroredV) s = MIRROR_SLOT_V[s];
+      // Un-apply mirrors to get the raw RS slot, then look up the new visual quad
+      let s_raw = s;
+      if (t.mirroredV) s_raw = MIRROR_SLOT_V[s_raw];
+      if (t.mirrored)  s_raw = MIRROR_SLOT[s_raw];
+      const q_new = RS_INV[r_new][s_raw];
+      const newLetter = geff(ci, q_new);
+      if (!newLetter) return null;
+      return { letter: newLetter, ci, q: q_new };
+    }).filter(Boolean);
+    updateWordDisplay();
+  } else {
+    t.ta += dir * Math.PI / 2;
+  }
+  startAnim();
 }
 
 // ─── Mirror maps ──────────────────────────────────────────────────────────────
@@ -2071,33 +2098,59 @@ const VALID_LETTERS = new Set([
 
 function doFlipH() {
   const newG = new Array(GR * GR).fill(null);
+  const ciMap = new Map();
   for (let row = 0; row < GR; row++) {
     for (let col = 0; col < GR; col++) {
-      const t = G[row * GR + col]; if (!t) continue;
-      newG[row * GR + (GR - 1 - col)] = { d: t.d, ca: -t.ca, ta: -t.ta, destroyed: t.destroyed, mirrored: !t.mirrored, mirroredV: t.mirroredV };
+      const ci = row * GR + col;
+      const t = G[ci]; if (!t) continue;
+      const ci2 = row * GR + (GR - 1 - col);
+      newG[ci2] = { d: t.d, ca: -t.ca, ta: -t.ta, destroyed: t.destroyed, mirrored: !t.mirrored, mirroredV: t.mirroredV };
+      ciMap.set(ci, ci2);
     }
   }
-  boardFlippedH = !boardFlippedH; G = newG; resolveWord();
+  boardFlippedH = !boardFlippedH; G = newG;
+  wordSeq = wordSeq.map(w => {
+    if (w.ci === null) return w;
+    if (!ciMap.has(w.ci)) return null;
+    const ci2 = ciMap.get(w.ci), q2 = MIRROR_SLOT[w.q];
+    const newLetter = geff(ci2, q2);
+    if (!newLetter) return null;
+    return { letter: newLetter, ci: ci2, q: q2 };
+  }).filter(Boolean);
+  updateWordDisplay();
 }
 
 function doFlipV() {
   const newG = new Array(GR * GR).fill(null);
+  const ciMap = new Map();
   for (let row = 0; row < GR; row++) {
     for (let col = 0; col < GR; col++) {
-      const t = G[row * GR + col]; if (!t) continue;
-      newG[(GR - 1 - row) * GR + col] = { d: t.d, ca: -t.ca, ta: -t.ta, destroyed: t.destroyed, mirrored: t.mirrored, mirroredV: !t.mirroredV };
+      const ci = row * GR + col;
+      const t = G[ci]; if (!t) continue;
+      const ci2 = (GR - 1 - row) * GR + col;
+      newG[ci2] = { d: t.d, ca: -t.ca, ta: -t.ta, destroyed: t.destroyed, mirrored: t.mirrored, mirroredV: !t.mirroredV };
+      ciMap.set(ci, ci2);
     }
   }
-  boardFlippedV = !boardFlippedV; G = newG; resolveWord();
+  boardFlippedV = !boardFlippedV; G = newG;
+  wordSeq = wordSeq.map(w => {
+    if (w.ci === null) return w;
+    if (!ciMap.has(w.ci)) return null;
+    const ci2 = ciMap.get(w.ci), q2 = MIRROR_SLOT_V[w.q];
+    const newLetter = geff(ci2, q2);
+    if (!newLetter) return null;
+    return { letter: newLetter, ci: ci2, q: q2 };
+  }).filter(Boolean);
+  updateWordDisplay();
 }
 
 function flipH() {
   if (flipAnim >= 0 || flipVAnim >= 0) return;
-  sndFlip(); clearWord(); flipAnim = 0; flipApplied = false; startAnim();
+  sndFlip(); flipAnim = 0; flipApplied = false; startAnim();
 }
 function flipV() {
   if (flipAnim >= 0 || flipVAnim >= 0) return;
-  sndFlip(); clearWord(); flipVAnim = 0; flipVApplied = false; startAnim();
+  sndFlip(); flipVAnim = 0; flipVApplied = false; startAnim();
 }
 document.getElementById('bflip').onclick  = flipH;
 document.getElementById('bflipv').onclick = flipV;
