@@ -2239,6 +2239,7 @@ function runIntro() {
   let wordOk = false;
   let iGM = true;           // intro-local glyph mode (independent of global glyphMode)
   let iFlipH = -1, iFlipV = -1; // -1 = idle, 0..1 = animating
+  let iFlipHHold = 0, iFlipVHold = 0; // frames to hold at midpoint (board fully mirrored)
   let alive = true, timers = [], raf = null;
 
   // ── Background bouncers (last 3 sprites in Alpha.png — mobile only) ───────
@@ -2325,8 +2326,14 @@ function runIntro() {
       const diff=iTgt[i]-iAng[i];
       iAng[i]=Math.abs(diff)<0.004?iTgt[i]:iAng[i]+diff*0.065;
     }
-    if (iFlipH >= 0) { iFlipH = Math.min(1, iFlipH + 0.02); if (iFlipH >= 1) iFlipH = -1; }
-    if (iFlipV >= 0) { iFlipV = Math.min(1, iFlipV + 0.02); if (iFlipV >= 1) iFlipV = -1; }
+    if (iFlipH >= 0) {
+      if (iFlipH >= 0.5 && iFlipHHold < 80) { iFlipHHold++; }
+      else { iFlipH = Math.min(1, iFlipH + 0.01); if (iFlipH >= 1) { iFlipH = -1; iFlipHHold = 0; } }
+    }
+    if (iFlipV >= 0) {
+      if (iFlipV >= 0.5 && iFlipVHold < 80) { iFlipVHold++; }
+      else { iFlipV = Math.min(1, iFlipV + 0.01); if (iFlipV >= 1) { iFlipV = -1; iFlipVHold = 0; } }
+    }
 
     ctx.clearRect(0,0,cssW,cssW+btnH);
 
@@ -2467,7 +2474,7 @@ function runIntro() {
     iSel.clear(); for(let i=0;i<9;i++){iAng[i]=0;iTgt[i]=0;}
     const s=qXY(0,0); curX=tgtX=s.x; curY=tgtY=s.y;
     curAlpha=0; tgtAlpha=0; clickAnim=0; wordOk=false;
-    iGM=true; iFlipH=-1; iFlipV=-1;
+    iGM=true; iFlipH=-1; iFlipV=-1; iFlipHHold=0; iFlipVHold=0;
     wb.classList.remove('ok'); wb.textContent='';
     lbl.textContent='Select letters to build a word…';
 
@@ -2515,19 +2522,19 @@ function runIntro() {
     at(12650, ()=>{ clickAnim=1; iFlipH=0; });
 
     // Phase 5: ↕ Flip — cursor moves to button, clicks it
-    at(14200, ()=>setLabel('↕ Flip mirrors vertically!'));
-    at(14450, ()=>moveToBt(3));
-    at(14950, ()=>{ clickAnim=1; iFlipV=0; });
+    at(16200, ()=>setLabel('↕ Flip mirrors vertically!'));
+    at(16450, ()=>moveToBt(3));
+    at(16950, ()=>{ clickAnim=1; iFlipV=0; });
 
     // Phase 6: ✏ Glyphs — cursor moves to button, clicks twice
-    at(16450, ()=>setLabel('✏ Glyphs toggles letter style!'));
-    at(16650, ()=>moveToBt(4));
-    at(17200, ()=>{ clickAnim=1; iGM=false; });
-    at(18500, ()=>{ clickAnim=1; iGM=true; });
+    at(20450, ()=>setLabel('✏ Glyphs toggles letter style!'));
+    at(20650, ()=>moveToBt(4));
+    at(21200, ()=>{ clickAnim=1; iGM=false; });
+    at(22500, ()=>{ clickAnim=1; iGM=true; });
 
     // Show Play button, then loop
-    at(19400, ()=>{ lbl.textContent=''; tgtAlpha=0; btn.classList.add('vis'); });
-    at(22300, ()=>playAnim());
+    at(23400, ()=>{ lbl.textContent=''; tgtAlpha=0; btn.classList.add('vis'); });
+    at(26300, ()=>playAnim());
   }
 
   raf=requestAnimationFrame(render);
