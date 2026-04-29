@@ -837,6 +837,7 @@ const AM = {
   'O': ['O', 'O', 'O', 'O'], 'P': ['P', null, 'd', null],
   'R': ['R', null, 'y', null], 'S': ['S', 'u', 'S', 'n'],
   'Y': ['Y', 'Y',  'h', 'Y'],
+  '!': ['!', null, 'i', null],  // ! upside-down reads as i
 };
 
 // Quad slot remapping after N CW 90° steps
@@ -1159,6 +1160,7 @@ function drawGlyph(letter, cx, cy, size, color) {
   let idx;
   if (code >= 97 && code <= 122) idx = code - 97;        // a–z → 0–25
   else if (code >= 65 && code <= 90) idx = 26 + code - 65; // A–Z → 26–51
+  else if (code === 33) idx = 54;                          // '!' at row 7, col 5
   else return false;
   const col = idx % 7, row = Math.floor(idx / 7);
   // Extract alpha from color (rgba(..., a) → use as globalAlpha; hex → 1)
@@ -1466,7 +1468,11 @@ function submit() {
   }
   const word = wordSeq.map(w => w.letter).join('');
   if (FW.includes(word)) { sndDuplicate(); shakeCanvas(); setSt('Already found: ' + word, 'warn'); return; }
-  if (!isValidWord(word)) { sndInvalid(); shakeCanvas(); setSt(`"${word}" is not in the word list`, 'err'); return; }
+  if (word.includes('!') && word[word.length - 1] !== '!') {
+    sndInvalid(); shakeCanvas(); setSt('! must be the last character', 'err'); return;
+  }
+  const validWord = word.endsWith('!') ? word.slice(0, -1) : word;
+  if (!isValidWord(validWord)) { sndInvalid(); shakeCanvas(); setSt(`"${validWord}" is not in the word list`, 'err'); return; }
   // Valid!
   FW.push(word);
   const base = word.length * word.length;
