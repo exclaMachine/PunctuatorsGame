@@ -210,11 +210,22 @@
     gap: 2px;
   }
   .word-bar .placeholder { font-size: 13px; font-weight: 400; color: var(--text2); letter-spacing: 0; font-family: inherit; }
-  .wl { display: inline-block; padding: 0 1px; border-radius: 3px; }
+  .wl { display: inline-block; padding: 0 1px; border-radius: 3px; cursor: grab; user-select: none; touch-action: none; }
   .wl.ok { color: var(--green); background: var(--green-bg); }
   .wl.no { color: var(--red); background: var(--red-bg); }
   .wl-georgia { font-family: 'Georgia', serif; }
   .wl-trebuchet { font-family: 'Trebuchet MS', sans-serif; }
+  .wl.wl-dragging { opacity: 0.25; cursor: grabbing; }
+  .wl.wl-drop-before { box-shadow: -3px 0 0 0 var(--accent); border-radius: 1px 3px 3px 1px; }
+  .wl.wl-drop-after  { box-shadow:  3px 0 0 0 var(--accent); border-radius: 3px 1px 1px 3px; }
+  .wl-ghost {
+    position: fixed; pointer-events: none; z-index: 9999;
+    font-family: 'Courier New', monospace; font-size: 22px; font-weight: 700;
+    padding: 0 1px; border-radius: 3px;
+    transform: scale(1.15) rotate(-2deg);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+    opacity: 0.9;
+  }
 
   .status { font-size: 12px; color: var(--text2); min-height: 18px; margin-top: 2px; }
   .status.ok { color: var(--green); }
@@ -1320,14 +1331,84 @@ function updateWordDisplay() {
     wb.innerHTML = '<span class="placeholder">start selecting letters…</span>';
     return;
   }
-  wb.innerHTML = wordSeq.map(w => {
+  wb.innerHTML = wordSeq.map((w, i) => {
     const state = w.ci !== null ? 'ok' : 'no';
     let extra = '';
     if (w.letter === 'g') extra = ' wl-georgia';
     else if (w.letter === 'i' || w.letter === 'l') extra = ' wl-trebuchet';
-    return `<span class="wl ${state}${extra}">${w.letter}</span>`;
+    return `<span class="wl ${state}${extra}" data-idx="${i}">${w.letter}</span>`;
   }).join('');
 }
+
+// ─── Word bar drag-to-reorder ─────────────────────────────────────────────────
+(function () {
+  let dragIdx = null, dropIdx = null, ghostEl = null, dragOffX = 0, dragOffY = 0;
+  const wb = document.getElementById('wb');
+
+  wb.addEventListener('pointerdown', e => {
+    const wl = e.target.closest('.wl[data-idx]');
+    if (!wl || wordSeq.length < 2) return;
+    dragIdx = +wl.dataset.idx;
+    const rect = wl.getBoundingClientRect();
+    dragOffX = e.clientX - rect.left;
+    dragOffY = e.clientY - rect.top;
+    ghostEl = document.createElement('span');
+    ghostEl.className = 'wl-ghost ' + (wordSeq[dragIdx].ci !== null ? 'ok' : 'no');
+    if (wordSeq[dragIdx].letter === 'g') ghostEl.classList.add('wl-georgia');
+    else if ('il'.includes(wordSeq[dragIdx].letter)) ghostEl.classList.add('wl-trebuchet');
+    ghostEl.textContent = wl.textContent;
+    ghostEl.style.left = (e.clientX - dragOffX) + 'px';
+    ghostEl.style.top  = (e.clientY - dragOffY) + 'px';
+    document.body.appendChild(ghostEl);
+    wl.classList.add('wl-dragging');
+    dropIdx = dragIdx;
+    showIndicator(dropIdx);
+    wb.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  wb.addEventListener('pointermove', e => {
+    if (dragIdx === null) return;
+    ghostEl.style.left = (e.clientX - dragOffX) + 'px';
+    ghostEl.style.top  = (e.clientY - dragOffY) + 'px';
+    const nd = calcDropIdx(e.clientX);
+    if (nd !== dropIdx) { dropIdx = nd; showIndicator(dropIdx); }
+  });
+
+  wb.addEventListener('pointerup', e => {
+    if (dragIdx === null) return;
+    if (dropIdx !== null && dropIdx !== dragIdx && dropIdx !== dragIdx + 1) {
+      const moved = wordSeq.splice(dragIdx, 1)[0];
+      wordSeq.splice(dropIdx > dragIdx ? dropIdx - 1 : dropIdx, 0, moved);
+    }
+    cleanup(); updateWordDisplay(); draw();
+  });
+
+  wb.addEventListener('pointercancel', () => { cleanup(); updateWordDisplay(); draw(); });
+
+  function calcDropIdx(cx) {
+    const els = [...wb.querySelectorAll('.wl[data-idx]')];
+    for (let i = 0; i < els.length; i++) {
+      const r = els[i].getBoundingClientRect();
+      if (cx < r.left + r.width / 2) return i;
+    }
+    return els.length;
+  }
+
+  function showIndicator(idx) {
+    const els = [...wb.querySelectorAll('.wl[data-idx]')];
+    els.forEach(el => el.classList.remove('wl-drop-before', 'wl-drop-after'));
+    if (idx < els.length) els[idx].classList.add('wl-drop-before');
+    else if (els.length) els[els.length - 1].classList.add('wl-drop-after');
+  }
+
+  function cleanup() {
+    if (ghostEl) { ghostEl.remove(); ghostEl = null; }
+    wb.querySelectorAll('.wl').forEach(el =>
+      el.classList.remove('wl-dragging', 'wl-drop-before', 'wl-drop-after'));
+    dragIdx = null; dropIdx = null;
+  }
+})();
 
 // ─── Ambigram detection ───────────────────────────────────────────────────────
 // Returns all {type, match} ambigram matches for a word
