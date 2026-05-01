@@ -265,10 +265,137 @@ const gameSfx = {
 
 let mySong = new Howl({
   src: ["./sounds/FourNote.mp3"],
-  autoplay: false, // or true, if you want it to play automatically
-  loop: true, // if you want the song to loop
+  autoplay: false,
+  loop: true,
   volume: 0.5,
 });
+
+// ── Synth SFX (Web Audio API) ─────────────────────────────────────────────
+const _ac = new (window.AudioContext || window.webkitAudioContext)();
+const _go = () => { if (_ac.state === 'suspended') _ac.resume(); };
+
+function _tone(freq, type, dur, vol = 0.35, freqEnd, delay = 0) {
+  _go();
+  const t = _ac.currentTime + delay;
+  const o = _ac.createOscillator(), g = _ac.createGain();
+  o.connect(g); g.connect(_ac.destination);
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t);
+  if (freqEnd != null) o.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 1), t + dur);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.start(t); o.stop(t + dur);
+}
+
+function _noise(dur, vol = 0.3, filtFreq = 800, q = 4, delay = 0) {
+  _go();
+  const sr = _ac.sampleRate, n = Math.ceil(sr * dur);
+  const buf = _ac.createBuffer(1, n, sr);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  const src = _ac.createBufferSource(); src.buffer = buf;
+  const f = _ac.createBiquadFilter(); f.type = 'bandpass';
+  f.frequency.value = filtFreq; f.Q.value = q;
+  const g = _ac.createGain();
+  src.connect(f); f.connect(g); g.connect(_ac.destination);
+  const t = _ac.currentTime + delay;
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.start(t); src.stop(t + dur);
+}
+
+// Apostrophantom — ghostly wail with vibrato (shoot) / shriek (hit)
+function _ghostWail() {
+  _go();
+  const lfo = _ac.createOscillator(), lfoG = _ac.createGain();
+  const osc = _ac.createOscillator(), outG = _ac.createGain();
+  lfo.frequency.value = 5.5; lfoG.gain.value = 28; osc.type = 'sine';
+  osc.frequency.setValueAtTime(500, _ac.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(160, _ac.currentTime + 1.5);
+  outG.gain.setValueAtTime(0.28, _ac.currentTime);
+  outG.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 1.5);
+  lfo.connect(lfoG); lfoG.connect(osc.frequency);
+  osc.connect(outG); outG.connect(_ac.destination);
+  lfo.start(); osc.start();
+  lfo.stop(_ac.currentTime + 1.5); osc.stop(_ac.currentTime + 1.5);
+  _tone(180, 'sine', 1.2, 0.1, 60);
+}
+function _ghostShriek() {
+  _tone(1200, 'sine', 0.12, 0.32, 400);
+  _tone(700, 'sine', 0.18, 0.15, 150);
+  _noise(0.12, 0.15, 1500, 6);
+}
+
+// Ambigrambador — rising magic arpeggio (shoot) / descending sparkle (hit)
+function _ambiShoot() { [262,330,392,523,659].forEach((f,i) => _tone(f,'sine',0.2,0.27,null,i*0.07)); }
+function _ambiHit()   { [523,392,330,220].forEach((f,i) => _tone(f,'triangle',0.18,0.23,null,i*0.06)); }
+
+// AnacontractShine — slurp/contract
+function _anaShoot() { _tone(100,'sawtooth',0.28,0.22,900); _noise(0.28,0.15,400,3); }
+
+// MasterAsterisk — sparkle twinkling star pings
+function _asteriskShoot() { [2093,1760,2637,2093,1976].forEach((f,i) => _tone(f,'sine',0.1,0.2,null,i*0.045)); }
+
+// Roundabout — palindrome whorl: pitch goes up then back down
+function _roundaboutShoot() { _tone(200,'sine',0.22,0.28,800); _tone(800,'sine',0.22,0.25,200,0.22); }
+function _roundaboutHit()   { _tone(600,'sawtooth',0.28,0.22,80); _noise(0.18,0.18,300,5); }
+
+// SargeColon — sharp military snare (shoot) / heavy thud (hit)
+function _sargeShoot() { _noise(0.08,0.55,2500,1); _noise(0.07,0.3,500,9); _tone(80,'sine',0.1,0.35,35); }
+function _sargeHit()   { _noise(0.12,0.45,1200,2); _tone(65,'sine',0.15,0.42,28); }
+
+// SemiColonel — half-intensity snare/thud
+function _semiShoot() { _noise(0.06,0.28,2200,1); _tone(90,'sine',0.09,0.22,50); }
+function _semiHit()   { _noise(0.1,0.25,1000,2); _tone(70,'sine',0.12,0.25,38); }
+
+// WhiteKnight — sword swish (shoot) / metallic clang (hit)
+function _knightShoot() {
+  _go();
+  const sr = _ac.sampleRate, n = Math.ceil(sr * 0.35);
+  const buf = _ac.createBuffer(1, n, sr);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/n, 0.6);
+  const src = _ac.createBufferSource(); src.buffer = buf;
+  const fh = _ac.createBiquadFilter(); fh.type = 'highpass'; fh.frequency.value = 2500;
+  const g = _ac.createGain(); g.gain.value = 0.45;
+  src.connect(fh); fh.connect(g); g.connect(_ac.destination); src.start();
+}
+function _knightHit() {
+  _tone(440,'sawtooth',0.55,0.3);
+  _tone(880,'sine',0.45,0.18);
+  _noise(0.07,0.38,3500,2);
+}
+
+// Zana — quick insertion pop (shoot) / click (hit)
+function _zanaShoot() { _tone(900,'sine',0.06,0.45,200); _tone(450,'sine',0.04,0.28,100,0.03); }
+function _zanaHit()   { _tone(650,'sine',0.05,0.38,180); }
+
+// CommaChameleon — tongue slap on hit
+function _commaHit()  { _tone(110,'sine',0.09,0.48,55); _noise(0.07,0.32,180,4); }
+
+// DrHyphenol — chemical fizz pop on hit
+function _hyphenHit() { _noise(0.28,0.32,2200,2); _tone(280,'sine',0.14,0.18,95); }
+
+// ExclaMachine — bell ding on hit
+function _exclaHit()  { _tone(1047,'sine',0.65,0.38); _tone(1319,'sine',0.45,0.2,null,0.02); }
+
+// FullStopGrenade — explosion boom on hit
+function _grenadeHit(){ _noise(0.5,0.55,110,1); _noise(0.38,0.38,55,2,0.05); _tone(48,'sine',0.5,0.48,18); }
+
+// OctoThwarter — spray splat on hit
+function _octoHit()   { _noise(0.15,0.42,1600,3); _tone(190,'sawtooth',0.1,0.28,75); }
+
+// QuestionMarkswoman — arrow thwack on hit
+function _questionHit(){ _noise(0.09,0.48,750,5); _tone(170,'triangle',0.14,0.32,58); }
+
+// QuetzalQuotel — feather flutter on hit
+function _quotelHit() { _noise(0.18,0.18,550,2); _tone(580,'sine',0.14,0.12,280); }
+
+// Spacel — fart impact on hit
+function _spacelHit() { _tone(75,'sawtooth',0.22,0.38,38); _noise(0.18,0.28,140,3); }
+
+// Betar — reel click on hit
+function _betarHit()  { _noise(0.04,0.38,3200,2); _tone(750,'square',0.04,0.22,380); }
 
 class Hero {
   /**
@@ -322,13 +449,12 @@ class Hero {
     this.projectileHitSound = projectileHitSound;
 
     this.sfx = {
-      shoot: new Howl({
-        src: [this.projectileShootSound],
-        rate: this.projectileSoundRate,
-      }),
-      hit: new Howl({
-        src: [this.projectileHitSound],
-      }),
+      shoot: this.projectileShootSound
+        ? new Howl({ src: [this.projectileShootSound], rate: this.projectileSoundRate })
+        : null,
+      hit: this.projectileHitSound
+        ? new Howl({ src: [this.projectileHitSound] })
+        : null,
     };
 
     //should put these in an array
@@ -369,11 +495,11 @@ class Hero {
   }
 
   shootProjectileSound() {
-    this.sfx.shoot.play();
+    this.sfx.shoot?.play();
   }
 
   hitProjectileSound() {
-    this.sfx.hit.play();
+    this.sfx.hit?.play();
   }
 
   draw() {
@@ -433,6 +559,8 @@ class Ambigrambador extends Hero {
       "./images/Ambigram2.png"
     );
   }
+  shootProjectileSound() { _ambiShoot(); }
+  hitProjectileSound()   { _ambiHit(); }
 }
 
 class AnacontractShine extends Hero {
@@ -453,6 +581,7 @@ class AnacontractShine extends Hero {
       "./sounds/projectile-hit/ana-eat.mp3"
     );
   }
+  shootProjectileSound() { _anaShoot(); }
 }
 
 class Apostrophantom extends Hero {
@@ -465,13 +594,15 @@ class Apostrophantom extends Hero {
       118,
       50,
       "./images/Ectoplasm.png",
-      "./sounds/spirit-sound.mp3",
+      undefined,
       0.2,
       5.0,
       undefined,
       "white"
     );
   }
+  shootProjectileSound() { _ghostWail(); }
+  hitProjectileSound()   { _ghostShriek(); }
 }
 
 class ArtTheTickler extends Hero {
@@ -511,6 +642,7 @@ class Betar extends Hero {
       "./images/Betar_2.png"
     );
   }
+  hitProjectileSound() { _betarHit(); }
 }
 
 class CommaChameleon extends Hero {
@@ -530,6 +662,7 @@ class CommaChameleon extends Hero {
       "./images/cc.png"
     );
   }
+  hitProjectileSound() { _commaHit(); }
 }
 
 class OctoThwarter extends Hero {
@@ -549,6 +682,7 @@ class OctoThwarter extends Hero {
       "./images/Octo2.png"
     );
   }
+  hitProjectileSound() { _octoHit(); }
 }
 
 class DrHyphenol extends Hero {
@@ -568,6 +702,7 @@ class DrHyphenol extends Hero {
       "./images/Hyphenol_2.png"
     );
   }
+  hitProjectileSound() { _hyphenHit(); }
 }
 
 class ExclaMachine extends Hero {
@@ -587,6 +722,7 @@ class ExclaMachine extends Hero {
       "./images/EM_Belt2.png"
     );
   }
+  hitProjectileSound() { _exclaHit(); }
 }
 
 class Foon extends Hero {
@@ -646,6 +782,7 @@ class FullStopGrenade extends Hero {
       "./images/FS_capital2.png"
     );
   }
+  hitProjectileSound() { _grenadeHit(); }
 }
 
 class MasterAsterisk extends Hero {
@@ -666,6 +803,7 @@ class MasterAsterisk extends Hero {
       "./sounds/projectile-hit/asterisk-hit.mp3"
     );
   }
+  shootProjectileSound() { _asteriskShoot(); }
 }
 
 class ParentsOfTheSeas extends Hero {
@@ -725,6 +863,7 @@ class QuestionMarkswoman extends Hero {
       "./images/QM2.png"
     );
   }
+  hitProjectileSound() { _questionHit(); }
 }
 
 //need to fix with code or choose different font so we get smart quotes instead of dumb quotes https://www.fontshop.com/content/curly-quotes
@@ -745,6 +884,7 @@ class QuetzalQuotel extends Hero {
       "./images/Qq.png"
     );
   }
+  hitProjectileSound() { _quotelHit(); }
 }
 
 class Roundabout extends Hero {
@@ -764,6 +904,8 @@ class Roundabout extends Hero {
       "./images/Roundabout2.png"
     );
   }
+  shootProjectileSound() { _roundaboutShoot(); }
+  hitProjectileSound()   { _roundaboutHit(); }
 }
 
 class SargeColon extends Hero {
@@ -783,6 +925,8 @@ class SargeColon extends Hero {
       "./images/Colon.png"
     );
   }
+  shootProjectileSound() { _sargeShoot(); }
+  hitProjectileSound()   { _sargeHit(); }
 }
 
 class SemiColonel extends Hero {
@@ -802,6 +946,8 @@ class SemiColonel extends Hero {
       "white"
     );
   }
+  shootProjectileSound() { _semiShoot(); }
+  hitProjectileSound()   { _semiHit(); }
 }
 
 class Spacel extends Hero {
@@ -821,6 +967,7 @@ class Spacel extends Hero {
       "./images/Spacel2.png"
     );
   }
+  hitProjectileSound() { _spacelHit(); }
 }
 
 class WhiteKnight extends Hero {
@@ -840,6 +987,8 @@ class WhiteKnight extends Hero {
       "./images/Whiteknight2.png"
     );
   }
+  shootProjectileSound() { _knightShoot(); }
+  hitProjectileSound()   { _knightHit(); }
 }
 
 class Zana extends Hero {
@@ -859,6 +1008,8 @@ class Zana extends Hero {
       "./images/Zana2.png"
     );
   }
+  shootProjectileSound() { _zanaShoot(); }
+  hitProjectileSound()   { _zanaHit(); }
 }
 
 //need to make this more generic and create a laser one
