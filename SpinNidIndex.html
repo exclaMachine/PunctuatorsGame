@@ -657,7 +657,7 @@
     <h1>SP<span class="si">I</span>N N<span class="si">I</span>dS</h1>
     <h2>An Ambigram Word Game</h2>
     <div id="intro-how">How to Play</div>
-    <div id="intro-sub">Select letters from the grid to build words.<br>Rotate tiles to unlock new letters!</div>
+    <div id="intro-sub">Select letters from the grid to build words.<br>Rotate tiles to unlock new letters!<br>Drag letters in the word bar to rearrange them.</div>
     <canvas id="intro-canvas" style="display:block;border-radius:10px;border:0.5px solid var(--border);margin-bottom:12px;"></canvas>
     <div id="demo-word-bar"></div>
     <div id="demo-label">Select letters to build a word…</div>
@@ -725,7 +725,7 @@
       <li>Press <strong>Enter</strong> or the ✓ button to submit a word</li>
       <li>Press <strong>⌫ Clear</strong> to clear your current word</li>
       <li>Use <strong>⟷ Flip</strong> to mirror the tile hand</li>
-      <li>Drag tiles from the hand onto the grid</li>
+      <li><strong>Drag letters in the word bar</strong> to rearrange them and try different words</li>
     </ul>
     <h3>Modes</h3>
     <ul>
@@ -764,7 +764,7 @@
       <div class="tier" id="tier" style="display:none"></div>
     </div>
     <div id="challenge-hint" class="challenge-hint" style="display:none"></div>
-    <div class="word-bar" id="wb"><span class="placeholder">start selecting letters…</span></div>
+    <div class="word-bar" id="wb" title="Drag letters to rearrange"><span class="placeholder">start selecting letters…</span></div>
     <div class="chips" id="chips"></div>
 
     <div class="mode-section" id="active-mode-label"></div>
