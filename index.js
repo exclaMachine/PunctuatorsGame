@@ -348,17 +348,11 @@ function _sargeHit()   { _noise(0.12,0.45,1200,2); _tone(65,'sine',0.15,0.42,28)
 function _semiShoot() { _noise(0.06,0.28,2200,1); _tone(90,'sine',0.09,0.22,50); }
 function _semiHit()   { _noise(0.1,0.25,1000,2); _tone(70,'sine',0.12,0.25,38); }
 
-// WhiteKnight — sword swish (shoot) / metallic clang (hit)
+// WhiteKnight — eraser strokes (shoot) / metallic clang (hit)
 function _knightShoot() {
-  _go();
-  const sr = _ac.sampleRate, n = Math.ceil(sr * 0.35);
-  const buf = _ac.createBuffer(1, n, sr);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < n; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/n, 0.6);
-  const src = _ac.createBufferSource(); src.buffer = buf;
-  const fh = _ac.createBiquadFilter(); fh.type = 'highpass'; fh.frequency.value = 2500;
-  const g = _ac.createGain(); g.gain.value = 0.45;
-  src.connect(fh); fh.connect(g); g.connect(_ac.destination); src.start();
+  // four quick eraser scrubs followed by a letter fading away
+  [0, 0.07, 0.14, 0.21].forEach(d => _noise(0.055, 0.32, 2800, 2.5, d));
+  _tone(550, 'sine', 0.28, 0.14, 80, 0.26);
 }
 function _knightHit() {
   _tone(440,'sawtooth',0.55,0.3);
