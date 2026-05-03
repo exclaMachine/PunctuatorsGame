@@ -1285,7 +1285,7 @@ function animate() {
               } else if (punctuationSymbol.id === betar.symbol) {
                 const span = punctuationSymbol;
 
-                // Step 1: Store original word if not already done
+                // Store original word on first hit
                 if (!span.hasAttribute("data-original-word")) {
                   span.setAttribute("data-original-word", span.textContent);
                 }
@@ -1294,59 +1294,106 @@ function animate() {
                 const neighborsList = span
                   .getAttribute("data-alphabetical-neighbors")
                   .split(",");
-                let currentIndex =
-                  parseInt(span.className.replace("word-", "")) || 0;
 
-                // Step 2: Wrap letters in spans if not already wrapped
+                // Track state via data attributes so we never read mid-animation DOM
+                // neighborsList[0] is always the original word; neighbors start at index 1
+                if (!span.hasAttribute("data-neighbor-cursor")) {
+                  span.setAttribute("data-neighbor-cursor", "1");
+                }
+                if (!span.hasAttribute("data-showing-original")) {
+                  span.setAttribute("data-showing-original", "true");
+                }
+
+                // Skip if a spin is already in progress
+                if (span.querySelector(".reel")) return;
+
+                // Wrap letters in spans if not already done
                 if (!span.querySelector(".letter")) {
-                  const letters = span.textContent
+                  span.innerHTML = span.textContent
                     .split("")
-                    .map((char) => `<span class="letter">${char}</span>`);
-                  span.innerHTML = letters.join("");
+                    .map((ch) => `<span class="letter">${ch}</span>`)
+                    .join("");
                 }
 
                 const letterSpans = span.querySelectorAll(".letter");
+                const showingOriginal =
+                  span.getAttribute("data-showing-original") === "true";
+                const cursor = parseInt(
+                  span.getAttribute("data-neighbor-cursor")
+                );
 
-                // Step 3: Determine if we're currently showing a neighbor or original
-                const currentWord = Array.from(letterSpans)
-                  .map((el) => el.textContent)
-                  .join("");
+                // Apply the original word's capitalization pattern to a neighbor word
+                // (neighbors are stored lowercase; the original may have capitals)
+                const matchCase = (orig, word) =>
+                  word
+                    .split("")
+                    .map((ch, i) =>
+                      orig[i] >= "A" && orig[i] <= "Z"
+                        ? ch.toUpperCase()
+                        : ch
+                    )
+                    .join("");
 
-                if (currentWord !== originalWord) {
-                  // Revert to original word
+                if (showingOriginal) {
+                  // Animate from original → next neighbor (case-corrected)
+                  const targetWord = matchCase(
+                    originalWord,
+                    neighborsList[cursor]
+                  );
+                  let diffIndex = -1;
                   for (let i = 0; i < originalWord.length; i++) {
-                    letterSpans[i].textContent = originalWord[i];
+                    if (originalWord[i] !== targetWord[i]) {
+                      diffIndex = i;
+                      break;
+                    }
                   }
-                  span.className = `word-${currentIndex}`;
-                  return;
+                  if (diffIndex === -1) return;
+
+                  spinLetter(
+                    letterSpans[diffIndex],
+                    originalWord[diffIndex],
+                    targetWord[diffIndex],
+                    () => {
+                      for (let i = 0; i < letterSpans.length; i++) {
+                        letterSpans[i].textContent = targetWord[i];
+                      }
+                      span.setAttribute("data-showing-original", "false");
+                      span.setAttribute("data-current-neighbor", targetWord);
+                    }
+                  );
+                } else {
+                  // Animate from current neighbor → original
+                  const currentNeighbor = span.getAttribute(
+                    "data-current-neighbor"
+                  );
+                  let diffIndex = -1;
+                  for (let i = 0; i < originalWord.length; i++) {
+                    if (currentNeighbor[i] !== originalWord[i]) {
+                      diffIndex = i;
+                      break;
+                    }
+                  }
+                  if (diffIndex === -1) return;
+
+                  spinLetter(
+                    letterSpans[diffIndex],
+                    currentNeighbor[diffIndex],
+                    originalWord[diffIndex],
+                    () => {
+                      for (let i = 0; i < letterSpans.length; i++) {
+                        letterSpans[i].textContent = originalWord[i];
+                      }
+                      span.setAttribute("data-showing-original", "true");
+                      // cycle through indices 1..length-1 (index 0 is the original)
+                      const nextCursor =
+                        cursor >= neighborsList.length - 1 ? 1 : cursor + 1;
+                      span.setAttribute(
+                        "data-neighbor-cursor",
+                        String(nextCursor)
+                      );
+                    }
+                  );
                 }
-
-                // Step 4: Move to next neighbor word
-                const nextIndex = (currentIndex + 1) % neighborsList.length;
-                const nextWord = neighborsList[nextIndex];
-
-                // Step 5: Find the differing index
-                let diffIndex = -1;
-                for (let i = 0; i < originalWord.length; i++) {
-                  if (originalWord[i] !== nextWord[i]) {
-                    diffIndex = i;
-                    break;
-                  }
-                }
-
-                if (diffIndex === -1) return;
-
-                const changingSpan = letterSpans[diffIndex];
-                const fromChar = originalWord[diffIndex];
-                const toChar = nextWord[diffIndex];
-
-                spinLetter(changingSpan, fromChar, toChar, () => {
-                  // After spin finishes, update full word to new neighbor
-                  for (let i = 0; i < letterSpans.length; i++) {
-                    letterSpans[i].textContent = nextWord[i];
-                  }
-                  span.className = `word-${nextIndex}`;
-                });
               } else if (punctuationSymbol.id === spacel.symbol) {
                 if (punctuationSymbol.hasAttribute("data-splitwords")) {
                   const [firstWord, secondWord] =
