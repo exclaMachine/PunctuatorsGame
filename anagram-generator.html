@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sentence Anagram Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: #f7f6f2;
+      color: #1a1a18;
+      min-height: 100vh;
+      padding: 2.5rem 1rem;
+    }
+
+    .container {
+      max-width: 740px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 2rem;
+    }
+
+    .title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: #1a1a18;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #6b6b65;
+      margin-top: 5px;
+    }
+
+    .section {
+      margin-bottom: 1.25rem;
+    }
+
+    .label {
+      font-size: 11px;
+      color: #6b6b65;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 7px;
+    }
+
+    .wordlist-status {
+      font-size: 13px;
+      color: #6b6b65;
+      padding: 6px 0;
+    }
+
+    .wordlist-status.ready { color: #2a7a4b; font-weight: 600; }
+    .wordlist-status.error { color: #b83232; }
+
+    textarea {
+      width: 100%;
+      resize: vertical;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 15px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #c4c3bc;
+      background: #ffffff;
+      color: #1a1a18;
+      line-height: 1.5;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #888882;
+    }
+
+    .letter-preview {
+      font-size: 12px;
+      color: #888882;
+      padding: 5px 0 0;
+      letter-spacing: 0.06em;
+      min-height: 20px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      font-family: 'Courier New', Courier, monospace;
+      cursor: pointer;
+      border-radius: 7px;
+      font-size: 14px;
+      padding: 8px 18px;
+      transition: background 0.12s, opacity 0.12s;
+    }
+
+    .btn-primary {
+      border: 1px solid #c4c3bc;
+      background: #ffffff;
+      color: #1a1a18;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #eeeee8;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .btn-danger {
+      border: 1px solid #e2a0a0;
+      background: transparent;
+      color: #b83232;
+      display: none;
+    }
+
+    .btn-danger:hover {
+      background: #fdf0f0;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .filter-label {
+      font-size: 12px;
+      color: #6b6b65;
+    }
+
+    select {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px;
+      padding: 6px 10px;
+      border-radius: 7px;
+      border: 1px solid #c4c3bc;
+      background: #ffffff;
+      color: #1a1a18;
+    }
+
+    .status-bar {
+      font-size: 13px;
+      color: #6b6b65;
+      padding: 8px 0;
+      min-height: 30px;
+    }
+
+    .status-count {
+      color: #1a1a18;
+      font-weight: 700;
+    }
+
+    .truncate-note {
+      font-size: 12px;
+      color: #a06020;
+      padding: 4px 0 8px;
+      display: none;
+    }
+
+    .results-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 500px;
+      overflow-y: auto;
+      border: 1px solid #c4c3bc;
+      border-radius: 8px;
+      padding: 8px;
+      background: #eeeee8;
+    }
+
+    .result-item {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px;
+      padding: 5px 9px;
+      border-radius: 5px;
+      color: #1a1a18;
+      background: #ffffff;
+      border: 1px solid #ddddd6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .word-count-badge {
+      font-size: 11px;
+      color: #aaa;
+      flex-shrink: 0;
+    }
+
+    #resultsContainer {
+      display: none;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border: 1.5px solid #ccc;
+      border-top-color: #888;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">Sentence Anagram Generator</div>
+      <div class="subtitle">Uses every letter — finds all valid word combinations</div>
+    </div>
+
+    <div class="section">
+      <div class="label">Word list</div>
+      <div id="wordlistStatus" class="wordlist-status">Loading enable1.txt…</div>
+    </div>
+
+    <div class="section">
+      <div class="label">Phrase or sentence</div>
+      <textarea id="phraseInput" rows="3" placeholder="e.g. listen"></textarea>
+      <div id="letterPreview" class="letter-preview"></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-primary" id="generateBtn" disabled>Generate anagrams</button>
+      <button class="btn-danger" id="cancelBtn">Stop</button>
+      <div class="filter-row">
+        <span class="filter-label">min word length</span>
+        <select id="minLen">
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="statusBar" class="status-bar"></div>
+    <div id="truncateNote" class="truncate-note">
+      Showing first 2,000 results — the search space is much larger.
+      Increase the min word length or use a longer/more specific phrase to narrow results.
+    </div>
+
+    <div id="resultsContainer">
+      <div class="results-grid" id="resultsGrid"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const wordlistStatus = document.getElementById('wordlistStatus');
+      const phraseInput   = document.getElementById('phraseInput');
+      const letterPreview = document.getElementById('letterPreview');
+      const generateBtn   = document.getElementById('generateBtn');
+      const cancelBtn     = document.getElementById('cancelBtn');
+      const statusBar     = document.getElementById('statusBar');
+      const truncateNote  = document.getElementById('truncateNote');
+      const resultsContainer = document.getElementById('resultsContainer');
+      const resultsGrid   = document.getElementById('resultsGrid');
+      const minLenSel     = document.getElementById('minLen');
+
+      const LIMIT = 2000;
+      const CHUNK = 80;
+
+      let wordList  = null;
+      let cancelFlag = false;
+
+      /* ---------- helpers ---------- */
+
+      function letterFreq(str) {
+        const f = {};
+        for (const c of str) {
+          if (c >= 'a' && c <= 'z') f[c] = (f[c] || 0) + 1;
+        }
+        return f;
+      }
+
+      function canForm(wordFreq, avail) {
+        for (const c in wordFreq) {
+          if ((avail[c] || 0) < wordFreq[c]) return false;
+        }
+        return true;
+      }
+
+      function subtract(avail, wordFreq) {
+        const r = Object.assign({}, avail);
+        for (const c in wordFreq) {
+          r[c] -= wordFreq[c];
+          if (r[c] === 0) delete r[c];
+        }
+        return r;
+      }
+
+      /* ---------- recursive generator ---------- */
+
+      function* searchGen(avail, cands, cur) {
+        if (Object.keys(avail).length === 0) {
+          yield cur.slice();
+          return;
+        }
+        for (let i = 0; i < cands.length; i++) {
+          const { word, freq } = cands[i];
+          if (canForm(freq, avail)) {
+            cur.push(word);
+            yield* searchGen(subtract(avail, freq), cands.slice(i), cur);
+            cur.pop();
+          }
+        }
+      }
+
+      /* ---------- load word list from project ---------- */
+
+      //fetch('./enable1.txt')
+      fetch('./2of12.txt')
+        .then(r => {
+          if (!r.ok) throw new Error(r.statusText);
+          return r.text();
+        })
+        .then(text => {
+          wordList = text
+            .split(/\r?\n/)
+            .map(w => w.trim().toLowerCase())
+            .filter(w => /^[a-z]+$/.test(w));
+          wordlistStatus.textContent = wordList.length.toLocaleString() + ' words loaded ✓';
+          wordlistStatus.className = 'wordlist-status ready';
+          if (phraseInput.value.trim()) generateBtn.disabled = false;
+        })
+        .catch(err => {
+          wordlistStatus.textContent = 'Failed to load enable1.txt: ' + err.message;
+          wordlistStatus.className = 'wordlist-status error';
+        });
+
+      /* ---------- phrase input ---------- */
+
+      phraseInput.addEventListener('input', () => {
+        const clean = phraseInput.value.toLowerCase().replace(/[^a-z]/g, '');
+        if (clean.length > 0) {
+          const sorted = clean.split('').sort().join(' ');
+          letterPreview.textContent = clean.length + ' letters: ' + sorted;
+        } else {
+          letterPreview.textContent = '';
+        }
+        generateBtn.disabled = !(wordList && clean.length > 0);
+      });
+
+      /* ---------- generate ---------- */
+
+      generateBtn.addEventListener('click', () => {
+        cancelFlag = true;           // stop any in-progress run
+        setTimeout(() => {
+          cancelFlag = false;
+          runSearch();
+        }, 20);
+      });
+
+      cancelBtn.addEventListener('click', () => {
+        cancelFlag = true;
+      });
+
+      function runSearch() {
+        const phrase = phraseInput.value.toLowerCase().replace(/[^a-z]/g, '');
+        if (!phrase || !wordList) return;
+
+        const minLen = parseInt(minLenSel.value, 10);
+        const avail  = letterFreq(phrase);
+
+        resultsContainer.style.display = 'none';
+        resultsGrid.innerHTML = '';
+        truncateNote.style.display = 'none';
+        statusBar.innerHTML = '<span class="spinner"></span> Filtering dictionary...';
+        generateBtn.disabled = true;
+        cancelBtn.style.display = 'inline-block';
+
+        setTimeout(() => {
+          // Pre-filter to words formable from the available letters
+          const cands = wordList
+            .filter(w => w.length >= minLen)
+            .map(w => ({ word: w, freq: letterFreq(w) }))
+            .filter(({ freq }) => canForm(freq, avail));
+
+          // Longest words first — better pruning
+          cands.sort((a, b) => b.word.length - a.word.length);
+
+          if (cands.length === 0) {
+            statusBar.textContent = 'No candidate words found for these letters.';
+            generateBtn.disabled = false;
+            cancelBtn.style.display = 'none';
+            return;
+          }
+
+          statusBar.innerHTML =
+            '<span class="spinner"></span> Searching (' +
+            cands.length.toLocaleString() + ' candidate words)...';
+
+          const gen = searchGen(avail, cands, []);
+          const accumulated = [];
+
+          function renderResults() {
+            resultsGrid.innerHTML = '';
+            const frag = document.createDocumentFragment();
+            for (const r of accumulated) {
+              const words = r.split(' ');
+              const div = document.createElement('div');
+              div.className = 'result-item';
+
+              const span1 = document.createElement('span');
+              span1.textContent = r;
+
+              const span2 = document.createElement('span');
+              span2.className = 'word-count-badge';
+              span2.textContent = words.length + 'w';
+
+              div.appendChild(span1);
+              div.appendChild(span2);
+              frag.appendChild(div);
+            }
+            resultsGrid.appendChild(frag);
+            resultsContainer.style.display = 'block';
+          }
+
+          function finish(msg) {
+            statusBar.innerHTML = msg;
+            renderResults();
+            generateBtn.disabled = false;
+            cancelBtn.style.display = 'none';
+          }
+
+          function tick() {
+            if (cancelFlag) {
+              finish('<span class="status-count">' + accumulated.length.toLocaleString() + '</span> results (stopped)');
+              return;
+            }
+
+            let count = 0;
+            let done = false;
+
+            while (count < CHUNK) {
+              const next = gen.next();
+              if (next.done) { done = true; break; }
+              accumulated.push(next.value.join(' '));
+              count++;
+              if (accumulated.length >= LIMIT) break;
+            }
+
+            if (done) {
+              finish(
+                '<span class="status-count">' + accumulated.length.toLocaleString() + '</span> anagram' +
+                (accumulated.length !== 1 ? 's' : '') + ' found'
+              );
+            } else if (accumulated.length >= LIMIT) {
+              truncateNote.style.display = 'block';
+              finish('<span class="status-count">' + LIMIT.toLocaleString() + '</span> results (limit reached)');
+            } else {
+              // Partial render every 200 results so the user sees progress
+              if (accumulated.length > 0 && accumulated.length % 200 === 0) renderResults();
+              statusBar.innerHTML =
+                '<span class="spinner"></span> Found <span class="status-count">' +
+                accumulated.length.toLocaleString() + '</span> so far...';
+              setTimeout(tick, 0);
+            }
+          }
+
+          setTimeout(tick, 0);
+        }, 30);
+      }
+    })();
+  </script>
+</body>
+</html>
