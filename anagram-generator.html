@@ -161,17 +161,7 @@
       font-weight: 700;
     }
 
-    .truncate-note {
-      font-size: 12px;
-      color: #a06020;
-      padding: 4px 0 8px;
-      display: none;
-    }
-
-    .results-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
+    .results-tree {
       max-height: 500px;
       overflow-y: auto;
       border: 1px solid #c4c3bc;
@@ -180,25 +170,65 @@
       background: #eeeee8;
     }
 
-    .result-item {
+    .tree-group {
+      background: #fff;
+      border: 1px solid #ddddd6;
+      border-radius: 6px;
+      margin-bottom: 5px;
+    }
+
+    .tree-group:last-child { margin-bottom: 0; }
+
+    .tree-header {
       font-family: 'Courier New', Courier, monospace;
       font-size: 13px;
-      padding: 5px 9px;
-      border-radius: 5px;
       color: #1a1a18;
-      background: #ffffff;
-      border: 1px solid #ddddd6;
+      padding: 8px 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .tree-header:hover { background: #f5f5f0; border-radius: 6px; }
+    .tree-header.open  { background: #eeeee8; border-radius: 6px 6px 0 0; }
+
+    .tree-header-inner {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 8px;
     }
 
-    .word-count-badge {
+    .tree-meta {
       font-size: 11px;
       color: #aaa;
-      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
+
+    .tree-children {
+      display: none;
+      border-top: 1px solid #eee;
+      background: #fafaf8;
+      border-radius: 0 0 6px 6px;
+      padding: 4px 6px;
+    }
+
+    .tree-children.open { display: block; }
+
+    .tree-child {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      color: #2a2a28;
+      padding: 5px 8px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tree-child:hover { background: #eeeee8; }
+
+    .tree-badge { font-size: 11px; color: #aaa; }
 
     #resultsContainer {
       display: none;
@@ -252,13 +282,10 @@
     </div>
 
     <div id="statusBar" class="status-bar"></div>
-    <div id="truncateNote" class="truncate-note">
-      Showing first 2,000 results — the search space is much larger.
-      Increase the min word length or use a longer/more specific phrase to narrow results.
-    </div>
 
     <div id="resultsContainer">
-      <div class="results-grid" id="resultsGrid"></div>
+      <div class="results-tree" id="resultsGrid"></div>
+
     </div>
   </div>
 
@@ -270,16 +297,15 @@
       const generateBtn   = document.getElementById('generateBtn');
       const cancelBtn     = document.getElementById('cancelBtn');
       const statusBar     = document.getElementById('statusBar');
-      const truncateNote  = document.getElementById('truncateNote');
       const resultsContainer = document.getElementById('resultsContainer');
       const resultsGrid   = document.getElementById('resultsGrid');
       const minLenSel     = document.getElementById('minLen');
 
-      const LIMIT = 2000;
       const CHUNK = 80;
 
-      let wordList  = null;
+      let wordList   = null;
       let cancelFlag = false;
+      let openGroups = new Set();
 
       /* ---------- helpers ---------- */
 
@@ -380,9 +406,10 @@
         const minLen = parseInt(minLenSel.value, 10);
         const avail  = letterFreq(phrase);
 
+        openGroups.clear();
         resultsContainer.style.display = 'none';
         resultsGrid.innerHTML = '';
-        truncateNote.style.display = 'none';
+        //truncateNote.style.display = 'none';
         statusBar.innerHTML = '<span class="spinner"></span> Filtering dictionary...';
         generateBtn.disabled = true;
         cancelBtn.style.display = 'inline-block';
@@ -413,23 +440,70 @@
 
           function renderResults() {
             resultsGrid.innerHTML = '';
-            const frag = document.createDocumentFragment();
+
+            // Group results by first word
+            const groups = new Map();
             for (const r of accumulated) {
-              const words = r.split(' ');
-              const div = document.createElement('div');
-              div.className = 'result-item';
-
-              const span1 = document.createElement('span');
-              span1.textContent = r;
-
-              const span2 = document.createElement('span');
-              span2.className = 'word-count-badge';
-              span2.textContent = words.length + 'w';
-
-              div.appendChild(span1);
-              div.appendChild(span2);
-              frag.appendChild(div);
+              const first = r.split(' ')[0];
+              if (!groups.has(first)) groups.set(first, []);
+              groups.get(first).push(r);
             }
+
+            const frag = document.createDocumentFragment();
+
+            for (const [key, combos] of groups) {
+              const groupDiv = document.createElement('div');
+              groupDiv.className = 'tree-group';
+
+              // Header row
+              const header = document.createElement('div');
+              const isOpen = openGroups.has(key);
+              header.className = 'tree-header' + (isOpen ? ' open' : '');
+
+              const inner = document.createElement('div');
+              inner.className = 'tree-header-inner';
+
+              const label = document.createElement('span');
+              label.textContent = key;
+
+              const meta = document.createElement('span');
+              meta.className = 'tree-meta';
+              meta.textContent = combos.length === 1
+                ? '1 combo  ▶'
+                : combos.length + ' combos  ▶';
+
+              inner.appendChild(label);
+              inner.appendChild(meta);
+              header.appendChild(inner);
+
+              // Children list
+              const children = document.createElement('div');
+              children.className = 'tree-children' + (isOpen ? ' open' : '');
+
+              for (const combo of combos) {
+                const child = document.createElement('div');
+                child.className = 'tree-child';
+                const c1 = document.createElement('span');
+                c1.textContent = combo;
+                const c2 = document.createElement('span');
+                c2.className = 'tree-badge';
+                c2.textContent = combo.split(' ').length + 'w';
+                child.appendChild(c1);
+                child.appendChild(c2);
+                children.appendChild(child);
+              }
+
+              header.addEventListener('click', () => {
+                const nowOpen = children.classList.toggle('open');
+                header.classList.toggle('open', nowOpen);
+                nowOpen ? openGroups.add(key) : openGroups.delete(key);
+              });
+
+              groupDiv.appendChild(header);
+              groupDiv.appendChild(children);
+              frag.appendChild(groupDiv);
+            }
+
             resultsGrid.appendChild(frag);
             resultsContainer.style.display = 'block';
           }
@@ -455,7 +529,6 @@
               if (next.done) { done = true; break; }
               accumulated.push(next.value.join(' '));
               count++;
-              if (accumulated.length >= LIMIT) break;
             }
 
             if (done) {
@@ -463,9 +536,6 @@
                 '<span class="status-count">' + accumulated.length.toLocaleString() + '</span> anagram' +
                 (accumulated.length !== 1 ? 's' : '') + ' found'
               );
-            } else if (accumulated.length >= LIMIT) {
-              truncateNote.style.display = 'block';
-              finish('<span class="status-count">' + LIMIT.toLocaleString() + '</span> results (limit reached)');
             } else {
               // Partial render every 200 results so the user sees progress
               if (accumulated.length > 0 && accumulated.length % 200 === 0) renderResults();
