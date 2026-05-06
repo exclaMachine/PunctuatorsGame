@@ -234,6 +234,37 @@
       display: none;
     }
 
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .search-row input {
+      flex: 1;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px;
+      padding: 7px 10px;
+      border-radius: 7px;
+      border: 1px solid #c4c3bc;
+      background: #fff;
+      color: #1a1a18;
+    }
+
+    .search-row input:focus {
+      outline: none;
+      border-color: #888882;
+    }
+
+    .search-count {
+      font-size: 12px;
+      color: #888882;
+      white-space: nowrap;
+      min-width: 80px;
+      text-align: right;
+    }
+
     .spinner {
       display: inline-block;
       width: 10px;
@@ -284,8 +315,11 @@
     <div id="statusBar" class="status-bar"></div>
 
     <div id="resultsContainer">
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="Filter results…" autocomplete="off" />
+        <span id="searchCount" class="search-count"></span>
+      </div>
       <div class="results-tree" id="resultsGrid"></div>
-
     </div>
   </div>
 
@@ -300,12 +334,66 @@
       const resultsContainer = document.getElementById('resultsContainer');
       const resultsGrid   = document.getElementById('resultsGrid');
       const minLenSel     = document.getElementById('minLen');
+      const searchInput   = document.getElementById('searchInput');
+      const searchCount   = document.getElementById('searchCount');
 
       const CHUNK = 80;
 
       let wordList   = null;
       let cancelFlag = false;
       let openGroups = new Set();
+
+      /* ---------- search filter ---------- */
+
+      function applySearch() {
+        const q = searchInput.value.trim().toLowerCase();
+        const groups = resultsGrid.querySelectorAll('.tree-group');
+        let visibleCombos = 0;
+
+        groups.forEach(groupDiv => {
+          const header   = groupDiv.querySelector('.tree-header');
+          const children = groupDiv.querySelector('.tree-children');
+          const key      = groupDiv.dataset.key;
+          const childDivs = children.querySelectorAll('.tree-child');
+
+          if (!q) {
+            groupDiv.style.display = '';
+            childDivs.forEach(c => c.style.display = '');
+            const isOpen = openGroups.has(key);
+            children.classList.toggle('open', isOpen);
+            header.classList.toggle('open', isOpen);
+            visibleCombos += childDivs.length;
+            return;
+          }
+
+          let matchCount = 0;
+          if (key.includes(q)) {
+            childDivs.forEach(c => c.style.display = '');
+            matchCount = childDivs.length;
+          } else {
+            childDivs.forEach(child => {
+              const matches = child.dataset.combo.includes(q);
+              child.style.display = matches ? '' : 'none';
+              if (matches) matchCount++;
+            });
+          }
+
+          if (matchCount > 0) {
+            groupDiv.style.display = '';
+            children.classList.add('open');
+            header.classList.add('open');
+            visibleCombos += matchCount;
+          } else {
+            groupDiv.style.display = 'none';
+          }
+        });
+
+        searchCount.textContent = q
+          ? visibleCombos.toLocaleString() + ' match' + (visibleCombos !== 1 ? 'es' : '')
+          : '';
+      }
+
+      searchInput.addEventListener('input', applySearch);
 
       /* ---------- helpers ---------- */
 
@@ -407,9 +495,10 @@
         const avail  = letterFreq(phrase);
 
         openGroups.clear();
+        searchInput.value = '';
+        searchCount.textContent = '';
         resultsContainer.style.display = 'none';
         resultsGrid.innerHTML = '';
-        //truncateNote.style.display = 'none';
         statusBar.innerHTML = '<span class="spinner"></span> Filtering dictionary...';
         generateBtn.disabled = true;
         cancelBtn.style.display = 'inline-block';
@@ -454,6 +543,7 @@
             for (const [key, combos] of groups) {
               const groupDiv = document.createElement('div');
               groupDiv.className = 'tree-group';
+              groupDiv.dataset.key = key;
 
               // Header row
               const header = document.createElement('div');
@@ -483,6 +573,7 @@
               for (const combo of combos) {
                 const child = document.createElement('div');
                 child.className = 'tree-child';
+                child.dataset.combo = combo;
                 const c1 = document.createElement('span');
                 c1.textContent = combo;
                 const c2 = document.createElement('span');
@@ -506,6 +597,7 @@
 
             resultsGrid.appendChild(frag);
             resultsContainer.style.display = 'block';
+            if (searchInput.value.trim()) applySearch();
           }
 
           function finish(msg) {
