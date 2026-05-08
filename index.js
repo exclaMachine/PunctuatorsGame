@@ -340,6 +340,75 @@ function _asteriskShoot() { [2093,1760,2637,2093,1976].forEach((f,i) => _tone(f,
 function _roundaboutShoot() { _tone(200,'sine',0.22,0.28,800); _tone(800,'sine',0.22,0.25,200,0.22); }
 function _roundaboutHit()   { _tone(600,'sawtooth',0.28,0.22,80); _noise(0.18,0.18,300,5); }
 
+// Morph each differing letter using an SVG displacement-map warp.
+// The straight strokes appear to bend and curve into the target letter.
+function _animateRoundabout(el, fromWord, toWord) {
+  const from = fromWord.toUpperCase().split('');
+  const to   = toWord.toUpperCase().split('');
+
+  el.innerHTML = from
+    .map((ch, i) =>
+      `<span style="display:inline-block"${ch !== to[i] ? ` data-to="${to[i]}"` : ''}>${ch}</span>`
+    )
+    .join('');
+
+  const changing = [...el.querySelectorAll('span[data-to]')];
+  if (changing.length === 0) {
+    el.textContent = toWord.toUpperCase();
+    el.classList.add('rounded-word');
+    return;
+  }
+
+  const HALF    = 300;  // ms per half of the warp
+  const MAX_SCL = 24;   // peak displacement (px)
+  const STAGGER = 120;  // ms between each letter's start
+
+  changing.forEach((span, idx) => {
+    const toChar = span.dataset.to;
+    const isLast = idx === changing.length - 1;
+
+    setTimeout(() => {
+      const uid = `ra${Date.now()}${idx}`;
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden');
+      svg.innerHTML =
+        `<defs><filter id="${uid}" x="-30%" y="-30%" width="160%" height="160%">` +
+        `<feTurbulence type="fractalNoise" baseFrequency="0.04 0.025" numOctaves="2" seed="${4 + idx}" result="n"/>` +
+        `<feDisplacementMap in="SourceGraphic" in2="n" scale="0" xChannelSelector="R" yChannelSelector="G" id="${uid}d"/>` +
+        `</filter></defs>`;
+      document.body.appendChild(svg);
+
+      const disp  = svg.getElementById(`${uid}d`);
+      span.style.filter = `url(#${uid})`;
+
+      let start   = null;
+      let swapped = false;
+
+      (function step(ts) {
+        if (!start) start = ts;
+        const t = ts - start;
+
+        if (t < HALF) {
+          disp.setAttribute('scale', (MAX_SCL * (t / HALF)).toFixed(1));
+        } else if (t < HALF * 2) {
+          if (!swapped) { span.textContent = toChar; swapped = true; }
+          disp.setAttribute('scale', (MAX_SCL * (1 - (t - HALF) / HALF)).toFixed(1));
+        } else {
+          disp.setAttribute('scale', '0');
+          span.style.filter = '';
+          svg.remove();
+          if (isLast) {
+            el.textContent = toWord.toUpperCase();
+            el.classList.add('rounded-word');
+          }
+          return;
+        }
+        requestAnimationFrame(step);
+      })(performance.now());
+    }, idx * STAGGER);
+  });
+}
+
 // SargeColon — sharp military snare (shoot) / heavy thud (hit)
 function _sargeShoot() { _noise(0.08,0.55,2500,1); _noise(0.07,0.3,500,9); _tone(80,'sine',0.1,0.35,35); }
 function _sargeHit()   { _noise(0.12,0.45,1200,2); _tone(65,'sine',0.15,0.42,28); }
@@ -1559,16 +1628,8 @@ function animate() {
 
                 const roundedWord = punctuationSymbol.dataset.roundedWord;
                 const currentWord = punctuationSymbol.textContent.trim();
-                const flashDuration = 500; //  ❰❰  milliseconds to keep the CAPS word visible ❱❱
 
-                /* STEP 1 – show original word in CAPS */
-                punctuationSymbol.textContent = currentWord.toUpperCase();
-
-                /* STEP 2 – after flashDuration ms, swap to rounded word & style */
-                setTimeout(() => {
-                  punctuationSymbol.textContent = roundedWord.toUpperCase();
-                  punctuationSymbol.classList.add("rounded-word");
-                }, flashDuration);
+                _animateRoundabout(punctuationSymbol, currentWord, roundedWord);
               } else {
                 punctuationSymbol.style.color = `${player.characterColor}`;
                 punctuationSymbol.style.textShadow =
