@@ -434,6 +434,85 @@ footer > div {
         border-radius: 4px;
     }
 
+    /* native select is hidden; .custom-select-wrapper takes its place */
+    #wordPlayOptions { display: none; }
+
+    .custom-select-wrapper {
+        position: relative;
+        display: inline-block;
+        margin: 5px;
+    }
+
+    .custom-select-trigger {
+        font-family: 'Palanquin', sans-serif;
+        font-size: 14px;
+        color: white;
+        background-color: #D4720A;
+        border: none;
+        border-radius: 4px;
+        padding: 5px 28px 5px 10px;
+        cursor: pointer;
+        text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
+        user-select: none;
+        white-space: nowrap;
+        min-width: 168px;
+        position: relative;
+        transition: opacity 0.15s;
+    }
+
+    .custom-select-trigger::after {
+        content: '▾';
+        position: absolute;
+        right: 9px;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: transform 0.18s;
+        font-size: 13px;
+        text-shadow: none;
+    }
+
+    .custom-select-wrapper.open .custom-select-trigger::after {
+        transform: translateY(-50%) rotate(180deg);
+    }
+
+    .custom-select-trigger:hover { opacity: 0.82; }
+
+    .custom-select-dropdown {
+        position: absolute;
+        top: calc(100% + 5px);
+        left: 0;
+        min-width: 100%;
+        background: #110824;
+        border: 1px solid blueviolet;
+        border-radius: 6px;
+        overflow: hidden;
+        z-index: 2000;
+        display: none;
+        box-shadow: 0 6px 20px rgba(138, 43, 226, 0.45);
+    }
+
+    .custom-select-wrapper.open .custom-select-dropdown { display: block; }
+
+    .custom-select-option {
+        font-family: 'Palanquin', sans-serif;
+        font-size: 14px;
+        color: #e8d8ff;
+        padding: 8px 14px;
+        cursor: pointer;
+        transition: background 0.12s;
+        border-bottom: 1px solid rgba(138, 43, 226, 0.18);
+    }
+
+    .custom-select-option:last-child { border-bottom: none; }
+
+    .custom-select-option:hover { background: blueviolet; color: white; }
+
+    .custom-select-option.selected {
+        color: #D4720A;
+        background: rgba(212, 114, 10, 0.12);
+        text-shadow: 0 0 8px rgba(212, 114, 10, 0.4);
+    }
+
     body {
         margin: 0
     }

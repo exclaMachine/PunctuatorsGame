@@ -131,6 +131,55 @@
 
     <canvas id="background" style="border: 2px black solid"></canvas>
 
+    <script>
+      (function () {
+        const sel = document.getElementById('wordPlayOptions');
+        if (!sel) return;
+
+        // Wrap the hidden select
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper';
+        sel.parentNode.insertBefore(wrapper, sel);
+        wrapper.appendChild(sel);
+
+        // Trigger button
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        trigger.textContent = sel.options[sel.selectedIndex]?.text ?? '';
+        wrapper.appendChild(trigger);
+
+        // Options panel
+        const dropdown = document.createElement('div');
+        dropdown.className = 'custom-select-dropdown';
+
+        Array.from(sel.options).forEach(opt => {
+          const item = document.createElement('div');
+          item.className = 'custom-select-option' + (opt.selected ? ' selected' : '');
+          item.textContent = opt.text;
+          item.dataset.value = opt.value;
+
+          item.addEventListener('click', () => {
+            sel.value = opt.value;
+            trigger.textContent = opt.text;
+            dropdown.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+            item.classList.add('selected');
+            wrapper.classList.remove('open');
+            sel.dispatchEvent(new Event('change'));
+          });
+
+          dropdown.appendChild(item);
+        });
+
+        wrapper.appendChild(dropdown);
+
+        trigger.addEventListener('click', e => {
+          e.stopPropagation();
+          wrapper.classList.toggle('open');
+        });
+
+        document.addEventListener('click', () => wrapper.classList.remove('open'));
+      })();
+    </script>
 </body>
 
 </html>
