@@ -257,6 +257,38 @@
       border-color: #888882;
     }
 
+    .label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 7px;
+    }
+
+    .label-row .label { margin-bottom: 0; }
+
+    .btn-subtle {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+      color: #6b6b65;
+      background: none;
+      border: 1px solid #c4c3bc;
+      border-radius: 5px;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .btn-subtle:hover:not(:disabled) { background: #eeeee8; color: #1a1a18; }
+    .btn-subtle:disabled { opacity: 0.5; cursor: default; }
+
+    .idiom-status {
+      font-size: 11px;
+      color: #888882;
+      font-style: italic;
+      padding: 4px 0 0;
+      min-height: 16px;
+    }
+
     .search-count {
       font-size: 12px;
       color: #888882;
@@ -293,8 +325,12 @@
     </div>
 
     <div class="section">
-      <div class="label">Phrase or sentence</div>
+      <div class="label-row">
+        <div class="label">Phrase or sentence</div>
+        <button class="btn-subtle" id="idiomBtn">Today's idiom</button>
+      </div>
       <textarea id="phraseInput" rows="3" placeholder="e.g. listen"></textarea>
+      <div id="idiomStatus" class="idiom-status"></div>
       <div id="letterPreview" class="letter-preview"></div>
     </div>
 
@@ -336,6 +372,8 @@
       const minLenSel     = document.getElementById('minLen');
       const searchInput   = document.getElementById('searchInput');
       const searchCount   = document.getElementById('searchCount');
+      const idiomBtn      = document.getElementById('idiomBtn');
+      const idiomStatus   = document.getElementById('idiomStatus');
 
       const CHUNK = 80;
 
@@ -439,7 +477,11 @@
       }
 
       /* ---------- load word list from project ---------- */
-
+      //possible anagram idioms -> put a sock in it -> pick at it on us
+      //chew the fat -> hew the fact
+      //its all greek to me -> tiresome talk gel
+      //build on sand -> island bound
+      //beat a dead horse
       //fetch('./enable1.txt')
       fetch('./2of12.txt')
         .then(r => {
@@ -459,6 +501,75 @@
           wordlistStatus.textContent = 'Failed to load enable1.txt: ' + err.message;
           wordlistStatus.className = 'wordlist-status error';
         });
+
+      /* ---------- daily idiom ---------- */
+
+      async function fetchIdiomList() {
+        const CACHE_KEY = 'wkt_3word_idioms_v1';
+        const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+        try {
+          const raw = localStorage.getItem(CACHE_KEY);
+          if (raw) {
+            const { ts, idioms } = JSON.parse(raw);
+            if (Date.now() - ts < CACHE_TTL && idioms.length > 0) return idioms;
+          }
+        } catch (_) {}
+
+        const idioms = [];
+        let cont = '';
+
+        for (let page = 0; page < 3; page++) {
+          let url = 'https://en.wiktionary.org/w/api.php?action=query&list=categorymembers' +
+                    '&cmtitle=Category:English_idioms&cmlimit=500&format=json&origin=*';
+          if (cont) url += '&cmcontinue=' + encodeURIComponent(cont);
+
+          const r = await fetch(url);
+          if (!r.ok) break;
+          const data = await r.json();
+
+          for (const { title } of (data?.query?.categorymembers ?? [])) {
+            const t = title.trim();
+            // exactly 3 words, no slashes, parens, or digits
+            if (t.split(/\s+/).length === 3 && !/[\/\(\)\d]/.test(t)) {
+              idioms.push(t);
+            }
+          }
+
+          cont = data?.continue?.cmcontinue ?? '';
+          if (!cont) break;
+        }
+
+        if (idioms.length > 0) {
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), idioms })); } catch (_) {}
+        }
+
+        return idioms;
+      }
+
+      async function loadDailyIdiom() {
+        idiomBtn.disabled = true;
+        idiomBtn.textContent = 'loading…';
+        try {
+          const idioms = await fetchIdiomList();
+          if (!idioms.length) throw new Error('empty');
+          const day   = Math.floor(Date.now() / 86400000);
+          const idiom = idioms[day % idioms.length];
+          phraseInput.value = idiom;
+          phraseInput.dispatchEvent(new Event('input'));
+          idiomStatus.textContent = 'Suggested by Wiktionary · edit freely';
+        } catch (_) {
+          idiomStatus.textContent = '';
+        } finally {
+          idiomBtn.disabled = false;
+          idiomBtn.textContent = "Today's idiom";
+        }
+      }
+
+      idiomBtn.addEventListener('click', loadDailyIdiom);
+
+      // Auto-fill on load — fails silently if offline or API unavailable
+      loadDailyIdiom();
 
       /* ---------- phrase input ---------- */
 
