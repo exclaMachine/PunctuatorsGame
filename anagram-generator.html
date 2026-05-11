@@ -297,6 +297,28 @@
       text-align: right;
     }
 
+    .sem-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .sem-status {
+      font-size: 11px;
+      color: #888882;
+      font-style: italic;
+    }
+
+    /* semantic highlights */
+    .tree-child.sem-similar  { border-left: 3px solid #2a9d4b; background: #f0faf4; }
+    .tree-child.sem-opposite { border-left: 3px solid #c04a2a; background: #fdf3f0; }
+    .tree-child.sem-similar.sem-opposite { border-left: 3px solid #7a3db8; background: #f6f0fd; }
+
+    .tree-group.sem-group-similar  { border-left: 4px solid #2a9d4b; }
+    .tree-group.sem-group-opposite { border-left: 4px solid #c04a2a; }
+    .tree-group.sem-group-similar.sem-group-opposite { border-left: 4px solid #7a3db8; }
+
     .spinner {
       display: inline-block;
       width: 10px;
@@ -355,6 +377,11 @@
         <input type="text" id="searchInput" placeholder="Filter results…" autocomplete="off" />
         <span id="searchCount" class="search-count"></span>
       </div>
+      <div class="sem-row">
+        <button class="btn-subtle" id="semBtn">Check semantic matches</button>
+        <button class="btn-subtle" id="semClearBtn" style="display:none">Clear highlights</button>
+        <span id="semStatus" class="sem-status"></span>
+      </div>
       <div class="results-tree" id="resultsGrid"></div>
     </div>
   </div>
@@ -374,6 +401,9 @@
       const searchCount   = document.getElementById('searchCount');
       const idiomBtn      = document.getElementById('idiomBtn');
       const idiomStatus   = document.getElementById('idiomStatus');
+      const semBtn        = document.getElementById('semBtn');
+      const semClearBtn   = document.getElementById('semClearBtn');
+      const semStatus     = document.getElementById('semStatus');
 
       const CHUNK = 80;
 
@@ -482,6 +512,33 @@
       //its all greek to me -> tiresome talk gel
       //build on sand -> island bound
       //beat a dead horse
+      //bang for your buck
+      //apple of her eye
+      //around the clock
+      //at the drop of a hat
+      //at the end of the day
+      //at the top of his lungs
+      //a bridge too far
+      //ace in the hole
+      //a cold day in July
+      //a dime a dozen
+      //afraid of your own shadow
+      //after my own heart
+      //against the clock
+      //ahead of the pack
+      //air one's dirty laundry
+      //a little bird told me
+      //albatross around one's neck
+      //all bets are off
+      //all it's cracked up to be
+      //all over the map
+      //all roads lead to rome
+      //all that jazz
+      //all thumbs
+      //amateur hour
+      //an arm and a leg
+      //ancient history.     --- USE
+      //ants in my pants
       //fetch('./enable1.txt')
       fetch('./2of12.txt')
         .then(r => {
@@ -553,8 +610,9 @@
         try {
           const idioms = await fetchIdiomList();
           if (!idioms.length) throw new Error('empty');
-          const day   = Math.floor(Date.now() / 86400000);
-          const idiom = idioms[day % idioms.length];
+          // const day   = Math.floor(Date.now() / 86400000);  // ← restore for one-a-day
+          // const idiom = idioms[day % idioms.length];
+          const idiom = idioms[Math.floor(Math.random() * idioms.length)];
           phraseInput.value = idiom;
           phraseInput.dispatchEvent(new Event('input'));
           idiomStatus.textContent = 'Suggested by Wiktionary · edit freely';
@@ -752,6 +810,84 @@
           setTimeout(tick, 0);
         }, 30);
       }
+
+      /* ---------- semantic check ---------- */
+
+      const STOP = new Set(['a','an','the','and','or','but','in','on','at','to',
+                            'for','of','with','by','from','as','is','was','are',
+                            'were','be','been','it','its','one','ones','your','my']);
+
+      function semanticClear() {
+        resultsGrid.querySelectorAll('.sem-similar, .sem-opposite').forEach(el => {
+          el.classList.remove('sem-similar', 'sem-opposite');
+        });
+        resultsGrid.querySelectorAll('.sem-group-similar, .sem-group-opposite').forEach(el => {
+          el.classList.remove('sem-group-similar', 'sem-group-opposite');
+        });
+        semClearBtn.style.display = 'none';
+        semStatus.textContent = '';
+      }
+
+      async function semanticCheck() {
+        const phrase = phraseInput.value.trim();
+        if (!phrase) { semStatus.textContent = 'Enter a phrase first.'; return; }
+
+        const groups = resultsGrid.querySelectorAll('.tree-group');
+        if (!groups.length) { semStatus.textContent = 'Run a search first.'; return; }
+
+        semBtn.disabled = true;
+        semBtn.textContent = 'fetching…';
+        semStatus.textContent = '';
+        semanticClear();
+
+        let similar = [];
+        try {
+          const r = await fetch(
+            'https://api.datamuse.com/words?ml=' + encodeURIComponent(phrase) + '&max=60'
+          );
+          similar = (await r.json()).map(w => w.word.toLowerCase());
+        } catch (_) {}
+
+        const keyWords = phrase.toLowerCase()
+          .replace(/[^a-z ]/g, '')
+          .split(/\s+/)
+          .filter(w => w.length > 2 && !STOP.has(w));
+
+        let opposite = [];
+        for (const word of keyWords) {
+          try {
+            const r = await fetch(
+              'https://api.datamuse.com/words?rel_ant=' + encodeURIComponent(word) + '&max=25'
+            );
+            opposite.push(...(await r.json()).map(w => w.word.toLowerCase()));
+          } catch (_) {}
+        }
+        opposite = [...new Set(opposite)];
+
+        let simCount = 0, antCount = 0;
+        groups.forEach(groupDiv => {
+          let groupHasSim = false, groupHasAnt = false;
+          groupDiv.querySelectorAll('.tree-child').forEach(child => {
+            const words = (child.dataset.combo || '').toLowerCase().split(/\s+/);
+            const hasSim = words.some(w => similar.includes(w));
+            const hasAnt = words.some(w => opposite.includes(w));
+            if (hasSim) { child.classList.add('sem-similar');  simCount++; groupHasSim = true; }
+            if (hasAnt) { child.classList.add('sem-opposite'); antCount++; groupHasAnt = true; }
+          });
+          if (groupHasSim) groupDiv.classList.add('sem-group-similar');
+          if (groupHasAnt) groupDiv.classList.add('sem-group-opposite');
+        });
+
+        semBtn.disabled = false;
+        semBtn.textContent = 'Check semantic matches';
+        semStatus.textContent =
+          simCount + ' similar (green)  ·  ' + antCount + ' opposite (red)';
+        semClearBtn.style.display = simCount + antCount > 0 ? '' : 'none';
+      }
+
+      semBtn.addEventListener('click', semanticCheck);
+      semClearBtn.addEventListener('click', semanticClear);
+
     })();
   </script>
 </body>
