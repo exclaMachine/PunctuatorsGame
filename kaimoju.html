@@ -145,10 +145,24 @@ const HR = {
   'わ':'wa',  'を':'wo',  'ん':'n'
 };
 
+// ── Kanji → Romaji map (JLPT N5 essentials, single readings only) ──
+// One reading per kanji to keep the typing target unambiguous. Readings
+// chosen to avoid romaji collisions between entries.
+const KJR = {
+  '一':'ichi','二':'ni',  '三':'san', '四':'yon', '五':'go',
+  '六':'roku','七':'nana','八':'hachi','九':'kyu','十':'ju',
+  '人':'hito','口':'kuchi','目':'me',  '耳':'mimi','手':'te', '足':'ashi',
+  '日':'hi',  '月':'tsuki','火':'ka',  '水':'mizu','木':'ki', '山':'yama',
+  '川':'kawa','田':'ta',  '空':'sora','雨':'ame',
+  '本':'hon', '大':'dai', '小':'sho', '中':'naka',
+  '上':'ue',  '下':'shita','左':'hidari','右':'migi'
+};
+
 // ── Difficulty modes ────────────────────────────────────────────────
 const MODES = {
-  katakana: { label:'カタカナ  KATAKANA', desc:'46 angular characters — the classic mode',  chars: KR, sample:'ア  イ  ウ  シ  ツ  フ' },
-  hiragana: { label:'ひらがな  HIRAGANA', desc:'46 rounded characters — same readings',     chars: HR, sample:'あ  い  う  し  つ  ふ' },
+  katakana: { label:'カタカナ  KATAKANA', desc:'46 angular characters — the classic mode',  chars: KR,  sample:'ア  イ  ウ  シ  ツ  フ' },
+  hiragana: { label:'ひらがな  HIRAGANA', desc:'46 rounded characters — same readings',     chars: HR,  sample:'あ  い  う  し  つ  ふ' },
+  kanji:    { label:'漢字    KANJI',       desc:'JLPT N5 essentials — one reading per kanji', chars: KJR, sample:'一  日  月  火  水  山' },
 };
 const MODE_KEYS = Object.keys(MODES);
 let gameMode = 'katakana';
@@ -415,12 +429,14 @@ const HINT_DELAY_MS = 1000;
 const PUNCH_DUR = 14;
 
 // Difficulty-select card hit-boxes (used by renderSelect + pointer handler)
-const SELECT_CARD_W = 580;
-const SELECT_CARD_H = 110;
+const SELECT_CARD_W   = 580;
+const SELECT_CARD_H   = 100;
+const SELECT_CARD_GAP = 22;
+const SELECT_STACK_Y0 = 170;
 const SELECT_CARDS = MODE_KEYS.map((key, i) => ({
   key,
   x: (W - SELECT_CARD_W) / 2,
-  y: 200 + i * (SELECT_CARD_H + 20),
+  y: SELECT_STACK_Y0 + i * (SELECT_CARD_H + SELECT_CARD_GAP),
   w: SELECT_CARD_W,
   h: SELECT_CARD_H,
   num: String(i + 1),
