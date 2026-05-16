@@ -265,3 +265,161 @@ No comparatives/superlatives — Mandarin/Yoruba invariant adjectives
 
 Key files: prescriptivist.html (self-contained — all game logic, rules, corpus, and styles are inline)
 Sprite hook: The villain character (Professor Prescripta) is intentionally absent from the current build. Sprite/animation integration is planned — the game UI leaves the left side of the main panel open for a character overlay.
+
+# KAIMOJU カイモジュ — Project Context
+
+Kaimoju (怪文字, kaomoji + kaiju) is a browser-based HTML5 Canvas game inspired by Rampage. The player controls a kaomoji monster and destroys ASCII-art buildings by correctly typing the romaji for katakana characters displayed on each block.
+
+---
+
+## Design Authority
+
+**The user's suggestions and decisions are confirmed requirements.** Implement them without question.
+
+**Claude's proposed suggestions are tentative.** Do not implement them without explicit user approval. When proposing new ideas, label them clearly as suggestions and wait for a yes before touching them.
+
+---
+
+## Tech Stack
+
+- **Single HTML file** — all HTML, CSS, and JavaScript lives in `kaimoju.html`. Do not split into separate files unless the user asks.
+- No frameworks, no build tools, no dependencies.
+- HTML5 Canvas (`<canvas>`) for all rendering.
+- Vanilla JavaScript for all game logic.
+- Target browsers: modern Chrome/Firefox/Safari/Edge.
+
+---
+
+## File Structure
+
+```
+your-project-folder/
+├── kaimoju.html   ← entire game
+└── CLAUDE.md      ← this file
+```
+
+---
+
+## Confirmed MVP Features (Do Not Change Without User Approval)
+
+These are locked-in. All of the following are the user's decisions:
+
+- **Katakana-only mode** (all 46 characters, romaji input via Latin keyboard)
+- **5 buildings** of 3 types: Wood (HP 1), Concrete (HP 2), Steel (HP 3)
+- **Random kaomoji** character at game start — random head + random body drawn from preset pools
+- **Combo system** — consecutive correct inputs build a multiplier, any miss resets to zero
+- **Ctrl+F — Find Mode**:
+  - Scans all alive katakana on screen, finds the one that appears most frequently
+  - Highlights every instance of that character in gold
+  - The next time the player correctly destroys a cell of that character, ALL highlighted instances are destroyed simultaneously
+  - Has a cooldown after use
+- **ASCII / terminal aesthetic** — dark background, green-on-black, scanlines, monospace font
+- **Score + stats** on game over screen (score, high score, max combo, blocks hit, misses, accuracy)
+- **No external dependencies** — one file, drop-in ready
+
+---
+
+## Architecture Overview
+
+### Key Constants
+
+- `CW = 48, CH = 48` — cell width/height in pixels
+- `GY = 460` — ground Y coordinate (player feet)
+- `PNL_Y = 473` — input panel top
+- `W = 920, H = 580` — canvas dimensions
+
+### Core Data Structures
+
+**`buildings[]`** — array of building objects
+
+```js
+{
+  x, width, cols, floors,
+  type: 'wood'|'concrete'|'steel',
+  cells: [ // cells[floor][col], floor 0 = bottom
+    [ { char, romaji, hp, maxHp, destroyed, hi, hitAnim, dieAnim }, ... ],
+    ...
+  ],
+  collapsed, shakeX
+}
+```
+
+**`player{}`**
+
+```js
+{
+  (x, vx, facing, head, body, wFrame, wTimer, tgt);
+}
+```
+
+**`findMode{}`**
+
+```js
+{
+  (on, char, count, cooldown);
+}
+```
+
+**`particles[]`** — ASCII explosion effect particles
+**`floats[]`** — floating score/status text
+
+### Input System
+
+- `window.addEventListener('keydown', ...)` — no hidden input element
+- `typeChar(ch)` handles romaji buffering:
+  - If buffer + new char **equals** target romaji → CORRECT, destroy cell
+  - If target romaji **starts with** buffer + char → valid prefix, keep buffering
+  - Otherwise → MISS, reset buffer (or keep new char if it's a valid prefix start)
+- Multi-char romaji (shi, chi, tsu, fu, wo) handled automatically by prefix logic
+- Ctrl+F is `preventDefault`'d before it can open the browser find dialog
+- Arrow keys are `preventDefault`'d to prevent page scrolling
+
+### Game Flow
+
+```
+menu  →  [Enter]  →  playing  →  all buildings collapsed  →  gameover
+                                                              [Enter/R]  →  playing
+```
+
+### Targeting Logic
+
+- `nearestBuilding()` — finds closest non-collapsed building to player by center-x distance
+- `firstCell(b)` — returns first non-destroyed cell in building (bottom → top, left → right)
+- `activeTarget()` — combines both: returns `{f, c, cell}` for current player target
+
+---
+
+## Tentative Future Features (Proposed — Needs User Approval)
+
+The following ideas were discussed but are **not confirmed**. Ask the user before implementing any of them:
+
+- **Hiragana mode** — difficulty tier 2 (46 hiragana characters, same romaji system)
+- **Kanji mode** — difficulty tier 3, JLPT N5→N3 vocabulary with furigana hints
+- **Oni Mode** — timed typing windows, no romaji hints, buildings "fight back"
+- **Kaomoji unlock/collection system** — earn new heads/bodies by destroying buildings
+- **Additional power-ups** (tentative key bindings):
+  - Ctrl+R — Rage Mode (simplifies all chars to kana for 10s)
+  - Ctrl+S — Speed Burst (doubles typing window)
+  - Ctrl+E — Chain (one correct input collapses whole floor)
+  - Ctrl+D — Shield (next 3 misses forgiven)
+  - Ctrl+A — Atomic Roar (clears all chars on screen)
+- **Scrolling city** — infinite city that advances as buildings are cleared
+- **Day/dusk/night cycle** — visual atmosphere that changes as difficulty ramps
+- **HP / lose condition** — player takes damage from building collapses or enemy attacks
+- **High score persistence** — localStorage
+- **Japanese word dictionary** — real JLPT N5 vocabulary replacing individual characters
+- **Difficulty select screen** — choose kana vs kanji, speed, etc.
+- **Mobile support** — on-screen soft keyboard / touch input
+
+---
+
+## Coding Notes
+
+- Keep all game code inside the single `<script>` tag in `kaimoju.html`
+- The canvas is `920×580`. Adjust layout constants at the top of the script if resizing.
+- Fonts: `'Courier New', monospace` — no external font imports needed
+- `ctx.shadowBlur` is used for glow effects; always reset to `0` after use
+- `ctx.textAlign` is often changed; always reset to `'left'` after centered drawing
+- `ctx.globalAlpha` is used for fades; always reset to `1` after use
+- The `frame` counter increments every `requestAnimationFrame` tick and is used for blink animations
+- `Date.now()` is used directly for smooth time-based animations (stars, player bounce, etc.)

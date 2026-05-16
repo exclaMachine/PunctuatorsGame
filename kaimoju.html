@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAIMOJU カイモジュ</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#000;
+  display:flex; align-items:center; justify-content:center;
+  min-height:100vh; overflow:hidden;
+  font-family:'Courier New',monospace;
+}
+canvas { display:block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  KAIMOJU  カイモジュ  —  怪文字 Kaiju Typer
+//  Destroy ASCII buildings by typing katakana romaji!
+// ═══════════════════════════════════════════════════════════════════
+
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const W = 920, H = 580;
+c.width = W; c.height = H;
+
+// ── Palette ─────────────────────────────────────────────────────────
+const P = {
+  bg:       '#03060a',
+  sky0:     '#020406',
+  sky1:     '#040c14',
+  ground:   '#050e05',
+  gndtex:   '#0d260d',
+  // cell fills per building type
+  fill_w:   '#0b180b',
+  fill_c:   '#0b1222',
+  fill_s:   '#140b22',
+  // cell borders per type
+  bdr_w:    '#1c6e1c',
+  bdr_c:    '#1c4a80',
+  bdr_s:    '#5c1c80',
+  // active / find highlight
+  act_bg:   '#191900',
+  act_bd:   '#ffff00',
+  act_k:    '#ffff55',
+  find_bg:  '#180f00',
+  find_bd:  '#ffaa00',
+  find_k:   '#ffcc44',
+  // hit/damage
+  hit_bg:   '#1a0404',
+  hit_bd:   '#ff3333',
+  // text
+  katakana: '#2eff5a',
+  romaji:   '#9adb9a',
+  player:   '#ffaa00',
+  pglow:    '#ff6600',
+  hud:      '#2eff5a',
+  hud_dim:  '#7ac27a',
+  score_fl: '#ffff44',
+  find_fl:  '#ffaa00',
+  combo_lo: '#00ddff',
+  combo_hi: '#ff8800',
+  panel_bg: 'rgba(0,7,0,0.92)',
+  panel_bd: '#3a6a3a',
+};
+
+// ── Katakana → Romaji map (all 46) ──────────────────────────────────
+const KR = {
+  'ア':'a',   'イ':'i',   'ウ':'u',   'エ':'e',   'オ':'o',
+  'カ':'ka',  'キ':'ki',  'ク':'ku',  'ケ':'ke',  'コ':'ko',
+  'サ':'sa',  'シ':'shi', 'ス':'su',  'セ':'se',  'ソ':'so',
+  'タ':'ta',  'チ':'chi', 'ツ':'tsu', 'テ':'te',  'ト':'to',
+  'ナ':'na',  'ニ':'ni',  'ヌ':'nu',  'ネ':'ne',  'ノ':'no',
+  'ハ':'ha',  'ヒ':'hi',  'フ':'fu',  'ヘ':'he',  'ホ':'ho',
+  'マ':'ma',  'ミ':'mi',  'ム':'mu',  'メ':'me',  'モ':'mo',
+  'ヤ':'ya',  'ユ':'yu',  'ヨ':'yo',
+  'ラ':'ra',  'リ':'ri',  'ル':'ru',  'レ':'re',  'ロ':'ro',
+  'ワ':'wa',  'ヲ':'wo',  'ン':'n'
+};
+const ALL_KAT = Object.keys(KR);
+
+// ── Kaomoji parts ────────────────────────────────────────────────────
+const HEADS = [
+  '(>ω<)',  '(◕‿◕)',  '(ᵔᴥᵔ)',   '(^•ω•^)',
+  '(｀▽´)', '(ΩДΩ)',  '(≧◡≦)',   '(¬‿¬)',
+  '(⊙_⊙)', '(ಠ益ಠ)', '(ᗒᗨᗕ)',   '(✿◠‿◠)'
+];
+const BODIES = [
+  'ᕦ(ò_ó)ᕤ',   'ヽ(°〇°)ﾉ',  'ლ(´ڡ`ლ)',
+  '(ﾉ◕ヮ◕)ﾉ',  'ᕙ(⇀‸↼)ᕗ',   '٩(◕‿◕)۶',
+  'ᕦ(ò_óˇ)ᕤ',  '(づ￣ ³￣)づ'
+];
+const WALK_ANIM = [
+  'ᕦ(ò_ó)ᕤ', 'ヽ(>ω<)ﾉ', 'ᕦ(ò_ó)ᕤ', '٩(◕ᴗ◕)۶'
+];
+
+// ── Static star field ────────────────────────────────────────────────
+const STARS = Array.from({length:90}, () => ({
+  x: Math.random()*W,
+  y: Math.random()*260+12,
+  r: Math.random()*1.4+0.3,
+  tw: Math.random()*6.28
+}));
+
+// ── Distant city silhouette (static, decorative) ─────────────────────
+const BG_BLDGS = Array.from({length:22}, (_,i) => ({
+  x: (i*61)%W, w: 18+((i*37)%28), h: 35+((i*61)%65)
+}));
+
+// ── Particle chars ───────────────────────────────────────────────────
+const PCHARS = ['#','*','!','%','@','░','▓','▒','×','+','∙','·','▪'];
+
+// ── Layout constants ─────────────────────────────────────────────────
+const CW = 48, CH = 48;   // cell width / height
+const GY = 460;            // ground y (player feet)
+const PNL_Y = 473;         // input panel top
+const HUD_H = 36;          // hud height
+
+// ── Building configs (MVP: 5 buildings) ──────────────────────────────
+const BCONFIGS = [
+  { cols:3, floors:5, type:'wood'     },
+  { cols:4, floors:7, type:'concrete' },
+  { cols:3, floors:6, type:'wood'     },
+  { cols:3, floors:4, type:'steel'    },
+  { cols:4, floors:8, type:'concrete' },
+];
+
+// ═══════════════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════════════
+let gState = 'menu';  // 'menu' | 'playing' | 'gameover'
+let score = 0, hiScore = 0;
+let combo = 0, maxCombo = 0;
+let totalHits = 0, totalMisses = 0;
+let buildings = [], particles = [], floats = [];
+let flash = { alpha:0, col:P.hit_bd };
+let findMode = { on:false, char:null, count:0, cooldown:0 };
+let inputBuf = '';
+let keys = {};
+let player = {};
+let frame = 0;  // frame counter for animations
+
+// ── Helpers ──────────────────────────────────────────────────────────
+const rnd  = (a,b) => a + Math.random()*(b-a);
+const pick = arr  => arr[Math.floor(Math.random()*arr.length)];
+
+// ═══════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════
+function initGame() {
+  score=0; combo=0; maxCombo=0; totalHits=0; totalMisses=0;
+  inputBuf=''; particles=[]; floats=[];
+  flash={alpha:0, col:P.hit_bd};
+  findMode={on:false, char:null, count:0, cooldown:0};
+  player = makePlayer();
+  buildings = makeBuildings();
+  player.tgt = nearestBuilding();
+}
+
+// ── Player ────────────────────────────────────────────────────────────
+function makePlayer() {
+  return {
+    x:80, vx:0, facing:1,
+    head: pick(HEADS),
+    body: pick(BODIES),
+    wFrame:0, wTimer:0,
+    tgt:0
+  };
+}
+
+// ── Buildings ────────────────────────────────────────────────────────
+function makeBuildings() {
+  let bx = 15;
+  return BCONFIGS.map(cfg => {
+    const baseHp = cfg.type==='wood'?1 : cfg.type==='concrete'?2 : 3;
+    const cells = Array.from({length:cfg.floors}, () =>
+      Array.from({length:cfg.cols}, () => {
+        const k = pick(ALL_KAT);
+        return {
+          char: k, romaji: KR[k],
+          hp: baseHp, maxHp: baseHp,
+          destroyed: false, hi: false,
+          hitAnim: 0, dieAnim: 0
+        };
+      })
+    );
+    const bld = {
+      x:bx, width:cfg.cols*CW,
+      cols:cfg.cols, floors:cfg.floors,
+      type:cfg.type, cells,
+      collapsed:false, shakeX:0
+    };
+    bx += bld.width + 18;
+    return bld;
+  });
+}
+
+// First alive cell: bottom floor → top, left col → right
+function firstCell(b) {
+  for (let f=0; f<b.floors; f++)
+    for (let c=0; c<b.cols; c++)
+      if (!b.cells[f][c].destroyed) return {f, c, cell:b.cells[f][c]};
+  return null;
+}
+
+function activeTarget() {
+  if (player.tgt<0 || player.tgt>=buildings.length) return null;
+  const b = buildings[player.tgt];
+  if (!b || b.collapsed) return null;
+  return firstCell(b);
+}
+
+function nearestBuilding() {
+  let best=-1, bestD=1e9;
+  buildings.forEach((b,i) => {
+    if (b.collapsed) return;
+    const d = Math.abs(player.x - (b.x + b.width/2));
+    if (d<bestD) { bestD=d; best=i; }
+  });
+  return best;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  INPUT HANDLING
+// ═══════════════════════════════════════════════════════════════════
+function handleKey(e) {
+  // Prevent browser shortcuts we're using
+  if (e.ctrlKey && e.key==='f') { e.preventDefault(); }
+  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) {
+    e.preventDefault();
+  }
+
+  if (gState==='menu') {
+    if (e.key==='Enter') { gState='playing'; initGame(); }
+    return;
+  }
+  if (gState==='gameover') {
+    if (e.key==='Enter' || e.key.toLowerCase()==='r') { gState='playing'; initGame(); }
+    return;
+  }
+
+  // Playing
+  if (e.ctrlKey && e.key==='f') { activateFind(); return; }
+  if (e.key==='Backspace') { inputBuf = inputBuf.slice(0,-1); return; }
+
+  // Letter input (a-z only, no ctrl/meta/alt combos)
+  if (e.key.length===1 && /[a-zA-Z]/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    typeChar(e.key.toLowerCase());
+  }
+}
+
+function typeChar(ch) {
+  const act = activeTarget();
+  if (!act) return;
+
+  const rom = act.cell.romaji;
+  const nb  = inputBuf + ch;
+
+  if (nb === rom) {
+    // ✓ Exact match → destroy
+    inputBuf = '';
+    doHit(player.tgt, act.f, act.c);
+  } else if (rom.startsWith(nb)) {
+    // Valid prefix → keep buffering
+    inputBuf = nb;
+  } else {
+    // Wrong — check if typed char alone starts the target
+    inputBuf = rom.startsWith(ch) ? ch : '';
+    doMiss();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  GAME LOGIC
+// ═══════════════════════════════════════════════════════════════════
+function doMiss() {
+  combo = 0;
+  totalMisses++;
+  flash.alpha = 0.32;
+  flash.col = P.hit_bd;
+  const b = buildings[player.tgt];
+  if (b) b.shakeX = 5;
+}
+
+function doHit(bIdx, f, c) {
+  const b    = buildings[bIdx];
+  const cell = b.cells[f][c];
+
+  cell.hp--;
+  cell.hitAnim = 10;
+  totalHits++;
+
+  if (cell.hp <= 0) {
+    cell.destroyed = true;
+    cell.dieAnim   = 20;
+
+    const cx = b.x + c*CW + CW/2;
+    const cy = GY - (f+1)*CH + CH/2;
+    spawnParticles(cx, cy, b.type);
+
+    // Find mode: if this char matches, burst ALL highlighted instances
+    if (findMode.on && cell.char === findMode.char) {
+      doFindBurst(bIdx);
+    }
+
+    // Scoring
+    const base = b.type==='wood'?10 : b.type==='concrete'?20 : 30;
+    const mult = Math.max(1, Math.floor(combo/3) + 1);
+    const pts  = base * mult;
+    score += pts;
+    combo++;
+    if (combo > maxCombo) maxCombo = combo;
+    addFloat('+' + pts, cx, cy);
+
+    checkCollapsed(bIdx);
+  }
+}
+
+function doFindBurst(triggerBIdx) {
+  let n = 0;
+  buildings.forEach((b, bi) => {
+    if (b.collapsed) return;
+    b.cells.forEach((row, f) => {
+      row.forEach((cell, c) => {
+        if (!cell.destroyed && cell.hi && cell.char === findMode.char) {
+          cell.destroyed = true;
+          cell.dieAnim   = 20;
+          const cx = b.x + c*CW + CW/2;
+          const cy = GY - (f+1)*CH + CH/2;
+          spawnParticles(cx, cy, b.type);
+          n++;
+          totalHits++;
+          checkCollapsed(bi);
+        }
+      });
+    });
+  });
+
+  if (n > 0) {
+    const bonus = n * 30 * Math.max(1, combo);
+    score += bonus;
+    combo += n;
+    flash.alpha = 0.4; flash.col = P.find_fl;
+    addFloat(`FIND ×${n}!  +${bonus}`, W/2, 200, P.find_fl, 22);
+  }
+
+  findMode.on = false; findMode.char = null; findMode.count = 0;
+  findMode.cooldown = 420;  // ~7 seconds at 60fps
+  clearHighlights();
+}
+
+function checkCollapsed(bIdx) {
+  const b = buildings[bIdx];
+  if (b.cells.every(row => row.every(cell => cell.destroyed))) {
+    b.collapsed = true;
+    score += 200;
+    addFloat('BUILDING DESTROYED! +200', b.x + b.width/2, GY - b.floors*CH/2, '#ff7700', 16);
+    player.tgt = nearestBuilding();
+    if (buildings.every(b => b.collapsed)) {
+      setTimeout(() => endGame(true), 1400);
+    }
+  }
+}
+
+// ── Find Mode (Ctrl+F) ────────────────────────────────────────────────
+function activateFind() {
+  if (findMode.on || findMode.cooldown > 0) return;
+
+  // Count all alive katakana chars
+  const cnt = {};
+  buildings.forEach(b => {
+    if (b.collapsed) return;
+    b.cells.forEach(row => row.forEach(cell => {
+      if (!cell.destroyed) cnt[cell.char] = (cnt[cell.char]||0)+1;
+    }));
+  });
+
+  // Find most frequent
+  let best=null, bestN=0;
+  for (const [k,v] of Object.entries(cnt))
+    if (v > bestN) { bestN=v; best=k; }
+
+  if (!best || bestN < 2) return;  // need at least 2 instances
+
+  findMode.on = true; findMode.char = best; findMode.count = bestN;
+
+  // Highlight all matching alive cells
+  buildings.forEach(b => b.cells.forEach(row => row.forEach(cell => {
+    cell.hi = (!cell.destroyed && cell.char === best);
+  })));
+
+  flash.alpha = 0.22; flash.col = P.find_fl;
+  addFloat(`◆ FIND: ${best} (${KR[best]})  ×${bestN} ◆`, W/2, 160, P.find_fl, 17);
+}
+
+function clearHighlights() {
+  buildings.forEach(b => b.cells.forEach(row => row.forEach(cell => cell.hi = false)));
+}
+
+// ── End Game ──────────────────────────────────────────────────────────
+function endGame(win=false) {
+  if (gState === 'gameover') return;
+  hiScore = Math.max(hiScore, score);
+  gState = 'gameover';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  PARTICLES & FLOATING TEXT
+// ═══════════════════════════════════════════════════════════════════
+function spawnParticles(x, y, type) {
+  const col = type==='wood' ? '#44ff66' : type==='concrete' ? '#4488ff' : '#aa44ff';
+  for (let i=0; i<12; i++) {
+    const a = Math.PI*2*(i/12) + rnd(-0.3,0.3);
+    const spd = rnd(1.5,4.5);
+    particles.push({
+      x, y,
+      vx: Math.cos(a)*spd, vy: Math.sin(a)*spd - 1.8,
+      life: rnd(22,50), maxLife:50,
+      ch: pick(PCHARS), col
+    });
+  }
+}
+
+function addFloat(txt, x, y, col=P.score_fl, sz=15) {
+  floats.push({ txt, x, y, vy:-1.5, life:75, maxLife:75, col, sz });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  UPDATE
+// ═══════════════════════════════════════════════════════════════════
+function update() {
+  if (gState !== 'playing') return;
+  frame++;
+
+  // Flash decay
+  if (flash.alpha > 0) flash.alpha = Math.max(0, flash.alpha - 0.022);
+
+  // Find mode cooldown
+  if (findMode.cooldown > 0) findMode.cooldown--;
+  if (!findMode.on) clearHighlights();
+
+  // Player movement
+  if (keys['ArrowLeft'])       player.vx = -2.8;
+  else if (keys['ArrowRight']) player.vx =  2.8;
+  else                         player.vx *= 0.72;
+
+  player.x = Math.max(20, Math.min(W-20, player.x + player.vx));
+  if (player.vx >  0.25) player.facing =  1;
+  if (player.vx < -0.25) player.facing = -1;
+
+  // Walk animation
+  player.wTimer++;
+  if (player.wTimer > 7) { player.wFrame = (player.wFrame+1)%4; player.wTimer=0; }
+
+  // Auto-target nearest alive building
+  player.tgt = nearestBuilding();
+
+  // Building shake decay
+  buildings.forEach(b => { if (b.shakeX>0) b.shakeX = Math.max(0, b.shakeX-0.38); });
+
+  // Particles
+  particles = particles.filter(p => {
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.14; p.life--;
+    return p.life > 0;
+  });
+
+  // Float texts
+  floats = floats.filter(ft => { ft.y+=ft.vy; ft.life--; return ft.life>0; });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════════════
+function render() {
+  ctx.clearRect(0,0,W,H);
+
+  if (gState==='menu')     { renderMenu();     return; }
+  if (gState==='gameover') { renderGameOver(); return; }
+
+  drawBG();
+  drawBuildings();
+  drawGround();
+  drawParticles();
+  drawFloats();
+  drawPlayer();
+  drawInputPanel();
+  drawHUD();
+
+  // Screen flash overlay
+  if (flash.alpha > 0) {
+    ctx.globalAlpha = flash.alpha;
+    ctx.fillStyle   = flash.col;
+    ctx.fillRect(0,0,W,H);
+    ctx.globalAlpha = 1;
+  }
+
+  drawScanlines();
+}
+
+// ── Background ────────────────────────────────────────────────────────
+function drawBG() {
+  const g = ctx.createLinearGradient(0,0,0,GY);
+  g.addColorStop(0, P.sky0);
+  g.addColorStop(1, P.sky1);
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,GY);
+
+  // Stars
+  const t = Date.now()/1000;
+  STARS.forEach(s => {
+    const a = 0.25 + 0.22*Math.sin(t*0.9+s.tw);
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(170,190,255,${a})`;
+    ctx.fill();
+  });
+
+  // Distant city silhouette
+  ctx.fillStyle = 'rgba(8,18,8,0.65)';
+  BG_BLDGS.forEach(b => ctx.fillRect(b.x, GY-b.h, b.w, b.h));
+}
+
+// ── Ground ────────────────────────────────────────────────────────────
+function drawGround() {
+  ctx.fillStyle = P.ground;
+  ctx.fillRect(0, GY, W, PNL_Y - GY);
+
+  ctx.font = '11px "Courier New"';
+  const TEX = ['▓','▒','░','▒'];
+  for (let x=0; x<W; x+=12) {
+    ctx.fillStyle = P.gndtex;
+    ctx.fillText(TEX[Math.floor(x/12)%4], x, GY+12);
+  }
+}
+
+// ── Buildings ────────────────────────────────────────────────────────
+function drawBuildings() {
+  buildings.forEach((b, bi) => {
+    if (b.collapsed) return;
+
+    const sx  = b.shakeX * Math.sin(Date.now()/38);
+    const isTgt = bi === player.tgt;
+    const act = isTgt ? firstCell(b) : null;
+
+    // Building base
+    ctx.fillStyle = b.type==='wood' ? '#0a140a' : b.type==='concrete' ? '#0a1020' : '#120a20';
+    ctx.fillRect(b.x+sx, GY - b.floors*CH, b.width, 4);
+
+    // Cells
+    for (let f=0; f<b.floors; f++) {
+      for (let c=0; c<b.cols; c++) {
+        drawCell(
+          b.x + sx + c*CW,
+          GY - (f+1)*CH,
+          b.cells[f][c], b.type,
+          isTgt && act && act.f===f && act.c===c
+        );
+      }
+    }
+
+    // Building type label above
+    ctx.font = '8px "Courier New"';
+    ctx.fillStyle  = isTgt ? '#2eff5a' : '#7ac27a';
+    ctx.textAlign  = 'center';
+    ctx.fillText(b.type.toUpperCase(), b.x + sx + b.width/2, GY - b.floors*CH - 4);
+    ctx.textAlign = 'left';
+  });
+}
+
+function drawCell(x, y, cell, type, isActive) {
+  // Dying animation
+  if (cell.destroyed) {
+    if (cell.dieAnim > 0) {
+      cell.dieAnim--;
+      ctx.globalAlpha = cell.dieAnim/20;
+      ctx.font = '13px "Courier New"';
+      ctx.fillStyle   = '#ff7700';
+      ctx.textAlign   = 'center';
+      ctx.fillText('░▒▓', x+CW/2, y+CH/2+4);
+      ctx.globalAlpha = 1;
+      ctx.textAlign   = 'left';
+    }
+    return;
+  }
+
+  if (cell.hitAnim > 0) cell.hitAnim--;
+
+  // Determine color theme
+  let bg, bd, kt;
+  if (cell.hi) {
+    bg=P.find_bg;  bd=P.find_bd;  kt=P.find_k;
+  } else if (isActive) {
+    bg=P.act_bg;   bd=P.act_bd;   kt=P.act_k;
+  } else if (cell.hitAnim > 0) {
+    bg=P.hit_bg;   bd=P.hit_bd;   kt='#ff6666';
+  } else {
+    bg = type==='wood'?P.fill_w : type==='concrete'?P.fill_c : P.fill_s;
+    bd = type==='wood'?P.bdr_w  : type==='concrete'?P.bdr_c  : P.bdr_s;
+    kt = P.katakana;
+  }
+
+  // Background
+  ctx.fillStyle = bg;
+  ctx.fillRect(x, y, CW, CH);
+
+  // Border
+  ctx.strokeStyle = bd;
+  ctx.lineWidth   = (isActive || cell.hi) ? 1.5 : 1;
+  ctx.strokeRect(x+0.5, y+0.5, CW-1, CH-1);
+
+  // Katakana character
+  ctx.font      = 'bold 20px "Courier New"';
+  ctx.fillStyle = kt;
+  ctx.textAlign = 'center';
+  if (isActive || cell.hi) { ctx.shadowBlur=9; ctx.shadowColor=kt; }
+  ctx.fillText(cell.char, x+CW/2, y+CH/2+6);
+  ctx.shadowBlur = 0;
+
+  // Romaji hint (small, bottom of cell)
+  ctx.font      = '9px "Courier New"';
+  ctx.fillStyle = isActive ? '#d8e8d8' : cell.hi ? '#ffcc66' : P.romaji;
+  ctx.fillText(cell.romaji, x+CW/2, y+CH-4);
+
+  // HP pips for multi-hp blocks (concrete/steel)
+  if (cell.maxHp > 1) {
+    for (let i=0; i<cell.maxHp; i++) {
+      ctx.fillStyle = i < cell.hp ? '#ff7700' : '#160800';
+      ctx.fillRect(x+3+i*8, y+3, 6, 4);
+    }
+  }
+
+  // Blinking ▼ cursor above active target
+  if (isActive && (frame%24)<12) {
+    ctx.fillStyle = '#ffff00';
+    ctx.font      = '9px "Courier New"';
+    ctx.fillText('▼', x+CW/2, y-1);
+  }
+
+  ctx.textAlign = 'left';
+}
+
+// ── Particles ─────────────────────────────────────────────────────────
+function drawParticles() {
+  ctx.font = '11px "Courier New"';
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life/p.maxLife;
+    ctx.fillStyle   = p.col;
+    ctx.fillText(p.ch, p.x, p.y);
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ── Floating score text ───────────────────────────────────────────────
+function drawFloats() {
+  ctx.textAlign = 'center';
+  floats.forEach(ft => {
+    ctx.globalAlpha = Math.min(1, ft.life/ft.maxLife * 2);
+    ctx.font        = `bold ${ft.sz}px "Courier New"`;
+    ctx.fillStyle   = ft.col;
+    ctx.shadowBlur  = 6; ctx.shadowColor = ft.col;
+    ctx.fillText(ft.txt, ft.x, ft.y);
+    ctx.shadowBlur  = 0;
+  });
+  ctx.globalAlpha = 1;
+  ctx.textAlign   = 'left';
+}
+
+// ── Player (Kaomoji Monster) ──────────────────────────────────────────
+function drawPlayer() {
+  const px = player.x;
+  const t  = Date.now();
+  const moving = Math.abs(player.vx) > 0.25;
+
+  ctx.textAlign  = 'center';
+  ctx.shadowBlur = 13; ctx.shadowColor = P.pglow;
+  ctx.fillStyle  = P.player;
+
+  ctx.font = 'bold 18px "Courier New"';
+  ctx.fillText(player.head, px, GY-34);
+  ctx.fillText(moving ? WALK_ANIM[player.wFrame] : player.body, px, GY-13);
+
+  ctx.shadowBlur = 0;
+  ctx.font      = '11px "Courier New"';
+  ctx.fillStyle = '#996600';
+  ctx.fillText(player.facing > 0 ? ' /|\\' : '\\| ', px, GY+2);
+
+  // Combo aura (combo ≥ 5)
+  if (combo >= 5) {
+    const pulse = 0.5 + 0.5*Math.sin(t/120);
+    ctx.globalAlpha = pulse * 0.85;
+    ctx.font        = `${11+pulse*5}px "Courier New"`;
+    ctx.fillStyle   = '#ff7700';
+    ctx.fillText('!!! !!!', px, GY-52);
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.textAlign = 'left';
+}
+
+// ── Input Panel (bottom bar) ──────────────────────────────────────────
+function drawInputPanel() {
+  const PY = PNL_Y;
+  const PH = H - PY;
+
+  ctx.fillStyle = P.panel_bg;
+  ctx.fillRect(0, PY, W, PH);
+
+  // Top border
+  ctx.strokeStyle = P.panel_bd;
+  ctx.lineWidth   = 1;
+  ctx.beginPath(); ctx.moveTo(0,PY); ctx.lineTo(W,PY); ctx.stroke();
+
+  const act = activeTarget();
+  const LP  = 270;  // left panel width
+
+  // Divider
+  ctx.strokeStyle = P.panel_bd;
+  ctx.beginPath(); ctx.moveTo(LP, PY+10); ctx.lineTo(LP, H-10); ctx.stroke();
+
+  // ─ Left: target katakana ─
+  ctx.textAlign  = 'center';
+  ctx.font       = 'bold 10px "Courier New"';
+  ctx.fillStyle  = '#9adb9a';
+  ctx.fillText('TARGET', LP/2, PY+15);
+
+  if (act) {
+    ctx.font      = 'bold 44px "Courier New"';
+    ctx.shadowBlur = 16; ctx.shadowColor = '#ffff44';
+    ctx.fillStyle  = '#ffff55';
+    ctx.fillText(act.cell.char, LP/2, PY+62);
+    ctx.shadowBlur = 0;
+
+    ctx.font      = '12px "Courier New"';
+    ctx.fillStyle  = '#b8e0b8';
+    ctx.fillText(act.cell.romaji, LP/2, PY+80);
+  } else {
+    ctx.font      = '11px "Courier New"';
+    ctx.fillStyle  = P.hud_dim;
+    ctx.fillText('— MOVE TO —', LP/2, PY+44);
+    ctx.fillText('A BUILDING', LP/2, PY+60);
+  }
+
+  // ─ Right: romaji letter boxes ─
+  if (act) {
+    const rom  = act.cell.romaji;
+    const typed = inputBuf;
+    const BW=40, BH=42, BSP=8;
+    const totalW = rom.length*(BW+BSP)-BSP;
+    const RPx    = LP;
+    const RPw    = W - LP;
+    const bx0    = RPx + (RPw - totalW)/2;
+    const by0    = PY + 12;
+
+    for (let i=0; i<rom.length; i++) {
+      const bx   = bx0 + i*(BW+BSP);
+      const done = i < typed.length;
+      const curr = i === typed.length;
+
+      ctx.fillStyle   = done ? '#0a280a' : curr ? '#191900' : '#0a160a';
+      ctx.fillRect(bx, by0, BW, BH);
+      ctx.strokeStyle = done ? '#2eff5a' : curr ? '#ffff00' : '#5fa05f';
+      ctx.lineWidth   = (done||curr) ? 1.5 : 1;
+      ctx.strokeRect(bx+0.5, by0+0.5, BW-1, BH-1);
+
+      if (curr) { ctx.shadowBlur=9; ctx.shadowColor='#ffff00'; }
+      ctx.font      = `bold ${done?20:curr?18:15}px "Courier New"`;
+      ctx.fillStyle  = done ? '#2eff5a' : curr ? '#ffff66' : '#9adb9a';
+      ctx.fillText(rom[i].toUpperCase(), bx+BW/2, by0+BH/2+7);
+      ctx.shadowBlur = 0;
+    }
+
+    // Status line under boxes
+    ctx.font = '10px "Courier New"';
+    const statusY = PY + 72;
+
+    if (findMode.on) {
+      ctx.fillStyle  = P.find_fl;
+      ctx.shadowBlur = 5; ctx.shadowColor = P.find_fl;
+      ctx.fillText(
+        `◆ FIND MODE ACTIVE: ${findMode.char} (${KR[findMode.char]}) ×${findMode.count}  —  destroy one to clear ALL ◆`,
+        RPx + RPw/2, statusY
+      );
+      ctx.shadowBlur = 0;
+    } else if (findMode.cooldown > 0) {
+      ctx.fillStyle = '#9ac49a';
+      ctx.fillText(`[CTRL+F] cooldown: ${Math.ceil(findMode.cooldown/60)}s`, RPx+RPw/2, statusY);
+    } else {
+      ctx.fillStyle = '#9adb9a';
+      ctx.fillText('[CTRL+F]  highlight most frequent katakana — type it once to destroy them all', RPx+RPw/2, statusY);
+    }
+  }
+
+  ctx.textAlign = 'left';
+}
+
+// ── HUD ───────────────────────────────────────────────────────────────
+function drawHUD() {
+  ctx.fillStyle   = 'rgba(0,5,0,0.82)';
+  ctx.fillRect(0, 0, W, HUD_H);
+  ctx.strokeStyle = '#0d2a0d';
+  ctx.lineWidth   = 1;
+  ctx.strokeRect(0, 0, W, HUD_H);
+
+  ctx.font = 'bold 13px "Courier New"';
+
+  // Score (left)
+  ctx.fillStyle = P.hud;
+  ctx.textAlign = 'left';
+  ctx.fillText(`スコア  ${score}`, 12, 23);
+
+  // Combo (center)
+  if (combo > 0) {
+    const cc = combo>=10 ? P.combo_hi : P.combo_lo;
+    ctx.textAlign  = 'center';
+    ctx.fillStyle  = cc;
+    if (combo>=5) { ctx.shadowBlur=8; ctx.shadowColor=cc; }
+    ctx.fillText(`COMBO  ×${combo}`, W/2, 23);
+    ctx.shadowBlur = 0;
+  }
+
+  // Misses (right)
+  ctx.textAlign = 'right';
+  ctx.fillStyle = combo===0 && totalMisses>0 ? '#ff8888' : '#9adb9a';
+  ctx.fillText(`misses: ${totalMisses}`, W-12, 23);
+
+  ctx.textAlign = 'left';
+}
+
+// ── Scanlines overlay ─────────────────────────────────────────────────
+function drawScanlines() {
+  ctx.fillStyle = 'rgba(0,0,0,0.11)';
+  for (let y=0; y<H; y+=3) ctx.fillRect(0, y, W, 1);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MENU & GAME OVER SCREENS
+// ═══════════════════════════════════════════════════════════════════
+function renderMenu() {
+  drawBG();
+  ctx.textAlign = 'center';
+
+  // Title
+  ctx.font      = 'bold 54px "Courier New"';
+  ctx.shadowBlur = 22; ctx.shadowColor = '#2eff5a';
+  ctx.fillStyle  = '#2eff5a';
+  ctx.fillText('カイモジュ', W/2, 110);
+  ctx.shadowBlur = 0;
+
+  ctx.font      = 'bold 18px "Courier New"';
+  ctx.fillStyle  = '#00ccdd';
+  ctx.shadowBlur = 8; ctx.shadowColor = '#00ccdd';
+  ctx.fillText('K A I M O J U   ✦   怪文字  KAIJU  TYPER', W/2, 148);
+  ctx.shadowBlur = 0;
+
+  // Animated kaomoji preview
+  const t  = Date.now();
+  const b  = Math.sin(t/580)*8;
+  const hi = HEADS[Math.floor(t/1300)%HEADS.length];
+  const bo = BODIES[Math.floor(t/2600)%BODIES.length];
+  ctx.font      = 'bold 22px "Courier New"';
+  ctx.fillStyle  = P.player;
+  ctx.shadowBlur = 14; ctx.shadowColor = P.pglow;
+  ctx.fillText(hi, W/2, 200+b);
+  ctx.fillText(bo, W/2, 228+b);
+  ctx.shadowBlur = 0;
+
+  // How to play
+  ctx.font      = '13px "Courier New"';
+  const rows = [
+    ['← →',         'move your kaomoji between buildings'],
+    ['type romaji',  'smash katakana blocks  (a, ka, shi, tsu…)'],
+    ['CTRL+F',       'FIND MODE — highlights most frequent char'],
+    ['',             'destroy one instance to clear them ALL'],
+  ];
+  rows.forEach(([key, desc], i) => {
+    const ry = 285 + i*22;
+    ctx.fillStyle = '#2eff5a';
+    ctx.textAlign = 'right';
+    ctx.fillText(key, W/2-14, ry);
+    ctx.fillStyle = '#b8e0b8';
+    ctx.textAlign = 'left';
+    ctx.fillText(desc, W/2+14, ry);
+  });
+
+  // Building type legend
+  ctx.textAlign = 'center';
+  ctx.font = '11px "Courier New"';
+  ctx.fillStyle = P.bdr_w; ctx.fillText('■ WOOD  ×1',     W/2-155, 390);
+  ctx.fillStyle = P.bdr_c; ctx.fillText('■ CONCRETE  ×2', W/2,     390);
+  ctx.fillStyle = P.bdr_s; ctx.fillText('■ STEEL  ×3',    W/2+155, 390);
+
+  // Flashing prompt
+  if ((Math.floor(t/500)%2)===0) {
+    ctx.font      = 'bold 16px "Courier New"';
+    ctx.fillStyle  = '#2eff5a';
+    ctx.shadowBlur = 8; ctx.shadowColor = '#2eff5a';
+    ctx.fillText('[ PRESS  ENTER  TO  BEGIN ]', W/2, 450);
+    ctx.shadowBlur = 0;
+  }
+
+  drawScanlines();
+  ctx.textAlign = 'left';
+}
+
+function renderGameOver() {
+  drawBG();
+  ctx.textAlign = 'center';
+
+  const won = buildings.length > 0 && buildings.every(b => b.collapsed);
+  const col  = won ? '#ffaa00' : '#ff3333';
+
+  ctx.font      = 'bold 36px "Courier New"';
+  ctx.shadowBlur = 16; ctx.shadowColor = col;
+  ctx.fillStyle  = col;
+  ctx.fillText(won ? '(ΩДΩ)  CITY  DESTROYED!' : '(╯°□°）╯  GAME  OVER', W/2, 148);
+  ctx.shadowBlur = 0;
+
+  const acc = (totalHits+totalMisses>0)
+    ? Math.round(totalHits/(totalHits+totalMisses)*100) : 0;
+
+  const stats = [
+    ['SCORE',       `${score}`],
+    ['HIGH SCORE',  `${hiScore}`],
+    ['MAX COMBO',   `×${maxCombo}`],
+    ['BLOCKS HIT',  `${totalHits}`],
+    ['MISSES',      `${totalMisses}`],
+    ['ACCURACY',    `${acc}%`],
+  ];
+
+  stats.forEach(([label, val], i) => {
+    const sy = 218 + i*32;
+    ctx.font      = 'bold 12px "Courier New"';
+    ctx.fillStyle  = '#9adb9a';
+    ctx.textAlign  = 'right';
+    ctx.fillText(label, W/2-24, sy);
+    ctx.font      = 'bold 16px "Courier New"';
+    ctx.fillStyle  = '#2eff5a';
+    ctx.textAlign  = 'left';
+    ctx.fillText(val, W/2+24, sy);
+  });
+
+  if ((Math.floor(Date.now()/500)%2)===0) {
+    ctx.font      = 'bold 15px "Courier New"';
+    ctx.fillStyle  = '#2eff5a';
+    ctx.textAlign  = 'center';
+    ctx.shadowBlur = 6; ctx.shadowColor = '#2eff5a';
+    ctx.fillText('[ PRESS  ENTER  OR  R  TO  RETRY ]', W/2, 445);
+    ctx.shadowBlur = 0;
+  }
+
+  drawScanlines();
+  ctx.textAlign = 'left';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════════════════════════════════════════
+function loop() {
+  update();
+  render();
+  requestAnimationFrame(loop);
+}
+
+// ── Event Listeners ───────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  handleKey(e);
+});
+window.addEventListener('keyup', e => {
+  keys[e.key] = false;
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
