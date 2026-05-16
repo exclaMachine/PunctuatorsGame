@@ -634,7 +634,7 @@ function makeTrees() {
 // ── Player ────────────────────────────────────────────────────────────
 function makePlayer() {
   return {
-    x:80, vx:0, facing:1,
+    x:-70, vx:0, facing:1,
     head: pick(HEADS),
     body: pick(BODIES),
     legs: pick(LEG_SETS),
@@ -649,11 +649,14 @@ function makeBuildings() {
   const cfgs = makeBuildingConfigs();
   // Distribute leftover horizontal space as variable gaps so each level
   // has a different silhouette and leaves room for ASCII trees.
-  const baseGap = 14;
-  const margin  = 20;
+  // Left margin is wider than right so the kaomoji always has clearance to
+  // stand to the left of the leftmost cell without covering its character.
+  const baseGap     = 14;
+  const leftMargin  = 100;
+  const rightMargin = 20;
   const totalBW = cfgs.reduce((s, cf) => s + cf.cols*CW, 0);
   const slots   = cfgs.length + 1;  // before-first + between + after-last
-  const slack   = Math.max(0, W - totalBW - (slots-1)*baseGap - margin*2);
+  const slack   = Math.max(0, W - totalBW - (slots-1)*baseGap - leftMargin - rightMargin);
   // Random partition of slack across slots
   const cuts = Array.from({length: slots-1}, () => Math.random()).sort();
   const gaps = [];
@@ -664,7 +667,7 @@ function makeBuildings() {
   const charMap  = MODES[gameMode].chars;
   const charKeys = Object.keys(charMap);
 
-  let bx = margin + gaps[0];
+  let bx = leftMargin + gaps[0];
   return cfgs.map((cfg, i) => {
     const cells = Array.from({length:cfg.floors}, () =>
       Array.from({length:cfg.cols}, () => {
@@ -1069,7 +1072,7 @@ function update() {
   }
   let standX = null;
   if (tgtB && !tgtB.collapsed) {
-    if (act) standX = tgtB.x + act.c*CW - 40;     // 40px left of cell's left edge
+    if (act) standX = tgtB.x + act.c*CW - 60;     // 60px left of cell's left edge so the kaomoji body never covers the glyph
     else     standX = tgtB.x + tgtB.width/2;       // fallback
   }
   if (standX !== null) {
@@ -1084,7 +1087,8 @@ function update() {
   // Freeze movement during the destroy-punch so the lunge reads cleanly
   if (player.punch > 0) { player.vx = 0; player.punch--; }
 
-  player.x = Math.max(20, Math.min(W-20, player.x + player.vx));
+  // Lower clamp is below 0 so the kaomoji can walk in from off-screen on round start
+  player.x = Math.max(-120, Math.min(W-20, player.x + player.vx));
   if (player.vx >  0.25) player.facing =  1;
   if (player.vx < -0.25) player.facing = -1;
   // When settled, face the cell we're attacking (always to the right of player)
