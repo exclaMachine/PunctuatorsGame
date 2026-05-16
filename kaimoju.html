@@ -343,7 +343,7 @@ let gState = 'menu';  // 'menu' | 'playing' | 'gameover'
 let score = 0, hiScore = 0;
 let combo = 0, maxCombo = 0;
 let totalHits = 0, totalMisses = 0;
-let buildings = [], particles = [], floats = [];
+let buildings = [], particles = [], floats = [], lasers = [];
 let mountains = [], clouds = [], trees = [];
 let currentBiome = 'forest';
 let flash = { alpha:0, col:P.hit_bd };
@@ -451,7 +451,7 @@ function sndGameOver(win) {
 // ═══════════════════════════════════════════════════════════════════
 function initGame() {
   score=0; combo=0; maxCombo=0; totalHits=0; totalMisses=0;
-  inputBuf=''; particles=[]; floats=[];
+  inputBuf=''; particles=[]; floats=[]; lasers=[];
   flash={alpha:0, col:P.hit_bd};
   findMode={on:false, char:null, count:0, cooldown:0};
   player = makePlayer();
@@ -699,38 +699,83 @@ function doHit(bIdx, f, c) {
 }
 
 function doFindBurst(triggerBIdx) {
-  let n = 0;
+  // Collect targets (don't destroy yet — lasers handle the kill on impact)
+  const targets = [];
   buildings.forEach((b, bi) => {
     if (b.collapsed) return;
     b.cells.forEach((row, f) => {
       row.forEach((cell, c) => {
         if (!cell.destroyed && cell.hi && cell.char === findMode.char) {
-          cell.destroyed = true;
-          cell.dieAnim   = 20;
-          const cx = b.x + c*CW + CW/2;
-          const cy = GY - (f+1)*CH + CH/2;
-          spawnParticles(cx, cy);
-          n++;
-          totalHits++;
-          checkCollapsed(bi);
+          targets.push({ bIdx: bi, f, c });
         }
       });
     });
   });
 
+  const n = targets.length;
   if (n > 0) {
+    // Spawn a laser per target from the kaomoji's "eyes"
+    const px = player.x;
+    const py = GY - 30;
+    const beams = targets.map(t => {
+      const b = buildings[t.bIdx];
+      const tx = b.x + t.c*CW + CW/2;
+      const ty = GY - (t.f+1)*CH + CH/2;
+      const dist = Math.hypot(tx - px, ty - py);
+      const hitAt = 4 + Math.min(14, Math.floor(dist/40)); // farther = longer flight
+      return {
+        x1: px, y1: py, x2: tx, y2: ty,
+        bIdx: t.bIdx, f: t.f, c: t.c,
+        life: 0, hitAt, maxLife: hitAt + 10,
+        hit: false, isLast: false,
+      };
+    });
+    // Flag the laser that will impact last so it triggers the floor collapse
+    let latest = beams[0];
+    beams.forEach(L => { if (L.hitAt > latest.hitAt) latest = L; });
+    latest.isLast = true;
+    beams.forEach(L => lasers.push(L));
+
     const bonus = n * 30 * Math.max(1, combo);
     score += bonus;
     combo += n;
     flash.alpha = 0.4; flash.col = P.find_fl;
     addFloat(`FIND ×${n}!  +${bonus}`, W/2, 200, P.find_fl, 22);
     sndFindBurst(n);
-    buildings.forEach(b => { if (!b.collapsed) collapseDestroyedFloors(b); });
   }
 
   findMode.on = false; findMode.char = null; findMode.count = 0;
   findMode.cooldown = FIND_COOLDOWN_FRAMES;
   clearHighlights();
+}
+
+// Step active laser beams: tick life, destroy target cell on impact frame,
+// drop expired lasers, and once the last laser lands, collapse all the floors
+// whose cells just died.
+function updateLasers() {
+  if (!lasers.length) return;
+  let lastHitThisTick = false;
+  for (let i = lasers.length - 1; i >= 0; i--) {
+    const L = lasers[i];
+    L.life++;
+    if (!L.hit && L.life >= L.hitAt) {
+      L.hit = true;
+      const b = buildings[L.bIdx];
+      const cell = b && !b.collapsed && b.cells[L.f] ? b.cells[L.f][L.c] : null;
+      if (cell && !cell.destroyed) {
+        cell.destroyed = true;
+        cell.dieAnim   = 20;
+        spawnParticles(L.x2, L.y2);
+        totalHits++;
+        checkCollapsed(L.bIdx);
+      }
+      if (L.isLast) lastHitThisTick = true;
+    }
+    if (L.life >= L.maxLife) lasers.splice(i, 1);
+  }
+  if (lastHitThisTick) {
+    buildings.forEach(b => { if (!b.collapsed) collapseDestroyedFloors(b); });
+  }
 }
 
 // Splice out any fully-destroyed floors; floors above fall down with gravity.
@@ -915,6 +960,9 @@ function update() {
     return p.life > 0;
   });
 
+  // Laser beams (find-mode burst)
+  updateLasers();
+
   // Float texts
   floats = floats.filter(ft => { ft.y+=ft.vy; ft.life--; return ft.life>0; });
 }
@@ -942,6 +990,7 @@ function render() {
   drawGround();
   drawTrees();
   drawParticles();
+  drawLasers();
   drawFloats();
   drawPlayer();
   drawInputPanel();
@@ -1176,6 +1225,54 @@ function drawParticles() {
     ctx.fillText(p.ch, p.x, p.y);
   });
   ctx.globalAlpha = 1;
+}
+
+// ── Laser beams (find-mode burst) ─────────────────────────────────────
+// Beam grows from kaomoji to target until `hitAt`, then the trailing end
+// retracts toward the target as it fades. A bright ✦ pops at the impact site.
+function drawLasers() {
+  lasers.forEach(L => {
+    const headT = Math.min(1, L.life / L.hitAt);
+    const tailT = L.hit ? Math.min(1, (L.life - L.hitAt) / (L.maxLife - L.hitAt)) : 0;
+    const dx = L.x2 - L.x1, dy = L.y2 - L.y1;
+    const sx = L.x1 + dx * tailT;
+    const sy = L.y1 + dy * tailT;
+    const ex = L.x1 + dx * headT;
+    const ey = L.y1 + dy * headT;
+    const fade = 1 - tailT;
+
+    // Outer glow
+    ctx.globalAlpha = fade * 0.55;
+    ctx.strokeStyle = P.find_fl;
+    ctx.lineWidth   = 7;
+    ctx.lineCap     = 'round';
+    ctx.shadowBlur  = 20; ctx.shadowColor = P.find_fl;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+
+    // Inner hot core
+    ctx.globalAlpha = fade;
+    ctx.strokeStyle = '#ffffd0';
+    ctx.lineWidth   = 2;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    ctx.lineCap    = 'butt';
+
+    // Impact flash
+    if (L.hit) {
+      const k = (L.life - L.hitAt) / Math.max(1, L.maxLife - L.hitAt);
+      const fa = Math.max(0, 1 - k);
+      ctx.globalAlpha = fa;
+      ctx.fillStyle   = '#ffffaa';
+      ctx.font        = `bold ${16 + k*14}px "Courier New"`;
+      ctx.textAlign   = 'center';
+      ctx.shadowBlur  = 18; ctx.shadowColor = P.find_fl;
+      ctx.fillText('✦', L.x2, L.y2 + 5);
+      ctx.shadowBlur  = 0;
+      ctx.textAlign   = 'left';
+    }
+    ctx.globalAlpha = 1;
+  });
 }
 
 // ── Floating score text ───────────────────────────────────────────────

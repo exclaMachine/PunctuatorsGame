@@ -313,7 +313,8 @@ These are locked-in. All of the following are the user's decisions:
 - **Ctrl+F — Find Mode**:
   - Scans all alive katakana on screen, finds the one that appears most frequently
   - Highlights every instance of that character in gold
-  - The next time the player correctly destroys a cell of that character, ALL highlighted instances are destroyed simultaneously
+  - The next time the player correctly destroys a cell of that character, the kaomoji fires laser beams from its eyes at every highlighted instance, destroying them all
+  - Laser flight time scales with distance; the last beam to land triggers the floor-collapse pass so debris falls together
   - Has a cooldown after use
 - **ASCII / terminal aesthetic** — dark background, green-on-black, scanlines, monospace font
 - **Score + stats** on game over screen (score, high score, max combo, blocks hit, misses, accuracy)
@@ -363,6 +364,7 @@ These are locked-in. All of the following are the user's decisions:
 
 **`particles[]`** — ASCII explosion effect particles
 **`floats[]`** — floating score/status text
+**`lasers[]`** — find-mode beams: `{ x1,y1, x2,y2, bIdx,f,c, life, hitAt, maxLife, hit, isLast }`. `hitAt` is when the beam reaches the target (and destroys the cell); the `isLast` beam (latest `hitAt`) triggers `collapseDestroyedFloors` for all buildings once it lands
 
 ### Input System
 
