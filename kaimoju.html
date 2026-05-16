@@ -131,6 +131,28 @@ const KR = {
 };
 const ALL_KAT = Object.keys(KR);
 
+// ── Hiragana → Romaji map (all 46) ──────────────────────────────────
+const HR = {
+  'あ':'a',   'い':'i',   'う':'u',   'え':'e',   'お':'o',
+  'か':'ka',  'き':'ki',  'く':'ku',  'け':'ke',  'こ':'ko',
+  'さ':'sa',  'し':'shi', 'す':'su',  'せ':'se',  'そ':'so',
+  'た':'ta',  'ち':'chi', 'つ':'tsu', 'て':'te',  'と':'to',
+  'な':'na',  'に':'ni',  'ぬ':'nu',  'ね':'ne',  'の':'no',
+  'は':'ha',  'ひ':'hi',  'ふ':'fu',  'へ':'he',  'ほ':'ho',
+  'ま':'ma',  'み':'mi',  'む':'mu',  'め':'me',  'も':'mo',
+  'や':'ya',  'ゆ':'yu',  'よ':'yo',
+  'ら':'ra',  'り':'ri',  'る':'ru',  'れ':'re',  'ろ':'ro',
+  'わ':'wa',  'を':'wo',  'ん':'n'
+};
+
+// ── Difficulty modes ────────────────────────────────────────────────
+const MODES = {
+  katakana: { label:'カタカナ  KATAKANA', desc:'46 angular characters — the classic mode',  chars: KR, sample:'ア  イ  ウ  シ  ツ  フ' },
+  hiragana: { label:'ひらがな  HIRAGANA', desc:'46 rounded characters — same readings',     chars: HR, sample:'あ  い  う  し  つ  ふ' },
+};
+const MODE_KEYS = Object.keys(MODES);
+let gameMode = 'katakana';
+
 // ── Kaomoji parts ────────────────────────────────────────────────────
 const HEADS = [
   '(>ω<)',  '(◕‿◕)',  '(ᵔᴥᵔ)',   '(^•ω•^)',
@@ -342,6 +364,18 @@ const HINT_DELAY_MS = 1000;
 // Punch animation length (frames) — fires on every correct katakana
 const PUNCH_DUR = 14;
 
+// Difficulty-select card hit-boxes (used by renderSelect + pointer handler)
+const SELECT_CARD_W = 580;
+const SELECT_CARD_H = 110;
+const SELECT_CARDS = MODE_KEYS.map((key, i) => ({
+  key,
+  x: (W - SELECT_CARD_W) / 2,
+  y: 200 + i * (SELECT_CARD_H + 20),
+  w: SELECT_CARD_W,
+  h: SELECT_CARD_H,
+  num: String(i + 1),
+}));
+
 // ── Random level / building config generator ────────────────────────
 // Returns 3–4 buildings with varied types, cols, and floors so each game
 // looks different. Total min width leaves room for trees in the gaps.
@@ -472,6 +506,13 @@ function sndGameOver(win) {
 // ═══════════════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════════════
+function startGame(mode) {
+  gameMode = mode in MODES ? mode : 'katakana';
+  gState   = 'playing';
+  initGame();
+  sndStart();
+}
+
 function initGame() {
   score=0; combo=0; maxCombo=0; totalHits=0; totalMisses=0;
   inputBuf=''; particles=[]; floats=[]; lasers=[];
@@ -569,13 +610,16 @@ function makeBuildings() {
   for (const c of cuts) { gaps.push((c - prev) * slack); prev = c; }
   gaps.push((1 - prev) * slack);
 
+  const charMap  = MODES[gameMode].chars;
+  const charKeys = Object.keys(charMap);
+
   let bx = margin + gaps[0];
   return cfgs.map((cfg, i) => {
     const cells = Array.from({length:cfg.floors}, () =>
       Array.from({length:cfg.cols}, () => {
-        const k = pick(ALL_KAT);
+        const k = pick(charKeys);
         return {
-          char: k, romaji: KR[k],
+          char: k, romaji: charMap[k],
           destroyed: false, hi: false,
           hitAnim: 0, dieAnim: 0
         };
@@ -646,18 +690,26 @@ function handleKey(e) {
     return;
   }
   if (e.key === 'Escape') {
-    if (showHelp) { showHelp = false; activeStartTime = Date.now(); e.preventDefault(); }
+    if (showHelp) { showHelp = false; activeStartTime = Date.now(); e.preventDefault(); return; }
+    if (gState === 'select') { gState = 'menu'; e.preventDefault(); return; }
     return;
   }
   // Swallow all other input while the help overlay is open
   if (showHelp) return;
 
   if (gState==='menu') {
-    if (e.key==='Enter') { gState='playing'; initGame(); sndStart(); }
+    if (e.key==='Enter') { gState='select'; }
+    return;
+  }
+  if (gState==='select') {
+    const idx = parseInt(e.key, 10);
+    if (idx >= 1 && idx <= MODE_KEYS.length) { startGame(MODE_KEYS[idx-1]); return; }
+    if (e.key==='Enter') { startGame(MODE_KEYS[0]); return; }
     return;
   }
   if (gState==='gameover') {
-    if (e.key==='Enter' || e.key.toLowerCase()==='r') { gState='playing'; initGame(); sndStart(); }
+    if (e.key==='Enter')           { gState='select'; return; }
+    if (e.key.toLowerCase()==='r') { startGame(gameMode); return; }
     return;
   }
 
@@ -1040,6 +1092,7 @@ function render() {
   ctx.clearRect(0,0,W,H);
 
   if (gState==='menu')     { renderMenu();     if (showHelp) drawHelpOverlay(); return; }
+  if (gState==='select')   { renderSelect();   if (showHelp) drawHelpOverlay(); return; }
   if (gState==='gameover') { renderGameOver(); if (showHelp) drawHelpOverlay(); return; }
 
   drawBG();
@@ -1727,8 +1780,74 @@ function renderMenu() {
     ctx.font      = 'bold 16px "Courier New"';
     ctx.fillStyle  = '#2eff5a';
     ctx.shadowBlur = 8; ctx.shadowColor = '#2eff5a';
-    ctx.fillText('[ PRESS  ENTER  TO  BEGIN ]', W/2, 450);
+    ctx.fillText('[ PRESS  ENTER  TO  CHOOSE  DIFFICULTY ]', W/2, 450);
     ctx.shadowBlur = 0;
+  }
+
+  drawHelpButton();
+  drawScanlines();
+  ctx.textAlign = 'left';
+}
+
+// ── Difficulty Select ─────────────────────────────────────────────────
+function renderSelect() {
+  drawBG();
+  ctx.textAlign = 'center';
+
+  // Title
+  ctx.font       = 'bold 36px "Courier New"';
+  ctx.shadowBlur = 16; ctx.shadowColor = '#2eff5a';
+  ctx.fillStyle  = '#2eff5a';
+  ctx.fillText('SELECT  DIFFICULTY', W/2, 100);
+  ctx.shadowBlur = 0;
+
+  ctx.font      = '14px "Courier New"';
+  ctx.fillStyle = '#9adb9a';
+  ctx.fillText('press a number — or tap a card', W/2, 132);
+
+  // Mode cards
+  const t = Date.now();
+  SELECT_CARDS.forEach(card => {
+    const m = MODES[card.key];
+
+    // Card background
+    ctx.fillStyle = '#0a1a0a';
+    ctx.fillRect(card.x, card.y, card.w, card.h);
+    ctx.strokeStyle = '#2eff5a';
+    ctx.lineWidth   = 1.5;
+    ctx.strokeRect(card.x+0.5, card.y+0.5, card.w-1, card.h-1);
+
+    // Number badge
+    ctx.font      = 'bold 44px "Courier New"';
+    ctx.fillStyle  = '#ffaa00';
+    ctx.shadowBlur = 10; ctx.shadowColor = '#ff7700';
+    ctx.textAlign  = 'center';
+    ctx.fillText(card.num, card.x + 44, card.y + card.h/2 + 16);
+    ctx.shadowBlur = 0;
+
+    // Label
+    ctx.font      = 'bold 22px "Courier New"';
+    ctx.fillStyle = '#2eff5a';
+    ctx.textAlign = 'left';
+    ctx.fillText(m.label, card.x + 96, card.y + 36);
+
+    // Description
+    ctx.font      = '13px "Courier New"';
+    ctx.fillStyle = '#b8e0b8';
+    ctx.fillText(m.desc, card.x + 96, card.y + 60);
+
+    // Sample glyphs
+    ctx.font      = 'bold 22px "Courier New"';
+    ctx.fillStyle = '#ffff66';
+    ctx.fillText(m.sample, card.x + 96, card.y + 92);
+  });
+
+  // Back hint (flashing)
+  if ((Math.floor(t/500)%2)===0) {
+    ctx.font      = '12px "Courier New"';
+    ctx.fillStyle = '#7ac27a';
+    ctx.textAlign = 'center';
+    ctx.fillText('[ ESC: back to title ]', W/2, H - 30);
   }
 
   drawHelpButton();
@@ -1778,7 +1897,7 @@ function renderGameOver() {
     ctx.fillStyle  = '#2eff5a';
     ctx.textAlign  = 'center';
     ctx.shadowBlur = 6; ctx.shadowColor = '#2eff5a';
-    ctx.fillText('[ PRESS  ENTER  OR  R  TO  RETRY ]', W/2, 445);
+    ctx.fillText('[ R: retry  ·  ENTER: change difficulty ]', W/2, 445);
     ctx.shadowBlur = 0;
   }
 
@@ -1902,13 +2021,21 @@ c.addEventListener('pointerdown', ev => {
   }
 
   if (gState === 'menu') {
-    gState='playing'; initGame(); sndStart();
-    focusMobileInput();
+    gState = 'select';
+    return;
+  }
+  if (gState === 'select') {
+    for (const card of SELECT_CARDS) {
+      if (x >= card.x && x <= card.x+card.w && y >= card.y && y <= card.y+card.h) {
+        startGame(card.key);
+        focusMobileInput();
+        return;
+      }
+    }
     return;
   }
   if (gState === 'gameover') {
-    gState='playing'; initGame(); sndStart();
-    focusMobileInput();
+    gState = 'select';
     return;
   }
   if (gState === 'playing') {

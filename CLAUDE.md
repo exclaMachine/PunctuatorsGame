@@ -306,7 +306,10 @@ your-project-folder/
 
 These are locked-in. All of the following are the user's decisions:
 
-- **Katakana-only mode** (all 46 characters, romaji input via Latin keyboard)
+- **Difficulty modes** — `MODES` registry currently holds `katakana` (KR map) and `hiragana` (HR map), both 46 chars sharing the same romaji readings. `gameMode` selects which char set `makeBuildings` populates cells from. New modes plug in by adding a `{ label, desc, chars, sample }` entry.
+- **Difficulty select screen** — new `gState === 'select'` reached from menu/gameover Enter (or tap). Press `1`/`2` (or tap a card) to start that mode; ESC returns to title. `SELECT_CARDS` holds the hit-boxes; `startGame(mode)` is the single entry point that sets `gameMode`, flips state to `playing`, and calls `initGame` + `sndStart`. Gameover `R` retries the same mode, Gameover Enter routes back to select.
+- **Katakana mode** (all 46 characters, romaji input via Latin keyboard)
+- **Hiragana mode** (all 46 hiragana, same romaji readings as katakana)
 - **3–4 buildings per round** with random column/floor counts; each cell is destroyed by one correct romaji input (no per-block HP)
 - **Random kaomoji** character at game start — random head + random body drawn from preset pools
 - **Combo system** — consecutive correct inputs build a multiplier, any miss resets to zero
@@ -386,8 +389,10 @@ These are locked-in. All of the following are the user's decisions:
 ### Game Flow
 
 ```
-menu  →  [Enter]  →  playing  →  all buildings collapsed  →  gameover
-                                                              [Enter/R]  →  playing
+menu  →  [Enter]  →  select  →  [1/2 or tap card]  →  playing  →  all buildings collapsed  →  gameover
+                       ↑                                                                       │
+                       └─────────────────── [Enter] ──────────────────────────────────────────┘
+                                                                                              [R] → retry same mode
 ```
 
 ### Targeting Logic
@@ -402,8 +407,7 @@ menu  →  [Enter]  →  playing  →  all buildings collapsed  →  gameover
 
 The following ideas were discussed but are **not confirmed**. Ask the user before implementing any of them:
 
-- **Hiragana mode** — difficulty tier 2 (46 hiragana characters, same romaji system)
-- **Kanji mode** — difficulty tier 3, JLPT N5→N3 vocabulary with furigana hints
+- **Kanji mode** — difficulty tier 3, JLPT N5→N3 vocabulary with furigana hints (deferred — added scaffolding for select screen but holding off on kanji char set per user)
 - **Oni Mode** — timed typing windows, no romaji hints, buildings "fight back"
 - **Kaomoji unlock/collection system** — earn new heads/bodies by destroying buildings
 - **Additional power-ups** (tentative key bindings):
@@ -417,7 +421,6 @@ The following ideas were discussed but are **not confirmed**. Ask the user befor
 - **HP / lose condition** — player takes damage from building collapses or enemy attacks
 - **High score persistence** — localStorage
 - **Japanese word dictionary** — real JLPT N5 vocabulary replacing individual characters
-- **Difficulty select screen** — choose kana vs kanji, speed, etc.
 - **Mobile support** — on-screen soft keyboard / touch input
 
 ---
