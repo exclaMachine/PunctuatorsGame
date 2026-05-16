@@ -120,6 +120,16 @@ const GY = 460;            // ground y (player feet)
 const PNL_Y = 473;         // input panel top
 const HUD_H = 36;          // hud height
 
+// ── Platform / input detection ───────────────────────────────────────
+const IS_MAC = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
+const IS_MOBILE = ((navigator.maxTouchPoints || 0) > 0) &&
+                  (window.matchMedia && window.matchMedia('(hover: none)').matches);
+const FIND_KEY_LABEL = IS_MOBILE ? 'TAP' : (IS_MAC ? '⌘+F' : 'CTRL+F');
+
+// Find button hit-box (drawn in the input panel; clickable on all platforms)
+const FIND_BTN = { x: 300, y: 538, w: 600, h: 26 };
+const FIND_COOLDOWN_FRAMES = 900;  // 15s @ 60fps
+
 // ── Building configs (MVP: 5 buildings) ──────────────────────────────
 const BCONFIGS = [
   { cols:3, floors:5, type:'wood'     },
@@ -318,14 +328,16 @@ function nearestBuilding() {
 //  INPUT HANDLING
 // ═══════════════════════════════════════════════════════════════════
 function handleKey(e) {
+  const findMod = IS_MAC ? e.metaKey : e.ctrlKey;
+
   // Prevent browser shortcuts we're using
-  if (e.ctrlKey && e.key==='f') { e.preventDefault(); }
+  if (findMod && e.key.toLowerCase()==='f') { e.preventDefault(); }
   if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) {
     e.preventDefault();
   }
 
   // Mute toggle works in any state (Ctrl+M — plain M is a romaji input letter)
-  if (e.ctrlKey && e.key.toLowerCase()==='m') {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='m') {
     e.preventDefault();
     muted = !muted;
     if (!muted) { audio(); tone(660, 0.08, 'triangle', 0.10); }
@@ -342,7 +354,7 @@ function handleKey(e) {
   }
 
   // Playing
-  if (e.ctrlKey && e.key==='f') { activateFind(); return; }
+  if (findMod && e.key.toLowerCase()==='f') { activateFind(); return; }
   if (e.key==='Backspace') { inputBuf = inputBuf.slice(0,-1); return; }
 
   // Letter input (a-z only, no ctrl/meta/alt combos)
@@ -457,7 +469,7 @@ function doFindBurst(triggerBIdx) {
   }
 
   findMode.on = false; findMode.char = null; findMode.count = 0;
-  findMode.cooldown = 420;  // ~7 seconds at 60fps
+  findMode.cooldown = FIND_COOLDOWN_FRAMES;
   clearHighlights();
 }
 
@@ -507,35 +519,35 @@ function checkCollapsed(bIdx) {
   }
 }
 
-// ── Find Mode (Ctrl+F) ────────────────────────────────────────────────
+// ── Find Mode (Cmd/Ctrl+F or tap the button) ────────────────────────
+// Highlights every alive instance of the character the player is CURRENTLY targeting.
+// Typing that romaji once detonates them all.
 function activateFind() {
   if (findMode.on || findMode.cooldown > 0) return;
 
-  // Count all alive katakana chars
-  const cnt = {};
+  const act = activeTarget();
+  if (!act) return;
+  const target = act.cell.char;
+
+  // Count all alive instances of the current target char
+  let count = 0;
   buildings.forEach(b => {
     if (b.collapsed) return;
     b.cells.forEach(row => row.forEach(cell => {
-      if (!cell.destroyed) cnt[cell.char] = (cnt[cell.char]||0)+1;
+      if (!cell.destroyed && cell.char === target) count++;
     }));
   });
 
-  // Find most frequent
-  let best=null, bestN=0;
-  for (const [k,v] of Object.entries(cnt))
-    if (v > bestN) { bestN=v; best=k; }
+  if (count < 2) return;  // current cell is the only one — pointless
 
-  if (!best || bestN < 2) return;  // need at least 2 instances
+  findMode.on = true; findMode.char = target; findMode.count = count;
 
-  findMode.on = true; findMode.char = best; findMode.count = bestN;
-
-  // Highlight all matching alive cells
   buildings.forEach(b => b.cells.forEach(row => row.forEach(cell => {
-    cell.hi = (!cell.destroyed && cell.char === best);
+    cell.hi = (!cell.destroyed && cell.char === target);
   })));
 
   flash.alpha = 0.22; flash.col = P.find_fl;
-  addFloat(`◆ FIND: ${best} (${KR[best]})  ×${bestN} ◆`, W/2, 160, P.find_fl, 17);
+  addFloat(`◆ FIND: ${target} (${KR[target]})  ×${count} ◆`, W/2, 160, P.find_fl, 17);
   sndFindOn();
 }
 
@@ -945,28 +957,55 @@ function drawInputPanel() {
       ctx.shadowBlur = 0;
     }
 
-    // Status line under boxes
-    ctx.font = '10px "Courier New"';
-    const statusY = PY + 72;
-
-    if (findMode.on) {
-      ctx.fillStyle  = P.find_fl;
-      ctx.shadowBlur = 5; ctx.shadowColor = P.find_fl;
-      ctx.fillText(
-        `◆ FIND MODE ACTIVE: ${findMode.char} (${KR[findMode.char]}) ×${findMode.count}  —  destroy one to clear ALL ◆`,
-        RPx + RPw/2, statusY
-      );
-      ctx.shadowBlur = 0;
-    } else if (findMode.cooldown > 0) {
-      ctx.fillStyle = '#9ac49a';
-      ctx.fillText(`[CTRL+F] cooldown: ${Math.ceil(findMode.cooldown/60)}s`, RPx+RPw/2, statusY);
-    } else {
-      ctx.fillStyle = '#9adb9a';
-      ctx.fillText('[CTRL+F]  highlight most frequent katakana — type it once to destroy them all', RPx+RPw/2, statusY);
-    }
+    drawFindButton(act);
+  } else {
+    drawFindButton(null);
   }
 
   ctx.textAlign = 'left';
+}
+
+// Clickable Find button (Cmd+F / Ctrl+F / tap)
+function drawFindButton(act) {
+  const { x, y, w, h } = FIND_BTN;
+  let bg, bd, fg, label;
+
+  if (findMode.on) {
+    bg = '#2a1a00'; bd = P.find_fl; fg = P.find_fl;
+    label = `◆ FIND ACTIVE: ${findMode.char} (${KR[findMode.char]}) ×${findMode.count} — type to detonate ◆`;
+  } else if (findMode.cooldown > 0) {
+    bg = '#0a0f0a'; bd = '#3a5a3a'; fg = '#7a9a7a';
+    label = `[${FIND_KEY_LABEL}]  cooldown: ${Math.ceil(findMode.cooldown/60)}s`;
+  } else if (act) {
+    // Count current-char instances for the live hint
+    let cnt = 0;
+    buildings.forEach(b => { if (!b.collapsed) b.cells.forEach(row => row.forEach(c => {
+      if (!c.destroyed && c.char === act.cell.char) cnt++;
+    })); });
+    const ready = cnt >= 2;
+    bg = ready ? '#0a1a0a' : '#0a0f0a';
+    bd = ready ? '#2eff5a' : '#3a5a3a';
+    fg = ready ? '#9adb9a' : '#6a8a6a';
+    label = ready
+      ? `[${FIND_KEY_LABEL}]  detonate every ${act.cell.char} (${act.cell.romaji})  ×${cnt}`
+      : `[${FIND_KEY_LABEL}]  no duplicate of current char on screen`;
+  } else {
+    bg = '#0a0f0a'; bd = '#3a5a3a'; fg = '#6a8a6a';
+    label = `[${FIND_KEY_LABEL}]  find duplicates of current target`;
+  }
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = bd;
+  ctx.lineWidth   = findMode.on ? 1.5 : 1;
+  ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
+
+  if (findMode.on) { ctx.shadowBlur = 5; ctx.shadowColor = P.find_fl; }
+  ctx.font      = 'bold 11px "Courier New"';
+  ctx.fillStyle = fg;
+  ctx.textAlign = 'center';
+  ctx.fillText(label, x + w/2, y + h/2 + 4);
+  ctx.shadowBlur = 0;
 }
 
 // ── HUD ───────────────────────────────────────────────────────────────
@@ -1043,11 +1082,11 @@ function renderMenu() {
   // How to play
   ctx.font      = '13px "Courier New"';
   const rows = [
-    ['type romaji',  'smash katakana — your kaomoji walks itself'],
-    ['',             '(a, ka, shi, tsu… auto-targets the nearest building)'],
-    ['CTRL+F',       'FIND MODE — highlights most frequent char'],
-    ['',             'destroy one instance to clear them ALL'],
-    ['CTRL+M',       `toggle sound  (${muted ? 'OFF' : 'ON'})`],
+    ['type romaji',     'smash katakana — your kaomoji walks itself'],
+    ['',                '(a, ka, shi, tsu… auto-targets the nearest building)'],
+    [FIND_KEY_LABEL,    'FIND MODE — highlights every copy of your target char'],
+    ['',                'type its romaji once to detonate them all'],
+    ['CTRL+M',          `toggle sound  (${muted ? 'OFF' : 'ON'})`],
   ];
   rows.forEach(([key, desc], i) => {
     const ry = 285 + i*22;
@@ -1145,6 +1184,28 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => {
   keys[e.key] = false;
+});
+
+// Canvas pointer (click/tap) — Find button + start/retry on mobile
+function canvasPointerXY(ev) {
+  const rect = c.getBoundingClientRect();
+  return {
+    x: (ev.clientX - rect.left) * (W / rect.width),
+    y: (ev.clientY - rect.top)  * (H / rect.height),
+  };
+}
+c.addEventListener('pointerdown', ev => {
+  ev.preventDefault();
+  const { x, y } = canvasPointerXY(ev);
+  if (gState === 'menu') { gState='playing'; initGame(); sndStart(); return; }
+  if (gState === 'gameover') { gState='playing'; initGame(); sndStart(); return; }
+  if (gState === 'playing') {
+    const b = FIND_BTN;
+    if (x >= b.x && x <= b.x+b.w && y >= b.y && y <= b.y+b.h) {
+      audio();  // wake AudioContext from touch gesture
+      activateFind();
+    }
+  }
 });
 
 // ── Boot ──────────────────────────────────────────────────────────────
