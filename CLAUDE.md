@@ -278,6 +278,8 @@ Kaimoju (怪文字, kaomoji + kaiju) is a browser-based HTML5 Canvas game inspir
 
 **Claude's proposed suggestions are tentative.** Do not implement them without explicit user approval. When proposing new ideas, label them clearly as suggestions and wait for a yes before touching them.
 
+**Keep this CLAUDE.md current.** Whenever a feature is added, removed, or changed in `kaimoju.html`or any other game in the project, update the relevant sections of this file in the same change — the Confirmed MVP Features list, the Core Data Structures block, and any related notes. Treat the doc as part of the diff, not an afterthought.
+
 ---
 
 ## Tech Stack
@@ -305,7 +307,7 @@ your-project-folder/
 These are locked-in. All of the following are the user's decisions:
 
 - **Katakana-only mode** (all 46 characters, romaji input via Latin keyboard)
-- **5 buildings** of 3 types: Wood (HP 1), Concrete (HP 2), Steel (HP 3)
+- **3–4 buildings per round** with random column/floor counts; each cell is destroyed by one correct romaji input (no per-block HP)
 - **Random kaomoji** character at game start — random head + random body drawn from preset pools
 - **Combo system** — consecutive correct inputs build a multiplier, any miss resets to zero
 - **Ctrl+F — Find Mode**:
@@ -335,12 +337,11 @@ These are locked-in. All of the following are the user's decisions:
 ```js
 {
   x, width, cols, floors,
-  type: 'wood'|'concrete'|'steel',
   cells: [ // cells[floor][col], floor 0 = bottom
-    [ { char, romaji, hp, maxHp, destroyed, hi, hitAnim, dieAnim }, ... ],
+    [ { char, romaji, destroyed, hi, hitAnim, dieAnim, fallY, fallVy }, ... ],
     ...
   ],
-  collapsed, shakeX
+  collapsed, shakeX, roof
 }
 ```
 

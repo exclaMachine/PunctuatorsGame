@@ -328,16 +328,11 @@ const FIND_COOLDOWN_FRAMES = 900;  // 15s @ 60fps
 // Returns 3–4 buildings with varied types, cols, and floors so each game
 // looks different. Total min width leaves room for trees in the gaps.
 function makeBuildingConfigs() {
-  const types = ['wood', 'concrete', 'steel'];
   const count = 3 + Math.floor(Math.random()*2);  // 3–4 buildings
   return Array.from({length: count}, () => {
-    const type = pick(types);
     const cols = 2 + Math.floor(Math.random()*2);  // 2–3 cols
-    let floors;
-    if (type === 'wood')          floors = 3 + Math.floor(Math.random()*3); // 3–5
-    else if (type === 'concrete') floors = 5 + Math.floor(Math.random()*3); // 5–7
-    else                          floors = 3 + Math.floor(Math.random()*3); // 3–5
-    return { cols, floors, type };
+    const floors = 3 + Math.floor(Math.random()*5); // 3–7
+    return { cols, floors };
   });
 }
 
@@ -409,10 +404,9 @@ function noise(dur, vol=0.18, filterFreq=1200, filterQ=1) {
 }
 // Event sounds
 function sndType()  { tone(880, 0.03, 'triangle', 0.05); }
-function sndHit(type) {
-  if (type === 'wood')          { tone(260, 0.07, 'square',  0.12, 120); noise(0.08, 0.10, 2200); }
-  else if (type === 'concrete') { tone(180, 0.09, 'square',  0.13, 90 ); noise(0.12, 0.14, 1400); }
-  else                          { tone(120, 0.12, 'sawtooth',0.14, 60 ); noise(0.18, 0.18, 900);  }
+function sndHit() {
+  tone(220, 0.08, 'square', 0.13, 100);
+  noise(0.10, 0.12, 1800);
 }
 function sndMiss()    { tone(160, 0.16, 'sawtooth', 0.10, 70); }
 function sndFloorCollapse(){
@@ -551,13 +545,11 @@ function makeBuildings() {
 
   let bx = margin + gaps[0];
   return cfgs.map((cfg, i) => {
-    const baseHp = cfg.type==='wood'?1 : cfg.type==='concrete'?2 : 3;
     const cells = Array.from({length:cfg.floors}, () =>
       Array.from({length:cfg.cols}, () => {
         const k = pick(ALL_KAT);
         return {
           char: k, romaji: KR[k],
-          hp: baseHp, maxHp: baseHp,
           destroyed: false, hi: false,
           hitAnim: 0, dieAnim: 0
         };
@@ -566,7 +558,7 @@ function makeBuildings() {
     const bld = {
       x:bx, width:cfg.cols*CW,
       cols:cfg.cols, floors:cfg.floors,
-      type:cfg.type, cells,
+      cells,
       collapsed:false, shakeX:0,
       roof: pick(ROOFS),
     };
@@ -678,40 +670,32 @@ function doHit(bIdx, f, c) {
   const b    = buildings[bIdx];
   const cell = b.cells[f][c];
 
-  cell.hp--;
   cell.hitAnim = 10;
+  cell.destroyed = true;
+  cell.dieAnim   = 20;
   totalHits++;
 
-  if (cell.hp <= 0) {
-    cell.destroyed = true;
-    cell.dieAnim   = 20;
+  const cx = b.x + c*CW + CW/2;
+  const cy = GY - (f+1)*CH + CH/2;
+  spawnParticles(cx, cy);
+  sndHit();
 
-    const cx = b.x + c*CW + CW/2;
-    const cy = GY - (f+1)*CH + CH/2;
-    spawnParticles(cx, cy, b.type);
-    sndHit(b.type);
-
-    // Find mode: if this char matches, burst ALL highlighted instances
-    if (findMode.on && cell.char === findMode.char) {
-      doFindBurst(bIdx);
-    }
-
-    // Scoring
-    const base = b.type==='wood'?10 : b.type==='concrete'?20 : 30;
-    const mult = Math.max(1, Math.floor(combo/3) + 1);
-    const pts  = base * mult;
-    score += pts;
-    combo++;
-    if (combo > maxCombo) maxCombo = combo;
-    addFloat('+' + pts, cx, cy);
-    if (combo > 0 && combo % 5 === 0) sndCombo(combo);
-
-    collapseDestroyedFloors(b);
-    checkCollapsed(bIdx);
-  } else {
-    // Multi-hp block, partial damage
-    sndType();
+  // Find mode: if this char matches, burst ALL highlighted instances
+  if (findMode.on && cell.char === findMode.char) {
+    doFindBurst(bIdx);
   }
+
+  // Scoring
+  const mult = Math.max(1, Math.floor(combo/3) + 1);
+  const pts  = 10 * mult;
+  score += pts;
+  combo++;
+  if (combo > maxCombo) maxCombo = combo;
+  addFloat('+' + pts, cx, cy);
+  if (combo > 0 && combo % 5 === 0) sndCombo(combo);
+
+  collapseDestroyedFloors(b);
+  checkCollapsed(bIdx);
 }
 
 function doFindBurst(triggerBIdx) {
@@ -725,7 +709,7 @@ function doFindBurst(triggerBIdx) {
           cell.dieAnim   = 20;
           const cx = b.x + c*CW + CW/2;
           const cy = GY - (f+1)*CH + CH/2;
-          spawnParticles(cx, cy, b.type);
+          spawnParticles(cx, cy);
           n++;
           totalHits++;
           checkCollapsed(bi);
@@ -842,8 +826,8 @@ function endGame(win=false) {
 // ═══════════════════════════════════════════════════════════════════
 //  PARTICLES & FLOATING TEXT
 // ═══════════════════════════════════════════════════════════════════
-function spawnParticles(x, y, type) {
-  const col = type==='wood' ? '#44ff66' : type==='concrete' ? '#4488ff' : '#aa44ff';
+function spawnParticles(x, y) {
+  const col = '#44ff66';
   for (let i=0; i<12; i++) {
     const a = Math.PI*2*(i/12) + rnd(-0.3,0.3);
     const spd = rnd(1.5,4.5);
@@ -1085,7 +1069,7 @@ function drawBuildings() {
     const topY = GY - b.floors*CH - topFallY;
 
     // Building base
-    ctx.fillStyle = b.type==='wood' ? '#0a140a' : b.type==='concrete' ? '#0a1020' : '#120a20';
+    ctx.fillStyle = '#0a140a';
     ctx.fillRect(b.x+sx, topY, b.width, 4);
 
     // Cells
@@ -1094,7 +1078,7 @@ function drawBuildings() {
         drawCell(
           b.x + sx + c*CW,
           GY - (f+1)*CH,
-          b.cells[f][c], b.type,
+          b.cells[f][c],
           isTgt && act && act.f===f && act.c===c
         );
       }
@@ -1102,31 +1086,21 @@ function drawBuildings() {
 
     // ASCII roof decoration (random per building)
     const cxLabel = b.x + sx + b.width/2;
-    let labelY = topY - 4;
     if (b.roof && b.roof.length) {
       const rfLH = 9;
       ctx.font      = '10px "Courier New"';
       ctx.textAlign = 'center';
-      ctx.fillStyle = b.type==='wood' ? '#3a8a3a'
-                    : b.type==='concrete' ? '#5a8aff'
-                    :                       '#b070ff';
+      ctx.fillStyle = '#3a8a3a';
       for (let i=0; i<b.roof.length; i++) {
         const y = topY - 4 - (b.roof.length - 1 - i) * rfLH;
         ctx.fillText(b.roof[i], cxLabel, y);
       }
-      labelY = topY - 4 - b.roof.length * rfLH - 2;
     }
-
-    // Building type label above the roof
-    ctx.font = '8px "Courier New"';
-    ctx.fillStyle  = isTgt ? '#2eff5a' : '#7ac27a';
-    ctx.textAlign  = 'center';
-    ctx.fillText(b.type.toUpperCase(), cxLabel, labelY);
     ctx.textAlign = 'left';
   });
 }
 
-function drawCell(x, y, cell, type, isActive) {
+function drawCell(x, y, cell, isActive) {
   // Apply falling offset (cell mid-air after a floor collapse below it)
   if (cell.fallY && cell.fallY > 0) y -= cell.fallY;
 
@@ -1156,8 +1130,8 @@ function drawCell(x, y, cell, type, isActive) {
   } else if (cell.hitAnim > 0) {
     bg=P.hit_bg;   bd=P.hit_bd;   kt='#ff6666';
   } else {
-    bg = type==='wood'?P.fill_w : type==='concrete'?P.fill_c : P.fill_s;
-    bd = type==='wood'?P.bdr_w  : type==='concrete'?P.bdr_c  : P.bdr_s;
+    bg = P.fill_w;
+    bd = P.bdr_w;
     kt = P.katakana;
   }
 
@@ -1182,14 +1156,6 @@ function drawCell(x, y, cell, type, isActive) {
   ctx.font      = '9px "Courier New"';
   ctx.fillStyle = isActive ? '#d8e8d8' : cell.hi ? '#ffcc66' : P.romaji;
   ctx.fillText(cell.romaji, x+CW/2, y+CH-4);
-
-  // HP pips for multi-hp blocks (concrete/steel)
-  if (cell.maxHp > 1) {
-    for (let i=0; i<cell.maxHp; i++) {
-      ctx.fillStyle = i < cell.hp ? '#ff7700' : '#160800';
-      ctx.fillRect(x+3+i*8, y+3, 6, 4);
-    }
-  }
 
   // Blinking ▼ cursor above active target
   if (isActive && (frame%24)<12) {
@@ -1472,12 +1438,7 @@ function renderMenu() {
     ctx.fillText(desc, W/2+14, ry);
   });
 
-  // Building type legend
   ctx.textAlign = 'center';
-  ctx.font = '11px "Courier New"';
-  ctx.fillStyle = P.bdr_w; ctx.fillText('■ WOOD  ×1',     W/2-155, 390);
-  ctx.fillStyle = P.bdr_c; ctx.fillText('■ CONCRETE  ×2', W/2,     390);
-  ctx.fillStyle = P.bdr_s; ctx.fillText('■ STEEL  ×3',    W/2+155, 390);
 
   // Flashing prompt
   if ((Math.floor(t/500)%2)===0) {
