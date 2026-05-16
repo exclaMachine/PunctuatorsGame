@@ -201,6 +201,11 @@ function sndHit(type) {
   else                          { tone(120, 0.12, 'sawtooth',0.14, 60 ); noise(0.18, 0.18, 900);  }
 }
 function sndMiss()    { tone(160, 0.16, 'sawtooth', 0.10, 70); }
+function sndFloorCollapse(){
+  tone(220, 0.18, 'square',  0.11, 90);
+  noise(0.24, 0.16, 1100);
+  setTimeout(() => tone(140, 0.12, 'sawtooth', 0.09, 70), 80);
+}
 function sndCollapse(){
   tone(90, 0.55, 'sawtooth', 0.16, 40);
   noise(0.55, 0.22, 700, 0.7);
@@ -413,6 +418,7 @@ function doHit(bIdx, f, c) {
     addFloat('+' + pts, cx, cy);
     if (combo > 0 && combo % 5 === 0) sndCombo(combo);
 
+    collapseDestroyedFloors(b);
     checkCollapsed(bIdx);
   } else {
     // Multi-hp block, partial damage
@@ -447,11 +453,44 @@ function doFindBurst(triggerBIdx) {
     flash.alpha = 0.4; flash.col = P.find_fl;
     addFloat(`FIND ×${n}!  +${bonus}`, W/2, 200, P.find_fl, 22);
     sndFindBurst(n);
+    buildings.forEach(b => { if (!b.collapsed) collapseDestroyedFloors(b); });
   }
 
   findMode.on = false; findMode.char = null; findMode.count = 0;
   findMode.cooldown = 420;  // ~7 seconds at 60fps
   clearHighlights();
+}
+
+// Splice out any fully-destroyed floors; floors above fall down with gravity.
+// Iterates bottom→top, so a stack of dead floors collapses in one pass.
+function collapseDestroyedFloors(b) {
+  let collapsed = 0;
+  for (let f = 0; f < b.cells.length; ) {
+    if (b.cells[f].length > 0 && b.cells[f].every(c => c.destroyed)) {
+      b.cells.splice(f, 1);
+      b.floors--;
+      // Cells now at index f and above must fall through CH pixels
+      for (let ff = f; ff < b.cells.length; ff++) {
+        b.cells[ff].forEach(cell => {
+          if (!cell.destroyed) {
+            cell.fallY  = (cell.fallY  || 0) + CH;
+            cell.fallVy = cell.fallVy || 0;
+          }
+        });
+      }
+      collapsed++;
+      // Don't increment f — re-check this index for stacked collapses
+    } else {
+      f++;
+    }
+  }
+  if (collapsed > 0) {
+    b.shakeX = Math.max(b.shakeX, 6);
+    flash.alpha = Math.max(flash.alpha, 0.15);
+    addFloat(collapsed > 1 ? `FLOOR x${collapsed}!` : 'FLOOR!',
+             b.x + b.width/2, GY - b.floors*CH - 14, '#ff9933', 14);
+    sndFloorCollapse();
+  }
 }
 
 function checkCollapsed(bIdx) {
@@ -573,6 +612,20 @@ function update() {
   // Building shake decay
   buildings.forEach(b => { if (b.shakeX>0) b.shakeX = Math.max(0, b.shakeX-0.38); });
 
+  // Falling cells (gravity for collapsed floors)
+  buildings.forEach(b => {
+    b.cells.forEach(row => row.forEach(cell => {
+      if (cell.fallY && cell.fallY > 0) {
+        cell.fallVy = (cell.fallVy || 0) + 1.6;   // gravity
+        cell.fallY -= cell.fallVy;
+        if (cell.fallY <= 0) {
+          cell.fallY = 0;
+          cell.fallVy = 0;
+        }
+      }
+    }));
+  });
+
   // Particles
   particles = particles.filter(p => {
     p.x+=p.vx; p.y+=p.vy; p.vy+=0.14; p.life--;
@@ -657,9 +710,14 @@ function drawBuildings() {
     const isTgt = bi === player.tgt;
     const act = isTgt ? firstCell(b) : null;
 
+    // Top row's fallY (used to keep the cap/label glued to the falling stack)
+    const topRow = b.cells[b.floors-1];
+    const topFallY = (topRow && topRow[0]) ? (topRow[0].fallY || 0) : 0;
+    const topY = GY - b.floors*CH - topFallY;
+
     // Building base
     ctx.fillStyle = b.type==='wood' ? '#0a140a' : b.type==='concrete' ? '#0a1020' : '#120a20';
-    ctx.fillRect(b.x+sx, GY - b.floors*CH, b.width, 4);
+    ctx.fillRect(b.x+sx, topY, b.width, 4);
 
     // Cells
     for (let f=0; f<b.floors; f++) {
@@ -677,12 +735,15 @@ function drawBuildings() {
     ctx.font = '8px "Courier New"';
     ctx.fillStyle  = isTgt ? '#2eff5a' : '#7ac27a';
     ctx.textAlign  = 'center';
-    ctx.fillText(b.type.toUpperCase(), b.x + sx + b.width/2, GY - b.floors*CH - 4);
+    ctx.fillText(b.type.toUpperCase(), b.x + sx + b.width/2, topY - 4);
     ctx.textAlign = 'left';
   });
 }
 
 function drawCell(x, y, cell, type, isActive) {
+  // Apply falling offset (cell mid-air after a floor collapse below it)
+  if (cell.fallY && cell.fallY > 0) y -= cell.fallY;
+
   // Dying animation
   if (cell.destroyed) {
     if (cell.dieAnim > 0) {
