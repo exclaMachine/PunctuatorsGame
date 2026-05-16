@@ -1312,14 +1312,18 @@ function drawCell(x, y, cell, isActive) {
   ctx.fillText(cell.char, x+CW/2, y+CH/2+6);
   ctx.shadowBlur = 0;
 
-  // Romaji hint (small, bottom of cell) — hidden for ~1s on the active target
-  ctx.font      = '9px "Courier New"';
-  if (isActive && !hintRevealed()) {
-    ctx.fillStyle = '#4a6a4a';
-    ctx.fillText('???', x+CW/2, y+CH-4);
-  } else {
-    ctx.fillStyle = isActive ? '#d8e8d8' : cell.hi ? '#ffcc66' : P.romaji;
-    ctx.fillText(cell.romaji, x+CW/2, y+CH-4);
+  // Romaji hint (small, bottom of cell) — only revealed on the active target
+  // once the 1-second delay elapses. Other cells stay blank so the player
+  // can't peek ahead at upcoming characters.
+  if (isActive) {
+    ctx.font = '9px "Courier New"';
+    if (hintRevealed()) {
+      ctx.fillStyle = '#d8e8d8';
+      ctx.fillText(cell.romaji, x+CW/2, y+CH-4);
+    } else {
+      ctx.fillStyle = '#4a6a4a';
+      ctx.fillText('???', x+CW/2, y+CH-4);
+    }
   }
 
   // Blinking ▼ cursor above active target
