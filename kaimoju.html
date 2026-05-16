@@ -335,6 +335,56 @@ function makeMountainRidge() {
 
 
 
+// ── Background vehicles (planes / helicopters / tanks) ──────────────
+// Roving ASCII props for atmosphere. Future plan: attach a katakana or
+// hiragana char to each (へ → helicopter, タ → tank, ヒ → plane) and have
+// them shoot at the kaomoji. For now they're just decorative.
+const VEHICLE_DEFS = {
+  plane: {
+    frames: [[
+      '    __|__    ',
+      '  >=[___]=>  ',
+      '     T T     ',
+    ]],
+    yMin: 55,  yMax: 110,
+    vxMin: 0.9, vxMax: 1.7,
+    color: '#6aa8d0',
+    fontSize: 10,
+  },
+  helicopter: {
+    // Two-frame rotor cycle
+    frames: [
+      [
+        '   --|--   ',
+        '*--|===|   ',
+        '     --   ',
+      ],
+      [
+        '   \\ | /   ',
+        '*--|===|   ',
+        '     --   ',
+      ],
+    ],
+    yMin: 150, yMax: 235,
+    vxMin: 0.4, vxMax: 1.0,
+    color: '#c89030',
+    fontSize: 10,
+    animDur: 5,  // frames per rotor tick
+  },
+  tank: {
+    frames: [[
+      '    ___      ',
+      '   _|___|>-- ',
+      '  [O-O-O-O]  ',
+    ]],
+    yMin: 424, yMax: 424,  // sits just above ground (GY=460)
+    vxMin: 0.25, vxMax: 0.55,
+    color: '#7a8c30',
+    fontSize: 10,
+  },
+};
+const VEHICLE_TYPES = Object.keys(VEHICLE_DEFS);
+
 // ── Particle chars ───────────────────────────────────────────────────
 const PCHARS = ['#','*','!','%','@','░','▓','▒','×','+','∙','·','▪'];
 
@@ -396,7 +446,8 @@ let score = 0, hiScore = 0;
 let combo = 0, maxCombo = 0;
 let totalHits = 0, totalMisses = 0;
 let buildings = [], particles = [], floats = [], lasers = [];
-let mountains = [], clouds = [], trees = [];
+let mountains = [], clouds = [], trees = [], vehicles = [];
+let vehicleSpawnTimer = 60;
 let currentBiome = 'forest';
 let flash = { alpha:0, col:P.hit_bd };
 let findMode = { on:false, char:null, count:0, cooldown:0 };
@@ -1083,6 +1134,59 @@ function updateAmbient() {
     const cw = ((cl.shape[0] || '').length) * (cl.sz * 0.6);
     if (cl.x > W + 20) cl.x = -cw - 30 - Math.random()*60;
   });
+  maybeSpawnVehicle();
+  updateVehicles();
+}
+
+// ── Background vehicles ──────────────────────────────────────────────
+function spawnVehicle() {
+  const type = pick(VEHICLE_TYPES);
+  const def  = VEHICLE_DEFS[type];
+  const frames = def.frames;
+  const w  = (frames[0][0] || '').length * def.fontSize * 0.62;
+  const y  = def.yMin + Math.random() * (def.yMax - def.yMin);
+  const vx = def.vxMin + Math.random() * (def.vxMax - def.vxMin);
+  vehicles.push({
+    type, frames, color: def.color, fontSize: def.fontSize,
+    animDur: def.animDur || 0,
+    x: -w - 20, y, vx, width: w,
+    frameIdx: 0, frameT: 0,
+  });
+}
+
+function maybeSpawnVehicle() {
+  if (--vehicleSpawnTimer > 0) return;
+  if (vehicles.length < 4) spawnVehicle();
+  vehicleSpawnTimer = 180 + Math.floor(Math.random() * 360);  // 3–9s @ 60fps
+}
+
+function updateVehicles() {
+  for (let i = vehicles.length - 1; i >= 0; i--) {
+    const v = vehicles[i];
+    v.x += v.vx;
+    if (v.animDur > 0) {
+      v.frameT++;
+      if (v.frameT >= v.animDur) {
+        v.frameT = 0;
+        v.frameIdx = (v.frameIdx + 1) % v.frames.length;
+      }
+    }
+    if (v.x > W + 30) vehicles.splice(i, 1);
+  }
+}
+
+function drawVehicles() {
+  if (!vehicles.length) return;
+  ctx.textAlign = 'left';
+  vehicles.forEach(v => {
+    ctx.font      = `${v.fontSize}px "Courier New"`;
+    ctx.fillStyle = v.color;
+    const frame = v.frames[v.frameIdx];
+    const lh    = v.fontSize - 1;
+    for (let i = 0; i < frame.length; i++) {
+      ctx.fillText(frame[i], v.x, v.y + i * lh);
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1099,6 +1203,7 @@ function render() {
   drawBuildings();
   drawGround();
   drawTrees();
+  drawVehicles();
   drawParticles();
   drawLasers();
   drawFloats();
@@ -1730,6 +1835,7 @@ function drawScanlines() {
 // ═══════════════════════════════════════════════════════════════════
 function renderMenu() {
   drawBG();
+  drawVehicles();
   ctx.textAlign = 'center';
 
   // Title
@@ -1803,6 +1909,7 @@ function renderMenu() {
 // ── Difficulty Select ─────────────────────────────────────────────────
 function renderSelect() {
   drawBG();
+  drawVehicles();
   ctx.textAlign = 'center';
 
   // Title
@@ -1868,6 +1975,7 @@ function renderSelect() {
 
 function renderGameOver() {
   drawBG();
+  drawVehicles();
   ctx.textAlign = 'center';
 
   const won = buildings.length > 0 && buildings.every(b => b.collapsed);
@@ -2064,6 +2172,12 @@ c.addEventListener('pointerdown', ev => {
 // Pre-fill ambient scenery so the menu/gameover screens have mountains+clouds.
 mountains = makeMountainRidge();
 clouds    = makeClouds();
+// Seed a few vehicles already on-screen so the title isn't empty
+for (let i = 0; i < 2; i++) {
+  spawnVehicle();
+  const v = vehicles[vehicles.length - 1];
+  v.x = Math.random() * (W - v.width);
+}
 requestAnimationFrame(loop);
 </script>
 </body>
