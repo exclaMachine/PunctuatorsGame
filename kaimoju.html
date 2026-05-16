@@ -601,11 +601,17 @@ function update() {
   // Auto-target nearest alive building
   player.tgt = nearestBuilding();
 
-  // Auto-walk toward current target building
+  // Auto-walk to a spot just LEFT of the active cell (so the kaomoji doesn't
+  // block the letter it's about to smash). Updates to the next cell after a destroy.
   const tgtB = (player.tgt>=0 && player.tgt<buildings.length) ? buildings[player.tgt] : null;
+  const act  = tgtB ? firstCell(tgtB) : null;
+  let standX = null;
   if (tgtB && !tgtB.collapsed) {
-    const targetX = tgtB.x + tgtB.width/2;
-    const dx = targetX - player.x;
+    if (act) standX = tgtB.x + act.c*CW - 40;     // 40px left of cell's left edge
+    else     standX = tgtB.x + tgtB.width/2;       // fallback
+  }
+  if (standX !== null) {
+    const dx   = standX - player.x;
     const dist = Math.abs(dx);
     if (dist > 3) player.vx = Math.sign(dx) * Math.min(2.8, dist*0.18);
     else          player.vx *= 0.5;
@@ -616,6 +622,11 @@ function update() {
   player.x = Math.max(20, Math.min(W-20, player.x + player.vx));
   if (player.vx >  0.25) player.facing =  1;
   if (player.vx < -0.25) player.facing = -1;
+  // When settled, face the cell we're attacking (always to the right of player)
+  if (act && Math.abs(player.vx) < 0.25) {
+    const cellCenterX = tgtB.x + act.c*CW + CW/2;
+    player.facing = cellCenterX >= player.x ? 1 : -1;
+  }
 
   // Walk animation
   player.wTimer++;
