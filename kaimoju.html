@@ -1750,12 +1750,19 @@ function renderMenu() {
   const b  = Math.sin(t/580)*8;
   const hi = HEADS[Math.floor(t/1300)%HEADS.length];
   const bo = BODIES[Math.floor(t/2600)%BODIES.length];
+  const ls = LEG_SETS[Math.floor(t/3500)%LEG_SETS.length];
+  const lf = Math.floor(t/260) % 4;
   ctx.font      = 'bold 22px "Courier New"';
   ctx.fillStyle  = P.player;
   ctx.shadowBlur = 14; ctx.shadowColor = P.pglow;
   ctx.fillText(hi, W/2, 200+b);
   ctx.fillText(bo, W/2, 228+b);
   ctx.shadowBlur = 0;
+
+  // Legs — cycle through every LEG_SET so the menu shows them off
+  ctx.font      = 'bold 18px "Courier New"';
+  ctx.fillStyle = P.player;
+  ctx.fillText(ls.walk[lf], W/2, 250+b);
 
   // How to play
   ctx.font      = '13px "Courier New"';
