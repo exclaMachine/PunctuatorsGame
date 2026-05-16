@@ -350,9 +350,11 @@ These are locked-in. All of the following are the user's decisions:
 
 ```js
 {
-  (x, vx, facing, head, body, wFrame, wTimer, tgt);
+  (x, vx, facing, head, body, legs, wFrame, wTimer, tgt);
 }
 ```
+
+`legs` is one of `LEG_SETS` — `{ stand, walk: [4 frames] }`. Body stays fixed; legs cycle through `walk` via `wFrame` while moving (any `|vx| > 0.25`) and snap to `stand` when idle. A small sine-driven vertical bob is added to the head and body while moving.
 
 **`findMode{}`**
 

@@ -142,8 +142,16 @@ const BODIES = [
   '(ﾉ◕ヮ◕)ﾉ',  'ᕙ(⇀‸↼)ᕗ',   '٩(◕‿◕)۶',
   'ᕦ(ò_óˇ)ᕤ',  '(づ￣ ³￣)づ'
 ];
-const WALK_ANIM = [
-  'ᕦ(ò_ó)ᕤ', 'ヽ(>ω<)ﾉ', 'ᕦ(ò_ó)ᕤ', '٩(◕ᴗ◕)۶'
+// Leg sets — each entry is { stand, walk: [4 frames] }. wFrame cycles 0..3
+// while the player is moving; standing pose is shown when idle.
+const LEG_SETS = [
+  { stand: '/|\\',   walk: ['/ \\',   '|_|',   '\\ /',   '|_|'  ] },
+  { stand: 'ハ',     walk: ['ハ',     '八',    'λ',      '八'   ] },
+  { stand: '/\\',    walk: ['_/\\',   '/\\',   '/\\_',   '/\\'  ] },
+  { stand: 'ﾉヽ',    walk: ['ﾉ ヽ',   'ﾉヽ',   'ヽ ﾉ',   'ﾉヽ'  ] },
+  { stand: 'M',      walk: ['M',      'И',     'W',      'И'    ] },
+  { stand: '人',     walk: ['人',     '入',    '从',     '入'   ] },
+  { stand: 'ʌʌ',     walk: ['ʌ ʌ',    'ʌʌ',    'ʌ_ʌ',    'ʌʌ'   ] },
 ];
 
 // ── ASCII star field (twinkling text characters) ────────────────────
@@ -521,6 +529,7 @@ function makePlayer() {
     x:80, vx:0, facing:1,
     head: pick(HEADS),
     body: pick(BODIES),
+    legs: pick(LEG_SETS),
     wFrame:0, wTimer:0,
     tgt:0
   };
@@ -1300,14 +1309,20 @@ function drawPlayer() {
   ctx.shadowBlur = 13; ctx.shadowColor = P.pglow;
   ctx.fillStyle  = P.player;
 
+  // Tiny vertical bob while walking — sells the gait
+  const bob = moving ? Math.abs(Math.sin(t/90)) * 1.5 : 0;
+
   ctx.font = 'bold 18px "Courier New"';
-  ctx.fillText(player.head, px, GY-34);
-  ctx.fillText(moving ? WALK_ANIM[player.wFrame] : player.body, px, GY-13);
+  ctx.fillText(player.head, px, GY-36 - bob);
+  ctx.fillText(player.body, px, GY-15 - bob);
 
   ctx.shadowBlur = 0;
-  ctx.font      = '11px "Courier New"';
-  ctx.fillStyle = '#996600';
-  ctx.fillText(player.facing > 0 ? ' /|\\' : '\\| ', px, GY+2);
+
+  // Legs — animated set cycles via wFrame while moving; stands still otherwise
+  ctx.font      = 'bold 14px "Courier New"';
+  ctx.fillStyle = P.player;
+  const legStr  = moving ? player.legs.walk[player.wFrame] : player.legs.stand;
+  ctx.fillText(legStr, px, GY+2);
 
   // Combo aura (combo ≥ 5)
   if (combo >= 5) {
