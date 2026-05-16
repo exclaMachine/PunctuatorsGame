@@ -310,6 +310,8 @@ These are locked-in. All of the following are the user's decisions:
 - **3–4 buildings per round** with random column/floor counts; each cell is destroyed by one correct romaji input (no per-block HP)
 - **Random kaomoji** character at game start — random head + random body drawn from preset pools
 - **Combo system** — consecutive correct inputs build a multiplier, any miss resets to zero
+- **Romaji hint delay** — when a new cell becomes the active target, its romaji answer is hidden for ~1 second (`HINT_DELAY_MS`). The cell hint, the bottom-panel target hint, and the per-letter input boxes all show `???` / `?` placeholders during the delay. Letters the player has already typed correctly still show. Tracked via `activeKey` + `activeStartTime`; `hintRevealed()` is the gate.
+- **Help overlay** — a `[?]` button in the top-right corner (and the `?` key) opens a full-screen how-to-play overlay. The game pauses while it's open (update() bails on `showHelp`); ESC, `?`, or clicking the overlay closes it. Closing resets the hint timer so the player still gets a fresh delay.
 - **Ctrl+F — Find Mode**:
   - Scans all alive katakana on screen, finds the one that appears most frequently
   - Highlights every instance of that character in gold
@@ -378,6 +380,7 @@ These are locked-in. All of the following are the user's decisions:
 - Multi-char romaji (shi, chi, tsu, fu, wo) handled automatically by prefix logic
 - Ctrl+F is `preventDefault`'d before it can open the browser find dialog
 - Arrow keys are `preventDefault`'d to prevent page scrolling
+- `?` and ESC are reserved for the help overlay; while `showHelp` is true, all other key input is swallowed in `handleKey`
 
 ### Game Flow
 

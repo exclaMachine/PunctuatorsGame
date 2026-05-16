@@ -332,6 +332,13 @@ const FIND_KEY_LABEL = IS_MOBILE ? 'TAP' : (IS_MAC ? '⌘+F' : 'CTRL+F');
 const FIND_BTN = { x: 300, y: 538, w: 600, h: 26 };
 const FIND_COOLDOWN_FRAMES = 900;  // 15s @ 60fps
 
+// Help button (top-right corner of HUD); opens a how-to-play overlay
+const HELP_BTN = { x: W-32, y: 6, w: 24, h: 24 };
+
+// Delay before the romaji answer for a new active target is revealed —
+// gives the player a beat to recall it on their own.
+const HINT_DELAY_MS = 1000;
+
 // ── Random level / building config generator ────────────────────────
 // Returns 3–4 buildings with varied types, cols, and floors so each game
 // looks different. Total min width leaves room for trees in the gaps.
@@ -361,6 +368,11 @@ let keys = {};
 let player = {};
 let frame = 0;  // frame counter for animations
 let muted = false;
+let showHelp = false;
+// Active-target hint timer (resets every time the targeted cell changes)
+let activeKey = '';
+let activeStartTime = 0;
+function hintRevealed() { return Date.now() - activeStartTime >= HINT_DELAY_MS; }
 
 // ── Helpers ──────────────────────────────────────────────────────────
 const rnd  = (a,b) => a + Math.random()*(b-a);
@@ -462,6 +474,7 @@ function initGame() {
   inputBuf=''; particles=[]; floats=[]; lasers=[];
   flash={alpha:0, col:P.hit_bd};
   findMode={on:false, char:null, count:0, cooldown:0};
+  activeKey=''; activeStartTime = Date.now();
   player = makePlayer();
   currentBiome = pick(['forest', 'desert', 'park']);
   buildings = makeBuildings();
@@ -620,6 +633,20 @@ function handleKey(e) {
     if (!muted) { audio(); tone(660, 0.08, 'triangle', 0.10); }
     return;
   }
+
+  // Help toggle (works in any state; '?' is shift+/ on US keyboards)
+  if (e.key === '?') {
+    e.preventDefault();
+    showHelp = !showHelp;
+    if (!showHelp) activeStartTime = Date.now();
+    return;
+  }
+  if (e.key === 'Escape') {
+    if (showHelp) { showHelp = false; activeStartTime = Date.now(); e.preventDefault(); }
+    return;
+  }
+  // Swallow all other input while the help overlay is open
+  if (showHelp) return;
 
   if (gState==='menu') {
     if (e.key==='Enter') { gState='playing'; initGame(); sndStart(); }
@@ -903,6 +930,7 @@ function addFloat(txt, x, y, col=P.score_fl, sz=15) {
 // ═══════════════════════════════════════════════════════════════════
 function update() {
   if (gState !== 'playing') return;
+  if (showHelp) return;  // freeze gameplay while the help overlay is open
   frame++;
 
   // Flash decay
@@ -919,6 +947,14 @@ function update() {
   // block the letter it's about to smash). Updates to the next cell after a destroy.
   const tgtB = (player.tgt>=0 && player.tgt<buildings.length) ? buildings[player.tgt] : null;
   const act  = tgtB ? firstCell(tgtB) : null;
+
+  // Reset hint timer whenever the active target cell changes
+  if (act) {
+    const key = `${player.tgt}:${act.f}:${act.c}`;
+    if (key !== activeKey) { activeKey = key; activeStartTime = Date.now(); }
+  } else {
+    activeKey = '';
+  }
   let standX = null;
   if (tgtB && !tgtB.collapsed) {
     if (act) standX = tgtB.x + act.c*CW - 40;     // 40px left of cell's left edge
@@ -991,8 +1027,8 @@ function updateAmbient() {
 function render() {
   ctx.clearRect(0,0,W,H);
 
-  if (gState==='menu')     { renderMenu();     return; }
-  if (gState==='gameover') { renderGameOver(); return; }
+  if (gState==='menu')     { renderMenu();     if (showHelp) drawHelpOverlay(); return; }
+  if (gState==='gameover') { renderGameOver(); if (showHelp) drawHelpOverlay(); return; }
 
   drawBG();
   drawBuildings();
@@ -1014,6 +1050,7 @@ function render() {
   }
 
   drawScanlines();
+  if (showHelp) drawHelpOverlay();
 }
 
 // ── Background (ASCII stars, mountains, drifting clouds) ────────────
@@ -1210,10 +1247,15 @@ function drawCell(x, y, cell, isActive) {
   ctx.fillText(cell.char, x+CW/2, y+CH/2+6);
   ctx.shadowBlur = 0;
 
-  // Romaji hint (small, bottom of cell)
+  // Romaji hint (small, bottom of cell) — hidden for ~1s on the active target
   ctx.font      = '9px "Courier New"';
-  ctx.fillStyle = isActive ? '#d8e8d8' : cell.hi ? '#ffcc66' : P.romaji;
-  ctx.fillText(cell.romaji, x+CW/2, y+CH-4);
+  if (isActive && !hintRevealed()) {
+    ctx.fillStyle = '#4a6a4a';
+    ctx.fillText('???', x+CW/2, y+CH-4);
+  } else {
+    ctx.fillStyle = isActive ? '#d8e8d8' : cell.hi ? '#ffcc66' : P.romaji;
+    ctx.fillText(cell.romaji, x+CW/2, y+CH-4);
+  }
 
   // Blinking ▼ cursor above active target
   if (isActive && (frame%24)<12) {
@@ -1371,8 +1413,9 @@ function drawInputPanel() {
     ctx.shadowBlur = 0;
 
     ctx.font      = '12px "Courier New"';
-    ctx.fillStyle  = '#b8e0b8';
-    ctx.fillText(act.cell.romaji, LP/2, PY+80);
+    const _rev = hintRevealed();
+    ctx.fillStyle  = _rev ? '#b8e0b8' : '#4a6a4a';
+    ctx.fillText(_rev ? act.cell.romaji : '???', LP/2, PY+80);
   } else {
     ctx.font      = '11px "Courier New"';
     ctx.fillStyle  = P.hud_dim;
@@ -1391,10 +1434,12 @@ function drawInputPanel() {
     const bx0    = RPx + (RPw - totalW)/2;
     const by0    = PY + 12;
 
+    const reveal = hintRevealed();
     for (let i=0; i<rom.length; i++) {
       const bx   = bx0 + i*(BW+BSP);
       const done = i < typed.length;
       const curr = i === typed.length;
+      const showLetter = done || reveal;
 
       ctx.fillStyle   = done ? '#0a280a' : curr ? '#191900' : '#0a160a';
       ctx.fillRect(bx, by0, BW, BH);
@@ -1404,8 +1449,8 @@ function drawInputPanel() {
 
       if (curr) { ctx.shadowBlur=9; ctx.shadowColor='#ffff00'; }
       ctx.font      = `bold ${done?20:curr?18:15}px "Courier New"`;
-      ctx.fillStyle  = done ? '#2eff5a' : curr ? '#ffff66' : '#9adb9a';
-      ctx.fillText(rom[i].toUpperCase(), bx+BW/2, by0+BH/2+7);
+      ctx.fillStyle  = done ? '#2eff5a' : (showLetter ? (curr ? '#ffff66' : '#9adb9a') : '#3a5a3a');
+      ctx.fillText(showLetter ? rom[i].toUpperCase() : '?', bx+BW/2, by0+BH/2+7);
       ctx.shadowBlur = 0;
     }
 
@@ -1485,11 +1530,94 @@ function drawHUD() {
     ctx.shadowBlur = 0;
   }
 
-  // Misses (right)
+  // Misses (right) — shifted left to leave room for the [?] help button
   ctx.textAlign = 'right';
   ctx.fillStyle = combo===0 && totalMisses>0 ? '#ff8888' : '#9adb9a';
-  ctx.fillText(`misses: ${totalMisses}`, W-12, 23);
+  ctx.fillText(`misses: ${totalMisses}`, W-44, 23);
 
+  ctx.textAlign = 'left';
+  drawHelpButton();
+}
+
+// ── Help button (top-right) ───────────────────────────────────────────
+function drawHelpButton() {
+  const { x, y, w, h } = HELP_BTN;
+  ctx.fillStyle = showHelp ? '#1a3a1a' : '#0a1a0a';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#2eff5a';
+  ctx.lineWidth   = 1;
+  ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
+  ctx.font        = 'bold 15px "Courier New"';
+  ctx.fillStyle   = '#2eff5a';
+  ctx.textAlign   = 'center';
+  ctx.fillText('?', x + w/2, y + h/2 + 6);
+  ctx.textAlign   = 'left';
+}
+
+// ── Help overlay (how-to-play screen) ─────────────────────────────────
+function drawHelpOverlay() {
+  // Dim background
+  ctx.fillStyle = 'rgba(0,8,4,0.92)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Frame
+  const fx = 60, fy = 50, fw = W - 120, fh = H - 100;
+  ctx.strokeStyle = '#2eff5a';
+  ctx.lineWidth   = 2;
+  ctx.strokeRect(fx+0.5, fy+0.5, fw-1, fh-1);
+
+  // Title
+  ctx.textAlign  = 'center';
+  ctx.font       = 'bold 26px "Courier New"';
+  ctx.shadowBlur = 12; ctx.shadowColor = '#2eff5a';
+  ctx.fillStyle  = '#2eff5a';
+  ctx.fillText('HOW  TO  PLAY', W/2, fy + 42);
+  ctx.shadowBlur = 0;
+
+  // Body
+  ctx.font = '13px "Courier New"';
+  const lines = [
+    ['GOAL',          'Destroy every building to win the city.'],
+    ['',              ''],
+    ['TYPE',          'Type the romaji for the highlighted katakana cell.'],
+    ['',              'ア = a    シ = shi    ツ = tsu    フ = fu    ヲ = wo'],
+    ['',              'Your kaomoji auto-walks to each new target.'],
+    ['',              ''],
+    ['HINT DELAY',    'The answer is hidden for ~1 second on each new'],
+    ['',              'target — try to recall it before it appears.'],
+    ['',              ''],
+    [FIND_KEY_LABEL,  'FIND MODE — highlights every copy of the current'],
+    ['',              'target. Type its romaji once to detonate them all'],
+    ['',              'in a laser barrage.'],
+    ['',              ''],
+    ['COMBO',         'Consecutive hits build a score multiplier.'],
+    ['',              'A miss resets your combo to zero.'],
+    ['',              ''],
+    ['CTRL+M',        `Toggle sound  (currently ${muted ? 'OFF' : 'ON'})`],
+    ['',              ''],
+    ['ESC  /  ?',     'Close this help screen'],
+  ];
+  let y = fy + 78;
+  lines.forEach(([key, desc]) => {
+    if (key) {
+      ctx.fillStyle = '#ffaa00';
+      ctx.textAlign = 'right';
+      ctx.fillText(key, W/2 - 90, y);
+    }
+    ctx.fillStyle = '#b8e0b8';
+    ctx.textAlign = 'left';
+    ctx.fillText(desc, W/2 - 78, y);
+    y += 19;
+  });
+
+  // Close hint
+  ctx.textAlign = 'center';
+  ctx.font      = '11px "Courier New"';
+  ctx.fillStyle = '#7ac27a';
+  ctx.fillText('— press [?] / ESC / click anywhere to close —', W/2, fy + fh - 18);
+
+  // Help button stays on top so it can be toggled off
+  drawHelpButton();
   ctx.textAlign = 'left';
 }
 
@@ -1539,6 +1667,7 @@ function renderMenu() {
     [FIND_KEY_LABEL,    'FIND MODE — highlights every copy of your target char'],
     ['',                'type its romaji once to detonate them all'],
     ['CTRL+M',          `toggle sound  (${muted ? 'OFF' : 'ON'})`],
+    ['?',               'open help anytime  (or tap the [?] in the corner)'],
   ];
   rows.forEach(([key, desc], i) => {
     const ry = 285 + i*22;
@@ -1561,6 +1690,7 @@ function renderMenu() {
     ctx.shadowBlur = 0;
   }
 
+  drawHelpButton();
   drawScanlines();
   ctx.textAlign = 'left';
 }
@@ -1611,6 +1741,7 @@ function renderGameOver() {
     ctx.shadowBlur = 0;
   }
 
+  drawHelpButton();
   drawScanlines();
   ctx.textAlign = 'left';
 }
@@ -1643,7 +1774,7 @@ if (IS_MOBILE) {
 function updateFindBtn() {
   if (!IS_MOBILE) return;
   findBtn.classList.toggle('active', findMode.on);
-  findBtn.disabled = findMode.cooldown > 0 || gState !== 'playing';
+  findBtn.disabled = findMode.cooldown > 0 || gState !== 'playing' || showHelp;
   if (findMode.on)               findBtn.textContent = `◆ ${findMode.char} ×${findMode.count}`;
   else if (findMode.cooldown>0)  findBtn.textContent = `FIND ${Math.ceil(findMode.cooldown/60)}s`;
   else                           findBtn.textContent = '[ FIND ]';
@@ -1714,6 +1845,21 @@ c.addEventListener('pointerdown', ev => {
   ev.preventDefault();
   const { x, y } = canvasPointerXY(ev);
   audio();  // wake AudioContext from gesture
+
+  // Help button (top-right) — works in any state
+  const hb = HELP_BTN;
+  if (x >= hb.x && x <= hb.x+hb.w && y >= hb.y && y <= hb.y+hb.h) {
+    showHelp = !showHelp;
+    if (!showHelp) activeStartTime = Date.now();
+    return;
+  }
+  // If the help overlay is open, any tap elsewhere closes it
+  if (showHelp) {
+    showHelp = false;
+    activeStartTime = Date.now();
+    return;
+  }
+
   if (gState === 'menu') {
     gState='playing'; initGame(); sndStart();
     focusMobileInput();

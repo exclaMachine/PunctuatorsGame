@@ -5,7 +5,11 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(grep -ixE '^.{6,}$' /Users/tyrickers/Desktop/PunctuatorsGame/enable1.txt)",
-      "Bash(grep -iE '^.{6,}$' /Users/tyrickers/Desktop/PunctuatorsGame/enable1.txt)"
+      "Bash(grep -iE '^.{6,}$' /Users/tyrickers/Desktop/PunctuatorsGame/enable1.txt)",
+      "Bash(node --check /Users/tyrickers/Desktop/PunctuatorsGame/kaimoju.html)",
+      "Bash(sed -n '/<script>/,/<\\\\/script>/p' /Users/tyrickers/Desktop/PunctuatorsGame/kaimoju.html)",
+      "Bash(sed '1d;$d')",
+      "Bash(node --check /tmp/kaimoju_script.js)"
     ]
   }
 }
