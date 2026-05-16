@@ -2,21 +2,69 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>KAIMOJU カイモジュ</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; }
 body {
   background:#000;
   display:flex; align-items:center; justify-content:center;
-  min-height:100vh; overflow:hidden;
+  min-height:100vh;
+  min-height:100dvh;
+  overflow:hidden;
   font-family:'Courier New',monospace;
 }
-canvas { display:block; }
+canvas {
+  display: block;
+  width: min(100vw, 920px);
+  height: auto;
+  max-height: 100dvh;
+  aspect-ratio: 920 / 580;
+  touch-action: manipulation;
+}
+/* Hidden text input — invoked on mobile taps so the OS keyboard opens.
+   font-size 16px prevents iOS Safari from auto-zooming on focus. */
+#ki {
+  position: fixed;
+  bottom: 0; left: 0;
+  width: 1px; height: 1px;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  font-size: 16px;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  outline: none;
+}
+/* Mobile-only Find button — fixed overlay so it stays reachable above the keyboard.
+   Hidden by default; the script unhides it when IS_MOBILE is true. */
+#findbtn {
+  position: fixed;
+  top: env(safe-area-inset-top, 8px);
+  right: 8px;
+  z-index: 10;
+  -webkit-tap-highlight-color: transparent;
+  background: #0a1a0a;
+  color: #2eff5a;
+  border: 1.5px solid #2eff5a;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+#findbtn[disabled] { opacity: 0.5; border-color: #3a5a3a; color: #7a9a7a; }
+#findbtn.active    { background:#3a2400; color:#ffaa00; border-color:#ffaa00; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<input id="ki" tabindex="-1" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text">
+<button id="findbtn" hidden>[ FIND ]</button>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 //  KAIMOJU  カイモジュ  —  怪文字 Kaiju Typer
@@ -1185,11 +1233,50 @@ function renderGameOver() {
 function loop() {
   update();
   render();
+  updateFindBtn();
   requestAnimationFrame(loop);
 }
 
 // ── Event Listeners ───────────────────────────────────────────────────
+const ki = document.getElementById('ki');
+const findBtn = document.getElementById('findbtn');
+if (IS_MOBILE) {
+  findBtn.hidden = false;
+  // pointerdown (not click) so we don't dismiss the keyboard before activating
+  findBtn.addEventListener('pointerdown', ev => {
+    if (findBtn.disabled) return;
+    ev.preventDefault();
+    audio();
+    if (gState === 'playing') activateFind();
+    focusMobileInput();
+  });
+}
+function updateFindBtn() {
+  if (!IS_MOBILE) return;
+  findBtn.classList.toggle('active', findMode.on);
+  findBtn.disabled = findMode.cooldown > 0 || gState !== 'playing';
+  if (findMode.on)               findBtn.textContent = `◆ ${findMode.char} ×${findMode.count}`;
+  else if (findMode.cooldown>0)  findBtn.textContent = `FIND ${Math.ceil(findMode.cooldown/60)}s`;
+  else                           findBtn.textContent = '[ FIND ]';
+}
+let lastBackspaceAt = 0;
+function deleteOneFromBuf() {
+  // Deduplicate Backspace fired from both keydown and beforeinput on mobile
+  const now = Date.now();
+  if (now - lastBackspaceAt < 80) return;
+  lastBackspaceAt = now;
+  inputBuf = inputBuf.slice(0, -1);
+}
+
 window.addEventListener('keydown', e => {
+  // On mobile the hidden input may be focused; letter input is delivered via
+  // the input element's 'input' event. Skip the duplicate path here, but still
+  // allow modifier shortcuts (find/mute), Enter, Backspace, etc. through.
+  if (e.target === ki &&
+      e.key.length === 1 && /[a-z]/i.test(e.key) &&
+      !e.ctrlKey && !e.metaKey && !e.altKey) {
+    return;
+  }
   keys[e.key] = true;
   handleKey(e);
 });
@@ -1197,7 +1284,31 @@ window.addEventListener('keyup', e => {
   keys[e.key] = false;
 });
 
-// Canvas pointer (click/tap) — Find button + start/retry on mobile
+// Hidden input — translates the mobile/IME keyboard into typeChar calls
+ki.addEventListener('input', () => {
+  const v = ki.value;
+  ki.value = '';
+  if (!v) return;
+  for (const ch of v.toLowerCase()) {
+    if (/[a-z]/.test(ch)) typeChar(ch);
+  }
+});
+ki.addEventListener('beforeinput', e => {
+  if (e.inputType === 'deleteContentBackward') {
+    deleteOneFromBuf();
+    e.preventDefault();
+  }
+});
+
+// Patch handleKey's Backspace path through dedupe (overrides inline slice above
+// only when the hidden input is involved — desktop path still works unchanged).
+const _origHandleKey = handleKey;
+handleKey = function(e) {
+  if (e.key === 'Backspace' && e.target === ki) { deleteOneFromBuf(); return; }
+  return _origHandleKey(e);
+};
+
+// Canvas pointer (click/tap) — Find button + start/retry + focus mobile keyboard
 function canvasPointerXY(ev) {
   const rect = c.getBoundingClientRect();
   return {
@@ -1205,16 +1316,32 @@ function canvasPointerXY(ev) {
     y: (ev.clientY - rect.top)  * (H / rect.height),
   };
 }
+function focusMobileInput() {
+  if (!IS_MOBILE) return;
+  // iOS/Android require the focus() to be inside the user-gesture callstack
+  try { ki.focus({ preventScroll: true }); } catch { ki.focus(); }
+}
 c.addEventListener('pointerdown', ev => {
   ev.preventDefault();
   const { x, y } = canvasPointerXY(ev);
-  if (gState === 'menu') { gState='playing'; initGame(); sndStart(); return; }
-  if (gState === 'gameover') { gState='playing'; initGame(); sndStart(); return; }
+  audio();  // wake AudioContext from gesture
+  if (gState === 'menu') {
+    gState='playing'; initGame(); sndStart();
+    focusMobileInput();
+    return;
+  }
+  if (gState === 'gameover') {
+    gState='playing'; initGame(); sndStart();
+    focusMobileInput();
+    return;
+  }
   if (gState === 'playing') {
     const b = FIND_BTN;
     if (x >= b.x && x <= b.x+b.w && y >= b.y && y <= b.y+b.h) {
-      audio();  // wake AudioContext from touch gesture
       activateFind();
+    } else {
+      // Tapping the playfield re-opens the keyboard if it dismissed
+      focusMobileInput();
     }
   }
 });
