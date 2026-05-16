@@ -339,6 +339,9 @@ const HELP_BTN = { x: W-32, y: 6, w: 24, h: 24 };
 // gives the player a beat to recall it on their own.
 const HINT_DELAY_MS = 1000;
 
+// Punch animation length (frames) — fires on every correct katakana
+const PUNCH_DUR = 14;
+
 // ── Random level / building config generator ────────────────────────
 // Returns 3–4 buildings with varied types, cols, and floors so each game
 // looks different. Total min width leaves room for trees in the gaps.
@@ -544,6 +547,7 @@ function makePlayer() {
     body: pick(BODIES),
     legs: pick(LEG_SETS),
     wFrame:0, wTimer:0,
+    punch:0, punchDir:1,
     tgt:0
   };
 }
@@ -711,8 +715,13 @@ function doHit(bIdx, f, c) {
   cell.dieAnim   = 20;
   totalHits++;
 
+  // Kaomoji destroy-punch toward the cell it just smashed
   const cx = b.x + c*CW + CW/2;
   const cy = GY - (f+1)*CH + CH/2;
+  player.punch    = PUNCH_DUR;
+  player.punchDir = cx >= player.x ? 1 : -1;
+  player.facing   = player.punchDir;
+
   spawnParticles(cx, cy);
   sndHit();
 
@@ -968,6 +977,9 @@ function update() {
   } else {
     player.vx *= 0.72;
   }
+
+  // Freeze movement during the destroy-punch so the lunge reads cleanly
+  if (player.punch > 0) { player.vx = 0; player.punch--; }
 
   player.x = Math.max(20, Math.min(W-20, player.x + player.vx));
   if (player.vx >  0.25) player.facing =  1;
@@ -1345,26 +1357,55 @@ function drawFloats() {
 function drawPlayer() {
   const px = player.x;
   const t  = Date.now();
-  const moving = Math.abs(player.vx) > 0.25;
+  const moving   = Math.abs(player.vx) > 0.25;
+  const punching = player.punch > 0;
+
+  // Destroy-punch lunge — sine curve, 0 → peak → 0 over PUNCH_DUR frames
+  let lungeX = 0, lungeT = 0;
+  if (punching) {
+    lungeT = Math.sin(((PUNCH_DUR - player.punch) / PUNCH_DUR) * Math.PI);
+    lungeX = lungeT * 16 * player.punchDir;
+  }
+  const drawX = px + lungeX;
 
   ctx.textAlign  = 'center';
   ctx.shadowBlur = 13; ctx.shadowColor = P.pglow;
   ctx.fillStyle  = P.player;
 
-  // Tiny vertical bob while walking — sells the gait
-  const bob = moving ? Math.abs(Math.sin(t/90)) * 1.5 : 0;
+  // Tiny vertical bob while walking — sells the gait (paused during a punch)
+  const bob = (moving && !punching) ? Math.abs(Math.sin(t/90)) * 1.5 : 0;
 
   ctx.font = 'bold 18px "Courier New"';
-  ctx.fillText(player.head, px, GY-36 - bob);
-  ctx.fillText(player.body, px, GY-15 - bob);
+  ctx.fillText(player.head, drawX, GY-36 - bob);
+  ctx.fillText(player.body, drawX, GY-15 - bob);
 
   ctx.shadowBlur = 0;
 
   // Legs — animated set cycles via wFrame while moving; stands still otherwise
   ctx.font      = 'bold 14px "Courier New"';
   ctx.fillStyle = P.player;
-  const legStr  = moving ? player.legs.walk[player.wFrame] : player.legs.stand;
-  ctx.fillText(legStr, px, GY+2);
+  const legStr  = (moving && !punching) ? player.legs.walk[player.wFrame] : player.legs.stand;
+  ctx.fillText(legStr, drawX, GY+2);
+
+  // Punch fist + BAM! — extends out from the kaomoji toward the smashed cell
+  if (punching) {
+    const fistDist = 22 + lungeT * 28;
+    const fistX    = drawX + fistDist * player.punchDir;
+    const fistY    = GY - 22;
+
+    ctx.font       = 'bold 18px "Courier New"';
+    ctx.fillStyle  = '#ffee44';
+    ctx.shadowBlur = 14; ctx.shadowColor = '#ff7700';
+    ctx.textAlign  = 'center';
+    ctx.fillText(player.punchDir > 0 ? '══►' : '◄══', fistX, fistY);
+
+    if (lungeT > 0.55) {
+      ctx.font      = 'bold 14px "Courier New"';
+      ctx.fillStyle = '#ffff88';
+      ctx.fillText('BAM!', drawX + 48 * player.punchDir, GY - 54);
+    }
+    ctx.shadowBlur = 0;
+  }
 
   // Combo aura (combo ≥ 5)
   if (combo >= 5) {
@@ -1372,7 +1413,7 @@ function drawPlayer() {
     ctx.globalAlpha = pulse * 0.85;
     ctx.font        = `${11+pulse*5}px "Courier New"`;
     ctx.fillStyle   = '#ff7700';
-    ctx.fillText('!!! !!!', px, GY-52);
+    ctx.fillText('!!! !!!', drawX, GY-52);
     ctx.globalAlpha = 1;
   }
 
