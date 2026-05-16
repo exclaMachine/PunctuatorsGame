@@ -547,10 +547,20 @@ function update() {
   if (findMode.cooldown > 0) findMode.cooldown--;
   if (!findMode.on) clearHighlights();
 
-  // Player movement
-  if (keys['ArrowLeft'])       player.vx = -2.8;
-  else if (keys['ArrowRight']) player.vx =  2.8;
-  else                         player.vx *= 0.72;
+  // Auto-target nearest alive building
+  player.tgt = nearestBuilding();
+
+  // Auto-walk toward current target building
+  const tgtB = (player.tgt>=0 && player.tgt<buildings.length) ? buildings[player.tgt] : null;
+  if (tgtB && !tgtB.collapsed) {
+    const targetX = tgtB.x + tgtB.width/2;
+    const dx = targetX - player.x;
+    const dist = Math.abs(dx);
+    if (dist > 3) player.vx = Math.sign(dx) * Math.min(2.8, dist*0.18);
+    else          player.vx *= 0.5;
+  } else {
+    player.vx *= 0.72;
+  }
 
   player.x = Math.max(20, Math.min(W-20, player.x + player.vx));
   if (player.vx >  0.25) player.facing =  1;
@@ -559,9 +569,6 @@ function update() {
   // Walk animation
   player.wTimer++;
   if (player.wTimer > 7) { player.wFrame = (player.wFrame+1)%4; player.wTimer=0; }
-
-  // Auto-target nearest alive building
-  player.tgt = nearestBuilding();
 
   // Building shake decay
   buildings.forEach(b => { if (b.shakeX>0) b.shakeX = Math.max(0, b.shakeX-0.38); });
@@ -975,8 +982,8 @@ function renderMenu() {
   // How to play
   ctx.font      = '13px "Courier New"';
   const rows = [
-    ['← →',         'move your kaomoji between buildings'],
-    ['type romaji',  'smash katakana blocks  (a, ka, shi, tsu…)'],
+    ['type romaji',  'smash katakana — your kaomoji walks itself'],
+    ['',             '(a, ka, shi, tsu… auto-targets the nearest building)'],
     ['CTRL+F',       'FIND MODE — highlights most frequent char'],
     ['',             'destroy one instance to clear them ALL'],
     ['CTRL+M',       `toggle sound  (${muted ? 'OFF' : 'ON'})`],
