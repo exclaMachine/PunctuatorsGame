@@ -146,18 +146,164 @@ const WALK_ANIM = [
   'ᕦ(ò_ó)ᕤ', 'ヽ(>ω<)ﾉ', 'ᕦ(ò_ó)ᕤ', '٩(◕ᴗ◕)۶'
 ];
 
-// ── Static star field ────────────────────────────────────────────────
-const STARS = Array.from({length:90}, () => ({
+// ── ASCII star field (twinkling text characters) ────────────────────
+const STAR_CHARS = ['.','.','.','.','`','\'','*','+','·','˙','·'];
+const STARS = Array.from({length:55}, () => ({
   x: Math.random()*W,
-  y: Math.random()*260+12,
-  r: Math.random()*1.4+0.3,
-  tw: Math.random()*6.28
+  y: Math.random()*240+12,
+  ch: pickFrom(STAR_CHARS),
+  tw: Math.random()*6.28,
+  sz: 10 + Math.floor(Math.random()*4)
 }));
+function pickFrom(a){ return a[Math.floor(Math.random()*a.length)]; }
 
-// ── Distant city silhouette (static, decorative) ─────────────────────
-const BG_BLDGS = Array.from({length:22}, (_,i) => ({
-  x: (i*61)%W, w: 18+((i*37)%28), h: 35+((i*61)%65)
-}));
+// ── Drifting ASCII clouds ───────────────────────────────────────────
+const CLOUD_SHAPES = [
+  ['   .-~~~-.   ',
+   '  (       )  ',
+   '   `~~~~~`   '],
+  ['     __      ',
+   '  _-(  )_    ',
+   ' (________)  '],
+  ['    _____    ',
+   '  .`     `.  ',
+   ' (_________) '],
+  ['  ~  ~~  ~   ',
+   ' ~~~~~~~~~~  ',
+   '   ~  ~~ ~   '],
+  ['    .--.     ',
+   '  _(    )__  ',
+   ' (         ) ',
+   '  `~~~~~~~`  '],
+];
+
+// ── Biome-flavored ASCII tree shapes ────────────────────────────────
+const FOREST_TREES = [
+  ['   ^   ',
+   '  /|\\  ',
+   ' /_|_\\ ',
+   '/__|__\\',
+   '   ||  ',
+   '   ||  '],
+  ['  /\\   ',
+   ' /  \\  ',
+   '/____\\ ',
+   '  ||   ',
+   '  ||   '],
+  ['  .-.  ',
+   ' (   ) ',
+   '(  *  )',
+   ' (___) ',
+   '   |   ',
+   '   |   '],
+  ['   ^   ',
+   '  /^\\  ',
+   ' /^^^\\ ',
+   '/^^^^^\\',
+   '   |   '],
+];
+
+const DESERT_TREES = [
+  [' _   ',
+   '| |_ ',
+   '| | |',
+   '|   |',
+   '|_| |',
+   '  |_|',
+   '   | '],
+  [' _  ',
+   '| | ',
+   '|_| ',
+   ' |  ',
+   ' |  '],
+  ['\\_|_/',
+   '  |  ',
+   ' _|_ ',
+   '/   \\'],
+  ['  _  ',
+   ' | | ',
+   '_| |_',
+   '|   |',
+   '|___|'],
+];
+
+const PARK_TREES = [
+  ['  .---.  ',
+   ' (     ) ',
+   '(   *   )',
+   ' (_____) ',
+   '   |||   ',
+   '   |||   '],
+  ['  .--.  ',
+   ' (    ) ',
+   '  ~~~~  ',
+   '   ||   '],
+  ['\\_|_|_/ ',
+   ' \\_|_/  ',
+   '   |    ',
+   '   |    ',
+   '   |    ',
+   '   |    '],
+  ['  (~)   ',
+   ' (~~~)  ',
+   '(~~*~~) ',
+   '  |||   ',
+   '  |||   '],
+];
+
+const BIOMES = {
+  forest: { trees: FOREST_TREES,  treeCol: ['#1c8c2c','#2c8c1c','#147a14','#1c6c2c'] },
+  desert: { trees: DESERT_TREES,  treeCol: ['#9aa030','#b0a040','#80a030','#a08020'] },
+  park:   { trees: PARK_TREES,    treeCol: ['#1c8c2c','#2cb840','#3c9c4c','#1c8c4c'] },
+};
+
+// ── ASCII building roof ornaments ───────────────────────────────────
+const ROOFS = [
+  // antenna
+  ['   |   ',
+   '   T   ',
+   '   |   '],
+  // dome
+  ['  .-.  ',
+   ' /   \\ ',
+   '/_____\\'],
+  // water tower
+  ['  ___  ',
+   ' |   | ',
+   ' |___| ',
+   '   |   '],
+  // satellite dish
+  ['  \\_/  ',
+   '   |   ',
+   ' __|__ '],
+  // pair of chimneys
+  [' _   _ ',
+   '| | | |',
+   '|_| |_|'],
+  // pyramid cap
+  ['   ^   ',
+   '  / \\  ',
+   ' /___\\ '],
+  // flat (no decoration — 3 variations)
+  [],
+  [],
+  [],
+];
+
+// ── ASCII mountain ridge (regenerated per game) ─────────────────────
+function makeMountainRidge() {
+  const peaks = [];
+  let x = -30;
+  while (x < W + 30) {
+    const h = 30 + Math.floor(Math.random()*70);
+    const w = 70 + Math.floor(Math.random()*80);
+    peaks.push({ x, h, w });
+    x += w * (0.45 + Math.random()*0.25);
+  }
+  return peaks;
+}
+
+
 
 // ── Particle chars ───────────────────────────────────────────────────
 const PCHARS = ['#','*','!','%','@','░','▓','▒','×','+','∙','·','▪'];
@@ -178,14 +324,22 @@ const FIND_KEY_LABEL = IS_MOBILE ? 'TAP' : (IS_MAC ? '⌘+F' : 'CTRL+F');
 const FIND_BTN = { x: 300, y: 538, w: 600, h: 26 };
 const FIND_COOLDOWN_FRAMES = 900;  // 15s @ 60fps
 
-// ── Building configs (MVP: 5 buildings) ──────────────────────────────
-const BCONFIGS = [
-  { cols:3, floors:5, type:'wood'     },
-  { cols:4, floors:7, type:'concrete' },
-  { cols:3, floors:6, type:'wood'     },
-  { cols:3, floors:4, type:'steel'    },
-  { cols:4, floors:8, type:'concrete' },
-];
+// ── Random level / building config generator ────────────────────────
+// Returns 3–4 buildings with varied types, cols, and floors so each game
+// looks different. Total min width leaves room for trees in the gaps.
+function makeBuildingConfigs() {
+  const types = ['wood', 'concrete', 'steel'];
+  const count = 3 + Math.floor(Math.random()*2);  // 3–4 buildings
+  return Array.from({length: count}, () => {
+    const type = pick(types);
+    const cols = 2 + Math.floor(Math.random()*2);  // 2–3 cols
+    let floors;
+    if (type === 'wood')          floors = 3 + Math.floor(Math.random()*3); // 3–5
+    else if (type === 'concrete') floors = 5 + Math.floor(Math.random()*3); // 5–7
+    else                          floors = 3 + Math.floor(Math.random()*3); // 3–5
+    return { cols, floors, type };
+  });
+}
 
 // ═══════════════════════════════════════════════════════════════════
 //  GAME STATE
@@ -195,6 +349,8 @@ let score = 0, hiScore = 0;
 let combo = 0, maxCombo = 0;
 let totalHits = 0, totalMisses = 0;
 let buildings = [], particles = [], floats = [];
+let mountains = [], clouds = [], trees = [];
+let currentBiome = 'forest';
 let flash = { alpha:0, col:P.hit_bd };
 let findMode = { on:false, char:null, count:0, cooldown:0 };
 let inputBuf = '';
@@ -305,8 +461,64 @@ function initGame() {
   flash={alpha:0, col:P.hit_bd};
   findMode={on:false, char:null, count:0, cooldown:0};
   player = makePlayer();
+  currentBiome = pick(['forest', 'desert', 'park']);
   buildings = makeBuildings();
+  mountains = makeMountainRidge();
+  clouds = makeClouds();
+  trees = makeTrees();
   player.tgt = nearestBuilding();
+}
+
+// ── Drifting clouds & ground trees (regenerated per game) ───────────
+function makeClouds() {
+  const n = 3 + Math.floor(Math.random()*3);  // 3–5 clouds
+  return Array.from({length: n}, () => ({
+    x: Math.random()*W,
+    y: 30 + Math.random()*110,
+    vx: 0.05 + Math.random()*0.18,
+    shape: pick(CLOUD_SHAPES),
+    sz: 11 + Math.floor(Math.random()*3),
+  }));
+}
+
+function makeTrees() {
+  const out = [];
+  if (buildings.length === 0) return out;
+  const pool = (BIOMES[currentBiome] || BIOMES.forest).trees;
+  const cols = (BIOMES[currentBiome] || BIOMES.forest).treeCol;
+  // Spans of open ground between buildings (and on the ends)
+  const spans = [];
+  spans.push([5, buildings[0].x - 4]);
+  for (let i=0; i<buildings.length-1; i++) {
+    const a = buildings[i].x + buildings[i].width + 4;
+    const b = buildings[i+1].x - 4;
+    if (b - a > 28) spans.push([a, b]);
+  }
+  const last = buildings[buildings.length-1];
+  spans.push([last.x + last.width + 4, W - 4]);
+
+  spans.forEach(([a, b]) => {
+    if (b - a < 38) return;
+    const slot = 56;
+    const maxN = Math.max(1, Math.floor((b - a) / slot));
+    const n = 1 + Math.floor(Math.random() * maxN);
+    let cursor = a + 2;
+    for (let i=0; i<n; i++) {
+      if (cursor >= b - 30) break;
+      const shape = pick(pool);
+      const tw = (shape[0]||'').length * 7;       // approx pixel width
+      const room = Math.max(2, b - cursor - tw - 2);
+      const tx = cursor + Math.random() * Math.min(room, slot*0.6);
+      out.push({
+        x: tx,
+        shape,
+        c: pick(cols),
+        sz: 11 + Math.floor(Math.random()*3),
+      });
+      cursor = tx + tw + 6;
+    }
+  });
+  return out;
 }
 
 // ── Player ────────────────────────────────────────────────────────────
@@ -322,8 +534,23 @@ function makePlayer() {
 
 // ── Buildings ────────────────────────────────────────────────────────
 function makeBuildings() {
-  let bx = 15;
-  return BCONFIGS.map(cfg => {
+  const cfgs = makeBuildingConfigs();
+  // Distribute leftover horizontal space as variable gaps so each level
+  // has a different silhouette and leaves room for ASCII trees.
+  const baseGap = 14;
+  const margin  = 20;
+  const totalBW = cfgs.reduce((s, cf) => s + cf.cols*CW, 0);
+  const slots   = cfgs.length + 1;  // before-first + between + after-last
+  const slack   = Math.max(0, W - totalBW - (slots-1)*baseGap - margin*2);
+  // Random partition of slack across slots
+  const cuts = Array.from({length: slots-1}, () => Math.random()).sort();
+  const gaps = [];
+  let prev = 0;
+  for (const c of cuts) { gaps.push((c - prev) * slack); prev = c; }
+  gaps.push((1 - prev) * slack);
+
+  let bx = margin + gaps[0];
+  return cfgs.map((cfg, i) => {
     const baseHp = cfg.type==='wood'?1 : cfg.type==='concrete'?2 : 3;
     const cells = Array.from({length:cfg.floors}, () =>
       Array.from({length:cfg.cols}, () => {
@@ -340,9 +567,10 @@ function makeBuildings() {
       x:bx, width:cfg.cols*CW,
       cols:cfg.cols, floors:cfg.floors,
       type:cfg.type, cells,
-      collapsed:false, shakeX:0
+      collapsed:false, shakeX:0,
+      roof: pick(ROOFS),
     };
-    bx += bld.width + 18;
+    bx += bld.width + baseGap + (gaps[i+1] || 0);
     return bld;
   });
 }
@@ -707,6 +935,15 @@ function update() {
   floats = floats.filter(ft => { ft.y+=ft.vy; ft.life--; return ft.life>0; });
 }
 
+// Cloud drift runs every frame (menu, gameover, playing) so the sky always moves.
+function updateAmbient() {
+  clouds.forEach(cl => {
+    cl.x += cl.vx;
+    const cw = ((cl.shape[0] || '').length) * (cl.sz * 0.6);
+    if (cl.x > W + 20) cl.x = -cw - 30 - Math.random()*60;
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  RENDER
 // ═══════════════════════════════════════════════════════════════════
@@ -719,6 +956,7 @@ function render() {
   drawBG();
   drawBuildings();
   drawGround();
+  drawTrees();
   drawParticles();
   drawFloats();
   drawPlayer();
@@ -736,7 +974,7 @@ function render() {
   drawScanlines();
 }
 
-// ── Background ────────────────────────────────────────────────────────
+// ── Background (ASCII stars, mountains, drifting clouds) ────────────
 function drawBG() {
   const g = ctx.createLinearGradient(0,0,0,GY);
   g.addColorStop(0, P.sky0);
@@ -744,19 +982,79 @@ function drawBG() {
   ctx.fillStyle = g;
   ctx.fillRect(0,0,W,GY);
 
-  // Stars
-  const t = Date.now()/1000;
-  STARS.forEach(s => {
-    const a = 0.25 + 0.22*Math.sin(t*0.9+s.tw);
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-    ctx.fillStyle = `rgba(170,190,255,${a})`;
-    ctx.fill();
-  });
+  drawStars();
+  drawMountains();
+  drawClouds();
+}
 
-  // Distant city silhouette
-  ctx.fillStyle = 'rgba(8,18,8,0.65)';
-  BG_BLDGS.forEach(b => ctx.fillRect(b.x, GY-b.h, b.w, b.h));
+function drawStars() {
+  const t = Date.now()/1000;
+  ctx.textAlign = 'left';
+  STARS.forEach(s => {
+    const a = 0.35 + 0.4*Math.sin(t*0.9 + s.tw);
+    ctx.globalAlpha = Math.max(0.1, a);
+    ctx.font = `${s.sz}px "Courier New"`;
+    ctx.fillStyle = '#a8b8e8';
+    ctx.fillText(s.ch, s.x, s.y);
+  });
+  ctx.globalAlpha = 1;
+}
+
+function drawMountains() {
+  if (!mountains.length) return;
+  ctx.textAlign = 'left';
+  const lh = 10;
+  mountains.forEach(p => {
+    const rows = Math.max(2, Math.floor(p.h / lh));
+    const halfW = p.w / 2;
+    const cx = p.x + halfW;
+    for (let r=0; r<rows; r++) {
+      const y = GY - 2 - r*lh;
+      const slope = (rows - r) * (halfW / rows);
+      const isTop = r >= rows - 2;
+      ctx.font = `${lh+1}px "Courier New"`;
+      ctx.fillStyle = isTop ? '#4a6a52' : '#1a3a24';
+      ctx.fillText('/', cx - slope, y);
+      ctx.fillText('\\', cx + slope - 7, y);
+      // sparse interior shading
+      if (r > 0 && r % 2 === 0) {
+        ctx.fillStyle = '#0e2418';
+        let fx = cx - slope + 8;
+        while (fx < cx + slope - 10) {
+          ctx.fillText('.', fx, y);
+          fx += 10;
+        }
+      }
+    }
+  });
+}
+
+function drawClouds() {
+  if (!clouds.length) return;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(150,168,200,0.55)';
+  clouds.forEach(cl => {
+    ctx.font = `${cl.sz}px "Courier New"`;
+    const lh = cl.sz - 1;
+    cl.shape.forEach((line, i) => {
+      ctx.fillText(line, cl.x, cl.y + i*lh);
+    });
+  });
+}
+
+function drawTrees() {
+  if (!trees.length) return;
+  ctx.textAlign = 'left';
+  trees.forEach(t => {
+    ctx.font = `${t.sz}px "Courier New"`;
+    ctx.fillStyle = t.c;
+    const lh = t.sz - 1;
+    const bottomY = GY - 2;
+    for (let i=0; i<t.shape.length; i++) {
+      const y = bottomY - (t.shape.length - 1 - i) * lh;
+      ctx.fillText(t.shape[i], t.x, y);
+    }
+  });
 }
 
 // ── Ground ────────────────────────────────────────────────────────────
@@ -802,11 +1100,28 @@ function drawBuildings() {
       }
     }
 
-    // Building type label above
+    // ASCII roof decoration (random per building)
+    const cxLabel = b.x + sx + b.width/2;
+    let labelY = topY - 4;
+    if (b.roof && b.roof.length) {
+      const rfLH = 9;
+      ctx.font      = '10px "Courier New"';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = b.type==='wood' ? '#3a8a3a'
+                    : b.type==='concrete' ? '#5a8aff'
+                    :                       '#b070ff';
+      for (let i=0; i<b.roof.length; i++) {
+        const y = topY - 4 - (b.roof.length - 1 - i) * rfLH;
+        ctx.fillText(b.roof[i], cxLabel, y);
+      }
+      labelY = topY - 4 - b.roof.length * rfLH - 2;
+    }
+
+    // Building type label above the roof
     ctx.font = '8px "Courier New"';
     ctx.fillStyle  = isTgt ? '#2eff5a' : '#7ac27a';
     ctx.textAlign  = 'center';
-    ctx.fillText(b.type.toUpperCase(), b.x + sx + b.width/2, topY - 4);
+    ctx.fillText(b.type.toUpperCase(), cxLabel, labelY);
     ctx.textAlign = 'left';
   });
 }
@@ -1232,6 +1547,7 @@ function renderGameOver() {
 // ═══════════════════════════════════════════════════════════════════
 function loop() {
   update();
+  updateAmbient();
   render();
   updateFindBtn();
   requestAnimationFrame(loop);
@@ -1347,6 +1663,9 @@ c.addEventListener('pointerdown', ev => {
 });
 
 // ── Boot ──────────────────────────────────────────────────────────────
+// Pre-fill ambient scenery so the menu/gameover screens have mountains+clouds.
+mountains = makeMountainRidge();
+clouds    = makeClouds();
 requestAnimationFrame(loop);
 </script>
 </body>
