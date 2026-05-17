@@ -580,7 +580,7 @@ const INTRO_PEOPLE = Array.from({length: 12}, (_, i) => ({
   bobPh: Math.random() * 6.28,
 }));
 // Active-target hint timer (resets every time the targeted cell changes)
-let activeKey = '';
+let activeCell = null;   // tracked by reference so floor-splice (same f:c, new cell) still resets the timer
 let activeStartTime = 0;
 function hintRevealed() { return Date.now() - activeStartTime >= HINT_DELAY_MS; }
 
@@ -762,7 +762,7 @@ function initGame() {
   inputBuf=''; particles=[]; floats=[]; lasers=[];
   flash={alpha:0, col:P.hit_bd};
   findMode={on:false, char:null, count:0, cooldown:0};
-  activeKey=''; activeStartTime = Date.now();
+  activeCell = null; activeStartTime = Date.now();
   player = makePlayer();
   currentBiome = pick(['forest', 'desert', 'park']);
   buildings = makeBuildings();
@@ -1222,8 +1222,12 @@ function collapseDestroyedFloors(b) {
   if (collapsed > 0) {
     b.shakeX = Math.max(b.shakeX, 6);
     flash.alpha = Math.max(flash.alpha, 0.15);
-    addFloat(collapsed > 1 ? `FLOOR x${collapsed}!` : 'FLOOR!',
-             b.x + b.width/2, GY - b.floors*CH - 14, '#ff9933', 14);
+    // Skip the "FLOOR!" callout in word mode — every cell is its own floor,
+    // so the message just adds float-text clutter on top of the translation.
+    if (!b.isWords) {
+      addFloat(collapsed > 1 ? `FLOOR x${collapsed}!` : 'FLOOR!',
+               b.x + b.width/2, GY - b.floors*CH - 14, '#ff9933', 14);
+    }
     sndFloorCollapse();
   }
 }
@@ -1337,12 +1341,13 @@ function update() {
   const tgtB = (player.tgt>=0 && player.tgt<buildings.length) ? buildings[player.tgt] : null;
   const act  = tgtB ? firstCell(tgtB) : null;
 
-  // Reset hint timer whenever the active target cell changes
+  // Reset hint timer whenever the active target cell changes (by object
+  // identity — word-mode floor splices leave the new word at the same f:c
+  // index, which a string key would treat as unchanged).
   if (act) {
-    const key = `${player.tgt}:${act.f}:${act.c}`;
-    if (key !== activeKey) { activeKey = key; activeStartTime = Date.now(); }
+    if (act.cell !== activeCell) { activeCell = act.cell; activeStartTime = Date.now(); }
   } else {
-    activeKey = '';
+    activeCell = null;
   }
   let standX = null;
   if (tgtB && !tgtB.collapsed) {
