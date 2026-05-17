@@ -81,8 +81,8 @@ const P = {
   bg:       '#03060a',
   sky0:     '#020406',
   sky1:     '#040c14',
-  ground:   '#050e05',
-  gndtex:   '#0d260d',
+  ground:   '#0e240e',
+  gndtex:   '#2a6a2a',
   // cell fills per building type
   fill_w:   '#0b180b',
   fill_c:   '#0b1222',
@@ -451,13 +451,18 @@ const VEHICLE_DEFS = {
       '  >=[___]=>  ',
       '     T T     ',
     ]],
+    framesLeft: [[
+      '    __|__    ',
+      '  <=[___]=<  ',
+      '     T T     ',
+    ]],
     yMin: 55,  yMax: 110,
     vxMin: 0.9, vxMax: 1.7,
     color: '#6aa8d0',
     fontSize: 10,
   },
   helicopter: {
-    // Two-frame rotor cycle
+    // Two-frame rotor cycle (roughly symmetric, fine in either direction)
     frames: [
       [
         '   --|--   ',
@@ -467,6 +472,18 @@ const VEHICLE_DEFS = {
       [
         '   \\ | /   ',
         '*--|===|   ',
+        '     --   ',
+      ],
+    ],
+    framesLeft: [
+      [
+        '   --|--   ',
+        '   |===|--*',
+        '     --   ',
+      ],
+      [
+        '   \\ | /   ',
+        '   |===|--*',
         '     --   ',
       ],
     ],
@@ -482,7 +499,12 @@ const VEHICLE_DEFS = {
       '   _|___|>-- ',
       '  [O-O-O-O]  ',
     ]],
-    yMin: 424, yMax: 424,  // sits just above ground (GY=460)
+    framesLeft: [[
+      '      ___    ',
+      ' --<|___|_   ',
+      '  [O-O-O-O]  ',
+    ]],
+    yMin: 440, yMax: 440,  // treads land on the ground line (GY=460)
     vxMin: 0.25, vxMax: 0.55,
     color: '#7a8c30',
     fontSize: 10,
@@ -1434,14 +1456,16 @@ function updateAmbient() {
 function spawnVehicle() {
   const type = pick(VEHICLE_TYPES);
   const def  = VEHICLE_DEFS[type];
-  const frames = def.frames;
+  const goRight = Math.random() < 0.5;
+  const frames  = goRight ? def.frames : (def.framesLeft || def.frames);
   const w  = (frames[0][0] || '').length * def.fontSize * 0.62;
   const y  = def.yMin + Math.random() * (def.yMax - def.yMin);
-  const vx = def.vxMin + Math.random() * (def.vxMax - def.vxMin);
+  const speed = def.vxMin + Math.random() * (def.vxMax - def.vxMin);
   vehicles.push({
     type, frames, color: def.color, fontSize: def.fontSize,
     animDur: def.animDur || 0,
-    x: -w - 20, y, vx, width: w,
+    x: goRight ? -w - 20 : W + 20,
+    y, vx: goRight ? speed : -speed, width: w,
     frameIdx: 0, frameT: 0,
   });
 }
@@ -1463,7 +1487,7 @@ function updateVehicles() {
         v.frameIdx = (v.frameIdx + 1) % v.frames.length;
       }
     }
-    if (v.x > W + 30) vehicles.splice(i, 1);
+    if (v.x > W + 30 || v.x < -v.width - 30) vehicles.splice(i, 1);
   }
 }
 
@@ -1602,9 +1626,15 @@ function drawTrees() {
 
 // ── Ground ────────────────────────────────────────────────────────────
 function drawGround() {
+  // Solid ground band so buildings/monster don't look like they're floating
   ctx.fillStyle = P.ground;
   ctx.fillRect(0, GY, W, PNL_Y - GY);
 
+  // Strong horizon ridge — 2 px line at the top edge of the ground
+  ctx.fillStyle = '#3a7a3a';
+  ctx.fillRect(0, GY, W, 2);
+
+  // Ground texture row, slightly brighter than before
   ctx.font = '11px "Courier New"';
   const TEX = ['▓','▒','░','▒'];
   for (let x=0; x<W; x+=12) {
