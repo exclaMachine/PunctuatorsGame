@@ -145,6 +145,20 @@ const HR = {
   'わ':'wa',  'を':'wo',  'ん':'n'
 };
 
+// ── Dakuon (voiced) + Handakuon (semi-voiced) ───────────────────────
+const DR = {
+  // が行 — ka → ga
+  'が':'ga',  'ぎ':'gi',  'ぐ':'gu',  'げ':'ge',  'ご':'go',
+  // ざ行 — sa → za
+  'ざ':'za',  'じ':'ji',  'ず':'zu',  'ぜ':'ze',  'ぞ':'zo',
+  // だ行 — ta → da  (ぢ/づ use di/du to distinguish from じ/ず)
+  'だ':'da',  'ぢ':'di',  'づ':'du',  'で':'de',  'ど':'do',
+  // ば行 — ha → ba
+  'ば':'ba',  'び':'bi',  'ぶ':'bu',  'べ':'be',  'ぼ':'bo',
+  // ぱ行 — ha → pa  (handakuon, the ° mark)
+  'ぱ':'pa',  'ぴ':'pi',  'ぷ':'pu',  'ぺ':'pe',  'ぽ':'po',
+};
+
 // ── Kanji → Romaji map (JLPT N5 essentials, single readings only) ──
 // One reading per kanji to keep the typing target unambiguous. Readings
 // chosen to avoid romaji collisions between entries.
@@ -251,7 +265,7 @@ const N5_WORDS = [
 // ── Difficulty modes ────────────────────────────────────────────────
 const MODES = {
   katakana: { label:'カタカナ  KATAKANA', desc:'46 angular characters — the classic mode',  chars: KR,  sample:'ア  イ  ウ  シ  ツ  フ' },
-  hiragana: { label:'ひらがな  HIRAGANA', desc:'46 rounded characters — same readings',     chars: HR,  sample:'あ  い  う  し  つ  ふ' },
+  hiragana: { label:'ひらがな  HIRAGANA', desc:'71 rounded characters — base 46 + dakuon/handakuon', chars: {...HR, ...DR}, sample:'あ  が  じ  だ  ば  ぱ' },
   kanji:    { label:'漢字    KANJI',       desc:'JLPT N5 essentials — one reading per kanji', chars: KJR, sample:'一  日  月  火  水  山' },
   words:    { label:'日本語  WORDS',       desc:'N5 vocabulary — destroy a word, learn its meaning', isWords:true, words: N5_WORDS, sample:'ねこ  がっこう  ともだち' },
 };
@@ -2536,6 +2550,7 @@ const TraceMode = (() => {
   function romajiFor(ch) {
     return (typeof KJR !== 'undefined' && KJR[ch])
         || (typeof HR  !== 'undefined' && HR[ch])
+        || (typeof DR  !== 'undefined' && DR[ch])
         || (typeof KR  !== 'undefined' && KR[ch])
         || '';
   }
