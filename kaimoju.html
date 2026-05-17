@@ -158,11 +158,102 @@ const KJR = {
   '上':'ue',  '下':'shita','左':'hidari','右':'migi'
 };
 
+// ── N5 vocabulary (hiragana spellings) ──────────────────────────────
+// Each entry is { jp, romaji, en } — used by the 'words' difficulty.
+const N5_WORDS = [
+  // Daily objects
+  { jp:'ほん',     romaji:'hon',     en:'book'    },
+  { jp:'かばん',   romaji:'kaban',   en:'bag'     },
+  { jp:'いす',     romaji:'isu',     en:'chair'   },
+  { jp:'つくえ',   romaji:'tsukue',  en:'desk'    },
+  { jp:'えんぴつ', romaji:'enpitsu', en:'pencil'  },
+  { jp:'かみ',     romaji:'kami',    en:'paper'   },
+  { jp:'とけい',   romaji:'tokei',   en:'clock'   },
+  { jp:'でんわ',   romaji:'denwa',   en:'phone'   },
+  { jp:'うち',     romaji:'uchi',    en:'home'    },
+  { jp:'へや',     romaji:'heya',    en:'room'    },
+  { jp:'まど',     romaji:'mado',    en:'window'  },
+  { jp:'かさ',     romaji:'kasa',    en:'umbrella'},
+  { jp:'くつ',     romaji:'kutsu',   en:'shoes'   },
+  // Animals
+  { jp:'ねこ',     romaji:'neko',    en:'cat'     },
+  { jp:'いぬ',     romaji:'inu',     en:'dog'     },
+  { jp:'とり',     romaji:'tori',    en:'bird'    },
+  { jp:'さかな',   romaji:'sakana',  en:'fish'    },
+  { jp:'うま',     romaji:'uma',     en:'horse'   },
+  { jp:'うし',     romaji:'ushi',    en:'cow'     },
+  // Time
+  { jp:'きょう',   romaji:'kyou',    en:'today'   },
+  { jp:'あした',   romaji:'ashita',  en:'tomorrow'},
+  { jp:'きのう',   romaji:'kinou',   en:'yesterday'},
+  { jp:'いま',     romaji:'ima',     en:'now'     },
+  { jp:'あさ',     romaji:'asa',     en:'morning' },
+  { jp:'よる',     romaji:'yoru',    en:'night'   },
+  { jp:'とき',     romaji:'toki',    en:'time'    },
+  { jp:'なつ',     romaji:'natsu',   en:'summer'  },
+  { jp:'ふゆ',     romaji:'fuyu',    en:'winter'  },
+  // Food
+  { jp:'みず',     romaji:'mizu',    en:'water'   },
+  { jp:'おちゃ',   romaji:'ocha',    en:'tea'     },
+  { jp:'ぱん',     romaji:'pan',     en:'bread'   },
+  { jp:'ごはん',   romaji:'gohan',   en:'rice'    },
+  { jp:'にく',     romaji:'niku',    en:'meat'    },
+  { jp:'やさい',   romaji:'yasai',   en:'veggies' },
+  { jp:'りんご',   romaji:'ringo',   en:'apple'   },
+  { jp:'たまご',   romaji:'tamago',  en:'egg'     },
+  { jp:'さとう',   romaji:'satou',   en:'sugar'   },
+  { jp:'しお',     romaji:'shio',    en:'salt'    },
+  // People & family
+  { jp:'ともだち', romaji:'tomodachi', en:'friend'    },
+  { jp:'せんせい', romaji:'sensei',    en:'teacher'   },
+  { jp:'がくせい', romaji:'gakusei',   en:'student'   },
+  { jp:'かぞく',   romaji:'kazoku',    en:'family'    },
+  { jp:'ちち',     romaji:'chichi',    en:'father'    },
+  { jp:'はは',     romaji:'haha',      en:'mother'    },
+  { jp:'あに',     romaji:'ani',       en:'older bro' },
+  { jp:'あね',     romaji:'ane',       en:'older sis' },
+  // Places
+  { jp:'がっこう', romaji:'gakkou',  en:'school'  },
+  { jp:'えき',     romaji:'eki',     en:'station' },
+  { jp:'みち',     romaji:'michi',   en:'road'    },
+  { jp:'まち',     romaji:'machi',   en:'town'    },
+  { jp:'やま',     romaji:'yama',    en:'mountain'},
+  { jp:'かわ',     romaji:'kawa',    en:'river'   },
+  { jp:'うみ',     romaji:'umi',     en:'sea'     },
+  { jp:'そら',     romaji:'sora',    en:'sky'     },
+  // Verbs
+  { jp:'たべる',   romaji:'taberu',  en:'eat'     },
+  { jp:'のむ',     romaji:'nomu',    en:'drink'   },
+  { jp:'いく',     romaji:'iku',     en:'go'      },
+  { jp:'くる',     romaji:'kuru',    en:'come'    },
+  { jp:'かえる',   romaji:'kaeru',   en:'return'  },
+  { jp:'みる',     romaji:'miru',    en:'see'     },
+  { jp:'きく',     romaji:'kiku',    en:'listen'  },
+  { jp:'はなす',   romaji:'hanasu',  en:'speak'   },
+  { jp:'かく',     romaji:'kaku',    en:'write'   },
+  { jp:'よむ',     romaji:'yomu',    en:'read'    },
+  // Colors
+  { jp:'あか',     romaji:'aka',     en:'red'     },
+  { jp:'あお',     romaji:'ao',      en:'blue'    },
+  { jp:'しろ',     romaji:'shiro',   en:'white'   },
+  { jp:'くろ',     romaji:'kuro',    en:'black'   },
+  { jp:'きいろ',   romaji:'kiiro',   en:'yellow'  },
+  // Adjectives
+  { jp:'たかい',   romaji:'takai',   en:'tall'    },
+  { jp:'やすい',   romaji:'yasui',   en:'cheap'   },
+  { jp:'おおきい', romaji:'ookii',   en:'big'     },
+  { jp:'ちいさい', romaji:'chiisai', en:'small'   },
+  { jp:'あつい',   romaji:'atsui',   en:'hot'     },
+  { jp:'さむい',   romaji:'samui',   en:'cold'    },
+  { jp:'わるい',   romaji:'warui',   en:'bad'     },
+];
+
 // ── Difficulty modes ────────────────────────────────────────────────
 const MODES = {
   katakana: { label:'カタカナ  KATAKANA', desc:'46 angular characters — the classic mode',  chars: KR,  sample:'ア  イ  ウ  シ  ツ  フ' },
   hiragana: { label:'ひらがな  HIRAGANA', desc:'46 rounded characters — same readings',     chars: HR,  sample:'あ  い  う  し  つ  ふ' },
   kanji:    { label:'漢字    KANJI',       desc:'JLPT N5 essentials — one reading per kanji', chars: KJR, sample:'一  日  月  火  水  山' },
+  words:    { label:'日本語  WORDS',       desc:'N5 vocabulary — destroy a word, learn its meaning', isWords:true, words: N5_WORDS, sample:'ねこ  がっこう  ともだち' },
 };
 const MODE_KEYS = Object.keys(MODES);
 let gameMode = 'katakana';
@@ -430,9 +521,9 @@ const PUNCH_DUR = 14;
 
 // Difficulty-select card hit-boxes (used by renderSelect + pointer handler)
 const SELECT_CARD_W   = 580;
-const SELECT_CARD_H   = 100;
-const SELECT_CARD_GAP = 22;
-const SELECT_STACK_Y0 = 170;
+const SELECT_CARD_H   = 80;
+const SELECT_CARD_GAP = 16;
+const SELECT_STACK_Y0 = 158;
 const SELECT_CARDS = MODE_KEYS.map((key, i) => ({
   key,
   x: (W - SELECT_CARD_W) / 2,
@@ -748,6 +839,11 @@ function makePlayer() {
 
 // ── Buildings ────────────────────────────────────────────────────────
 function makeBuildings() {
+  const mode = MODES[gameMode];
+
+  // ── Words mode: each floor is one Japanese word, building width = widest word ──
+  if (mode.isWords) return makeWordBuildings(mode.words);
+
   const cfgs = makeBuildingConfigs();
   // Distribute leftover horizontal space as variable gaps so each level
   // has a different silhouette and leaves room for ASCII trees.
@@ -766,7 +862,7 @@ function makeBuildings() {
   for (const c of cuts) { gaps.push((c - prev) * slack); prev = c; }
   gaps.push((1 - prev) * slack);
 
-  const charMap  = MODES[gameMode].chars;
+  const charMap  = mode.chars;
   const charKeys = Object.keys(charMap);
 
   let bx = leftMargin + gaps[0];
@@ -783,10 +879,66 @@ function makeBuildings() {
     );
     const bld = {
       x:bx, width:cfg.cols*CW,
+      cellW: CW,
       cols:cfg.cols, floors:cfg.floors,
       cells,
       collapsed:false, shakeX:0,
       roof: pick(ROOFS),
+    };
+    bx += bld.width + baseGap + (gaps[i+1] || 0);
+    return bld;
+  });
+}
+
+// ── Word-mode buildings: each floor is one wide cell holding a word ──
+function makeWordBuildings(wordPool) {
+  const baseGap     = 18;
+  const leftMargin  = 100;
+  const rightMargin = 20;
+  const buildingCount = 2 + Math.floor(Math.random()*2);  // 2–3 towers
+
+  const towers = [];
+  let totalW = 0;
+  for (let i = 0; i < buildingCount; i++) {
+    const floors = 3 + Math.floor(Math.random()*3);  // 3–5 words per tower
+    const wordsForFloors = [];
+    let maxCellW = 72;
+    for (let f = 0; f < floors; f++) {
+      const w = pick(wordPool);
+      const cw = Math.max(72, w.jp.length * 26 + 18);
+      if (cw > maxCellW) maxCellW = cw;
+      wordsForFloors.push(w);
+    }
+    towers.push({ floors, wordsForFloors, width: maxCellW });
+    totalW += maxCellW;
+  }
+
+  // Distribute slack so towers aren't packed against the edges
+  const slots = buildingCount + 1;
+  const slack = Math.max(0, W - totalW - (slots-1)*baseGap - leftMargin - rightMargin);
+  const cuts  = Array.from({length: slots-1}, () => Math.random()).sort();
+  const gaps  = [];
+  let prev = 0;
+  for (const c of cuts) { gaps.push((c - prev) * slack); prev = c; }
+  gaps.push((1 - prev) * slack);
+
+  let bx = leftMargin + gaps[0];
+  return towers.map((tw, i) => {
+    const cells = tw.wordsForFloors.map(w => [{
+      char:    w.jp,
+      romaji:  w.romaji,
+      en:      w.en,
+      destroyed: false, hi: false,
+      hitAnim: 0, dieAnim: 0,
+    }]);
+    const bld = {
+      x: bx, width: tw.width,
+      cellW: tw.width,                 // each floor is one wide cell
+      cols: 1, floors: tw.floors,
+      cells,
+      collapsed: false, shakeX: 0,
+      roof: pick(ROOFS),
+      isWords: true,
     };
     bx += bld.width + baseGap + (gaps[i+1] || 0);
     return bld;
@@ -931,7 +1083,8 @@ function doHit(bIdx, f, c) {
   totalHits++;
 
   // Kaomoji destroy-punch toward the cell it just smashed
-  const cx = b.x + c*CW + CW/2;
+  const cellW = b.cellW || CW;
+  const cx = b.x + c*cellW + cellW/2;
   const cy = GY - (f+1)*CH + CH/2;
   player.punch    = PUNCH_DUR;
   player.punchDir = cx >= player.x ? 1 : -1;
@@ -939,6 +1092,10 @@ function doHit(bIdx, f, c) {
 
   spawnParticles(cx, cy);
   sndHit();
+
+  // Pop the English translation away from the score float — diagonal drift
+  // off to the right so the two don't overlap as they rise.
+  if (cell.en) addFloat(cell.en, cx + 6, cy - 4, '#9adfff', 16, 2.0, -0.6);
 
   // Find mode: if this char matches, burst ALL highlighted instances
   if (findMode.on && cell.char === findMode.char) {
@@ -979,7 +1136,8 @@ function doFindBurst(triggerBIdx) {
     const py = GY - 30;
     const beams = targets.map(t => {
       const b = buildings[t.bIdx];
-      const tx = b.x + t.c*CW + CW/2;
+      const bcw = b.cellW || CW;
+      const tx = b.x + t.c*bcw + bcw/2;
       const ty = GY - (t.f+1)*CH + CH/2;
       const dist = Math.hypot(tx - px, ty - py);
       const hitAt = 4 + Math.min(14, Math.floor(dist/40)); // farther = longer flight
@@ -1146,8 +1304,8 @@ function spawnParticles(x, y) {
   }
 }
 
-function addFloat(txt, x, y, col=P.score_fl, sz=15) {
-  floats.push({ txt, x, y, vy:-1.5, life:75, maxLife:75, col, sz });
+function addFloat(txt, x, y, col=P.score_fl, sz=15, vx=0, vy=-1.5) {
+  floats.push({ txt, x, y, vx, vy, life:75, maxLife:75, col, sz });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1188,8 +1346,9 @@ function update() {
   }
   let standX = null;
   if (tgtB && !tgtB.collapsed) {
-    if (act) standX = tgtB.x + act.c*CW - 60;     // 60px left of cell's left edge so the kaomoji body never covers the glyph
-    else     standX = tgtB.x + tgtB.width/2;       // fallback
+    const tCellW = tgtB.cellW || CW;
+    if (act) standX = tgtB.x + act.c*tCellW - 60; // 60px left of cell's left edge so the kaomoji body never covers the glyph
+    else     standX = tgtB.x + tgtB.width/2;      // fallback
   }
   if (standX !== null) {
     const dx   = standX - player.x;
@@ -1209,7 +1368,8 @@ function update() {
   if (player.vx < -0.25) player.facing = -1;
   // When settled, face the cell we're attacking (always to the right of player)
   if (act && Math.abs(player.vx) < 0.25) {
-    const cellCenterX = tgtB.x + act.c*CW + CW/2;
+    const _cw = tgtB.cellW || CW;
+    const cellCenterX = tgtB.x + act.c*_cw + _cw/2;
     player.facing = cellCenterX >= player.x ? 1 : -1;
   }
 
@@ -1251,7 +1411,7 @@ function update() {
   updateLasers();
 
   // Float texts
-  floats = floats.filter(ft => { ft.y+=ft.vy; ft.life--; return ft.life>0; });
+  floats = floats.filter(ft => { ft.y+=ft.vy; ft.x += (ft.vx||0); ft.life--; return ft.life>0; });
 }
 
 // Cloud drift runs every frame (menu, gameover, playing) so the sky always moves.
@@ -1467,13 +1627,15 @@ function drawBuildings() {
     ctx.fillRect(b.x+sx, topY, b.width, 4);
 
     // Cells
+    const bcw = b.cellW || CW;
     for (let f=0; f<b.floors; f++) {
       for (let c=0; c<b.cols; c++) {
         drawCell(
-          b.x + sx + c*CW,
+          b.x + sx + c*bcw,
           GY - (f+1)*CH,
           b.cells[f][c],
-          isTgt && act && act.f===f && act.c===c
+          isTgt && act && act.f===f && act.c===c,
+          bcw
         );
       }
     }
@@ -1494,7 +1656,8 @@ function drawBuildings() {
   });
 }
 
-function drawCell(x, y, cell, isActive) {
+function drawCell(x, y, cell, isActive, cellW) {
+  cellW = cellW || CW;
   // Apply falling offset (cell mid-air after a floor collapse below it)
   if (cell.fallY && cell.fallY > 0) y -= cell.fallY;
 
@@ -1506,7 +1669,7 @@ function drawCell(x, y, cell, isActive) {
       ctx.font = '13px "Courier New"';
       ctx.fillStyle   = '#ff7700';
       ctx.textAlign   = 'center';
-      ctx.fillText('░▒▓', x+CW/2, y+CH/2+4);
+      ctx.fillText('░▒▓', x+cellW/2, y+CH/2+4);
       ctx.globalAlpha = 1;
       ctx.textAlign   = 'left';
     }
@@ -1531,19 +1694,21 @@ function drawCell(x, y, cell, isActive) {
 
   // Background
   ctx.fillStyle = bg;
-  ctx.fillRect(x, y, CW, CH);
+  ctx.fillRect(x, y, cellW, CH);
 
   // Border
   ctx.strokeStyle = bd;
   ctx.lineWidth   = (isActive || cell.hi) ? 1.5 : 1;
-  ctx.strokeRect(x+0.5, y+0.5, CW-1, CH-1);
+  ctx.strokeRect(x+0.5, y+0.5, cellW-1, CH-1);
 
-  // Katakana character
-  ctx.font      = 'bold 20px "Courier New"';
+  // Glyph — shrink the font for long word cells so it stays inside the box
+  const charLen = (cell.char || '').length;
+  const fontPx  = charLen > 4 ? 16 : charLen > 2 ? 18 : 20;
+  ctx.font      = `bold ${fontPx}px "Courier New"`;
   ctx.fillStyle = kt;
   ctx.textAlign = 'center';
   if (isActive || cell.hi) { ctx.shadowBlur=9; ctx.shadowColor=kt; }
-  ctx.fillText(cell.char, x+CW/2, y+CH/2+6);
+  ctx.fillText(cell.char, x+cellW/2, y+CH/2+6);
   ctx.shadowBlur = 0;
 
   // Romaji hint (small, bottom of cell) — only revealed on the active target
@@ -1553,10 +1718,10 @@ function drawCell(x, y, cell, isActive) {
     ctx.font = '9px "Courier New"';
     if (hintRevealed()) {
       ctx.fillStyle = '#d8e8d8';
-      ctx.fillText(cell.romaji, x+CW/2, y+CH-4);
+      ctx.fillText(cell.romaji, x+cellW/2, y+CH-4);
     } else {
       ctx.fillStyle = '#4a6a4a';
-      ctx.fillText('???', x+CW/2, y+CH-4);
+      ctx.fillText('???', x+cellW/2, y+CH-4);
     }
   }
 
@@ -1564,7 +1729,7 @@ function drawCell(x, y, cell, isActive) {
   if (isActive && (frame%24)<12) {
     ctx.fillStyle = '#ffff00';
     ctx.font      = '9px "Courier New"';
-    ctx.fillText('▼', x+CW/2, y-1);
+    ctx.fillText('▼', x+cellW/2, y-1);
   }
 
   ctx.textAlign = 'left';
@@ -1739,7 +1904,10 @@ function drawInputPanel() {
   ctx.fillText('TARGET', LP/2, PY+15);
 
   if (act) {
-    ctx.font      = 'bold 44px "Courier New"';
+    // Shrink the big target glyph if it's a multi-character word
+    const tgtLen = (act.cell.char || '').length;
+    const tgtFont = tgtLen > 4 ? 24 : tgtLen > 2 ? 32 : 44;
+    ctx.font      = `bold ${tgtFont}px "Courier New"`;
     ctx.shadowBlur = 16; ctx.shadowColor = '#ffff44';
     ctx.fillStyle  = '#ffff55';
     ctx.fillText(act.cell.char, LP/2, PY+62);
@@ -2149,28 +2317,28 @@ function renderSelect() {
     ctx.strokeRect(card.x+0.5, card.y+0.5, card.w-1, card.h-1);
 
     // Number badge
-    ctx.font      = 'bold 44px "Courier New"';
+    ctx.font      = 'bold 36px "Courier New"';
     ctx.fillStyle  = '#ffaa00';
     ctx.shadowBlur = 10; ctx.shadowColor = '#ff7700';
     ctx.textAlign  = 'center';
-    ctx.fillText(card.num, card.x + 44, card.y + card.h/2 + 16);
+    ctx.fillText(card.num, card.x + 38, card.y + card.h/2 + 12);
     ctx.shadowBlur = 0;
 
     // Label
-    ctx.font      = 'bold 22px "Courier New"';
+    ctx.font      = 'bold 18px "Courier New"';
     ctx.fillStyle = '#2eff5a';
     ctx.textAlign = 'left';
-    ctx.fillText(m.label, card.x + 96, card.y + 36);
+    ctx.fillText(m.label, card.x + 84, card.y + 26);
 
     // Description
-    ctx.font      = '13px "Courier New"';
+    ctx.font      = '12px "Courier New"';
     ctx.fillStyle = '#b8e0b8';
-    ctx.fillText(m.desc, card.x + 96, card.y + 60);
+    ctx.fillText(m.desc, card.x + 84, card.y + 46);
 
     // Sample glyphs
-    ctx.font      = 'bold 22px "Courier New"';
+    ctx.font      = 'bold 18px "Courier New"';
     ctx.fillStyle = '#ffff66';
-    ctx.fillText(m.sample, card.x + 96, card.y + 92);
+    ctx.fillText(m.sample, card.x + 84, card.y + 68);
   });
 
   // Back hint (flashing)
