@@ -585,10 +585,73 @@ function sndGameOver(win) {
   }
 }
 
+// ── Title/select intro song ─────────────────────────────────────────
+// A short chiptune loop that plays on the menu and difficulty-select
+// screens. Web Audio needs a user gesture before any sound, so the
+// song actually kicks in on the player's first keypress or tap.
+const SONG_STEP_MS = 160;
+const SONG_MELODY = [
+  // C major arpeggio up
+  [523, 1], [659, 1], [784, 1], [1047, 1],
+  // descending hook
+  [1175, 1], [1047, 1], [988, 1], [784, 1],
+  // F variation
+  [880, 1], [1047, 1], [880, 1], [698, 1],
+  // resolution + breath
+  [659, 1], [587, 1], [523, 1], [0, 1],
+];
+const SONG_BASS = [
+  [131, 4], [175, 4], [196, 4], [131, 4],   // I  IV  V  I  in C
+];
+let songPlaying  = false;
+let songFinished = false;   // plays once per page load, never repeats
+let _songMelT = null, _songBassT = null;
+let _songMelI = 0,    _songBassI = 0;
+
+function _songMelTick() {
+  if (!songPlaying) return;
+  if (_songMelI >= SONG_MELODY.length) {
+    songPlaying = false; songFinished = true; return;
+  }
+  const [f, n] = SONG_MELODY[_songMelI];
+  const ms = n * SONG_STEP_MS;
+  if (f > 0) tone(f, (ms - 30) / 1000, 'square', 0.045);
+  _songMelI++;
+  _songMelT = setTimeout(_songMelTick, ms);
+}
+function _songBassTick() {
+  if (!songPlaying) return;
+  if (_songBassI >= SONG_BASS.length) return;
+  const [f, n] = SONG_BASS[_songBassI];
+  const ms = n * SONG_STEP_MS;
+  if (f > 0) tone(f, (ms - 40) / 1000, 'triangle', 0.06);
+  _songBassI++;
+  _songBassT = setTimeout(_songBassTick, ms);
+}
+function startSong() {
+  if (songPlaying || songFinished) return;
+  songPlaying = true;
+  _songMelI = 0; _songBassI = 0;
+  _songMelTick();
+  _songBassTick();
+}
+function stopSong() {
+  songPlaying = false;
+  songFinished = true;  // a round started before the song finished — don't replay
+  if (_songMelT)  clearTimeout(_songMelT);
+  if (_songBassT) clearTimeout(_songBassT);
+  _songMelT = null; _songBassT = null;
+}
+function maybeStartIntroSong() {
+  if (songPlaying || songFinished) return;
+  if (gState === 'menu' || gState === 'select') { audio(); startSong(); }
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════════════
 function startGame(mode) {
+  stopSong();
   gameMode = mode in MODES ? mode : 'katakana';
   gState   = 'playing';
   initGame();
@@ -760,6 +823,9 @@ function handleKey(e) {
   if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) {
     e.preventDefault();
   }
+
+  // First gesture on menu/select wakes the AudioContext and starts the song
+  maybeStartIntroSong();
 
   // Mute toggle works in any state (Ctrl+M — plain M is a romaji input letter)
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='m') {
@@ -2258,6 +2324,7 @@ c.addEventListener('pointerdown', ev => {
   ev.preventDefault();
   const { x, y } = canvasPointerXY(ev);
   audio();  // wake AudioContext from gesture
+  maybeStartIntroSong();
 
   // Help button (top-right) — works in any state
   const hb = HELP_BTN;
