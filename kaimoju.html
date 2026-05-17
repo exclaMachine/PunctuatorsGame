@@ -1701,12 +1701,19 @@ function drawCell(x, y, cell, isActive, cellW) {
   ctx.fillStyle = bg;
   ctx.fillRect(x, y, cellW, CH);
 
-  // Border
+  // Outer border (the wall)
   ctx.strokeStyle = bd;
   ctx.lineWidth   = (isActive || cell.hi) ? 1.5 : 1;
   ctx.strokeRect(x+0.5, y+0.5, cellW-1, CH-1);
 
-  // Glyph — shrink the font for long word cells so it stays inside the box
+  // Inner frame — a smaller box that wraps the character, so each cell
+  // reads as a window pane in a building wall.
+  const inset = 6;
+  ctx.strokeStyle = isActive ? '#7a7a1a' : cell.hi ? '#7a4a10' : '#1c4a1c';
+  ctx.lineWidth   = 1;
+  ctx.strokeRect(x+inset+0.5, y+inset+0.5, cellW-inset*2-1, CH-inset*2-1);
+
+  // Glyph — shrink the font for long word cells so it stays inside the frame
   const charLen = (cell.char || '').length;
   const fontPx  = charLen > 4 ? 16 : charLen > 2 ? 18 : 20;
   ctx.font      = `bold ${fontPx}px "Courier New"`;
