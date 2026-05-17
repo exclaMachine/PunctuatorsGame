@@ -1023,8 +1023,19 @@ function handleKey(e) {
     return;
   }
   if (e.key === 'Escape') {
+    // TraceMode: ESC exits the tracing overlay first
+    if (TraceMode.isActive()) { TraceMode.exit(); e.preventDefault(); return; }
     if (showHelp) { showHelp = false; activeStartTime = Date.now(); e.preventDefault(); return; }
     if (gState === 'select') { gState = 'menu'; e.preventDefault(); return; }
+    return;
+  }
+  // TraceMode: while active, swallow all other input (mouse-only mini-game)
+  if (TraceMode.isActive()) return;
+  // TraceMode: T launches a random glyph from the menu
+  if (gState === 'menu' && e.key.toLowerCase() === 't') {
+    e.preventDefault();
+    audio();
+    TraceMode.start(pick(TraceMode.availableChars()));
     return;
   }
   // Swallow all other input while the help overlay is open
@@ -1511,9 +1522,9 @@ function drawVehicles() {
 function render() {
   ctx.clearRect(0,0,W,H);
 
-  if (gState==='menu')     { renderMenu();     if (showHelp) drawHelpOverlay(); return; }
-  if (gState==='select')   { renderSelect();   if (showHelp) drawHelpOverlay(); return; }
-  if (gState==='gameover') { renderGameOver(); if (showHelp) drawHelpOverlay(); return; }
+  if (gState==='menu')     { renderMenu();     if (showHelp) drawHelpOverlay(); TraceMode.render(); return; }
+  if (gState==='select')   { renderSelect();   if (showHelp) drawHelpOverlay(); TraceMode.render(); return; }
+  if (gState==='gameover') { renderGameOver(); if (showHelp) drawHelpOverlay(); TraceMode.render(); return; }
 
   drawBG();
   drawBuildings();
@@ -1539,6 +1550,7 @@ function render() {
 
   drawScanlines();
   if (showHelp) drawHelpOverlay();
+  TraceMode.render();   // TraceMode: overlay on top of everything when active
 }
 
 // ── Background (ASCII stars, mountains, drifting clouds) ────────────
@@ -2219,6 +2231,7 @@ function renderMenu() {
     ['',                'type its romaji once to detonate them all'],
     ['CTRL+M',          `toggle sound  (${muted ? 'OFF' : 'ON'})`],
     ['?',               'open help anytime  (or tap the [?] in the corner)'],
+    ['T',               'TRACE  (experimental) — draw a random kana/kanji'],   // TraceMode: menu hint
   ];
   rows.forEach(([key, desc], i) => {
     const ry = 285 + i*22;
@@ -2448,6 +2461,256 @@ function renderGameOver() {
   ctx.textAlign = 'left';
 }
 
+// ╔═══════════════════════════════════════════════════════════════════╗
+// ║  TRACE MODE  (EXPERIMENTAL — encapsulated, safe to remove)        ║
+// ╠═══════════════════════════════════════════════════════════════════╣
+// ║  Duolingo-style stroke tracing mini-game. Step 1 = guided tracks. ║
+// ║                                                                   ║
+// ║  TO REMOVE THIS FEATURE ENTIRELY:                                 ║
+// ║    1. Delete this whole TraceMode block.                          ║
+// ║    2. Remove the four call sites flagged with "// TraceMode:":    ║
+// ║         - render() integration                                    ║
+// ║         - handleKey() T-key trigger + ESC + input gate            ║
+// ║         - pointerdown/move/up handlers                            ║
+// ║         - menu hint line                                          ║
+// ║  No other game code reads or writes TraceMode state.              ║
+// ╚═══════════════════════════════════════════════════════════════════╝
+const TraceMode = (() => {
+  // Hand-defined stroke paths in 0–1 normalized coords. Each char's value
+  // is an array of strokes; each stroke is an array of [x, y] waypoints.
+  // Starts small — add more once the interaction feels right.
+  const STROKES = {
+    '一': [
+      [[0.10, 0.50], [0.50, 0.50], [0.90, 0.50]],
+    ],
+    '二': [
+      [[0.15, 0.32], [0.85, 0.32]],
+      [[0.10, 0.70], [0.90, 0.70]],
+    ],
+    '三': [
+      [[0.18, 0.22], [0.82, 0.22]],
+      [[0.26, 0.50], [0.74, 0.50]],
+      [[0.10, 0.78], [0.90, 0.78]],
+    ],
+    'い': [
+      [[0.30, 0.22], [0.27, 0.45], [0.32, 0.65], [0.48, 0.78], [0.58, 0.72]],
+      [[0.72, 0.30], [0.73, 0.55], [0.70, 0.66]],
+    ],
+    'こ': [
+      [[0.22, 0.32], [0.55, 0.32], [0.72, 0.34]],
+      [[0.15, 0.68], [0.45, 0.76], [0.80, 0.72]],
+    ],
+  };
+
+  const TOL_PX = 32;   // pixel distance for a waypoint to count as "covered"
+  const PASS   = 0.7;  // fraction of waypoints needed to clear a stroke
+
+  let active = false;
+  let glyph  = '';
+  let strokes = [];
+  let strokeIdx = 0;
+  let drawn = [];      // current in-progress user points
+  let isDrawing = false;
+  let box = { x: 0, y: 0, size: 400 };
+  let flashUntil = 0;  // brief success-flash timestamp
+  let startTime = 0;   // for the recall-before-reveal delay on the romaji label
+
+  // Pull romaji from existing mode maps so the label always matches the
+  // rest of the game (no duplicated truth).
+  function romajiFor(ch) {
+    return (typeof KJR !== 'undefined' && KJR[ch])
+        || (typeof HR  !== 'undefined' && HR[ch])
+        || (typeof KR  !== 'undefined' && KR[ch])
+        || '';
+  }
+  function labelRevealed() { return Date.now() - startTime >= HINT_DELAY_MS; }
+
+  function availableChars() { return Object.keys(STROKES); }
+  function isActive()       { return active; }
+
+  function start(char) {
+    if (!STROKES[char]) return false;
+    active = true;
+    glyph = char;
+    strokes = STROKES[char];
+    strokeIdx = 0;
+    drawn = [];
+    isDrawing = false;
+    flashUntil = 0;
+    startTime = Date.now();
+    return true;
+  }
+
+  function exit() {
+    active = false;
+    isDrawing = false;
+    drawn = [];
+  }
+
+  function layout() {
+    const size = Math.min(W, H) * 0.62;
+    box = { x: (W - size) / 2, y: (H - size) / 2 - 14, size };
+  }
+
+  function npx(p) {
+    return { x: box.x + p[0] * box.size, y: box.y + p[1] * box.size };
+  }
+
+  function pointer(type, x, y) {
+    if (!active) return;
+    if (type === 'down') {
+      isDrawing = true;
+      drawn = [{ x, y }];
+    } else if (type === 'move') {
+      if (!isDrawing) return;
+      const last = drawn[drawn.length - 1];
+      if (!last || Math.hypot(x - last.x, y - last.y) > 3) drawn.push({ x, y });
+    } else if (type === 'up') {
+      if (!isDrawing) return;
+      isDrawing = false;
+      scoreStroke();
+    }
+  }
+
+  function scoreStroke() {
+    if (strokeIdx >= strokes.length) return;
+    const target = strokes[strokeIdx].map(npx);
+    let covered = 0;
+    for (const p of target) {
+      let best = Infinity;
+      for (const d of drawn) {
+        const dist = Math.hypot(d.x - p.x, d.y - p.y);
+        if (dist < best) best = dist;
+      }
+      if (best < TOL_PX) covered++;
+    }
+    const score = covered / target.length;
+    if (score >= PASS) {
+      strokeIdx++;
+      drawn = [];
+      flashUntil = Date.now() + 320;
+      if (strokeIdx >= strokes.length) {
+        // All strokes cleared — celebrate briefly then exit
+        setTimeout(() => exit(), 900);
+      }
+    } else {
+      drawn = [];  // missed; let them try again
+    }
+  }
+
+  function render() {
+    if (!active) return;
+    layout();
+    const t = Date.now();
+
+    // Dim full-screen backdrop
+    ctx.fillStyle = 'rgba(0, 8, 4, 0.92)';
+    ctx.fillRect(0, 0, W, H);
+
+    // Box outline
+    ctx.strokeStyle = '#1c4a1c';
+    ctx.lineWidth   = 1;
+    ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.size - 1, box.size - 1);
+
+    // Faded full glyph as visual anchor
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font         = `bold ${Math.floor(box.size * 0.78)}px "Courier New"`;
+    ctx.fillStyle    = 'rgba(46, 255, 90, 0.07)';
+    ctx.fillText(glyph, box.x + box.size/2, box.y + box.size/2);
+    ctx.textBaseline = 'alphabetic';
+
+    // Title
+    ctx.font      = 'bold 22px "Courier New"';
+    ctx.fillStyle = '#2eff5a';
+    ctx.shadowBlur = 10; ctx.shadowColor = '#2eff5a';
+    ctx.fillText(`TRACE   ${glyph}`, W/2, box.y - 54);
+    ctx.shadowBlur = 0;
+
+    // Romaji name — hidden for ~1s so the player can recall it first
+    const rom = romajiFor(glyph);
+    const reveal = labelRevealed();
+    ctx.font       = 'bold 15px "Courier New"';
+    ctx.fillStyle  = reveal ? '#ffe080' : '#5a6a3a';
+    ctx.fillText(reveal && rom ? rom : '???', W/2, box.y - 32);
+
+    ctx.font      = '12px "Courier New"';
+    ctx.fillStyle = '#9adb9a';
+    ctx.fillText(`stroke ${Math.min(strokeIdx + 1, strokes.length)} / ${strokes.length}`, W/2, box.y - 12);
+
+    // Already-completed strokes — solid green ink
+    ctx.lineCap   = 'round';
+    ctx.lineJoin  = 'round';
+    ctx.strokeStyle = '#2eff5a';
+    ctx.lineWidth = 6;
+    for (let i = 0; i < strokeIdx; i++) {
+      const s = strokes[i];
+      ctx.beginPath();
+      s.forEach((p, j) => {
+        const pp = npx(p);
+        if (j === 0) ctx.moveTo(pp.x, pp.y); else ctx.lineTo(pp.x, pp.y);
+      });
+      ctx.stroke();
+    }
+
+    // Current stroke as a pulsing track
+    if (strokeIdx < strokes.length) {
+      const s = strokes[strokeIdx];
+      const pulse = 0.5 + 0.5 * Math.sin(t / 220);
+      ctx.strokeStyle = `rgba(255, 224, 64, ${0.30 + pulse * 0.35})`;
+      ctx.lineWidth   = 24;
+      ctx.beginPath();
+      s.forEach((p, j) => {
+        const pp = npx(p);
+        if (j === 0) ctx.moveTo(pp.x, pp.y); else ctx.lineTo(pp.x, pp.y);
+      });
+      ctx.stroke();
+
+      // Start dot + end arrow so the order is obvious
+      const sp = npx(s[0]);
+      ctx.fillStyle = '#ffe040';
+      ctx.beginPath(); ctx.arc(sp.x, sp.y, 9, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#1a1a1a';
+      ctx.font      = 'bold 12px "Courier New"';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('1', sp.x, sp.y + 1);
+      ctx.textBaseline = 'alphabetic';
+
+      const ep = npx(s[s.length - 1]);
+      ctx.fillStyle = '#ff8a30';
+      ctx.beginPath(); ctx.arc(ep.x, ep.y, 7, 0, Math.PI*2); ctx.fill();
+    }
+
+    // User's live drag
+    if (drawn.length > 1) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth   = 4;
+      ctx.beginPath();
+      drawn.forEach((p, i) => {
+        if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+      });
+      ctx.stroke();
+    }
+
+    // Success flash
+    if (t < flashUntil) {
+      const k = (flashUntil - t) / 320;
+      ctx.fillStyle = `rgba(46, 255, 90, ${k * 0.25})`;
+      ctx.fillRect(box.x, box.y, box.size, box.size);
+    }
+
+    // Footer hint
+    ctx.font      = '11px "Courier New"';
+    ctx.fillStyle = '#7ac27a';
+    ctx.textAlign = 'center';
+    ctx.fillText('[ trace the yellow path — ESC to exit ]', W/2, H - 18);
+    ctx.textAlign = 'left';
+  }
+
+  return { start, exit, isActive, pointer, render, availableChars };
+})();
+
 // ═══════════════════════════════════════════════════════════════════
 //  GAME LOOP
 // ═══════════════════════════════════════════════════════════════════
@@ -2549,6 +2812,9 @@ c.addEventListener('pointerdown', ev => {
   audio();  // wake AudioContext from gesture
   maybeStartIntroSong();
 
+  // TraceMode: hand pointer events to the tracing overlay first
+  if (TraceMode.isActive()) { TraceMode.pointer('down', x, y); return; }
+
   // Help button (top-right) — works in any state
   const hb = HELP_BTN;
   if (x >= hb.x && x <= hb.x+hb.w && y >= hb.y && y <= hb.y+hb.h) {
@@ -2593,6 +2859,20 @@ c.addEventListener('pointerdown', ev => {
       focusMobileInput();
     }
   }
+});
+
+// TraceMode: pointer move/up only do work when the overlay is active
+c.addEventListener('pointermove', ev => {
+  if (!TraceMode.isActive()) return;
+  ev.preventDefault();
+  const { x, y } = canvasPointerXY(ev);
+  TraceMode.pointer('move', x, y);
+});
+c.addEventListener('pointerup', ev => {
+  if (!TraceMode.isActive()) return;
+  ev.preventDefault();
+  const { x, y } = canvasPointerXY(ev);
+  TraceMode.pointer('up', x, y);
 });
 
 // ── Boot ──────────────────────────────────────────────────────────────
