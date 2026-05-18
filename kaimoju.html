@@ -677,6 +677,10 @@ let totalHits = 0, totalMisses = 0;
 let currentLevel = 1, maxLevelReached = 1;
 let learnedPool = [];
 let newCharThisLevel = null;
+// Flipped true once the player has destroyed the first instance of the
+// newly-introduced char; after that, the new char loses its hint reveal
+// and behaves like all previously-learned chars.
+let newCharIntroduced = false;
 // kaomoji health — game ends at 0
 const KAIJU_MAX_HP = 5;
 // Miss reveal — when the player types wrong, the correct romaji is forced
@@ -723,7 +727,7 @@ function hintAllowed() {
   if (!activeCell) return false;
   const tgtB = (player && player.tgt >= 0) ? buildings[player.tgt] : null;
   if (tgtB && tgtB.isTutorial) return true;
-  if (currentLevel >= 2 && newCharThisLevel && activeCell.char === newCharThisLevel) return true;
+  if (currentLevel >= 2 && newCharThisLevel && !newCharIntroduced && activeCell.char === newCharThisLevel) return true;
   return false;
 }
 function hintRevealed() {
@@ -925,9 +929,11 @@ function initGame() {
   if (isProgressionMode(gameMode)) {
     learnedPool       = poolForLevel(gameMode, currentLevel);
     newCharThisLevel  = newCharForLevel(gameMode, currentLevel);
+    newCharIntroduced = false;
   } else {
     learnedPool = [];
     newCharThisLevel = null;
+    newCharIntroduced = false;
   }
   currentBiome = pick(['forest', 'desert', 'park']);
   buildings = makeBuildings();
@@ -1045,9 +1051,18 @@ function makeBuildings() {
   let bx = leftMargin + gaps[0];
   return cfgs.map((cfg, i) => {
     const cells = Array.from({length:cfg.floors}, (_, f) =>
-      Array.from({length:cfg.cols}, () => {
+      Array.from({length:cfg.cols}, (_, c) => {
         // Tutorial building: one starter char per floor, bottom→top in gojuon order.
-        const k = cfg.tutorial ? charKeys[f % charKeys.length] : pick(charKeys);
+        // Level 2+: pin the newly-introduced char to building 0, floor 0, col 0
+        // so the player meets it first (and gets the one-shot hint reveal).
+        let k;
+        if (cfg.tutorial) {
+          k = charKeys[f % charKeys.length];
+        } else if (useProgression && currentLevel >= 2 && newCharThisLevel && i === 0 && f === 0 && c === 0) {
+          k = newCharThisLevel;
+        } else {
+          k = pick(charKeys);
+        }
         return {
           char: k, romaji: charMap[k],
           destroyed: false, hi: false,
@@ -1320,6 +1335,11 @@ function doHit(bIdx, f, c) {
   addFloat('+' + pts, cx, cy);
   if (combo > 0 && combo % 5 === 0) sndCombo(combo);
 
+  // First successful destroy of the level's new char — retire its hint.
+  if (newCharThisLevel && !newCharIntroduced && cell.char === newCharThisLevel) {
+    newCharIntroduced = true;
+  }
+
   collapseDestroyedFloors(b);
   checkCollapsed(bIdx);
 }
@@ -1495,9 +1515,24 @@ function advanceLevel() {
 // ── Find Mode (Cmd/Ctrl+F or tap the button) ────────────────────────
 // Highlights every alive instance of the character the player is CURRENTLY targeting.
 // Typing that romaji once detonates them all.
+// True while the current target is the un-introduced new-char on level 2+.
+// Used to lock out Find Mode so the player can't bypass learning the new
+// char by detonating every instance in one shot.
+function findLockedOnNewChar() {
+  if (!isProgressionMode(gameMode)) return false;
+  if (currentLevel < 2 || !newCharThisLevel || newCharIntroduced) return false;
+  const act = activeTarget();
+  return !!(act && act.cell.char === newCharThisLevel);
+}
+
 function activateFind() {
   if (introActive) return;
   if (findMode.on || findMode.cooldown > 0) return;
+  if (findLockedOnNewChar()) {
+    // Soft-deny — show a tiny float so the player knows why.
+    addFloat('LEARN IT FIRST', W/2, 180, '#ff8899', 14);
+    return;
+  }
 
   const act = activeTarget();
   if (!act) return;
@@ -2289,6 +2324,9 @@ function drawFindButton(act) {
   if (findMode.on) {
     bg = '#2a1a00'; bd = P.find_fl; fg = P.find_fl;
     label = `◆ FIND ACTIVE: ${findMode.char} (${KR[findMode.char]}) ×${findMode.count} — type to detonate ◆`;
+  } else if (findLockedOnNewChar()) {
+    bg = '#1a0a0a'; bd = '#7a3a3a'; fg = '#ff8899';
+    label = `[${FIND_KEY_LABEL}]  locked — learn the new char (${act.cell.char}) first`;
   } else if (findMode.cooldown > 0) {
     bg = '#0a0f0a'; bd = '#3a5a3a'; fg = '#7a9a7a';
     label = `[${FIND_KEY_LABEL}]  cooldown: ${Math.ceil(findMode.cooldown/60)}s`;
@@ -3027,7 +3065,7 @@ if (IS_MOBILE) {
 function updateFindBtn() {
   if (!IS_MOBILE) return;
   findBtn.classList.toggle('active', findMode.on);
-  findBtn.disabled = findMode.cooldown > 0 || gState !== 'playing' || showHelp;
+  findBtn.disabled = findMode.cooldown > 0 || gState !== 'playing' || showHelp || findLockedOnNewChar();
   if (findMode.on)               findBtn.textContent = `◆ ${findMode.char} ×${findMode.count}`;
   else if (findMode.cooldown>0)  findBtn.textContent = `FIND ${Math.ceil(findMode.cooldown/60)}s`;
   else                           findBtn.textContent = '[ FIND ]';
