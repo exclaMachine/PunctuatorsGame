@@ -159,6 +159,60 @@ const DR = {
   'ぱ':'pa',  'ぴ':'pi',  'ぷ':'pu',  'ぺ':'pe',  'ぽ':'po',
 };
 
+// ── Gojuon-order char lists (used by progression mode) ──────────────
+// Base 46 first in standard gojuon order, then dakuon, then handakuon.
+// Level 1 starts with the first 6 chars and one new char is appended per level.
+const GOJUON_HIRA = [
+  'あ','い','う','え','お',
+  'か','き','く','け','こ',
+  'さ','し','す','せ','そ',
+  'た','ち','つ','て','と',
+  'な','に','ぬ','ね','の',
+  'は','ひ','ふ','へ','ほ',
+  'ま','み','む','め','も',
+  'や','ゆ','よ',
+  'ら','り','る','れ','ろ',
+  'わ','を','ん',
+  'が','ぎ','ぐ','げ','ご',
+  'ざ','じ','ず','ぜ','ぞ',
+  'だ','ぢ','づ','で','ど',
+  'ば','び','ぶ','べ','ぼ',
+  'ぱ','ぴ','ぷ','ぺ','ぽ',
+];
+const GOJUON_KATA = [
+  'ア','イ','ウ','エ','オ',
+  'カ','キ','ク','ケ','コ',
+  'サ','シ','ス','セ','ソ',
+  'タ','チ','ツ','テ','ト',
+  'ナ','ニ','ヌ','ネ','ノ',
+  'ハ','ヒ','フ','ヘ','ホ',
+  'マ','ミ','ム','メ','モ',
+  'ヤ','ユ','ヨ',
+  'ラ','リ','ル','レ','ロ',
+  'ワ','ヲ','ン',
+  'ガ','ギ','グ','ゲ','ゴ',
+  'ザ','ジ','ズ','ゼ','ゾ',
+  'ダ','ヂ','ヅ','デ','ド',
+  'バ','ビ','ブ','ベ','ボ',
+  'パ','ピ','プ','ペ','ポ',
+];
+const LEVEL_START_SIZE = 6;
+function gojuonOrder(mode) {
+  return mode === 'hiragana' ? GOJUON_HIRA : GOJUON_KATA;
+}
+function isProgressionMode(mode) { return mode === 'katakana' || mode === 'hiragana'; }
+function poolForLevel(mode, level) {
+  const order = gojuonOrder(mode);
+  return order.slice(0, Math.min(order.length, LEVEL_START_SIZE + (level - 1)));
+}
+function newCharForLevel(mode, level) {
+  // Level 1: no single "new" char — every cell on level 1 is a tutorial char.
+  // Level 2+: the most-recently-added gojuon char.
+  if (level < 2) return null;
+  const order = gojuonOrder(mode);
+  return order[Math.min(order.length - 1, LEVEL_START_SIZE + (level - 1) - 1)];
+}
+
 // ── Katakana dakuon (voiced) + handakuon (semi-voiced) ──────────────
 const DKR = {
   // ガ行 — ka → ga
@@ -618,6 +672,19 @@ let gState = 'menu';  // 'menu' | 'playing' | 'gameover'
 let score = 0, hiScore = 0;
 let combo = 0, maxCombo = 0;
 let totalHits = 0, totalMisses = 0;
+// Progression — kana modes only. learnedPool grows by one gojuon char per level;
+// newCharThisLevel is the just-added char (null on level 1).
+let currentLevel = 1, maxLevelReached = 1;
+let learnedPool = [];
+let newCharThisLevel = null;
+// kaomoji health — game ends at 0
+const KAIJU_MAX_HP = 5;
+// Miss reveal — when the player types wrong, the correct romaji is forced
+// onto every hint surface (bottom panel + letter boxes) AND a huge center
+// banner pops for ~1.4s so the answer can't be missed.
+const MISS_REVEAL_MS = 1400;
+let missReveal = { until: 0, romaji: '', char: '' };
+function missRevealActive() { return Date.now() < missReveal.until; }
 let buildings = [], particles = [], floats = [], lasers = [];
 let mountains = [], clouds = [], trees = [], vehicles = [];
 let vehicleSpawnTimer = 60;
@@ -648,7 +715,20 @@ const INTRO_PEOPLE = Array.from({length: 12}, (_, i) => ({
 // Active-target hint timer (resets every time the targeted cell changes)
 let activeCell = null;   // tracked by reference so floor-splice (same f:c, new cell) still resets the timer
 let activeStartTime = 0;
-function hintRevealed() { return Date.now() - activeStartTime >= HINT_DELAY_MS; }
+// Whether the hint is even allowed for the current target. Progression modes
+// gate it: only the level-1 tutorial building OR cells of the newly-introduced
+// char on later levels get the romaji reveal. Other modes keep old behavior.
+function hintAllowed() {
+  if (!isProgressionMode(gameMode)) return true;
+  if (!activeCell) return false;
+  const tgtB = (player && player.tgt >= 0) ? buildings[player.tgt] : null;
+  if (tgtB && tgtB.isTutorial) return true;
+  if (currentLevel >= 2 && newCharThisLevel && activeCell.char === newCharThisLevel) return true;
+  return false;
+}
+function hintRevealed() {
+  return hintAllowed() && Date.now() - activeStartTime >= HINT_DELAY_MS;
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────
 const rnd  = (a,b) => a + Math.random()*(b-a);
@@ -817,19 +897,38 @@ function startGame(mode) {
   stopSong();
   gameMode = mode in MODES ? mode : 'katakana';
   gState   = 'playing';
+  currentLevel = 1;
+  maxLevelReached = 1;
   initGame();
   introActive = true;
   introStart  = Date.now();
   sndStart();
 }
 
+// Build/regenerate the world. Called both on startGame (level 1) and when
+// the player clears all buildings (advance to next level). Score/combo/HP
+// persist across levels — only the world is regenerated.
 function initGame() {
-  score=0; combo=0; maxCombo=0; totalHits=0; totalMisses=0;
   inputBuf=''; particles=[]; floats=[]; lasers=[];
   flash={alpha:0, col:P.hit_bd};
   findMode={on:false, char:null, count:0, cooldown:0};
   activeCell = null; activeStartTime = Date.now();
-  player = makePlayer();
+  // Level 1 reset: fresh player + score. Higher levels: preserve carry-over.
+  if (currentLevel === 1) {
+    score=0; combo=0; maxCombo=0; totalHits=0; totalMisses=0;
+    player = makePlayer();
+  } else {
+    const carriedHp = player.hp || KAIJU_MAX_HP;
+    player = makePlayer();
+    player.hp = carriedHp;
+  }
+  if (isProgressionMode(gameMode)) {
+    learnedPool       = poolForLevel(gameMode, currentLevel);
+    newCharThisLevel  = newCharForLevel(gameMode, currentLevel);
+  } else {
+    learnedPool = [];
+    newCharThisLevel = null;
+  }
   currentBiome = pick(['forest', 'desert', 'park']);
   buildings = makeBuildings();
   mountains = makeMountainRidge();
@@ -899,6 +998,8 @@ function makePlayer() {
     legs: pick(LEG_SETS),
     wFrame:0, wTimer:0,
     punch:0, punchDir:1,
+    hp: KAIJU_MAX_HP, maxHp: KAIJU_MAX_HP,
+    hurtFlash: 0,
     tgt:0
   };
 }
@@ -910,7 +1011,15 @@ function makeBuildings() {
   // ── Words mode: each floor is one Japanese word, building width = widest word ──
   if (mode.isWords) return makeWordBuildings(mode.words);
 
+  // ── Progression modes (kata/hira): draw chars only from the learned pool ──
+  // and on level 1 prepend a small tutorial building (1×2) that gets the hint reveal.
+  const useProgression = isProgressionMode(gameMode);
   const cfgs = makeBuildingConfigs();
+  if (useProgression && currentLevel === 1 && cfgs.length > 0) {
+    // Tutorial building: 1 col, one floor per starter char so the player meets
+    // every char in the level-1 pool at least once with the hint reveal on.
+    cfgs[0] = { cols: 1, floors: LEVEL_START_SIZE, tutorial: true };
+  }
   // Distribute leftover horizontal space as variable gaps so each level
   // has a different silhouette and leaves room for ASCII trees.
   // Left margin is wider than right so the kaomoji always has clearance to
@@ -929,13 +1038,16 @@ function makeBuildings() {
   gaps.push((1 - prev) * slack);
 
   const charMap  = mode.chars;
-  const charKeys = Object.keys(charMap);
-
+  // In progression modes only sample from learned chars; in kanji mode use full map.
+  const charKeys = (useProgression && learnedPool.length > 0)
+    ? learnedPool
+    : Object.keys(charMap);
   let bx = leftMargin + gaps[0];
   return cfgs.map((cfg, i) => {
-    const cells = Array.from({length:cfg.floors}, () =>
+    const cells = Array.from({length:cfg.floors}, (_, f) =>
       Array.from({length:cfg.cols}, () => {
-        const k = pick(charKeys);
+        // Tutorial building: one starter char per floor, bottom→top in gojuon order.
+        const k = cfg.tutorial ? charKeys[f % charKeys.length] : pick(charKeys);
         return {
           char: k, romaji: charMap[k],
           destroyed: false, hi: false,
@@ -950,6 +1062,7 @@ function makeBuildings() {
       cells,
       collapsed:false, shakeX:0,
       roof: pick(ROOFS),
+      isTutorial: !!cfg.tutorial,
     };
     bx += bld.width + baseGap + (gaps[i+1] || 0);
     return bld;
@@ -1148,6 +1261,25 @@ function doMiss() {
   const b = buildings[player.tgt];
   if (b) b.shakeX = 5;
   sndMiss();
+
+  // Force-reveal the correct answer everywhere: bottom panel target hint,
+  // letter boxes, and a big center banner. Persists for MISS_REVEAL_MS.
+  const act = activeTarget();
+  if (act) {
+    missReveal.until  = Date.now() + MISS_REVEAL_MS;
+    missReveal.romaji = act.cell.romaji;
+    missReveal.char   = act.cell.char;
+  }
+
+  // HP damage — only in progression modes (kata/hira). Other modes keep
+  // the old "misses are free" behavior so the game's older flow is unchanged.
+  if (isProgressionMode(gameMode)) {
+    player.hp = Math.max(0, player.hp - 1);
+    player.hurtFlash = 18;
+    if (player.hp <= 0) {
+      setTimeout(() => endGame(false), 600);
+    }
+  }
 }
 
 function doHit(bIdx, f, c) {
@@ -1318,9 +1450,46 @@ function checkCollapsed(bIdx) {
     sndCollapse();
     player.tgt = nearestBuilding();
     if (buildings.every(b => b.collapsed)) {
-      setTimeout(() => endGame(true), 1400);
+      // Progression modes regenerate a fresh level instead of ending the run.
+      // Kanji/words keep the original win-state behavior.
+      if (isProgressionMode(gameMode)) {
+        setTimeout(advanceLevel, 1400);
+      } else {
+        setTimeout(() => endGame(true), 1400);
+      }
     }
   }
+}
+
+// Advance to the next gojuon char and regenerate the world. Score, combo, and
+// HP carry across — the level number is the only thing that matters for the run.
+function advanceLevel() {
+  if (gState !== 'playing') return;
+  currentLevel++;
+  maxLevelReached = Math.max(maxLevelReached, currentLevel);
+  const order = gojuonOrder(gameMode);
+  const cap = order.length;
+  // Once we've taught every char, just keep regenerating with the full pool —
+  // no new char is introduced, so newCharThisLevel becomes null.
+  if (LEVEL_START_SIZE + (currentLevel - 1) > cap) {
+    newCharThisLevel = null;
+    learnedPool = order.slice();
+  } else {
+    learnedPool      = poolForLevel(gameMode, currentLevel);
+    newCharThisLevel = newCharForLevel(gameMode, currentLevel);
+  }
+  // Float a "LEVEL N" callout so the player feels the progression beat.
+  addFloat(`LEVEL ${currentLevel}`, W/2, 200, '#ffdd44', 28);
+  if (newCharThisLevel) {
+    const mode = MODES[gameMode];
+    const rom  = mode.chars[newCharThisLevel] || '';
+    addFloat(`new: ${newCharThisLevel}  ${rom}`, W/2, 232, '#ffff88', 16);
+  }
+  // Rebuild world (preserves player.hp via the level>1 branch of initGame).
+  initGame();
+  // Brief intro fanfare without holding the kaomoji off-screen — skip introActive
+  // since the kaomoji is already positioned on the map.
+  sndStart();
 }
 
 // ── Find Mode (Cmd/Ctrl+F or tap the button) ────────────────────────
@@ -1593,8 +1762,50 @@ function render() {
   }
 
   drawScanlines();
+  drawMissReveal();
   if (showHelp) drawHelpOverlay();
   TraceMode.render();   // TraceMode: overlay on top of everything when active
+}
+
+// Big center banner showing the romaji the player should have typed.
+// Fades in fast, holds, then fades out. Active for MISS_REVEAL_MS.
+function drawMissReveal() {
+  if (!missRevealActive()) return;
+  const remaining = missReveal.until - Date.now();
+  const t = remaining / MISS_REVEAL_MS;        // 1 → 0 over the window
+  // Pop instantly, hold most of the window, fade out in the last 25%.
+  const alpha = t < 0.25 ? Math.max(0, t / 0.25) : 1;
+  const cx = W / 2, cy = H / 2 - 20;
+
+  // Dim backdrop so the banner pops against busy ASCII
+  ctx.globalAlpha = alpha * 0.45;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, cy - 80, W, 180);
+
+  ctx.globalAlpha = alpha;
+  ctx.textAlign = 'center';
+
+  // Small label
+  ctx.font = 'bold 16px "Courier New"';
+  ctx.fillStyle = '#ff8899';
+  ctx.fillText('WRONG — type this:', cx, cy - 48);
+
+  // Glyph
+  ctx.font = 'bold 64px "Courier New"';
+  ctx.shadowBlur = 22; ctx.shadowColor = '#ff5566';
+  ctx.fillStyle = '#ffe0e0';
+  ctx.fillText(missReveal.char, cx, cy + 8);
+  ctx.shadowBlur = 0;
+
+  // Romaji
+  ctx.font = 'bold 56px "Courier New"';
+  ctx.shadowBlur = 22; ctx.shadowColor = '#ff5566';
+  ctx.fillStyle = '#ff6677';
+  ctx.fillText(missReveal.romaji.toUpperCase(), cx, cy + 72);
+  ctx.shadowBlur = 0;
+
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left';
 }
 
 // ── Background (ASCII stars, mountains, drifting clouds) ────────────
@@ -2012,8 +2223,9 @@ function drawInputPanel() {
     ctx.shadowBlur = 0;
 
     ctx.font      = '12px "Courier New"';
-    const _rev = hintRevealed();
-    ctx.fillStyle  = _rev ? '#b8e0b8' : '#4a6a4a';
+    const _miss = missRevealActive();
+    const _rev  = hintRevealed() || _miss;
+    ctx.fillStyle  = _miss ? '#ff6677' : (_rev ? '#b8e0b8' : '#4a6a4a');
     ctx.fillText(_rev ? act.cell.romaji : '???', LP/2, PY+80);
   } else {
     ctx.font      = '11px "Courier New"';
@@ -2033,22 +2245,30 @@ function drawInputPanel() {
     const bx0    = RPx + (RPw - totalW)/2;
     const by0    = PY + 12;
 
-    const reveal = hintRevealed();
+    const miss   = missRevealActive();
+    const reveal = hintRevealed() || miss;
     for (let i=0; i<rom.length; i++) {
       const bx   = bx0 + i*(BW+BSP);
       const done = i < typed.length;
       const curr = i === typed.length;
       const showLetter = done || reveal;
 
-      ctx.fillStyle   = done ? '#0a280a' : curr ? '#191900' : '#0a160a';
+      // Pulse box red while the miss reveal is on, otherwise normal styling.
+      ctx.fillStyle   = miss && !done ? '#2a0a0a'
+                        : done ? '#0a280a' : curr ? '#191900' : '#0a160a';
       ctx.fillRect(bx, by0, BW, BH);
-      ctx.strokeStyle = done ? '#2eff5a' : curr ? '#ffff00' : '#5fa05f';
-      ctx.lineWidth   = (done||curr) ? 1.5 : 1;
+      ctx.strokeStyle = miss && !done ? '#ff5566'
+                        : done ? '#2eff5a' : curr ? '#ffff00' : '#5fa05f';
+      ctx.lineWidth   = (done||curr||miss) ? 1.5 : 1;
       ctx.strokeRect(bx+0.5, by0+0.5, BW-1, BH-1);
 
-      if (curr) { ctx.shadowBlur=9; ctx.shadowColor='#ffff00'; }
+      if (curr && !miss) { ctx.shadowBlur=9; ctx.shadowColor='#ffff00'; }
+      if (miss && !done) { ctx.shadowBlur=10; ctx.shadowColor='#ff5566'; }
       ctx.font      = `bold ${done?20:curr?18:15}px "Courier New"`;
-      ctx.fillStyle  = done ? '#2eff5a' : (showLetter ? (curr ? '#ffff66' : '#9adb9a') : '#3a5a3a');
+      const litCol  = miss && !done ? '#ff8899'
+                       : done ? '#2eff5a'
+                       : (showLetter ? (curr ? '#ffff66' : '#9adb9a') : '#3a5a3a');
+      ctx.fillStyle = litCol;
       ctx.fillText(showLetter ? rom[i].toUpperCase() : '?', bx+BW/2, by0+BH/2+7);
       ctx.shadowBlur = 0;
     }
@@ -2119,6 +2339,26 @@ function drawHUD() {
   ctx.textAlign = 'left';
   ctx.fillText(`スコア  ${score}`, 12, 23);
 
+  // Level (kana modes only — sits just right of score)
+  if (isProgressionMode(gameMode)) {
+    ctx.fillStyle = '#ffdd44';
+    ctx.fillText(`LV ${currentLevel}`, 132, 23);
+  }
+
+  // HP hearts (kana modes) — between level and combo
+  if (isProgressionMode(gameMode)) {
+    const hpX0 = 198;
+    ctx.font = 'bold 16px "Courier New"';
+    for (let i = 0; i < player.maxHp; i++) {
+      const alive = i < player.hp;
+      ctx.fillStyle = alive
+        ? (player.hurtFlash > 0 && i === player.hp ? '#ffaaaa' : '#ff5566')
+        : '#3a1a1a';
+      ctx.fillText('♥', hpX0 + i * 18, 24);
+    }
+    ctx.font = 'bold 13px "Courier New"';
+  }
+
   // Combo (center)
   if (combo > 0) {
     const cc = combo>=10 ? P.combo_hi : P.combo_lo;
@@ -2135,6 +2375,7 @@ function drawHUD() {
   ctx.fillText(`misses: ${totalMisses}`, W-44, 23);
 
   ctx.textAlign = 'left';
+  if (player.hurtFlash > 0) player.hurtFlash--;
   drawHelpButton();
 }
 
@@ -2473,6 +2714,7 @@ function renderGameOver() {
   const stats = [
     ['SCORE',       `${score}`],
     ['HIGH SCORE',  `${hiScore}`],
+    ...(isProgressionMode(gameMode) ? [['LEVEL REACHED', `${maxLevelReached}`]] : []),
     ['MAX COMBO',   `×${maxCombo}`],
     ['BLOCKS HIT',  `${totalHits}`],
     ['MISSES',      `${totalMisses}`],
