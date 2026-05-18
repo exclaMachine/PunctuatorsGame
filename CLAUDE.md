@@ -332,6 +332,7 @@ These are locked-in. All of the following are the user's decisions:
 - **ASCII / terminal aesthetic** — dark background, green-on-black, scanlines, monospace font
 - **Score + stats** on game over screen (score, high score, max combo, blocks hit, misses, accuracy)
 - **No external dependencies** — one file, drop-in ready
+- **Day / Night themes** — `THEME_DAY` and `THEME_NIGHT` palettes are spread into the live `P` palette by `applyTheme(name)`. Night = warm yellow-lit windows on dark masonry walls under a navy/purple sky; Day = cool light-blue windows on tan walls under a pale sky (windows are a *darker* blue than the sky so they read as glass). `currentTheme` defaults to OS `prefers-color-scheme` and live-updates on system change. A `[☀]/[☾]` button (top-right, just left of `[?]`) and a click handler in pointerdown let the user toggle manually. Cells are rendered as `wall_bg`/`wall_bd` rectangles with an inset `pane_bg`/`pane_bd` window pane plus a faint mullion cross — this is what made buildings actually read as buildings. State changes (idle / active / find / hit) swap pane color **and** border thickness **and** shadow glow so red-green or blue-yellow colorblind users can still parse them. Stars are skipped in day mode. Body CSS bg is repainted from JS to match. Many menu/select/gameover hardcoded greens were swapped for theme-aware `P.hud` / `P.hud_dim`.
 
 ---
 

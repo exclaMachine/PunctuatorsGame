@@ -15,6 +15,9 @@ body {
   overflow:hidden;
   font-family:'Courier New',monospace;
 }
+@media (prefers-color-scheme: light) {
+  body { background: #fff6e0; }
+}
 canvas {
   display: block;
   width: min(100vw, 920px);
@@ -76,45 +79,111 @@ const ctx = c.getContext('2d');
 const W = 920, H = 580;
 c.width = W; c.height = H;
 
-// ── Palette ─────────────────────────────────────────────────────────
-const P = {
+// ── Palette / Themes ────────────────────────────────────────────────
+// Two complete palettes — night (lit yellow windows on dark walls) and day
+// (cool-blue windows on warm tan walls). The active P object is overwritten
+// in place by applyTheme() so all draw code can keep reading P.* directly.
+// Accessibility notes:
+//   • Cell state (idle / active / find / hit) is encoded by THREE channels:
+//     pane color, border thickness, AND shadow glow — so red/green or
+//     blue/yellow colorblind users still read it.
+//   • Active highlight always differs in lightness from idle windows so
+//     even with full desaturation the cursor cell stands out.
+//   • Day-mode "windows" use a deeper, more saturated blue than the sky so
+//     buildings don't blend into the backdrop.
+const THEME_NIGHT = {
   bg:       '#03060a',
-  sky0:     '#020406',
-  sky1:     '#040c14',
-  ground:   '#0e240e',
-  gndtex:   '#2a6a2a',
-  // cell fills per building type
-  fill_w:   '#0b180b',
-  fill_c:   '#0b1222',
-  fill_s:   '#140b22',
-  // cell borders per type
-  bdr_w:    '#1c6e1c',
-  bdr_c:    '#1c4a80',
-  bdr_s:    '#5c1c80',
-  // active / find highlight
-  act_bg:   '#191900',
-  act_bd:   '#ffff00',
-  act_k:    '#ffff55',
-  find_bg:  '#180f00',
-  find_bd:  '#ffaa00',
-  find_k:   '#ffcc44',
-  // hit/damage
-  hit_bg:   '#1a0404',
-  hit_bd:   '#ff3333',
-  // text
-  katakana: '#2eff5a',
-  romaji:   '#9adb9a',
-  player:   '#ffaa00',
-  pglow:    '#ff6600',
-  hud:      '#2eff5a',
-  hud_dim:  '#7ac27a',
-  score_fl: '#ffff44',
-  find_fl:  '#ffaa00',
-  combo_lo: '#00ddff',
-  combo_hi: '#ff8800',
-  panel_bg: 'rgba(0,7,0,0.92)',
-  panel_bd: '#3a6a3a',
+  sky0:     '#0a0e2a',
+  sky1:     '#241335',
+  ground:   '#0a1f12',
+  gndtex:   '#2f6a3a',
+  // cell wall (outer rectangle) — warm dark masonry
+  wall_bg:  '#1f1812',
+  wall_bd:  '#6a4a28',
+  // window pane (inner rectangle) — lit yellow
+  pane_bg:  '#ffd84a',
+  pane_bd:  '#a06010',
+  pane_g:   '#1a0d02',   // glyph color on a lit pane (dark silhouette)
+  // legacy aliases (older code paths)
+  fill_w:   '#1f1812',
+  bdr_w:    '#6a4a28',
+  katakana: '#1a0d02',
+  // active / find / hit
+  act_bg:   '#6acfff',   // cyan-blue lit window — distinct from yellow even for tritanopes via brightness
+  act_bd:   '#1c7ad0',
+  act_k:    '#001a2a',
+  find_bg:  '#ff7acc',   // magenta — different hue from active + idle
+  find_bd:  '#aa1f80',
+  find_k:   '#2a0014',
+  hit_bg:   '#2a0808',
+  hit_bd:   '#ff4444',
+  // floating text
+  player:   '#ffcc66',
+  pglow:    '#ff8844',
+  hud:      '#7eff8a',
+  hud_dim:  '#5fc26f',
+  score_fl: '#ffe88a',
+  find_fl:  '#ff7acc',
+  combo_lo: '#7adfff',
+  combo_hi: '#ffaa44',
+  // panel + hud chrome
+  panel_bg: 'rgba(6,8,14,0.92)',
+  panel_bd: '#3a4a6a',
+  hud_bg:   'rgba(0,5,0,0.82)',
+  scanline: 'rgba(0,0,0,0.11)',
 };
+const THEME_DAY = {
+  bg:       '#fff6e0',
+  sky0:     '#a8d4f2',
+  sky1:     '#ffe6c0',
+  ground:   '#3d6224',
+  gndtex:   '#6e9242',
+  // cell wall — sun-lit tan masonry
+  wall_bg:  '#c8a577',
+  wall_bd:  '#7a4f25',
+  // window pane — cool light blue, deeper than the sky so it reads as glass
+  pane_bg:  '#4d8cb8',
+  pane_bd:  '#1f4c72',
+  pane_g:   '#fff6dd',   // cream text on cool blue window — high contrast
+  fill_w:   '#c8a577',
+  bdr_w:    '#7a4f25',
+  katakana: '#fff6dd',
+  // active = warm vivid orange (pops against cool windows + sky)
+  act_bg:   '#ff8a34',
+  act_bd:   '#b94400',
+  act_k:    '#fff4d0',
+  // find = deep purple (distinct from both orange + blue)
+  find_bg:  '#9a44c8',
+  find_bd:  '#5a1c80',
+  find_k:   '#fff0ff',
+  hit_bg:   '#5a0a0a',
+  hit_bd:   '#cc1818',
+  player:   '#3a3014',
+  pglow:    '#8a6a1a',
+  hud:      '#2a5024',
+  hud_dim:  '#4f7a42',
+  score_fl: '#a06820',
+  find_fl:  '#7a2eb8',
+  combo_lo: '#1c6a8a',
+  combo_hi: '#b95400',
+  panel_bg: 'rgba(255,246,224,0.94)',
+  panel_bd: '#7a4f25',
+  hud_bg:   'rgba(255,246,224,0.88)',
+  scanline: 'rgba(0,0,0,0.05)',
+};
+// Live palette — mutated by applyTheme(). Initialized to a clone of NIGHT;
+// the real preference (OS dark-mode media query) is applied on boot.
+const P = Object.assign({}, THEME_NIGHT);
+let currentTheme = 'night';
+function applyTheme(name) {
+  currentTheme = name === 'day' ? 'day' : 'night';
+  Object.assign(P, currentTheme === 'day' ? THEME_DAY : THEME_NIGHT);
+  // Also paint the page chrome (the thin band around the canvas) so it
+  // doesn't fight the in-canvas theme.
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.style.background = currentTheme === 'day' ? '#fff6e0' : '#000';
+  }
+}
 
 // ── Katakana → Romaji map (all 46) ──────────────────────────────────
 const KR = {
@@ -631,6 +700,8 @@ const FIND_COOLDOWN_FRAMES = 900;  // 15s @ 60fps
 
 // Help button (top-right corner of HUD); opens a how-to-play overlay
 const HELP_BTN = { x: W-32, y: 6, w: 24, h: 24 };
+// Theme toggle (sits just left of the help button)
+const THEME_BTN = { x: W-62, y: 6, w: 24, h: 24 };
 
 // Delay before the romaji answer for a new active target is revealed —
 // gives the player a beat to recall it on their own.
@@ -1851,7 +1922,7 @@ function drawBG() {
   ctx.fillStyle = g;
   ctx.fillRect(0,0,W,GY);
 
-  drawStars();
+  if (currentTheme === 'night') drawStars();   // skip stars under the daytime sky
   drawMountains();
   drawClouds();
 }
@@ -1933,7 +2004,7 @@ function drawGround() {
   ctx.fillRect(0, GY, W, PNL_Y - GY);
 
   // Strong horizon ridge — 2 px line at the top edge of the ground
-  ctx.fillStyle = '#3a7a3a';
+  ctx.fillStyle = P.gndtex;
   ctx.fillRect(0, GY, W, 2);
 
   // Ground texture row, slightly brighter than before
@@ -1959,8 +2030,8 @@ function drawBuildings() {
     const topFallY = (topRow && topRow[0]) ? (topRow[0].fallY || 0) : 0;
     const topY = GY - b.floors*CH - topFallY;
 
-    // Building base
-    ctx.fillStyle = '#0a140a';
+    // Building base — slightly darker than wall, glues the floors together
+    ctx.fillStyle = P.wall_bd;
     ctx.fillRect(b.x+sx, topY, b.width, 4);
 
     // Cells
@@ -1983,7 +2054,7 @@ function drawBuildings() {
       const rfLH = 9;
       ctx.font      = '10px "Courier New"';
       ctx.textAlign = 'center';
-      ctx.fillStyle = '#3a8a3a';
+      ctx.fillStyle = P.wall_bd;
       for (let i=0; i<b.roof.length; i++) {
         const y = topY - 4 - (b.roof.length - 1 - i) * rfLH;
         ctx.fillText(b.roof[i], cxLabel, y);
@@ -2015,35 +2086,49 @@ function drawCell(x, y, cell, isActive, cellW) {
 
   if (cell.hitAnim > 0) cell.hitAnim--;
 
-  // Determine color theme
-  let bg, bd, kt;
+  // Each cell = a wall section (outer rect) with a lit window pane inside.
+  // The wall is constant per-theme; the pane swaps color for state changes
+  // (idle / active / find / hit) so the cursor / detonate set / damage are
+  // each visually distinct AND high-contrast against the wall.
+  const wallBg = P.wall_bg, wallBd = P.wall_bd;
+  let paneBg = P.pane_bg, paneBd = P.pane_bd, kt = P.pane_g;
   if (cell.hi) {
-    bg=P.find_bg;  bd=P.find_bd;  kt=P.find_k;
+    paneBg = P.find_bg; paneBd = P.find_bd; kt = P.find_k;
   } else if (isActive) {
-    bg=P.act_bg;   bd=P.act_bd;   kt=P.act_k;
+    paneBg = P.act_bg;  paneBd = P.act_bd;  kt = P.act_k;
   } else if (cell.hitAnim > 0) {
-    bg=P.hit_bg;   bd=P.hit_bd;   kt='#ff6666';
-  } else {
-    bg = P.fill_w;
-    bd = P.bdr_w;
-    kt = P.katakana;
+    paneBg = P.hit_bg;  paneBd = P.hit_bd;  kt = '#ffd0d0';
   }
 
-  // Background
-  ctx.fillStyle = bg;
+  // Outer wall (masonry-colored block, full cell)
+  ctx.fillStyle = wallBg;
   ctx.fillRect(x, y, cellW, CH);
-
-  // Outer border (the wall)
-  ctx.strokeStyle = bd;
-  ctx.lineWidth   = (isActive || cell.hi) ? 1.5 : 1;
+  ctx.strokeStyle = wallBd;
+  ctx.lineWidth   = 1;
   ctx.strokeRect(x+0.5, y+0.5, cellW-1, CH-1);
 
-  // Inner frame — a smaller box that wraps the character, so each cell
-  // reads as a window pane in a building wall.
-  const inset = 6;
-  ctx.strokeStyle = isActive ? '#7a7a1a' : cell.hi ? '#7a4a10' : '#1c4a1c';
-  ctx.lineWidth   = 1;
-  ctx.strokeRect(x+inset+0.5, y+inset+0.5, cellW-inset*2-1, CH-inset*2-1);
+  // Inset window pane (filled — this is what makes the cell read as a window)
+  const inset = 5;
+  const pw = cellW - inset*2, ph = CH - inset*2;
+  ctx.fillStyle = paneBg;
+  ctx.fillRect(x+inset, y+inset, pw, ph);
+
+  // Pane border (thicker when active/find so the cursor/locked set pops)
+  ctx.strokeStyle = paneBd;
+  ctx.lineWidth   = (isActive || cell.hi) ? 2 : 1;
+  ctx.strokeRect(x+inset+0.5, y+inset+0.5, pw-1, ph-1);
+
+  // Subtle mullion cross — adds the "window" read at idle without distracting
+  // when the pane is lit a different color (skipped for active/find/hit).
+  if (!isActive && !cell.hi && cell.hitAnim <= 0) {
+    ctx.strokeStyle = paneBd;
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath();
+    ctx.moveTo(x+cellW/2, y+inset);  ctx.lineTo(x+cellW/2, y+CH-inset);
+    ctx.moveTo(x+inset, y+CH/2);     ctx.lineTo(x+cellW-inset, y+CH/2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
 
   // Glyph — shrink the font for long word cells so it stays inside the frame
   const charLen = (cell.char || '').length;
@@ -2051,27 +2136,27 @@ function drawCell(x, y, cell, isActive, cellW) {
   ctx.font      = `bold ${fontPx}px "Courier New"`;
   ctx.fillStyle = kt;
   ctx.textAlign = 'center';
-  if (isActive || cell.hi) { ctx.shadowBlur=9; ctx.shadowColor=kt; }
+  if (isActive || cell.hi) { ctx.shadowBlur=9; ctx.shadowColor=paneBd; }
   ctx.fillText(cell.char, x+cellW/2, y+CH/2+6);
   ctx.shadowBlur = 0;
 
-  // Romaji hint (small, bottom of cell) — only revealed on the active target
-  // once the 1-second delay elapses. Other cells stay blank so the player
-  // can't peek ahead at upcoming characters.
+  // Romaji hint — uses pane-glyph color so it stays legible on any window.
   if (isActive) {
     ctx.font = '9px "Courier New"';
     if (hintRevealed()) {
-      ctx.fillStyle = '#d8e8d8';
+      ctx.fillStyle = kt;
       ctx.fillText(cell.romaji, x+cellW/2, y+CH-4);
     } else {
-      ctx.fillStyle = '#4a6a4a';
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = kt;
       ctx.fillText('???', x+cellW/2, y+CH-4);
+      ctx.globalAlpha = 1;
     }
   }
 
-  // Blinking ▼ cursor above active target
+  // Blinking ▼ cursor above active target — uses pane-border (high contrast on wall)
   if (isActive && (frame%24)<12) {
-    ctx.fillStyle = '#ffff00';
+    ctx.fillStyle = P.act_bd;
     ctx.font      = '9px "Courier New"';
     ctx.fillText('▼', x+cellW/2, y-1);
   }
@@ -2244,7 +2329,7 @@ function drawInputPanel() {
   // ─ Left: target katakana ─
   ctx.textAlign  = 'center';
   ctx.font       = 'bold 10px "Courier New"';
-  ctx.fillStyle  = '#9adb9a';
+  ctx.fillStyle  = P.hud_dim;
   ctx.fillText('TARGET', LP/2, PY+15);
 
   if (act) {
@@ -2252,15 +2337,15 @@ function drawInputPanel() {
     const tgtLen = (act.cell.char || '').length;
     const tgtFont = tgtLen > 4 ? 24 : tgtLen > 2 ? 32 : 44;
     ctx.font      = `bold ${tgtFont}px "Courier New"`;
-    ctx.shadowBlur = 16; ctx.shadowColor = '#ffff44';
-    ctx.fillStyle  = '#ffff55';
+    ctx.shadowBlur = 16; ctx.shadowColor = P.score_fl;
+    ctx.fillStyle  = P.score_fl;
     ctx.fillText(act.cell.char, LP/2, PY+62);
     ctx.shadowBlur = 0;
 
     ctx.font      = '12px "Courier New"';
     const _miss = missRevealActive();
     const _rev  = hintRevealed() || _miss;
-    ctx.fillStyle  = _miss ? '#ff6677' : (_rev ? '#b8e0b8' : '#4a6a4a');
+    ctx.fillStyle  = _miss ? P.hit_bd : (_rev ? P.hud : P.hud_dim);
     ctx.fillText(_rev ? act.cell.romaji : '???', LP/2, PY+80);
   } else {
     ctx.font      = '11px "Courier New"';
@@ -2322,13 +2407,13 @@ function drawFindButton(act) {
   let bg, bd, fg, label;
 
   if (findMode.on) {
-    bg = '#2a1a00'; bd = P.find_fl; fg = P.find_fl;
+    bg = P.hud_bg; bd = P.find_fl; fg = P.find_fl;
     label = `◆ FIND ACTIVE: ${findMode.char} (${KR[findMode.char]}) ×${findMode.count} — type to detonate ◆`;
   } else if (findLockedOnNewChar()) {
-    bg = '#1a0a0a'; bd = '#7a3a3a'; fg = '#ff8899';
+    bg = P.hud_bg; bd = P.hit_bd; fg = P.hit_bd;
     label = `[${FIND_KEY_LABEL}]  locked — learn the new char (${act.cell.char}) first`;
   } else if (findMode.cooldown > 0) {
-    bg = '#0a0f0a'; bd = '#3a5a3a'; fg = '#7a9a7a';
+    bg = P.hud_bg; bd = P.panel_bd; fg = P.hud_dim;
     label = `[${FIND_KEY_LABEL}]  cooldown: ${Math.ceil(findMode.cooldown/60)}s`;
   } else if (act) {
     // Count current-char instances for the live hint
@@ -2337,14 +2422,14 @@ function drawFindButton(act) {
       if (!c.destroyed && c.char === act.cell.char) cnt++;
     })); });
     const ready = cnt >= 2;
-    bg = ready ? '#0a1a0a' : '#0a0f0a';
-    bd = ready ? '#2eff5a' : '#3a5a3a';
-    fg = ready ? '#9adb9a' : '#6a8a6a';
+    bg = P.hud_bg;
+    bd = ready ? P.hud : P.panel_bd;
+    fg = ready ? P.hud : P.hud_dim;
     label = ready
       ? `[${FIND_KEY_LABEL}]  detonate every ${act.cell.char} (${act.cell.romaji})  ×${cnt}`
       : `[${FIND_KEY_LABEL}]  no duplicate of current char on screen`;
   } else {
-    bg = '#0a0f0a'; bd = '#3a5a3a'; fg = '#6a8a6a';
+    bg = P.hud_bg; bd = P.panel_bd; fg = P.hud_dim;
     label = `[${FIND_KEY_LABEL}]  find duplicates of current target`;
   }
 
@@ -2364,9 +2449,9 @@ function drawFindButton(act) {
 
 // ── HUD ───────────────────────────────────────────────────────────────
 function drawHUD() {
-  ctx.fillStyle   = 'rgba(0,5,0,0.82)';
+  ctx.fillStyle   = P.hud_bg;
   ctx.fillRect(0, 0, W, HUD_H);
-  ctx.strokeStyle = '#0d2a0d';
+  ctx.strokeStyle = P.panel_bd;
   ctx.lineWidth   = 1;
   ctx.strokeRect(0, 0, W, HUD_H);
 
@@ -2414,41 +2499,57 @@ function drawHUD() {
 
   ctx.textAlign = 'left';
   if (player.hurtFlash > 0) player.hurtFlash--;
+  drawThemeButton();
   drawHelpButton();
 }
 
 // ── Help button (top-right) ───────────────────────────────────────────
 function drawHelpButton() {
   const { x, y, w, h } = HELP_BTN;
-  ctx.fillStyle = showHelp ? '#1a3a1a' : '#0a1a0a';
+  ctx.fillStyle = showHelp ? P.panel_bd : P.hud_bg;
   ctx.fillRect(x, y, w, h);
-  ctx.strokeStyle = '#2eff5a';
+  ctx.strokeStyle = P.hud;
   ctx.lineWidth   = 1;
   ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
   ctx.font        = 'bold 15px "Courier New"';
-  ctx.fillStyle   = '#2eff5a';
+  ctx.fillStyle   = P.hud;
   ctx.textAlign   = 'center';
   ctx.fillText('?', x + w/2, y + h/2 + 6);
+  ctx.textAlign   = 'left';
+}
+
+// Theme toggle (☀ in night theme switches to day; ☾ in day → night)
+function drawThemeButton() {
+  const { x, y, w, h } = THEME_BTN;
+  ctx.fillStyle = P.hud_bg;
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = P.hud;
+  ctx.lineWidth   = 1;
+  ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
+  ctx.font        = 'bold 14px "Courier New"';
+  ctx.fillStyle   = P.hud;
+  ctx.textAlign   = 'center';
+  ctx.fillText(currentTheme === 'night' ? '☀' : '☾', x + w/2, y + h/2 + 5);
   ctx.textAlign   = 'left';
 }
 
 // ── Help overlay (how-to-play screen) ─────────────────────────────────
 function drawHelpOverlay() {
   // Dim background
-  ctx.fillStyle = 'rgba(0,8,4,0.92)';
+  ctx.fillStyle = P.panel_bg;
   ctx.fillRect(0, 0, W, H);
 
   // Frame
   const fx = 60, fy = 50, fw = W - 120, fh = H - 100;
-  ctx.strokeStyle = '#2eff5a';
+  ctx.strokeStyle = P.hud;
   ctx.lineWidth   = 2;
   ctx.strokeRect(fx+0.5, fy+0.5, fw-1, fh-1);
 
   // Title
   ctx.textAlign  = 'center';
   ctx.font       = 'bold 26px "Courier New"';
-  ctx.shadowBlur = 12; ctx.shadowColor = '#2eff5a';
-  ctx.fillStyle  = '#2eff5a';
+  ctx.shadowBlur = 12; ctx.shadowColor = P.hud;
+  ctx.fillStyle  = P.hud;
   ctx.fillText('HOW  TO  PLAY', W/2, fy + 42);
   ctx.shadowBlur = 0;
 
@@ -2478,11 +2579,11 @@ function drawHelpOverlay() {
   let y = fy + 78;
   lines.forEach(([key, desc]) => {
     if (key) {
-      ctx.fillStyle = '#ffaa00';
+      ctx.fillStyle = P.find_fl;
       ctx.textAlign = 'right';
       ctx.fillText(key, W/2 - 90, y);
     }
-    ctx.fillStyle = '#b8e0b8';
+    ctx.fillStyle = P.hud_dim;
     ctx.textAlign = 'left';
     ctx.fillText(desc, W/2 - 78, y);
     y += 19;
@@ -2491,7 +2592,7 @@ function drawHelpOverlay() {
   // Close hint
   ctx.textAlign = 'center';
   ctx.font      = '11px "Courier New"';
-  ctx.fillStyle = '#7ac27a';
+  ctx.fillStyle = P.hud_dim;
   ctx.fillText('— press [?] / ESC / click anywhere to close —', W/2, fy + fh - 18);
 
   // Help button stays on top so it can be toggled off
@@ -2501,7 +2602,7 @@ function drawHelpOverlay() {
 
 // ── Scanlines overlay ─────────────────────────────────────────────────
 function drawScanlines() {
-  ctx.fillStyle = 'rgba(0,0,0,0.11)';
+  ctx.fillStyle = P.scanline;
   for (let y=0; y<H; y+=3) ctx.fillRect(0, y, W, 1);
 }
 
@@ -2515,14 +2616,14 @@ function renderMenu() {
 
   // Title
   ctx.font      = 'bold 54px "Courier New"';
-  ctx.shadowBlur = 22; ctx.shadowColor = '#2eff5a';
-  ctx.fillStyle  = '#2eff5a';
+  ctx.shadowBlur = 22; ctx.shadowColor = P.hud;
+  ctx.fillStyle  = P.hud;
   ctx.fillText('カイモジュ', W/2, 110);
   ctx.shadowBlur = 0;
 
   ctx.font      = 'bold 18px "Courier New"';
-  ctx.fillStyle  = '#00ccdd';
-  ctx.shadowBlur = 8; ctx.shadowColor = '#00ccdd';
+  ctx.fillStyle  = P.combo_lo;
+  ctx.shadowBlur = 8; ctx.shadowColor = P.combo_lo;
   ctx.fillText('K A I M O J U   ✦   怪文字  KAIJU  TYPER', W/2, 148);
   ctx.shadowBlur = 0;
 
@@ -2558,10 +2659,10 @@ function renderMenu() {
   ];
   rows.forEach(([key, desc], i) => {
     const ry = 285 + i*22;
-    ctx.fillStyle = '#2eff5a';
+    ctx.fillStyle = P.hud;
     ctx.textAlign = 'right';
     ctx.fillText(key, W/2-14, ry);
-    ctx.fillStyle = '#b8e0b8';
+    ctx.fillStyle = P.hud_dim;
     ctx.textAlign = 'left';
     ctx.fillText(desc, W/2+14, ry);
   });
@@ -2571,8 +2672,8 @@ function renderMenu() {
   // Flashing prompt
   if ((Math.floor(t/500)%2)===0) {
     ctx.font      = 'bold 16px "Courier New"';
-    ctx.fillStyle  = '#2eff5a';
-    ctx.shadowBlur = 8; ctx.shadowColor = '#2eff5a';
+    ctx.fillStyle  = P.hud;
+    ctx.shadowBlur = 8; ctx.shadowColor = P.hud;
     ctx.fillText('[ PRESS  ENTER  TO  CHOOSE  DIFFICULTY ]', W/2, 450);
     ctx.shadowBlur = 0;
   }
@@ -2673,13 +2774,13 @@ function renderSelect() {
 
   // Title
   ctx.font       = 'bold 36px "Courier New"';
-  ctx.shadowBlur = 16; ctx.shadowColor = '#2eff5a';
-  ctx.fillStyle  = '#2eff5a';
+  ctx.shadowBlur = 16; ctx.shadowColor = P.hud;
+  ctx.fillStyle  = P.hud;
   ctx.fillText('SELECT  DIFFICULTY', W/2, 100);
   ctx.shadowBlur = 0;
 
   ctx.font      = '14px "Courier New"';
-  ctx.fillStyle = '#9adb9a';
+  ctx.fillStyle = P.hud_dim;
   ctx.fillText('press a number — or tap a card', W/2, 132);
 
   // Mode cards
@@ -2688,41 +2789,41 @@ function renderSelect() {
     const m = MODES[card.key];
 
     // Card background
-    ctx.fillStyle = '#0a1a0a';
+    ctx.fillStyle = P.hud_bg;
     ctx.fillRect(card.x, card.y, card.w, card.h);
-    ctx.strokeStyle = '#2eff5a';
+    ctx.strokeStyle = P.hud;
     ctx.lineWidth   = 1.5;
     ctx.strokeRect(card.x+0.5, card.y+0.5, card.w-1, card.h-1);
 
     // Number badge
     ctx.font      = 'bold 36px "Courier New"';
-    ctx.fillStyle  = '#ffaa00';
-    ctx.shadowBlur = 10; ctx.shadowColor = '#ff7700';
+    ctx.fillStyle  = P.find_fl;
+    ctx.shadowBlur = 10; ctx.shadowColor = P.find_fl;
     ctx.textAlign  = 'center';
     ctx.fillText(card.num, card.x + 38, card.y + card.h/2 + 12);
     ctx.shadowBlur = 0;
 
     // Label
     ctx.font      = 'bold 18px "Courier New"';
-    ctx.fillStyle = '#2eff5a';
+    ctx.fillStyle = P.hud;
     ctx.textAlign = 'left';
     ctx.fillText(m.label, card.x + 84, card.y + 26);
 
     // Description
     ctx.font      = '12px "Courier New"';
-    ctx.fillStyle = '#b8e0b8';
+    ctx.fillStyle = P.hud_dim;
     ctx.fillText(m.desc, card.x + 84, card.y + 46);
 
     // Sample glyphs
     ctx.font      = 'bold 18px "Courier New"';
-    ctx.fillStyle = '#ffff66';
+    ctx.fillStyle = P.score_fl;
     ctx.fillText(m.sample, card.x + 84, card.y + 68);
   });
 
   // Back hint (flashing)
   if ((Math.floor(t/500)%2)===0) {
     ctx.font      = '12px "Courier New"';
-    ctx.fillStyle = '#7ac27a';
+    ctx.fillStyle = P.hud_dim;
     ctx.textAlign = 'center';
     ctx.fillText('[ ESC: back to title ]', W/2, H - 30);
   }
@@ -2738,7 +2839,7 @@ function renderGameOver() {
   ctx.textAlign = 'center';
 
   const won = buildings.length > 0 && buildings.every(b => b.collapsed);
-  const col  = won ? '#ffaa00' : '#ff3333';
+  const col  = won ? P.find_fl : P.hit_bd;
 
   ctx.font      = 'bold 36px "Courier New"';
   ctx.shadowBlur = 16; ctx.shadowColor = col;
@@ -2762,20 +2863,20 @@ function renderGameOver() {
   stats.forEach(([label, val], i) => {
     const sy = 218 + i*32;
     ctx.font      = 'bold 12px "Courier New"';
-    ctx.fillStyle  = '#9adb9a';
+    ctx.fillStyle  = P.hud_dim;
     ctx.textAlign  = 'right';
     ctx.fillText(label, W/2-24, sy);
     ctx.font      = 'bold 16px "Courier New"';
-    ctx.fillStyle  = '#2eff5a';
+    ctx.fillStyle  = P.hud;
     ctx.textAlign  = 'left';
     ctx.fillText(val, W/2+24, sy);
   });
 
   if ((Math.floor(Date.now()/500)%2)===0) {
     ctx.font      = 'bold 15px "Courier New"';
-    ctx.fillStyle  = '#2eff5a';
+    ctx.fillStyle  = P.hud;
     ctx.textAlign  = 'center';
-    ctx.shadowBlur = 6; ctx.shadowColor = '#2eff5a';
+    ctx.shadowBlur = 6; ctx.shadowColor = P.hud;
     ctx.fillText('[ R: retry  ·  ENTER: change difficulty ]', W/2, 445);
     ctx.shadowBlur = 0;
   }
@@ -3141,6 +3242,12 @@ c.addEventListener('pointerdown', ev => {
   // TraceMode: hand pointer events to the tracing overlay first
   if (TraceMode.isActive()) { TraceMode.pointer('down', x, y); return; }
 
+  // Theme toggle (top-right, just left of [?]) — works in any state
+  const tb = THEME_BTN;
+  if (x >= tb.x && x <= tb.x+tb.w && y >= tb.y && y <= tb.y+tb.h) {
+    applyTheme(currentTheme === 'night' ? 'day' : 'night');
+    return;
+  }
   // Help button (top-right) — works in any state
   const hb = HELP_BTN;
   if (x >= hb.x && x <= hb.x+hb.w && y >= hb.y && y <= hb.y+hb.h) {
@@ -3204,6 +3311,16 @@ c.addEventListener('pointerup', ev => {
 // ── Boot ──────────────────────────────────────────────────────────────
 // Pre-fill ambient scenery so the menu/gameover screens have mountains+clouds.
 mountains = makeMountainRidge();
+// Honor OS dark-mode preference at boot, and live-update if the user flips
+// their system theme while playing. Manual toggle (click [☀]/[☾] button)
+// overrides this until the next OS change.
+(() => {
+  const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+  applyTheme(mq && mq.matches ? 'night' : 'day');
+  if (mq && mq.addEventListener) {
+    mq.addEventListener('change', e => applyTheme(e.matches ? 'night' : 'day'));
+  }
+})();
 clouds    = makeClouds();
 // Seed a few vehicles already on-screen so the title isn't empty
 for (let i = 0; i < 2; i++) {
