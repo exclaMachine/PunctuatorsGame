@@ -8,23 +8,24 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { width:100%; height:100%; }
 body {
-  background:#000;
-  display:flex; align-items:center; justify-content:center;
-  min-height:100vh;
-  min-height:100dvh;
+  background:#0a0e2a;            /* matches THEME_NIGHT sky0 — overridden by JS on theme change */
+  display:flex; align-items:flex-start; justify-content:center;
+  height:100vh;
+  height:100dvh;
   overflow:hidden;
-  /* Leave room for the site-wide nav (injected by nav.js, 44px tall) so the
-     HUD at the top of the canvas isn't hidden behind it. */
-  padding-top: 44px;
   font-family:'Courier New',monospace;
 }
 @media (prefers-color-scheme: light) {
-  body { background: #fff6e0; }
+  body { background: #a8d4f2; }   /* THEME_DAY sky0 */
 }
 canvas {
   display: block;
   width: min(100vw, 920px);
   height: auto;
+  /* Canvas sits directly under the 44px site nav. Aspect ratio is preserved
+     so on portrait phones the canvas fills the width and the body bg (which
+     we keep in sync with the in-canvas sky color) fills the space below. */
+  margin-top: 44px;
   max-height: calc(100vh - 44px);
   max-height: calc(100dvh - 44px);
   aspect-ratio: 920 / 580;
@@ -49,8 +50,9 @@ canvas {
    Hidden by default; the script unhides it when IS_MOBILE is true. */
 #findbtn {
   position: fixed;
-  /* Offset below the 44px site nav so the button doesn't sit behind it on mobile */
-  top: calc(env(safe-area-inset-top, 0px) + 52px);
+  /* Anchored just below the 44px site nav in the viewport's upper-right
+     corner so the player never has to scroll to reach it. */
+  top: 50px;
   right: 8px;
   z-index: 10;
   -webkit-tap-highlight-color: transparent;
@@ -183,10 +185,12 @@ let currentTheme = 'night';
 function applyTheme(name) {
   currentTheme = name === 'day' ? 'day' : 'night';
   Object.assign(P, currentTheme === 'day' ? THEME_DAY : THEME_NIGHT);
-  // Also paint the page chrome (the thin band around the canvas) so it
-  // doesn't fight the in-canvas theme.
+  // Paint the body background to match the in-canvas sky so the empty space
+  // around the canvas (which appears on portrait phones thanks to the fixed
+  // 920:580 aspect ratio) blends into the scene instead of looking like dead
+  // letterboxing.
   if (typeof document !== 'undefined' && document.body) {
-    document.body.style.background = currentTheme === 'day' ? '#fff6e0' : '#000';
+    document.body.style.background = P.sky0;
   }
 }
 
