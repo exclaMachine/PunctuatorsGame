@@ -69,12 +69,148 @@ canvas {
 }
 #findbtn[disabled] { opacity: 0.5; border-color: #3a5a3a; color: #7a9a7a; }
 #findbtn.active    { background:#3a2400; color:#ffaa00; border-color:#ffaa00; }
+
+/* ── Mobile-only menu + difficulty overlays ────────────────────────────
+   The canvas-rendered menu looks tiny on phones because it's locked to a
+   920×580 aspect ratio. On touch devices we cover it with these DOM
+   overlays, which can use the whole portrait viewport, scale fonts with
+   vw/vh, and space the buttons out properly. Theme colors are driven by
+   CSS variables that JS rewrites in applyTheme(). */
+:root {
+  --kj-sky: #0a0e2a;
+  --kj-fg: #7eff8a;
+  --kj-fg-dim: #5fc26f;
+  --kj-accent: #ffaa44;
+  --kj-card-bg: rgba(255,255,255,0.06);
+  --kj-card-bd: rgba(255,255,255,0.22);
+  --kj-card-bd-active: #ffaa44;
+}
+.mob-overlay {
+  display: none;
+  position: fixed;
+  top: 44px; left: 0; right: 0; bottom: 0;
+  z-index: 50;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 18px 18px 24px;
+  background: var(--kj-sky);
+  color: var(--kj-fg);
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+@media (hover: none) and (pointer: coarse) {
+  .mob-overlay.show { display: flex; }
+  body.mob-overlay-active canvas { visibility: hidden; }
+}
+.mob-overlay h1 {
+  font-size: clamp(38px, 13vw, 80px);
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 0 16px var(--kj-fg);
+}
+.mob-overlay .mob-subtitle {
+  font-size: clamp(13px, 4vw, 20px);
+  color: var(--kj-accent);
+  margin: 6px 0 0;
+  line-height: 1.35;
+}
+.mob-kaomoji {
+  font-size: clamp(22px, 7vw, 36px);
+  color: var(--kj-accent);
+  font-weight: 700;
+  line-height: 1.15;
+  text-shadow: 0 0 14px var(--kj-accent);
+  margin: 0;
+}
+.mob-blurb {
+  font-size: clamp(13px, 3.6vw, 17px);
+  color: var(--kj-fg-dim);
+  line-height: 1.45;
+  margin: 0;
+  padding: 0 6px;
+}
+.mob-blurb b { color: var(--kj-fg); }
+.mob-cta, .mob-back, .mob-card {
+  font-family: 'Courier New', monospace;
+  background: var(--kj-card-bg);
+  color: var(--kj-fg);
+  border: 1.5px solid var(--kj-card-bd);
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mob-cta {
+  padding: 16px 18px;
+  font-size: clamp(15px, 4.4vw, 21px);
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-color: var(--kj-accent);
+  color: var(--kj-accent);
+}
+.mob-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  justify-content: center;
+  padding: 4px 0;
+}
+.mob-card {
+  padding: 14px 18px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mob-card-label {
+  font-size: clamp(16px, 4.8vw, 22px);
+  font-weight: 700;
+  color: var(--kj-fg);
+}
+.mob-card-desc {
+  font-size: clamp(11px, 3.2vw, 14px);
+  color: var(--kj-fg-dim);
+  line-height: 1.35;
+}
+.mob-back {
+  padding: 10px 16px;
+  font-size: clamp(13px, 3.6vw, 16px);
+  color: var(--kj-fg-dim);
+  border-color: var(--kj-card-bd);
+  align-self: center;
+}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <input id="ki" tabindex="-1" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text">
 <button id="findbtn" hidden>[ FIND ]</button>
+
+<!-- Mobile-only menu overlay (covers the canvas on phones) -->
+<div id="mob-menu" class="mob-overlay">
+  <div>
+    <h1>カイモジュ</h1>
+    <p class="mob-subtitle">KAIMOJU  ✦  kaomoji + kaiju<br>(顔文字 + 怪獣)</p>
+  </div>
+  <p class="mob-kaomoji" id="mob-kao"></p>
+  <p class="mob-blurb">
+    A <b>KAOMOJI</b> is a Japanese-style emoticon built from text.<br>
+    Yours has gone full <b>KAIJU</b>! Smash the city by
+    typing the romaji on each katakana / hiragana tile.
+  </p>
+  <button id="mob-menu-cta" class="mob-cta">CHOOSE  DIFFICULTY  ▸</button>
+</div>
+
+<!-- Mobile-only difficulty-select overlay -->
+<div id="mob-select" class="mob-overlay">
+  <h1 style="font-size:clamp(26px,8vw,42px);">SELECT  DIFFICULTY</h1>
+  <div class="mob-cards" id="mob-cards"></div>
+  <button id="mob-back" class="mob-back">← BACK</button>
+</div>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 //  KAIMOJU  カイモジュ  —  怪文字 Kaiju Typer
@@ -167,12 +303,14 @@ const THEME_DAY = {
   hit_bd:   '#cc1818',
   player:   '#3a3014',
   pglow:    '#8a6a1a',
-  hud:      '#2a5024',
-  hud_dim:  '#4f7a42',
+  // High-contrast near-black text for day mode. The previous greens were
+  // mid-tone and got eaten by the pale blue sky bg on the menu/select pages.
+  hud:      '#0e1f0a',
+  hud_dim:  '#345030',
   score_fl: '#a06820',
-  find_fl:  '#7a2eb8',
-  combo_lo: '#1c6a8a',
-  combo_hi: '#b95400',
+  find_fl:  '#6a1ca0',
+  combo_lo: '#0c3a52',
+  combo_hi: '#9a3a00',
   panel_bg: 'rgba(255,246,224,0.94)',
   panel_bd: '#7a4f25',
   hud_bg:   'rgba(255,246,224,0.88)',
@@ -192,6 +330,10 @@ function applyTheme(name) {
   if (typeof document !== 'undefined' && document.body) {
     document.body.style.background = P.sky0;
   }
+  // Keep the mobile DOM overlays in sync with the active theme. Guarded —
+  // syncMobOverlayTheme is defined later in the file; first applyTheme call
+  // at boot happens before that, so we no-op until it exists.
+  if (typeof syncMobOverlayTheme === 'function') syncMobOverlayTheme();
 }
 
 // ── Katakana → Romaji map (all 46) ──────────────────────────────────
@@ -1938,7 +2080,9 @@ function drawBG() {
   ctx.fillRect(0,0,W,GY);
 
   if (currentTheme === 'night') drawStars();   // skip stars under the daytime sky
-  drawMountains();
+  // Mountains conflict with menu/select copy that lives in the lower half
+  // of the canvas — skip them on those screens.
+  if (gState !== 'menu' && gState !== 'select') drawMountains();
   drawClouds();
 }
 
@@ -2592,15 +2736,35 @@ function drawHelpOverlay() {
     ['ESC  /  ?',     'Close this help screen'],
   ];
   let y = fy + 78;
+  // Two-column block, centered as a whole: every key right-aligns to the
+  // same vertical line, every desc left-aligns to the same vertical line.
+  // The block (maxKeyW + gap + maxDescW) is centered on the canvas, so
+  // short rows don't appear left-of-center next to long ones.
+  const COL_GAP = 16;
+  let maxKeyW = 0, maxDescW = 0;
+  lines.forEach(([key, desc]) => {
+    ctx.font = 'bold 13px "Courier New"';
+    if (key)  maxKeyW  = Math.max(maxKeyW,  ctx.measureText(key).width);
+    ctx.font = '13px "Courier New"';
+    if (desc) maxDescW = Math.max(maxDescW, ctx.measureText(desc).width);
+  });
+  const blockW = maxKeyW + COL_GAP + maxDescW;
+  const blockX = W/2 - blockW/2;
+  const keyRightX = blockX + maxKeyW;
+  const descLeftX = blockX + maxKeyW + COL_GAP;
   lines.forEach(([key, desc]) => {
     if (key) {
+      ctx.font      = 'bold 13px "Courier New"';
       ctx.fillStyle = P.find_fl;
       ctx.textAlign = 'right';
-      ctx.fillText(key, W/2 - 90, y);
+      ctx.fillText(key, keyRightX, y);
     }
-    ctx.fillStyle = P.hud_dim;
-    ctx.textAlign = 'left';
-    ctx.fillText(desc, W/2 - 78, y);
+    if (desc) {
+      ctx.font      = '13px "Courier New"';
+      ctx.fillStyle = P.hud_dim;
+      ctx.textAlign = 'left';
+      ctx.fillText(desc, descLeftX, y);
+    }
     y += 19;
   });
 
@@ -2629,36 +2793,37 @@ function renderMenu() {
   drawVehicles();
   ctx.textAlign = 'center';
 
-  // Title
+  // Title (positions spread top→bottom so the menu fills the canvas height,
+  // which matters on mobile where the canvas is stretched to fit the viewport)
   ctx.font      = 'bold 50px "Courier New"';
   ctx.shadowBlur = 20; ctx.shadowColor = P.hud;
   ctx.fillStyle  = P.hud;
-  ctx.fillText('カイモジュ', W/2, 76);
+  ctx.fillText('カイモジュ', W/2, 64);
   ctx.shadowBlur = 0;
 
   ctx.font      = 'bold 15px "Courier New"';
   ctx.fillStyle  = P.combo_lo;
   ctx.shadowBlur = 6; ctx.shadowColor = P.combo_lo;
-  ctx.fillText('K A I M O J U   ✦   kaomoji + kaiju   (顔文字 + 怪獣)', W/2, 104);
+  ctx.fillText('K A I M O J U   ✦   kaomoji + kaiju   (顔文字 + 怪獣)', W/2, 96);
   ctx.shadowBlur = 0;
 
-  // Animated kaomoji preview (small — leaves room for the tutorial text below)
+  // Animated kaomoji preview
   const t  = Date.now();
   const b  = Math.sin(t/580)*6;
   const hi = HEADS[Math.floor(t/1300)%HEADS.length];
   const bo = BODIES[Math.floor(t/2600)%BODIES.length];
   const ls = LEG_SETS[Math.floor(t/3500)%LEG_SETS.length];
   const lf = Math.floor(t/260) % 4;
-  ctx.font      = 'bold 20px "Courier New"';
+  ctx.font      = 'bold 22px "Courier New"';
   ctx.fillStyle  = P.player;
   ctx.shadowBlur = 12; ctx.shadowColor = P.pglow;
   ctx.fillText(hi, W/2, 144+b);
-  ctx.fillText(bo, W/2, 168+b);
+  ctx.fillText(bo, W/2, 174+b);
   ctx.shadowBlur = 0;
 
-  ctx.font      = 'bold 16px "Courier New"';
+  ctx.font      = 'bold 18px "Courier New"';
   ctx.fillStyle = P.player;
-  ctx.fillText(ls.walk[lf], W/2, 190+b);
+  ctx.fillText(ls.walk[lf], W/2, 202+b);
 
   // Tutorial blurb — explains what a kaomoji is so KAIMOJU makes sense.
   ctx.font      = '13px "Courier New"';
@@ -2669,7 +2834,7 @@ function renderMenu() {
     "Yours has gone full KAIJU (怪獣, 'monster') and is smashing the city!",
     "Type the romaji on each katakana / hiragana to break every floor.",
   ];
-  blurb.forEach((ln, i) => ctx.fillText(ln, W/2, 226 + i*17));
+  blurb.forEach((ln, i) => ctx.fillText(ln, W/2, 246 + i*20));
 
   // Controls — trimmed to the essentials. Help screen has the full list.
   ctx.font      = '13px "Courier New"';
@@ -2681,7 +2846,7 @@ function renderMenu() {
     ['?',             'full help anytime  ·  CTRL+M mutes  ·  ESC backs out'],
   ];
   rows.forEach(([key, desc], i) => {
-    const ry = 312 + i*22;
+    const ry = 358 + i*26;
     ctx.fillStyle = P.hud;
     ctx.textAlign = 'right';
     ctx.fillText(key, W/2-14, ry);
@@ -2692,12 +2857,13 @@ function renderMenu() {
 
   ctx.textAlign = 'center';
 
-  // Flashing prompt
+  // Flashing prompt — sits near the canvas bottom so a stretched mobile
+  // canvas doesn't have a giant empty band beneath it.
   if ((Math.floor(t/500)%2)===0) {
     ctx.font      = 'bold 16px "Courier New"';
     ctx.fillStyle  = P.hud;
     ctx.shadowBlur = 8; ctx.shadowColor = P.hud;
-    ctx.fillText('[ PRESS  ENTER  TO  CHOOSE  DIFFICULTY ]', W/2, 442);
+    ctx.fillText('[ PRESS  ENTER  TO  CHOOSE  DIFFICULTY ]', W/2, 548);
     ctx.shadowBlur = 0;
   }
 
@@ -3169,8 +3335,85 @@ function loop() {
   updateAmbient();
   render();
   updateFindBtn();
+  updateMobOverlays();
   requestAnimationFrame(loop);
 }
+
+// ── Mobile menu / select overlays ────────────────────────────────────
+// On touch devices the canvas-rendered menu is too small. We mirror the
+// menu and select-difficulty screens into DOM overlays that scale with
+// the viewport, then hide them whenever the game enters playing/gameover.
+const mobMenuEl   = document.getElementById('mob-menu');
+const mobSelectEl = document.getElementById('mob-select');
+const mobKaoEl    = document.getElementById('mob-kao');
+const mobCtaBtn   = document.getElementById('mob-menu-cta');
+const mobBackBtn  = document.getElementById('mob-back');
+const mobCardsEl  = document.getElementById('mob-cards');
+
+// Populate difficulty cards once, in MODE_KEYS order, so they stay in sync
+// with the canvas select screen.
+MODE_KEYS.forEach((key, i) => {
+  const m = MODES[key];
+  const btn = document.createElement('button');
+  btn.className = 'mob-card';
+  btn.dataset.mode = key;
+  btn.innerHTML =
+    `<div class="mob-card-label">${i+1}.  ${m.label}</div>` +
+    `<div class="mob-card-desc">${m.desc}</div>`;
+  btn.addEventListener('click', ev => {
+    ev.preventDefault();
+    audio();
+    startGame(key);
+    focusMobileInput();
+  });
+  mobCardsEl.appendChild(btn);
+});
+
+mobCtaBtn.addEventListener('click', ev => {
+  ev.preventDefault();
+  audio();
+  maybeStartIntroSong();
+  gState = 'select';
+});
+mobBackBtn.addEventListener('click', ev => {
+  ev.preventDefault();
+  gState = 'menu';
+});
+
+let lastMobKaoT = 0;
+function updateMobOverlays() {
+  if (!IS_MOBILE) return;
+  const showMenu   = gState === 'menu';
+  const showSelect = gState === 'select';
+  mobMenuEl  .classList.toggle('show', showMenu);
+  mobSelectEl.classList.toggle('show', showSelect);
+  document.body.classList.toggle('mob-overlay-active', showMenu || showSelect);
+  // Cycle the kaomoji preview ~3×/sec so the menu feels alive even though
+  // it's all DOM. Cheap textContent updates.
+  if (showMenu) {
+    const now = Date.now();
+    if (now - lastMobKaoT > 320) {
+      lastMobKaoT = now;
+      const head = HEADS[Math.floor(now/1300)%HEADS.length];
+      const body = BODIES[Math.floor(now/2600)%BODIES.length];
+      mobKaoEl.textContent = head + ' ' + body;
+    }
+  }
+}
+
+// Keep the overlay theme colors in sync with the in-canvas theme.
+function syncMobOverlayTheme() {
+  const root = document.documentElement.style;
+  root.setProperty('--kj-sky',    P.sky0);
+  root.setProperty('--kj-fg',     P.hud);
+  root.setProperty('--kj-fg-dim', P.hud_dim);
+  root.setProperty('--kj-accent', currentTheme === 'day' ? P.combo_hi : P.find_fl);
+  root.setProperty('--kj-card-bg',        currentTheme === 'day' ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.06)');
+  root.setProperty('--kj-card-bd',        currentTheme === 'day' ? 'rgba(0,0,0,0.20)'       : 'rgba(255,255,255,0.22)');
+  root.setProperty('--kj-card-bd-active', P.find_fl);
+}
+// Sync once now that the function exists (boot-time applyTheme ran before this).
+syncMobOverlayTheme();
 
 // ── Event Listeners ───────────────────────────────────────────────────
 const ki = document.getElementById('ki');
@@ -3188,8 +3431,12 @@ if (IS_MOBILE) {
 }
 function updateFindBtn() {
   if (!IS_MOBILE) return;
+  // The button only makes sense while actually playing. Hide it on menu /
+  // select / gameover screens so it doesn't float over the title art.
+  findBtn.hidden = gState !== 'playing';
+  if (findBtn.hidden) return;
   findBtn.classList.toggle('active', findMode.on);
-  findBtn.disabled = findMode.cooldown > 0 || gState !== 'playing' || showHelp || findLockedOnNewChar();
+  findBtn.disabled = findMode.cooldown > 0 || showHelp || findLockedOnNewChar();
   if (findMode.on)               findBtn.textContent = `◆ ${findMode.char} ×${findMode.count}`;
   else if (findMode.cooldown>0)  findBtn.textContent = `FIND ${Math.ceil(findMode.cooldown/60)}s`;
   else                           findBtn.textContent = '[ FIND ]';
