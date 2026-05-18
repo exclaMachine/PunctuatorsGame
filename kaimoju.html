@@ -1280,14 +1280,9 @@ function handleKey(e) {
     return;
   }
   // TraceMode: while active, swallow all other input (mouse-only mini-game)
+  // Note: the T-key launcher was removed from the menu so 'T' stays free for
+  // typing in-game (テ etc.). TraceMode itself is preserved for a future hook.
   if (TraceMode.isActive()) return;
-  // TraceMode: T launches a random glyph from the menu
-  if (gState === 'menu' && e.key.toLowerCase() === 't') {
-    e.preventDefault();
-    audio();
-    TraceMode.start(pick(TraceMode.availableChars()));
-    return;
-  }
   // Swallow all other input while the help overlay is open
   if (showHelp) return;
 
@@ -2626,50 +2621,58 @@ function renderMenu() {
   ctx.textAlign = 'center';
 
   // Title
-  ctx.font      = 'bold 54px "Courier New"';
-  ctx.shadowBlur = 22; ctx.shadowColor = P.hud;
+  ctx.font      = 'bold 50px "Courier New"';
+  ctx.shadowBlur = 20; ctx.shadowColor = P.hud;
   ctx.fillStyle  = P.hud;
-  ctx.fillText('カイモジュ', W/2, 110);
+  ctx.fillText('カイモジュ', W/2, 76);
   ctx.shadowBlur = 0;
 
-  ctx.font      = 'bold 18px "Courier New"';
+  ctx.font      = 'bold 15px "Courier New"';
   ctx.fillStyle  = P.combo_lo;
-  ctx.shadowBlur = 8; ctx.shadowColor = P.combo_lo;
-  ctx.fillText('K A I M O J U   ✦   怪文字  KAIJU  TYPER', W/2, 148);
+  ctx.shadowBlur = 6; ctx.shadowColor = P.combo_lo;
+  ctx.fillText('K A I M O J U   ✦   kaomoji + kaiju   (顔文字 + 怪獣)', W/2, 104);
   ctx.shadowBlur = 0;
 
-  // Animated kaomoji preview
+  // Animated kaomoji preview (small — leaves room for the tutorial text below)
   const t  = Date.now();
-  const b  = Math.sin(t/580)*8;
+  const b  = Math.sin(t/580)*6;
   const hi = HEADS[Math.floor(t/1300)%HEADS.length];
   const bo = BODIES[Math.floor(t/2600)%BODIES.length];
   const ls = LEG_SETS[Math.floor(t/3500)%LEG_SETS.length];
   const lf = Math.floor(t/260) % 4;
-  ctx.font      = 'bold 22px "Courier New"';
+  ctx.font      = 'bold 20px "Courier New"';
   ctx.fillStyle  = P.player;
-  ctx.shadowBlur = 14; ctx.shadowColor = P.pglow;
-  ctx.fillText(hi, W/2, 200+b);
-  ctx.fillText(bo, W/2, 228+b);
+  ctx.shadowBlur = 12; ctx.shadowColor = P.pglow;
+  ctx.fillText(hi, W/2, 144+b);
+  ctx.fillText(bo, W/2, 168+b);
   ctx.shadowBlur = 0;
 
-  // Legs — cycle through every LEG_SET so the menu shows them off
-  ctx.font      = 'bold 18px "Courier New"';
+  ctx.font      = 'bold 16px "Courier New"';
   ctx.fillStyle = P.player;
-  ctx.fillText(ls.walk[lf], W/2, 250+b);
+  ctx.fillText(ls.walk[lf], W/2, 190+b);
 
-  // How to play
+  // Tutorial blurb — explains what a kaomoji is so KAIMOJU makes sense.
+  ctx.font      = '13px "Courier New"';
+  ctx.fillStyle = P.hud_dim;
+  const blurb = [
+    "A KAOMOJI (顔文字, 'face-letters') is a Japanese-style emoticon",
+    "built from text — like the one above, (>ω<), or (ಠ_ಠ).",
+    "Yours has gone full KAIJU (怪獣, 'monster') and is smashing the city!",
+    "Type the romaji on each katakana / hiragana to break every floor.",
+  ];
+  blurb.forEach((ln, i) => ctx.fillText(ln, W/2, 226 + i*17));
+
+  // Controls — trimmed to the essentials. Help screen has the full list.
   ctx.font      = '13px "Courier New"';
   const rows = [
-    ['type romaji',     'smash katakana — your kaomoji walks itself'],
-    ['',                '(a, ka, shi, tsu… auto-targets the nearest building)'],
-    [FIND_KEY_LABEL,    'FIND MODE — highlights every copy of your target char'],
-    ['',                'type its romaji once to detonate them all'],
-    ['CTRL+M',          `toggle sound  (${muted ? 'OFF' : 'ON'})`],
-    ['?',               'open help anytime  (or tap the [?] in the corner)'],
-    ['T',               'TRACE  (experimental) — draw a random kana/kanji'],   // TraceMode: menu hint
+    ['TYPE',          'romaji destroys the highlighted cell  (a, ka, shi, tsu…)'],
+    ['LEVELS',        'kana modes ramp gojuon-style — one new char per level'],
+    [FIND_KEY_LABEL,  'FIND — detonate every copy of your current target'],
+    ['HP',            '5 hearts — wrong romaji costs 1; 0 ends the run'],
+    ['?',             'full help anytime  ·  CTRL+M mutes  ·  ESC backs out'],
   ];
   rows.forEach(([key, desc], i) => {
-    const ry = 285 + i*22;
+    const ry = 312 + i*22;
     ctx.fillStyle = P.hud;
     ctx.textAlign = 'right';
     ctx.fillText(key, W/2-14, ry);
@@ -2685,7 +2688,7 @@ function renderMenu() {
     ctx.font      = 'bold 16px "Courier New"';
     ctx.fillStyle  = P.hud;
     ctx.shadowBlur = 8; ctx.shadowColor = P.hud;
-    ctx.fillText('[ PRESS  ENTER  TO  CHOOSE  DIFFICULTY ]', W/2, 450);
+    ctx.fillText('[ PRESS  ENTER  TO  CHOOSE  DIFFICULTY ]', W/2, 442);
     ctx.shadowBlur = 0;
   }
 
