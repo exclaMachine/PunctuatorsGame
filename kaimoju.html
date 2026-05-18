@@ -776,10 +776,17 @@ let showHelp = false;
 // ── Intro animation (plays each time a new round starts) ────────────
 // Crowd of tiny ASCII people scatters right across the building scene,
 // then once they're all off-screen the kaomoji walks in from the left.
-const INTRO_DUR    = 4000;  // ms — total intro length before kaomoji enters
+const INTRO_DUR    = 4000;  // ms — crowd-overlay duration (people run off-screen)
 const INTRO_STAND  = 1100;  // ms screaming/standing before they bolt
+// Kaomoji is only held off-screen until shortly after the crowd starts running.
+// The crowd keeps fleeing in the background while the kaiju walks in — no more
+// dead air waiting for every last person to leave.
+const KAIJU_HOLD_MS = INTRO_STAND + 350;
 let introActive = false;
 let introStart  = 0;
+function kaijuLocked() {
+  return introActive && (Date.now() - introStart) < KAIJU_HOLD_MS;
+}
 const INTRO_PEOPLE = Array.from({length: 12}, (_, i) => ({
   x0:    230 + i * 28 + (Math.random()-0.5)*10,
   speed: 320 + Math.random() * 220,   // px/sec — right flee speed
@@ -1314,7 +1321,7 @@ function handleKey(e) {
 }
 
 function typeChar(ch) {
-  if (introActive) return;
+  if (kaijuLocked()) return;
   const act = activeTarget();
   if (!act) return;
 
@@ -1602,7 +1609,7 @@ function findLockedOnNewChar() {
 }
 
 function activateFind() {
-  if (introActive) return;
+  if (kaijuLocked()) return;
   if (findMode.on || findMode.cooldown > 0) return;
   if (findLockedOnNewChar()) {
     // Soft-deny — show a tiny float so the player knows why.
@@ -1677,11 +1684,10 @@ function update() {
   if (showHelp) return;  // freeze gameplay while the help overlay is open
   frame++;
 
-  // Hold the kaomoji off-screen while the intro plays
-  if (introActive) {
-    if (Date.now() - introStart > INTRO_DUR) introActive = false;
-    else { player.vx = 0; return; }
-  }
+  // Crowd overlay expires after INTRO_DUR, but the kaomoji is only held for
+  // KAIJU_HOLD_MS — it walks on while the last stragglers are still running.
+  if (introActive && Date.now() - introStart > INTRO_DUR) introActive = false;
+  if (kaijuLocked()) { player.vx = 0; return; }
 
   // Flash decay
   if (flash.alpha > 0) flash.alpha = Math.max(0, flash.alpha - 0.022);
@@ -2245,7 +2251,7 @@ function drawFloats() {
 
 // ── Player (Kaomoji Monster) ──────────────────────────────────────────
 function drawPlayer() {
-  if (introActive) return;  // kaomoji enters after the crowd has fled
+  if (kaijuLocked()) return;  // kaomoji enters as soon as the crowd starts running
   const px = player.x;
   const t  = Date.now();
   const moving   = Math.abs(player.vx) > 0.25;
