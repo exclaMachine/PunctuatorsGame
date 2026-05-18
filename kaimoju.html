@@ -1586,14 +1586,19 @@ function advanceLevel() {
 // ── Find Mode (Cmd/Ctrl+F or tap the button) ────────────────────────
 // Highlights every alive instance of the character the player is CURRENTLY targeting.
 // Typing that romaji once detonates them all.
-// True while the current target is the un-introduced new-char on level 2+.
-// Used to lock out Find Mode so the player can't bypass learning the new
-// char by detonating every instance in one shot.
+// True while the current target is a char the player hasn't been
+// introduced to yet — the level-1 tutorial tower (all 6 starter chars)
+// or the un-introduced new char on level 2+. Locking Find Mode here
+// stops the player from detonating every instance before they actually
+// learn the char.
 function findLockedOnNewChar() {
   if (!isProgressionMode(gameMode)) return false;
-  if (currentLevel < 2 || !newCharThisLevel || newCharIntroduced) return false;
   const act = activeTarget();
-  return !!(act && act.cell.char === newCharThisLevel);
+  if (!act) return false;
+  const tgtB = buildings[player.tgt];
+  if (tgtB && tgtB.isTutorial) return true;
+  if (currentLevel >= 2 && newCharThisLevel && !newCharIntroduced && act.cell.char === newCharThisLevel) return true;
+  return false;
 }
 
 function activateFind() {
@@ -2411,7 +2416,7 @@ function drawFindButton(act) {
     label = `◆ FIND ACTIVE: ${findMode.char} (${KR[findMode.char]}) ×${findMode.count} — type to detonate ◆`;
   } else if (findLockedOnNewChar()) {
     bg = P.hud_bg; bd = P.hit_bd; fg = P.hit_bd;
-    label = `[${FIND_KEY_LABEL}]  locked — learn the new char (${act.cell.char}) first`;
+    label = `[${FIND_KEY_LABEL}]  locked — learn this char (${act.cell.char}) first`;
   } else if (findMode.cooldown > 0) {
     bg = P.hud_bg; bd = P.panel_bd; fg = P.hud_dim;
     label = `[${FIND_KEY_LABEL}]  cooldown: ${Math.ceil(findMode.cooldown/60)}s`;
