@@ -13,6 +13,9 @@ body {
   min-height:100vh;
   min-height:100dvh;
   overflow:hidden;
+  /* Leave room for the site-wide nav (injected by nav.js, 44px tall) so the
+     HUD at the top of the canvas isn't hidden behind it. */
+  padding-top: 44px;
   font-family:'Courier New',monospace;
 }
 @media (prefers-color-scheme: light) {
@@ -22,7 +25,8 @@ canvas {
   display: block;
   width: min(100vw, 920px);
   height: auto;
-  max-height: 100dvh;
+  max-height: calc(100vh - 44px);
+  max-height: calc(100dvh - 44px);
   aspect-ratio: 920 / 580;
   touch-action: manipulation;
 }
@@ -45,7 +49,8 @@ canvas {
    Hidden by default; the script unhides it when IS_MOBILE is true. */
 #findbtn {
   position: fixed;
-  top: env(safe-area-inset-top, 8px);
+  /* Offset below the 44px site nav so the button doesn't sit behind it on mobile */
+  top: calc(env(safe-area-inset-top, 0px) + 52px);
   right: 8px;
   z-index: 10;
   -webkit-tap-highlight-color: transparent;
@@ -3344,5 +3349,6 @@ for (let i = 0; i < 2; i++) {
 }
 requestAnimationFrame(loop);
 </script>
+<script src="./nav.js"></script>
 </body>
 </html>

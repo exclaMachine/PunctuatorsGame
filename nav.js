@@ -14,6 +14,7 @@
     { label: "Typow!", file: "typing.html", desktopOnly: true },
     { label: "Spin Nids", file: "SpinNidIndex.html" },
     { label: "Write. Right!", file: "WriteRight.html" },
+    { label: "Kaimoju", file: "kaimoju.html" },
     {
       label: "Webtoons",
       href: "https://www.webtoons.com/en/challenge/the-punctuators-super-powered-punctuation/list?title_no=318764",
