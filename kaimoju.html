@@ -57,30 +57,6 @@ canvas {
   caret-color: transparent;
   outline: none;
 }
-/* Mobile-only Find button — fixed overlay so it stays reachable above the keyboard.
-   Hidden by default; the script unhides it when IS_MOBILE is true. */
-#findbtn {
-  position: fixed;
-  /* Anchored just below the 44px site nav in the viewport's upper-right
-     corner so the player never has to scroll to reach it. */
-  top: 50px;
-  right: 8px;
-  z-index: 10;
-  -webkit-tap-highlight-color: transparent;
-  background: #0a1a0a;
-  color: #2eff5a;
-  border: 1.5px solid #2eff5a;
-  font-family: 'Courier New', monospace;
-  font-weight: bold;
-  font-size: 13px;
-  padding: 8px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  user-select: none;
-}
-#findbtn[disabled] { opacity: 0.5; border-color: #3a5a3a; color: #7a9a7a; }
-#findbtn.active    { background:#3a2400; color:#ffaa00; border-color:#ffaa00; }
-
 /* ── Mobile-only menu + difficulty overlays ────────────────────────────
    The canvas-rendered menu looks tiny on phones because it's locked to a
    920×580 aspect ratio. On touch devices we cover it with these DOM
@@ -199,7 +175,6 @@ canvas {
 <body>
 <canvas id="c"></canvas>
 <input id="ki" tabindex="-1" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text">
-<button id="findbtn" hidden>[ FIND ]</button>
 
 <!-- Mobile-only menu overlay (covers the canvas on phones) -->
 <div id="mob-menu" class="mob-overlay">
@@ -3382,7 +3357,6 @@ function loop() {
   update();
   updateAmbient();
   render();
-  updateFindBtn();
   updateMobOverlays();
   requestAnimationFrame(loop);
 }
@@ -3465,30 +3439,6 @@ syncMobOverlayTheme();
 
 // ── Event Listeners ───────────────────────────────────────────────────
 const ki = document.getElementById('ki');
-const findBtn = document.getElementById('findbtn');
-if (IS_MOBILE) {
-  findBtn.hidden = false;
-  // pointerdown (not click) so we don't dismiss the keyboard before activating
-  findBtn.addEventListener('pointerdown', ev => {
-    if (findBtn.disabled) return;
-    ev.preventDefault();
-    audio();
-    if (gState === 'playing') activateFind();
-    focusMobileInput();
-  });
-}
-function updateFindBtn() {
-  if (!IS_MOBILE) return;
-  // The button only makes sense while actually playing. Hide it on menu /
-  // select / gameover screens so it doesn't float over the title art.
-  findBtn.hidden = gState !== 'playing';
-  if (findBtn.hidden) return;
-  findBtn.classList.toggle('active', findMode.on);
-  findBtn.disabled = findMode.cooldown > 0 || showHelp || findLockedOnNewChar();
-  if (findMode.on)               findBtn.textContent = `◆ ${findMode.char} ×${findMode.count}`;
-  else if (findMode.cooldown>0)  findBtn.textContent = `FIND ${Math.ceil(findMode.cooldown/60)}s`;
-  else                           findBtn.textContent = '[ FIND ]';
-}
 let lastBackspaceAt = 0;
 function deleteOneFromBuf() {
   // Deduplicate Backspace fired from both keydown and beforeinput on mobile
