@@ -31,15 +31,10 @@ body {
 }
 canvas {
   display: block;
-  width: min(100vw, 920px);
-  height: auto;
-  /* Canvas sits directly under the 44px site nav. Aspect ratio is preserved
-     so on portrait phones the canvas fills the width and the body bg (which
-     we keep in sync with the in-canvas sky color) fills the space below. */
+  /* JS sets the canvas's width/height attrs AND the matching style.width/
+     height so logical px == display px. Desktop = 920×580, mobile =
+     viewport-sized portrait. No CSS aspect-ratio, no max-height — sizeCanvas() owns it. */
   margin-top: 44px;
-  max-height: calc(100vh - 44px);
-  max-height: calc(100dvh - 44px);
-  aspect-ratio: 920 / 580;
   touch-action: manipulation;
 }
 /* Hidden text input — invoked on mobile taps so the OS keyboard opens.
@@ -170,6 +165,41 @@ canvas {
   border-color: var(--kj-card-bd);
   align-self: center;
 }
+.mob-close {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 44px; height: 44px;
+  background: var(--kj-card-bg);
+  color: var(--kj-fg);
+  border: 1.5px solid var(--kj-card-bd);
+  border-radius: 8px;
+  font-size: 28px;
+  line-height: 1;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+}
+.mob-help-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  text-align: left;
+  padding: 4px 4px 12px;
+  margin-top: 4px;
+}
+.mob-help-scroll p {
+  margin: 0 0 12px;
+  font-size: clamp(14px, 3.8vw, 17px);
+  line-height: 1.45;
+  color: var(--kj-fg-dim);
+}
+.mob-help-scroll b {
+  color: var(--kj-accent);
+  font-weight: 700;
+}
 </style>
 </head>
 <body>
@@ -197,6 +227,33 @@ canvas {
   <div class="mob-cards" id="mob-cards"></div>
   <button id="mob-back" class="mob-back">← BACK</button>
 </div>
+
+<!-- Mobile-only help / tutorial overlay (scrollable) -->
+<div id="mob-help" class="mob-overlay">
+  <button id="mob-help-close" class="mob-close" aria-label="Close help">×</button>
+  <h1 style="font-size:clamp(22px,7vw,32px);margin-top:4px;">HOW  TO  PLAY</h1>
+  <div class="mob-help-scroll">
+    <p><b>GOAL</b> — Smash every building by typing the romaji for the
+    highlighted kana cell.</p>
+    <p><b>HP</b> — You start with 5 hearts. A wrong romaji costs one heart.
+    Run out and the game ends.</p>
+    <p><b>HINT DELAY</b> — On each new target the romaji is hidden for ~1
+    second; try to recall it on your own. New characters introduced each
+    level get a one-shot hint reveal.</p>
+    <p><b>LEVELS</b> — Kana modes start with 6 characters and add one more
+    per level (gojuon order: a, i, u, e, o, ka, ki, ku…). Dakuon / handakuon
+    come last.</p>
+    <p><b>FIND</b> — Chain <b>10 clean hits in a row</b> to unlock the laser
+    burst. Tap the FIND button at the bottom of the panel to activate, then
+    type the romaji once to detonate every copy on screen. One miss resets
+    the streak. Locked while a brand-new character is your target so you
+    have to learn it first.</p>
+    <p><b>COMBO</b> — Consecutive hits build a score multiplier. Any miss
+    drops it back to zero.</p>
+    <p><b>☀ / ☾</b> — Toggle day / night theme.</p>
+    <p><b>CTRL+M</b> (or system mute) — Toggle sound.</p>
+  </div>
+</div>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 //  KAIMOJU  カイモジュ  —  怪文字 Kaiju Typer
@@ -205,8 +262,23 @@ canvas {
 
 const c = document.getElementById('c');
 const ctx = c.getContext('2d');
-const W = 920, H = 580;
+// Desktop keeps the 920×580 canvas it was designed around. Mobile gets a
+// portrait canvas sized to the actual viewport so every CSS-px font size
+// reads at that physical size (no shrink-to-fit, no stretch distortion).
+// Layout constants that depend on these dimensions (GY, PNL_Y, HUD_H,
+// HELP_BTN, THEME_BTN, FIND_BTN) are recomputed in sizeCanvas().
+let W = 920, H = 580;
+// IS_MOBILE is defined further down — temporarily use the touch heuristic
+// here so the initial canvas size is correct on first paint.
+const _IS_TOUCH_AT_BOOT = ((navigator.maxTouchPoints || 0) > 0) &&
+                          (window.matchMedia && window.matchMedia('(hover: none)').matches);
+if (_IS_TOUCH_AT_BOOT) {
+  W = window.innerWidth;
+  H = Math.max(360, window.innerHeight - 44);
+}
 c.width = W; c.height = H;
+c.style.width  = W + 'px';
+c.style.height = H + 'px';
 
 // ── Palette / Themes ────────────────────────────────────────────────
 // Two complete palettes — night (lit yellow windows on dark walls) and day
@@ -825,23 +897,27 @@ const IS_MAC = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.user
 const IS_MOBILE = ((navigator.maxTouchPoints || 0) > 0) &&
                   (window.matchMedia && window.matchMedia('(hover: none)').matches);
 const FIND_KEY_LABEL = IS_MOBILE ? 'TAP' : (IS_MAC ? '⌘+F' : 'CTRL+F');
-// Mobile font scale — the canvas is locked to a 920×580 logical aspect
-// and displayed at ~400 px wide on a phone, so any draw fonts at logical
-// pixel sizes become tiny (logical 13 px → ≈5.6 phys). Scaling the in-game
-// fonts up here makes text readable without distorting glyph aspect.
-const MFS = IS_MOBILE ? 1.55 : 1;
+// On mobile the canvas is portrait with a 1:1 logical↔physical mapping,
+// so font sizes can be plain CSS px (no more MFS scale). Kept as a no-op
+// to avoid touching every existing call site.
+const MFS = 1;
 function mFont(weight, px) { return `${weight ? weight + ' ' : ''}${px * MFS}px "Courier New"`; }
 
-const CW = 48, CH = 48;   // cell width / height
-const GY = 460;            // ground y (player feet)
-const PNL_Y = 473;         // input panel top
-const HUD_H = IS_MOBILE ? 54 : 36;    // hud height — taller on mobile to hold the bumped HUD text
+// Mobile cells shrink so two or three buildings fit side-by-side on a
+// narrow portrait canvas (~360-400 px wide) instead of one lonely column.
+const CW = IS_MOBILE ? 34 : 48;
+const CH = IS_MOBILE ? 34 : 48;
+// Layout values that depend on H — recomputed by sizeCanvas() so the
+// portrait mobile canvas can anchor ground/panel near the bottom.
+let GY    = 460;          // ground y (player feet)
+let PNL_Y = 473;          // input panel top
+let HUD_H = IS_MOBILE ? 60 : 36;
 
 // Find button hit-box (drawn in the input panel; clickable on all platforms)
-// Mobile letter boxes are bigger (64 tall vs 42), so the find button on
-// the canvas has to slide down to clear them.
-const FIND_BTN = IS_MOBILE
-  ? { x: 280, y: 553, w: 640, h: 24 }
+// Find button — letter boxes are bigger on mobile, so it slides to the
+// bottom of the canvas. sizeCanvas() resets its dimensions on resize.
+let FIND_BTN = IS_MOBILE
+  ? { x: 8, y: H-30, w: W-16, h: 26 }
   : { x: 300, y: 538, w: 600, h: 26 };
 // Find Mode is no longer time-gated — the player charges it by stringing
 // together this many correct hits in a row. One miss resets the streak,
@@ -849,13 +925,80 @@ const FIND_BTN = IS_MOBILE
 const FIND_CHARGE_REQUIRED = 10;
 
 // Help button (top-right corner of HUD); opens a how-to-play overlay
-const HELP_BTN = IS_MOBILE
-  ? { x: W-44, y: 6, w: 38, h: 38 }
+// Help / theme buttons — let (not const) so sizeCanvas() can re-anchor
+// them to the right edge whenever the canvas width changes.
+let HELP_BTN = IS_MOBILE
+  ? { x: W-40, y: 6, w: 34, h: 34 }
   : { x: W-32, y: 6, w: 24, h: 24 };
 // Theme toggle (sits just left of the help button)
-const THEME_BTN = IS_MOBILE
-  ? { x: W-92, y: 6, w: 38, h: 38 }
+let THEME_BTN = IS_MOBILE
+  ? { x: W-80, y: 6, w: 34, h: 34 }
   : { x: W-62, y: 6, w: 24, h: 24 };
+
+// ── Canvas-size + layout recompute ───────────────────────────────────
+// On mobile the canvas is sized to the viewport (1:1 logical↔physical px),
+// and ground/panel/buttons re-anchor to the new H/W. Called at boot and
+// on every window resize / orientation change.
+function sizeCanvas() {
+  if (IS_MOBILE) {
+    W = window.innerWidth;
+    // Reserve ~42% of the viewport for the soft keyboard so the input panel
+    // stays visible while typing. visualViewport, when available, gives the
+    // *actual* visible area (already accounts for the keyboard), so we use
+    // that as a tighter cap if it's smaller than the 58% budget.
+    const vpH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const budgeted = Math.floor((window.innerHeight - 44) * 0.58);
+    const visible  = vpH - 44;
+    H = Math.max(360, Math.min(budgeted, visible));
+  } else {
+    W = 920;
+    H = 580;
+  }
+  c.width = W;
+  c.height = H;
+  c.style.width  = W + 'px';
+  c.style.height = H + 'px';
+
+  // Top bar — slimmer HUD on mobile (smaller buttons + smaller text).
+  HUD_H = IS_MOBILE ? 44 : 36;
+  // Ground / panel anchor to bottom of canvas on mobile (so the input
+  // panel always sits at the bottom even with a portrait canvas). Panel
+  // is shorter than before since target glyph + letter boxes are smaller.
+  if (IS_MOBILE) {
+    const panelH = 90;
+    PNL_Y = H - panelH;
+    GY    = PNL_Y - 10;   // ground sits just above the panel
+  } else {
+    GY    = 460;
+    PNL_Y = 473;
+  }
+  // Buttons re-anchor to the right edge. Mobile: 34×34 icon-only buttons.
+  if (IS_MOBILE) {
+    HELP_BTN  = { x: W-40, y: 6, w: 34, h: 34 };
+    THEME_BTN = { x: W-80, y: 6, w: 34, h: 34 };
+    FIND_BTN  = { x: 8,    y: H-30, w: W-16, h: 26 };
+  } else {
+    HELP_BTN  = { x: W-32, y: 6, w: 24, h: 24 };
+    THEME_BTN = { x: W-62, y: 6, w: 24, h: 24 };
+    FIND_BTN  = { x: 300,  y: 538, w: 600, h: 26 };
+  }
+}
+sizeCanvas();
+function _onResize() {
+  sizeCanvas();
+  // Buildings were placed for the old W — regenerate them so they fit
+  // the new canvas (only meaningful mid-game on orientation changes).
+  if (typeof buildings !== 'undefined' && gState === 'playing') {
+    buildings = makeBuildings();
+  }
+}
+window.addEventListener('resize', _onResize);
+// iOS Safari fires `visualViewport.resize` (not `window.resize`) when the
+// soft keyboard pops up, so we listen there too to keep the canvas glued
+// above the keyboard.
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', _onResize);
+}
 
 // Delay before the romaji answer for a new active target is revealed —
 // gives the player a beat to recall it on their own.
@@ -882,10 +1025,18 @@ const SELECT_CARDS = MODE_KEYS.map((key, i) => ({
 // Returns 3–4 buildings with varied types, cols, and floors so each game
 // looks different. Total min width leaves room for trees in the gaps.
 function makeBuildingConfigs() {
-  const count = 3 + Math.floor(Math.random()*2);  // 3–4 buildings
+  // Mobile: always 3 buildings on screen (rarely 2 if a small viewport
+  // can't fit them) so the cityscape never collapses to one column. Cols
+  // default to 1 (sometimes 2) to leave room across the narrow canvas.
+  // Buildings can grow tall — overflow rolls back into view as lower
+  // floors are destroyed.
+  const count  = IS_MOBILE ? (Math.random() < 0.2 ? 2 : 3)     // 2–3 buildings
+                           : 3 + Math.floor(Math.random()*2);  // 3–4
   return Array.from({length: count}, () => {
-    const cols = 2 + Math.floor(Math.random()*2);  // 2–3 cols
-    const floors = 3 + Math.floor(Math.random()*5); // 3–7
+    const cols   = IS_MOBILE ? (Math.random() < 0.75 ? 1 : 2)
+                             : 2 + Math.floor(Math.random()*2);  // 2–3
+    const floors = IS_MOBILE ? 5 + Math.floor(Math.random()*5)   // 5–9
+                             : 3 + Math.floor(Math.random()*5);  // 3–7
     return { cols, floors };
   });
 }
@@ -1262,13 +1413,17 @@ function makeBuildings() {
   // has a different silhouette and leaves room for ASCII trees.
   // Left margin is wider than right so the kaomoji always has clearance to
   // stand to the left of the leftmost cell without covering its character.
-  const baseGap     = 14;
-  const leftMargin  = 100;
-  const rightMargin = 20;
+  const baseGap     = IS_MOBILE ? 6  : 14;
+  // The kaomoji is drawn with textAlign='center', so its 30 px half-width
+  // sits to the LEFT of player.x. standX is `b.x - 60`, meaning player.x
+  // == b.x - 60. To keep the kaomoji's left edge on-screen we need
+  // standX >= 30, i.e. b.x >= 90. leftMargin pins that minimum.
+  const leftMargin  = IS_MOBILE ? 90 : 100;
+  const rightMargin = IS_MOBILE ? 6  : 20;
   // Cap how far the first building drifts right of leftMargin so the
   // kaomoji never has a long, dead walk from off-screen to the first
   // target. The remaining slack is distributed across the inner gaps.
-  const FIRST_GAP_MAX = 60;
+  const FIRST_GAP_MAX = IS_MOBILE ? 16 : 60;
   const totalBW = cfgs.reduce((s, cf) => s + cf.cols*CW, 0);
   const slots   = cfgs.length + 1;  // before-first + between + after-last
   const slack   = Math.max(0, W - totalBW - (slots-1)*baseGap - leftMargin - rightMargin);
@@ -2317,22 +2472,20 @@ function drawCell(x, y, cell, isActive, cellW) {
     ctx.globalAlpha = 1;
   }
 
-  // Glyph — shrink the font for long word cells so it stays inside the frame.
-  // Mobile bumps the base size so the kana glyph is actually legible at the
-  // tiny physical canvas size (920 logical → ~400 phys on a typical phone).
+  // Glyph — same logical size on all devices now (mobile canvas is 1:1
+  // logical↔physical, so 20 logical px is already a legible 20 CSS px).
   const charLen = (cell.char || '').length;
-  const base    = IS_MOBILE ? (charLen > 4 ? 22 : charLen > 2 ? 26 : 30)
-                            : (charLen > 4 ? 16 : charLen > 2 ? 18 : 20);
+  const base    = charLen > 4 ? 16 : charLen > 2 ? 18 : 20;
   ctx.font      = `bold ${base}px "Courier New"`;
   ctx.fillStyle = kt;
   ctx.textAlign = 'center';
   if (isActive || cell.hi) { ctx.shadowBlur=9; ctx.shadowColor=paneBd; }
-  ctx.fillText(cell.char, x+cellW/2, y+CH/2 + (IS_MOBILE ? 9 : 6));
+  ctx.fillText(cell.char, x+cellW/2, y+CH/2 + 6);
   ctx.shadowBlur = 0;
 
   // Romaji hint — uses pane-glyph color so it stays legible on any window.
   if (isActive) {
-    ctx.font = `${IS_MOBILE ? 13 : 9}px "Courier New"`;
+    ctx.font = `${IS_MOBILE ? 11 : 9}px "Courier New"`;
     if (hintRevealed()) {
       ctx.fillStyle = kt;
       ctx.fillText(cell.romaji, x+cellW/2, y+CH-4);
@@ -2347,7 +2500,7 @@ function drawCell(x, y, cell, isActive, cellW) {
   // Blinking ▼ cursor above active target — uses pane-border (high contrast on wall)
   if (isActive && (frame%24)<12) {
     ctx.fillStyle = P.act_bd;
-    ctx.font      = `${IS_MOBILE ? 14 : 9}px "Courier New"`;
+    ctx.font      = `${IS_MOBILE ? 11 : 9}px "Courier New"`;
     ctx.fillText('▼', x+cellW/2, y-1);
   }
 
@@ -2510,52 +2663,68 @@ function drawInputPanel() {
   ctx.beginPath(); ctx.moveTo(0,PY); ctx.lineTo(W,PY); ctx.stroke();
 
   const act = activeTarget();
-  const LP  = 270;  // left panel width
+  const LP  = IS_MOBILE ? Math.floor(W * 0.42) : 270;  // left panel width
 
   // Divider
   ctx.strokeStyle = P.panel_bd;
   ctx.beginPath(); ctx.moveTo(LP, PY+10); ctx.lineTo(LP, H-10); ctx.stroke();
 
+  // Vertical layout: content sits above the find button (which lives at
+  // y = H-30). contentH is the panel area available for the target glyph /
+  // letter boxes. Both columns center their main element on contentMid.
+  const findBtnTop = IS_MOBILE ? (H - 30) : H;
+  const contentH   = findBtnTop - PY;
+  const contentMid = PY + contentH / 2;
+
   // ─ Left: target katakana ─
   ctx.textAlign  = 'center';
   ctx.font       = mFont('bold', 10);
   ctx.fillStyle  = P.hud_dim;
-  ctx.fillText('TARGET', LP/2, PY+15);
+  ctx.fillText('TARGET', LP/2, IS_MOBILE ? PY+14 : PY+15);
 
   if (act) {
-    // Shrink the big target glyph if it's a multi-character word
+    // Shrink the big target glyph if it's a multi-character word.
+    // Mobile uses ~⅔ the size of desktop since the panel is smaller.
     const tgtLen = (act.cell.char || '').length;
-    const tgtFont = (tgtLen > 4 ? 24 : tgtLen > 2 ? 32 : 44) * (IS_MOBILE ? 1.25 : 1);
+    const tgtFont = IS_MOBILE
+      ? (tgtLen > 4 ? 16 : tgtLen > 2 ? 20 : 26)
+      : (tgtLen > 4 ? 24 : tgtLen > 2 ? 32 : 44);
     ctx.font      = `bold ${tgtFont}px "Courier New"`;
     ctx.shadowBlur = 16; ctx.shadowColor = P.score_fl;
     ctx.fillStyle  = P.score_fl;
-    ctx.fillText(act.cell.char, LP/2, PY+62);
+    // Glyph baseline ≈ contentMid + tgtFont/3 → glyph visually centered on contentMid
+    const glyphY = IS_MOBILE ? Math.round(contentMid + tgtFont/3) : PY+62;
+    ctx.fillText(act.cell.char, LP/2, glyphY);
     ctx.shadowBlur = 0;
 
     ctx.font      = mFont('', 12);
     const _miss = missRevealActive();
     const _rev  = hintRevealed() || _miss;
     ctx.fillStyle  = _miss ? P.hit_bd : (_rev ? P.hud : P.hud_dim);
-    ctx.fillText(_rev ? act.cell.romaji : '???', LP/2, PY+80);
+    ctx.fillText(_rev ? act.cell.romaji : '???', LP/2,
+                 IS_MOBILE ? glyphY + 14 : PY+80);
   } else {
     ctx.font      = mFont('', 11);
     ctx.fillStyle  = P.hud_dim;
-    ctx.fillText('— MOVE TO —', LP/2, PY+44);
-    ctx.fillText('A BUILDING', LP/2, PY+60);
+    ctx.fillText('— MOVE TO —', LP/2, IS_MOBILE ? contentMid - 4 : PY+44);
+    ctx.fillText('A BUILDING',  LP/2, IS_MOBILE ? contentMid + 14 : PY+60);
   }
 
   // ─ Right: romaji letter boxes ─
   if (act) {
     const rom  = act.cell.romaji;
     const typed = inputBuf;
-    const BW  = IS_MOBILE ? 62 : 40,
-          BH  = IS_MOBILE ? 64 : 42,
-          BSP = IS_MOBILE ? 10 : 8;
+    // Letter boxes ~⅓ smaller on mobile and centered vertically in the
+    // panel content area (instead of stuck against the top with empty
+    // space below).
+    const BW  = IS_MOBILE ? 26 : 40,
+          BH  = IS_MOBILE ? 30 : 42,
+          BSP = IS_MOBILE ? 6 : 8;
     const totalW = rom.length*(BW+BSP)-BSP;
     const RPx    = LP;
     const RPw    = W - LP;
     const bx0    = RPx + (RPw - totalW)/2;
-    const by0    = PY + 12;
+    const by0    = IS_MOBILE ? Math.round(contentMid - BH/2) : PY + 12;
 
     const miss   = missRevealActive();
     const reveal = hintRevealed() || miss;
@@ -2576,7 +2745,7 @@ function drawInputPanel() {
 
       if (curr && !miss) { ctx.shadowBlur=9; ctx.shadowColor='#ffff00'; }
       if (miss && !done) { ctx.shadowBlur=10; ctx.shadowColor='#ff5566'; }
-      const letterPx = IS_MOBILE ? (done?32:curr?28:22) : (done?20:curr?18:15);
+      const letterPx = IS_MOBILE ? (done?15:curr?14:12) : (done?20:curr?18:15);
       ctx.font      = `bold ${letterPx}px "Courier New"`;
       const litCol  = miss && !done ? '#ff8899'
                        : done ? '#2eff5a'
@@ -2635,10 +2804,12 @@ function drawFindButton(act) {
   ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
 
   if (findMode.on) { ctx.shadowBlur = 5; ctx.shadowColor = P.find_fl; }
-  ctx.font      = `bold ${IS_MOBILE ? 16 : 11}px "Courier New"`;
+  // Mobile button is narrower (W − 16), so the label has to be a touch
+  // smaller than desktop to fit the long "STREAK N/10 → unlock FIND" copy.
+  ctx.font      = `bold ${IS_MOBILE ? 10 : 11}px "Courier New"`;
   ctx.fillStyle = fg;
   ctx.textAlign = 'center';
-  ctx.fillText(label, x + w/2, y + h/2 + (IS_MOBILE ? 6 : 4));
+  ctx.fillText(label, x + w/2, y + h/2 + 4);
   ctx.shadowBlur = 0;
 }
 
@@ -2650,52 +2821,70 @@ function drawHUD() {
   ctx.lineWidth   = 1;
   ctx.strokeRect(0, 0, W, HUD_H);
 
-  // Vertical baseline that keeps text inside the (mobile-taller) HUD strip.
-  const baseY = HUD_H - 13;
-  ctx.font = mFont('bold', 13);
+  if (IS_MOBILE) {
+    // Single-row mobile HUD: score / LV / hearts on the left, theme + help
+    // buttons on the right. Slimmer than before — 44 px tall instead of 60.
+    const textY = HUD_H - 8;
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 13px "Courier New"';
 
-  // Score (left)
-  ctx.fillStyle = P.hud;
-  ctx.textAlign = 'left';
-  ctx.fillText(IS_MOBILE ? `${score}` : `スコア  ${score}`, 12, baseY);
+    ctx.fillStyle = P.hud;
+    ctx.fillText(`${score}`, 8, textY);
 
-  // Level (kana modes only — sits just right of score)
-  if (isProgressionMode(gameMode)) {
-    ctx.fillStyle = '#ffdd44';
-    ctx.fillText(`LV ${currentLevel}`, IS_MOBILE ? 130 : 132, baseY);
-  }
-
-  // HP hearts (kana modes) — between level and combo
-  if (isProgressionMode(gameMode)) {
-    const hpX0 = IS_MOBILE ? 230 : 198;
-    const heartGap = IS_MOBILE ? 28 : 18;
-    ctx.font = mFont('bold', 16);
-    for (let i = 0; i < player.maxHp; i++) {
-      const alive = i < player.hp;
-      ctx.fillStyle = alive
-        ? (player.hurtFlash > 0 && i === player.hp ? '#ffaaaa' : '#ff5566')
-        : '#3a1a1a';
-      ctx.fillText('♥', hpX0 + i * heartGap, baseY + 1);
+    if (isProgressionMode(gameMode)) {
+      ctx.fillStyle = '#ffdd44';
+      ctx.fillText(`LV${currentLevel}`, 64, textY);
     }
-    ctx.font = mFont('bold', 13);
-  }
 
-  // Combo (center) — compact on mobile (just "×N") so it fits between hearts
-  // and the misses readout.
-  if (combo > 0) {
-    const cc = combo>=10 ? P.combo_hi : P.combo_lo;
-    ctx.textAlign  = 'center';
-    ctx.fillStyle  = cc;
-    if (combo>=5) { ctx.shadowBlur=8; ctx.shadowColor=cc; }
-    ctx.fillText(IS_MOBILE ? `×${combo}` : `COMBO  ×${combo}`, IS_MOBILE ? 480 : W/2, baseY);
-    ctx.shadowBlur = 0;
+    if (isProgressionMode(gameMode)) {
+      const heartGap = 12;
+      const hpX0 = 110;     // ends at 110 + 4*12 = 158 — clears THEME btn at W-80
+      ctx.font = 'bold 14px "Courier New"';
+      for (let i = 0; i < player.maxHp; i++) {
+        const alive = i < player.hp;
+        ctx.fillStyle = alive
+          ? (player.hurtFlash > 0 && i === player.hp ? '#ffaaaa' : '#ff5566')
+          : '#3a1a1a';
+        ctx.fillText('♥', hpX0 + i * heartGap, textY + 1);
+      }
+    }
+    // Combo / miss readouts skipped on mobile (no room next to the buttons).
+  } else {
+    // Desktop HUD — keeps the original single-row layout.
+    const baseY = HUD_H - 13;
+    ctx.font = 'bold 13px "Courier New"';
+    ctx.fillStyle = P.hud;
+    ctx.textAlign = 'left';
+    ctx.fillText(`スコア  ${score}`, 12, baseY);
+    if (isProgressionMode(gameMode)) {
+      ctx.fillStyle = '#ffdd44';
+      ctx.fillText(`LV ${currentLevel}`, 132, baseY);
+    }
+    if (isProgressionMode(gameMode)) {
+      const hpX0 = 198;
+      const heartGap = 18;
+      ctx.font = 'bold 16px "Courier New"';
+      for (let i = 0; i < player.maxHp; i++) {
+        const alive = i < player.hp;
+        ctx.fillStyle = alive
+          ? (player.hurtFlash > 0 && i === player.hp ? '#ffaaaa' : '#ff5566')
+          : '#3a1a1a';
+        ctx.fillText('♥', hpX0 + i * heartGap, baseY + 1);
+      }
+      ctx.font = 'bold 13px "Courier New"';
+    }
+    if (combo > 0) {
+      const cc = combo>=10 ? P.combo_hi : P.combo_lo;
+      ctx.textAlign  = 'center';
+      ctx.fillStyle  = cc;
+      if (combo>=5) { ctx.shadowBlur=8; ctx.shadowColor=cc; }
+      ctx.fillText(`COMBO  ×${combo}`, W/2, baseY);
+      ctx.shadowBlur = 0;
+    }
+    ctx.textAlign = 'right';
+    ctx.fillStyle = combo===0 && totalMisses>0 ? '#ff8888' : '#9adb9a';
+    ctx.fillText(`misses: ${totalMisses}`, W-44, baseY);
   }
-
-  // Misses (right) — compact label on mobile so it fits next to the help btn
-  ctx.textAlign = 'right';
-  ctx.fillStyle = combo===0 && totalMisses>0 ? '#ff8888' : '#9adb9a';
-  ctx.fillText(IS_MOBILE ? `miss ${totalMisses}` : `misses: ${totalMisses}`,
-               W - (IS_MOBILE ? 110 : 44), baseY);
 
   ctx.textAlign = 'left';
   if (player.hurtFlash > 0) player.hurtFlash--;
@@ -2711,10 +2900,10 @@ function drawHelpButton() {
   ctx.strokeStyle = P.hud;
   ctx.lineWidth   = 1;
   ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
-  ctx.font        = `bold ${IS_MOBILE ? 22 : 15}px "Courier New"`;
+  ctx.font        = `bold ${IS_MOBILE ? 20 : 15}px "Courier New"`;
   ctx.fillStyle   = P.hud;
   ctx.textAlign   = 'center';
-  ctx.fillText('?', x + w/2, y + h/2 + (IS_MOBILE ? 9 : 6));
+  ctx.fillText('?', x + w/2, y + h/2 + (IS_MOBILE ? 7 : 6));
   ctx.textAlign   = 'left';
 }
 
@@ -2726,10 +2915,10 @@ function drawThemeButton() {
   ctx.strokeStyle = P.hud;
   ctx.lineWidth   = 1;
   ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
-  ctx.font        = `bold ${IS_MOBILE ? 20 : 14}px "Courier New"`;
+  ctx.font        = `bold ${IS_MOBILE ? 18 : 14}px "Courier New"`;
   ctx.fillStyle   = P.hud;
   ctx.textAlign   = 'center';
-  ctx.fillText(currentTheme === 'night' ? '☀' : '☾', x + w/2, y + h/2 + (IS_MOBILE ? 8 : 5));
+  ctx.fillText(currentTheme === 'night' ? '☀' : '☾', x + w/2, y + h/2 + (IS_MOBILE ? 7 : 5));
   ctx.textAlign   = 'left';
 }
 
@@ -3422,13 +3611,23 @@ mobBackBtn.addEventListener('click', ev => {
 });
 
 let lastMobKaoT = 0;
+const mobHelpEl     = document.getElementById('mob-help');
+const mobHelpClose  = document.getElementById('mob-help-close');
+mobHelpClose.addEventListener('click', ev => {
+  ev.preventDefault();
+  showHelp = false;
+  activeStartTime = Date.now();
+});
 function updateMobOverlays() {
   if (!IS_MOBILE) return;
   const showMenu   = gState === 'menu';
   const showSelect = gState === 'select';
-  mobMenuEl  .classList.toggle('show', showMenu);
-  mobSelectEl.classList.toggle('show', showSelect);
-  document.body.classList.toggle('mob-overlay-active', showMenu || showSelect);
+  mobMenuEl  .classList.toggle('show', showMenu  && !showHelp);
+  mobSelectEl.classList.toggle('show', showSelect && !showHelp);
+  // Help overlay rides on top of everything (any state) on mobile so the
+  // canvas-rendered drawHelpOverlay never has to fit in a 400-px box.
+  mobHelpEl  .classList.toggle('show', showHelp);
+  document.body.classList.toggle('mob-overlay-active', showMenu || showSelect || showHelp);
   // Cycle the kaomoji preview ~3×/sec so the menu feels alive even though
   // it's all DOM. Cheap textContent updates.
   if (showMenu) {
