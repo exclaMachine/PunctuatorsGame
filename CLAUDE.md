@@ -328,7 +328,7 @@ These are locked-in. All of the following are the user's decisions:
   - Highlights every instance of that character in gold
   - The next time the player correctly destroys a cell of that character, the kaomoji fires laser beams from its eyes at every highlighted instance, destroying them all
   - Laser flight time scales with distance; the last beam to land triggers the floor-collapse pass so debris falls together
-  - Has a cooldown after use
+  - **Streak-gated, not time-gated**: needs `FIND_CHARGE_REQUIRED` (10) clean hits in a row to unlock. `findMode.charge` increments on each correct hit in `doHit` and resets to 0 on any miss (`doMiss`) or after the burst fires (`doFindBurst`). The bottom on-canvas FIND button shows `STREAK N/10 → unlock FIND` until charged, then the usual ready label. A `FIND READY!` float fires the frame the streak completes.
 - **ASCII / terminal aesthetic** — dark background, green-on-black, scanlines, monospace font
 - **Score + stats** on game over screen (score, high score, max combo, blocks hit, misses, accuracy)
 - **No external dependencies** — one file, drop-in ready
@@ -374,7 +374,7 @@ These are locked-in. All of the following are the user's decisions:
 
 ```js
 {
-  (on, char, count, cooldown);
+  (on, char, count, charge);   // charge = current clean-hit streak (0..FIND_CHARGE_REQUIRED)
 }
 ```
 

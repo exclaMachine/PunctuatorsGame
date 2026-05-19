@@ -843,7 +843,10 @@ const HUD_H = IS_MOBILE ? 54 : 36;    // hud height — taller on mobile to hold
 const FIND_BTN = IS_MOBILE
   ? { x: 280, y: 553, w: 640, h: 24 }
   : { x: 300, y: 538, w: 600, h: 26 };
-const FIND_COOLDOWN_FRAMES = 900;  // 15s @ 60fps
+// Find Mode is no longer time-gated — the player charges it by stringing
+// together this many correct hits in a row. One miss resets the streak,
+// and using Find Mode also resets it.
+const FIND_CHARGE_REQUIRED = 10;
 
 // Help button (top-right corner of HUD); opens a how-to-play overlay
 const HELP_BTN = IS_MOBILE
@@ -916,7 +919,7 @@ let mountains = [], clouds = [], trees = [], vehicles = [];
 let vehicleSpawnTimer = 60;
 let currentBiome = 'forest';
 let flash = { alpha:0, col:P.hit_bd };
-let findMode = { on:false, char:null, count:0, cooldown:0 };
+let findMode = { on:false, char:null, count:0, charge:0 };
 let inputBuf = '';
 let keys = {};
 let player = {};
@@ -1144,7 +1147,7 @@ function startGame(mode) {
 function initGame() {
   inputBuf=''; particles=[]; floats=[]; lasers=[];
   flash={alpha:0, col:P.hit_bd};
-  findMode={on:false, char:null, count:0, cooldown:0};
+  findMode={on:false, char:null, count:0, charge:0};
   activeCell = null; activeStartTime = Date.now();
   // Level 1 reset: fresh player + score. Higher levels: preserve carry-over.
   if (currentLevel === 1) {
@@ -1505,6 +1508,9 @@ function typeChar(ch) {
 // ═══════════════════════════════════════════════════════════════════
 function doMiss() {
   combo = 0;
+  // A miss interrupts the Find-Mode streak — the player has to chain
+  // another FIND_CHARGE_REQUIRED clean hits before the burst is available.
+  findMode.charge = 0;
   totalMisses++;
   flash.alpha = 0.32;
   flash.col = P.hit_bd;
@@ -1557,8 +1563,9 @@ function doHit(bIdx, f, c) {
   if (cell.en) addFloat(cell.en, cx + 6, cy - 4, '#9adfff', 16, 2.0, -0.6);
 
   // Find mode: if this char matches, burst ALL highlighted instances
-  if (findMode.on && cell.char === findMode.char) {
-    doFindBurst(bIdx);
+  const triggeredFindBurst = findMode.on && cell.char === findMode.char;
+  if (triggeredFindBurst) {
+    doFindBurst(bIdx);   // resets findMode.charge to 0 internally
   }
 
   // Scoring
@@ -1569,6 +1576,15 @@ function doHit(bIdx, f, c) {
   if (combo > maxCombo) maxCombo = combo;
   addFloat('+' + pts, cx, cy);
   if (combo > 0 && combo % 5 === 0) sndCombo(combo);
+
+  // Charge Find Mode by one tick — but the hit that *spent* the charge to
+  // trigger the burst doesn't earn a head-start toward the next one.
+  if (!triggeredFindBurst && findMode.charge < FIND_CHARGE_REQUIRED) {
+    findMode.charge++;
+    if (findMode.charge === FIND_CHARGE_REQUIRED) {
+      addFloat('FIND READY!', W/2, 180, P.find_fl, 18);
+    }
+  }
 
   // First successful destroy of the level's new char — retire its hint.
   if (newCharThisLevel && !newCharIntroduced && cell.char === newCharThisLevel) {
@@ -1627,7 +1643,9 @@ function doFindBurst(triggerBIdx) {
   }
 
   findMode.on = false; findMode.char = null; findMode.count = 0;
-  findMode.cooldown = FIND_COOLDOWN_FRAMES;
+  // Streak resets on use — player has to chain FIND_CHARGE_REQUIRED more
+  // clean hits before the burst is available again.
+  findMode.charge = 0;
   clearHighlights();
 }
 
@@ -1767,7 +1785,7 @@ function findLockedOnNewChar() {
 
 function activateFind() {
   if (kaijuLocked()) return;
-  if (findMode.on || findMode.cooldown > 0) return;
+  if (findMode.on || findMode.charge < FIND_CHARGE_REQUIRED) return;
   if (findLockedOnNewChar()) {
     // Soft-deny — show a tiny float so the player knows why.
     addFloat('LEARN IT FIRST', W/2, 180, '#ff8899', 14);
@@ -1849,8 +1867,7 @@ function update() {
   // Flash decay
   if (flash.alpha > 0) flash.alpha = Math.max(0, flash.alpha - 0.022);
 
-  // Find mode cooldown
-  if (findMode.cooldown > 0) findMode.cooldown--;
+  // Find Mode is now streak-gated, not time-gated — nothing to tick down.
   if (!findMode.on) clearHighlights();
 
   // Auto-target nearest alive building
@@ -2589,9 +2606,10 @@ function drawFindButton(act) {
   } else if (findLockedOnNewChar()) {
     bg = P.hud_bg; bd = P.hit_bd; fg = P.hit_bd;
     label = `[${FIND_KEY_LABEL}]  locked — learn this char (${act.cell.char}) first`;
-  } else if (findMode.cooldown > 0) {
+  } else if (findMode.charge < FIND_CHARGE_REQUIRED) {
+    // Streak meter — needs N clean hits in a row to unlock the burst.
     bg = P.hud_bg; bd = P.panel_bd; fg = P.hud_dim;
-    label = `[${FIND_KEY_LABEL}]  cooldown: ${Math.ceil(findMode.cooldown/60)}s`;
+    label = `STREAK  ${findMode.charge}/${FIND_CHARGE_REQUIRED}  →  unlock FIND  (one miss resets)`;
   } else if (act) {
     // Count current-char instances for the live hint
     let cnt = 0;
@@ -2747,9 +2765,10 @@ function drawHelpOverlay() {
     ['HINT DELAY',    'The answer is hidden for ~1 second on each new'],
     ['',              'target — try to recall it before it appears.'],
     ['',              ''],
-    [FIND_KEY_LABEL,  'FIND MODE — highlights every copy of the current'],
-    ['',              'target. Type its romaji once to detonate them all'],
-    ['',              'in a laser barrage.'],
+    [FIND_KEY_LABEL,  `FIND MODE — chain ${FIND_CHARGE_REQUIRED} clean hits to charge it.`],
+    ['',              'Then activating it highlights every copy of the current'],
+    ['',              'target. Type its romaji once to detonate them all in a'],
+    ['',              'laser barrage. One miss resets the streak to zero.'],
     ['',              ''],
     ['COMBO',         'Consecutive hits build a score multiplier.'],
     ['',              'A miss resets your combo to zero.'],
@@ -2864,7 +2883,7 @@ function renderMenu() {
   const rows = [
     ['TYPE',          'romaji destroys the highlighted cell  (a, ka, shi, tsu…)'],
     ['LEVELS',        'kana modes ramp gojuon-style — one new char per level'],
-    [FIND_KEY_LABEL,  'FIND — detonate every copy of your current target'],
+    [FIND_KEY_LABEL,  `FIND — chain ${FIND_CHARGE_REQUIRED} clean hits to unlock, then detonate all`],
     ['HP',            '5 hearts — wrong romaji costs 1; 0 ends the run'],
     ['?',             'full help anytime  ·  CTRL+M mutes  ·  ESC backs out'],
   ];
