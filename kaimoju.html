@@ -1287,15 +1287,22 @@ function makeBuildings() {
   const baseGap     = 14;
   const leftMargin  = 100;
   const rightMargin = 20;
+  // Cap how far the first building drifts right of leftMargin so the
+  // kaomoji never has a long, dead walk from off-screen to the first
+  // target. The remaining slack is distributed across the inner gaps.
+  const FIRST_GAP_MAX = 60;
   const totalBW = cfgs.reduce((s, cf) => s + cf.cols*CW, 0);
   const slots   = cfgs.length + 1;  // before-first + between + after-last
   const slack   = Math.max(0, W - totalBW - (slots-1)*baseGap - leftMargin - rightMargin);
-  // Random partition of slack across slots
-  const cuts = Array.from({length: slots-1}, () => Math.random()).sort();
-  const gaps = [];
+  // Reserve a small random gap for the first slot (clamped to FIRST_GAP_MAX),
+  // then random-partition what's left across the remaining slots.
+  const firstGap = Math.random() * Math.min(slack, FIRST_GAP_MAX);
+  const remaining = slack - firstGap;
+  const cuts = Array.from({length: Math.max(0, slots-2)}, () => Math.random()).sort();
+  const gaps = [firstGap];
   let prev = 0;
-  for (const c of cuts) { gaps.push((c - prev) * slack); prev = c; }
-  gaps.push((1 - prev) * slack);
+  for (const c of cuts) { gaps.push((c - prev) * remaining); prev = c; }
+  gaps.push((1 - prev) * remaining);
 
   const charMap  = mode.chars;
   // In progression modes only sample from learned chars; in kanji mode use full map.
@@ -1361,14 +1368,18 @@ function makeWordBuildings(wordPool) {
     totalW += maxCellW;
   }
 
-  // Distribute slack so towers aren't packed against the edges
+  // Distribute slack so towers aren't packed against the edges. Cap the
+  // first gap so the kaomoji doesn't have a long dead walk in from off-screen.
+  const FIRST_GAP_MAX = 60;
   const slots = buildingCount + 1;
   const slack = Math.max(0, W - totalW - (slots-1)*baseGap - leftMargin - rightMargin);
-  const cuts  = Array.from({length: slots-1}, () => Math.random()).sort();
-  const gaps  = [];
+  const firstGap = Math.random() * Math.min(slack, FIRST_GAP_MAX);
+  const remaining = slack - firstGap;
+  const cuts  = Array.from({length: Math.max(0, slots-2)}, () => Math.random()).sort();
+  const gaps  = [firstGap];
   let prev = 0;
-  for (const c of cuts) { gaps.push((c - prev) * slack); prev = c; }
-  gaps.push((1 - prev) * slack);
+  for (const c of cuts) { gaps.push((c - prev) * remaining); prev = c; }
+  gaps.push((1 - prev) * remaining);
 
   let bx = leftMargin + gaps[0];
   return towers.map((tw, i) => {
