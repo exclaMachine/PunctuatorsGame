@@ -984,18 +984,17 @@ function sizeCanvas() {
   }
 }
 sizeCanvas();
+// Only resize the canvas on resize events — DON'T regenerate buildings.
+// Earlier versions called makeBuildings() here to keep the cityscape fitted
+// to the new dimensions, but on iOS that handler fires every time the soft
+// keyboard is dismissed (via Safari's "Done" bar / Chrome's keyboard
+// toolbar), which scrambled the in-progress level. Trade-off: rotating the
+// phone mid-game can leave a building slightly off-center until the next
+// level regenerates the world.
 function _onResize() {
   sizeCanvas();
-  // Buildings were placed for the old W — regenerate them so they fit
-  // the new canvas (only meaningful mid-game on orientation changes).
-  if (typeof buildings !== 'undefined' && gState === 'playing') {
-    buildings = makeBuildings();
-  }
 }
 window.addEventListener('resize', _onResize);
-// iOS Safari fires `visualViewport.resize` (not `window.resize`) when the
-// soft keyboard pops up, so we listen there too to keep the canvas glued
-// above the keyboard.
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', _onResize);
 }
