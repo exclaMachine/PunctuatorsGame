@@ -3075,14 +3075,36 @@ function renderMenu() {
     ['HP',            '5 hearts — wrong romaji costs 1; 0 ends the run'],
     ['?',             'full help anytime  ·  CTRL+M mutes  ·  ESC backs out'],
   ];
+  // Center the whole key+desc block on W/2 (instead of anchoring the
+  // divider at W/2, which made long descs push the block right of center).
+  // Every key right-aligns to one column, every desc left-aligns to the
+  // next; the block as a whole sits on the canvas centerline.
+  const CTRL_GAP = 14;
+  let maxKeyW = 0, maxDescW = 0;
+  rows.forEach(([key, desc]) => {
+    ctx.font = 'bold 13px "Courier New"';
+    if (key)  maxKeyW  = Math.max(maxKeyW,  ctx.measureText(key).width);
+    ctx.font = '13px "Courier New"';
+    if (desc) maxDescW = Math.max(maxDescW, ctx.measureText(desc).width);
+  });
+  const ctrlBlockW = maxKeyW + CTRL_GAP + maxDescW;
+  const ctrlBlockX = W/2 - ctrlBlockW/2;
+  const keyRightX  = ctrlBlockX + maxKeyW;
+  const descLeftX  = ctrlBlockX + maxKeyW + CTRL_GAP;
   rows.forEach(([key, desc], i) => {
     const ry = 358 + i*26;
-    ctx.fillStyle = P.hud;
-    ctx.textAlign = 'right';
-    ctx.fillText(key, W/2-14, ry);
-    ctx.fillStyle = P.hud_dim;
-    ctx.textAlign = 'left';
-    ctx.fillText(desc, W/2+14, ry);
+    if (key) {
+      ctx.font      = 'bold 13px "Courier New"';
+      ctx.fillStyle = P.hud;
+      ctx.textAlign = 'right';
+      ctx.fillText(key, keyRightX, ry);
+    }
+    if (desc) {
+      ctx.font      = '13px "Courier New"';
+      ctx.fillStyle = P.hud_dim;
+      ctx.textAlign = 'left';
+      ctx.fillText(desc, descLeftX, ry);
+    }
   });
 
   ctx.textAlign = 'center';
