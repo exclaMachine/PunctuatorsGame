@@ -1297,11 +1297,16 @@ function startGame(mode) {
 function initGame() {
   inputBuf=''; particles=[]; floats=[]; lasers=[];
   flash={alpha:0, col:P.hit_bd};
-  findMode={on:false, char:null, count:0, charge:0};
+  // Clear active highlight (buildings are about to be regenerated) but
+  // preserve the streak charge — it carries across levels so the player
+  // doesn't have to chain another 10 from scratch every level. Find Mode
+  // is still gated against the un-introduced new char by findLockedOnNewChar().
+  findMode.on = false; findMode.char = null; findMode.count = 0;
   activeCell = null; activeStartTime = Date.now();
-  // Level 1 reset: fresh player + score. Higher levels: preserve carry-over.
+  // Level 1 reset: fresh player + score + charge. Higher levels: preserve carry-over.
   if (currentLevel === 1) {
     score=0; combo=0; maxCombo=0; totalHits=0; totalMisses=0;
+    findMode.charge = 0;
     player = makePlayer();
   } else {
     const carriedHp = player.hp || KAIJU_MAX_HP;
