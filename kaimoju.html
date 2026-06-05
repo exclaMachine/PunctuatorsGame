@@ -2775,7 +2775,7 @@ function drawFindButton(act) {
 
   if (findMode.on) {
     bg = P.hud_bg; bd = P.find_fl; fg = P.find_fl;
-    label = `◆ FIND ACTIVE: ${findMode.char} (${KR[findMode.char]}) ×${findMode.count} — type to detonate ◆`;
+    label = `◆ FIND ACTIVE: ${findMode.char}  ×${findMode.count} — type to detonate ◆`;
   } else if (findLockedOnNewChar()) {
     bg = P.hud_bg; bd = P.hit_bd; fg = P.hit_bd;
     label = `[${FIND_KEY_LABEL}]  locked — learn this char (${act.cell.char}) first`;
@@ -2794,7 +2794,7 @@ function drawFindButton(act) {
     bd = ready ? P.hud : P.panel_bd;
     fg = ready ? P.hud : P.hud_dim;
     label = ready
-      ? `[${FIND_KEY_LABEL}]  detonate every ${act.cell.char} (${act.cell.romaji})  ×${cnt}`
+      ? `[${FIND_KEY_LABEL}]  detonate every ${act.cell.char} ×${cnt}`
       : `[${FIND_KEY_LABEL}]  no duplicate of current char on screen`;
   } else {
     bg = P.hud_bg; bd = P.panel_bd; fg = P.hud_dim;
