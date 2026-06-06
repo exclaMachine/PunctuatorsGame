@@ -475,6 +475,27 @@ const GOJUON_KATA = [
   'パ','ピ','プ','ペ','ポ',
 ];
 const LEVEL_START_SIZE = 6;
+// ── Block-count progression (kana modes only) ───────────────────────
+// Each level spawns a *set* number of building blocks = BLOCKS_PER_CHAR ×
+// (chars learned so far). Level 1 = 6 chars × 3 = 18 blocks; every new char
+// learned adds ~3 more blocks, so the city grows with the player's vocab.
+// The total is capped (BLOCK_CAP) so the cityscape still fits on screen.
+//
+// FUTURE — side-scrolling: flip SIDE_SCROLL to true to let the city extend
+// past the right edge instead of capping. The generator already removes the
+// cap and the column-fit limit when this is on; the remaining work is a
+// horizontal camera offset in the render/targeting/movement code. Until that
+// camera exists, leave this false.
+const SIDE_SCROLL     = false;
+const BLOCKS_PER_CHAR = 3;
+// IS_MOBILE is defined further down, so resolve the cap at call time.
+function blockCap() { return IS_MOBILE ? 30 : 54; }   // max blocks/level when not side-scrolling
+// Target block count for the current level (driven by the learned pool size).
+function targetBlockCount() {
+  const pool = learnedPool.length || LEVEL_START_SIZE;
+  const raw  = BLOCKS_PER_CHAR * pool;
+  return SIDE_SCROLL ? raw : Math.min(raw, blockCap());
+}
 function gojuonOrder(mode) {
   return mode === 'hiragana' ? GOJUON_HIRA : GOJUON_KATA;
 }
@@ -1020,9 +1041,10 @@ const SELECT_CARDS = MODE_KEYS.map((key, i) => ({
   num: String(i + 1),
 }));
 
-// ── Random level / building config generator ────────────────────────
-// Returns 3–4 buildings with varied types, cols, and floors so each game
-// looks different. Total min width leaves room for trees in the gaps.
+// ── Random level / building config generator (kanji mode) ───────────
+// Returns 3–4 buildings with varied cols and floors so each game looks
+// different. Total min width leaves room for trees in the gaps. Kana
+// progression modes use makeProgressionConfigs instead (set block count).
 function makeBuildingConfigs() {
   // Mobile: always 3 buildings on screen (rarely 2 if a small viewport
   // can't fit them) so the cityscape never collapses to one column. Cols
@@ -1038,6 +1060,63 @@ function makeBuildingConfigs() {
                              : 3 + Math.floor(Math.random()*5);  // 3–7
     return { cols, floors };
   });
+}
+
+// ── Progression building configs (kana modes) ───────────────────────
+// Produces a set of {cols, floors} whose cell counts sum to *exactly*
+// targetBlockCount(). Extra blocks each level go into a mix of MORE
+// buildings and TALLER buildings. On level 1 the first building is a 1-wide
+// tutorial tower (one floor per starter char) so the player meets every
+// starting character with the hint reveal on.
+function makeProgressionConfigs() {
+  let N = targetBlockCount();
+  const out = [];
+  if (currentLevel === 1) {
+    const tut = Math.min(LEVEL_START_SIZE, N);
+    out.push({ cols: 1, floors: tut, tutorial: true });
+    N -= tut;
+  }
+  out.push(...partitionConfigs(N));
+  return out;
+}
+
+// Chop a column total into building widths of 1..maxW columns.
+function chopWidths(total, maxW) {
+  const out = [];
+  while (total > 0) {
+    const w = Math.min(total, 1 + Math.floor(Math.random() * maxW));
+    out.push(w);
+    total -= w;
+  }
+  return out;
+}
+function shuffleArr(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Partition N blocks into rectangular buildings (cols × floors) whose cell
+// counts sum to exactly N. We pick a total column count C (more columns as N
+// grows → wider city) and a base height h = floor(N/C) (taller as N grows).
+// The leftover `extra = N - C*h` becomes that many columns one floor taller,
+// grouped into "tall" buildings; the rest are "short". Tall/short buildings
+// are interleaved left→right so the skyline isn't lopsided.
+function partitionConfigs(N) {
+  if (N <= 0) return [];
+  const maxColW = IS_MOBILE ? 2 : 3;
+  // Column-fit cap keeps the city on-screen; lifted entirely when side-scrolling.
+  const maxCols = SIDE_SCROLL ? Infinity : (IS_MOBILE ? 4 : 9);
+  const avgH    = (IS_MOBILE ? 5 : 4) + Math.floor(Math.random() * 2); // 4–5 (5–6 mobile)
+  let C = Math.max(1, Math.min(maxCols, Math.round(N / avgH)));
+  while (C > 1 && Math.floor(N / C) < 2) C--;   // keep buildings ≥2 floors where possible
+  const h     = Math.floor(N / C);
+  const extra = N - C * h;                       // this many columns are 1 floor taller
+  const tall  = chopWidths(extra,     maxColW).map(w => ({ cols: w, floors: h + 1 }));
+  const short = chopWidths(C - extra, maxColW).map(w => ({ cols: w, floors: h }));
+  return shuffleArr([...tall, ...short]);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1405,14 +1484,12 @@ function makeBuildings() {
   if (mode.isWords) return makeWordBuildings(mode.words);
 
   // ── Progression modes (kata/hira): draw chars only from the learned pool ──
-  // and on level 1 prepend a small tutorial building (1×2) that gets the hint reveal.
+  // The block count is a *set* number per level (targetBlockCount), distributed
+  // across a mix of taller and wider buildings by makeProgressionConfigs. On
+  // level 1 that generator also prepends a 1-wide tutorial tower (one floor per
+  // starter char) that gets the hint reveal. Kanji mode keeps the random layout.
   const useProgression = isProgressionMode(gameMode);
-  const cfgs = makeBuildingConfigs();
-  if (useProgression && currentLevel === 1 && cfgs.length > 0) {
-    // Tutorial building: 1 col, one floor per starter char so the player meets
-    // every char in the level-1 pool at least once with the hint reveal on.
-    cfgs[0] = { cols: 1, floors: LEVEL_START_SIZE, tutorial: true };
-  }
+  const cfgs = useProgression ? makeProgressionConfigs() : makeBuildingConfigs();
   // Distribute leftover horizontal space as variable gaps so each level
   // has a different silhouette and leaves room for ASCII trees.
   // Left margin is wider than right so the kaomoji always has clearance to
