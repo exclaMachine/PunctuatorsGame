@@ -1687,8 +1687,11 @@ function handleKey(e) {
   // Swallow all other input while the help overlay is open
   if (showHelp) return;
 
-  // Any key skips the level-start intro
-  if (introActive) { introActive = false; return; }
+  // Any key skips the level-start intro. Don't `return` — clearing introActive
+  // also releases the kaiju (kaijuLocked() goes false), so we let the key fall
+  // through and register as input. Otherwise the first letter you press is eaten
+  // just to dismiss the intro and you'd have to press it twice.
+  if (introActive) { introActive = false; }
 
   if (gState==='menu') {
     if (e.key==='Enter') { gState='select'; }

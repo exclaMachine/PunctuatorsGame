@@ -9,7 +9,8 @@
       "Bash(node --check /Users/tyrickers/Desktop/PunctuatorsGame/kaimoju.html)",
       "Bash(sed -n '/<script>/,/<\\\\/script>/p' /Users/tyrickers/Desktop/PunctuatorsGame/kaimoju.html)",
       "Bash(sed '1d;$d')",
-      "Bash(node --check /tmp/kaimoju_script.js)"
+      "Bash(node --check /tmp/kaimoju_script.js)",
+      "Bash(node *)"
     ]
   }
 }
