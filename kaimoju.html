@@ -200,6 +200,71 @@ canvas {
   color: var(--kj-accent);
   font-weight: 700;
 }
+/* ── Mobile-only on-screen keyboard ──────────────────────────────────
+   Replaces the OS soft keyboard during play. QWERTY layout, no spacebar
+   (romaji never needs one). Unused letters (l/q/v/x) are shown but disabled.
+   Theme colors reuse the same CSS vars as the overlays (set in applyTheme).
+   Height is owned by JS via --kbd-h so sizeCanvas can reserve the band. */
+#mob-kbd {
+  display: none;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  height: var(--kbd-h, 220px);
+  box-sizing: border-box;
+  padding: 6px 5px calc(6px + env(safe-area-inset-bottom));
+  flex-direction: column;
+  gap: 6px;
+  background: var(--kj-sky);
+  border-top: 1px solid var(--kj-card-bd);
+  font-family: 'Courier New', monospace;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+@media (hover: none) and (pointer: coarse) {
+  #mob-kbd.show { display: flex; }
+}
+.kbd-row {
+  display: flex;
+  gap: 5px;
+  flex: 1;
+  justify-content: center;
+}
+.kbd-key {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(15px, 5.2vw, 22px);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--kj-fg);
+  background: var(--kj-card-bg);
+  border: 1px solid var(--kj-card-bd);
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.kbd-key.kbd-down {
+  background: var(--kj-accent);
+  color: var(--kj-sky);
+  border-color: var(--kj-accent);
+}
+.kbd-key.kbd-disabled {
+  color: var(--kj-fg-dim);
+  opacity: 0.32;
+  background: transparent;
+  pointer-events: none;
+}
+.kbd-key.kbd-wide { flex: 1.6 1 0; }            /* backspace */
+.kbd-key.kbd-action {
+  font-size: clamp(12px, 3.6vw, 16px);
+  letter-spacing: 1px;
+  color: var(--kj-accent);
+}
 </style>
 </head>
 <body>
@@ -254,6 +319,9 @@ canvas {
     <p><b>CTRL+M</b> (or system mute) — Toggle sound.</p>
   </div>
 </div>
+
+<!-- Mobile-only on-screen keyboard (built + wired in JS) -->
+<div id="mob-kbd" aria-hidden="true"></div>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 //  KAIMOJU  カイモジュ  —  怪文字 Kaiju Typer
@@ -963,14 +1031,13 @@ let THEME_BTN = IS_MOBILE
 function sizeCanvas() {
   if (IS_MOBILE) {
     W = window.innerWidth;
-    // Reserve ~42% of the viewport for the soft keyboard so the input panel
-    // stays visible while typing. visualViewport, when available, gives the
-    // *actual* visible area (already accounts for the keyboard), so we use
-    // that as a tighter cap if it's smaller than the 58% budget.
-    const vpH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    const budgeted = Math.floor((window.innerHeight - 44) * 0.58);
-    const visible  = vpH - 44;
-    H = Math.max(360, Math.min(budgeted, visible));
+    // We render our own on-screen keyboard (no OS keyboard), so reserve a fixed
+    // band at the bottom for it and give the rest of the viewport to the canvas.
+    // Layout: 44px top margin + canvas (H) + keyboard band (kbdH) = viewport.
+    const vh   = window.innerHeight;
+    const kbdH = Math.round(Math.min(280, Math.max(190, vh * 0.40)));
+    document.documentElement.style.setProperty('--kbd-h', kbdH + 'px');
+    H = Math.max(300, vh - 44 - kbdH);
   } else {
     W = 920;
     H = 580;
@@ -3735,6 +3802,8 @@ function updateMobOverlays() {
   // canvas-rendered drawHelpOverlay never has to fit in a 400-px box.
   mobHelpEl  .classList.toggle('show', showHelp);
   document.body.classList.toggle('mob-overlay-active', showMenu || showSelect || showHelp);
+  // The custom keyboard only shows during play (hidden behind overlays/help).
+  if (mobKbdEl) mobKbdEl.classList.toggle('show', gState === 'playing' && !showHelp);
   // Cycle the kaomoji preview ~3×/sec so the menu feels alive even though
   // it's all DOM. Cheap textContent updates.
   if (showMenu) {
@@ -3761,6 +3830,59 @@ function syncMobOverlayTheme() {
 }
 // Sync once now that the function exists (boot-time applyTheme ran before this).
 syncMobOverlayTheme();
+
+// ── Mobile on-screen keyboard ────────────────────────────────────────
+// QWERTY layout, no spacebar (romaji never needs one). l/q/v/x never appear
+// in any romaji, so they're shown but disabled. A ⌫ backspace and a wide
+// CLEAR (wipes the whole buffer) round it out. Only visible while playing.
+const mobKbdEl = document.getElementById('mob-kbd');
+const KBD_ROWS = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l'],
+  ['z','x','c','v','b','n','m','bksp'],
+  ['clear'],
+];
+const KBD_DISABLED = new Set(['l','q','v','x']);
+function kbdPress(key) {
+  audio();                                  // wake AudioContext from the gesture
+  if (introActive) introActive = false;     // first tap skips intro AND still types
+  if (gState !== 'playing') return;
+  if (key === 'bksp')      deleteOneFromBuf();
+  else if (key === 'clear') inputBuf = '';
+  else                      typeChar(key);
+}
+function buildMobKeyboard() {
+  if (!IS_MOBILE || !mobKbdEl) return;
+  KBD_ROWS.forEach(row => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'kbd-row';
+    row.forEach(key => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'kbd-key';
+      if (key === 'bksp')       { b.classList.add('kbd-wide', 'kbd-action'); b.textContent = '⌫'; }
+      else if (key === 'clear') { b.classList.add('kbd-action');             b.textContent = 'CLEAR'; }
+      else {
+        b.textContent = key;
+        if (KBD_DISABLED.has(key)) b.classList.add('kbd-disabled');
+      }
+      if (!b.classList.contains('kbd-disabled')) {
+        const release = () => b.classList.remove('kbd-down');
+        b.addEventListener('pointerdown', ev => {
+          ev.preventDefault();              // no focus shift / no synthetic click
+          b.classList.add('kbd-down');
+          kbdPress(key);
+        });
+        b.addEventListener('pointerup', release);
+        b.addEventListener('pointercancel', release);
+        b.addEventListener('pointerleave', release);
+      }
+      rowEl.appendChild(b);
+    });
+    mobKbdEl.appendChild(rowEl);
+  });
+}
+buildMobKeyboard();
 
 // ── Event Listeners ───────────────────────────────────────────────────
 const ki = document.getElementById('ki');
@@ -3822,9 +3944,11 @@ function canvasPointerXY(ev) {
   };
 }
 function focusMobileInput() {
+  // The custom on-screen keyboard (#mob-kbd) handles all mobile input now, so
+  // we never summon the OS keyboard. Kept as a no-op (blurring the legacy hidden
+  // input) so existing call sites stay valid.
   if (!IS_MOBILE) return;
-  // iOS/Android require the focus() to be inside the user-gesture callstack
-  try { ki.focus({ preventScroll: true }); } catch { ki.focus(); }
+  try { ki.blur(); } catch {}
 }
 c.addEventListener('pointerdown', ev => {
   ev.preventDefault();
