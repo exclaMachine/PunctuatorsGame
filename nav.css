@@ -61,6 +61,35 @@
   font-weight: 600;
 }
 
+/* Dropdown (e.g. "Read Free") */
+.has-sub {
+  position: relative;
+}
+
+.site-nav__sub {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 210px;
+  background: var(--nav-bg);
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+  display: none;
+  flex-direction: column;
+}
+
+.has-sub:hover > .site-nav__sub,
+.has-sub.open > .site-nav__sub {
+  display: flex;
+}
+
+.site-nav__sub a {
+  opacity: 0.9;
+}
+
 .site-nav__toggle {
   display: none;
   background: none;
@@ -99,5 +128,22 @@
   .site-nav__links a {
     padding: 11px 20px;
     border-radius: 0;
+  }
+
+  /* Submenu expands inline (indented) instead of floating on mobile. */
+  .site-nav__sub {
+    position: static;
+    min-width: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .has-sub.open > .site-nav__sub {
+    display: flex;
+  }
+
+  .site-nav__sub a {
+    padding-left: 38px;
   }
 }

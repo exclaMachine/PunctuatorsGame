@@ -20,6 +20,20 @@
       href: "https://www.webtoons.com/en/challenge/the-punctuators-super-powered-punctuation/list?title_no=318764",
       external: true,
     },
+    {
+      label: "Read Free",
+      // Free graphic-novel PDFs hosted on Dropbox.
+      children: [
+        {
+          label: "Question Markswoman (Book 1)",
+          href: "https://www.dropbox.com/scl/fo/0kx2ztlbq95ioxnfifew9/AGYTaJ0ALODy-SidG3yS6Y0/rescaled%20Punctuators%20Question%20Quest%20copy%202.pdf?rlkey=hje8gtuguop92sjyqtrj7yu9h&st=82b298t2&dl=0",
+        },
+        {
+          label: "Exclamachine (Book 2)",
+          href: "https://www.dropbox.com/scl/fi/u5lk0v1h4loxopy5j3ekw/Exclamachine.pdf?rlkey=ifv7oxkr48mart3r9wgbjqt5c&st=rvqhht6a&dl=0",
+        },
+      ],
+    },
     { label: "Books", href: "https://a.co/d/aX8NZcc", external: true },
   ];
 
@@ -37,6 +51,16 @@
 
   const linkItems = pages
     .map((p) => {
+      // Dropdown item: a labelled toggle with a nested list of links.
+      if (p.children) {
+        const subItems = p.children
+          .map(
+            (c) =>
+              `<li><a href="${c.href}" target="_blank" rel="noopener">${c.label}</a></li>`,
+          )
+          .join("");
+        return `<li class="has-sub"><a href="#" class="sub-toggle" aria-haspopup="true">${p.label} &#9662;</a><ul class="site-nav__sub">${subItems}</ul></li>`;
+      }
       const href = p.external ? p.href : `${root}${p.file}`;
       const target = p.external ? ' target="_blank" rel="noopener"' : "";
       const active =
@@ -67,9 +91,25 @@
     document.getElementById("nav-links").classList.toggle("open");
   });
 
-  // Close mobile menu when a link is clicked
+  // Toggle a dropdown open/closed (works on touch where hover doesn't).
+  document.querySelectorAll(".sub-toggle").forEach(function (t) {
+    t.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.parentElement.classList.toggle("open");
+    });
+  });
+
+  // Close any open dropdown when clicking elsewhere on the page.
+  document.addEventListener("click", function () {
+    document.querySelectorAll(".has-sub.open").forEach(function (li) {
+      li.classList.remove("open");
+    });
+  });
+
+  // Close mobile menu when a real link is clicked (not a dropdown toggle).
   document.getElementById("nav-links").addEventListener("click", function (e) {
-    if (e.target.tagName === "A") {
+    if (e.target.tagName === "A" && !e.target.classList.contains("sub-toggle")) {
       document.getElementById("nav-links").classList.remove("open");
     }
   });
