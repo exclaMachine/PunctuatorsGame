@@ -3217,7 +3217,7 @@ function renderMenu() {
     "Type the romaji on each katakana / hiragana to break every floor",
     "and learn Japanese!"
   ];
-  blurb.forEach((ln, i) => ctx.fillText(ln, W/2, 246 + i*20));
+  blurb.forEach((ln, i) => ctx.fillText(ln, W/2, 226 + i*20));
 
   // Controls — trimmed to the essentials. Help screen has the full list.
   ctx.font      = '13px "Courier New"';
@@ -3245,7 +3245,7 @@ function renderMenu() {
   const keyRightX  = ctrlBlockX + maxKeyW;
   const descLeftX  = ctrlBlockX + maxKeyW + CTRL_GAP;
   rows.forEach(([key, desc], i) => {
-    const ry = 358 + i*26;
+    const ry = 336 + i*26;
     if (key) {
       ctx.font      = 'bold 13px "Courier New"';
       ctx.fillStyle = P.hud;
