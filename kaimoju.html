@@ -564,8 +564,13 @@ function targetBlockCount() {
   const raw  = BLOCKS_PER_CHAR * pool;
   return SIDE_SCROLL ? raw : Math.min(raw, blockCap());
 }
-function gojuonOrder(mode) {
+function baseGojuon(mode) {
   return mode === 'hiragana' ? GOJUON_HIRA : GOJUON_KATA;
+}
+function gojuonOrder(mode) {
+  // When the random-order toggle is on, the run draws from a shuffled copy of
+  // the gojuon order (built once per run in startGame); otherwise the fixed order.
+  return runOrder || baseGojuon(mode);
 }
 function isProgressionMode(mode) { return mode === 'katakana' || mode === 'hiragana'; }
 function poolForLevel(mode, level) {
@@ -1098,7 +1103,7 @@ const PUNCH_DUR = 14;
 const SELECT_CARD_W   = 580;
 const SELECT_CARD_H   = 80;
 const SELECT_CARD_GAP = 16;
-const SELECT_STACK_Y0 = 158;
+const SELECT_STACK_Y0 = 150;
 const SELECT_CARDS = MODE_KEYS.map((key, i) => ({
   key,
   x: (W - SELECT_CARD_W) / 2,
@@ -1107,6 +1112,23 @@ const SELECT_CARDS = MODE_KEYS.map((key, i) => ({
   h: SELECT_CARD_H,
   num: String(i + 1),
 }));
+
+// Character-order toggle, sits below the mode cards. Two clickable segments
+// (SEQUENTIAL / RANDOM); also flipped with the R key on the select screen.
+const SELECT_TOGGLE = (() => {
+  const w = 460, h = 30;
+  const x = (W - w) / 2;
+  const y = SELECT_STACK_Y0 + (MODE_KEYS.length - 1) * (SELECT_CARD_H + SELECT_CARD_GAP)
+            + SELECT_CARD_H + 12;
+  const segW = 130, segH = h - 8, segY = y + 4;
+  const seg2x = x + w - 8 - segW;        // RANDOM
+  const seg1x = seg2x - 6 - segW;        // SEQUENTIAL
+  return {
+    x, y, w, h, segW, segH, segY,
+    seg1: { x: seg1x, y: segY, w: segW, h: segH },  // SEQUENTIAL → randomOrder=false
+    seg2: { x: seg2x, y: segY, w: segW, h: segH },  // RANDOM     → randomOrder=true
+  };
+})();
 
 // ── Random level / building config generator (kanji mode) ───────────
 // Returns 3–4 buildings with varied cols and floors so each game looks
@@ -1198,6 +1220,14 @@ let totalHits = 0, totalMisses = 0;
 let currentLevel = 1, maxLevelReached = 1;
 let learnedPool = [];
 let newCharThisLevel = null;
+// Character-order toggle (select screen, kana modes only, session-only — not
+// persisted). When true, the run uses `runOrder` (a freshly-shuffled copy of
+// the gojuon order) instead of the fixed gojuon sequence, so the 6 starter
+// chars and each level's new char are random while the ramp/HP/hint scaffolding
+// stays identical. `runOrder` is built once per run in startGame and read by
+// gojuonOrder so the learned pool stays consistent across that run's levels.
+let randomOrder = false;
+let runOrder = null;
 // Flipped true once the player has destroyed the first instance of the
 // newly-introduced char; after that, the new char loses its hint reveal
 // and behaves like all previously-learned chars.
@@ -1428,6 +1458,11 @@ function maybeStartIntroSong() {
 function startGame(mode) {
   stopSong();
   gameMode = mode in MODES ? mode : 'katakana';
+  // Random-order: shuffle the gojuon order once for this run so starter chars
+  // and each level's new char arrive in random order (kana modes only).
+  runOrder = (randomOrder && isProgressionMode(gameMode))
+    ? shuffleArr(baseGojuon(gameMode).slice())
+    : null;
   gState   = 'playing';
   currentLevel = 1;
   maxLevelReached = 1;
@@ -1765,6 +1800,7 @@ function handleKey(e) {
     return;
   }
   if (gState==='select') {
+    if (e.key.toLowerCase()==='r') { randomOrder = !randomOrder; return; }
     const idx = parseInt(e.key, 10);
     if (idx >= 1 && idx <= MODE_KEYS.length) { startGame(MODE_KEYS[idx-1]); return; }
     if (e.key==='Enter') { startGame(MODE_KEYS[0]); return; }
@@ -3414,12 +3450,34 @@ function renderSelect() {
     ctx.fillText(m.sample, card.x + 84, card.y + 68);
   });
 
+  // ── Character-order toggle (kana modes) ──────────────────────────
+  const tg = SELECT_TOGGLE;
+  ctx.font      = 'bold 13px "Courier New"';
+  ctx.fillStyle = P.hud_dim;
+  ctx.textAlign = 'left';
+  ctx.fillText('KANA ORDER:', tg.x + 8, tg.y + tg.h/2 + 5);
+  const drawSeg = (seg, label, active) => {
+    ctx.fillStyle = active ? P.find_fl : P.hud_bg;
+    ctx.fillRect(seg.x, seg.y, seg.w, seg.h);
+    ctx.strokeStyle = active ? P.find_fl : P.hud_dim;
+    ctx.lineWidth   = 1;
+    if (active) { ctx.shadowBlur = 8; ctx.shadowColor = P.find_fl; }
+    ctx.strokeRect(seg.x+0.5, seg.y+0.5, seg.w-1, seg.h-1);
+    ctx.shadowBlur = 0;
+    ctx.font      = 'bold 12px "Courier New"';
+    ctx.fillStyle = active ? P.hud_bg : P.hud_dim;
+    ctx.textAlign = 'center';
+    ctx.fillText(label, seg.x + seg.w/2, seg.y + seg.h/2 + 4);
+  };
+  drawSeg(tg.seg1, 'SEQUENTIAL', !randomOrder);
+  drawSeg(tg.seg2, 'RANDOM',      randomOrder);
+
   // Back hint (flashing)
   if ((Math.floor(t/500)%2)===0) {
     ctx.font      = '12px "Courier New"';
     ctx.fillStyle = P.hud_dim;
     ctx.textAlign = 'center';
-    ctx.fillText('[ ESC: back to title ]', W/2, H - 30);
+    ctx.fillText('[ ESC: back to title ]', W/2, H - 7);
   }
 
   drawHelpButton();
@@ -3987,6 +4045,10 @@ c.addEventListener('pointerdown', ev => {
     return;
   }
   if (gState === 'select') {
+    // Character-order toggle segments
+    const inSeg = (s) => x >= s.x && x <= s.x+s.w && y >= s.y && y <= s.y+s.h;
+    if (inSeg(SELECT_TOGGLE.seg1)) { randomOrder = false; audio(); return; }
+    if (inSeg(SELECT_TOGGLE.seg2)) { randomOrder = true;  audio(); return; }
     for (const card of SELECT_CARDS) {
       if (x >= card.x && x <= card.x+card.w && y >= card.y && y <= card.y+card.h) {
         startGame(card.key);
