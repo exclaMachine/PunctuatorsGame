@@ -150,8 +150,15 @@ removePuncButton.addEventListener("click", () => {
     removePuncButton,
     startBanner,
     wordPlayOptions,
-    typingLink
+    typingLink,
   );
+
+  // The native <select> is hidden by CSS and replaced by a custom dropdown
+  // (.custom-select-wrapper, built in index.html). Hiding the select alone
+  // leaves the visible wrapper on screen, so hide the wrapper too. Use
+  // classList.add (not setClassName) to keep the wrapper class intact.
+  const selectWrapper = wordPlayOptions.closest(".custom-select-wrapper");
+  if (selectWrapper) selectWrapper.classList.add("go-away");
 
   if (dropDownSelection === "alphabetNeighbors") {
     updateCharacterModal("alphabetNeighbors");
@@ -172,7 +179,7 @@ function updateCharacterModal(selection) {
   const templates = {
     alphabetNeighbors: `
     <div class="char-modal">
-      <h2>Betar — Alphabet Neighbors</h2>
+      <h2>Betar — Alphabet Slots</h2>
       <p class="lead">
         An alphabet neighbor is the letter directly before or after a letter in the alphabet
         (with wrap-around: <code>a</code> ↔ <code>z</code>). Betar spins one letter to a neighbor
@@ -272,96 +279,139 @@ let mySong = new Howl({
 
 // ── Synth SFX (Web Audio API) ─────────────────────────────────────────────
 const _ac = new (window.AudioContext || window.webkitAudioContext)();
-const _go = () => { if (_ac.state === 'suspended') _ac.resume(); };
+const _go = () => {
+  if (_ac.state === "suspended") _ac.resume();
+};
 
 function _tone(freq, type, dur, vol = 0.35, freqEnd, delay = 0) {
   _go();
   const t = _ac.currentTime + delay;
-  const o = _ac.createOscillator(), g = _ac.createGain();
-  o.connect(g); g.connect(_ac.destination);
+  const o = _ac.createOscillator(),
+    g = _ac.createGain();
+  o.connect(g);
+  g.connect(_ac.destination);
   o.type = type;
   o.frequency.setValueAtTime(freq, t);
-  if (freqEnd != null) o.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 1), t + dur);
+  if (freqEnd != null)
+    o.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 1), t + dur);
   g.gain.setValueAtTime(vol, t);
   g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-  o.start(t); o.stop(t + dur);
+  o.start(t);
+  o.stop(t + dur);
 }
 
 function _noise(dur, vol = 0.3, filtFreq = 800, q = 4, delay = 0) {
   _go();
-  const sr = _ac.sampleRate, n = Math.ceil(sr * dur);
+  const sr = _ac.sampleRate,
+    n = Math.ceil(sr * dur);
   const buf = _ac.createBuffer(1, n, sr);
   const d = buf.getChannelData(0);
   for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-  const src = _ac.createBufferSource(); src.buffer = buf;
-  const f = _ac.createBiquadFilter(); f.type = 'bandpass';
-  f.frequency.value = filtFreq; f.Q.value = q;
+  const src = _ac.createBufferSource();
+  src.buffer = buf;
+  const f = _ac.createBiquadFilter();
+  f.type = "bandpass";
+  f.frequency.value = filtFreq;
+  f.Q.value = q;
   const g = _ac.createGain();
-  src.connect(f); f.connect(g); g.connect(_ac.destination);
+  src.connect(f);
+  f.connect(g);
+  g.connect(_ac.destination);
   const t = _ac.currentTime + delay;
   g.gain.setValueAtTime(vol, t);
   g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-  src.start(t); src.stop(t + dur);
+  src.start(t);
+  src.stop(t + dur);
 }
 
 // Apostrophantom — ghostly wail with vibrato (shoot) / shriek (hit)
 function _ghostWail() {
   _go();
-  const lfo = _ac.createOscillator(), lfoG = _ac.createGain();
-  const osc = _ac.createOscillator(), outG = _ac.createGain();
-  lfo.frequency.value = 5.5; lfoG.gain.value = 28; osc.type = 'sine';
+  const lfo = _ac.createOscillator(),
+    lfoG = _ac.createGain();
+  const osc = _ac.createOscillator(),
+    outG = _ac.createGain();
+  lfo.frequency.value = 5.5;
+  lfoG.gain.value = 28;
+  osc.type = "sine";
   osc.frequency.setValueAtTime(500, _ac.currentTime);
   osc.frequency.exponentialRampToValueAtTime(160, _ac.currentTime + 1.5);
   outG.gain.setValueAtTime(0.28, _ac.currentTime);
   outG.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 1.5);
-  lfo.connect(lfoG); lfoG.connect(osc.frequency);
-  osc.connect(outG); outG.connect(_ac.destination);
-  lfo.start(); osc.start();
-  lfo.stop(_ac.currentTime + 1.5); osc.stop(_ac.currentTime + 1.5);
-  _tone(180, 'sine', 1.2, 0.1, 60);
+  lfo.connect(lfoG);
+  lfoG.connect(osc.frequency);
+  osc.connect(outG);
+  outG.connect(_ac.destination);
+  lfo.start();
+  osc.start();
+  lfo.stop(_ac.currentTime + 1.5);
+  osc.stop(_ac.currentTime + 1.5);
+  _tone(180, "sine", 1.2, 0.1, 60);
 }
 function _ghostShriek() {
-  _tone(1200, 'sine', 0.12, 0.32, 400);
-  _tone(700, 'sine', 0.18, 0.15, 150);
+  _tone(1200, "sine", 0.12, 0.32, 400);
+  _tone(700, "sine", 0.18, 0.15, 150);
   _noise(0.12, 0.15, 1500, 6);
 }
 
 // Ambigrambador — rising magic arpeggio (shoot) / descending sparkle (hit)
-function _ambiShoot() { [262,330,392,523,659].forEach((f,i) => _tone(f,'sine',0.2,0.27,null,i*0.07)); }
-function _ambiHit()   { [523,392,330,220].forEach((f,i) => _tone(f,'triangle',0.18,0.23,null,i*0.06)); }
+function _ambiShoot() {
+  [262, 330, 392, 523, 659].forEach((f, i) =>
+    _tone(f, "sine", 0.2, 0.27, null, i * 0.07),
+  );
+}
+function _ambiHit() {
+  [523, 392, 330, 220].forEach((f, i) =>
+    _tone(f, "triangle", 0.18, 0.23, null, i * 0.06),
+  );
+}
 
 // AnacontractShine — slurp/contract
-function _anaShoot() { _tone(100,'sawtooth',0.28,0.22,900); _noise(0.28,0.15,400,3); }
+function _anaShoot() {
+  _tone(100, "sawtooth", 0.28, 0.22, 900);
+  _noise(0.28, 0.15, 400, 3);
+}
 
 // MasterAsterisk — sparkle twinkling star pings
-function _asteriskShoot() { [2093,1760,2637,2093,1976].forEach((f,i) => _tone(f,'sine',0.1,0.2,null,i*0.045)); }
+function _asteriskShoot() {
+  [2093, 1760, 2637, 2093, 1976].forEach((f, i) =>
+    _tone(f, "sine", 0.1, 0.2, null, i * 0.045),
+  );
+}
 
 // Roundabout — palindrome whorl: pitch goes up then back down
-function _roundaboutShoot() { _tone(200,'sine',0.22,0.28,800); _tone(800,'sine',0.22,0.25,200,0.22); }
-function _roundaboutHit()   { _tone(600,'sawtooth',0.28,0.22,80); _noise(0.18,0.18,300,5); }
+function _roundaboutShoot() {
+  _tone(200, "sine", 0.22, 0.28, 800);
+  _tone(800, "sine", 0.22, 0.25, 200, 0.22);
+}
+function _roundaboutHit() {
+  _tone(600, "sawtooth", 0.28, 0.22, 80);
+  _noise(0.18, 0.18, 300, 5);
+}
 
 // Morph each differing letter using an SVG displacement-map warp.
 // The straight strokes appear to bend and curve into the target letter.
 function _animateRoundabout(el, fromWord, toWord) {
-  const from = fromWord.toUpperCase().split('');
-  const to   = toWord.toUpperCase().split('');
+  const from = fromWord.toUpperCase().split("");
+  const to = toWord.toUpperCase().split("");
 
   el.innerHTML = from
-    .map((ch, i) =>
-      `<span style="display:inline-block"${ch !== to[i] ? ` data-to="${to[i]}"` : ''}>${ch}</span>`
+    .map(
+      (ch, i) =>
+        `<span style="display:inline-block"${ch !== to[i] ? ` data-to="${to[i]}"` : ""}>${ch}</span>`,
     )
-    .join('');
+    .join("");
 
-  const changing = [...el.querySelectorAll('span[data-to]')];
+  const changing = [...el.querySelectorAll("span[data-to]")];
   if (changing.length === 0) {
     el.textContent = toWord.toUpperCase();
-    el.classList.add('rounded-word');
+    el.classList.add("rounded-word");
     return;
   }
 
-  const HALF    = 300;  // ms per half of the warp
-  const MAX_SCL = 24;   // peak displacement (px)
-  const STAGGER = 120;  // ms between each letter's start
+  const HALF = 300; // ms per half of the warp
+  const MAX_SCL = 24; // peak displacement (px)
+  const STAGGER = 120; // ms between each letter's start
 
   changing.forEach((span, idx) => {
     const toChar = span.dataset.to;
@@ -369,8 +419,11 @@ function _animateRoundabout(el, fromWord, toWord) {
 
     setTimeout(() => {
       const uid = `ra${Date.now()}${idx}`;
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden');
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute(
+        "style",
+        "position:absolute;width:0;height:0;overflow:hidden",
+      );
       svg.innerHTML =
         `<defs><filter id="${uid}" x="-30%" y="-30%" width="160%" height="160%">` +
         `<feTurbulence type="fractalNoise" baseFrequency="0.04 0.025" numOctaves="2" seed="${4 + idx}" result="n"/>` +
@@ -378,10 +431,10 @@ function _animateRoundabout(el, fromWord, toWord) {
         `</filter></defs>`;
       document.body.appendChild(svg);
 
-      const disp  = svg.getElementById(`${uid}d`);
+      const disp = svg.getElementById(`${uid}d`);
       span.style.filter = `url(#${uid})`;
 
-      let start   = null;
+      let start = null;
       let swapped = false;
 
       (function step(ts) {
@@ -389,17 +442,23 @@ function _animateRoundabout(el, fromWord, toWord) {
         const t = ts - start;
 
         if (t < HALF) {
-          disp.setAttribute('scale', (MAX_SCL * (t / HALF)).toFixed(1));
+          disp.setAttribute("scale", (MAX_SCL * (t / HALF)).toFixed(1));
         } else if (t < HALF * 2) {
-          if (!swapped) { span.textContent = toChar; swapped = true; }
-          disp.setAttribute('scale', (MAX_SCL * (1 - (t - HALF) / HALF)).toFixed(1));
+          if (!swapped) {
+            span.textContent = toChar;
+            swapped = true;
+          }
+          disp.setAttribute(
+            "scale",
+            (MAX_SCL * (1 - (t - HALF) / HALF)).toFixed(1),
+          );
         } else {
-          disp.setAttribute('scale', '0');
-          span.style.filter = '';
+          disp.setAttribute("scale", "0");
+          span.style.filter = "";
           svg.remove();
           if (isLast) {
             el.textContent = toWord.toUpperCase();
-            el.classList.add('rounded-word');
+            el.classList.add("rounded-word");
           }
           return;
         }
@@ -410,55 +469,101 @@ function _animateRoundabout(el, fromWord, toWord) {
 }
 
 // SargeColon — sharp military snare (shoot) / heavy thud (hit)
-function _sargeShoot() { _noise(0.08,0.55,2500,1); _noise(0.07,0.3,500,9); _tone(80,'sine',0.1,0.35,35); }
-function _sargeHit()   { _noise(0.12,0.45,1200,2); _tone(65,'sine',0.15,0.42,28); }
+function _sargeShoot() {
+  _noise(0.08, 0.55, 2500, 1);
+  _noise(0.07, 0.3, 500, 9);
+  _tone(80, "sine", 0.1, 0.35, 35);
+}
+function _sargeHit() {
+  _noise(0.12, 0.45, 1200, 2);
+  _tone(65, "sine", 0.15, 0.42, 28);
+}
 
 // SemiColonel — half-intensity snare/thud
-function _semiShoot() { _noise(0.06,0.28,2200,1); _tone(90,'sine',0.09,0.22,50); }
-function _semiHit()   { _noise(0.1,0.25,1000,2); _tone(70,'sine',0.12,0.25,38); }
+function _semiShoot() {
+  _noise(0.06, 0.28, 2200, 1);
+  _tone(90, "sine", 0.09, 0.22, 50);
+}
+function _semiHit() {
+  _noise(0.1, 0.25, 1000, 2);
+  _tone(70, "sine", 0.12, 0.25, 38);
+}
 
 // WhiteKnight — eraser strokes (shoot) / metallic clang (hit)
 function _knightShoot() {
   // four quick eraser scrubs followed by a letter fading away
-  [0, 0.07, 0.14, 0.21].forEach(d => _noise(0.055, 0.32, 2800, 2.5, d));
-  _tone(550, 'sine', 0.28, 0.14, 80, 0.26);
+  [0, 0.07, 0.14, 0.21].forEach((d) => _noise(0.055, 0.32, 2800, 2.5, d));
+  _tone(550, "sine", 0.28, 0.14, 80, 0.26);
 }
 function _knightHit() {
-  _tone(440,'sawtooth',0.55,0.3);
-  _tone(880,'sine',0.45,0.18);
-  _noise(0.07,0.38,3500,2);
+  _tone(440, "sawtooth", 0.55, 0.3);
+  _tone(880, "sine", 0.45, 0.18);
+  _noise(0.07, 0.38, 3500, 2);
 }
 
 // Zana — quick insertion pop (shoot) / click (hit)
-function _zanaShoot() { _tone(900,'sine',0.06,0.45,200); _tone(450,'sine',0.04,0.28,100,0.03); }
-function _zanaHit()   { _tone(650,'sine',0.05,0.38,180); }
+function _zanaShoot() {
+  _tone(900, "sine", 0.06, 0.45, 200);
+  _tone(450, "sine", 0.04, 0.28, 100, 0.03);
+}
+function _zanaHit() {
+  _tone(650, "sine", 0.05, 0.38, 180);
+}
 
 // CommaChameleon — tongue slap on hit
-function _commaHit()  { _tone(110,'sine',0.09,0.48,55); _noise(0.07,0.32,180,4); }
+function _commaHit() {
+  _tone(110, "sine", 0.09, 0.48, 55);
+  _noise(0.07, 0.32, 180, 4);
+}
 
 // DrHyphenol — chemical fizz pop on hit
-function _hyphenHit() { _noise(0.28,0.32,2200,2); _tone(280,'sine',0.14,0.18,95); }
+function _hyphenHit() {
+  _noise(0.28, 0.32, 2200, 2);
+  _tone(280, "sine", 0.14, 0.18, 95);
+}
 
 // ExclaMachine — bell ding on hit
-function _exclaHit()  { _tone(1047,'sine',0.65,0.38); _tone(1319,'sine',0.45,0.2,null,0.02); }
+function _exclaHit() {
+  _tone(1047, "sine", 0.65, 0.38);
+  _tone(1319, "sine", 0.45, 0.2, null, 0.02);
+}
 
 // FullStopGrenade — explosion boom on hit
-function _grenadeHit(){ _noise(0.5,0.55,110,1); _noise(0.38,0.38,55,2,0.05); _tone(48,'sine',0.5,0.48,18); }
+function _grenadeHit() {
+  _noise(0.5, 0.55, 110, 1);
+  _noise(0.38, 0.38, 55, 2, 0.05);
+  _tone(48, "sine", 0.5, 0.48, 18);
+}
 
 // OctoThwarter — spray splat on hit
-function _octoHit()   { _noise(0.15,0.42,1600,3); _tone(190,'sawtooth',0.1,0.28,75); }
+function _octoHit() {
+  _noise(0.15, 0.42, 1600, 3);
+  _tone(190, "sawtooth", 0.1, 0.28, 75);
+}
 
 // QuestionMarkswoman — arrow thwack on hit
-function _questionHit(){ _noise(0.09,0.48,750,5); _tone(170,'triangle',0.14,0.32,58); }
+function _questionHit() {
+  _noise(0.09, 0.48, 750, 5);
+  _tone(170, "triangle", 0.14, 0.32, 58);
+}
 
 // QuetzalQuotel — feather flutter on hit
-function _quotelHit() { _noise(0.18,0.18,550,2); _tone(580,'sine',0.14,0.12,280); }
+function _quotelHit() {
+  _noise(0.18, 0.18, 550, 2);
+  _tone(580, "sine", 0.14, 0.12, 280);
+}
 
 // Spacel — fart impact on hit
-function _spacelHit() { _tone(75,'sawtooth',0.22,0.38,38); _noise(0.18,0.28,140,3); }
+function _spacelHit() {
+  _tone(75, "sawtooth", 0.22, 0.38, 38);
+  _noise(0.18, 0.28, 140, 3);
+}
 
 // Betar — reel click on hit
-function _betarHit()  { _noise(0.04,0.38,3200,2); _tone(750,'square',0.04,0.22,380); }
+function _betarHit() {
+  _noise(0.04, 0.38, 3200, 2);
+  _tone(750, "square", 0.04, 0.22, 380);
+}
 
 class Hero {
   /**
@@ -491,7 +596,7 @@ class Hero {
     projectileSoundRate,
     projectileSoundVolume,
     secondHeroImage,
-    projectileHitSound
+    projectileHitSound,
   ) {
     this.velocity = {
       x: 0,
@@ -513,7 +618,10 @@ class Hero {
 
     this.sfx = {
       shoot: this.projectileShootSound
-        ? new Howl({ src: [this.projectileShootSound], rate: this.projectileSoundRate })
+        ? new Howl({
+            src: [this.projectileShootSound],
+            rate: this.projectileSoundRate,
+          })
         : null,
       hit: this.projectileHitSound
         ? new Howl({ src: [this.projectileHitSound] })
@@ -541,7 +649,7 @@ class Hero {
         this.position.x,
         this.position.y,
         this.width,
-        this.height
+        this.height,
       );
     } else {
       image2.src = this.secondHeroImage;
@@ -571,7 +679,7 @@ class Hero {
       this.position.x,
       this.position.y,
       this.width,
-      this.height
+      this.height,
     );
   }
 
@@ -582,7 +690,7 @@ class Hero {
       this.position.x,
       this.position.y,
       this.width,
-      this.height
+      this.height,
     );
     c.restore();
   }
@@ -619,11 +727,15 @@ class Ambigrambador extends Hero {
       0.1,
       5.0,
       undefined,
-      "./images/Ambigram2.png"
+      "./images/Ambigram2.png",
     );
   }
-  shootProjectileSound() { _ambiShoot(); }
-  hitProjectileSound()   { _ambiHit(); }
+  shootProjectileSound() {
+    _ambiShoot();
+  }
+  hitProjectileSound() {
+    _ambiHit();
+  }
 }
 
 class AnacontractShine extends Hero {
@@ -641,10 +753,12 @@ class AnacontractShine extends Hero {
       5.0,
       undefined,
       "white",
-      "./sounds/projectile-hit/ana-eat.mp3"
+      "./sounds/projectile-hit/ana-eat.mp3",
     );
   }
-  shootProjectileSound() { _anaShoot(); }
+  shootProjectileSound() {
+    _anaShoot();
+  }
 }
 
 class Apostrophantom extends Hero {
@@ -661,11 +775,15 @@ class Apostrophantom extends Hero {
       0.2,
       5.0,
       undefined,
-      "white"
+      "white",
     );
   }
-  shootProjectileSound() { _ghostWail(); }
-  hitProjectileSound()   { _ghostShriek(); }
+  shootProjectileSound() {
+    _ghostWail();
+  }
+  hitProjectileSound() {
+    _ghostShriek();
+  }
 }
 
 class ArtTheTickler extends Hero {
@@ -683,7 +801,7 @@ class ArtTheTickler extends Hero {
       undefined,
       undefined,
       "./images/Article2.png",
-      "./sounds/article-laughing.mp3"
+      "./sounds/article-laughing.mp3",
     );
   }
 }
@@ -693,7 +811,7 @@ class Betar extends Hero {
     super(
       "./images/Betar_1.png",
       0.4,
-      "Betar (Alphabet Neighbors)",
+      "Betar (Alphabet Slots)",
       "gray",
       118,
       50,
@@ -702,10 +820,12 @@ class Betar extends Hero {
       0.2,
       undefined,
       undefined,
-      "./images/Betar_2.png"
+      "./images/Betar_2.png",
     );
   }
-  hitProjectileSound() { _betarHit(); }
+  hitProjectileSound() {
+    _betarHit();
+  }
 }
 
 class CommaChameleon extends Hero {
@@ -722,10 +842,12 @@ class CommaChameleon extends Hero {
       0.2,
       undefined,
       undefined,
-      "./images/cc.png"
+      "./images/cc.png",
     );
   }
-  hitProjectileSound() { _commaHit(); }
+  hitProjectileSound() {
+    _commaHit();
+  }
 }
 
 class OctoThwarter extends Hero {
@@ -742,10 +864,12 @@ class OctoThwarter extends Hero {
       0.1,
       undefined,
       undefined,
-      "./images/Octo2.png"
+      "./images/Octo2.png",
     );
   }
-  hitProjectileSound() { _octoHit(); }
+  hitProjectileSound() {
+    _octoHit();
+  }
 }
 
 class DrHyphenol extends Hero {
@@ -762,10 +886,12 @@ class DrHyphenol extends Hero {
       0.25,
       undefined,
       undefined,
-      "./images/Hyphenol_2.png"
+      "./images/Hyphenol_2.png",
     );
   }
-  hitProjectileSound() { _hyphenHit(); }
+  hitProjectileSound() {
+    _hyphenHit();
+  }
 }
 
 class ExclaMachine extends Hero {
@@ -782,10 +908,12 @@ class ExclaMachine extends Hero {
       0.5,
       undefined,
       undefined,
-      "./images/EM_Belt2.png"
+      "./images/EM_Belt2.png",
     );
   }
-  hitProjectileSound() { _exclaHit(); }
+  hitProjectileSound() {
+    _exclaHit();
+  }
 }
 
 class Foon extends Hero {
@@ -803,7 +931,7 @@ class Foon extends Hero {
       undefined,
       undefined,
       "./images/Foon_2.png",
-      "./sounds/foon_hit.mp3"
+      "./sounds/foon_hit.mp3",
     );
   }
 }
@@ -823,7 +951,7 @@ class FullStop extends Hero {
       undefined,
       undefined,
       undefined,
-      "./sounds/projectile-hit/laser-hit.mp3"
+      "./sounds/projectile-hit/laser-hit.mp3",
     );
   }
 }
@@ -842,10 +970,12 @@ class FullStopGrenade extends Hero {
       0.2,
       undefined,
       undefined,
-      "./images/FS_capital2.png"
+      "./images/FS_capital2.png",
     );
   }
-  hitProjectileSound() { _grenadeHit(); }
+  hitProjectileSound() {
+    _grenadeHit();
+  }
 }
 
 class MasterAsterisk extends Hero {
@@ -863,10 +993,12 @@ class MasterAsterisk extends Hero {
       1,
       undefined,
       "./images/Asterisk2.png",
-      "./sounds/projectile-hit/asterisk-hit.mp3"
+      "./sounds/projectile-hit/asterisk-hit.mp3",
     );
   }
-  shootProjectileSound() { _asteriskShoot(); }
+  shootProjectileSound() {
+    _asteriskShoot();
+  }
 }
 
 class ParentsOfTheSeas extends Hero {
@@ -884,7 +1016,7 @@ class ParentsOfTheSeas extends Hero {
       undefined,
       undefined,
       undefined,
-      "./sounds/projectile-hit/bubble-hit.mp3"
+      "./sounds/projectile-hit/bubble-hit.mp3",
     );
   }
 }
@@ -904,7 +1036,7 @@ class Phonia extends Hero {
       undefined,
       undefined,
       "./images/Phonia2.png",
-      "./sounds/projectile-hit/bubble-hit.mp3"
+      "./sounds/projectile-hit/bubble-hit.mp3",
     );
   }
 }
@@ -923,10 +1055,12 @@ class QuestionMarkswoman extends Hero {
       0.2,
       undefined,
       undefined,
-      "./images/QM2.png"
+      "./images/QM2.png",
     );
   }
-  hitProjectileSound() { _questionHit(); }
+  hitProjectileSound() {
+    _questionHit();
+  }
 }
 
 //need to fix with code or choose different font so we get smart quotes instead of dumb quotes https://www.fontshop.com/content/curly-quotes
@@ -944,10 +1078,12 @@ class QuetzalQuotel extends Hero {
       0.1,
       undefined,
       undefined,
-      "./images/Qq.png"
+      "./images/Qq.png",
     );
   }
-  hitProjectileSound() { _quotelHit(); }
+  hitProjectileSound() {
+    _quotelHit();
+  }
 }
 
 class Roundabout extends Hero {
@@ -964,11 +1100,15 @@ class Roundabout extends Hero {
       0.2,
       undefined,
       undefined,
-      "./images/Roundabout2.png"
+      "./images/Roundabout2.png",
     );
   }
-  shootProjectileSound() { _roundaboutShoot(); }
-  hitProjectileSound()   { _roundaboutHit(); }
+  shootProjectileSound() {
+    _roundaboutShoot();
+  }
+  hitProjectileSound() {
+    _roundaboutHit();
+  }
 }
 
 class SargeColon extends Hero {
@@ -985,11 +1125,15 @@ class SargeColon extends Hero {
       0.1,
       undefined,
       undefined,
-      "./images/Colon.png"
+      "./images/Colon.png",
     );
   }
-  shootProjectileSound() { _sargeShoot(); }
-  hitProjectileSound()   { _sargeHit(); }
+  shootProjectileSound() {
+    _sargeShoot();
+  }
+  hitProjectileSound() {
+    _sargeHit();
+  }
 }
 
 class SemiColonel extends Hero {
@@ -1006,11 +1150,15 @@ class SemiColonel extends Hero {
       0.5,
       undefined,
       undefined,
-      "white"
+      "white",
     );
   }
-  shootProjectileSound() { _semiShoot(); }
-  hitProjectileSound()   { _semiHit(); }
+  shootProjectileSound() {
+    _semiShoot();
+  }
+  hitProjectileSound() {
+    _semiHit();
+  }
 }
 
 class Spacel extends Hero {
@@ -1027,10 +1175,12 @@ class Spacel extends Hero {
       0.1,
       undefined,
       undefined,
-      "./images/Spacel2.png"
+      "./images/Spacel2.png",
     );
   }
-  hitProjectileSound() { _spacelHit(); }
+  hitProjectileSound() {
+    _spacelHit();
+  }
 }
 
 class WhiteKnight extends Hero {
@@ -1047,11 +1197,15 @@ class WhiteKnight extends Hero {
       0.2,
       undefined,
       undefined,
-      "./images/Whiteknight2.png"
+      "./images/Whiteknight2.png",
     );
   }
-  shootProjectileSound() { _knightShoot(); }
-  hitProjectileSound()   { _knightHit(); }
+  shootProjectileSound() {
+    _knightShoot();
+  }
+  hitProjectileSound() {
+    _knightHit();
+  }
 }
 
 class Zana extends Hero {
@@ -1068,11 +1222,15 @@ class Zana extends Hero {
       0.05,
       undefined,
       undefined,
-      "./images/Zana2.png"
+      "./images/Zana2.png",
     );
   }
-  shootProjectileSound() { _zanaShoot(); }
-  hitProjectileSound()   { _zanaHit(); }
+  shootProjectileSound() {
+    _zanaShoot();
+  }
+  hitProjectileSound() {
+    _zanaHit();
+  }
 }
 
 //need to make this more generic and create a laser one
@@ -1108,7 +1266,7 @@ class Projectile {
         this.position.x,
         this.position.y,
         this.width,
-        this.height
+        this.height,
       );
     }
   }
@@ -1136,7 +1294,7 @@ class CommaTongue {
       this.position.x,
       this.position.y + this.startYPosition,
       this.width,
-      this.height
+      this.height,
     );
   }
 
@@ -1253,7 +1411,7 @@ function animate() {
                 refreshButton.classList.remove("go-away");
                 root.style.setProperty(
                   "--speech-bubble-triangle",
-                  projectile.position.x
+                  projectile.position.x,
                 );
                 root.style.setProperty("--color", player.characterColor);
                 ENDING_REACHED = true;
@@ -1312,7 +1470,7 @@ function animate() {
                 setClassName("upside-down", punctuationSymbol);
                 setTimeout(() => {
                   punctuationSymbol.innerText = makeAmbigram(
-                    punctuationSymbol.innerText
+                    punctuationSymbol.innerText,
                   );
                   setClassName("rightside-up", punctuationSymbol);
                   punctuationSymbol.classList.remove("upside-down");
@@ -1324,7 +1482,7 @@ function animate() {
                     .getAttribute("data-homophones")
                     .split(",");
                   let currentIndex = parseInt(
-                    span.className.replace("word-", "")
+                    span.className.replace("word-", ""),
                   );
 
                   // Get the next index, or loop back to 0 if we're at the last word
@@ -1341,7 +1499,7 @@ function animate() {
                     .getAttribute("data-anagrams")
                     .split(",");
                   let currentIndex = parseInt(
-                    span.className.replace("word-", "")
+                    span.className.replace("word-", ""),
                   );
 
                   // Get the next index, or loop back to 0 if we're at the last word
@@ -1388,7 +1546,7 @@ function animate() {
                 const showingOriginal =
                   span.getAttribute("data-showing-original") === "true";
                 const cursor = parseInt(
-                  span.getAttribute("data-neighbor-cursor")
+                  span.getAttribute("data-neighbor-cursor"),
                 );
 
                 // Apply the original word's capitalization pattern to a neighbor word
@@ -1397,9 +1555,7 @@ function animate() {
                   word
                     .split("")
                     .map((ch, i) =>
-                      orig[i] >= "A" && orig[i] <= "Z"
-                        ? ch.toUpperCase()
-                        : ch
+                      orig[i] >= "A" && orig[i] <= "Z" ? ch.toUpperCase() : ch,
                     )
                     .join("");
 
@@ -1407,7 +1563,7 @@ function animate() {
                   // Animate from original → next neighbor (case-corrected)
                   const targetWord = matchCase(
                     originalWord,
-                    neighborsList[cursor]
+                    neighborsList[cursor],
                   );
                   let diffIndex = -1;
                   for (let i = 0; i < originalWord.length; i++) {
@@ -1428,12 +1584,12 @@ function animate() {
                       }
                       span.setAttribute("data-showing-original", "false");
                       span.setAttribute("data-current-neighbor", targetWord);
-                    }
+                    },
                   );
                 } else {
                   // Animate from current neighbor → original
                   const currentNeighbor = span.getAttribute(
-                    "data-current-neighbor"
+                    "data-current-neighbor",
                   );
                   let diffIndex = -1;
                   for (let i = 0; i < originalWord.length; i++) {
@@ -1458,9 +1614,9 @@ function animate() {
                         cursor >= neighborsList.length - 1 ? 1 : cursor + 1;
                       span.setAttribute(
                         "data-neighbor-cursor",
-                        String(nextCursor)
+                        String(nextCursor),
                       );
-                    }
+                    },
                   );
                 }
               } else if (punctuationSymbol.id === spacel.symbol) {
@@ -1487,7 +1643,7 @@ function animate() {
                 if (additionalLetter) {
                   const newText = alteredText.replace(
                     additionalLetter,
-                    `<sup class="superscript">${additionalLetter}</sup>`
+                    `<sup class="superscript">${additionalLetter}</sup>`,
                   );
                   punctuationSymbol.innerHTML = newText;
                 }
@@ -1646,7 +1802,7 @@ function animate() {
                 refreshButton.classList.remove("go-away");
                 root.style.setProperty(
                   "--speech-bubble-triangle",
-                  projectile.position.x
+                  projectile.position.x,
                 );
                 root.style.setProperty("--color", player.characterColor);
                 ENDING_REACHED = true;
@@ -1781,7 +1937,7 @@ shootButton.addEventListener("pointerdown", (e) => {
           x: 0,
           y: -10,
         },
-      })
+      }),
     );
   } else if (player.characterColor !== undefined) {
     projectiles.push(
@@ -1794,7 +1950,7 @@ shootButton.addEventListener("pointerdown", (e) => {
           x: 0,
           y: -10,
         },
-      })
+      }),
     );
     // player.draw2();
     // player.update2();
@@ -1928,7 +2084,7 @@ addEventListener("keydown", ({ key }) => {
               x: 0,
               y: -10,
             },
-          })
+          }),
         );
       } else if (player.characterColor !== undefined) {
         projectiles.push(
@@ -1944,7 +2100,7 @@ addEventListener("keydown", ({ key }) => {
               x: 0,
               y: -10,
             },
-          })
+          }),
         );
       }
   }
@@ -1955,7 +2111,7 @@ let chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
 
 let freeDictionaryFetchDefinition = async (word) => {
   let res = await fetch(
-    `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`
+    `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`,
   );
   let data = await res.json();
   console.log({ data });

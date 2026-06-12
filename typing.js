@@ -20,12 +20,15 @@ const slashSfx = new Howl({ src: ["./sounds/whoosh.mp3"], volume: 0.9 });
 let _AC = null;
 function ac() {
   if (!_AC) _AC = new (window.AudioContext || window.webkitAudioContext)();
-  if (_AC.state === 'suspended') _AC.resume();
+  if (_AC.state === "suspended") _AC.resume();
   return _AC;
 }
-function tone(freq, dur, type = 'sine', vol = 0.20, t0 = 0) {
-  const ctx = ac(), o = ctx.createOscillator(), g = ctx.createGain();
-  o.connect(g); g.connect(ctx.destination);
+function tone(freq, dur, type = "sine", vol = 0.2, t0 = 0) {
+  const ctx = ac(),
+    o = ctx.createOscillator(),
+    g = ctx.createGain();
+  o.connect(g);
+  g.connect(ctx.destination);
   o.type = type;
   o.frequency.setValueAtTime(freq, ctx.currentTime + t0);
   g.gain.setValueAtTime(0, ctx.currentTime + t0);
@@ -34,9 +37,12 @@ function tone(freq, dur, type = 'sine', vol = 0.20, t0 = 0) {
   o.start(ctx.currentTime + t0);
   o.stop(ctx.currentTime + t0 + dur + 0.01);
 }
-function sweep(f0, f1, dur, type = 'sine', vol = 0.16, t0 = 0) {
-  const ctx = ac(), o = ctx.createOscillator(), g = ctx.createGain();
-  o.connect(g); g.connect(ctx.destination);
+function sweep(f0, f1, dur, type = "sine", vol = 0.16, t0 = 0) {
+  const ctx = ac(),
+    o = ctx.createOscillator(),
+    g = ctx.createGain();
+  o.connect(g);
+  g.connect(ctx.destination);
   o.type = type;
   o.frequency.setValueAtTime(f0, ctx.currentTime + t0);
   o.frequency.exponentialRampToValueAtTime(f1, ctx.currentTime + t0 + dur);
@@ -48,59 +54,68 @@ function sweep(f0, f1, dur, type = 'sine', vol = 0.16, t0 = 0) {
 
 // Each printable key: tight mechanical tap
 function sndKey() {
-  tone(1300, 0.04, 'square', 0.04);
+  tone(1300, 0.04, "square", 0.04);
 }
 
 // Backspace: short downward tick (reverse of key)
 function sndBackspace() {
-  sweep(620, 300, 0.07, 'sine', 0.07);
+  sweep(620, 300, 0.07, "sine", 0.07);
 }
 
 // Correct word: quick rising laser-ping then warm bell ring
 function sndCorrect() {
-  sweep(240, 960, 0.09, 'sine', 0.20);
-  tone(960, 0.32, 'triangle', 0.18, 0.07);
-  tone(1920, 0.18, 'sine', 0.09, 0.14);
+  sweep(240, 960, 0.09, "sine", 0.2);
+  tone(960, 0.32, "triangle", 0.18, 0.07);
+  tone(1920, 0.18, "sine", 0.09, 0.14);
 }
 
 // Wrong word: flat low thud + brief descending groan
 function sndWrong() {
-  tone(160, 0.14, 'sawtooth', 0.26);
-  sweep(300, 110, 0.22, 'triangle', 0.14, 0.06);
+  tone(160, 0.14, "sawtooth", 0.26);
+  sweep(300, 110, 0.22, "triangle", 0.14, 0.06);
 }
 
 // New word appears: soft upward shimmer (subtle, non-intrusive)
 function sndNewWord() {
-  sweep(320, 580, 0.16, 'sine', 0.09);
+  sweep(320, 580, 0.16, "sine", 0.09);
 }
 
 // Streak milestone sounds — each one escalates in energy
 function sndStreak5() {
   // Double bright ping — "nice!"
-  tone(1047, 0.18, 'sine', 0.20);
-  tone(1319, 0.22, 'sine', 0.20, 0.12);
+  tone(1047, 0.18, "sine", 0.2);
+  tone(1319, 0.22, "sine", 0.2, 0.12);
 }
 function sndStreak10() {
   // 3-note ascending arpeggio — "getting hot!"
-  [[880, 0], [1047, 0.10], [1319, 0.20]].forEach(([f, t]) => tone(f, 0.28, 'sine', 0.22, t));
-  tone(1568, 0.22, 'sine', 0.16, 0.30);
+  [
+    [880, 0],
+    [1047, 0.1],
+    [1319, 0.2],
+  ].forEach(([f, t]) => tone(f, 0.28, "sine", 0.22, t));
+  tone(1568, 0.22, "sine", 0.16, 0.3);
 }
 function sndStreak20() {
   // Sweep + chord blast — "on fire!"
-  sweep(440, 1760, 0.20, 'sine', 0.18);
-  [880, 1047, 1319, 1568].forEach(f => tone(f, 0.40, 'sine', 0.14, 0.18));
+  sweep(440, 1760, 0.2, "sine", 0.18);
+  [880, 1047, 1319, 1568].forEach((f) => tone(f, 0.4, "sine", 0.14, 0.18));
 }
 function sndStreak30() {
   // Full epic: bass-to-high sweep + chord explosion + shimmer
-  sweep(180, 1760, 0.30, 'sine', 0.20);
-  [1047, 1319, 1568, 2093].forEach(f => tone(f, 0.50, 'sine', 0.14, 0.28));
-  [[1568, 0.60], [2093, 0.70], [1568, 0.80], [2093, 0.90]].forEach(([f, t]) => tone(f, 0.14, 'triangle', 0.12, t));
+  sweep(180, 1760, 0.3, "sine", 0.2);
+  [1047, 1319, 1568, 2093].forEach((f) => tone(f, 0.5, "sine", 0.14, 0.28));
+  [
+    [1568, 0.6],
+    [2093, 0.7],
+    [1568, 0.8],
+    [2093, 0.9],
+  ].forEach(([f, t]) => tone(f, 0.14, "triangle", 0.12, t));
 }
 function sndStreakMilestone(streak) {
-  if      (streak >= 30) sndStreak30();
+  if (streak >= 30) sndStreak30();
   else if (streak >= 20) sndStreak20();
   else if (streak >= 10) sndStreak10();
-  else if (streak >=  5) sndStreak5();
+  else if (streak >= 5) sndStreak5();
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -137,7 +152,7 @@ function idbGet(key) {
         const r = store.get(key);
         r.onsuccess = () => resolve(r.result);
         r.onerror = () => reject(r.error);
-      })
+      }),
   );
 }
 function idbSet(key, val) {
@@ -149,7 +164,7 @@ function idbSet(key, val) {
         const r = store.put(val, key);
         r.onsuccess = () => resolve();
         r.onerror = () => reject(r.error);
-      })
+      }),
   );
 }
 
@@ -441,7 +456,7 @@ const HEROES = [
     heroImage: "./images/Betar_1.png",
     secondHeroImage: "./images/Betar_2.png",
     heroScale: 0.4,
-    symbol: "Betar (Alphabet Neighbors)",
+    symbol: "Betar (Alphabet Slots)",
     color: "gray",
     projectileImage: "./images/Ectoplasm.png",
     projectileScale: 0.2,
@@ -642,7 +657,7 @@ Object.assign(STATE, {
 async function loadWords() {
   try {
     const txt = await fetch("./2of12.txt", { cache: "no-store" }).then((r) =>
-      r.text()
+      r.text(),
     );
     STATE.words = txt
       .split(/\r?\n/)
@@ -1033,7 +1048,7 @@ async function saveCurrentWord() {
           const r = store.get(key);
           r.onsuccess = () => resolve(r.result);
           r.onerror = () => reject(r.error);
-        })
+        }),
     );
   }
   function idbSet(key, val) {
@@ -1045,7 +1060,7 @@ async function saveCurrentWord() {
           const r = store.put(val, key);
           r.onsuccess = () => resolve();
           r.onerror = () => reject(r.error);
-        })
+        }),
     );
   }
   function idbDel(key) {
@@ -1057,7 +1072,7 @@ async function saveCurrentWord() {
           const r = store.delete(key);
           r.onsuccess = () => resolve();
           r.onerror = () => reject(r.error);
-        })
+        }),
     );
   }
 
@@ -1478,7 +1493,7 @@ function openShortcutsDialog() {
         dlg.close("ok");
       }
     },
-    { once: true }
+    { once: true },
   );
 }
 
@@ -1850,7 +1865,7 @@ window.addEventListener(
     //   if (!STATE.paused) requestAnimationFrame(update);
     // }
   },
-  true
+  true,
 );
 
 /* ---------- Boot ---------- */
