@@ -158,6 +158,45 @@ canvas {
   color: var(--kj-fg-dim);
   line-height: 1.35;
 }
+/* Character-order toggle (SEQUENTIAL / RANDOM) — kana modes */
+.mob-order {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 2px;
+}
+.mob-order-label {
+  font-family: 'Courier New', monospace;
+  font-size: clamp(11px, 3.2vw, 14px);
+  letter-spacing: 1px;
+  color: var(--kj-fg-dim);
+}
+.mob-order-segs {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 360px;
+}
+.mob-order-seg {
+  flex: 1;
+  font-family: 'Courier New', monospace;
+  font-size: clamp(12px, 3.4vw, 15px);
+  font-weight: 700;
+  padding: 12px 8px;
+  background: var(--kj-card-bg);
+  color: var(--kj-fg-dim);
+  border: 1.5px solid var(--kj-card-bd);
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mob-order-seg.active {
+  color: #0b0b0b;
+  background: var(--kj-accent);
+  border-color: var(--kj-accent);
+  box-shadow: 0 0 12px var(--kj-accent);
+}
 .mob-back {
   padding: 10px 16px;
   font-size: clamp(13px, 3.6vw, 16px);
@@ -289,6 +328,13 @@ canvas {
 <!-- Mobile-only difficulty-select overlay -->
 <div id="mob-select" class="mob-overlay">
   <h1 style="font-size:clamp(26px,8vw,42px);">SELECT  DIFFICULTY</h1>
+  <div class="mob-order" id="mob-order">
+    <span class="mob-order-label">KANA ORDER</span>
+    <div class="mob-order-segs">
+      <button type="button" class="mob-order-seg" data-order="seq">SEQUENTIAL</button>
+      <button type="button" class="mob-order-seg" data-order="rand">RANDOM</button>
+    </div>
+  </div>
   <div class="mob-cards" id="mob-cards"></div>
   <button id="mob-back" class="mob-back">← BACK</button>
 </div>
@@ -1029,6 +1075,63 @@ let THEME_BTN = IS_MOBILE
   ? { x: W-80, y: 6, w: 34, h: 34 }
   : { x: W-62, y: 6, w: 24, h: 24 };
 
+// Difficulty-select layout (cards + character-order toggle). Computed by
+// layoutSelect() and recomputed from sizeCanvas() so it fits the live W/H.
+// On desktop the canvas is a fixed 920×580; on mobile it's portrait and much
+// shorter (sizeCanvas reserves a keyboard band), so the select screen has to
+// pack the cards + toggle + hints into whatever height is available — otherwise
+// the toggle (and lower cards) would render below the visible canvas.
+let SELECT_CARDS  = [];
+let SELECT_TOGGLE = null;
+let SELECT_TITLE_Y = 100, SELECT_SUB_Y = 132, SELECT_BACK_Y = 573;
+function layoutSelect() {
+  const n = MODE_KEYS.length;
+  if (!IS_MOBILE) {
+    // Desktop — fixed layout. Toggle sits ABOVE the cards (under the subtitle).
+    const cardW = 580, cardH = 80, gap = 16;
+    const w = 460, h = 30, x = (W - w) / 2, y = 148;  // toggle row
+    const segW = 130, segH = h - 8, segY = y + 4;
+    const seg2x = x + w - 8 - segW, seg1x = seg2x - 6 - segW;
+    SELECT_TOGGLE = { x, y, w, h, segW, segH, segY,
+      seg1: { x: seg1x, y: segY, w: segW, h: segH },
+      seg2: { x: seg2x, y: segY, w: segW, h: segH } };
+    const y0 = y + h + 14;   // cards start just below the toggle
+    SELECT_CARDS = MODE_KEYS.map((key, i) => ({
+      key, x: (W - cardW) / 2, y: y0 + i * (cardH + gap),
+      w: cardW, h: cardH, num: String(i + 1),
+    }));
+    SELECT_TITLE_Y = 100; SELECT_SUB_Y = 132; SELECT_BACK_Y = H - 7;
+    return;
+  }
+  // Mobile — pack everything between the title and the bottom of the canvas.
+  // Toggle sits ABOVE the cards (just under the subtitle).
+  const titleY = 54, subY = titleY + 22;
+  const toggleH = 34;
+  const toggleY = subY + 14;                  // toggle row, under the subtitle
+  const cardsTop = toggleY + toggleH + 10;    // cards start below the toggle
+  const backY  = H - 8;                       // back hint baseline
+  const gap = 8;
+  const cardsBottom = backY - 16;
+  let cardH = (cardsBottom - cardsTop - (n - 1) * gap) / n;
+  cardH = Math.max(46, Math.min(80, cardH));
+  const cardW = Math.min(580, W - 16);
+  const cardX = (W - cardW) / 2;
+  SELECT_CARDS = MODE_KEYS.map((key, i) => ({
+    key, x: cardX, y: cardsTop + i * (cardH + gap),
+    w: cardW, h: cardH, num: String(i + 1),
+  }));
+  const tW = Math.min(460, W - 16), tX = (W - tW) / 2;
+  // Reserve room for the "ORDER:" label on the left, split the rest into two segs.
+  const labelW = 70, rightPad = 8, segGap = 6;
+  const segW = Math.max(96, Math.floor((tW - labelW - rightPad - segGap) / 2));
+  const segH = toggleH - 8, segY = toggleY + 4;
+  const seg2x = tX + tW - rightPad - segW, seg1x = seg2x - segGap - segW;
+  SELECT_TOGGLE = { x: tX, y: toggleY, w: tW, h: toggleH, segW, segH, segY,
+    seg1: { x: seg1x, y: segY, w: segW, h: segH },
+    seg2: { x: seg2x, y: segY, w: segW, h: segH } };
+  SELECT_TITLE_Y = titleY; SELECT_SUB_Y = subY; SELECT_BACK_Y = backY;
+}
+
 // ── Canvas-size + layout recompute ───────────────────────────────────
 // On mobile the canvas is sized to the viewport (1:1 logical↔physical px),
 // and ground/panel/buttons re-anchor to the new H/W. Called at boot and
@@ -1075,6 +1178,8 @@ function sizeCanvas() {
     THEME_BTN = { x: W-62, y: 6, w: 24, h: 24 };
     FIND_BTN  = { x: 300,  y: 538, w: 600, h: 26 };
   }
+  // Re-fit the difficulty-select cards + order toggle to the new W/H.
+  layoutSelect();
 }
 sizeCanvas();
 // Only resize the canvas on resize events — DON'T regenerate buildings.
@@ -1098,37 +1203,6 @@ const HINT_DELAY_MS = 1000;
 
 // Punch animation length (frames) — fires on every correct katakana
 const PUNCH_DUR = 14;
-
-// Difficulty-select card hit-boxes (used by renderSelect + pointer handler)
-const SELECT_CARD_W   = 580;
-const SELECT_CARD_H   = 80;
-const SELECT_CARD_GAP = 16;
-const SELECT_STACK_Y0 = 150;
-const SELECT_CARDS = MODE_KEYS.map((key, i) => ({
-  key,
-  x: (W - SELECT_CARD_W) / 2,
-  y: SELECT_STACK_Y0 + i * (SELECT_CARD_H + SELECT_CARD_GAP),
-  w: SELECT_CARD_W,
-  h: SELECT_CARD_H,
-  num: String(i + 1),
-}));
-
-// Character-order toggle, sits below the mode cards. Two clickable segments
-// (SEQUENTIAL / RANDOM); also flipped with the R key on the select screen.
-const SELECT_TOGGLE = (() => {
-  const w = 460, h = 30;
-  const x = (W - w) / 2;
-  const y = SELECT_STACK_Y0 + (MODE_KEYS.length - 1) * (SELECT_CARD_H + SELECT_CARD_GAP)
-            + SELECT_CARD_H + 12;
-  const segW = 130, segH = h - 8, segY = y + 4;
-  const seg2x = x + w - 8 - segW;        // RANDOM
-  const seg1x = seg2x - 6 - segW;        // SEQUENTIAL
-  return {
-    x, y, w, h, segW, segH, segY,
-    seg1: { x: seg1x, y: segY, w: segW, h: segH },  // SEQUENTIAL → randomOrder=false
-    seg2: { x: seg2x, y: segY, w: segW, h: segH },  // RANDOM     → randomOrder=true
-  };
-})();
 
 // ── Random level / building config generator (kanji mode) ───────────
 // Returns 3–4 buildings with varied cols and floors so each game looks
@@ -3402,18 +3476,21 @@ function renderSelect() {
   drawVehicles();
   ctx.textAlign = 'center';
 
+  const mob = IS_MOBILE;
+
   // Title
-  ctx.font       = 'bold 36px "Courier New"';
+  ctx.font       = mob ? 'bold 26px "Courier New"' : 'bold 36px "Courier New"';
   ctx.shadowBlur = 16; ctx.shadowColor = P.hud;
   ctx.fillStyle  = P.hud;
-  ctx.fillText('SELECT  DIFFICULTY', W/2, 100);
+  ctx.fillText('SELECT  DIFFICULTY', W/2, SELECT_TITLE_Y);
   ctx.shadowBlur = 0;
 
-  ctx.font      = '14px "Courier New"';
+  ctx.font      = mob ? '12px "Courier New"' : '14px "Courier New"';
   ctx.fillStyle = P.hud_dim;
-  ctx.fillText('press a number — or tap a card', W/2, 132);
+  ctx.fillText(mob ? 'tap a card to start' : 'press a number — or tap a card', W/2, SELECT_SUB_Y);
 
-  // Mode cards
+  // Mode cards — text positions scale with card height so they fit the
+  // shorter mobile cards. Descriptions are dropped on the compact layout.
   const t = Date.now();
   SELECT_CARDS.forEach(card => {
     const m = MODES[card.key];
@@ -3425,37 +3502,43 @@ function renderSelect() {
     ctx.lineWidth   = 1.5;
     ctx.strokeRect(card.x+0.5, card.y+0.5, card.w-1, card.h-1);
 
+    const showDesc = card.h >= 64;
+    const textX    = card.x + (mob ? 64 : 84);
+    const badgeFont = mob ? Math.min(30, Math.round(card.h * 0.55)) : 36;
+
     // Number badge
-    ctx.font      = 'bold 36px "Courier New"';
+    ctx.font      = `bold ${badgeFont}px "Courier New"`;
     ctx.fillStyle  = P.find_fl;
     ctx.shadowBlur = 10; ctx.shadowColor = P.find_fl;
     ctx.textAlign  = 'center';
-    ctx.fillText(card.num, card.x + 38, card.y + card.h/2 + 12);
+    ctx.fillText(card.num, card.x + (mob ? 32 : 38), card.y + card.h/2 + badgeFont*0.34);
     ctx.shadowBlur = 0;
 
     // Label
-    ctx.font      = 'bold 18px "Courier New"';
+    ctx.font      = mob ? 'bold 15px "Courier New"' : 'bold 18px "Courier New"';
     ctx.fillStyle = P.hud;
     ctx.textAlign = 'left';
-    ctx.fillText(m.label, card.x + 84, card.y + 26);
+    ctx.fillText(m.label, textX, card.y + (showDesc ? 26 : Math.round(card.h*0.42)));
 
-    // Description
-    ctx.font      = '12px "Courier New"';
-    ctx.fillStyle = P.hud_dim;
-    ctx.fillText(m.desc, card.x + 84, card.y + 46);
+    // Description (desktop / tall cards only)
+    if (showDesc) {
+      ctx.font      = '12px "Courier New"';
+      ctx.fillStyle = P.hud_dim;
+      ctx.fillText(m.desc, textX, card.y + 46);
+    }
 
     // Sample glyphs
-    ctx.font      = 'bold 18px "Courier New"';
+    ctx.font      = mob ? 'bold 15px "Courier New"' : 'bold 18px "Courier New"';
     ctx.fillStyle = P.score_fl;
-    ctx.fillText(m.sample, card.x + 84, card.y + 68);
+    ctx.fillText(m.sample, textX, card.y + (showDesc ? 68 : card.h - 9));
   });
 
   // ── Character-order toggle (kana modes) ──────────────────────────
   const tg = SELECT_TOGGLE;
-  ctx.font      = 'bold 13px "Courier New"';
+  ctx.font      = mob ? 'bold 11px "Courier New"' : 'bold 13px "Courier New"';
   ctx.fillStyle = P.hud_dim;
   ctx.textAlign = 'left';
-  ctx.fillText('KANA ORDER:', tg.x + 8, tg.y + tg.h/2 + 5);
+  ctx.fillText(mob ? 'ORDER:' : 'KANA ORDER:', tg.x + 8, tg.y + tg.h/2 + 4);
   const drawSeg = (seg, label, active) => {
     ctx.fillStyle = active ? P.find_fl : P.hud_bg;
     ctx.fillRect(seg.x, seg.y, seg.w, seg.h);
@@ -3464,7 +3547,7 @@ function renderSelect() {
     if (active) { ctx.shadowBlur = 8; ctx.shadowColor = P.find_fl; }
     ctx.strokeRect(seg.x+0.5, seg.y+0.5, seg.w-1, seg.h-1);
     ctx.shadowBlur = 0;
-    ctx.font      = 'bold 12px "Courier New"';
+    ctx.font      = mob ? 'bold 11px "Courier New"' : 'bold 12px "Courier New"';
     ctx.fillStyle = active ? P.hud_bg : P.hud_dim;
     ctx.textAlign = 'center';
     ctx.fillText(label, seg.x + seg.w/2, seg.y + seg.h/2 + 4);
@@ -3472,12 +3555,12 @@ function renderSelect() {
   drawSeg(tg.seg1, 'SEQUENTIAL', !randomOrder);
   drawSeg(tg.seg2, 'RANDOM',      randomOrder);
 
-  // Back hint (flashing)
-  if ((Math.floor(t/500)%2)===0) {
+  // Back hint (flashing) — desktop only (no ESC key on mobile).
+  if (!mob && (Math.floor(t/500)%2)===0) {
     ctx.font      = '12px "Courier New"';
     ctx.fillStyle = P.hud_dim;
     ctx.textAlign = 'center';
-    ctx.fillText('[ ESC: back to title ]', W/2, H - 7);
+    ctx.fillText('[ ESC: back to title ]', W/2, SELECT_BACK_Y);
   }
 
   drawHelpButton();
@@ -3830,6 +3913,25 @@ MODE_KEYS.forEach((key, i) => {
   });
   mobCardsEl.appendChild(btn);
 });
+
+// Character-order toggle (mobile DOM mirror of the canvas SELECT_TOGGLE).
+// Kana-only, session-only — flips the shared `randomOrder` flag that
+// startGame reads to build runOrder. Two segments behave like a radio.
+const mobOrderEl   = document.getElementById('mob-order');
+const mobOrderSegs = mobOrderEl ? [...mobOrderEl.querySelectorAll('.mob-order-seg')] : [];
+function syncMobOrder() {
+  mobOrderSegs.forEach(seg =>
+    seg.classList.toggle('active', (seg.dataset.order === 'rand') === randomOrder));
+}
+mobOrderSegs.forEach(seg => {
+  seg.addEventListener('click', ev => {
+    ev.preventDefault();
+    randomOrder = seg.dataset.order === 'rand';
+    audio();
+    syncMobOrder();
+  });
+});
+syncMobOrder();
 
 mobCtaBtn.addEventListener('click', ev => {
   ev.preventDefault();
