@@ -61,10 +61,16 @@
   .log .me{color:var(--accent)}
   .log .steal{color:var(--venom)}
   .log .sys{color:#e8c977}
-  details.rules{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
-  details.rules summary{cursor:pointer;color:var(--accent);font-size:13px}
-  details.rules div{font-size:13px;line-height:1.6;color:#cdd;margin-top:8px}
-  details.rules b{color:#fff}
+  .iconbtn{font-family:inherit;font-weight:700;font-size:17px;width:34px;height:34px;padding:0;border-radius:50%;background:var(--panel);border:1px solid var(--line);color:var(--accent);cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+  .iconbtn:hover{filter:brightness(1.12);border-color:var(--accent-dim)}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal-bg.show{display:flex}
+  .modal{position:relative;background:var(--panel);border:1px solid var(--accent-dim);border-radius:10px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;padding:20px 22px}
+  .modal h2{margin:0 0 12px;color:var(--accent)}
+  .modal .rules-body{font-size:13px;line-height:1.6;color:#cdd}
+  .modal .rules-body b{color:#fff}
+  .modal .close{position:absolute;top:10px;right:12px;width:auto;height:auto;padding:2px 6px;background:transparent;border:none;color:var(--muted);font-size:22px;line-height:1;cursor:pointer}
+  .modal .close:hover{color:#fff}
 
   /* scoreboard */
   #scoreboard{display:none;background:var(--panel);border:1px solid var(--accent-dim);border-radius:8px;padding:18px;max-width:520px;margin:24px auto}
@@ -84,8 +90,7 @@
       <small>exquisite corpse · monster rummy</small>
     </div>
     <div class="spacer"></div>
-    <div class="pill">LAB <b id="labCount">0</b></div>
-    <div class="pill">GRAVEYARD <b id="graveCount">0</b></div>
+    <button class="iconbtn" id="rulesBtn" title="Rules & how to play" aria-label="Rules and how to play">?</button>
   </div>
 
   <!-- SETUP -->
@@ -118,17 +123,6 @@
     <canvas id="board" width="1140" height="700"></canvas>
     <div class="controls" id="controls"></div>
     <div class="log" id="log"></div>
-    <details class="rules">
-      <summary>Rules & how to play</summary>
-      <div>
-        <b>Your turn:</b> Draw → Build / Steal → Discard.<br>
-        <b>Draw</b> — click the LAB deck, or click any card in the graveyard. The top graveyard card is free. Digging deeper is only allowed if that card can complete a monster this turn, and you must also sweep every card sitting on top of it into your hand.<br>
-        <b>Build</b> — select cards in your hand and press <b>Build monster</b>. A monster is exactly one skull + one foot, with any number of claws, all sharing a suit. Wild parts can fill a missing suit. Build as many as you like.<br>
-        <b>Steal</b> — switch to Steal mode and click a glowing wild part inside any monster, then click a matching real card (same suit + same part) from your hand to swap it in. The wild returns to your hand and can be rebuilt this turn.<br>
-        <b>Discard</b> — end your turn by sending one card to the graveyard. If your hand is empty you may end the turn instead.<br>
-        <b>Round end</b> — emptying your hand triggers the last turn; everyone else gets one more turn, then scores are tallied.
-      </div>
-    </details>
   </div>
 
   <!-- SCOREBOARD -->
@@ -138,6 +132,22 @@
     <div style="margin-top:16px;display:flex;gap:8px">
       <button class="primary" id="againBtn">New round</button>
       <button class="ghost" id="resetBtn">Change table</button>
+    </div>
+  </div>
+</div>
+
+<!-- RULES MODAL -->
+<div class="modal-bg" id="rulesModal">
+  <div class="modal">
+    <button class="close" id="rulesClose" aria-label="Close">×</button>
+    <h2>Rules &amp; how to play</h2>
+    <div class="rules-body">
+      <b>Your turn:</b> Draw → Build / Steal → Discard.<br>
+      <b>Draw</b> — click the LAB deck, or click any card in the graveyard. The rightmost graveyard card is free. Digging deeper is only allowed if that card can complete a monster this turn, and you must also sweep every card sitting on top of it into your hand.<br>
+      <b>Build</b> — drag cards from your hand into the HEAD / BODY / FOOT slots. A monster is exactly one skull + one foot, with any number of claws, all sharing a suit. Wild parts can fill a missing suit. Once a head and a foot are placed the monster forms automatically.<br>
+      <b>Steal</b> — switch to Steal mode and click a glowing wild part inside any monster, then click a matching real card (same suit + same part) from your hand to swap it in. The wild returns to your hand and can be rebuilt this turn.<br>
+      <b>Discard</b> — end your turn by sending one card to the graveyard. If your hand is empty you may end the turn instead.<br>
+      <b>Round end</b> — emptying your hand triggers the last turn; everyone else gets one more turn, then scores are tallied.
     </div>
   </div>
 </div>
@@ -968,8 +978,6 @@ function handleHit(r){
    HUD / CONTROLS / LOG
    ============================================================ */
 function updateHUD(){
-  document.getElementById('labCount').textContent=G.lab.length;
-  document.getElementById('graveCount').textContent=G.graveyard.length;
   document.getElementById('turnChip').textContent=cur().name+(cur().type==='cpu'?' (AI)':'')+ (G.lastTurn?'  ·  LAST TURN':'');
   const phaseName = G.phase==='action' ? ('action · '+G.mode) : G.phase;
   document.getElementById('phaseChip').textContent=phaseName;
@@ -1046,6 +1054,14 @@ document.getElementById('resetBtn').onclick=()=>{
   document.getElementById('scoreboard').style.display='none';
   document.getElementById('setup').style.display='block';
 };
+
+// rules modal (opened by the [?] button in the top bar)
+const rulesModal=document.getElementById('rulesModal');
+function setRules(open){ rulesModal.classList.toggle('show', open); }
+document.getElementById('rulesBtn').onclick=()=>setRules(true);
+document.getElementById('rulesClose').onclick=()=>setRules(false);
+rulesModal.addEventListener('click', e=>{ if(e.target===rulesModal) setRules(false); }); // click backdrop to close
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') setRules(false); });
 </script>
 </body>
 </html>
