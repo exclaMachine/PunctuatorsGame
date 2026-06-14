@@ -520,7 +520,9 @@ function aiTurn(){
    ============================================================ */
 const canvas=document.getElementById('board');
 const ctx=canvas.getContext('2d');
-const CARD_W=88, CARD_H=124, BANNER=24;
+// Cards are sized so the banner fits a readable ~13-character name beside the
+// two glyph circles (see drawCard's banner layout).
+const CARD_W=164, CARD_H=216, BANNER=30;
 let regions=[]; // {x,y,w,h,type,data}
 
 function add(x,y,w,h,type,data){ regions.push({x,y,w,h,type,data}); }
@@ -535,7 +537,7 @@ function suitFill(x0,y0,x1,y1,suit){
 
 function drawPartArt(x,y,w,h,card){
   const key=card.part+'_'+card.name;
-  const conY=y+h*0.52, conH=18;
+  const conY=y+h*0.52, conH=h*0.17;
   ctx.save();
   // connecting "spine" band reaches the linking edge(s) so neighbours join
   ctx.fillStyle=suitFill(x,conY,x+w,conY,card.suit);
@@ -550,6 +552,8 @@ function drawPartArt(x,y,w,h,card){
   const col=card.suit==='wild' ? '#b06bff' : SUIT_COLOR[card.suit];
   ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=3;
   const cx=x+w/2, cy=y+h*0.40;
+  // placeholder shapes were drawn for an ~88px-wide card — scale them up to fill bigger cards
+  const s=w/88; ctx.translate(cx,cy); ctx.scale(s,s); ctx.translate(-cx,-cy);
   if(card.part==='skull'){
     ctx.globalAlpha=.9;
     ctx.beginPath(); ctx.arc(cx-6, cy, 22, 0, Math.PI*2); ctx.fill();
@@ -593,19 +597,26 @@ function drawCard(x,y,card,opts={}){
   ctx.fillStyle='#f4eede'; ctx.fillRect(x,y+BANNER,w,h-BANNER);
   drawPartArt(x, y+BANNER, w, h-BANNER, card);
   ctx.restore();
-  // banner: 1 suit circle + 1 part circle + body name
+  // banner: 1 suit circle + 1 part circle + body name (room for ~13 chars)
   ctx.fillStyle='#ddd3bb'; ctx.fillRect(x+1,y+1,w-2,BANNER-1);
-  const r=7; let cxs=x+12;
-  drawGlyphCircle(cxs, y+BANNER/2, r, card.suit==='wild'?'#b06bff':SUIT_COLOR[card.suit], SUIT_GLYPH[card.suit]); cxs+=18;
-  drawGlyphCircle(cxs, y+BANNER/2, r, '#3a3326', PART_GLYPH[card.part]);
-  ctx.fillStyle='#2a241c'; ctx.font='9px "Courier New",monospace'; ctx.textAlign='right'; ctx.textBaseline='middle';
-  ctx.fillText(card.name, x+w-6, y+BANNER/2+1);
+  const sc=Math.min(1, w/CARD_W); // shrink banner contents for scaled-down cards
+  const r=8*sc; let cxs=x+11*sc + r;
+  const bcy=y+BANNER/2;
+  drawGlyphCircle(cxs, bcy, r, card.suit==='wild'?'#b06bff':SUIT_COLOR[card.suit], SUIT_GLYPH[card.suit]); cxs+=2*r+4*sc;
+  drawGlyphCircle(cxs, bcy, r, '#3a3326', PART_GLYPH[card.part]); cxs+=r;
+  // name fills the rest of the banner; auto-shrinks if it would collide with the glyphs
+  const nameRight=x+w-7*sc, nameLeft=cxs+7*sc;
+  let fs=13*sc;
+  ctx.font=fs+'px "Courier New",monospace';
+  while(fs>7 && ctx.measureText(card.name).width > (nameRight-nameLeft)){ fs-=0.5; ctx.font=fs+'px "Courier New",monospace'; }
+  ctx.fillStyle='#2a241c'; ctx.textAlign='right'; ctx.textBaseline='middle';
+  ctx.fillText(card.name, nameRight, bcy+0.5);
   ctx.restore();
 }
 function drawGlyphCircle(cx,cy,r,color,glyph){
   ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
   ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=1; ctx.stroke();
-  ctx.fillStyle='#fff'; ctx.font='9px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#fff'; ctx.font=(r*1.4)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText(glyph, cx, cy+0.5);
 }
 function drawCardBack(x,y,w,h){
