@@ -643,10 +643,10 @@ function render(){
   const innerW=canvas.width-pad*2;
   const bfRows=layoutBattlefield(innerW);
   const bfHeight = Math.max(CARD_W*0.78+32, bfRows.height);
-  // graveyard height depends on count
-  const graveStagger=24;
-  const graveH = CARD_H + Math.max(0,(G.graveyard.length-1))*graveStagger;
-  const midH = Math.max(CARD_H+40, graveH+30);
+  // graveyard now fans out to the RIGHT (rotated cards), so it's a single
+  // landscape-card-tall row; the LAB deck (portrait) drives the mid height.
+  const graveH = CARD_W; // landscape card height = portrait width
+  const midH = Math.max(CARD_H+40, graveH+44);
   // hand height
   const handCards = (cur().type==='human'||G.phase==='draw') ? cur().hand.length : cur().hand.length;
   const handPerRow = Math.floor(innerW/(CARD_W+10));
@@ -670,7 +670,7 @@ function render(){
   // ---- LAB + GRAVEYARD ----
   sectionTitle(pad, y+8, 'The Lab & the Graveyard');
   y+=22;
-  drawLabGrave(pad, y);
+  drawLabGrave(pad, y, innerW);
   y+=midH+18;
 
   // ---- ASSEMBLY STAGING SLOTS (drag-build) ----
@@ -817,8 +817,17 @@ function drawCardLandscape(x,y,w,h,card,opts={}){
   drawCard(-h/2, -w/2, card, {w:h, h:w, ...opts});
   ctx.restore();
 }
+/* same idea rotated 90° CCW: the banner lands on the LEFT edge — used by the
+   graveyard so each card's banner stays visible as the pile fans out rightward. */
+function drawCardLandscapeCCW(x,y,w,h,card,opts={}){
+  ctx.save();
+  ctx.translate(x+w/2, y+h/2);
+  ctx.rotate(-Math.PI/2);
+  drawCard(-h/2, -w/2, card, {w:h, h:w, ...opts});
+  ctx.restore();
+}
 
-function drawLabGrave(x,y){
+function drawLabGrave(x,y,innerW){
   // LAB deck
   const labX=x, labY=y+4;
   for(let i=Math.min(4,Math.max(1,Math.ceil(G.lab.length/12)));i>=1;i--){
@@ -830,21 +839,27 @@ function drawLabGrave(x,y){
     ctx.strokeStyle='#7ee787'; ctx.lineWidth=2; roundRect(labX,labY,CARD_W,CARD_H,7); ctx.stroke();
     add(labX,labY,CARD_W,CARD_H,'lab',null);
   }
-  // GRAVEYARD (staggered down, banner of each visible; perpendicular look via slight tag)
-  const gx=labX+CARD_W+60, gy=y+4, stagger=24;
+  // GRAVEYARD — fans out to the RIGHT, each card rotated 90° CCW so its banner
+  // sits on the left edge and stays visible under the next card. Newest card is
+  // the rightmost (on top) and is the free draw.
+  const gw=CARD_H, gh=CARD_W;            // landscape bounding box (portrait rotated 90°)
+  const gx=labX+CARD_W+50, gy=y+4;
+  const n=G.graveyard.length;
+  const availW=(x+innerW)-gx-8;          // room from the pile's left edge to the right margin
+  const stagger = n>1 ? Math.max(12, Math.min(44, (availW-gw)/(n-1))) : 0;
   const clickable = (G.phase==='draw'&&!G.drewThisTurn&&cur().type==='human');
   G.graveyard.forEach((c,i)=>{
-    const cy=gy+i*stagger;
-    const isTop=(i===G.graveyard.length-1);
-    drawCard(gx, cy, c, {});
+    const cxp=gx + i*stagger;
+    const isTop=(i===n-1);
+    drawCardLandscapeCCW(cxp, gy, gw, gh, c, {});
     if(clickable){
-      // top card fully clickable; deeper cards only their visible banner strip
-      if(isTop){ add(gx,cy,CARD_W,CARD_H,'grave',{index:i}); ctx.strokeStyle='#7ee787'; ctx.lineWidth=2; roundRect(gx,cy,CARD_W,CARD_H,7); ctx.stroke(); }
-      else { add(gx,cy,CARD_W,stagger,'grave',{index:i}); }
+      // top card fully clickable; deeper cards only their visible (left) banner strip
+      if(isTop){ add(cxp,gy,gw,gh,'grave',{index:i}); ctx.strokeStyle='#7ee787'; ctx.lineWidth=2; roundRect(cxp,gy,gw,gh,7); ctx.stroke(); }
+      else { add(cxp,gy,Math.max(stagger,1),gh,'grave',{index:i}); }
     }
   });
   ctx.fillStyle='#9ab'; ctx.font='11px "Courier New",monospace'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-  ctx.fillText('top is free · dig deeper only to build', gx+CARD_W+14, gy+16);
+  ctx.fillText('rightmost is free · dig deeper only to build', gx, gy+gh+18);
 }
 
 function drawHand(x,y,innerW,perRow){

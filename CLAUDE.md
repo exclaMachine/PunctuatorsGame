@@ -497,8 +497,11 @@ the log are plain DOM elements styled with CSS variables at the top of `<style>`
 from the current content, clears, redraws every section, and rebuilds the `regions[]`
 array. Each interactive element pushes a hit-rect via `add(x, y, w, h, type, data)`. The
 click handler walks `regions` **in reverse** so the topmost (last-drawn) element wins —
-this is what makes the staggered graveyard's top card take priority. Call `render()` after
-any state change; do not mutate the canvas outside the `draw*` helpers.
+this is what makes the graveyard's top card take priority. (The graveyard fans out to the
+**right**, each card rotated 90° CCW via `drawCardLandscapeCCW` so its banner stays visible;
+the rightmost/newest card is on top and is the free draw, deeper cards expose only their
+left banner strip.) Call `render()` after any state change; do not mutate the canvas outside
+the `draw*` helpers.
 
 ## Data model
 
