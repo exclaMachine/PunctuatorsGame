@@ -54,7 +54,7 @@
   .turnchip{font-weight:700}
   .phasechip{font-family:"Courier New",monospace;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent)}
   .instruct{color:var(--muted);font-size:13px;flex:1;min-width:200px}
-  canvas{display:block;width:100%;height:auto;background:linear-gradient(180deg,#0c1816,#0a1412);border:1px solid var(--line);border-radius:8px;}
+  canvas{display:block;width:100%;height:auto;background:linear-gradient(180deg,#0c1816,#0a1412);border:1px solid var(--line);border-radius:8px;touch-action:none;}
   .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
   .controls .sel{font-family:"Courier New",monospace;font-size:12px;color:var(--muted)}
   .log{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;height:104px;overflow-y:auto;font-family:"Courier New",monospace;font-size:12px;line-height:1.55;color:#bcd}
@@ -205,7 +205,7 @@ function newGame(seats){
   G = {
     players, monsters:[], lab:deck, graveyard:grave,
     current:0, phase:'draw', mode:'build',
-    selection:new Set(), stealTarget:null,
+    stage:{skull:null, claws:[], foot:null}, stealTarget:null,
     builtThisTurnIds:new Set(), mustUseIds:new Set(),
     drewThisTurn:false, lastTurn:false, lastTurnRemaining:0, roundOver:false,
     log:[]
@@ -262,7 +262,7 @@ function cur(){ return G.players[G.current]; }
 
 function startTurn(){
   G.phase='draw'; G.mode='build';
-  G.selection.clear(); G.stealTarget=null;
+  G.stage={skull:null, claws:[], foot:null}; G.stealTarget=null;
   G.builtThisTurnIds.clear(); G.mustUseIds.clear();
   G.drewThisTurn=false;
   // auto-skip draw only if no cards anywhere to draw
@@ -304,21 +304,52 @@ function drawFromGraveyard(index){
   render();
 }
 
-function buildSelected(){
-  if(G.phase!=='action') return;
-  const idxs=[...G.selection];
-  if(idxs.length<2){ flash('Select at least a skull and a foot.'); return; }
-  const cards=idxs.map(i=>cur().hand[i]);
+/* all cards currently sitting in the staging slots, in monster order */
+function stageCards(){
+  const s=G.stage;
+  return [ ...(s.skull?[s.skull]:[]), ...s.claws, ...(s.foot?[s.foot]:[]) ];
+}
+/* place a dragged hand card into its matching slot. Returns true if accepted.
+   Skull/foot have one slot each; claws are unlimited (a fresh empty body slot
+   always follows). After a successful placement we try to auto-build. */
+function placeInStage(card){
+  const s=G.stage;
+  if(card.part==='skull'){ if(s.skull){ flash('The head slot is already filled.'); return false; } s.skull=card; }
+  else if(card.part==='foot'){ if(s.foot){ flash('The foot slot is already filled.'); return false; } s.foot=card; }
+  else { s.claws.push(card); } // claw → next open body slot
+  const i=cur().hand.indexOf(card); if(i>=0) cur().hand.splice(i,1);
+  tryStageBuild();
+  return true;
+}
+// pull a staged card back into the current hand. slot = 'skull' | 'foot' | claw index
+function unStage(slot){
+  const s=G.stage; let c=null;
+  if(slot==='skull'){ c=s.skull; s.skull=null; }
+  else if(slot==='foot'){ c=s.foot; s.foot=null; }
+  else { c=s.claws.splice(slot,1)[0]; }
+  if(c) cur().hand.push(c);
+}
+/* auto-build the monster the instant both a head and a foot are staged. If
+   the suits clash it can't build — warn and leave the slots for the player. */
+function tryStageBuild(){
+  const s=G.stage;
+  if(!s.skull || !s.foot) return false;
+  const cards=stageCards();
   const v=validateMonster(cards);
-  if(!v.ok){ flash(v.reason); return; }
-  // remove from hand (high→low index)
-  idxs.sort((a,b)=>b-a).forEach(i=>cur().hand.splice(i,1));
+  if(!v.ok){ flash('⚠ '+v.reason); return false; }
   const ordered=orderMonster(cards);
   ordered.forEach(c=>{ c.owner=G.current; G.builtThisTurnIds.add(c.id); });
   G.monsters.push({ id:monsterUID++, owner:G.current, cards:ordered });
-  G.selection.clear();
+  G.stage={skull:null, claws:[], foot:null};
   logMsg(playerCls(),cur().name+' built a '+v.suit+' monster ('+ordered.length+' parts).');
-  render();
+  return true;
+}
+// send every staged (un-built) card back to the current player's hand
+function returnTrayToHand(){
+  const all=stageCards();
+  if(!all.length) return;
+  for(const c of all) cur().hand.push(c);
+  G.stage={skull:null, claws:[], foot:null};
 }
 
 function attemptSteal(monsterId, cardIdx){
@@ -352,12 +383,13 @@ function completeSteal(handIdx){
 }
 
 function goDiscard(){
+  returnTrayToHand(); // never lose staged-but-unbuilt cards
   // enforce dig obligation
   for(const id of G.mustUseIds){
     if(cur().hand.some(c=>c.id===id)){ flash('You dug for a card you must build into a monster this turn.'); return; }
   }
   if(cur().hand.length===0){ finalizeTurn(); return; }
-  G.phase='discard'; G.stealTarget=null; G.selection.clear();
+  G.phase='discard'; G.stealTarget=null;
   flash('Click a card in your hand to discard and end your turn.');
   render();
 }
@@ -609,7 +641,11 @@ function render(){
   const handPerRow = Math.floor(innerW/(CARD_W+10));
   const handRows = Math.max(1, Math.ceil(cur().hand.length/handPerRow));
   const handH = handRows*(CARD_H+12)+34;
-  const totalH = pad + 22 + bfHeight + 18 + 22 + midH + 18 + 22 + handH + pad;
+  // assembly staging slots (drag-build) — only while the human is in build mode
+  const showStage = cur().type!=='cpu' && G.phase==='action' && G.mode==='build';
+  const stageBoxH = showStage ? stageLayout(innerW).boxH : 0;
+  const stageH = showStage ? (22 + stageBoxH + 18) : 0;
+  const totalH = pad + 22 + bfHeight + 18 + 22 + midH + 18 + stageH + 22 + handH + pad;
   if(canvas.height!==Math.ceil(totalH)){ canvas.height=Math.ceil(totalH); }
   // clear
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -626,11 +662,26 @@ function render(){
   drawLabGrave(pad, y);
   y+=midH+18;
 
+  // ---- ASSEMBLY STAGING SLOTS (drag-build) ----
+  if(showStage){
+    sectionTitle(pad, y+8, 'Assembly — drag cards into the slots');
+    y+=22;
+    drawStage(pad, y, innerW, stageBoxH);
+    y+=stageBoxH+18;
+  }
+
   // ---- HAND ----
   const who = cur().name + (cur().type==='cpu'?' (AI)':'');
   sectionTitle(pad, y+8, 'Hand — '+who);
   y+=22;
   drawHand(pad, y, innerW, handPerRow);
+
+  // dragged-card ghost floats above everything
+  if(dragState && dragState.dragging && dragState.card){
+    ctx.save(); ctx.globalAlpha=0.85;
+    drawCard(dragState.x-CARD_W/2, dragState.y-CARD_H/2, dragState.card, {});
+    ctx.restore();
+  }
 
   updateHUD();
 }
@@ -684,6 +735,60 @@ function drawBattlefield(x,y,innerW,bf){
     }
     yy += bf.rowHeights[ri];
   });
+}
+/* staging slots: HEAD, one BODY per claw + one always-open BODY, then FOOT —
+   all portrait cards in the same orientation as the hand. Returns a slot list
+   the renderer and drop logic share, plus the card scale that fits the width. */
+function stageLayout(innerW){
+  const s=G.stage;
+  const slots=[{slot:'skull', part:'skull', card:s.skull, label:'HEAD'}];
+  s.claws.forEach((c,i)=>slots.push({slot:i, part:'claw', card:c, label:'BODY'}));
+  slots.push({slot:'claw', part:'claw', card:null, label:'BODY'}); // always one open body slot
+  slots.push({slot:'foot', part:'foot', card:s.foot, label:'FOOT'});
+  const gap=14, n=slots.length, padIn=16, labelH=16;
+  const avail=(innerW - padIn*2 - gap*(n-1))/n;
+  const ss=Math.max(0.5, Math.min(0.82, avail/CARD_W));
+  const slotW=CARD_W*ss, slotH=CARD_H*ss;
+  const boxH=labelH + slotH + padIn*2;
+  return {slots, gap, ss, slotW, slotH, boxH, padIn, labelH};
+}
+function drawStage(x,y,innerW,boxH){
+  const L=stageLayout(innerW);
+  const boxW=innerW;
+  const hot = dragState && dragState.dragging; // a card is being dragged
+  // backing zone (whole row is a forgiving drop target; auto-routes to slot)
+  ctx.save();
+  ctx.fillStyle='rgba(126,231,135,0.04)'; roundRect(x,y,boxW,boxH,9); ctx.fill();
+  ctx.strokeStyle = hot?'#7ee787':'#26433b'; ctx.lineWidth=hot?2:1;
+  roundRect(x,y,boxW,boxH,9); ctx.stroke();
+  ctx.restore();
+  stageZoneRect={x,y,w:boxW,h:boxH};
+  let sx=x+L.padIn;
+  const sy=y+L.labelH+L.padIn/2;
+  for(const sl of L.slots){
+    // label above the slot
+    ctx.fillStyle = sl.card?'#7ee787':'#5e7d72';
+    ctx.font='10px "Courier New",monospace'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    ctx.fillText(sl.label, sx+L.slotW/2, y+12);
+    if(sl.card){
+      drawCard(sx, sy, sl.card, {w:L.slotW, h:L.slotH});
+      add(sx, sy, L.slotW, L.slotH, 'stage-card', {slot:sl.slot});
+    } else {
+      // empty slot: dashed outline + faded part glyph; highlight matching drop
+      const match = hot && dragState.card && dragState.card.part===sl.part;
+      ctx.save();
+      ctx.setLineDash([5,4]); ctx.lineWidth=match?2.5:1.5;
+      ctx.strokeStyle = match?'#7ee787':'#3f6b5e';
+      roundRect(sx, sy, L.slotW, L.slotH, 7); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha=.5; ctx.fillStyle='#6f8d82';
+      ctx.font=(L.slotW*0.42)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(PART_GLYPH[sl.part], sx+L.slotW/2, sy+L.slotH/2);
+      ctx.restore();
+    }
+    sx += L.slotW + L.gap;
+  }
+  ctx.textAlign='left';
 }
 function drawCardScaled(x,y,card,sc,opts={}){
   // draw at scale by temporarily using w/h
@@ -748,7 +853,7 @@ function drawHand(x,y,innerW,perRow){
   hand.forEach((c,i)=>{
     const col=i%perRow, rr=Math.floor(i/perRow);
     const cx=x+col*(CARD_W+10), cy=y+rr*(CARD_H+12);
-    const selected = G.selection.has(i) && G.phase==='action' && G.mode==='build';
+    const dragging = dragState && dragState.dragging && dragState.card===c;
     let stealHi=false;
     if(G.phase==='action'&&G.mode==='steal'&&G.stealTarget){
       const m=G.monsters.find(x=>x.id===G.stealTarget.monsterId);
@@ -756,7 +861,7 @@ function drawHand(x,y,innerW,perRow){
       const need=monsterSuit(m.cards.filter((cc,ii)=>ii!==G.stealTarget.cardIdx));
       stealHi = c.suit!=='wild' && c.part===wild.part && (need==='wild'||need===null||c.suit===need);
     }
-    drawCard(cx,cy,c,{selected, stealable:stealHi});
+    drawCard(cx,cy,c,{stealable:stealHi, dim:dragging});
     add(cx,cy,CARD_W,CARD_H,'hand',{index:i});
   });
 }
@@ -764,27 +869,70 @@ function drawHand(x,y,innerW,perRow){
 /* ============================================================
    INTERACTION
    ============================================================ */
-canvas.addEventListener('click', ev=>{
-  if(!G || G.roundOver || cur().type==='cpu') return;
+let dragState=null; // {startX,startY,x,y,region,dragging,moved,card}
+let stageZoneRect=null; // bounds of the staging row, for forgiving drop detection
+const DRAG_THRESH=6;
+function canvasPos(ev){
   const rect=canvas.getBoundingClientRect();
   const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
-  const mx=(ev.clientX-rect.left)*sx, my=(ev.clientY-rect.top)*sy;
-  // topmost region wins (iterate reverse so staggered graveyard top hits first)
+  return { x:(ev.clientX-rect.left)*sx, y:(ev.clientY-rect.top)*sy };
+}
+function hitRegion(x,y){
+  // topmost region wins (iterate reverse so staggered/last-drawn elements hit first)
   for(let i=regions.length-1;i>=0;i--){
     const r=regions[i];
-    if(mx>=r.x&&mx<=r.x+r.w&&my>=r.y&&my<=r.y+r.h){ handleHit(r); return; }
+    if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h) return r;
+  }
+  return null;
+}
+canvas.addEventListener('pointerdown', ev=>{
+  if(!G || G.roundOver || cur().type==='cpu') return;
+  const p=canvasPos(ev);
+  const r=hitRegion(p.x,p.y);
+  dragState={ startX:p.x, startY:p.y, x:p.x, y:p.y, region:r, dragging:false, moved:false, card:null };
+  // a hand card in build mode can be dragged into the assembly tray
+  if(r && r.type==='hand' && G.phase==='action' && G.mode==='build'){
+    dragState.card=cur().hand[r.data.index];
+    try{ canvas.setPointerCapture(ev.pointerId); }catch(e){}
   }
 });
+canvas.addEventListener('pointermove', ev=>{
+  if(!dragState) return;
+  const p=canvasPos(ev); dragState.x=p.x; dragState.y=p.y;
+  if(Math.hypot(p.x-dragState.startX,p.y-dragState.startY)>DRAG_THRESH){
+    dragState.moved=true;
+    if(dragState.card) dragState.dragging=true;
+  }
+  if(dragState.dragging) render(); // redraw with ghost + zone highlight
+});
+function endDrag(ev){
+  if(!dragState) return;
+  const p=canvasPos(ev);
+  const ds=dragState; dragState=null;
+  if(ds.card && ds.dragging){
+    // forgiving: dropping anywhere over the staging row routes to the right slot
+    const r=stageZoneRect;
+    if(r && p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h){
+      placeInStage(ds.card); // auto-routes by part, then auto-builds if head+foot set
+    }
+    render(); // either placed in a slot or snapped back
+    return;
+  }
+  if(!ds.moved && ds.region) handleHit(ds.region); // a tap (no real drag)
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', ()=>{ if(dragState){ dragState=null; render(); } });
 function handleHit(r){
   if(r.type==='lab') return drawFromLab();
   if(r.type==='grave') return drawFromGraveyard(r.data.index);
   if(r.type==='wild' && G.phase==='action' && G.mode==='steal') return attemptSteal(r.data.monsterId, r.data.cardIdx);
+  if(r.type==='stage-card'){ // click a staged card to send it back to the hand
+    unStage(r.data.slot); render();
+    return;
+  }
   if(r.type==='hand'){
     const i=r.data.index;
-    if(G.phase==='action' && G.mode==='build'){
-      if(G.selection.has(i)) G.selection.delete(i); else G.selection.add(i);
-      render(); return;
-    }
+    if(G.phase==='action' && G.mode==='build') return; // building is drag-only now
     if(G.phase==='action' && G.mode==='steal' && G.stealTarget){ return completeSteal(i); }
     if(G.phase==='discard'){ return discardCard(i); }
   }
@@ -802,7 +950,7 @@ function updateHUD(){
   let instr='';
   if(cur().type==='cpu') instr='AI is taking its turn…';
   else if(G.phase==='draw') instr='Draw: click the LAB deck or a graveyard card.';
-  else if(G.phase==='action'&&G.mode==='build') instr='Build: select cards, then Build monster. Or switch to Steal / go to Discard.';
+  else if(G.phase==='action'&&G.mode==='build') instr='Build: drag cards into the HEAD / BODY / FOOT slots. Once a head and foot are placed the monster forms automatically.';
   else if(G.phase==='action'&&G.mode==='steal') instr= G.stealTarget? 'Click a matching real card in your hand to complete the steal.' : 'Steal: click a glowing wild part inside a monster.';
   else if(G.phase==='discard') instr='Click a card in your hand to discard.';
   document.getElementById('instruct').textContent=instr;
@@ -814,11 +962,10 @@ function renderControls(){
   const mk=(label,cls,fn,dis)=>{ const b=document.createElement('button'); b.textContent=label; if(cls)b.className=cls; b.disabled=!!dis; b.onclick=fn; c.appendChild(b); return b; };
   if(G.phase==='action'){
     mk('🔨 Build', G.mode==='build'?'primary':'ghost', ()=>{G.mode='build';G.stealTarget=null;render();});
-    mk('🩸 Steal', G.mode==='steal'?'primary':'ghost', ()=>{G.mode='steal';G.selection.clear();render();});
-    if(G.mode==='build'){
-      mk('✅ Build monster','', buildSelected, G.selection.size<2);
-      mk('✖ Clear','ghost', ()=>{G.selection.clear();render();}, G.selection.size===0);
-      const s=document.createElement('span'); s.className='sel'; s.textContent=G.selection.size+' selected'; c.appendChild(s);
+    mk('🩸 Steal', G.mode==='steal'?'primary':'ghost', ()=>{G.mode='steal';returnTrayToHand();render();});
+    if(G.mode==='build' && stageCards().length){
+      mk('✖ Clear staging','ghost', ()=>{returnTrayToHand();render();});
+      const s=document.createElement('span'); s.className='sel'; s.textContent=stageCards().length+' staged'; c.appendChild(s);
     }
     if(G.mode==='steal'&&G.stealTarget){ mk('Cancel steal','ghost', ()=>{G.stealTarget=null;render();}); }
     mk(cur().hand.length===0?'End turn':'➡ Go to discard','danger', goDiscard);

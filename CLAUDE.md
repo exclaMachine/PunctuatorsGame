@@ -483,7 +483,8 @@ Everything lives in one file, split into clearly commented sections inside the s
 4. **Turn flow** — draw / build / steal / discard / round-end logic.
 5. **Simple AI** — `findBestMonster`, `aiTurn`.
 6. **Rendering (canvas)** — all `draw*` functions plus `render()`.
-7. **Interaction** — canvas click → hit-test against `regions[]` → `handleHit`.
+7. **Interaction** — canvas pointer events → hit-test against `regions[]`. A tap routes to
+   `handleHit`; a drag (in build mode) stages a hand card into the assembly tray.
 8. **HUD / controls / log** — DOM status bar, buttons, message log.
 9. **Setup UI** — seat selection and start/restart wiring.
 
@@ -517,7 +518,7 @@ G = {
   current, // index of player whose turn it is
   phase: "draw" | "action" | "discard",
   mode: "build" | "steal", // sub-mode during the 'action' phase
-  selection: Set, // hand indices selected for building
+  stage: { skull, claws:[card], foot }, // cards dropped into the assembly slots (drag-build)
   stealTarget, // { monsterId, cardIdx } of the wild being stolen
   builtThisTurnIds: Set,
   mustUseIds: Set, // dug cards that MUST be built this turn
@@ -541,6 +542,16 @@ G = {
   card is recorded in `mustUseIds` and the turn cannot end until it is built.
 - **Build:** a monster is exactly **one skull + one foot + any number of claws**, all
   sharing one suit. The `wild` suit substitutes for any suit. Build as many as you like.
+  Building is **drag-and-drop into labeled slots** (`G.stage` = `{skull, claws:[], foot}`):
+  the on-canvas Assembly row shows a **HEAD** slot, one **BODY** slot per claw plus one
+  always-open BODY slot, and a **FOOT** slot — all portrait cards in the same orientation as
+  the hand. Dropping anywhere over the row auto-routes the card to its matching slot by part
+  (`placeInStage`); dropping a second skull/foot is rejected. The moment a head **and** a
+  foot are both placed the monster **auto-builds** (`tryStageBuild`) — so add claws first. A
+  suit clash blocks the build with a warning until corrected. Click a staged card (or "Clear
+  staging") to send it back to the hand; leaving build mode or going to discard returns all
+  staged cards (`returnTrayToHand`). The old click-to-select + "Build monster" button flow
+  was removed.
 - **Steal:** swap a real card (matching the monster's suit and the wild's part) from your
   hand into another monster, taking the displaced wild into your hand.
 - **Discard:** send one card to the graveyard to end the turn. An empty hand may end the
@@ -557,13 +568,14 @@ G = {
 | Suit/part names, colors, glyphs | `SUITS`, `NAMES`, `SUIT_COLOR`, `SUIT_GLYPH`, `PART_GLYPH` |
 | Is a monster legal?             | `validateMonster()`, `monsterSuit()`                       |
 | Dig-deeper legality             | `canFormMonsterWith()` + `drawFromGraveyard()`             |
-| Building                        | `buildSelected()` (human), `findBestMonster()` (AI)        |
+| Building                        | drag → `placeInStage()` → `tryStageBuild()` (human), `findBestMonster()` (AI) |
+| Drag-and-drop / slots           | `pointerdown/move/up`, `dragState`, `stageLayout()`, `drawStage()`, `stageZoneRect` |
 | Stealing                        | `attemptSteal()` → `completeSteal()`                       |
 | Turn advance / last turn        | `finalizeTurn()`                                           |
 | Scoring                         | `endRound()`                                               |
 | AI behavior                     | `aiTurn()`                                                 |
 | Card visuals / connectors       | `drawCard()`, `drawPartArt()`                              |
-| Click routing                   | canvas `click` listener + `handleHit()`                    |
+| Click/drag routing              | canvas `pointerdown/move/up` + `handleHit()`               |
 
 ## Conventions & constraints
 
