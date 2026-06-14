@@ -599,7 +599,7 @@ function render(){
   // We need total height; do a layout pass for battlefield rows.
   const innerW=canvas.width-pad*2;
   const bfRows=layoutBattlefield(innerW);
-  const bfHeight = Math.max(CARD_H*0.78+30, bfRows.height);
+  const bfHeight = Math.max(CARD_W*0.78+32, bfRows.height);
   // graveyard height depends on count
   const graveStagger=24;
   const graveH = CARD_H + Math.max(0,(G.graveyard.length-1))*graveStagger;
@@ -635,18 +635,26 @@ function render(){
   updateHUD();
 }
 
-/* battlefield layout: returns rows of monsters */
+/* battlefield layout: monsters are vertical stacks of landscape cards
+   (skull on top → foot on bottom), arranged in side-by-side columns that
+   wrap into rows when they run out of horizontal room. */
+const BF_SC=0.78;
+function bfCardDims(){ return { cw: CARD_H*BF_SC, ch: CARD_W*BF_SC }; } // landscape: long edge horizontal
 function layoutBattlefield(innerW){
+  const {cw,ch}=bfCardDims();
+  const gap=22, labelH=16, padBelow=16;
   const rows=[]; let row=[]; let rowW=0;
-  const gap=22;
   for(const m of G.monsters){
-    const w=m.cards.length*CARD_W;
-    if(rowW+w+gap>innerW && row.length){ rows.push(row); row=[]; rowW=0; }
-    row.push(m); rowW+=w+gap;
+    if(rowW+cw+gap>innerW && row.length){ rows.push(row); row=[]; rowW=0; }
+    row.push(m); rowW+=cw+gap;
   }
   if(row.length) rows.push(row);
-  const rowH=CARD_H*0.78+34;
-  return {rows, gap, rowH, height: rows.length? rows.length*rowH : rowH};
+  const rowHeights=rows.map(r=>{
+    const maxCards=Math.max(...r.map(m=>m.cards.length));
+    return labelH + maxCards*ch + padBelow;
+  });
+  const height = rowHeights.reduce((a,b)=>a+b,0) || (labelH+ch+padBelow);
+  return {rows, gap, cw, ch, labelH, rowHeights, height};
 }
 function drawBattlefield(x,y,innerW,bf){
   if(G.monsters.length===0){
@@ -654,32 +662,44 @@ function drawBattlefield(x,y,innerW,bf){
     ctx.fillText('No monsters yet — build one on your turn.', x, y+30);
     return;
   }
-  const sc=0.78, cw=CARD_W*sc, ch=CARD_H*sc;
+  const {cw,ch,gap,labelH}=bf;
   let yy=y;
-  for(const row of bf.rows){
+  bf.rows.forEach((row,ri)=>{
     let xx=x;
     for(const m of row){
       // owner + suit tag
       ctx.fillStyle = m.owner===G.current ? '#7ee787' : '#9ab';
       ctx.font='10px "Courier New",monospace'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
       const ms=monsterSuit(m.cards); m.suitView=ms;
-      ctx.fillText(G.players[m.owner].name+' · '+ms, xx, yy+10);
-      // cards (scaled), drawn touching so spines connect
-      let cardX=xx;
+      ctx.fillText(G.players[m.owner].name+' · '+ms, xx, yy+11);
+      // vertical stack of landscape cards, drawn touching so spines connect
+      let cardY=yy+labelH;
       m.cards.forEach((c,ci)=>{
         const canSteal = G.phase==='action'&&G.mode==='steal'&&c.suit==='wild';
-        drawCardScaled(cardX, yy+16, c, sc, {stealable:canSteal});
-        if(canSteal) add(cardX, yy+16, cw, ch, 'wild', {monsterId:m.id, cardIdx:ci});
-        cardX+=cw;
+        drawCardLandscape(xx, cardY, cw, ch, c, {stealable:canSteal});
+        if(canSteal) add(xx, cardY, cw, ch, 'wild', {monsterId:m.id, cardIdx:ci});
+        cardY+=ch;
       });
-      xx += m.cards.length*cw + bf.gap;
+      xx += cw + gap;
     }
-    yy += bf.rowH;
-  }
+    yy += bf.rowHeights[ri];
+  });
 }
 function drawCardScaled(x,y,card,sc,opts={}){
   // draw at scale by temporarily using w/h
   drawCard(x,y,card,{w:CARD_W*sc, h:CARD_H*sc, ...opts});
+}
+/* landscape monster card: just the normal portrait card rotated 90° CW so
+   the long edge runs horizontal. The banner (top in portrait) lands on the
+   RIGHT edge, and the art + connecting spine rotate with it as one unit, so
+   the top/bottom edges stay clean for vertically-stacked monster cards.
+   w×h is the landscape bounding box (= h×w of the portrait card). */
+function drawCardLandscape(x,y,w,h,card,opts={}){
+  ctx.save();
+  ctx.translate(x+w/2, y+h/2);
+  ctx.rotate(Math.PI/2);
+  drawCard(-h/2, -w/2, card, {w:h, h:w, ...opts});
+  ctx.restore();
 }
 
 function drawLabGrave(x,y){

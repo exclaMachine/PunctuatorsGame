@@ -567,6 +567,9 @@ G = {
 
 ## Conventions & constraints
 
+- **Ask clarifying questions before coding.** For any non-trivial change to this game,
+  surface clarifying questions and get answers before writing code. (Standing requirement —
+  the user should not have to ask for this each time.)
 - **Vanilla JS only.** Keep it a single dependency-free file unless there's a strong reason
   to split it. If splitting, extract `<script>` into `game.js` and `<style>` into
   `style.css` and link them.
@@ -595,8 +598,10 @@ join cleanly. Names per part are in `NAMES` (`insectoid/horned/bloodshot` skulls
 
 These were judgment calls during the prototype — flag in commit messages if you change them:
 
-1. **Assembly direction** is horizontal (skull → claws → foot, left to right). Could become
-   vertical.
+1. **Assembly direction** on the battlefield is vertical (skull on top → claws → foot on
+   bottom). Each monster card is the normal portrait `drawCard` rotated 90° CW by
+   `drawCardLandscape` (banner ends up on the right edge; art + spine rotate with it).
+   Hand/lab/graveyard still use upright portrait cards.
 2. **Build + Steal share one phase** to allow rebuilding stolen wilds. Could be split back
    into strict sequential phases.
 3. **One suit circle + one part circle per card.** (The earlier redundant second suit
