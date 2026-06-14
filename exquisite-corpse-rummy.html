@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Specimen Lab — Monster Rummy</title>
+<style>
+  :root{
+    --table:#0e1a18;          /* dark lab counter */
+    --table2:#13241f;
+    --panel:#0a1413;
+    --bone:#ece4d2;           /* card stock */
+    --ink:#241f17;
+    --line:#2b3b37;
+    --accent:#7ee787;         /* bioluminescent green */
+    --accent-dim:#3f6b48;
+    --venom:#ff5d8f;          /* steal / danger */
+    --muted:#8aa39b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:
+     radial-gradient(1200px 600px at 50% -10%, #1b302b 0%, var(--table) 55%, #081210 100%);
+     color:#dfe9e4;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  h1{margin:0;font-size:20px;letter-spacing:.5px;}
+  .wrap{max-width:1180px;margin:0 auto;padding:14px;}
+  .topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px;}
+  .brand{display:flex;flex-direction:column;}
+  .brand small{color:var(--muted);font-family:"Courier New",monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;}
+  .spacer{flex:1}
+  .pill{font-family:"Courier New",monospace;font-size:12px;border:1px solid var(--line);background:var(--panel);padding:6px 10px;border-radius:4px;color:var(--muted);}
+  .pill b{color:var(--accent)}
+
+  /* setup */
+  #setup{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px;max-width:560px;margin:30px auto;}
+  #setup h2{margin:0 0 4px;font-size:18px}
+  #setup p{color:var(--muted);margin:0 0 16px;font-size:13px;line-height:1.5}
+  .seatrow{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .seatrow label{flex:1;font-size:14px}
+  select,button{font-family:inherit}
+  select{background:#0e1c1a;color:#dfe9e4;border:1px solid var(--line);border-radius:4px;padding:6px 8px;font-size:13px}
+  .count{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+  button{cursor:pointer;background:#16302a;color:#dfe9e4;border:1px solid var(--accent-dim);border-radius:5px;padding:8px 12px;font-size:13px;transition:.12s}
+  button:hover{background:#1d433a;border-color:var(--accent)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.primary{background:var(--accent);color:#06140d;border-color:var(--accent);font-weight:700}
+  button.primary:hover{filter:brightness(1.08)}
+  button.danger{border-color:var(--venom);color:#ffd2e0}
+  button.danger:hover{background:#3a1424}
+  button.ghost{background:transparent}
+
+  /* game */
+  #game{display:none}
+  .statusbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:10px}
+  .turnchip{font-weight:700}
+  .phasechip{font-family:"Courier New",monospace;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent)}
+  .instruct{color:var(--muted);font-size:13px;flex:1;min-width:200px}
+  canvas{display:block;width:100%;height:auto;background:linear-gradient(180deg,#0c1816,#0a1412);border:1px solid var(--line);border-radius:8px;}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+  .controls .sel{font-family:"Courier New",monospace;font-size:12px;color:var(--muted)}
+  .log{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;height:104px;overflow-y:auto;font-family:"Courier New",monospace;font-size:12px;line-height:1.55;color:#bcd}
+  .log .me{color:var(--accent)}
+  .log .steal{color:var(--venom)}
+  .log .sys{color:#e8c977}
+  details.rules{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+  details.rules summary{cursor:pointer;color:var(--accent);font-size:13px}
+  details.rules div{font-size:13px;line-height:1.6;color:#cdd;margin-top:8px}
+  details.rules b{color:#fff}
+
+  /* scoreboard */
+  #scoreboard{display:none;background:var(--panel);border:1px solid var(--accent-dim);border-radius:8px;padding:18px;max-width:520px;margin:24px auto}
+  #scoreboard h2{margin:0 0 12px}
+  .score-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14px}
+  .score-row .nm{flex:1}
+  .score-row .pts{font-family:"Courier New",monospace}
+  .score-row.win{color:var(--accent);font-weight:700}
+  .detail{font-family:"Courier New",monospace;font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <h1>SPECIMEN&nbsp;LAB</h1>
+      <small>exquisite corpse · monster rummy</small>
+    </div>
+    <div class="spacer"></div>
+    <div class="pill">LAB <b id="labCount">0</b></div>
+    <div class="pill">GRAVEYARD <b id="graveCount">0</b></div>
+  </div>
+
+  <!-- SETUP -->
+  <div id="setup">
+    <h2>Assemble the table</h2>
+    <p>Build monsters from a skull, optional claws, and a foot — all of one suit (wild fills any gap, but wild parts can be stolen). Empty your hand to trigger the last turn; score +1 per card you played into a monster and −1 per card left in your hand.</p>
+    <div class="count">
+      <span>Players:</span>
+      <select id="pcount">
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4" selected>4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+      </select>
+    </div>
+    <div id="seats"></div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="primary" id="startBtn">Start game</button>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game">
+    <div class="statusbar">
+      <span class="turnchip" id="turnChip">—</span>
+      <span class="phasechip" id="phaseChip">DRAW</span>
+      <span class="instruct" id="instruct"></span>
+    </div>
+    <canvas id="board" width="1140" height="700"></canvas>
+    <div class="controls" id="controls"></div>
+    <div class="log" id="log"></div>
+    <details class="rules">
+      <summary>Rules & how to play</summary>
+      <div>
+        <b>Your turn:</b> Draw → Build / Steal → Discard.<br>
+        <b>Draw</b> — click the LAB deck, or click any card in the graveyard. The top graveyard card is free. Digging deeper is only allowed if that card can complete a monster this turn, and you must also sweep every card sitting on top of it into your hand.<br>
+        <b>Build</b> — select cards in your hand and press <b>Build monster</b>. A monster is exactly one skull + one foot, with any number of claws, all sharing a suit. Wild parts can fill a missing suit. Build as many as you like.<br>
+        <b>Steal</b> — switch to Steal mode and click a glowing wild part inside any monster, then click a matching real card (same suit + same part) from your hand to swap it in. The wild returns to your hand and can be rebuilt this turn.<br>
+        <b>Discard</b> — end your turn by sending one card to the graveyard. If your hand is empty you may end the turn instead.<br>
+        <b>Round end</b> — emptying your hand triggers the last turn; everyone else gets one more turn, then scores are tallied.
+      </div>
+    </details>
+  </div>
+
+  <!-- SCOREBOARD -->
+  <div id="scoreboard">
+    <h2>Battle results</h2>
+    <div id="scoreRows"></div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="primary" id="againBtn">New round</button>
+      <button class="ghost" id="resetBtn">Change table</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DATA MODEL & CONSTANTS
+   ============================================================ */
+const SUITS = ['bug','fungus','fire','sea','robot','electric','fang','wild'];
+const COLORED = ['bug','fungus','fire','sea','robot','electric','fang'];
+const PARTS = ['skull','claw','foot'];
+const NAMES = {
+  skull:['insectoid','horned','bloodshot'],
+  claw :['mutant','clutching','warty'],
+  foot :['mermaid','runner','dandy']
+};
+const SUIT_COLOR = {
+  bug:'#5fa845', fungus:'#9b59b6', fire:'#e8542a', sea:'#2e86c1',
+  robot:'#9aa6ab', electric:'#f4d03f', fang:'#c0392b', wild:'#b06bff'
+};
+const SUIT_GLYPH = {
+  bug:'🐛', fungus:'🍄', fire:'🔥', sea:'🌊',
+  robot:'🤖', electric:'⚡', fang:'🦷', wild:'✦'
+};
+const PART_GLYPH = { skull:'💀', claw:'🐾', foot:'🦶' };
+
+/* HOOK: drop real artwork here later, keyed `part_name` e.g. "skull_horned".
+   If an entry holds a loaded <img>, it is drawn into the card art slot
+   (the slot already reaches the connecting edge so monsters still link up). */
+const PART_IMAGES = {}; // e.g. PART_IMAGES['skull_horned'] = imageElement;
+
+let CARD_UID = 1;
+function makeCard(suit, part, name){ return {id:CARD_UID++, suit, part, name, owner:null}; }
+
+/* Deck: 2 copies of every colored suit×part×name, 1 copy of every wild part×name.
+   Tweak COPIES_* to change deck size / wild frequency. */
+const COPIES_COLORED = 2;
+const COPIES_WILD = 1;
+function buildDeck(){
+  const d=[];
+  for(const suit of COLORED)
+    for(const part of PARTS)
+      for(const name of NAMES[part])
+        for(let c=0;c<COPIES_COLORED;c++) d.push(makeCard(suit,part,name));
+  for(const part of PARTS)
+    for(const name of NAMES[part])
+      for(let c=0;c<COPIES_WILD;c++) d.push(makeCard('wild',part,name));
+  return d;
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+/* ============================================================
+   GAME STATE
+   ============================================================ */
+let G = null;
+let monsterUID = 1;
+
+function newGame(seats){
+  const deck = shuffle(buildDeck());
+  const players = seats.map((s,i)=>({ name:s.name||('Player '+(i+1)), type:s.type, hand:[] }));
+  // deal 10 each
+  for(let r=0;r<10;r++) for(const p of players){ const c=deck.pop(); c.owner=players.indexOf(p); p.hand.push(c); }
+  // graveyard seed
+  const grave=[deck.pop()]; grave[0].owner=null;
+  G = {
+    players, monsters:[], lab:deck, graveyard:grave,
+    current:0, phase:'draw', mode:'build',
+    selection:new Set(), stealTarget:null,
+    builtThisTurnIds:new Set(), mustUseIds:new Set(),
+    drewThisTurn:false, lastTurn:false, lastTurnRemaining:0, roundOver:false,
+    log:[]
+  };
+  logMsg('sys','A fresh batch of specimens is dealt. '+players.length+' players, 10 cards each.');
+  startTurn();
+}
+
+/* ============================================================
+   RULES HELPERS
+   ============================================================ */
+function compatible(a,b){ return a===b || a==='wild' || b==='wild'; }
+
+function monsterSuit(cards){
+  const real = cards.filter(c=>c.suit!=='wild').map(c=>c.suit);
+  const set=[...new Set(real)];
+  if(set.length>1) return null;        // illegal
+  return set.length===1 ? set[0] : 'wild';
+}
+function orderMonster(cards){
+  const sk=cards.filter(c=>c.part==='skull');
+  const cl=cards.filter(c=>c.part==='claw');
+  const ft=cards.filter(c=>c.part==='foot');
+  return [...sk,...cl,...ft];
+}
+function validateMonster(cards){
+  if(cards.length<2) return {ok:false,reason:'A monster needs at least a skull and a foot.'};
+  const sk=cards.filter(c=>c.part==='skull').length;
+  const ft=cards.filter(c=>c.part==='foot').length;
+  if(sk!==1) return {ok:false,reason:'A monster needs exactly one skull.'};
+  if(ft!==1) return {ok:false,reason:'A monster needs exactly one foot.'};
+  const suit=monsterSuit(cards);
+  if(suit===null) return {ok:false,reason:'All parts must share one suit (wild excepted).'};
+  return {ok:true, suit};
+}
+
+/* can `card` be part of any valid monster drawn from `pool` (pool includes card)? */
+function canFormMonsterWith(card, pool){
+  const skulls=pool.filter(c=>c.part==='skull');
+  const feet=pool.filter(c=>c.part==='foot');
+  if(card.part==='skull') return feet.some(f=>compatible(card.suit,f.suit));
+  if(card.part==='foot')  return skulls.some(s=>compatible(card.suit,s.suit));
+  // claw: need a skull & foot that share a suit with the claw
+  for(const s of skulls) for(const f of feet){
+    if(validateMonster([s,f,card]).ok) return true;
+  }
+  return false;
+}
+
+/* ============================================================
+   TURN FLOW
+   ============================================================ */
+function cur(){ return G.players[G.current]; }
+
+function startTurn(){
+  G.phase='draw'; G.mode='build';
+  G.selection.clear(); G.stealTarget=null;
+  G.builtThisTurnIds.clear(); G.mustUseIds.clear();
+  G.drewThisTurn=false;
+  // auto-skip draw only if no cards anywhere to draw
+  if(G.lab.length===0 && G.graveyard.length===0){ G.phase='action'; }
+  render();
+  if(cur().type==='cpu' && !G.roundOver){ setTimeout(()=>{ try{ aiTurn(); }catch(e){ console.error(e); logMsg('sys','(AI error — skipping turn)'); finalizeTurn(); } }, 700); }
+}
+
+function drawFromLab(){
+  if(G.phase!=='draw'||G.drewThisTurn) return;
+  if(G.lab.length===0){ flash('The LAB is empty — draw from the graveyard.'); return; }
+  const c=G.lab.pop(); c.owner=G.current; cur().hand.push(c);
+  G.drewThisTurn=true; G.phase='action';
+  logMsg(playerCls(),cur().name+' drew from the LAB.');
+  render();
+}
+function drawFromGraveyard(index){
+  if(G.phase!=='draw'||G.drewThisTurn) return;
+  const top=G.graveyard.length-1;
+  if(index===top){
+    const c=G.graveyard.pop(); c.owner=G.current; cur().hand.push(c);
+    G.drewThisTurn=true; G.phase='action';
+    logMsg(playerCls(),cur().name+' took '+label(c)+' from the graveyard.');
+    render(); return;
+  }
+  // dig deeper: only if target can complete a monster this turn
+  const target=G.graveyard[index];
+  const above=G.graveyard.slice(index+1);          // cards sitting on top
+  const pool=[...cur().hand, target, ...above];
+  if(!canFormMonsterWith(target,pool)){
+    flash('You can only dig for a card you can use in a monster this turn.'); return;
+  }
+  // take target + everything above into hand
+  const taken=G.graveyard.splice(index);           // [target, ...above]
+  for(const c of taken){ c.owner=G.current; cur().hand.push(c); }
+  G.mustUseIds.add(target.id);
+  G.drewThisTurn=true; G.phase='action';
+  logMsg(playerCls(),cur().name+' dug for '+label(target)+' (swept '+above.length+' card'+(above.length===1?'':'s')+'). Must build with it.');
+  render();
+}
+
+function buildSelected(){
+  if(G.phase!=='action') return;
+  const idxs=[...G.selection];
+  if(idxs.length<2){ flash('Select at least a skull and a foot.'); return; }
+  const cards=idxs.map(i=>cur().hand[i]);
+  const v=validateMonster(cards);
+  if(!v.ok){ flash(v.reason); return; }
+  // remove from hand (high→low index)
+  idxs.sort((a,b)=>b-a).forEach(i=>cur().hand.splice(i,1));
+  const ordered=orderMonster(cards);
+  ordered.forEach(c=>{ c.owner=G.current; G.builtThisTurnIds.add(c.id); });
+  G.monsters.push({ id:monsterUID++, owner:G.current, cards:ordered });
+  G.selection.clear();
+  logMsg(playerCls(),cur().name+' built a '+v.suit+' monster ('+ordered.length+' parts).');
+  render();
+}
+
+function attemptSteal(monsterId, cardIdx){
+  const m=G.monsters.find(x=>x.id===monsterId);
+  if(!m) return;
+  const wild=m.cards[cardIdx];
+  if(wild.suit!=='wild'){ flash('You can only steal wild parts.'); return; }
+  G.stealTarget={monsterId, cardIdx};
+  flash('Now click a real '+m.suitView+' '+wild.part+' in your hand to swap it in.');
+  render();
+}
+function completeSteal(handIdx){
+  const t=G.stealTarget; if(!t) return;
+  const m=G.monsters.find(x=>x.id===t.monsterId);
+  const wild=m.cards[t.cardIdx];
+  const sub=cur().hand[handIdx];
+  const need=monsterSuit(m.cards.filter((c,i)=>i!==t.cardIdx)); // suit defined by the real parts
+  const wantSuit = (need==='wild'||need===null)? null : need;
+  if(sub.suit==='wild'){ flash('Substitute must be a real card, not a wild.'); return; }
+  if(sub.part!==wild.part){ flash('Substitute must be the same part ('+wild.part+').'); return; }
+  if(wantSuit && sub.suit!==wantSuit){ flash('Substitute must be a '+wantSuit+' '+wild.part+'.'); return; }
+  // swap
+  cur().hand.splice(handIdx,1);
+  sub.owner=G.current; G.builtThisTurnIds.add(sub.id);
+  m.cards[t.cardIdx]=sub;
+  m.cards=orderMonster(m.cards);
+  wild.owner=G.current; cur().hand.push(wild);
+  G.stealTarget=null;
+  logMsg('steal',cur().name+' stole a wild '+wild.part+' from '+G.players[m.owner].name+"'s monster.");
+  render();
+}
+
+function goDiscard(){
+  // enforce dig obligation
+  for(const id of G.mustUseIds){
+    if(cur().hand.some(c=>c.id===id)){ flash('You dug for a card you must build into a monster this turn.'); return; }
+  }
+  if(cur().hand.length===0){ finalizeTurn(); return; }
+  G.phase='discard'; G.stealTarget=null; G.selection.clear();
+  flash('Click a card in your hand to discard and end your turn.');
+  render();
+}
+function discardCard(handIdx){
+  if(G.phase!=='discard') return;
+  const c=cur().hand.splice(handIdx,1)[0];
+  c.owner=null;
+  G.graveyard.push(c);
+  logMsg(playerCls(),cur().name+' discarded '+label(c)+'.');
+  finalizeTurn();
+}
+
+function finalizeTurn(){
+  if(!G.lastTurn){
+    if(cur().hand.length===0){
+      G.lastTurn=true; G.lastTurnRemaining=G.players.length-1;
+      logMsg('sys',cur().name+' emptied their hand — LAST TURN! Everyone else gets one more turn.');
+    }
+  } else {
+    G.lastTurnRemaining--;
+    if(G.lastTurnRemaining<=0){ endRound(); return; }
+  }
+  G.current=(G.current+1)%G.players.length;
+  startTurn();
+}
+
+function endRound(){
+  G.roundOver=true;
+  const rows=[];
+  for(let i=0;i<G.players.length;i++){
+    const built=G.monsters.reduce((n,m)=>n+m.cards.filter(c=>c.owner===i).length,0);
+    const hand=G.players[i].hand.length;
+    rows.push({i, name:G.players[i].name, built, hand, score:built-hand});
+  }
+  rows.sort((a,b)=>b.score-a.score);
+  const best=rows[0].score;
+  const el=document.getElementById('scoreRows'); el.innerHTML='';
+  rows.forEach(r=>{
+    const d=document.createElement('div');
+    d.className='score-row'+(r.score===best?' win':'');
+    d.innerHTML=`<span class="nm">${r.name}${r.score===best?' 👑':''}</span>
+      <span class="detail">+${r.built} played · −${r.hand} in hand</span>
+      <span class="pts">${r.score>=0?'+':''}${r.score}</span>`;
+    el.appendChild(d);
+  });
+  logMsg('sys','Round over. Final scores tallied.');
+  document.getElementById('game').style.display='none';
+  document.getElementById('scoreboard').style.display='block';
+}
+
+/* ============================================================
+   SIMPLE AI
+   ============================================================ */
+function findBestMonster(hand){
+  let best=null;
+  const wildSkulls=hand.filter(c=>c.suit==='wild'&&c.part==='skull');
+  const wildFeet=hand.filter(c=>c.suit==='wild'&&c.part==='foot');
+  for(const s of COLORED){
+    const skull=hand.find(c=>c.suit===s&&c.part==='skull') || wildSkulls[0];
+    const foot =hand.find(c=>c.suit===s&&c.part==='foot')  || wildFeet[0];
+    if(!skull||!foot||skull===foot) continue;
+    const claws=hand.filter(c=>c.suit===s&&c.part==='claw');
+    const cards=[skull,...claws,foot];
+    const v=validateMonster(cards);
+    if(!v.ok) continue;
+    const wildUsed=cards.filter(c=>c.suit==='wild').length;
+    const score=cards.length*10 - wildUsed*7;   // prefer big monsters, conserve wilds
+    if(!best||score>best.score) best={cards,score};
+  }
+  return best;
+}
+function aiTurn(){
+  const p=cur();
+  // ---- DRAW ----
+  const top=G.graveyard[G.graveyard.length-1];
+  let tookGrave=false;
+  if(top){
+    const pool=[...p.hand, top];
+    if(canFormMonsterWith(top,pool)){
+      const c=G.graveyard.pop(); c.owner=G.current; p.hand.push(c); tookGrave=true;
+      logMsg('',p.name+' took '+label(c)+' from the graveyard.');
+    }
+  }
+  if(!tookGrave){
+    if(G.lab.length){ const c=G.lab.pop(); c.owner=G.current; p.hand.push(c); logMsg('',p.name+' drew from the LAB.'); }
+    else if(G.graveyard.length){ const c=G.graveyard.pop(); c.owner=G.current; p.hand.push(c); logMsg('',p.name+' took '+label(c)+' from the graveyard.'); }
+  }
+  G.drewThisTurn=true; G.phase='action';
+  render();
+
+  // ---- BUILD (greedy) ----
+  let guard=0;
+  while(guard++<30){
+    const m=findBestMonster(p.hand);
+    if(!m) break;
+    const ids=new Set(m.cards.map(c=>c.id));
+    p.hand=p.hand.filter(c=>!ids.has(c.id));
+    const ordered=orderMonster(m.cards);
+    ordered.forEach(c=>c.owner=G.current);
+    G.monsters.push({id:monsterUID++, owner:G.current, cards:ordered});
+    logMsg('',p.name+' built a '+validateMonster(ordered).suit+' monster ('+ordered.length+' parts).');
+  }
+  render();
+
+  // ---- DISCARD ----
+  setTimeout(()=>{
+    if(p.hand.length===0){ logMsg('',p.name+' ends with an empty hand.'); finalizeTurn(); return; }
+    // discard least useful: a part whose suit can't pair, prefer dropping orphans, keep wilds
+    let worstIdx=0, worst=Infinity;
+    p.hand.forEach((c,i)=>{
+      let u=0;
+      if(c.suit==='wild') u+=100;                 // hoard wilds
+      const same=p.hand.filter(x=>x!==c && compatible(x.suit,c.suit));
+      const hasSkull=same.some(x=>x.part==='skull');
+      const hasFoot=same.some(x=>x.part==='foot');
+      if(c.part==='claw'){ if(hasSkull&&hasFoot) u+=30; }
+      else { if(same.some(x=>x.part!==c.part && (x.part==='skull'||x.part==='foot'))) u+=20; }
+      if(u<worst){ worst=u; worstIdx=i; }
+    });
+    const c=p.hand.splice(worstIdx,1)[0]; c.owner=null; G.graveyard.push(c);
+    logMsg('',p.name+' discarded '+label(c)+'.');
+    finalizeTurn();
+  }, 500);
+}
+
+/* ============================================================
+   RENDERING (CANVAS)
+   ============================================================ */
+const canvas=document.getElementById('board');
+const ctx=canvas.getContext('2d');
+const CARD_W=88, CARD_H=124, BANNER=24;
+let regions=[]; // {x,y,w,h,type,data}
+
+function add(x,y,w,h,type,data){ regions.push({x,y,w,h,type,data}); }
+
+function suitFill(x0,y0,x1,y1,suit){
+  if(suit!=='wild') return SUIT_COLOR[suit];
+  const g=ctx.createLinearGradient(x0,y0,x1,y1);
+  g.addColorStop(0,'#ff6b6b'); g.addColorStop(.33,'#f4d03f');
+  g.addColorStop(.66,'#5fa845'); g.addColorStop(1,'#9b59b6');
+  return g;
+}
+
+function drawPartArt(x,y,w,h,card){
+  const key=card.part+'_'+card.name;
+  const conY=y+h*0.52, conH=18;
+  ctx.save();
+  // connecting "spine" band reaches the linking edge(s) so neighbours join
+  ctx.fillStyle=suitFill(x,conY,x+w,conY,card.suit);
+  if(card.part==='skull') ctx.fillRect(x+w*0.46, conY-conH/2, w*0.54, conH);
+  else if(card.part==='foot') ctx.fillRect(x, conY-conH/2, w*0.54, conH);
+  else ctx.fillRect(x, conY-conH/2, w, conH); // claw spans both edges
+
+  if(PART_IMAGES[key]){
+    try{ ctx.drawImage(PART_IMAGES[key], x+4, y+4, w-8, h-8); ctx.restore(); return; }catch(e){}
+  }
+  // ---- placeholder shapes ----
+  const col=card.suit==='wild' ? '#b06bff' : SUIT_COLOR[card.suit];
+  ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=3;
+  const cx=x+w/2, cy=y+h*0.40;
+  if(card.part==='skull'){
+    ctx.globalAlpha=.9;
+    ctx.beginPath(); ctx.arc(cx-6, cy, 22, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0c1816';
+    ctx.beginPath(); ctx.arc(cx-13, cy-3, 5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx+1, cy-3, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillRect(cx-9, cy+9, 8, 7);
+  } else if(card.part==='foot'){
+    ctx.globalAlpha=.9;
+    ctx.beginPath(); ctx.ellipse(cx+4, cy+18, 20, 11, -0.25, 0, Math.PI*2); ctx.fill();
+    ctx.fillRect(cx-2, cy-14, 9, 28);
+    ctx.fillStyle='#0c1816';
+    for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(cx+14+i*5, cy+24, 2.4, 0, Math.PI*2); ctx.fill(); }
+  } else { // claw
+    ctx.globalAlpha=.95;
+    ctx.lineCap='round';
+    for(let i=-1;i<=1;i++){
+      ctx.beginPath();
+      ctx.moveTo(cx-2, cy+22);
+      ctx.quadraticCurveTo(cx+i*10, cy-2, cx+i*16, cy-20);
+      ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(cx-2, cy+24, 7, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawCard(x,y,card,opts={}){
+  const w=opts.w||CARD_W, h=opts.h||CARD_H;
+  ctx.save();
+  // stock
+  ctx.fillStyle = opts.dim ? '#cfc7b3' : 'var(--bone)';
+  ctx.fillStyle = opts.dim ? '#cdc6b4' : '#ece4d2';
+  roundRect(x,y,w,h,7); ctx.fill();
+  // selected / target glow
+  if(opts.selected){ ctx.lineWidth=3; ctx.strokeStyle='#7ee787'; roundRect(x,y,w,h,7); ctx.stroke(); }
+  else if(opts.stealable){ ctx.lineWidth=3; ctx.strokeStyle='#ff5d8f'; roundRect(x,y,w,h,7); ctx.stroke(); }
+  else { ctx.lineWidth=1; ctx.strokeStyle='#9a927c'; roundRect(x,y,w,h,7); ctx.stroke(); }
+  // art slot (below banner)
+  ctx.save(); roundRect(x,y+BANNER,w,h-BANNER,7); ctx.clip();
+  ctx.fillStyle='#f4eede'; ctx.fillRect(x,y+BANNER,w,h-BANNER);
+  drawPartArt(x, y+BANNER, w, h-BANNER, card);
+  ctx.restore();
+  // banner: 2 suit circles + 1 part circle + body name
+  ctx.fillStyle='#ddd3bb'; ctx.fillRect(x+1,y+1,w-2,BANNER-1);
+  const r=7; let cxs=x+12;
+  for(let i=0;i<2;i++){ drawGlyphCircle(cxs, y+BANNER/2, r, card.suit==='wild'?'#b06bff':SUIT_COLOR[card.suit], SUIT_GLYPH[card.suit]); cxs+=18; }
+  drawGlyphCircle(cxs, y+BANNER/2, r, '#3a3326', PART_GLYPH[card.part]); 
+  ctx.fillStyle='#2a241c'; ctx.font='9px "Courier New",monospace'; ctx.textAlign='right'; ctx.textBaseline='middle';
+  ctx.fillText(card.name, x+w-6, y+BANNER/2+1);
+  ctx.restore();
+}
+function drawGlyphCircle(cx,cy,r,color,glyph){
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle='#fff'; ctx.font='9px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(glyph, cx, cy+0.5);
+}
+function drawCardBack(x,y,w,h){
+  ctx.save();
+  ctx.fillStyle='#16302a'; roundRect(x,y,w,h,7); ctx.fill();
+  ctx.strokeStyle='#2e5b4d'; ctx.lineWidth=1; roundRect(x,y,w,h,7); ctx.stroke();
+  ctx.fillStyle='#234b40';
+  for(let i=8;i<h-8;i+=14) for(let j=8;j<w-8;j+=14){ ctx.beginPath(); ctx.arc(x+j,y+i,2,0,Math.PI*2); ctx.fill(); }
+  ctx.fillStyle='#7ee787'; ctx.font='10px "Courier New",monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.save(); ctx.translate(x+w/2,y+h/2); ctx.fillText('LAB',0,0); ctx.restore();
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function sectionTitle(x,y,t){ ctx.fillStyle='#7ee787'; ctx.font='11px "Courier New",monospace'; ctx.textAlign='left'; ctx.textBaseline='alphabetic'; ctx.fillText(t.toUpperCase(),x,y); }
+
+function render(){
+  regions=[];
+  // compute heights
+  const pad=16;
+  let y=pad;
+  // ---- BATTLEFIELD ----
+  sectionTitle(pad, y+4, 'Battlefield — built monsters'); // drawn after height known? we set canvas height first
+  // We need total height; do a layout pass for battlefield rows.
+  const innerW=canvas.width-pad*2;
+  const bfRows=layoutBattlefield(innerW);
+  const bfHeight = Math.max(CARD_H*0.78+30, bfRows.height);
+  // graveyard height depends on count
+  const graveStagger=24;
+  const graveH = CARD_H + Math.max(0,(G.graveyard.length-1))*graveStagger;
+  const midH = Math.max(CARD_H+40, graveH+30);
+  // hand height
+  const handCards = (cur().type==='human'||G.phase==='draw') ? cur().hand.length : cur().hand.length;
+  const handPerRow = Math.floor(innerW/(CARD_W+10));
+  const handRows = Math.max(1, Math.ceil(cur().hand.length/handPerRow));
+  const handH = handRows*(CARD_H+12)+34;
+  const totalH = pad + 22 + bfHeight + 18 + 22 + midH + 18 + 22 + handH + pad;
+  if(canvas.height!==Math.ceil(totalH)){ canvas.height=Math.ceil(totalH); }
+  // clear
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  y=pad;
+  sectionTitle(pad, y+8, 'Battlefield — built monsters');
+  y+=22;
+  drawBattlefield(pad, y, innerW, bfRows);
+  y+=bfHeight+18;
+
+  // ---- LAB + GRAVEYARD ----
+  sectionTitle(pad, y+8, 'The Lab & the Graveyard');
+  y+=22;
+  drawLabGrave(pad, y);
+  y+=midH+18;
+
+  // ---- HAND ----
+  const who = cur().name + (cur().type==='cpu'?' (AI)':'');
+  sectionTitle(pad, y+8, 'Hand — '+who);
+  y+=22;
+  drawHand(pad, y, innerW, handPerRow);
+
+  updateHUD();
+}
+
+/* battlefield layout: returns rows of monsters */
+function layoutBattlefield(innerW){
+  const rows=[]; let row=[]; let rowW=0;
+  const gap=22;
+  for(const m of G.monsters){
+    const w=m.cards.length*CARD_W;
+    if(rowW+w+gap>innerW && row.length){ rows.push(row); row=[]; rowW=0; }
+    row.push(m); rowW+=w+gap;
+  }
+  if(row.length) rows.push(row);
+  const rowH=CARD_H*0.78+34;
+  return {rows, gap, rowH, height: rows.length? rows.length*rowH : rowH};
+}
+function drawBattlefield(x,y,innerW,bf){
+  if(G.monsters.length===0){
+    ctx.fillStyle='#46665d'; ctx.font='13px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText('No monsters yet — build one on your turn.', x, y+30);
+    return;
+  }
+  const sc=0.78, cw=CARD_W*sc, ch=CARD_H*sc;
+  let yy=y;
+  for(const row of bf.rows){
+    let xx=x;
+    for(const m of row){
+      // owner + suit tag
+      ctx.fillStyle = m.owner===G.current ? '#7ee787' : '#9ab';
+      ctx.font='10px "Courier New",monospace'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+      const ms=monsterSuit(m.cards); m.suitView=ms;
+      ctx.fillText(G.players[m.owner].name+' · '+ms, xx, yy+10);
+      // cards (scaled), drawn touching so spines connect
+      let cardX=xx;
+      m.cards.forEach((c,ci)=>{
+        const canSteal = G.phase==='action'&&G.mode==='steal'&&c.suit==='wild';
+        drawCardScaled(cardX, yy+16, c, sc, {stealable:canSteal});
+        if(canSteal) add(cardX, yy+16, cw, ch, 'wild', {monsterId:m.id, cardIdx:ci});
+        cardX+=cw;
+      });
+      xx += m.cards.length*cw + bf.gap;
+    }
+    yy += bf.rowH;
+  }
+}
+function drawCardScaled(x,y,card,sc,opts={}){
+  // draw at scale by temporarily using w/h
+  drawCard(x,y,card,{w:CARD_W*sc, h:CARD_H*sc, ...opts});
+}
+
+function drawLabGrave(x,y){
+  // LAB deck
+  const labX=x, labY=y+4;
+  for(let i=Math.min(4,Math.max(1,Math.ceil(G.lab.length/12)));i>=1;i--){
+    drawCardBack(labX+ (i-1)*2, labY+(i-1)*2, CARD_W, CARD_H);
+  }
+  ctx.fillStyle='#9ab'; ctx.font='11px "Courier New",monospace'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.fillText(G.lab.length+' cards', labX+CARD_W/2, labY+CARD_H+18);
+  if(G.phase==='draw' && !G.drewThisTurn && cur().type==='human' && G.lab.length){
+    ctx.strokeStyle='#7ee787'; ctx.lineWidth=2; roundRect(labX,labY,CARD_W,CARD_H,7); ctx.stroke();
+    add(labX,labY,CARD_W,CARD_H,'lab',null);
+  }
+  // GRAVEYARD (staggered down, banner of each visible; perpendicular look via slight tag)
+  const gx=labX+CARD_W+60, gy=y+4, stagger=24;
+  const clickable = (G.phase==='draw'&&!G.drewThisTurn&&cur().type==='human');
+  G.graveyard.forEach((c,i)=>{
+    const cy=gy+i*stagger;
+    const isTop=(i===G.graveyard.length-1);
+    drawCard(gx, cy, c, {});
+    if(clickable){
+      // top card fully clickable; deeper cards only their visible banner strip
+      if(isTop){ add(gx,cy,CARD_W,CARD_H,'grave',{index:i}); ctx.strokeStyle='#7ee787'; ctx.lineWidth=2; roundRect(gx,cy,CARD_W,CARD_H,7); ctx.stroke(); }
+      else { add(gx,cy,CARD_W,stagger,'grave',{index:i}); }
+    }
+  });
+  ctx.fillStyle='#9ab'; ctx.font='11px "Courier New",monospace'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillText('top is free · dig deeper only to build', gx+CARD_W+14, gy+16);
+}
+
+function drawHand(x,y,innerW,perRow){
+  const hand=cur().hand;
+  if(cur().type==='cpu'){
+    // face-down summary during AI turn
+    for(let i=0;i<Math.min(hand.length,12);i++) drawCardBack(x+i*26, y, CARD_W, CARD_H);
+    ctx.fillStyle='#9ab'; ctx.font='12px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(hand.length+' cards (hidden — AI is thinking)', x, y+CARD_H+16);
+    return;
+  }
+  if(hand.length===0){
+    ctx.fillStyle='#7ee787'; ctx.font='13px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText('Hand empty. End your turn to set the last turn in motion.', x, y+30);
+    return;
+  }
+  hand.forEach((c,i)=>{
+    const col=i%perRow, rr=Math.floor(i/perRow);
+    const cx=x+col*(CARD_W+10), cy=y+rr*(CARD_H+12);
+    const selected = G.selection.has(i) && G.phase==='action' && G.mode==='build';
+    let stealHi=false;
+    if(G.phase==='action'&&G.mode==='steal'&&G.stealTarget){
+      const m=G.monsters.find(x=>x.id===G.stealTarget.monsterId);
+      const wild=m.cards[G.stealTarget.cardIdx];
+      const need=monsterSuit(m.cards.filter((cc,ii)=>ii!==G.stealTarget.cardIdx));
+      stealHi = c.suit!=='wild' && c.part===wild.part && (need==='wild'||need===null||c.suit===need);
+    }
+    drawCard(cx,cy,c,{selected, stealable:stealHi});
+    add(cx,cy,CARD_W,CARD_H,'hand',{index:i});
+  });
+}
+
+/* ============================================================
+   INTERACTION
+   ============================================================ */
+canvas.addEventListener('click', ev=>{
+  if(!G || G.roundOver || cur().type==='cpu') return;
+  const rect=canvas.getBoundingClientRect();
+  const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+  const mx=(ev.clientX-rect.left)*sx, my=(ev.clientY-rect.top)*sy;
+  // topmost region wins (iterate reverse so staggered graveyard top hits first)
+  for(let i=regions.length-1;i>=0;i--){
+    const r=regions[i];
+    if(mx>=r.x&&mx<=r.x+r.w&&my>=r.y&&my<=r.y+r.h){ handleHit(r); return; }
+  }
+});
+function handleHit(r){
+  if(r.type==='lab') return drawFromLab();
+  if(r.type==='grave') return drawFromGraveyard(r.data.index);
+  if(r.type==='wild' && G.phase==='action' && G.mode==='steal') return attemptSteal(r.data.monsterId, r.data.cardIdx);
+  if(r.type==='hand'){
+    const i=r.data.index;
+    if(G.phase==='action' && G.mode==='build'){
+      if(G.selection.has(i)) G.selection.delete(i); else G.selection.add(i);
+      render(); return;
+    }
+    if(G.phase==='action' && G.mode==='steal' && G.stealTarget){ return completeSteal(i); }
+    if(G.phase==='discard'){ return discardCard(i); }
+  }
+}
+
+/* ============================================================
+   HUD / CONTROLS / LOG
+   ============================================================ */
+function updateHUD(){
+  document.getElementById('labCount').textContent=G.lab.length;
+  document.getElementById('graveCount').textContent=G.graveyard.length;
+  document.getElementById('turnChip').textContent=cur().name+(cur().type==='cpu'?' (AI)':'')+ (G.lastTurn?'  ·  LAST TURN':'');
+  const phaseName = G.phase==='action' ? ('action · '+G.mode) : G.phase;
+  document.getElementById('phaseChip').textContent=phaseName;
+  let instr='';
+  if(cur().type==='cpu') instr='AI is taking its turn…';
+  else if(G.phase==='draw') instr='Draw: click the LAB deck or a graveyard card.';
+  else if(G.phase==='action'&&G.mode==='build') instr='Build: select cards, then Build monster. Or switch to Steal / go to Discard.';
+  else if(G.phase==='action'&&G.mode==='steal') instr= G.stealTarget? 'Click a matching real card in your hand to complete the steal.' : 'Steal: click a glowing wild part inside a monster.';
+  else if(G.phase==='discard') instr='Click a card in your hand to discard.';
+  document.getElementById('instruct').textContent=instr;
+  renderControls();
+}
+function renderControls(){
+  const c=document.getElementById('controls'); c.innerHTML='';
+  if(cur().type==='cpu') return;
+  const mk=(label,cls,fn,dis)=>{ const b=document.createElement('button'); b.textContent=label; if(cls)b.className=cls; b.disabled=!!dis; b.onclick=fn; c.appendChild(b); return b; };
+  if(G.phase==='action'){
+    mk('🔨 Build', G.mode==='build'?'primary':'ghost', ()=>{G.mode='build';G.stealTarget=null;render();});
+    mk('🩸 Steal', G.mode==='steal'?'primary':'ghost', ()=>{G.mode='steal';G.selection.clear();render();});
+    if(G.mode==='build'){
+      mk('✅ Build monster','', buildSelected, G.selection.size<2);
+      mk('✖ Clear','ghost', ()=>{G.selection.clear();render();}, G.selection.size===0);
+      const s=document.createElement('span'); s.className='sel'; s.textContent=G.selection.size+' selected'; c.appendChild(s);
+    }
+    if(G.mode==='steal'&&G.stealTarget){ mk('Cancel steal','ghost', ()=>{G.stealTarget=null;render();}); }
+    mk(cur().hand.length===0?'End turn':'➡ Go to discard','danger', goDiscard);
+  }
+}
+function flash(msg){ document.getElementById('instruct').textContent=msg; }
+function playerCls(){ return cur().type==='human'?'me':''; }
+function label(c){ return c.suit+' '+c.name+' '+c.part; }
+function logMsg(cls,msg){
+  G.log.push({cls,msg});
+  const el=document.getElementById('log');
+  const d=document.createElement('div'); if(cls)d.className=cls; d.textContent='» '+msg; el.appendChild(d);
+  el.scrollTop=el.scrollHeight;
+}
+
+/* ============================================================
+   SETUP UI
+   ============================================================ */
+function buildSeats(){
+  const n=+document.getElementById('pcount').value;
+  const wrap=document.getElementById('seats'); wrap.innerHTML='';
+  for(let i=0;i<n;i++){
+    const row=document.createElement('div'); row.className='seatrow';
+    const lab=document.createElement('label'); lab.textContent='Player '+(i+1);
+    const sel=document.createElement('select'); sel.dataset.seat=i;
+    sel.innerHTML='<option value="human">Human</option><option value="cpu">AI</option>';
+    sel.value = i===0 ? 'human' : 'cpu';
+    row.appendChild(lab); row.appendChild(sel); wrap.appendChild(row);
+  }
+}
+document.getElementById('pcount').addEventListener('change', buildSeats);
+buildSeats();
+
+document.getElementById('startBtn').onclick=()=>{
+  const seats=[...document.querySelectorAll('#seats select')].map((s,i)=>({type:s.value, name:'Player '+(i+1)}));
+  document.getElementById('setup').style.display='none';
+  document.getElementById('scoreboard').style.display='none';
+  document.getElementById('game').style.display='block';
+  document.getElementById('log').innerHTML='';
+  monsterUID=1;
+  newGame(seats);
+};
+document.getElementById('againBtn').onclick=()=>{
+  const seats=G.players.map(p=>({type:p.type, name:p.name}));
+  document.getElementById('scoreboard').style.display='none';
+  document.getElementById('game').style.display='block';
+  document.getElementById('log').innerHTML='';
+  monsterUID=1;
+  newGame(seats);
+};
+document.getElementById('resetBtn').onclick=()=>{
+  document.getElementById('scoreboard').style.display='none';
+  document.getElementById('setup').style.display='block';
+};
+</script>
+</body>
+</html>
