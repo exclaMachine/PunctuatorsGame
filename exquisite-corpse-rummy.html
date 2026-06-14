@@ -561,11 +561,11 @@ function drawCard(x,y,card,opts={}){
   ctx.fillStyle='#f4eede'; ctx.fillRect(x,y+BANNER,w,h-BANNER);
   drawPartArt(x, y+BANNER, w, h-BANNER, card);
   ctx.restore();
-  // banner: 2 suit circles + 1 part circle + body name
+  // banner: 1 suit circle + 1 part circle + body name
   ctx.fillStyle='#ddd3bb'; ctx.fillRect(x+1,y+1,w-2,BANNER-1);
   const r=7; let cxs=x+12;
-  for(let i=0;i<2;i++){ drawGlyphCircle(cxs, y+BANNER/2, r, card.suit==='wild'?'#b06bff':SUIT_COLOR[card.suit], SUIT_GLYPH[card.suit]); cxs+=18; }
-  drawGlyphCircle(cxs, y+BANNER/2, r, '#3a3326', PART_GLYPH[card.part]); 
+  drawGlyphCircle(cxs, y+BANNER/2, r, card.suit==='wild'?'#b06bff':SUIT_COLOR[card.suit], SUIT_GLYPH[card.suit]); cxs+=18;
+  drawGlyphCircle(cxs, y+BANNER/2, r, '#3a3326', PART_GLYPH[card.part]);
   ctx.fillStyle='#2a241c'; ctx.font='9px "Courier New",monospace'; ctx.textAlign='right'; ctx.textBaseline='middle';
   ctx.fillText(card.name, x+w-6, y+BANNER/2+1);
   ctx.restore();

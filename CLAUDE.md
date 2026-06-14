@@ -599,8 +599,9 @@ These were judgment calls during the prototype — flag in commit messages if yo
    vertical.
 2. **Build + Steal share one phase** to allow rebuilding stolen wilds. Could be split back
    into strict sequential phases.
-3. **Two suit circles per card** are currently redundant (display only). If a card is meant
-   to carry two _different_ suits, building/matching logic changes significantly.
+3. **One suit circle + one part circle per card.** (The earlier redundant second suit
+   circle was removed.) If a card is ever meant to carry two _different_ suits,
+   building/matching logic changes significantly.
 4. **AI does not steal** and does not dig the graveyard — kept simple for reliability.
 
 ## Suggested roadmap / TODO
