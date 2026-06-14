@@ -484,7 +484,10 @@ Everything lives in one file, split into clearly commented sections inside the s
 5. **Simple AI** — `findBestMonster`, `aiTurn`.
 6. **Rendering (canvas)** — all `draw*` functions plus `render()`.
 7. **Interaction** — canvas pointer events → hit-test against `regions[]`. A tap routes to
-   `handleHit`; a drag (in build mode) stages a hand card into the assembly tray.
+   `handleHit`; tapping a hand card calls `selectHandCard` (click-to-select: one valid target
+   acts immediately, several stay highlighted via `selectedCard`). A drag (build mode) stages
+   a hand card into the assembly slots. Non-actionable hand cards are dimmed
+   (`handCardActionable`); valid targets light up (slots fill green, steal wilds outline green).
 8. **HUD / controls / log** — DOM status bar, buttons, message log.
 9. **Setup UI** — seat selection and start/restart wiring.
 
@@ -545,18 +548,24 @@ G = {
   card is recorded in `mustUseIds` and the turn cannot end until it is built.
 - **Build:** a monster is exactly **one skull + one foot + any number of claws**, all
   sharing one suit. The `wild` suit substitutes for any suit. Build as many as you like.
-  Building is **drag-and-drop into labeled slots** (`G.stage` = `{skull, claws:[], foot}`):
-  the on-canvas Assembly row shows a **HEAD** slot, one **BODY** slot per claw plus one
-  always-open BODY slot, and a **FOOT** slot — all portrait cards in the same orientation as
-  the hand. Dropping anywhere over the row auto-routes the card to its matching slot by part
-  (`placeInStage`); dropping a second skull/foot is rejected. The moment a head **and** a
-  foot are both placed the monster **auto-builds** (`tryStageBuild`) — so add claws first. A
-  suit clash blocks the build with a warning until corrected. Click a staged card (or "Clear
-  staging") to send it back to the hand; leaving build mode or going to discard returns all
-  staged cards (`returnTrayToHand`). The old click-to-select + "Build monster" button flow
-  was removed.
+  Building uses **labeled slots** (`G.stage` = `{skull, claws:[], foot}`): the on-canvas
+  Assembly row shows a **HEAD** slot, one **BODY** slot per claw plus one always-open BODY
+  slot, and a **FOOT** slot — all portrait cards in the same orientation as the hand. Two
+  input methods, both supported: **drag** a hand card anywhere over the row (auto-routes to
+  its matching slot by part via `placeInStage`), or **click** a hand card (`selectHandCard`)
+  which — since each part has exactly one open slot — auto-places it immediately
+  (WriteRight-style "one valid target → act"). Dropping/clicking a second skull/foot is
+  rejected. The moment a head **and** a foot are both placed the monster **auto-builds**
+  (`tryStageBuild`) — so add claws first. A suit clash blocks the build with a warning. Click
+  a staged card (or "Clear staging") to send it back to the hand; leaving build mode or going
+  to discard returns all staged cards (`returnTrayToHand`).
 - **Steal:** swap a real card (matching the monster's suit and the wild's part) from your
-  hand into another monster, taking the displaced wild into your hand.
+  hand into another monster, taking the displaced wild into your hand. Two flows: **wild-
+  first** (click a glowing wild in a monster → `attemptSteal` sets `G.stealTarget` → click a
+  matching hand card) or **card-first** (click a hand card → `selectHandCard` highlights every
+  wild it can replace via `validStealTargets`; one target acts immediately, several stay
+  highlighted until you click one). The actual swap is `doSteal(card, monsterId, cardIdx)`,
+  gated by the side-effect-free predicate `canStealWith`.
 - **Discard:** send one card to the graveyard to end the turn. An empty hand may end the
   turn without discarding.
 - **Round end:** emptying your hand triggers the **last turn**; every other player gets one
@@ -571,9 +580,10 @@ G = {
 | Suit/part names, colors, glyphs | `SUITS`, `NAMES`, `SUIT_COLOR`, `SUIT_GLYPH`, `PART_GLYPH` |
 | Is a monster legal?             | `validateMonster()`, `monsterSuit()`                       |
 | Dig-deeper legality             | `canFormMonsterWith()` + `drawFromGraveyard()`             |
-| Building                        | drag → `placeInStage()` → `tryStageBuild()` (human), `findBestMonster()` (AI) |
+| Building                        | click/drag → `placeInStage()` → `tryStageBuild()` (human), `findBestMonster()` (AI) |
+| Click-to-select / highlight     | `selectHandCard()`, `selectedCard`, `handCardActionable()` |
 | Drag-and-drop / slots           | `pointerdown/move/up`, `dragState`, `stageLayout()`, `drawStage()`, `stageZoneRect` |
-| Stealing                        | `attemptSteal()` → `completeSteal()`                       |
+| Stealing                        | `canStealWith()` / `validStealTargets()` → `doSteal()`; `attemptSteal()`/`completeSteal()` (wild-first) |
 | Turn advance / last turn        | `finalizeTurn()`                                           |
 | Scoring                         | `endRound()`                                               |
 | AI behavior                     | `aiTurn()`                                                 |

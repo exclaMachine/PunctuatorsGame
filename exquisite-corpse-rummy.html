@@ -204,6 +204,7 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.rando
    ============================================================ */
 let G = null;
 let monsterUID = 1;
+let selectedCard = null; // hand card currently click-selected (highlights its valid targets)
 
 function newGame(seats){
   const deck = shuffle(buildDeck());
@@ -272,7 +273,7 @@ function cur(){ return G.players[G.current]; }
 
 function startTurn(){
   G.phase='draw'; G.mode='build';
-  G.stage={skull:null, claws:[], foot:null}; G.stealTarget=null;
+  G.stage={skull:null, claws:[], foot:null}; G.stealTarget=null; selectedCard=null;
   G.builtThisTurnIds.clear(); G.mustUseIds.clear();
   G.drewThisTurn=false;
   // auto-skip draw only if no cards anywhere to draw
@@ -361,7 +362,62 @@ function returnTrayToHand(){
   for(const c of all) cur().hand.push(c);
   G.stage={skull:null, claws:[], foot:null};
 }
+// is there an open staging slot for this card's part? (claws always have one)
+function buildSlotOpenFor(card){
+  if(card.part==='skull') return !G.stage.skull;
+  if(card.part==='foot') return !G.stage.foot;
+  return true;
+}
+const SLOT_NAME={skull:'HEAD', claw:'BODY', foot:'FOOT'};
+// does the current mode offer any legal action for this hand card? (drives dimming)
+function handCardActionable(card){
+  if(G.phase==='draw' || G.phase==='discard') return true; // don't grey these out
+  if(G.phase!=='action') return false;
+  if(G.mode==='build') return buildSlotOpenFor(card);
+  if(G.mode==='steal'){
+    if(G.stealTarget){ const m=G.monsters.find(x=>x.id===G.stealTarget.monsterId); return !!m && canStealWith(card,m,G.stealTarget.cardIdx); }
+    return validStealTargets(card).length>0;
+  }
+  return true;
+}
+/* click-to-select (WriteRight-style): clicking a hand card resolves its valid
+   targets. One target → act immediately; several → keep it selected so the
+   targets highlight and the player clicks one. */
+function selectHandCard(card){
+  if(G.phase==='discard'){ const i=cur().hand.indexOf(card); if(i>=0) discardCard(i); return; }
+  if(G.phase!=='action') return;
+  if(G.mode==='build'){
+    selectedCard=null;
+    if(!buildSlotOpenFor(card)){ flash('No open '+SLOT_NAME[card.part]+' slot for that card.'); render(); return; }
+    placeInStage(card); render(); // exactly one slot per part → auto-place
+    return;
+  }
+  // steal mode
+  if(G.stealTarget){ doSteal(card, G.stealTarget.monsterId, G.stealTarget.cardIdx); return; } // wild already chosen
+  if(selectedCard===card){ selectedCard=null; render(); return; } // click again to deselect
+  const targets=validStealTargets(card);
+  if(targets.length===0){ selectedCard=null; flash('No monster has a matching wild part for that card.'); render(); return; }
+  if(targets.length===1){ doSteal(card, targets[0].monsterId, targets[0].cardIdx); return; }
+  selectedCard=card; flash('Click a highlighted wild part to swap this card in.'); render();
+}
 
+// can hand `card` legally replace the wild part at m.cards[cardIdx]? (no side effects)
+function canStealWith(card, m, cardIdx){
+  const wild=m.cards[cardIdx];
+  if(!wild || wild.suit!=='wild') return false;
+  if(card.suit==='wild') return false;
+  if(card.part!==wild.part) return false;
+  const need=monsterSuit(m.cards.filter((c,i)=>i!==cardIdx)); // suit defined by the real parts
+  const wantSuit=(need==='wild'||need===null)?null:need;
+  return !wantSuit || card.suit===wantSuit;
+}
+// every {monsterId, cardIdx} wild slot that `card` could be swapped into
+function validStealTargets(card){
+  const out=[];
+  for(const m of G.monsters) m.cards.forEach((c,i)=>{ if(canStealWith(card,m,i)) out.push({monsterId:m.id, cardIdx:i}); });
+  return out;
+}
+// wild-first flow: pick the wild to steal, then click a matching hand card
 function attemptSteal(monsterId, cardIdx){
   const m=G.monsters.find(x=>x.id===monsterId);
   if(!m) return;
@@ -371,29 +427,36 @@ function attemptSteal(monsterId, cardIdx){
   flash('Now click a real '+m.suitView+' '+wild.part+' in your hand to swap it in.');
   render();
 }
-function completeSteal(handIdx){
-  const t=G.stealTarget; if(!t) return;
-  const m=G.monsters.find(x=>x.id===t.monsterId);
-  const wild=m.cards[t.cardIdx];
-  const sub=cur().hand[handIdx];
-  const need=monsterSuit(m.cards.filter((c,i)=>i!==t.cardIdx)); // suit defined by the real parts
-  const wantSuit = (need==='wild'||need===null)? null : need;
-  if(sub.suit==='wild'){ flash('Substitute must be a real card, not a wild.'); return; }
-  if(sub.part!==wild.part){ flash('Substitute must be the same part ('+wild.part+').'); return; }
-  if(wantSuit && sub.suit!==wantSuit){ flash('Substitute must be a '+wantSuit+' '+wild.part+'.'); return; }
-  // swap
-  cur().hand.splice(handIdx,1);
-  sub.owner=G.current; G.builtThisTurnIds.add(sub.id);
-  m.cards[t.cardIdx]=sub;
-  m.cards=orderMonster(m.cards);
+// perform the swap of `card` into a monster's wild slot (shared by both flows)
+function doSteal(card, monsterId, cardIdx){
+  const m=G.monsters.find(x=>x.id===monsterId); if(!m) return false;
+  const wild=m.cards[cardIdx];
+  if(!canStealWith(card,m,cardIdx)){
+    const need=monsterSuit(m.cards.filter((c,i)=>i!==cardIdx));
+    const wantSuit=(need==='wild'||need===null)?null:need;
+    if(!wild||wild.suit!=='wild') flash('You can only steal wild parts.');
+    else if(card.suit==='wild') flash('Substitute must be a real card, not a wild.');
+    else if(card.part!==wild.part) flash('Substitute must be the same part ('+wild.part+').');
+    else flash('Substitute must be a '+wantSuit+' '+wild.part+'.');
+    return false;
+  }
+  const hi=cur().hand.indexOf(card); if(hi>=0) cur().hand.splice(hi,1);
+  card.owner=G.current; G.builtThisTurnIds.add(card.id);
+  m.cards[cardIdx]=card; m.cards=orderMonster(m.cards);
   wild.owner=G.current; cur().hand.push(wild);
-  G.stealTarget=null;
+  G.stealTarget=null; selectedCard=null;
   logMsg('steal',cur().name+' stole a wild '+wild.part+' from '+G.players[m.owner].name+"'s monster.");
   render();
+  return true;
+}
+function completeSteal(handIdx){
+  const t=G.stealTarget; if(!t) return;
+  doSteal(cur().hand[handIdx], t.monsterId, t.cardIdx);
 }
 
 function goDiscard(){
   returnTrayToHand(); // never lose staged-but-unbuilt cards
+  selectedCard=null;
   // enforce dig obligation
   for(const id of G.mustUseIds){
     if(cur().hand.some(c=>c.id===id)){ flash('You dug for a card you must build into a monster this turn.'); return; }
@@ -746,10 +809,14 @@ function drawBattlefield(x,y,innerW,bf){
       ctx.fillText(G.players[m.owner].name+' · '+ms, xx, yy+11);
       // vertical stack of landscape cards, drawn touching so spines connect
       let cardY=yy+labelH;
+      const stealing = G.phase==='action'&&G.mode==='steal';
       m.cards.forEach((c,ci)=>{
-        const canSteal = G.phase==='action'&&G.mode==='steal'&&c.suit==='wild';
-        drawCardLandscape(xx, cardY, cw, ch, c, {stealable:canSteal});
-        if(canSteal) add(xx, cardY, cw, ch, 'wild', {monsterId:m.id, cardIdx:ci});
+        // with a selected hand card, only its legal targets light up (green);
+        // otherwise every wild is a pickable steal source (pink)
+        const isTarget = stealing && selectedCard && canStealWith(selectedCard,m,ci);
+        const canSteal = stealing && !selectedCard && c.suit==='wild';
+        drawCardLandscape(xx, cardY, cw, ch, c, {stealable:canSteal, selected:isTarget});
+        if(canSteal || isTarget) add(xx, cardY, cw, ch, 'wild', {monsterId:m.id, cardIdx:ci});
         cardY+=ch;
       });
       xx += cw + gap;
@@ -890,14 +957,16 @@ function drawHand(x,y,innerW,perRow){
     const col=i%perRow, rr=Math.floor(i/perRow);
     const cx=x+col*(CARD_W+10), cy=y+rr*(CARD_H+12);
     const dragging = dragState && dragState.dragging && dragState.card===c;
+    const isSel = selectedCard===c; // click-selected → green outline
+    // wild-first steal: matching hand cards glow pink
     let stealHi=false;
     if(G.phase==='action'&&G.mode==='steal'&&G.stealTarget){
       const m=G.monsters.find(x=>x.id===G.stealTarget.monsterId);
-      const wild=m.cards[G.stealTarget.cardIdx];
-      const need=monsterSuit(m.cards.filter((cc,ii)=>ii!==G.stealTarget.cardIdx));
-      stealHi = c.suit!=='wild' && c.part===wild.part && (need==='wild'||need===null||c.suit===need);
+      stealHi = !!m && canStealWith(c,m,G.stealTarget.cardIdx);
     }
-    drawCard(cx,cy,c,{stealable:stealHi, dim:dragging});
+    // fade cards with no legal action this mode (and the one being dragged)
+    const faded = dragging || !handCardActionable(c);
+    drawCard(cx,cy,c,{stealable:stealHi, dim:faded, selected:isSel});
     add(cx,cy,CARD_W,CARD_H,'hand',{index:i});
   });
 }
@@ -946,6 +1015,7 @@ function endDrag(ev){
   const p=canvasPos(ev);
   const ds=dragState; dragState=null;
   if(ds.card && ds.dragging){
+    selectedCard=null;
     // forgiving: dropping anywhere over the staging row routes to the right slot
     const r=stageZoneRect;
     if(r && p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h){
@@ -954,24 +1024,24 @@ function endDrag(ev){
     render(); // either placed in a slot or snapped back
     return;
   }
-  if(!ds.moved && ds.region) handleHit(ds.region); // a tap (no real drag)
+  if(!ds.moved && ds.region){ handleHit(ds.region); return; } // a tap on something
+  if(!ds.moved && selectedCard){ selectedCard=null; render(); } // tap empty space → deselect
 }
 canvas.addEventListener('pointerup', endDrag);
 canvas.addEventListener('pointercancel', ()=>{ if(dragState){ dragState=null; render(); } });
 function handleHit(r){
   if(r.type==='lab') return drawFromLab();
   if(r.type==='grave') return drawFromGraveyard(r.data.index);
-  if(r.type==='wild' && G.phase==='action' && G.mode==='steal') return attemptSteal(r.data.monsterId, r.data.cardIdx);
+  if(r.type==='wild' && G.phase==='action' && G.mode==='steal'){
+    // card-first: a selected hand card → drop it into this highlighted wild
+    if(selectedCard) return doSteal(selectedCard, r.data.monsterId, r.data.cardIdx);
+    return attemptSteal(r.data.monsterId, r.data.cardIdx); // wild-first
+  }
   if(r.type==='stage-card'){ // click a staged card to send it back to the hand
-    unStage(r.data.slot); render();
+    selectedCard=null; unStage(r.data.slot); render();
     return;
   }
-  if(r.type==='hand'){
-    const i=r.data.index;
-    if(G.phase==='action' && G.mode==='build') return; // building is drag-only now
-    if(G.phase==='action' && G.mode==='steal' && G.stealTarget){ return completeSteal(i); }
-    if(G.phase==='discard'){ return discardCard(i); }
-  }
+  if(r.type==='hand') return selectHandCard(cur().hand[r.data.index]); // click-to-select / auto-act
 }
 
 /* ============================================================
@@ -984,8 +1054,8 @@ function updateHUD(){
   let instr='';
   if(cur().type==='cpu') instr='AI is taking its turn…';
   else if(G.phase==='draw') instr='Draw: click the LAB deck or a graveyard card.';
-  else if(G.phase==='action'&&G.mode==='build') instr='Build: drag cards into the HEAD / BODY / FOOT slots. Once a head and foot are placed the monster forms automatically.';
-  else if(G.phase==='action'&&G.mode==='steal') instr= G.stealTarget? 'Click a matching real card in your hand to complete the steal.' : 'Steal: click a glowing wild part inside a monster.';
+  else if(G.phase==='action'&&G.mode==='build') instr='Build: click a card to drop it into its HEAD / BODY / FOOT slot (or drag it). A head + foot auto-builds the monster.';
+  else if(G.phase==='action'&&G.mode==='steal') instr= G.stealTarget? 'Click a matching real card in your hand to complete the steal.' : (selectedCard? 'Click a highlighted wild part to swap this card in.' : 'Steal: click a hand card to highlight wilds it can replace, or click a glowing wild part.');
   else if(G.phase==='discard') instr='Click a card in your hand to discard.';
   document.getElementById('instruct').textContent=instr;
   renderControls();
@@ -995,13 +1065,13 @@ function renderControls(){
   if(cur().type==='cpu') return;
   const mk=(label,cls,fn,dis)=>{ const b=document.createElement('button'); b.textContent=label; if(cls)b.className=cls; b.disabled=!!dis; b.onclick=fn; c.appendChild(b); return b; };
   if(G.phase==='action'){
-    mk('🔨 Build', G.mode==='build'?'primary':'ghost', ()=>{G.mode='build';G.stealTarget=null;render();});
-    mk('🩸 Steal', G.mode==='steal'?'primary':'ghost', ()=>{G.mode='steal';returnTrayToHand();render();});
+    mk('🔨 Build', G.mode==='build'?'primary':'ghost', ()=>{G.mode='build';G.stealTarget=null;selectedCard=null;render();});
+    mk('🩸 Steal', G.mode==='steal'?'primary':'ghost', ()=>{G.mode='steal';selectedCard=null;returnTrayToHand();render();});
     if(G.mode==='build' && stageCards().length){
       mk('✖ Clear staging','ghost', ()=>{returnTrayToHand();render();});
       const s=document.createElement('span'); s.className='sel'; s.textContent=stageCards().length+' staged'; c.appendChild(s);
     }
-    if(G.mode==='steal'&&G.stealTarget){ mk('Cancel steal','ghost', ()=>{G.stealTarget=null;render();}); }
+    if(G.mode==='steal'&&(G.stealTarget||selectedCard)){ mk('Cancel steal','ghost', ()=>{G.stealTarget=null;selectedCard=null;render();}); }
     mk(cur().hand.length===0?'End turn':'➡ Go to discard','danger', goDiscard);
   }
 }
