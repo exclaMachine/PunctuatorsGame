@@ -113,15 +113,31 @@
   transform: translate(-2px, -2px) rotate(-0.6deg);
   box-shadow: 9px 9px 0 var(--ink);
 }
+/* Padding-ratio box (16:10) instead of aspect-ratio + height:100%. iOS Safari
+   mis-sizes object-fit:cover images inside an aspect-ratio box using the
+   image's intrinsic ratio, which crops portrait art wrongly on phones. An
+   absolutely-positioned image inside a padding-ratio box is reliable
+   everywhere. */
 .hub-card__media {
-  aspect-ratio: 16 / 10;
+  position: relative;
+  width: 100%;
+  padding-top: 62.5%;            /* 10 / 16 = 16:10 */
+  overflow: hidden;
   background: var(--ink-soft);
+}
+.hub-card__media img {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.hub-card__media .emoji {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
   display: grid;
   place-items: center;
-  overflow: hidden;
+  font-size: 3.4rem;
 }
-.hub-card__media img { width: 100%; height: 100%; object-fit: cover; }
-.hub-card__media .emoji { font-size: 3.4rem; }
 /* For art with its own white/transparent background (team poster, alphabet):
    show the whole image on white instead of cropping it. */
 .hub-card__media--contain { background: #fff; }
