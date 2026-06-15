@@ -134,3 +134,10 @@
   margin: 0 0 2px;
 }
 .hub-card__desc { font-family: var(--font-body); font-size: 0.95rem; line-height: 1.35; color: var(--ink-soft); margin: 0; }
+
+/* Hide desktop-only cards (e.g. TyPow) on touch devices. This needs a
+   two-class selector so it outranks .hub-card { display:flex } above —
+   nav.css's plain .nav-desktop-only rule loses to it otherwise. */
+@media (hover: none) and (pointer: coarse) {
+  .hub-card.nav-desktop-only { display: none; }
+}
