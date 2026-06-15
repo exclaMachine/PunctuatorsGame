@@ -90,6 +90,7 @@
       <small>exquisite corpse · monster rummy</small>
     </div>
     <div class="spacer"></div>
+    <button class="iconbtn" id="muteBtn" title="Mute sound" aria-label="Mute sound">🔊</button>
     <button class="iconbtn" id="rulesBtn" title="Rules & how to play" aria-label="Rules and how to play">?</button>
   </div>
 
@@ -200,6 +201,57 @@ function buildDeck(){
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 
 /* ============================================================
+   SOUND EFFECTS — subtle synthesized blips (Web Audio, no asset files).
+   Call `SFX.play('build')` etc. Events: select, place, build, steal, draw,
+   discard, invalid, win.
+
+   EASY TO REPLACE LATER — two ways:
+     1) tweak a tone in SFX.DEFS  (freq can be a single note or a short arpeggio),
+     2) drop in a real audio file:  SFX.files.build = 'sounds/build.mp3';
+        (a URL string or a preloaded <audio> element). A file override wins over
+        the synth for that one event, so you can swap them in one at a time.
+   ============================================================ */
+const SFX = (()=>{
+  let ctx=null, muted=false;
+  try{ muted = localStorage.getItem('sfxMuted')==='1'; }catch(e){}
+  const files = {}; // event name -> url | HTMLAudioElement (override hook)
+  const DEFS = {
+    select:  { freq:[330],            dur:0.05, vol:0.035, wave:'sine'     },
+    place:   { freq:[392,523],        dur:0.07, vol:0.05,  wave:'sine'     },
+    build:   { freq:[523,659,784],    dur:0.10, vol:0.06,  wave:'triangle' },
+    steal:   { freq:[466,311],        dur:0.10, vol:0.05,  wave:'sawtooth' },
+    draw:    { freq:[294,392],        dur:0.06, vol:0.045, wave:'sine'     },
+    discard: { freq:[330,196],        dur:0.08, vol:0.045, wave:'sine'     },
+    invalid: { freq:[220,165],        dur:0.12, vol:0.05,  wave:'square'   },
+    win:     { freq:[523,659,784,1047], dur:0.12, vol:0.06, wave:'triangle' },
+  };
+  function ac(){ if(!ctx){ try{ ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ ctx=null; } } return ctx; }
+  function resume(){ const a=ac(); if(a && a.state==='suspended') a.resume(); } // call on a user gesture
+  function tone(def){
+    const a=ac(); if(!a) return;
+    const seq=Array.isArray(def.freq)?def.freq:[def.freq], step=def.dur;
+    seq.forEach((f,i)=>{
+      const t0=a.currentTime + i*step*0.9;
+      const osc=a.createOscillator(), g=a.createGain();
+      osc.type=def.wave||'sine'; osc.frequency.value=f;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(def.vol, t0+0.008);     // quick attack
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+step);  // short decay → subtle
+      osc.connect(g).connect(a.destination);
+      osc.start(t0); osc.stop(t0+step+0.02);
+    });
+  }
+  function play(name){
+    if(muted) return;
+    const f=files[name];
+    if(f){ try{ const el=(typeof f==='string')?new Audio(f):(f.cloneNode?f.cloneNode():f); el.play&&el.play().catch(()=>{}); return; }catch(e){} }
+    const def=DEFS[name]; if(def) tone(def);
+  }
+  function setMuted(m){ muted=!!m; try{ localStorage.setItem('sfxMuted', muted?'1':'0'); }catch(e){} }
+  return { play, resume, setMuted, isMuted:()=>muted, files, DEFS };
+})();
+
+/* ============================================================
    GAME STATE
    ============================================================ */
 let G = null;
@@ -289,6 +341,7 @@ function drawFromLab(){
   const c=G.lab.pop(); c.owner=G.current; cur().hand.push(c);
   G.drewThisTurn=true; G.phase='action';
   logMsg(playerCls(),cur().name+' drew from the LAB.');
+  SFX.play('draw');
   commit(from ? [{card:c, from}] : null);
 }
 function drawFromGraveyard(index){
@@ -299,6 +352,7 @@ function drawFromGraveyard(index){
     G.graveyard.pop(); c.owner=G.current; cur().hand.push(c);
     G.drewThisTurn=true; G.phase='action';
     logMsg(playerCls(),cur().name+' took '+label(c)+' from the graveyard.');
+    SFX.play('draw');
     commit(from ? [{card:c, from}] : null); return;
   }
   // dig deeper: only if target can complete a monster this turn
@@ -315,6 +369,7 @@ function drawFromGraveyard(index){
   G.mustUseIds.add(target.id);
   G.drewThisTurn=true; G.phase='action';
   logMsg(playerCls(),cur().name+' dug for '+label(target)+' (swept '+above.length+' card'+(above.length===1?'':'s')+'). Must build with it.');
+  SFX.play('draw');
   commit(froms);
 }
 
@@ -328,14 +383,14 @@ function stageCards(){
    always follows). After a successful placement we try to auto-build. */
 function placeInStage(card){
   const s=G.stage;
-  if(card.part==='skull'){ if(s.skull){ flash('The head slot is already filled.'); render(); return false; } s.skull=card; }
-  else if(card.part==='foot'){ if(s.foot){ flash('The foot slot is already filled.'); render(); return false; } s.foot=card; }
+  if(card.part==='skull'){ if(s.skull){ flash('The head slot is already filled.'); SFX.play('invalid'); render(); return false; } s.skull=card; }
+  else if(card.part==='foot'){ if(s.foot){ flash('The foot slot is already filled.'); SFX.play('invalid'); render(); return false; } s.foot=card; }
   else { s.claws.push(card); } // claw → next open body slot
   const i=cur().hand.indexOf(card); if(i>=0) cur().hand.splice(i,1);
   // capture froms BEFORE the (possible) build: incoming card from hand, others from their slots
   const froms=stageCards().map(c=>({card:c, from:snapRect(c)})).filter(s2=>s2.from);
-  if(tryStageBuild()) commit(froms);                 // built → all staged cards fly to the battlefield
-  else commit(froms.filter(f=>f.card===card));       // just staged one → it flies hand → slot
+  if(tryStageBuild()) commit(froms);                 // built → all staged cards fly to the battlefield (plays 'build')
+  else { SFX.play('place'); commit(froms.filter(f=>f.card===card)); } // just staged one → it flies hand → slot
   return true;
 }
 // pull a staged card back into the current hand. slot = 'skull' | 'foot' | claw index
@@ -359,6 +414,7 @@ function tryStageBuild(){
   G.monsters.push({ id:monsterUID++, owner:G.current, cards:ordered });
   G.stage={skull:null, claws:[], foot:null};
   logMsg(playerCls(),cur().name+' built a '+v.suit+' monster ('+ordered.length+' parts).');
+  SFX.play('build');
   return true;
 }
 // send every staged (un-built) card back to the current player's hand
@@ -398,7 +454,7 @@ function selectHandCard(card){
   if(!buildSlotOpenFor(card) && validStealTargets(card).length===0){
     selectedCard=null; flash('No open slot or matching wild for that card right now.'); render(); return;
   }
-  selectedCard=card; render(); // its slot + stealable wilds now light up; click one to commit
+  selectedCard=card; SFX.play('select'); render(); // its slot + stealable wilds now light up; click one to commit
 }
 
 // can hand `card` legally replace the wild part at m.cards[cardIdx]? (no side effects)
@@ -438,6 +494,7 @@ function doSteal(card, monsterId, cardIdx){
     else if(card.suit==='wild') flash('Substitute must be a real card, not a wild.');
     else if(card.part!==wild.part) flash('Substitute must be the same part ('+wild.part+').');
     else flash('Substitute must be a '+wantSuit+' '+wild.part+'.');
+    SFX.play('invalid');
     return false;
   }
   const subFrom=snapRect(card), wildFrom=snapRect(wild); // before the swap
@@ -447,6 +504,7 @@ function doSteal(card, monsterId, cardIdx){
   wild.owner=G.current; cur().hand.push(wild);
   G.stealTarget=null; selectedCard=null;
   logMsg('steal',cur().name+' stole a wild '+wild.part+' from '+G.players[m.owner].name+"'s monster.");
+  SFX.play('steal');
   const specs=[]; if(subFrom) specs.push({card, from:subFrom}); if(wildFrom) specs.push({card:wild, from:wildFrom});
   commit(specs);
   return true;
@@ -474,6 +532,7 @@ function discardCard(handIdx){
   c.owner=null;
   G.graveyard.push(c);
   logMsg(playerCls(),cur().name+' discarded '+label(c)+'.');
+  SFX.play('discard');
   finalizeTurn();
 }
 
@@ -511,6 +570,7 @@ function endRound(){
     el.appendChild(d);
   });
   logMsg('sys','Round over. Final scores tallied.');
+  SFX.play('win');
   document.getElementById('game').style.display='none';
   document.getElementById('scoreboard').style.display='block';
 }
@@ -1219,6 +1279,13 @@ document.getElementById('rulesBtn').onclick=()=>setRules(true);
 document.getElementById('rulesClose').onclick=()=>setRules(false);
 rulesModal.addEventListener('click', e=>{ if(e.target===rulesModal) setRules(false); }); // click backdrop to close
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') setRules(false); });
+
+// sound: unlock the AudioContext on the first user gesture, and wire the mute toggle
+document.addEventListener('pointerdown', ()=>SFX.resume(), true);
+const muteBtn=document.getElementById('muteBtn');
+function syncMute(){ muteBtn.textContent = SFX.isMuted()?'🔇':'🔊'; muteBtn.title = SFX.isMuted()?'Unmute sound':'Mute sound'; }
+muteBtn.onclick=()=>{ SFX.setMuted(!SFX.isMuted()); SFX.resume(); syncMute(); if(!SFX.isMuted()) SFX.play('select'); };
+syncMute();
 </script>
 </body>
 </html>

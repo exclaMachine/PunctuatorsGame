@@ -507,6 +507,17 @@ the rightmost/newest card is on top and is the free draw, deeper cards expose on
 left banner strip.) Call `render()` after any state change; do not mutate the canvas outside
 the `draw*` helpers.
 
+### Sound effects
+
+A tiny `SFX` module (IIFE near the top of the script) plays **subtle synthesized Web Audio
+blips** — no asset files. Events: `select`, `place`, `build`, `steal`, `draw`, `discard`,
+`invalid`, `win`; fire them with `SFX.play('build')`. Tone params live in `SFX.DEFS` (`freq`
+can be a single note or a short arpeggio). **Easy to replace with real audio later**: set
+`SFX.files.build = 'sounds/build.mp3'` (a URL string or a preloaded `<audio>` element) and the
+file plays instead of the synth for that one event — swap them in one at a time. A `[🔊]`
+top-bar button toggles mute (`SFX.setMuted`, persisted in `localStorage` as `sfxMuted`).
+Browsers gate audio behind a gesture, so a `document` `pointerdown` calls `SFX.resume()`.
+
 ### Card move animations
 
 Cards tween from their old spot to their new one (build → battlefield, hand → slot, steal
@@ -606,6 +617,7 @@ G = {
 | AI behavior                     | `aiTurn()`                                                 |
 | Card visuals / connectors       | `drawCard()`, `drawPartArt()`                              |
 | Card move animations            | `commit()`, `animStep()`, `note()`/`snapRect()`, `cardRects`, `flying`, `drawFlyingCard()` |
+| Sound effects                   | `SFX` module — `SFX.play(name)`, `SFX.DEFS` (tones), `SFX.files` (file override), mute `[🔊]` |
 | Click/drag routing              | canvas `pointerdown/move/up` + `handleHit()`               |
 
 ## Conventions & constraints
