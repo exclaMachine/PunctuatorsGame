@@ -229,6 +229,8 @@ Everything lives in `WriteRight.html` — styles, game logic, and canvas drawing
 
 The app uses a manual `render()` function that tears down and rebuilds `#app` innerHTML each call. The drawing overlay (`.draw-ov`) is appended directly to `<body>` and removed on `endDrawing()` or `resetGame()` to avoid losing canvas content during timer re-renders. Timer ticks use `tickTimer()` to patch only the DOM nodes that change, not a full re-render.
 
+**Card-play animation:** because `render()` rebuilds the DOM, played cards are animated with a fly-a-clone (FLIP-style) trick instead of CSS transitions. `commit()` snapshots the played `.card`'s `getBoundingClientRect()` + a `cloneNode` **before** the rebuild (cards carry `data-c`, filled slot cells carry `data-slot`/`data-pos`), then after `render()` calls `flyCardToSlot(node, srcRect, destEl)` which fixed-positions the clone at the source and uses the Web Animations API (`element.animate`) to arc it to the slot with a scale-down/pop, hiding the destination cell until it lands. Skipped on `prefers-reduced-motion` (`PREFERS_REDUCED`) and when the play completes a sentence (the drawing overlay takes over). This mirrors the canvas card-move animation in the exquisite-corpse game.
+
 ## Things to Keep in Mind
 
 - Do not add a framework — keep it vanilla JS, single file

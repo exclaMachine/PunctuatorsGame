@@ -520,8 +520,40 @@ function commitWild() {
   commit(w);
 }
 
+/* Fly a clone of the just-played hand card from where it sat to the sentence
+   slot it landed in — an arc with a little scale-down/pop. DOM analog of the
+   canvas card-move animation in the exquisite-corpse game. Easy to disable:
+   honour prefers-reduced-motion, and any missing element just no-ops. */
+const PREFERS_REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+function flyCardToSlot(node, srcRect, destEl){
+  if(!node || !srcRect || !destEl || typeof node.animate!=='function') return;
+  const d=destEl.getBoundingClientRect();
+  node.classList.remove('sel','off');
+  node.onclick=null;
+  node.style.cssText += ';position:fixed;box-sizing:border-box;left:'+srcRect.left+'px;top:'+srcRect.top+'px;width:'+srcRect.width+'px;height:'+srcRect.height+'px;margin:0;z-index:9999;pointer-events:none;transition:none;transform-origin:center center;';
+  document.body.appendChild(node);
+  const dx=(d.left+d.width/2)-(srcRect.left+srcRect.width/2);
+  const dy=(d.top +d.height/2)-(srcRect.top +srcRect.height/2);
+  const endScale=Math.max(0.25, d.height/srcRect.height);
+  const arc=Math.min(90, Math.abs(dx)*0.25+44);
+  destEl.style.visibility='hidden';
+  const anim=node.animate([
+    { transform:'translate(0,0) scale(1)', offset:0 },
+    { transform:'translate('+(dx*0.5)+'px,'+(dy*0.5-arc)+'px) scale('+((1+endScale)/2*1.06)+')', offset:0.55 },
+    { transform:'translate('+dx+'px,'+dy+'px) scale('+endScale+')', offset:1 }
+  ], { duration:430, easing:'cubic-bezier(.34,1.25,.5,1)', fill:'forwards' });
+  const done=()=>{ node.remove(); if(destEl) destEl.style.visibility=''; };
+  anim.onfinish=done; anim.oncancel=done;
+}
+
 function commit(word) {
   const player = cp();
+  // snapshot the played card's on-screen spot before the DOM is rebuilt
+  let flySrc=null, flySlot=G.pendSlot, flyPos=G.pendPos;
+  if(!PREFERS_REDUCED){
+    const el=document.querySelector('.card[data-c="'+G.selId+'"]');
+    if(el) flySrc={rect:el.getBoundingClientRect(), node:el.cloneNode(true)};
+  }
   const card = player.hand.find(c=>c.id===G.selId);
   const slot  = G.slots.find(s=>s.id===G.pendSlot);
 
@@ -562,6 +594,12 @@ function commit(word) {
     G.phase='game'; advTurn();
   }
   render();
+  // after the rebuild, fly the played card into its sentence slot (skip if the
+  // sentence completed → the drawing overlay takes over instead)
+  if(flySrc && G.phase==='game'){
+    const destEl=document.querySelector('.slot-pos[data-slot="'+flySlot+'"][data-pos="'+flyPos+'"]');
+    if(destEl) flyCardToSlot(flySrc.node, flySrc.rect, destEl);
+  }
 }
 
 function tickTimer() {
@@ -865,7 +903,7 @@ function rGame(app) {
       const lbl=posLabel[k];
       if (val) {
         const cls = k==='v'?'fv':k==='p'?'fp':'fn';
-        return `<div class="slot-pos ${cls}"><span class="pl">${lbl}</span><span class="pw">${x(val)}</span></div>`;
+        return `<div class="slot-pos ${cls}" data-slot="${slot.id}" data-pos="${k}"><span class="pl">${lbl}</span><span class="pw">${x(val)}</span></div>`;
       }
       const isTgt = selCard && playable && (
         selCard.type==='wild' ||
@@ -893,6 +931,7 @@ function rGame(app) {
     const isSel=card.id===G.selId;
     const playable=G.slots.some(s=>canPlay(card,s));
     const ce=mk('div',`card ${card.type}-c${isSel?' sel':''}${!playable?' off':''}`);
+    ce.dataset.c=card.id;
     if(playable) ce.onclick=()=>selectCard(card.id);
     ce.innerHTML=`
       <div class="c-badge">${card.suit} ${card.type.toUpperCase()}</div>
