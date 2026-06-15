@@ -215,7 +215,7 @@ function newGame(seats){
   const grave=[deck.pop()]; grave[0].owner=null;
   G = {
     players, monsters:[], lab:deck, graveyard:grave,
-    current:0, phase:'draw', mode:'build',
+    current:0, phase:'draw',
     stage:{skull:null, claws:[], foot:null}, stealTarget:null,
     builtThisTurnIds:new Set(), mustUseIds:new Set(),
     drewThisTurn:false, lastTurn:false, lastTurnRemaining:0, roundOver:false,
@@ -272,7 +272,7 @@ function canFormMonsterWith(card, pool){
 function cur(){ return G.players[G.current]; }
 
 function startTurn(){
-  G.phase='draw'; G.mode='build';
+  G.phase='draw';
   G.stage={skull:null, claws:[], foot:null}; G.stealTarget=null; selectedCard=null;
   G.builtThisTurnIds.clear(); G.mustUseIds.clear();
   G.drewThisTurn=false;
@@ -285,19 +285,21 @@ function startTurn(){
 function drawFromLab(){
   if(G.phase!=='draw'||G.drewThisTurn) return;
   if(G.lab.length===0){ flash('The LAB is empty — draw from the graveyard.'); return; }
+  const from = labRect ? {...labRect} : null;
   const c=G.lab.pop(); c.owner=G.current; cur().hand.push(c);
   G.drewThisTurn=true; G.phase='action';
   logMsg(playerCls(),cur().name+' drew from the LAB.');
-  render();
+  commit(from ? [{card:c, from}] : null);
 }
 function drawFromGraveyard(index){
   if(G.phase!=='draw'||G.drewThisTurn) return;
   const top=G.graveyard.length-1;
   if(index===top){
-    const c=G.graveyard.pop(); c.owner=G.current; cur().hand.push(c);
+    const c=G.graveyard[index]; const from=snapRect(c);
+    G.graveyard.pop(); c.owner=G.current; cur().hand.push(c);
     G.drewThisTurn=true; G.phase='action';
     logMsg(playerCls(),cur().name+' took '+label(c)+' from the graveyard.');
-    render(); return;
+    commit(from ? [{card:c, from}] : null); return;
   }
   // dig deeper: only if target can complete a monster this turn
   const target=G.graveyard[index];
@@ -306,13 +308,14 @@ function drawFromGraveyard(index){
   if(!canFormMonsterWith(target,pool)){
     flash('You can only dig for a card you can use in a monster this turn.'); return;
   }
-  // take target + everything above into hand
+  // take target + everything above into hand (capture their grave positions first)
+  const froms=G.graveyard.slice(index).map(c=>({card:c, from:snapRect(c)})).filter(s=>s.from);
   const taken=G.graveyard.splice(index);           // [target, ...above]
   for(const c of taken){ c.owner=G.current; cur().hand.push(c); }
   G.mustUseIds.add(target.id);
   G.drewThisTurn=true; G.phase='action';
   logMsg(playerCls(),cur().name+' dug for '+label(target)+' (swept '+above.length+' card'+(above.length===1?'':'s')+'). Must build with it.');
-  render();
+  commit(froms);
 }
 
 /* all cards currently sitting in the staging slots, in monster order */
@@ -325,11 +328,14 @@ function stageCards(){
    always follows). After a successful placement we try to auto-build. */
 function placeInStage(card){
   const s=G.stage;
-  if(card.part==='skull'){ if(s.skull){ flash('The head slot is already filled.'); return false; } s.skull=card; }
-  else if(card.part==='foot'){ if(s.foot){ flash('The foot slot is already filled.'); return false; } s.foot=card; }
+  if(card.part==='skull'){ if(s.skull){ flash('The head slot is already filled.'); render(); return false; } s.skull=card; }
+  else if(card.part==='foot'){ if(s.foot){ flash('The foot slot is already filled.'); render(); return false; } s.foot=card; }
   else { s.claws.push(card); } // claw → next open body slot
   const i=cur().hand.indexOf(card); if(i>=0) cur().hand.splice(i,1);
-  tryStageBuild();
+  // capture froms BEFORE the (possible) build: incoming card from hand, others from their slots
+  const froms=stageCards().map(c=>({card:c, from:snapRect(c)})).filter(s2=>s2.from);
+  if(tryStageBuild()) commit(froms);                 // built → all staged cards fly to the battlefield
+  else commit(froms.filter(f=>f.card===card));       // just staged one → it flies hand → slot
   return true;
 }
 // pull a staged card back into the current hand. slot = 'skull' | 'foot' | claw index
@@ -369,36 +375,30 @@ function buildSlotOpenFor(card){
   return true;
 }
 const SLOT_NAME={skull:'HEAD', claw:'BODY', foot:'FOOT'};
-// does the current mode offer any legal action for this hand card? (drives dimming)
+// in the unified action phase a hand card is "live" if it can build OR steal
 function handCardActionable(card){
   if(G.phase==='draw' || G.phase==='discard') return true; // don't grey these out
   if(G.phase!=='action') return false;
-  if(G.mode==='build') return buildSlotOpenFor(card);
-  if(G.mode==='steal'){
-    if(G.stealTarget){ const m=G.monsters.find(x=>x.id===G.stealTarget.monsterId); return !!m && canStealWith(card,m,G.stealTarget.cardIdx); }
-    return validStealTargets(card).length>0;
-  }
-  return true;
+  if(G.stealTarget){ const m=G.monsters.find(x=>x.id===G.stealTarget.monsterId); return !!m && canStealWith(card,m,G.stealTarget.cardIdx); }
+  return buildSlotOpenFor(card) || validStealTargets(card).length>0;
 }
-/* click-to-select (WriteRight-style): clicking a hand card resolves its valid
-   targets. One target → act immediately; several → keep it selected so the
-   targets highlight and the player clicks one. */
+/* unified click-to-select. Clicking a hand card selects it (highlighting both the
+   build slot it fits AND any wilds it can steal); the second click — on a slot or a
+   wild — commits. No mode toggle; always an explicit two-click. */
 function selectHandCard(card){
   if(G.phase==='discard'){ const i=cur().hand.indexOf(card); if(i>=0) discardCard(i); return; }
   if(G.phase!=='action') return;
-  if(G.mode==='build'){
-    selectedCard=null;
-    if(!buildSlotOpenFor(card)){ flash('No open '+SLOT_NAME[card.part]+' slot for that card.'); render(); return; }
-    placeInStage(card); render(); // exactly one slot per part → auto-place
-    return;
+  // a wild is already armed → second click completes (if compatible), else re-select this card
+  if(G.stealTarget){
+    const m=G.monsters.find(x=>x.id===G.stealTarget.monsterId);
+    if(m && canStealWith(card,m,G.stealTarget.cardIdx)) return doSteal(card, G.stealTarget.monsterId, G.stealTarget.cardIdx);
+    G.stealTarget=null; // fall through and select this card instead
   }
-  // steal mode
-  if(G.stealTarget){ doSteal(card, G.stealTarget.monsterId, G.stealTarget.cardIdx); return; } // wild already chosen
   if(selectedCard===card){ selectedCard=null; render(); return; } // click again to deselect
-  const targets=validStealTargets(card);
-  if(targets.length===0){ selectedCard=null; flash('No monster has a matching wild part for that card.'); render(); return; }
-  if(targets.length===1){ doSteal(card, targets[0].monsterId, targets[0].cardIdx); return; }
-  selectedCard=card; flash('Click a highlighted wild part to swap this card in.'); render();
+  if(!buildSlotOpenFor(card) && validStealTargets(card).length===0){
+    selectedCard=null; flash('No open slot or matching wild for that card right now.'); render(); return;
+  }
+  selectedCard=card; render(); // its slot + stealable wilds now light up; click one to commit
 }
 
 // can hand `card` legally replace the wild part at m.cards[cardIdx]? (no side effects)
@@ -440,13 +440,15 @@ function doSteal(card, monsterId, cardIdx){
     else flash('Substitute must be a '+wantSuit+' '+wild.part+'.');
     return false;
   }
+  const subFrom=snapRect(card), wildFrom=snapRect(wild); // before the swap
   const hi=cur().hand.indexOf(card); if(hi>=0) cur().hand.splice(hi,1);
   card.owner=G.current; G.builtThisTurnIds.add(card.id);
   m.cards[cardIdx]=card; m.cards=orderMonster(m.cards);
   wild.owner=G.current; cur().hand.push(wild);
   G.stealTarget=null; selectedCard=null;
   logMsg('steal',cur().name+' stole a wild '+wild.part+' from '+G.players[m.owner].name+"'s monster.");
-  render();
+  const specs=[]; if(subFrom) specs.push({card, from:subFrom}); if(wildFrom) specs.push({card:wild, from:wildFrom});
+  commit(specs);
   return true;
 }
 function completeSteal(handIdx){
@@ -600,6 +602,61 @@ let regions=[]; // {x,y,w,h,type,data}
 
 function add(x,y,w,h,type,data){ regions.push({x,y,w,h,type,data}); }
 
+/* ============================================================
+   CARD MOVE ANIMATIONS
+   render() is immediate-mode, so each draw site records every card's on-screen
+   transform into `cardRects` (center x/y, scale, rotation) and skips drawing any
+   card that is currently "flying". `commit(specs)` captures destinations from a
+   post-mutation render and tweens each card from its old spot, drawn on top.
+   ============================================================ */
+let cardRects={};            // card.id -> {cx,cy,s,rot} from the latest render
+let labRect=null;            // center of the LAB deck (source for draws)
+let flying=new Set();        // card ids mid-flight (hidden by the normal draw pass)
+let anims=[];                // active tweens: {card, from, to, t0, dur}
+let animRAF=0, animating=false;
+const ANIM_DUR=420, ARC_H=46;
+const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+function note(card, cx, cy, s, rot){ if(card) cardRects[card.id]={cx,cy,s,rot}; }
+function snapRect(card){ const r=card&&cardRects[card.id]; return r?{...r}:null; }
+function isFlying(card){ return flying.has(card.id); }
+function easeOutBack(t){ const c1=1.70158, c3=c1+1; return 1 + c3*Math.pow(t-1,3) + c1*Math.pow(t-1,2); }
+function drawFlyingCard(card, cx, cy, s, rot){
+  ctx.save();
+  ctx.translate(cx,cy); ctx.rotate(rot); ctx.scale(s,s);
+  ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=20; ctx.shadowOffsetY=10;
+  drawCard(-CARD_W/2, -CARD_H/2, card, {});
+  ctx.restore();
+}
+/* animate `specs` ([{card, from:{cx,cy,s,rot}}]) to wherever they now render. */
+function commit(specs){
+  if(reduceMotion || !specs || !specs.length){ render(); return; }
+  flying=new Set(specs.map(s=>s.card.id));
+  render(); // computes & records destination transforms; flying cards aren't drawn
+  const now=performance.now();
+  anims=specs.map(s=>({card:s.card, from:s.from, to:cardRects[s.card.id]&&{...cardRects[s.card.id]}, t0:now, dur:ANIM_DUR}))
+             .filter(a=>a.from && a.to);
+  if(!anims.length){ flying=new Set(); render(); return; }
+  animating=true;
+  animStep(now); // paint frame 0 immediately, then it schedules itself
+}
+function animStep(now){
+  render(); // board without the flying cards
+  for(const a of anims){
+    const t=Math.min(1,(now-a.t0)/a.dur);
+    const e=easeOutBack(t);                          // overshoot/settle → a little landing pop
+    const cx=a.from.cx+(a.to.cx-a.from.cx)*e;
+    const cy=a.from.cy+(a.to.cy-a.from.cy)*e - Math.sin(Math.PI*t)*ARC_H; // upward bow
+    const s =a.from.s +(a.to.s -a.from.s )*e;
+    const rot=a.from.rot+(a.to.rot-a.from.rot)*t;    // linear rotation (no spin overshoot)
+    drawFlyingCard(a.card, cx, cy, s, rot);
+  }
+  const done=anims.filter(a=> now-a.t0>=a.dur);
+  for(const a of done) flying.delete(a.card.id);
+  anims=anims.filter(a=> now-a.t0<a.dur);
+  if(anims.length){ animRAF=requestAnimationFrame(animStep); }
+  else { animRAF=0; animating=false; flying=new Set(); render(); }
+}
+
 function suitFill(x0,y0,x1,y1,suit){
   if(suit!=='wild') return SUIT_COLOR[suit];
   const g=ctx.createLinearGradient(x0,y0,x1,y1);
@@ -707,6 +764,7 @@ function sectionTitle(x,y,t){ ctx.fillStyle='#7ee787'; ctx.font='11px "Courier N
 
 function render(){
   regions=[];
+  cardRects={}; labRect=null; // re-recorded fresh each frame for the animation system
   // compute heights
   const pad=16;
   let y=pad;
@@ -726,7 +784,7 @@ function render(){
   const handRows = Math.max(1, Math.ceil(cur().hand.length/handPerRow));
   const handH = handRows*(CARD_H+12)+34;
   // assembly staging slots (drag-build) — only while the human is in build mode
-  const showStage = cur().type!=='cpu' && G.phase==='action' && G.mode==='build';
+  const showStage = cur().type!=='cpu' && G.phase==='action';
   const stageBoxH = showStage ? stageLayout(innerW).boxH : 0;
   const stageH = showStage ? (22 + stageBoxH + 18) : 0;
   const totalH = pad + 22 + bfHeight + 18 + 22 + midH + 18 + stageH + 22 + handH + pad;
@@ -767,7 +825,7 @@ function render(){
     ctx.restore();
   }
 
-  updateHUD();
+  if(!animating) updateHUD(); // skip DOM churn on every animation frame
 }
 
 /* battlefield layout: monsters are vertical stacks of landscape cards
@@ -809,14 +867,20 @@ function drawBattlefield(x,y,innerW,bf){
       ctx.fillText(G.players[m.owner].name+' · '+ms, xx, yy+11);
       // vertical stack of landscape cards, drawn touching so spines connect
       let cardY=yy+labelH;
-      const stealing = G.phase==='action'&&G.mode==='steal';
+      const stealing = G.phase==='action';
       m.cards.forEach((c,ci)=>{
-        // with a selected hand card, only its legal targets light up (green);
-        // otherwise every wild is a pickable steal source (pink)
-        const isTarget = stealing && selectedCard && canStealWith(selectedCard,m,ci);
-        const canSteal = stealing && !selectedCard && c.suit==='wild';
-        drawCardLandscape(xx, cardY, cw, ch, c, {stealable:canSteal, selected:isTarget});
-        if(canSteal || isTarget) add(xx, cardY, cw, ch, 'wild', {monsterId:m.id, cardIdx:ci});
+        const isWild = c.suit==='wild';
+        let target=false, armed=false, source=false;
+        if(stealing && isWild){
+          if(selectedCard) target = canStealWith(selectedCard,m,ci);              // card chosen → its legal wilds glow green
+          else if(G.stealTarget){ armed = (G.stealTarget.monsterId===m.id && G.stealTarget.cardIdx===ci); source=!armed; } // a wild is armed
+          else source = true;                                                     // idle → every wild is pickable (pink)
+        }
+        note(c, xx+cw/2, cardY+ch/2, BF_SC, Math.PI/2);
+        if(!isFlying(c)){
+          drawCardLandscape(xx, cardY, cw, ch, c, {selected: target||armed, stealable: source});
+          if(stealing && isWild) add(xx, cardY, cw, ch, 'wild', {monsterId:m.id, cardIdx:ci}); // all wilds clickable
+        }
         cardY+=ch;
       });
       xx += cw + gap;
@@ -859,11 +923,17 @@ function drawStage(x,y,innerW,boxH){
     ctx.font='10px "Courier New",monospace'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
     ctx.fillText(sl.label, sx+L.slotW/2, y+12);
     if(sl.card){
-      drawCard(sx, sy, sl.card, {w:L.slotW, h:L.slotH});
-      add(sx, sy, L.slotW, L.slotH, 'stage-card', {slot:sl.slot});
+      note(sl.card, sx+L.slotW/2, sy+L.slotH/2, L.slotW/CARD_W, 0);
+      if(!isFlying(sl.card)){
+        drawCard(sx, sy, sl.card, {w:L.slotW, h:L.slotH});
+        add(sx, sy, L.slotW, L.slotH, 'stage-card', {slot:sl.slot});
+      }
     } else {
-      // empty slot: dashed outline + faded part glyph; highlight matching drop
-      const match = hot && dragState.card && dragState.card.part===sl.part;
+      // empty slot: dashed outline + faded part glyph. Highlights (and becomes
+      // clickable) when the dragged or click-selected card fits this slot.
+      const wantPart = (hot && dragState.card) ? dragState.card.part : (selectedCard ? selectedCard.part : null);
+      const match = wantPart===sl.part;
+      if(match && selectedCard && !hot) add(sx, sy, L.slotW, L.slotH, 'stage-slot', {part:sl.part});
       ctx.save();
       ctx.setLineDash([5,4]); ctx.lineWidth=match?2.5:1.5;
       ctx.strokeStyle = match?'#7ee787':'#3f6b5e';
@@ -907,6 +977,7 @@ function drawCardLandscapeCCW(x,y,w,h,card,opts={}){
 function drawLabGrave(x,y,innerW){
   // LAB deck
   const labX=x, labY=y+4;
+  labRect={cx:labX+CARD_W/2, cy:labY+CARD_H/2, s:1, rot:0}; // source for draw-from-lab animation
   for(let i=Math.min(4,Math.max(1,Math.ceil(G.lab.length/12)));i>=1;i--){
     drawCardBack(labX+ (i-1)*2, labY+(i-1)*2, CARD_W, CARD_H);
   }
@@ -928,6 +999,8 @@ function drawLabGrave(x,y,innerW){
   G.graveyard.forEach((c,i)=>{
     const cxp=gx + i*stagger;
     const isTop=(i===n-1);
+    note(c, cxp+gw/2, gy+gh/2, 1, -Math.PI/2);
+    if(isFlying(c)) return;
     drawCardLandscapeCCW(cxp, gy, gw, gh, c, {});
     if(clickable){
       // top card fully clickable; deeper cards only their visible (left) banner strip
@@ -958,16 +1031,19 @@ function drawHand(x,y,innerW,perRow){
     const cx=x+col*(CARD_W+10), cy=y+rr*(CARD_H+12);
     const dragging = dragState && dragState.dragging && dragState.card===c;
     const isSel = selectedCard===c; // click-selected → green outline
-    // wild-first steal: matching hand cards glow pink
+    // an armed wild → the hand cards that could swap in glow pink
     let stealHi=false;
-    if(G.phase==='action'&&G.mode==='steal'&&G.stealTarget){
+    if(G.phase==='action'&&G.stealTarget){
       const m=G.monsters.find(x=>x.id===G.stealTarget.monsterId);
       stealHi = !!m && canStealWith(c,m,G.stealTarget.cardIdx);
     }
     // fade cards with no legal action this mode (and the one being dragged)
     const faded = dragging || !handCardActionable(c);
-    drawCard(cx,cy,c,{stealable:stealHi, dim:faded, selected:isSel});
-    add(cx,cy,CARD_W,CARD_H,'hand',{index:i});
+    note(c, cx+CARD_W/2, cy+CARD_H/2, 1, 0);
+    if(!isFlying(c)){
+      drawCard(cx,cy,c,{stealable:stealHi, dim:faded, selected:isSel});
+      add(cx,cy,CARD_W,CARD_H,'hand',{index:i});
+    }
   });
 }
 
@@ -992,11 +1068,12 @@ function hitRegion(x,y){
 }
 canvas.addEventListener('pointerdown', ev=>{
   if(!G || G.roundOver || cur().type==='cpu') return;
+  if(anims.length) return; // input locked while cards are mid-flight
   const p=canvasPos(ev);
   const r=hitRegion(p.x,p.y);
   dragState={ startX:p.x, startY:p.y, x:p.x, y:p.y, region:r, dragging:false, moved:false, card:null };
-  // a hand card in build mode can be dragged into the assembly tray
-  if(r && r.type==='hand' && G.phase==='action' && G.mode==='build'){
+  // any hand card can be dragged into the assembly slots during the action phase
+  if(r && r.type==='hand' && G.phase==='action'){
     dragState.card=cur().hand[r.data.index];
     try{ canvas.setPointerCapture(ev.pointerId); }catch(e){}
   }
@@ -1019,9 +1096,10 @@ function endDrag(ev){
     // forgiving: dropping anywhere over the staging row routes to the right slot
     const r=stageZoneRect;
     if(r && p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h){
-      placeInStage(ds.card); // auto-routes by part, then auto-builds if head+foot set
+      placeInStage(ds.card); // auto-routes by part; owns its own render/animation
+    } else {
+      render(); // dropped outside → snap back
     }
-    render(); // either placed in a slot or snapped back
     return;
   }
   if(!ds.moved && ds.region){ handleHit(ds.region); return; } // a tap on something
@@ -1032,16 +1110,25 @@ canvas.addEventListener('pointercancel', ()=>{ if(dragState){ dragState=null; re
 function handleHit(r){
   if(r.type==='lab') return drawFromLab();
   if(r.type==='grave') return drawFromGraveyard(r.data.index);
-  if(r.type==='wild' && G.phase==='action' && G.mode==='steal'){
-    // card-first: a selected hand card → drop it into this highlighted wild
-    if(selectedCard) return doSteal(selectedCard, r.data.monsterId, r.data.cardIdx);
-    return attemptSteal(r.data.monsterId, r.data.cardIdx); // wild-first
+  if(r.type==='wild' && G.phase==='action'){
+    const {monsterId, cardIdx}=r.data;
+    if(selectedCard){ // a card is chosen → this wild completes the steal if compatible
+      const m=G.monsters.find(x=>x.id===monsterId);
+      if(m && canStealWith(selectedCard,m,cardIdx)) return doSteal(selectedCard, monsterId, cardIdx);
+      selectedCard=null; // not compatible → fall through and arm this wild instead
+    }
+    if(G.stealTarget && G.stealTarget.monsterId===monsterId && G.stealTarget.cardIdx===cardIdx){ G.stealTarget=null; render(); return; } // toggle off
+    return attemptSteal(monsterId, cardIdx); // arm this wild; matching hand cards light up
+  }
+  if(r.type==='stage-slot'){ // commit a selected card into its highlighted build slot
+    if(selectedCard){ const c=selectedCard; selectedCard=null; placeInStage(c); } // placeInStage renders/animates
+    return;
   }
   if(r.type==='stage-card'){ // click a staged card to send it back to the hand
     selectedCard=null; unStage(r.data.slot); render();
     return;
   }
-  if(r.type==='hand') return selectHandCard(cur().hand[r.data.index]); // click-to-select / auto-act
+  if(r.type==='hand') return selectHandCard(cur().hand[r.data.index]); // click-to-select
 }
 
 /* ============================================================
@@ -1049,13 +1136,15 @@ function handleHit(r){
    ============================================================ */
 function updateHUD(){
   document.getElementById('turnChip').textContent=cur().name+(cur().type==='cpu'?' (AI)':'')+ (G.lastTurn?'  ·  LAST TURN':'');
-  const phaseName = G.phase==='action' ? ('action · '+G.mode) : G.phase;
-  document.getElementById('phaseChip').textContent=phaseName;
+  document.getElementById('phaseChip').textContent=G.phase;
   let instr='';
   if(cur().type==='cpu') instr='AI is taking its turn…';
   else if(G.phase==='draw') instr='Draw: click the LAB deck or a graveyard card.';
-  else if(G.phase==='action'&&G.mode==='build') instr='Build: click a card to drop it into its HEAD / BODY / FOOT slot (or drag it). A head + foot auto-builds the monster.';
-  else if(G.phase==='action'&&G.mode==='steal') instr= G.stealTarget? 'Click a matching real card in your hand to complete the steal.' : (selectedCard? 'Click a highlighted wild part to swap this card in.' : 'Steal: click a hand card to highlight wilds it can replace, or click a glowing wild part.');
+  else if(G.phase==='action'){
+    if(G.stealTarget) instr='Steal: click one of your highlighted cards to swap it in (or click the wild again to cancel).';
+    else if(selectedCard) instr='Click a glowing slot to build, or a glowing wild to steal it. Click the card again to deselect.';
+    else instr='Click one of your cards to build or steal with it, or click a wild part in a monster. (Dragging still builds.)';
+  }
   else if(G.phase==='discard') instr='Click a card in your hand to discard.';
   document.getElementById('instruct').textContent=instr;
   renderControls();
@@ -1065,13 +1154,11 @@ function renderControls(){
   if(cur().type==='cpu') return;
   const mk=(label,cls,fn,dis)=>{ const b=document.createElement('button'); b.textContent=label; if(cls)b.className=cls; b.disabled=!!dis; b.onclick=fn; c.appendChild(b); return b; };
   if(G.phase==='action'){
-    mk('🔨 Build', G.mode==='build'?'primary':'ghost', ()=>{G.mode='build';G.stealTarget=null;selectedCard=null;render();});
-    mk('🩸 Steal', G.mode==='steal'?'primary':'ghost', ()=>{G.mode='steal';selectedCard=null;returnTrayToHand();render();});
-    if(G.mode==='build' && stageCards().length){
-      mk('✖ Clear staging','ghost', ()=>{returnTrayToHand();render();});
+    if(selectedCard || G.stealTarget){ mk('✖ Cancel selection','ghost', ()=>{selectedCard=null;G.stealTarget=null;render();}); }
+    if(stageCards().length){
+      mk('✖ Clear staging','ghost', ()=>{returnTrayToHand();selectedCard=null;render();});
       const s=document.createElement('span'); s.className='sel'; s.textContent=stageCards().length+' staged'; c.appendChild(s);
     }
-    if(G.mode==='steal'&&(G.stealTarget||selectedCard)){ mk('Cancel steal','ghost', ()=>{G.stealTarget=null;selectedCard=null;render();}); }
     mk(cur().hand.length===0?'End turn':'➡ Go to discard','danger', goDiscard);
   }
 }

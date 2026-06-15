@@ -484,10 +484,11 @@ Everything lives in one file, split into clearly commented sections inside the s
 5. **Simple AI** — `findBestMonster`, `aiTurn`.
 6. **Rendering (canvas)** — all `draw*` functions plus `render()`.
 7. **Interaction** — canvas pointer events → hit-test against `regions[]`. A tap routes to
-   `handleHit`; tapping a hand card calls `selectHandCard` (click-to-select: one valid target
-   acts immediately, several stay highlighted via `selectedCard`). A drag (build mode) stages
-   a hand card into the assembly slots. Non-actionable hand cards are dimmed
-   (`handCardActionable`); valid targets light up (slots fill green, steal wilds outline green).
+   `handleHit`. The action phase is **unified (no build/steal mode)**: tapping a hand card
+   `selectHandCard` selects it (`selectedCard`), lighting up its build `stage-slot` and any
+   stealable `wild` cells; tapping one of those commits (build or steal). Tapping a wild first
+   arms it (`G.stealTarget`) and lights up matching hand cards. Drag still builds. Non-
+   actionable hand cards are dimmed (`handCardActionable`); valid targets glow green.
 8. **HUD / controls / log** — DOM status bar, buttons, message log.
 9. **Setup UI** — seat selection and start/restart wiring.
 
@@ -506,6 +507,23 @@ the rightmost/newest card is on top and is the free draw, deeper cards expose on
 left banner strip.) Call `render()` after any state change; do not mutate the canvas outside
 the `draw*` helpers.
 
+### Card move animations
+
+Cards tween from their old spot to their new one (build → battlefield, hand → slot, steal
+swaps, deck/graveyard → hand) with a playful arc + landing pop (`easeOutBack` + a `sin` bow).
+Because `render()` is immediate-mode, every draw site records each card's on-screen transform
+(`note(card, cx, cy, scale, rot)` → `cardRects[id]`) and **skips drawing any card in the
+`flying` set**. A mutation that should animate: (1) captures the moving cards' current
+transforms via `snapRect(card)` **before** mutating state, (2) mutates, (3) calls
+`commit(specs)` where `specs = [{card, from}]`. `commit` marks them flying, renders once to
+record their destinations, then runs an rAF loop (`animStep`) that re-renders the board
+(flying cards hidden) and draws each card in-flight on top via `drawFlyingCard`. Input is
+locked while `anims.length` (pointerdown bails); `render()` skips `updateHUD()` while
+`animating`. `prefers-reduced-motion` (and any missing from/to) falls straight through to a
+plain `render()`. `labRect` is the draw source for the LAB deck. AI builds are **not**
+animated (the AI hand has no per-card rects). Hooked in: `drawFromLab`, `drawFromGraveyard`,
+`placeInStage` (hand→slot, or all staged→battlefield when it builds), `doSteal`.
+
 ## Data model
 
 ```js
@@ -522,10 +540,9 @@ G = {
   lab: [card], // draw pile; top = last element
   graveyard: [card], // discard pile; top = last element
   current, // index of player whose turn it is
-  phase: "draw" | "action" | "discard",
-  mode: "build" | "steal", // sub-mode during the 'action' phase
-  stage: { skull, claws:[card], foot }, // cards dropped into the assembly slots (drag-build)
-  stealTarget, // { monsterId, cardIdx } of the wild being stolen
+  phase: "draw" | "action" | "discard", // no build/steal sub-mode — the action phase is unified
+  stage: { skull, claws:[card], foot }, // cards placed into the assembly slots
+  stealTarget, // { monsterId, cardIdx } of an armed wild (steal); also `selectedCard` (module var) = armed hand card
   builtThisTurnIds: Set,
   mustUseIds: Set, // dug cards that MUST be built this turn
   drewThisTurn,
@@ -540,8 +557,9 @@ G = {
 
 - **Setup:** 2–6 players, 10 cards each. Remaining deck is the face-down **LAB**. One card
   flipped to start the **graveyard**.
-- **Turn:** Draw → Build / Steal → Discard. (Build and Steal are intentionally one
-  interleaved `action` phase, since stolen wilds may be rebuilt the same turn.)
+- **Turn:** Draw → Action (build &/or steal, freely interleaved) → Discard. There is **no
+  build/steal mode toggle** — the action phase is unified: clicking a hand card highlights
+  both the build slot it fits and any wilds it can steal, and the next click commits.
 - **Draw:** take the top LAB card, the top graveyard card (free), or dig deeper in the
   graveyard. Digging is only legal if that card can complete a monster this turn
   (`canFormMonsterWith`), and you must sweep every card above it into your hand. The dug
@@ -549,23 +567,22 @@ G = {
 - **Build:** a monster is exactly **one skull + one foot + any number of claws**, all
   sharing one suit. The `wild` suit substitutes for any suit. Build as many as you like.
   Building uses **labeled slots** (`G.stage` = `{skull, claws:[], foot}`): the on-canvas
-  Assembly row shows a **HEAD** slot, one **BODY** slot per claw plus one always-open BODY
-  slot, and a **FOOT** slot — all portrait cards in the same orientation as the hand. Two
-  input methods, both supported: **drag** a hand card anywhere over the row (auto-routes to
-  its matching slot by part via `placeInStage`), or **click** a hand card (`selectHandCard`)
-  which — since each part has exactly one open slot — auto-places it immediately
-  (WriteRight-style "one valid target → act"). Dropping/clicking a second skull/foot is
-  rejected. The moment a head **and** a foot are both placed the monster **auto-builds**
-  (`tryStageBuild`) — so add claws first. A suit clash blocks the build with a warning. Click
-  a staged card (or "Clear staging") to send it back to the hand; leaving build mode or going
-  to discard returns all staged cards (`returnTrayToHand`).
-- **Steal:** swap a real card (matching the monster's suit and the wild's part) from your
-  hand into another monster, taking the displaced wild into your hand. Two flows: **wild-
-  first** (click a glowing wild in a monster → `attemptSteal` sets `G.stealTarget` → click a
-  matching hand card) or **card-first** (click a hand card → `selectHandCard` highlights every
-  wild it can replace via `validStealTargets`; one target acts immediately, several stay
-  highlighted until you click one). The actual swap is `doSteal(card, monsterId, cardIdx)`,
-  gated by the side-effect-free predicate `canStealWith`.
+  Assembly row (always shown during the action phase) has a **HEAD** slot, one **BODY** slot
+  per claw plus one always-open BODY slot, and a **FOOT** slot — portrait cards in the same
+  orientation as the hand. To build: **click** a hand card (`selectHandCard`) → its matching
+  slot lights up → **click that slot** (`stage-slot` region → `placeInStage`); or **drag** the
+  card onto the row (auto-routes by part). A second skull/foot is rejected. When a head **and**
+  a foot are both staged the monster **auto-builds** (`tryStageBuild`) — add claws first. Suit
+  clash blocks with a warning. Click a staged card (or "Clear staging") to return it.
+- **Steal:** swap a real card (matching the monster's suit and the wild's part) into another
+  monster, taking the displaced wild. **Bidirectional and toggle-free**: click a hand card →
+  the wilds it can replace light up (`validStealTargets`), then click one; OR click a wild →
+  it arms (`attemptSteal` sets `G.stealTarget`) and your matching hand cards light up, then
+  click one. Always an explicit two-click (no auto-complete). Clicking the armed thing again
+  cancels; clicking a different card/wild re-targets. The swap is `doSteal(card, monsterId,
+  cardIdx)`, gated by the side-effect-free predicate `canStealWith`. The same `selectedCard`
+  that drives building also drives card-first stealing — one selection lights up both its
+  build slot and its stealable wilds, and whichever target you click decides the action.
 - **Discard:** send one card to the graveyard to end the turn. An empty hand may end the
   turn without discarding.
 - **Round end:** emptying your hand triggers the **last turn**; every other player gets one
@@ -583,11 +600,12 @@ G = {
 | Building                        | click/drag → `placeInStage()` → `tryStageBuild()` (human), `findBestMonster()` (AI) |
 | Click-to-select / highlight     | `selectHandCard()`, `selectedCard`, `handCardActionable()` |
 | Drag-and-drop / slots           | `pointerdown/move/up`, `dragState`, `stageLayout()`, `drawStage()`, `stageZoneRect` |
-| Stealing                        | `canStealWith()` / `validStealTargets()` → `doSteal()`; `attemptSteal()`/`completeSteal()` (wild-first) |
+| Stealing                        | `canStealWith()` / `validStealTargets()` → `doSteal()`; `attemptSteal()` arms a wild (`G.stealTarget`) |
 | Turn advance / last turn        | `finalizeTurn()`                                           |
 | Scoring                         | `endRound()`                                               |
 | AI behavior                     | `aiTurn()`                                                 |
 | Card visuals / connectors       | `drawCard()`, `drawPartArt()`                              |
+| Card move animations            | `commit()`, `animStep()`, `note()`/`snapRect()`, `cardRects`, `flying`, `drawFlyingCard()` |
 | Click/drag routing              | canvas `pointerdown/move/up` + `handleHit()`               |
 
 ## Conventions & constraints
@@ -627,8 +645,9 @@ These were judgment calls during the prototype — flag in commit messages if yo
    bottom). Each monster card is the normal portrait `drawCard` rotated 90° CW by
    `drawCardLandscape` (banner ends up on the right edge; art + spine rotate with it).
    Hand/lab/graveyard still use upright portrait cards.
-2. **Build + Steal share one phase** to allow rebuilding stolen wilds. Could be split back
-   into strict sequential phases.
+2. **Build + Steal are one unified action phase with no mode toggle.** A single click-to-
+   select model drives both (a selected hand card lights up its build slot and its stealable
+   wilds; click the target to decide). Could be split back into a moded/sequential flow.
 3. **One suit circle + one part circle per card.** (The earlier redundant second suit
    circle was removed.) If a card is ever meant to carry two _different_ suits,
    building/matching logic changes significantly.
