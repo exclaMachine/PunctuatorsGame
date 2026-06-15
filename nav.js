@@ -9,8 +9,15 @@
   cssLink.href = root + "nav.css";
   document.head.appendChild(cssLink);
 
+  // Inject theme.css AFTER nav.css so the theme's design tokens (e.g. the
+  // --nav-* colors) win over nav.css's own defaults and reskin the nav.
+  const themeLink = document.createElement("link");
+  themeLink.rel = "stylesheet";
+  themeLink.href = root + "theme.css";
+  document.head.appendChild(themeLink);
+
   const pages = [
-    { label: "Punctuators", file: "index.html" },
+    { label: "Punctuators Game", file: "punctuators.html" },
     { label: "Typow!", file: "typing.html", desktopOnly: true },
     { label: "Spin Nids", file: "SpinNidIndex.html" },
     { label: "Write. Right!", file: "WriteRight.html" },
@@ -77,7 +84,7 @@
   nav.style.cssText =
     "position:fixed!important;top:0!important;left:0!important;right:0!important;z-index:99999!important;";
   nav.innerHTML = `
-    <a class="site-nav__brand" href="${root}index.html">Exclamachine</a>
+    <a class="site-nav__brand" href="${root}index.html">Punctuators</a>
     <button class="site-nav__toggle" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
     <ul class="site-nav__links" id="nav-links">${linkItems}</ul>
   `;

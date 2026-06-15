@@ -1,0 +1,136 @@
+/* ============================================================================
+   theme.css — shared design system for the Exclamachine / Punctuators site.
+
+   Injected on EVERY page by nav.js (alongside nav.css). To stay safe across the
+   games, this file only defines:
+     - :root design tokens (colors, fonts, spacing, shadows)
+     - the @font-face import for the comic display font
+     - shared component classes (.btn, .card, .hub-*) used by the hub
+     - a reskin of the shared .site-nav and site .footer via tokens/overrides
+
+   It intentionally avoids broad element selectors (body, h1, p, button…) that
+   could disturb a game's own layout. Game pages opt in by using the classes.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Palanquin:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* --- Comic-book palette --- */
+  --ink:        #15131f;   /* near-black ink */
+  --ink-soft:   #2a2640;   /* panel shadow / secondary surface */
+  --paper:      #fdf6e9;   /* warm cream — hero accents only */
+  --paper-dim:  #efe4cf;
+  --bg:         #c6d2e0;   /* page background — cool & clearly darker than cards */
+  --surface:    #ffffff;   /* cards / boxes — high contrast against --bg */
+
+  /* Accents chosen to stay distinguishable for red-green color blindness:
+     red vs blue vs gold differ in BOTH hue and lightness, and every one is
+     paired with the ink outline + a text label so color is never the only cue. */
+  --accent:     #d62828;   /* comic red (primary action) — deepened for contrast */
+  --accent-2:   #ffc62e;   /* gold (highlight) */
+  --accent-3:   #1d6fe0;   /* electric blue — darkened for AA on white */
+  --accent-3-lt:#7fb4ff;   /* light blue — for links on the dark ink boxes */
+  --violet:     #5a3fc0;   /* secondary — nod to original blueviolet */
+
+  /* --- Type --- */
+  --font-display: 'Bangers', 'Palanquin', system-ui, sans-serif;
+  --font-body:    'Palanquin', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* --- Comic ink outline (the signature look) --- */
+  --ink-outline: 3px 3px 0 var(--ink);
+  --ink-border:  3px solid var(--ink);
+  --radius:      14px;
+
+  /* --- Reskin the shared nav (nav.css reads these) --- */
+  --nav-bg:     var(--ink);
+  --nav-text:   var(--paper);
+  --nav-hover:  rgba(255, 198, 46, 0.20);
+  --nav-active: rgba(226, 59, 59, 0.40);
+}
+
+/* Comic text-stroke helper (display headings on light backgrounds). */
+.comic-stroke {
+  font-family: var(--font-display);
+  color: var(--paper);
+  -webkit-text-stroke: 2px var(--ink);
+  text-shadow: var(--ink-outline);
+  letter-spacing: 1px;
+}
+
+/* Faint halftone dot texture for backdrops. */
+.halftone {
+  background-image: radial-gradient(var(--ink) 1.4px, transparent 1.6px);
+  background-size: 14px 14px;
+}
+
+/* ---------------------------------------------------------------------------
+   Shared button — namespaced .btn-comic to avoid clashing with games that
+   already define their own .btn (e.g. index.css "How to Play").
+   --------------------------------------------------------------------------- */
+.btn-comic {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  color: var(--paper);
+  background: var(--accent);
+  border: var(--ink-border);
+  border-radius: 999px;
+  padding: 0.45em 1.2em;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.btn-comic:hover  { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); filter: saturate(1.1); }
+.btn-comic:active { transform: translate(2px, 2px);  box-shadow: 2px 2px 0 var(--ink); }
+
+.btn-comic--gold  { background: var(--accent-2); color: var(--ink); }
+.btn-comic--blue  { background: var(--accent-3); }
+.btn-comic--ghost { background: var(--paper);   color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Card — namespaced .hub-card so it can't collide with the games' own .card
+   classes (WriteRight / Exquisite Corpse use .card for playing cards).
+   --------------------------------------------------------------------------- */
+.hub-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: var(--ink-border);
+  border-radius: var(--radius);
+  box-shadow: 6px 6px 0 var(--ink);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.hub-card:hover {
+  transform: translate(-2px, -2px) rotate(-0.6deg);
+  box-shadow: 9px 9px 0 var(--ink);
+}
+.hub-card__media {
+  aspect-ratio: 16 / 10;
+  background: var(--ink-soft);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.hub-card__media img { width: 100%; height: 100%; object-fit: cover; }
+.hub-card__media .emoji { font-size: 3.4rem; }
+/* For art with its own white/transparent background (team poster, alphabet):
+   show the whole image on white instead of cropping it. */
+.hub-card__media--contain { background: #fff; }
+.hub-card__media--contain img { object-fit: contain; padding: 6px; }
+.hub-card__body { padding: 12px 16px 16px; }
+.hub-card__title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0.5px;
+  margin: 0 0 2px;
+}
+.hub-card__desc { font-family: var(--font-body); font-size: 0.95rem; line-height: 1.35; color: var(--ink-soft); margin: 0; }

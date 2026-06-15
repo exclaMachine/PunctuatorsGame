@@ -1,0 +1,185 @@
+<html>
+<head>
+    <link rel="icon" type="image/png" href="/images/Third.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js" integrity="sha512-6+YN/9o9BWrk6wSfGxQGpt3EUK6XeHi6yeHV+TYD2GR0Sj/cggRpXr1BrAQf0as6XslxomMUxXp2vIl+fv0QRA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Palanquin:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="./index.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="./index.js" defer></script>
+
+</head>
+
+    <body>
+    <script src="./nav.js"></script>
+    <button data-modal-target="#modal" class="btn">How to Play</button>
+    <div class="modal" id="modal">
+        <div class="modal--header">
+            <div class="modal__title">How to Play</div>
+            <button data-close-button class="modal__close-button">&times;</button>
+        </div>
+        <div class="modal--body">
+            This game makes learning punctuation fun and can be a great tool in the classroom or at home! Currently the game is meant to be played between two people.
+            <br>
+            <br>
+            <strong>To play:</strong>
+            <br>
+            <ul>
+                <li>Player 1 will enter a sentence that includes one or more punctuation marks. No peeking, Player 2!</li>
+                <li>Player 2 will control the given characters with the buttons on the bottom right to shoot the punctuation back into the sentence.</li>
+                <li>If you get stuck, press the hint button in the upper left and the remaining punctuation locations will be highlighted.</li>
+                <li>Once you find all the punctuation, a message will appear with triumphant trumpets sounding 🎺</li>
+                <li>You can also choose some of the other options in the drop down to do some fun wordplay!</li>
+                <!-- <li>Refresh the page to play again, and this time have Player 2 write the sentence. So far there are <span id="character-count"></span> heroes, so try and use them all!</li> -->
+            </ul>
+        </div>
+    </div>
+
+    <div class="modal" id="aster">
+        <div class="modal--header">
+            <div id="footnote_title" class="modal__title"></div>
+            <button data-close-button class="modal__close-button">&times;</button>
+        </div>
+        <div id="footnote--body" class="modal--body">
+        </div>
+    </div>
+
+    <h2 id="start"></h2>
+
+    <div id="banner">
+        <h1 class="shine">Punctuators: The Game</h1>
+    </div>
+
+    <!-- <div id="contraction-container">
+        <input type="checkbox" id="contraction-check" value="Contractions" name="Contractions">
+        <label for="contraction-check">Contractions</label><br>
+    </div> -->
+
+    <div id="sentence-container">
+        <h1 id="output"></h1>
+        <!-- <h1 id="moving-sentence">here<span id="hidden-punc" class="p">.</span> is a sentence<span id="hidden-punc" class="p">.</span></h1> -->
+    </div>
+
+    <div id="input-container">
+        <!-- <input style="color: white; background-color: blueviolet; border-radius: 4px; margin: 5px" type="button" id="punc-button" value="Get random sentence"> -->
+        <div id="error-message"></div>
+        <input id="input-sentence" type="text" maxlength="140" placeholder="Enter sentence">
+        <select id="wordPlayOptions">
+            <!-- <option value="abjads">Abjads</option> -->
+            <option value="removePunc">Remove Punctuation</option>
+            <option value="ambigrams">Ambigrams</option>
+            <option value="anagrams">Anagrams</option>
+            <option value="caret">Caret</option>
+            <option value="homophones">Homophones</option>
+            <option value="rounded">Rounded</option>
+            <option value="split">Split</option>
+            <option value="whiteOut">White Out</option>
+            <option value="alphabetNeighbors">Alphabet Slots</option>
+          </select>
+        <input type="button" id="punc-button" value="Pow! Wordplay">
+       <!-- In #input-container on your main page -->
+
+       <a id="typing-game-link"
+       href="typing.html"
+       style="
+         position:fixed; top:64px; left:20px;
+         z-index:4000;
+         font-family:'Palanquin',sans-serif;
+         color:#fff; padding:6px 10px; background-color:blueviolet;
+         border-radius:4px; text-decoration:none; text-shadow:1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
+       ">
+      TyPow!
+    </a>
+
+
+
+        <!-- <input type="button" class="create-wordplay-button" value="Do Wordplay!"> -->
+        <!-- <input type="button" id="create-sentence-button" value="Create a sentence for me!"> -->
+    </div>
+
+    <div id="ending-message-container">
+        <h3 id="ending_message_1"></h3>
+    </div>
+
+    <button class="refresh-game-btn go-away">Play again!</button>
+
+    <div id="control-buttons" class="go-away">
+        <!-- <div class="speech-bubble"></div> -->
+        <h2 class="noSelect" id="name-tag">Press the Switch character button to reveal your team!</h2>
+        <input class="control__button shoot" type="button" id="shoot-button" value="Shoot">
+        <input class="control__button left" type="button" id="left-button" value="Move left">
+        <input class="control__button switch" type="button" id="switch-button" value="Switch Character">
+        <input class="control__button right" type="button" id="right-button" value="Move right">
+    </div>
+
+    <input class="go-away" type="button" id="hint-button" value="Hint">
+    <div id="overlay"></div>
+
+    <footer  id="footer">
+        <div>
+            ©2018-2026 Ty Rickers
+        </div>
+        <div><a href="https://www.instagram.com/super_powered_punctuation/" class="fa fa-instagram" target="_blank"></a></div>
+        <div><a href="https://tyrickers.substack.com/" target="_blank"><img src="https://substack.com/favicon.ico" alt="Substack" width="30" height="30"></a></div>
+        <div><a href="https://github.com/exclaMachine/PunctuatorsGame" class="fa fa-github" target="_blank"></a></div>
+        <div><a href="IPA-fan-game/ipaFan.html" target="_blank">PAC</a></div>
+        <div><a href="text-to-ipa-master/examples/example-translator.html" target="_blank">IPA</a></div>
+        <button data-modal-target="#aster" id="footnote" class="go-away"></button>
+    </footer>
+
+    <canvas id="background" style="border: 2px black solid"></canvas>
+
+    <script>
+      (function () {
+        const sel = document.getElementById('wordPlayOptions');
+        if (!sel) return;
+
+        // Wrap the hidden select
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper';
+        sel.parentNode.insertBefore(wrapper, sel);
+        wrapper.appendChild(sel);
+
+        // Trigger button
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        trigger.textContent = sel.options[sel.selectedIndex]?.text ?? '';
+        wrapper.appendChild(trigger);
+
+        // Options panel
+        const dropdown = document.createElement('div');
+        dropdown.className = 'custom-select-dropdown';
+
+        Array.from(sel.options).forEach(opt => {
+          const item = document.createElement('div');
+          item.className = 'custom-select-option' + (opt.selected ? ' selected' : '');
+          item.textContent = opt.text;
+          item.dataset.value = opt.value;
+
+          item.addEventListener('click', () => {
+            sel.value = opt.value;
+            trigger.textContent = opt.text;
+            dropdown.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+            item.classList.add('selected');
+            wrapper.classList.remove('open');
+            sel.dispatchEvent(new Event('change'));
+          });
+
+          dropdown.appendChild(item);
+        });
+
+        wrapper.appendChild(dropdown);
+
+        trigger.addEventListener('click', e => {
+          e.stopPropagation();
+          wrapper.classList.toggle('open');
+        });
+
+        document.addEventListener('click', () => wrapper.classList.remove('open'));
+      })();
+    </script>
+</body>
+
+</html>

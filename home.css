@@ -1,0 +1,134 @@
+/* ============================================================================
+   home.css — layout for the hub landing page (index.html) ONLY.
+   Design tokens & shared components come from theme.css (injected by nav.js).
+   Responsive: 3-col grid on desktop → single-column stack on mobile.
+   ========================================================================== */
+
+* { box-sizing: border-box; }
+
+html { overflow-x: hidden; max-width: 100%; }
+
+body {
+  margin: 0;
+  padding-top: var(--nav-h, 44px);           /* clear the fixed site nav */
+  font-family: var(--font-body);
+  color: var(--ink);
+  background-color: var(--bg);
+  background-image: radial-gradient(rgba(21, 19, 31, 0.09) 1.4px, transparent 1.6px);
+  background-size: 16px 16px;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;            /* big display title must never cause sideways scroll */
+}
+
+.hub-wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 60px; }
+
+/* ---------------- Hero ---------------- */
+.hub-hero {
+  text-align: center;
+  padding: 56px 20px 40px;
+}
+.hub-hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 11vw, 7rem);
+  line-height: 0.95;
+  margin: 0;
+  color: var(--accent-2);
+  -webkit-text-stroke: 3px var(--ink);
+  text-shadow: 6px 6px 0 var(--ink);
+  letter-spacing: 2px;
+}
+.hub-hero__tag {
+  font-size: clamp(1rem, 2.6vw, 1.4rem);
+  font-weight: 600;
+  margin: 18px auto 0;
+  max-width: 36ch;
+  color: var(--ink-soft);
+}
+
+/* ---------------- Section headers ---------------- */
+.hub-section { margin-top: 44px; }
+.hub-section__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  letter-spacing: 1px;
+  margin: 0 0 18px;
+  display: inline-block;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 4px 18px;
+  border-radius: 8px;
+  transform: rotate(-1.2deg);
+  box-shadow: 4px 4px 0 var(--accent);
+}
+
+/* ---------------- Games grid ---------------- */
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);     /* desktop: 3 columns */
+  gap: 22px;
+}
+
+/* ---------------- Comic & books strip ---------------- */
+.hub-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+.strip-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--ink);
+  color: var(--paper);
+  border: var(--ink-border);
+  border-radius: var(--radius);
+  box-shadow: 6px 6px 0 var(--violet);
+  padding: 18px;
+  text-decoration: none;
+  min-height: 150px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.strip-card:hover { transform: translate(-2px, -2px); box-shadow: 9px 9px 0 var(--violet); }
+.strip-card__kicker { font-family: var(--font-display); font-size: 1.05rem; color: var(--accent-2); letter-spacing: 0.5px; }
+.strip-card__title  { font-family: var(--font-display); font-size: 1.6rem; line-height: 1; }
+.strip-card__more   { font-weight: 700; color: var(--accent-3-lt); }
+
+/* ---------------- Footer ---------------- */
+.site-footer {
+  margin-top: 56px;
+  border-top: var(--ink-border);
+  padding-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  font-weight: 600;
+}
+.site-footer .spacer { margin-left: auto; }
+.site-footer a { color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.site-footer a:hover { color: var(--accent); }
+.site-footer .fa { font-size: 26px; width: 34px; height: 34px; line-height: 34px; text-align: center; border-radius: 8px; }
+.site-footer .fa-instagram { background: #e95950; color: #fff; }
+.site-footer .fa-github { background: #000; color: #fff; }
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 860px) {
+  .hub-grid  { grid-template-columns: repeat(2, 1fr); }
+  .hub-strip { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 540px) {
+  .hub-grid  { grid-template-columns: 1fr; }   /* mobile: single column stack */
+  .hub-strip { grid-template-columns: 1fr; }
+  .hub-hero  { padding: 38px 14px 26px; }
+  .hub-hero__title {
+    font-size: clamp(1.8rem, 8.2vw, 4rem);
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+    -webkit-text-stroke-width: 2px;
+    text-shadow: 4px 4px 0 var(--ink);
+  }
+  .hub-hero__tag { max-width: 32ch; font-size: 0.98rem; }
+  .site-footer { justify-content: center; }
+  .site-footer .spacer { margin-left: 0; flex-basis: 100%; height: 0; }
+}
