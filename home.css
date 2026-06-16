@@ -122,13 +122,13 @@ body {
   .hub-strip { grid-template-columns: 1fr; }
   .hub-hero  { padding: 38px 14px 26px; }
   .hub-hero__title {
-    font-size: clamp(1.8rem, 8.2vw, 4rem);
+    font-size: clamp(2.6rem, 13.5vw, 4.5rem);
     letter-spacing: 0;
     overflow-wrap: anywhere;
     -webkit-text-stroke-width: 2px;
-    text-shadow: 4px 4px 0 var(--ink);
+    text-shadow: 5px 5px 0 var(--ink);
   }
-  .hub-hero__tag { max-width: 32ch; font-size: 0.98rem; }
+  .hub-hero__tag { max-width: 30ch; font-size: 1.18rem; }
   .site-footer { justify-content: center; }
   .site-footer .spacer { margin-left: 0; flex-basis: 100%; height: 0; }
 }
