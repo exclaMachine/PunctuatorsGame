@@ -55,6 +55,11 @@
   .phasechip{font-family:"Courier New",monospace;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent)}
   .instruct{color:var(--muted);font-size:13px;flex:1;min-width:200px}
   canvas{display:block;width:100%;height:auto;background:linear-gradient(180deg,#0c1816,#0a1412);border:1px solid var(--line);border-radius:8px;touch-action:none;}
+  /* On touch devices the canvas fills most of the screen; touch-action:none would
+     trap all gestures and leave the page unscrollable (controls/log below the fold
+     become unreachable). Allow vertical pan so the page scrolls — tap-to-build/steal
+     still works; only the optional drag-build is given up on touch. */
+  @media (pointer: coarse){ canvas{touch-action:pan-y;} }
   .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
   .controls .sel{font-family:"Courier New",monospace;font-size:12px;color:var(--muted)}
   .log{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;height:104px;overflow-y:auto;font-family:"Courier New",monospace;font-size:12px;line-height:1.55;color:#bcd}
