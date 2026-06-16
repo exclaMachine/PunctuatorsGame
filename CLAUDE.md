@@ -639,17 +639,33 @@ G = {
 
 ## Adding real artwork
 
-Placeholder shapes are drawn in `drawPartArt()`. To use real images, populate the
-`PART_IMAGES` hook (top of the script), keyed `part_name`:
+### Full-card art (current, hand-off friendly)
 
-```js
-PART_IMAGES["skull_horned"] = someLoadedImageElement;
-```
+Each card can be a **single full-bleed image** — the whole card is the artist's art, with the
+card name and any symbols baked into the picture (no game-drawn banner). Cards render at
+**standard trading-card proportions** (`CARD_W=164, CARD_H=230` ≈ 2.5:3.5); artists design at
+**750×1050px**. Authoring needs **no code edits**:
 
-If an entry exists, `drawPartArt` draws it into the card's art slot. The art slot already
-extends to the card's connecting edge, so monsters keep linking up. **Important:** art must
-align its connecting "spine" to the band at ~52% of the art-slot height so adjacent cards
-join cleanly. Names per part are in `NAMES` (`insectoid/horned/bloodshot` skulls, etc.).
+- Drop `cards/suit_part_name.png` into the `cards/` folder (e.g. `bug_skull_horned.png`;
+  `_xN` before the extension sets copies) and list the filename in `cards/cards.txt`
+  (one per line, `#` comments). `cards/README.txt` is the full guide for collaborators.
+- `loadCardArt()` fetches the manifest, parses `suit_part_name[_xN]` from each filename, and
+  loads each image into `CARD_ART['suit_part_name']`. `part` must be skull/claw/foot.
+- `drawCard()` checks `hasArt(card)`: if an image is loaded it draws it full-bleed (rounded
+  clip) and skips the placeholder/banner entirely; selection/steal/dim outlines still draw on
+  top (interaction state, not card content). A name matching an existing card **re-skins** it;
+  a new name **adds** a card via `buildDeck()` folding in `ART_ENTRIES`.
+- `PLACEHOLDER_DECK = true` (top of script) keeps the original generated deck so un-arted
+  cards keep placeholder faces and art can replace them one at a time; set it to `false` to
+  build the deck only from `cards.txt`. The game must be served over http (the manifest fetch
+  fails on `file://`). Note: full-card art monsters just stack (no spine band) — continuity is
+  the artist's call.
+
+### Legacy part-slot hook
+
+`PART_IMAGES['skull_horned'] = img` still fills only the **art slot** of a *placeholder* card
+via `drawPartArt()` (spine band at ~52% height so monsters link). Superseded by `CARD_ART`
+for real artwork. `NAMES` holds the per-part names (`insectoid/horned/bloodshot` skulls, etc.).
 
 ## Open design decisions (confirm before building on these)
 

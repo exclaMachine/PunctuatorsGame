@@ -1,0 +1,26 @@
+# ============================================================
+# Specimen Lab — CARD ART MANIFEST
+# ============================================================
+# List one image filename per line. Each file must live in this
+# same  cards/  folder. Lines starting with #, and blank lines,
+# are ignored.
+#
+# FILENAME FORMAT:   suit_part_name.png
+#   suit : bug  fungus  fire  sea  robot  electric  fang   (or 'wild')
+#   part : skull | claw | foot      <- fixed; the game rules need these
+#   name : any single word
+#            - a word that matches an existing card REPLACES its art
+#            - a NEW word ADDS a brand-new card to the deck
+#   copies (optional): add _xN before the extension
+#            e.g.  fire_foot_runner_x2.png  = 2 copies of that card
+#
+# The WHOLE image is the card face — bake the card name and any
+# symbols straight into the artwork. Recommended size: 750 x 1050 px
+# (standard trading-card proportions). PNG or JPG both work.
+#
+# See README.txt in this folder for the full guide.
+# ------------------------------------------------------------
+# Sample cards (already in this folder) — overwrite or delete freely:
+bug_skull_horned.png
+fire_foot_runner.png
+wild_claw_mutant.png

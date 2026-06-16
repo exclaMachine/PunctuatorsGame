@@ -175,13 +175,63 @@ const SUIT_GLYPH = {
 };
 const PART_GLYPH = { skull:'💀', claw:'🐾', foot:'🦶' };
 
-/* HOOK: drop real artwork here later, keyed `part_name` e.g. "skull_horned".
-   If an entry holds a loaded <img>, it is drawn into the card art slot
-   (the slot already reaches the connecting edge so monsters still link up). */
+/* Legacy hook: fills only the art slot of a PLACEHOLDER card. The full-card
+   art system below (CARD_ART) supersedes this for real artwork. */
 const PART_IMAGES = {}; // e.g. PART_IMAGES['skull_horned'] = imageElement;
 
 let CARD_UID = 1;
 function makeCard(suit, part, name){ return {id:CARD_UID++, suit, part, name, owner:null}; }
+
+/* ============================================================
+   FULL-CARD ART — hand-off friendly card authoring
+   ------------------------------------------------------------
+   To add/replace a card's artwork, an artist only needs to:
+     1. Draw a card image (the WHOLE card — bake the name + any
+        symbols INTO the art). Recommended size: 750 x 1050 px
+        (standard trading-card proportions).
+     2. Save it into the  cards/  folder named  suit_part_name.png
+        e.g.  bug_skull_horned.png ,  wild_claw_mutant.png
+          - suit: bug fungus fire sea robot electric fang  (or 'wild')
+          - part: skull | claw | foot   (fixed — the game's rules need these)
+          - name: any single word. Matches an existing card => REPLACES its
+                  face. A new word => ADDS a brand-new card to the deck.
+          - extra copies: add _xN before the extension (fire_foot_runner_x2.png)
+     3. Add that filename on its own line in  cards/cards.txt .
+   Full instructions live in  cards/README.txt .
+
+   Nothing else has to change. Un-arted cards keep their placeholder face,
+   so you can replace them one at a time. Once every card has art, set
+   PLACEHOLDER_DECK = false to drop the built-in placeholder deck entirely.
+   ============================================================ */
+const PLACEHOLDER_DECK = true;   // keep the original generated cards (set false when fully arted)
+const CARD_ART = {};             // 'suit_part_name' -> loaded <img>
+let ART_ENTRIES = [];            // [{suit,part,name,copies,file}] parsed from cards/cards.txt
+function artKeyOf(card){ return card.suit+'_'+card.part+'_'+card.name; }
+function hasArt(card){ const im=CARD_ART[artKeyOf(card)]; return !!(im && im.complete && im.naturalWidth); }
+
+async function loadCardArt(){
+  let text='';
+  try{ const r=await fetch('cards/cards.txt'); if(r.ok) text=await r.text(); }
+  catch(e){ return; }            // opened via file:// or no cards/ folder -> art simply stays off
+  const entries=[];
+  for(let raw of text.split(/\r?\n/)){
+    const line=raw.trim();
+    if(!line || line[0]==='#') continue;          // blank / comment
+    const base=line.replace(/\.[a-z0-9]+$/i,'');   // strip extension
+    const cm=base.match(/_x(\d+)$/i);              // optional _xN copies
+    const copies=cm?parseInt(cm[1],10):0;
+    const seg=base.replace(/_x\d+$/i,'').split('_');
+    if(seg.length<3) continue;
+    const suit=seg[0], part=seg[1], name=seg.slice(2).join('_');
+    if(!PARTS.includes(part)) continue;            // part must be skull/claw/foot
+    entries.push({suit,part,name,copies,file:line});
+    const img=new Image();
+    img.onload=()=>{ CARD_ART[suit+'_'+part+'_'+name]=img; if(G) render(); };
+    img.src='cards/'+line;
+  }
+  ART_ENTRIES=entries;
+}
+loadCardArt();
 
 /* Deck: 2 copies of every colored suit×part×name, 1 copy of every wild part×name.
    Tweak COPIES_* to change deck size / wild frequency. */
@@ -189,13 +239,26 @@ const COPIES_COLORED = 2;
 const COPIES_WILD = 1;
 function buildDeck(){
   const d=[];
-  for(const suit of COLORED)
+  if(PLACEHOLDER_DECK){
+    for(const suit of COLORED)
+      for(const part of PARTS)
+        for(const name of NAMES[part])
+          for(let c=0;c<COPIES_COLORED;c++) d.push(makeCard(suit,part,name));
     for(const part of PARTS)
       for(const name of NAMES[part])
-        for(let c=0;c<COPIES_COLORED;c++) d.push(makeCard(suit,part,name));
-  for(const part of PARTS)
-    for(const name of NAMES[part])
-      for(let c=0;c<COPIES_WILD;c++) d.push(makeCard('wild',part,name));
+        for(let c=0;c<COPIES_WILD;c++) d.push(makeCard('wild',part,name));
+  }
+  // Fold in art cards from cards/cards.txt. A manifest card whose suit_part_name
+  // matches a placeholder simply re-skins it (art is looked up by key at draw
+  // time); a new key adds brand-new copies to the deck.
+  const seen=new Set(d.map(c=>c.suit+'_'+c.part+'_'+c.name));
+  for(const e of ART_ENTRIES){
+    const key=e.suit+'_'+e.part+'_'+e.name;
+    if(seen.has(key)) continue;
+    const n=e.copies>0 ? e.copies : (e.suit==='wild'?COPIES_WILD:COPIES_COLORED);
+    for(let c=0;c<n;c++) d.push(makeCard(e.suit,e.part,e.name));
+    seen.add(key);
+  }
   return d;
 }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
@@ -657,7 +720,9 @@ const canvas=document.getElementById('board');
 const ctx=canvas.getContext('2d');
 // Cards are sized so the banner fits a readable ~13-character name beside the
 // two glyph circles (see drawCard's banner layout).
-const CARD_W=164, CARD_H=216, BANNER=30;
+// Standard trading-card proportions (2.5:3.5, like a poker/Pokémon card) so
+// full-bleed art (recommended 750x1050) fits without distortion.
+const CARD_W=164, CARD_H=230, BANNER=30;
 let regions=[]; // {x,y,w,h,type,data}
 
 function add(x,y,w,h,type,data){ regions.push({x,y,w,h,type,data}); }
@@ -774,6 +839,20 @@ function drawPartArt(x,y,w,h,card){
 function drawCard(x,y,card,opts={}){
   const w=opts.w||CARD_W, h=opts.h||CARD_H;
   ctx.save();
+  // full-bleed art face: the whole image IS the card (name/symbols baked in).
+  // Selection/steal/dim feedback still draws on top — it's interaction state,
+  // not card content.
+  if(hasArt(card)){
+    ctx.save(); roundRect(x,y,w,h,7); ctx.clip();
+    try{ ctx.drawImage(CARD_ART[artKeyOf(card)], x, y, w, h); }catch(e){}
+    if(opts.dim){ ctx.fillStyle='rgba(35,33,26,0.55)'; ctx.fillRect(x,y,w,h); }
+    ctx.restore();
+    ctx.lineWidth = (opts.selected||opts.stealable) ? 3 : 1;
+    ctx.strokeStyle = opts.selected ? '#7ee787' : opts.stealable ? '#ff5d8f' : '#9a927c';
+    roundRect(x,y,w,h,7); ctx.stroke();
+    ctx.restore();
+    return;
+  }
   // stock
   ctx.fillStyle = opts.dim ? '#cfc7b3' : 'var(--bone)';
   ctx.fillStyle = opts.dim ? '#cdc6b4' : '#ece4d2';
