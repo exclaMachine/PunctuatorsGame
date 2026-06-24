@@ -3395,6 +3395,13 @@ const data = {
   writhe: ["wither"],
 };
 
+// True if the sentence contains at least one word with a known anagram.
+// Uses the same word-boundary split + exact match as wrapAnagrams, so it
+// agrees with what wrapAnagrams will actually wrap.
+export const hasAnagrams = (sentence) => {
+  return sentence.split(/\b/).some((word) => data[word]);
+};
+
 export const wrapAnagrams = (sentence) => {
   const words = sentence.split(/\b/); // Splitting by word boundary
 

@@ -132,8 +132,8 @@ export const addSpansAndIdsForWordPlay = (
       break;
   }
 
-  // Always apply spoonerism last
-  let final = spoonerism(processed);
+  // Apply spoonerism (Foon) last — but never in anagram mode
+  let final = mode === "anagrams" ? processed : spoonerism(processed);
 
   // Split and render to output
   let newString = final.split("");
