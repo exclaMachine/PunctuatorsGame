@@ -103,9 +103,11 @@ function getAlphabetNeighbors(letter) {
   ];
 }
 
-// Swirl-then-settle animation for anagram words. The current word's letters
-// detach into absolutely-positioned tiles, drift/orbit in place (bubble-like),
-// then glide into the next anagram's order before collapsing back to plain text.
+// Swirl-then-settle animation for anagram words. The current word's letters are
+// copied into absolutely-positioned overlays that drift/orbit in place
+// (bubble-like), then glide into the next anagram's order before collapsing back
+// to plain text. The original letters stay in normal flow but invisible, so they
+// hold the line's box + baseline and the surrounding sentence never moves.
 // `nextWord` is an anagram of the current text (same letters, new order).
 function animateAnagramSwirl(span, nextWord, nextIndex) {
   if (span.dataset.anagramAnimating === "true") return;
@@ -117,9 +119,6 @@ function animateAnagramSwirl(span, nextWord, nextIndex) {
     span.textContent = nextWord;
     span.className = `word-${nextIndex}`;
     span.style.position = "";
-    span.style.display = "";
-    span.style.width = "";
-    span.style.height = "";
     span.dataset.anagramAnimating = "false";
   };
 
@@ -132,8 +131,9 @@ function animateAnagramSwirl(span, nextWord, nextIndex) {
 
   span.dataset.anagramAnimating = "true";
 
-  // Lay a word out inline and read each letter's position relative to the span.
-  const renderTiles = (word) => {
+  // Lay a word out as inline tiles and read each letter's position relative to
+  // the span's own box.
+  const renderInline = (word) => {
     span.innerHTML = word
       .split("")
       .map(
@@ -149,36 +149,36 @@ function animateAnagramSwirl(span, nextWord, nextIndex) {
   };
 
   // Measure where the new word's letters will land, then re-render the current
-  // word as the live tiles we actually animate.
-  const targets = renderTiles(nextWord);
-  const lockRect = span.getBoundingClientRect();
-  const starts = renderTiles(currentWord);
-  const tiles = Array.from(span.querySelectorAll(".anagram-tile"));
+  // word as the in-flow tiles.
+  const targets = renderInline(nextWord);
+  const starts = renderInline(currentWord);
 
-  // Freeze the span's footprint so the surrounding sentence doesn't reflow while
-  // the letters fly around inside it.
+  // Keep the span inline; its (now hidden) letters hold the box and baseline so
+  // the rest of the sentence stays put. The visible, moving letters are absolute
+  // overlays positioned within it.
   span.style.position = "relative";
-  span.style.display = "inline-block";
-  span.style.width = lockRect.width + "px";
-  span.style.height = lockRect.height + "px";
-
-  // Pin each tile at its starting slot.
-  tiles.forEach((t, i) => {
-    t.style.position = "absolute";
-    t.style.left = starts[i].left + "px";
-    t.style.top = starts[i].top + "px";
-    t.style.willChange = "transform";
+  const spacers = Array.from(span.querySelectorAll(".anagram-tile"));
+  const movers = spacers.map((sp, i) => {
+    sp.style.visibility = "hidden";
+    const m = document.createElement("span");
+    m.textContent = currentWord[i] === " " ? " " : currentWord[i];
+    m.style.position = "absolute";
+    m.style.left = starts[i].left + "px";
+    m.style.top = starts[i].top + "px";
+    m.style.willChange = "transform";
+    span.appendChild(m);
+    return m;
   });
 
-  // Map each source tile to a destination slot: for every position in the new
-  // word, claim an unused source tile holding the same character.
-  const used = new Array(tiles.length).fill(false);
-  const targetForTile = new Array(tiles.length).fill(null);
+  // Map each source letter to a destination slot: for every position in the new
+  // word, claim an unused source letter holding the same character.
+  const used = new Array(movers.length).fill(false);
+  const targetForMover = new Array(movers.length).fill(null);
   for (let j = 0; j < nextWord.length; j++) {
-    for (let i = 0; i < tiles.length; i++) {
+    for (let i = 0; i < movers.length; i++) {
       if (!used[i] && currentWord[i] === nextWord[j]) {
         used[i] = true;
-        targetForTile[i] = targets[j];
+        targetForMover[i] = targets[j];
         break;
       }
     }
@@ -190,13 +190,13 @@ function animateAnagramSwirl(span, nextWord, nextIndex) {
       1,
     )}px) rotate(${rand(-35, 35).toFixed(0)}deg)`;
 
-  // Each tile drifts through a few random waypoints (the bubble swirl), then the
-  // final keyframe lands it exactly on its destination slot.
-  const finished = tiles.map((t, i) => {
-    const tgt = targetForTile[i] || starts[i];
+  // Each letter drifts through a few random waypoints (the bubble swirl), then
+  // the final keyframe lands it exactly on its destination slot.
+  const finished = movers.map((m, i) => {
+    const tgt = targetForMover[i] || starts[i];
     const endDX = tgt.left - starts[i].left;
     const endDY = tgt.top - starts[i].top;
-    const anim = t.animate(
+    const anim = m.animate(
       [
         { transform: "translate(0px, 0px) rotate(0deg)" },
         { transform: waypoint(), offset: 0.2 },
