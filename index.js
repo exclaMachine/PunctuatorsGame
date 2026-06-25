@@ -152,11 +152,36 @@ function animateAnagramSwirl(span, nextWord, nextIndex) {
   // word as the in-flow tiles.
   const targets = renderInline(nextWord);
   const starts = renderInline(currentWord);
+  const box = span.getBoundingClientRect();
 
   // Keep the span inline; its (now hidden) letters hold the box and baseline so
   // the rest of the sentence stays put. The visible, moving letters are absolute
   // overlays positioned within it.
   span.style.position = "relative";
+
+  // The soap bubble: an absolute overlay centred on the word, sized a bit larger
+  // so the letters have room to drift. It fades in together with the drift.
+  const padX = 22;
+  const padY = 16;
+  const bubbleW = box.width + padX * 2;
+  const bubbleH = box.height + padY * 2;
+  const cx = box.width / 2;
+  const cy = box.height / 2;
+  const bubble = document.createElement("span");
+  bubble.className = "anagram-bubble";
+  bubble.style.width = bubbleW + "px";
+  bubble.style.height = bubbleH + "px";
+  bubble.style.left = cx + "px";
+  bubble.style.top = cy + "px";
+  span.appendChild(bubble);
+  bubble.animate(
+    [
+      { opacity: 0, transform: "translate(-50%, -50%) scale(0.6)" },
+      { opacity: 1, transform: "translate(-50%, -50%) scale(1)" },
+    ],
+    { duration: 320, easing: "ease-out", fill: "forwards" },
+  );
+
   const spacers = Array.from(span.querySelectorAll(".anagram-tile"));
   const movers = spacers.map((sp, i) => {
     sp.style.visibility = "hidden";
@@ -209,7 +234,42 @@ function animateAnagramSwirl(span, nextWord, nextIndex) {
     return anim.finished;
   });
 
-  Promise.all(finished).then(settle).catch(settle);
+  // Burst the bubble once the letters have settled: a quick scale-up + fade plus
+  // a ring of droplets flung outward.
+  const popBubble = () => {
+    for (let k = 0; k < 8; k++) {
+      const drop = document.createElement("span");
+      drop.className = "anagram-droplet";
+      drop.style.left = cx + "px";
+      drop.style.top = cy + "px";
+      span.appendChild(drop);
+      const ang = (k / 8) * Math.PI * 2 + rand(-0.3, 0.3);
+      const dist = rand(bubbleW * 0.4, bubbleW * 0.6);
+      drop.animate(
+        [
+          { transform: "translate(-50%, -50%) scale(1)", opacity: 0.95 },
+          {
+            transform: `translate(calc(-50% + ${(Math.cos(ang) * dist).toFixed(
+              1,
+            )}px), calc(-50% + ${(Math.sin(ang) * dist).toFixed(
+              1,
+            )}px)) scale(0.2)`,
+            opacity: 0,
+          },
+        ],
+        { duration: 420, easing: "ease-out", fill: "forwards" },
+      );
+    }
+    return bubble.animate(
+      [
+        { transform: "translate(-50%, -50%) scale(1)", opacity: 1 },
+        { transform: "translate(-50%, -50%) scale(1.2)", opacity: 0 },
+      ],
+      { duration: 280, easing: "ease-out", fill: "forwards" },
+    ).finished;
+  };
+
+  Promise.all(finished).then(popBubble).then(settle).catch(settle);
 }
 
 const buttonSounds = {
