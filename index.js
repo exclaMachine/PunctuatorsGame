@@ -2135,10 +2135,22 @@ shootButton.addEventListener("pointerdown", (e) => {
 });
 console.log("node2", nodeArr);
 
-switchButton.addEventListener("pointerdown", (e) => {
-  e.preventDefault();
+// How fast (px per frame) a hero slides off / onto the screen when switching.
+const SWITCH_SLIDE_SPEED = 32;
+// Guards against starting a new switch while one is still animating.
+let isSwitching = false;
 
-  //This initially makes the hint button appear, should make it more specific down the road so can add more classes if needed
+// A hero's resting y — feet near the bottom of the canvas (matches the
+// position set in the Hero constructor when its image loads).
+function restingY(hero) {
+  return canvas.height - hero.height + 20;
+}
+
+// Slide the current hero down off the bottom of the screen, swap in the next
+// hero, then slide it up from the bottom into its resting position.
+function switchToNextHero() {
+  if (chosenHeroArray.length === 0) return;
+  if (isSwitching) return;
 
   //This code will make it so the tongue doesn't stay on the screen if comma chameleon is switched out. All other projectiles will stay though
   if (
@@ -2148,13 +2160,57 @@ switchButton.addEventListener("pointerdown", (e) => {
     projectiles.length = 0;
   }
 
-  if (player === chosenHeroArray[chosenHeroArray.length - 1]) {
-    player = chosenHeroArray[0];
-  } else {
-    player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
-  }
-  nameTag.innerText = player.symbol;
-  root.style.setProperty("--color", player.characterColor);
+  const current = player;
+  const next =
+    current === chosenHeroArray[chosenHeroArray.length - 1]
+      ? chosenHeroArray[0]
+      : chosenHeroArray[chosenHeroArray.indexOf(current) + 1];
+
+  // Only one hero to choose from — nothing to animate.
+  if (next === current) return;
+
+  isSwitching = true;
+
+  // Phase 1: slide the current hero straight down, off the bottom edge.
+  const slideOut = () => {
+    current.position.y += SWITCH_SLIDE_SPEED;
+    if (current.position.y < canvas.height) {
+      requestAnimationFrame(slideOut);
+      return;
+    }
+    // Park the outgoing hero back at rest for the next time it's shown.
+    current.position.y = restingY(current);
+
+    // Swap in the next hero, starting just below the screen.
+    player = next;
+    nameTag.innerText = player.symbol;
+    root.style.setProperty("--color", player.characterColor);
+    player.position.x = canvas.width / 2 - player.width / 2;
+    player.position.y = canvas.height;
+    requestAnimationFrame(slideIn);
+  };
+
+  // Phase 2: slide the new hero up from the bottom to its resting position.
+  const slideIn = () => {
+    const rest = restingY(player);
+    player.position.y -= SWITCH_SLIDE_SPEED;
+    if (player.position.y > rest) {
+      requestAnimationFrame(slideIn);
+      return;
+    }
+    player.position.y = rest;
+    isSwitching = false;
+  };
+
+  requestAnimationFrame(slideOut);
+}
+
+switchButton.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+
+  //This initially makes the hint button appear, should make it more specific down the road so can add more classes if needed
+
+  switchToNextHero();
 });
 
 hintButton.addEventListener("pointerdown", (e) => {
@@ -2228,20 +2284,7 @@ addEventListener("keydown", ({ key }) => {
       break;
 
     case "ArrowDown":
-      if (
-        projectiles.length &&
-        projectiles[0]?.constructor?.name === "CommaTongue"
-      ) {
-        projectiles.length = 0;
-      }
-
-      if (player === chosenHeroArray[chosenHeroArray.length - 1]) {
-        player = chosenHeroArray[0];
-      } else {
-        player = chosenHeroArray[chosenHeroArray.indexOf(player) + 1];
-      }
-      nameTag.innerText = player.symbol;
-      root.style.setProperty("--color", player.characterColor);
+      switchToNextHero();
       break;
 
     //case "w":  This causes second animation to show if a w is typed in initial sentence
