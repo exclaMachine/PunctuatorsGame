@@ -509,7 +509,7 @@
     display: flex; flex-direction: column; align-items: center;
   }
   #win-overlay.visible #win-box { transform: scale(1); }
-  #win-trophy { font-size: 56px; margin-bottom: 10px; }
+  #win-trophy { width: 64px; height: 64px; margin-bottom: 10px; }
   #win-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; color: var(--accent); }
   #win-stats { font-size: 14px; color: var(--text2); margin-bottom: 22px; line-height: 1.7; }
   #win-keep-going {
@@ -717,7 +717,7 @@
 
 <div id="win-overlay">
   <div id="win-box">
-    <div id="win-trophy">🏆</div>
+    <canvas id="win-trophy" width="64" height="64"></canvas>
     <div id="win-title">Ambigram Ace!</div>
     <div id="win-stats"></div>
     <button id="win-keep-going">Keep Going → 1000 pts</button>
@@ -1801,7 +1801,21 @@ function showWin() {
     `You hit <strong>${winTarget} points</strong> in <strong>${MODE_LABELS[diffMode]}</strong> mode<br>` +
     `with <strong>${score} total points</strong> in <strong>${timeStr}</strong> — you're a word wizard!`;
   document.getElementById('win-keep-going').textContent = `Keep Going → ${winTarget + 500} pts`;
+  drawWinGlyph();
   document.getElementById('win-overlay').classList.add('visible');
+}
+
+// Draw the hand-drawn '!' from Alpha.png (idx 54 → row 7, col 5) into the win box,
+// replacing the old 🏆 emoji. Uses the dark-mode inverted sheet when appropriate.
+function drawWinGlyph() {
+  const cv = document.getElementById('win-trophy');
+  if (!cv) return;
+  const wc = cv.getContext('2d');
+  wc.clearRect(0, 0, cv.width, cv.height);
+  if (!glyphImg.complete || !glyphImg.naturalWidth) return;
+  const idx = 54, col = idx % 7, row = Math.floor(idx / 7);
+  const src = (dk() && glyphImgInv) ? glyphImgInv : glyphImg;
+  wc.drawImage(src, col * GLYPH_CELL, row * GLYPH_CELL, GLYPH_CELL, GLYPH_CELL, 0, 0, cv.width, cv.height);
 }
 
 document.getElementById('win-keep-going').addEventListener('click', () => {
