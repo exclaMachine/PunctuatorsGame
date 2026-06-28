@@ -110,6 +110,41 @@
   #startcard .book{max-width:470px;text-align:center}
   #startcard h1{font-size:22px;line-height:1.5}
   #startcard p{font-size:19px;line-height:1.4;color:var(--ink)}
+  /* Touch controls (mobile only) */
+  .touch-only{display:none}
+  body.touch .touch-only{display:block}
+  body.touch .kbd-only{display:none}
+  body.touch #help-btn{display:none}     /* replaced by the on-screen ? button */
+  #touch{position:absolute;inset:0;z-index:3;pointer-events:none;display:none}
+  body.touch #touch.live{display:block}
+  .tc-btn{pointer-events:auto;font-family:var(--disp);color:var(--ink);
+    background:rgba(236,227,207,.88);border:2px solid var(--edge);box-shadow:3px 3px 0 rgba(0,0,0,.3);
+    display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
+    user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none}
+  .tc-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0);background:#dcd0b2}
+  /* D-pad — bottom-right */
+  #dpad{position:absolute;right:14px;bottom:14px;
+    display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);gap:6px}
+  #dpad .tc-btn{width:46px;height:46px;font-size:18px;font-family:system-ui,'Press Start 2P',sans-serif}
+  #dpad .up{grid-column:2;grid-row:1}
+  #dpad .left{grid-column:1;grid-row:2}
+  #dpad .right{grid-column:3;grid-row:2}
+  #dpad .down{grid-column:2;grid-row:3}
+  /* Action cluster — bottom-left */
+  #tact{position:absolute;left:14px;bottom:14px;display:flex;gap:8px;align-items:flex-end}
+  #tact .atk{width:78px;height:78px;font-size:13px;background:var(--inkblue);color:#f4f0e6}
+  #tact .atk:active{background:#46578f}
+  #tact .util-grid{display:grid;grid-template-columns:42px 42px;grid-auto-rows:42px;gap:6px}
+  #tact .util{width:42px;height:42px;font-size:7px}
+  /* shrink the pad/buttons on small screens so they don't swallow the playfield */
+  @media(max-width:560px){
+    #dpad{right:8px;bottom:8px;grid-template-columns:repeat(3,38px);grid-template-rows:repeat(3,38px);gap:5px}
+    #dpad .tc-btn{width:38px;height:38px;font-size:15px}
+    #tact{left:8px;bottom:8px;gap:6px}
+    #tact .atk{width:62px;height:62px;font-size:11px}
+    #tact .util-grid{grid-template-columns:34px 34px;grid-auto-rows:34px;gap:5px}
+    #tact .util{width:34px;height:34px;font-size:6px}
+  }
 </style>
 </head>
 <body>
@@ -194,9 +229,32 @@
         <p>You're a collector of words wandering the pages of an endless book.
         Hunt the <b>letter-creatures</b> with your writing implement, gather their letters,
         then return to your <b>bench</b> to spell words and fill your library.</p>
-        <p style="color:var(--ink-soft);font-size:13px">
+        <p class="kbd-only" style="color:var(--ink-soft);font-size:13px">
         <b>WASD</b> move &nbsp;·&nbsp; <b>Space</b> attack &nbsp;·&nbsp; <b>H</b> home to bench &nbsp;·&nbsp; <b>E</b> use bench &nbsp;·&nbsp; <b>Q</b> swap implement</p>
+        <p class="touch-only" style="color:var(--ink-soft);font-size:13px">
+        <b>D-pad</b> (bottom-right) to move &nbsp;·&nbsp; <b>ATK</b> to attack &nbsp;·&nbsp; <b>HOME / DESK / SWAP</b> on the left</p>
         <button class="primary" id="start-btn" style="margin-top:6px;padding:10px 22px;font-size:15px">Begin</button>
+      </div>
+    </div>
+
+    <!-- On-screen touch controls (mobile only) -->
+    <div id="touch">
+      <!-- action cluster, bottom-left -->
+      <div id="tact">
+        <button class="tc-btn atk" id="tc-atk" aria-label="Attack">ATK</button>
+        <div class="util-grid">
+          <button class="tc-btn util" id="tc-home" aria-label="Home to bench">HOME</button>
+          <button class="tc-btn util" id="tc-desk" aria-label="Open desk">DESK</button>
+          <button class="tc-btn util" id="tc-swap" aria-label="Switch implement">SWAP</button>
+          <button class="tc-btn util" id="tc-help" aria-label="Controls">?</button>
+        </div>
+      </div>
+      <!-- D-pad, bottom-right -->
+      <div id="dpad">
+        <button class="tc-btn up"    data-dir="arrowup"    aria-label="Move up">↑</button>
+        <button class="tc-btn left"  data-dir="arrowleft"  aria-label="Move left">←</button>
+        <button class="tc-btn right" data-dir="arrowright" aria-label="Move right">→</button>
+        <button class="tc-btn down"  data-dir="arrowdown"  aria-label="Move down">↓</button>
       </div>
     </div>
   </div>
@@ -322,6 +380,7 @@ function goScreen(dsx,dsy,edge){
 
 /* ---------- INPUT ----------------------------------------- */
 const keys={};
+let attackHeld=false;   // set true while the touch ATK button is held
 const MOVE_KEYS=new Set(["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d"]);
 addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
@@ -402,6 +461,8 @@ function update(dt){
     else if(p.x>W) goScreen(1,0,"left");
     else if(p.y<0) goScreen(0,-1,"bottom");
     else if(p.y>H) goScreen(0,1,"top");
+    // touch attack button: hold to keep swinging (doAttack is cooldown-gated)
+    if(attackHeld) doAttack();
   }
 
   // creatures
@@ -425,6 +486,8 @@ function update(dt){
   const hint=document.getElementById("hint");
   if(!state.overlay && !state.help && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
   else hint.classList.remove("show");
+
+  syncTouchUI();
 }
 
 /* ---------- RENDER ---------------------------------------- */
@@ -716,6 +779,49 @@ document.getElementById("close-btn").onclick=closeOverlay;
 document.getElementById("export-btn").onclick=exportBackup;
 document.getElementById("import-btn").onclick=()=>document.getElementById("import-file").click();
 document.getElementById("import-file").onchange=e=>{ if(e.target.files[0]) importBackup(e.target.files[0]); };
+
+/* ---------- TOUCH CONTROLS (mobile) ----------------------- */
+const IS_TOUCH = matchMedia("(pointer:coarse)").matches || ("ontouchstart" in window) || navigator.maxTouchPoints>0;
+const touchEl = document.getElementById("touch");
+let touchLive = false;
+// Show the on-screen pad/buttons only on touch devices and only during active play.
+function syncTouchUI(){
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help;
+  if(live!==touchLive){
+    touchLive = live;
+    touchEl.classList.toggle("live", live);
+    if(!live){   // release any held inputs so the player doesn't keep moving/attacking
+      keys["arrowup"]=keys["arrowdown"]=keys["arrowleft"]=keys["arrowright"]=false;
+      attackHeld=false;
+    }
+  }
+}
+if(IS_TOUCH){
+  document.body.classList.add("touch");
+  // D-pad: press-and-hold sets the matching movement key, release clears it.
+  touchEl.querySelectorAll("#dpad .tc-btn").forEach(btn=>{
+    const dir=btn.dataset.dir;
+    const press=e=>{ e.preventDefault(); keys[dir]=true; };
+    const release=e=>{ if(e) e.preventDefault(); keys[dir]=false; };
+    btn.addEventListener("pointerdown",press);
+    btn.addEventListener("pointerup",release);
+    btn.addEventListener("pointercancel",release);
+    btn.addEventListener("pointerleave",release);
+  });
+  // Attack: hold to keep swinging (update() calls doAttack while held).
+  const atk=document.getElementById("tc-atk");
+  atk.addEventListener("pointerdown",e=>{ e.preventDefault(); attackHeld=true; doAttack(); });
+  const atkUp=e=>{ if(e) e.preventDefault(); attackHeld=false; };
+  atk.addEventListener("pointerup",atkUp);
+  atk.addEventListener("pointercancel",atkUp);
+  atk.addEventListener("pointerleave",atkUp);
+  // Utility buttons mirror their keyboard shortcuts.
+  const tap=(id,fn)=>document.getElementById(id).addEventListener("pointerdown",e=>{ e.preventDefault(); fn(); });
+  tap("tc-home",()=>{ if(state.started) teleportHome(); });
+  tap("tc-desk",()=>{ if(state.started && !state.help && !state.overlay) openOverlay(); });
+  tap("tc-swap",()=>{ if(state.started) cycleWeapon(); });
+  tap("tc-help",toggleHelp);
+}
 
 /* ---------- SPRITESHEET LOAD ------------------------------ */
 if(SPRITESHEET.url){

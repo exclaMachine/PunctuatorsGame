@@ -854,7 +854,8 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 - Desk: click-to-build word, async API dictionary check with feedback states (checking / new /
   known / invalid / couldn't-reach-API), library list with definitions.
 - Backup: export state to JSON, import it back (also the manual cross-device transfer).
-- Keyboard + basic touch (drag to move, tap to attack).
+- Keyboard on desktop; **on-screen touch controls on mobile** (D-pad bottom-right, action cluster
+  bottom-left). See the Controls section + code map for details.
 
 **Stubbed / not yet done:**
 
@@ -871,8 +872,23 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 
 ## Controls
 
-Move: WASD / arrows · Attack: `J` or Space · Switch weapon: `1`–`4` · Teleport home: `H` ·
-Open desk (at home): `B` / Esc to close. Touch: drag to move, tap to swing.
+**Keyboard (desktop):** Move `WASD` / arrows · Attack `Space` · Switch implement `Q` · Teleport
+home `H` · Use bench when near it `E` · Open library `Tab` · Controls/help `?` · Close any panel `Esc`.
+
+**Touch (mobile):** On touch devices a DOM control overlay (`#touch`) appears over the canvas:
+- **D-pad** bottom-right (`#dpad`, 4 arrows) — press-and-hold sets the matching `keys["arrow*"]`, so
+  it reuses the exact keyboard movement path in `update()`. 4-directional (matches keyboard).
+- **Action cluster** bottom-left (`#tact`): a large **ATK** button (hold to keep swinging — `update()`
+  calls cooldown-gated `doAttack()` while `attackHeld`; attack uses the facing direction, same as
+  Space), plus small **HOME** / **DESK** / **SWAP** / **?** buttons that mirror `H` / `Tab(openOverlay)`
+  / `Q` / help.
+- Detection: `IS_TOUCH` (`pointer:coarse` || `ontouchstart` || `maxTouchPoints`) adds `body.touch`.
+  `syncTouchUI()` (called each frame from `update()`) shows the overlay only while
+  `state.started && !overlay && !help` and clears held inputs when hidden, so the pad never sits on
+  top of the library/help overlays. The corner `#help-btn` is hidden on touch (the `?` button replaces
+  it); the start card swaps its keyboard hint (`.kbd-only`) for a touch hint (`.touch-only`).
+- Controls shrink under `@media(max-width:560px)`. The canvas is landscape (720×528), so **landscape
+  orientation plays best** on phones.
 
 ---
 
