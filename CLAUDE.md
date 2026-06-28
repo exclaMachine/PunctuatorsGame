@@ -727,20 +727,26 @@ If this loop is fun, the game is fun. New features must serve it, not distract f
 
 ---
 
-## Aesthetic identity: ink and paper
+## Aesthetic identity: ink and paper, retro-pixel chrome
 
 The theme is load-bearing — the weapons are writing implements, so the whole world is built
-from the vocabulary of writing. Keep to it.
+from the vocabulary of writing. The UI now wears a **retro-pixel skin** (matching the pixel theme
+of the other games in this project) layered on top of the ink/paper palette. Keep to both.
 
 - **World**: aged graph-paper ground, like exploring the pages of a book.
 - **Creatures**: hand-drawn ink-stamp letter glyphs from `Alpha.png` (until distinct creature art is drawn).
 - **Desk / library**: a parchment panel; collected words get "stamped" in with their meaning.
-- **Palette**: deep ink `#211E1A`, paper `#E9DEC4`, parchment `#F6EFDC`, sepia `#8A5A2B`,
-  accents of ink-blue `#234E70` and ink-red `#9A3324`.
-- **Type**: a bookish serif for display (Iowan Old Style / Georgia), a monospace for HUD/data.
+- **Palette**: ink `#26233a`, paper `#ece3cf`, parchment `#e3d8bd`, accents gold `#c89b3c`,
+  ink-blue `#3b4a7a`, moss `#5b7a4b`, violet `#7a4a9a` (the live CSS `:root` vars). Dark page bg `#15131c`.
+- **Retro-pixel chrome**: square corners only (no `border-radius`), chunky 2–3px `--edge` ink borders,
+  hard offset drop-shadows (`box-shadow: Npx Npx 0` — no blur), `image-rendering:pixelated` on the
+  canvas, stepped (non-eased) animations (`steps()`).
+- **Type**: `Press Start 2P` (`--disp`) for display/UI chrome (titles, labels, buttons, letter chips,
+  canvas labels) and `VT323` (`--read`) for readable body text (definitions, paragraphs, key hints).
+  Press Start 2P is wide and only legible small — use ~7–16px; VT323 needs ~17–19px to read well.
 
-Avoid generic AI-design defaults (cream + terracotta + high-contrast serif). The ink/ledger
-direction is specific to this game — keep it that way.
+Avoid generic AI-design defaults (cream + terracotta + high-contrast serif). The ink/ledger +
+retro-pixel direction is specific to this game — keep it that way.
 
 ---
 
@@ -804,8 +810,10 @@ These are settled. Don't reverse them without a real reason.
 
 ## Current file & code map
 
-Current file: `letter-farms.html` (consider renaming to `inklings.html`). One self-contained
-HTML/CSS/JS file. Config lives in clearly-marked blocks at the top of the `<script>`:
+Current file: `inklings.html`. One self-contained HTML/CSS/JS file. Config lives in clearly-marked
+blocks at the top of the `<script>`. The displayed game name is **Inklings** (title, start card,
+save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts), declared as the
+`--disp` / `--read` CSS vars and also used by the canvas `ctx.font` calls (floats, BENCH label).
 
 - **CONFIG constants** — `TILE`, `COLS/ROWS`, `WORLD_W/H`, `HOME`, speeds, `CONSUME_LETTERS`.
 - **`WEAPONS`** — per-implement `dmg` / `range` / `cd` (cooldown) / visual. Tune feel here.
