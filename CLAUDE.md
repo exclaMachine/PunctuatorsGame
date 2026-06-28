@@ -554,7 +554,7 @@ G = {
   graveyard: [card], // discard pile; top = last element
   current, // index of player whose turn it is
   phase: "draw" | "action" | "discard", // no build/steal sub-mode — the action phase is unified
-  stage: { skull, claws:[card], foot }, // cards placed into the assembly slots
+  stage: { skull, claws: [card], foot }, // cards placed into the assembly slots
   stealTarget, // { monsterId, cardIdx } of an armed wild (steal); also `selectedCard` (module var) = armed hand card
   builtThisTurnIds: Set,
   mustUseIds: Set, // dug cards that MUST be built this turn
@@ -593,7 +593,7 @@ G = {
   it arms (`attemptSteal` sets `G.stealTarget`) and your matching hand cards light up, then
   click one. Always an explicit two-click (no auto-complete). Clicking the armed thing again
   cancels; clicking a different card/wild re-targets. The swap is `doSteal(card, monsterId,
-  cardIdx)`, gated by the side-effect-free predicate `canStealWith`. The same `selectedCard`
+cardIdx)`, gated by the side-effect-free predicate `canStealWith`. The same `selectedCard`
   that drives building also drives card-first stealing — one selection lights up both its
   build slot and its stealable wilds, and whichever target you click decides the action.
 - **Discard:** send one card to the graveyard to end the turn. An empty hand may end the
@@ -604,23 +604,23 @@ G = {
 
 ## Where to find things (code map)
 
-| Task                            | Look at                                                    |
-| ------------------------------- | ---------------------------------------------------------- |
-| Deck size / wild frequency      | `COPIES_COLORED`, `COPIES_WILD`, `buildDeck()`             |
-| Suit/part names, colors, glyphs | `SUITS`, `NAMES`, `SUIT_COLOR`, `SUIT_GLYPH`, `PART_GLYPH` |
-| Is a monster legal?             | `validateMonster()`, `monsterSuit()`                       |
-| Dig-deeper legality             | `canFormMonsterWith()` + `drawFromGraveyard()`             |
-| Building                        | click/drag → `placeInStage()` → `tryStageBuild()` (human), `findBestMonster()` (AI) |
-| Click-to-select / highlight     | `selectHandCard()`, `selectedCard`, `handCardActionable()` |
-| Drag-and-drop / slots           | `pointerdown/move/up`, `dragState`, `stageLayout()`, `drawStage()`, `stageZoneRect` |
+| Task                            | Look at                                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Deck size / wild frequency      | `COPIES_COLORED`, `COPIES_WILD`, `buildDeck()`                                                         |
+| Suit/part names, colors, glyphs | `SUITS`, `NAMES`, `SUIT_COLOR`, `SUIT_GLYPH`, `PART_GLYPH`                                             |
+| Is a monster legal?             | `validateMonster()`, `monsterSuit()`                                                                   |
+| Dig-deeper legality             | `canFormMonsterWith()` + `drawFromGraveyard()`                                                         |
+| Building                        | click/drag → `placeInStage()` → `tryStageBuild()` (human), `findBestMonster()` (AI)                    |
+| Click-to-select / highlight     | `selectHandCard()`, `selectedCard`, `handCardActionable()`                                             |
+| Drag-and-drop / slots           | `pointerdown/move/up`, `dragState`, `stageLayout()`, `drawStage()`, `stageZoneRect`                    |
 | Stealing                        | `canStealWith()` / `validStealTargets()` → `doSteal()`; `attemptSteal()` arms a wild (`G.stealTarget`) |
-| Turn advance / last turn        | `finalizeTurn()`                                           |
-| Scoring                         | `endRound()`                                               |
-| AI behavior                     | `aiTurn()`                                                 |
-| Card visuals / connectors       | `drawCard()`, `drawPartArt()`                              |
-| Card move animations            | `commit()`, `animStep()`, `note()`/`snapRect()`, `cardRects`, `flying`, `drawFlyingCard()` |
-| Sound effects                   | `SFX` module — `SFX.play(name)`, `SFX.DEFS` (tones), `SFX.files` (file override), mute `[🔊]` |
-| Click/drag routing              | canvas `pointerdown/move/up` + `handleHit()`               |
+| Turn advance / last turn        | `finalizeTurn()`                                                                                       |
+| Scoring                         | `endRound()`                                                                                           |
+| AI behavior                     | `aiTurn()`                                                                                             |
+| Card visuals / connectors       | `drawCard()`, `drawPartArt()`                                                                          |
+| Card move animations            | `commit()`, `animStep()`, `note()`/`snapRect()`, `cardRects`, `flying`, `drawFlyingCard()`             |
+| Sound effects                   | `SFX` module — `SFX.play(name)`, `SFX.DEFS` (tones), `SFX.files` (file override), mute `[🔊]`          |
+| Click/drag routing              | canvas `pointerdown/move/up` + `handleHit()`                                                           |
 
 ## Conventions & constraints
 
@@ -663,7 +663,7 @@ card name and any symbols baked into the picture (no game-drawn banner). Cards r
 
 ### Legacy part-slot hook
 
-`PART_IMAGES['skull_horned'] = img` still fills only the **art slot** of a *placeholder* card
+`PART_IMAGES['skull_horned'] = img` still fills only the **art slot** of a _placeholder_ card
 via `drawPartArt()` (spine band at ~52% height so monsters link). Superseded by `CARD_ART`
 for real artwork. `NAMES` holds the per-part names (`insectoid/horned/bloodshot` skulls, etc.).
 
@@ -693,3 +693,204 @@ These were judgment calls during the prototype — flag in commit messages if yo
 - [ ] Touch/mobile hit-testing pass (clicks already scale; verify tap targets).
 - [ ] Optional: split into `index.html` + `game.js` + `style.css` once the file grows.
 - [ ] Decide and lock the open design questions above.
+
+# Inklings — project context
+
+A word-collecting adventure game for the browser, built on HTML canvas. Inspired by the
+day-to-day rhythm of Stardew Valley, but built around a different core mechanic: instead of
+growing crops, you hunt **letter-creatures ("inklings")**, collect the letters they drop, and
+spell them into real words at your writing desk. Every valid word is recorded in your library
+with its definition. The fantasy is a scholar-adventurer filling a personal dictionary.
+
+This file is the source of truth for the project's design and conventions. When in doubt,
+prefer what's written here over generic game-dev defaults.
+
+---
+
+## Core loop
+
+This single loop is the whole game. Everything else is a layer on top of it.
+
+```
+Home base (writing desk + library)
+      → enter a field screen ("book")
+      → hunt letter-creatures, attack to make them drop a letter
+      → collect letters into your inventory
+      → return home (teleport)
+      → spell a word at the desk
+      → dictionary check
+      → valid word saved to the library with its definition
+      → back out to hunt more
+```
+
+If this loop is fun, the game is fun. New features must serve it, not distract from it.
+
+---
+
+## Aesthetic identity: ink and paper
+
+The theme is load-bearing — the weapons are writing implements, so the whole world is built
+from the vocabulary of writing. Keep to it.
+
+- **World**: aged graph-paper ground, like exploring the pages of a book.
+- **Creatures**: ink-stamp tiles bearing letters (until real sprites are wired in).
+- **Desk / library**: a parchment panel; collected words get "stamped" in with their meaning.
+- **Palette**: deep ink `#211E1A`, paper `#E9DEC4`, parchment `#F6EFDC`, sepia `#8A5A2B`,
+  accents of ink-blue `#234E70` and ink-red `#9A3324`.
+- **Type**: a bookish serif for display (Iowan Old Style / Georgia), a monospace for HUD/data.
+
+Avoid generic AI-design defaults (cream + terracotta + high-contrast serif). The ink/ledger
+direction is specific to this game — keep it that way.
+
+---
+
+## Naming / vocabulary
+
+Use these terms consistently in code, UI, and writing:
+
+- **Inklings** — the letter-creatures (also the game's name).
+- **The desk / writing desk** — the word-building bench at home base.
+- **The library** — the collection of words you've spelled (the "dex"). It is currently a list;
+  long-term it becomes a walkable room you fill (see roadmap).
+- **Field / books** — the screens you travel to and hunt in.
+- **Implements** — the weapons (stick, brush, pencil, pen, …).
+
+---
+
+## Key design decisions (and why)
+
+These are settled. Don't reverse them without a real reason.
+
+1. **HTML canvas, not Godot/Unity.** The dev is fluent in canvas and ships canvas games.
+   The hard parts of this game are text, data, and the dictionary/library UI — all web-native.
+   Switching engines would stack "learn an engine" on top of "design a novel game."
+
+2. **Collect letters by combat now; farming is deferred.** The dev has letter-creature sprites
+   but no crop/plant art yet, so acquisition is hunting. Farming/ranching returns later as the
+   _renewable supply_ upgrade (keep an inkling on your farm and it produces its letter).
+
+3. **The library is the dex made physical.** The collection and the "decorate a space" fantasy
+   are the same feature. MVP renders it as a list; later it becomes a room with shelves. Same
+   underlying data, nicer skin — so deferring the room costs nothing.
+
+4. **No home town.** The house/desk is the only hub. Big content saving vs. a Stardew-style
+   village; revisit only if the game clearly needs NPC density.
+
+5. **Yoda-Stories-style travel.** A grid of screens; walk off an edge to enter the neighbor.
+   Long-term these become genre "books" whose genre weights which letters spawn (a sci-fi book
+   is rich in Q/X/Z), giving players a reason to choose one book over another.
+
+6. **Weapons are dual-use.** Each implement is both how you fight _and_ a verb at the desk.
+   The punctuation-superhero characters become later weapon upgrades with bench powers:
+   - Question Markswoman's **bow** — ranged; dropped creatures yield a "?" wildcard tile.
+   - Apostrophantom's **sword** — melee; unlocks contractions/possessives (CANT → CAN'T).
+   - Excla Machine's **belt** — "shouts" a word to double its effect at a cost.
+
+7. **Letters are consumed when you spell a word** (`CONSUME_LETTERS = true`). This is what makes
+   the hunt→craft loop actually _loop_. The flag exists so the feel can be tested both ways.
+
+8. **Bench is click-to-build, not drag-and-drop.** Drag-and-drop tests the same fun for far more
+   effort. Click a tray letter to add, click a bench letter to remove. (May prettify later.)
+
+9. **Self-contained single file.** No build step, no dependencies, no external fetches on the
+   critical path — so it runs offline and drops straight onto GitHub Pages. Keep it this way
+   unless a feature genuinely requires otherwise.
+
+---
+
+## Current file & code map
+
+Current file: `letter-farms.html` (consider renaming to `inklings.html`). One self-contained
+HTML/CSS/JS file. Config lives in clearly-marked blocks at the top of the `<script>`:
+
+- **CONFIG constants** — `TILE`, `COLS/ROWS`, `WORLD_W/H`, `HOME`, speeds, `CONSUME_LETTERS`.
+- **`WEAPONS`** — per-implement `dmg` / `range` / `cd` (cooldown) / visual. Tune feel here.
+- **`WEAPON_DROPS`** — which field screen hides which implement upgrade.
+- **`SPRITES`** — spritesheet loader + `cellForLetter(letter)` mapping. Placeholder ink-stamps
+  render until a real sheet loads (see Open questions).
+- **`DEFINITIONS` / `WORDS`** — the baked-in dictionary (~100 common words, each with a short
+  definition). `WORDS` is the validity set; `DEFINITIONS` supplies the meaning shown on collect.
+- **`LETTER_BAG`** — frequency-weighted spawn pool (vowels common, Q/X/Z rare).
+- **`state`** — `{ player, inventory: {letter:count}, dex: {word:{def,found}}, weapon, unlocked }`.
+- **Systems**, in order: screen generation → input → combat → update → render → desk/bench →
+  backup (export/import) → main loop.
+
+---
+
+## Current state
+
+**Built and working:**
+
+- Home base with a writing desk; 3×3 world of screens; walk-off-edge travel; `H` to teleport home.
+- Attack-based combat (no bump-to-collect); creatures take damage, drop a letter on defeat.
+- Writing-implement weapons: start with stick; brush/pencil/pen hidden in field screens as
+  diegetic upgrades; `1`–`4` to switch among unlocked ones.
+- Letter pickups → inventory; renewable (field creatures respawn on re-entry).
+- Desk: click-to-build word, dictionary check, three-way feedback (new / known / invalid),
+  library list with definitions.
+- Backup: export state to JSON, import it back (also the manual cross-device transfer).
+- Keyboard + basic touch (drag to move, tap to attack).
+
+**Stubbed / not yet done:**
+
+- **Real sprites** — creatures are placeholders pending the 7×8 spritesheet (see below).
+- **Dictionary is small** (~100 words). Needs expansion to a full wordlist + definition source.
+- **No autosave** — only manual export/import. IndexedDB autosave is the next persistence step.
+- Not started: library room, genre books / procedural layouts, hero weapons, word effects,
+  farming/ranching, town/trade.
+
+---
+
+## Controls
+
+Move: WASD / arrows · Attack: `J` or Space · Switch weapon: `1`–`4` · Teleport home: `H` ·
+Open desk (at home): `B` / Esc to close. Touch: drag to move, tap to swing.
+
+---
+
+## Roadmap (build order from here)
+
+1. **Wire the spritesheet** — set `SPRITES.src`, confirm cols/rows, fix `cellForLetter` mapping.
+2. **Expand the dictionary** — replace the inline object with a bundled wordlist (e.g. ENABLE)
+   plus a definitions source. Keep it offline-friendly: bundle a definitions JSON rather than
+   depending on a live API on the critical path. (`exit`, `quartz`, etc. are simply absent today
+   because they're not in the ~100-word starter set — not a bug.)
+3. **IndexedDB autosave** — persist `state` per-origin; call `navigator.storage.persist()`;
+   namespace the DB (`inklings_save`) so it won't collide with other games on the same Pages
+   origin. Keep export/import as the backup/transfer path. (IndexedDB is per-browser/device;
+   true cross-device sync would need a backend — out of scope.)
+4. **Library room** — render the dex as a walkable room with shelves. Organize words into
+   sets/shelves (by length, by source book, by theme) so there are achievable sub-goals instead
+   of one impossible "collect everything." Same data as the current list.
+5. **Genre books + procedural layouts** — multiple book types with distinct tilesets and
+   genre-weighted letter pools. Start with simple random scatter / room-and-corridor generation;
+   do **not** build a clever dungeon generator first (classic time sink).
+6. **Hero weapons** — convert the punctuation superheroes into implement upgrades with their
+   dual-use bench powers (bow/wildcard, sword/contractions, belt/shout).
+7. **Word effects ("spellbook")** — tag a few hundred words so spelling them does something
+   (RAIN waters, SUN speeds growth). Most words stay plain tradeable goods.
+8. **Farming / ranching** — renewable letters from ranched inklings; the deferred cozy layer.
+9. **Town / trade** — towns that want specific words; bundle-style requests as content gates.
+
+---
+
+## Conventions for working on this project
+
+- Keep the game a single self-contained file with no external runtime dependencies, unless a
+  feature truly requires one (say so and why).
+- Protect the MVP loop. New systems are layers on the working core, shipped one at a time, each
+  independently testable.
+- Maintain the ink-and-paper identity and the vocabulary above.
+- Prefer the simplest thing that proves the fun (e.g. random scatter before procedural gen,
+  list before library room, click before drag).
+- Spend polish budget on the **word-collection moment** — the definition reveal is the emotional
+  core; that half-second should always feel good.
+
+---
+
+## Open questions
+
+- **Spritesheet mapping.** The sheet is 7×8 = 56 cells, but the alphabet is 26. The code defaults
+  to cell 0 = A … cell 25 = Z (left→right, top→bottom). Need to confirm the real layout — are the
+  extra 30 cells animation frames per letter, alternate creature types, or unused? Update
+  `SPRITES.cellForLetter` once known.

@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Letter Farms — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#ece3cf; --paper-2:#e3d8bd; --ink:#26233a; --ink-soft:#5f5872;
+    --gold:#c89b3c; --inkblue:#3b4a7a; --moss:#5b7a4b; --violet:#7a4a9a;
+    --line:rgba(38,35,58,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#1c1a24;color:var(--ink);
+    font-family:'Nunito',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  #app{min-height:100%;display:flex;align-items:center;justify-content:center;padding:16px}
+  #stage{position:relative;width:720px;max-width:100%}
+  canvas{display:block;width:100%;height:auto;image-rendering:pixelated;
+    border-radius:10px;border:1px solid rgba(0,0,0,.4);background:#d8cba8;
+    box-shadow:0 18px 40px rgba(0,0,0,.45)}
+  /* HUD */
+  .hud{position:absolute;top:10px;left:10px;right:10px;display:flex;
+    justify-content:space-between;gap:10px;pointer-events:none;font-weight:700}
+  .panel{background:rgba(236,227,207,.92);border:1px solid var(--line);
+    border-radius:8px;padding:6px 10px;font-size:13px;color:var(--ink);
+    box-shadow:0 4px 10px rgba(0,0,0,.18)}
+  .panel .small{font-weight:600;color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  #tray-hud{display:flex;flex-wrap:wrap;gap:4px;max-width:420px}
+  .lchip{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;
+    padding:0 5px;border-radius:5px;background:var(--paper-2);font-family:'Fraunces',serif;
+    font-weight:600;font-size:13px;border:1px solid var(--line)}
+  .lchip b{font-size:10px;color:var(--ink-soft);margin-left:2px;font-family:'Nunito',sans-serif}
+  #hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);
+    background:rgba(38,35,58,.85);color:var(--paper);padding:7px 14px;border-radius:20px;
+    font-size:13px;font-weight:600;pointer-events:none;opacity:0;transition:opacity .2s}
+  #hint.show{opacity:1}
+  #toast{position:absolute;left:50%;top:54px;transform:translateX(-50%);
+    background:var(--gold);color:#3a2c08;padding:8px 16px;border-radius:8px;font-weight:700;
+    font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.3)}
+  #toast.show{opacity:1}
+  /* Overlay (Library) */
+  #overlay{position:absolute;inset:0;display:none;background:rgba(28,26,36,.55);
+    border-radius:10px;backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:18px}
+  #overlay.open{display:flex}
+  .book{width:100%;max-width:680px;max-height:100%;overflow:auto;background:var(--paper);
+    border:1px solid rgba(0,0,0,.3);border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,.5);
+    padding:18px 20px}
+  .book h1{font-family:'Fraunces',serif;font-weight:900;font-size:24px;margin:0 0 2px}
+  .book .sub{color:var(--ink-soft);font-size:13px;margin-bottom:14px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:560px){.cols{grid-template-columns:1fr}}
+  .sec-label{font-family:'Fraunces',serif;font-weight:600;font-size:15px;margin:0 0 8px;
+    border-bottom:1px solid var(--line);padding-bottom:5px}
+  .tray{display:flex;flex-wrap:wrap;gap:6px;min-height:40px;padding:8px;background:var(--paper-2);
+    border-radius:8px;border:1px solid var(--line)}
+  .tray .lchip{cursor:pointer;min-width:30px;height:30px;font-size:16px;transition:transform .08s}
+  .tray .lchip:hover{transform:translateY(-2px)}
+  .tray .empty{color:var(--ink-soft);font-size:13px;font-weight:600;align-self:center}
+  .bench-line{display:flex;flex-wrap:wrap;gap:6px;min-height:48px;margin:10px 0;padding:10px;
+    border:2px dashed var(--line);border-radius:8px;background:#fffdf6}
+  .bench-line .lchip{cursor:pointer;min-width:34px;height:34px;font-size:18px;background:#fff}
+  .bench-line .ph{color:var(--ink-soft);font-size:13px;font-weight:600;align-self:center}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+  button{font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;cursor:pointer;
+    border-radius:8px;padding:8px 14px;border:1px solid var(--line);background:var(--paper-2);
+    color:var(--ink);transition:background .12s,transform .06s}
+  button:hover{background:#dcd0b2}button:active{transform:translateY(1px)}
+  button.primary{background:var(--inkblue);color:#f4f0e6;border-color:transparent}
+  button.primary:hover{background:#33406b}
+  button.ghost{background:transparent}
+  #result{min-height:64px;margin-top:10px}
+  .reveal{animation:pop .35s ease both}
+  @keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+  .reveal .word{font-family:'Fraunces',serif;font-weight:900;font-size:26px;color:var(--inkblue)}
+  .reveal .def{font-size:14px;color:var(--ink);margin-top:2px;line-height:1.45}
+  .msg-bad{color:#9a3b2e;font-weight:700;font-size:14px}
+  .msg-known{color:var(--ink-soft);font-weight:700;font-size:14px}
+  .dex-count{font-family:'Fraunces',serif;font-size:13px;color:var(--ink-soft);font-weight:600}
+  .dex-list{margin-top:8px;max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:2px}
+  .dex-item{padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;
+    justify-content:space-between;gap:8px}
+  .dex-item:hover{background:var(--paper-2)}
+  .dex-item .w{font-family:'Fraunces',serif;font-weight:600}
+  .dex-item .d{color:var(--ink-soft);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%}
+  .foot{margin-top:16px;padding-top:12px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .foot .keys{font-size:11px;color:var(--ink-soft);font-weight:600;line-height:1.6}
+  .foot .keys b{color:var(--ink);background:var(--paper-2);padding:1px 5px;border-radius:4px;
+    border:1px solid var(--line);font-family:'Nunito';font-weight:700}
+  #help-btn{position:absolute;left:12px;bottom:12px;width:34px;height:34px;border-radius:50%;
+    font-family:'Fraunces',serif;font-weight:900;font-size:18px;background:rgba(236,227,207,.94);
+    color:var(--ink);border:1px solid var(--line);box-shadow:0 4px 10px rgba(0,0,0,.25);padding:0;
+    display:flex;align-items:center;justify-content:center;z-index:4}
+  #help-btn:hover{background:#dcd0b2}
+  #controls{position:absolute;inset:0;display:none;background:rgba(28,26,36,.55);border-radius:10px;
+    backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:18px;z-index:6}
+  #controls.open{display:flex}
+  .ctrl-grid{display:grid;grid-template-columns:auto 1fr;gap:9px 14px;align-items:center;font-size:14px}
+  .ctrl-grid span:nth-child(odd){text-align:right;color:var(--ink-soft)}
+  .ctrl-grid b{display:inline-block;background:var(--paper-2);padding:2px 7px;border-radius:5px;
+    border:1px solid var(--line);font-family:'Nunito';font-weight:700;font-size:12px;color:var(--ink)}
+  #startcard{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(28,26,36,.6);border-radius:10px;z-index:5}
+  #startcard .book{max-width:440px;text-align:center}
+  #startcard p{font-size:14px;line-height:1.6;color:var(--ink)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="cv" width="720" height="528"></canvas>
+
+    <div class="hud">
+      <div class="panel">
+        <div class="small">Implement</div>
+        <div id="weapon-name">Stick</div>
+      </div>
+      <div class="panel" id="tray-hud-wrap" style="text-align:right">
+        <div class="small">Satchel</div>
+        <div id="tray-hud"><span class="empty" style="font-weight:600;color:var(--ink-soft);font-size:12px">empty</span></div>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+    <div id="hint"></div>
+    <button id="help-btn" aria-label="Show controls" title="Controls (?)">?</button>
+
+    <!-- Library overlay -->
+    <div id="overlay">
+      <div class="book">
+        <h1>The Library</h1>
+        <div class="sub">Build words from the letters in your satchel. Each new word joins your collection.</div>
+        <div class="cols">
+          <div>
+            <div class="sec-label">The Bench</div>
+            <div class="tray" id="tray"></div>
+            <div class="bench-line" id="bench"><span class="ph">click letters above to build a word</span></div>
+            <div class="btn-row">
+              <button class="primary" id="check-btn">Check word</button>
+              <button id="clear-btn">Clear</button>
+            </div>
+            <div id="result"></div>
+          </div>
+          <div>
+            <div class="sec-label">Collection <span class="dex-count" id="dex-count"></span></div>
+            <div class="dex-list" id="dex-list"></div>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="keys">
+            <b>WASD</b>/<b>↑↓←→</b> move &nbsp; <b>Space</b> attack &nbsp; <b>Q</b> switch implement<br>
+            <b>H</b> go to your bench &nbsp; <b>E</b> use bench &nbsp; <b>Tab</b> open library &nbsp; <b>Esc</b> close
+          </div>
+          <div class="btn-row">
+            <button class="ghost" id="export-btn">Export backup</button>
+            <button class="ghost" id="import-btn">Import backup</button>
+            <button id="close-btn">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls modal -->
+    <div id="controls">
+      <div class="book" style="max-width:430px">
+        <h1>Controls</h1>
+        <div class="ctrl-grid">
+          <span><b>WASD</b> / <b>↑ ↓ ← →</b></span><span>Move</span>
+          <span><b>Space</b></span><span>Attack with your implement</span>
+          <span><b>Q</b></span><span>Switch implement</span>
+          <span><b>H</b></span><span>Teleport home to your bench</span>
+          <span><b>E</b></span><span>Use the bench (when standing near it)</span>
+          <span><b>Tab</b></span><span>Open the library</span>
+          <span><b>?</b></span><span>Show or hide this panel</span>
+          <span><b>Esc</b></span><span>Close any panel</span>
+        </div>
+        <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
+          <button class="primary" id="controls-close">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start card -->
+    <div id="startcard">
+      <div class="book">
+        <h1 style="margin-bottom:6px">Letter Farms</h1>
+        <p>You're a collector of words wandering the pages of an endless book.
+        Hunt the <b>letter-creatures</b> with your writing implement, gather their letters,
+        then return to your <b>bench</b> to spell words and fill your library.</p>
+        <p style="color:var(--ink-soft);font-size:13px">
+        <b>WASD</b> move &nbsp;·&nbsp; <b>Space</b> attack &nbsp;·&nbsp; <b>H</b> home to bench &nbsp;·&nbsp; <b>E</b> use bench &nbsp;·&nbsp; <b>Q</b> swap implement</p>
+        <button class="primary" id="start-btn" style="margin-top:6px;padding:10px 22px;font-size:15px">Begin</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="import-file" accept="application/json" style="display:none">
+
+<script>
+"use strict";
+/* ============================================================
+   LETTER FARMS — prototype
+   Single-file MVP. Drop on GitHub Pages as index.html.
+   ============================================================ */
+
+/* ---------- CONFIG ---------------------------------------- */
+const TILE = 48, COLS = 15, ROWS = 11;
+const W = TILE * COLS, H = TILE * ROWS;            // 720 x 528
+
+// >>> SPRITESHEET: when you upload your 7x8 PNG, set url + cell size here.
+// Leave url empty to use the built-in placeholder creatures.
+const SPRITESHEET = {
+  url: "",          // e.g. "creatures.png"  (place the file next to index.html)
+  cols: 7, rows: 8, // your grid
+  cellW: 0, cellH: 0, // 0 = auto (image.width/cols). Override if cells are padded.
+  // Which frame index (0 = top-left, counting left-to-right, top-to-bottom)
+  // shows which letter. Default maps a..z to frames 0..25 — edit to match your sheet.
+  letterToFrame: (()=>{ const m={}; "abcdefghijklmnopqrstuvwxyz".split("").forEach((c,i)=>m[c]=i); return m; })()
+};
+let sheetImg = null, sheetReady = false;
+
+// Writing implements. Unlock thresholds = unique words collected.
+const WEAPONS = [
+  { name:"Stick",  dmg:1, range:50, cd:0.42, shaft:"#9b6b3a", tip:"#7c5226", unlockAt:0  },
+  { name:"Brush",  dmg:1, range:58, cd:0.38, shaft:"#7a5230", tip:"#d4553e", unlockAt:3  },
+  { name:"Pencil", dmg:2, range:60, cd:0.34, shaft:"#d9b13a", tip:"#2c2c2c", unlockAt:8  },
+  { name:"Pen",    dmg:2, range:66, cd:0.30, shaft:"#33406b", tip:"#1c2440", unlockAt:16 },
+  { name:"Marker", dmg:3, range:70, cd:0.28, shaft:"#4f8a52", tip:"#235c2a", unlockAt:28 },
+  { name:"Quill",  dmg:3, range:78, cd:0.24, shaft:"#d8cdbb", tip:"#7a4a9a", unlockAt:44 }
+];
+
+// Letter frequency (relative spawn weight) + rarity tier (for colour).
+const FREQ = {e:12,t:9,a:8,o:8,i:7,n:7,s:6,r:6,h:6,d:4,l:4,u:3,c:3,m:2,w:2,f:2,g:2,y:2,p:2,b:1,v:1,k:1,j:1,x:1,q:1,z:1};
+const TIER = {
+  common:"etaoinsr".split(""), mid:"hdlucm".split(""),
+  rare:"wfgypbv".split(""), legend:"kjxqz".split("")
+};
+const TIER_COLOR = { common:"#5b7a4b", mid:"#3b6ea5", rare:"#7a4a9a", legend:"#c89b3c" };
+function tierOf(l){ for(const t in TIER){ if(TIER[t].includes(l)) return t; } return "common"; }
+function colorFor(l){ return TIER_COLOR[tierOf(l)]; }
+
+const CONSUME_ON_NEW = true;   // spend letters when you record a NEW word
+const CREATURE_HP = 3;
+
+/* ---------- DICTIONARY (starter set) ----------------------
+   For the real game on your site, replace this with a fetch of
+   a full wordlist (ENABLE / SOWPODS) + a bundled definitions file.
+   Every word here has a definition so the loop always rewards.    */
+const DICT = {
+  at:"in or near a place or position.", in:"located inside something.", on:"resting atop a surface.",
+  up:"toward a higher position.", an:"a form of 'a' before a vowel sound.", as:"to the same degree.",
+  go:"to move from one place to another.", hi:"a casual greeting.", it:"the thing already mentioned.",
+  me:"the speaker referring to themselves.", my:"belonging to me.", no:"a negative reply.",
+  of:"belonging to or part of.", ox:"a large domesticated bovine.", so:"to such a degree.",
+  to:"in the direction of.", us:"the speaker and others.", we:"the speaker and others together.",
+  cat:"a small domesticated feline.", dog:"a domesticated canine.", sun:"the star at the centre of our solar system.",
+  run:"to move quickly on foot.", fun:"enjoyment or amusement.", hat:"a covering worn on the head.",
+  map:"a drawing of an area showing features.", top:"the highest point of something.", pot:"a deep round container.",
+  pen:"a tool for writing with ink.", pin:"a thin pointed piece of metal.", big:"large in size.",
+  bug:"a small insect.", cup:"a small container for drinking.", car:"a road vehicle with wheels and an engine.",
+  ear:"the organ of hearing.", eat:"to consume food.", tea:"a hot drink made from steeped leaves.",
+  sea:"a large body of salt water.", see:"to perceive with the eyes.", bee:"a flying insect that makes honey.",
+  sky:"the space above the earth.", fly:"to move through the air.", dry:"free from moisture.",
+  cry:"to shed tears.", try:"to make an attempt.", day:"the time of daylight.", way:"a route or method.",
+  say:"to speak words.", joy:"a feeling of great happiness.", ice:"frozen water.", age:"the length of time lived.",
+  owl:"a nocturnal bird of prey.", oak:"a large hardwood tree.", oil:"a thick slippery liquid.",
+  out:"away from the inside.", one:"the number 1.", two:"the number 2.", ten:"the number 10.",
+  red:"the colour of blood.", bed:"furniture for sleeping.", web:"a network spun by a spider.",
+  win:"to be victorious.", wax:"a soft pliable substance.", yes:"an affirmative reply.",
+  you:"the person addressed.", zoo:"a place where animals are kept for display.", jam:"a fruit preserve.",
+  jar:"a wide-mouthed glass container.", job:"paid work.", gem:"a precious stone.", gas:"an airlike substance.",
+  gun:"a weapon that fires projectiles.", god:"a being worshipped as divine.", gap:"an opening or break.",
+  tree:"a tall woody plant.", frog:"a small amphibian that hops.", blue:"the colour of a clear sky.",
+  gold:"a precious yellow metal.", star:"a luminous point in the night sky.", moon:"earth's natural satellite.",
+  rain:"water falling from clouds.", snow:"frozen white precipitation.", wind:"moving air.",
+  fire:"the flame and heat of burning.", leaf:"a flat green part of a plant.", seed:"a plant's reproductive unit.",
+  bird:"a feathered, winged animal.", fish:"an animal that lives in water.", lion:"a large wild cat.",
+  bear:"a large heavy mammal.", wolf:"a wild relative of the dog.", deer:"a hoofed grazing animal.",
+  hawk:"a bird of prey.", dove:"a small pale pigeon.", lake:"a large inland body of water.",
+  hill:"a raised area of land.", cave:"a hollow space in rock.", road:"a path for travel.",
+  gate:"a hinged barrier in a fence or wall.", door:"a movable barrier for an entrance.",
+  book:"a set of written pages bound together.", word:"a unit of language with meaning.",
+  read:"to look at and understand text.", sing:"to make musical sounds with the voice.",
+  song:"a piece of music with words.", play:"to take part in a game for fun.",
+  jump:"to push off into the air.", walk:"to move on foot.", swim:"to move through water.",
+  grow:"to increase in size.", glow:"to give off steady light.", gift:"something given freely.",
+  king:"a male ruler of a country.", ring:"a circular band.", wing:"a limb used for flight.",
+  mind:"the seat of thought.", kind:"warm and considerate.", time:"the passing of moments.",
+  wave:"a ridge of water moving across the sea.", calm:"free from disturbance.", cool:"slightly cold.",
+  warm:"moderately hot.", soft:"easy to press or yielding.", tall:"of great height.",
+  deep:"extending far down.", wide:"broad from side to side.", open:"not closed.",
+  idea:"a thought or plan.", hope:"a wish for something good.", love:"deep affection.",
+  life:"the state of being alive.", apple:"a round edible fruit.", beach:"a sandy shore.",
+  bloom:"to produce flowers.", brave:"showing courage.", bread:"a baked food made from flour.",
+  brush:"a tool with bristles.", chalk:"a soft white writing stone.", charm:"an attractive quality.",
+  cloud:"a visible mass of water vapour.", dream:"images in the mind during sleep.",
+  eagle:"a large bird of prey.", earth:"the planet we live on.", field:"an open area of land.",
+  flame:"the glowing part of a fire.", glass:"a hard transparent material.", grass:"green ground plants.",
+  green:"the colour of growing leaves.", heart:"the organ that pumps blood.", honey:"a sweet food made by bees.",
+  house:"a building for living in.", jewel:"a precious stone.", light:"brightness that lets us see.",
+  lemon:"a sour yellow citrus fruit.", magic:"the power to affect events mysteriously.",
+  maple:"a tree with winged seeds.", music:"sound arranged in a pleasing way.",
+  ocean:"a vast body of salt water.", paint:"coloured liquid for covering surfaces.",
+  pearl:"a smooth gem formed in a shell.", plant:"a living thing that grows in soil.",
+  queen:"a female ruler.", quiet:"making little or no sound.", river:"a large flowing stream.",
+  robin:"a small bird with a red breast.", shine:"to give off light.", smile:"to curve the lips in pleasure.",
+  spark:"a small fiery particle.", stone:"a small piece of rock.", storm:"violent weather.",
+  sugar:"a sweet crystalline food.", sweet:"having a sugary taste.", swift:"moving very fast.",
+  tiger:"a large striped wild cat.", train:"linked railway carriages.", water:"the clear liquid of rivers and seas.",
+  white:"the colour of fresh snow.", world:"the earth and all on it.", write:"to form letters and words.",
+  young:"in an early stage of life.", zebra:"a striped African horse.",
+  forest:"a large area of trees.", garden:"a plot for growing plants.", flower:"the blossom of a plant.",
+  bridge:"a structure spanning a gap.", candle:"a wax stick with a wick for light.",
+  castle:"a large fortified building.", copper:"a reddish metal.", dragon:"a mythical fire-breathing beast.",
+  island:"land surrounded by water.", jungle:"a dense tropical forest.", knight:"an armoured medieval warrior.",
+  marble:"a hard patterned stone.", meadow:"a field of grass and flowers.", pencil:"a writing tool with a graphite core.",
+  planet:"a body orbiting a star.", purple:"a colour between red and blue.", silver:"a shiny grey precious metal.",
+  spring:"the season after winter.", summer:"the warmest season.", sunset:"the sun sinking below the horizon.",
+  temple:"a building for worship.", valley:"low land between hills.", willow:"a tree with slender drooping branches.",
+  winter:"the coldest season.", wonder:"a feeling of awe.", anchor:"a heavy device that holds a ship in place.",
+  breeze:"a gentle wind.", cherry:"a small round red fruit.",
+  crystal:"a clear mineral with flat faces.", diamond:"a hard brilliant gem.", harvest:"the gathering of crops.",
+  lantern:"a portable case holding a light.", library:"a place that holds books.", mystery:"something hard to explain.",
+  rainbow:"an arc of colours in the sky.", journey:"travel from one place to another.",
+  kingdom:"a land ruled by a king or queen.", blossom:"a flower on a tree.", feather:"a light plume from a bird.",
+  morning:"the early part of the day.", penguin:"a flightless seabird.", sparkle:"to shine with small flashes.",
+  thunder:"the loud sound after lightning.", lantern2:"x"
+};
+delete DICT.lantern2;
+const VALID = new Set(Object.keys(DICT));
+
+/* ---------- UTIL: seeded RNG ------------------------------ */
+function hash2(x,y){ let h=(x*374761393 + y*668265263) ^ 0x9e3779b9; h=(h^(h>>>13))*1274126177; return (h^(h>>>16))>>>0; }
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+/* ---------- STATE ----------------------------------------- */
+const state = {
+  player:{ x:W/2, y:H/2+TILE, r:15, speed:180, face:{x:0,y:1}, atkCd:0, atkAnim:0 },
+  screen:{ sx:0, sy:0 },
+  weaponIdx:0, unlocked:[0],
+  inv:{},                       // letter -> count
+  dex:{},                       // word -> {def, found}
+  screens:new Map(),            // "sx,sy" -> {creatures, decos, generated}
+  fx:[],                        // floating texts
+  started:false, overlay:false, help:false
+};
+"abcdefghijklmnopqrstuvwxyz".split("").forEach(c=>state.inv[c]=0);
+
+/* ---------- SCREEN GENERATION ----------------------------- */
+function key(sx,sy){ return sx+","+sy; }
+function weightedLetter(rng, dist){
+  let pool=[], total=0;
+  for(const l in FREQ){
+    let w=FREQ[l];
+    const t=tierOf(l);
+    if(t==="rare")   w*=(1+dist*0.5);
+    if(t==="legend") w*=(0.3+dist*0.8);   // very rare up close, commoner far out
+    pool.push([l,w]); total+=w;
+  }
+  let r=rng()*total;
+  for(const [l,w] of pool){ r-=w; if(r<=0) return l; }
+  return "e";
+}
+function genScreen(sx,sy){
+  const isBase = (sx===0 && sy===0);
+  const rng = mulberry32(hash2(sx,sy));
+  const decos=[];
+  const decoCount = isBase ? 6 : 8 + Math.floor(rng()*8);
+  for(let i=0;i<decoCount;i++){
+    decos.push({ x:30+rng()*(W-60), y:30+rng()*(H-60), kind:Math.floor(rng()*3), s:0.7+rng()*0.6 });
+  }
+  const creatures=[];
+  if(!isBase){
+    const dist=Math.abs(sx)+Math.abs(sy);
+    const n = 4 + Math.floor(rng()*3) + Math.min(2, Math.floor(dist/3));
+    for(let i=0;i<n;i++){
+      const l = weightedLetter(rng, dist);
+      creatures.push({
+        x:60+rng()*(W-120), y:60+rng()*(H-120), letter:l, hp:CREATURE_HP, maxhp:CREATURE_HP,
+        vx:0, vy:0, wander:0, flash:0
+      });
+    }
+  }
+  return { creatures, decos, generated:true, isBase };
+}
+function curScreen(){
+  const k=key(state.screen.sx,state.screen.sy);
+  if(!state.screens.has(k)) state.screens.set(k, genScreen(state.screen.sx,state.screen.sy));
+  return state.screens.get(k);
+}
+function goScreen(dsx,dsy,edge){
+  // edge = which edge of the NEW screen the player should appear at
+  state.screen.sx+=dsx; state.screen.sy+=dsy;
+  const p=state.player;
+  if(edge==="left")   p.x=p.r+2;
+  if(edge==="right")  p.x=W-p.r-2;
+  if(edge==="top")    p.y=p.r+2;
+  if(edge==="bottom") p.y=H-p.r-2;
+}
+
+/* ---------- INPUT ----------------------------------------- */
+const keys={};
+const MOVE_KEYS=new Set(["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d"]);
+addEventListener("keydown",e=>{
+  const k=e.key.toLowerCase();
+  if(MOVE_KEYS.has(k)) e.preventDefault();
+  if(k==="?"||k==="/"){ e.preventDefault(); toggleHelp(); return; }
+  if(state.help){ if(k==="escape"){ e.preventDefault(); toggleHelp(); } return; }
+  if(state.overlay){ if(k==="escape"||k==="tab"){ e.preventDefault(); closeOverlay(); } return; }
+  if(!state.started) return;
+  keys[k]=true;
+  if(k==="h") teleportHome();
+  if(k==="e") tryUseBench();
+  if(k==="q") cycleWeapon();
+  if(k==="tab"){ e.preventDefault(); openOverlay(); }
+  if(k===" ") doAttack();
+});
+addEventListener("keyup",e=>{ keys[e.key.toLowerCase()]=false; });
+
+function teleportHome(){
+  state.screen.sx=0; state.screen.sy=0;
+  state.player.x=W/2; state.player.y=H/2+TILE+10;
+  showToast("Back at your bench. Press E.");
+}
+function nearBench(){
+  return state.screen.sx===0 && state.screen.sy===0 &&
+    Math.hypot(state.player.x-W/2, state.player.y-(H/2-6))<78;
+}
+function tryUseBench(){ if(nearBench()) openOverlay(); }
+function cycleWeapon(){
+  if(state.unlocked.length<2) return;
+  const pos=state.unlocked.indexOf(state.weaponIdx);
+  state.weaponIdx=state.unlocked[(pos+1)%state.unlocked.length];
+  document.getElementById("weapon-name").textContent=WEAPONS[state.weaponIdx].name;
+  showToast("Equipped: "+WEAPONS[state.weaponIdx].name);
+}
+
+/* ---------- COMBAT ---------------------------------------- */
+function doAttack(){
+  const p=state.player; if(p.atkCd>0) return;
+  const wpn=WEAPONS[state.weaponIdx];
+  p.atkCd=wpn.cd; p.atkAnim=0.18;
+  const sc=curScreen();
+  for(let i=sc.creatures.length-1;i>=0;i--){
+    const c=sc.creatures[i];
+    const dx=c.x-p.x, dy=c.y-p.y, d=Math.hypot(dx,dy);
+    if(d>wpn.range+18) continue;
+    const dot=(dx*p.face.x+dy*p.face.y)/(d||1);
+    if(dot<0.35) continue;                 // must be roughly in front
+    c.hp-=wpn.dmg; c.flash=0.15;
+    const kb=22; c.x+=(dx/(d||1))*kb; c.y+=(dy/(d||1))*kb;
+    if(c.hp<=0){
+      state.inv[c.letter]=(state.inv[c.letter]||0)+1;
+      state.fx.push({x:c.x,y:c.y,text:"+"+c.letter.toUpperCase(),life:0.9,color:colorFor(c.letter)});
+      sc.creatures.splice(i,1);
+      updateTrayHud();
+    }
+  }
+}
+
+/* ---------- UPDATE ---------------------------------------- */
+function update(dt){
+  const p=state.player;
+  if(p.atkCd>0) p.atkCd-=dt;
+  if(p.atkAnim>0) p.atkAnim-=dt;
+
+  if(!state.overlay && !state.help && state.started){
+    let mx=0,my=0;
+    if(keys["arrowup"]||keys["w"]) my-=1;
+    if(keys["arrowdown"]||keys["s"]) my+=1;
+    if(keys["arrowleft"]||keys["a"]) mx-=1;
+    if(keys["arrowright"]||keys["d"]) mx+=1;
+    if(mx||my){
+      const len=Math.hypot(mx,my); mx/=len; my/=len;
+      p.face.x=mx; p.face.y=my;
+      p.x+=mx*p.speed*dt; p.y+=my*p.speed*dt;
+    }
+    // edge transitions: exit one side, arrive on the opposite side of the next screen
+    if(p.x<0)      goScreen(-1,0,"right");
+    else if(p.x>W) goScreen(1,0,"left");
+    else if(p.y<0) goScreen(0,-1,"bottom");
+    else if(p.y>H) goScreen(0,1,"top");
+  }
+
+  // creatures
+  const sc=curScreen();
+  for(const c of sc.creatures){
+    if(c.flash>0) c.flash-=dt;
+    c.wander-=dt;
+    if(c.wander<=0){ c.wander=0.6+Math.random()*1.2; const a=Math.random()*Math.PI*2; c.vx=Math.cos(a)*26; c.vy=Math.sin(a)*26; }
+    // flee from player
+    const dx=c.x-p.x, dy=c.y-p.y, d=Math.hypot(dx,dy);
+    if(d<130){ c.vx+=(dx/(d||1))*60*dt*4; c.vy+=(dy/(d||1))*60*dt*4; }
+    c.vx*=0.96; c.vy*=0.96;
+    c.x+=c.vx*dt; c.y+=c.vy*dt;
+    c.x=Math.max(28,Math.min(W-28,c.x)); c.y=Math.max(28,Math.min(H-28,c.y));
+  }
+
+  // fx
+  for(let i=state.fx.length-1;i>=0;i--){ const f=state.fx[i]; f.life-=dt; f.y-=24*dt; if(f.life<=0) state.fx.splice(i,1); }
+
+  // bench hint
+  const hint=document.getElementById("hint");
+  if(!state.overlay && !state.help && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
+  else hint.classList.remove("show");
+}
+
+/* ---------- RENDER ---------------------------------------- */
+const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+function render(){
+  const sc=curScreen();
+  // floor
+  ctx.fillStyle = sc.isBase ? "#e7dcc0" : "#d8cba8";
+  ctx.fillRect(0,0,W,H);
+  // subtle parchment grid
+  ctx.strokeStyle="rgba(38,35,58,.05)"; ctx.lineWidth=1;
+  for(let x=TILE;x<W;x+=TILE){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke(); }
+  for(let y=TILE;y<H;y+=TILE){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke(); }
+
+  // decorations (ground flora — walk-over)
+  for(const d of sc.decos) drawDeco(d);
+
+  // base bench
+  if(sc.isBase) drawBench();
+
+  // edge arrows
+  drawEdgeHints();
+
+  // creatures
+  for(const c of sc.creatures) drawCreature(c);
+
+  // player + implement
+  drawPlayer();
+
+  // floating texts
+  for(const f of state.fx){
+    ctx.globalAlpha=Math.max(0,Math.min(1,f.life*1.6));
+    ctx.fillStyle=f.color; ctx.font="700 20px Fraunces, serif"; ctx.textAlign="center";
+    ctx.fillText(f.text,f.x,f.y);
+    ctx.globalAlpha=1;
+  }
+}
+function drawDeco(d){
+  ctx.save(); ctx.translate(d.x,d.y); ctx.scale(d.s,d.s);
+  if(d.kind===0){ // ink tuft
+    ctx.strokeStyle="rgba(91,122,75,.65)"; ctx.lineWidth=2; ctx.lineCap="round";
+    for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(i*3,6); ctx.quadraticCurveTo(i*3+2,-4,i*4,-12); ctx.stroke(); }
+  } else if(d.kind===1){ // pebble
+    ctx.fillStyle="rgba(95,88,114,.35)"; ctx.beginPath(); ctx.ellipse(0,0,9,6,0,0,7); ctx.fill();
+  } else { // tiny inkblot flower
+    ctx.fillStyle="rgba(122,74,154,.4)";
+    for(let a=0;a<5;a++){ const an=a/5*Math.PI*2; ctx.beginPath(); ctx.ellipse(Math.cos(an)*6,Math.sin(an)*6,4,4,0,0,7); ctx.fill(); }
+    ctx.fillStyle="rgba(200,155,60,.8)"; ctx.beginPath(); ctx.arc(0,0,3,0,7); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawBench(){
+  const cx=W/2, cy=H/2-6;
+  ctx.save();
+  // rug
+  ctx.fillStyle="rgba(59,74,122,.18)"; roundRect(cx-90,cy-70,180,150,16); ctx.fill();
+  // desk
+  ctx.fillStyle="#8a6a44"; roundRect(cx-70,cy-26,140,46,8); ctx.fill();
+  ctx.fillStyle="#6f5436"; roundRect(cx-70,cy+12,140,12,4); ctx.fill();
+  // paper + quill icon
+  ctx.fillStyle="#fbf6e8"; roundRect(cx-22,cy-20,44,34,4); ctx.fill();
+  ctx.strokeStyle="#c89b3c"; ctx.lineWidth=2; ctx.beginPath();
+  ctx.moveTo(cx+14,cy-30); ctx.quadraticCurveTo(cx-4,cy-8,cx-12,cy+8); ctx.stroke();
+  ctx.fillStyle="var(--ink)";
+  ctx.fillStyle="#26233a"; ctx.font="600 12px Fraunces, serif"; ctx.textAlign="center";
+  ctx.fillText("BENCH", cx, cy-36);
+  ctx.restore();
+}
+function drawEdgeHints(){
+  ctx.fillStyle="rgba(38,35,58,.18)";
+  const t=10;
+  ctx.beginPath(); ctx.moveTo(W/2-t,8); ctx.lineTo(W/2+t,8); ctx.lineTo(W/2,2); ctx.fill();        // up
+  ctx.beginPath(); ctx.moveTo(W/2-t,H-8); ctx.lineTo(W/2+t,H-8); ctx.lineTo(W/2,H-2); ctx.fill();    // down
+  ctx.beginPath(); ctx.moveTo(8,H/2-t); ctx.lineTo(8,H/2+t); ctx.lineTo(2,H/2); ctx.fill();          // left
+  ctx.beginPath(); ctx.moveTo(W-8,H/2-t); ctx.lineTo(W-8,H/2+t); ctx.lineTo(W-2,H/2); ctx.fill();    // right
+}
+function drawCreature(c){
+  const size=40;
+  if(sheetReady && SPRITESHEET.url){
+    const fr=SPRITESHEET.letterToFrame[c.letter] ?? 0;
+    const col=fr%SPRITESHEET.cols, row=Math.floor(fr/SPRITESHEET.cols);
+    const cw=SPRITESHEET.cellW||sheetImg.width/SPRITESHEET.cols;
+    const ch=SPRITESHEET.cellH||sheetImg.height/SPRITESHEET.rows;
+    if(c.flash>0){ ctx.globalAlpha=0.6; }
+    ctx.drawImage(sheetImg,col*cw,row*ch,cw,ch,c.x-size/2,c.y-size/2,size,size);
+    ctx.globalAlpha=1;
+  } else {
+    // placeholder creature: rounded tile, colour = rarity, letter on top
+    const col=colorFor(c.letter);
+    ctx.save();
+    ctx.shadowColor="rgba(0,0,0,.25)"; ctx.shadowBlur=6; ctx.shadowOffsetY=3;
+    ctx.fillStyle = c.flash>0 ? "#fff" : col;
+    roundRect(c.x-size/2,c.y-size/2,size,size,10); ctx.fill();
+    ctx.restore();
+    // little feet
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(c.x-9,c.y+size/2,4,0,7); ctx.arc(c.x+9,c.y+size/2,4,0,7); ctx.fill();
+    // eyes
+    ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(c.x-7,c.y-3,4,0,7); ctx.arc(c.x+7,c.y-3,4,0,7); ctx.fill();
+    ctx.fillStyle="#26233a"; ctx.beginPath(); ctx.arc(c.x-7,c.y-3,2,0,7); ctx.arc(c.x+7,c.y-3,2,0,7); ctx.fill();
+    // letter
+    ctx.fillStyle = c.flash>0 ? col : "#fff";
+    ctx.font="900 20px Fraunces, serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(c.letter.toUpperCase(), c.x, c.y+10);
+    ctx.textBaseline="alphabetic";
+  }
+  // hp pips
+  if(c.hp<c.maxhp){
+    for(let i=0;i<c.maxhp;i++){
+      ctx.fillStyle = i<c.hp ? "#5b7a4b" : "rgba(38,35,58,.25)";
+      ctx.fillRect(c.x-size/2 + i*(size/c.maxhp), c.y-size/2-7, size/c.maxhp-2, 3);
+    }
+  }
+}
+function drawPlayer(){
+  const p=state.player;
+  // shadow
+  ctx.fillStyle="rgba(0,0,0,.2)"; ctx.beginPath(); ctx.ellipse(p.x,p.y+p.r-2,p.r,6,0,0,7); ctx.fill();
+  // body (a little scholar)
+  ctx.fillStyle="#3b4a7a"; roundRect(p.x-12,p.y-14,24,28,8); ctx.fill();
+  ctx.fillStyle="#ece3cf"; ctx.beginPath(); ctx.arc(p.x,p.y-16,9,0,7); ctx.fill();   // head
+  // implement
+  const wpn=WEAPONS[state.weaponIdx];
+  const ang=Math.atan2(p.face.y,p.face.x);
+  const swing = p.atkAnim>0 ? (1 - p.atkAnim/0.18) : 0;       // 0..1
+  const a = ang - 0.6 + swing*1.2;
+  const bx=p.x+Math.cos(ang)*8, by=p.y+Math.cos(ang)*2;
+  const ex=bx+Math.cos(a)*wpn.range, ey=by+Math.sin(a)*wpn.range;
+  ctx.strokeStyle=wpn.shaft; ctx.lineWidth=4; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(ex,ey); ctx.stroke();
+  ctx.fillStyle=wpn.tip; ctx.beginPath(); ctx.arc(ex,ey,4,0,7); ctx.fill();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+/* ---------- HUD ------------------------------------------- */
+function updateTrayHud(){
+  const el=document.getElementById("tray-hud");
+  const have=Object.keys(state.inv).filter(l=>state.inv[l]>0);
+  if(!have.length){ el.innerHTML='<span class="empty" style="font-weight:600;color:var(--ink-soft);font-size:12px">empty</span>'; return; }
+  el.innerHTML=have.map(l=>`<span class="lchip" style="border-color:${colorFor(l)}">${l.toUpperCase()}<b>${state.inv[l]}</b></span>`).join("");
+}
+
+/* ---------- WEAPON UNLOCKS -------------------------------- */
+function checkUnlocks(){
+  const count=Object.keys(state.dex).length;
+  WEAPONS.forEach((w,i)=>{
+    if(count>=w.unlockAt && !state.unlocked.includes(i)){
+      state.unlocked.push(i); state.weaponIdx=i;
+      document.getElementById("weapon-name").textContent=w.name;
+      showToast("New implement unlocked: "+w.name+"!");
+    }
+  });
+}
+
+/* ---------- BENCH / LIBRARY OVERLAY ----------------------- */
+let bench=[];   // letters currently on the bench line
+function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); renderBench(); renderDex(); }
+function closeOverlay(){ state.overlay=false; document.getElementById("overlay").classList.remove("open"); bench=[]; document.getElementById("result").innerHTML=""; }
+function renderBench(){
+  // tray = letters you hold, minus what's on the bench
+  const used={}; bench.forEach(l=>used[l]=(used[l]||0)+1);
+  const trayEl=document.getElementById("tray");
+  const have=Object.keys(state.inv).filter(l=>state.inv[l]-(used[l]||0)>0);
+  trayEl.innerHTML = have.length
+    ? have.map(l=>`<span class="lchip" data-l="${l}" style="border-color:${colorFor(l)}">${l.toUpperCase()}<b>${state.inv[l]-(used[l]||0)}</b></span>`).join("")
+    : '<span class="empty">no letters yet — go hunt some creatures</span>';
+  trayEl.querySelectorAll("[data-l]").forEach(ch=>ch.onclick=()=>{ bench.push(ch.dataset.l); renderBench(); });
+
+  const benchEl=document.getElementById("bench");
+  benchEl.innerHTML = bench.length
+    ? bench.map((l,i)=>`<span class="lchip" data-i="${i}">${l.toUpperCase()}</span>`).join("")
+    : '<span class="ph">click letters above to build a word</span>';
+  benchEl.querySelectorAll("[data-i]").forEach(ch=>ch.onclick=()=>{ bench.splice(+ch.dataset.i,1); renderBench(); });
+}
+function renderDex(){
+  const words=Object.keys(state.dex).sort();
+  document.getElementById("dex-count").textContent = words.length?`· ${words.length} word${words.length>1?"s":""}`:"";
+  const list=document.getElementById("dex-list");
+  list.innerHTML = words.length
+    ? words.map(w=>`<div class="dex-item" data-w="${w}"><span class="w">${w}</span><span class="d">${state.dex[w].def}</span></div>`).join("")
+    : '<div style="color:var(--ink-soft);font-size:13px;padding:6px">Your collection is empty. Spell your first word!</div>';
+  list.querySelectorAll("[data-w]").forEach(it=>it.onclick=()=>showReveal(it.dataset.w,false));
+}
+function checkWord(){
+  const word=bench.join("").toLowerCase();
+  const res=document.getElementById("result");
+  if(word.length<2){ res.innerHTML='<div class="msg-bad">Words need at least two letters.</div>'; return; }
+  if(!VALID.has(word)){
+    res.innerHTML=`<div class="msg-bad">“${word.toUpperCase()}” isn’t in the dictionary.</div>`;
+    return;   // letters stay on the bench so you can rearrange
+  }
+  if(state.dex[word]){
+    res.innerHTML=`<div class="msg-known">You’ve already collected “${word.toUpperCase()}”. Letters returned.</div>`;
+    bench=[]; renderBench(); return;
+  }
+  // NEW word!
+  state.dex[word]={ def:DICT[word], found:Date.now() };
+  if(CONSUME_ON_NEW){ bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); }); }
+  bench=[];
+  updateTrayHud(); renderBench(); renderDex(); checkUnlocks();
+  showReveal(word,true);
+}
+function showReveal(word,isNew){
+  const res=document.getElementById("result");
+  res.innerHTML=`<div class="reveal">
+    ${isNew?'<div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">New word collected</div>':''}
+    <div class="word">${word}</div>
+    <div class="def">${state.dex[word]?state.dex[word].def:DICT[word]}</div>
+  </div>`;
+}
+
+/* ---------- EXPORT / IMPORT BACKUP ------------------------ */
+function exportBackup(){
+  const data={ v:1, inv:state.inv, dex:state.dex, unlocked:state.unlocked, weaponIdx:state.weaponIdx };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="letter-farms-save.json"; a.click();
+  URL.revokeObjectURL(url);
+  showToast("Backup downloaded.");
+}
+function importBackup(file){
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const d=JSON.parse(reader.result);
+      if(d.inv) state.inv=Object.assign(state.inv,d.inv);
+      if(d.dex) state.dex=d.dex;
+      if(d.unlocked) state.unlocked=d.unlocked;
+      if(typeof d.weaponIdx==="number") state.weaponIdx=d.weaponIdx;
+      document.getElementById("weapon-name").textContent=WEAPONS[state.weaponIdx].name;
+      updateTrayHud(); renderBench(); renderDex();
+      showToast("Backup loaded.");
+    }catch(e){ showToast("That file couldn’t be read."); }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- TOAST ----------------------------------------- */
+let toastT=null;
+function showToast(msg){
+  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1800);
+}
+
+/* ---------- WIRING ---------------------------------------- */
+document.getElementById("start-btn").onclick=()=>{ state.started=true; document.getElementById("startcard").style.display="none"; };
+function toggleHelp(){ state.help=!state.help; document.getElementById("controls").classList.toggle("open",state.help); }
+document.getElementById("help-btn").onclick=toggleHelp;
+document.getElementById("controls-close").onclick=toggleHelp;
+document.getElementById("check-btn").onclick=checkWord;
+document.getElementById("clear-btn").onclick=()=>{ bench=[]; renderBench(); document.getElementById("result").innerHTML=""; };
+document.getElementById("close-btn").onclick=closeOverlay;
+document.getElementById("export-btn").onclick=exportBackup;
+document.getElementById("import-btn").onclick=()=>document.getElementById("import-file").click();
+document.getElementById("import-file").onchange=e=>{ if(e.target.files[0]) importBackup(e.target.files[0]); };
+
+/* ---------- SPRITESHEET LOAD ------------------------------ */
+if(SPRITESHEET.url){
+  sheetImg=new Image();
+  sheetImg.onload=()=>{ sheetReady=true; };
+  sheetImg.onerror=()=>{ sheetReady=false; };  // fall back to placeholders
+  sheetImg.src=SPRITESHEET.url;
+}
+
+/* ---------- MAIN LOOP ------------------------------------- */
+updateTrayHud();
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  update(dt); render();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
