@@ -733,7 +733,7 @@ The theme is load-bearing — the weapons are writing implements, so the whole w
 from the vocabulary of writing. Keep to it.
 
 - **World**: aged graph-paper ground, like exploring the pages of a book.
-- **Creatures**: ink-stamp tiles bearing letters (until real sprites are wired in).
+- **Creatures**: hand-drawn ink-stamp letter glyphs from `Alpha.png` (until distinct creature art is drawn).
 - **Desk / library**: a parchment panel; collected words get "stamped" in with their meaning.
 - **Palette**: deep ink `#211E1A`, paper `#E9DEC4`, parchment `#F6EFDC`, sepia `#8A5A2B`,
   accents of ink-blue `#234E70` and ink-red `#9A3324`.
@@ -806,8 +806,12 @@ HTML/CSS/JS file. Config lives in clearly-marked blocks at the top of the `<scri
 - **CONFIG constants** — `TILE`, `COLS/ROWS`, `WORLD_W/H`, `HOME`, speeds, `CONSUME_LETTERS`.
 - **`WEAPONS`** — per-implement `dmg` / `range` / `cd` (cooldown) / visual. Tune feel here.
 - **`WEAPON_DROPS`** — which field screen hides which implement upgrade.
-- **`SPRITES`** — spritesheet loader + `cellForLetter(letter)` mapping. Placeholder ink-stamps
-  render until a real sheet loads (see Open questions).
+- **`SPRITESHEET`** — glyph-sheet config (`url`, `cols`/`rows`, `cellW`/`cellH`, `letterToFrame`)
+  + loader. Wired to `Alpha.png` (the same hand-drawn sheet Spin Nids uses): a 7×8 grid of 32×32
+  cells where a–z = frames 0–25 (A–Z = 26–51, unused here). `drawGlyph(letter,cx,cy,size)` blits one
+  cell. `drawCreature` renders the creature **as the glyph itself** — no tile, eyes, or feet — with a
+  brief scale-up "pop" while `c.flash>0` (just hit), falling back to dark `fillText` if the sheet
+  hasn't loaded or the letter isn't on it. HP pips still draw above the glyph when damaged.
 - **`DEFINITIONS` / `WORDS`** — the baked-in dictionary (~100 common words, each with a short
   definition). `WORDS` is the validity set; `DEFINITIONS` supplies the meaning shown on collect.
 - **`LETTER_BAG`** — frequency-weighted spawn pool (vowels common, Q/X/Z rare).
@@ -833,7 +837,9 @@ HTML/CSS/JS file. Config lives in clearly-marked blocks at the top of the `<scri
 
 **Stubbed / not yet done:**
 
-- **Real sprites** — creatures are placeholders pending the 7×8 spritesheet (see below).
+- **Creature glyphs** — creatures render solely as their hand-drawn letter glyph from `Alpha.png`
+  (the glyph sheet shared with Spin Nids) — no tile, eyes, or feet. Dedicated per-creature *art*
+  (distinct bodies beyond the bare glyph) is still future work.
 - **Dictionary is small** (~100 words). Needs expansion to a full wordlist + definition source.
 - **No autosave** — only manual export/import. IndexedDB autosave is the next persistence step.
 - Not started: library room, genre books / procedural layouts, hero weapons, word effects,
@@ -850,7 +856,8 @@ Open desk (at home): `B` / Esc to close. Touch: drag to move, tap to swing.
 
 ## Roadmap (build order from here)
 
-1. **Wire the spritesheet** — set `SPRITES.src`, confirm cols/rows, fix `cellForLetter` mapping.
+1. **Wire the spritesheet** — DONE: creatures draw their letter from `Alpha.png` via `SPRITESHEET`
+   + `drawGlyph` (a–z = frames 0–25). Next sprite step is real per-creature *body* art, not just glyphs.
 2. **Expand the dictionary** — replace the inline object with a bundled wordlist (e.g. ENABLE)
    plus a definitions source. Keep it offline-friendly: bundle a definitions JSON rather than
    depending on a live API on the critical path. (`exit`, `quartz`, etc. are simply absent today
@@ -890,7 +897,8 @@ Open desk (at home): `B` / Esc to close. Touch: drag to move, tap to swing.
 
 ## Open questions
 
-- **Spritesheet mapping.** The sheet is 7×8 = 56 cells, but the alphabet is 26. The code defaults
-  to cell 0 = A … cell 25 = Z (left→right, top→bottom). Need to confirm the real layout — are the
-  extra 30 cells animation frames per letter, alternate creature types, or unused? Update
-  `SPRITES.cellForLetter` once known.
+- **Spritesheet mapping.** RESOLVED for `Alpha.png`: it's a glyph sheet, not creature art — 7×8
+  = 56 cells holding a–z (frames 0–25), A–Z (26–51), and a few punctuation glyphs (e.g. `!` at 54).
+  We map a–z → 0–25 in `SPRITESHEET.letterToFrame`. Open question reframed: if dedicated creature
+  *body* art (multiple frames or alternate forms per letter) is ever added, it would be a separate
+  sheet with its own `letterToFrame`/frame-animation scheme.
