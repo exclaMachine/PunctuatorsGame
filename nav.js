@@ -42,6 +42,7 @@
       ],
     },
     { label: "Books", href: "https://a.co/d/aX8NZcc", external: true },
+    { label: "Contact", file: "contact.html" },
   ];
 
   const currentPath = window.location.pathname;

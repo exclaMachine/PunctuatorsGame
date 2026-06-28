@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact — Punctuators</title>
+  <meta name="description" content="Get in touch with the Punctuators — questions, feedback, or just to say hi.">
+  <link rel="icon" type="image/png" href="./images/Third.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <!-- theme.css (design tokens) + nav are injected by nav.js -->
+  <link href="./home.css" rel="stylesheet">
+  <style>
+    /* ---- Contact form (scoped to this page; uses theme.css tokens) ---- */
+    .contact-wrap { max-width: 620px; }
+    .contact-intro {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: var(--ink-soft);
+      margin: 0 0 26px;
+      max-width: 52ch;
+    }
+    .contact-card {
+      background: var(--surface);
+      border: var(--ink-border);
+      border-radius: var(--radius);
+      box-shadow: 6px 6px 0 var(--ink);
+      padding: 26px 24px;
+    }
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+    .field input,
+    .field textarea {
+      width: 100%;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--ink);
+      background: var(--paper);
+      border: var(--ink-border);
+      border-radius: 10px;
+      padding: 11px 13px;
+    }
+    .field textarea { min-height: 140px; resize: vertical; }
+    .field input:focus,
+    .field textarea:focus {
+      outline: none;
+      box-shadow: 3px 3px 0 var(--accent-3);
+    }
+    /* Honeypot — hidden from humans, tempting to bots. Never displayed. */
+    .hp-field {
+      position: absolute !important;
+      left: -9999px !important;
+      top: auto;
+      width: 1px; height: 1px;
+      overflow: hidden;
+    }
+    .contact-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    #form-status {
+      font-weight: 600;
+      margin: 0;
+      min-height: 1.2em;
+    }
+    #form-status.ok    { color: #1a7a3c; }
+    #form-status.error { color: var(--accent); }
+    .contact-alt {
+      margin-top: 26px;
+      font-size: 0.95rem;
+      color: var(--ink-soft);
+    }
+    .contact-alt a { color: var(--accent-3); font-weight: 600; }
+  </style>
+</head>
+
+<body>
+  <script src="./nav.js"></script>
+
+  <!-- ===================== HERO ===================== -->
+  <header class="hub-hero">
+    <h1 class="hub-hero__title">CONTACT</h1>
+    <p class="hub-hero__tag">Questions, feedback, or fan ASCII art — email me.</p>
+  </header>
+
+  <main class="hub-wrap contact-wrap">
+    <p class="contact-intro">
+      Got a bug report, an idea for a new game, or just want to say hello? Fill out the
+      form and it'll land straight in my inbox. I read everything.
+    </p>
+
+    <div class="contact-card">
+      <form id="contact-form" autocomplete="on">
+        <!-- Web3Forms access key — get a free one at https://web3forms.com
+             by entering ty.rickers@gmail.com; paste the key below. -->
+        <input type="hidden" name="access_key" value="b1697278-8f4b-412d-a18d-82258dcacb34">
+
+        <!-- Helps format the email Web3Forms sends to you. -->
+        <input type="hidden" name="subject" value="New message from the Punctuators contact page">
+        <input type="hidden" name="from_name" value="Punctuators Contact Form">
+
+        <!-- Web3Forms' built-in honeypot: bots that tick this get filtered server-side. -->
+        <input type="checkbox" name="botcheck" class="hp-field" tabindex="-1" autocomplete="off">
+
+        <!-- Our own honeypot: a fake field humans never see. If filled, we block. -->
+        <div class="hp-field" aria-hidden="true">
+          <label>Leave this field empty</label>
+          <input type="text" name="website" tabindex="-1" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label for="name">Your name</label>
+          <input type="text" id="name" name="name" required maxlength="100" placeholder="Jane Punctuator">
+        </div>
+
+        <div class="field">
+          <label for="email">Your email</label>
+          <input type="email" id="email" name="email" required maxlength="150" placeholder="you@example.com">
+        </div>
+
+        <div class="field">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" required maxlength="3000" placeholder="What's on your mind?"></textarea>
+        </div>
+
+        <div class="contact-actions">
+          <button type="submit" class="btn-comic" id="submit-btn">Send Message</button>
+          <p id="form-status" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </div>
+
+    <p class="contact-alt">
+      Prefer social? Find me on
+      <a href="https://www.instagram.com/super_powered_punctuation/" target="_blank" rel="noopener">Instagram</a>.
+    </p>
+
+    <!-- ===================== FOOTER ===================== -->
+    <footer class="site-footer">
+      <div>©2018–2026 Ty Rickers</div>
+      <div class="spacer"></div>
+      <a href="https://www.instagram.com/super_powered_punctuation/" class="fa fa-instagram" target="_blank" rel="noopener" aria-label="Instagram"></a>
+      <a href="https://tyrickers.substack.com/" target="_blank" rel="noopener" aria-label="Substack">
+        <img src="https://substack.com/favicon.ico" alt="Substack" width="26" height="26">
+      </a>
+      <a href="https://github.com/exclaMachine/PunctuatorsGame" class="fa fa-github" target="_blank" rel="noopener" aria-label="GitHub"></a>
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      const form = document.getElementById("contact-form");
+      const statusEl = document.getElementById("form-status");
+      const submitBtn = document.getElementById("submit-btn");
+
+      // Time-trap: record when the form became available. A real person takes a
+      // few seconds to read + type; bots fire near-instantly.
+      const loadedAt = Date.now();
+      const MIN_FILL_MS = 3000;
+
+      function setStatus(msg, kind) {
+        statusEl.textContent = msg;
+        statusEl.className = kind || "";
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        // 1) Honeypot — if our hidden field is filled, it's a bot. Pretend success.
+        if (form.website.value.trim() !== "" || form.botcheck.checked) {
+          setStatus("Thanks! Your message has been sent.", "ok");
+          form.reset();
+          return;
+        }
+
+        // 2) Time-trap — submitted suspiciously fast.
+        if (Date.now() - loadedAt < MIN_FILL_MS) {
+          setStatus("Please take a moment to fill out the form.", "error");
+          return;
+        }
+
+        submitBtn.disabled = true;
+        setStatus("Sending…", "");
+
+        try {
+          const res = await fetch("https://api.web3forms.com/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify(Object.fromEntries(new FormData(form))),
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            setStatus("Thanks! Your message has been sent.", "ok");
+            form.reset();
+          } else {
+            setStatus(data.message || "Something went wrong. Please try again.", "error");
+          }
+        } catch (err) {
+          setStatus("Network error — please try again in a moment.", "error");
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
