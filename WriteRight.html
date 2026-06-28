@@ -373,6 +373,12 @@
     .f-row .fp  { font-size: .9rem; }
     .win-banner { font-size: .85rem; line-height: 1.4; }
 
+    /* Pixel-art inline icons (ic()) — render crisp, sit centered with text. */
+    .px { display: inline-block; vertical-align: middle; image-rendering: pixelated; -ms-interpolation-mode: nearest-neighbor; }
+    .card { position: relative; }
+    .c-icon { position: absolute; top: 8px; right: 8px; line-height: 0; }
+    .f-row .rk .px { vertical-align: middle; }
+
     /* Keep the drawing surface smooth, not pixelated. */
     #draw-canvas { image-rendering: auto; }
 
@@ -396,6 +402,102 @@
 <script src="./nav.js"></script>
 <div id="app"></div>
 <script>
+// ══════════════════════ PIXEL-ART ICONS ══════════════════════
+// Tiny self-contained pixel-art engine. Each icon is a grid of single-char
+// pixels + a palette. ic(name,size) renders it as crisp inline SVG. All art is
+// hand-made here (CC0) — to swap any icon for a real asset later, replace the
+// grid below or drop an <img> in its place. 'currentColor' pixels inherit the
+// surrounding text color so monochrome icons read on light or dark buttons.
+const MEDAL_G = [
+  "R.....R.",
+  "R.....R.",
+  ".R...R..",
+  ".DDDDD..",
+  "DDDDDDD.",
+  "DDnnnDD.",
+  "DDDDDDD.",
+  ".DDDDD..",
+];
+const PX = {
+  // ── Card category icons ──
+  apple:  {p:{R:'#d23b2b',r:'#9e2a1e',L:'#3fae3f',S:'#6b4a2b',w:'#ff9b8c'}, g:[
+    "...S...","...SL..",".RRRRR.","RRwRRRR","RRRRRRR","RRRRRRR","rRRRRRr",".rRRRr.","..rrr.."]},
+  burger: {p:{B:'#d9a05b',b:'#b07a37',M:'#7a4a23',L:'#5fbf4f',C:'#f4c430',s:'#fff2cc'}, g:[
+    ".BBBBBBB.","BsBBsBBsB","BBBBBBBBB","CCCCCCCCC","LLLLLLLLL","MMMMMMMMM","BBBBBBBBB",".bbbbbbb."]},
+  cat:    {p:{F:'#9b8579',E:'#2ecc40',N:'#e26d8a'}, g:[
+    "F.....F.","FF...FF.","FFFFFFF.","FFFFFFFF","FEFFFEFF","FFFFFFFF","FFFNFFFF","FFFFFFFF",".FFFFFF."]},
+  car:    {p:{C:'#e23b3b',W:'#afe3ff',T:'#1a1a2e'}, g:[
+    "..CCCCC...",".CWWWWWC..","CCCCCCCCCC","CCCCCCCCCC","CCCCCCCCCC",".T......T.","TTT....TTT",".T......T."]},
+  sword:  {p:{B:'#cfd8dc',G:'#c0392b',H:'#6b4a2b',P:'#f4c430'}, g:[
+    ".........B","........BB",".......BB.","......BB..",".....BB...","....BB....","...BB.....",".GGGGG....","...H......","...H......","..PPP....."]},
+  ghost:  {p:{G:'#b39ddb',E:'#1a1a2e',w:'#ffffff'}, g:[
+    "..GGGGG..",".GGGGGGG.","GGGGGGGGG","GwwGwwGGG","GwEGwEGGG","GGGGGGGGG","GGGGGGGGG","G.GG.GG.G"]},
+  // ── Emoji replacements ──
+  palette:{p:{P:'#e8d3a0',a:'#e23b3b',b:'#1d6fe0',c:'#f4c430',d:'#3fae3f',h:'#1a1a2e'}, g:[
+    "..PPPPP..",".PPaPPbP.","PPPPPPPPP","PdPPPPcPP","PPPPhPPPP",".PPPPPPP.","..PPPPP.."]},
+  pencil: {p:{e:'#e26d8a',m:'#aab2bd',y:'#f4c430',t:'#1a1a2e'}, g:[
+    ".emyyyyyt.",".emyyyyytt",".emyyyyyt."]},
+  gamepad:{p:{G:'#444c56',d:'#aab2bd',b:'#e23b3b',a:'#f4c430'}, g:[
+    ".GGGGGGGG.","GGGGGGGGGG","GdGGGGbaGG","GGGGGGGGGG","GG......GG"]},
+  pin:    {p:{r:'#e23b3b',m:'#aab2bd'}, g:[
+    ".rrrr.","rrrrrr","rrrrrr",".mmmm.","..mm..","..m...",".m...."]},
+  rocket: {p:{B:'#e8eef2',W:'#1d6fe0',F:'#e23b3b',o:'#e87b1d',f:'#f4c430'}, g:[
+    "...B...","..BBB..","..BWB..","..BBB..",".BBBBB.",".BBBBB.","FBBBBBF","F.BBB.F","..ooo..","..ofo..","...f..."]},
+  note:   {p:{P:'#f5f0e1',L:'#9aa7ad',b:'#e23b3b'}, g:[
+    "bbbbbbbb","PPPPPPPP","PLLLLLLP","PPPPPPPP","PLLLLLLP","PPPPPPPP","PLLLLLLP","PPPPPPPP"]},
+  cards:  {p:{A:'#f5f0e1',r:'#e23b3b'}, g:[
+    "AAAAAAA","AArArAA","ArrrrrA","ArrrrrA","AArrrAA","AAArAAA","AAAAAAA"]},
+  star:   {p:{Y:'#f4c430',o:'#e8a200'}, g:[
+    "....Y....","....Y....","o..YYY..o",".YYYYYYY.","YYYYYYYYY",".YYYYYYY.","o..YYY..o","....Y....","....Y...."]},
+  eraser: {p:{E:'#e26d8a',e:'#c44f6e',b:'#1d6fe0'}, g:[
+    ".EEEEEE.","EEEEEEEE","EEEEEEEE","bbbbbbbb","eeeeeeee",".eeeeee."]},
+  trash:  {p:{l:'#888c94',B:'#aab2bd',k:'#555b61'}, g:[
+    "..llll..","llllllll",".kBkBkB.",".kBkBkB.",".kBkBkB.",".kBkBkB.","..BBBB.."]},
+  trophy: {p:{G:'#f4c430',B:'#6b4a2b'}, g:[
+    "GGGGGGG..","G.GGGGG.G","G.GGGGG.G",".GGGGGGG.","..GGGGG..","...GGG...","...GGG...","..GGGGG..","...BBB...","..BBBBB.."]},
+  undo:   {p:{c:'currentColor'}, g:[
+    "...c......","..cc......",".cccccccc.","..cc......","...c......"]},
+  check:  {p:{c:'currentColor'}, g:[
+    ".......c.","......cc.","c....cc..","cc..cc...",".cccc....","..cc....."]},
+  clock:  {p:{c:'currentColor'}, g:[
+    ".c.....c.","..ccccc..",".c.....c.",".c..c..c.",".c..cc.c.",".c.....c.","..ccccc..","..c...c.."]},
+  reload: {p:{c:'currentColor'}, g:[
+    ".ccccc.c..","cc....ccc.","c.....c...","c.........","c........c","...c.....c",".ccc....cc",".c.ccccc.."]},
+};
+PX.medalGold   = {p:{R:'#e23b3b',D:'#f4c430',n:'#fff2b0'}, g:MEDAL_G};
+PX.medalSilver = {p:{R:'#e23b3b',D:'#cfd8dc',n:'#ffffff'}, g:MEDAL_G};
+PX.medalBronze = {p:{R:'#e23b3b',D:'#cd7f32',n:'#e6b87a'}, g:MEDAL_G};
+
+function ic(name, size) {
+  const d = PX[name];
+  if (!d) return '';
+  const g = d.g, p = d.p, h = g.length;
+  let w = 0; for (const r of g) if (r.length > w) w = r.length;
+  let rects = '';
+  for (let y = 0; y < h; y++) {
+    const row = g[y];
+    for (let xx = 0; xx < row.length; xx++) {
+      const ch = row[xx];
+      if (ch === '.' || ch === ' ') continue;
+      const col = p[ch]; if (!col) continue;
+      rects += `<rect x="${xx}" y="${y}" width="1" height="1" fill="${col}"/>`;
+    }
+  }
+  size = size || 16;
+  const hpx = Math.round(size * h / w);
+  return `<svg class="px" width="${size}" height="${hpx}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${rects}</svg>`;
+}
+
+// Card category → icon (only a handful of the most visual categories for now).
+const CARD_ICON = {
+  'Fruit or Vegetable': 'apple',
+  'Drink or Food':      'burger',
+  'Animal or Creature': 'cat',
+  'Vehicle or Machine': 'car',
+  'Tool or Weapon':     'sword',
+  'Bug or Monster':     'ghost',
+};
+
 // ══════════════════════ WORD DATA ══════════════════════
 const WORDS = {
   // Noun categories
@@ -907,7 +1009,7 @@ function undoCV() {
 function render() {
   const app=document.getElementById('app');
   app.innerHTML='';
-  app.innerHTML=`<div class="header"><h1>WRITE. RIGHT? DRAW IT!</h1><p>✏️ The wild sentence drawing game</p></div>`;
+  app.innerHTML=`<div class="header"><h1>WRITE. RIGHT? DRAW IT!</h1><p>${ic('pencil',16)} The wild sentence drawing game</p></div>`;
   if (!G) { rSetup(app); return; }
   switch(G.phase) {
     case 'game':        rGame(app);    break;
@@ -924,7 +1026,7 @@ let SS = {n:2, names:['','','','']};
 function rSetup(app) {
   const box=mk('div','setup-box');
   box.innerHTML=`
-    <h2>🎮 Game Setup</h2>
+    <h2>${ic('gamepad',20)} Game Setup</h2>
     <strong>How many players?</strong>
     <div class="pc-btns" style="margin-top:8px">
       ${[2,3,4].map(n=>`<button class="btn ${SS.n===n?'btn-sel':''}" onclick="setPC(${n})">${n} Players</button>`).join('')}
@@ -938,11 +1040,11 @@ function rSetup(app) {
       </div>`).join('')}
     </div>
     <div class="hint">
-      <strong>📌 Card rules:</strong> Play any matching card to any open slot position in any sentence — no set order!
+      <strong>${ic('pin',14)} Card rules:</strong> Play any matching card to any open slot position in any sentence — no set order!
       Complete a sentence (Noun + Verb + Prep + Noun) to trigger the drawing round.
     </div>
     <div style="text-align:center;margin-top:20px">
-      <button class="btn btn-accent btn-lg" onclick="go()">Start Game! 🚀</button>
+      <button class="btn btn-accent btn-lg" onclick="go()">Start Game! ${ic('rocket',18)}</button>
     </div>`;
   app.appendChild(box);
 }
@@ -980,7 +1082,7 @@ function rGame(app) {
   // Slots
   const selCard = G.selId!==null ? player.hand.find(c=>c.id===G.selId) : null;
   const ss=mk('div','slots-section');
-  ss.innerHTML='<h3>🗒️ Active Sentences</h3>';
+  ss.innerHTML='<h3>'+ic('note',16)+' Active Sentences</h3>';
 
   G.slots.forEach(slot=>{
     const playable = selCard && canPlay(selCard, slot);
@@ -1015,7 +1117,7 @@ function rGame(app) {
 
   // Hand
   const ha=mk('div','hand-area');
-  ha.innerHTML=`<h3>🃏 ${x(player.name)}'s Hand</h3>`;
+  ha.innerHTML=`<h3>${ic('cards',16)} ${x(player.name)}'s Hand</h3>`;
   const hc=mk('div','hand-cards');
   player.hand.forEach(card=>{
     const isSel=card.id===G.selId;
@@ -1025,6 +1127,7 @@ function rGame(app) {
     if(playable) ce.onclick=()=>selectCard(card.id);
     ce.innerHTML=`
       <div class="c-badge"><span class="suit">${card.suit}</span> ${card.type.toUpperCase()}</div>
+      ${CARD_ICON[card.label]?`<div class="c-icon">${ic(CARD_ICON[card.label],26)}</div>`:''}
       <div class="c-lbl">${x(card.label)}</div>
       <div class="c-opts">
         <div class="c-word">${x(card.oA)}</div>
@@ -1050,7 +1153,7 @@ function rWord(app) {
   const ov=mk('div','modal-bg');
   ov.innerHTML=`
     <div class="modal">
-      <h2>🎴 Play a Word</h2>
+      <h2>${ic('cards',20)} Play a Word</h2>
       <p>Playing <strong>${x(card.label)}</strong> as the <strong>${pl}</strong> — type any ${typ}:</p>
       <div class="wild-row">
         <input type=text id=wi placeholder="Enter a ${typ}…" maxlength=30
@@ -1064,7 +1167,7 @@ function rWord(app) {
         <div style="text-align:center;color:#aaa;font-size:.85rem">or</div>
         <button class="w-btn w${tc[0]}" onclick="G.wordInput='${x(card.oB)}';render()">${x(card.oB)}</button>
       </div>
-      <div style="margin-top:14px"><button class="btn btn-sm" onclick="cancelPlay()">↩ Cancel</button></div>
+      <div style="margin-top:14px"><button class="btn btn-sm" onclick="cancelPlay()">${ic('undo',12)} Cancel</button></div>
     </div>`;
   app.appendChild(ov);
   setTimeout(()=>document.getElementById('wi')?.focus(),40);
@@ -1092,12 +1195,12 @@ function rWild(app) {
           onkeydown="if(event.key==='Enter')commitWild()">
         <button class="btn btn-wild btn-sm" onclick="commitWild()">Play!</button>
       </div>
-      ${emp.length>1?`<div style="margin-top:8px"><button class="btn btn-sm" onclick="G.wildPos=null;render()">← Change</button></div>`:''}`;
+      ${emp.length>1?`<div style="margin-top:8px"><button class="btn btn-sm" onclick="G.wildPos=null;render()">${ic('undo',12)} Change</button></div>`:''}`;
   }
   ov.innerHTML=`
     <div class="modal">
-      <h2>✨ Wild Card!</h2>${body}
-      <div style="margin-top:14px"><button class="btn btn-sm" onclick="cancelPlay()">↩ Cancel</button></div>
+      <h2>${ic('star',18)} Wild Card!</h2>${body}
+      <div style="margin-top:14px"><button class="btn btn-sm" onclick="cancelPlay()">${ic('undo',12)} Cancel</button></div>
     </div>`;
   app.appendChild(ov);
   if(G.wildPos||emp.length===1) setTimeout(()=>document.getElementById('wi')?.focus(),40);
@@ -1120,7 +1223,7 @@ function rDraw(app) {
   ov.className='draw-ov';
   ov.innerHTML=`
     <div class="draw-top">
-      <div class="draw-sent">🎨 <span style="color:${player.color}">${x(player.name)}</span> — now draw: "<strong>${x(sent)}</strong>"</div>
+      <div class="draw-sent">${ic('palette',18)} <span style="color:${player.color}">${x(player.name)}</span> — now draw: "<strong>${x(sent)}</strong>"</div>
       <div class="draw-timer">
         <svg width=40 height=40 viewBox="0 0 40 40" style="transform:rotate(-90deg)">
           <circle cx=20 cy=20 r="${r}" fill=none stroke="rgba(255,255,255,.15)" stroke-width=4/>
@@ -1150,11 +1253,11 @@ function rDraw(app) {
             onclick="setSize(${s})"></div>`).join('')}
       </div>
       <div class="bar-div"></div>
-      <button class="db${DS.tool==='eraser'?' act':''}" data-tool="eraser" onclick="setTool('eraser')">⬜ Eraser</button>
-      <button class="db" onclick="undoCV()">↩ Undo</button>
-      <button class="db" onclick="clearCV()">🗑 Clear</button>
+      <button class="db${DS.tool==='eraser'?' act':''}" data-tool="eraser" onclick="setTool('eraser')">${ic('eraser',14)} Eraser</button>
+      <button class="db" onclick="undoCV()">${ic('undo',14)} Undo</button>
+      <button class="db" onclick="clearCV()">${ic('trash',14)} Clear</button>
       <button id=dd-btn class="draw-done-btn${timesUp?' tu':''} db-ml" onclick="endDrawing()">
-        ${timesUp?"⏰ Time's Up! Score Points":"✅ Done Drawing"}
+        ${timesUp?ic('clock',14)+" Time's Up! Score Points":ic('check',14)+" Done Drawing"}
       </button>
     </div>`;
 
@@ -1179,7 +1282,7 @@ function rScore(app) {
     ptLine   = others.map(p=>`<p style="color:#555;margin-top:4px">${x(p.name)}: <strong style="font-family:'Press Start 2P';font-size:.75rem">${p.score}pts</strong></p>`).join('');
   }
   s.innerHTML=`
-    <h2>🏆 Points Scored!</h2>
+    <h2>${ic('trophy',20)} Points Scored!</h2>
     ${headline}
     <div class="pts-big">+${G.ptsEarned} pts</div>
     <p style="color:#555;margin-bottom:8px">Cards in that sentence:</p>
@@ -1201,17 +1304,17 @@ function rEnd(app) {
   const sorted=[...G.players].sort((a,b)=>b.score-a.score);
   const s=mk('div','end-sc');
   s.innerHTML=`
-    <h2>🎉 Game Over!</h2>
-    <div class="win-banner">🏆 ${x(sorted[0].name)} wins with ${sorted[0].score} points!</div>
+    <h2>${ic('star',20)} Game Over!</h2>
+    <div class="win-banner">${ic('trophy',18)} ${x(sorted[0].name)} wins with ${sorted[0].score} points!</div>
     <div class="final-tbl">
       ${sorted.map((p,i)=>`
         <div class="f-row${i===0?' w':''}">
-          <span class="rk">${['🥇','🥈','🥉','4️⃣'][i]}</span>
+          <span class="rk">${[ic('medalGold',20),ic('medalSilver',20),ic('medalBronze',20),'4'][i]||(i+1)}</span>
           <span class="pn" style="color:${p.color}">${x(p.name)}</span>
           <span class="fp">${p.score}pts</span>
         </div>`).join('')}
     </div>
-    <button class="btn btn-accent btn-lg" onclick="resetGame()">🔄 Play Again</button>`;
+    <button class="btn btn-accent btn-lg" onclick="resetGame()">${ic('reload',16)} Play Again</button>`;
   app.appendChild(s);
 }
 
