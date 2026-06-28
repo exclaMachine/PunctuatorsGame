@@ -243,94 +243,9 @@ function tierOf(l){ for(const t in TIER){ if(TIER[t].includes(l)) return t; } re
 function colorFor(l){ return TIER_COLOR[tierOf(l)]; }
 
 const CONSUME_ON_NEW = true;   // spend letters when you record a NEW word
-const CREATURE_HP = 3;
+const CREATURE_HP = 1;   // creatures are captured (drop their letter) in a single hit
 
-/* ---------- DICTIONARY (starter set) ----------------------
-   For the real game on your site, replace this with a fetch of
-   a full wordlist (ENABLE / SOWPODS) + a bundled definitions file.
-   Every word here has a definition so the loop always rewards.    */
-const DICT = {
-  at:"in or near a place or position.", in:"located inside something.", on:"resting atop a surface.",
-  up:"toward a higher position.", an:"a form of 'a' before a vowel sound.", as:"to the same degree.",
-  go:"to move from one place to another.", hi:"a casual greeting.", it:"the thing already mentioned.",
-  me:"the speaker referring to themselves.", my:"belonging to me.", no:"a negative reply.",
-  of:"belonging to or part of.", ox:"a large domesticated bovine.", so:"to such a degree.",
-  to:"in the direction of.", us:"the speaker and others.", we:"the speaker and others together.",
-  cat:"a small domesticated feline.", dog:"a domesticated canine.", sun:"the star at the centre of our solar system.",
-  run:"to move quickly on foot.", fun:"enjoyment or amusement.", hat:"a covering worn on the head.",
-  map:"a drawing of an area showing features.", top:"the highest point of something.", pot:"a deep round container.",
-  pen:"a tool for writing with ink.", pin:"a thin pointed piece of metal.", big:"large in size.",
-  bug:"a small insect.", cup:"a small container for drinking.", car:"a road vehicle with wheels and an engine.",
-  ear:"the organ of hearing.", eat:"to consume food.", tea:"a hot drink made from steeped leaves.",
-  sea:"a large body of salt water.", see:"to perceive with the eyes.", bee:"a flying insect that makes honey.",
-  sky:"the space above the earth.", fly:"to move through the air.", dry:"free from moisture.",
-  cry:"to shed tears.", try:"to make an attempt.", day:"the time of daylight.", way:"a route or method.",
-  say:"to speak words.", joy:"a feeling of great happiness.", ice:"frozen water.", age:"the length of time lived.",
-  owl:"a nocturnal bird of prey.", oak:"a large hardwood tree.", oil:"a thick slippery liquid.",
-  out:"away from the inside.", one:"the number 1.", two:"the number 2.", ten:"the number 10.",
-  red:"the colour of blood.", bed:"furniture for sleeping.", web:"a network spun by a spider.",
-  win:"to be victorious.", wax:"a soft pliable substance.", yes:"an affirmative reply.",
-  you:"the person addressed.", zoo:"a place where animals are kept for display.", jam:"a fruit preserve.",
-  jar:"a wide-mouthed glass container.", job:"paid work.", gem:"a precious stone.", gas:"an airlike substance.",
-  gun:"a weapon that fires projectiles.", god:"a being worshipped as divine.", gap:"an opening or break.",
-  tree:"a tall woody plant.", frog:"a small amphibian that hops.", blue:"the colour of a clear sky.",
-  gold:"a precious yellow metal.", star:"a luminous point in the night sky.", moon:"earth's natural satellite.",
-  rain:"water falling from clouds.", snow:"frozen white precipitation.", wind:"moving air.",
-  fire:"the flame and heat of burning.", leaf:"a flat green part of a plant.", seed:"a plant's reproductive unit.",
-  bird:"a feathered, winged animal.", fish:"an animal that lives in water.", lion:"a large wild cat.",
-  bear:"a large heavy mammal.", wolf:"a wild relative of the dog.", deer:"a hoofed grazing animal.",
-  hawk:"a bird of prey.", dove:"a small pale pigeon.", lake:"a large inland body of water.",
-  hill:"a raised area of land.", cave:"a hollow space in rock.", road:"a path for travel.",
-  gate:"a hinged barrier in a fence or wall.", door:"a movable barrier for an entrance.",
-  book:"a set of written pages bound together.", word:"a unit of language with meaning.",
-  read:"to look at and understand text.", sing:"to make musical sounds with the voice.",
-  song:"a piece of music with words.", play:"to take part in a game for fun.",
-  jump:"to push off into the air.", walk:"to move on foot.", swim:"to move through water.",
-  grow:"to increase in size.", glow:"to give off steady light.", gift:"something given freely.",
-  king:"a male ruler of a country.", ring:"a circular band.", wing:"a limb used for flight.",
-  mind:"the seat of thought.", kind:"warm and considerate.", time:"the passing of moments.",
-  wave:"a ridge of water moving across the sea.", calm:"free from disturbance.", cool:"slightly cold.",
-  warm:"moderately hot.", soft:"easy to press or yielding.", tall:"of great height.",
-  deep:"extending far down.", wide:"broad from side to side.", open:"not closed.",
-  idea:"a thought or plan.", hope:"a wish for something good.", love:"deep affection.",
-  life:"the state of being alive.", apple:"a round edible fruit.", beach:"a sandy shore.",
-  bloom:"to produce flowers.", brave:"showing courage.", bread:"a baked food made from flour.",
-  brush:"a tool with bristles.", chalk:"a soft white writing stone.", charm:"an attractive quality.",
-  cloud:"a visible mass of water vapour.", dream:"images in the mind during sleep.",
-  eagle:"a large bird of prey.", earth:"the planet we live on.", field:"an open area of land.",
-  flame:"the glowing part of a fire.", glass:"a hard transparent material.", grass:"green ground plants.",
-  green:"the colour of growing leaves.", heart:"the organ that pumps blood.", honey:"a sweet food made by bees.",
-  house:"a building for living in.", jewel:"a precious stone.", light:"brightness that lets us see.",
-  lemon:"a sour yellow citrus fruit.", magic:"the power to affect events mysteriously.",
-  maple:"a tree with winged seeds.", music:"sound arranged in a pleasing way.",
-  ocean:"a vast body of salt water.", paint:"coloured liquid for covering surfaces.",
-  pearl:"a smooth gem formed in a shell.", plant:"a living thing that grows in soil.",
-  queen:"a female ruler.", quiet:"making little or no sound.", river:"a large flowing stream.",
-  robin:"a small bird with a red breast.", shine:"to give off light.", smile:"to curve the lips in pleasure.",
-  spark:"a small fiery particle.", stone:"a small piece of rock.", storm:"violent weather.",
-  sugar:"a sweet crystalline food.", sweet:"having a sugary taste.", swift:"moving very fast.",
-  tiger:"a large striped wild cat.", train:"linked railway carriages.", water:"the clear liquid of rivers and seas.",
-  white:"the colour of fresh snow.", world:"the earth and all on it.", write:"to form letters and words.",
-  young:"in an early stage of life.", zebra:"a striped African horse.",
-  forest:"a large area of trees.", garden:"a plot for growing plants.", flower:"the blossom of a plant.",
-  bridge:"a structure spanning a gap.", candle:"a wax stick with a wick for light.",
-  castle:"a large fortified building.", copper:"a reddish metal.", dragon:"a mythical fire-breathing beast.",
-  island:"land surrounded by water.", jungle:"a dense tropical forest.", knight:"an armoured medieval warrior.",
-  marble:"a hard patterned stone.", meadow:"a field of grass and flowers.", pencil:"a writing tool with a graphite core.",
-  planet:"a body orbiting a star.", purple:"a colour between red and blue.", silver:"a shiny grey precious metal.",
-  spring:"the season after winter.", summer:"the warmest season.", sunset:"the sun sinking below the horizon.",
-  temple:"a building for worship.", valley:"low land between hills.", willow:"a tree with slender drooping branches.",
-  winter:"the coldest season.", wonder:"a feeling of awe.", anchor:"a heavy device that holds a ship in place.",
-  breeze:"a gentle wind.", cherry:"a small round red fruit.",
-  crystal:"a clear mineral with flat faces.", diamond:"a hard brilliant gem.", harvest:"the gathering of crops.",
-  lantern:"a portable case holding a light.", library:"a place that holds books.", mystery:"something hard to explain.",
-  rainbow:"an arc of colours in the sky.", journey:"travel from one place to another.",
-  kingdom:"a land ruled by a king or queen.", blossom:"a flower on a tree.", feather:"a light plume from a bird.",
-  morning:"the early part of the day.", penguin:"a flightless seabird.", sparkle:"to shine with small flashes.",
-  thunder:"the loud sound after lightning.", lantern2:"x"
-};
-delete DICT.lantern2;
-const VALID = new Set(Object.keys(DICT));
+// Word validation + definitions come from the Free Dictionary API (api.dictionaryapi.dev).
 
 /* ---------- UTIL: seeded RNG ------------------------------ */
 function hash2(x,y){ let h=(x*374761393 + y*668265263) ^ 0x9e3779b9; h=(h^(h>>>13))*1274126177; return (h^(h>>>16))>>>0; }
@@ -679,24 +594,65 @@ function renderDex(){
   document.getElementById("dex-count").textContent = words.length?`· ${words.length} word${words.length>1?"s":""}`:"";
   const list=document.getElementById("dex-list");
   list.innerHTML = words.length
-    ? words.map(w=>`<div class="dex-item" data-w="${w}"><span class="w">${w}</span><span class="d">${state.dex[w].def}</span></div>`).join("")
+    ? words.map(w=>`<div class="dex-item" data-w="${esc(w)}"><span class="w">${esc(w)}</span><span class="d">${esc(state.dex[w].def)}</span></div>`).join("")
     : '<div style="color:var(--ink-soft);font-size:13px;padding:6px">Your collection is empty. Spell your first word!</div>';
   list.querySelectorAll("[data-w]").forEach(it=>it.onclick=()=>showReveal(it.dataset.w,false));
 }
-function checkWord(){
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+
+// Validate + define a word against the Free Dictionary API (same one the punctuators game uses).
+// Returns { ok:true, def } if it's a real word, { ok:false } if the API says it isn't, or
+// { ok:null } if we couldn't reach the API at all.
+async function lookupWord(word){
+  try{
+    const res=await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+    if(res.ok){
+      const data=await res.json();
+      if(Array.isArray(data) && data[0]){
+        let def="";
+        for(const m of (data[0].meanings||[])){
+          if(m.definitions && m.definitions[0] && m.definitions[0].definition){ def=m.definitions[0].definition; break; }
+        }
+        return { ok:true, def: def || "A word in the dictionary." };
+      }
+      return { ok:false };          // API replied but it's not a recognised entry
+    }
+    if(res.status===404) return { ok:false };
+    throw new Error("api "+res.status);
+  }catch(e){
+    return { ok:null };             // couldn't reach the API
+  }
+}
+
+let checking=false;
+async function checkWord(){
+  if(checking) return;
   const word=bench.join("").toLowerCase();
   const res=document.getElementById("result");
   if(word.length<2){ res.innerHTML='<div class="msg-bad">Words need at least two letters.</div>'; return; }
-  if(!VALID.has(word)){
-    res.innerHTML=`<div class="msg-bad">“${word.toUpperCase()}” isn’t in the dictionary.</div>`;
-    return;   // letters stay on the bench so you can rearrange
-  }
   if(state.dex[word]){
-    res.innerHTML=`<div class="msg-known">You’ve already collected “${word.toUpperCase()}”. Letters returned.</div>`;
+    res.innerHTML=`<div class="msg-known">You’ve already collected “${esc(word.toUpperCase())}”. Letters returned.</div>`;
     bench=[]; renderBench(); return;
   }
+  checking=true;
+  const btn=document.getElementById("check-btn");
+  if(btn) btn.disabled=true;
+  res.innerHTML='<div class="msg-known">Checking the dictionary…</div>';
+  const r=await lookupWord(word);
+  checking=false;
+  if(btn) btn.disabled=false;
+  // bench may have changed while we waited — abort silently if so
+  if(bench.join("").toLowerCase()!==word) return;
+  if(r.ok===null){
+    res.innerHTML='<div class="msg-bad">Couldn’t reach the dictionary — check your connection and try again.</div>';
+    return;   // letters stay on the bench
+  }
+  if(!r.ok){
+    res.innerHTML=`<div class="msg-bad">“${esc(word.toUpperCase())}” isn’t in the dictionary.</div>`;
+    return;   // letters stay on the bench so you can rearrange
+  }
   // NEW word!
-  state.dex[word]={ def:DICT[word], found:Date.now() };
+  state.dex[word]={ def:r.def, found:Date.now() };
   if(CONSUME_ON_NEW){ bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); }); }
   bench=[];
   updateTrayHud(); renderBench(); renderDex(); checkUnlocks();
@@ -704,10 +660,11 @@ function checkWord(){
 }
 function showReveal(word,isNew){
   const res=document.getElementById("result");
+  const def=state.dex[word]?state.dex[word].def:"";
   res.innerHTML=`<div class="reveal">
     ${isNew?'<div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">New word collected</div>':''}
-    <div class="word">${word}</div>
-    <div class="def">${state.dex[word]?state.dex[word].def:DICT[word]}</div>
+    <div class="word">${esc(word)}</div>
+    <div class="def">${esc(def)}</div>
   </div>`;
 }
 

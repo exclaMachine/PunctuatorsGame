@@ -11,7 +11,8 @@
       "Bash(sed '1d;$d')",
       "Bash(node --check /tmp/kaimoju_script.js)",
       "Bash(node *)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(cd *)"
     ]
   }
 }

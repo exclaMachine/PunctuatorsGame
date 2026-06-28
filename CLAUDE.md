@@ -792,9 +792,13 @@ These are settled. Don't reverse them without a real reason.
 8. **Bench is click-to-build, not drag-and-drop.** Drag-and-drop tests the same fun for far more
    effort. Click a tray letter to add, click a bench letter to remove. (May prettify later.)
 
-9. **Self-contained single file.** No build step, no dependencies, no external fetches on the
-   critical path — so it runs offline and drops straight onto GitHub Pages. Keep it this way
-   unless a feature genuinely requires otherwise.
+9. **Self-contained single file.** No build step, no bundled dependencies; drops straight onto
+   GitHub Pages. **Exception (intentional):** word validation + definitions call the Free
+   Dictionary API (`api.dictionaryapi.dev`) — the same API the punctuators game (`index.js`) uses —
+   so the game isn't limited to a baked-in list. There is **no local word list anymore** (the old
+   `DICT` was fully removed); with no connection, word-checking can't resolve and the desk reports
+   it couldn't reach the dictionary. Keep everything else local; don't add other external fetches
+   without a strong reason.
 
 ---
 
@@ -812,8 +816,15 @@ HTML/CSS/JS file. Config lives in clearly-marked blocks at the top of the `<scri
   cell. `drawCreature` renders the creature **as the glyph itself** — no tile, eyes, or feet — with a
   brief scale-up "pop" while `c.flash>0` (just hit), falling back to dark `fillText` if the sheet
   hasn't loaded or the letter isn't on it. HP pips still draw above the glyph when damaged.
-- **`DEFINITIONS` / `WORDS`** — the baked-in dictionary (~100 common words, each with a short
-  definition). `WORDS` is the validity set; `DEFINITIONS` supplies the meaning shown on collect.
+- **`lookupWord(word)` / `checkWord()`** — word validation + definitions come **entirely** from the
+  Free Dictionary API (`api.dictionaryapi.dev`); there is no local word list. `lookupWord` is async
+  and returns `{ok:true, def}` for a real word, `{ok:false}` if the API rejects it (incl. 404), or
+  `{ok:null}` if the API can't be reached. `checkWord` is async: it short-circuits on too-short /
+  already-collected words, shows a "Checking the dictionary…" state, disables the button + guards
+  with a `checking` flag against double-submit, aborts silently if the bench changed during the
+  await, and only consumes letters / records the word on a confirmed new valid word. The `{ok:null}`
+  case keeps the letters and tells the player it couldn't reach the dictionary. Defs are
+  HTML-escaped via `esc()` before rendering since they come from an external source.
 - **`LETTER_BAG`** — frequency-weighted spawn pool (vowels common, Q/X/Z rare).
 - **`state`** — `{ player, inventory: {letter:count}, dex: {word:{def,found}}, weapon, unlocked }`.
 - **Systems**, in order: screen generation → input → combat → update → render → desk/bench →
@@ -826,12 +837,14 @@ HTML/CSS/JS file. Config lives in clearly-marked blocks at the top of the `<scri
 **Built and working:**
 
 - Home base with a writing desk; 3×3 world of screens; walk-off-edge travel; `H` to teleport home.
-- Attack-based combat (no bump-to-collect); creatures take damage, drop a letter on defeat.
+- Attack-based combat (no bump-to-collect); creatures are captured in a **single hit**
+  (`CREATURE_HP = 1`) and drop their letter. (HP/pip scaffolding remains if multi-hit creatures
+  are ever wanted again.)
 - Writing-implement weapons: start with stick; brush/pencil/pen hidden in field screens as
   diegetic upgrades; `1`–`4` to switch among unlocked ones.
 - Letter pickups → inventory; renewable (field creatures respawn on re-entry).
-- Desk: click-to-build word, dictionary check, three-way feedback (new / known / invalid),
-  library list with definitions.
+- Desk: click-to-build word, async API dictionary check with feedback states (checking / new /
+  known / invalid / couldn't-reach-API), library list with definitions.
 - Backup: export state to JSON, import it back (also the manual cross-device transfer).
 - Keyboard + basic touch (drag to move, tap to attack).
 
@@ -840,7 +853,8 @@ HTML/CSS/JS file. Config lives in clearly-marked blocks at the top of the `<scri
 - **Creature glyphs** — creatures render solely as their hand-drawn letter glyph from `Alpha.png`
   (the glyph sheet shared with Spin Nids) — no tile, eyes, or feet. Dedicated per-creature *art*
   (distinct bodies beyond the bare glyph) is still future work.
-- **Dictionary is small** (~100 words). Needs expansion to a full wordlist + definition source.
+- **Dictionary** — validation + definitions come entirely from the Free Dictionary API (see code
+  map), so any real English word works. No local word list (requires a connection to check words).
 - **No autosave** — only manual export/import. IndexedDB autosave is the next persistence step.
 - Not started: library room, genre books / procedural layouts, hero weapons, word effects,
   farming/ranching, town/trade.
@@ -858,10 +872,10 @@ Open desk (at home): `B` / Esc to close. Touch: drag to move, tap to swing.
 
 1. **Wire the spritesheet** — DONE: creatures draw their letter from `Alpha.png` via `SPRITESHEET`
    + `drawGlyph` (a–z = frames 0–25). Next sprite step is real per-creature *body* art, not just glyphs.
-2. **Expand the dictionary** — replace the inline object with a bundled wordlist (e.g. ENABLE)
-   plus a definitions source. Keep it offline-friendly: bundle a definitions JSON rather than
-   depending on a live API on the critical path. (`exit`, `quartz`, etc. are simply absent today
-   because they're not in the ~100-word starter set — not a bug.)
+2. **Dictionary** — DONE (via API): word validation + definitions come from the Free Dictionary API,
+   so any real English word works (`exit`, `quartz`, etc. now validate). No local word list. Optional
+   future polish: bundle a local wordlist/definitions JSON for an offline fallback, and/or cache API
+   results in `localStorage`.
 3. **IndexedDB autosave** — persist `state` per-origin; call `navigator.storage.persist()`;
    namespace the DB (`inklings_save`) so it won't collide with other games on the same Pages
    origin. Keep export/import as the backup/transfer path. (IndexedDB is per-browser/device;
@@ -884,7 +898,8 @@ Open desk (at home): `B` / Esc to close. Touch: drag to move, tap to swing.
 ## Conventions for working on this project
 
 - Keep the game a single self-contained file with no external runtime dependencies, unless a
-  feature truly requires one (say so and why).
+  feature truly requires one (say so and why). Current intentional exception: the Free Dictionary
+  API for word validation/definitions (no local fallback word list).
 - Protect the MVP loop. New systems are layers on the working core, shipped one at a time, each
   independently testable.
 - Maintain the ink-and-paper identity and the vocabulary above.
