@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Write. Right? Draw it! 🎨</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Patrick+Hand&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #fef6e4;
@@ -25,14 +26,14 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { overflow-y: auto; }
     body {
-      font-family: 'Patrick Hand', cursive;
+      font-family: 'Press Start 2P', monospace;
       background: var(--bg);
       background-image: radial-gradient(#d4c5a9 1px, transparent 1px);
       background-size: 24px 24px;
       min-height: 100vh;
       overflow-x: hidden;
     }
-    h1,h2,h3 { font-family: 'Bangers', cursive; letter-spacing: 2px; }
+    h1,h2,h3 { font-family: 'Press Start 2P', monospace; letter-spacing: 2px; }
     #app { max-width: 960px; margin: 0 auto; padding: 16px; padding-top: 60px; }
 
     /* HEADER */
@@ -43,7 +44,7 @@
     /* BUTTONS */
     .btn {
       display: inline-block; padding: 10px 22px; border: 3px solid var(--dark);
-      border-radius: 8px; background: #fff; font-family: 'Bangers', cursive;
+      border-radius: 8px; background: #fff; font-family: 'Press Start 2P', monospace;
       font-size: 1.2rem; letter-spacing: 1px; cursor: pointer; box-shadow: var(--shadow);
       transition: transform .1s, box-shadow .1s;
     }
@@ -70,13 +71,13 @@
     .pc-btns .btn { flex: 1; text-align: center; }
     .pi-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
     .p-badge {
-      font-family: 'Bangers', cursive; font-size: 1.1rem; width: 36px; height: 36px;
+      font-family: 'Press Start 2P', monospace; font-size: 1.1rem; width: 36px; height: 36px;
       border-radius: 50%; display: flex; align-items: center; justify-content: center;
       border: 2px solid var(--dark); flex-shrink: 0;
     }
     input[type=text] {
       flex:1; padding:8px 12px; border:2px solid var(--dark); border-radius:8px;
-      font-family:'Patrick Hand',cursive; font-size:1rem; background:#fff; min-width:120px;
+      font-family:'Press Start 2P', monospace; font-size:1rem; background:#fff; min-width:120px;
     }
     input[type=text]:focus { outline:none; box-shadow:0 0 0 3px rgba(26,26,46,.15); }
     .hint {
@@ -92,13 +93,13 @@
       display:flex; align-items:center; gap:6px;
     }
     .chip.active { background:var(--dark); color:#fff; }
-    .chip .pts { font-family:'Bangers',cursive; font-size:1.1rem; }
+    .chip .pts { font-family:'Press Start 2P', monospace; font-size:1.1rem; }
     .turn-banner {
       text-align:center; border-radius:10px; padding:10px 16px; margin-bottom:14px;
-      font-family:'Bangers',cursive; font-size:1.4rem; letter-spacing:1px; color:#fff;
+      font-family:'Press Start 2P', monospace; font-size:1.4rem; letter-spacing:1px; color:#fff;
     }
     .deck-row { display:flex; gap:14px; align-items:center; font-size:.9rem; color:#666; margin-bottom:12px; }
-    .deck-row b { font-family:'Bangers',cursive; font-size:1.1rem; color:var(--dark); }
+    .deck-row b { font-family:'Press Start 2P', monospace; font-size:1.1rem; color:var(--dark); }
     .notice { border-radius:8px; padding:8px 14px; margin-bottom:10px; font-size:.9rem; }
     .n-info { background:#eff6ff; border:2px solid #3b82f6; color:#1e40af; }
 
@@ -114,7 +115,7 @@
       border-color:var(--accent); box-shadow:4px 4px 0 var(--accent); cursor:pointer;
     }
     .slot-card.playable:hover { transform:translateY(-2px); }
-    .slot-lbl { font-family:'Bangers',cursive; font-size:.78rem; letter-spacing:1px; color:#999; margin-bottom:8px; }
+    .slot-lbl { font-family:'Press Start 2P', monospace; font-size:.78rem; letter-spacing:1px; color:#999; margin-bottom:8px; }
     .slot-row { display:flex; gap:4px; align-items:center; }
     .slot-pos {
       border:2px dashed #bbb; border-radius:8px; padding:5px 6px;
@@ -156,7 +157,7 @@
     .card.off     { opacity:.4; cursor:not-allowed; }
     .card.off:hover { transform:none; box-shadow:var(--shadow); }
     .c-badge {
-      font-family:'Bangers',cursive; font-size:.7rem; letter-spacing:1px;
+      font-family:'Press Start 2P', monospace; font-size:.7rem; letter-spacing:1px;
       padding:2px 7px; border-radius:999px; border:2px solid currentColor;
       display:inline-block; margin-bottom:6px; align-self:flex-start;
     }
@@ -171,7 +172,7 @@
       padding:4px 7px; font-size:.86rem; font-weight:bold; text-align:center;
     }
     .c-or  { text-align:center; font-size:.7rem; color:#999; }
-    .c-pts { font-family:'Bangers',cursive; font-size:.95rem; text-align:right; margin-top:6px; }
+    .c-pts { font-family:'Press Start 2P', monospace; font-size:.95rem; text-align:right; margin-top:6px; }
 
     /* MODALS */
     .modal-bg {
@@ -187,7 +188,7 @@
     .w-choices { display:flex; flex-direction:column; gap:10px; }
     .w-btn {
       padding:14px; border:3px solid var(--dark); border-radius:10px;
-      font-family:'Patrick Hand',cursive; font-size:1.15rem; font-weight:bold;
+      font-family:'Press Start 2P', monospace; font-size:1.15rem; font-weight:bold;
       cursor:pointer; box-shadow:var(--shadow-sm); transition:transform .1s; background:#fff;
     }
     .w-btn:hover { transform:translateY(-2px); }
@@ -209,12 +210,12 @@
       border-bottom:2px solid rgba(255,255,255,.1);
     }
     .draw-sent {
-      flex:1; font-family:'Bangers',cursive; font-size:1.2rem;
+      flex:1; font-family:'Press Start 2P', monospace; font-size:1.2rem;
       letter-spacing:1px; line-height:1.2; min-width:0;
     }
     .draw-timer { display:flex; align-items:center; gap:6px; flex-shrink:0; }
     .draw-timer-n {
-      font-family:'Bangers',cursive; font-size:2rem; color:#fff; min-width:2.2ch; text-align:center;
+      font-family:'Press Start 2P', monospace; font-size:2rem; color:#fff; min-width:2.2ch; text-align:center;
     }
     .draw-timer-n.urg { color:#fca5a5; }
     .draw-canvas-wrap { flex:1; position:relative; background:#fff; overflow:hidden; }
@@ -239,7 +240,7 @@
     .sz-dot.act { border-color:#f97316; transform:scale(1.2); }
     .db {
       padding:5px 11px; border:2px solid rgba(255,255,255,.4); border-radius:6px;
-      background:rgba(255,255,255,.08); color:#fff; font-family:'Patrick Hand',cursive;
+      background:rgba(255,255,255,.08); color:#fff; font-family:'Press Start 2P', monospace;
       font-size:.88rem; cursor:pointer; transition:background .1s; white-space:nowrap;
     }
     .db:hover  { background:rgba(255,255,255,.2); }
@@ -247,7 +248,7 @@
     .db-ml     { margin-left:auto; }
     .draw-done-btn {
       padding:8px 18px; background:var(--accent); color:#fff; border:2px solid rgba(255,255,255,.6);
-      border-radius:8px; font-family:'Bangers',cursive; font-size:1.1rem; letter-spacing:1px;
+      border-radius:8px; font-family:'Press Start 2P', monospace; font-size:1.1rem; letter-spacing:1px;
       cursor:pointer; transition:background .1s; white-space:nowrap;
     }
     .draw-done-btn:hover { background:#be123c; }
@@ -257,7 +258,7 @@
     /* SCORE REVEAL */
     .score-rv { text-align:center; max-width:500px; margin:0 auto; }
     .pts-big {
-      font-family:'Bangers',cursive; font-size:4rem;
+      font-family:'Press Start 2P', monospace; font-size:4rem;
       color:var(--accent); text-shadow:3px 3px 0 var(--dark); margin:16px 0;
     }
     .cards-sc { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:12px 0; }
@@ -272,13 +273,13 @@
     }
     .f-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px dashed #ccc; }
     .f-row:last-child { border:none; }
-    .f-row .rk { font-family:'Bangers',cursive; font-size:1.8rem; margin-right:12px; color:#bbb; }
+    .f-row .rk { font-family:'Press Start 2P', monospace; font-size:1.8rem; margin-right:12px; color:#bbb; }
     .f-row.w .rk { color:#e6a817; }
     .f-row .pn { flex:1; font-size:1.1rem; text-align:left; }
-    .f-row .fp { font-family:'Bangers',cursive; font-size:1.8rem; color:var(--accent); }
+    .f-row .fp { font-family:'Press Start 2P', monospace; font-size:1.8rem; color:var(--accent); }
     .win-banner {
       background:var(--dark); color:#fff; border-radius:10px; padding:14px 20px;
-      margin-bottom:14px; font-family:'Bangers',cursive; font-size:1.5rem;
+      margin-bottom:14px; font-family:'Press Start 2P', monospace; font-size:1.5rem;
     }
 
     @media(max-width:480px){
@@ -299,6 +300,95 @@
       .sw{width:22px;height:22px}
       .slot-pos .pw{font-size:.78rem}
       .conn{font-size:.75rem}
+    }
+
+    /* ════════════════════ PIXEL-GAME THEME ════════════════════
+       Layered on top of the original rules. Keeps the exact layout but:
+       - hard, square (8-bit) corners everywhere
+       - Press Start 2P type scaled down so it still fits the same boxes
+       - crisp pixel edges on shadows/borders (already hard-edged)
+       The freehand drawing canvas is intentionally left smooth.        */
+
+    /* Square every corner — pixel art has no anti-aliased curves. */
+    * { border-radius: 0 !important; }
+
+    /* Press Start 2P is ~2× wider/taller than the old fonts, so scale the
+       type down to preserve the layout. Floor ~7px keeps tiny labels legible. */
+    body { -webkit-font-smoothing: none; font-smooth: never; line-height: 1.5; }
+    h1, h2, h3 { letter-spacing: 0 !important; line-height: 1.4 !important; }
+
+    .header h1 { font-size: 1.5rem; line-height: 1.5; }
+    .header p  { font-size: .55rem; line-height: 1.6; }
+
+    .btn      { font-size: .7rem; letter-spacing: 0; line-height: 1.4; }
+    .btn-sm   { font-size: .55rem; }
+    .btn-lg   { font-size: .9rem; }
+
+    .setup-box h2 { font-size: .95rem; }
+    .p-badge      { font-size: .6rem; }
+    input[type=text] { font-size: .6rem; }
+    .hint     { font-size: .55rem; line-height: 1.7; }
+
+    .chip          { font-size: .55rem; }
+    .chip .pts     { font-size: .6rem; }
+    .turn-banner   { font-size: .8rem; letter-spacing: 0; line-height: 1.4; }
+    .deck-row      { font-size: .55rem; }
+    .deck-row b    { font-size: .6rem; }
+    .notice        { font-size: .55rem; line-height: 1.7; }
+
+    .slots-section h3 { font-size: .65rem; }
+    .slot-lbl     { font-size: .5rem; letter-spacing: 0; }
+    .slot-pos     { font-size: .5rem; }
+    .slot-pos .pl { font-size: .45rem; line-height: 1.4; }
+    .slot-pos .pw { font-size: .55rem; }
+    .conn         { font-size: .6rem; }
+    .slot-sent    { font-size: .55rem; line-height: 1.6; }
+
+    .hand-area h3 { font-size: .62rem; }
+
+    .c-badge { font-size: .45rem; letter-spacing: 0; display: inline-flex; align-items: center; gap: 3px; }
+    /* Suit glyphs come from a fallback font (Press Start 2P has none), so they
+       look tiny next to the pixel text — bump their size and center them. */
+    .c-badge .suit { font-size: 1.6em; line-height: 1; }
+    .c-lbl   { font-size: .5rem; line-height: 1.5; }
+    .c-word  { font-size: .5rem; line-height: 1.4; }
+    .c-or    { font-size: .45rem; }
+    .c-pts   { font-size: .6rem; }
+
+    .modal h2 { font-size: .9rem; }
+    .modal p  { font-size: .55rem; line-height: 1.7; }
+    .w-btn    { font-size: .6rem; line-height: 1.4; }
+
+    .draw-sent     { font-size: .7rem; letter-spacing: 0; line-height: 1.5; }
+    .draw-timer-n  { font-size: 1.1rem; }
+    .db            { font-size: .52rem; }
+    .draw-done-btn { font-size: .6rem; letter-spacing: 0; }
+
+    .pts-big  { font-size: 2rem; line-height: 1.2; }
+    .sc-chip  { font-size: .5rem; }
+
+    .end-sc h2  { font-size: 1.3rem; }
+    .f-row .rk  { font-size: .9rem; }
+    .f-row .pn  { font-size: .6rem; line-height: 1.4; }
+    .f-row .fp  { font-size: .9rem; }
+    .win-banner { font-size: .85rem; line-height: 1.4; }
+
+    /* Keep the drawing surface smooth, not pixelated. */
+    #draw-canvas { image-rendering: auto; }
+
+    /* Mobile: re-apply the responsive shrink on top of the pixel scale. */
+    @media(max-width:480px){
+      .header h1   { font-size: 1rem !important; }
+      .header p    { font-size: .5rem !important; }
+      .setup-box h2{ font-size: .8rem !important; }
+      .pc-btns .btn{ font-size: .55rem !important; }
+      .p-badge     { font-size: .55rem !important; }
+      .hint        { font-size: .5rem !important; }
+      .draw-sent   { font-size: .6rem !important; }
+      .slot-pos .pw{ font-size: .5rem !important; }
+      .conn        { font-size: .5rem !important; }
+      .pts-big     { font-size: 1.5rem !important; }
+      .end-sc h2   { font-size: 1rem !important; }
     }
   </style>
 </head>
@@ -934,7 +1024,7 @@ function rGame(app) {
     ce.dataset.c=card.id;
     if(playable) ce.onclick=()=>selectCard(card.id);
     ce.innerHTML=`
-      <div class="c-badge">${card.suit} ${card.type.toUpperCase()}</div>
+      <div class="c-badge"><span class="suit">${card.suit}</span> ${card.type.toUpperCase()}</div>
       <div class="c-lbl">${x(card.label)}</div>
       <div class="c-opts">
         <div class="c-word">${x(card.oA)}</div>
@@ -1081,12 +1171,12 @@ function rScore(app) {
   let headline, ptLine;
   if (G.drawerDrew) {
     headline = `<p style="margin-top:6px"><strong style="color:${drawer.color}">${x(drawer.name)}</strong> drew it — all points go to the drawer!</p>`;
-    ptLine   = `<p style="color:#555;margin-top:12px">${x(drawer.name)}'s total: <strong style="font-family:Bangers;font-size:1.4rem">${drawer.score}pts</strong></p>`;
+    ptLine   = `<p style="color:#555;margin-top:12px">${x(drawer.name)}'s total: <strong style="font-family:'Press Start 2P';font-size:.85rem">${drawer.score}pts</strong></p>`;
   } else {
     const others = G.players.filter(p => p.id !== drawer.id);
     const share  = Math.floor(G.ptsEarned / others.length);
     headline = `<p style="margin-top:6px"><strong style="color:${drawer.color}">${x(drawer.name)}</strong> didn't draw — everyone else gets ${share} pts each!</p>`;
-    ptLine   = others.map(p=>`<p style="color:#555;margin-top:4px">${x(p.name)}: <strong style="font-family:Bangers;font-size:1.2rem">${p.score}pts</strong></p>`).join('');
+    ptLine   = others.map(p=>`<p style="color:#555;margin-top:4px">${x(p.name)}: <strong style="font-family:'Press Start 2P';font-size:.75rem">${p.score}pts</strong></p>`).join('');
   }
   s.innerHTML=`
     <h2>🏆 Points Scored!</h2>
