@@ -834,6 +834,15 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   case keeps the letters and tells the player it couldn't reach the dictionary. Defs are
   HTML-escaped via `esc()` before rendering since they come from an external source.
 - **`LETTER_BAG`** — frequency-weighted spawn pool (vowels common, Q/X/Z rare).
+- **`SFX`** — a small Web Audio IIFE (no asset files) that synthesizes chiptune blips, matching the
+  retro-pixel theme and the single-file/offline rule. `SFX.play(name)` plays a named cue (`swing`,
+  `capture`, `newword`, `known`, `invalid`, `unlock`, `home`, `click`); internals are `tone()` (one
+  oscillator+gain blip with optional pitch slide) and `seq()` (notes back-to-back). Hooked into:
+  attack swing + creature capture (`doAttack`), word results (`checkWord`: new/known/invalid), implement
+  unlock (`checkUnlocks`), weapon switch (`cycleWeapon`), teleport (`teleportHome`), desk open
+  (`openOverlay`), and UI button taps. Mute state persists in `localStorage["inklings_muted"]` and is
+  toggled by the top-center `#sound-btn` (🔊/🔇). Browsers gate audio behind a gesture, so `play()`
+  calls `SFX.resume()` and the Start button resumes the context on click.
 - **`state`** — `{ player, inventory: {letter:count}, dex: {word:{def,found}}, weapon, unlocked }`.
 - **Systems**, in order: screen generation → input → combat → update → render → desk/bench →
   backup (export/import) → main loop.
@@ -856,6 +865,9 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 - Backup: export state to JSON, import it back (also the manual cross-device transfer).
 - Keyboard on desktop; **on-screen touch controls on mobile** (D-pad bottom-right, action cluster
   bottom-left). See the Controls section + code map for details.
+- **Sound effects** — synthesized chiptune blips (`SFX`, Web Audio, no asset files) on attack,
+  capture, word results, unlock, and UI actions; mute toggle (`#sound-btn`, 🔊/🔇) persisted to
+  `localStorage`.
 
 **Stubbed / not yet done:**
 

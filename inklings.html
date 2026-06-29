@@ -98,6 +98,12 @@
     display:flex;align-items:center;justify-content:center;z-index:4}
   #help-btn:hover{background:#dcd0b2}
   #help-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0)}
+  #sound-btn{position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    width:36px;height:36px;font-size:16px;background:var(--paper);color:var(--ink);
+    border:2px solid var(--edge);box-shadow:3px 3px 0 rgba(0,0,0,.35);padding:0;line-height:1;
+    display:flex;align-items:center;justify-content:center;z-index:4;cursor:pointer}
+  #sound-btn:hover{background:#dcd0b2}
+  #sound-btn:active{transform:translateX(-50%) translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0)}
   #controls{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
     align-items:center;justify-content:center;padding:18px;z-index:6}
   #controls.open{display:flex}
@@ -166,6 +172,7 @@
     <div id="toast"></div>
     <div id="hint"></div>
     <button id="help-btn" aria-label="Show controls" title="Controls (?)">?</button>
+    <button id="sound-btn" aria-label="Mute sound" title="Sound on/off">🔊</button>
 
     <!-- Library overlay -->
     <div id="overlay">
@@ -378,6 +385,48 @@ function goScreen(dsx,dsy,edge){
   if(edge==="bottom") p.y=H-p.r-2;
 }
 
+/* ---------- SOUND (synthesized, no asset files) ----------- */
+const SFX = (()=>{
+  let ac=null, muted=false;
+  try{ muted = localStorage.getItem("inklings_muted")==="1"; }catch(e){}
+  function ctx(){
+    if(!ac){ try{ ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ ac=null; } }
+    return ac;
+  }
+  function resume(){ const c=ctx(); if(c && c.state==="suspended") c.resume(); }
+  // one blip: freq Hz, dur s, wave type, peak vol, optional pitch slide, start delay s
+  function tone(freq, dur, type, vol, slideTo, delay){
+    const c=ctx(); if(!c||muted) return;
+    const t0=c.currentTime+(delay||0);
+    const o=c.createOscillator(), g=c.createGain();
+    o.type=type||"square"; o.frequency.setValueAtTime(freq, t0);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0+dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol||0.14, t0+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0+dur+0.03);
+  }
+  function seq(notes, type, vol){ // notes: [[freq,dur],...] played back-to-back
+    let t=0;
+    for(const n of notes){ tone(n[0], n[1], type, vol, null, t); t+=n[1]*0.92; }
+  }
+  const lib={
+    swing(){  tone(240,0.07,"triangle",0.09,150); },
+    capture(){ seq([[660,0.06],[988,0.10]],"square",0.13); },
+    newword(){ seq([[523,0.08],[659,0.08],[784,0.10],[1047,0.16]],"square",0.13); },
+    known(){  seq([[440,0.09],[440,0.10]],"triangle",0.10); },
+    invalid(){ tone(196,0.24,"sawtooth",0.11,92); },
+    unlock(){ seq([[523,0.09],[784,0.09],[1047,0.18]],"square",0.15); },
+    home(){   seq([[392,0.07],[523,0.09],[784,0.12]],"triangle",0.12); },
+    click(){  tone(330,0.05,"square",0.08); }
+  };
+  function play(name){ resume(); const f=lib[name]; if(f) f(); }
+  function setMuted(m){ muted=!!m; try{ localStorage.setItem("inklings_muted", muted?"1":"0"); }catch(e){} }
+  function isMuted(){ return muted; }
+  return { play, resume, setMuted, isMuted };
+})();
+
 /* ---------- INPUT ----------------------------------------- */
 const keys={};
 let attackHeld=false;   // set true while the touch ATK button is held
@@ -402,6 +451,7 @@ function teleportHome(){
   state.screen.sx=0; state.screen.sy=0;
   state.player.x=W/2; state.player.y=H/2+TILE+10;
   showToast("Back at your bench. Press E.");
+  SFX.play("home");
 }
 function nearBench(){
   return state.screen.sx===0 && state.screen.sy===0 &&
@@ -414,6 +464,7 @@ function cycleWeapon(){
   state.weaponIdx=state.unlocked[(pos+1)%state.unlocked.length];
   document.getElementById("weapon-name").textContent=WEAPONS[state.weaponIdx].name;
   showToast("Equipped: "+WEAPONS[state.weaponIdx].name);
+  SFX.play("click");
 }
 
 /* ---------- COMBAT ---------------------------------------- */
@@ -421,6 +472,7 @@ function doAttack(){
   const p=state.player; if(p.atkCd>0) return;
   const wpn=WEAPONS[state.weaponIdx];
   p.atkCd=wpn.cd; p.atkAnim=0.18;
+  SFX.play("swing");
   const sc=curScreen();
   for(let i=sc.creatures.length-1;i>=0;i--){
     const c=sc.creatures[i];
@@ -435,6 +487,7 @@ function doAttack(){
       state.fx.push({x:c.x,y:c.y,text:"+"+c.letter.toUpperCase(),life:0.9,color:colorFor(c.letter)});
       sc.creatures.splice(i,1);
       updateTrayHud();
+      SFX.play("capture");
     }
   }
 }
@@ -632,13 +685,14 @@ function checkUnlocks(){
       state.unlocked.push(i); state.weaponIdx=i;
       document.getElementById("weapon-name").textContent=w.name;
       showToast("New implement unlocked: "+w.name+"!");
+      SFX.play("unlock");
     }
   });
 }
 
 /* ---------- BENCH / LIBRARY OVERLAY ----------------------- */
 let bench=[];   // letters currently on the bench line
-function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); renderBench(); renderDex(); }
+function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); renderBench(); renderDex(); SFX.play("click"); }
 function closeOverlay(){ state.overlay=false; document.getElementById("overlay").classList.remove("open"); bench=[]; document.getElementById("result").innerHTML=""; }
 function renderBench(){
   // tray = letters you hold, minus what's on the bench
@@ -696,10 +750,10 @@ async function checkWord(){
   if(checking) return;
   const word=bench.join("").toLowerCase();
   const res=document.getElementById("result");
-  if(word.length<2){ res.innerHTML='<div class="msg-bad">Words need at least two letters.</div>'; return; }
+  if(word.length<2){ res.innerHTML='<div class="msg-bad">Words need at least two letters.</div>'; SFX.play("invalid"); return; }
   if(state.dex[word]){
     res.innerHTML=`<div class="msg-known">You’ve already collected “${esc(word.toUpperCase())}”. Letters returned.</div>`;
-    bench=[]; renderBench(); return;
+    bench=[]; renderBench(); SFX.play("known"); return;
   }
   checking=true;
   const btn=document.getElementById("check-btn");
@@ -712,10 +766,12 @@ async function checkWord(){
   if(bench.join("").toLowerCase()!==word) return;
   if(r.ok===null){
     res.innerHTML='<div class="msg-bad">Couldn’t reach the dictionary — check your connection and try again.</div>';
+    SFX.play("invalid");
     return;   // letters stay on the bench
   }
   if(!r.ok){
     res.innerHTML=`<div class="msg-bad">“${esc(word.toUpperCase())}” isn’t in the dictionary.</div>`;
+    SFX.play("invalid");
     return;   // letters stay on the bench so you can rearrange
   }
   // NEW word!
@@ -724,6 +780,7 @@ async function checkWord(){
   bench=[];
   updateTrayHud(); renderBench(); renderDex(); checkUnlocks();
   showReveal(word,true);
+  SFX.play("newword");
 }
 function showReveal(word,isNew){
   const res=document.getElementById("result");
@@ -769,16 +826,23 @@ function showToast(msg){
 }
 
 /* ---------- WIRING ---------------------------------------- */
-document.getElementById("start-btn").onclick=()=>{ state.started=true; document.getElementById("startcard").style.display="none"; };
-function toggleHelp(){ state.help=!state.help; document.getElementById("controls").classList.toggle("open",state.help); }
+document.getElementById("start-btn").onclick=()=>{ SFX.resume(); SFX.play("click"); state.started=true; document.getElementById("startcard").style.display="none"; };
+function toggleHelp(){ state.help=!state.help; document.getElementById("controls").classList.toggle("open",state.help); SFX.play("click"); }
 document.getElementById("help-btn").onclick=toggleHelp;
 document.getElementById("controls-close").onclick=toggleHelp;
 document.getElementById("check-btn").onclick=checkWord;
-document.getElementById("clear-btn").onclick=()=>{ bench=[]; renderBench(); document.getElementById("result").innerHTML=""; };
-document.getElementById("close-btn").onclick=closeOverlay;
-document.getElementById("export-btn").onclick=exportBackup;
-document.getElementById("import-btn").onclick=()=>document.getElementById("import-file").click();
+document.getElementById("clear-btn").onclick=()=>{ bench=[]; renderBench(); document.getElementById("result").innerHTML=""; SFX.play("click"); };
+document.getElementById("close-btn").onclick=()=>{ closeOverlay(); SFX.play("click"); };
+document.getElementById("export-btn").onclick=()=>{ exportBackup(); SFX.play("click"); };
+document.getElementById("import-btn").onclick=()=>{ SFX.play("click"); document.getElementById("import-file").click(); };
 document.getElementById("import-file").onchange=e=>{ if(e.target.files[0]) importBackup(e.target.files[0]); };
+
+/* sound on/off toggle (persisted) */
+const soundBtn=document.getElementById("sound-btn");
+function syncSoundBtn(){ soundBtn.textContent = SFX.isMuted() ? "🔇" : "🔊";
+  soundBtn.setAttribute("aria-label", SFX.isMuted()?"Unmute sound":"Mute sound"); }
+soundBtn.onclick=()=>{ SFX.setMuted(!SFX.isMuted()); syncSoundBtn(); if(!SFX.isMuted()){ SFX.resume(); SFX.play("click"); } };
+syncSoundBtn();
 
 /* ---------- TOUCH CONTROLS (mobile) ----------------------- */
 const IS_TOUCH = matchMedia("(pointer:coarse)").matches || ("ontouchstart" in window) || navigator.maxTouchPoints>0;
