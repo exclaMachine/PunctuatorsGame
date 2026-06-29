@@ -862,6 +862,15 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   in the export/import backup.
 - **Systems**, in order: screen generation → input → combat → update → render → desk/bench →
   backup (export/import) → main loop.
+- **World is unbounded/procedural** — `genScreen(sx,sy)` makes a screen for any integer coords
+  (hashed RNG), `goScreen` has no clamp, so the world is infinite in all directions. `(0,0)` is home.
+  (The old "3×3 world" note is aspirational, not enforced.)
+- **Minimap** (`drawMinimap`, drawn last in `render` when `state.started`): a translucent
+  explored-area map in the canvas bottom-right. `state.visited` (a `Set` of `"sx,sy"`, added to in
+  `curScreen`) drives it; it renders the padded bounding box of visited screens — **visited cells are
+  lit (home `(0,0)` gold, others parchment), unvisited cells inside the box are black**, and the
+  current screen is outlined in ink-red. Cell size auto-scales (5–15px) so the map stays compact as you
+  explore. `visited` is saved/loaded in the export/import backup.
 - **Library layout** (`#overlay`): the panel is a fixed-size flex column so it never resizes/jumps
   as content changes. The two columns (`.cols`) are a `1fr 1fr` grid where **`.cols>div` carries
   `min-width:0`** — this is the load-bearing fix: without it a long collection entry (word +
@@ -890,7 +899,8 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 
 **Built and working:**
 
-- Home base with a writing desk; 3×3 world of screens; walk-off-edge travel; `H` to teleport home.
+- Home base with a writing desk; unbounded procedural world of screens; walk-off-edge travel;
+  `H` to teleport home; translucent explored-area minimap in the bottom-right.
 - Attack-based combat (no bump-to-collect); creatures are captured in a **single hit**
   (`CREATURE_HP = 1`) and drop their letter. (HP/pip scaffolding remains if multi-hit creatures
   are ever wanted again.) The satchel holds a capped number of letters (`state.bagCap`, starts at 10);

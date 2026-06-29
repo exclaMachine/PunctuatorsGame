@@ -414,6 +414,7 @@ const state = {
   dex:{},                       // word -> {def, found}
   bagCap:10,                    // max letters the satchel can hold (raise later via items)
   screens:new Map(),            // "sx,sy" -> {creatures, decos, generated}
+  visited:new Set(),            // "sx,sy" of screens the player has entered (for the minimap)
   fx:[],                        // floating texts
   started:false, overlay:false, help:false
 };
@@ -462,6 +463,7 @@ function genScreen(sx,sy){
 function curScreen(){
   const k=key(state.screen.sx,state.screen.sy);
   if(!state.screens.has(k)) state.screens.set(k, genScreen(state.screen.sx,state.screen.sy));
+  state.visited.add(k);   // record it for the minimap
   return state.screens.get(k);
 }
 function goScreen(dsx,dsy,edge){
@@ -689,6 +691,40 @@ function render(){
     ctx.fillText(f.text,f.x,f.y);
     ctx.globalAlpha=1;
   }
+
+  if(state.started) drawMinimap();
+}
+// Translucent explored-area map in the bottom-right. Visited screens are lit, screens you
+// haven't reached are black; home (0,0) is gold and the current screen is marked in ink-red.
+function drawMinimap(){
+  const cx=state.screen.sx, cy=state.screen.sy;
+  // bounds of everything visited (+ current), padded by 1 so unexplored neighbours show as black
+  let minX=cx,maxX=cx,minY=cy,maxY=cy;
+  state.visited.forEach(k=>{ const c=k.indexOf(","); const x=+k.slice(0,c), y=+k.slice(c+1);
+    if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; });
+  minX--; maxX++; minY--; maxY++;
+  const cols=maxX-minX+1, rows=maxY-minY+1;
+  const cell=Math.max(5, Math.min(15, Math.floor(118/Math.max(cols,rows))));
+  const gw=cols*cell, gh=rows*cell, pad=5, margin=8;
+  const x0=W-gw-pad-margin, y0=H-gh-pad-margin;
+
+  ctx.save();
+  ctx.globalAlpha=0.74;                                   // overall translucency
+  ctx.fillStyle="rgba(20,18,28,0.6)";
+  ctx.fillRect(x0-pad, y0-pad, gw+pad*2, gh+pad*2);       // panel
+  ctx.strokeStyle="rgba(233,222,196,0.55)"; ctx.lineWidth=2;
+  ctx.strokeRect(x0-pad+1, y0-pad+1, gw+pad*2-2, gh+pad*2-2);
+  for(let gy=0; gy<rows; gy++) for(let gx=0; gx<cols; gx++){
+    const sx=minX+gx, sy=minY+gy;
+    const seen=state.visited.has(sx+","+sy);
+    ctx.fillStyle = seen ? ((sx===0&&sy===0) ? "#c89b3c" : "#cdbd95") : "#000";
+    ctx.fillRect(x0+gx*cell+1, y0+gy*cell+1, cell-2, cell-2);
+  }
+  // current position marker
+  const px=x0+(cx-minX)*cell, py=y0+(cy-minY)*cell;
+  ctx.strokeStyle="#9a3324"; ctx.lineWidth=2;
+  ctx.strokeRect(px+1, py+1, cell-2, cell-2);
+  ctx.restore();
 }
 function drawDeco(d){
   ctx.save(); ctx.translate(d.x,d.y); ctx.scale(d.s,d.s);
@@ -939,7 +975,7 @@ function showReveal(word){
 
 /* ---------- EXPORT / IMPORT BACKUP ------------------------ */
 function exportBackup(){
-  const data={ v:1, inv:state.inv, dex:state.dex, unlocked:state.unlocked, weaponIdx:state.weaponIdx, bagCap:state.bagCap };
+  const data={ v:1, inv:state.inv, dex:state.dex, unlocked:state.unlocked, weaponIdx:state.weaponIdx, bagCap:state.bagCap, visited:[...state.visited] };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a"); a.href=url; a.download="inklings-save.json"; a.click();
@@ -956,6 +992,7 @@ function importBackup(file){
       if(d.unlocked) state.unlocked=d.unlocked;
       if(typeof d.weaponIdx==="number") state.weaponIdx=d.weaponIdx;
       if(typeof d.bagCap==="number") state.bagCap=d.bagCap;
+      if(Array.isArray(d.visited)) state.visited=new Set(d.visited);
       document.getElementById("weapon-name").textContent=WEAPONS[state.weaponIdx].name;
       updateTrayHud(); renderBench(); renderDex();
       showToast("Backup loaded.");
