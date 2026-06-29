@@ -846,6 +846,14 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 - **`state`** — `{ player, inventory: {letter:count}, dex: {word:{def,found}}, weapon, unlocked }`.
 - **Systems**, in order: screen generation → input → combat → update → render → desk/bench →
   backup (export/import) → main loop.
+- **Library layout** (`#overlay`): the panel is a fixed-size flex column so it never resizes/jumps
+  as content changes. The two columns (`.cols`) are a `1fr 1fr` grid where **`.cols>div` carries
+  `min-width:0`** — this is the load-bearing fix: without it a long collection entry (word +
+  `nowrap` definition) expands its grid track past 50%, squeezing the bench column until the
+  letter chips overlap and a horizontal scrollbar appears. Letter chips are `flex:0 0 auto` so they
+  never compress; only `.dex-list` scrolls (`flex:1;min-height:0`). Collection defs are single-line
+  ellipsis; `openDefModal()` shows full text in `#defmodal`. Under `max-width:560px` the panel
+  switches to a normal scrolling single column.
 
 ---
 
@@ -860,8 +868,12 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 - Writing-implement weapons: start with stick; brush/pencil/pen hidden in field screens as
   diegetic upgrades; `1`–`4` to switch among unlocked ones.
 - Letter pickups → inventory; renewable (field creatures respawn on re-entry).
-- Desk: click-to-build word, async API dictionary check with feedback states (checking / new /
-  known / invalid / couldn't-reach-API), library list with definitions.
+- Desk/Library: click-to-build word, async API dictionary check with feedback states (checking /
+  new / known / invalid / couldn't-reach-API). **Stable fixed-size panel** (`#overlay .book` is a
+  fixed-height flex column; only the collection list scrolls). The **definition appears in one place
+  only** — the collection list, truncated to one line with an ellipsis (no horizontal scroll);
+  clicking an entry opens a full-text modal (`#defmodal`). The new-word reveal celebrates the word
+  but no longer prints a second copy of the definition.
 - Backup: export state to JSON, import it back (also the manual cross-device transfer).
 - Keyboard on desktop; **on-screen touch controls on mobile** (D-pad bottom-right, action cluster
   bottom-left). See the Controls section + code map for details.

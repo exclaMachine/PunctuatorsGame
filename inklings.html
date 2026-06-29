@@ -46,24 +46,28 @@
   #overlay{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
     align-items:center;justify-content:center;padding:18px}
   #overlay.open{display:flex}
-  .book{width:100%;max-width:680px;max-height:100%;overflow:auto;background:var(--paper);
+  .book{width:100%;max-width:680px;max-height:92vh;overflow:auto;background:var(--paper);
     border:3px solid var(--edge);box-shadow:6px 6px 0 rgba(0,0,0,.5);padding:18px 20px}
   .book h1{font-family:var(--disp);font-size:16px;line-height:1.4;margin:0 0 12px;color:var(--ink)}
   .book .sub{color:var(--ink-soft);font-size:17px;margin-bottom:14px;line-height:1.3}
-  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  @media(max-width:560px){.cols{grid-template-columns:1fr}}
+  /* Library: fixed, stable panel — only the collection list scrolls, nothing reflows */
+  #overlay .book{display:flex;flex-direction:column;height:min(600px,92vh);overflow:hidden}
+  #overlay .book>h1,#overlay .book>.sub,#overlay .foot{flex:none}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;flex:1;min-height:0}
+  .cols>div{min-width:0;min-height:0;display:flex;flex-direction:column}  /* min-width:0 is the key fix */
   .sec-label{font-family:var(--disp);font-size:10px;margin:0 0 10px;text-transform:uppercase;
-    border-bottom:2px solid var(--line);padding-bottom:8px}
+    border-bottom:2px solid var(--line);padding-bottom:8px;flex:none}
   .tray{display:flex;flex-wrap:wrap;gap:6px;min-height:40px;padding:8px;background:var(--paper-2);
-    border:2px solid var(--edge)}
+    border:2px solid var(--edge);flex:none}
+  .lchip{flex:0 0 auto}                       /* never compress letter chips */
   .tray .lchip{cursor:pointer;min-width:32px;height:32px;font-size:13px;transition:transform .06s}
   .tray .lchip:hover{transform:translateY(-2px)}
   .tray .empty{color:var(--ink-soft);font-size:16px;align-self:center}
   .bench-line{display:flex;flex-wrap:wrap;gap:6px;min-height:50px;margin:10px 0;padding:10px;
-    border:2px dashed var(--ink-soft);background:#fffdf6}
+    border:2px dashed var(--ink-soft);background:#fffdf6;flex:none}
   .bench-line .lchip{cursor:pointer;min-width:36px;height:36px;font-size:15px;background:#fff}
   .bench-line .ph{color:var(--ink-soft);font-size:16px;align-self:center}
-  .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;flex:none}
   button{font-family:var(--disp);font-size:9px;line-height:1.4;cursor:pointer;
     padding:9px 12px;border:2px solid var(--edge);background:var(--paper-2);
     color:var(--ink);box-shadow:3px 3px 0 rgba(0,0,0,.3);transition:transform .05s,box-shadow .05s}
@@ -73,20 +77,37 @@
   button.primary:hover{background:#46578f}
   button.ghost{background:transparent;box-shadow:none}
   button.ghost:active{transform:translate(2px,2px)}
-  #result{min-height:64px;margin-top:12px}
+  #result{min-height:60px;margin-top:12px;flex:none}
   .reveal{animation:pop .18s steps(3) both}
   @keyframes pop{0%{transform:scale(.85)}100%{transform:scale(1)}}
   .reveal .word{font-family:var(--disp);font-size:18px;color:var(--inkblue);text-transform:uppercase;line-height:1.4}
-  .reveal .def{font-size:19px;color:var(--ink);margin-top:8px;line-height:1.3}
+  .reveal .note{font-size:16px;color:var(--ink-soft);margin-top:8px;line-height:1.3}
   .msg-bad{color:#9a3b2e;font-size:19px}
   .msg-known{color:var(--ink-soft);font-size:19px}
   .dex-count{font-family:var(--disp);font-size:9px;color:var(--ink-soft)}
-  .dex-list{margin-top:8px;max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:3px}
-  .dex-item{padding:5px 7px;cursor:pointer;font-size:17px;display:flex;
-    justify-content:space-between;gap:8px;border:2px solid transparent}
+  .dex-list{margin-top:8px;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
+    display:flex;flex-direction:column;gap:3px}
+  .dex-item{padding:6px 7px;cursor:pointer;display:flex;align-items:baseline;gap:10px;
+    border:2px solid transparent;min-width:0}
   .dex-item:hover{background:var(--paper-2);border-color:var(--line)}
-  .dex-item .w{font-family:var(--disp);font-size:10px;text-transform:uppercase}
-  .dex-item .d{color:var(--ink-soft);font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%}
+  .dex-item .w{font-family:var(--disp);font-size:10px;text-transform:uppercase;flex:0 0 auto;
+    max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dex-item .d{color:var(--ink-soft);font-size:16px;flex:1 1 auto;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* Mobile: single column, let the panel scroll as a whole */
+  @media(max-width:560px){
+    #overlay .book{height:auto;max-height:92vh;overflow:auto;display:block}
+    .cols{display:block}
+    .cols>div{display:block}
+    .dex-list{max-height:46vh}
+  }
+  /* Definition modal (full text on tap of a collection entry) */
+  #defmodal{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
+    align-items:center;justify-content:center;padding:18px;z-index:7}
+  #defmodal.open{display:flex}
+  #defmodal .book{max-width:460px}
+  #defmodal .def-full{font-size:19px;line-height:1.45;color:var(--ink);
+    max-height:60vh;overflow:auto;overflow-wrap:break-word}
   .foot{margin-top:16px;padding-top:12px;border-top:2px solid var(--line);
     display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
   .foot .keys{font-size:16px;color:var(--ink-soft);line-height:1.9}
@@ -205,6 +226,17 @@
             <button class="ghost" id="import-btn">Import backup</button>
             <button id="close-btn">Close</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Definition modal (full text of a collection entry) -->
+    <div id="defmodal">
+      <div class="book">
+        <h1 id="defmodal-word"></h1>
+        <div class="def-full" id="defmodal-def"></div>
+        <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
+          <button class="primary" id="defmodal-close">Close</button>
         </div>
       </div>
     </div>
@@ -435,6 +467,9 @@ addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
   if(MOVE_KEYS.has(k)) e.preventDefault();
   if(k==="?"||k==="/"){ e.preventDefault(); toggleHelp(); return; }
+  if(document.getElementById("defmodal").classList.contains("open")){
+    if(k==="escape"){ e.preventDefault(); closeDefModal(); } return;   // close the def modal first
+  }
   if(state.help){ if(k==="escape"){ e.preventDefault(); toggleHelp(); } return; }
   if(state.overlay){ if(k==="escape"||k==="tab"){ e.preventDefault(); closeOverlay(); } return; }
   if(!state.started) return;
@@ -693,7 +728,7 @@ function checkUnlocks(){
 /* ---------- BENCH / LIBRARY OVERLAY ----------------------- */
 let bench=[];   // letters currently on the bench line
 function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); renderBench(); renderDex(); SFX.play("click"); }
-function closeOverlay(){ state.overlay=false; document.getElementById("overlay").classList.remove("open"); bench=[]; document.getElementById("result").innerHTML=""; }
+function closeOverlay(){ state.overlay=false; document.getElementById("overlay").classList.remove("open"); closeDefModal(); bench=[]; document.getElementById("result").innerHTML=""; }
 function renderBench(){
   // tray = letters you hold, minus what's on the bench
   const used={}; bench.forEach(l=>used[l]=(used[l]||0)+1);
@@ -715,10 +750,19 @@ function renderDex(){
   document.getElementById("dex-count").textContent = words.length?`· ${words.length} word${words.length>1?"s":""}`:"";
   const list=document.getElementById("dex-list");
   list.innerHTML = words.length
-    ? words.map(w=>`<div class="dex-item" data-w="${esc(w)}"><span class="w">${esc(w)}</span><span class="d">${esc(state.dex[w].def)}</span></div>`).join("")
+    ? words.map(w=>`<div class="dex-item" data-w="${esc(w)}" title="Click to read the full meaning"><span class="w">${esc(w)}</span><span class="d">${esc(state.dex[w].def)}</span></div>`).join("")
     : '<div style="color:var(--ink-soft);font-size:13px;padding:6px">Your collection is empty. Spell your first word!</div>';
-  list.querySelectorAll("[data-w]").forEach(it=>it.onclick=()=>showReveal(it.dataset.w,false));
+  list.querySelectorAll("[data-w]").forEach(it=>it.onclick=()=>openDefModal(it.dataset.w));
 }
+// Full-definition modal — opened by tapping a collection entry (defs are truncated in the list).
+function openDefModal(word){
+  const e=state.dex[word]; if(!e) return;
+  document.getElementById("defmodal-word").textContent=word.toUpperCase();
+  document.getElementById("defmodal-def").textContent=e.def;
+  document.getElementById("defmodal").classList.add("open");
+  SFX.play("click");
+}
+function closeDefModal(){ document.getElementById("defmodal").classList.remove("open"); }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
 
 // Validate + define a word against the Free Dictionary API (same one the punctuators game uses).
@@ -779,16 +823,17 @@ async function checkWord(){
   if(CONSUME_ON_NEW){ bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); }); }
   bench=[];
   updateTrayHud(); renderBench(); renderDex(); checkUnlocks();
-  showReveal(word,true);
+  showReveal(word);
   SFX.play("newword");
 }
-function showReveal(word,isNew){
+// New-word celebration in the bench result area. The definition lives only in the collection
+// list (click an entry to read the full text) — no second copy here.
+function showReveal(word){
   const res=document.getElementById("result");
-  const def=state.dex[word]?state.dex[word].def:"";
   res.innerHTML=`<div class="reveal">
-    ${isNew?'<div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">New word collected</div>':''}
+    <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">New word collected</div>
     <div class="word">${esc(word)}</div>
-    <div class="def">${esc(def)}</div>
+    <div class="note">Added to your collection → click it to read its meaning.</div>
   </div>`;
 }
 
@@ -833,6 +878,8 @@ document.getElementById("controls-close").onclick=toggleHelp;
 document.getElementById("check-btn").onclick=checkWord;
 document.getElementById("clear-btn").onclick=()=>{ bench=[]; renderBench(); document.getElementById("result").innerHTML=""; SFX.play("click"); };
 document.getElementById("close-btn").onclick=()=>{ closeOverlay(); SFX.play("click"); };
+document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
+document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
 document.getElementById("export-btn").onclick=()=>{ exportBackup(); SFX.play("click"); };
 document.getElementById("import-btn").onclick=()=>{ SFX.play("click"); document.getElementById("import-file").click(); };
 document.getElementById("import-file").onchange=e=>{ if(e.target.files[0]) importBackup(e.target.files[0]); };
