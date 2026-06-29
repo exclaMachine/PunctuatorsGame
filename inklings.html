@@ -29,6 +29,8 @@
     padding:6px 9px;font-size:18px;color:var(--ink);box-shadow:3px 3px 0 rgba(0,0,0,.35)}
   .panel .small{font-family:var(--disp);color:var(--ink-soft);font-size:7px;
     text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+  #bag-count{color:var(--ink)}
+  #bag-count.full{color:#9a3b2e}
   #tray-hud{display:flex;flex-wrap:wrap;gap:4px;max-width:420px}
   .lchip{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;
     padding:0 5px;background:var(--paper-2);font-family:var(--disp);
@@ -119,10 +121,10 @@
     display:flex;align-items:center;justify-content:center;z-index:4}
   #help-btn:hover{background:#dcd0b2}
   #help-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0)}
-  #sound-btn{position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  #sound-btn{position:absolute;top:2px;left:50%;transform:translateX(-50%);pointer-events:auto;
     width:36px;height:36px;font-size:16px;background:var(--paper);color:var(--ink);
     border:2px solid var(--edge);box-shadow:3px 3px 0 rgba(0,0,0,.35);padding:0;line-height:1;
-    display:flex;align-items:center;justify-content:center;z-index:4;cursor:pointer}
+    display:flex;align-items:center;justify-content:center;z-index:4;cursor:pointer;flex:none}
   #sound-btn:hover{background:#dcd0b2}
   #sound-btn:active{transform:translateX(-50%) translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0)}
   #controls{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
@@ -172,6 +174,25 @@
     #tact .util-grid{grid-template-columns:34px 34px;grid-auto-rows:34px;gap:5px}
     #tact .util{width:34px;height:34px;font-size:6px}
   }
+  /* ── Mobile reflow: HUD sits in the black band ABOVE the map and the touch
+     controls in the band BELOW it — they never overlap the grid ─────────── */
+  body.touch #app{align-items:stretch;justify-content:flex-start;padding:0}
+  body.touch #stage{width:100%;max-width:100%;height:100vh;height:100dvh;
+    display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+    padding:6px 6px max(6px,env(safe-area-inset-bottom))}
+  body.touch canvas{order:0;flex:0 1 auto;align-self:center;width:auto;height:auto;
+    max-width:100%;max-height:calc(100vh - 230px);max-height:calc(100dvh - 230px)}
+  /* top bar */
+  body.touch .hud{position:static;order:-1;flex:none;width:100%;pointer-events:auto;
+    align-items:flex-start;justify-content:space-between;gap:6px;flex-wrap:wrap}
+  body.touch #sound-btn{position:static;transform:none;align-self:flex-start}
+  body.touch #sound-btn:active{transform:translate(3px,3px)}
+  body.touch #tray-hud{max-width:62vw}
+  /* bottom bar */
+  body.touch #touch{position:static;inset:auto;order:1;flex:none;width:100%}
+  body.touch #touch.live{display:flex;align-items:flex-end;justify-content:space-between;padding:0 8px 2px}
+  body.touch #dpad{position:static}
+  body.touch #tact{position:static}
 </style>
 </head>
 <body>
@@ -185,15 +206,15 @@
         <div id="weapon-name">Stick</div>
       </div>
       <div class="panel" id="tray-hud-wrap" style="text-align:right">
-        <div class="small">Satchel</div>
+        <div class="small">Satchel <span id="bag-count"></span></div>
         <div id="tray-hud"><span class="empty" style="font-weight:600;color:var(--ink-soft);font-size:12px">empty</span></div>
       </div>
+      <button id="sound-btn" aria-label="Mute sound" title="Sound on/off">🔊</button>
     </div>
 
     <div id="toast"></div>
     <div id="hint"></div>
     <button id="help-btn" aria-label="Show controls" title="Controls (?)">?</button>
-    <button id="sound-btn" aria-label="Mute sound" title="Sound on/off">🔊</button>
 
     <!-- Library overlay -->
     <div id="overlay">
@@ -359,11 +380,15 @@ const state = {
   weaponIdx:0, unlocked:[0],
   inv:{},                       // letter -> count
   dex:{},                       // word -> {def, found}
+  bagCap:10,                    // max letters the satchel can hold (raise later via items)
   screens:new Map(),            // "sx,sy" -> {creatures, decos, generated}
   fx:[],                        // floating texts
   started:false, overlay:false, help:false
 };
 "abcdefghijklmnopqrstuvwxyz".split("").forEach(c=>state.inv[c]=0);
+// Total letters currently carried, and whether the satchel is at capacity.
+function satchelCount(){ let n=0; for(const l in state.inv) n+=state.inv[l]; return n; }
+function satchelFull(){ return satchelCount()>=state.bagCap; }
 
 /* ---------- SCREEN GENERATION ----------------------------- */
 function key(sx,sy){ return sx+","+sy; }
@@ -506,6 +531,13 @@ function cycleWeapon(){
 function doAttack(){
   const p=state.player; if(p.atkCd>0) return;
   const wpn=WEAPONS[state.weaponIdx];
+  // satchel full? don't capture more (letters would be wasted) — go spell some words.
+  if(satchelFull()){
+    p.atkCd=wpn.cd;   // cooldown throttles the toast/sound while attack is held
+    showToast("Satchel full ("+state.bagCap+") — spell words to free space.");
+    SFX.play("invalid");
+    return;
+  }
   p.atkCd=wpn.cd; p.atkAnim=0.18;
   SFX.play("swing");
   const sc=curScreen();
@@ -707,6 +739,8 @@ function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w
 /* ---------- HUD ------------------------------------------- */
 function updateTrayHud(){
   const el=document.getElementById("tray-hud");
+  const cnt=document.getElementById("bag-count");
+  if(cnt){ cnt.textContent=satchelCount()+"/"+state.bagCap; cnt.classList.toggle("full", satchelFull()); }
   const have=Object.keys(state.inv).filter(l=>state.inv[l]>0);
   if(!have.length){ el.innerHTML='<span class="empty" style="font-weight:600;color:var(--ink-soft);font-size:12px">empty</span>'; return; }
   el.innerHTML=have.map(l=>`<span class="lchip" style="border-color:${colorFor(l)}">${l.toUpperCase()}<b>${state.inv[l]}</b></span>`).join("");
@@ -839,7 +873,7 @@ function showReveal(word){
 
 /* ---------- EXPORT / IMPORT BACKUP ------------------------ */
 function exportBackup(){
-  const data={ v:1, inv:state.inv, dex:state.dex, unlocked:state.unlocked, weaponIdx:state.weaponIdx };
+  const data={ v:1, inv:state.inv, dex:state.dex, unlocked:state.unlocked, weaponIdx:state.weaponIdx, bagCap:state.bagCap };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a"); a.href=url; a.download="inklings-save.json"; a.click();
@@ -855,6 +889,7 @@ function importBackup(file){
       if(d.dex) state.dex=d.dex;
       if(d.unlocked) state.unlocked=d.unlocked;
       if(typeof d.weaponIdx==="number") state.weaponIdx=d.weaponIdx;
+      if(typeof d.bagCap==="number") state.bagCap=d.bagCap;
       document.getElementById("weapon-name").textContent=WEAPONS[state.weaponIdx].name;
       updateTrayHud(); renderBench(); renderDex();
       showToast("Backup loaded.");

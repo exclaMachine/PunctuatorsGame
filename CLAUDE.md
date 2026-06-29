@@ -819,11 +819,11 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 - **`WEAPONS`** — per-implement `dmg` / `range` / `cd` (cooldown) / visual. Tune feel here.
 - **`WEAPON_DROPS`** — which field screen hides which implement upgrade.
 - **`SPRITESHEET`** — glyph-sheet config (`url`, `cols`/`rows`, `cellW`/`cellH`, `letterToFrame`)
-  + loader. Wired to `Alpha.png` (the same hand-drawn sheet Spin Nids uses): a 7×8 grid of 32×32
-  cells where a–z = frames 0–25 (A–Z = 26–51, unused here). `drawGlyph(letter,cx,cy,size)` blits one
-  cell. `drawCreature` renders the creature **as the glyph itself** — no tile, eyes, or feet — with a
-  brief scale-up "pop" while `c.flash>0` (just hit), falling back to dark `fillText` if the sheet
-  hasn't loaded or the letter isn't on it. HP pips still draw above the glyph when damaged.
+  - loader. Wired to `Alpha.png` (the same hand-drawn sheet Spin Nids uses): a 7×8 grid of 32×32
+    cells where a–z = frames 0–25 (A–Z = 26–51, unused here). `drawGlyph(letter,cx,cy,size)` blits one
+    cell. `drawCreature` renders the creature **as the glyph itself** — no tile, eyes, or feet — with a
+    brief scale-up "pop" while `c.flash>0` (just hit), falling back to dark `fillText` if the sheet
+    hasn't loaded or the letter isn't on it. HP pips still draw above the glyph when damaged.
 - **`lookupWord(word)` / `checkWord()`** — word validation + definitions come **entirely** from the
   Free Dictionary API (`api.dictionaryapi.dev`); there is no local word list. `lookupWord` is async
   and returns `{ok:true, def}` for a real word, `{ok:false}` if the API rejects it (incl. 404), or
@@ -843,7 +843,12 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   (`openOverlay`), and UI button taps. Mute state persists in `localStorage["inklings_muted"]` and is
   toggled by the top-center `#sound-btn` (🔊/🔇). Browsers gate audio behind a gesture, so `play()`
   calls `SFX.resume()` and the Start button resumes the context on click.
-- **`state`** — `{ player, inventory: {letter:count}, dex: {word:{def,found}}, weapon, unlocked }`.
+- **`state`** — `{ player, inv:{letter:count}, dex:{word:{def,found}}, weaponIdx, unlocked, bagCap }`.
+  `bagCap` is the **satchel capacity** (max letters carried; starts at 10, designed to be raised later
+  by items). `satchelCount()` sums `state.inv`; `satchelFull()` gates capture in `doAttack` (a full
+  satchel blocks new captures with a "Satchel full" toast so letters aren't wasted — spell words to
+  free space). The HUD shows `N/cap` via `#bag-count` (turns red when full). `bagCap` is saved/loaded
+  in the export/import backup.
 - **Systems**, in order: screen generation → input → combat → update → render → desk/bench →
   backup (export/import) → main loop.
 - **Library layout** (`#overlay`): the panel is a fixed-size flex column so it never resizes/jumps
@@ -864,7 +869,8 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 - Home base with a writing desk; 3×3 world of screens; walk-off-edge travel; `H` to teleport home.
 - Attack-based combat (no bump-to-collect); creatures are captured in a **single hit**
   (`CREATURE_HP = 1`) and drop their letter. (HP/pip scaffolding remains if multi-hit creatures
-  are ever wanted again.)
+  are ever wanted again.) The satchel holds a capped number of letters (`state.bagCap`, starts at 10);
+  when full, capture is blocked until you spell words to free space.
 - Writing-implement weapons: start with stick; brush/pencil/pen hidden in field screens as
   diegetic upgrades; `1`–`4` to switch among unlocked ones.
 - Letter pickups → inventory; renewable (field creatures respawn on re-entry).
@@ -884,7 +890,7 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 **Stubbed / not yet done:**
 
 - **Creature glyphs** — creatures render solely as their hand-drawn letter glyph from `Alpha.png`
-  (the glyph sheet shared with Spin Nids) — no tile, eyes, or feet. Dedicated per-creature *art*
+  (the glyph sheet shared with Spin Nids) — no tile, eyes, or feet. Dedicated per-creature _art_
   (distinct bodies beyond the bare glyph) is still future work.
 - **Dictionary** — validation + definitions come entirely from the Free Dictionary API (see code
   map), so any real English word works. No local word list (requires a connection to check words).
@@ -900,6 +906,7 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 home `H` · Use bench when near it `E` · Open library `Tab` · Controls/help `?` · Close any panel `Esc`.
 
 **Touch (mobile):** On touch devices a DOM control overlay (`#touch`) appears over the canvas:
+
 - **D-pad** bottom-right (`#dpad`, 4 arrows) — press-and-hold sets the matching `keys["arrow*"]`, so
   it reuses the exact keyboard movement path in `update()`. 4-directional (matches keyboard).
 - **Action cluster** bottom-left (`#tact`): a large **ATK** button (hold to keep swinging — `update()`
@@ -911,15 +918,22 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Controls/help `?
   `state.started && !overlay && !help` and clears held inputs when hidden, so the pad never sits on
   top of the library/help overlays. The corner `#help-btn` is hidden on touch (the `?` button replaces
   it); the start card swaps its keyboard hint (`.kbd-only`) for a touch hint (`.touch-only`).
-- Controls shrink under `@media(max-width:560px)`. The canvas is landscape (720×528), so **landscape
-  orientation plays best** on phones.
+- Controls shrink under `@media(max-width:560px)`. The canvas is landscape (720×528).
+- **Mobile reflow (`body.touch`)** — on touch devices `#stage` becomes a full-height (`100dvh`) flex
+  column so the controls live in the black bands, never over the map: the **HUD becomes a static top
+  bar** (`order:-1`; the `#sound-btn` was moved into `.hud` so it flows inline there), the **`#touch`
+  bar is static at the bottom** (`order:1`, `#tact` at the left end, `#dpad` at the right end), and the
+  **canvas is centered between them** (`justify-content:space-between`; `max-height:calc(100dvh - 230px)`
+  with `width/height:auto` to preserve aspect and reserve room for both bars). Desktop is unchanged
+  (HUD/controls stay absolute). When `#touch` isn't `.live` it's removed from the column (behind an
+  overlay), which is fine because an overlay is covering the screen then.
 
 ---
 
 ## Roadmap (build order from here)
 
 1. **Wire the spritesheet** — DONE: creatures draw their letter from `Alpha.png` via `SPRITESHEET`
-   + `drawGlyph` (a–z = frames 0–25). Next sprite step is real per-creature *body* art, not just glyphs.
+   - `drawGlyph` (a–z = frames 0–25). Next sprite step is real per-creature _body_ art, not just glyphs.
 2. **Dictionary** — DONE (via API): word validation + definitions come from the Free Dictionary API,
    so any real English word works (`exit`, `quartz`, etc. now validate). No local word list. Optional
    future polish: bundle a local wordlist/definitions JSON for an offline fallback, and/or cache API
@@ -940,6 +954,9 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Controls/help `?
    (RAIN waters, SUN speeds growth). Most words stay plain tradeable goods.
 8. **Farming / ranching** — renewable letters from ranched inklings; the deferred cozy layer.
 9. **Town / trade** — towns that want specific words; bundle-style requests as content gates.
+10. **Limit the starting letters** - start with only lowercase letters and the more common letters (not all).
+    Eventually add capital letters which are stronger and they can be used to make proper nouns
+    (Ex. City names to help with geography)
 
 ---
 
@@ -963,5 +980,5 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Controls/help `?
 - **Spritesheet mapping.** RESOLVED for `Alpha.png`: it's a glyph sheet, not creature art — 7×8
   = 56 cells holding a–z (frames 0–25), A–Z (26–51), and a few punctuation glyphs (e.g. `!` at 54).
   We map a–z → 0–25 in `SPRITESHEET.letterToFrame`. Open question reframed: if dedicated creature
-  *body* art (multiple frames or alternate forms per letter) is ever added, it would be a separate
+  _body_ art (multiple frames or alternate forms per letter) is ever added, it would be a separate
   sheet with its own `letterToFrame`/frame-animation scheme.
