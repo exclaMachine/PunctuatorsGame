@@ -59,12 +59,19 @@
   .cols>div{min-width:0;min-height:0;display:flex;flex-direction:column}  /* min-width:0 is the key fix */
   .sec-label{font-family:var(--disp);font-size:10px;margin:0 0 10px;text-transform:uppercase;
     border-bottom:2px solid var(--line);padding-bottom:8px;flex:none}
-  .tray{display:flex;flex-wrap:wrap;gap:6px;min-height:40px;padding:8px;background:var(--paper-2);
+  .tray{display:flex;flex-direction:column;gap:5px;padding:8px;background:var(--paper-2);
     border:2px solid var(--edge);flex:none}
-  .lchip{flex:0 0 auto}                       /* never compress letter chips */
-  .tray .lchip{cursor:pointer;min-width:32px;height:32px;font-size:13px;transition:transform .06s}
+  .kb-row{display:flex;gap:4px;justify-content:center}
+  .lchip{flex:0 0 auto}                       /* never compress letter chips (bench word) */
+  .tray .lchip{cursor:pointer;flex:1 1 0;min-width:0;max-width:40px;height:34px;font-size:13px;
+    position:relative;padding:0 2px;transition:transform .06s}
   .tray .lchip:hover{transform:translateY(-2px)}
-  .tray .empty{color:var(--ink-soft);font-size:16px;align-self:center}
+  .tray .lchip b{position:absolute;top:-5px;right:-3px;font-size:8px;font-family:var(--read);
+    color:var(--ink);background:var(--paper);border:1px solid var(--edge);
+    min-width:11px;height:12px;line-height:11px;text-align:center;padding:0 1px}
+  .tray .lchip.off{opacity:.35;cursor:default;pointer-events:none;filter:grayscale(1)}
+  .tray .lchip.off:hover{transform:none}
+  .tray .lchip.off b{opacity:.6}
   .bench-line{display:flex;flex-wrap:wrap;gap:6px;min-height:50px;margin:10px 0;padding:10px;
     border:2px dashed var(--ink-soft);background:#fffdf6;flex:none}
   .bench-line .lchip{cursor:pointer;min-width:36px;height:36px;font-size:15px;background:#fff}
@@ -121,12 +128,12 @@
     display:flex;align-items:center;justify-content:center;z-index:4}
   #help-btn:hover{background:#dcd0b2}
   #help-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0)}
-  #sound-btn{position:absolute;top:2px;left:50%;transform:translateX(-50%);pointer-events:auto;
+  /* mute button: hidden on desktop (it got in the way); shown only in the mobile HUD bar */
+  #sound-btn{display:none;pointer-events:auto;
     width:36px;height:36px;font-size:16px;background:var(--paper);color:var(--ink);
     border:2px solid var(--edge);box-shadow:3px 3px 0 rgba(0,0,0,.35);padding:0;line-height:1;
-    display:flex;align-items:center;justify-content:center;z-index:4;cursor:pointer;flex:none}
+    align-items:center;justify-content:center;z-index:4;cursor:pointer;flex:none}
   #sound-btn:hover{background:#dcd0b2}
-  #sound-btn:active{transform:translateX(-50%) translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0)}
   #controls{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
     align-items:center;justify-content:center;padding:18px;z-index:6}
   #controls.open{display:flex}
@@ -185,8 +192,8 @@
   /* top bar */
   body.touch .hud{position:static;order:-1;flex:none;width:100%;pointer-events:auto;
     align-items:flex-start;justify-content:space-between;gap:6px;flex-wrap:wrap}
-  body.touch #sound-btn{position:static;transform:none;align-self:flex-start}
-  body.touch #sound-btn:active{transform:translate(3px,3px)}
+  body.touch #sound-btn{display:flex;position:static;transform:none;align-self:flex-start}
+  body.touch #sound-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0)}
   body.touch #tray-hud{max-width:62vw}
   /* bottom bar */
   body.touch #touch{position:static;inset:auto;order:1;flex:none;width:100%}
@@ -763,14 +770,21 @@ function checkUnlocks(){
 let bench=[];   // letters currently on the bench line
 function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); renderBench(); renderDex(); SFX.play("click"); }
 function closeOverlay(){ state.overlay=false; document.getElementById("overlay").classList.remove("open"); closeDefModal(); bench=[]; document.getElementById("result").innerHTML=""; }
+const KB_ROWS=["qwertyuiop","asdfghjkl","zxcvbnm"];
 function renderBench(){
-  // tray = letters you hold, minus what's on the bench
+  // tray = full keyboard; letters you don't have (or have all on the bench) are greyed + unclickable
   const used={}; bench.forEach(l=>used[l]=(used[l]||0)+1);
   const trayEl=document.getElementById("tray");
-  const have=Object.keys(state.inv).filter(l=>state.inv[l]-(used[l]||0)>0);
-  trayEl.innerHTML = have.length
-    ? have.map(l=>`<span class="lchip" data-l="${l}" style="border-color:${colorFor(l)}">${l.toUpperCase()}<b>${state.inv[l]-(used[l]||0)}</b></span>`).join("")
-    : '<span class="empty">no letters yet — go hunt some creatures</span>';
+  trayEl.innerHTML = KB_ROWS.map(row=>
+    `<div class="kb-row">`+row.split("").map(l=>{
+      const owned=state.inv[l]||0;
+      const avail=owned-(used[l]||0);
+      const off=avail<=0;                         // no copies left to place
+      return `<span class="lchip${off?" off":""}"${off?"":` data-l="${l}"`} `+
+             `style="border-color:${off?"var(--line)":colorFor(l)}">${l.toUpperCase()}`+
+             `${owned>0?`<b>${avail}</b>`:""}</span>`;
+    }).join("")+`</div>`
+  ).join("");
   trayEl.querySelectorAll("[data-l]").forEach(ch=>ch.onclick=()=>{ bench.push(ch.dataset.l); renderBench(); });
 
   const benchEl=document.getElementById("bench");

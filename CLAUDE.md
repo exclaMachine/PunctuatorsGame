@@ -841,8 +841,10 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   attack swing + creature capture (`doAttack`), word results (`checkWord`: new/known/invalid), implement
   unlock (`checkUnlocks`), weapon switch (`cycleWeapon`), teleport (`teleportHome`), desk open
   (`openOverlay`), and UI button taps. Mute state persists in `localStorage["inklings_muted"]` and is
-  toggled by the top-center `#sound-btn` (🔊/🔇). Browsers gate audio behind a gesture, so `play()`
-  calls `SFX.resume()` and the Start button resumes the context on click.
+  toggled by `#sound-btn` (🔊/🔇), which lives inside `.hud`. It is **hidden on desktop** (it got in
+  the way) and **shown only on touch** (`body.touch`), where it sits in the static HUD top bar.
+  Browsers gate audio behind a gesture, so `play()` calls `SFX.resume()` and the Start button resumes
+  the context on click.
 - **`state`** — `{ player, inv:{letter:count}, dex:{word:{def,found}}, weaponIdx, unlocked, bagCap }`.
   `bagCap` is the **satchel capacity** (max letters carried; starts at 10, designed to be raised later
   by items). `satchelCount()` sums `state.inv`; `satchelFull()` gates capture in `doAttack` (a full
@@ -855,10 +857,16 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   as content changes. The two columns (`.cols`) are a `1fr 1fr` grid where **`.cols>div` carries
   `min-width:0`** — this is the load-bearing fix: without it a long collection entry (word +
   `nowrap` definition) expands its grid track past 50%, squeezing the bench column until the
-  letter chips overlap and a horizontal scrollbar appears. Letter chips are `flex:0 0 auto` so they
+  letter chips overlap and a horizontal scrollbar appears. Bench-word chips are `flex:0 0 auto` so they
   never compress; only `.dex-list` scrolls (`flex:1;min-height:0`). Collection defs are single-line
   ellipsis; `openDefModal()` shows full text in `#defmodal`. Under `max-width:560px` the panel
   switches to a normal scrolling single column.
+- **Library keyboard tray** (`renderBench` → `#tray`): the bench input shows a **full QWERTY keyboard**
+  (`KB_ROWS`, 3 rows), not just owned letters. Each key shows a corner count badge of how many copies
+  are still available to place (owned minus what's already on the bench); a key with **zero available**
+  (un-owned, or all copies on the bench) gets `.off` — greyed, `grayscale`, `pointer-events:none`, and
+  no `data-l` so it's unclickable. Tray keys use `flex:1 1 0;min-width:0;max-width:40px` so a 10-key
+  row always fits the column width (no overflow).
 
 ---
 
