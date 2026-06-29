@@ -820,8 +820,8 @@ function checkUnlocks(){
 
 /* ---------- BENCH / LIBRARY OVERLAY ----------------------- */
 let bench=[];   // letters currently on the bench line
-function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); renderBench(); renderDex(); SFX.play("click"); }
-function closeOverlay(){ state.overlay=false; document.getElementById("overlay").classList.remove("open"); closeDefModal(); bench=[]; document.getElementById("result").innerHTML=""; }
+function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); document.getElementById("sound-btn").style.display="none"; renderBench(); renderDex(); SFX.play("click"); }
+function closeOverlay(){ state.overlay=false; document.getElementById("overlay").classList.remove("open"); document.getElementById("sound-btn").style.display=""; closeDefModal(); bench=[]; document.getElementById("result").innerHTML=""; }
 const KB_ROWS=["qwertyuiop","asdfghjkl","zxcvbnm"];
 function renderBench(){
   // tray = full keyboard; letters you don't have (or have all on the bench) are greyed + unclickable
