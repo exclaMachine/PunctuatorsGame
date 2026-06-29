@@ -824,6 +824,15 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
     cell. `drawCreature` renders the creature **as the glyph itself** — no tile, eyes, or feet — with a
     brief scale-up "pop" while `c.flash>0` (just hit), falling back to dark `fillText` if the sheet
     hasn't loaded or the letter isn't on it. HP pips still draw above the glyph when damaged.
+- **Player sprite** (`playerImg` → `Lumberjack_Jack.png`) — **art by Kenmi, purchased on itch.io;
+  credit Kenmi (kept in the source comment above the loader)**. Sheet = 6 cols × 10 rows of 64×64
+  frames; `PR` maps rows: 0 idle-down, 1 idle-right, 2 idle-up, 3 walk-down, 4 walk-right, 5 walk-up,
+  6 fall-right (unused), 7 attack-right, 8 attack-down, 9 attack-up. `drawPlayer` picks the row from
+  `p.face` (cardinal) + state (`p.atkAnim>0` attack → `p.moving` walk → idle), advances the frame from
+  `p.animT` (idle/walk cycle) or attack progress, and **mirrors the right-facing rows for left**. Drawn
+  at `PLAYER_DRAW` (80px, `imageSmoothingEnabled=false`), feet near `p.y`. Weapons are **stats-only**
+  now (no drawn implement — the sprite has its own axe); the primitive "scholar" draw remains as a
+  fallback until the PNG loads. `doAttack` sets `p.atkAnim=ATTACK_ANIM` to play the attack row.
 - **`lookupWord(word)` / `checkWord()`** — word validation + definitions come **entirely** from the
   Free Dictionary API (`api.dictionaryapi.dev`); there is no local word list. `lookupWord` is async
   and returns `{ok:true, def}` for a real word, `{ok:false}` if the API rejects it (incl. 404), or

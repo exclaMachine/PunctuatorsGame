@@ -360,6 +360,22 @@ const SPRITESHEET = {
 };
 let sheetImg = null, sheetReady = false;
 
+/* ---------- PLAYER SPRITE --------------------------------------------------
+   "Lumberjack Jack" character sprite by Kenmi (purchased on itch.io).
+   Credit: Kenmi. Sheet = 6 columns × 10 rows of 64×64 frames.
+   Rows: 0 idle-down, 1 idle-right, 2 idle-up, 3 walk-down, 4 walk-right,
+   5 walk-up, 6 fall-right (unused), 7 attack-right, 8 attack-down, 9 attack-up.
+   Left-facing reuses the right-facing rows mirrored horizontally.            */
+const playerImg = new Image();
+let playerReady = false;
+playerImg.onload = ()=>{ playerReady=true; };
+playerImg.src = "./Lumberjack_Jack.png";
+const PLAYER_FRAME=64, PLAYER_COLS=6, PLAYER_DRAW=80;
+const ATTACK_ANIM=0.30;                    // attack animation length (s)
+const WALK_FRAME=0.09, IDLE_FRAME=0.16;    // seconds per animation frame
+const PR={ idleDown:0, idleRight:1, idleUp:2, walkDown:3, walkRight:4, walkUp:5,
+           atkRight:7, atkDown:8, atkUp:9 };
+
 // Writing implements. Unlock thresholds = unique words collected.
 const WEAPONS = [
   { name:"Stick",  dmg:1, range:50, cd:0.42, shaft:"#9b6b3a", tip:"#7c5226", unlockAt:0  },
@@ -565,7 +581,7 @@ function doAttack(){
     SFX.play("invalid");
     return;
   }
-  p.atkCd=wpn.cd; p.atkAnim=0.18;
+  p.atkCd=wpn.cd; p.atkAnim=ATTACK_ANIM;
   SFX.play("swing");
   const sc=curScreen();
   for(let i=sc.creatures.length-1;i>=0;i--){
@@ -591,6 +607,8 @@ function update(dt){
   const p=state.player;
   if(p.atkCd>0) p.atkCd-=dt;
   if(p.atkAnim>0) p.atkAnim-=dt;
+  p.animT=(p.animT||0)+dt;     // drives idle/walk sprite cycling
+  p.moving=false;
 
   if(!state.overlay && !state.help && state.started){
     let mx=0,my=0;
@@ -600,7 +618,7 @@ function update(dt){
     if(keys["arrowright"]||keys["d"]) mx+=1;
     if(mx||my){
       const len=Math.hypot(mx,my); mx/=len; my/=len;
-      p.face.x=mx; p.face.y=my;
+      p.face.x=mx; p.face.y=my; p.moving=true;
       p.x+=mx*p.speed*dt; p.y+=my*p.speed*dt;
     }
     // edge transitions: exit one side, arrive on the opposite side of the next screen
@@ -744,21 +762,35 @@ function drawCreature(c){
 }
 function drawPlayer(){
   const p=state.player;
-  // shadow
-  ctx.fillStyle="rgba(0,0,0,.2)"; ctx.beginPath(); ctx.ellipse(p.x,p.y+p.r-2,p.r,6,0,0,7); ctx.fill();
-  // body (a little scholar)
-  ctx.fillStyle="#3b4a7a"; roundRect(p.x-12,p.y-14,24,28,8); ctx.fill();
-  ctx.fillStyle="#ece3cf"; ctx.beginPath(); ctx.arc(p.x,p.y-16,9,0,7); ctx.fill();   // head
-  // implement
-  const wpn=WEAPONS[state.weaponIdx];
-  const ang=Math.atan2(p.face.y,p.face.x);
-  const swing = p.atkAnim>0 ? (1 - p.atkAnim/0.18) : 0;       // 0..1
-  const a = ang - 0.6 + swing*1.2;
-  const bx=p.x+Math.cos(ang)*8, by=p.y+Math.cos(ang)*2;
-  const ex=bx+Math.cos(a)*wpn.range, ey=by+Math.sin(a)*wpn.range;
-  ctx.strokeStyle=wpn.shaft; ctx.lineWidth=4; ctx.lineCap="round";
-  ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(ex,ey); ctx.stroke();
-  ctx.fillStyle=wpn.tip; ctx.beginPath(); ctx.arc(ex,ey,4,0,7); ctx.fill();
+  if(!playerReady){
+    // fallback (before the sprite loads): a little scholar
+    ctx.fillStyle="#3b4a7a"; roundRect(p.x-12,p.y-14,24,28,8); ctx.fill();
+    ctx.fillStyle="#ece3cf"; ctx.beginPath(); ctx.arc(p.x,p.y-16,9,0,7); ctx.fill();
+    return;
+  }
+
+  // pick row (direction + state) and frame
+  const horiz=Math.abs(p.face.x)>=Math.abs(p.face.y);
+  const left=horiz && p.face.x<0;
+  let row, frame;
+  if(p.atkAnim>0){                                   // attacking — play through the row once
+    row = horiz ? PR.atkRight : (p.face.y<0 ? PR.atkUp : PR.atkDown);
+    frame = Math.min(PLAYER_COLS-1, Math.floor((1-p.atkAnim/ATTACK_ANIM)*PLAYER_COLS));
+  } else if(p.moving){
+    row = horiz ? PR.walkRight : (p.face.y<0 ? PR.walkUp : PR.walkDown);
+    frame = Math.floor(p.animT/WALK_FRAME)%PLAYER_COLS;
+  } else {
+    row = horiz ? PR.idleRight : (p.face.y<0 ? PR.idleUp : PR.idleDown);
+    frame = Math.floor(p.animT/IDLE_FRAME)%PLAYER_COLS;
+  }
+  const sx=frame*PLAYER_FRAME, sy=row*PLAYER_FRAME;
+  const D=PLAYER_DRAW;
+  const dx=p.x-D/2, dy=p.y-D*0.74;     // feet sit near p.y
+  ctx.save();
+  ctx.imageSmoothingEnabled=false;
+  if(left){ ctx.translate(p.x,0); ctx.scale(-1,1); ctx.translate(-p.x,0); }   // mirror for left
+  ctx.drawImage(playerImg, sx,sy,PLAYER_FRAME,PLAYER_FRAME, dx,dy,D,D);
+  ctx.restore();
 }
 function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r);
   ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
