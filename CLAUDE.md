@@ -867,6 +867,10 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   (un-owned, or all copies on the bench) gets `.off` — greyed, `grayscale`, `pointer-events:none`, and
   no `data-l` so it's unclickable. Tray keys use `flex:1 1 0;min-width:0;max-width:40px` so a 10-key
   row always fits the column width (no overflow).
+- **Library close** — the footer "Close" button was replaced by an **`✕` button (`#lib-close`,
+  `.close-x`) in the panel's upper-right**, on both desktop and mobile. It's `position:absolute` in the
+  `#overlay .book` (which is `position:relative`); on touch the panel can scroll as a whole, so the X is
+  `position:fixed` to the corner there. Wired to `closeOverlay()` (same as Esc / clicking outside).
 
 ---
 

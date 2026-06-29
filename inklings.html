@@ -53,7 +53,14 @@
   .book h1{font-family:var(--disp);font-size:16px;line-height:1.4;margin:0 0 12px;color:var(--ink)}
   .book .sub{color:var(--ink-soft);font-size:17px;margin-bottom:14px;line-height:1.3}
   /* Library: fixed, stable panel — only the collection list scrolls, nothing reflows */
-  #overlay .book{display:flex;flex-direction:column;height:min(600px,92vh);overflow:hidden}
+  #overlay .book{position:relative;display:flex;flex-direction:column;height:min(600px,92vh);overflow:hidden}
+  .close-x{position:absolute;top:10px;right:10px;width:32px;height:32px;z-index:2;
+    font-family:var(--disp);font-size:12px;line-height:1;padding:0;
+    background:var(--paper-2);color:var(--ink);border:2px solid var(--edge);
+    box-shadow:3px 3px 0 rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .close-x:hover{background:#dcd0b2}
+  .close-x:active{transform:translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0)}
+  #overlay .book>h1{margin-right:40px}   /* leave room for the X */
   #overlay .book>h1,#overlay .book>.sub,#overlay .foot{flex:none}
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;flex:1;min-height:0}
   .cols>div{min-width:0;min-height:0;display:flex;flex-direction:column}  /* min-width:0 is the key fix */
@@ -200,6 +207,8 @@
   body.touch #touch.live{display:flex;align-items:flex-end;justify-content:space-between;padding:0 8px 2px}
   body.touch #dpad{position:static}
   body.touch #tact{position:static}
+  /* the library can scroll as a whole on mobile, so pin the X to the corner */
+  body.touch .close-x{position:fixed;top:max(12px,env(safe-area-inset-top));right:12px}
 </style>
 </head>
 <body>
@@ -226,6 +235,7 @@
     <!-- Library overlay -->
     <div id="overlay">
       <div class="book">
+        <button class="close-x" id="lib-close" aria-label="Close library" title="Close">✕</button>
         <h1>The Library</h1>
         <div class="sub">Build words from the letters in your satchel. Each new word joins your collection.</div>
         <div class="cols">
@@ -252,7 +262,6 @@
           <div class="btn-row">
             <button class="ghost" id="export-btn">Export backup</button>
             <button class="ghost" id="import-btn">Import backup</button>
-            <button id="close-btn">Close</button>
           </div>
         </div>
       </div>
@@ -926,7 +935,7 @@ document.getElementById("help-btn").onclick=toggleHelp;
 document.getElementById("controls-close").onclick=toggleHelp;
 document.getElementById("check-btn").onclick=checkWord;
 document.getElementById("clear-btn").onclick=()=>{ bench=[]; renderBench(); document.getElementById("result").innerHTML=""; SFX.play("click"); };
-document.getElementById("close-btn").onclick=()=>{ closeOverlay(); SFX.play("click"); };
+document.getElementById("lib-close").onclick=()=>{ closeOverlay(); SFX.play("click"); };
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
 document.getElementById("export-btn").onclick=()=>{ exportBackup(); SFX.play("click"); };
