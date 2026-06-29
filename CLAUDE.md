@@ -928,7 +928,8 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   (distinct bodies beyond the bare glyph) is still future work.
 - **Dictionary** — validation + definitions come entirely from the Free Dictionary API (see code
   map), so any real English word works. No local word list (requires a connection to check words).
-- **No autosave** — only manual export/import. IndexedDB autosave is the next persistence step.
+- **Autosave (IndexedDB)** — progress persists automatically across reloads; Export/Import remain as
+  manual backup/transfer; a **Reset** button (library footer, with confirm) wipes the save.
 - Not started: library room, genre books / procedural layouts, hero weapons, word effects,
   farming/ranching, town/trade.
 
@@ -972,10 +973,19 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Controls/help `?
    so any real English word works (`exit`, `quartz`, etc. now validate). No local word list. Optional
    future polish: bundle a local wordlist/definitions JSON for an offline fallback, and/or cache API
    results in `localStorage`.
-3. **IndexedDB autosave** — persist `state` per-origin; call `navigator.storage.persist()`;
-   namespace the DB (`inklings_save`) so it won't collide with other games on the same Pages
-   origin. Keep export/import as the backup/transfer path. (IndexedDB is per-browser/device;
-   true cross-device sync would need a backend — out of scope.)
+3. **IndexedDB autosave** — DONE. Progress autosaves to IndexedDB DB `inklings_save` (store `state`,
+   key `save`). `snapshot()` builds a clone-safe object (inv, dex, unlocked, weaponIdx, bagCap,
+   visited[]); `applySnapshot()` restores it. `scheduleSave()` (600 ms debounce) is called on the
+   meaningful mutations (capture, new word, weapon switch, new screen visited); `saveNow()` also fires
+   on `pagehide`/`visibilitychange`. A `loaded` gate blocks autosave until the startup `idbGet()` load
+   resolves so a fresh frame can't overwrite the real save. `navigator.storage.persist()` is requested
+   on startup. Export/Import (file) share `snapshot()`/`applySnapshot()` and remain the backup/transfer
+   path; **Reset** (`resetProgress` → `idbClear` + reload) wipes it. (Per-browser/device; true
+   cross-device sync would need a backend — out of scope.) **Import gotcha:** the Import control is a
+   `<label class="filebtn">` wrapping a real (visually-hidden, *not* `display:none`) `#import-file`
+   input, so the OS picker opens **natively**. Do NOT revert it to a `<button>` that calls
+   `input.click()` programmatically — Chrome silently refuses to open the picker that way (handler runs,
+   no dialog). Handle the chosen file in `#import-file`'s `onchange`.
 4. **Library room** — render the dex as a walkable room with shelves. Organize words into
    sets/shelves (by length, by source book, by theme) so there are achievable sub-goals instead
    of one impossible "collect everything." Same data as the current list.
