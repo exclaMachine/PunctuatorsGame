@@ -866,7 +866,10 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   are still available to place (owned minus what's already on the bench); a key with **zero available**
   (un-owned, or all copies on the bench) gets `.off` — greyed, `grayscale`, `pointer-events:none`, and
   no `data-l` so it's unclickable. Tray keys use `flex:1 1 0;min-width:0;max-width:40px` so a 10-key
-  row always fits the column width (no overflow).
+  row always fits the column width (no overflow). While the library is open the **physical keyboard
+  also builds words** (handled in the `if(state.overlay)` keydown branch): an `a–z` key adds that
+  letter iff a copy is still available (same availability rule as the on-screen keys), `Backspace`
+  removes the last bench letter, and `Enter` runs `checkWord()`. (`Esc`/`Tab` still close.)
 - **Library close** — the footer "Close" button was replaced by an **`✕` button (`#lib-close`,
   `.close-x`) in the panel's upper-right**, on both desktop and mobile. It's `position:absolute` in the
   `#overlay .book` (which is `position:relative`); on touch the panel can scroll as a whole, so the X is

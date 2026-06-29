@@ -512,7 +512,18 @@ addEventListener("keydown",e=>{
     if(k==="escape"){ e.preventDefault(); closeDefModal(); } return;   // close the def modal first
   }
   if(state.help){ if(k==="escape"){ e.preventDefault(); toggleHelp(); } return; }
-  if(state.overlay){ if(k==="escape"||k==="tab"){ e.preventDefault(); closeOverlay(); } return; }
+  if(state.overlay){   // library open: let the physical keyboard build words
+    if(k==="escape"||k==="tab"){ e.preventDefault(); closeOverlay(); return; }
+    if(k==="enter"){ e.preventDefault(); checkWord(); return; }
+    if(k==="backspace"){ e.preventDefault(); if(bench.length){ bench.pop(); renderBench(); } return; }
+    if(/^[a-z]$/.test(k)){               // add the letter only if you still have a copy available
+      e.preventDefault();
+      const used={}; bench.forEach(l=>used[l]=(used[l]||0)+1);
+      if((state.inv[k]||0)-(used[k]||0) > 0){ bench.push(k); renderBench(); }
+      return;
+    }
+    return;
+  }
   if(!state.started) return;
   keys[k]=true;
   if(k==="h") teleportHome();
