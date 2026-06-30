@@ -859,7 +859,14 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   adds its stable id (`"sx,sy,i"`) to `state.captured`; `genScreen` skips any creature already in that
   set, so a taken creature stays gone until tomorrow. To get more letters you wait for the next day's
   map. `makeCreature(rng, dist, tiles)` is called for every index (to keep RNG/positions stable) but
-  only pushed if not yet captured.
+  only pushed if not yet captured. **All-cleared notice:** `dayTotalCreatures()` sums the day's
+  per-screen creature counts across the whole map (replaying each screen's first `rng()` draw, the
+  same one `genScreen` uses — no need to visit them), memoized per day. `dayCleared()` = `captured.size
+  >= dayTotalCreatures()`. When cleared, `render()` draws a **persistent** bottom-centre banner
+  (`drawClearedBanner`, "ALL CREATURES CAPTURED! / Come back tomorrow…") that stays on screen all day —
+  it does **not** fade like a toast. `maybeNotifyCleared()` only plays the one-time `unlock` chime
+  (guarded by `_clearedDay`); it's called from `doAttack` (clearing the last one) and each frame in
+  `update()` while started (so loading into an already-cleared day still chimes once).
 - **`SFX`** — a small Web Audio IIFE (no asset files) that synthesizes chiptune blips, matching the
   retro-pixel theme and the single-file/offline rule. `SFX.play(name)` plays a named cue (`swing`,
   `capture`, `newword`, `known`, `invalid`, `unlock`, `home`, `click`); internals are `tone()` (one
@@ -879,8 +886,9 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   in the export/import backup.
 - **Systems**, in order: screen generation → input → combat → update → render → desk/bench →
   backup (export/import) → main loop.
-- **Bounded daily map (Wordle-style)** — the world is a fixed **5×5 grid of screens** (`MAP_RADIUS=2`,
-  `sx,sy ∈ [-2,2]`, home `(0,0)` at centre), regenerated fresh each **real calendar day**. `todayStr()`
+- **Bounded daily map (Wordle-style)** — the world is a fixed grid of screens sized by `MAP_RADIUS`
+  (currently **1 → 3×3**, `sx,sy ∈ [-1,1]`; bump to 2 for 5×5, etc.), home `(0,0)` at centre,
+  regenerated fresh each **real calendar day**. `todayStr()`
   (local Y-M-D) + `dayHash()` give `state.daySeed`, which is XOR'd into every `genScreen`/`genTiles` RNG
   so the whole map (terrain + creatures) is deterministic for the date, identical all day, and new
   tomorrow. `update()` checks `state.day !== todayStr()` each frame and calls `startNewDay()` on
@@ -961,7 +969,7 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 
 **Built and working:**
 
-- Home base with a writing desk; bounded **5×5 daily map** of screens (walls at the world edge),
+- Home base with a writing desk; bounded **daily map** of screens (`MAP_RADIUS`, currently 3×3; walls at the world edge),
   regenerated each real calendar day; walk-off-edge travel between screens; `H` to teleport home;
   translucent explored-area minimap in the bottom-right (resets daily).
 - Attack-based combat (no bump-to-collect); creatures are captured in a **single hit**

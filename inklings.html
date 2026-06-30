@@ -374,7 +374,7 @@ const W = TILE * COLS, H = TILE * ROWS;            // 720 x 528
 const TS = 24, TCOLS = W / TS, TROWS = H / TS;    // 30 × 22
 const T_GRASS = 0, T_PATH = 1, T_WATER = 2, T_ROCK = 3;
 function walkType(t){ return t === T_GRASS || t === T_PATH; }
-const MAP_RADIUS = 2;   // bounded 5×5 map of screens (home (0,0) at centre; sx,sy ∈ [-2,2])
+const MAP_RADIUS = 1;   // bounded 3×3 map of screens (home (0,0) at centre; sx,sy ∈ [-1,1]). Raise for a bigger map (2 = 5×5, …)
 
 // >>> SPRITESHEET: the hand-drawn glyph sheet shared with Spin Nids (Alpha.png).
 // 7×8 grid of 32×32 cells: a–z = frames 0–25, A–Z = 26–51. We only use a–z here.
@@ -741,6 +741,32 @@ function doAttack(){
       scheduleSave();
     }
   }
+  maybeNotifyCleared();
+}
+// Total letter-creatures across the whole day's bounded map. Mirrors genScreen's per-screen count
+// (the first rng() draw seeds it the same way), so we can know the day's total without visiting every
+// screen. Memoized per day.
+let _dayTotalDay=null, _dayTotal=0;
+function dayTotalCreatures(){
+  if(_dayTotalDay===state.day) return _dayTotal;
+  let tot=0;
+  for(let sy=-MAP_RADIUS; sy<=MAP_RADIUS; sy++) for(let sx=-MAP_RADIUS; sx<=MAP_RADIUS; sx++){
+    if(sx===0 && sy===0) continue;                       // home has no creatures
+    const rng=mulberry32((hash2(sx,sy) ^ state.daySeed)>>>0);
+    const dist=Math.abs(sx)+Math.abs(sy);
+    tot += 4 + Math.floor(rng()*3) + Math.min(2, Math.floor(dist/3));
+  }
+  _dayTotalDay=state.day; _dayTotal=tot;
+  return tot;
+}
+function dayCleared(){ return state.captured.size >= dayTotalCreatures(); }
+// Chime once the day the map gets fully cleared. The persistent "come back tomorrow" message itself is a
+// banner drawn every frame by drawClearedBanner() (it stays on screen, it doesn't fade like a toast).
+let _clearedDay=null;
+function maybeNotifyCleared(){
+  if(_clearedDay===state.day || !dayCleared()) return;
+  _clearedDay=state.day;
+  SFX.play("unlock");
 }
 
 /* ---------- UPDATE ---------------------------------------- */
@@ -802,6 +828,9 @@ function update(dt){
   if(!state.overlay && !state.help && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
   else hint.classList.remove("show");
 
+  // if you load into an already-cleared day, greet you with the "come back tomorrow" notice (once/day)
+  if(state.started) maybeNotifyCleared();
+
   syncTouchUI();
 }
 
@@ -836,6 +865,23 @@ function render(){
   }
 
   if(state.started) drawMinimap();
+  if(state.started && dayCleared()) drawClearedBanner();
+}
+// Persistent banner shown all day once every creature has been captured — stays on screen (no fade)
+// until tomorrow's fresh map. Bottom-centre so it clears the top toasts and the bottom-right minimap.
+function drawClearedBanner(){
+  ctx.save();
+  ctx.imageSmoothingEnabled=false;
+  const bw=452, bh=56, bx=(W-bw)/2, by=H-bh-14;
+  ctx.fillStyle="rgba(38,35,58,.35)"; ctx.fillRect(bx+4,by+4,bw,bh);   // hard offset shadow
+  ctx.fillStyle="#26233a";            ctx.fillRect(bx-3,by-3,bw+6,bh+6); // chunky ink border
+  ctx.fillStyle="#e3d8bd";            ctx.fillRect(bx,by,bw,bh);         // parchment panel
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillStyle="#3b4a7a"; ctx.font="11px 'Press Start 2P', monospace";
+  ctx.fillText("ALL CREATURES CAPTURED!", W/2, by+19);
+  ctx.fillStyle="#26233a"; ctx.font="9px 'Press Start 2P', monospace";
+  ctx.fillText("Come back tomorrow for a fresh map.", W/2, by+39);
+  ctx.restore();
 }
 // Translucent explored-area map in the bottom-right. Visited screens are lit, screens you
 // haven't reached are black; home (0,0) is gold and the current screen is marked in ink-red.
