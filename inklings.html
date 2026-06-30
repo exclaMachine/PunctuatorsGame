@@ -370,6 +370,10 @@
 /* ---------- CONFIG ---------------------------------------- */
 const TILE = 48, COLS = 15, ROWS = 11;
 const W = TILE * COLS, H = TILE * ROWS;            // 720 x 528
+// Terrain grid (finer than TILE): 24px tiles → 30 × 22. Four types; water/rock block movement.
+const TS = 24, TCOLS = W / TS, TROWS = H / TS;    // 30 × 22
+const T_GRASS = 0, T_PATH = 1, T_WATER = 2, T_ROCK = 3;
+function walkType(t){ return t === T_GRASS || t === T_PATH; }
 
 // >>> SPRITESHEET: the hand-drawn glyph sheet shared with Spin Nids (Alpha.png).
 // 7×8 grid of 32×32 cells: a–z = frames 0–25, A–Z = 26–51. We only use a–z here.
@@ -449,7 +453,7 @@ const state = {
   inv:{},                       // letter -> count
   dex:{},                       // word -> {def, found}
   bagCap:10,                    // max letters the satchel can hold (raise later via items)
-  screens:new Map(),            // "sx,sy" -> {creatures, decos, generated}
+  screens:new Map(),            // "sx,sy" -> {creatures, tiles, seed, bg, ...}
   visited:new Set(),            // "sx,sy" of screens the player has entered (for the minimap)
   fx:[],                        // floating texts
   started:false, overlay:false, help:false
@@ -477,25 +481,83 @@ function weightedLetter(rng, dist){
   return "e";
 }
 const RESPAWN_MS = 360000;   // ~6 min for a cleared field to grow back (session-only; reload = a fresh, full day)
-function makeCreature(rng, dist){
-  return { x:60+rng()*(W-120), y:60+rng()*(H-120), letter:weightedLetter(rng, dist),
-           hp:CREATURE_HP, maxhp:CREATURE_HP, vx:0, vy:0, wander:0, flash:0 };
+// Every collidable tile (water/rock) must keep at least this many walkable tiles between it and any
+// screen edge, so you can never arrive on/beside an obstacle and get boxed in.
+const EDGE_MARGIN = 2;
+// Grow a random-walk blob of `type`, confined to the interior beyond EDGE_MARGIN.
+function blob(t, rng, type, size){
+  const lo=EDGE_MARGIN, hc=TCOLS-1-EDGE_MARGIN, hr=TROWS-1-EDGE_MARGIN;
+  let c=lo+(rng()*(hc-lo+1)|0), r=lo+(rng()*(hr-lo+1)|0);
+  for(let i=0;i<size;i++){
+    t[r][c]=type;
+    const d=rng()*4|0;
+    if(d===0) c++; else if(d===1) c--; else if(d===2) r++; else r--;
+    c=Math.max(lo,Math.min(hc,c)); r=Math.max(lo,Math.min(hr,r));
+  }
+}
+// Carve a winding light-brown trail left→right (overwriting obstacles), so screens read as linked by paths.
+function carvePath(t, rng){
+  let c=0, r=1+(rng()*(TROWS-2)|0); const er=1+(rng()*(TROWS-2)|0);
+  while(c<TCOLS){
+    t[r][c]=T_PATH;
+    if(c>0 && c<TCOLS-1 && rng()<0.5){ const r2=Math.max(0,Math.min(TROWS-1,r+(rng()<0.5?1:-1))); t[r2][c]=T_PATH; }
+    c++;
+    if(rng()<0.6){ r += (r<er?1:(r>er?-1:(rng()<0.5?1:-1))); r=Math.max(0,Math.min(TROWS-1,r)); }
+  }
+}
+function genTiles(sx,sy,isBase){
+  const trng = mulberry32((hash2(sx,sy) ^ 0x5a17b3)>>>0);
+  const t=[]; for(let r=0;r<TROWS;r++) t.push(new Array(TCOLS).fill(T_GRASS));
+  if(!isBase){
+    const dist=Math.abs(sx)+Math.abs(sy);
+    const ponds = 1 + (trng()*3|0);
+    for(let i=0;i<ponds;i++) blob(t, trng, T_WATER, 5 + (trng()*9|0) + Math.min(6,dist));
+    const rocks = 1 + (trng()*3|0);
+    for(let i=0;i<rocks;i++) blob(t, trng, T_ROCK, 3 + (trng()*6|0) + Math.min(4,dist));
+  }
+  carvePath(t, trng);
+  // Scrub any collidable tile within EDGE_MARGIN of an edge — guarantees the walkable border so arrivals
+  // are always valid and you can never be fully trapped (belt-and-suspenders with blob's confinement).
+  for(let r=0;r<TROWS;r++) for(let c=0;c<TCOLS;c++){
+    if((r<EDGE_MARGIN || r>=TROWS-EDGE_MARGIN || c<EDGE_MARGIN || c>=TCOLS-EDGE_MARGIN) && !walkType(t[r][c]))
+      t[r][c]=T_GRASS;
+  }
+  return t;
+}
+// Is the terrain under a world point solid (blocks movement)? Off-screen is not blocked (edge transitions handle it).
+function blockedAt(sc,px,py){
+  if(!sc.tiles || px<0 || py<0 || px>=W || py>=H) return false;
+  return !walkType(sc.tiles[(py/TS)|0][(px/TS)|0]);
+}
+// Collide on a small box at the player's FEET. The visible feet sit a little ABOVE p.y, so the box is
+// centred at p.y+FOOT_DY (negative) and kept thin — that way the feet touch the near edge of water/rock
+// evenly whether you walk into it from above or below, instead of overlapping one side and gapping the
+// other. FOOT_DY is the knob: more negative = feet higher up the sprite.
+const FOOT_DY=-10, FOOT_HW=8, FOOT_HH=4;
+function canStand(sc,px,py){
+  const fy=py+FOOT_DY;
+  return !blockedAt(sc,px-FOOT_HW,fy-FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy-FOOT_HH)
+      && !blockedAt(sc,px-FOOT_HW,fy+FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy+FOOT_HH);
+}
+function makeCreature(rng, dist, tiles){
+  let x=60+rng()*(W-120), y=60+rng()*(H-120);
+  if(tiles){                                  // keep spawns on land so every creature is reachable
+    for(let i=0;i<24 && !walkType(tiles[(y/TS)|0][(x/TS)|0]);i++){ x=40+rng()*(W-80); y=40+rng()*(H-80); }
+  }
+  return { x, y, letter:weightedLetter(rng, dist), hp:CREATURE_HP, maxhp:CREATURE_HP, vx:0, vy:0, wander:0, flash:0 };
 }
 function genScreen(sx,sy){
   const isBase = (sx===0 && sy===0);
   const rng = mulberry32(hash2(sx,sy));
-  const decos=[];
-  const decoCount = isBase ? 6 : 8 + Math.floor(rng()*8);
-  for(let i=0;i<decoCount;i++){
-    decos.push({ x:30+rng()*(W-60), y:30+rng()*(H-60), kind:Math.floor(rng()*3), s:0.7+rng()*0.6 });
-  }
+  const tiles = genTiles(sx,sy,isBase);
   const dist=Math.abs(sx)+Math.abs(sy);
   const creatures=[]; let cap=0;
   if(!isBase){
     cap = 4 + Math.floor(rng()*3) + Math.min(2, Math.floor(dist/3));   // target population for this field
-    for(let i=0;i<cap;i++) creatures.push(makeCreature(rng, dist));
+    for(let i=0;i<cap;i++) creatures.push(makeCreature(rng, dist, tiles));
   }
-  return { creatures, decos, generated:true, isBase, cap, dist, refillAt:0 };
+  return { creatures, tiles, seed:hash2(sx,sy), bg:null, waterTiles:null,
+           generated:true, isBase, cap, dist, refillAt:0 };
 }
 function curScreen(){
   const k=key(state.screen.sx,state.screen.sy);
@@ -652,6 +714,7 @@ function update(dt){
   if(p.atkAnim>0) p.atkAnim-=dt;
   p.animT=(p.animT||0)+dt;     // drives idle/walk sprite cycling
   p.moving=false;
+  const sc=curScreen();
 
   if(!state.overlay && !state.help && state.started){
     let mx=0,my=0;
@@ -662,7 +725,10 @@ function update(dt){
     if(mx||my){
       const len=Math.hypot(mx,my); mx/=len; my/=len;
       p.face.x=mx; p.face.y=my; p.moving=true;
-      p.x+=mx*p.speed*dt; p.y+=my*p.speed*dt;
+      // resolve axes independently so you slide along water/rock instead of sticking
+      const nx=p.x+mx*p.speed*dt, ny=p.y+my*p.speed*dt;
+      if(canStand(sc,nx,p.y)) p.x=nx;
+      if(canStand(sc,p.x,ny)) p.y=ny;
     }
     // edge transitions: exit one side, arrive on the opposite side of the next screen
     if(p.x<0)      goScreen(-1,0,"right");
@@ -675,10 +741,9 @@ function update(dt){
 
   // creatures — regrow a depleted field once its timer elapses (returners are freshly
   // randomized, so the same screen isn't identical, and they reflect your current unlocks)
-  const sc=curScreen();
   if(sc.refillAt && Date.now()>=sc.refillAt){
     const rng=mulberry32((hash2(state.screen.sx,state.screen.sy) ^ (Date.now()>>>0))>>>0);
-    while(sc.creatures.length<sc.cap) sc.creatures.push(makeCreature(rng, sc.dist));
+    while(sc.creatures.length<sc.cap) sc.creatures.push(makeCreature(rng, sc.dist, sc.tiles));
     sc.refillAt=0;
   }
   for(const c of sc.creatures){
@@ -689,7 +754,10 @@ function update(dt){
     const dx=c.x-p.x, dy=c.y-p.y, d=Math.hypot(dx,dy);
     if(d<130){ c.vx+=(dx/(d||1))*60*dt*4; c.vy+=(dy/(d||1))*60*dt*4; }
     c.vx*=0.96; c.vy*=0.96;
-    c.x+=c.vx*dt; c.y+=c.vy*dt;
+    // stay on land — bounce off water/rock so creatures never drift somewhere unreachable
+    const ncx=c.x+c.vx*dt, ncy=c.y+c.vy*dt;
+    if(!blockedAt(sc,ncx,c.y)) c.x=ncx; else c.vx*=-1;
+    if(!blockedAt(sc,c.x,ncy)) c.y=ncy; else c.vy*=-1;
     c.x=Math.max(28,Math.min(W-28,c.x)); c.y=Math.max(28,Math.min(H-28,c.y));
   }
 
@@ -708,16 +776,11 @@ function update(dt){
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
 function render(){
   const sc=curScreen();
-  // floor
-  ctx.fillStyle = sc.isBase ? "#e7dcc0" : "#d8cba8";
-  ctx.fillRect(0,0,W,H);
-  // subtle parchment grid
-  ctx.strokeStyle="rgba(38,35,58,.05)"; ctx.lineWidth=1;
-  for(let x=TILE;x<W;x+=TILE){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke(); }
-  for(let y=TILE;y<H;y+=TILE){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke(); }
-
-  // decorations (ground flora — walk-over)
-  for(const d of sc.decos) drawDeco(d);
+  // terrain: blit the baked tile map, then animate water on top
+  ensureBg(sc);
+  ctx.drawImage(sc.bg,0,0);
+  const tnow=Date.now();
+  for(const wt of sc.waterTiles) drawWaterAnim(wt[0],wt[1],tnow);
 
   // base bench
   if(sc.isBase) drawBench();
@@ -773,19 +836,49 @@ function drawMinimap(){
   ctx.strokeRect(px+1, py+1, cell-2, cell-2);
   ctx.restore();
 }
-function drawDeco(d){
-  ctx.save(); ctx.translate(d.x,d.y); ctx.scale(d.s,d.s);
-  if(d.kind===0){ // ink tuft
-    ctx.strokeStyle="rgba(91,122,75,.65)"; ctx.lineWidth=2; ctx.lineCap="round";
-    for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(i*3,6); ctx.quadraticCurveTo(i*3+2,-4,i*4,-12); ctx.stroke(); }
-  } else if(d.kind===1){ // pebble
-    ctx.fillStyle="rgba(95,88,114,.35)"; ctx.beginPath(); ctx.ellipse(0,0,9,6,0,0,7); ctx.fill();
-  } else { // tiny inkblot flower
-    ctx.fillStyle="rgba(122,74,154,.4)";
-    for(let a=0;a<5;a++){ const an=a/5*Math.PI*2; ctx.beginPath(); ctx.ellipse(Math.cos(an)*6,Math.sin(an)*6,4,4,0,0,7); ctx.fill(); }
-    ctx.fillStyle="rgba(200,155,60,.8)"; ctx.beginPath(); ctx.arc(0,0,3,0,7); ctx.fill();
+/* ---------- TERRAIN RENDERING ----------------------------- */
+// Deterministic per-tile random byte → each block looks a little unique (jitter, shade, motif).
+function tileVar(seed,c,r){ let h=(seed ^ (c*374761393) ^ (r*668265263))>>>0; h=(h^(h>>>13))*1274126177; return (h^(h>>>16))>>>0; }
+// Bake the static terrain of a screen into an offscreen canvas once (water gets an animated layer live).
+function ensureBg(sc){
+  if(sc.bg) return;
+  const cv2=document.createElement("canvas"); cv2.width=W; cv2.height=H;
+  const g=cv2.getContext("2d"); g.imageSmoothingEnabled=false;
+  sc.waterTiles=[];
+  for(let r=0;r<TROWS;r++) for(let c=0;c<TCOLS;c++){
+    const t=sc.tiles[r][c], v=tileVar(sc.seed,c,r);
+    bakeTile(g,t,c,r,v);
+    if(t===T_WATER) sc.waterTiles.push([c,r]);
   }
-  ctx.restore();
+  sc.bg=cv2;
+}
+function bakeTile(g,t,c,r,v){
+  const x=c*TS, y=r*TS;
+  if(t===T_GRASS){
+    g.fillStyle=(v&1)?"#6f8f4e":"#638544"; g.fillRect(x,y,TS,TS);
+    g.fillStyle=(v&2)?"#557a3c":"#82a35e";                   // a few jittered blades
+    const n=2+(v%3);
+    for(let i=0;i<n;i++){ const bx=x+3+((v>>(i*3))%(TS-6)), by=y+5+((v>>(i*2+1))%(TS-9)); g.fillRect(bx,by,2,4+((v>>i)&2)); }
+  } else if(t===T_PATH){
+    g.fillStyle=(v&1)?"#c2a76a":"#b89a5c"; g.fillRect(x,y,TS,TS);
+    g.fillStyle=(v&2)?"#a98f4f":"#d6c08a";                   // gravel specks
+    const n=3+(v%3);
+    for(let i=0;i<n;i++){ const bx=x+2+((v>>(i*3))%(TS-4)), by=y+2+((v>>(i*2))%(TS-4)); g.fillRect(bx,by,2,2); }
+  } else if(t===T_WATER){
+    g.fillStyle=(v&1)?"#3b6ea5":"#34679d"; g.fillRect(x,y,TS,TS);
+    g.fillStyle="rgba(120,175,225,.45)"; g.fillRect(x+2,y+3+(v%5),TS-5,2);  // faint static ripple
+  } else { // rock
+    g.fillStyle=(v&1)?"#83838d":"#777781"; g.fillRect(x,y,TS,TS);
+    g.fillStyle="#5e5e68"; g.fillRect(x+3+(v%4),y+7,TS-9,TS-11);            // boulder body
+    g.fillStyle="#9da1ab"; g.fillRect(x+4+(v%4),y+8,5,4);                   // highlight
+    g.fillStyle="#4a4a54"; g.fillRect(x,y+TS-3,TS,3);                       // base shadow
+  }
+}
+// Two light ripples that slide back and forth — the "wavy" water (drawn live over the baked base).
+function drawWaterAnim(c,r,tnow){
+  const x=c*TS, y=r*TS, ph=tnow/600 + (c*0.6 + r*0.4);
+  ctx.fillStyle="rgba(160,205,240,.5)";  ctx.fillRect(x+4+Math.sin(ph)*3, y+8,  TS-12, 2);
+  ctx.fillStyle="rgba(120,175,225,.45)"; ctx.fillRect(x+5-Math.cos(ph*1.1)*3, y+15, TS-12, 2);
 }
 function drawBench(){
   const cx=W/2, cy=H/2-6;

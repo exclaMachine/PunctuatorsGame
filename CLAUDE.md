@@ -884,6 +884,28 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 - **World is unbounded/procedural** — `genScreen(sx,sy)` makes a screen for any integer coords
   (hashed RNG), `goScreen` has no clamp, so the world is infinite in all directions. `(0,0)` is home.
   (The old "3×3 world" note is aspirational, not enforced.)
+- **Tile terrain + collision** — each screen has a `tiles[TROWS][TCOLS]` map on a **24px grid**
+  (`TS=24`, `TCOLS=30 × TROWS=22`, separate from the 48px gameplay `TILE`). Four pixel-art types:
+  `T_GRASS`/`T_PATH` are walkable, `T_WATER`/`T_ROCK` block movement (`walkType()`). `genTiles(sx,sy,isBase)`
+  (own seeded RNG `hash2 ^ 0x5a17b3`) fills grass, grows water ponds + rock clusters as random-walk
+  `blob()`s (interior only; bigger with `dist`), carves a winding left→right `carvePath()` trail
+  (overwriting obstacles so it's always walkable), then **keeps every collidable tile ≥`EDGE_MARGIN`
+  (2) tiles from any edge** — `blob()` is confined to the interior and a final pass scrubs any
+  water/rock in the 2-tile border band. This guarantees edge arrivals (you land in col/row 0–1) are
+  always valid and you can never be boxed in on arrival. A whole side can still be walled behind that
+  margin for "blocked-ish" variety. Home `(0,0)` gets no
+  ponds/rocks. Movement in `update()` resolves X/Y independently via `canStand(sc,x,y)` (samples a
+  ~10px foot footprint against `blockedAt`) so you slide along walls; off-screen counts as unblocked
+  so edge transitions still fire. Creatures spawn only on walkable tiles (`makeCreature` retries) and
+  bounce off water/rock so none drift somewhere unreachable.
+- **Terrain rendering** — `ensureBg(sc)` bakes the static tile map into a per-screen offscreen canvas
+  once (`sc.bg`, with `sc.waterTiles` listed); `render()` blits it then draws **animated water ripples**
+  live over each water tile (`drawWaterAnim`, sine-sliding light bars = the "wavy" water). `bakeTile`
+  draws a flat type color + small pixel motifs (grass blades / path gravel / rock boulder+highlight),
+  varied per tile by `tileVar(seed,c,r)` so each block looks a little unique. The old freeform
+  `decos` (tufts/pebbles/flowers) and the parchment-grid floor were removed in favor of this. Note:
+  `sc.bg` canvases accumulate in the `screens` Map for the session (no eviction yet) — fine for normal
+  play, revisit if memory matters on very long runs.
 - **Minimap** (`drawMinimap`, drawn last in `render` when `state.started`): a translucent
   explored-area map in the canvas bottom-right. `state.visited` (a `Set` of `"sx,sy"`, added to in
   `curScreen`) drives it; it renders the padded bounding box of visited screens — **visited cells are
