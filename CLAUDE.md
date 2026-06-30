@@ -842,7 +842,26 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   await, and only consumes letters / records the word on a confirmed new valid word. The `{ok:null}`
   case keeps the letters and tells the player it couldn't reach the dictionary. Defs are
   HTML-escaped via `esc()` before rendering since they come from an external source.
-- **`LETTER_BAG`** — frequency-weighted spawn pool (vowels common, Q/X/Z rare).
+- **Letter spawn pool** — `FREQ` (per-letter weights, vowels common, j/k/x/q/z rare) + `TIER`
+  (common/mid/rare/legend) drive `weightedLetter(rng, dist)`, which also pushes rare/legend letters
+  farther from home (`dist` = `|sx|+|sy|`). (The old `LETTER_BAG` const is gone.)
+- **Letter unlock progression** (`unlockedLetters()`): you start with only the 8 commonest letters
+  (`START_LETTERS = "etaoinsr"`); the other 18 appear in the wild **one at a time, in frequency
+  order** (`UNLOCK_ORDER = "hdlucmwfgypbvkjxqz"`) as your collection grows, gated by word-count
+  milestones (`UNLOCK_AT` — a slow/grindy curve; j/k/x/q/z aren't reachable until ~90–120 words).
+  It's **derived purely from `wordsCollected()` (= `Object.keys(state.dex).length`)**, so nothing
+  extra is saved. `weightedLetter` filters its pool to `unlockedLetters()`, so locked letters never
+  spawn (and thus can't be collected or spelled yet). On a new word, `checkWord` diffs the unlocked
+  set before/after and toasts (`"New letter now roams the wild: …"` + `SFX.play("unlock")`) when a
+  threshold is crossed. Letters a player already owns in `state.inv` from before stay usable on the
+  bench regardless. (Capitals are still not in the game — roadmap #10; the world is lowercase-only.)
+- **Field respawn (session-only)** — each generated screen stores `cap` (target creature count),
+  `dist`, and `refillAt`. Capturing a creature that drops a field below `cap` starts a `RESPAWN_MS`
+  (~6 min) clock (`refillAt`); when `update()` sees the current screen's `refillAt` elapse it tops the
+  field back up to `cap` with **freshly randomized** creatures (a time-seeded RNG, so the returners
+  differ from the originals and reflect current unlocks). Screen contents are **not** saved, so a
+  reload regenerates every field full — a "fresh day." `makeCreature(rng, dist)` is the shared
+  creature factory used by both `genScreen` and the respawn path.
 - **`SFX`** — a small Web Audio IIFE (no asset files) that synthesizes chiptune blips, matching the
   retro-pixel theme and the single-file/offline rule. `SFX.play(name)` plays a named cue (`swing`,
   `capture`, `newword`, `known`, `invalid`, `unlock`, `home`, `click`); internals are `tone()` (one

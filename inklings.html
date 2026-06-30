@@ -417,6 +417,20 @@ const TIER = {
 const TIER_COLOR = { common:"#5b7a4b", mid:"#3b6ea5", rare:"#7a4a9a", legend:"#c89b3c" };
 function tierOf(l){ for(const t in TIER){ if(TIER[t].includes(l)) return t; } return "common"; }
 function colorFor(l){ return TIER_COLOR[tierOf(l)]; }
+// --- Letter unlock progression -------------------------------------------------
+// Start with the 8 commonest letters; the rest appear in the wild one at a time
+// (frequency order) as your collection grows. Derived purely from how many words
+// you've collected, so nothing extra is saved. "Slow/grindy" curve: the legendary
+// letters (j/k/x/q/z) aren't reachable until ~90–120 words.
+const START_LETTERS = "etaoinsr".split("");
+const UNLOCK_ORDER  = "hdlucmwfgypbvkjxqz".split("");                       // next-most-common first
+const UNLOCK_AT     = [3,6,9,13,17,22,27,33,39,46,53,61,69,78,87,97,107,118]; // words needed for UNLOCK_ORDER[i]
+function wordsCollected(){ return Object.keys(state.dex).length; }
+function unlockedLetters(){
+  const n=wordsCollected(), set=new Set(START_LETTERS);
+  for(let i=0;i<UNLOCK_ORDER.length;i++){ if(n>=UNLOCK_AT[i]) set.add(UNLOCK_ORDER[i]); }
+  return set;
+}
 
 const CONSUME_ON_NEW = true;   // spend letters when you record a NEW word
 const CREATURE_HP = 1;   // creatures are captured (drop their letter) in a single hit
@@ -448,8 +462,10 @@ function satchelFull(){ return satchelCount()>=state.bagCap; }
 /* ---------- SCREEN GENERATION ----------------------------- */
 function key(sx,sy){ return sx+","+sy; }
 function weightedLetter(rng, dist){
+  const unlocked=unlockedLetters();
   let pool=[], total=0;
   for(const l in FREQ){
+    if(!unlocked.has(l)) continue;          // letter not yet earned — never spawns
     let w=FREQ[l];
     const t=tierOf(l);
     if(t==="rare")   w*=(1+dist*0.5);
@@ -460,6 +476,11 @@ function weightedLetter(rng, dist){
   for(const [l,w] of pool){ r-=w; if(r<=0) return l; }
   return "e";
 }
+const RESPAWN_MS = 360000;   // ~6 min for a cleared field to grow back (session-only; reload = a fresh, full day)
+function makeCreature(rng, dist){
+  return { x:60+rng()*(W-120), y:60+rng()*(H-120), letter:weightedLetter(rng, dist),
+           hp:CREATURE_HP, maxhp:CREATURE_HP, vx:0, vy:0, wander:0, flash:0 };
+}
 function genScreen(sx,sy){
   const isBase = (sx===0 && sy===0);
   const rng = mulberry32(hash2(sx,sy));
@@ -468,19 +489,13 @@ function genScreen(sx,sy){
   for(let i=0;i<decoCount;i++){
     decos.push({ x:30+rng()*(W-60), y:30+rng()*(H-60), kind:Math.floor(rng()*3), s:0.7+rng()*0.6 });
   }
-  const creatures=[];
+  const dist=Math.abs(sx)+Math.abs(sy);
+  const creatures=[]; let cap=0;
   if(!isBase){
-    const dist=Math.abs(sx)+Math.abs(sy);
-    const n = 4 + Math.floor(rng()*3) + Math.min(2, Math.floor(dist/3));
-    for(let i=0;i<n;i++){
-      const l = weightedLetter(rng, dist);
-      creatures.push({
-        x:60+rng()*(W-120), y:60+rng()*(H-120), letter:l, hp:CREATURE_HP, maxhp:CREATURE_HP,
-        vx:0, vy:0, wander:0, flash:0
-      });
-    }
+    cap = 4 + Math.floor(rng()*3) + Math.min(2, Math.floor(dist/3));   // target population for this field
+    for(let i=0;i<cap;i++) creatures.push(makeCreature(rng, dist));
   }
-  return { creatures, decos, generated:true, isBase };
+  return { creatures, decos, generated:true, isBase, cap, dist, refillAt:0 };
 }
 function curScreen(){
   const k=key(state.screen.sx,state.screen.sy);
@@ -621,6 +636,8 @@ function doAttack(){
       state.inv[c.letter]=(state.inv[c.letter]||0)+1;
       state.fx.push({x:c.x,y:c.y,text:"+"+c.letter.toUpperCase(),life:0.9,color:colorFor(c.letter)});
       sc.creatures.splice(i,1);
+      // start the slow regrowth clock the moment a field first drops below its cap
+      if(!sc.isBase && !sc.refillAt && sc.creatures.length<sc.cap) sc.refillAt=Date.now()+RESPAWN_MS;
       updateTrayHud();
       SFX.play("capture");
       scheduleSave();
@@ -656,8 +673,14 @@ function update(dt){
     if(attackHeld) doAttack();
   }
 
-  // creatures
+  // creatures — regrow a depleted field once its timer elapses (returners are freshly
+  // randomized, so the same screen isn't identical, and they reflect your current unlocks)
   const sc=curScreen();
+  if(sc.refillAt && Date.now()>=sc.refillAt){
+    const rng=mulberry32((hash2(state.screen.sx,state.screen.sy) ^ (Date.now()>>>0))>>>0);
+    while(sc.creatures.length<sc.cap) sc.creatures.push(makeCreature(rng, sc.dist));
+    sc.refillAt=0;
+  }
   for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     c.wander-=dt;
@@ -994,13 +1017,19 @@ async function checkWord(){
     return;   // letters stay on the bench so you can rearrange
   }
   // NEW word!
+  const beforeUnlocked=unlockedLetters();
   state.dex[word]={ def:r.def, found:Date.now() };
+  const newly=[...unlockedLetters()].filter(l=>!beforeUnlocked.has(l));   // letters this word just unlocked
   if(CONSUME_ON_NEW){ bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); }); }
   bench=[];
   dexTab=(word[0]||"?").toUpperCase();   // jump the collection to the new word's letter tab
   updateTrayHud(); renderBench(); renderDex(); checkUnlocks();
   showReveal(word);
   SFX.play("newword");
+  if(newly.length){
+    showToast("New letter"+(newly.length>1?"s":"")+" now roams the wild: "+newly.map(l=>l.toUpperCase()).join(" "));
+    SFX.play("unlock");
+  }
   scheduleSave();
 }
 // New-word celebration in the bench result area. The definition lives only in the collection
