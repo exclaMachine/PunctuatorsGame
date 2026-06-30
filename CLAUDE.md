@@ -901,7 +901,13 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   ponds/rocks. Movement in `update()` resolves X/Y independently via `canStand(sc,x,y)` (samples a
   ~10px foot footprint against `blockedAt`) so you slide along walls; off-screen counts as unblocked
   so edge transitions still fire. Creatures spawn only on walkable tiles (`makeCreature` retries) and
-  bounce off water/rock so none drift somewhere unreachable.
+  bounce off water/rock so none drift somewhere unreachable. On the home screen the **desk is solid** too:
+  `canStand` also rejects the foot box overlapping the `DESK` rect (`overlapsDesk`), so you walk up to the
+  desk instead of through it (still close enough to trigger the `E`/`nearBench` prompt).
+- **Desk art** — `drawBench()` is drawn in the retro-pixel style: square corners, flat fills, chunky 2px
+  ink borders via `pxBox(x,y,w,h,fill)`, a hard offset drop-shadow (no blur) — wood slab + front panel,
+  a parchment sheet with ink lines, an ink pot + quill, and the `BENCH` label. `DESK` (the collision rect)
+  matches the drawn slab+front footprint.
 - **Terrain rendering** — `ensureBg(sc)` bakes the static tile map into a per-screen offscreen canvas
   once (`sc.bg`, with `sc.waterTiles` listed); `render()` blits it then draws **animated water ripples**
   live over each water tile (`drawWaterAnim`, sine-sliding light bars = the "wavy" water). `bakeTile`
