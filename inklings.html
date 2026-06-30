@@ -31,6 +31,16 @@
     text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
   #bag-count{color:var(--ink)}
   #bag-count.full{color:#9a3b2e}
+  #ink-count{color:var(--gold);font-weight:700}
+  #potions{display:flex;gap:5px;margin-top:4px}
+  .potion-btn{font-family:var(--disp);font-size:8px;line-height:1;padding:5px 6px;border:2px solid var(--edge);
+    background:var(--paper-2);color:var(--ink);cursor:pointer;display:inline-flex;gap:4px;align-items:center;
+    box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .potion-btn:hover:not(:disabled){background:#dcd0b2}
+  .potion-btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:0 0 0 rgba(0,0,0,0)}
+  .potion-btn:disabled{opacity:.4;cursor:default;box-shadow:none}
+  .potion-btn.active{background:var(--gold);color:#fff}
+  .potion-btn b{font-family:var(--read);font-size:11px}
   #tray-hud{display:flex;flex-wrap:wrap;gap:4px;max-width:420px}
   .lchip{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;
     padding:0 5px;background:var(--paper-2);font-family:var(--disp);
@@ -170,6 +180,11 @@
   .ctrl-grid span:nth-child(odd){text-align:right;color:var(--ink-soft)}
   .ctrl-grid b{display:inline-block;background:var(--paper-2);padding:3px 7px;
     border:2px solid var(--edge);font-family:var(--disp);font-size:9px;color:var(--ink)}
+  .help-note{margin-top:14px;border-top:2px solid var(--line);padding-top:12px;
+    font-family:var(--read);font-size:17px;color:var(--ink);line-height:1.25}
+  .help-note p{margin:0 0 6px}
+  .help-note ul{margin:0 0 9px;padding-left:20px}
+  .help-note li{margin:2px 0}
   #startcard{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     background:rgba(21,19,28,.78);z-index:5}
   #startcard .book{max-width:470px;text-align:center}
@@ -242,6 +257,8 @@
       <div class="panel">
         <div class="small">Implement</div>
         <div id="weapon-name">Stick</div>
+        <div class="small" style="margin-top:6px">Ink <span id="ink-count">0</span></div>
+        <div id="potions"></div>
       </div>
       <div class="panel" id="tray-hud-wrap" style="text-align:right">
         <div class="small">Satchel <span id="bag-count"></span></div>
@@ -313,8 +330,23 @@
           <span><b>H</b></span><span>Teleport home to your bench</span>
           <span><b>E</b></span><span>Use the bench (when standing near it)</span>
           <span><b>Tab</b></span><span>Open the library</span>
+          <span><b>1</b> / <b>2</b> / <b>3</b></span><span>Drink a Size / Speed / Reveal potion (or tap its HUD button)</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
           <span><b>Esc</b></span><span>Close any panel</span>
+        </div>
+        <div class="help-note">
+          <p><b>Ink &amp; potions.</b> Spelling words pays off by part of speech:</p>
+          <ul>
+            <li>Spell a <b>noun</b> → earn <b>ink</b> (your currency, shown top-left).</li>
+            <li>Spell an <b>adjective</b> → brew a random <b>potion</b>. These stack up in the HUD.</li>
+          </ul>
+          <p>Drink a potion with <b>1</b>/<b>2</b>/<b>3</b> or by tapping its HUD button — each lasts 25&nbsp;seconds:</p>
+          <ul>
+            <li><b>Size</b> — grow bigger, with longer attack reach.</li>
+            <li><b>Speed</b> — move faster.</li>
+            <li><b>Reveal</b> — the minimap shows the whole map and which screens still have letters.</li>
+          </ul>
+          <p>Rewards repeat: re-spelling a word spends its letters again and pays again.</p>
         </div>
         <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
           <button class="primary" id="controls-close">Got it</button>
@@ -440,6 +472,18 @@ function unlockedLetters(){
 const CONSUME_ON_NEW = true;   // spend letters when you record a NEW word
 const CREATURE_HP = 1;   // creatures are captured (drop their letter) in a single hit
 
+// --- Word effects (roadmap step 7, scoped to nouns + adjectives) ---------------
+// Nouns earn "ink" (currency). Adjectives brew a random potion. Both rewards repeat every time you
+// spell a qualifying word (re-spelling consumes its letters again). Part of speech comes from the API.
+const POTION_TYPES = ["size","speed","reveal"];
+const POTION_DUR   = 25;                                   // seconds an effect lasts once drunk
+const SIZE_MULT    = 1.5;                                  // size potion: bigger sprite + reach
+const SPEED_MULT   = 1.7;                                  // speed potion: faster movement
+const POTION_SHORT = { size:"BIG",   speed:"FAST",  reveal:"MAP"    };
+const POTION_LABEL = { size:"Size",  speed:"Speed", reveal:"Reveal" };
+const POTION_COLOR = { size:"#7a4a9a", speed:"#3b6ea5", reveal:"#c89b3c" };
+function inkForWord(w){ return w.length; }                 // currency per noun (longer = more)
+
 // Word validation + definitions come from the Free Dictionary API (api.dictionaryapi.dev).
 
 /* ---------- UTIL: seeded RNG ------------------------------ */
@@ -462,6 +506,9 @@ const state = {
   visited:new Set(),            // "sx,sy" of screens entered today (minimap only; not saved)
   captured:new Set(),           // "sx,sy,i" of creatures taken today — no respawn, so they stay gone
   day:"", daySeed:0,            // current calendar day + its map seed
+  ink:0,                        // currency earned by spelling nouns (persists across days)
+  potions:{ size:0, speed:0, reveal:0 },   // brewed-but-undrunk potions (persist)
+  buffs:{ size:0, speed:0, reveal:0 },      // seconds remaining on active effects (session only)
   fx:[],                        // floating texts
   started:false, overlay:false, help:false
 };
@@ -683,6 +730,9 @@ addEventListener("keydown",e=>{
   if(k==="h") teleportHome();
   if(k==="e") tryUseBench();
   if(k==="q") cycleWeapon();
+  if(k==="1") drinkPotion("size");
+  if(k==="2") drinkPotion("speed");
+  if(k==="3") drinkPotion("reveal");
   if(k==="tab"){ e.preventDefault(); openOverlay(); }
   if(k===" ") doAttack();
 });
@@ -723,10 +773,11 @@ function doAttack(){
   p.atkCd=wpn.cd; p.atkAnim=ATTACK_ANIM;
   SFX.play("swing");
   const sc=curScreen();
+  const range=wpn.range*(state.buffs.size>0?SIZE_MULT:1);   // size potion: longer reach
   for(let i=sc.creatures.length-1;i>=0;i--){
     const c=sc.creatures[i];
     const dx=c.x-p.x, dy=c.y-p.y, d=Math.hypot(dx,dy);
-    if(d>wpn.range+18) continue;
+    if(d>range+18) continue;
     const dot=(dx*p.face.x+dy*p.face.y)/(d||1);
     if(dot<0.35) continue;                 // must be roughly in front
     c.hp-=wpn.dmg; c.flash=0.15;
@@ -746,16 +797,24 @@ function doAttack(){
 // Total letter-creatures across the whole day's bounded map. Mirrors genScreen's per-screen count
 // (the first rng() draw seeds it the same way), so we can know the day's total without visiting every
 // screen. Memoized per day.
+// How many creatures a screen spawns today — mirrors genScreen's first rng() draw (home has none).
+function screenCreatureCount(sx,sy){
+  if(sx===0 && sy===0) return 0;
+  const rng=mulberry32((hash2(sx,sy) ^ state.daySeed)>>>0);
+  const dist=Math.abs(sx)+Math.abs(sy);
+  return 4 + Math.floor(rng()*3) + Math.min(2, Math.floor(dist/3));
+}
+// How many of a screen's creatures are still uncaptured (used by the reveal potion's minimap).
+function screenRemaining(sx,sy){
+  let cap=0; const pre=sx+","+sy+",";
+  state.captured.forEach(id=>{ if(id.indexOf(pre)===0) cap++; });
+  return screenCreatureCount(sx,sy)-cap;
+}
 let _dayTotalDay=null, _dayTotal=0;
 function dayTotalCreatures(){
   if(_dayTotalDay===state.day) return _dayTotal;
   let tot=0;
-  for(let sy=-MAP_RADIUS; sy<=MAP_RADIUS; sy++) for(let sx=-MAP_RADIUS; sx<=MAP_RADIUS; sx++){
-    if(sx===0 && sy===0) continue;                       // home has no creatures
-    const rng=mulberry32((hash2(sx,sy) ^ state.daySeed)>>>0);
-    const dist=Math.abs(sx)+Math.abs(sy);
-    tot += 4 + Math.floor(rng()*3) + Math.min(2, Math.floor(dist/3));
-  }
+  for(let sy=-MAP_RADIUS; sy<=MAP_RADIUS; sy++) for(let sx=-MAP_RADIUS; sx<=MAP_RADIUS; sx++) tot+=screenCreatureCount(sx,sy);
   _dayTotalDay=state.day; _dayTotal=tot;
   return tot;
 }
@@ -789,7 +848,8 @@ function update(dt){
       const len=Math.hypot(mx,my); mx/=len; my/=len;
       p.face.x=mx; p.face.y=my; p.moving=true;
       // resolve axes independently so you slide along water/rock instead of sticking
-      const nx=p.x+mx*p.speed*dt, ny=p.y+my*p.speed*dt;
+      const spd=p.speed*(state.buffs.speed>0?SPEED_MULT:1);   // speed potion
+      const nx=p.x+mx*spd*dt, ny=p.y+my*spd*dt;
       if(canStand(sc,nx,p.y)) p.x=nx;
       if(canStand(sc,p.x,ny)) p.y=ny;
     }
@@ -828,6 +888,11 @@ function update(dt){
   if(!state.overlay && !state.help && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
   else hint.classList.remove("show");
 
+  // active potion timers
+  for(const t of POTION_TYPES){
+    if(state.buffs[t]>0){ state.buffs[t]-=dt; if(state.buffs[t]<=0){ state.buffs[t]=0; updateRewardHud(); showToast(POTION_LABEL[t]+" potion wore off."); } }
+  }
+
   // if you load into an already-cleared day, greet you with the "come back tomorrow" notice (once/day)
   if(state.started) maybeNotifyCleared();
 
@@ -865,6 +930,7 @@ function render(){
   }
 
   if(state.started) drawMinimap();
+  if(state.started) drawBuffs();
   if(state.started && dayCleared()) drawClearedBanner();
 }
 // Persistent banner shown all day once every creature has been captured — stays on screen (no fade)
@@ -887,11 +953,17 @@ function drawClearedBanner(){
 // haven't reached are black; home (0,0) is gold and the current screen is marked in ink-red.
 function drawMinimap(){
   const cx=state.screen.sx, cy=state.screen.sy;
-  // bounds of everything visited (+ current), padded by 1 so unexplored neighbours show as black
-  let minX=cx,maxX=cx,minY=cy,maxY=cy;
-  state.visited.forEach(k=>{ const c=k.indexOf(","); const x=+k.slice(0,c), y=+k.slice(c+1);
-    if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; });
-  minX--; maxX++; minY--; maxY++;
+  const reveal=state.buffs.reveal>0;   // reveal potion → show the whole map + where letters remain
+  let minX,maxX,minY,maxY;
+  if(reveal){
+    minX=-MAP_RADIUS; maxX=MAP_RADIUS; minY=-MAP_RADIUS; maxY=MAP_RADIUS;
+  } else {
+    // bounds of everything visited (+ current), padded by 1 so unexplored neighbours show as black
+    minX=cx;maxX=cx;minY=cy;maxY=cy;
+    state.visited.forEach(k=>{ const c=k.indexOf(","); const x=+k.slice(0,c), y=+k.slice(c+1);
+      if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; });
+    minX--; maxX++; minY--; maxY++;
+  }
   const cols=maxX-minX+1, rows=maxY-minY+1;
   const cell=Math.max(5, Math.min(15, Math.floor(118/Math.max(cols,rows))));
   const gw=cols*cell, gh=rows*cell, pad=5, margin=8;
@@ -901,18 +973,42 @@ function drawMinimap(){
   ctx.globalAlpha=0.74;                                   // overall translucency
   ctx.fillStyle="rgba(20,18,28,0.6)";
   ctx.fillRect(x0-pad, y0-pad, gw+pad*2, gh+pad*2);       // panel
-  ctx.strokeStyle="rgba(233,222,196,0.55)"; ctx.lineWidth=2;
+  ctx.strokeStyle = reveal ? "rgba(200,155,60,0.85)" : "rgba(233,222,196,0.55)"; ctx.lineWidth=2;
   ctx.strokeRect(x0-pad+1, y0-pad+1, gw+pad*2-2, gh+pad*2-2);
   for(let gy=0; gy<rows; gy++) for(let gx=0; gx<cols; gx++){
-    const sx=minX+gx, sy=minY+gy;
-    const seen=state.visited.has(sx+","+sy);
-    ctx.fillStyle = seen ? ((sx===0&&sy===0) ? "#c89b3c" : "#cdbd95") : "#000";
+    const sx=minX+gx, sy=minY+gy, home=(sx===0&&sy===0);
+    if(reveal){
+      // full map: gold home, blue where letters remain, dim where cleared/empty
+      ctx.fillStyle = home ? "#c89b3c" : (screenRemaining(sx,sy)>0 ? "#3b6ea5" : "#3a3550");
+    } else {
+      const seen=state.visited.has(sx+","+sy);
+      ctx.fillStyle = seen ? (home ? "#c89b3c" : "#cdbd95") : "#000";
+    }
     ctx.fillRect(x0+gx*cell+1, y0+gy*cell+1, cell-2, cell-2);
   }
   // current position marker
   const px=x0+(cx-minX)*cell, py=y0+(cy-minY)*cell;
   ctx.strokeStyle="#9a3324"; ctx.lineWidth=2;
   ctx.strokeRect(px+1, py+1, cell-2, cell-2);
+  ctx.restore();
+}
+// Active potion timers shown top-centre on the canvas: a labelled bar that drains over POTION_DUR.
+function drawBuffs(){
+  const active=POTION_TYPES.filter(t=>state.buffs[t]>0);
+  if(!active.length) return;
+  ctx.save(); ctx.imageSmoothingEnabled=false;
+  const bw=86, bh=22, gap=6, total=active.length*bw+(active.length-1)*gap;
+  let x=(W-total)/2; const y=94;
+  ctx.textAlign="left"; ctx.textBaseline="alphabetic"; ctx.font="7px 'Press Start 2P', monospace";
+  for(const t of active){
+    ctx.fillStyle="#26233a"; ctx.fillRect(x-2,y-2,bw+4,bh+4);
+    ctx.fillStyle="#e3d8bd"; ctx.fillRect(x,y,bw,bh);
+    ctx.fillStyle=POTION_COLOR[t]; ctx.fillText(POTION_SHORT[t],x+5,y+10);
+    const frac=Math.max(0,Math.min(1,state.buffs[t]/POTION_DUR));
+    ctx.fillStyle="#cfc3a5"; ctx.fillRect(x+5,y+13,bw-10,5);
+    ctx.fillStyle=POTION_COLOR[t]; ctx.fillRect(x+5,y+13,(bw-10)*frac,5);
+    x+=bw+gap;
+  }
   ctx.restore();
 }
 /* ---------- TERRAIN RENDERING ----------------------------- */
@@ -1055,7 +1151,7 @@ function drawPlayer(){
     frame = Math.floor(p.animT/IDLE_FRAME)%PLAYER_COLS;
   }
   const sx=frame*PLAYER_FRAME, sy=row*PLAYER_FRAME;
-  const D=PLAYER_DRAW;
+  const D=PLAYER_DRAW*(state.buffs.size>0?SIZE_MULT:1);   // size potion: bigger sprite
   const dx=p.x-D/2, dy=p.y-D*0.74;     // feet sit near p.y
   ctx.save();
   ctx.imageSmoothingEnabled=false;
@@ -1074,6 +1170,18 @@ function updateTrayHud(){
   const have=Object.keys(state.inv).filter(l=>state.inv[l]>0);
   if(!have.length){ el.innerHTML='<span class="empty" style="font-weight:600;color:var(--ink-soft);font-size:12px">empty</span>'; return; }
   el.innerHTML=have.map(l=>`<span class="lchip" style="border-color:${colorFor(l)}">${l.toUpperCase()}<b>${state.inv[l]}</b></span>`).join("");
+}
+// Ink counter + potion buttons. A potion button is disabled when you have none, or while its effect is
+// already running (no stacking). Clicking drinks it.
+function updateRewardHud(){
+  const ic=document.getElementById("ink-count"); if(ic) ic.textContent=state.ink;
+  const el=document.getElementById("potions"); if(!el) return;
+  el.innerHTML=POTION_TYPES.map(t=>{
+    const n=state.potions[t], active=state.buffs[t]>0, dis=(n<=0||active)?" disabled":"";
+    return `<button class="potion-btn${active?" active":""}" data-p="${t}"${dis} style="border-color:${POTION_COLOR[t]}" `+
+           `title="${POTION_LABEL[t]} potion${active?" (active)":""}">${POTION_SHORT[t]}<b>${n}</b></button>`;
+  }).join("");
+  el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>drinkPotion(b.dataset.p));
 }
 
 /* ---------- WEAPON UNLOCKS -------------------------------- */
@@ -1160,11 +1268,12 @@ async function lookupWord(word){
     if(res.ok){
       const data=await res.json();
       if(Array.isArray(data) && data[0]){
-        let def="";
-        for(const m of (data[0].meanings||[])){
-          if(m.definitions && m.definitions[0] && m.definitions[0].definition){ def=m.definitions[0].definition; break; }
+        let def=""; const pos=[];
+        for(const entry of data) for(const m of (entry.meanings||[])){
+          if(m.partOfSpeech && !pos.includes(m.partOfSpeech)) pos.push(m.partOfSpeech);
+          if(!def && m.definitions && m.definitions[0] && m.definitions[0].definition) def=m.definitions[0].definition;
         }
-        return { ok:true, def: def || "A word in the dictionary." };
+        return { ok:true, def: def || "A word in the dictionary.", pos };
       }
       return { ok:false };          // API replied but it's not a recognised entry
     }
@@ -1181,54 +1290,81 @@ async function checkWord(){
   const word=bench.join("").toLowerCase();
   const res=document.getElementById("result");
   if(word.length<2){ res.innerHTML='<div class="msg-bad">Words need at least two letters.</div>'; SFX.play("invalid"); return; }
-  if(state.dex[word]){
-    res.innerHTML=`<div class="msg-known">You’ve already collected “${esc(word.toUpperCase())}”. Letters returned.</div>`;
+  const known=!!state.dex[word];
+
+  // Resolve part(s) of speech (and a definition for new words). Known words cache their POS so a
+  // re-spell needs no network; new words (and old saves missing POS) hit the dictionary API.
+  let pos, def;
+  if(known && Array.isArray(state.dex[word].pos)){
+    pos=state.dex[word].pos;
+  } else {
+    checking=true;
+    const btn=document.getElementById("check-btn"); if(btn) btn.disabled=true;
+    res.innerHTML='<div class="msg-known">Checking the dictionary…</div>';
+    const r=await lookupWord(word);
+    checking=false; if(btn) btn.disabled=false;
+    if(bench.join("").toLowerCase()!==word) return;   // bench changed mid-await — abort
+    if(r.ok===null){ res.innerHTML='<div class="msg-bad">Couldn’t reach the dictionary — check your connection and try again.</div>'; SFX.play("invalid"); return; }
+    if(!r.ok){ res.innerHTML=`<div class="msg-bad">“${esc(word.toUpperCase())}” isn’t in the dictionary.</div>`; SFX.play("invalid"); return; }
+    pos=r.pos||[]; def=r.def;
+    if(known) state.dex[word].pos=pos;   // backfill an old entry
+  }
+
+  const isNoun=pos.includes("noun"), isAdj=pos.includes("adjective");
+  // A known word that isn't a noun/adjective has no repeat reward — old behaviour, letters returned.
+  if(known && !isNoun && !isAdj){
+    res.innerHTML=`<div class="msg-known">You’ve already collected “${esc(word.toUpperCase())}” (no re-spell reward). Letters returned.</div>`;
     bench=[]; renderBench(); SFX.play("known"); return;
   }
-  checking=true;
-  const btn=document.getElementById("check-btn");
-  if(btn) btn.disabled=true;
-  res.innerHTML='<div class="msg-known">Checking the dictionary…</div>';
-  const r=await lookupWord(word);
-  checking=false;
-  if(btn) btn.disabled=false;
-  // bench may have changed while we waited — abort silently if so
-  if(bench.join("").toLowerCase()!==word) return;
-  if(r.ok===null){
-    res.innerHTML='<div class="msg-bad">Couldn’t reach the dictionary — check your connection and try again.</div>';
-    SFX.play("invalid");
-    return;   // letters stay on the bench
+
+  // Spend the letters (the cost — repeatable), then pay out rewards.
+  bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); });
+  let earnedInk=0, brewed=null;
+  if(isNoun){ earnedInk=inkForWord(word); state.ink+=earnedInk; }
+  if(isAdj){ brewed=POTION_TYPES[(Math.random()*POTION_TYPES.length)|0]; state.potions[brewed]++; }
+
+  // First-time collection: record it, jump the tab, check letter/weapon unlocks.
+  let newly=[];
+  if(!known){
+    const before=unlockedLetters();
+    state.dex[word]={ def:def||"A word in the dictionary.", found:Date.now(), pos };
+    newly=[...unlockedLetters()].filter(l=>!before.has(l));
+    dexTab=(word[0]||"?").toUpperCase();
+    renderDex(); checkUnlocks();
   }
-  if(!r.ok){
-    res.innerHTML=`<div class="msg-bad">“${esc(word.toUpperCase())}” isn’t in the dictionary.</div>`;
-    SFX.play("invalid");
-    return;   // letters stay on the bench so you can rearrange
-  }
-  // NEW word!
-  const beforeUnlocked=unlockedLetters();
-  state.dex[word]={ def:r.def, found:Date.now() };
-  const newly=[...unlockedLetters()].filter(l=>!beforeUnlocked.has(l));   // letters this word just unlocked
-  if(CONSUME_ON_NEW){ bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); }); }
+
   bench=[];
-  dexTab=(word[0]||"?").toUpperCase();   // jump the collection to the new word's letter tab
-  updateTrayHud(); renderBench(); renderDex(); checkUnlocks();
-  showReveal(word);
-  SFX.play("newword");
+  updateTrayHud(); updateRewardHud(); renderBench();
+  showSpellResult(word, known, earnedInk, brewed);
+  SFX.play(known ? "known" : "newword");
   if(newly.length){
     showToast("New letter"+(newly.length>1?"s":"")+" now roams the wild: "+newly.map(l=>l.toUpperCase()).join(" "));
     SFX.play("unlock");
   }
   scheduleSave();
 }
-// New-word celebration in the bench result area. The definition lives only in the collection
-// list (click an entry to read the full text) — no second copy here.
-function showReveal(word){
+// Result shown in the bench area: the word + what it earned (ink for nouns, a potion for adjectives).
+function showSpellResult(word, known, ink, brewed){
   const res=document.getElementById("result");
+  const rewards=[];
+  if(ink>0)   rewards.push(`<span style="color:var(--gold)">+${ink} ink</span>`);
+  if(brewed)  rewards.push(`<span style="color:${POTION_COLOR[brewed]}">+1 ${POTION_LABEL[brewed]} potion</span>`);
+  const note = rewards.length
+    ? `<div class="note">${rewards.join(" &nbsp;·&nbsp; ")}</div>`
+    : `<div class="note" style="color:var(--ink-soft)">Collected — but no noun/adjective reward.</div>`;
   res.innerHTML=`<div class="reveal">
-    <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">New word collected</div>
+    <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">${known?"Spelled again":"New word collected"}</div>
     <div class="word">${esc(word)}</div>
-    <div class="note">Added to your collection → click it to read its meaning.</div>
+    ${note}
   </div>`;
+}
+// Drink a stored potion → start its timed effect. Can't stack the same effect (re-drink once it wears off).
+function drinkPotion(t){
+  if(!POTION_TYPES.includes(t) || state.potions[t]<=0 || state.buffs[t]>0) return;
+  state.potions[t]--; state.buffs[t]=POTION_DUR;
+  updateRewardHud(); SFX.play("unlock");
+  showToast(POTION_LABEL[t]+" potion — active for "+POTION_DUR+"s.");
+  scheduleSave();
 }
 
 /* ---------- SAVE STATE (shared by autosave + file backup) ----------------- */
@@ -1236,7 +1372,8 @@ function showReveal(word){
 // the collection + unlocks persist forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
   return { v:2, day:state.day, inv:state.inv, dex:state.dex, unlocked:state.unlocked,
-           weaponIdx:state.weaponIdx, bagCap:state.bagCap, captured:[...state.captured] };
+           weaponIdx:state.weaponIdx, bagCap:state.bagCap, captured:[...state.captured],
+           ink:state.ink, potions:state.potions };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -1244,6 +1381,9 @@ function applySnapshot(d){
   if(Array.isArray(d.unlocked)) state.unlocked=d.unlocked;
   if(typeof d.weaponIdx==="number") state.weaponIdx=d.weaponIdx;
   if(typeof d.bagCap==="number") state.bagCap=d.bagCap;
+  // Ink + potions persist across days (earned progress, like the collection).
+  if(typeof d.ink==="number") state.ink=d.ink;
+  if(d.potions) for(const t of POTION_TYPES) if(typeof d.potions[t]==="number") state.potions[t]=d.potions[t];
   // Satchel + captured creatures only carry over within the SAME calendar day. A new day = empty satchel
   // and a fresh map (captures forgotten); state.day was already set to today before this runs.
   if(d.day===state.day){
@@ -1251,7 +1391,7 @@ function applySnapshot(d){
     if(Array.isArray(d.captured)) state.captured=new Set(d.captured);
   }
   document.getElementById("weapon-name").textContent=WEAPONS[state.weaponIdx].name;
-  updateTrayHud();
+  updateTrayHud(); updateRewardHud();
   return true;
 }
 
@@ -1406,7 +1546,7 @@ addEventListener("pagehide", saveNow);
 addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") saveNow(); });
 
 /* ---------- MAIN LOOP ------------------------------------- */
-updateTrayHud();
+updateTrayHud(); updateRewardHud();
 let last=performance.now();
 function frame(now){
   const dt=Math.min(0.05,(now-last)/1000); last=now;

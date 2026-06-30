@@ -833,15 +833,18 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   at `PLAYER_DRAW` (80px, `imageSmoothingEnabled=false`), feet near `p.y`. Weapons are **stats-only**
   now (no drawn implement — the sprite has its own axe); the primitive "scholar" draw remains as a
   fallback until the PNG loads. `doAttack` sets `p.atkAnim=ATTACK_ANIM` to play the attack row.
-- **`lookupWord(word)` / `checkWord()`** — word validation + definitions come **entirely** from the
-  Free Dictionary API (`api.dictionaryapi.dev`); there is no local word list. `lookupWord` is async
-  and returns `{ok:true, def}` for a real word, `{ok:false}` if the API rejects it (incl. 404), or
-  `{ok:null}` if the API can't be reached. `checkWord` is async: it short-circuits on too-short /
-  already-collected words, shows a "Checking the dictionary…" state, disables the button + guards
-  with a `checking` flag against double-submit, aborts silently if the bench changed during the
-  await, and only consumes letters / records the word on a confirmed new valid word. The `{ok:null}`
-  case keeps the letters and tells the player it couldn't reach the dictionary. Defs are
-  HTML-escaped via `esc()` before rendering since they come from an external source.
+- **`lookupWord(word)` / `checkWord()`** — word validation + definitions + **part(s) of speech** come
+  **entirely** from the Free Dictionary API (`api.dictionaryapi.dev`); there is no local word list.
+  `lookupWord` is async and returns `{ok:true, def, pos}` (`pos` = unique `partOfSpeech` list across all
+  entries/meanings) for a real word, `{ok:false}` if the API rejects it (incl. 404), or `{ok:null}` if
+  the API can't be reached. `checkWord` is async: shows a "Checking the dictionary…" state, disables the
+  button + guards with a `checking` flag, aborts silently if the bench changed during the await, and
+  on `{ok:null}` keeps the letters + reports it couldn't reach the dictionary. **Rewards (step 7) are
+  repeatable:** it always consumes the bench letters on a successful spell and pays out by POS — nouns
+  add `ink`, adjectives brew a random potion (both if the word is both). New words also record to the
+  dex (`{def, found, pos}`) and run letter/weapon unlocks; a known word caches its `pos` so re-spells
+  skip the network. A known word that's neither noun nor adjective short-circuits with letters returned
+  (no point re-spelling it). Defs are HTML-escaped via `esc()`.
 - **Letter spawn pool** — `FREQ` (per-letter weights, vowels common, j/k/x/q/z rare) + `TIER`
   (common/mid/rare/legend) drive `weightedLetter(rng, dist)`, which also pushes rare/legend letters
   farther from home (`dist` = `|sx|+|sy|`). (The old `LETTER_BAG` const is gone.)
@@ -878,7 +881,12 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   the way) and **shown only on touch** (`body.touch`), where it sits in the static HUD top bar.
   Browsers gate audio behind a gesture, so `play()` calls `SFX.resume()` and the Start button resumes
   the context on click.
-- **`state`** — `{ player, inv:{letter:count}, dex:{word:{def,found}}, weaponIdx, unlocked, bagCap }`.
+- **`state`** — `{ player, inv:{letter:count}, dex:{word:{def,found,pos}}, weaponIdx, unlocked, bagCap,
+  ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun currency) + `potions`
+  (brewed-but-undrunk counts) persist across days; `buffs` (seconds remaining on a drunk potion) are
+  session-only. `updateRewardHud()` renders the `#ink-count` + the `#potions` buttons (disabled when
+  you have none or while that buff is active); `drinkPotion(t)` spends a potion and starts a
+  `POTION_DUR` buff; `drawBuffs()` paints the active-buff timer bars top-centre on the canvas.
   `bagCap` is the **satchel capacity** (max letters carried; starts at 10, designed to be raised later
   by items). `satchelCount()` sums `state.inv`; `satchelFull()` gates capture in `doAttack` (a full
   satchel blocks new captures with a "Satchel full" toast so letters aren't wasted — spell words to
@@ -1010,7 +1018,8 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 ## Controls
 
 **Keyboard (desktop):** Move `WASD` / arrows · Attack `Space` · Switch implement `Q` · Teleport
-home `H` · Use bench when near it `E` · Open library `Tab` · Controls/help `?` · Close any panel `Esc`.
+home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`/`2`/`3` (size/speed/reveal)
+· Controls/help `?` · Close any panel `Esc`.
 
 **Touch (mobile):** On touch devices a DOM control overlay (`#touch`) appears over the canvas:
 
@@ -1047,8 +1056,9 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Controls/help `?
    results in `localStorage`.
 3. **IndexedDB autosave** — DONE. Progress autosaves to IndexedDB DB `inklings_save` (store `state`,
    key `save`). `snapshot()` builds a clone-safe object (`v:2` — `day`, inv, dex, unlocked, weaponIdx,
-   bagCap, captured[]; the **map/visited are not saved**); `applySnapshot()` restores it. `dex`/unlocks
-   restore unconditionally, but `inv` + `captured` only carry over when the saved `day` matches today —
+   bagCap, captured[], `ink`, `potions`; the **map/visited are not saved**); `applySnapshot()` restores
+   it. `dex`/unlocks/`ink`/`potions` restore unconditionally, but `inv` + `captured` only carry over
+   when the saved `day` matches today —
    a new calendar day loads with an empty satchel and a fresh map (`state.day` is set to `todayStr()`
    synchronously before load so the comparison works). `scheduleSave()` (600 ms debounce) is called on the
    meaningful mutations (capture, new word, weapon switch, new screen visited); `saveNow()` also fires
@@ -1069,7 +1079,19 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Controls/help `?
    do **not** build a clever dungeon generator first (classic time sink).
 6. **Hero weapons** — convert the punctuation superheroes into implement upgrades with their
    dual-use bench powers (bow/wildcard, sword/contractions, belt/shout).
-7. **Word effects (part-of-speech driven)** — every word does something, with zero per-word
+7. **Word effects (part-of-speech driven)** — **Status: partially DONE (nouns + adjectives).** POS
+   comes live from the Free Dictionary API (not WordNet) — `lookupWord` returns a `pos` array; new
+   words cache it in their dex entry so re-spells need no network. **Nouns → ink** (currency,
+   `inkForWord(word)` = word length). **Adjectives → a random potion** of `size`/`speed`/`reveal`
+   (`POTION_TYPES`). Rewards are **repeatable** (re-spelling a noun/adj re-consumes its letters and
+   pays again — the renewable loop); multi-POS words (noun+adjective) pay **both**. Potions are stored
+   (`state.potions`), drunk on demand (HUD buttons / `1`/`2`/`3`) for a `POTION_DUR` (25 s) timed buff
+   (`state.buffs`): size = bigger sprite + attack reach (`SIZE_MULT`), speed = faster move (`SPEED_MULT`),
+   reveal = minimap shows the whole map + which screens still have letters (`screenRemaining`). `ink` +
+   `potions` persist across days in the save (buffs are session-only). Verbs/adverbs/etc. give no reward
+   yet (still collected to the dex). The fuller vision below (verbs→deeds, adverbs→amplifiers, rarity
+   tiers, choose-1-of-3) is still aspirational:
+   every word does something, with zero per-word
    tagging, by keying effects off `partOfSpeech` (from the bundled WordNet data; see item 2).
    Three independent dials keep it scalable and non-literal: **POS sets the reward category**,
    **word rarity (length + Scrabble-style letter rarity) sets the tier/magnitude**, and **a
