@@ -855,13 +855,11 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   set before/after and toasts (`"New letter now roams the wild: …"` + `SFX.play("unlock")`) when a
   threshold is crossed. Letters a player already owns in `state.inv` from before stay usable on the
   bench regardless. (Capitals are still not in the game — roadmap #10; the world is lowercase-only.)
-- **Field respawn (session-only)** — each generated screen stores `cap` (target creature count),
-  `dist`, and `refillAt`. Capturing a creature that drops a field below `cap` starts a `RESPAWN_MS`
-  (~6 min) clock (`refillAt`); when `update()` sees the current screen's `refillAt` elapse it tops the
-  field back up to `cap` with **freshly randomized** creatures (a time-seeded RNG, so the returners
-  differ from the originals and reflect current unlocks). Screen contents are **not** saved, so a
-  reload regenerates every field full — a "fresh day." `makeCreature(rng, dist)` is the shared
-  creature factory used by both `genScreen` and the respawn path.
+- **No respawn (Wordle-style daily map)** — creatures do **not** respawn within a day. Capturing one
+  adds its stable id (`"sx,sy,i"`) to `state.captured`; `genScreen` skips any creature already in that
+  set, so a taken creature stays gone until tomorrow. To get more letters you wait for the next day's
+  map. `makeCreature(rng, dist, tiles)` is called for every index (to keep RNG/positions stable) but
+  only pushed if not yet captured.
 - **`SFX`** — a small Web Audio IIFE (no asset files) that synthesizes chiptune blips, matching the
   retro-pixel theme and the single-file/offline rule. `SFX.play(name)` plays a named cue (`swing`,
   `capture`, `newword`, `known`, `invalid`, `unlock`, `home`, `click`); internals are `tone()` (one
@@ -881,9 +879,15 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   in the export/import backup.
 - **Systems**, in order: screen generation → input → combat → update → render → desk/bench →
   backup (export/import) → main loop.
-- **World is unbounded/procedural** — `genScreen(sx,sy)` makes a screen for any integer coords
-  (hashed RNG), `goScreen` has no clamp, so the world is infinite in all directions. `(0,0)` is home.
-  (The old "3×3 world" note is aspirational, not enforced.)
+- **Bounded daily map (Wordle-style)** — the world is a fixed **5×5 grid of screens** (`MAP_RADIUS=2`,
+  `sx,sy ∈ [-2,2]`, home `(0,0)` at centre), regenerated fresh each **real calendar day**. `todayStr()`
+  (local Y-M-D) + `dayHash()` give `state.daySeed`, which is XOR'd into every `genScreen`/`genTiles` RNG
+  so the whole map (terrain + creatures) is deterministic for the date, identical all day, and new
+  tomorrow. `update()` checks `state.day !== todayStr()` each frame and calls `startNewDay()` on
+  rollover (empties satchel, clears `captured`/`visited`/`screens`, wakes home, toasts). Movement at the
+  outermost screens treats the world edge as a **hard wall** (clamp instead of `goScreen`); `goScreen`
+  is only called when the neighbour is in-bounds. `drawEdgeHints` only draws an arrow for directions you
+  can actually leave. The **map is never saved** — it's rederived from the date. `(0,0)` is home.
 - **Tile terrain + collision** — each screen has a `tiles[TROWS][TCOLS]` map on a **24px grid**
   (`TS=24`, `TCOLS=30 × TROWS=22`, separate from the 48px gameplay `TILE`). Four pixel-art types:
   `T_GRASS`/`T_PATH` are walkable, `T_WATER`/`T_ROCK` block movement (`walkType()`). `genTiles(sx,sy,isBase)`
@@ -911,7 +915,7 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   `curScreen`) drives it; it renders the padded bounding box of visited screens — **visited cells are
   lit (home `(0,0)` gold, others parchment), unvisited cells inside the box are black**, and the
   current screen is outlined in ink-red. Cell size auto-scales (5–15px) so the map stays compact as you
-  explore. `visited` is saved/loaded in the export/import backup.
+  explore. `visited` is **day-scoped and not saved** — it resets each new day (explored-only reveal).
 - **Library layout** (`#overlay`): the panel is a fixed-size flex column so it never resizes/jumps
   as content changes. The two columns (`.cols`) are a `1fr 1fr` grid where **`.cols>div` carries
   `min-width:0`** — this is the load-bearing fix: without it a long collection entry (word +
@@ -951,15 +955,17 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 
 **Built and working:**
 
-- Home base with a writing desk; unbounded procedural world of screens; walk-off-edge travel;
-  `H` to teleport home; translucent explored-area minimap in the bottom-right.
+- Home base with a writing desk; bounded **5×5 daily map** of screens (walls at the world edge),
+  regenerated each real calendar day; walk-off-edge travel between screens; `H` to teleport home;
+  translucent explored-area minimap in the bottom-right (resets daily).
 - Attack-based combat (no bump-to-collect); creatures are captured in a **single hit**
   (`CREATURE_HP = 1`) and drop their letter. (HP/pip scaffolding remains if multi-hit creatures
   are ever wanted again.) The satchel holds a capped number of letters (`state.bagCap`, starts at 10);
   when full, capture is blocked until you spell words to free space.
 - Writing-implement weapons: start with stick; brush/pencil/pen hidden in field screens as
   diegetic upgrades; `1`–`4` to switch among unlocked ones.
-- Letter pickups → inventory; renewable (field creatures respawn on re-entry).
+- Letter pickups → inventory; **no respawn within a day** (captured creatures stay gone until the next
+  day's fresh map). Satchel empties at the start of each new day.
 - Desk/Library: click-to-build word, async API dictionary check with feedback states (checking /
   new / known / invalid / couldn't-reach-API). **Stable fixed-size panel** (`#overlay .book` is a
   fixed-height flex column; only the collection list scrolls). The **definition appears in one place
@@ -1026,15 +1032,18 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Controls/help `?
    future polish: bundle a local wordlist/definitions JSON for an offline fallback, and/or cache API
    results in `localStorage`.
 3. **IndexedDB autosave** — DONE. Progress autosaves to IndexedDB DB `inklings_save` (store `state`,
-   key `save`). `snapshot()` builds a clone-safe object (inv, dex, unlocked, weaponIdx, bagCap,
-   visited[]); `applySnapshot()` restores it. `scheduleSave()` (600 ms debounce) is called on the
+   key `save`). `snapshot()` builds a clone-safe object (`v:2` — `day`, inv, dex, unlocked, weaponIdx,
+   bagCap, captured[]; the **map/visited are not saved**); `applySnapshot()` restores it. `dex`/unlocks
+   restore unconditionally, but `inv` + `captured` only carry over when the saved `day` matches today —
+   a new calendar day loads with an empty satchel and a fresh map (`state.day` is set to `todayStr()`
+   synchronously before load so the comparison works). `scheduleSave()` (600 ms debounce) is called on the
    meaningful mutations (capture, new word, weapon switch, new screen visited); `saveNow()` also fires
    on `pagehide`/`visibilitychange`. A `loaded` gate blocks autosave until the startup `idbGet()` load
    resolves so a fresh frame can't overwrite the real save. `navigator.storage.persist()` is requested
    on startup. Export/Import (file) share `snapshot()`/`applySnapshot()` and remain the backup/transfer
    path; **Reset** (`resetProgress` → `idbClear` + reload) wipes it. (Per-browser/device; true
    cross-device sync would need a backend — out of scope.) **Import gotcha:** the Import control is a
-   `<label class="filebtn">` wrapping a real (visually-hidden, *not* `display:none`) `#import-file`
+   `<label class="filebtn">` wrapping a real (visually-hidden, _not_ `display:none`) `#import-file`
    input, so the OS picker opens **natively**. Do NOT revert it to a `<button>` that calls
    `input.click()` programmatically — Chrome silently refuses to open the picker that way (handler runs,
    no dialog). Handle the chosen file in `#import-file`'s `onchange`.
@@ -1046,8 +1055,32 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Controls/help `?
    do **not** build a clever dungeon generator first (classic time sink).
 6. **Hero weapons** — convert the punctuation superheroes into implement upgrades with their
    dual-use bench powers (bow/wildcard, sword/contractions, belt/shout).
-7. **Word effects ("spellbook")** — tag a few hundred words so spelling them does something
-   (RAIN waters, SUN speeds growth). Most words stay plain tradeable goods.
+7. **Word effects (part-of-speech driven)** — every word does something, with zero per-word
+   tagging, by keying effects off `partOfSpeech` (from the bundled WordNet data; see item 2).
+   Three independent dials keep it scalable and non-literal: **POS sets the reward category**,
+   **word rarity (length + Scrabble-style letter rarity) sets the tier/magnitude**, and **a
+   random roll within that category+tier picks the specific reward** — so SWIM does not grant a
+   swim ability. Category mapping:
+   - **Noun → currency** (scaled by rarity). The common case and the economic backbone.
+   - **Verb → a banked "deed"** spent out in the field (dash, sweeping strike, blink, reveal).
+   - **Adjective → a potion** drunk on demand for a timed buff (swiftness, strength, fortune, lantern).
+   - **Adverb → an amplifier** that boosts the player's _next_ deed or potion (duration / area /
+     strength) — adverbs modify, so in-game they modify other effects.
+   - **Interjection / exclamation → an instant "shout" burst** (stun or scatter nearby inklings);
+     natural fuel for the Excla Machine hero.
+   - **Function words (the / and / of / it) → minor "ink scraps."** Later, conjunctions trigger a
+     combine-two-words bench mechanic (joining is literally what they do).
+
+   Multi-POS words roll randomly across their available parts of speech (a noun+verb+adjective
+   word is a little wildcard); a rare / high-tier word may instead grant a choose-1-of-3 as a
+   special moment. **Implementation note:** WordNet only tags noun / verb / adjective / adverb, so
+   interjections and function words won't receive a POS from it — route any word WordNet doesn't
+   tag into a default bucket (minor currency) until/unless we pivot to Wiktextract for the richer
+   POS set. **Balance guards:** keep the definition reveal as the loud, primary celebration and the
+   effect as a quieter secondary payout; first-time words give a dex entry **plus** an effect, while
+   re-crafting a known word gives only the effect (the renewable currency loop — where consuming
+   letters earns its keep).
+
 8. **Farming / ranching** — renewable letters from ranched inklings; the deferred cozy layer.
 9. **Town / trade** — towns that want specific words; bundle-style requests as content gates.
 10. **Limit the starting letters** - start with only lowercase letters and the more common letters (not all).

@@ -374,6 +374,7 @@ const W = TILE * COLS, H = TILE * ROWS;            // 720 x 528
 const TS = 24, TCOLS = W / TS, TROWS = H / TS;    // 30 × 22
 const T_GRASS = 0, T_PATH = 1, T_WATER = 2, T_ROCK = 3;
 function walkType(t){ return t === T_GRASS || t === T_PATH; }
+const MAP_RADIUS = 2;   // bounded 5×5 map of screens (home (0,0) at centre; sx,sy ∈ [-2,2])
 
 // >>> SPRITESHEET: the hand-drawn glyph sheet shared with Spin Nids (Alpha.png).
 // 7×8 grid of 32×32 cells: a–z = frames 0–25, A–Z = 26–51. We only use a–z here.
@@ -446,6 +447,10 @@ function hash2(x,y){ let h=(x*374761393 + y*668265263) ^ 0x9e3779b9; h=(h^(h>>>1
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 
 /* ---------- STATE ----------------------------------------- */
+// Wordle-style daily map: one bounded map per real calendar day, seeded by the date, so it's the same
+// all day and fresh tomorrow. todayStr() is the local Y-M-D key; dayHash() turns it into a map seed.
+function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+function dayHash(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
 const state = {
   player:{ x:W/2, y:H/2+TILE, r:15, speed:180, face:{x:0,y:1}, atkCd:0, atkAnim:0 },
   screen:{ sx:0, sy:0 },
@@ -453,12 +458,15 @@ const state = {
   inv:{},                       // letter -> count
   dex:{},                       // word -> {def, found}
   bagCap:10,                    // max letters the satchel can hold (raise later via items)
-  screens:new Map(),            // "sx,sy" -> {creatures, tiles, seed, bg, ...}
-  visited:new Set(),            // "sx,sy" of screens the player has entered (for the minimap)
+  screens:new Map(),            // "sx,sy" -> {creatures, tiles, seed, bg, ...}  (date-seeded; never saved)
+  visited:new Set(),            // "sx,sy" of screens entered today (minimap only; not saved)
+  captured:new Set(),           // "sx,sy,i" of creatures taken today — no respawn, so they stay gone
+  day:"", daySeed:0,            // current calendar day + its map seed
   fx:[],                        // floating texts
   started:false, overlay:false, help:false
 };
 "abcdefghijklmnopqrstuvwxyz".split("").forEach(c=>state.inv[c]=0);
+state.day = todayStr(); state.daySeed = dayHash(state.day);   // set before any screen is generated
 // Total letters currently carried, and whether the satchel is at capacity.
 function satchelCount(){ let n=0; for(const l in state.inv) n+=state.inv[l]; return n; }
 function satchelFull(){ return satchelCount()>=state.bagCap; }
@@ -480,7 +488,6 @@ function weightedLetter(rng, dist){
   for(const [l,w] of pool){ r-=w; if(r<=0) return l; }
   return "e";
 }
-const RESPAWN_MS = 360000;   // ~6 min for a cleared field to grow back (session-only; reload = a fresh, full day)
 // Every collidable tile (water/rock) must keep at least this many walkable tiles between it and any
 // screen edge, so you can never arrive on/beside an obstacle and get boxed in.
 const EDGE_MARGIN = 2;
@@ -506,7 +513,7 @@ function carvePath(t, rng){
   }
 }
 function genTiles(sx,sy,isBase){
-  const trng = mulberry32((hash2(sx,sy) ^ 0x5a17b3)>>>0);
+  const trng = mulberry32((hash2(sx,sy) ^ state.daySeed ^ 0x5a17b3)>>>0);
   const t=[]; for(let r=0;r<TROWS;r++) t.push(new Array(TCOLS).fill(T_GRASS));
   if(!isBase){
     const dist=Math.abs(sx)+Math.abs(sy);
@@ -548,16 +555,19 @@ function makeCreature(rng, dist, tiles){
 }
 function genScreen(sx,sy){
   const isBase = (sx===0 && sy===0);
-  const rng = mulberry32(hash2(sx,sy));
+  const rng = mulberry32((hash2(sx,sy) ^ state.daySeed)>>>0);
   const tiles = genTiles(sx,sy,isBase);
   const dist=Math.abs(sx)+Math.abs(sy);
-  const creatures=[]; let cap=0;
+  const creatures=[];
   if(!isBase){
-    cap = 4 + Math.floor(rng()*3) + Math.min(2, Math.floor(dist/3));   // target population for this field
-    for(let i=0;i<cap;i++) creatures.push(makeCreature(rng, dist, tiles));
+    const n = 4 + Math.floor(rng()*3) + Math.min(2, Math.floor(dist/3));   // population for this field today
+    for(let i=0;i<n;i++){
+      const cr=makeCreature(rng, dist, tiles); cr.id=sx+","+sy+","+i;
+      if(!state.captured.has(cr.id)) creatures.push(cr);   // already taken today → stays gone (no respawn)
+    }
   }
-  return { creatures, tiles, seed:hash2(sx,sy), bg:null, waterTiles:null,
-           generated:true, isBase, cap, dist, refillAt:0 };
+  return { creatures, tiles, seed:(hash2(sx,sy) ^ state.daySeed)>>>0, bg:null, waterTiles:null,
+           generated:true, isBase, dist };
 }
 function curScreen(){
   const k=key(state.screen.sx,state.screen.sy);
@@ -573,6 +583,25 @@ function goScreen(dsx,dsy,edge){
   if(edge==="right")  p.x=W-p.r-2;
   if(edge==="top")    p.y=p.r+2;
   if(edge==="bottom") p.y=H-p.r-2;
+}
+// Roll the world over to a new calendar day: empty satchel, forget today's captures, regenerate the
+// whole (date-seeded) map, and wake up back home. The collection (dex) + unlocks always persist.
+function startNewDay(){
+  state.day=todayStr(); state.daySeed=dayHash(state.day);
+  "abcdefghijklmnopqrstuvwxyz".split("").forEach(c=>state.inv[c]=0);
+  state.captured=new Set(); state.visited=new Set(); state.screens=new Map();
+  state.screen={sx:0,sy:0};
+  state.player.x=W/2; state.player.y=H/2+TILE; state.player.face={x:0,y:1};
+  updateTrayHud(); saveNow();
+  showToast("A new day dawns — a fresh map awaits.");
+}
+// Tell the player they've hit the world boundary (throttled so it doesn't spam while they hold into it).
+let edgeMsgAt=0;
+function edgeBump(){
+  const now=Date.now();
+  if(now-edgeMsgAt<2200) return;
+  edgeMsgAt=now;
+  showToast("You've reached the edge of the world.");
 }
 
 /* ---------- SOUND (synthesized, no asset files) ----------- */
@@ -698,8 +727,7 @@ function doAttack(){
       state.inv[c.letter]=(state.inv[c.letter]||0)+1;
       state.fx.push({x:c.x,y:c.y,text:"+"+c.letter.toUpperCase(),life:0.9,color:colorFor(c.letter)});
       sc.creatures.splice(i,1);
-      // start the slow regrowth clock the moment a field first drops below its cap
-      if(!sc.isBase && !sc.refillAt && sc.creatures.length<sc.cap) sc.refillAt=Date.now()+RESPAWN_MS;
+      state.captured.add(c.id);   // gone for the rest of the day — no respawn; a fresh map comes tomorrow
       updateTrayHud();
       SFX.play("capture");
       scheduleSave();
@@ -714,6 +742,7 @@ function update(dt){
   if(p.atkAnim>0) p.atkAnim-=dt;
   p.animT=(p.animT||0)+dt;     // drives idle/walk sprite cycling
   p.moving=false;
+  if(state.started && state.day!==todayStr()) startNewDay();   // rolled past midnight → fresh map
   const sc=curScreen();
 
   if(!state.overlay && !state.help && state.started){
@@ -730,22 +759,18 @@ function update(dt){
       if(canStand(sc,nx,p.y)) p.x=nx;
       if(canStand(sc,p.x,ny)) p.y=ny;
     }
-    // edge transitions: exit one side, arrive on the opposite side of the next screen
-    if(p.x<0)      goScreen(-1,0,"right");
-    else if(p.x>W) goScreen(1,0,"left");
-    else if(p.y<0) goScreen(0,-1,"bottom");
-    else if(p.y>H) goScreen(0,1,"top");
+    // edge transitions: exit one side, arrive on the opposite side of the next screen — but the map is
+    // bounded, so at the outermost screens the world edge is a hard wall (clamp instead of transition).
+    const R=MAP_RADIUS, s=state.screen;
+    if(p.x<0)      { if(s.sx>-R) goScreen(-1,0,"right"); else { p.x=2;   edgeBump(); } }
+    else if(p.x>W) { if(s.sx< R) goScreen( 1,0,"left");  else { p.x=W-2; edgeBump(); } }
+    else if(p.y<0) { if(s.sy>-R) goScreen(0,-1,"bottom");else { p.y=2;   edgeBump(); } }
+    else if(p.y>H) { if(s.sy< R) goScreen(0, 1,"top");   else { p.y=H-2; edgeBump(); } }
     // touch attack button: hold to keep swinging (doAttack is cooldown-gated)
     if(attackHeld) doAttack();
   }
 
-  // creatures — regrow a depleted field once its timer elapses (returners are freshly
-  // randomized, so the same screen isn't identical, and they reflect your current unlocks)
-  if(sc.refillAt && Date.now()>=sc.refillAt){
-    const rng=mulberry32((hash2(state.screen.sx,state.screen.sy) ^ (Date.now()>>>0))>>>0);
-    while(sc.creatures.length<sc.cap) sc.creatures.push(makeCreature(rng, sc.dist, sc.tiles));
-    sc.refillAt=0;
-  }
+  // creatures (no respawn — once taken today they're gone until tomorrow's map)
   for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     c.wander-=dt;
@@ -899,11 +924,11 @@ function drawBench(){
 }
 function drawEdgeHints(){
   ctx.fillStyle="rgba(38,35,58,.18)";
-  const t=10;
-  ctx.beginPath(); ctx.moveTo(W/2-t,8); ctx.lineTo(W/2+t,8); ctx.lineTo(W/2,2); ctx.fill();        // up
-  ctx.beginPath(); ctx.moveTo(W/2-t,H-8); ctx.lineTo(W/2+t,H-8); ctx.lineTo(W/2,H-2); ctx.fill();    // down
-  ctx.beginPath(); ctx.moveTo(8,H/2-t); ctx.lineTo(8,H/2+t); ctx.lineTo(2,H/2); ctx.fill();          // left
-  ctx.beginPath(); ctx.moveTo(W-8,H/2-t); ctx.lineTo(W-8,H/2+t); ctx.lineTo(W-2,H/2); ctx.fill();    // right
+  const t=10, R=MAP_RADIUS, s=state.screen;   // only show an arrow where you can actually leave (bounded map)
+  if(s.sy>-R){ ctx.beginPath(); ctx.moveTo(W/2-t,8); ctx.lineTo(W/2+t,8); ctx.lineTo(W/2,2); ctx.fill(); }        // up
+  if(s.sy< R){ ctx.beginPath(); ctx.moveTo(W/2-t,H-8); ctx.lineTo(W/2+t,H-8); ctx.lineTo(W/2,H-2); ctx.fill(); }   // down
+  if(s.sx>-R){ ctx.beginPath(); ctx.moveTo(8,H/2-t); ctx.lineTo(8,H/2+t); ctx.lineTo(2,H/2); ctx.fill(); }         // left
+  if(s.sx< R){ ctx.beginPath(); ctx.moveTo(W-8,H/2-t); ctx.lineTo(W-8,H/2+t); ctx.lineTo(W-2,H/2); ctx.fill(); }   // right
 }
 // Draws the hand-drawn ink glyph for `letter` from Alpha.png centred at (cx,cy).
 // Returns false if the sheet/letter is unavailable so the caller can fall back to text.
@@ -1137,19 +1162,24 @@ function showReveal(word){
 }
 
 /* ---------- SAVE STATE (shared by autosave + file backup) ----------------- */
-// Plain, JSON/clone-safe snapshot of progress (procedural screens + player pos are not saved).
+// Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
+// the collection + unlocks persist forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
-  return { v:1, inv:state.inv, dex:state.dex, unlocked:state.unlocked,
-           weaponIdx:state.weaponIdx, bagCap:state.bagCap, visited:[...state.visited] };
+  return { v:2, day:state.day, inv:state.inv, dex:state.dex, unlocked:state.unlocked,
+           weaponIdx:state.weaponIdx, bagCap:state.bagCap, captured:[...state.captured] };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
-  if(d.inv) state.inv=Object.assign(state.inv, d.inv);
   if(d.dex) state.dex=d.dex;
   if(Array.isArray(d.unlocked)) state.unlocked=d.unlocked;
   if(typeof d.weaponIdx==="number") state.weaponIdx=d.weaponIdx;
   if(typeof d.bagCap==="number") state.bagCap=d.bagCap;
-  if(Array.isArray(d.visited)) state.visited=new Set(d.visited);
+  // Satchel + captured creatures only carry over within the SAME calendar day. A new day = empty satchel
+  // and a fresh map (captures forgotten); state.day was already set to today before this runs.
+  if(d.day===state.day){
+    if(d.inv) Object.assign(state.inv, d.inv);
+    if(Array.isArray(d.captured)) state.captured=new Set(d.captured);
+  }
   document.getElementById("weapon-name").textContent=WEAPONS[state.weaponIdx].name;
   updateTrayHud();
   return true;
