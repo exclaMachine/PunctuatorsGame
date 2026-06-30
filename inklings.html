@@ -113,6 +113,16 @@
   .msg-bad{color:#9a3b2e;font-size:19px}
   .msg-known{color:var(--ink-soft);font-size:19px}
   .dex-count{font-family:var(--disp);font-size:9px;color:var(--ink-soft)}
+  /* A–Z collection tabs ("books") — one chip per letter you own a word for */
+  .dex-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;flex:none}
+  .dex-tab{font-family:var(--disp);font-size:9px;line-height:1;cursor:pointer;
+    padding:6px 7px;border:2px solid var(--edge);background:var(--paper-2);color:var(--ink);
+    text-transform:uppercase;transition:transform .05s;box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .dex-tab:hover{background:#dcd0b2}
+  .dex-tab:active{transform:translate(2px,2px);box-shadow:0 0 0 rgba(0,0,0,0)}
+  .dex-tab.active{background:var(--inkblue);color:#f4f0e6;box-shadow:2px 2px 0 rgba(0,0,0,.35)}
+  .dex-tab b{font-family:var(--read);font-size:12px;margin-left:5px;color:var(--ink-soft);font-weight:400}
+  .dex-tab.active b{color:#d9e2f4}
   .dex-list{margin-top:8px;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
     display:flex;flex-direction:column;gap:3px}
   .dex-item{padding:6px 7px;cursor:pointer;display:flex;align-items:baseline;gap:10px;
@@ -263,6 +273,7 @@
           </div>
           <div>
             <div class="sec-label">Collection <span class="dex-count" id="dex-count"></span></div>
+            <div class="dex-tabs" id="dex-tabs"></div>
             <div class="dex-list" id="dex-list"></div>
           </div>
         </div>
@@ -894,12 +905,27 @@ function renderBench(){
     : '<span class="ph">click letters above to build a word</span>';
   benchEl.querySelectorAll("[data-i]").forEach(ch=>ch.onclick=()=>{ bench.splice(+ch.dataset.i,1); renderBench(); });
 }
+let dexTab=null;   // selected collection tab — a single uppercase letter, or null when empty
 function renderDex(){
   const words=Object.keys(state.dex).sort();
   document.getElementById("dex-count").textContent = words.length?`· ${words.length} word${words.length>1?"s":""}`:"";
+
+  // group words by first letter; only letters you own a word for get a tab ("book")
+  const groups={};
+  words.forEach(w=>{ const L=(w[0]||"?").toUpperCase(); (groups[L]=groups[L]||[]).push(w); });
+  const letters=Object.keys(groups).sort();
+  if(!dexTab || !groups[dexTab]) dexTab = letters[0] || null;   // keep selection valid
+
+  const tabsEl=document.getElementById("dex-tabs");
+  tabsEl.innerHTML = letters.map(L=>
+    `<span class="dex-tab${L===dexTab?" active":""}" data-tab="${L}">${L}<b>${groups[L].length}</b></span>`
+  ).join("");
+  tabsEl.querySelectorAll("[data-tab]").forEach(t=>t.onclick=()=>{ dexTab=t.dataset.tab; renderDex(); });
+
+  const shown = dexTab ? groups[dexTab] : [];
   const list=document.getElementById("dex-list");
-  list.innerHTML = words.length
-    ? words.map(w=>`<div class="dex-item" data-w="${esc(w)}" title="Click to read the full meaning"><span class="w">${esc(w)}</span><span class="d">${esc(state.dex[w].def)}</span></div>`).join("")
+  list.innerHTML = shown.length
+    ? shown.map(w=>`<div class="dex-item" data-w="${esc(w)}" title="Click to read the full meaning"><span class="w">${esc(w)}</span><span class="d">${esc(state.dex[w].def)}</span></div>`).join("")
     : '<div style="color:var(--ink-soft);font-size:13px;padding:6px">Your collection is empty. Spell your first word!</div>';
   list.querySelectorAll("[data-w]").forEach(it=>it.onclick=()=>openDefModal(it.dataset.w));
 }
@@ -971,6 +997,7 @@ async function checkWord(){
   state.dex[word]={ def:r.def, found:Date.now() };
   if(CONSUME_ON_NEW){ bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); }); }
   bench=[];
+  dexTab=(word[0]||"?").toUpperCase();   // jump the collection to the new word's letter tab
   updateTrayHud(); renderBench(); renderDex(); checkUnlocks();
   showReveal(word);
   SFX.play("newword");

@@ -879,6 +879,17 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   never compress; only `.dex-list` scrolls (`flex:1;min-height:0`). Collection defs are single-line
   ellipsis; `openDefModal()` shows full text in `#defmodal`. Under `max-width:560px` the panel
   switches to a normal scrolling single column.
+- **Collection A–Z tabs ("books")** (`renderDex` → `#dex-tabs` + `#dex-list`): the collection is
+  split into per-letter tabs instead of one long list. `renderDex` groups `state.dex` words by first
+  letter and **only renders a tab for letters you actually own a word for** (no empty A–Z row). Each
+  tab chip shows the letter + a count badge of how many words it holds (`.dex-tab b`); the active tab
+  is inkblue. `dexTab` (module-level, an uppercase letter or `null`) tracks the selection and is kept
+  valid each render (falls back to the first available letter). The `#dex-list` shows only the
+  selected tab's words. The `#dex-count` next to the header still shows the **total** across all tabs.
+  Spelling a **new** word sets `dexTab` to that word's first letter before `renderDex()`, so the
+  collection jumps to where the word just landed. Genre/source tabs can layer on later. (The new
+  `House_5_Wood_Red_Red.png` is staged for the future walkable library room — not wired into the
+  build yet.)
 - **Library keyboard tray** (`renderBench` → `#tray`): the bench input shows a **full QWERTY keyboard**
   (`KB_ROWS`, 3 rows), not just owned letters. Each key shows a corner count badge of how many copies
   are still available to place (owned minus what's already on the bench); a key with **zero available**
