@@ -1105,7 +1105,27 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
    upgrade whose cost climbs each buy (`bagUpgradeCost()` = `BAG_COST_BASE + BAG_COST_STEP·(bagCap −
    BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap`, `updateShop()`
    refreshes the panel on `openShop()`. (It used to be a bar inside the desk/library overlay — moved out
-   because it cluttered that window.) The fuller vision below
+   because it cluttered that window.) **Word of the Day:** `wordOfTheDay()` picks a daily target from the
+   big **`2of12.txt`** dictionary (fetched once at startup into `WORD_POOL`, filtered to `WOTD_MIN..MAX`
+   = 4–7 letters, a–z only), then **filtered again to words using only your `unlockedLetters()`** and
+   picked deterministically with `mulberry32(daySeed)` — so it's stable all day, rotates daily, and is
+   **always makeable**. Makeability isn't just "the letter is unlocked" — the world must spawn enough
+   **copies** (e.g. two L's for "seller"). `wotdGuaranteed()` spreads the word's full letter multiset
+   one-per-screen across the map and `genScreen` **pins those letters onto its first creatures** (letters
+   only, so the per-screen count `n` — and thus `dayTotalCreatures`/captured tracking — is unchanged).
+   The pool loads async, so `onWotdPoolResolved()` (fired on fetch success **or** failure) recomputes the
+   word + pinned letters and **drops the screen cache** (`state.screens=new Map()`) so any field screen
+   generated before the word was known respawns with the pinned copies. Cached per day (`_wotd`/`_wotdDay`,
+   `_wotdGuar`/`_wotdGuarDay`).
+   Until the fetch resolves it returns `null` (banner shows "loading…"); if the fetch fails it falls back
+   to `WOTD_FALLBACK` (the old built-in etaoinsr list). This is a **second intentional network/file
+   exception** (like the API) — 2of12 is used only to *pick* the word, never for validation. Spelling it
+   pays a one-per-day `WOTD_BONUS` (25) ink on top of any normal reward. `checkWord` computes
+   `wotdUnclaimed` up front and (a) skips the "no reward, letters returned" early-out for the unclaimed
+   WOTD, and (b) **honours the WOTD even if the API 404s / is unreachable** (accepts it with empty POS +
+   generic def), since it came from our own dictionary — so the daily bonus is never blocked.
+   `state.wotdDay` records the claim day (persisted; re-arms when the date rolls over). The desk overlay
+   shows a `.wotd` banner (`updateWotd()`). The fuller vision below
    (verbs→deeds, adverbs→amplifiers, rarity tiers, choose-1-of-3) is still aspirational:
    every word does something, with zero per-word
    tagging, by keying effects off `partOfSpeech` (from the bundled WordNet data; see item 2).
@@ -1144,8 +1164,9 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
 ## Conventions for working on this project
 
 - Keep the game a single self-contained file with no external runtime dependencies, unless a
-  feature truly requires one (say so and why). Current intentional exception: the Free Dictionary
-  API for word validation/definitions (no local fallback word list).
+  feature truly requires one (say so and why). Current intentional exceptions: the Free Dictionary
+  API for word validation/definitions (no local fallback word list), and a one-time fetch of
+  `2of12.txt` used only to pick the Word of the Day (not for validation).
 - Protect the MVP loop. New systems are layers on the working core, shipped one at a time, each
   independently testable.
 - Maintain the ink-and-paper identity and the vocabulary above.

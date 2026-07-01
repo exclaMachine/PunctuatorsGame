@@ -39,6 +39,11 @@
   #bag-count{color:var(--ink)}
   #bag-count.full{color:#9a3b2e}
   #ink-count{color:var(--gold);font-weight:700}
+  /* Word-of-the-Day banner in the desk overlay */
+  .wotd{flex:none;font-family:var(--read);font-size:16px;color:var(--ink);
+    background:var(--paper-2);border:2px solid var(--gold);padding:6px 10px;margin-bottom:12px}
+  .wotd b{font-family:var(--disp);font-size:10px;color:var(--gold)}
+  .wotd .wotd-done{color:var(--moss);font-family:var(--disp);font-size:9px}
   /* Shop bar inside the desk overlay */
   /* The Stall — a standalone shop overlay (centered modal like the def/controls panels) */
   #shop{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
@@ -297,6 +302,7 @@
         <button class="close-x" id="lib-close" aria-label="Close library" title="Close">✕</button>
         <h1>The Library</h1>
         <div class="sub">Build words from the letters in your satchel. Each new word joins your collection.</div>
+        <div class="wotd" id="wotd"></div>
         <div class="cols">
           <div>
             <div class="sec-label">The Bench</div>
@@ -387,6 +393,7 @@
             <li><b>Reveal</b> — the minimap shows the whole map and which screens still have letters.</li>
           </ul>
           <p>Rewards repeat: re-spelling a word spends its letters again and pays again.</p>
+          <p><b>Word of the Day.</b> Each day the desk shows a bonus word — always built from letters you've unlocked, so you can always collect what you need. Spell it once for a big ink bonus.</p>
         </div>
         <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
           <button class="primary" id="controls-close">Got it</button>
@@ -528,6 +535,60 @@ function inkForWord(w){ return w.length; }                 // currency per noun 
 const BAG_BASE_CAP=10, BAG_COST_BASE=10, BAG_COST_STEP=5;
 function bagUpgradeCost(){ return BAG_COST_BASE + BAG_COST_STEP*Math.max(0, state.bagCap-BAG_BASE_CAP); }
 
+// --- Word of the Day ------------------------------------------------------------
+// A daily target word that pays a one-time ink bonus. It's drawn from the big 2of12 dictionary but
+// filtered to words using ONLY letters you've unlocked (so the creatures you need actually spawn) and
+// WOTD_MIN..WOTD_MAX long (short enough to always fit the satchel). Picked deterministically from the
+// date's seed, so it's the same all day and rotates daily. Guaranteed makeable by construction.
+const WOTD_BONUS=25;
+const WOTD_MIN=4, WOTD_MAX=7;
+// Offline fallback pool (used until 2of12.txt loads, or if the fetch fails). etaoinsr-only so it works
+// at any progress; the live pool below replaces it once loaded.
+const WOTD_FALLBACK=["stone","store","stare","snare","snore","saint","stain","satin","train","tenor",
+  "notes","arise","raise","arose","aster","rates","tears","stair","resin","rinse","siren","irons",
+  "ratio","roast","tarot","ornate","retina","ratios","station","senator","treason","tension",
+  "toaster","oration","retains","nastier","insert"];
+let WORD_POOL=null;                 // 2of12 words filtered to WOTD_MIN..WOTD_MAX, a–z only
+let WORD_POOL_FAILED=false;         // fetch failed → fall back to the built-in etaoinsr pool
+let _wotd=null, _wotdDay=null;      // cached daily pick (recomputed only when the day changes)
+// Load the dictionary once — used ONLY to pick the daily word (validation still goes through the API).
+function onWotdPoolResolved(){
+  _wotd=null; _wotdDay=null; _wotdGuar=null; _wotdGuarDay=null;   // recompute the day's word + its pinned letters
+  state.screens=new Map();          // drop cached screens so field creatures respawn with the pinned letters
+  updateWotd();
+}
+fetch("2of12.txt").then(r=>r.ok?r.text():Promise.reject()).then(txt=>{
+  WORD_POOL=txt.split(/\r?\n/).filter(w=>{ const n=w.length; return n>=WOTD_MIN && n<=WOTD_MAX && /^[a-z]+$/.test(w); });
+  onWotdPoolResolved();
+}).catch(()=>{ WORD_POOL_FAILED=true; onWotdPoolResolved(); });
+function wordOfTheDay(){
+  if(_wotdDay===state.day && _wotd) return _wotd;
+  const pool = WORD_POOL || (WORD_POOL_FAILED ? WOTD_FALLBACK : null);
+  if(!pool) return null;            // still loading — updateWotd shows "loading…"
+  const avail=unlockedLetters();
+  const viable=pool.filter(w=>{ for(const c of w) if(!avail.has(c)) return false; return true; });
+  const list=viable.length?viable:WOTD_FALLBACK;   // extreme-safety fallback (shouldn't happen)
+  _wotd=list[Math.floor(mulberry32(state.daySeed>>>0)()*list.length)];
+  _wotdDay=state.day;
+  return _wotd;
+}
+function wotdClaimed(){ return state.wotdDay===state.day; }
+// Which of today's word letters to PIN into each field screen, so the world always has enough copies
+// (e.g. two L's for "seller"). We spread the word's full letter multiset one-per-screen across the map;
+// genScreen forces these onto its first creatures. Cached per day. Empty while the word is still loading.
+let _wotdGuar=null, _wotdGuarDay=null;
+function wotdGuaranteed(){
+  if(_wotdGuarDay===state.day && _wotdGuar) return _wotdGuar;
+  const w=wordOfTheDay(), map={};
+  if(w){
+    const screens=[];
+    for(let sy=-MAP_RADIUS;sy<=MAP_RADIUS;sy++) for(let sx=-MAP_RADIUS;sx<=MAP_RADIUS;sx++) if(sx||sy) screens.push(sx+","+sy);
+    if(screens.length) [...w].forEach((c,j)=>{ const k=screens[j%screens.length]; (map[k]=map[k]||[]).push(c); });
+  }
+  _wotdGuar=map; _wotdGuarDay=state.day;
+  return _wotdGuar;
+}
+
 // Word validation + definitions come from the Free Dictionary API (api.dictionaryapi.dev).
 
 /* ---------- UTIL: seeded RNG ------------------------------ */
@@ -551,6 +612,7 @@ const state = {
   captured:new Set(),           // "sx,sy,i" of creatures taken today — no respawn, so they stay gone
   day:"", daySeed:0,            // current calendar day + its map seed
   ink:0,                        // currency earned by spelling nouns (persists across days)
+  wotdDay:"",                   // the day-string on which the Word of the Day bonus was last claimed
   potions:{ size:0, speed:0, reveal:0 },   // brewed-but-undrunk potions (persist)
   buffs:{ size:0, speed:0, reveal:0 },      // seconds remaining on active effects (session only)
   fx:[],                        // floating texts
@@ -661,8 +723,10 @@ function genScreen(sx,sy){
   const creatures=[];
   if(!isBase){
     const n = 4 + Math.floor(rng()*3) + Math.min(2, Math.floor(dist/3));   // population for this field today
+    const guar = wotdGuaranteed()[sx+","+sy] || [];   // WOTD letters pinned to this screen (enough copies)
     for(let i=0;i<n;i++){
       const cr=makeCreature(rng, dist, tiles); cr.id=sx+","+sy+","+i;
+      if(i<guar.length) cr.letter=guar[i];   // force in the day's word letters so the WOTD is always makeable
       if(!state.captured.has(cr.id)) creatures.push(cr);   // already taken today → stays gone (no respawn)
     }
   }
@@ -1294,7 +1358,7 @@ function checkUnlocks(){
 
 /* ---------- BENCH / LIBRARY OVERLAY ----------------------- */
 let bench=[];   // letters currently on the bench line
-function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); document.getElementById("sound-btn").style.display="none"; renderBench(); renderDex(); SFX.play("click"); }
+function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); document.getElementById("sound-btn").style.display="none"; renderBench(); renderDex(); updateWotd(); SFX.play("click"); }
 function openShop(){ state.shop=true; document.getElementById("shop").classList.add("open"); document.getElementById("sound-btn").style.display="none"; updateShop(); SFX.play("click"); }
 function closeShop(){ state.shop=false; document.getElementById("shop").classList.remove("open"); document.getElementById("sound-btn").style.display=""; }
 function closeOverlay(){ state.overlay=false; document.getElementById("overlay").classList.remove("open"); document.getElementById("sound-btn").style.display=""; closeDefModal(); bench=[]; document.getElementById("result").innerHTML=""; }
@@ -1388,6 +1452,7 @@ async function checkWord(){
   const res=document.getElementById("result");
   if(word.length<2){ res.innerHTML='<div class="msg-bad">Words need at least two letters.</div>'; SFX.play("invalid"); return; }
   const known=!!state.dex[word];
+  const wotdUnclaimed = (word===wordOfTheDay() && !wotdClaimed());   // today's bonus word, not yet claimed
 
   // Resolve part(s) of speech (and a definition for new words). Known words cache their POS so a
   // re-spell needs no network; new words (and old saves missing POS) hit the dictionary API.
@@ -1401,24 +1466,34 @@ async function checkWord(){
     const r=await lookupWord(word);
     checking=false; if(btn) btn.disabled=false;
     if(bench.join("").toLowerCase()!==word) return;   // bench changed mid-await — abort
-    if(r.ok===null){ res.innerHTML='<div class="msg-bad">Couldn’t reach the dictionary — check your connection and try again.</div>'; SFX.play("invalid"); return; }
-    if(!r.ok){ res.innerHTML=`<div class="msg-bad">“${esc(word.toUpperCase())}” isn’t in the dictionary.</div>`; SFX.play("invalid"); return; }
-    pos=r.pos||[]; def=r.def;
-    if(known) state.dex[word].pos=pos;   // backfill an old entry
+    if(r.ok!==true){
+      // The Word of the Day comes from our own dictionary, so honour it even if the API 404s / is down.
+      if(!wotdUnclaimed){
+        res.innerHTML = r.ok===null
+          ? '<div class="msg-bad">Couldn’t reach the dictionary — check your connection and try again.</div>'
+          : `<div class="msg-bad">“${esc(word.toUpperCase())}” isn’t in the dictionary.</div>`;
+        SFX.play("invalid"); return;
+      }
+      pos=[]; def="A word in the dictionary.";
+    } else {
+      pos=r.pos||[]; def=r.def;
+      if(known) state.dex[word].pos=pos;   // backfill an old entry
+    }
   }
 
   const isNoun=pos.includes("noun"), isAdj=pos.includes("adjective");
-  // A known word that isn't a noun/adjective has no repeat reward — old behaviour, letters returned.
-  if(known && !isNoun && !isAdj){
+  // A known word with no reward at all (not noun/adjective, not the unclaimed WOTD) → letters returned.
+  if(known && !isNoun && !isAdj && !wotdUnclaimed){
     res.innerHTML=`<div class="msg-known">You’ve already collected “${esc(word.toUpperCase())}” (no re-spell reward). Letters returned.</div>`;
     bench=[]; renderBench(); SFX.play("known"); return;
   }
 
   // Spend the letters (the cost — repeatable), then pay out rewards.
   bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); });
-  let earnedInk=0, brewed=null;
+  let earnedInk=0, brewed=null, wotdBonus=0;
   if(isNoun){ earnedInk=inkForWord(word); state.ink+=earnedInk; }
   if(isAdj){ brewed=POTION_TYPES[(Math.random()*POTION_TYPES.length)|0]; state.potions[brewed]++; }
+  if(wotdUnclaimed){ wotdBonus=WOTD_BONUS; state.ink+=wotdBonus; state.wotdDay=state.day; }
 
   // First-time collection: record it, jump the tab, check letter/weapon unlocks.
   let newly=[];
@@ -1431,21 +1506,24 @@ async function checkWord(){
   }
 
   bench=[];
-  updateTrayHud(); updateRewardHud(); renderBench();
-  showSpellResult(word, known, earnedInk, brewed);
+  updateTrayHud(); updateRewardHud(); updateWotd(); renderBench();
+  showSpellResult(word, known, earnedInk, brewed, wotdBonus);
   SFX.play(known ? "known" : "newword");
+  if(wotdBonus){ showToast("★ Word of the Day! +"+wotdBonus+" bonus ink."); SFX.play("unlock"); }
   if(newly.length){
     showToast("New letter"+(newly.length>1?"s":"")+" now roams the wild: "+newly.map(l=>l.toUpperCase()).join(" "));
     SFX.play("unlock");
   }
   scheduleSave();
 }
-// Result shown in the bench area: the word + what it earned (ink for nouns, a potion for adjectives).
-function showSpellResult(word, known, ink, brewed){
+// Result shown in the bench area: the word + what it earned (ink for nouns, a potion for adjectives,
+// plus the Word-of-the-Day bonus if this was it).
+function showSpellResult(word, known, ink, brewed, wotdBonus){
   const res=document.getElementById("result");
   const rewards=[];
-  if(ink>0)   rewards.push(`<span style="color:var(--gold)">+${ink} ink</span>`);
-  if(brewed)  rewards.push(`<span style="color:${POTION_COLOR[brewed]}">+1 ${POTION_LABEL[brewed]} potion</span>`);
+  if(ink>0)      rewards.push(`<span style="color:var(--gold)">+${ink} ink</span>`);
+  if(brewed)     rewards.push(`<span style="color:${POTION_COLOR[brewed]}">+1 ${POTION_LABEL[brewed]} potion</span>`);
+  if(wotdBonus)  rewards.push(`<span style="color:var(--gold)">★ Word of the Day +${wotdBonus} ink</span>`);
   const note = rewards.length
     ? `<div class="note">${rewards.join(" &nbsp;·&nbsp; ")}</div>`
     : `<div class="note" style="color:var(--ink-soft)">Collected — but no noun/adjective reward.</div>`;
@@ -1454,6 +1532,16 @@ function showSpellResult(word, known, ink, brewed){
     <div class="word">${esc(word)}</div>
     ${note}
   </div>`;
+}
+// Word-of-the-Day banner in the desk overlay (reveals the target + bonus, or "claimed" once done).
+function updateWotd(){
+  const el=document.getElementById("wotd"); if(!el) return;
+  const wd=wordOfTheDay();
+  if(!wd){ el.innerHTML=`★ Word of the Day: <span style="color:var(--ink-soft)">loading…</span>`; return; }
+  const w=wd.toUpperCase();
+  el.innerHTML = wotdClaimed()
+    ? `★ Word of the Day: <b>${w}</b> — <span class="wotd-done">claimed ✓</span>`
+    : `★ Word of the Day: <b>${w}</b> — spell it for <b>+${WOTD_BONUS} ink</b>`;
 }
 // Drink a stored potion → start its timed effect. Can't stack the same effect (re-drink once it wears off).
 function drinkPotion(t){
@@ -1470,7 +1558,7 @@ function drinkPotion(t){
 function snapshot(){
   return { v:2, day:state.day, inv:state.inv, dex:state.dex, unlocked:state.unlocked,
            weaponIdx:state.weaponIdx, bagCap:state.bagCap, captured:[...state.captured],
-           ink:state.ink, potions:state.potions };
+           ink:state.ink, potions:state.potions, wotdDay:state.wotdDay };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -1481,6 +1569,8 @@ function applySnapshot(d){
   // Ink + potions persist across days (earned progress, like the collection).
   if(typeof d.ink==="number") state.ink=d.ink;
   if(d.potions) for(const t of POTION_TYPES) if(typeof d.potions[t]==="number") state.potions[t]=d.potions[t];
+  // wotdDay is a date-string; if it still equals today the bonus stays claimed, otherwise it re-arms.
+  if(typeof d.wotdDay==="string") state.wotdDay=d.wotdDay;
   // Satchel + captured creatures only carry over within the SAME calendar day. A new day = empty satchel
   // and a fresh map (captures forgotten); state.day was already set to today before this runs.
   if(d.day===state.day){
