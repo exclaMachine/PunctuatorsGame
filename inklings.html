@@ -32,6 +32,19 @@
   #bag-count{color:var(--ink)}
   #bag-count.full{color:#9a3b2e}
   #ink-count{color:var(--gold);font-weight:700}
+  /* Shop bar inside the desk overlay */
+  /* The Stall — a standalone shop overlay (centered modal like the def/controls panels) */
+  #shop{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
+    align-items:center;justify-content:center;padding:18px;z-index:7}
+  #shop.open{display:flex}
+  #shop .book{position:relative}
+  .shop-ink-row{font-family:var(--read);font-size:17px;color:var(--ink);margin:6px 0 14px}
+  .shop-ink-row b{font-family:var(--disp);font-size:11px;color:var(--gold)}
+  .shop-item{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:var(--paper-2);border:2px solid var(--edge);padding:10px 12px}
+  .shop-item-name{font-family:var(--disp);font-size:10px}
+  .shop-item-desc{font-family:var(--read);font-size:15px;color:var(--ink-soft);margin-top:3px}
+  .shop-item button:disabled{opacity:.45;cursor:default;box-shadow:none}
   #potions{display:flex;gap:5px;margin-top:4px}
   .potion-btn{font-family:var(--disp);font-size:8px;line-height:1;padding:5px 6px;border:2px solid var(--edge);
     background:var(--paper-2);color:var(--ink);cursor:pointer;display:inline-flex;gap:4px;align-items:center;
@@ -308,6 +321,26 @@
       </div>
     </div>
 
+    <!-- Shop overlay (the Stall — opened by pressing E near the stall on the home screen) -->
+    <div id="shop">
+      <div class="book" style="max-width:420px">
+        <button class="close-x" id="shop-close" aria-label="Close shop" title="Close">✕</button>
+        <h1>The Stall</h1>
+        <div class="sub">Spend the ink you earn by spelling nouns.</div>
+        <div class="shop-ink-row">You have <b id="shop-ink">0</b> ink</div>
+        <div class="shop-item">
+          <div>
+            <div class="shop-item-name">Bigger Satchel</div>
+            <div class="shop-item-desc" id="shop-bag-desc">Carry +1 letter</div>
+          </div>
+          <button class="primary" id="shop-bag-buy">Buy · <b id="shop-bag-cost">10</b> ink</button>
+        </div>
+        <div class="btn-row" style="margin-top:18px;justify-content:flex-end">
+          <button class="primary" id="shop-done">Done</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Definition modal (full text of a collection entry) -->
     <div id="defmodal">
       <div class="book">
@@ -337,7 +370,7 @@
         <div class="help-note">
           <p><b>Ink &amp; potions.</b> Spelling words pays off by part of speech:</p>
           <ul>
-            <li>Spell a <b>noun</b> → earn <b>ink</b> (your currency, shown top-left).</li>
+            <li>Spell a <b>noun</b> → earn <b>ink</b> (your currency, shown top-left). Spend it at the <b>Stall</b> on the home screen (walk up and press <b>E</b>, or tap <b>SHOP</b>) to grow your satchel.</li>
             <li>Spell an <b>adjective</b> → brew a random <b>potion</b>. These stack up in the HUD.</li>
           </ul>
           <p>Drink a potion with <b>1</b>/<b>2</b>/<b>3</b> or by tapping its HUD button — each lasts 25&nbsp;seconds:</p>
@@ -377,6 +410,7 @@
         <div class="util-grid">
           <button class="tc-btn util" id="tc-home" aria-label="Home to bench">HOME</button>
           <button class="tc-btn util" id="tc-desk" aria-label="Open desk">DESK</button>
+          <button class="tc-btn util" id="tc-shop" aria-label="Open shop">SHOP</button>
           <button class="tc-btn util" id="tc-swap" aria-label="Switch implement">SWAP</button>
           <button class="tc-btn util" id="tc-help" aria-label="Controls">?</button>
         </div>
@@ -483,6 +517,9 @@ const POTION_SHORT = { size:"BIG",   speed:"FAST",  reveal:"MAP"    };
 const POTION_LABEL = { size:"Size",  speed:"Speed", reveal:"Reveal" };
 const POTION_COLOR = { size:"#7a4a9a", speed:"#3b6ea5", reveal:"#c89b3c" };
 function inkForWord(w){ return w.length; }                 // currency per noun (longer = more)
+// Shop: repeatable "+1 satchel" upgrade whose cost climbs each purchase (Korok-seed style).
+const BAG_BASE_CAP=10, BAG_COST_BASE=10, BAG_COST_STEP=5;
+function bagUpgradeCost(){ return BAG_COST_BASE + BAG_COST_STEP*Math.max(0, state.bagCap-BAG_BASE_CAP); }
 
 // Word validation + definitions come from the Free Dictionary API (api.dictionaryapi.dev).
 
@@ -510,7 +547,7 @@ const state = {
   potions:{ size:0, speed:0, reveal:0 },   // brewed-but-undrunk potions (persist)
   buffs:{ size:0, speed:0, reveal:0 },      // seconds remaining on active effects (session only)
   fx:[],                        // floating texts
-  started:false, overlay:false, help:false
+  started:false, overlay:false, help:false, shop:false
 };
 "abcdefghijklmnopqrstuvwxyz".split("").forEach(c=>state.inv[c]=0);
 state.day = todayStr(); state.daySeed = dayHash(state.day);   // set before any screen is generated
@@ -588,15 +625,16 @@ function blockedAt(sc,px,py){
 // evenly whether you walk into it from above or below, instead of overlapping one side and gapping the
 // other. FOOT_DY is the knob: more negative = feet higher up the sprite.
 const FOOT_DY=-10, FOOT_HW=8, FOOT_HH=4;
-// Solid footprint of the home desk (matches the drawn slab+front) — the player collides with it.
-const DESK = { x: W/2-72, y: H/2-26, w: 144, h: 48 };
-function overlapsDesk(px,py){
+// Solid footprints on the home screen (the player collides with them). DESK = writing desk (centre),
+// STALL = the shop counter (left). Each is the drawn body the player can't walk through.
+const DESK  = { x: W/2-72, y: H/2-26, w: 144, h: 48 };
+const STALL = (()=>{ const cx=150, cy=H/2-6; return { cx, cy, x:cx-58, y:cy-6, w:116, h:30 }; })();
+function overlapsSolid(r,px,py){
   const fy=py+FOOT_DY;
-  return px+FOOT_HW > DESK.x && px-FOOT_HW < DESK.x+DESK.w
-      && fy+FOOT_HH > DESK.y && fy-FOOT_HH < DESK.y+DESK.h;
+  return px+FOOT_HW > r.x && px-FOOT_HW < r.x+r.w && fy+FOOT_HH > r.y && fy-FOOT_HH < r.y+r.h;
 }
 function canStand(sc,px,py){
-  if(sc.isBase && overlapsDesk(px,py)) return false;   // can't walk through the desk
+  if(sc.isBase && (overlapsSolid(DESK,px,py) || overlapsSolid(STALL,px,py))) return false;   // desk + stall are solid
   const fy=py+FOOT_DY;
   return !blockedAt(sc,px-FOOT_HW,fy-FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy-FOOT_HH)
       && !blockedAt(sc,px-FOOT_HW,fy+FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy+FOOT_HH);
@@ -725,6 +763,10 @@ addEventListener("keydown",e=>{
     }
     return;
   }
+  if(state.shop){   // shop window open: close on Esc / Tab / E, swallow everything else
+    if(k==="escape"||k==="tab"||k==="e"){ e.preventDefault(); closeShop(); }
+    return;
+  }
   if(!state.started) return;
   keys[k]=true;
   if(k==="h") teleportHome();
@@ -748,7 +790,12 @@ function nearBench(){
   return state.screen.sx===0 && state.screen.sy===0 &&
     Math.hypot(state.player.x-W/2, state.player.y-(H/2-6))<78;
 }
-function tryUseBench(){ if(nearBench()) openOverlay(); }
+function nearShop(){
+  return state.screen.sx===0 && state.screen.sy===0 &&
+    Math.hypot(state.player.x-STALL.cx, state.player.y-STALL.cy)<80;
+}
+// E interacts with whatever you're standing by (shop takes priority since it's off to the side).
+function tryUseBench(){ if(nearShop()) openShop(); else if(nearBench()) openOverlay(); }
 function cycleWeapon(){
   if(state.unlocked.length<2) return;
   const pos=state.unlocked.indexOf(state.weaponIdx);
@@ -838,7 +885,7 @@ function update(dt){
   if(state.started && state.day!==todayStr()) startNewDay();   // rolled past midnight → fresh map
   const sc=curScreen();
 
-  if(!state.overlay && !state.help && state.started){
+  if(!state.overlay && !state.help && !state.shop && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -885,7 +932,8 @@ function update(dt){
 
   // bench hint
   const hint=document.getElementById("hint");
-  if(!state.overlay && !state.help && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
+  if(!state.overlay && !state.help && !state.shop && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
+  else if(!state.overlay && !state.help && !state.shop && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
   else hint.classList.remove("show");
 
   // active potion timers
@@ -910,7 +958,7 @@ function render(){
   for(const wt of sc.waterTiles) drawWaterAnim(wt[0],wt[1],tnow);
 
   // base bench
-  if(sc.isBase) drawBench();
+  if(sc.isBase){ drawBench(); drawStall(); }
 
   // edge arrows
   drawEdgeHints();
@@ -1088,6 +1136,26 @@ function drawBench(){
   ctx.fillText("BENCH", cx, cy-44);
   ctx.restore();
 }
+// The shop stall: a wooden market counter with a striped awning + a coin on the counter.
+function drawStall(){
+  const cx=STALL.cx, cy=STALL.cy;
+  ctx.save();
+  ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle="rgba(38,35,58,.30)"; ctx.fillRect(cx-58,cy-2,120,46);       // shadow
+  pxBox(cx-58, cy-44, 6, 50, "#6f5436");                                      // posts
+  pxBox(cx+52, cy-44, 6, 50, "#6f5436");
+  pxBox(cx-56, cy,    112, 24, "#8a6a44");                                    // counter front
+  pxBox(cx-58, cy-6,  116, 8,  "#9c7748");                                    // counter top
+  const aw=128, ax=cx-aw/2, ay=cy-48, ah=16, n=8;                             // striped awning
+  ctx.fillStyle="#26233a"; ctx.fillRect(ax-2,ay-2,aw+4,ah+4);
+  for(let i=0;i<n;i++){ ctx.fillStyle=(i%2)?"#c8553c":"#efe6cf"; ctx.fillRect(ax+i*(aw/n), ay, Math.ceil(aw/n), ah); }
+  for(let i=0;i<n;i++){ ctx.fillStyle=(i%2)?"#c8553c":"#efe6cf"; ctx.fillRect(ax+i*(aw/n), ay+ah, Math.ceil(aw/n)-3, 4); } // scallop
+  ctx.fillStyle="#c89b3c"; ctx.fillRect(cx-6, cy+6, 12, 12);                  // coin
+  ctx.fillStyle="#a87f2a"; ctx.fillRect(cx-2, cy+9, 4, 6);
+  ctx.fillStyle="#26233a"; ctx.font="9px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
+  ctx.fillText("SHOP", cx, cy-54);
+  ctx.restore();
+}
 function drawEdgeHints(){
   ctx.fillStyle="rgba(38,35,58,.18)";
   const t=10, R=MAP_RADIUS, s=state.screen;   // only show an arrow where you can actually leave (bounded map)
@@ -1183,6 +1251,26 @@ function updateRewardHud(){
   }).join("");
   el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>drinkPotion(b.dataset.p));
 }
+// Shop panel inside the desk overlay: shows your ink and the next satchel upgrade (cost + Buy button).
+function updateShop(){
+  const inkEl=document.getElementById("shop-ink"); if(inkEl) inkEl.textContent=state.ink;
+  const cost=bagUpgradeCost();
+  const desc=document.getElementById("shop-bag-desc");
+  const costEl=document.getElementById("shop-bag-cost");
+  const btn=document.getElementById("shop-bag-buy");
+  if(desc) desc.textContent=`Carry +1 letter (${state.bagCap} → ${state.bagCap+1})`;
+  if(costEl) costEl.textContent=cost;
+  if(btn) btn.disabled = state.ink < cost;
+}
+function buyBagUpgrade(){
+  const cost=bagUpgradeCost();
+  if(state.ink < cost) return;
+  state.ink-=cost; state.bagCap+=1;
+  SFX.play("unlock");
+  showToast("Satchel upgraded — now holds "+state.bagCap+" letters.");
+  updateShop(); updateRewardHud(); updateTrayHud();   // refresh ink, shop cost, and the N/cap readout
+  scheduleSave();
+}
 
 /* ---------- WEAPON UNLOCKS -------------------------------- */
 function checkUnlocks(){
@@ -1200,6 +1288,8 @@ function checkUnlocks(){
 /* ---------- BENCH / LIBRARY OVERLAY ----------------------- */
 let bench=[];   // letters currently on the bench line
 function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); document.getElementById("sound-btn").style.display="none"; renderBench(); renderDex(); SFX.play("click"); }
+function openShop(){ state.shop=true; document.getElementById("shop").classList.add("open"); document.getElementById("sound-btn").style.display="none"; updateShop(); SFX.play("click"); }
+function closeShop(){ state.shop=false; document.getElementById("shop").classList.remove("open"); document.getElementById("sound-btn").style.display=""; }
 function closeOverlay(){ state.overlay=false; document.getElementById("overlay").classList.remove("open"); document.getElementById("sound-btn").style.display=""; closeDefModal(); bench=[]; document.getElementById("result").innerHTML=""; }
 const KB_ROWS=["qwertyuiop","asdfghjkl","zxcvbnm"];
 function renderBench(){
@@ -1466,6 +1556,9 @@ document.getElementById("help-btn").onclick=toggleHelp;
 document.getElementById("controls-close").onclick=toggleHelp;
 document.getElementById("check-btn").onclick=checkWord;
 document.getElementById("clear-btn").onclick=()=>{ bench=[]; renderBench(); document.getElementById("result").innerHTML=""; SFX.play("click"); };
+document.getElementById("shop-bag-buy").onclick=buyBagUpgrade;
+document.getElementById("shop-close").onclick=()=>{ closeShop(); SFX.play("click"); };
+document.getElementById("shop-done").onclick=()=>{ closeShop(); SFX.play("click"); };
 document.getElementById("lib-close").onclick=()=>{ closeOverlay(); SFX.play("click"); };
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
@@ -1491,7 +1584,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -1523,7 +1616,8 @@ if(IS_TOUCH){
   // Utility buttons mirror their keyboard shortcuts.
   const tap=(id,fn)=>document.getElementById(id).addEventListener("pointerdown",e=>{ e.preventDefault(); fn(); });
   tap("tc-home",()=>{ if(state.started) teleportHome(); });
-  tap("tc-desk",()=>{ if(state.started && !state.help && !state.overlay) openOverlay(); });
+  tap("tc-desk",()=>{ if(state.started && !state.help && !state.overlay && !state.shop) openOverlay(); });
+  tap("tc-shop",()=>{ if(state.started && !state.help && !state.overlay && !state.shop) openShop(); });
   tap("tc-swap",()=>{ if(state.started) cycleWeapon(); });
   tap("tc-help",toggleHelp);
 }

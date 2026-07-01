@@ -15,7 +15,8 @@
       "Bash(cd *)",
       "Bash(sips -g pixelWidth -g pixelHeight Lumberjack_Jack.png)",
       "Bash(grep -n \"function drawPlayer\\\\|p.atkAnim\\\\|p.face\\\\|drawWeapon\\\\|implement\\\\|wFrame\\\\|wTimer\\\\|p.legs\\\\|p.vx\\\\|p.x,p.y\\\\|player:{\" inklings.html)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(echo \"exit:$?\")"
     ]
   }
 }

@@ -891,7 +891,8 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   by items). `satchelCount()` sums `state.inv`; `satchelFull()` gates capture in `doAttack` (a full
   satchel blocks new captures with a "Satchel full" toast so letters aren't wasted — spell words to
   free space). The HUD shows `N/cap` via `#bag-count` (turns red when full). `bagCap` is saved/loaded
-  in the export/import backup.
+  in the export/import backup, and is raised by buying the **Stall**'s repeatable +1 satchel upgrade
+  with `ink` (a separate shop building on the home screen — see Word effects).
 - **Systems**, in order: screen generation → input → combat → update → render → desk/bench →
   backup (export/import) → main loop.
 - **Bounded daily map (Wordle-style)** — the world is a fixed grid of screens sized by `MAP_RADIUS`
@@ -917,13 +918,15 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   ponds/rocks. Movement in `update()` resolves X/Y independently via `canStand(sc,x,y)` (samples a
   ~10px foot footprint against `blockedAt`) so you slide along walls; off-screen counts as unblocked
   so edge transitions still fire. Creatures spawn only on walkable tiles (`makeCreature` retries) and
-  bounce off water/rock so none drift somewhere unreachable. On the home screen the **desk is solid** too:
-  `canStand` also rejects the foot box overlapping the `DESK` rect (`overlapsDesk`), so you walk up to the
-  desk instead of through it (still close enough to trigger the `E`/`nearBench` prompt).
-- **Desk art** — `drawBench()` is drawn in the retro-pixel style: square corners, flat fills, chunky 2px
-  ink borders via `pxBox(x,y,w,h,fill)`, a hard offset drop-shadow (no blur) — wood slab + front panel,
-  a parchment sheet with ink lines, an ink pot + quill, and the `BENCH` label. `DESK` (the collision rect)
-  matches the drawn slab+front footprint.
+  bounce off water/rock so none drift somewhere unreachable. On the home screen the **desk and shop stall
+  are solid** too: `canStand` rejects the foot box overlapping the `DESK` or `STALL` rect
+  (`overlapsSolid(rect,…)`), so you walk up to them instead of through them (still close enough to trigger
+  the `E` prompt — `nearShop`/`nearBench`).
+- **Desk + stall art** — `drawBench()` and `drawStall()` are drawn in the retro-pixel style: square
+  corners, flat fills, chunky 2px ink borders via `pxBox(x,y,w,h,fill)`, hard offset drop-shadows (no
+  blur). Desk = wood slab + front panel, parchment sheet, ink pot + quill, `BENCH` label. Stall = wooden
+  counter + posts + striped awning + a coin, `SHOP` label. `DESK`/`STALL` collision rects match the drawn
+  footprints.
 - **Terrain rendering** — `ensureBg(sc)` bakes the static tile map into a per-screen offscreen canvas
   once (`sc.bg`, with `sc.waterTiles` listed); `render()` blits it then draws **animated water ripples**
   live over each water tile (`drawWaterAnim`, sine-sliding light bars = the "wavy" water). `bakeTile`
@@ -1089,8 +1092,15 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
    (`state.buffs`): size = bigger sprite + attack reach (`SIZE_MULT`), speed = faster move (`SPEED_MULT`),
    reveal = minimap shows the whole map + which screens still have letters (`screenRemaining`). `ink` +
    `potions` persist across days in the save (buffs are session-only). Verbs/adverbs/etc. give no reward
-   yet (still collected to the dex). The fuller vision below (verbs→deeds, adverbs→amplifiers, rarity
-   tiers, choose-1-of-3) is still aspirational:
+   yet (still collected to the dex). **Ink sink — the Stall:** a separate **shop building** on the home
+   screen (left of the desk; `drawStall()`, solid via the `STALL` collision rect) opens its **own**
+   overlay (`#shop`, `state.shop`) — walk up + press `E` (`nearShop()` → `tryUseBench` prioritises the
+   stall over the bench), or tap the `SHOP` touch button / `tc-shop`. It sells a repeatable **+1 satchel**
+   upgrade whose cost climbs each buy (`bagUpgradeCost()` = `BAG_COST_BASE + BAG_COST_STEP·(bagCap −
+   BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap`, `updateShop()`
+   refreshes the panel on `openShop()`. (It used to be a bar inside the desk/library overlay — moved out
+   because it cluttered that window.) The fuller vision below
+   (verbs→deeds, adverbs→amplifiers, rarity tiers, choose-1-of-3) is still aspirational:
    every word does something, with zero per-word
    tagging, by keying effects off `partOfSpeech` (from the bundled WordNet data; see item 2).
    Three independent dials keep it scalable and non-literal: **POS sets the reward category**,
