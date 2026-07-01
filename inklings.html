@@ -423,10 +423,11 @@
         <button class="tc-btn atk" id="tc-atk" aria-label="Attack">ATK</button>
         <div class="util-grid">
           <button class="tc-btn util" id="tc-home" aria-label="Home to bench">HOME</button>
-          <button class="tc-btn util" id="tc-desk" aria-label="Open desk">DESK</button>
-          <button class="tc-btn util" id="tc-shop" aria-label="Open shop">SHOP</button>
           <button class="tc-btn util" id="tc-swap" aria-label="Switch implement">SWAP</button>
           <button class="tc-btn util" id="tc-help" aria-label="Controls">?</button>
+          <!-- DESK / SHOP are contextual: only shown when standing by the desk / stall (see syncTouchUI) -->
+          <button class="tc-btn util" id="tc-desk" aria-label="Open desk">DESK</button>
+          <button class="tc-btn util" id="tc-shop" aria-label="Open shop">SHOP</button>
         </div>
       </div>
       <!-- D-pad, bottom-right -->
@@ -1001,10 +1002,10 @@ function update(dt){
   // fx
   for(let i=state.fx.length-1;i>=0;i--){ const f=state.fx[i]; f.life-=dt; f.y-=24*dt; if(f.life<=0) state.fx.splice(i,1); }
 
-  // bench hint
+  // bench/shop hint — keyboard only (touch uses the contextual DESK/SHOP buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  if(!state.overlay && !state.help && !state.shop && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
-  else if(!state.overlay && !state.help && !state.shop && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
+  if(!IS_TOUCH && !state.overlay && !state.help && !state.shop && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
+  else if(!IS_TOUCH && !state.overlay && !state.help && !state.shop && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
   else hint.classList.remove("show");
 
   // active potion timers
@@ -1690,6 +1691,12 @@ function syncTouchUI(){
       attackHeld=false;
     }
   }
+  // DESK / SHOP buttons are only shown (and only work) when you're standing by the desk / stall.
+  if(live){
+    const dv=document.getElementById("tc-desk"), sh=document.getElementById("tc-shop");
+    if(dv) dv.style.display = nearBench() ? "" : "none";
+    if(sh) sh.style.display = nearShop() ? "" : "none";
+  }
 }
 if(IS_TOUCH){
   document.body.classList.add("touch");
@@ -1713,8 +1720,8 @@ if(IS_TOUCH){
   // Utility buttons mirror their keyboard shortcuts.
   const tap=(id,fn)=>document.getElementById(id).addEventListener("pointerdown",e=>{ e.preventDefault(); fn(); });
   tap("tc-home",()=>{ if(state.started) teleportHome(); });
-  tap("tc-desk",()=>{ if(state.started && !state.help && !state.overlay && !state.shop) openOverlay(); });
-  tap("tc-shop",()=>{ if(state.started && !state.help && !state.overlay && !state.shop) openShop(); });
+  tap("tc-desk",()=>{ if(state.started && !state.help && !state.overlay && !state.shop && nearBench()) openOverlay(); });
+  tap("tc-shop",()=>{ if(state.started && !state.help && !state.overlay && !state.shop && nearShop()) openShop(); });
   tap("tc-swap",()=>{ if(state.started) cycleWeapon(); });
   tap("tc-help",toggleHelp);
 }

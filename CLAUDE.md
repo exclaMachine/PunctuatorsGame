@@ -1030,8 +1030,12 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
   it reuses the exact keyboard movement path in `update()`. 4-directional (matches keyboard).
 - **Action cluster** bottom-left (`#tact`): a large **ATK** button (hold to keep swinging — `update()`
   calls cooldown-gated `doAttack()` while `attackHeld`; attack uses the facing direction, same as
-  Space), plus small **HOME** / **DESK** / **SWAP** / **?** buttons that mirror `H` / `Tab(openOverlay)`
-  / `Q` / help.
+  Space), plus small **HOME** / **SWAP** / **?** buttons (always shown) and the **contextual DESK /
+  SHOP** buttons that mirror `H` / `Q` / help / desk / stall. **DESK and SHOP only appear (and only
+  fire) when you're standing by the desk (`nearBench()`) / stall (`nearShop()`)** — `syncTouchUI()`
+  toggles their `display` each frame and the tap handlers re-check proximity. They're ordered last in
+  the grid so showing/hiding them doesn't shift HOME/SWAP/?. The "Press E to use your bench/shop" hint
+  is **keyboard-only** (`!IS_TOUCH`) — touch has no E key, so the contextual buttons replace it.
 - Detection: `IS_TOUCH` (`pointer:coarse` || `ontouchstart` || `maxTouchPoints`) adds `body.touch`.
   `syncTouchUI()` (called each frame from `update()`) shows the overlay only while
   `state.started && !overlay && !help` and clears held inputs when hidden, so the pad never sits on
