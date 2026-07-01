@@ -1037,7 +1037,13 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
   `state.started && !overlay && !help` and clears held inputs when hidden, so the pad never sits on
   top of the library/help overlays. The corner `#help-btn` is hidden on touch (the `?` button replaces
   it); the start card swaps its keyboard hint (`.kbd-only`) for a touch hint (`.touch-only`).
-- Controls shrink under `@media(max-width:560px)`. The canvas is landscape (720×528).
+- Controls shrink under `@media(max-width:560px)`. The canvas is a fixed 720×528 internal resolution.
+  Base `#stage` is `width:720px;max-width:100%`. Desktop scaling (fill the viewport, keep 720:528) lives
+  in a **`@media (hover:hover) and (pointer:fine)`** block so it only affects mouse/desktop — touch
+  devices never match it, and `body.touch #stage` (the mobile reflow) outranks it regardless. `#stage`
+  scales to the largest box that fits width **and** height (`min(100%, calc((100dvh-40px)*720/528))`),
+  `image-rendering:pixelated` keeps the upscale crisp, and the DOM HUD/overlays stay fixed-px, anchored
+  to the stage edges. Keep desktop and mobile stage sizing in separate rules so one can't break the other.
 - **Mobile reflow (`body.touch`)** — on touch devices `#stage` becomes a full-height (`100dvh`) flex
   column so the controls live in the black bands, never over the map: the **HUD becomes a static top
   bar** (`order:-1`; the `#sound-btn` was moved into `.hud` so it flows inline there), the **`#touch`
