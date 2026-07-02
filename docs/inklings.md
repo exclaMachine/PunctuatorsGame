@@ -63,7 +63,9 @@ Use these terms consistently in code, UI, and writing:
 - **The library** — the collection of words you've spelled (the "dex"). It is currently a list;
   long-term it becomes a walkable room you fill (see roadmap).
 - **Field / books** — the screens you travel to and hunt in.
-- **Implements** — the weapons (stick, brush, pencil, pen, …).
+- **Implements** — the (future) weapon/equipment vocabulary (stick, brush, pencil, pen, …). **Deferred:
+  no equipment system is currently in the game** — attacking uses one fixed `ATTACK`. See design decision
+  #6 and roadmap #6 for the eventual dual-use-implement vision.
 
 ---
 
@@ -120,8 +122,9 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 `--disp` / `--read` CSS vars and also used by the canvas `ctx.font` calls (floats, BENCH label).
 
 - **CONFIG constants** — `TILE`, `COLS/ROWS`, `WORLD_W/H`, `HOME`, speeds, `CONSUME_LETTERS`.
-- **`WEAPONS`** — per-implement `dmg` / `range` / `cd` (cooldown) / visual. Tune feel here.
-- **`WEAPON_DROPS`** — which field screen hides which implement upgrade.
+- **`ATTACK`** — the single fixed base attack (`dmg`/`range`/`cd`). There is **no equipment/implement
+  system** — it was removed (stick/brush/pencil + the SWAP/Q switch mechanic) because it did nothing yet
+  and only added a dead button. Future gear can override this const. `dmg 1` one-shots creatures.
 - **`SPRITESHEET`** — glyph-sheet config (`url`, `cols`/`rows`, `cellW`/`cellH`, `letterToFrame`)
   - loader. Wired to `Alpha.png` (the same hand-drawn sheet Spin Nids uses): a 7×8 grid of 32×32
     cells where a–z = frames 0–25 (A–Z = 26–51, unused here). `drawGlyph(letter,cx,cy,size)` blits one
@@ -134,9 +137,9 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   6 fall-right (unused), 7 attack-right, 8 attack-down, 9 attack-up. `drawPlayer` picks the row from
   `p.face` (cardinal) + state (`p.atkAnim>0` attack → `p.moving` walk → idle), advances the frame from
   `p.animT` (idle/walk cycle) or attack progress, and **mirrors the right-facing rows for left**. Drawn
-  at `PLAYER_DRAW` (80px, `imageSmoothingEnabled=false`), feet near `p.y`. Weapons are **stats-only**
-  now (no drawn implement — the sprite has its own axe); the primitive "scholar" draw remains as a
-  fallback until the PNG loads. `doAttack` sets `p.atkAnim=ATTACK_ANIM` to play the attack row.
+  at `PLAYER_DRAW` (80px, `imageSmoothingEnabled=false`), feet near `p.y`. There's no weapon sprite (the
+  Lumberjack sprite has its own axe); the primitive "scholar" draw remains as a fallback until the PNG
+  loads. `doAttack` sets `p.atkAnim=ATTACK_ANIM` to play the attack row.
 - **`lookupWord(word)` / `checkWord()`** — word validation + definitions + **part(s) of speech** come
   **entirely** from the Free Dictionary API (`api.dictionaryapi.dev`); there is no local word list.
   `lookupWord` is async and returns `{ok:true, def, pos}` (`pos` = unique `partOfSpeech` list across all
@@ -146,7 +149,7 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   on `{ok:null}` keeps the letters + reports it couldn't reach the dictionary. **Rewards (step 7) are
   repeatable:** it always consumes the bench letters on a successful spell and pays out by POS — nouns
   add `ink`, adjectives brew a random potion (both if the word is both). New words also record to the
-  dex (`{def, found, pos}`) and run letter/weapon unlocks; a known word caches its `pos` so re-spells
+  dex (`{def, found, pos}`) and run letter unlocks; a known word caches its `pos` so re-spells
   skip the network. A known word that's neither noun nor adjective short-circuits with letters returned
   (no point re-spelling it). Defs are HTML-escaped via `esc()`.
 - **Letter spawn pool** — `FREQ` (per-letter weights, vowels common, j/k/x/q/z rare) + `TIER`
@@ -169,24 +172,22 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   only pushed if not yet captured. **All-cleared notice:** `dayTotalCreatures()` sums the day's
   per-screen creature counts across the whole map (replaying each screen's first `rng()` draw, the
   same one `genScreen` uses — no need to visit them), memoized per day. `dayCleared()` = `captured.size
-  >= dayTotalCreatures()`. When cleared, `render()` draws a **persistent** bottom-centre banner
-  (`drawClearedBanner`, "ALL CREATURES CAPTURED! / Come back tomorrow…") that stays on screen all day —
-  it does **not** fade like a toast. `maybeNotifyCleared()` only plays the one-time `unlock` chime
-  (guarded by `_clearedDay`); it's called from `doAttack` (clearing the last one) and each frame in
-  `update()` while started (so loading into an already-cleared day still chimes once).
+  > = dayTotalCreatures()`. When cleared, `render()` draws a **persistent** bottom-centre banner
+(`drawClearedBanner`, "ALL CREATURES CAPTURED! / Come back tomorrow…") that stays on screen all day —
+it does **not** fade like a toast. `maybeNotifyCleared()`only plays the one-time`unlock`chime
+(guarded by`\_clearedDay`); it's called from `doAttack`(clearing the last one) and each frame in`update()` while started (so loading into an already-cleared day still chimes once).
 - **`SFX`** — a small Web Audio IIFE (no asset files) that synthesizes chiptune blips, matching the
   retro-pixel theme and the single-file/offline rule. `SFX.play(name)` plays a named cue (`swing`,
   `capture`, `newword`, `known`, `invalid`, `unlock`, `home`, `click`); internals are `tone()` (one
   oscillator+gain blip with optional pitch slide) and `seq()` (notes back-to-back). Hooked into:
-  attack swing + creature capture (`doAttack`), word results (`checkWord`: new/known/invalid), implement
-  unlock (`checkUnlocks`), weapon switch (`cycleWeapon`), teleport (`teleportHome`), desk open
-  (`openOverlay`), and UI button taps. Mute state persists in `localStorage["inklings_muted"]` and is
+  attack swing + creature capture (`doAttack`), word results (`checkWord`: new/known/invalid), letter
+  unlock, teleport (`teleportHome`), desk open (`openOverlay`), and UI button taps. Mute state persists in `localStorage["inklings_muted"]` and is
   toggled by `#sound-btn` (🔊/🔇), which lives inside `.hud`. It is **hidden on desktop** (it got in
   the way) and **shown only on touch** (`body.touch`), where it sits in the static HUD top bar.
   Browsers gate audio behind a gesture, so `play()` calls `SFX.resume()` and the Start button resumes
   the context on click.
-- **`state`** — `{ player, inv:{letter:count}, dex:{word:{def,found,pos}}, weaponIdx, unlocked, bagCap,
-  ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun currency) + `potions`
+- **`state`** — `{ player, inv:{letter:count}, dex:{word:{def,found,pos}}, bagCap,
+ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun currency) + `potions`
   (brewed-but-undrunk counts) persist across days; `buffs` (seconds remaining on a drunk potion) are
   session-only. `updateRewardHud()` renders the `#ink-count` + the `#potions` buttons (disabled when
   you have none or while that buff is active); `drinkPotion(t)` spends a potion and starts a
@@ -294,8 +295,8 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   (`CREATURE_HP = 1`) and drop their letter. (HP/pip scaffolding remains if multi-hit creatures
   are ever wanted again.) The satchel holds a capped number of letters (`state.bagCap`, starts at 10);
   when full, capture is blocked until you spell words to free space.
-- Writing-implement weapons: start with stick; brush/pencil/pen hidden in field screens as
-  diegetic upgrades; `1`–`4` to switch among unlocked ones.
+- No equipment/implement system yet (the old stick/brush/pencil + SWAP switch was removed — it did
+  nothing). Attacking uses a single fixed `ATTACK` (dmg/range/cd). Equipment may return later.
 - Letter pickups → inventory; **no respawn within a day** (captured creatures stay gone until the next
   day's fresh map). Satchel empties at the start of each new day.
 - Desk/Library: click-to-build word, async API dictionary check with feedback states (checking /
@@ -327,7 +328,7 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 
 ## Controls
 
-**Keyboard (desktop):** Move `WASD` / arrows · Attack `Space` · Switch implement `Q` · Teleport
+**Keyboard (desktop):** Move `WASD` / arrows · Attack `Space` · Teleport
 home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`/`2`/`3` (size/speed/reveal)
 · Controls/help `?` · Close any panel `Esc`.
 
@@ -337,11 +338,11 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
   it reuses the exact keyboard movement path in `update()`. 4-directional (matches keyboard).
 - **Action cluster** bottom-left (`#tact`): a large **ATK** button (hold to keep swinging — `update()`
   calls cooldown-gated `doAttack()` while `attackHeld`; attack uses the facing direction, same as
-  Space), plus small **HOME** / **SWAP** / **?** buttons (always shown) and the **contextual DESK /
-  SHOP** buttons that mirror `H` / `Q` / help / desk / stall. **DESK and SHOP only appear (and only
+  Space), plus small **HOME** / **?** buttons (always shown) and the **contextual DESK /
+  SHOP** buttons that mirror `H` / help / desk / stall. **DESK and SHOP only appear (and only
   fire) when you're standing by the desk (`nearBench()`) / stall (`nearShop()`)** — `syncTouchUI()`
   toggles their `display` each frame and the tap handlers re-check proximity. They're ordered last in
-  the grid so showing/hiding them doesn't shift HOME/SWAP/?. The "Press E to use your bench/shop" hint
+  the grid so showing/hiding them doesn't shift HOME/?. The "Press E to use your bench/shop" hint
   is **keyboard-only** (`!IS_TOUCH`) — touch has no E key, so the contextual buttons replace it.
 - Detection: `IS_TOUCH` (`pointer:coarse` || `ontouchstart` || `maxTouchPoints`) adds `body.touch`.
   `syncTouchUI()` (called each frame from `update()`) shows the overlay only while
@@ -375,13 +376,13 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
    future polish: bundle a local wordlist/definitions JSON for an offline fallback, and/or cache API
    results in `localStorage`.
 3. **IndexedDB autosave** — DONE. Progress autosaves to IndexedDB DB `inklings_save` (store `state`,
-   key `save`). `snapshot()` builds a clone-safe object (`v:2` — `day`, inv, dex, unlocked, weaponIdx,
-   bagCap, captured[], `ink`, `potions`; the **map/visited are not saved**); `applySnapshot()` restores
-   it. `dex`/unlocks/`ink`/`potions` restore unconditionally, but `inv` + `captured` only carry over
+   key `save`). `snapshot()` builds a clone-safe object (`v:2` — `day`, inv, dex,
+   bagCap, captured[], `ink`, `potions`, `wotdDay`; the **map/visited are not saved**); `applySnapshot()`
+   restores it. `dex`/`ink`/`potions` restore unconditionally, but `inv` + `captured` only carry over
    when the saved `day` matches today —
    a new calendar day loads with an empty satchel and a fresh map (`state.day` is set to `todayStr()`
    synchronously before load so the comparison works). `scheduleSave()` (600 ms debounce) is called on the
-   meaningful mutations (capture, new word, weapon switch, new screen visited); `saveNow()` also fires
+   meaningful mutations (capture, new word, new screen visited); `saveNow()` also fires
    on `pagehide`/`visibilitychange`. A `loaded` gate blocks autosave until the startup `idbGet()` load
    resolves so a fresh frame can't overwrite the real save. `navigator.storage.persist()` is requested
    on startup. Export/Import (file) share `snapshot()`/`applySnapshot()` and remain the backup/transfer
@@ -414,7 +415,7 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
    overlay (`#shop`, `state.shop`) — walk up + press `E` (`nearShop()` → `tryUseBench` prioritises the
    stall over the bench), or tap the `SHOP` touch button / `tc-shop`. It sells a repeatable **+1 satchel**
    upgrade whose cost climbs each buy (`bagUpgradeCost()` = `BAG_COST_BASE + BAG_COST_STEP·(bagCap −
-   BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap`, `updateShop()`
+BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap`, `updateShop()`
    refreshes the panel on `openShop()`. (It used to be a bar inside the desk/library overlay — moved out
    because it cluttered that window.) **Word of the Day:** `wordOfTheDay()` picks a daily target from the
    big **`2of12.txt`** dictionary (fetched once at startup into `WORD_POOL`, filtered to `WOTD_MIN..MAX`
@@ -430,7 +431,7 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
    `_wotdGuar`/`_wotdGuarDay`).
    Until the fetch resolves it returns `null` (banner shows "loading…"); if the fetch fails it falls back
    to `WOTD_FALLBACK` (the old built-in etaoinsr list). This is a **second intentional network/file
-   exception** (like the API) — 2of12 is used only to *pick* the word, never for validation. Spelling it
+   exception** (like the API) — 2of12 is used only to _pick_ the word, never for validation. Spelling it
    pays a one-per-day `WOTD_BONUS` (25) ink on top of any normal reward. `checkWord` computes
    `wotdUnclaimed` up front and (a) skips the "no reward, letters returned" early-out for the unclaimed
    WOTD, and (b) **honours the WOTD even if the API 404s / is unreachable** (accepts it with empty POS +
@@ -469,6 +470,29 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
 10. **Limit the starting letters** - start with only lowercase letters and the more common letters (not all).
     Eventually add capital letters which are stronger and they can be used to make proper nouns
     (Ex. City names to help with geography)
+11. **Books as worlds; mad-libs restoration (core loop, post-pivot)** — each world is a
+    public-domain book; each chapter (or, for fable/tale collections, each tale) is a level.
+    Fiction: letters have "escaped" the book, so the player rounds them up (the catch-and-collect
+    loop), spells words from them, and uses those words to refill part-of-speech-typed blanks in
+    the chapter, mad-libs style. Completing a chapter restores it; completing a book adds it to the
+    library. This unifies every prior system: letter-collection → words → POS-typed blanks
+    validated by the bundled WordNet POS data (see item on the dictionary bundle).
+
+- **Blank validation:** accept any word whose WordNet POS matches the blank's `pos`; matching
+  or bettering the original `answer` earns bonus flavor, but is never required (that's the fun).
+- **Content pipeline (offline, once per book):** pull clean text from Project Gutenberg,
+  POS-tag each chapter with spaCy/NLTK, and emit one level JSON per chapter — a `segments`
+  array alternating `{type:"text"}` runs with `{type:"blank", id, pos, answer, lemma?}` slots
+  (see `sample-level.json`). The game loads pre-processed levels; no runtime NLP.
+- **Source rules:** use works published 1930 or earlier (US public domain as of 2026), favor
+  short/episodic ones (fables, tales, short stories, or naturally chaptered books). Use only
+  OLD public-domain translations (Grimm/Andersen/Verne); do NOT use modern abridged editions —
+  they carry a fresh copyright. Note US term = publication+95, but UK/EU = author death+70, so
+  global distribution timelines differ (e.g. Winnie-the-Pooh clears the US but not everywhere
+  yet). Not legal advice; verify before a commercial launch.
+- **Reframes existing items:** each book's genre drives its letter pool / tileset (the old
+  "genre books" idea); the library becomes a shelf of restored books; word-effects become an
+  optional secondary reward layered on top of blank-filling.
 
 ---
 
