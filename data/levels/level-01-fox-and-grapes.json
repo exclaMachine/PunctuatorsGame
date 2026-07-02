@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+
+  "level": {
+    "id": "fox-and-grapes",
+    "title": "The Fox and the Grapes",
+    "order": 12,
+    "moral": "There are many who pretend to despise and belittle that which is beyond their reach.",
+
+    "blankCounts": { "noun": 4, "adjective": 4, "verb": 2, "adverb": 2 },
+
+    "segments": [
+      { "type": "text",  "value": "A Fox one day " },
+      { "type": "text",  "value": " " },
+      { "type": "blank", "id": "b2",  "pos": "verb",      "answer": "spied", "lemma": "spy" },
+      { "type": "text",  "value": " a " },
+      { "type": "blank", "id": "b3",  "pos": "adjective", "answer": "beautiful" },
+      { "type": "text",  "value": " bunch of " },
+      { "type": "blank", "id": "b4",  "pos": "adjective", "answer": "ripe" },
+      { "type": "text",  "value": " grapes hanging from a " },
+      { "type": "blank", "id": "b5",  "pos": "noun",      "answer": "vine" },
+      { "type": "text",  "value": " trained along the branches of a tree. The grapes seemed ready to burst with juice, and the Fox's mouth watered as he gazed " },
+      { "type": "blank", "id": "b6",  "pos": "adverb",    "answer": "longingly" },
+      { "type": "text",  "value": " at them.\n\nThe bunch hung from a " },
+      { "type": "blank", "id": "b7",  "pos": "adjective", "answer": "high" },
+      { "type": "text",  "value": " branch, and the Fox had to jump for it. The first time he jumped he " },
+      { "type": "blank", "id": "b8",  "pos": "verb",      "answer": "missed", "lemma": "miss" },
+      { "type": "text",  "value": " it by a long way. So he walked off a short " },
+      { "type": "blank", "id": "b9",  "pos": "noun",      "answer": "distance" },
+      { "type": "text",  "value": " and took a running leap at it, only to fall short once more. Again and again he tried, but in vain.\n\nNow he sat down and looked at the grapes in disgust.\n\n\"What a " },
+      { "type": "blank", "id": "b10", "pos": "noun",      "answer": "fool" },
+      { "type": "text",  "value": " I am,\" he said. \"Here I am wearing myself out to get a bunch of " },
+      { "type": "blank", "id": "b11", "pos": "adjective", "answer": "sour" },
+      { "type": "text",  "value": " grapes that are not worth gaping for.\"\n\nAnd off he walked very, very " },
+      { "type": "blank", "id": "b12", "pos": "adverb",    "answer": "scornfully" },
+      { "type": "text",  "value": "." }
+    ]
+  }
+}

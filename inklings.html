@@ -57,6 +57,39 @@
   .shop-item-name{font-family:var(--disp);font-size:10px}
   .shop-item-desc{font-family:var(--read);font-size:15px;color:var(--ink-soft);margin-top:3px}
   .shop-item button:disabled{opacity:.45;cursor:default;box-shadow:none}
+  /* Mad-libs "restore the chapter" overlay */
+  #madlibs{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
+    align-items:center;justify-content:center;padding:18px;z-index:7}
+  #madlibs.open{display:flex}
+  #madlibs .book{position:relative;max-width:640px;width:100%}
+  .ml-passage{font-family:var(--read);font-size:18px;line-height:1.5;color:var(--ink);
+    background:var(--paper-2);border:2px solid var(--edge);padding:12px 14px;margin:10px 0;
+    max-height:42vh;overflow-y:auto}
+  .ml-passage p{margin:0 0 10px}  .ml-passage p:last-child{margin:0}
+  .ml-blank{font-family:var(--disp);font-size:9px;text-transform:uppercase;
+    background:var(--paper);border:2px solid var(--inkblue);color:var(--inkblue);
+    padding:2px 6px;margin:0 2px;cursor:pointer;line-height:1.6}
+  .ml-blank:hover,.ml-blank.active{background:var(--inkblue);color:#f4f0e6}
+  .ml-word{background:#e2edd6;border:2px solid var(--moss);color:var(--ink);padding:1px 5px;
+    margin:0 1px;cursor:pointer;font-weight:700}
+  .ml-word.exact{background:#f4e6bf;border-color:var(--gold)}
+  .ml-panel{min-height:40px}
+  .ml-needed{font-family:var(--disp);font-size:9px;color:var(--ink-soft);margin-bottom:6px}
+  .ml-hint,.ml-empty,.ml-picktitle{font-family:var(--read);font-size:16px;color:var(--ink)}
+  .ml-empty,.ml-hint{color:var(--ink-soft)}
+  .ml-picktitle{margin-bottom:8px}
+  .ml-picks{display:flex;flex-wrap:wrap;gap:6px;max-height:22vh;overflow-y:auto}
+  .ml-pick{font-family:var(--disp);font-size:10px;text-transform:uppercase;background:var(--paper-2);
+    border:2px solid var(--edge);color:var(--ink);padding:6px 8px;cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .ml-pick:hover{background:var(--inkblue);color:#f4f0e6}
+  .ml-pickrow{display:flex;gap:8px;margin-top:10px}
+  .ml-clear,.ml-cancel{font-family:var(--disp);font-size:9px;padding:6px 10px;
+    border:2px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer}
+  .ml-complete{font-family:var(--read);font-size:17px}
+  .ml-restored{font-family:var(--disp);font-size:11px;color:var(--gold);margin-bottom:8px}
+  .ml-moral{margin-bottom:8px}
+  .ml-bookdone{font-family:var(--disp);font-size:10px;color:var(--moss)}
+  .ml-err{color:#9a3b2e}
   #potions{display:flex;gap:5px;margin-top:4px}
   .potion-btn{font-family:var(--disp);font-size:8px;line-height:1;padding:5px 6px;border:2px solid var(--edge);
     background:var(--paper-2);color:var(--ink);cursor:pointer;display:inline-flex;gap:4px;align-items:center;
@@ -352,6 +385,20 @@
       </div>
     </div>
 
+    <!-- Mad-libs "restore the chapter" overlay (opened at the book lectern) -->
+    <div id="madlibs">
+      <div class="book">
+        <button class="close-x" id="ml-close" aria-label="Close book" title="Close">✕</button>
+        <h1 id="ml-title">Restore the Chapter</h1>
+        <div class="sub" id="ml-sub"></div>
+        <div class="ml-passage" id="ml-passage"></div>
+        <div class="ml-panel" id="ml-panel"></div>
+        <div class="btn-row" style="margin-top:14px;justify-content:flex-end">
+          <button class="primary" id="ml-done">Close</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Definition modal (full text of a collection entry) -->
     <div id="defmodal">
       <div class="book">
@@ -391,6 +438,7 @@
           </ul>
           <p>Rewards repeat: re-spelling a word spends its letters again and pays again.</p>
           <p><b>Word of the Day.</b> Each day the desk shows a bonus word — always built from letters you've unlocked, so you can always collect what you need. Spell it once for a big ink bonus.</p>
+          <p><b>The book lectern.</b> Right of the desk. Restore a story by filling each blank with a collected word that matches the needed part of speech (noun/verb/adjective/adverb). Matching the original word earns bonus ink. A word can be used in a chapter only <b>once, ever</b> — so keep learning new ones. Finish every chapter to add the book to your library.</p>
         </div>
         <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
           <button class="primary" id="controls-close">Got it</button>
@@ -421,9 +469,10 @@
         <div class="util-grid">
           <button class="tc-btn util" id="tc-home" aria-label="Home to bench">HOME</button>
           <button class="tc-btn util" id="tc-help" aria-label="Controls">?</button>
-          <!-- DESK / SHOP are contextual: only shown when standing by the desk / stall (see syncTouchUI) -->
+          <!-- DESK / SHOP / BOOK are contextual: only shown when standing by that structure (see syncTouchUI) -->
           <button class="tc-btn util" id="tc-desk" aria-label="Open desk">DESK</button>
           <button class="tc-btn util" id="tc-shop" aria-label="Open shop">SHOP</button>
+          <button class="tc-btn util" id="tc-book" aria-label="Open book">BOOK</button>
         </div>
       </div>
       <!-- D-pad, bottom-right -->
@@ -582,6 +631,18 @@ function wotdGuaranteed(){
 
 // Word validation + definitions come from the Free Dictionary API (api.dictionaryapi.dev).
 
+// --- Books / mad-libs ("restore the chapter") ----------------------------------
+// A book is a set of chapter level files. Add chapters/books by listing their JSON paths here. A book
+// is "restored" (added to your library) once all its listed levels are done. Blanks are filled with
+// words from your collection (dex) that match the blank's part of speech (POS cached in the dex entry —
+// no API call needed at fill time). Each collected word can fill only ONE blank ever (across all books):
+// using it marks it used so you keep learning new vocabulary rather than reusing the same words.
+const BOOKS = [
+  { id:"aesop-for-children", title:"The Aesop for Children",
+    levels:["data/levels/level-01-fox-and-grapes.json"] }
+];
+const MADLIB_EXACT_BONUS = 5;   // ink awarded per blank filled with the exact original word
+
 /* ---------- UTIL: seeded RNG ------------------------------ */
 function hash2(x,y){ let h=(x*374761393 + y*668265263) ^ 0x9e3779b9; h=(h^(h>>>13))*1274126177; return (h^(h>>>16))>>>0; }
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -605,8 +666,10 @@ const state = {
   wotdDay:"",                   // the day-string on which the Word of the Day bonus was last claimed
   potions:{ size:0, speed:0, reveal:0 },   // brewed-but-undrunk potions (persist)
   buffs:{ size:0, speed:0, reveal:0 },      // seconds remaining on active effects (session only)
+  restored:{},                  // mad-libs progress: levelId -> {fills:{blankId:word}, done, exact, bookId} (persist)
+  books:[],                     // ids of books fully restored (added to your library) (persist)
   fx:[],                        // floating texts
-  started:false, overlay:false, help:false, shop:false
+  started:false, overlay:false, help:false, shop:false, madlibs:false
 };
 "abcdefghijklmnopqrstuvwxyz".split("").forEach(c=>state.inv[c]=0);
 state.day = todayStr(); state.daySeed = dayHash(state.day);   // set before any screen is generated
@@ -685,15 +748,16 @@ function blockedAt(sc,px,py){
 // other. FOOT_DY is the knob: more negative = feet higher up the sprite.
 const FOOT_DY=-10, FOOT_HW=8, FOOT_HH=4;
 // Solid footprints on the home screen (the player collides with them). DESK = writing desk (centre),
-// STALL = the shop counter (left). Each is the drawn body the player can't walk through.
-const DESK  = { x: W/2-72, y: H/2-26, w: 144, h: 48 };
-const STALL = (()=>{ const cx=150, cy=H/2-6; return { cx, cy, x:cx-58, y:cy-6, w:116, h:30 }; })();
+// STALL = the shop counter (left), LECTERN = the book/mad-libs stand (right). Can't walk through them.
+const DESK    = { x: W/2-72, y: H/2-26, w: 144, h: 48 };
+const STALL   = (()=>{ const cx=150, cy=H/2-6; return { cx, cy, x:cx-58, y:cy-6, w:116, h:30 }; })();
+const LECTERN = (()=>{ const cx=570, cy=H/2-6; return { cx, cy, x:cx-30, y:cy-2, w:60,  h:40 }; })();
 function overlapsSolid(r,px,py){
   const fy=py+FOOT_DY;
   return px+FOOT_HW > r.x && px-FOOT_HW < r.x+r.w && fy+FOOT_HH > r.y && fy-FOOT_HH < r.y+r.h;
 }
 function canStand(sc,px,py){
-  if(sc.isBase && (overlapsSolid(DESK,px,py) || overlapsSolid(STALL,px,py))) return false;   // desk + stall are solid
+  if(sc.isBase && (overlapsSolid(DESK,px,py) || overlapsSolid(STALL,px,py) || overlapsSolid(LECTERN,px,py))) return false;
   const fy=py+FOOT_DY;
   return !blockedAt(sc,px-FOOT_HW,fy-FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy-FOOT_HH)
       && !blockedAt(sc,px-FOOT_HW,fy+FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy+FOOT_HH);
@@ -828,6 +892,10 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"||k==="e"){ e.preventDefault(); closeShop(); }
     return;
   }
+  if(state.madlibs){   // book/mad-libs window open: close on Esc / Tab / E (clicks drive the rest)
+    if(k==="escape"||k==="tab"||k==="e"){ e.preventDefault(); closeBook(); }
+    return;
+  }
   if(!state.started) return;
   keys[k]=true;
   if(k==="h") teleportHome();
@@ -854,8 +922,12 @@ function nearShop(){
   return state.screen.sx===0 && state.screen.sy===0 &&
     Math.hypot(state.player.x-STALL.cx, state.player.y-STALL.cy)<80;
 }
-// E interacts with whatever you're standing by (shop takes priority since it's off to the side).
-function tryUseBench(){ if(nearShop()) openShop(); else if(nearBench()) openOverlay(); }
+function nearLectern(){
+  return state.screen.sx===0 && state.screen.sy===0 &&
+    Math.hypot(state.player.x-LECTERN.cx, state.player.y-LECTERN.cy)<80;
+}
+// E interacts with whatever you're standing by (each structure is off in its own spot).
+function tryUseBench(){ if(nearLectern()) openBook(); else if(nearShop()) openShop(); else if(nearBench()) openOverlay(); }
 
 /* ---------- COMBAT ---------------------------------------- */
 function doAttack(){
@@ -935,7 +1007,7 @@ function update(dt){
   if(state.started && state.day!==todayStr()) startNewDay();   // rolled past midnight → fresh map
   const sc=curScreen();
 
-  if(!state.overlay && !state.help && !state.shop && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -982,8 +1054,10 @@ function update(dt){
 
   // bench/shop hint — keyboard only (touch uses the contextual DESK/SHOP buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  if(!IS_TOUCH && !state.overlay && !state.help && !state.shop && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
-  else if(!IS_TOUCH && !state.overlay && !state.help && !state.shop && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs;
+  if(hintReady && nearLectern()){ hint.textContent="Press E to open the book"; hint.classList.add("show"); }
+  else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
+  else if(hintReady && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
   else hint.classList.remove("show");
 
   // active potion timers
@@ -1008,7 +1082,7 @@ function render(){
   for(const wt of sc.waterTiles) drawWaterAnim(wt[0],wt[1],tnow);
 
   // base bench
-  if(sc.isBase){ drawBench(); drawStall(); }
+  if(sc.isBase){ drawBench(); drawStall(); drawLectern(); }
 
   // edge arrows
   drawEdgeHints();
@@ -1207,6 +1281,23 @@ function drawStall(){
   ctx.fillStyle="#a87f2a"; ctx.fillRect(cx-2, cy+9, 4, 6);
   ctx.fillStyle="#26233a"; ctx.font="9px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
   ctx.fillText("SHOP", cx, cy-54);
+  ctx.restore();
+}
+// The book lectern (mad-libs "restore the chapter"): a pedestal with an open book on a slanted rest.
+function drawLectern(){
+  const cx=LECTERN.cx, cy=LECTERN.cy;
+  ctx.save();
+  ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle="rgba(38,35,58,.30)"; ctx.fillRect(cx-30,cy-2,64,44);   // shadow
+  pxBox(cx-10, cy+2,  20, 28, "#6f5436");                                // post
+  pxBox(cx-28, cy+30, 56, 8,  "#5a4630");                                // base
+  pxBox(cx-30, cy-20, 60, 22, "#8a6a44");                                // slanted book rest
+  ctx.fillStyle="#efe6cf"; ctx.fillRect(cx-26,cy-18,24,16); ctx.fillRect(cx+2,cy-18,24,16);   // open pages
+  ctx.fillStyle="#26233a"; ctx.fillRect(cx-1,cy-18,2,16);               // spine
+  ctx.fillStyle="#c8b48a";                                              // page lines
+  for(let i=0;i<3;i++){ ctx.fillRect(cx-23,cy-14+i*4,18,1); ctx.fillRect(cx+5,cy-14+i*4,18,1); }
+  ctx.fillStyle="#26233a"; ctx.font="9px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
+  ctx.fillText("BOOK", cx, cy-30);
   ctx.restore();
 }
 function drawEdgeHints(){
@@ -1521,13 +1612,162 @@ function drinkPotion(t){
   scheduleSave();
 }
 
+/* ---------- MAD-LIBS: restore the chapter ----------------- */
+let mlBook=null, mlLevel=null, mlActive=null;   // open book (JSON book), open level, active blank id
+function ensureRestored(id){ return (state.restored[id] = state.restored[id] || { fills:{}, done:false }); }
+// Every word already committed to a blank (across all books) — used words can't fill another blank ever.
+function usedWordSet(){
+  const s=new Set();
+  for(const id in state.restored){ const f=state.restored[id].fills||{}; for(const b in f) s.add(f[b]); }
+  return s;
+}
+// Collected words whose cached POS includes `pos` and that haven't been used yet.
+function eligibleWords(pos){
+  const used=usedWordSet();
+  return Object.keys(state.dex).filter(w=>{
+    const p=state.dex[w].pos;
+    return Array.isArray(p) && p.includes(pos) && !used.has(w);
+  }).sort();
+}
+// Fetch + parse a level JSON → {book, level}, or null on network/parse error (needs http, not file://).
+async function loadLevel(path){
+  try{
+    const res=await fetch(path);
+    if(!res.ok) return null;
+    const d=await res.json();
+    if(!d || !d.level || !Array.isArray(d.level.segments)) return null;
+    return { book:d.book||{id:"?",title:"Book"}, level:d.level };
+  }catch(e){ return null; }
+}
+async function openBook(){
+  const reg=BOOKS[0], path=reg.levels[0];         // one book / one chapter for now
+  mlBook=null; mlLevel=null; mlActive=null;
+  state.madlibs=true;
+  document.getElementById("madlibs").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  SFX.play("click");
+  document.getElementById("ml-title").textContent="Opening the book…";
+  document.getElementById("ml-sub").textContent="";
+  document.getElementById("ml-passage").innerHTML='<p style="color:var(--ink-soft)">Loading chapter…</p>';
+  document.getElementById("ml-panel").innerHTML="";
+  const data=await loadLevel(path);
+  if(!state.madlibs) return;                       // closed while loading
+  if(!data){
+    document.getElementById("ml-title").textContent="The book won't open";
+    document.getElementById("ml-passage").innerHTML='<p class="ml-err">Couldn’t load this chapter. The level file must be served over http (not opened as a <code>file://</code>). Use a local server or the deployed page.</p>';
+    return;
+  }
+  mlBook=data.book; mlLevel=data.level;
+  renderMadlibs();
+}
+function closeBook(){
+  state.madlibs=false;
+  document.getElementById("madlibs").classList.remove("open");
+  document.getElementById("sound-btn").style.display="";
+  mlActive=null;
+}
+function selectBlank(bId){ mlActive=bId; renderMadlibs(); }
+function pickWord(w){
+  if(!mlLevel || !mlActive) return;
+  const R=ensureRestored(mlLevel.id);
+  R.fills[mlActive]=w; R.bookId=mlBook.id;
+  mlActive=null;
+  SFX.play("newword");
+  if(allFilled(R)) completeLevel(); else scheduleSave();
+  renderMadlibs();
+}
+function clearActive(){
+  if(!mlLevel || !mlActive) return;
+  delete ensureRestored(mlLevel.id).fills[mlActive];
+  SFX.play("click"); scheduleSave(); renderMadlibs();   // keep the picker open on the now-empty blank
+}
+function allFilled(R){ return mlLevel.segments.filter(s=>s.type==="blank").every(s=>R.fills[s.id]); }
+function completeLevel(){
+  const lvl=mlLevel, R=ensureRestored(lvl.id);
+  if(R.done){ scheduleSave(); return; }
+  R.done=true; R.bookId=mlBook.id;
+  const blanks=lvl.segments.filter(s=>s.type==="blank");
+  R.exact=blanks.filter(b=>R.fills[b.id]===b.answer).length;   // exact-original matches → bonus (never required)
+  if(R.exact){ state.ink+=R.exact*MADLIB_EXACT_BONUS; updateRewardHud(); }
+  // A book is "restored" (added to your library) when every one of its listed chapters is done.
+  const reg=BOOKS.find(b=>b.id===mlBook.id), need=reg?reg.levels.length:1;
+  let done=0; for(const id in state.restored){ if(state.restored[id].done && state.restored[id].bookId===mlBook.id) done++; }
+  R.bookDone = (done>=need && !state.books.includes(mlBook.id));
+  if(R.bookDone) state.books.push(mlBook.id);
+  SFX.play("unlock");
+  showToast("Chapter restored: "+lvl.title+(R.exact?` · +${R.exact*MADLIB_EXACT_BONUS} ink`:""));
+  scheduleSave();
+}
+function renderMadlibs(){
+  const lvl=mlLevel; if(!lvl) return;
+  const R=ensureRestored(lvl.id);
+  document.getElementById("ml-title").textContent=lvl.title;
+  document.getElementById("ml-sub").innerHTML = R.done
+    ? `<b>${esc(mlBook.title)}</b> — restored ✓`
+    : `<b>${esc(mlBook.title)}</b> — fill each blank with a word from your library that matches its part of speech. Each collected word can be used only once, ever.`;
+  const pas=document.getElementById("ml-passage");
+  pas.innerHTML=passageHTML(lvl,R);
+  if(!R.done) pas.querySelectorAll("[data-b]").forEach(el=>el.onclick=()=>selectBlank(el.dataset.b));
+  const panel=document.getElementById("ml-panel");
+  if(R.done) panel.innerHTML=completionHTML(lvl,R);
+  else if(mlActive){ panel.innerHTML=pickerHTML(lvl,R,mlActive); wirePicker(panel); }
+  else panel.innerHTML=neededHTML(lvl,R);
+}
+function passageHTML(lvl,R){
+  let html="";
+  for(const seg of lvl.segments){
+    if(seg.type==="text"){ html+=esc(seg.value).replace(/\n\n/g,"</p><p>"); continue; }
+    const w=R.fills[seg.id];
+    if(R.done || w){ const ex=w===seg.answer;
+      html+=`<span class="ml-word${ex?" exact":""}"${R.done?"":` data-b="${seg.id}"`} title="${seg.pos}${ex?" · original word":""}">${esc(w||"")}</span>`;
+    } else {
+      html+=`<button class="ml-blank${seg.id===mlActive?" active":""}" data-b="${seg.id}">${seg.pos}</button>`;
+    }
+  }
+  return `<p>${html}</p>`;
+}
+function neededHTML(lvl,R){
+  const blanks=lvl.segments.filter(s=>s.type==="blank"), total={}, filled={};
+  for(const b of blanks){ total[b.pos]=(total[b.pos]||0)+1; if(R.fills[b.id]) filled[b.pos]=(filled[b.pos]||0)+1; }
+  const parts=Object.keys(total).sort().map(p=>`${p[0].toUpperCase()+p.slice(1)} ${filled[p]||0}/${total[p]}`);
+  const left=blanks.length-blanks.filter(b=>R.fills[b.id]).length;
+  return `<div class="ml-needed">Still needed: ${parts.join("  ·  ")}</div>
+    <div class="ml-hint">${left?"Tap a blank to fill it from your library.":"Every blank is filled!"}</div>`;
+}
+function pickerHTML(lvl,R,bId){
+  const blank=lvl.segments.find(s=>s.type==="blank"&&s.id===bId), cur=R.fills[bId];
+  const words=eligibleWords(blank.pos);
+  const list=words.length
+    ? `<div class="ml-picks">${words.map(w=>`<button class="ml-pick" data-w="${esc(w)}">${esc(w)}</button>`).join("")}</div>`
+    : `<div class="ml-empty">No unused <b>${blank.pos}</b> in your library yet — go spell some ${blank.pos}s at the bench, then come back.</div>`;
+  const clear=cur?`<button class="ml-clear" data-act="clear">Remove “${esc(cur)}”</button>`:"";
+  return `<div class="ml-picktitle">Choose a <b>${blank.pos}</b>${cur?` (currently “${esc(cur)}”)`:""}:</div>
+    ${list}
+    <div class="ml-pickrow">${clear}<button class="ml-cancel" data-act="cancel">Cancel</button></div>`;
+}
+function wirePicker(panel){
+  panel.querySelectorAll(".ml-pick").forEach(b=>b.onclick=()=>pickWord(b.dataset.w));
+  panel.querySelectorAll("[data-act='clear']").forEach(b=>b.onclick=clearActive);
+  panel.querySelectorAll("[data-act='cancel']").forEach(b=>b.onclick=()=>{ mlActive=null; renderMadlibs(); });
+}
+function completionHTML(lvl,R){
+  const bonus=R.exact?` <span style="color:var(--gold)">+${R.exact*MADLIB_EXACT_BONUS} ink for ${R.exact} original word${R.exact>1?"s":""}</span>`:"";
+  const bookLine = state.books.includes(mlBook.id)
+    ? `<div class="ml-bookdone">📖 “${esc(mlBook.title)}” ${R.bookDone?"added to":"is in"} your library!</div>` : "";
+  return `<div class="ml-complete">
+    <div class="ml-restored">✦ Chapter restored!${bonus}</div>
+    <div class="ml-moral"><b>Moral:</b> ${esc(lvl.moral||"")}</div>
+    ${bookLine}</div>`;
+}
+
 /* ---------- SAVE STATE (shared by autosave + file backup) ----------------- */
 // Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
   return { v:2, day:state.day, inv:state.inv, dex:state.dex,
            bagCap:state.bagCap, captured:[...state.captured],
-           ink:state.ink, potions:state.potions, wotdDay:state.wotdDay };
+           ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
+           restored:state.restored, books:state.books };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -1538,6 +1778,9 @@ function applySnapshot(d){
   if(d.potions) for(const t of POTION_TYPES) if(typeof d.potions[t]==="number") state.potions[t]=d.potions[t];
   // wotdDay is a date-string; if it still equals today the bonus stays claimed, otherwise it re-arms.
   if(typeof d.wotdDay==="string") state.wotdDay=d.wotdDay;
+  // Mad-libs chapter progress + restored-book list persist forever (earned progress).
+  if(d.restored && typeof d.restored==="object") state.restored=d.restored;
+  if(Array.isArray(d.books)) state.books=d.books;
   // Satchel + captured creatures only carry over within the SAME calendar day. A new day = empty satchel
   // and a fresh map (captures forgotten); state.day was already set to today before this runs.
   if(d.day===state.day){
@@ -1622,6 +1865,8 @@ document.getElementById("clear-btn").onclick=()=>{ bench=[]; renderBench(); docu
 document.getElementById("shop-bag-buy").onclick=buyBagUpgrade;
 document.getElementById("shop-close").onclick=()=>{ closeShop(); SFX.play("click"); };
 document.getElementById("shop-done").onclick=()=>{ closeShop(); SFX.play("click"); };
+document.getElementById("ml-close").onclick=()=>{ closeBook(); SFX.play("click"); };
+document.getElementById("ml-done").onclick=()=>{ closeBook(); SFX.play("click"); };
 document.getElementById("lib-close").onclick=()=>{ closeOverlay(); SFX.play("click"); };
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
@@ -1647,7 +1892,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -1656,11 +1901,12 @@ function syncTouchUI(){
       attackHeld=false;
     }
   }
-  // DESK / SHOP buttons are only shown (and only work) when you're standing by the desk / stall.
+  // DESK / SHOP / BOOK buttons are only shown (and only work) when you're standing by that structure.
   if(live){
-    const dv=document.getElementById("tc-desk"), sh=document.getElementById("tc-shop");
+    const dv=document.getElementById("tc-desk"), sh=document.getElementById("tc-shop"), bk=document.getElementById("tc-book");
     if(dv) dv.style.display = nearBench() ? "" : "none";
     if(sh) sh.style.display = nearShop() ? "" : "none";
+    if(bk) bk.style.display = nearLectern() ? "" : "none";
   }
 }
 if(IS_TOUCH){
@@ -1685,8 +1931,10 @@ if(IS_TOUCH){
   // Utility buttons mirror their keyboard shortcuts.
   const tap=(id,fn)=>document.getElementById(id).addEventListener("pointerdown",e=>{ e.preventDefault(); fn(); });
   tap("tc-home",()=>{ if(state.started) teleportHome(); });
-  tap("tc-desk",()=>{ if(state.started && !state.help && !state.overlay && !state.shop && nearBench()) openOverlay(); });
-  tap("tc-shop",()=>{ if(state.started && !state.help && !state.overlay && !state.shop && nearShop()) openShop(); });
+  const homeReady=()=>state.started && !state.help && !state.overlay && !state.shop && !state.madlibs;
+  tap("tc-desk",()=>{ if(homeReady() && nearBench()) openOverlay(); });
+  tap("tc-shop",()=>{ if(homeReady() && nearShop()) openShop(); });
+  tap("tc-book",()=>{ if(homeReady() && nearLectern()) openBook(); });
   tap("tc-help",toggleHelp);
 }
 

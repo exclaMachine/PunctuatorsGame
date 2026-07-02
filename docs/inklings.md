@@ -227,11 +227,19 @@ ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun curr
   are solid** too: `canStand` rejects the foot box overlapping the `DESK` or `STALL` rect
   (`overlapsSolid(rect,…)`), so you walk up to them instead of through them (still close enough to trigger
   the `E` prompt — `nearShop`/`nearBench`).
-- **Desk + stall art** — `drawBench()` and `drawStall()` are drawn in the retro-pixel style: square
-  corners, flat fills, chunky 2px ink borders via `pxBox(x,y,w,h,fill)`, hard offset drop-shadows (no
-  blur). Desk = wood slab + front panel, parchment sheet, ink pot + quill, `BENCH` label. Stall = wooden
-  counter + posts + striped awning + a coin, `SHOP` label. `DESK`/`STALL` collision rects match the drawn
-  footprints.
+- **Desk + stall + lectern art** — `drawBench()` / `drawStall()` / `drawLectern()` are drawn in the
+  retro-pixel style: square corners, flat fills, chunky 2px ink borders via `pxBox(x,y,w,h,fill)`, hard
+  offset drop-shadows (no blur). Desk = wood slab + front panel, parchment sheet, ink pot + quill, `BENCH`
+  label (centre). Stall = wooden counter + posts + striped awning + a coin, `SHOP` label (left). Lectern =
+  pedestal + open book on a slanted rest, `BOOK` label (right). `DESK`/`STALL`/`LECTERN` collision rects
+  (`overlapsSolid`) match the drawn footprints; `nearBench`/`nearShop`/`nearLectern` gate the `E`/touch
+  interaction and open `#overlay` / `#shop` / `#madlibs` respectively.
+- **Mad-libs module** (`/* MAD-LIBS */`) — `BOOKS` registry (book → chapter JSON paths). `loadLevel`,
+  `openBook`/`closeBook`, `renderMadlibs` (+ `passageHTML`/`neededHTML`/`pickerHTML`/`completionHTML`/
+  `wirePicker`), `selectBlank`/`pickWord`/`clearActive`, `usedWordSet`/`eligibleWords`, `allFilled`/
+  `completeLevel`. State: `state.restored` (per-level `{fills,done,exact,bookId}`) + `state.books`, both
+  saved. `mlBook`/`mlLevel`/`mlActive` are the open session. Blank fills come from the dex filtered by
+  cached POS; a word used anywhere is locked forever (`usedWordSet`).
 - **Terrain rendering** — `ensureBg(sc)` bakes the static tile map into a per-screen offscreen canvas
   once (`sc.bg`, with `sc.waterTiles` listed); `render()` blits it then draws **animated water ripples**
   live over each water tile (`drawWaterAnim`, sine-sliding light bars = the "wavy" water). `bakeTile`
@@ -305,6 +313,11 @@ ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun curr
   only** — the collection list, truncated to one line with an ellipsis (no horizontal scroll);
   clicking an entry opens a full-text modal (`#defmodal`). The new-word reveal celebrates the word
   but no longer prints a second copy of the definition.
+- **Mad-libs "restore the chapter"** — a book lectern (right of the desk) opens a chapter (`data/levels/`).
+  Fill each blank with a **collected word** matching its part of speech; exact-original matches earn bonus
+  ink (never required). Words are single-use across all books (you keep learning new vocab). Completing a
+  chapter restores it; completing a book adds it to your library. Persisted. (POS uses the FreeDictionary
+  data cached on each dex word — WordNet bundle is future.)
 - Backup: export state to JSON, import it back (also the manual cross-device transfer).
 - Keyboard on desktop; **on-screen touch controls on mobile** (D-pad bottom-right, action cluster
   bottom-left). See the Controls section + code map for details.
@@ -470,7 +483,25 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
 10. **Limit the starting letters** - start with only lowercase letters and the more common letters (not all).
     Eventually add capital letters which are stronger and they can be used to make proper nouns
     (Ex. City names to help with geography)
-11. **Books as worlds; mad-libs restoration (core loop, post-pivot)** — each world is a
+11. **Books as worlds; mad-libs restoration (core loop, post-pivot)** — **Status: MVP DONE (one
+    chapter).** A **book lectern** structure sits right of the desk on the home screen (`drawLectern`,
+    solid via the `LECTERN` rect, walk-up + `E` / `nearLectern()` / touch `BOOK` button → `openBook()`).
+    `loadLevel(path)` fetches + parses a chapter JSON (`data/levels/…`; graceful http/parse-error
+    handling). The `#madlibs` overlay (`state.madlibs`, gated like `#shop`) renders the passage from
+    `segments` (`passageHTML` — text runs with `\n\n` → paragraphs, each blank a POS-labelled slot);
+    clicking a blank opens a **word picker of your collected words** (`eligibleWords(pos)` = dex words
+    whose cached `pos` includes the blank's, **filtered by the FreeDictionary POS stored on the dex
+    entry — no API call at fill time; WordNet isn't bundled yet**). **Each collected word can fill only
+    ONE blank ever, across all books** (`usedWordSet()` unions all `state.restored[*].fills`; used words
+    are locked but stay in your dex) — this is deliberate, to push learning new vocabulary (a future
+    item could "unlock" used words). Any correct-POS word fills a blank; matching the original `answer`
+    exactly awards `MADLIB_EXACT_BONUS` ink (per blank, on completion) but is **never required**.
+    Completing every blank marks the chapter `done` (persisted in `state.restored[levelId]`), shows the
+    finished passage + `moral`; finishing every chapter of a book adds it to `state.books` (your
+    library). `restored`/`books` persist in the save. `BOOKS` is the registry (add chapters/books by
+    listing JSON paths). The fuller pipeline vision below (Gutenberg + spaCy content pipeline, genre
+    letter pools, walkable library room) is still ahead:
+    each world is a
     public-domain book; each chapter (or, for fable/tale collections, each tale) is a level.
     Fiction: letters have "escaped" the book, so the player rounds them up (the catch-and-collect
     loop), spells words from them, and uses those words to refill part-of-speech-typed blanks in
