@@ -2012,5 +2012,266 @@ function frame(now){
 }
 requestAnimationFrame(frame);
 </script>
+
+<!-- Background music: overworld theme (synthesized inline via Web Audio — no audio files) -->
+<script>
+/**
+ * OverworldTheme — an 8-bit NES-style chiptune loop generator using the
+ * Web Audio API. No audio files required; every note is synthesized live,
+ * so this drops straight into any HTML canvas game with zero load time
+ * and loops seamlessly forever.
+ *
+ * Usage:
+ *   const theme = new OverworldTheme();
+ *   startButton.addEventListener('click', () => theme.start());
+ *   theme.setVolume(0.4);
+ *   theme.stop();
+ */
+class OverworldTheme {
+  constructor() {
+    this.ctx = null;
+    this.master = null;
+    this.playing = false;
+    this.timerID = null;
+
+    // --- Musical settings -------------------------------------------------
+    this.bpm = 108;
+    this.beatSec = 60 / this.bpm;
+    this.lookaheadMs = 25;        // how often the scheduler wakes up
+    this.scheduleAheadSec = 0.15; // how far ahead we schedule audio events
+
+    // --- Composition: A (8 bars) - B (8 bars) - A (8 bars) = 24 bars ------
+    // Each melody bar is a list of [note, beats]. Beats sum to 4 per bar.
+    this.melodyA = [
+      [['E4', 1], ['G4', 1], ['A4', 1], ['G4', 1]],
+      [['E4', 1], ['D4', 1], ['C4', 2]],
+      [['E4', 0.5], ['G4', 0.5], ['A4', 1], ['G4', 1], ['E4', 1]],
+      [['D4', 2], ['C4', 2]],
+      [['E4', 1], ['G4', 1], ['A4', 1], ['G4', 1]],
+      [['A4', 1], ['B4', 1], ['C5', 2]],
+      [['B4', 0.5], ['A4', 0.5], ['G4', 1], ['E4', 1], ['D4', 1]],
+      [['C4', 4]],
+    ];
+    this.melodyB = [
+      [['G4', 1], ['A4', 1], ['C5', 1], ['A4', 1]],
+      [['G4', 1.5], ['E4', 0.5], ['D4', 2]],
+      [['E4', 1], ['G4', 1], ['A4', 1], ['B4', 1]],
+      [['C5', 2], ['A4', 1], ['G4', 1]],
+      [['F4', 1], ['E4', 1], ['D4', 1], ['E4', 1]],
+      [['G4', 1.5], ['F4', 0.5], ['E4', 2]],
+      [['D4', 1], ['E4', 1], ['D4', 1], ['C4', 1]],
+      [['D4', 4]],
+    ];
+    this.melodyPattern = [...this.melodyA, ...this.melodyB, ...this.melodyA];
+
+    // One chord (as two notes) per bar, played twice (beat 1 and beat 3).
+    this.harmonyA = [
+      ['C4', 'E4'], ['G3', 'B3'], ['A3', 'C4'], ['F3', 'A3'],
+      ['C4', 'E4'], ['D4', 'F4'], ['G3', 'B3'], ['C4', 'E4'],
+    ];
+    this.harmonyB = [
+      ['F3', 'A3'], ['C4', 'E4'], ['G3', 'B3'], ['A3', 'C4'],
+      ['F3', 'A3'], ['C4', 'E4'], ['G3', 'B3'], ['C4', 'E4'],
+    ];
+    this.harmonyPattern = [...this.harmonyA, ...this.harmonyB, ...this.harmonyA];
+
+    // One sustained bass root per bar.
+    this.bassA = ['C3', 'G2', 'A2', 'F2', 'C3', 'D3', 'G2', 'C3'];
+    this.bassB = ['F2', 'C3', 'G2', 'A2', 'F2', 'C3', 'G2', 'C3'];
+    this.bassPattern = [...this.bassA, ...this.bassB, ...this.bassA];
+
+    this.barsTotal = this.melodyPattern.length; // 24
+    this.loopBeats = this.barsTotal * 4;
+    this.loopSec = this.loopBeats * this.beatSec;
+
+    this.events = this._buildEvents();
+    this.nextEventIndex = 0;
+    this.currentLoop = 0;
+    this.loopStartTime = 0;
+  }
+
+  // --- Public controls ------------------------------------------------
+
+  start() {
+    if (this.playing) return;
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+
+    if (!this.master) {
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.4;
+      this.master.connect(this.ctx.destination);
+    }
+
+    this.playing = true;
+    this.nextEventIndex = 0;
+    this.currentLoop = 0;
+    this.loopStartTime = this.ctx.currentTime + 0.1;
+    this._scheduler();
+  }
+
+  stop() {
+    this.playing = false;
+    if (this.timerID) clearTimeout(this.timerID);
+  }
+
+  setVolume(v) {
+    if (this.master) this.master.gain.value = v;
+  }
+
+  // --- Internals --------------------------------------------------------
+
+  _scheduler() {
+    if (!this.playing) return;
+
+    while (true) {
+      const evt = this.events[this.nextEventIndex];
+      const absTime =
+        this.loopStartTime +
+        this.currentLoop * this.loopSec +
+        evt.beatOffset * this.beatSec;
+
+      if (absTime < this.ctx.currentTime + this.scheduleAheadSec) {
+        this._playEvent(evt, absTime);
+        this.nextEventIndex++;
+        if (this.nextEventIndex >= this.events.length) {
+          this.nextEventIndex = 0;
+          this.currentLoop++;
+        }
+      } else {
+        break;
+      }
+    }
+
+    this.timerID = setTimeout(() => this._scheduler(), this.lookaheadMs);
+  }
+
+  _buildEvents() {
+    const events = [];
+
+    let barOffset = 0;
+    this.melodyPattern.forEach((bar) => {
+      let beatOffset = barOffset;
+      bar.forEach(([note, beats]) => {
+        events.push({
+          type: 'melody',
+          beatOffset,
+          duration: beats,
+          freq: this._noteToFreq(note),
+        });
+        beatOffset += beats;
+      });
+      barOffset += 4;
+    });
+
+    barOffset = 0;
+    this.harmonyPattern.forEach((chord) => {
+      const freqs = chord.map((n) => this._noteToFreq(n));
+      events.push({ type: 'harmony', beatOffset: barOffset, duration: 1.8, freqs });
+      events.push({ type: 'harmony', beatOffset: barOffset + 2, duration: 1.8, freqs });
+      barOffset += 4;
+    });
+
+    barOffset = 0;
+    this.bassPattern.forEach((note) => {
+      events.push({
+        type: 'bass',
+        beatOffset: barOffset,
+        duration: 3.8,
+        freq: this._noteToFreq(note),
+      });
+      barOffset += 4;
+    });
+
+    events.sort((a, b) => a.beatOffset - b.beatOffset);
+    return events;
+  }
+
+  _playEvent(evt, time) {
+    if (evt.type === 'melody') {
+      this._playTone(evt.freq, time, evt.duration * this.beatSec * 0.9, 0.14, 'square');
+    } else if (evt.type === 'harmony') {
+      evt.freqs.forEach((f) =>
+        this._playTone(f, time, evt.duration * this.beatSec * 0.85, 0.045, 'square')
+      );
+    } else if (evt.type === 'bass') {
+      this._playTone(evt.freq, time, evt.duration * this.beatSec * 0.95, 0.16, 'triangle');
+    }
+  }
+
+  _playTone(freq, time, dur, peakVol, type) {
+    const osc = this.ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = freq;
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.linearRampToValueAtTime(peakVol, time + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+
+    osc.connect(gain);
+    gain.connect(this.master);
+    osc.start(time);
+    osc.stop(time + dur + 0.03);
+  }
+
+  _noteToFreq(note) {
+    const semitoneFromA = { C: -9, 'C#': -8, D: -7, 'D#': -6, E: -5, F: -4,
+      'F#': -3, G: -2, 'G#': -1, A: 0, 'A#': 1, B: 2 };
+    const match = note.match(/^([A-G]#?)(\d)$/);
+    const [, name, octave] = match;
+    const semitones = semitoneFromA[name] + (parseInt(octave, 10) - 4) * 12;
+    return 440 * Math.pow(2, semitones / 12);
+  }
+}
+
+// Works both as a plain <script> global and as an ES module import.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = OverworldTheme;
+}
+
+/* ---- Wire the overworld theme into Inklings --------------------------------
+   The tune runs during active gameplay and fully STOPS only when the game hasn't
+   started, the sound is muted, or the tab is hidden. While any dialogue/overlay is
+   open (library / shop / book / help) it keeps running but is FADED TO SILENCE
+   (master gain → 0), so it resumes from the same spot when you close it. Browsers
+   block audio until a gesture, so the first sync fires from one; a light 250ms tick
+   keeps it in sync after that. This only READS the game's global state/mute — it
+   changes no existing game logic. */
+const OVERWORLD_VOL = 0.3;
+const overworldTheme = new OverworldTheme();
+overworldTheme.setVolume(OVERWORLD_VOL);   // background level, sits under the SFX
+function overworldRunning() {   // scheduler active during gameplay (off on title / mute / hidden tab)
+  try {
+    return typeof state !== "undefined" && state.started
+      && localStorage.getItem("inklings_muted") !== "1"
+      && !document.hidden;
+  } catch (e) { return false; }
+}
+function overworldDialogueOpen() {
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs); } catch (e) { return false; }
+}
+function overworldFade(to) {     // smooth ~120ms master-gain ramp (avoids clicks)
+  const m = overworldTheme.master, c = overworldTheme.ctx;
+  if (!m || !c) { overworldTheme.setVolume(to); return; }
+  const g = m.gain, t = c.currentTime;
+  g.cancelScheduledValues(t); g.setValueAtTime(g.value, t);
+  g.linearRampToValueAtTime(to, t + 0.12);
+}
+function syncOverworldMusic() {
+  if (overworldRunning()) {
+    overworldTheme.start();                                     // no-op if already playing
+    overworldFade(overworldDialogueOpen() ? 0 : OVERWORLD_VOL); // silence (not stop) while a dialogue is open
+  } else {
+    overworldTheme.stop();
+  }
+}
+["pointerdown", "keydown", "touchstart"].forEach(ev =>
+  window.addEventListener(ev, syncOverworldMusic, { passive: true }));
+document.addEventListener("visibilitychange", syncOverworldMusic);
+setInterval(syncOverworldMusic, 250);
+</script>
 </body>
 </html>

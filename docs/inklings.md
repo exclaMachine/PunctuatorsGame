@@ -186,6 +186,14 @@ it does **not** fade like a toast. `maybeNotifyCleared()`only plays the one-time
   the way) and **shown only on touch** (`body.touch`), where it sits in the static HUD top bar.
   Browsers gate audio behind a gesture, so `play()` calls `SFX.resume()` and the Start button resumes
   the context on click.
+- **Background music** (`OverworldTheme` + `syncOverworldMusic`) — a synthesized 8-bit chiptune loop
+  (Web Audio, no asset files), in its **own `<script>` block after the game script** (it only reads the
+  game's global `state`/mute, changing no game logic). `overworldTheme` (`setVolume(OVERWORLD_VOL=0.3)`).
+  A 250ms tick + gesture/visibility listeners drive `syncOverworldMusic`: it fully **`stop()`s** unless
+  gameplay is active (`state.started`, not `inklings_muted`, tab visible); while any dialogue is open
+  (`overlay`/`help`/`shop`/`madlibs`) it keeps running but **fades the master gain to 0** (`overworldFade`,
+  ~120ms ramp) so it resumes seamlessly on close. Gesture-gated (nothing autoplays on load). The class's
+  own `module.exports` is guarded (`typeof module`), so it's browser-safe.
 - **`state`** — `{ player, inv:{letter:count}, dex:{word:{def,found,pos}}, bagCap,
 ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun currency) + `potions`
   (brewed-but-undrunk counts) persist across days; `buffs` (seconds remaining on a drunk potion) are
@@ -325,6 +333,9 @@ ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun curr
 - Backup: export state to JSON, import it back (also the manual cross-device transfer).
 - Keyboard on desktop; **on-screen touch controls on mobile** (D-pad bottom-right, action cluster
   bottom-left). See the Controls section + code map for details.
+- **Background music** — a synthesized overworld chiptune loop (`OverworldTheme`) plays while walking
+  around; it fades to silence while any dialogue is open (resumes seamlessly) and stops when muted /
+  not started / tab hidden.
 - **Sound effects** — synthesized chiptune blips (`SFX`, Web Audio, no asset files) on attack,
   capture, word results, unlock, and UI actions; mute toggle (`#sound-btn`, 🔊/🔇) persisted to
   `localStorage`.
