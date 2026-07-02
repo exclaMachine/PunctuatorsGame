@@ -937,10 +937,13 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   play, revisit if memory matters on very long runs.
 - **Minimap** (`drawMinimap`, drawn last in `render` when `state.started`): a translucent
   explored-area map in the canvas bottom-right. `state.visited` (a `Set` of `"sx,sy"`, added to in
-  `curScreen`) drives it; it renders the padded bounding box of visited screens — **visited cells are
-  lit (home `(0,0)` gold, others parchment), unvisited cells inside the box are black**, and the
-  current screen is outlined in ink-red. Cell size auto-scales (5–15px) so the map stays compact as you
-  explore. `visited` is **day-scoped and not saved** — it resets each new day (explored-only reveal).
+  `curScreen`) drives it; it renders the bounding box of visited screens padded by 1 **and clamped to
+  the real map `[-MAP_RADIUS, MAP_RADIUS]`** so it never draws cells outside the bounded map (a black
+  square there would wrongly imply you could travel to it). **Visited cells are lit (home `(0,0)` gold,
+  others parchment), in-bounds unvisited cells are black** (those are still reachable), and the current
+  screen is outlined in ink-red. Cell size auto-scales (5–15px). `visited` is **day-scoped and not
+  saved** — it resets each new day (explored-only reveal). The reveal potion instead shows the full
+  `[-MAP_RADIUS, MAP_RADIUS]` grid with letter-bearing screens highlighted.
 - **Library layout** (`#overlay`): the panel is a fixed-size flex column so it never resizes/jumps
   as content changes. The two columns (`.cols`) are a `1fr 1fr` grid where **`.cols>div` carries
   `min-width:0`** — this is the load-bearing fix: without it a long collection entry (word +

@@ -1078,11 +1078,14 @@ function drawMinimap(){
   if(reveal){
     minX=-MAP_RADIUS; maxX=MAP_RADIUS; minY=-MAP_RADIUS; maxY=MAP_RADIUS;
   } else {
-    // bounds of everything visited (+ current), padded by 1 so unexplored neighbours show as black
+    // bounds of everything visited (+ current), padded by 1 so unexplored neighbours show as black —
+    // then clamped to the real map so we never draw cells outside it (those aren't reachable, and a
+    // black square there would wrongly imply you could travel to it).
     minX=cx;maxX=cx;minY=cy;maxY=cy;
     state.visited.forEach(k=>{ const c=k.indexOf(","); const x=+k.slice(0,c), y=+k.slice(c+1);
       if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; });
-    minX--; maxX++; minY--; maxY++;
+    minX=Math.max(-MAP_RADIUS,minX-1); maxX=Math.min(MAP_RADIUS,maxX+1);
+    minY=Math.max(-MAP_RADIUS,minY-1); maxY=Math.min(MAP_RADIUS,maxY+1);
   }
   const cols=maxX-minX+1, rows=maxY-minY+1;
   const cell=Math.max(5, Math.min(15, Math.floor(118/Math.max(cols,rows))));
