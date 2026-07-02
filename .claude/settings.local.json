@@ -17,7 +17,9 @@
       "Bash(grep -n \"function drawPlayer\\\\|p.atkAnim\\\\|p.face\\\\|drawWeapon\\\\|implement\\\\|wFrame\\\\|wTimer\\\\|p.legs\\\\|p.vx\\\\|p.x,p.y\\\\|player:{\" inklings.html)",
       "Bash(grep *)",
       "Bash(echo \"exit:$?\")",
-      "Bash(shuf)"
+      "Bash(shuf)",
+      "Bash(gh api *)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

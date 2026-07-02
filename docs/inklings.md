@@ -234,12 +234,15 @@ ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun curr
   pedestal + open book on a slanted rest, `BOOK` label (right). `DESK`/`STALL`/`LECTERN` collision rects
   (`overlapsSolid`) match the drawn footprints; `nearBench`/`nearShop`/`nearLectern` gate the `E`/touch
   interaction and open `#overlay` / `#shop` / `#madlibs` respectively.
-- **Mad-libs module** (`/* MAD-LIBS */`) — `BOOKS` registry (book → chapter JSON paths). `loadLevel`,
-  `openBook`/`closeBook`, `renderMadlibs` (+ `passageHTML`/`neededHTML`/`pickerHTML`/`completionHTML`/
-  `wirePicker`), `selectBlank`/`pickWord`/`clearActive`, `usedWordSet`/`eligibleWords`, `allFilled`/
-  `completeLevel`. State: `state.restored` (per-level `{fills,done,exact,bookId}`) + `state.books`, both
-  saved. `mlBook`/`mlLevel`/`mlActive` are the open session. Blank fills come from the dex filtered by
-  cached POS; a word used anywhere is locked forever (`usedWordSet`).
+- **Mad-libs module** (`/* MAD-LIBS */`) — `BOOKS` registry (book → array of chapter JSON paths).
+  `openBook` → `showChapterMenu` (loads each chapter via `loadLevelCached`/`mlCache`, lists them by
+  `order` with progress) → `openChapter(path)` → `renderMadlibs` (+ `passageHTML`/`neededHTML`/
+  `pickerHTML`/`completionHTML`/`wirePicker`); `backToChapters` returns to the menu (`#ml-back`).
+  `selectBlank`/`pickWord`/`clearActive`, `usedWordSet`/`eligibleWords`, `allFilled`/`completeLevel`.
+  State: `state.restored` (per-level `{fills,done,exact,bookId}`) + `state.books`, both saved.
+  `mlReg`/`mlBook`/`mlLevel`/`mlActive` are the open session. Blank fills come from the dex filtered by
+  cached POS; a word used anywhere is locked forever (`usedWordSet`). Add chapters/books by listing their
+  JSON paths in `BOOKS` (the menu + book-completion count derive from it).
 - **Terrain rendering** — `ensureBg(sc)` bakes the static tile map into a per-screen offscreen canvas
   once (`sc.bg`, with `sc.waterTiles` listed); `render()` blits it then draws **animated water ripples**
   live over each water tile (`drawWaterAnim`, sine-sliding light bars = the "wavy" water). `bakeTile`
@@ -313,8 +316,9 @@ ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun curr
   only** — the collection list, truncated to one line with an ellipsis (no horizontal scroll);
   clicking an entry opens a full-text modal (`#defmodal`). The new-word reveal celebrates the word
   but no longer prints a second copy of the definition.
-- **Mad-libs "restore the chapter"** — a book lectern (right of the desk) opens a chapter (`data/levels/`).
-  Fill each blank with a **collected word** matching its part of speech; exact-original matches earn bonus
+- **Mad-libs "restore the chapter"** — a book lectern (right of the desk) opens a **chapter menu**
+  (`data/levels/`; currently 3 Aesop fables). Pick a chapter, then
+  fill each blank with a **collected word** matching its part of speech; exact-original matches earn bonus
   ink (never required). Words are single-use across all books (you keep learning new vocab). Completing a
   chapter restores it; completing a book adds it to your library. Persisted. (POS uses the FreeDictionary
   data cached on each dex word — WordNet bundle is future.)
@@ -483,11 +487,16 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
 10. **Limit the starting letters** - start with only lowercase letters and the more common letters (not all).
     Eventually add capital letters which are stronger and they can be used to make proper nouns
     (Ex. City names to help with geography)
-11. **Books as worlds; mad-libs restoration (core loop, post-pivot)** — **Status: MVP DONE (one
-    chapter).** A **book lectern** structure sits right of the desk on the home screen (`drawLectern`,
-    solid via the `LECTERN` rect, walk-up + `E` / `nearLectern()` / touch `BOOK` button → `openBook()`).
-    `loadLevel(path)` fetches + parses a chapter JSON (`data/levels/…`; graceful http/parse-error
-    handling). The `#madlibs` overlay (`state.madlibs`, gated like `#shop`) renders the passage from
+11. **Books as worlds; mad-libs restoration (core loop, post-pivot)** — **Status: MVP DONE (chapter
+    menu; 3 chapters).** A **book lectern** structure sits right of the desk on the home screen
+    (`drawLectern`, solid via the `LECTERN` rect, walk-up + `E` / `nearLectern()` / touch `BOOK` button →
+    `openBook()`). `openBook()` shows a **chapter menu** (`showChapterMenu()`): it loads each of the
+    book's `BOOKS[…].levels` JSONs (`loadLevelCached`, memoized in `mlCache`) and lists them by `order`
+    with title, blank count, and restored ✓ / `filled/total` progress. Picking one runs
+    `openChapter(path)` → the passage view; a **`← Chapters`** footer button (`backToChapters`) returns to
+    the menu (so finishing a chapter → back → pick the next). `loadLevel(path)` fetches + parses a chapter
+    JSON (`data/levels/…`; graceful http/parse-error handling). The `#madlibs` overlay (`state.madlibs`,
+    gated like `#shop`) renders the passage from
     `segments` (`passageHTML` — text runs with `\n\n` → paragraphs, each blank a POS-labelled slot);
     clicking a blank opens a **word picker of your collected words** (`eligibleWords(pos)` = dex words
     whose cached `pos` includes the blank's, **filtered by the FreeDictionary POS stored on the dex

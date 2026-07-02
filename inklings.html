@@ -85,6 +85,15 @@
   .ml-pickrow{display:flex;gap:8px;margin-top:10px}
   .ml-clear,.ml-cancel{font-family:var(--disp);font-size:9px;padding:6px 10px;
     border:2px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer}
+  .ml-chapters{display:flex;flex-direction:column;gap:8px}
+  .ml-chapter{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;
+    background:var(--paper-2);border:2px solid var(--edge);color:var(--ink);padding:10px 12px;
+    cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .ml-chapter:hover{background:#dcd0b2}
+  .ml-chapter:active{transform:translate(2px,2px);box-shadow:0 0 0 rgba(0,0,0,0)}
+  .ml-ch-title{font-family:var(--disp);font-size:11px}
+  .ml-ch-meta{font-family:var(--read);font-size:14px;color:var(--ink-soft)}
+  .ml-ch-done{color:var(--moss);font-family:var(--disp);font-size:9px}
   .ml-complete{font-family:var(--read);font-size:17px}
   .ml-restored{font-family:var(--disp);font-size:11px;color:var(--gold);margin-bottom:8px}
   .ml-moral{margin-bottom:8px}
@@ -394,6 +403,7 @@
         <div class="ml-passage" id="ml-passage"></div>
         <div class="ml-panel" id="ml-panel"></div>
         <div class="btn-row" style="margin-top:14px;justify-content:flex-end">
+          <button id="ml-back" style="display:none">← Chapters</button>
           <button class="primary" id="ml-done">Close</button>
         </div>
       </div>
@@ -638,8 +648,11 @@ function wotdGuaranteed(){
 // no API call needed at fill time). Each collected word can fill only ONE blank ever (across all books):
 // using it marks it used so you keep learning new vocabulary rather than reusing the same words.
 const BOOKS = [
-  { id:"aesop-for-children", title:"The Aesop for Children",
-    levels:["data/levels/level-01-fox-and-grapes.json"] }
+  { id:"aesop-for-children", title:"The Aesop for Children", levels:[
+    "data/levels/level-01-fox-and-grapes.json",
+    "data/levels/level-02-lion-and-mouse.json",
+    "data/levels/level-03-crow-and-pitcher.json"
+  ] }
 ];
 const MADLIB_EXACT_BONUS = 5;   // ink awarded per blank filled with the exact original word
 
@@ -751,7 +764,7 @@ const FOOT_DY=-10, FOOT_HW=8, FOOT_HH=4;
 // STALL = the shop counter (left), LECTERN = the book/mad-libs stand (right). Can't walk through them.
 const DESK    = { x: W/2-72, y: H/2-26, w: 144, h: 48 };
 const STALL   = (()=>{ const cx=150, cy=H/2-6; return { cx, cy, x:cx-58, y:cy-6, w:116, h:30 }; })();
-const LECTERN = (()=>{ const cx=570, cy=H/2-6; return { cx, cy, x:cx-30, y:cy-2, w:60,  h:40 }; })();
+const LECTERN = (()=>{ const cx=570, cy=H/2-18; return { cx, cy, x:cx-30, y:cy-2, w:60,  h:40 }; })();   // up 12px vs desk/stall so the book lines up
 function overlapsSolid(r,px,py){
   const fy=py+FOOT_DY;
   return px+FOOT_HW > r.x && px-FOOT_HW < r.x+r.w && fy+FOOT_HH > r.y && fy-FOOT_HH < r.y+r.h;
@@ -1614,6 +1627,8 @@ function drinkPotion(t){
 
 /* ---------- MAD-LIBS: restore the chapter ----------------- */
 let mlBook=null, mlLevel=null, mlActive=null;   // open book (JSON book), open level, active blank id
+let mlReg=null;                                 // current book's registry entry (BOOKS[…])
+const mlCache={};                               // path -> loaded {book, level} (avoid re-fetching)
 function ensureRestored(id){ return (state.restored[id] = state.restored[id] || { fills:{}, done:false }); }
 // Every word already committed to a blank (across all books) — used words can't fill another blank ever.
 function usedWordSet(){
@@ -1639,26 +1654,15 @@ async function loadLevel(path){
     return { book:d.book||{id:"?",title:"Book"}, level:d.level };
   }catch(e){ return null; }
 }
+function loadLevelCached(path){ return mlCache[path] ? Promise.resolve(mlCache[path]) : loadLevel(path).then(d=>{ if(d) mlCache[path]=d; return d; }); }
 async function openBook(){
-  const reg=BOOKS[0], path=reg.levels[0];         // one book / one chapter for now
+  mlReg=BOOKS[0];                                  // one book for now (chapter menu inside it)
   mlBook=null; mlLevel=null; mlActive=null;
   state.madlibs=true;
   document.getElementById("madlibs").classList.add("open");
   document.getElementById("sound-btn").style.display="none";
   SFX.play("click");
-  document.getElementById("ml-title").textContent="Opening the book…";
-  document.getElementById("ml-sub").textContent="";
-  document.getElementById("ml-passage").innerHTML='<p style="color:var(--ink-soft)">Loading chapter…</p>';
-  document.getElementById("ml-panel").innerHTML="";
-  const data=await loadLevel(path);
-  if(!state.madlibs) return;                       // closed while loading
-  if(!data){
-    document.getElementById("ml-title").textContent="The book won't open";
-    document.getElementById("ml-passage").innerHTML='<p class="ml-err">Couldn’t load this chapter. The level file must be served over http (not opened as a <code>file://</code>). Use a local server or the deployed page.</p>';
-    return;
-  }
-  mlBook=data.book; mlLevel=data.level;
-  renderMadlibs();
+  showChapterMenu();
 }
 function closeBook(){
   state.madlibs=false;
@@ -1666,6 +1670,48 @@ function closeBook(){
   document.getElementById("sound-btn").style.display="";
   mlActive=null;
 }
+// The book's table of contents: each chapter with its blank count and restored/progress status.
+async function showChapterMenu(){
+  mlActive=null; mlLevel=null;
+  const title=document.getElementById("ml-title"), sub=document.getElementById("ml-sub"),
+        pas=document.getElementById("ml-passage"), panel=document.getElementById("ml-panel");
+  document.getElementById("ml-back").style.display="none";
+  title.textContent=mlReg.title;
+  sub.innerHTML = state.books.includes(mlReg.id)
+    ? "Restored ✓ — every chapter complete. Reopen any to re-read it."
+    : "Choose a chapter to restore. Fill each blank with a word from your library.";
+  panel.innerHTML="";
+  pas.innerHTML='<div class="ml-hint">Loading chapters…</div>';
+  const metas=[];
+  for(const path of mlReg.levels){
+    const d=await loadLevelCached(path);
+    if(!state.madlibs) return;                     // closed while loading
+    if(d){ const l=d.level; metas.push({ path, id:l.id, title:l.title, order:l.order||0,
+             blanks:l.segments.filter(s=>s.type==="blank").length }); }
+  }
+  if(!metas.length){ pas.innerHTML='<p class="ml-err">Couldn’t load this book’s chapters. The level files must be served over http (not <code>file://</code>).</p>'; return; }
+  metas.sort((a,b)=>a.order-b.order);
+  pas.innerHTML='<div class="ml-chapters">'+metas.map(m=>{
+    const R=state.restored[m.id], done=R&&R.done, filled=R?Object.keys(R.fills||{}).length:0;
+    const status=done ? '<span class="ml-ch-done">restored ✓</span>'
+                      : `<span class="ml-ch-prog">${filled}/${m.blanks} filled</span>`;
+    return `<button class="ml-chapter" data-path="${esc(m.path)}">`+
+           `<span class="ml-ch-title">${esc(m.title)}</span>`+
+           `<span class="ml-ch-meta">${m.blanks} blanks · ${status}</span></button>`;
+  }).join("")+'</div>';
+  pas.querySelectorAll("[data-path]").forEach(b=>b.onclick=()=>openChapter(b.dataset.path));
+}
+async function openChapter(path){
+  const pas=document.getElementById("ml-passage");
+  pas.innerHTML='<div class="ml-hint">Opening chapter…</div>';
+  const d=await loadLevelCached(path);
+  if(!state.madlibs) return;
+  if(!d){ pas.innerHTML='<p class="ml-err">Couldn’t open this chapter (needs http, not <code>file://</code>).</p>'; return; }
+  mlBook=d.book; mlLevel=d.level; mlActive=null;
+  document.getElementById("ml-back").style.display="";
+  renderMadlibs();
+}
+function backToChapters(){ mlActive=null; showChapterMenu(); }
 function selectBlank(bId){ mlActive=bId; renderMadlibs(); }
 function pickWord(w){
   if(!mlLevel || !mlActive) return;
@@ -1867,6 +1913,7 @@ document.getElementById("shop-close").onclick=()=>{ closeShop(); SFX.play("click
 document.getElementById("shop-done").onclick=()=>{ closeShop(); SFX.play("click"); };
 document.getElementById("ml-close").onclick=()=>{ closeBook(); SFX.play("click"); };
 document.getElementById("ml-done").onclick=()=>{ closeBook(); SFX.play("click"); };
+document.getElementById("ml-back").onclick=()=>{ backToChapters(); SFX.play("click"); };
 document.getElementById("lib-close").onclick=()=>{ closeOverlay(); SFX.play("click"); };
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close

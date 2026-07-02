@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+
+  "level": {
+    "id": "crow-and-pitcher",
+    "title": "The Crow and the Pitcher",
+    "order": 31,
+    "moral": "In a pinch a good use of our wits may help us out.",
+
+    "blankCounts": { "noun": 3, "adjective": 3, "verb": 2, "adverb": 1 },
+
+    "segments": [
+      { "type": "text",  "value": "In a spell of " },
+      { "type": "blank", "id": "b1", "pos": "adjective", "answer": "dry" },
+      { "type": "text",  "value": " " },
+      { "type": "blank", "id": "b2", "pos": "noun",      "answer": "weather" },
+      { "type": "text",  "value": ", when the Birds could find very little to drink, a " },
+      { "type": "blank", "id": "b3", "pos": "adjective", "answer": "thirsty" },
+      { "type": "text",  "value": " Crow found a pitcher with a little water in it. But the pitcher was high and had a " },
+      { "type": "blank", "id": "b4", "pos": "adjective", "answer": "narrow" },
+      { "type": "text",  "value": " " },
+      { "type": "blank", "id": "b5", "pos": "noun",      "answer": "neck" },
+      { "type": "text",  "value": ", and no matter how he tried, the Crow could not reach the water. The poor thing felt as if he must die of " },
+      { "type": "blank", "id": "b6", "pos": "noun",      "answer": "thirst" },
+      { "type": "text",  "value": ".\n\nThen an idea came to him. Picking up some small pebbles, he " },
+      { "type": "blank", "id": "b7", "pos": "verb",      "answer": "dropped", "lemma": "drop" },
+      { "type": "text",  "value": " them into the pitcher one by one. With each pebble the water " },
+      { "type": "blank", "id": "b8", "pos": "verb",      "answer": "rose", "lemma": "rise" },
+      { "type": "text",  "value": " a little " },
+      { "type": "blank", "id": "b9", "pos": "adverb",    "answer": "higher" },
+      { "type": "text",  "value": " until at last it was near enough so he could drink." }
+    ]
+  }
+}

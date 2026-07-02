@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+
+  "level": {
+    "id": "lion-and-mouse",
+    "title": "The Lion and the Mouse",
+    "order": 17,
+    "moral": "A kindness is never wasted.",
+
+    "blankCounts": { "noun": 4, "adjective": 4, "verb": 2, "adverb": 2 },
+
+    "segments": [
+      { "type": "text",  "value": "A Lion lay asleep in the forest, his great head " },
+      { "type": "blank", "id": "b1",  "pos": "verb",      "answer": "resting", "lemma": "rest" },
+      { "type": "text",  "value": " on his paws. A " },
+      { "type": "blank", "id": "b2",  "pos": "adjective", "answer": "timid" },
+      { "type": "text",  "value": " little Mouse came upon him " },
+      { "type": "blank", "id": "b3",  "pos": "adverb",    "answer": "unexpectedly" },
+      { "type": "text",  "value": ", and in her " },
+      { "type": "blank", "id": "b4",  "pos": "noun",      "answer": "fright" },
+      { "type": "text",  "value": " and haste to get away, ran across the Lion's " },
+      { "type": "blank", "id": "b5",  "pos": "noun",      "answer": "nose" },
+      { "type": "text",  "value": ". Roused from his nap, the Lion laid his " },
+      { "type": "blank", "id": "b6",  "pos": "adjective", "answer": "huge" },
+      { "type": "text",  "value": " paw angrily on the " },
+      { "type": "blank", "id": "b7",  "pos": "adjective", "answer": "tiny" },
+      { "type": "text",  "value": " creature to kill her.\n\n\"Spare me!\" begged the poor Mouse. \"Please let me go and some day I will surely repay you.\"\n\nThe Lion was much amused to think that a Mouse could ever help him. But he was " },
+      { "type": "blank", "id": "b8",  "pos": "adjective", "answer": "generous" },
+      { "type": "text",  "value": " and finally let the Mouse go.\n\nSome days later, while stalking his " },
+      { "type": "blank", "id": "b9",  "pos": "noun",      "answer": "prey" },
+      { "type": "text",  "value": " in the forest, the Lion was caught in the toils of a hunter's net. Unable to free himself, he filled the forest with his angry roaring. The Mouse knew the " },
+      { "type": "blank", "id": "b10", "pos": "noun",      "answer": "voice" },
+      { "type": "text",  "value": " and " },
+      { "type": "blank", "id": "b11", "pos": "adverb",    "answer": "quickly" },
+      { "type": "text",  "value": " found the Lion struggling in the net. Running to one of the great ropes that bound him, she " },
+      { "type": "blank", "id": "b12", "pos": "verb",      "answer": "gnawed", "lemma": "gnaw" },
+      { "type": "text",  "value": " it until it parted, and soon the Lion was free.\n\n\"You laughed when I said I would repay you,\" said the Mouse. \"Now you see that even a Mouse can help a Lion.\"" }
+    ]
+  }
+}
