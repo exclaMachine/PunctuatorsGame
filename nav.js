@@ -20,6 +20,7 @@
     { label: "Punctuators Game", file: "punctuators.html" },
     { label: "Typow!", file: "typing.html", desktopOnly: true },
     { label: "Spin Nids", file: "SpinNidIndex.html" },
+    { label: "Inklings", file: "inklings.html" },
     { label: "Write. Right!", file: "WriteRight.html" },
     { label: "Kaimoju", file: "kaimoju.html" },
     {
