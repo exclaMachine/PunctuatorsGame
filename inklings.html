@@ -99,6 +99,38 @@
   .ml-moral{margin-bottom:8px}
   .ml-bookdone{font-family:var(--disp);font-size:10px;color:var(--moss)}
   .ml-err{color:#9a3b2e}
+  /* Bestiary overlay (creature dex) */
+  #bestiary{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
+    align-items:center;justify-content:center;padding:18px;z-index:7}
+  #bestiary.open{display:flex}
+  #bestiary .book{position:relative;display:flex;flex-direction:column;height:min(600px,92vh);
+    overflow:hidden;max-width:660px}
+  #bestiary .book>h1,#bestiary .book>.sub{flex:none}
+  .bes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;overflow-y:auto;flex:1;min-height:0;padding:2px}
+  .bes-card{background:var(--paper-2);border:2px solid var(--edge);padding:8px;
+    box-shadow:2px 2px 0 rgba(0,0,0,.25);display:flex;flex-direction:column;gap:5px}
+  .bes-card.locked{background:#26233a;align-items:center;justify-content:center;text-align:center;gap:8px;min-height:104px}
+  .bes-q{font-family:var(--disp);font-size:18px;color:#4a4560}
+  .bes-name{font-family:var(--disp);font-size:10px;text-transform:uppercase;color:var(--ink)}
+  .bes-tier{font-family:var(--disp);font-size:7px;text-transform:uppercase;padding:2px 5px;
+    border:2px solid var(--edge);align-self:flex-start;line-height:1}
+  .bes-kills{font-family:var(--read);font-size:14px;color:var(--ink-soft)}
+  .bes-sil{font-family:var(--read);font-size:14px;color:var(--ink-soft);font-style:italic}
+  .bes-desc{font-family:var(--read);font-size:15px;color:var(--ink);line-height:1.25}
+  .bes-stats,.bes-drops{font-family:var(--read);font-size:14px;color:var(--ink)}
+  .bes-stats b,.bes-drops b{font-family:var(--disp);font-size:8px;text-transform:uppercase}
+  .bes-lore{font-family:var(--read);font-size:14px;color:var(--moss);font-style:italic;
+    border-top:2px solid var(--line);padding-top:5px}
+  .bes-locked-blk{font-family:var(--read);font-size:13px;color:var(--ink-soft)}
+  .bes-materials{flex:none;border-top:2px solid var(--line);margin-top:12px;padding-top:10px;
+    display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .bes-mat{display:inline-flex;align-items:center;gap:5px;background:var(--paper-2);
+    border:2px solid var(--edge);padding:3px 7px;font-family:var(--read);font-size:15px}
+  .bes-mat i{width:12px;height:12px;border:2px solid var(--edge);display:inline-block}
+  @media(max-width:560px){
+    #bestiary .book{height:auto;max-height:92vh;overflow:auto;display:block}
+    .bes-grid{grid-template-columns:repeat(2,1fr)}
+  }
   #potions{display:flex;gap:5px;margin-top:4px}
   .potion-btn{font-family:var(--disp);font-size:8px;line-height:1;padding:5px 6px;border:2px solid var(--edge);
     background:var(--paper-2);color:var(--ink);cursor:pointer;display:inline-flex;gap:4px;align-items:center;
@@ -410,6 +442,17 @@
       </div>
     </div>
 
+    <!-- Bestiary overlay (creature dex — opened with B / the 🐾 touch button) -->
+    <div id="bestiary">
+      <div class="book">
+        <button class="close-x" id="bes-close" aria-label="Close bestiary" title="Close">✕</button>
+        <h1>Bestiary <span class="dex-count" id="bes-count"></span></h1>
+        <div class="sub">Every creature you've defeated or captured. Keep hunting one to reveal more about it.</div>
+        <div class="bes-grid" id="bes-grid"></div>
+        <div class="bes-materials" id="bes-materials"></div>
+      </div>
+    </div>
+
     <!-- Definition modal (full text of a collection entry) -->
     <div id="defmodal">
       <div class="book">
@@ -431,6 +474,7 @@
           <span><b>H</b></span><span>Teleport home to your bench</span>
           <span><b>E</b></span><span>Use the bench (when standing near it)</span>
           <span><b>Tab</b></span><span>Open the library</span>
+          <span><b>B</b></span><span>Open the bestiary (or tap the 🐾 button)</span>
           <span><b>1</b> / <b>2</b> / <b>3</b></span><span>Drink a Size / Speed / Reveal potion (or tap its HUD button)</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
           <span><b>Esc</b></span><span>Close any panel</span>
@@ -450,6 +494,7 @@
           <p>Rewards repeat: re-spelling a word spends its letters again and pays again.</p>
           <p><b>Word of the Day.</b> Each day the desk shows a bonus word — always built from letters you've unlocked, so you can always collect what you need. Spell it once for a big ink bonus.</p>
           <p><b>The book lectern.</b> Right of the desk. Restore a story by filling each blank with a collected word that matches the needed part of speech (noun/verb/adjective/adverb). Matching the original word earns bonus ink. A word can be used in a chapter only <b>once, ever</b> — so keep learning new ones. Finish every chapter to add the book to your library.</p>
+          <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground, then flies to you when you're close (auto-collect) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
         </div>
         <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
           <button class="primary" id="controls-close">Got it</button>
@@ -480,6 +525,7 @@
         <div class="util-grid">
           <button class="tc-btn util" id="tc-home" aria-label="Home to bench">HOME</button>
           <button class="tc-btn util" id="tc-help" aria-label="Controls">?</button>
+          <button class="tc-btn util" id="tc-dex" aria-label="Bestiary">🐾</button>
           <!-- DESK / SHOP / BOOK are contextual: only shown when standing by that structure (see syncTouchUI) -->
           <button class="tc-btn util" id="tc-desk" aria-label="Open desk">DESK</button>
           <button class="tc-btn util" id="tc-shop" aria-label="Open shop">SHOP</button>
@@ -572,12 +618,11 @@ const HURT_IFRAMES = 1.0;      // seconds of invulnerability after a hit
 const HEAL_SEC = 1.6;          // seconds per heart recovered while resting at home
 const CONTACT_DIST = 30;       // how close a cube must get to hurt you
 // "Writer's block" — a cheese play on the gelatinous cube. Slow chaser; touching it costs a heart. It
-// takes CUBE_HP hits to break and (for now) drops nothing. TODO: give cubes a resource drop (cheese →
-// heal / crafting?) and add stronger, differently-coloured variants with more HP.
+// takes CUBE_HP hits to break. Its hp / contact damage / drops / bestiary entry are now driven by
+// data/creatures.json ("writers-block"); it's spawned via the unified resource-creature roll in genScreen.
 const CUBE_HP = 2;
 const CUBE_SPEED = 42;         // slow (the player moves at 180)
 const CUBE_SIZE = 34;
-const CUBE_CHANCE = 0.45;      // chance a field screen spawns a cube
 
 // --- Word effects (roadmap step 7, scoped to nouns + adjectives) ---------------
 // Nouns earn "ink" (currency). Adjectives brew a random potion. Both rewards repeat every time you
@@ -665,6 +710,93 @@ const BOOKS = [
 ];
 const MADLIB_EXACT_BONUS = 5;   // ink awarded per blank filled with the exact original word
 
+/* ---------- CREATURES / DROPS / BESTIARY (data-driven) --------------------------
+   data/creatures.json is the SINGLE SOURCE OF TRUTH for both the spawner (tier/hp/spawn/drops) and the
+   bestiary UI (dex.*). Loaded once at startup, same pattern as the mad-libs chapter JSON. Kill/seen
+   tracking lives in state.bestiary = { <id>:{kills,seen} }; collected binding materials in state.resources.
+   This is a third intentional local fetch (like data/levels/… and 2of12.txt) — no new external service. */
+let CREATURES_DATA=null;              // full parsed JSON (also gates the bestiary UI open)
+const CREATURES_BY_ID={};             // id -> creature entry
+let RESOURCE_POOL=[];                 // creatures with spawn.weight>0 — the resource-creature roll pool
+const RES_PER_SCREEN_MIN=1, RES_PER_SCREEN_MAX=3;   // resource-creatures per FIELD screen (modest; letters stay scarce)
+const SPEED_OF={ slow:42, medium:70, fast:104 };    // named creature speeds → px/s (player moves at 180)
+const PICKUP_DIST=26;                 // collect radius (auto-grabbed at this range)
+const PICKUP_MAGNET=110;             // within this, a dropped material homes toward you (auto-collect)
+const PICKUP_PULL=240;               // base homing speed (px/s; accelerates as it nears you — beats player speed 180)
+// material id -> swatch colour for the ground pickup + the bestiary materials list
+const ITEM_COLOR={ paper:"#efe6cf", glue:"#d7c98a", cheese:"#e8c84a", thread:"#c88fb0", paste:"#cfe0a0",
+  ash:"#9a95a5", wax:"#e0b24a", graphite:"#6b6b76", leather:"#8a5a34", "blank-tile":"#f4f0e6" };
+function prettyItem(id){ return id==="blank-tile" ? "blank tile" : id; }
+// Optional custom art: a creature's "sprite" path is loaded here; drawCreatureSprite() blits it in place of
+// the built-in pixel art, falling back to the drawn art if the image is missing/not yet loaded. Drop a PNG
+// at the declared path and reload — no code change needed. (Same load-with-fallback idea as Alpha.png.)
+const creatureSprites={};                // id -> { img, ready }
+function loadCreatureSprite(c){
+  if(!c.sprite) return;
+  const rec={ img:new Image(), ready:false };
+  rec.img.onload=()=>{ rec.ready=true; };
+  rec.img.onerror=()=>{ rec.ready=false; };   // quietly fall back to the drawn art
+  rec.img.src=c.sprite;
+  creatureSprites[c.id]=rec;
+}
+function drawCreatureSprite(cid, x, y, size){
+  const rec=creatureSprites[cid];
+  if(!rec || !rec.ready) return false;
+  ctx.drawImage(rec.img, x-size/2, y-size/2, size, size);
+  return true;
+}
+function creatureEnabled(c){ return c.enabled!==false; }   // "enabled": false shelves a creature entirely
+function onCreaturesLoaded(){ state.screens=new Map(); }   // drop cached screens so field creatures repopulate from the data
+fetch("data/creatures.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{
+  CREATURES_DATA=data;
+  (data.creatures||[]).forEach(c=>{ CREATURES_BY_ID[c.id]=c; loadCreatureSprite(c); });
+  RESOURCE_POOL=(data.creatures||[]).filter(c=>c.spawn && c.spawn.weight>0 && creatureEnabled(c));
+  onCreaturesLoaded();
+}).catch(()=>{ console.warn("Inklings: couldn't load data/creatures.json — resource-creatures disabled."); });
+// Resolve a defeat into concrete drops (reference resolver from the spec). rng is any ()=>[0,1).
+function rollDrops(cre, rng){
+  const t=cre.drops.table, out=[];
+  if(cre.drops.mode==="one"){
+    const total=t.reduce((s,d)=>s+(d.weight||1),0);
+    let r=rng()*total;
+    for(const d of t){ r-=(d.weight||1); if(r<=0){ out.push({item:d.item, qty:1, effect:d.effect}); break; } }
+  } else {
+    for(const d of t){
+      if(rng()<(d.chance??1)){
+        const qty=d.qtyMin!=null ? d.qtyMin+Math.floor(rng()*(d.qtyMax-d.qtyMin+1)) : (d.qty??1);
+        out.push({item:d.item, qty, effect:d.effect});
+      }
+    }
+  }
+  return out;
+}
+// Pick one resource-creature for this screen, gated so it only appears where minDist ≤ (|sx|+|sy|).
+function rollResourceCreature(rng, dist){
+  const pool=RESOURCE_POOL.filter(c=>(c.spawn.minDist||0)<=dist);
+  if(!pool.length) return null;
+  let total=0; for(const c of pool) total+=c.spawn.weight;
+  let r=rng()*total;
+  for(const c of pool){ r-=c.spawn.weight; if(r<=0) return c; }
+  return pool[pool.length-1];
+}
+// Bestiary tracking: first defeat/capture unlocks the entry; each kill bumps its counter.
+function recordBestiary(id){
+  if(!id) return;
+  const b=state.bestiary[id]||(state.bestiary[id]={kills:0, seen:false});
+  b.seen=true; b.kills++;
+  scheduleSave();
+}
+// dexView (reference logic from the spec): what to reveal for a creature given its record.
+function dexView(cre, rec){
+  rec=rec||{kills:0, seen:false};
+  if(!rec.seen) return { locked:true };
+  const k=rec.kills, r=cre.dex.reveal;
+  return { locked:false, name:cre.name, kills:k,
+    description: k>=r.description ? cre.dex.description : null,
+    showStats: k>=r.stats, showDrops: k>=r.drops,
+    lore: k>=r.lore ? cre.dex.lore : null };
+}
+
 /* ---------- UTIL: seeded RNG ------------------------------ */
 function hash2(x,y){ let h=(x*374761393 + y*668265263) ^ 0x9e3779b9; h=(h^(h>>>13))*1274126177; return (h^(h>>>16))>>>0; }
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -690,8 +822,10 @@ const state = {
   buffs:{ size:0, speed:0, reveal:0 },      // seconds remaining on active effects (session only)
   restored:{},                  // mad-libs progress: levelId -> {fills:{blankId:word}, done, exact, bookId} (persist)
   books:[],                     // ids of books fully restored (added to your library) (persist)
+  resources:{},                 // book-binding material id -> count, from resource-creature drops (persist)
+  bestiary:{},                  // creature id -> {kills, seen} — unlocks bestiary entries (persist)
   fx:[],                        // floating texts
-  started:false, overlay:false, help:false, shop:false, madlibs:false
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false
 };
 "abcdefghijklmnopqrstuvwxyz".split("").forEach(c=>state.inv[c]=0);
 state.day = todayStr(); state.daySeed = dayHash(state.day);   // set before any screen is generated
@@ -797,6 +931,14 @@ function makeCube(rng, tiles){
   const p=walkableSpawn(rng, tiles);
   return { kind:"cube", x:p.x, y:p.y, hp:CUBE_HP, maxhp:CUBE_HP, vx:0, vy:0, wob:rng()*6.28, flash:0 };
 }
+// A data-driven resource-creature (everything except Writer's Block, which keeps the cube art/behaviour).
+function makeResourceCreature(rng, cre, tiles){
+  const p=walkableSpawn(rng, tiles);
+  return { kind:"resource", cid:cre.id, x:p.x, y:p.y, hp:cre.hp, maxhp:cre.hp,
+    vx:0, vy:0, wander:0, wob:rng()*6.28, flash:0, eraseT:0,
+    speed:SPEED_OF[cre.speed]||60, behavior:cre.behavior||"wander",
+    special:cre.special||[], contactDamage:cre.contactDamage||0 };
+}
 // Thin, even scatter of loose letters: usually none, sometimes 1–2 (letters are meant to feel rare now).
 // Uses exactly one rng() draw so screenCreatureCount can replay it deterministically.
 function letterScatter(rng){ const r=rng(); return r<0.6 ? 0 : (r<0.87 ? 1 : 2); }
@@ -814,10 +956,24 @@ function genScreen(sx,sy){
       if(i<guar.length) cr.letter=guar[i];   // force in the day's word letters so the WOTD is always makeable
       if(!state.captured.has(cr.id)) creatures.push(cr);   // already taken today → stays gone (no respawn)
     }
-    // writer's-block cube (extra rng draws AFTER letters, so the letter count/replay stays stable)
-    if(rng() < CUBE_CHANCE){ const cube=makeCube(rng, tiles); cube.id="cube:"+sx+","+sy; creatures.push(cube); }
+    // resource-creatures (data-driven). Rolled AFTER the letters, so letterScatter stays the first rng()
+    // draw and the daily letter count/replay (screenCreatureCount/dayTotalCreatures) is unchanged. This
+    // roll also spawns Writer's Block (weight 20), which keeps its existing cube art/behaviour. Resource
+    // creatures are NOT added to state.captured (that set stays letters-only for the "all captured" banner),
+    // so like today's cubes they regenerate on reload.
+    if(RESOURCE_POOL.length){
+      const rc = RES_PER_SCREEN_MIN + ((rng()*(RES_PER_SCREEN_MAX-RES_PER_SCREEN_MIN+1))|0);
+      for(let i=0;i<rc;i++){
+        const pick=rollResourceCreature(rng, dist); if(!pick) continue;
+        let mk;
+        if(pick.id==="writers-block"){ mk=makeCube(rng, tiles); mk.cid="writers-block"; mk.hp=mk.maxhp=pick.hp; mk.contactDamage=pick.contactDamage; }
+        else mk=makeResourceCreature(rng, pick, tiles);
+        mk.id="res:"+sx+","+sy+","+i;
+        creatures.push(mk);
+      }
+    }
   }
-  return { creatures, tiles, seed:(hash2(sx,sy) ^ state.daySeed)>>>0, bg:null, waterTiles:null,
+  return { creatures, tiles, pickups:[], seed:(hash2(sx,sy) ^ state.daySeed)>>>0, bg:null, waterTiles:null,
            generated:true, isBase, dist };
 }
 function curScreen(){
@@ -932,10 +1088,15 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"||k==="e"){ e.preventDefault(); closeBook(); }
     return;
   }
+  if(state.bestiaryOpen){   // bestiary open: close on Esc / Tab / B
+    if(k==="escape"||k==="tab"||k==="b"){ e.preventDefault(); closeBestiary(); }
+    return;
+  }
   if(!state.started) return;
   keys[k]=true;
   if(k==="h") teleportHome();
   if(k==="e") tryUseBench();
+  if(k==="b") openBestiary();
   if(k==="1") drinkPotion("size");
   if(k==="2") drinkPotion("speed");
   if(k==="3") drinkPotion("reveal");
@@ -980,13 +1141,10 @@ function doAttack(){
     if(d>range+18) continue;
     const dot=(dx*p.face.x+dy*p.face.y)/(d||1);
     if(dot<0.35) continue;                 // must be roughly in front
-    if(c.kind==="cube"){                   // fight the cube (you can hit it even with a full satchel)
+    if(c.kind==="cube" || c.kind==="resource"){   // resource-creatures (incl. Writer's Block) — hit even with a full satchel
       c.hp-=ATTACK.dmg; c.flash=0.15;
       const kb=16; c.x+=(dx/(d||1))*kb; c.y+=(dy/(d||1))*kb;   // shove it back
-      if(c.hp<=0){
-        for(let k=0;k<7;k++) state.fx.push({x:c.x+(Math.random()*20-10),y:c.y+(Math.random()*16-8),text:"·",life:0.5+Math.random()*0.3,color:"#d9b84a"});
-        sc.creatures.splice(i,1); SFX.play("capture");   // (no drop yet — resource TODO)
-      }
+      if(c.hp<=0){ defeatCreature(c, sc); sc.creatures.splice(i,1); }
       continue;
     }
     // letter-creature
@@ -998,6 +1156,7 @@ function doAttack(){
       state.fx.push({x:c.x,y:c.y,text:"+"+c.letter.toUpperCase(),life:0.9,color:colorFor(c.letter)});
       sc.creatures.splice(i,1);
       state.captured.add(c.id);   // gone for the rest of the day — no respawn; a fresh map comes tomorrow
+      recordBestiary("inkling");   // letter-creatures are the "inkling" bestiary entry
       updateTrayHud();
       SFX.play("capture");
       scheduleSave();
@@ -1005,6 +1164,30 @@ function doAttack(){
   }
   if(blockedLetter){ showToast("Satchel full ("+state.bagCap+") — spell words to free space."); SFX.play("invalid"); }
   maybeNotifyCleared();
+}
+// A resource-creature (or the Writer's Block cube) was beaten: log it in the bestiary, scatter its drops
+// as ground pickups (walk over to collect), and puff some dust.
+function defeatCreature(c, sc){
+  recordBestiary(c.cid);
+  const cre=CREATURES_BY_ID[c.cid];
+  if(cre && cre.drops){ for(const d of rollDrops(cre, Math.random)) grantDrop(sc, d, c.x, c.y); }
+  for(let k=0;k<7;k++) state.fx.push({x:c.x+(Math.random()*20-10), y:c.y+(Math.random()*16-8), text:"·", life:0.5+Math.random()*0.3, color:"#d9b84a"});
+  SFX.play("capture");
+  scheduleSave();
+}
+// Drop a material as a ground pickup on the current screen (scattered a little around the kill point).
+function grantDrop(sc, d, x, y){
+  (sc.pickups=sc.pickups||[]).push({ item:d.item, qty:d.qty||1, effect:d.effect,
+    x:Math.max(20,Math.min(W-20, x+(Math.random()*28-14))), y:Math.max(20,Math.min(H-20, y+(Math.random()*28-14))) });
+}
+// Walk over a dropped material to collect it → adds to state.resources; cheese also heals a heart.
+function collectPickup(pk){
+  state.resources[pk.item]=(state.resources[pk.item]||0)+pk.qty;
+  if(pk.effect && pk.effect.indexOf("heal:")===0){
+    const amt=parseInt(pk.effect.split(":")[1],10)||1, p=state.player;
+    p.hearts=Math.min(PLAYER_MAX_HEARTS, p.hearts+amt);
+  }
+  showToast("+"+pk.qty+" "+prettyItem(pk.item)); SFX.play("capture"); scheduleSave();
 }
 // Player takes a hit from a cube (contact). Costs a heart + brief i-frames + knockback; 0 → faint home.
 function hurtPlayer(fx,fy){
@@ -1072,7 +1255,7 @@ function update(dt){
     p.healT+=dt; if(p.healT>=HEAL_SEC){ p.healT=0; p.hearts++; SFX.play("known"); }
   } else p.healT=0;
 
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -1100,9 +1283,10 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map)
-  const canBeHurt = !state.overlay && !state.help && !state.shop && !state.madlibs && state.started;
+  const canBeHurt = !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && state.started;
   for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
+    if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
     if(c.kind==="cube"){
       // writer's block: a slow chaser. Touching it costs a heart. Freezes while a dialog is open.
       c.wob=(c.wob||0)+dt*6;
@@ -1133,9 +1317,18 @@ function update(dt){
   // fx
   for(let i=state.fx.length-1;i>=0;i--){ const f=state.fx[i]; f.life-=dt; f.y-=24*dt; if(f.life<=0) state.fx.splice(i,1); }
 
+  // dropped materials — auto-collect: a nearby pickup homes toward you, then is grabbed (cheese heals a heart)
+  if(canBeHurt && sc.pickups && sc.pickups.length){
+    for(let i=sc.pickups.length-1;i>=0;i--){ const pk=sc.pickups[i];
+      const dx=p.x-pk.x, dy=p.y-pk.y, d=Math.hypot(dx,dy)||1;
+      if(d<PICKUP_DIST){ collectPickup(pk); sc.pickups.splice(i,1); continue; }
+      if(d<PICKUP_MAGNET){ const pull=PICKUP_PULL*dt*(1+(PICKUP_MAGNET-d)/PICKUP_MAGNET); pk.x+=dx/d*pull; pk.y+=dy/d*pull; }
+    }
+  }
+
   // bench/shop hint — keyboard only (touch uses the contextual DESK/SHOP buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen;
   if(hintReady && nearLectern()){ hint.textContent="Press E to open the book"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else if(hintReady && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
@@ -1150,6 +1343,55 @@ function update(dt){
   if(state.started) maybeNotifyCleared();
 
   syncTouchUI();
+}
+
+/* ---------- RESOURCE-CREATURE BEHAVIOUR ------------------- */
+// Give the creature a fresh random wander heading (erratic = quicker, jumpier changes — for the Bindmoth).
+function wanderStep(c, dt, spd, erratic){
+  c.wander-=dt;
+  if(c.wander<=0){ c.wander=(erratic?0.25:0.6)+Math.random()*(erratic?0.5:1.2);
+    const a=Math.random()*Math.PI*2; c.vx=Math.cos(a)*spd; c.vy=Math.sin(a)*spd; }
+}
+// The Erazor's contact effect: rub out one random carried letter (no heart loss), on a short cooldown.
+function eraseCarried(c){
+  if(c.eraseT>0) return;
+  const owned=Object.keys(state.inv).filter(l=>state.inv[l]>0);
+  if(!owned.length){ c.eraseT=0.6; return; }
+  const l=owned[(Math.random()*owned.length)|0];
+  state.inv[l]=Math.max(0,(state.inv[l]||0)-1); c.eraseT=1.4;
+  updateTrayHud(); scheduleSave();
+  showToast("The Erazor rubbed out a "+l.toUpperCase()+"!"); SFX.play("invalid");
+}
+// The Kindle scorches uncollected loot it drifts over.
+// TODO: fire-spread visuals (trailing embers, tiles catching) are stubbed — for now it only burns pickups.
+function scorchNearbyLoot(c, sc){
+  if(!sc.pickups) return;
+  for(let i=sc.pickups.length-1;i>=0;i--){ const pk=sc.pickups[i];
+    if(Math.hypot(pk.x-c.x, pk.y-c.y)<26){ state.fx.push({x:pk.x, y:pk.y, text:"×", life:0.6, color:"#c8553c"}); sc.pickups.splice(i,1); } }
+}
+function updateResourceCreature(c, sc, p, dt, canBeHurt){
+  c.wob=(c.wob||0)+dt*6;
+  if(c.eraseT>0) c.eraseT-=dt;
+  if(!canBeHurt) return;                                  // freeze while a dialog is open
+  const dx=p.x-c.x, dy=p.y-c.y, d=Math.hypot(dx,dy)||1, spd=c.speed, b=c.behavior;
+  if(b==="chaser"||b==="shambler"){ c.vx+=(dx/d)*spd*dt*2.4; c.vy+=(dy/d)*spd*dt*2.4; }          // homes in
+  else if(b==="drifter"){ c.vx+=(dx/d)*spd*dt*1.3; c.vy+=(dy/d)*spd*dt*1.3;                       // loose, wandering drift
+    if((c.wander-=dt)<=0){ c.wander=0.7+Math.random(); const a=Math.random()*6.28; c.vx+=Math.cos(a)*spd*0.5; c.vy+=Math.sin(a)*spd*0.5; } }
+  else if(b==="lunger"){ if(d<180){ c.vx+=(dx/d)*spd*dt*3.4; c.vy+=(dy/d)*spd*dt*3.4; } else wanderStep(c,dt,spd); }   // lunges when close
+  else if(b==="skittish"){ if(d<150){ c.vx-=(dx/d)*spd*dt*3.6; c.vy-=(dy/d)*spd*dt*3.6; } else wanderStep(c,dt,spd); } // flees when approached
+  else if(b==="flutter"){ wanderStep(c,dt,spd,true); }                                            // erratic flight
+  else wanderStep(c,dt,spd);                                                                      // wander (bookworm) + default
+  c.vx*=0.96; c.vy*=0.96;
+  const sp=Math.hypot(c.vx,c.vy); if(sp>spd){ c.vx=c.vx/sp*spd; c.vy=c.vy/sp*spd; }
+  const ncx=c.x+c.vx*dt, ncy=c.y+c.vy*dt;
+  if(!blockedAt(sc,ncx,c.y)) c.x=ncx; else c.vx*=-0.5;    // bounce off water/rock
+  if(!blockedAt(sc,c.x,ncy)) c.y=ncy; else c.vy*=-0.5;
+  c.x=Math.max(20,Math.min(W-20,c.x)); c.y=Math.max(20,Math.min(H-20,c.y));
+  if(d<CONTACT_DIST){                                     // contact effects
+    if(c.contactDamage>0) hurtPlayer(c.x,c.y);
+    else if(c.special.includes("contact-erases-carried-letter")) eraseCarried(c);
+  }
+  if(c.special.includes("scorches-dropped-loot")) scorchNearbyLoot(c, sc);
 }
 
 /* ---------- RENDER ---------------------------------------- */
@@ -1168,8 +1410,15 @@ function render(){
   // edge arrows
   drawEdgeHints();
 
+  // dropped materials (under the creatures/player)
+  if(sc.pickups) for(const pk of sc.pickups) drawPickup(pk, tnow);
+
   // creatures
-  for(const c of sc.creatures){ if(c.kind==="cube") drawCube(c); else drawCreature(c); }
+  for(const c of sc.creatures){
+    if(c.kind==="cube") drawCube(c);
+    else if(c.kind==="resource") drawResourceCreature(c);
+    else drawCreature(c);
+  }
 
   // player
   drawPlayer();
@@ -1198,7 +1447,7 @@ function drawClearedBanner(){
   ctx.fillStyle="#e3d8bd";            ctx.fillRect(bx,by,bw,bh);         // parchment panel
   ctx.textAlign="center"; ctx.textBaseline="middle";
   ctx.fillStyle="#3b4a7a"; ctx.font="11px 'Press Start 2P', monospace";
-  ctx.fillText("ALL CREATURES CAPTURED!", W/2, by+19);
+  ctx.fillText("ALL LETTERS CAPTURED!", W/2, by+19);
   ctx.fillStyle="#26233a"; ctx.font="9px 'Press Start 2P', monospace";
   ctx.fillText("Come back tomorrow for a fresh map.", W/2, by+39);
   ctx.restore();
@@ -1425,6 +1674,9 @@ function drawCreature(c){
 function drawCube(c){
   const s=CUBE_SIZE, x=c.x, y=c.y, wob=Math.sin(c.wob||0)*2;
   ctx.save(); ctx.imageSmoothingEnabled=false;
+  if(c.cid && drawCreatureSprite(c.cid, x, y+wob, spriteSizeOf(c.cid, s+8)*(c.flash>0?1.16:1))){   // custom PNG if present
+    ctx.restore(); drawHpPips(c, y-s/2-10+wob); return;
+  }
   ctx.fillStyle="rgba(38,35,58,.28)"; ctx.fillRect(x-s/2, y+s/2-3, s, 6);        // shadow
   ctx.fillStyle="#26233a"; ctx.fillRect(x-s/2-2, y-s/2-2+wob, s+4, s+4);         // ink border
   ctx.fillStyle=c.flash>0?"#fff7d8":"#e8c84a"; ctx.fillRect(x-s/2, y-s/2+wob, s, s);   // cheese body
@@ -1438,6 +1690,88 @@ function drawCube(c){
   if(c.hp<c.maxhp){   // hp pips above
     for(let i=0;i<c.maxhp;i++){ ctx.fillStyle=i<c.hp?"#5b7a4b":"rgba(38,35,58,.25)"; ctx.fillRect(x-s/2+i*(s/c.maxhp), y-s/2-10+wob, s/c.maxhp-2, 3); }
   }
+}
+// Crisp filled rect with a chunky 2px ink border (like pxBox but self-contained for creature/pickup art).
+function pxSprite(x,y,w,h,fill){ ctx.fillStyle="#26233a"; ctx.fillRect(x-2,y-2,w+4,h+4); ctx.fillStyle=fill; ctx.fillRect(x,y,w,h); }
+function drawHpPips(c, topY){
+  if(c.hp>=c.maxhp) return; const bar=40, x=c.x;
+  for(let i=0;i<c.maxhp;i++){ ctx.fillStyle=i<c.hp?"#5b7a4b":"rgba(38,35,58,.25)"; ctx.fillRect(x-bar/2+i*(bar/c.maxhp), topY, bar/c.maxhp-2, 3); }
+}
+// Per-creature pixel bodies (distinct silhouettes; dedicated multi-frame art is still future work). Each
+// draws centred at (x,y); pop scales up briefly on hit. Standard 3px ink eyes tie them to the cube's look.
+const EYE="#26233a";
+const RES_DRAW={
+  bookworm(x,y,pop){                                   // plump green grub, segmented
+    const s=28*pop;
+    ctx.fillStyle="rgba(38,35,58,.25)"; ctx.fillRect(x-s/2, y+s/4, s, 4);
+    pxSprite(x-s/2, y-8, s, 16, "#7aa84e");
+    ctx.fillStyle="#8fbf60"; for(let i=0;i<3;i++) ctx.fillRect(x-s/2+4+i*(s/3), y-8, s/6, 16);   // segment bands
+    pxSprite(x+s/2-4, y-9, 12, 18, "#8fbf60");         // head
+    ctx.fillStyle=EYE; ctx.fillRect(x+s/2+2, y-4, 3,3);
+  },
+  bindmoth(x,y,pop){                                   // pale moth, two wings + body
+    const w=13*pop;
+    ctx.fillStyle=EYE; ctx.fillRect(x-3, y-11, 6, 22);
+    ctx.fillStyle="#4a4560"; ctx.fillRect(x-2, y-10, 4, 20);
+    pxSprite(x-3-w, y-11, w, 22, "#e6dcc6"); pxSprite(x+3, y-11, w, 22, "#e6dcc6");
+    ctx.fillStyle="#c8b48a"; ctx.fillRect(x-3-w, y-2, w, 5); ctx.fillRect(x+3, y-2, w, 5);
+    ctx.fillStyle=EYE; ctx.fillRect(x-2, y-14, 2,4); ctx.fillRect(x+1, y-14, 2,4);   // antennae
+  },
+  silverfish(x,y,pop){                                 // tapered silver body, antennae + tails
+    const s=26*pop;
+    ctx.fillStyle="rgba(38,35,58,.2)"; ctx.fillRect(x-s/2, y+8, s, 3);
+    for(let i=0;i<4;i++){ const h=16-i*2; pxSprite(x-s/2+i*(s/4), y-h/2, s/4+1, h, i%2?"#c8ccd6":"#b3b8c4"); }
+    ctx.fillStyle=EYE; ctx.fillRect(x-s/2-3, y-3, 3,2); ctx.fillRect(x-s/2-3, y+1, 3,2);   // antennae
+    ctx.fillRect(x+s/2, y-1, 4,2);                                                          // tail
+  },
+  "the-kindle"(x,y,pop){                               // drifting ember / flame
+    const fl=Math.sin(Date.now()/90)*1.5, u=6*pop;
+    ctx.fillStyle="rgba(200,85,60,.25)"; ctx.fillRect(x-2*u, y+2*u, 4*u, 3);
+    pxSprite(x-2*u, y-3*u+fl, 4*u, 5*u, "#e8622e");
+    ctx.fillStyle="#f4a63a"; ctx.fillRect(x-u, y-2*u+fl, 2*u, 4*u);
+    ctx.fillStyle="#ffe08a"; ctx.fillRect(x-u/2, y-u+fl, u, 2*u);
+    ctx.fillStyle=EYE; ctx.fillRect(x-u, y-u+fl, 3,3); ctx.fillRect(x+u-2, y-u+fl, 3,3);
+  },
+  "the-erazor"(x,y,pop){                               // pink eraser with a metal razor edge
+    const w=34*pop, h=26*pop;
+    ctx.fillStyle="rgba(38,35,58,.25)"; ctx.fillRect(x-w/2, y+h/2, w, 4);
+    pxSprite(x-w/2, y-h/2, w, h, "#d98aa0");
+    ctx.fillStyle="#b96a82"; ctx.fillRect(x-w/2, y+h/6, w, 5);         // worn band
+    ctx.fillStyle="#c8ccd6"; ctx.fillRect(x-w/2, y-h/2, w, 7);          // razor edge
+    ctx.fillStyle=EYE; ctx.fillRect(x-7, y+2, 3,3); ctx.fillRect(x+4, y+2, 3,3);
+  },
+  "the-overdue"(x,y,pop){                              // shambling stamped library book
+    const s=34*pop;
+    ctx.fillStyle="rgba(38,35,58,.28)"; ctx.fillRect(x-s/2, y+s/2, s, 4);
+    pxSprite(x-s/2, y-s/2, s, s, "#7a4a34");
+    ctx.fillStyle="#efe6cf"; ctx.fillRect(x+s/2-6, y-s/2, 6, s);        // page edges
+    ctx.save(); ctx.translate(x-2, y-3); ctx.rotate(-0.28);             // OVERDUE stamp
+    ctx.fillStyle="#c8553c"; ctx.fillRect(-12, -5, 24, 10); ctx.restore();
+    ctx.fillStyle=EYE; ctx.fillRect(x-8, y-s/4, 3,3); ctx.fillRect(x+2, y-s/4, 3,3);
+  },
+  _default(x,y,pop){ pxSprite(x-15*pop, y-15*pop, 30*pop, 30*pop, "#8a8496");
+    ctx.fillStyle=EYE; ctx.fillRect(x-7, y-4, 3,3); ctx.fillRect(x+4, y-4, 3,3); }
+};
+function spriteSizeOf(cid, dflt){ const d=CREATURES_BY_ID[cid]; return (d && d.spriteSize) || dflt; }
+function drawResourceCreature(c){
+  const pop=c.flash>0?1.16:1;
+  const y=c.y + (c.behavior==="flutter" ? Math.sin((c.wob||0)*1.5)*4 : Math.sin(c.wob||0)*2);
+  ctx.save(); ctx.imageSmoothingEnabled=false;
+  if(!drawCreatureSprite(c.cid, c.x, y, spriteSizeOf(c.cid,44)*pop))   // custom PNG if present, else pixel art
+    (RES_DRAW[c.cid]||RES_DRAW._default)(c.x, y, pop, c);
+  ctx.restore();
+  drawHpPips(c, c.y-28);
+}
+// A dropped material sitting on the ground (bobs gently; walk over to collect).
+function drawPickup(pk, tnow){
+  const bob=Math.sin(tnow/300 + pk.x*0.1)*2, s=16, x=pk.x, y=pk.y+bob;
+  ctx.save(); ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle="rgba(38,35,58,.22)"; ctx.fillRect(x-s/2, pk.y+5, s, 3);
+  pxSprite(x-s/2, y-s/2, s, s, ITEM_COLOR[pk.item]||"#cccccc");
+  ctx.fillStyle="#26233a"; ctx.font="8px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText(pk.item==="blank-tile"?"*":(pk.item[0]||"?").toUpperCase(), x, y+1);
+  if(pk.qty>1){ ctx.fillStyle="#9a3324"; ctx.fillText(""+pk.qty, x+9, y-7); }
+  ctx.textBaseline="alphabetic"; ctx.restore();
 }
 // Player hearts, top-centre.
 function drawHeart(cx,cy,px,filled){
@@ -1906,14 +2240,65 @@ function completionHTML(lvl,R){
     ${bookLine}</div>`;
 }
 
+/* ---------- BESTIARY (creature dex) ----------------------- */
+const TIER_BADGE={ common:"#5b7a4b", uncommon:"#3b6ea5", rare:"#7a4a9a", special:"#c89b3c", prize:"#c89b3c" };
+function openBestiary(){
+  if(!CREATURES_DATA){ showToast("Bestiary is still loading…"); return; }
+  state.bestiaryOpen=true;
+  document.getElementById("bestiary").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  renderBestiary(); SFX.play("click");
+}
+function closeBestiary(){
+  state.bestiaryOpen=false;
+  document.getElementById("bestiary").classList.remove("open");
+  document.getElementById("sound-btn").style.display="";
+}
+function toggleBestiary(){ state.bestiaryOpen ? closeBestiary() : openBestiary(); }
+// Unique material names a creature can drop (for the "Drops" line once that block is unlocked).
+function dropSummary(cre){
+  return cre.drops.table.map(d=>prettyItem(d.item)).filter((v,i,a)=>a.indexOf(v)===i).join(", ");
+}
+function renderBestiary(){
+  const grid=document.getElementById("bes-grid"); if(!grid || !CREATURES_DATA) return;
+  const list=CREATURES_DATA.creatures.filter(creatureEnabled);   // "enabled": false → hidden from the dex too
+  const seenN=list.filter(c=>state.bestiary[c.id] && state.bestiary[c.id].seen).length;
+  document.getElementById("bes-count").textContent=`· ${seenN}/${list.length} seen`;
+  grid.innerHTML=list.map(cre=>{
+    const v=dexView(cre, state.bestiary[cre.id]);
+    if(v.locked) return `<div class="bes-card locked"><div class="bes-q">???</div><div class="bes-locked-blk">${esc(cre.dex.silhouette)}</div></div>`;
+    const badge=TIER_BADGE[cre.tier]||"#5b7a4b";
+    let h=`<div class="bes-card"><div class="bes-name">${esc(v.name)}</div>`+
+      `<span class="bes-tier" style="color:${badge};border-color:${badge}">${esc(cre.tier)}</span>`+
+      `<div class="bes-kills">Defeated ×${v.kills}</div>`;
+    h += v.description ? `<div class="bes-desc">${esc(v.description)}</div>` : `<div class="bes-sil">${esc(cre.dex.silhouette)}</div>`;
+    h += v.showStats ? `<div class="bes-stats"><b>HP</b> ${cre.hp} · ${esc(cre.behavior)}${cre.contactDamage?" · bites":""}</div>`
+                     : `<div class="bes-locked-blk">Stats locked — ${cre.dex.reveal.stats-v.kills} more.</div>`;
+    h += v.showDrops ? `<div class="bes-drops"><b>Drops:</b> ${esc(dropSummary(cre))}</div>`
+                     : `<div class="bes-locked-blk">Drops locked — ${cre.dex.reveal.drops-v.kills} more.</div>`;
+    if(v.lore) h += `<div class="bes-lore">${esc(v.lore)}</div>`;
+    return h+`</div>`;
+  }).join("");
+  renderMaterials();
+}
+// Binding-materials tally (collected from resource-creature drops; future "bind a book" gate will spend these).
+function renderMaterials(){
+  const el=document.getElementById("bes-materials"); if(!el) return;
+  const items=Object.keys(state.resources).filter(k=>state.resources[k]>0).sort();
+  el.innerHTML = `<div class="bes-name" style="flex-basis:100%;margin-bottom:2px">Binding materials</div>` + (items.length
+    ? items.map(k=>`<span class="bes-mat"><i style="background:${ITEM_COLOR[k]||'#ccc'}"></i>${esc(prettyItem(k))} ×${state.resources[k]}</span>`).join("")
+    : `<span class="bes-locked-blk">None yet — defeat resource-creatures to gather paper, glue, thread…</span>`);
+}
+
 /* ---------- SAVE STATE (shared by autosave + file backup) ----------------- */
 // Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
-  return { v:2, day:state.day, inv:state.inv, dex:state.dex,
+  return { v:3, day:state.day, inv:state.inv, dex:state.dex,
            bagCap:state.bagCap, captured:[...state.captured],
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
-           restored:state.restored, books:state.books };
+           restored:state.restored, books:state.books,
+           resources:state.resources, bestiary:state.bestiary };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -1927,6 +2312,9 @@ function applySnapshot(d){
   // Mad-libs chapter progress + restored-book list persist forever (earned progress).
   if(d.restored && typeof d.restored==="object") state.restored=d.restored;
   if(Array.isArray(d.books)) state.books=d.books;
+  // Binding materials + bestiary progress persist forever (earned progress, like the collection).
+  if(d.resources && typeof d.resources==="object") state.resources=d.resources;
+  if(d.bestiary && typeof d.bestiary==="object") state.bestiary=d.bestiary;
   // Satchel + captured creatures only carry over within the SAME calendar day. A new day = empty satchel
   // and a fresh map (captures forgotten); state.day was already set to today before this runs.
   if(d.day===state.day){
@@ -2015,6 +2403,8 @@ document.getElementById("ml-close").onclick=()=>{ closeBook(); SFX.play("click")
 document.getElementById("ml-done").onclick=()=>{ closeBook(); SFX.play("click"); };
 document.getElementById("ml-back").onclick=()=>{ backToChapters(); SFX.play("click"); };
 document.getElementById("lib-close").onclick=()=>{ closeOverlay(); SFX.play("click"); };
+document.getElementById("bes-close").onclick=()=>{ closeBestiary(); SFX.play("click"); };
+document.getElementById("bestiary").onclick=e=>{ if(e.target.id==="bestiary") closeBestiary(); };  // tap backdrop to close
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
 document.getElementById("export-btn").onclick=()=>{ exportBackup(); SFX.play("click"); };
@@ -2039,7 +2429,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -2090,6 +2480,7 @@ if(IS_TOUCH){
   tap("tc-desk",()=>{ if(homeReady() && nearBench()) openOverlay(); });
   tap("tc-shop",()=>{ if(homeReady() && nearShop()) openShop(); });
   tap("tc-book",()=>{ if(homeReady() && nearLectern()) openBook(); });
+  tap("tc-dex",()=>{ if(homeReady()) openBestiary(); });
   tap("tc-help",toggleHelp);
 }
 
@@ -2359,7 +2750,7 @@ function overworldRunning() {   // scheduler active during gameplay (off on titl
   } catch (e) { return false; }
 }
 function overworldDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen); } catch (e) { return false; }
 }
 function overworldFade(to) {     // smooth ~120ms master-gain ramp (avoids clicks)
   const m = overworldTheme.master, c = overworldTheme.ctx;

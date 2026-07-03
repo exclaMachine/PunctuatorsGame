@@ -1,0 +1,223 @@
+{
+  "_note": "Single source of truth for creatures: spawner reads tier/hp/spawn/drops; bestiary UI reads dex.*. Kill/capture tracking lives in state.bestiary = { <id>: { kills, seen } }. A creature entry is a locked ??? box until seen=true (first defeat/capture); after that its kill count shows, and each dex.reveal.<field> is a kill threshold that unlocks that block. Optional per-creature fields: \"sprite\" = path to a PNG that replaces the built-in pixel art (drop the file in and reload; if it's missing the game falls back to the drawn art — a 404 in the console until you add it is harmless), \"spriteSize\" = draw size in px (default 44), \"enabled\": false = fully removed from spawning + the bestiary (a clean way to shelf a creature without deleting it).",
+  "schemaVersion": 1,
+
+  "resources": {
+    "paper":      { "tier": "common" },
+    "glue":       { "tier": "common" },
+    "cheese":     { "tier": "common", "effect": "heal:1" },
+    "thread":     { "tier": "uncommon" },
+    "paste":      { "tier": "uncommon" },
+    "ash":        { "tier": "uncommon" },
+    "wax":        { "tier": "rare" },
+    "graphite":   { "tier": "rare" },
+    "leather":    { "tier": "rare" },
+    "blank-tile": { "tier": "special", "wildcard": true }
+  },
+
+  "creatures": [
+    {
+      "id": "writers-block",
+      "name": "Writer's Block",
+      "sprite": "sprites/writers-block.png",
+      "spriteSize": 42,
+      "kind": "cube",
+      "tier": "common",
+      "hp": 2,
+      "speed": "slow",
+      "behavior": "chaser",
+      "special": ["contact-damage"],
+      "contactDamage": 1,
+      "spawn": { "weight": 20, "minDist": 0, "notOnHome": true },
+      "drops": {
+        "mode": "one",
+        "table": [
+          { "item": "cheese", "weight": 1, "effect": "heal:1" },
+          { "item": "glue",   "weight": 1, "qty": 1 }
+        ]
+      },
+      "dex": {
+        "silhouette": "a slow, wobbling cube",
+        "reveal": { "description": 1, "stats": 5, "drops": 15, "lore": 40 },
+        "description": "A gelatinous cube of congealed, unwritten ideas. It doesn't bite — it just wobbles toward you and gets in the way until you're pinned against it.",
+        "lore": "Every writer meets one eventually. Break it down and it yields something useful — usually cheese, occasionally glue. Nobody asks why cheese."
+      }
+    },
+    {
+      "id": "bookworm",
+      "name": "Bookworm",
+      "sprite": "sprites/bookworm.png",
+      "spriteSize": 40,
+      "kind": "pest",
+      "tier": "common",
+      "hp": 1,
+      "speed": "slow",
+      "behavior": "wander",
+      "special": ["burrows"],
+      "contactDamage": 0,
+      "spawn": { "weight": 18, "minDist": 0, "notOnHome": true },
+      "drops": {
+        "mode": "each",
+        "table": [ { "item": "paper", "chance": 0.95, "qtyMin": 1, "qtyMax": 2 } ]
+      },
+      "dex": {
+        "silhouette": "a plump, tunnelling grub",
+        "reveal": { "description": 1, "stats": 5, "drops": 15, "lore": 40 },
+        "description": "A plump grub that tunnels through pages, leaving little round holes. Harmless and everywhere — your most reliable source of scrap paper.",
+        "lore": "The original enemy of books, and the reason the whole genre is named after it."
+      }
+    },
+    {
+      "id": "bindmoth",
+      "name": "Bindmoth",
+      "sprite": "sprites/bindmoth.png",
+      "spriteSize": 40,
+      "kind": "pest",
+      "tier": "uncommon",
+      "hp": 2,
+      "speed": "fast",
+      "behavior": "flutter",
+      "special": ["erratic-flight"],
+      "contactDamage": 0,
+      "spawn": { "weight": 9, "minDist": 0, "notOnHome": true },
+      "drops": {
+        "mode": "each",
+        "table": [ { "item": "thread", "chance": 0.85, "qty": 1 } ]
+      },
+      "dex": {
+        "silhouette": "a pale, looping moth",
+        "reveal": { "description": 1, "stats": 3, "drops": 10, "lore": 25 },
+        "description": "A pale moth that flies in looping, unpredictable paths, nibbling the cloth and thread of bindings. Its erratic flight makes it a tricky hit.",
+        "lore": "Drawn to lamplight and old spines. Where a Bindmoth roosts, the covers come loose."
+      }
+    },
+    {
+      "id": "silverfish",
+      "name": "Silverfish",
+      "sprite": "sprites/silverfish.png",
+      "spriteSize": 40,
+      "kind": "pest",
+      "tier": "rare",
+      "hp": 2,
+      "speed": "fast",
+      "behavior": "skittish",
+      "special": ["evasive", "flees-when-approached"],
+      "contactDamage": 0,
+      "spawn": { "weight": 5, "minDist": 0, "notOnHome": true },
+      "drops": {
+        "mode": "each",
+        "table": [ { "item": "paste", "chance": 1, "qty": 1 } ]
+      },
+      "dex": {
+        "silhouette": "a darting, wingless glimmer",
+        "reveal": { "description": 1, "stats": 2, "drops": 6, "lore": 15 },
+        "description": "A quick, wingless pest that bolts for cover the instant you approach. Rare and evasive, but worth the chase — it hoards the paste that holds books together.",
+        "lore": "It eats the glue right out of the spine. Catching one is half reflex, half luck."
+      }
+    },
+    {
+      "id": "the-kindle",
+      "name": "The Kindle",
+      "sprite": "sprites/the-kindle.png",
+      "spriteSize": 42,
+      "kind": "elemental",
+      "tier": "rare",
+      "hp": 3,
+      "speed": "medium",
+      "behavior": "drifter",
+      "special": ["spreads-fire", "scorches-dropped-loot", "contact-damage"],
+      "contactDamage": 1,
+      "spawn": { "weight": 5, "minDist": 1, "notOnHome": true },
+      "drops": {
+        "mode": "each",
+        "table": [
+          { "item": "wax", "chance": 0.7, "qty": 1 },
+          { "item": "ash", "chance": 0.5, "qty": 1 }
+        ]
+      },
+      "dex": {
+        "silhouette": "a drifting ember",
+        "reveal": { "description": 1, "stats": 2, "drops": 6, "lore": 15 },
+        "description": "A living ember named for the enemy of every printed page. It spreads fire as it drifts and will scorch loot left on the ground — grab your drops fast.",
+        "lore": "Its name is the cruelest joke in the library. It burns wax hot enough to seal a cover, if you dare collect it."
+      }
+    },
+    {
+      "id": "the-erazor",
+      "name": "The Erazor",
+      "sprite": "sprites/the-erazor.png",
+      "spriteSize": 42,
+      "enabled": false,
+      "kind": "hazard",
+      "tier": "rare",
+      "hp": 2,
+      "speed": "medium",
+      "behavior": "lunger",
+      "special": ["contact-erases-carried-letter"],
+      "contactDamage": 0,
+      "spawn": { "weight": 4, "minDist": 1, "notOnHome": true },
+      "drops": {
+        "mode": "each",
+        "table": [
+          { "item": "graphite",   "chance": 0.6, "qty": 1 },
+          { "item": "blank-tile", "chance": 0.4, "qty": 1 }
+        ]
+      },
+      "dex": {
+        "silhouette": "an eraser with an edge",
+        "reveal": { "description": 1, "stats": 2, "drops": 6, "lore": 15 },
+        "description": "Half eraser, half razor. It lunges to rub out a letter you're carrying — a real threat, not just loot. Beat it for graphite and the occasional blank wildcard tile.",
+        "lore": "It doesn't want to hurt you. It wants to un-write you."
+      }
+    },
+    {
+      "id": "the-overdue",
+      "name": "The Overdue",
+      "sprite": "sprites/the-overdue.png",
+      "spriteSize": 44,
+      "kind": "elite",
+      "tier": "rare",
+      "hp": 4,
+      "speed": "slow",
+      "behavior": "shambler",
+      "special": ["tanky", "best-haul"],
+      "contactDamage": 1,
+      "spawn": { "weight": 3, "minDist": 2, "notOnHome": true },
+      "drops": {
+        "mode": "each",
+        "table": [
+          { "item": "leather", "chance": 1, "qty": 1 },
+          { "item": "paper",   "chance": 1, "qtyMin": 2, "qtyMax": 3 }
+        ]
+      },
+      "dex": {
+        "silhouette": "a shambling stamped book",
+        "reveal": { "description": 1, "stats": 2, "drops": 5, "lore": 12 },
+        "description": "A shambling, stamp-covered library book that never went home. Slow and tough, but it carries the richest haul — leather and a stack of pages.",
+        "lore": "Return date: long past. It roams the stacks, heavy with guilt and good materials."
+      }
+    },
+    {
+      "id": "inkling",
+      "name": "Inkling (letter-creature)",
+      "kind": "letter",
+      "tier": "prize",
+      "hp": 1,
+      "speed": "medium",
+      "behavior": "skittish",
+      "special": ["may-flee", "drops-a-letter"],
+      "contactDamage": 0,
+      "spawn": { "weight": 0, "minDist": 0, "notOnHome": true, "note": "Not part of the resource-creature pool; spawned by letterScatter + WOTD guarantee (see CLAUDE.md). Weight 0 so it isn't rolled here." },
+      "drops": {
+        "mode": "each",
+        "table": [ { "item": "letter", "chance": 1, "qty": 1, "note": "genre-weighted letter" } ]
+      },
+      "dex": {
+        "silhouette": "a living letter",
+        "reveal": { "description": 1, "stats": 20, "drops": 50, "lore": 100 },
+        "description": "The prize catch. A living letter, skittish and quick to flee. Capture one to add its letter to your satchel — the raw material of every word you'll spell.",
+        "lore": "Escaped from the books when the words came loose. Round them up to set the stories right."
+      }
+    }
+  ]
+}

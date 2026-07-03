@@ -176,6 +176,48 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 (`drawClearedBanner`, "ALL CREATURES CAPTURED! / Come back tomorrow…") that stays on screen all day —
 it does **not** fade like a toast. `maybeNotifyCleared()`only plays the one-time`unlock`chime
 (guarded by`\_clearedDay`); it's called from `doAttack`(clearing the last one) and each frame in`update()` while started (so loading into an already-cleared day still chimes once).
+- **Creatures / drops / bestiary** (data-driven, `data/creatures.json`) — one JSON is the **single source of
+  truth** for both the spawner (`tier`/`hp`/`speed`/`behavior`/`special`/`spawn`/`drops`) and the bestiary
+  UI (`dex.*`). Loaded once at startup (`fetch`, same pattern as `data/levels/…`); `onCreaturesLoaded()`
+  drops the screen cache so pre-load field screens repopulate. `CREATURES_BY_ID` indexes it; `RESOURCE_POOL`
+  = entries with `spawn.weight>0` (so weight-0 `inkling` is excluded — it's the existing letter-creature,
+  present only for its bestiary entry).
+  - **Spawn:** `genScreen` rolls `RES_PER_SCREEN_MIN..MAX` (1–3) resource-creatures per **field** screen
+    **after** the letters (so `letterScatter` stays the first `rng()` draw and `screenCreatureCount`/
+    `dayTotalCreatures` are unchanged). `rollResourceCreature(rng,dist)` is a weighted pick gated by
+    `spawn.minDist ≤ (|sx|+|sy|)`. Writer's Block is folded into this roll but keeps its `kind:"cube"` art/
+    behavior; every other new creature is a generic `kind:"resource"` (`makeResourceCreature`). Resource-
+    creatures are **not** added to `state.captured` (that set stays letters-only so the "all captured"
+    banner + `dayCleared` stay correct); like cubes they regenerate on reload. Same per-screen RNG → a
+    day's resource layout is deterministic.
+  - **Behavior** (`updateResourceCreature`): `chaser`/`shambler` home in, `drifter` loosely drifts+wanders,
+    `lunger` lunges when close, `skittish` flees when approached, `flutter` flies erratically, `wander` =
+    harmless amble. They bounce off water/rock and freeze while a dialog is open. `special` hooks:
+    `contact-damage` → `hurtPlayer`; `contact-erases-carried-letter` (The Erazor) → `eraseCarried` (removes
+    one random satchel letter on a cooldown, no heart loss); `scorches-dropped-loot` (The Kindle) →
+    `scorchNearbyLoot` burns uncollected pickups it drifts over (**fire-spread visuals are a TODO stub**).
+  - **Drops** (`rollDrops(cre,rng)` — the spec's resolver; `mode:"one"` = weighted single, `mode:"each"` =
+    independent chance rolls, `qty` fixed or `qtyMin..qtyMax`). On defeat, `defeatCreature` logs the
+    bestiary + scatters each drop as a **ground pickup** on `sc.pickups` (`grantDrop`). **Auto-collect
+    (magnet):** a pickup within `PICKUP_MAGNET` homes toward you (`PICKUP_PULL`, accelerating), and within
+    `PICKUP_DIST` `collectPickup` adds it to `state.resources`; a `heal:` effect (cheese) heals a heart
+    (capped). Loot still sits on the ground briefly, so The Kindle can scorch it before it reaches you. `blank-tile` is stored now (future: usable as any letter on the bench). Pickups draw via
+    `drawPickup`; resource bodies via `drawResourceCreature`/`RES_DRAW` (per-creature pixel silhouettes +
+    shared `pxSprite`/`drawHpPips`).
+  - **Custom sprites (drop-in):** each creature may declare a `sprite` PNG path (+ optional `spriteSize`).
+    `loadCreatureSprite`/`creatureSprites` preload them; `drawCreatureSprite` blits the image in place of the
+    procedural art (`drawResourceCreature` and `drawCube` both try it first) and **falls back** to the drawn
+    art if the file is missing/unloaded. So adding real art = drop `sprites/<id>.png` in + reload, no code
+    change. See `sprites/README.md`. `"enabled": false` on a creature (`creatureEnabled`) removes it from
+    both the spawn pool and the bestiary — currently used to shelf **The Erazor**.
+  - **Bestiary state:** `recordBestiary(id)` on every defeat (and on letter capture → `"inkling"`) sets
+    `seen=true` + bumps `kills`. `dexView(cre,rec)` gates reveals: an unseen creature is a locked `???`
+    card; once seen, each `dex.reveal.<field>` is a kill threshold that unlocks description → stats → drops
+    → lore (rarer creatures unlock sooner by design).
+  - **Bestiary UI** (`#bestiary` overlay, `state.bestiaryOpen`, opened with `B` / the 🐾 touch button):
+    `renderBestiary` draws a 3-col card grid (retro-pixel, like the library/shop panels) + a **Binding
+    materials** tally (`renderMaterials`). Closed with `✕`/`Esc`/`B`/backdrop. `state.bestiaryOpen` is added
+    to every overlay guard (movement, `canBeHurt`, hint, `syncTouchUI`, `overworldDialogueOpen`).
 - **`SFX`** — a small Web Audio IIFE (no asset files) that synthesizes chiptune blips, matching the
   retro-pixel theme and the single-file/offline rule. `SFX.play(name)` plays a named cue (`swing`,
   `capture`, `newword`, `known`, `invalid`, `unlock`, `home`, `click`); internals are `tone()` (one
@@ -195,7 +237,9 @@ it does **not** fade like a toast. `maybeNotifyCleared()`only plays the one-time
   ~120ms ramp) so it resumes seamlessly on close. Gesture-gated (nothing autoplays on load). The class's
   own `module.exports` is guarded (`typeof module`), so it's browser-safe.
 - **`state`** — `{ player, inv:{letter:count}, dex:{word:{def,found,pos}}, bagCap,
-ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun currency) + `potions`
+ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal}, resources:{item:count},
+bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary` (creature kill/seen log)
+  persist forever like `dex`/`ink`. `ink` (noun currency) + `potions`
   (brewed-but-undrunk counts) persist across days; `buffs` (seconds remaining on a drunk potion) are
   session-only. `updateRewardHud()` renders the `#ink-count` + the `#potions` buttons (disabled when
   you have none or while that buff is active); `drinkPotion(t)` spends a potion and starts a
@@ -320,9 +364,16 @@ ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun curr
 - **Writer's-block cubes** (`kind:"cube"`, `makeCube`/`drawCube`) — a cheese play on the gelatinous cube:
   a slow chaser (`CUBE_SPEED`) that takes `CUBE_HP` (2) hits to break. **Touching one costs a heart**
   (`hurtPlayer`, contact within `CONTACT_DIST`); attack range out-reaches contact so you can kite them.
-  They freeze while a dialog is open, spawn `~CUBE_CHANCE` per field screen (not on home), and **drop
-  nothing yet — TODO: resource drop (cheese → heal/craft?) + stronger, differently-coloured variants
-  with more HP**. Cubes don't count toward the daily letter total and (for now) reappear on reload.
+  They freeze while a dialog is open and now spawn via the **unified resource-creature roll** (weight 20;
+  see the Creatures & bestiary section) rather than a standalone `CUBE_CHANCE`. Their hp / contact damage /
+  drops / bestiary entry come from `data/creatures.json` (`"writers-block"`) — they now **drop cheese (heals
+  a heart) or glue**. Cubes don't count toward the daily letter total and (like the other resource-creatures)
+  reappear on reload.
+- **Resource-creatures + drops + bestiary** — a data-driven creature system (`data/creatures.json`). See the
+  dedicated **Creatures & bestiary** section below. Resource-creatures roam the field alongside inklings,
+  drop **book-binding materials** (paper/glue/thread/wax/leather/…) as ground pickups you walk over to
+  collect (`state.resources`), and are catalogued in a **bestiary overlay** (`B` / 🐾). Kill/seen tracking is
+  `state.bestiary`; both persist in the save.
 - **Hearts (life):** `state.player.hearts` (max `PLAYER_MAX_HEARTS` = 3), drawn top-centre (`drawHearts`).
   A hit costs 1 heart + `HURT_IFRAMES` invulnerability (player blinks) + knockback. **0 → `faint()`**:
   teleport to the desk, refill hearts, keep everything. **Heal by resting at home** (on the base screen,
@@ -369,11 +420,45 @@ ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun curr
 
 ---
 
+## Creatures & bestiary
+
+A data-driven creature system layered on the core loop. `data/creatures.json` is the **single source of
+truth** — edit it to add/tune creatures and their loot; the spawner and the bestiary UI both read from it
+(don't hardcode creature stats in `inklings.html`). Schema per creature: `id`, `name`, `kind`, `tier`,
+`hp`, `speed` (`slow`/`medium`/`fast`), `behavior`, `special[]`, `contactDamage`, `spawn:{weight,minDist,
+notOnHome}`, `drops:{mode,table}`, and `dex:{silhouette,reveal,description,lore}`. A top-level `resources`
+map tags each material with a `tier` (and `effect`/`wildcard` where relevant).
+
+**Design intent.** HP is deliberately low (there's no weapon-upgrade system yet — see decision #6), so
+creatures differ by **behavior**, not bulk. Letters remain the scarce prize; resource-creatures are a
+modest 1–3 per field screen and drop **book-binding materials** — the future "bind a finished book onto the
+shelf" gate will spend these (that gate is **not built yet**; for now materials just collect in
+`state.resources`). The roster: **Writer's Block** (common cube, cheese/glue), **Bookworm** (paper),
+**Bindmoth** (thread), **Silverfish** (paste, flees), **The Kindle** (wax/ash, burns dropped loot, hurts on
+contact), **The Overdue** (elite, leather + a stack of paper). **The Erazor** (graphite/blank-tile, erases a
+carried letter on contact) exists in the JSON but is **shelved** (`"enabled": false`) — flip that off to bring
+it back. **Inkling** (the letter-creature) is in the file only for its bestiary entry (`spawn.weight:0` keeps
+it out of the resource roll — letter spawning is unchanged: `letterScatter` + the WOTD guarantee).
+
+**Not static.** The spawn roll (mix + positions) is seeded by `hash2(sx,sy) ^ daySeed`, so every field screen
+carries a **different** blend of creatures, and the whole map re-rolls each calendar day — no two grids or
+days look the same. Tier weighting + `minDist` gating just push rarer creatures farther from home.
+
+**Custom art.** Non-letter creatures are drawn from built-in pixel art but will use a `sprites/<id>.png` PNG
+if you drop one in (`sprite`/`spriteSize` in the JSON; see `sprites/README.md`) — no code change.
+
+**Bestiary reveal.** An unseen creature is a locked `???` card (with its silhouette hint). First defeat/
+capture sets `seen` and shows the kill counter; each `dex.reveal.<field>` is a kill threshold that unlocks
+description → stats → drops → lore. Rarer creatures unlock at lower kill counts. Open with `B` / the 🐾
+touch button; the panel also shows a running **binding-materials** tally.
+
+See the code map (**Creatures / drops / bestiary**) for the function-level wiring.
+
 ## Controls
 
 **Keyboard (desktop):** Move `WASD` / arrows · Attack `Space` · Teleport
-home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`/`2`/`3` (size/speed/reveal)
-· Controls/help `?` · Close any panel `Esc`.
+home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B` · Drink potion `1`/`2`/`3`
+(size/speed/reveal) · Controls/help `?` · Close any panel `Esc`.
 
 **Touch (mobile):** On touch devices a DOM control overlay (`#touch`) appears over the canvas:
 
@@ -384,8 +469,8 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
   (replaced the old 4-way d-pad). Reset (thumb recentred) whenever the touch UI goes non-live.
 - **Action cluster** bottom-left (`#tact`): a large **ATK** button (hold to keep swinging — `update()`
   calls cooldown-gated `doAttack()` while `attackHeld`; attack uses the facing direction, same as
-  Space), plus small **HOME** / **?** buttons (always shown) and the **contextual DESK /
-  SHOP** buttons that mirror `H` / help / desk / stall. **DESK and SHOP only appear (and only
+  Space), plus small **HOME** / **?** / **🐾** (bestiary) buttons (always shown) and the **contextual DESK /
+  SHOP / BOOK** buttons that mirror `H` / help / bestiary / desk / stall / lectern. **DESK and SHOP only appear (and only
   fire) when you're standing by the desk (`nearBench()`) / stall (`nearShop()`)** — `syncTouchUI()`
   toggles their `display` each frame and the tap handlers re-check proximity. They're ordered last in
   the grid so showing/hiding them doesn't shift HOME/?. The "Press E to use your bench/shop" hint
@@ -422,9 +507,10 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
    future polish: bundle a local wordlist/definitions JSON for an offline fallback, and/or cache API
    results in `localStorage`.
 3. **IndexedDB autosave** — DONE. Progress autosaves to IndexedDB DB `inklings_save` (store `state`,
-   key `save`). `snapshot()` builds a clone-safe object (`v:2` — `day`, inv, dex,
-   bagCap, captured[], `ink`, `potions`, `wotdDay`; the **map/visited are not saved**); `applySnapshot()`
-   restores it. `dex`/`ink`/`potions` restore unconditionally, but `inv` + `captured` only carry over
+   key `save`). `snapshot()` builds a clone-safe object (`v:3` — `day`, inv, dex,
+   bagCap, captured[], `ink`, `potions`, `wotdDay`, `restored`, `books`, `resources`, `bestiary`; the
+   **map/visited/pickups are not saved**); `applySnapshot()`
+   restores it. `dex`/`ink`/`potions`/`resources`/`bestiary` restore unconditionally, but `inv` + `captured` only carry over
    when the saved `day` matches today —
    a new calendar day loads with an empty satchel and a fresh map (`state.day` is set to `todayStr()`
    synchronously before load so the comparison works). `scheduleSave()` (600 ms debounce) is called on the
@@ -569,8 +655,9 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
 
 - Keep the game a single self-contained file with no external runtime dependencies, unless a
   feature truly requires one (say so and why). Current intentional exceptions: the Free Dictionary
-  API for word validation/definitions (no local fallback word list), and a one-time fetch of
-  `2of12.txt` used only to pick the Word of the Day (not for validation).
+  API for word validation/definitions (no local fallback word list), a one-time fetch of
+  `2of12.txt` used only to pick the Word of the Day (not for validation), the mad-libs chapter JSONs
+  in `data/levels/`, and `data/creatures.json` (the data-driven creature/drop/bestiary source of truth).
 - Protect the MVP loop. New systems are layers on the working core, shipped one at a time, each
   independently testable.
 - Maintain the ink-and-paper identity and the vocabulary above.
