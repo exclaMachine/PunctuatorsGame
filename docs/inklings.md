@@ -331,7 +331,7 @@ ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun curr
   chapter restores it; completing a book adds it to your library. Persisted. (POS uses the FreeDictionary
   data cached on each dex word — WordNet bundle is future.)
 - Backup: export state to JSON, import it back (also the manual cross-device transfer).
-- Keyboard on desktop; **on-screen touch controls on mobile** (D-pad bottom-right, action cluster
+- Keyboard on desktop; **on-screen touch controls on mobile** (joystick bottom-right, action cluster
   bottom-left). See the Controls section + code map for details.
 - **Background music** — a synthesized overworld chiptune loop (`OverworldTheme`) plays while walking
   around; it fades to silence while any dialogue is open (resumes seamlessly) and stops when muted /
@@ -362,8 +362,11 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
 
 **Touch (mobile):** On touch devices a DOM control overlay (`#touch`) appears over the canvas:
 
-- **D-pad** bottom-right (`#dpad`, 4 arrows) — press-and-hold sets the matching `keys["arrow*"]`, so
-  it reuses the exact keyboard movement path in `update()`. 4-directional (matches keyboard).
+- **Joystick** bottom-right (`#joystick` + `#joy-thumb`, a fixed circular base) — drag the thumb; the
+  clamped offset from centre becomes the movement vector (`joy.{active,x,y}`, `-1..1`, with a `JOY_DEAD`
+  ~0.22 deadzone). Uses **pointer capture** so dragging past the base still tracks. In `update()` the
+  joystick overrides the keyboard keys and the vector is normalized → **constant speed at any 360° angle**
+  (replaced the old 4-way d-pad). Reset (thumb recentred) whenever the touch UI goes non-live.
 - **Action cluster** bottom-left (`#tact`): a large **ATK** button (hold to keep swinging — `update()`
   calls cooldown-gated `doAttack()` while `attackHeld`; attack uses the facing direction, same as
   Space), plus small **HOME** / **?** buttons (always shown) and the **contextual DESK /
@@ -387,7 +390,7 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Drink potion `1`
 - **Mobile reflow (`body.touch`)** — on touch devices `#stage` becomes a full-height (`100dvh`) flex
   column so the controls live in the black bands, never over the map: the **HUD becomes a static top
   bar** (`order:-1`; the `#sound-btn` was moved into `.hud` so it flows inline there), the **`#touch`
-  bar is static at the bottom** (`order:1`, `#tact` at the left end, `#dpad` at the right end), and the
+  bar is static at the bottom** (`order:1`, `#tact` at the left end, `#joystick` at the right end), and the
   **canvas is centered between them** (`justify-content:space-between`; `max-height:calc(100dvh - 230px)`
   with `width/height:auto` to preserve aspect and reserve room for both bars). Desktop is unchanged
   (HUD/controls stay absolute). When `#touch` isn't `.live` it's removed from the column (behind an

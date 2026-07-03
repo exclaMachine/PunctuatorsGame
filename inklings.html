@@ -269,28 +269,29 @@
     display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
     user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none}
   .tc-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0);background:#dcd0b2}
-  /* D-pad — bottom-right */
-  #dpad{position:absolute;right:14px;bottom:14px;
-    display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);gap:6px}
-  #dpad .tc-btn{width:46px;height:46px;font-size:18px;font-family:system-ui,'Press Start 2P',sans-serif}
-  #dpad .up{grid-column:2;grid-row:1}
-  #dpad .left{grid-column:1;grid-row:2}
-  #dpad .right{grid-column:3;grid-row:2}
-  #dpad .down{grid-column:2;grid-row:3}
+  /* Joystick — bottom-right (fixed base; drag the thumb for 360° movement) */
+  #joystick{position:absolute;right:14px;bottom:14px;pointer-events:auto;
+    width:132px;height:132px;border-radius:50%;touch-action:none;
+    background:rgba(236,227,207,.55);border:3px solid var(--edge);box-shadow:3px 3px 0 rgba(0,0,0,.3);
+    display:flex;align-items:center;justify-content:center;
+    user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+  #joy-thumb{width:58px;height:58px;border-radius:50%;background:var(--inkblue);
+    border:3px solid var(--edge);box-shadow:2px 2px 0 rgba(0,0,0,.35);
+    will-change:transform;pointer-events:none}
   /* Action cluster — bottom-left */
   #tact{position:absolute;left:14px;bottom:14px;display:flex;gap:8px;align-items:flex-end}
   #tact .atk{width:78px;height:78px;font-size:13px;background:var(--inkblue);color:#f4f0e6}
   #tact .atk:active{background:#46578f}
-  #tact .util-grid{display:grid;grid-template-columns:42px 42px;grid-auto-rows:42px;gap:6px}
-  #tact .util{width:42px;height:42px;font-size:7px}
-  /* shrink the pad/buttons on small screens so they don't swallow the playfield */
+  #tact .util-grid{display:grid;grid-template-columns:52px 52px;grid-auto-rows:52px;gap:6px}
+  #tact .util{width:52px;height:52px;font-size:8px}
+  /* shrink the stick/buttons on small screens so they don't swallow the playfield */
   @media(max-width:560px){
-    #dpad{right:8px;bottom:8px;grid-template-columns:repeat(3,38px);grid-template-rows:repeat(3,38px);gap:5px}
-    #dpad .tc-btn{width:38px;height:38px;font-size:15px}
+    #joystick{right:8px;bottom:8px;width:112px;height:112px}
+    #joy-thumb{width:50px;height:50px}
     #tact{left:8px;bottom:8px;gap:6px}
     #tact .atk{width:62px;height:62px;font-size:11px}
-    #tact .util-grid{grid-template-columns:34px 34px;grid-auto-rows:34px;gap:5px}
-    #tact .util{width:34px;height:34px;font-size:6px}
+    #tact .util-grid{grid-template-columns:44px 44px;grid-auto-rows:44px;gap:5px}
+    #tact .util{width:44px;height:44px;font-size:7px}
   }
   /* ── Mobile reflow: HUD sits in the black band ABOVE the map and the touch
      controls in the band BELOW it — they never overlap the grid ─────────── */
@@ -309,7 +310,7 @@
   /* bottom bar */
   body.touch #touch{position:static;inset:auto;order:1;flex:none;width:100%}
   body.touch #touch.live{display:flex;align-items:flex-end;justify-content:space-between;padding:0 8px 2px}
-  body.touch #dpad{position:static}
+  body.touch #joystick{position:static}
   body.touch #tact{position:static}
   /* the library can scroll as a whole on mobile, so pin the X to the corner */
   body.touch .close-x{position:fixed;top:max(12px,env(safe-area-inset-top));right:12px}
@@ -485,13 +486,8 @@
           <button class="tc-btn util" id="tc-book" aria-label="Open book">BOOK</button>
         </div>
       </div>
-      <!-- D-pad, bottom-right -->
-      <div id="dpad">
-        <button class="tc-btn up"    data-dir="arrowup"    aria-label="Move up">↑</button>
-        <button class="tc-btn left"  data-dir="arrowleft"  aria-label="Move left">←</button>
-        <button class="tc-btn right" data-dir="arrowright" aria-label="Move right">→</button>
-        <button class="tc-btn down"  data-dir="arrowdown"  aria-label="Move down">↓</button>
-      </div>
+      <!-- Joystick, bottom-right -->
+      <div id="joystick" role="button" aria-label="Move"><div id="joy-thumb"></div></div>
     </div>
   </div>
 </div>
@@ -880,6 +876,8 @@ const SFX = (()=>{
 /* ---------- INPUT ----------------------------------------- */
 const keys={};
 let attackHeld=false;   // set true while the touch ATK button is held
+const joy={active:false, x:0, y:0};   // mobile joystick vector (-1..1); x/y are 0 within the deadzone
+const JOY_DEAD=0.22;    // ignore tiny thumb nudges near the centre
 const MOVE_KEYS=new Set(["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d"]);
 addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
@@ -1026,8 +1024,9 @@ function update(dt){
     if(keys["arrowdown"]||keys["s"]) my+=1;
     if(keys["arrowleft"]||keys["a"]) mx-=1;
     if(keys["arrowright"]||keys["d"]) mx+=1;
+    if(joy.active && Math.hypot(joy.x,joy.y)>JOY_DEAD){ mx=joy.x; my=joy.y; }   // touch joystick (overrides keys)
     if(mx||my){
-      const len=Math.hypot(mx,my); mx/=len; my/=len;
+      const len=Math.hypot(mx,my); mx/=len; my/=len;   // unit direction → constant speed at any angle
       p.face.x=mx; p.face.y=my; p.moving=true;
       // resolve axes independently so you slide along water/rock instead of sticking
       const spd=p.speed*(state.buffs.speed>0?SPEED_MULT:1);   // speed potion
@@ -1946,6 +1945,8 @@ function syncTouchUI(){
     if(!live){   // release any held inputs so the player doesn't keep moving/attacking
       keys["arrowup"]=keys["arrowdown"]=keys["arrowleft"]=keys["arrowright"]=false;
       attackHeld=false;
+      joy.active=false; joy.x=0; joy.y=0;
+      const jt=document.getElementById("joy-thumb"); if(jt) jt.style.transform="translate(0,0)";
     }
   }
   // DESK / SHOP / BOOK buttons are only shown (and only work) when you're standing by that structure.
@@ -1958,16 +1959,22 @@ function syncTouchUI(){
 }
 if(IS_TOUCH){
   document.body.classList.add("touch");
-  // D-pad: press-and-hold sets the matching movement key, release clears it.
-  touchEl.querySelectorAll("#dpad .tc-btn").forEach(btn=>{
-    const dir=btn.dataset.dir;
-    const press=e=>{ e.preventDefault(); keys[dir]=true; };
-    const release=e=>{ if(e) e.preventDefault(); keys[dir]=false; };
-    btn.addEventListener("pointerdown",press);
-    btn.addEventListener("pointerup",release);
-    btn.addEventListener("pointercancel",release);
-    btn.addEventListener("pointerleave",release);
-  });
+  // Joystick: drag the thumb from the base centre; the clamped offset is the movement vector.
+  const joyEl=document.getElementById("joystick"), joyThumb=document.getElementById("joy-thumb");
+  function joyUpdate(e){
+    const r=joyEl.getBoundingClientRect();
+    const maxR=r.width*0.34;                                  // max thumb travel from centre
+    let dx=e.clientX-(r.left+r.width/2), dy=e.clientY-(r.top+r.height/2);
+    const d=Math.hypot(dx,dy);
+    if(d>maxR){ dx=dx/d*maxR; dy=dy/d*maxR; }
+    joy.x=dx/maxR; joy.y=dy/maxR;                            // -1..1
+    joyThumb.style.transform=`translate(${dx}px,${dy}px)`;
+  }
+  joyEl.addEventListener("pointerdown",e=>{ e.preventDefault(); joy.active=true; joyEl.setPointerCapture&&joyEl.setPointerCapture(e.pointerId); joyUpdate(e); });
+  joyEl.addEventListener("pointermove",e=>{ if(joy.active){ e.preventDefault(); joyUpdate(e); } });
+  const joyEnd=e=>{ if(e) e.preventDefault(); joy.active=false; joy.x=0; joy.y=0; joyThumb.style.transform="translate(0,0)"; };
+  joyEl.addEventListener("pointerup",joyEnd);
+  joyEl.addEventListener("pointercancel",joyEnd);
   // Attack: hold to keep swinging (update() calls doAttack while held).
   const atk=document.getElementById("tc-atk");
   atk.addEventListener("pointerdown",e=>{ e.preventDefault(); attackHeld=true; doAttack(); });
