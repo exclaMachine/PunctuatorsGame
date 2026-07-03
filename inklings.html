@@ -127,6 +127,7 @@
   .bes-mat{display:inline-flex;align-items:center;gap:5px;background:var(--paper-2);
     border:2px solid var(--edge);padding:3px 7px;font-family:var(--read);font-size:15px}
   .bes-mat i{width:12px;height:12px;border:2px solid var(--edge);display:inline-block}
+  .bes-mat-ico{width:18px;height:18px;image-rendering:pixelated;display:inline-block}
   @media(max-width:560px){
     #bestiary .book{height:auto;max-height:92vh;overflow:auto;display:block}
     .bes-grid{grid-template-columns:repeat(2,1fr)}
@@ -746,10 +747,31 @@ function drawCreatureSprite(cid, x, y, size){
   return true;
 }
 function creatureEnabled(c){ return c.enabled!==false; }   // "enabled": false shelves a creature entirely
+// Resource materials get the same drop-in treatment: a resource's "sprite" PNG (in data/creatures.json's
+// "resources" map) overrides the built-in ICON_DRAW pixel icon, with the same missing-file fallback.
+const resourceSprites={};                // item -> { img, ready }
+function loadResourceSprites(data){
+  const R=data.resources||{};
+  for(const item in R){ const r=R[item]; if(!r || !r.sprite) continue;
+    const rec={ img:new Image(), ready:false };
+    rec.img.onload=()=>{ rec.ready=true; };
+    rec.img.onerror=()=>{ rec.ready=false; };
+    rec.img.src=r.sprite;
+    resourceSprites[item]=rec;
+  }
+}
+function drawResourceSprite(item, x, y, size){
+  const rec=resourceSprites[item];
+  if(!rec || !rec.ready) return false;
+  ctx.drawImage(rec.img, x-size/2, y-size/2, size, size);
+  return true;
+}
+function resSpriteSizeOf(item, dflt){ const R=CREATURES_DATA&&CREATURES_DATA.resources&&CREATURES_DATA.resources[item]; return (R&&R.spriteSize)||dflt; }
 function onCreaturesLoaded(){ state.screens=new Map(); }   // drop cached screens so field creatures repopulate from the data
 fetch("data/creatures.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{
   CREATURES_DATA=data;
   (data.creatures||[]).forEach(c=>{ CREATURES_BY_ID[c.id]=c; loadCreatureSprite(c); });
+  loadResourceSprites(data);
   RESOURCE_POOL=(data.creatures||[]).filter(c=>c.spawn && c.spawn.weight>0 && creatureEnabled(c));
   onCreaturesLoaded();
 }).catch(()=>{ console.warn("Inklings: couldn't load data/creatures.json — resource-creatures disabled."); });
@@ -1763,15 +1785,97 @@ function drawResourceCreature(c){
   drawHpPips(c, c.y-28);
 }
 // A dropped material sitting on the ground (bobs gently; walk over to collect).
+// ── Material icons (letterless pixel art). Each fn(g,x,y,s) draws centred at (x,y) on context g so the same
+// code serves both the ground pickup (main ctx) and the bestiary swatch (offscreen → data URL). A material's
+// "sprite" PNG in data/creatures.json overrides these; missing files fall back here.
+function iconRect(g,x,y,w,h,fill){ g.fillStyle="#26233a"; g.fillRect(x-1,y-1,w+2,h+2); g.fillStyle=fill; g.fillRect(x,y,w,h); }
+const ICON_DRAW={
+  paper(g,x,y,s){                                   // sheet with a folded top-right corner (dog-ear)
+    const w=Math.round(s*0.72), h=s, lx=x-w/2, ty=y-h/2, f=Math.round(s*0.32);
+    iconRect(g,lx,ty,w,h,"#f4efdc");
+    g.fillStyle="#26233a"; g.beginPath(); g.moveTo(lx+w-f,ty-1); g.lineTo(lx+w+1,ty+f); g.lineTo(lx+w+1,ty-1); g.closePath(); g.fill();
+    g.fillStyle="#d8cfb0"; g.beginPath(); g.moveTo(lx+w-f,ty); g.lineTo(lx+w,ty+f); g.lineTo(lx+w-f,ty+f); g.closePath(); g.fill();
+    g.fillStyle="#c8bd9a"; for(let i=0;i<2;i++) g.fillRect(lx+2, ty+Math.round(h*0.5)+i*3, w-4, 1);   // ruling (not letters)
+  },
+  glue(g,x,y,s){                                    // glue bottle with a nozzle cap
+    const w=Math.round(s*0.5), h=s, lx=x-w/2, ty=y-h/2;
+    iconRect(g,lx,ty+Math.round(h*0.3),w,Math.round(h*0.7),"#d7c98a");
+    g.fillStyle="#26233a"; g.fillRect(x-2,ty,4,Math.round(h*0.34));
+    g.fillStyle="#a68f4a"; g.fillRect(lx+1,ty+Math.round(h*0.55),w-2,2);
+  },
+  cheese(g,x,y,s){                                  // holey yellow wedge
+    const h=Math.round(s*0.8);
+    g.fillStyle="#26233a"; g.beginPath(); g.moveTo(x-s/2-1,y+h/2+1); g.lineTo(x+s/2+1,y+h/2+1); g.lineTo(x+s/2+1,y-h/2-1); g.closePath(); g.fill();
+    g.fillStyle="#e8c84a"; g.beginPath(); g.moveTo(x-s/2,y+h/2); g.lineTo(x+s/2,y+h/2); g.lineTo(x+s/2,y-h/2); g.closePath(); g.fill();
+    g.fillStyle="#c9a52f"; g.fillRect(x-1,y+1,2,2); g.fillRect(x+3,y-1,2,2); g.fillRect(x+1,y+4,2,2);
+  },
+  thread(g,x,y,s){                                  // spool of pink thread between wooden flanges
+    const w=Math.round(s*0.72), h=s, lx=x-w/2, ty=y-h/2;
+    g.fillStyle="#26233a"; g.fillRect(lx-1,ty-1,w+2,h+2);
+    g.fillStyle="#c88fb0"; g.fillRect(lx,ty,w,h);
+    g.fillStyle="#a86f92"; for(let i=0;i<4;i++) g.fillRect(lx,ty+2+i*3,w,1);
+    g.fillStyle="#7a5a3a"; g.fillRect(lx-1,ty-1,w+2,2); g.fillRect(lx-1,ty+h-1,w+2,2);
+  },
+  paste(g,x,y,s){                                   // lidded jar of paste
+    const w=Math.round(s*0.8), h=Math.round(s*0.66), lx=x-w/2, ty=y-h/2+2;
+    iconRect(g,lx,ty,w,h,"#cfe0a0");
+    g.fillStyle="#26233a"; g.fillRect(lx-1,ty-3,w+2,3);
+    g.fillStyle="#b6c98a"; g.fillRect(lx+1,ty+2,w-2,2);
+  },
+  ash(g,x,y,s){                                     // grey mound with flecks
+    const w=s, h=Math.round(s*0.58);
+    g.fillStyle="#9a95a5"; g.beginPath(); g.moveTo(x-w/2,y+h/2); g.lineTo(x+w/2,y+h/2); g.lineTo(x,y-h/2); g.closePath(); g.fill();
+    g.fillStyle="#7a7585"; g.fillRect(x-w/2,y+h/2-1,w,2);
+    g.fillStyle="#cfcad6"; g.fillRect(x-3,y+1,2,2); g.fillRect(x+2,y+2,2,2); g.fillRect(x,y-2,1,1);
+  },
+  wax(g,x,y,s){                                     // amber wax seal blob with a sheen
+    const r=Math.round(s*0.4);
+    g.fillStyle="#26233a"; g.beginPath(); g.arc(x,y,r+1,0,7); g.fill();
+    g.fillStyle="#e0b24a"; g.beginPath(); g.arc(x,y,r,0,7); g.fill();
+    g.fillStyle="#c89b3c"; g.fillRect(x-3,y-1,6,3);
+    g.fillStyle="#f2d488"; g.fillRect(x-r+2,y-r+2,3,2);
+  },
+  graphite(g,x,y,s){                                // dark graphite stick (diagonal), tip sheen
+    g.save(); g.translate(x,y); g.rotate(-0.6);
+    g.fillStyle="#26233a"; g.fillRect(-2,-s/2-1,5,s+2);
+    g.fillStyle="#6b6b76"; g.fillRect(-1,-s/2,3,s);
+    g.fillStyle="#9a9aa6"; g.fillRect(-1,-s/2,3,2);
+    g.restore();
+  },
+  leather(g,x,y,s){                                 // brown hide patch with stitches
+    const w=s, h=Math.round(s*0.8), lx=x-w/2, ty=y-h/2;
+    iconRect(g,lx,ty,w,h,"#8a5a34");
+    g.fillStyle="#6f4526"; g.fillRect(lx+1,ty+1,w-2,1);
+    g.fillStyle="#c89b6a"; for(let i=0;i<3;i++){ g.fillRect(lx+2+i*4, ty+2, 1,1); g.fillRect(lx+2+i*4, ty+h-3, 1,1); }
+  },
+  "blank-tile"(g,x,y,s){                            // blank cream tile, bevel + faint wildcard sparkle (no letter)
+    const w=s, h=s, lx=x-w/2, ty=y-h/2;
+    iconRect(g,lx,ty,w,h,"#f4f0e6");
+    g.fillStyle="#d8d2c2"; g.fillRect(lx+1,ty+h-3,w-2,2); g.fillRect(lx+w-3,ty+1,2,h-2);
+    g.fillStyle="#c89b3c"; g.fillRect(x-1,y-3,2,6); g.fillRect(x-3,y-1,6,2);
+  }
+};
+// Cache a data URL of each built-in icon (drawn once offscreen) for the bestiary materials swatches.
+const _iconURL={};
+function iconDataURL(item){
+  if(_iconURL[item]!==undefined) return _iconURL[item];
+  const fn=ICON_DRAW[item]; if(!fn) return (_iconURL[item]=null);
+  const c=document.createElement("canvas"); c.width=c.height=20;
+  const g=c.getContext("2d"); g.imageSmoothingEnabled=false; fn(g,10,10,16);
+  return _iconURL[item]=c.toDataURL();
+}
+// A dropped material on the ground (bobs; homes to you when near). Custom PNG if present, else pixel icon.
 function drawPickup(pk, tnow){
-  const bob=Math.sin(tnow/300 + pk.x*0.1)*2, s=16, x=pk.x, y=pk.y+bob;
+  const bob=Math.sin(tnow/300 + pk.x*0.1)*2, x=pk.x, y=pk.y+bob;
   ctx.save(); ctx.imageSmoothingEnabled=false;
-  ctx.fillStyle="rgba(38,35,58,.22)"; ctx.fillRect(x-s/2, pk.y+5, s, 3);
-  pxSprite(x-s/2, y-s/2, s, s, ITEM_COLOR[pk.item]||"#cccccc");
-  ctx.fillStyle="#26233a"; ctx.font="8px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
-  ctx.fillText(pk.item==="blank-tile"?"*":(pk.item[0]||"?").toUpperCase(), x, y+1);
-  if(pk.qty>1){ ctx.fillStyle="#9a3324"; ctx.fillText(""+pk.qty, x+9, y-7); }
-  ctx.textBaseline="alphabetic"; ctx.restore();
+  ctx.fillStyle="rgba(38,35,58,.22)"; ctx.fillRect(x-8, pk.y+5, 16, 3);   // shadow
+  if(!drawResourceSprite(pk.item, x, y, resSpriteSizeOf(pk.item,18))){
+    const fn=ICON_DRAW[pk.item];
+    if(fn) fn(ctx, x, y, 16); else pxSprite(x-8,y-8,16,16, ITEM_COLOR[pk.item]||"#cccccc");
+  }
+  if(pk.qty>1){ ctx.fillStyle="#26233a"; ctx.font="8px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(""+pk.qty, x+9, y-7); ctx.textBaseline="alphabetic"; }
+  ctx.restore();
 }
 // Player hearts, top-centre.
 function drawHeart(cx,cy,px,filled){
@@ -2286,7 +2390,11 @@ function renderMaterials(){
   const el=document.getElementById("bes-materials"); if(!el) return;
   const items=Object.keys(state.resources).filter(k=>state.resources[k]>0).sort();
   el.innerHTML = `<div class="bes-name" style="flex-basis:100%;margin-bottom:2px">Binding materials</div>` + (items.length
-    ? items.map(k=>`<span class="bes-mat"><i style="background:${ITEM_COLOR[k]||'#ccc'}"></i>${esc(prettyItem(k))} ×${state.resources[k]}</span>`).join("")
+    ? items.map(k=>{
+        const rec=resourceSprites[k], url = (rec&&rec.ready) ? rec.img.src : iconDataURL(k);   // custom PNG > built-in icon
+        const swatch = url ? `<img class="bes-mat-ico" src="${url}" alt="">` : `<i style="background:${ITEM_COLOR[k]||'#ccc'}"></i>`;
+        return `<span class="bes-mat">${swatch}${esc(prettyItem(k))} ×${state.resources[k]}</span>`;
+      }).join("")
     : `<span class="bes-locked-blk">None yet — defeat resource-creatures to gather paper, glue, thread…</span>`);
 }
 

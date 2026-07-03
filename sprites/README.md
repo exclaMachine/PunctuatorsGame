@@ -23,6 +23,26 @@ So to add your own art: **save a PNG at the path below and reload.** That's it.
 
 (The letter-creatures — inklings — are drawn from the shared `Alpha.png` glyph sheet, not from here.)
 
+### Materials (dropped resources)
+
+The drop pickups have the same drop-in override — declared in the `resources` map of `creatures.json`.
+Each material ships with a built-in **letterless pixel icon**; drop a PNG here to replace it.
+
+| Material | File |
+| --- | --- |
+| Paper | `sprites/paper.png` |
+| Glue | `sprites/glue.png` |
+| Cheese | `sprites/cheese.png` |
+| Thread | `sprites/thread.png` |
+| Paste | `sprites/paste.png` |
+| Ash | `sprites/ash.png` |
+| Wax | `sprites/wax.png` |
+| Graphite | `sprites/graphite.png` |
+| Leather | `sprites/leather.png` |
+| Blank tile | `sprites/blank-tile.png` |
+
+Materials draw small (~16–18px on the ground and in the bestiary), so 16×16 source art reads best.
+
 ## Art guidelines
 
 - **Format:** transparent PNG. Square canvas works best (it's drawn centered at `spriteSize`).

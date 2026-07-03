@@ -204,12 +204,19 @@ it does **not** fade like a toast. `maybeNotifyCleared()`only plays the one-time
     (capped). Loot still sits on the ground briefly, so The Kindle can scorch it before it reaches you. `blank-tile` is stored now (future: usable as any letter on the bench). Pickups draw via
     `drawPickup`; resource bodies via `drawResourceCreature`/`RES_DRAW` (per-creature pixel silhouettes +
     shared `pxSprite`/`drawHpPips`).
-  - **Custom sprites (drop-in):** each creature may declare a `sprite` PNG path (+ optional `spriteSize`).
-    `loadCreatureSprite`/`creatureSprites` preload them; `drawCreatureSprite` blits the image in place of the
-    procedural art (`drawResourceCreature` and `drawCube` both try it first) and **falls back** to the drawn
-    art if the file is missing/unloaded. So adding real art = drop `sprites/<id>.png` in + reload, no code
-    change. See `sprites/README.md`. `"enabled": false` on a creature (`creatureEnabled`) removes it from
-    both the spawn pool and the bestiary — currently used to shelf **The Erazor**.
+  - **Material icons:** dropped materials draw as **letterless pixel icons** (`ICON_DRAW`, each `fn(g,x,y,s)`
+    so the same code paints the ground pickup on the main ctx *and* a bestiary swatch via an offscreen
+    canvas → `iconDataURL`, memoized). `drawPickup` uses the icon; the bestiary materials list uses the
+    cached data URL (or the custom PNG when present).
+  - **Custom sprites (drop-in):** each creature may declare a `sprite` PNG path (+ optional `spriteSize`),
+    and each entry in the `resources` map supports the same override for its material icon.
+    `loadCreatureSprite`/`creatureSprites` + `loadResourceSprites`/`resourceSprites` preload them;
+    `drawCreatureSprite`/`drawResourceSprite` blit the image in place of the procedural art
+    (`drawResourceCreature`/`drawCube`/`drawPickup` all try it first) and **fall back** to the drawn art if
+    the file is missing/unloaded. So adding real art = drop `sprites/<id>.png` (creature) or
+    `sprites/<material>.png` in + reload, no code change. See `sprites/README.md`. `"enabled": false` on a
+    creature (`creatureEnabled`) removes it from both the spawn pool and the bestiary — currently used to
+    shelf **The Erazor**.
   - **Bestiary state:** `recordBestiary(id)` on every defeat (and on letter capture → `"inkling"`) sets
     `seen=true` + bumps `kills`. `dexView(cre,rec)` gates reveals: an unseen creature is a locked `???`
     card; once seen, each `dex.reveal.<field>` is a kill threshold that unlocks description → stats → drops
@@ -444,8 +451,9 @@ it out of the resource roll — letter spawning is unchanged: `letterScatter` + 
 carries a **different** blend of creatures, and the whole map re-rolls each calendar day — no two grids or
 days look the same. Tier weighting + `minDist` gating just push rarer creatures farther from home.
 
-**Custom art.** Non-letter creatures are drawn from built-in pixel art but will use a `sprites/<id>.png` PNG
-if you drop one in (`sprite`/`spriteSize` in the JSON; see `sprites/README.md`) — no code change.
+**Custom art.** Non-letter creatures **and** the dropped materials are drawn from built-in pixel art but will
+use a `sprites/<id>.png` / `sprites/<material>.png` PNG if you drop one in (`sprite`/`spriteSize` in the JSON;
+see `sprites/README.md`) — no code change. Material icons are letterless.
 
 **Bestiary reveal.** An unseen creature is a locked `???` card (with its silhouette hint). First defeat/
 capture sets `seen` and shows the kill counter; each `dex.reveal.<field>` is a kill threshold that unlocks

@@ -1,18 +1,18 @@
 {
-  "_note": "Single source of truth for creatures: spawner reads tier/hp/spawn/drops; bestiary UI reads dex.*. Kill/capture tracking lives in state.bestiary = { <id>: { kills, seen } }. A creature entry is a locked ??? box until seen=true (first defeat/capture); after that its kill count shows, and each dex.reveal.<field> is a kill threshold that unlocks that block. Optional per-creature fields: \"sprite\" = path to a PNG that replaces the built-in pixel art (drop the file in and reload; if it's missing the game falls back to the drawn art — a 404 in the console until you add it is harmless), \"spriteSize\" = draw size in px (default 44), \"enabled\": false = fully removed from spawning + the bestiary (a clean way to shelf a creature without deleting it).",
+  "_note": "Single source of truth for creatures: spawner reads tier/hp/spawn/drops; bestiary UI reads dex.*. Kill/capture tracking lives in state.bestiary = { <id>: { kills, seen } }. A creature entry is a locked ??? box until seen=true (first defeat/capture); after that its kill count shows, and each dex.reveal.<field> is a kill threshold that unlocks that block. Optional per-creature fields: \"sprite\" = path to a PNG that replaces the built-in pixel art (drop the file in and reload; if it's missing the game falls back to the drawn art — a 404 in the console until you add it is harmless), \"spriteSize\" = draw size in px (default 44), \"enabled\": false = fully removed from spawning + the bestiary (a clean way to shelf a creature without deleting it). Each entry in the \"resources\" map supports the same \"sprite\"/\"spriteSize\" override for its dropped-material icon (default drawn from built-in letterless pixel icons).",
   "schemaVersion": 1,
 
   "resources": {
-    "paper":      { "tier": "common" },
-    "glue":       { "tier": "common" },
-    "cheese":     { "tier": "common", "effect": "heal:1" },
-    "thread":     { "tier": "uncommon" },
-    "paste":      { "tier": "uncommon" },
-    "ash":        { "tier": "uncommon" },
-    "wax":        { "tier": "rare" },
-    "graphite":   { "tier": "rare" },
-    "leather":    { "tier": "rare" },
-    "blank-tile": { "tier": "special", "wildcard": true }
+    "paper":      { "tier": "common", "sprite": "sprites/paper.png", "spriteSize": 18 },
+    "glue":       { "tier": "common", "sprite": "sprites/glue.png", "spriteSize": 18 },
+    "cheese":     { "tier": "common", "effect": "heal:1", "sprite": "sprites/cheese.png", "spriteSize": 18 },
+    "thread":     { "tier": "uncommon", "sprite": "sprites/thread.png", "spriteSize": 18 },
+    "paste":      { "tier": "uncommon", "sprite": "sprites/paste.png", "spriteSize": 18 },
+    "ash":        { "tier": "uncommon", "sprite": "sprites/ash.png", "spriteSize": 18 },
+    "wax":        { "tier": "rare", "sprite": "sprites/wax.png", "spriteSize": 18 },
+    "graphite":   { "tier": "rare", "sprite": "sprites/graphite.png", "spriteSize": 18 },
+    "leather":    { "tier": "rare", "sprite": "sprites/leather.png", "spriteSize": 18 },
+    "blank-tile": { "tier": "special", "wildcard": true, "sprite": "sprites/blank-tile.png", "spriteSize": 18 }
   },
 
   "creatures": [
