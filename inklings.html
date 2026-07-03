@@ -395,7 +395,7 @@
           </div>
         </div>
         <div class="foot">
-          <div class="keys">
+          <div class="keys kbd-only">
             <b>WASD</b>/<b>↑↓←→</b> move &nbsp; <b>Space</b> attack<br>
             <b>H</b> go to your bench &nbsp; <b>E</b> use bench &nbsp; <b>Tab</b> open library &nbsp; <b>Esc</b> close
           </div>
@@ -949,6 +949,17 @@ function makeCreature(rng, dist, tiles){
   const p=walkableSpawn(rng, tiles);
   return { kind:"letter", x:p.x, y:p.y, letter:weightedLetter(rng, dist), hp:CREATURE_HP, maxhp:CREATURE_HP, vx:0, vy:0, wander:0, flash:0 };
 }
+// The home-base tutorial letter-creature: a walkable spot clear of the desk/stall/lectern and the player's
+// spawn point, so it reads clearly as "this is an inkling" the moment a new day begins.
+function makeHomeLetter(rng, tiles){
+  let x=W/2, y=H/2+TILE*2;
+  for(let i=0;i<40;i++){
+    const p=walkableSpawn(rng, tiles); x=p.x; y=p.y;
+    if(!overlapsSolid(DESK,x,y) && !overlapsSolid(STALL,x,y) && !overlapsSolid(LECTERN,x,y)
+       && Math.hypot(x-W/2, y-(H/2+TILE)) > 48) break;   // not on furniture, not on top of the player
+  }
+  return { kind:"letter", x, y, letter:weightedLetter(rng, 0), hp:CREATURE_HP, maxhp:CREATURE_HP, vx:0, vy:0, wander:0, flash:0 };
+}
 function makeCube(rng, tiles){
   const p=walkableSpawn(rng, tiles);
   return { kind:"cube", x:p.x, y:p.y, hp:CUBE_HP, maxhp:CUBE_HP, vx:0, vy:0, wob:rng()*6.28, flash:0 };
@@ -970,6 +981,13 @@ function genScreen(sx,sy){
   const tiles = genTiles(sx,sy,isBase);
   const dist=Math.abs(sx)+Math.abs(sy);
   const creatures=[];
+  if(isBase){
+    // Home base gets ONE guaranteed letter-creature each day, so new players can see what an "inkling"
+    // looks like right where they start. It counts toward the daily total (screenCreatureCount) and, once
+    // captured, stays gone for the day like any other; a fresh one appears with tomorrow's map.
+    const cr=makeHomeLetter(rng, tiles); cr.id="0,0,0";
+    if(!state.captured.has(cr.id)) creatures.push(cr);
+  }
   if(!isBase){
     const guar = wotdGuaranteed()[sx+","+sy] || [];   // WOTD letters pinned to this screen (enough copies)
     const n = Math.max(letterScatter(rng), guar.length);   // ensure the day's word letters always fit
@@ -1232,9 +1250,9 @@ function faint(){
 // Total letter-creatures across the whole day's bounded map. Mirrors genScreen's per-screen count
 // (the first rng() draw seeds it the same way), so we can know the day's total without visiting every
 // screen. Memoized per day.
-// How many creatures a screen spawns today — mirrors genScreen's first rng() draw (home has none).
-function screenCreatureCount(sx,sy){   // letters only (cubes don't count toward the daily collection)
-  if(sx===0 && sy===0) return 0;
+// How many letters a screen spawns today — mirrors genScreen's first rng() draw (home = 1 tutorial letter).
+function screenCreatureCount(sx,sy){   // letters only (cubes/resource-creatures don't count toward the daily collection)
+  if(sx===0 && sy===0) return 1;       // home base has one guaranteed tutorial letter-creature per day
   const rng=mulberry32((hash2(sx,sy) ^ state.daySeed)>>>0);
   const guar=(wotdGuaranteed()[sx+","+sy]||[]).length;
   return Math.max(letterScatter(rng), guar);   // mirrors genScreen's first rng() draw + WOTD minimum

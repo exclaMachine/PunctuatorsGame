@@ -375,6 +375,10 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   per screen) so finding one feels good; the WOTD's guaranteed pinned letters (`Math.max(scatter,guar)`)
   still ensure the daily word is makeable. `screenCreatureCount`/`dayTotalCreatures` (the "all letters
   gathered" banner) count **letters only**.
+- **Home-base tutorial letter** — home `(0,0)` spawns exactly **one guaranteed letter-creature per day**
+  (`makeHomeLetter`, placed clear of the desk/stall/lectern and the player spawn), so new players see what
+  an "inkling" looks like right where they start. It counts toward the daily total (`screenCreatureCount`
+  returns `1` for home), and once captured it stays gone until tomorrow's map like any other letter.
 - **Writer's-block cubes** (`kind:"cube"`, `makeCube`/`drawCube`) — a cheese play on the gelatinous cube:
   a slow chaser (`CUBE_SPEED`) that takes `CUBE_HP` (2) hits to break. **Touching one costs a heart**
   (`hurtPlayer`, contact within `CONTACT_DIST`); attack range out-reaches contact so you can kite them.
@@ -500,7 +504,9 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B
   fire) when you're standing by the desk (`nearBench()`) / stall (`nearShop()`)** — `syncTouchUI()`
   toggles their `display` each frame and the tap handlers re-check proximity. They're ordered last in
   the grid so showing/hiding them doesn't shift HOME/?. The "Press E to use your bench/shop" hint
-  is **keyboard-only** (`!IS_TOUCH`) — touch has no E key, so the contextual buttons replace it.
+  is **keyboard-only** (`!IS_TOUCH`) — touch has no E key, so the contextual buttons replace it. The
+  library overlay's footer key-hints row carries `.kbd-only` too, so it's hidden on touch (mobile has no
+  keyboard) via the shared `body.touch .kbd-only{display:none}` rule.
 - Detection: `IS_TOUCH` (`pointer:coarse` || `ontouchstart` || `maxTouchPoints`) adds `body.touch`.
   `syncTouchUI()` (called each frame from `update()`) shows the overlay only while
   `state.started && !overlay && !help` and clears held inputs when hidden, so the pad never sits on
