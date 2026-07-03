@@ -310,10 +310,25 @@ ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal} }`. `ink` (noun curr
 - Home base with a writing desk; bounded **daily map** of screens (`MAP_RADIUS`, currently 3×3; walls at the world edge),
   regenerated each real calendar day; walk-off-edge travel between screens; `H` to teleport home;
   translucent explored-area minimap in the bottom-right (resets daily).
-- Attack-based combat (no bump-to-collect); creatures are captured in a **single hit**
-  (`CREATURE_HP = 1`) and drop their letter. (HP/pip scaffolding remains if multi-hit creatures
-  are ever wanted again.) The satchel holds a capped number of letters (`state.bagCap`, starts at 10);
-  when full, capture is blocked until you spell words to free space.
+- Attack-based combat (no bump-to-collect); **letter-creatures** (`kind:"letter"`) are captured in a
+  **single hit** (`CREATURE_HP = 1`) and drop their letter. The satchel holds a capped number of letters
+  (`state.bagCap`, starts at 10); when full, **letter capture** is blocked (you can still fight cubes).
+- **Letters are now rare** — `letterScatter(rng)` gives a thin, even scatter (usually 0, sometimes 1–2
+  per screen) so finding one feels good; the WOTD's guaranteed pinned letters (`Math.max(scatter,guar)`)
+  still ensure the daily word is makeable. `screenCreatureCount`/`dayTotalCreatures` (the "all letters
+  gathered" banner) count **letters only**.
+- **Writer's-block cubes** (`kind:"cube"`, `makeCube`/`drawCube`) — a cheese play on the gelatinous cube:
+  a slow chaser (`CUBE_SPEED`) that takes `CUBE_HP` (2) hits to break. **Touching one costs a heart**
+  (`hurtPlayer`, contact within `CONTACT_DIST`); attack range out-reaches contact so you can kite them.
+  They freeze while a dialog is open, spawn `~CUBE_CHANCE` per field screen (not on home), and **drop
+  nothing yet — TODO: resource drop (cheese → heal/craft?) + stronger, differently-coloured variants
+  with more HP**. Cubes don't count toward the daily letter total and (for now) reappear on reload.
+- **Hearts (life):** `state.player.hearts` (max `PLAYER_MAX_HEARTS` = 3), drawn top-centre (`drawHearts`).
+  A hit costs 1 heart + `HURT_IFRAMES` invulnerability (player blinks) + knockback. **0 → `faint()`**:
+  teleport to the desk, refill hearts, keep everything. **Heal by resting at home** (on the base screen,
+  `+1` heart every `HEAL_SEC`). Hearts also refill on a new day.
+- No equipment/implement system yet (the old stick/brush/pencil + SWAP switch was removed — it did
+  nothing). Attacking uses a single fixed `ATTACK` (dmg/range/cd). Equipment may return later.
 - No equipment/implement system yet (the old stick/brush/pencil + SWAP switch was removed — it did
   nothing). Attacking uses a single fixed `ATTACK` (dmg/range/cd). Equipment may return later.
 - Letter pickups → inventory; **no respawn within a day** (captured creatures stay gone until the next
