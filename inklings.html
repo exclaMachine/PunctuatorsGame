@@ -720,13 +720,13 @@ let CREATURES_DATA=null;              // full parsed JSON (also gates the bestia
 const CREATURES_BY_ID={};             // id -> creature entry
 let RESOURCE_POOL=[];                 // creatures with spawn.weight>0 — the resource-creature roll pool
 const RES_PER_SCREEN_MIN=1, RES_PER_SCREEN_MAX=3;   // resource-creatures per FIELD screen (modest; letters stay scarce)
-const SPEED_OF={ slow:42, medium:70, fast:104 };    // named creature speeds → px/s (player moves at 180)
+const SPEED_OF={ still:0, slow:42, medium:70, fast:104 };    // named creature speeds → px/s (player moves at 180)
 const PICKUP_DIST=26;                 // collect radius (auto-grabbed at this range)
 const PICKUP_MAGNET=110;             // within this, a dropped material homes toward you (auto-collect)
 const PICKUP_PULL=240;               // base homing speed (px/s; accelerates as it nears you — beats player speed 180)
 // material id -> swatch colour for the ground pickup + the bestiary materials list
 const ITEM_COLOR={ paper:"#efe6cf", glue:"#d7c98a", cheese:"#e8c84a", thread:"#c88fb0", paste:"#cfe0a0",
-  ash:"#9a95a5", wax:"#e0b24a", graphite:"#6b6b76", leather:"#8a5a34", "blank-tile":"#f4f0e6" };
+  ash:"#9a95a5", wax:"#e0b24a", graphite:"#6b6b76", leather:"#8a5a34", "blank-tile":"#f4f0e6", "red-ink":"#b3372f" };
 function prettyItem(id){ return id==="blank-tile" ? "blank tile" : id; }
 // Optional custom art: a creature's "sprite" path is loaded here; drawCreatureSprite() blits it in place of
 // the built-in pixel art, falling back to the drawn art if the image is missing/not yet loaded. Drop a PNG
@@ -829,7 +829,7 @@ function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.im
 function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
 function dayHash(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
 const state = {
-  player:{ x:W/2, y:H/2+TILE, r:15, speed:180, face:{x:0,y:1}, atkCd:0, atkAnim:0, hearts:PLAYER_MAX_HEARTS, hurtT:0, healT:0 },
+  player:{ x:W/2, y:H/2+TILE, r:15, speed:180, face:{x:0,y:1}, atkCd:0, atkAnim:0, hearts:PLAYER_MAX_HEARTS, hurtT:0, healT:0, slipT:0, slipCd:0, slipDir:null },
   screen:{ sx:0, sy:0 },
   inv:{},                       // letter -> count
   dex:{},                       // word -> {def, found}
@@ -957,8 +957,8 @@ function makeCube(rng, tiles){
 function makeResourceCreature(rng, cre, tiles){
   const p=walkableSpawn(rng, tiles);
   return { kind:"resource", cid:cre.id, x:p.x, y:p.y, hp:cre.hp, maxhp:cre.hp,
-    vx:0, vy:0, wander:0, wob:rng()*6.28, flash:0, eraseT:0,
-    speed:SPEED_OF[cre.speed]||60, behavior:cre.behavior||"wander",
+    vx:0, vy:0, wander:0, wob:rng()*6.28, flash:0, eraseT:0, swapT:0,
+    speed:(SPEED_OF[cre.speed]!=null?SPEED_OF[cre.speed]:60), behavior:cre.behavior||"wander",
     special:cre.special||[], contactDamage:cre.contactDamage||0 };
 }
 // Thin, even scatter of loose letters: usually none, sometimes 1–2 (letters are meant to feel rare now).
@@ -995,7 +995,7 @@ function genScreen(sx,sy){
       }
     }
   }
-  return { creatures, tiles, pickups:[], seed:(hash2(sx,sy) ^ state.daySeed)>>>0, bg:null, waterTiles:null,
+  return { creatures, tiles, pickups:[], slicks:[], seed:(hash2(sx,sy) ^ state.daySeed)>>>0, bg:null, waterTiles:null,
            generated:true, isBase, dist };
 }
 function curScreen(){
@@ -1284,6 +1284,14 @@ function update(dt){
     if(keys["arrowleft"]||keys["a"]) mx-=1;
     if(keys["arrowright"]||keys["d"]) mx+=1;
     if(joy.active && Math.hypot(joy.x,joy.y)>JOY_DEAD){ mx=joy.x; my=joy.y; }   // touch joystick (overrides keys)
+    // Mugwump's slippery rings — stepping on one briefly steals your steering (you slide the way you were going).
+    if(p.slipT>0) p.slipT-=dt;
+    if(p.slipCd>0) p.slipCd-=dt;
+    const onSlick=(sc.slicks||[]).some(s=>Math.hypot(s.x-p.x, s.y-p.y)<s.r);
+    if(onSlick && p.slipT<=0 && p.slipCd<=0 && (mx||my)){
+      const l=Math.hypot(mx,my)||1; p.slipDir={x:mx/l, y:my/l}; p.slipT=0.5; p.slipCd=1.0;
+    }
+    if(p.slipT>0 && p.slipDir){ mx=p.slipDir.x; my=p.slipDir.y; }   // slide: ignore input while slipping
     if(mx||my){
       const len=Math.hypot(mx,my); mx/=len; my/=len;   // unit direction → constant speed at any angle
       p.face.x=mx; p.face.y=my; p.moving=true;
@@ -1339,6 +1347,9 @@ function update(dt){
   // fx
   for(let i=state.fx.length-1;i>=0;i--){ const f=state.fx[i]; f.life-=dt; f.y-=24*dt; if(f.life<=0) state.fx.splice(i,1); }
 
+  // slippery rings (Mugwump) fade out over time
+  if(sc.slicks && sc.slicks.length){ for(let i=sc.slicks.length-1;i>=0;i--){ if((sc.slicks[i].life-=dt)<=0) sc.slicks.splice(i,1); } }
+
   // dropped materials — auto-collect: a nearby pickup homes toward you, then is grabbed (cheese heals a heart)
   if(canBeHurt && sc.pickups && sc.pickups.length){
     for(let i=sc.pickups.length-1;i>=0;i--){ const pk=sc.pickups[i];
@@ -1384,6 +1395,18 @@ function eraseCarried(c){
   updateTrayHud(); scheduleSave();
   showToast("The Erazor rubbed out a "+l.toUpperCase()+"!"); SFX.play("invalid");
 }
+// The Typo's contact effect: swap one random carried letter for a different unlocked one (no heart loss), cooldowned.
+function swapCarried(c){
+  if(c.swapT>0) return;
+  const owned=Object.keys(state.inv).filter(l=>state.inv[l]>0);
+  if(!owned.length){ c.swapT=0.6; return; }
+  const from=owned[(Math.random()*owned.length)|0];
+  const pool=[...unlockedLetters()].filter(l=>l!==from);
+  const to=pool.length ? pool[(Math.random()*pool.length)|0] : from;
+  state.inv[from]=Math.max(0,(state.inv[from]||0)-1); state.inv[to]=(state.inv[to]||0)+1;
+  c.swapT=1.4; updateTrayHud(); scheduleSave();
+  showToast("The Typo swapped your "+from.toUpperCase()+" for "+to.toUpperCase()+"!"); SFX.play("invalid");
+}
 // The Kindle scorches uncollected loot it drifts over.
 // TODO: fire-spread visuals (trailing embers, tiles catching) are stubbed — for now it only burns pickups.
 function scorchNearbyLoot(c, sc){
@@ -1391,27 +1414,59 @@ function scorchNearbyLoot(c, sc){
   for(let i=sc.pickups.length-1;i>=0;i--){ const pk=sc.pickups[i];
     if(Math.hypot(pk.x-c.x, pk.y-c.y)<26){ state.fx.push({x:pk.x, y:pk.y, text:"×", life:0.6, color:"#c8553c"}); sc.pickups.splice(i,1); } }
 }
+// Plot Hole (behavior "sinkhole"): stationary; drags the player toward its centre. Reaching the centre
+// lands as a contact hit (a heart + knockback via the shared hurtPlayer path). Doesn't move itself.
+const PLOTHOLE_RADIUS=124;
+function updateSinkhole(c, p, dt){
+  const dx=c.x-p.x, dy=c.y-p.y, d=Math.hypot(dx,dy)||1;
+  if(d<PLOTHOLE_RADIUS){
+    const pull=90*dt*(1 + (PLOTHOLE_RADIUS-d)/PLOTHOLE_RADIUS);   // stronger the closer you are
+    p.x=Math.max(6,Math.min(W-6, p.x + dx/d*pull));
+    p.y=Math.max(6,Math.min(H-6, p.y + dy/d*pull));
+  }
+  if(d<CONTACT_DIST && c.contactDamage>0) hurtPlayer(c.x,c.y);
+}
+// The Proofreaper (behavior "stalker"): tanky chaser that periodically telegraphs a red aim-line, then
+// lunges along it. Contact damage does the hurting (no separate hitscan). TODO: the telegraph + strike are
+// a simple line + speed burst; swap in real slash art later.
+function updateStalkerStrike(c, dx, dy, d, dt, spd){
+  if(c.strikeCd==null) c.strikeCd=1.6+Math.random()*1.4;
+  c.telegraphT=c.telegraphT||0; c.dashT=c.dashT||0;
+  if(c.telegraphT>0){ c.telegraphT-=dt; if(c.telegraphT<=0){ c.dashT=0.3; } }        // telegraph → dash
+  else if(c.dashT>0){ c.dashT-=dt; c.vx+=(c.strikeDir?c.strikeDir.x:0)*spd*dt*9; c.vy+=(c.strikeDir?c.strikeDir.y:0)*spd*dt*9; }
+  else { c.strikeCd-=dt; if(c.strikeCd<=0 && d<230){ c.telegraphT=0.4; c.strikeDir={x:dx/d,y:dy/d}; c.strikeCd=2.2+Math.random()*1.2; SFX.play("swing"); } }
+}
 function updateResourceCreature(c, sc, p, dt, canBeHurt){
   c.wob=(c.wob||0)+dt*6;
   if(c.eraseT>0) c.eraseT-=dt;
+  if(c.swapT>0) c.swapT-=dt;
   if(!canBeHurt) return;                                  // freeze while a dialog is open
   const dx=p.x-c.x, dy=p.y-c.y, d=Math.hypot(dx,dy)||1, spd=c.speed, b=c.behavior;
+  if(b==="sinkhole"){ updateSinkhole(c, p, dt); return; }   // stationary hazard, handled fully above
   if(b==="chaser"||b==="shambler"){ c.vx+=(dx/d)*spd*dt*2.4; c.vy+=(dy/d)*spd*dt*2.4; }          // homes in
+  else if(b==="stalker"){ c.vx+=(dx/d)*spd*dt*2.0; c.vy+=(dy/d)*spd*dt*2.0; updateStalkerStrike(c,dx,dy,d,dt,spd); }  // chase + line strike
   else if(b==="drifter"){ c.vx+=(dx/d)*spd*dt*1.3; c.vy+=(dy/d)*spd*dt*1.3;                       // loose, wandering drift
     if((c.wander-=dt)<=0){ c.wander=0.7+Math.random(); const a=Math.random()*6.28; c.vx+=Math.cos(a)*spd*0.5; c.vy+=Math.sin(a)*spd*0.5; } }
+  else if(b==="darter"){ wanderStep(c,dt,spd,true); if(d<170){ c.vx+=(dx/d)*spd*dt*1.2; c.vy+=(dy/d)*spd*dt*1.2; } }   // fast, jittery, drifts at you
+  else if(b==="oozer"){ wanderStep(c,dt,spd);                                                     // slow ooze that drops slippery rings
+    if(c.ringT==null) c.ringT=1.4+Math.random()*1.4;
+    if((c.ringT-=dt)<=0){ c.ringT=2.2+Math.random()*1.6; (sc.slicks=sc.slicks||[]).push({x:c.x, y:c.y, r:22, life:5, born:performance.now()}); } }
+  else if(b==="scuttler"){ if(d<120){ c.vx-=(dx/d)*spd*dt*3.2; c.vy-=(dy/d)*spd*dt*3.2; } else wanderStep(c,dt,spd,true); }   // quick, cowardly
   else if(b==="lunger"){ if(d<180){ c.vx+=(dx/d)*spd*dt*3.4; c.vy+=(dy/d)*spd*dt*3.4; } else wanderStep(c,dt,spd); }   // lunges when close
   else if(b==="skittish"){ if(d<150){ c.vx-=(dx/d)*spd*dt*3.6; c.vy-=(dy/d)*spd*dt*3.6; } else wanderStep(c,dt,spd); } // flees when approached
   else if(b==="flutter"){ wanderStep(c,dt,spd,true); }                                            // erratic flight
-  else wanderStep(c,dt,spd);                                                                      // wander (bookworm) + default
+  else wanderStep(c,dt,spd);                                                                      // wander + default
   c.vx*=0.96; c.vy*=0.96;
-  const sp=Math.hypot(c.vx,c.vy); if(sp>spd){ c.vx=c.vx/sp*spd; c.vy=c.vy/sp*spd; }
+  const maxSp = c.dashT>0 ? spd*3 : spd;                  // allow the stalker's dash to briefly exceed base speed
+  const sp=Math.hypot(c.vx,c.vy); if(sp>maxSp){ c.vx=c.vx/sp*maxSp; c.vy=c.vy/sp*maxSp; }
   const ncx=c.x+c.vx*dt, ncy=c.y+c.vy*dt;
   if(!blockedAt(sc,ncx,c.y)) c.x=ncx; else c.vx*=-0.5;    // bounce off water/rock
   if(!blockedAt(sc,c.x,ncy)) c.y=ncy; else c.vy*=-0.5;
   c.x=Math.max(20,Math.min(W-20,c.x)); c.y=Math.max(20,Math.min(H-20,c.y));
-  if(d<CONTACT_DIST){                                     // contact effects
+  if(d<CONTACT_DIST){                                     // contact effects (a creature can both bite AND harass)
     if(c.contactDamage>0) hurtPlayer(c.x,c.y);
-    else if(c.special.includes("contact-erases-carried-letter")) eraseCarried(c);
+    if(c.special.includes("contact-erases-carried-letter")) eraseCarried(c);
+    if(c.special.includes("contact-swaps-a-held-letter")) swapCarried(c);
   }
   if(c.special.includes("scorches-dropped-loot")) scorchNearbyLoot(c, sc);
 }
@@ -1431,6 +1486,9 @@ function render(){
 
   // edge arrows
   drawEdgeHints();
+
+  // slippery rings on the floor (under everything)
+  if(sc.slicks) for(const s of sc.slicks) drawSlick(s, tnow);
 
   // dropped materials (under the creatures/player)
   if(sc.pickups) for(const pk of sc.pickups) drawPickup(pk, tnow);
@@ -1771,6 +1829,56 @@ const RES_DRAW={
     ctx.fillStyle="#c8553c"; ctx.fillRect(-12, -5, 24, 10); ctx.restore();
     ctx.fillStyle=EYE; ctx.fillRect(x-8, y-s/4, 3,3); ctx.fillRect(x+2, y-s/4, 3,3);
   },
+  "slush-pile"(x,y,pop){                            // messy stack of rejected pages, eyes peeking
+    const w=34*pop, h=30*pop, lx=x-w/2, ty=y-h/2;
+    ctx.fillStyle="rgba(38,35,58,.28)"; ctx.fillRect(lx, y+h/2-2, w, 5);
+    for(let i=0;i<4;i++){ const off=(i%2?3:-3); pxSprite(lx+off, ty+i*6, w-6, 10, i%2?"#f4efdc":"#e8e0c8"); }
+    ctx.fillStyle="#c8bd9a"; for(let i=0;i<3;i++) ctx.fillRect(lx+4, ty+4+i*6, w-14, 1);
+    ctx.fillStyle=EYE; ctx.fillRect(x-6, y+2, 3,3); ctx.fillRect(x+3, y+2, 3,3);
+  },
+  "the-typo"(x,y,pop){                              // giggling violet imp with horns + wide grin
+    const s=24*pop;
+    ctx.fillStyle="rgba(38,35,58,.25)"; ctx.fillRect(x-s/2, y+s/2-2, s, 4);
+    ctx.fillStyle="#5f3a7a"; ctx.fillRect(x-s/2, y-s/2-3, 4,4); ctx.fillRect(x+s/2-4, y-s/2-3, 4,4);   // horns
+    pxSprite(x-s/2, y-s/2, s, s, "#7a4a9a");
+    ctx.fillStyle="#f4e9c8"; ctx.fillRect(x-6, y-3, 4,4); ctx.fillRect(x+2, y-3, 4,4);                 // eye whites
+    ctx.fillStyle=EYE; ctx.fillRect(x-5, y-2, 2,2); ctx.fillRect(x+3, y-2, 2,2);
+    ctx.fillStyle="#2b2340"; ctx.fillRect(x-5, y+4, 10, 2);                                            // grin
+  },
+  mugwump(x,y,pop){                                 // coffee-stain blob
+    const s=30*pop, r=s/2;
+    ctx.fillStyle="rgba(38,35,58,.25)"; ctx.fillRect(x-r, y+r-3, s, 5);
+    ctx.fillStyle="#26233a"; ctx.beginPath(); ctx.ellipse(x,y,r+1,r*0.7+1,0,0,7); ctx.fill();
+    ctx.fillStyle="#6f4a2f"; ctx.beginPath(); ctx.ellipse(x,y,r,r*0.7,0,0,7); ctx.fill();
+    ctx.fillStyle="#8a5a34"; ctx.beginPath(); ctx.ellipse(x,y-2,r*0.7,r*0.5,0,0,7); ctx.fill();
+    ctx.fillStyle=EYE; ctx.fillRect(x-6, y-3, 3,3); ctx.fillRect(x+3, y-3, 3,3);
+  },
+  "the-spineless"(x,y,pop){                         // cracked-open book scuttling on little legs
+    const w=30*pop, h=20*pop, lx=x-w/2, ty=y-h/2;
+    ctx.fillStyle="rgba(38,35,58,.25)"; ctx.fillRect(lx, y+h/2, w, 4);
+    ctx.fillStyle="#3a2e22"; for(let i=0;i<4;i++) ctx.fillRect(lx+4+i*7, y+h/2-2, 2, 6);   // legs
+    pxSprite(lx, ty, w, h, "#8a4a3a");
+    ctx.fillStyle="#e8dcc0"; ctx.fillRect(lx+2, ty+2, w/2-3, h-4); ctx.fillRect(x+2, ty+2, w/2-3, h-4);   // pages
+    ctx.fillStyle="#efe6cf"; ctx.fillRect(x-1, ty, 2, h);                                  // cracked spine
+    ctx.fillStyle=EYE; ctx.fillRect(x-6, ty+3, 2,2); ctx.fillRect(x+4, ty+3, 2,2);
+  },
+  "plot-hole"(x,y,pop){                             // dark tear in the page (torn cream edges)
+    const r=18*pop;
+    ctx.fillStyle="rgba(38,35,58,.3)"; ctx.beginPath(); ctx.ellipse(x,y,r+2,r*0.7+2,0,0,7); ctx.fill();
+    ctx.fillStyle="#15131c"; ctx.beginPath(); ctx.ellipse(x,y,r,r*0.66,0,0,7); ctx.fill();
+    ctx.fillStyle="#3a3550"; ctx.beginPath(); ctx.ellipse(x,y,r*0.55,r*0.36,0,0,7); ctx.fill();
+    ctx.fillStyle="#efe6cf"; for(let i=0;i<6;i++){ const a=i/6*6.28; ctx.fillRect(x+Math.cos(a)*r-1, y+Math.sin(a)*r*0.66-1, 2,2); }
+  },
+  "the-proofreaper"(x,y,pop){                       // red-inked hooded wraith with a scythe-pen
+    const s=34*pop;
+    ctx.fillStyle="rgba(38,35,58,.3)"; ctx.fillRect(x-s/2, y+s/2-2, s, 5);
+    pxSprite(x-s/2+4, y-s/2, s-8, s, "#7a1f1a");
+    ctx.fillStyle="#b3372f"; ctx.fillRect(x-s/2+6, y-s/2+2, s-12, 6);            // hood trim
+    ctx.fillStyle="#26233a"; ctx.fillRect(x-6, y-4, 12, 8);                      // face void
+    ctx.fillStyle="#ff5a4a"; ctx.fillRect(x-4, y-2, 2,2); ctx.fillRect(x+2, y-2, 2,2);   // red eyes
+    ctx.fillStyle="#c8ccd6"; ctx.fillRect(x+s/2-3, y-s/2, 2, s);                 // pen shaft
+    ctx.fillStyle="#b3372f"; ctx.beginPath(); ctx.moveTo(x+s/2-3,y-s/2); ctx.lineTo(x+s/2+6,y-s/2+3); ctx.lineTo(x+s/2-3,y-s/2+9); ctx.fill();   // red nib blade
+  },
   _default(x,y,pop){ pxSprite(x-15*pop, y-15*pop, 30*pop, 30*pop, "#8a8496");
     ctx.fillStyle=EYE; ctx.fillRect(x-7, y-4, 3,3); ctx.fillRect(x+4, y-4, 3,3); }
 };
@@ -1779,10 +1887,24 @@ function drawResourceCreature(c){
   const pop=c.flash>0?1.16:1;
   const y=c.y + (c.behavior==="flutter" ? Math.sin((c.wob||0)*1.5)*4 : Math.sin(c.wob||0)*2);
   ctx.save(); ctx.imageSmoothingEnabled=false;
+  if(c.telegraphT>0 && c.strikeDir){                                  // Proofreaper's telegraphed strike line
+    ctx.strokeStyle="rgba(179,55,47,.8)"; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x+c.strikeDir.x*170, c.y+c.strikeDir.y*170); ctx.stroke();
+  }
   if(!drawCreatureSprite(c.cid, c.x, y, spriteSizeOf(c.cid,44)*pop))   // custom PNG if present, else pixel art
     (RES_DRAW[c.cid]||RES_DRAW._default)(c.x, y, pop, c);
   ctx.restore();
   drawHpPips(c, c.y-28);
+}
+// A translucent slippery ring left by a Mugwump (fades as its life runs out).
+function drawSlick(s, tnow){
+  const a=Math.max(0, Math.min(0.4, s.life*0.12)), rr=s.r+Math.sin(tnow/260 + s.x)*1.5;
+  ctx.save();
+  ctx.fillStyle="rgba(120,90,60,"+a+")";
+  ctx.beginPath(); ctx.ellipse(s.x, s.y, rr, rr*0.55, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle="rgba(90,60,40,"+(a+0.12)+")"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.ellipse(s.x, s.y, rr, rr*0.55, 0, 0, 7); ctx.stroke();
+  ctx.restore();
 }
 // A dropped material sitting on the ground (bobs gently; walk over to collect).
 // ── Material icons (letterless pixel art). Each fn(g,x,y,s) draws centred at (x,y) on context g so the same
@@ -1853,6 +1975,13 @@ const ICON_DRAW={
     iconRect(g,lx,ty,w,h,"#f4f0e6");
     g.fillStyle="#d8d2c2"; g.fillRect(lx+1,ty+h-3,w-2,2); g.fillRect(lx+w-3,ty+1,2,h-2);
     g.fillStyle="#c89b3c"; g.fillRect(x-1,y-3,2,6); g.fillRect(x-3,y-1,6,2);
+  },
+  "red-ink"(g,x,y,s){                               // red editorial ink pot with a sheen
+    const w=Math.round(s*0.64), h=Math.round(s*0.68), lx=x-w/2, ty=y-h/2+2;
+    iconRect(g,lx,ty,w,h,"#b3372f");
+    g.fillStyle="#26233a"; g.fillRect(x-3,ty-3,6,4);          // neck/cap
+    g.fillStyle="#e05a4a"; g.fillRect(lx+1,ty+2,w-2,2);       // sheen
+    g.fillStyle="#7a1f1a"; g.fillRect(lx,ty+h-2,w,2);         // base shadow
   }
 };
 // Cache a data URL of each built-in icon (drawn once offscreen) for the bestiary materials swatches.
@@ -2345,7 +2474,7 @@ function completionHTML(lvl,R){
 }
 
 /* ---------- BESTIARY (creature dex) ----------------------- */
-const TIER_BADGE={ common:"#5b7a4b", uncommon:"#3b6ea5", rare:"#7a4a9a", special:"#c89b3c", prize:"#c89b3c" };
+const TIER_BADGE={ common:"#5b7a4b", uncommon:"#3b6ea5", rare:"#7a4a9a", "very-rare":"#b3372f", special:"#c89b3c", prize:"#c89b3c" };
 function openBestiary(){
   if(!CREATURES_DATA){ showToast("Bestiary is still loading…"); return; }
   state.bestiaryOpen=true;

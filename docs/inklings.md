@@ -190,12 +190,19 @@ it does **not** fade like a toast. `maybeNotifyCleared()`only plays the one-time
     creatures are **not** added to `state.captured` (that set stays letters-only so the "all captured"
     banner + `dayCleared` stay correct); like cubes they regenerate on reload. Same per-screen RNG → a
     day's resource layout is deterministic.
-  - **Behavior** (`updateResourceCreature`): `chaser`/`shambler` home in, `drifter` loosely drifts+wanders,
-    `lunger` lunges when close, `skittish` flees when approached, `flutter` flies erratically, `wander` =
-    harmless amble. They bounce off water/rock and freeze while a dialog is open. `special` hooks:
-    `contact-damage` → `hurtPlayer`; `contact-erases-carried-letter` (The Erazor) → `eraseCarried` (removes
-    one random satchel letter on a cooldown, no heart loss); `scorches-dropped-loot` (The Kindle) →
-    `scorchNearbyLoot` burns uncollected pickups it drifts over (**fire-spread visuals are a TODO stub**).
+  - **Behavior** (`updateResourceCreature`): `chaser`/`shambler` home in, `stalker` chases + line-strikes,
+    `drifter` loosely drifts+wanders, `darter` jitters fast toward you, `oozer` slow-oozes (drops rings),
+    `scuttler` flees fast, `sinkhole` is stationary (handled by `updateSinkhole`), plus carry-over
+    `lunger`/`skittish`/`flutter`/`wander`. Non-still creatures bounce off water/rock and freeze while a
+    dialog is open. `special` hooks (a creature can bite **and** harass — the contact checks are independent
+    `if`s): `contact-damage` → `hurtPlayer`; `contact-swaps-a-held-letter` (The Typo) → `swapCarried`
+    (swaps a random carried letter for a different unlocked one, cooldowned, no heart); `leaves-slippery-rings`
+    (Mugwump) → drops decaying `sc.slicks` floor rings that steal the player's steering for ~0.5s when stepped
+    on (`p.slipT`/`slipCd`/`slipDir` in the movement code; `drawSlick`); `pulls-player-in` (Plot Hole,
+    `updateSinkhole`) → radial pull toward centre, contact = a heart; `strikes-lines` (The Proofreaper,
+    `updateStalkerStrike`) → telegraphed red aim-line then a speed-burst lunge (**TODO: real slash art**);
+    `scorches-dropped-loot` (The Kindle) → `scorchNearbyLoot` (**fire-spread visuals are a TODO stub**).
+    `contact-erases-carried-letter` → `eraseCarried` remains wired for the archived Erazor.
   - **Drops** (`rollDrops(cre,rng)` — the spec's resolver; `mode:"one"` = weighted single, `mode:"each"` =
     independent chance rolls, `qty` fixed or `qtyMin..qtyMax`). On defeat, `defeatCreature` logs the
     bestiary + scatters each drop as a **ground pickup** on `sc.pickups` (`grantDrop`). **Auto-collect
@@ -432,20 +439,31 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
 A data-driven creature system layered on the core loop. `data/creatures.json` is the **single source of
 truth** — edit it to add/tune creatures and their loot; the spawner and the bestiary UI both read from it
 (don't hardcode creature stats in `inklings.html`). Schema per creature: `id`, `name`, `kind`, `tier`,
-`hp`, `speed` (`slow`/`medium`/`fast`), `behavior`, `special[]`, `contactDamage`, `spawn:{weight,minDist,
-notOnHome}`, `drops:{mode,table}`, and `dex:{silhouette,reveal,description,lore}`. A top-level `resources`
-map tags each material with a `tier` (and `effect`/`wildcard` where relevant).
+`hp`, `speed` (`still`/`slow`/`medium`/`fast`), `behavior`, `special[]`, `contactDamage`, `spawn:{weight,
+minDist,notOnHome}`, `drops:{mode,table}`, and `dex:{silhouette,reveal,description,lore}`. A top-level
+`resources` map tags each material with a `tier` (and `effect`/`wildcard` where relevant). **The loader reads
+only the `creatures` and `resources` keys**, so any top-level key starting with `_` is ignored — retired
+creatures live in `_archived` (currently Bookworm, Bindmoth, Silverfish, The Erazor) so they're preserved,
+not deleted; move an entry back into `creatures` to revive it.
 
 **Design intent.** HP is deliberately low (there's no weapon-upgrade system yet — see decision #6), so
-creatures differ by **behavior**, not bulk. Letters remain the scarce prize; resource-creatures are a
-modest 1–3 per field screen and drop **book-binding materials** — the future "bind a finished book onto the
-shelf" gate will spend these (that gate is **not built yet**; for now materials just collect in
-`state.resources`). The roster: **Writer's Block** (common cube, cheese/glue), **Bookworm** (paper),
-**Bindmoth** (thread), **Silverfish** (paste, flees), **The Kindle** (wax/ash, burns dropped loot, hurts on
-contact), **The Overdue** (elite, leather + a stack of paper). **The Erazor** (graphite/blank-tile, erases a
-carried letter on contact) exists in the JSON but is **shelved** (`"enabled": false`) — flip that off to bring
-it back. **Inkling** (the letter-creature) is in the file only for its bestiary entry (`spawn.weight:0` keeps
+creatures differ by **behavior**, not bulk (The Proofreaper mini-boss at hp 5 is the deliberate exception).
+**Every non-letter creature costs a heart on contact** (`contactDamage:1`); the nuisance pests *also* harass.
+Letters remain the scarce prize; resource-creatures are a modest 1–3 per field screen and drop **book-binding
+materials** — the future "bind a finished book onto the shelf" gate will spend these (that gate is **not
+built yet**; for now materials just collect in `state.resources`). Roster: **Writer's Block** (cube,
+cheese/glue), **The Slush Pile** (bulk paper), **The Typo** (graphite/blank-tile, swaps a carried letter),
+**Mugwump** (paste/leather, drops slippery rings), **The Spineless** (thread/glue, flees), **The Kindle**
+(wax/ash, burns dropped loot), **Plot Hole** (stationary sinkhole that pulls you in; blank-tile), **The
+Proofreaper** (mini-boss, hp 5, telegraphed line strike; the ONLY source of **red-ink**, a special resource —
+gate only optional/prestige content with it, never core progression), **The Overdue** (elite, leather +
+paper). **Inkling** (the letter-creature) is in the file only for its bestiary entry (`spawn.weight:0` keeps
 it out of the resource roll — letter spawning is unchanged: `letterScatter` + the WOTD guarantee).
+
+**Resource coverage** (each material keeps a reliable source): paper = Slush Pile + Overdue; glue = Writer's
+Block + Spineless; cheese (heal) = Writer's Block; thread = Spineless; paste = Mugwump; ash + wax = Kindle;
+graphite = Typo; leather = Mugwump + Overdue + Proofreaper; blank-tile = Typo + Plot Hole; red-ink =
+Proofreaper only.
 
 **Not static.** The spawn roll (mix + positions) is seeded by `hash2(sx,sy) ^ daySeed`, so every field screen
 carries a **different** blend of creatures, and the whole map re-rolls each calendar day — no two grids or
