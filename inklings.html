@@ -1836,21 +1836,14 @@ function drawCreature(c){
     ctx.fillText(c.letter, c.x, c.y);
     ctx.textBaseline="alphabetic";
   }
-  // hp pips
-  if(c.hp<c.maxhp){
-    const bar=40;
-    for(let i=0;i<c.maxhp;i++){
-      ctx.fillStyle = i<c.hp ? "#5b7a4b" : "rgba(38,35,58,.25)";
-      ctx.fillRect(c.x-bar/2 + i*(bar/c.maxhp), c.y-bar/2-7, bar/c.maxhp-2, 3);
-    }
-  }
+  drawHpPips(c, c.y-30);
 }
 // Writer's-block cube — a grumpy block of cheese (holes) that jiggles.
 function drawCube(c){
   const s=CUBE_SIZE, x=c.x, y=c.y, wob=Math.sin(c.wob||0)*2;
   ctx.save(); ctx.imageSmoothingEnabled=false;
   if(c.cid && drawCreatureSprite(c.cid, x, y+wob, spriteSizeOf(c.cid, s+8)*(c.flash>0?1.16:1), flashAmt(c))){   // custom PNG (flashes) if present
-    ctx.restore(); drawHpPips(c, y-s/2-10+wob); return;
+    ctx.restore(); drawHpPips(c, y-s/2-13+wob); return;
   }
   ctx.fillStyle="rgba(38,35,58,.28)"; ctx.fillRect(x-s/2, y+s/2-3, s, 6);        // shadow
   ctx.fillStyle="#26233a"; ctx.fillRect(x-s/2-2, y-s/2-2+wob, s+4, s+4);         // ink border
@@ -1862,18 +1855,24 @@ function drawCube(c){
   ctx.fillRect(x-8,y-4+wob,3,3); ctx.fillRect(x+5,y-4+wob,3,3);                   // eyes
   ctx.fillRect(x-6,y+6+wob,12,2);                                                 // flat frown
   ctx.restore();
-  if(c.hp<c.maxhp){   // hp pips above
-    for(let i=0;i<c.maxhp;i++){ ctx.fillStyle=i<c.hp?"#5b7a4b":"rgba(38,35,58,.25)"; ctx.fillRect(x-s/2+i*(s/c.maxhp), y-s/2-10+wob, s/c.maxhp-2, 3); }
-  }
+  drawHpPips(c, y-s/2-13+wob);   // hp bar above the cube
 }
 // Crisp filled rect with a chunky 2px ink border (like pxBox but self-contained for creature/pickup art).
 // RCTX is the context the procedural creature bodies draw to. It's the live canvas normally, but
 // flashProcedural() points it at an offscreen buffer to capture a body's silhouette for the white hit-flash.
 let RCTX=ctx;
 function pxSprite(x,y,w,h,fill){ RCTX.fillStyle="#26233a"; RCTX.fillRect(x-2,y-2,w+4,h+4); RCTX.fillStyle=fill; RCTX.fillRect(x,y,w,h); }
+// Enemy HP bar (all creatures). A near-black frame makes it read on any terrain (grass/water/rock/path),
+// and segments are told apart by BRIGHTNESS — bright amber = remaining, dark = spent — not hue, so it's
+// legible for colour-blind players too. Taller (6px) than the old 3px pips.
 function drawHpPips(c, topY){
-  if(c.hp>=c.maxhp) return; const bar=40, x=c.x;
-  for(let i=0;i<c.maxhp;i++){ ctx.fillStyle=i<c.hp?"#5b7a4b":"rgba(38,35,58,.25)"; ctx.fillRect(x-bar/2+i*(bar/c.maxhp), topY, bar/c.maxhp-2, 3); }
+  if(c.hp>=c.maxhp) return;
+  const n=c.maxhp, barW=Math.max(30, n*11), h=6, x=c.x-barW/2, seg=barW/n;
+  ctx.fillStyle="#15131c"; ctx.fillRect(x-2, topY-2, barW+4, h+4);       // dark frame for contrast
+  for(let i=0;i<n;i++){
+    ctx.fillStyle = i<c.hp ? "#ffcf3f" : "#3a3550";                       // amber remaining / dark spent
+    ctx.fillRect(x + i*seg + 1, topY, seg-2, h);
+  }
 }
 // Per-creature pixel bodies (distinct silhouettes; dedicated multi-frame art is still future work). Each
 // draws centred at (x,y); pop scales up briefly on hit. Standard 3px ink eyes tie them to the cube's look.

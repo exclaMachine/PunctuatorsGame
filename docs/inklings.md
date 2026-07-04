@@ -131,8 +131,10 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
     play — see Capital letters). `drawGlyph(letter,cx,cy,size)` blits one
     cell. `drawCreature` renders the creature **as the glyph itself** — no tile, eyes, or feet — with a
     brief scale-up "pop" **and a white damage-flash** while `c.flash>0` (just hit), falling back to dark
-    `fillText` if the sheet hasn't loaded or the letter isn't on it. HP pips still draw above the glyph when
-    damaged.
+    `fillText` if the sheet hasn't loaded or the letter isn't on it. A shared **HP bar** (`drawHpPips`, used
+    by every creature) draws above it when damaged: a near-black frame for contrast on any terrain, segments
+    told apart by **brightness** (bright amber = remaining, dark = spent) not hue, so it reads for
+    colour-blind players too.
 - **Hit-flash** (`flashAmt`/`tintFlashImage`/`flashProcedural`) — on hit **every** creature is overlaid with
   a fading solid-white silhouette of its own art (~0.15s), on top of the scale-pop. It builds the silhouette
   on a scratch canvas via a `source-in` white fill (respecting transparency), not a rectangle, so it works on
