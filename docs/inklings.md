@@ -289,6 +289,13 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   outermost screens treats the world edge as a **hard wall** (clamp instead of `goScreen`); `goScreen`
   is only called when the neighbour is in-bounds. `drawEdgeHints` only draws an arrow for directions you
   can actually leave. The **map is never saved** — it's rederived from the date. `(0,0)` is home.
+- **Screen-slide transition** — crossing an edge doesn't cut instantly: `goScreen` records the travel
+  direction + the screen you left in `trans`, and for `TRANS_DUR` (~0.32s) `render` draws **both** screens
+  offset (old sliding out toward `-dir`, new entering from `+dir`, via `renderWorld(sc, ox, oy)` which just
+  `translate`s the normal draw) with an `easeIO` smoothstep; the player rides the incoming screen. Gameplay
+  **freezes** during the slide (movement, the creature loop, attacks, contact are gated on `!trans`);
+  `update()` advances/clears `trans`. `teleportHome`/`faint`/`startNewDay` cancel it (they reposition
+  instantly). `drawEdgeHints`/`fx` only draw in the non-transition path.
 - **Tile terrain + collision** — each screen has a `tiles[TROWS][TCOLS]` map on a **24px grid**
   (`TS=24`, `TCOLS=30 × TROWS=22`, separate from the 48px gameplay `TILE`). Four pixel-art types:
   `T_GRASS`/`T_PATH` are walkable, `T_WATER`/`T_ROCK` block movement (`walkType()`). `genTiles(sx,sy,isBase)`
@@ -384,7 +391,8 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
 **Built and working:**
 
 - Home base with a writing desk; bounded **daily map** of screens (`MAP_RADIUS`, currently 3×3; walls at the world edge),
-  regenerated each real calendar day; walk-off-edge travel between screens; `H` to teleport home;
+  regenerated each real calendar day; walk-off-edge travel between screens with a smooth **screen-slide**
+  transition; `H` to teleport home;
   translucent explored-area minimap in the bottom-right (resets daily).
 - Attack-based combat (no bump-to-collect); **letter-creatures** (`kind:"letter"`) are captured in a
   **single hit** (`CREATURE_HP = 1`) and drop their letter. The satchel holds a capped number of letters

@@ -1043,16 +1043,19 @@ function curScreen(){
 }
 function goScreen(dsx,dsy,edge){
   // edge = which edge of the NEW screen the player should appear at
+  const from={ sx:state.screen.sx, sy:state.screen.sy };
   state.screen.sx+=dsx; state.screen.sy+=dsy;
   const p=state.player;
   if(edge==="left")   p.x=p.r+2;
   if(edge==="right")  p.x=W-p.r-2;
   if(edge==="top")    p.y=p.r+2;
   if(edge==="bottom") p.y=H-p.r-2;
+  trans={ dsx, dsy, from, t:0, dur:TRANS_DUR };   // start the slide (gameplay freezes until it ends)
 }
 // Roll the world over to a new calendar day: empty satchel, forget today's captures, regenerate the
 // whole (date-seeded) map, and wake up back home. The collection (dex) + unlocks always persist.
 function startNewDay(){
+  trans=null;                       // cancel any in-progress slide
   state.day=todayStr(); state.daySeed=dayHash(state.day);
   "abcdefghijklmnopqrstuvwxyz".split("").forEach(c=>state.inv[c]=0);
   state.captured=new Set(); state.visited=new Set(); state.screens=new Map();
@@ -1165,6 +1168,7 @@ addEventListener("keydown",e=>{
 addEventListener("keyup",e=>{ keys[e.key.toLowerCase()]=false; });
 
 function teleportHome(){
+  trans=null;                       // cancel any in-progress slide
   state.screen.sx=0; state.screen.sy=0;
   state.player.x=W/2; state.player.y=H/2+TILE+10;
   showToast("Back at your bench. Press E.");
@@ -1187,6 +1191,7 @@ function tryUseBench(){ if(nearLectern()) openBook(); else if(nearShop()) openSh
 
 /* ---------- COMBAT ---------------------------------------- */
 function doAttack(){
+  if(trans) return;                 // no attacking mid screen-slide
   const p=state.player; if(p.atkCd>0) return;
   p.atkCd=ATTACK.cd; p.atkAnim=ATTACK_ANIM;
   SFX.play("swing");
@@ -1260,6 +1265,7 @@ function hurtPlayer(fx,fy){
 }
 function faint(){
   const p=state.player;
+  trans=null;                       // cancel any in-progress slide
   state.screen.sx=0; state.screen.sy=0;
   p.x=W/2; p.y=H/2+TILE+10; p.face={x:0,y:1};
   p.hearts=PLAYER_MAX_HEARTS; p.hurtT=1.5; p.healT=0;
@@ -1314,7 +1320,10 @@ function update(dt){
     p.healT+=dt; if(p.healT>=HEAL_SEC){ p.healT=0; p.hearts++; SFX.play("known"); }
   } else p.healT=0;
 
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && state.started){
+  // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
+  if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
+
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -1349,9 +1358,9 @@ function update(dt){
     if(attackHeld) doAttack();
   }
 
-  // creatures (no respawn — once taken today they're gone until tomorrow's map)
-  const canBeHurt = !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && state.started;
-  for(const c of sc.creatures){
+  // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && state.started;
+  if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
     if(c.kind==="cube"){
@@ -1510,42 +1519,49 @@ function updateResourceCreature(c, sc, p, dt, canBeHurt){
 
 /* ---------- RENDER ---------------------------------------- */
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
-function render(){
-  const sc=curScreen();
-  // terrain: blit the baked tile map, then animate water on top
-  ensureBg(sc);
-  ctx.drawImage(sc.bg,0,0);
+// Screen-slide transition: when you cross an edge, the old screen slides out and the new one slides in over
+// TRANS_DUR seconds (gameplay frozen meanwhile — set in goScreen, advanced/cleared in update()).
+let trans=null;
+const TRANS_DUR=0.32;
+function easeIO(x){ x=x<0?0:x>1?1:x; return x*x*(3-2*x); }   // smoothstep
+// Draw one screen's whole world (terrain, structures, loot, creatures) shifted by (ox,oy) — the translate
+// means every existing draw call can stay in normal screen coordinates.
+function renderWorld(sc, ox, oy){
+  ctx.save(); ctx.translate(ox, oy);
+  ensureBg(sc); ctx.drawImage(sc.bg,0,0);
   const tnow=Date.now();
   for(const wt of sc.waterTiles) drawWaterAnim(wt[0],wt[1],tnow);
-
-  // base bench
   if(sc.isBase){ drawBench(); drawStall(); drawLectern(); }
-
-  // edge arrows
-  drawEdgeHints();
-
-  // slippery rings on the floor (under everything)
   if(sc.slicks) for(const s of sc.slicks) drawSlick(s, tnow);
-
-  // dropped materials (under the creatures/player)
   if(sc.pickups) for(const pk of sc.pickups) drawPickup(pk, tnow);
-
-  // creatures
   for(const c of sc.creatures){
     if(c.kind==="cube") drawCube(c);
     else if(c.kind==="resource") drawResourceCreature(c);
     else drawCreature(c);
   }
-
-  // player
-  drawPlayer();
-
-  // floating texts
-  for(const f of state.fx){
-    ctx.globalAlpha=Math.max(0,Math.min(1,f.life*1.6));
-    ctx.fillStyle=f.color; ctx.font="16px 'Press Start 2P', monospace"; ctx.textAlign="center";
-    ctx.fillText(f.text,f.x,f.y);
-    ctx.globalAlpha=1;
+  ctx.restore();
+}
+function render(){
+  const sc=curScreen();
+  if(trans){
+    // slide: old screen exits toward -dir, new screen enters from +dir; the player rides the new screen in.
+    const p=easeIO(trans.t/trans.dur);
+    const ox = trans.dsx ? -trans.dsx*p*W : 0, oy = trans.dsy ? -trans.dsy*p*H : 0;
+    const fromSc = state.screens.get(key(trans.from.sx, trans.from.sy)) || sc;
+    renderWorld(fromSc, ox, oy);
+    const nox = ox + trans.dsx*W, noy = oy + trans.dsy*H;
+    renderWorld(sc, nox, noy);
+    ctx.save(); ctx.translate(nox, noy); drawPlayer(); ctx.restore();
+  } else {
+    renderWorld(sc, 0, 0);
+    drawEdgeHints();
+    drawPlayer();
+    for(const f of state.fx){   // floating texts
+      ctx.globalAlpha=Math.max(0,Math.min(1,f.life*1.6));
+      ctx.fillStyle=f.color; ctx.font="16px 'Press Start 2P', monospace"; ctx.textAlign="center";
+      ctx.fillText(f.text,f.x,f.y);
+      ctx.globalAlpha=1;
+    }
   }
 
   if(state.started) drawMinimap();
