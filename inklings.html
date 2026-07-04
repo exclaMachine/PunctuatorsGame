@@ -110,6 +110,10 @@
   .bes-card{background:var(--paper-2);border:2px solid var(--edge);padding:8px;
     box-shadow:2px 2px 0 rgba(0,0,0,.25);display:flex;flex-direction:column;gap:5px}
   .bes-card.locked{background:#26233a;align-items:center;justify-content:center;text-align:center;gap:8px;min-height:104px}
+  .bes-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .bes-head-txt{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .bes-portrait{width:46px;height:46px;flex:none;image-rendering:pixelated;
+    border:2px solid var(--edge);background:var(--paper);box-shadow:2px 2px 0 rgba(0,0,0,.25)}
   .bes-q{font-family:var(--disp);font-size:18px;color:#4a4560}
   .bes-name{font-family:var(--disp);font-size:10px;text-transform:uppercase;color:var(--ink)}
   .bes-tier{font-family:var(--disp);font-size:7px;text-transform:uppercase;padding:2px 5px;
@@ -583,7 +587,7 @@ const PR={ idleDown:0, idleRight:1, idleUp:2, walkDown:3, walkRight:4, walkUp:5,
            atkRight:7, atkDown:8, atkUp:9 };
 
 // Base attack — a single fixed reach/speed for now (no equipment/implements yet; future gear can
-// override dmg/range/cd here). dmg 1 per hit; letter-creatures currently take CREATURE_HP (TEMP 2) hits.
+// override dmg/range/cd here). dmg 1 one-shots creatures (CREATURE_HP=1).
 const ATTACK = { dmg:1, range:62, cd:0.32 };
 
 // Letter frequency (relative spawn weight) + rarity tier (for colour).
@@ -611,7 +615,7 @@ function unlockedLetters(){
 }
 
 const CONSUME_ON_NEW = true;   // spend letters when you record a NEW word
-const CREATURE_HP = 2;   // TEMP (was 1): 2 hits to capture a letter-creature, to test the hit-flash on real sprites — revert to 1 later
+const CREATURE_HP = 1;   // letter-creatures are captured (drop their letter) in a single hit
 
 // --- Hearts (life) + writer's-block cubes --------------------------------------
 const PLAYER_MAX_HEARTS = 3;   // starting/max hearts
@@ -2549,6 +2553,49 @@ function toggleBestiary(){ state.bestiaryOpen ? closeBestiary() : openBestiary()
 function dropSummary(cre){
   return cre.drops.table.map(d=>prettyItem(d.item)).filter((v,i,a)=>a.indexOf(v)===i).join(", ");
 }
+// Draw one glyph-sheet cell onto an arbitrary context (used for the Inkling bestiary portrait).
+function drawGlyphTo(g, letter, cx, cy, size){
+  if(!sheetReady || !sheetImg) return false;
+  const fr=SPRITESHEET.letterToFrame[letter]; if(fr===undefined) return false;
+  const col=fr%SPRITESHEET.cols, row=Math.floor(fr/SPRITESHEET.cols);
+  const cw=SPRITESHEET.cellW||sheetImg.width/SPRITESHEET.cols, ch=SPRITESHEET.cellH||sheetImg.height/SPRITESHEET.rows;
+  g.drawImage(sheetImg, col*cw, row*ch, cw, ch, cx-size/2, cy-size/2, size, size);
+  return true;
+}
+// A compact Writer's-Block cube for its bestiary portrait (it draws via drawCube in-world, not RES_DRAW).
+function drawCubeThumb(g, cx, cy){
+  const s=32;
+  g.fillStyle="#26233a"; g.fillRect(cx-s/2-2, cy-s/2-2, s+4, s+4);
+  g.fillStyle="#e8c84a"; g.fillRect(cx-s/2, cy-s/2, s, s);
+  g.fillStyle="#c9a52f"; g.fillRect(cx-s/2, cy+s/2-6, s, 6);
+  g.fillStyle="#b9902a"; [[-8,-6,4],[6,-2,4],[-3,7,3],[8,6,3],[1,1,3]].forEach(([hx,hy,hr])=>g.fillRect(cx+hx, cy+hy, hr, hr));
+  g.fillStyle="#26233a"; g.fillRect(cx-8, cy-4, 3,3); g.fillRect(cx+5, cy-4, 3,3); g.fillRect(cx-6, cy+6, 12, 2);
+}
+// A portrait image source for a creature: its custom PNG if present, else its built-in art rendered to a
+// data URL (memoized). Reuses the exact in-world art — glyph for the Inkling, drawCube for Writer's Block,
+// the RES_DRAW body for everything else (via the shared RCTX draw-context).
+const _creThumb={};
+function creatureThumbURL(cre){
+  const rec=creatureSprites[cre.id];
+  if(rec && rec.ready) return rec.img.src;                // custom PNG wins
+  if(_creThumb[cre.id]) return _creThumb[cre.id];
+  const S=52, cvs=document.createElement("canvas"); cvs.width=cvs.height=S;
+  const g=cvs.getContext("2d"); g.imageSmoothingEnabled=false;
+  const cx=S/2, cy=S/2; let cacheable=true;
+  if(cre.kind==="letter"){
+    if(!drawGlyphTo(g, "a", cx, cy, 40)){                 // sheet not loaded yet → text fallback, don't cache
+      g.fillStyle="#211E1A"; g.font="26px 'Press Start 2P', monospace"; g.textAlign="center"; g.textBaseline="middle"; g.fillText("A", cx, cy);
+      cacheable=false;
+    }
+  } else if(cre.id==="writers-block"){
+    drawCubeThumb(g, cx, cy);
+  } else {
+    const prev=RCTX; RCTX=g; (RES_DRAW[cre.id]||RES_DRAW._default)(cx, cy, 1); RCTX=prev;
+  }
+  const url=cvs.toDataURL();
+  if(cacheable) _creThumb[cre.id]=url;
+  return url;
+}
 function renderBestiary(){
   const grid=document.getElementById("bes-grid"); if(!grid || !CREATURES_DATA) return;
   const list=CREATURES_DATA.creatures.filter(creatureEnabled);   // "enabled": false → hidden from the dex too
@@ -2558,9 +2605,11 @@ function renderBestiary(){
     const v=dexView(cre, state.bestiary[cre.id]);
     if(v.locked) return `<div class="bes-card locked"><div class="bes-q">???</div><div class="bes-locked-blk">${esc(cre.dex.silhouette)}</div></div>`;
     const badge=TIER_BADGE[cre.tier]||"#5b7a4b";
-    let h=`<div class="bes-card"><div class="bes-name">${esc(v.name)}</div>`+
+    let h=`<div class="bes-card"><div class="bes-head"><div class="bes-head-txt">`+
+      `<div class="bes-name">${esc(v.name)}</div>`+
       `<span class="bes-tier" style="color:${badge};border-color:${badge}">${esc(cre.tier)}</span>`+
-      `<div class="bes-kills">Defeated ×${v.kills}</div>`;
+      `<div class="bes-kills">Defeated ×${v.kills}</div>`+
+      `</div><img class="bes-portrait" src="${creatureThumbURL(cre)}" alt=""></div>`;
     h += v.description ? `<div class="bes-desc">${esc(v.description)}</div>` : `<div class="bes-sil">${esc(cre.dex.silhouette)}</div>`;
     h += v.showStats ? `<div class="bes-stats"><b>HP</b> ${cre.hp} · ${esc(cre.behavior)}${cre.contactDamage?" · bites":""}</div>`
                      : `<div class="bes-locked-blk">Stats locked — ${cre.dex.reveal.stats-v.kills} more.</div>`;

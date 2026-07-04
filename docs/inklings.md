@@ -239,8 +239,12 @@ it does **not** fade like a toast. `maybeNotifyCleared()`only plays the one-time
     → lore (rarer creatures unlock sooner by design).
   - **Bestiary UI** (`#bestiary` overlay, `state.bestiaryOpen`, opened with `B` / the 🐾 touch button):
     `renderBestiary` draws a 3-col card grid (retro-pixel, like the library/shop panels) + a **Binding
-    materials** tally (`renderMaterials`). Closed with `✕`/`Esc`/`B`/backdrop. `state.bestiaryOpen` is added
-    to every overlay guard (movement, `canBeHurt`, hint, `syncTouchUI`, `overworldDialogueOpen`).
+    materials** tally (`renderMaterials`). Each seen card's header shows a **portrait** (`.bes-portrait`) to
+    the right of the name/tier/kills, via `creatureThumbURL` — the creature's custom PNG if present, else its
+    built-in art rendered once to a memoized data URL (glyph for the Inkling through `drawGlyphTo`, `drawCube`-
+    style thumb for Writer's Block, the `RES_DRAW` body via the `RCTX` redirect for the rest). Closed with
+    `✕`/`Esc`/`B`/backdrop. `state.bestiaryOpen` is added to every overlay guard (movement, `canBeHurt`, hint,
+    `syncTouchUI`, `overworldDialogueOpen`).
 - **`SFX`** — a small Web Audio IIFE (no asset files) that synthesizes chiptune blips, matching the
   retro-pixel theme and the single-file/offline rule. `SFX.play(name)` plays a named cue (`swing`,
   `capture`, `newword`, `known`, `invalid`, `unlock`, `home`, `click`); internals are `tone()` (one
@@ -377,9 +381,8 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
 - Home base with a writing desk; bounded **daily map** of screens (`MAP_RADIUS`, currently 3×3; walls at the world edge),
   regenerated each real calendar day; walk-off-edge travel between screens; `H` to teleport home;
   translucent explored-area minimap in the bottom-right (resets daily).
-- Attack-based combat (no bump-to-collect); **letter-creatures** (`kind:"letter"`) drop their letter when
-  captured. **TEMP:** `CREATURE_HP` is set to **2** (two hits to capture) to test the hit-flash on real
-  sprites — revert to `1` for the normal one-hit capture. The satchel holds a capped number of letters
+- Attack-based combat (no bump-to-collect); **letter-creatures** (`kind:"letter"`) are captured in a
+  **single hit** (`CREATURE_HP = 1`) and drop their letter. The satchel holds a capped number of letters
   (`state.bagCap`, starts at 10); when full, **letter capture** is blocked (you can still fight cubes).
 - **Letters are now rare** — `letterScatter(rng)` gives a thin, even scatter (usually 0, sometimes 1–2
   per screen) so finding one feels good; the WOTD's guaranteed pinned letters (`Math.max(scatter,guar)`)
