@@ -193,6 +193,8 @@
   .tray .lchip.off{opacity:.35;cursor:default;pointer-events:none;filter:grayscale(1)}
   .tray .lchip.off:hover{transform:none}
   .tray .lchip.off b{opacity:.6}
+  .tray .lchip.shift{background:var(--paper-2);border-color:var(--ink-soft);color:var(--ink-soft);flex:0 0 auto;min-width:34px}
+  .tray .lchip.shift.on{background:var(--inkblue);border-color:var(--inkblue);color:#f4f0e6}
   .bench-line{display:flex;flex-wrap:wrap;gap:6px;min-height:50px;margin:10px 0;padding:10px;
     border:2px dashed var(--ink-soft);background:#fffdf6;flex:none}
   .bench-line .lchip{cursor:pointer;min-width:36px;height:36px;font-size:15px;background:#fff}
@@ -566,7 +568,8 @@ const SPRITESHEET = {
   url: "./Alpha.png",
   cols: 7, rows: 8,     // sheet grid
   cellW: 32, cellH: 32, // 0 = auto (image.width/cols). Override if cells are padded.
-  letterToFrame: (()=>{ const m={}; "abcdefghijklmnopqrstuvwxyz".split("").forEach((c,i)=>m[c]=i); return m; })()
+  // a–z = frames 0–25 (first 3 rows + 5 of the 4th); A–Z = frames 26–51 (the sheet's second half).
+  letterToFrame: (()=>{ const m={}; "abcdefghijklmnopqrstuvwxyz".split("").forEach((c,i)=>{ m[c]=i; m[c.toUpperCase()]=26+i; }); return m; })()
 };
 let sheetImg = null, sheetReady = false;
 
@@ -597,8 +600,13 @@ const TIER = {
   rare:"wfgypbv".split(""), legend:"kjxqz".split("")
 };
 const TIER_COLOR = { common:"#5b7a4b", mid:"#3b6ea5", rare:"#7a4a9a", legend:"#c89b3c" };
-function tierOf(l){ for(const t in TIER){ if(TIER[t].includes(l)) return t; } return "common"; }
+// Case-agnostic helpers: a capital shares its lowercase counterpart's tier/frequency/colour (its distinct
+// value comes later, via the geography/proper-noun content — roadmap #10). Only spawn weighting treats
+// capitals as rarer (see weightedLetter).
+function isUpper(l){ return l>="A" && l<="Z"; }
+function tierOf(l){ const lc=l.toLowerCase(); for(const t in TIER){ if(TIER[t].includes(lc)) return t; } return "common"; }
 function colorFor(l){ return TIER_COLOR[tierOf(l)]; }
+function freqOf(l){ return FREQ[l.toLowerCase()]||1; }
 // --- Letter unlock progression -------------------------------------------------
 // Start with the 8 commonest letters; the rest appear in the wild one at a time
 // (frequency order) as your collection grows. Derived purely from how many words
@@ -607,12 +615,23 @@ function colorFor(l){ return TIER_COLOR[tierOf(l)]; }
 const START_LETTERS = "etaoinsr".split("");
 const UNLOCK_ORDER  = "hdlucmwfgypbvkjxqz".split("");                       // next-most-common first
 const UNLOCK_AT     = [3,6,9,13,17,22,27,33,39,46,53,61,69,78,87,97,107,118]; // words needed for UNLOCK_ORDER[i]
+// Capital letters unlock ONLY after every lowercase letter is unlocked, then one at a time in the same
+// frequency order — the same mechanic, continued. (Grounds the future geography/proper-noun content.)
+const CAP_ORDER = ("etaoinsr"+"hdlucmwfgypbvkjxqz").toUpperCase().split("");   // all 26, frequency order
+const LOWER_DONE_AT = UNLOCK_AT[UNLOCK_AT.length-1];                            // 118 = last lowercase (z)
+const CAP_FIRST_GAP = 12;   // words after the last lowercase before the first capital appears
+const CAP_GAP = 12;         // base words between capital unlocks (grows slightly — tune to taste)
+function capUnlockAt(i){ return LOWER_DONE_AT + CAP_FIRST_GAP + i*CAP_GAP + Math.floor(i*(i-1)/6); }
 function wordsCollected(){ return Object.keys(state.dex).length; }
 function unlockedLetters(){
   const n=wordsCollected(), set=new Set(START_LETTERS);
   for(let i=0;i<UNLOCK_ORDER.length;i++){ if(n>=UNLOCK_AT[i]) set.add(UNLOCK_ORDER[i]); }
+  if(n>=LOWER_DONE_AT){   // all lowercase unlocked → capitals begin, one at a time
+    for(let i=0;i<CAP_ORDER.length;i++){ if(n>=capUnlockAt(i)) set.add(CAP_ORDER[i]); }
+  }
   return set;
 }
+function hasUnlockedCapital(){ const u=unlockedLetters(); for(const c of CAP_ORDER) if(u.has(c)) return true; return false; }
 
 const CONSUME_ON_NEW = true;   // spend letters when you record a NEW word
 const CREATURE_HP = 1;   // letter-creatures are captured (drop their letter) in a single hit
@@ -854,7 +873,7 @@ const state = {
   fx:[],                        // floating texts
   started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false
 };
-"abcdefghijklmnopqrstuvwxyz".split("").forEach(c=>state.inv[c]=0);
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
 state.day = todayStr(); state.daySeed = dayHash(state.day);   // set before any screen is generated
 // Total letters currently carried, and whether the satchel is at capacity.
 function satchelCount(){ let n=0; for(const l in state.inv) n+=state.inv[l]; return n; }
@@ -865,14 +884,17 @@ function key(sx,sy){ return sx+","+sy; }
 function weightedLetter(rng, dist){
   const unlocked=unlockedLetters();
   let pool=[], total=0;
-  for(const l in FREQ){
-    if(!unlocked.has(l)) continue;          // letter not yet earned — never spawns
-    let w=FREQ[l];
+  const add=(l)=>{
+    if(!unlocked.has(l)) return;            // letter not yet earned — never spawns
+    let w=freqOf(l);
     const t=tierOf(l);
     if(t==="rare")   w*=(1+dist*0.5);
-    if(t==="legend") w*=(0.3+dist*0.8);   // very rare up close, commoner far out
-    pool.push([l,w]); total+=w;
-  }
+    if(t==="legend") w*=(0.3+dist*0.8);     // very rare up close, commoner far out
+    if(isUpper(l))   w*=(0.35+dist*0.5);    // capitals: rare, end-game, skew far from home
+    if(w>0){ pool.push([l,w]); total+=w; }
+  };
+  for(const l in FREQ) add(l);              // lowercase first, in the original order (maps unchanged pre-capitals)
+  for(const c of CAP_ORDER) add(c);         // capitals appended (only enter the pool once unlocked)
   let r=rng()*total;
   for(const [l,w] of pool){ r-=w; if(r<=0) return l; }
   return "e";
@@ -1057,7 +1079,7 @@ function goScreen(dsx,dsy,edge){
 function startNewDay(){
   trans=null;                       // cancel any in-progress slide
   state.day=todayStr(); state.daySeed=dayHash(state.day);
-  "abcdefghijklmnopqrstuvwxyz".split("").forEach(c=>state.inv[c]=0);
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
   state.captured=new Set(); state.visited=new Set(); state.screens=new Map();
   state.screen={sx:0,sy:0};
   state.player.x=W/2; state.player.y=H/2+TILE; state.player.face={x:0,y:1};
@@ -1134,10 +1156,11 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"){ e.preventDefault(); closeOverlay(); return; }
     if(k==="enter"){ e.preventDefault(); checkWord(); return; }
     if(k==="backspace"){ e.preventDefault(); if(bench.length){ bench.pop(); renderBench(); } return; }
-    if(/^[a-z]$/.test(k)){               // add the letter only if you still have a copy available
+    if(/^[a-zA-Z]$/.test(e.key)){        // add the letter (Shift+key = capital); only if a copy is available
       e.preventDefault();
+      const ch=e.key;                    // e.key preserves case, unlike the lowercased `k`
       const used={}; bench.forEach(l=>used[l]=(used[l]||0)+1);
-      if((state.inv[k]||0)-(used[k]||0) > 0){ bench.push(k); renderBench(); }
+      if((state.inv[ch]||0)-(used[ch]||0) > 0){ bench.push(ch); renderBench(); }
       return;
     }
     return;
@@ -1217,7 +1240,7 @@ function doAttack(){
     const kb=22; c.x+=(dx/(d||1))*kb; c.y+=(dy/(d||1))*kb;
     if(c.hp<=0){
       state.inv[c.letter]=(state.inv[c.letter]||0)+1;
-      state.fx.push({x:c.x,y:c.y,text:"+"+c.letter.toUpperCase(),life:0.9,color:colorFor(c.letter)});
+      state.fx.push({x:c.x,y:c.y,text:"+"+c.letter,life:0.9,color:colorFor(c.letter)});
       sc.creatures.splice(i,1);
       state.captured.add(c.id);   // gone for the rest of the day — no respawn; a fresh map comes tomorrow
       recordBestiary("inkling");   // letter-creatures are the "inkling" bestiary entry
@@ -1810,7 +1833,7 @@ function drawCreature(c){
     // text fallback if the sheet hasn't loaded / letter isn't on it (flashes white too)
     ctx.fillStyle = amt>0 ? "#ffffff" : "#211E1A";
     ctx.font="22px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(c.letter.toUpperCase(), c.x, c.y);
+    ctx.fillText(c.letter, c.x, c.y);
     ctx.textBaseline="alphabetic";
   }
   // hp pips
@@ -2152,7 +2175,7 @@ function updateTrayHud(){
   if(cnt){ cnt.textContent=satchelCount()+"/"+state.bagCap; cnt.classList.toggle("full", satchelFull()); }
   const have=Object.keys(state.inv).filter(l=>state.inv[l]>0);
   if(!have.length){ el.innerHTML='<span class="empty" style="font-weight:600;color:var(--ink-soft);font-size:12px">empty</span>'; return; }
-  el.innerHTML=have.map(l=>`<span class="lchip" style="border-color:${colorFor(l)}">${l.toUpperCase()}<b>${state.inv[l]}</b></span>`).join("");
+  el.innerHTML=have.map(l=>`<span class="lchip" style="border-color:${colorFor(l)}">${l}<b>${state.inv[l]}</b></span>`).join("");
 }
 // Ink counter + potion buttons. A potion button is disabled when you have none, or while its effect is
 // already running (no stacking). Clicking drinks it.
@@ -2189,30 +2212,38 @@ function buyBagUpgrade(){
 
 /* ---------- BENCH / LIBRARY OVERLAY ----------------------- */
 let bench=[];   // letters currently on the bench line
+let benchShift=false;   // tray showing capital letters (only offered once capitals are unlocked)
 function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); document.getElementById("sound-btn").style.display="none"; renderBench(); renderDex(); updateWotd(); SFX.play("click"); }
 function openShop(){ state.shop=true; document.getElementById("shop").classList.add("open"); document.getElementById("sound-btn").style.display="none"; updateShop(); SFX.play("click"); }
 function closeShop(){ state.shop=false; document.getElementById("shop").classList.remove("open"); document.getElementById("sound-btn").style.display=""; }
 function closeOverlay(){ state.overlay=false; document.getElementById("overlay").classList.remove("open"); document.getElementById("sound-btn").style.display=""; closeDefModal(); bench=[]; document.getElementById("result").innerHTML=""; }
 const KB_ROWS=["qwertyuiop","asdfghjkl","zxcvbnm"];
 function renderBench(){
-  // tray = full keyboard; letters you don't have (or have all on the bench) are greyed + unclickable
+  // tray = full keyboard; letters you don't have (or have all on the bench) are greyed + unclickable.
+  // A ⇧ toggle (shown once capitals are unlocked) flips the tray to the capital letters.
+  const caps=hasUnlockedCapital(); if(!caps) benchShift=false;
   const used={}; bench.forEach(l=>used[l]=(used[l]||0)+1);
   const trayEl=document.getElementById("tray");
-  trayEl.innerHTML = KB_ROWS.map(row=>
-    `<div class="kb-row">`+row.split("").map(l=>{
+  trayEl.innerHTML = KB_ROWS.map((row,ri)=>{
+    let keys = row.split("").map(low=>{
+      const l = benchShift ? low.toUpperCase() : low;   // actual char (case) this key places
       const owned=state.inv[l]||0;
       const avail=owned-(used[l]||0);
-      const off=avail<=0;                         // no copies left to place
+      const off=avail<=0;                               // no copies left to place
       return `<span class="lchip${off?" off":""}"${off?"":` data-l="${l}"`} `+
-             `style="border-color:${off?"var(--line)":colorFor(l)}">${l.toUpperCase()}`+
+             `style="border-color:${off?"var(--line)":colorFor(l)}">${l}`+
              `${owned>0?`<b>${avail}</b>`:""}</span>`;
-    }).join("")+`</div>`
-  ).join("");
+    }).join("");
+    if(ri===KB_ROWS.length-1 && caps)                   // shift toggle sits on the bottom row (like a keyboard)
+      keys = `<span class="lchip shift${benchShift?" on":""}" data-shift="1" title="Capital letters">⇧</span>` + keys;
+    return `<div class="kb-row">${keys}</div>`;
+  }).join("");
   trayEl.querySelectorAll("[data-l]").forEach(ch=>ch.onclick=()=>{ bench.push(ch.dataset.l); renderBench(); });
+  const sh=trayEl.querySelector("[data-shift]"); if(sh) sh.onclick=()=>{ benchShift=!benchShift; renderBench(); };
 
   const benchEl=document.getElementById("bench");
   benchEl.innerHTML = bench.length
-    ? bench.map((l,i)=>`<span class="lchip" data-i="${i}">${l.toUpperCase()}</span>`).join("")
+    ? bench.map((l,i)=>`<span class="lchip" data-i="${i}">${l}</span>`).join("")
     : '<span class="ph">click letters above to build a word</span>';
   benchEl.querySelectorAll("[data-i]").forEach(ch=>ch.onclick=()=>{ bench.splice(+ch.dataset.i,1); renderBench(); });
 }
@@ -2342,7 +2373,7 @@ async function checkWord(){
   SFX.play(known ? "known" : "newword");
   if(wotdBonus){ showToast("★ Word of the Day! +"+wotdBonus+" bonus ink."); SFX.play("unlock"); }
   if(newly.length){
-    showToast("New letter"+(newly.length>1?"s":"")+" now roams the wild: "+newly.map(l=>l.toUpperCase()).join(" "));
+    showToast("New letter"+(newly.length>1?"s":"")+" now roams the wild: "+newly.join(" "));
     SFX.play("unlock");
   }
   scheduleSave();

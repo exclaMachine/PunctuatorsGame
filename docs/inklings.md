@@ -127,7 +127,8 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   and only added a dead button. Future gear can override this const. `dmg 1` one-shots creatures.
 - **`SPRITESHEET`** — glyph-sheet config (`url`, `cols`/`rows`, `cellW`/`cellH`, `letterToFrame`)
   - loader. Wired to `Alpha.png` (the same hand-drawn sheet Spin Nids uses): a 7×8 grid of 32×32
-    cells where a–z = frames 0–25 (A–Z = 26–51, unused here). `drawGlyph(letter,cx,cy,size)` blits one
+    cells where a–z = frames 0–25 and **A–Z = 26–51** (both mapped in `letterToFrame`; capitals are now in
+    play — see Capital letters). `drawGlyph(letter,cx,cy,size)` blits one
     cell. `drawCreature` renders the creature **as the glyph itself** — no tile, eyes, or feet — with a
     brief scale-up "pop" **and a white damage-flash** while `c.flash>0` (just hit), falling back to dark
     `fillText` if the sheet hasn't loaded or the letter isn't on it. HP pips still draw above the glyph when
@@ -173,7 +174,21 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   spawn (and thus can't be collected or spelled yet). On a new word, `checkWord` diffs the unlocked
   set before/after and toasts (`"New letter now roams the wild: …"` + `SFX.play("unlock")`) when a
   threshold is crossed. Letters a player already owns in `state.inv` from before stay usable on the
-  bench regardless. (Capitals are still not in the game — roadmap #10; the world is lowercase-only.)
+  bench regardless.
+- **Capital letters** (roadmap #10, groundwork done) — `'A' ≠ 'a'` throughout (separate `state.inv` slots,
+  spawns, glyphs). Capitals unlock **only after every lowercase letter is unlocked** (`n ≥ LOWER_DONE_AT`,
+  118 words), then **one at a time in frequency order** (`CAP_ORDER`) on a continuing curve
+  (`capUnlockAt(i)` = `LOWER_DONE_AT + CAP_FIRST_GAP + i*CAP_GAP + …`; first capital ~130 words, all 26 by
+  ~530 — tune via `CAP_FIRST_GAP`/`CAP_GAP`). They render from Alpha.png frames **26–51** (added to
+  `SPRITESHEET.letterToFrame`; the glyphs already existed in the sheet's second half). `weightedLetter`
+  appends capitals to the pool (skipped until unlocked, so **pre-capital daily maps are byte-identical to
+  before**) with an extra `isUpper` rarity+distance scaling, so capital inklings are rare and skew far from
+  home. A capital shares its lowercase counterpart's tier/colour (`tierOf`/`freqOf` are case-folded). At the
+  desk you place capitals with **Shift+letter** (physical keyboard, `e.key` preserves case) or a **⇧ toggle**
+  on the on-screen tray (`benchShift`, shown only once `hasUnlockedCapital()`); dictionary validation stays
+  case-insensitive for now (`checkWord` lowercases the word), so capitals also work in ordinary words — their
+  distinct purpose (proper nouns for a geography level) is the future payoff. Letter chips/floats now show
+  the **actual case** (a vs A) so the two read differently.
 - **No respawn (Wordle-style daily map)** — creatures do **not** respawn within a day. Capturing one
   adds its stable id (`"sx,sy,i"`) to `state.captured`; `genScreen` skips any creature already in that
   set, so a taken creature stays gone until tomorrow. To get more letters you wait for the next day's
@@ -658,8 +673,12 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
 8. **Farming / ranching** — renewable letters from ranched inklings; the deferred cozy layer.
 9. **Town / trade** — towns that want specific words; bundle-style requests as content gates.
 10. **Limit the starting letters** - start with only lowercase letters and the more common letters (not all).
-    Eventually add capital letters which are stronger and they can be used to make proper nouns
-    (Ex. City names to help with geography)
+    **Status: DONE (incl. capitals groundwork).** Lowercase unlock one at a time in frequency order; once all
+    26 are unlocked, capital letters unlock the same way (`CAP_ORDER`/`capUnlockAt`) and spawn as rare
+    capital inklings (glyphs = Alpha.png 26–51). Capitals are collectible + usable at the desk now
+    (Shift/⇧, case-insensitive validation). **Still ahead:** make capitals *matter* — a geography level where
+    country/capital-city **proper nouns** require the leading capital (a separate proper-noun validation
+    source, since the Free Dictionary API won't have most place names).
 11. **Books as worlds; mad-libs restoration (core loop, post-pivot)** — **Status: MVP DONE (chapter
     menu; 3 chapters).** A **book lectern** structure sits right of the desk on the home screen
     (`drawLectern`, solid via the `LECTERN` rect, walk-up + `E` / `nearLectern()` / touch `BOOK` button →
