@@ -104,13 +104,14 @@ These are settled. Don't reverse them without a real reason.
 8. **Bench is click-to-build, not drag-and-drop.** Drag-and-drop tests the same fun for far more
    effort. Click a tray letter to add, click a bench letter to remove. (May prettify later.)
 
-9. **Self-contained single file.** No build step, no bundled dependencies; drops straight onto
-   GitHub Pages. **Exception (intentional):** word validation + definitions call the Free
-   Dictionary API (`api.dictionaryapi.dev`) — the same API the punctuators game (`index.js`) uses —
-   so the game isn't limited to a baked-in list. There is **no local word list anymore** (the old
-   `DICT` was fully removed); with no connection, word-checking can't resolve and the desk reports
-   it couldn't reach the dictionary. Keep everything else local; don't add other external fetches
-   without a strong reason.
+9. **Self-contained single file.** No build step in the shipped game, no runtime third-party services;
+   drops straight onto GitHub Pages and works **fully offline**. Word validation + definitions + POS come
+   from a **bundled local WordNet dataset** — `data/dictionary.json` (`{word:{pos,def,syn}}`) plus
+   `data/inflections.json` (`{inflectedForm:lemma}`) so plurals/tenses/etc. validate. These are generated
+   **offline** by `build_dictionary.py` (WordNet via NLTK + lemminflect) and fetched once at startup like
+   `2of12.txt`; the browser only does plain map lookups (no lemmatizer). The old Free Dictionary API
+   (`api.dictionaryapi.dev`) is **removed** — there is no live third-party API anymore. Keep everything
+   local; don't add external fetches without a strong reason.
 
 ---
 
@@ -152,18 +153,19 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   at `PLAYER_DRAW` (80px, `imageSmoothingEnabled=false`), feet near `p.y`. There's no weapon sprite (the
   Lumberjack sprite has its own axe); the primitive "scholar" draw remains as a fallback until the PNG
   loads. `doAttack` sets `p.atkAnim=ATTACK_ANIM` to play the attack row.
-- **`lookupWord(word)` / `checkWord()`** — word validation + definitions + **part(s) of speech** come
-  **entirely** from the Free Dictionary API (`api.dictionaryapi.dev`); there is no local word list.
-  `lookupWord` is async and returns `{ok:true, def, pos}` (`pos` = unique `partOfSpeech` list across all
-  entries/meanings) for a real word, `{ok:false}` if the API rejects it (incl. 404), or `{ok:null}` if
-  the API can't be reached. `checkWord` is async: shows a "Checking the dictionary…" state, disables the
-  button + guards with a `checking` flag, aborts silently if the bench changed during the await, and
-  on `{ok:null}` keeps the letters + reports it couldn't reach the dictionary. **Rewards (step 7) are
-  repeatable:** it always consumes the bench letters on a successful spell and pays out by POS — nouns
-  add `ink`, adjectives brew a random potion (both if the word is both). New words also record to the
-  dex (`{def, found, pos}`) and run letter unlocks; a known word caches its `pos` so re-spells
-  skip the network. A known word that's neither noun nor adjective short-circuits with letters returned
-  (no point re-spelling it). Defs are HTML-escaped via `esc()`.
+- **Local dictionary (`DICT`/`INFL`/`localLookup` / `checkWord()`)** — validation + definitions + **POS**
+  come from the **bundled WordNet dataset**, loaded once at startup: `dictReady = Promise.all(fetch
+  dictionary.json, fetch inflections.json)` sets `DICT`/`INFL` (or `DICT_FAILED` on error). `localLookup(word)`
+  is **synchronous**: lowercase → `DICT` hit → `{ok, def, pos}`; else `INFL[word]` → resolve to that lemma's
+  `DICT` entry (its def/pos); else `{ok:false}` = not a real word. No JS lemmatization — one map lookup +
+  one redirect. `checkWord` stays async only to `await dictReady` on the very first spell (a brief "Loading
+  the dictionary…", guarded by `checking`, aborts if the bench changed during that one await); after that
+  every lookup is instant. A local miss simply means "isn't a word we know" (no network/"couldn't reach"
+  states anymore). **Rewards (step 7) are repeatable:** it always consumes the bench letters on a successful
+  spell and pays out by POS — nouns add `ink`, adjectives brew a random potion (both if the word is both).
+  New words record to the dex (`{def, found, pos}`) and run letter unlocks; a known word caches its `pos`
+  (now WordNet-sourced, via the resolved lemma) so re-spells skip the lookup. A known word that's neither
+  noun nor adjective short-circuits with letters returned. Defs are HTML-escaped via `esc()`.
 - **Letter spawn pool** — `FREQ` (per-letter weights, vowels common, j/k/x/q/z rare) + `TIER`
   (common/mid/rare/legend) drive `weightedLetter(rng, dist)`, which also pushes rare/legend letters
   farther from home (`dist` = `|sx|+|sy|`). (The old `LETTER_BAG` const is gone.)
@@ -456,8 +458,8 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   nothing). Attacking uses a single fixed `ATTACK` (dmg/range/cd). Equipment may return later.
 - Letter pickups → inventory; **no respawn within a day** (captured creatures stay gone until the next
   day's fresh map). Satchel empties at the start of each new day.
-- Desk/Library: click-to-build word, async API dictionary check with feedback states (checking /
-  new / known / invalid / couldn't-reach-API). **Stable fixed-size panel** (`#overlay .book` is a
+- Desk/Library: click-to-build word, **local WordNet** dictionary check with feedback states (new /
+  known / invalid / "loading…" on the one-time bundle load). **Stable fixed-size panel** (`#overlay .book` is a
   fixed-height flex column; only the collection list scrolls). The **definition appears in one place
   only** — the collection list, truncated to one line with an ellipsis (no horizontal scroll);
   clicking an entry opens a full-text modal (`#defmodal`). The new-word reveal celebrates the word
@@ -483,8 +485,11 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
 - **Creature glyphs** — creatures render solely as their hand-drawn letter glyph from `Alpha.png`
   (the glyph sheet shared with Spin Nids) — no tile, eyes, or feet. Dedicated per-creature _art_
   (distinct bodies beyond the bare glyph) is still future work.
-- **Dictionary** — validation + definitions come entirely from the Free Dictionary API (see code
-  map), so any real English word works. No local word list (requires a connection to check words).
+- **Dictionary** — validation + definitions + POS come from a **bundled local WordNet dataset**
+  (`data/dictionary.json` + `data/inflections.json`; see code map). Works fully **offline**, no third-party
+  API. ~63.8k dictionary entries (WordNet lemmas + ~130 curated **function words** WordNet lacks, so
+  the/and/of/against validate with no reward) + ~29k inflected forms. Gaps: proper nouns, brand-new
+  coinages, and some rare derivational forms.
 - **Autosave (IndexedDB)** — progress persists automatically across reloads; Export/Import remain as
   manual backup/transfer; a **Reset** button (library footer, with confirm) wipes the save.
 - Not started: library room, genre books / procedural layouts, hero weapons, word effects,
@@ -588,10 +593,11 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B
 
 1. **Wire the spritesheet** — DONE: creatures draw their letter from `Alpha.png` via `SPRITESHEET`
    - `drawGlyph` (a–z = frames 0–25). Next sprite step is real per-creature _body_ art, not just glyphs.
-2. **Dictionary** — DONE (via API): word validation + definitions come from the Free Dictionary API,
-   so any real English word works (`exit`, `quartz`, etc. now validate). No local word list. Optional
-   future polish: bundle a local wordlist/definitions JSON for an offline fallback, and/or cache API
-   results in `localStorage`.
+2. **Dictionary** — DONE (local WordNet bundle): word validation + definitions + POS come from
+   `data/dictionary.json` + `data/inflections.json`, generated offline by `build_dictionary.py`
+   (WordNet/NLTK + lemminflect) + a curated function-word list (WordNet omits the/and/of/…). Fully offline;
+   the Free Dictionary API was **removed**. Optional future polish: use the bundled
+   `data/wordnet-relations.json` for new mechanics (see "Future mechanics (WordNet relationships)").
 3. **IndexedDB autosave** — DONE. Progress autosaves to IndexedDB DB `inklings_save` (store `state`,
    key `save`). `snapshot()` builds a clone-safe object (`v:3` — `day`, inv, dex,
    bagCap, captured[], `ink`, `potions`, `wotdDay`, `restored`, `books`, `resources`, `bestiary`; the
@@ -618,9 +624,9 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B
    do **not** build a clever dungeon generator first (classic time sink).
 6. **Hero weapons** — convert the punctuation superheroes into implement upgrades with their
    dual-use bench powers (bow/wildcard, sword/contractions, belt/shout).
-7. **Word effects (part-of-speech driven)** — **Status: partially DONE (nouns + adjectives).** POS
-   comes live from the Free Dictionary API (not WordNet) — `lookupWord` returns a `pos` array; new
-   words cache it in their dex entry so re-spells need no network. **Nouns → ink** (currency,
+7. **Word effects (part-of-speech driven)** — **Status: partially DONE (nouns + adjectives).** POS now
+   comes from the **bundled WordNet dictionary** — `localLookup` returns a `pos` array (for an inflected
+   form, the resolved lemma's POS); new words cache it in their dex entry so re-spells need no lookup. **Nouns → ink** (currency,
    `inkForWord(word)` = word length). **Adjectives → a random potion** of `size`/`speed`/`reveal`
    (`POTION_TYPES`). Rewards are **repeatable** (re-spelling a noun/adj re-consumes its letters and
    pays again — the renewable loop); multi-POS words (noun+adjective) pay **both**. Potions are stored
@@ -648,12 +654,12 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
    generated before the word was known respawns with the pinned copies. Cached per day (`_wotd`/`_wotdDay`,
    `_wotdGuar`/`_wotdGuarDay`).
    Until the fetch resolves it returns `null` (banner shows "loading…"); if the fetch fails it falls back
-   to `WOTD_FALLBACK` (the old built-in etaoinsr list). This is a **second intentional network/file
-   exception** (like the API) — 2of12 is used only to _pick_ the word, never for validation. Spelling it
+   to `WOTD_FALLBACK` (the old built-in etaoinsr list). `2of12.txt` is a **local project-file fetch** (also
+   used by the punctuators page) — used only to _pick_ the daily word, never for validation. Spelling it
    pays a one-per-day `WOTD_BONUS` (25) ink on top of any normal reward. `checkWord` computes
    `wotdUnclaimed` up front and (a) skips the "no reward, letters returned" early-out for the unclaimed
-   WOTD, and (b) **honours the WOTD even if the API 404s / is unreachable** (accepts it with empty POS +
-   generic def), since it came from our own dictionary — so the daily bonus is never blocked.
+   WOTD, and (b) **honours the WOTD even if it isn't in WordNet** (accepts it with empty POS + generic def),
+   since it came from our own 2of12 list — so the daily bonus is never blocked (e.g. a function word).
    `state.wotdDay` records the claim day (persisted; re-arms when the date rolls over). The desk overlay
    shows a `.wotd` banner (`updateWotd()`). The fuller vision below
    (verbs→deeds, adverbs→amplifiers, rarity tiers, choose-1-of-3) is still aspirational:
@@ -691,7 +697,7 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
     capital inklings (glyphs = Alpha.png 26–51). Capitals are collectible + usable at the desk now
     (Shift/⇧, case-insensitive validation). **Still ahead:** make capitals *matter* — a geography level where
     country/capital-city **proper nouns** require the leading capital (a separate proper-noun validation
-    source, since the Free Dictionary API won't have most place names).
+    source, since the bundled WordNet dictionary won't have most place names).
 11. **Books as worlds; mad-libs restoration (core loop, post-pivot)** — **Status: MVP DONE (chapter
     menu; 3 chapters).** A **book lectern** structure sits right of the desk on the home screen
     (`drawLectern`, solid via the `LECTERN` rect, walk-up + `E` / `nearLectern()` / touch `BOOK` button →
@@ -739,15 +745,34 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   "genre books" idea); the library becomes a shelf of restored books; word-effects become an
   optional secondary reward layered on top of blank-filling.
 
+12. **Future mechanics (WordNet relationships)** — **Status: NOT STARTED (data bundled, unused).** The
+    WordNet migration also ships `data/wordnet-relations.json` — a per-word relation graph
+    (`hyper`/`hypo`/`mero`/`holo`/`tropo`/`entail`/`cause`/`ant`/`sim`/`attr`/`pert`/`deriv`, each resolved
+    to single-word lemmas). Nothing loads it yet; it's bundled so these ideas can be *designed later, not
+    built now* — the payoff of the migration, reusing the graph instead of hand-tagging content:
+    - **Category hunts / collect-a-family** (`hypo`): "spell 4 kinds of BIRD" — auto-generate themed
+      library shelves from the graph.
+    - **Word ladders** (`hyper` chains): climb OAK → TREE → PLANT → ORGANISM, each rung verified.
+    - **Part-assembly crafting** (`mero`): spell a thing's parts to build/restore it — natural fit with
+      bookbinding (SPINE, PAGE, COVER, BINDING → bind a book).
+    - **Guess-the-word-from-clues** (graph as hint engine): describe a mystery word via its relations
+      ("a kind of ANIMAL, has a MANE, opposite of tame") and the player spells it.
+    - **Antonym duels & synonym bridges** (`ant`/`sim`): "spell the opposite of BRAVE"; or step
+      word-to-word through synonyms.
+    - **Verb-manner play** (`tropo`/`entail`): refine a scene's verb (MOVED → TIPTOE, SPRINT).
+    Note (data caveat): relations are aggregated at the **word level** (merged across all senses), so a
+    word with rare senses carries some cross-sense noise — a real feature would likely filter by sense/POS.
+
 ---
 
 ## Conventions for working on this project
 
-- Keep the game a single self-contained file with no external runtime dependencies, unless a
-  feature truly requires one (say so and why). Current intentional exceptions: the Free Dictionary
-  API for word validation/definitions (no local fallback word list), a one-time fetch of
-  `2of12.txt` used only to pick the Word of the Day (not for validation), the mad-libs chapter JSONs
-  in `data/levels/`, and `data/creatures.json` (the data-driven creature/drop/bestiary source of truth).
+- Keep the game a single self-contained file with **no runtime third-party services** (fully offline),
+  unless a feature truly requires one (say so and why). Current fetches are all **local project files**:
+  the bundled WordNet dictionary (`data/dictionary.json` + `data/inflections.json`, from `build_dictionary.py`;
+  `data/wordnet-relations.json` is bundled but dormant), `2of12.txt` (Word-of-the-Day picker only, not
+  validation), the mad-libs chapter JSONs in `data/levels/`, and `data/creatures.json`. The old Free
+  Dictionary API was removed — no external API at runtime.
 - Protect the MVP loop. New systems are layers on the working core, shipped one at a time, each
   independently testable.
 - Maintain the ink-and-paper identity and the vocabulary above.

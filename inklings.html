@@ -717,7 +717,26 @@ function wotdGuaranteed(){
   return _wotdGuar;
 }
 
-// Word validation + definitions come from the Free Dictionary API (api.dictionaryapi.dev).
+// --- Local dictionary (bundled WordNet) -----------------------------------------
+// Validation, definitions, and parts of speech come from data/dictionary.json — built OFFLINE from WordNet
+// by build_dictionary.py (no third-party API, fully offline). Inflected forms (plurals, tenses, comparatives,
+// -ly adverbs, irregulars like ran→run) resolve to their base lemma via data/inflections.json. Both are
+// plain maps — the browser does NO lemmatization, only lookups. Fetched once at startup (like 2of12.txt).
+// data/wordnet-relations.json (the relation graph) is NOT loaded here — it's dormant, bundled for future use.
+let DICT=null, INFL=null, DICT_FAILED=false;
+const dictReady = Promise.all([
+  fetch("data/dictionary.json").then(r=>r.ok?r.json():Promise.reject()),
+  fetch("data/inflections.json").then(r=>r.ok?r.json():Promise.reject())
+]).then(([d,i])=>{ DICT=d; INFL=i; }).catch(()=>{ DICT={}; INFL={}; DICT_FAILED=true; });
+// Resolve a spelled word locally: dictionary hit → use it; else inflected form → its lemma's entry; else
+// not a real word. One map lookup + one redirect, synchronous, offline.
+function localLookup(word){
+  const w=word.toLowerCase();
+  let e=DICT[w];
+  if(!e){ const lem=INFL[w]; if(lem) e=DICT[lem]; }
+  if(!e) return { ok:false };
+  return { ok:true, def:e.def||"A word in the dictionary.", pos:e.pos||[] };
+}
 
 // --- Books / mad-libs ("restore the chapter") ----------------------------------
 // A book is a set of chapter level files. Add chapters/books by listing their JSON paths here. A book
@@ -2280,31 +2299,6 @@ function openDefModal(word){
 function closeDefModal(){ document.getElementById("defmodal").classList.remove("open"); }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
 
-// Validate + define a word against the Free Dictionary API (same one the punctuators game uses).
-// Returns { ok:true, def } if it's a real word, { ok:false } if the API says it isn't, or
-// { ok:null } if we couldn't reach the API at all.
-async function lookupWord(word){
-  try{
-    const res=await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
-    if(res.ok){
-      const data=await res.json();
-      if(Array.isArray(data) && data[0]){
-        let def=""; const pos=[];
-        for(const entry of data) for(const m of (entry.meanings||[])){
-          if(m.partOfSpeech && !pos.includes(m.partOfSpeech)) pos.push(m.partOfSpeech);
-          if(!def && m.definitions && m.definitions[0] && m.definitions[0].definition) def=m.definitions[0].definition;
-        }
-        return { ok:true, def: def || "A word in the dictionary.", pos };
-      }
-      return { ok:false };          // API replied but it's not a recognised entry
-    }
-    if(res.status===404) return { ok:false };
-    throw new Error("api "+res.status);
-  }catch(e){
-    return { ok:null };             // couldn't reach the API
-  }
-}
-
 let checking=false;
 async function checkWord(){
   if(checking) return;
@@ -2314,24 +2308,27 @@ async function checkWord(){
   const known=!!state.dex[word];
   const wotdUnclaimed = (word===wordOfTheDay() && !wotdClaimed());   // today's bonus word, not yet claimed
 
-  // Resolve part(s) of speech (and a definition for new words). Known words cache their POS so a
-  // re-spell needs no network; new words (and old saves missing POS) hit the dictionary API.
+  // Resolve part(s) of speech (+ a definition for new words) from the LOCAL WordNet bundle. Known words
+  // cache their POS so a re-spell needs no lookup; new words (and old saves missing POS) hit localLookup.
   let pos, def;
   if(known && Array.isArray(state.dex[word].pos)){
     pos=state.dex[word].pos;
   } else {
-    checking=true;
-    const btn=document.getElementById("check-btn"); if(btn) btn.disabled=true;
-    res.innerHTML='<div class="msg-known">Checking the dictionary…</div>';
-    const r=await lookupWord(word);
-    checking=false; if(btn) btn.disabled=false;
-    if(bench.join("").toLowerCase()!==word) return;   // bench changed mid-await — abort
-    if(r.ok!==true){
-      // The Word of the Day comes from our own dictionary, so honour it even if the API 404s / is down.
+    if(!DICT){   // local, but the bundle loads async at startup — await it only on the very first use
+      checking=true;
+      const btn=document.getElementById("check-btn"); if(btn) btn.disabled=true;
+      res.innerHTML='<div class="msg-known">Loading the dictionary…</div>';
+      await dictReady;
+      checking=false; if(btn) btn.disabled=false;
+      if(bench.join("").toLowerCase()!==word) return;   // bench changed while it loaded — abort
+    }
+    const r=localLookup(word);
+    if(!r.ok){
+      // The Word of the Day comes from our own 2of12 list and may not be in WordNet — honour it anyway.
       if(!wotdUnclaimed){
-        res.innerHTML = r.ok===null
-          ? '<div class="msg-bad">Couldn’t reach the dictionary — check your connection and try again.</div>'
-          : `<div class="msg-bad">“${esc(word.toUpperCase())}” isn’t in the dictionary.</div>`;
+        res.innerHTML = DICT_FAILED
+          ? '<div class="msg-bad">The dictionary didn’t load — reload the page.</div>'
+          : `<div class="msg-bad">“${esc(word.toUpperCase())}” isn’t a word we know.</div>`;
         SFX.play("invalid"); return;
       }
       pos=[]; def="A word in the dictionary.";
