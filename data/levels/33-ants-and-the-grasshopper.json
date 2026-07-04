@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "ants-and-the-grasshopper",
+    "title": "The Ants And The Grasshopper",
+    "order": 33,
+    "moral": "There's a time for work and a time for play.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 5,
+      "adjective": 2,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "One "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "bright"
+      },
+      {
+        "type": "text",
+        "value": " day in late "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "autumn"
+      },
+      {
+        "type": "text",
+        "value": " a family of Ants were "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "bustling",
+        "lemma": "bustle"
+      },
+      {
+        "type": "text",
+        "value": " about in the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "warm"
+      },
+      {
+        "type": "text",
+        "value": " sunshine, drying out the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "grain"
+      },
+      {
+        "type": "text",
+        "value": " they had stored up during the summer, when a "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "starving",
+        "lemma": "starve"
+      },
+      {
+        "type": "text",
+        "value": " Grasshopper, his "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "fiddle"
+      },
+      {
+        "type": "text",
+        "value": " under his arm, "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "came",
+        "lemma": "come"
+      },
+      {
+        "type": "text",
+        "value": " up and humbly "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "begged",
+        "lemma": "beg"
+      },
+      {
+        "type": "text",
+        "value": " for a bite to "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "eat",
+        "lemma": "eat"
+      },
+      {
+        "type": "text",
+        "value": ".\n\n\"What!\" cried the Ants in "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "surprise"
+      },
+      {
+        "type": "text",
+        "value": ", \"haven't you stored anything "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adverb",
+        "answer": "away"
+      },
+      {
+        "type": "text",
+        "value": " for the winter? What in the world were you doing all last summer?\"\n\n\"I didn't have time to store up any food,\" whined the Grasshopper; \"I was so busy making music that before I knew it the summer was gone.\"\n\nThe Ants shrugged their shoulders in disgust.\n\n\"Making music, were you?\" they cried. \"Very well; now dance!\" And they turned their backs on the Grasshopper and went on with their work."
+      }
+    ]
+  }
+}

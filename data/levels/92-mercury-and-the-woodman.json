@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "mercury-and-the-woodman",
+    "title": "Mercury And The Woodman",
+    "order": 92,
+    "moral": "Honesty is the best policy.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 4,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A poor Woodman was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "cutting",
+        "lemma": "cut"
+      },
+      {
+        "type": "text",
+        "value": " down a tree near the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "edge"
+      },
+      {
+        "type": "text",
+        "value": " of a deep pool in the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "forest"
+      },
+      {
+        "type": "text",
+        "value": ". It was "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "late"
+      },
+      {
+        "type": "text",
+        "value": " in the day and the Woodman was "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "tired"
+      },
+      {
+        "type": "text",
+        "value": ". He had been "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "working",
+        "lemma": "work"
+      },
+      {
+        "type": "text",
+        "value": " since sunrise and his "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "strokes"
+      },
+      {
+        "type": "text",
+        "value": " were not so "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "sure"
+      },
+      {
+        "type": "text",
+        "value": " as they had been "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "early"
+      },
+      {
+        "type": "text",
+        "value": " that morning. Thus it happened that the axe "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "slipped",
+        "lemma": "slip"
+      },
+      {
+        "type": "text",
+        "value": " and flew out of his hands into the pool.\n\nThe Woodman was in "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "despair"
+      },
+      {
+        "type": "text",
+        "value": ". The axe was all he "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "possessed",
+        "lemma": "possess"
+      },
+      {
+        "type": "text",
+        "value": " with which to make a living, and he had not money enough to buy a new one. As he stood wringing his hands and weeping, the god Mercury suddenly appeared and asked what the trouble was. The Woodman told what had happened, and straightway the kind Mercury dived into the pool. When he came up again he held a wonderful golden axe.\n\n\"Is this your axe?\" Mercury asked the Woodman.\n\n\"No,\" answered the honest Woodman, \"that is not my axe.\"\n\nMercury laid the golden axe on the bank and sprang back into the pool. This time he brought up an axe of silver, but the Woodman declared again that his axe was just an ordinary one with a wooden handle.\n\nMercury dived down for the third time, and when he came up again he had the very axe that had been lost.\n\nThe poor Woodman was very glad that his axe had been found and could not thank the kind god enough. Mercury was greatly pleased with the Woodman's honesty.\n\n\"I admire your honesty,\" he said, \"and as a reward you may have all three axes, the gold and the silver as well as your own.\"\n\nThe happy Woodman returned to his home with his treasures, and soon the story of his good fortune was known to everybody in the village. Now there were several Woodmen in the village who believed that they could easily win the same good fortune. They hurried out into the woods, one here, one there, and hiding their axes in the bushes, pretended they had lost them. Then they wept and wailed and called on Mercury to help them.\n\nAnd indeed, Mercury did appear, first to this one, then to that. To each one he showed an axe of gold, and each one eagerly claimed it to be the one he had lost. But Mercury did not give them the golden axe. Oh no! Instead he gave them each a hard whack over the head with it and sent them home. And when they returned next day to look for their own axes, they were nowhere to be found."
+      }
+    ]
+  }
+}

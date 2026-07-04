@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "mole-and-his-mother",
+    "title": "The Mole And His Mother",
+    "order": 141,
+    "moral": "Boast of one thing and you will be found lacking in that and a few other things as well.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 3,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A little Mole "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": " said to his Mother:\n\n\"Why, Mother, you said I was blind! But I am "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "sure"
+      },
+      {
+        "type": "text",
+        "value": " I can see!\"\n\nMother Mole "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "saw",
+        "lemma": "see"
+      },
+      {
+        "type": "text",
+        "value": " she would have to "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "get",
+        "lemma": "get"
+      },
+      {
+        "type": "text",
+        "value": " such conceit out of his "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "head"
+      },
+      {
+        "type": "text",
+        "value": ". So she "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "put",
+        "lemma": "put"
+      },
+      {
+        "type": "text",
+        "value": " a bit of "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "frankincense"
+      },
+      {
+        "type": "text",
+        "value": " before him and asked him to tell what it was.\n\nThe little Mole peered at it.\n\n\"Why, that's a pebble!\"\n\n\"Well, my son, that proves you've lost your sense of smell as well as being blind.\""
+      }
+    ]
+  }
+}

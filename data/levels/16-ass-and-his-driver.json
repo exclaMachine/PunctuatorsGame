@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "ass-and-his-driver",
+    "title": "The Ass And His Driver",
+    "order": 16,
+    "moral": "They who will not listen to reason but stubbornly go their own way against the friendly advice of those who are wiser than they, are on the road to misfortune.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 3,
+      "adjective": 4,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "An Ass was being "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "driven",
+        "lemma": "drive"
+      },
+      {
+        "type": "text",
+        "value": " along a road "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "leading",
+        "lemma": "lead"
+      },
+      {
+        "type": "text",
+        "value": " down the mountain side, when he "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adverb",
+        "answer": "suddenly"
+      },
+      {
+        "type": "text",
+        "value": " took it into his "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "silly"
+      },
+      {
+        "type": "text",
+        "value": " head to choose his "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "own"
+      },
+      {
+        "type": "text",
+        "value": " path. He could see his "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "stall"
+      },
+      {
+        "type": "text",
+        "value": " at the foot of the mountain, and to him the "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "quickest"
+      },
+      {
+        "type": "text",
+        "value": " way down seemed to be over the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "edge"
+      },
+      {
+        "type": "text",
+        "value": " of the nearest "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "cliff"
+      },
+      {
+        "type": "text",
+        "value": ". Just as he was "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "about"
+      },
+      {
+        "type": "text",
+        "value": " to leap over, his master "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "caught",
+        "lemma": "catch"
+      },
+      {
+        "type": "text",
+        "value": " him by the "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "tail"
+      },
+      {
+        "type": "text",
+        "value": " and tried to pull him back, but the stubborn Ass would not yield and pulled with all his might.\n\n\"Very well,\" said his master, \"go your way, you willful beast, and see where it leads you.\"\n\nWith that he let go, and the foolish Ass tumbled head over heels down the mountain side."
+      }
+    ]
+  }
+}

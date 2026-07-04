@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "dog-the-cock-and-the-fox",
+    "title": "The Dog, The Cock, And The Fox",
+    "order": 6,
+    "moral": "Those who try to deceive may expect to be paid in their own coin.",
+    "blankCounts": {
+      "noun": 6,
+      "verb": 5,
+      "adjective": 1,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Dog and a Cock, who were the best of friends, "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "wished",
+        "lemma": "wish"
+      },
+      {
+        "type": "text",
+        "value": " very much to see something of the world. So they "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "decided",
+        "lemma": "decide"
+      },
+      {
+        "type": "text",
+        "value": " to leave the farmyard and to "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "set",
+        "lemma": "set"
+      },
+      {
+        "type": "text",
+        "value": " out into the world along the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "road"
+      },
+      {
+        "type": "text",
+        "value": " that led to the woods. The two "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "comrades"
+      },
+      {
+        "type": "text",
+        "value": " traveled along in the very best of "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "spirits"
+      },
+      {
+        "type": "text",
+        "value": " and without meeting any "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "adventure"
+      },
+      {
+        "type": "text",
+        "value": " to speak of.\n\nAt "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "nightfall"
+      },
+      {
+        "type": "text",
+        "value": " the Cock, "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "looking",
+        "lemma": "look"
+      },
+      {
+        "type": "text",
+        "value": " for a place to "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "roost",
+        "lemma": "roost"
+      },
+      {
+        "type": "text",
+        "value": ", as was his "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "custom"
+      },
+      {
+        "type": "text",
+        "value": ", spied nearby a "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "hollow"
+      },
+      {
+        "type": "text",
+        "value": " tree that he thought would do very nicely for a night's lodging. The Dog could creep inside and the Cock would fly up on one of the branches. So said, so done, and both slept very comfortably.\n\nWith the first glimmer of dawn the Cock awoke. For the moment he forgot just where he was. He thought he was still in the farmyard where it had been his duty to arouse the household at daybreak. So standing on tip-toes he flapped his wings and crowed lustily. But instead of awakening the farmer, he awakened a Fox not far off in the wood. The Fox immediately had rosy visions of a very delicious breakfast. Hurrying to the tree where the Cock was roosting, he said very politely:\n\n\"A hearty welcome to our woods, honored sir. I cannot tell you how glad I am to see you here. I am quite sure we shall become the closest of friends.\"\n\n\"I feel highly flattered, kind sir,\" replied the Cock slyly. \"If you will please go around to the door of my house at the foot of the tree, my porter will let you in.\"\n\nThe hungry but unsuspecting Fox, went around the tree as he was told, and in a twinkling the Dog had seized him."
+      }
+    ]
+  }
+}

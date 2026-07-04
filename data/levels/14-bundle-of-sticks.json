@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "bundle-of-sticks",
+    "title": "The Bundle Of Sticks",
+    "order": 14,
+    "moral": "In unity is strength.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 2,
+      "adjective": 3,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A certain Father had a "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "family"
+      },
+      {
+        "type": "text",
+        "value": " of Sons, who were "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "forever"
+      },
+      {
+        "type": "text",
+        "value": " quarreling among themselves. No "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "words"
+      },
+      {
+        "type": "text",
+        "value": " he could say did the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "least"
+      },
+      {
+        "type": "text",
+        "value": " good, so he "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "cast",
+        "lemma": "cast"
+      },
+      {
+        "type": "text",
+        "value": " about in his "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "mind"
+      },
+      {
+        "type": "text",
+        "value": " for some very "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "striking"
+      },
+      {
+        "type": "text",
+        "value": " example that should "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "make",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " them see that "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "discord"
+      },
+      {
+        "type": "text",
+        "value": " would lead them to misfortune.\n\nOne "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " when the quarreling had been "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "much"
+      },
+      {
+        "type": "text",
+        "value": " more violent than "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "usual"
+      },
+      {
+        "type": "text",
+        "value": " and each of the Sons was moping in a surly manner, he asked one of them to bring him a bundle of sticks. Then handing the bundle to each of his Sons in turn he told them to try to break it. But although each one tried his best, none was able to do so.\n\nThe Father then untied the bundle and gave the sticks to his Sons to break one by one. This they did very easily.\n\n\"My Sons,\" said the Father, \"do you not see how certain it is that if you agree with each other and help each other, it will be impossible for your enemies to injure you? But if you are divided among yourselves, you will be no stronger than a single stick in that bundle.\""
+      }
+    ]
+  }
+}

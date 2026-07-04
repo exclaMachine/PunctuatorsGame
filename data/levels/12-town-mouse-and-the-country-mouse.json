@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "town-mouse-and-the-country-mouse",
+    "title": "The Town Mouse And The Country Mouse",
+    "order": 12,
+    "moral": "Poverty with security is better than plenty in the midst of fear and uncertainty.",
+    "blankCounts": {
+      "noun": 7,
+      "verb": 2,
+      "adjective": 1,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Town Mouse "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": " visited a relative who lived in the country. For "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "lunch"
+      },
+      {
+        "type": "text",
+        "value": " the Country Mouse "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "served",
+        "lemma": "serve"
+      },
+      {
+        "type": "text",
+        "value": " wheat stalks, "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "roots"
+      },
+      {
+        "type": "text",
+        "value": ", and acorns, with a "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "dash"
+      },
+      {
+        "type": "text",
+        "value": " of cold water for "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "drink"
+      },
+      {
+        "type": "text",
+        "value": ". The Town Mouse ate very "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "sparingly"
+      },
+      {
+        "type": "text",
+        "value": ", nibbling a little of this and a little of that, and by her "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "manner"
+      },
+      {
+        "type": "text",
+        "value": " making it very plain that she ate the simple food only to be "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "polite"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nAfter the "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "meal"
+      },
+      {
+        "type": "text",
+        "value": " the friends had a long "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "talk"
+      },
+      {
+        "type": "text",
+        "value": ", or rather the Town Mouse "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "talked",
+        "lemma": "talk"
+      },
+      {
+        "type": "text",
+        "value": " about her life in the city while the Country Mouse listened. They then went to bed in a cozy nest in the hedgerow and slept in quiet and comfort until morning. In her sleep the Country Mouse dreamed she was a Town Mouse with all the luxuries and delights of city life that her friend had described for her. So the next day when the Town Mouse asked the Country Mouse to go home with her to the city, she gladly said yes.\n\nWhen they reached the mansion in which the Town Mouse lived, they found on the table in the dining room the leavings of a very fine banquet. There were sweetmeats and jellies, pastries, delicious cheeses, indeed, the most tempting foods that a Mouse can imagine. But just as the Country Mouse was about to nibble a dainty bit of pastry, she heard a Cat mew loudly and scratch at the door. In great fear the Mice scurried to a hiding place, where they lay quite still for a long time, hardly daring to breathe. When at last they ventured back to the feast, the door opened suddenly and in came the servants to clear the table, followed by the House Dog.\n\nThe Country Mouse stopped in the Town Mouse's den only long enough to pick up her carpet bag and umbrella.\n\n\"You may have luxuries and dainties that I have not,\" she said as she hurried away, \"but I prefer my plain food and simple life in the country with the peace and security that go with it.\""
+      }
+    ]
+  }
+}

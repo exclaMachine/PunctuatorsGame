@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "serpent-and-the-eagle",
+    "title": "The Serpent And The Eagle",
+    "order": 95,
+    "moral": "An act of kindness is well repaid.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 6,
+      "adjective": 0,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Serpent had "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "succeeded",
+        "lemma": "succeed"
+      },
+      {
+        "type": "text",
+        "value": " in surprising an Eagle and had "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "wrapped",
+        "lemma": "wrap"
+      },
+      {
+        "type": "text",
+        "value": " himself around the Eagle's "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "neck"
+      },
+      {
+        "type": "text",
+        "value": ". The Eagle could not "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "reach",
+        "lemma": "reach"
+      },
+      {
+        "type": "text",
+        "value": " the Serpent, neither with "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "beak"
+      },
+      {
+        "type": "text",
+        "value": " nor claws. Far into the "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "sky"
+      },
+      {
+        "type": "text",
+        "value": " he soared trying to "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "shake",
+        "lemma": "shake"
+      },
+      {
+        "type": "text",
+        "value": " off his enemy. But the Serpent's "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "hold"
+      },
+      {
+        "type": "text",
+        "value": " only tightened, and "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "slowly"
+      },
+      {
+        "type": "text",
+        "value": " the Eagle sank "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adverb",
+        "answer": "back"
+      },
+      {
+        "type": "text",
+        "value": " to earth, "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "gasping",
+        "lemma": "gasp"
+      },
+      {
+        "type": "text",
+        "value": " for breath.\n\nA Countryman "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "chanced",
+        "lemma": "chance"
+      },
+      {
+        "type": "text",
+        "value": " to see the unequal combat. In pity for the noble Eagle he rushed up and soon had loosened the coiling Serpent and freed the Eagle.\n\nThe Serpent was furious. He had no chance to bite the watchful Countryman. Instead he struck at the drinking horn, hanging at the Countryman's belt, and into it let fly the poison of his fangs.\n\nThe Countryman now went on toward home. Becoming thirsty on the way, he filled his horn at a spring, and was about to drink. There was a sudden rush of great wings. Sweeping down, the Eagle seized the poisoned horn from out his savior's hands, and flew away with it to hide it where it could never be found."
+      }
+    ]
+  }
+}

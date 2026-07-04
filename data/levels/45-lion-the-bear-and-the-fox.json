@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "lion-the-bear-and-the-fox",
+    "title": "The Lion, The Bear, And The Fox",
+    "order": 45,
+    "moral": "Those who have all the toil do not always get the profit.",
+    "blankCounts": {
+      "noun": 1,
+      "verb": 6,
+      "adjective": 2,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Just as a "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "great"
+      },
+      {
+        "type": "text",
+        "value": " Bear rushed to "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "seize",
+        "lemma": "seize"
+      },
+      {
+        "type": "text",
+        "value": " a stray kid, a Lion "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "leaped",
+        "lemma": "leap"
+      },
+      {
+        "type": "text",
+        "value": " from another direction upon the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "same"
+      },
+      {
+        "type": "text",
+        "value": " prey. The two "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "fought",
+        "lemma": "fight"
+      },
+      {
+        "type": "text",
+        "value": " furiously for the "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "prize"
+      },
+      {
+        "type": "text",
+        "value": " until they had "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "received",
+        "lemma": "receive"
+      },
+      {
+        "type": "text",
+        "value": " so many wounds that both "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "sank",
+        "lemma": "sink"
+      },
+      {
+        "type": "text",
+        "value": " down unable to "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "continue",
+        "lemma": "continue"
+      },
+      {
+        "type": "text",
+        "value": " the battle.\n\nJust then a Fox dashed up, and seizing the kid, made off with it as fast as he could go, while the Lion and the Bear looked on in helpless rage.\n\n\"How much better it would have been,\" they said, \"to have shared in a friendly spirit.\""
+      }
+    ]
+  }
+}

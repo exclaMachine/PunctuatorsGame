@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fox-and-the-leopard",
+    "title": "The Fox And The Leopard",
+    "order": 67,
+    "moral": "A fine coat is not always an indication of an attractive mind.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 3,
+      "adjective": 6,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Fox and a Leopard, "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "resting",
+        "lemma": "rest"
+      },
+      {
+        "type": "text",
+        "value": " lazily after a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "generous"
+      },
+      {
+        "type": "text",
+        "value": " dinner, amused themselves by disputing about their "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "good"
+      },
+      {
+        "type": "text",
+        "value": " looks. The Leopard was very "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "proud"
+      },
+      {
+        "type": "text",
+        "value": " of his glossy, "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "spotted",
+        "lemma": "spot"
+      },
+      {
+        "type": "text",
+        "value": " coat and made "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "disdainful"
+      },
+      {
+        "type": "text",
+        "value": " remarks about the Fox, whose "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "appearance"
+      },
+      {
+        "type": "text",
+        "value": " he declared was "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "quite"
+      },
+      {
+        "type": "text",
+        "value": " ordinary.\n\nThe Fox "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "prided",
+        "lemma": "pride"
+      },
+      {
+        "type": "text",
+        "value": " himself on his "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "fine"
+      },
+      {
+        "type": "text",
+        "value": " bushy tail with its "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "tip"
+      },
+      {
+        "type": "text",
+        "value": " of white, but he was "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "wise"
+      },
+      {
+        "type": "text",
+        "value": " enough to see that he could not rival the Leopard in looks. Still he kept up a flow of sarcastic talk, just to exercise his wits and to have the fun of disputing. The Leopard was about to lose his temper when the Fox got up, yawning lazily.\n\n\"You may have a very smart coat,\" he said, \"but you would be a great deal better off if you had a little more smartness inside your head and less on your ribs, the way I am. That's what I call real beauty.\""
+      }
+    ]
+  }
+}

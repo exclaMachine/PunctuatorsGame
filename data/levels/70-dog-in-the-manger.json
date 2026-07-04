@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "dog-in-the-manger",
+    "title": "The Dog In The Manger",
+    "order": 70,
+    "moral": "Do not grudge others what you cannot enjoy yourself.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 6,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Dog "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "asleep"
+      },
+      {
+        "type": "text",
+        "value": " in a manger filled with hay, was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "awakened",
+        "lemma": "awaken"
+      },
+      {
+        "type": "text",
+        "value": " by the Cattle, which came in "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "tired"
+      },
+      {
+        "type": "text",
+        "value": " and hungry from "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "working",
+        "lemma": "work"
+      },
+      {
+        "type": "text",
+        "value": " in the field. But the Dog would not let them "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "get",
+        "lemma": "get"
+      },
+      {
+        "type": "text",
+        "value": " near the manger, and "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "snarled",
+        "lemma": "snarl"
+      },
+      {
+        "type": "text",
+        "value": " and snapped as if it were filled with the "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "best"
+      },
+      {
+        "type": "text",
+        "value": " of meat and "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "bones"
+      },
+      {
+        "type": "text",
+        "value": ", all for himself.\n\nThe Cattle "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "looked",
+        "lemma": "look"
+      },
+      {
+        "type": "text",
+        "value": " at the Dog in "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "disgust"
+      },
+      {
+        "type": "text",
+        "value": ". \"How selfish he is!\" "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "said",
+        "lemma": "say"
+      },
+      {
+        "type": "text",
+        "value": " one. \"He cannot eat the hay and "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adverb",
+        "answer": "yet"
+      },
+      {
+        "type": "text",
+        "value": " he will not let us eat it who are so hungry for it!\"\n\nNow the farmer came in. When he saw how the Dog was acting, he seized a stick and drove him out of the stable with many a blow for his selfish behavior."
+      }
+    ]
+  }
+}

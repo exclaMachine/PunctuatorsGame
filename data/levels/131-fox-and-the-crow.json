@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fox-and-the-crow",
+    "title": "The Fox And The Crow",
+    "order": 131,
+    "moral": "The flatterer lives at the expense of those who will listen to him.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 4,
+      "adjective": 1,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "One "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "bright"
+      },
+      {
+        "type": "text",
+        "value": " morning as the Fox was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "following",
+        "lemma": "follow"
+      },
+      {
+        "type": "text",
+        "value": " his sharp nose through the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "wood"
+      },
+      {
+        "type": "text",
+        "value": " in search of a bite to "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "eat",
+        "lemma": "eat"
+      },
+      {
+        "type": "text",
+        "value": ", he saw a Crow on the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "limb"
+      },
+      {
+        "type": "text",
+        "value": " of a tree "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "overhead"
+      },
+      {
+        "type": "text",
+        "value": ". This was by no "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "means"
+      },
+      {
+        "type": "text",
+        "value": " the first Crow the Fox had "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "ever"
+      },
+      {
+        "type": "text",
+        "value": " seen. What "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "caught",
+        "lemma": "catch"
+      },
+      {
+        "type": "text",
+        "value": " his attention this "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "time"
+      },
+      {
+        "type": "text",
+        "value": " and made him "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "stop",
+        "lemma": "stop"
+      },
+      {
+        "type": "text",
+        "value": " for a second "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "look"
+      },
+      {
+        "type": "text",
+        "value": ", was that the lucky Crow held a bit of cheese in her beak.\n\n\"No need to search any farther,\" thought sly Master Fox. \"Here is a dainty bite for my breakfast.\"\n\nUp he trotted to the foot of the tree in which the Crow was sitting, and looking up admiringly, he cried, \"Good-morning, beautiful creature!\"\n\nThe Crow, her head cocked on one side, watched the Fox suspiciously. But she kept her beak tightly closed on the cheese and did not return his greeting.\n\n\"What a charming creature she is!\" said the Fox. \"How her feathers shine! What a beautiful form and what splendid wings! Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect. Could she sing just one song, I know I should hail her Queen of Birds.\"\n\nListening to these flattering words, the Crow forgot all her suspicion, and also her breakfast. She wanted very much to be called Queen of Birds.\n\nSo she opened her beak wide to utter her loudest caw, and down fell the cheese straight into the Fox's open mouth.\n\n\"Thank you,\" said Master Fox sweetly, as he walked off. \"Though it is cracked, you have a voice sure enough. But where are your wits?\""
+      }
+    ]
+  }
+}

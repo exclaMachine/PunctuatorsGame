@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "oxen-and-the-wheels",
+    "title": "The Oxen And The Wheels",
+    "order": 17,
+    "moral": "They complain most who suffer least.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 4,
+      "adjective": 1,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "pair"
+      },
+      {
+        "type": "text",
+        "value": " of Oxen were drawing a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "heavily"
+      },
+      {
+        "type": "text",
+        "value": " loaded wagon along a "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "miry"
+      },
+      {
+        "type": "text",
+        "value": " country road. They had to "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "use",
+        "lemma": "use"
+      },
+      {
+        "type": "text",
+        "value": " all their strength to "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "pull",
+        "lemma": "pull"
+      },
+      {
+        "type": "text",
+        "value": " the wagon, but they did not complain.\n\nThe Wheels of the wagon were of a "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "different"
+      },
+      {
+        "type": "text",
+        "value": " sort. Though the "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "task"
+      },
+      {
+        "type": "text",
+        "value": " they had to do was "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "very"
+      },
+      {
+        "type": "text",
+        "value": " light compared with that of the Oxen, they "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "creaked",
+        "lemma": "creak"
+      },
+      {
+        "type": "text",
+        "value": " and groaned at every "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "turn"
+      },
+      {
+        "type": "text",
+        "value": ". The poor Oxen, "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "pulling",
+        "lemma": "pull"
+      },
+      {
+        "type": "text",
+        "value": " with all their "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "might"
+      },
+      {
+        "type": "text",
+        "value": " to draw the wagon through the deep mud, had their ears filled with the loud complaining of the Wheels. And this, you may well know, made their work so much the harder to endure.\n\n\"Silence!\" the Oxen cried at last, out of patience. \"What have you Wheels to complain about so loudly? We are drawing all the weight, not you, and we are keeping still about it besides.\""
+      }
+    ]
+  }
+}

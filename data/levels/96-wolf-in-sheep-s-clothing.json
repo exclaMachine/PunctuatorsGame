@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "wolf-in-sheep-s-clothing",
+    "title": "The Wolf In Sheep'S Clothing",
+    "order": 96,
+    "moral": "The evil doer often comes to harm through his own deceit.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 3,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "certain"
+      },
+      {
+        "type": "text",
+        "value": " Wolf could not "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "get",
+        "lemma": "get"
+      },
+      {
+        "type": "text",
+        "value": " enough to eat because of the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "watchfulness"
+      },
+      {
+        "type": "text",
+        "value": " of the Shepherds. But one "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "night"
+      },
+      {
+        "type": "text",
+        "value": " he found a sheep skin that had been "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "cast",
+        "lemma": "cast"
+      },
+      {
+        "type": "text",
+        "value": " aside and forgotten. The "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "next"
+      },
+      {
+        "type": "text",
+        "value": " day, dressed in the skin, the Wolf "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "strolled",
+        "lemma": "stroll"
+      },
+      {
+        "type": "text",
+        "value": " into the pasture with the Sheep. Soon a "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "little"
+      },
+      {
+        "type": "text",
+        "value": " Lamb was following him about and was "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "quickly"
+      },
+      {
+        "type": "text",
+        "value": " led away to "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "slaughter"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nThat evening the Wolf entered the fold with the flock. But it happened that the Shepherd took a fancy for mutton broth that very evening, and, picking up a knife, went to the fold. There the first he laid hands on and killed was the Wolf."
+      }
+    ]
+  }
+}

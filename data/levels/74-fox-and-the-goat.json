@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fox-and-the-goat",
+    "title": "The Fox And The Goat",
+    "order": 74,
+    "moral": "Look before you leap.",
+    "blankCounts": {
+      "noun": 1,
+      "verb": 6,
+      "adjective": 4,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Fox "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "fell",
+        "lemma": "fall"
+      },
+      {
+        "type": "text",
+        "value": " into a well, and though it was not "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "very"
+      },
+      {
+        "type": "text",
+        "value": " deep, he "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "found",
+        "lemma": "find"
+      },
+      {
+        "type": "text",
+        "value": " that he could not get out again. After he had been in the well a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "long"
+      },
+      {
+        "type": "text",
+        "value": " time, a thirsty Goat "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "came",
+        "lemma": "come"
+      },
+      {
+        "type": "text",
+        "value": " by. The Goat "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "thought",
+        "lemma": "think"
+      },
+      {
+        "type": "text",
+        "value": " the Fox had "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "gone",
+        "lemma": "go"
+      },
+      {
+        "type": "text",
+        "value": " down to drink, and so he "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "asked",
+        "lemma": "ask"
+      },
+      {
+        "type": "text",
+        "value": " if the water was "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "good"
+      },
+      {
+        "type": "text",
+        "value": ".\n\n\"The "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "finest"
+      },
+      {
+        "type": "text",
+        "value": " in the whole "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "country"
+      },
+      {
+        "type": "text",
+        "value": ",\" said the "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "crafty"
+      },
+      {
+        "type": "text",
+        "value": " Fox, \"jump in and try it. There is more than enough for both of us.\"\n\nThe thirsty Goat immediately jumped in and began to drink. The Fox just as quickly jumped on the Goat's back and leaped from the tip of the Goat's horns out of the well.\n\nThe foolish Goat now saw what a plight he had got into, and begged the Fox to help him out. But the Fox was already on his way to the woods.\n\n\"If you had as much sense as you have beard, old fellow,\" he said as he ran, \"you would have been more cautious about finding a way to get out again before you jumped in.\""
+      }
+    ]
+  }
+}

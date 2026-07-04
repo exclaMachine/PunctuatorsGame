@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "ant-and-the-dove",
+    "title": "The Ant And The Dove",
+    "order": 134,
+    "moral": "A kindness is never wasted.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 5,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Dove saw an Ant "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "fall"
+      },
+      {
+        "type": "text",
+        "value": " into a brook. The Ant "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "struggled",
+        "lemma": "struggle"
+      },
+      {
+        "type": "text",
+        "value": " in vain to "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "reach",
+        "lemma": "reach"
+      },
+      {
+        "type": "text",
+        "value": " the bank, and in "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "pity"
+      },
+      {
+        "type": "text",
+        "value": ", the Dove "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "dropped",
+        "lemma": "drop"
+      },
+      {
+        "type": "text",
+        "value": " a blade of straw "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "close"
+      },
+      {
+        "type": "text",
+        "value": " beside it. Clinging to the straw like a "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "shipwrecked",
+        "lemma": "shipwreck"
+      },
+      {
+        "type": "text",
+        "value": " sailor to a "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "broken"
+      },
+      {
+        "type": "text",
+        "value": " spar, the Ant "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "floated",
+        "lemma": "float"
+      },
+      {
+        "type": "text",
+        "value": " safely to shore.\n\nSoon after, the Ant saw a man getting ready to kill the Dove with a stone. But just as he cast the stone, the Ant stung him in the heel, so that the pain made him miss his aim, and the startled Dove flew to safety in a distant wood."
+      }
+    ]
+  }
+}

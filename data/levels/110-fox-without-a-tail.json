@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fox-without-a-tail",
+    "title": "The Fox Without A Tail",
+    "order": 110,
+    "moral": "Do not listen to the advice of him who seeks to lower you to his own level.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 6,
+      "adjective": 3,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Fox that had been caught in a "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "trap"
+      },
+      {
+        "type": "text",
+        "value": ", succeeded at last, after "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "much"
+      },
+      {
+        "type": "text",
+        "value": " painful tugging, in "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "getting",
+        "lemma": "get"
+      },
+      {
+        "type": "text",
+        "value": " away. But he had to "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "leave",
+        "lemma": "leave"
+      },
+      {
+        "type": "text",
+        "value": " his beautiful bushy tail behind him.\n\nFor a long "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "time"
+      },
+      {
+        "type": "text",
+        "value": " he kept away from the "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "other"
+      },
+      {
+        "type": "text",
+        "value": " Foxes, for he "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "knew",
+        "lemma": "know"
+      },
+      {
+        "type": "text",
+        "value": " well enough that they would all "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "make",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " fun of him and "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "crack",
+        "lemma": "crack"
+      },
+      {
+        "type": "text",
+        "value": " jokes and laugh behind his "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "back"
+      },
+      {
+        "type": "text",
+        "value": ". But it was "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "hard"
+      },
+      {
+        "type": "text",
+        "value": " for him to "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "live",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " alone, and at last he thought of a plan that would perhaps help him out of his trouble.\n\nHe called a meeting of all the Foxes, saying that he had something of great importance to tell the tribe.\n\nWhen they were all gathered together, the Fox Without a Tail got up and made a long speech about those Foxes who had come to harm because of their tails.\n\nThis one had been caught by hounds when his tail had become entangled in the hedge. That one had not been able to run fast enough because of the weight of his brush. Besides, it was well known, he said, that men hunt Foxes simply for their tails, which they cut off as prizes of the hunt. With such proof of the danger and uselessness of having a tail, said Master Fox, he would advise every Fox to cut it off, if he valued life and safety.\n\nWhen he had finished talking, an old Fox arose, and said, smiling:\n\n\"Master Fox, kindly turn around for a moment, and you shall have your answer.\"\n\nWhen the poor Fox Without a Tail turned around, there arose such a storm of jeers and hooting, that he saw how useless it was to try any longer to persuade the Foxes to part with their tails."
+      }
+    ]
+  }
+}

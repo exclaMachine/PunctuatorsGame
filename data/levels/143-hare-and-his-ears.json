@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "hare-and-his-ears",
+    "title": "The Hare And His Ears",
+    "order": 143,
+    "moral": "Your enemies will seize any excuse to attack you.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 5,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "The Lion had been "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "badly"
+      },
+      {
+        "type": "text",
+        "value": " hurt by the horns of a Goat, which he was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "eating",
+        "lemma": "eat"
+      },
+      {
+        "type": "text",
+        "value": ". He was very "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "angry"
+      },
+      {
+        "type": "text",
+        "value": " to think that any "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "animal"
+      },
+      {
+        "type": "text",
+        "value": " that he chose for a "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "meal"
+      },
+      {
+        "type": "text",
+        "value": ", should be so "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "brazen"
+      },
+      {
+        "type": "text",
+        "value": " as to wear "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "such"
+      },
+      {
+        "type": "text",
+        "value": " dangerous things as horns to "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "scratch",
+        "lemma": "scratch"
+      },
+      {
+        "type": "text",
+        "value": " him while he "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "ate",
+        "lemma": "eat"
+      },
+      {
+        "type": "text",
+        "value": ". So he "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "commanded",
+        "lemma": "command"
+      },
+      {
+        "type": "text",
+        "value": " that all animals with horns should "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "leave",
+        "lemma": "leave"
+      },
+      {
+        "type": "text",
+        "value": " his domains within twenty-four "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "hours"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nThe command struck terror among the beasts. All those who were so unfortunate as to have horns, began to pack up and move out. Even the Hare, who, as you know, has no horns and so had nothing to fear, passed a very restless night, dreaming awful dreams about the fearful Lion.\n\nAnd when he came out of the warren in the early morning sunshine, and there saw the shadow cast by his long and pointed ears, a terrible fright seized him.\n\n\"Goodby, neighbor Cricket,\" he called. \"I'm off. He will certainly make out that my ears are horns, no matter what I say.\"\n\nDo not give your enemies the slightest reason to attack your reputation."
+      }
+    ]
+  }
+}

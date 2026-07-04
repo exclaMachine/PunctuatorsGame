@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fox-and-the-pheasants",
+    "title": "The Fox And The Pheasants",
+    "order": 116,
+    "moral": "Too much attention to danger may cause us to fall victims to it.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 2,
+      "adjective": 2,
+      "adverb": 3
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "One moonlight "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "evening"
+      },
+      {
+        "type": "text",
+        "value": " as Master Fox was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "taking",
+        "lemma": "take"
+      },
+      {
+        "type": "text",
+        "value": " his usual stroll in the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "woods"
+      },
+      {
+        "type": "text",
+        "value": ", he saw a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "number"
+      },
+      {
+        "type": "text",
+        "value": " of Pheasants perched "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adverb",
+        "answer": "quite"
+      },
+      {
+        "type": "text",
+        "value": " out of his "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "reach"
+      },
+      {
+        "type": "text",
+        "value": " on a limb of a "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "tall"
+      },
+      {
+        "type": "text",
+        "value": " old tree. The "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "sly"
+      },
+      {
+        "type": "text",
+        "value": " Fox soon found a "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "bright"
+      },
+      {
+        "type": "text",
+        "value": " patch of moonlight, where the Pheasants could "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "see",
+        "lemma": "see"
+      },
+      {
+        "type": "text",
+        "value": " him clearly; "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "there"
+      },
+      {
+        "type": "text",
+        "value": " he raised himself up on his "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "hind"
+      },
+      {
+        "type": "text",
+        "value": " legs, and began a wild dance. First he whirled 'round and 'round like a top, then he hopped up and down, cutting all sorts of strange capers. The Pheasants stared giddily. They hardly dared blink for fear of losing him out of their sight a single instant.\n\nNow the Fox made as if to climb a tree, now he fell over and lay still, playing dead, and the next instant he was hopping on all fours, his back in the air, and his bushy tail shaking so that it seemed to throw out silver sparks in the moonlight.\n\nBy this time the poor birds' heads were in a whirl. And when the Fox began his performance all over again, so dazed did they become, that they lost their hold on the limb, and fell down one by one to the Fox."
+      }
+    ]
+  }
+}

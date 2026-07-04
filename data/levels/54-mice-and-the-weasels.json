@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "mice-and-the-weasels",
+    "title": "The Mice And The Weasels",
+    "order": 54,
+    "moral": "Greatness has its penalties.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 5,
+      "adjective": 0,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "The Weasels and the Mice were always up in "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "arms"
+      },
+      {
+        "type": "text",
+        "value": " against each other. In every "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "battle"
+      },
+      {
+        "type": "text",
+        "value": " the Weasels carried off the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "victory"
+      },
+      {
+        "type": "text",
+        "value": ", as well as a large number of the Mice, which they "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "ate",
+        "lemma": "eat"
+      },
+      {
+        "type": "text",
+        "value": " for dinner next "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": ". In despair the Mice "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "called",
+        "lemma": "call"
+      },
+      {
+        "type": "text",
+        "value": " a council, and "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "there"
+      },
+      {
+        "type": "text",
+        "value": " it was decided that the Mouse army was always "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "beaten",
+        "lemma": "beat"
+      },
+      {
+        "type": "text",
+        "value": " because it had no leaders. So a large number of "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "generals"
+      },
+      {
+        "type": "text",
+        "value": " and commanders were "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "appointed",
+        "lemma": "appoint"
+      },
+      {
+        "type": "text",
+        "value": " from among the "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "most"
+      },
+      {
+        "type": "text",
+        "value": " eminent Mice.\n\nTo "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "distinguish",
+        "lemma": "distinguish"
+      },
+      {
+        "type": "text",
+        "value": " themselves from the soldiers in the ranks, the new leaders proudly bound on their heads lofty crests and ornaments of feathers or straw. Then after long preparation of the Mouse army in all the arts of war, they sent a challenge to the Weasels.\n\nThe Weasels accepted the challenge with eagerness, for they were always ready for a fight when a meal was in sight. They immediately attacked the Mouse army in large numbers. Soon the Mouse line gave way before the attack and the whole army fled for cover. The privates easily slipped into their holes, but the Mouse leaders could not squeeze through the narrow openings because of their head-dresses. Not one escaped the teeth of the hungry Weasels."
+      }
+    ]
+  }
+}

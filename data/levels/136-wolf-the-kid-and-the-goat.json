@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "wolf-the-kid-and-the-goat",
+    "title": "The Wolf, The Kid, And The Goat",
+    "order": 136,
+    "moral": "Two sureties are better than one.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 4,
+      "adjective": 1,
+      "adverb": 3
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Mother Goat was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "going",
+        "lemma": "go"
+      },
+      {
+        "type": "text",
+        "value": " to market one "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "morning"
+      },
+      {
+        "type": "text",
+        "value": " to get provisions for her "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "household"
+      },
+      {
+        "type": "text",
+        "value": ", which consisted of but one "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "little"
+      },
+      {
+        "type": "text",
+        "value": " Kid and herself.\n\n\""
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "Take",
+        "lemma": "take"
+      },
+      {
+        "type": "text",
+        "value": " good care of the "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "house"
+      },
+      {
+        "type": "text",
+        "value": ", my son,\" she said to the Kid, as she "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "carefully"
+      },
+      {
+        "type": "text",
+        "value": " latched the door. \"Do not let anyone in, unless he "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "gives",
+        "lemma": "give"
+      },
+      {
+        "type": "text",
+        "value": " you this password: 'Down with the Wolf and all his race!'\"\n\n"
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "Strangely"
+      },
+      {
+        "type": "text",
+        "value": " enough, a Wolf was "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "lurking",
+        "lemma": "lurk"
+      },
+      {
+        "type": "text",
+        "value": " near and heard what the Goat had said. So, as "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "soon"
+      },
+      {
+        "type": "text",
+        "value": " as Mother Goat was out of "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "sight"
+      },
+      {
+        "type": "text",
+        "value": ", up he trotted to the door and knocked.\n\n\"Down with the Wolf and all his race,\" said the Wolf softly.\n\nIt was the right password, but when the Kid peeped through a crack in the door and saw the shadowy figure outside, he did not feel at all easy.\n\n\"Show me a white paw,\" he said, \"or I won't let you in.\"\n\nA white paw, of course, is a feature few Wolves can show, and so Master Wolf had to go away as hungry as he had come.\n\n\"You can never be too sure,\" said the Kid, when he saw the Wolf making off to the woods."
+      }
+    ]
+  }
+}

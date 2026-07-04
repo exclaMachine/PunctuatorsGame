@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "wolf-and-the-sheep",
+    "title": "The Wolf And The Sheep",
+    "order": 47,
+    "moral": "A knave's hypocrisy is easily seen through.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 5,
+      "adjective": 1,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Wolf had been "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "hurt",
+        "lemma": "hurt"
+      },
+      {
+        "type": "text",
+        "value": " in a fight with a Bear. He was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "unable"
+      },
+      {
+        "type": "text",
+        "value": " to move and could not "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "satisfy",
+        "lemma": "satisfy"
+      },
+      {
+        "type": "text",
+        "value": " his hunger and "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "thirst"
+      },
+      {
+        "type": "text",
+        "value": ". A Sheep "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "passed",
+        "lemma": "pass"
+      },
+      {
+        "type": "text",
+        "value": " by near his "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "hiding"
+      },
+      {
+        "type": "text",
+        "value": " place, and the Wolf "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "called",
+        "lemma": "call"
+      },
+      {
+        "type": "text",
+        "value": " to him.\n\n\"Please "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "fetch",
+        "lemma": "fetch"
+      },
+      {
+        "type": "text",
+        "value": " me a drink of "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "water"
+      },
+      {
+        "type": "text",
+        "value": ",\" he begged, \"that might give me strength enough so I can get me some solid food.\"\n\n\"Solid food!\" said the Sheep. \"That means me, I suppose. If I should bring you a drink, it would only serve to wash me down your throat. Don't talk to me about a drink!\""
+      }
+    ]
+  }
+}

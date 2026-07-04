@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "frogs-and-the-ox",
+    "title": "The Frogs And The Ox",
+    "order": 5,
+    "moral": "Do not attempt the impossible.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 4,
+      "adjective": 4,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "An Ox "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "came",
+        "lemma": "come"
+      },
+      {
+        "type": "text",
+        "value": " down to a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "reedy"
+      },
+      {
+        "type": "text",
+        "value": " pool to drink. As he "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "splashed",
+        "lemma": "splash"
+      },
+      {
+        "type": "text",
+        "value": " heavily into the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "water"
+      },
+      {
+        "type": "text",
+        "value": ", he crushed a "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "young"
+      },
+      {
+        "type": "text",
+        "value": " Frog into the "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "mud"
+      },
+      {
+        "type": "text",
+        "value": ". The old Frog "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "soon"
+      },
+      {
+        "type": "text",
+        "value": " missed the little one and "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "asked",
+        "lemma": "ask"
+      },
+      {
+        "type": "text",
+        "value": " his brothers and "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "sisters"
+      },
+      {
+        "type": "text",
+        "value": " what had become of him.\n\n\"A "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "great"
+      },
+      {
+        "type": "text",
+        "value": " big monster,\" said one of them, \""
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "stepped",
+        "lemma": "step"
+      },
+      {
+        "type": "text",
+        "value": " on little brother with one of his "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "huge"
+      },
+      {
+        "type": "text",
+        "value": " feet!\"\n\n\"Big, was he!\" said the old Frog, puffing herself up. \"Was he as big as this?\"\n\n\"Oh, much bigger!\" they cried.\n\nThe Frog puffed up still more.\n\n\"He could not have been bigger than this,\" she said. But the little Frogs all declared that the monster was much, much bigger and the old Frog kept puffing herself out more and more until, all at once, she burst."
+      }
+    ]
+  }
+}

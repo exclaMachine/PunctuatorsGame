@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "wolves-and-the-sheep",
+    "title": "The Wolves And The Sheep",
+    "order": 144,
+    "moral": "Do not give up friends for foes.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 4,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "pack"
+      },
+      {
+        "type": "text",
+        "value": " of Wolves lurked near the Sheep "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "pasture"
+      },
+      {
+        "type": "text",
+        "value": ". But the Dogs "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "kept",
+        "lemma": "keep"
+      },
+      {
+        "type": "text",
+        "value": " them all at a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "respectful"
+      },
+      {
+        "type": "text",
+        "value": " distance, and the Sheep "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "grazed",
+        "lemma": "graze"
+      },
+      {
+        "type": "text",
+        "value": " in perfect safety. But "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "now"
+      },
+      {
+        "type": "text",
+        "value": " the Wolves thought of a "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "plan"
+      },
+      {
+        "type": "text",
+        "value": " to trick the Sheep.\n\n\"Why is there always this "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "hostility"
+      },
+      {
+        "type": "text",
+        "value": " between us?\" they "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "said",
+        "lemma": "say"
+      },
+      {
+        "type": "text",
+        "value": ". \"If it were not for those Dogs who are always "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "stirring",
+        "lemma": "stir"
+      },
+      {
+        "type": "text",
+        "value": " up trouble, I am sure we should get along beautifully. Send them away and you will see what good friends we shall become.\"\n\nThe Sheep were easily fooled. They persuaded the Dogs to go away, and that very evening the Wolves had the grandest feast of their lives."
+      }
+    ]
+  }
+}

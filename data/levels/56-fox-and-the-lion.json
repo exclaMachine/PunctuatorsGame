@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fox-and-the-lion",
+    "title": "The Fox And The Lion",
+    "order": 56,
+    "moral": "Acquaintance with evil blinds us to its dangers.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 1,
+      "adjective": 2,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "very"
+      },
+      {
+        "type": "text",
+        "value": " young Fox, who had "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "never"
+      },
+      {
+        "type": "text",
+        "value": " before seen a Lion, "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "happened",
+        "lemma": "happen"
+      },
+      {
+        "type": "text",
+        "value": " to meet one in the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "forest"
+      },
+      {
+        "type": "text",
+        "value": ". A single look was "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "enough"
+      },
+      {
+        "type": "text",
+        "value": " to send the Fox off at top "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "speed"
+      },
+      {
+        "type": "text",
+        "value": " for the nearest "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "hiding"
+      },
+      {
+        "type": "text",
+        "value": " place.\n\nThe "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "second"
+      },
+      {
+        "type": "text",
+        "value": " time the Fox saw the Lion he stopped behind a tree to look at him a moment before slinking away. But the third time, the Fox went boldly up to the Lion and, without turning a hair, said, \"Hello, there, old top.\"\n\nFamiliarity breeds contempt."
+      }
+    ]
+  }
+}

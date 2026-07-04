@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "flies-and-the-honey",
+    "title": "The Flies And The Honey",
+    "order": 121,
+    "moral": "Be not greedy for a little passing pleasure. It may destroy you.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 2,
+      "adjective": 1,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "jar"
+      },
+      {
+        "type": "text",
+        "value": " of honey was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "upset"
+      },
+      {
+        "type": "text",
+        "value": " and the sticky sweetness "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "flowed",
+        "lemma": "flow"
+      },
+      {
+        "type": "text",
+        "value": " out on the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "table"
+      },
+      {
+        "type": "text",
+        "value": ". The sweet "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "smell"
+      },
+      {
+        "type": "text",
+        "value": " of the honey "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "soon"
+      },
+      {
+        "type": "text",
+        "value": " brought a large "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "number"
+      },
+      {
+        "type": "text",
+        "value": " of Flies buzzing "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "around"
+      },
+      {
+        "type": "text",
+        "value": ". They did not "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "wait",
+        "lemma": "wait"
+      },
+      {
+        "type": "text",
+        "value": " for an invitation. No, indeed; they settled right down, feet and all, to gorge themselves. The Flies were quickly smeared from head to foot with honey. Their wings stuck together. They could not pull their feet out of the sticky mass. And so they died, giving their lives for the sake of a taste of sweetness."
+      }
+    ]
+  }
+}

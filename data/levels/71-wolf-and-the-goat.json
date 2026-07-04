@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "wolf-and-the-goat",
+    "title": "The Wolf And The Goat",
+    "order": 71,
+    "moral": "An invitation prompted by selfishness is not to be accepted.",
+    "blankCounts": {
+      "noun": 1,
+      "verb": 5,
+      "adjective": 4,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "hungry"
+      },
+      {
+        "type": "text",
+        "value": " Wolf spied a Goat "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "browsing",
+        "lemma": "browse"
+      },
+      {
+        "type": "text",
+        "value": " at the top of a "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "steep"
+      },
+      {
+        "type": "text",
+        "value": " cliff where he could not "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adverb",
+        "answer": "possibly"
+      },
+      {
+        "type": "text",
+        "value": " get at her.\n\n\"That is a very "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "dangerous"
+      },
+      {
+        "type": "text",
+        "value": " place for you,\" he "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "called",
+        "lemma": "call"
+      },
+      {
+        "type": "text",
+        "value": " out, pretending to be very anxious about the Goat's "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "safety"
+      },
+      {
+        "type": "text",
+        "value": ". \"What if you should "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "fall",
+        "lemma": "fall"
+      },
+      {
+        "type": "text",
+        "value": "! Please listen to me and "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "come",
+        "lemma": "come"
+      },
+      {
+        "type": "text",
+        "value": " down! Here you can get all you "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "want",
+        "lemma": "want"
+      },
+      {
+        "type": "text",
+        "value": " of the finest, "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "tenderest"
+      },
+      {
+        "type": "text",
+        "value": " grass in the country.\"\n\nThe Goat looked over the edge of the cliff.\n\n\"How very, very anxious you are about me,\" she said, \"and how generous you are with your grass! But I know you! It's your own appetite you are thinking of, not mine!\""
+      }
+    ]
+  }
+}

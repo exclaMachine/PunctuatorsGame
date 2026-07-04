@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "bear-and-the-bees",
+    "title": "The Bear And The Bees",
+    "order": 66,
+    "moral": "It is wiser to bear a single injury in silence than to provoke a thousand by flying into a rage.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 8,
+      "adjective": 0,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Bear "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "roaming",
+        "lemma": "roam"
+      },
+      {
+        "type": "text",
+        "value": " the woods in "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "search"
+      },
+      {
+        "type": "text",
+        "value": " of berries happened on a "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "fallen",
+        "lemma": "fall"
+      },
+      {
+        "type": "text",
+        "value": " tree in which a swarm of Bees had "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "stored",
+        "lemma": "store"
+      },
+      {
+        "type": "text",
+        "value": " their honey. The Bear "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "began",
+        "lemma": "begin"
+      },
+      {
+        "type": "text",
+        "value": " to nose around the log "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "very"
+      },
+      {
+        "type": "text",
+        "value": " carefully to find out if the Bees were at home. Just then one of the swarm "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "came",
+        "lemma": "come"
+      },
+      {
+        "type": "text",
+        "value": " home from the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "clover"
+      },
+      {
+        "type": "text",
+        "value": " field with a "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "load"
+      },
+      {
+        "type": "text",
+        "value": " of sweets. Guessing what the Bear was after, the Bee "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "flew",
+        "lemma": "fly"
+      },
+      {
+        "type": "text",
+        "value": " at him, "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "stung",
+        "lemma": "sting"
+      },
+      {
+        "type": "text",
+        "value": " him sharply and then "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "disappeared",
+        "lemma": "disappear"
+      },
+      {
+        "type": "text",
+        "value": " into the hollow log.\n\nThe Bear lost his temper in an instant, and sprang upon the log tooth and claw, to destroy the nest. But this only brought out the whole swarm. The poor Bear had to take to his heels, and he was able to save himself only by diving into a pool of water."
+      }
+    ]
+  }
+}

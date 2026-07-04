@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "wolf-and-the-shepherd",
+    "title": "The Wolf And The Shepherd",
+    "order": 76,
+    "moral": "Once a wolf, always a wolf.",
+    "blankCounts": {
+      "noun": 1,
+      "verb": 8,
+      "adjective": 2,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Wolf had been "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "prowling",
+        "lemma": "prowl"
+      },
+      {
+        "type": "text",
+        "value": " around a flock of Sheep for a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "long"
+      },
+      {
+        "type": "text",
+        "value": " time, and the Shepherd "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "watched",
+        "lemma": "watch"
+      },
+      {
+        "type": "text",
+        "value": " very anxiously to "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "prevent",
+        "lemma": "prevent"
+      },
+      {
+        "type": "text",
+        "value": " him from carrying off a Lamb. But the Wolf did not "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "try",
+        "lemma": "try"
+      },
+      {
+        "type": "text",
+        "value": " to do any "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "harm"
+      },
+      {
+        "type": "text",
+        "value": ". Instead he "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "seemed",
+        "lemma": "seem"
+      },
+      {
+        "type": "text",
+        "value": " to be helping the Shepherd "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "take",
+        "lemma": "take"
+      },
+      {
+        "type": "text",
+        "value": " care of the Sheep. At "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "last"
+      },
+      {
+        "type": "text",
+        "value": " the Shepherd got so "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "used",
+        "lemma": "use"
+      },
+      {
+        "type": "text",
+        "value": " to seeing the Wolf about that he "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "forgot",
+        "lemma": "forget"
+      },
+      {
+        "type": "text",
+        "value": " how wicked he could be.\n\nOne day he even went so far as to leave his flock in the Wolf's care while he went on an errand. But when he came back and saw how many of the flock had been killed and carried off, he knew how foolish to trust a Wolf."
+      }
+    ]
+  }
+}

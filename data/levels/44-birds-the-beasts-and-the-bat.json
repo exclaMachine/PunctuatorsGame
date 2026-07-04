@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "birds-the-beasts-and-the-bat",
+    "title": "The Birds, The Beasts, And The Bat",
+    "order": 44,
+    "moral": "The deceitful have no friends.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 5,
+      "adjective": 2,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "The Birds and the Beasts "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "declared",
+        "lemma": "declare"
+      },
+      {
+        "type": "text",
+        "value": " war against each "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "other"
+      },
+      {
+        "type": "text",
+        "value": ". No compromise was "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "possible"
+      },
+      {
+        "type": "text",
+        "value": ", and so they "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "went",
+        "lemma": "go"
+      },
+      {
+        "type": "text",
+        "value": " at it tooth and "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "claw"
+      },
+      {
+        "type": "text",
+        "value": ". It is "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "said",
+        "lemma": "say"
+      },
+      {
+        "type": "text",
+        "value": " the quarrel grew out of the "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "persecution"
+      },
+      {
+        "type": "text",
+        "value": " the race of Geese "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "suffered",
+        "lemma": "suffer"
+      },
+      {
+        "type": "text",
+        "value": " at the teeth of the Fox family. The Beasts, "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "too"
+      },
+      {
+        "type": "text",
+        "value": ", had cause for "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "fight"
+      },
+      {
+        "type": "text",
+        "value": ". The Eagle was "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "constantly"
+      },
+      {
+        "type": "text",
+        "value": " pouncing on the Hare, and the Owl "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "dined",
+        "lemma": "dine"
+      },
+      {
+        "type": "text",
+        "value": " daily on Mice.\n\nIt was a terrible battle. Many a Hare and many a Mouse died. Chickens and Geese fell by the score--and the victor always stopped for a feast.\n\nNow the Bat family had not openly joined either side. They were a very politic race. So when they saw the Birds getting the better of it, they were Birds for all there was in it. But when the tide of battle turned, they immediately sided with the Beasts.\n\nWhen the battle was over, the conduct of the Bats was discussed at the peace conference. Such deceit was unpardonable, and Birds and Beasts made common cause to drive out the Bats. And since then the Bat family hides in dark towers and deserted ruins, flying out only in the night."
+      }
+    ]
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "lion-s-share",
+    "title": "The Lion'S Share",
+    "order": 140,
+    "moral": "Might makes right.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 4,
+      "adjective": 3,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "long"
+      },
+      {
+        "type": "text",
+        "value": " time ago, the Lion, the Fox, the Jackal, and the Wolf "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "agreed",
+        "lemma": "agree"
+      },
+      {
+        "type": "text",
+        "value": " to go hunting "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adverb",
+        "answer": "together"
+      },
+      {
+        "type": "text",
+        "value": ", sharing with each "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "other"
+      },
+      {
+        "type": "text",
+        "value": " whatever they found.\n\nOne "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " the Wolf ran down a Stag and "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "immediately"
+      },
+      {
+        "type": "text",
+        "value": " called his comrades to "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "divide",
+        "lemma": "divide"
+      },
+      {
+        "type": "text",
+        "value": " the spoil.\n\nWithout being "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "asked",
+        "lemma": "ask"
+      },
+      {
+        "type": "text",
+        "value": ", the Lion "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "placed",
+        "lemma": "place"
+      },
+      {
+        "type": "text",
+        "value": " himself at the "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "head"
+      },
+      {
+        "type": "text",
+        "value": " of the feast to do the "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "carving"
+      },
+      {
+        "type": "text",
+        "value": ", and, with a "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "great"
+      },
+      {
+        "type": "text",
+        "value": " show of fairness, began to count the guests.\n\n\"One,\" he said, counting on his claws, \"that is myself the Lion. Two, that's the Wolf, three, is the Jackal, and the Fox makes four.\"\n\nHe then very carefully divided the Stag into four equal parts.\n\n\"I am King Lion,\" he said, when he had finished, \"so of course I get the first part. This next part falls to me because I am the strongest; and this is mine because I am the bravest.\"\n\nHe now began to glare at the others very savagely. \"If any of you have any claim to the part that is left,\" he growled, stretching his claws meaningly, \"now is the time to speak up.\""
+      }
+    ]
+  }
+}

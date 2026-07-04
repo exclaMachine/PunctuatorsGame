@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "sheep-and-the-pig",
+    "title": "The Sheep And The Pig",
+    "order": 23,
+    "moral": "It is easy to be brave when there is no danger.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 4,
+      "adjective": 2,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "One "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " a shepherd discovered a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "fat"
+      },
+      {
+        "type": "text",
+        "value": " Pig in the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "meadow"
+      },
+      {
+        "type": "text",
+        "value": " where his Sheep were "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "pastured",
+        "lemma": "pasture"
+      },
+      {
+        "type": "text",
+        "value": ". He very "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adverb",
+        "answer": "quickly"
+      },
+      {
+        "type": "text",
+        "value": " captured the porker, which "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "squealed",
+        "lemma": "squeal"
+      },
+      {
+        "type": "text",
+        "value": " at the top of its "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "voice"
+      },
+      {
+        "type": "text",
+        "value": " the moment the Shepherd "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "laid",
+        "lemma": "lay"
+      },
+      {
+        "type": "text",
+        "value": " his hands on it. You would have "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "thought",
+        "lemma": "think"
+      },
+      {
+        "type": "text",
+        "value": ", to hear the "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "loud"
+      },
+      {
+        "type": "text",
+        "value": " squealing, that the Pig was being "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "cruelly"
+      },
+      {
+        "type": "text",
+        "value": " hurt. But in "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "spite"
+      },
+      {
+        "type": "text",
+        "value": " of its squeals and struggles to escape, the Shepherd tucked his prize under his arm and started off to the butcher's in the market place.\n\nThe Sheep in the pasture were much astonished and amused at the Pig's behavior, and followed the Shepherd and his charge to the pasture gate.\n\n\"What makes you squeal like that?\" asked one of the Sheep. \"The Shepherd often catches and carries off one of us. But we should feel very much ashamed to make such a terrible fuss about it like you do.\"\n\n\"That is all very well,\" replied the Pig, with a squeal and a frantic kick. \"When he catches you he is only after your wool. But he wants my bacon! gree-ee-ee!\""
+      }
+    ]
+  }
+}

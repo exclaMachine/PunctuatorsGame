@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "monkey-and-the-cat",
+    "title": "The Monkey And The Cat",
+    "order": 62,
+    "moral": "The flatterer seeks some benefit at your expense.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 6,
+      "adjective": 2,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Once upon a time a Cat and a Monkey "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "lived",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " as pets in the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "same"
+      },
+      {
+        "type": "text",
+        "value": " house. They were "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "great"
+      },
+      {
+        "type": "text",
+        "value": " friends and were "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adverb",
+        "answer": "constantly"
+      },
+      {
+        "type": "text",
+        "value": " in all sorts of "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "mischief"
+      },
+      {
+        "type": "text",
+        "value": " together. What they "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "seemed",
+        "lemma": "seem"
+      },
+      {
+        "type": "text",
+        "value": " to think of more than anything "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "else"
+      },
+      {
+        "type": "text",
+        "value": " was to get something to "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "eat",
+        "lemma": "eat"
+      },
+      {
+        "type": "text",
+        "value": ", and it did not "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "matter",
+        "lemma": "matter"
+      },
+      {
+        "type": "text",
+        "value": " much to them how they "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "got",
+        "lemma": "get"
+      },
+      {
+        "type": "text",
+        "value": " it.\n\nOne "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " they were sitting by the fire, "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "watching",
+        "lemma": "watch"
+      },
+      {
+        "type": "text",
+        "value": " some chestnuts roasting on the hearth. How to get them was the question.\n\n\"I would gladly get them,\" said the cunning Monkey, \"but you are much more skillful at such things than I am. Pull them out and I'll divide them between us.\"\n\nPussy stretched out her paw very carefully, pushed aside some of the cinders, and drew back her paw very quickly. Then she tried it again, this time pulling a chestnut half out of the fire. A third time and she drew out the chestnut. This performance she went through several times, each time singeing her paw severely. As fast as she pulled the chestnuts out of the fire, the Monkey ate them up.\n\nNow the master came in, and away scampered the rascals, Mistress Cat with a burnt paw and no chestnuts. From that time on, they say, she contented herself with mice and rats and had little to do with Sir Monkey."
+      }
+    ]
+  }
+}

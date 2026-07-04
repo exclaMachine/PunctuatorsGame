@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "kid-and-the-wolf",
+    "title": "The Kid And The Wolf",
+    "order": 11,
+    "moral": "Do not say anything at any time that you would not say at all times.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 4,
+      "adjective": 2,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "frisky"
+      },
+      {
+        "type": "text",
+        "value": " young Kid had been "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "left",
+        "lemma": "leave"
+      },
+      {
+        "type": "text",
+        "value": " by the herdsman on the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "thatched"
+      },
+      {
+        "type": "text",
+        "value": " roof of a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "sheep"
+      },
+      {
+        "type": "text",
+        "value": " shelter to keep him out of "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "harm"
+      },
+      {
+        "type": "text",
+        "value": "'s way. The Kid was "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "browsing",
+        "lemma": "browse"
+      },
+      {
+        "type": "text",
+        "value": " near the edge of the roof, when he "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "spied",
+        "lemma": "spy"
+      },
+      {
+        "type": "text",
+        "value": " a Wolf and "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "began",
+        "lemma": "begin"
+      },
+      {
+        "type": "text",
+        "value": " to jeer at him, making faces and abusing him to his heart's content.\n\n\"I hear you,\" said the Wolf, \"and I haven't the least grudge against you for what you say or do. When you are up there it is the roof that's talking, not you.\""
+      }
+    ]
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "farmer-and-the-cranes",
+    "title": "The Farmer And The Cranes",
+    "order": 78,
+    "moral": "Bluff is no proof that hard fists are lacking.",
+    "blankCounts": {
+      "noun": 6,
+      "verb": 5,
+      "adjective": 1,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Some Cranes saw a farmer plowing a "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "large"
+      },
+      {
+        "type": "text",
+        "value": " field. When the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "work"
+      },
+      {
+        "type": "text",
+        "value": " of plowing was "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "done",
+        "lemma": "do"
+      },
+      {
+        "type": "text",
+        "value": ", they patiently "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "watched",
+        "lemma": "watch"
+      },
+      {
+        "type": "text",
+        "value": " him sow the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "seed"
+      },
+      {
+        "type": "text",
+        "value": ". It was their "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "feast"
+      },
+      {
+        "type": "text",
+        "value": ", they thought.\n\nSo, as soon as the Farmer had "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "finished",
+        "lemma": "finish"
+      },
+      {
+        "type": "text",
+        "value": " planting and had "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "gone",
+        "lemma": "go"
+      },
+      {
+        "type": "text",
+        "value": " home, down they flew to the field, and began to "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "eat",
+        "lemma": "eat"
+      },
+      {
+        "type": "text",
+        "value": " as fast as they could.\n\nThe Farmer, of "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "course"
+      },
+      {
+        "type": "text",
+        "value": ", knew the Cranes and their "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "ways"
+      },
+      {
+        "type": "text",
+        "value": ". He had had "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "experience"
+      },
+      {
+        "type": "text",
+        "value": " with such birds before. He soon returned to the field with a sling. But he did not bring any stones with him. He expected to scare the Cranes just by swinging the sling in the air, and shouting loudly at them.\n\nAt first the Cranes flew away in great terror. But they soon began to see that none of them ever got hurt. They did not even hear the noise of stones whizzing through the air, and as for words, they would kill nobody. At last they paid no attention whatever to the Farmer.\n\nThe Farmer saw that he would have to take other measures. He wanted to save at least some of his grain. So he loaded his sling with stones and killed several of the Cranes. This had the effect the Farmer wanted, for from that day the Cranes visited his field no more.\n\nBluff and threatening words are of little value with rascals."
+      }
+    ]
+  }
+}

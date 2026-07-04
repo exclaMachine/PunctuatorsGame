@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "ass-and-the-grasshoppers",
+    "title": "The Ass And The Grasshoppers",
+    "order": 72,
+    "moral": "The laws of nature are unchangeable.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 6,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "One "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " as an Ass was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "walking",
+        "lemma": "walk"
+      },
+      {
+        "type": "text",
+        "value": " in the pasture, he "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "found",
+        "lemma": "find"
+      },
+      {
+        "type": "text",
+        "value": " some Grasshoppers chirping "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adverb",
+        "answer": "merrily"
+      },
+      {
+        "type": "text",
+        "value": " in a grassy "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "corner"
+      },
+      {
+        "type": "text",
+        "value": " of the field.\n\nHe "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "listened",
+        "lemma": "listen"
+      },
+      {
+        "type": "text",
+        "value": " with a great "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "deal"
+      },
+      {
+        "type": "text",
+        "value": " of admiration to the song of the Grasshoppers. It was such a "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "joyful"
+      },
+      {
+        "type": "text",
+        "value": " song that his "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "pleasure"
+      },
+      {
+        "type": "text",
+        "value": "-loving heart was "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "filled",
+        "lemma": "fill"
+      },
+      {
+        "type": "text",
+        "value": " with a wish to sing as they "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "did",
+        "lemma": "do"
+      },
+      {
+        "type": "text",
+        "value": ".\n\n\"What is it?\" he "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "asked",
+        "lemma": "ask"
+      },
+      {
+        "type": "text",
+        "value": " very respectfully, \"that has given you such beautiful voices? Is there any special food you eat, or is it some divine nectar that makes you sing so wonderfully?\"\n\n\"Yes,\" said the Grasshoppers, who were very fond of a joke; \"it is the dew we drink! Try some and see.\"\n\nSo thereafter the Ass would eat nothing and drink nothing but dew.\n\nNaturally, the poor foolish Ass soon died."
+      }
+    ]
+  }
+}

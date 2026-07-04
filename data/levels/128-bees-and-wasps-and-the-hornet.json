@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "bees-and-wasps-and-the-hornet",
+    "title": "The Bees And Wasps, And The Hornet",
+    "order": 128,
+    "moral": "Ability proves itself by deeds.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 4,
+      "adjective": 2,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "store"
+      },
+      {
+        "type": "text",
+        "value": " of honey had been "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "found",
+        "lemma": "find"
+      },
+      {
+        "type": "text",
+        "value": " in a hollow tree, and the Wasps declared "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adverb",
+        "answer": "positively"
+      },
+      {
+        "type": "text",
+        "value": " that it belonged to them. The Bees were "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adverb",
+        "answer": "just"
+      },
+      {
+        "type": "text",
+        "value": " as sure that the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "treasure"
+      },
+      {
+        "type": "text",
+        "value": " was theirs. The "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "argument"
+      },
+      {
+        "type": "text",
+        "value": " grew very pointed, and it "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "looked",
+        "lemma": "look"
+      },
+      {
+        "type": "text",
+        "value": " as if the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "affair"
+      },
+      {
+        "type": "text",
+        "value": " could not be "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "settled",
+        "lemma": "settle"
+      },
+      {
+        "type": "text",
+        "value": " without a battle, when at "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "last"
+      },
+      {
+        "type": "text",
+        "value": ", with much "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "good"
+      },
+      {
+        "type": "text",
+        "value": " sense, they "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "agreed",
+        "lemma": "agree"
+      },
+      {
+        "type": "text",
+        "value": " to let a judge decide the matter. So they brought the case before the Hornet, justice of the peace in that part of the woods.\n\nWhen the Judge called the case, witnesses declared that they had seen certain winged creatures in the neighborhood of the hollow tree, who hummed loudly, and whose bodies were striped, yellow and black, like Bees.\n\nCounsel for the Wasps immediately insisted that this description fitted his clients exactly.\n\nSuch evidence did not help Judge Hornet to any decision, so he adjourned court for six weeks to give him time to think it over. When the case came up again, both sides had a large number of witnesses. An Ant was first to take the stand, and was about to be cross-examined, when a wise old Bee addressed the Court.\n\n\"Your honor,\" he said, \"the case has now been pending for six weeks. If it is not decided soon, the honey will not be fit for anything. I move that the Bees and the Wasps be both instructed to build a honey comb. Then we shall soon see to whom the honey really belongs.\"\n\nThe Wasps protested loudly. Wise Judge Hornet quickly understood why they did so: They knew they could not build a honey comb and fill it with honey.\n\n\"It is clear,\" said the Judge, \"who made the comb and who could not have made it. The honey belongs to the Bees.\""
+      }
+    ]
+  }
+}

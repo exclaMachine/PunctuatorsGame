@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "a-raven-and-a-swan",
+    "title": "A Raven And A Swan",
+    "order": 35,
+    "moral": "A change of habits will not alter nature.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 5,
+      "adjective": 2,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Raven, which you "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "know",
+        "lemma": "know"
+      },
+      {
+        "type": "text",
+        "value": " is black as "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "coal"
+      },
+      {
+        "type": "text",
+        "value": ", was envious of the Swan, because her feathers were as white as the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "purest"
+      },
+      {
+        "type": "text",
+        "value": " snow. The "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "foolish"
+      },
+      {
+        "type": "text",
+        "value": " bird got the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "idea"
+      },
+      {
+        "type": "text",
+        "value": " that if he "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "lived",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " like the Swan, "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "swimming"
+      },
+      {
+        "type": "text",
+        "value": " and diving all day long and "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "eating",
+        "lemma": "eat"
+      },
+      {
+        "type": "text",
+        "value": " the weeds and "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "plants"
+      },
+      {
+        "type": "text",
+        "value": " that grow in the water, his feathers would "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "turn",
+        "lemma": "turn"
+      },
+      {
+        "type": "text",
+        "value": " white like the Swan's.\n\nSo he "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "left",
+        "lemma": "leave"
+      },
+      {
+        "type": "text",
+        "value": " his home in the "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "woods"
+      },
+      {
+        "type": "text",
+        "value": " and fields and flew down to live on the lakes and in the marshes. But though he washed and washed all day long, almost drowning himself at it, his feathers remained as black as ever. And as the water weeds he ate did not agree with him, he got thinner and thinner, and at last he died."
+      }
+    ]
+  }
+}

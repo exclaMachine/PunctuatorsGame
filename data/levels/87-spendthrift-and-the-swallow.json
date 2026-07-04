@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "spendthrift-and-the-swallow",
+    "title": "The Spendthrift And The Swallow",
+    "order": 87,
+    "moral": "One swallow does not make a summer.",
+    "blankCounts": {
+      "noun": 9,
+      "verb": 1,
+      "adjective": 2,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A young "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "fellow"
+      },
+      {
+        "type": "text",
+        "value": ", who was very "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "popular"
+      },
+      {
+        "type": "text",
+        "value": " among his boon "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "companions"
+      },
+      {
+        "type": "text",
+        "value": " as a good "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "spender"
+      },
+      {
+        "type": "text",
+        "value": ", quickly wasted his "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "fortune"
+      },
+      {
+        "type": "text",
+        "value": " trying to live up to his "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "reputation"
+      },
+      {
+        "type": "text",
+        "value": ". Then one "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "fine"
+      },
+      {
+        "type": "text",
+        "value": " day in early "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "spring"
+      },
+      {
+        "type": "text",
+        "value": " he found himself with not a "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "penny"
+      },
+      {
+        "type": "text",
+        "value": " left, and no "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "property"
+      },
+      {
+        "type": "text",
+        "value": " save the clothes he wore.\n\nHe was to "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "meet",
+        "lemma": "meet"
+      },
+      {
+        "type": "text",
+        "value": " some jolly young "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "men"
+      },
+      {
+        "type": "text",
+        "value": " that morning, and he was at his wits' end how to get enough money to keep up appearances. Just then a Swallow flew by, twittering merrily, and the young man, thinking summer had come, hastened off to a clothes dealer, to whom he sold all the clothes he wore down to his very tunic.\n\nA few days later a change in weather brought a severe frost; and the poor swallow and that foolish young man in his light tunic, and with his arms and knees bare, could scarcely keep life in their shivering bodies."
+      }
+    ]
+  }
+}

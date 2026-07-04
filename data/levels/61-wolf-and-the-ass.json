@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "wolf-and-the-ass",
+    "title": "The Wolf And The Ass",
+    "order": 61,
+    "moral": "Stick to your trade.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 8,
+      "adjective": 0,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "An Ass was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "feeding",
+        "lemma": "feed"
+      },
+      {
+        "type": "text",
+        "value": " in a pasture near a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "wood"
+      },
+      {
+        "type": "text",
+        "value": " when he saw a Wolf "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "lurking",
+        "lemma": "lurk"
+      },
+      {
+        "type": "text",
+        "value": " in the shadows along the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "hedge"
+      },
+      {
+        "type": "text",
+        "value": ". He easily "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "guessed",
+        "lemma": "guess"
+      },
+      {
+        "type": "text",
+        "value": " what the Wolf had in "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "mind"
+      },
+      {
+        "type": "text",
+        "value": ", and thought of a "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "plan"
+      },
+      {
+        "type": "text",
+        "value": " to save himself. So he "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "pretended",
+        "lemma": "pretend"
+      },
+      {
+        "type": "text",
+        "value": " he was lame, and began to "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "hobble",
+        "lemma": "hobble"
+      },
+      {
+        "type": "text",
+        "value": " painfully.\n\nWhen the Wolf "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "came",
+        "lemma": "come"
+      },
+      {
+        "type": "text",
+        "value": " up, he "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "asked",
+        "lemma": "ask"
+      },
+      {
+        "type": "text",
+        "value": " the Ass what had "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "made",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " him lame, and the Ass replied that he had stepped on a sharp thorn.\n\n\"Please pull it out,\" he pleaded, groaning as if in pain. \"If you do not, it might stick in your throat when you eat me.\"\n\nThe Wolf saw the wisdom of the advice, for he wanted to enjoy his meal without any danger of choking. So the Ass lifted up his foot and the Wolf began to search very closely and carefully for the thorn.\n\nJust then the Ass kicked out with all his might, tumbling the Wolf a dozen paces away. And while the Wolf was getting very slowly and painfully to his feet, the Ass galloped away in safety.\n\n\"Serves me right,\" growled the Wolf as he crept into the bushes. \"I'm a butcher by trade, not a doctor.\""
+      }
+    ]
+  }
+}

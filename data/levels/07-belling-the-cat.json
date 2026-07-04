@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "belling-the-cat",
+    "title": "Belling The Cat",
+    "order": 7,
+    "moral": "It is one thing to say that something should be done, but quite a different matter to do it.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 6,
+      "adjective": 1,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "The Mice "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": " called a meeting to "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "decide",
+        "lemma": "decide"
+      },
+      {
+        "type": "text",
+        "value": " on a plan to "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "free",
+        "lemma": "free"
+      },
+      {
+        "type": "text",
+        "value": " themselves of their enemy, the Cat. At "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "least"
+      },
+      {
+        "type": "text",
+        "value": " they wished to "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "find",
+        "lemma": "find"
+      },
+      {
+        "type": "text",
+        "value": " some way of "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "knowing",
+        "lemma": "know"
+      },
+      {
+        "type": "text",
+        "value": " when she was coming, so they might have "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "time"
+      },
+      {
+        "type": "text",
+        "value": " to run away. Indeed, something had to be "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "done",
+        "lemma": "do"
+      },
+      {
+        "type": "text",
+        "value": ", for they "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "lived",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " in such constant "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "fear"
+      },
+      {
+        "type": "text",
+        "value": " of her claws that they "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "hardly"
+      },
+      {
+        "type": "text",
+        "value": " dared stir from their "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "dens"
+      },
+      {
+        "type": "text",
+        "value": " by night or day.\n\nMany plans were discussed, but none of them was thought good enough. At last a very young Mouse got up and said:\n\n\"I have a plan that seems very simple, but I know it will be successful. All we have to do is to hang a bell about the Cat's neck. When we hear the bell ringing we will know immediately that our enemy is coming.\"\n\nAll the Mice were much surprised that they had not thought of such a plan before. But in the midst of the rejoicing over their good fortune, an old Mouse arose and said:\n\n\"I will say that the plan of the young Mouse is very good. But let me ask one question: Who will bell the Cat?\""
+      }
+    ]
+  }
+}

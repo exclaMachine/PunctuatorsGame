@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fox-and-the-hedgehog",
+    "title": "The Fox And The Hedgehog",
+    "order": 107,
+    "moral": "Better to bear a lesser evil than to risk a greater in removing it.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 3,
+      "adjective": 1,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Fox, "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "swimming",
+        "lemma": "swim"
+      },
+      {
+        "type": "text",
+        "value": " across a river, was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "barely"
+      },
+      {
+        "type": "text",
+        "value": " able to reach the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "bank"
+      },
+      {
+        "type": "text",
+        "value": ", where he lay "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "bruised",
+        "lemma": "bruise"
+      },
+      {
+        "type": "text",
+        "value": " and exhausted from his "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "struggle"
+      },
+      {
+        "type": "text",
+        "value": " with the swift "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "current"
+      },
+      {
+        "type": "text",
+        "value": ". Soon a swarm of blood-"
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "sucking",
+        "lemma": "suck"
+      },
+      {
+        "type": "text",
+        "value": " flies settled on him; but he lay "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "quietly"
+      },
+      {
+        "type": "text",
+        "value": ", still too "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "weak"
+      },
+      {
+        "type": "text",
+        "value": " to run away from them.\n\nA Hedgehog happened by. \"Let me drive the flies away,\" he said kindly.\n\n\"No, no!\" exclaimed the Fox, \"do not disturb them! They have taken all they can hold. If you drive them away, another greedy swarm will come and take the little blood I have left.\""
+      }
+    ]
+  }
+}

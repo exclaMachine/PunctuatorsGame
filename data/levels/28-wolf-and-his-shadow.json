@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "wolf-and-his-shadow",
+    "title": "The Wolf And His Shadow",
+    "order": 28,
+    "moral": "Do not let your fancy make you forget realities.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 3,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Wolf "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "left",
+        "lemma": "leave"
+      },
+      {
+        "type": "text",
+        "value": " his lair one "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "evening"
+      },
+      {
+        "type": "text",
+        "value": " in fine spirits and an "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "excellent"
+      },
+      {
+        "type": "text",
+        "value": " appetite. As he "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "ran",
+        "lemma": "run"
+      },
+      {
+        "type": "text",
+        "value": ", the setting "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "sun"
+      },
+      {
+        "type": "text",
+        "value": " cast his shadow "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "far"
+      },
+      {
+        "type": "text",
+        "value": " out on the "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "ground"
+      },
+      {
+        "type": "text",
+        "value": ", and it "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "looked",
+        "lemma": "look"
+      },
+      {
+        "type": "text",
+        "value": " as if the wolf were a hundred "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "times"
+      },
+      {
+        "type": "text",
+        "value": " bigger than he really was.\n\n\"Why,\" exclaimed the Wolf proudly, \"see how big I am! Fancy me running away from a puny Lion! I'll show him who is fit to be king, he or I.\"\n\nJust then an immense shadow blotted him out entirely, and the next instant a Lion struck him down with a single blow."
+      }
+    ]
+  }
+}

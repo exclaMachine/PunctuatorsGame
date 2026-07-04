@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "mother-and-the-wolf",
+    "title": "The Mother And The Wolf",
+    "order": 120,
+    "moral": "Do not believe everything you hear.",
+    "blankCounts": {
+      "noun": 6,
+      "verb": 4,
+      "adjective": 2,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Early one "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "morning"
+      },
+      {
+        "type": "text",
+        "value": " a hungry Wolf was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "prowling",
+        "lemma": "prowl"
+      },
+      {
+        "type": "text",
+        "value": " around a cottage at the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "edge"
+      },
+      {
+        "type": "text",
+        "value": " of a village, when he heard a child crying in the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "house"
+      },
+      {
+        "type": "text",
+        "value": ". Then he heard the Mother's voice "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "say",
+        "lemma": "say"
+      },
+      {
+        "type": "text",
+        "value": ":\n\n\"Hush, child, hush! Stop your crying, or I will "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "give",
+        "lemma": "give"
+      },
+      {
+        "type": "text",
+        "value": " you to the Wolf!\"\n\n"
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "Surprised"
+      },
+      {
+        "type": "text",
+        "value": " but delighted at the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "prospect"
+      },
+      {
+        "type": "text",
+        "value": " of so delicious a "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "meal"
+      },
+      {
+        "type": "text",
+        "value": ", the Wolf "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "settled",
+        "lemma": "settle"
+      },
+      {
+        "type": "text",
+        "value": " down under an "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "open"
+      },
+      {
+        "type": "text",
+        "value": " window, expecting every "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "moment"
+      },
+      {
+        "type": "text",
+        "value": " to have the child handed out to him. But though the little one continued to fret, the Wolf waited all day in vain. Then, toward nightfall, he heard the Mother's voice again as she sat down near the window to sing and rock her baby to sleep.\n\n\"There, child, there! The Wolf shall not get you. No, no! Daddy is watching and Daddy will kill him if he should come near!\"\n\nJust then the Father came within sight of the home, and the Wolf was barely able to save himself from the Dogs by a clever bit of running."
+      }
+    ]
+  }
+}

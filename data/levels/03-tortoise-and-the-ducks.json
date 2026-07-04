@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "tortoise-and-the-ducks",
+    "title": "The Tortoise And The Ducks",
+    "order": 3,
+    "moral": "Foolish curiosity and vanity often lead to misfortune.",
+    "blankCounts": {
+      "noun": 1,
+      "verb": 6,
+      "adjective": 3,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "The Tortoise, you "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "know",
+        "lemma": "know"
+      },
+      {
+        "type": "text",
+        "value": ", carries his house on his back. No "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "matter"
+      },
+      {
+        "type": "text",
+        "value": " how hard he "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "tries",
+        "lemma": "try"
+      },
+      {
+        "type": "text",
+        "value": ", he cannot "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "leave",
+        "lemma": "leave"
+      },
+      {
+        "type": "text",
+        "value": " home. They say that Jupiter "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "punished",
+        "lemma": "punish"
+      },
+      {
+        "type": "text",
+        "value": " him so, because he was such a "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "lazy"
+      },
+      {
+        "type": "text",
+        "value": " stay-at-home that he would not go to Jupiter's wedding, "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "even"
+      },
+      {
+        "type": "text",
+        "value": " when especially invited.\n\nAfter "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "many"
+      },
+      {
+        "type": "text",
+        "value": " years, Tortoise began to "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "wish",
+        "lemma": "wish"
+      },
+      {
+        "type": "text",
+        "value": " he had gone to that wedding. When he "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "saw",
+        "lemma": "see"
+      },
+      {
+        "type": "text",
+        "value": " how gaily the "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "birds"
+      },
+      {
+        "type": "text",
+        "value": " flew about and how the Hare and the Chipmunk and all the "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "other"
+      },
+      {
+        "type": "text",
+        "value": " animals ran nimbly by, always eager to see everything there was to be seen, the Tortoise felt very sad and discontented. He wanted to see the world too, and there he was with a house on his back and little short legs that could hardly drag him along.\n\nOne day he met a pair of Ducks and told them all his trouble.\n\n\"We can help you to see the world,\" said the Ducks. \"Take hold of this stick with your teeth and we will carry you far up in the air where you can see the whole countryside. But keep quiet or you will be sorry.\"\n\nThe Tortoise was very glad indeed. He seized the stick firmly with his teeth, the two Ducks took hold of it one at each end, and away they sailed up toward the clouds.\n\nJust then a Crow flew by. He was very much astonished at the strange sight and cried:\n\n\"This must surely be the King of Tortoises!\"\n\n\"Why certainly----\" began the Tortoise.\n\nBut as he opened his mouth to say these foolish words he lost his hold on the stick, and down he fell to the ground, where he was dashed to pieces on a rock."
+      }
+    ]
+  }
+}

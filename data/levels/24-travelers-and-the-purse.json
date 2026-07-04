@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "travelers-and-the-purse",
+    "title": "The Travelers And The Purse",
+    "order": 24,
+    "moral": "We cannot expect any one to share our misfortunes unless we are willing to share our good fortune also.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 4,
+      "adjective": 1,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Two "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "men"
+      },
+      {
+        "type": "text",
+        "value": " were traveling in "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "company"
+      },
+      {
+        "type": "text",
+        "value": " along the road when one of them "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "picked",
+        "lemma": "pick"
+      },
+      {
+        "type": "text",
+        "value": " up a well-"
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "filled",
+        "lemma": "fill"
+      },
+      {
+        "type": "text",
+        "value": " purse.\n\n\"How lucky I am!\" he said. \"I have found a purse. Judging by its "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "weight"
+      },
+      {
+        "type": "text",
+        "value": " it must be "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "full"
+      },
+      {
+        "type": "text",
+        "value": " of gold.\"\n\n\"Do not say 'I have found a purse,'\" said his "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "companion"
+      },
+      {
+        "type": "text",
+        "value": ". \"Say "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "rather"
+      },
+      {
+        "type": "text",
+        "value": " 'we have found a purse' and 'how lucky we are.' Travelers ought to "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "share",
+        "lemma": "share"
+      },
+      {
+        "type": "text",
+        "value": " alike the fortunes or "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "misfortunes"
+      },
+      {
+        "type": "text",
+        "value": " of the road.\"\n\n\"No, no,\" replied the other "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "angrily"
+      },
+      {
+        "type": "text",
+        "value": ". \"I found it and I am "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "going",
+        "lemma": "go"
+      },
+      {
+        "type": "text",
+        "value": " to keep it.\"\n\nJust then they heard a shout of \"Stop, thief!\" and looking around, saw a mob of people armed with clubs coming down the road.\n\nThe man who had found the purse fell into a panic.\n\n\"We are lost if they find the purse on us,\" he cried.\n\n\"No, no,\" replied the other, \"You would not say 'we' before, so now stick to your 'I'. Say 'I am lost.'\""
+      }
+    ]
+  }
+}

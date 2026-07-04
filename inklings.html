@@ -725,12 +725,11 @@ function wotdGuaranteed(){
 // words from your collection (dex) that match the blank's part of speech (POS cached in the dex entry —
 // no API call needed at fill time). Each collected word can fill only ONE blank ever (across all books):
 // using it marks it used so you keep learning new vocabulary rather than reusing the same words.
+// Chapters live in data/levels/index.json (147 Aesop fables built by build_levels.py, in book order, with
+// the 3 hand-tuned fables substituted for their generated versions). `levels` (array of file paths) is
+// filled lazily from that index at open time by ensureBookLevels(), so we don't hardcode ~150 paths here.
 const BOOKS = [
-  { id:"aesop-for-children", title:"The Aesop for Children", levels:[
-    "data/levels/level-01-fox-and-grapes.json",
-    "data/levels/level-02-lion-and-mouse.json",
-    "data/levels/level-03-crow-and-pitcher.json"
-  ] }
+  { id:"aesop-for-children", title:"The Aesop for Children", index:"data/levels/index.json", levels:null }
 ];
 const MADLIB_EXACT_BONUS = 5;   // ink awarded per blank filled with the exact original word
 
@@ -2443,6 +2442,23 @@ async function loadLevel(path){
   }catch(e){ return null; }
 }
 function loadLevelCached(path){ return mlCache[path] ? Promise.resolve(mlCache[path]) : loadLevel(path).then(d=>{ if(d) mlCache[path]=d; return d; }); }
+// Populate a book's `levels` (array of level-file paths, in book order) from its index.json, once. The index
+// lists chapters as { file, … }; each file is resolved relative to the index's own folder. On any error we
+// set an empty list so showChapterMenu shows its http/file:// notice.
+async function ensureBookLevels(reg){
+  if(Array.isArray(reg.levels)) return reg.chapters;
+  reg.chapters=[]; reg.levels=[];
+  if(!reg.index) return reg.chapters;
+  try{
+    const res=await fetch(reg.index); if(!res.ok) throw 0;
+    const list=await res.json();
+    const dir=reg.index.slice(0, reg.index.lastIndexOf("/")+1);
+    reg.chapters=(Array.isArray(list)?list:[]).filter(e=>e&&e.file).map(e=>(
+      { id:e.id, title:e.title, blanks:e.blanks||0, path:dir+e.file }));
+    reg.levels=reg.chapters.map(c=>c.path);   // paths in book order (used by completeLevel's count)
+  }catch(e){ reg.chapters=[]; reg.levels=[]; }
+  return reg.chapters;
+}
 async function openBook(){
   mlReg=BOOKS[0];                                  // one book for now (chapter menu inside it)
   mlBook=null; mlLevel=null; mlActive=null;
@@ -2470,16 +2486,11 @@ async function showChapterMenu(){
     : "Choose a chapter to restore. Fill each blank with a word from your library.";
   panel.innerHTML="";
   pas.innerHTML='<div class="ml-hint">Loading chapters…</div>';
-  const metas=[];
-  for(const path of mlReg.levels){
-    const d=await loadLevelCached(path);
-    if(!state.madlibs) return;                     // closed while loading
-    if(d){ const l=d.level; metas.push({ path, id:l.id, title:l.title, order:l.order||0,
-             blanks:l.segments.filter(s=>s.type==="blank").length }); }
-  }
-  if(!metas.length){ pas.innerHTML='<p class="ml-err">Couldn’t load this book’s chapters. The level files must be served over http (not <code>file://</code>).</p>'; return; }
-  metas.sort((a,b)=>a.order-b.order);
-  pas.innerHTML='<div class="ml-chapters">'+metas.map(m=>{
+  const chapters=await ensureBookLevels(mlReg);    // book-ordered metadata from index.json (once)
+  if(!state.madlibs) return;
+  if(!chapters.length){ pas.innerHTML='<p class="ml-err">Couldn’t load this book’s chapters. The level files must be served over http (not <code>file://</code>).</p>'; return; }
+  // Rendered straight from the index (no per-chapter fetch) — a chapter only loads when you open it.
+  pas.innerHTML='<div class="ml-chapters">'+chapters.map(m=>{
     const R=state.restored[m.id], done=R&&R.done, filled=R?Object.keys(R.fills||{}).length:0;
     const status=done ? '<span class="ml-ch-done">restored ✓</span>'
                       : `<span class="ml-ch-prog">${filled}/${m.blanks} filled</span>`;

@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "ass-carrying-the-image",
+    "title": "The Ass Carrying The Image",
+    "order": 34,
+    "moral": "Do not try to take the credit to yourself that is due to others.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 4,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "sacred"
+      },
+      {
+        "type": "text",
+        "value": " Image was being "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "carried",
+        "lemma": "carry"
+      },
+      {
+        "type": "text",
+        "value": " to the temple. It was "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "mounted",
+        "lemma": "mount"
+      },
+      {
+        "type": "text",
+        "value": " on an Ass "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "adorned",
+        "lemma": "adorn"
+      },
+      {
+        "type": "text",
+        "value": " with garlands and "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "gorgeous"
+      },
+      {
+        "type": "text",
+        "value": " trappings, and a "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "grand"
+      },
+      {
+        "type": "text",
+        "value": " procession of priests and "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "pages"
+      },
+      {
+        "type": "text",
+        "value": " followed it through the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "streets"
+      },
+      {
+        "type": "text",
+        "value": ". As the Ass "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "walked",
+        "lemma": "walk"
+      },
+      {
+        "type": "text",
+        "value": " along, the "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "people"
+      },
+      {
+        "type": "text",
+        "value": " bowed their heads "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "reverently"
+      },
+      {
+        "type": "text",
+        "value": " or fell on their "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "knees"
+      },
+      {
+        "type": "text",
+        "value": ", and the Ass thought the honor was being paid to himself.\n\nWith his head full of this foolish idea, he became so puffed up with pride and vanity that he halted and started to bray loudly. But in the midst of his song, his driver guessed what the Ass had got into his head, and began to beat him unmercifully with a stick.\n\n\"Go along with you, you stupid Ass,\" he cried. \"The honor is not meant for you but for the image you are carrying.\""
+      }
+    ]
+  }
+}

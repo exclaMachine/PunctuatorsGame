@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "cat-and-the-fox",
+    "title": "The Cat And The Fox",
+    "order": 113,
+    "moral": "Common sense is always worth more than cunning.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 5,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Once a Cat and a Fox were "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "traveling",
+        "lemma": "travel"
+      },
+      {
+        "type": "text",
+        "value": " together. As they "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "went",
+        "lemma": "go"
+      },
+      {
+        "type": "text",
+        "value": " along, picking up "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "provisions"
+      },
+      {
+        "type": "text",
+        "value": " on the way--a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "stray"
+      },
+      {
+        "type": "text",
+        "value": " mouse here, a "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "fat"
+      },
+      {
+        "type": "text",
+        "value": " chicken there--they began an "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "argument"
+      },
+      {
+        "type": "text",
+        "value": " to while away the "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "time"
+      },
+      {
+        "type": "text",
+        "value": " between bites. And, as "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "usually"
+      },
+      {
+        "type": "text",
+        "value": " happens when comrades "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "argue",
+        "lemma": "argue"
+      },
+      {
+        "type": "text",
+        "value": ", the talk began to "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "get",
+        "lemma": "get"
+      },
+      {
+        "type": "text",
+        "value": " personal.\n\n\"You "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "think",
+        "lemma": "think"
+      },
+      {
+        "type": "text",
+        "value": " you are extremely "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "clever"
+      },
+      {
+        "type": "text",
+        "value": ", don't you?\" said the Fox. \"Do you pretend to know more than I? Why, I know a whole sackful of tricks!\"\n\n\"Well,\" retorted the Cat, \"I admit I know one trick only, but that one, let me tell you, is worth a thousand of yours!\"\n\nJust then, close by, they heard a hunter's horn and the yelping of a pack of hounds. In an instant the Cat was up a tree, hiding among the leaves.\n\n\"This is my trick,\" he called to the Fox. \"Now let me see what yours are worth.\"\n\nBut the Fox had so many plans for escape he could not decide which one to try first. He dodged here and there with the hounds at his heels. He doubled on his tracks, he ran at top speed, he entered a dozen burrows,--but all in vain. The hounds caught him, and soon put an end to the boaster and all his tricks."
+      }
+    ]
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "ass-and-its-shadow",
+    "title": "The Ass And Its Shadow",
+    "order": 132,
+    "moral": "In quarreling about the shadow we often lose the substance.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 6,
+      "adjective": 2,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Traveler had hired an Ass to "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "carry",
+        "lemma": "carry"
+      },
+      {
+        "type": "text",
+        "value": " him to a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "distant"
+      },
+      {
+        "type": "text",
+        "value": " part of the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "country"
+      },
+      {
+        "type": "text",
+        "value": ". The owner of the Ass "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "went",
+        "lemma": "go"
+      },
+      {
+        "type": "text",
+        "value": " with the Traveler, walking beside him to "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "drive",
+        "lemma": "drive"
+      },
+      {
+        "type": "text",
+        "value": " the Ass and "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "point",
+        "lemma": "point"
+      },
+      {
+        "type": "text",
+        "value": " out the way.\n\nThe "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "road"
+      },
+      {
+        "type": "text",
+        "value": " led across a "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "treeless"
+      },
+      {
+        "type": "text",
+        "value": " plain where the Sun "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "beat",
+        "lemma": "beat"
+      },
+      {
+        "type": "text",
+        "value": " down fiercely. So "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "intense"
+      },
+      {
+        "type": "text",
+        "value": " did the heat "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "become",
+        "lemma": "become"
+      },
+      {
+        "type": "text",
+        "value": ", that the Traveler at "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adverb",
+        "answer": "last"
+      },
+      {
+        "type": "text",
+        "value": " decided to stop for a rest, and as there was no other shade to be found, the Traveler sat down in the shadow of the Ass.\n\nNow the heat had affected the Driver as much as it had the Traveler, and even more, for he had been walking. Wishing also to rest in the shade cast by the Ass, he began to quarrel with the Traveler, saying he had hired the Ass and not the shadow it cast.\n\nThe two soon came to blows, and while they were fighting, the Ass took to its heels."
+      }
+    ]
+  }
+}

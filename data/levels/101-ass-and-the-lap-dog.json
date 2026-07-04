@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "ass-and-the-lap-dog",
+    "title": "The Ass And The Lap Dog",
+    "order": 101,
+    "moral": "Do not try to gain favor by acting in a way that is contrary to your own nature and character.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 3,
+      "adjective": 2,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "There was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": " an Ass whose Master "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "also"
+      },
+      {
+        "type": "text",
+        "value": " owned a Lap Dog. This Dog was a "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "favorite"
+      },
+      {
+        "type": "text",
+        "value": " and received many a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "pat"
+      },
+      {
+        "type": "text",
+        "value": " and kind word from his Master, as well as "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "choice"
+      },
+      {
+        "type": "text",
+        "value": " bits from his "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "plate"
+      },
+      {
+        "type": "text",
+        "value": ". Every day the Dog would "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "run",
+        "lemma": "run"
+      },
+      {
+        "type": "text",
+        "value": " to meet the Master, "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "frisking",
+        "lemma": "frisk"
+      },
+      {
+        "type": "text",
+        "value": " playfully about and "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "leaping",
+        "lemma": "leap"
+      },
+      {
+        "type": "text",
+        "value": " up to lick his "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "hands"
+      },
+      {
+        "type": "text",
+        "value": " and face.\n\nAll this the Ass saw with much "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "discontent"
+      },
+      {
+        "type": "text",
+        "value": ". Though he was well "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "fed"
+      },
+      {
+        "type": "text",
+        "value": ", he had much work to do; besides, the Master hardly ever took any notice of him.\n\nNow the jealous Ass got it into his silly head that all he had to do to win his Master's favor was to act like the Dog. So one day he left his stable and clattered eagerly into the house.\n\nFinding his Master seated at the dinner table, he kicked up his heels and, with a loud bray, pranced giddily around the table, upsetting it as he did so. Then he planted his forefeet on his Master's knees and rolled out his tongue to lick the Master's face, as he had seen the Dog do. But his weight upset the chair, and Ass and man rolled over together in the pile of broken dishes from the table.\n\nThe Master was much alarmed at the strange behavior of the Ass, and calling for help, soon attracted the attention of the servants. When they saw the danger the Master was in from the clumsy beast, they set upon the Ass and drove him with kicks and blows back to the stable. There they left him to mourn the foolishness that had brought him nothing but a sound beating.\n\nBehavior that is regarded as agreeable in one is very rude and impertinent in another."
+      }
+    ]
+  }
+}

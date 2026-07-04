@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "oak-and-the-reeds",
+    "title": "The Oak And The Reeds",
+    "order": 29,
+    "moral": "Better to yield when it is folly to resist, than to resist stubbornly and be destroyed.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 4,
+      "adjective": 3,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Giant Oak stood near a "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "brook"
+      },
+      {
+        "type": "text",
+        "value": " in which grew some "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "slender"
+      },
+      {
+        "type": "text",
+        "value": " Reeds. When the wind "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "blew",
+        "lemma": "blow"
+      },
+      {
+        "type": "text",
+        "value": ", the great Oak stood proudly upright with its hundred "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "arms"
+      },
+      {
+        "type": "text",
+        "value": " uplifted to the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "sky"
+      },
+      {
+        "type": "text",
+        "value": ". But the Reeds bowed low in the wind and "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "sang",
+        "lemma": "sing"
+      },
+      {
+        "type": "text",
+        "value": " a sad and "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "mournful"
+      },
+      {
+        "type": "text",
+        "value": " song.\n\n\"You have "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "reason"
+      },
+      {
+        "type": "text",
+        "value": " to complain,\" "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "said",
+        "lemma": "say"
+      },
+      {
+        "type": "text",
+        "value": " the Oak. \"The "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "slightest"
+      },
+      {
+        "type": "text",
+        "value": " breeze that ruffles the "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "surface"
+      },
+      {
+        "type": "text",
+        "value": " of the water "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "makes",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " you bow your heads, while I, the mighty Oak, stand upright and firm before the howling tempest.\"\n\n\"Do not worry about us,\" replied the Reeds. \"The winds do not harm us. We bow before them and so we do not break. You, in all your pride and strength, have so far resisted their blows. But the end is coming.\"\n\nAs the Reeds spoke a great hurricane rushed out of the north. The Oak stood proudly and fought against the storm, while the yielding Reeds bowed low. The wind redoubled in fury, and all at once the great tree fell, torn up by the roots, and lay among the pitying Reeds."
+      }
+    ]
+  }
+}

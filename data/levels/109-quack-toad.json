@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "quack-toad",
+    "title": "The Quack Toad",
+    "order": 109,
+    "moral": "Those who would mend others, should first mend themselves.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 4,
+      "adjective": 2,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "An "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "old"
+      },
+      {
+        "type": "text",
+        "value": " Toad once informed all his "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "neighbors"
+      },
+      {
+        "type": "text",
+        "value": " that he was a "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "learned"
+      },
+      {
+        "type": "text",
+        "value": " doctor. In "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "fact"
+      },
+      {
+        "type": "text",
+        "value": " he could cure anything. The Fox "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "heard",
+        "lemma": "hear"
+      },
+      {
+        "type": "text",
+        "value": " the news and "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "hurried",
+        "lemma": "hurry"
+      },
+      {
+        "type": "text",
+        "value": " to see the Toad. He "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "looked",
+        "lemma": "look"
+      },
+      {
+        "type": "text",
+        "value": " the Toad over "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "very"
+      },
+      {
+        "type": "text",
+        "value": " carefully.\n\n\"Mr. Toad,\" he "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "said",
+        "lemma": "say"
+      },
+      {
+        "type": "text",
+        "value": ", \"I've been told that you cure anything! But just take a look at yourself, and then try some of your own medicine. If you can cure yourself of that blotchy skin and that rheumatic gait, someone might believe you. Otherwise, I should advise you to try some other profession.\""
+      }
+    ]
+  }
+}

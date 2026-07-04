@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "plane-tree",
+    "title": "The Plane Tree",
+    "order": 21,
+    "moral": "Our best blessings are often the least appreciated.",
+    "blankCounts": {
+      "noun": 1,
+      "verb": 5,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Two Travellers, "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "walking",
+        "lemma": "walk"
+      },
+      {
+        "type": "text",
+        "value": " in the noonday "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "sun"
+      },
+      {
+        "type": "text",
+        "value": ", sought the shade of a "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "widespreading",
+        "lemma": "widespreade"
+      },
+      {
+        "type": "text",
+        "value": " tree to rest. As they "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "lay",
+        "lemma": "lay"
+      },
+      {
+        "type": "text",
+        "value": " looking up among the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "pleasant"
+      },
+      {
+        "type": "text",
+        "value": " leaves, they "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "saw",
+        "lemma": "see"
+      },
+      {
+        "type": "text",
+        "value": " that it was a Plane Tree.\n\n\"How useless is the Plane!\" said one of them. \"It "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "bears",
+        "lemma": "bear"
+      },
+      {
+        "type": "text",
+        "value": " no fruit whatever, and "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "only"
+      },
+      {
+        "type": "text",
+        "value": " serves to litter the ground with leaves.\"\n\n\"Ungrateful creatures!\" said a voice from the Plane Tree. \"You lie here in my cooling shade, and yet you say I am useless! Thus ungratefully, O Jupiter, do men receive their blessings!\""
+      }
+    ]
+  }
+}

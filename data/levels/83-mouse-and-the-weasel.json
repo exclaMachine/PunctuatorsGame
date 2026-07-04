@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "mouse-and-the-weasel",
+    "title": "The Mouse And The Weasel",
+    "order": 83,
+    "moral": "Greediness leads to misfortune.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 4,
+      "adjective": 5,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "little"
+      },
+      {
+        "type": "text",
+        "value": " hungry Mouse found his "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "way"
+      },
+      {
+        "type": "text",
+        "value": " one day into a basket of corn. He had to "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "squeeze",
+        "lemma": "squeeze"
+      },
+      {
+        "type": "text",
+        "value": " himself a good "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "deal"
+      },
+      {
+        "type": "text",
+        "value": " to get through the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "narrow"
+      },
+      {
+        "type": "text",
+        "value": " opening between the "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "strips"
+      },
+      {
+        "type": "text",
+        "value": " of the basket. But the corn was "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "tempting"
+      },
+      {
+        "type": "text",
+        "value": " and the Mouse was "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "determined"
+      },
+      {
+        "type": "text",
+        "value": " to get in. When at last he had "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "succeeded",
+        "lemma": "succeed"
+      },
+      {
+        "type": "text",
+        "value": ", he gorged himself to "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "bursting",
+        "lemma": "burst"
+      },
+      {
+        "type": "text",
+        "value": ". Indeed he "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "became",
+        "lemma": "become"
+      },
+      {
+        "type": "text",
+        "value": " about three times as "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "big"
+      },
+      {
+        "type": "text",
+        "value": " around the middle as he was when he went in.\n\nAt last he felt satisfied and dragged himself to the opening to get out again. But the best he could do was to get his head out. So there he sat groaning and moaning, both from the discomfort inside him and his anxiety to escape from the basket.\n\nJust then a Weasel came by. He understood the situation quickly.\n\n\"My friend,\" he said, \"I know what you've been doing. You've been stuffing. That's what you get. You will have to stay there till you feel just like you did when you went in. Good night, and good enough for you.\"\n\nAnd that was all the sympathy the poor Mouse got."
+      }
+    ]
+  }
+}

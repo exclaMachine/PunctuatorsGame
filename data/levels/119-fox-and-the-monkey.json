@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fox-and-the-monkey",
+    "title": "The Fox And The Monkey",
+    "order": 119,
+    "moral": "The true leader proves himself by his qualities.",
+    "blankCounts": {
+      "noun": 1,
+      "verb": 5,
+      "adjective": 3,
+      "adverb": 3
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "At a "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "great"
+      },
+      {
+        "type": "text",
+        "value": " meeting of the Animals, who had "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "gathered",
+        "lemma": "gather"
+      },
+      {
+        "type": "text",
+        "value": " to elect a "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "new"
+      },
+      {
+        "type": "text",
+        "value": " ruler, the Monkey was "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "asked",
+        "lemma": "ask"
+      },
+      {
+        "type": "text",
+        "value": " to dance. This he did so "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adverb",
+        "answer": "well"
+      },
+      {
+        "type": "text",
+        "value": ", with a thousand "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "funny"
+      },
+      {
+        "type": "text",
+        "value": " capers and grimaces, that the Animals were "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "carried",
+        "lemma": "carry"
+      },
+      {
+        "type": "text",
+        "value": " entirely off their "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "feet"
+      },
+      {
+        "type": "text",
+        "value": " with enthusiasm, and "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "then"
+      },
+      {
+        "type": "text",
+        "value": " and there, "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "elected",
+        "lemma": "elect"
+      },
+      {
+        "type": "text",
+        "value": " him their king.\n\nThe Fox did not "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "vote",
+        "lemma": "vote"
+      },
+      {
+        "type": "text",
+        "value": " for the Monkey and was "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adverb",
+        "answer": "much"
+      },
+      {
+        "type": "text",
+        "value": " disgusted with the Animals for electing so unworthy a ruler.\n\nOne day he found a trap with a bit of meat in it. Hurrying to King Monkey, he told him he had found a rich treasure, which he had not touched because it belonged by right to his majesty the Monkey.\n\nThe greedy Monkey followed the Fox to the trap. As soon as he saw the meat he grasped eagerly for it, only to find himself held fast in the trap. The Fox stood off and laughed.\n\n\"You pretend to be our king,\" he said, \"and cannot even take care of yourself!\"\n\nShortly after that, another election among the Animals was held."
+      }
+    ]
+  }
+}

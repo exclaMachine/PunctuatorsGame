@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "wolf-and-the-lion",
+    "title": "The Wolf And The Lion",
+    "order": 51,
+    "moral": "What is evil won is evil lost.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 7,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Wolf had "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "stolen",
+        "lemma": "steal"
+      },
+      {
+        "type": "text",
+        "value": " a Lamb and was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "carrying",
+        "lemma": "carry"
+      },
+      {
+        "type": "text",
+        "value": " it off to his "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "lair"
+      },
+      {
+        "type": "text",
+        "value": " to eat it. But his "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "plans"
+      },
+      {
+        "type": "text",
+        "value": " were very much "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "changed",
+        "lemma": "change"
+      },
+      {
+        "type": "text",
+        "value": " when he met a Lion, who, without "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "making",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " any excuses, "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "took",
+        "lemma": "take"
+      },
+      {
+        "type": "text",
+        "value": " the Lamb away from him.\n\nThe Wolf "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "made",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " off to a "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "safe"
+      },
+      {
+        "type": "text",
+        "value": " distance, and "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adverb",
+        "answer": "then"
+      },
+      {
+        "type": "text",
+        "value": " said in a much "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "injured",
+        "lemma": "injure"
+      },
+      {
+        "type": "text",
+        "value": " tone:\n\n\"You have no right to take my property like that!\"\n\nThe Lion looked back, but as the Wolf was too far away to be taught a lesson without too much inconvenience, he said:\n\n\"Your property? Did you buy it, or did the Shepherd make you a gift of it? Pray tell me, how did you get it?\""
+      }
+    ]
+  }
+}

@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "dogs-and-the-hides",
+    "title": "The Dogs And The Hides",
+    "order": 64,
+    "moral": "Do not try to do impossible things.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 5,
+      "adjective": 3,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Some hungry Dogs "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "saw",
+        "lemma": "see"
+      },
+      {
+        "type": "text",
+        "value": " a number of hides at the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "bottom"
+      },
+      {
+        "type": "text",
+        "value": " of a stream where the Tanner had "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "put",
+        "lemma": "put"
+      },
+      {
+        "type": "text",
+        "value": " them to soak. A "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "fine"
+      },
+      {
+        "type": "text",
+        "value": " hide makes an "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "excellent"
+      },
+      {
+        "type": "text",
+        "value": " meal for a hungry "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "Dog"
+      },
+      {
+        "type": "text",
+        "value": ", but the water was "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "deep"
+      },
+      {
+        "type": "text",
+        "value": " and the Dogs could not "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "reach",
+        "lemma": "reach"
+      },
+      {
+        "type": "text",
+        "value": " the hides from the "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "bank"
+      },
+      {
+        "type": "text",
+        "value": ". So they "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "held",
+        "lemma": "hold"
+      },
+      {
+        "type": "text",
+        "value": " a council and "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "decided",
+        "lemma": "decide"
+      },
+      {
+        "type": "text",
+        "value": " that the very best thing to do was to drink up the river.\n\nAll fell to lapping up the water as fast as they could. But though they drank and drank until, one after another, all of them had burst with drinking, still, for all their effort, the water in the river remained as high as ever."
+      }
+    ]
+  }
+}

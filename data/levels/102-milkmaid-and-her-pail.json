@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "milkmaid-and-her-pail",
+    "title": "The Milkmaid And Her Pail",
+    "order": 102,
+    "moral": "Do not count your chickens before they are hatched.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 6,
+      "adjective": 2,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Milkmaid had been out to milk the "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "cows"
+      },
+      {
+        "type": "text",
+        "value": " and was returning from the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "field"
+      },
+      {
+        "type": "text",
+        "value": " with the shining milk pail "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "balanced",
+        "lemma": "balance"
+      },
+      {
+        "type": "text",
+        "value": " nicely on her head. As she "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "walked",
+        "lemma": "walk"
+      },
+      {
+        "type": "text",
+        "value": " along, her "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "pretty"
+      },
+      {
+        "type": "text",
+        "value": " head was busy with "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "plans"
+      },
+      {
+        "type": "text",
+        "value": " for the days to come.\n\n\"This "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "good"
+      },
+      {
+        "type": "text",
+        "value": ", rich milk,\" she "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "mused",
+        "lemma": "muse"
+      },
+      {
+        "type": "text",
+        "value": ", \"will "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "give",
+        "lemma": "give"
+      },
+      {
+        "type": "text",
+        "value": " me plenty of "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "cream"
+      },
+      {
+        "type": "text",
+        "value": " to churn. The butter I make I will "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "take",
+        "lemma": "take"
+      },
+      {
+        "type": "text",
+        "value": " to market, and with the money I "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "get",
+        "lemma": "get"
+      },
+      {
+        "type": "text",
+        "value": " for it I will buy a lot of eggs for hatching. How nice it will be when they are all hatched and the yard is full of fine young chicks. Then when May day comes I will sell them, and with the money I'll buy a lovely new dress to wear to the fair. All the young men will look at me. They will come and try to make love to me,--but I shall very quickly send them about their business!\"\n\nAs she thought of how she would settle that matter, she tossed her head scornfully, and down fell the pail of milk to the ground. And all the milk flowed out, and with it vanished butter and eggs and chicks and new dress and all the milkmaid's pride."
+      }
+    ]
+  }
+}

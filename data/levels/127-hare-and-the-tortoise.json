@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "hare-and-the-tortoise",
+    "title": "The Hare And The Tortoise",
+    "order": 127,
+    "moral": "The race is not always to the swift.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 6,
+      "adjective": 1,
+      "adverb": 3
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Hare was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "making",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " fun of the Tortoise one "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " for being so "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "slow"
+      },
+      {
+        "type": "text",
+        "value": ".\n\n\"Do you "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adverb",
+        "answer": "ever"
+      },
+      {
+        "type": "text",
+        "value": " get anywhere?\" he "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "asked",
+        "lemma": "ask"
+      },
+      {
+        "type": "text",
+        "value": " with a mocking "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "laugh"
+      },
+      {
+        "type": "text",
+        "value": ".\n\n\"Yes,\" "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "replied",
+        "lemma": "reply"
+      },
+      {
+        "type": "text",
+        "value": " the Tortoise, \"and I get "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "there"
+      },
+      {
+        "type": "text",
+        "value": " sooner than you "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "think",
+        "lemma": "think"
+      },
+      {
+        "type": "text",
+        "value": ". I'll "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "run",
+        "lemma": "run"
+      },
+      {
+        "type": "text",
+        "value": " you a race and "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "prove",
+        "lemma": "prove"
+      },
+      {
+        "type": "text",
+        "value": " it.\"\n\nThe Hare was "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adverb",
+        "answer": "much"
+      },
+      {
+        "type": "text",
+        "value": " amused at the idea of running a race with the Tortoise, but for the fun of the thing he agreed. So the Fox, who had consented to act as judge, marked the distance and started the runners off.\n\nThe Hare was soon far out of sight, and to make the Tortoise feel very deeply how ridiculous it was for him to try a race with a Hare, he lay down beside the course to take a nap until the Tortoise should catch up.\n\nThe Tortoise meanwhile kept going slowly but steadily, and, after a time, passed the place where the Hare was sleeping. But the Hare slept on very peacefully; and when at last he did wake up, the Tortoise was near the goal. The Hare now ran his swiftest, but he could not overtake the Tortoise in time."
+      }
+    ]
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "shepherd-and-the-lion",
+    "title": "The Shepherd And The Lion",
+    "order": 125,
+    "moral": "Do not foolishly ask for things that would bring ruin if they were granted.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 6,
+      "adjective": 2,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Shepherd, "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "counting",
+        "lemma": "count"
+      },
+      {
+        "type": "text",
+        "value": " his Sheep one "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": ", discovered that a "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "number"
+      },
+      {
+        "type": "text",
+        "value": " of them were "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "missing",
+        "lemma": "miss"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nMuch "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "irritated"
+      },
+      {
+        "type": "text",
+        "value": ", he very "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "loudly"
+      },
+      {
+        "type": "text",
+        "value": " and boastfully declared that he would "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "catch",
+        "lemma": "catch"
+      },
+      {
+        "type": "text",
+        "value": " the thief and "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "punish",
+        "lemma": "punish"
+      },
+      {
+        "type": "text",
+        "value": " him as he "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "deserved",
+        "lemma": "deserve"
+      },
+      {
+        "type": "text",
+        "value": ". The Shepherd "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "suspected",
+        "lemma": "suspect"
+      },
+      {
+        "type": "text",
+        "value": " a Wolf of the "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "deed"
+      },
+      {
+        "type": "text",
+        "value": " and so set out toward a "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "rocky"
+      },
+      {
+        "type": "text",
+        "value": " region among the hills, where there were caves infested by Wolves. But before starting out he made a vow to Jupiter that if he would help him find the thief he would offer a fat Calf as a sacrifice.\n\nThe Shepherd searched a long time without finding any Wolves, but just as he was passing near a large cave on the mountain side, a huge Lion stalked out, carrying a Sheep. In great terror the Shepherd fell on his knees.\n\n\"Alas, O Jupiter, man does not know what he asks! To find the thief I offered to sacrifice a fat Calf. Now I promise you a full-grown Bull, if you but make the thief go away!\"\n\nWe are often not so eager for what we seek, after we have found it."
+      }
+    ]
+  }
+}

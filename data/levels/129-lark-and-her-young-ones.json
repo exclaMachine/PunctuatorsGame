@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "lark-and-her-young-ones",
+    "title": "The Lark And Her Young Ones",
+    "order": 129,
+    "moral": "Self-help is the best help.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 4,
+      "adjective": 3,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Lark "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "made",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " her nest in a field of young wheat. As the days "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "passed",
+        "lemma": "pass"
+      },
+      {
+        "type": "text",
+        "value": ", the wheat stalks grew "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "tall"
+      },
+      {
+        "type": "text",
+        "value": " and the young "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "birds"
+      },
+      {
+        "type": "text",
+        "value": ", too, grew in "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "strength"
+      },
+      {
+        "type": "text",
+        "value": ". Then one day, when the ripe "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "golden"
+      },
+      {
+        "type": "text",
+        "value": " grain waved in the "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "breeze"
+      },
+      {
+        "type": "text",
+        "value": ", the Farmer and his son came into the field.\n\n\"This wheat is "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "now"
+      },
+      {
+        "type": "text",
+        "value": " ready for reaping,\" said the Farmer. \"We must call in our neighbors and friends to help us "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "harvest",
+        "lemma": "harvest"
+      },
+      {
+        "type": "text",
+        "value": " it.\"\n\nThe young Larks in their nest "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adverb",
+        "answer": "close"
+      },
+      {
+        "type": "text",
+        "value": " by were much frightened, for they "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "knew",
+        "lemma": "know"
+      },
+      {
+        "type": "text",
+        "value": " they would be in "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "great"
+      },
+      {
+        "type": "text",
+        "value": " danger if they did not leave the nest before the reapers came. When the Mother Lark returned with food for them, they told her what they had heard.\n\n\"Do not be frightened, children,\" said the Mother Lark. \"If the Farmer said he would call in his neighbors and friends to help him do his work, this wheat will not be reaped for a while yet.\"\n\nA few days later, the wheat was so ripe, that when the wind shook the stalks, a hail of wheat grains came rustling down on the young Larks' heads.\n\n\"If this wheat is not harvested at once,\" said the Farmer, \"we shall lose half the crop. We cannot wait any longer for help from our friends. Tomorrow we must set to work, ourselves.\"\n\nWhen the young Larks told their mother what they had heard that day, she said:\n\n\"Then we must be off at once. When a man decides to do his own work and not depend on any one else, then you may be sure there will be no more delay.\"\n\nThere was much fluttering and trying out of wings that afternoon, and at sunrise next day, when the Farmer and his son cut down the grain, they found an empty nest."
+      }
+    ]
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "three-bullocks-and-a-lion",
+    "title": "Three Bullocks And A Lion",
+    "order": 91,
+    "moral": "In unity is strength.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 6,
+      "adjective": 4,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Lion had been watching three Bullocks "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "feeding",
+        "lemma": "feed"
+      },
+      {
+        "type": "text",
+        "value": " in an open field. He had "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "tried",
+        "lemma": "try"
+      },
+      {
+        "type": "text",
+        "value": " to attack them "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "several"
+      },
+      {
+        "type": "text",
+        "value": " times, but they had "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "kept",
+        "lemma": "keep"
+      },
+      {
+        "type": "text",
+        "value": " together, and "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "helped",
+        "lemma": "help"
+      },
+      {
+        "type": "text",
+        "value": " each other to "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "drive",
+        "lemma": "drive"
+      },
+      {
+        "type": "text",
+        "value": " him off. The Lion had little "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "hope"
+      },
+      {
+        "type": "text",
+        "value": " of eating them, for he was no "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "match"
+      },
+      {
+        "type": "text",
+        "value": " for three strong Bullocks with their "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "sharp"
+      },
+      {
+        "type": "text",
+        "value": " horns and hoofs. But he could not "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "keep",
+        "lemma": "keep"
+      },
+      {
+        "type": "text",
+        "value": " away from that field, for it is "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "hard"
+      },
+      {
+        "type": "text",
+        "value": " to resist watching a "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "good"
+      },
+      {
+        "type": "text",
+        "value": " meal, even when there is little chance of getting it.\n\nThen one day the Bullocks had a quarrel, and when the hungry Lion came to look at them and lick his chops as he was accustomed to do, he found them in separate corners of the field, as far away from one another as they could get.\n\nIt was now an easy matter for the Lion to attack them one at a time, and this he proceeded to do with the greatest satisfaction and relish."
+      }
+    ]
+  }
+}

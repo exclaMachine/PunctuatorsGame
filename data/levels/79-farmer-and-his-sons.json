@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "farmer-and-his-sons",
+    "title": "The Farmer And His Sons",
+    "order": 79,
+    "moral": "Industry is itself a treasure.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 5,
+      "adjective": 2,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A rich "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "old"
+      },
+      {
+        "type": "text",
+        "value": " farmer, who "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "felt",
+        "lemma": "feel"
+      },
+      {
+        "type": "text",
+        "value": " that he had not many "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "more"
+      },
+      {
+        "type": "text",
+        "value": " days to live, "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "called",
+        "lemma": "call"
+      },
+      {
+        "type": "text",
+        "value": " his sons to his "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "bedside"
+      },
+      {
+        "type": "text",
+        "value": ".\n\n\"My sons,\" he "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "said",
+        "lemma": "say"
+      },
+      {
+        "type": "text",
+        "value": ", \"heed what I "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "have",
+        "lemma": "have"
+      },
+      {
+        "type": "text",
+        "value": " to say to you. Do not on any "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "account"
+      },
+      {
+        "type": "text",
+        "value": " part with the "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "estate"
+      },
+      {
+        "type": "text",
+        "value": " that has belonged to our "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "family"
+      },
+      {
+        "type": "text",
+        "value": " for so many "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "generations"
+      },
+      {
+        "type": "text",
+        "value": ". Somewhere on it is hidden a rich treasure. I do not "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "know",
+        "lemma": "know"
+      },
+      {
+        "type": "text",
+        "value": " the exact spot, but it is there, and you will surely find it. Spare no energy and leave no spot unturned in your search.\"\n\nThe father died, and no sooner was he in his grave than the sons set to work digging with all their might, turning up every foot of ground with their spades, and going over the whole farm two or three times.\n\nNo hidden gold did they find; but at harvest time when they had settled their accounts and had pocketed a rich profit far greater than that of any of their neighbors, they understood that the treasure their father had told them about was the wealth of a bountiful crop, and that in their industry had they found the treasure."
+      }
+    ]
+  }
+}

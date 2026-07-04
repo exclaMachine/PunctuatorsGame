@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "frogs-who-wished-for-a-king",
+    "title": "The Frogs Who Wished For A King",
+    "order": 26,
+    "moral": "Be sure you can better your condition before you seek to change.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 6,
+      "adjective": 2,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "The Frogs were "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "tired"
+      },
+      {
+        "type": "text",
+        "value": " of governing themselves. They had so "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "much"
+      },
+      {
+        "type": "text",
+        "value": " freedom that it had "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "spoiled",
+        "lemma": "spoil"
+      },
+      {
+        "type": "text",
+        "value": " them, and they "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "did",
+        "lemma": "do"
+      },
+      {
+        "type": "text",
+        "value": " nothing but sit around "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "croaking",
+        "lemma": "croak"
+      },
+      {
+        "type": "text",
+        "value": " in a bored "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "manner"
+      },
+      {
+        "type": "text",
+        "value": " and wishing for a government that could "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "entertain",
+        "lemma": "entertain"
+      },
+      {
+        "type": "text",
+        "value": " them with the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "pomp"
+      },
+      {
+        "type": "text",
+        "value": " and display of "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "royalty"
+      },
+      {
+        "type": "text",
+        "value": ", and rule them in a "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "way"
+      },
+      {
+        "type": "text",
+        "value": " to make them "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "know",
+        "lemma": "know"
+      },
+      {
+        "type": "text",
+        "value": " they were being "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "ruled",
+        "lemma": "rule"
+      },
+      {
+        "type": "text",
+        "value": ". No milk and water government for them, they declared. So they sent a petition to Jupiter asking for a king.\n\nJupiter saw what simple and foolish creatures they were, but to keep them quiet and make them think they had a king he threw down a huge log, which fell into the water with a great splash. The Frogs hid themselves among the reeds and grasses, thinking the new king to be some fearful giant. But they soon discovered how tame and peaceable King Log was. In a short time the younger Frogs were using him for a diving platform, while the older Frogs made him a meeting place, where they complained loudly to Jupiter about the government.\n\nTo teach the Frogs a lesson the ruler of the gods now sent a Crane to be king of Frogland. The Crane proved to be a very different sort of king from old King Log. He gobbled up the poor Frogs right and left and they soon saw what fools they had been. In mournful croaks they begged Jupiter to take away the cruel tyrant before they should all be destroyed.\n\n\"How now!\" cried Jupiter \"Are you not yet content? You have what you asked for and so you have only yourselves to blame for your misfortunes.\""
+      }
+    ]
+  }
+}

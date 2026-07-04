@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "ass-in-the-lion-s-skin",
+    "title": "The Ass In The Lion'S Skin",
+    "order": 146,
+    "moral": "A fool may deceive by his dress and appearance, but his words will soon show what he really is.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 6,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "An Ass "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "found",
+        "lemma": "find"
+      },
+      {
+        "type": "text",
+        "value": " a Lion's "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "skin"
+      },
+      {
+        "type": "text",
+        "value": " left in the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "forest"
+      },
+      {
+        "type": "text",
+        "value": " by a hunter. He "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "dressed",
+        "lemma": "dress"
+      },
+      {
+        "type": "text",
+        "value": " himself in it, and "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "amused",
+        "lemma": "amuse"
+      },
+      {
+        "type": "text",
+        "value": " himself by hiding in a "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "thicket"
+      },
+      {
+        "type": "text",
+        "value": " and rushing out "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "suddenly"
+      },
+      {
+        "type": "text",
+        "value": " at the animals who "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "passed",
+        "lemma": "pass"
+      },
+      {
+        "type": "text",
+        "value": " that way. All "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "took",
+        "lemma": "take"
+      },
+      {
+        "type": "text",
+        "value": " to their heels the "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "moment"
+      },
+      {
+        "type": "text",
+        "value": " they saw him.\n\nThe Ass was so "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "pleased"
+      },
+      {
+        "type": "text",
+        "value": " to see the animals "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "running",
+        "lemma": "run"
+      },
+      {
+        "type": "text",
+        "value": " away from him, just as if he were King Lion himself, that he could not keep from expressing his delight by a loud, harsh bray. A Fox, who ran with the rest, stopped short as soon as he heard the voice. Approaching the Ass, he said with a laugh:\n\n\"If you had kept your mouth shut you might have frightened me, too. But you gave yourself away with that silly bray.\""
+      }
+    ]
+  }
+}

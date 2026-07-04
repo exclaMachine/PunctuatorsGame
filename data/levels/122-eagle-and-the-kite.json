@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "eagle-and-the-kite",
+    "title": "The Eagle And The Kite",
+    "order": 122,
+    "moral": "Everything is fair in love.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 8,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "An Eagle "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "sat",
+        "lemma": "sit"
+      },
+      {
+        "type": "text",
+        "value": " high in the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "branches"
+      },
+      {
+        "type": "text",
+        "value": " of a great Oak. She "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "seemed",
+        "lemma": "seem"
+      },
+      {
+        "type": "text",
+        "value": " very sad and "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "drooping",
+        "lemma": "droop"
+      },
+      {
+        "type": "text",
+        "value": " for an Eagle. A Kite "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "saw",
+        "lemma": "see"
+      },
+      {
+        "type": "text",
+        "value": " her.\n\n\"Why do you "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "look",
+        "lemma": "look"
+      },
+      {
+        "type": "text",
+        "value": " so woebegone?\" asked the Kite.\n\n\"I "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "want",
+        "lemma": "want"
+      },
+      {
+        "type": "text",
+        "value": " to get married,\" replied the Eagle, \"and I can't find a "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "mate"
+      },
+      {
+        "type": "text",
+        "value": " who can provide for me as I should "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "like",
+        "lemma": "like"
+      },
+      {
+        "type": "text",
+        "value": ".\"\n\n\""
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "Take",
+        "lemma": "take"
+      },
+      {
+        "type": "text",
+        "value": " me,\" said the Kite; \"I am very strong, "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "stronger"
+      },
+      {
+        "type": "text",
+        "value": " even than you!\"\n\n\"Do you "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adverb",
+        "answer": "really"
+      },
+      {
+        "type": "text",
+        "value": " think you can provide for me?\" asked the Eagle eagerly.\n\n\"Why, of course,\" replied the Kite. \"That would be a very simple matter. I am so strong I can carry away an Ostrich in my talons as if it were a feather!\"\n\nThe Eagle accepted the Kite immediately. But after the wedding, when the Kite flew away to find something to eat for his bride, all he had when he returned, was a tiny Mouse.\n\n\"Is that the Ostrich you talked about?\" said the Eagle in disgust.\n\n\"To win you I would have said and promised anything,\" replied the Kite."
+      }
+    ]
+  }
+}

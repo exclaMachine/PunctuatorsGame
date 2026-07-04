@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "bull-and-the-goat",
+    "title": "The Bull And The Goat",
+    "order": 97,
+    "moral": "It is wicked to take advantage of another's distress.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 6,
+      "adjective": 0,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Bull "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": " escaped from a Lion by "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "entering",
+        "lemma": "enter"
+      },
+      {
+        "type": "text",
+        "value": " a cave which the Goatherds "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "used",
+        "lemma": "use"
+      },
+      {
+        "type": "text",
+        "value": " to house their "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "flocks"
+      },
+      {
+        "type": "text",
+        "value": " in stormy weather and at "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "night"
+      },
+      {
+        "type": "text",
+        "value": ". It happened that one of the Goats had been "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "left",
+        "lemma": "leave"
+      },
+      {
+        "type": "text",
+        "value": " behind, and the Bull had no "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "sooner"
+      },
+      {
+        "type": "text",
+        "value": " got inside than this Goat "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "lowered",
+        "lemma": "lower"
+      },
+      {
+        "type": "text",
+        "value": " his head and "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "made",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " a rush at him, "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "butting",
+        "lemma": "butt"
+      },
+      {
+        "type": "text",
+        "value": " him with his "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "horns"
+      },
+      {
+        "type": "text",
+        "value": ". As the Lion was still prowling outside the entrance to the cave, the Bull had to submit to the insult.\n\n\"Do not think,\" he said, \"that I submit to your cowardly treatment because I am afraid of you. When that Lion leaves, I'll teach you a lesson you won't forget.\""
+      }
+    ]
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "porcupine-and-the-snakes",
+    "title": "The Porcupine And The Snakes",
+    "order": 118,
+    "moral": "Give a finger and lose a hand.",
+    "blankCounts": {
+      "noun": 1,
+      "verb": 6,
+      "adjective": 1,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Porcupine was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "looking",
+        "lemma": "look"
+      },
+      {
+        "type": "text",
+        "value": " for a good home. At last he "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "found",
+        "lemma": "find"
+      },
+      {
+        "type": "text",
+        "value": " a little sheltered cave, where "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "lived",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " a family of Snakes. He asked them to "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "let",
+        "lemma": "let"
+      },
+      {
+        "type": "text",
+        "value": " him share the cave with them, and the Snakes "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adverb",
+        "answer": "kindly"
+      },
+      {
+        "type": "text",
+        "value": " consented.\n\nThe Snakes "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "soon"
+      },
+      {
+        "type": "text",
+        "value": " wished they had not "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "given",
+        "lemma": "give"
+      },
+      {
+        "type": "text",
+        "value": " him permission to stay. His "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "sharp"
+      },
+      {
+        "type": "text",
+        "value": " quills pricked them at every "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "turn"
+      },
+      {
+        "type": "text",
+        "value": ", and at last they politely asked him to "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "leave",
+        "lemma": "leave"
+      },
+      {
+        "type": "text",
+        "value": ".\n\n\"I am very well satisfied, thank you,\" said the Porcupine. \"I intend to stay right here.\" And with that, he politely escorted the Snakes out of doors. And to save their skins, the Snakes had to look for another home."
+      }
+    ]
+  }
+}

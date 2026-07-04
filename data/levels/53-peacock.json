@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "peacock",
+    "title": "The Peacock",
+    "order": 53,
+    "moral": "Do not sacrifice your freedom for the sake of pomp and show.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 5,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "The Peacock, they "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "say",
+        "lemma": "say"
+      },
+      {
+        "type": "text",
+        "value": ", did not at first have the beautiful feathers in which he "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "now"
+      },
+      {
+        "type": "text",
+        "value": " takes so much "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "pride"
+      },
+      {
+        "type": "text",
+        "value": ". These, Juno, whose "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "favorite"
+      },
+      {
+        "type": "text",
+        "value": " he was, "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "granted",
+        "lemma": "grant"
+      },
+      {
+        "type": "text",
+        "value": " to him one "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " when he begged her for a train of feathers to "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "distinguish",
+        "lemma": "distinguish"
+      },
+      {
+        "type": "text",
+        "value": " him from the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "other"
+      },
+      {
+        "type": "text",
+        "value": " birds. Then, "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "decked",
+        "lemma": "deck"
+      },
+      {
+        "type": "text",
+        "value": " in his finery, "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "gleaming",
+        "lemma": "gleam"
+      },
+      {
+        "type": "text",
+        "value": " with emerald, "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "gold"
+      },
+      {
+        "type": "text",
+        "value": ", purple, and "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "azure"
+      },
+      {
+        "type": "text",
+        "value": ", he strutted proudly among the birds. All regarded him with envy. Even the most beautiful pheasant could see that his beauty was surpassed.\n\nPresently the Peacock saw an Eagle soaring high up in the blue sky and felt a desire to fly, as he had been accustomed to do. Lifting his wings he tried to rise from the ground. But the weight of his magnificent train held him down. Instead of flying up to greet the first rays of the morning sun or to bathe in the rosy light among the floating clouds at sunset, he would have to walk the ground more encumbered and oppressed than any common barnyard fowl."
+      }
+    ]
+  }
+}

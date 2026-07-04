@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "monkey-and-the-dolphin",
+    "title": "The Monkey And The Dolphin",
+    "order": 60,
+    "moral": "One falsehood leads to another.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 4,
+      "adjective": 3,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "It "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "happened",
+        "lemma": "happen"
+      },
+      {
+        "type": "text",
+        "value": " once upon a time that a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "certain"
+      },
+      {
+        "type": "text",
+        "value": " Greek ship bound for Athens was "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "wrecked",
+        "lemma": "wreck"
+      },
+      {
+        "type": "text",
+        "value": " off the coast "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adverb",
+        "answer": "close"
+      },
+      {
+        "type": "text",
+        "value": " to Piraeus, the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "port"
+      },
+      {
+        "type": "text",
+        "value": " of Athens. Had it not been for the Dolphins, who at that time were very "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "friendly"
+      },
+      {
+        "type": "text",
+        "value": " toward mankind and "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "especially"
+      },
+      {
+        "type": "text",
+        "value": " toward Athenians, all would have "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "perished",
+        "lemma": "perish"
+      },
+      {
+        "type": "text",
+        "value": ". But the Dolphins took the "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "shipwrecked",
+        "lemma": "shipwreck"
+      },
+      {
+        "type": "text",
+        "value": " people on their "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "backs"
+      },
+      {
+        "type": "text",
+        "value": " and swam with them to shore.\n\nNow it was the "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "custom"
+      },
+      {
+        "type": "text",
+        "value": " among the Greeks to take their "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "pet"
+      },
+      {
+        "type": "text",
+        "value": " monkeys and dogs with them whenever they went on a voyage. So when one of the Dolphins saw a Monkey struggling in the water, he thought it was a man, and made the Monkey climb up on his back. Then off he swam with him toward the shore.\n\nThe Monkey sat up, grave and dignified, on the Dolphin's back.\n\n\"You are a citizen of illustrious Athens, are you not?\" asked the Dolphin politely.\n\n\"Yes,\" answered the Monkey, proudly. \"My family is one of the noblest in the city.\"\n\n\"Indeed,\" said the Dolphin. \"Then of course you often visit Piraeus.\"\n\n\"Yes, yes,\" replied the Monkey. \"Indeed, I do. I am with him constantly. Piraeus is my very best friend.\"\n\nThis answer took the Dolphin by surprise, and, turning his head, he now saw what it was he was carrying. Without more ado, he dived and left the foolish Monkey to take care of himself, while he swam off in search of some human being to save."
+      }
+    ]
+  }
+}

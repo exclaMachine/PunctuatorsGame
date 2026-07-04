@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "vain-jackdaw-and-his-borrowed-feathers",
+    "title": "The Vain Jackdaw And His Borrowed Feathers",
+    "order": 59,
+    "moral": "Borrowed feathers do not make fine birds.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 3,
+      "adjective": 4,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Jackdaw "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "chanced",
+        "lemma": "chance"
+      },
+      {
+        "type": "text",
+        "value": " to fly over the garden of the King's "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "palace"
+      },
+      {
+        "type": "text",
+        "value": ". There he saw with "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "much"
+      },
+      {
+        "type": "text",
+        "value": " wonder and envy a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "flock"
+      },
+      {
+        "type": "text",
+        "value": " of royal Peacocks in all the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "glory"
+      },
+      {
+        "type": "text",
+        "value": " of their splendid "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "plumage"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nNow the black Jackdaw was not a very "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "handsome"
+      },
+      {
+        "type": "text",
+        "value": " bird, nor very "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "refined"
+      },
+      {
+        "type": "text",
+        "value": " in manner. Yet he "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "imagined",
+        "lemma": "imagine"
+      },
+      {
+        "type": "text",
+        "value": " that all he "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "needed",
+        "lemma": "need"
+      },
+      {
+        "type": "text",
+        "value": " to make himself "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "fit"
+      },
+      {
+        "type": "text",
+        "value": " for the society of the Peacocks was a "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "dress"
+      },
+      {
+        "type": "text",
+        "value": " like theirs. So he picked up some castoff feathers of the Peacocks and stuck them among his own black plumes.\n\nDressed in his borrowed finery he strutted loftily among the birds of his own kind. Then he flew down into the garden among the Peacocks. But they soon saw who he was. Angry at the cheat, they flew at him, plucking away the borrowed feathers and also some of his own.\n\nThe poor Jackdaw returned sadly to his former companions. There another unpleasant surprise awaited him. They had not forgotten his superior airs toward them, and, to punish him, they drove him away with a rain of pecks and jeers."
+      }
+    ]
+  }
+}

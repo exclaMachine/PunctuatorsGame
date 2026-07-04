@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "man-and-the-lion",
+    "title": "The Man And The Lion",
+    "order": 100,
+    "moral": "It all depends on the point of view, and who tells the story.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 3,
+      "adjective": 1,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Lion and a Man "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "chanced",
+        "lemma": "chance"
+      },
+      {
+        "type": "text",
+        "value": " to travel in "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "company"
+      },
+      {
+        "type": "text",
+        "value": " through the forest. They "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adverb",
+        "answer": "soon"
+      },
+      {
+        "type": "text",
+        "value": " began to quarrel, for each of them "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "boasted",
+        "lemma": "boast"
+      },
+      {
+        "type": "text",
+        "value": " that he and his "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "kind"
+      },
+      {
+        "type": "text",
+        "value": " were far superior to the "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "other"
+      },
+      {
+        "type": "text",
+        "value": " both in strength and "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "mind"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nNow they "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "reached",
+        "lemma": "reach"
+      },
+      {
+        "type": "text",
+        "value": " a clearing in the forest and "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "there"
+      },
+      {
+        "type": "text",
+        "value": " stood a statue. It was a "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "representation"
+      },
+      {
+        "type": "text",
+        "value": " of Heracles in the "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "act"
+      },
+      {
+        "type": "text",
+        "value": " of tearing the jaws of the Nemean Lion.\n\n\"See,\" said the man, \"that's how strong we are! The King of Beasts is like wax in our hands!\"\n\n\"Ho!\" laughed the Lion, \"a Man made that statue. It would have been quite a different scene had a Lion made it!\""
+      }
+    ]
+  }
+}

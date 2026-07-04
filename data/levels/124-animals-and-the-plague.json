@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "animals-and-the-plague",
+    "title": "The Animals And The Plague",
+    "order": 124,
+    "moral": "The weak are made to suffer for the misdeeds of the powerful.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 4,
+      "adjective": 2,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Once upon a "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "time"
+      },
+      {
+        "type": "text",
+        "value": " a severe plague "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "raged",
+        "lemma": "rage"
+      },
+      {
+        "type": "text",
+        "value": " among the animals. Many "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "died",
+        "lemma": "die"
+      },
+      {
+        "type": "text",
+        "value": ", and those who "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "lived",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " were so ill, that they "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "cared",
+        "lemma": "care"
+      },
+      {
+        "type": "text",
+        "value": " for neither food nor "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "drink"
+      },
+      {
+        "type": "text",
+        "value": ", and dragged themselves about "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "listlessly"
+      },
+      {
+        "type": "text",
+        "value": ". No longer could a "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "fat"
+      },
+      {
+        "type": "text",
+        "value": " young hen tempt Master Fox to "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "dinner"
+      },
+      {
+        "type": "text",
+        "value": ", nor a tender lamb "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "rouse"
+      },
+      {
+        "type": "text",
+        "value": " greedy Sir Wolf's "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "appetite"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nAt "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "last"
+      },
+      {
+        "type": "text",
+        "value": " the Lion decided to call a council. When all the animals were gathered together he arose and said:\n\n\"Dear friends, I believe the gods have sent this plague upon us as a punishment for our sins. Therefore, the most guilty one of us must be offered in sacrifice. Perhaps we may thus obtain forgiveness and cure for all.\n\n\"I will confess all my sins first. I admit that I have been very greedy and have devoured many sheep. They had done me no harm. I have eaten goats and bulls and stags. To tell the truth, I even ate up a shepherd now and then.\n\n\"Now, if I am the most guilty, I am ready to be sacrificed. But I think it best that each one confess his sins as I have done. Then we can decide in all justice who is the most guilty.\"\n\n\"Your majesty,\" said the Fox, \"you are too good. Can it be a crime to eat sheep, such stupid mutton heads? No, no, your majesty. You have done them great honor by eating them up.\n\n\"And so far as shepherds are concerned, we all know they belong to that puny race that pretends to be our masters.\"\n\nAll the animals applauded the Fox loudly. Then, though the Tiger, the Bear, the Wolf, and all the savage beasts recited the most wicked deeds, all were excused and made to appear very saint-like and innocent.\n\nIt was now the Ass's turn to confess.\n\n\"I remember,\" he said guiltily, \"that one day as I was passing a field belonging to some priests, I was so tempted by the tender grass and my hunger, that I could not resist nibbling a bit of it. I had no right to do it, I admit--\"\n\nA great uproar among the beasts interrupted him. Here was the culprit who had brought misfortune on all of them! What a horrible crime it was to eat grass that belonged to someone else! It was enough to hang anyone for, much more an Ass.\n\nImmediately they all fell upon him, the Wolf in the lead, and soon had made an end to him, sacrificing him to the gods then and there, and without the formality of an altar."
+      }
+    ]
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "lion-the-ass-and-the-fox",
+    "title": "The Lion, The Ass, And The Fox",
+    "order": 139,
+    "moral": "Learn from the misfortunes of others.",
+    "blankCounts": {
+      "noun": 6,
+      "verb": 5,
+      "adjective": 0,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Lion, an Ass, and a Fox were "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "hunting",
+        "lemma": "hunt"
+      },
+      {
+        "type": "text",
+        "value": " in company, and "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "caught",
+        "lemma": "catch"
+      },
+      {
+        "type": "text",
+        "value": " a large quantity of game. The Ass was asked to divide the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "spoil"
+      },
+      {
+        "type": "text",
+        "value": ". This he "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "did",
+        "lemma": "do"
+      },
+      {
+        "type": "text",
+        "value": " very fairly, "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "giving",
+        "lemma": "give"
+      },
+      {
+        "type": "text",
+        "value": " each an equal "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "share"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nThe Fox was "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "well"
+      },
+      {
+        "type": "text",
+        "value": " satisfied, but the Lion "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "flew",
+        "lemma": "fly"
+      },
+      {
+        "type": "text",
+        "value": " into a great "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "rage"
+      },
+      {
+        "type": "text",
+        "value": " over it, and with one "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "stroke"
+      },
+      {
+        "type": "text",
+        "value": " of his huge "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "paw"
+      },
+      {
+        "type": "text",
+        "value": ", he added the Ass to the "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "pile"
+      },
+      {
+        "type": "text",
+        "value": " of slain.\n\nThen he turned to the Fox.\n\n\"You divide it,\" he roared angrily.\n\nThe Fox wasted no time in talking. He quickly piled all the game into one great heap. From this he took a very small portion for himself, such undesirable bits as the horns and hoofs of a mountain goat, and the end of an ox tail.\n\nThe Lion now recovered his good humor entirely.\n\n\"Who taught you to divide so fairly?\" he asked pleasantly.\n\n\"I learned a lesson from the Ass,\" replied the Fox, carefully edging away."
+      }
+    ]
+  }
+}

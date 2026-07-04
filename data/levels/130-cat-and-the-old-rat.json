@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "cat-and-the-old-rat",
+    "title": "The Cat And The Old Rat",
+    "order": 130,
+    "moral": "The wise do not let themselves be tricked a second time.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 2,
+      "adjective": 4,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "There was once a Cat who was so "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "watchful"
+      },
+      {
+        "type": "text",
+        "value": ", that a Mouse "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "hardly"
+      },
+      {
+        "type": "text",
+        "value": " dared show the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "tip"
+      },
+      {
+        "type": "text",
+        "value": " of his whiskers for "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "fear"
+      },
+      {
+        "type": "text",
+        "value": " of being eaten "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "alive"
+      },
+      {
+        "type": "text",
+        "value": ". That Cat "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "seemed",
+        "lemma": "seem"
+      },
+      {
+        "type": "text",
+        "value": " to be everywhere at once with his claws all "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "ready"
+      },
+      {
+        "type": "text",
+        "value": " for a pounce. At "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "last"
+      },
+      {
+        "type": "text",
+        "value": " the Mice kept so "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "closely"
+      },
+      {
+        "type": "text",
+        "value": " to their dens, that the Cat saw he would "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "have",
+        "lemma": "have"
+      },
+      {
+        "type": "text",
+        "value": " to use his "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "wits"
+      },
+      {
+        "type": "text",
+        "value": " well to catch one. So one "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " he climbed up on a shelf and hung from it, head downward, as if he were dead, holding himself up by clinging to some ropes with one paw.\n\nWhen the Mice peeped out and saw him in that position, they thought he had been hung up there in punishment for some misdeed. Very timidly at first they stuck out their heads and sniffed about carefully. But as nothing stirred, all trooped joyfully out to celebrate the death of the Cat.\n\nJust then the Cat let go his hold, and before the Mice recovered from their surprise, he had made an end of three or four.\n\nNow the Mice kept more strictly at home than ever. But the Cat, who was still hungry for Mice, knew more tricks than one. Rolling himself in flour until he was covered completely, he lay down in the flour bin, with one eye open for the Mice.\n\nSure enough, the Mice soon began to come out. To the Cat it was almost as if he already had a plump young Mouse under his claws, when an old Rat, who had had much experience with Cats and traps, and had even lost a part of his tail to pay for it, sat up at a safe distance from a hole in the wall where he lived.\n\n\"Take care!\" he cried. \"That may be a heap of meal, but it looks to me very much like the Cat. Whatever it is, it is wisest to keep at a safe distance.\""
+      }
+    ]
+  }
+}

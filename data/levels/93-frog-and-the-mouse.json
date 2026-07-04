@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "frog-and-the-mouse",
+    "title": "The Frog And The Mouse",
+    "order": 93,
+    "moral": "Those who seek to harm others often come to harm themselves through their own deceit.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 7,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "young"
+      },
+      {
+        "type": "text",
+        "value": " Mouse in search of "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "adventure"
+      },
+      {
+        "type": "text",
+        "value": " was running along the bank of a pond where "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "lived",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " a Frog. When the Frog "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "saw",
+        "lemma": "see"
+      },
+      {
+        "type": "text",
+        "value": " the Mouse, he "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "swam",
+        "lemma": "swam"
+      },
+      {
+        "type": "text",
+        "value": " to the bank and "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "croaked",
+        "lemma": "croak"
+      },
+      {
+        "type": "text",
+        "value": ":\n\n\"Won't you "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "pay",
+        "lemma": "pay"
+      },
+      {
+        "type": "text",
+        "value": " me a visit? I can "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "promise",
+        "lemma": "promise"
+      },
+      {
+        "type": "text",
+        "value": " you a good "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "time"
+      },
+      {
+        "type": "text",
+        "value": " if you do.\"\n\nThe Mouse did not "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "need",
+        "lemma": "need"
+      },
+      {
+        "type": "text",
+        "value": " much coaxing, for he was "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "very"
+      },
+      {
+        "type": "text",
+        "value": " anxious to see the "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "world"
+      },
+      {
+        "type": "text",
+        "value": " and everything in it. But though he could swim a little, he did not dare risk going into the pond without some help.\n\nThe Frog had a plan. He tied the Mouse's leg to his own with a tough reed. Then into the pond he jumped, dragging his foolish companion with him.\n\nThe Mouse soon had enough of it and wanted to return to shore; but the treacherous Frog had other plans. He pulled the Mouse down under the water and drowned him. But before he could untie the reed that bound him to the dead Mouse, a Hawk came sailing over the pond. Seeing the body of the Mouse floating on the water, the Hawk swooped down, seized the Mouse and carried it off, with the Frog dangling from its leg. Thus at one swoop he had caught both meat and fish for his dinner."
+      }
+    ]
+  }
+}

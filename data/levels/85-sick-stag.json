@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "sick-stag",
+    "title": "The Sick Stag",
+    "order": 85,
+    "moral": "Good will is worth nothing unless it is accompanied by good acts.",
+    "blankCounts": {
+      "noun": 1,
+      "verb": 5,
+      "adjective": 0,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Stag had "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "fallen",
+        "lemma": "fall"
+      },
+      {
+        "type": "text",
+        "value": " sick. He had "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "just"
+      },
+      {
+        "type": "text",
+        "value": " strength enough to "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "gather",
+        "lemma": "gather"
+      },
+      {
+        "type": "text",
+        "value": " some food and "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "find",
+        "lemma": "find"
+      },
+      {
+        "type": "text",
+        "value": " a quiet clearing in the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "woods"
+      },
+      {
+        "type": "text",
+        "value": ", where he "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "lay",
+        "lemma": "lie"
+      },
+      {
+        "type": "text",
+        "value": " down to wait until his strength should "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "return",
+        "lemma": "return"
+      },
+      {
+        "type": "text",
+        "value": ". The Animals heard about the Stag's illness and came to ask after his health. Of course, they were all hungry, and helped themselves freely to the Stag's food; and as you would expect, the Stag soon starved to death."
+      }
+    ]
+  }
+}

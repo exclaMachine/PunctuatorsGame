@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "goose-and-the-golden-egg",
+    "title": "The Goose And The Golden Egg",
+    "order": 81,
+    "moral": "Those who have plenty want more and so lose all they have.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 8,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "There was once a Countryman who "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "possessed",
+        "lemma": "possess"
+      },
+      {
+        "type": "text",
+        "value": " the most wonderful Goose you can "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "imagine",
+        "lemma": "imagine"
+      },
+      {
+        "type": "text",
+        "value": ", for every day when he "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "visited",
+        "lemma": "visit"
+      },
+      {
+        "type": "text",
+        "value": " the nest, the Goose had "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "laid",
+        "lemma": "lay"
+      },
+      {
+        "type": "text",
+        "value": " a beautiful, "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "glittering"
+      },
+      {
+        "type": "text",
+        "value": ", golden egg.\n\nThe Countryman "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "took",
+        "lemma": "take"
+      },
+      {
+        "type": "text",
+        "value": " the eggs to "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "market"
+      },
+      {
+        "type": "text",
+        "value": " and soon began to get rich. But it was not "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "long"
+      },
+      {
+        "type": "text",
+        "value": " before he grew "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "impatient"
+      },
+      {
+        "type": "text",
+        "value": " with the Goose because she "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "gave",
+        "lemma": "give"
+      },
+      {
+        "type": "text",
+        "value": " him only a single golden egg a day. He was not "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "getting",
+        "lemma": "get"
+      },
+      {
+        "type": "text",
+        "value": " rich fast enough.\n\nThen one day, after he had "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "finished",
+        "lemma": "finish"
+      },
+      {
+        "type": "text",
+        "value": " counting his money, the idea came to him that he could get all the golden eggs at once by killing the Goose and cutting it open. But when the deed was done, not a single golden egg did he find, and his precious Goose was dead."
+      }
+    ]
+  }
+}

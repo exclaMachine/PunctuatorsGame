@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "old-lion-and-the-fox",
+    "title": "The Old Lion And The Fox",
+    "order": 99,
+    "moral": "Take warning from the misfortunes of others.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 3,
+      "adjective": 5,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "An "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "old"
+      },
+      {
+        "type": "text",
+        "value": " Lion, whose "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "teeth"
+      },
+      {
+        "type": "text",
+        "value": " and claws were so "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "worn"
+      },
+      {
+        "type": "text",
+        "value": " that it was not so "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "easy"
+      },
+      {
+        "type": "text",
+        "value": " for him to "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "get",
+        "lemma": "get"
+      },
+      {
+        "type": "text",
+        "value": " food as in his "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "younger"
+      },
+      {
+        "type": "text",
+        "value": " days, pretended that he was "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "sick"
+      },
+      {
+        "type": "text",
+        "value": ". He took "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "care"
+      },
+      {
+        "type": "text",
+        "value": " to let all his "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "neighbors"
+      },
+      {
+        "type": "text",
+        "value": " know about it, and "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adverb",
+        "answer": "then"
+      },
+      {
+        "type": "text",
+        "value": " lay down in his cave to "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "wait",
+        "lemma": "wait"
+      },
+      {
+        "type": "text",
+        "value": " for visitors. And when they came to "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "offer",
+        "lemma": "offer"
+      },
+      {
+        "type": "text",
+        "value": " him their sympathy, he ate them up one by one.\n\nThe Fox came too, but he was very cautious about it. Standing at a safe distance from the cave, he inquired politely after the Lion's health. The Lion replied that he was very ill indeed, and asked the Fox to step in for a moment. But Master Fox very wisely stayed outside, thanking the Lion very kindly for the invitation.\n\n\"I should be glad to do as you ask,\" he added, \"but I have noticed that there are many footprints leading into your cave and none coming out. Pray tell me, how do your visitors find their way out again?\""
+      }
+    ]
+  }
+}

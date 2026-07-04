@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "cock-and-the-jewel",
+    "title": "The Cock And The Jewel",
+    "order": 40,
+    "moral": "Precious things are without value to those who cannot prize them.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 3,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Cock was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "busily"
+      },
+      {
+        "type": "text",
+        "value": " scratching and scraping about to find something to "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "eat",
+        "lemma": "eat"
+      },
+      {
+        "type": "text",
+        "value": " for himself and his "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "family"
+      },
+      {
+        "type": "text",
+        "value": ", when he "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "happened",
+        "lemma": "happen"
+      },
+      {
+        "type": "text",
+        "value": " to turn up a "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "precious"
+      },
+      {
+        "type": "text",
+        "value": " jewel that had been lost by its "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "owner"
+      },
+      {
+        "type": "text",
+        "value": ".\n\n\"Aha!\" "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "said",
+        "lemma": "say"
+      },
+      {
+        "type": "text",
+        "value": " the Cock. \"No doubt you are very costly and he who lost you would give a great deal to find you. But as for me, I would choose a single grain of barleycorn before all the jewels in the world.\""
+      }
+    ]
+  }
+}

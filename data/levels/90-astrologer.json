@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "astrologer",
+    "title": "The Astrologer",
+    "order": 90,
+    "moral": "Take care of the little things and the big things will take care of themselves.",
+    "blankCounts": {
+      "noun": 6,
+      "verb": 4,
+      "adjective": 2,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "man"
+      },
+      {
+        "type": "text",
+        "value": " who lived a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "long"
+      },
+      {
+        "type": "text",
+        "value": " time ago believed that he could read the future in the stars. He "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "called",
+        "lemma": "call"
+      },
+      {
+        "type": "text",
+        "value": " himself an Astrologer, and "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "spent",
+        "lemma": "spend"
+      },
+      {
+        "type": "text",
+        "value": " his time at "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "night"
+      },
+      {
+        "type": "text",
+        "value": " gazing at the "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "sky"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nOne "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "evening"
+      },
+      {
+        "type": "text",
+        "value": " he was walking along the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "open"
+      },
+      {
+        "type": "text",
+        "value": " road outside the "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "village"
+      },
+      {
+        "type": "text",
+        "value": ". His eyes were "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "fixed",
+        "lemma": "fix"
+      },
+      {
+        "type": "text",
+        "value": " on the stars. He "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "thought",
+        "lemma": "think"
+      },
+      {
+        "type": "text",
+        "value": " he saw there that the "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "end"
+      },
+      {
+        "type": "text",
+        "value": " of the world was at hand, when all at once, down he went into a hole full of mud and water.\n\nThere he stood up to his ears, in the muddy water, and madly clawing at the slippery sides of the hole in his effort to climb out.\n\nHis cries for help soon brought the villagers running. As they pulled him out of the mud, one of them said:\n\n\"You pretend to read the future in the stars, and yet you fail to see what is at your feet! This may teach you to pay more attention to what is right in front of you, and let the future take care of itself.\"\n\n\"What use is it,\" said another, \"to read the stars, when you can't see what's right here on the earth?\""
+      }
+    ]
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "dog-and-his-master-s-dinner",
+    "title": "The Dog And His Master'S Dinner",
+    "order": 58,
+    "moral": "Do not stop to argue with temptation.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 6,
+      "adjective": 2,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Dog had "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "learned",
+        "lemma": "learn"
+      },
+      {
+        "type": "text",
+        "value": " to carry his master's dinner to him every day. He was very "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "faithful"
+      },
+      {
+        "type": "text",
+        "value": " to his duty, though the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "smell"
+      },
+      {
+        "type": "text",
+        "value": " of the good "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "things"
+      },
+      {
+        "type": "text",
+        "value": " in the basket "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "tempted",
+        "lemma": "tempt"
+      },
+      {
+        "type": "text",
+        "value": " him.\n\nThe Dogs in the neighborhood "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "noticed",
+        "lemma": "notice"
+      },
+      {
+        "type": "text",
+        "value": " him carrying the basket and soon "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "discovered",
+        "lemma": "discover"
+      },
+      {
+        "type": "text",
+        "value": " what was in it. They made "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "several"
+      },
+      {
+        "type": "text",
+        "value": " attempts to steal it from him. But he "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "always"
+      },
+      {
+        "type": "text",
+        "value": " guarded it faithfully.\n\nThen one day all the Dogs in the neighborhood "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "got",
+        "lemma": "get"
+      },
+      {
+        "type": "text",
+        "value": " together and met him on his "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "way"
+      },
+      {
+        "type": "text",
+        "value": " with the basket. The Dog "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "tried",
+        "lemma": "try"
+      },
+      {
+        "type": "text",
+        "value": " to run away from them. But at last he stopped to argue.\n\nThat was his mistake. They soon made him feel so ridiculous that he dropped the basket and seized a large piece of roast meat intended for his master's dinner.\n\n\"Very well,\" he said, \"you divide the rest.\""
+      }
+    ]
+  }
+}

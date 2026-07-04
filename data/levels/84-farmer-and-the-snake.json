@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "farmer-and-the-snake",
+    "title": "The Farmer And The Snake",
+    "order": 84,
+    "moral": "Learn from my fate not to take pity on a scoundrel.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 3,
+      "adjective": 1,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Farmer "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "walked",
+        "lemma": "walk"
+      },
+      {
+        "type": "text",
+        "value": " through his field one cold "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "winter"
+      },
+      {
+        "type": "text",
+        "value": " morning. On the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "ground"
+      },
+      {
+        "type": "text",
+        "value": " lay a Snake, "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "stiff"
+      },
+      {
+        "type": "text",
+        "value": " and frozen with the cold. The Farmer "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "knew",
+        "lemma": "know"
+      },
+      {
+        "type": "text",
+        "value": " how deadly the Snake could be, and "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "yet"
+      },
+      {
+        "type": "text",
+        "value": " he picked it up and "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "put",
+        "lemma": "put"
+      },
+      {
+        "type": "text",
+        "value": " it in his "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "bosom"
+      },
+      {
+        "type": "text",
+        "value": " to warm it "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "back"
+      },
+      {
+        "type": "text",
+        "value": " to life.\n\nThe Snake soon revived, and when it had enough strength, bit the man who had been so kind to it. The bite was deadly and the Farmer felt that he must die. As he drew his last breath, he said to those standing around:"
+      }
+    ]
+  }
+}

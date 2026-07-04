@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "two-travelers-and-a-bear",
+    "title": "Two Travelers And A Bear",
+    "order": 117,
+    "moral": "Misfortune is the test of true friendship.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 5,
+      "adjective": 2,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Two Men were "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "traveling",
+        "lemma": "travel"
+      },
+      {
+        "type": "text",
+        "value": " in company through a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "forest"
+      },
+      {
+        "type": "text",
+        "value": ", when, all at "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": ", a huge Bear "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "crashed",
+        "lemma": "crash"
+      },
+      {
+        "type": "text",
+        "value": " out of the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "brush"
+      },
+      {
+        "type": "text",
+        "value": " near them.\n\nOne of the Men, "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "thinking",
+        "lemma": "think"
+      },
+      {
+        "type": "text",
+        "value": " of his own "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "safety"
+      },
+      {
+        "type": "text",
+        "value": ", climbed a tree.\n\nThe other, "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "unable"
+      },
+      {
+        "type": "text",
+        "value": " to fight the "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "savage"
+      },
+      {
+        "type": "text",
+        "value": " beast alone, "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "threw",
+        "lemma": "throw"
+      },
+      {
+        "type": "text",
+        "value": " himself on the "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "ground"
+      },
+      {
+        "type": "text",
+        "value": " and lay still, as if he were dead. He had "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "heard",
+        "lemma": "hear"
+      },
+      {
+        "type": "text",
+        "value": " that a Bear will not touch a dead body.\n\nIt must have been true, for the Bear snuffed at the Man's head awhile, and then, seeming to be satisfied that he was dead, walked away.\n\nThe Man in the tree climbed down.\n\n\"It looked just as if that Bear whispered in your ear,\" he said. \"What did he tell you?\"\n\n\"He said,\" answered the other, \"that it was not at all wise to keep company with a fellow who would desert his friend in a moment of danger.\""
+      }
+    ]
+  }
+}

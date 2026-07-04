@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "man-and-the-satyr",
+    "title": "The Man And The Satyr",
+    "order": 135,
+    "moral": "The man who talks for both sides is not to be trusted by either.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 6,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "long"
+      },
+      {
+        "type": "text",
+        "value": " time ago a Man "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "met",
+        "lemma": "meet"
+      },
+      {
+        "type": "text",
+        "value": " a Satyr in the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "forest"
+      },
+      {
+        "type": "text",
+        "value": " and succeeded in "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "making",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " friends with him. The two "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adverb",
+        "answer": "soon"
+      },
+      {
+        "type": "text",
+        "value": " became the best of comrades, "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "living",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " together in the Man's "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "hut"
+      },
+      {
+        "type": "text",
+        "value": ". But one cold "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "winter"
+      },
+      {
+        "type": "text",
+        "value": " evening, as they were "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "walking",
+        "lemma": "walk"
+      },
+      {
+        "type": "text",
+        "value": " homeward, the Satyr "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "saw",
+        "lemma": "see"
+      },
+      {
+        "type": "text",
+        "value": " the Man blow on his "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "fingers"
+      },
+      {
+        "type": "text",
+        "value": ".\n\n\"Why do you do that?\" asked the Satyr.\n\n\"To "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "warm",
+        "lemma": "warm"
+      },
+      {
+        "type": "text",
+        "value": " my hands,\" the Man replied.\n\nWhen they reached home the Man prepared two bowls of porridge. These he placed steaming hot on the table, and the comrades sat down very cheerfully to enjoy the meal. But much to the Satyr's surprise, the Man began to blow into his bowl of porridge.\n\n\"Why do you do that?\" he asked.\n\n\"To cool my porridge,\" replied the Man.\n\nThe Satyr sprang hurriedly to his feet and made for the door.\n\n\"Goodby,\" he said, \"I've seen enough. A fellow that blows hot and cold in the same breath cannot be friends with me!\""
+      }
+    ]
+  }
+}

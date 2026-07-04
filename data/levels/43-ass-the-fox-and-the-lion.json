@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "ass-the-fox-and-the-lion",
+    "title": "The Ass, The Fox, And The Lion",
+    "order": 43,
+    "moral": "Traitors may expect treachery.",
+    "blankCounts": {
+      "noun": 6,
+      "verb": 4,
+      "adjective": 0,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "An Ass and a Fox had "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "become",
+        "lemma": "become"
+      },
+      {
+        "type": "text",
+        "value": " close comrades, and were "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "constantly"
+      },
+      {
+        "type": "text",
+        "value": " in each other's "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "company"
+      },
+      {
+        "type": "text",
+        "value": ". While the Ass "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "cropped",
+        "lemma": "crop"
+      },
+      {
+        "type": "text",
+        "value": " a fresh bit of "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "greens"
+      },
+      {
+        "type": "text",
+        "value": ", the Fox would "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "devour",
+        "lemma": "devour"
+      },
+      {
+        "type": "text",
+        "value": " a chicken from the "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "neighboring"
+      },
+      {
+        "type": "text",
+        "value": " farmyard or a bit of "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "cheese"
+      },
+      {
+        "type": "text",
+        "value": " filched from the "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "dairy"
+      },
+      {
+        "type": "text",
+        "value": ". One day the "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "pair"
+      },
+      {
+        "type": "text",
+        "value": " unexpectedly met a Lion. The Ass was "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "very"
+      },
+      {
+        "type": "text",
+        "value": " much frightened, but the Fox "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "calmed",
+        "lemma": "calm"
+      },
+      {
+        "type": "text",
+        "value": " his fears.\n\n\"I will talk to him,\" he said.\n\nSo the Fox walked boldly up to the Lion.\n\n\"Your highness,\" he said in an undertone, so the Ass could not hear him, \"I've got a fine scheme in my head. If you promise not to hurt me, I will lead that foolish creature yonder into a pit where he can't get out, and you can feast at your pleasure.\"\n\nThe Lion agreed and the Fox returned to the Ass.\n\n\"I made him promise not to hurt us,\" said the Fox. \"But come, I know a good place to hide till he is gone.\"\n\nSo the Fox led the Ass into a deep pit. But when the Lion saw that the Ass was his for the taking, he first of all struck down the traitor Fox."
+      }
+    ]
+  }
+}

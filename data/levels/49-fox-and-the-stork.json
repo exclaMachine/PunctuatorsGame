@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fox-and-the-stork",
+    "title": "The Fox And The Stork",
+    "order": 49,
+    "moral": "Do not play tricks on your neighbors unless you can stand the same treatment yourself.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 3,
+      "adjective": 2,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "The Fox one "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " thought of a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "plan"
+      },
+      {
+        "type": "text",
+        "value": " to amuse himself at the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "expense"
+      },
+      {
+        "type": "text",
+        "value": " of the Stork, at whose "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "odd"
+      },
+      {
+        "type": "text",
+        "value": " appearance he was "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adverb",
+        "answer": "always"
+      },
+      {
+        "type": "text",
+        "value": " laughing.\n\n\"You must "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "come",
+        "lemma": "come"
+      },
+      {
+        "type": "text",
+        "value": " and dine with me "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "today"
+      },
+      {
+        "type": "text",
+        "value": ",\" he said to the Stork, "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "smiling",
+        "lemma": "smile"
+      },
+      {
+        "type": "text",
+        "value": " to himself at the trick he was "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "going",
+        "lemma": "go"
+      },
+      {
+        "type": "text",
+        "value": " to play. The Stork "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adverb",
+        "answer": "gladly"
+      },
+      {
+        "type": "text",
+        "value": " accepted the invitation and arrived in good time and with a very good "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "appetite"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nFor dinner the Fox served soup. But it was set out in a very "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "shallow"
+      },
+      {
+        "type": "text",
+        "value": " dish, and all the Stork could do was to wet the very tip of his bill. Not a drop of soup could he get. But the Fox lapped it up easily, and, to increase the disappointment of the Stork, made a great show of enjoyment.\n\nThe hungry Stork was much displeased at the trick, but he was a calm, even-tempered fellow and saw no good in flying into a rage. Instead, not long afterward, he invited the Fox to dine with him in turn. The Fox arrived promptly at the time that had been set, and the Stork served a fish dinner that had a very appetizing smell. But it was served in a tall jar with a very narrow neck. The Stork could easily get at the food with his long bill, but all the Fox could do was to lick the outside of the jar, and sniff at the delicious odor. And when the Fox lost his temper, the Stork said calmly:"
+      }
+    ]
+  }
+}

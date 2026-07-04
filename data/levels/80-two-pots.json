@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "two-pots",
+    "title": "The Two Pots",
+    "order": 80,
+    "moral": "Equals make the best friends.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 5,
+      "adjective": 3,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Two Pots, one of brass and the other of "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "clay"
+      },
+      {
+        "type": "text",
+        "value": ", stood together on the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "hearthstone"
+      },
+      {
+        "type": "text",
+        "value": ". One day the Brass Pot "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "proposed",
+        "lemma": "propose"
+      },
+      {
+        "type": "text",
+        "value": " to the Earthen Pot that they go out into the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "world"
+      },
+      {
+        "type": "text",
+        "value": " together. But the Earthen Pot "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "excused",
+        "lemma": "excuse"
+      },
+      {
+        "type": "text",
+        "value": " himself, saying that it would be "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "wiser"
+      },
+      {
+        "type": "text",
+        "value": " for him to "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "stay",
+        "lemma": "stay"
+      },
+      {
+        "type": "text",
+        "value": " in the corner by the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "fire"
+      },
+      {
+        "type": "text",
+        "value": ".\n\n\"It would take so "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "little"
+      },
+      {
+        "type": "text",
+        "value": " to break me,\" he "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "said",
+        "lemma": "say"
+      },
+      {
+        "type": "text",
+        "value": ". \"You "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "know",
+        "lemma": "know"
+      },
+      {
+        "type": "text",
+        "value": " how fragile I am. The "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "least"
+      },
+      {
+        "type": "text",
+        "value": " shock is sure to shatter me!\"\n\n\"Don't let that keep you at home,\" urged the Brass Pot. \"I shall take very good care of you. If we should happen to meet anything hard I will step between and save you.\"\n\nSo the Earthen Pot at last consented, and the two set out side by side, jolting along on three stubby legs first to this side, then to that, and bumping into each other at every step.\n\nThe Earthen Pot could not survive that sort of companionship very long. They had not gone ten paces before the Earthen Pot cracked, and at the next jolt he flew into a thousand pieces."
+      }
+    ]
+  }
+}

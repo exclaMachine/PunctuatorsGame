@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fighting-bulls-and-the-frog",
+    "title": "The Fighting Bulls And The Frog",
+    "order": 82,
+    "moral": "When the great fall out, the weak must suffer for it.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 5,
+      "adjective": 2,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Two Bulls were "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "fighting",
+        "lemma": "fight"
+      },
+      {
+        "type": "text",
+        "value": " furiously in a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "field"
+      },
+      {
+        "type": "text",
+        "value": ", at one "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "side"
+      },
+      {
+        "type": "text",
+        "value": " of which was a marsh. An old Frog "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "living",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " in the marsh, "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "trembled",
+        "lemma": "tremble"
+      },
+      {
+        "type": "text",
+        "value": " as he watched the "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "fierce"
+      },
+      {
+        "type": "text",
+        "value": " battle.\n\n\"What are you "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "afraid"
+      },
+      {
+        "type": "text",
+        "value": " of?\" "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "asked",
+        "lemma": "ask"
+      },
+      {
+        "type": "text",
+        "value": " a young Frog.\n\n\"Do you not "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "see",
+        "lemma": "see"
+      },
+      {
+        "type": "text",
+        "value": ",\" replied the old Frog, \"that the Bull who is beaten, will be driven "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adverb",
+        "answer": "away"
+      },
+      {
+        "type": "text",
+        "value": " from the good forage up there to the reeds of this marsh, and we shall all be trampled into the mud?\"\n\nIt turned out as the Frog had said. The beaten Bull was driven to the marsh, where his great hoofs crushed the Frogs to death."
+      }
+    ]
+  }
+}

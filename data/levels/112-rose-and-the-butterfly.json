@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "rose-and-the-butterfly",
+    "title": "The Rose And The Butterfly",
+    "order": 112,
+    "moral": "Do not expect constancy in others if you have none yourself.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 2,
+      "adjective": 4,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Butterfly "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": " fell in love with a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "beautiful"
+      },
+      {
+        "type": "text",
+        "value": " Rose. The Rose was not "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "indifferent"
+      },
+      {
+        "type": "text",
+        "value": ", for the Butterfly's "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "wings"
+      },
+      {
+        "type": "text",
+        "value": " were powdered in a "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "charming"
+      },
+      {
+        "type": "text",
+        "value": " pattern of gold and "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "silver"
+      },
+      {
+        "type": "text",
+        "value": ". And so, when he fluttered "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "near"
+      },
+      {
+        "type": "text",
+        "value": " and told how he "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "loved",
+        "lemma": "love"
+      },
+      {
+        "type": "text",
+        "value": " her, she "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "blushed",
+        "lemma": "blush"
+      },
+      {
+        "type": "text",
+        "value": " rosily and said yes. After "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "much"
+      },
+      {
+        "type": "text",
+        "value": " pretty love-"
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "making"
+      },
+      {
+        "type": "text",
+        "value": " and many whispered "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "vows"
+      },
+      {
+        "type": "text",
+        "value": " of constancy, the Butterfly took a tender leave of his sweetheart.\n\nBut alas! It was a long time before he came back to her.\n\n\"Is this your constancy?\" she exclaimed tearfully. \"It is ages since you went away, and all the time, you have been carrying on with all sorts of flowers. I saw you kiss Miss Geranium, and you fluttered around Miss Mignonette until Honey Bee chased you away. I wish he had stung you!\"\n\n\"Constancy!\" laughed the Butterfly. \"I had no sooner left you than I saw Zephyr kissing you. You carried on scandalously with Mr. Bumble Bee and you made eyes at every single Bug you could see. You can't expect any constancy from me!\""
+      }
+    ]
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "dog-and-his-reflection",
+    "title": "The Dog And His Reflection",
+    "order": 126,
+    "moral": "It is very foolish to be greedy.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 4,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Dog, to whom the "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "butcher"
+      },
+      {
+        "type": "text",
+        "value": " had thrown a bone, was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "hurrying",
+        "lemma": "hurry"
+      },
+      {
+        "type": "text",
+        "value": " home with his "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "prize"
+      },
+      {
+        "type": "text",
+        "value": " as fast as he could go. As he "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "crossed",
+        "lemma": "cross"
+      },
+      {
+        "type": "text",
+        "value": " a narrow footbridge, he "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "happened",
+        "lemma": "happen"
+      },
+      {
+        "type": "text",
+        "value": " to look down and saw himself "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "reflected",
+        "lemma": "reflect"
+      },
+      {
+        "type": "text",
+        "value": " in the quiet "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "water"
+      },
+      {
+        "type": "text",
+        "value": " as if in a "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "mirror"
+      },
+      {
+        "type": "text",
+        "value": ". But the "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "greedy"
+      },
+      {
+        "type": "text",
+        "value": " Dog thought he saw a "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "real"
+      },
+      {
+        "type": "text",
+        "value": " Dog carrying a bone "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adverb",
+        "answer": "much"
+      },
+      {
+        "type": "text",
+        "value": " bigger than his "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "own"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nIf he had stopped to think he would have known better. But instead of thinking, he dropped his bone and sprang at the Dog in the river, only to find himself swimming for dear life to reach the shore. At last he managed to scramble out, and as he stood sadly thinking about the good bone he had lost, he realized what a stupid Dog he had been."
+      }
+    ]
+  }
+}

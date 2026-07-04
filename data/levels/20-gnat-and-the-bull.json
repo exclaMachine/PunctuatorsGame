@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "gnat-and-the-bull",
+    "title": "The Gnat And The Bull",
+    "order": 20,
+    "moral": "The smaller the mind the greater the conceit.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 5,
+      "adjective": 2,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Gnat "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "flew",
+        "lemma": "fly"
+      },
+      {
+        "type": "text",
+        "value": " over the meadow with "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "much"
+      },
+      {
+        "type": "text",
+        "value": " buzzing for so "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "small"
+      },
+      {
+        "type": "text",
+        "value": " a creature and "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "settled",
+        "lemma": "settle"
+      },
+      {
+        "type": "text",
+        "value": " on the tip of one of the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "horns"
+      },
+      {
+        "type": "text",
+        "value": " of a Bull. After he had "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "rested",
+        "lemma": "rest"
+      },
+      {
+        "type": "text",
+        "value": " a short time, he "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "made",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " ready to fly "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "away"
+      },
+      {
+        "type": "text",
+        "value": ". But before he "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "left",
+        "lemma": "leave"
+      },
+      {
+        "type": "text",
+        "value": " he begged the Bull's "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "pardon"
+      },
+      {
+        "type": "text",
+        "value": " for having used his horn for a resting place.\n\n\"You must be very glad to have me go now,\" he said.\n\n\"It's all the same to me,\" replied the Bull. \"I did not even know you were there.\"\n\nWe are often of greater importance in our own eyes than in the eyes of our neighbor."
+      }
+    ]
+  }
+}

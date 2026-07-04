@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "wild-boar-and-the-fox",
+    "title": "The Wild Boar And The Fox",
+    "order": 42,
+    "moral": "Preparedness for war is the best guarantee of peace.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 4,
+      "adjective": 0,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Wild Boar was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "sharpening",
+        "lemma": "sharpen"
+      },
+      {
+        "type": "text",
+        "value": " his tusks busily against the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "stump"
+      },
+      {
+        "type": "text",
+        "value": " of a tree, when a Fox "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "happened",
+        "lemma": "happen"
+      },
+      {
+        "type": "text",
+        "value": " by. Now the Fox was "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adverb",
+        "answer": "always"
+      },
+      {
+        "type": "text",
+        "value": " looking for a "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "chance"
+      },
+      {
+        "type": "text",
+        "value": " to make fun of his "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "neighbors"
+      },
+      {
+        "type": "text",
+        "value": ". So he "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "made",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " a great show of looking "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adverb",
+        "answer": "anxiously"
+      },
+      {
+        "type": "text",
+        "value": " about, as if in "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "fear"
+      },
+      {
+        "type": "text",
+        "value": " of some hidden "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "enemy"
+      },
+      {
+        "type": "text",
+        "value": ". But the Boar "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "kept",
+        "lemma": "keep"
+      },
+      {
+        "type": "text",
+        "value": " right on with his work.\n\n\"Why are you doing that?\" asked the Fox at last with a grin. \"There isn't any danger that I can see.\"\n\n\"True enough,\" replied the Boar, \"but when danger does come there will not be time for such work as this. My weapons will have to be ready for use then, or I shall suffer for it.\""
+      }
+    ]
+  }
+}

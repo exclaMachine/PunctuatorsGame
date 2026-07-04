@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "goatherd-and-the-wild-goats",
+    "title": "The Goatherd And The Wild Goats",
+    "order": 86,
+    "moral": "It is unwise to treat old friends badly for the sake of new ones.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 4,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "One "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "cold"
+      },
+      {
+        "type": "text",
+        "value": " stormy day a Goatherd "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "drove",
+        "lemma": "drive"
+      },
+      {
+        "type": "text",
+        "value": " his Goats for "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "shelter"
+      },
+      {
+        "type": "text",
+        "value": " into a cave, where a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "number"
+      },
+      {
+        "type": "text",
+        "value": " of Wild Goats had "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adverb",
+        "answer": "also"
+      },
+      {
+        "type": "text",
+        "value": " found their way. The Shepherd "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "wanted",
+        "lemma": "want"
+      },
+      {
+        "type": "text",
+        "value": " to make the Wild Goats "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "part"
+      },
+      {
+        "type": "text",
+        "value": " of his flock; so he "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "fed",
+        "lemma": "feed"
+      },
+      {
+        "type": "text",
+        "value": " them well. But to his "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "own"
+      },
+      {
+        "type": "text",
+        "value": " flock, he "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "gave",
+        "lemma": "give"
+      },
+      {
+        "type": "text",
+        "value": " only just enough "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "food"
+      },
+      {
+        "type": "text",
+        "value": " to keep them "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "alive"
+      },
+      {
+        "type": "text",
+        "value": ". When the weather cleared, and the Shepherd led the Goats out to feed, the Wild Goats scampered off to the hills.\n\n\"Is that the thanks I get for feeding you and treating you so well?\" complained the Shepherd.\n\n\"Do not expect us to join your flock,\" replied one of the Wild Goats. \"We know how you would treat us later on, if some strangers should come as we did.\""
+      }
+    ]
+  }
+}

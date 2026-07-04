@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "leap-at-rhodes",
+    "title": "The Leap At Rhodes",
+    "order": 39,
+    "moral": "Deeds count, not boasting words.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 2,
+      "adjective": 4,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "certain"
+      },
+      {
+        "type": "text",
+        "value": " man who visited "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "foreign"
+      },
+      {
+        "type": "text",
+        "value": " lands could talk of "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "little"
+      },
+      {
+        "type": "text",
+        "value": " when he returned to his "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "home"
+      },
+      {
+        "type": "text",
+        "value": " except the wonderful "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "adventures"
+      },
+      {
+        "type": "text",
+        "value": " he had met with and the great "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "deeds"
+      },
+      {
+        "type": "text",
+        "value": " he had done "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "abroad"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nOne of the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "feats"
+      },
+      {
+        "type": "text",
+        "value": " he told about was a leap he had "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "made",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " in a city "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "Called",
+        "lemma": "call"
+      },
+      {
+        "type": "text",
+        "value": " Rhodes. That leap was so great, he said, that no "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "other"
+      },
+      {
+        "type": "text",
+        "value": " man could leap anywhere near the distance. A great many persons in Rhodes had seen him do it and would prove that what he told was true.\n\n\"No need of witnesses,\" said one of the hearers. \"Suppose this city is Rhodes. Now show us how far you can jump.\""
+      }
+    ]
+  }
+}

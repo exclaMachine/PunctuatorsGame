@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "lion-and-the-ass",
+    "title": "The Lion And The Ass",
+    "order": 57,
+    "moral": "The loud-mouthed boaster does not impress nor frighten those who know him.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 6,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Lion and an Ass "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "agreed",
+        "lemma": "agree"
+      },
+      {
+        "type": "text",
+        "value": " to go hunting "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adverb",
+        "answer": "together"
+      },
+      {
+        "type": "text",
+        "value": ". In their "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "search"
+      },
+      {
+        "type": "text",
+        "value": " for game the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "hunters"
+      },
+      {
+        "type": "text",
+        "value": " saw a number of Wild Goats run into a cave, and "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "laid",
+        "lemma": "lay"
+      },
+      {
+        "type": "text",
+        "value": " plans to catch them. The Ass was to go into the cave and "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "drive",
+        "lemma": "drive"
+      },
+      {
+        "type": "text",
+        "value": " the Goats out, while the Lion would "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "stand",
+        "lemma": "stand"
+      },
+      {
+        "type": "text",
+        "value": " at the entrance to "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "strike",
+        "lemma": "strike"
+      },
+      {
+        "type": "text",
+        "value": " them down.\n\nThe "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "plan"
+      },
+      {
+        "type": "text",
+        "value": " worked beautifully. The Ass made such a "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "frightful"
+      },
+      {
+        "type": "text",
+        "value": " din in the cave, "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "kicking",
+        "lemma": "kick"
+      },
+      {
+        "type": "text",
+        "value": " and braying with all his "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "might"
+      },
+      {
+        "type": "text",
+        "value": ", that the Goats came running out in a panic of fear, only to fall victim to the Lion.\n\nThe Ass came proudly out of the cave.\n\n\"Did you see how I made them run?\" he said.\n\n\"Yes, indeed,\" answered the Lion, \"and if I had not known you and your kind I should certainly have run, too.\""
+      }
+    ]
+  }
+}

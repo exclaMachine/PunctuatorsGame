@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "eagle-and-the-beetle",
+    "title": "The Eagle And The Beetle",
+    "order": 98,
+    "moral": "Even the weakest may find means to avenge a wrong.",
+    "blankCounts": {
+      "noun": 8,
+      "verb": 3,
+      "adjective": 0,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Beetle "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": " begged the Eagle to spare a Hare which had "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "run",
+        "lemma": "run"
+      },
+      {
+        "type": "text",
+        "value": " to her for "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "protection"
+      },
+      {
+        "type": "text",
+        "value": ". But the Eagle "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "pounced",
+        "lemma": "pounce"
+      },
+      {
+        "type": "text",
+        "value": " upon her prey, the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "sweep"
+      },
+      {
+        "type": "text",
+        "value": " of her great "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "wings"
+      },
+      {
+        "type": "text",
+        "value": " tumbling the Beetle a "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "dozen"
+      },
+      {
+        "type": "text",
+        "value": " feet away. Furious at the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "disrespect"
+      },
+      {
+        "type": "text",
+        "value": " shown her, the Beetle "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "flew",
+        "lemma": "fly"
+      },
+      {
+        "type": "text",
+        "value": " to the Eagle's nest and rolled out the eggs. Not "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "one"
+      },
+      {
+        "type": "text",
+        "value": " did she spare. The Eagle's "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "grief"
+      },
+      {
+        "type": "text",
+        "value": " and anger knew no "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "bounds"
+      },
+      {
+        "type": "text",
+        "value": ", but who had done the cruel deed she did not know.\n\nNext year the Eagle built her nest far up on a mountain crag; but the Beetle found it and again destroyed the eggs. In despair the Eagle now implored great Jupiter to let her place her eggs in his lap. There none would dare harm them. But the Beetle buzzed about Jupiter's head, and made him rise to drive her away; and the eggs rolled from his lap.\n\nNow the Beetle told the reason for her action, and Jupiter had to acknowledge the justice of her cause. And they say that ever after, while the Eagle's eggs lie in the nest in spring, the Beetle still sleeps in the ground. For so Jupiter commanded."
+      }
+    ]
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "monkey-and-the-camel",
+    "title": "The Monkey And The Camel",
+    "order": 41,
+    "moral": "Do not try to ape your betters.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 2,
+      "adjective": 4,
+      "adverb": 3
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "At a "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "great"
+      },
+      {
+        "type": "text",
+        "value": " celebration in honor of King Lion, the Monkey was "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "asked",
+        "lemma": "ask"
+      },
+      {
+        "type": "text",
+        "value": " to dance for the company. His "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "dancing"
+      },
+      {
+        "type": "text",
+        "value": " was very clever "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adverb",
+        "answer": "indeed"
+      },
+      {
+        "type": "text",
+        "value": ", and the animals were "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adverb",
+        "answer": "all"
+      },
+      {
+        "type": "text",
+        "value": " highly pleased with his "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "grace"
+      },
+      {
+        "type": "text",
+        "value": " and lightness.\n\nThe "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "praise"
+      },
+      {
+        "type": "text",
+        "value": " that was showered on the Monkey made the Camel "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "envious"
+      },
+      {
+        "type": "text",
+        "value": ". He was very "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "sure"
+      },
+      {
+        "type": "text",
+        "value": " that he could dance "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adverb",
+        "answer": "quite"
+      },
+      {
+        "type": "text",
+        "value": " as well as the Monkey, if not "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "better"
+      },
+      {
+        "type": "text",
+        "value": ", so he "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "pushed",
+        "lemma": "push"
+      },
+      {
+        "type": "text",
+        "value": " his way into the crowd that was gathered around the Monkey, and rising on his hind legs, began to dance. But the big hulking Camel made himself very ridiculous as he kicked out his knotty legs and twisted his long clumsy neck. Besides, the animals found it hard to keep their toes from under his heavy hoofs.\n\nAt last, when one of his huge feet came within an inch of King Lion's nose, the animals were so disgusted that they set upon the Camel in a rage and drove him out into the desert.\n\nShortly afterward, refreshments, consisting mostly of Camel's hump and ribs, were served to the company."
+      }
+    ]
+  }
+}

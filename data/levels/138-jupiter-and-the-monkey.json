@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "jupiter-and-the-monkey",
+    "title": "Jupiter And The Monkey",
+    "order": 138,
+    "moral": "Mother love is blind.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 2,
+      "adjective": 1,
+      "adverb": 3
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "There was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": " a baby show among the Animals in the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "forest"
+      },
+      {
+        "type": "text",
+        "value": ". Jupiter provided the prize. Of "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adverb",
+        "answer": "course"
+      },
+      {
+        "type": "text",
+        "value": " all the proud "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "mammas"
+      },
+      {
+        "type": "text",
+        "value": " from far and "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adverb",
+        "answer": "near"
+      },
+      {
+        "type": "text",
+        "value": " brought their babies. But "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "none"
+      },
+      {
+        "type": "text",
+        "value": " got there earlier than Mother Monkey. Proudly she "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "presented",
+        "lemma": "present"
+      },
+      {
+        "type": "text",
+        "value": " her baby among the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "other"
+      },
+      {
+        "type": "text",
+        "value": " contestants.\n\nAs you can "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "imagine",
+        "lemma": "imagine"
+      },
+      {
+        "type": "text",
+        "value": ", there was quite a laugh when the Animals saw the ugly flat-nosed, hairless, pop-eyed little creature.\n\n\"Laugh if you will,\" said the Mother Monkey. \"Though Jupiter may not give him the prize, I know that he is the prettiest, the sweetest, the dearest darling in the world.\""
+      }
+    ]
+  }
+}

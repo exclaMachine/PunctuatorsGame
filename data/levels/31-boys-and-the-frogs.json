@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "boys-and-the-frogs",
+    "title": "The Boys And The Frogs",
+    "order": 31,
+    "moral": "Always stop to think whether your fun may not be the cause of another's unhappiness.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 7,
+      "adjective": 1,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Some Boys were "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "playing",
+        "lemma": "play"
+      },
+      {
+        "type": "text",
+        "value": " one day at the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "edge"
+      },
+      {
+        "type": "text",
+        "value": " of a pond in which "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "lived",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " a family of Frogs. The Boys "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "amused",
+        "lemma": "amuse"
+      },
+      {
+        "type": "text",
+        "value": " themselves by throwing stones into the pond so as to "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "make",
+        "lemma": "make"
+      },
+      {
+        "type": "text",
+        "value": " them skip on "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "top"
+      },
+      {
+        "type": "text",
+        "value": " of the water.\n\nThe stones were "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "flying",
+        "lemma": "fly"
+      },
+      {
+        "type": "text",
+        "value": " thick and fast and the Boys were "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "enjoying",
+        "lemma": "enjoy"
+      },
+      {
+        "type": "text",
+        "value": " themselves very much; but the "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "poor"
+      },
+      {
+        "type": "text",
+        "value": " Frogs in the pond were "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "trembling",
+        "lemma": "tremble"
+      },
+      {
+        "type": "text",
+        "value": " with fear.\n\nAt last one of the Frogs, the oldest and bravest, put his head out of the water, and said, \"Oh, please, dear children, stop your cruel play! Though it may be fun for you, it means death to us!\""
+      }
+    ]
+  }
+}

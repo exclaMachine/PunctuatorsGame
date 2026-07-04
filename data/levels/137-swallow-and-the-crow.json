@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "swallow-and-the-crow",
+    "title": "The Swallow And The Crow",
+    "order": 137,
+    "moral": "Friends in fine weather only, are not worth much.",
+    "blankCounts": {
+      "noun": 1,
+      "verb": 2,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "The Swallow and the Crow "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "had",
+        "lemma": "have"
+      },
+      {
+        "type": "text",
+        "value": " an argument one "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " about their plumage.\n\nSaid the Swallow: \""
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adverb",
+        "answer": "Just"
+      },
+      {
+        "type": "text",
+        "value": " look at my "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "bright"
+      },
+      {
+        "type": "text",
+        "value": " and downy feathers. Your "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "black"
+      },
+      {
+        "type": "text",
+        "value": " stiff quills are not "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "worth"
+      },
+      {
+        "type": "text",
+        "value": " having. Why don't you "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "dress",
+        "lemma": "dress"
+      },
+      {
+        "type": "text",
+        "value": " better? Show a little pride!\"\n\n\"Your feathers may do very well in spring,\" replied the Crow, \"but--I don't remember ever having seen you around in winter, and that's when I enjoy myself most.\""
+      }
+    ]
+  }
+}

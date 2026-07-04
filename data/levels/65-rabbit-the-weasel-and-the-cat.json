@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "rabbit-the-weasel-and-the-cat",
+    "title": "The Rabbit, The Weasel, And The Cat",
+    "order": 65,
+    "moral": "The strong are apt to settle questions to their own advantage.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 4,
+      "adjective": 2,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Rabbit "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "left",
+        "lemma": "leave"
+      },
+      {
+        "type": "text",
+        "value": " his home one "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " for a dinner of "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "clover"
+      },
+      {
+        "type": "text",
+        "value": ". But he "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "forgot",
+        "lemma": "forget"
+      },
+      {
+        "type": "text",
+        "value": " to latch the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "door"
+      },
+      {
+        "type": "text",
+        "value": " of his house and while he was "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "gone",
+        "lemma": "go"
+      },
+      {
+        "type": "text",
+        "value": " a Weasel walked in and "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "calmly"
+      },
+      {
+        "type": "text",
+        "value": " made himself at home. When the Rabbit "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "returned",
+        "lemma": "return"
+      },
+      {
+        "type": "text",
+        "value": ", there was the Weasel's "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "nose"
+      },
+      {
+        "type": "text",
+        "value": " sticking out of the Rabbit's "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "own"
+      },
+      {
+        "type": "text",
+        "value": " doorway, sniffing the "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "fine"
+      },
+      {
+        "type": "text",
+        "value": " air.\n\nThe Rabbit was "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adverb",
+        "answer": "quite"
+      },
+      {
+        "type": "text",
+        "value": " angry--for a Rabbit--, and requested the Weasel to move out. But the Weasel was perfectly content. He was settled down for good.\n\nA wise old Cat heard the dispute and offered to settle it.\n\n\"Come close to me,\" said the Cat, \"I am very deaf. Put your mouths close to my ears while you tell me the facts.\"\n\nThe unsuspecting pair did as they were told and in an instant the Cat had them both under her claws. No one could deny that the dispute had been definitely settled."
+      }
+    ]
+  }
+}

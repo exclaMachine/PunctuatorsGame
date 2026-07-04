@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "ass-and-the-load-of-salt",
+    "title": "The Ass And The Load Of Salt",
+    "order": 37,
+    "moral": "The same measures will not suit all circumstances.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 6,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Merchant, "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "driving",
+        "lemma": "drive"
+      },
+      {
+        "type": "text",
+        "value": " his Ass homeward from the seashore with a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "heavy"
+      },
+      {
+        "type": "text",
+        "value": " load of salt, "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "came",
+        "lemma": "come"
+      },
+      {
+        "type": "text",
+        "value": " to a river crossed by a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "shallow"
+      },
+      {
+        "type": "text",
+        "value": " ford. They had crossed this river "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "many"
+      },
+      {
+        "type": "text",
+        "value": " times before without "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "accident"
+      },
+      {
+        "type": "text",
+        "value": ", but this "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "time"
+      },
+      {
+        "type": "text",
+        "value": " the Ass slipped and "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "fell",
+        "lemma": "fall"
+      },
+      {
+        "type": "text",
+        "value": " when halfway over. And when the Merchant at "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "last"
+      },
+      {
+        "type": "text",
+        "value": " got him to his feet, much of the salt had "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "melted",
+        "lemma": "melt"
+      },
+      {
+        "type": "text",
+        "value": " away. Delighted to "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "find",
+        "lemma": "find"
+      },
+      {
+        "type": "text",
+        "value": " how much lighter his burden had "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "become",
+        "lemma": "become"
+      },
+      {
+        "type": "text",
+        "value": ", the Ass finished the journey very gayly.\n\nNext day the Merchant went for another load of salt. On the way home the Ass, remembering what had happened at the ford, purposely let himself fall into the water, and again got rid of most of his burden.\n\nThe angry Merchant immediately turned about and drove the Ass back to the seashore, where he loaded him with two great baskets of sponges. At the ford the Ass again tumbled over; but when he had scrambled to his feet, it was a very disconsolate Ass that dragged himself homeward under a load ten times heavier than before."
+      }
+    ]
+  }
+}

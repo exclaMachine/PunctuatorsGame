@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fisherman-and-the-little-fish",
+    "title": "The Fisherman And The Little Fish",
+    "order": 147,
+    "moral": "A small gain is worth more than a large promise.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 3,
+      "adjective": 4,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "poor"
+      },
+      {
+        "type": "text",
+        "value": " Fisherman, who "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "lived",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " on the fish he caught, "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "had",
+        "lemma": "have"
+      },
+      {
+        "type": "text",
+        "value": " bad luck one "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " and caught nothing but a "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adverb",
+        "answer": "very"
+      },
+      {
+        "type": "text",
+        "value": " small fry. The Fisherman was "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "about"
+      },
+      {
+        "type": "text",
+        "value": " to put it in his basket when the "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "little"
+      },
+      {
+        "type": "text",
+        "value": " Fish said:\n\n\"Please "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "spare",
+        "lemma": "spare"
+      },
+      {
+        "type": "text",
+        "value": " me, Mr. Fisherman! I am so small it is not "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "worth"
+      },
+      {
+        "type": "text",
+        "value": " while to carry me "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "home"
+      },
+      {
+        "type": "text",
+        "value": ". When I am bigger, I shall make you a much better meal.\"\n\nBut the Fisherman quickly put the fish into his basket.\n\n\"How foolish I should be,\" he said, \"to throw you back. However small you may be, you are better than nothing at all.\""
+      }
+    ]
+  }
+}

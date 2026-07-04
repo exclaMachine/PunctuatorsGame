@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "cock-and-the-fox-2",
+    "title": "The Cock And The Fox (2)",
+    "order": 145,
+    "moral": "The wicked deserve no aid.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 5,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Fox was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "caught",
+        "lemma": "catch"
+      },
+      {
+        "type": "text",
+        "value": " in a trap one "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "fine"
+      },
+      {
+        "type": "text",
+        "value": " morning, because he had got "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adverb",
+        "answer": "too"
+      },
+      {
+        "type": "text",
+        "value": " near the Farmer's hen "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "house"
+      },
+      {
+        "type": "text",
+        "value": ". No doubt he was "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "hungry"
+      },
+      {
+        "type": "text",
+        "value": ", but that was not an "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "excuse"
+      },
+      {
+        "type": "text",
+        "value": " for stealing. A Cock, "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "rising",
+        "lemma": "rise"
+      },
+      {
+        "type": "text",
+        "value": " early, discovered what had "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "happened",
+        "lemma": "happen"
+      },
+      {
+        "type": "text",
+        "value": ". He knew the Fox could not get at him, so he "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "went",
+        "lemma": "go"
+      },
+      {
+        "type": "text",
+        "value": " a little closer to get a "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "good"
+      },
+      {
+        "type": "text",
+        "value": " look at his "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "enemy"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nThe Fox "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "saw",
+        "lemma": "see"
+      },
+      {
+        "type": "text",
+        "value": " a slender chance of escape.\n\n\"Dear friend,\" he said, \"I was just on my way to visit a sick relative, when I stumbled into this string and got all tangled up. But please do not tell anybody about it. I dislike causing sorrow to anybody, and I am sure I can soon gnaw this string to pieces.\"\n\nBut the Cock was not to be so easily fooled. He soon roused the whole hen yard, and when the Farmer came running out, that was the end of Mr. Fox."
+      }
+    ]
+  }
+}

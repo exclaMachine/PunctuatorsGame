@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "two-goats",
+    "title": "The Two Goats",
+    "order": 36,
+    "moral": "It is better to yield than to come to misfortune through stubbornness.",
+    "blankCounts": {
+      "noun": 6,
+      "verb": 4,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Two Goats, "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "frisking",
+        "lemma": "frisk"
+      },
+      {
+        "type": "text",
+        "value": " gayly on the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "rocky"
+      },
+      {
+        "type": "text",
+        "value": " steeps of a mountain "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "valley"
+      },
+      {
+        "type": "text",
+        "value": ", chanced to "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "meet",
+        "lemma": "meet"
+      },
+      {
+        "type": "text",
+        "value": ", one on each "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "side"
+      },
+      {
+        "type": "text",
+        "value": " of a deep chasm through which "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "poured",
+        "lemma": "pour"
+      },
+      {
+        "type": "text",
+        "value": " a mighty mountain torrent. The "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "trunk"
+      },
+      {
+        "type": "text",
+        "value": " of a fallen "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "tree"
+      },
+      {
+        "type": "text",
+        "value": " formed the only "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "means"
+      },
+      {
+        "type": "text",
+        "value": " of crossing the chasm, and on this not "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adverb",
+        "answer": "even"
+      },
+      {
+        "type": "text",
+        "value": " two squirrels could have "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "passed",
+        "lemma": "pass"
+      },
+      {
+        "type": "text",
+        "value": " each other in "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "safety"
+      },
+      {
+        "type": "text",
+        "value": ". The narrow path would have made the bravest tremble. Not so our Goats. Their pride would not permit either to stand aside for the other.\n\nOne set her foot on the log. The other did likewise. In the middle they met horn to horn. Neither would give way, and so they both fell, to be swept away by the roaring torrent below."
+      }
+    ]
+  }
+}

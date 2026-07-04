@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "hares-and-the-frogs",
+    "title": "The Hares And The Frogs",
+    "order": 48,
+    "moral": "However unfortunate we may think we are there is always someone worse off than ourselves.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 7,
+      "adjective": 1,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Hares, as you "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "know",
+        "lemma": "know"
+      },
+      {
+        "type": "text",
+        "value": ", are very "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "timid"
+      },
+      {
+        "type": "text",
+        "value": ". The least "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "shadow"
+      },
+      {
+        "type": "text",
+        "value": ", sends them "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "scurrying",
+        "lemma": "scurry"
+      },
+      {
+        "type": "text",
+        "value": " in fright to a "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "hiding"
+      },
+      {
+        "type": "text",
+        "value": " place. Once they "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "decided",
+        "lemma": "decide"
+      },
+      {
+        "type": "text",
+        "value": " to die rather than "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "live",
+        "lemma": "live"
+      },
+      {
+        "type": "text",
+        "value": " in such misery. But while they were "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "debating",
+        "lemma": "debate"
+      },
+      {
+        "type": "text",
+        "value": " how best to "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "meet",
+        "lemma": "meet"
+      },
+      {
+        "type": "text",
+        "value": " death, they "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "thought",
+        "lemma": "think"
+      },
+      {
+        "type": "text",
+        "value": " they heard a noise and in a flash were scampering off to the warren. On the way they passed a pond where a family of Frogs was sitting among the reeds on the bank. In an instant the startled Frogs were seeking safety in the mud.\n\n\"Look,\" cried a Hare, \"things are not so bad after all, for here are creatures who are even afraid of us!\""
+      }
+    ]
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "young-crab-and-his-mother",
+    "title": "The Young Crab And His Mother",
+    "order": 4,
+    "moral": "Do not tell others how to act unless you can set a good example.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 4,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "\"Why in the "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "world"
+      },
+      {
+        "type": "text",
+        "value": " do you walk sideways like that?\" "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "said",
+        "lemma": "say"
+      },
+      {
+        "type": "text",
+        "value": " a Mother Crab to her son. \"You should "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adverb",
+        "answer": "always"
+      },
+      {
+        "type": "text",
+        "value": " walk straight forward with your toes "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "turned",
+        "lemma": "turn"
+      },
+      {
+        "type": "text",
+        "value": " out.\"\n\n\""
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "Show",
+        "lemma": "show"
+      },
+      {
+        "type": "text",
+        "value": " me how to walk, mother "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "dear"
+      },
+      {
+        "type": "text",
+        "value": ",\" answered the "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "little"
+      },
+      {
+        "type": "text",
+        "value": " Crab obediently, \"I "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "want",
+        "lemma": "want"
+      },
+      {
+        "type": "text",
+        "value": " to learn.\"\n\nSo the old Crab tried and tried to walk straight forward. But she could walk sideways only, like her son. And when she wanted to turn her toes out she tripped and fell on her nose."
+      }
+    ]
+  }
+}

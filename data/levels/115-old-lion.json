@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "old-lion",
+    "title": "The Old Lion",
+    "order": 115,
+    "moral": "It is cowardly to attack the defenseless, though he be an enemy.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 4,
+      "adjective": 1,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Lion had "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "grown",
+        "lemma": "grow"
+      },
+      {
+        "type": "text",
+        "value": " very old. His "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "teeth"
+      },
+      {
+        "type": "text",
+        "value": " were worn away. His "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "limbs"
+      },
+      {
+        "type": "text",
+        "value": " could no longer "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "bear",
+        "lemma": "bear"
+      },
+      {
+        "type": "text",
+        "value": " him, and the King of Beasts was very "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "pitiful"
+      },
+      {
+        "type": "text",
+        "value": " indeed as he "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "lay",
+        "lemma": "lie"
+      },
+      {
+        "type": "text",
+        "value": " gasping on the "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "ground"
+      },
+      {
+        "type": "text",
+        "value": ", about to "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "die",
+        "lemma": "die"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nWhere now his strength and his former graceful beauty?\n\nNow a Boar spied him, and rushing at him, gored him with his yellow tusk. A Bull trampled him with his heavy hoofs. Even a contemptible Ass let fly his heels and brayed his insults in the face of the Lion."
+      }
+    ]
+  }
+}

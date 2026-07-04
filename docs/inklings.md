@@ -342,15 +342,26 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   pedestal + open book on a slanted rest, `BOOK` label (right). `DESK`/`STALL`/`LECTERN` collision rects
   (`overlapsSolid`) match the drawn footprints; `nearBench`/`nearShop`/`nearLectern` gate the `E`/touch
   interaction and open `#overlay` / `#shop` / `#madlibs` respectively.
-- **Mad-libs module** (`/* MAD-LIBS */`) — `BOOKS` registry (book → array of chapter JSON paths).
-  `openBook` → `showChapterMenu` (loads each chapter via `loadLevelCached`/`mlCache`, lists them by
-  `order` with progress) → `openChapter(path)` → `renderMadlibs` (+ `passageHTML`/`neededHTML`/
-  `pickerHTML`/`completionHTML`/`wirePicker`); `backToChapters` returns to the menu (`#ml-back`).
+- **Mad-libs module** (`/* MAD-LIBS */`) — `BOOKS` registry. For a big book, an entry points at an
+  **`index:"data/levels/index.json"`** (book-ordered `[{id,title,file,blanks}]`) instead of a hardcoded
+  `levels` array; `ensureBookLevels(reg)` fetches that index once and fills `reg.chapters` (metadata) +
+  `reg.levels` (paths, used by the completion count). `openBook` → `showChapterMenu` renders the chapter
+  list **straight from the index** (title + blank count + `state.restored` progress — **no per-chapter
+  fetch**; kept in index/book order, not re-sorted) → `openChapter(path)` loads that one level via
+  `loadLevelCached`/`mlCache` → `renderMadlibs` (+ `passageHTML`/`neededHTML`/`pickerHTML`/`completionHTML`/
+  `wirePicker`); `backToChapters` returns to the menu (`#ml-back`).
   `selectBlank`/`pickWord`/`clearActive`, `usedWordSet`/`eligibleWords`, `allFilled`/`completeLevel`.
   State: `state.restored` (per-level `{fills,done,exact,bookId}`) + `state.books`, both saved.
   `mlReg`/`mlBook`/`mlLevel`/`mlActive` are the open session. Blank fills come from the dex filtered by
-  cached POS; a word used anywhere is locked forever (`usedWordSet`). Add chapters/books by listing their
-  JSON paths in `BOOKS` (the menu + book-completion count derive from it).
+  cached POS; a word used anywhere is locked forever (`usedWordSet`).
+- **Level content pipeline** (`build_levels.py`, project root) — offline, run once per book: turns a
+  Project Gutenberg plain-text book into one mad-libs level JSON per chapter/fable (spaCy POS-tagging; POS
+  blanks spaced apart, single-occurrence, never sentence-initial) + an `index.json`. **The book text is
+  never committed** — download to a temp path, run, delete. The current book is *The Aesop for Children*
+  (#19994) → **147 fables** in `data/levels/` (3 hand-tuned fables substituted for their generated versions;
+  the TOC-leak "Page" pseudo-fable quarantined to `data/levels/_quarantine/`; same-title distinct fables
+  disambiguated with `-2`/"(2)"). Regenerate/add books by re-running the script and pointing a `BOOKS`
+  entry at the new `index.json`.
 - **Terrain rendering** — `ensureBg(sc)` bakes the static tile map into a per-screen offscreen canvas
   once (`sc.bg`, with `sc.waterTiles` listed); `render()` blits it then draws **animated water ripples**
   live over each water tile (`drawWaterAnim`, sine-sliding light bars = the "wavy" water). `bakeTile`
@@ -452,7 +463,7 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   clicking an entry opens a full-text modal (`#defmodal`). The new-word reveal celebrates the word
   but no longer prints a second copy of the definition.
 - **Mad-libs "restore the chapter"** — a book lectern (right of the desk) opens a **chapter menu**
-  (`data/levels/`; currently 3 Aesop fables). Pick a chapter, then
+  (`data/levels/`; **147 Aesop fables**, listed from `index.json` — see the Level content pipeline). Pick a chapter, then
   fill each blank with a **collected word** matching its part of speech; exact-original matches earn bonus
   ink (never required). Words are single-use across all books (you keep learning new vocab). Completing a
   chapter restores it; completing a book adds it to your library. Persisted. (POS uses the FreeDictionary

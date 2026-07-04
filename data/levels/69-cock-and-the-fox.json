@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "cock-and-the-fox",
+    "title": "The Cock And The Fox",
+    "order": 69,
+    "moral": "The trickster is easily tricked.",
+    "blankCounts": {
+      "noun": 6,
+      "verb": 3,
+      "adjective": 3,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "One "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adjective",
+        "answer": "bright"
+      },
+      {
+        "type": "text",
+        "value": " evening as the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "sun"
+      },
+      {
+        "type": "text",
+        "value": " was sinking on a "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "glorious"
+      },
+      {
+        "type": "text",
+        "value": " world a wise "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "old"
+      },
+      {
+        "type": "text",
+        "value": " Cock flew into a "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "tree"
+      },
+      {
+        "type": "text",
+        "value": " to roost. Before he "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "composed",
+        "lemma": "compose"
+      },
+      {
+        "type": "text",
+        "value": " himself to rest, he "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "flapped",
+        "lemma": "flap"
+      },
+      {
+        "type": "text",
+        "value": " his wings three "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "times"
+      },
+      {
+        "type": "text",
+        "value": " and crowed loudly. But just as he was about to "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "put",
+        "lemma": "put"
+      },
+      {
+        "type": "text",
+        "value": " his head under his "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "wing"
+      },
+      {
+        "type": "text",
+        "value": ", his beady "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "eyes"
+      },
+      {
+        "type": "text",
+        "value": " caught a flash of "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "red"
+      },
+      {
+        "type": "text",
+        "value": " and a glimpse of a long pointed nose, and there just below him stood Master Fox.\n\n\"Have you heard the wonderful news?\" cried the Fox in a very joyful and excited manner.\n\n\"What news?\" asked the Cock very calmly. But he had a queer, fluttery feeling inside him, for, you know, he was very much afraid of the Fox.\n\n\"Your family and mine and all other animals have agreed to forget their differences and live in peace and friendship from now on forever. Just think of it! I simply cannot wait to embrace you! Do come down, dear friend, and let us celebrate the joyful event.\"\n\n\"How grand!\" said the Cock. \"I certainly am delighted at the news.\" But he spoke in an absent way, and stretching up on tiptoes, seemed to be looking at something afar off.\n\n\"What is it you see?\" asked the Fox a little anxiously.\n\n\"Why, it looks to me like a couple of Dogs coming this way. They must have heard the good news and--\"\n\nBut the Fox did not wait to hear more. Off he started on a run.\n\n\"Wait,\" cried the Cock. \"Why do you run? The Dogs are friends of yours now!\"\n\n\"Yes,\" answered the Fox. \"But they might not have heard the news. Besides, I have a very important errand that I had almost forgotten about.\"\n\nThe Cock smiled as he buried his head in his feathers and went to sleep, for he had succeeded in outwitting a very crafty enemy."
+      }
+    ]
+  }
+}

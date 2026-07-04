@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "owl-and-the-grasshopper",
+    "title": "The Owl And The Grasshopper",
+    "order": 27,
+    "moral": "Do not let flattery throw you off your guard against an enemy.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 3,
+      "adjective": 3,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "The Owl "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "always"
+      },
+      {
+        "type": "text",
+        "value": " takes her sleep during the day. Then after "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "sundown"
+      },
+      {
+        "type": "text",
+        "value": ", when the "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adjective",
+        "answer": "rosy"
+      },
+      {
+        "type": "text",
+        "value": " light fades from the "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "sky"
+      },
+      {
+        "type": "text",
+        "value": " and the shadows "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "rise",
+        "lemma": "rise"
+      },
+      {
+        "type": "text",
+        "value": " slowly through the wood, out she "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "comes",
+        "lemma": "come"
+      },
+      {
+        "type": "text",
+        "value": " ruffling and blinking from the old "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "hollow"
+      },
+      {
+        "type": "text",
+        "value": " tree. Now her "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "weird"
+      },
+      {
+        "type": "text",
+        "value": " \"hoo-hoo-hoo-oo-oo\" "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "echoes"
+      },
+      {
+        "type": "text",
+        "value": " through the quiet wood, and she "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "begins",
+        "lemma": "begin"
+      },
+      {
+        "type": "text",
+        "value": " her hunt for the "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "bugs"
+      },
+      {
+        "type": "text",
+        "value": " and beetles, "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "frogs"
+      },
+      {
+        "type": "text",
+        "value": " and mice she likes so well to eat.\n\nNow there was a certain old Owl who had become very cross and hard to please as she grew older, especially if anything disturbed her daily slumbers. One warm summer afternoon as she dozed away in her den in the old oak tree, a Grasshopper nearby began a joyous but very raspy song. Out popped the old Owl's head from the opening in the tree that served her both for door and for window.\n\n\"Get away from here, sir,\" she said to the Grasshopper. \"Have you no manners? You should at least respect my age and leave me to sleep in quiet!\"\n\nBut the Grasshopper answered saucily that he had as much right to his place in the sun as the Owl had to her place in the old oak. Then he struck up a louder and still more rasping tune.\n\nThe wise old Owl knew quite well that it would do no good to argue with the Grasshopper, nor with anybody else for that matter. Besides, her eyes were not sharp enough by day to permit her to punish the Grasshopper as he deserved. So she laid aside all hard words and spoke very kindly to him.\n\n\"Well sir,\" she said, \"if I must stay awake, I am going to settle right down to enjoy your singing. Now that I think of it, I have a wonderful wine here, sent me from Olympus, of which I am told Apollo drinks before he sings to the high gods. Please come up and taste this delicious drink with me. I know it will make you sing like Apollo himself.\"\n\nThe foolish Grasshopper was taken in by the Owl's flattering words. Up he jumped to the Owl's den, but as soon as he was near enough so the old Owl could see him clearly, she pounced upon him and ate him up.\n\nFlattery is not a proof of true admiration."
+      }
+    ]
+  }
+}

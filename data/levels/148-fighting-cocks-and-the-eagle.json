@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "fighting-cocks-and-the-eagle",
+    "title": "The Fighting Cocks And The Eagle",
+    "order": 148,
+    "moral": "Pride goes before a fall.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 7,
+      "adjective": 2,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "Once there "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "were",
+        "lemma": "be"
+      },
+      {
+        "type": "text",
+        "value": " two Cocks living in the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "same"
+      },
+      {
+        "type": "text",
+        "value": " farmyard who could not "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "bear",
+        "lemma": "bear"
+      },
+      {
+        "type": "text",
+        "value": " the sight of each "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "other"
+      },
+      {
+        "type": "text",
+        "value": ". At last one "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " they flew up to "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "fight",
+        "lemma": "fight"
+      },
+      {
+        "type": "text",
+        "value": " it out, "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "noun",
+        "answer": "beak"
+      },
+      {
+        "type": "text",
+        "value": " and claw. They "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "fought",
+        "lemma": "fight"
+      },
+      {
+        "type": "text",
+        "value": " until one of them was "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "beaten",
+        "lemma": "beat"
+      },
+      {
+        "type": "text",
+        "value": " and crawled off to a corner to "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "hide",
+        "lemma": "hide"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nThe Cock that had "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "verb",
+        "answer": "won",
+        "lemma": "win"
+      },
+      {
+        "type": "text",
+        "value": " the battle flew to the top of the hen-house, and, proudly flapping his wings, crowed with all his might to tell the world about his victory. But an Eagle, circling overhead, heard the boasting chanticleer and, swooping down, carried him off to his nest.\n\nHis rival saw the deed, and coming out of his corner, took his place as master of the farmyard."
+      }
+    ]
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "rat-and-the-elephant",
+    "title": "The Rat And The Elephant",
+    "order": 30,
+    "moral": "A resemblance to the great in some things does not make us great.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 4,
+      "adjective": 2,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Rat was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "traveling",
+        "lemma": "travel"
+      },
+      {
+        "type": "text",
+        "value": " along the King's "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "highway"
+      },
+      {
+        "type": "text",
+        "value": ". He was a "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "adverb",
+        "answer": "very"
+      },
+      {
+        "type": "text",
+        "value": " proud Rat, "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "considering",
+        "lemma": "consider"
+      },
+      {
+        "type": "text",
+        "value": " his small size and the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "bad"
+      },
+      {
+        "type": "text",
+        "value": " reputation all Rats have. As Mr. Rat "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "walked",
+        "lemma": "walk"
+      },
+      {
+        "type": "text",
+        "value": " along--he "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "kept",
+        "lemma": "keep"
+      },
+      {
+        "type": "text",
+        "value": " mostly to the "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "ditch"
+      },
+      {
+        "type": "text",
+        "value": "--he noticed a great "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "commotion"
+      },
+      {
+        "type": "text",
+        "value": " up the road, and soon a "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "grand"
+      },
+      {
+        "type": "text",
+        "value": " procession came in "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "view"
+      },
+      {
+        "type": "text",
+        "value": ". It was the King and his "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "retinue"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nThe King rode on a huge Elephant adorned with the most gorgeous trappings. With the King in his luxurious howdah were the royal Dog and Cat. A great crowd of people followed the procession. They were so taken up with admiration of the Elephant, that the Rat was not noticed. His pride was hurt.\n\n\"What fools!\" he cried. \"Look at me, and you will soon forget that clumsy Elephant! Is it his great size that makes your eyes pop out? Or is it his wrinkled hide? Why, I have eyes and ears and as many legs as he! I am of just as much importance, and\"--\n\nBut just then the royal Cat spied him, and the next instant, the Rat knew he was not quite so important as an Elephant."
+      }
+    ]
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "cat-and-the-birds",
+    "title": "The Cat And The Birds",
+    "order": 88,
+    "moral": "Be wise and shun the quack.",
+    "blankCounts": {
+      "noun": 5,
+      "verb": 5,
+      "adjective": 0,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Cat was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "growing",
+        "lemma": "grow"
+      },
+      {
+        "type": "text",
+        "value": " very thin. As you have "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "guessed",
+        "lemma": "guess"
+      },
+      {
+        "type": "text",
+        "value": ", he did not "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "get",
+        "lemma": "get"
+      },
+      {
+        "type": "text",
+        "value": " enough to eat. One "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " he heard that some Birds in the "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "neighborhood"
+      },
+      {
+        "type": "text",
+        "value": " were ailing and "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "needed",
+        "lemma": "need"
+      },
+      {
+        "type": "text",
+        "value": " a doctor. So he "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "put",
+        "lemma": "put"
+      },
+      {
+        "type": "text",
+        "value": " on a pair of "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "noun",
+        "answer": "spectacles"
+      },
+      {
+        "type": "text",
+        "value": ", and with a "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "leather"
+      },
+      {
+        "type": "text",
+        "value": " box in his "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "noun",
+        "answer": "hand"
+      },
+      {
+        "type": "text",
+        "value": ", knocked at the door of the Bird's home.\n\nThe Birds peeped out, and Dr. Cat, with much solicitude, asked how they were. He would be very happy to give them some medicine.\n\n\"Tweet, tweet,\" laughed the Birds. \"Very smart, aren't you? We are very well, thank you, and more so, if you only keep away from here.\""
+      }
+    ]
+  }
+}

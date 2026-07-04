@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "north-wind-and-the-sun",
+    "title": "The North Wind And The Sun",
+    "order": 142,
+    "moral": "Gentleness and kind persuasion win where force and bluster fail.",
+    "blankCounts": {
+      "noun": 3,
+      "verb": 7,
+      "adjective": 0,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "The North Wind and the Sun "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "had",
+        "lemma": "have"
+      },
+      {
+        "type": "text",
+        "value": " a quarrel about which of them was the stronger. While they were "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "disputing",
+        "lemma": "dispute"
+      },
+      {
+        "type": "text",
+        "value": " with much heat and "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "bluster"
+      },
+      {
+        "type": "text",
+        "value": ", a Traveler "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "verb",
+        "answer": "passed",
+        "lemma": "pass"
+      },
+      {
+        "type": "text",
+        "value": " along the road wrapped in a cloak.\n\n\"Let us "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "agree",
+        "lemma": "agree"
+      },
+      {
+        "type": "text",
+        "value": ",\" said the Sun, \"that he is the stronger who can "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "verb",
+        "answer": "strip",
+        "lemma": "strip"
+      },
+      {
+        "type": "text",
+        "value": " that Traveler of his cloak.\"\n\n\""
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adverb",
+        "answer": "Very"
+      },
+      {
+        "type": "text",
+        "value": " well,\" "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "growled",
+        "lemma": "growl"
+      },
+      {
+        "type": "text",
+        "value": " the North Wind, and at "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": " sent a cold, "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "howling",
+        "lemma": "howl"
+      },
+      {
+        "type": "text",
+        "value": " blast against the Traveler.\n\nWith the first "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "gust"
+      },
+      {
+        "type": "text",
+        "value": " of wind the "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "ends"
+      },
+      {
+        "type": "text",
+        "value": " of the cloak whipped about the Traveler's body. But he immediately wrapped it closely around him, and the harder the Wind blew, the tighter he held it to him. The North Wind tore angrily at the cloak, but all his efforts were in vain.\n\nThen the Sun began to shine. At first his beams were gentle, and in the pleasant warmth after the bitter cold of the North Wind, the Traveler unfastened his cloak and let it hang loosely from his shoulders. The Sun's rays grew warmer and warmer. The man took off his cap and mopped his brow. At last he became so heated that he pulled off his cloak, and, to escape the blazing sunshine, threw himself down in the welcome shade of a tree by the roadside."
+      }
+    ]
+  }
+}

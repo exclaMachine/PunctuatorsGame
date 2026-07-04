@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "stag-and-his-reflection",
+    "title": "The Stag And His Reflection",
+    "order": 52,
+    "moral": "We often make much of the ornamental and despise the useful.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 7,
+      "adjective": 0,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Stag, "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "drinking",
+        "lemma": "drink"
+      },
+      {
+        "type": "text",
+        "value": " from a crystal "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "spring"
+      },
+      {
+        "type": "text",
+        "value": ", saw himself "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "mirrored",
+        "lemma": "mirror"
+      },
+      {
+        "type": "text",
+        "value": " in the clear "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "water"
+      },
+      {
+        "type": "text",
+        "value": ". He greatly "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "admired",
+        "lemma": "admire"
+      },
+      {
+        "type": "text",
+        "value": " the graceful arch of his antlers, but he was "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "very"
+      },
+      {
+        "type": "text",
+        "value": " much ashamed of his "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "spindling",
+        "lemma": "spindle"
+      },
+      {
+        "type": "text",
+        "value": " legs.\n\n\"How can it be,\" he "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "sighed",
+        "lemma": "sigh"
+      },
+      {
+        "type": "text",
+        "value": ", \"that I should be "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "cursed",
+        "lemma": "curse"
+      },
+      {
+        "type": "text",
+        "value": " with such legs when I have so "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "magnificent",
+        "lemma": "magnificent"
+      },
+      {
+        "type": "text",
+        "value": " a crown.\"\n\nAt that "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "moment"
+      },
+      {
+        "type": "text",
+        "value": " he scented a panther and in an "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "noun",
+        "answer": "instant"
+      },
+      {
+        "type": "text",
+        "value": " was bounding away through the forest. But as he ran his wide-spreading antlers caught in the branches of the trees, and soon the Panther overtook him. Then the Stag perceived that the legs of which he was so ashamed would have saved him had it not been for the useless ornaments on his head."
+      }
+    ]
+  }
+}

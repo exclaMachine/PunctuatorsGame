@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "stag-the-sheep-and-the-wolf",
+    "title": "The Stag, The Sheep, And The Wolf",
+    "order": 123,
+    "moral": "Two blacks do not make a white.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 5,
+      "adjective": 1,
+      "adverb": 2
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "One "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "noun",
+        "answer": "day"
+      },
+      {
+        "type": "text",
+        "value": " a Stag came to a Sheep and asked her to "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "lend",
+        "lemma": "lend"
+      },
+      {
+        "type": "text",
+        "value": " him a measure of "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "wheat"
+      },
+      {
+        "type": "text",
+        "value": ". The Sheep knew him for a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adverb",
+        "answer": "very"
+      },
+      {
+        "type": "text",
+        "value": " swift runner, who could "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adverb",
+        "answer": "easily"
+      },
+      {
+        "type": "text",
+        "value": " take himself out of "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "noun",
+        "answer": "reach"
+      },
+      {
+        "type": "text",
+        "value": ", were he so "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "adjective",
+        "answer": "inclined"
+      },
+      {
+        "type": "text",
+        "value": ". So she asked him if he knew someone who would "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "answer",
+        "lemma": "answer"
+      },
+      {
+        "type": "text",
+        "value": " for him.\n\n\"Yes, yes,\" "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "answered",
+        "lemma": "answer"
+      },
+      {
+        "type": "text",
+        "value": " the Stag confidently, \"the Wolf has "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "verb",
+        "answer": "promised",
+        "lemma": "promise"
+      },
+      {
+        "type": "text",
+        "value": " to be my "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "surety"
+      },
+      {
+        "type": "text",
+        "value": ".\"\n\n\"The Wolf!\" "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "exclaimed",
+        "lemma": "exclaim"
+      },
+      {
+        "type": "text",
+        "value": " the Sheep indignantly. \"Do you think I would trust you on such security? I know the Wolf! He takes what he wants and runs off with it without paying. As for you, you can use your legs so well that I should have little chance of collecting the debt if I had to catch you for it!\""
+      }
+    ]
+  }
+}

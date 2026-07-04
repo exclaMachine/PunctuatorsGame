@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "mischievous-dog",
+    "title": "The Mischievous Dog",
+    "order": 111,
+    "moral": "Notoriety is not fame.",
+    "blankCounts": {
+      "noun": 1,
+      "verb": 3,
+      "adjective": 4,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "There was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": " a Dog who was so ill-natured and "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "adjective",
+        "answer": "mischievous"
+      },
+      {
+        "type": "text",
+        "value": " that his Master "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "had",
+        "lemma": "have"
+      },
+      {
+        "type": "text",
+        "value": " to fasten a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "heavy"
+      },
+      {
+        "type": "text",
+        "value": " wooden clog about his "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "neck"
+      },
+      {
+        "type": "text",
+        "value": " to keep him from "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "annoying"
+      },
+      {
+        "type": "text",
+        "value": " visitors and neighbors. But the Dog "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "seemed",
+        "lemma": "seem"
+      },
+      {
+        "type": "text",
+        "value": " to be very "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "proud"
+      },
+      {
+        "type": "text",
+        "value": " of the clog and "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "verb",
+        "answer": "dragged",
+        "lemma": "drag"
+      },
+      {
+        "type": "text",
+        "value": " it about noisily as if he wished to attract everybody's attention. He was not able to impress anyone.\n\n\"You would be wiser,\" said an old acquaintance, \"to keep quietly out of sight with that clog. Do you want everybody to know what a disgraceful and ill-natured Dog you are?\""
+      }
+    ]
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "heron",
+    "title": "The Heron",
+    "order": 68,
+    "moral": "Do not be too hard to suit or you may have to be content with the worst or with nothing at all.",
+    "blankCounts": {
+      "noun": 4,
+      "verb": 2,
+      "adjective": 6,
+      "adverb": 0
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Heron was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "walking",
+        "lemma": "walk"
+      },
+      {
+        "type": "text",
+        "value": " sedately along the "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "bank"
+      },
+      {
+        "type": "text",
+        "value": " of a stream, his "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "noun",
+        "answer": "eyes"
+      },
+      {
+        "type": "text",
+        "value": " on the clear water, and his "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "adjective",
+        "answer": "long"
+      },
+      {
+        "type": "text",
+        "value": " neck and pointed "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "noun",
+        "answer": "bill"
+      },
+      {
+        "type": "text",
+        "value": " ready to snap up a "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adjective",
+        "answer": "likely"
+      },
+      {
+        "type": "text",
+        "value": " morsel for his breakfast. The clear water "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "swarmed",
+        "lemma": "swarm"
+      },
+      {
+        "type": "text",
+        "value": " with fish, but Master Heron was "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "adjective",
+        "answer": "hard"
+      },
+      {
+        "type": "text",
+        "value": " to please that "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "noun",
+        "answer": "morning"
+      },
+      {
+        "type": "text",
+        "value": ".\n\n\"No "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adjective",
+        "answer": "small"
+      },
+      {
+        "type": "text",
+        "value": " fry for me,\" he said. \""
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "adjective",
+        "answer": "Such"
+      },
+      {
+        "type": "text",
+        "value": " scanty fare is not "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "adjective",
+        "answer": "fit"
+      },
+      {
+        "type": "text",
+        "value": " for a Heron.\"\n\nNow a fine young Perch swam near.\n\n\"No indeed,\" said the Heron. \"I wouldn't even trouble to open my beak for anything like that!\"\n\nAs the sun rose, the fish left the shallow water near the shore and swam below into the cool depths toward the middle. The Heron saw no more fish, and very glad was he at last to breakfast on a tiny Snail."
+      }
+    ]
+  }
+}

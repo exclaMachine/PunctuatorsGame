@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "wolf-and-the-kid",
+    "title": "The Wolf And The Kid",
+    "order": 2,
+    "moral": "Do not let anything turn you from your purpose.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 5,
+      "adjective": 2,
+      "adverb": 3
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "There was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "adverb",
+        "answer": "once"
+      },
+      {
+        "type": "text",
+        "value": " a little Kid whose "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "verb",
+        "answer": "growing",
+        "lemma": "grow"
+      },
+      {
+        "type": "text",
+        "value": " horns made him "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "think",
+        "lemma": "think"
+      },
+      {
+        "type": "text",
+        "value": " he was a "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "grown"
+      },
+      {
+        "type": "text",
+        "value": "-up Billy Goat and "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "adjective",
+        "answer": "able"
+      },
+      {
+        "type": "text",
+        "value": " to take care of himself. So one evening when the flock started "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "home"
+      },
+      {
+        "type": "text",
+        "value": " from the pasture and his mother called, the Kid "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "paid",
+        "lemma": "pay"
+      },
+      {
+        "type": "text",
+        "value": " no heed and "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "kept",
+        "lemma": "keep"
+      },
+      {
+        "type": "text",
+        "value": " right on nibbling the "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "tender"
+      },
+      {
+        "type": "text",
+        "value": " grass. A little "
+      },
+      {
+        "type": "blank",
+        "id": "b10",
+        "pos": "adverb",
+        "answer": "later"
+      },
+      {
+        "type": "text",
+        "value": " when he lifted his "
+      },
+      {
+        "type": "blank",
+        "id": "b11",
+        "pos": "noun",
+        "answer": "head"
+      },
+      {
+        "type": "text",
+        "value": ", the flock was "
+      },
+      {
+        "type": "blank",
+        "id": "b12",
+        "pos": "verb",
+        "answer": "gone",
+        "lemma": "go"
+      },
+      {
+        "type": "text",
+        "value": ".\n\nHe was all alone. The sun was sinking. Long shadows came creeping over the ground. A chilly little wind came creeping with them making scary noises in the grass. The Kid shivered as he thought of the terrible Wolf. Then he started wildly over the field, bleating for his mother. But not half-way, near a clump of trees, there was the Wolf!\n\nThe Kid knew there was little hope for him.\n\n\"Please, Mr. Wolf,\" he said trembling, \"I know you are going to eat me. But first please pipe me a tune, for I want to dance and be merry as long as I can.\"\n\nThe Wolf liked the idea of a little music before eating, so he struck up a merry tune and the Kid leaped and frisked gaily.\n\nMeanwhile, the flock was moving slowly homeward. In the still evening air the Wolf's piping carried far. The Shepherd Dogs pricked up their ears. They recognized the song the Wolf sings before a feast, and in a moment they were racing back to the pasture. The Wolf's song ended suddenly, and as he ran, with the Dogs at his heels, he called himself a fool for turning piper to please a Kid, when he should have stuck to his butcher's trade."
+      }
+    ]
+  }
+}

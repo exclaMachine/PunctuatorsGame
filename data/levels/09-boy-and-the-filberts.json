@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "book": {
+    "id": "aesop-for-children",
+    "title": "The Aesop for Children",
+    "source": "Aesop, ill. Milo Winter (Rand McNally, 1919). Public domain in the USA. Text via Project Gutenberg #19994.",
+    "genre": "fable",
+    "letterPool": "balanced"
+  },
+  "level": {
+    "id": "boy-and-the-filberts",
+    "title": "The Boy And The Filberts",
+    "order": 9,
+    "moral": "Do not attempt too much at once.",
+    "blankCounts": {
+      "noun": 2,
+      "verb": 5,
+      "adjective": 1,
+      "adverb": 1
+    },
+    "segments": [
+      {
+        "type": "text",
+        "value": "A Boy was "
+      },
+      {
+        "type": "blank",
+        "id": "b1",
+        "pos": "verb",
+        "answer": "given",
+        "lemma": "give"
+      },
+      {
+        "type": "text",
+        "value": " permission to put his hand into a "
+      },
+      {
+        "type": "blank",
+        "id": "b2",
+        "pos": "noun",
+        "answer": "pitcher"
+      },
+      {
+        "type": "text",
+        "value": " to get some filberts. But he "
+      },
+      {
+        "type": "blank",
+        "id": "b3",
+        "pos": "verb",
+        "answer": "took",
+        "lemma": "take"
+      },
+      {
+        "type": "text",
+        "value": " such a great "
+      },
+      {
+        "type": "blank",
+        "id": "b4",
+        "pos": "noun",
+        "answer": "fistful"
+      },
+      {
+        "type": "text",
+        "value": " that he could not "
+      },
+      {
+        "type": "blank",
+        "id": "b5",
+        "pos": "verb",
+        "answer": "draw",
+        "lemma": "draw"
+      },
+      {
+        "type": "text",
+        "value": " his hand out "
+      },
+      {
+        "type": "blank",
+        "id": "b6",
+        "pos": "adverb",
+        "answer": "again"
+      },
+      {
+        "type": "text",
+        "value": ". There he "
+      },
+      {
+        "type": "blank",
+        "id": "b7",
+        "pos": "verb",
+        "answer": "stood",
+        "lemma": "stand"
+      },
+      {
+        "type": "text",
+        "value": ", unwilling to "
+      },
+      {
+        "type": "blank",
+        "id": "b8",
+        "pos": "verb",
+        "answer": "give",
+        "lemma": "give"
+      },
+      {
+        "type": "text",
+        "value": " up a single "
+      },
+      {
+        "type": "blank",
+        "id": "b9",
+        "pos": "adjective",
+        "answer": "filbert"
+      },
+      {
+        "type": "text",
+        "value": " and yet unable to get them all out at once. Vexed and disappointed he began to cry.\n\n\"My boy,\" said his mother, \"be satisfied with half the nuts you have taken and you will easily get your hand out. Then perhaps you may have some more filberts some other time.\""
+      }
+    ]
+  }
+}
