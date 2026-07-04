@@ -583,7 +583,7 @@ const PR={ idleDown:0, idleRight:1, idleUp:2, walkDown:3, walkRight:4, walkUp:5,
            atkRight:7, atkDown:8, atkUp:9 };
 
 // Base attack — a single fixed reach/speed for now (no equipment/implements yet; future gear can
-// override dmg/range/cd here). dmg 1 one-shots creatures (CREATURE_HP=1).
+// override dmg/range/cd here). dmg 1 per hit; letter-creatures currently take CREATURE_HP (TEMP 2) hits.
 const ATTACK = { dmg:1, range:62, cd:0.32 };
 
 // Letter frequency (relative spawn weight) + rarity tier (for colour).
@@ -611,7 +611,7 @@ function unlockedLetters(){
 }
 
 const CONSUME_ON_NEW = true;   // spend letters when you record a NEW word
-const CREATURE_HP = 1;   // letter-creatures are captured (drop their letter) in a single hit
+const CREATURE_HP = 2;   // TEMP (was 1): 2 hits to capture a letter-creature, to test the hit-flash on real sprites — revert to 1 later
 
 // --- Hearts (life) + writer's-block cubes --------------------------------------
 const PLAYER_MAX_HEARTS = 3;   // starting/max hearts
@@ -740,10 +740,11 @@ function loadCreatureSprite(c){
   rec.img.src=c.sprite;
   creatureSprites[c.id]=rec;
 }
-function drawCreatureSprite(cid, x, y, size){
+function drawCreatureSprite(cid, x, y, size, amt){
   const rec=creatureSprites[cid];
   if(!rec || !rec.ready) return false;
   ctx.drawImage(rec.img, x-size/2, y-size/2, size, size);
+  if(amt>0) tintFlashImage(rec.img, 0,0, rec.img.width, rec.img.height, x-size/2, y-size/2, size, size, amt);   // white hit-flash on your PNG
   return true;
 }
 function creatureEnabled(c){ return c.enabled!==false; }   // "enabled": false shelves a creature entirely
@@ -1739,22 +1740,41 @@ function drawEdgeHints(){
 }
 // Draws the hand-drawn ink glyph for `letter` from Alpha.png centred at (cx,cy).
 // Returns false if the sheet/letter is unavailable so the caller can fall back to text.
-function drawGlyph(letter, cx, cy, size){
+// Damage flash: how bright the white overlay is right now (fades over the ~0.15s c.flash window).
+function flashAmt(c){ return c.flash>0 ? Math.min(0.85, c.flash*5) : 0; }
+// Overlay a solid-white silhouette of an image region at `amt` alpha — this is what makes a hit read as
+// damage on ANY sprite (glyph sheet, or a custom PNG once you add one), because it respects the image's
+// transparency via a source-in composite on a scratch canvas rather than a plain rectangle.
+const _flashCv=document.createElement("canvas"), _flashG=_flashCv.getContext("2d");
+function tintFlashImage(img, sx,sy,sw,sh, dx,dy,dw,dh, amt){
+  const w=Math.max(1,Math.ceil(dw)), h=Math.max(1,Math.ceil(dh));
+  if(_flashCv.width!==w) _flashCv.width=w;
+  if(_flashCv.height!==h) _flashCv.height=h;
+  _flashG.clearRect(0,0,w,h); _flashG.imageSmoothingEnabled=false; _flashG.globalCompositeOperation="source-over";
+  _flashG.drawImage(img, sx,sy,sw,sh, 0,0,w,h);
+  _flashG.globalCompositeOperation="source-in"; _flashG.fillStyle="#ffffff"; _flashG.fillRect(0,0,w,h);
+  _flashG.globalCompositeOperation="source-over";
+  ctx.save(); ctx.globalAlpha=Math.max(0,Math.min(1,amt)); ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(_flashCv, 0,0,w,h, dx,dy,dw,dh); ctx.restore();
+}
+function drawGlyph(letter, cx, cy, size, amt){
   if(!sheetReady || !sheetImg || typeof letter!=="string" || letter.length!==1) return false;
   const fr = SPRITESHEET.letterToFrame[letter];
   if(fr===undefined) return false;
   const col=fr%SPRITESHEET.cols, row=Math.floor(fr/SPRITESHEET.cols);
   const cw=SPRITESHEET.cellW||sheetImg.width/SPRITESHEET.cols;
   const ch=SPRITESHEET.cellH||sheetImg.height/SPRITESHEET.rows;
-  ctx.drawImage(sheetImg, col*cw, row*ch, cw, ch, cx-size/2, cy-size/2, size, size);
+  const dx=cx-size/2, dy=cy-size/2;
+  ctx.drawImage(sheetImg, col*cw, row*ch, cw, ch, dx, dy, size, size);
+  if(amt>0) tintFlashImage(sheetImg, col*cw, row*ch, cw, ch, dx, dy, size, size, amt);   // white hit-flash
   return true;
 }
 function drawCreature(c){
   // the creature IS the hand-drawn ink glyph from Alpha.png — no tile, eyes, or feet.
-  const size = 44 * (c.flash>0 ? 1.18 : 1);   // brief pop on hit
-  if(!drawGlyph(c.letter, c.x, c.y, size, true)){
-    // text fallback if the sheet hasn't loaded / letter isn't on it
-    ctx.fillStyle="#211E1A";
+  const amt=flashAmt(c), size = 44 * (c.flash>0 ? 1.18 : 1);   // brief pop + white flash on hit
+  if(!drawGlyph(c.letter, c.x, c.y, size, amt)){
+    // text fallback if the sheet hasn't loaded / letter isn't on it (flashes white too)
+    ctx.fillStyle = amt>0 ? "#ffffff" : "#211E1A";
     ctx.font="22px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
     ctx.fillText(c.letter.toUpperCase(), c.x, c.y);
     ctx.textBaseline="alphabetic";
@@ -1772,7 +1792,7 @@ function drawCreature(c){
 function drawCube(c){
   const s=CUBE_SIZE, x=c.x, y=c.y, wob=Math.sin(c.wob||0)*2;
   ctx.save(); ctx.imageSmoothingEnabled=false;
-  if(c.cid && drawCreatureSprite(c.cid, x, y+wob, spriteSizeOf(c.cid, s+8)*(c.flash>0?1.16:1))){   // custom PNG if present
+  if(c.cid && drawCreatureSprite(c.cid, x, y+wob, spriteSizeOf(c.cid, s+8)*(c.flash>0?1.16:1), flashAmt(c))){   // custom PNG (flashes) if present
     ctx.restore(); drawHpPips(c, y-s/2-10+wob); return;
   }
   ctx.fillStyle="rgba(38,35,58,.28)"; ctx.fillRect(x-s/2, y+s/2-3, s, 6);        // shadow
@@ -1790,7 +1810,10 @@ function drawCube(c){
   }
 }
 // Crisp filled rect with a chunky 2px ink border (like pxBox but self-contained for creature/pickup art).
-function pxSprite(x,y,w,h,fill){ ctx.fillStyle="#26233a"; ctx.fillRect(x-2,y-2,w+4,h+4); ctx.fillStyle=fill; ctx.fillRect(x,y,w,h); }
+// RCTX is the context the procedural creature bodies draw to. It's the live canvas normally, but
+// flashProcedural() points it at an offscreen buffer to capture a body's silhouette for the white hit-flash.
+let RCTX=ctx;
+function pxSprite(x,y,w,h,fill){ RCTX.fillStyle="#26233a"; RCTX.fillRect(x-2,y-2,w+4,h+4); RCTX.fillStyle=fill; RCTX.fillRect(x,y,w,h); }
 function drawHpPips(c, topY){
   if(c.hp>=c.maxhp) return; const bar=40, x=c.x;
   for(let i=0;i<c.maxhp;i++){ ctx.fillStyle=i<c.hp?"#5b7a4b":"rgba(38,35,58,.25)"; ctx.fillRect(x-bar/2+i*(bar/c.maxhp), topY, bar/c.maxhp-2, 3); }
@@ -1801,116 +1824,132 @@ const EYE="#26233a";
 const RES_DRAW={
   bookworm(x,y,pop){                                   // plump green grub, segmented
     const s=28*pop;
-    ctx.fillStyle="rgba(38,35,58,.25)"; ctx.fillRect(x-s/2, y+s/4, s, 4);
+    RCTX.fillStyle="rgba(38,35,58,.25)"; RCTX.fillRect(x-s/2, y+s/4, s, 4);
     pxSprite(x-s/2, y-8, s, 16, "#7aa84e");
-    ctx.fillStyle="#8fbf60"; for(let i=0;i<3;i++) ctx.fillRect(x-s/2+4+i*(s/3), y-8, s/6, 16);   // segment bands
+    RCTX.fillStyle="#8fbf60"; for(let i=0;i<3;i++) RCTX.fillRect(x-s/2+4+i*(s/3), y-8, s/6, 16);   // segment bands
     pxSprite(x+s/2-4, y-9, 12, 18, "#8fbf60");         // head
-    ctx.fillStyle=EYE; ctx.fillRect(x+s/2+2, y-4, 3,3);
+    RCTX.fillStyle=EYE; RCTX.fillRect(x+s/2+2, y-4, 3,3);
   },
   bindmoth(x,y,pop){                                   // pale moth, two wings + body
     const w=13*pop;
-    ctx.fillStyle=EYE; ctx.fillRect(x-3, y-11, 6, 22);
-    ctx.fillStyle="#4a4560"; ctx.fillRect(x-2, y-10, 4, 20);
+    RCTX.fillStyle=EYE; RCTX.fillRect(x-3, y-11, 6, 22);
+    RCTX.fillStyle="#4a4560"; RCTX.fillRect(x-2, y-10, 4, 20);
     pxSprite(x-3-w, y-11, w, 22, "#e6dcc6"); pxSprite(x+3, y-11, w, 22, "#e6dcc6");
-    ctx.fillStyle="#c8b48a"; ctx.fillRect(x-3-w, y-2, w, 5); ctx.fillRect(x+3, y-2, w, 5);
-    ctx.fillStyle=EYE; ctx.fillRect(x-2, y-14, 2,4); ctx.fillRect(x+1, y-14, 2,4);   // antennae
+    RCTX.fillStyle="#c8b48a"; RCTX.fillRect(x-3-w, y-2, w, 5); RCTX.fillRect(x+3, y-2, w, 5);
+    RCTX.fillStyle=EYE; RCTX.fillRect(x-2, y-14, 2,4); RCTX.fillRect(x+1, y-14, 2,4);   // antennae
   },
   silverfish(x,y,pop){                                 // tapered silver body, antennae + tails
     const s=26*pop;
-    ctx.fillStyle="rgba(38,35,58,.2)"; ctx.fillRect(x-s/2, y+8, s, 3);
+    RCTX.fillStyle="rgba(38,35,58,.2)"; RCTX.fillRect(x-s/2, y+8, s, 3);
     for(let i=0;i<4;i++){ const h=16-i*2; pxSprite(x-s/2+i*(s/4), y-h/2, s/4+1, h, i%2?"#c8ccd6":"#b3b8c4"); }
-    ctx.fillStyle=EYE; ctx.fillRect(x-s/2-3, y-3, 3,2); ctx.fillRect(x-s/2-3, y+1, 3,2);   // antennae
-    ctx.fillRect(x+s/2, y-1, 4,2);                                                          // tail
+    RCTX.fillStyle=EYE; RCTX.fillRect(x-s/2-3, y-3, 3,2); RCTX.fillRect(x-s/2-3, y+1, 3,2);   // antennae
+    RCTX.fillRect(x+s/2, y-1, 4,2);                                                          // tail
   },
   "the-kindle"(x,y,pop){                               // drifting ember / flame
     const fl=Math.sin(Date.now()/90)*1.5, u=6*pop;
-    ctx.fillStyle="rgba(200,85,60,.25)"; ctx.fillRect(x-2*u, y+2*u, 4*u, 3);
+    RCTX.fillStyle="rgba(200,85,60,.25)"; RCTX.fillRect(x-2*u, y+2*u, 4*u, 3);
     pxSprite(x-2*u, y-3*u+fl, 4*u, 5*u, "#e8622e");
-    ctx.fillStyle="#f4a63a"; ctx.fillRect(x-u, y-2*u+fl, 2*u, 4*u);
-    ctx.fillStyle="#ffe08a"; ctx.fillRect(x-u/2, y-u+fl, u, 2*u);
-    ctx.fillStyle=EYE; ctx.fillRect(x-u, y-u+fl, 3,3); ctx.fillRect(x+u-2, y-u+fl, 3,3);
+    RCTX.fillStyle="#f4a63a"; RCTX.fillRect(x-u, y-2*u+fl, 2*u, 4*u);
+    RCTX.fillStyle="#ffe08a"; RCTX.fillRect(x-u/2, y-u+fl, u, 2*u);
+    RCTX.fillStyle=EYE; RCTX.fillRect(x-u, y-u+fl, 3,3); RCTX.fillRect(x+u-2, y-u+fl, 3,3);
   },
   "the-erazor"(x,y,pop){                               // pink eraser with a metal razor edge
     const w=34*pop, h=26*pop;
-    ctx.fillStyle="rgba(38,35,58,.25)"; ctx.fillRect(x-w/2, y+h/2, w, 4);
+    RCTX.fillStyle="rgba(38,35,58,.25)"; RCTX.fillRect(x-w/2, y+h/2, w, 4);
     pxSprite(x-w/2, y-h/2, w, h, "#d98aa0");
-    ctx.fillStyle="#b96a82"; ctx.fillRect(x-w/2, y+h/6, w, 5);         // worn band
-    ctx.fillStyle="#c8ccd6"; ctx.fillRect(x-w/2, y-h/2, w, 7);          // razor edge
-    ctx.fillStyle=EYE; ctx.fillRect(x-7, y+2, 3,3); ctx.fillRect(x+4, y+2, 3,3);
+    RCTX.fillStyle="#b96a82"; RCTX.fillRect(x-w/2, y+h/6, w, 5);         // worn band
+    RCTX.fillStyle="#c8ccd6"; RCTX.fillRect(x-w/2, y-h/2, w, 7);          // razor edge
+    RCTX.fillStyle=EYE; RCTX.fillRect(x-7, y+2, 3,3); RCTX.fillRect(x+4, y+2, 3,3);
   },
   "the-overdue"(x,y,pop){                              // shambling stamped library book
     const s=34*pop;
-    ctx.fillStyle="rgba(38,35,58,.28)"; ctx.fillRect(x-s/2, y+s/2, s, 4);
+    RCTX.fillStyle="rgba(38,35,58,.28)"; RCTX.fillRect(x-s/2, y+s/2, s, 4);
     pxSprite(x-s/2, y-s/2, s, s, "#7a4a34");
-    ctx.fillStyle="#efe6cf"; ctx.fillRect(x+s/2-6, y-s/2, 6, s);        // page edges
-    ctx.save(); ctx.translate(x-2, y-3); ctx.rotate(-0.28);             // OVERDUE stamp
-    ctx.fillStyle="#c8553c"; ctx.fillRect(-12, -5, 24, 10); ctx.restore();
-    ctx.fillStyle=EYE; ctx.fillRect(x-8, y-s/4, 3,3); ctx.fillRect(x+2, y-s/4, 3,3);
+    RCTX.fillStyle="#efe6cf"; RCTX.fillRect(x+s/2-6, y-s/2, 6, s);        // page edges
+    RCTX.save(); RCTX.translate(x-2, y-3); RCTX.rotate(-0.28);            // OVERDUE stamp
+    RCTX.fillStyle="#c8553c"; RCTX.fillRect(-12, -5, 24, 10); RCTX.restore();
+    RCTX.fillStyle=EYE; RCTX.fillRect(x-8, y-s/4, 3,3); RCTX.fillRect(x+2, y-s/4, 3,3);
   },
   "slush-pile"(x,y,pop){                            // messy stack of rejected pages, eyes peeking
     const w=34*pop, h=30*pop, lx=x-w/2, ty=y-h/2;
-    ctx.fillStyle="rgba(38,35,58,.28)"; ctx.fillRect(lx, y+h/2-2, w, 5);
+    RCTX.fillStyle="rgba(38,35,58,.28)"; RCTX.fillRect(lx, y+h/2-2, w, 5);
     for(let i=0;i<4;i++){ const off=(i%2?3:-3); pxSprite(lx+off, ty+i*6, w-6, 10, i%2?"#f4efdc":"#e8e0c8"); }
-    ctx.fillStyle="#c8bd9a"; for(let i=0;i<3;i++) ctx.fillRect(lx+4, ty+4+i*6, w-14, 1);
-    ctx.fillStyle=EYE; ctx.fillRect(x-6, y+2, 3,3); ctx.fillRect(x+3, y+2, 3,3);
+    RCTX.fillStyle="#c8bd9a"; for(let i=0;i<3;i++) RCTX.fillRect(lx+4, ty+4+i*6, w-14, 1);
+    RCTX.fillStyle=EYE; RCTX.fillRect(x-6, y+2, 3,3); RCTX.fillRect(x+3, y+2, 3,3);
   },
   "the-typo"(x,y,pop){                              // giggling violet imp with horns + wide grin
     const s=24*pop;
-    ctx.fillStyle="rgba(38,35,58,.25)"; ctx.fillRect(x-s/2, y+s/2-2, s, 4);
-    ctx.fillStyle="#5f3a7a"; ctx.fillRect(x-s/2, y-s/2-3, 4,4); ctx.fillRect(x+s/2-4, y-s/2-3, 4,4);   // horns
+    RCTX.fillStyle="rgba(38,35,58,.25)"; RCTX.fillRect(x-s/2, y+s/2-2, s, 4);
+    RCTX.fillStyle="#5f3a7a"; RCTX.fillRect(x-s/2, y-s/2-3, 4,4); RCTX.fillRect(x+s/2-4, y-s/2-3, 4,4);   // horns
     pxSprite(x-s/2, y-s/2, s, s, "#7a4a9a");
-    ctx.fillStyle="#f4e9c8"; ctx.fillRect(x-6, y-3, 4,4); ctx.fillRect(x+2, y-3, 4,4);                 // eye whites
-    ctx.fillStyle=EYE; ctx.fillRect(x-5, y-2, 2,2); ctx.fillRect(x+3, y-2, 2,2);
-    ctx.fillStyle="#2b2340"; ctx.fillRect(x-5, y+4, 10, 2);                                            // grin
+    RCTX.fillStyle="#f4e9c8"; RCTX.fillRect(x-6, y-3, 4,4); RCTX.fillRect(x+2, y-3, 4,4);                 // eye whites
+    RCTX.fillStyle=EYE; RCTX.fillRect(x-5, y-2, 2,2); RCTX.fillRect(x+3, y-2, 2,2);
+    RCTX.fillStyle="#2b2340"; RCTX.fillRect(x-5, y+4, 10, 2);                                            // grin
   },
   mugwump(x,y,pop){                                 // coffee-stain blob
     const s=30*pop, r=s/2;
-    ctx.fillStyle="rgba(38,35,58,.25)"; ctx.fillRect(x-r, y+r-3, s, 5);
-    ctx.fillStyle="#26233a"; ctx.beginPath(); ctx.ellipse(x,y,r+1,r*0.7+1,0,0,7); ctx.fill();
-    ctx.fillStyle="#6f4a2f"; ctx.beginPath(); ctx.ellipse(x,y,r,r*0.7,0,0,7); ctx.fill();
-    ctx.fillStyle="#8a5a34"; ctx.beginPath(); ctx.ellipse(x,y-2,r*0.7,r*0.5,0,0,7); ctx.fill();
-    ctx.fillStyle=EYE; ctx.fillRect(x-6, y-3, 3,3); ctx.fillRect(x+3, y-3, 3,3);
+    RCTX.fillStyle="rgba(38,35,58,.25)"; RCTX.fillRect(x-r, y+r-3, s, 5);
+    RCTX.fillStyle="#26233a"; RCTX.beginPath(); RCTX.ellipse(x,y,r+1,r*0.7+1,0,0,7); RCTX.fill();
+    RCTX.fillStyle="#6f4a2f"; RCTX.beginPath(); RCTX.ellipse(x,y,r,r*0.7,0,0,7); RCTX.fill();
+    RCTX.fillStyle="#8a5a34"; RCTX.beginPath(); RCTX.ellipse(x,y-2,r*0.7,r*0.5,0,0,7); RCTX.fill();
+    RCTX.fillStyle=EYE; RCTX.fillRect(x-6, y-3, 3,3); RCTX.fillRect(x+3, y-3, 3,3);
   },
   "the-spineless"(x,y,pop){                         // cracked-open book scuttling on little legs
     const w=30*pop, h=20*pop, lx=x-w/2, ty=y-h/2;
-    ctx.fillStyle="rgba(38,35,58,.25)"; ctx.fillRect(lx, y+h/2, w, 4);
-    ctx.fillStyle="#3a2e22"; for(let i=0;i<4;i++) ctx.fillRect(lx+4+i*7, y+h/2-2, 2, 6);   // legs
+    RCTX.fillStyle="rgba(38,35,58,.25)"; RCTX.fillRect(lx, y+h/2, w, 4);
+    RCTX.fillStyle="#3a2e22"; for(let i=0;i<4;i++) RCTX.fillRect(lx+4+i*7, y+h/2-2, 2, 6);   // legs
     pxSprite(lx, ty, w, h, "#8a4a3a");
-    ctx.fillStyle="#e8dcc0"; ctx.fillRect(lx+2, ty+2, w/2-3, h-4); ctx.fillRect(x+2, ty+2, w/2-3, h-4);   // pages
-    ctx.fillStyle="#efe6cf"; ctx.fillRect(x-1, ty, 2, h);                                  // cracked spine
-    ctx.fillStyle=EYE; ctx.fillRect(x-6, ty+3, 2,2); ctx.fillRect(x+4, ty+3, 2,2);
+    RCTX.fillStyle="#e8dcc0"; RCTX.fillRect(lx+2, ty+2, w/2-3, h-4); RCTX.fillRect(x+2, ty+2, w/2-3, h-4);   // pages
+    RCTX.fillStyle="#efe6cf"; RCTX.fillRect(x-1, ty, 2, h);                                  // cracked spine
+    RCTX.fillStyle=EYE; RCTX.fillRect(x-6, ty+3, 2,2); RCTX.fillRect(x+4, ty+3, 2,2);
   },
   "plot-hole"(x,y,pop){                             // dark tear in the page (torn cream edges)
     const r=18*pop;
-    ctx.fillStyle="rgba(38,35,58,.3)"; ctx.beginPath(); ctx.ellipse(x,y,r+2,r*0.7+2,0,0,7); ctx.fill();
-    ctx.fillStyle="#15131c"; ctx.beginPath(); ctx.ellipse(x,y,r,r*0.66,0,0,7); ctx.fill();
-    ctx.fillStyle="#3a3550"; ctx.beginPath(); ctx.ellipse(x,y,r*0.55,r*0.36,0,0,7); ctx.fill();
-    ctx.fillStyle="#efe6cf"; for(let i=0;i<6;i++){ const a=i/6*6.28; ctx.fillRect(x+Math.cos(a)*r-1, y+Math.sin(a)*r*0.66-1, 2,2); }
+    RCTX.fillStyle="rgba(38,35,58,.3)"; RCTX.beginPath(); RCTX.ellipse(x,y,r+2,r*0.7+2,0,0,7); RCTX.fill();
+    RCTX.fillStyle="#15131c"; RCTX.beginPath(); RCTX.ellipse(x,y,r,r*0.66,0,0,7); RCTX.fill();
+    RCTX.fillStyle="#3a3550"; RCTX.beginPath(); RCTX.ellipse(x,y,r*0.55,r*0.36,0,0,7); RCTX.fill();
+    RCTX.fillStyle="#efe6cf"; for(let i=0;i<6;i++){ const a=i/6*6.28; RCTX.fillRect(x+Math.cos(a)*r-1, y+Math.sin(a)*r*0.66-1, 2,2); }
   },
   "the-proofreaper"(x,y,pop){                       // red-inked hooded wraith with a scythe-pen
     const s=34*pop;
-    ctx.fillStyle="rgba(38,35,58,.3)"; ctx.fillRect(x-s/2, y+s/2-2, s, 5);
+    RCTX.fillStyle="rgba(38,35,58,.3)"; RCTX.fillRect(x-s/2, y+s/2-2, s, 5);
     pxSprite(x-s/2+4, y-s/2, s-8, s, "#7a1f1a");
-    ctx.fillStyle="#b3372f"; ctx.fillRect(x-s/2+6, y-s/2+2, s-12, 6);            // hood trim
-    ctx.fillStyle="#26233a"; ctx.fillRect(x-6, y-4, 12, 8);                      // face void
-    ctx.fillStyle="#ff5a4a"; ctx.fillRect(x-4, y-2, 2,2); ctx.fillRect(x+2, y-2, 2,2);   // red eyes
-    ctx.fillStyle="#c8ccd6"; ctx.fillRect(x+s/2-3, y-s/2, 2, s);                 // pen shaft
-    ctx.fillStyle="#b3372f"; ctx.beginPath(); ctx.moveTo(x+s/2-3,y-s/2); ctx.lineTo(x+s/2+6,y-s/2+3); ctx.lineTo(x+s/2-3,y-s/2+9); ctx.fill();   // red nib blade
+    RCTX.fillStyle="#b3372f"; RCTX.fillRect(x-s/2+6, y-s/2+2, s-12, 6);            // hood trim
+    RCTX.fillStyle="#26233a"; RCTX.fillRect(x-6, y-4, 12, 8);                      // face void
+    RCTX.fillStyle="#ff5a4a"; RCTX.fillRect(x-4, y-2, 2,2); RCTX.fillRect(x+2, y-2, 2,2);   // red eyes
+    RCTX.fillStyle="#c8ccd6"; RCTX.fillRect(x+s/2-3, y-s/2, 2, s);                 // pen shaft
+    RCTX.fillStyle="#b3372f"; RCTX.beginPath(); RCTX.moveTo(x+s/2-3,y-s/2); RCTX.lineTo(x+s/2+6,y-s/2+3); RCTX.lineTo(x+s/2-3,y-s/2+9); RCTX.fill();   // red nib blade
   },
   _default(x,y,pop){ pxSprite(x-15*pop, y-15*pop, 30*pop, 30*pop, "#8a8496");
-    ctx.fillStyle=EYE; ctx.fillRect(x-7, y-4, 3,3); ctx.fillRect(x+4, y-4, 3,3); }
+    RCTX.fillStyle=EYE; RCTX.fillRect(x-7, y-4, 3,3); RCTX.fillRect(x+4, y-4, 3,3); }
 };
+// Re-render a procedural body into an offscreen buffer, recolour it solid white (source-in), and overlay it
+// at `amt` alpha — the same hit-flash the image sprites get, so EVERY creature flashes white when struck.
+const _procCv=document.createElement("canvas"); _procCv.width=_procCv.height=104;
+const _procG=_procCv.getContext("2d");
+function flashProcedural(fn, x, y, pop, c, amt){
+  const S=104, cx=S/2, cy=S/2, prev=RCTX;
+  _procG.clearRect(0,0,S,S); _procG.imageSmoothingEnabled=false; _procG.globalCompositeOperation="source-over";
+  RCTX=_procG; fn(cx, cy, pop, c); RCTX=prev;                 // draw the body into the scratch buffer
+  _procG.globalCompositeOperation="source-in"; _procG.fillStyle="#ffffff"; _procG.fillRect(0,0,S,S);
+  _procG.globalCompositeOperation="source-over";
+  ctx.save(); ctx.globalAlpha=Math.max(0,Math.min(1,amt)); ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(_procCv, x-cx, y-cy); ctx.restore();
+}
 function spriteSizeOf(cid, dflt){ const d=CREATURES_BY_ID[cid]; return (d && d.spriteSize) || dflt; }
 function drawResourceCreature(c){
-  const pop=c.flash>0?1.16:1;
+  const pop=c.flash>0?1.16:1, amt=flashAmt(c);
   const y=c.y + (c.behavior==="flutter" ? Math.sin((c.wob||0)*1.5)*4 : Math.sin(c.wob||0)*2);
   ctx.save(); ctx.imageSmoothingEnabled=false;
   if(c.telegraphT>0 && c.strikeDir){                                  // Proofreaper's telegraphed strike line
     ctx.strokeStyle="rgba(179,55,47,.8)"; ctx.lineWidth=3;
     ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x+c.strikeDir.x*170, c.y+c.strikeDir.y*170); ctx.stroke();
   }
-  if(!drawCreatureSprite(c.cid, c.x, y, spriteSizeOf(c.cid,44)*pop))   // custom PNG if present, else pixel art
-    (RES_DRAW[c.cid]||RES_DRAW._default)(c.x, y, pop, c);
+  if(!drawCreatureSprite(c.cid, c.x, y, spriteSizeOf(c.cid,44)*pop, amt)){   // custom PNG (flashes) if present, else pixel art
+    const fn=RES_DRAW[c.cid]||RES_DRAW._default;
+    fn(c.x, y, pop, c);
+    if(amt>0) flashProcedural(fn, c.x, y, pop, c, amt);                      // white hit-flash on the drawn body
+  }
   ctx.restore();
   drawHpPips(c, c.y-28);
 }

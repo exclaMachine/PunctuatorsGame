@@ -129,8 +129,17 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   - loader. Wired to `Alpha.png` (the same hand-drawn sheet Spin Nids uses): a 7×8 grid of 32×32
     cells where a–z = frames 0–25 (A–Z = 26–51, unused here). `drawGlyph(letter,cx,cy,size)` blits one
     cell. `drawCreature` renders the creature **as the glyph itself** — no tile, eyes, or feet — with a
-    brief scale-up "pop" while `c.flash>0` (just hit), falling back to dark `fillText` if the sheet
-    hasn't loaded or the letter isn't on it. HP pips still draw above the glyph when damaged.
+    brief scale-up "pop" **and a white damage-flash** while `c.flash>0` (just hit), falling back to dark
+    `fillText` if the sheet hasn't loaded or the letter isn't on it. HP pips still draw above the glyph when
+    damaged.
+- **Hit-flash** (`flashAmt`/`tintFlashImage`/`flashProcedural`) — on hit **every** creature is overlaid with
+  a fading solid-white silhouette of its own art (~0.15s), on top of the scale-pop. It builds the silhouette
+  on a scratch canvas via a `source-in` white fill (respecting transparency), not a rectangle, so it works on
+  any art: **image sprites** (Alpha.png glyph now, and a creature's custom `sprite` PNG automatically once you
+  add one) go through `tintFlashImage` (`drawGlyph`/`drawCreatureSprite`), and **procedural `RES_DRAW` bodies**
+  go through `flashProcedural`, which re-renders the body into an offscreen buffer by pointing the shared
+  `RCTX` draw-context at it (`pxSprite`/`RES_DRAW` draw to `RCTX`, normally the live canvas). The Writer's
+  Block cube additionally colour-flashes in its own draw.
 - **Player sprite** (`playerImg` → `Lumberjack_Jack.png`) — **art by Kenmi, purchased on itch.io;
   credit Kenmi (kept in the source comment above the loader)**. Sheet = 6 cols × 10 rows of 64×64
   frames; `PR` maps rows: 0 idle-down, 1 idle-right, 2 idle-up, 3 walk-down, 4 walk-right, 5 walk-up,
@@ -368,8 +377,9 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
 - Home base with a writing desk; bounded **daily map** of screens (`MAP_RADIUS`, currently 3×3; walls at the world edge),
   regenerated each real calendar day; walk-off-edge travel between screens; `H` to teleport home;
   translucent explored-area minimap in the bottom-right (resets daily).
-- Attack-based combat (no bump-to-collect); **letter-creatures** (`kind:"letter"`) are captured in a
-  **single hit** (`CREATURE_HP = 1`) and drop their letter. The satchel holds a capped number of letters
+- Attack-based combat (no bump-to-collect); **letter-creatures** (`kind:"letter"`) drop their letter when
+  captured. **TEMP:** `CREATURE_HP` is set to **2** (two hits to capture) to test the hit-flash on real
+  sprites — revert to `1` for the normal one-hit capture. The satchel holds a capped number of letters
   (`state.bagCap`, starts at 10); when full, **letter capture** is blocked (you can still fight cubes).
 - **Letters are now rare** — `letterScatter(rng)` gives a thin, even scatter (usually 0, sometimes 1–2
   per screen) so finding one feels good; the WOTD's guaranteed pinned letters (`Math.max(scatter,guar)`)
