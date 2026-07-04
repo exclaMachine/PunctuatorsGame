@@ -293,13 +293,18 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   (`TS=24`, `TCOLS=30 × TROWS=22`, separate from the 48px gameplay `TILE`). Four pixel-art types:
   `T_GRASS`/`T_PATH` are walkable, `T_WATER`/`T_ROCK` block movement (`walkType()`). `genTiles(sx,sy,isBase)`
   (own seeded RNG `hash2 ^ 0x5a17b3`) fills grass, grows water ponds + rock clusters as random-walk
-  `blob()`s (interior only; bigger with `dist`), carves a winding left→right `carvePath()` trail
-  (overwriting obstacles so it's always walkable), then **keeps every collidable tile ≥`EDGE_MARGIN`
+  `blob()`s (interior only; bigger with `dist`), carves a **connected path network** (`carvePaths()`,
+  overwriting obstacles so it's always walkable), then **keeps every collidable tile ≥`EDGE_MARGIN`
   (2) tiles from any edge** — `blob()` is confined to the interior and a final pass scrubs any
   water/rock in the 2-tile border band. This guarantees edge arrivals (you land in col/row 0–1) are
   always valid and you can never be boxed in on arrival. A whole side can still be walled behind that
   margin for "blocked-ish" variety. Home `(0,0)` gets no
-  ponds/rocks. Movement in `update()` resolves X/Y independently via `canStand(sc,x,y)` (samples a
+  ponds/rocks. **Connected paths** (`carvePaths`): each shared edge's crossing point ("gate") is a
+  deterministic hash of that edge + `daySeed` (`vGateRow`/`hGateCol`), so both neighbouring screens compute
+  the same row/column and the trails line up across the seam; each screen then carves a 2-wide L-path
+  (`carveLine`) from every in-bounds edge-gate to a central hub, so paths connect within a screen and from
+  screen to screen, vertically as well as horizontally (replacing the old per-screen random left→right trail).
+  Movement in `update()` resolves X/Y independently via `canStand(sc,x,y)` (samples a
   ~10px foot footprint against `blockedAt`) so you slide along walls; off-screen counts as unblocked
   so edge transitions still fire. Creatures spawn only on walkable tiles (`makeCreature` retries) and
   bounce off water/rock so none drift somewhere unreachable. On the home screen the **desk and shop stall

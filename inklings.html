@@ -891,15 +891,29 @@ function blob(t, rng, type, size){
     c=Math.max(lo,Math.min(hc,c)); r=Math.max(lo,Math.min(hr,r));
   }
 }
-// Carve a winding light-brown trail left→right (overwriting obstacles), so screens read as linked by paths.
-function carvePath(t, rng){
-  let c=0, r=1+(rng()*(TROWS-2)|0); const er=1+(rng()*(TROWS-2)|0);
-  while(c<TCOLS){
-    t[r][c]=T_PATH;
-    if(c>0 && c<TCOLS-1 && rng()<0.5){ const r2=Math.max(0,Math.min(TROWS-1,r+(rng()<0.5?1:-1))); t[r2][c]=T_PATH; }
-    c++;
-    if(rng()<0.6){ r += (r<er?1:(r>er?-1:(rng()<0.5?1:-1))); r=Math.max(0,Math.min(TROWS-1,r)); }
-  }
+// Connected path network. The trick: where two screens share an edge, the path's crossing point ("gate")
+// is a deterministic hash of that edge (+ the day seed), so BOTH screens compute the same row/column and the
+// trails line up across the seam. Each screen then links every one of its edge-gates to a central hub, so
+// paths connect within a screen and, via the matching gates, from screen to screen — horizontally AND
+// vertically. Gates only exist toward in-bounds neighbours (no path runs off the world edge into a wall).
+function vGateRow(leftSx, sy){ const h=(hash2(leftSx*2+1, sy) ^ state.daySeed ^ 0x5eed01)>>>0; return 2 + h%(TROWS-4); }   // shared row of the vertical edge between (leftSx,sy)|(leftSx+1,sy)
+function hGateCol(sx, topSy){ const h=(hash2(sx, topSy*2+1) ^ state.daySeed ^ 0x5eed02)>>>0; return 2 + h%(TCOLS-4); }       // shared col of the horizontal edge between (sx,topSy)|(sx,topSy+1)
+function setPath(t,c,r){ if(r>=0 && r<TROWS && c>=0 && c<TCOLS) t[r][c]=T_PATH; }
+// Carve a 2-wide L-path from (c0,r0) to (c1,r1). vertFirst leaves the gate perpendicular to its edge first
+// (so top/bottom paths dive inward instead of running along the screen edge).
+function carveLine(t, c0,r0, c1,r1, vertFirst){
+  let c=c0, r=r0; const sc=Math.sign(c1-c), sr=Math.sign(r1-r);
+  const legH=()=>{ while(c!==c1){ setPath(t,c,r); setPath(t,c,r+1); c+=sc; } };
+  const legV=()=>{ while(r!==r1){ setPath(t,c,r); setPath(t,c+1,r); r+=sr; } };
+  if(vertFirst){ legV(); legH(); } else { legH(); legV(); }
+  setPath(t,c1,r1); setPath(t,c1+1,r1); setPath(t,c1,r1+1);   // fill the hub corner
+}
+function carvePaths(t, sx, sy){
+  const R=MAP_RADIUS, hubC=TCOLS>>1, hubR=TROWS>>1;
+  if(sx>-R) carveLine(t, 0,        vGateRow(sx-1,sy), hubC,hubR, false);   // west
+  if(sx< R) carveLine(t, TCOLS-1,  vGateRow(sx,sy),   hubC,hubR, false);   // east
+  if(sy>-R) carveLine(t, hGateCol(sx,sy-1), 0,        hubC,hubR, true);    // north
+  if(sy< R) carveLine(t, hGateCol(sx,sy),   TROWS-1,  hubC,hubR, true);    // south
 }
 function genTiles(sx,sy,isBase){
   const trng = mulberry32((hash2(sx,sy) ^ state.daySeed ^ 0x5a17b3)>>>0);
@@ -911,7 +925,7 @@ function genTiles(sx,sy,isBase){
     const rocks = 1 + (trng()*3|0);
     for(let i=0;i<rocks;i++) blob(t, trng, T_ROCK, 3 + (trng()*6|0) + Math.min(4,dist));
   }
-  carvePath(t, trng);
+  carvePaths(t, sx, sy);
   // Scrub any collidable tile within EDGE_MARGIN of an edge — guarantees the walkable border so arrivals
   // are always valid and you can never be fully trapped (belt-and-suspenders with blob's confinement).
   for(let r=0;r<TROWS;r++) for(let c=0;c<TCOLS;c++){
