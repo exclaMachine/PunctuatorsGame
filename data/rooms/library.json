@@ -25,10 +25,10 @@
       { "type": "railing", "id": "railL",  "col": 1,  "row": 11, "w": 12, "h": 1, "solid": true },
       { "type": "railing", "id": "railR",  "col": 17, "row": 11, "w": 12, "h": 1, "solid": true },
 
-      { "type": "shelf", "id": "sideL1", "col": 0,  "row": 15, "w": 2, "h": 3, "solid": true, "shelf": true, "side": true },
-      { "type": "shelf", "id": "sideL2", "col": 0,  "row": 19, "w": 2, "h": 3, "solid": true, "shelf": true, "side": true },
-      { "type": "shelf", "id": "sideR1", "col": 28, "row": 15, "w": 2, "h": 3, "solid": true, "shelf": true, "side": true },
-      { "type": "shelf", "id": "sideR2", "col": 28, "row": 19, "w": 2, "h": 3, "solid": true, "shelf": true, "side": true },
+      { "type": "shelf", "id": "sideL1", "col": 0,  "row": 15, "w": 2, "h": 2, "solid": true, "shelf": true, "side": true },
+      { "type": "shelf", "id": "sideL2", "col": 0,  "row": 18, "w": 2, "h": 2, "solid": true, "shelf": true, "side": true },
+      { "type": "shelf", "id": "sideR1", "col": 28, "row": 15, "w": 2, "h": 2, "solid": true, "shelf": true, "side": true },
+      { "type": "shelf", "id": "sideR2", "col": 28, "row": 18, "w": 2, "h": 2, "solid": true, "shelf": true, "side": true },
 
       { "type": "desk", "id": "desk", "col": 7,  "row": 19, "w": 4, "h": 2, "solid": true, "interact": "openCollection" },
       { "type": "book", "id": "book", "col": 20, "row": 19, "w": 2, "h": 2, "solid": true, "interact": "openBook" }

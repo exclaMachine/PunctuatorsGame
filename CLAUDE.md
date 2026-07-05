@@ -31,8 +31,8 @@ before changing it.
 - **Vanilla, single-file, no build step.** Each game is one self-contained HTML file (inline CSS + JS),
   no frameworks, no bundler. Don't add dependencies unless a feature truly requires it (say so and why).
   Intentional exceptions are documented per-game (e.g. Inklings fetches a bundled local WordNet dictionary
-  (`data/dictionary.json` + `data/inflections.json`) and `2of12.txt` — all local project files, no runtime
-  third-party API).
+  (`data/dictionary.json` + `data/inflections.json`), the Nouns-wing shelf index (`data/noun-books.json`),
+  room layouts (`data/rooms/*.json`), and `2of12.txt` — all local project files, no runtime third-party API).
 - **Ask clarifying questions before non-trivial work.** For any meaningful change, surface the genuine
   design forks and get answers before writing code. Prefer a recommendation over an exhaustive survey.
 - **Parse-check, don't build a test harness.** These are browser games with no test rig; sanity-check

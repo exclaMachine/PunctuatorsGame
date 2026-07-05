@@ -202,6 +202,86 @@ def build_inflections(dict_words):
 
 
 # ----------------------------------------------------------------------------
+# Noun "books" index for the Library's Nouns wing (roadmap #4).
+#   - Each collected noun sits on the shelf-level of its MOST COMMON noun sense's lexicographer category.
+#   - Within a category, a BOOK = the immediate hypernym (parent) of that sense; climb one level when the
+#     direct parent has fewer than MIN_BOOK_CHILDREN dict-noun children (avoids tiny/obscure books).
+#   - A book's roster = every dict noun assigned to that parent (self-consistent with placement); the runtime
+#     shows found (in state.dex) vs the rest as blanks.
+# 26 WordNet noun lexnames in a fixed shelf order (concrete/common first → abstract last), mapped 2 per shelf.
+NOUN_CATS_ORDER = ["animal", "plant", "food", "person", "body", "substance", "object", "artifact",
+                   "location", "group", "possession", "quantity", "time", "shape", "phenomenon", "process",
+                   "event", "act", "motive", "state", "attribute", "feeling", "cognition", "communication",
+                   "relation", "Tops"]
+MIN_BOOK_CHILDREN = 4   # keep climbing while the parent has fewer than this many dict-noun children
+# Prefer a word's concrete "thing" sense over abstract ones when the corpus can't decide — so 'tiger' is an
+# animal (not "an audacious person") and 'oak' is a plant/tree (not the wood). Higher = preferred.
+_SENSE_RANK = {"animal": 9, "plant": 9, "food": 8, "artifact": 7, "body": 6, "object": 5, "substance": 5,
+               "location": 4, "person": 4, "group": 3, "shape": 3, "phenomenon": 3}
+
+
+def _best_noun_sense(w):
+    """The sense a player most likely means: prefer concrete-thing categories, then real corpus frequency
+    (lemma.count), then WordNet's own sense order."""
+    syns = wn.synsets(w, pos="n")
+    if not syns:
+        return None
+    def score(s):
+        cnt = next((l.count() for l in s.lemmas() if l.name() == w), 0)
+        return (_SENSE_RANK.get(s.lexname().split(".")[-1], 2), cnt, -syns.index(s))
+    return max(syns, key=score)
+
+
+def _dict_hypo_count(syn, dict_words):
+    return sum(1 for h in syn.hyponyms() for l in h.lemmas()
+              if single_word(l.name()) and l.name() in dict_words)
+
+
+def _book_lemma(syn, dict_words):
+    for l in syn.lemmas():                        # prefer a single-word lemma that's in the dictionary
+        if single_word(l.name()) and l.name() in dict_words:
+            return l.name()
+    return next((l.name() for l in syn.lemmas() if single_word(l.name())), None)
+
+
+def build_noun_books(dict_words):
+    # KNOWN ODD PLACEMENTS (WordNet quirks, acceptable for an MVP; tune _SENSE_RANK / MIN_BOOK_CHILDREN):
+    #   • a few words shelve on a prominent alternate sense — e.g. oak/maple → "wood" (substance) not a tree;
+    #     "words"/"ohm" fall into the person catch-all.
+    #   • some book names are the technical parent, not the everyday word — sparrow → "passerine",
+    #     salmon → "salmonid". Still real one-word lemmas, just not the word a kid would pick.
+    #   • ~375 rootless/proper/unit nouns land in per-category "•<cat>" catch-all ("Other") books.
+    books = {}
+    for w in dict_words:
+        syn = _best_noun_sense(w)
+        if syn is None:
+            continue
+        parent, pl = None, None
+        if syn.hypernyms():
+            parent = syn.hypernyms()[0]
+            for _ in range(5):                                   # climb until the book has a real one-word
+                pl = _book_lemma(parent, dict_words)             # name AND isn't tiny/obscure
+                if pl and pl != w and _dict_hypo_count(parent, dict_words) >= MIN_BOOK_CHILDREN:
+                    break
+                up = parent.hypernyms()
+                if not up:
+                    pl = None; break
+                parent = up[0]
+        if pl and pl != w:                                       # a real book (the immediate-ish parent)
+            b = books.setdefault(pl, {"cat": parent.lexname().split(".")[-1], "children": set()})
+        else:                                                    # no clean parent (root / proper noun / unit /
+            cat = syn.lexname().split(".")[-1]                   # …) → the category's catch-all "Other" book,
+            b = books.setdefault("•" + cat, {"cat": cat, "children": set(), "misc": True})  # keyed by "•<cat>"
+        b["children"].add(w)
+    out = {}
+    for k, b in books.items():
+        e = {"cat": b["cat"], "children": sorted(b["children"])}
+        if b.get("misc"):
+            e["misc"] = True
+        out[k] = e
+    return {"categories": NOUN_CATS_ORDER, "books": out}
+
+
 def write_json(name, obj):
     path = os.path.join(OUT_DIR, name)
     raw = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -227,10 +307,19 @@ def main():
     print("Building inflection map…")
     inflections = build_inflections(set(dictionary.keys()))
 
+    print("Building noun-books index (Library Nouns wing)…")
+    noun_books = build_noun_books(set(dictionary.keys()))
+
     print("\nWrote:")
     write_json("dictionary.json", dictionary)
     write_json("inflections.json", inflections)
     write_json("wordnet-relations.json", relations)
+    write_json("noun-books.json", noun_books)
+    nb = noun_books["books"]
+    nchild = sum(len(b["children"]) for b in nb.values())
+    big = sorted(nb.items(), key=lambda kv: -len(kv[1]["children"]))[:8]
+    print(f"  noun-books: {len(nb):,} books, {nchild:,} noun placements. "
+          f"Largest: " + ", ".join(f'{p}({len(b["children"])})' for p, b in big))
 
     # --- coverage report against 2of12 (proxy for words a player might spell) ---
     if os.path.exists("2of12.txt"):

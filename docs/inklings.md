@@ -349,21 +349,33 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
 - **Library room** (`state.room==="library"`; `data/rooms/library.json`) — a **separate walkable screen**
   that is now the game's **home/study**, not part of the daily field grid, entered via the `HOUSE` (cut, not
   the field slide). Loaded once by `buildLibrary(room)` into `LIBRARY = {room, cw, ch, screen, entranceRect/Px,
-  desk, book, deskStand, bg}`. It has its **own tile grid** (`room.cols×room.rows` = 30×24, non-square cells
+  desk, book, deskStand, shelves, activeByCat, bg}`. It has its **own tile grid** (`room.cols×room.rows` = 30×24, non-square cells
   `cw=24`/`ch=22` filling 720×528) used only for collision — `blockedAt` is now cell-size-aware (`sc.cw||TS` /
   `sc.ch||TS`), so the existing `canStand` works unchanged (field screens have no `cw/ch` → `TS`). Solid
   objects → `T_ROCK`; floors/stairs/entrance walk. `update()` branches to **`updateLibrary`** (same
   movement/collision, bounded — no edge transitions/creatures/pickups; **rests/heals** here; stepping onto the
   entrance mat calls `exitLibrary`); `render()` branches to **`drawLibraryRoom`** (offscreen bake
-  `ensureLibraryBg`, rebuilt per entry): two floor zones + every object (shelf/stairs/railing/ladder/chair,
-  the **desk** + **book** interactables, entrance mat) as retro-pixel rects, plus **book-spines** — one per
-  `state.dex` word (collection order, filling shelf slots left→right/top→bottom), `spineColor` by POS. Inside:
-  `nearLibraryDesk` → `openOverlay` (collection/bench), `nearLibraryBook` → `openBook` (mad-libs). Entry
-  helpers: `enterLibrary` (via the house → entrance mat) and **`goHome`** (H/faint/new-day → `deskStand`, the
-  desk) both go through `enterLibraryAt`. Touch: contextual **SHOP**/**LIB** (home) and **DESK**/**BOOK**
-  (room) via `syncTouchUI`. `state.room` is session-only (not saved); reload starts outdoors. **Placeholder
-  pixel art** (except the house PNG) — draw code is structured by object type so the staged tileset can swap
-  in later.
+  `ensureLibraryBg`, rebuilt per entry): two floor zones + every object (shelf/stairs/railing/ladder,
+  the **desk** + **book** interactables, entrance mat) as retro-pixel rects. Inside: `nearLibraryDesk` →
+  `openOverlay` (collection/bench), `nearLibraryBook` → `openBook` (mad-libs), `nearLibraryShelf` →
+  `openShelfView`. Entry helpers: `enterLibrary` (via the house → entrance mat) and **`goHome`**
+  (H/faint/new-day → `deskStand`) both go through `enterLibraryAt`. Touch: contextual **SHOP**/**LIB** (home)
+  and **DESK**/**BOOK**/**SHELF** (room) via `syncTouchUI`. `state.room` is session-only (not saved); reload
+  starts outdoors. **Placeholder pixel art** (except the house PNG) — draw code is structured by object type
+  so the staged tileset can swap in later.
+- **Nouns wing** (the shelves) — `data/noun-books.json` (`{categories:[…26], books:{key:{cat,children,[misc]}}}`,
+  precomputed by `build_dictionary.py:build_noun_books`, ~200 KB gzip) is fetched at startup into `NOUN_BOOKS`
+  + a `WORDBOOK` (child→book) reverse map. **26 shelf-levels** (13 shelves × 2 board-rows) ↦ the 26 noun
+  categories via `SHELF_ORDER` × `NOUN_BOOKS.categories` (`shelfCategory(id, level)`), concrete cats on the big
+  top/mid shelves. `ensureLibraryBg` computes `LIBRARY.activeByCat` (category → sorted active book keys, an
+  "active" book = ≥1 child in `state.dex`) and draws a plain spine per active book (`bookSpineColor`, no title)
+  on its category board-row; a collected word sets `LIBRARY.bg=null` to rebake. **Shelf view** (`#shelfview`,
+  one `state.shelfview` modal, two pages like the mad-libs menu→chapter): `openShelfView`→`renderShelfList`
+  (the shelf's 2 categories + their books with `found/total`) → `renderBookPage(key)` (the book's full roster —
+  discovered words are chips → `openDefModal`, undiscovered are `?????` blanks; `← Shelf` / `svBook` tracks the
+  page). `bookName` renders `•<cat>` catch-alls as "Other <cat>". Pure view over `state.dex`; **no new saved
+  state.** See [`build_dictionary.py`](../build_dictionary.py) for the book-assignment rules + known odd
+  placements.
 - **Mad-libs module** (`/* MAD-LIBS */`) — `BOOKS` registry. For a big book, an entry points at an
   **`index:"data/levels/index.json"`** (book-ordered `[{id,title,file,blanks}]`) instead of a hardcoded
   `levels` array; `ensureBookLevels(reg)` fetches that index once and fills `reg.chapters` (metadata) +
@@ -513,9 +525,11 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
 - **Autosave (IndexedDB)** — progress persists automatically across reloads; Export/Import remain as
   manual backup/transfer; a **Reset** button (library footer, with confirm) wipes the save.
 - **Library room (MVP)** — your home/study: entered via the **house** on the outdoor home (`nearHouse` →
-  `enterLibrary`); holds the writing **desk** (spell words) + **book** lectern (mad-libs) and shelves that
-  fill with book-spines from `state.dex`; `H`/faint/new-day return you to the desk; resting there heals. See the code map +
-  roadmap #4.
+  `enterLibrary`); holds the writing **desk** (spell words) + **book** lectern (mad-libs); `H`/faint/new-day
+  return you to the desk; resting there heals. **Nouns wing:** the 26 shelf-levels map to WordNet noun
+  categories and fill with per-hypernym **books** as you collect nouns (`data/noun-books.json`); walk to a
+  shelf + `E`/**SHELF** → its books (`found/total`) → a book's roster with `?????` blanks for undiscovered
+  words. See the code map + roadmap #4.
 - Not started: genre books / procedural layouts, hero weapons, word effects, farming/ranching, town/trade.
 
 ---
@@ -619,8 +633,9 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B
 2. **Dictionary** — DONE (local WordNet bundle): word validation + definitions + POS come from
    `data/dictionary.json` + `data/inflections.json`, generated offline by `build_dictionary.py`
    (WordNet/NLTK + lemminflect) + a curated function-word list (WordNet omits the/and/of/…). Fully offline;
-   the Free Dictionary API was **removed**. Optional future polish: use the bundled
-   `data/wordnet-relations.json` for new mechanics (see "Future mechanics (WordNet relationships)").
+   the Free Dictionary API was **removed**. The same script also emits **`data/noun-books.json`** (the Nouns
+   wing index — noun → hypernym "book" + category, ~200 KB gzip; see roadmap #4). Optional future polish: use
+   the bundled `data/wordnet-relations.json` for new mechanics (see "Future mechanics (WordNet relationships)").
 3. **IndexedDB autosave** — DONE. Progress autosaves to IndexedDB DB `inklings_save` (store `state`,
    key `save`). `snapshot()` builds a clone-safe object (`v:3` — `day`, inv, dex,
    bagCap, captured[], `ink`, `potions`, `wotdDay`, `restored`, `books`, `resources`, `bestiary`; the
@@ -645,10 +660,15 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B
    right of the shop; walk-up + `E` / touch **LIB**); the bottom entrance mat walks you back out beside the
    house. `H`/faint/new-day drop you **at the desk inside the library**, and resting there heals (the library
    is the rest point now). Laid out from `data/rooms/library.json` (30×24 grid, own non-square cells; solid
-   objects block, floors/stairs/entrance walk). Shelves start **empty** and fill with **book-spines** — one
-   per `state.dex` word (collection order, left→right/top→bottom across the shelf list), coloured by POS. Pure
-   view of `state.dex`, no new saved data. **Still ahead:** organize words into themed sets/shelves for
-   achievable sub-goals, and swap the placeholder pixel art for the staged tileset.
+   objects block, floors/stairs/entrance walk). **Nouns wing (done):** the 13 shelves × 2 board-rows = 26
+   **shelf-levels**, each mapped to one WordNet **noun category** (`noun.*` lexname) in a fixed order
+   (`SHELF_ORDER` × `NOUN_BOOKS.categories`, concrete/common categories on the big top+mid shelves). A
+   collected noun's **book** = the (immediate-ish) hypernym of its most-common concrete sense; the book
+   appears as a plain spine on its category shelf-level once you own ≥1 of its words. Walk up to a shelf +
+   `E` / touch **SHELF** → the shelf's two categories and their books (`found / total`); open a **book** →
+   its full roster with discovered words clickable (→ `#defmodal`) and undiscovered ones as `?????` blanks.
+   All derived from `data/noun-books.json` + `state.dex` (no new saved data). **Still ahead:** verb/adj/adverb
+   wings on other floors, and swapping the placeholder pixel art for the staged tileset.
 5. **Genre books + procedural layouts** — multiple book types with distinct tilesets and
    genre-weighted letter pools. Start with simple random scatter / room-and-corridor generation;
    do **not** build a clever dungeon generator first (classic time sink).

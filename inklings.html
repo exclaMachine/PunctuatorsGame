@@ -262,6 +262,24 @@
   #defmodal .book{max-width:460px}
   #defmodal .def-full{font-size:19px;line-height:1.45;color:var(--ink);
     max-height:60vh;overflow:auto;overflow-wrap:break-word}
+  /* Bookshelf view (Nouns wing) */
+  #shelfview{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
+    align-items:center;justify-content:center;padding:18px;z-index:6}
+  #shelfview.open{display:flex}
+  #shelfview .book{max-height:82vh;overflow:auto}
+  #sv-body{max-height:62vh;overflow:auto;margin-top:8px}
+  .nb-cat{margin:12px 0 3px;font-family:var(--disp);font-size:11px;color:var(--gold);text-transform:capitalize}
+  .nb-book{display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:8px 11px;margin:5px 0;background:var(--paper-2);border:2px solid var(--edge);cursor:pointer}
+  .nb-book:hover{background:#d8ccab}
+  .nb-book .nm{font-size:19px;color:var(--ink)}
+  .nb-book .ct{font-size:16px;color:var(--ink-soft);white-space:nowrap}
+  .nb-empty{font-size:16px;color:var(--ink-soft);padding:2px 2px 6px}
+  .nb-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+  .nb-chip{font-size:18px;padding:5px 9px;border:2px solid var(--edge);background:var(--paper-2)}
+  .nb-chip.found{cursor:pointer;color:var(--ink)}
+  .nb-chip.found:hover{background:#d8ccab}
+  .nb-chip.blank{color:var(--ink-soft);opacity:.55;letter-spacing:3px}
   .foot{margin-top:16px;padding-top:12px;border-top:2px solid var(--line);
     display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
   .foot .keys{font-size:16px;color:var(--ink-soft);line-height:1.9}
@@ -460,6 +478,17 @@
       </div>
     </div>
 
+    <!-- Bookshelf view: a shelf's books (2 noun categories) → a book's found-vs-blank word list -->
+    <div id="shelfview">
+      <div class="book" style="max-width:520px">
+        <button class="close-x" id="sv-close" aria-label="Close" title="Close">✕</button>
+        <button id="sv-back" style="display:none;margin-bottom:10px">← Shelf</button>
+        <h1 id="sv-title">Bookshelf</h1>
+        <div class="sub" id="sv-sub"></div>
+        <div id="sv-body"></div>
+      </div>
+    </div>
+
     <!-- Definition modal (full text of a collection entry) -->
     <div id="defmodal">
       <div class="book">
@@ -538,6 +567,7 @@
           <button class="tc-btn util" id="tc-house" aria-label="Enter library">LIB</button>
           <button class="tc-btn util" id="tc-desk" aria-label="Use desk">DESK</button>
           <button class="tc-btn util" id="tc-book" aria-label="Open book">BOOK</button>
+          <button class="tc-btn util" id="tc-shelf" aria-label="Browse shelf">SHELF</button>
         </div>
       </div>
       <!-- Joystick, bottom-right -->
@@ -831,6 +861,29 @@ fetch("data/creatures.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>
 let LIBRARY=null;
 fetch("data/rooms/library.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{ buildLibrary(data.room); })
   .catch(()=>{ console.warn("Inklings: couldn't load data/rooms/library.json — Library room disabled."); });
+
+// --- Nouns wing: which "book" (hypernym group) each collected noun belongs to, for the shelves + book view.
+// A precomputed index (data/noun-books.json): { categories:[…26], books:{ key:{cat,children,[misc]} } }.
+let NOUN_BOOKS=null;              // the index
+let WORDBOOK=null;                // child lemma -> book key (built once, for fast placement)
+fetch("data/noun-books.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{
+  NOUN_BOOKS=data; WORDBOOK=Object.create(null);
+  for(const key in data.books) for(const c of data.books[key].children) WORDBOOK[c]=key;
+  if(LIBRARY) LIBRARY.bg=null;   // rebake the shelves now that the book data is here
+}).catch(()=>{ console.warn("Inklings: couldn't load data/noun-books.json — Nouns wing shelves disabled."); });
+
+// The 13 shelves (fixed order) × 2 board-rows = 26 shelf-levels, mapped to the 26 noun categories in
+// NOUN_BOOKS.categories order (top board-row first). Concrete/common categories land on the big top+mid shelves.
+const SHELF_ORDER=["top1","top2","top3","top4","top5","midL1","midL2","midR1","midR2","sideL1","sideL2","sideR1","sideR2"];
+function shelfCategory(shelfId, level){   // level 0 = top board-row, 1 = second board-row
+  if(!NOUN_BOOKS) return null;
+  const i=SHELF_ORDER.indexOf(shelfId); if(i<0) return null;
+  return NOUN_BOOKS.categories[i*2+level] || null;
+}
+function nbCap(s){ return s ? s[0].toUpperCase()+s.slice(1) : s; }
+function bookName(key){ return key && key[0]==="•" ? "Other "+nbCap(key.slice(1)) : nbCap(key); }   // "•cat" = catch-all
+function bookSpineColor(key){ let h=0; for(let i=0;i<key.length;i++) h=(h*31+key.charCodeAt(i))>>>0;
+  return ["#c89b3c","#7a4a9a","#3b4a7a","#5b7a4b","#8a5a34","#5f5872","#3b6ea5","#9a3b2e","#b06a2e","#4a7a6a"][h%10]; }
 function buildLibrary(room){
   const cw=W/room.cols, ch=H/room.rows;                 // 24 × 22 for a 30×24 room on 720×528
   const tiles=[]; for(let r=0;r<room.rows;r++) tiles.push(new Array(room.cols).fill(T_GRASS));
@@ -849,6 +902,7 @@ function buildLibrary(room){
     entrancePx:{ x:(ent.col+ent.w/2)*cw, y:(ent.row+ent.h/2)*ch },
     desk: interactPt("desk"),      // the writing desk (opens the collection/bench)
     book: interactPt("book"),      // the book lectern (opens mad-libs)
+    shelves: room.objects.filter(o=>o.shelf).map(o=>({ id:o.id, rect:{x:o.col*cw, y:o.row*ch, w:o.w*cw, h:o.h*ch} })),
     bg:null
   };
   LIBRARY.deskStand={ x:LIBRARY.desk.standX, y:LIBRARY.desk.standY };   // where H / faint / new-day drop you
@@ -925,7 +979,7 @@ const state = {
   resources:{},                 // book-binding material id -> count, from resource-creature drops (persist)
   bestiary:{},                  // creature id -> {kills, seen} — unlocks bestiary entries (persist)
   fx:[],                        // floating texts
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false,
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -1253,6 +1307,11 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"||k==="b"){ e.preventDefault(); closeBestiary(); }
     return;
   }
+  if(state.shelfview){   // bookshelf view: Esc backs out of a book to the list, then closes; Tab/E close
+    if(k==="escape"){ e.preventDefault(); if(svBook) renderShelfList(); else closeShelfView(); }
+    else if(k==="tab"||k==="e"){ e.preventDefault(); closeShelfView(); }
+    return;
+  }
   if(!state.started) return;
   keys[k]=true;
   if(k==="h") teleportHome();
@@ -1284,6 +1343,19 @@ function nearHouse(){   // the Library entrance (house) on the outdoor home scre
 }
 function nearLibraryDesk(){ return state.room==="library" && LIBRARY && LIBRARY.desk && Math.hypot(state.player.x-LIBRARY.desk.cx, state.player.y-LIBRARY.desk.cy)<64; }
 function nearLibraryBook(){ return state.room==="library" && LIBRARY && LIBRARY.book && Math.hypot(state.player.x-LIBRARY.book.cx, state.player.y-LIBRARY.book.cy)<64; }
+// The bookshelf whose front the player is standing at (nearest within range), or null. Distance is measured
+// from the player's feet to the shelf rectangle, so you can approach from below or the side.
+function nearLibraryShelf(){
+  if(state.room!=="library" || !LIBRARY || !LIBRARY.shelves || !NOUN_BOOKS) return null;
+  const fx=state.player.x, fy=state.player.y+FOOT_DY; let best=null, bd=1e9;
+  for(const sh of LIBRARY.shelves){
+    const r=sh.rect;
+    const dx=Math.max(r.x-fx, 0, fx-(r.x+r.w)), dy=Math.max(r.y-fy, 0, fy-(r.y+r.h));
+    const d=Math.hypot(dx,dy);
+    if(d<28 && d<bd){ bd=d; best=sh; }
+  }
+  return best;
+}
 // Enter/leave the Library room (a cut, not the field-grid slide). state.room is session-only.
 function enterLibraryAt(x,y,face){ trans=null; state.room="library"; LIBRARY.bg=null; const p=state.player; p.x=x; p.y=y; p.face=face; p.moving=false; SFX.play("home"); }
 function enterLibrary(){   // in through the house door → arrive at the entrance mat
@@ -1310,6 +1382,7 @@ function tryUseBench(){
   if(state.room==="library"){
     if(nearLibraryDesk()) openOverlay();       // the desk → collection/bench
     else if(nearLibraryBook()) openBook();     // the lectern → mad-libs
+    else { const sh=nearLibraryShelf(); if(sh) openShelfView(sh); }   // a bookshelf → its books
     return;
   }
   if(nearShop()) openShop();                   // outdoor home: shop or the house (library)
@@ -1555,7 +1628,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.shelfview && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -1580,9 +1653,10 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen;
+  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.shelfview;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use your desk"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open the book"; hint.classList.add("show"); }
+  else if(hintReady && nearLibraryShelf()){ hint.textContent="Press E to browse this shelf"; hint.classList.add("show"); }
   else hint.classList.remove("show");
   // active potion timers keep ticking
   for(const t of POTION_TYPES){
@@ -1932,12 +2006,18 @@ function ensureLibraryBg(){
     }
   }
 
-  // --- book-spine slots across the shelves (fill with collected words, in order) ---
-  const words=Object.keys(state.dex);   // collection order (as collected)
-  let wi=0;
-  const drawSpine=(x,y,w,h,word)=>{
+  // --- active books per noun category (a book is "active" once you've collected ≥1 of its words) ---
+  const activeByCat={};
+  if(NOUN_BOOKS && WORDBOOK){
+    const seen={};
+    for(const w in state.dex){ const key=WORDBOOK[w]; if(!key) continue;
+      const cat=NOUN_BOOKS.books[key].cat; (seen[cat]||(seen[cat]=new Set())).add(key); }
+    for(const cat in seen) activeByCat[cat]=[...seen[cat]].sort();
+  }
+  LIBRARY.activeByCat=activeByCat;      // the shelf menu reuses this
+  const drawBookSpine=(x,y,w,h,key)=>{  // one plain spine per active book (no title — too small to read)
     g.fillStyle="#26233a"; g.fillRect(x-1,y-1,w+2,h+2);
-    g.fillStyle=spineColor(word); g.fillRect(x,y,w,h);
+    g.fillStyle=bookSpineColor(key); g.fillRect(x,y,w,h);
     g.fillStyle="rgba(255,255,255,.18)"; g.fillRect(x,y,w,1);               // top glint
     g.fillStyle="rgba(38,35,58,.5)"; g.fillRect(x, y+Math.floor(h*0.35), w, 1);  // title band
   };
@@ -1947,18 +2027,15 @@ function ensureLibraryBg(){
     const x=o.col*cw, y=o.row*ch, w=o.w*cw, h=o.h*ch;
     if(o.type==="shelf"){
       box(x+1, y+1, w-2, h-2, "#5a4630");                                   // shelf carcass
-      const boards=o.h;                                                     // one board row per tile-height
-      for(let b=0;b<boards;b++){
+      for(let b=0;b<o.h;b++){                                               // each board row = one category
         const by=y+2+b*ch, bh=ch-4;
         g.fillStyle="#3a2e22"; g.fillRect(x+3, by+bh-2, w-6, 2);            // board underside
-        // fill this board with spines left→right
+        const cat=(b<2) ? shelfCategory(o.id, b) : null;                    // top two rows map to categories
+        const keys=cat ? (activeByCat[cat]||[]) : [];
         const pad=4, sw=6, gap=2, avail=w-2*pad;
         const slots=Math.max(0, Math.floor((avail+gap)/(sw+gap)));
-        for(let s=0;s<slots;s++){
-          if(wi>=words.length) break;
-          const sx=x+pad+s*(sw+gap), sh=bh-4, sy=by+2;
-          drawSpine(sx, sy, sw, sh, words[wi++]);
-        }
+        for(let s=0;s<slots && s<keys.length;s++)                           // one spine per active book, left→right
+          drawBookSpine(x+pad+s*(sw+gap), by+2, sw, bh-4, keys[s]);
       }
       if(o.ladder){ g.fillStyle="#6f5436"; g.fillRect(x+w-6, y, 3, h); g.fillRect(x+w-12, y, 3, h);
         for(let r=0;r<o.h*2;r++) g.fillRect(x+w-12, y+2+r*(h/(o.h*2)), 9, 2); }   // ladder rails + rungs
@@ -2503,6 +2580,60 @@ function openDefModal(word){
   SFX.play("click");
 }
 function closeDefModal(){ document.getElementById("defmodal").classList.remove("open"); }
+
+/* ---------- BOOKSHELF VIEW (Nouns wing) ------------------- */
+let svShelf=null, svBook=null;   // the shelf being browsed, and the open book (null = the shelf's book list)
+function openShelfView(shelf){
+  if(!NOUN_BOOKS){ showToast("The shelves are still loading…"); return; }
+  state.shelfview=true; svShelf=shelf;
+  document.getElementById("sound-btn").style.display="none";
+  renderShelfList();
+  document.getElementById("shelfview").classList.add("open");
+  SFX.play("click");
+}
+function renderShelfList(){   // page 1: the shelf's two categories and their discovered books
+  svBook=null;
+  document.getElementById("sv-back").style.display="none";
+  const cats=[shelfCategory(svShelf.id,0), shelfCategory(svShelf.id,1)].filter(Boolean);
+  document.getElementById("sv-title").textContent="Bookshelf";
+  document.getElementById("sv-sub").textContent=cats.map(nbCap).join("  ·  ");
+  const active=(LIBRARY&&LIBRARY.activeByCat)||{};
+  let html="";
+  for(const cat of cats){
+    html+=`<div class="nb-cat">${esc(nbCap(cat))}</div>`;
+    const keys=active[cat]||[];
+    if(!keys.length){ html+=`<div class="nb-empty">No words shelved here yet.</div>`; continue; }
+    for(const key of keys){
+      const bk=NOUN_BOOKS.books[key];
+      const found=bk.children.reduce((n,c)=>n+(state.dex[c]?1:0),0);
+      html+=`<div class="nb-book" data-key="${esc(key)}"><span class="nm">${esc(bookName(key))}</span>`
+          + `<span class="ct">${found} / ${bk.children.length}</span></div>`;
+    }
+  }
+  const body=document.getElementById("sv-body"); body.innerHTML=html; body.scrollTop=0;
+  body.querySelectorAll("[data-key]").forEach(el=>el.onclick=()=>renderBookPage(el.dataset.key));
+}
+function renderBookPage(key){   // page 2: one book — found words (clickable) + undiscovered as blanks
+  svBook=key; const bk=NOUN_BOOKS.books[key];
+  document.getElementById("sv-back").style.display="";
+  const found=bk.children.filter(c=>state.dex[c]).length;
+  document.getElementById("sv-title").textContent=bookName(key);
+  document.getElementById("sv-sub").textContent=`found ${found} / ${bk.children.length}`;
+  let html='<div class="nb-chips">';
+  for(const c of bk.children)
+    html += state.dex[c] ? `<span class="nb-chip found" data-w="${esc(c)}">${esc(c)}</span>`
+                         : `<span class="nb-chip blank">?????</span>`;
+  html+="</div>";
+  const body=document.getElementById("sv-body"); body.innerHTML=html; body.scrollTop=0;
+  body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>openDefModal(el.dataset.w));
+  SFX.play("click");
+}
+function closeShelfView(){
+  state.shelfview=false; svShelf=null; svBook=null;
+  document.getElementById("shelfview").classList.remove("open");
+  document.getElementById("sound-btn").style.display="";
+  closeDefModal();
+}
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
 
 let checking=false;
@@ -2563,6 +2694,7 @@ async function checkWord(){
   if(!known){
     const before=unlockedLetters();
     state.dex[word]={ def:def||"A word in the dictionary.", found:Date.now(), pos };
+    if(LIBRARY) LIBRARY.bg=null;   // a new word may add a spine to the Nouns wing → rebake on next draw
     newly=[...unlockedLetters()].filter(l=>!before.has(l));
     dexTab=(word[0]||"?").toUpperCase();
     renderDex();
@@ -3024,6 +3156,9 @@ document.getElementById("bes-close").onclick=()=>{ closeBestiary(); SFX.play("cl
 document.getElementById("bestiary").onclick=e=>{ if(e.target.id==="bestiary") closeBestiary(); };  // tap backdrop to close
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
+document.getElementById("sv-close").onclick=()=>{ closeShelfView(); SFX.play("click"); };
+document.getElementById("sv-back").onclick=()=>{ renderShelfList(); SFX.play("click"); };
+document.getElementById("shelfview").onclick=e=>{ if(e.target.id==="shelfview") closeShelfView(); };  // tap backdrop to close
 document.getElementById("export-btn").onclick=()=>{ exportBackup(); SFX.play("click"); };
 // The label opens the OS picker natively; we just handle the chosen file.
 document.getElementById("import-file").onchange=e=>{
@@ -3046,7 +3181,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.shelfview;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -3062,11 +3197,14 @@ function syncTouchUI(){
   if(live){
     const inLib = state.room==="library";
     const sh=document.getElementById("tc-shop"), hs=document.getElementById("tc-house"),
-          dv=document.getElementById("tc-desk"), bk=document.getElementById("tc-book");
+          dv=document.getElementById("tc-desk"), bk=document.getElementById("tc-book"),
+          sf=document.getElementById("tc-shelf");
+    const atDesk=inLib&&nearLibraryDesk(), atBook=inLib&&nearLibraryBook();
     if(sh) sh.style.display = (!inLib && nearShop())        ? "" : "none";
     if(hs) hs.style.display = (!inLib && nearHouse())       ? "" : "none";
-    if(dv) dv.style.display = ( inLib && nearLibraryDesk()) ? "" : "none";
-    if(bk) bk.style.display = ( inLib && nearLibraryBook()) ? "" : "none";
+    if(dv) dv.style.display = ( atDesk)                     ? "" : "none";
+    if(bk) bk.style.display = ( atBook)                     ? "" : "none";
+    if(sf) sf.style.display = ( inLib && !atDesk && !atBook && nearLibraryShelf()) ? "" : "none";
   }
 }
 if(IS_TOUCH){
@@ -3102,6 +3240,7 @@ if(IS_TOUCH){
   tap("tc-house",()=>{ if(homeReady() && nearHouse()) enterLibrary(); });     // home: enter the library
   tap("tc-desk",()=>{ if(state.started && nearLibraryDesk()) openOverlay(); }); // library: desk → collection
   tap("tc-book",()=>{ if(state.started && nearLibraryBook()) openBook(); });    // library: lectern → mad-libs
+  tap("tc-shelf",()=>{ if(state.started){ const s=nearLibraryShelf(); if(s) openShelfView(s); } }); // library: shelf → books
   tap("tc-dex",()=>{ if(homeReady()) openBestiary(); });
   tap("tc-help",toggleHelp);
 }
@@ -3372,7 +3511,7 @@ function overworldRunning() {   // scheduler active during gameplay (off on titl
   } catch (e) { return false; }
 }
 function overworldDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview); } catch (e) { return false; }
 }
 function overworldFade(to) {     // smooth ~120ms master-gain ramp (avoids clicks)
   const m = overworldTheme.master, c = overworldTheme.ctx;
