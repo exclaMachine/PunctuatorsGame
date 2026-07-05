@@ -318,7 +318,7 @@
     border:3px solid var(--edge);box-shadow:2px 2px 0 rgba(0,0,0,.35);
     will-change:transform;pointer-events:none}
   /* Action cluster — bottom-left */
-  #tact{position:absolute;left:14px;bottom:14px;display:flex;gap:8px;align-items:flex-end}
+  #tact{position:absolute;left:14px;bottom:14px;display:flex;gap:26px;align-items:flex-end}   /* wide gap so util buttons aren't hit instead of ATK */
   #tact .atk{width:78px;height:78px;font-size:13px;background:var(--inkblue);color:#f4f0e6}
   #tact .atk:active{background:#46578f}
   #tact .util-grid{display:grid;grid-template-columns:52px 52px;grid-auto-rows:52px;gap:6px}
@@ -327,7 +327,7 @@
   @media(max-width:560px){
     #joystick{right:8px;bottom:8px;width:112px;height:112px}
     #joy-thumb{width:50px;height:50px}
-    #tact{left:8px;bottom:8px;gap:6px}
+    #tact{left:8px;bottom:8px;gap:18px}
     #tact .atk{width:62px;height:62px;font-size:11px}
     #tact .util-grid{grid-template-columns:44px 44px;grid-auto-rows:44px;gap:5px}
     #tact .util{width:44px;height:44px;font-size:7px}
