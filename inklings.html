@@ -1025,14 +1025,34 @@ const FOOT_DY=-10, FOOT_HW=8, FOOT_HH=4;
 // Solid footprints on the home (outdoor) screen. STALL = the shop counter (left); HOUSE = the Library — walk
 // up + E to go inside (the writing desk + book lectern live in the library now). Can't walk through them.
 const STALL = (()=>{ const cx=150, cy=H/2-6; return { cx, cy, x:cx-58, y:cy-6, w:116, h:30 }; })();
-const HOUSE = (()=>{ const cx=528, cy=214, w=312, h=208; return { cx, cy, w, h, x:cx-w/2, y:cy-h/2,
-  doorX:cx, doorY:cy+h/2 }; })();   // right-ish of the screen (where the book used to be); front door faces down
+const HOUSE = (()=>{
+  const cx=528, cy=214, w=312, h=208, x=cx-w/2, y=cy-h/2;
+  // Collision follows the sprite's silhouette (native 192×128 → drawn at w×h, so scale S=w/192). It's a set
+  // of rects, not the full box: inset from the transparent roof margins, and the central door/window section
+  // comes down farther than the side wings, with the DOOR COLUMN (and bottom strip) left walkable so you can
+  // walk up to it. Coords below are native px on the 192×128 sprite.
+  const S=w/192, R=(a,b,c,d)=>({ x:x+a*S, y:y+b*S, w:(c-a)*S, h:(d-b)*S });
+  // The door sits LEFT of centre on the sprite → native x ~74–98. The central door/window section comes down
+  // farther than the side wings; the door column + the strip below the wings stay walkable so you can walk in.
+  const solids=[
+    R(12,  8, 180,  64),   // roof + upper walls (inset on top + both sides)
+    R(16, 64,  66, 118),   // left wing
+    R(126,64, 176, 118),   // right wing
+    R(66, 64, 126, 100),   // central window band (spans above the door)
+    R(66,100,  74, 122),   // wall left of the door
+    R(98,100, 126, 122)    // wall right of the door
+  ];
+  const doorRect=R(74,102,98,128);              // walkable doorway threshold — step on it to enter the library
+  return { cx, cy, w, h, x, y, doorX:x+86*S, doorY:y+116*S, doorRect, solids };
+})();
+function houseBlocks(px,py){ return HOUSE.solids.some(r=>overlapsSolid(r,px,py)); }
+function onHouseDoor(px,py){ const d=HOUSE.doorRect, fy=py+FOOT_DY; return px>d.x && px<d.x+d.w && fy>d.y && fy<d.y+d.h; }
 function overlapsSolid(r,px,py){
   const fy=py+FOOT_DY;
   return px+FOOT_HW > r.x && px-FOOT_HW < r.x+r.w && fy+FOOT_HH > r.y && fy-FOOT_HH < r.y+r.h;
 }
 function canStand(sc,px,py){
-  if(sc.isBase && (overlapsSolid(STALL,px,py) || overlapsSolid(HOUSE,px,py))) return false;
+  if(sc.isBase && (overlapsSolid(STALL,px,py) || houseBlocks(px,py))) return false;
   const fy=py+FOOT_DY;
   return !blockedAt(sc,px-FOOT_HW,fy-FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy-FOOT_HH)
       && !blockedAt(sc,px-FOOT_HW,fy+FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy+FOOT_HH);
@@ -1052,7 +1072,7 @@ function makeHomeLetter(rng, tiles){
   let x=W/2, y=H/2+TILE*2;
   for(let i=0;i<40;i++){
     const p=walkableSpawn(rng, tiles); x=p.x; y=p.y;
-    if(!overlapsSolid(STALL,x,y) && !overlapsSolid(HOUSE,x,y)
+    if(!overlapsSolid(STALL,x,y) && !houseBlocks(x,y)
        && Math.hypot(x-HOUSE.doorX, y-(HOUSE.doorY+34)) > 48) break;   // not on furniture, not on the house doorway
   }
   return { kind:"letter", x, y, letter:weightedLetter(rng, 0), hp:CREATURE_HP, maxhp:CREATURE_HP, vx:0, vy:0, wander:0, flash:0 };
@@ -1270,9 +1290,9 @@ function enterLibrary(){   // in through the house door → arrive at the entran
   if(!LIBRARY || !LIBRARY.screen){ showToast("The library is still loading…"); return; }
   enterLibraryAt(LIBRARY.entrancePx.x, LIBRARY.entrancePx.y-26, {x:0,y:-1}); showToast("The Library.");
 }
-function exitLibrary(){   // out the entrance mat → outdoor home, beside the house
+function exitLibrary(){   // out the entrance mat → outdoor home, just below the house door (clear of the doorway trigger)
   trans=null; state.room=null; state.screen.sx=0; state.screen.sy=0;
-  const p=state.player; p.x=HOUSE.doorX; p.y=HOUSE.doorY+34; p.face={x:0,y:1}; p.moving=false;
+  const p=state.player; p.x=HOUSE.doorX; p.y=HOUSE.y+HOUSE.h+20; p.face={x:0,y:1}; p.moving=false;
   SFX.play("home");
 }
 // Spine colour: reuse the POS reward colours; function/unknown words get a stable hashed muted colour.
@@ -1459,6 +1479,8 @@ function update(dt){
     else if(p.x>W) { if(s.sx< R) goScreen( 1,0,"left");  else { p.x=W-2; edgeBump(); } }
     else if(p.y<0) { if(s.sy>-R) goScreen(0,-1,"bottom");else { p.y=2;   edgeBump(); } }
     else if(p.y>H) { if(s.sy< R) goScreen(0, 1,"top");   else { p.y=H-2; edgeBump(); } }
+    // walk into the house doorway → enter the library (no key press needed, like the exit mat inside)
+    if(sc.isBase && LIBRARY && LIBRARY.screen && onHouseDoor(p.x,p.y)){ enterLibrary(); return; }
     // touch attack button: hold to keep swinging (doAttack is cooldown-gated)
     if(attackHeld) doAttack();
   }
