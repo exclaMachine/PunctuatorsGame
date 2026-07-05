@@ -478,9 +478,9 @@
         <div class="ctrl-grid">
           <span><b>WASD</b> / <b>↑ ↓ ← →</b></span><span>Move</span>
           <span><b>Space</b></span><span>Attack</span>
-          <span><b>H</b></span><span>Teleport home to your bench</span>
-          <span><b>E</b></span><span>Use the bench (when standing near it)</span>
-          <span><b>Tab</b></span><span>Open the library</span>
+          <span><b>H</b></span><span>Teleport home — to your desk in the library</span>
+          <span><b>E</b></span><span>Use what you're near: shop, the house (enter library), the desk, the book</span>
+          <span><b>Tab</b></span><span>Open the collection list</span>
           <span><b>B</b></span><span>Open the bestiary (or tap the 🐾 button)</span>
           <span><b>1</b> / <b>2</b> / <b>3</b></span><span>Drink a Size / Speed / Reveal potion (or tap its HUD button)</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
@@ -514,12 +514,12 @@
       <div class="book">
         <h1 style="margin-bottom:14px">Inklings</h1>
         <p>You're a collector of words which you use to repair a book.
-        Hunt the <b>letter-creatures</b>, gather their letters,
-        then return to your <b>bench</b> to spell words and fill your library.</p>
+        Hunt the <b>letter-creatures</b>, gather their letters, then go to your
+        <b>library</b> (the house by the shop) and spell words at the desk to fill your shelves.</p>
         <p class="kbd-only" style="color:var(--ink-soft);font-size:13px">
-        <b>WASD</b> move &nbsp;·&nbsp; <b>Space</b> attack &nbsp;·&nbsp; <b>H</b> home to bench &nbsp;·&nbsp; <b>E</b> use bench</p>
+        <b>WASD</b> move &nbsp;·&nbsp; <b>Space</b> attack &nbsp;·&nbsp; <b>H</b> home to your desk &nbsp;·&nbsp; <b>E</b> use / enter</p>
         <p class="touch-only" style="color:var(--ink-soft);font-size:13px">
-        <b>D-pad</b> (bottom-right) to move &nbsp;·&nbsp; <b>ATK</b> to attack &nbsp;·&nbsp; <b>HOME / DESK</b> on the left</p>
+        <b>D-pad</b> (bottom-right) to move &nbsp;·&nbsp; <b>ATK</b> to attack &nbsp;·&nbsp; <b>HOME / LIB</b> on the left</p>
         <button class="primary" id="start-btn" style="margin-top:6px;padding:10px 22px;font-size:15px">Begin</button>
       </div>
     </div>
@@ -533,9 +533,10 @@
           <button class="tc-btn util" id="tc-home" aria-label="Home to bench">HOME</button>
           <button class="tc-btn util" id="tc-help" aria-label="Controls">?</button>
           <button class="tc-btn util" id="tc-dex" aria-label="Bestiary">🐾</button>
-          <!-- DESK / SHOP / BOOK are contextual: only shown when standing by that structure (see syncTouchUI) -->
-          <button class="tc-btn util" id="tc-desk" aria-label="Open desk">DESK</button>
+          <!-- SHOP / HOUSE (home) and DESK / BOOK (inside the library) are contextual: only shown when standing by that structure (see syncTouchUI) -->
           <button class="tc-btn util" id="tc-shop" aria-label="Open shop">SHOP</button>
+          <button class="tc-btn util" id="tc-house" aria-label="Enter library">LIB</button>
+          <button class="tc-btn util" id="tc-desk" aria-label="Use desk">DESK</button>
           <button class="tc-btn util" id="tc-book" aria-label="Open book">BOOK</button>
         </div>
       </div>
@@ -583,6 +584,11 @@ const playerImg = new Image();
 let playerReady = false;
 playerImg.onload = ()=>{ playerReady=true; };
 playerImg.src = "./Lumberjack_Jack.png";
+// The house on the home screen = the Library entrance (192×128 pixel-art PNG; falls back to a drawn house).
+const houseImg = new Image();
+let houseReady = false;
+houseImg.onload = ()=>{ houseReady=true; };
+houseImg.src = "./House_5_Wood_Red_Red.png";
 const PLAYER_FRAME=64, PLAYER_COLS=6, PLAYER_DRAW=80;
 const ATTACK_ANIM=0.30;                    // attack animation length (s)
 const WALK_FRAME=0.09, IDLE_FRAME=0.16;    // seconds per animation frame
@@ -817,6 +823,36 @@ fetch("data/creatures.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>
   RESOURCE_POOL=(data.creatures||[]).filter(c=>c.spawn && c.spawn.weight>0 && creatureEnabled(c));
   onCreaturesLoaded();
 }).catch(()=>{ console.warn("Inklings: couldn't load data/creatures.json — resource-creatures disabled."); });
+
+// --- Library room (roadmap #4) --------------------------------------------------
+// A separate walkable screen (state.room==="library"), loaded from data/rooms/library.json like the other
+// data files. It gets its OWN tile grid (room.cols×room.rows, non-square cells filling the 720×528 canvas)
+// used purely for collision via the sc-aware blockedAt/canStand; drawing is custom (drawLibraryRoom).
+let LIBRARY=null;
+fetch("data/rooms/library.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{ buildLibrary(data.room); })
+  .catch(()=>{ console.warn("Inklings: couldn't load data/rooms/library.json — Library room disabled."); });
+function buildLibrary(room){
+  const cw=W/room.cols, ch=H/room.rows;                 // 24 × 22 for a 30×24 room on 720×528
+  const tiles=[]; for(let r=0;r<room.rows;r++) tiles.push(new Array(room.cols).fill(T_GRASS));
+  for(const o of room.objects){                          // solid (non-walkable) objects block movement
+    if(o.solid && !o.walkable)
+      for(let r=o.row;r<o.row+o.h;r++) for(let c=o.col;c<o.col+o.w;c++)
+        if(r>=0&&r<room.rows&&c>=0&&c<room.cols) tiles[r][c]=T_ROCK;
+  }
+  const ent=room.entrance;
+  const interactPt=(id)=>{ const o=room.objects.find(o=>o.id===id); if(!o) return null;
+    return { cx:(o.col+o.w/2)*cw, cy:(o.row+o.h/2)*ch, standX:(o.col+o.w/2)*cw, standY:(o.row+o.h)*ch+14 }; };
+  LIBRARY={
+    room, cw, ch,
+    screen:{ tiles, cw, ch, isLibrary:true, isBase:false, creatures:[], pickups:[], slicks:[], bg:null, waterTiles:[] },
+    entranceRect:{ x:ent.col*cw, y:ent.row*ch, w:ent.w*cw, h:ent.h*ch },
+    entrancePx:{ x:(ent.col+ent.w/2)*cw, y:(ent.row+ent.h/2)*ch },
+    desk: interactPt("desk"),      // the writing desk (opens the collection/bench)
+    book: interactPt("book"),      // the book lectern (opens mad-libs)
+    bg:null
+  };
+  LIBRARY.deskStand={ x:LIBRARY.desk.standX, y:LIBRARY.desk.standY };   // where H / faint / new-day drop you
+}
 // Resolve a defeat into concrete drops (reference resolver from the spec). rng is any ()=>[0,1).
 function rollDrops(cre, rng){
   const t=cre.drops.table, out=[];
@@ -889,7 +925,8 @@ const state = {
   resources:{},                 // book-binding material id -> count, from resource-creature drops (persist)
   bestiary:{},                  // creature id -> {kills, seen} — unlocks bestiary entries (persist)
   fx:[],                        // floating texts
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false,
+  room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
 state.day = todayStr(); state.daySeed = dayHash(state.day);   // set before any screen is generated
@@ -977,24 +1014,25 @@ function genTiles(sx,sy,isBase){
 // Is the terrain under a world point solid (blocks movement)? Off-screen is not blocked (edge transitions handle it).
 function blockedAt(sc,px,py){
   if(!sc.tiles || px<0 || py<0 || px>=W || py>=H) return false;
-  return !walkType(sc.tiles[(py/TS)|0][(px/TS)|0]);
+  const cw=sc.cw||TS, ch=sc.ch||TS;   // library uses its own cell size (30×24 grid); field screens default to TS
+  return !walkType(sc.tiles[(py/ch)|0][(px/cw)|0]);
 }
 // Collide on a small box at the player's FEET. The visible feet sit a little ABOVE p.y, so the box is
 // centred at p.y+FOOT_DY (negative) and kept thin — that way the feet touch the near edge of water/rock
 // evenly whether you walk into it from above or below, instead of overlapping one side and gapping the
 // other. FOOT_DY is the knob: more negative = feet higher up the sprite.
 const FOOT_DY=-10, FOOT_HW=8, FOOT_HH=4;
-// Solid footprints on the home screen (the player collides with them). DESK = writing desk (centre),
-// STALL = the shop counter (left), LECTERN = the book/mad-libs stand (right). Can't walk through them.
-const DESK    = { x: W/2-72, y: H/2-26, w: 144, h: 48 };
-const STALL   = (()=>{ const cx=150, cy=H/2-6; return { cx, cy, x:cx-58, y:cy-6, w:116, h:30 }; })();
-const LECTERN = (()=>{ const cx=570, cy=H/2-18; return { cx, cy, x:cx-30, y:cy-2, w:60,  h:40 }; })();   // up 12px vs desk/stall so the book lines up
+// Solid footprints on the home (outdoor) screen. STALL = the shop counter (left); HOUSE = the Library — walk
+// up + E to go inside (the writing desk + book lectern live in the library now). Can't walk through them.
+const STALL = (()=>{ const cx=150, cy=H/2-6; return { cx, cy, x:cx-58, y:cy-6, w:116, h:30 }; })();
+const HOUSE = (()=>{ const cx=528, cy=214, w=312, h=208; return { cx, cy, w, h, x:cx-w/2, y:cy-h/2,
+  doorX:cx, doorY:cy+h/2 }; })();   // right-ish of the screen (where the book used to be); front door faces down
 function overlapsSolid(r,px,py){
   const fy=py+FOOT_DY;
   return px+FOOT_HW > r.x && px-FOOT_HW < r.x+r.w && fy+FOOT_HH > r.y && fy-FOOT_HH < r.y+r.h;
 }
 function canStand(sc,px,py){
-  if(sc.isBase && (overlapsSolid(DESK,px,py) || overlapsSolid(STALL,px,py) || overlapsSolid(LECTERN,px,py))) return false;
+  if(sc.isBase && (overlapsSolid(STALL,px,py) || overlapsSolid(HOUSE,px,py))) return false;
   const fy=py+FOOT_DY;
   return !blockedAt(sc,px-FOOT_HW,fy-FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy-FOOT_HH)
       && !blockedAt(sc,px-FOOT_HW,fy+FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy+FOOT_HH);
@@ -1008,14 +1046,14 @@ function makeCreature(rng, dist, tiles){
   const p=walkableSpawn(rng, tiles);
   return { kind:"letter", x:p.x, y:p.y, letter:weightedLetter(rng, dist), hp:CREATURE_HP, maxhp:CREATURE_HP, vx:0, vy:0, wander:0, flash:0 };
 }
-// The home-base tutorial letter-creature: a walkable spot clear of the desk/stall/lectern and the player's
-// spawn point, so it reads clearly as "this is an inkling" the moment a new day begins.
+// The home-base tutorial letter-creature: a walkable spot clear of the shop/house and the door the player
+// arrives at, so it reads clearly as "this is an inkling" the moment a new day begins.
 function makeHomeLetter(rng, tiles){
   let x=W/2, y=H/2+TILE*2;
   for(let i=0;i<40;i++){
     const p=walkableSpawn(rng, tiles); x=p.x; y=p.y;
-    if(!overlapsSolid(DESK,x,y) && !overlapsSolid(STALL,x,y) && !overlapsSolid(LECTERN,x,y)
-       && Math.hypot(x-W/2, y-(H/2+TILE)) > 48) break;   // not on furniture, not on top of the player
+    if(!overlapsSolid(STALL,x,y) && !overlapsSolid(HOUSE,x,y)
+       && Math.hypot(x-HOUSE.doorX, y-(HOUSE.doorY+34)) > 48) break;   // not on furniture, not on the house doorway
   }
   return { kind:"letter", x, y, letter:weightedLetter(rng, 0), hp:CREATURE_HP, maxhp:CREATURE_HP, vx:0, vy:0, wander:0, flash:0 };
 }
@@ -1095,13 +1133,13 @@ function goScreen(dsx,dsy,edge){
 // Roll the world over to a new calendar day: empty satchel, forget today's captures, regenerate the
 // whole (date-seeded) map, and wake up back home. The collection (dex) + unlocks always persist.
 function startNewDay(){
-  trans=null;                       // cancel any in-progress slide
+  trans=null;
   state.day=todayStr(); state.daySeed=dayHash(state.day);
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
   state.captured=new Set(); state.visited=new Set(); state.screens=new Map();
   state.screen={sx:0,sy:0};
-  state.player.x=W/2; state.player.y=H/2+TILE; state.player.face={x:0,y:1};
   state.player.hearts=PLAYER_MAX_HEARTS; state.player.hurtT=0; state.player.healT=0;
+  goHome();                         // wake up at the library desk (home)
   updateTrayHud(); saveNow();
   showToast("A new day dawns — a fresh map awaits.");
 }
@@ -1208,31 +1246,59 @@ addEventListener("keydown",e=>{
 });
 addEventListener("keyup",e=>{ keys[e.key.toLowerCase()]=false; });
 
-function teleportHome(){
-  trans=null;                       // cancel any in-progress slide
-  state.screen.sx=0; state.screen.sy=0;
-  state.player.x=W/2; state.player.y=H/2+TILE+10;
-  showToast("Back at your bench. Press E.");
-  SFX.play("home");
-}
-function nearBench(){
-  return state.screen.sx===0 && state.screen.sy===0 &&
-    Math.hypot(state.player.x-W/2, state.player.y-(H/2-6))<78;
+function teleportHome(){ goHome(); showToast("Back at your desk. Press E."); }
+// "Home" is now the Library (the writing desk lives inside it) — H / faint / new-day drop you at the desk.
+// Falls back to the outdoor home screen if the room JSON hasn't loaded yet.
+function goHome(){
+  trans=null;
+  if(LIBRARY && LIBRARY.screen){ enterLibraryAt(LIBRARY.deskStand.x, LIBRARY.deskStand.y, {x:0,y:-1}); }
+  else { state.room=null; state.screen.sx=0; state.screen.sy=0; const p=state.player; p.x=W/2; p.y=H/2+TILE+10; p.face={x:0,y:1}; }
 }
 function nearShop(){
-  return state.screen.sx===0 && state.screen.sy===0 &&
+  return state.room===null && state.screen.sx===0 && state.screen.sy===0 &&
     Math.hypot(state.player.x-STALL.cx, state.player.y-STALL.cy)<80;
 }
-function nearLectern(){
-  return state.screen.sx===0 && state.screen.sy===0 &&
-    Math.hypot(state.player.x-LECTERN.cx, state.player.y-LECTERN.cy)<80;
+function nearHouse(){   // the Library entrance (house) on the outdoor home screen
+  return state.room===null && state.screen.sx===0 && state.screen.sy===0 &&
+    Math.hypot(state.player.x-HOUSE.doorX, state.player.y-HOUSE.doorY)<80;
 }
-// E interacts with whatever you're standing by (each structure is off in its own spot).
-function tryUseBench(){ if(nearLectern()) openBook(); else if(nearShop()) openShop(); else if(nearBench()) openOverlay(); }
+function nearLibraryDesk(){ return state.room==="library" && LIBRARY && LIBRARY.desk && Math.hypot(state.player.x-LIBRARY.desk.cx, state.player.y-LIBRARY.desk.cy)<64; }
+function nearLibraryBook(){ return state.room==="library" && LIBRARY && LIBRARY.book && Math.hypot(state.player.x-LIBRARY.book.cx, state.player.y-LIBRARY.book.cy)<64; }
+// Enter/leave the Library room (a cut, not the field-grid slide). state.room is session-only.
+function enterLibraryAt(x,y,face){ trans=null; state.room="library"; LIBRARY.bg=null; const p=state.player; p.x=x; p.y=y; p.face=face; p.moving=false; SFX.play("home"); }
+function enterLibrary(){   // in through the house door → arrive at the entrance mat
+  if(!LIBRARY || !LIBRARY.screen){ showToast("The library is still loading…"); return; }
+  enterLibraryAt(LIBRARY.entrancePx.x, LIBRARY.entrancePx.y-26, {x:0,y:-1}); showToast("The Library.");
+}
+function exitLibrary(){   // out the entrance mat → outdoor home, beside the house
+  trans=null; state.room=null; state.screen.sx=0; state.screen.sy=0;
+  const p=state.player; p.x=HOUSE.doorX; p.y=HOUSE.doorY+34; p.face={x:0,y:1}; p.moving=false;
+  SFX.play("home");
+}
+// Spine colour: reuse the POS reward colours; function/unknown words get a stable hashed muted colour.
+function spineColor(word){
+  const pos=(state.dex[word]&&state.dex[word].pos)||[];
+  if(pos.includes("noun")) return "#c89b3c";
+  if(pos.includes("adjective")) return "#7a4a9a";
+  if(pos.includes("verb")) return "#3b4a7a";
+  if(pos.includes("adverb")) return "#5b7a4b";
+  let h=0; for(let i=0;i<word.length;i++) h=(h*31+word.charCodeAt(i))>>>0;
+  return ["#8a5a34","#5f5872","#3b6ea5","#9a3b2e","#6f5436"][h%5];
+}
+// E interacts with whatever you're standing by.
+function tryUseBench(){
+  if(state.room==="library"){
+    if(nearLibraryDesk()) openOverlay();       // the desk → collection/bench
+    else if(nearLibraryBook()) openBook();     // the lectern → mad-libs
+    return;
+  }
+  if(nearShop()) openShop();                   // outdoor home: shop or the house (library)
+  else if(nearHouse()) enterLibrary();
+}
 
 /* ---------- COMBAT ---------------------------------------- */
 function doAttack(){
-  if(trans) return;                 // no attacking mid screen-slide
+  if(trans || state.room) return;   // no attacking mid screen-slide or inside the library
   const p=state.player; if(p.atkCd>0) return;
   p.atkCd=ATTACK.cd; p.atkAnim=ATTACK_ANIM;
   SFX.play("swing");
@@ -1306,12 +1372,9 @@ function hurtPlayer(fx,fy){
 }
 function faint(){
   const p=state.player;
-  trans=null;                       // cancel any in-progress slide
-  state.screen.sx=0; state.screen.sy=0;
-  p.x=W/2; p.y=H/2+TILE+10; p.face={x:0,y:1};
+  goHome();                         // recover at the library desk (home)
   p.hearts=PLAYER_MAX_HEARTS; p.hurtT=1.5; p.healT=0;
   showToast("You blanked out! Rest recovered you at home.");
-  SFX.play("home");
 }
 // Total letter-creatures across the whole day's bounded map. Mirrors genScreen's per-screen count
 // (the first rng() draw seeds it the same way), so we can know the day's total without visiting every
@@ -1355,8 +1418,9 @@ function update(dt){
   p.animT=(p.animT||0)+dt;     // drives idle/walk sprite cycling
   p.moving=false;
   if(state.started && state.day!==todayStr()) startNewDay();   // rolled past midnight → fresh map
-  const sc=curScreen();
   if(p.hurtT>0) p.hurtT-=dt;                       // invulnerability window after a hit
+  if(state.room==="library"){ updateLibrary(p, dt); return; }  // Library room has its own (simpler) update
+  const sc=curScreen();
   if(sc.isBase && p.hearts<PLAYER_MAX_HEARTS){     // rest at home to recover hearts
     p.healT+=dt; if(p.healT>=HEAL_SEC){ p.healT=0; p.hearts++; SFX.play("known"); }
   } else p.healT=0;
@@ -1446,12 +1510,11 @@ function update(dt){
     }
   }
 
-  // bench/shop hint — keyboard only (touch uses the contextual DESK/SHOP buttons instead of an E prompt)
+  // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
   const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen;
-  if(hintReady && nearLectern()){ hint.textContent="Press E to open the book"; hint.classList.add("show"); }
+  if(hintReady && nearHouse()){ hint.textContent="Press E to enter the library"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
-  else if(hintReady && nearBench()){ hint.textContent="Press E to use your bench"; hint.classList.add("show"); }
   else hint.classList.remove("show");
 
   // active potion timers
@@ -1462,6 +1525,47 @@ function update(dt){
   // if you load into an already-cleared day, greet you with the "come back tomorrow" notice (once/day)
   if(state.started) maybeNotifyCleared();
 
+  syncTouchUI();
+}
+
+/* ---------- LIBRARY ROOM UPDATE --------------------------- */
+// Simpler than the field update: bounded room (no edge transitions / creatures / pickups), same movement +
+// collision (canStand against the library grid). Step onto the entrance mat to return home.
+function updateLibrary(p, dt){
+  const sc=LIBRARY.screen;
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && state.started){
+    let mx=0,my=0;
+    if(keys["arrowup"]||keys["w"]) my-=1;
+    if(keys["arrowdown"]||keys["s"]) my+=1;
+    if(keys["arrowleft"]||keys["a"]) mx-=1;
+    if(keys["arrowright"]||keys["d"]) mx+=1;
+    if(joy.active && Math.hypot(joy.x,joy.y)>JOY_DEAD){ mx=joy.x; my=joy.y; }
+    if(mx||my){
+      const len=Math.hypot(mx,my); mx/=len; my/=len;
+      p.face.x=mx; p.face.y=my; p.moving=true;
+      const spd=p.speed*(state.buffs.speed>0?SPEED_MULT:1);
+      const nx=p.x+mx*spd*dt, ny=p.y+my*spd*dt;
+      if(canStand(sc,nx,p.y)) p.x=nx;
+      if(canStand(sc,p.x,ny)) p.y=ny;
+    }
+    p.x=Math.max(6,Math.min(W-6,p.x)); p.y=Math.max(6,Math.min(H-6,p.y));   // room is bounded
+    // walk onto the entrance mat → back home
+    const er=LIBRARY.entranceRect, fy=p.y+FOOT_DY;
+    if(p.x>er.x && p.x<er.x+er.w && fy>er.y-4 && fy<er.y+er.h+10){ exitLibrary(); return; }
+  }
+  // resting at home (the library) recovers hearts over time — same as the outdoor base used to
+  if(p.hearts<PLAYER_MAX_HEARTS){ p.healT+=dt; if(p.healT>=HEAL_SEC){ p.healT=0; p.hearts++; SFX.play("known"); } }
+  else p.healT=0;
+  // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
+  const hint=document.getElementById("hint");
+  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen;
+  if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use your desk"; hint.classList.add("show"); }
+  else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open the book"; hint.classList.add("show"); }
+  else hint.classList.remove("show");
+  // active potion timers keep ticking
+  for(const t of POTION_TYPES){
+    if(state.buffs[t]>0){ state.buffs[t]-=dt; if(state.buffs[t]<=0){ state.buffs[t]=0; updateRewardHud(); showToast(POTION_LABEL[t]+" potion wore off."); } }
+  }
   syncTouchUI();
 }
 
@@ -1572,7 +1676,7 @@ function renderWorld(sc, ox, oy){
   ensureBg(sc); ctx.drawImage(sc.bg,0,0);
   const tnow=Date.now();
   for(const wt of sc.waterTiles) drawWaterAnim(wt[0],wt[1],tnow);
-  if(sc.isBase){ drawBench(); drawStall(); drawLectern(); }
+  if(sc.isBase){ drawStall(); drawHouse(); }   // outdoor home: shop + the house (Library entrance)
   if(sc.slicks) for(const s of sc.slicks) drawSlick(s, tnow);
   if(sc.pickups) for(const pk of sc.pickups) drawPickup(pk, tnow);
   for(const c of sc.creatures){
@@ -1583,6 +1687,12 @@ function renderWorld(sc, ox, oy){
   ctx.restore();
 }
 function render(){
+  if(state.room==="library"){          // Library room: baked room image + player + minimal HUD
+    drawLibraryRoom();
+    drawPlayer();
+    if(state.started){ drawBuffs(); drawHearts(); }
+    return;
+  }
   const sc=curScreen();
   if(trans){
     // slide: old screen exits toward -dir, new screen enters from +dir; the player rides the new screen in.
@@ -1740,34 +1850,6 @@ function pxBox(x,y,w,h,fill,bw){ bw=bw||2;
   ctx.fillStyle="#26233a"; ctx.fillRect(x-bw,y-bw,w+bw*2,h+bw*2);
   ctx.fillStyle=fill;       ctx.fillRect(x,y,w,h);
 }
-function drawBench(){
-  const cx=W/2, cy=H/2-6;
-  ctx.save();
-  ctx.imageSmoothingEnabled=false;
-  // square pixel mat under the desk (flat fill + hard ink frame, no rounding)
-  ctx.fillStyle="rgba(59,74,122,.15)"; ctx.fillRect(cx-94,cy-58,188,150);
-  ctx.fillStyle="rgba(38,35,58,.18)";
-  ctx.fillRect(cx-94,cy-58,188,3); ctx.fillRect(cx-94,cy+89,188,3);
-  ctx.fillRect(cx-94,cy-58,3,150); ctx.fillRect(cx+91,cy-58,3,150);
-  // hard offset drop shadow (no blur)
-  ctx.fillStyle="rgba(38,35,58,.30)"; ctx.fillRect(cx-66,cy-14,148,52);
-  // desk body: darker front panel, then lighter top slab — both with chunky ink borders
-  pxBox(cx-72, cy,    144, 28, "#6f5436");
-  pxBox(cx-72, cy-20, 144, 22, "#8a6a44");
-  // a couple of darker wood-grain lines across the slab
-  ctx.fillStyle="#74572f"; ctx.fillRect(cx-58,cy-14,116,2); ctx.fillRect(cx-58,cy-6,116,2);
-  // parchment sheet with ink writing lines
-  pxBox(cx-22, cy-34, 44, 30, "#efe6cf");
-  ctx.fillStyle="#3b4a7a"; for(let i=0;i<3;i++) ctx.fillRect(cx-15, cy-28+i*7, 30, 2);
-  // ink pot (gold rim) + quill
-  pxBox(cx+28, cy-22, 14, 16, "#2f2a44");
-  ctx.fillStyle="#c89b3c"; ctx.fillRect(cx+28, cy-22, 14, 3);
-  ctx.fillStyle="#e3d8bd"; ctx.fillRect(cx+33, cy-36, 3, 16);
-  // BENCH label
-  ctx.fillStyle="#26233a"; ctx.font="9px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
-  ctx.fillText("BENCH", cx, cy-44);
-  ctx.restore();
-}
 // The shop stall: a wooden market counter with a striped awning + a coin on the counter.
 function drawStall(){
   const cx=STALL.cx, cy=STALL.cy;
@@ -1788,22 +1870,124 @@ function drawStall(){
   ctx.fillText("SHOP", cx, cy-54);
   ctx.restore();
 }
-// The book lectern (mad-libs "restore the chapter"): a pedestal with an open book on a slanted rest.
-function drawLectern(){
-  const cx=LECTERN.cx, cy=LECTERN.cy;
-  ctx.save();
-  ctx.imageSmoothingEnabled=false;
-  ctx.fillStyle="rgba(38,35,58,.30)"; ctx.fillRect(cx-30,cy-2,64,44);   // shadow
-  pxBox(cx-10, cy+2,  20, 28, "#6f5436");                                // post
-  pxBox(cx-28, cy+30, 56, 8,  "#5a4630");                                // base
-  pxBox(cx-30, cy-20, 60, 22, "#8a6a44");                                // slanted book rest
-  ctx.fillStyle="#efe6cf"; ctx.fillRect(cx-26,cy-18,24,16); ctx.fillRect(cx+2,cy-18,24,16);   // open pages
-  ctx.fillStyle="#26233a"; ctx.fillRect(cx-1,cy-18,2,16);               // spine
-  ctx.fillStyle="#c8b48a";                                              // page lines
-  for(let i=0;i<3;i++){ ctx.fillRect(cx-23,cy-14+i*4,18,1); ctx.fillRect(cx+5,cy-14+i*4,18,1); }
+// The house on the home screen = the Library entrance. Blits House_5_Wood_Red_Red.png (pixel-crisp), with a
+// drawn fallback if the PNG hasn't loaded. Walk up to the front door + E to go inside.
+function drawHouse(){
+  const x=HOUSE.x, y=HOUSE.y, w=HOUSE.w, h=HOUSE.h, cx=HOUSE.cx;
+  ctx.save(); ctx.imageSmoothingEnabled=false;
+  if(houseReady){
+    ctx.drawImage(houseImg, x, y, w, h);
+  } else {                                                                    // fallback: a simple red house
+    pxBox(x+8, y+h*0.42, w-16, h*0.55, "#a34a3a");                           // body
+    ctx.fillStyle="#7a2f28"; ctx.beginPath(); ctx.moveTo(x+2,y+h*0.44); ctx.lineTo(cx,y+2); ctx.lineTo(x+w-2,y+h*0.44); ctx.fill();  // roof
+    pxBox(cx-11, y+h-26, 22, 26, "#3a2f45");                                  // door
+    ctx.fillStyle="#c89b3c"; ctx.fillRect(cx+4, y+h-14, 3, 4);               // handle
+  }
   ctx.fillStyle="#26233a"; ctx.font="9px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
-  ctx.fillText("BOOK", cx, cy-30);
+  ctx.fillText("LIBRARY", cx, y-8);
   ctx.restore();
+}
+/* ---------- LIBRARY ROOM RENDER --------------------------- */
+// Bake the whole static room (floors + objects + book-spines from state.dex) into an offscreen canvas once
+// per entry (LIBRARY.bg, invalidated by enterLibrary so new words show). Structured by object type so real
+// tileset sprites can replace the placeholder pixel rects later.
+function ensureLibraryBg(){
+  if(LIBRARY.bg) return;
+  const room=LIBRARY.room, cw=LIBRARY.cw, ch=LIBRARY.ch;
+  const cv2=document.createElement("canvas"); cv2.width=W; cv2.height=H;
+  const g=cv2.getContext("2d"); g.imageSmoothingEnabled=false;
+  const box=(x,y,w,h,fill,bw)=>{ bw=bw||2; g.fillStyle="#26233a"; g.fillRect(x-bw,y-bw,w+bw*2,h+bw*2); g.fillStyle=fill; g.fillRect(x,y,w,h); };
+
+  // --- floor zones (wood on top, blue tile on the bottom) ---
+  for(const fl of room.floors){
+    const wood = fl.type==="wood";
+    for(let r=fl.row;r<fl.row+fl.h;r++) for(let c=fl.col;c<fl.col+fl.w;c++){
+      const x=c*cw, y=r*ch, alt=(r+c)&1;
+      g.fillStyle = wood ? (alt?"#8a6a44":"#7d5f3c") : (alt?"#3b6ea5":"#34679d");
+      g.fillRect(x,y,Math.ceil(cw),Math.ceil(ch));
+      g.fillStyle = wood ? "rgba(58,42,26,.5)" : "rgba(24,60,110,.5)";       // seam lines / planks
+      if(wood) g.fillRect(x,y,Math.ceil(cw),1); else { g.fillRect(x,y,1,Math.ceil(ch)); g.fillRect(x,y,Math.ceil(cw),1); }
+    }
+  }
+
+  // --- book-spine slots across the shelves (fill with collected words, in order) ---
+  const words=Object.keys(state.dex);   // collection order (as collected)
+  let wi=0;
+  const drawSpine=(x,y,w,h,word)=>{
+    g.fillStyle="#26233a"; g.fillRect(x-1,y-1,w+2,h+2);
+    g.fillStyle=spineColor(word); g.fillRect(x,y,w,h);
+    g.fillStyle="rgba(255,255,255,.18)"; g.fillRect(x,y,w,1);               // top glint
+    g.fillStyle="rgba(38,35,58,.5)"; g.fillRect(x, y+Math.floor(h*0.35), w, 1);  // title band
+  };
+
+  // --- objects ---
+  for(const o of room.objects){
+    const x=o.col*cw, y=o.row*ch, w=o.w*cw, h=o.h*ch;
+    if(o.type==="shelf"){
+      box(x+1, y+1, w-2, h-2, "#5a4630");                                   // shelf carcass
+      const boards=o.h;                                                     // one board row per tile-height
+      for(let b=0;b<boards;b++){
+        const by=y+2+b*ch, bh=ch-4;
+        g.fillStyle="#3a2e22"; g.fillRect(x+3, by+bh-2, w-6, 2);            // board underside
+        // fill this board with spines left→right
+        const pad=4, sw=6, gap=2, avail=w-2*pad;
+        const slots=Math.max(0, Math.floor((avail+gap)/(sw+gap)));
+        for(let s=0;s<slots;s++){
+          if(wi>=words.length) break;
+          const sx=x+pad+s*(sw+gap), sh=bh-4, sy=by+2;
+          drawSpine(sx, sy, sw, sh, words[wi++]);
+        }
+      }
+      if(o.ladder){ g.fillStyle="#6f5436"; g.fillRect(x+w-6, y, 3, h); g.fillRect(x+w-12, y, 3, h);
+        for(let r=0;r<o.h*2;r++) g.fillRect(x+w-12, y+2+r*(h/(o.h*2)), 9, 2); }   // ladder rails + rungs
+    } else if(o.type==="stairs"){
+      const steps=o.h;
+      for(let s=0;s<steps;s++){ const sy=y+s*ch;
+        g.fillStyle=(s&1)?"#b89a5c":"#a98f4f"; g.fillRect(x, sy, w, Math.ceil(ch));
+        g.fillStyle="#8a6a44"; g.fillRect(x, sy, w, 2); }
+      g.fillStyle="#26233a"; g.fillRect(x-2, y, 2, h); g.fillRect(x+w, y, 2, h);   // side rails
+    } else if(o.type==="railing"){
+      g.fillStyle="#5a4630"; g.fillRect(x, y+ch-6, w, 4);                   // top rail
+      for(let c=0;c<=o.w;c++) g.fillRect(x+c*cw, y+2, 2, ch-4);            // balusters
+    } else if(o.type==="desk"){                                            // writing desk → collection/bench
+      const cx=x+w/2;
+      box(x+3, y+h*0.45, w-6, h*0.5, "#6f5436");                           // desk front
+      box(x+3, y+h*0.45-6, w-6, 8, "#8a6a44");                             // top slab
+      g.fillStyle="#efe6cf"; g.fillRect(cx-11, y+h*0.5, 22, h*0.4);        // parchment sheet
+      g.fillStyle="#3b4a7a"; for(let i=0;i<3;i++) g.fillRect(cx-8, y+h*0.5+4+i*5, 16, 2);   // ink lines
+      g.fillStyle="#2f2a44"; g.fillRect(cx+14, y+h*0.5, 8, 10); g.fillStyle="#c89b3c"; g.fillRect(cx+14, y+h*0.5, 8, 2);  // ink pot
+      g.fillStyle="#26233a"; g.font="7px 'Press Start 2P', monospace"; g.textAlign="center"; g.textBaseline="alphabetic";
+      g.fillText("DESK", cx, y-3);
+    } else if(o.type==="book"){                                            // lectern → mad-libs
+      const cx=x+w/2;
+      box(cx-8, y+h*0.45, 16, h*0.5, "#6f5436");                           // pedestal
+      box(x+4, y+h*0.2, w-8, h*0.32, "#8a6a44");                           // slanted rest
+      g.fillStyle="#efe6cf"; g.fillRect(x+7, y+h*0.22, w/2-9, h*0.26); g.fillRect(cx+2, y+h*0.22, w/2-9, h*0.26);  // pages
+      g.fillStyle="#26233a"; g.fillRect(cx-1, y+h*0.22, 2, h*0.26);        // spine
+      g.fillStyle="#c8b48a"; for(let i=0;i<3;i++){ g.fillRect(x+9, y+h*0.25+i*4, w/2-13, 1); g.fillRect(cx+4, y+h*0.25+i*4, w/2-13, 1); }
+      g.fillStyle="#26233a"; g.font="7px 'Press Start 2P', monospace"; g.textAlign="center"; g.textBaseline="alphabetic";
+      g.fillText("BOOK", cx, y-3);
+    } else if(o.type==="chair"){
+      box(x+3, y+2, w-6, h-4, "#6f5436");
+      g.fillStyle="#5a4630"; g.fillRect(x+3, y+2, w-6, 3);
+    }
+  }
+
+  // --- entrance mat (walk onto it to leave) ---
+  const er=LIBRARY.entranceRect;
+  g.fillStyle="#26233a"; g.fillRect(er.x, er.y, er.w, er.h);
+  g.fillStyle="#c8553c"; g.fillRect(er.x+2, er.y+2, er.w-4, er.h-4);
+  g.fillStyle="#efe6cf"; g.font="7px 'Press Start 2P', monospace"; g.textAlign="center"; g.textBaseline="middle";
+  g.fillText("EXIT ↓", er.x+er.w/2, er.y+er.h/2);
+  g.textBaseline="alphabetic";
+
+  LIBRARY.bg=cv2;
+}
+function drawLibraryRoom(){
+  if(!LIBRARY){ ctx.fillStyle="#15131c"; ctx.fillRect(0,0,W,H); return; }
+  ensureLibraryBg();
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(LIBRARY.bg, 0, 0);
 }
 function drawEdgeHints(){
   ctx.fillStyle="rgba(38,35,58,.18)";
@@ -2851,12 +3035,16 @@ function syncTouchUI(){
       const jt=document.getElementById("joy-thumb"); if(jt) jt.style.transform="translate(0,0)";
     }
   }
-  // DESK / SHOP / BOOK buttons are only shown (and only work) when you're standing by that structure.
+  // Contextual buttons: only shown (and only work) when standing by that structure. Outdoor home has the
+  // SHOP + the HOUSE (library entrance); inside the library the DESK + BOOK buttons appear by those objects.
   if(live){
-    const dv=document.getElementById("tc-desk"), sh=document.getElementById("tc-shop"), bk=document.getElementById("tc-book");
-    if(dv) dv.style.display = nearBench() ? "" : "none";
-    if(sh) sh.style.display = nearShop() ? "" : "none";
-    if(bk) bk.style.display = nearLectern() ? "" : "none";
+    const inLib = state.room==="library";
+    const sh=document.getElementById("tc-shop"), hs=document.getElementById("tc-house"),
+          dv=document.getElementById("tc-desk"), bk=document.getElementById("tc-book");
+    if(sh) sh.style.display = (!inLib && nearShop())        ? "" : "none";
+    if(hs) hs.style.display = (!inLib && nearHouse())       ? "" : "none";
+    if(dv) dv.style.display = ( inLib && nearLibraryDesk()) ? "" : "none";
+    if(bk) bk.style.display = ( inLib && nearLibraryBook()) ? "" : "none";
   }
 }
 if(IS_TOUCH){
@@ -2888,9 +3076,10 @@ if(IS_TOUCH){
   const tap=(id,fn)=>document.getElementById(id).addEventListener("pointerdown",e=>{ e.preventDefault(); fn(); });
   tap("tc-home",()=>{ if(state.started) teleportHome(); });
   const homeReady=()=>state.started && !state.help && !state.overlay && !state.shop && !state.madlibs;
-  tap("tc-desk",()=>{ if(homeReady() && nearBench()) openOverlay(); });
   tap("tc-shop",()=>{ if(homeReady() && nearShop()) openShop(); });
-  tap("tc-book",()=>{ if(homeReady() && nearLectern()) openBook(); });
+  tap("tc-house",()=>{ if(homeReady() && nearHouse()) enterLibrary(); });     // home: enter the library
+  tap("tc-desk",()=>{ if(state.started && nearLibraryDesk()) openOverlay(); }); // library: desk → collection
+  tap("tc-book",()=>{ if(state.started && nearLibraryBook()) openBook(); });    // library: lectern → mad-libs
   tap("tc-dex",()=>{ if(homeReady()) openBestiary(); });
   tap("tc-help",toggleHelp);
 }

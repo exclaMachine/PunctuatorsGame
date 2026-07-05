@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "room": {
+    "id": "library",
+    "cols": 30,
+    "rows": 24,
+    "floors": [
+      { "type": "wood",      "col": 0, "row": 0,  "w": 30, "h": 12 },
+      { "type": "tile_blue", "col": 0, "row": 12, "w": 30, "h": 12 }
+    ],
+    "entrance": { "col": 14, "row": 23, "w": 2, "h": 1, "leadsTo": "home" },
+    "objects": [
+      { "type": "shelf", "id": "top1",  "col": 1,  "row": 0,  "w": 5, "h": 2, "solid": true, "shelf": true },
+      { "type": "shelf", "id": "top2",  "col": 7,  "row": 0,  "w": 5, "h": 2, "solid": true, "shelf": true, "ladder": true },
+      { "type": "shelf", "id": "top3",  "col": 13, "row": 0,  "w": 5, "h": 2, "solid": true, "shelf": true },
+      { "type": "shelf", "id": "top4",  "col": 19, "row": 0,  "w": 5, "h": 2, "solid": true, "shelf": true },
+      { "type": "shelf", "id": "top5",  "col": 25, "row": 0,  "w": 5, "h": 2, "solid": true, "shelf": true, "ladder": true },
+
+      { "type": "shelf", "id": "midL1", "col": 2,  "row": 9,  "w": 5, "h": 2, "solid": true, "shelf": true },
+      { "type": "shelf", "id": "midL2", "col": 8,  "row": 9,  "w": 4, "h": 2, "solid": true, "shelf": true },
+      { "type": "shelf", "id": "midR1", "col": 18, "row": 9,  "w": 4, "h": 2, "solid": true, "shelf": true },
+      { "type": "shelf", "id": "midR2", "col": 23, "row": 9,  "w": 5, "h": 2, "solid": true, "shelf": true },
+
+      { "type": "stairs",  "id": "stairs", "col": 13, "row": 8, "w": 4, "h": 8, "solid": false, "walkable": true },
+      { "type": "railing", "id": "railL",  "col": 1,  "row": 11, "w": 12, "h": 1, "solid": true },
+      { "type": "railing", "id": "railR",  "col": 17, "row": 11, "w": 12, "h": 1, "solid": true },
+
+      { "type": "shelf", "id": "sideL1", "col": 0,  "row": 15, "w": 2, "h": 3, "solid": true, "shelf": true, "side": true },
+      { "type": "shelf", "id": "sideL2", "col": 0,  "row": 19, "w": 2, "h": 3, "solid": true, "shelf": true, "side": true },
+      { "type": "shelf", "id": "sideR1", "col": 28, "row": 15, "w": 2, "h": 3, "solid": true, "shelf": true, "side": true },
+      { "type": "shelf", "id": "sideR2", "col": 28, "row": 19, "w": 2, "h": 3, "solid": true, "shelf": true, "side": true },
+
+      { "type": "desk", "id": "desk", "col": 7,  "row": 19, "w": 4, "h": 2, "solid": true, "interact": "openCollection" },
+      { "type": "book", "id": "book", "col": 20, "row": 19, "w": 2, "h": 2, "solid": true, "interact": "openBook" }
+    ]
+  }
+}

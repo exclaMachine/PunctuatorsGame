@@ -342,8 +342,28 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   offset drop-shadows (no blur). Desk = wood slab + front panel, parchment sheet, ink pot + quill, `BENCH`
   label (centre). Stall = wooden counter + posts + striped awning + a coin, `SHOP` label (left). Lectern =
   pedestal + open book on a slanted rest, `BOOK` label (right). `DESK`/`STALL`/`LECTERN` collision rects
-  (`overlapsSolid`) match the drawn footprints; `nearBench`/`nearShop`/`nearLectern` gate the `E`/touch
-  interaction and open `#overlay` / `#shop` / `#madlibs` respectively.
+  (`overlapsSolid`) match the drawn footprints. The **outdoor home** now has just two structures: the shop
+  **STALL** (`drawStall`, `nearShop` → `#shop`) and the **HOUSE** (`drawHouse` — blits `House_5_Wood_Red_Red.png`,
+  right of the shop; `nearHouse` → `enterLibrary`). The writing desk + book lectern **moved into the Library**
+  (below), so `DESK`/`LECTERN`/`drawBench`/`drawLectern`/the archway were removed.
+- **Library room** (`state.room==="library"`; `data/rooms/library.json`) — a **separate walkable screen**
+  that is now the game's **home/study**, not part of the daily field grid, entered via the `HOUSE` (cut, not
+  the field slide). Loaded once by `buildLibrary(room)` into `LIBRARY = {room, cw, ch, screen, entranceRect/Px,
+  desk, book, deskStand, bg}`. It has its **own tile grid** (`room.cols×room.rows` = 30×24, non-square cells
+  `cw=24`/`ch=22` filling 720×528) used only for collision — `blockedAt` is now cell-size-aware (`sc.cw||TS` /
+  `sc.ch||TS`), so the existing `canStand` works unchanged (field screens have no `cw/ch` → `TS`). Solid
+  objects → `T_ROCK`; floors/stairs/entrance walk. `update()` branches to **`updateLibrary`** (same
+  movement/collision, bounded — no edge transitions/creatures/pickups; **rests/heals** here; stepping onto the
+  entrance mat calls `exitLibrary`); `render()` branches to **`drawLibraryRoom`** (offscreen bake
+  `ensureLibraryBg`, rebuilt per entry): two floor zones + every object (shelf/stairs/railing/ladder/chair,
+  the **desk** + **book** interactables, entrance mat) as retro-pixel rects, plus **book-spines** — one per
+  `state.dex` word (collection order, filling shelf slots left→right/top→bottom), `spineColor` by POS. Inside:
+  `nearLibraryDesk` → `openOverlay` (collection/bench), `nearLibraryBook` → `openBook` (mad-libs). Entry
+  helpers: `enterLibrary` (via the house → entrance mat) and **`goHome`** (H/faint/new-day → `deskStand`, the
+  desk) both go through `enterLibraryAt`. Touch: contextual **SHOP**/**LIB** (home) and **DESK**/**BOOK**
+  (room) via `syncTouchUI`. `state.room` is session-only (not saved); reload starts outdoors. **Placeholder
+  pixel art** (except the house PNG) — draw code is structured by object type so the staged tileset can swap
+  in later.
 - **Mad-libs module** (`/* MAD-LIBS */`) — `BOOKS` registry. For a big book, an entry points at an
   **`index:"data/levels/index.json"`** (book-ordered `[{id,title,file,blanks}]`) instead of a hardcoded
   `levels` array; `ensureBookLevels(reg)` fetches that index once and fills `reg.chapters` (metadata) +
@@ -397,9 +417,9 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   valid each render (falls back to the first available letter). The `#dex-list` shows only the
   selected tab's words. The `#dex-count` next to the header still shows the **total** across all tabs.
   Spelling a **new** word sets `dexTab` to that word's first letter before `renderDex()`, so the
-  collection jumps to where the word just landed. Genre/source tabs can layer on later. (The new
-  `House_5_Wood_Red_Red.png` is staged for the future walkable library room — not wired into the
-  build yet.)
+  collection jumps to where the word just landed. Genre/source tabs can layer on later.
+  (`House_5_Wood_Red_Red.png` is now **wired in** as the Library entrance house on the home screen — see the
+  Library room entry.)
 - **Library keyboard tray** (`renderBench` → `#tray`): the bench input shows a **full QWERTY keyboard**
   (`KB_ROWS`, 3 rows), not just owned letters. Each key shows a corner count badge of how many copies
   are still available to place (owned minus what's already on the bench); a key with **zero available**
@@ -420,10 +440,10 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
 
 **Built and working:**
 
-- Home base with a writing desk; bounded **daily map** of screens (`MAP_RADIUS`, currently 3×3; walls at the world edge),
-  regenerated each real calendar day; walk-off-edge travel between screens with a smooth **screen-slide**
-  transition; `H` to teleport home;
-  translucent explored-area minimap in the bottom-right (resets daily).
+- Outdoor home base (shop + the **house** that is your Library); bounded **daily map** of screens
+  (`MAP_RADIUS`, currently 3×3; walls at the world edge), regenerated each real calendar day; walk-off-edge
+  travel between screens with a smooth **screen-slide** transition; `H` teleports home **to your desk inside
+  the library**; translucent explored-area minimap in the bottom-right (resets daily).
 - Attack-based combat (no bump-to-collect); **letter-creatures** (`kind:"letter"`) are captured in a
   **single hit** (`CREATURE_HP = 1`) and drop their letter. The satchel holds a capped number of letters
   (`state.bagCap`, starts at 10); when full, **letter capture** is blocked (you can still fight cubes).
@@ -492,8 +512,11 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   coinages, and some rare derivational forms.
 - **Autosave (IndexedDB)** — progress persists automatically across reloads; Export/Import remain as
   manual backup/transfer; a **Reset** button (library footer, with confirm) wipes the save.
-- Not started: library room, genre books / procedural layouts, hero weapons, word effects,
-  farming/ranching, town/trade.
+- **Library room (MVP)** — your home/study: entered via the **house** on the outdoor home (`nearHouse` →
+  `enterLibrary`); holds the writing **desk** (spell words) + **book** lectern (mad-libs) and shelves that
+  fill with book-spines from `state.dex`; `H`/faint/new-day return you to the desk; resting there heals. See the code map +
+  roadmap #4.
+- Not started: genre books / procedural layouts, hero weapons, word effects, farming/ranching, town/trade.
 
 ---
 
@@ -616,9 +639,16 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B
    input, so the OS picker opens **natively**. Do NOT revert it to a `<button>` that calls
    `input.click()` programmatically — Chrome silently refuses to open the picker that way (handler runs,
    no dialog). Handle the chosen file in `#import-file`'s `onchange`.
-4. **Library room** — render the dex as a walkable room with shelves. Organize words into
-   sets/shelves (by length, by source book, by theme) so there are achievable sub-goals instead
-   of one impossible "collect everything." Same data as the current list.
+4. **Library room** — **Status: IN PROGRESS (MVP).** The Library is now your **home/study**: the writing
+   **desk** (→ collection/bench) and **book lectern** (→ mad-libs) live inside it (they were removed from the
+   outdoor home screen). You reach it from the outdoor home by the **house** (`House_5_Wood_Red_Red.png`,
+   right of the shop; walk-up + `E` / touch **LIB**); the bottom entrance mat walks you back out beside the
+   house. `H`/faint/new-day drop you **at the desk inside the library**, and resting there heals (the library
+   is the rest point now). Laid out from `data/rooms/library.json` (30×24 grid, own non-square cells; solid
+   objects block, floors/stairs/entrance walk). Shelves start **empty** and fill with **book-spines** — one
+   per `state.dex` word (collection order, left→right/top→bottom across the shelf list), coloured by POS. Pure
+   view of `state.dex`, no new saved data. **Still ahead:** organize words into themed sets/shelves for
+   achievable sub-goals, and swap the placeholder pixel art for the staged tileset.
 5. **Genre books + procedural layouts** — multiple book types with distinct tilesets and
    genre-weighted letter pools. Start with simple random scatter / room-and-corridor generation;
    do **not** build a clever dungeon generator first (classic time sink).
@@ -771,8 +801,9 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   unless a feature truly requires one (say so and why). Current fetches are all **local project files**:
   the bundled WordNet dictionary (`data/dictionary.json` + `data/inflections.json`, from `build_dictionary.py`;
   `data/wordnet-relations.json` is bundled but dormant), `2of12.txt` (Word-of-the-Day picker only, not
-  validation), the mad-libs chapter JSONs in `data/levels/`, and `data/creatures.json`. The old Free
-  Dictionary API was removed — no external API at runtime.
+  validation), the mad-libs chapter JSONs in `data/levels/`, `data/creatures.json`, and
+  `data/rooms/library.json` (the Library room layout). The old Free Dictionary API was removed — no external
+  API at runtime.
 - Protect the MVP loop. New systems are layers on the working core, shipped one at a time, each
   independently testable.
 - Maintain the ink-and-paper identity and the vocabulary above.
