@@ -619,7 +619,7 @@ const houseImg = new Image();
 let houseReady = false;
 houseImg.onload = ()=>{ houseReady=true; };
 houseImg.src = "./House_5_Wood_Red_Red.png";
-const PLAYER_FRAME=64, PLAYER_COLS=6, PLAYER_DRAW=80;
+const PLAYER_FRAME=64, PLAYER_COLS=6, PLAYER_DRAW=120;   // base sprite size; the size potion grows it ×SIZE_MULT from here
 const ATTACK_ANIM=0.30;                    // attack animation length (s)
 const WALK_FRAME=0.09, IDLE_FRAME=0.16;    // seconds per animation frame
 const PR={ idleDown:0, idleRight:1, idleUp:2, walkDown:3, walkRight:4, walkUp:5,
