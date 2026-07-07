@@ -656,8 +656,11 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B
    no dialog). Handle the chosen file in `#import-file`'s `onchange`.
 4. **Library room** — **Status: IN PROGRESS (MVP).** The Library is now your **home/study**: the writing
    **desk** (→ collection/bench) and **book lectern** (→ mad-libs) live inside it (they were removed from the
-   outdoor home screen). You reach it from the outdoor home by the **house** (`House_5_Wood_Red_Red.png`,
-   right of the shop; walk-up + `E` / touch **LIB**); the bottom entrance mat walks you back out beside the
+   outdoor home screen). **Display names** (code identifiers unchanged): the room = **The Wordhoard**
+   (`state.room==="library"` / the `HOUSE`, labeled `WORDHOARD` / touch `HOARD`), the desk = **The Wordsmithy**
+   (`desk` / `nearLibraryDesk` / `#overlay` title / touch `SMITHY`), the lectern = **Mad Libris**
+   (`book` / `nearLibraryBook` / mad-libs / touch `LIBRIS`). You reach it from the outdoor home by the
+   **house** (`House_5_Wood_Red_Red.png`, right of the shop; walk-up + `E`); the bottom entrance mat walks you back out beside the
    house. `H`/faint/new-day drop you **at the desk inside the library**, and resting there heals (the library
    is the rest point now). Laid out from `data/rooms/library.json` (30×24 grid, own non-square cells; solid
    objects block, floors/stairs/entrance walk). **Nouns wing (done):** the 13 shelves × 2 board-rows = 26

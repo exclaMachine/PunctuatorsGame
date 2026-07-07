@@ -397,9 +397,9 @@
     <!-- Library overlay -->
     <div id="overlay">
       <div class="book">
-        <button class="close-x" id="lib-close" aria-label="Close library" title="Close">✕</button>
-        <h1>The Library</h1>
-        <div class="sub">Build words from the letters in your satchel. Each new word joins your collection.</div>
+        <button class="close-x" id="lib-close" aria-label="Close" title="Close">✕</button>
+        <h1>The Wordsmithy</h1>
+        <div class="sub">Forge words from the letters in your satchel. Each new word joins your Wordhoard.</div>
         <div class="wotd" id="wotd"></div>
         <div class="cols">
           <div>
@@ -507,8 +507,8 @@
         <div class="ctrl-grid">
           <span><b>WASD</b> / <b>↑ ↓ ← →</b></span><span>Move</span>
           <span><b>Space</b></span><span>Attack</span>
-          <span><b>H</b></span><span>Teleport home — to your desk in the library</span>
-          <span><b>E</b></span><span>Use what you're near: shop, the house (enter library), the desk, the book</span>
+          <span><b>H</b></span><span>Teleport home — to the Wordsmithy in the Wordhoard</span>
+          <span><b>E</b></span><span>Use what you're near: shop, the house (enter the Wordhoard), the Wordsmithy, Mad Libris</span>
           <span><b>Tab</b></span><span>Open the collection list</span>
           <span><b>B</b></span><span>Open the bestiary (or tap the 🐾 button)</span>
           <span><b>1</b> / <b>2</b> / <b>3</b></span><span>Drink a Size / Speed / Reveal potion (or tap its HUD button)</span>
@@ -528,8 +528,8 @@
             <li><b>Reveal</b> — the minimap shows the whole map and which screens still have letters.</li>
           </ul>
           <p>Rewards repeat: re-spelling a word spends its letters again and pays again.</p>
-          <p><b>Word of the Day.</b> Each day the desk shows a bonus word — always built from letters you've unlocked, so you can always collect what you need. Spell it once for a big ink bonus.</p>
-          <p><b>The book lectern.</b> Right of the desk. Restore a story by filling each blank with a collected word that matches the needed part of speech (noun/verb/adjective/adverb). Matching the original word earns bonus ink. A word can be used in a chapter only <b>once, ever</b> — so keep learning new ones. Finish every chapter to add the book to your library.</p>
+          <p><b>Word of the Day.</b> Each day the Wordsmithy shows a bonus word — always built from letters you've unlocked, so you can always collect what you need. Spell it once for a big ink bonus.</p>
+          <p><b>Mad Libris.</b> The lectern right of the Wordsmithy. Restore a story by filling each blank with a collected word that matches the needed part of speech (noun/verb/adjective/adverb). Matching the original word earns bonus ink. A word can be used in a chapter only <b>once, ever</b> — so keep learning new ones. Finish every chapter to add the book to your Wordhoard.</p>
           <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground, then flies to you when you're close (auto-collect) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
         </div>
         <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
@@ -544,11 +544,11 @@
         <h1 style="margin-bottom:14px">Inklings</h1>
         <p>You're a collector of words which you use to repair a book.
         Hunt the <b>letter-creatures</b>, gather their letters, then go to your
-        <b>library</b> (the house by the shop) and spell words at the desk to fill your shelves.</p>
+        <b>Wordhoard</b> (the house by the shop) and forge words at the <b>Wordsmithy</b> to fill your shelves.</p>
         <p class="kbd-only" style="color:var(--ink-soft);font-size:13px">
-        <b>WASD</b> move &nbsp;·&nbsp; <b>Space</b> attack &nbsp;·&nbsp; <b>H</b> home to your desk &nbsp;·&nbsp; <b>E</b> use / enter</p>
+        <b>WASD</b> move &nbsp;·&nbsp; <b>Space</b> attack &nbsp;·&nbsp; <b>H</b> home to the Wordsmithy &nbsp;·&nbsp; <b>E</b> use / enter</p>
         <p class="touch-only" style="color:var(--ink-soft);font-size:13px">
-        <b>D-pad</b> (bottom-right) to move &nbsp;·&nbsp; <b>ATK</b> to attack &nbsp;·&nbsp; <b>HOME / LIB</b> on the left</p>
+        <b>D-pad</b> (bottom-right) to move &nbsp;·&nbsp; <b>ATK</b> to attack &nbsp;·&nbsp; <b>HOME / HOARD</b> on the left</p>
         <button class="primary" id="start-btn" style="margin-top:6px;padding:10px 22px;font-size:15px">Begin</button>
       </div>
     </div>
@@ -564,9 +564,9 @@
           <button class="tc-btn util" id="tc-dex" aria-label="Bestiary">🐾</button>
           <!-- SHOP / HOUSE (home) and DESK / BOOK (inside the library) are contextual: only shown when standing by that structure (see syncTouchUI) -->
           <button class="tc-btn util" id="tc-shop" aria-label="Open shop">SHOP</button>
-          <button class="tc-btn util" id="tc-house" aria-label="Enter library">LIB</button>
-          <button class="tc-btn util" id="tc-desk" aria-label="Use desk">DESK</button>
-          <button class="tc-btn util" id="tc-book" aria-label="Open book">BOOK</button>
+          <button class="tc-btn util" id="tc-house" aria-label="Enter the Wordhoard">HOARD</button>
+          <button class="tc-btn util" id="tc-desk" aria-label="Use the Wordsmithy">SMITHY</button>
+          <button class="tc-btn util" id="tc-book" aria-label="Open Mad Libris">LIBRIS</button>
           <button class="tc-btn util" id="tc-shelf" aria-label="Browse shelf">SHELF</button>
         </div>
       </div>
@@ -1325,7 +1325,7 @@ addEventListener("keydown",e=>{
 });
 addEventListener("keyup",e=>{ keys[e.key.toLowerCase()]=false; });
 
-function teleportHome(){ goHome(); showToast("Back at your desk. Press E."); }
+function teleportHome(){ goHome(); showToast("Back at the Wordsmithy. Press E."); }
 // "Home" is now the Library (the writing desk lives inside it) — H / faint / new-day drop you at the desk.
 // Falls back to the outdoor home screen if the room JSON hasn't loaded yet.
 function goHome(){
@@ -1360,7 +1360,7 @@ function nearLibraryShelf(){
 function enterLibraryAt(x,y,face){ trans=null; state.room="library"; LIBRARY.bg=null; const p=state.player; p.x=x; p.y=y; p.face=face; p.moving=false; SFX.play("home"); }
 function enterLibrary(){   // in through the house door → arrive at the entrance mat
   if(!LIBRARY || !LIBRARY.screen){ showToast("The library is still loading…"); return; }
-  enterLibraryAt(LIBRARY.entrancePx.x, LIBRARY.entrancePx.y-26, {x:0,y:-1}); showToast("The Library.");
+  enterLibraryAt(LIBRARY.entrancePx.x, LIBRARY.entrancePx.y-26, {x:0,y:-1}); showToast("The Wordhoard.");
 }
 function exitLibrary(){   // out the entrance mat → outdoor home, just below the house door (clear of the doorway trigger)
   trans=null; state.room=null; state.screen.sx=0; state.screen.sy=0;
@@ -1608,7 +1608,7 @@ function update(dt){
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
   const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen;
-  if(hintReady && nearHouse()){ hint.textContent="Press E to enter the library"; hint.classList.add("show"); }
+  if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else hint.classList.remove("show");
 
@@ -1654,8 +1654,8 @@ function updateLibrary(p, dt){
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
   const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.shelfview;
-  if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use your desk"; hint.classList.add("show"); }
-  else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open the book"; hint.classList.add("show"); }
+  if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
+  else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryShelf()){ hint.textContent="Press E to browse this shelf"; hint.classList.add("show"); }
   else hint.classList.remove("show");
   // active potion timers keep ticking
@@ -1980,7 +1980,7 @@ function drawHouse(){
     ctx.fillStyle="#c89b3c"; ctx.fillRect(cx+4, y+h-14, 3, 4);               // handle
   }
   ctx.fillStyle="#26233a"; ctx.font="9px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
-  ctx.fillText("LIBRARY", cx, y-8);
+  ctx.fillText("WORDHOARD", cx, y-8);
   ctx.restore();
 }
 /* ---------- LIBRARY ROOM RENDER --------------------------- */
@@ -2056,7 +2056,7 @@ function ensureLibraryBg(){
       g.fillStyle="#3b4a7a"; for(let i=0;i<3;i++) g.fillRect(cx-8, y+h*0.5+4+i*5, 16, 2);   // ink lines
       g.fillStyle="#2f2a44"; g.fillRect(cx+14, y+h*0.5, 8, 10); g.fillStyle="#c89b3c"; g.fillRect(cx+14, y+h*0.5, 8, 2);  // ink pot
       g.fillStyle="#26233a"; g.font="7px 'Press Start 2P', monospace"; g.textAlign="center"; g.textBaseline="alphabetic";
-      g.fillText("DESK", cx, y-3);
+      g.fillText("WORDSMITHY", cx, y-3);
     } else if(o.type==="book"){                                            // lectern → mad-libs
       const cx=x+w/2;
       box(cx-8, y+h*0.45, 16, h*0.5, "#6f5436");                           // pedestal
@@ -2065,7 +2065,7 @@ function ensureLibraryBg(){
       g.fillStyle="#26233a"; g.fillRect(cx-1, y+h*0.22, 2, h*0.26);        // spine
       g.fillStyle="#c8b48a"; for(let i=0;i<3;i++){ g.fillRect(x+9, y+h*0.25+i*4, w/2-13, 1); g.fillRect(cx+4, y+h*0.25+i*4, w/2-13, 1); }
       g.fillStyle="#26233a"; g.font="7px 'Press Start 2P', monospace"; g.textAlign="center"; g.textBaseline="alphabetic";
-      g.fillText("BOOK", cx, y-3);
+      g.fillText("MAD LIBRIS", cx, y-3);
     } else if(o.type==="chair"){
       box(x+3, y+2, w-6, h-4, "#6f5436");
       g.fillStyle="#5a4630"; g.fillRect(x+3, y+2, w-6, 3);
