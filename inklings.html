@@ -161,6 +161,10 @@
   /* Overlay (Library) */
   #overlay{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
     align-items:center;justify-content:center;padding:18px}
+  /* "Spell it again?" confirm — a solid centered card over a dark scrim that dims the Wordsmithy behind it */
+  #respell{position:absolute;inset:0;display:none;background:rgba(21,19,28,.9);
+    align-items:center;justify-content:center;padding:18px;z-index:9}
+  #respell.open{display:flex}
   #overlay.open{display:flex}
   .book{width:100%;max-width:680px;max-height:92vh;overflow:auto;background:var(--paper);
     border:3px solid var(--edge);box-shadow:6px 6px 0 rgba(0,0,0,.5);padding:18px 20px}
@@ -496,6 +500,21 @@
         <div class="def-full" id="defmodal-def"></div>
         <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
           <button class="primary" id="defmodal-close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- "Spell it again?" confirm (re-spending letters on a word you already own) -->
+    <div id="respell">
+      <div class="book" style="max-width:380px">
+        <div class="reveal" style="text-align:center">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">Already collected</div>
+          <div class="word" id="respell-word" style="margin:6px 0"></div>
+          <div class="note" id="respell-msg"></div>
+          <div class="btn-row" style="margin-top:16px;justify-content:center;gap:10px">
+            <button class="primary" id="respell-yes">Yes — spell it</button>
+            <button id="respell-no">Keep letters</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1282,7 +1301,13 @@ addEventListener("keydown",e=>{
     if(k==="escape"){ e.preventDefault(); closeDefModal(); } return;   // close the def modal first
   }
   if(state.help){ if(k==="escape"){ e.preventDefault(); toggleHelp(); } return; }
-  if(state.overlay){   // library open: let the physical keyboard build words
+  if(state.overlay){   // Wordsmithy open: let the physical keyboard build words
+    if(pendingRespell){   // the "spell it again?" confirm is modal: only yes/no
+      if(k==="enter"){ e.preventDefault(); confirmRespell(); }
+      else if(k==="escape"){ e.preventDefault(); cancelRespell(); }
+      else if(k==="tab"||k==="backspace"||/^[a-zA-Z]$/.test(e.key)) e.preventDefault();   // swallow — no editing behind the modal
+      return;
+    }
     if(k==="escape"||k==="tab"){ e.preventDefault(); closeOverlay(); return; }
     if(k==="enter"){ e.preventDefault(); checkWord(); return; }
     if(k==="backspace"){ e.preventDefault(); if(bench.length){ bench.pop(); renderBench(); } return; }
@@ -2516,7 +2541,7 @@ let benchShift=false;   // tray showing capital letters (only offered once capit
 function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); document.getElementById("sound-btn").style.display="none"; renderBench(); renderDex(); updateWotd(); SFX.play("click"); }
 function openShop(){ state.shop=true; document.getElementById("shop").classList.add("open"); document.getElementById("sound-btn").style.display="none"; updateShop(); SFX.play("click"); }
 function closeShop(){ state.shop=false; document.getElementById("shop").classList.remove("open"); document.getElementById("sound-btn").style.display=""; }
-function closeOverlay(){ state.overlay=false; document.getElementById("overlay").classList.remove("open"); document.getElementById("sound-btn").style.display=""; closeDefModal(); bench=[]; document.getElementById("result").innerHTML=""; }
+function closeOverlay(){ state.overlay=false; closeRespell(); document.getElementById("overlay").classList.remove("open"); document.getElementById("sound-btn").style.display=""; closeDefModal(); bench=[]; document.getElementById("result").innerHTML=""; }
 const KB_ROWS=["qwertyuiop","asdfghjkl","zxcvbnm"];
 function renderBench(){
   // tray = full keyboard; letters you don't have (or have all on the bench) are greyed + unclickable.
@@ -2637,8 +2662,10 @@ function closeShelfView(){
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
 
 let checking=false;
+let pendingRespell=null;   // when a "spell it again?" prompt is showing, the callback that commits it
 async function checkWord(){
   if(checking) return;
+  pendingRespell=null;     // a fresh check supersedes any pending re-spell prompt
   const word=bench.join("").toLowerCase();
   const res=document.getElementById("result");
   if(word.length<2){ res.innerHTML='<div class="msg-bad">Words need at least two letters.</div>'; SFX.play("invalid"); return; }
@@ -2682,7 +2709,23 @@ async function checkWord(){
     bench=[]; renderBench(); SFX.play("known"); return;
   }
 
-  // Spend the letters (the cost — repeatable), then pay out rewards.
+  // Re-spelling a word you already own re-spends the letters for the same reward → confirm first, so you
+  // don't burn letters you'd rather keep. (New words are collected straight away.)
+  if(known){
+    const parts=[];
+    if(isNoun) parts.push("+"+inkForWord(word)+" ink");
+    if(isAdj) parts.push("a potion");
+    if(wotdUnclaimed) parts.push("the ★ Word of the Day bonus");
+    askRespell(word, parts.join(" and "), ()=>commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, true));
+    return;
+  }
+  commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, false);
+}
+
+// The actual spell: spend the bench letters, pay rewards, record a new word, show the result. Split out of
+// checkWord so a re-spell of a word you already own can ask before committing (see askRespell).
+function commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, known){
+  pendingRespell=null;
   bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); });
   let earnedInk=0, brewed=null, wotdBonus=0;
   if(isNoun){ earnedInk=inkForWord(word); state.ink+=earnedInk; }
@@ -2711,6 +2754,17 @@ async function checkWord(){
   }
   scheduleSave();
 }
+// A yes/no confirm modal (solid card over a dark scrim) before re-spending letters on a word you already own.
+function askRespell(word, rewardText, onYes){
+  pendingRespell=onYes;
+  document.getElementById("respell-word").textContent=word;
+  document.getElementById("respell-msg").textContent="Spell it again to spend these letters for "+(rewardText||"no reward")+"?";
+  document.getElementById("respell").classList.add("open");
+  SFX.play("known");
+}
+function closeRespell(){ pendingRespell=null; document.getElementById("respell").classList.remove("open"); }
+function confirmRespell(){ const fn=pendingRespell; closeRespell(); if(fn) fn(); }        // Yes → spend + reward
+function cancelRespell(){ closeRespell(); document.getElementById("result").innerHTML='<div class="msg-known">Letters kept.</div>'; SFX.play("click"); }
 // Result shown in the bench area: the word + what it earned (ink for nouns, a potion for adjectives,
 // plus the Word-of-the-Day bonus if this was it).
 function showSpellResult(word, known, ink, brewed, wotdBonus){
@@ -3144,7 +3198,7 @@ function toggleHelp(){ state.help=!state.help; document.getElementById("controls
 document.getElementById("help-btn").onclick=toggleHelp;
 document.getElementById("controls-close").onclick=toggleHelp;
 document.getElementById("check-btn").onclick=checkWord;
-document.getElementById("clear-btn").onclick=()=>{ bench=[]; renderBench(); document.getElementById("result").innerHTML=""; SFX.play("click"); };
+document.getElementById("clear-btn").onclick=()=>{ closeRespell(); bench=[]; renderBench(); document.getElementById("result").innerHTML=""; SFX.play("click"); };
 document.getElementById("shop-bag-buy").onclick=buyBagUpgrade;
 document.getElementById("shop-close").onclick=()=>{ closeShop(); SFX.play("click"); };
 document.getElementById("shop-done").onclick=()=>{ closeShop(); SFX.play("click"); };
@@ -3156,6 +3210,9 @@ document.getElementById("bes-close").onclick=()=>{ closeBestiary(); SFX.play("cl
 document.getElementById("bestiary").onclick=e=>{ if(e.target.id==="bestiary") closeBestiary(); };  // tap backdrop to close
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
+document.getElementById("respell-yes").onclick=confirmRespell;
+document.getElementById("respell-no").onclick=cancelRespell;
+document.getElementById("respell").onclick=e=>{ if(e.target.id==="respell") cancelRespell(); };   // tap the dark scrim = keep letters
 document.getElementById("sv-close").onclick=()=>{ closeShelfView(); SFX.play("click"); };
 document.getElementById("sv-back").onclick=()=>{ renderShelfList(); SFX.play("click"); };
 document.getElementById("shelfview").onclick=e=>{ if(e.target.id==="shelfview") closeShelfView(); };  // tap backdrop to close
