@@ -459,6 +459,13 @@
           </div>
           <button class="primary" id="shop-bag-buy">Buy · <b id="shop-bag-cost">10</b> ink</button>
         </div>
+        <div class="shop-item">
+          <div>
+            <div class="shop-item-name">Bind a Fable Page</div>
+            <div class="shop-item-desc" id="shop-fable-desc">Recover the next fable</div>
+          </div>
+          <button class="primary" id="shop-fable-buy">Bind · <b id="shop-fable-cost"></b></button>
+        </div>
         <div class="btn-row" style="margin-top:18px;justify-content:flex-end">
           <button class="primary" id="shop-done">Done</button>
         </div>
@@ -572,7 +579,7 @@
           </ul>
           <p>Rewards repeat: re-spelling a word spends its letters again and pays again.</p>
           <p><b>Word of the Day.</b> Each day the Wordsmithy shows a bonus word — always built from letters you've unlocked, so you can always collect what you need. Spell it once for a big ink bonus.</p>
-          <p><b>Mad Libris.</b> The lectern right of the Wordsmithy. Restore a story by filling each blank with a collected word that matches the needed part of speech (noun/verb/adjective/adverb). Matching the original word earns bonus ink. A word can be used in a chapter only <b>once, ever</b> — so keep learning new ones. Finish every chapter to add the book to your Wordhoard.</p>
+          <p><b>Mad Libris.</b> The lectern right of the Wordsmithy. You start with one fable; <b>recover</b> the rest one at a time — beasts rarely drop a <b>page</b>, or <b>bind</b> the next one at the Stall with materials beasts drop. Restore a story by filling each blank with a collected word that matches the needed part of speech (noun/verb/adjective/adverb). Matching the original word earns bonus ink. A word can be used in a chapter only <b>once, ever</b> — so keep learning new ones. Finish every recovered chapter to add the book to your Wordhoard.</p>
           <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground, then flies to you when you're close (auto-collect) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
         </div>
         <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
@@ -829,7 +836,14 @@ function localLookup(word){
 const BOOKS = [
   { id:"aesop-for-children", title:"The Aesop for Children", index:"data/levels/index.json", levels:null }
 ];
+ensureBookLevels(BOOKS[0]).catch(()=>{});   // preload the chapter index so fableTotal() is known early
 const MADLIB_EXACT_BONUS = 5;   // ink awarded per blank filled with the exact original word
+// Fables are RECOVERED (unlocked) one at a time in book order: chapter 1 is free; the rest come from a rare
+// beast page-drop or by binding a page at the Stall (materials the beasts drop). fableTotal from the index.
+const FABLE_COST = { paper:3, glue:2 };      // materials to "bind" the next fable page at the shop
+const FABLE_DROP_CHANCE = 0.10;              // ~1 in 10 beat beasts drops a fable page (only while any remain)
+function fableTotal(){ const c=BOOKS[0].chapters; return (c&&c.length) || 140; }
+function canBindFable(){ return state.fables < fableTotal() && Object.keys(FABLE_COST).every(m=>(state.resources[m]||0) >= FABLE_COST[m]); }
 
 /* ---------- CREATURES / DROPS / BESTIARY (data-driven) --------------------------
    data/creatures.json is the SINGLE SOURCE OF TRUTH for both the spawner (tier/hp/spawn/drops) and the
@@ -1020,6 +1034,7 @@ const state = {
   buffs:{ size:0, speed:0, reveal:0 },      // seconds remaining on active effects (session only)
   restored:{},                  // mad-libs progress: levelId -> {fills:{blankId:word}, done, exact, bookId} (persist)
   books:[],                     // ids of books fully restored (added to your library) (persist)
+  fables:1,                     // how many Aesop chapters are RECOVERED (unlocked), in book order — chapter 1 is free (persist)
   resources:{},                 // book-binding material id -> count, from resource-creature drops (persist)
   bestiary:{},                  // creature id -> {kills, seen} — unlocks bestiary entries (persist)
   fx:[],                        // floating texts
@@ -1506,6 +1521,8 @@ function defeatCreature(c, sc){
   recordBestiary(c.cid);
   const cre=CREATURES_BY_ID[c.cid];
   if(cre && cre.drops){ for(const d of rollDrops(cre, Math.random)) grantDrop(sc, d, c.x, c.y); }
+  if(state.fables < fableTotal() && Math.random() < FABLE_DROP_CHANCE)   // rare bonus: a fable page
+    grantDrop(sc, {item:"page", qty:1}, c.x, c.y);
   for(let k=0;k<7;k++) state.fx.push({x:c.x+(Math.random()*20-10), y:c.y+(Math.random()*16-8), text:"·", life:0.5+Math.random()*0.3, color:"#d9b84a"});
   SFX.play("capture");
   scheduleSave();
@@ -1517,6 +1534,10 @@ function grantDrop(sc, d, x, y){
 }
 // Walk over a dropped material to collect it → adds to state.resources; cheese also heals a heart.
 function collectPickup(pk){
+  if(pk.item==="page"){   // a fable page → recover the next chapter (not a stockpiled material)
+    if(!recoverNextFable()){ state.ink+=5; showToast("Every fable's recovered — the page is worth +5 ink."); updateRewardHud(); scheduleSave(); }
+    return;
+  }
   state.resources[pk.item]=(state.resources[pk.item]||0)+pk.qty;
   if(pk.effect && pk.effect.indexOf("heal:")===0){
     const amt=parseInt(pk.effect.split(":")[1],10)||1, p=state.player;
@@ -2404,6 +2425,14 @@ const ICON_DRAW={
     g.fillStyle="#d8cfb0"; g.beginPath(); g.moveTo(lx+w-f,ty); g.lineTo(lx+w,ty+f); g.lineTo(lx+w-f,ty+f); g.closePath(); g.fill();
     g.fillStyle="#c8bd9a"; for(let i=0;i<2;i++) g.fillRect(lx+2, ty+Math.round(h*0.5)+i*3, w-4, 1);   // ruling (not letters)
   },
+  page(g,x,y,s){                                    // a recovered fable page — ruled parchment + a red wax seal
+    const w=Math.round(s*0.74), h=s, lx=x-w/2, ty=y-h/2;
+    iconRect(g,lx,ty,w,h,"#efe0b8");
+    g.fillStyle="#b6a374"; for(let i=0;i<4;i++) g.fillRect(lx+2, ty+3+i*Math.round(h*0.22), w-4, 1);   // text ruling
+    const r=Math.max(2,Math.round(s*0.15));
+    g.fillStyle="#9a3b2e"; g.fillRect(x-r, y+Math.round(h*0.30)-r, r*2, r*2);                          // wax seal
+    g.fillStyle="#7a2c22"; g.fillRect(x-1, y+Math.round(h*0.30)-1, 2, 2);
+  },
   glue(g,x,y,s){                                    // glue bottle with a nozzle cap
     const w=Math.round(s*0.5), h=s, lx=x-w/2, ty=y-h/2;
     iconRect(g,lx,ty+Math.round(h*0.3),w,Math.round(h*0.7),"#d7c98a");
@@ -2570,6 +2599,13 @@ function updateShop(){
   if(desc) desc.textContent=`Carry +1 letter (${state.bagCap} → ${state.bagCap+1})`;
   if(costEl) costEl.textContent=cost;
   if(btn) btn.disabled = state.ink < cost;
+  // "Bind a Fable Page" — recover the next locked fable using beast-dropped materials
+  const total=fableTotal(), doneAll=state.fables>=total;
+  const fdesc=document.getElementById("shop-fable-desc"), fcost=document.getElementById("shop-fable-cost"),
+        fbtn=document.getElementById("shop-fable-buy");
+  if(fdesc) fdesc.textContent = doneAll ? "Every fable recovered ✓" : `Recover the next fable (${state.fables}/${total})`;
+  if(fcost) fcost.textContent = Object.keys(FABLE_COST).map(m=>`${FABLE_COST[m]} ${prettyItem(m)}`).join(" + ");
+  if(fbtn) fbtn.disabled = !canBindFable();
 }
 function buyBagUpgrade(){
   const cost=bagUpgradeCost();
@@ -2579,6 +2615,12 @@ function buyBagUpgrade(){
   showToast("Satchel upgraded — now holds "+state.bagCap+" letters.");
   updateShop(); updateRewardHud(); updateTrayHud();   // refresh ink, shop cost, and the N/cap readout
   scheduleSave();
+}
+function buyFable(){
+  if(!canBindFable()) return;
+  for(const m in FABLE_COST) state.resources[m]=(state.resources[m]||0)-FABLE_COST[m];
+  recoverNextFable();    // plays the chime + toast, refreshes the menu, saves
+  updateShop();
 }
 
 /* ---------- BENCH / LIBRARY OVERLAY ----------------------- */
@@ -2902,6 +2944,19 @@ async function ensureBookLevels(reg){
   }catch(e){ reg.chapters=[]; reg.levels=[]; }
   return reg.chapters;
 }
+// Recover the next locked fable (book order). Shared by the rare beast page-drop + the shop bind.
+// Returns the recovered chapter meta, or null if the book is already fully recovered.
+function recoverNextFable(){
+  if(state.fables >= fableTotal()) return null;
+  const meta=(BOOKS[0].chapters||[])[state.fables] || null;   // next one (state.fables is the current count)
+  state.fables++;
+  SFX.play("unlock");
+  showToast("📜 New fable recovered"+(meta?": “"+meta.title+"”":"")+" — restore it at Mad Libris.");
+  if(state.madlibs && !mlLevel) showChapterMenu();            // refresh an open chapter menu
+  if(state.shop) updateShop();
+  scheduleSave();
+  return meta;
+}
 async function openBook(){
   mlReg=BOOKS[0];                                  // one book for now (chapter menu inside it)
   mlBook=null; mlLevel=null; mlActive=null;
@@ -2929,9 +2984,12 @@ async function showChapterMenu(){
     : "Choose a chapter to restore. Fill each blank with a word from your library.";
   panel.innerHTML="";
   pas.innerHTML='<div class="ml-hint">Loading chapters…</div>';
-  const chapters=await ensureBookLevels(mlReg);    // book-ordered metadata from index.json (once)
+  const allChapters=await ensureBookLevels(mlReg);    // book-ordered metadata from index.json (once)
   if(!state.madlibs) return;
-  if(!chapters.length){ pas.innerHTML='<p class="ml-err">Couldn’t load this book’s chapters. The level files must be served over http (not <code>file://</code>).</p>'; return; }
+  if(!allChapters.length){ pas.innerHTML='<p class="ml-err">Couldn’t load this book’s chapters. The level files must be served over http (not <code>file://</code>).</p>'; return; }
+  // Only RECOVERED fables are shown; locked ones are hidden (recover them via beast page-drops or the Stall).
+  const chapters=allChapters.slice(0, state.fables);
+  const locked=allChapters.length-chapters.length;
   // Rendered straight from the index (no per-chapter fetch) — a chapter only loads when you open it.
   pas.innerHTML='<div class="ml-chapters">'+chapters.map(m=>{
     const R=state.restored[m.id], done=R&&R.done, filled=R?Object.keys(R.fills||{}).length:0;
@@ -2940,7 +2998,9 @@ async function showChapterMenu(){
     return `<button class="ml-chapter" data-path="${esc(m.path)}">`+
            `<span class="ml-ch-title">${esc(m.title)}</span>`+
            `<span class="ml-ch-meta">${m.blanks} blanks · ${status}</span></button>`;
-  }).join("")+'</div>';
+  }).join("")
+   + (locked ? `<div class="ml-hint" style="margin-top:8px">…${locked} more fable${locked>1?"s":""} out there to recover — beat beasts for a page, or bind one at the Stall.</div>` : "")
+   + '</div>';
   pas.querySelectorAll("[data-path]").forEach(b=>b.onclick=()=>openChapter(b.dataset.path));
 }
 async function openChapter(path){
@@ -3154,7 +3214,7 @@ function snapshot(){
   return { v:3, day:state.day, inv:state.inv, dex:state.dex,
            bagCap:state.bagCap, captured:[...state.captured], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
-           restored:state.restored, books:state.books,
+           restored:state.restored, books:state.books, fables:state.fables,
            resources:state.resources, bestiary:state.bestiary };
 }
 function applySnapshot(d){
@@ -3169,6 +3229,7 @@ function applySnapshot(d){
   // Mad-libs chapter progress + restored-book list persist forever (earned progress).
   if(d.restored && typeof d.restored==="object") state.restored=d.restored;
   if(Array.isArray(d.books)) state.books=d.books;
+  if(typeof d.fables==="number") state.fables=Math.max(1, d.fables);   // recovered-fable count (chapter 1 always free)
   // Binding materials + bestiary progress persist forever (earned progress, like the collection).
   if(d.resources && typeof d.resources==="object") state.resources=d.resources;
   if(d.bestiary && typeof d.bestiary==="object") state.bestiary=d.bestiary;
@@ -3255,6 +3316,7 @@ document.getElementById("controls-close").onclick=toggleHelp;
 document.getElementById("check-btn").onclick=checkWord;
 document.getElementById("clear-btn").onclick=()=>{ closeRespell(); bench=[]; renderBench(); document.getElementById("result").innerHTML=""; SFX.play("click"); };
 document.getElementById("shop-bag-buy").onclick=buyBagUpgrade;
+document.getElementById("shop-fable-buy").onclick=buyFable;
 document.getElementById("shop-close").onclick=()=>{ closeShop(); SFX.play("click"); };
 document.getElementById("shop-done").onclick=()=>{ closeShop(); SFX.play("click"); };
 document.getElementById("ml-close").onclick=()=>{ closeBook(); SFX.play("click"); };

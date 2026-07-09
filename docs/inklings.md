@@ -391,7 +391,16 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   `loadLevelCached`/`mlCache` → `renderMadlibs` (+ `passageHTML`/`neededHTML`/`pickerHTML`/`completionHTML`/
   `wirePicker`); `backToChapters` returns to the menu (`#ml-back`).
   `selectBlank`/`pickWord`/`clearActive`, `usedWordSet`/`eligibleWords`, `allFilled`/`completeLevel`.
-  State: `state.restored` (per-level `{fills,done,exact,bookId}`) + `state.books`, both saved.
+  **Fable gating** — chapters are **recovered one at a time in book order**: `state.fables` (saved, always;
+  ≥1) is how many are unlocked, **chapter 1 free**. `showChapterMenu` shows only `chapters.slice(0, state.fables)`
+  and hides the rest behind a "…N more fables out there to recover" note. **`recoverNextFable()`** (unlocks the
+  next, chime + toast, refreshes the open menu/shop) is driven by two sources: a **rare beast page-drop**
+  (`defeatCreature` rolls `FABLE_DROP_CHANCE≈0.10` while any remain → a `"page"` ground pickup with its own
+  `ICON_DRAW.page` scroll icon; `collectPickup` special-cases `"page"` → `recoverNextFable`, **not** stockpiled
+  in `state.resources`), and the **Stall** ("Bind a Fable Page", costs `FABLE_COST = {paper:3, glue:2}` of
+  beast-dropped materials; `buyFable`/`canBindFable`). `fableTotal()` comes from the preloaded index. The book
+  only *completes* (`state.books`) once **all** chapters are restored, so all must be recovered first.
+  State: `state.restored` (per-level `{fills,done,exact,bookId}`) + `state.books` + `state.fables`, all saved.
   `mlReg`/`mlBook`/`mlLevel`/`mlActive` are the open session. Blank fills come from the dex filtered by
   cached POS; a word used anywhere is locked forever (`usedWordSet`).
 - **Level content pipeline** (`build_levels.py`, project root) — offline, run once per book: turns a
