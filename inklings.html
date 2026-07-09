@@ -174,6 +174,21 @@
   #unlockmodal{position:absolute;inset:0;display:none;background:rgba(21,19,28,.9);
     align-items:center;justify-content:center;padding:18px;z-index:10}
   #unlockmodal.open{display:flex}
+  /* Feats panel (verb stat ladders) */
+  #stats{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
+    align-items:center;justify-content:center;padding:18px;z-index:8}
+  #stats.open{display:flex}
+  #stats .book{max-width:460px;max-height:86vh;overflow:auto}
+  .feat-cat{background:var(--paper-2);border:2px solid var(--edge);padding:10px 12px;margin:10px 0}
+  .feat-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .feat-head .nm{font-family:var(--disp);font-size:12px;color:var(--inkblue)}
+  .feat-head .ct{font-size:15px;color:var(--ink-soft)}
+  .feat-rewards{font-size:16px;color:var(--ink);margin:6px 0 8px;line-height:1.4}
+  .feat-next{font-size:14px;color:var(--ink-soft)}
+  .feat-bar{height:8px;background:var(--paper);border:2px solid var(--edge);margin-top:5px}
+  .feat-bar > i{display:block;height:100%;background:var(--gold);transition:width .6s ease}
+  .feat-cat.levelup{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+  .feat-levelup{font-family:var(--disp);font-size:10px;color:var(--gold);margin:7px 0 4px;line-height:1.4}
   #overlay.open{display:flex}
   .book{width:100%;max-width:680px;max-height:92vh;overflow:auto;background:var(--paper);
     border:3px solid var(--edge);box-shadow:6px 6px 0 rgba(0,0,0,.5);padding:18px 20px}
@@ -293,6 +308,7 @@
   .nb-chip.found{cursor:pointer;color:var(--ink)}
   .nb-chip.found:hover{background:#d8ccab}
   .nb-chip.blank{color:var(--ink-soft);opacity:.55;letter-spacing:3px}
+  .nb-chip.divined{color:var(--gold);border-color:var(--gold);letter-spacing:2px;text-transform:uppercase}
   .foot{margin-top:16px;padding-top:12px;border-top:2px solid var(--line);
     display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
   .foot .keys{font-size:16px;color:var(--ink-soft);line-height:1.9}
@@ -498,6 +514,16 @@
       </div>
     </div>
 
+    <!-- Feats: verb-category stat ladders (opened with C / the ✦ touch button) -->
+    <div id="stats">
+      <div class="book">
+        <button class="close-x" id="stats-close" aria-label="Close" title="Close">✕</button>
+        <h1>Feats</h1>
+        <div class="sub">Collecting verbs levels you up. Each category rewards you as its word count climbs.</div>
+        <div id="stats-body"></div>
+      </div>
+    </div>
+
     <!-- Bookshelf view: a shelf's books (2 noun categories) → a book's found-vs-blank word list -->
     <div id="shelfview">
       <div class="book" style="max-width:520px">
@@ -561,6 +587,8 @@
           <span><b>E</b></span><span>Use what you're near: shop, the house (enter the Wordhoard), the Wordsmithy, Mad Libris</span>
           <span><b>Tab</b></span><span>Open the collection list</span>
           <span><b>B</b></span><span>Open the bestiary (or tap the 🐾 button)</span>
+          <span><b>C</b></span><span>Open your Feats (verb milestones — or tap ✦)</span>
+          <span><b>Shift</b></span><span>Slide — a quick forward lunge (once unlocked; tap SLIDE)</span>
           <span><b>1</b> / <b>2</b> / <b>3</b></span><span>Drink a Size / Speed / Reveal potion (or tap its HUD button)</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
           <span><b>Esc</b></span><span>Close any panel</span>
@@ -580,7 +608,8 @@
           <p>Rewards repeat: re-spelling a word spends its letters again and pays again.</p>
           <p><b>Word of the Day.</b> Each day the Wordsmithy shows a bonus word — always built from letters you've unlocked, so you can always collect what you need. Spell it once for a big ink bonus.</p>
           <p><b>Mad Libris.</b> The lectern right of the Wordsmithy. You start with one fable; <b>recover</b> the rest one at a time — beasts rarely drop a <b>page</b>, or <b>bind</b> the next one at the Stall with materials beasts drop. Restore a story by filling each blank with a collected word that matches the needed part of speech (noun/verb/adjective/adverb). Matching the original word earns bonus ink. A word can be used in a chapter only <b>once, ever</b> — so keep learning new ones. Finish every recovered chapter to add the book to your Wordhoard.</p>
-          <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground, then flies to you when you're close (auto-collect) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
+          <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground — walk over it to collect (the <b>Magnet</b> feat later makes drops drift to you) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
+          <p><b>Feats (<b>C</b>).</b> Collecting <b>verbs</b> levels you up along five word-count milestones per category (1, then every 5). Rewards interleave passive boosts and abilities: <b>Motion</b> → move speed + <b>Slide</b>; <b>Competition</b> → attack + <b>Finisher</b>/<b>Combo</b>; <b>Perception</b> → <b>Divine</b> (a daily letter peek in the library) + <b>Treasure Sense</b> (drops glint); <b>Possession</b> → satchel space + <b>Magnet</b>. More verb categories arrive later.</p>
         </div>
         <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
           <button class="primary" id="controls-close">Got it</button>
@@ -612,6 +641,8 @@
           <button class="tc-btn util" id="tc-home" aria-label="Home to bench">HOME</button>
           <button class="tc-btn util" id="tc-help" aria-label="Controls">?</button>
           <button class="tc-btn util" id="tc-dex" aria-label="Bestiary">🐾</button>
+          <button class="tc-btn util" id="tc-stats" aria-label="Feats">✦</button>
+          <button class="tc-btn util" id="tc-slide" aria-label="Slide">SLIDE</button>
           <!-- SHOP / HOUSE (home) and DESK / BOOK (inside the library) are contextual: only shown when standing by that structure (see syncTouchUI) -->
           <button class="tc-btn util" id="tc-shop" aria-label="Open shop">SHOP</button>
           <button class="tc-btn util" id="tc-house" aria-label="Enter the Wordhoard">HOARD</button>
@@ -673,7 +704,7 @@ const PLAYER_FRAME=64, PLAYER_COLS=6, PLAYER_DRAW=120;   // base sprite size; th
 const ATTACK_ANIM=0.30;                    // attack animation length (s)
 const WALK_FRAME=0.09, IDLE_FRAME=0.16;    // seconds per animation frame
 const PR={ idleDown:0, idleRight:1, idleUp:2, walkDown:3, walkRight:4, walkUp:5,
-           atkRight:7, atkDown:8, atkUp:9 };
+           slide:6, atkRight:7, atkDown:8, atkUp:9 };
 
 // Base attack — a single fixed reach/speed for now (no equipment/implements yet; future gear can
 // override dmg/range/cd here). dmg 1 one-shots creatures (CREATURE_HP=1).
@@ -929,6 +960,105 @@ fetch("data/noun-books.json").then(r=>r.ok?r.json():Promise.reject()).then(data=
   if(LIBRARY) LIBRARY.bg=null;   // rebake the shelves now that the book data is here
 }).catch(()=>{ console.warn("Inklings: couldn't load data/noun-books.json — Nouns wing shelves disabled."); });
 
+/* ---------- VERB-CATEGORY STAT LADDERS (Korok-style milestones) ---------------------------------------
+   Collecting distinct verbs levels the player up. Each verb's category = its most-common-sense verb.* lexname
+   (precomputed in data/verb-cats.json). We track distinct-verb counts per category (state.verbCounts) and hand
+   out ONE reward each time a count hits a milestone. Rewards are DERIVED from the counts (state.perks), so it's
+   retroactive + idempotent. Only these 4 categories have ladders now; the other ~11 are tracked and get added
+   later by filling in VERB_LADDERS with the same shape. Thresholds (Option B): 1, then every +5. */
+let VERB_CATS=null;              // word -> verb category (e.g. "motion"); loaded async
+fetch("data/verb-cats.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{
+  VERB_CATS=data; rederiveVerbCounts();   // recompute counts from the existing collection (retroactive)
+}).catch(()=>{ console.warn("Inklings: couldn't load data/verb-cats.json — verb stat ladders disabled."); });
+
+// ---- TUNABLE CONSTANTS (grouped for playtest balancing) ----
+const VERB_MS_STEP     = 5;      // milestones fire at word count 1, then every +5 (5,10,15,…)
+const SPEED_STEP       = 12;     // +px/s base move speed per motion "speed" rung (base 180 — a fraction)
+const ATTACK_STEP      = 0.5;    // +damage per competition "attack" rung (base 1; CREATURE_HP=1, CUBE_HP=2)
+const SATCHEL_STEP     = 1;      // +satchel capacity per possession "satchel" rung
+const SLIDE_SPEED      = 640;    // px/s of the Slide lunge (base move ~180)
+const SLIDE_TIME       = 0.18;   // seconds the slide lasts
+const SLIDE_CD         = 1.0;    // seconds between slides
+const SLIDE_FRAMES     = 4;      // row 6 of the sheet only has 4 non-empty frames
+const FINISHER_HP_FRAC = 0.5;    // a foe at/below this fraction of max HP…
+const FINISHER_BONUS   = 1;      //   …takes +this much damage
+const COMBO_WINDOW     = 1.6;    // seconds to land the next hit and keep the combo alive
+const COMBO_STEP       = 0.15;   // +damage per consecutive hit
+const COMBO_MAX        = 1.0;    // cap on combo bonus damage
+const TREASURE_PULSE     = 2.2;  // glint pulses/sec at Treasure Sense (level 1)
+const TREASURE_PULSE_STEP= 0.8;  // +pulses/sec per Keener rung (raises glint vividness/coverage)
+
+// Each ladder: milestone word-count → reward type. Past the last explicit rung, milestones repeat VERB_REPEAT.
+const VERB_LADDERS = {
+  motion:      [ {at:1,type:"speed"},  {at:5,type:"slide"},    {at:10,type:"speed"} ],
+  competition: [ {at:1,type:"attack"}, {at:5,type:"finisher"}, {at:10,type:"attack"}, {at:15,type:"combo"} ],
+  perception:  [ {at:1,type:"divine"}, {at:5,type:"treasure"}, {at:10,type:"keener"} ],
+  possession:  [ {at:1,type:"satchel"},{at:5,type:"magnet"},   {at:10,type:"satchel"} ]
+};
+const VERB_REPEAT = { motion:"speed", competition:"attack", perception:"keener", possession:"satchel" };
+const VERB_CAT_LABEL = { motion:"Motion", competition:"Competition", perception:"Perception", possession:"Possession" };
+const REWARD_LABEL = {
+  speed:"Speed boost", slide:"Slide", attack:"Attack boost", finisher:"Finisher", combo:"Combo",
+  divine:"Divine", treasure:"Treasure Sense", keener:"Keener senses", satchel:"+1 Satchel", magnet:"Magnet"
+};
+function isVerbMilestone(n){ return n===1 || (n>0 && n%VERB_MS_STEP===0); }
+function verbMilestonesUpTo(n){ const out=[]; if(n>=1) out.push(1); for(let m=VERB_MS_STEP;m<=n;m+=VERB_MS_STEP) out.push(m); return out; }
+function verbRewardAt(cat, count){                  // the reward handed out when `cat` reaches `count`
+  const L=VERB_LADDERS[cat]; if(!L) return null;
+  const rung=L.find(r=>r.at===count); if(rung) return rung.type;
+  if(isVerbMilestone(count) && count>L[L.length-1].at) return VERB_REPEAT[cat];
+  return null;
+}
+// Derive all perks from the persisted counts. Called on load, on snapshot restore, and after each new verb.
+function computePerks(){
+  const c=state.verbCounts||{};
+  const p={ speed:0, attack:0, satchel:0, slide:false, finisher:false, combo:false, divine:false, treasure:0 };
+  for(const cat in VERB_LADDERS){
+    for(const m of verbMilestonesUpTo(c[cat]||0)){
+      switch(verbRewardAt(cat,m)){
+        case "speed":   p.speed+=SPEED_STEP; break;
+        case "attack":  p.attack+=ATTACK_STEP; break;
+        case "satchel": p.satchel+=SATCHEL_STEP; break;
+        case "slide":   p.slide=true; break;
+        case "finisher":p.finisher=true; break;
+        case "combo":   p.combo=true; break;
+        case "divine":  p.divine=true; break;
+        case "treasure":p.treasure=Math.max(p.treasure,1); break;
+        case "keener":  p.treasure+=1; break;
+      }
+    }
+  }
+  state.perks=p;
+}
+// Recompute counts straight from the collection (dex × the verb map) — authoritative + retroactive.
+function rederiveVerbCounts(){
+  if(!VERB_CATS) return;
+  const counts={};
+  for(const w in state.dex){ const cat=VERB_CATS[w]; if(cat) counts[cat]=(counts[cat]||0)+1; }
+  state.verbCounts=counts; computePerks();
+}
+// A brand-new distinct word was just collected — if it's a verb, bump its category + fire any milestone.
+function onNewVerbWord(word){
+  if(!VERB_CATS) return;
+  const cat=VERB_CATS[word]; if(!cat) return;
+  const n=(state.verbCounts[cat]||0)+1; state.verbCounts[cat]=n;
+  computePerks();
+  if(isVerbMilestone(n)){
+    const t=verbRewardAt(cat,n);
+    if(t){
+      if(t==="satchel") updateTrayHud();   // the N/cap readout just grew
+      showLevelUp(cat, n, t);              // open the Feats panel + fill the bar (clearer than a toast)
+    }
+  }
+}
+// Effective stats (base + verb perks; potions still multiply on top where they apply).
+function moveSpeed(){ return 180 + (state.perks?state.perks.speed:0); }
+function attackDmg(){ return ATTACK.dmg + (state.perks?state.perks.attack:0) + comboBonus(); }
+function satchelCap(){ return state.bagCap + (state.perks?state.perks.satchel:0); }
+// Combo (competition perk): consecutive hits within COMBO_WINDOW ramp damage; a miss/timeout resets it.
+let combo={ count:0, timer:0 };
+function comboBonus(){ return (state.perks&&state.perks.combo) ? Math.min(COMBO_MAX, combo.count*COMBO_STEP) : 0; }
+
 // The 13 shelves (fixed order) × 2 board-rows = 26 shelf-levels, mapped to the 26 noun categories in
 // NOUN_BOOKS.categories order (top board-row first). Concrete/common categories land on the big top+mid shelves.
 const SHELF_ORDER=["top1","top2","top3","top4","top5","midL1","midL2","midR1","midR2","sideL1","sideL2","sideR1","sideR2"];
@@ -1018,7 +1148,7 @@ function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.im
 function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
 function dayHash(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
 const state = {
-  player:{ x:W/2, y:H/2+TILE, r:15, speed:180, face:{x:0,y:1}, atkCd:0, atkAnim:0, hearts:PLAYER_MAX_HEARTS, hurtT:0, healT:0, slipT:0, slipCd:0, slipDir:null },
+  player:{ x:W/2, y:H/2+TILE, r:15, speed:180, face:{x:0,y:1}, atkCd:0, atkAnim:0, hearts:PLAYER_MAX_HEARTS, hurtT:0, healT:0, slipT:0, slipCd:0, slipDir:null, slideT:0, slideCd:0, slideDir:null },
   screen:{ sx:0, sy:0 },
   inv:{},                       // letter -> count
   dex:{},                       // word -> {def, found}
@@ -1035,17 +1165,21 @@ const state = {
   restored:{},                  // mad-libs progress: levelId -> {fills:{blankId:word}, done, exact, bookId} (persist)
   books:[],                     // ids of books fully restored (added to your library) (persist)
   fables:1,                     // how many Aesop chapters are RECOVERED (unlocked), in book order — chapter 1 is free (persist)
+  verbCounts:{},                // verb category -> distinct verbs collected (persist; re-derived from dex on load)
+  perks:{ speed:0, attack:0, satchel:0, slide:false, finisher:false, combo:false, divine:false, treasure:0 },  // derived from verbCounts
+  divineDay:"",                 // date-string of the last Divine peek (day-scoped like the WOTD)
+  divine:null,                  // {day, word, i} — the letter revealed by today's Divine, shown in the book view
   resources:{},                 // book-binding material id -> count, from resource-creature drops (persist)
   bestiary:{},                  // creature id -> {kills, seen} — unlocks bestiary entries (persist)
   fx:[],                        // floating texts
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false,
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, statsOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
 state.day = todayStr(); state.daySeed = dayHash(state.day);   // set before any screen is generated
 // Total letters currently carried, and whether the satchel is at capacity.
 function satchelCount(){ let n=0; for(const l in state.inv) n+=state.inv[l]; return n; }
-function satchelFull(){ return satchelCount()>=state.bagCap; }
+function satchelFull(){ return satchelCount()>=satchelCap(); }
 
 /* ---------- SCREEN GENERATION ----------------------------- */
 function key(sx,sy){ return sx+","+sy; }
@@ -1361,6 +1495,10 @@ addEventListener("keydown",e=>{
     if(k==="escape"){ e.preventDefault(); closeDefModal(); } return;   // close the def modal first
   }
   if(state.help){ if(k==="escape"){ e.preventDefault(); toggleHelp(); } return; }
+  if(state.statsOpen){   // Feats panel (may sit atop the Wordsmithy after a milestone): close on Esc / Tab / C
+    if(k==="escape"||k==="tab"||k==="c"){ e.preventDefault(); toggleStats(); }
+    return;
+  }
   if(state.overlay){   // Wordsmithy open: let the physical keyboard build words
     if(pendingRespell){   // the "spell it again?" confirm is modal: only yes/no
       if(k==="enter"){ e.preventDefault(); confirmRespell(); }
@@ -1406,6 +1544,8 @@ addEventListener("keydown",e=>{
   if(k==="2") drinkPotion("speed");
   if(k==="3") drinkPotion("reveal");
   if(k==="tab"){ e.preventDefault(); openOverlay(); }
+  if(k==="shift") startSlide();          // motion perk: forward lunge
+  if(k==="c") toggleStats();             // Feats / character sheet
   if(k===" ") doAttack();
 });
 addEventListener("keyup",e=>{ keys[e.key.toLowerCase()]=false; });
@@ -1483,22 +1623,25 @@ function doAttack(){
   const sc=curScreen();
   const range=ATTACK.range*(state.buffs.size>0?SIZE_MULT:1);   // size potion: longer reach
   const full=satchelFull();
-  let blockedLetter=false;
+  const dmg=attackDmg();                                       // base + attack perk + current combo bonus
+  const fin=state.perks && state.perks.finisher;
+  let blockedLetter=false, hitAny=false;
   for(let i=sc.creatures.length-1;i>=0;i--){
     const c=sc.creatures[i];
     const dx=c.x-p.x, dy=c.y-p.y, d=Math.hypot(dx,dy);
     if(d>range+18) continue;
     const dot=(dx*p.face.x+dy*p.face.y)/(d||1);
     if(dot<0.35) continue;                 // must be roughly in front
+    const hit=dmg + ((fin && c.hp<=c.maxhp*FINISHER_HP_FRAC) ? FINISHER_BONUS : 0);   // finisher: low-HP bonus
     if(c.kind==="cube" || c.kind==="resource"){   // resource-creatures (incl. Writer's Block) — hit even with a full satchel
-      c.hp-=ATTACK.dmg; c.flash=0.15;
+      c.hp-=hit; c.flash=0.15; hitAny=true;
       const kb=16; c.x+=(dx/(d||1))*kb; c.y+=(dy/(d||1))*kb;   // shove it back
       if(c.hp<=0){ defeatCreature(c, sc); sc.creatures.splice(i,1); }
       continue;
     }
     // letter-creature
     if(full){ blockedLetter=true; continue; }   // can't hold more — leave the letter in the wild
-    c.hp-=ATTACK.dmg; c.flash=0.15;
+    c.hp-=hit; c.flash=0.15; hitAny=true;
     const kb=22; c.x+=(dx/(d||1))*kb; c.y+=(dy/(d||1))*kb;
     if(c.hp<=0){
       state.inv[c.letter]=(state.inv[c.letter]||0)+1;
@@ -1512,8 +1655,23 @@ function doAttack(){
       scheduleSave();
     }
   }
-  if(blockedLetter){ showToast("Satchel full ("+state.bagCap+") — spell words to free space."); SFX.play("invalid"); }
+  // Combo (competition perk): a swing that connects ramps up; a whiff resets it.
+  if(state.perks && state.perks.combo){
+    if(hitAny){ combo.count=Math.min(20, combo.count+1); combo.timer=COMBO_WINDOW;
+      if(combo.count>1) state.fx.push({x:p.x, y:p.y-42, text:"combo ×"+combo.count, life:0.6, color:"#c89b3c"}); }
+    else combo.count=0;
+  }
+  if(blockedLetter){ showToast("Satchel full ("+satchelCap()+") — spell words to free space."); SFX.play("invalid"); }
   maybeNotifyCleared();
+}
+// Slide (motion perk): a quick forward lunge on Shift / the SLIDE touch button. Field only.
+function startSlide(){
+  if(trans || state.room) return;
+  const p=state.player;
+  if(!state.perks || !state.perks.slide || p.slideT>0 || p.slideCd>0) return;
+  const f=p.face, l=Math.hypot(f.x,f.y)||1;
+  p.slideDir={ x:f.x/l, y:f.y/l }; p.slideT=SLIDE_TIME; p.slideCd=SLIDE_CD;
+  SFX.play("swing");
 }
 // A resource-creature (or the Writer's Block cube) was beaten: log it in the bestiary, scatter its drops
 // as ground pickups (walk over to collect), and puff some dust.
@@ -1599,6 +1757,8 @@ function maybeNotifyCleared(){
 function update(dt){
   const p=state.player;
   if(p.atkCd>0) p.atkCd-=dt;
+  if(combo.timer>0){ combo.timer-=dt; if(combo.timer<=0) combo.count=0; }   // combo window
+  if(p.slideCd>0 && state.room==="library") p.slideCd-=dt;                   // (field cd handled in the move block)
   if(p.atkAnim>0) p.atkAnim-=dt;
   p.animT=(p.animT||0)+dt;     // drives idle/walk sprite cycling
   p.moving=false;
@@ -1613,7 +1773,7 @@ function update(dt){
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -1623,16 +1783,23 @@ function update(dt){
     // Mugwump's slippery rings — stepping on one briefly steals your steering (you slide the way you were going).
     if(p.slipT>0) p.slipT-=dt;
     if(p.slipCd>0) p.slipCd-=dt;
+    if(p.slideCd>0) p.slideCd-=dt;
+    if(p.slideT>0) p.slideT-=dt;
     const onSlick=(sc.slicks||[]).some(s=>Math.hypot(s.x-p.x, s.y-p.y)<s.r);
     if(onSlick && p.slipT<=0 && p.slipCd<=0 && (mx||my)){
       const l=Math.hypot(mx,my)||1; p.slipDir={x:mx/l, y:my/l}; p.slipT=0.5; p.slipCd=1.0;
     }
     if(p.slipT>0 && p.slipDir){ mx=p.slipDir.x; my=p.slipDir.y; }   // slide: ignore input while slipping
-    if(mx||my){
+    if(p.slideT>0 && p.slideDir){        // Slide lunge (motion perk): shoot forward fast, overrides input
+      p.face.x=p.slideDir.x; p.face.y=p.slideDir.y; p.moving=true;
+      const nx=p.x+p.slideDir.x*SLIDE_SPEED*dt, ny=p.y+p.slideDir.y*SLIDE_SPEED*dt;
+      if(canStand(sc,nx,p.y)) p.x=nx;
+      if(canStand(sc,p.x,ny)) p.y=ny;
+    } else if(mx||my){
       const len=Math.hypot(mx,my); mx/=len; my/=len;   // unit direction → constant speed at any angle
       p.face.x=mx; p.face.y=my; p.moving=true;
       // resolve axes independently so you slide along water/rock instead of sticking
-      const spd=p.speed*(state.buffs.speed>0?SPEED_MULT:1);   // speed potion
+      const spd=moveSpeed()*(state.buffs.speed>0?SPEED_MULT:1);   // motion perks + speed potion
       const nx=p.x+mx*spd*dt, ny=p.y+my*spd*dt;
       if(canStand(sc,nx,p.y)) p.x=nx;
       if(canStand(sc,p.x,ny)) p.y=ny;
@@ -1651,7 +1818,7 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -1693,13 +1860,14 @@ function update(dt){
     for(let i=sc.pickups.length-1;i>=0;i--){ const pk=sc.pickups[i];
       const dx=p.x-pk.x, dy=p.y-pk.y, d=Math.hypot(dx,dy)||1;
       if(d<PICKUP_DIST){ collectPickup(pk); sc.pickups.splice(i,1); continue; }
-      if(d<PICKUP_MAGNET){ const pull=PICKUP_PULL*dt*(1+(PICKUP_MAGNET-d)/PICKUP_MAGNET); pk.x+=dx/d*pull; pk.y+=dy/d*pull; }
+      else if(state.perks && state.perks.magnet && d<PICKUP_MAGNET){   // Magnet perk (possession): drops drift to you
+        const pull=PICKUP_PULL*dt*(1+(PICKUP_MAGNET-d)/PICKUP_MAGNET); pk.x+=dx/d*pull; pk.y+=dy/d*pull; }
     }
   }
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else hint.classList.remove("show");
@@ -1720,7 +1888,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.shelfview && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.shelfview && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -1730,7 +1898,7 @@ function updateLibrary(p, dt){
     if(mx||my){
       const len=Math.hypot(mx,my); mx/=len; my/=len;
       p.face.x=mx; p.face.y=my; p.moving=true;
-      const spd=p.speed*(state.buffs.speed>0?SPEED_MULT:1);
+      const spd=moveSpeed()*(state.buffs.speed>0?SPEED_MULT:1);
       const nx=p.x+mx*spd*dt, ny=p.y+my*spd*dt;
       if(canStand(sc,nx,p.y)) p.x=nx;
       if(canStand(sc,p.x,ny)) p.y=ny;
@@ -1745,7 +1913,7 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.shelfview;
+  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.shelfview;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryShelf()){ hint.textContent="Press E to browse this shelf"; hint.classList.add("show"); }
@@ -2518,6 +2686,15 @@ function drawPickup(pk, tnow){
   }
   if(pk.qty>1){ ctx.fillStyle="#26233a"; ctx.font="8px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
     ctx.fillText(""+pk.qty, x+9, y-7); ctx.textBaseline="alphabetic"; }
+  // Treasure Sense (perception perk): a pulsing glint so drops pop; Keener rungs raise the pulse rate/vividness.
+  if(state.perks && state.perks.treasure>0){
+    const lvl=state.perks.treasure, rate=TREASURE_PULSE + (lvl-1)*TREASURE_PULSE_STEP;
+    const a=0.4 + 0.6*(0.5+0.5*Math.sin(tnow/1000*rate*6.283 + pk.x));
+    const gx=x+7, gy=y-9, s=Math.min(3, 1+lvl*0.5);
+    ctx.fillStyle="rgba(255,246,190,"+a.toFixed(2)+")";
+    ctx.fillRect(gx-s, gy-1, s*2, 2); ctx.fillRect(gx-1, gy-s, 2, s*2);
+    ctx.fillStyle="rgba(255,255,255,"+(a*0.9).toFixed(2)+")"; ctx.fillRect(gx-1,gy-1,2,2);
+  }
   ctx.restore();
 }
 // Player hearts, top-centre.
@@ -2546,7 +2723,10 @@ function drawPlayer(){
   const horiz=Math.abs(p.face.x)>=Math.abs(p.face.y);
   const left=horiz && p.face.x<0;
   let row, frame;
-  if(p.atkAnim>0){                                   // attacking — play through the row once
+  if(p.slideT>0){                                    // sliding — play through the slide row (row 6, 4 frames)
+    row = PR.slide;
+    frame = Math.min(SLIDE_FRAMES-1, Math.floor((1-p.slideT/SLIDE_TIME)*SLIDE_FRAMES));
+  } else if(p.atkAnim>0){                            // attacking — play through the row once
     row = horiz ? PR.atkRight : (p.face.y<0 ? PR.atkUp : PR.atkDown);
     frame = Math.min(PLAYER_COLS-1, Math.floor((1-p.atkAnim/ATTACK_ANIM)*PLAYER_COLS));
   } else if(p.moving){
@@ -2572,7 +2752,7 @@ function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w
 function updateTrayHud(){
   const el=document.getElementById("tray-hud");
   const cnt=document.getElementById("bag-count");
-  if(cnt){ cnt.textContent=satchelCount()+"/"+state.bagCap; cnt.classList.toggle("full", satchelFull()); }
+  if(cnt){ cnt.textContent=satchelCount()+"/"+satchelCap(); cnt.classList.toggle("full", satchelFull()); }
   const have=Object.keys(state.inv).filter(l=>state.inv[l]>0);
   if(!have.length){ el.innerHTML='<span class="empty" style="font-weight:600;color:var(--ink-soft);font-size:12px">empty</span>'; return; }
   el.innerHTML=have.map(l=>`<span class="lchip" style="border-color:${colorFor(l)}">${l}<b>${state.inv[l]}</b></span>`).join("");
@@ -2726,19 +2906,40 @@ function renderShelfList(){   // page 1: the shelf's two categories and their di
   const body=document.getElementById("sv-body"); body.innerHTML=html; body.scrollTop=0;
   body.querySelectorAll("[data-key]").forEach(el=>el.onclick=()=>renderBookPage(el.dataset.key));
 }
+function divineActive(){ return state.divine && state.divine.day===state.day; }
+function divineMaskFor(word){ return word.split("").map((ch,idx)=> idx===state.divine.i ? ch : "_").join(" "); }
+// Divine (perception perk): once per day, reveal one letter of an undiscovered word in the open book.
+function useDivine(){
+  if(!svBook || !(state.perks&&state.perks.divine)) return;
+  if(divineActive()){ showToast("You've already divined a word today — it re-arms tomorrow."); return; }
+  const undis=NOUN_BOOKS.books[svBook].children.filter(c=>!state.dex[c]);
+  if(!undis.length){ showToast("Every word in this book is already collected!"); return; }
+  const word=undis[(Math.random()*undis.length)|0], i=(Math.random()*word.length)|0;
+  state.divine={ day:state.day, word, i }; state.divineDay=state.day;
+  SFX.play("unlock"); showToast("🔮 Divination: a missing word here shows a letter.");
+  renderBookPage(svBook); scheduleSave();
+}
 function renderBookPage(key){   // page 2: one book — found words (clickable) + undiscovered as blanks
   svBook=key; const bk=NOUN_BOOKS.books[key];
   document.getElementById("sv-back").style.display="";
   const found=bk.children.filter(c=>state.dex[c]).length;
   document.getElementById("sv-title").textContent=bookName(key);
   document.getElementById("sv-sub").textContent=`found ${found} / ${bk.children.length}`;
-  let html='<div class="nb-chips">';
-  for(const c of bk.children)
-    html += state.dex[c] ? `<span class="nb-chip found" data-w="${esc(c)}">${esc(c)}</span>`
-                         : `<span class="nb-chip blank">?????</span>`;
+  let html="";
+  if(state.perks && state.perks.divine){
+    const used=divineActive();
+    html += `<div style="margin-bottom:8px"><button class="primary" id="sv-divine"${used?" disabled":""}>🔮 Divine a word${used?" — used today":" (daily)"}</button></div>`;
+  }
+  html+='<div class="nb-chips">';
+  for(const c of bk.children){
+    if(state.dex[c]) html += `<span class="nb-chip found" data-w="${esc(c)}">${esc(c)}</span>`;
+    else if(divineActive() && state.divine.word===c) html += `<span class="nb-chip divined">${esc(divineMaskFor(c))}</span>`;
+    else html += `<span class="nb-chip blank">?????</span>`;
+  }
   html+="</div>";
   const body=document.getElementById("sv-body"); body.innerHTML=html; body.scrollTop=0;
   body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>openDefModal(el.dataset.w));
+  const db=document.getElementById("sv-divine"); if(db) db.onclick=useDivine;
   SFX.play("click");
 }
 function closeShelfView(){
@@ -2826,6 +3027,7 @@ function commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, known){
     const before=unlockedLetters();
     state.dex[word]={ def:def||"A word in the dictionary.", found:Date.now(), pos };
     if(LIBRARY) LIBRARY.bg=null;   // a new word may add a spine to the Nouns wing → rebake on next draw
+    onNewVerbWord(word);           // if it's a verb, advance its category ladder (may fire a milestone)
     newly=[...unlockedLetters()].filter(l=>!before.has(l));
     dexTab=(word[0]||"?").toUpperCase();
     renderDex();
@@ -3122,6 +3324,66 @@ function closeBestiary(){
   document.getElementById("bestiary").classList.remove("open");
   document.getElementById("sound-btn").style.display="";
 }
+// Feats panel: the verb-category ladders (only the populated ones), with progress to the next milestone.
+let levelup=null;   // {cat,milestone,reward,fromPct} — the milestone celebration currently animating
+function toggleStats(){
+  state.statsOpen=!state.statsOpen;
+  document.getElementById("stats").classList.toggle("open", state.statsOpen);
+  // keep the mute button hidden if another overlay (e.g. the Wordsmithy a milestone popped over) is still open
+  const hideSound = state.statsOpen || state.overlay || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview;
+  document.getElementById("sound-btn").style.display = hideSound ? "none" : "";
+  if(state.statsOpen) renderStats(); else levelup=null;   // clearing the celebration → normal progress next open
+  SFX.play("click");
+}
+// A milestone was hit: open the Feats panel and animate the just-completed bar filling to full (clear + juicy).
+function showLevelUp(cat, milestone, reward){
+  const prevMs = milestone===1 ? 0 : (milestone===VERB_MS_STEP ? 1 : milestone-VERB_MS_STEP);   // start of this segment
+  const fromPct = Math.round(((milestone-1)-prevMs)/(milestone-prevMs)*100);                    // fill just before this word
+  levelup = { cat, milestone, reward, fromPct };
+  if(!state.statsOpen){
+    state.statsOpen=true;
+    document.getElementById("stats").classList.add("open");
+    document.getElementById("sound-btn").style.display="none";
+  }
+  renderStats();
+  SFX.play("unlockbig");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{   // next frame: let CSS transition the bar to full
+    const bar=document.querySelector(".feat-cat.levelup .feat-bar > i"); if(bar) bar.style.width="100%";
+  }));
+}
+function nextVerbMilestone(count){ return count<1 ? 1 : Math.floor(count/VERB_MS_STEP)*VERB_MS_STEP+VERB_MS_STEP; }
+function renderStats(){
+  const body=document.getElementById("stats-body");
+  let html="";
+  for(const cat in VERB_LADDERS){
+    const n=(state.verbCounts&&state.verbCounts[cat])||0;
+    // earned rewards so far (tally by type, in ladder feel)
+    const tally={};
+    for(const m of verbMilestonesUpTo(n)){ const t=verbRewardAt(cat,m); if(t) tally[t]=(tally[t]||0)+1; }
+    const earned=Object.keys(tally).map(t=>REWARD_LABEL[t]+(tally[t]>1?" ×"+tally[t]:"")).join(" · ") || "—";
+    if(levelup && levelup.cat===cat){
+      // celebration view: the bar starts at its pre-milestone fill and animates to 100% (see showLevelUp)
+      html+=`<div class="feat-cat levelup">
+        <div class="feat-head"><span class="nm">${esc(VERB_CAT_LABEL[cat])}</span><span class="ct">${n} verb${n===1?"":"s"}</span></div>
+        <div class="feat-rewards">${esc(earned)}</div>
+        <div class="feat-levelup">★ Milestone ${levelup.milestone} — ${esc(REWARD_LABEL[levelup.reward])} unlocked!</div>
+        <div class="feat-bar"><i style="width:${levelup.fromPct}%"></i></div>
+      </div>`;
+      continue;
+    }
+    const next=nextVerbMilestone(n), nextReward=REWARD_LABEL[verbRewardAt(cat,next)]||"reward";
+    const prev=n<1?0:Math.floor(n/VERB_MS_STEP)*VERB_MS_STEP;   // last milestone (0 or a multiple of 5)
+    const span=next-prev, pct=Math.max(0,Math.min(100, Math.round((n-prev)/span*100)));
+    html+=`<div class="feat-cat">
+      <div class="feat-head"><span class="nm">${esc(VERB_CAT_LABEL[cat])}</span><span class="ct">${n} verb${n===1?"":"s"}</span></div>
+      <div class="feat-rewards">${esc(earned)}</div>
+      <div class="feat-next">Next at ${next}: <b>${esc(nextReward)}</b> &nbsp;(${n}/${next})</div>
+      <div class="feat-bar"><i style="width:${pct}%"></i></div>
+    </div>`;
+  }
+  if(!VERB_CATS) html='<div class="sub">Loading verb data…</div>'+html;
+  body.innerHTML=html;
+}
 function toggleBestiary(){ state.bestiaryOpen ? closeBestiary() : openBestiary(); }
 // Unique material names a creature can drop (for the "Drops" line once that block is unlocked).
 function dropSummary(cre){
@@ -3215,7 +3477,8 @@ function snapshot(){
            bagCap:state.bagCap, captured:[...state.captured], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
            restored:state.restored, books:state.books, fables:state.fables,
-           resources:state.resources, bestiary:state.bestiary };
+           resources:state.resources, bestiary:state.bestiary,
+           verbCounts:state.verbCounts, divineDay:state.divineDay, divine:state.divine };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -3233,6 +3496,11 @@ function applySnapshot(d){
   // Binding materials + bestiary progress persist forever (earned progress, like the collection).
   if(d.resources && typeof d.resources==="object") state.resources=d.resources;
   if(d.bestiary && typeof d.bestiary==="object") state.bestiary=d.bestiary;
+  // Verb-ladder perks: counts persist, but are re-derived from the dex once verb-cats.json loads (authoritative).
+  if(d.verbCounts && typeof d.verbCounts==="object"){ state.verbCounts=d.verbCounts; computePerks(); }
+  if(typeof d.divineDay==="string") state.divineDay=d.divineDay;
+  if(d.divine && typeof d.divine==="object") state.divine=d.divine;
+  rederiveVerbCounts();   // no-op until VERB_CATS is loaded; then reconciles counts with the collection
   // Satchel + captured creatures only carry over within the SAME calendar day. A new day = empty satchel
   // and a fresh map (captures forgotten); state.day was already set to today before this runs.
   if(d.day===state.day){
@@ -3324,6 +3592,8 @@ document.getElementById("ml-done").onclick=()=>{ closeBook(); SFX.play("click");
 document.getElementById("ml-back").onclick=()=>{ backToChapters(); SFX.play("click"); };
 document.getElementById("lib-close").onclick=()=>{ closeOverlay(); SFX.play("click"); };
 document.getElementById("bes-close").onclick=()=>{ closeBestiary(); SFX.play("click"); };
+document.getElementById("stats-close").onclick=()=>{ toggleStats(); };
+document.getElementById("stats").onclick=e=>{ if(e.target.id==="stats") toggleStats(); };
 document.getElementById("bestiary").onclick=e=>{ if(e.target.id==="bestiary") closeBestiary(); };  // tap backdrop to close
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
@@ -3358,7 +3628,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.shelfview;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.shelfview;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -3382,6 +3652,8 @@ function syncTouchUI(){
     if(dv) dv.style.display = ( atDesk)                     ? "" : "none";
     if(bk) bk.style.display = ( atBook)                     ? "" : "none";
     if(sf) sf.style.display = ( inLib && !atDesk && !atBook && nearLibraryShelf()) ? "" : "none";
+    const sl=document.getElementById("tc-slide");   // Slide: field only, once the motion perk is unlocked
+    if(sl) sl.style.display = (!inLib && state.perks && state.perks.slide) ? "" : "none";
   }
 }
 if(IS_TOUCH){
@@ -3419,6 +3691,8 @@ if(IS_TOUCH){
   tap("tc-book",()=>{ if(state.started && nearLibraryBook()) openBook(); });    // library: lectern → mad-libs
   tap("tc-shelf",()=>{ if(state.started){ const s=nearLibraryShelf(); if(s) openShelfView(s); } }); // library: shelf → books
   tap("tc-dex",()=>{ if(homeReady()) openBestiary(); });
+  tap("tc-stats",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen) toggleStats(); });
+  tap("tc-slide",()=>{ if(state.started) startSlide(); });
   tap("tc-help",toggleHelp);
 }
 
@@ -3688,7 +3962,7 @@ function overworldRunning() {   // scheduler active during gameplay (off on titl
   } catch (e) { return false; }
 }
 function overworldDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.statsOpen); } catch (e) { return false; }
 }
 function overworldFade(to) {     // smooth ~120ms master-gain ramp (avoids clicks)
   const m = overworldTheme.master, c = overworldTheme.ctx;

@@ -244,6 +244,28 @@ def _book_lemma(syn, dict_words):
     return next((l.name() for l in syn.lemmas() if single_word(l.name())), None)
 
 
+def _best_verb_sense(w):
+    """Most-common verb sense: highest SemCor lemma frequency, tie → WordNet's own sense order."""
+    syns = wn.synsets(w, pos="v")
+    if not syns:
+        return None
+    def score(s):
+        cnt = next((l.count() for l in s.lemmas() if l.name() == w), 0)
+        return (cnt, -syns.index(s))
+    return max(syns, key=score)
+
+
+def build_verb_cats(dict_words):
+    """word -> its most-common-sense verb lexicographer category (verb.motion -> 'motion', …), for the
+    verb-category stat ladders. Only words that have a verb sense are included."""
+    out = {}
+    for w in dict_words:
+        s = _best_verb_sense(w)
+        if s:
+            out[w] = s.lexname().split(".")[-1]
+    return out
+
+
 def build_noun_books(dict_words):
     # KNOWN ODD PLACEMENTS (WordNet quirks, acceptable for an MVP; tune _SENSE_RANK / MIN_BOOK_CHILDREN):
     #   • a few words shelve on a prominent alternate sense — e.g. oak/maple → "wood" (substance) not a tree;
@@ -309,12 +331,15 @@ def main():
 
     print("Building noun-books index (Library Nouns wing)…")
     noun_books = build_noun_books(set(dictionary.keys()))
+    print("Building verb-category map (verb stat ladders)…")
+    verb_cats = build_verb_cats(set(dictionary.keys()))
 
     print("\nWrote:")
     write_json("dictionary.json", dictionary)
     write_json("inflections.json", inflections)
     write_json("wordnet-relations.json", relations)
     write_json("noun-books.json", noun_books)
+    write_json("verb-cats.json", verb_cats)
     nb = noun_books["books"]
     nchild = sum(len(b["children"]) for b in nb.values())
     big = sorted(nb.items(), key=lambda kv: -len(kv[1]["children"]))[:8]

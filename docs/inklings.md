@@ -467,6 +467,11 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
 
 **Built and working:**
 
+- **Verb stat ladders (Feats, `C`/`✦`)** — collecting distinct verbs levels you up per WordNet verb category
+  along Korok-style milestones (1, then every 5); 4 categories populated (motion/competition/perception/
+  possession) giving passive boosts + abilities (Slide, Finisher, Combo, Divine, Treasure Sense, Magnet).
+  Data-driven from `data/verb-cats.json`; retroactive from the collection. See the code map (verb-category
+  stat ladders) — remaining ~11 categories are meant to be filled into the same `VERB_LADDERS` table.
 - Outdoor home base (shop + the **house** that is your Library); bounded **daily map** of screens
   (`MAP_RADIUS`, currently 3×3; walls at the world edge), regenerated each real calendar day; walk-off-edge
   travel between screens with a smooth **screen-slide** transition; `H` teleports home **to your desk inside
@@ -649,7 +654,8 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B
    `data/dictionary.json` + `data/inflections.json`, generated offline by `build_dictionary.py`
    (WordNet/NLTK + lemminflect) + a curated function-word list (WordNet omits the/and/of/…). Fully offline;
    the Free Dictionary API was **removed**. The same script also emits **`data/noun-books.json`** (the Nouns
-   wing index — noun → hypernym "book" + category, ~200 KB gzip; see roadmap #4). Optional future polish: use
+   wing index — noun → hypernym "book" + category, ~200 KB gzip; see roadmap #4) and **`data/verb-cats.json`**
+   (verb → most-common-sense `verb.*` category, ~65 KB gzip; drives the verb stat ladders). Optional future polish: use
    the bundled `data/wordnet-relations.json` for new mechanics (see "Future mechanics (WordNet relationships)").
 3. **IndexedDB autosave** — DONE. Progress autosaves to IndexedDB DB `inklings_save` (store `state`,
    key `save`). `snapshot()` builds a clone-safe object (`v:3` — `day`, inv, dex,
@@ -701,8 +707,8 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B
    (`state.potions`), drunk on demand (HUD buttons / `1`/`2`/`3`) for a `POTION_DUR` (25 s) timed buff
    (`state.buffs`): size = bigger sprite + attack reach (`SIZE_MULT`), speed = faster move (`SPEED_MULT`),
    reveal = minimap shows the whole map + which screens still have letters (`screenRemaining`). `ink` +
-   `potions` persist across days in the save (buffs are session-only). Verbs/adverbs/etc. give no reward
-   yet (still collected to the dex). **Ink sink — the Stall:** a separate **shop building** on the home
+   `potions` persist across days in the save (buffs are session-only). **Verbs → stat ladders** (see the
+   next entry); adverbs/etc. still give no reward yet (collected to the dex). **Ink sink — the Stall:** a separate **shop building** on the home
    screen (left of the desk; `drawStall()`, solid via the `STALL` collision rect) opens its **own**
    overlay (`#shop`, `state.shop`) — walk up + press `E` (`nearShop()` → `tryUseBench` prioritises the
    stall over the bench), or tap the `SHOP` touch button / `tc-shop`. It sells a repeatable **+1 satchel**
@@ -730,9 +736,31 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
    since it came from our own 2of12 list — so the daily bonus is never blocked (e.g. a function word).
    `state.wotdDay` records the claim day (persisted; re-arms when the date rolls over). The desk overlay
    shows a `.wotd` banner (`updateWotd()`). The fuller vision below
-   (verbs→deeds, adverbs→amplifiers, rarity tiers, choose-1-of-3) is still aspirational:
+   (adverbs→amplifiers, rarity tiers, choose-1-of-3) is still aspirational:
    every word does something, with zero per-word
    tagging, by keying effects off `partOfSpeech` (from the bundled WordNet data; see item 2).
+- **Verb-category stat ladders** (`/* VERB-CATEGORY STAT LADDERS */`) — collecting **distinct verbs** levels
+  the player up Korok-style. Each verb's category = its most-common-sense `verb.*` lexname, precomputed offline
+  in **`data/verb-cats.json`** (`{word:category}`, `build_dictionary.py:build_verb_cats`, ~65 KB gzip; loaded
+  into `VERB_CATS`). **Model:** `state.verbCounts` (distinct verbs per category; persisted, but **re-derived from
+  `state.dex` × `VERB_CATS`** on load via `rederiveVerbCounts()` — retroactive + idempotent). Rewards are
+  **derived** into `state.perks` by `computePerks()` (so nothing is a one-time increment); read through
+  `moveSpeed()`, `attackDmg()` (incl. `comboBonus()`), `satchelCap()`, and boolean perks. A **new** distinct
+  verb (in `commitSpell`) bumps its count → `onNewVerbWord` fires a **toast + `unlockbig` SFX** only on a
+  milestone. **Thresholds (Option B):** `n===1`, then every `VERB_MS_STEP` (5) → 1,5,10,15,… Past a ladder's
+  explicit rungs, milestones **repeat** `VERB_REPEAT[cat]` so it never dead-ends. Data table `VERB_LADDERS`
+  ({at,type}); **tunable constants** grouped up top (`SPEED_STEP`,`ATTACK_STEP`,`SATCHEL_STEP`,`SLIDE_*`,
+  `FINISHER_*`,`COMBO_*`,`TREASURE_*`). **Populated now (4; ~11 more later via the same table):**
+  *motion* 1→speed·5→**Slide**·10→speed·(+5 speed); *competition* 1→attack·5→Finisher·10→attack·15→Combo·(+5
+  attack); *perception* 1→**Divine**·5→Treasure Sense·10→Keener·(+5 keener); *possession* 1→+satchel·5→**Magnet**·
+  10→+satchel·(+5 satchel). **Abilities:** only **Slide** is active — `Shift`/`tc-slide`, `startSlide()`, a
+  forward lunge using sprite **row 6** (`PR.slide`). Finisher/Combo apply in `doAttack` (`combo`
+  counter/window/miss-reset). **Divine** = a daily letter peek in the book view (`useDivine`, `state.divine`/
+  `divineDay`, day-scoped like WOTD). **Treasure Sense/Keener** draw a pulsing glint on pickups (`drawPickup`,
+  scales with `perks.treasure`). **Magnet** now **gates the pre-existing pickup homing** (contact-collect stays
+  default). Speed/Attack/Satchel are passive via the getters. **Feats panel** (`#stats`, `state.statsOpen`, `C`/
+  `✦` `tc-stats`, `renderStats`) shows the 4 populated ladders: rewards earned, verb count, progress bar to the
+  next milestone. Persisted: `verbCounts`,`divineDay`,`divine`.
    Three independent dials keep it scalable and non-literal: **POS sets the reward category**,
    **word rarity (length + Scrabble-style letter rarity) sets the tier/magnitude**, and **a
    random roll within that category+tier picks the specific reward** — so SWIM does not grant a
