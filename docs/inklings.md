@@ -175,10 +175,16 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   milestones (`UNLOCK_AT` — a slow/grindy curve; j/k/x/q/z aren't reachable until ~90–120 words).
   It's **derived purely from `wordsCollected()` (= `Object.keys(state.dex).length`)**, so nothing
   extra is saved. `weightedLetter` filters its pool to `unlockedLetters()`, so locked letters never
-  spawn (and thus can't be collected or spelled yet). On a new word, `checkWord` diffs the unlocked
-  set before/after and toasts (`"New letter now roams the wild: …"` + `SFX.play("unlock")`) when a
-  threshold is crossed. Letters a player already owns in `state.inv` from before stay usable on the
-  bench regardless.
+  spawn (and thus can't be collected or spelled yet). On a new word, `commitSpell` diffs the unlocked
+  set before/after; when a threshold is crossed it opens a **dismiss-me modal** (`showUnlockModal`, `#unlockmodal`
+  — OK/✕, not a fleeting toast) with a big fanfare (`SFX.play("unlockbig")`),
+  and **`spawnBonusLetter`** drops one of the just-unlocked letters onto the **home screen (0,0)** so you can
+  go catch it that day even if the map's already cleared. Bonus letter-creatures live in **`state.bonus`**
+  (`[{id,letter}]`, same-day like `state.captured`): `genScreen`'s home branch adds one creature per entry
+  (`makeBonusCreature`), capturing one removes it from `state.bonus` (it's **not** added to `state.captured`,
+  so it doesn't touch the day-total math), and `dayCleared()` requires `state.bonus` empty — so an uncaught
+  unlock **reopens** the "all captured" banner (and `_clearedDay=null` lets its chime replay). Letters a
+  player already owns in `state.inv` from before stay usable on the bench regardless.
 - **Capital letters** (roadmap #10, groundwork done) — `'A' ≠ 'a'` throughout (separate `state.inv` slots,
   spawns, glyphs). Capitals unlock **only after every lowercase letter is unlocked** (`n ≥ LOWER_DONE_AT`,
   118 words), then **one at a time in frequency order** (`CAP_ORDER`) on a continuing curve

@@ -170,6 +170,10 @@
   #respell{position:absolute;inset:0;display:none;background:rgba(21,19,28,.9);
     align-items:center;justify-content:center;padding:18px;z-index:9}
   #respell.open{display:flex}
+  /* New-letter-unlocked notice — solid card over a dark scrim; dismissed with OK / ✕ */
+  #unlockmodal{position:absolute;inset:0;display:none;background:rgba(21,19,28,.9);
+    align-items:center;justify-content:center;padding:18px;z-index:10}
+  #unlockmodal.open{display:flex}
   #overlay.open{display:flex}
   .book{width:100%;max-width:680px;max-height:92vh;overflow:auto;background:var(--paper);
     border:3px solid var(--edge);box-shadow:6px 6px 0 rgba(0,0,0,.5);padding:18px 20px}
@@ -519,6 +523,21 @@
           <div class="btn-row" style="margin-top:16px;justify-content:center;gap:10px">
             <button class="primary" id="respell-yes">Yes — spell it</button>
             <button id="respell-no">Keep letters</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New-letter-unlocked notice — dismiss with OK / ✕ so you clearly see a letter was added -->
+    <div id="unlockmodal">
+      <div class="book" style="max-width:380px;text-align:center">
+        <button class="close-x" id="unlock-x" aria-label="Close" title="Close">✕</button>
+        <div class="reveal">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">New letter unlocked!</div>
+          <div id="unlock-letters" style="font-family:var(--disp);font-size:34px;color:var(--inkblue);margin:12px 0;letter-spacing:6px"></div>
+          <div class="note">It now roams the wild — one is waiting for you near home. Go catch it!</div>
+          <div class="btn-row" style="margin-top:18px;justify-content:center">
+            <button class="primary" id="unlock-ok">OK</button>
           </div>
         </div>
       </div>
@@ -993,6 +1012,7 @@ const state = {
   screens:new Map(),            // "sx,sy" -> {creatures, tiles, seed, bg, ...}  (date-seeded; never saved)
   visited:new Set(),            // "sx,sy" of screens entered today (minimap only; not saved)
   captured:new Set(),           // "sx,sy,i" of creatures taken today — no respawn, so they stay gone
+  bonus:[],                     // [{id,letter}] extra letter-creatures on the home map from just-unlocked letters (same-day)
   day:"", daySeed:0,            // current calendar day + its map seed
   ink:0,                        // currency earned by spelling nouns (persists across days)
   wotdDay:"",                   // the day-string on which the Word of the Day bonus was last claimed
@@ -1170,6 +1190,19 @@ function makeResourceCreature(rng, cre, tiles){
 // Thin, even scatter of loose letters: usually none, sometimes 1–2 (letters are meant to feel rare now).
 // Uses exactly one rng() draw so screenCreatureCount can replay it deterministically.
 function letterScatter(rng){ const r=rng(); return r<0.6 ? 0 : (r<0.87 ? 1 : 2); }
+// Bonus letter-creatures: when a new letter unlocks, one is placed on the HOME screen (0,0) so you can go
+// catch it that day even if the map is already cleared. Tracked in state.bonus until captured.
+function makeBonusCreature(tiles, letter, id){
+  const cr=makeHomeLetter(Math.random, tiles);   // a good home spot, clear of the house/shop + spawn point
+  cr.letter=letter; cr.id=id; cr.bonus=true;
+  return cr;
+}
+function spawnBonusLetter(letter){
+  const id="bonus:"+letter+":"+((Date.now())>>>0);
+  state.bonus.push({ id, letter });
+  const scr=state.screens.get("0,0");            // home is cached (you left it to reach the Wordsmithy)
+  if(scr && scr.creatures) scr.creatures.push(makeBonusCreature(scr.tiles, letter, id));
+}
 function genScreen(sx,sy){
   const isBase = (sx===0 && sy===0);
   const rng = mulberry32((hash2(sx,sy) ^ state.daySeed)>>>0);
@@ -1182,6 +1215,7 @@ function genScreen(sx,sy){
     // captured, stays gone for the day like any other; a fresh one appears with tomorrow's map.
     const cr=makeHomeLetter(rng, tiles); cr.id="0,0,0";
     if(!state.captured.has(cr.id)) creatures.push(cr);
+    for(const b of state.bonus) creatures.push(makeBonusCreature(tiles, b.letter, b.id));   // just-unlocked letters
   }
   if(!isBase){
     const guar = wotdGuaranteed()[sx+","+sy] || [];   // WOTD letters pinned to this screen (enough copies)
@@ -1234,7 +1268,7 @@ function startNewDay(){
   trans=null;
   state.day=todayStr(); state.daySeed=dayHash(state.day);
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
-  state.captured=new Set(); state.visited=new Set(); state.screens=new Map();
+  state.captured=new Set(); state.bonus=[]; state.visited=new Set(); state.screens=new Map();
   state.screen={sx:0,sy:0};
   state.player.hearts=PLAYER_MAX_HEARTS; state.player.hurtT=0; state.player.healT=0;
   goHome();                         // wake up at the library desk (home)
@@ -1283,6 +1317,9 @@ const SFX = (()=>{
     known(){  seq([[440,0.09],[440,0.10]],"triangle",0.10); },
     invalid(){ tone(196,0.24,"sawtooth",0.11,92); },
     unlock(){ seq([[523,0.09],[784,0.09],[1047,0.18]],"square",0.15); },
+    // A bigger, layered fanfare for unlocking a whole new letter — louder + longer than a plain unlock.
+    unlockbig(){ seq([[523,0.10],[659,0.10],[784,0.10],[1047,0.14],[1319,0.34]],"square",0.19);
+                 seq([[262,0.10],[330,0.10],[392,0.10],[523,0.14],[659,0.34]],"triangle",0.11); },
     home(){   seq([[392,0.07],[523,0.09],[784,0.12]],"triangle",0.12); },
     click(){  tone(330,0.05,"square",0.08); }
   };
@@ -1302,6 +1339,9 @@ addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
   if(MOVE_KEYS.has(k)) e.preventDefault();
   if(k==="?"||k==="/"){ e.preventDefault(); toggleHelp(); return; }
+  if(document.getElementById("unlockmodal").classList.contains("open")){   // top-most: dismiss the new-letter notice
+    e.preventDefault(); if(k==="enter"||k==="escape"||k===" ") closeUnlockModal(); return;
+  }
   if(document.getElementById("defmodal").classList.contains("open")){
     if(k==="escape"){ e.preventDefault(); closeDefModal(); } return;   // close the def modal first
   }
@@ -1449,7 +1489,8 @@ function doAttack(){
       state.inv[c.letter]=(state.inv[c.letter]||0)+1;
       state.fx.push({x:c.x,y:c.y,text:"+"+c.letter,life:0.9,color:colorFor(c.letter)});
       sc.creatures.splice(i,1);
-      state.captured.add(c.id);   // gone for the rest of the day — no respawn; a fresh map comes tomorrow
+      if(c.bonus) state.bonus=state.bonus.filter(b=>b.id!==c.id);   // a just-unlocked bonus letter (not part of the day total)
+      else state.captured.add(c.id);   // gone for the rest of the day — no respawn; a fresh map comes tomorrow
       recordBestiary("inkling");   // letter-creatures are the "inkling" bestiary entry
       updateTrayHud();
       SFX.play("capture");
@@ -1523,7 +1564,7 @@ function dayTotalCreatures(){
   _dayTotalDay=state.day; _dayTotal=tot;
   return tot;
 }
-function dayCleared(){ return state.captured.size >= dayTotalCreatures(); }
+function dayCleared(){ return state.captured.size >= dayTotalCreatures() && state.bonus.length===0; }   // an uncaught just-unlocked letter reopens the map
 // Chime once the day the map gets fully cleared. The persistent "come back tomorrow" message itself is a
 // banner drawn every frame by drawClearedBanner() (it stays on screen, it doesn't fade like a toast).
 let _clearedDay=null;
@@ -2754,8 +2795,9 @@ function commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, known){
   SFX.play(known ? "known" : "newword");
   if(wotdBonus){ showToast("★ Word of the Day! +"+wotdBonus+" bonus ink."); SFX.play("unlock"); }
   if(newly.length){
-    showToast("New letter"+(newly.length>1?"s":"")+" now roams the wild: "+newly.join(" "));
-    SFX.play("unlock");
+    spawnBonusLetter(newly[0]);     // put one of the new letters on the home map — even if the day was cleared
+    _clearedDay=null;               // …which reopens the "all captured" banner; let its chime replay when re-cleared
+    showUnlockModal(newly);         // a dismiss-me modal (+ fanfare) so it's clearly seen, not a fleeting toast
   }
   scheduleSave();
 }
@@ -2770,6 +2812,13 @@ function askRespell(word, rewardText, onYes){
 function closeRespell(){ pendingRespell=null; document.getElementById("respell").classList.remove("open"); }
 function confirmRespell(){ const fn=pendingRespell; closeRespell(); if(fn) fn(); }        // Yes → spend + reward
 function cancelRespell(){ closeRespell(); document.getElementById("result").innerHTML='<div class="msg-known">Letters kept.</div>'; SFX.play("click"); }
+// New-letter-unlocked notice: a dismiss-me modal (so the player clearly sees a letter was added), plus the fanfare.
+function showUnlockModal(letters){
+  document.getElementById("unlock-letters").textContent=letters.join(" ");
+  document.getElementById("unlockmodal").classList.add("open");
+  SFX.play("unlockbig");
+}
+function closeUnlockModal(){ document.getElementById("unlockmodal").classList.remove("open"); }
 // Result shown in the bench area: the word + what it earned (ink for nouns, a potion for adjectives,
 // plus the Word-of-the-Day bonus if this was it).
 function showSpellResult(word, known, ink, brewed, wotdBonus){
@@ -3103,7 +3152,7 @@ function renderMaterials(){
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
   return { v:3, day:state.day, inv:state.inv, dex:state.dex,
-           bagCap:state.bagCap, captured:[...state.captured],
+           bagCap:state.bagCap, captured:[...state.captured], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
            restored:state.restored, books:state.books,
            resources:state.resources, bestiary:state.bestiary };
@@ -3128,6 +3177,7 @@ function applySnapshot(d){
   if(d.day===state.day){
     if(d.inv) Object.assign(state.inv, d.inv);
     if(Array.isArray(d.captured)) state.captured=new Set(d.captured);
+    if(Array.isArray(d.bonus)) state.bonus=d.bonus;   // uncaught just-unlocked letters still roam home today
   }
   updateTrayHud(); updateRewardHud();
   return true;
@@ -3218,6 +3268,9 @@ document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") cl
 document.getElementById("respell-yes").onclick=confirmRespell;
 document.getElementById("respell-no").onclick=cancelRespell;
 document.getElementById("respell").onclick=e=>{ if(e.target.id==="respell") cancelRespell(); };   // tap the dark scrim = keep letters
+document.getElementById("unlock-ok").onclick=()=>{ closeUnlockModal(); SFX.play("click"); };
+document.getElementById("unlock-x").onclick=()=>{ closeUnlockModal(); SFX.play("click"); };
+document.getElementById("unlockmodal").onclick=e=>{ if(e.target.id==="unlockmodal") closeUnlockModal(); };   // tap scrim to dismiss
 document.getElementById("sv-close").onclick=()=>{ closeShelfView(); SFX.play("click"); };
 document.getElementById("sv-back").onclick=()=>{ renderShelfList(); SFX.play("click"); };
 document.getElementById("shelfview").onclick=e=>{ if(e.target.id==="shelfview") closeShelfView(); };  // tap backdrop to close
