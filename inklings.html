@@ -145,7 +145,12 @@
   .potion-btn:disabled{opacity:.4;cursor:default;box-shadow:none}
   .potion-btn.active{background:var(--gold);color:#fff}
   .potion-btn b{font-family:var(--read);font-size:11px}
-  #tray-hud{display:flex;flex-wrap:wrap;gap:4px;max-width:420px}
+  /* Satchel letters: a fixed-width grid of uniform cells so letters sit in stable columns and wrap to the
+     next row as they fill — the panel width never changes, so nothing (incl. the 🔊 button) gets shifted. */
+  #tray-hud{display:grid;grid-template-columns:repeat(auto-fill,30px);gap:4px;width:234px;margin-left:auto}
+  #tray-hud .lchip{width:30px;min-width:0;padding:0}
+  #tray-hud .lchip b{margin-left:2px}
+  #tray-hud .empty{grid-column:1/-1;justify-self:end}
   .lchip{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;
     padding:0 5px;background:var(--paper-2);font-family:var(--disp);
     font-size:9px;line-height:1;border:2px solid var(--edge)}
@@ -367,7 +372,7 @@
     align-items:flex-start;justify-content:space-between;gap:6px;flex-wrap:wrap}
   body.touch #sound-btn{display:flex;position:static;transform:none;align-self:flex-start}
   body.touch #sound-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0)}
-  body.touch #tray-hud{max-width:62vw}
+  body.touch #tray-hud{width:166px}   /* 5 fixed columns on mobile — constant width, no reflow */
   /* bottom bar */
   body.touch #touch{position:static;inset:auto;order:1;flex:none;width:100%}
   body.touch #touch.live{display:flex;align-items:flex-end;justify-content:space-between;padding:0 8px 2px}
