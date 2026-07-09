@@ -280,14 +280,17 @@ it does **not** fade like a toast. `maybeNotifyCleared()`only plays the one-time
   the way) and **shown only on touch** (`body.touch`), where it sits in the static HUD top bar.
   Browsers gate audio behind a gesture, so `play()` calls `SFX.resume()` and the Start button resumes
   the context on click.
-- **Background music** (`OverworldTheme` + `syncOverworldMusic`) — a synthesized 8-bit chiptune loop
-  (Web Audio, no asset files), in its **own `<script>` block after the game script** (it only reads the
-  game's global `state`/mute, changing no game logic). `overworldTheme` (`setVolume(OVERWORLD_VOL=0.3)`).
-  A 250ms tick + gesture/visibility listeners drive `syncOverworldMusic`: it fully **`stop()`s** unless
-  gameplay is active (`state.started`, not `inklings_muted`, tab visible); while any dialogue is open
-  (`overlay`/`help`/`shop`/`madlibs`) it keeps running but **fades the master gain to 0** (`overworldFade`,
-  ~120ms ramp) so it resumes seamlessly on close. Gesture-gated (nothing autoplays on load). The class's
-  own `module.exports` is guarded (`typeof module`), so it's browser-safe.
+- **Background music** (`ChiptuneTheme` + `syncMusic`) — **two** synthesized 8-bit chiptune loops (Web Audio,
+  no asset files), in their **own `<script>` block after the game script** (only read `state`/mute, change no
+  game logic). `ChiptuneTheme` is a **data-driven** engine: `new ChiptuneTheme(song)` where `song` =
+  `{bpm, melody, harmony, bass, drums?, arp?, vol?}` (melody supports `'R'` rests; optional noise-based
+  **drum groove** kick/snare/hat + a harmony-derived **arpeggio**). Two songs: **`WORDHOARD_SONG`** (the
+  original cozy C-major loop, ~108 BPM, played inside the library) and **`FIELD_SONG`** (a new bouncy
+  exploration tune, ~116 BPM, with drums + arpeggio, played outdoors). Both loops run together during
+  gameplay; `syncMusic` **crossfades by `state.room`** (`themeFade`, ~120ms) — field outdoors, Wordhoard
+  inside — so each **resumes where it left off** when you pop in/out. Everything fades to 0 while any dialogue
+  is open and fully **`stop()`s** unless gameplay is active (`state.started`, not `inklings_muted`, tab
+  visible). Gesture-gated; `module.exports` guarded (`typeof module`) so it's browser-safe.
 - **`state`** — `{ player, inv:{letter:count}, dex:{word:{def,found,pos}}, bagCap,
 ink, potions:{size,speed,reveal}, buffs:{size,speed,reveal}, resources:{item:count},
 bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary` (creature kill/seen log)
@@ -529,9 +532,9 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
 - Backup: export state to JSON, import it back (also the manual cross-device transfer).
 - Keyboard on desktop; **on-screen touch controls on mobile** (joystick bottom-right, action cluster
   bottom-left). See the Controls section + code map for details.
-- **Background music** — a synthesized overworld chiptune loop (`OverworldTheme`) plays while walking
-  around; it fades to silence while any dialogue is open (resumes seamlessly) and stops when muted /
-  not started / tab hidden.
+- **Background music** — two synthesized chiptune loops (`ChiptuneTheme`): a bouncy **field** tune outdoors
+  and the cozy **Wordhoard** tune inside the library, crossfaded by `state.room`. Both fade to silence while
+  any dialogue is open (resume seamlessly) and stop when muted / not started / tab hidden.
 - **Sound effects** — synthesized chiptune blips (`SFX`, Web Audio, no asset files) on attack,
   capture, word results, unlock, and UI actions; mute toggle (`#sound-btn`, 🔊/🔇) persisted to
   `localStorage`.

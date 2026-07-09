@@ -3747,74 +3747,38 @@ function frame(now){
 requestAnimationFrame(frame);
 </script>
 
-<!-- Background music: overworld theme (synthesized inline via Web Audio — no audio files) -->
+<!-- Background music: two synthesized chiptunes (Web Audio, no audio files) — a bouncy FIELD theme outdoors
+     and the cozy WORDHOARD theme inside the library, crossfaded by state.room. -->
 <script>
 /**
- * OverworldTheme — an 8-bit NES-style chiptune loop generator using the
- * Web Audio API. No audio files required; every note is synthesized live,
- * so this drops straight into any HTML canvas game with zero load time
- * and loops seamlessly forever.
+ * ChiptuneTheme — an 8-bit NES-style chiptune loop generator (Web Audio API). No audio files; every note is
+ * synthesized live and loops seamlessly. Data-driven: pass a `song` config (melody/harmony/bass + optional
+ * drum groove + arpeggio). See WORDHOARD_SONG / FIELD_SONG below.
  *
- * Usage:
- *   const theme = new OverworldTheme();
- *   startButton.addEventListener('click', () => theme.start());
- *   theme.setVolume(0.4);
- *   theme.stop();
+ * Usage:  const theme = new ChiptuneTheme(SONG); theme.start(); theme.setVolume(0.3); theme.stop();
  */
-class OverworldTheme {
-  constructor() {
+class ChiptuneTheme {
+  // song = { bpm, melody:[[[note,beats],…] per bar], harmony:[[n,n] per bar], bass:[n per bar],
+  //          drums:['KH','H','SH','H',…8 eighth-steps]|null, arp:bool, vol:{melody,harmony,bass,arp,drum} }
+  constructor(song) {
     this.ctx = null;
     this.master = null;
     this.playing = false;
     this.timerID = null;
 
-    // --- Musical settings -------------------------------------------------
-    this.bpm = 108;
+    this.bpm = song.bpm;
     this.beatSec = 60 / this.bpm;
     this.lookaheadMs = 25;        // how often the scheduler wakes up
     this.scheduleAheadSec = 0.15; // how far ahead we schedule audio events
 
-    // --- Composition: A (8 bars) - B (8 bars) - A (8 bars) = 24 bars ------
-    // Each melody bar is a list of [note, beats]. Beats sum to 4 per bar.
-    this.melodyA = [
-      [['E4', 1], ['G4', 1], ['A4', 1], ['G4', 1]],
-      [['E4', 1], ['D4', 1], ['C4', 2]],
-      [['E4', 0.5], ['G4', 0.5], ['A4', 1], ['G4', 1], ['E4', 1]],
-      [['D4', 2], ['C4', 2]],
-      [['E4', 1], ['G4', 1], ['A4', 1], ['G4', 1]],
-      [['A4', 1], ['B4', 1], ['C5', 2]],
-      [['B4', 0.5], ['A4', 0.5], ['G4', 1], ['E4', 1], ['D4', 1]],
-      [['C4', 4]],
-    ];
-    this.melodyB = [
-      [['G4', 1], ['A4', 1], ['C5', 1], ['A4', 1]],
-      [['G4', 1.5], ['E4', 0.5], ['D4', 2]],
-      [['E4', 1], ['G4', 1], ['A4', 1], ['B4', 1]],
-      [['C5', 2], ['A4', 1], ['G4', 1]],
-      [['F4', 1], ['E4', 1], ['D4', 1], ['E4', 1]],
-      [['G4', 1.5], ['F4', 0.5], ['E4', 2]],
-      [['D4', 1], ['E4', 1], ['D4', 1], ['C4', 1]],
-      [['D4', 4]],
-    ];
-    this.melodyPattern = [...this.melodyA, ...this.melodyB, ...this.melodyA];
+    this.melodyPattern  = song.melody;
+    this.harmonyPattern = song.harmony;
+    this.bassPattern    = song.bass;
+    this.drumPattern    = song.drums || null;   // one 8-eighth-note pattern applied every bar
+    this.arp            = !!song.arp;           // fast broken-chord shimmer derived from the harmony
+    this.vol = Object.assign({ melody:0.14, harmony:0.045, bass:0.16, arp:0.05, drum:1 }, song.vol||{});
 
-    // One chord (as two notes) per bar, played twice (beat 1 and beat 3).
-    this.harmonyA = [
-      ['C4', 'E4'], ['G3', 'B3'], ['A3', 'C4'], ['F3', 'A3'],
-      ['C4', 'E4'], ['D4', 'F4'], ['G3', 'B3'], ['C4', 'E4'],
-    ];
-    this.harmonyB = [
-      ['F3', 'A3'], ['C4', 'E4'], ['G3', 'B3'], ['A3', 'C4'],
-      ['F3', 'A3'], ['C4', 'E4'], ['G3', 'B3'], ['C4', 'E4'],
-    ];
-    this.harmonyPattern = [...this.harmonyA, ...this.harmonyB, ...this.harmonyA];
-
-    // One sustained bass root per bar.
-    this.bassA = ['C3', 'G2', 'A2', 'F2', 'C3', 'D3', 'G2', 'C3'];
-    this.bassB = ['F2', 'C3', 'G2', 'A2', 'F2', 'C3', 'G2', 'C3'];
-    this.bassPattern = [...this.bassA, ...this.bassB, ...this.bassA];
-
-    this.barsTotal = this.melodyPattern.length; // 24
+    this.barsTotal = this.melodyPattern.length;
     this.loopBeats = this.barsTotal * 4;
     this.loopSec = this.loopBeats * this.beatSec;
 
@@ -3835,7 +3799,7 @@ class OverworldTheme {
 
     if (!this.master) {
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.4;
+      this.master.gain.value = 0.0001;   // start silent; syncMusic crossfades the active theme up
       this.master.connect(this.ctx.destination);
     }
 
@@ -3889,12 +3853,8 @@ class OverworldTheme {
     this.melodyPattern.forEach((bar) => {
       let beatOffset = barOffset;
       bar.forEach(([note, beats]) => {
-        events.push({
-          type: 'melody',
-          beatOffset,
-          duration: beats,
-          freq: this._noteToFreq(note),
-        });
+        if (note !== 'R')   // 'R' = rest: advance the clock but sound nothing
+          events.push({ type: 'melody', beatOffset, duration: beats, freq: this._noteToFreq(note) });
         beatOffset += beats;
       });
       barOffset += 4;
@@ -3910,14 +3870,33 @@ class OverworldTheme {
 
     barOffset = 0;
     this.bassPattern.forEach((note) => {
-      events.push({
-        type: 'bass',
-        beatOffset: barOffset,
-        duration: 3.8,
-        freq: this._noteToFreq(note),
-      });
+      events.push({ type: 'bass', beatOffset: barOffset, duration: 3.8, freq: this._noteToFreq(note) });
       barOffset += 4;
     });
+
+    // Fast broken-chord arpeggio (root · third · root+octave · third as eighth notes), from the harmony.
+    if (this.arp) {
+      barOffset = 0;
+      this.harmonyPattern.forEach((chord) => {
+        const seq = [chord[0], chord[1], this._upOctave(chord[0]), chord[1]];
+        for (let i = 0; i < 8; i++)
+          events.push({ type: 'arp', beatOffset: barOffset + i * 0.5, duration: 0.42, freq: this._noteToFreq(seq[i % 4]) });
+        barOffset += 4;
+      });
+    }
+
+    // Drum groove: one eighth-note pattern repeated every bar (K=kick, S=snare, H=hat; e.g. 'KH','SH').
+    if (this.drumPattern) {
+      for (let bar = 0; bar < this.barsTotal; bar++) {
+        const base = bar * 4;
+        this.drumPattern.forEach((tok, i) => {
+          const t = base + i * 0.5;
+          if (tok.indexOf('K') >= 0) events.push({ type: 'drum', drum: 'kick', beatOffset: t });
+          if (tok.indexOf('S') >= 0) events.push({ type: 'drum', drum: 'snare', beatOffset: t });
+          if (tok.indexOf('H') >= 0) events.push({ type: 'drum', drum: 'hat', beatOffset: t });
+        });
+      }
+    }
 
     events.sort((a, b) => a.beatOffset - b.beatOffset);
     return events;
@@ -3925,14 +3904,45 @@ class OverworldTheme {
 
   _playEvent(evt, time) {
     if (evt.type === 'melody') {
-      this._playTone(evt.freq, time, evt.duration * this.beatSec * 0.9, 0.14, 'square');
+      this._playTone(evt.freq, time, evt.duration * this.beatSec * 0.9, this.vol.melody, 'square');
     } else if (evt.type === 'harmony') {
       evt.freqs.forEach((f) =>
-        this._playTone(f, time, evt.duration * this.beatSec * 0.85, 0.045, 'square')
+        this._playTone(f, time, evt.duration * this.beatSec * 0.85, this.vol.harmony, 'square')
       );
     } else if (evt.type === 'bass') {
-      this._playTone(evt.freq, time, evt.duration * this.beatSec * 0.95, 0.16, 'triangle');
+      this._playTone(evt.freq, time, evt.duration * this.beatSec * 0.95, this.vol.bass, 'triangle');
+    } else if (evt.type === 'arp') {
+      this._playTone(evt.freq, time, evt.duration * this.beatSec, this.vol.arp, 'square');
+    } else if (evt.type === 'drum') {
+      this._playDrum(evt.drum, time);
     }
+  }
+  _upOctave(note) { const m = note.match(/^([A-G]#?)(\d)$/); return m[1] + (parseInt(m[2], 10) + 1); }
+  _noiseBuffer() {
+    if (this._noise) return this._noise;
+    const len = Math.floor(this.ctx.sampleRate * 0.3);
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    return (this._noise = buf);
+  }
+  _playDrum(kind, time) {
+    const ctx = this.ctx, master = this.master, k = this.vol.drum;
+    if (kind === 'kick') {   // sine thump with a fast pitch drop
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(160, time); o.frequency.exponentialRampToValueAtTime(48, time + 0.12);
+      g.gain.setValueAtTime(0.0001, time); g.gain.linearRampToValueAtTime(0.19 * k, time + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, time + 0.17);
+      o.connect(g); g.connect(master); o.start(time); o.stop(time + 0.2);
+      return;
+    }
+    const src = ctx.createBufferSource(); src.buffer = this._noiseBuffer();   // snare / hat = filtered noise
+    const g = ctx.createGain(), f = ctx.createBiquadFilter();
+    let vol, dur;
+    if (kind === 'snare') { f.type = 'highpass'; f.frequency.value = 1400; vol = 0.09 * k; dur = 0.13; }
+    else { f.type = 'highpass'; f.frequency.value = 8000; vol = 0.045 * k; dur = 0.04; }   // hat
+    g.gain.setValueAtTime(vol, time); g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+    src.connect(f); f.connect(g); g.connect(master); src.start(time); src.stop(time + dur + 0.02);
   }
 
   _playTone(freq, time, dur, peakVol, type) {
@@ -3963,49 +3973,100 @@ class OverworldTheme {
 
 // Works both as a plain <script> global and as an ES module import.
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = OverworldTheme;
+  module.exports = ChiptuneTheme;
 }
 
-/* ---- Wire the overworld theme into Inklings --------------------------------
-   The tune runs during active gameplay and fully STOPS only when the game hasn't
-   started, the sound is muted, or the tab is hidden. While any dialogue/overlay is
-   open (library / shop / book / help) it keeps running but is FADED TO SILENCE
-   (master gain → 0), so it resumes from the same spot when you close it. Browsers
-   block audio until a gesture, so the first sync fires from one; a light 250ms tick
-   keeps it in sync after that. This only READS the game's global state/mute — it
-   changes no existing game logic. */
-const OVERWORLD_VOL = 0.3;
-const overworldTheme = new OverworldTheme();
-overworldTheme.setVolume(OVERWORLD_VOL);   // background level, sits under the SFX
-function overworldRunning() {   // scheduler active during gameplay (off on title / mute / hidden tab)
+/* ================= SONGS =================
+   WORDHOARD (interior) = the original cozy C-major NES loop. FIELD (outdoors) = a new bouncy exploration
+   tune (~116 BPM) with a drum groove + a fast arpeggio. Both are A(8)-B(8)-A(8) = 24-bar loops. */
+const WORDHOARD_SONG = {
+  bpm: 108,
+  melody: [
+    [['E4',1],['G4',1],['A4',1],['G4',1]], [['E4',1],['D4',1],['C4',2]],
+    [['E4',0.5],['G4',0.5],['A4',1],['G4',1],['E4',1]], [['D4',2],['C4',2]],
+    [['E4',1],['G4',1],['A4',1],['G4',1]], [['A4',1],['B4',1],['C5',2]],
+    [['B4',0.5],['A4',0.5],['G4',1],['E4',1],['D4',1]], [['C4',4]],
+    [['G4',1],['A4',1],['C5',1],['A4',1]], [['G4',1.5],['E4',0.5],['D4',2]],
+    [['E4',1],['G4',1],['A4',1],['B4',1]], [['C5',2],['A4',1],['G4',1]],
+    [['F4',1],['E4',1],['D4',1],['E4',1]], [['G4',1.5],['F4',0.5],['E4',2]],
+    [['D4',1],['E4',1],['D4',1],['C4',1]], [['D4',4]],
+    [['E4',1],['G4',1],['A4',1],['G4',1]], [['E4',1],['D4',1],['C4',2]],
+    [['E4',0.5],['G4',0.5],['A4',1],['G4',1],['E4',1]], [['D4',2],['C4',2]],
+    [['E4',1],['G4',1],['A4',1],['G4',1]], [['A4',1],['B4',1],['C5',2]],
+    [['B4',0.5],['A4',0.5],['G4',1],['E4',1],['D4',1]], [['C4',4]],
+  ],
+  harmony: [
+    ['C4','E4'],['G3','B3'],['A3','C4'],['F3','A3'],['C4','E4'],['D4','F4'],['G3','B3'],['C4','E4'],
+    ['F3','A3'],['C4','E4'],['G3','B3'],['A3','C4'],['F3','A3'],['C4','E4'],['G3','B3'],['C4','E4'],
+    ['C4','E4'],['G3','B3'],['A3','C4'],['F3','A3'],['C4','E4'],['D4','F4'],['G3','B3'],['C4','E4'],
+  ],
+  bass: ['C3','G2','A2','F2','C3','D3','G2','C3','F2','C3','G2','A2','F2','C3','G2','C3','C3','G2','A2','F2','C3','D3','G2','C3'],
+};
+const FIELD_SONG = {
+  bpm: 116,
+  melody: [
+    [['G4',0.5],['E4',0.5],['G4',1],['C5',1],['G4',1]], [['A4',0.5],['G4',0.5],['E4',1],['G4',2]],
+    [['F4',0.5],['A4',0.5],['C5',1],['A4',0.5],['F4',0.5],['A4',1]], [['G4',1],['E4',1],['D4',2]],
+    [['E4',0.5],['G4',0.5],['C5',1],['B4',0.5],['A4',0.5],['G4',1]], [['A4',0.5],['B4',0.5],['C5',1],['E5',1],['C5',1]],
+    [['D5',0.5],['C5',0.5],['B4',1],['A4',0.5],['G4',0.5],['F4',1]], [['G4',1.5],['G4',0.5],['C5',2]],
+    [['C5',0.5],['D5',0.5],['E5',1],['D5',0.5],['C5',0.5],['A4',1]], [['G4',1],['A4',1],['G4',2]],
+    [['A4',0.5],['C5',0.5],['E5',1],['D5',0.5],['C5',0.5],['B4',1]], [['C5',2],['G4',2]],
+    [['F4',0.5],['G4',0.5],['A4',1],['F4',0.5],['G4',0.5],['A4',1]], [['B4',0.5],['A4',0.5],['G4',1],['B4',1],['D5',1]],
+    [['C5',0.5],['B4',0.5],['A4',1],['G4',0.5],['F4',0.5],['E4',1]], [['D4',1],['E4',1],['G4',2]],
+    [['G4',0.5],['E4',0.5],['G4',1],['C5',1],['G4',1]], [['A4',0.5],['G4',0.5],['E4',1],['G4',2]],
+    [['F4',0.5],['A4',0.5],['C5',1],['A4',0.5],['F4',0.5],['A4',1]], [['G4',1],['E4',1],['D4',2]],
+    [['E4',0.5],['G4',0.5],['C5',1],['B4',0.5],['A4',0.5],['G4',1]], [['A4',0.5],['B4',0.5],['C5',1],['E5',1],['C5',1]],
+    [['D5',0.5],['C5',0.5],['B4',1],['A4',0.5],['G4',0.5],['F4',1]], [['G4',2],['C5',1],['R',1]],
+  ],
+  harmony: [
+    ['C4','E4'],['G3','B3'],['F3','A3'],['G3','B3'],['C4','E4'],['A3','C4'],['F3','A3'],['G3','B3'],
+    ['A3','C4'],['G3','B3'],['F3','A3'],['C4','E4'],['F3','A3'],['G3','B3'],['A3','C4'],['G3','B3'],
+    ['C4','E4'],['G3','B3'],['F3','A3'],['G3','B3'],['C4','E4'],['A3','C4'],['F3','A3'],['G3','B3'],
+  ],
+  bass: ['C3','G2','F2','G2','C3','A2','F2','G2','A2','G2','F2','C3','F2','G2','A2','G2','C3','G2','F2','G2','C3','A2','F2','G2'],
+  drums: ['KH','H','SH','H','KH','H','SH','H'],   // kick 1&3, snare 2&4, hats on the eighths
+  arp: true,
+  vol: { melody:0.15, harmony:0.04, bass:0.15, arp:0.045, drum:0.9 },
+};
+
+/* ---- Wire the two themes into Inklings --------------------------------------
+   Both loops run during gameplay; the FIELD tune plays outdoors and the WORDHOARD tune inside the library,
+   crossfaded by state.room (both keep scheduling, so each resumes where it left off). Everything fades to
+   silence while any dialogue is open, and fully STOPS on the title / mute / hidden tab. Gesture-gated. */
+const FIELD_VOL = 0.28, WORDHOARD_VOL = 0.3;
+const fieldTheme = new ChiptuneTheme(FIELD_SONG);
+const wordhoardTheme = new ChiptuneTheme(WORDHOARD_SONG);
+function musicRunning() {
   try {
     return typeof state !== "undefined" && state.started
-      && localStorage.getItem("inklings_muted") !== "1"
-      && !document.hidden;
+      && localStorage.getItem("inklings_muted") !== "1" && !document.hidden;
   } catch (e) { return false; }
 }
-function overworldDialogueOpen() {
+function musicDialogueOpen() {
   try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.statsOpen); } catch (e) { return false; }
 }
-function overworldFade(to) {     // smooth ~120ms master-gain ramp (avoids clicks)
-  const m = overworldTheme.master, c = overworldTheme.ctx;
-  if (!m || !c) { overworldTheme.setVolume(to); return; }
+function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
+function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)
+  const m = theme.master, c = theme.ctx;
+  if (!m || !c) { theme.setVolume(to); return; }
   const g = m.gain, t = c.currentTime;
   g.cancelScheduledValues(t); g.setValueAtTime(g.value, t);
   g.linearRampToValueAtTime(to, t + 0.12);
 }
-function syncOverworldMusic() {
-  if (overworldRunning()) {
-    overworldTheme.start();                                     // no-op if already playing
-    overworldFade(overworldDialogueOpen() ? 0 : OVERWORLD_VOL); // silence (not stop) while a dialogue is open
+function syncMusic() {
+  if (musicRunning()) {
+    fieldTheme.start(); wordhoardTheme.start();     // no-ops if already playing
+    const dlg = musicDialogueOpen(), inLib = musicInWordhoard();
+    themeFade(fieldTheme,     (!dlg && !inLib) ? FIELD_VOL     : 0);   // outdoors → field tune
+    themeFade(wordhoardTheme, (!dlg &&  inLib) ? WORDHOARD_VOL : 0);   // inside the Wordhoard → cozy tune
   } else {
-    overworldTheme.stop();
+    fieldTheme.stop(); wordhoardTheme.stop();
   }
 }
 ["pointerdown", "keydown", "touchstart"].forEach(ev =>
-  window.addEventListener(ev, syncOverworldMusic, { passive: true }));
-document.addEventListener("visibilitychange", syncOverworldMusic);
-setInterval(syncOverworldMusic, 250);
+  window.addEventListener(ev, syncMusic, { passive: true }));
+document.addEventListener("visibilitychange", syncMusic);
+setInterval(syncMusic, 250);
 </script>
 </body>
 </html>
