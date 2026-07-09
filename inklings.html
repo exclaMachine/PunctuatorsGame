@@ -1037,19 +1037,18 @@ function rederiveVerbCounts(){
   for(const w in state.dex){ const cat=VERB_CATS[w]; if(cat) counts[cat]=(counts[cat]||0)+1; }
   state.verbCounts=counts; computePerks();
 }
-// A brand-new distinct word was just collected — if it's a verb, bump its category + fire any milestone.
+// A brand-new distinct word was just collected — if it's a verb, bump its category. Every applicable verb
+// queues a Feats-panel pop (bar animates to the new progress); milestones also hand out a reward. The actual
+// panel-open is deferred to a staggered celebration queue (see commitSpell) so it doesn't stack on the
+// new-letter modal. `pendingFeat` carries it out of here.
 function onNewVerbWord(word){
   if(!VERB_CATS) return;
   const cat=VERB_CATS[word]; if(!cat) return;
   const n=(state.verbCounts[cat]||0)+1; state.verbCounts[cat]=n;
   computePerks();
-  if(isVerbMilestone(n)){
-    const t=verbRewardAt(cat,n);
-    if(t){
-      if(t==="satchel") updateTrayHud();   // the N/cap readout just grew
-      showLevelUp(cat, n, t);              // open the Feats panel + fill the bar (clearer than a toast)
-    }
-  }
+  if(!VERB_LADDERS[cat]) return;   // only the populated categories celebrate/show progress
+  if(isVerbMilestone(n) && verbRewardAt(cat,n)==="satchel") updateTrayHud();   // the N/cap readout just grew
+  pendingFeat={ cat, n };
 }
 // Effective stats (base + verb perks; potions still multiply on top where they apply).
 function moveSpeed(){ return 180 + (state.perks?state.perks.speed:0); }
@@ -3057,11 +3056,14 @@ function commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, known){
   showSpellResult(word, known, earnedInk, brewed, wotdBonus);
   SFX.play(known ? "known" : "newword");
   if(wotdBonus){ showToast("★ Word of the Day! +"+wotdBonus+" bonus ink."); SFX.play("unlock"); }
+  // Celebrations are shown ONE AT A TIME (staggered): Feats first, then the new-letter modal.
+  if(pendingFeat){ const pf=pendingFeat; pendingFeat=null; queueCelebration(()=>showFeatProgress(pf.cat, pf.n)); }
   if(newly.length){
     spawnBonusLetter(newly[0]);     // put one of the new letters on the home map — even if the day was cleared
     _clearedDay=null;               // …which reopens the "all captured" banner; let its chime replay when re-cleared
-    showUnlockModal(newly);         // a dismiss-me modal (+ fanfare) so it's clearly seen, not a fleeting toast
+    queueCelebration(()=>showUnlockModal(newly));   // a dismiss-me modal shown after the Feats pop
   }
+  nextCelebration();
   scheduleSave();
 }
 // A yes/no confirm modal (solid card over a dark scrim) before re-spending letters on a word you already own.
@@ -3081,7 +3083,7 @@ function showUnlockModal(letters){
   document.getElementById("unlockmodal").classList.add("open");
   SFX.play("unlockbig");
 }
-function closeUnlockModal(){ document.getElementById("unlockmodal").classList.remove("open"); }
+function closeUnlockModal(){ document.getElementById("unlockmodal").classList.remove("open"); nextCelebration(); }
 // Result shown in the bench area: the word + what it earned (ink for nouns, a potion for adjectives,
 // plus the Word-of-the-Day bonus if this was it).
 function showSpellResult(word, known, ink, brewed, wotdBonus){
@@ -3343,32 +3345,40 @@ function closeBestiary(){
   document.getElementById("bestiary").classList.remove("open");
   document.getElementById("sound-btn").style.display="";
 }
-// Feats panel: the verb-category ladders (only the populated ones), with progress to the next milestone.
-let levelup=null;   // {cat,milestone,reward,fromPct} — the milestone celebration currently animating
-function toggleStats(){
-  state.statsOpen=!state.statsOpen;
-  document.getElementById("stats").classList.toggle("open", state.statsOpen);
-  // keep the mute button hidden if another overlay (e.g. the Wordsmithy a milestone popped over) is still open
-  const hideSound = state.statsOpen || state.overlay || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview;
-  document.getElementById("sound-btn").style.display = hideSound ? "none" : "";
-  if(state.statsOpen) renderStats(); else levelup=null;   // clearing the celebration → normal progress next open
-  SFX.play("click");
-}
-// A milestone was hit: open the Feats panel and animate the just-completed bar filling to full (clear + juicy).
-function showLevelUp(cat, milestone, reward){
-  const prevMs = milestone===1 ? 0 : (milestone===VERB_MS_STEP ? 1 : milestone-VERB_MS_STEP);   // start of this segment
-  const fromPct = Math.round(((milestone-1)-prevMs)/(milestone-prevMs)*100);                    // fill just before this word
-  levelup = { cat, milestone, reward, fromPct };
-  if(!state.statsOpen){
-    state.statsOpen=true;
-    document.getElementById("stats").classList.add("open");
-    document.getElementById("sound-btn").style.display="none";
-  }
-  renderStats();
-  SFX.play("unlockbig");
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{   // next frame: let CSS transition the bar to full
-    const bar=document.querySelector(".feat-cat.levelup .feat-bar > i"); if(bar) bar.style.width="100%";
+/* ---------- CELEBRATION QUEUE (staggered feat / letter dialogues) ---------- */
+// Milestone/letter dialogues are shown ONE AT A TIME so they never stack. commitSpell queues the Feats pop
+// first, then the new-letter modal; each dialogue's close runs the next.
+let celebrations=[], pendingFeat=null;
+function queueCelebration(fn){ celebrations.push(fn); }
+function nextCelebration(){ const fn=celebrations.shift(); if(fn) fn(); }
+
+/* ---------- FEATS PANEL (verb-category ladders) ---------- */
+let featAnim=null, featAutoT=null;   // featAnim={cat,fromPct,toPct,reward|null,next,nextReward}; timer auto-closes plain steps
+function statsHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview; }
+function openStats(){ state.statsOpen=true; document.getElementById("stats").classList.add("open");
+  document.getElementById("sound-btn").style.display="none"; renderStats(); }
+function closeStats(){ clearTimeout(featAutoT); featAnim=null; state.statsOpen=false;
+  document.getElementById("stats").classList.remove("open");
+  document.getElementById("sound-btn").style.display = statsHideSound()?"none":""; }
+function toggleStats(){ if(state.statsOpen){ closeStats(); nextCelebration(); } else openStats(); SFX.play("click"); }
+// Every applicable verb pops the Feats panel and animates that category's bar to its new progress. A milestone
+// fills to 100%, hands out the reward, and STAYS (dismiss to continue); a plain step auto-dismisses.
+function showFeatProgress(cat, n){
+  const ms=isVerbMilestone(n);
+  const a = ms ? (n===1?0 : n===VERB_MS_STEP?1 : n-VERB_MS_STEP)          // just-completed segment start (milestone)
+               : (n<VERB_MS_STEP?1 : Math.floor(n/VERB_MS_STEP)*VERB_MS_STEP);  // current segment start
+  const b = ms ? n : nextVerbMilestone(n);
+  featAnim={ cat, fromPct:Math.max(0,Math.round(((n-1)-a)/(b-a)*100)), toPct:Math.min(100,Math.round((n-a)/(b-a)*100)),
+             reward: ms?verbRewardAt(cat,n):null, next:b, nextReward:REWARD_LABEL[verbRewardAt(cat, ms?nextVerbMilestone(n):b)]||"reward" };
+  clearTimeout(featAutoT);
+  if(!state.statsOpen) openStats(); else renderStats();
+  if(ms) SFX.play("unlockbig");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{   // next frame: CSS-transition the bar to its new fill
+    const bar=document.querySelector(".feat-cat.feat-live .feat-bar > i"); if(bar) bar.style.width=featAnim.toPct+"%";
   }));
+  if(!ms) featAutoT=setTimeout(()=>{                       // plain step: show it briefly, then move on
+    if(state.statsOpen && featAnim && featAnim.cat===cat && !featAnim.reward){ closeStats(); nextCelebration(); }
+  }, 1400);
 }
 function nextVerbMilestone(count){ return count<1 ? 1 : Math.floor(count/VERB_MS_STEP)*VERB_MS_STEP+VERB_MS_STEP; }
 function renderStats(){
@@ -3376,29 +3386,23 @@ function renderStats(){
   let html="";
   for(const cat in VERB_LADDERS){
     const n=(state.verbCounts&&state.verbCounts[cat])||0;
-    // earned rewards so far (tally by type, in ladder feel)
-    const tally={};
+    const tally={};   // earned rewards so far (tally by type, in ladder feel)
     for(const m of verbMilestonesUpTo(n)){ const t=verbRewardAt(cat,m); if(t) tally[t]=(tally[t]||0)+1; }
     const earned=Object.keys(tally).map(t=>REWARD_LABEL[t]+(tally[t]>1?" ×"+tally[t]:"")).join(" · ") || "—";
-    if(levelup && levelup.cat===cat){
-      // celebration view: the bar starts at its pre-milestone fill and animates to 100% (see showLevelUp)
-      html+=`<div class="feat-cat levelup">
-        <div class="feat-head"><span class="nm">${esc(VERB_CAT_LABEL[cat])}</span><span class="ct">${n} verb${n===1?"":"s"}</span></div>
-        <div class="feat-rewards">${esc(earned)}</div>
-        <div class="feat-levelup">★ Milestone ${levelup.milestone} — ${esc(REWARD_LABEL[levelup.reward])} unlocked!</div>
-        <div class="feat-bar"><i style="width:${levelup.fromPct}%"></i></div>
-      </div>`;
+    const head=`<div class="feat-head"><span class="nm">${esc(VERB_CAT_LABEL[cat])}</span><span class="ct">${n} verb${n===1?"":"s"}</span></div>`
+             + `<div class="feat-rewards">${esc(earned)}</div>`;
+    if(featAnim && featAnim.cat===cat){
+      // live view: bar starts at fromPct and CSS-animates to toPct (see showFeatProgress)
+      const line = featAnim.reward
+        ? `<div class="feat-levelup">★ Milestone ${featAnim.next} — ${esc(REWARD_LABEL[featAnim.reward])} unlocked!</div>`
+        : `<div class="feat-next">Next at ${featAnim.next}: <b>${esc(featAnim.nextReward)}</b> &nbsp;(${n}/${featAnim.next})</div>`;
+      html+=`<div class="feat-cat feat-live${featAnim.reward?" levelup":""}">${head}${line}<div class="feat-bar"><i style="width:${featAnim.fromPct}%"></i></div></div>`;
       continue;
     }
     const next=nextVerbMilestone(n), nextReward=REWARD_LABEL[verbRewardAt(cat,next)]||"reward";
-    const prev=n<1?0:Math.floor(n/VERB_MS_STEP)*VERB_MS_STEP;   // last milestone (0 or a multiple of 5)
+    const prev=n<1?0:(n<VERB_MS_STEP?1:Math.floor(n/VERB_MS_STEP)*VERB_MS_STEP);   // start of the current segment
     const span=next-prev, pct=Math.max(0,Math.min(100, Math.round((n-prev)/span*100)));
-    html+=`<div class="feat-cat">
-      <div class="feat-head"><span class="nm">${esc(VERB_CAT_LABEL[cat])}</span><span class="ct">${n} verb${n===1?"":"s"}</span></div>
-      <div class="feat-rewards">${esc(earned)}</div>
-      <div class="feat-next">Next at ${next}: <b>${esc(nextReward)}</b> &nbsp;(${n}/${next})</div>
-      <div class="feat-bar"><i style="width:${pct}%"></i></div>
-    </div>`;
+    html+=`<div class="feat-cat">${head}<div class="feat-next">Next at ${next}: <b>${esc(nextReward)}</b> &nbsp;(${n}/${next})</div><div class="feat-bar"><i style="width:${pct}%"></i></div></div>`;
   }
   if(!VERB_CATS) html='<div class="sub">Loading verb data…</div>'+html;
   body.innerHTML=html;

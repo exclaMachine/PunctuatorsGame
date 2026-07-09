@@ -763,8 +763,13 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   `divineDay`, day-scoped like WOTD). **Treasure Sense/Keener** draw a pulsing glint on pickups (`drawPickup`,
   scales with `perks.treasure`). **Magnet** now **gates the pre-existing pickup homing** (contact-collect stays
   default). Speed/Attack/Satchel are passive via the getters. **Feats panel** (`#stats`, `state.statsOpen`, `C`/
-  `✦` `tc-stats`, `renderStats`) shows the 4 populated ladders: rewards earned, verb count, progress bar to the
-  next milestone. Persisted: `verbCounts`,`divineDay`,`divine`.
+  `✦` `tc-stats`, `renderStats`) lists the 4 populated ladders (rewards earned, verb count, progress bar to the
+  next milestone). **Progress feedback:** *every* applicable verb pops the panel and CSS-animates that
+  category's bar to its new fill (`showFeatProgress`/`featAnim`) — a **milestone** fills to 100%, shows the
+  reward, and stays until dismissed; a **plain step** auto-dismisses after ~1.4 s. Milestone + letter-unlock on
+  the same word are **staggered** via a small `celebrations` queue (`queueCelebration`/`nextCelebration`,
+  `pendingFeat`): the Feats pop shows first, then the new-letter modal on its close. Persisted: `verbCounts`,
+  `divineDay`,`divine`.
    Three independent dials keep it scalable and non-literal: **POS sets the reward category**,
    **word rarity (length + Scrabble-style letter rarity) sets the tier/magnitude**, and **a
    random roll within that category+tier picks the specific reward** — so SWIM does not grant a
