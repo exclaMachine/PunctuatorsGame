@@ -465,6 +465,10 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
 
 ## Current state
 
+**Dev-only debug:** `IS_DEV` (true on `localhost`/`127.0.0.1`/`file:`, false on the deployed GitHub Pages host)
+gates a testing cheat — press **`` ` ``** (backtick) to `prompt()` for letters and grant them straight to the
+satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active. Never runs in production.
+
 **Built and working:**
 
 - **Verb stat ladders (Feats, `C`/`✦`)** — collecting distinct verbs levels you up per WordNet verb category

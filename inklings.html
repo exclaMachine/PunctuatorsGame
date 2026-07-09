@@ -1484,8 +1484,27 @@ let attackHeld=false;   // set true while the touch ATK button is held
 const joy={active:false, x:0, y:0};   // mobile joystick vector (-1..1); x/y are 0 within the deadzone
 const JOY_DEAD=0.22;    // ignore tiny thumb nudges near the centre
 const MOVE_KEYS=new Set(["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d"]);
+// DEV-ONLY DEBUG: on localhost / file:// only (never the deployed GitHub Pages host). Press ` (backtick) to
+// grant yourself any letters for testing — added straight to the satchel, bypassing the cap.
+const IS_DEV = location.protocol==="file:" || /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(location.hostname);
+function debugGrantLetters(){
+  const s=prompt("DEBUG — grant letters (type any; e.g. 'qzx', or 'aaa' for three a's):");
+  if(!s) return;
+  let n=0; for(const ch of s){ if(/[a-zA-Z]/.test(ch)){ state.inv[ch]=(state.inv[ch]||0)+1; n++; } }
+  updateTrayHud(); if(state.overlay) renderBench(); scheduleSave();
+  showToast("DEBUG: granted "+n+" letter"+(n===1?"":"s"));
+}
+if(IS_DEV){   // a small corner badge so it's obvious the debug build is active (and prod isn't)
+  const mk=()=>{ if(document.getElementById("devbadge")||!document.body) return;
+    const b=document.createElement("div"); b.id="devbadge"; b.textContent="DEV · ` grants letters";
+    b.style.cssText="position:fixed;left:6px;bottom:6px;z-index:99;font:10px 'Press Start 2P',monospace;"+
+      "color:#e3d8bd;background:rgba(38,35,58,.82);border:2px solid #c89b3c;padding:4px 7px;pointer-events:none";
+    document.body.appendChild(b); };
+  if(document.body) mk(); else addEventListener("DOMContentLoaded", mk);
+}
 addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
+  if(IS_DEV && (k==="`"||e.key==="~")){ e.preventDefault(); debugGrantLetters(); return; }   // dev-only letter cheat
   if(MOVE_KEYS.has(k)) e.preventDefault();
   if(k==="?"||k==="/"){ e.preventDefault(); toggleHelp(); return; }
   if(document.getElementById("unlockmodal").classList.contains("open")){   // top-most: dismiss the new-letter notice
