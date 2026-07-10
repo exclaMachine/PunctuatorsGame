@@ -373,7 +373,9 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   starts outdoors. **Placeholder pixel art** (except the house PNG) — draw code is structured by object type
   so the staged tileset can swap in later.
 - **Nouns wing** (the shelves) — `data/noun-books.json` (`{categories:[…26], books:{key:{cat,children,[misc]}}}`,
-  precomputed by `build_dictionary.py:build_noun_books`, ~200 KB gzip) is fetched at startup into `NOUN_BOOKS`
+  precomputed by `build_dictionary.py:build_noun_books`, ~200 KB gzip; the builder filters out WordNet junk —
+  only real dictionary nouns, ≥3 letters, non-proper-noun senses — so abbreviations like OR/HI/ID/OK and names
+  like Bach no longer show on the shelves) is fetched at startup into `NOUN_BOOKS`
   + a `WORDBOOK` (child→book) reverse map. **26 shelf-levels** (13 shelves × 2 board-rows) ↦ the 26 noun
   categories via `SHELF_ORDER` × `NOUN_BOOKS.categories` (`shelfCategory(id, level)`), concrete cats on the big
   top/mid shelves. `ensureLibraryBg` computes `LIBRARY.activeByCat` (category → sorted active book keys, an
@@ -439,8 +441,10 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   never compress; only `.dex-list` scrolls (`flex:1;min-height:0`). Collection defs are single-line
   ellipsis; `openDefModal()` shows full text in `#defmodal`. Under `max-width:560px` the panel
   switches to a normal scrolling single column.
-- **Collection A–Z tabs ("books")** (`renderDex` → `#dex-tabs` + `#dex-list`): the collection is
-  split into per-letter tabs instead of one long list. `renderDex` groups `state.dex` words by first
+- **Collection: POS filter + A–Z tabs** (`renderDex` → `#dex-pos` + `#dex-tabs` + `#dex-list`): a **POS filter
+  row** (`dexPos`: All / Nouns / Verbs / Adjectives / Adverbs — the home for browsing adjectives/adverbs, which
+  lack rich WordNet categories; nouns→shelves and verbs→Feats-tab are the richer views) narrows the list, then
+  it's split into per-letter tabs. `renderDex` filters `state.dex` by `dexPos`, groups by first
   letter and **only renders a tab for letters you actually own a word for** (no empty A–Z row). Each
   tab chip shows the letter + a count badge of how many words it holds (`.dex-tab b`); the active tab
   is inkblue. `dexTab` (module-level, an uppercase letter or `null`) tracks the selection and is kept
@@ -780,8 +784,9 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   `divineDay`, day-scoped like WOTD). **Treasure Sense/Keener** draw a pulsing glint on pickups (`drawPickup`,
   scales with `perks.treasure`). **Magnet** now **gates the pre-existing pickup homing** (contact-collect stays
   default). Speed/Attack/Satchel are passive via the getters. **Feats panel** (`#stats`, `state.statsOpen`, `C`/
-  `✦` `tc-stats`, `renderStats`) lists the 4 populated ladders (rewards earned, verb count, progress bar to the
-  next milestone). **Progress feedback:** *every* applicable verb pops the panel and CSS-animates that
+  `✦` `tc-stats`, `renderStats`) has two tabs (`statsTab`, `#stats-tabs`): **Ladders** (the 4 populated ladders —
+  rewards earned, verb count, progress bar) and **Words** (`renderVerbWords` — your collected verbs grouped by
+  all 15 WordNet verb categories, populated-ladder cats first, chips → `#defmodal`). **Progress feedback:** *every* applicable verb pops the panel and CSS-animates that
   category's bar to its new fill (`showFeatProgress`/`featAnim`) — a **milestone** fills to 100%, shows the
   reward, and stays until dismissed; a **plain step** auto-dismisses after ~1.4 s. Milestone + letter-unlock on
   the same word are **staggered** via a small `celebrations` queue (`queueCelebration`/`nextCelebration`,

@@ -266,17 +266,22 @@ def build_verb_cats(dict_words):
     return out
 
 
-def build_noun_books(dict_words):
+def build_noun_books(dictionary):
     # KNOWN ODD PLACEMENTS (WordNet quirks, acceptable for an MVP; tune _SENSE_RANK / MIN_BOOK_CHILDREN):
     #   • a few words shelve on a prominent alternate sense — e.g. oak/maple → "wood" (substance) not a tree;
     #     "words"/"ohm" fall into the person catch-all.
     #   • some book names are the technical parent, not the everyday word — sparrow → "passerine",
     #     salmon → "salmonid". Still real one-word lemmas, just not the word a kid would pick.
-    #   • ~375 rootless/proper/unit nouns land in per-category "•<cat>" catch-all ("Other") books.
+    # Filters keep out WordNet junk: only words that are a noun in OUR dictionary (no function words), ≥3 letters
+    # (drops 2-letter abbreviations like OR/HI/ID/OK/MI), and whose best noun sense is NOT a proper-noun instance
+    # (drops Bach, Ana, US-state codes, …).
+    dict_words = set(dictionary.keys())
     books = {}
-    for w in dict_words:
+    for w, entry in dictionary.items():
+        if len(w) < 3 or "noun" not in (entry.get("pos") or []):
+            continue
         syn = _best_noun_sense(w)
-        if syn is None:
+        if syn is None or syn.instance_hypernyms():
             continue
         parent, pl = None, None
         if syn.hypernyms():
@@ -330,7 +335,7 @@ def main():
     inflections = build_inflections(set(dictionary.keys()))
 
     print("Building noun-books index (Library Nouns wing)…")
-    noun_books = build_noun_books(set(dictionary.keys()))
+    noun_books = build_noun_books(dictionary)
     print("Building verb-category map (verb stat ladders)…")
     verb_cats = build_verb_cats(set(dictionary.keys()))
 

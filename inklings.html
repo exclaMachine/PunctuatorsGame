@@ -179,6 +179,10 @@
     align-items:center;justify-content:center;padding:18px;z-index:8}
   #stats.open{display:flex}
   #stats .book{max-width:460px;max-height:86vh;overflow:auto}
+  .stats-tabs{display:flex;gap:6px;margin:10px 0 4px}
+  .stab{font-family:var(--disp);font-size:10px;padding:6px 12px;border:2px solid var(--edge);
+    background:var(--paper);color:var(--ink-soft);cursor:pointer}
+  .stab.on{background:var(--inkblue);color:#fff;border-color:var(--inkblue)}
   .feat-cat{background:var(--paper-2);border:2px solid var(--edge);padding:10px 12px;margin:10px 0}
   .feat-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
   .feat-head .nm{font-family:var(--disp);font-size:12px;color:var(--inkblue)}
@@ -460,6 +464,7 @@
           </div>
           <div>
             <div class="sec-label">Collection <span class="dex-count" id="dex-count"></span></div>
+            <div class="dex-tabs" id="dex-pos"></div>
             <div class="dex-tabs" id="dex-tabs"></div>
             <div class="dex-list" id="dex-list"></div>
           </div>
@@ -537,6 +542,7 @@
         <button class="close-x" id="stats-close" aria-label="Close" title="Close">✕</button>
         <h1>Feats</h1>
         <div class="sub">Collecting verbs levels you up. Each category rewards you as its word count climbs.</div>
+        <div id="stats-tabs" class="stats-tabs"></div>
         <div id="stats-body"></div>
       </div>
     </div>
@@ -3149,9 +3155,16 @@ function renderBench(){
     : '<span class="ph">click letters above to build a word</span>';
   benchEl.querySelectorAll("[data-i]").forEach(ch=>ch.onclick=()=>{ bench.splice(+ch.dataset.i,1); renderBench(); });
 }
-let dexTab=null;   // selected collection tab — a single uppercase letter, or null when empty
+let dexTab=null, dexPos="all";   // selected collection tabs — a POS filter + a single uppercase letter
 function renderDex(){
-  const words=Object.keys(state.dex).sort();
+  // POS filter tabs (All / Nouns / Verbs / Adjectives / Adverbs) — where nouns/verbs also have richer views
+  const posEl=document.getElementById("dex-pos");
+  posEl.innerHTML=[["all","All"],["noun","Nouns"],["verb","Verbs"],["adjective","Adjectives"],["adverb","Adverbs"]]
+    .map(([p,l])=>`<span class="dex-tab${dexPos===p?" active":""}" data-pos="${p}">${l}</span>`).join("");
+  posEl.querySelectorAll("[data-pos]").forEach(t=>t.onclick=()=>{ dexPos=t.dataset.pos; dexTab=null; renderDex(); });
+
+  const words=Object.keys(state.dex).filter(w=>{ if(dexPos==="all") return true;
+    const p=state.dex[w].pos; return Array.isArray(p) && p.includes(dexPos); }).sort();
   document.getElementById("dex-count").textContent = words.length?`· ${words.length} word${words.length>1?"s":""}`:"";
 
   // group words by first letter; only letters you own a word for get a tab ("book")
@@ -3170,7 +3183,7 @@ function renderDex(){
   const list=document.getElementById("dex-list");
   list.innerHTML = shown.length
     ? shown.map(w=>`<div class="dex-item" data-w="${esc(w)}" title="Click to read the full meaning"><span class="w">${esc(w)}</span><span class="d">${esc(state.dex[w].def)}</span></div>`).join("")
-    : '<div style="color:var(--ink-soft);font-size:13px;padding:6px">Your collection is empty. Spell your first word!</div>';
+    : `<div style="color:var(--ink-soft);font-size:13px;padding:6px">${dexPos==="all"?"Your collection is empty. Spell your first word!":"No "+dexPos+"s collected yet."}</div>`;
   list.querySelectorAll("[data-w]").forEach(it=>it.onclick=()=>openDefModal(it.dataset.w));
 }
 // Full-definition modal — opened by tapping a collection entry (defs are truncated in the list).
@@ -3655,6 +3668,7 @@ function toggleStats(){ if(state.statsOpen){ closeStats(); nextCelebration(); } 
 // Every applicable verb pops the Feats panel and animates that category's bar to its new progress. A milestone
 // fills to 100%, hands out the reward, and STAYS (dismiss to continue); a plain step auto-dismisses.
 function showFeatProgress(cat, n){
+  statsTab="ladders";   // milestone pops always show the Ladders tab
   const ms=isVerbMilestone(n);
   const a = ms ? (n===1?0 : n===VERB_MS_STEP?1 : n-VERB_MS_STEP)          // just-completed segment start (milestone)
                : (n<VERB_MS_STEP?1 : Math.floor(n/VERB_MS_STEP)*VERB_MS_STEP);  // current segment start
@@ -3672,8 +3686,13 @@ function showFeatProgress(cat, n){
   }, 1400);
 }
 function nextVerbMilestone(count){ return count<1 ? 1 : Math.floor(count/VERB_MS_STEP)*VERB_MS_STEP+VERB_MS_STEP; }
+let statsTab="ladders";   // Feats panel tab: "ladders" (milestones) | "words" (collected verbs by category)
 function renderStats(){
+  const tabs=document.getElementById("stats-tabs");
+  tabs.innerHTML=[["ladders","Ladders"],["words","Words"]].map(([t,l])=>`<button class="stab${statsTab===t?" on":""}" data-tab="${t}">${l}</button>`).join("");
+  tabs.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ statsTab=b.dataset.tab; renderStats(); });
   const body=document.getElementById("stats-body");
+  if(statsTab==="words"){ renderVerbWords(body); return; }
   let html="";
   for(const cat in VERB_LADDERS){
     const n=(state.verbCounts&&state.verbCounts[cat])||0;
@@ -3697,6 +3716,21 @@ function renderStats(){
   }
   if(!VERB_CATS) html='<div class="sub">Loading verb data…</div>'+html;
   body.innerHTML=html;
+}
+// "Words" tab: your collected verbs grouped by WordNet verb category (populated-ladder categories first).
+function renderVerbWords(body){
+  if(!VERB_CATS){ body.innerHTML='<div class="sub">Loading verb data…</div>'; return; }
+  const cats={};
+  for(const w in state.dex){ const e=state.dex[w]; if(!Array.isArray(e.pos)||!e.pos.includes("verb")) continue;
+    const cat=VERB_CATS[w]||"other"; (cats[cat]||(cats[cat]=[])).push(w); }
+  const order=Object.keys(cats).sort((a,b)=>((a in VERB_LADDERS?0:1)-(b in VERB_LADDERS?0:1)) || a.localeCompare(b));
+  let html="";
+  for(const cat of order){ const ws=cats[cat].sort();
+    html+=`<div class="feat-cat"><div class="nb-cat">${esc(nbCap(cat))} <span style="color:var(--ink-soft)">(${ws.length})</span></div>`
+        + `<div class="nb-chips">`+ws.map(w=>`<span class="nb-chip found" data-w="${esc(w)}">${esc(w)}</span>`).join("")+`</div></div>`;
+  }
+  body.innerHTML = html || '<div class="sub">No verbs collected yet — spell some doing-words at the Wordsmithy.</div>';
+  body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>openDefModal(el.dataset.w));
 }
 function toggleBestiary(){ state.bestiaryOpen ? closeBestiary() : openBestiary(); }
 
