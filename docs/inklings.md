@@ -811,7 +811,9 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   `mode==="speak"`, else the small follow sprite **only when `following`** (YES sets it, NO clears it — opt-in;
   `alaFollowOpts`). Drawing helpers: `drawModalSmall`/`drawModalLarge` (via shared `alaScoop` — now with a
   scalloped spreading ruffle at the scoop base — plus `alaHand`/`alaDrip`/`alaSet`), `drawModalSpeak` (docks
-  bottom-left, pop-in, speech bubble via `alaWrap`). The large sprite goes through **`drawModalLargePixel`**: it
+  bottom-left, pop-in, speech bubble via `alaWrap`). Her speech bubble is set in **Baloo 2** (a rounded, mobile-
+  legible Google font, `500 19px`, system-sans fallback) rather than the pixel body font — since it's canvas-only,
+  the load is kicked off explicitly with `document.fonts.load`. The large sprite goes through **`drawModalLargePixel`**: it
   renders `drawModalLarge` into a `1/PIX` offscreen buffer (`_alaBuf`) then blits it back up with
   `imageSmoothingEnabled=false` for a pixelated look; `drawModalLarge`'s box/button rects use `roundRectP(c,…)`
   (context-aware) so they draw into the buffer, and hit rects stay in screen space. Buttons are

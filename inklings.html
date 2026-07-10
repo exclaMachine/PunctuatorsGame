@@ -6,7 +6,7 @@
 <title>Inklings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Baloo+2:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#ece3cf; --paper-2:#e3d8bd; --ink:#26233a; --ink-soft:#5f5872;
@@ -2322,6 +2322,9 @@ function drawPrints(sc){
    She speaks in modal verbs (can/could/should/might/would) — hedging, offering possibilities. */
 const ALA = { out:"#20202a", box:"#dedede", cream:"#fdfcf6", creamHi:"#cfc6b2", cherry:"#cf3a2c",
   cherrySh:"#9e2a20", stem:"#4e8a3c", pink:"#e98aa4", blush:"#f0a6bd", blue:"#3b6ea5", eye:"#ffffff", pupil:"#20202a", paper:"#efe6cf" };
+// Baloo 2 is used only on the canvas (her speech bubble); browsers won't fetch a canvas-only webfont on their
+// own, so kick off the load explicitly. The game redraws every frame, so it swaps in the moment it's ready.
+try{ if(document.fonts&&document.fonts.load){ document.fonts.load("500 19px 'Baloo 2'"); document.fonts.load("600 19px 'Baloo 2'"); } }catch(e){}
 function alaSet(c,lw){ c.lineWidth=lw; c.strokeStyle=ALA.out; c.lineJoin="round"; c.lineCap="round"; }
 function alaHand(c,x,y,r,dir){
   c.fillStyle=ALA.box;
@@ -2431,12 +2434,13 @@ function drawModalSpeak(c,m,nerv){
   const e=1-(1-m.popT)*(1-m.popT), S=200*(0.5+0.5*e);       // pop-in scale
   const cx=22+S*0.55, cy=H-16-S*0.5;                        // docked bottom-left
   if(m.text && m.popT>0.55){                                // speech bubble with the (modal-verb) line
-    const bbx=Math.max(18, cx-S*0.05), bby=26, bbw=Math.min(W-bbx-16, 380), bbh=104;
+    const bbx=Math.max(18, cx-S*0.05), bby=26, bbw=Math.min(W-bbx-16, 400), bbh=112;
     c.fillStyle=ALA.paper; alaSet(c,3);
     roundRect(bbx,bby,bbw,bbh,10); c.fill(); c.stroke();
     c.fillStyle=ALA.paper; c.beginPath(); c.moveTo(bbx+34,bby+bbh-1); c.lineTo(bbx+20,bby+bbh+24); c.lineTo(bbx+58,bby+bbh-1); c.closePath(); c.fill(); c.stroke();
-    c.fillStyle=ALA.out; c.font="20px 'VT323', monospace"; c.textAlign="left"; c.textBaseline="top";
-    alaWrap(c, m.text, bbx+14, bby+12, bbw-28, 22);
+    // Baloo 2 (rounded, friendly, far more legible on mobile than the pixel body font); system-sans fallback.
+    c.fillStyle=ALA.out; c.font="500 19px 'Baloo 2', system-ui, sans-serif"; c.textAlign="left"; c.textBaseline="top";
+    alaWrap(c, m.text, bbx+14, bby+13, bbw-28, 22);
     c.textBaseline="alphabetic";
   }
   drawModalLargePixel(c, cx, cy, S, m, nerv, ALaModal.hitRects);
