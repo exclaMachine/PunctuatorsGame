@@ -187,6 +187,23 @@
   .feat-next{font-size:14px;color:var(--ink-soft)}
   .feat-bar{height:8px;background:var(--paper);border:2px solid var(--edge);margin-top:5px}
   .feat-bar > i{display:block;height:100%;background:var(--gold);transition:width .6s ease}
+  /* Obstacle (river) mad-lib */
+  #obstacle{position:absolute;inset:0;display:none;background:rgba(21,19,28,.82);
+    align-items:center;justify-content:center;padding:18px;z-index:9}
+  #obstacle.open{display:flex}
+  #obstacle .book{max-height:86vh;overflow:auto}
+  .obs-prompt{font-size:19px;line-height:1.5;color:var(--ink);margin:6px 0 4px}
+  .obs-blank{display:inline-block;min-width:56px;border-bottom:3px solid var(--ink-soft);text-align:center}
+  .obs-response{min-height:24px;font-size:17px;line-height:1.4;margin:8px 0;color:var(--ink-soft)}
+  .obs-response.success{color:var(--moss);font-weight:600}
+  .obs-response.joke{color:var(--violet)}
+  .obs-response.nope,.obs-response.used{color:#9a3b2e}
+  .obs-pick-label{font-family:var(--disp);font-size:10px;color:var(--ink-soft);margin:10px 0 5px;text-transform:uppercase}
+  .obs-picker{display:flex;flex-wrap:wrap;gap:6px;max-height:34vh;overflow:auto}
+  .obs-chip{font-size:16px;padding:5px 10px;border:2px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer}
+  .obs-chip:hover{background:#d8ccab}
+  .obs-chip.used{opacity:.4;cursor:default;text-decoration:line-through}
+  .obs-empty{font-size:16px;color:var(--ink-soft);padding:6px 2px}
   .feat-cat.levelup{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
   .feat-levelup{font-family:var(--disp);font-size:10px;color:var(--gold);margin:7px 0 4px;line-height:1.4}
   #overlay.open{display:flex}
@@ -521,6 +538,21 @@
         <h1>Feats</h1>
         <div class="sub">Collecting verbs levels you up. Each category rewards you as its word count climbs.</div>
         <div id="stats-body"></div>
+      </div>
+    </div>
+
+    <!-- Interactable obstacle (river) mad-lib: fill the blank with a collected verb -->
+    <div id="obstacle">
+      <div class="book" style="max-width:470px">
+        <button class="close-x" id="obs-close" aria-label="Close" title="Close">✕</button>
+        <h1 id="obs-title"></h1>
+        <div class="obs-prompt" id="obs-prompt"></div>
+        <div class="obs-response" id="obs-response"></div>
+        <div class="obs-pick-label">Pick a verb you've collected:</div>
+        <div class="obs-picker" id="obs-picker"></div>
+        <div class="btn-row" style="margin-top:14px;justify-content:flex-end">
+          <button class="primary" id="obs-done" style="display:none">Continue →</button>
+        </div>
       </div>
     </div>
 
@@ -1168,10 +1200,13 @@ const state = {
   perks:{ speed:0, attack:0, satchel:0, slide:false, finisher:false, combo:false, divine:false, treasure:0 },  // derived from verbCounts
   divineDay:"",                 // date-string of the last Divine peek (day-scoped like the WOTD)
   divine:null,                  // {day, word, i} — the letter revealed by today's Divine, shown in the book view
+  obstacleDay:{},               // obstacle id -> day-string it was solved/passable (resets daily; persisted)
+  obstacleGot:{},               // obstacle id -> day-string its corner reward letter was collected (persisted)
+  riverCrossed:[],              // verbs already used to cross a river — single-use forever (persisted)
   resources:{},                 // book-binding material id -> count, from resource-creature drops (persist)
   bestiary:{},                  // creature id -> {kills, seen} — unlocks bestiary entries (persist)
   fx:[],                        // floating texts
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, statsOpen:false,
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, statsOpen:false, obstacle:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -1299,9 +1334,49 @@ function overlapsSolid(r,px,py){
 }
 function canStand(sc,px,py){
   if(sc.isBase && (overlapsSolid(STALL,px,py) || houseBlocks(px,py))) return false;
+  if(obstacleBlocks(sc,px,py)) return false;                     // an unsolved river/obstacle band
   const fy=py+FOOT_DY;
   return !blockedAt(sc,px-FOOT_HW,fy-FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy-FOOT_HH)
       && !blockedAt(sc,px-FOOT_HW,fy+FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy+FOOT_HH);
+}
+
+/* ---------- INTERACTABLE OBSTACLES (river mad-lib puzzle) -------------------------------------------
+   An L-shaped river walls off a corner of a screen. Touch it → a mad-lib: fill "___ it" with a COLLECTED
+   verb. Curated `accept` verbs (swim/ford/…) let you cross (the river turns passable for the day); certain
+   verbs or verb CATEGORIES (@consumption, @perception, …) get a funny line; everything else rotates
+   DEFAULT_NOPES. A rare **letter** sits stationary in the walled corner (visible across the water as bait) —
+   cross, then walk over it to grab it. Resets daily; a crossing verb is single-use FOREVER
+   (state.riverCrossed) so you keep finding new ways over (and funnier misfires). Data-driven — add more. */
+const OBSTACLES = [{
+  id:"river", screen:[MAP_RADIUS, MAP_RADIUS],
+  bands:[                                     // an L: enters mid-right, flows to the right edge, then turns down
+    { x:19*TS, y:9*TS, w:11*TS, h:3*TS  },    //   horizontal arm (rows 9-11, cols 19-29 → right edge)
+    { x:19*TS, y:9*TS, w:3*TS,  h:13*TS }     //   vertical arm down to the bottom edge (cols 19-21, rows 9-21)
+  ],
+  letter:{ x:25*TS, y:16*TS },                // the reward letter, in the walled-off bottom-right corner
+  title:"A Rushing River",
+  prompt:"A cold river cuts across the land. I guess I could ___ it.",
+  accept:["swim","ford","wade","cross","traverse","raft","paddle","float","bridge","span","navigate","brave","breast","boat"],
+  success:"You {v} across the current! Now go grab that letter on the far bank.",
+  jokes:{ jump:"Across THAT? I'm not Spider-Man.", fly:"If only I had wings.",
+    climb:"Climb… a river? It's flat, genius.", dig:"Dig under a river. Sure. What could go wrong.",
+    "@consumption":"Drink the whole river? I'd float away.", "@perception":"Staring at the current won't part it.",
+    "@communication":"Sweet-talking water? It isn't listening.", "@cognition":"Overthinking it won't get me any drier.",
+    "@emotion":"Feelings won't build a bridge." }
+}];
+const RARE_LETTERS = "jkqxzv".split("");
+const DEFAULT_NOPES = ["Nope.","No.","Negative.","Not a chance.","Nuh-uh.","Afraid not.","That won't work."];
+let _nopeIdx=0, _obstacleArmed=true, curObstacle=null;
+function obstacleFor(sc){ return sc ? (OBSTACLES.find(o=>o.screen[0]===sc.sx && o.screen[1]===sc.sy) || null) : null; }
+function obstacleSolvedToday(o){ return !!(state.obstacleDay && state.obstacleDay[o.id]===state.day); }
+function obstacleGotToday(o){ return !!(state.obstacleGot && state.obstacleGot[o.id]===state.day); }
+function obstacleBlocks(sc,px,py){ const o=obstacleFor(sc); return !!(o && !obstacleSolvedToday(o) && o.bands.some(b=>overlapsSolid(b,px,py))); }
+function rewardLetter(){ const h=(hash2(state.daySeed>>>0, 0x1379)^0x9e37)>>>0; return RARE_LETTERS[h%RARE_LETTERS.length]; }  // today's corner letter (stable per day)
+// If a screen entry lands the player inside an unsolved river band, step them back above it (onto the bank).
+function nudgeOutOfObstacle(){
+  const o=obstacleFor(curScreen()); if(!o || obstacleSolvedToday(o)) return;
+  const p=state.player;
+  for(const b of o.bands) if(overlapsSolid(b, p.x, p.y)){ p.y = b.y - 26; return; }
 }
 function walkableSpawn(rng, tiles){   // a random point that lands on walkable ground
   let x=60+rng()*(W-120), y=60+rng()*(H-120);
@@ -1391,7 +1466,7 @@ function genScreen(sx,sy){
     }
   }
   return { creatures, tiles, pickups:[], slicks:[], seed:(hash2(sx,sy) ^ state.daySeed)>>>0, bg:null, waterTiles:null,
-           generated:true, isBase, dist };
+           generated:true, isBase, dist, sx, sy };
 }
 function curScreen(){
   const k=key(state.screen.sx,state.screen.sy);
@@ -1408,6 +1483,8 @@ function goScreen(dsx,dsy,edge){
   if(edge==="right")  p.x=W-p.r-2;
   if(edge==="top")    p.y=p.r+2;
   if(edge==="bottom") p.y=H-p.r-2;
+  nudgeOutOfObstacle();   // don't land inside a river band on the new screen
+  _obstacleArmed=true;    // re-arm the touch trigger for the new screen
   trans={ dsx, dsy, from, t:0, dur:TRANS_DUR };   // start the slide (gameplay freezes until it ends)
 }
 // Roll the world over to a new calendar day: empty satchel, forget today's captures, regenerate the
@@ -1515,6 +1592,10 @@ addEventListener("keydown",e=>{
   if(state.help){ if(k==="escape"){ e.preventDefault(); toggleHelp(); } return; }
   if(state.statsOpen){   // Feats panel (may sit atop the Wordsmithy after a milestone): close on Esc / Tab / C
     if(k==="escape"||k==="tab"||k==="c"){ e.preventDefault(); toggleStats(); }
+    return;
+  }
+  if(state.obstacle){   // river mad-lib: close on Esc / Tab (picks are click-driven)
+    if(k==="escape"||k==="tab"){ e.preventDefault(); closeObstacle(); }
     return;
   }
   if(state.overlay){   // Wordsmithy open: let the physical keyboard build words
@@ -1791,7 +1872,7 @@ function update(dt){
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -1829,14 +1910,31 @@ function update(dt){
     else if(p.x>W) { if(s.sx< R) goScreen( 1,0,"left");  else { p.x=W-2; edgeBump(); } }
     else if(p.y<0) { if(s.sy>-R) goScreen(0,-1,"bottom");else { p.y=2;   edgeBump(); } }
     else if(p.y>H) { if(s.sy< R) goScreen(0, 1,"top");   else { p.y=H-2; edgeBump(); } }
+    if(trans) return;   // a transition just started: `sc`/player now refer to different screens — skip the below
     // walk into the house doorway → enter the library (no key press needed, like the exit mat inside)
     if(sc.isBase && LIBRARY && LIBRARY.screen && onHouseDoor(p.x,p.y)){ enterLibrary(); return; }
+    // river/obstacle: touch it (unsolved) → mad-lib; once crossed, walk over the corner letter → collect it
+    const obs=obstacleFor(sc), fx=p.x, fy=p.y+FOOT_DY;
+    if(obs && !obstacleSolvedToday(obs)){
+      const near = obs.bands.some(b=> fx>b.x-18 && fx<b.x+b.w+18 && fy>b.y-16 && fy<b.y+b.h+16);
+      if(near){ if(_obstacleArmed){ _obstacleArmed=false; openObstacle(obs); return; } }
+      else _obstacleArmed=true;
+    } else {
+      _obstacleArmed=true;
+      if(obs && !obstacleGotToday(obs) && Math.hypot(fx-obs.letter.x, fy-obs.letter.y) < 22){
+        const L=rewardLetter(); state.inv[L]=(state.inv[L]||0)+1;
+        (state.obstacleGot=state.obstacleGot||{})[obs.id]=state.day;
+        state.fx.push({x:obs.letter.x, y:obs.letter.y-4, text:"+"+L, life:1.0, color:colorFor(L)});
+        updateTrayHud(); SFX.play("capture"); scheduleSave();
+        showToast("A rare “"+L+"”, snatched from the far bank!");
+      }
+    }
     // touch attack button: hold to keep swinging (doAttack is cooldown-gated)
     if(attackHeld) doAttack();
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -1885,7 +1983,7 @@ function update(dt){
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else hint.classList.remove("show");
@@ -1906,7 +2004,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.shelfview && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.shelfview && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -1931,7 +2029,7 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.shelfview;
+  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.shelfview;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryShelf()){ hint.textContent="Press E to browse this shelf"; hint.classList.add("show"); }
@@ -2050,6 +2148,7 @@ function renderWorld(sc, ox, oy){
   ensureBg(sc); ctx.drawImage(sc.bg,0,0);
   const tnow=Date.now();
   for(const wt of sc.waterTiles) drawWaterAnim(wt[0],wt[1],tnow);
+  drawObstacle(sc, tnow);                       // river / interactable obstacle band, if this screen has one
   if(sc.isBase){ drawStall(); drawHouse(); }   // outdoor home: shop + the house (Library entrance)
   if(sc.slicks) for(const s of sc.slicks) drawSlick(s, tnow);
   if(sc.pickups) for(const pk of sc.pickups) drawPickup(pk, tnow);
@@ -2057,6 +2156,30 @@ function renderWorld(sc, ox, oy){
     if(c.kind==="cube") drawCube(c);
     else if(c.kind==="resource") drawResourceCreature(c);
     else drawCreature(c);
+  }
+  ctx.restore();
+}
+// Draw the L-shaped river (striped water + drifting ripples + grassy banks) and the stationary reward letter
+// glinting in the walled-off corner. Once crossed today the water no longer blocks (you just walk over it —
+// a swim sprite can come later); no stepping stones.
+function drawObstacle(sc, tnow){
+  const o=obstacleFor(sc); if(!o) return;
+  ctx.save(); ctx.imageSmoothingEnabled=false;
+  for(const b of o.bands){
+    for(let y=b.y; y<b.y+b.h; y+=4){ ctx.fillStyle=((y>>2)&1)?"#3b6ea5":"#34679d"; ctx.fillRect(b.x,y,b.w,4); }   // water
+    ctx.fillStyle="rgba(255,255,255,.14)";                                                                        // ripples
+    for(let k=0;k<b.w;k+=44){ const dx=b.x+((k+(tnow/55))%(b.w||44)); ctx.fillRect(dx, b.y+8+((k*7)%Math.max(4,b.h-16)), 12, 2); }
+    ctx.fillStyle="#3a5a34"; ctx.fillRect(b.x, b.y-3, b.w, 4); ctx.fillRect(b.x, b.y+b.h-1, b.w, 4);              // banks
+    ctx.fillStyle="#2a4a28"; ctx.fillRect(b.x, b.y, b.w, 1);
+  }
+  if(!obstacleGotToday(o)){                                    // the rare reward letter, glinting in the corner
+    const lx=o.letter.x, ly=o.letter.y, L=rewardLetter(), gp=0.5+0.5*Math.sin(tnow/300);
+    ctx.fillStyle="rgba(255,246,190,"+(0.35+0.5*gp).toFixed(2)+")";
+    ctx.beginPath(); ctx.arc(lx, ly, 13+gp*3, 0, 7); ctx.fill();
+    if(!drawGlyph(L, lx, ly-2, 26, 0)){
+      ctx.fillStyle="#c89b3c"; ctx.font="20px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(L.toUpperCase(), lx, ly); ctx.textBaseline="alphabetic";
+    }
   }
   ctx.restore();
 }
@@ -3371,7 +3494,7 @@ function showFeatProgress(cat, n){
   featAnim={ cat, fromPct:Math.max(0,Math.round(((n-1)-a)/(b-a)*100)), toPct:Math.min(100,Math.round((n-a)/(b-a)*100)),
              reward: ms?verbRewardAt(cat,n):null, next:b, nextReward:REWARD_LABEL[verbRewardAt(cat, ms?nextVerbMilestone(n):b)]||"reward" };
   clearTimeout(featAutoT);
-  if(!state.statsOpen) openStats(); else renderStats();
+  if(!state.statsOpen && !state.obstacle) openStats(); else renderStats();
   if(ms) SFX.play("unlockbig");
   requestAnimationFrame(()=>requestAnimationFrame(()=>{   // next frame: CSS-transition the bar to its new fill
     const bar=document.querySelector(".feat-cat.feat-live .feat-bar > i"); if(bar) bar.style.width=featAnim.toPct+"%";
@@ -3408,6 +3531,63 @@ function renderStats(){
   body.innerHTML=html;
 }
 function toggleBestiary(){ state.bestiaryOpen ? closeBestiary() : openBestiary(); }
+
+/* ---------- OBSTACLE (river) MAD-LIB ---------- */
+function openObstacle(o){
+  curObstacle=o; state.obstacle=true;
+  document.getElementById("obstacle").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  document.getElementById("obs-title").textContent=o.title;
+  const resp=document.getElementById("obs-response"); resp.textContent=""; resp.className="obs-response";
+  document.getElementById("obs-done").style.display="none";
+  renderObstaclePrompt(o, null);
+  renderObstaclePicker(o);
+  SFX.play("click");
+}
+function closeObstacle(){
+  state.obstacle=false; curObstacle=null;
+  document.getElementById("obstacle").classList.remove("open");
+  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.statsOpen;
+  document.getElementById("sound-btn").style.display = hide?"none":"";
+}
+function renderObstaclePrompt(o, verb){
+  const blank = verb ? `<b style="color:var(--gold)">${esc(verb)}</b>` : `<span class="obs-blank"></span>`;
+  document.getElementById("obs-prompt").innerHTML = esc(o.prompt).replace("___", blank);
+}
+function renderObstaclePicker(o){
+  const verbs=Object.keys(state.dex).filter(w=>Array.isArray(state.dex[w].pos)&&state.dex[w].pos.includes("verb")).sort();
+  const pk=document.getElementById("obs-picker");
+  if(!verbs.length){ pk.innerHTML='<div class="obs-empty">You haven\'t collected any verbs yet — spell some doing-words at the Wordsmithy, then come back.</div>'; return; }
+  const crossed=state.riverCrossed||[];
+  pk.innerHTML=verbs.map(w=>{ const used=crossed.includes(w);
+    return `<button class="obs-chip${used?" used":""}" data-w="${esc(w)}"${used?" disabled":""} title="${used?"already crossed with this":""}">${esc(w)}</button>`; }).join("");
+  pk.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>submitObstacleVerb(o, b.dataset.w));
+}
+// Curated accept-list crosses (rare-letter reward, single-use verb); specific/category jokes; else a rotating "nope".
+function resolveObstacle(o, verb){
+  verb=verb.toLowerCase();
+  if((state.riverCrossed||[]).includes(verb)) return { kind:"used", text:"You've already crossed with “"+verb+"” — that trick works only once. Find another way." };
+  if(o.accept.includes(verb)) return { kind:"success", text:o.success.replace("{v}",verb) };
+  if(o.jokes[verb]) return { kind:"joke", text:o.jokes[verb] };
+  const cat=VERB_CATS && VERB_CATS[verb];
+  if(cat && o.jokes["@"+cat]) return { kind:"joke", text:o.jokes["@"+cat] };
+  return { kind:"nope", text:DEFAULT_NOPES[_nopeIdx++ % DEFAULT_NOPES.length] };
+}
+function submitObstacleVerb(o, verb){
+  renderObstaclePrompt(o, verb);
+  const r=resolveObstacle(o, verb);
+  const resp=document.getElementById("obs-response");
+  resp.className="obs-response "+r.kind; resp.textContent=r.text;
+  if(r.kind==="success"){
+    (state.obstacleDay=state.obstacleDay||{})[o.id]=state.day;            // river now passable today
+    (state.riverCrossed=state.riverCrossed||[]).push(verb);              // this verb is spent forever
+    document.getElementById("obs-done").style.display="";
+    SFX.play("unlockbig"); scheduleSave();
+    renderObstaclePicker(o);                                              // grey the just-used verb
+  } else {
+    SFX.play(r.kind==="joke" ? "known" : "invalid");
+  }
+}
 // Unique material names a creature can drop (for the "Drops" line once that block is unlocked).
 function dropSummary(cre){
   return cre.drops.table.map(d=>prettyItem(d.item)).filter((v,i,a)=>a.indexOf(v)===i).join(", ");
@@ -3501,7 +3681,8 @@ function snapshot(){
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
            restored:state.restored, books:state.books, fables:state.fables,
            resources:state.resources, bestiary:state.bestiary,
-           verbCounts:state.verbCounts, divineDay:state.divineDay, divine:state.divine };
+           verbCounts:state.verbCounts, divineDay:state.divineDay, divine:state.divine,
+           obstacleDay:state.obstacleDay, obstacleGot:state.obstacleGot, riverCrossed:state.riverCrossed };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -3523,6 +3704,9 @@ function applySnapshot(d){
   if(d.verbCounts && typeof d.verbCounts==="object"){ state.verbCounts=d.verbCounts; computePerks(); }
   if(typeof d.divineDay==="string") state.divineDay=d.divineDay;
   if(d.divine && typeof d.divine==="object") state.divine=d.divine;
+  if(d.obstacleDay && typeof d.obstacleDay==="object") state.obstacleDay=d.obstacleDay;   // solved-today (day-scoped)
+  if(d.obstacleGot && typeof d.obstacleGot==="object") state.obstacleGot=d.obstacleGot;   // reward collected today (day-scoped)
+  if(Array.isArray(d.riverCrossed)) state.riverCrossed=d.riverCrossed;                     // spent crossing verbs (forever)
   rederiveVerbCounts();   // no-op until VERB_CATS is loaded; then reconciles counts with the collection
   // Satchel + captured creatures only carry over within the SAME calendar day. A new day = empty satchel
   // and a fresh map (captures forgotten); state.day was already set to today before this runs.
@@ -3617,6 +3801,9 @@ document.getElementById("lib-close").onclick=()=>{ closeOverlay(); SFX.play("cli
 document.getElementById("bes-close").onclick=()=>{ closeBestiary(); SFX.play("click"); };
 document.getElementById("stats-close").onclick=()=>{ toggleStats(); };
 document.getElementById("stats").onclick=e=>{ if(e.target.id==="stats") toggleStats(); };
+document.getElementById("obs-close").onclick=()=>{ closeObstacle(); SFX.play("click"); };
+document.getElementById("obs-done").onclick=()=>{ closeObstacle(); SFX.play("click"); };
+document.getElementById("obstacle").onclick=e=>{ if(e.target.id==="obstacle") closeObstacle(); };
 document.getElementById("bestiary").onclick=e=>{ if(e.target.id==="bestiary") closeBestiary(); };  // tap backdrop to close
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
@@ -3651,7 +3838,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.shelfview;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.shelfview;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -4043,7 +4230,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.statsOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.statsOpen || state.obstacle); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)

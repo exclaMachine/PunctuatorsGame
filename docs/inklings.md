@@ -474,6 +474,13 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
 
 **Built and working:**
 
+- **Interactable obstacles (river mad-lib)** — an **L-shaped river** walls off a corner of the far corner
+  screen, with a **rare letter sitting in the walled-off corner** (visible across the water as bait). Touch the
+  river → a mad-lib ("I could ___ it") you fill with a **collected verb**: curated crossing verbs
+  (swim/ford/wade…) make it **passable for the day** (then walk over to grab the corner letter); specific verbs
+  (`jump`→"I'm not Spider-Man") and whole verb **categories** (`@consumption`, `@perception`…) get funny lines;
+  anything else rotates "nope". **Resets daily**, and a crossing verb is **single-use forever**
+  (`state.riverCrossed`) so you keep finding new ways over. Data-driven (`OBSTACLES`) — add entries for more.
 - **Verb stat ladders (Feats, `C`/`✦`)** — collecting distinct verbs levels you up per WordNet verb category
   along Korok-style milestones (1, then every 5); 4 categories populated (motion/competition/perception/
   possession) giving passive boosts + abilities (Slide, Finisher, Combo, Divine, Treasure Sense, Magnet).
@@ -773,6 +780,18 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   the same word are **staggered** via a small `celebrations` queue (`queueCelebration`/`nextCelebration`,
   `pendingFeat`): the Feats pop shows first, then the new-letter modal on its close. Persisted: `verbCounts`,
   `divineDay`,`divine`.
+- **Interactable obstacles** (`/* INTERACTABLE OBSTACLES */`) — data-driven **`OBSTACLES`** array (`{id, screen:[sx,sy],
+  bands:[rect,…] (an L: mid-left arm + down arm), letter:{x,y}, title, prompt, accept:[verbs], success,
+  jokes:{verb|@category:line}}`). `obstacleFor(sc)` matches by `sc.sx/sc.sy` (stored on each screen);
+  `obstacleBlocks` adds every band to `canStand` (blocks until solved-today), `nudgeOutOfObstacle` snaps you to
+  the near bank on entry, `drawObstacle` renders the water/banks + the glinting corner reward letter (no
+  stepping-stones — once crossed you just walk over). The **field update** opens the mad-lib on touch
+  (`openObstacle`, re-armed via `_obstacleArmed`) and, once passable, **collects the corner letter on contact**
+  (`rewardLetter()` = today's rare letter, deterministic from `daySeed`; `state.obstacleGot[id]=today`). Modal
+  `#obstacle` (`state.obstacle`): a picker of your collected verbs (`renderObstaclePicker`, greying spent ones) →
+  **`resolveObstacle`** = curated `accept` → success (river passable: `obstacleDay[id]=today`, verb pushed to
+  `riverCrossed`), specific/`@category` (via `VERB_CATS`) joke, else rotating `DEFAULT_NOPES`. **Resets daily**
+  (`obstacleDay`/`obstacleGot` day-scoped); crossing verbs single-use forever (`riverCrossed`). All persisted.
    Three independent dials keep it scalable and non-literal: **POS sets the reward category**,
    **word rarity (length + Scrabble-style letter rarity) sets the tier/magnitude**, and **a
    random roll within that category+tier picks the specific reward** — so SWIM does not grant a
