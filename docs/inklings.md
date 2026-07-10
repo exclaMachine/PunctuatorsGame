@@ -492,6 +492,14 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   (`jump`→"I'm not Spider-Man") and whole verb **categories** (`@consumption`, `@perception`…) get funny lines;
   anything else rotates "nope". **Resets daily**, and a crossing verb is **single-use forever**
   (`state.riverCrossed`) so you keep finding new ways over. Data-driven (`OBSTACLES`) — add entries for more.
+- **Spilled-ink puddle (daily gag, non-blocking)** — each day a **pool of ink** appears on one random walkable
+  square somewhere on the map (never the home base). It blocks nothing — walk up and touch it → a mad-lib
+  ("I could ___ it") filled with a **collected verb**. The answer decides the gag: a **crossing verb**
+  (swim/wade…) or a **`@competition`** verb → you barge through and turn **jet-black for the day** (+a little
+  ink); a **`@motion`** verb → you tromp through and leave a **black footprint trail** for the day (+a little
+  ink); a **`@consumption`** verb → **"Yuck!" and −1 heart** (don't drink ink); **`@communication`** → a friendly
+  non-answer; anything else → a plain "nope". The three "through" answers clear the puddle for the day; the rest
+  leave it so you can try another verb. All state (`inkClearedDay`/`inkedDay`/`printsDay`) is **day-scoped**.
 - **Verb stat ladders (Feats, `C`/`✦`)** — collecting distinct verbs levels you up per WordNet verb category
   along Korok-style milestones (1, then every 5); 4 categories populated (motion/competition/perception/
   possession) giving passive boosts + abilities (Slide, Finisher, Combo, Divine, Treasure Sense, Magnet).
@@ -816,6 +824,15 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   **`resolveObstacle`** = curated `accept` → success (river passable: `obstacleDay[id]=today`, verb pushed to
   `riverCrossed`), specific/`@category` (via `VERB_CATS`) joke, else rotating `DEFAULT_NOPES`. **Resets daily**
   (`obstacleDay`/`obstacleGot` day-scoped); crossing verbs single-use forever (`riverCrossed`). All persisted.
+- **Spilled-ink puddle** (`/* SPILLED-INK PUDDLE */`) — a non-blocking daily gag, separate from `OBSTACLES`.
+  `inkScreenCoord()` picks the day's screen from `daySeed` (off home base); `inkPos(sc)` picks/snaps a walkable
+  tile on it (cached in `_inkPos`/`_inkPosDay`). The **field update** touch-triggers `openInk` (re-armed via
+  `_inkArmed`) and, while `inkPrints()`, drops footprints into `state.prints` (a rolling 44-entry trail, tagged
+  by screen). `drawInk`/`drawPrints` render the blob + trail; `drawPlayer` tints the sprite via
+  `ctx.filter="brightness(0)"` while `inkInked()`. Reuses modal `#obstacle` via `openInk`/`renderInkPicker`/
+  **`resolveInk`** (crossing list or `@competition` → clear + jet-black + `INK_REWARD` ink; `@motion` → clear +
+  footprints + ink; `@consumption` → −1 heart, no clear; `@communication` → gag, no clear; else `DEFAULT_NOPES`).
+  Day-scoped state: `inkClearedDay`/`inkedDay`/`printsDay` (all persisted); reset in `startNewDay`.
    Three independent dials keep it scalable and non-literal: **POS sets the reward category**,
    **word rarity (length + Scrabble-style letter rarity) sets the tier/magnitude**, and **a
    random roll within that category+tier picks the specific reward** — so SWIM does not grant a

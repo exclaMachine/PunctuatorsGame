@@ -1380,6 +1380,67 @@ function obstacleSolvedToday(o){ return !!(state.obstacleDay && state.obstacleDa
 function obstacleGotToday(o){ return !!(state.obstacleGot && state.obstacleGot[o.id]===state.day); }
 function obstacleBlocks(sc,px,py){ const o=obstacleFor(sc); return !!(o && !obstacleSolvedToday(o) && o.bands.some(b=>overlapsSolid(b,px,py))); }
 function rewardLetter(){ const h=(hash2(state.daySeed>>>0, 0x1379)^0x9e37)>>>0; return RARE_LETTERS[h%RARE_LETTERS.length]; }  // today's corner letter (stable per day)
+
+/* ---------- SPILLED-INK PUDDLE (non-blocking daily gag) --------------------------------------------
+   Each day a pool of ink appears on ONE random walkable square somewhere on the map (never the home base).
+   It blocks nothing — you just walk up and touch it → a mad-lib ("I could ___ it"). How you answer decides
+   the gag: a crossing verb (swim/wade/…) or a @competition verb → you barge through and turn jet-black for
+   the day (+a little ink); a @motion verb → you tromp through and leave black footprints for the day
+   (+a little ink); a @consumption verb → "Yuck!" and you lose a heart (don't drink ink); @communication →
+   a friendly non-answer; anything else → a plain nope. The three "through" answers make the puddle vanish
+   for the day; the rest leave it so you can try another verb. All state is day-scoped (Wordle-style). */
+const INK = {
+  title:"A Pool of Spilled Ink",
+  prompt:"A pool of spilled ink sits on the ground. I could ___ it.",
+  cross:["swim","ford","wade","cross","traverse","raft","paddle","float","bridge","span","navigate","brave","breast","boat"],
+  lines:{
+    black:["I am now 100% ink. Cool. Cool cool cool."],
+    competition:["Take THAT, puddle!","Victory!","En garde!"],
+    motion:["Tromp tromp — I'm a walking rubber stamp!"],
+    consumption:["Yuck! Note to self: ink hurts stomach.","Yuck! Tastes like the alphabet."],
+    communication:["I think we're friends now."]
+  }
+};
+const INK_REWARD=2;                                          // "a little ink" for barging/tromping through
+let _inkArmed=true, curInk=false, _inkPos=null, _inkPosDay=null;
+function inkClearedToday(){ return state.inkClearedDay===state.day; }
+function inkInked(){ return state.inkedDay===state.day; }    // covered head-to-toe today → jet-black sprite
+function inkPrints(){ return state.printsDay===state.day; }  // leaving inky footprints today
+function pick(arr){ return arr[(Math.random()*arr.length)|0]; }
+function inkScreenCoord(){                                   // which screen today's puddle lives on
+  if(typeof IS_DEV!=="undefined" && IS_DEV) return {sx:0, sy:0};  // DEV: always on the start screen for easy testing
+  const R=MAP_RADIUS, h=(hash2(state.daySeed>>>0,0x10c1)>>>0);
+  let sx=(h%(2*R+1))-R, sy=((h/(2*R+1)|0)%(2*R+1))-R;
+  const taken=(x,y)=> (x===0&&y===0) || OBSTACLES.some(o=>o.screen[0]===x&&o.screen[1]===y);  // off home + off the river
+  if(taken(sx,sy)){ sx = sx<R ? sx+1 : sx-1; if(taken(sx,sy)) sy = sy<R ? sy+1 : sy-1; }
+  return {sx,sy};
+}
+function inkPos(sc){                                         // today's puddle {sx,sy,x,y}, snapped onto walkable ground
+  const isc=inkScreenCoord();
+  if(!sc || sc.sx!==isc.sx || sc.sy!==isc.sy) return null;   // not on the ink screen
+  if(_inkPos && _inkPosDay===state.day) return _inkPos;
+  const rng=mulberry32((hash2(isc.sx,isc.sy) ^ state.daySeed ^ 0x10c2)>>>0);
+  let col=2+((rng()*(TCOLS-4))|0), row=2+((rng()*(TROWS-4))|0); const t=sc.tiles;
+  if(t && !walkType(t[row][col])){                           // spiral out to the nearest walkable tile
+    outer: for(let rad=1;rad<12;rad++) for(let dr=-rad;dr<=rad;dr++) for(let dc=-rad;dc<=rad;dc++){
+      const r=row+dr, c=col+dc;
+      if(r>1&&r<TROWS-2&&c>1&&c<TCOLS-2&&walkType(t[r][c])){ row=r; col=c; break outer; }
+    }
+  }
+  _inkPos={sx:isc.sx, sy:isc.sy, x:col*TS+TS/2, y:row*TS+TS/2}; _inkPosDay=state.day;
+  return _inkPos;
+}
+// How the puddle reacts to a verb → {kind, text, clear, effect?, ink?, heart?}
+function resolveInk(verb){
+  verb=verb.toLowerCase();
+  if(INK.cross.includes(verb)) return { kind:"success", clear:true, effect:"black", ink:INK_REWARD, text:pick(INK.lines.black) };
+  const cat=VERB_CATS && VERB_CATS[verb];
+  if(cat==="competition")   return { kind:"success", clear:true, effect:"black",  ink:INK_REWARD, text:pick(INK.lines.competition) };
+  if(cat==="motion")        return { kind:"success", clear:true, effect:"prints", ink:INK_REWARD, text:pick(INK.lines.motion) };
+  if(cat==="consumption")   return { kind:"joke", clear:false, heart:1, text:pick(INK.lines.consumption) };
+  if(cat==="communication") return { kind:"joke", clear:false, text:pick(INK.lines.communication) };
+  return { kind:"nope", clear:false, text:DEFAULT_NOPES[_nopeIdx++ % DEFAULT_NOPES.length] };
+}
 // If a screen entry lands the player inside an unsolved river band, step them back above it (onto the bank).
 function nudgeOutOfObstacle(){
   const o=obstacleFor(curScreen()); if(!o || obstacleSolvedToday(o)) return;
@@ -1504,6 +1565,7 @@ function startNewDay(){
   state.captured=new Set(); state.bonus=[]; state.visited=new Set(); state.screens=new Map();
   state.screen={sx:0,sy:0};
   state.player.hearts=PLAYER_MAX_HEARTS; state.player.hurtT=0; state.player.healT=0;
+  state.prints=[]; _inkArmed=true; _inkPos=null; _inkPosDay=null;   // fresh ink puddle + clean feet
   goHome();                         // wake up at the library desk (home)
   updateTrayHud(); saveNow();
   showToast("A new day dawns — a fresh map awaits.");
@@ -1939,6 +2001,30 @@ function update(dt){
         showToast("A rare “"+L+"”, snatched from the far bank!");
       }
     }
+    // spilled-ink puddle (non-blocking): touch it → mad-lib; the "through" answers make it vanish for the day
+    if(!inkClearedToday()){
+      const ip=inkPos(sc);
+      if(ip){
+        if(Math.hypot(fx-ip.x, fy-ip.y) < 22){ if(_inkArmed){ _inkArmed=false; openInk(); return; } }
+        else _inkArmed=true;
+      }
+    }
+    // inky footprints: while marked today, drop a black print every ~15px of walking (a rolling trail).
+    // (fx,fy) is where the feet meet the ground; prints stagger PERPENDICULAR to travel and alternate L/R off
+    // the previous print (not the array length — that freezes once the trail caps). Sideways prints sit a
+    // little higher since the walk-cycle feet read up there.
+    if(inkPrints() && p.moving){
+      state.prints=state.prints||[];
+      const last=state.prints[state.prints.length-1];
+      if(!last || last.sx!==sc.sx || last.sy!==sc.sy || Math.hypot(fx-last.fx, fy-last.fy)>15){
+        const side = last ? (last.side^1) : 0, sgn = side?1:-1;
+        const horiz = Math.abs(p.face.x) >= Math.abs(p.face.y);
+        const px = horiz ? fx           : fx + sgn*2;   // up/down: stagger left/right of centre
+        const py = horiz ? fy - 5 + sgn*2 : fy;         // sideways: nudge up + stagger the two feet
+        state.prints.push({sx:sc.sx, sy:sc.sy, fx, fy, x:px, y:py, side});
+        if(state.prints.length>44) state.prints.shift();
+      }
+    }
     // touch attack button: hold to keep swinging (doAttack is cooldown-gated)
     if(attackHeld) doAttack();
   }
@@ -2166,6 +2252,8 @@ function renderWorld(sc, ox, oy){
   const tnow=Date.now();
   for(const wt of sc.waterTiles) drawWaterAnim(wt[0],wt[1],tnow);
   drawObstacle(sc, tnow);                       // river / interactable obstacle band, if this screen has one
+  drawInk(sc, tnow);                            // today's spilled-ink puddle, if it's on this screen
+  drawPrints(sc);                               // inky footprints trail (if the player is marked today)
   if(sc.isBase){ drawStall(); drawHouse(); }   // outdoor home: shop + the house (Library entrance)
   if(sc.slicks) for(const s of sc.slicks) drawSlick(s, tnow);
   if(sc.pickups) for(const pk of sc.pickups) drawPickup(pk, tnow);
@@ -2197,6 +2285,32 @@ function drawObstacle(sc, tnow){
       ctx.fillStyle="#c89b3c"; ctx.font="20px 'Press Start 2P', monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
       ctx.fillText(L.toUpperCase(), lx, ly); ctx.textBaseline="alphabetic";
     }
+  }
+  ctx.restore();
+}
+// The spilled-ink puddle: an irregular black blob with a slow wet sheen, sitting on the ground.
+function drawInk(sc, tnow){
+  if(inkClearedToday()) return;
+  const ip=inkPos(sc); if(!ip) return;
+  ctx.save();
+  const rng=mulberry32((hash2(ip.x|0, ip.y|0) ^ state.daySeed)>>>0);
+  ctx.fillStyle="#0c0c12";
+  ctx.beginPath();
+  for(let i=0;i<9;i++){ const a=i/9*6.283, rr=13+rng()*7; ctx.ellipse(ip.x+Math.cos(a)*5, ip.y+Math.sin(a)*3, rr, rr*0.62, a, 0, 6.29); }
+  ctx.ellipse(ip.x, ip.y, 19, 12, 0, 0, 6.29);
+  ctx.fill();
+  const gp=0.5+0.5*Math.sin(tnow/420);                                  // slow wet sheen
+  ctx.fillStyle="rgba(150,165,220,"+(0.16+0.14*gp).toFixed(2)+")";
+  ctx.beginPath(); ctx.ellipse(ip.x-5, ip.y-3, 6, 3, -0.5, 0, 6.29); ctx.fill();
+  ctx.restore();
+}
+// Black footprints the player tracks for the day after tromping through the ink (a rolling trail).
+function drawPrints(sc){
+  if(!inkPrints() || !state.prints) return;
+  ctx.save(); ctx.fillStyle="rgba(14,14,20,0.7)";
+  for(const pr of state.prints){
+    if(pr.sx!==sc.sx || pr.sy!==sc.sy) continue;
+    ctx.beginPath(); ctx.ellipse(pr.x, pr.y, 3.4, 2.2, 0, 0, 6.29); ctx.fill();
   }
   ctx.restore();
 }
@@ -3057,6 +3171,7 @@ function drawPlayer(){
   const dx=p.x-D/2, dy=p.y-D*0.74;     // feet sit near p.y
   ctx.save();
   ctx.imageSmoothingEnabled=false;
+  if(inkInked()) ctx.filter="brightness(0)";                                  // covered in ink today → jet-black silhouette
   if(left){ ctx.translate(p.x,0); ctx.scale(-1,1); ctx.translate(-p.x,0); }   // mirror for left
   ctx.drawImage(playerImg, sx,sy,PLAYER_FRAME,PLAYER_FRAME, dx,dy,D,D);
   ctx.restore();
@@ -3748,7 +3863,7 @@ function openObstacle(o){
   SFX.play("click");
 }
 function closeObstacle(){
-  state.obstacle=false; curObstacle=null;
+  state.obstacle=false; curObstacle=null; curInk=false;
   document.getElementById("obstacle").classList.remove("open");
   const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.statsOpen;
   document.getElementById("sound-btn").style.display = hide?"none":"";
@@ -3789,6 +3904,43 @@ function submitObstacleVerb(o, verb){
     renderObstaclePicker(o);                                              // grey the just-used verb
   } else {
     SFX.play(r.kind==="joke" ? "known" : "invalid");
+  }
+}
+// ---- Spilled-ink puddle: reuses the same modal DOM as the river, but its own resolve/effects. ----
+function openInk(){
+  curInk=true; curObstacle=null; state.obstacle=true;
+  document.getElementById("obstacle").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  document.getElementById("obs-title").textContent=INK.title;
+  const resp=document.getElementById("obs-response"); resp.textContent=""; resp.className="obs-response";
+  document.getElementById("obs-done").style.display="none";
+  document.getElementById("obs-prompt").innerHTML = esc(INK.prompt).replace("___", '<span class="obs-blank"></span>');
+  renderInkPicker();
+  SFX.play("click");
+}
+function renderInkPicker(){
+  const verbs=Object.keys(state.dex).filter(w=>Array.isArray(state.dex[w].pos)&&state.dex[w].pos.includes("verb")).sort();
+  const pk=document.getElementById("obs-picker");
+  if(!verbs.length){ pk.innerHTML='<div class="obs-empty">You haven\'t collected any verbs yet — spell some doing-words at the Wordsmithy, then come back.</div>'; return; }
+  pk.innerHTML=verbs.map(w=>`<button class="obs-chip" data-w="${esc(w)}">${esc(w)}</button>`).join("");
+  pk.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>submitInkVerb(b.dataset.w));
+}
+function submitInkVerb(verb){
+  document.getElementById("obs-prompt").innerHTML = esc(INK.prompt).replace("___", `<b style="color:var(--gold)">${esc(verb)}</b>`);
+  const r=resolveInk(verb);
+  const resp=document.getElementById("obs-response");
+  resp.className="obs-response "+r.kind; resp.textContent=r.text;
+  if(r.clear){
+    state.inkClearedDay=state.day;                                   // puddle gone for the day
+    if(r.effect==="black") state.inkedDay=state.day;                 // jet-black sprite until tomorrow
+    if(r.effect==="prints"){ state.printsDay=state.day; state.prints=[]; }  // start a fresh footprint trail
+    if(r.ink){ state.ink+=r.ink; updateRewardHud(); }
+    document.getElementById("obs-picker").innerHTML="";
+    document.getElementById("obs-done").style.display="";
+    SFX.play("unlockbig"); scheduleSave();
+  } else {
+    if(r.heart){ const p=state.player; if(p.hearts>0){ p.hearts--; if(p.hearts<=0){ closeObstacle(); faint(); return; } } SFX.play("invalid"); }
+    else SFX.play(r.kind==="joke" ? "known" : "invalid");
   }
 }
 // Unique material names a creature can drop (for the "Drops" line once that block is unlocked).
@@ -3885,7 +4037,8 @@ function snapshot(){
            restored:state.restored, books:state.books, fables:state.fables,
            resources:state.resources, bestiary:state.bestiary,
            verbCounts:state.verbCounts, divineDay:state.divineDay, divine:state.divine,
-           obstacleDay:state.obstacleDay, obstacleGot:state.obstacleGot, riverCrossed:state.riverCrossed };
+           obstacleDay:state.obstacleDay, obstacleGot:state.obstacleGot, riverCrossed:state.riverCrossed,
+           inkClearedDay:state.inkClearedDay, inkedDay:state.inkedDay, printsDay:state.printsDay };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -3910,6 +4063,10 @@ function applySnapshot(d){
   if(d.obstacleDay && typeof d.obstacleDay==="object") state.obstacleDay=d.obstacleDay;   // solved-today (day-scoped)
   if(d.obstacleGot && typeof d.obstacleGot==="object") state.obstacleGot=d.obstacleGot;   // reward collected today (day-scoped)
   if(Array.isArray(d.riverCrossed)) state.riverCrossed=d.riverCrossed;                     // spent crossing verbs (forever)
+  // Spilled-ink puddle state is day-scoped: only meaningful if the saved day is still today.
+  if(typeof d.inkClearedDay==="string") state.inkClearedDay=d.inkClearedDay;
+  if(typeof d.inkedDay==="string") state.inkedDay=d.inkedDay;
+  if(typeof d.printsDay==="string") state.printsDay=d.printsDay;
   rederiveVerbCounts();   // no-op until VERB_CATS is loaded; then reconciles counts with the collection
   // Satchel + captured creatures only carry over within the SAME calendar day. A new day = empty satchel
   // and a fresh map (captures forgotten); state.day was already set to today before this runs.
