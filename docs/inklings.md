@@ -474,6 +474,13 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
 
 **Built and working:**
 
+- **À La Modal (companion, base version)** — a Navi-style floating companion (an ice-cream-topped dialogue-box
+  with two floating hands). A **large detailed speaking sprite** (chibi face, solid open mouth, speech bubble,
+  real **YES/NO/×** buttons wired to callbacks) pops in when she has something to say; a **small in-world follow
+  sprite** (bob + independent hand wiggle) trails the player **only after you say YES** (opt-in via
+  `ALaModal.following`) — **NO** sends her off, **×** just closes. Press **M** / tap 💬 to bring her up (YES to
+  follow / hint), and a greeting-offer pops in on start. She talks in **modal verbs** (can/could/should/might).
+  `ALaModal.confidence` (0..1) is retained as a reusable emotion variable. Base scaffold to iterate on.
 - **Interactable obstacles (river mad-lib)** — an **L-shaped river** walls off a corner of the far corner
   screen, with a **rare letter sitting in the walled-off corner** (visible across the water as bait). Touch the
   river → a mad-lib ("I could ___ it") you fill with a **collected verb**: curated crossing verbs
@@ -780,6 +787,18 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   the same word are **staggered** via a small `celebrations` queue (`queueCelebration`/`nextCelebration`,
   `pendingFeat`): the Feats pop shows first, then the new-letter modal on its close. Persisted: `verbCounts`,
   `divineDay`,`divine`.
+- **À La Modal companion** (`/* À LA MODAL */`) — a self-contained module drawn on canvas. `ALaModal`
+  (`mode:"follow"|"speak"`, `x/y` lerp to hover up-right of the player, `bob`/`hl`/`hr` animation phases,
+  `dripT`/`drop` melt, **`confidence`** 0..1 driving drip, `popT` speak scale-in, `hitRects` for buttons).
+  `ALaModal.update(dt)` (called in `update`) trails the player + advances animation + eases `confidence` toward
+  player-HP; `ALaModal.draw(ctx)` (called last in `render`, both branches) draws the large speak sprite whenever
+  `mode==="speak"`, else the small follow sprite **only when `following`** (YES sets it, NO clears it — opt-in;
+  `alaFollowOpts`). Drawing helpers: `drawModalSmall`/`drawModalLarge` (via shared `alaScoop`/`alaHand`/
+  `alaDrip`/`alaSet`), `drawModalSpeak` (docks bottom-left, pop-in, speech bubble via `alaWrap`). Buttons are
+  **canvas-drawn + hit-tested**: a `cv` `pointerdown` maps CSS→720×528 px and calls `ALaModal.hit` → `onYes`/
+  `onNo`/dismiss (×). `ALaModal.speak(text,{onYes,onNo,confidence})` / `dismiss()`. `alaSummon` (key **M** /
+  `tc-modal` 💬) shows a placeholder hint from `ALA_HINTS` (modal-verb voice); a greeting fires on start. The
+  melt drip is meant to be reused as a lightweight emotion indicator (set `confidence`).
 - **Interactable obstacles** (`/* INTERACTABLE OBSTACLES */`) — data-driven **`OBSTACLES`** array (`{id, screen:[sx,sy],
   bands:[rect,…] (an L: mid-left arm + down arm), letter:{x,y}, title, prompt, accept:[verbs], success,
   jokes:{verb|@category:line}}`). `obstacleFor(sc)` matches by `sc.sx/sc.sy` (stored on each screen);

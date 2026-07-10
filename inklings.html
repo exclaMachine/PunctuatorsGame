@@ -674,6 +674,7 @@
           <button class="tc-btn util" id="tc-help" aria-label="Controls">?</button>
           <button class="tc-btn util" id="tc-dex" aria-label="Bestiary">🐾</button>
           <button class="tc-btn util" id="tc-stats" aria-label="Feats">✦</button>
+          <button class="tc-btn util" id="tc-modal" aria-label="À La Modal hint">💬</button>
           <button class="tc-btn util" id="tc-slide" aria-label="Slide">SLIDE</button>
           <!-- SHOP / HOUSE (home) and DESK / BOOK (inside the library) are contextual: only shown when standing by that structure (see syncTouchUI) -->
           <button class="tc-btn util" id="tc-shop" aria-label="Open shop">SHOP</button>
@@ -1645,6 +1646,7 @@ addEventListener("keydown",e=>{
   if(k==="tab"){ e.preventDefault(); openOverlay(); }
   if(k==="shift") startSlide();          // motion perk: forward lunge
   if(k==="c") toggleStats();             // Feats / character sheet
+  if(k==="m") alaSummon();               // À La Modal: offer a hint (or dismiss)
   if(k===" ") doAttack();
 });
 addEventListener("keyup",e=>{ keys[e.key.toLowerCase()]=false; });
@@ -1862,6 +1864,7 @@ function update(dt){
   p.animT=(p.animT||0)+dt;     // drives idle/walk sprite cycling
   p.moving=false;
   if(state.started && state.day!==todayStr()) startNewDay();   // rolled past midnight → fresh map
+  if(state.started) ALaModal.update(dt);           // À La Modal companion (follows / hovers / drips)
   if(p.hurtT>0) p.hurtT-=dt;                       // invulnerability window after a hit
   if(state.room==="library"){ updateLibrary(p, dt); return; }  // Library room has its own (simpler) update
   const sc=curScreen();
@@ -2136,6 +2139,13 @@ function updateResourceCreature(c, sc, p, dt, canBeHurt){
 
 /* ---------- RENDER ---------------------------------------- */
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+// Clicks/taps on À La Modal's large sprite hit-test its YES/NO/× buttons (map CSS px → 720×528 canvas px).
+cv.addEventListener("pointerdown", e=>{
+  if(typeof ALaModal==="undefined" || ALaModal.mode!=="speak") return;
+  const r=cv.getBoundingClientRect();
+  const px=(e.clientX-r.left)*(cv.width/r.width), py=(e.clientY-r.top)*(cv.height/r.height);
+  if(ALaModal.hit(px,py)){ e.preventDefault(); e.stopPropagation(); }
+}, true);
 // Screen-slide transition: when you cross an edge, the old screen slides out and the new one slides in over
 // TRANS_DUR seconds (gameplay frozen meanwhile — set in goScreen, advanced/cleared in update()).
 let trans=null;
@@ -2183,11 +2193,168 @@ function drawObstacle(sc, tnow){
   }
   ctx.restore();
 }
+
+/* ================= À LA MODAL — Navi-style floating companion ==================================
+   A small in-world follow sprite (gentle bob + independent hand wiggle + subtle melt drip) that swaps to a
+   large detailed speaking sprite (chibi face, YES/NO/× buttons, speech bubble) when it has something to say.
+   The melt drip is driven by `confidence` (0..1; low = nervous = drippier) so it doubles as an emotion cue.
+   She speaks in modal verbs (can/could/should/might/would) — hedging, offering possibilities. */
+const ALA = { out:"#20202a", box:"#dedede", cream:"#fdfcf6", creamHi:"#cfc6b2", cherry:"#cf3a2c",
+  cherrySh:"#9e2a20", stem:"#4e8a3c", pink:"#e98aa4", blush:"#f0a6bd", blue:"#3b6ea5", eye:"#ffffff", pupil:"#20202a", paper:"#efe6cf" };
+function alaSet(c,lw){ c.lineWidth=lw; c.strokeStyle=ALA.out; c.lineJoin="round"; c.lineCap="round"; }
+function alaHand(c,x,y,r,dir){
+  c.fillStyle=ALA.box;
+  c.beginPath(); c.arc(x,y,r,0,7); c.fill(); c.stroke();
+  c.beginPath(); c.arc(x+dir*r*0.7, y-r*0.45, r*0.45, 0,7); c.fill(); c.stroke();   // thumb nub
+}
+function alaScoop(c,cx,baseY,w,S,detail,m,nerv){
+  const sh=S*0.44, top=baseY-sh, lw=detail?S*0.035:Math.max(1.6,S*0.07);
+  alaSet(c,lw); c.fillStyle=ALA.cream;
+  c.beginPath(); c.moveTo(cx-w/2, baseY);
+  c.bezierCurveTo(cx-w*0.6, top+sh*0.2, cx-w*0.35, top, cx, top);
+  c.bezierCurveTo(cx+w*0.35, top, cx+w*0.6, top+sh*0.2, cx+w/2, baseY);
+  c.closePath(); c.fill(); c.stroke();
+  if(detail){                                              // scalloped melt-line + a highlight stroke
+    c.beginPath(); const n=5, sw=w/n; c.moveTo(cx-w/2, baseY);
+    for(let i=0;i<n;i++){ const x0=cx-w/2+i*sw; c.quadraticCurveTo(x0+sw/2, baseY+S*0.055, x0+sw, baseY); }
+    c.stroke();
+    c.strokeStyle=ALA.creamHi; c.lineWidth=lw*0.7;
+    c.beginPath(); c.moveTo(cx-w*0.18, top+sh*0.4); c.quadraticCurveTo(cx-w*0.02, top+sh*0.18, cx+w*0.12, top+sh*0.34); c.stroke();
+    alaSet(c,lw);
+  }
+  const chy=top-S*0.02;                                    // cherry
+  c.fillStyle=ALA.cherry; c.beginPath(); c.arc(cx, chy, S*0.1, 0,7); c.fill(); c.stroke();
+  if(detail){ c.fillStyle=ALA.cherrySh; c.beginPath(); c.arc(cx+S*0.03, chy+S*0.02, S*0.018, 0,7); c.fill();
+    c.fillStyle="#fff"; c.beginPath(); c.arc(cx-S*0.03, chy-S*0.03, S*0.02, 0,7); c.fill(); }
+  c.strokeStyle=ALA.stem; c.lineWidth=S*0.03;              // curved stem
+  c.beginPath(); c.moveTo(cx+S*0.02, chy-S*0.09); c.quadraticCurveTo(cx+S*0.14, chy-S*0.22, cx+S*0.08, chy-S*0.28); c.stroke();
+  alaSet(c,lw);
+}
+function drawModalSmall(c,cx,cy,S,m,nerv){
+  const lw=Math.max(1.6,S*0.07), bw=S*0.72, bh=S*0.5, bx=cx-bw/2, by=cy-bh*0.2;
+  alaSet(c,lw);
+  alaHand(c, bx-S*0.1, by+bh*0.5+Math.sin(m.hl*3)*S*0.07, S*0.11, 1);
+  alaHand(c, bx+bw+S*0.1, by+bh*0.5+Math.sin(m.hr*3+1)*S*0.07, S*0.11, -1);
+  alaScoop(c, cx, by+lw, bw*0.86, S, false, m, nerv);
+  alaSet(c,lw); c.fillStyle=ALA.box; roundRect(bx,by,bw,bh,S*0.14); c.fill(); c.stroke();
+  c.fillStyle=ALA.pupil;                                   // simplified face
+  c.beginPath(); c.arc(cx-bw*0.2, by+bh*0.42, S*0.05, 0,7); c.fill();
+  c.beginPath(); c.arc(cx+bw*0.2, by+bh*0.42, S*0.05, 0,7); c.fill();
+  alaSet(c,lw*0.8); c.beginPath(); c.arc(cx, by+bh*0.46, S*0.12, 0.15*Math.PI, 0.85*Math.PI); c.stroke();
+}
+function drawModalLarge(c,cx,cy,S,m,nerv,rects){
+  const lw=S*0.035, bw=S*0.98, bh=S*0.62, bx=cx-bw/2, by=cy-bh*0.36;
+  alaSet(c,lw);
+  alaHand(c, bx-S*0.09, by+bh*0.55+Math.sin(m.hl*3)*S*0.035, S*0.12, 1);
+  alaHand(c, bx+bw+S*0.09, by+bh*0.55+Math.sin(m.hr*3+1)*S*0.035, S*0.12, -1);
+  alaScoop(c, cx, by+lw, bw*0.84, S, true, m, nerv);
+  alaSet(c,lw); c.fillStyle=ALA.box; roundRect(bx,by,bw,bh,S*0.1); c.fill(); c.stroke();
+  const ey=by+bh*0.4, ex=S*0.19;                           // chibi eyes
+  for(const sg of [-1,1]){
+    c.fillStyle=ALA.eye; c.beginPath(); c.ellipse(cx+sg*ex, ey, S*0.1, S*0.13, 0,0,7); c.fill(); c.stroke();
+    c.fillStyle=ALA.pupil; c.beginPath(); c.ellipse(cx+sg*ex, ey+S*0.02, S*0.055, S*0.075, 0,0,7); c.fill();
+    c.fillStyle="#fff"; c.beginPath(); c.arc(cx+sg*ex-S*0.02, ey-S*0.03, S*0.024, 0,7); c.fill();
+  }
+  c.fillStyle=ALA.blush;                                   // blush dots
+  for(const sg of [-1,1]){ c.beginPath(); c.ellipse(cx+sg*(ex+S*0.12), ey+S*0.06, S*0.042, S*0.03, 0,0,7); c.fill(); }
+  alaSet(c,lw); c.fillStyle=ALA.out;                                   // open talking mouth: solid black half-circle
+  c.beginPath(); c.arc(cx, ey+S*0.1, S*0.11, 0, Math.PI); c.closePath(); c.fill(); c.stroke();
+  const clS=S*0.13, clx=bx+bw-clS*1.15, cly=by+clS*0.25;   // × close button
+  c.fillStyle=ALA.paper; roundRect(clx,cly,clS,clS,clS*0.25); c.fill(); c.stroke();
+  alaSet(c,lw*0.9); c.beginPath();
+  c.moveTo(clx+clS*0.3,cly+clS*0.3); c.lineTo(clx+clS*0.7,cly+clS*0.7);
+  c.moveTo(clx+clS*0.7,cly+clS*0.3); c.lineTo(clx+clS*0.3,cly+clS*0.7); c.stroke();
+  rects.close={x:clx,y:cly,w:clS,h:clS};
+  const pw=bw*0.36, ph=S*0.15, py=by+bh-ph*0.55, gap=bw*0.06;   // YES / NO pills on the bottom edge
+  const yesx=cx-pw-gap/2, nox=cx+gap/2;
+  alaSet(c,lw); c.fillStyle=ALA.blue; roundRect(yesx,py,pw,ph,ph/2); c.fill(); c.stroke();
+  c.fillStyle=ALA.paper; roundRect(nox,py,pw,ph,ph/2); c.fill(); c.stroke();
+  c.font=(ph*0.46|0)+"px 'Press Start 2P', monospace"; c.textAlign="center"; c.textBaseline="middle";
+  c.fillStyle="#fff"; c.fillText("YES", yesx+pw/2, py+ph/2+1);
+  c.fillStyle=ALA.blue; c.fillText("NO", nox+pw/2, py+ph/2+1);
+  c.textBaseline="alphabetic";
+  rects.yes={x:yesx,y:py,w:pw,h:ph}; rects.no={x:nox,y:py,w:pw,h:ph};
+}
+function alaWrap(c,text,x,y,maxW,lh){
+  const words=String(text).split(" "); let line="", yy=y;
+  for(const w of words){ const t=line?line+" "+w:w; if(c.measureText(t).width>maxW && line){ c.fillText(line,x,yy); line=w; yy+=lh; } else line=t; }
+  if(line) c.fillText(line,x,yy);
+}
+function drawModalSpeak(c,m,nerv){
+  const e=1-(1-m.popT)*(1-m.popT), S=200*(0.5+0.5*e);       // pop-in scale
+  const cx=22+S*0.55, cy=H-16-S*0.5;                        // docked bottom-left
+  if(m.text && m.popT>0.55){                                // speech bubble with the (modal-verb) line
+    const bbx=Math.max(18, cx-S*0.05), bby=26, bbw=Math.min(W-bbx-16, 380), bbh=104;
+    c.fillStyle=ALA.paper; alaSet(c,3);
+    roundRect(bbx,bby,bbw,bbh,10); c.fill(); c.stroke();
+    c.fillStyle=ALA.paper; c.beginPath(); c.moveTo(bbx+34,bby+bbh-1); c.lineTo(bbx+20,bby+bbh+24); c.lineTo(bbx+58,bby+bbh-1); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle=ALA.out; c.font="20px 'VT323', monospace"; c.textAlign="left"; c.textBaseline="top";
+    alaWrap(c, m.text, bbx+14, bby+12, bbw-28, 22);
+    c.textBaseline="alphabetic";
+  }
+  drawModalLarge(c, cx, cy, S, m, nerv, ALaModal.hitRects);
+}
+const ALaModal = {
+  mode:"follow", following:false, x:W/2, y:H/2, bob:0, hl:0, hr:0,
+  confidence:0.7, popT:1, text:"", onYes:null, onNo:null, hitRects:{},
+  speak(text, opts){ opts=opts||{};
+    this.text=text; this.onYes=opts.onYes||null; this.onNo=opts.onNo||null;
+    if(typeof opts.confidence==="number") this.confidence=opts.confidence;
+    this.mode="speak"; this.popT=0; try{ SFX.play("newword"); }catch(e){}
+  },
+  dismiss(){ if(this.mode!=="speak") return; this.mode="follow"; this.text=""; this.onYes=this.onNo=null; try{ SFX.play("click"); }catch(e){} },
+  update(dt){
+    const p=state.player;
+    if(this.mode!=="speak"){ const hp=p.hearts/PLAYER_MAX_HEARTS; this.confidence+=((0.3+0.7*hp)-this.confidence)*Math.min(1,dt*2); }
+    this.x+=((p.x+48)-this.x)*Math.min(1,dt*5); this.y+=((p.y-46)-this.y)*Math.min(1,dt*5);
+    this.bob+=dt; this.hl+=dt*1.9; this.hr+=dt*1.5;
+    if(this.mode==="speak" && this.popT<1) this.popT=Math.min(1,this.popT+dt*7);
+  },
+  draw(c){
+    if(!state.started) return;
+    const nerv=Math.max(0,Math.min(1,1-this.confidence));
+    if(this.mode==="speak"){ drawModalSpeak(c, this, nerv); return; }   // the big talking sprite always shows
+    if(this.following) drawModalSmall(c, this.x, this.y+Math.sin(this.bob*2.2)*3, 40, this, nerv);   // small sprite only if you said YES
+  },
+  hit(cx,cy){
+    if(this.mode!=="speak" || this.popT<0.6) return false;
+    const R=this.hitRects, inb=r=> r && cx>r.x && cx<r.x+r.w && cy>r.y && cy<r.y+r.h;
+    if(inb(R.close)){ this.dismiss(); return true; }
+    if(inb(R.yes)){ const f=this.onYes; this.dismiss(); if(f) f(); return true; }
+    if(inb(R.no)){ const f=this.onNo; this.dismiss(); if(f) f(); return true; }
+    return false;
+  }
+};
+// Placeholder hints — modal-verb voice (offers possibilities, never commands).
+const ALA_HINTS = [
+  "You might want to check behind that shelf.",
+  "You could try spelling it backwards?",
+  "Perhaps you should rest at the Wordhoard for a heart or two.",
+  "That river? You could probably swim it — if you must.",
+  "You may find a rare letter across the water.",
+  "You could collect a few more verbs, should you feel bold.",
+  "Might I suggest a longer word? It would earn more ink.",
+  "You should watch the creatures — some of them bite back."
+];
+let _alaHintIdx=0;
+// YES = "tag along" (small follow sprite appears); NO = "give me space" (she stops following). × just closes.
+function alaFollowOpts(){ return {
+  onYes:()=>{ ALaModal.following=true;  showToast("À La Modal: “Wonderful — I'll stay close. Press M for a hint.”"); },
+  onNo :()=>{ ALaModal.following=false; showToast("À La Modal: “No? I'll give you space. Press M if you change your mind.”"); }
+}; }
+function alaSummon(){                        // key M / touch button: bring up the big sprite (YES to follow)
+  if(ALaModal.mode==="speak"){ ALaModal.dismiss(); return; }
+  const line = ALaModal.following
+    ? ALA_HINTS[_alaHintIdx++ % ALA_HINTS.length]
+    : "You might like a little company. Should I tag along and offer the odd nudge?";
+  ALaModal.speak(line, alaFollowOpts());
+}
 function render(){
   if(state.room==="library"){          // Library room: baked room image + player + minimal HUD
     drawLibraryRoom();
     drawPlayer();
     if(state.started){ drawBuffs(); drawHearts(); }
+    ALaModal.draw(ctx);
     return;
   }
   const sc=curScreen();
@@ -2216,6 +2383,7 @@ function render(){
   if(state.started) drawBuffs();
   if(state.started) drawHearts();
   if(state.started && dayCleared()) drawClearedBanner();
+  ALaModal.draw(ctx);   // companion on top (small follow sprite, or the large speaking sprite)
 }
 // Persistent banner shown all day once every creature has been captured — stays on screen (no fade)
 // until tomorrow's fresh map. Bottom-centre so it clears the top toasts and the bottom-right minimap.
@@ -3784,7 +3952,10 @@ function showToast(msg){
 }
 
 /* ---------- WIRING ---------------------------------------- */
-document.getElementById("start-btn").onclick=()=>{ SFX.resume(); SFX.play("click"); state.started=true; document.getElementById("startcard").style.display="none"; };
+document.getElementById("start-btn").onclick=()=>{ SFX.resume(); SFX.play("click"); state.started=true; document.getElementById("startcard").style.display="none";
+  // À La Modal greets you and offers to tag along; YES makes the small follow sprite appear, NO sends her off.
+  setTimeout(()=>{ if(state.started) ALaModal.speak("Oh — hello! I'm À La Modal. I could tag along and offer the odd hint… would you like that? (Press M to summon me, YES to keep me near.)", alaFollowOpts()); }, 1400);
+};
 function toggleHelp(){ state.help=!state.help; document.getElementById("controls").classList.toggle("open",state.help); SFX.play("click"); }
 document.getElementById("help-btn").onclick=toggleHelp;
 document.getElementById("controls-close").onclick=toggleHelp;
@@ -3902,6 +4073,7 @@ if(IS_TOUCH){
   tap("tc-shelf",()=>{ if(state.started){ const s=nearLibraryShelf(); if(s) openShelfView(s); } }); // library: shelf → books
   tap("tc-dex",()=>{ if(homeReady()) openBestiary(); });
   tap("tc-stats",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen) toggleStats(); });
+  tap("tc-modal",()=>{ if(state.started) alaSummon(); });
   tap("tc-slide",()=>{ if(state.started) startSlide(); });
   tap("tc-help",toggleHelp);
 }
