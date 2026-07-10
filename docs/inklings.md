@@ -484,7 +484,10 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   sprite** (bob + independent hand wiggle) trails the player **only after you say YES** (opt-in via
   `ALaModal.following`) — **NO** sends her off, **×** just closes. Press **M** / tap 💬 to bring her up (YES to
   follow / hint), and a greeting-offer pops in on start. She talks in **modal verbs** (can/could/should/might).
-  `ALaModal.confidence` (0..1) is retained as a reusable emotion variable. Base scaffold to iterate on.
+  `ALaModal.confidence` (0..1) is retained as a reusable emotion variable. The ice-cream scoop has a **scalloped
+  ruffle collar** flaring out where it's set on the box (drawn in `alaScoop`), and the **large speaking sprite is
+  pixelated** (rendered through a downscaled offscreen buffer, then blitted back up with smoothing off) to match
+  the game's pixel art. Base scaffold to iterate on.
 - **Interactable obstacles (river mad-lib)** — an **L-shaped river** walls off a corner of the far corner
   screen, with a **rare letter sitting in the walled-off corner** (visible across the water as bait). Touch the
   river → a mad-lib ("I could ___ it") you fill with a **collected verb**: curated crossing verbs
@@ -806,8 +809,12 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   `ALaModal.update(dt)` (called in `update`) trails the player + advances animation + eases `confidence` toward
   player-HP; `ALaModal.draw(ctx)` (called last in `render`, both branches) draws the large speak sprite whenever
   `mode==="speak"`, else the small follow sprite **only when `following`** (YES sets it, NO clears it — opt-in;
-  `alaFollowOpts`). Drawing helpers: `drawModalSmall`/`drawModalLarge` (via shared `alaScoop`/`alaHand`/
-  `alaDrip`/`alaSet`), `drawModalSpeak` (docks bottom-left, pop-in, speech bubble via `alaWrap`). Buttons are
+  `alaFollowOpts`). Drawing helpers: `drawModalSmall`/`drawModalLarge` (via shared `alaScoop` — now with a
+  scalloped spreading ruffle at the scoop base — plus `alaHand`/`alaDrip`/`alaSet`), `drawModalSpeak` (docks
+  bottom-left, pop-in, speech bubble via `alaWrap`). The large sprite goes through **`drawModalLargePixel`**: it
+  renders `drawModalLarge` into a `1/PIX` offscreen buffer (`_alaBuf`) then blits it back up with
+  `imageSmoothingEnabled=false` for a pixelated look; `drawModalLarge`'s box/button rects use `roundRectP(c,…)`
+  (context-aware) so they draw into the buffer, and hit rects stay in screen space. Buttons are
   **canvas-drawn + hit-tested**: a `cv` `pointerdown` maps CSS→720×528 px and calls `ALaModal.hit` → `onYes`/
   `onNo`/dismiss (×). `ALaModal.speak(text,{onYes,onNo,confidence})` / `dismiss()`. `alaSummon` (key **M** /
   `tc-modal` 💬) shows a placeholder hint from `ALA_HINTS` (modal-verb voice); a greeting fires on start. The

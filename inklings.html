@@ -2335,10 +2335,17 @@ function alaScoop(c,cx,baseY,w,S,detail,m,nerv){
   c.bezierCurveTo(cx-w*0.6, top+sh*0.2, cx-w*0.35, top, cx, top);
   c.bezierCurveTo(cx+w*0.35, top, cx+w*0.6, top+sh*0.2, cx+w/2, baseY);
   c.closePath(); c.fill(); c.stroke();
-  if(detail){                                              // scalloped melt-line + a highlight stroke
-    c.beginPath(); const n=5, sw=w/n; c.moveTo(cx-w/2, baseY);
-    for(let i=0;i<n;i++){ const x0=cx-w/2+i*sw; c.quadraticCurveTo(x0+sw/2, baseY+S*0.055, x0+sw, baseY); }
-    c.stroke();
+  // spreading ruffle: a scalloped cream collar that flares out (wider than the scoop) where it's set down on
+  // the box — the ice cream squishing outward as it's placed. Bumps point up; the flat base tucks behind the box.
+  const boxTop=baseY-lw, rw=w*1.16, rl=cx-rw/2, rr=cx+rw/2, n=6, rsw=rw/n,
+        rbase=boxTop+S*0.01, rpk=S*0.08, rval=rbase-rpk*0.3;
+  c.fillStyle=ALA.cream; c.beginPath(); c.moveTo(rl, rval);
+  for(let i=0;i<n;i++){ const x0=rl+i*rsw; c.quadraticCurveTo(x0+rsw/2, rbase-rpk, x0+rsw, rval); }
+  c.lineTo(rr, rbase); c.lineTo(rl, rbase); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(rl, rbase); c.lineTo(rl, rval);                 // left flare edge
+  for(let i=0;i<n;i++){ const x0=rl+i*rsw; c.quadraticCurveTo(x0+rsw/2, rbase-rpk, x0+rsw, rval); }  // wavy top
+  c.lineTo(rr, rbase); c.stroke();                                        // right flare edge (base sits on the box)
+  if(detail){                                              // highlight stroke on the scoop
     c.strokeStyle=ALA.creamHi; c.lineWidth=lw*0.7;
     c.beginPath(); c.moveTo(cx-w*0.18, top+sh*0.4); c.quadraticCurveTo(cx-w*0.02, top+sh*0.18, cx+w*0.12, top+sh*0.34); c.stroke();
     alaSet(c,lw);
@@ -2369,7 +2376,7 @@ function drawModalLarge(c,cx,cy,S,m,nerv,rects){
   alaHand(c, bx-S*0.09, by+bh*0.55+Math.sin(m.hl*3)*S*0.035, S*0.12, 1);
   alaHand(c, bx+bw+S*0.09, by+bh*0.55+Math.sin(m.hr*3+1)*S*0.035, S*0.12, -1);
   alaScoop(c, cx, by+lw, bw*0.84, S, true, m, nerv);
-  alaSet(c,lw); c.fillStyle=ALA.box; roundRect(bx,by,bw,bh,S*0.1); c.fill(); c.stroke();
+  alaSet(c,lw); c.fillStyle=ALA.box; roundRectP(c,bx,by,bw,bh,S*0.1); c.fill(); c.stroke();
   const ey=by+bh*0.4, ex=S*0.19;                           // chibi eyes
   for(const sg of [-1,1]){
     c.fillStyle=ALA.eye; c.beginPath(); c.ellipse(cx+sg*ex, ey, S*0.1, S*0.13, 0,0,7); c.fill(); c.stroke();
@@ -2381,20 +2388,39 @@ function drawModalLarge(c,cx,cy,S,m,nerv,rects){
   alaSet(c,lw); c.fillStyle=ALA.out;                                   // open talking mouth: solid black half-circle
   c.beginPath(); c.arc(cx, ey+S*0.1, S*0.11, 0, Math.PI); c.closePath(); c.fill(); c.stroke();
   const clS=S*0.13, clx=bx+bw-clS*1.15, cly=by+clS*0.25;   // × close button
-  c.fillStyle=ALA.paper; roundRect(clx,cly,clS,clS,clS*0.25); c.fill(); c.stroke();
+  c.fillStyle=ALA.paper; roundRectP(c,clx,cly,clS,clS,clS*0.25); c.fill(); c.stroke();
   alaSet(c,lw*0.9); c.beginPath();
   c.moveTo(clx+clS*0.3,cly+clS*0.3); c.lineTo(clx+clS*0.7,cly+clS*0.7);
   c.moveTo(clx+clS*0.7,cly+clS*0.3); c.lineTo(clx+clS*0.3,cly+clS*0.7); c.stroke();
   rects.close={x:clx,y:cly,w:clS,h:clS};
   const pw=bw*0.36, ph=S*0.15, py=by+bh-ph*0.55, gap=bw*0.06;   // YES / NO pills on the bottom edge
   const yesx=cx-pw-gap/2, nox=cx+gap/2;
-  alaSet(c,lw); c.fillStyle=ALA.blue; roundRect(yesx,py,pw,ph,ph/2); c.fill(); c.stroke();
-  c.fillStyle=ALA.paper; roundRect(nox,py,pw,ph,ph/2); c.fill(); c.stroke();
+  alaSet(c,lw); c.fillStyle=ALA.blue; roundRectP(c,yesx,py,pw,ph,ph/2); c.fill(); c.stroke();
+  c.fillStyle=ALA.paper; roundRectP(c,nox,py,pw,ph,ph/2); c.fill(); c.stroke();
   c.font=(ph*0.46|0)+"px 'Press Start 2P', monospace"; c.textAlign="center"; c.textBaseline="middle";
   c.fillStyle="#fff"; c.fillText("YES", yesx+pw/2, py+ph/2+1);
   c.fillStyle=ALA.blue; c.fillText("NO", nox+pw/2, py+ph/2+1);
   c.textBaseline="alphabetic";
   rects.yes={x:yesx,y:py,w:pw,h:ph}; rects.no={x:nox,y:py,w:pw,h:ph};
+}
+// Render the large talking sprite through a downscaled offscreen buffer, then blit it back up with smoothing
+// OFF — so it reads as chunky pixel art (matching the game) instead of smooth vectors. Hit rects are computed
+// from screen-space cx/cy/S inside drawModalLarge, so they stay correct regardless of the buffer transform.
+let _alaBuf=null, _alaBufG=null;
+function drawModalLargePixel(c, cx, cy, S, m, nerv, rects){
+  const PIX=3;                                                    // pixel chunk size (higher = blockier)
+  const bxs=cx-S*0.90, bys=cy-S*1.10, bws=S*1.80, bhs=S*1.70;     // generous sprite bbox (covers hands/cherry)
+  const ow=Math.max(1,Math.ceil(bws/PIX)), oh=Math.max(1,Math.ceil(bhs/PIX));
+  if(!_alaBuf){ _alaBuf=document.createElement("canvas"); _alaBufG=_alaBuf.getContext("2d"); }
+  if(_alaBuf.width!==ow || _alaBuf.height!==oh){ _alaBuf.width=ow; _alaBuf.height=oh; }
+  const g=_alaBufG;
+  g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,ow,oh); g.imageSmoothingEnabled=true;
+  g.save(); g.scale(1/PIX,1/PIX); g.translate(-bxs,-bys);
+  drawModalLarge(g, cx, cy, S, m, nerv, rects);                   // draw in screen units into the small buffer
+  g.restore();
+  c.save(); c.imageSmoothingEnabled=false;
+  c.drawImage(_alaBuf, 0,0,ow,oh, bxs,bys, ow*PIX, oh*PIX);       // blit up, no smoothing → pixelated
+  c.restore();
 }
 function alaWrap(c,text,x,y,maxW,lh){
   const words=String(text).split(" "); let line="", yy=y;
@@ -2413,7 +2439,7 @@ function drawModalSpeak(c,m,nerv){
     alaWrap(c, m.text, bbx+14, bby+12, bbw-28, 22);
     c.textBaseline="alphabetic";
   }
-  drawModalLarge(c, cx, cy, S, m, nerv, ALaModal.hitRects);
+  drawModalLargePixel(c, cx, cy, S, m, nerv, ALaModal.hitRects);
 }
 const ALaModal = {
   mode:"follow", following:false, x:W/2, y:H/2, bob:0, hl:0, hr:0,
@@ -3178,6 +3204,9 @@ function drawPlayer(){
 }
 function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r);
   ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+// Same, but on an arbitrary context (so À La Modal can render into an offscreen pixelation buffer).
+function roundRectP(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r);
+  c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
 
 /* ---------- HUD ------------------------------------------- */
 function updateTrayHud(){
