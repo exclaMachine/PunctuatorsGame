@@ -687,6 +687,13 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B
   `state.started && !overlay && !help` and clears held inputs when hidden, so the pad never sits on
   top of the library/help overlays. The corner `#help-btn` is hidden on touch (the `?` button replaces
   it); the start card swaps its keyboard hint (`.kbd-only`) for a touch hint (`.touch-only`).
+- **Title screen (`#startcard`)** — an NES-style title: full-viewport (`position:fixed`, `z-index:8` so it
+  covers the side panels/pillars), a scanline + ink-gradient background, a big pixel **INKLINGS** logo
+  (Press Start 2P with a black outline + red drop-shadow, gentle bob), tagline, a static player-sprite
+  portrait (`#title-hero` canvas via `drawTitleHero`), faint drifting letters (`#title-fx`, `initTitleFx`),
+  and a blinking **PRESS START**. `startGame()` (idempotent) begins on the button, **any key** (top of the
+  keydown handler), or a **pointerdown** anywhere on the card; it hides the card, sets `state.started`, and
+  fires the À La Modal greeting.
 - Controls shrink under `@media(max-width:560px)`. The canvas is a fixed 720×528 internal resolution.
   Base `#stage` is `width:720px;max-width:100%`. Desktop scaling (fill the viewport, keep 720:528) lives
   in a **`@media (hover:hover) and (pointer:fine)`** block so it only affects mouse/desktop — touch

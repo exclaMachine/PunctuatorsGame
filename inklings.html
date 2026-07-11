@@ -409,11 +409,32 @@
   .help-note p{margin:0 0 6px}
   .help-note ul{margin:0 0 9px;padding-left:20px}
   .help-note li{margin:2px 0}
-  #startcard{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    background:rgba(21,19,28,.78);z-index:5}
-  #startcard .book{max-width:470px;text-align:center}
-  #startcard h1{font-size:22px;line-height:1.5}
-  #startcard p{font-size:19px;line-height:1.4;color:var(--ink)}
+  /* NES-style title screen */
+  #startcard{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    overflow:hidden;z-index:8;image-rendering:pixelated;cursor:pointer;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 3px, rgba(0,0,0,.12) 3px 4px),
+      radial-gradient(130% 100% at 50% 14%, #2c2758 0%, #16122c 52%, #0a0812 100%)}
+  #title-fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .title-letter{position:absolute;font-family:var(--disp);opacity:.14;will-change:transform,opacity;
+    animation:titleFloat ease-in-out infinite}
+  @keyframes titleFloat{0%,100%{transform:translate(0,0);opacity:.05}
+    50%{transform:translate(5px,-14px);opacity:.24}}
+  .nes-title{position:relative;text-align:center;padding:18px;display:flex;flex-direction:column;
+    align-items:center;gap:14px;max-width:96%}
+  .nes-logo{font-family:var(--disp);font-size:clamp(26px,7.4vw,52px);line-height:1;color:#f4e6b0;
+    letter-spacing:2px;animation:logoBob 2.6s ease-in-out infinite;
+    text-shadow:-3px -3px 0 #000,3px -3px 0 #000,-3px 3px 0 #000,3px 3px 0 #000,0 6px 0 #b5432e,0 9px 0 #000}
+  @keyframes logoBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  .nes-tag{font-family:var(--disp);font-size:clamp(7px,1.7vw,10px);color:#8fb8e0;letter-spacing:3px}
+  #title-hero{image-rendering:pixelated;width:88px;height:88px;margin:2px 0}
+  .nes-start{font-family:var(--disp);font-size:clamp(11px,2.4vw,15px);color:#fff;background:none;border:none;
+    cursor:pointer;padding:6px 10px;letter-spacing:2px;text-shadow:2px 2px 0 #000;
+    animation:nesBlink 1.06s steps(1,end) infinite}
+  .nes-start:hover{color:#f4e6b0}
+  @keyframes nesBlink{0%,49%{opacity:1}50%,100%{opacity:0}}
+  .nes-hint{font-family:var(--read);font-size:15px;color:#b9b0cf;letter-spacing:1px}
+  .nes-foot{font-family:var(--disp);font-size:6px;color:#6f68a0;letter-spacing:1px;margin-top:4px}
   /* Touch controls (mobile only) */
   .touch-only{display:none}
   body.touch .touch-only{display:block}
@@ -778,16 +799,15 @@
 
     <!-- Start card -->
     <div id="startcard">
-      <div class="book">
-        <h1 style="margin-bottom:14px">Inklings</h1>
-        <p>You're a collector of words which you use to repair a book.
-        Hunt the <b>letter-creatures</b>, gather their letters, then go to your
-        <b>Wordhoard</b> (the house by the shop) and forge words at the <b>Wordsmithy</b> to fill your shelves.</p>
-        <p class="kbd-only" style="color:var(--ink-soft);font-size:13px">
-        <b>WASD</b> move &nbsp;·&nbsp; <b>Space</b> attack &nbsp;·&nbsp; <b>H</b> home to the Wordsmithy &nbsp;·&nbsp; <b>E</b> use / enter</p>
-        <p class="touch-only" style="color:var(--ink-soft);font-size:13px">
-        <b>D-pad</b> (bottom-right) to move &nbsp;·&nbsp; <b>ATK</b> to attack &nbsp;·&nbsp; <b>HOME / HOARD</b> on the left</p>
-        <button class="primary" id="start-btn" style="margin-top:6px;padding:10px 22px;font-size:15px">Begin</button>
+      <div id="title-fx"></div>
+      <div class="nes-title">
+        <div class="nes-logo">INKLINGS</div>
+        <div class="nes-tag">A WORD-COLLECTING ADVENTURE</div>
+        <canvas id="title-hero" width="64" height="64"></canvas>
+        <button class="nes-start" id="start-btn">▶ PRESS START</button>
+        <div class="nes-hint kbd-only">press any key · or click</div>
+        <div class="nes-hint touch-only">tap to begin</div>
+        <div class="nes-foot">© 2026 EXCLAMACHINE · A PUNCTUATORS GAME</div>
       </div>
     </div>
 
@@ -861,7 +881,7 @@ let sheetImg = null, sheetReady = false;
    Left-facing reuses the right-facing rows mirrored horizontally.            */
 const playerImg = new Image();
 let playerReady = false;
-playerImg.onload = ()=>{ playerReady=true; };
+playerImg.onload = ()=>{ playerReady=true; try{ if(typeof drawTitleHero==="function") drawTitleHero(); }catch(e){} };
 playerImg.src = "./Lumberjack_Jack.png";
 // The house on the home screen = the Library entrance (192×128 pixel-art PNG; falls back to a drawn house).
 const houseImg = new Image();
@@ -1780,6 +1800,7 @@ if(IS_DEV){   // a small corner badge so it's obvious the debug build is active 
 }
 addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
+  if(!state.started){ e.preventDefault(); startGame(); return; }   // NES title: any key = PRESS START
   if(IS_DEV && (k==="`"||e.key==="~")){ e.preventDefault(); debugGrantLetters(); return; }   // dev-only letter cheat
   if(MOVE_KEYS.has(k)) e.preventDefault();
   if(k==="?"||k==="/"){ e.preventDefault(); toggleHelp(); return; }
@@ -4055,10 +4076,19 @@ function closeEquip(){
   const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.statsOpen;
   document.getElementById("sound-btn").style.display = hide?"none":"";
 }
-function drawEquipDoll(){                                         // the zoomed, static player sprite (idle-down frame)
+// Shared static player portrait (idle-down frame) zoomed to fill a box — crops the frame's transparent
+// padding so the character isn't lost in empty space. PORTRAIT_ZOOM/CY are the tunable knobs (CY = the
+// character's vertical centre within the 64px cell; feet sit ~74% down). Used by the title screen + equipment.
+const PORTRAIT_ZOOM=1.45, PORTRAIT_CX=0.5, PORTRAIT_CY=0.41;
+function drawPlayerPortrait(g, w, h){
+  g.imageSmoothingEnabled=false; g.clearRect(0,0,w,h);
+  if(!playerReady) return;
+  const dw=w*PORTRAIT_ZOOM, dh=h*PORTRAIT_ZOOM, dx=w*0.5-PORTRAIT_CX*dw, dy=h*0.5-PORTRAIT_CY*dh;
+  g.drawImage(playerImg, 0, PR.idleDown*PLAYER_FRAME, PLAYER_FRAME, PLAYER_FRAME, dx, dy, dw, dh);   // overflow clipped by the canvas
+}
+function drawEquipDoll(){
   const cv=document.getElementById("eq-sprite"); if(!cv) return;
-  const g=cv.getContext("2d"); g.imageSmoothingEnabled=false; g.clearRect(0,0,cv.width,cv.height);
-  if(playerReady) g.drawImage(playerImg, 0, PR.idleDown*PLAYER_FRAME, PLAYER_FRAME, PLAYER_FRAME, 0,0, cv.width, cv.height);
+  drawPlayerPortrait(cv.getContext("2d"), cv.width, cv.height);
 }
 function bonusText(b){ if(!b) return ""; const a=[]; if(b.hearts) a.push("+"+b.hearts+"♥"); if(b.guard) a.push("+"+b.guard.toFixed(1)+"s guard"); return a.join(" · "); }
 function costText(r){
@@ -4504,10 +4534,37 @@ function showToast(msg){
 }
 
 /* ---------- WIRING ---------------------------------------- */
-document.getElementById("start-btn").onclick=()=>{ SFX.resume(); SFX.play("click"); state.started=true; document.getElementById("startcard").style.display="none";
+// NES title screen: PRESS START (button, any key, click, or tap all begin — idempotent).
+function startGame(){
+  if(state.started) return;
+  SFX.resume(); SFX.play("click"); state.started=true;
+  document.getElementById("startcard").style.display="none";
   // À La Modal greets you and offers to tag along; YES makes the small follow sprite appear, NO sends her off.
   setTimeout(()=>{ if(state.started) ALaModal.speak("Oh — hello! I'm À La Modal. I could tag along and offer the odd hint… would you like that? (Press M to summon me, YES to keep me near.)", alaFollowOpts()); }, 1400);
-};
+}
+document.getElementById("start-btn").onclick=e=>{ e.stopPropagation(); startGame(); };
+document.getElementById("startcard").addEventListener("pointerdown", startGame);
+// Title-screen flair: a static player-sprite portrait + faint drifting letters behind the logo.
+function drawTitleHero(){
+  const cv=document.getElementById("title-hero"); if(!cv) return;
+  drawPlayerPortrait(cv.getContext("2d"), cv.width, cv.height);
+}
+(function initTitleFx(){
+  const fx=document.getElementById("title-fx"); if(!fx) return;
+  const glyphs="INKLINGSabcdefghijklmnop?!.,;:".split("");
+  const colors=["#c89b3c","#3b6ea5","#7a4a9a","#5b7a4b","#9a3b2e","#e9dec4"];
+  for(let i=0;i<18;i++){
+    const s=document.createElement("span"); s.className="title-letter";
+    s.textContent=glyphs[(Math.random()*glyphs.length)|0];
+    s.style.left=(Math.random()*98)+"%"; s.style.top=(Math.random()*96)+"%";
+    s.style.color=colors[(Math.random()*colors.length)|0];
+    s.style.fontSize=(11+(Math.random()*16|0))+"px";
+    const dur=(4+Math.random()*5).toFixed(2);
+    s.style.animationDuration=dur+"s"; s.style.animationDelay=(-Math.random()*dur)+"s";
+    fx.appendChild(s);
+  }
+  drawTitleHero();
+})();
 function toggleHelp(){ state.help=!state.help; document.getElementById("controls").classList.toggle("open",state.help); SFX.play("click"); }
 document.getElementById("help-btn").onclick=toggleHelp;
 document.getElementById("controls-close").onclick=toggleHelp;
