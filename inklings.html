@@ -4079,7 +4079,7 @@ function closeEquip(){
 // Shared static player portrait (idle-down frame) zoomed to fill a box — crops the frame's transparent
 // padding so the character isn't lost in empty space. PORTRAIT_ZOOM/CY are the tunable knobs (CY = the
 // character's vertical centre within the 64px cell; feet sit ~74% down). Used by the title screen + equipment.
-const PORTRAIT_ZOOM=1.45, PORTRAIT_CX=0.5, PORTRAIT_CY=0.41;
+const PORTRAIT_ZOOM=2.0, PORTRAIT_CX=0.5, PORTRAIT_CY=0.45;
 function drawPlayerPortrait(g, w, h){
   g.imageSmoothingEnabled=false; g.clearRect(0,0,w,h);
   if(!playerReady) return;

@@ -1,5 +1,9 @@
 # Inklings — project context
 
+> **Planning the map/engine future?** See [`inklings-architecture.md`](inklings-architecture.md) — the
+> agreed **hybrid map** direction (authored geography + daily contents), the neutral Tiled/LDtk map schema,
+> the phased seam-refactor plan, and Godot-portability notes. Read it before reworking the map layer.
+
 A word-collecting adventure game for the browser, built on HTML canvas. Inspired by the
 day-to-day rhythm of Stardew Valley, but built around a different core mechanic: instead of
 growing crops, you hunt **letter-creatures ("inklings")**, collect the letters they drop, and
