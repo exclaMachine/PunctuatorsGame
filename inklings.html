@@ -450,6 +450,37 @@
     #tact .util-grid{grid-template-columns:44px 44px 44px;grid-auto-rows:44px;gap:5px}
     #tact .util{width:44px;height:44px;font-size:7px}
   }
+  /* ── Desktop side panels: use the pillar-box space left/right of the stage for a feature toolbar
+     (left) + a persistent minimap (right). Fixed to the viewport edges so they never affect the stage
+     centring/sizing; only shown on a wide, fine-pointer (non-touch) window — otherwise everything falls
+     back to today's overlay HUD + on-canvas minimap. ─────────────────────── */
+  .sidepanel{position:fixed;top:50%;transform:translateY(-50%);z-index:6;display:none;
+    flex-direction:column;gap:6px;width:158px;max-height:96vh;overflow:auto}
+  #side-left{left:14px}
+  #side-right{right:14px}
+  .tb-title,.tb-sep{font-family:var(--disp);font-size:8px;color:var(--ink-soft);text-transform:uppercase;
+    text-align:center;letter-spacing:1px}
+  .tb-sep{margin-top:9px;border-top:2px solid rgba(233,222,196,.25);padding-top:9px}
+  .tb-btn{display:flex;align-items:center;gap:8px;width:100%;padding:8px 9px;border:2px solid var(--edge);
+    background:var(--paper-2);color:var(--ink);cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.25);
+    font-family:var(--disp);font-size:8px;text-align:left;line-height:1.2}
+  .tb-btn .tb-ico{font-style:normal;font-size:16px;flex:none}
+  .tb-btn span{flex:1;min-width:0}
+  .tb-btn b{font-family:var(--read);font-size:12px;color:var(--ink-soft);font-weight:400}
+  .tb-btn:hover{background:#efe4c6}
+  .tb-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 rgba(0,0,0,0)}
+  .tb-btn.dim{opacity:.4;cursor:default;box-shadow:none}
+  .tb-btn.dim:hover{background:var(--paper-2)}
+  .tb-btn.dim:active{transform:none}
+  #side-right canvas{width:150px;height:150px;image-rendering:pixelated;border:2px solid var(--edge);
+    background:#141220;box-shadow:2px 2px 0 rgba(0,0,0,.25);align-self:center}
+  .mini-note{font-family:var(--read);font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.25}
+  @media (hover:hover) and (pointer:fine) and (min-width:1100px){ .sidepanel{display:flex} }
+  body.touch .sidepanel{display:none!important}
+  /* mobile minimap lives in the top HUD band (off the canvas); hidden on desktop */
+  #mini-mobile{display:none}
+  body.touch #mini-mobile{display:block;width:46px;height:46px;image-rendering:pixelated;flex:none;
+    align-self:center;border:2px solid var(--edge);background:#141220}
   /* ── Mobile reflow: HUD sits in the black band ABOVE the map and the touch
      controls in the band BELOW it — they never overlap the grid ─────────── */
   body.touch #app{align-items:stretch;justify-content:flex-start;padding:0}
@@ -475,6 +506,21 @@
 </head>
 <body>
 <div id="app">
+  <!-- Desktop-only feature toolbar in the left pillar space (auto-hidden on narrow / touch) -->
+  <aside id="side-left" class="sidepanel" aria-label="Menu">
+    <div class="tb-title">Menu</div>
+    <button class="tb-btn" id="tb-home"><span class="tb-ico">🏡</span><span>Home</span><b>H</b></button>
+    <button class="tb-btn" id="tb-words"><span class="tb-ico">📝</span><span>Wordsmithy</span><b>Tab</b></button>
+    <button class="tb-btn" id="tb-dex"><span class="tb-ico">🐾</span><span>Bestiary</span><b>B</b></button>
+    <button class="tb-btn" id="tb-feats"><span class="tb-ico">✦</span><span>Feats</span><b>C</b></button>
+    <button class="tb-btn" id="tb-gear"><span class="tb-ico">🎒</span><span>Equipment</span><b>G</b></button>
+    <button class="tb-btn" id="tb-help"><span class="tb-ico">❓</span><span>Help</span><b>?</b></button>
+    <div class="tb-sep">Nearby</div>
+    <button class="tb-btn dim" id="tb-shop"><span class="tb-ico">🛒</span><span>Shop</span></button>
+    <button class="tb-btn dim" id="tb-book"><span class="tb-ico">📖</span><span>Mad Libris</span></button>
+    <button class="tb-btn dim" id="tb-shelf"><span class="tb-ico">📚</span><span>Shelf</span></button>
+  </aside>
+
   <div id="stage">
     <canvas id="cv" width="720" height="528"></canvas>
 
@@ -483,6 +529,7 @@
         <div class="small">Ink <span id="ink-count">0</span></div>
         <div id="potions"></div>
       </div>
+      <canvas id="mini-mobile" width="46" height="46" aria-label="Map"></canvas>
       <div class="panel" id="tray-hud-wrap" style="text-align:right">
         <div class="small">Satchel <span id="bag-count"></span></div>
         <div id="tray-hud"><span class="empty" style="font-weight:600;color:var(--ink-soft);font-size:12px">empty</span></div>
@@ -769,6 +816,13 @@
       <div id="joystick" role="button" aria-label="Move"><div id="joy-thumb"></div></div>
     </div>
   </div>
+
+  <!-- Desktop-only persistent minimap in the right pillar space (auto-hidden on narrow / touch) -->
+  <aside id="side-right" class="sidepanel" aria-label="Map">
+    <div class="tb-title">Map</div>
+    <canvas id="mini-desktop" width="150" height="150"></canvas>
+    <div class="mini-note">Blue = letters remain (with Reveal). Gold = home.</div>
+  </aside>
 </div>
 
 <script>
@@ -2573,6 +2627,7 @@ function render(){
     drawPlayer();
     if(state.started){ drawBuffs(); drawHearts(); }
     ALaModal.draw(ctx);
+    refreshSidePanels();   // keep the toolbar (Mad Libris/Shelf light-up) + minimap live inside the library too
     return;
   }
   const sc=curScreen();
@@ -2597,7 +2652,7 @@ function render(){
     }
   }
 
-  if(state.started) drawMinimap();
+  refreshSidePanels();   // on-canvas minimap, OR the desktop side panel / mobile band minimap + toolbar
   if(state.started) drawBuffs();
   if(state.started) drawHearts();
   if(state.started && dayCleared()) drawClearedBanner();
@@ -2621,49 +2676,90 @@ function drawClearedBanner(){
 }
 // Translucent explored-area map in the bottom-right. Visited screens are lit, screens you
 // haven't reached are black; home (0,0) is gold and the current screen is marked in ink-red.
-function drawMinimap(){
-  const cx=state.screen.sx, cy=state.screen.sy;
-  const reveal=state.buffs.reveal>0;   // reveal potion → show the whole map + where letters remain
+// Shared minimap logic (on-canvas corner overlay AND the DOM side/band panels use these).
+function minimapBounds(){
+  const cx=state.screen.sx, cy=state.screen.sy, reveal=state.buffs.reveal>0;   // reveal → whole map + letters-remain
   let minX,maxX,minY,maxY;
-  if(reveal){
-    minX=-MAP_RADIUS; maxX=MAP_RADIUS; minY=-MAP_RADIUS; maxY=MAP_RADIUS;
-  } else {
-    // bounds of everything visited (+ current), padded by 1 so unexplored neighbours show as black —
-    // then clamped to the real map so we never draw cells outside it (those aren't reachable, and a
-    // black square there would wrongly imply you could travel to it).
+  if(reveal){ minX=-MAP_RADIUS; maxX=MAP_RADIUS; minY=-MAP_RADIUS; maxY=MAP_RADIUS; }
+  else {
+    // bounds of everything visited (+ current), padded by 1 (unexplored neighbours show black), clamped to the map.
     minX=cx;maxX=cx;minY=cy;maxY=cy;
     state.visited.forEach(k=>{ const c=k.indexOf(","); const x=+k.slice(0,c), y=+k.slice(c+1);
       if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; });
     minX=Math.max(-MAP_RADIUS,minX-1); maxX=Math.min(MAP_RADIUS,maxX+1);
     minY=Math.max(-MAP_RADIUS,minY-1); maxY=Math.min(MAP_RADIUS,maxY+1);
   }
-  const cols=maxX-minX+1, rows=maxY-minY+1;
+  return {cx,cy,reveal,minX,maxX,minY,maxY};
+}
+function minimapCellFill(sx,sy,reveal){
+  const home=(sx===0&&sy===0);
+  if(reveal) return home ? "#c89b3c" : (screenRemaining(sx,sy)>0 ? "#3b6ea5" : "#3a3550");
+  const seen=state.visited.has(sx+","+sy);
+  return seen ? (home ? "#c89b3c" : "#cdbd95") : "#000";
+}
+// On-canvas minimap (bottom-right of the play area) — the fallback when no side/band panel is showing.
+function drawMinimap(){
+  const b=minimapBounds();
+  const cols=b.maxX-b.minX+1, rows=b.maxY-b.minY+1;
   const cell=Math.max(5, Math.min(15, Math.floor(118/Math.max(cols,rows))));
   const gw=cols*cell, gh=rows*cell, pad=5, margin=8;
   const x0=W-gw-pad-margin, y0=H-gh-pad-margin;
-
   ctx.save();
-  ctx.globalAlpha=0.74;                                   // overall translucency
-  ctx.fillStyle="rgba(20,18,28,0.6)";
-  ctx.fillRect(x0-pad, y0-pad, gw+pad*2, gh+pad*2);       // panel
-  ctx.strokeStyle = reveal ? "rgba(200,155,60,0.85)" : "rgba(233,222,196,0.55)"; ctx.lineWidth=2;
+  ctx.globalAlpha=0.74;
+  ctx.fillStyle="rgba(20,18,28,0.6)"; ctx.fillRect(x0-pad, y0-pad, gw+pad*2, gh+pad*2);
+  ctx.strokeStyle = b.reveal ? "rgba(200,155,60,0.85)" : "rgba(233,222,196,0.55)"; ctx.lineWidth=2;
   ctx.strokeRect(x0-pad+1, y0-pad+1, gw+pad*2-2, gh+pad*2-2);
   for(let gy=0; gy<rows; gy++) for(let gx=0; gx<cols; gx++){
-    const sx=minX+gx, sy=minY+gy, home=(sx===0&&sy===0);
-    if(reveal){
-      // full map: gold home, blue where letters remain, dim where cleared/empty
-      ctx.fillStyle = home ? "#c89b3c" : (screenRemaining(sx,sy)>0 ? "#3b6ea5" : "#3a3550");
-    } else {
-      const seen=state.visited.has(sx+","+sy);
-      ctx.fillStyle = seen ? (home ? "#c89b3c" : "#cdbd95") : "#000";
-    }
+    ctx.fillStyle=minimapCellFill(b.minX+gx, b.minY+gy, b.reveal);
     ctx.fillRect(x0+gx*cell+1, y0+gy*cell+1, cell-2, cell-2);
   }
-  // current position marker
-  const px=x0+(cx-minX)*cell, py=y0+(cy-minY)*cell;
-  ctx.strokeStyle="#9a3324"; ctx.lineWidth=2;
-  ctx.strokeRect(px+1, py+1, cell-2, cell-2);
+  const px=x0+(b.cx-b.minX)*cell, py=y0+(b.cy-b.minY)*cell;
+  ctx.strokeStyle="#9a3324"; ctx.lineWidth=2; ctx.strokeRect(px+1, py+1, cell-2, cell-2);
   ctx.restore();
+}
+// Minimap filling a DOM <canvas> (the desktop side panel or the mobile HUD band).
+function drawMinimapPanel(cv){
+  if(!cv) return;
+  const g=cv.getContext("2d"); g.imageSmoothingEnabled=false;
+  const w=cv.width, h=cv.height;
+  g.clearRect(0,0,w,h);
+  g.fillStyle="#141220"; g.fillRect(0,0,w,h);
+  if(!state.started) return;
+  const b=minimapBounds();
+  const cols=b.maxX-b.minX+1, rows=b.maxY-b.minY+1, pad=4;
+  const cell=Math.max(6, Math.floor(Math.min((w-2*pad)/cols, (h-2*pad)/rows)));
+  const gw=cols*cell, gh=rows*cell, x0=Math.floor((w-gw)/2), y0=Math.floor((h-gh)/2);
+  for(let gy=0; gy<rows; gy++) for(let gx=0; gx<cols; gx++){
+    g.fillStyle=minimapCellFill(b.minX+gx, b.minY+gy, b.reveal);
+    g.fillRect(x0+gx*cell+1, y0+gy*cell+1, cell-2, cell-2);
+  }
+  const px=x0+(b.cx-b.minX)*cell, py=y0+(b.cy-b.minY)*cell;
+  g.strokeStyle="#e0563a"; g.lineWidth=2; g.strokeRect(px+1, py+1, cell-2, cell-2);
+}
+// Are the desktop side panels visible? (fine pointer, wide window, non-touch — matches the CSS gate.)
+const _mqPanels = window.matchMedia("(hover:hover) and (pointer:fine) and (min-width:1100px)");
+function panelsShown(){ return !document.body.classList.contains("touch") && _mqPanels.matches; }
+function activeMinimapCanvas(){
+  if(document.body.classList.contains("touch")) return document.getElementById("mini-mobile");
+  if(panelsShown()) return document.getElementById("mini-desktop");
+  return null;   // narrow desktop → fall back to the on-canvas minimap
+}
+// Keep the contextual toolbar buttons lit only when you can actually use them. Cheap; skips DOM when unchanged.
+let _tbSig="";
+function refreshToolbar(){
+  if(!panelsShown()) return;
+  const started=state.started;
+  const shop=started&&!state.room&&nearShop(), book=started&&nearLibraryBook(), shelf=started&&!!nearLibraryShelf();
+  const sig=[started,shop,book,shelf].join(",");
+  if(sig===_tbSig) return; _tbSig=sig;
+  const set=(id,on)=>{ const el=document.getElementById(id); if(el) el.classList.toggle("dim", !on); };
+  set("tb-shop",shop); set("tb-book",book); set("tb-shelf",shelf);
+}
+// Called each render frame: draw the minimap into whichever surface is active, and refresh the toolbar.
+function refreshSidePanels(){
+  const mmc=activeMinimapCanvas();
+  if(mmc) drawMinimapPanel(mmc); else if(state.started) drawMinimap();
+  refreshToolbar();
 }
 // Active potion timers shown top-centre on the canvas: a labelled bar that drains over POTION_DUR.
 function drawBuffs(){
@@ -4435,6 +4531,19 @@ document.getElementById("bestiary").onclick=e=>{ if(e.target.id==="bestiary") cl
 document.getElementById("eq-close").onclick=()=>{ closeEquip(); SFX.play("click"); };
 document.getElementById("equipment").onclick=e=>{ if(e.target.id==="equipment") closeEquip(); };  // tap backdrop to close
 document.querySelectorAll("#equipment .eq-tab").forEach(t=>t.onclick=()=>{ _equipTab=t.dataset.tab; SFX.play("click"); renderEquip(); });
+// Desktop feature toolbar (left pillar) — mirrors the keyboard shortcuts / mobile util buttons.
+// tbCanOpen() gates the panel-openers so the toolbar can't stack a second modal over an open one.
+function tbCanOpen(){ return state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.shelfview && !state.help; }
+const _wireTb=(id,fn)=>{ const el=document.getElementById(id); if(el) el.onclick=fn; };
+_wireTb("tb-home",()=>{ if(state.started) teleportHome(); });
+_wireTb("tb-words",()=>{ if(tbCanOpen()) openOverlay(); });
+_wireTb("tb-dex",()=>{ if(tbCanOpen()) openBestiary(); });
+_wireTb("tb-feats",()=>{ if(tbCanOpen()) toggleStats(); });
+_wireTb("tb-gear",()=>{ if(tbCanOpen()) openEquip(); });
+_wireTb("tb-help",()=>{ toggleHelp(); });
+_wireTb("tb-shop",()=>{ if(tbCanOpen() && !state.room && nearShop()) openShop(); });
+_wireTb("tb-book",()=>{ if(tbCanOpen() && nearLibraryBook()) openBook(); });
+_wireTb("tb-shelf",()=>{ if(tbCanOpen()){ const s=nearLibraryShelf(); if(s) openShelfView(s); } });
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
 document.getElementById("respell-yes").onclick=confirmRespell;

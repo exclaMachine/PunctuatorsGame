@@ -432,7 +432,20 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   others parchment), in-bounds unvisited cells are black** (those are still reachable), and the current
   screen is outlined in ink-red. Cell size auto-scales (5–15px). `visited` is **day-scoped and not
   saved** — it resets each new day (explored-only reveal). The reveal potion instead shows the full
-  `[-MAP_RADIUS, MAP_RADIUS]` grid with letter-bearing screens highlighted.
+  `[-MAP_RADIUS, MAP_RADIUS]` grid with letter-bearing screens highlighted. The bounds/colour logic is
+  shared via `minimapBounds()` + `minimapCellFill()` so the on-canvas version and the DOM panels below all
+  match.
+- **Side panels — feature toolbar + persistent minimap** (use the empty pillar/band space). `refreshSidePanels()`
+  (called each frame in `render`) routes the minimap: on **touch** it draws into `#mini-mobile` (in the top HUD
+  band), on a **wide fine-pointer desktop** into `#mini-desktop` (right pillar panel `#side-right`), else it
+  falls back to the on-canvas `drawMinimap()` — all via `drawMinimapPanel(canvas)`. `panelsShown()`
+  (`_mqPanels` = `matchMedia("(hover:hover) and (pointer:fine) and (min-width:1100px)")`, and not `body.touch`)
+  gates the desktop panels; CSS `.sidepanel` is `position:fixed` at the viewport edges so it never affects the
+  720px stage's centring/sizing. The **left panel `#side-left`** is a clickable feature toolbar mirroring the
+  keyboard shortcuts (Home/Wordsmithy/Bestiary/Feats/Equipment/Help always-on; Shop/Mad Libris/Shelf are
+  **contextual**, `refreshToolbar()` toggles a `.dim` class by proximity — `nearShop`/`nearLibraryBook`/
+  `nearLibraryShelf`); handlers are guarded by `tbCanOpen()` so a click can't stack a second modal. Mobile
+  already has these as the `#tact` util buttons, so the toolbar is desktop-only; the minimap move benefits both.
 - **Library layout** (`#overlay`): the panel is a fixed-size flex column so it never resizes/jumps
   as content changes. The two columns (`.cols`) are a `1fr 1fr` grid where **`.cols>div` carries
   `min-width:0`** — this is the load-bearing fix: without it a long collection entry (word +
@@ -520,7 +533,8 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
 - Outdoor home base (shop + the **house** that is your Library); bounded **daily map** of screens
   (`MAP_RADIUS`, currently 3×3; walls at the world edge), regenerated each real calendar day; walk-off-edge
   travel between screens with a smooth **screen-slide** transition; `H` teleports home **to your desk inside
-  the library**; translucent explored-area minimap in the bottom-right (resets daily).
+  the library**; explored-area minimap (resets daily) — in the right desktop side panel / top mobile HUD band, with a
+  translucent bottom-right on-canvas fallback on narrow desktop windows.
 - Attack-based combat (no bump-to-collect); **letter-creatures** (`kind:"letter"`) are captured in a
   **single hit** (`CREATURE_HP = 1`) and drop their letter. The satchel holds a capped number of letters
   (`state.bagCap`, starts at 10); when full, **letter capture** is blocked (you can still fight cubes).
