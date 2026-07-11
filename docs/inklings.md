@@ -503,6 +503,15 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   ink); a **`@consumption`** verb → **"Yuck!" and −1 heart** (don't drink ink); **`@communication`** → a friendly
   non-answer; anything else → a plain "nope". The three "through" answers clear the puddle for the day; the rest
   leave it so you can try another verb. All state (`inkClearedDay`/`inkedDay`/`printsDay`) is **day-scoped**.
+- **Equipment (`G` / 🎒)** — a Stardew-lite gear screen. **Anatomical paper-doll slots** (hat above the head,
+  boots below the feet, rings at the hands, accessory by the face, a **locked Weapon** slot) frame a **zoomed,
+  static player sprite** (the sprite doesn't change yet — a paper-doll overlay can draw on it later). Common
+  gear is **crafted** (Craft tab) from **ink + the beast materials** you already collect (`state.resources`),
+  and grants simple functional bonuses: **+max hearts** and **longer post-hit invulnerability** (guard). Owned
+  gear lives in the **Bag** tab; click to equip (rings auto-fill the two ring slots), click a filled slot to
+  take it off. Bonuses **stack additively** across slots. Every item has an inert **`effect` hook** so the
+  future **punctuation-hero gear** (weapons + special effects) can slot in without a redesign; **tier** is an
+  isolated, removable field. All gear **persists forever** (`state.equip`/`state.gear`/`state.gearSeq`).
 - **Verb stat ladders (Feats, `C`/`✦`)** — collecting distinct verbs levels you up per WordNet verb category
   along Korok-style milestones (1, then every 5); 4 categories populated (motion/competition/perception/
   possession) giving passive boosts + abilities (Slide, Finisher, Combo, Divine, Treasure Sense, Magnet).
@@ -841,6 +850,20 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   **`resolveInk`** (crossing list or `@competition` → clear + jet-black + `INK_REWARD` ink; `@motion` → clear +
   footprints + ink; `@consumption` → −1 heart, no clear; `@communication` → gag, no clear; else `DEFAULT_NOPES`).
   Day-scoped state: `inkClearedDay`/`inkedDay`/`printsDay` (all persisted); reset in `startNewDay`.
+- **Equipment** (`/* EQUIPMENT */`, `#equipment` overlay, `state.equipOpen`, opened with `G` / 🎒 `tc-gear`).
+  Data: **`EQUIP_SLOTS`** (7 slots + locked `weapon`, each with anatomical `pos:{t,l}` percentages) and
+  **`EQUIP_ITEMS`** (`{name, emoji, slot, tier, bonuses:{hearts,guard}, effect:null, recipe:{ink,mats}}`).
+  State: `state.equip` (slot→gear uid), `state.gear` (`[{uid,item}]`), `state.gearSeq` — all persisted; loaded
+  via `sanitizeEquip` (drops unknown items / dangling slots) then `player.hearts=maxHearts()`. **Bonuses stack**
+  via `equipBonuses()`, surfaced through **`maxHearts()`** (= `PLAYER_MAX_HEARTS` + Σhearts) and
+  **`hurtIframes()`** (= `HURT_IFRAMES` + Σguard) — these replaced the raw constants in the heart draw/heal/
+  faint/hurt/potion paths, so bare behaviour is unchanged. `equipOwned`/`unequipSlot` adjust current hearts by
+  the Δmax (`afterEquipChange`). `craftEquip` spends ink + `state.resources` mats (`canAffordRecipe`) and pushes
+  a new instance. `renderEquip` draws the static sprite (`drawEquipDoll`, idle-down frame, pixelated) + slots +
+  Bag/Craft panel (`_equipTab`) + a live bonus footer. `state.equipOpen` is in every overlay guard (movement,
+  `canBeHurt`, hints, `musicDialogueOpen`). The `effect` hook + `weapon` slot are the seams for future
+  punctuation-hero gear.
+
    Three independent dials keep it scalable and non-literal: **POS sets the reward category**,
    **word rarity (length + Scrabble-style letter rarity) sets the tier/magnitude**, and **a
    random roll within that category+tier picks the specific reward** — so SWIM does not grant a

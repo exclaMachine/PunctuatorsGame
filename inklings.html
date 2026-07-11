@@ -136,6 +136,56 @@
     #bestiary .book{height:auto;max-height:92vh;overflow:auto;display:block}
     .bes-grid{grid-template-columns:repeat(2,1fr)}
   }
+  /* ---- Equipment (paper-doll slots + owned/craft panel) ---- */
+  #equipment{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
+    align-items:center;justify-content:center;padding:18px;z-index:7}
+  #equipment.open{display:flex}
+  #equipment .book{position:relative;display:flex;flex-direction:column;max-width:680px;width:100%;
+    height:min(560px,92vh);overflow:hidden}
+  #equipment .book>h1{flex:none}
+  .eq-wrap{display:flex;gap:16px;flex:1;min-height:0}
+  .eq-doll{position:relative;flex:none;width:250px;background:var(--paper-2);border:2px solid var(--edge);
+    box-shadow:inset 2px 2px 0 rgba(0,0,0,.12)}
+  .eq-doll canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-48%);
+    width:120px;height:120px;image-rendering:pixelated}
+  .eq-slots{position:absolute;inset:0}
+  .eq-slot{position:absolute;transform:translate(-50%,-50%);width:48px;display:flex;flex-direction:column;
+    align-items:center;gap:2px;cursor:pointer}
+  .eq-slot .eq-emo{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:21px;
+    background:var(--paper);border:2px solid var(--edge);box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .eq-slot .eq-emo.ghost{opacity:.3}
+  .eq-slot.filled .eq-emo{background:#fdf6e3;border-color:var(--gold)}
+  .eq-slot.locked{cursor:not-allowed}
+  .eq-slot.locked .eq-emo{opacity:.5}
+  .eq-lbl{font-family:var(--disp);font-size:6px;color:var(--ink-soft);text-transform:uppercase;
+    white-space:nowrap;max-width:70px;overflow:hidden;text-overflow:ellipsis;text-align:center}
+  .eq-right{display:flex;flex-direction:column;flex:1;min-width:0}
+  .eq-tabs{display:flex;gap:6px;flex:none;margin-bottom:8px}
+  .eq-tab{font-family:var(--disp);font-size:9px;padding:6px 11px;border:2px solid var(--edge);
+    background:var(--paper-2);color:var(--ink-soft);cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .eq-tab.active{background:var(--gold);color:#2a2540}
+  .eq-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;overflow-y:auto;flex:1;min-height:0;
+    align-content:start;padding:2px}
+  .eq-card{background:var(--paper-2);border:2px solid var(--edge);padding:8px;box-shadow:2px 2px 0 rgba(0,0,0,.25);
+    display:flex;flex-direction:column;gap:4px;cursor:pointer}
+  .eq-card.craft{cursor:default}
+  .eq-card.cant{opacity:.7}
+  .eq-card .eq-emo{font-size:24px}
+  .eq-cn{font-family:var(--disp);font-size:9px;color:var(--ink);text-transform:uppercase;line-height:1.3}
+  .eq-cb{font-family:var(--read);font-size:14px;color:var(--moss)}
+  .eq-cost{font-family:var(--read);font-size:13px;color:var(--ink-soft);display:flex;flex-wrap:wrap;gap:2px 8px}
+  .eq-ing.no{color:#9a3b2e}
+  .eq-craftbtn{font-family:var(--disp);font-size:8px;padding:6px 8px;border:2px solid var(--edge);
+    background:var(--paper);color:var(--ink);cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.25);margin-top:2px}
+  .eq-craftbtn:disabled{opacity:.5;cursor:not-allowed}
+  .eq-empty{grid-column:1/-1;font-family:var(--read);font-size:15px;color:var(--ink-soft);padding:10px}
+  .eq-bonuses{flex:none;border-top:2px solid var(--line);margin-top:12px;padding-top:10px;
+    font-family:var(--read);font-size:15px;color:var(--ink)}
+  @media(max-width:560px){
+    #equipment .book{height:auto;max-height:92vh;overflow:auto;display:block}
+    .eq-wrap{flex-direction:column}
+    .eq-doll{width:100%;height:280px}
+  }
   #potions{display:flex;gap:5px;margin-top:4px}
   .potion-btn{font-family:var(--disp);font-size:8px;line-height:1;padding:5px 6px;border:2px solid var(--edge);
     background:var(--paper-2);color:var(--ink);cursor:pointer;display:inline-flex;gap:4px;align-items:center;
@@ -547,6 +597,28 @@
       </div>
     </div>
 
+    <!-- Equipment: paper-doll slots (anatomical) framing a zoomed player sprite, + Bag/Craft panel (G) -->
+    <div id="equipment">
+      <div class="book">
+        <button class="close-x" id="eq-close" aria-label="Close" title="Close">✕</button>
+        <h1>Equipment</h1>
+        <div class="eq-wrap">
+          <div class="eq-doll" id="eq-doll">
+            <canvas id="eq-sprite" width="64" height="64"></canvas>
+            <div class="eq-slots" id="eq-slots"></div>
+          </div>
+          <div class="eq-right">
+            <div class="eq-tabs">
+              <button class="eq-tab" data-tab="bag">Bag</button>
+              <button class="eq-tab" data-tab="craft">Craft</button>
+            </div>
+            <div class="eq-grid" id="eq-panel"></div>
+          </div>
+        </div>
+        <div class="eq-bonuses" id="eq-bonuses"></div>
+      </div>
+    </div>
+
     <!-- Interactable obstacle (river) mad-lib: fill the blank with a collected verb -->
     <div id="obstacle">
       <div class="book" style="max-width:470px">
@@ -627,6 +699,7 @@
           <span><b>Tab</b></span><span>Open the collection list</span>
           <span><b>B</b></span><span>Open the bestiary (or tap the 🐾 button)</span>
           <span><b>C</b></span><span>Open your Feats (verb milestones — or tap ✦)</span>
+          <span><b>G</b></span><span>Open your Equipment — equip &amp; craft gear (or tap 🎒)</span>
           <span><b>Shift</b></span><span>Slide — a quick forward lunge (once unlocked; tap SLIDE)</span>
           <span><b>1</b> / <b>2</b> / <b>3</b></span><span>Drink a Size / Speed / Reveal potion (or tap its HUD button)</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
@@ -681,6 +754,7 @@
           <button class="tc-btn util" id="tc-help" aria-label="Controls">?</button>
           <button class="tc-btn util" id="tc-dex" aria-label="Bestiary">🐾</button>
           <button class="tc-btn util" id="tc-stats" aria-label="Feats">✦</button>
+          <button class="tc-btn util" id="tc-gear" aria-label="Equipment">🎒</button>
           <button class="tc-btn util" id="tc-modal" aria-label="À La Modal hint">💬</button>
           <button class="tc-btn util" id="tc-slide" aria-label="Slide">SLIDE</button>
           <!-- SHOP / HOUSE (home) and DESK / BOOK (inside the library) are contextual: only shown when standing by that structure (see syncTouchUI) -->
@@ -1212,8 +1286,11 @@ const state = {
   riverCrossed:[],              // verbs already used to cross a river — single-use forever (persisted)
   resources:{},                 // book-binding material id -> count, from resource-creature drops (persist)
   bestiary:{},                  // creature id -> {kills, seen} — unlocks bestiary entries (persist)
+  equip:{ hat:null, shirt:null, pants:null, boots:null, ring1:null, ring2:null, accessory:null },  // slot -> owned-gear uid (persist)
+  gear:[],                      // owned gear instances [{uid, item}] (item = key into EQUIP_ITEMS) (persist)
+  gearSeq:0,                    // running counter for unique gear instance ids (persist)
   fx:[],                        // floating texts
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, statsOpen:false, obstacle:false,
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, statsOpen:false, obstacle:false, equipOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -1563,7 +1640,7 @@ function startNewDay(){
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
   state.captured=new Set(); state.bonus=[]; state.visited=new Set(); state.screens=new Map();
   state.screen={sx:0,sy:0};
-  state.player.hearts=PLAYER_MAX_HEARTS; state.player.hurtT=0; state.player.healT=0;
+  state.player.hearts=maxHearts(); state.player.hurtT=0; state.player.healT=0;
   state.prints=[]; _inkArmed=true; _inkPos=null; _inkPosDay=null;   // fresh ink puddle + clean feet
   goHome();                         // wake up at the library desk (home)
   updateTrayHud(); saveNow();
@@ -1698,6 +1775,10 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"||k==="b"){ e.preventDefault(); closeBestiary(); }
     return;
   }
+  if(state.equipOpen){   // equipment open: close on Esc / Tab / G (slots/craft are click-driven)
+    if(k==="escape"||k==="tab"||k==="g"){ e.preventDefault(); closeEquip(); }
+    return;
+  }
   if(state.shelfview){   // bookshelf view: Esc backs out of a book to the list, then closes; Tab/E close
     if(k==="escape"){ e.preventDefault(); if(svBook) renderShelfList(); else closeShelfView(); }
     else if(k==="tab"||k==="e"){ e.preventDefault(); closeShelfView(); }
@@ -1714,6 +1795,7 @@ addEventListener("keydown",e=>{
   if(k==="tab"){ e.preventDefault(); openOverlay(); }
   if(k==="shift") startSlide();          // motion perk: forward lunge
   if(k==="c") toggleStats();             // Feats / character sheet
+  if(k==="g") openEquip();               // Equipment (paper-doll slots + craft)
   if(k==="m") alaSummon();               // À La Modal: offer a hint (or dismiss)
   if(k===" ") doAttack();
 });
@@ -1858,7 +1940,7 @@ function collectPickup(pk){
   state.resources[pk.item]=(state.resources[pk.item]||0)+pk.qty;
   if(pk.effect && pk.effect.indexOf("heal:")===0){
     const amt=parseInt(pk.effect.split(":")[1],10)||1, p=state.player;
-    p.hearts=Math.min(PLAYER_MAX_HEARTS, p.hearts+amt);
+    p.hearts=Math.min(maxHearts(), p.hearts+amt);
   }
   showToast("+"+pk.qty+" "+prettyItem(pk.item)); SFX.play("capture"); scheduleSave();
 }
@@ -1866,7 +1948,7 @@ function collectPickup(pk){
 function hurtPlayer(fx,fy){
   const p=state.player;
   if(p.hurtT>0 || p.hearts<=0) return;
-  p.hearts--; p.hurtT=HURT_IFRAMES;
+  p.hearts--; p.hurtT=hurtIframes();
   const dx=p.x-fx, dy=p.y-fy, d=Math.hypot(dx,dy)||1;   // shove the player away from the cube
   p.x=Math.max(6,Math.min(W-6, p.x+dx/d*34)); p.y=Math.max(6,Math.min(H-6, p.y+dy/d*34));
   SFX.play("invalid");
@@ -1875,7 +1957,7 @@ function hurtPlayer(fx,fy){
 function faint(){
   const p=state.player;
   goHome();                         // recover at the library desk (home)
-  p.hearts=PLAYER_MAX_HEARTS; p.hurtT=1.5; p.healT=0;
+  p.hearts=maxHearts(); p.hurtT=1.5; p.healT=0;
   showToast("You blanked out! Rest recovered you at home.");
 }
 // Total letter-creatures across the whole day's bounded map. Mirrors genScreen's per-screen count
@@ -1926,14 +2008,14 @@ function update(dt){
   if(p.hurtT>0) p.hurtT-=dt;                       // invulnerability window after a hit
   if(state.room==="library"){ updateLibrary(p, dt); return; }  // Library room has its own (simpler) update
   const sc=curScreen();
-  if(sc.isBase && p.hearts<PLAYER_MAX_HEARTS){     // rest at home to recover hearts
+  if(sc.isBase && p.hearts<maxHearts()){     // rest at home to recover hearts
     p.healT+=dt; if(p.healT>=HEAL_SEC){ p.healT=0; p.hearts++; SFX.play("known"); }
   } else p.healT=0;
 
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2019,7 +2101,7 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -2068,7 +2150,7 @@ function update(dt){
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else hint.classList.remove("show");
@@ -2089,7 +2171,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.shelfview && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.shelfview && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2110,11 +2192,11 @@ function updateLibrary(p, dt){
     if(p.x>er.x && p.x<er.x+er.w && fy>er.y-4 && fy<er.y+er.h+10){ exitLibrary(); return; }
   }
   // resting at home (the library) recovers hearts over time — same as the outdoor base used to
-  if(p.hearts<PLAYER_MAX_HEARTS){ p.healT+=dt; if(p.healT>=HEAL_SEC){ p.healT=0; p.hearts++; SFX.play("known"); } }
+  if(p.hearts<maxHearts()){ p.healT+=dt; if(p.healT>=HEAL_SEC){ p.healT=0; p.hearts++; SFX.play("known"); } }
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.shelfview;
+  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.shelfview;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryShelf()){ hint.textContent="Press E to browse this shelf"; hint.classList.add("show"); }
@@ -3150,7 +3232,7 @@ function drawHeart(cx,cy,px,filled){
     ctx.fillRect(Math.round(cx-3.5*px+c*px), Math.round(cy-3*px+r*px), Math.ceil(px), Math.ceil(px));
 }
 function drawHearts(){
-  const p=state.player, n=PLAYER_MAX_HEARTS, px=2.4, w=7*px, gap=7;
+  const p=state.player, n=maxHearts(), px=2.4, w=7*px, gap=7;
   const total=n*w+(n-1)*gap, x0=W/2-total/2, y=10;
   for(let i=0;i<n;i++) drawHeart(x0+i*(w+gap)+w/2, y+3*px, px, i<p.hearts);
 }
@@ -3783,6 +3865,164 @@ function closeBestiary(){
   document.getElementById("bestiary").classList.remove("open");
   document.getElementById("sound-btn").style.display="";
 }
+
+/* ================= EQUIPMENT (paper-doll slots + craft-from-materials) =========================
+   Stardew-lite gear. Slots are anatomical (hat above the head, boots below the feet, rings at the hands…)
+   and frame a zoomed, STATIC player sprite — the sprite doesn't change yet; a paper-doll overlay can draw on
+   top of it later. Common gear is CRAFTED from ink + the beast materials you already collect, and grants
+   simple functional bonuses (extra hearts, longer post-hit invulnerability). Every item carries an inert
+   `effect` hook so the rarer punctuation-hero gear (weapons, special effects) can slot in later without a
+   redesign. The Weapon slot is shown but locked. All gear persists forever (like the collection). */
+const EQUIP_SLOTS = [
+  { id:"hat",       label:"Hat",       emoji:"🎩", pos:{t:5,  l:50} },
+  { id:"accessory", label:"Accessory", emoji:"👓", pos:{t:20, l:13} },
+  { id:"weapon",    label:"Weapon",    emoji:"🗡️", pos:{t:20, l:87}, locked:true },
+  { id:"ring1",     label:"Ring",      emoji:"💍", pos:{t:42, l:10} },
+  { id:"ring2",     label:"Ring",      emoji:"💍", pos:{t:42, l:90} },
+  { id:"shirt",     label:"Shirt",     emoji:"👕", pos:{t:62, l:14} },
+  { id:"pants",     label:"Pants",     emoji:"👖", pos:{t:80, l:14} },
+  { id:"boots",     label:"Boots",     emoji:"🥾", pos:{t:94, l:50} },
+];
+// bonuses: { hearts:+maxHP, guard:+invuln seconds }. tier is an isolated field (drop it later if desired).
+// effect:null is the future hook for special hero-gear behaviour. recipe: { ink, mats:{materialId:qty} }.
+const EQUIP_ITEMS = {
+  "inkcap-hat":        { name:"Inkcap Hat",         emoji:"🎩", slot:"hat",       tier:1, bonuses:{hearts:1},           effect:null, recipe:{ink:10, mats:{thread:2}} },
+  "inkcap-hat-2":      { name:"Inkcap Hat II",      emoji:"🎩", slot:"hat",       tier:2, bonuses:{hearts:1, guard:0.3}, effect:null, recipe:{ink:25, mats:{thread:4, wax:1}} },
+  "blotter-vest":      { name:"Blotter Vest",       emoji:"👕", slot:"shirt",     tier:1, bonuses:{guard:0.3},          effect:null, recipe:{ink:12, mats:{leather:2}} },
+  "quilted-blotter-2": { name:"Quilted Blotter II", emoji:"👕", slot:"shirt",     tier:2, bonuses:{hearts:1, guard:0.5}, effect:null, recipe:{ink:30, mats:{leather:4, thread:2}} },
+  "foolscap-trousers": { name:"Foolscap Trousers",  emoji:"👖", slot:"pants",     tier:1, bonuses:{guard:0.2},          effect:null, recipe:{ink:10, mats:{paper:2, thread:1}} },
+  "serif-boots":       { name:"Serif Boots",        emoji:"🥾", slot:"boots",     tier:1, bonuses:{hearts:1},           effect:null, recipe:{ink:12, mats:{leather:2}} },
+  "sans-serif-boots":  { name:"Sans-Serif Boots II",emoji:"🥾", slot:"boots",     tier:2, bonuses:{hearts:1, guard:0.2}, effect:null, recipe:{ink:28, mats:{leather:3, wax:1}} },
+  "loop-ring":         { name:"Loop Ring",          emoji:"💍", slot:"ring",      tier:1, bonuses:{guard:0.2},          effect:null, recipe:{ink:15, mats:{wax:1, thread:1}} },
+  "ampersand-ring":    { name:"Ampersand Ring",     emoji:"💍", slot:"ring",      tier:1, bonuses:{hearts:1},           effect:null, recipe:{ink:15, mats:{wax:1, leather:1}} },
+  "dogear-clip":       { name:"Dog-ear Clip",       emoji:"👓", slot:"accessory", tier:1, bonuses:{hearts:1},           effect:null, recipe:{ink:10, mats:{paper:1, glue:1}} },
+  "margin-belt":       { name:"Margin Belt",        emoji:"👓", slot:"accessory", tier:1, bonuses:{guard:0.3},          effect:null, recipe:{ink:14, mats:{leather:2, glue:1}} },
+};
+let _equipTab="bag";
+function newGearUid(){ state.gearSeq=(state.gearSeq||0)+1; return "g"+state.gearSeq; }
+// Sum of every equipped item's bonuses → { hearts, guard }. Cheap enough to call each frame.
+function equipBonuses(){
+  const b={hearts:0, guard:0};
+  for(const slot in state.equip){ const uid=state.equip[slot]; if(!uid) continue;
+    const inst=state.gear.find(g=>g.uid===uid), def=inst&&EQUIP_ITEMS[inst.item];
+    if(def&&def.bonuses) for(const k in def.bonuses) b[k]=(b[k]||0)+def.bonuses[k];
+  }
+  return b;
+}
+function maxHearts(){ return PLAYER_MAX_HEARTS + (equipBonuses().hearts||0); }         // gear-adjusted heart cap
+function hurtIframes(){ return HURT_IFRAMES + (equipBonuses().guard||0); }             // gear-adjusted invuln window
+function gearEquippedSlot(uid){ for(const s in state.equip) if(state.equip[s]===uid) return s; return null; }
+// Adjust current hearts by the change in max after an equip/unequip (equipping +hearts tops you up; unequipping trims, min 1).
+function afterEquipChange(beforeMax){
+  const now=maxHearts();
+  state.player.hearts=Math.max(1, Math.min(now, state.player.hearts + (now-beforeMax)));
+  scheduleSave(); renderEquip();
+}
+function equipOwned(uid){
+  const inst=state.gear.find(g=>g.uid===uid), def=inst&&EQUIP_ITEMS[inst.item]; if(!def) return;
+  const before=maxHearts();
+  let slot=def.slot;
+  if(slot==="ring") slot = state.equip.ring1 ? (state.equip.ring2 ? "ring1" : "ring2") : "ring1";  // fill an empty ring, else swap ring1
+  const cur=gearEquippedSlot(uid); if(cur) state.equip[cur]=null;   // never sit in two slots at once
+  state.equip[slot]=uid;
+  SFX.play("unlockbig"); afterEquipChange(before);
+}
+function unequipSlot(slot){
+  if(!state.equip[slot]) return;
+  const before=maxHearts(); state.equip[slot]=null;
+  SFX.play("click"); afterEquipChange(before);
+}
+function canAffordRecipe(r){
+  if((state.ink||0) < (r.ink||0)) return false;
+  const mats=r.mats||{}; for(const m in mats) if((state.resources[m]||0) < mats[m]) return false;
+  return true;
+}
+function craftEquip(key){
+  const def=EQUIP_ITEMS[key]; if(!def) return;
+  if(!canAffordRecipe(def.recipe)){ SFX.play("invalid"); showToast("Not enough ink or materials for that."); return; }
+  state.ink -= def.recipe.ink||0;
+  const mats=def.recipe.mats||{}; for(const m in mats) state.resources[m]=(state.resources[m]||0)-mats[m];
+  state.gear.push({uid:newGearUid(), item:key});
+  updateRewardHud(); scheduleSave(); SFX.play("unlockbig"); showToast("Crafted "+def.name+"!");
+  _equipTab="bag"; renderEquip();
+}
+function openEquip(){
+  if(state.equipOpen) return;
+  state.equipOpen=true;
+  document.getElementById("equipment").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  renderEquip(); SFX.play("click");
+}
+function closeEquip(){
+  state.equipOpen=false;
+  document.getElementById("equipment").classList.remove("open");
+  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.statsOpen;
+  document.getElementById("sound-btn").style.display = hide?"none":"";
+}
+function drawEquipDoll(){                                         // the zoomed, static player sprite (idle-down frame)
+  const cv=document.getElementById("eq-sprite"); if(!cv) return;
+  const g=cv.getContext("2d"); g.imageSmoothingEnabled=false; g.clearRect(0,0,cv.width,cv.height);
+  if(playerReady) g.drawImage(playerImg, 0, PR.idleDown*PLAYER_FRAME, PLAYER_FRAME, PLAYER_FRAME, 0,0, cv.width, cv.height);
+}
+function bonusText(b){ if(!b) return ""; const a=[]; if(b.hearts) a.push("+"+b.hearts+"♥"); if(b.guard) a.push("+"+b.guard.toFixed(1)+"s guard"); return a.join(" · "); }
+function costText(r){
+  const parts=["<span class=\"eq-ing"+((state.ink||0)>=(r.ink||0)?"":" no")+"\">"+(r.ink||0)+" ink</span>"];
+  const mats=r.mats||{};
+  for(const m in mats){ const ok=(state.resources[m]||0)>=mats[m]; parts.push("<span class=\"eq-ing"+(ok?"":" no")+"\">"+mats[m]+" "+esc(prettyItem(m))+"</span>"); }
+  return parts.join(" ");
+}
+function bagPanelHTML(){
+  const owned=state.gear.filter(g=>!gearEquippedSlot(g.uid) && EQUIP_ITEMS[g.item]);
+  if(!owned.length) return '<div class="eq-empty">No gear in your bag — open the <b>Craft</b> tab to make some from your beast materials.</div>';
+  return owned.map(g=>{ const d=EQUIP_ITEMS[g.item];
+    return '<div class="eq-card" data-own="'+g.uid+'" title="Equip '+esc(d.name)+'"><span class="eq-emo">'+d.emoji+
+      '</span><span class="eq-cn">'+esc(d.name)+'</span><span class="eq-cb">'+bonusText(d.bonuses)+'</span></div>';
+  }).join("");
+}
+function craftPanelHTML(){
+  return Object.keys(EQUIP_ITEMS).map(key=>{ const d=EQUIP_ITEMS[key], ok=canAffordRecipe(d.recipe);
+    return '<div class="eq-card craft'+(ok?"":" cant")+'"><span class="eq-emo">'+d.emoji+'</span>'+
+      '<span class="eq-cn">'+esc(d.name)+'</span><span class="eq-cb">'+bonusText(d.bonuses)+'</span>'+
+      '<span class="eq-cost">'+costText(d.recipe)+'</span>'+
+      '<button class="eq-craftbtn" data-craft="'+key+'"'+(ok?"":" disabled")+'>Craft</button></div>';
+  }).join("");
+}
+function renderEquip(){
+  drawEquipDoll();
+  const slots=document.getElementById("eq-slots");
+  slots.innerHTML = EQUIP_SLOTS.map(s=>{
+    const uid=state.equip[s.id], inst=uid&&state.gear.find(g=>g.uid===uid), def=inst&&EQUIP_ITEMS[inst.item];
+    const cls="eq-slot"+(def?" filled":"")+(s.locked?" locked":"");
+    const emo = s.locked ? '<span class="eq-emo">🔒</span>'
+             : def ? '<span class="eq-emo">'+def.emoji+'</span>'
+                   : '<span class="eq-emo ghost">'+s.emoji+'</span>';
+    const lbl = s.locked ? "Soon" : (def ? def.name : s.label);
+    return '<div class="'+cls+'" style="top:'+s.pos.t+'%;left:'+s.pos.l+'%" data-slot="'+s.id+'" title="'+esc(lbl)+'">'+
+      emo+'<span class="eq-lbl">'+esc(lbl)+'</span></div>';
+  }).join("");
+  slots.querySelectorAll("[data-slot]").forEach(el=>el.onclick=()=>onEquipSlotClick(el.dataset.slot));
+  document.querySelectorAll("#equipment .eq-tab").forEach(t=>t.classList.toggle("active", t.dataset.tab===_equipTab));
+  const panel=document.getElementById("eq-panel");
+  panel.innerHTML = _equipTab==="craft" ? craftPanelHTML() : bagPanelHTML();
+  if(_equipTab==="craft") panel.querySelectorAll("[data-craft]").forEach(el=>el.onclick=()=>craftEquip(el.dataset.craft));
+  else panel.querySelectorAll("[data-own]").forEach(el=>el.onclick=()=>equipOwned(el.dataset.own));
+  const b=equipBonuses(), parts=[];
+  if(b.hearts) parts.push("+"+b.hearts+" ♥ max");
+  if(b.guard) parts.push("longer guard (+"+b.guard.toFixed(1)+"s)");
+  document.getElementById("eq-bonuses").innerHTML = parts.length ? "Equipped bonuses: "+parts.join(" · ") : "No bonuses equipped yet — craft and equip some gear.";
+}
+function onEquipSlotClick(slot){
+  const s=EQUIP_SLOTS.find(x=>x.id===slot);
+  if(s&&s.locked){ SFX.play("invalid"); showToast("Weapons are coming soon — the punctuation heroes' gear."); return; }
+  if(state.equip[slot]) unequipSlot(slot);   // click a filled slot to take the item off (back to the bag)
+}
+// Drop invalid gear on load (unknown item keys, or equip slots pointing at gear you no longer own).
+function sanitizeEquip(){
+  if(!Array.isArray(state.gear)) state.gear=[];
+  state.gear=state.gear.filter(g=>g&&g.uid&&EQUIP_ITEMS[g.item]);
+  for(const s in state.equip){ const uid=state.equip[s]; if(uid && !state.gear.some(g=>g.uid===uid)) state.equip[s]=null; }
+}
+
 /* ---------- CELEBRATION QUEUE (staggered feat / letter dialogues) ---------- */
 // Milestone/letter dialogues are shown ONE AT A TIME so they never stack. commitSpell queues the Feats pop
 // first, then the new-letter modal; each dialogue's close runs the next.
@@ -3810,7 +4050,7 @@ function showFeatProgress(cat, n){
   featAnim={ cat, fromPct:Math.max(0,Math.round(((n-1)-a)/(b-a)*100)), toPct:Math.min(100,Math.round((n-a)/(b-a)*100)),
              reward: ms?verbRewardAt(cat,n):null, next:b, nextReward:REWARD_LABEL[verbRewardAt(cat, ms?nextVerbMilestone(n):b)]||"reward" };
   clearTimeout(featAutoT);
-  if(!state.statsOpen && !state.obstacle) openStats(); else renderStats();
+  if(!state.statsOpen && !state.obstacle && !state.equipOpen) openStats(); else renderStats();
   if(ms) SFX.play("unlockbig");
   requestAnimationFrame(()=>requestAnimationFrame(()=>{   // next frame: CSS-transition the bar to its new fill
     const bar=document.querySelector(".feat-cat.feat-live .feat-bar > i"); if(bar) bar.style.width=featAnim.toPct+"%";
@@ -4055,7 +4295,8 @@ function snapshot(){
            resources:state.resources, bestiary:state.bestiary,
            verbCounts:state.verbCounts, divineDay:state.divineDay, divine:state.divine,
            obstacleDay:state.obstacleDay, obstacleGot:state.obstacleGot, riverCrossed:state.riverCrossed,
-           inkClearedDay:state.inkClearedDay, inkedDay:state.inkedDay, printsDay:state.printsDay };
+           inkClearedDay:state.inkClearedDay, inkedDay:state.inkedDay, printsDay:state.printsDay,
+           equip:state.equip, gear:state.gear, gearSeq:state.gearSeq };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -4084,6 +4325,12 @@ function applySnapshot(d){
   if(typeof d.inkClearedDay==="string") state.inkClearedDay=d.inkClearedDay;
   if(typeof d.inkedDay==="string") state.inkedDay=d.inkedDay;
   if(typeof d.printsDay==="string") state.printsDay=d.printsDay;
+  // Equipment persists forever (like the collection). Restore, drop anything invalid, then top hearts to the new max.
+  if(Array.isArray(d.gear)) state.gear=d.gear;
+  if(typeof d.gearSeq==="number") state.gearSeq=d.gearSeq;
+  if(d.equip && typeof d.equip==="object") for(const s in state.equip) if(s in d.equip) state.equip[s]=d.equip[s];
+  sanitizeEquip();
+  state.player.hearts=maxHearts();
   rederiveVerbCounts();   // no-op until VERB_CATS is loaded; then reconciles counts with the collection
   // Satchel + captured creatures only carry over within the SAME calendar day. A new day = empty satchel
   // and a fresh map (captures forgotten); state.day was already set to today before this runs.
@@ -4185,6 +4432,9 @@ document.getElementById("obs-close").onclick=()=>{ closeObstacle(); SFX.play("cl
 document.getElementById("obs-done").onclick=()=>{ closeObstacle(); SFX.play("click"); };
 document.getElementById("obstacle").onclick=e=>{ if(e.target.id==="obstacle") closeObstacle(); };
 document.getElementById("bestiary").onclick=e=>{ if(e.target.id==="bestiary") closeBestiary(); };  // tap backdrop to close
+document.getElementById("eq-close").onclick=()=>{ closeEquip(); SFX.play("click"); };
+document.getElementById("equipment").onclick=e=>{ if(e.target.id==="equipment") closeEquip(); };  // tap backdrop to close
+document.querySelectorAll("#equipment .eq-tab").forEach(t=>t.onclick=()=>{ _equipTab=t.dataset.tab; SFX.play("click"); renderEquip(); });
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
 document.getElementById("respell-yes").onclick=confirmRespell;
@@ -4218,7 +4468,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.shelfview;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.shelfview;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -4281,7 +4531,8 @@ if(IS_TOUCH){
   tap("tc-book",()=>{ if(state.started && nearLibraryBook()) openBook(); });    // library: lectern → mad-libs
   tap("tc-shelf",()=>{ if(state.started){ const s=nearLibraryShelf(); if(s) openShelfView(s); } }); // library: shelf → books
   tap("tc-dex",()=>{ if(homeReady()) openBestiary(); });
-  tap("tc-stats",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen) toggleStats(); });
+  tap("tc-stats",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.equipOpen) toggleStats(); });
+  tap("tc-gear",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen) openEquip(); });
   tap("tc-modal",()=>{ if(state.started) alaSummon(); });
   tap("tc-slide",()=>{ if(state.started) startSlide(); });
   tap("tc-help",toggleHelp);
@@ -4611,7 +4862,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.statsOpen || state.obstacle); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.statsOpen || state.obstacle || state.equipOpen); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)
