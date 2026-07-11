@@ -729,7 +729,7 @@ let sheetImg = null, sheetReady = false;
    "Lumberjack Jack" character sprite by Kenmi (purchased on itch.io).
    Credit: Kenmi. Sheet = 6 columns × 10 rows of 64×64 frames.
    Rows: 0 idle-down, 1 idle-right, 2 idle-up, 3 walk-down, 4 walk-right,
-   5 walk-up, 6 fall-right (unused), 7 attack-right, 8 attack-down, 9 attack-up.
+   5 walk-up, 6 fall-right (repurposed as the slide anim, PR.slide), 7 attack-right, 8 attack-down, 9 attack-up.
    Left-facing reuses the right-facing rows mirrored horizontally.            */
 const playerImg = new Image();
 let playerReady = false;
@@ -790,7 +790,6 @@ function unlockedLetters(){
 }
 function hasUnlockedCapital(){ const u=unlockedLetters(); for(const c of CAP_ORDER) if(u.has(c)) return true; return false; }
 
-const CONSUME_ON_NEW = true;   // spend letters when you record a NEW word
 const CREATURE_HP = 1;   // letter-creatures are captured (drop their letter) in a single hit
 
 // --- Hearts (life) + writer's-block cubes --------------------------------------
@@ -1762,16 +1761,6 @@ function exitLibrary(){   // out the entrance mat → outdoor home, just below t
   const p=state.player; p.x=HOUSE.doorX; p.y=HOUSE.y+HOUSE.h+20; p.face={x:0,y:1}; p.moving=false;
   SFX.play("home");
 }
-// Spine colour: reuse the POS reward colours; function/unknown words get a stable hashed muted colour.
-function spineColor(word){
-  const pos=(state.dex[word]&&state.dex[word].pos)||[];
-  if(pos.includes("noun")) return "#c89b3c";
-  if(pos.includes("adjective")) return "#7a4a9a";
-  if(pos.includes("verb")) return "#3b4a7a";
-  if(pos.includes("adverb")) return "#5b7a4b";
-  let h=0; for(let i=0;i<word.length;i++) h=(h*31+word.charCodeAt(i))>>>0;
-  return ["#8a5a34","#5f5872","#3b6ea5","#9a3b2e","#6f5436"][h%5];
-}
 // E interacts with whatever you're standing by.
 function tryUseBench(){
   if(state.room==="library"){
@@ -1933,7 +1922,7 @@ function update(dt){
   p.animT=(p.animT||0)+dt;     // drives idle/walk sprite cycling
   p.moving=false;
   if(state.started && state.day!==todayStr()) startNewDay();   // rolled past midnight → fresh map
-  if(state.started) ALaModal.update(dt);           // À La Modal companion (follows / hovers / drips)
+  if(state.started) ALaModal.update(dt);           // À La Modal companion (follows / hovers)
   if(p.hurtT>0) p.hurtT-=dt;                       // invulnerability window after a hit
   if(state.room==="library"){ updateLibrary(p, dt); return; }  // Library room has its own (simpler) update
   const sc=curScreen();
@@ -2316,9 +2305,8 @@ function drawPrints(sc){
 }
 
 /* ================= À LA MODAL — Navi-style floating companion ==================================
-   A small in-world follow sprite (gentle bob + independent hand wiggle + subtle melt drip) that swaps to a
-   large detailed speaking sprite (chibi face, YES/NO/× buttons, speech bubble) when it has something to say.
-   The melt drip is driven by `confidence` (0..1; low = nervous = drippier) so it doubles as an emotion cue.
+   A small in-world follow sprite (gentle bob + independent hand wiggle) that swaps to a large detailed
+   speaking sprite (chibi face, YES/NO/× buttons, speech bubble) when it has something to say.
    She speaks in modal verbs (can/could/should/might/would) — hedging, offering possibilities. */
 const ALA = { out:"#20202a", box:"#dedede", cream:"#fdfcf6", creamHi:"#cfc6b2", cherry:"#cf3a2c",
   cherrySh:"#9e2a20", stem:"#4e8a3c", pink:"#e98aa4", blush:"#f0a6bd", blue:"#3b6ea5", eye:"#ffffff", pupil:"#20202a", paper:"#efe6cf" };
@@ -2331,7 +2319,7 @@ function alaHand(c,x,y,r,dir){
   c.beginPath(); c.arc(x,y,r,0,7); c.fill(); c.stroke();
   c.beginPath(); c.arc(x+dir*r*0.7, y-r*0.45, r*0.45, 0,7); c.fill(); c.stroke();   // thumb nub
 }
-function alaScoop(c,cx,baseY,w,S,detail,m,nerv){
+function alaScoop(c,cx,baseY,w,S,detail){
   const sh=S*0.44, top=baseY-sh, lw=detail?S*0.035:Math.max(1.6,S*0.07);
   alaSet(c,lw); c.fillStyle=ALA.cream;
   c.beginPath(); c.moveTo(cx-w/2, baseY);
@@ -2361,24 +2349,24 @@ function alaScoop(c,cx,baseY,w,S,detail,m,nerv){
   c.beginPath(); c.moveTo(cx+S*0.02, chy-S*0.09); c.quadraticCurveTo(cx+S*0.14, chy-S*0.22, cx+S*0.08, chy-S*0.28); c.stroke();
   alaSet(c,lw);
 }
-function drawModalSmall(c,cx,cy,S,m,nerv){
+function drawModalSmall(c,cx,cy,S,m){
   const lw=Math.max(1.6,S*0.07), bw=S*0.72, bh=S*0.5, bx=cx-bw/2, by=cy-bh*0.2;
   alaSet(c,lw);
   alaHand(c, bx-S*0.1, by+bh*0.5+Math.sin(m.hl*3)*S*0.07, S*0.11, 1);
   alaHand(c, bx+bw+S*0.1, by+bh*0.5+Math.sin(m.hr*3+1)*S*0.07, S*0.11, -1);
-  alaScoop(c, cx, by+lw, bw*0.86, S, false, m, nerv);
+  alaScoop(c, cx, by+lw, bw*0.86, S, false);
   alaSet(c,lw); c.fillStyle=ALA.box; roundRect(bx,by,bw,bh,S*0.14); c.fill(); c.stroke();
   c.fillStyle=ALA.pupil;                                   // simplified face
   c.beginPath(); c.arc(cx-bw*0.2, by+bh*0.42, S*0.05, 0,7); c.fill();
   c.beginPath(); c.arc(cx+bw*0.2, by+bh*0.42, S*0.05, 0,7); c.fill();
   alaSet(c,lw*0.8); c.beginPath(); c.arc(cx, by+bh*0.46, S*0.12, 0.15*Math.PI, 0.85*Math.PI); c.stroke();
 }
-function drawModalLarge(c,cx,cy,S,m,nerv,rects){
+function drawModalLarge(c,cx,cy,S,m,rects){
   const lw=S*0.035, bw=S*0.98, bh=S*0.62, bx=cx-bw/2, by=cy-bh*0.36;
   alaSet(c,lw);
   alaHand(c, bx-S*0.09, by+bh*0.55+Math.sin(m.hl*3)*S*0.035, S*0.12, 1);
   alaHand(c, bx+bw+S*0.09, by+bh*0.55+Math.sin(m.hr*3+1)*S*0.035, S*0.12, -1);
-  alaScoop(c, cx, by+lw, bw*0.84, S, true, m, nerv);
+  alaScoop(c, cx, by+lw, bw*0.84, S, true);
   alaSet(c,lw); c.fillStyle=ALA.box; roundRectP(c,bx,by,bw,bh,S*0.1); c.fill(); c.stroke();
   const ey=by+bh*0.4, ex=S*0.19;                           // chibi eyes
   for(const sg of [-1,1]){
@@ -2410,7 +2398,7 @@ function drawModalLarge(c,cx,cy,S,m,nerv,rects){
 // OFF — so it reads as chunky pixel art (matching the game) instead of smooth vectors. Hit rects are computed
 // from screen-space cx/cy/S inside drawModalLarge, so they stay correct regardless of the buffer transform.
 let _alaBuf=null, _alaBufG=null;
-function drawModalLargePixel(c, cx, cy, S, m, nerv, rects){
+function drawModalLargePixel(c, cx, cy, S, m, rects){
   const PIX=3;                                                    // pixel chunk size (higher = blockier)
   const bxs=cx-S*0.90, bys=cy-S*1.10, bws=S*1.80, bhs=S*1.70;     // generous sprite bbox (covers hands/cherry)
   const ow=Math.max(1,Math.ceil(bws/PIX)), oh=Math.max(1,Math.ceil(bhs/PIX));
@@ -2419,7 +2407,7 @@ function drawModalLargePixel(c, cx, cy, S, m, nerv, rects){
   const g=_alaBufG;
   g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,ow,oh); g.imageSmoothingEnabled=true;
   g.save(); g.scale(1/PIX,1/PIX); g.translate(-bxs,-bys);
-  drawModalLarge(g, cx, cy, S, m, nerv, rects);                   // draw in screen units into the small buffer
+  drawModalLarge(g, cx, cy, S, m, rects);                         // draw in screen units into the small buffer
   g.restore();
   c.save(); c.imageSmoothingEnabled=false;
   c.drawImage(_alaBuf, 0,0,ow,oh, bxs,bys, ow*PIX, oh*PIX);       // blit up, no smoothing → pixelated
@@ -2430,7 +2418,7 @@ function alaWrap(c,text,x,y,maxW,lh){
   for(const w of words){ const t=line?line+" "+w:w; if(c.measureText(t).width>maxW && line){ c.fillText(line,x,yy); line=w; yy+=lh; } else line=t; }
   if(line) c.fillText(line,x,yy);
 }
-function drawModalSpeak(c,m,nerv){
+function drawModalSpeak(c,m){
   const e=1-(1-m.popT)*(1-m.popT), S=200*(0.5+0.5*e);       // pop-in scale
   const cx=22+S*0.55, cy=H-16-S*0.5;                        // docked bottom-left
   if(m.text && m.popT>0.55){                                // speech bubble with the (modal-verb) line
@@ -2443,29 +2431,26 @@ function drawModalSpeak(c,m,nerv){
     alaWrap(c, m.text, bbx+14, bby+13, bbw-28, 22);
     c.textBaseline="alphabetic";
   }
-  drawModalLargePixel(c, cx, cy, S, m, nerv, ALaModal.hitRects);
+  drawModalLargePixel(c, cx, cy, S, m, ALaModal.hitRects);
 }
 const ALaModal = {
   mode:"follow", following:false, x:W/2, y:H/2, bob:0, hl:0, hr:0,
-  confidence:0.7, popT:1, text:"", onYes:null, onNo:null, hitRects:{},
+  popT:1, text:"", onYes:null, onNo:null, hitRects:{},
   speak(text, opts){ opts=opts||{};
     this.text=text; this.onYes=opts.onYes||null; this.onNo=opts.onNo||null;
-    if(typeof opts.confidence==="number") this.confidence=opts.confidence;
     this.mode="speak"; this.popT=0; try{ SFX.play("newword"); }catch(e){}
   },
   dismiss(){ if(this.mode!=="speak") return; this.mode="follow"; this.text=""; this.onYes=this.onNo=null; try{ SFX.play("click"); }catch(e){} },
   update(dt){
     const p=state.player;
-    if(this.mode!=="speak"){ const hp=p.hearts/PLAYER_MAX_HEARTS; this.confidence+=((0.3+0.7*hp)-this.confidence)*Math.min(1,dt*2); }
     this.x+=((p.x+48)-this.x)*Math.min(1,dt*5); this.y+=((p.y-46)-this.y)*Math.min(1,dt*5);
     this.bob+=dt; this.hl+=dt*1.9; this.hr+=dt*1.5;
     if(this.mode==="speak" && this.popT<1) this.popT=Math.min(1,this.popT+dt*7);
   },
   draw(c){
     if(!state.started) return;
-    const nerv=Math.max(0,Math.min(1,1-this.confidence));
-    if(this.mode==="speak"){ drawModalSpeak(c, this, nerv); return; }   // the big talking sprite always shows
-    if(this.following) drawModalSmall(c, this.x, this.y+Math.sin(this.bob*2.2)*3, 40, this, nerv);   // small sprite only if you said YES
+    if(this.mode==="speak"){ drawModalSpeak(c, this); return; }   // the big talking sprite always shows
+    if(this.following) drawModalSmall(c, this.x, this.y+Math.sin(this.bob*2.2)*3, 40, this);   // small sprite only if you said YES
   },
   hit(cx,cy){
     if(this.mode!=="speak" || this.popT<0.6) return false;
@@ -3881,7 +3866,6 @@ function renderVerbWords(body){
   body.innerHTML = html || '<div class="sub">No verbs collected yet — spell some doing-words at the Wordsmithy.</div>';
   body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>openDefModal(el.dataset.w));
 }
-function toggleBestiary(){ state.bestiaryOpen ? closeBestiary() : openBestiary(); }
 
 /* ---------- OBSTACLE (river) MAD-LIB ---------- */
 function openObstacle(o){
