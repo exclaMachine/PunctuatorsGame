@@ -211,3 +211,5 @@ A Godot version is a rewrite; the value we preserve is design + content + rules,
 3. **Richer terrain set?** Authored maps make more tile types cheap (sand, floor, cliff, bridge…) — decide
    the palette when authoring.
 4. **Do gates stay per-edge openings, or move to explicit door/path entities?** (Either fits the schema.)
+5. **The geography World Atlas reuses this pipeline** — its pixel "regions in real positions" are authored
+   as an entity map here (regions = fillable entities). See `inklings-grammar-systems.md` §4b.

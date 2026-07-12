@@ -26,7 +26,7 @@ Cross-refs: [`inklings.md`](inklings.md) (current systems), [`inklings-architect
 
 | POS | System(s) | Teaches | Guide |
 | --- | --- | --- | --- |
-| **Noun** | ink (economy) · **hypernym shelves** (taxonomy) · **attribute-flasks** (unlock potion families) | IS-A hierarchy | *(taxonomy guide — deferred)* |
+| **Noun** | ink (economy) · **hypernym shelves** (taxonomy) · **attribute-flasks** (unlock potions) · **proper-noun atlases** (geography, §4b) | IS-A hierarchy; proper vs common | *(taxonomy guide — deferred)* |
 | **Verb** | Feats ladders + abilities (existing) · "**action**" obstacle solutions | verb categories | *(future)* |
 | **Adjective** | **potions** — the WordNet "dumbbell" (self-buff / antonym-throw / world) · "**state**" obstacle solutions | antonymy, similar-to, attribute | **Antonym 🐜** + **Synonomouse 🐭** |
 | **Adverb** | potion **amplifiers** (adjective→adverb derivation) — later | derivation | *(future)* |
@@ -106,6 +106,52 @@ Adverbs derive from adjectives (quickly←quick). An adverb amplifies its matchi
 
 ---
 
+## 4b. Proper nouns → Atlases (geography first — the capital-letters payoff)
+
+**The hook (already set up in code):** capitals are deliberately end-game — `CAP_ORDER` (frequency-ordered),
+`weightedLetter` skews capitals "rare, end-game, far from home," and comments reserve them for
+*"geography/proper-noun content — roadmap #10."* `build_dictionary.py` **excludes** proper nouns (filters
+`instance_hypernyms`). So proper nouns are a clean, separate namespace, and unlocking **capital letters
+unlocks Capitals (capital cities)** — the payoff for a currently-rewardless gate.
+
+**Proper nouns = a noun subtype:** common nouns → shelves/taxonomy; **proper nouns → fillable "atlases."**
+Every atlas also teaches *proper vs common (why we capitalize)*.
+
+### First atlas: the World (geography)
+- **Content tier (decided):** countries + capitals only to start; **single-word, accent-normalized**
+  (Paris, France, Bogota). Multiword (New York) and diacritics deferred.
+- **Map style (decided): Hybrid** — pixel/parchment regions in roughly real-world positions, **authored in
+  Tiled/LDtk**, so it **reuses the authored-map pipeline** in `inklings-architecture.md` (regions = entities).
+  Teaches real layout/adjacency without a vector renderer.
+- **Mechanic:** blank world → spell a country to fill its region; spell a capital to pin its dot; **pair
+  capital↔country** to fully light it (teaches "capital of"). **Continents** are sub-goals with rewards (ink,
+  cosmetics, unlock the next atlas). An **Atlas/Globe** object in the Library opens it.
+- **Reward = fact card** — the proper-noun parallel to the WordNet definition reveal: spelling "France"
+  shows capital/continent/flag facts (teaches geography) instead of a gloss.
+
+### Data (offline, open-licensed — no runtime API)
+- **Countries+capitals JSON** (~195 rows: country, capital, continent, ISO, lat/long, flag) from
+  **Natural Earth** / **Wikidata** (public-domain / CC0).
+- **Region shapes:** hand-authored in Tiled/LDtk for the Hybrid look — no GeoJSON needed for v1 (Natural
+  Earth 1:110m is the fallback if we ever want real borders).
+- **Cities (later):** **GeoNames** `cities15000` (CC-BY, needs a credit line), subset it.
+- Build with a `build_geo.py` script (same pattern as `build_dictionary.py`).
+
+### Conflicts / considerations
+- **Separate validation.** Proper nouns aren't in WordNet/`2of12`. The Wordsmithy must check a **second
+  dictionary** (the atlas data) and require a leading **capital**. Dual-dictionary logic is the core addition.
+- **Reward routing.** Proper nouns → atlas fill + fact card (+maybe ink); **not** the common-noun taxonomy
+  shelves (they're instances, not hypernyms).
+- **Rare-capital gating.** Qatar needs Q, etc. — frequency-ordered capitals make some places genuinely
+  end-game (fine as aspiration).
+- **Multiword / diacritics.** Start single-word + normalized; add later.
+- **Educational scope.** Adds **geography** as a new subject; the proper-vs-common tie keeps it coherent.
+
+### Atlas family (deferred — geography first)
+The shared "fillable board" system later powers ✨ **Star Atlas** (constellations/planets), 🏛 **Pantheon**
+(myth), 📅 **Calendar** (days/months), 🗣 **nationalities/languages**. Spec the generic atlas framework when
+a second atlas is greenlit.
+
 ## 5. The grammar codex
 
 Opt-in menu (a "field guide"). Entries **unlock on discovery** and store the guide's blurb + a live example
@@ -153,6 +199,8 @@ synonym/similar-to, attribute, hypernym, hyponym, (later) derivation, modality. 
 4. **World/state** potion effects → authored-obstacle `acceptedSolutions`.
 5. **Hypernym→hyponym shelves** (regenerated noun-books).
 6. **Adverb amplifiers.**
+7. **World Atlas** (proper nouns behind capital letters) — countries+capitals JSON, an authored Tiled/LDtk
+   region map, dual-dictionary validation, fact-card reward. Fairly independent of 1–6; gated by capitals.
 
 ---
 
@@ -162,3 +210,5 @@ synonym/similar-to, attribute, hypernym, hyponym, (later) derivation, modality. 
 - Verb / adverb / function-word guides — future.
 - Exact starter attribute list & numbers — tune when building §8.1.
 - Whether world-effects share the obstacle system or get their own interactables.
+- Atlas family beyond geography (star/pantheon/calendar/languages, §4b) — deferred to a shared board system.
+- Whether proper-noun spelling also grants ink, or only atlas fill + fact card.
