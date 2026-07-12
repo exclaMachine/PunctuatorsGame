@@ -35,28 +35,59 @@ is an authored persistent area), [`inklings-grammar-systems.md`](inklings-gramma
   ```
 - **Seeds (shop-bought, decided):** buy a letter's seed at the Stall with ink. Seeds **gate the harvest** —
   you can't just "draw" a letter's shape to get it; you must own its seed.
-- **Crops tied to letters — the alphabet garden:** each crop is produce whose initial *is* its letter —
-  **A**pple, **B**ean, **C**arrot, **D**aikon, **E**ggplant, **F**ig, **G**rape, **K**ale, **O**nion,
-  **P**ea, **R**adish, **T**urnip, **Y**am… (teaches initial letters; great for younger learners).
+- **Crops tied to letters — the alphabet garden:** each crop is produce whose initial *is* its letter (teaches
+  initial letters; great for younger learners). Full A–Z roster below.
 - **Planting = the Braille lesson:** plant the crop in its letter's Braille pattern (A → dot 1; C → dots 1+4;
   L → dots 1+2+3). The almanac shows each letter's pattern; doing it grows the letter.
-- **Harvest:** a renewable supply of that Latin letter for the satchel / Wordsmithy.
+- **Harvest:** a renewable supply of that Latin letter for the satchel / Wordsmithy (plus word rewards, §3).
 
-## 3. The crossword-garden (the hook)
-- The farm is a **field of beds**; read a **row** left-to-right or a **column** top-to-bottom, and each bed is
-  a letter → a **Braille word**.
-- Any row **or** column that spells a **real word** (validated against the game dictionary) pays a **bonus**
-  (extra yield / ink / a special crop).
-- **Intersections** — a bed shared by a row-word and a column-word — can pay extra, so you plan a
-  word-square/crossword to stack bonuses (Scrabble-garden energy).
-- Rewards vocabulary + planning, ties the cozy farm straight back to the game's core (*words*), and reinforces
-  Braille by having you *read your plots as words*.
+### Crop roster (emoji stand-ins → pixel crops later)
+Data shape: `{ letter, name, emoji, brailleDots }`. Emoji are placeholders (swap for sprites later, like the
+equipment items). `*` = weak/duplicate emoji, prioritize a custom sprite there.
+
+| | Crop | | | Crop | |
+| --- | --- | --- | --- | --- | --- |
+| **A** | Apple | 🍎 | **N** | Nectarine | 🍑* |
+| **B** | Banana | 🍌 | **O** | Orange | 🍊 |
+| **C** | Carrot | 🥕 | **P** | Pineapple | 🍍 |
+| **D** | Dill | 🌿 | **Q** | Quince | 🍐* |
+| **E** | Eggplant | 🍆 | **R** | Rainier cherry | 🍒 |
+| **F** | Fig | 🫐* | **S** | Strawberry | 🍓 |
+| **G** | Grapes | 🍇 | **T** | Tomato | 🍅 |
+| **H** | Honeydew | 🍈 | **U** | Ugli fruit | 🍊* |
+| **I** | Iceberg lettuce | 🥬 | **V** | Vidalia onion | 🧅 |
+| **J** | Jalapeño | 🌶️ | **W** | Watermelon | 🍉 |
+| **K** | Kiwi | 🥝 | **X** | Xigua (melon) | 🍉* |
+| **L** | Lemon | 🍋 | **Y** | Yam | 🍠 |
+| **M** | Mango | 🥭 | **Z** | Zucchini | 🥒 |
+
+(X = *Xigua*, R = *Rainier cherry* are the classic "impossible-letter" alphabet-book picks — real produce.)
+
+## 3. The crossword-garden (the hook + scoring)
+- **Garden = a grid of bed-cells** (start ~6×6). Each planted, mature bed = one letter (its crop), shown as its
+  Braille pattern. Read a **row** left-to-right or a **column** top-to-bottom → a **Braille word**.
+- **Base harvest (always on):** every mature bed yields **+1 of its letter** — the renewable letter supply.
+- **Word scan:** every run of **≥3 adjacent beds** across a row or down a column whose letters form a **valid
+  dictionary word** (reuse the game's existing word check) scores. (2-letter valid words = optional token trickle.)
+- **Words pay by their part of speech (the key unifier, decided).** Harvesting a garden word *spells* it, so it
+  pays through the **normal word pipeline** — **noun → ink, adjective → potion, verb → Feats, proper noun →
+  atlas**, etc. No special-case rewards: the garden is just a peaceful, renewable way to spell words, and every
+  word type pays *something*. Payout = base letters **+** each word's POS reward.
+- **Renewable loop:** pays **every harvest** (decided), so a good crossword pays each cycle. Re-harvesting
+  *known* words gives the **renewable** reward (ink/potion) but not new collection entries; a **first-time**
+  word also registers in your collection — matches the "renewable currency loop" in `inklings-grammar-systems.md`.
+- **Crossing bonus:** any bed in **both** a row-word and a column-word applies **×1.5** to each — interlocking
+  layouts compound (the reason to think in 2-D).
+- Reinforces Braille (*read your plots as words*), rewards vocabulary + planning, ties the farm to the core.
 
 ## 4. Economy & balance
-- **Input = ink** (earned by spelling nouns); **output = renewable letters** → feeds back into spelling. Ink
-  is the bridge; the Stall gains a **seed rack** (more for the existing shop to do).
-- **Balance guard:** renewable letters could undercut hunt/spell scarcity — pace via **seed cost, grow time,
-  and plot/zone limits** so hunting and daily spelling still matter.
+- **Input = ink** (earned by spelling nouns); **output = renewable letters + POS word-rewards** → feeds back
+  into spelling. Ink is the bridge; the Stall gains a **seed rack** (more for the existing shop to do).
+- **Seasons are the throttle (desired direction).** A Stardew-style **season** mechanic rotates which crops
+  grow / which words pay, so a single "perfect" crossword can't pay forever — players must **re-plan** each
+  season. This is the main brake on the renewable word-reward loop.
+- **Balance guard:** also pace via **seed cost, grow time, plot/zone limits**, and the reduced renewable rate
+  for repeat words, so hunting and daily desk-spelling still matter.
 
 ## 5. IPA / phonetics — parked for later
 - Braille is **orthographic** (letters). A later **"Sound Garden"** pass could teach **IPA/phonetics** — e.g.
@@ -77,7 +108,9 @@ is an authored persistent area), [`inklings-grammar-systems.md`](inklings-gramma
 ## 7. Open / deferred
 - Seed sourcing beyond the shop (hunt-drops? quests?) — **shop-bought** for now.
 - Whether the Braille pattern is **required** or merely a **bonus** (plant freely vs plant-in-shape).
-- Cozy-sim depth: zone layout, tools, watering/growth timers, seasons.
+- **Seasons** (rotate crops / word-values so layouts must change) — **desired direction**, the throttle on the
+  renewable loop (§4); not built yet.
+- Other cozy-sim depth: zone layout, tools, watering/growth timers.
 - The Sound Garden / IPA pass (§5).
 - Other scripts as future cozy variants (Cyrillic "heirloom varieties", Ogham plant-aesthetics, Morse rhythm) —
   from the brainstorm; not planned.
