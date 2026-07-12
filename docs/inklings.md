@@ -10,6 +10,11 @@
 >
 > **Planning the cozy farm?** See [`inklings-farming.md`](inklings-farming.md) — the Braille-bed farm,
 > shop-bought letter-seeds, alphabet crops, the crossword-garden (row/column words), and the parked IPA pass.
+>
+> **Planning collection rewards?** See [`inklings-collections.md`](inklings-collections.md) — the Wordhoard
+> curator (a librarian who hands out **one-time grants** for completing collection subgoals, reusing the
+> Nouns-wing `found/total`), **placeable decorations**, and the **facing-tile placement primitive shared with
+> farm planting**. Pure grant, no town, nothing gated.
 
 A word-collecting adventure game for the browser, built on HTML canvas. Inspired by the
 day-to-day rhythm of Stardew Valley, but built around a different core mechanic: instead of
@@ -397,7 +402,20 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   discovered words are chips → `openDefModal`, undiscovered are `?????` blanks; `← Shelf` / `svBook` tracks the
   page). `bookName` renders `•<cat>` catch-alls as "Other <cat>". Pure view over `state.dex`; **no new saved
   state.** See [`build_dictionary.py`](../build_dictionary.py) for the book-assignment rules + known odd
-  placements.
+  placements. The per-book/per-category `found/total` here is the **bundle substrate** for the Wordhoard
+  curator (below) — see [`inklings-collections.md`](inklings-collections.md).
+- **Curation panel (collection subgoals)** — a **curator** NPC (a librarian behind a desk) in the Wordhoard
+  (`data/rooms/library.json` `type:"curator"` at col 10 row 14; `buildLibrary` exposes `LIBRARY.curator`,
+  `nearLibraryCurator()` gates it, drawn in `ensureLibraryBg`'s object loop). Walk up + `E` (or touch
+  **CURATE** / desktop toolbar **Curator** `tb-curate`) → the `#curation` modal (`state.curation`, styled off
+  the shelf view). Three drill-down pages (nav via `cuCat`/`cuBook`; `cu-back`/Esc step back one page):
+  `renderCuration` lists the **26 noun categories as "sets"** each with a `found/total` bar (✓ COMPLETE at
+  100%) → `renderCurationCat` shows that category's books with per-book bars → `renderCurationBook` shows a
+  book's words (collected = clickable chips → `#defmodal`, undiscovered = `?????` blanks, reusing the shelf's
+  `.nb-chip` styling). **Sets/books with ≥1 collected word float to the top** (shelf order / alphabetical
+  within each group). All computed live by `curationCats()` from `state.dex` × `NOUN_BOOKS` — **read-only, no
+  new saved state, no rewards yet** (step 1 of the plan). Rewards (one-time grants → placeable décor) + the
+  shared facing-tile placement primitive are the next steps. See [`inklings-collections.md`](inklings-collections.md).
 - **Mad-libs module** (`/* MAD-LIBS */`) — `BOOKS` registry. For a big book, an entry points at an
   **`index:"data/levels/index.json"`** (book-ordered `[{id,title,file,blanks}]`) instead of a hardcoded
   `levels` array; `ensureBookLevels(reg)` fetches that index once and fills `reg.chapters` (metadata) +
@@ -934,7 +952,14 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
    letters earns its keep).
 
 8. **Farming / ranching** — renewable letters from ranched inklings; the deferred cozy layer.
-9. **Town / trade** — towns that want specific words; bundle-style requests as content gates.
+9. **Collection curation (the Wordhoard rewards layer)** — **reframed from the old "town / trade" idea.**
+   Decision #4 keeps **no town**; instead a **librarian/curator NPC inside the Wordhoard** hands out
+   **one-time grants** when you complete collection subgoals ("bundles"). Bundles **reuse the Nouns-wing
+   `found/total`** (a book/category threshold), so there's no new content to author. Rewards are **placeable
+   decorations** for the Wordhoard, dropped on the **tile you're facing** — a **placement primitive shared
+   with farm planting** (build once). **Pure grant, nothing gated** (not a community center). See
+   [`inklings-collections.md`](inklings-collections.md). **Status: step 1 DONE** — a read-only **curator**
+   interactable + `#curation` panel showing each noun category's `found/total` set progress (no rewards yet).
 10. **Limit the starting letters** - start with only lowercase letters and the more common letters (not all).
     **Status: DONE (incl. capitals groundwork).** Lowercase unlock one at a time in frequency order; once all
     26 are unlocked, capital letters unlock the same way (`CAP_ORDER`/`capUnlockAt`) and spawn as rare

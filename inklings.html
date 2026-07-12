@@ -436,6 +436,24 @@
   .nb-chip.found:hover{background:#d8ccab}
   .nb-chip.blank{color:var(--ink-soft);opacity:.55;letter-spacing:3px}
   .nb-chip.divined{color:var(--gold);border-color:var(--gold);letter-spacing:2px;text-transform:uppercase}
+  /* Curation view (reuses the shelfview overlay pattern) */
+  #curation{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
+    align-items:center;justify-content:center;padding:18px;z-index:6}
+  #curation.open{display:flex}
+  #curation .book{max-height:82vh;overflow:auto}
+  #cu-body{max-height:60vh;overflow:auto;margin-top:8px}
+  .cu-note{font-size:16px;color:var(--ink-soft);margin:0 0 10px;line-height:1.35}
+  .cu-row{display:block;padding:8px 11px;margin:6px 0;background:var(--paper-2);border:2px solid var(--edge)}
+  .cu-row.link{cursor:pointer}
+  .cu-row.link:hover{background:#d8ccab}
+  .cu-row .cu-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .cu-row .nm{font-size:19px;color:var(--ink);text-transform:capitalize}
+  .cu-row .ct{font-size:15px;color:var(--ink-soft);white-space:nowrap}
+  .cu-bar{height:8px;margin-top:6px;background:#cdbf9c;border:2px solid var(--edge);overflow:hidden}
+  .cu-fill{height:100%;background:var(--inkblue)}
+  .cu-row.done .cu-fill{background:var(--moss)}
+  .cu-row.done .ct{color:var(--moss)}
+  .cu-badge{font-family:var(--disp);font-size:8px;color:var(--moss)}
   .foot{margin-top:16px;padding-top:12px;border-top:2px solid var(--line);
     display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
   .foot .keys{font-size:16px;color:var(--ink-soft);line-height:1.9}
@@ -597,6 +615,7 @@
     <button class="tb-btn dim" id="tb-shop"><span class="tb-ico">🛒</span><span>Shop</span></button>
     <button class="tb-btn dim" id="tb-book"><span class="tb-ico">📖</span><span>Mad Libris</span></button>
     <button class="tb-btn dim" id="tb-shelf"><span class="tb-ico">📚</span><span>Shelf</span></button>
+    <button class="tb-btn dim" id="tb-curate"><span class="tb-ico">🗂️</span><span>Curator</span></button>
   </aside>
 
   <div id="stage">
@@ -794,6 +813,17 @@
       </div>
     </div>
 
+    <!-- Curation view: the curator's collection subgoals (per noun category → its books), read-only progress -->
+    <div id="curation">
+      <div class="book" style="max-width:520px">
+        <button class="close-x" id="cu-close" aria-label="Close" title="Close">✕</button>
+        <button id="cu-back" style="display:none;margin-bottom:10px">← All sets</button>
+        <h1 id="cu-title">The Curator</h1>
+        <div class="sub" id="cu-sub"></div>
+        <div id="cu-body"></div>
+      </div>
+    </div>
+
     <!-- Definition modal (full text of a collection entry) -->
     <div id="defmodal">
       <div class="book">
@@ -912,6 +942,7 @@
           <button class="tc-btn util" id="tc-desk" aria-label="Use the Wordsmithy">SMITHY</button>
           <button class="tc-btn util" id="tc-book" aria-label="Open Mad Libris">LIBRIS</button>
           <button class="tc-btn util" id="tc-shelf" aria-label="Browse shelf">SHELF</button>
+          <button class="tc-btn util" id="tc-curate" aria-label="Speak with the curator">CURATE</button>
         </div>
       </div>
       <!-- Joystick, bottom-right -->
@@ -1357,6 +1388,7 @@ function buildLibrary(room){
     entrancePx:{ x:(ent.col+ent.w/2)*cw, y:(ent.row+ent.h/2)*ch },
     desk: interactPt("desk"),      // the writing desk (opens the collection/bench)
     book: interactPt("book"),      // the book lectern (opens mad-libs)
+    curator: interactPt("curator"),// the curator's desk (opens the curation panel)
     shelves: room.objects.filter(o=>o.shelf).map(o=>({ id:o.id, rect:{x:o.col*cw, y:o.row*ch, w:o.w*cw, h:o.h*ch} })),
     bg:null
   };
@@ -1447,7 +1479,7 @@ const state = {
   gearSeq:0,                    // running counter for unique gear instance ids (persist)
   fx:[],                        // floating texts
   garden:null,                  // Braille crossword farm { cols, rows, cells:[[{letter, dots}]] } (persist)
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, statsOpen:false, obstacle:false, equipOpen:false, gardenOpen:false,
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, obstacle:false, equipOpen:false, gardenOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -1947,6 +1979,11 @@ addEventListener("keydown",e=>{
     else if(k==="tab"||k==="e"){ e.preventDefault(); closeShelfView(); }
     return;
   }
+  if(state.curation){   // curation view: Esc steps back a page (book → set → list), then closes; Tab/E close
+    if(k==="escape"){ e.preventDefault(); if(cuBook) renderCurationCat(cuCat); else if(cuCat) renderCuration(); else closeCuration(); }
+    else if(k==="tab"||k==="e"){ e.preventDefault(); closeCuration(); }
+    return;
+  }
   if(!state.started) return;
   keys[k]=true;
   if(k==="h") teleportHome();
@@ -1983,6 +2020,7 @@ function nearHouse(){   // the Library entrance (house) on the outdoor home scre
 }
 function nearLibraryDesk(){ return state.room==="library" && LIBRARY && LIBRARY.desk && Math.hypot(state.player.x-LIBRARY.desk.cx, state.player.y-LIBRARY.desk.cy)<64; }
 function nearLibraryBook(){ return state.room==="library" && LIBRARY && LIBRARY.book && Math.hypot(state.player.x-LIBRARY.book.cx, state.player.y-LIBRARY.book.cy)<64; }
+function nearLibraryCurator(){ return state.room==="library" && LIBRARY && LIBRARY.curator && Math.hypot(state.player.x-LIBRARY.curator.cx, state.player.y-LIBRARY.curator.cy)<64; }
 // The bookshelf whose front the player is standing at (nearest within range), or null. Distance is measured
 // from the player's feet to the shelf rectangle, so you can approach from below or the side.
 function nearLibraryShelf(){
@@ -2012,6 +2050,7 @@ function tryUseBench(){
   if(state.room==="library"){
     if(nearLibraryDesk()) openOverlay();       // the desk → collection/bench
     else if(nearLibraryBook()) openBook();     // the lectern → mad-libs
+    else if(nearLibraryCurator()) openCuration();  // the curator → collection subgoals
     else { const sh=nearLibraryShelf(); if(sh) openShelfView(sh); }   // a bookshelf → its books
     return;
   }
@@ -2335,7 +2374,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2360,9 +2399,10 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview;
+  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
+  else if(hintReady && nearLibraryCurator()){ hint.textContent="Press E to speak with the curator"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryShelf()){ hint.textContent="Press E to browse this shelf"; hint.classList.add("show"); }
   else hint.classList.remove("show");
   // active potion timers keep ticking
@@ -2866,10 +2906,11 @@ function refreshToolbar(){
   if(!panelsShown()) return;
   const started=state.started;
   const shop=started&&!state.room&&nearShop(), book=started&&nearLibraryBook(), shelf=started&&!!nearLibraryShelf();
-  const sig=[started,shop,book,shelf].join(",");
+  const curate=started&&nearLibraryCurator();
+  const sig=[started,shop,book,shelf,curate].join(",");
   if(sig===_tbSig) return; _tbSig=sig;
   const set=(id,on)=>{ const el=document.getElementById(id); if(el) el.classList.toggle("dim", !on); };
-  set("tb-shop",shop); set("tb-book",book); set("tb-shelf",shelf);
+  set("tb-shop",shop); set("tb-book",book); set("tb-shelf",shelf); set("tb-curate",curate);
 }
 // Called each render frame: draw the minimap into whichever surface is active, and refresh the toolbar.
 function refreshSidePanels(){
@@ -3065,6 +3106,20 @@ function ensureLibraryBg(){
       g.fillStyle="#c8b48a"; for(let i=0;i<3;i++){ g.fillRect(x+9, y+h*0.25+i*4, w/2-13, 1); g.fillRect(cx+4, y+h*0.25+i*4, w/2-13, 1); }
       g.fillStyle="#26233a"; g.font="7px 'Press Start 2P', monospace"; g.textAlign="center"; g.textBaseline="alphabetic";
       g.fillText("MAD LIBRIS", cx, y-3);
+    } else if(o.type==="curator"){                                        // curator's desk → collection subgoals
+      const cx=x+w/2;
+      box(x+2, y+h*0.55, w-4, h*0.42, "#5a4630");                          // counter
+      g.fillStyle="#3a2e22"; g.fillRect(x+2, y+h*0.55, w-4, 3);            // counter lip
+      g.fillStyle="#c89b3c"; g.fillRect(cx-13, y+h*0.6, 8, 6);            // a stamp/ink block on the counter
+      g.fillStyle="#efe6cf"; g.fillRect(cx+3, y+h*0.6, 10, 7);           // an open ledger
+      g.fillStyle="#3b4a7a"; for(let i=0;i<2;i++) g.fillRect(cx+5, y+h*0.61+i*3, 6, 1);
+      // the librarian standing behind the counter
+      g.fillStyle="#7a4a9a"; g.fillRect(cx-7, y+h*0.2, 14, h*0.36);        // robe/body
+      g.fillStyle="#e8c9a0"; g.fillRect(cx-5, y+h*0.06, 10, 10);          // head
+      g.fillStyle="#3a2e22"; g.fillRect(cx-6, y+h*0.05, 12, 4);           // hair
+      g.fillStyle="#efe6cf"; g.fillRect(cx-8, y+h*0.24, 4, 4); g.fillRect(cx+4, y+h*0.24, 4, 4);  // collar/hands
+      g.fillStyle="#26233a"; g.font="7px 'Press Start 2P', monospace"; g.textAlign="center"; g.textBaseline="alphabetic";
+      g.fillText("CURATOR", cx, y-3);
     } else if(o.type==="chair"){
       box(x+3, y+2, w-6, h-4, "#6f5436");
       g.fillStyle="#5a4630"; g.fillRect(x+3, y+2, w-6, 3);
@@ -3698,6 +3753,100 @@ function closeShelfView(){
   document.getElementById("sound-btn").style.display="";
   closeDefModal();
 }
+
+/* ---------- CURATION VIEW (collection subgoals) ----------- */
+// Read-only progress over the Nouns wing: each noun category is a "set" (all its books' words). Step 1 shows
+// progress only; rewards (one-time grants → placeable decorations) come in a later step. See
+// docs/inklings-collections.md. Bundle math reuses the same found/total the shelf view already computes.
+let cuCat=null;   // page 2: the drilled-into category, or null on the list page
+let cuBook=null;  // page 3: the opened book (word list), or null
+function curationCats(){   // [{cat, found, total, books:[{key,found,total}]}], in shelf/category order, non-empty only
+  if(!NOUN_BOOKS) return [];
+  const byCat={};
+  for(const key in NOUN_BOOKS.books){ const bk=NOUN_BOOKS.books[key];
+    const found=bk.children.reduce((n,c)=>n+(state.dex[c]?1:0),0);
+    (byCat[bk.cat]||(byCat[bk.cat]=[])).push({key, found, total:bk.children.length}); }
+  const out=[];
+  for(const cat of NOUN_BOOKS.categories){
+    const books=byCat[cat]; if(!books||!books.length) continue;
+    // books with ≥1 collected word float to the top; alphabetical within each group
+    books.sort((a,b)=> ((b.found>0)-(a.found>0)) || (a.key<b.key?-1:1));
+    out.push({ cat, found:books.reduce((n,b)=>n+b.found,0), total:books.reduce((n,b)=>n+b.total,0), books });
+  }
+  return out;
+}
+function cuBar(found,total){   // a progress row's bar; total 0 guarded
+  const pct = total ? Math.round(found/total*100) : 0;
+  return `<div class="cu-bar"><div class="cu-fill" style="width:${pct}%"></div></div>`;
+}
+function openCuration(){
+  if(!NOUN_BOOKS){ showToast("The curator is still cataloguing…"); return; }
+  state.curation=true; cuCat=null;
+  document.getElementById("sound-btn").style.display="none";
+  renderCuration();
+  document.getElementById("curation").classList.add("open");
+  SFX.play("click");
+}
+function renderCuration(){   // page 1: every noun category as a set with its collection progress
+  cuCat=null; cuBook=null;
+  document.getElementById("cu-back").style.display="none";
+  document.getElementById("cu-title").textContent="The Curator";
+  const cats=curationCats();
+  const done=cats.filter(c=>c.total&&c.found>=c.total).length;
+  document.getElementById("cu-sub").textContent=`${done} / ${cats.length} sets complete`;
+  // sets with ≥1 collected word float to the top (stable sort keeps the shelf order within each group)
+  cats.sort((a,b)=> (b.found>0)-(a.found>0));
+  let html=`<p class="cu-note">Complete a collection set and the curator will have a reward for you. (Rewards coming soon — for now, track your progress.)</p>`;
+  for(const c of cats){
+    const complete=c.total&&c.found>=c.total;
+    html+=`<div class="cu-row link${complete?" done":""}" data-cat="${esc(c.cat)}">`
+        + `<div class="cu-head"><span class="nm">${esc(nbCap(c.cat))}</span>`
+        + `<span class="ct">${complete?'<span class="cu-badge">✓ COMPLETE</span> ':''}${c.found} / ${c.total}</span></div>`
+        + cuBar(c.found,c.total) + `</div>`;
+  }
+  const body=document.getElementById("cu-body"); body.innerHTML=html; body.scrollTop=0;
+  body.querySelectorAll("[data-cat]").forEach(el=>el.onclick=()=>renderCurationCat(el.dataset.cat));
+}
+function renderCurationCat(cat){   // page 2: one category's books, each with its own found/total progress
+  cuCat=cat; cuBook=null;
+  const back=document.getElementById("cu-back"); back.style.display=""; back.textContent="← All sets";
+  const rec=curationCats().find(c=>c.cat===cat); if(!rec){ renderCuration(); return; }
+  document.getElementById("cu-title").textContent=nbCap(cat);
+  document.getElementById("cu-sub").textContent=`${rec.found} / ${rec.total} words collected in this set`;
+  let html="";
+  for(const b of rec.books){
+    const complete=b.total&&b.found>=b.total;
+    html+=`<div class="cu-row link${complete?" done":""}" data-key="${esc(b.key)}">`
+        + `<div class="cu-head"><span class="nm">${esc(bookName(b.key))}</span>`
+        + `<span class="ct">${complete?'<span class="cu-badge">✓</span> ':''}${b.found} / ${b.total}</span></div>`
+        + cuBar(b.found,b.total) + `</div>`;
+  }
+  const body=document.getElementById("cu-body"); body.innerHTML=html; body.scrollTop=0;
+  body.querySelectorAll("[data-key]").forEach(el=>el.onclick=()=>renderCurationBook(el.dataset.key));
+  SFX.play("click");
+}
+function renderCurationBook(key){   // page 3: one book's words — collected words (clickable) + undiscovered as blanks
+  cuBook=key; const bk=NOUN_BOOKS.books[key];
+  const back=document.getElementById("cu-back"); back.style.display=""; back.textContent="← "+nbCap(bk.cat);
+  const found=bk.children.filter(c=>state.dex[c]).length;
+  document.getElementById("cu-title").textContent=bookName(key);
+  document.getElementById("cu-sub").textContent=`found ${found} / ${bk.children.length}`;
+  let html='<div class="nb-chips">';
+  for(const c of bk.children){
+    if(state.dex[c]) html += `<span class="nb-chip found" data-w="${esc(c)}">${esc(c)}</span>`;
+    else html += `<span class="nb-chip blank">?????</span>`;
+  }
+  html+="</div>";
+  const body=document.getElementById("cu-body"); body.innerHTML=html; body.scrollTop=0;
+  body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>openDefModal(el.dataset.w));
+  SFX.play("click");
+}
+function closeCuration(){
+  state.curation=false; cuCat=null; cuBook=null;
+  document.getElementById("curation").classList.remove("open");
+  document.getElementById("sound-btn").style.display="";
+  closeDefModal();
+}
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
 
 let checking=false;
@@ -4168,7 +4317,7 @@ function openEquip(){
 function closeEquip(){
   state.equipOpen=false;
   document.getElementById("equipment").classList.remove("open");
-  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.statsOpen;
+  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen;
   document.getElementById("sound-btn").style.display = hide?"none":"";
 }
 // Shared static player portrait (idle-down frame) zoomed to fill a box — crops the frame's transparent
@@ -4397,7 +4546,7 @@ function openGarden(){
 function closeGarden(){
   state.gardenOpen=false;
   document.getElementById("garden").classList.remove("open");
-  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.statsOpen||state.equipOpen;
+  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen;
   document.getElementById("sound-btn").style.display = hide?"none":"";
 }
 
@@ -4410,7 +4559,7 @@ function nextCelebration(){ const fn=celebrations.shift(); if(fn) fn(); }
 
 /* ---------- FEATS PANEL (verb-category ladders) ---------- */
 let featAnim=null, featAutoT=null;   // featAnim={cat,fromPct,toPct,reward|null,next,nextReward}; timer auto-closes plain steps
-function statsHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview; }
+function statsHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation; }
 function openStats(){ state.statsOpen=true; document.getElementById("stats").classList.add("open");
   document.getElementById("sound-btn").style.display="none"; renderStats(); }
 function closeStats(){ clearTimeout(featAutoT); featAnim=null; state.statsOpen=false;
@@ -4500,7 +4649,7 @@ function openObstacle(o){
 function closeObstacle(){
   state.obstacle=false; curObstacle=null; curInk=false;
   document.getElementById("obstacle").classList.remove("open");
-  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.statsOpen;
+  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen;
   document.getElementById("sound-btn").style.display = hide?"none":"";
 }
 function renderObstaclePrompt(o, verb){
@@ -4847,7 +4996,7 @@ document.getElementById("gd-harvest").onclick=harvestGarden;
 document.getElementById("gd-clear").onclick=()=>{ gardenInit(); state.garden.cells.forEach(row=>row.forEach(cell=>{ cell.letter=null; cell.dots=""; })); scheduleSave(); SFX.play("click"); renderGarden(); };
 // Desktop feature toolbar (left pillar) — mirrors the keyboard shortcuts / mobile util buttons.
 // tbCanOpen() gates the panel-openers so the toolbar can't stack a second modal over an open one.
-function tbCanOpen(){ return state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.help; }
+function tbCanOpen(){ return state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation && !state.help; }
 const _wireTb=(id,fn)=>{ const el=document.getElementById(id); if(el) el.onclick=fn; };
 _wireTb("tb-home",()=>{ if(state.started) teleportHome(); });
 _wireTb("tb-words",()=>{ if(tbCanOpen()) openOverlay(); });
@@ -4859,6 +5008,7 @@ _wireTb("tb-help",()=>{ toggleHelp(); });
 _wireTb("tb-shop",()=>{ if(tbCanOpen() && !state.room && nearShop()) openShop(); });
 _wireTb("tb-book",()=>{ if(tbCanOpen() && nearLibraryBook()) openBook(); });
 _wireTb("tb-shelf",()=>{ if(tbCanOpen()){ const s=nearLibraryShelf(); if(s) openShelfView(s); } });
+_wireTb("tb-curate",()=>{ if(tbCanOpen() && nearLibraryCurator()) openCuration(); });
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
 document.getElementById("respell-yes").onclick=confirmRespell;
@@ -4870,6 +5020,9 @@ document.getElementById("unlockmodal").onclick=e=>{ if(e.target.id==="unlockmoda
 document.getElementById("sv-close").onclick=()=>{ closeShelfView(); SFX.play("click"); };
 document.getElementById("sv-back").onclick=()=>{ renderShelfList(); SFX.play("click"); };
 document.getElementById("shelfview").onclick=e=>{ if(e.target.id==="shelfview") closeShelfView(); };  // tap backdrop to close
+document.getElementById("cu-close").onclick=()=>{ closeCuration(); SFX.play("click"); };
+document.getElementById("cu-back").onclick=()=>{ if(cuBook) renderCurationCat(cuCat); else renderCuration(); SFX.play("click"); };
+document.getElementById("curation").onclick=e=>{ if(e.target.id==="curation") closeCuration(); };  // tap backdrop to close
 document.getElementById("export-btn").onclick=()=>{ exportBackup(); SFX.play("click"); };
 // The label opens the OS picker natively; we just handle the chosen file.
 document.getElementById("import-file").onchange=e=>{
@@ -4892,7 +5045,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -4909,13 +5062,14 @@ function syncTouchUI(){
     const inLib = state.room==="library";
     const sh=document.getElementById("tc-shop"), hs=document.getElementById("tc-house"),
           dv=document.getElementById("tc-desk"), bk=document.getElementById("tc-book"),
-          sf=document.getElementById("tc-shelf");
-    const atDesk=inLib&&nearLibraryDesk(), atBook=inLib&&nearLibraryBook();
+          sf=document.getElementById("tc-shelf"), cu=document.getElementById("tc-curate");
+    const atDesk=inLib&&nearLibraryDesk(), atBook=inLib&&nearLibraryBook(), atCurator=inLib&&nearLibraryCurator();
     if(sh) sh.style.display = (!inLib && nearShop())        ? "" : "none";
     if(hs) hs.style.display = (!inLib && nearHouse())       ? "" : "none";
     if(dv) dv.style.display = ( atDesk)                     ? "" : "none";
     if(bk) bk.style.display = ( atBook)                     ? "" : "none";
-    if(sf) sf.style.display = ( inLib && !atDesk && !atBook && nearLibraryShelf()) ? "" : "none";
+    if(cu) cu.style.display = ( atCurator)                  ? "" : "none";
+    if(sf) sf.style.display = ( inLib && !atDesk && !atBook && !atCurator && nearLibraryShelf()) ? "" : "none";
     const sl=document.getElementById("tc-slide");   // Slide: field only, once the motion perk is unlocked
     if(sl) sl.style.display = (!inLib && state.perks && state.perks.slide) ? "" : "none";
   }
@@ -4954,6 +5108,7 @@ if(IS_TOUCH){
   tap("tc-desk",()=>{ if(state.started && nearLibraryDesk()) openOverlay(); }); // library: desk → collection
   tap("tc-book",()=>{ if(state.started && nearLibraryBook()) openBook(); });    // library: lectern → mad-libs
   tap("tc-shelf",()=>{ if(state.started){ const s=nearLibraryShelf(); if(s) openShelfView(s); } }); // library: shelf → books
+  tap("tc-curate",()=>{ if(state.started && nearLibraryCurator()) openCuration(); });  // library: curator → subgoals
   tap("tc-dex",()=>{ if(homeReady()) openBestiary(); });
   tap("tc-stats",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.equipOpen && !state.gardenOpen) toggleStats(); });
   tap("tc-gear",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen) openEquip(); });
@@ -5287,7 +5442,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.statsOpen || state.obstacle || state.equipOpen || state.gardenOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.obstacle || state.equipOpen || state.gardenOpen); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)

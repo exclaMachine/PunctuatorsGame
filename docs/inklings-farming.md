@@ -123,6 +123,12 @@ per §6) with the **full farm-sim loop**, Stardew/Harvest Moon style: **till** a
 (tools, watering can, growth timers, seasons). The modal below is only a throwaway test rig for the crossword
 scoring; it gets replaced by the walkable zone, it does not become it.
 
+**Shared placement primitive:** "plant a seed on the tile in front of you" is the **same interaction** as
+"place a decoration on the tile you're facing" from the Wordhoard curation reward
+([`inklings-collections.md`](inklings-collections.md) §5). Build **one** generic facing-tile place/act helper
+(`tileInFront()` + a ghost-preview place/pick-up mode) and reuse it for both — don't implement planting and
+décor placement separately.
+
 ## 9. Test scaffold (built — DEBUG ONLY)
 A quick modal to validate the **Braille-cell + crossword scoring** before building the walkable zone.
 **Debug-gated** (`IS_DEV`: localhost/`file://` only; the 🌱/toolbar buttons are hidden and `openGarden` no-ops

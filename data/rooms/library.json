@@ -31,7 +31,8 @@
       { "type": "shelf", "id": "sideR2", "col": 28, "row": 18, "w": 2, "h": 2, "solid": true, "shelf": true, "side": true },
 
       { "type": "desk", "id": "desk", "col": 7,  "row": 19, "w": 4, "h": 2, "solid": true, "interact": "openCollection" },
-      { "type": "book", "id": "book", "col": 20, "row": 19, "w": 2, "h": 2, "solid": true, "interact": "openBook" }
+      { "type": "book", "id": "book", "col": 20, "row": 19, "w": 2, "h": 2, "solid": true, "interact": "openBook" },
+      { "type": "curator", "id": "curator", "col": 10, "row": 14, "w": 2, "h": 2, "solid": true, "interact": "openCuration" }
     ]
   }
 }
