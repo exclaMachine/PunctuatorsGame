@@ -5191,22 +5191,47 @@ document.getElementById("gd-close").onclick=()=>{ closeGarden(); SFX.play("click
 document.getElementById("garden").onclick=e=>{ if(e.target.id==="garden") closeGarden(); };  // tap backdrop to close
 document.getElementById("gd-harvest").onclick=harvestGarden;
 document.getElementById("gd-clear").onclick=()=>{ gardenInit(); state.garden.cells.forEach(row=>row.forEach(cell=>{ cell.letter=null; cell.dots=""; })); scheduleSave(); SFX.play("click"); renderGarden(); };
+// Close whichever primary dialog is currently open. Used when a toolbar/touch button switches dialogs
+// so a click never stacks a second modal on top of the open one.
+function closeAnyDialog(){
+  if(state.overlay) closeOverlay();
+  if(state.shop) closeShop();
+  if(state.madlibs) closeBook();
+  if(state.bestiaryOpen) closeBestiary();
+  if(state.statsOpen) closeStats();
+  if(state.apothecaryOpen) closeApothecary();
+  if(state.obstacle) closeObstacle();
+  if(state.equipOpen) closeEquip();
+  if(state.gardenOpen) closeGarden();
+  if(state.shelfview) closeShelfView();
+  if(state.curation) closeCuration();
+  if(state.help) toggleHelp();
+}
+// A toolbar/touch button opens its dialog, switching away from any dialog already open (close-then-open).
+// Clicking the button of the dialog that's already open just closes it (toggle). `key` is the state flag
+// for that dialog; `canOpen` gates contextual buttons (must be standing near the thing). This switching is
+// button-only by design — keystrokes never switch dialogs, so they can't collide with typing at the Wordsmithy.
+function tbSwitch(key, open, canOpen){
+  if(!state.started) return;
+  if(state[key]){ closeAnyDialog(); return; }   // its own button while open → close (toggle)
+  if(canOpen && !canOpen()) return;             // contextual button, but not near the thing
+  closeAnyDialog();                             // switching away from some other open dialog
+  open();
+}
 // Desktop feature toolbar (left pillar) — mirrors the keyboard shortcuts / mobile util buttons.
-// tbCanOpen() gates the panel-openers so the toolbar can't stack a second modal over an open one.
-function tbCanOpen(){ return state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation && !state.help; }
 const _wireTb=(id,fn)=>{ const el=document.getElementById(id); if(el) el.onclick=fn; };
-_wireTb("tb-home",()=>{ if(state.started) teleportHome(); });
-_wireTb("tb-words",()=>{ if(tbCanOpen()) openOverlay(); });
-_wireTb("tb-dex",()=>{ if(tbCanOpen()) openBestiary(); });
-_wireTb("tb-feats",()=>{ if(tbCanOpen()) toggleStats(); });
-_wireTb("tb-gear",()=>{ if(tbCanOpen()) openEquip(); });
-_wireTb("tb-apothecary",()=>{ if(tbCanOpen()) openApothecary(); });
-_wireTb("tb-farm",()=>{ if(tbCanOpen()) openGarden(); });
-_wireTb("tb-help",()=>{ toggleHelp(); });
-_wireTb("tb-shop",()=>{ if(tbCanOpen() && !state.room && nearShop()) openShop(); });
-_wireTb("tb-book",()=>{ if(tbCanOpen() && nearLibraryBook()) openBook(); });
-_wireTb("tb-shelf",()=>{ if(tbCanOpen()){ const s=nearLibraryShelf(); if(s) openShelfView(s); } });
-_wireTb("tb-curate",()=>{ if(tbCanOpen() && nearLibraryCurator()) openCuration(); });
+_wireTb("tb-home",()=>{ if(state.started){ closeAnyDialog(); teleportHome(); } });
+_wireTb("tb-words",()=> tbSwitch("overlay", openOverlay));
+_wireTb("tb-dex",()=> tbSwitch("bestiaryOpen", openBestiary));
+_wireTb("tb-feats",()=> tbSwitch("statsOpen", openStats));
+_wireTb("tb-gear",()=> tbSwitch("equipOpen", openEquip));
+_wireTb("tb-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
+_wireTb("tb-farm",()=> tbSwitch("gardenOpen", openGarden));
+_wireTb("tb-help",()=> tbSwitch("help", toggleHelp));
+_wireTb("tb-shop",()=> tbSwitch("shop", openShop, ()=> !state.room && nearShop()));
+_wireTb("tb-book",()=> tbSwitch("madlibs", openBook, nearLibraryBook));
+_wireTb("tb-shelf",()=> tbSwitch("shelfview", ()=>{ const s=nearLibraryShelf(); if(s) openShelfView(s); }, nearLibraryShelf));
+_wireTb("tb-curate",()=> tbSwitch("curation", openCuration, nearLibraryCurator));
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
 document.getElementById("respell-yes").onclick=confirmRespell;
@@ -5301,22 +5326,22 @@ if(IS_TOUCH){
   atk.addEventListener("pointerleave",atkUp);
   // Utility buttons mirror their keyboard shortcuts.
   const tap=(id,fn)=>document.getElementById(id).addEventListener("pointerdown",e=>{ e.preventDefault(); fn(); });
-  tap("tc-home",()=>{ if(state.started) teleportHome(); });
-  const homeReady=()=>state.started && !state.help && !state.overlay && !state.shop && !state.madlibs;
-  tap("tc-shop",()=>{ if(homeReady() && nearShop()) openShop(); });
-  tap("tc-house",()=>{ if(homeReady() && nearHouse()) enterLibrary(); });     // home: enter the library
-  tap("tc-desk",()=>{ if(state.started && nearLibraryDesk()) openOverlay(); }); // library: desk → collection
-  tap("tc-book",()=>{ if(state.started && nearLibraryBook()) openBook(); });    // library: lectern → mad-libs
-  tap("tc-shelf",()=>{ if(state.started){ const s=nearLibraryShelf(); if(s) openShelfView(s); } }); // library: shelf → books
-  tap("tc-curate",()=>{ if(state.started && nearLibraryCurator()) openCuration(); });  // library: curator → subgoals
-  tap("tc-dex",()=>{ if(homeReady()) openBestiary(); });
-  tap("tc-stats",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.equipOpen && !state.gardenOpen) toggleStats(); });
-  tap("tc-gear",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen) openEquip(); });
-  tap("tc-apothecary",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.equipOpen) openApothecary(); });
-  tap("tc-farm",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.equipOpen) openGarden(); });
+  // Touch util buttons switch dialogs the same way the desktop toolbar does (close-then-open).
+  tap("tc-home",()=>{ if(state.started){ closeAnyDialog(); teleportHome(); } });
+  tap("tc-shop",()=> tbSwitch("shop", openShop, ()=> !state.room && nearShop()));
+  tap("tc-house",()=>{ if(state.started && nearHouse()){ closeAnyDialog(); enterLibrary(); } });   // home: enter the library
+  tap("tc-desk",()=> tbSwitch("overlay", openOverlay, nearLibraryDesk));                            // library: desk → collection
+  tap("tc-book",()=> tbSwitch("madlibs", openBook, nearLibraryBook));                               // library: lectern → mad-libs
+  tap("tc-shelf",()=> tbSwitch("shelfview", ()=>{ const s=nearLibraryShelf(); if(s) openShelfView(s); }, nearLibraryShelf));  // shelf → books
+  tap("tc-curate",()=> tbSwitch("curation", openCuration, nearLibraryCurator));                     // library: curator → subgoals
+  tap("tc-dex",()=> tbSwitch("bestiaryOpen", openBestiary));
+  tap("tc-stats",()=> tbSwitch("statsOpen", openStats));
+  tap("tc-gear",()=> tbSwitch("equipOpen", openEquip));
+  tap("tc-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
+  tap("tc-farm",()=> tbSwitch("gardenOpen", openGarden));
   tap("tc-modal",()=>{ if(state.started) alaSummon(); });
   tap("tc-slide",()=>{ if(state.started) startSlide(); });
-  tap("tc-help",toggleHelp);
+  tap("tc-help",()=> tbSwitch("help", toggleHelp));
 }
 
 /* ---------- SPRITESHEET LOAD ------------------------------ */

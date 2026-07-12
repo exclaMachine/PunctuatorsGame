@@ -494,8 +494,13 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   720px stage's centring/sizing. The **left panel `#side-left`** is a clickable feature toolbar mirroring the
   keyboard shortcuts (Home/Wordsmithy/Bestiary/Feats/Equipment/Help always-on; Shop/Mad Libris/Shelf are
   **contextual**, `refreshToolbar()` toggles a `.dim` class by proximity — `nearShop`/`nearLibraryBook`/
-  `nearLibraryShelf`); handlers are guarded by `tbCanOpen()` so a click can't stack a second modal. Mobile
-  already has these as the `#tact` util buttons, so the toolbar is desktop-only; the minimap move benefits both.
+  `nearLibraryShelf`). **Dialog switching (button-only):** every panel-opener routes through `tbSwitch(key,
+  open, canOpen)`, which **closes whatever dialog is already open first, then opens the clicked one** (and a
+  click on the currently-open dialog's own button just closes it — toggle). `closeAnyDialog()` is the shared
+  close-everything helper both `tbSwitch` and the touch (`tc-*`) handlers use. This switching is **buttons
+  only** — the keyboard hotkeys are unchanged and never switch dialogs (so a letter key at the Wordsmithy
+  still types into the word instead of jumping to another panel). The mobile `#tact` util buttons (`tc-*`)
+  now share the same `tbSwitch`/`closeAnyDialog` path; the minimap move benefits both.
 - **Library layout** (`#overlay`): the panel is a fixed-size flex column so it never resizes/jumps
   as content changes. The two columns (`.cols`) are a `1fr 1fr` grid where **`.cols>div` carries
   `min-width:0`** — this is the load-bearing fix: without it a long collection entry (word +
