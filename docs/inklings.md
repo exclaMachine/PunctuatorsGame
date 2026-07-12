@@ -536,6 +536,17 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   take it off. Bonuses **stack additively** across slots. Every item has an inert **`effect` hook** so the
   future **punctuation-hero gear** (weapons + special effects) can slot in without a redesign; **tier** is an
   isolated, removable field. All gear **persists forever** (`state.equip`/`state.gear`/`state.gearSeq`).
+- **Garden — Braille crossword scaffold (`F` / 🌱, DEBUG-ONLY)** — a **debug-gated** modal (`IS_DEV`; buttons
+  hidden + `openGarden` no-ops in prod) to validate the Braille-cell + crossword loop *before* the real garden
+  (a walkable farm-sim map zone — see [`inklings-farming.md`](inklings-farming.md) §8). **Each bed IS a 2×3
+  Braille cell** (dots 1-2-3 left / 4-5-6 right) on a small field (`GARDEN_COLS`×`GARDEN_ROWS`, default 5×4).
+  Pick a crop from the 26-letter **palette**, then plant it into that letter's **dot pattern** (ghost guides
+  show where; wrong plot = red, right pattern = the bed **grows** green) — forming the pattern *is* the lesson.
+  Only **grown** beds count: **2+-bed rows/columns whose whole run is a real word** highlight (crossings gold),
+  and **Harvest** yields +1 of each grown letter **plus each word paid by its POS** (noun→ink, adjective→potion,
+  new words recorded; verbs advance Feats), **×1.5 on crossing words**. Persists
+  (`state.garden = {cols,rows,cells:[[{letter,dots}]]}`). Seed economy/growth/seasons/walkable-zone are the real
+  build (§8–9).
 - **Verb stat ladders (Feats, `C`/`✦`)** — collecting distinct verbs levels you up per WordNet verb category
   along Korok-style milestones (1, then every 5); 4 categories populated (motion/competition/perception/
   possession) giving passive boosts + abilities (Slide, Finisher, Combo, Divine, Treasure Sense, Magnet).

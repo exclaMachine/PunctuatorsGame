@@ -186,6 +186,62 @@
     .eq-wrap{flex-direction:column}
     .eq-doll{width:100%;height:280px}
   }
+  /* ---- Garden (Braille crossword-farm — DEBUG scaffold) ----
+     Each LETTER is a 2×3 Braille cell (dots 1-2-3 = left column top→bottom, 4-5-6 = right column). Pick a
+     crop-seed, then plant it into that letter's dot pattern; a bed only "grows" (counts) once the dots match.
+     Rows/columns of grown beds that spell real words score. See docs/inklings-farming.md. */
+  #garden{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);align-items:center;
+    justify-content:center;padding:18px;z-index:7}
+  #garden.open{display:flex}
+  #garden .book{position:relative;display:flex;flex-direction:column;max-width:720px;width:100%;
+    height:min(600px,92vh);overflow:hidden}
+  #garden .book>h1{flex:none}
+  .gd-wrap{display:flex;gap:16px;flex:1;min-height:0}
+  .gd-left{display:flex;flex-direction:column;gap:8px;flex:none;min-width:0}
+  .gd-field{display:grid;gap:10px;background:#6b4a2e;padding:10px;border:3px solid var(--edge);
+    box-shadow:3px 3px 0 rgba(0,0,0,.3)}                                        /* gutters separate Braille cells */
+  .gd-cell{--plot:18px;position:relative;display:grid;grid-template-columns:repeat(2,var(--plot));
+    grid-template-rows:repeat(3,var(--plot));gap:3px;padding:4px;background:#3f2f1e;border:2px solid #2a2013}
+  .gd-cell.growing{border-color:#d9a02b;box-shadow:0 0 0 1px #d9a02b}           /* planted, pattern not yet correct */
+  .gd-cell.grown{border-color:#7dc357;box-shadow:0 0 0 1px #7dc357}             /* dots match the letter — it grew */
+  .gd-cell.word{background:#33502a}                                            /* grown & part of a valid word */
+  .gd-cell.cross{background:#5c451c}                                           /* row×column crossing */
+  .gd-plot{width:var(--plot);height:var(--plot);border-radius:50%;background:#241a10;
+    display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;cursor:pointer}
+  .gd-plot:hover{outline:2px solid var(--gold);outline-offset:-2px}
+  .gd-plot.ghost{box-shadow:inset 0 0 0 2px rgba(255,255,255,.28)}             /* where the crop SHOULD go (guide) */
+  .gd-plot.on{background:#6e5836}                                              /* planted correctly */
+  .gd-plot.bad{background:#5a2020;box-shadow:inset 0 0 0 2px #d05a5a}          /* planted in the WRONG plot */
+  .gd-clabel{position:absolute;top:-7px;left:-2px;font-family:var(--disp);font-size:8px;color:#fff;
+    background:rgba(0,0,0,.6);padding:1px 3px;border-radius:2px;line-height:1}
+  .gd-cell.grown .gd-clabel{background:var(--moss)}
+  .gd-right{display:flex;flex-direction:column;flex:1;min-width:0;gap:8px}
+  .gd-palette{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;flex:none}
+  .gd-seed{font-family:var(--disp);font-size:6px;padding:4px 0;border:2px solid var(--edge);background:var(--paper-2);
+    color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1;
+    box-shadow:1px 1px 0 rgba(0,0,0,.25)}
+  .gd-seed span{font-size:15px}
+  .gd-seed.sel{background:var(--gold);color:#2a2540}
+  .gd-legend{display:flex;align-items:center;gap:8px;flex:none;font-family:var(--read);font-size:13px;
+    color:var(--ink);border:2px solid var(--line);padding:5px 8px}
+  .gd-legend .bp{flex:none;display:grid;grid-template-columns:repeat(2,7px);grid-template-rows:repeat(3,7px);gap:2px}
+  .gd-legend .bp i{width:7px;height:7px;border-radius:50%;background:rgba(0,0,0,.15)}
+  .gd-legend .bp i.on{background:var(--ink)}
+  .gd-words{flex:1;min-height:0;overflow:auto;border:2px solid var(--line);padding:6px;display:flex;
+    flex-direction:column;gap:4px}
+  .gd-word{font-family:var(--read);font-size:15px;color:var(--ink);display:flex;gap:6px;align-items:baseline}
+  .gd-word.x{color:#a06a00}
+  .gd-word b{font-family:var(--disp);font-size:9px}
+  .gd-pos{font-size:12px;color:var(--ink-soft)}
+  .gd-rw{margin-left:auto;font-size:13px;color:var(--moss);white-space:nowrap}
+  .gd-note{font-family:var(--read);font-size:14px;color:var(--ink-soft)}
+  .gd-actions{display:flex;gap:8px;flex:none}
+  .gd-mvpnote{font-family:var(--read);font-size:12px;color:var(--ink-soft);flex:none;max-width:360px}
+  @media(max-width:560px){
+    #garden .book{height:auto;max-height:92vh;overflow:auto;display:block}
+    .gd-wrap{flex-direction:column}
+    .gd-cell{--plot:15px}
+  }
   #potions{display:flex;gap:5px;margin-top:4px}
   .potion-btn{font-family:var(--disp);font-size:8px;line-height:1;padding:5px 6px;border:2px solid var(--edge);
     background:var(--paper-2);color:var(--ink);cursor:pointer;display:inline-flex;gap:4px;align-items:center;
@@ -535,6 +591,7 @@
     <button class="tb-btn" id="tb-dex"><span class="tb-ico">🐾</span><span>Bestiary</span><b>B</b></button>
     <button class="tb-btn" id="tb-feats"><span class="tb-ico">✦</span><span>Feats</span><b>C</b></button>
     <button class="tb-btn" id="tb-gear"><span class="tb-ico">🎒</span><span>Equipment</span><b>G</b></button>
+    <button class="tb-btn" id="tb-farm"><span class="tb-ico">🌱</span><span>Garden</span><b>F</b></button>
     <button class="tb-btn" id="tb-help"><span class="tb-ico">❓</span><span>Help</span><b>?</b></button>
     <div class="tb-sep">Nearby</div>
     <button class="tb-btn dim" id="tb-shop"><span class="tb-ico">🛒</span><span>Shop</span></button>
@@ -687,6 +744,30 @@
       </div>
     </div>
 
+    <!-- Garden: Braille crossword-farm (DEBUG scaffold, F / 🌱). Each letter is a 2×3 Braille cell; plant a
+         crop-seed into its dot pattern to grow it, then spell words across rows / down columns to harvest. -->
+    <div id="garden">
+      <div class="book">
+        <button class="close-x" id="gd-close" aria-label="Close" title="Close">✕</button>
+        <h1>The Garden <span class="dex-count">Braille crossword farm</span></h1>
+        <div class="gd-wrap">
+          <div class="gd-left">
+            <div class="gd-field" id="gd-field"></div>
+            <div class="gd-mvpnote">DEBUG scaffold (the real garden will be a walkable map zone). Each bed is a 2×3 <b>Braille cell</b>: pick a crop, then plant it in the glowing dots to grow that letter. Grown beds that spell a word across a row / down a column score.</div>
+          </div>
+          <div class="gd-right">
+            <div class="gd-palette" id="gd-palette"></div>
+            <div class="gd-legend" id="gd-legend"></div>
+            <div class="gd-words" id="gd-words"></div>
+            <div class="gd-actions">
+              <button class="primary" id="gd-harvest">Harvest</button>
+              <button id="gd-clear">Clear all</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Interactable obstacle (river) mad-lib: fill the blank with a collected verb -->
     <div id="obstacle">
       <div class="book" style="max-width:470px">
@@ -822,6 +903,7 @@
           <button class="tc-btn util" id="tc-dex" aria-label="Bestiary">🐾</button>
           <button class="tc-btn util" id="tc-stats" aria-label="Feats">✦</button>
           <button class="tc-btn util" id="tc-gear" aria-label="Equipment">🎒</button>
+          <button class="tc-btn util" id="tc-farm" aria-label="Garden">🌱</button>
           <button class="tc-btn util" id="tc-modal" aria-label="À La Modal hint">💬</button>
           <button class="tc-btn util" id="tc-slide" aria-label="Slide">SLIDE</button>
           <!-- SHOP / HOUSE (home) and DESK / BOOK (inside the library) are contextual: only shown when standing by that structure (see syncTouchUI) -->
@@ -1364,7 +1446,8 @@ const state = {
   gear:[],                      // owned gear instances [{uid, item}] (item = key into EQUIP_ITEMS) (persist)
   gearSeq:0,                    // running counter for unique gear instance ids (persist)
   fx:[],                        // floating texts
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, statsOpen:false, obstacle:false, equipOpen:false,
+  garden:null,                  // Braille crossword farm { cols, rows, cells:[[{letter, dots}]] } (persist)
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, statsOpen:false, obstacle:false, equipOpen:false, gardenOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -1783,6 +1866,7 @@ const MOVE_KEYS=new Set(["arrowup","arrowdown","arrowleft","arrowright"," ","w",
 // DEV-ONLY DEBUG: on localhost / file:// only (never the deployed GitHub Pages host). Press ` (backtick) to
 // grant yourself any letters for testing — added straight to the satchel, bypassing the cap.
 const IS_DEV = location.protocol==="file:" || /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(location.hostname);
+if(!IS_DEV){ ["tc-farm","tb-farm"].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display="none"; }); }   // Garden is debug-only for now
 function debugGrantLetters(){
   const s=prompt("DEBUG — grant letters (type any; e.g. 'qzx', or 'aaa' for three a's):");
   if(!s) return;
@@ -1854,6 +1938,10 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"||k==="g"){ e.preventDefault(); closeEquip(); }
     return;
   }
+  if(state.gardenOpen){   // garden open: close on Esc / Tab / F (planting is click-driven)
+    if(k==="escape"||k==="tab"||k==="f"){ e.preventDefault(); closeGarden(); }
+    return;
+  }
   if(state.shelfview){   // bookshelf view: Esc backs out of a book to the list, then closes; Tab/E close
     if(k==="escape"){ e.preventDefault(); if(svBook) renderShelfList(); else closeShelfView(); }
     else if(k==="tab"||k==="e"){ e.preventDefault(); closeShelfView(); }
@@ -1871,6 +1959,7 @@ addEventListener("keydown",e=>{
   if(k==="shift") startSlide();          // motion perk: forward lunge
   if(k==="c") toggleStats();             // Feats / character sheet
   if(k==="g") openEquip();               // Equipment (paper-doll slots + craft)
+  if(k==="f") openGarden();              // Garden (crossword farm)
   if(k==="m") alaSummon();               // À La Modal: offer a hint (or dismiss)
   if(k===" ") doAttack();
 });
@@ -2090,7 +2179,7 @@ function update(dt){
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2176,7 +2265,7 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -2225,7 +2314,7 @@ function update(dt){
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else hint.classList.remove("show");
@@ -2246,7 +2335,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.shelfview && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2271,7 +2360,7 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.shelfview;
+  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryShelf()){ hint.textContent="Press E to browse this shelf"; hint.classList.add("show"); }
@@ -4149,6 +4238,163 @@ function sanitizeEquip(){
   for(const s in state.equip){ const uid=state.equip[s]; if(uid && !state.gear.some(g=>g.uid===uid)) state.equip[s]=null; }
 }
 
+/* ================= GARDEN — Braille crossword-farm (DEBUG scaffold) =============================
+   Each LETTER is a 2×3 Braille cell of plots (dots 1-2-3 = left column top→bottom, 4-5-6 = right column). You
+   pick a crop-seed (each crop's initial IS its letter) and plant it into that letter's dot pattern — forming
+   the pattern in the right orientation IS the Braille lesson. A bed only "grows" (counts as its letter) once
+   its dots exactly match; a wrong/incomplete pattern gives instant feedback (amber bed, red mis-planted dot)
+   and simply doesn't count until fixed. Any 2+ adjacent GROWN beds across a row or down a column that spell a
+   real word score, paid through the normal word pipeline (noun→ink, adjective→potion; verbs advance Feats on
+   first collection). Beds shared by a row-word AND a column-word pay ×1.5 (the crossword magic).
+   Scaffold scope: planting is free (no seed economy), no growth/season throttle, harvest keeps the layout
+   (instantly repeatable). The real garden is a walkable map zone. See docs/inklings-farming.md. */
+const CROPS = {  // letter -> [name, emoji]  (emoji are placeholders; swap for pixel sprites later)
+  A:["Apple","🍎"], B:["Banana","🍌"], C:["Carrot","🥕"], D:["Dill","🌿"], E:["Eggplant","🍆"], F:["Fig","🫐"],
+  G:["Grapes","🍇"], H:["Honeydew","🍈"], I:["Iceberg","🥬"], J:["Jalapeño","🌶️"], K:["Kiwi","🥝"], L:["Lemon","🍋"],
+  M:["Mango","🥭"], N:["Nectarine","🍑"], O:["Orange","🍊"], P:["Pineapple","🍍"], Q:["Quince","🍐"], R:["Rainier","🍒"],
+  S:["Strawberry","🍓"], T:["Tomato","🍅"], U:["Ugli","🍊"], V:["Vidalia","🧅"], W:["Watermelon","🍉"], X:["Xigua","🍉"],
+  Y:["Yam","🍠"], Z:["Zucchini","🥒"]
+};
+// Grade-1 Braille dot patterns (dots 1-6). 1-2-3 = left column top→bottom, 4-5-6 = right column.
+const BRAILLE = { a:"1",b:"12",c:"14",d:"145",e:"15",f:"124",g:"1245",h:"125",i:"24",j:"245",k:"13",l:"123",m:"134",
+  n:"1345",o:"135",p:"1234",q:"12345",r:"1235",s:"234",t:"2345",u:"136",v:"1236",w:"2456",x:"1346",y:"13456",z:"1356" };
+// Small scaffold field; the real walkable garden targets ~12×7 cells (a 28×22 single-square map grid).
+const GARDEN_COLS = 5, GARDEN_ROWS = 4;
+// Plot render order: filling a 2-column grid row-major lands dots as 1-2-3 (left col) / 4-5-6 (right col).
+const BRAILLE_DOTS = [1,4,2,5,3,6];
+let _gdSeed = "A";                                   // currently selected crop-seed (the letter you're planting)
+// A bed = { letter, dots }: letter = the crop planted here (null = fallow), dots = the plots filled ("14", …).
+function gardenInit(){
+  const ok = state.garden && state.garden.cols===GARDEN_COLS && state.garden.rows===GARDEN_ROWS
+    && Array.isArray(state.garden.cells) && state.garden.cells.length===GARDEN_ROWS
+    && state.garden.cells.every(row=>Array.isArray(row) && row.length===GARDEN_COLS);
+  if(!ok) state.garden = { cols:GARDEN_COLS, rows:GARDEN_ROWS,
+    cells:Array.from({length:GARDEN_ROWS},()=>Array.from({length:GARDEN_COLS},()=>({letter:null, dots:""}))) };
+}
+function normDots(s){ return [...new Set((s||"").split(""))].filter(d=>"123456".includes(d)).sort().join(""); }
+function cellGrown(cell){ return !!(cell && cell.letter) && normDots(cell.dots)===BRAILLE[cell.letter.toLowerCase()]; }
+function effLetter(cell){ return cellGrown(cell) ? cell.letter : null; }   // only a correctly-grown bed reads as its letter
+function braillePreview(letter){                                           // mini 2×3 pattern for the almanac legend
+  const on=BRAILLE[(letter||"").toLowerCase()]||"";
+  return '<span class="bp">'+BRAILLE_DOTS.map(d=>'<i class="'+(on.includes(""+d)?"on":"")+'"></i>').join("")+'</span>';
+}
+function posLabel(pos){ if(pos.includes("noun"))return "noun"; if(pos.includes("verb"))return "verb";
+  if(pos.includes("adjective"))return "adj"; if(pos.includes("adverb"))return "adv"; return "word"; }
+// Find every 2+-bed row/column run of GROWN beds that spells a real word (dex or the WordNet bundle); flag crossings.
+function gardenScan(){
+  gardenInit();
+  if(!DICT) return [];
+  const R=state.garden.rows, C=state.garden.cols, words=[];
+  const L=state.garden.cells.map(row=>row.map(effLetter));   // derived letter grid (null where a bed hasn't grown)
+  const addRun=(run)=>{
+    if(run.length<2) return;   // 2-letter words count (AT, TO…) — essential for crosswords
+    const word=run.map(([r,c])=>L[r][c]).join("").toLowerCase();
+    let pos=null,def=null;
+    if(state.dex[word]&&Array.isArray(state.dex[word].pos)){ pos=state.dex[word].pos; def=state.dex[word].def; }
+    else { const q=localLookup(word); if(q.ok){ pos=q.pos||[]; def=q.def; } }
+    if(pos!==null) words.push({word, cells:run, pos, def});
+  };
+  for(let r=0;r<R;r++){ let run=[]; for(let c=0;c<C;c++){ if(L[r][c]) run.push([r,c]); else { addRun(run); run=[]; } } addRun(run); }
+  for(let c=0;c<C;c++){ let run=[]; for(let r=0;r<R;r++){ if(L[r][c]) run.push([r,c]); else { addRun(run); run=[]; } } addRun(run); }
+  const seen={};                                     // a bed in 2 words = a row×column crossing
+  for(const w of words) for(const [r,c] of w.cells) seen[r+","+c]=(seen[r+","+c]||0)+1;
+  for(const w of words) w.crossing = w.cells.some(([r,c])=>seen[r+","+c]>1);
+  return words;
+}
+function gardenWordReward(w){
+  const parts=[];
+  if(w.pos.includes("noun")) parts.push("+"+inkForWord(w.word)+" ink");
+  if(w.pos.includes("adjective")) parts.push("+potion");
+  if(w.pos.includes("verb") && !state.dex[w.word]) parts.push("+feat");
+  if(!parts.length) parts.push("letters only");
+  return parts.join(" · ");
+}
+function renderGarden(){
+  gardenInit();
+  const words=gardenScan(), wordCells=new Set(), crossCells=new Set();
+  for(const w of words) for(const [r,c] of w.cells){ wordCells.add(r+","+c); if(w.crossing) crossCells.add(r+","+c); }
+  // seed palette — pick which crop/letter you're planting
+  const pal=document.getElementById("gd-palette");
+  pal.innerHTML=Object.keys(CROPS).map(Lk=>{ const [nm,em]=CROPS[Lk];
+    return '<button class="gd-seed'+(Lk===_gdSeed?" sel":"")+'" data-l="'+Lk+'" title="'+esc(nm)+'"><span>'+em+'</span><b>'+Lk+'</b></button>'; }).join("");
+  pal.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{ _gdSeed=b.dataset.l; renderGarden(); });
+  // legend (the almanac line): what you're planting + its Braille pattern
+  const [snm,sem]=CROPS[_gdSeed];
+  document.getElementById("gd-legend").innerHTML=braillePreview(_gdSeed)+
+    '<span>Planting <b>'+_gdSeed+'</b> — '+esc(snm)+' '+sem+'. Fill the glowing dots.</span>';
+  // field of Braille cells; each bed renders its 6 plots (dots 1-6) in BRAILLE_DOTS order
+  const cells=state.garden.cells, C=state.garden.cols, field=document.getElementById("gd-field");
+  field.style.gridTemplateColumns="repeat("+C+",auto)";
+  let html="";
+  for(let r=0;r<state.garden.rows;r++) for(let c=0;c<C;c++){
+    const cell=cells[r][c], k=r+","+c, grown=cellGrown(cell);
+    const target=cell.letter?BRAILLE[cell.letter.toLowerCase()]:"";
+    const cls="gd-cell"+(cell.letter?(grown?" grown":" growing"):"")+
+      (grown&&wordCells.has(k)?" word":"")+(grown&&crossCells.has(k)?" cross":"");
+    let plots="";
+    for(const d of BRAILLE_DOTS){ const on=cell.dots.includes(""+d), inTarget=target.includes(""+d);
+      const pc="gd-plot"+(on?(inTarget?" on":" bad"):(cell.letter&&inTarget?" ghost":""));
+      plots+='<div class="'+pc+'" data-r="'+r+'" data-c="'+c+'" data-d="'+d+'">'+(on&&cell.letter?CROPS[cell.letter][1]:"")+'</div>';
+    }
+    html+='<div class="'+cls+'" data-cell="'+k+'">'+(cell.letter?'<span class="gd-clabel">'+cell.letter+'</span>':"")+plots+'</div>';
+  }
+  field.innerHTML=html;
+  field.querySelectorAll(".gd-plot").forEach(p=>p.onclick=()=>gardenPlant(+p.dataset.r,+p.dataset.c,p.dataset.d));
+  const wl=document.getElementById("gd-words");
+  if(!DICT) wl.innerHTML='<div class="gd-note">Dictionary still loading…</div>';
+  else if(!words.length) wl.innerHTML='<div class="gd-note">No words yet — grow 2+ beds in a row or column so they spell a word (the whole unbroken run must be valid).</div>';
+  else wl.innerHTML=words.map(w=>'<div class="gd-word'+(w.crossing?" x":"")+'"><b>'+esc(w.word.toUpperCase())+
+    '</b> <span class="gd-pos">'+posLabel(w.pos)+'</span> <span class="gd-rw">'+gardenWordReward(w)+(w.crossing?" ×1.5":"")+'</span></div>').join("");
+}
+// Click a plot: plant/lift the selected crop there. A bed holds one crop — clicking with a different seed replants it.
+function gardenPlant(r,c,d){
+  gardenInit();
+  const cell=state.garden.cells[r][c];
+  if(cell.letter && cell.letter!==_gdSeed){ cell.letter=_gdSeed; cell.dots=""; }   // replant this bed with the new crop
+  if(!cell.letter) cell.letter=_gdSeed;
+  cell.dots = cell.dots.includes(d) ? normDots(cell.dots.replace(d,"")) : normDots(cell.dots+d);
+  if(!cell.dots) cell.letter=null;                                                 // last dot lifted → fallow again
+  scheduleSave(); renderGarden();
+}
+function harvestGarden(){
+  gardenInit();
+  if(!DICT){ showToast("Dictionary still loading…"); return; }
+  let letters=0;
+  for(const row of state.garden.cells) for(const cell of row){
+    if(cellGrown(cell)){ const low=cell.letter.toLowerCase(); state.inv[low]=(state.inv[low]||0)+1; letters++; } }
+  const words=gardenScan();
+  if(!letters && !words.length){ showToast("Nothing grown yet — fill a bed's Braille dots to grow its letter."); return; }
+  let ink=0, potions=0, newWords=0;
+  for(const w of words){
+    if(!state.dex[w.word]){ state.dex[w.word]={ def:w.def||"A word in the dictionary.", pos:w.pos, found:Date.now() }; onNewVerbWord(w.word); newWords++; }
+    const mult=w.crossing?1.5:1;
+    if(w.pos.includes("noun")){ const got=Math.round(inkForWord(w.word)*mult); state.ink+=got; ink+=got; }
+    if(w.pos.includes("adjective")){ state.potions[POTION_TYPES[(Math.random()*POTION_TYPES.length)|0]]++; potions++; }
+  }
+  updateTrayHud(); updateRewardHud(); scheduleSave();
+  SFX.play(words.length?"newword":"capture");
+  let msg="Harvested +"+letters+" letter"+(letters===1?"":"s");
+  if(ink) msg+=", +"+ink+" ink";
+  if(potions) msg+=", +"+potions+" potion"+(potions>1?"s":"");
+  if(newWords) msg+=" — "+newWords+" new word"+(newWords>1?"s":"")+"!";
+  showToast(msg);
+  renderGarden();
+}
+function openGarden(){
+  if(state.gardenOpen) return;
+  if(typeof IS_DEV!=="undefined" && !IS_DEV) return;   // DEBUG-ONLY test scaffolding — the real garden is a walkable map zone
+  gardenInit(); state.gardenOpen=true;
+  document.getElementById("garden").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  renderGarden(); SFX.play("click");
+}
+function closeGarden(){
+  state.gardenOpen=false;
+  document.getElementById("garden").classList.remove("open");
+  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.statsOpen||state.equipOpen;
+  document.getElementById("sound-btn").style.display = hide?"none":"";
+}
+
 /* ---------- CELEBRATION QUEUE (staggered feat / letter dialogues) ---------- */
 // Milestone/letter dialogues are shown ONE AT A TIME so they never stack. commitSpell queues the Feats pop
 // first, then the new-letter modal; each dialogue's close runs the next.
@@ -4176,7 +4422,7 @@ function showFeatProgress(cat, n){
   featAnim={ cat, fromPct:Math.max(0,Math.round(((n-1)-a)/(b-a)*100)), toPct:Math.min(100,Math.round((n-a)/(b-a)*100)),
              reward: ms?verbRewardAt(cat,n):null, next:b, nextReward:REWARD_LABEL[verbRewardAt(cat, ms?nextVerbMilestone(n):b)]||"reward" };
   clearTimeout(featAutoT);
-  if(!state.statsOpen && !state.obstacle && !state.equipOpen) openStats(); else renderStats();
+  if(!state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen) openStats(); else renderStats();
   if(ms) SFX.play("unlockbig");
   requestAnimationFrame(()=>requestAnimationFrame(()=>{   // next frame: CSS-transition the bar to its new fill
     const bar=document.querySelector(".feat-cat.feat-live .feat-bar > i"); if(bar) bar.style.width=featAnim.toPct+"%";
@@ -4422,7 +4668,7 @@ function snapshot(){
            verbCounts:state.verbCounts, divineDay:state.divineDay, divine:state.divine,
            obstacleDay:state.obstacleDay, obstacleGot:state.obstacleGot, riverCrossed:state.riverCrossed,
            inkClearedDay:state.inkClearedDay, inkedDay:state.inkedDay, printsDay:state.printsDay,
-           equip:state.equip, gear:state.gear, gearSeq:state.gearSeq };
+           equip:state.equip, gear:state.gear, gearSeq:state.gearSeq, garden:state.garden };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -4456,6 +4702,7 @@ function applySnapshot(d){
   if(typeof d.gearSeq==="number") state.gearSeq=d.gearSeq;
   if(d.equip && typeof d.equip==="object") for(const s in state.equip) if(s in d.equip) state.equip[s]=d.equip[s];
   sanitizeEquip();
+  if(d.garden && Array.isArray(d.garden.cells)) state.garden=d.garden;   // Braille crossword farm (persist; gardenInit re-validates shape)
   state.player.hearts=maxHearts();
   rederiveVerbCounts();   // no-op until VERB_CATS is loaded; then reconciles counts with the collection
   // Satchel + captured creatures only carry over within the SAME calendar day. A new day = empty satchel
@@ -4588,15 +4835,20 @@ document.getElementById("bestiary").onclick=e=>{ if(e.target.id==="bestiary") cl
 document.getElementById("eq-close").onclick=()=>{ closeEquip(); SFX.play("click"); };
 document.getElementById("equipment").onclick=e=>{ if(e.target.id==="equipment") closeEquip(); };  // tap backdrop to close
 document.querySelectorAll("#equipment .eq-tab").forEach(t=>t.onclick=()=>{ _equipTab=t.dataset.tab; SFX.play("click"); renderEquip(); });
+document.getElementById("gd-close").onclick=()=>{ closeGarden(); SFX.play("click"); };
+document.getElementById("garden").onclick=e=>{ if(e.target.id==="garden") closeGarden(); };  // tap backdrop to close
+document.getElementById("gd-harvest").onclick=harvestGarden;
+document.getElementById("gd-clear").onclick=()=>{ gardenInit(); state.garden.cells.forEach(row=>row.forEach(cell=>{ cell.letter=null; cell.dots=""; })); scheduleSave(); SFX.play("click"); renderGarden(); };
 // Desktop feature toolbar (left pillar) — mirrors the keyboard shortcuts / mobile util buttons.
 // tbCanOpen() gates the panel-openers so the toolbar can't stack a second modal over an open one.
-function tbCanOpen(){ return state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.shelfview && !state.help; }
+function tbCanOpen(){ return state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.help; }
 const _wireTb=(id,fn)=>{ const el=document.getElementById(id); if(el) el.onclick=fn; };
 _wireTb("tb-home",()=>{ if(state.started) teleportHome(); });
 _wireTb("tb-words",()=>{ if(tbCanOpen()) openOverlay(); });
 _wireTb("tb-dex",()=>{ if(tbCanOpen()) openBestiary(); });
 _wireTb("tb-feats",()=>{ if(tbCanOpen()) toggleStats(); });
 _wireTb("tb-gear",()=>{ if(tbCanOpen()) openEquip(); });
+_wireTb("tb-farm",()=>{ if(tbCanOpen()) openGarden(); });
 _wireTb("tb-help",()=>{ toggleHelp(); });
 _wireTb("tb-shop",()=>{ if(tbCanOpen() && !state.room && nearShop()) openShop(); });
 _wireTb("tb-book",()=>{ if(tbCanOpen() && nearLibraryBook()) openBook(); });
@@ -4634,7 +4886,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.shelfview;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -4697,8 +4949,9 @@ if(IS_TOUCH){
   tap("tc-book",()=>{ if(state.started && nearLibraryBook()) openBook(); });    // library: lectern → mad-libs
   tap("tc-shelf",()=>{ if(state.started){ const s=nearLibraryShelf(); if(s) openShelfView(s); } }); // library: shelf → books
   tap("tc-dex",()=>{ if(homeReady()) openBestiary(); });
-  tap("tc-stats",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.equipOpen) toggleStats(); });
+  tap("tc-stats",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.equipOpen && !state.gardenOpen) toggleStats(); });
   tap("tc-gear",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen) openEquip(); });
+  tap("tc-farm",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.equipOpen) openGarden(); });
   tap("tc-modal",()=>{ if(state.started) alaSummon(); });
   tap("tc-slide",()=>{ if(state.started) startSlide(); });
   tap("tc-help",toggleHelp);
@@ -5028,7 +5281,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.statsOpen || state.obstacle || state.equipOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.statsOpen || state.obstacle || state.equipOpen || state.gardenOpen); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)

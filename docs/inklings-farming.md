@@ -4,7 +4,8 @@ Planning doc. A peaceful, **persistent** "cozy layer" (roadmap item #8: *renewab
 **alongside** — not replacing — the hunt-and-spell core. First script: **Braille**, via a farm whose beds
 echo the Braille 2×3 cell. IPA/phonetics is parked for a later pass (§5).
 
-Status: **plan / exploring** — the core loop below is agreed; some details deliberately loose.
+Status: **plan / exploring** — the core loop below is agreed; some details deliberately loose. A **testable
+Garden scaffold is built** (each letter is a 2×3 Braille cell you plant into; crossword scoring on top — see §9).
 Cross-refs: [`inklings.md`](inklings.md), [`inklings-architecture.md`](inklings-architecture.md) (the farm
 is an authored persistent area), [`inklings-grammar-systems.md`](inklings-grammar-systems.md) (teaching mission).
 
@@ -114,3 +115,44 @@ equipment items). `*` = weak/duplicate emoji, prioritize a custom sprite there.
 - The Sound Garden / IPA pass (§5).
 - Other scripts as future cozy variants (Cyrillic "heirloom varieties", Ogham plant-aesthetics, Morse rhythm) —
   from the brainstorm; not planned.
+
+## 8. Target: the real garden (walkable farm-sim)
+**The garden is NOT a dialogue — it's a walkable zone on the map** (a persistent authored area behind home,
+per §6) with the **full farm-sim loop**, Stardew/Harvest Moon style: **till** a plot → **plant** a seed →
+**water** → **wait** (growth stages/days) → **harvest** manually → **repeat**. Plus the cozy-sim depth in §7
+(tools, watering can, growth timers, seasons). The modal below is only a throwaway test rig for the crossword
+scoring; it gets replaced by the walkable zone, it does not become it.
+
+## 9. Test scaffold (built — DEBUG ONLY)
+A quick modal to validate the **Braille-cell + crossword scoring** before building the walkable zone.
+**Debug-gated** (`IS_DEV`: localhost/`file://` only; the 🌱/toolbar buttons are hidden and `openGarden` no-ops
+in prod). Open with **F**, the 🌱 touch button, or the desktop toolbar (in dev).
+
+**The core mechanic (rebuilt — each letter IS a 2×3 Braille cell):**
+- The field is a small grid of **beds** (`GARDEN_COLS`×`GARDEN_ROWS`, default **5×4**; the real walkable garden
+  targets ~**12×7** cells ≈ a 28×22 single-square map grid). **Each bed = one Braille cell = a 2×3 grid of
+  plots** (dots 1-2-3 down the left column, 4-5-6 down the right — rendered via `BRAILLE_DOTS`).
+- **Planting = forming the pattern (the lesson).** Pick a **crop-seed** from the 26-letter palette (`CROPS`);
+  a **legend** (`braillePreview`) shows that letter's Braille pattern (the almanac line). Click the bed's plots
+  to plant the crop in the dots. A bed holds **one crop**; clicking with a different seed **replants** it;
+  lifting the last dot leaves it **fallow**.
+- **Instant feedback / validation (decided):** the correct plots glow as **ghost** guides; a plot filled in the
+  **right** dot shows the crop (green bed once complete), a plot in the **wrong** dot turns **red**; a planted
+  but not-yet-correct bed is **amber** ("growing"). A bed only **grows** — i.e. counts as its letter
+  (`cellGrown`, `effLetter`) — when its dots **exactly** match the seed's pattern. No weeds, no penalty; a wrong
+  pattern just doesn't count until fixed.
+- Data: `state.garden = { cols, rows, cells:[[{letter, dots}]] }`, persisted (`snapshot`/`applySnapshot`;
+  `gardenInit` re-validates shape and discards mismatched/old saves).
+
+**Crossword scoring (kept from the prior scaffold):**
+- **Live word scan** (`gardenScan`) reads only **grown** beds: every **2+-bed** row/column run whose **whole
+  unbroken run** is a real word (via `state.dex` or `localLookup`) lights up green; **crossing** beds (in a
+  row-word *and* a column-word) turn gold. A side list previews each word, its POS, and reward. (Crossword-correct:
+  an extra adjacent letter breaks a run — "CAT"+"x" → "catx", invalid.)
+- **Harvest** (`harvestGarden`): +1 of each **grown** letter, **plus each word paid by POS** (noun → ink,
+  adjective → potion; new words recorded, `onNewVerbWord` for verbs); **crossings ×1.5**. Summary toast.
+
+**Stubbed / intentionally missing (it's a scaffold, not the game):** planting is **free** (no seed economy),
+beds grow **instantly** (no till/water/grow/season loop; harvest keeps the layout, repeatable), no walkable
+zone, and the ghost guide is always on (a later "hard mode" could hide it). Those are the real build (§8),
+tackled once the Braille + crossword rules feel right.
