@@ -15,6 +15,11 @@
 > curator (a librarian who hands out **one-time grants** for completing collection subgoals, reusing the
 > Nouns-wing `found/total`), **placeable decorations**, and the **facing-tile placement primitive shared with
 > farm planting**. Pure grant, no town, nothing gated.
+>
+> **Planning the poetry mechanic?** See [`inklings-poetry.md`](inklings-poetry.md) — the **Versery** (a second
+> mad-libs lectern that runs poem forms), the **phoneme engine** (rhyme + syllables from the bundled
+> `ipa_words.js`; meter deferred to a CMU stress fold-in), mad-libs-fill-first with free-compose later, the
+> poet-NPC cast (punny, names not final), and the **Anthology** reward. Read before building the sound layer.
 
 A word-collecting adventure game for the browser, built on HTML canvas. Inspired by the
 day-to-day rhythm of Stardew Valley, but built around a different core mechanic: instead of

@@ -12,7 +12,7 @@ you add/remove/modify a feature (treat the doc as part of the diff, not an after
 
 | Game | Entry file | Doc |
 | ---- | ---------- | --- |
-| **Inklings** — word-collecting adventure (hunt letter-creatures, spell words at a desk, fill a library) | `inklings.html` | [`docs/inklings.md`](docs/inklings.md) · [architecture/maps/portability](docs/inklings-architecture.md) · [grammar systems/edu design](docs/inklings-grammar-systems.md) · [farming/scripts](docs/inklings-farming.md) · [collections/curation/decoration](docs/inklings-collections.md) |
+| **Inklings** — word-collecting adventure (hunt letter-creatures, spell words at a desk, fill a library) | `inklings.html` | [`docs/inklings.md`](docs/inklings.md) · [architecture/maps/portability](docs/inklings-architecture.md) · [grammar systems/edu design](docs/inklings-grammar-systems.md) · [farming/scripts](docs/inklings-farming.md) · [collections/curation/decoration](docs/inklings-collections.md) · [poetry/phoneme engine](docs/inklings-poetry.md) |
 | **Kaimoju** — Rampage-style kaiju that destroys buildings by typing romaji for kana/kanji | `kaimoju.html` | [`docs/kaimoju.md`](docs/kaimoju.md) |
 | **Specimen Lab** (Exquisite Corpse) — Rummikub-style monster-parts card game on canvas | `exquisite-corpse-rummy.html` | [`docs/exquisite-corpse.md`](docs/exquisite-corpse.md) |
 | **Spin Nids** (Ambigram Word Game) — rotatable ambigram-tile word game | `SpinNidIndex.html` | [`docs/spin-nids.md`](docs/spin-nids.md) |
