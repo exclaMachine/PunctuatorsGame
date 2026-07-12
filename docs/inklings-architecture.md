@@ -97,7 +97,8 @@ a Tiled or LDtk export → this shape). Models the library-room schema.
     "entities": [                    // AUTHORED objects placed on the map
       { "type": "structure", "id": "shop",    "col": 3,  "row": 8, "w": 4, "h": 3, "interact": "openShop" },
       { "type": "door",      "id": "library", "col": 12, "row": 6, "w": 2, "h": 2, "leadsTo": "library" },
-      { "type": "obstacle",  "id": "river",   "kind": "madlib", "region": [/*rects*/], "promptId": "river" },
+      { "type": "obstacle",  "id": "river",   "kind": "madlib", "region": [/*rects*/], "promptId": "river",
+        "acceptedSolutions": { "verbs": ["swim","ford"], "adjPoles": ["dry","cold"] } },  // multi-POS: verbs ACT, adjectives CHANGE STATE — see inklings-grammar-systems.md
       { "type": "spawnZone", "region": { "col": 6, "row": 4, "w": 18, "h": 14 },
                              "spawns": ["letter","monster"], "weight": 1.0 }
     ]

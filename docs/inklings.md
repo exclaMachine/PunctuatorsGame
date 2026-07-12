@@ -3,6 +3,10 @@
 > **Planning the map/engine future?** See [`inklings-architecture.md`](inklings-architecture.md) — the
 > agreed **hybrid map** direction (authored geography + daily contents), the neutral Tiled/LDtk map schema,
 > the phased seam-refactor plan, and Godot-portability notes. Read it before reworking the map layer.
+>
+> **Planning grammar/educational systems?** See [`inklings-grammar-systems.md`](inklings-grammar-systems.md) —
+> the POS-anchored framework, the word-guide cast (Antonym, Synonomouse, À La Modal), adjective "dumbbell"
+> potions, hypernym/hyponym shelves, and the build order.
 
 A word-collecting adventure game for the browser, built on HTML canvas. Inspired by the
 day-to-day rhythm of Stardew Valley, but built around a different core mechanic: instead of
