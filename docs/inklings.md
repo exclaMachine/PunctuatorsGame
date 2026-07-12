@@ -7,6 +7,9 @@
 > **Planning grammar/educational systems?** See [`inklings-grammar-systems.md`](inklings-grammar-systems.md) —
 > the POS-anchored framework, the word-guide cast (Antonym, Synonomouse, À La Modal), adjective "dumbbell"
 > potions, hypernym/hyponym shelves, and the build order.
+>
+> **Planning the cozy farm?** See [`inklings-farming.md`](inklings-farming.md) — the Braille-bed farm,
+> shop-bought letter-seeds, alphabet crops, the crossword-garden (row/column words), and the parked IPA pass.
 
 A word-collecting adventure game for the browser, built on HTML canvas. Inspired by the
 day-to-day rhythm of Stardew Valley, but built around a different core mechanic: instead of
