@@ -57,13 +57,12 @@ pole**, not a random one. `potionForAdj(word)` reads `data/adj-attrs.json` (`wor
 `build_adj_attrs.py`); unmapped adjectives fall back to a random self-buff so none is a dud. The three
 existing potions are the **self-buff poles** (`speed`=Swift, `size`=Big, `reveal`=Bright — legacy ids kept
 for save-compat + buff logic); their **antonym poles** (`slow`/`small`/`dark`) now brew and accumulate in
-inventory (shown disabled in the HUD — not yet usable). **Next up (step 2): the Apothecary** — attribute
-racks + **flask capacity** (per-pole vials whose _size = # uses_, grown by adjective breadth; no gating —
-§3.2). The antonym poles become usable as a **drink-to-debuff-all-beasts-on-screen** effect (decided 2026-07
-— _no throw/aim_; that's a later enhancement, §3.3/§8). Deferred further: Antonym/Synonomouse guides, codex,
+inventory (shown disabled in the HUD — not yet usable). **Step 2 DONE (2026-07): the Apothecary** — an
+always-available window (`P` / ⚗️) with attribute racks + **per-pole flask capacity** (vials whose _size = #
+uses_ grow with adjective breadth; attribute noun = bonus; no gating — §3.2). **Next up (step 3):** make the
+antonym poles usable as a **drink-to-debuff-all-beasts-on-screen** effect (decided 2026-07 — _no throw/aim_;
+that's a later enhancement, §3.3/§8). Deferred further: Antonym/Synonomouse guides + codex (a 2b pass),
 throw/aim targeting, and world/obstacle potion effects.
-_(Code note: the HUD tooltip still says "throw at enemies (coming soon)" from step 1 — reword to the
-screen-wide framing when we build the debuff.)_
 
 **Original framing.** Before step 1, spelling any adjective brewed a _random_ potion from three fixed types
 (`size`/`speed`/`reveal`); the word's meaning was ignored. **Target:** the adjective's **attribute + pole**
@@ -259,11 +258,17 @@ synonym/similar-to, attribute, hypernym, hyponym, (later) derivation, modality. 
 1. ✅ **DONE** — `adj-attrs.json` + **meaning-driven potions** (replaced random-3; re-slotted size/speed/reveal
    as the self-buff poles). Antonym poles (slow/small/dark) also brew now and accumulate in inventory
    (not yet usable), since the dev's call was to keep the debuffs and defer only the _world/obstacle_ effects.
-2. **⟵ NEXT — the Apothecary:** attribute **racks + per-pole flask capacity** (a vial whose _size = # uses_,
-   grown by adjective breadth Feats-style; attribute noun = bonus size; **no gating**) — §3.2. Capacity
-   derived from the dex (no new save state); brewing fills the flask, a full flask caps extra doses. New
-   station/room or Equipment-style window. _(Antonym/Synonomouse guides + codex v1 can ride along or split
-   into 2b — decide when building.)_
+2. ✅ **DONE (2026-07) — the Apothecary:** an always-available window (`P` / ⚗️ toolbar + touch button;
+   `state.apothecaryOpen`, `openApothecary`/`renderApothecary`/`apVial`, modal `#apothecary`) with two tabs
+   (Feats-style): **Flasks** shows one **dumbbell rack per attribute** (Speed/Size/Light) with two **per-pole
+   flasks** — a vial whose _size = # uses_ that visibly **grows** with capacity; **Words** lists your collected
+   adjectives grouped by pole (clickable → def modal) so you can see which synonyms fill each side of a dumbbell. `flaskCap(pole)` = `FLASK_BASE(5) + floor(breadth/FLASK_STEP(4))
+   + (attribute noun in dex ? FLASK_NOUN_BONUS(2))`; breadth = distinct adjectives per pole, `state.adjCounts`
+   re-derived from the dex like `verbCounts` (`rederiveAdjCounts`/`onNewAdjWord`) — **no new saved state**.
+   `commitSpell` + farm-harvest now **brew up to cap** (a full flask declines the extra dose but still
+   collects the word; a brand-new synonym grows the flask first, so it can make room). Collecting an
+   attribute noun fires an "aha" toast. **No gating.** _(Antonym/Synonomouse guides + codex v1 NOT included —
+   deferred to a 2b pass.)_
 3. **Antonym debuffs — drink → affect ALL beasts on screen** + enemy **status states** (slowed/shrunk/blinded).
    Makes the already-brewing slow/small/dark potions usable. **No throw/aim** (decided 2026-07).
 4. **Throw + aim** single-target mode for antonym potions — a later enhancement on the §3 status states.

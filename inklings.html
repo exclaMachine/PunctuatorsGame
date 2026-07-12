@@ -444,6 +444,32 @@
     align-items:center;justify-content:center;padding:18px;z-index:6}
   #curation.open{display:flex}
   #curation .book{max-height:82vh;overflow:auto}
+  /* Apothecary flask rack (grammar-systems §3.2) */
+  #apothecary{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
+    align-items:center;justify-content:center;padding:18px;z-index:6}
+  #apothecary.open{display:flex}
+  #apothecary .book{max-height:86vh;overflow:auto}
+  #ap-body{margin-top:10px}
+  .ap-rack{border:2px solid var(--edge);background:var(--paper-2);padding:10px 12px;margin:10px 0}
+  .ap-attr{font-family:var(--disp);font-size:12px;color:var(--ink);display:flex;justify-content:space-between;
+    align-items:baseline;gap:10px;margin-bottom:8px;text-transform:uppercase}
+  .ap-noun{font-family:var(--read);font-size:13px;color:var(--ink-soft);text-transform:none}
+  .ap-noun.on{color:#3f7a3f}
+  .ap-vials{display:flex;align-items:flex-end;justify-content:center;gap:14px}
+  .ap-anti{align-self:center;font-size:20px;color:var(--ink-soft);padding-bottom:40px}
+  .ap-pole{width:150px;text-align:center}
+  .ap-vial{position:relative;width:46px;margin:0 auto 6px;border:2px solid var(--edge);border-radius:5px 5px 9px 9px;
+    background:#e9dfc4;overflow:hidden;box-shadow:inset 0 2px 4px rgba(0,0,0,.12)}
+  .ap-fill{position:absolute;left:0;right:0;bottom:0;transition:height .25s ease}
+  .ap-dose{position:absolute;left:0;right:0;bottom:3px;text-align:center;font-family:var(--disp);font-size:9px;
+    color:var(--ink);text-shadow:0 1px 0 rgba(255,255,255,.5)}
+  .ap-name{font-family:var(--disp);font-size:10px;margin-top:2px}
+  .ap-sub{font-size:12px;color:var(--ink-soft);margin-top:3px;line-height:1.3}
+  .ap-tag{font-size:12px;color:var(--ink);margin-top:3px;font-style:italic}
+  .ap-wgroup{margin:6px 0 8px}
+  .ap-wlabel{font-family:var(--disp);font-size:10px;margin-bottom:5px}
+  .ap-wct{color:var(--ink-soft)}
+  .ap-empty{font-size:13px;color:var(--ink-soft);font-style:italic}
   #cu-body{max-height:60vh;overflow:auto;margin-top:8px}
   .cu-note{font-size:16px;color:var(--ink-soft);margin:0 0 10px;line-height:1.35}
   .cu-row{display:block;padding:8px 11px;margin:6px 0;background:var(--paper-2);border:2px solid var(--edge)}
@@ -612,6 +638,7 @@
     <button class="tb-btn" id="tb-dex"><span class="tb-ico">🐾</span><span>Bestiary</span><b>B</b></button>
     <button class="tb-btn" id="tb-feats"><span class="tb-ico">✦</span><span>Feats</span><b>C</b></button>
     <button class="tb-btn" id="tb-gear"><span class="tb-ico">🎒</span><span>Equipment</span><b>G</b></button>
+    <button class="tb-btn" id="tb-apothecary"><span class="tb-ico">⚗️</span><span>Apothecary</span><b>P</b></button>
     <button class="tb-btn" id="tb-farm"><span class="tb-ico">🌱</span><span>Garden</span><b>F</b></button>
     <button class="tb-btn" id="tb-help"><span class="tb-ico">❓</span><span>Help</span><b>?</b></button>
     <div class="tb-sep">Nearby</div>
@@ -827,6 +854,18 @@
       </div>
     </div>
 
+    <!-- Apothecary: per-pole flask rack. Each attribute is a dumbbell (two vials + the antonymy bar); a
+         vial's SIZE = how many uses it holds, grown by the synonyms you collect (grammar-systems §3.2). -->
+    <div id="apothecary">
+      <div class="book" style="max-width:560px">
+        <button class="close-x" id="ap-close" aria-label="Close" title="Close">✕</button>
+        <h1>The Apothecary <span class="dex-count">flask rack</span></h1>
+        <div class="sub">Every adjective brews a potion on its <b>dumbbell</b>. Collect more synonyms to grow a flask (more uses); find the attribute noun for a bonus. Drink self-buffs from the HUD (<b>1</b>/<b>2</b>/<b>3</b>).</div>
+        <div id="ap-tabs" class="stats-tabs"></div>
+        <div id="ap-body"></div>
+      </div>
+    </div>
+
     <!-- Definition modal (full text of a collection entry) -->
     <div id="defmodal">
       <div class="book">
@@ -882,6 +921,7 @@
           <span><b>B</b></span><span>Open the bestiary (or tap the 🐾 button)</span>
           <span><b>C</b></span><span>Open your Feats (verb milestones — or tap ✦)</span>
           <span><b>G</b></span><span>Open your Equipment — equip &amp; craft gear (or tap 🎒)</span>
+          <span><b>P</b></span><span>Open the Apothecary — your potion flasks &amp; how they grow (or tap ⚗️)</span>
           <span><b>Shift</b></span><span>Slide — a quick forward lunge (once unlocked; tap SLIDE)</span>
           <span><b>1</b> / <b>2</b> / <b>3</b></span><span>Drink a Size / Speed / Reveal potion (or tap its HUD button)</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
@@ -891,8 +931,9 @@
           <p><b>Ink &amp; potions.</b> Spelling words pays off by part of speech:</p>
           <ul>
             <li>Spell a <b>noun</b> → earn <b>ink</b> (your currency, shown top-left). Spend it at the <b>Stall</b> on the home screen (walk up and press <b>E</b>, or tap <b>SHOP</b>) to grow your satchel.</li>
-            <li>Spell an <b>adjective</b> → brew a <b>potion that matches its meaning</b>. Each adjective sits on a “dumbbell” — an attribute (speed, size, light) with two opposite ends: a <b>self-buff</b> you drink and an <b>antonym</b> you’ll throw at enemies. So <i>swift</i>→Speed, <i>big</i>→Size, <i>bright</i>→Reveal; their opposites <i>slow</i>/<i>small</i>/<i>dark</i> brew throwable potions (throwing coming soon). Potions stack in the HUD.</li>
+            <li>Spell an <b>adjective</b> → brew a <b>potion that matches its meaning</b>. Each adjective sits on a “dumbbell” — an attribute (speed, size, light) with two opposite ends: a <b>self-buff</b> you drink and an <b>antonym</b> that (soon) debuffs every beast on screen. So <i>swift</i>→Speed, <i>big</i>→Size, <i>bright</i>→Reveal; their opposites <i>slow</i>/<i>small</i>/<i>dark</i> brew the debuff potions. Potions stack in the HUD.</li>
           </ul>
+          <p><b>Flasks (the Apothecary — <b>P</b> / ⚗️).</b> Each potion has a <b>flask</b> whose size = how many uses it holds. Collect more <b>synonyms</b> of a pole to grow its flask; spell the attribute noun (<i>speed</i>/<i>size</i>/<i>light</i>) for a bonus. A full flask can’t brew more until you drink one.</p>
           <p>Drink a self-buff potion with <b>1</b>/<b>2</b>/<b>3</b> or by tapping its HUD button — each lasts 25&nbsp;seconds:</p>
           <ul>
             <li><b>Size</b> (from <i>big</i>) — grow bigger, with longer attack reach.</li>
@@ -936,6 +977,7 @@
           <button class="tc-btn util" id="tc-dex" aria-label="Bestiary">🐾</button>
           <button class="tc-btn util" id="tc-stats" aria-label="Feats">✦</button>
           <button class="tc-btn util" id="tc-gear" aria-label="Equipment">🎒</button>
+          <button class="tc-btn util" id="tc-apothecary" aria-label="Apothecary">⚗️</button>
           <button class="tc-btn util" id="tc-farm" aria-label="Garden">🌱</button>
           <button class="tc-btn util" id="tc-modal" aria-label="À La Modal hint">💬</button>
           <button class="tc-btn util" id="tc-slide" aria-label="Slide">SLIDE</button>
@@ -1083,6 +1125,7 @@ const SPEED_MULT   = 1.7;                                  // speed potion: fast
 const POTION_SHORT = { size:"BIG",   speed:"FAST",  reveal:"MAP",    small:"TINY", slow:"SLOW",  dark:"DARK" };
 const POTION_LABEL = { size:"Size",  speed:"Speed", reveal:"Reveal", small:"Shrink", slow:"Slow", dark:"Dark" };
 const POTION_COLOR = { size:"#7a4a9a", speed:"#3b6ea5", reveal:"#c89b3c", small:"#8a5db0", slow:"#4f7fb5", dark:"#6b5a2a" };
+const POTION_HINT  = { size:"reach + attack", speed:"move fast", reveal:"reveal the map", small:"shrink all beasts", slow:"slow all beasts", dark:"blind all beasts" };
 function inkForWord(w){ return w.length; }                 // currency per noun (longer = more)
 // Shop: repeatable "+1 satchel" upgrade whose cost climbs each purchase (Korok-seed style).
 const BAG_BASE_CAP=10, BAG_COST_BASE=10, BAG_COST_STEP=5;
@@ -1283,13 +1326,48 @@ fetch("data/verb-cats.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>
 // Meaning-driven brewing: spelling an adjective brews ITS pole's potion. Unmapped adjectives (or before
 // this loads) fall back to a random self-buff via potionForAdj() so no adjective is ever a dud.
 let ADJ_ATTRS=null;             // word -> potionId ("speed"/"slow"/"size"/"small"/"reveal"/"dark")
-fetch("data/adj-attrs.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{ ADJ_ATTRS=data; })
+fetch("data/adj-attrs.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{ ADJ_ATTRS=data; rederiveAdjCounts(); })
   .catch(()=>{ console.warn("Inklings: couldn't load data/adj-attrs.json — adjective potions fall back to random."); });
-// Which potion an adjective brews. Prefers the dumbbell map; falls back to a random self-buff.
+// Which potion an adjective brews. Prefers the dumbbell map; unmapped adjectives fall back to a self-buff
+// chosen by a STABLE hash of the word (so a word always brews the same potion — needed for the flask-full
+// pre-check to agree with what commitSpell actually brews, and nicer than a random each spell).
 function potionForAdj(word){
   const p = ADJ_ATTRS && ADJ_ATTRS[word];
   if(p && POTION_LABEL[p]) return p;
-  return POTION_TYPES[(Math.random()*POTION_TYPES.length)|0];
+  let h=0; for(let i=0;i<word.length;i++) h=(h*31+word.charCodeAt(i))|0;
+  return POTION_TYPES[Math.abs(h)%POTION_TYPES.length];
+}
+
+/* ---- APOTHECARY: per-pole flask capacity (grammar-systems §3.2) --------------------------------
+   A "flask" is one vial per potion pole whose SIZE = how many doses (uses) you can carry. Capacity is
+   fully DERIVED from the collection (no new saved state — only current doses persist in state.potions):
+     cap = FLASK_BASE + floor(distinct adjectives on that pole / FLASK_STEP) + (attribute noun in dex ? bonus)
+   Breadth (distinct synonyms) grows the flask Feats-style; the attribute noun gives a bonus to BOTH poles of
+   its dumbbell. Brewing fills up to cap; a full flask blocks extra DOSES (never blocks collection). */
+const FLASK_BASE=5, FLASK_STEP=4, FLASK_NOUN_BONUS=2;
+const ATTR_NOUN_OF={ speed:"speed", slow:"speed", size:"size", small:"size", reveal:"light", dark:"light" };
+// Dumbbell racks the Apothecary shows: one per attribute (two poles + the shared flask-noun).
+const APOTHECARY_RACKS=[
+  { attr:"Speed", noun:"speed", self:"speed",  anti:"slow"  },
+  { attr:"Size",  noun:"size",  self:"size",   anti:"small" },
+  { attr:"Light", noun:"light", self:"reveal", anti:"dark"  },
+];
+function attrNounHeld(pole){ const n=ATTR_NOUN_OF[pole]; return !!(n && state.dex && state.dex[n]); }
+function flaskCap(pole){
+  const breadth = (state.adjCounts && state.adjCounts[pole]) || 0;
+  return FLASK_BASE + Math.floor(breadth/FLASK_STEP) + (attrNounHeld(pole)?FLASK_NOUN_BONUS:0);
+}
+// Distinct adjectives collected per pole (session-derived from the dex, like verbCounts — never saved).
+function rederiveAdjCounts(){
+  const counts={ size:0, speed:0, reveal:0, small:0, slow:0, dark:0 };
+  if(ADJ_ATTRS) for(const w in state.dex){ const p=ADJ_ATTRS[w]; if(p && counts[p]!=null) counts[p]++; }
+  state.adjCounts=counts;
+}
+// A brand-new distinct word was just collected — if it's a mapped adjective, grow its pole's breadth count
+// (so a fresh synonym can enlarge that flask before we try to add its dose in commitSpell).
+function onNewAdjWord(word){
+  if(!ADJ_ATTRS || !state.adjCounts) return;
+  const p=ADJ_ATTRS[word]; if(p && state.adjCounts[p]!=null) state.adjCounts[p]++;
 }
 
 // ---- TUNABLE CONSTANTS (grouped for playtest balancing) ----
@@ -1481,7 +1559,8 @@ const state = {
   day:"", daySeed:0,            // current calendar day + its map seed
   ink:0,                        // currency earned by spelling nouns (persists across days)
   wotdDay:"",                   // the day-string on which the Word of the Day bonus was last claimed
-  potions:{ size:0, speed:0, reveal:0, small:0, slow:0, dark:0 },   // brewed-but-undrunk potions (persist): self-buffs + antonym throwables
+  potions:{ size:0, speed:0, reveal:0, small:0, slow:0, dark:0 },   // brewed-but-undrunk potion doses (persist): self-buffs + antonym poles
+  adjCounts:{ size:0, speed:0, reveal:0, small:0, slow:0, dark:0 }, // distinct adjectives per pole → flask capacity (session; re-derived from dex)
   buffs:{ size:0, speed:0, reveal:0 },      // seconds remaining on active self-buffs (session only)
   restored:{},                  // mad-libs progress: levelId -> {fills:{blankId:word}, done, exact, bookId} (persist)
   books:[],                     // ids of books fully restored (added to your library) (persist)
@@ -1500,7 +1579,7 @@ const state = {
   gearSeq:0,                    // running counter for unique gear instance ids (persist)
   fx:[],                        // floating texts
   garden:null,                  // Braille crossword farm { cols, rows, cells:[[{letter, dots}]] } (persist)
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, obstacle:false, equipOpen:false, gardenOpen:false,
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -1952,6 +2031,10 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"||k==="c"){ e.preventDefault(); toggleStats(); }
     return;
   }
+  if(state.apothecaryOpen){   // Apothecary (flask rack): close on Esc / Tab / P
+    if(k==="escape"||k==="tab"||k==="p"){ e.preventDefault(); toggleApothecary(); }
+    return;
+  }
   if(state.obstacle){   // river mad-lib: close on Esc / Tab (picks are click-driven)
     if(k==="escape"||k==="tab"){ e.preventDefault(); closeObstacle(); }
     return;
@@ -2016,6 +2099,7 @@ addEventListener("keydown",e=>{
   if(k==="tab"){ e.preventDefault(); openOverlay(); }
   if(k==="shift") startSlide();          // motion perk: forward lunge
   if(k==="c") toggleStats();             // Feats / character sheet
+  if(k==="p") toggleApothecary();        // Apothecary (flask rack)
   if(k==="g") openEquip();               // Equipment (paper-doll slots + craft)
   if(k==="f") openGarden();              // Garden (crossword farm)
   if(k==="m") alaSummon();               // À La Modal: offer a hint (or dismiss)
@@ -2239,7 +2323,7 @@ function update(dt){
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2325,7 +2409,7 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -2374,7 +2458,7 @@ function update(dt){
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else hint.classList.remove("show");
@@ -2395,7 +2479,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2420,7 +2504,7 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation;
+  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryCurator()){ hint.textContent="Press E to speak with the curator"; hint.classList.add("show"); }
@@ -3584,13 +3668,13 @@ function updateRewardHud(){
   const drink=POTION_TYPES.map(t=>{
     const n=state.potions[t], active=state.buffs[t]>0, dis=(n<=0||active)?" disabled":"";
     return `<button class="potion-btn${active?" active":""}" data-p="${t}"${dis} style="border-color:${POTION_COLOR[t]}" `+
-           `title="${POTION_LABEL[t]} potion${active?" (active)":""}">${POTION_SHORT[t]}<b>${n}</b></button>`;
+           `title="${POTION_LABEL[t]} potion — ${n}/${flaskCap(t)} uses${active?" (active)":""}">${POTION_SHORT[t]}<b>${n}</b></button>`;
   });
-  // Antonym-pole potions are thrown at enemies (Step 2). Until throwing lands they accumulate here,
-  // shown only when you own some, disabled with a "coming soon" hint (dashed border marks "not yet usable").
+  // Antonym-pole potions debuff all beasts on screen when drunk (coming soon). Until then they accumulate
+  // here, shown only when you own some, disabled with a hint (dashed border marks "not yet usable").
   const throwables=POTION_THROW.filter(t=>state.potions[t]>0).map(t=>
     `<button class="potion-btn throw" disabled style="border-color:${POTION_COLOR[t]}" `+
-    `title="${POTION_LABEL[t]} — throw at enemies (coming soon)">${POTION_SHORT[t]}<b>${state.potions[t]}</b></button>`);
+    `title="${POTION_LABEL[t]} — drink to debuff all beasts (coming soon)">${POTION_SHORT[t]}<b>${state.potions[t]}</b></button>`);
   el.innerHTML=drink.concat(throwables).join("");
   el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>drinkPotion(b.dataset.p));
 }
@@ -3918,9 +4002,16 @@ async function checkWord(){
   }
 
   const isNoun=pos.includes("noun"), isAdj=pos.includes("adjective");
-  // A known word with no reward at all (not noun/adjective, not the unclaimed WOTD) → letters returned.
-  if(known && !isNoun && !isAdj && !wotdUnclaimed){
-    res.innerHTML=`<div class="msg-known">You’ve already collected “${esc(word.toUpperCase())}” (no re-spell reward). Letters returned.</div>`;
+  // For a KNOWN adjective, its flask may be full — re-spelling can't add a dose (breadth won't grow), so it'd
+  // pay nothing. (A NEW adjective still grows the flask + collection, so this only gates known re-spells.)
+  const brewPole = isAdj ? potionForAdj(word) : null;
+  const adjFull = known && isAdj && state.potions[brewPole] >= flaskCap(brewPole);
+  const adjPays = isAdj && !adjFull;   // the adjective would actually brew a dose
+  // A known word with no payable reward (not a noun, adj-flask full or not-adj, not the unclaimed WOTD) → letters returned.
+  if(known && !isNoun && !adjPays && !wotdUnclaimed){
+    res.innerHTML = (isAdj && adjFull)
+      ? `<div class="msg-known">“${esc(word.toUpperCase())}” — your ${esc(POTION_LABEL[brewPole])} flask is full. Drink one first. Letters returned.</div>`
+      : `<div class="msg-known">You’ve already collected “${esc(word.toUpperCase())}” (no re-spell reward). Letters returned.</div>`;
     bench=[]; renderBench(); SFX.play("known"); return;
   }
 
@@ -3929,7 +4020,7 @@ async function checkWord(){
   if(known){
     const parts=[];
     if(isNoun) parts.push("+"+inkForWord(word)+" ink");
-    if(isAdj) parts.push("a potion");
+    if(adjPays) parts.push("a potion");
     if(wotdUnclaimed) parts.push("the ★ Word of the Day bonus");
     askRespell(word, parts.join(" and "), ()=>commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, true));
     return;
@@ -3942,9 +4033,8 @@ async function checkWord(){
 function commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, known){
   pendingRespell=null;
   bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); });
-  let earnedInk=0, brewed=null, wotdBonus=0;
+  let earnedInk=0, brewed=null, wotdBonus=0, brewFull=null;
   if(isNoun){ earnedInk=inkForWord(word); state.ink+=earnedInk; }
-  if(isAdj){ brewed=potionForAdj(word); state.potions[brewed]++; }   // meaning-driven: the adjective's dumbbell pole
   if(wotdUnclaimed){ wotdBonus=WOTD_BONUS; state.ink+=wotdBonus; state.wotdDay=state.day; }
 
   // First-time collection: record it, jump the tab, check letter/weapon unlocks.
@@ -3954,14 +4044,25 @@ function commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, known){
     state.dex[word]={ def:def||"A word in the dictionary.", found:Date.now(), pos };
     if(LIBRARY) LIBRARY.bg=null;   // a new word may add a spine to the Nouns wing → rebake on next draw
     onNewVerbWord(word);           // if it's a verb, advance its category ladder (may fire a milestone)
+    onNewAdjWord(word);            // if it's a mapped adjective, grow its pole's flask breadth BEFORE we brew
     newly=[...unlockedLetters()].filter(l=>!before.has(l));
     dexTab=(word[0]||"?").toUpperCase();
     renderDex();
   }
 
+  // Brew AFTER recording, so a brand-new synonym enlarges its own flask first (can make room when full).
+  if(isAdj){
+    const pole=potionForAdj(word);
+    if(state.potions[pole] < flaskCap(pole)){ state.potions[pole]++; brewed=pole; }
+    else brewFull=pole;   // flask full → the extra dose is declined (the word is still collected)
+  }
+  // The attribute-noun "aha": collecting speed/size/light grows BOTH poles of that dumbbell (flaskCap bonus).
+  if(!known && isNoun && (word==="speed"||word==="size"||word==="light"))
+    showToast("Found the "+word.toUpperCase()+" flask — its potions now hold more!");
+
   bench=[];
   updateTrayHud(); updateRewardHud(); updateWotd(); renderBench();
-  showSpellResult(word, known, earnedInk, brewed, wotdBonus);
+  showSpellResult(word, known, earnedInk, brewed, wotdBonus, brewFull);
   SFX.play(known ? "known" : "newword");
   if(wotdBonus){ showToast("★ Word of the Day! +"+wotdBonus+" bonus ink."); SFX.play("unlock"); }
   // Celebrations are shown ONE AT A TIME (staggered): Feats first, then the new-letter modal.
@@ -3994,11 +4095,12 @@ function showUnlockModal(letters){
 function closeUnlockModal(){ document.getElementById("unlockmodal").classList.remove("open"); nextCelebration(); }
 // Result shown in the bench area: the word + what it earned (ink for nouns, a potion for adjectives,
 // plus the Word-of-the-Day bonus if this was it).
-function showSpellResult(word, known, ink, brewed, wotdBonus){
+function showSpellResult(word, known, ink, brewed, wotdBonus, brewFull){
   const res=document.getElementById("result");
   const rewards=[];
   if(ink>0)      rewards.push(`<span style="color:var(--gold)">+${ink} ink</span>`);
-  if(brewed)     rewards.push(`<span style="color:${POTION_COLOR[brewed]}">+1 ${POTION_LABEL[brewed]} potion${POTION_THROW.includes(brewed)?" (throwable)":""}</span>`);
+  if(brewed)     rewards.push(`<span style="color:${POTION_COLOR[brewed]}">+1 ${POTION_LABEL[brewed]} potion${POTION_THROW.includes(brewed)?" (debuff)":""}</span>`);
+  if(brewFull)   rewards.push(`<span style="color:var(--ink-soft)">${POTION_LABEL[brewFull]} flask full — drink one to brew more</span>`);
   if(wotdBonus)  rewards.push(`<span style="color:var(--gold)">★ Word of the Day +${wotdBonus} ink</span>`);
   const note = rewards.length
     ? `<div class="note">${rewards.join(" &nbsp;·&nbsp; ")}</div>`
@@ -4344,7 +4446,7 @@ function openEquip(){
 function closeEquip(){
   state.equipOpen=false;
   document.getElementById("equipment").classList.remove("open");
-  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen;
+  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.apothecaryOpen;
   document.getElementById("sound-btn").style.display = hide?"none":"";
 }
 // Shared static player portrait (idle-down frame) zoomed to fill a box — crops the frame's transparent
@@ -4548,10 +4650,10 @@ function harvestGarden(){
   if(!letters && !words.length){ showToast("Nothing grown yet — fill a bed's Braille dots to grow its letter."); return; }
   let ink=0, potions=0, newWords=0;
   for(const w of words){
-    if(!state.dex[w.word]){ state.dex[w.word]={ def:w.def||"A word in the dictionary.", pos:w.pos, found:Date.now() }; onNewVerbWord(w.word); newWords++; }
+    if(!state.dex[w.word]){ state.dex[w.word]={ def:w.def||"A word in the dictionary.", pos:w.pos, found:Date.now() }; onNewVerbWord(w.word); onNewAdjWord(w.word); newWords++; }
     const mult=w.crossing?1.5:1;
     if(w.pos.includes("noun")){ const got=Math.round(inkForWord(w.word)*mult); state.ink+=got; ink+=got; }
-    if(w.pos.includes("adjective")){ state.potions[potionForAdj(w.word)]++; potions++; }   // meaning-driven brew
+    if(w.pos.includes("adjective")){ const p=potionForAdj(w.word); if(state.potions[p]<flaskCap(p)){ state.potions[p]++; potions++; } }   // meaning-driven brew, capped by flask
   }
   updateTrayHud(); updateRewardHud(); scheduleSave();
   SFX.play(words.length?"newword":"capture");
@@ -4573,7 +4675,7 @@ function openGarden(){
 function closeGarden(){
   state.gardenOpen=false;
   document.getElementById("garden").classList.remove("open");
-  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen;
+  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.apothecaryOpen;
   document.getElementById("sound-btn").style.display = hide?"none":"";
 }
 
@@ -4586,13 +4688,80 @@ function nextCelebration(){ const fn=celebrations.shift(); if(fn) fn(); }
 
 /* ---------- FEATS PANEL (verb-category ladders) ---------- */
 let featAnim=null, featAutoT=null;   // featAnim={cat,fromPct,toPct,reward|null,next,nextReward}; timer auto-closes plain steps
-function statsHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation; }
+function statsHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.apothecaryOpen; }
 function openStats(){ state.statsOpen=true; document.getElementById("stats").classList.add("open");
   document.getElementById("sound-btn").style.display="none"; renderStats(); }
 function closeStats(){ clearTimeout(featAutoT); featAnim=null; state.statsOpen=false;
   document.getElementById("stats").classList.remove("open");
   document.getElementById("sound-btn").style.display = statsHideSound()?"none":""; }
 function toggleStats(){ if(state.statsOpen){ closeStats(); nextCelebration(); } else openStats(); SFX.play("click"); }
+
+/* ---------- APOTHECARY (flask rack — grammar-systems §3.2) ---------- */
+// An always-available status window (P / ⚗️) showing each attribute's dumbbell: two per-pole flasks whose
+// SIZE grows with the synonyms you collect. Read-only view over state.potions × state.adjCounts × the dex.
+function apothHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen; }
+function openApothecary(){ if(state.apothecaryOpen) return; state.apothecaryOpen=true;
+  document.getElementById("apothecary").classList.add("open");
+  document.getElementById("sound-btn").style.display="none"; renderApothecary(); }
+function closeApothecary(){ state.apothecaryOpen=false;
+  document.getElementById("apothecary").classList.remove("open");
+  document.getElementById("sound-btn").style.display = apothHideSound()?"none":""; }
+function toggleApothecary(){ if(state.apothecaryOpen) closeApothecary(); else openApothecary(); SFX.play("click"); }
+let apTab="flasks";   // Apothecary panel tab: "flasks" (the racks) | "words" (collected adjectives per pole)
+function renderApothecary(){
+  const tabs=document.getElementById("ap-tabs");
+  if(tabs){
+    tabs.innerHTML=[["flasks","Flasks"],["words","Words"]].map(([t,l])=>`<button class="stab${apTab===t?" on":""}" data-tab="${t}">${l}</button>`).join("");
+    tabs.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ apTab=b.dataset.tab; renderApothecary(); SFX.play("click"); });
+  }
+  const body=document.getElementById("ap-body"); if(!body) return;
+  if(!ADJ_ATTRS){ body.innerHTML='<div class="sub">Loading adjective data…</div>'; return; }
+  if(apTab==="words"){ renderApothecaryWords(body); return; }
+  body.innerHTML=APOTHECARY_RACKS.map(rack=>{
+    const held=!!(state.dex && state.dex[rack.noun]);
+    const noun=held ? `<span class="ap-noun on">✓ ${esc(rack.noun)} flask +${FLASK_NOUN_BONUS}</span>`
+                    : `<span class="ap-noun">spell “${esc(rack.noun)}” → +${FLASK_NOUN_BONUS} uses</span>`;
+    return `<div class="ap-rack"><div class="ap-attr">${esc(rack.attr)} ${noun}</div>`
+         + `<div class="ap-vials">${apVial(rack.self)}<div class="ap-anti" title="antonyms">⟷</div>${apVial(rack.anti)}</div></div>`;
+  }).join("");
+}
+// Your collected adjectives, grouped by pole (so you can see which synonyms fill each side of a dumbbell).
+function adjWordsByPole(){
+  const map={ size:[], speed:[], reveal:[], small:[], slow:[], dark:[] };
+  if(ADJ_ATTRS) for(const w in state.dex){ const p=ADJ_ATTRS[w]; if(p && map[p]) map[p].push(w); }
+  for(const k in map) map[k].sort();
+  return map;
+}
+function renderApothecaryWords(body){
+  const byPole=adjWordsByPole();
+  body.innerHTML=APOTHECARY_RACKS.map(rack=>{
+    const poles=[rack.self, rack.anti].map(pole=>{
+      const ws=byPole[pole];
+      const chips = ws.length
+        ? `<div class="nb-chips">`+ws.map(w=>`<span class="nb-chip found" data-w="${esc(w)}">${esc(w)}</span>`).join("")+`</div>`
+        : `<div class="ap-empty">— none collected yet</div>`;
+      return `<div class="ap-wgroup"><div class="ap-wlabel" style="color:${POTION_COLOR[pole]}">${esc(POTION_LABEL[pole])} <span class="ap-wct">(${ws.length})</span></div>${chips}</div>`;
+    }).join("");
+    return `<div class="ap-rack"><div class="ap-attr">${esc(rack.attr)}</div>${poles}</div>`;
+  }).join("");
+  body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>openDefModal(el.dataset.w));
+}
+function apVial(pole){
+  const doses=state.potions[pole]||0, cap=flaskCap(pole), breadth=(state.adjCounts&&state.adjCounts[pole])||0;
+  const vh=Math.min(118, 46+cap*7);                            // the vial itself GROWS with capacity (a bigger flask)
+  const fill=cap>0 ? Math.min(1, doses/cap) : 0;
+  const nextAt=(Math.floor(breadth/FLASK_STEP)+1)*FLASK_STEP;  // synonyms needed for the next +1 use
+  const throwP=POTION_THROW.includes(pole);
+  return `<div class="ap-pole">
+    <div class="ap-vial" style="height:${vh}px" title="${doses} of ${cap} uses">
+      <div class="ap-fill" style="height:${Math.round(fill*100)}%;background:${POTION_COLOR[pole]}"></div>
+      <span class="ap-dose">${doses}/${cap}</span>
+    </div>
+    <div class="ap-name" style="color:${POTION_COLOR[pole]}">${esc(POTION_LABEL[pole])}</div>
+    <div class="ap-sub">${breadth} synonym${breadth===1?"":"s"} · next +1 at ${nextAt}</div>
+    <div class="ap-tag">${esc(POTION_HINT[pole])}${throwP?" — soon":""}</div>
+  </div>`;
+}
 // Every applicable verb pops the Feats panel and animates that category's bar to its new progress. A milestone
 // fills to 100%, hands out the reward, and STAYS (dismiss to continue); a plain step auto-dismisses.
 function showFeatProgress(cat, n){
@@ -4604,7 +4773,7 @@ function showFeatProgress(cat, n){
   featAnim={ cat, fromPct:Math.max(0,Math.round(((n-1)-a)/(b-a)*100)), toPct:Math.min(100,Math.round((n-a)/(b-a)*100)),
              reward: ms?verbRewardAt(cat,n):null, next:b, nextReward:REWARD_LABEL[verbRewardAt(cat, ms?nextVerbMilestone(n):b)]||"reward" };
   clearTimeout(featAutoT);
-  if(!state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen) openStats(); else renderStats();
+  if(!state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen) openStats(); else renderStats();
   if(ms) SFX.play("unlockbig");
   requestAnimationFrame(()=>requestAnimationFrame(()=>{   // next frame: CSS-transition the bar to its new fill
     const bar=document.querySelector(".feat-cat.feat-live .feat-bar > i"); if(bar) bar.style.width=featAnim.toPct+"%";
@@ -4676,7 +4845,7 @@ function openObstacle(o){
 function closeObstacle(){
   state.obstacle=false; curObstacle=null; curInk=false;
   document.getElementById("obstacle").classList.remove("open");
-  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen;
+  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.apothecaryOpen;
   document.getElementById("sound-btn").style.display = hide?"none":"";
 }
 function renderObstaclePrompt(o, verb){
@@ -4887,6 +5056,7 @@ function applySnapshot(d){
   if(d.garden && Array.isArray(d.garden.cells)) state.garden=d.garden;   // Braille crossword farm (persist; gardenInit re-validates shape)
   state.player.hearts=maxHearts();
   rederiveVerbCounts();   // no-op until VERB_CATS is loaded; then reconciles counts with the collection
+  rederiveAdjCounts();    // per-pole flask capacity, re-derived from the collection (no-op until ADJ_ATTRS loads)
   // Satchel + captured creatures only carry over within the SAME calendar day. A new day = empty satchel
   // and a fresh map (captures forgotten); state.day was already set to today before this runs.
   if(d.day===state.day){
@@ -5023,13 +5193,14 @@ document.getElementById("gd-harvest").onclick=harvestGarden;
 document.getElementById("gd-clear").onclick=()=>{ gardenInit(); state.garden.cells.forEach(row=>row.forEach(cell=>{ cell.letter=null; cell.dots=""; })); scheduleSave(); SFX.play("click"); renderGarden(); };
 // Desktop feature toolbar (left pillar) — mirrors the keyboard shortcuts / mobile util buttons.
 // tbCanOpen() gates the panel-openers so the toolbar can't stack a second modal over an open one.
-function tbCanOpen(){ return state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation && !state.help; }
+function tbCanOpen(){ return state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation && !state.help; }
 const _wireTb=(id,fn)=>{ const el=document.getElementById(id); if(el) el.onclick=fn; };
 _wireTb("tb-home",()=>{ if(state.started) teleportHome(); });
 _wireTb("tb-words",()=>{ if(tbCanOpen()) openOverlay(); });
 _wireTb("tb-dex",()=>{ if(tbCanOpen()) openBestiary(); });
 _wireTb("tb-feats",()=>{ if(tbCanOpen()) toggleStats(); });
 _wireTb("tb-gear",()=>{ if(tbCanOpen()) openEquip(); });
+_wireTb("tb-apothecary",()=>{ if(tbCanOpen()) openApothecary(); });
 _wireTb("tb-farm",()=>{ if(tbCanOpen()) openGarden(); });
 _wireTb("tb-help",()=>{ toggleHelp(); });
 _wireTb("tb-shop",()=>{ if(tbCanOpen() && !state.room && nearShop()) openShop(); });
@@ -5050,6 +5221,8 @@ document.getElementById("shelfview").onclick=e=>{ if(e.target.id==="shelfview") 
 document.getElementById("cu-close").onclick=()=>{ closeCuration(); SFX.play("click"); };
 document.getElementById("cu-back").onclick=()=>{ if(cuBook) renderCurationCat(cuCat); else renderCuration(); SFX.play("click"); };
 document.getElementById("curation").onclick=e=>{ if(e.target.id==="curation") closeCuration(); };  // tap backdrop to close
+document.getElementById("ap-close").onclick=()=>{ closeApothecary(); SFX.play("click"); };
+document.getElementById("apothecary").onclick=e=>{ if(e.target.id==="apothecary") closeApothecary(); };  // tap backdrop to close
 document.getElementById("export-btn").onclick=()=>{ exportBackup(); SFX.play("click"); };
 // The label opens the OS picker natively; we just handle the chosen file.
 document.getElementById("import-file").onchange=e=>{
@@ -5072,7 +5245,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -5139,6 +5312,7 @@ if(IS_TOUCH){
   tap("tc-dex",()=>{ if(homeReady()) openBestiary(); });
   tap("tc-stats",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.equipOpen && !state.gardenOpen) toggleStats(); });
   tap("tc-gear",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen) openEquip(); });
+  tap("tc-apothecary",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.equipOpen) openApothecary(); });
   tap("tc-farm",()=>{ if(state.started && !state.overlay && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.equipOpen) openGarden(); });
   tap("tc-modal",()=>{ if(state.started) alaSummon(); });
   tap("tc-slide",()=>{ if(state.started) startSlide(); });
@@ -5469,7 +5643,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.obstacle || state.equipOpen || state.gardenOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)

@@ -322,12 +322,19 @@ it does **not** fade like a toast. `maybeNotifyCleared()`only plays the one-time
 ink, potions:{size,speed,reveal,small,slow,dark}, buffs:{size,speed,reveal}, resources:{item:count},
 bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary` (creature kill/seen log)
   persist forever like `dex`/`ink`. `ink` (noun currency) + `potions`
-  (brewed-but-undrunk counts — six poles: three drinkable self-buffs + three antonym debuff potions) persist
+  (brewed-but-undrunk **doses** — six poles: three drinkable self-buffs + three antonym debuff potions) persist
   across days; `buffs` (seconds remaining on a drunk **self-buff** — only the three self-buff poles are
-  timed) are session-only. `updateRewardHud()` renders the `#ink-count` + the `#potions` buttons (self-buffs
-  clickable/disabled when you have none or the buff is active; antonym debuff potions shown disabled until the
-  Apothecary makes them usable — planned as a **drink → debuff all beasts on screen** effect, no throw/aim);
-  `drinkPotion(t)` spends a self-buff potion and starts a
+  timed) are session-only. **Flask capacity** (grammar-systems §3.2) caps how many doses each pole holds:
+  `flaskCap(pole)` = `FLASK_BASE + floor(breadth/FLASK_STEP) + (attribute noun in dex ? FLASK_NOUN_BONUS)`,
+  where breadth = `state.adjCounts[pole]` (distinct adjectives per pole, session-derived from the dex via
+  `rederiveAdjCounts`/`onNewAdjWord`, **not saved** — like `verbCounts`). Brewing (`commitSpell` + farm
+  harvest) fills up to cap; a full flask declines the extra dose but still collects the word. The **Apothecary**
+  window (`P` / ⚗️, `openApothecary`/`renderApothecary`, modal `#apothecary`, `state.apothecaryOpen`) has a
+  **Flasks** tab (a dumbbell rack per attribute with a growing vial per pole) and a **Words** tab
+  (`renderApothecaryWords`/`adjWordsByPole` — collected adjectives grouped by pole, clickable → def modal). `updateRewardHud()` renders the `#ink-count` + the
+  `#potions` buttons (self-buffs clickable/disabled when you have none or the buff is active, titled `n/cap`;
+  antonym debuff potions shown disabled until step 3 makes them usable — a **drink → debuff all beasts on
+  screen** effect, no throw/aim). `drinkPotion(t)` spends a self-buff potion and starts a
   `POTION_DUR` buff; `drawBuffs()` paints the active-buff timer bars top-centre on the canvas.
   `bagCap` is the **satchel capacity** (max letters carried; starts at 10, designed to be raised later
   by items). `satchelCount()` sums `state.inv`; `satchelFull()` gates capture in `doAttack` (a full
