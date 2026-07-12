@@ -52,9 +52,18 @@ codex; a **single-at-a-time queue** (reuse the existing Feats/letter celebration
 
 ## 3. Adjective potions — the WordNet "dumbbell"
 
-**Today:** spelling any adjective brews a *random* potion from three fixed types (`size`/`speed`/`reveal`);
-the word's meaning is ignored (`isAdj` branch in the spell handler; `POTION_TYPES`). **Target:** the
-adjective's **attribute + pole** decides the potion — meaning-driven, and teachable.
+**Status — build step 1 DONE (2026-07):** spelling an adjective now brews the potion for its **dumbbell
+pole**, not a random one. `potionForAdj(word)` reads `data/adj-attrs.json` (`word → potionId`, built by
+`build_adj_attrs.py`); unmapped adjectives fall back to a random self-buff so none is a dud. The three
+existing potions are the **self-buff poles** (`speed`=Swift, `size`=Big, `reveal`=Bright — legacy ids kept
+for save-compat + buff logic); their **antonym poles** (`slow`/`small`/`dark`) now brew as **throwables**
+that accumulate in inventory (shown disabled in the HUD — the throw/aim action + enemy status states are
+**step 2**, per the dev's "keep the debuffs, defer only the world/obstacle effects" call). Deferred to step 2+:
+Apothecary rack UI, flask gating, Antonym/Synonomouse guides, codex, and world/obstacle potion effects.
+
+**Original framing.** Before step 1, spelling any adjective brewed a *random* potion from three fixed types
+(`size`/`speed`/`reveal`); the word's meaning was ignored. **Target:** the adjective's **attribute + pole**
+decides the potion — meaning-driven, and teachable.
 
 ### 3.1 The dumbbell (recap)
 Descriptive adjectives cluster around an **attribute** (a noun). Two **antonym head** synsets = the poles
@@ -162,9 +171,15 @@ synonym/similar-to, attribute, hypernym, hyponym, (later) derivation, modality. 
 
 ## 6. Data pipeline (new WordNet-derived files, via `build_dictionary.py`)
 
-- **`data/adj-attrs.json`** — adjective → { attribute-noun, antonym, similar-to[] }. Powers the dumbbell.
-  Curate the attribute→friendly-noun mapping. **Fallback:** non-gradable/pertainym adjectives (wooden,
-  musical) with no attribute/antonym → a bucket that feeds **crafting**, not potions (see §7.6).
+- **`data/adj-attrs.json`** — **built (step 1)** by `build_adj_attrs.py` from the bundled (previously dormant)
+  `data/wordnet-relations.json` + `data/dictionary.json` — no NLTK needed. **Shipped schema is the compact
+  runtime form `word → potionId`** (a plain map lookup like `verb-cats.json`), *not* the fuller
+  `{ attribute-noun, antonym, similar-to[] }` originally sketched here — the richer dumbbell metadata is
+  deferred to when the Apothecary UI (§8.2) needs it. Classification = curated per-pole **seeds** + **one hop**
+  of WordNet `sim`, kept precise by an **on-attribute filter** (a candidate is accepted only if it has no
+  `attr` or its `attr` intersects the pole's attribute nouns — this kills sense-drift like bright→happy).
+  ~360 adjectives mapped; the rest hit the random-self-buff fallback. **Later:** non-gradable/pertainym
+  adjectives (wooden, musical) → a **crafting** bucket, not potions (see §7.6) — not built yet.
 - **`data/noun-books.json`** — regenerated as **hypernym → capped hyponym set** (see §4), replacing the
   current category buckets.
 - Follows the existing generator pattern (`build_dictionary.py`, `build_levels.py`); add a small script if
@@ -193,9 +208,12 @@ synonym/similar-to, attribute, hypernym, hyponym, (later) derivation, modality. 
 
 ## 8. Build order (each a shippable milestone)
 
-1. `adj-attrs.json` + **meaning-driven self-buff potions** (replace random-3; re-slot size/speed/reveal).
+1. ✅ **DONE** — `adj-attrs.json` + **meaning-driven potions** (replaced random-3; re-slotted size/speed/reveal
+   as the self-buff poles). Antonym poles (slow/small/dark) also brew now — as **throwables** that accumulate
+   in inventory, since the dev's call was to keep the debuffs and defer only the *world/obstacle* effects.
 2. **Flask gating** + **Apothecary UI** + **Antonym & Synonomouse** on discovery + **codex** v1.
-3. **Antonym-throw** debuffs (combat + status states).
+3. **Antonym-throw** debuffs — the **throw/aim action + enemy status states** (slowed/shrunk/blinded) that
+   make the already-brewing slow/small/dark potions usable. *(This is the immediate next step.)*
 4. **World/state** potion effects → authored-obstacle `acceptedSolutions`.
 5. **Hypernym→hyponym shelves** (regenerated noun-books).
 6. **Adverb amplifiers.**

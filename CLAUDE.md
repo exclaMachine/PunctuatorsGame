@@ -32,7 +32,8 @@ before changing it.
   no frameworks, no bundler. Don't add dependencies unless a feature truly requires it (say so and why).
   Intentional exceptions are documented per-game (e.g. Inklings fetches a bundled local WordNet dictionary
   (`data/dictionary.json` + `data/inflections.json`), the Nouns-wing shelf index (`data/noun-books.json`),
-  the verb-category map for stat ladders (`data/verb-cats.json`), room layouts (`data/rooms/*.json`), and
+  the verb-category map for stat ladders (`data/verb-cats.json`), the adjective→potion dumbbell map
+  (`data/adj-attrs.json`, built by `build_adj_attrs.py`), room layouts (`data/rooms/*.json`), and
   `2of12.txt` — all local project files, no runtime third-party API).
 - **Ask clarifying questions before non-trivial work.** For any meaningful change, surface the genuine
   design forks and get answers before writing code. Prefer a recommendation over an exhaustive survey.

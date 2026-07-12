@@ -23,7 +23,8 @@
       "Bash(python3 build_dictionary.py)",
       "Bash(perl -0pi -e 's/!state\\\\.statsOpen\\(?! && !state\\\\.obstacle\\)/!state.statsOpen && !state.obstacle/g' inklings.html)",
       "Bash(perl -0pi -e 's/\\\\|\\\\| state\\\\.statsOpen\\\\\\)/|| state.statsOpen || state.obstacle\\)/g' inklings.html)",
-      "Bash(perl -0pi -e 's/&& !state\\\\.equipOpen\\(?!\\\\w\\)/&& !state.equipOpen && !state.gardenOpen/g' inklings.html)"
+      "Bash(perl -0pi -e 's/&& !state\\\\.equipOpen\\(?!\\\\w\\)/&& !state.equipOpen && !state.gardenOpen/g' inklings.html)",
+      "Bash(python3 *)"
     ]
   }
 }

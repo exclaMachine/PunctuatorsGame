@@ -250,6 +250,9 @@
   .potion-btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:0 0 0 rgba(0,0,0,0)}
   .potion-btn:disabled{opacity:.4;cursor:default;box-shadow:none}
   .potion-btn.active{background:var(--gold);color:#fff}
+  /* Antonym-pole potions: thrown at enemies (Step 2). Dashed border + a bit more legible than plain disabled. */
+  .potion-btn.throw{border-style:dashed}
+  .potion-btn.throw:disabled{opacity:.6}
   .potion-btn b{font-family:var(--read);font-size:11px}
   /* Satchel letters: a fixed-width grid of uniform cells so letters sit in stable columns and wrap to the
      next row as they fill — the panel width never changes, so nothing (incl. the 🔊 button) gets shifted. */
@@ -888,13 +891,13 @@
           <p><b>Ink &amp; potions.</b> Spelling words pays off by part of speech:</p>
           <ul>
             <li>Spell a <b>noun</b> → earn <b>ink</b> (your currency, shown top-left). Spend it at the <b>Stall</b> on the home screen (walk up and press <b>E</b>, or tap <b>SHOP</b>) to grow your satchel.</li>
-            <li>Spell an <b>adjective</b> → brew a random <b>potion</b>. These stack up in the HUD.</li>
+            <li>Spell an <b>adjective</b> → brew a <b>potion that matches its meaning</b>. Each adjective sits on a “dumbbell” — an attribute (speed, size, light) with two opposite ends: a <b>self-buff</b> you drink and an <b>antonym</b> you’ll throw at enemies. So <i>swift</i>→Speed, <i>big</i>→Size, <i>bright</i>→Reveal; their opposites <i>slow</i>/<i>small</i>/<i>dark</i> brew throwable potions (throwing coming soon). Potions stack in the HUD.</li>
           </ul>
-          <p>Drink a potion with <b>1</b>/<b>2</b>/<b>3</b> or by tapping its HUD button — each lasts 25&nbsp;seconds:</p>
+          <p>Drink a self-buff potion with <b>1</b>/<b>2</b>/<b>3</b> or by tapping its HUD button — each lasts 25&nbsp;seconds:</p>
           <ul>
-            <li><b>Size</b> — grow bigger, with longer attack reach.</li>
-            <li><b>Speed</b> — move faster.</li>
-            <li><b>Reveal</b> — the minimap shows the whole map and which screens still have letters.</li>
+            <li><b>Size</b> (from <i>big</i>) — grow bigger, with longer attack reach.</li>
+            <li><b>Speed</b> (from <i>swift</i>) — move faster.</li>
+            <li><b>Reveal</b> (from <i>bright</i>) — the minimap shows the whole map and which screens still have letters.</li>
           </ul>
           <p>Rewards repeat: re-spelling a word spends its letters again and pays again.</p>
           <p><b>Word of the Day.</b> Each day the Wordsmithy shows a bonus word — always built from letters you've unlocked, so you can always collect what you need. Spell it once for a big ink bonus.</p>
@@ -1066,15 +1069,20 @@ const CUBE_SPEED = 42;         // slow (the player moves at 180)
 const CUBE_SIZE = 34;
 
 // --- Word effects (roadmap step 7, scoped to nouns + adjectives) ---------------
-// Nouns earn "ink" (currency). Adjectives brew a random potion. Both rewards repeat every time you
-// spell a qualifying word (re-spelling consumes its letters again). Part of speech comes from the API.
-const POTION_TYPES = ["size","speed","reveal"];
+// Nouns earn "ink" (currency). Adjectives brew a potion whose type is decided by the word's MEANING —
+// each adjective sits on a WordNet "dumbbell": an attribute (speed/size/light) with two poles. The
+// self-buff pole you DRINK (speed/size/reveal — legacy ids), the antonym pole you THROW at enemies
+// (slow/small/dark — accumulate now, throwing lands in Step 2). data/adj-attrs.json maps word -> potionId.
+// Rewards repeat every time you spell a qualifying word (re-spelling consumes its letters again).
+const POTION_TYPES = ["size","speed","reveal"];            // self-buff poles — drinkable, timed
+const POTION_THROW = ["small","slow","dark"];              // antonym poles — thrown at enemies (Step 2); stored now
+const POTION_ALL   = [...POTION_TYPES, ...POTION_THROW];
 const POTION_DUR   = 25;                                   // seconds an effect lasts once drunk
 const SIZE_MULT    = 1.5;                                  // size potion: bigger sprite + reach
 const SPEED_MULT   = 1.7;                                  // speed potion: faster movement
-const POTION_SHORT = { size:"BIG",   speed:"FAST",  reveal:"MAP"    };
-const POTION_LABEL = { size:"Size",  speed:"Speed", reveal:"Reveal" };
-const POTION_COLOR = { size:"#7a4a9a", speed:"#3b6ea5", reveal:"#c89b3c" };
+const POTION_SHORT = { size:"BIG",   speed:"FAST",  reveal:"MAP",    small:"TINY", slow:"SLOW",  dark:"DARK" };
+const POTION_LABEL = { size:"Size",  speed:"Speed", reveal:"Reveal", small:"Shrink", slow:"Slow", dark:"Dark" };
+const POTION_COLOR = { size:"#7a4a9a", speed:"#3b6ea5", reveal:"#c89b3c", small:"#8a5db0", slow:"#4f7fb5", dark:"#6b5a2a" };
 function inkForWord(w){ return w.length; }                 // currency per noun (longer = more)
 // Shop: repeatable "+1 satchel" upgrade whose cost climbs each purchase (Korok-seed style).
 const BAG_BASE_CAP=10, BAG_COST_BASE=10, BAG_COST_STEP=5;
@@ -1271,6 +1279,19 @@ fetch("data/verb-cats.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>
   VERB_CATS=data; rederiveVerbCounts();   // recompute counts from the existing collection (retroactive)
 }).catch(()=>{ console.warn("Inklings: couldn't load data/verb-cats.json — verb stat ladders disabled."); });
 
+// Adjective -> potion id (data/adj-attrs.json, built offline by build_adj_attrs.py from WordNet dumbbells).
+// Meaning-driven brewing: spelling an adjective brews ITS pole's potion. Unmapped adjectives (or before
+// this loads) fall back to a random self-buff via potionForAdj() so no adjective is ever a dud.
+let ADJ_ATTRS=null;             // word -> potionId ("speed"/"slow"/"size"/"small"/"reveal"/"dark")
+fetch("data/adj-attrs.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{ ADJ_ATTRS=data; })
+  .catch(()=>{ console.warn("Inklings: couldn't load data/adj-attrs.json — adjective potions fall back to random."); });
+// Which potion an adjective brews. Prefers the dumbbell map; falls back to a random self-buff.
+function potionForAdj(word){
+  const p = ADJ_ATTRS && ADJ_ATTRS[word];
+  if(p && POTION_LABEL[p]) return p;
+  return POTION_TYPES[(Math.random()*POTION_TYPES.length)|0];
+}
+
 // ---- TUNABLE CONSTANTS (grouped for playtest balancing) ----
 const VERB_MS_STEP     = 5;      // milestones fire at word count 1, then every +5 (5,10,15,…)
 const SPEED_STEP       = 12;     // +px/s base move speed per motion "speed" rung (base 180 — a fraction)
@@ -1460,8 +1481,8 @@ const state = {
   day:"", daySeed:0,            // current calendar day + its map seed
   ink:0,                        // currency earned by spelling nouns (persists across days)
   wotdDay:"",                   // the day-string on which the Word of the Day bonus was last claimed
-  potions:{ size:0, speed:0, reveal:0 },   // brewed-but-undrunk potions (persist)
-  buffs:{ size:0, speed:0, reveal:0 },      // seconds remaining on active effects (session only)
+  potions:{ size:0, speed:0, reveal:0, small:0, slow:0, dark:0 },   // brewed-but-undrunk potions (persist): self-buffs + antonym throwables
+  buffs:{ size:0, speed:0, reveal:0 },      // seconds remaining on active self-buffs (session only)
   restored:{},                  // mad-libs progress: levelId -> {fills:{blankId:word}, done, exact, bookId} (persist)
   books:[],                     // ids of books fully restored (added to your library) (persist)
   fables:1,                     // how many Aesop chapters are RECOVERED (unlocked), in book order — chapter 1 is free (persist)
@@ -3560,11 +3581,17 @@ function updateTrayHud(){
 function updateRewardHud(){
   const ic=document.getElementById("ink-count"); if(ic) ic.textContent=state.ink;
   const el=document.getElementById("potions"); if(!el) return;
-  el.innerHTML=POTION_TYPES.map(t=>{
+  const drink=POTION_TYPES.map(t=>{
     const n=state.potions[t], active=state.buffs[t]>0, dis=(n<=0||active)?" disabled":"";
     return `<button class="potion-btn${active?" active":""}" data-p="${t}"${dis} style="border-color:${POTION_COLOR[t]}" `+
            `title="${POTION_LABEL[t]} potion${active?" (active)":""}">${POTION_SHORT[t]}<b>${n}</b></button>`;
-  }).join("");
+  });
+  // Antonym-pole potions are thrown at enemies (Step 2). Until throwing lands they accumulate here,
+  // shown only when you own some, disabled with a "coming soon" hint (dashed border marks "not yet usable").
+  const throwables=POTION_THROW.filter(t=>state.potions[t]>0).map(t=>
+    `<button class="potion-btn throw" disabled style="border-color:${POTION_COLOR[t]}" `+
+    `title="${POTION_LABEL[t]} — throw at enemies (coming soon)">${POTION_SHORT[t]}<b>${state.potions[t]}</b></button>`);
+  el.innerHTML=drink.concat(throwables).join("");
   el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>drinkPotion(b.dataset.p));
 }
 // Shop panel inside the desk overlay: shows your ink and the next satchel upgrade (cost + Buy button).
@@ -3917,7 +3944,7 @@ function commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, known){
   bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); });
   let earnedInk=0, brewed=null, wotdBonus=0;
   if(isNoun){ earnedInk=inkForWord(word); state.ink+=earnedInk; }
-  if(isAdj){ brewed=POTION_TYPES[(Math.random()*POTION_TYPES.length)|0]; state.potions[brewed]++; }
+  if(isAdj){ brewed=potionForAdj(word); state.potions[brewed]++; }   // meaning-driven: the adjective's dumbbell pole
   if(wotdUnclaimed){ wotdBonus=WOTD_BONUS; state.ink+=wotdBonus; state.wotdDay=state.day; }
 
   // First-time collection: record it, jump the tab, check letter/weapon unlocks.
@@ -3971,7 +3998,7 @@ function showSpellResult(word, known, ink, brewed, wotdBonus){
   const res=document.getElementById("result");
   const rewards=[];
   if(ink>0)      rewards.push(`<span style="color:var(--gold)">+${ink} ink</span>`);
-  if(brewed)     rewards.push(`<span style="color:${POTION_COLOR[brewed]}">+1 ${POTION_LABEL[brewed]} potion</span>`);
+  if(brewed)     rewards.push(`<span style="color:${POTION_COLOR[brewed]}">+1 ${POTION_LABEL[brewed]} potion${POTION_THROW.includes(brewed)?" (throwable)":""}</span>`);
   if(wotdBonus)  rewards.push(`<span style="color:var(--gold)">★ Word of the Day +${wotdBonus} ink</span>`);
   const note = rewards.length
     ? `<div class="note">${rewards.join(" &nbsp;·&nbsp; ")}</div>`
@@ -4524,7 +4551,7 @@ function harvestGarden(){
     if(!state.dex[w.word]){ state.dex[w.word]={ def:w.def||"A word in the dictionary.", pos:w.pos, found:Date.now() }; onNewVerbWord(w.word); newWords++; }
     const mult=w.crossing?1.5:1;
     if(w.pos.includes("noun")){ const got=Math.round(inkForWord(w.word)*mult); state.ink+=got; ink+=got; }
-    if(w.pos.includes("adjective")){ state.potions[POTION_TYPES[(Math.random()*POTION_TYPES.length)|0]]++; potions++; }
+    if(w.pos.includes("adjective")){ state.potions[potionForAdj(w.word)]++; potions++; }   // meaning-driven brew
   }
   updateTrayHud(); updateRewardHud(); scheduleSave();
   SFX.play(words.length?"newword":"capture");
@@ -4831,7 +4858,7 @@ function applySnapshot(d){
   if(typeof d.bagCap==="number") state.bagCap=d.bagCap;
   // Ink + potions persist across days (earned progress, like the collection).
   if(typeof d.ink==="number") state.ink=d.ink;
-  if(d.potions) for(const t of POTION_TYPES) if(typeof d.potions[t]==="number") state.potions[t]=d.potions[t];
+  if(d.potions) for(const t of POTION_ALL) if(typeof d.potions[t]==="number") state.potions[t]=d.potions[t];
   // wotdDay is a date-string; if it still equals today the bonus stays claimed, otherwise it re-arms.
   if(typeof d.wotdDay==="string") state.wotdDay=d.wotdDay;
   // Mad-libs chapter progress + restored-book list persist forever (earned progress).
