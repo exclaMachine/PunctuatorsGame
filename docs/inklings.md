@@ -507,7 +507,8 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   real **YES/NO/×** buttons wired to callbacks) pops in when she has something to say; a **small in-world follow
   sprite** (bob + independent hand wiggle) trails the player **only after you say YES** (opt-in via
   `ALaModal.following`) — **NO** sends her off, **×** just closes. Press **M** / tap 💬 to bring her up (YES to
-  follow / hint), and a greeting-offer pops in on start. She talks in **modal verbs** (can/could/should/might).
+  follow / hint); her greeting-offer is **not** shown on open (it was intrusive) — it plays the **first** time
+  you summon her each session (`_alaGreeted`). She talks in **modal verbs** (can/could/should/might).
   The ice-cream scoop has a **scalloped
   ruffle collar** flaring out where it's set on the box (drawn in `alaScoop`), and the **large speaking sprite is
   pixelated** (rendered through a downscaled offscreen buffer, then blitted back up with smoothing off) to match
@@ -714,8 +715,8 @@ home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B
   (Press Start 2P with a black outline + red drop-shadow, gentle bob), tagline, a static player-sprite
   portrait (`#title-hero` canvas via `drawTitleHero`), faint drifting letters (`#title-fx`, `initTitleFx`),
   and a blinking **PRESS START**. `startGame()` (idempotent) begins on the button, **any key** (top of the
-  keydown handler), or a **pointerdown** anywhere on the card; it hides the card, sets `state.started`, and
-  fires the À La Modal greeting.
+  keydown handler), or a **pointerdown** anywhere on the card; it hides the card and sets `state.started`
+  (the À La Modal greeting no longer fires here — it waits for your first summon).
 - Controls shrink under `@media(max-width:560px)`. The canvas is a fixed 720×528 internal resolution.
   Base `#stage` is `width:720px;max-width:100%`. Desktop scaling (fill the viewport, keep 720:528) lives
   in a **`@media (hover:hover) and (pointer:fine)`** block so it only affects mouse/desktop — touch
@@ -871,7 +872,8 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   (context-aware) so they draw into the buffer, and hit rects stay in screen space. Buttons are
   **canvas-drawn + hit-tested**: a `cv` `pointerdown` maps CSS→720×528 px and calls `ALaModal.hit` → `onYes`/
   `onNo`/dismiss (×). `ALaModal.speak(text,{onYes,onNo})` / `dismiss()`. `alaSummon` (key **M** /
-  `tc-modal` 💬) shows a placeholder hint from `ALA_HINTS` (modal-verb voice); a greeting fires on start.
+  `tc-modal` 💬): the **first** summon each session plays her greeting/intro (`_alaGreeted`); after that it
+  shows a placeholder hint from `ALA_HINTS` (modal-verb voice). No greeting fires on open anymore.
 - **Interactable obstacles** (`/* INTERACTABLE OBSTACLES */`) — data-driven **`OBSTACLES`** array (`{id, screen:[sx,sy],
   bands:[rect,…] (an L: mid-left arm + down arm), letter:{x,y}, title, prompt, accept:[verbs], success,
   jokes:{verb|@category:line}}`). `obstacleFor(sc)` matches by `sc.sx/sc.sy` (stored on each screen);

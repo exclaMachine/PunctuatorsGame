@@ -2718,7 +2718,7 @@ const ALA_HINTS = [
   "Might I suggest a longer word? It would earn more ink.",
   "You should watch the creatures — some of them bite back."
 ];
-let _alaHintIdx=0;
+let _alaHintIdx=0, _alaGreeted=false;   // _alaGreeted: her intro plays once, on the first summon this session
 // YES = "tag along" (small follow sprite appears); NO = "give me space" (she stops following). × just closes.
 function alaFollowOpts(){ return {
   onYes:()=>{ ALaModal.following=true;  showToast("À La Modal: “Wonderful — I'll stay close. Press M for a hint.”"); },
@@ -2726,6 +2726,12 @@ function alaFollowOpts(){ return {
 }; }
 function alaSummon(){                        // key M / touch button: bring up the big sprite (YES to follow)
   if(ALaModal.mode==="speak"){ ALaModal.dismiss(); return; }
+  // First summon: her greeting/intro (explains the hints + the follow offer) instead of auto-showing on open.
+  if(!_alaGreeted){
+    _alaGreeted=true;
+    ALaModal.speak("Oh — hello! I'm À La Modal. I could tag along and offer the odd hint… would you like that? (Press M any time to summon me, YES to keep me near.)", alaFollowOpts());
+    return;
+  }
   const line = ALaModal.following
     ? ALA_HINTS[_alaHintIdx++ % ALA_HINTS.length]
     : "You might like a little company. Should I tag along and offer the odd nudge?";
@@ -4786,8 +4792,8 @@ function startGame(){
   if(state.started) return;
   SFX.resume(); SFX.play("click"); state.started=true;
   document.getElementById("startcard").style.display="none";
-  // À La Modal greets you and offers to tag along; YES makes the small follow sprite appear, NO sends her off.
-  setTimeout(()=>{ if(state.started) ALaModal.speak("Oh — hello! I'm À La Modal. I could tag along and offer the odd hint… would you like that? (Press M to summon me, YES to keep me near.)", alaFollowOpts()); }, 1400);
+  // À La Modal no longer greets on open (it was intrusive) — her intro shows the first time you summon her
+  // with M / the 💬 button (see alaSummon).
 }
 document.getElementById("start-btn").onclick=e=>{ e.stopPropagation(); startGame(); };
 document.getElementById("startcard").addEventListener("pointerdown", startGame);
