@@ -186,9 +186,10 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
   spell and pays out by POS — nouns add `ink`, adjectives brew a **meaning-driven potion** (both if the word
   is both). The adjective's potion is its WordNet **dumbbell pole**: `potionForAdj(word)` looks it up in
   `data/adj-attrs.json` (`word → potionId`), falling back to a random self-buff for unmapped adjectives.
-  Self-buff poles `speed`/`size`/`reveal` are drinkable; antonym poles `slow`/`small`/`dark` accumulate as
-  **throwables** (thrown at enemies — Step 2; stored + shown disabled in the HUD for now). See
-  [grammar-systems §3/§8](inklings-grammar-systems.md).
+  Self-buff poles `speed`/`size`/`reveal` are drinkable; antonym poles `slow`/`small`/`dark` accumulate in
+  inventory (stored + shown disabled in the HUD for now). Planned: drinking an antonym potion **debuffs all
+  beasts on the current screen** (screen-wide, no throw/aim — the Apothecary step). See
+  [grammar-systems §3.2/§3.3/§8](inklings-grammar-systems.md).
   New words record to the dex (`{def, found, pos}`) and run letter unlocks; a known word caches its `pos`
   (now WordNet-sourced, via the resolved lemma) so re-spells skip the lookup. A known word that's neither
   noun nor adjective short-circuits with letters returned. Defs are HTML-escaped via `esc()`.
@@ -321,11 +322,12 @@ it does **not** fade like a toast. `maybeNotifyCleared()`only plays the one-time
 ink, potions:{size,speed,reveal,small,slow,dark}, buffs:{size,speed,reveal}, resources:{item:count},
 bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary` (creature kill/seen log)
   persist forever like `dex`/`ink`. `ink` (noun currency) + `potions`
-  (brewed-but-undrunk counts — six poles: three drinkable self-buffs + three throwable antonyms) persist
-  across days; `buffs` (seconds remaining on a drunk **self-buff** — only the three drinkable poles are
+  (brewed-but-undrunk counts — six poles: three drinkable self-buffs + three antonym debuff potions) persist
+  across days; `buffs` (seconds remaining on a drunk **self-buff** — only the three self-buff poles are
   timed) are session-only. `updateRewardHud()` renders the `#ink-count` + the `#potions` buttons (self-buffs
-  clickable/disabled when you have none or the buff is active; antonym throwables shown disabled until
-  throwing lands); `drinkPotion(t)` spends a self-buff potion and starts a
+  clickable/disabled when you have none or the buff is active; antonym debuff potions shown disabled until the
+  Apothecary makes them usable — planned as a **drink → debuff all beasts on screen** effect, no throw/aim);
+  `drinkPotion(t)` spends a self-buff potion and starts a
   `POTION_DUR` buff; `drawBuffs()` paints the active-buff timer bars top-centre on the canvas.
   `bagCap` is the **satchel capacity** (max letters carried; starts at 10, designed to be raised later
   by items). `satchelCount()` sums `state.inv`; `satchelFull()` gates capture in `doAttack` (a full

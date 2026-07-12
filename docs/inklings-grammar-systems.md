@@ -2,7 +2,7 @@
 
 Planning doc. The game's long-term identity: a Stardew/Minecraft-breadth adventure whose systems **teach
 real grammar/lexical concepts by embodying them** (not by lecturing). Every part of speech owns a mechanic
-*and* a word-guide character. Anchoring features to a part of speech / WordNet relation is how the game can
+_and_ a word-guide character. Anchoring features to a part of speech / WordNet relation is how the game can
 grow "a lot of features" without becoming an incoherent bag of systems.
 
 Status: **plan only — not implemented.** Reflects decisions from the 2026-07 planning session.
@@ -13,7 +13,7 @@ Cross-refs: [`inklings.md`](inklings.md) (current systems), [`inklings-architect
 
 ## 0. Design philosophy
 
-- **Teach through mechanics (emergent), with an optional codex.** You learn *antonymy* by brewing opposing
+- **Teach through mechanics (emergent), with an optional codex.** You learn _antonymy_ by brewing opposing
   potions, not by reading a definition. Short explanatory blurbs live in an **opt-in grammar codex**,
   delivered by the guide characters on **discovery** moments. No forced lessons/quizzes.
 - **One relation per system.** Each mechanic embodies exactly one lexical idea, so the concept is legible.
@@ -24,14 +24,14 @@ Cross-refs: [`inklings.md`](inklings.md) (current systems), [`inklings-architect
 
 ## 1. The POS-anchored framework
 
-| POS | System(s) | Teaches | Guide |
-| --- | --- | --- | --- |
-| **Noun** | ink (economy) · **hypernym shelves** (taxonomy) · **attribute-flasks** (unlock potions) · **proper-noun atlases** (geography, §4b) | IS-A hierarchy; proper vs common | *(taxonomy guide — deferred)* |
-| **Verb** | Feats ladders + abilities (existing) · "**action**" obstacle solutions | verb categories | *(future)* |
-| **Adjective** | **potions** — the WordNet "dumbbell" (self-buff / antonym-throw / world) · "**state**" obstacle solutions | antonymy, similar-to, attribute | **Antonym 🐜** + **Synonomouse 🐭** |
-| **Adverb** | potion **amplifiers** (adjective→adverb derivation) — later | derivation | *(future)* |
-| **Modal verb** | hints / possibility (existing À La Modal) | modality | **À La Modal** |
-| **Function words** | scraps / combine mechanic — later | syntax | *(future)* |
+| POS                | System(s)                                                                                                                                                 | Teaches                          | Guide                               |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ----------------------------------- |
+| **Noun**           | ink (economy) · **hypernym shelves** (taxonomy) · **attribute-flasks** (grow potion carry — bonus, not a gate) · **proper-noun atlases** (geography, §4b) | IS-A hierarchy; proper vs common | _(taxonomy guide — deferred)_       |
+| **Verb**           | Feats ladders + abilities (existing) · "**action**" obstacle solutions                                                                                    | verb categories                  | _(future)_                          |
+| **Adjective**      | **potions** — the WordNet "dumbbell" (self-buff / antonym-debuff _all beasts on screen_ / world) · "**state**" obstacle solutions                         | antonymy, similar-to, attribute  | **Antonym 🐜** + **Synonomouse 🐭** |
+| **Adverb**         | potion **amplifiers** (adjective→adverb derivation) — later                                                                                               | derivation                       | _(future)_                          |
+| **Modal verb**     | hints / possibility (existing À La Modal)                                                                                                                 | modality                         | **À La Modal**                      |
+| **Function words** | scraps / combine mechanic — later                                                                                                                         | syntax                           | _(future)_                          |
 
 ---
 
@@ -40,8 +40,8 @@ Cross-refs: [`inklings.md`](inklings.md) (current systems), [`inklings-architect
 A small "faculty" of anthropomorphic guides. They appear on **discovery**, deliver one line, and feed the
 codex; a **single-at-a-time queue** (reuse the existing Feats/letter celebration queue) stops them clamoring.
 
-- **À La Modal** *(exists)* — modal verbs / possibility; the hedging hint companion.
-- **Antonym the Ant 🐜** — teaches **antonymy**. Lives on the *bar* of the dumbbell between two poles; pops
+- **À La Modal** _(exists)_ — modal verbs / possibility; the hedging hint companion.
+- **Antonym the Ant 🐜** — teaches **antonymy**. Lives on the _bar_ of the dumbbell between two poles; pops
   in the first time you complete an opposing pair (e.g. own both Hot and Cold). Contrary — argues both sides.
 - **Synonomouse the Mouse 🐭** — teaches **similar-to / synonymy**. Hoards near-synonyms like cheese;
   appears as you stack satellites on a pole ("swift, fleet, nimble — almost the same!").
@@ -56,50 +56,92 @@ codex; a **single-at-a-time queue** (reuse the existing Feats/letter celebration
 pole**, not a random one. `potionForAdj(word)` reads `data/adj-attrs.json` (`word → potionId`, built by
 `build_adj_attrs.py`); unmapped adjectives fall back to a random self-buff so none is a dud. The three
 existing potions are the **self-buff poles** (`speed`=Swift, `size`=Big, `reveal`=Bright — legacy ids kept
-for save-compat + buff logic); their **antonym poles** (`slow`/`small`/`dark`) now brew as **throwables**
-that accumulate in inventory (shown disabled in the HUD — the throw/aim action + enemy status states are
-**step 2**, per the dev's "keep the debuffs, defer only the world/obstacle effects" call). Deferred to step 2+:
-Apothecary rack UI, flask gating, Antonym/Synonomouse guides, codex, and world/obstacle potion effects.
+for save-compat + buff logic); their **antonym poles** (`slow`/`small`/`dark`) now brew and accumulate in
+inventory (shown disabled in the HUD — not yet usable). **Next up (step 2): the Apothecary** — attribute
+racks + **flask capacity** (per-pole vials whose _size = # uses_, grown by adjective breadth; no gating —
+§3.2). The antonym poles become usable as a **drink-to-debuff-all-beasts-on-screen** effect (decided 2026-07
+— _no throw/aim_; that's a later enhancement, §3.3/§8). Deferred further: Antonym/Synonomouse guides, codex,
+throw/aim targeting, and world/obstacle potion effects.
+_(Code note: the HUD tooltip still says "throw at enemies (coming soon)" from step 1 — reword to the
+screen-wide framing when we build the debuff.)_
 
-**Original framing.** Before step 1, spelling any adjective brewed a *random* potion from three fixed types
+**Original framing.** Before step 1, spelling any adjective brewed a _random_ potion from three fixed types
 (`size`/`speed`/`reveal`); the word's meaning was ignored. **Target:** the adjective's **attribute + pole**
 decides the potion — meaning-driven, and teachable.
 
 ### 3.1 The dumbbell (recap)
+
 Descriptive adjectives cluster around an **attribute** (a noun). Two **antonym head** synsets = the poles
-(the *bar*); each head's **"similar-to" satellites** = near-synonyms (the two *bells*). Also: attribute
+(the _bar_); each head's **"similar-to" satellites** = near-synonyms (the two _bells_). Also: attribute
 (→ the noun), also-see, pertainyms (relational adjectives, outside the dumbbell).
 
-### 3.2 Apothecary: attribute shelves + flask gating
-- A brewing UI (station/room or a window like Equipment) shows one **dumbbell rack per attribute**: two
-  opposing vials with the antonymy bar between them.
-- **Flask gating (decided: yes):** collect the **attribute noun** (speed/weight/temperature) to *unlock*
-  that shelf — the noun is the empty flask, adjectives are the essence. Essence collected before the flask
-  **waits**, then unlocks on a satisfying "aha" when you find the noun.
-- **Satellite tiers (synonymy):** more "similar-to" words on a pole → higher potion tier (potency/duration).
-  Mirrors the verb Feats ladder.
+### 3.2 Apothecary: attribute racks + flask capacity — **⟵ NEXT BUILD TARGET (2026-07)**
 
-### 3.3 The three reaches (decided: self + antonym + world)
+The immediate next milestone (build step 2). **No gating** (decided 2026-07): every pole can already brew;
+the Apothecary adds the rack UI + the **flask** that gives potions a _carry economy_.
+
+**The reward lanes — each mechanic owns ONE dial (this is the anti-conflict spine):**
+
+| Source                                      | Grows                                                | Teaches                     |
+| ------------------------------------------- | ---------------------------------------------------- | --------------------------- |
+| **Adjective meaning** (which word)          | _which_ effect (the pole)                            | antonymy (the two poles)    |
+| **Distinct adjectives on a pole** (breadth) | **flask size = # uses you can carry** (quantity)     | similar-to / synonymy       |
+| **Attribute noun** (`speed`/`size`/`light`) | **bonus flask size** to _both_ poles of its dumbbell | attribute (the shared noun) |
+| **Adverb** (later, §3.5)                    | **potency + duration** _per use_ (quality)           | derivation (quickly←quick)  |
+
+So breadth = **quantity** (flasks) and adverbs = **quality** (potency/duration) — they never fight over the
+same number. (This deliberately **re-homes the old "satellite tier → potency" idea**: synonymy now grows the
+flask, not the strength.)
+
+**The flask model (decided):**
+
+- **Per-pole, and a flask is ONE vial whose _size_ = how many uses/doses it holds.** Not a stack of flask
+  icons — picture a single vial that visibly **grows bigger** as you collect more of that pole's synonyms.
+- **Brewing fills the flask** (spelling a matching adjective adds a dose, up to its size); **drinking spends a
+  dose.** A **full flask blocks extra doses** — you drink to make room or spell a different pole. (Not a hard
+  wall: you can always brew more later, "make another potion from your word list." The user's framing.)
+- **Size grows, Feats-style:** +capacity per **distinct adjectives collected on that pole** (milestone ladder
+  like verbs — e.g. base N, then every +K). Finding the **attribute noun** grants a **bonus size bump to both
+  poles** of that dumbbell (the "aha", not a gate).
+- **Layout:** one **dumbbell rack per attribute** (two vials + the antonymy bar between); each vial is a
+  per-pole flask with its own size. So _rack = per-attribute (visual)_, _flask = per-pole (capacity)_.
+- **State/data:** flask **capacity is fully derived from `state.dex`** — distinct-adjective-per-pole counts
+  (via `data/adj-attrs.json`, re-derivable like `verbCounts`) + whether the attribute noun is in the dex.
+  **No new saved state for capacity**; only the _current doses_ persist (`state.potions`, already saved).
+  Full-flask rule: a **new** adjective still records to the dex (and may enlarge the flask) even when full —
+  only the extra _dose_ is capped, never the collection.
+
+### 3.3 The three reaches (decided: self + antonym + world; **antonym simplified — see note**)
+
 Effects are **per-pole, defined in data** (not every pole needs all three):
-- **Drink a pole → self-buff** in that direction.
-- **Throw the antonym → debuff** enemies (or the world).
+
+- **Drink a self-buff pole → self-buff** in that direction (Swift/Big/Bright — shipped in step 1).
+- **Drink an antonym pole → debuff ALL beasts on screen** (a screen-wide "reagent burst"). **Simplification
+  (decided 2026-07):** the antonym potion is _drunk_, hitting every creature on the current screen at once —
+  **no throw, no aim**. This removes the projectile/targeting system from the critical path while still making
+  slow/small/dark meaningful. **Throw + aim at a single target is a later enhancement** (§8, §9), layered on
+  the same enemy status states.
 - **Some poles act on the world** → traversal/puzzle tools; wire into authored-obstacle `acceptedSolutions`
-  (see §7.1).
+  (see §7.1). **Still deferred** (the dev's "defer only the world/obstacle effects" call).
 
-### 3.4 Starter attribute set (proposal — re-slots the current 3 potions)
+### 3.4 Starter attribute set (re-slots the current 3 potions — shipped in step 1)
 
-| Attribute (noun/flask) | Pole A (drink = self) | Pole B (throw = debuff) | World use |
-| --- | --- | --- | --- |
-| Speed | **Swift** — move fast *(=old speed)* | **Slow** — enemy slowed | — |
-| Size | **Big** — reach/attack *(=old size)* | **Small** — fit gaps (self) | shrink/enter tiny passages |
-| Light | **Bright** — reveal/light *(=old reveal)* | **Dark** — blind enemies | light dark screens |
-| Temperature | **Hot** — fire resist / thaw | **Cold** — freeze/root enemy | melt ice / freeze water into a bridge |
-| Weight | **Light(wt)** — float, longer dash | **Heavy** — root enemy | press switches |
-| Strength | **Strong** — +attack | **Weak** — weaken enemy | — |
+| Attribute (noun/flask) | Pole A (drink = self-buff)                | Pole B (drink = screen-wide debuff)    | World use _(deferred)_            |
+| ---------------------- | ----------------------------------------- | -------------------------------------- | --------------------------------- |
+| Speed                  | **Swift** — move fast _(=old speed)_      | **Slow** — slow all beasts on screen   | —                                 |
+| Size                   | **Big** — reach/attack _(=old size)_      | **Small** — shrink all beasts (weaker) | shrink self / enter tiny passages |
+| Light                  | **Bright** — reveal/light _(=old reveal)_ | **Dark** — blind all beasts on screen  | light dark screens                |
 
-### 3.5 Adverb amplifiers (later)
+Later attributes (Temperature Hot/Cold, Weight Light/Heavy, Strength Strong/Weak — the fuller table) come
+when we expand past the re-slotted three; their world uses (melt ice, press switches) ride the deferred
+obstacle system.
+
+### 3.5 Adverb amplifiers (later) — the **QUALITY** lane (complements flasks' **quantity**)
+
 Adverbs derive from adjectives (quickly←quick). An adverb amplifies its matching potion (Swift + "quickly"
-→ longer/stronger) — teaches the derivation. Layer on after the core works.
+→ **stronger/longer _per use_**) — teaches the derivation. This is deliberately the **only** owner of
+potency/duration, so it never collides with flask capacity (§3.2): **flasks = how many uses you carry,
+adverbs = how good each use is.** Layer on after the core works.
 
 ---
 
@@ -119,14 +161,15 @@ Adverbs derive from adjectives (quickly←quick). An adverb amplifies its matchi
 
 **The hook (already set up in code):** capitals are deliberately end-game — `CAP_ORDER` (frequency-ordered),
 `weightedLetter` skews capitals "rare, end-game, far from home," and comments reserve them for
-*"geography/proper-noun content — roadmap #10."* `build_dictionary.py` **excludes** proper nouns (filters
+_"geography/proper-noun content — roadmap #10."_ `build_dictionary.py` **excludes** proper nouns (filters
 `instance_hypernyms`). So proper nouns are a clean, separate namespace, and unlocking **capital letters
 unlocks Capitals (capital cities)** — the payoff for a currently-rewardless gate.
 
 **Proper nouns = a noun subtype:** common nouns → shelves/taxonomy; **proper nouns → fillable "atlases."**
-Every atlas also teaches *proper vs common (why we capitalize)*.
+Every atlas also teaches _proper vs common (why we capitalize)_.
 
 ### First atlas: the World (geography)
+
 - **Content tier (decided):** countries + capitals only to start; **single-word, accent-normalized**
   (Paris, France, Bogota). Multiword (New York) and diacritics deferred.
 - **Map style (decided): Hybrid** — pixel/parchment regions in roughly real-world positions, **authored in
@@ -139,6 +182,7 @@ Every atlas also teaches *proper vs common (why we capitalize)*.
   shows capital/continent/flag facts (teaches geography) instead of a gloss.
 
 ### Data (offline, open-licensed — no runtime API)
+
 - **Countries+capitals JSON** (~195 rows: country, capital, continent, ISO, lat/long, flag) from
   **Natural Earth** / **Wikidata** (public-domain / CC0).
 - **Region shapes:** hand-authored in Tiled/LDtk for the Hybrid look — no GeoJSON needed for v1 (Natural
@@ -147,6 +191,7 @@ Every atlas also teaches *proper vs common (why we capitalize)*.
 - Build with a `build_geo.py` script (same pattern as `build_dictionary.py`).
 
 ### Conflicts / considerations
+
 - **Separate validation.** Proper nouns aren't in WordNet/`2of12`. The Wordsmithy must check a **second
   dictionary** (the atlas data) and require a leading **capital**. Dual-dictionary logic is the core addition.
 - **Reward routing.** Proper nouns → atlas fill + fact card (+maybe ink); **not** the common-noun taxonomy
@@ -157,6 +202,7 @@ Every atlas also teaches *proper vs common (why we capitalize)*.
 - **Educational scope.** Adds **geography** as a new subject; the proper-vs-common tie keeps it coherent.
 
 ### Atlas family (deferred — geography first)
+
 The shared "fillable board" system later powers ✨ **Star Atlas** (constellations/planets), 🏛 **Pantheon**
 (myth), 📅 **Calendar** (days/months), 🗣 **nationalities/languages**. Spec the generic atlas framework when
 a second atlas is greenlit.
@@ -164,7 +210,7 @@ a second atlas is greenlit.
 ## 5. The grammar codex
 
 Opt-in menu (a "field guide"). Entries **unlock on discovery** and store the guide's blurb + a live example
-from *your* collection ("you found *frigid* and *icy* — both satellites of **cold**"). Concepts: antonym,
+from _your_ collection ("you found _frigid_ and _icy_ — both satellites of **cold**"). Concepts: antonym,
 synonym/similar-to, attribute, hypernym, hyponym, (later) derivation, modality. Never gates play.
 
 ---
@@ -173,7 +219,7 @@ synonym/similar-to, attribute, hypernym, hyponym, (later) derivation, modality. 
 
 - **`data/adj-attrs.json`** — **built (step 1)** by `build_adj_attrs.py` from the bundled (previously dormant)
   `data/wordnet-relations.json` + `data/dictionary.json` — no NLTK needed. **Shipped schema is the compact
-  runtime form `word → potionId`** (a plain map lookup like `verb-cats.json`), *not* the fuller
+  runtime form `word → potionId`** (a plain map lookup like `verb-cats.json`), _not_ the fuller
   `{ attribute-noun, antonym, similar-to[] }` originally sketched here — the richer dumbbell metadata is
   deferred to when the Apothecary UI (§8.2) needs it. Classification = curated per-pole **seeds** + **one hop**
   of WordNet `sim`, kept precise by an **on-attribute filter** (a candidate is accepted only if it has no
@@ -193,15 +239,17 @@ synonym/similar-to, attribute, hypernym, hyponym, (later) derivation, modality. 
    or freeze it into a bridge). The authored-obstacle schema in `inklings-architecture.md` needs an
    **`acceptedSolutions`** field (e.g. `{ verbs:[…], adjPoles:[…] }`). Thematically clean; note added there.
 2. **Data pipeline grows** (§6) — two new/regenerated WordNet files.
-3. **Potion UI overhaul.** `1`/`2`/`3` won't scale → the Apothecary (racks) + a **throw/aim** action for
-   antonym debuffs. New station/room or Equipment-style window.
+3. **Potion UI overhaul.** `1`/`2`/`3` won't scale → the Apothecary (racks) + more hotkeys/slots for the
+   antonym debuffs. New station/room or Equipment-style window. _(Throw/aim is **no longer** on the critical
+   path — antonym potions are drunk for a screen-wide effect, §3.3; aim is a later enhancement.)_
 4. **Companion traffic.** Multiple guides → discovery-gated, one-at-a-time via the existing celebration queue.
-5. **Combat expansion.** Thrown-potion debuffs add an aim mechanic + enemy **status states** (slowed, rooted,
-   weakened, frozen, blinded).
+5. **Combat expansion.** Antonym debuffs add enemy **status states** (slowed, shrunk, blinded — later also
+   rooted/frozen/weakened). **Applied screen-wide on drink** for now (no aim mechanic); a **throw/aim** single-
+   target mode is a later enhancement on the same status-state system.
 6. **Non-attribute adjectives.** Fallback bucket → crafting materials/tinctures, not potions.
 7. **Story vs daily loop.** A heavy linear story fights the daily reset; the **graphic-novel-adjacent** plan
    sidesteps it. Keep in-game narrative light/environmental; persistent systems are the "progression story."
-8. **Mad Libris word reuse.** Adjectives fill fable blanks *and* brew potions — keep the collection a
+8. **Mad Libris word reuse.** Adjectives fill fable blanks _and_ brew potions — keep the collection a
    non-destructive record; brewing spends **letters**, not the word entry.
 
 ---
@@ -209,24 +257,42 @@ synonym/similar-to, attribute, hypernym, hyponym, (later) derivation, modality. 
 ## 8. Build order (each a shippable milestone)
 
 1. ✅ **DONE** — `adj-attrs.json` + **meaning-driven potions** (replaced random-3; re-slotted size/speed/reveal
-   as the self-buff poles). Antonym poles (slow/small/dark) also brew now — as **throwables** that accumulate
-   in inventory, since the dev's call was to keep the debuffs and defer only the *world/obstacle* effects.
-2. **Flask gating** + **Apothecary UI** + **Antonym & Synonomouse** on discovery + **codex** v1.
-3. **Antonym-throw** debuffs — the **throw/aim action + enemy status states** (slowed/shrunk/blinded) that
-   make the already-brewing slow/small/dark potions usable. *(This is the immediate next step.)*
-4. **World/state** potion effects → authored-obstacle `acceptedSolutions`.
-5. **Hypernym→hyponym shelves** (regenerated noun-books).
-6. **Adverb amplifiers.**
-7. **World Atlas** (proper nouns behind capital letters) — countries+capitals JSON, an authored Tiled/LDtk
-   region map, dual-dictionary validation, fact-card reward. Fairly independent of 1–6; gated by capitals.
+   as the self-buff poles). Antonym poles (slow/small/dark) also brew now and accumulate in inventory
+   (not yet usable), since the dev's call was to keep the debuffs and defer only the _world/obstacle_ effects.
+2. **⟵ NEXT — the Apothecary:** attribute **racks + per-pole flask capacity** (a vial whose _size = # uses_,
+   grown by adjective breadth Feats-style; attribute noun = bonus size; **no gating**) — §3.2. Capacity
+   derived from the dex (no new save state); brewing fills the flask, a full flask caps extra doses. New
+   station/room or Equipment-style window. _(Antonym/Synonomouse guides + codex v1 can ride along or split
+   into 2b — decide when building.)_
+3. **Antonym debuffs — drink → affect ALL beasts on screen** + enemy **status states** (slowed/shrunk/blinded).
+   Makes the already-brewing slow/small/dark potions usable. **No throw/aim** (decided 2026-07).
+4. **Throw + aim** single-target mode for antonym potions — a later enhancement on the §3 status states.
+5. **World/state** potion effects → authored-obstacle `acceptedSolutions`.
+6. **Hypernym→hyponym shelves** (regenerated noun-books).
+7. **Adverb amplifiers** — the **quality** lane (potency/duration per use), complement to flasks (§3.5).
+8. **World Atlas** (proper nouns behind capital letters) — countries+capitals JSON, an authored Tiled/LDtk
+   region map, dual-dictionary validation, fact-card reward. Fairly independent of the rest; gated by capitals.
 
 ---
 
 ## 9. Deferred / open
 
+- **Throw + aim** for antonym potions — deferred (§8.4). v1 antonym effect is drink → all-beasts-on-screen;
+  single-target throwing/aiming is a later enhancement layered on the same status states.
+- **Flask capacity numbers** — base size per pole, the breadth milestone step (Feats-style: base N, then
+  every +K distinct adjectives → +1 use), and how big the attribute-noun bonus bump is. Tune when building.
+- **Full-flask UX** — brewing a _new_ adjective when full still collects it (may enlarge the flask); a
+  _re-spell_ when full should decline the dose (return letters) with a clear "flask full" message. Confirm.
+- **Retroactive capacity** — like Feats, re-derive per-pole flask size from the existing dex on load; existing
+  self-buff potion counts (`state.potions`) may already exceed a freshly-derived cap → clamp on display, don't
+  destroy earned doses. Decide clamp vs. grandfather when building.
+- **Guides + codex timing** — bundle Antonym/Synonomouse + codex v1 into the Apothecary step (2) or split to 2b?
 - Taxonomy guide character (owl?) — deferred.
 - Verb / adverb / function-word guides — future.
-- Exact starter attribute list & numbers — tune when building §8.1.
+- Exact starter attribute list & numbers — tune when building the Apothecary.
 - Whether world-effects share the obstacle system or get their own interactables.
 - Atlas family beyond geography (star/pantheon/calendar/languages, §4b) — deferred to a shared board system.
-- Whether proper-noun spelling also grants ink, or only atlas fill + fact card.
+- Whether proper-noun spelling also grants ink, or only atlas fill + fact card. -**Other potions possibilities -
+  | Temperature | **Hot** — fire resist / thaw | **Cold** — freeze/root enemy | melt ice / freeze water into a bridge |
+  | Weight | **Light(wt)** — float, longer dash | **Heavy** — root enemy | press switches |
+  | Strength | **Strong** — +attack | **Weak\*\* — weaken enemy | — |
