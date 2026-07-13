@@ -4,11 +4,11 @@ Planning doc. A peaceful, **persistent** "cozy layer" (roadmap item #8: *renewab
 **alongside** — not replacing — the hunt-and-spell core. First script: **Braille**, via a farm whose beds
 echo the Braille 2×3 cell. IPA/phonetics is parked for a later pass (§5).
 
-Status: **Stage 1 shipped to production for testing** (was a debug-only scaffold). The Garden modal now runs a
+Status: **Stages 1–2 shipped to production for testing** (was a debug-only scaffold). The Garden modal now runs a
 real economy: **real-calendar seasons**, **season-locked consumable seeds** sown **one per Braille dot**, a Stall
-**seed rack**, **overnight maturation + once-per-day harvest**, and starter/milestone seed grants. Still a
-**dialogue** (the walkable §8 zone is future). **Stage 2 (not built):** rarity-scaled bonus-seed yield, the rare
-uppercase-letter drop, and a quiz/hard mode that hides the Braille pattern. See §9 for the shipped mechanics.
+**seed rack**, **overnight maturation + once-per-day harvest**, starter/milestone seed grants, **rarity-scaled
+bonus-seed yield**, a rare **uppercase-letter drop** (early path past the word-gate), and a **quiz/hard mode** that
+hides the Braille pattern. Still a **dialogue** (the walkable §8 zone is the remaining future work). See §9.
 Cross-refs: [`inklings.md`](inklings.md), [`inklings-architecture.md`](inklings-architecture.md) (the farm
 is an authored persistent area), [`inklings-grammar-systems.md`](inklings-grammar-systems.md) (teaching mission).
 
@@ -101,9 +101,12 @@ equipment items). `*` = weak/duplicate emoji, prioritize a custom sprite there.
 - **Once-per-day harvest (built).** A bed matures overnight (`cellMature`, `matureDays` default 1) then yields
   **once per real calendar day** (`cell.lastHarvest`); word POS-payouts are likewise **once per day per word**
   (`state.garden.paid`, day-scoped) — so you can't instant-re-harvest to mint infinite ink/seeds.
-- **Balance guard:** also pace via **rarity-scaled seed cost** (rare Q/X/Z seeds are dear and — Stage 2 — won't
-  self-propagate), per-dot seed cost (complex letters cost more seeds), and plot limits, so hunting and daily
-  desk-spelling still matter.
+- **Renewable seed loop (built).** Harvesting a mature bed has a **rarity-scaled** chance (`BONUS_SEED_CHANCE` ×
+  `tierOf`: common 0.6 → legend 0) to yield a **bonus seed** of that same season-crop, so commons self-propagate
+  while rare **Q/X/Z stay buy-only**. A rare **uppercase drop** (`UPPER_DROP_CHANCE` ≈ 0.05) also drops that
+  letter's **capital** into the satchel — an **early path** to capitals ahead of the ~118-word gate.
+- **Balance guard:** also pace via **rarity-scaled seed cost**, **per-dot** seed cost (complex letters cost more
+  seeds), and plot limits, so hunting and daily desk-spelling still matter.
 
 ## 5. IPA / phonetics — parked for later
 - Braille is **orthographic** (letters). A later **"Sound Garden"** pass could teach **IPA/phonetics** — e.g.
@@ -125,12 +128,14 @@ equipment items). `*` = weak/duplicate emoji, prioritize a custom sprite there.
 - **Seasons — DECIDED & BUILT:** real-calendar (Northern-hemisphere meteorological), season-locked seeds, wither
   at the turn. Per-crop timing (`CROP_CFG`, `matureDays`/`regrow`) is a framework with defaults — tune per crop
   (some persist, some take longer) as the real 104-crop rosters get authored (flowers welcome).
-- **Stage 2 (decided, not built):** rarity-scaled **bonus-seed yield** on harvest (commons self-propagate, rare
-  letters stay buy-only), the rare **uppercase-letter drop** (an *early path* past the ~118-word capital gate),
-  and a **quiz/hard mode** toggle that hides the Braille ghost hint for self-testing.
+- **Stage 2 — BUILT:** rarity-scaled **bonus-seed yield** on harvest (`bonusSeedChance`; commons self-propagate,
+  rare stay buy-only), the rare **uppercase-letter drop** (`UPPER_DROP_CHANCE`, an *early path* past the ~118-word
+  capital gate), and a **quiz/hard mode** toggle (`state.gardenQuiz`) that hides the Braille pattern + per-dot
+  right/wrong colour for self-testing.
 - Seed sourcing beyond the shop + starter/milestone packets (hunt-drops? quests?) — shop + grants for now.
-- Braille pattern is **required** (must match to grow) — decided; the quiz mode (Stage 2) hides the hint.
-- Other cozy-sim depth: walkable zone (§8), tools, watering, richer growth stages.
+- Braille pattern is **required** (must match to grow) — decided; quiz mode hides the hint.
+- Remaining future work: the **walkable §8 zone** (tools, watering, richer growth stages, the shared
+  `tileInFront()` placement primitive).
 - The Sound Garden / IPA pass (§5).
 - Other scripts as future cozy variants (Cyrillic "heirloom varieties", Ogham plant-aesthetics, Morse rhythm) —
   from the brainstorm; not planned.
@@ -148,7 +153,7 @@ scoring; it gets replaced by the walkable zone, it does not become it.
 (`tileInFront()` + a ghost-preview place/pick-up mode) and reuse it for both — don't implement planting and
 décor placement separately.
 
-## 9. The Garden modal — SHIPPED (Stage 1)
+## 9. The Garden modal — SHIPPED (Stages 1–2)
 The modal that validates the **Braille-cell + crossword** mechanic is **now in production** (no longer debug-gated)
 so players can test the real seed/season economy while the walkable §8 zone is still future. Open with **F**, the
 🌱 touch button, or the desktop toolbar. In dev only, a **cheat bar** inside the modal (`gardenDevBarHTML`/
@@ -180,6 +185,14 @@ and on open; `gardenSeasonSync` withers beds whose `cell.season` ≠ the current
 - **Once per real day** (`cell.lastHarvest`; word payouts via day-scoped `state.garden.paid`): `harvestGarden`
   gives +1 of each **mature** letter and pays each **fully-mature** word by POS (noun → ink, adjective → potion,
   new verbs → feats; **crossings ×1.5**), each at most once per day (renewable tomorrow).
+
+**Stage 2 — harvest bonuses & quiz mode (built):**
+- **Bonus seeds** (`bonusSeedChance` = `BONUS_SEED_CHANCE[tierOf]`, common 0.6 → legend 0): each harvested mature
+  bed may drop a **bonus seed** of that season-crop, so commons self-propagate and rare seeds stay buy-only.
+- **Uppercase drop** (`UPPER_DROP_CHANCE` ≈ 0.05): a harvested crop may also drop its **CAPITAL** into `state.inv`
+  — usable at the desk immediately, an *early path* past the ~118-word capital-unlock gate.
+- **Quiz/hard mode** (`state.gardenQuiz`, toggled by `#gd-quiz`, persisted): hides the legend's Braille pattern
+  and every bed's ghost guide **and** per-dot right/wrong colour — you find out only when the whole bed grows.
 - Data: `state.garden = { v, cols, rows, cells:[[{letter,dots,season,plantedDay,lastHarvest}]], paid }`, persisted
   (`snapshot`/`applySnapshot`; `gardenInit` re-validates + versions the shape via `GARDEN_V`, resetting old saves
   to fallow). `state.seeds`/`state.season`/`state.seedGrants` also persist.
@@ -188,6 +201,5 @@ and on open; `gardenSeasonSync` withers beds whose `cell.season` ≠ the current
 unbroken run is a real word (via `state.dex`/`localLookup`) lights up, crossings gold. (An extra adjacent letter
 breaks a run — "CAT"+"x" → "catx", invalid.)
 
-**Stage 2 — intentionally not built yet:** rarity-scaled **bonus-seed yield** on harvest, the rare **uppercase
-drop** (early path past the capital gate), and a **quiz/hard mode** that hides the ghost guide. Plus the walkable
-§8 zone (with the shared `tileInFront()` placement primitive).
+**Remaining future work:** the walkable §8 zone (till/water/growth-stage depth) with the shared `tileInFront()`
+placement primitive. Per-crop timing lives in `CROP_CFG` (defaults only) awaiting the authored 104-crop rosters.

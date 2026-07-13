@@ -8,9 +8,10 @@
 > the POS-anchored framework, the word-guide cast (Antonym, Synonomouse, À La Modal), adjective "dumbbell"
 > potions, hypernym/hyponym shelves, and the build order.
 >
-> **Planning the cozy farm?** See [`inklings-farming.md`](inklings-farming.md) — the Braille-bed farm (**Stage 1
+> **Planning the cozy farm?** See [`inklings-farming.md`](inklings-farming.md) — the Braille-bed farm (**Stages 1–2
 > shipped**): **real-calendar seasons**, **season-locked consumable seeds** sown one-per-dot, the Stall seed rack,
-> overnight maturation + once-per-day harvest, the crossword-garden (row/column words), and the parked IPA pass.
+> overnight maturation + once-per-day harvest, rarity-scaled bonus seeds + a rare uppercase drop, a quiz/hard mode,
+> the crossword-garden (row/column words), and the parked IPA pass.
 >
 > **Planning collection rewards?** See [`inklings-collections.md`](inklings-collections.md) — the Wordhoard
 > curator (a librarian who hands out **one-time grants** for completing collection subgoals, reusing the
