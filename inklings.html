@@ -1090,8 +1090,8 @@ const WALK_FRAME=0.09, IDLE_FRAME=0.16;    // seconds per animation frame
 const PR={ idleDown:0, idleRight:1, idleUp:2, walkDown:3, walkRight:4, walkUp:5,
            slide:6, atkRight:7, atkDown:8, atkUp:9 };
 
-// Base attack — a single fixed reach/speed for now (no equipment/implements yet; future gear can
-// override dmg/range/cd here). dmg 1 one-shots creatures (CREATURE_HP=1).
+// Base (bare-handed) attack. An equipped weapon adds to this via equipBonuses(): attack→dmg (attackDmg),
+// reach→range and haste→cd (both applied in doAttack). dmg 1 one-shots creatures (CREATURE_HP=1).
 const ATTACK = { dmg:1, range:62, cd:0.32 };
 
 // Letter frequency (relative spawn weight) + rarity tier (for colour).
@@ -1281,7 +1281,7 @@ const PICKUP_PULL=240;               // base homing speed (px/s; accelerates as 
 // material id -> swatch colour for the ground pickup + the bestiary materials list
 const ITEM_COLOR={ paper:"#efe6cf", glue:"#d7c98a", cheese:"#e8c84a", thread:"#c88fb0", paste:"#cfe0a0",
   ash:"#9a95a5", wax:"#e0b24a", graphite:"#6b6b76", leather:"#8a5a34", "blank-tile":"#f4f0e6", "red-ink":"#b3372f" };
-function prettyItem(id){ return id==="blank-tile" ? "blank tile" : id; }
+function prettyItem(id){ return String(id).replace(/-/g," "); }
 // Optional custom art: a creature's "sprite" path is loaded here; drawCreatureSprite() blits it in place of
 // the built-in pixel art, falling back to the drawn art if the image is missing/not yet loaded. Drop a PNG
 // at the declared path and reload — no code change needed. (Same load-with-fallback idea as Alpha.png.)
@@ -1489,7 +1489,7 @@ function onNewVerbWord(word){
 }
 // Effective stats (base + verb perks; potions still multiply on top where they apply).
 function moveSpeed(){ return 180 + (state.perks?state.perks.speed:0); }
-function attackDmg(){ return ATTACK.dmg + (state.perks?state.perks.attack:0) + comboBonus(); }
+function attackDmg(){ return ATTACK.dmg + (state.perks?state.perks.attack:0) + comboBonus() + (equipBonuses().attack||0); }
 function satchelCap(){ return state.bagCap + (state.perks?state.perks.satchel:0); }
 // Combo (competition perk): consecutive hits within COMBO_WINDOW ramp damage; a miss/timeout resets it.
 let combo={ count:0, timer:0 };
@@ -2210,10 +2210,12 @@ function tryUseBench(){
 function doAttack(){
   if(trans || state.room) return;   // no attacking mid screen-slide or inside the library
   const p=state.player; if(p.atkCd>0) return;
-  p.atkCd=ATTACK.cd; p.atkAnim=ATTACK_ANIM;
+  const eb=equipBonuses();                                     // weapon: attack/reach/haste
+  p.atkCd=Math.max(0.12, ATTACK.cd - (eb.haste||0));           // haste shortens the swing cooldown (min 0.12s)
+  p.atkAnim=ATTACK_ANIM;
   SFX.play("swing");
   const sc=curScreen();
-  const range=ATTACK.range*(state.buffs.size>0?SIZE_MULT:1);   // size potion: longer reach
+  const range=(ATTACK.range + (eb.reach||0))*(state.buffs.size>0?SIZE_MULT:1);   // weapon reach, then size potion multiplies
   const full=satchelFull();
   const dmg=attackDmg();                                       // base + attack perk + current combo bonus
   const fin=state.perks && state.perks.finisher;
@@ -4440,13 +4442,13 @@ function closeBestiary(){
    Stardew-lite gear. Slots are anatomical (hat above the head, boots below the feet, rings at the hands…)
    and frame a zoomed, STATIC player sprite — the sprite doesn't change yet; a paper-doll overlay can draw on
    top of it later. Common gear is CRAFTED from ink + the beast materials you already collect, and grants
-   simple functional bonuses (extra hearts, longer post-hit invulnerability). Every item carries an inert
-   `effect` hook so the rarer punctuation-hero gear (weapons, special effects) can slot in later without a
-   redesign. The Weapon slot is shown but locked. All gear persists forever (like the collection). */
+   functional bonuses (hearts, guard, and for weapons attack/reach/haste). Every item carries an `effect`
+   hook (inert today) so a signature weapon's special ability can slot in later without a redesign. The
+   Weapon slot is live: a Pencil→Reed Pen ladder gates the signature story weapons. All gear persists. */
 const EQUIP_SLOTS = [
   { id:"hat",       label:"Hat",       emoji:"🎩", pos:{t:5,  l:50} },
   { id:"accessory", label:"Accessory", emoji:"👓", pos:{t:20, l:13} },
-  { id:"weapon",    label:"Weapon",    emoji:"🗡️", pos:{t:20, l:87}, locked:true },
+  { id:"weapon",    label:"Weapon",    emoji:"🗡️", pos:{t:20, l:87} },
   { id:"ring1",     label:"Ring",      emoji:"💍", pos:{t:42, l:10} },
   { id:"ring2",     label:"Ring",      emoji:"💍", pos:{t:42, l:90} },
   { id:"shirt",     label:"Shirt",     emoji:"👕", pos:{t:62, l:14} },
@@ -4467,6 +4469,18 @@ const EQUIP_ITEMS = {
   "ampersand-ring":    { name:"Ampersand Ring",     emoji:"💍", slot:"ring",      tier:1, bonuses:{hearts:1},           effect:null, recipe:{ink:15, mats:{wax:1, leather:1}} },
   "dogear-clip":       { name:"Dog-ear Clip",       emoji:"👓", slot:"accessory", tier:1, bonuses:{hearts:1},           effect:null, recipe:{ink:10, mats:{paper:1, glue:1}} },
   "margin-belt":       { name:"Margin Belt",        emoji:"👓", slot:"accessory", tier:1, bonuses:{guard:0.3},          effect:null, recipe:{ink:14, mats:{leather:2, glue:1}} },
+  // ---- Weapons (weapon slot) --------------------------------------------------------------------
+  // Weapon bonuses extend the vocab: attack (+dmg), reach (+px range), haste (+s off swing cooldown;
+  // negative = slower). Weapons are pricier than armour. Two GENERIC rungs (Pencil → Reed Pen) gate the
+  // signature story weapons via `requires`. `effect` names each signature's *future* special ability
+  // (inert for now — they only change stats today). Signatures cost premium ink + the rare red-ink/graphite.
+  "pencil":            { name:"Pencil",             emoji:"✏️",  slot:"weapon",    tier:1, bonuses:{attack:1},                        effect:null,      recipe:{ink:20, mats:{graphite:1}} },
+  "reed-pen":          { name:"Reed Pen",           emoji:"🖋️",  slot:"weapon",    tier:2, bonuses:{attack:2, reach:8},               effect:null,      requires:"pencil",   recipe:{ink:40, mats:{graphite:2, thread:2}} },
+  // Signature story weapons — each requires the Reed Pen (top of the generic ladder).
+  "vaporl-sword":      { name:"Vaporl Sword",       emoji:"🗡️",  slot:"weapon",    tier:3, bonuses:{attack:4, reach:40, haste:-0.12}, effect:"possess", requires:"reed-pen", recipe:{ink:110, mats:{"red-ink":3, graphite:3, leather:2}} },  // gas sword once wielded by Apostrophantom; long reach, slow. Future: possession power.
+  "banana":            { name:"Banana",             emoji:"🍌",  slot:"weapon",    tier:3, bonuses:{attack:6, reach:-6, haste:0.14},  effect:null,      requires:"reed-pen", recipe:{ink:130, mats:{"red-ink":3, graphite:4, wax:2}} },        // "Surprisingly sharp for a banana…" — fast, short reach, very powerful. Rarest.
+  "dooter":            { name:"Dooter",             emoji:"🎺",  slot:"weapon",    tier:3, bonuses:{attack:3, reach:12},              effect:null,      requires:"reed-pen", recipe:{ink:75,  mats:{"red-ink":1, graphite:2}} },                    // flavour TBD.
+  "murmerer-mirror":   { name:"Murmerer Mirror",    emoji:"🪞",  slot:"weapon",    tier:3, bonuses:{attack:3, reach:6, guard:0.4},    effect:null,      requires:"reed-pen", recipe:{ink:85,  mats:{"red-ink":2, graphite:2, wax:1}} },            // flavour TBD.
 };
 let _equipTab="bag";
 function newGearUid(){ state.gearSeq=(state.gearSeq||0)+1; return "g"+state.gearSeq; }
@@ -4476,7 +4490,7 @@ function ownsGearItem(key){ return state.gear.some(g=>g&&g.item===key); }
 function craftUnlocked(key){ const req=EQUIP_ITEMS[key]&&EQUIP_ITEMS[key].requires; return !req || ownsGearItem(req); }
 // Sum of every equipped item's bonuses → { hearts, guard }. Cheap enough to call each frame.
 function equipBonuses(){
-  const b={hearts:0, guard:0};
+  const b={hearts:0, guard:0, attack:0, reach:0, haste:0};
   for(const slot in state.equip){ const uid=state.equip[slot]; if(!uid) continue;
     const inst=state.gear.find(g=>g.uid===uid), def=inst&&EQUIP_ITEMS[inst.item];
     if(def&&def.bonuses) for(const k in def.bonuses) b[k]=(b[k]||0)+def.bonuses[k];
@@ -4548,7 +4562,13 @@ function drawEquipDoll(){
   const cv=document.getElementById("eq-sprite"); if(!cv) return;
   drawPlayerPortrait(cv.getContext("2d"), cv.width, cv.height);
 }
-function bonusText(b){ if(!b) return ""; const a=[]; if(b.hearts) a.push("+"+b.hearts+"♥"); if(b.guard) a.push("+"+b.guard.toFixed(1)+"s guard"); return a.join(" · "); }
+function bonusText(b){ if(!b) return ""; const a=[];
+  if(b.hearts) a.push("+"+b.hearts+"♥");
+  if(b.attack) a.push("+"+b.attack+"⚔");
+  if(b.reach)  a.push((b.reach>0?"+":"")+b.reach+" reach");
+  if(b.haste>0) a.push("fast swing"); else if(b.haste<0) a.push("slow swing");
+  if(b.guard)  a.push("+"+b.guard.toFixed(1)+"s guard");
+  return a.join(" · "); }
 function costText(r){
   const parts=["<span class=\"eq-ing"+((state.ink||0)>=(r.ink||0)?"":" no")+"\">"+(r.ink||0)+" ink</span>"];
   const mats=r.mats||{};
@@ -4595,12 +4615,15 @@ function renderEquip(){
   else panel.querySelectorAll("[data-own]").forEach(el=>el.onclick=()=>equipOwned(el.dataset.own));
   const b=equipBonuses(), parts=[];
   if(b.hearts) parts.push("+"+b.hearts+" ♥ max");
+  if(b.attack) parts.push("+"+b.attack+" attack");
+  if(b.reach)  parts.push((b.reach>0?"+":"")+b.reach+"px reach");
+  if(b.haste>0) parts.push("faster swing"); else if(b.haste<0) parts.push("slower swing");
   if(b.guard) parts.push("longer guard (+"+b.guard.toFixed(1)+"s)");
   document.getElementById("eq-bonuses").innerHTML = parts.length ? "Equipped bonuses: "+parts.join(" · ") : "No bonuses equipped yet — craft and equip some gear.";
 }
 function onEquipSlotClick(slot){
   const s=EQUIP_SLOTS.find(x=>x.id===slot);
-  if(s&&s.locked){ SFX.play("invalid"); showToast("Weapons are coming soon — the punctuation heroes' gear."); return; }
+  if(s&&s.locked){ SFX.play("invalid"); showToast("That slot isn't available yet."); return; }
   if(state.equip[slot]) unequipSlot(slot);   // click a filled slot to take the item off (back to the bag)
 }
 // Drop invalid gear on load (unknown item keys, or equip slots pointing at gear you no longer own).

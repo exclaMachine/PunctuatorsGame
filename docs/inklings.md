@@ -92,9 +92,10 @@ Use these terms consistently in code, UI, and writing:
 - **The library** — the collection of words you've spelled (the "dex"). It is currently a list;
   long-term it becomes a walkable room you fill (see roadmap).
 - **Field / books** — the screens you travel to and hunt in.
-- **Implements** — the (future) weapon/equipment vocabulary (stick, brush, pencil, pen, …). **Deferred:
-  no equipment system is currently in the game** — attacking uses one fixed `ATTACK`. See design decision
-  #6 and roadmap #6 for the eventual dual-use-implement vision.
+- **Implements** — the weapon vocabulary. **Weapons now exist** as craftable gear in the Weapon slot
+  (Pencil → Reed Pen generic ladder, then the signature story weapons — Vaporl Sword, Banana, Dooter,
+  Murmerer Mirror). They add `attack`/`reach`/`haste` on top of the base `ATTACK`; each signature reserves
+  an `effect` for a future special ability (inert today — stats only). See the Equipment section below.
 
 ---
 
@@ -152,9 +153,9 @@ save file `inklings-save.json`). Fonts: `Press Start 2P` + `VT323` (Google Fonts
 `--disp` / `--read` CSS vars and also used by the canvas `ctx.font` calls (floats, BENCH label).
 
 - **CONFIG constants** — `TILE`, `COLS/ROWS`, `WORLD_W/H`, `HOME`, speeds, `CONSUME_LETTERS`.
-- **`ATTACK`** — the single fixed base attack (`dmg`/`range`/`cd`). There is **no equipment/implement
-  system** — it was removed (stick/brush/pencil + the SWAP/Q switch mechanic) because it did nothing yet
-  and only added a dead button. Future gear can override this const. `dmg 1` one-shots creatures.
+- **`ATTACK`** — the base (bare-handed) attack (`dmg`/`range`/`cd`). An **equipped weapon adds on top**
+  via `equipBonuses()`: `attack`→dmg (`attackDmg`), `reach`→range and `haste`→cd (both in `doAttack`,
+  cd floored at 0.12s). `dmg 1` one-shots creatures; weapons let you out-damage tougher beasts.
 - **`SPRITESHEET`** — glyph-sheet config (`url`, `cols`/`rows`, `cellW`/`cellH`, `letterToFrame`)
   - loader. Wired to `Alpha.png` (the same hand-drawn sheet Spin Nids uses): a 7×8 grid of 32×32
     cells where a–z = frames 0–25 and **A–Z = 26–51** (both mapped in `letterToFrame`; capitals are now in
@@ -581,17 +582,25 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   non-answer; anything else → a plain "nope". The three "through" answers clear the puddle for the day; the rest
   leave it so you can try another verb. All state (`inkClearedDay`/`inkedDay`/`printsDay`) is **day-scoped**.
 - **Equipment (`G` / 🎒)** — a Stardew-lite gear screen. **Anatomical paper-doll slots** (hat above the head,
-  boots below the feet, rings at the hands, accessory by the face, a **locked Weapon** slot) frame a **zoomed,
-  static player sprite** (the sprite doesn't change yet — a paper-doll overlay can draw on it later). Common
-  gear is **crafted** (Craft tab) from **ink + the beast materials** you already collect (`state.resources`),
-  and grants simple functional bonuses: **+max hearts** and **longer post-hit invulnerability** (guard). Owned
-  gear lives in the **Bag** tab; click to equip (rings auto-fill the two ring slots), click a filled slot to
-  take it off. Bonuses **stack additively** across slots. Every item has an inert **`effect` hook** so the
-  future **punctuation-hero gear** (weapons + special effects) can slot in without a redesign; **tier** is an
-  isolated, removable field. **Tiered upgrades are gated by a `requires` field** (e.g. Inkcap Hat II
-  `requires:"inkcap-hat"`): a recipe stays **hidden from the Craft tab until you own its predecessor**
-  (`craftUnlocked`/`ownsGearItem` — "own" = ever crafted, since gear is never consumed), and `requires`
-  chains for future III+. All gear **persists forever** (`state.equip`/`state.gear`/`state.gearSeq`).
+  boots below the feet, rings at the hands, accessory by the face, a **Weapon** slot) frame a **zoomed,
+  static player sprite** (the sprite doesn't change yet — a paper-doll overlay can draw on it later). Gear
+  is **crafted** (Craft tab) from **ink + the beast materials** you already collect (`state.resources`),
+  and grants functional bonuses: **+max hearts**, **longer post-hit invulnerability** (guard), and — for
+  weapons — **`attack`** (+dmg), **`reach`** (+px range), **`haste`** (−s off the swing cooldown; negative
+  = slower). Owned gear lives in the **Bag** tab; click to equip (rings auto-fill the two ring slots), click
+  a filled slot to take it off. Bonuses **stack additively** across slots. Every item has an **`effect` hook**
+  (inert today) that names each signature weapon's **future special ability** so it can light up without a
+  redesign; **tier** is an isolated, removable field. **Tiered upgrades are gated by a `requires` field**
+  (e.g. Inkcap Hat II `requires:"inkcap-hat"`; the signature weapons `requires:"reed-pen"`): a recipe stays
+  **hidden from the Craft tab until you own its predecessor** (`craftUnlocked`/`ownsGearItem` — "own" = ever
+  crafted, since gear is never consumed), and `requires` chains for future III+.
+  - **Weapons** — the Weapon slot is now live. A **generic ladder** (**Pencil** ✏️ → **Reed Pen** 🖋️, small
+    +attack/reach) gates the **signature story weapons**, each `requires:"reed-pen"` and costing **premium ink
+    + rare `red-ink`/`graphite`** (red-ink drops only from the very-rare Proofreaper → true end-game):
+    **Vaporl Sword** 🗡️ (Apostrophantom's gas blade — long reach, slow; `effect:"possess"`), **Banana** 🍌
+    ("surprisingly sharp…" — fast, short reach, highest raw attack), **Dooter** 🎺 and **Murmerer Mirror** 🪞
+    (mirror also grants a little guard) — the last two are stat-only placeholders pending flavour/abilities.
+  - All gear **persists forever** (`state.equip`/`state.gear`/`state.gearSeq`).
 - **Garden — Braille crossword scaffold (`F` / 🌱, DEBUG-ONLY)** — a **debug-gated** modal (`IS_DEV`; buttons
   hidden + `openGarden` no-ops in prod) to validate the Braille-cell + crossword loop *before* the real garden
   (a walkable farm-sim map zone — see [`inklings-farming.md`](inklings-farming.md) §8). **Each bed IS a 2×3
