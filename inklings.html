@@ -246,6 +246,41 @@
   .shop-seed-row select{font-family:var(--read);font-size:15px;padding:2px 4px;max-width:190px;flex:1;min-width:0}
   .shop-seed-qtywrap{font-family:var(--read);font-size:15px;color:var(--ink);white-space:nowrap}
   .shop-seed-row input{font-family:var(--read);font-size:15px;width:48px;padding:2px 4px}
+
+  /* ---- Herald's Bench (Blazon Shield — MVP, DEV-only). See docs/inklings-heraldry.md ---- */
+  #herald{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);align-items:center;
+    justify-content:center;padding:18px;z-index:7}
+  #herald.open{display:flex}
+  #herald .book{position:relative;display:flex;flex-direction:column;max-width:720px;width:100%;
+    height:min(620px,92vh);overflow:hidden}
+  #herald .book>h1{flex:none}
+  .hb-wrap{display:flex;gap:16px;flex:1;min-height:0}
+  .hb-left{display:flex;flex-direction:column;gap:8px;flex:none;width:220px}
+  #hb-shield{width:200px;height:240px;image-rendering:pixelated;background:var(--paper-2);
+    border:3px solid var(--edge);box-shadow:3px 3px 0 rgba(0,0,0,.3);align-self:center}
+  .hb-canon{font-family:var(--read);font-size:14px;font-style:italic;color:var(--ink);
+    background:var(--paper-2);border:2px solid var(--line);padding:5px 8px;min-height:20px}
+  .hb-valid{font-family:var(--read);font-size:12.5px;line-height:1.35;padding:4px 6px;border:2px solid var(--line)}
+  .hb-valid.ok{color:#2b6b2b;background:#e7f4e3;border-color:#7dc357}
+  .hb-valid.bad{color:#7a2a2a;background:#f7e7e3;border-color:#d08a6a}
+  .hb-bonus{font-family:var(--read);font-size:12.5px;color:var(--ink)}
+  .hb-bonus .hb-active{color:var(--ink-soft);font-size:11.5px}
+  .hb-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+  .hb-actions button{font-family:var(--disp);font-size:8px;padding:5px 7px;border:2px solid var(--edge);
+    background:var(--paper-2);color:var(--ink);cursor:pointer}
+  .hb-actions button.primary{background:var(--gold);color:#2a2540}
+  .hb-actions button:disabled{opacity:.45;cursor:default}
+  .hb-right{display:flex;flex-direction:column;flex:1;min-width:0;gap:4px;overflow-y:auto;padding-right:4px}
+  .hb-section{font-family:var(--disp);font-size:8px;color:var(--gold);border-bottom:2px solid var(--line);
+    padding:6px 0 3px;margin-top:4px}
+  .hb-section .hb-hint{color:var(--ink-soft);font-size:7px}
+  .hb-slot{display:flex;flex-direction:column;gap:3px;margin:3px 0}
+  .hb-lbl{font-family:var(--read);font-size:12px;color:var(--ink-soft)}
+  .hb-chips{display:flex;flex-wrap:wrap;gap:3px}
+  .hb-chip{font-family:var(--read);font-size:12.5px;padding:2px 7px;border:2px solid var(--edge);
+    background:var(--paper);color:var(--ink);cursor:pointer;line-height:1.4}
+  .hb-chip.on{background:var(--gold);color:#2a2540;font-weight:bold}
+  .hb-chip:hover{outline:2px solid var(--gold);outline-offset:-2px}
   .gd-legend{display:flex;align-items:center;gap:8px;flex:none;font-family:var(--read);font-size:13px;
     color:var(--ink);border:2px solid var(--line);padding:5px 8px}
   .gd-legend .bp{flex:none;display:grid;grid-template-columns:repeat(2,7px);grid-template-rows:repeat(3,7px);gap:2px}
@@ -664,6 +699,7 @@
     <button class="tb-btn" id="tb-gear"><span class="tb-ico">🎒</span><span>Equipment</span><b>G</b></button>
     <button class="tb-btn" id="tb-apothecary"><span class="tb-ico">⚗️</span><span>Apothecary</span><b>P</b></button>
     <button class="tb-btn" id="tb-farm"><span class="tb-ico">🌱</span><span>Garden</span><b>F</b></button>
+    <button class="tb-btn" id="tb-herald" style="display:none"><span class="tb-ico">🛡️</span><span>Herald</span><b>Y</b></button>
     <button class="tb-btn" id="tb-help"><span class="tb-ico">❓</span><span>Help</span><b>?</b></button>
     <div class="tb-sep">Nearby</div>
     <button class="tb-btn dim" id="tb-shop"><span class="tb-ico">🛒</span><span>Shop</span></button>
@@ -855,6 +891,29 @@
       </div>
     </div>
 
+    <!-- Herald's Bench: compose a valid BLAZON → emblazon a shield → equip for passive bonuses. DEV-only
+         (Y / dev toolbar). Ordered slots enforce word order; live rule-of-tincture check; canvas preview. -->
+    <div id="herald">
+      <div class="book">
+        <button class="close-x" id="hb-close" aria-label="Close" title="Close">✕</button>
+        <h1>The Herald's Bench <span class="dex-count">blazon a shield · DEV</span></h1>
+        <div class="hb-wrap">
+          <div class="hb-left">
+            <canvas id="hb-shield" width="200" height="240"></canvas>
+            <div class="hb-canon" id="hb-canon"></div>
+            <div class="hb-valid" id="hb-valid"></div>
+            <div class="hb-bonus" id="hb-bonus"></div>
+            <div class="hb-actions">
+              <button class="primary" id="hb-equip">Equip this shield</button>
+              <button id="hb-unequip">Unequip</button>
+              <button id="hb-reset">Reset</button>
+            </div>
+          </div>
+          <div class="hb-right" id="hb-slots"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Interactable obstacle (river) mad-lib: fill the blank with a collected verb -->
     <div id="obstacle">
       <div class="book" style="max-width:470px">
@@ -1017,6 +1076,7 @@
           <button class="tc-btn util" id="tc-gear" aria-label="Equipment">🎒</button>
           <button class="tc-btn util" id="tc-apothecary" aria-label="Apothecary">⚗️</button>
           <button class="tc-btn util" id="tc-farm" aria-label="Garden">🌱</button>
+          <button class="tc-btn util" id="tc-herald" aria-label="Herald's Bench" style="display:none">🛡️</button>
           <button class="tc-btn util" id="tc-modal" aria-label="À La Modal hint">💬</button>
           <button class="tc-btn util" id="tc-slide" aria-label="Slide">SLIDE</button>
           <!-- SHOP / HOUSE (home) and DESK / BOOK (inside the library) are contextual: only shown when standing by that structure (see syncTouchUI) -->
@@ -1615,13 +1675,14 @@ const state = {
   equip:{ hat:null, shirt:null, pants:null, boots:null, ring1:null, ring2:null, accessory:null },  // slot -> owned-gear uid (persist)
   gear:[],                      // owned gear instances [{uid, item}] (item = key into EQUIP_ITEMS) (persist)
   gearSeq:0,                    // running counter for unique gear instance ids (persist)
+  blazonShield:null,            // equipped Blazon Shield (a validated blazon object, not a gear uid) — DEV MVP (persist). docs/inklings-heraldry.md
   fx:[],                        // floating texts
   garden:null,                  // Braille crossword farm { v, cols, rows, cells:[[{letter,dots,season,plantedDay,lastHarvest}]], paid } (persist)
   seeds:{},                     // "season:letter" -> seed count (season-locked, consumable; persist)
   season:"",                    // current real-calendar season (checked on rollover; withers out-of-season beds)
   seedGrants:[],                // milestone `at` values already granted a starter seed packet (persist)
   gardenQuiz:false,             // garden hard mode: hide the Braille pattern/guides to self-test (persist)
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false,
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -2121,6 +2182,10 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"||k==="f"){ e.preventDefault(); closeGarden(); }
     return;
   }
+  if(state.heraldOpen){   // Herald's Bench open (DEV): close on Esc / Tab / Y (slots are click-driven)
+    if(k==="escape"||k==="tab"||k==="y"){ e.preventDefault(); closeHerald(); }
+    return;
+  }
   if(state.shelfview){   // bookshelf view: Esc backs out of a book to the list, then closes; Tab/E close
     if(k==="escape"){ e.preventDefault(); if(svBook) renderShelfList(); else closeShelfView(); }
     else if(k==="tab"||k==="e"){ e.preventDefault(); closeShelfView(); }
@@ -2145,6 +2210,7 @@ addEventListener("keydown",e=>{
   if(k==="p") toggleApothecary();        // Apothecary (flask rack)
   if(k==="g") openEquip();               // Equipment (paper-doll slots + craft)
   if(k==="f") openGarden();              // Garden (crossword farm)
+  if(k==="y" && IS_DEV) openHerald();    // Herald's Bench (Blazon Shield) — DEV-only for now
   if(k==="m") alaSummon();               // À La Modal: offer a hint (or dismiss)
   if(k===" ") doAttack();
 });
@@ -2368,7 +2434,7 @@ function update(dt){
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2454,7 +2520,7 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -2503,7 +2569,7 @@ function update(dt){
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else hint.classList.remove("show");
@@ -2524,7 +2590,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.shelfview && !state.curation && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2549,7 +2615,7 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation;
+  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.shelfview && !state.curation;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryCurator()){ hint.textContent="Press E to speak with the curator"; hint.classList.add("show"); }
@@ -4454,6 +4520,9 @@ const EQUIP_SLOTS = [
   { id:"shirt",     label:"Shirt",     emoji:"👕", pos:{t:62, l:14} },
   { id:"pants",     label:"Pants",     emoji:"👖", pos:{t:80, l:14} },
   { id:"boots",     label:"Boots",     emoji:"🥾", pos:{t:94, l:50} },
+  // Shield (off-hand) — NOT crafted from materials; its "recipe" is a valid blazon composed at the Herald's
+  // Bench (docs/inklings-heraldry.md). DEV-only for the MVP: the slot is hidden until the feature ships.
+  { id:"shield",    label:"Shield",    emoji:"🛡️", pos:{t:62, l:86}, dev:true, blazon:true },
 ];
 // bonuses: { hearts:+maxHP, guard:+invuln seconds }. tier is an isolated field (drop it later if desired).
 // effect:null is the future hook for special hero-gear behaviour. recipe: { ink, mats:{materialId:qty} }.
@@ -4495,6 +4564,9 @@ function equipBonuses(){
     const inst=state.gear.find(g=>g.uid===uid), def=inst&&EQUIP_ITEMS[inst.item];
     if(def&&def.bonuses) for(const k in def.bonuses) b[k]=(b[k]||0)+def.bonuses[k];
   }
+  // Blazon Shield (DEV MVP): bonuses are COMPUTED from the equipped blazon, not a static map. Stored shield
+  // is always a validated blazon; blazonBonuses() no-ops until data/blazon.json loads. docs/inklings-heraldry.md
+  if(state.blazonShield){ const sb=blazonBonuses(state.blazonShield); for(const k in sb) b[k]=(b[k]||0)+sb[k]; }
   return b;
 }
 function maxHearts(){ return PLAYER_MAX_HEARTS + (equipBonuses().hearts||0); }         // gear-adjusted heart cap
@@ -4597,7 +4669,15 @@ function craftPanelHTML(){
 function renderEquip(){
   drawEquipDoll();
   const slots=document.getElementById("eq-slots");
-  slots.innerHTML = EQUIP_SLOTS.map(s=>{
+  slots.innerHTML = EQUIP_SLOTS.filter(s=>!(s.dev && !IS_DEV)).map(s=>{
+    if(s.blazon){   // Blazon Shield slot: filled from state.blazonShield (a blazon, not a gear uid).
+      const on=!!state.blazonShield;
+      const lbl = on ? "Shield" : s.label;
+      const emo = on ? '<span class="eq-emo">'+s.emoji+'</span>' : '<span class="eq-emo ghost">'+s.emoji+'</span>';
+      const title = on ? blazonText(state.blazonShield) : "Blazon a shield at the Herald's Bench (Y)";
+      return '<div class="eq-slot'+(on?" filled":"")+'" style="top:'+s.pos.t+'%;left:'+s.pos.l+'%" data-slot="'+s.id+'" title="'+esc(title)+'">'+
+        emo+'<span class="eq-lbl">'+esc(lbl)+'</span></div>';
+    }
     const uid=state.equip[s.id], inst=uid&&state.gear.find(g=>g.uid===uid), def=inst&&EQUIP_ITEMS[inst.item];
     const cls="eq-slot"+(def?" filled":"")+(s.locked?" locked":"");
     const emo = s.locked ? '<span class="eq-emo">🔒</span>'
@@ -4624,6 +4704,10 @@ function renderEquip(){
 function onEquipSlotClick(slot){
   const s=EQUIP_SLOTS.find(x=>x.id===slot);
   if(s&&s.locked){ SFX.play("invalid"); showToast("That slot isn't available yet."); return; }
+  if(s&&s.blazon){   // Shield: filled → take it off; empty → jump to the Herald's Bench to blazon one.
+    if(state.blazonShield) unequipBlazon(); else { closeEquip(); openHerald(); }
+    return;
+  }
   if(state.equip[slot]) unequipSlot(slot);   // click a filled slot to take the item off (back to the bag)
 }
 // Drop invalid gear on load (unknown item keys, or equip slots pointing at gear you no longer own).
@@ -4631,6 +4715,344 @@ function sanitizeEquip(){
   if(!Array.isArray(state.gear)) state.gear=[];
   state.gear=state.gear.filter(g=>g&&g.uid&&EQUIP_ITEMS[g.item]);
   for(const s in state.equip){ const uid=state.equip[s]; if(uid && !state.gear.some(g=>g.uid===uid)) state.equip[s]=null; }
+}
+
+/* ================= HERALDRY — the Blazon Shield (MVP, DEV-only) =================================
+   docs/inklings-heraldry.md. Compose a valid blazon at the Herald's Bench → emblazon a pixel shield →
+   equip it for PASSIVE stat bonuses derived from its content (mapped onto the five wired equip stats).
+   DEV-gated (IS_DEV) exactly like the Garden began as a debug scaffold. Two forward seams stay open:
+   (1) blazonActive() computes an INERT guard/ability descriptor for a future Zelda-style block — nothing
+   invokes it yet; (2) the whole roster + bonus vocab is data-driven (data/blazon.json), so more terms,
+   grammar layers, and newly-wired stats bolt on without touching this logic. */
+let BLAZON = null;   // roster from data/blazon.json (null until fetched — every fn below guards on it)
+fetch("data/blazon.json").then(r=>r.json()).then(j=>{ BLAZON=j; if(state.blazonShield && !blazonValidate(state.blazonShield).valid) state.blazonShield=null; }).catch(()=>{});
+
+// Working-blazon shape (also the persisted state.blazonShield shape):
+//   { field:{t1, t2}, div:"pale"|"fess"|null, ordinary:{name,t}|null, charge:{num,id,attitude,t}|null }
+//   A tincture slot `t` is a tincture id, or the anaphor "counterchanged" (only legal with a division).
+//   t2 is only meaningful when div is set. v1 subset omits furs-as-field-pattern nuance and "of the field".
+function newBlazon(){ return { field:{t1:"azure", t2:"or"}, div:null, ordinary:null, charge:null }; }
+function tinc(id){ return BLAZON ? BLAZON.tinctures[id] : null; }
+function tClass(id){ const t=tinc(id); return t ? t.class : null; }
+// Rule of tincture: metal-on-metal or colour-on-colour clashes; a FUR never clashes (neutral exemption).
+function tinctureClash(aClass, bClass){ if(aClass==="fur"||bClass==="fur") return false; return aClass===bClass; }
+// Check one explicit tincture against the field (both halves if divided) — the core teaching constraint.
+function checkVsField(tId, bl, errors, what){
+  const c=tClass(tId); if(!c) return;
+  if(bl.div){
+    for(const half of [bl.field.t1, bl.field.t2]){
+      if(tinctureClash(c, tClass(half))){ errors.push(what+" ("+tinc(tId).name+") lies "+c+"-on-"+tClass(half)+" against the "+tinc(half).name+" half — rule of tincture. Try “counterchanged”."); return; }
+    }
+  } else if(tinctureClash(c, tClass(bl.field.t1))){
+    errors.push(what+" ("+tinc(tId).name+") sits "+c+"-on-"+c+" on the "+tinc(bl.field.t1).name+" field — the rule of tincture forbids it.");
+  }
+}
+// Validate word-order (structural, enforced by the slots) + the rule of tincture with its exemptions.
+function blazonValidate(bl){
+  if(!BLAZON) return { valid:false, errors:["Loading the heraldry roster…"] };
+  const errors=[];
+  const ccUsed = (bl.ordinary&&bl.ordinary.t==="counterchanged") || (bl.charge&&bl.charge.t==="counterchanged");
+  if(ccUsed && !bl.div) errors.push("“Counterchanged” needs a division — choose party per pale or per fess first.");
+  if(bl.ordinary){
+    if(bl.ordinary.t==null||bl.ordinary.t==="") errors.push("Give the "+bl.ordinary.name+" a tincture.");
+    else if(bl.ordinary.t!=="counterchanged") checkVsField(bl.ordinary.t, bl, errors, "The "+bl.ordinary.name);
+  }
+  if(bl.charge){
+    if(!bl.charge.id) errors.push("Choose a charge.");
+    if(!bl.charge.num) errors.push("Choose a number.");
+    if(bl.charge.t==null||bl.charge.t==="") errors.push("Give the charge a tincture.");
+    else if(bl.charge.t!=="counterchanged" && bl.charge.id) checkVsField(bl.charge.t, bl, errors, "The charge");
+  }
+  return { valid:errors.length===0, errors };
+}
+// Canonical blazon string ("Party per pale Azure and Or, a chevron counterchanged, three mullets Or.").
+function blazonText(bl){
+  if(!BLAZON) return "";
+  const tName=id=> id==="counterchanged" ? "counterchanged" : (tinc(id)?tinc(id).name:id);
+  const parts=[];
+  parts.push(bl.div ? "party per "+bl.div+" "+tinc(bl.field.t1).name+" and "+tinc(bl.field.t2).name : tinc(bl.field.t1).name);
+  if(bl.ordinary && bl.ordinary.t) parts.push("a "+bl.ordinary.name+" "+tName(bl.ordinary.t));
+  if(bl.charge && bl.charge.id && bl.charge.num){
+    const ch=BLAZON.charges[bl.charge.id], n=BLAZON.numbers[bl.charge.num];
+    let s=n.name+" "+(n.count>1?ch.plural:ch.name);
+    if(bl.charge.attitude) s+=" "+bl.charge.attitude;
+    if(bl.charge.t) s+=" "+tName(bl.charge.t);
+    parts.push(s);
+  }
+  let text=parts.join(", ");
+  return text.charAt(0).toUpperCase()+text.slice(1)+".";
+}
+// Passive bonuses on the FIVE wired equip stats. Each grammar slot owns a different contribution
+// (charge=class×number, attitude=stance lean, ordinary=armour band, field=temperament, counterchange banks
+// BOTH field temperaments). Clamped to ≈ one gear piece (first-pass power budget; tune in the doc §5/§9).
+function blazonBonuses(bl){
+  const b={hearts:0, guard:0, attack:0, reach:0, haste:0};
+  if(!BLAZON || !bl) return b;
+  const add=o=>{ if(o) for(const k in o) if(k in b) b[k]+=o[k]; };
+  add(tinc(bl.field.t1) && tinc(bl.field.t1).temperament);                    // field temperament
+  const cc=(bl.ordinary&&bl.ordinary.t==="counterchanged")||(bl.charge&&bl.charge.t==="counterchanged");
+  if(bl.div && cc) add(tinc(bl.field.t2) && tinc(bl.field.t2).temperament);   // mastery flourish: bank both
+  if(bl.ordinary) add(BLAZON.ordinaries[bl.ordinary.name] && BLAZON.ordinaries[bl.ordinary.name].bonus);
+  if(bl.charge && bl.charge.id){
+    const ch=BLAZON.charges[bl.charge.id], n=Math.min(3,(BLAZON.numbers[bl.charge.num]||{count:1}).count);
+    if(ch.stat in b) b[ch.stat]+=ch.unit*n;                                   // class × rank (capped ×3)
+    if(bl.charge.attitude) add(BLAZON.attitudes[bl.charge.attitude] && BLAZON.attitudes[bl.charge.attitude].lean);
+  }
+  const cl=BLAZON.clamp||{};
+  for(const k in b){ if(cl[k]!=null) b[k]=Math.min(b[k], cl[k]); b[k]=Math.round(b[k]*1000)/1000; }
+  return b;
+}
+// RESERVED / INERT. The equipped shield's future active ability — a Zelda-style raise-shield guard or a
+// charge power. Derived from the charge (its `active`) tuned by the attitude/stance. Computed for the bench
+// preview + telemetry only; NOTHING calls it in the MVP. This is the seam abilities/guarding bolt onto.
+function blazonActive(bl){
+  if(!BLAZON || !bl || !bl.charge || !bl.charge.id) return null;
+  const ch=BLAZON.charges[bl.charge.id];
+  return { type:"charge-power", charge:bl.charge.id, name:ch.active, stance:bl.charge.attitude||null };
+}
+function shieldEquipped(){ return state.blazonShield || null; }
+
+/* ---------- Emblazon renderer — layered painter's algorithm (docs §5b) ---------- */
+// One pass per grammar production: escutcheon clip → field/division → ordinary → charges → counterchange.
+function escutcheonPath(ctx, x, y, w, h){
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x+w, y);
+  ctx.lineTo(x+w, y+h*0.46);
+  ctx.quadraticCurveTo(x+w, y+h*0.82, x+w/2, y+h);
+  ctx.quadraticCurveTo(x, y+h*0.82, x, y+h*0.46);
+  ctx.closePath();
+}
+// Fill a rectangle in a tincture, painting fur patterns (ermine/vair) as a cheap approximation.
+function fillTincRect(ctx, id, x, y, w, h){
+  const t=tinc(id); if(!t){ return; }
+  ctx.fillStyle=t.hex; ctx.fillRect(x,y,w,h);
+  if(t.pattern==="ermine"){
+    ctx.fillStyle="#20232a";
+    for(let gy=y+h*0.18; gy<y+h; gy+=h*0.26) for(let gx=x+w*0.2; gx<x+w; gx+=w*0.34){
+      const cx=gx+((Math.round((gy-y)/(h*0.26)))%2? w*0.17:0);
+      ctx.beginPath(); ctx.moveTo(cx,gy-4); ctx.lineTo(cx-3,gy+3); ctx.lineTo(cx+3,gy+3); ctx.closePath(); ctx.fill();
+      ctx.fillRect(cx-0.6,gy+2.5,1.2,3);
+    }
+  } else if(t.pattern==="vair"){
+    ctx.fillStyle="#2a4bd0";
+    const bw=w*0.5, bh=h*0.28;
+    for(let ry=0, r=0; y+ry<y+h; ry+=bh, r++) for(let rx=(r%2?bw/2:0); x+rx<x+w; rx+=bw){
+      ctx.beginPath(); ctx.moveTo(x+rx, y+ry); ctx.lineTo(x+rx+bw/2, y+ry+bh); ctx.lineTo(x+rx-bw/2, y+ry+bh); ctx.closePath(); ctx.fill();
+    }
+  }
+}
+// Charge glyphs: geometric charges drawn faithfully; beasts/birds as simple silhouettes (sprites drop in
+// later via the same fallback as creatures — docs §5b "the one real art cost").
+function drawChargeGlyph(ctx, glyph, cx, cy, r, color){
+  ctx.save(); ctx.fillStyle=color; ctx.strokeStyle=color; ctx.lineJoin="round"; ctx.lineCap="round";
+  if(glyph==="cross"){ const a=r*0.34; ctx.fillRect(cx-a,cy-r,2*a,2*r); ctx.fillRect(cx-r,cy-a,2*r,2*a); }
+  else if(glyph==="star"){ ctx.beginPath(); for(let i=0;i<10;i++){ const ra=i%2?r*0.42:r; const ang=-Math.PI/2+i*Math.PI/5; ctx[i?"lineTo":"moveTo"](cx+Math.cos(ang)*ra, cy+Math.sin(ang)*ra); } ctx.closePath(); ctx.fill(); }
+  else if(glyph==="moon"){ // crescent as a single sliver path (no compositing — safe under region clips)
+    ctx.beginPath(); ctx.arc(cx,cy,r, Math.PI*0.42, Math.PI*1.58, false);
+    ctx.arc(cx+r*0.5,cy,r*0.95, Math.PI*1.5, Math.PI*0.5, true); ctx.closePath(); ctx.fill(); }
+  else if(glyph==="rose"){ for(let i=0;i<5;i++){ const ang=-Math.PI/2+i*2*Math.PI/5; ctx.beginPath(); ctx.arc(cx+Math.cos(ang)*r*0.55, cy+Math.sin(ang)*r*0.55, r*0.42, 0, Math.PI*2); ctx.fill(); } ctx.beginPath(); ctx.arc(cx,cy,r*0.34,0,Math.PI*2); ctx.fill(); }
+  else if(glyph==="tower"){ const w=r*1.5,h=r*1.7; ctx.fillRect(cx-w/2,cy-h*0.3,w,h*0.85); for(let i=0;i<3;i++) ctx.fillRect(cx-w/2+i*w*0.375, cy-h*0.55, w*0.25, h*0.28); }
+  else if(glyph==="beast"){ // lion rampant — rearing silhouette facing dexter (viewer's left)
+    ctx.beginPath();
+    ctx.moveTo(cx-r*0.1, cy+r);           // hind foot
+    ctx.quadraticCurveTo(cx-r*0.5,cy+r*0.4, cx-r*0.35,cy-r*0.1);
+    ctx.quadraticCurveTo(cx-r*0.6,cy-r*0.5, cx-r*0.75,cy-r*0.75); // raised foreleg
+    ctx.quadraticCurveTo(cx-r*0.5,cy-r*0.6, cx-r*0.45,cy-r*0.85);
+    ctx.quadraticCurveTo(cx-r*0.5,cy-r*1.05, cx-r*0.2,cy-r);      // head
+    ctx.quadraticCurveTo(cx+r*0.15,cy-r*1.05, cx+r*0.2,cy-r*0.7);
+    ctx.quadraticCurveTo(cx+r*0.55,cy-r*0.55, cx+r*0.75,cy-r*0.85); // tail up
+    ctx.quadraticCurveTo(cx+r*0.55,cy-r*0.3, cx+r*0.45,cy+r*0.2);
+    ctx.quadraticCurveTo(cx+r*0.5,cy+r*0.8, cx+r*0.35,cy+r);       // hind
+    ctx.quadraticCurveTo(cx+r*0.1,cy+r*0.7, cx-r*0.1,cy+r);
+    ctx.closePath(); ctx.fill();
+  }
+  else if(glyph==="bird"){ // eagle/martlet displayed — spread wings
+    ctx.beginPath();
+    ctx.moveTo(cx, cy-r*0.9);
+    ctx.quadraticCurveTo(cx-r*0.5,cy-r, cx-r,cy-r*0.3);   // left wing tip
+    ctx.quadraticCurveTo(cx-r*0.45,cy-r*0.4, cx-r*0.35,cy+r*0.1);
+    ctx.quadraticCurveTo(cx-r*0.2,cy+r*0.9, cx,cy+r);     // tail
+    ctx.quadraticCurveTo(cx+r*0.2,cy+r*0.9, cx+r*0.35,cy+r*0.1);
+    ctx.quadraticCurveTo(cx+r*0.45,cy-r*0.4, cx+r,cy-r*0.3); // right wing tip
+    ctx.quadraticCurveTo(cx+r*0.5,cy-r, cx,cy-r*0.9);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy-r*0.95,r*0.18,0,Math.PI*2); ctx.fill(); // head
+  }
+  else { ctx.font="bold "+Math.round(r*1.6)+"px serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("✦",cx,cy); }
+  ctx.restore();
+}
+// Draw an ordinary band's PATH (in the current path) so it can be filled or used as a clip.
+function ordinaryPath(ctx, name, x, y, w, h){
+  ctx.beginPath();
+  if(name==="chief") ctx.rect(x, y, w, h*0.22);
+  else if(name==="fess") ctx.rect(x, y+h*0.40, w, h*0.20);
+  else if(name==="pale") ctx.rect(x+w*0.40, y, w*0.20, h);
+  else if(name==="bordure"){ ctx.rect(x,y,w,h); ctx.rect(x+w*0.12, y+h*0.12, w*0.76, h*0.76); }  // even-odd ring
+  else if(name==="bend"){ const t=w*0.20; ctx.moveTo(x,y+t); ctx.lineTo(x,y); ctx.lineTo(x+t,y); ctx.lineTo(x+w,y+h-t); ctx.lineTo(x+w,y+h); ctx.lineTo(x+w-t,y+h); ctx.closePath(); }
+  else if(name==="chevron"){ // an inverted-V BAND of constant (perpendicular) width, apex up — not a solid wedge
+    const apexY=y+h*0.30, baseY=y+h*0.82, th=h*0.17;
+    const dxLeg=w/2, dyLeg=baseY-apexY, len=Math.hypot(dxLeg,dyLeg);
+    const ox=th*dyLeg/len, oy=th*dxLeg/len, apexIn=apexY+th*len/dyLeg;   // perpendicular offsets + mitred inner apex
+    ctx.moveTo(x, baseY); ctx.lineTo(x+w/2, apexY); ctx.lineTo(x+w, baseY);
+    ctx.lineTo(x+w-ox, baseY+oy); ctx.lineTo(x+w/2, apexIn); ctx.lineTo(x+ox, baseY+oy); ctx.closePath(); }
+}
+// Charge centres for the standard arrangement (1 centre, 2 side-by-side, 3 in 2-and-1).
+function chargeSpots(n, x, y, w, h){
+  const cx=x+w/2, midy=y+h*0.42;
+  if(n<=1) return [[cx, midy]];
+  if(n===2) return [[x+w*0.32, midy],[x+w*0.68, midy]];
+  return [[x+w*0.30, y+h*0.28],[x+w*0.70, y+h*0.28],[cx, y+h*0.66]];  // 2-and-1
+}
+// Full emblazon. `sz` scales; draws inside the given ctx at [ox,oy].
+function emblazon(ctx, bl, ox, oy, W, H){
+  if(!BLAZON || !bl) return;
+  const pad=Math.max(6,W*0.06), x=ox+pad, y=oy+pad, w=W-pad*2, h=H-pad*2;
+  ctx.save();
+  escutcheonPath(ctx, x, y, w, h); ctx.save(); ctx.clip();
+  // 2. Field / division.
+  if(bl.div){
+    fillTincRect(ctx, bl.field.t1, x, y, w, h);
+    if(bl.div==="pale") fillTincRect(ctx, bl.field.t2, x+w/2, y, w/2, h);
+    else fillTincRect(ctx, bl.field.t2, x, y+h/2, w, h/2);
+  } else fillTincRect(ctx, bl.field.t1, x, y, w, h);
+  // 3. Ordinary.
+  if(bl.ordinary && bl.ordinary.t){
+    const rule=bl.ordinary.name==="bordure"?"evenodd":"nonzero";
+    const paintOrd=hex=>{ ordinaryPath(ctx, bl.ordinary.name, x, y, w, h); ctx.fillStyle=hex; ctx.fill(rule); };
+    if(bl.ordinary.t==="counterchanged" && bl.div) counterchangeFill(ctx, bl, x, y, w, h, paintOrd);
+    else { const t=tinc(bl.ordinary.t); if(t) paintOrd(t.hex); }
+  }
+  // 4. Charges (2-and-1 arrangement), each recoloured to its tincture / counterchanged.
+  if(bl.charge && bl.charge.id && bl.charge.num){
+    const ch=BLAZON.charges[bl.charge.id], n=Math.min(3,(BLAZON.numbers[bl.charge.num]||{count:1}).count);
+    const r=(n>=3?h*0.15:h*0.19), spots=chargeSpots(n, x, y, w, h);
+    for(const [scx,scy] of spots){
+      const paintGlyph=hex=>drawChargeGlyph(ctx, ch.glyph, scx, scy, r, hex);
+      if(bl.charge.t==="counterchanged" && bl.div) counterchangeFill(ctx, bl, x, y, w, h, paintGlyph);
+      else { const t=tinc(bl.charge.t); paintGlyph(t?t.hex:"#222"); }
+    }
+  }
+  ctx.restore(); // field clip
+  // Escutcheon outline.
+  escutcheonPath(ctx, x, y, w, h); ctx.lineWidth=Math.max(2,W*0.018); ctx.strokeStyle="#1a1614"; ctx.stroke();
+  ctx.restore();
+}
+// Counterchange helper: run paint(hex) twice, once clipped to each division region, each painted in the
+// OPPOSITE field tincture (docs §5b step 5 — the render that best shows off fidelity). `paint` draws the
+// element (ordinary band or charge glyph) in whatever colour it's handed.
+function counterchangeFill(ctx, bl, x, y, w, h, paint){
+  const regions = bl.div==="pale"
+    ? [[x,y,w/2,h, bl.field.t2],[x+w/2,y,w/2,h, bl.field.t1]]     // left (dexter) half painted with the RIGHT tincture
+    : [[x,y,w,h/2, bl.field.t2],[x,y+h/2,w,h/2, bl.field.t1]];
+  for(const [rx,ry,rw,rh,tid] of regions){
+    ctx.save(); ctx.beginPath(); ctx.rect(rx,ry,rw,rh); ctx.clip();
+    paint((tinc(tid)||{}).hex || "#000");
+    ctx.restore();
+  }
+}
+
+/* ---------- Herald's Bench modal (compose-a-blazon UI) — DEV-only entry ---------- */
+let _hbBlazon = null;   // the in-progress blazon (not persisted until equipped)
+function openHerald(){
+  if(!IS_DEV || state.heraldOpen) return;
+  if(!_hbBlazon) _hbBlazon = state.blazonShield ? JSON.parse(JSON.stringify(state.blazonShield)) : newBlazon();
+  state.heraldOpen=true;
+  document.getElementById("herald").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  renderHerald(); SFX.play("click");
+}
+function closeHerald(){
+  state.heraldOpen=false;
+  document.getElementById("herald").classList.remove("open");
+  const hide=state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen||state.apothecaryOpen;
+  document.getElementById("sound-btn").style.display = hide?"none":"";
+}
+// Build one labelled row of option chips; `sel` is the current value, options=[{v,label}], onPick(v).
+function hbRow(label, options, sel, cbName, extra){
+  const chips=options.map(o=>'<button class="hb-chip'+(o.v===sel?" on":"")+'" data-cb="'+cbName+'" data-v="'+esc(String(o.v))+'">'+esc(o.label)+'</button>').join("");
+  return '<div class="hb-slot"><div class="hb-lbl">'+esc(label)+(extra||"")+'</div><div class="hb-chips">'+chips+'</div></div>';
+}
+function tinctureOptions(includeCounterchange){
+  const os=Object.keys(BLAZON.tinctures).map(id=>({v:id, label:BLAZON.tinctures[id].name}));
+  if(includeCounterchange) os.push({v:"counterchanged", label:"counterchanged"});
+  return os;
+}
+function renderHerald(){
+  if(!BLAZON){ document.getElementById("hb-slots").innerHTML="Loading the heraldry roster…"; return; }
+  const bl=_hbBlazon;
+  let html="";
+  // FIELD
+  html+='<div class="hb-section">Field</div>';
+  html+=hbRow("Division", [{v:"",label:"none"},{v:"pale",label:"per pale ▮▮"},{v:"fess",label:"per fess ▬"}], bl.div||"", "div");
+  html+=hbRow(bl.div?"First tincture":"Tincture", tinctureOptions(false), bl.field.t1, "t1");
+  if(bl.div) html+=hbRow("Second tincture", tinctureOptions(false), bl.field.t2, "t2");
+  // ORDINARY
+  html+='<div class="hb-section">Ordinary <span class="hb-hint">(optional band)</span></div>';
+  const ordOpts=[{v:"",label:"none"}].concat(Object.keys(BLAZON.ordinaries).map(id=>({v:id,label:BLAZON.ordinaries[id].name})));
+  html+=hbRow("Ordinary", ordOpts, bl.ordinary?bl.ordinary.name:"", "ord");
+  if(bl.ordinary) html+=hbRow("Its tincture", tinctureOptions(true), bl.ordinary.t||"", "ordt");
+  // CHARGE
+  html+='<div class="hb-section">Charge group <span class="hb-hint">(optional)</span></div>';
+  const chOpts=[{v:"",label:"none"}].concat(Object.keys(BLAZON.charges).map(id=>({v:id,label:BLAZON.charges[id].name})));
+  html+=hbRow("Charge", chOpts, bl.charge?bl.charge.id:"", "charge");
+  if(bl.charge){
+    html+=hbRow("Number", Object.keys(BLAZON.numbers).map(id=>({v:id,label:BLAZON.numbers[id].name})), bl.charge.num, "num");
+    html+=hbRow("Attitude", [{v:"",label:"—"}].concat(Object.keys(BLAZON.attitudes).map(id=>({v:id,label:id}))), bl.charge.attitude||"", "att");
+    html+=hbRow("Its tincture", tinctureOptions(true), bl.charge.t||"", "charget");
+  }
+  const slots=document.getElementById("hb-slots"); slots.innerHTML=html;
+  slots.querySelectorAll("[data-cb]").forEach(el=>el.onclick=()=>hbPick(el.dataset.cb, el.dataset.v));
+  // Left panel: preview + validation + bonuses.
+  const cv=document.getElementById("hb-shield"); emblazonCanvas(cv, bl);
+  const res=blazonValidate(bl);
+  document.getElementById("hb-canon").textContent=blazonText(bl);
+  const vEl=document.getElementById("hb-valid");
+  vEl.className="hb-valid "+(res.valid?"ok":"bad");
+  vEl.innerHTML = res.valid ? "✔ A legal blazon — the Herald approves." : res.errors.map(e=>"⚠ "+esc(e)).join("<br>");
+  const b=blazonBonuses(bl), parts=[];
+  if(b.hearts) parts.push("+"+b.hearts+" ♥ max");
+  if(b.attack) parts.push("+"+b.attack+" attack");
+  if(b.guard) parts.push("+"+b.guard.toFixed(2)+"s guard");
+  if(b.reach) parts.push("+"+b.reach+"px reach");
+  if(b.haste>0) parts.push("faster swing"); else if(b.haste<0) parts.push("slower swing");
+  const act=blazonActive(bl);
+  document.getElementById("hb-bonus").innerHTML =
+    "<b>Passive:</b> "+(res.valid ? (parts.join(" · ")||"no bonuses yet") : "—")+
+    (act?'<br><span class="hb-active" title="Reserved — not active in this MVP">🛡 Ability (soon): '+esc(act.name)+"</span>":"");
+  const eq=document.getElementById("hb-equip");
+  eq.disabled=!res.valid; eq.textContent = (state.blazonShield && JSON.stringify(state.blazonShield)===JSON.stringify(bl)) ? "Equipped ✓" : "Equip this shield";
+}
+function emblazonCanvas(cv, bl){
+  if(!cv) return; const ctx=cv.getContext("2d"); ctx.clearRect(0,0,cv.width,cv.height);
+  emblazon(ctx, bl, 0, 0, cv.width, cv.height);
+}
+function hbPick(cb, v){
+  const bl=_hbBlazon;
+  if(cb==="div"){ bl.div=v||null; if(bl.div){ if(!bl.field.t2) bl.field.t2="or"; } }
+  else if(cb==="t1") bl.field.t1=v;
+  else if(cb==="t2") bl.field.t2=v;
+  else if(cb==="ord") bl.ordinary = v ? {name:v, t:(bl.ordinary&&bl.ordinary.t)||""} : null;
+  else if(cb==="ordt") bl.ordinary.t=v;
+  else if(cb==="charge") bl.charge = v ? {id:v, num:(bl.charge&&bl.charge.num)||"a", attitude:(bl.charge&&bl.charge.attitude)||"", t:(bl.charge&&bl.charge.t)||""} : null;
+  else if(cb==="num") bl.charge.num=v;
+  else if(cb==="att") bl.charge.attitude=v;
+  else if(cb==="charget") bl.charge.t=v;
+  SFX.play("click"); renderHerald();
+}
+function equipBlazon(){
+  const res=blazonValidate(_hbBlazon); if(!res.valid){ SFX.play("invalid"); return; }
+  const before=maxHearts();
+  state.blazonShield=JSON.parse(JSON.stringify(_hbBlazon));
+  SFX.play("unlockbig"); showToast("Shield emblazoned: "+blazonText(state.blazonShield));
+  state.player.hearts=Math.max(1, Math.min(maxHearts(), state.player.hearts+(maxHearts()-before)));
+  scheduleSave(); renderHerald(); if(state.equipOpen) renderEquip();
+}
+function unequipBlazon(){
+  if(!state.blazonShield) return;
+  const before=maxHearts(); state.blazonShield=null;
+  state.player.hearts=Math.max(1, state.player.hearts+(maxHearts()-before));
+  SFX.play("click"); scheduleSave(); if(state.equipOpen) renderEquip(); if(state.heraldOpen) renderHerald();
 }
 
 /* ================= GARDEN — Braille crossword-farm (DEBUG scaffold) =============================
@@ -5057,7 +5479,7 @@ function showFeatProgress(cat, n){
   featAnim={ cat, fromPct:Math.max(0,Math.round(((n-1)-a)/(b-a)*100)), toPct:Math.min(100,Math.round((n-a)/(b-a)*100)),
              reward: ms?verbRewardAt(cat,n):null, next:b, nextReward:REWARD_LABEL[verbRewardAt(cat, ms?nextVerbMilestone(n):b)]||"reward" };
   clearTimeout(featAutoT);
-  if(!state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen) openStats(); else renderStats();
+  if(!state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen) openStats(); else renderStats();
   if(ms) SFX.play("unlockbig");
   requestAnimationFrame(()=>requestAnimationFrame(()=>{   // next frame: CSS-transition the bar to its new fill
     const bar=document.querySelector(".feat-cat.feat-live .feat-bar > i"); if(bar) bar.style.width=featAnim.toPct+"%";
@@ -5303,7 +5725,7 @@ function snapshot(){
            verbCounts:state.verbCounts, divineDay:state.divineDay, divine:state.divine,
            obstacleDay:state.obstacleDay, obstacleGot:state.obstacleGot, riverCrossed:state.riverCrossed,
            inkClearedDay:state.inkClearedDay, inkedDay:state.inkedDay, printsDay:state.printsDay,
-           equip:state.equip, gear:state.gear, gearSeq:state.gearSeq, garden:state.garden,
+           equip:state.equip, gear:state.gear, gearSeq:state.gearSeq, blazonShield:state.blazonShield, garden:state.garden,
            seeds:state.seeds, season:state.season, seedGrants:state.seedGrants, gardenQuiz:state.gardenQuiz };
 }
 function applySnapshot(d){
@@ -5338,6 +5760,9 @@ function applySnapshot(d){
   if(typeof d.gearSeq==="number") state.gearSeq=d.gearSeq;
   if(d.equip && typeof d.equip==="object") for(const s in state.equip) if(s in d.equip) state.equip[s]=d.equip[s];
   sanitizeEquip();
+  // Blazon Shield (DEV MVP): restore the equipped blazon. Re-validated once data/blazon.json loads (the fetch
+  // callback drops it if the roster no longer accepts it); blazonBonuses() no-ops safely until then.
+  if(d.blazonShield && typeof d.blazonShield==="object") state.blazonShield=d.blazonShield;
   if(d.garden && Array.isArray(d.garden.cells)) state.garden=d.garden;   // Braille crossword farm (persist; gardenInit re-validates/versions shape)
   if(d.seeds && typeof d.seeds==="object") state.seeds=d.seeds;          // season-locked seed stock
   if(typeof d.season==="string") state.season=d.season;
@@ -5482,6 +5907,12 @@ document.getElementById("equipment").onclick=e=>{ if(e.target.id==="equipment") 
 document.querySelectorAll("#equipment .eq-tab").forEach(t=>t.onclick=()=>{ _equipTab=t.dataset.tab; SFX.play("click"); renderEquip(); });
 document.getElementById("gd-close").onclick=()=>{ closeGarden(); SFX.play("click"); };
 document.getElementById("garden").onclick=e=>{ if(e.target.id==="garden") closeGarden(); };  // tap backdrop to close
+// Herald's Bench (Blazon Shield — DEV MVP).
+document.getElementById("hb-close").onclick=()=>{ closeHerald(); SFX.play("click"); };
+document.getElementById("herald").onclick=e=>{ if(e.target.id==="herald") closeHerald(); };  // tap backdrop to close
+document.getElementById("hb-equip").onclick=equipBlazon;
+document.getElementById("hb-unequip").onclick=unequipBlazon;
+document.getElementById("hb-reset").onclick=()=>{ _hbBlazon=newBlazon(); SFX.play("click"); renderHerald(); };
 document.getElementById("gd-harvest").onclick=harvestGarden;
 document.getElementById("gd-quiz").onclick=()=>{ state.gardenQuiz=!state.gardenQuiz; scheduleSave(); SFX.play("click"); renderGarden(); };
 document.getElementById("gd-clear").onclick=()=>{ gardenInit();
@@ -5500,6 +5931,7 @@ function closeAnyDialog(){
   if(state.obstacle) closeObstacle();
   if(state.equipOpen) closeEquip();
   if(state.gardenOpen) closeGarden();
+  if(state.heraldOpen) closeHerald();
   if(state.shelfview) closeShelfView();
   if(state.curation) closeCuration();
   if(state.help) toggleHelp();
@@ -5524,6 +5956,7 @@ _wireTb("tb-feats",()=> tbSwitch("statsOpen", openStats));
 _wireTb("tb-gear",()=> tbSwitch("equipOpen", openEquip));
 _wireTb("tb-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
 _wireTb("tb-farm",()=> tbSwitch("gardenOpen", openGarden));
+if(IS_DEV){ const th=document.getElementById("tb-herald"); if(th){ th.style.display=""; _wireTb("tb-herald",()=> tbSwitch("heraldOpen", openHerald)); } }
 _wireTb("tb-help",()=> tbSwitch("help", toggleHelp));
 _wireTb("tb-shop",()=> tbSwitch("shop", openShop, ()=> !state.room && nearShop()));
 _wireTb("tb-book",()=> tbSwitch("madlibs", openBook, nearLibraryBook));
@@ -5567,7 +6000,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.shelfview && !state.curation;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.shelfview && !state.curation;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -5636,6 +6069,7 @@ if(IS_TOUCH){
   tap("tc-gear",()=> tbSwitch("equipOpen", openEquip));
   tap("tc-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
   tap("tc-farm",()=> tbSwitch("gardenOpen", openGarden));
+  if(IS_DEV){ const tch=document.getElementById("tc-herald"); if(tch){ tch.style.display=""; tap("tc-herald",()=> tbSwitch("heraldOpen", openHerald)); } }
   tap("tc-modal",()=>{ if(state.started) alaSummon(); });
   tap("tc-slide",()=>{ if(state.started) startSlide(); });
   tap("tc-help",()=> tbSwitch("help", toggleHelp));
@@ -5965,7 +6399,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)

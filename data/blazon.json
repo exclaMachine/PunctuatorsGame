@@ -1,0 +1,50 @@
+{
+  "_note": "Heraldry MVP roster (docs/inklings-heraldry.md). Curated blazon vocabulary — a separate namespace from the dex/potions. `class` metal|colour|fur drives the rule of tincture (never metal-on-metal / colour-on-colour; furs are neutral). Ability `bonus` maps onto the five WIRED equip stats {hearts,guard,attack,reach,haste} so an equipped shield actually affects gameplay; `active` is the RESERVED (inert) guard/ability seam for a future Zelda-style block — read by blazonActive(), never invoked in the MVP. Numbers/magnitudes are a first-pass power budget (~one gear piece), tune later.",
+  "tinctures": {
+    "or":      { "name": "Or",      "class": "metal",  "hex": "#e8c34a", "temperament": { "reach": 4 } },
+    "argent":  { "name": "Argent",  "class": "metal",  "hex": "#e9edf0", "temperament": { "hearts": 1 } },
+    "gules":   { "name": "Gules",   "class": "colour", "hex": "#b3242b", "temperament": { "attack": 1 } },
+    "azure":   { "name": "Azure",   "class": "colour", "hex": "#2a4bd0", "temperament": { "hearts": 1 } },
+    "sable":   { "name": "Sable",   "class": "colour", "hex": "#22262e", "temperament": { "guard": 0.2 } },
+    "vert":    { "name": "Vert",    "class": "colour", "hex": "#2f8f3e", "temperament": { "haste": 0.05 } },
+    "purpure": { "name": "Purpure", "class": "colour", "hex": "#7d2fa0", "temperament": { "reach": 4 } },
+    "ermine":  { "name": "Ermine",  "class": "fur",    "hex": "#eef1f4", "pattern": "ermine", "temperament": { "guard": 0.2 } },
+    "vair":    { "name": "Vair",    "class": "fur",    "hex": "#cfe0f5", "pattern": "vair",   "temperament": { "guard": 0.2 } }
+  },
+  "divlines": {
+    "pale": { "name": "pale", "axis": "vertical",   "label": "party per pale" },
+    "fess": { "name": "fess", "axis": "horizontal", "label": "party per fess" }
+  },
+  "ordinaries": {
+    "chief":   { "name": "chief",   "bonus": { "hearts": 1 } },
+    "fess":    { "name": "fess",    "bonus": { "guard": 0.3 } },
+    "pale":    { "name": "pale",    "bonus": { "attack": 1 } },
+    "bend":    { "name": "bend",    "bonus": { "reach": 8 } },
+    "chevron": { "name": "chevron", "bonus": { "guard": 0.3 } },
+    "bordure": { "name": "bordure", "bonus": { "guard": 0.2 } }
+  },
+  "charges": {
+    "lion":     { "name": "lion",     "plural": "lions",     "glyph": "beast", "stat": "attack", "unit": 1,    "active": "Roar — sweep knockback",  "role": "Warrior — offense" },
+    "eagle":    { "name": "eagle",    "plural": "eagles",    "glyph": "bird",  "stat": "reach",  "unit": 8,    "active": "Sight — reveal / far strike", "role": "Scout — vision" },
+    "tower":    { "name": "tower",    "plural": "towers",    "glyph": "tower", "stat": "guard",  "unit": 0.2,  "active": "Bulwark — timed block",   "role": "Warden — guard" },
+    "cross":    { "name": "cross",    "plural": "crosses",   "glyph": "cross", "stat": "hearts", "unit": 1,    "active": "Vigil — heal pulse",      "role": "Devotee — vitality" },
+    "mullet":   { "name": "mullet",   "plural": "mullets",   "glyph": "star",  "stat": "reach",  "unit": 6,    "active": "Guide — mark target",     "role": "Seer — reach" },
+    "crescent": { "name": "crescent", "plural": "crescents", "glyph": "moon",  "stat": "guard",  "unit": 0.15, "active": "Wane — brief invuln",     "role": "Nightward — guard" },
+    "rose":     { "name": "rose",     "plural": "roses",     "glyph": "rose",  "stat": "hearts", "unit": 1,    "active": "Bloom — regen burst",     "role": "Gardener — vitality" },
+    "martlet":  { "name": "martlet",  "plural": "martlets",  "glyph": "bird",  "stat": "haste",  "unit": 0.05, "active": "Flight — dash",           "role": "Courier — speed" }
+  },
+  "attitudes": {
+    "rampant":  { "name": "rampant",  "lean": { "attack": 1 } },
+    "passant":  { "name": "passant",  "lean": { "reach": 6 } },
+    "statant":  { "name": "statant",  "lean": { "guard": 0.2 } },
+    "couchant": { "name": "couchant", "lean": { "hearts": 1 } },
+    "salient":  { "name": "salient",  "lean": { "haste": 0.05 } },
+    "guardant": { "name": "guardant", "lean": { "guard": 0.2 } }
+  },
+  "numbers": {
+    "a":     { "name": "a",     "count": 1 },
+    "two":   { "name": "two",   "count": 2 },
+    "three": { "name": "three", "count": 3 }
+  },
+  "clamp": { "hearts": 3, "guard": 0.6, "attack": 4, "reach": 40, "haste": 0.15 }
+}

@@ -1,6 +1,9 @@
 # Inklings — Heraldry & the Blazon Shield
 
-Planning doc. Status: **plan only — not implemented.** Captures the 2026-07 planning session.
+Status: **MVP shipped DEV-only — in testing** (like the Garden began as a debug scaffold). A vertical slice of
+build-steps 1–4 is live behind `IS_DEV` (localhost / `file://`); acquisition (drops), the armory, and the
+Herald character are still future. Everything below §0 is the original 2026-07 plan; **§10 records what the MVP
+actually built** and where the forward seams sit. See that section first when working on the code.
 
 The game's long-term identity is a Stardew/Minecraft-breadth adventure whose systems **teach real
 grammar/lexical concepts by embodying them.** Heraldry is a natural new subject: **blazon** (the formal
@@ -256,3 +259,60 @@ fallback) handles them exactly like creatures.
   (`inklings-architecture.md`).
 - **Drop rate + power numbers** — exact scroll chance, early-drop pacing, per-term bonus magnitudes, ×N cap.
 - **Tincture-symbolism labeling** — present color "meanings" as "traditional lore," not hard heraldry.
+
+---
+
+## 10. MVP — what shipped (DEV-only) & how it maps to the plan
+
+A dev-gated vertical slice of build-steps **1–4** (§8). Open the **Herald's Bench** with **`Y`** (or the
+dev-only 🛡️ toolbar / touch button). Everything is behind `IS_DEV`, so production is untouched: the bench
+entry, the shield equip slot, and the bench itself only appear on `localhost` / `file://`.
+
+**Data — `data/blazon.json`** (fetched into the `BLAZON` global; every engine fn no-ops until it loads).
+Curated roster, a separate namespace from the dex/potions (the §1/§7 anti-conflict spine):
+- **Tinctures**: metals Or/Argent, colours Gules/Azure/Sable/Vert/Purpure, **furs Ermine/Vair** (neutral).
+  Each has a `hex` (for emblazoning) + a `temperament` bonus (§5 "Temperament" lane).
+- **Divlines** per pale / per fess · **Ordinaries** chief/fess/pale/bend/chevron/bordure · **Charges** the v1
+  eight (lion/eagle/tower/cross/mullet/crescent/rose/martlet) · **Attitudes** rampant/passant/statant/couchant/
+  salient/guardant · **Numbers** a/two/three.
+- Each charge carries `stat`+`unit` (its class ability), an `active` string (the **reserved** ability name),
+  and a `role` label. A top-level `clamp` caps each stat to the ~one-gear-piece power budget.
+
+**Engine (JS, `HERALDRY` section in `inklings.html`).**
+- `blazonValidate(bl)` — structural word-order is enforced by the ordered slots; the fn checks the **rule of
+  tincture** at each layer with the exemptions: **furs never clash**, **counterchanged is exempt** (and
+  *requires* a division, else it errors). Returns `{valid, errors[]}` with Herald-voiced messages.
+- `blazonText(bl)` — the canonical string ("Party per pale Azure and Or, a chevron counterchanged, three
+  mullets Or.").
+- `blazonBonuses(bl)` — **passive** stats mapped onto the FIVE already-wired equip stats
+  `{hearts,guard,attack,reach,haste}` (so bonuses actually affect gameplay). Slot ownership matches §5:
+  charge = class×number (×3 cap), attitude = stance lean, ordinary = armour band, field = temperament,
+  **counterchange banks BOTH field temperaments**. Clamped by `BLAZON.clamp` (first-pass power budget —
+  the §5 magnitudes are still "subject to change"). *Simplification vs §5:* the richer stat vocab
+  (magnet/ink/regen/heal) is folded onto the five wired stats for now; add the new stats + rewire, then just
+  edit `blazon.json`, no engine change.
+- `blazonActive(bl)` — **RESERVED / INERT.** Computes the future active ability descriptor
+  `{type, charge, name, stance}` from the charge's `active` (tuned by attitude/stance). **Nothing invokes
+  it** — it only feeds the bench's "🛡 Ability (soon)" line. **This is the seam** the Zelda-style raise-shield
+  guard and charge powers bolt onto (§8 active block, §5 attitude "Stance"). Guarding lands here later.
+
+**Emblazon renderer** — `emblazon(ctx, bl, x,y,w,h)`, the §5b layered painter's algorithm: escutcheon clip →
+field/division fill (furs drawn as a cheap ermine/vair pattern) → ordinary band → charges in the standard
+arrangement (1 / 2 / 2-and-1) → **counterchange** as a per-region clip-and-swap. Charges are drawn glyphs
+(geometric ones faithful; lion/eagle/martlet/tower as simple silhouettes) — the drop-in `sprites/<id>.png`
+pipeline replaces them later exactly like creatures.
+
+**Bench UI (`#herald` modal).** Ordered slot pickers (Field → Ordinary → Charge group) as chip rows; live
+emblazon preview canvas + canonical text + pass/fail validation + the computed passive bonuses + the reserved
+ability line. **Equip this shield** (disabled while illegal) writes `state.blazonShield`; **Unequip** / **Reset**.
+In dev, **all terms are unlocked** (the real ~3–5% blazon-scroll drops of §3 are deferred to production).
+
+**Equip integration.** A `shield` slot (marked `dev:true`, hidden in prod) in `EQUIP_SLOTS`; `equipBonuses()`
+folds `blazonBonuses(state.blazonShield)` onto the gear sum, so `maxHearts`/`hurtIframes`/`attackDmg`/reach/
+haste all pick it up. The doll's shield slot shows the equipped state (tooltip = the blazon); clicking it
+unequips, or (when empty) jumps to the bench. `state.blazonShield` persists via `snapshot`/`applySnapshot`
+and is re-validated when `blazon.json` loads.
+
+**Deferred to the production-readiness pass:** blazon-scroll drops + `state.blazon` roster gating (§3), the
+armory / named saved blazons (§4), the Herald character (§8.7), the active-block combat verb (wire onto
+`blazonActive`), and the richer stat vocab + tuned power numbers.
