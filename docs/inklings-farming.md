@@ -4,8 +4,11 @@ Planning doc. A peaceful, **persistent** "cozy layer" (roadmap item #8: *renewab
 **alongside** — not replacing — the hunt-and-spell core. First script: **Braille**, via a farm whose beds
 echo the Braille 2×3 cell. IPA/phonetics is parked for a later pass (§5).
 
-Status: **plan / exploring** — the core loop below is agreed; some details deliberately loose. A **testable
-Garden scaffold is built** (each letter is a 2×3 Braille cell you plant into; crossword scoring on top — see §9).
+Status: **Stage 1 shipped to production for testing** (was a debug-only scaffold). The Garden modal now runs a
+real economy: **real-calendar seasons**, **season-locked consumable seeds** sown **one per Braille dot**, a Stall
+**seed rack**, **overnight maturation + once-per-day harvest**, and starter/milestone seed grants. Still a
+**dialogue** (the walkable §8 zone is future). **Stage 2 (not built):** rarity-scaled bonus-seed yield, the rare
+uppercase-letter drop, and a quiz/hard mode that hides the Braille pattern. See §9 for the shipped mechanics.
 Cross-refs: [`inklings.md`](inklings.md), [`inklings-architecture.md`](inklings-architecture.md) (the farm
 is an authored persistent area), [`inklings-grammar-systems.md`](inklings-grammar-systems.md) (teaching mission).
 
@@ -13,12 +16,16 @@ is an authored persistent area), [`inklings-grammar-systems.md`](inklings-gramma
 
 ## 0. TL;DR
 - A cozy **persistent** farming zone, separate from the daily-reset field **and** from combat.
-- Beds are **2×3 Braille cells**. You buy **letter-seeds** at the Stall; each crop is tied to a letter and is
-  planted in that letter's **Braille dot-pattern** — so planting *is* the Braille lesson.
-- Harvest = a **renewable** supply of that letter.
-- **Crossword-garden:** rows **and** columns of beds that spell real (dictionary-valid) words pay bonuses —
+- Beds are **2×3 Braille cells**. Seeds are **consumable and season-locked**: you sow **one seed per Braille dot**,
+  so forming a letter spends seeds equal to its dot-count — the deliberate placement *is* the Braille lesson.
+- **Real-calendar seasons** (Northern-hemisphere meteorological): each of the four seasons has its own 26-crop
+  roster (**104 crops** total, framework-only for now — reused placeholder art until authored, flowers welcome).
+  A season's seed only grows that season; standing crops **wither** at the season's turn and must be replanted.
+- **Overnight maturation, then harvest once per real day** all season (per-crop timing is configurable for
+  real-plant accuracy later). Harvest = a **renewable** supply of that letter + the crossword-word POS payouts.
+- **Crossword-garden:** rows **and** columns of mature beds that spell real (dictionary-valid) words pay bonuses —
   you design your own crossword.
-- Economy loop: **spell nouns → ink → buy seeds → grow letters → spell more/rarer words.**
+- Economy loop: **spell nouns → ink → buy this season's seeds → sow letters → grow/spell more → re-plan each season.**
 
 ## 1. Why / how it fits
 - Already on the roadmap ("Farming/ranching — renewable letters, the cozy layer").
@@ -34,8 +41,12 @@ is an authored persistent area), [`inklings-grammar-systems.md`](inklings-gramma
   (2) (5)
   (3) (6)
   ```
-- **Seeds (shop-bought, decided):** buy a letter's seed at the Stall with ink. Seeds **gate the harvest** —
-  you can't just "draw" a letter's shape to get it; you must own its seed.
+- **Seeds (consumable, season-locked, decided):** buy the **current season's** seeds at the Stall with ink
+  (**buy any quantity**; price scales with letter rarity via `SEED_PRICE_TIER` × `tierOf`). You sow **one seed
+  per Braille dot** (`gardenPlant` spends/refunds per dot); lifting a dot refunds its seed until the crop matures.
+  A seed only grows in **its own season** — off-season seeds wait in your bag until that season returns. Seeds are
+  keyed `"season:letter"` in `state.seeds`. Starter + early word-milestone **seed packets** (`SEED_GRANTS`: start
+  with an A packet, earn T/E/S packets at 3/8/15 words) bootstrap a fresh player.
 - **Crops tied to letters — the alphabet garden:** each crop is produce whose initial *is* its letter (teaches
   initial letters; great for younger learners). Full A–Z roster below.
 - **Planting = the Braille lesson:** plant the crop in its letter's Braille pattern (A → dot 1; C → dots 1+4;
@@ -83,12 +94,16 @@ equipment items). `*` = weak/duplicate emoji, prioritize a custom sprite there.
 
 ## 4. Economy & balance
 - **Input = ink** (earned by spelling nouns); **output = renewable letters + POS word-rewards** → feeds back
-  into spelling. Ink is the bridge; the Stall gains a **seed rack** (more for the existing shop to do).
-- **Seasons are the throttle (desired direction).** A Stardew-style **season** mechanic rotates which crops
-  grow / which words pay, so a single "perfect" crossword can't pay forever — players must **re-plan** each
-  season. This is the main brake on the renewable word-reward loop.
-- **Balance guard:** also pace via **seed cost, grow time, plot/zone limits**, and the reduced renewable rate
-  for repeat words, so hunting and daily desk-spelling still matter.
+  into spelling. Ink is the bridge; the Stall now has a **seed rack** (`updateShopSeeds`/`buySeeds`).
+- **Seasons are the throttle (built).** Seasons are **real-calendar** (`currentSeason` from the date; dev can
+  force one). Because seeds are **season-locked** and standing crops **wither** at the turn (`gardenSeasonSync`),
+  a single "perfect" crossword can't pay forever — players must **re-plan and re-buy** each season.
+- **Once-per-day harvest (built).** A bed matures overnight (`cellMature`, `matureDays` default 1) then yields
+  **once per real calendar day** (`cell.lastHarvest`); word POS-payouts are likewise **once per day per word**
+  (`state.garden.paid`, day-scoped) — so you can't instant-re-harvest to mint infinite ink/seeds.
+- **Balance guard:** also pace via **rarity-scaled seed cost** (rare Q/X/Z seeds are dear and — Stage 2 — won't
+  self-propagate), per-dot seed cost (complex letters cost more seeds), and plot limits, so hunting and daily
+  desk-spelling still matter.
 
 ## 5. IPA / phonetics — parked for later
 - Braille is **orthographic** (letters). A later **"Sound Garden"** pass could teach **IPA/phonetics** — e.g.
@@ -107,11 +122,15 @@ equipment items). `*` = weak/duplicate emoji, prioritize a custom sprite there.
   phonetics.
 
 ## 7. Open / deferred
-- Seed sourcing beyond the shop (hunt-drops? quests?) — **shop-bought** for now.
-- Whether the Braille pattern is **required** or merely a **bonus** (plant freely vs plant-in-shape).
-- **Seasons** (rotate crops / word-values so layouts must change) — **desired direction**, the throttle on the
-  renewable loop (§4); not built yet.
-- Other cozy-sim depth: zone layout, tools, watering/growth timers.
+- **Seasons — DECIDED & BUILT:** real-calendar (Northern-hemisphere meteorological), season-locked seeds, wither
+  at the turn. Per-crop timing (`CROP_CFG`, `matureDays`/`regrow`) is a framework with defaults — tune per crop
+  (some persist, some take longer) as the real 104-crop rosters get authored (flowers welcome).
+- **Stage 2 (decided, not built):** rarity-scaled **bonus-seed yield** on harvest (commons self-propagate, rare
+  letters stay buy-only), the rare **uppercase-letter drop** (an *early path* past the ~118-word capital gate),
+  and a **quiz/hard mode** toggle that hides the Braille ghost hint for self-testing.
+- Seed sourcing beyond the shop + starter/milestone packets (hunt-drops? quests?) — shop + grants for now.
+- Braille pattern is **required** (must match to grow) — decided; the quiz mode (Stage 2) hides the hint.
+- Other cozy-sim depth: walkable zone (§8), tools, watering, richer growth stages.
 - The Sound Garden / IPA pass (§5).
 - Other scripts as future cozy variants (Cyrillic "heirloom varieties", Ogham plant-aesthetics, Morse rhythm) —
   from the brainstorm; not planned.
@@ -129,36 +148,46 @@ scoring; it gets replaced by the walkable zone, it does not become it.
 (`tileInFront()` + a ghost-preview place/pick-up mode) and reuse it for both — don't implement planting and
 décor placement separately.
 
-## 9. Test scaffold (built — DEBUG ONLY)
-A quick modal to validate the **Braille-cell + crossword scoring** before building the walkable zone.
-**Debug-gated** (`IS_DEV`: localhost/`file://` only; the 🌱/toolbar buttons are hidden and `openGarden` no-ops
-in prod). Open with **F**, the 🌱 touch button, or the desktop toolbar (in dev).
+## 9. The Garden modal — SHIPPED (Stage 1)
+The modal that validates the **Braille-cell + crossword** mechanic is **now in production** (no longer debug-gated)
+so players can test the real seed/season economy while the walkable §8 zone is still future. Open with **F**, the
+🌱 touch button, or the desktop toolbar. In dev only, a **cheat bar** inside the modal (`gardenDevBarHTML`/
+`wireGardenDevBar`) forces any season (`_devSeason`) and grants seeds.
 
-**The core mechanic (rebuilt — each letter IS a 2×3 Braille cell):**
-- The field is a small grid of **beds** (`GARDEN_COLS`×`GARDEN_ROWS`, default **5×4**; the real walkable garden
-  targets ~**12×7** cells ≈ a 28×22 single-square map grid). **Each bed = one Braille cell = a 2×3 grid of
-  plots** (dots 1-2-3 down the left column, 4-5-6 down the right — rendered via `BRAILLE_DOTS`).
-- **Planting = forming the pattern (the lesson).** Pick a **crop-seed** from the 26-letter palette (`CROPS`);
-  a **legend** (`braillePreview`) shows that letter's Braille pattern (the almanac line). Click the bed's plots
-  to plant the crop in the dots. A bed holds **one crop**; clicking with a different seed **replants** it;
-  lifting the last dot leaves it **fallow**.
-- **Instant feedback / validation (decided):** the correct plots glow as **ghost** guides; a plot filled in the
-  **right** dot shows the crop (green bed once complete), a plot in the **wrong** dot turns **red**; a planted
-  but not-yet-correct bed is **amber** ("growing"). A bed only **grows** — i.e. counts as its letter
-  (`cellGrown`, `effLetter`) — when its dots **exactly** match the seed's pattern. No weeds, no penalty; a wrong
-  pattern just doesn't count until fixed.
-- Data: `state.garden = { cols, rows, cells:[[{letter, dots}]] }`, persisted (`snapshot`/`applySnapshot`;
-  `gardenInit` re-validates shape and discards mismatched/old saves).
+**Seasons (`SEASONS`, `currentSeason`, `seasonForDate`):** real-calendar, Northern-hemisphere meteorological
+(Mar–May / Jun–Aug / Sep–Nov / Dec–Feb). `state.season` is checked on load, on daily rollover (`startNewDay`),
+and on open; `gardenSeasonSync` withers beds whose `cell.season` ≠ the current season. Crop rosters are
+`CROPS_BY_SEASON[season][letter]` — the **104-crop** framework; every season currently reuses the placeholder
+`CROPS_BASE` roster until real seasonal crops (and flowers) are authored. `BRAILLE[letter]` stays global.
 
-**Crossword scoring (kept from the prior scaffold):**
-- **Live word scan** (`gardenScan`) reads only **grown** beds: every **2+-bed** row/column run whose **whole
-  unbroken run** is a real word (via `state.dex` or `localLookup`) lights up green; **crossing** beds (in a
-  row-word *and* a column-word) turn gold. A side list previews each word, its POS, and reward. (Crossword-correct:
-  an extra adjacent letter breaks a run — "CAT"+"x" → "catx", invalid.)
-- **Harvest** (`harvestGarden`): +1 of each **grown** letter, **plus each word paid by POS** (noun → ink,
-  adjective → potion; new words recorded, `onNewVerbWord` for verbs); **crossings ×1.5**. Summary toast.
+**Seeds — consumable, season-locked, per-dot** (`state.seeds` keyed `"season:letter"`):
+- Pick a crop from the **current season's** palette (`cropsFor`); the badge shows how many seeds you own. The
+  **legend** (`braillePreview`) shows that letter's Braille pattern + your stock.
+- **Sow one seed per dot** (`gardenPlant`): each correct/incorrect dot placement spends a seed; **lifting a dot
+  refunds** it (until the crop matures). Replanting a bed with a different crop refunds the old, unspent seeds.
+  A bed holds **one crop**; you can't sow a letter you have no seeds for (prompts to buy at the Stall).
+- **Buy at the Stall** (`updateShopSeeds`/`buySeeds`): the Seed Rack sells the **current season's** seeds,
+  **any quantity**, rarity-priced (`seedPrice` = `SEED_PRICE_TIER[tierOf(L)]`). Starter + milestone packets via
+  `SEED_GRANTS`/`checkSeedGrants` (start with A; T/E/S at 3/8/15 words).
 
-**Stubbed / intentionally missing (it's a scaffold, not the game):** planting is **free** (no seed economy),
-beds grow **instantly** (no till/water/grow/season loop; harvest keeps the layout, repeatable), no walkable
-zone, and the ghost guide is always on (a later "hard mode" could hide it). Those are the real build (§8),
-tackled once the Braille + crossword rules feel right.
+**Growth & harvest cadence:**
+- **Instant feedback / validation:** correct plots glow as **ghost** guides; a right dot shows the crop, a wrong
+  dot turns **red**; an incomplete bed is **amber** ("growing"). A bed **grows** (`cellGrown`/`effLetter`, reads
+  as its letter) only when its dots **exactly** match the pattern.
+- **Overnight maturation** (`cellMature`, `CROP_CFG.matureDays` default 1): a grown bed matures the next real day
+  (`cell.plantedDay` stamped when it grows), then is harvestable. Cell labels show `…` ripening / `⛏` ready / `✓`
+  reaped-today; immature beds/words render dimmed.
+- **Once per real day** (`cell.lastHarvest`; word payouts via day-scoped `state.garden.paid`): `harvestGarden`
+  gives +1 of each **mature** letter and pays each **fully-mature** word by POS (noun → ink, adjective → potion,
+  new verbs → feats; **crossings ×1.5**), each at most once per day (renewable tomorrow).
+- Data: `state.garden = { v, cols, rows, cells:[[{letter,dots,season,plantedDay,lastHarvest}]], paid }`, persisted
+  (`snapshot`/`applySnapshot`; `gardenInit` re-validates + versions the shape via `GARDEN_V`, resetting old saves
+  to fallow). `state.seeds`/`state.season`/`state.seedGrants` also persist.
+
+**Crossword scan (unchanged):** `gardenScan` reads **grown** beds; every **2+-bed** row/column run whose whole
+unbroken run is a real word (via `state.dex`/`localLookup`) lights up, crossings gold. (An extra adjacent letter
+breaks a run — "CAT"+"x" → "catx", invalid.)
+
+**Stage 2 — intentionally not built yet:** rarity-scaled **bonus-seed yield** on harvest, the rare **uppercase
+drop** (early path past the capital gate), and a **quiz/hard mode** that hides the ghost guide. Plus the walkable
+§8 zone (with the shared `tileInFront()` placement primitive).

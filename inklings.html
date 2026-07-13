@@ -222,6 +222,27 @@
     box-shadow:1px 1px 0 rgba(0,0,0,.25)}
   .gd-seed span{font-size:15px}
   .gd-seed.sel{background:var(--gold);color:#2a2540}
+  .gd-seed{position:relative}
+  .gd-seed em{position:absolute;top:1px;right:1px;font-style:normal;font-size:6px;background:var(--moss);color:#fff;
+    padding:0 2px;line-height:1.4;border-radius:2px}
+  .gd-seed.empty{opacity:.5}
+  .gd-seed.empty em{background:#7a3030}
+  .gd-season{flex:none;font-family:var(--read);font-size:14px;color:var(--ink);background:var(--paper-2);
+    border:2px solid var(--line);padding:5px 9px;margin:0 0 8px}
+  .gd-season b{font-family:var(--disp);font-size:9px;color:var(--gold)}
+  .gd-cell.maturing{border-color:#c7d97d;box-shadow:0 0 0 1px #c7d97d}          /* pattern correct, ripening overnight */
+  .gd-cell.reaped{opacity:.72}                                                 /* already harvested today */
+  .gd-word.unripe{opacity:.55}
+  .gd-dev{flex:none;display:flex;flex-wrap:wrap;gap:4px;align-items:center;border-top:2px dashed var(--line);
+    padding-top:6px;margin-top:2px}
+  .gd-dev .gd-devlabel{font-family:var(--disp);font-size:7px;color:var(--gold)}
+  .gd-dev button{font-family:var(--disp);font-size:7px;padding:3px 5px;border:2px solid var(--edge);
+    background:var(--paper-2);color:var(--ink);cursor:pointer}
+  .gd-dev button.on{background:var(--gold);color:#2a2540}
+  .shop-seed-row{display:flex;gap:6px;align-items:center;margin-top:6px}
+  .shop-seed-row select{font-family:var(--read);font-size:15px;padding:2px 4px;max-width:190px;flex:1;min-width:0}
+  .shop-seed-qtywrap{font-family:var(--read);font-size:15px;color:var(--ink);white-space:nowrap}
+  .shop-seed-row input{font-family:var(--read);font-size:15px;width:48px;padding:2px 4px}
   .gd-legend{display:flex;align-items:center;gap:8px;flex:none;font-family:var(--read);font-size:13px;
     color:var(--ink);border:2px solid var(--line);padding:5px 8px}
   .gd-legend .bp{flex:none;display:grid;grid-template-columns:repeat(2,7px);grid-template-rows:repeat(3,7px);gap:2px}
@@ -728,6 +749,17 @@
           </div>
           <button class="primary" id="shop-fable-buy">Bind · <b id="shop-fable-cost"></b></button>
         </div>
+        <div class="shop-item shop-seed">
+          <div style="flex:1;min-width:0">
+            <div class="shop-item-name">Seed Rack <span id="shop-seed-season"></span></div>
+            <div class="shop-item-desc" id="shop-seed-desc">Garden seeds for this season</div>
+            <div class="shop-seed-row">
+              <select id="shop-seed-letter"></select>
+              <span class="shop-seed-qtywrap">×<input id="shop-seed-qty" type="number" min="1" max="999" value="5"></span>
+            </div>
+          </div>
+          <button class="primary" id="shop-seed-buy">Buy · <b id="shop-seed-cost">0</b> ink</button>
+        </div>
         <div class="btn-row" style="margin-top:18px;justify-content:flex-end">
           <button class="primary" id="shop-done">Done</button>
         </div>
@@ -799,10 +831,11 @@
       <div class="book">
         <button class="close-x" id="gd-close" aria-label="Close" title="Close">✕</button>
         <h1>The Garden <span class="dex-count">Braille crossword farm</span></h1>
+        <div class="gd-season" id="gd-season"></div>
         <div class="gd-wrap">
           <div class="gd-left">
             <div class="gd-field" id="gd-field"></div>
-            <div class="gd-mvpnote">DEBUG scaffold (the real garden will be a walkable map zone). Each bed is a 2×3 <b>Braille cell</b>: pick a crop, then plant it in the glowing dots to grow that letter. Grown beds that spell a word across a row / down a column score.</div>
+            <div class="gd-mvpnote">Each bed is a 2×3 <b>Braille cell</b>. Buy this season's seeds at the Stall, then sow <b>one seed per dot</b> to form a letter — that placement is the Braille drill. A bed <b>matures overnight</b>, then yields <b>once a day</b> all season. Grown beds that spell a word across a row / down a column pay extra.</div>
           </div>
           <div class="gd-right">
             <div class="gd-palette" id="gd-palette"></div>
@@ -812,6 +845,7 @@
               <button class="primary" id="gd-harvest">Harvest</button>
               <button id="gd-clear">Clear all</button>
             </div>
+            <div class="gd-dev" id="gd-dev"></div>
           </div>
         </div>
       </div>
@@ -1578,7 +1612,10 @@ const state = {
   gear:[],                      // owned gear instances [{uid, item}] (item = key into EQUIP_ITEMS) (persist)
   gearSeq:0,                    // running counter for unique gear instance ids (persist)
   fx:[],                        // floating texts
-  garden:null,                  // Braille crossword farm { cols, rows, cells:[[{letter, dots}]] } (persist)
+  garden:null,                  // Braille crossword farm { v, cols, rows, cells:[[{letter,dots,season,plantedDay,lastHarvest}]], paid } (persist)
+  seeds:{},                     // "season:letter" -> seed count (season-locked, consumable; persist)
+  season:"",                    // current real-calendar season (checked on rollover; withers out-of-season beds)
+  seedGrants:[],                // milestone `at` values already granted a starter seed packet (persist)
   started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
@@ -1932,6 +1969,7 @@ function startNewDay(){
   state.player.hearts=maxHearts(); state.player.hurtT=0; state.player.healT=0;
   state.prints=[]; _inkArmed=true; _inkPos=null; _inkPosDay=null;   // fresh ink puddle + clean feet
   goHome();                         // wake up at the library desk (home)
+  gardenSeasonSync(true);           // a new day may cross a season boundary → wither out-of-season crops
   updateTrayHud(); saveNow();
   showToast("A new day dawns — a fresh map awaits.");
 }
@@ -1998,7 +2036,7 @@ const MOVE_KEYS=new Set(["arrowup","arrowdown","arrowleft","arrowright"," ","w",
 // DEV-ONLY DEBUG: on localhost / file:// only (never the deployed GitHub Pages host). Press ` (backtick) to
 // grant yourself any letters for testing — added straight to the satchel, bypassing the cap.
 const IS_DEV = location.protocol==="file:" || /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(location.hostname);
-if(!IS_DEV){ ["tc-farm","tb-farm"].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display="none"; }); }   // Garden is debug-only for now
+// The Garden ships to production for testing (seasons + consumable season-locked seeds). Dev keeps a season/seed cheat bar inside the modal.
 function debugGrantLetters(){
   const s=prompt("DEBUG — grant letters (type any; e.g. 'qzx', or 'aaa' for three a's):");
   if(!s) return;
@@ -3678,6 +3716,7 @@ function updateRewardHud(){
   el.innerHTML=drink.concat(throwables).join("");
   el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>drinkPotion(b.dataset.p));
 }
+let _shopSeed="A", _shopSeedSig="";   // currently selected crop in the Stall's Seed Rack (+ cache so the <select> isn't rebuilt every frame)
 // Shop panel inside the desk overlay: shows your ink and the next satchel upgrade (cost + Buy button).
 function updateShop(){
   const inkEl=document.getElementById("shop-ink"); if(inkEl) inkEl.textContent=state.ink;
@@ -3695,6 +3734,41 @@ function updateShop(){
   if(fdesc) fdesc.textContent = doneAll ? "Every fable recovered ✓" : `Recover the next fable (${state.fables}/${total})`;
   if(fcost) fcost.textContent = Object.keys(FABLE_COST).map(m=>`${FABLE_COST[m]} ${prettyItem(m)}`).join(" + ");
   if(fbtn) fbtn.disabled = !canBindFable();
+  updateShopSeeds();
+}
+// Seed Rack — buy any quantity of a CURRENT-season crop's seed; price scales with letter rarity.
+function updateShopSeeds(){
+  const season=currentSeason(), crops=cropsFor(season);
+  const seasonEl=document.getElementById("shop-seed-season");
+  if(seasonEl) seasonEl.textContent = SEASON_EMOJI[season]+" "+SEASON_LABEL[season];
+  if(!crops[_shopSeed]) _shopSeed=Object.keys(crops)[0]||"A";
+  const sel=document.getElementById("shop-seed-letter");
+  const sig=season+"|"+Object.keys(crops).map(L=>seedCount(season,L)).join(",");   // rebuild options only when this changes
+  if(sel && sig!==_shopSeedSig){
+    _shopSeedSig=sig;
+    sel.innerHTML=Object.keys(crops).map(L=>{ const [nm]=crops[L];
+      return '<option value="'+L+'">'+L+' — '+esc(nm)+' · '+seedPrice(L)+' ink (own '+seedCount(season,L)+')</option>'; }).join("");
+    sel.value=_shopSeed;
+  }
+  const qtyEl=document.getElementById("shop-seed-qty");
+  const qty=Math.max(1, Math.min(999, parseInt(qtyEl&&qtyEl.value)||1));
+  const total=qty*seedPrice(_shopSeed);
+  const costEl=document.getElementById("shop-seed-cost"); if(costEl) costEl.textContent=total;
+  const descEl=document.getElementById("shop-seed-desc");
+  if(descEl) descEl.textContent=SEASON_LABEL[season]+" "+cropInfo(season,_shopSeed)[0]+" — you own "+seedCount(season,_shopSeed)+" seed"+(seedCount(season,_shopSeed)===1?"":"s");
+  const btn=document.getElementById("shop-seed-buy"); if(btn) btn.disabled = state.ink<total;
+}
+function buySeeds(){
+  const season=currentSeason(), L=_shopSeed;
+  const qtyEl=document.getElementById("shop-seed-qty");
+  const qty=Math.max(1, Math.min(999, parseInt(qtyEl&&qtyEl.value)||1));
+  const total=qty*seedPrice(L);
+  if(state.ink<total){ SFX.play("invalid"); return; }
+  state.ink-=total; addSeeds(season,L,qty);
+  SFX.play("unlock");
+  showToast("Bought "+qty+" "+SEASON_LABEL[season]+" "+cropInfo(season,L)[0]+" ("+L+") seed"+(qty===1?"":"s")+".");
+  updateShop(); updateRewardHud(); scheduleSave();
+  if(state.gardenOpen) renderGarden();
 }
 function buyBagUpgrade(){
   const cost=bagUpgradeCost();
@@ -4048,6 +4122,7 @@ function commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, known){
     newly=[...unlockedLetters()].filter(l=>!before.has(l));
     dexTab=(word[0]||"?").toUpperCase();
     renderDex();
+    checkSeedGrants();             // early word-milestone seed packets for the garden
   }
 
   // Brew AFTER recording, so a brand-new synonym enlarges its own flask first (can make room when full).
@@ -4532,13 +4607,60 @@ function sanitizeEquip(){
    first collection). Beds shared by a row-word AND a column-word pay ×1.5 (the crossword magic).
    Scaffold scope: planting is free (no seed economy), no growth/season throttle, harvest keeps the layout
    (instantly repeatable). The real garden is a walkable map zone. See docs/inklings-farming.md. */
-const CROPS = {  // letter -> [name, emoji]  (emoji are placeholders; swap for pixel sprites later)
+// ---------- SEASONS (real-calendar; Northern-hemisphere meteorological) ----------
+const SEASONS = ["spring","summer","autumn","winter"];
+const SEASON_LABEL = { spring:"Spring", summer:"Summer", autumn:"Autumn", winter:"Winter" };
+const SEASON_EMOJI = { spring:"🌱", summer:"☀️", autumn:"🍂", winter:"❄️" };
+// Mar–May spring, Jun–Aug summer, Sep–Nov autumn, Dec–Feb winter (Northern-hemisphere meteorological).
+function seasonForDate(d){ const m=(d||new Date()).getMonth();   // 0=Jan
+  if(m>=2 && m<=4) return "spring"; if(m>=5 && m<=7) return "summer"; if(m>=8 && m<=10) return "autumn"; return "winter"; }
+let _devSeason = null;   // DEV: force a season (null = follow the real date)
+function currentSeason(){ return (typeof IS_DEV!=="undefined" && IS_DEV && _devSeason) ? _devSeason : seasonForDate(); }
+// Monotonic integer day count from a local "Y-M-D" string — used to age crops (maturity) day-to-day.
+function dayIndex(str){ const [y,m,d]=(str||todayStr()).split("-").map(Number); return Math.floor(Date.UTC(y,m-1,d)/86400000); }
+
+// Placeholder crop roster (letter -> [name, emoji]) reused across ALL four seasons until the real 104 crops
+// (fruit/veg AND flowers) are authored. BRAILLE[letter] stays global — the lesson is season-invariant; only the
+// crop skin/name changes per season. Author real seasonal rosters by filling CROPS_BY_SEASON[season] later.
+const CROPS_BASE = {
   A:["Apple","🍎"], B:["Banana","🍌"], C:["Carrot","🥕"], D:["Dill","🌿"], E:["Eggplant","🍆"], F:["Fig","🫐"],
   G:["Grapes","🍇"], H:["Honeydew","🍈"], I:["Iceberg","🥬"], J:["Jalapeño","🌶️"], K:["Kiwi","🥝"], L:["Lemon","🍋"],
   M:["Mango","🥭"], N:["Nectarine","🍑"], O:["Orange","🍊"], P:["Pineapple","🍍"], Q:["Quince","🍐"], R:["Rainier","🍒"],
   S:["Strawberry","🍓"], T:["Tomato","🍅"], U:["Ugli","🍊"], V:["Vidalia","🧅"], W:["Watermelon","🍉"], X:["Xigua","🍉"],
   Y:["Yam","🍠"], Z:["Zucchini","🥒"]
 };
+const CROPS_BY_SEASON = { spring:{}, summer:{}, autumn:{}, winter:{} };
+for(const s of SEASONS) for(const L in CROPS_BASE) CROPS_BY_SEASON[s][L]=CROPS_BASE[L];
+function cropsFor(season){ return CROPS_BY_SEASON[season]||CROPS_BASE; }
+function cropInfo(season,L){ return (cropsFor(season)[String(L).toUpperCase()]) || CROPS_BASE[String(L).toUpperCase()] || [String(L),"❓"]; }
+
+// Per-crop growth config. Default: matures in 1 real day, then yields once per day, persists to season's end.
+// Override per season/letter later (some plants persist, some take longer, etc.) for real-plant accuracy.
+const CROP_CFG_DEFAULT = { matureDays:1, regrow:true };
+function cropCfg(season,L){ return CROP_CFG_DEFAULT; }
+
+// ---------- SEEDS (season-locked, consumable; keyed "season:letter") ----------
+const SEED_PRICE_TIER = { common:3, mid:6, rare:12, legend:20 };   // ink per seed, by letter rarity
+function seedPrice(L){ return SEED_PRICE_TIER[tierOf(L)] || SEED_PRICE_TIER.common; }
+function seedKey(season,L){ return season+":"+String(L).toLowerCase(); }
+function seedCount(season,L){ return state.seeds[seedKey(season,L)]||0; }
+function addSeeds(season,L,n){ const k=seedKey(season,L); state.seeds[k]=Math.max(0,(state.seeds[k]||0)+n); }
+// Starter + early word-milestone seed packets (granted in the CURRENT season). at:0 = the starter A packet.
+const SEED_GRANTS = [ {at:0,letter:"a",qty:6}, {at:3,letter:"t",qty:6}, {at:8,letter:"e",qty:6}, {at:15,letter:"s",qty:6} ];
+function checkSeedGrants(){
+  const n=wordsCollected(), season=currentSeason();
+  for(const g of SEED_GRANTS){
+    if(state.seedGrants.includes(g.at) || n<g.at) continue;
+    state.seedGrants.push(g.at);
+    addSeeds(season, g.letter, g.qty);
+    if(state.started){   // silent on the very first load; announced when earned in play
+      const nm=cropInfo(season,g.letter)[0];
+      showToast("Seed packet! +"+g.qty+" "+SEASON_LABEL[season]+" "+nm+" ("+g.letter.toUpperCase()+") seeds — sow them in the Garden.");
+      SFX.play("unlock");
+    }
+    scheduleSave();
+  }
+}
 // Grade-1 Braille dot patterns (dots 1-6). 1-2-3 = left column top→bottom, 4-5-6 = right column.
 const BRAILLE = { a:"1",b:"12",c:"14",d:"145",e:"15",f:"124",g:"1245",h:"125",i:"24",j:"245",k:"13",l:"123",m:"134",
   n:"1345",o:"135",p:"1234",q:"12345",r:"1235",s:"234",t:"2345",u:"136",v:"1236",w:"2456",x:"1346",y:"13456",z:"1356" };
@@ -4546,18 +4668,40 @@ const BRAILLE = { a:"1",b:"12",c:"14",d:"145",e:"15",f:"124",g:"1245",h:"125",i:
 const GARDEN_COLS = 5, GARDEN_ROWS = 4;
 // Plot render order: filling a 2-column grid row-major lands dots as 1-2-3 (left col) / 4-5-6 (right col).
 const BRAILLE_DOTS = [1,4,2,5,3,6];
+const GARDEN_V = 2;                                  // bumped when the cell shape changes (old saves reset to fallow)
 let _gdSeed = "A";                                   // currently selected crop-seed (the letter you're planting)
-// A bed = { letter, dots }: letter = the crop planted here (null = fallow), dots = the plots filled ("14", …).
+// A bed = { letter, dots, season, plantedDay, lastHarvest }: letter = the crop (null = fallow), dots = filled plots
+// ("14", …), season = the season it was planted in (withers when the season turns), plantedDay = day it grew (for
+// maturity), lastHarvest = day-string it last yielded (once-per-day cadence). paid = day-scoped word-payout log.
+function newCell(){ return { letter:null, dots:"", season:null, plantedDay:null, lastHarvest:null }; }
 function gardenInit(){
-  const ok = state.garden && state.garden.cols===GARDEN_COLS && state.garden.rows===GARDEN_ROWS
+  const ok = state.garden && state.garden.v===GARDEN_V && state.garden.cols===GARDEN_COLS && state.garden.rows===GARDEN_ROWS
     && Array.isArray(state.garden.cells) && state.garden.cells.length===GARDEN_ROWS
     && state.garden.cells.every(row=>Array.isArray(row) && row.length===GARDEN_COLS);
-  if(!ok) state.garden = { cols:GARDEN_COLS, rows:GARDEN_ROWS,
-    cells:Array.from({length:GARDEN_ROWS},()=>Array.from({length:GARDEN_COLS},()=>({letter:null, dots:""}))) };
+  if(!ok) state.garden = { v:GARDEN_V, cols:GARDEN_COLS, rows:GARDEN_ROWS, paid:{day:"",words:[]},
+    cells:Array.from({length:GARDEN_ROWS},()=>Array.from({length:GARDEN_COLS},()=>newCell())) };
+  if(!state.garden.paid) state.garden.paid={day:"",words:[]};
 }
 function normDots(s){ return [...new Set((s||"").split(""))].filter(d=>"123456".includes(d)).sort().join(""); }
 function cellGrown(cell){ return !!(cell && cell.letter) && normDots(cell.dots)===BRAILLE[cell.letter.toLowerCase()]; }
 function effLetter(cell){ return cellGrown(cell) ? cell.letter : null; }   // only a correctly-grown bed reads as its letter
+// A grown bed is MATURE (harvestable) once matureDays have passed since it grew; matures overnight by default.
+function cellMature(cell){ if(!cellGrown(cell) || !cell.plantedDay) return false;
+  return dayIndex(todayStr()) - dayIndex(cell.plantedDay) >= cropCfg(cell.season,cell.letter).matureDays; }
+function cellHarvestable(cell){ return cellMature(cell) && cell.lastHarvest!==todayStr(); }
+// Turn of the season: crops planted in a past season wither to fallow. Seeds already sown are spent (no refund).
+function gardenSeasonSync(announce){
+  gardenInit();
+  const season=currentSeason();
+  if(state.season===season) return;
+  let withered=0;
+  for(const row of state.garden.cells) for(const cell of row){
+    if(cell.letter && cell.season && cell.season!==season){ Object.assign(cell,newCell()); withered++; }
+  }
+  const prev=state.season; state.season=season;
+  if(announce && prev && withered) showToast("The season turns to "+SEASON_LABEL[season]+" — "+withered+" out-of-season bed"+(withered===1?"":"s")+" withered. Replant with "+SEASON_LABEL[season]+" seeds.");
+  scheduleSave();
+}
 function braillePreview(letter){                                           // mini 2×3 pattern for the almanac legend
   const on=BRAILLE[(letter||"").toLowerCase()]||"";
   return '<span class="bp">'+BRAILLE_DOTS.map(d=>'<i class="'+(on.includes(""+d)?"on":"")+'"></i>').join("")+'</span>';
@@ -4595,68 +4739,112 @@ function gardenWordReward(w){
 }
 function renderGarden(){
   gardenInit();
+  const season=currentSeason(), crops=cropsFor(season), today=todayStr();
   const words=gardenScan(), wordCells=new Set(), crossCells=new Set();
   for(const w of words) for(const [r,c] of w.cells){ wordCells.add(r+","+c); if(w.crossing) crossCells.add(r+","+c); }
-  // seed palette — pick which crop/letter you're planting
+  if(!crops[_gdSeed]) _gdSeed=Object.keys(crops)[0]||"A";
+  // season banner
+  const banner=document.getElementById("gd-season");
+  if(banner) banner.innerHTML=SEASON_EMOJI[season]+' <b>'+SEASON_LABEL[season]+'</b> — only this season’s seeds can be sown; standing crops wither when the season turns.';
+  // seed palette — pick which crop/letter you're planting (this season's roster; badge = seeds you own)
   const pal=document.getElementById("gd-palette");
-  pal.innerHTML=Object.keys(CROPS).map(Lk=>{ const [nm,em]=CROPS[Lk];
-    return '<button class="gd-seed'+(Lk===_gdSeed?" sel":"")+'" data-l="'+Lk+'" title="'+esc(nm)+'"><span>'+em+'</span><b>'+Lk+'</b></button>'; }).join("");
+  pal.innerHTML=Object.keys(crops).map(Lk=>{ const [nm,em]=crops[Lk]; const own=seedCount(season,Lk);
+    return '<button class="gd-seed'+(Lk===_gdSeed?" sel":"")+(own?"":" empty")+'" data-l="'+Lk+'" title="'+esc(nm)+' — '+own+' seed'+(own===1?"":"s")+'"><span>'+em+'</span><b>'+Lk+'</b><em>'+own+'</em></button>'; }).join("");
   pal.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{ _gdSeed=b.dataset.l; renderGarden(); });
-  // legend (the almanac line): what you're planting + its Braille pattern
-  const [snm,sem]=CROPS[_gdSeed];
+  // legend (the almanac line): what you're planting, its Braille pattern, and your seed stock
+  const [snm,sem]=crops[_gdSeed]||CROPS_BASE[_gdSeed]; const own=seedCount(season,_gdSeed);
   document.getElementById("gd-legend").innerHTML=braillePreview(_gdSeed)+
-    '<span>Planting <b>'+_gdSeed+'</b> — '+esc(snm)+' '+sem+'. Fill the glowing dots.</span>';
+    '<span>Sowing <b>'+_gdSeed+'</b> — '+esc(snm)+' '+sem+'. <b style="color:'+(own?'var(--moss)':'var(--rose,#b3372f)')+'">'+own+'</b> seed'+(own===1?"":"s")+' left. One seed per dot; lift a dot to get it back.</span>';
   // field of Braille cells; each bed renders its 6 plots (dots 1-6) in BRAILLE_DOTS order
   const cells=state.garden.cells, C=state.garden.cols, field=document.getElementById("gd-field");
   field.style.gridTemplateColumns="repeat("+C+",auto)";
   let html="";
   for(let r=0;r<state.garden.rows;r++) for(let c=0;c<C;c++){
-    const cell=cells[r][c], k=r+","+c, grown=cellGrown(cell);
+    const cell=cells[r][c], k=r+","+c, grown=cellGrown(cell), mature=cellMature(cell), reaped=grown&&cell.lastHarvest===today;
     const target=cell.letter?BRAILLE[cell.letter.toLowerCase()]:"";
-    const cls="gd-cell"+(cell.letter?(grown?" grown":" growing"):"")+
-      (grown&&wordCells.has(k)?" word":"")+(grown&&crossCells.has(k)?" cross":"");
+    const cls="gd-cell"+(cell.letter?(grown?(mature?" grown":" maturing"):" growing"):"")+
+      (grown&&wordCells.has(k)?" word":"")+(grown&&crossCells.has(k)?" cross":"")+(reaped?" reaped":"");
     let plots="";
     for(const d of BRAILLE_DOTS){ const on=cell.dots.includes(""+d), inTarget=target.includes(""+d);
       const pc="gd-plot"+(on?(inTarget?" on":" bad"):(cell.letter&&inTarget?" ghost":""));
-      plots+='<div class="'+pc+'" data-r="'+r+'" data-c="'+c+'" data-d="'+d+'">'+(on&&cell.letter?CROPS[cell.letter][1]:"")+'</div>';
+      const em=on&&cell.letter?cropInfo(cell.season||season,cell.letter)[1]:"";
+      plots+='<div class="'+pc+'" data-r="'+r+'" data-c="'+c+'" data-d="'+d+'">'+em+'</div>';
     }
-    html+='<div class="'+cls+'" data-cell="'+k+'">'+(cell.letter?'<span class="gd-clabel">'+cell.letter+'</span>':"")+plots+'</div>';
+    const tag=cell.letter?('<span class="gd-clabel">'+cell.letter+(grown?(mature?(reaped?" ✓":" ⛏"):" …"):"")+'</span>'):"";
+    html+='<div class="'+cls+'" data-cell="'+k+'">'+tag+plots+'</div>';
   }
   field.innerHTML=html;
   field.querySelectorAll(".gd-plot").forEach(p=>p.onclick=()=>gardenPlant(+p.dataset.r,+p.dataset.c,p.dataset.d));
   const wl=document.getElementById("gd-words");
   if(!DICT) wl.innerHTML='<div class="gd-note">Dictionary still loading…</div>';
   else if(!words.length) wl.innerHTML='<div class="gd-note">No words yet — grow 2+ beds in a row or column so they spell a word (the whole unbroken run must be valid).</div>';
-  else wl.innerHTML=words.map(w=>'<div class="gd-word'+(w.crossing?" x":"")+'"><b>'+esc(w.word.toUpperCase())+
-    '</b> <span class="gd-pos">'+posLabel(w.pos)+'</span> <span class="gd-rw">'+gardenWordReward(w)+(w.crossing?" ×1.5":"")+'</span></div>').join("");
+  else wl.innerHTML=words.map(w=>{ const rip=w.cells.every(([r,c])=>cellMature(cells[r][c]));
+    return '<div class="gd-word'+(w.crossing?" x":"")+(rip?"":" unripe")+'"><b>'+esc(w.word.toUpperCase())+
+    '</b> <span class="gd-pos">'+posLabel(w.pos)+'</span> <span class="gd-rw">'+gardenWordReward(w)+(w.crossing?" ×1.5":"")+(rip?"":" · unripe")+'</span></div>'; }).join("");
+  const devbar=document.getElementById("gd-dev");
+  if(devbar) devbar.innerHTML = (typeof IS_DEV!=="undefined"&&IS_DEV) ? gardenDevBarHTML(season) : "";
+  if(devbar) wireGardenDevBar();
 }
-// Click a plot: plant/lift the selected crop there. A bed holds one crop — clicking with a different seed replants it.
+// Click a plot: sow/lift ONE seed of the selected crop there. Each dot spends a seed; lifting refunds it (until the
+// crop matures). A bed holds one crop — clicking with a different seed replants it (refunding the old, unspent seeds).
 function gardenPlant(r,c,d){
   gardenInit();
+  const season=currentSeason();
   const cell=state.garden.cells[r][c];
-  if(cell.letter && cell.letter!==_gdSeed){ cell.letter=_gdSeed; cell.dots=""; }   // replant this bed with the new crop
-  if(!cell.letter) cell.letter=_gdSeed;
-  cell.dots = cell.dots.includes(d) ? normDots(cell.dots.replace(d,"")) : normDots(cell.dots+d);
-  if(!cell.dots) cell.letter=null;                                                 // last dot lifted → fallow again
-  scheduleSave(); renderGarden();
+  if(cellMature(cell)){ showToast("This crop has matured — harvest it, or Clear the bed to replant."); return; }
+  const sameCrop = cell.letter===_gdSeed && cell.season===season;
+  const lifting  = sameCrop && cell.dots.includes(d);
+  if(!lifting && seedCount(season,_gdSeed)<=0){   // sowing needs a seed in stock — check BEFORE mutating the bed
+    showToast("No "+_gdSeed+" seeds this "+SEASON_LABEL[season]+" — buy some at the Stall."); SFX.play("invalid"); return; }
+  // Replant: bed holds a different crop (or a past season's) → refund its still-unspent seeds, then start fresh.
+  if(cell.letter && !sameCrop){
+    if(cell.dots) addSeeds(cell.season||season, cell.letter, cell.dots.length);
+    Object.assign(cell,newCell());
+  }
+  if(lifting){                                    // lift this dot → refund its seed
+    addSeeds(season, _gdSeed, 1);
+    cell.dots=normDots(cell.dots.replace(d,""));
+    if(!cell.dots) Object.assign(cell,newCell());
+  } else {                                        // sow a seed in this dot → spend one
+    addSeeds(season, _gdSeed, -1);
+    if(!cell.letter){ cell.letter=_gdSeed; cell.season=season; }
+    cell.dots=normDots(cell.dots+d);
+  }
+  // Stamp the grow-day when the pattern first completes (it then matures overnight); clear it if broken again.
+  if(cellGrown(cell)){ if(!cell.plantedDay){ cell.plantedDay=todayStr(); cell.lastHarvest=null; } }
+  else cell.plantedDay=null;
+  scheduleSave(); renderGarden(); if(state.shop) updateShop();
 }
 function harvestGarden(){
   gardenInit();
   if(!DICT){ showToast("Dictionary still loading…"); return; }
-  let letters=0;
-  for(const row of state.garden.cells) for(const cell of row){
-    if(cellGrown(cell)){ const low=cell.letter.toLowerCase(); state.inv[low]=(state.inv[low]||0)+1; letters++; } }
+  const today=todayStr();
+  if(!state.garden.paid || state.garden.paid.day!==today) state.garden.paid={day:today, words:[]};
+  const cells=state.garden.cells;
+  let letters=0, unripe=0;
+  for(const row of cells) for(const cell of row){
+    if(!cellGrown(cell)) continue;
+    if(!cellMature(cell)){ unripe++; continue; }
+    if(cell.lastHarvest===today) continue;                    // already reaped today — once-per-day cadence
+    const low=cell.letter.toLowerCase(); state.inv[low]=(state.inv[low]||0)+1; cell.lastHarvest=today; letters++;
+  }
   const words=gardenScan();
-  if(!letters && !words.length){ showToast("Nothing grown yet — fill a bed's Braille dots to grow its letter."); return; }
   let ink=0, potions=0, newWords=0;
   for(const w of words){
+    if(!w.cells.every(([r,c])=>cellMature(cells[r][c]))) continue;   // whole word must be mature to pay
+    if(state.garden.paid.words.includes(w.word)) continue;           // once per day per word (renewable tomorrow)
+    state.garden.paid.words.push(w.word);
     if(!state.dex[w.word]){ state.dex[w.word]={ def:w.def||"A word in the dictionary.", pos:w.pos, found:Date.now() }; onNewVerbWord(w.word); onNewAdjWord(w.word); newWords++; }
     const mult=w.crossing?1.5:1;
     if(w.pos.includes("noun")){ const got=Math.round(inkForWord(w.word)*mult); state.ink+=got; ink+=got; }
     if(w.pos.includes("adjective")){ const p=potionForAdj(w.word); if(state.potions[p]<flaskCap(p)){ state.potions[p]++; potions++; } }   // meaning-driven brew, capped by flask
   }
+  if(!letters && !ink && !potions && !newWords){
+    showToast(unripe ? "Still ripening — come back tomorrow to harvest." : "Nothing to harvest — sow seeds into a bed's Braille dots first.");
+    return;
+  }
   updateTrayHud(); updateRewardHud(); scheduleSave();
-  SFX.play(words.length?"newword":"capture");
+  SFX.play(newWords?"newword":"capture");
   let msg="Harvested +"+letters+" letter"+(letters===1?"":"s");
   if(ink) msg+=", +"+ink+" ink";
   if(potions) msg+=", +"+potions+" potion"+(potions>1?"s":"");
@@ -4666,11 +4854,30 @@ function harvestGarden(){
 }
 function openGarden(){
   if(state.gardenOpen) return;
-  if(typeof IS_DEV!=="undefined" && !IS_DEV) return;   // DEBUG-ONLY test scaffolding — the real garden is a walkable map zone
-  gardenInit(); state.gardenOpen=true;
+  gardenInit(); gardenSeasonSync(false); state.gardenOpen=true;
   document.getElementById("garden").classList.add("open");
   document.getElementById("sound-btn").style.display="none";
   renderGarden(); SFX.play("click");
+}
+// DEV-only garden bar: force a season (real date is followed in prod) + grant seeds to test the loop.
+function gardenDevBarHTML(season){
+  const secs=SEASONS.map(s=>'<button class="gd-devseason'+(s===season?" on":"")+'" data-season="'+s+'">'+SEASON_EMOJI[s]+' '+SEASON_LABEL[s]+'</button>').join("");
+  return '<span class="gd-devlabel">DEV</span>'+secs+
+    '<button data-devseed="one">+20 '+_gdSeed+' seed</button>'+
+    '<button data-devseed="all">+20 all seeds</button>'+
+    '<button data-devmature="1">Force-mature all</button>';
+}
+function wireGardenDevBar(){
+  const bar=document.getElementById("gd-dev"); if(!bar) return;
+  bar.querySelectorAll("[data-season]").forEach(b=>b.onclick=()=>{ _devSeason=b.dataset.season; gardenSeasonSync(false); renderGarden(); if(state.shop) updateShop(); });
+  bar.querySelectorAll("[data-devseed]").forEach(b=>b.onclick=()=>{ const season=currentSeason();
+    if(b.dataset.devseed==="all"){ for(const L in cropsFor(season)) addSeeds(season,L,20); }
+    else addSeeds(season,_gdSeed,20);
+    scheduleSave(); renderGarden(); if(state.shop) updateShop(); });
+  const mb=bar.querySelector("[data-devmature]");   // backdate every grown bed so it's ripe today (test the harvest loop in one sitting)
+  if(mb) mb.onclick=()=>{ gardenInit(); let n=0;
+    for(const row of state.garden.cells) for(const cell of row){ if(cellGrown(cell)){ cell.plantedDay="2000-1-1"; cell.lastHarvest=null; n++; } }
+    scheduleSave(); renderGarden(); showToast("DEV: matured "+n+" bed"+(n===1?"":"s")+" — harvest now."); };
 }
 function closeGarden(){
   state.gardenOpen=false;
@@ -5019,7 +5226,8 @@ function snapshot(){
            verbCounts:state.verbCounts, divineDay:state.divineDay, divine:state.divine,
            obstacleDay:state.obstacleDay, obstacleGot:state.obstacleGot, riverCrossed:state.riverCrossed,
            inkClearedDay:state.inkClearedDay, inkedDay:state.inkedDay, printsDay:state.printsDay,
-           equip:state.equip, gear:state.gear, gearSeq:state.gearSeq, garden:state.garden };
+           equip:state.equip, gear:state.gear, gearSeq:state.gearSeq, garden:state.garden,
+           seeds:state.seeds, season:state.season, seedGrants:state.seedGrants };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -5053,7 +5261,11 @@ function applySnapshot(d){
   if(typeof d.gearSeq==="number") state.gearSeq=d.gearSeq;
   if(d.equip && typeof d.equip==="object") for(const s in state.equip) if(s in d.equip) state.equip[s]=d.equip[s];
   sanitizeEquip();
-  if(d.garden && Array.isArray(d.garden.cells)) state.garden=d.garden;   // Braille crossword farm (persist; gardenInit re-validates shape)
+  if(d.garden && Array.isArray(d.garden.cells)) state.garden=d.garden;   // Braille crossword farm (persist; gardenInit re-validates/versions shape)
+  if(d.seeds && typeof d.seeds==="object") state.seeds=d.seeds;          // season-locked seed stock
+  if(typeof d.season==="string") state.season=d.season;
+  if(Array.isArray(d.seedGrants)) state.seedGrants=d.seedGrants;
+  gardenSeasonSync(false); checkSeedGrants();                            // wither out-of-season beds; grant any owed packets
   state.player.hearts=maxHearts();
   rederiveVerbCounts();   // no-op until VERB_CATS is loaded; then reconciles counts with the collection
   rederiveAdjCounts();    // per-pole flask capacity, re-derived from the collection (no-op until ADJ_ATTRS loads)
@@ -5171,6 +5383,9 @@ document.getElementById("check-btn").onclick=checkWord;
 document.getElementById("clear-btn").onclick=()=>{ closeRespell(); bench=[]; renderBench(); document.getElementById("result").innerHTML=""; SFX.play("click"); };
 document.getElementById("shop-bag-buy").onclick=buyBagUpgrade;
 document.getElementById("shop-fable-buy").onclick=buyFable;
+document.getElementById("shop-seed-buy").onclick=buySeeds;
+document.getElementById("shop-seed-letter").onchange=e=>{ _shopSeed=e.target.value; updateShopSeeds(); };
+document.getElementById("shop-seed-qty").oninput=updateShopSeeds;
 document.getElementById("shop-close").onclick=()=>{ closeShop(); SFX.play("click"); };
 document.getElementById("shop-done").onclick=()=>{ closeShop(); SFX.play("click"); };
 document.getElementById("ml-close").onclick=()=>{ closeBook(); SFX.play("click"); };
@@ -5190,7 +5405,10 @@ document.querySelectorAll("#equipment .eq-tab").forEach(t=>t.onclick=()=>{ _equi
 document.getElementById("gd-close").onclick=()=>{ closeGarden(); SFX.play("click"); };
 document.getElementById("garden").onclick=e=>{ if(e.target.id==="garden") closeGarden(); };  // tap backdrop to close
 document.getElementById("gd-harvest").onclick=harvestGarden;
-document.getElementById("gd-clear").onclick=()=>{ gardenInit(); state.garden.cells.forEach(row=>row.forEach(cell=>{ cell.letter=null; cell.dots=""; })); scheduleSave(); SFX.play("click"); renderGarden(); };
+document.getElementById("gd-clear").onclick=()=>{ gardenInit();
+  // Refund seeds sown into beds that haven't matured yet (mature crops are already spent); then clear everything.
+  state.garden.cells.forEach(row=>row.forEach(cell=>{ if(cell.letter && cell.dots && !cellMature(cell)) addSeeds(cell.season||currentSeason(), cell.letter, cell.dots.length); Object.assign(cell,newCell()); }));
+  scheduleSave(); SFX.play("click"); renderGarden(); if(state.shop) updateShop(); };
 // Close whichever primary dialog is currently open. Used when a toolbar/touch button switches dialogs
 // so a click never stacks a second modal on top of the open one.
 function closeAnyDialog(){
@@ -5356,7 +5574,7 @@ if(SPRITESHEET.url){
 // Ask the browser to keep our storage (protects the whole origin's storage, IndexedDB included).
 if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
 // Restore the autosave on startup, then enable autosaving (gate prevents overwriting before load).
-idbGet().then(d=>{ if(applySnapshot(d)) renderDex(); }).catch(()=>{}).finally(()=>{ loaded=true; });
+idbGet().then(d=>{ if(applySnapshot(d)) renderDex(); }).catch(()=>{}).finally(()=>{ gardenSeasonSync(false); checkSeedGrants(); loaded=true; });
 // Best-effort final save when leaving/backgrounding the page.
 addEventListener("pagehide", saveNow);
 addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") saveNow(); });
