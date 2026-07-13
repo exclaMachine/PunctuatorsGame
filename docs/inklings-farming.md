@@ -18,8 +18,8 @@ is an authored persistent area), [`inklings-grammar-systems.md`](inklings-gramma
 - A cozy **persistent** farming zone, separate from the daily-reset field **and** from combat.
 - Beds are **2×3 Braille cells**. Seeds are **consumable and season-locked**: you sow **one seed per Braille dot**,
   so forming a letter spends seeds equal to its dot-count — the deliberate placement *is* the Braille lesson.
-- **Real-calendar seasons** (Northern-hemisphere meteorological): each of the four seasons has its own 26-crop
-  roster (**104 crops** total, framework-only for now — reused placeholder art until authored, flowers welcome).
+- **Real-calendar seasons** (Northern-hemisphere meteorological): each of the four seasons has its own **authored
+  26-crop roster** (**104 crops** total — see §2's table; emoji still placeholder pending pixel sprites).
   A season's seed only grows that season; standing crops **wither** at the season's turn and must be replanted.
 - **Overnight maturation, then harvest once per real day** all season (per-crop timing is configurable for
   real-plant accuracy later). Harvest = a **renewable** supply of that letter + the crossword-word POS payouts.
@@ -48,32 +48,50 @@ is an authored persistent area), [`inklings-grammar-systems.md`](inklings-gramma
   keyed `"season:letter"` in `state.seeds`. Starter + early word-milestone **seed packets** (`SEED_GRANTS`: start
   with an A packet, earn T/E/S packets at 3/8/15 words) bootstrap a fresh player.
 - **Crops tied to letters — the alphabet garden:** each crop is produce whose initial *is* its letter (teaches
-  initial letters; great for younger learners). Full A–Z roster below.
+  initial letters; great for younger learners). Full **104-crop** roster (26 × 4 seasons) below.
 - **Planting = the Braille lesson:** plant the crop in its letter's Braille pattern (A → dot 1; C → dots 1+4;
   L → dots 1+2+3). The almanac shows each letter's pattern; doing it grows the letter.
 - **Harvest:** a renewable supply of that Latin letter for the satchel / Wordsmithy (plus word rewards, §3).
 
-### Crop roster (emoji stand-ins → pixel crops later)
-Data shape: `{ letter, name, emoji, brailleDots }`. Emoji are placeholders (swap for sprites later, like the
-equipment items). `*` = weak/duplicate emoji, prioritize a custom sprite there.
+### Crop roster — the 104 (authored; emoji stand-ins → pixel crops later)
+One real plant per letter per season (`CROPS_BY_SEASON[season][letter] = [name, emoji]` in `inklings.html`),
+placed by **Northern-hemisphere** seasonality across flower/fruit/veg/root/leaf/herb/nut/melon/squash/citrus/
+bark-resin/spice/medicinal/mushroom. `BRAILLE[letter]` is global (season-invariant lesson). Emoji are
+**placeholders** — many reuse generics (🌸/🌼/💐 flowers, 🌿 greens/herbs, 🌰 nut/bark/spice, 🫘 legumes,
+🍠/🥕/🥔 roots) and should be replaced by pixel sprites.
 
-| | Crop | | | Crop | |
-| --- | --- | --- | --- | --- | --- |
-| **A** | Apple | 🍎 | **N** | Nectarine | 🍑* |
-| **B** | Banana | 🍌 | **O** | Orange | 🍊 |
-| **C** | Carrot | 🥕 | **P** | Pineapple | 🍍 |
-| **D** | Dill | 🌿 | **Q** | Quince | 🍐* |
-| **E** | Eggplant | 🍆 | **R** | Rainier cherry | 🍒 |
-| **F** | Fig | 🫐* | **S** | Strawberry | 🍓 |
-| **G** | Grapes | 🍇 | **T** | Tomato | 🍅 |
-| **H** | Honeydew | 🍈 | **U** | Ugli fruit | 🍊* |
-| **I** | Iceberg lettuce | 🥬 | **V** | Vidalia onion | 🧅 |
-| **J** | Jalapeño | 🌶️ | **W** | Watermelon | 🍉 |
-| **K** | Kiwi | 🥝 | **X** | Xigua (melon) | 🍉* |
-| **L** | Lemon | 🍋 | **Y** | Yam | 🍠 |
-| **M** | Mango | 🥭 | **Z** | Zucchini | 🥒 |
+| | 🌱 Spring | ☀️ Summer | 🍂 Autumn | ❄️ Winter |
+| --- | --- | --- | --- | --- |
+| **A** | Asparagus 🌿 | Apricot 🍑 | Apple 🍎 | Amaryllis 🌺 |
+| **B** | Bluebell 🌸 | Blueberry 🫐 | Beet 🍠 | Brussels sprout 🥦 |
+| **C** | Chives 🌿 | Cucumber 🥒 | Cranberry 🍒 | Cinnamon 🌰 |
+| **D** | Daffodil 🌼 | Dill 🌿 | Date 🌰 | Daikon 🥕 |
+| **E** | Elderflower 💐 | Eggplant 🍆 | Elderberry 🫐 | Endive 🥬 |
+| **F** | Fiddlehead 🌿 | Fig 🫐 | Fennel 🌿 | Frankincense 🌰 |
+| **G** | Grape hyacinth 🌸 | Green bean 🫘 | Grape 🍇 | Ginger 🌿 |
+| **H** | Hyacinth 🌸 | Honeydew 🍈 | Hazelnut 🌰 | Horseradish 🥕 |
+| **I** | Iceberg lettuce 🥬 | Indigo 🌸 | Indian gooseberry 🍏 | Iris 🌸 |
+| **J** | Jonquil 🌼 | Jalapeño 🌶️ | Jujube 🍒 | Juniper 🫐 |
+| **K** | Kohlrabi 🥬 | Kiwano 🍈 | Kabocha 🎃 | Kumquat 🍊 |
+| **L** | Lettuce 🥬 | Lavender 🌸 | Leek 🧅 | Lemon 🍋 |
+| **M** | Morel 🍄 | Mango 🥭 | Marigold 🌼 | Mandarin 🍊 |
+| **N** | Nettle 🌿 | Nectarine 🍑 | Nutmeg 🌰 | Napa cabbage 🥬 |
+| **O** | Orange blossom 🌸 | Okra 🌿 | Olive 🫒 | Orange 🍊 |
+| **P** | Pea 🫘 | Peach 🍑 | Pumpkin 🎃 | Parsnip 🥕 |
+| **Q** | Quamash 🌸 | Queen Anne's lace 💐 | Quince 🍐 | Quinine bark 🌰 |
+| **R** | Rhubarb 🌿 | Raspberry 🍓 | Rosehip 🌹 | Rutabaga 🥔 |
+| **S** | Strawberry 🍓 | Sunflower 🌻 | Saffron 🌸 | Snowdrop 🌸 |
+| **T** | Tulip 🌷 | Tomato 🍅 | Turnip 🥔 | Tangerine 🍊 |
+| **U** | Upland cress 🌿 | Urad bean 🫘 | Ube 🍠 | Ugli fruit 🍊 |
+| **V** | Violet 🌸 | Vidalia onion 🧅 | Verbena 🌿 | Valerian 🌿 |
+| **W** | Wisteria 🌸 | Watermelon 🍉 | Walnut 🌰 | Witch hazel 🌼 |
+| **X** | Xanthoceras 🌼 | Xigua 🍉 | Ximenia 🍑 | Xylopia 🌰 |
+| **Y** | Yarrow 💐 | Youngberry 🍇 | Yam 🍠 | Yuzu 🍋 |
+| **Z** | Zizia 🌼 | Zucchini 🥒 | Zante currant 🍇 | Zedoary 🌿 |
 
-(X = *Xigua*, R = *Rainier cherry* are the classic "impossible-letter" alphabet-book picks — real produce.)
+Nice seasonal arcs the same plant makes across the table: **Elderflower** (spring) → **Elderberry** (autumn),
+and **Orange blossom** (spring) → **Orange** (winter). Hard letters lean on real-but-obscure plants (X:
+Xanthoceras/Ximenia/Xylopia; Q: Quamash/Quinine bark; Z: Zizia/Zedoary) — all genuine, all swappable.
 
 ## 3. The crossword-garden (the hook + scoring)
 - **Garden = a grid of bed-cells** (start ~6×6). Each planted, mature bed = one letter (its crop), shown as its
@@ -161,9 +179,9 @@ so players can test the real seed/season economy while the walkable §8 zone is 
 
 **Seasons (`SEASONS`, `currentSeason`, `seasonForDate`):** real-calendar, Northern-hemisphere meteorological
 (Mar–May / Jun–Aug / Sep–Nov / Dec–Feb). `state.season` is checked on load, on daily rollover (`startNewDay`),
-and on open; `gardenSeasonSync` withers beds whose `cell.season` ≠ the current season. Crop rosters are
-`CROPS_BY_SEASON[season][letter]` — the **104-crop** framework; every season currently reuses the placeholder
-`CROPS_BASE` roster until real seasonal crops (and flowers) are authored. `BRAILLE[letter]` stays global.
+and on open; `gardenSeasonSync` withers beds whose `cell.season` ≠ the current season. Crop rosters are the
+**authored 104** in `CROPS_BY_SEASON[season][letter]` (one real plant per letter per season — see §2's table;
+emoji are still placeholders pending pixel sprites). `BRAILLE[letter]` stays global.
 
 **Seeds — consumable, season-locked, per-dot** (`state.seeds` keyed `"season:letter"`):
 - Pick a crop from the **current season's** palette (`cropsFor`); the badge shows how many seeds you own. The

@@ -4624,18 +4624,42 @@ function currentSeason(){ return (typeof IS_DEV!=="undefined" && IS_DEV && _devS
 // Monotonic integer day count from a local "Y-M-D" string — used to age crops (maturity) day-to-day.
 function dayIndex(str){ const [y,m,d]=(str||todayStr()).split("-").map(Number); return Math.floor(Date.UTC(y,m-1,d)/86400000); }
 
-// Placeholder crop roster (letter -> [name, emoji]) reused across ALL four seasons until the real 104 crops
-// (fruit/veg AND flowers) are authored. BRAILLE[letter] stays global — the lesson is season-invariant; only the
-// crop skin/name changes per season. Author real seasonal rosters by filling CROPS_BY_SEASON[season] later.
-const CROPS_BASE = {
-  A:["Apple","🍎"], B:["Banana","🍌"], C:["Carrot","🥕"], D:["Dill","🌿"], E:["Eggplant","🍆"], F:["Fig","🫐"],
-  G:["Grapes","🍇"], H:["Honeydew","🍈"], I:["Iceberg","🥬"], J:["Jalapeño","🌶️"], K:["Kiwi","🥝"], L:["Lemon","🍋"],
-  M:["Mango","🥭"], N:["Nectarine","🍑"], O:["Orange","🍊"], P:["Pineapple","🍍"], Q:["Quince","🍐"], R:["Rainier","🍒"],
-  S:["Strawberry","🍓"], T:["Tomato","🍅"], U:["Ugli","🍊"], V:["Vidalia","🧅"], W:["Watermelon","🍉"], X:["Xigua","🍉"],
-  Y:["Yam","🍠"], Z:["Zucchini","🥒"]
+// The 104-crop roster (letter -> [name, emoji]), one real plant per letter per season, placed by
+// Northern-hemisphere seasonality. Categories span flower/fruit/veg/root/leaf/herb/nut/melon/squash/citrus/
+// bark-resin/spice/medicinal/mushroom. BRAILLE[letter] stays global — the lesson is season-invariant; only the
+// crop skin/name changes per season. Emoji are PLACEHOLDERS (reused generics where no dedicated glyph exists —
+// 🌸/🌼/💐 flowers, 🌿 greens/herbs, 🌰 nut/bark/spice, 🫘 legumes, 🍠/🥕/🥔 roots) → swap for pixel sprites later.
+const CROPS_BY_SEASON = {
+  spring: {
+    A:["Asparagus","🌿"], B:["Bluebell","🌸"], C:["Chives","🌿"], D:["Daffodil","🌼"], E:["Elderflower","💐"],
+    F:["Fiddlehead","🌿"], G:["Grape hyacinth","🌸"], H:["Hyacinth","🌸"], I:["Iceberg lettuce","🥬"], J:["Jonquil","🌼"],
+    K:["Kohlrabi","🥬"], L:["Lettuce","🥬"], M:["Morel","🍄"], N:["Nettle","🌿"], O:["Orange blossom","🌸"],
+    P:["Pea","🫘"], Q:["Quamash","🌸"], R:["Rhubarb","🌿"], S:["Strawberry","🍓"], T:["Tulip","🌷"],
+    U:["Upland cress","🌿"], V:["Violet","🌸"], W:["Wisteria","🌸"], X:["Xanthoceras","🌼"], Y:["Yarrow","💐"], Z:["Zizia","🌼"]
+  },
+  summer: {
+    A:["Apricot","🍑"], B:["Blueberry","🫐"], C:["Cucumber","🥒"], D:["Dill","🌿"], E:["Eggplant","🍆"],
+    F:["Fig","🫐"], G:["Green bean","🫘"], H:["Honeydew","🍈"], I:["Indigo","🌸"], J:["Jalapeño","🌶️"],
+    K:["Kiwano","🍈"], L:["Lavender","🌸"], M:["Mango","🥭"], N:["Nectarine","🍑"], O:["Okra","🌿"],
+    P:["Peach","🍑"], Q:["Queen Anne's lace","💐"], R:["Raspberry","🍓"], S:["Sunflower","🌻"], T:["Tomato","🍅"],
+    U:["Urad bean","🫘"], V:["Vidalia onion","🧅"], W:["Watermelon","🍉"], X:["Xigua","🍉"], Y:["Youngberry","🍇"], Z:["Zucchini","🥒"]
+  },
+  autumn: {
+    A:["Apple","🍎"], B:["Beet","🍠"], C:["Cranberry","🍒"], D:["Date","🌰"], E:["Elderberry","🫐"],
+    F:["Fennel","🌿"], G:["Grape","🍇"], H:["Hazelnut","🌰"], I:["Indian gooseberry","🍏"], J:["Jujube","🍒"],
+    K:["Kabocha","🎃"], L:["Leek","🧅"], M:["Marigold","🌼"], N:["Nutmeg","🌰"], O:["Olive","🫒"],
+    P:["Pumpkin","🎃"], Q:["Quince","🍐"], R:["Rosehip","🌹"], S:["Saffron","🌸"], T:["Turnip","🥔"],
+    U:["Ube","🍠"], V:["Verbena","🌿"], W:["Walnut","🌰"], X:["Ximenia","🍑"], Y:["Yam","🍠"], Z:["Zante currant","🍇"]
+  },
+  winter: {
+    A:["Amaryllis","🌺"], B:["Brussels sprout","🥦"], C:["Cinnamon","🌰"], D:["Daikon","🥕"], E:["Endive","🥬"],
+    F:["Frankincense","🌰"], G:["Ginger","🌿"], H:["Horseradish","🥕"], I:["Iris","🌸"], J:["Juniper","🫐"],
+    K:["Kumquat","🍊"], L:["Lemon","🍋"], M:["Mandarin","🍊"], N:["Napa cabbage","🥬"], O:["Orange","🍊"],
+    P:["Parsnip","🥕"], Q:["Quinine bark","🌰"], R:["Rutabaga","🥔"], S:["Snowdrop","🌸"], T:["Tangerine","🍊"],
+    U:["Ugli fruit","🍊"], V:["Valerian","🌿"], W:["Witch hazel","🌼"], X:["Xylopia","🌰"], Y:["Yuzu","🍋"], Z:["Zedoary","🌿"]
+  }
 };
-const CROPS_BY_SEASON = { spring:{}, summer:{}, autumn:{}, winter:{} };
-for(const s of SEASONS) for(const L in CROPS_BASE) CROPS_BY_SEASON[s][L]=CROPS_BASE[L];
+const CROPS_BASE = CROPS_BY_SEASON.spring;   // ultimate fallback for cropInfo (every season is fully populated, so rarely hit)
 function cropsFor(season){ return CROPS_BY_SEASON[season]||CROPS_BASE; }
 function cropInfo(season,L){ return (cropsFor(season)[String(L).toUpperCase()]) || CROPS_BASE[String(L).toUpperCase()] || [String(L),"❓"]; }
 
