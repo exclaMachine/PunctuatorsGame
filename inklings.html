@@ -4457,12 +4457,12 @@ const EQUIP_SLOTS = [
 // effect:null is the future hook for special hero-gear behaviour. recipe: { ink, mats:{materialId:qty} }.
 const EQUIP_ITEMS = {
   "inkcap-hat":        { name:"Inkcap Hat",         emoji:"🎩", slot:"hat",       tier:1, bonuses:{hearts:1},           effect:null, recipe:{ink:10, mats:{thread:2}} },
-  "inkcap-hat-2":      { name:"Inkcap Hat II",      emoji:"🎩", slot:"hat",       tier:2, bonuses:{hearts:1, guard:0.3}, effect:null, recipe:{ink:25, mats:{thread:4, wax:1}} },
+  "inkcap-hat-2":      { name:"Inkcap Hat II",      emoji:"🎩", slot:"hat",       tier:2, bonuses:{hearts:1, guard:0.3}, effect:null, requires:"inkcap-hat",   recipe:{ink:25, mats:{thread:4, wax:1}} },
   "blotter-vest":      { name:"Blotter Vest",       emoji:"👕", slot:"shirt",     tier:1, bonuses:{guard:0.3},          effect:null, recipe:{ink:12, mats:{leather:2}} },
-  "quilted-blotter-2": { name:"Quilted Blotter II", emoji:"👕", slot:"shirt",     tier:2, bonuses:{hearts:1, guard:0.5}, effect:null, recipe:{ink:30, mats:{leather:4, thread:2}} },
+  "quilted-blotter-2": { name:"Quilted Blotter II", emoji:"👕", slot:"shirt",     tier:2, bonuses:{hearts:1, guard:0.5}, effect:null, requires:"blotter-vest", recipe:{ink:30, mats:{leather:4, thread:2}} },
   "foolscap-trousers": { name:"Foolscap Trousers",  emoji:"👖", slot:"pants",     tier:1, bonuses:{guard:0.2},          effect:null, recipe:{ink:10, mats:{paper:2, thread:1}} },
   "serif-boots":       { name:"Serif Boots",        emoji:"🥾", slot:"boots",     tier:1, bonuses:{hearts:1},           effect:null, recipe:{ink:12, mats:{leather:2}} },
-  "sans-serif-boots":  { name:"Sans-Serif Boots II",emoji:"🥾", slot:"boots",     tier:2, bonuses:{hearts:1, guard:0.2}, effect:null, recipe:{ink:28, mats:{leather:3, wax:1}} },
+  "sans-serif-boots":  { name:"Sans-Serif Boots II",emoji:"🥾", slot:"boots",     tier:2, bonuses:{hearts:1, guard:0.2}, effect:null, requires:"serif-boots",  recipe:{ink:28, mats:{leather:3, wax:1}} },
   "loop-ring":         { name:"Loop Ring",          emoji:"💍", slot:"ring",      tier:1, bonuses:{guard:0.2},          effect:null, recipe:{ink:15, mats:{wax:1, thread:1}} },
   "ampersand-ring":    { name:"Ampersand Ring",     emoji:"💍", slot:"ring",      tier:1, bonuses:{hearts:1},           effect:null, recipe:{ink:15, mats:{wax:1, leather:1}} },
   "dogear-clip":       { name:"Dog-ear Clip",       emoji:"👓", slot:"accessory", tier:1, bonuses:{hearts:1},           effect:null, recipe:{ink:10, mats:{paper:1, glue:1}} },
@@ -4470,6 +4470,10 @@ const EQUIP_ITEMS = {
 };
 let _equipTab="bag";
 function newGearUid(){ state.gearSeq=(state.gearSeq||0)+1; return "g"+state.gearSeq; }
+// Have we ever crafted this gear item? (Gear is never consumed, so owning one = crafted it.) Used to
+// gate tiered gear: a tier-II recipe stays hidden/unbuyable until you own its `requires` predecessor.
+function ownsGearItem(key){ return state.gear.some(g=>g&&g.item===key); }
+function craftUnlocked(key){ const req=EQUIP_ITEMS[key]&&EQUIP_ITEMS[key].requires; return !req || ownsGearItem(req); }
 // Sum of every equipped item's bonuses → { hearts, guard }. Cheap enough to call each frame.
 function equipBonuses(){
   const b={hearts:0, guard:0};
@@ -4509,6 +4513,7 @@ function canAffordRecipe(r){
 }
 function craftEquip(key){
   const def=EQUIP_ITEMS[key]; if(!def) return;
+  if(!craftUnlocked(key)){ SFX.play("invalid"); showToast("Craft "+(EQUIP_ITEMS[def.requires]?.name||"the previous tier")+" first."); return; }
   if(!canAffordRecipe(def.recipe)){ SFX.play("invalid"); showToast("Not enough ink or materials for that."); return; }
   state.ink -= def.recipe.ink||0;
   const mats=def.recipe.mats||{}; for(const m in mats) state.resources[m]=(state.resources[m]||0)-mats[m];
@@ -4559,7 +4564,10 @@ function bagPanelHTML(){
   }).join("");
 }
 function craftPanelHTML(){
-  return Object.keys(EQUIP_ITEMS).map(key=>{ const d=EQUIP_ITEMS[key], ok=canAffordRecipe(d.recipe);
+  // Hide tiered upgrades until their predecessor is crafted (see craftUnlocked).
+  const keys=Object.keys(EQUIP_ITEMS).filter(craftUnlocked);
+  if(!keys.length) return '<div class="eq-empty">No recipes available.</div>';
+  return keys.map(key=>{ const d=EQUIP_ITEMS[key], ok=canAffordRecipe(d.recipe);
     return '<div class="eq-card craft'+(ok?"":" cant")+'"><span class="eq-emo">'+d.emoji+'</span>'+
       '<span class="eq-cn">'+esc(d.name)+'</span><span class="eq-cb">'+bonusText(d.bonuses)+'</span>'+
       '<span class="eq-cost">'+costText(d.recipe)+'</span>'+

@@ -588,7 +588,10 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   gear lives in the **Bag** tab; click to equip (rings auto-fill the two ring slots), click a filled slot to
   take it off. Bonuses **stack additively** across slots. Every item has an inert **`effect` hook** so the
   future **punctuation-hero gear** (weapons + special effects) can slot in without a redesign; **tier** is an
-  isolated, removable field. All gear **persists forever** (`state.equip`/`state.gear`/`state.gearSeq`).
+  isolated, removable field. **Tiered upgrades are gated by a `requires` field** (e.g. Inkcap Hat II
+  `requires:"inkcap-hat"`): a recipe stays **hidden from the Craft tab until you own its predecessor**
+  (`craftUnlocked`/`ownsGearItem` — "own" = ever crafted, since gear is never consumed), and `requires`
+  chains for future III+. All gear **persists forever** (`state.equip`/`state.gear`/`state.gearSeq`).
 - **Garden — Braille crossword scaffold (`F` / 🌱, DEBUG-ONLY)** — a **debug-gated** modal (`IS_DEV`; buttons
   hidden + `openGarden` no-ops in prod) to validate the Braille-cell + crossword loop *before* the real garden
   (a walkable farm-sim map zone — see [`inklings-farming.md`](inklings-farming.md) §8). **Each bed IS a 2×3
