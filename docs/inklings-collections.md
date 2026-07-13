@@ -93,6 +93,10 @@ adjectives feed **potions**, so keep bundles from double-rewarding those — the
 - **Cosmetic vs functional (open):** MVP is purely cosmetic (the reward is the *look* + the collection
   milestone). A later option: some décor gives a small ambient perk (a comfy chair heals faster; a lamp
   brightens the room) — Stardew-lite. Keep the catalog schema ready for a `perk` field but ship cosmetic.
+- **Companions are a second grant type.** Completing a **themed** set can also award a **story companion** (a
+  named character from the dev's books that follows the player and grants a bonus) instead of / alongside
+  décor. Same one-time-grant trigger, different payout. See [`inklings-companions.md`](inklings-companions.md);
+  the Claim+grant step (§8.2) is the shared substrate.
 
 ---
 

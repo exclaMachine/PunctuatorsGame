@@ -28,6 +28,12 @@
 > equipment slots), the v1 blazon **grammar** (field/division + ordinary + numbered charges + attitude +
 > **counterchange**, with the **rule of tincture** as a hard agreement constraint), rare **scroll drops** for
 > a separate term vocabulary, and the layered emblazon renderer. Read before building the shield.
+>
+> **Planning story companions?** See [`inklings-companions.md`](inklings-companions.md) — the **combat/bonus
+> buddies** (authored book characters — Suede, Swifty, Johnny — that follow the player), the agreed v1
+> (silent, one equipped at a time via a new **Equipment slot**, **passive bonus**, unlocked by **themed
+> Wordhoard collection sets**), the reuse of À La Modal's follow-sprite + the creature sprite loader, and the
+> parked growth path (autonomous fighting / triggered abilities). A *separate* track from the grammar guides.
 
 A word-collecting adventure game for the browser, built on HTML canvas. Inspired by the
 day-to-day rhythm of Stardew Valley, but built around a different core mechanic: instead of
