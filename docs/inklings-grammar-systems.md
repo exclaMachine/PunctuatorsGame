@@ -7,7 +7,9 @@ grow "a lot of features" without becoming an incoherent bag of systems.
 
 Status: **plan only — not implemented.** Reflects decisions from the 2026-07 planning session.
 Cross-refs: [`inklings.md`](inklings.md) (current systems), [`inklings-architecture.md`](inklings-architecture.md)
-(maps/obstacles/portability).
+(maps/obstacles/portability), [`inklings-heraldry.md`](inklings-heraldry.md) (the **blazon shield** — a
+sibling grammar-teaching system: heraldic word order + the rule of tincture as an agreement constraint,
+built on a separate drop-acquired vocabulary so it doesn't compete with these POS systems).
 
 ---
 

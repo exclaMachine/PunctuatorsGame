@@ -20,6 +20,12 @@
 > mad-libs lectern that runs poem forms), the **phoneme engine** (rhyme + syllables from the bundled
 > `ipa_words.js`; meter deferred to a CMU stress fold-in), mad-libs-fill-first with free-compose later, the
 > poet-NPC cast (punny, names not final), and the **Anthology** reward. Read before building the sound layer.
+>
+> **Planning the heraldry shield?** See [`inklings-heraldry.md`](inklings-heraldry.md) — the **blazon shield**
+> (compose a valid heraldic phrase → an emblazoned shield with passive, meaning-driven bonuses in the existing
+> equipment slots), the v1 blazon **grammar** (field/division + ordinary + numbered charges + attitude +
+> **counterchange**, with the **rule of tincture** as a hard agreement constraint), rare **scroll drops** for
+> a separate term vocabulary, and the layered emblazon renderer. Read before building the shield.
 
 A word-collecting adventure game for the browser, built on HTML canvas. Inspired by the
 day-to-day rhythm of Stardew Valley, but built around a different core mechanic: instead of
