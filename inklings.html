@@ -281,6 +281,18 @@
     background:var(--paper);color:var(--ink);cursor:pointer;line-height:1.4}
   .hb-chip.on{background:var(--gold);color:#2a2540;font-weight:bold}
   .hb-chip:hover{outline:2px solid var(--gold);outline-offset:-2px}
+  .hb-tabs{display:flex;gap:6px;flex:none;margin-bottom:8px}
+  .hb-tab{font-family:var(--disp);font-size:9px;padding:6px 11px;border:2px solid var(--edge);
+    background:var(--paper-2);color:var(--ink);cursor:pointer}
+  .hb-tab.active{background:var(--gold);color:#2a2540}
+  .hb-about{flex:1;min-height:0;overflow-y:auto;padding-right:6px;font-family:var(--read);font-size:14px;
+    line-height:1.5;color:var(--ink)}
+  .hb-about p{margin:0 0 9px}
+  .hb-about b{color:var(--ink)}
+  .hb-gloss{margin:0 0 9px;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+  .hb-about .hb-o{color:var(--ink-soft);font-size:12px}
+  .hb-about .hb-rule{border:2px solid var(--gold);background:var(--paper-2);padding:7px 9px}
+  .hb-about .hb-eg{font-style:italic;color:var(--ink-soft)}
   .gd-legend{display:flex;align-items:center;gap:8px;flex:none;font-family:var(--read);font-size:13px;
     color:var(--ink);border:2px solid var(--line);padding:5px 8px}
   .gd-legend .bp{flex:none;display:grid;grid-template-columns:repeat(2,7px);grid-template-rows:repeat(3,7px);gap:2px}
@@ -897,7 +909,35 @@
       <div class="book">
         <button class="close-x" id="hb-close" aria-label="Close" title="Close">✕</button>
         <h1>The Herald's Bench <span class="dex-count">blazon a shield · DEV</span></h1>
-        <div class="hb-wrap">
+        <div class="hb-tabs">
+          <button class="hb-tab active" data-htab="bench">Bench</button>
+          <button class="hb-tab" data-htab="about">What's a blazon?</button>
+        </div>
+        <div class="hb-about" id="hb-about" style="display:none">
+          <p><b>Blazon</b> is the centuries-old <i>language for describing coats of arms</i> — a real,
+          tightly-constrained grammar. Here you write a valid blazon from words on the right; it's drawn as a
+          shield (to <b>emblazon</b>), and equipping it grants passive bonuses read from what's on it.</p>
+          <p>A blazon is read in a <b>fixed order</b>, describing the shield from the background up:</p>
+          <ol class="hb-gloss">
+            <li><b>Field</b> — the background colour. It can be split by a <b>division</b>: <i>party per pale</i>
+            (a vertical split) or <i>per fess</i> (horizontal), giving two tinctures.</li>
+            <li><b>Ordinary</b> <span class="hb-o">(optional)</span> — a bold geometric band: <i>chief</i> (top
+            strip), <i>fess</i> (middle bar), <i>pale</i> (vertical bar), <i>bend</i> (diagonal), <i>chevron</i>
+            (∧), or <i>bordure</i> (border).</li>
+            <li><b>Charge group</b> <span class="hb-o">(optional)</span> — the emblems on top: a <b>number</b>
+            (a / two / three), a <b>charge</b> (lion, eagle, tower, cross…), an optional <b>attitude</b> (its
+            pose, e.g. <i>rampant</i>), and its own tincture.</li>
+          </ol>
+          <p><b>Tinctures</b> come in three kinds: <b>metals</b> (Or = gold, Argent = silver), <b>colours</b>
+          (Gules, Azure, Sable, Vert, Purpure), and <b>furs</b> (Ermine, Vair).</p>
+          <p class="hb-rule">⚖ <b>The rule of tincture</b> — heraldry's one hard agreement rule: never place a
+          <i>metal on a metal</i> or a <i>colour on a colour</i> (poor contrast). <b>Furs</b> are neutral and
+          break no rule. The exception is <b>counterchanged</b>: on a divided field an element can flip the two
+          field tinctures across the line — legal even where it'd otherwise clash. The Herald flags any
+          violation, and you can't equip an illegal blazon.</p>
+          <p class="hb-eg">e.g. <i>“Party per pale Azure and Or, a chevron counterchanged, three mullets Or.”</i></p>
+        </div>
+        <div class="hb-wrap" id="hb-wrap">
           <div class="hb-left">
             <canvas id="hb-shield" width="200" height="240"></canvas>
             <div class="hb-canon" id="hb-canon"></div>
@@ -4814,8 +4854,7 @@ function shieldEquipped(){ return state.blazonShield || null; }
 
 /* ---------- Emblazon renderer — layered painter's algorithm (docs §5b) ---------- */
 // One pass per grammar production: escutcheon clip → field/division → ordinary → charges → counterchange.
-function escutcheonPath(ctx, x, y, w, h){
-  ctx.beginPath();
+function escutcheonTrace(ctx, x, y, w, h){   // trace the subpath only (no beginPath) so shapes can compose
   ctx.moveTo(x, y);
   ctx.lineTo(x+w, y);
   ctx.lineTo(x+w, y+h*0.46);
@@ -4823,6 +4862,7 @@ function escutcheonPath(ctx, x, y, w, h){
   ctx.quadraticCurveTo(x, y+h*0.82, x, y+h*0.46);
   ctx.closePath();
 }
+function escutcheonPath(ctx, x, y, w, h){ ctx.beginPath(); escutcheonTrace(ctx, x, y, w, h); }
 // Fill a rectangle in a tincture, painting fur patterns (ermine/vair) as a cheap approximation.
 function fillTincRect(ctx, id, x, y, w, h){
   const t=tinc(id); if(!t){ return; }
@@ -4888,7 +4928,8 @@ function ordinaryPath(ctx, name, x, y, w, h){
   if(name==="chief") ctx.rect(x, y, w, h*0.22);
   else if(name==="fess") ctx.rect(x, y+h*0.40, w, h*0.20);
   else if(name==="pale") ctx.rect(x+w*0.40, y, w*0.20, h);
-  else if(name==="bordure"){ ctx.rect(x,y,w,h); ctx.rect(x+w*0.12, y+h*0.12, w*0.76, h*0.76); }  // even-odd ring
+  else if(name==="bordure"){ const ins=Math.min(w,h)*0.10;   // border follows the SHIELD outline (inset escutcheon), even-odd ring
+    escutcheonTrace(ctx, x, y, w, h); escutcheonTrace(ctx, x+ins, y+ins, w-2*ins, h-2*ins); }
   else if(name==="bend"){ const t=w*0.20; ctx.moveTo(x,y+t); ctx.lineTo(x,y); ctx.lineTo(x+t,y); ctx.lineTo(x+w,y+h-t); ctx.lineTo(x+w,y+h); ctx.lineTo(x+w-t,y+h); ctx.closePath(); }
   else if(name==="chevron"){ // an inverted-V BAND of constant (perpendicular) width, apex up — not a solid wedge
     const apexY=y+h*0.30, baseY=y+h*0.82, th=h*0.17;
@@ -4954,13 +4995,20 @@ function counterchangeFill(ctx, bl, x, y, w, h, paint){
 
 /* ---------- Herald's Bench modal (compose-a-blazon UI) — DEV-only entry ---------- */
 let _hbBlazon = null;   // the in-progress blazon (not persisted until equipped)
+let _hbTab = "bench";   // "bench" = the composer, "about" = the plain-language blazon primer
+function hbSwitchTab(t){
+  _hbTab=t; SFX.play("click");
+  document.querySelectorAll("#herald .hb-tab").forEach(el=>el.classList.toggle("active", el.dataset.htab===t));
+  document.getElementById("hb-wrap").style.display = t==="bench" ? "" : "none";
+  document.getElementById("hb-about").style.display = t==="about" ? "" : "none";
+}
 function openHerald(){
   if(!IS_DEV || state.heraldOpen) return;
   if(!_hbBlazon) _hbBlazon = state.blazonShield ? JSON.parse(JSON.stringify(state.blazonShield)) : newBlazon();
   state.heraldOpen=true;
   document.getElementById("herald").classList.add("open");
   document.getElementById("sound-btn").style.display="none";
-  renderHerald(); SFX.play("click");
+  hbSwitchTab("bench"); renderHerald(); SFX.play("click");
 }
 function closeHerald(){
   state.heraldOpen=false;
@@ -5913,6 +5961,7 @@ document.getElementById("herald").onclick=e=>{ if(e.target.id==="herald") closeH
 document.getElementById("hb-equip").onclick=equipBlazon;
 document.getElementById("hb-unequip").onclick=unequipBlazon;
 document.getElementById("hb-reset").onclick=()=>{ _hbBlazon=newBlazon(); SFX.play("click"); renderHerald(); };
+document.querySelectorAll("#herald .hb-tab").forEach(t=>t.onclick=()=>hbSwitchTab(t.dataset.htab));
 document.getElementById("gd-harvest").onclick=harvestGarden;
 document.getElementById("gd-quiz").onclick=()=>{ state.gardenQuiz=!state.gardenQuiz; scheduleSave(); SFX.play("click"); renderGarden(); };
 document.getElementById("gd-clear").onclick=()=>{ gardenInit();

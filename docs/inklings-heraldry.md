@@ -302,10 +302,13 @@ arrangement (1 / 2 / 2-and-1) → **counterchange** as a per-region clip-and-swa
 (geometric ones faithful; lion/eagle/martlet/tower as simple silhouettes) — the drop-in `sprites/<id>.png`
 pipeline replaces them later exactly like creatures.
 
-**Bench UI (`#herald` modal).** Ordered slot pickers (Field → Ordinary → Charge group) as chip rows; live
-emblazon preview canvas + canonical text + pass/fail validation + the computed passive bonuses + the reserved
-ability line. **Equip this shield** (disabled while illegal) writes `state.blazonShield`; **Unequip** / **Reset**.
-In dev, **all terms are unlocked** (the real ~3–5% blazon-scroll drops of §3 are deferred to production).
+**Bench UI (`#herald` modal).** Two tabs (`hbSwitchTab`): **Bench** — ordered slot pickers (Field → Ordinary →
+Charge group) as chip rows, live emblazon preview canvas + canonical text + pass/fail validation + the computed
+passive bonuses + the reserved ability line; and **What's a blazon?** — a static plain-language primer (what
+blazon is, the read order, the three tincture kinds, and the rule of tincture + counterchange) so a first-time
+player gets the gist without outside knowledge. **Equip this shield** (disabled while illegal) writes
+`state.blazonShield`; **Unequip** / **Reset**. In dev, **all terms are unlocked** (the real ~3–5% blazon-scroll
+drops of §3 are deferred to production).
 
 **Equip integration.** A `shield` slot (marked `dev:true`, hidden in prod) in `EQUIP_SLOTS`; `equipBonuses()`
 folds `blazonBonuses(state.blazonShield)` onto the gear sum, so `maxHearts`/`hurtIframes`/`attackDmg`/reach/
