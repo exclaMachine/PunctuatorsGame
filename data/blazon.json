@@ -1,16 +1,17 @@
 {
-  "_note": "Heraldry MVP roster (docs/inklings-heraldry.md). Curated blazon vocabulary — a separate namespace from the dex/potions. `class` metal|colour|fur drives the rule of tincture (never metal-on-metal / colour-on-colour; furs are neutral). Ability `bonus` maps onto the five WIRED equip stats {hearts,guard,attack,reach,haste} so an equipped shield actually affects gameplay; `active` is the RESERVED (inert) guard/ability seam for a future Zelda-style block — read by blazonActive(), never invoked in the MVP. Numbers/magnitudes are a first-pass power budget (~one gear piece), tune later.",
+  "_note": "Heraldry roster (docs/inklings-heraldry.md §10–12). Curated blazon vocabulary — separate namespace from the dex/potions. `class` metal|colour|fur drives the rule of tincture (never metal-on-metal / colour-on-colour; furs neutral). RE-FLAVORED to the combat vocabulary (§11): COLOURS are elements in a counter-cycle (lore-only on the passive shield — no opponent to counter — reserved for the future duel); METALS are polarity (Or=Strike/offense, Argent=Ward/defense); ATTITUDES are TEMPO (an intensity+speed slider — see `tempo` config); CHARGES are roles. Each tincture's `temperament` and each ordinary's `bonus` map onto the five WIRED equip stats {hearts,guard,attack,reach,haste} so the shield actually affects gameplay. `active` is the RESERVED (inert) ability seam read by blazonActive(). NOTE: `guardant` sits in the attitude slot for legacy reasons but is really a HEAD modifier (see §11) — flagged for a future grammar fix. Magnitudes are a first-pass power budget (~one gear piece); tune freely.",
   "tinctures": {
-    "or":      { "name": "Or",      "class": "metal",  "hex": "#e8c34a", "temperament": { "reach": 4 } },
-    "argent":  { "name": "Argent",  "class": "metal",  "hex": "#e9edf0", "temperament": { "hearts": 1 } },
-    "gules":   { "name": "Gules",   "class": "colour", "hex": "#b3242b", "temperament": { "attack": 1 } },
-    "azure":   { "name": "Azure",   "class": "colour", "hex": "#2a4bd0", "temperament": { "hearts": 1 } },
-    "sable":   { "name": "Sable",   "class": "colour", "hex": "#22262e", "temperament": { "guard": 0.2 } },
-    "vert":    { "name": "Vert",    "class": "colour", "hex": "#2f8f3e", "temperament": { "haste": 0.05 } },
-    "purpure": { "name": "Purpure", "class": "colour", "hex": "#7d2fa0", "temperament": { "reach": 4 } },
-    "ermine":  { "name": "Ermine",  "class": "fur",    "hex": "#eef1f4", "pattern": "ermine", "temperament": { "guard": 0.2 } },
-    "vair":    { "name": "Vair",    "class": "fur",    "hex": "#cfe0f5", "pattern": "vair",   "temperament": { "guard": 0.2 } }
+    "or":      { "name": "Or",      "class": "metal",  "hex": "#e8c34a", "polarity": "Strike", "stance": "offense", "temperament": { "attack": 1 } },
+    "argent":  { "name": "Argent",  "class": "metal",  "hex": "#e9edf0", "polarity": "Ward",   "stance": "defense", "temperament": { "guard": 0.2 } },
+    "gules":   { "name": "Gules",   "class": "colour", "hex": "#b3242b", "element": "fire",  "beats": "vert",    "temperament": { "attack": 1 } },
+    "vert":    { "name": "Vert",    "class": "colour", "hex": "#2f8f3e", "element": "vine",  "beats": "sable",   "temperament": { "reach": 4 } },
+    "sable":   { "name": "Sable",   "class": "colour", "hex": "#22262e", "element": "stone", "beats": "purpure", "temperament": { "guard": 0.2 } },
+    "purpure": { "name": "Purpure", "class": "colour", "hex": "#7d2fa0", "element": "storm", "beats": "azure",   "temperament": { "haste": 0.05 } },
+    "azure":   { "name": "Azure",   "class": "colour", "hex": "#2a4bd0", "element": "water", "beats": "gules",   "temperament": { "hearts": 1 } },
+    "ermine":  { "name": "Ermine",  "class": "fur",    "hex": "#eef1f4", "pattern": "ermine", "temperament": { "guard": 0.1 } },
+    "vair":    { "name": "Vair",    "class": "fur",    "hex": "#cfe0f5", "pattern": "vair",   "temperament": { "guard": 0.1 } }
   },
+  "elementCycle": ["gules", "vert", "sable", "purpure", "azure"],
   "divlines": {
     "pale": { "name": "pale", "axis": "vertical",   "label": "party per pale" },
     "fess": { "name": "fess", "axis": "horizontal", "label": "party per fess" }
@@ -24,23 +25,25 @@
     "bordure": { "name": "bordure", "bonus": { "guard": 0.2 } }
   },
   "charges": {
-    "lion":     { "name": "lion",     "plural": "lions",     "glyph": "beast", "stat": "attack", "unit": 1,    "active": "Roar — sweep knockback",  "role": "Warrior — offense" },
-    "eagle":    { "name": "eagle",    "plural": "eagles",    "glyph": "bird",  "stat": "reach",  "unit": 8,    "active": "Sight — reveal / far strike", "role": "Scout — vision" },
-    "tower":    { "name": "tower",    "plural": "towers",    "glyph": "tower", "stat": "guard",  "unit": 0.2,  "active": "Bulwark — timed block",   "role": "Warden — guard" },
-    "cross":    { "name": "cross",    "plural": "crosses",   "glyph": "cross", "stat": "hearts", "unit": 1,    "active": "Vigil — heal pulse",      "role": "Devotee — vitality" },
-    "mullet":   { "name": "mullet",   "plural": "mullets",   "glyph": "star",  "stat": "reach",  "unit": 6,    "active": "Guide — mark target",     "role": "Seer — reach" },
-    "crescent": { "name": "crescent", "plural": "crescents", "glyph": "moon",  "stat": "guard",  "unit": 0.15, "active": "Wane — brief invuln",     "role": "Nightward — guard" },
-    "rose":     { "name": "rose",     "plural": "roses",     "glyph": "rose",  "stat": "hearts", "unit": 1,    "active": "Bloom — regen burst",     "role": "Gardener — vitality" },
-    "martlet":  { "name": "martlet",  "plural": "martlets",  "glyph": "bird",  "stat": "haste",  "unit": 0.05, "active": "Flight — dash",           "role": "Courier — speed" }
+    "lion":     { "name": "lion",     "plural": "lions",     "glyph": "beast", "stat": "attack", "unit": 1,    "active": "Roar — sweep knockback",  "role": "Lion — reliable damage" },
+    "eagle":    { "name": "eagle",    "plural": "eagles",    "glyph": "bird",  "stat": "reach",  "unit": 8,    "active": "Sight — reveal / far strike", "role": "Eagle — vision & range" },
+    "tower":    { "name": "tower",    "plural": "towers",    "glyph": "tower", "stat": "guard",  "unit": 0.2,  "active": "Bulwark — timed block",   "role": "Tower — bulwark" },
+    "cross":    { "name": "cross",    "plural": "crosses",   "glyph": "cross", "stat": "hearts", "unit": 1,    "active": "Vigil — heal pulse",      "role": "Cross — vitality" },
+    "mullet":   { "name": "mullet",   "plural": "mullets",   "glyph": "star",  "stat": "reach",  "unit": 6,    "active": "Guide — mark target",     "role": "Mullet — far reach" },
+    "crescent": { "name": "crescent", "plural": "crescents", "glyph": "moon",  "stat": "guard",  "unit": 0.15, "active": "Wane — brief invuln",     "role": "Crescent — nightward" },
+    "rose":     { "name": "rose",     "plural": "roses",     "glyph": "rose",  "stat": "hearts", "unit": 1,    "active": "Bloom — regen burst",     "role": "Rose — vitality" },
+    "martlet":  { "name": "martlet",  "plural": "martlets",  "glyph": "bird",  "stat": "haste",  "unit": 0.05, "active": "Flight — dash",           "role": "Martlet — swift" }
   },
   "attitudes": {
-    "rampant":  { "name": "rampant",  "lean": { "attack": 1 } },
-    "passant":  { "name": "passant",  "lean": { "reach": 6 } },
-    "statant":  { "name": "statant",  "lean": { "guard": 0.2 } },
-    "couchant": { "name": "couchant", "lean": { "hearts": 1 } },
-    "salient":  { "name": "salient",  "lean": { "haste": 0.05 } },
-    "guardant": { "name": "guardant", "lean": { "guard": 0.2 } }
+    "rampant":  { "name": "rampant",  "tempo": 8 },
+    "salient":  { "name": "salient",  "tempo": 7 },
+    "passant":  { "name": "passant",  "tempo": 5 },
+    "statant":  { "name": "statant",  "tempo": 4 },
+    "guardant": { "name": "guardant", "tempo": 3 },
+    "couchant": { "name": "couchant", "tempo": 2 }
   },
+  "tempo": { "pivot": 4, "hastePer": 0.015, "attackPer": 0.4, "guardPer": 0.12,
+    "_note": "Attitude = tempo (an intensity+speed slider). Every rung adds haste = tempo×hastePer. Rungs ABOVE the pivot lean aggressive (+attack = (tempo−pivot)×attackPer); rungs BELOW lean defensive (+guard = (pivot−tempo)×guardPer)." },
   "numbers": {
     "a":     { "name": "a",     "count": 1 },
     "two":   { "name": "two",   "count": 2 },

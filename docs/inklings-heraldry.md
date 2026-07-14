@@ -319,3 +319,77 @@ and is re-validated when `blazon.json` loads.
 **Deferred to the production-readiness pass:** blazon-scroll drops + `state.blazon` roster gating (§3), the
 armory / named saved blazons (§4), the Herald character (§8.7), the active-block combat verb (wire onto
 `blazonActive`), and the richer stat vocab + tuned power numbers.
+
+---
+
+## 11. Combat vocabulary & the Red Queen duel (explored 2026-07, folded into the shield)
+
+We prototyped a standalone **two-herald duel** (Red Queen boss) to test heraldry-as-combat. The reusable
+idea set — kept because it's a strong, memorable framework:
+
+- **Colours are elements in a counter-cycle:** **Gules** (fire) → **Vert** (vine) → **Sable** (stone) →
+  **Purpure** (storm) → **Azure** (water) → Gules. Each beats the next (fire burns vine; vine cracks stone;
+  stone grounds storm; storm churns water; water quenches fire).
+- **Metals are polarity:** **Or** = *Strike* (offense/sun), **Argent** = *Ward* (defense/moon).
+- **Attitudes are tempo** (a cost/intensity ladder, 1–8): dormant · couchant · sejant · statant · passant ·
+  courant · salient · rampant. Higher = faster/stronger but pricier; *dormant* = the fold.
+- **Charges are roles:** lion (reliable damage), boar (armour-breaker), eagle (initiative/vision), serpent
+  (evasion), griffin (aggressor), martlet (cheap harass, "never lands").
+- **Head** guardant/regardant as tactical reads; the **rule of tincture** (one metal + one colour) as the
+  hard constraint.
+
+**Verdict on the PvP duel:** as a competitive two-player game it played badly — too swingy (one-round kills,
+blind simultaneous element RPS, no room for skill). **Not pursued now.** A future **single-player boss**
+version — the *"Predictable Queen"* (Direction 1): she adapts **out loud** (telegraphs her next element as
+"the one that beats your last move" + climbs a tempo rung), so the fight is a *deterministic read/sequencing*
+puzzle (out-anticipate adaptation instead of racing it — literally the Red Queen Hypothesis). Attrition HP,
+small clash swings. **Possible future**, noted here; not built.
+
+**What we ARE doing now (Direction 4):** fold this vocabulary into the **equipped Blazon Shield's passive
+buffs** so the worn shield speaks the same language — polarity (metal) → offense/defense lean, element
+(colour) → a themed buff, charge → a role, attitude → tempo/intensity. The element counter-cycle itself is
+**lore-only** on the passive shield (there's no opponent element to counter) — reserved live for the future
+duel above. See §12.
+
+---
+
+## 12. Direction 4 — the shield re-flavored to the combat vocabulary (built, DEV-only)
+
+The equipped Blazon Shield's **passive buffs now speak the puzzle's language**. This was a re-flavor of the
+existing MVP (§10), not a rewrite — the grammar, bench, validator, renderer, and equip wiring are unchanged.
+Decided via a design pass: **keep the full MVP grammar** (ordinaries/divisions/furs/number all stay) and
+layer the combat meanings on top; make **attitude an intensity+speed slider**.
+
+**`data/blazon.json` re-flavor (data-only; engine reads it):**
+- **Metals = polarity** — `polarity`/`stance` + a `temperament` lean: **Or** (Strike) → `{attack}`, **Argent**
+  (Ward) → `{guard}`.
+- **Colours = elements** — `element` + `beats` (the counter-cycle, `elementCycle`) + a themed `temperament`:
+  Gules/fire→attack, Vert/vine→reach, Sable/stone→guard, Purpure/storm→haste, Azure/water→hearts.
+- **Attitudes = tempo** — each now carries a `tempo` rung (rampant 8 … couchant 2); the old flat `lean` is
+  gone. A `tempo` config block (`pivot`, `hastePer`, `attackPer`, `guardPer`) drives the slider.
+- **Charges = roles** — `role` labels refreshed (lion→damage, tower→bulwark, …); `stat`/`unit` kept.
+
+**Engine (`blazonBonuses` rework + two helpers):**
+- **Element + polarity** come from **both** the field AND the charge tinctures paying their `temperament`
+  (so the colour banks its element buff and the metal banks its offense/defense lean, wherever each sits);
+  counterchange still banks the 2nd field tincture.
+- **Word order** (`blazonWordOrder`): figure (colour on charge) → +0.5 attack (burst); ground (colour on
+  field) → +0.1 guard (sustained).
+- **Charge role × number** (a/two/three, ×3 cap) — kept.
+- **Attitude tempo** → `haste += tempo×hastePer`; above the pivot `+attack`, below `+guard` (aggressive ↔
+  defensive slider). All clamped to ≈ one gear piece.
+- `blazonProfile(bl)` returns the read-only {element, polarity, tempo, wordOrder} character sheet.
+
+**Bench UI:** the **Guide & powers** tab (was "What's a blazon?") gained a **codex**: polarity, the element
+wheel with each colour's buff, the tempo slider, word order, and the charge→role table — the visible legend
+the playtest was missing. The bench's live readout now shows the current blazon's **element · polarity ·
+tempo · word order** above the passive stats.
+
+**Reconciled decision (flagged):** the two build answers slightly conflicted — "keep the full grammar" (which
+includes the `a/two/three` **number** slot) vs "tempo replaces number." Resolved by **keeping number** (the
+charge magnitude dial) AND layering **tempo** as an independent intensity+haste driver. Revisit if number
+should be retired.
+
+**Heraldic-accuracy note:** `guardant` still occupies the *attitude* slot (legacy) though it's really a
+**head** modifier (the future duel, §11, models it correctly). Left as-is for now; a grammar fix would move
+head-position out of the attitude ladder.

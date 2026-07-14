@@ -293,6 +293,8 @@
   .hb-about .hb-o{color:var(--ink-soft);font-size:12px}
   .hb-about .hb-rule{border:2px solid var(--gold);background:var(--paper-2);padding:7px 9px}
   .hb-about .hb-eg{font-style:italic;color:var(--ink-soft)}
+  .hb-codexh{font-family:var(--disp);font-size:10px;color:var(--gold);border-top:2px solid var(--line);padding-top:10px;margin:12px 0 6px}
+  .hb-sw{display:inline-block;width:11px;height:11px;border:1px solid var(--edge);border-radius:2px;vertical-align:middle;margin-right:1px}
   .gd-legend{display:flex;align-items:center;gap:8px;flex:none;font-family:var(--read);font-size:13px;
     color:var(--ink);border:2px solid var(--line);padding:5px 8px}
   .gd-legend .bp{flex:none;display:grid;grid-template-columns:repeat(2,7px);grid-template-rows:repeat(3,7px);gap:2px}
@@ -911,7 +913,7 @@
         <h1>The Herald's Bench <span class="dex-count">blazon a shield · DEV</span></h1>
         <div class="hb-tabs">
           <button class="hb-tab active" data-htab="bench">Bench</button>
-          <button class="hb-tab" data-htab="about">What's a blazon?</button>
+          <button class="hb-tab" data-htab="about">Guide &amp; powers</button>
         </div>
         <div class="hb-about" id="hb-about" style="display:none">
           <p><b>Blazon</b> is the centuries-old <i>language for describing coats of arms</i> — a real,
@@ -936,6 +938,30 @@
           field tinctures across the line — legal even where it'd otherwise clash. The Herald flags any
           violation, and you can't equip an illegal blazon.</p>
           <p class="hb-eg">e.g. <i>“Party per pale Azure and Or, a chevron counterchanged, three mullets Or.”</i></p>
+
+          <h3 class="hb-codexh">How your shield's powers are read</h3>
+          <p>Every part of the blazon is also a <b>power</b>. Equip a shield and these become passive buffs.</p>
+          <p><b>Metal = polarity</b> (which way the shield leans):<br>
+          <span class="hb-sw" style="background:#e8c34a"></span> <b>Or</b> (Strike / sun) → offense (+attack) &nbsp;·&nbsp;
+          <span class="hb-sw" style="background:#e9edf0"></span> <b>Argent</b> (Ward / moon) → defense (+guard).</p>
+          <p><b>Colour = element</b> (a themed buff). The elements sit in a counter-cycle
+          (<i>fire → vine → stone → storm → water → fire</i>; each beats the next — lore for now, kept for a future duel):<br>
+          <span class="hb-sw" style="background:#b3242b"></span> <b>Gules</b> · fire → attack &nbsp;
+          <span class="hb-sw" style="background:#2f8f3e"></span> <b>Vert</b> · vine → reach &nbsp;
+          <span class="hb-sw" style="background:#22262e"></span> <b>Sable</b> · stone → guard &nbsp;
+          <span class="hb-sw" style="background:#7d2fa0"></span> <b>Purpure</b> · storm → haste &nbsp;
+          <span class="hb-sw" style="background:#2a4bd0"></span> <b>Azure</b> · water → hearts.</p>
+          <p><b>Attitude = tempo</b> (an intensity + speed slider): <i>rampant/salient</i> (fast) lean
+          <b>aggressive</b> — more attack &amp; swing speed; <i>couchant/guardant</i> (slow) lean
+          <b>defensive</b> — more guard. Higher tempo always = more haste.</p>
+          <p><b>Word order</b>: colour <i>on the charge</i> = <b>figure</b> (burst, +attack); colour <i>as the
+          field</i> = <b>ground</b> (sustained, +guard).</p>
+          <p><b>Charge = role</b> (its main stat, scaled by the number a/two/three):<br>
+          🦁 <b>Lion</b> → damage (attack) &nbsp; 🦅 <b>Eagle</b> → vision &amp; range (reach) &nbsp;
+          🏰 <b>Tower</b> → bulwark (guard) &nbsp; ✝ <b>Cross</b> → vitality (hearts)<br>
+          ★ <b>Mullet</b> → far reach &nbsp; ☾ <b>Crescent</b> → nightward (guard) &nbsp;
+          🌹 <b>Rose</b> → vitality (hearts) &nbsp; 🕊 <b>Martlet</b> → swift (haste).</p>
+          <p class="hb-eg">The Bench shows the live element · polarity · tempo of whatever you're building, above the passive stats.</p>
         </div>
         <div class="hb-wrap" id="hb-wrap">
           <div class="hb-left">
@@ -4822,21 +4848,62 @@ function blazonText(bl){
   let text=parts.join(", ");
   return text.charAt(0).toUpperCase()+text.slice(1)+".";
 }
-// Passive bonuses on the FIVE wired equip stats. Each grammar slot owns a different contribution
-// (charge=class×number, attitude=stance lean, ordinary=armour band, field=temperament, counterchange banks
-// BOTH field temperaments). Clamped to ≈ one gear piece (first-pass power budget; tune in the doc §5/§9).
+// Word order (docs §11): "figure" = colour on the charge (a metal field) → a small offensive tilt (burst);
+// "ground" = colour on the field → a small defensive tilt (sustained). Null when it doesn't apply.
+function blazonWordOrder(bl){
+  if(!bl || !bl.field || !bl.charge || !bl.charge.id) return null;
+  const fieldColour = tClass(bl.field.t1)==="colour";
+  const chargeColour = bl.charge.t && tClass(bl.charge.t)==="colour";
+  if(chargeColour && !fieldColour) return "figure";
+  if(fieldColour) return "ground";
+  return null;
+}
+// Read-only "character sheet" of a blazon in the combat vocabulary — element (colour), polarity (metal),
+// tempo (attitude rung), word order. Feeds the bench codex readout. docs §11–12.
+function blazonProfile(bl){
+  if(!BLAZON || !bl) return null;
+  const T=BLAZON.tinctures;
+  const ids=[bl.field&&bl.field.t1, bl.charge&&bl.charge.t, bl.div?(bl.field&&bl.field.t2):null].filter(Boolean);
+  let element=null, polarity=null;
+  for(const id of ids){ const t=T[id]; if(!t) continue;
+    if(t.class==="colour" && !element) element={id, name:t.name, element:t.element};
+    if(t.class==="metal"  && !polarity) polarity={id, name:t.name, polarity:t.polarity, stance:t.stance};
+  }
+  let tempo=null;
+  const att=bl.charge && BLAZON.attitudes[bl.charge.attitude];
+  if(att) tempo={name:bl.charge.attitude, rung:att.tempo};
+  return {element, polarity, tempo, wordOrder:blazonWordOrder(bl)};
+}
+// Passive bonuses on the FIVE wired equip stats, RE-FLAVORED to the combat vocabulary (docs §11–12):
+//   ELEMENT (colour) + POLARITY (metal): both the field AND charge tinctures pay their `temperament`, so
+//     the shield banks its element buff (from its colour) and its offense/defense lean (from its metal),
+//     wherever each sits. Counterchange banks the 2nd field tincture (mastery flourish).
+//   WORD ORDER: figure (colour on charge) = small +attack; ground (colour on field) = small +guard.
+//   CHARGE = role → its stat × number (a/two/three, ×3 cap — the magnitude dial, kept per Q1).
+//   ATTITUDE = TEMPO → an intensity+speed slider: every rung adds haste; rungs above the pivot lean
+//     aggressive (+attack), below lean defensive (+guard).  The element counter-cycle itself is lore-only
+//     here (no opponent to counter) — reserved for the future duel.  Clamped to ≈ one gear piece.
 function blazonBonuses(bl){
   const b={hearts:0, guard:0, attack:0, reach:0, haste:0};
   if(!BLAZON || !bl) return b;
+  const T=BLAZON.tinctures;
   const add=o=>{ if(o) for(const k in o) if(k in b) b[k]+=o[k]; };
-  add(tinc(bl.field.t1) && tinc(bl.field.t1).temperament);                    // field temperament
+  add(tinc(bl.field.t1) && tinc(bl.field.t1).temperament);                    // field tincture (element or polarity)
+  if(bl.charge && bl.charge.t && T[bl.charge.t]) add(T[bl.charge.t].temperament); // charge tincture (the other of element/polarity)
   const cc=(bl.ordinary&&bl.ordinary.t==="counterchanged")||(bl.charge&&bl.charge.t==="counterchanged");
-  if(bl.div && cc) add(tinc(bl.field.t2) && tinc(bl.field.t2).temperament);   // mastery flourish: bank both
+  if(bl.div && cc) add(tinc(bl.field.t2) && tinc(bl.field.t2).temperament);   // mastery flourish: bank both field tinctures
+  const wo=blazonWordOrder(bl);
+  if(wo==="figure") b.attack+=0.5; else if(wo==="ground") b.guard+=0.1;       // burst vs sustained tilt
   if(bl.ordinary) add(BLAZON.ordinaries[bl.ordinary.name] && BLAZON.ordinaries[bl.ordinary.name].bonus);
   if(bl.charge && bl.charge.id){
     const ch=BLAZON.charges[bl.charge.id], n=Math.min(3,(BLAZON.numbers[bl.charge.num]||{count:1}).count);
-    if(ch.stat in b) b[ch.stat]+=ch.unit*n;                                   // class × rank (capped ×3)
-    if(bl.charge.attitude) add(BLAZON.attitudes[bl.charge.attitude] && BLAZON.attitudes[bl.charge.attitude].lean);
+    if(ch.stat in b) b[ch.stat]+=ch.unit*n;                                   // charge role × rank
+    const att=BLAZON.attitudes[bl.charge.attitude], tc=BLAZON.tempo;
+    if(att && tc){ const t=att.tempo!=null?att.tempo:tc.pivot;
+      b.haste += t*tc.hastePer;                                               // tempo → speed
+      if(t>tc.pivot)      b.attack += (t-tc.pivot)*tc.attackPer;              // above pivot → aggressive
+      else if(t<tc.pivot) b.guard  += (tc.pivot-t)*tc.guardPer;              // below pivot → defensive
+    }
   }
   const cl=BLAZON.clamp||{};
   for(const k in b){ if(cl[k]!=null) b[k]=Math.min(b[k], cl[k]); b[k]=Math.round(b[k]*1000)/1000; }
@@ -5064,8 +5131,15 @@ function renderHerald(){
   if(b.guard) parts.push("+"+b.guard.toFixed(2)+"s guard");
   if(b.reach) parts.push("+"+b.reach+"px reach");
   if(b.haste>0) parts.push("faster swing"); else if(b.haste<0) parts.push("slower swing");
-  const act=blazonActive(bl);
+  const act=blazonActive(bl), prof=blazonProfile(bl), pf=[];
+  if(prof){
+    if(prof.polarity) pf.push('<b>'+esc(prof.polarity.name)+'</b> — '+prof.polarity.polarity+' ('+prof.polarity.stance+')');
+    if(prof.element)  pf.push('<b>'+esc(prof.element.name)+'</b> — '+(prof.element.element||"element"));
+    if(prof.tempo)    pf.push('tempo <b>'+esc(prof.tempo.name)+'</b> ('+prof.tempo.rung+')'+(prof.tempo.rung>BLAZON.tempo.pivot?' ⚔':prof.tempo.rung<BLAZON.tempo.pivot?' 🛡':''));
+    if(prof.wordOrder) pf.push(prof.wordOrder==="figure"?'figure — burst':'ground — sustained');
+  }
   document.getElementById("hb-bonus").innerHTML =
+    (pf.length?'<span class="hb-active">'+pf.join(" · ")+'</span><br>':"")+
     "<b>Passive:</b> "+(res.valid ? (parts.join(" · ")||"no bonuses yet") : "—")+
     (act?'<br><span class="hb-active" title="Reserved — not active in this MVP">🛡 Ability (soon): '+esc(act.name)+"</span>":"");
   const eq=document.getElementById("hb-equip");
