@@ -1,9 +1,9 @@
 # Inklings — Heraldry & the Blazon Shield
 
-Status: **MVP shipped DEV-only — in testing** (like the Garden began as a debug scaffold). A vertical slice of
-build-steps 1–4 is live behind `IS_DEV` (localhost / `file://`); acquisition (drops), the armory, and the
-Herald character are still future. Everything below §0 is the original 2026-07 plan; **§10 records what the MVP
-actually built** and where the forward seams sit. See that section first when working on the code.
+Status: **MVP shipped DEV-only** (§10), **re-flavored to the combat vocabulary** (§12); **production plan
+agreed — §13, not yet built.** The dev slice is live behind `IS_DEV` (localhost / `file://`). Everything below
+§0 is the original 2026-07 plan; **§10/§12 record what's actually built**, §11 the explored duel, and **§13 is
+the live plan to take it dev→production.** Read §13 (then §10/§12) before working on the code.
 
 The game's long-term identity is a Stardew/Minecraft-breadth adventure whose systems **teach real
 grammar/lexical concepts by embodying them.** Heraldry is a natural new subject: **blazon** (the formal
@@ -393,3 +393,70 @@ should be retired.
 **Heraldic-accuracy note:** `guardant` still occupies the *attitude* slot (legacy) though it's really a
 **head** modifier (the future duel, §11, models it correctly). Left as-is for now; a grammar fix would move
 head-position out of the attitude ladder.
+
+---
+
+## 13. Production plan — dev → production (agreed 2026-07; not yet built)
+
+Decisions this pass: **(a)** unlock terms via a **starter set + rare scroll drops**; **(b)** enter the bench
+at a **Herald's desk in the Library**; **(c)** v1 also lands the **guardant head-position grammar fix**;
+**(d)** I propose balance numbers now, tune from play. Herald NPC, armory, and active guard/block stay
+**deferred**. Build in the order of §13.6; each step parse-checks + is browser-verified.
+
+### 13.1 Acquisition — `state.blazon` roster + scroll drops
+- **`state.blazon`** = unlocked-term sets per category (`tinctures`, `charges`, `ordinaries`, `attitudes`,
+  `divlines`). Numbers (a/two/three) and head `none` are always available (structural, not earned).
+- **Starter set** (guarantees a first legal shield + a little choice): tinctures **Or, Argent, Gules,
+  Azure**; charges **lion, cross**; attitudes **statant, rampant**. → e.g. *"Gules, a lion rampant Or."*
+- **Scroll drops:** new `BLAZON_SCROLL_CHANCE ≈ 0.04` in `collectPickup` (sibling to `FABLE_DROP_CHANCE`
+  0.10). A dropped **blazon scroll** grants one still-locked term, **weighted so rarer terms come off rarer
+  beasts** (beast rarity × term-rarity tier). Special ground pickup (like fable pages — NOT
+  `state.resources`); unlock → celebration/toast via the one-at-a-time queue. Early drops weight toward
+  filling gaps a player still needs for a legal shield.
+- **Bench gating:** `renderHerald` pickers (`tinctureOptions`/`ordOpts`/`chOpts`/attitudes) filter to
+  unlocked terms, with a per-category "*N locked — find blazon scrolls*" hint. Already-equipped shields are
+  **not** retroactively invalidated by locked terms.
+- **Persistence + migration:** `state.blazon` in `snapshot`/`applySnapshot`; on load, if absent, grant the
+  starter set (covers existing saves).
+- **Dev convenience:** keep an "unlock all terms" cheat in the bench (mirror the Garden dev bar) so testing
+  stays trivial.
+
+### 13.2 Entry — Herald's desk in the Library
+- Add an interact object to **`data/rooms/library.json`**: `{ "id":"herald", "col":~23, "row":19, "w":2,
+  "h":2 }` (a free floor spot — `desk` is col 7, `book` col 20, `curator` col 10; put the herald desk on the
+  lower-right).
+- Wire it the same way as the other stations: `LIBRARY.herald = interactPt("herald")`; **`nearLibraryHerald()`**;
+  a branch in **`tryUseBench`** → `openHerald()`; the E-hint ("*Press E to blazon a shield*"); the contextual
+  **touch button + desktop toolbar** entry; and draw it in the library render like `desk`/`book`/`curator`.
+- **Ungate:** drop `IS_DEV` from the shield **equip slot** (`dev:true` → always shown) and from the bench
+  entry. Keep the equip-doll shield-slot → bench jump (ungated). Retire the raw dev-only `Y` key (or keep an
+  ungated shortcut).
+
+### 13.3 Grammar fix — head-position slot
+- Move **guardant/regardant out of the attitude slot** into a real `head` slot. Blazon shape becomes
+  `bl.charge = { num, id, attitude, head, t }`, `head ∈ {none, guardant, regardant}`.
+- `data/blazon.json`: remove `guardant` from `attitudes` (attitudes = pure tempo: rampant/salient/passant/
+  statant/couchant — *optionally* add dormant/sejant/courant to complete the 1–8 ladder, flagged optional);
+  add a `heads` block. On the **passive** shield the head is **flavor-only** (no stat) but grammatically
+  correct — its live mechanics are reserved for the future duel (§11).
+- `blazonText` renders head after attitude ("*a lion rampant guardant Or*"); `renderHerald` gains a **Head
+  picker**; `blazonBonuses`/`blazonProfile` need only the attitude-set cleanup (renderer unchanged — one pose
+  per charge). **Migration:** saved shields with `attitude:"guardant"` → `attitude:"statant"` + `head:"guardant"`.
+
+### 13.4 Balance (proposed; tune from play — all constants)
+- `BLAZON_SCROLL_CHANCE` = **0.04**, rarity-weighted.
+- Power budget (shield ≈ one strong gear piece): tighten `clamp` to **{ hearts:2, guard:0.5, attack:3,
+  reach:24, haste:0.12 }** (from {3, 0.6, 4, 40, 0.15}); keep the `tempo` config. Revisit after play.
+- First-shield pacing: the starter set is an immediate legal shield; scroll weighting fills a player's
+  missing metal/colour/charge first.
+
+### 13.5 Not in v1 (still deferred)
+Herald NPC (guide/coaching), armory (named saved blazons), **active guard/block** combat (`blazonActive`
+stays inert — the seam remains for the §11 "Predictable Queen" duel or a Zelda-style raise-shield later).
+
+### 13.6 Build order (shippable steps)
+1. **Grammar fix** (head slot) — smallest; gives a clean tempo ladder before the rest.
+2. **`state.blazon` roster** + starter grant + bench gating + persistence/migration.
+3. **Scroll drops** in `collectPickup` + rarity/pacing weights + unlock celebration.
+4. **Herald's desk** interactable + ungate the entry and the shield slot.
+5. **Balance numbers** + playtest pass.
