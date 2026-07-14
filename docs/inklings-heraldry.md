@@ -14,7 +14,9 @@ to build a **shield** that, when equipped, grants passive bonuses derived from w
 Cross-refs: [`inklings.md`](inklings.md) (current systems, incl. the equipment paper-doll + drop/scroll
 patterns), [`inklings-grammar-systems.md`](inklings-grammar-systems.md) (the POS-anchored framework this
 extends), [`inklings-architecture.md`](inklings-architecture.md) (authored-obstacle `acceptedSolutions`, if
-world-effects ever join).
+world-effects ever join), [`inklings-signal-flags.md`](inklings-signal-flags.md) (**tentative** — the naval
+Omen Mast, which would reuse this emblazon renderer + tincture-rule validator since signal flags are simple
+blazons).
 
 ---
 
