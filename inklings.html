@@ -557,6 +557,26 @@
   .cu-row.done .cu-fill{background:var(--moss)}
   .cu-row.done .ct{color:var(--moss)}
   .cu-badge{font-family:var(--disp);font-size:8px;color:var(--moss)}
+  /* Curator Guide tab + word-relationships page (teach the WordNet relations the shelves encode) */
+  .cu-guide{overflow:visible;font-family:var(--read);font-size:14px;line-height:1.4}
+  .cu-guide p{margin:0 0 9px}  .cu-guide b{color:var(--ink)}
+  .cu-guide .cu-lead{font-size:15px}
+  .cu-guide .cu-rule{border:2px solid var(--gold);background:var(--paper-2);padding:7px 9px}
+  .cu-guide .cu-eg{font-style:italic;color:var(--ink-soft)}
+  .cu-guide h3{font-family:var(--disp);font-size:10px;color:var(--gold);border-top:2px solid var(--line);padding-top:10px;margin:12px 0 6px}
+  .cu-rico{display:inline-block;width:1.4em;color:var(--gold);font-weight:bold;text-align:center}
+  .cu-word .cu-def{font-size:15px;color:var(--ink-soft);font-style:italic;margin:2px 0 4px;line-height:1.35}
+  .cu-word .cu-deflink{font-family:var(--disp);font-size:8px;color:var(--inkblue);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline}
+  .cu-rel{padding:8px 10px;margin:7px 0;background:var(--paper-2);border:2px solid var(--edge)}
+  .cu-rel .cu-relhd{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:5px}
+  .cu-rel .cu-relnm{font-family:var(--disp);font-size:9px;color:var(--gold)}
+  .cu-rel .cu-reltag{font-size:12.5px;color:var(--ink)}
+  .cu-rel .cu-relex{font-size:11.5px;color:var(--ink-soft);font-style:italic}
+  .cu-relchips{display:flex;flex-wrap:wrap;gap:4px}
+  .cu-relchips .nb-chip{font-size:14px;padding:3px 7px}
+  .cu-relchips .nb-chip.reldim{color:var(--ink-soft);opacity:.6;cursor:default}
+  .cu-relmore{font-size:12px;color:var(--ink-soft);align-self:center}
+  .cu-empty{font-size:13px;color:var(--ink-soft);font-style:italic;margin:4px 0}
   .foot{margin-top:16px;padding-top:12px;border-top:2px solid var(--line);
     display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
   .foot .keys{font-size:16px;color:var(--ink-soft);line-height:1.9}
@@ -1013,8 +1033,35 @@
         <button class="close-x" id="cu-close" aria-label="Close" title="Close">✕</button>
         <button id="cu-back" style="display:none;margin-bottom:10px">← All sets</button>
         <h1 id="cu-title">The Curator</h1>
+        <div class="hb-tabs">
+          <button class="hb-tab active" data-cutab="sets">Collection</button>
+          <button class="hb-tab" data-cutab="guide">Guide</button>
+        </div>
         <div class="sub" id="cu-sub"></div>
         <div id="cu-body"></div>
+        <div class="cu-guide" id="cu-guide" style="display:none">
+          <p class="cu-lead">The library is a <b>tree of meanings</b>. Every word you spell is filed by what
+          it <i>is a kind of</i> — so the shelves themselves teach a real relationship linguists call
+          <b>hyponymy</b>. Each book is a broader idea; the words shelved on it are its narrower kinds.</p>
+          <p>A book like <i>Bird</i> is a <b>hypernym</b> (the general term). <i>robin</i>, <i>wren</i>,
+          <i>finch</i> are its <b>hyponyms</b> (the specific kinds). Words that share a shelf are
+          <b>co-hyponyms</b> — siblings under the same parent.</p>
+          <p>Open any collected word (tap it on a shelf page) to see <b>all</b> of its relatives:</p>
+          <ul class="hb-gloss">
+            <li><span class="cu-rico">↑</span><b>Hypernym</b> — a <i>broader</i> kind. A robin <b>is a kind of</b> bird → animal.</li>
+            <li><span class="cu-rico">↓</span><b>Hyponym</b> — a <i>narrower</i> kind. Kinds of bird: robin, wren, owl…</li>
+            <li><span class="cu-rico">⊂</span><b>Meronym</b> — a <i>part</i> of it. A bird <b>has</b> a beak, a wing.</li>
+            <li><span class="cu-rico">⊃</span><b>Holonym</b> — the <i>whole</i> it belongs to. A wing <b>is part of</b> a bird.</li>
+            <li><span class="cu-rico">⇄</span><b>Antonym</b> — the <i>opposite</i>. hot ⇄ cold, open ⇄ shut.</li>
+            <li><span class="cu-rico">↝</span><b>Troponym</b> — a particular <i>way</i> of doing a verb. To <b>march</b> is a way to <b>walk</b>.</li>
+          </ul>
+          <p class="cu-rule">🌳 <b>Why it matters:</b> these links turn your loose pile of words into a map.
+          Follow a word up to its hypernyms and you generalise; follow it down to hyponyms and you get
+          specific. Explore parts, wholes and opposites and you start to see how the whole dictionary
+          hangs together.</p>
+          <p class="cu-eg">Collected relatives are <b>clickable</b> — hop word to word to wander the tree.
+          Words you haven't found yet show greyed out, as a hint of what's still out there.</p>
+        </div>
       </div>
     </div>
 
@@ -1355,7 +1402,8 @@ function wotdGuaranteed(){
 // by build_dictionary.py (no third-party API, fully offline). Inflected forms (plurals, tenses, comparatives,
 // -ly adverbs, irregulars like ran→run) resolve to their base lemma via data/inflections.json. Both are
 // plain maps — the browser does NO lemmatization, only lookups. Fetched once at startup (like 2of12.txt).
-// data/wordnet-relations.json (the relation graph) is NOT loaded here — it's dormant, bundled for future use.
+// data/wordnet-relations.json (the relation graph) is NOT loaded here — it's lazy-loaded on first curator
+// open (see loadRelations / RELATIONS) to power the curator's per-word relatives page.
 let DICT=null, INFL=null, DICT_FAILED=false;
 const dictReady = Promise.all([
   fetch("data/dictionary.json").then(r=>r.ok?r.json():Promise.reject()),
@@ -2259,7 +2307,10 @@ addEventListener("keydown",e=>{
     return;
   }
   if(state.curation){   // curation view: Esc steps back a page (book → set → list), then closes; Tab/E close
-    if(k==="escape"){ e.preventDefault(); if(cuBook) renderCurationCat(cuCat); else if(cuCat) renderCuration(); else closeCuration(); }
+    if(k==="escape"){ e.preventDefault();
+      if(cuTab==="guide") cuShowTab("sets");
+      else if(cuWord){ if(cuBook) renderCurationBook(cuBook); else renderCuration(); }
+      else if(cuBook) renderCurationCat(cuCat); else if(cuCat) renderCuration(); else closeCuration(); }
     else if(k==="tab"||k==="e"){ e.preventDefault(); closeCuration(); }
     return;
   }
@@ -4085,6 +4136,28 @@ function closeShelfView(){
 // docs/inklings-collections.md. Bundle math reuses the same found/total the shelf view already computes.
 let cuCat=null;   // page 2: the drilled-into category, or null on the list page
 let cuBook=null;  // page 3: the opened book (word list), or null
+let cuWord=null;  // page 4: the opened word (its relationships), or null
+let cuTab="sets"; // "sets" = the paginated collection; "guide" = the relationship primer
+// Bundled WordNet relation graph (data/wordnet-relations.json) — 7.7MB, so lazy-loaded on first curator
+// open. Powers the per-word relatives page (the curator's teaching payload). See docs/inklings-collections.md.
+let RELATIONS=null, _relLoading=false;
+function loadRelations(cb){
+  if(RELATIONS){ cb&&cb(); return; }
+  if(!_relLoading){ _relLoading=true;
+    fetch("data/wordnet-relations.json").then(r=>r.json())
+      .then(j=>{ RELATIONS=j; _relLoading=false; if(state.curation && cuWord) renderCurationWord(cuWord); })
+      .catch(()=>{ _relLoading=false; }); }
+  cb&&cb();
+}
+// The six relations the graph carries, in teaching order. `ex` is a one-liner shown above the word list.
+const CU_RELS=[
+  {k:"hyper", ico:"↑", nm:"Hypernym", tag:"a broader kind",       ex:w=>`“${w}” is a kind of these`},
+  {k:"hypo",  ico:"↓", nm:"Hyponym",  tag:"a narrower kind",      ex:w=>`kinds of “${w}”`},
+  {k:"mero",  ico:"⊂", nm:"Meronym",  tag:"a part of it",         ex:w=>`parts of “${w}”`},
+  {k:"holo",  ico:"⊃", nm:"Holonym",  tag:"the whole it's in",    ex:w=>`“${w}” is a part of these`},
+  {k:"ant",   ico:"⇄", nm:"Antonym",  tag:"the opposite",         ex:w=>`the opposite of “${w}”`},
+  {k:"tropo", ico:"↝", nm:"Troponym", tag:"a way of doing it",    ex:w=>`particular ways to “${w}”`},
+];
 function curationCats(){   // [{cat, found, total, books:[{key,found,total}]}], in shelf/category order, non-empty only
   if(!NOUN_BOOKS) return [];
   const byCat={};
@@ -4106,19 +4179,30 @@ function cuBar(found,total){   // a progress row's bar; total 0 guarded
 }
 function openCuration(){
   if(!NOUN_BOOKS){ showToast("The curator is still cataloguing…"); return; }
-  state.curation=true; cuCat=null;
+  state.curation=true; cuCat=null; cuBook=null; cuWord=null;
   document.getElementById("sound-btn").style.display="none";
-  renderCuration();
+  loadRelations();               // warm the relation graph so word pages are ready when reached
+  cuShowTab("sets");
   document.getElementById("curation").classList.add("open");
   SFX.play("click");
 }
+function cuShowTab(t){   // toggle the Collection (paginated) vs Guide (relationship primer) tabs
+  cuTab=t;
+  document.querySelectorAll("#curation .hb-tab").forEach(el=>el.classList.toggle("active", el.dataset.cutab===t));
+  const guide=t==="guide";
+  document.getElementById("cu-guide").style.display = guide ? "" : "none";
+  document.getElementById("cu-body").style.display  = guide ? "none" : "";
+  document.getElementById("cu-sub").style.display   = guide ? "none" : "";
+  if(guide){ document.getElementById("cu-back").style.display="none"; document.getElementById("cu-title").textContent="Word Relationships"; }
+  else { if(cuWord) renderCurationWord(cuWord); else if(cuBook) renderCurationBook(cuBook); else if(cuCat) renderCurationCat(cuCat); else renderCuration(); }
+}
 function renderCuration(){   // page 1: every noun category as a set with its collection progress
-  cuCat=null; cuBook=null;
+  cuCat=null; cuBook=null; cuWord=null;
   document.getElementById("cu-back").style.display="none";
   document.getElementById("cu-title").textContent="The Curator";
   const cats=curationCats();
   const done=cats.filter(c=>c.total&&c.found>=c.total).length;
-  document.getElementById("cu-sub").textContent=`${done} / ${cats.length} sets complete`;
+  const sub=document.getElementById("cu-sub"); sub.style.display=""; sub.textContent=`${done} / ${cats.length} sets complete`;
   // sets with ≥1 collected word float to the top (stable sort keeps the shelf order within each group)
   cats.sort((a,b)=> (b.found>0)-(a.found>0));
   let html=`<p class="cu-note">Complete a collection set and the curator will have a reward for you. (Rewards coming soon — for now, track your progress.)</p>`;
@@ -4133,11 +4217,11 @@ function renderCuration(){   // page 1: every noun category as a set with its co
   body.querySelectorAll("[data-cat]").forEach(el=>el.onclick=()=>renderCurationCat(el.dataset.cat));
 }
 function renderCurationCat(cat){   // page 2: one category's books, each with its own found/total progress
-  cuCat=cat; cuBook=null;
+  cuCat=cat; cuBook=null; cuWord=null;
   const back=document.getElementById("cu-back"); back.style.display=""; back.textContent="← All sets";
   const rec=curationCats().find(c=>c.cat===cat); if(!rec){ renderCuration(); return; }
   document.getElementById("cu-title").textContent=nbCap(cat);
-  document.getElementById("cu-sub").textContent=`${rec.found} / ${rec.total} words collected in this set`;
+  const sub=document.getElementById("cu-sub"); sub.style.display=""; sub.textContent=`${rec.found} / ${rec.total} words collected in this set`;
   let html="";
   for(const b of rec.books){
     const complete=b.total&&b.found>=b.total;
@@ -4150,12 +4234,12 @@ function renderCurationCat(cat){   // page 2: one category's books, each with it
   body.querySelectorAll("[data-key]").forEach(el=>el.onclick=()=>renderCurationBook(el.dataset.key));
   SFX.play("click");
 }
-function renderCurationBook(key){   // page 3: one book's words — collected words (clickable) + undiscovered as blanks
-  cuBook=key; const bk=NOUN_BOOKS.books[key];
+function renderCurationBook(key){   // page 3: one book's words — collected words (→ relatives page) + undiscovered blanks
+  cuBook=key; cuWord=null; const bk=NOUN_BOOKS.books[key];
   const back=document.getElementById("cu-back"); back.style.display=""; back.textContent="← "+nbCap(bk.cat);
   const found=bk.children.filter(c=>state.dex[c]).length;
   document.getElementById("cu-title").textContent=bookName(key);
-  document.getElementById("cu-sub").textContent=`found ${found} / ${bk.children.length}`;
+  const sub=document.getElementById("cu-sub"); sub.style.display=""; sub.textContent=`found ${found} / ${bk.children.length} · tap a word for its relatives`;
   let html='<div class="nb-chips">';
   for(const c of bk.children){
     if(state.dex[c]) html += `<span class="nb-chip found" data-w="${esc(c)}">${esc(c)}</span>`;
@@ -4163,11 +4247,46 @@ function renderCurationBook(key){   // page 3: one book's words — collected wo
   }
   html+="</div>";
   const body=document.getElementById("cu-body"); body.innerHTML=html; body.scrollTop=0;
-  body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>openDefModal(el.dataset.w));
+  body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>renderCurationWord(el.dataset.w));
+  SFX.play("click");
+}
+// One relation row: label + explainer + chips. Collected relatives are clickable (→ that word's page);
+// undiscovered ones show greyed as a hint. Long lists are capped with a "+N more" tail.
+function cuRelRow(rel, word, list){
+  const words=Array.isArray(list)?list:[]; if(!words.length) return "";
+  const CAP=30, shown=words.slice(0,CAP), extra=words.length-shown.length;
+  let chips="";
+  for(const w of shown){
+    if(state.dex[w]) chips+=`<span class="nb-chip found" data-rel="${esc(w)}">${esc(w)}</span>`;
+    else chips+=`<span class="nb-chip reldim">${esc(w)}</span>`;
+  }
+  if(extra>0) chips+=`<span class="cu-relmore">+${extra} more</span>`;
+  return `<div class="cu-rel"><div class="cu-relhd"><span class="cu-relnm">${rel.ico} ${rel.nm}</span>`
+       + `<span class="cu-reltag">${rel.tag}</span><span class="cu-relex">— ${esc(rel.ex(word))}</span></div>`
+       + `<div class="cu-relchips">${chips}</div></div>`;
+}
+function renderCurationWord(word){   // page 4: one collected word's WordNet relatives — the teaching payload
+  cuWord=word; const e=state.dex[word];
+  const back=document.getElementById("cu-back"); back.style.display="";
+  back.textContent = cuBook ? "← "+bookName(cuBook) : "← All sets";
+  document.getElementById("cu-title").textContent=nbCap(word);
+  document.getElementById("cu-sub").style.display="none";
+  const defHtml = e ? `<div class="cu-def">${esc(e.def||"A word in your collection.")}</div>`
+                    + `<button class="cu-deflink" data-def="${esc(word)}">read full meaning ↗</button>` : "";
+  let relHtml="";
+  if(!RELATIONS){ loadRelations(); relHtml=`<p class="cu-empty">Gathering this word's relatives…</p>`; }
+  else {
+    const rec=RELATIONS[word]||{};
+    let rows=""; for(const rel of CU_RELS) rows+=cuRelRow(rel, word, rec[rel.k]);
+    relHtml = rows || `<p class="cu-empty">The catalogue lists no relatives for “${esc(word)}” — a lonely word.</p>`;
+  }
+  const body=document.getElementById("cu-body"); body.style.display=""; body.innerHTML=`<div class="cu-word">${defHtml}${relHtml}</div>`; body.scrollTop=0;
+  const df=body.querySelector("[data-def]"); if(df) df.onclick=()=>openDefModal(df.dataset.def);
+  body.querySelectorAll("[data-rel]").forEach(el=>el.onclick=()=>{ if(state.dex[el.dataset.rel]) renderCurationWord(el.dataset.rel); });
   SFX.play("click");
 }
 function closeCuration(){
-  state.curation=false; cuCat=null; cuBook=null;
+  state.curation=false; cuCat=null; cuBook=null; cuWord=null;
   document.getElementById("curation").classList.remove("open");
   document.getElementById("sound-btn").style.display="";
   closeDefModal();
@@ -6098,7 +6217,11 @@ document.getElementById("sv-close").onclick=()=>{ closeShelfView(); SFX.play("cl
 document.getElementById("sv-back").onclick=()=>{ renderShelfList(); SFX.play("click"); };
 document.getElementById("shelfview").onclick=e=>{ if(e.target.id==="shelfview") closeShelfView(); };  // tap backdrop to close
 document.getElementById("cu-close").onclick=()=>{ closeCuration(); SFX.play("click"); };
-document.getElementById("cu-back").onclick=()=>{ if(cuBook) renderCurationCat(cuCat); else renderCuration(); SFX.play("click"); };
+document.getElementById("cu-back").onclick=()=>{
+  if(cuWord){ if(cuBook) renderCurationBook(cuBook); else renderCuration(); }
+  else if(cuBook) renderCurationCat(cuCat); else renderCuration();
+  SFX.play("click"); };
+document.querySelectorAll("#curation .hb-tab").forEach(t=>t.onclick=()=>{ cuShowTab(t.dataset.cutab); SFX.play("click"); });
 document.getElementById("curation").onclick=e=>{ if(e.target.id==="curation") closeCuration(); };  // tap backdrop to close
 document.getElementById("ap-close").onclick=()=>{ closeApothecary(); SFX.play("click"); };
 document.getElementById("apothecary").onclick=e=>{ if(e.target.id==="apothecary") closeApothecary(); };  // tap backdrop to close

@@ -79,6 +79,16 @@ adjectives feed **potions**, so keep bundles from double-rewarding those — the
   `NOUN_BOOKS`; the only new saved state is which bundles have been **claimed** (§6).
 - The librarian delivers short flavor lines (À-La-Modal style, canvas or DOM), teaching hypernym/hyponym as
   she describes each set ("a *fish* is a **kind of** animal…"). Personality/voice is open.
+- **Two tabs on the panel** (`.hb-tab` chrome, reused from the Herald's Bench): **Collection** (the paginated
+  progress pages) and **Guide** — a static primer (`#cu-guide`) that names and explains the WordNet relations
+  the shelves encode (hypernym/hyponym/meronym/holonym/antonym/troponym), the same "explain the grammar"
+  treatment the blazon guide gives heraldry.
+- **A fourth page — a word's relatives** (`renderCurationWord`): tap any *collected* word on a shelf page and,
+  instead of the bare definition modal, the curator shows that word's real relatives read live from
+  `data/wordnet-relations.json` (`RELATIONS`, lazy-loaded on open): ↑ hypernyms, ↓ hyponyms, ⊂ meronyms,
+  ⊃ holonyms, ⇄ antonyms, ↝ troponyms. Related words **you've collected** are clickable (hop word-to-word to
+  wander the graph); undiscovered ones show greyed as a hint. A "read full meaning ↗" link still opens the
+  definition modal. This is the concrete teaching payload — the tree made explorable.
 
 ---
 
@@ -162,8 +172,12 @@ placement anyway, building the shared primitive up front is the efficient path.
    pages** (nav tracked by `cuCat`/`cuBook`; the `← ` back button + Esc step back one page at a time):
    - **Page 1** — each category as a set with a `found/total` progress bar + a ✓ COMPLETE badge.
    - **Page 2** — that category's books, each with its own bar.
-   - **Page 3** — a book's actual words: collected ones as clickable chips (→ `#defmodal`), undiscovered ones
-     as `?????` blanks (reuses the shelf view's `.nb-chip` styling).
+   - **Page 3** — a book's actual words: collected ones as clickable chips (→ the **relatives page**),
+     undiscovered ones as `?????` blanks (reuses the shelf view's `.nb-chip` styling).
+   - **Page 4 (relatives)** — `renderCurationWord`: a collected word's WordNet relatives (hyper/hypo/mero/
+     holo/ant/tropo) from `RELATIONS` (`data/wordnet-relations.json`, lazy-loaded via `loadRelations`).
+     Collected relatives are clickable to walk the graph; undiscovered ones greyed. Plus a **Guide** tab
+     (`#cu-guide`, `cuShowTab`) explaining each relation in prose. Both teach the relations the shelves encode.
    **Ordering:** anything with ≥1 collected word floats to the top (categories keep shelf order within a group;
    books keep alphabetical within a group) so progress is easy to spot. All read live from `state.dex` ×
    `NOUN_BOOKS` via `curationCats()` — **no new saved state, no rewards yet** (a note in the panel says rewards
