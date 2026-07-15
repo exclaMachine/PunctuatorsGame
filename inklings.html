@@ -765,8 +765,8 @@
     display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
     user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none}
   .tc-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0);background:#dcd0b2}
-  /* Joystick — bottom-right (fixed base; drag the thumb for 360° movement) */
-  #joystick{position:absolute;right:14px;bottom:14px;pointer-events:auto;
+  /* Joystick — bottom-left (fixed base; drag the thumb for 360° movement) */
+  #joystick{position:absolute;left:14px;bottom:14px;pointer-events:auto;
     width:132px;height:132px;border-radius:50%;touch-action:none;
     background:rgba(236,227,207,.55);border:3px solid var(--edge);box-shadow:3px 3px 0 rgba(0,0,0,.3);
     display:flex;align-items:center;justify-content:center;
@@ -774,8 +774,8 @@
   #joy-thumb{width:58px;height:58px;border-radius:50%;background:var(--inkblue);
     border:3px solid var(--edge);box-shadow:2px 2px 0 rgba(0,0,0,.35);
     will-change:transform;pointer-events:none}
-  /* Action cluster — bottom-left */
-  #tact{position:absolute;left:14px;bottom:14px;display:flex;gap:26px;align-items:flex-end}   /* wide gap so util buttons aren't hit instead of ATK */
+  /* Action cluster — bottom-right (ATK at the far-right edge, util grid inboard) */
+  #tact{position:absolute;right:14px;bottom:14px;display:flex;flex-direction:row-reverse;gap:26px;align-items:flex-end}   /* row-reverse: ATK (first child) hugs the right edge under the thumb; wide gap so util buttons aren't hit instead of ATK */
   #tact .atk{width:78px;height:78px;font-size:13px;background:var(--inkblue);color:#f4f0e6}
   #tact .atk:active{background:#46578f}
   #tact .util-grid{display:grid;grid-template-columns:52px 52px 52px;grid-auto-rows:52px;gap:6px}
@@ -784,9 +784,9 @@
   #tact .util.ico{font-size:30px}
   /* shrink the stick/buttons on small screens so they don't swallow the playfield */
   @media(max-width:560px){
-    #joystick{right:8px;bottom:8px;width:112px;height:112px}
+    #joystick{left:8px;bottom:8px;width:112px;height:112px}
     #joy-thumb{width:50px;height:50px}
-    #tact{left:8px;bottom:8px;gap:18px}
+    #tact{right:8px;bottom:8px;gap:18px}
     #tact .atk{width:62px;height:62px;font-size:11px}
     #tact .util-grid{grid-template-columns:44px 44px 44px;grid-auto-rows:44px;gap:5px}
     #tact .util{width:44px;height:44px;font-size:7px}
@@ -839,7 +839,7 @@
   body.touch #tray-hud{width:166px}   /* 5 fixed columns on mobile — constant width, no reflow */
   /* bottom bar */
   body.touch #touch{position:static;inset:auto;order:1;flex:none;width:100%}
-  body.touch #touch.live{display:flex;align-items:flex-end;justify-content:space-between;padding:0 8px 2px}
+  body.touch #touch.live{display:flex;flex-direction:row-reverse;align-items:flex-end;justify-content:space-between;padding:0 8px 2px}   /* row-reverse: joystick (last child) on the left thumb, action cluster on the right */
   body.touch #joystick{position:static}
   body.touch #tact{position:static}
   /* the library can scroll as a whole on mobile, so pin the X to the corner */
@@ -1338,7 +1338,7 @@
     <div id="controls">
       <div class="book" style="max-width:430px">
         <h1>Controls</h1>
-        <p class="touch-only" style="color:var(--ink-soft);font-size:14px;margin:0 0 4px">Use the on-screen buttons — the joystick (bottom-right) to move, <b>ATK</b> to attack, and the utility buttons (bottom-left).</p>
+        <p class="touch-only" style="color:var(--ink-soft);font-size:14px;margin:0 0 4px">Use the on-screen buttons — the joystick (bottom-left) to move, <b>ATK</b> (bottom-right) to attack, and the utility buttons alongside it.</p>
         <div class="ctrl-grid kbd-only">
           <span><b>WASD</b> / <b>↑ ↓ ← →</b></span><span>Move</span>
           <span><b>Space</b></span><span>Attack</span>
@@ -1421,7 +1421,7 @@
           <button class="tc-btn util" id="tc-fish" aria-label="Cast a line">CAST</button>
         </div>
       </div>
-      <!-- Joystick, bottom-right -->
+      <!-- Joystick, bottom-left -->
       <div id="joystick" role="button" aria-label="Move"><div id="joy-thumb"></div></div>
     </div>
   </div>

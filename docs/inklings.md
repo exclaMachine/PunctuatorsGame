@@ -680,8 +680,9 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   chapter restores it; completing a book adds it to your library. Persisted. (POS uses the FreeDictionary
   data cached on each dex word — WordNet bundle is future.)
 - Backup: export state to JSON, import it back (also the manual cross-device transfer).
-- Keyboard on desktop; **on-screen touch controls on mobile** (joystick bottom-right, action cluster
-  bottom-left). See the Controls section + code map for details.
+- Keyboard on desktop; **on-screen touch controls on mobile** (joystick bottom-left, action cluster
+  bottom-right — movement under the left thumb, ATK under the right, matching the usual mobile/controller
+  convention). See the Controls section + code map for details.
 - **Background music** — two synthesized chiptune loops (`ChiptuneTheme`): a bouncy **field** tune outdoors
   and the cozy **Wordhoard** tune inside the library, crossfaded by `state.room`. Both fade to silence while
   any dialogue is open (resume seamlessly) and stop when muted / not started / tab hidden.
@@ -766,12 +767,13 @@ future teleport item/power.)
 
 **Touch (mobile):** On touch devices a DOM control overlay (`#touch`) appears over the canvas:
 
-- **Joystick** bottom-right (`#joystick` + `#joy-thumb`, a fixed circular base) — drag the thumb; the
+- **Joystick** bottom-left (`#joystick` + `#joy-thumb`, a fixed circular base) — drag the thumb; the
   clamped offset from centre becomes the movement vector (`joy.{active,x,y}`, `-1..1`, with a `JOY_DEAD`
   ~0.22 deadzone). Uses **pointer capture** so dragging past the base still tracks. In `update()` the
   joystick overrides the keyboard keys and the vector is normalized → **constant speed at any 360° angle**
   (replaced the old 4-way d-pad). Reset (thumb recentred) whenever the touch UI goes non-live.
-- **Action cluster** bottom-left (`#tact`): a large **ATK** button (hold to keep swinging — `update()`
+- **Action cluster** bottom-right (`#tact`, `flex-direction:row-reverse` so **ATK** hugs the right edge
+  under the thumb and the util grid sits inboard): a large **ATK** button (hold to keep swinging — `update()`
   calls cooldown-gated `doAttack()` while `attackHeld`; attack uses the facing direction, same as
   Space), plus small **HOME** / **?** / **🐾** (bestiary) buttons (always shown) and the **contextual DESK /
   SHOP / BOOK** buttons that mirror `H` / help / bestiary / desk / stall / lectern. **DESK and SHOP only appear (and only
@@ -803,7 +805,8 @@ future teleport item/power.)
 - **Mobile reflow (`body.touch`)** — on touch devices `#stage` becomes a full-height (`100dvh`) flex
   column so the controls live in the black bands, never over the map: the **HUD becomes a static top
   bar** (`order:-1`; the `#sound-btn` was moved into `.hud` so it flows inline there), the **`#touch`
-  bar is static at the bottom** (`order:1`, `#tact` at the left end, `#joystick` at the right end), and the
+  bar is static at the bottom** (`order:1`, `flex-direction:row-reverse` → `#joystick` at the left end,
+  `#tact` at the right end), and the
   **canvas is centered between them** (`justify-content:space-between`; `max-height:calc(100dvh - 230px)`
   with `width/height:auto` to preserve aspect and reserve room for both bars). Desktop is unchanged
   (HUD/controls stay absolute). When `#touch` isn't `.live` it's removed from the column (behind an
