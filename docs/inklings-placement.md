@@ -6,7 +6,8 @@ collection reward (place a decoration) were always meant to share — the "build
 [`inklings-farming.md`](inklings-farming.md) §8 and [`inklings-collections.md`](inklings-collections.md) §5 —
 plus the **new persistent cozy square** that hosts the walkable farm.
 
-Status: **plan only — not yet implemented.** Direction settled with the dev (§1). Build order in §6.
+Status: **step 1 built** (the shared primitive + décor place/pick-up inside the Wordhoard; see §6). Steps
+2–5 (the cozy square, gift economy, planting, polish) are still ahead. Direction settled with the dev (§1).
 
 Cross-refs: [`inklings.md`](inklings.md) · [`inklings-architecture.md`](inklings-architecture.md) (the farm is
 an authored persistent zone; this special-cases one overworld screen until the Tiled/LDtk pipeline lands) ·
@@ -69,32 +70,34 @@ data engine-neutral (plain JSON) so it survives the swap.
 ---
 
 ## 3. The shared placement primitive
-One generic system, reused by décor, seed-planting, and pen-placing. **Don't implement these separately.**
+One generic system, reused by décor, seed-planting, and pen-placing. **The load-bearing layers — validity,
+`state.placed`, place/swap/pick-up, collision, render, save — are shared, and so is the *cell selector*:**
 
-### 3a. `tileInFront(sc, p)` — the facing tile
-- Read the **active venue's cell size** (`sc.cw||TS`, `sc.ch||TS`) — the library uses non-square `cw/ch`, the
-  cozy square uses `TS` — exactly as `blockedAt` already does.
-- Snap `p.face` to a **cardinal** (dominant axis, like the attack/sprite code's
-  `horiz=Math.abs(p.face.x)>=Math.abs(p.face.y)`), so diagonal facing still targets one clean cell.
-- Foot cell = `((p.x)/cw|0, (p.y+FOOT_DY)/ch|0)`; **facing cell = foot cell + cardinal offset**. Return
-  `{cx, cy}` (or null if out of bounds).
+- **Targeting is the tile IN FRONT of the character** (`tileInFront`) for **both** décor and (later) farm tools —
+  the Stardew *tools* model. The dev chose faced-tile over click-anywhere: placing wherever the cursor points
+  "felt less realistic." A tray still picks *what* you hold; your **facing** picks *where* it goes.
 
-### 3b. Validity — can I place here?
-The facing cell must be:
-- **in-bounds** and its terrain **walkable** (`walkType` — grass/path), i.e. **tillable** for seeds;
-- **not overlapping a solid** placed object (reuse the `overlapsSolid` box test over this venue's placed list);
-- **not on** a fixed interactable (Wordhoard desk/book/curator/shelf/entrance; the cozy square's future stall);
-- **not on the player** themselves.
-Seeds add one rule (must be bare tillable soil); décor may sit on any valid open tile.
+### 3a. Cell selector — `tileInFront(sc, p)`
+- Read the venue's cell size (`sc.cw||TS`, `sc.ch||TS`); snap `p.face` to a cardinal (dominant axis); return
+  foot-cell + offset, or null off-grid. One selector for décor now and the farm's till/plant/water later.
 
-### 3c. Place / pick-up mode (the ghost)
-- Enter placement mode by **selecting an owned item** (a décor from inventory, a seed/animal in the farm) from a
-  small picker. A **translucent ghost** of that item draws on the facing tile each frame — **green tint = valid,
-  red = blocked** (drives off §3b).
-- **E** (or a dedicated touch/toolbar button) **confirms** — moves the item from owned → placed.
-- A **pick-up/remove** mode faces a placed item and lifts it back into owned inventory (reverses the confirm).
-  Facing an empty tile in pick-up mode does nothing.
-- Esc / toggle exits the mode.
+### 3b. Validity — can I place here? (`placeValidAt`)
+- **in-bounds** and terrain **walkable** (`walkType` — grass/path), i.e. tillable for seeds;
+- **not the exit mat** (Wordhoard entrance — would trap the player); fixed interactables are already `T_ROCK`
+  (desk/shelves), so `walkType` excludes them;
+- **not a solid piece on the player's own tile** (would trap them). Non-solid (rug/lamp) may sit under the player.
+- **Occupancy is NOT a blocker** — dropping on an occupied cell **swaps** (see 3c).
+
+### 3c. The tray + face-and-place (built — Stardew tools model)
+- A docked **décor tray** (`#decorbar`, `renderDecorBar`) shows **every owned piece at once** + a leading
+  **✋ pick-up slot**. Click a slot to **hold** that piece (or the empty hand); the held slot highlights.
+- A translucent green/red **ghost** (`drawPlaceUI`) always sits on the **tile you're facing** as you walk.
+- **Confirm with Space** (`placeFront` → `placeAtCell`) or the tray's **Place** button (touch/mouse): holding a
+  piece → **place** it; on an occupied faced tile → **swap** (old piece returns to the tray); holding the
+  **✋ hand** → **pick up** the faced piece.
+- **Few hotkeys (dev ask):** only `O` (open/close), `Esc`, and `Space` (place). Entry also via a **🖼️ Decorate**
+  button on the desktop toolbar (`tb-decor`) and touch util bar (`tc-decor`); **Place**/**Done** buttons live in
+  the tray so touch needs no keyboard.
 
 ### 3d. Rendering & collision
 - **Render:** placed objects draw as a **pass on top of the venue's baked background** — after `LIBRARY.bg` in
@@ -135,8 +138,16 @@ Seeds add one rule (must be bare tillable soil); décor may sit on any valid ope
 ---
 
 ## 6. Build order (each step independently testable)
-1. **`tileInFront()` + ghost place/pick-up in the Wordhoard.** Wire the primitive against the existing library
-   grid + collision. Test by placing a hardcoded placeholder décor (no gift economy yet). Proves the primitive.
+1. **Placement primitive + décor tray in the Wordhoard — BUILT (Stardew-tools UI).** In `inklings.html`:
+   `DECOR` placeholder catalog (emoji), `state.decorOwned`/`state.placed` (persisted; snapshot `v:4`),
+   `tileInFront`/`placeValidAt`/`placedSolidBlocks` (fed into `canStand`), and the tray
+   (`#decorbar`, `renderDecorBar`/`placeFront`/`placeAtCell`/`drawPlacedDecor`/`drawPlaceUI`). **Flow:** open with
+   `O` or the **🖼️ Decorate** button (desktop `tb-decor` / touch `tc-decor`) → the tray shows **all owned pieces at
+   once** + a **✋ pick-up slot**; a green/red **ghost tracks the tile in front of the character**; **Space** (or the
+   tray's **Place** button) drops it, **swaps** on an occupied faced tile, or **picks up** with the hand.
+   `Esc`/`O`/Done exits. Décor draws on top of the baked `LIBRARY.bg`; solid pieces block movement. **Test grant:**
+   in DEV, opening the tray with nothing owned grants one of each; in prod it says "earn them from the curator"
+   (real source = step 3). Placement is Wordhoard-only until step 2 opens `(0,1)`.
 2. **Cozy square `(0,1)`.** Special-case `genScreen`/`genTiles` (hazard-free, empty, `isFarm:true`); render the
    placed pass; let the same primitive place décor there. Proves the venue + `where` key.
 3. **Décor gifts.** `DECOR` catalog + `state.decorOwned`; the curator grants a décor on a claimed category

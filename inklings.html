@@ -29,6 +29,25 @@
   }
   canvas{display:block;width:100%;height:auto;image-rendering:pixelated;
     border:3px solid #000;background:#d8cba8;box-shadow:6px 6px 0 rgba(0,0,0,.55)}
+  /* Décor tray — Stardew-style hotbar of all owned decorations, docked at the bottom while placing.
+     Hidden unless placement mode is active (JS toggles #decorbar.open). Click a slot to hold that item;
+     the ✋ slot holds nothing = pick-up mode. Click a room tile to place/swap/pick up. docs/inklings-placement.md */
+  #decorbar{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:5;display:none;
+    max-width:calc(100% - 24px);align-items:center;gap:6px;padding:7px 9px;flex-wrap:wrap;justify-content:center;
+    background:rgba(20,18,28,.9);border:2px solid var(--gold);box-shadow:4px 4px 0 rgba(0,0,0,.5)}
+  #decorbar.open{display:flex}
+  .decorslot{position:relative;width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;
+    font-size:24px;background:var(--paper-2);border:2px solid var(--edge);cursor:pointer;line-height:1;user-select:none}
+  .decorslot.sel{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold) inset;background:#fff6df}
+  .decorslot .cnt{position:absolute;right:1px;bottom:0;font-family:var(--disp);font-size:8px;color:var(--ink);
+    background:rgba(236,227,207,.9);padding:0 2px;border-radius:2px}
+  .decorslot.hand{font-size:22px}
+  #decor-place{flex:none;font-family:var(--disp);font-size:9px;color:#fff;background:var(--inkblue);
+    border:2px solid var(--edge);padding:0 12px;height:44px;cursor:pointer;margin-left:4px}
+  #decor-done{flex:none;font-family:var(--disp);font-size:9px;color:#fff;background:var(--moss);
+    border:2px solid var(--edge);padding:0 10px;height:44px;cursor:pointer;margin-left:2px}
+  .decorbar-tip{flex-basis:100%;text-align:center;font-family:var(--disp);font-size:7px;color:var(--paper);
+    letter-spacing:.03em;opacity:.85;margin-bottom:1px}
   /* HUD */
   .hud{position:absolute;top:10px;left:10px;right:10px;display:flex;
     justify-content:space-between;gap:10px;pointer-events:none}
@@ -785,6 +804,7 @@
     <button class="tb-btn dim" id="tb-book"><span class="tb-ico">📖</span><span>Mad Libris</span></button>
     <button class="tb-btn dim" id="tb-shelf"><span class="tb-ico">📚</span><span>Shelf</span></button>
     <button class="tb-btn dim" id="tb-curate"><span class="tb-ico">🗂️</span><span>Curator</span></button>
+    <button class="tb-btn dim" id="tb-decor"><span class="tb-ico">🖼️</span><span>Decorate</span></button>
   </aside>
 
   <div id="stage">
@@ -806,6 +826,9 @@
     <div id="toast"></div>
     <div id="hint"></div>
     <button id="help-btn" aria-label="Show controls" title="Controls (?)">?</button>
+
+    <!-- Décor tray (Stardew-style hotbar): all owned decorations at once + a ✋ pick-up slot. Populated by renderDecorBar(). -->
+    <div id="decorbar" aria-label="Decoration tray"></div>
 
     <!-- Library overlay -->
     <div id="overlay">
@@ -1269,6 +1292,7 @@
           <button class="tc-btn util" id="tc-book" aria-label="Open Mad Libris">LIBRIS</button>
           <button class="tc-btn util" id="tc-shelf" aria-label="Browse shelf">SHELF</button>
           <button class="tc-btn util" id="tc-curate" aria-label="Speak with the curator">CURATE</button>
+          <button class="tc-btn util" id="tc-decor" aria-label="Decorate the Wordhoard">🖼️</button>
         </div>
       </div>
       <!-- Joystick, bottom-right -->
@@ -1875,6 +1899,8 @@ const state = {
   gardenQuiz:false,             // garden hard mode: hide the Braille pattern/guides to self-test (persist)
   pigpens:null,                 // Pig Pens (Pigpen cipher) { v, count, decoded:{day,word} } (persist). docs/inklings-ciphers.md
   pigpenHard:false,             // Pig Pens hard mode: hide the reference key (persist)
+  decorOwned:{},                // earned-but-unplaced décor: id -> count (persist). docs/inklings-placement.md
+  placed:[],                    // placed objects: [{id,kind,where,cx,cy}] — where="library"|"sx,sy" (persist)
   started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
@@ -2004,10 +2030,145 @@ function overlapsSolid(r,px,py){
 function canStand(sc,px,py){
   if(sc.isBase && (overlapsSolid(STALL,px,py) || houseBlocks(px,py))) return false;
   if(obstacleBlocks(sc,px,py)) return false;                     // an unsolved river/obstacle band
+  if(placedSolidBlocks(sc,px,py)) return false;                  // a solid placed object (décor/future crop/pen)
   const fy=py+FOOT_DY;
   return !blockedAt(sc,px-FOOT_HW,fy-FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy-FOOT_HH)
       && !blockedAt(sc,px-FOOT_HW,fy+FOOT_HH) && !blockedAt(sc,px+FOOT_HW,fy+FOOT_HH);
 }
+
+/* ---------- OBJECT PLACEMENT (shared primitive) --------------------------------------------------
+   One generic "act on the tile you're facing" system, shared by décor placement now and seed-planting /
+   pen-placing later (docs/inklings-placement.md). Step 1: place/pick-up décor inside the Wordhoard.
+   `state.placed` = [{id,kind,where,cx,cy}]; `where` is the venue key ("library" or a screen "sx,sy"). */
+// Placeholder décor catalog (emoji stand-ins → pixel sprites later; same drop-in pattern as crops/equipment).
+const DECOR = {
+  globe:   { name:"Brass Globe",   emoji:"🌐", solid:true  },
+  fern:    { name:"Potted Fern",   emoji:"🪴", solid:true  },
+  lamp:    { name:"Reading Lamp",  emoji:"🏮", solid:false },
+  bust:    { name:"Marble Bust",   emoji:"🗿", solid:true  },
+  candle:  { name:"Candelabra",    emoji:"🕯️", solid:false },
+  terrarium:{name:"Terrarium",     emoji:"🌱", solid:true  },
+  rug:     { name:"Round Rug",     emoji:"🟤", solid:false },
+  hourglass:{name:"Hourglass",     emoji:"⏳", solid:false }
+};
+// Session-only placement UI: `held` = the décor id being held (a string), or null = the ✋ "pick-up" hand.
+// Targeting is the tile IN FRONT of the character (tileInFront), confirmed with Space / the tray's Place button.
+const place = { active:false, held:null };
+// The venue whose placed objects are live right now: the library room, else the current field screen.
+function placeVenue(){ return state.room==="library" ? "library" : key(state.screen.sx,state.screen.sy); }
+function placeScreen(){ return state.room==="library" ? LIBRARY.screen : curScreen(); }
+function ownedDecorList(){ return Object.keys(state.decorOwned).filter(id=>state.decorOwned[id]>0 && DECOR[id]); }
+function placedIndexAt(cx,cy){ const v=placeVenue(); return state.placed.findIndex(o=>o.where===v && o.cx===cx && o.cy===cy); }
+function firstOwnedDecor(){ const l=ownedDecorList(); return l.length?l[0]:null; }
+// The grid cell directly in front of the player (facing snapped to a cardinal), or null if off-grid. Kept as
+// the shared primitive for the FARM (till/plant/water act on the faced tile); décor uses cursor-picking below.
+function tileInFront(sc,p){
+  const cw=sc.cw||TS, ch=sc.ch||TS;
+  const fd = Math.abs(p.face.x)>=Math.abs(p.face.y) ? {x:(p.face.x<0?-1:1),y:0} : {x:0,y:(p.face.y<0?-1:1)};
+  const cx=((p.x/cw)|0)+fd.x, cy=(((p.y+FOOT_DY)/ch)|0)+fd.y;
+  const rows=sc.tiles?sc.tiles.length:0, cols=rows?sc.tiles[0].length:0;
+  if(cx<0||cy<0||cx>=cols||cy>=rows) return null;
+  return { cx, cy, cw, ch };
+}
+// Can the currently-held décor go on this cell? Walkable terrain, not the exit mat, and (if solid) not on the
+// player's own tile. Occupancy is allowed — dropping onto an occupied cell SWAPS (handled in placeAtCell).
+function placeValidAt(sc,cell){
+  if(!cell) return false;
+  if(!walkType(sc.tiles[cell.cy][cell.cx])) return false;          // solid room objects are baked as T_ROCK → excluded
+  if(state.room==="library"){                                     // never block the entrance mat (would trap the player)
+    const er=LIBRARY.entranceRect, x=cell.cx*cell.cw, y=cell.cy*cell.ch;
+    if(x+cell.cw>er.x && x<er.x+er.w && y+cell.ch>er.y && y<er.y+er.h) return false;
+  }
+  const d=place.held&&DECOR[place.held];
+  if(d&&d.solid){                                                  // can't drop a solid piece where the player stands
+    const pcx=(state.player.x/cell.cw)|0, pcy=((state.player.y+FOOT_DY)/cell.ch)|0;
+    if(cell.cx===pcx && cell.cy===pcy) return false;
+  }
+  return true;
+}
+// Solid placed objects block movement (fed into canStand alongside the stall/house/obstacle checks).
+function placedSolidBlocks(sc,px,py){
+  if(!state.placed.length) return false;
+  const v = sc.isLibrary ? "library" : key(sc.sx,sc.sy);
+  const cw=sc.cw||TS, ch=sc.ch||TS;
+  for(const o of state.placed){
+    if(o.where!==v) continue; const d=DECOR[o.id]; if(!d||!d.solid) continue;
+    if(overlapsSolid({x:o.cx*cw, y:o.cy*ch, w:cw, h:ch}, px, py)) return true;
+  }
+  return false;
+}
+// Click/tap a room tile: hand → pick up what's there; a held piece → place, or SWAP if the tile's occupied.
+function placeAtCell(cell){
+  if(!cell || state.room!=="library") return;   // step 1: Wordhoard only (cozy square (0,1) is step 2)
+  const sc=placeScreen(), i=placedIndexAt(cell.cx,cell.cy);
+  if(place.held===null){                         // ✋ pick-up hand: lift the placed piece back into the tray
+    if(i<0){ SFX.play("invalid"); return; }
+    const o=state.placed[i]; state.decorOwned[o.id]=(state.decorOwned[o.id]||0)+1; state.placed.splice(i,1);
+    SFX.play("home"); afterDecorChange(); return;
+  }
+  if((state.decorOwned[place.held]||0)<=0){ SFX.play("invalid"); return; }
+  if(!placeValidAt(sc,cell)){ SFX.play("invalid"); return; }
+  if(i>=0){                                      // occupied → swap: return the old piece, then drop the new one
+    const old=state.placed[i]; state.decorOwned[old.id]=(state.decorOwned[old.id]||0)+1; state.placed.splice(i,1);
+  }
+  state.placed.push({ id:place.held, kind:"decor", where:placeVenue(), cx:cell.cx, cy:cell.cy });
+  if(--state.decorOwned[place.held]<=0){ delete state.decorOwned[place.held]; place.held=firstOwnedDecor(); }
+  SFX.play("capture"); afterDecorChange();
+}
+function afterDecorChange(){ scheduleSave(); renderDecorBar(); }
+function togglePlaceMode(){
+  if(place.active){ closePlaceMode(); return; }
+  if(state.room!=="library"){ showToast("Head into the Wordhoard to decorate."); return; }   // step 1: library only
+  closeAnyDialog();
+  if(IS_DEV && !ownedDecorList().length){ for(const id in DECOR) state.decorOwned[id]=1; }     // dev test grant
+  if(!ownedDecorList().length){ showToast("No decorations yet — earn them from the curator."); return; }
+  place.active=true; place.held=firstOwnedDecor(); SFX.play("home"); renderDecorBar();
+}
+function closePlaceMode(){ if(!place.active) return; place.active=false; renderDecorBar(); SFX.play("click"); }
+// The décor tray: every owned piece shown at once + a ✋ pick-up slot. Click a slot to hold it; Done exits.
+function renderDecorBar(){
+  const bar=document.getElementById("decorbar"); if(!bar) return;
+  if(!place.active){ bar.classList.remove("open"); bar.innerHTML=""; return; }
+  const owned=ownedDecorList();
+  let html='<div class="decorbar-tip">Pick a piece (or ✋) · face a tile · Space or Place to drop · onto a piece = swap</div>';
+  html+=`<div class="decorslot hand${place.held===null?" sel":""}" data-id="" title="Pick up (empty hand)">✋</div>`;
+  for(const id of owned){ const d=DECOR[id];
+    html+=`<div class="decorslot${place.held===id?" sel":""}" data-id="${id}" title="${d.name}">${d.emoji}<span class="cnt">${state.decorOwned[id]}</span></div>`; }
+  if(!owned.length) html+='<div class="decorbar-tip" style="opacity:.7">No pieces left — pick some back up or earn more.</div>';
+  html+='<button id="decor-place" type="button" title="Place on the tile in front of you (Space)">Place</button>';
+  html+='<button id="decor-done" type="button">Done</button>';
+  bar.innerHTML=html; bar.classList.add("open");
+  bar.querySelectorAll(".decorslot").forEach(el=>el.onclick=()=>{ const id=el.getAttribute("data-id"); place.held=id||null; SFX.play("click"); renderDecorBar(); });
+  const pb=document.getElementById("decor-place"); if(pb) pb.onclick=()=>placeFront();
+  const done=document.getElementById("decor-done"); if(done) done.onclick=()=>closePlaceMode();
+}
+// Draw the placed objects for a venue on top of its baked background (called by drawLibraryRoom, later the farm).
+function drawPlacedDecor(sc){
+  if(!state.placed.length) return;
+  const v = sc.isLibrary ? "library" : key(sc.sx,sc.sy);
+  const cw=sc.cw||TS, ch=sc.ch||TS, sz=Math.floor(Math.min(cw,ch)*0.92);
+  ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font=sz+"px serif";
+  for(const o of state.placed){ if(o.where!==v) continue; const d=DECOR[o.id]; if(!d) continue;
+    ctx.fillText(d.emoji, (o.cx+0.5)*cw, (o.cy+0.5)*ch); }
+  ctx.textBaseline="alphabetic";
+}
+// Place / pick up / swap on the tile in front of the character (Spacebar, or the tray's Place button).
+function placeFront(){ placeAtCell(tileInFront(placeScreen(), state.player)); }
+// The translucent ghost on the tile the character is FACING (green=valid / red=blocked), drawn while decorating.
+function drawPlaceUI(){
+  if(!place.active) return;
+  const sc=placeScreen(), cell=tileInFront(sc, state.player); if(!cell) return;
+  const cw=cell.cw, ch=cell.ch, x=cell.cx*cw, y=cell.cy*ch;
+  const ok = place.held===null ? (placedIndexAt(cell.cx,cell.cy)>=0) : placeValidAt(sc,cell);
+  ctx.save();
+  ctx.fillStyle = ok ? "rgba(90,220,120,0.35)" : "rgba(230,80,80,0.32)";
+  ctx.fillRect(x,y,cw,ch);
+  ctx.lineWidth=2; ctx.strokeStyle = ok ? "#4caf50" : "#e05555"; ctx.strokeRect(x+1,y+1,cw-2,ch-2);
+  if(place.held && DECOR[place.held]){ ctx.globalAlpha=0.65; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.font=Math.floor(Math.min(cw,ch)*0.92)+"px serif"; ctx.fillText(DECOR[place.held].emoji, x+cw/2, y+ch/2); ctx.textBaseline="alphabetic"; }
+  ctx.restore();
+}
+// (Canvas cursor-picking listeners for décor placement are wired next to the canvas element — see below.)
 
 /* ---------- INTERACTABLE OBSTACLES (river mad-lib puzzle) -------------------------------------------
    An L-shaped river walls off a corner of a screen. Touch it → a mad-lib: fill "___ it" with a COLLECTED
@@ -2400,6 +2561,13 @@ addEventListener("keydown",e=>{
   }
   if(!state.started) return;
   keys[k]=true;
+  if(place.active){   // decorate mode: face a tile, Space places — keep only walk + Space + O/Esc
+    if(k==="o"||k==="escape"){ closePlaceMode(); return; }
+    if(k===" "){ placeFront(); return; }   // Spacebar drops/picks-up/swaps on the faced tile (no attack here)
+    if(MOVE_KEYS.has(k)) return;            // allow walking (keys[k] already set above)
+    return;                                // swallow the rest so no dialog opens mid-decorate
+  }
+  if(k==="o"){ togglePlaceMode(); return; }   // decorate: open the tray (Wordhoard for now)
   if(k==="h") teleportHome();
   if(k==="e") tryUseBench();
   if(k==="b") openBestiary();
@@ -2458,6 +2626,7 @@ function enterLibrary(){   // in through the house door → arrive at the entran
   enterLibraryAt(LIBRARY.entrancePx.x, LIBRARY.entrancePx.y-26, {x:0,y:-1}); showToast("The Wordhoard.");
 }
 function exitLibrary(){   // out the entrance mat → outdoor home, just below the house door (clear of the doorway trigger)
+  if(place.active) closePlaceMode();   // don't carry décor placement mode out into the field (step 1: library only)
   trans=null; state.room=null; state.screen.sx=0; state.screen.sy=0;
   const p=state.player; p.x=HOUSE.doorX; p.y=HOUSE.y+HOUSE.h+20; p.face={x:0,y:1}; p.moving=false;
   SFX.play("home");
@@ -2818,11 +2987,12 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.shelfview && !state.curation;
+  const hintReady=!IS_TOUCH && !place.active && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.shelfview && !state.curation;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryCurator()){ hint.textContent="Press E to speak with the curator"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryShelf()){ hint.textContent="Press E to browse this shelf"; hint.classList.add("show"); }
+  else if(hintReady && ownedDecorList().length){ hint.textContent="Press O to place decorations"; hint.classList.add("show"); }
   else hint.classList.remove("show");
   // active potion timers keep ticking
   for(const t of POTION_TYPES){
@@ -3200,6 +3370,7 @@ function render(){
   if(state.room==="library"){          // Library room: baked room image + player + minimal HUD
     drawLibraryRoom();
     drawPlayer();
+    drawPlaceUI();                      // décor placement ghost + control HUD (when active)
     if(state.started){ drawBuffs(); drawHearts(); }
     ALaModal.draw(ctx);
     refreshSidePanels();   // keep the toolbar (Mad Libris/Shelf light-up) + minimap live inside the library too
@@ -3560,6 +3731,7 @@ function drawLibraryRoom(){
   ensureLibraryBg();
   ctx.imageSmoothingEnabled=false;
   ctx.drawImage(LIBRARY.bg, 0, 0);
+  drawPlacedDecor(LIBRARY.screen);   // placed décor draws on top of the baked room (not baked in)
 }
 function drawEdgeHints(){
   ctx.fillStyle="rgba(38,35,58,.18)";
@@ -6363,7 +6535,8 @@ function renderMaterials(){
 // Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
-  return { v:3, day:state.day, inv:state.inv, dex:state.dex,
+  return { v:4, day:state.day, inv:state.inv, dex:state.dex,
+           decorOwned:state.decorOwned, placed:state.placed,
            bagCap:state.bagCap, captured:[...state.captured], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
            restored:state.restored, books:state.books, fables:state.fables,
@@ -6417,6 +6590,8 @@ function applySnapshot(d){
   if(typeof d.gardenQuiz==="boolean") state.gardenQuiz=d.gardenQuiz;
   if(d.pigpens && typeof d.pigpens==="object") state.pigpens=d.pigpens;  // Pig Pens (pigpenInit re-validates/versions the shape)
   if(typeof d.pigpenHard==="boolean") state.pigpenHard=d.pigpenHard;
+  if(d.decorOwned && typeof d.decorOwned==="object") state.decorOwned=d.decorOwned;   // earned-unplaced décor (persist)
+  if(Array.isArray(d.placed)) state.placed=d.placed.filter(o=>o&&DECOR[o.id]);        // placed objects (drop any unknown ids)
   gardenSeasonSync(false); checkSeedGrants();                            // wither out-of-season beds; grant any owed packets
   state.player.hearts=maxHearts();
   rederiveVerbCounts();   // no-op until VERB_CATS is loaded; then reconciles counts with the collection
@@ -6579,6 +6754,7 @@ document.getElementById("gd-clear").onclick=()=>{ gardenInit();
 // Close whichever primary dialog is currently open. Used when a toolbar/touch button switches dialogs
 // so a click never stacks a second modal on top of the open one.
 function closeAnyDialog(){
+  if(place.active) closePlaceMode();   // decorate tray isn't a modal, but a dialog opening should dismiss it
   if(state.overlay) closeOverlay();
   if(state.shop) closeShop();
   if(state.madlibs) closeBook();
@@ -6621,6 +6797,7 @@ _wireTb("tb-shop",()=> tbSwitch("shop", openShop, ()=> !state.room && nearShop()
 _wireTb("tb-book",()=> tbSwitch("madlibs", openBook, nearLibraryBook));
 _wireTb("tb-shelf",()=> tbSwitch("shelfview", ()=>{ const s=nearLibraryShelf(); if(s) openShelfView(s); }, nearLibraryShelf));
 _wireTb("tb-curate",()=> tbSwitch("curation", openCuration, nearLibraryCurator));
+_wireTb("tb-decor",()=> togglePlaceMode());   // decorate: place/pick-up décor (Wordhoard for now)
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
 document.getElementById("respell-yes").onclick=confirmRespell;
@@ -6690,6 +6867,8 @@ function syncTouchUI(){
     if(sf) sf.style.display = ( inLib && !atDesk && !atBook && !atCurator && nearLibraryShelf()) ? "" : "none";
     const sl=document.getElementById("tc-slide");   // Slide: field only, once the motion perk is unlocked
     if(sl) sl.style.display = (!inLib && state.perks && state.perks.slide) ? "" : "none";
+    const dc=document.getElementById("tc-decor");   // Decorate: available anywhere inside the Wordhoard
+    if(dc) dc.style.display = inLib ? "" : "none";
   }
 }
 if(IS_TOUCH){
@@ -6727,6 +6906,7 @@ if(IS_TOUCH){
   tap("tc-book",()=> tbSwitch("madlibs", openBook, nearLibraryBook));                               // library: lectern → mad-libs
   tap("tc-shelf",()=> tbSwitch("shelfview", ()=>{ const s=nearLibraryShelf(); if(s) openShelfView(s); }, nearLibraryShelf));  // shelf → books
   tap("tc-curate",()=> tbSwitch("curation", openCuration, nearLibraryCurator));                     // library: curator → subgoals
+  tap("tc-decor",()=> togglePlaceMode());                                                            // library: décor tray
   tap("tc-dex",()=> tbSwitch("bestiaryOpen", openBestiary));
   tap("tc-stats",()=> tbSwitch("statsOpen", openStats));
   tap("tc-gear",()=> tbSwitch("equipOpen", openEquip));
