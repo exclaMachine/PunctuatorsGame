@@ -5,9 +5,9 @@ You *read* the animals to decode a word (or, for one animal, a direction) — li
 notation, delivered as a cozy renewable-supply layer, not a lecture. The anchor is **Pig Pens**, a literal
 staging of the **Pigpen cipher**.
 
-Status: **plan only — not implemented.** Reflects the 2026-07 brainstorm. The pigs are the committed core;
-rabbits and cows are agreed candidates; bees and chickens are **tentative** (kept until each has a mechanic
-worth its keep).
+Status: **Pig Pens shipped DEV-only (anchor + hard mode); the rest is plan only.** Reflects the 2026-07
+brainstorm. The pigs are the committed core — **now built** as a DEV-gated modal (§1.3); rabbits and cows are
+agreed candidates; bees and chickens are **tentative** (kept until each has a mechanic worth its keep).
 Cross-refs: [`inklings.md`](inklings.md) (core loop, letter-unlock curve, capitals, SFX), [`inklings-farming.md`](inklings-farming.md)
 (the cozy farm this rides on — seasons, daily seed, once-per-day cadence, hard mode), [`inklings-signal-flags.md`](inklings-signal-flags.md)
 (**nautical** signal flags / Omen Mast — a *different* flag system from rabbit **semaphore**; see §3.1), [`inklings-grammar-systems.md`](inklings-grammar-systems.md)
@@ -61,7 +61,37 @@ same 9 **with a dot** = the next 9; an `X` split into 4 quadrants = 4 more; thos
 with a **pig inside = the dot**. A tiny `drawPigpen(letter, x, y, size)` — sibling to `drawGlyph` — is all the
 art. The reference key is the same two grids drawn once.
 
-### 1.3 Extra layers (later, optional)
+### 1.3 What shipped (DEV-only build) — `inklings.html`
+Built exactly on the **Garden** pattern (a self-contained modal + a DEV cheat bar), but **DEV-gated like the
+Herald's Bench**: the 🐖 toolbar button and the **K** shortcut appear only on `localhost`/`file://`, invisible
+to prod players until we promote it. Pieces:
+- **`drawPigpen` → `pigpenSVG(letter, size)`** — draws only the walls that letter's Pigpen cell has (grid
+  interior lines for A–R, an X-wedge for S–Z) plus a **🐖 pig** centred in the pen for the dotted twins
+  (J–R, W–Z). Strokes use `currentColor` so a pen reads on the dark pen-yard **and** the light reference key.
+  `PIGPEN_MAP` builds the 9+9+4+4 = 26 assignment; the on-screen **key** (all 26, hidden in hard mode) makes
+  it self-teaching regardless of variant.
+- **Daily word** (`pigpenWord`) — daily-seeded off `state.daySeed` **+ pen count**, ≤ count letters, biased
+  toward the **longest that fits** (more pens → rarer words), and **not already in `state.dex`**. Drawn from a
+  wider `PIGPEN_POOL` (3–10-letter slice of `2of12.txt`) and — unlike the WOTD — **not gated by unlocked
+  letters** (reading a letter you can't yet catch is the point). Cached per `day:count`; nothing about the
+  puzzle is saved.
+- **Read-and-type decode** (`pigpenSubmit`) — a real `<input>`; on a correct read the word commits through
+  `pigpenCommit`, which mirrors the collection half of `commitSpell` (dex entry + `onNewVerbWord`/
+  `onNewAdjWord`, noun→ink, adjective→potion, the letter-unlock diff + staggered new-letter/Feat celebrations)
+  **without spending any letters**. **One decode per day** (`state.pigpens.decoded={day,word}`); the daily seed
+  already forbids rerolls.
+- **Buy a pen** (`pigpenBuyPen`, in-modal button) — escalating ink (`25 + 15×extra`), `PIGPEN_START=4` …
+  `PIGPEN_MAX=10`. Raising the count can lengthen *today's* word (the seed keys off count).
+- **Hard mode** (`state.pigpenHard`) — hides the reference key for self-testing (the farm's quiz-mode
+  precedent). **DEV bar:** reveal / auto-decode today's word, clear today's decode to retest, free pens + ink.
+- **Persistence:** `state.pigpens` (`{v,count,decoded}`) + `state.pigpenHard` in `snapshot`/`applySnapshot`;
+  `pigpenInit` re-validates/versions the shape (`PIGPEN_V`). Only the *outcome* (decoded word in the dex)
+  persists — the puzzle rederives from the date.
+
+**Not yet built** (from §1.1/§1.4): the golden-pig **uppercase** slot, the **pen-grid crossword**, themed
+pens, and **decode streaks**. Promotion to prod (drop the DEV gate) is a later call.
+
+### 1.4 Extra layers (later, optional)
 - **Golden pig = uppercase.** A rare breed fills the "with-dot capital" slot — ties into the capital-letter
   endgame (`CAP_ORDER`).
 - **Pen-grid crossword.** The farm already has a *crossword-garden*; arrange pens in a grid so the pigs spell
@@ -171,9 +201,9 @@ notations.
 - **Capitals:** golden-pig uppercase — in v1 or later?
 
 ## 7. Rough build order
-1. **Pig Pens** — `drawPigpen`, buy-a-pen upgrade, daily-seeded word, read-and-type decode → dex commit, key
-   shown. The whole system stands on this alone.
-2. **Hard mode** (hide key) + **decode streak** reward.
+1. **Pig Pens** — ✅ **DONE (DEV-only, §1.4):** `pigpenSVG`, buy-a-pen upgrade, daily-seeded word, read-and-type
+   decode → dex commit, key shown. The whole system stands on this alone.
+2. **Hard mode** (hide key) — ✅ **DONE (§1.4).** **Decode streak** reward — not yet.
 3. **Rabbits (semaphore)** — second visual cipher, second reward cadence.
 4. **Cows (Morse)** — the audio decode (transcript easy-mode → audio-only hard-mode).
 5. **Bees (waggle)** — *only once* there's map intel worth a bearing (§3.3).

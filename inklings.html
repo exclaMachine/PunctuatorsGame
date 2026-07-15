@@ -316,6 +316,46 @@
     .gd-wrap{flex-direction:column}
     .gd-cell{--plot:15px}
   }
+
+  /* ---- Pig Pens (Pigpen cipher — DEV-only). Each pen draws a letter's Pigpen cell (walls) and a 🐖 pig = its
+     dotted twin. Read the daily pens, type the word → it enters the library (no letters spent). See docs/inklings-ciphers.md ---- */
+  #pigpens{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);align-items:center;
+    justify-content:center;padding:18px;z-index:7}
+  #pigpens.open{display:flex}
+  #pigpens .book{position:relative;display:flex;flex-direction:column;max-width:640px;width:100%;
+    max-height:92vh;overflow:auto}
+  #pigpens .book>h1{flex:none}
+  .pp-intro{font-family:var(--read);font-size:13.5px;line-height:1.45;color:var(--ink);margin:0 0 10px}
+  .pp-intro b{color:var(--ink)}
+  .pp-pens{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;background:#6b4a2e;padding:14px;
+    border:3px solid var(--edge);box-shadow:3px 3px 0 rgba(0,0,0,.3);margin:0 0 12px}
+  .pp-pen{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .pp-slot{background:#3f2f1e;border:2px solid #2a2013;padding:8px;color:#f0e6d0;display:flex;
+    align-items:center;justify-content:center;line-height:0}
+  .pp-lbl{font-family:var(--disp);font-size:10px;color:var(--gold);min-height:12px}
+  .pp-glyph{display:block}
+  .pp-note{font-family:var(--read);font-size:14px;color:#f0e6d0}
+  .pp-decode{display:flex;gap:8px;margin:0 0 8px}
+  .pp-decode input{flex:1;min-width:0;font-family:var(--read);font-size:18px;padding:6px 9px;
+    border:2px solid var(--edge);background:var(--paper);color:var(--ink)}
+  .pp-decode input:disabled{opacity:.7}
+  .pp-decode button{font-family:var(--disp);font-size:9px;padding:6px 12px;border:2px solid var(--edge);
+    background:var(--gold);color:#2a2540;cursor:pointer}
+  .pp-decode button:disabled{opacity:.5;cursor:default}
+  .pp-msg{font-family:var(--read);font-size:13.5px;min-height:19px;margin:0 0 10px;color:var(--ink-soft)}
+  .pp-msg.ok{color:var(--moss)}
+  .pp-msg.bad{color:#b3372f}
+  .pp-key{display:grid;grid-template-columns:repeat(9,1fr);gap:7px 6px;background:var(--paper-2);
+    border:2px solid var(--line);padding:9px;margin:0 0 10px}
+  .pp-kc{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink)}
+  .pp-kc b{font-family:var(--disp);font-size:7px;color:var(--ink-soft)}
+  .pp-actions{display:flex;gap:8px;flex:none;margin:0 0 6px;flex-wrap:wrap}
+  .pp-actions button{font-family:var(--disp);font-size:8px;padding:5px 8px;border:2px solid var(--edge);
+    background:var(--paper-2);color:var(--ink);cursor:pointer}
+  .pp-actions button:disabled{opacity:.5;cursor:default}
+  #pp-hard.on{background:var(--gold);color:#2a2540}
+  .pp-shake{animation:ppshake .32s}
+  @keyframes ppshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}60%{transform:translateX(7px)}}
   #potions{display:flex;gap:5px;margin-top:4px}
   .potion-btn{font-family:var(--disp);font-size:8px;line-height:1;padding:5px 6px;border:2px solid var(--edge);
     background:var(--paper-2);color:var(--ink);cursor:pointer;display:inline-flex;gap:4px;align-items:center;
@@ -737,6 +777,7 @@
     <button class="tb-btn" id="tb-gear"><span class="tb-ico">🎒</span><span>Equipment</span><b>G</b></button>
     <button class="tb-btn" id="tb-apothecary"><span class="tb-ico">⚗️</span><span>Apothecary</span><b>P</b></button>
     <button class="tb-btn" id="tb-farm"><span class="tb-ico">🌱</span><span>Garden</span><b>F</b></button>
+    <button class="tb-btn" id="tb-pigpens" style="display:none"><span class="tb-ico">🐖</span><span>Pig Pens</span><b>K</b></button>
     <button class="tb-btn" id="tb-herald" style="display:none"><span class="tb-ico">🛡️</span><span>Herald</span><b>Y</b></button>
     <button class="tb-btn" id="tb-help"><span class="tb-ico">❓</span><span>Help</span><b>?</b></button>
     <div class="tb-sep">Nearby</div>
@@ -926,6 +967,28 @@
             <div class="gd-dev" id="gd-dev"></div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Pig Pens: read the Pigpen-cipher pens (walls + a 🐖 pig = the dot), type today's daily-seeded word,
+         and it enters the library with no letters spent. DEV-only (K / dev toolbar). See docs/inklings-ciphers.md -->
+    <div id="pigpens">
+      <div class="book">
+        <button class="close-x" id="pp-close" aria-label="Close" title="Close">✕</button>
+        <h1>The Pig Pens <span class="dex-count">Pigpen cipher · DEV</span></h1>
+        <div class="pp-intro" id="pp-intro"></div>
+        <div class="pp-pens" id="pp-pens"></div>
+        <div class="pp-decode">
+          <input id="pp-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="read the pens — type the word">
+          <button class="primary" id="pp-submit">Decode</button>
+        </div>
+        <div class="pp-msg" id="pp-msg"></div>
+        <div class="pp-key" id="pp-key"></div>
+        <div class="pp-actions">
+          <button id="pp-buy"></button>
+          <button id="pp-hard">Hard: off</button>
+        </div>
+        <div class="gd-dev" id="pp-dev"></div>
       </div>
     </div>
 
@@ -1365,14 +1428,21 @@ const WOTD_FALLBACK=["stone","store","stare","snare","snore","saint","stain","sa
 let WORD_POOL=null;                 // 2of12 words filtered to WOTD_MIN..WOTD_MAX, a–z only
 let WORD_POOL_FAILED=false;         // fetch failed → fall back to the built-in etaoinsr pool
 let _wotd=null, _wotdDay=null;      // cached daily pick (recomputed only when the day changes)
+// Pig Pens draws from a WIDER slice (3..PIGPEN_MAX letters) and — unlike the WOTD — is NOT gated by unlocked
+// letters (reading a letter you can't yet catch is the point of the cipher). docs/inklings-ciphers.md
+let PIGPEN_POOL=null;
 // Load the dictionary once — used ONLY to pick the daily word (validation still goes through the API).
 function onWotdPoolResolved(){
   _wotd=null; _wotdDay=null; _wotdGuar=null; _wotdGuarDay=null; _dayTotalDay=null;   // recompute word, pins, letter total
+  _ppKey="";                        // recompute today's pig-pen word once its pool is ready
   state.screens=new Map();          // drop cached screens so field creatures respawn with the pinned letters
   updateWotd();
+  if(state.pigpensOpen) renderPigpens();
 }
 fetch("2of12.txt").then(r=>r.ok?r.text():Promise.reject()).then(txt=>{
-  WORD_POOL=txt.split(/\r?\n/).filter(w=>{ const n=w.length; return n>=WOTD_MIN && n<=WOTD_MAX && /^[a-z]+$/.test(w); });
+  const lines=txt.split(/\r?\n/);
+  WORD_POOL=lines.filter(w=>{ const n=w.length; return n>=WOTD_MIN && n<=WOTD_MAX && /^[a-z]+$/.test(w); });
+  PIGPEN_POOL=lines.filter(w=>{ const n=w.length; return n>=3 && n<=10 && /^[a-z]+$/.test(w); });
   onWotdPoolResolved();
 }).catch(()=>{ WORD_POOL_FAILED=true; onWotdPoolResolved(); });
 function wordOfTheDay(){
@@ -1803,7 +1873,9 @@ const state = {
   season:"",                    // current real-calendar season (checked on rollover; withers out-of-season beds)
   seedGrants:[],                // milestone `at` values already granted a starter seed packet (persist)
   gardenQuiz:false,             // garden hard mode: hide the Braille pattern/guides to self-test (persist)
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false,
+  pigpens:null,                 // Pig Pens (Pigpen cipher) { v, count, decoded:{day,word} } (persist). docs/inklings-ciphers.md
+  pigpenHard:false,             // Pig Pens hard mode: hide the reference key (persist)
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -2243,6 +2315,10 @@ addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
   if(!state.started){ e.preventDefault(); startGame(); return; }   // NES title: any key = PRESS START
   if(IS_DEV && (k==="`"||e.key==="~")){ e.preventDefault(); debugGrantLetters(); return; }   // dev-only letter cheat
+  if(state.pigpensOpen){   // Pig Pens open (DEV): a real <input> — DON'T swallow letters/space; only Esc/Tab close (Enter is the input's own)
+    if(k==="escape"||k==="tab"){ e.preventDefault(); closePigpens(); }
+    return;
+  }
   if(MOVE_KEYS.has(k)) e.preventDefault();
   if(k==="?"||k==="/"){ e.preventDefault(); toggleHelp(); return; }
   if(document.getElementById("unlockmodal").classList.contains("open")){   // top-most: dismiss the new-letter notice
@@ -2336,6 +2412,7 @@ addEventListener("keydown",e=>{
   if(k==="p") toggleApothecary();        // Apothecary (flask rack)
   if(k==="g") openEquip();               // Equipment (paper-doll slots + craft)
   if(k==="f") openGarden();              // Garden (crossword farm)
+  if(k==="k" && IS_DEV) openPigpens();   // Pig Pens (Pigpen cipher) — DEV-only for now
   if(k==="y" && IS_DEV) openHerald();    // Herald's Bench (Blazon Shield) — DEV-only for now
   if(k==="m") alaSummon();               // À La Modal: offer a hint (or dismiss)
   if(k===" ") doAttack();
@@ -2560,7 +2637,7 @@ function update(dt){
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2646,7 +2723,7 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -2695,7 +2772,7 @@ function update(dt){
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else hint.classList.remove("show");
@@ -2716,7 +2793,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.shelfview && !state.curation && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.shelfview && !state.curation && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2741,7 +2818,7 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.shelfview && !state.curation;
+  const hintReady=!IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.shelfview && !state.curation;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryCurator()){ hint.textContent="Press E to speak with the curator"; hint.classList.add("show"); }
@@ -5634,6 +5711,190 @@ function closeGarden(){
   document.getElementById("sound-btn").style.display = hide?"none":"";
 }
 
+/* ================= PIG PENS — the Pigpen cipher (anchor of the Cipher Menagerie) — DEV-only ==============
+   The pig IS the dot: a Pigpen glyph is a grid/X cell (the "pen" walls) and its dotted twin adds a 🐖 pig.
+   Each real day the pens are arranged (daily-seeded off state.daySeed + pen count) into ONE word you haven't
+   collected — you READ the pens against the key, type the word, and it enters your library WITH NO LETTERS
+   SPENT (a second acquisition path; the word may use letters you can't yet catch in the field). More pens =
+   longer, rarer words. Hard mode hides the reference key. One decode per day (anti-cheese; the daily seed also
+   forbids rerolls). Nothing about the puzzle is saved — it rederives from the date; only the decoded word
+   (entering state.dex) persists. See docs/inklings-ciphers.md. */
+const PIGPEN_START=4, PIGPEN_MAX=10, PIGPEN_V=1;
+// letter -> {t:'grid',cell:0-8,dot} | {t:'x',quad:0-3,dot}. A–I grid, J–R grid+dot, S–V X-quadrants, W–Z +dot
+// (9+9+4+4 = 26). One common variant; the on-screen key makes it self-teaching regardless of variant choice.
+const PIGPEN_MAP = (()=>{ const m={}, A="abcdefghijklmnopqrstuvwxyz";
+  for(let i=0;i<9;i++){ m[A[i]]={t:"grid",cell:i,dot:false}; m[A[i+9]]={t:"grid",cell:i,dot:true}; }
+  for(let i=0;i<4;i++){ m[A[i+18]]={t:"x",quad:i,dot:false}; m[A[i+22]]={t:"x",quad:i,dot:true}; }
+  return m; })();
+// Draw one pen as inline SVG: only the walls that letter's cell has (tic-tac-toe interior lines / X-wedge),
+// plus a 🐖 pig where the dot goes for the dotted twins. Strokes use currentColor so it reads on any bg.
+function pigpenSVG(letter, size){
+  const g=PIGPEN_MAP[String(letter).toLowerCase()], s=size||56, pad=Math.round(s*0.15), a=pad, b=s-pad, cx=s/2, cy=s/2;
+  const seg=(x1,y1,x2,y2)=>'<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>';
+  let lines="", pig="";
+  if(g && g.t==="grid"){
+    const row=Math.floor(g.cell/3), col=g.cell%3;               // walls = the interior grid lines bordering this cell
+    if(row>0) lines+=seg(a,a,b,a); if(row<2) lines+=seg(a,b,b,b);
+    if(col>0) lines+=seg(a,a,a,b); if(col<2) lines+=seg(b,a,b,b);
+  } else if(g && g.t==="x"){
+    const C=[[a,a],[b,a],[b,b],[a,b]], p=C[g.quad], q=C[(g.quad+1)%4];   // wedge = two lines from centre to two adjacent corners
+    lines+=seg(cx,cy,p[0],p[1])+seg(cx,cy,q[0],q[1]);
+  }
+  if(g && g.dot){                                                // pig sits centred in a grid cell / nudged into an X-wedge
+    let px=cx, py=cy; if(g.t==="x"){ const o=s*0.22; px+= g.quad===1?o : g.quad===3?-o : 0; py+= g.quad===0?-o : g.quad===2?o : 0; }
+    pig='<text x="'+px+'" y="'+py+'" text-anchor="middle" dominant-baseline="central" font-size="'+Math.round(s*0.42)+'">🐖</text>';
+  }
+  return '<svg class="pp-glyph" viewBox="0 0 '+s+' '+s+'" width="'+s+'" height="'+s+'">'+
+    '<g stroke="currentColor" stroke-width="'+Math.max(2,s*0.06)+'" stroke-linecap="round" fill="none">'+lines+'</g>'+pig+'</svg>';
+}
+function pigpenInit(){
+  const p=state.pigpens;
+  if(!p || p.v!==PIGPEN_V || typeof p.count!=="number") state.pigpens={ v:PIGPEN_V, count:PIGPEN_START, decoded:{day:"",word:""} };
+  if(!state.pigpens.decoded) state.pigpens.decoded={day:"",word:""};
+  state.pigpens.count = Math.max(PIGPEN_START, Math.min(PIGPEN_MAX, state.pigpens.count|0));
+}
+function pigpenPenPrice(){ pigpenInit(); return 25 + (state.pigpens.count - PIGPEN_START)*15; }   // 25,40,55,… escalating
+// Today's word: daily-seeded off the date + pen count, ≤ count letters, biased toward the longest that fits
+// (more pens → rarer words), and NOT already in the dex. NOT gated by unlocked letters (the leapfrog point).
+let _ppWord=null, _ppKey="";
+function pigpenWord(){
+  pigpenInit();
+  const count=state.pigpens.count, key=state.day+":"+count;
+  if(_ppKey===key && _ppWord) return _ppWord;
+  const pool = PIGPEN_POOL || (WORD_POOL_FAILED ? WOTD_FALLBACK : null);
+  if(!pool) return null;                                         // still loading
+  let viable = pool.filter(w=>w.length<=count && !state.dex[w]);
+  if(!viable.length) viable = pool.filter(w=>w.length<=count);   // extreme fallback (you've collected everything short)
+  if(!viable.length) return null;
+  const maxLen = Math.min(count, viable.reduce((m,w)=>Math.max(m,w.length),0));
+  const top = viable.filter(w=>w.length>=maxLen-1);              // longest bucket (+ one shorter, for a little variety)
+  const rng = mulberry32((state.daySeed ^ (count*0x9e3779b1) ^ 0x016901)>>>0);
+  _ppWord = top[Math.floor(rng()*top.length)]; _ppKey=key;
+  return _ppWord;
+}
+// Route a decoded word through the normal collection pipeline — dex + POS payouts + letter-unlock diff — but
+// WITHOUT spending any letters (the whole point of the cipher). Mirrors the collection half of commitSpell.
+function pigpenCommit(word){
+  const known=!!state.dex[word];
+  const q = known ? {pos:state.dex[word].pos, def:state.dex[word].def} : localLookup(word);
+  const pos=(q&&q.pos)||[], def=(q&&q.def)||"A word in the dictionary.";
+  const isNoun=pos.includes("noun"), isAdj=pos.includes("adjective");
+  let newly=[], earnedInk=0, brewed=null;
+  if(!known){
+    const before=unlockedLetters();
+    state.dex[word]={ def, found:Date.now(), pos };
+    if(LIBRARY) LIBRARY.bg=null;              // a new noun may add a spine to the Nouns wing → rebake
+    onNewVerbWord(word); onNewAdjWord(word);  // advance verb ladders / grow the adjective flask BEFORE brewing
+    newly=[...unlockedLetters()].filter(l=>!before.has(l));
+    dexTab=(word[0]||"?").toUpperCase(); renderDex(); checkSeedGrants();
+  }
+  if(isNoun){ earnedInk=inkForWord(word); state.ink+=earnedInk; }
+  if(isAdj){ const pole=potionForAdj(word); if(state.potions[pole] < flaskCap(pole)){ state.potions[pole]++; brewed=pole; } }
+  updateTrayHud(); updateRewardHud(); updateWotd(); scheduleSave();
+  SFX.play(known?"capture":"newword");
+  // Staggered celebrations (Feats pop, then the new-letter modal) — same queue commitSpell uses.
+  if(pendingFeat){ const pf=pendingFeat; pendingFeat=null; queueCelebration(()=>showFeatProgress(pf.cat, pf.n)); }
+  if(newly.length){ spawnBonusLetter(newly[0]); _clearedDay=null; queueCelebration(()=>showUnlockModal(newly)); }
+  nextCelebration();
+  return { known, isNoun, isAdj, earnedInk, brewed, newly };
+}
+function setPPMsg(t,cls){ const m=document.getElementById("pp-msg"); if(!m) return; m.textContent=t; m.className="pp-msg"+(cls?(" "+cls):""); }
+function ppShake(){ const el=document.getElementById("pp-pens"); if(!el) return; el.classList.remove("pp-shake"); void el.offsetWidth; el.classList.add("pp-shake"); }
+function pigpenSubmit(){
+  if(!state.pigpensOpen) return;
+  pigpenInit();
+  const today=todayStr();
+  if(state.pigpens.decoded && state.pigpens.decoded.day===today){ setPPMsg("You've already decoded today's pen — a new word tomorrow.","bad"); return; }
+  const target=pigpenWord();
+  if(!target){ setPPMsg("The pen dictionary is still loading…","bad"); return; }
+  const guess=((document.getElementById("pp-input").value)||"").trim().toLowerCase().replace(/[^a-z]/g,"");
+  if(!guess){ setPPMsg("Read the pens and type the word.","bad"); ppShake(); return; }
+  if(guess!==target){ setPPMsg("Not quite — read each pen against the key and try again.","bad"); ppShake(); SFX.play("invalid"); return; }
+  state.pigpens.decoded={ day:today, word:target }; scheduleSave();
+  const r=pigpenCommit(target);
+  const bits=[]; if(r.earnedInk) bits.push("+"+r.earnedInk+" ink"); if(r.brewed) bits.push("+1 "+POTION_LABEL[r.brewed]+" potion");
+  if(r.newly.length) bits.push("unlocked "+r.newly.join(" "));
+  showToast("Decoded “"+target.toUpperCase()+"” → added to your library"+(bits.length?" ("+bits.join(", ")+")":"")+"!");
+  renderPigpens();
+}
+function pigpenBuyPen(){
+  pigpenInit();
+  if(state.pigpens.count>=PIGPEN_MAX){ showToast("The pens are at their maximum ("+PIGPEN_MAX+")."); return; }
+  const price=pigpenPenPrice();
+  if(state.ink<price){ showToast("Not enough ink for another pen — "+price+" needed."); SFX.play("invalid"); return; }
+  state.ink-=price; state.pigpens.count++;
+  updateRewardHud(); scheduleSave(); SFX.play("unlock");
+  showToast("Built a new pen — "+state.pigpens.count+" pens now (longer words become possible).");
+  renderPigpens();
+}
+function renderPigpens(){
+  pigpenInit();
+  const hard=!!state.pigpenHard, today=todayStr(), count=state.pigpens.count;
+  const decodedToday = state.pigpens.decoded && state.pigpens.decoded.day===today;
+  const word = decodedToday ? state.pigpens.decoded.word : pigpenWord();
+  document.getElementById("pp-intro").innerHTML =
+    "Each <b>pen</b> is a Pigpen-cipher cell — the walls tell you the letter, and a <b>🐖 pig in the pen</b> marks its dotted twin. "+
+    "Read today's pens, type the word, and it's added to your library — <b>no letters needed</b>. "+
+    "<b>"+count+"</b> pen"+(count===1?"":"s")+" = longest word you can be given. New word daily.";
+  const pens=document.getElementById("pp-pens");
+  if(!word){ pens.innerHTML='<div class="pp-note">The pen dictionary is still loading…</div>'; }
+  else pens.innerHTML = word.split("").map(ch=>'<div class="pp-pen"><div class="pp-slot">'+pigpenSVG(ch,58)+
+    '</div><div class="pp-lbl">'+(decodedToday?ch.toUpperCase():"")+'</div></div>').join("");
+  const key=document.getElementById("pp-key");
+  if(hard) key.innerHTML='<div class="pp-note" style="grid-column:1/-1;color:var(--ink-soft)">Hard mode — the reference key is hidden. Read the pens from memory.</div>';
+  else key.innerHTML = "abcdefghijklmnopqrstuvwxyz".split("").map(ch=>'<div class="pp-kc">'+pigpenSVG(ch,30)+'<b>'+ch.toUpperCase()+'</b></div>').join("");
+  const input=document.getElementById("pp-input"), submit=document.getElementById("pp-submit"), msg=document.getElementById("pp-msg");
+  if(decodedToday){
+    input.value=state.pigpens.decoded.word; input.disabled=true; submit.disabled=true;
+    msg.textContent="Decoded ✓ — “"+state.pigpens.decoded.word.toUpperCase()+"” is in your library. A fresh word tomorrow."; msg.className="pp-msg ok";
+  } else {
+    input.disabled=false; submit.disabled=false;
+    if(!msg.classList.contains("bad")){ msg.textContent=""; msg.className="pp-msg"; }   // keep a just-shown error until the next action
+  }
+  const buy=document.getElementById("pp-buy");
+  if(count>=PIGPEN_MAX){ buy.textContent="Pens maxed ("+PIGPEN_MAX+")"; buy.disabled=true; }
+  else { const price=pigpenPenPrice(); buy.textContent="Buy a pen — "+price+" ink"; buy.disabled=state.ink<price; }
+  const hb=document.getElementById("pp-hard"); hb.textContent=hard?"Hard: ON":"Hard: off"; hb.classList.toggle("on",hard);
+  hb.title = hard?"Reference key hidden — you're testing yourself":"Hide the reference key to quiz yourself";
+  const dev=document.getElementById("pp-dev");
+  if(dev){ dev.innerHTML = (typeof IS_DEV!=="undefined"&&IS_DEV) ? pigpenDevBarHTML(word) : ""; if(typeof IS_DEV!=="undefined"&&IS_DEV) wirePigpenDevBar(); }
+}
+// DEV bar (like the Garden's): reveal/auto-solve today's word, clear today's decode to test again, free pens + ink.
+function pigpenDevBarHTML(word){
+  return '<span class="gd-devlabel">DEV</span>'+
+    '<button data-pp="reveal">Reveal answer</button>'+
+    '<button data-pp="solve">Auto-decode</button>'+
+    '<button data-pp="reset">Clear today\'s decode</button>'+
+    '<button data-pp="pen">+1 pen (free)</button>'+
+    '<button data-pp="ink">+100 ink</button>'+
+    '<span class="gd-devlabel">'+(word?("answer: "+word.toUpperCase()):"…")+'</span>';
+}
+function wirePigpenDevBar(){
+  const bar=document.getElementById("pp-dev"); if(!bar) return;
+  bar.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>{ const act=b.dataset.pp, today=todayStr();
+    if(act==="reveal"){ const w=pigpenWord(); if(w){ document.getElementById("pp-input").value=w; setPPMsg("DEV — answer is "+w.toUpperCase(),"ok"); } }
+    else if(act==="solve"){ const w=pigpenWord(); if(w && !(state.pigpens.decoded&&state.pigpens.decoded.day===today)){ state.pigpens.decoded={day:today,word:w}; pigpenCommit(w); scheduleSave(); showToast("DEV — decoded "+w.toUpperCase()); renderPigpens(); } }
+    else if(act==="reset"){ pigpenInit(); state.pigpens.decoded={day:"",word:""}; scheduleSave(); renderPigpens(); }
+    else if(act==="pen"){ pigpenInit(); if(state.pigpens.count<PIGPEN_MAX){ state.pigpens.count++; scheduleSave(); renderPigpens(); } }
+    else if(act==="ink"){ state.ink+=100; updateRewardHud(); scheduleSave(); renderPigpens(); }
+  });
+}
+function ppHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen||state.apothecaryOpen||state.heraldOpen; }
+function openPigpens(){
+  if(state.pigpensOpen) return;
+  pigpenInit(); state.pigpensOpen=true;
+  document.getElementById("pigpens").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  const m=document.getElementById("pp-msg"); if(m){ m.textContent=""; m.className="pp-msg"; }
+  renderPigpens(); SFX.play("click");
+  const inp=document.getElementById("pp-input"); if(inp && !inp.disabled){ inp.value=""; setTimeout(()=>{ try{ inp.focus(); }catch(e){} },0); }
+}
+function closePigpens(){
+  state.pigpensOpen=false;
+  document.getElementById("pigpens").classList.remove("open");
+  document.getElementById("sound-btn").style.display = ppHideSound()?"none":"";
+}
+
 /* ---------- CELEBRATION QUEUE (staggered feat / letter dialogues) ---------- */
 // Milestone/letter dialogues are shown ONE AT A TIME so they never stack. commitSpell queues the Feats pop
 // first, then the new-letter modal; each dialogue's close runs the next.
@@ -5814,7 +6075,7 @@ function showFeatProgress(cat, n){
   featAnim={ cat, fromPct:Math.max(0,Math.round(((n-1)-a)/(b-a)*100)), toPct:Math.min(100,Math.round((n-a)/(b-a)*100)),
              reward: ms?verbRewardAt(cat,n):null, next:b, nextReward:REWARD_LABEL[verbRewardAt(cat, ms?nextVerbMilestone(n):b)]||"reward" };
   clearTimeout(featAutoT);
-  if(!state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen) openStats(); else renderStats();
+  if(!state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen) openStats(); else renderStats();
   if(ms) SFX.play("unlockbig");
   requestAnimationFrame(()=>requestAnimationFrame(()=>{   // next frame: CSS-transition the bar to its new fill
     const bar=document.querySelector(".feat-cat.feat-live .feat-bar > i"); if(bar) bar.style.width=featAnim.toPct+"%";
@@ -6111,7 +6372,8 @@ function snapshot(){
            obstacleDay:state.obstacleDay, obstacleGot:state.obstacleGot, riverCrossed:state.riverCrossed,
            inkClearedDay:state.inkClearedDay, inkedDay:state.inkedDay, printsDay:state.printsDay,
            equip:state.equip, gear:state.gear, gearSeq:state.gearSeq, blazonShield:state.blazonShield, garden:state.garden,
-           seeds:state.seeds, season:state.season, seedGrants:state.seedGrants, gardenQuiz:state.gardenQuiz };
+           seeds:state.seeds, season:state.season, seedGrants:state.seedGrants, gardenQuiz:state.gardenQuiz,
+           pigpens:state.pigpens, pigpenHard:state.pigpenHard };
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -6153,6 +6415,8 @@ function applySnapshot(d){
   if(typeof d.season==="string") state.season=d.season;
   if(Array.isArray(d.seedGrants)) state.seedGrants=d.seedGrants;
   if(typeof d.gardenQuiz==="boolean") state.gardenQuiz=d.gardenQuiz;
+  if(d.pigpens && typeof d.pigpens==="object") state.pigpens=d.pigpens;  // Pig Pens (pigpenInit re-validates/versions the shape)
+  if(typeof d.pigpenHard==="boolean") state.pigpenHard=d.pigpenHard;
   gardenSeasonSync(false); checkSeedGrants();                            // wither out-of-season beds; grant any owed packets
   state.player.hearts=maxHearts();
   rederiveVerbCounts();   // no-op until VERB_CATS is loaded; then reconciles counts with the collection
@@ -6292,6 +6556,13 @@ document.getElementById("equipment").onclick=e=>{ if(e.target.id==="equipment") 
 document.querySelectorAll("#equipment .eq-tab").forEach(t=>t.onclick=()=>{ _equipTab=t.dataset.tab; SFX.play("click"); renderEquip(); });
 document.getElementById("gd-close").onclick=()=>{ closeGarden(); SFX.play("click"); };
 document.getElementById("garden").onclick=e=>{ if(e.target.id==="garden") closeGarden(); };  // tap backdrop to close
+// Pig Pens (Pigpen cipher — DEV). Read the pens, type the word → into the library.
+document.getElementById("pp-close").onclick=()=>{ closePigpens(); SFX.play("click"); };
+document.getElementById("pigpens").onclick=e=>{ if(e.target.id==="pigpens") closePigpens(); };  // tap backdrop to close
+document.getElementById("pp-submit").onclick=()=>pigpenSubmit();
+document.getElementById("pp-input").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); pigpenSubmit(); } });
+document.getElementById("pp-buy").onclick=pigpenBuyPen;
+document.getElementById("pp-hard").onclick=()=>{ state.pigpenHard=!state.pigpenHard; scheduleSave(); SFX.play("click"); renderPigpens(); };
 // Herald's Bench (Blazon Shield — DEV MVP).
 document.getElementById("hb-close").onclick=()=>{ closeHerald(); SFX.play("click"); };
 document.getElementById("herald").onclick=e=>{ if(e.target.id==="herald") closeHerald(); };  // tap backdrop to close
@@ -6317,6 +6588,7 @@ function closeAnyDialog(){
   if(state.obstacle) closeObstacle();
   if(state.equipOpen) closeEquip();
   if(state.gardenOpen) closeGarden();
+  if(state.pigpensOpen) closePigpens();
   if(state.heraldOpen) closeHerald();
   if(state.shelfview) closeShelfView();
   if(state.curation) closeCuration();
@@ -6342,6 +6614,7 @@ _wireTb("tb-feats",()=> tbSwitch("statsOpen", openStats));
 _wireTb("tb-gear",()=> tbSwitch("equipOpen", openEquip));
 _wireTb("tb-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
 _wireTb("tb-farm",()=> tbSwitch("gardenOpen", openGarden));
+if(IS_DEV){ const tp=document.getElementById("tb-pigpens"); if(tp){ tp.style.display=""; _wireTb("tb-pigpens",()=> tbSwitch("pigpensOpen", openPigpens)); } }
 if(IS_DEV){ const th=document.getElementById("tb-herald"); if(th){ th.style.display=""; _wireTb("tb-herald",()=> tbSwitch("heraldOpen", openHerald)); } }
 _wireTb("tb-help",()=> tbSwitch("help", toggleHelp));
 _wireTb("tb-shop",()=> tbSwitch("shop", openShop, ()=> !state.room && nearShop()));
@@ -6390,7 +6663,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.shelfview && !state.curation;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.shelfview && !state.curation;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -6789,7 +7062,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen || state.pigpensOpen); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)
