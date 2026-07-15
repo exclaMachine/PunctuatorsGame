@@ -5,8 +5,11 @@ Planning doc. A **reward layer over the collection** inspired by Stardew Valley'
 content, no unlocking of new areas. It is a **pure grant** system that lives entirely inside **the
 Wordhoard** (the library room) and pays out **placeable decorations** for that room.
 
-Status: **build step 1 done** (read-only curation panel; see §8). The direction below is agreed (see the
-decisions box); the balance/granularity details are deliberately loose. Rewards + placement are still ahead.
+Status: **build steps 1–2 + 4 done** — the read-only curation panel (§8.1), the **Claim + grant** milestone
+economy (§8.2: category thresholds 5/15/30 → a one-time décor gift), and the shared facing-tile décor
+placement (§8.4, specced in [`inklings-placement.md`](inklings-placement.md)). Remaining: the cozy square
+`(0,1)` as a second placement venue, the librarian's art/voice (§8.5), and later curated cross-book sets. The
+direction below is agreed (see the decisions box); the balance/granularity details are deliberately loose.
 
 Cross-refs: [`inklings.md`](inklings.md) (the Nouns wing + Wordhoard room this builds on),
 [`inklings-farming.md`](inklings-farming.md) (**shares the facing-tile placement primitive** — see §5),
@@ -191,12 +194,23 @@ placement anyway, building the shared primitive up front is the efficient path.
    books keep alphabetical within a group) so progress is easy to spot. All read live from `state.dex` ×
    `NOUN_BOOKS` via `curationCats()` — **no new saved state, no rewards yet** (a note in the panel says rewards
    are coming). Proves the UI + the bundle definitions.
-2. **Claim + grant** — add `state.bundles`; a completed bundle shows **Claim** → grants a placeholder reward
-   (a décor token or ink) once. One-time, persisted. Proves the milestone economy.
-3. **Décor catalog + auto-slot** — define `DECOR`; earned décor **auto-appears** in fixed Wordhoard slots
-   (no placement UI). Proves the reward reads well in the room.
-4. **Shared facing-tile placement** — the generic `tileInFront()` + place/pick-up mode; free placement of
-   décor (and the same primitive wired for farm planting). Replaces the auto-slots.
+2. **Claim + grant** — **DONE.** **Category-milestone bundles**: each noun category has three thresholds
+   (`BUNDLE_TIERS = [5,15,30]` words). On a category page (curation page 2) a **milestone strip**
+   (`renderMilestones`) shows three reward cards — **locked** (`found/tier`), **claimable** (a pulsing gold
+   **CLAIM** button), or **claimed** (✓). `claimBundle(cat,t)` marks `state.bundles["cat:t"]=true` (one-time,
+   persisted, snapshot `v:6`) and drops a **décor** into `state.decorOwned` (the existing tray) with an
+   `unlockbig` chime + toast. The reward is **deterministic** per `(cat,tier)` (`bundleReward` → a `_hashStr`
+   pick from tiered `BUNDLE_REWARDS` pools, fancier at higher tiers) so it's stable. Page 1 shows a **🎁 badge**
+   (`catClaimable`) on any category with an unclaimed milestone. All claimable state re-derives from
+   `state.dex × NOUN_BOOKS` on load; only the *claimed* flag persists (`state.bundles`). Skips the auto-slot
+   step below — grants land straight in the **already-built décor tray** (placement §6 step 1), which is the
+   real reward venue. Proves the milestone economy end-to-end (collect → claim → place).
+3. **Décor catalog + auto-slot** — **SUPERSEDED.** The décor tray + facing-tile placement (step 4) shipped
+   first (see [`inklings-placement.md`](inklings-placement.md) §6 step 1), so grants go straight into it; the
+   throwaway auto-slot MVP was skipped. `DECOR` catalog is defined (8 placeholder-emoji curios).
+4. **Shared facing-tile placement** — **DONE** (ahead of order). The generic `tileInFront()` + ghost
+   place/pick-up tray places décor in the Wordhoard; the same primitive is wired for farm planting later.
+   See [`inklings-placement.md`](inklings-placement.md) §3/§6.
 5. **The librarian** — character art + flavor voice (hypernym/hyponym teaching); polish pass.
 
 ---

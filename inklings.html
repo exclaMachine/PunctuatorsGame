@@ -677,6 +677,21 @@
   .cu-row.done .cu-fill{background:var(--moss)}
   .cu-row.done .ct{color:var(--moss)}
   .cu-badge{font-family:var(--disp);font-size:8px;color:var(--moss)}
+  .cu-gift{cursor:default}
+  /* Category-milestone reward strip (curation page 2) — locked / claimable / claimed décor cards */
+  .cu-mstrip{margin:2px 0 12px}
+  .cu-mslead{font-family:var(--disp);font-size:8px;color:var(--gold);margin:0 0 6px}
+  .cu-ms{display:flex;gap:8px}
+  .ms-card{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;background:var(--paper-2);border:2px solid var(--edge);text-align:center;font-family:inherit}
+  .ms-card .ms-em{font-size:22px;line-height:1}
+  .ms-card .ms-lbl{font-family:var(--disp);font-size:8px;color:var(--ink-soft)}
+  .ms-card.lock{opacity:.55}
+  .ms-card.done{border-color:var(--moss)}
+  .ms-card.done .ms-lbl{color:var(--moss)}
+  .ms-card.claim{cursor:pointer;border-color:var(--gold);background:#f0e4bf;box-shadow:2px 2px 0 var(--gold);animation:msPulse 1.2s steps(2,end) infinite}
+  .ms-card.claim .ms-lbl{color:var(--gold)}
+  .ms-card.claim:hover{background:#f6eecb}
+  @keyframes msPulse{50%{box-shadow:2px 2px 0 transparent}}
   /* Curator Guide tab + word-relationships page (teach the WordNet relations the shelves encode) */
   .cu-guide{overflow:visible;font-family:var(--read);font-size:14px;line-height:1.4}
   .cu-guide p{margin:0 0 9px}  .cu-guide b{color:var(--ink)}
@@ -2088,6 +2103,7 @@ const state = {
   pigpenHard:false,             // Pig Pens hard mode: hide the reference key (persist)
   decorOwned:{},                // earned-but-unplaced décor: id -> count (persist). docs/inklings-placement.md
   placed:[],                    // placed objects: [{id,kind,where,cx,cy}] — where="library"|"sx,sy" (persist)
+  bundles:{},                   // claimed category-milestone ids ("cat:threshold" -> true), one-time (persist). docs/inklings-collections.md
   started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false, fishing:false, phoniconOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
@@ -4740,6 +4756,47 @@ const CU_RELS=[
   {k:"holo",  ico:"⊃", nm:"Holonym",  tag:"the whole it's in",    ex:w=>`“${w}” is a part of these`},
   {k:"ant",   ico:"⇄", nm:"Antonym",  tag:"the opposite",         ex:w=>`the opposite of “${w}”`},
 ];
+// ── Category-milestone bundles (collections §8.2 / placement §6.3) ──────────────────────────────
+// Museum-style thresholds on a whole noun category: collect 5 / 15 / 30 of its words and the curator
+// grants a placeable décor ONCE. Category milestones avoid the "impossible full set" dead-end (see
+// docs/inklings-collections.md §2). The reward is deterministic per (cat,tier) so it's stable; higher
+// tiers draw from fancier pools so the escalation reads. Grants land in state.decorOwned → the décor tray.
+const BUNDLE_TIERS=[5,15,30];
+const BUNDLE_REWARDS={ 5:["rug","candle","lamp","hourglass"], 15:["fern","terrarium","lamp"], 30:["globe","bust"] };
+function bundleId(cat,t){ return cat+":"+t; }
+function _hashStr(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function bundleReward(cat,t){ const pool=BUNDLE_REWARDS[t]||["rug"]; return pool[_hashStr(cat+":"+t)%pool.length]; }
+// How many of a category's milestones are reached-but-unclaimed right now (drives the page-1 🎁 badge).
+function catClaimable(cat,found){ let n=0; for(const t of BUNDLE_TIERS) if(found>=t && !state.bundles[bundleId(cat,t)]) n++; return n; }
+// Claim a completed milestone: mark it, drop the reward décor into the owned-unplaced tray, celebrate.
+function claimBundle(cat,t){
+  const rec=curationCats().find(c=>c.cat===cat); if(!rec) return;
+  const id=bundleId(cat,t);
+  if(state.bundles[id] || rec.found<t){ SFX.play("invalid"); return; }   // not really claimable
+  const rid=bundleReward(cat,t);
+  state.bundles[id]=true;
+  state.decorOwned[rid]=(state.decorOwned[rid]||0)+1;
+  SFX.play("unlockbig");
+  showToast(`Curator's gift: ${DECOR[rid].name}! Decorate the Wordhoard (🖼️).`);
+  scheduleSave();
+  renderCurationCat(cat);                 // refresh the milestone strip (claimed → ✓)
+  if(place.active) renderDecorBar();       // surface the new piece if the décor tray is open
+}
+// The milestone strip on a category page: three reward cards (locked / claimable / claimed).
+function renderMilestones(rec){
+  let cards="";
+  for(const t of BUNDLE_TIERS){
+    const rid=bundleReward(rec.cat,t), d=DECOR[rid]||DECOR.rug, id=bundleId(rec.cat,t);
+    const claimed=!!state.bundles[id], reached=rec.found>=t;
+    if(claimed)
+      cards+=`<div class="ms-card done" title="${esc(d.name)} — claimed"><span class="ms-em">${d.emoji}</span><span class="ms-lbl">✓ ${t}</span></div>`;
+    else if(reached)
+      cards+=`<button class="ms-card claim" type="button" data-claim="${t}" title="Claim ${esc(d.name)}"><span class="ms-em">${d.emoji}</span><span class="ms-lbl">CLAIM ${t}</span></button>`;
+    else
+      cards+=`<div class="ms-card lock" title="Collect ${t} to unlock ${esc(d.name)}"><span class="ms-em">${d.emoji}</span><span class="ms-lbl">${rec.found}/${t}</span></div>`;
+  }
+  return `<div class="cu-mstrip"><div class="cu-mslead">Milestone rewards — décor for your Wordhoard</div><div class="cu-ms">${cards}</div></div>`;
+}
 function curationCats(){   // [{cat, found, total, books:[{key,found,total}]}], in shelf/category order, non-empty only
   if(!NOUN_BOOKS) return [];
   const byCat={};
@@ -4787,12 +4844,13 @@ function renderCuration(){   // page 1: every noun category as a set with its co
   const sub=document.getElementById("cu-sub"); sub.style.display=""; sub.textContent=`${done} / ${cats.length} sets complete`;
   // sets with ≥1 collected word float to the top (stable sort keeps the shelf order within each group)
   cats.sort((a,b)=> (b.found>0)-(a.found>0));
-  let html=`<p class="cu-note">Complete a collection set and the curator will have a reward for you. (Rewards coming soon — for now, track your progress.)</p>`;
+  let html=`<p class="cu-note">Reach a milestone in any set — <b>5</b>, <b>15</b>, or <b>30</b> words — and the curator gifts a decoration for your Wordhoard. Open a set to claim its rewards.</p>`;
   for(const c of cats){
     const complete=c.total&&c.found>=c.total;
+    const claim=catClaimable(c.cat,c.found);
     html+=`<div class="cu-row link${complete?" done":""}" data-cat="${esc(c.cat)}">`
         + `<div class="cu-head"><span class="nm">${esc(nbCap(c.cat))}</span>`
-        + `<span class="ct">${complete?'<span class="cu-badge">✓ COMPLETE</span> ':''}${c.found} / ${c.total}</span></div>`
+        + `<span class="ct">${claim?`<span class="cu-gift" title="${claim} reward${claim>1?'s':''} to claim">🎁</span> `:''}${complete?'<span class="cu-badge">✓ COMPLETE</span> ':''}${c.found} / ${c.total}</span></div>`
         + cuBar(c.found,c.total) + `</div>`;
   }
   const body=document.getElementById("cu-body"); body.innerHTML=html; body.scrollTop=0;
@@ -4804,7 +4862,7 @@ function renderCurationCat(cat){   // page 2: one category's books, each with it
   const rec=curationCats().find(c=>c.cat===cat); if(!rec){ renderCuration(); return; }
   document.getElementById("cu-title").textContent=nbCap(cat);
   const sub=document.getElementById("cu-sub"); sub.style.display=""; sub.textContent=`${rec.found} / ${rec.total} words collected in this set`;
-  let html="";
+  let html=renderMilestones(rec);
   for(const b of rec.books){
     const complete=b.total&&b.found>=b.total;
     html+=`<div class="cu-row link${complete?" done":""}" data-key="${esc(b.key)}">`
@@ -4813,6 +4871,7 @@ function renderCurationCat(cat){   // page 2: one category's books, each with it
         + cuBar(b.found,b.total) + `</div>`;
   }
   const body=document.getElementById("cu-body"); body.innerHTML=html; body.scrollTop=0;
+  body.querySelectorAll("[data-claim]").forEach(el=>el.onclick=e=>{ e.stopPropagation(); claimBundle(cat, +el.dataset.claim); });
   body.querySelectorAll("[data-key]").forEach(el=>el.onclick=()=>renderCurationBook(el.dataset.key));
   SFX.play("click");
 }
@@ -7053,8 +7112,8 @@ function renderMaterials(){
 // Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
-  return { v:5, day:state.day, inv:state.inv, dex:state.dex,
-           decorOwned:state.decorOwned, placed:state.placed,
+  return { v:6, day:state.day, inv:state.inv, dex:state.dex,
+           decorOwned:state.decorOwned, placed:state.placed, bundles:state.bundles,
            bagCap:state.bagCap, captured:[...state.captured], fishedSpots:[...state.fishedSpots], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
            restored:state.restored, books:state.books, fables:state.fables,
@@ -7111,6 +7170,7 @@ function applySnapshot(d){
   if(typeof d.pigpenHard==="boolean") state.pigpenHard=d.pigpenHard;
   if(d.decorOwned && typeof d.decorOwned==="object") state.decorOwned=d.decorOwned;   // earned-unplaced décor (persist)
   if(Array.isArray(d.placed)) state.placed=d.placed.filter(o=>o&&DECOR[o.id]);        // placed objects (drop any unknown ids)
+  if(d.bundles && typeof d.bundles==="object") state.bundles=d.bundles;               // claimed category milestones (persist; claimable state re-derives from dex)
   gardenSeasonSync(false); checkSeedGrants();                            // wither out-of-season beds; grant any owed packets
   state.player.hearts=maxHearts();
   rederiveVerbCounts();   // no-op until VERB_CATS is loaded; then reconciles counts with the collection

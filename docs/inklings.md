@@ -455,9 +455,16 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   100%) → `renderCurationCat` shows that category's books with per-book bars → `renderCurationBook` shows a
   book's words (collected = clickable chips → `#defmodal`, undiscovered = `?????` blanks, reusing the shelf's
   `.nb-chip` styling). **Sets/books with ≥1 collected word float to the top** (shelf order / alphabetical
-  within each group). All computed live by `curationCats()` from `state.dex` × `NOUN_BOOKS` — **read-only, no
-  new saved state, no rewards yet** (step 1 of the plan). Rewards (one-time grants → placeable décor) + the
-  shared facing-tile placement primitive are the next steps. See [`inklings-collections.md`](inklings-collections.md).
+  within each group). All computed live by `curationCats()` from `state.dex` × `NOUN_BOOKS`.
+  **Milestone rewards (Claim + grant):** each category page (`renderCurationCat`) shows a **milestone strip**
+  (`renderMilestones`) with three reward cards at `BUNDLE_TIERS = [5,15,30]` words — **locked** (`found/tier`),
+  **claimable** (a pulsing gold **CLAIM** button), or **claimed** (✓). `claimBundle(cat,t)` sets
+  `state.bundles["cat:t"]=true` (one-time, persisted, snapshot `v:6`) and grants a **décor** into
+  `state.decorOwned` (the existing décor tray) with an `unlockbig` chime + toast; the reward is deterministic
+  per `(cat,tier)` (`bundleReward` → tiered `BUNDLE_REWARDS` pools). Page 1 flags any category with an
+  unclaimed milestone with a **🎁 badge** (`catClaimable`). Only the *claimed* flag saves; claimable state
+  re-derives from `state.dex`. The reward → place loop (collect nouns → claim → place in the Wordhoard via the
+  décor tray) is closed. See [`inklings-collections.md`](inklings-collections.md) + [`inklings-placement.md`](inklings-placement.md).
 - **Mad-libs module** (`/* MAD-LIBS */`) — `BOOKS` registry. For a big book, an entry points at an
   **`index:"data/levels/index.json"`** (book-ordered `[{id,title,file,blanks}]`) instead of a hardcoded
   `levels` array; `ensureBookLevels(reg)` fetches that index once and fills `reg.chapters` (metadata) +
@@ -1024,8 +1031,11 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
    `found/total`** (a book/category threshold), so there's no new content to author. Rewards are **placeable
    decorations** for the Wordhoard, dropped on the **tile you're facing** — a **placement primitive shared
    with farm planting** (build once). **Pure grant, nothing gated** (not a community center). See
-   [`inklings-collections.md`](inklings-collections.md). **Status: step 1 DONE** — a read-only **curator**
-   interactable + `#curation` panel showing each noun category's `found/total` set progress (no rewards yet).
+   [`inklings-collections.md`](inklings-collections.md). **Status: steps 1–2 + 4 DONE** — the **curator**
+   panel (`#curation`, per-category `found/total` progress), the **Claim + grant** milestone economy
+   (category thresholds 5/15/30 → a one-time décor gift; `state.bundles`, `claimBundle`, snapshot `v:6`), and
+   the **shared facing-tile décor placement** (the tray + `tileInFront` ghost place/pick-up in the Wordhoard).
+   Remaining: the cozy square `(0,1)` as a second placement venue + the librarian's art/voice.
 10. **Limit the starting letters** - start with only lowercase letters and the more common letters (not all).
     **Status: DONE (incl. capitals groundwork).** Lowercase unlock one at a time in frequency order; once all
     26 are unlocked, capital letters unlock the same way (`CAP_ORDER`/`capUnlockAt`) and spawn as rare

@@ -6,8 +6,9 @@ collection reward (place a decoration) were always meant to share — the "build
 [`inklings-farming.md`](inklings-farming.md) §8 and [`inklings-collections.md`](inklings-collections.md) §5 —
 plus the **new persistent cozy square** that hosts the walkable farm.
 
-Status: **step 1 built** (the shared primitive + décor place/pick-up inside the Wordhoard; see §6). Steps
-2–5 (the cozy square, gift economy, planting, polish) are still ahead. Direction settled with the dev (§1).
+Status: **steps 1 + 3 built** — the shared primitive + décor place/pick-up inside the Wordhoard (§6.1) and the
+**gift economy** (§6.3: category milestones → curator grants a décor). Steps 2, 4, 5 (the cozy square `(0,1)`,
+farm planting, polish) are still ahead. Direction settled with the dev (§1).
 
 Cross-refs: [`inklings.md`](inklings.md) · [`inklings-architecture.md`](inklings-architecture.md) (the farm is
 an authored persistent zone; this special-cases one overworld screen until the Tiled/LDtk pipeline lands) ·
@@ -153,8 +154,10 @@ One generic system, reused by décor, seed-planting, and pen-placing. **The load
    (real source = step 3). Placement is Wordhoard-only until step 2 opens `(0,1)`.
 2. **Cozy square `(0,1)`.** Special-case `genScreen`/`genTiles` (hazard-free, empty, `isFarm:true`); render the
    placed pass; let the same primitive place décor there. Proves the venue + `where` key.
-3. **Décor gifts.** `DECOR` catalog + `state.decorOwned`; the curator grants a décor on a claimed category
-   milestone ([`inklings-collections.md`](inklings-collections.md) §8.2). Proves the reward → place loop.
+3. **Décor gifts — BUILT.** The curator grants a décor into `state.decorOwned` when you **claim** a completed
+   category milestone (5/15/30 words; `BUNDLE_TIERS`/`bundleReward`/`claimBundle`, `state.bundles`, snapshot
+   `v:6`). The reward → place loop is closed (collect nouns → claim on the curation page → the piece appears in
+   the décor tray → place it). See [`inklings-collections.md`](inklings-collections.md) §8.2.
 4. **Farm planting on `(0,1)`.** Reuse the primitive to plant seeds (and pen animals) as `kind:"crop"`/`"pen"`;
    graduate the Braille-bed **modal** into this walkable zone (farming §8). Retire the modal test rig.
 5. **Polish.** Rotation/removal UX, solid-vs-walkable tuning, sprite art, and (later) the Tiled/LDtk authoring of
