@@ -115,6 +115,11 @@ adjectives feed **potions**, so keep bundles from double-rewarding those — the
 ---
 
 ## 5. The placement system (shared with farming) — the load-bearing shared build
+> **Full spec now lives in [`inklings-placement.md`](inklings-placement.md)** (the cozy square `(0,1)`, the
+> `tileInFront()` + ghost place/pick-up mode, state schema, build order). Decided since: décor is placeable in
+> **both** the Wordhoard **and** the cozy square `(0,1)`; the gift trigger is **category milestones** (§2);
+> the interaction is the **ghost-preview place/pick-up** below. This section is the collections-side summary.
+
 Placing décor and planting a seed are the **same interaction**, so implement **one** generic primitive:
 
 - **`tileInFront()` / facing-tile helper** — from `p.x/p.y` + `p.face` (cardinal), compute the grid cell

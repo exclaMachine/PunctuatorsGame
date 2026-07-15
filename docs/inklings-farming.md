@@ -160,17 +160,20 @@ Xanthoceras/Ximenia/Xylopia; Q: Quamash/Quinine bark; Z: Zizia/Zedoary) — all 
   from the brainstorm; not planned.
 
 ## 8. Target: the real garden (walkable farm-sim)
-**The garden is NOT a dialogue — it's a walkable zone on the map** (a persistent authored area behind home,
-per §6) with the **full farm-sim loop**, Stardew/Harvest Moon style: **till** a plot → **plant** a seed →
-**water** → **wait** (growth stages/days) → **harvest** manually → **repeat**. Plus the cozy-sim depth in §7
-(tools, watering can, growth timers, seasons). The modal below is only a throwaway test rig for the crossword
-scoring; it gets replaced by the walkable zone, it does not become it.
+**The garden is NOT a dialogue — it's a walkable zone on the map.** Decided (see
+[`inklings-placement.md`](inklings-placement.md)): **the walkable zone is the cozy square `(0,1)`** — one
+screen down from home — a **persistent, hazard-free** overworld screen (no beasts/water/rock) it shares with
+the cipher **pens** and Wordhoard **décor**. The full farm-sim loop, Stardew/Harvest Moon style: **till** a
+plot → **plant** a seed → **water** → **wait** (growth stages/days) → **harvest** manually → **repeat**. Plus
+the cozy-sim depth in §7 (tools, watering can, growth timers, seasons). The modal below is only a throwaway
+test rig for the crossword scoring; it gets replaced by the walkable zone, it does not become it.
 
 **Shared placement primitive:** "plant a seed on the tile in front of you" is the **same interaction** as
-"place a decoration on the tile you're facing" from the Wordhoard curation reward
-([`inklings-collections.md`](inklings-collections.md) §5). Build **one** generic facing-tile place/act helper
-(`tileInFront()` + a ghost-preview place/pick-up mode) and reuse it for both — don't implement planting and
-décor placement separately.
+"place a decoration on the tile you're facing" from the Wordhoard curation reward. Build **one** generic
+facing-tile place/act helper (`tileInFront()` + a ghost-preview place/pick-up mode) and reuse it for planting,
+pen-placing, **and** décor — don't implement them separately. **Full spec, the cozy square `(0,1)`, and the
+build order live in [`inklings-placement.md`](inklings-placement.md)**; planted beds become `kind:"crop"`
+entries in that doc's `state.placed`.
 
 ## 9. The Garden modal — SHIPPED (Stages 1–2)
 The modal that validates the **Braille-cell + crossword** mechanic is **now in production** (no longer debug-gated)
