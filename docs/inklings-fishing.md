@@ -8,7 +8,7 @@ is it.
 
 > **letters ← combat · words ← the desk · sounds ← fishing**
 
-Status: **build steps 1–3 shipped; rest plan-only.** Reflects a 2026-07 planning session (three settled
+Status: **build steps 1–4 shipped; rest plan-only.** Reflects a 2026-07 planning session (three settled
 forks below). **Step 1 done (2026-07-15):** the hand-authored inventory `data/phonemes.json` (40 GA phonemes)
 + the pure runtime lookup live in the `/* FISHING */` block of `inklings.html` (`PHONEMES`/`PHONEMES_BY_IPA`,
 `pickPhoneme(castDepth,rand)` weighted by tier + depth-gated, `phonemeAccepts(ph,typed)` lenient match,
@@ -22,9 +22,15 @@ cast→bite→type→catch loop inside the modal — a `fish` state machine (`re
 `slip`→`ready`) with a **shallow/deeper** cast choice (depth 1 shows symbol+hint word, depth 2 symbol only;
 deep sound-only tier stays deferred), a snappy 0.5–1.6s nibble telegraph, `fishSetHook` grading the typed
 romanization via `phonemeAccepts` (lenient/normalized), SFX per beat, and a serialized in-modal praise card
-(both catch and miss reveal the sound→spelling, so a miss still teaches). **Catches aren't persisted yet** —
-`state.phonicon` + the first-catch celebration-queue flourish arrive with the Phonicon in step 4. The
-word-level shared phoneme engine (`data/pronunciations.json` +
+(both catch and miss reveal the sound→spelling, so a miss still teaches). **Step 4 done (2026-07-15):** the
+**Phonicon** — persistent `state.phonicon` (`{ ipa: {count, first} }`), `recordPhonemeCatch` filling it on
+each catch (returns new-vs-repeat), and a bestiary-style `#phonicon` sound-dex view
+(`openPhonicon`/`closePhonicon`/`renderPhonicon`, its own `state.phoniconOpen` flag + guards, a non-contextual
+`tb-phonicon`/`tc-phonicon` button) showing a `X/40 caught` grid — caught sounds revealed (symbol · spelling ·
+hint word · ×count), uncaught locked `???`. Save bumped **v4→v5**, `phonicon` added to
+`snapshot`/`applySnapshot` (additive; old saves default `{}`). A **first-catch flourish** is the louder
+`unlockbig` SFX + an in-modal "✨ new sound" card; the polished field-level celebration-queue pop stays
+step-5 tuning. The word-level shared phoneme engine (`data/pronunciations.json` +
 `rhymeKey`/`syllables`, poetry §11.1) stays **deliberately deferred** — fishing v1's typed loop doesn't
 consume it; stand it up when poetry / the Sound Garden needs it.
 
@@ -254,7 +260,10 @@ prematurely:
    in-modal for now; the global celebration-queue **first-catch** flourish lands with step 4 (needs
    `state.phonicon` to know a catch is new). Catches are **not persisted yet** — that's step 4.
 4. **The Phonicon** — `state.phonicon` + the sound-dex view (bestiary-style reveal) + snapshot/version bump.
-   Proves the collection + save.
+   Proves the collection + save. **✓ Shipped 2026-07-15** (`recordPhonemeCatch` fills `state.phonicon` on
+   catch; `#phonicon` reveal grid `X/40 caught` via `tb-phonicon`/`tc-phonicon`; save v4→v5, additive
+   restore). First-catch flourish is minimal here (louder SFX + in-modal ✨ card) — the field-level
+   celebration-queue pop is step-5 tuning.
 5. **Tuning pass** — rarity/depth skew, cast feel, any daily "fished-out" cap, first-catch flourish.
 6. **(Later) Sound Garden hookup** — the Phonicon becomes the Sound Garden's supply (farming §5).
 7. **(Deferred) Deep sound-only tier** — once bundled phoneme audio exists (§4.3).
