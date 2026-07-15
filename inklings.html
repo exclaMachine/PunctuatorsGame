@@ -721,6 +721,8 @@
   #tact .atk:active{background:#46578f}
   #tact .util-grid{display:grid;grid-template-columns:52px 52px 52px;grid-auto-rows:52px;gap:6px}
   #tact .util{width:52px;height:52px;font-size:8px}
+  /* Single-symbol/emoji buttons: blow the glyph up so it nearly fills the button (word labels stay small) */
+  #tact .util.ico{font-size:30px}
   /* shrink the stick/buttons on small screens so they don't swallow the playfield */
   @media(max-width:560px){
     #joystick{right:8px;bottom:8px;width:112px;height:112px}
@@ -729,6 +731,7 @@
     #tact .atk{width:62px;height:62px;font-size:11px}
     #tact .util-grid{grid-template-columns:44px 44px 44px;grid-auto-rows:44px;gap:5px}
     #tact .util{width:44px;height:44px;font-size:7px}
+    #tact .util.ico{font-size:26px}
   }
   /* ── Desktop side panels: use the pillar-box space left/right of the stage for a feature toolbar
      (left) + a persistent minimap (right). Fixed to the viewport edges so they never affect the stage
@@ -1276,14 +1279,14 @@
         <button class="tc-btn atk" id="tc-atk" aria-label="Attack">ATK</button>
         <div class="util-grid">
           <button class="tc-btn util" id="tc-home" aria-label="Home to bench">HOME</button>
-          <button class="tc-btn util" id="tc-help" aria-label="Controls">?</button>
-          <button class="tc-btn util" id="tc-dex" aria-label="Bestiary">🐾</button>
-          <button class="tc-btn util" id="tc-stats" aria-label="Feats">✦</button>
-          <button class="tc-btn util" id="tc-gear" aria-label="Equipment">🎒</button>
-          <button class="tc-btn util" id="tc-apothecary" aria-label="Apothecary">⚗️</button>
-          <button class="tc-btn util" id="tc-farm" aria-label="Garden">🌱</button>
-          <button class="tc-btn util" id="tc-herald" aria-label="Herald's Bench" style="display:none">🛡️</button>
-          <button class="tc-btn util" id="tc-modal" aria-label="À La Modal hint">💬</button>
+          <button class="tc-btn util ico" id="tc-help" aria-label="Controls">?</button>
+          <button class="tc-btn util ico" id="tc-dex" aria-label="Bestiary">🐾</button>
+          <button class="tc-btn util ico" id="tc-stats" aria-label="Feats">✦</button>
+          <button class="tc-btn util ico" id="tc-gear" aria-label="Equipment">🎒</button>
+          <button class="tc-btn util ico" id="tc-apothecary" aria-label="Apothecary">⚗️</button>
+          <button class="tc-btn util ico" id="tc-farm" aria-label="Garden">🌱</button>
+          <button class="tc-btn util ico" id="tc-herald" aria-label="Herald's Bench" style="display:none">🛡️</button>
+          <button class="tc-btn util ico" id="tc-modal" aria-label="À La Modal hint">💬</button>
           <button class="tc-btn util" id="tc-slide" aria-label="Slide">SLIDE</button>
           <!-- SHOP / HOUSE (home) and DESK / BOOK (inside the library) are contextual: only shown when standing by that structure (see syncTouchUI) -->
           <button class="tc-btn util" id="tc-shop" aria-label="Open shop">SHOP</button>
@@ -1292,7 +1295,7 @@
           <button class="tc-btn util" id="tc-book" aria-label="Open Mad Libris">LIBRIS</button>
           <button class="tc-btn util" id="tc-shelf" aria-label="Browse shelf">SHELF</button>
           <button class="tc-btn util" id="tc-curate" aria-label="Speak with the curator">CURATE</button>
-          <button class="tc-btn util" id="tc-decor" aria-label="Decorate the Wordhoard">🖼️</button>
+          <button class="tc-btn util ico" id="tc-decor" aria-label="Decorate the Wordhoard">🖼️</button>
         </div>
       </div>
       <!-- Joystick, bottom-right -->
