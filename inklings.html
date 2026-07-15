@@ -488,8 +488,10 @@
     .dex-list{max-height:46vh}
   }
   /* Definition modal (full text on tap of a collection entry) */
+  /* z-index:12 keeps this leaf "detail" modal above every panel it can be opened from (incl. Feats, z:8),
+     so it never opens BEHIND its parent — see docs/inklings-grammar-systems.md */
   #defmodal{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
-    align-items:center;justify-content:center;padding:18px;z-index:7}
+    align-items:center;justify-content:center;padding:18px;z-index:12}
   #defmodal.open{display:flex}
   #defmodal .book{max-width:460px}
   #defmodal .def-full{font-size:19px;line-height:1.45;color:var(--ink);
@@ -566,6 +568,8 @@
   .cu-guide h3{font-family:var(--disp);font-size:10px;color:var(--gold);border-top:2px solid var(--line);padding-top:10px;margin:12px 0 6px}
   .cu-rico{display:inline-block;width:1.4em;color:var(--gold);font-weight:bold;text-align:center}
   .cu-word .cu-def{font-size:15px;color:var(--ink-soft);font-style:italic;margin:2px 0 8px;line-height:1.35}
+  .cu-backlink{font-family:var(--disp);font-size:8px;color:var(--inkblue);cursor:pointer;background:none;border:none;padding:0;margin:0 0 8px;text-decoration:underline}
+  .cu-wordh{font-size:22px;color:var(--ink);margin:2px 0 8px;text-transform:capitalize}
   .cu-rel{padding:8px 10px;margin:7px 0;background:var(--paper-2);border:2px solid var(--edge)}
   .cu-rel .cu-relhd{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:5px}
   .cu-rel .cu-relnm{font-family:var(--disp);font-size:9px;color:var(--gold)}
@@ -2249,7 +2253,8 @@ addEventListener("keydown",e=>{
   }
   if(state.help){ if(k==="escape"){ e.preventDefault(); toggleHelp(); } return; }
   if(state.statsOpen){   // Feats panel (may sit atop the Wordsmithy after a milestone): close on Esc / Tab / C
-    if(k==="escape"||k==="tab"||k==="c"){ e.preventDefault(); toggleStats(); }
+    if(k==="escape" && featWord){ e.preventDefault(); featWord=null; renderStats(); }   // step back from a verb's relatives page first
+    else if(k==="escape"||k==="tab"||k==="c"){ e.preventDefault(); toggleStats(); }
     return;
   }
   if(state.apothecaryOpen){   // Apothecary (flask rack): close on Esc / Tab / P
@@ -5638,7 +5643,8 @@ function nextCelebration(){ const fn=celebrations.shift(); if(fn) fn(); }
 /* ---------- FEATS PANEL (verb-category ladders) ---------- */
 let featAnim=null, featAutoT=null;   // featAnim={cat,fromPct,toPct,reward|null,next,nextReward}; timer auto-closes plain steps
 function statsHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.apothecaryOpen; }
-function openStats(){ state.statsOpen=true; document.getElementById("stats").classList.add("open");
+function openStats(){ state.statsOpen=true; featWord=null; loadRelations();   // warm the relation graph for verb pages
+  document.getElementById("stats").classList.add("open");
   document.getElementById("sound-btn").style.display="none"; renderStats(); }
 function closeStats(){ clearTimeout(featAutoT); featAnim=null; state.statsOpen=false;
   document.getElementById("stats").classList.remove("open");
@@ -5714,7 +5720,7 @@ function apVial(pole){
 // Every applicable verb pops the Feats panel and animates that category's bar to its new progress. A milestone
 // fills to 100%, hands out the reward, and STAYS (dismiss to continue); a plain step auto-dismisses.
 function showFeatProgress(cat, n){
-  statsTab="ladders";   // milestone pops always show the Ladders tab
+  statsTab="ladders"; featWord=null;   // milestone pops always show the Ladders tab
   const ms=isVerbMilestone(n);
   const a = ms ? (n===1?0 : n===VERB_MS_STEP?1 : n-VERB_MS_STEP)          // just-completed segment start (milestone)
                : (n<VERB_MS_STEP?1 : Math.floor(n/VERB_MS_STEP)*VERB_MS_STEP);  // current segment start
@@ -5732,13 +5738,26 @@ function showFeatProgress(cat, n){
   }, 1400);
 }
 function nextVerbMilestone(count){ return count<1 ? 1 : Math.floor(count/VERB_MS_STEP)*VERB_MS_STEP+VERB_MS_STEP; }
-let statsTab="ladders";   // Feats panel tab: "ladders" (milestones) | "words" (collected verbs by category)
+let statsTab="ladders";   // Feats panel tab: "ladders" (milestones) | "words" (verbs) | "guide" (relations primer)
+let featWord=null;        // within Words: the verb whose relatives page is showing, or null for the list
+// The verb relations we surface on a verb's relatives page. We deliberately show only the relations that are
+// POS-CLEAN in the current lemma-keyed graph: troponym (verb hyponyms, by construction), entailment and cause
+// (verb-only), and antonym. Hypernym/hyponym are POS-MIXED here (a verb's "broader" list leaks noun senses),
+// so they wait on the per-POS rebuild — see docs/inklings-grammar-systems.md. Same shape as CU_RELS, so the
+// curator's cuRelRow() renders these too.
+const VERB_RELS=[
+  {k:"tropo",  ico:"⇝", nm:"Troponym",   tag:"a particular way to do it",   ex:w=>`ways to “${w}”`},
+  {k:"entail", ico:"↪", nm:"Entailment", tag:"what it necessarily involves", ex:w=>`“${w}” can’t happen without these`},
+  {k:"cause",  ico:"⚡", nm:"Cause",      tag:"what it makes happen",         ex:w=>`“${w}” brings these about`},
+  {k:"ant",    ico:"⇄", nm:"Antonym",    tag:"the opposite",                 ex:w=>`the opposite of “${w}”`},
+];
 function renderStats(){
   const tabs=document.getElementById("stats-tabs");
-  tabs.innerHTML=[["ladders","Ladders"],["words","Words"]].map(([t,l])=>`<button class="stab${statsTab===t?" on":""}" data-tab="${t}">${l}</button>`).join("");
-  tabs.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ statsTab=b.dataset.tab; renderStats(); });
+  tabs.innerHTML=[["ladders","Ladders"],["words","Words"],["guide","Guide"]].map(([t,l])=>`<button class="stab${statsTab===t?" on":""}" data-tab="${t}">${l}</button>`).join("");
+  tabs.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ statsTab=b.dataset.tab; featWord=null; renderStats(); });
   const body=document.getElementById("stats-body");
-  if(statsTab==="words"){ renderVerbWords(body); return; }
+  if(statsTab==="guide"){ renderFeatsGuide(body); return; }
+  if(statsTab==="words"){ if(featWord) renderVerbRelatives(body); else renderVerbWords(body); return; }
   let html="";
   for(const cat in VERB_LADDERS){
     const n=(state.verbCounts&&state.verbCounts[cat])||0;
@@ -5776,7 +5795,44 @@ function renderVerbWords(body){
         + `<div class="nb-chips">`+ws.map(w=>`<span class="nb-chip found" data-w="${esc(w)}">${esc(w)}</span>`).join("")+`</div></div>`;
   }
   body.innerHTML = html || '<div class="sub">No verbs collected yet — spell some doing-words at the Wordsmithy.</div>';
-  body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>openDefModal(el.dataset.w));
+  body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>{ featWord=el.dataset.w; renderStats(); SFX.play("click"); });
+}
+// A collected verb's relatives page (inline — no modal, so it can never open behind the Feats panel). Reuses
+// the curator's cuRelRow(); shows the POS-clean verb relations from RELATIONS. No gloss: the single stored
+// definition is often a noun sense (e.g. "tote" → a bag), so we teach by relation until the per-POS rebuild.
+function renderVerbRelatives(body){
+  const word=featWord;
+  let inner=`<button class="cu-backlink" data-back="1">← all verbs</button><h2 class="cu-wordh">${esc(word)}</h2>`;
+  if(!RELATIONS){ loadRelations(); inner+=`<p class="cu-empty">Gathering this verb’s relatives…</p>`; }
+  else {
+    const rec=RELATIONS[word]||{};
+    let rows=""; for(const rel of VERB_RELS) rows+=cuRelRow(rel, word, rec[rel.k]);
+    inner += rows || `<p class="cu-empty">The catalogue lists no verb relatives for “${esc(word)}” — a verb that stands alone.</p>`;
+  }
+  body.innerHTML=`<div class="cu-word">${inner}</div>`; body.scrollTop=0;
+  const bk=body.querySelector("[data-back]"); if(bk) bk.onclick=()=>{ featWord=null; renderStats(); SFX.play("click"); };
+  body.querySelectorAll("[data-rel]").forEach(el=>el.onclick=()=>{ if(state.dex[el.dataset.rel]){ featWord=el.dataset.rel; renderStats(); SFX.play("click"); } });
+}
+// Guide tab: a static primer teaching how verbs relate (troponymy chiefly), mirroring the curator's Guide.
+function renderFeatsGuide(body){
+  body.innerHTML=`<div class="cu-guide">
+    <p class="cu-lead">Feats track your <b>verbs</b> — the doing-words. Just as nouns nest in an
+    <i>is-a-kind-of</i> tree, verbs relate in their own ways, and the richest is <b>troponymy</b>: one verb is
+    a particular <i>manner</i> of another.</p>
+    <p>To <b>march</b>, <b>stride</b> or <b>limp</b> are all <i>ways to</i> <b>walk</b> — they're its
+    <b>troponyms</b>. Open any collected verb (tap it on the <b>Words</b> tab) to see how it connects:</p>
+    <ul class="hb-gloss">
+      <li><span class="cu-rico">⇝</span><b>Troponym</b> — a particular <i>way</i> of doing it. To <b>march</b> is a way to <b>walk</b>.</li>
+      <li><span class="cu-rico">↪</span><b>Entailment</b> — what it <i>necessarily involves</i>. To <b>snore</b> entails <b>sleeping</b>.</li>
+      <li><span class="cu-rico">⚡</span><b>Cause</b> — what it <i>makes happen</i>. To <b>fell</b> a tree makes it <b>fall</b>.</li>
+      <li><span class="cu-rico">⇄</span><b>Antonym</b> — the <i>opposite</i>. walk ⇄ ride, wake ⇄ sleep.</li>
+    </ul>
+    <p class="cu-rule">⚙ <b>Why it matters:</b> verbs are the engine of a sentence. Seeing the ways-to, the
+    knock-on effects and the opposites of an action builds a feel for how English packs nuance into its
+    doing-words.</p>
+    <p class="cu-eg">Collected relatives are <b>clickable</b> — hop verb to verb. (Verbs also nest under
+    broader verbs — their <i>hypernyms</i> — but that view waits on a data upgrade.)</p>
+  </div>`;
 }
 
 /* ---------- OBSTACLE (river) MAD-LIB ---------- */

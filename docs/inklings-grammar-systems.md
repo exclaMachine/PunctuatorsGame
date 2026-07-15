@@ -216,6 +216,48 @@ synonym/similar-to, attribute, hypernym, hyponym, (later) derivation, modality. 
 
 ---
 
+## 5b. Feats relation teaching — Guide tab + verb-relatives page (**shipped**)
+
+Mirrors the Curator's noun-relations layer (see [`inklings-collections.md`](inklings-collections.md) §3) but
+for **verbs**, inside the **Feats** panel (`#stats`). Two additions to the existing Ladders/Words tabs:
+
+- **A `Guide` tab** (`renderFeatsGuide`) — a static primer teaching how verbs relate, led by **troponymy**
+  ("to *march* is a way to *walk*"), plus entailment, cause, and antonym.
+- **A per-verb relatives page** (`renderVerbRelatives`, reached by tapping a verb on the **Words** tab).
+  Reads the lazy-loaded `RELATIONS` graph and renders rows via the curator's `cuRelRow()`. Collected
+  relatives are clickable to hop verb→verb; a `← all verbs` back-link + Esc step back to the list.
+
+**Which relations (and why only these).** The graph (`data/wordnet-relations.json`) is **lemma-keyed and
+POS-blind**, so a multi-POS lemma carries *all* its senses' relations mashed together. We therefore surface
+only the relations that are **reliably verb-clean** as-is (`VERB_RELS`): **troponym** (`tropo` = verb
+hyponyms by construction), **entailment** and **cause** (verb-only), and **antonym**. We deliberately **omit
+hypernym/hyponym** here — a verb's `hyper`/`hypo` lists leak noun senses (e.g. `tote`'s "broader" list is
+`[bag, transport, carry]`; `bank`'s mixes `slope/incline` with `enclose/transact`).
+
+**No gloss on the verb page — by design (for now).** `dictionary.json` stores a **single** definition per
+lemma (`synsets[0].definition()`, the most common sense across *all* parts of speech), so multi-POS verbs
+show their **noun** gloss (`tote` → "a capacious bag or basket"). Rather than show a misleading definition
+in a verbs context, the page teaches by relation only.
+
+**Also fixes a z-index bug:** the old Words tab opened `#defmodal` (z:7) *behind* the Feats panel (z:8). The
+inline relatives page removes that path; `#defmodal` was also bumped to **z:12** so it can never open behind
+any parent panel again.
+
+### ⏭ TODO — the per-POS rebuild (deferred, agreed 2026-07)
+The clean fix for both limitations is a **`build_dictionary.py` regeneration** (§6) that splits by part of
+speech:
+- **Per-POS definitions** — emit e.g. `def` per POS (or a `defs:{n,v,a,r}` map) so Feats can show the *verb*
+  sense ("tote → carry with difficulty") and the library the *noun* sense.
+- **Per-POS relations** — split `hyper`/`hypo` by POS so verbs get a clean **broader/narrower verb** view
+  (add those rows to `VERB_RELS`), and drop the noun leakage.
+
+This is **purely additive** to the shipped Option-2 UI: the Guide tab and `renderVerbRelatives`/`cuRelRow`
+stay; the rebuild just improves the underlying data and lets us add the extra rows + a gloss line. No rework.
+Cost: touches the build pipeline, grows `dictionary.json`, and adds POS-context plumbing to `localLookup`
+(Feats→verb sense, library→noun sense). Not started.
+
+---
+
 ## 6. Data pipeline (new WordNet-derived files, via `build_dictionary.py`)
 
 - **`data/adj-attrs.json`** — **built (step 1)** by `build_adj_attrs.py` from the bundled (previously dormant)
