@@ -632,10 +632,13 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   (`state.garden = {cols,rows,cells:[[{letter,dots}]]}`). Seed economy/growth/seasons/walkable-zone are the real
   build (§8–9).
 - **Verb stat ladders (Feats, `C`/`✦`)** — collecting distinct verbs levels you up per WordNet verb category
-  along Korok-style milestones (1, then every 5); 4 categories populated (motion/competition/perception/
-  possession) giving passive boosts + abilities (Slide, Finisher, Combo, Divine, Treasure Sense, Magnet).
-  Data-driven from `data/verb-cats.json`; retroactive from the collection. See the code map (verb-category
-  stat ladders) — remaining ~11 categories are meant to be filled into the same `VERB_LADDERS` table.
+  along Korok-style milestones (1, then every **per-category step** — `VERB_STEP`, sized to each category's
+  verb pool — with a **growing-gap repeat tail** + speed/heart caps so passive stats can't inflate with the
+  huge verb pools); 5 categories populated (motion/competition/perception/
+  possession/**body**) giving passive boosts + abilities (Slide, Finisher, Combo, Divine, Treasure Sense, Magnet,
+  **Second Wind**). Data-driven from `data/verb-cats.json`; retroactive from the collection. See the code map
+  (verb-category stat ladders) — remaining ~10 categories are meant to be filled into the same `VERB_LADDERS`
+  table (candidate feats catalogued in [`inklings-grammar-systems.md`](inklings-grammar-systems.md) §5d).
 - Outdoor home base (shop + the **house** that is your Library); bounded **daily map** of screens
   (`MAP_RADIUS`, currently 3×3; walls at the world edge), regenerated each real calendar day; walk-off-edge
   travel between screens with a smooth **screen-slide** transition; explored-area minimap (resets daily) — in the right desktop side panel / top mobile HUD band, with a
@@ -922,19 +925,31 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   **derived** into `state.perks` by `computePerks()` (so nothing is a one-time increment); read through
   `moveSpeed()`, `attackDmg()` (incl. `comboBonus()`), `satchelCap()`, and boolean perks. A **new** distinct
   verb (in `commitSpell`) bumps its count → `onNewVerbWord` fires a **toast + `unlockbig` SFX** only on a
-  milestone. **Thresholds (Option B):** `n===1`, then every `VERB_MS_STEP` (5) → 1,5,10,15,… Past a ladder's
-  explicit rungs, milestones **repeat** `VERB_REPEAT[cat]` so it never dead-ends. Data table `VERB_LADDERS`
-  ({at,type}); **tunable constants** grouped up top (`SPEED_STEP`,`ATTACK_STEP`,`SATCHEL_STEP`,`SLIDE_*`,
-  `FINISHER_*`,`COMBO_*`,`TREASURE_*`). **Populated now (4; ~11 more later via the same table):**
-  *motion* 1→speed·5→**Slide**·10→speed·(+5 speed); *competition* 1→attack·5→Finisher·10→attack·15→Combo·(+5
-  attack); *perception* 1→**Divine**·5→Treasure Sense·10→Keener·(+5 keener); *possession* 1→+satchel·5→**Magnet**·
-  10→+satchel·(+5 satchel). **Abilities:** only **Slide** is active — `Shift`/`tc-slide`, `startSlide()`, a
+  milestone. **Thresholds:** `n===1`, then every **per-category `verbStep(cat)`** — `VERB_STEP` maps each
+  category to a step sized to its verb pool (`data/verb-cats.json`): weather 3 · competition/consumption 6 ·
+  the 500–899 tier (incl. body/perception/possession) 10 · social/motion 12 · contact/change/communication 15
+  (default 5). Rung `at` values sit on that grid (up to a ladder's last explicit rung). Past that, milestones
+  **repeat** `VERB_REPEAT[cat]` at a **growing gap** (step·1, step·2, step·3 … — positions `last+step·k(k+1)/2`)
+  so passive stats grow **sub-linearly** and can't balloon with the huge verb pools; two stats also get an
+  **absolute cap** (`MAX_MOVE_SPEED` 380 px/s for steerability, `MAX_HEARTS_CAP` 16 for the HUD heart-row).
+  The grid math lives in `verbLast`/`isVerbMilestone`/`verbMilestonesUpTo`/`nextVerbMilestone`/
+  `prevVerbMilestone`. Data table `VERB_LADDERS` ({at,type}); **tunable constants** grouped up top
+  (`SPEED_STEP`,`MAX_MOVE_SPEED`,`ATTACK_STEP`,`SATCHEL_STEP`,`HEART_STEP`,`MAX_HEARTS_CAP`,`SECOND_WIND_SEC`,
+  `SLIDE_*`,`FINISHER_*`,`COMBO_*`,`TREASURE_*`). **Populated now (5; ~10 more later via the same table) —
+  regraded 2026-07 to the per-category steps:** *motion* 1→speed·12→**Slide**·24→speed·(then +12 speed at a
+  growing gap); *competition* 1→attack·6→Finisher·12→attack·18→Combo·(+6 attack, growing gap); *perception*
+  1→**Divine**·10→Treasure Sense·20→Keener; *possession* 1→+satchel·10→**Magnet**·20→+satchel; *body*
+  1→**+1 heart**·10→**Second Wind**·20→+1 heart. **Abilities:** only **Slide** is active — `Shift`/`tc-slide`, `startSlide()`, a
   forward lunge using sprite **row 6** (`PR.slide`). Finisher/Combo apply in `doAttack` (`combo`
   counter/window/miss-reset). **Divine** = a daily letter peek in the book view (`useDivine`, `state.divine`/
   `divineDay`, day-scoped like WOTD). **Treasure Sense/Keener** draw a pulsing glint on pickups (`drawPickup`,
-  scales with `perks.treasure`). **Magnet** now **gates the pre-existing pickup homing** (contact-collect stays
-  default). Speed/Attack/Satchel are passive via the getters. **Feats panel** (`#stats`, `state.statsOpen`, `C`/
-  `✦` `tc-stats`, `renderStats`) has two tabs (`statsTab`, `#stats-tabs`): **Ladders** (the 4 populated ladders —
+  scales with `perks.treasure`). **Magnet** gates the pre-existing pickup homing (contact-collect stays
+  default) — *fixed 2026-07: `computePerks` never set `p.magnet`, so the perk was inert until now.* **Second
+  Wind** (body) recovers a heart after `SECOND_WIND_SEC` (8 s) out of combat **in the field** (the timer
+  `p.swT` counts up in the field update, resets on any hit; home/base still heal via `HEAL_SEC`).
+  Speed/Attack/Satchel/**+max hearts** are passive via the getters (`maxHearts()` now adds `perks.hearts`).
+  **Feats panel** (`#stats`, `state.statsOpen`, `C`/`✦` `tc-stats`, `renderStats`) has **Ladders / Words /
+  Guide** tabs (`statsTab`, `#stats-tabs`): **Ladders** (the 5 populated ladders —
   rewards earned, verb count, progress bar) and **Words** (`renderVerbWords` — your collected verbs grouped by
   all 15 WordNet verb categories, populated-ladder cats first, chips → `#defmodal`). **Progress feedback:** *every* applicable verb pops the panel and CSS-animates that
   category's bar to its new fill (`showFeatProgress`/`featAnim`) — a **milestone** fills to 100%, shows the

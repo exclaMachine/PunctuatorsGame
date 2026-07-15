@@ -1385,7 +1385,7 @@
           <p><b>Word of the Day.</b> Each day the Wordsmithy shows a bonus word — always built from letters you've unlocked, so you can always collect what you need. Spell it once for a big ink bonus.</p>
           <p><b>Mad Libris.</b> The lectern right of the Wordsmithy. You start with one fable; <b>recover</b> the rest one at a time — beasts rarely drop a <b>page</b>, or <b>bind</b> the next one at the Stall with materials beasts drop. Restore a story by filling each blank with a collected word that matches the needed part of speech (noun/verb/adjective/adverb). Matching the original word earns bonus ink. A word can be used in a chapter only <b>once, ever</b> — so keep learning new ones. Finish every recovered chapter to add the book to your Wordhoard.</p>
           <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground — walk over it to collect (the <b>Magnet</b> feat later makes drops drift to you) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
-          <p><b>Feats (<b>C</b>).</b> Collecting <b>verbs</b> levels you up along five word-count milestones per category (1, then every 5). Rewards interleave passive boosts and abilities: <b>Motion</b> → move speed + <b>Slide</b>; <b>Competition</b> → attack + <b>Finisher</b>/<b>Combo</b>; <b>Perception</b> → <b>Divine</b> (a daily letter peek in the library) + <b>Treasure Sense</b> (drops glint); <b>Possession</b> → satchel space + <b>Magnet</b>. More verb categories arrive later.</p>
+          <p><b>Feats (<b>C</b>).</b> Collecting <b>verbs</b> levels you up along word-count milestones per category (1, then every few — bigger categories space rewards out further). Rewards interleave passive boosts and abilities: <b>Motion</b> → move speed + <b>Slide</b>; <b>Competition</b> → attack + <b>Finisher</b>/<b>Combo</b>; <b>Perception</b> → <b>Divine</b> (a daily letter peek in the library) + <b>Treasure Sense</b> (drops glint); <b>Possession</b> → satchel space + <b>Magnet</b>; <b>Body</b> → max hearts + <b>Second Wind</b> (recover a heart when you stay out of combat). More verb categories arrive later.</p>
         </div>
         <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
           <button class="primary" id="controls-close">Got it</button>
@@ -1828,8 +1828,9 @@ fetch("data/noun-books.json").then(r=>r.ok?r.json():Promise.reject()).then(data=
    Collecting distinct verbs levels the player up. Each verb's category = its most-common-sense verb.* lexname
    (precomputed in data/verb-cats.json). We track distinct-verb counts per category (state.verbCounts) and hand
    out ONE reward each time a count hits a milestone. Rewards are DERIVED from the counts (state.perks), so it's
-   retroactive + idempotent. Only these 4 categories have ladders now; the other ~11 are tracked and get added
-   later by filling in VERB_LADDERS with the same shape. Thresholds (Option B): 1, then every +5. */
+   retroactive + idempotent. 5 categories have ladders now (Motion/Competition/Perception/Possession + Body);
+   the other ~10 are tracked and get added later by filling in VERB_LADDERS with the same shape. Thresholds:
+   1, then every PER-CATEGORY step (VERB_STEP, sized to each category's verb pool — weather 3 … contact 15). */
 let VERB_CATS=null;              // word -> verb category (e.g. "motion"); loaded async
 fetch("data/verb-cats.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{
   VERB_CATS=data; rederiveVerbCounts();   // recompute counts from the existing collection (retroactive)
@@ -1884,10 +1885,29 @@ function onNewAdjWord(word){
 }
 
 // ---- TUNABLE CONSTANTS (grouped for playtest balancing) ----
-const VERB_MS_STEP     = 5;      // milestones fire at word count 1, then every +5 (5,10,15,…)
+// Milestones fire at word count 1, then every step UP TO a ladder's last explicit rung. The step is
+// PER-CATEGORY, sized to each WordNet verb category's pool (data/verb-cats.json): tiny weather (76 verbs)
+// steps by 3; huge contact (1965) by 15. AFTER the last explicit rung, repeat-passives fire at a GROWING
+// gap (step, 2·step, 3·step, …) so late rewards cost progressively more and passive stats can't inflate
+// without bound (a huge category would otherwise stack ~100 repeats). Hard caps (MAX_MOVE_SPEED /
+// MAX_HEARTS_CAP) backstop the two stats with a playability/HUD ceiling. See docs/inklings-grammar-systems.md
+// §5d. Categories without a VERB_STEP entry fall back to VERB_STEP_DEFAULT.
+const VERB_STEP_DEFAULT = 5;
+const VERB_STEP = {
+  contact:15, change:15, communication:15,   // ≥1500 verbs
+  social:12, motion:12,                       // 900–1499
+  possession:10, stative:10, creation:10, cognition:10, emotion:10, perception:10, body:10,  // 500–899
+  competition:6, consumption:6,               // 200–499
+  weather:3                                   // <100
+};
+function verbStep(cat){ return VERB_STEP[cat] || VERB_STEP_DEFAULT; }
 const SPEED_STEP       = 12;     // +px/s base move speed per motion "speed" rung (base 180 — a fraction)
+const MAX_MOVE_SPEED   = 380;    // hard ceiling for the motion perk — keeps the character steerable on a 720px stage
 const ATTACK_STEP      = 0.5;    // +damage per competition "attack" rung (base 1; CREATURE_HP=1, CUBE_HP=2)
 const SATCHEL_STEP     = 1;      // +satchel capacity per possession "satchel" rung
+const HEART_STEP       = 1;      // +max hearts per body "hearts" (Vitality) rung
+const MAX_HEARTS_CAP   = 16;     // hard ceiling for max hearts — keeps the HUD heart-row within the 720px stage
+const SECOND_WIND_SEC  = 8;      // seconds out of combat (in the field) to recover a heart via Second Wind
 const SLIDE_SPEED      = 640;    // px/s of the Slide lunge (base move ~180)
 const SLIDE_TIME       = 0.18;   // seconds the slide lasts
 const SLIDE_CD         = 1.0;    // seconds between slides
@@ -1901,42 +1921,80 @@ const TREASURE_PULSE     = 2.2;  // glint pulses/sec at Treasure Sense (level 1)
 const TREASURE_PULSE_STEP= 0.8;  // +pulses/sec per Keener rung (raises glint vividness/coverage)
 
 // Each ladder: milestone word-count → reward type. Past the last explicit rung, milestones repeat VERB_REPEAT.
+// Rung `at` values sit ON each category's milestone grid (1, step, 2·step, …) — see VERB_STEP. Regraded
+// 2026-07 so ability pacing scales with pool size (motion step 12, competition step 6, perception/
+// possession step 10). Body (Vitality) is the first of the remaining categories, stepped at 10.
 const VERB_LADDERS = {
-  motion:      [ {at:1,type:"speed"},  {at:5,type:"slide"},    {at:10,type:"speed"} ],
-  competition: [ {at:1,type:"attack"}, {at:5,type:"finisher"}, {at:10,type:"attack"}, {at:15,type:"combo"} ],
-  perception:  [ {at:1,type:"divine"}, {at:5,type:"treasure"}, {at:10,type:"keener"} ],
-  possession:  [ {at:1,type:"satchel"},{at:5,type:"magnet"},   {at:10,type:"satchel"} ]
+  motion:      [ {at:1,type:"speed"},  {at:12,type:"slide"},    {at:24,type:"speed"} ],
+  competition: [ {at:1,type:"attack"}, {at:6,type:"finisher"},  {at:12,type:"attack"}, {at:18,type:"combo"} ],
+  perception:  [ {at:1,type:"divine"}, {at:10,type:"treasure"}, {at:20,type:"keener"} ],
+  possession:  [ {at:1,type:"satchel"},{at:10,type:"magnet"},   {at:20,type:"satchel"} ],
+  body:        [ {at:1,type:"hearts"}, {at:10,type:"secondwind"},{at:20,type:"hearts"} ]
 };
-const VERB_REPEAT = { motion:"speed", competition:"attack", perception:"keener", possession:"satchel" };
-const VERB_CAT_LABEL = { motion:"Motion", competition:"Competition", perception:"Perception", possession:"Possession" };
+const VERB_REPEAT = { motion:"speed", competition:"attack", perception:"keener", possession:"satchel", body:"hearts" };
+const VERB_CAT_LABEL = { motion:"Motion", competition:"Competition", perception:"Perception", possession:"Possession", body:"Body" };
 const REWARD_LABEL = {
   speed:"Speed boost", slide:"Slide", attack:"Attack boost", finisher:"Finisher", combo:"Combo",
-  divine:"Divine", treasure:"Treasure Sense", keener:"Keener senses", satchel:"+1 Satchel", magnet:"Magnet"
+  divine:"Divine", treasure:"Treasure Sense", keener:"Keener senses", satchel:"+1 Satchel", magnet:"Magnet",
+  hearts:"+1 Heart", secondwind:"Second Wind"
 };
-function isVerbMilestone(n){ return n===1 || (n>0 && n%VERB_MS_STEP===0); }
-function verbMilestonesUpTo(n){ const out=[]; if(n>=1) out.push(1); for(let m=VERB_MS_STEP;m<=n;m+=VERB_MS_STEP) out.push(m); return out; }
+// The milestone GRID for a category. Explicit ladder rungs sit on the arithmetic grid (1, step, 2·step … up
+// to the last rung — ladders keep their rungs dense on that grid); AFTER the last explicit rung the repeat-
+// passive tail fires at a GROWING gap (step·1, step·2, step·3 …), i.e. positions last + step·(k(k+1)/2). This
+// makes each successive repeat cost more so passive stats grow sub-linearly instead of ballooning with the
+// (huge) verb pools. `last` = a ladder's final explicit rung (or `step` when a category has no ladder yet).
+function verbLast(cat){ const L=VERB_LADDERS[cat]; return L ? L[L.length-1].at : verbStep(cat); }
+function isVerbMilestone(cat,n){
+  if(n===1) return true;
+  const s=verbStep(cat), last=verbLast(cat);
+  if(n<=last) return n>0 && n%s===0;              // still on the arithmetic (explicit-rung) grid
+  const t=(n-last)/s; if(!Number.isInteger(t)) return false;   // repeat tail: n = last + s·T_k, T_k = k(k+1)/2
+  const k=(Math.sqrt(8*t+1)-1)/2; return Number.isInteger(k) && k>=1;
+}
+function verbMilestonesUpTo(cat,n){
+  const s=verbStep(cat), last=verbLast(cat), out=[];
+  if(n>=1) out.push(1);
+  for(let m=s;m<=last && m<=n;m+=s) out.push(m);   // arithmetic grid up to the last explicit rung
+  let pos=last, k=1; while((pos+=s*k)<=n){ out.push(pos); k++; }   // then growing-gap repeats
+  return out;
+}
+function nextVerbMilestone(cat,count){
+  const s=verbStep(cat), last=verbLast(cat);
+  if(count<1) return 1;
+  if(count<last) return Math.floor(count/s)*s+s;   // next arithmetic-grid rung
+  let pos=last, k=1; while(pos<=count) pos+=s*(k++); return pos;   // next growing-gap repeat
+}
+function prevVerbMilestone(cat,n){                  // largest milestone ≤ n (segment start for the panel bar)
+  const s=verbStep(cat), last=verbLast(cat);
+  if(n<1) return 0;
+  if(n<=last) return n<s?1:Math.floor(n/s)*s;
+  let pos=last, prev=last, k=1; while(pos<=n){ prev=pos; pos+=s*(k++); } return prev;
+}
 function verbRewardAt(cat, count){                  // the reward handed out when `cat` reaches `count`
   const L=VERB_LADDERS[cat]; if(!L) return null;
   const rung=L.find(r=>r.at===count); if(rung) return rung.type;
-  if(isVerbMilestone(count) && count>L[L.length-1].at) return VERB_REPEAT[cat];
+  if(isVerbMilestone(cat,count) && count>L[L.length-1].at) return VERB_REPEAT[cat];
   return null;
 }
 // Derive all perks from the persisted counts. Called on load, on snapshot restore, and after each new verb.
 function computePerks(){
   const c=state.verbCounts||{};
-  const p={ speed:0, attack:0, satchel:0, slide:false, finisher:false, combo:false, divine:false, treasure:0 };
+  const p={ speed:0, attack:0, satchel:0, hearts:0, slide:false, finisher:false, combo:false, divine:false, treasure:0, magnet:false, secondwind:false };
   for(const cat in VERB_LADDERS){
-    for(const m of verbMilestonesUpTo(c[cat]||0)){
+    for(const m of verbMilestonesUpTo(cat, c[cat]||0)){
       switch(verbRewardAt(cat,m)){
         case "speed":   p.speed+=SPEED_STEP; break;
         case "attack":  p.attack+=ATTACK_STEP; break;
         case "satchel": p.satchel+=SATCHEL_STEP; break;
+        case "hearts":  p.hearts+=HEART_STEP; break;
         case "slide":   p.slide=true; break;
         case "finisher":p.finisher=true; break;
         case "combo":   p.combo=true; break;
         case "divine":  p.divine=true; break;
         case "treasure":p.treasure=Math.max(p.treasure,1); break;
         case "keener":  p.treasure+=1; break;
+        case "magnet":  p.magnet=true; break;
+        case "secondwind": p.secondwind=true; break;
       }
     }
   }
@@ -1959,11 +2017,11 @@ function onNewVerbWord(word){
   const n=(state.verbCounts[cat]||0)+1; state.verbCounts[cat]=n;
   computePerks();
   if(!VERB_LADDERS[cat]) return;   // only the populated categories celebrate/show progress
-  if(isVerbMilestone(n) && verbRewardAt(cat,n)==="satchel") updateTrayHud();   // the N/cap readout just grew
+  if(isVerbMilestone(cat,n) && verbRewardAt(cat,n)==="satchel") updateTrayHud();   // the N/cap readout just grew
   pendingFeat={ cat, n };
 }
 // Effective stats (base + verb perks; potions still multiply on top where they apply).
-function moveSpeed(){ return 180 + (state.perks?state.perks.speed:0); }
+function moveSpeed(){ return Math.min(MAX_MOVE_SPEED, 180 + (state.perks?state.perks.speed:0)); }  // capped for steerability
 function attackDmg(){ return ATTACK.dmg + (state.perks?state.perks.attack:0) + comboBonus() + (equipBonuses().attack||0); }
 function satchelCap(){ return state.bagCap + (state.perks?state.perks.satchel:0); }
 // Combo (competition perk): consecutive hits within COMBO_WINDOW ramp damage; a miss/timeout resets it.
@@ -2080,7 +2138,7 @@ const state = {
   books:[],                     // ids of books fully restored (added to your library) (persist)
   fables:1,                     // how many Aesop chapters are RECOVERED (unlocked), in book order — chapter 1 is free (persist)
   verbCounts:{},                // verb category -> distinct verbs collected (persist; re-derived from dex on load)
-  perks:{ speed:0, attack:0, satchel:0, slide:false, finisher:false, combo:false, divine:false, treasure:0 },  // derived from verbCounts
+  perks:{ speed:0, attack:0, satchel:0, hearts:0, slide:false, finisher:false, combo:false, divine:false, treasure:0, magnet:false, secondwind:false },  // derived from verbCounts
   divineDay:"",                 // date-string of the last Divine peek (day-scoped like the WOTD)
   divine:null,                  // {day, word, i} — the letter revealed by today's Divine, shown in the book view
   obstacleDay:{},               // obstacle id -> day-string it was solved/passable (resets daily; persisted)
@@ -3006,7 +3064,7 @@ function collectPickup(pk){
 function hurtPlayer(fx,fy){
   const p=state.player;
   if(p.hurtT>0 || p.hearts<=0) return;
-  p.hearts--; p.hurtT=hurtIframes();
+  p.hearts--; p.hurtT=hurtIframes(); p.swT=0;   // taking a hit resets Second Wind's out-of-combat timer
   const dx=p.x-fx, dy=p.y-fy, d=Math.hypot(dx,dy)||1;   // shove the player away from the cube
   p.x=Math.max(6,Math.min(W-6, p.x+dx/d*34)); p.y=Math.max(6,Math.min(H-6, p.y+dy/d*34));
   SFX.play("invalid");
@@ -3069,6 +3127,11 @@ function update(dt){
   if(sc.isBase && p.hearts<maxHearts()){     // rest at home to recover hearts
     p.healT+=dt; if(p.healT>=HEAL_SEC){ p.healT=0; p.hearts++; SFX.play("known"); }
   } else p.healT=0;
+  // Second Wind (Body/Vitality feat): out in the field, staying out of combat recovers a heart over time.
+  // p.swT counts seconds since the last hit (reset in hurtPlayer); at home the base-heal above covers it.
+  if(state.perks && state.perks.secondwind && !sc.isBase && p.hearts>0 && p.hearts<maxHearts()){
+    p.swT=(p.swT||0)+dt; if(p.swT>=SECOND_WIND_SEC){ p.swT=0; p.hearts++; SFX.play("known"); }
+  } else if(p.swT) p.swT=0;
 
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
@@ -5394,7 +5457,7 @@ function equipBonuses(){
   if(state.blazonShield){ const sb=blazonBonuses(state.blazonShield); for(const k in sb) b[k]=(b[k]||0)+sb[k]; }
   return b;
 }
-function maxHearts(){ return PLAYER_MAX_HEARTS + (equipBonuses().hearts||0); }         // gear-adjusted heart cap
+function maxHearts(){ return Math.min(MAX_HEARTS_CAP, PLAYER_MAX_HEARTS + (equipBonuses().hearts||0) + ((state.perks&&state.perks.hearts)||0)); }  // gear + Body/Vitality perk, HUD-capped
 function hurtIframes(){ return HURT_IFRAMES + (equipBonuses().guard||0); }             // gear-adjusted invuln window
 function gearEquippedSlot(uid){ for(const s in state.equip) if(state.equip[s]===uid) return s; return null; }
 // Adjust current hearts by the change in max after an equip/unequip (equipping +hearts tops you up; unequipping trims, min 1).
@@ -6817,12 +6880,12 @@ function apVial(pole){
 // fills to 100%, hands out the reward, and STAYS (dismiss to continue); a plain step auto-dismisses.
 function showFeatProgress(cat, n){
   statsTab="ladders"; featWord=null;   // milestone pops always show the Ladders tab
-  const ms=isVerbMilestone(n);
-  const a = ms ? (n===1?0 : n===VERB_MS_STEP?1 : n-VERB_MS_STEP)          // just-completed segment start (milestone)
-               : (n<VERB_MS_STEP?1 : Math.floor(n/VERB_MS_STEP)*VERB_MS_STEP);  // current segment start
-  const b = ms ? n : nextVerbMilestone(n);
+  const ms=isVerbMilestone(cat,n);
+  const a = ms ? prevVerbMilestone(cat,n-1)      // milestone: segment = [previous milestone, n]
+               : prevVerbMilestone(cat,n);        // plain step: segment = [current milestone, next]
+  const b = ms ? n : nextVerbMilestone(cat,n);
   featAnim={ cat, fromPct:Math.max(0,Math.round(((n-1)-a)/(b-a)*100)), toPct:Math.min(100,Math.round((n-a)/(b-a)*100)),
-             reward: ms?verbRewardAt(cat,n):null, next:b, nextReward:REWARD_LABEL[verbRewardAt(cat, ms?nextVerbMilestone(n):b)]||"reward" };
+             reward: ms?verbRewardAt(cat,n):null, next:b, nextReward:REWARD_LABEL[verbRewardAt(cat, ms?nextVerbMilestone(cat,n):b)]||"reward" };
   clearTimeout(featAutoT);
   if(!state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen) openStats(); else renderStats();
   if(ms) SFX.play("unlockbig");
@@ -6833,7 +6896,6 @@ function showFeatProgress(cat, n){
     if(state.statsOpen && featAnim && featAnim.cat===cat && !featAnim.reward){ closeStats(); nextCelebration(); }
   }, 1400);
 }
-function nextVerbMilestone(count){ return count<1 ? 1 : Math.floor(count/VERB_MS_STEP)*VERB_MS_STEP+VERB_MS_STEP; }
 let statsTab="ladders";   // Feats panel tab: "ladders" (milestones) | "words" (verbs) | "guide" (relations primer)
 let featWord=null;        // within Words: the verb whose relatives page is showing, or null for the list
 // The verb relations we surface on a verb's relatives page. We deliberately show only the relations that are
@@ -6858,7 +6920,7 @@ function renderStats(){
   for(const cat in VERB_LADDERS){
     const n=(state.verbCounts&&state.verbCounts[cat])||0;
     const tally={};   // earned rewards so far (tally by type, in ladder feel)
-    for(const m of verbMilestonesUpTo(n)){ const t=verbRewardAt(cat,m); if(t) tally[t]=(tally[t]||0)+1; }
+    for(const m of verbMilestonesUpTo(cat,n)){ const t=verbRewardAt(cat,m); if(t) tally[t]=(tally[t]||0)+1; }
     const earned=Object.keys(tally).map(t=>REWARD_LABEL[t]+(tally[t]>1?" ×"+tally[t]:"")).join(" · ") || "—";
     const head=`<div class="feat-head"><span class="nm">${esc(VERB_CAT_LABEL[cat])}</span><span class="ct">${n} verb${n===1?"":"s"}</span></div>`
              + `<div class="feat-rewards">${esc(earned)}</div>`;
@@ -6870,8 +6932,8 @@ function renderStats(){
       html+=`<div class="feat-cat feat-live${featAnim.reward?" levelup":""}">${head}${line}<div class="feat-bar"><i style="width:${featAnim.fromPct}%"></i></div></div>`;
       continue;
     }
-    const next=nextVerbMilestone(n), nextReward=REWARD_LABEL[verbRewardAt(cat,next)]||"reward";
-    const prev=n<1?0:(n<VERB_MS_STEP?1:Math.floor(n/VERB_MS_STEP)*VERB_MS_STEP);   // start of the current segment
+    const next=nextVerbMilestone(cat,n), nextReward=REWARD_LABEL[verbRewardAt(cat,next)]||"reward";
+    const prev=prevVerbMilestone(cat,n);   // start of the current segment (grid-aware: arithmetic then growing gap)
     const span=next-prev, pct=Math.max(0,Math.min(100, Math.round((n-prev)/span*100)));
     html+=`<div class="feat-cat">${head}<div class="feat-next">Next at ${next}: <b>${esc(nextReward)}</b> &nbsp;(${n}/${next})</div><div class="feat-bar"><i style="width:${pct}%"></i></div></div>`;
   }

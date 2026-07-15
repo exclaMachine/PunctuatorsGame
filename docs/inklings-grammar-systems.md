@@ -29,7 +29,7 @@ built on a separate drop-acquired vocabulary so it doesn't compete with these PO
 | POS                | System(s)                                                                                                                                                 | Teaches                          | Guide                               |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ----------------------------------- |
 | **Noun**           | ink (economy) · **hypernym shelves** (taxonomy) · **attribute-flasks** (grow potion carry — bonus, not a gate) · **proper-noun atlases** (geography, §4b) | IS-A hierarchy; proper vs common | _(taxonomy guide — deferred)_       |
-| **Verb**           | Feats ladders + abilities (existing) · **relations Guide + relatives page** (§5b) · "**action**" obstacle solutions                                       | verb categories; troponymy       | Feats **Guide** tab (§5b)           |
+| **Verb**           | Feats ladders + abilities (4 of 15 cats; remaining ladders §5d, tentative) · **relations Guide + relatives page** (§5b) · "**action**" obstacle solutions | verb categories; troponymy       | Feats **Guide** tab (§5b)           |
 | **Adjective**      | **potions** — the WordNet "dumbbell" (self-buff / antonym-debuff _all beasts on screen_ / world) · **relations Guide + relatives page** (§5c) · "**state**" obstacle solutions | antonymy, similar-to, attribute  | Apothecary **Guide** tab (§5c) + **Antonym 🐜** / **Synonomouse 🐭** |
 | **Adverb**         | potion **amplifiers** (adjective→adverb derivation) — later · **relations home staked** in the Apothecary Adverbs tab (§5c)                                | derivation (pertainym)           | Apothecary **Guide** tab (§5c)      |
 | **Modal verb**     | hints / possibility (existing À La Modal)                                                                                                                 | modality                         | **À La Modal**                      |
@@ -283,6 +283,139 @@ Note the thematic tie-in: the adjective **similar-to** list *is* the synonym set
 **attribute** noun is the one that grants the flask bonus — so the relations page teaches the exact vocabulary
 the dumbbell mechanic runs on. The **per-POS rebuild TODO above (§5b)** applies here too: it would give
 adjectives a correct gloss and could add cleaner data, but the shipped UI needs no rework.
+
+---
+
+## 5d. Verb Feats — the remaining category ladders
+
+**Status:** the **per-category step (`VERB_STEP`)** and **Body/Vitality (Option A)** are **SHIPPED (2026-07)**;
+the 4 pre-existing ladders were **regraded** to the size-scaled steps at the same time. The **other 10
+categories remain a tentative brainstorm** (§5d.2). The engine now ships **5 of WordNet's 15 verb
+categories** with reward ladders (`VERB_LADDERS`, `inklings.html`). Each ladder follows the shipped shape: a
+**repeatable passive stat** interleaved with one or two **named abilities that literally embody the verb
+class** (Motion→Slide, Competition→Finisher/Combo, Body→Second Wind), so the reward stays teachable.
+
+### 5d.1 Category size drives milestone spacing (the key tuning knob)
+
+The categories are **wildly unequal in size**, so a flat "milestone every 5 verbs" is unfair: a giant
+category firehoses repeat-passives while a tiny one barely reaches its named abilities. **Shipped fix:** the
+old flat `VERB_MS_STEP` is now the **`VERB_STEP` map** (keyed by category, default 5) + a `verbStep(cat)`
+helper; `isVerbMilestone`/`verbMilestonesUpTo`/`nextVerbMilestone`/`verbRewardAt` and the panel all read it.
+Distinct-verb counts in `data/verb-cats.json` (12,835 mapped verbs total) → shipped steps:
+
+| Category          | Verbs | Step (shipped) | Named-ability rungs (at 1 / step / 2×step) | Status |
+| ----------------- | ----- | -------------- | ------------------------------------------ | ------ |
+| **contact**       | 1965  | 15             | 1 / 15 / 30                                 | open   |
+| **change**        | 1895  | 15             | 1 / 15 / 30                                 | open   |
+| **communication** | 1589  | 15             | 1 / 15 / 30                                 | open   |
+| **social**        | 1227  | 12             | 1 / 12 / 24                                 | open   |
+| motion            | 1216  | 12             | 1 / 12 / 24                                 | ✅ shipped (regraded) |
+| possession        | 737   | 10             | 1 / 10 / 20                                 | ✅ shipped (regraded) |
+| **stative**       | 695   | 10             | 1 / 10 / 20                                 | open   |
+| **creation**      | 639   | 10             | 1 / 10 / 20                                 | open   |
+| **cognition**     | 634   | 10             | 1 / 10 / 20                                 | open   |
+| **emotion**       | 578   | 10             | 1 / 10 / 20                                 | open   |
+| perception        | 553   | 10             | 1 / 10 / 20                                 | ✅ shipped (regraded) |
+| **body**          | 518   | 10             | 1 / 10 / 20                                 | ✅ **shipped (Vitality/Second Wind)** |
+| competition       | 287   | 6              | 1 / 6 / 12 / 18                             | ✅ shipped (regraded) |
+| **consumption**   | 226   | 6              | 1 / 6 / 12                                  | open   |
+| **weather**       | 76    | 3              | 1 / 3 / 6                                    | open   |
+
+**Design rule:** the per-category `step` sets the *early* cadence (where the named abilities land) and scales
+to pool size so the abilities are comparably reachable across categories. Rung `at` values in `VERB_LADDERS`
+sit **on** each category's milestone grid.
+
+- **The 4 pre-existing ladders were regraded** (dev's call), not grandfathered: motion 5→12, competition
+  5→6, perception/possession 5→10, and their explicit rungs moved onto the new grid (e.g. Slide 5→12,
+  Finisher 5→6). Perks are re-derived from counts on load (`rederiveVerbCounts`), so this is retroactive:
+  a save that had, say, 8 motion verbs **loses Slide** until it reaches 12 — an intentional pacing change,
+  not a bug. (Big categories were rewarding abilities too cheaply.)
+- **Weather stays viable as a real feat *because* of this rule** (the dev's call): its 76-verb pool would
+  never fill a step-5 ladder past the first rungs, but **step 3** puts its named abilities at 1 / 3 / 6 —
+  reachable — while the repeat cadence stays honest. No need to fold it into another category.
+
+#### 5d.1a Growing-gap repeat tail + hard caps (SHIPPED 2026-07) — *why a fixed step isn't enough*
+
+A **fixed** repeat step (even a big one) still inflates passive stats **linearly with the verb pool**, and the
+pools are enormous. Measured at *full-pool collection* under the old fixed-step repeat (base speed 180 px/s
+on a 720×528 stage, base 3 hearts, HUD heart-row ~24px each):
+
+| Passive | Fixed-step repeat @ full pool | Problem |
+| ------- | ----------------------------- | ------- |
+| Motion → speed | 101 rungs → **1392 px/s (7.7×)**, crosses the stage in 0.52 s (2366 w/potion) | 🔴 uncontrollable |
+| Body → hearts | 51 rungs → **54 hearts, HUD row 1285 px** | 🔴 overflows the 720 px stage (breaks ~30 hearts) |
+| Competition → attack | 46 rungs → dmg 24 = **12× a cube's HP** | 🟠 trivializes combat |
+| Possession → satchel | 73 rungs → 83 slots | 🟢 harmless |
+
+**Fix (shipped):** after a ladder's **last explicit rung**, the repeat-passive tail fires at a **growing gap**
+(step·1, step·2, step·3 …, i.e. positions `last + step·k(k+1)/2`), so each further repeat costs progressively
+more and the stat grows **sub-linearly** (~√pool rungs). Same full-pool collection now yields:
+
+| Passive | Growing-gap @ full pool |
+| ------- | ----------------------- |
+| Motion → speed | **15 rungs → 360 px/s (2.0×)** — fast but steerable |
+| Body → hearts | **11 rungs → 14 hearts**, HUD row 333 px — fits |
+| Competition → attack | 8 rungs → dmg ~5 |
+
+That's **5–8× fewer repeat rungs**. Because a growing *arithmetic* gap still isn't a *hard* ceiling, the two
+stats with a genuine ceiling also get an **absolute cap**: `MAX_MOVE_SPEED` (380 px/s, steerability) and
+`MAX_HEARTS_CAP` (16, the HUD heart-row width). Satchel/attack need no cap (harmless / merely strong).
+
+**Implementation:** the milestone grid is no longer uniformly arithmetic — `verbLast`/`isVerbMilestone`/
+`verbMilestonesUpTo`/`nextVerbMilestone`/`prevVerbMilestone` compute *arithmetic up to the last explicit rung,
+then growing-gap repeats*. Named (one-time) abilities are unaffected; only the repeat tail changed.
+
+### 5d.2 Candidate feats per category (2 options each; **all tentative**)
+
+Trimmed from the 2026-07 brainstorm. **⚠️ = overlaps another planned system** — settle the shared "home"
+before wiring so the same ability isn't owned twice.
+
+- **🫀 Body** (breathe, heal, rest, wake) — **A ✅ SHIPPED (2026-07) → Vitality:** passive **+max hearts**
+  (`hearts` reward, `HEART_STEP=1`, added into `maxHearts()`); ability **Second Wind** — recover a heart after
+  `SECOND_WIND_SEC` (8 s) out of combat **in the field** (`p.swT` counts up in the field update, resets on any
+  hit; home still heals via `HEAL_SEC`). Ladder: 1→+heart · 10→Second Wind · 20→+heart · (+heart every 10).
+  · **B — Toughness (not taken):** passive longer guard i-frames; ability **Brace** — shrug the next hit /
+  cancel knockback.
+- **🔄 Change** (transform, melt, grow, freeze) — **A — Transmute:** ability **Reclaim** (drop → ink or reroll);
+  passive stronger brews. · **B — Metamorph:** ability **Shift** (brief phase/camouflage past a hazard);
+  passive faster potion onset.
+- **🧠 Cognition** (think, know, learn, remember) — **A — Scholar:** passive **+ink per word**; ability **Recall**
+  (one free definition/hint). · **B — Foresight:** ability slow-mo telegraph of enemy wind-ups; passive softer
+  Wordsmithy misspell penalty.
+- **🗣 Communication** (speak, tell, sing, write) — **A — Silver Tongue:** ability **Parley** (chance to pacify
+  a creature); passive shop discount. · **B — Rallying Cry:** ability **Shout** (area stun/knockback). **⚠️
+  overlaps** [`inklings-shouts.md`](inklings-shouts.md) — pick one owner for "shout."
+- **🍽 Consumption** (eat, drink, use, exhaust) — **A — Gourmand:** ability **Devour** (eat a defeated creature
+  → small heal/buff); passive food/potions restore more. · **B — Efficiency:** passive doses last longer / cost
+  less; ability **Stockpile** (occasional free dose refund).
+- **✋ Contact** (touch, hit, cut, press, catch) — **A — Grip:** passive **+attack reach/hitbox**; ability
+  **Grapple** (yank an enemy in). · **B — Cleave:** ability hits pierce adjacent enemies; passive bonus vs
+  armored foes.
+- **🔨 Creation** (make, build, craft, draw, cook) — **A — Artisan:** ability **Craft** (build placeable
+  décor/tools from materials); passive cheaper crafting. **⚠️ natural home** for the non-attribute-adjective
+  crafting bucket (§7.6) + [`inklings-placement.md`](inklings-placement.md). · **B — Conjure:** ability summon a
+  temporary construct (decoy/bridge plank); passive **+1 farm yield**.
+- **❤️ Emotion** (love, fear, anger, calm) — **A — Fervor:** ability **Fury** (attack up while at low hearts);
+  passive resist fear/aggro effects. · **B — Bond:** passive stronger companion-pet bonus; ability **Soothe**
+  (calm/heal). **⚠️ leans on** [`inklings-companions.md`](inklings-companions.md).
+- **🤝 Social** (help, join, meet, serve) — **A — Camaraderie:** ability **Ally** (call a temporary helper);
+  passive companion effectiveness up. **⚠️ companions.** · **B — Reputation:** passive better prices/drop rates;
+  ability **Recruit** (defeated foe briefly joins).
+- **🧘 Stative** (be, stay, remain, belong, exist) — **A — Steadfast:** ability **Hold Ground** (stance:
+  immovable + damage reduction); passive buffs/potions persist longer. · **B — Presence:** passive quiet aura
+  (slow regen or drift drops in); ability **Stasis** (freeze own state to negate one hit).
+- **🌦 Weather** (rain, storm, shine, thunder) — **A — Stormcaller:** ability **Squall** (lightning/gust area
+  hit); passive minor elemental resist. · **B — Fair Weather:** passive regen outdoors/in daylight; ability
+  **Clear Skies** (dispel weather hazards / reveal screen — pairs with Bright).
+
+### 5d.3 Plumbing cost
+
+Passive rewards (max-hearts, reach, ink-per-word, drop-rate, farm-yield) are **cheap** — add a field to
+`computePerks()` and read it in the relevant getter. **Active abilities** (Grapple, Shout, Craft, Ally…)
+each need real behavior + a `REWARD_LABEL` entry + often HUD/cooldown, so they're the real cost. **Body A
+was the pilot** for the size-scaled-step change (its +max-hearts passive is a getter tweak; Second Wind is
+one field timer). **Fixed alongside:** the **Magnet** perk (possession) was inert — `computePerks` never set
+`p.magnet` — now wired. **Recommended path for the remaining 10:** ship passive-heavy rungs first.
 
 ---
 
