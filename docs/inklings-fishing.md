@@ -30,7 +30,11 @@ each catch (returns new-vs-repeat), and a bestiary-style `#phonicon` sound-dex v
 hint word · ×count), uncaught locked `???`. Save bumped **v4→v5**, `phonicon` added to
 `snapshot`/`applySnapshot` (additive; old saves default `{}`). A **first-catch flourish** is the louder
 `unlockbig` SFX + an in-modal "✨ new sound" card; the polished field-level celebration-queue pop stays
-step-5 tuning. The word-level shared phoneme engine (`data/pronunciations.json` +
+step-5 tuning. **Fish fiction added (2026-07-15):** each phoneme is now a named **sound-fish** (`fish`/`emoji`/
+`habitat` fields on `data/phonemes.json`) — the creature shows on the line while guessing (name hidden until
+the catch), obscure non-hinting fish for rarer sounds, all rendered through the single swap point `fishGlyph()`
+so emoji→sprite is a one-function change (§3.1, §7); `habitat` is a dormant open-vocab tag (pond/lake/river/
+ocean) for future edge-water maps, all catchable in ponds now except the two ocean-only rares. The word-level shared phoneme engine (`data/pronunciations.json` +
 `rhymeKey`/`syllables`, poetry §11.1) stays **deliberately deferred** — fishing v1's typed loop doesn't
 consume it; stand it up when poetry / the Sound Garden needs it.
 
@@ -120,19 +124,34 @@ stable all day and fresh tomorrow — same Wordle rhythm as everything else. Whe
 `data/phonemes.json` — the ~44 English phonemes, each with:
 
 ```
-{ ipa:"ʃ", roman:["sh"], accepts:["sh"], hintWord:"ship", tier:"common", depth:1 }
-{ ipa:"θ", roman:["th"], accepts:["th"], hintWord:"thin", tier:"mid",    depth:2 }
-{ ipa:"uː", roman:["oo"], accepts:["oo","u"], hintWord:"moon", tier:"common", depth:1 }
+{ ipa:"ʃ", roman:"sh", accepts:["sh"], hintWord:"ship", tier:"mid", depth:2, fish:"Shad", emoji:"🐡", habitat:["pond","river"] }
+{ ipa:"ð", roman:"th", accepts:["th"], hintWord:"this", tier:"rare", depth:3, fish:"Coelacanth", emoji:"🦈", habitat:["ocean"] }
+{ ipa:"u", roman:"oo", accepts:["oo","u","ew"], hintWord:"moon", tier:"common", depth:1, fish:"Moonfish", emoji:"🐟", habitat:["pond","ocean"] }
 ```
 
 - `ipa` — the symbol shown on the line at shallow depth.
-- `roman` / `accepts` — the **typed answer(s)**. Many phonemes have several common spellings (`/uː/` →
+- `roman` / `accepts` — the **typed answer(s)**. Many phonemes have several common spellings (`/u/` →
   "oo", "u", "ew"); `accepts` is the **lenient set** so the input isn't a memory-trap. The primary `roman`
   is what a hint reveals.
 - `hintWord` — a keyword example (`/ʃ/` → "**sh**ip") shown at shallow depth to teach the sound→spelling map.
 - `tier` — rarity (common / mid / rare), driving spawn weight and where a phoneme skews (rarer sounds bite
   in deeper / farther-from-home water, echoing the letter-unlock distance scaling).
 - `depth` — the shallowest depth at which this phoneme appears (see §4.2).
+- `fish` — the **sound-fish's display name** (the "Fish fiction" of §7, now built). Revealed **only on the
+  catch/reveal**, never while the player is still guessing, and deliberately **obscure for rarer sounds** so
+  the name can't give the answer away (e.g. `/ʒ/` → "Mirage eel", `/ð/` → "Coelacanth"). Non-hinting is the
+  point — the fish is flavor, not a crib.
+- `emoji` — a **placeholder glyph** for the creature, rendered through the single swap point **`fishGlyph(ph)`**
+  in `inklings.html` (per docs/inklings.md "Emoji are placeholders"). Real sprite art = edit that one function;
+  the emoji repeats across entries because the fish *name* carries the identity until art exists. `fishGlyph`
+  also supports a `silhouette` mask (used for uncaught Phonicon slots — a generic mystery fish — and available
+  to hide the creature's shape while guessing).
+- `habitat` — a **dormant, open-vocabulary tag array** (`pond` | `lake` | `river` | `ocean` | …, extensible)
+  for the future edge-water maps (§0). **Not yet used to gate spawns** — `pickPhoneme` ignores it — but
+  authored ahead so the feature needs no data pass later. Every fish includes `pond` (so all 40 are catchable
+  now) **except** the two rare deep-sea fish (`/ð/` Coelacanth, `/ʒ/` Mirage eel), which are `["ocean"]`-only
+  to seed the "certain fish live only in the ocean" idea. When ocean water and habitat gating both exist, those
+  two become ocean-exclusive; until then nothing is stranded.
 
 This file is **hand-authored** (44 entries — trivial next to the Gutenberg/WordNet pipelines) and
 **data-driven** so the romanization map and tiers tune without code. It is the **canonical sound→spelling
@@ -287,8 +306,14 @@ prematurely:
 - **Rhythm-reel variant** — an optional reeling minigame reusing the poetry axe-chop timing primitive and/or
   the cipher menagerie's Morse/semaphore framing (fish taps its sound in rhythm). Brainstormed, not planned.
 - **Canvas bobber polish** — animating the cast/bite on the world canvas instead of a pure dialog.
-- **Fish fiction** — whether catches are literally "sound-fish" creatures (art, names, a bestiary-style
-  flavor) or abstract phoneme tokens. Cosmetic, open.
+- **Fish fiction — DECIDED & BUILT (2026-07-15):** catches are literally **sound-fish creatures** — each
+  phoneme has a `fish` name + `emoji` placeholder glyph in `data/phonemes.json` (§3.1). The creature shows
+  on the line while guessing (name hidden), the name reveals on catch, and the Phonicon shows caught fish
+  (uncaught = generic silhouette). Rarer sounds get obscure, non-hinting fish. Emoji render through the
+  single swap point `fishGlyph(ph)` so sprite art is a one-function change (docs/inklings.md "Emoji are
+  placeholders"). Open sub-items: real per-fish **sprite art**, and the **ocean-only habitat** gating once
+  edge-water maps exist (habitat tags are authored but dormant, §3.1). Silhouette-while-guessing (dim the
+  creature so its shape also can't hint) is wired in `fishGlyph` but not yet toggled on.
 
 ---
 

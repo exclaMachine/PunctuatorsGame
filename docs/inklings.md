@@ -1108,6 +1108,15 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   list before library room, click before drag).
 - Spend polish budget on the **word-collection moment** — the definition reveal is the emotional
   core; that half-second should always feel good.
+- **Emoji are placeholders.** Where a system shows an emoji as content-art (a creature, an item, a
+  décor piece — not a UI affordance like ⚙️/✖), treat it as a **stand-in for future sprite art** and
+  render it through **one swap point** so real art lands with no scattered edits. The reference pattern
+  is fishing's **`fishGlyph(ph)`** (the sound-fish creature) — every fishing + Phonicon view renders the
+  emoji through that single function, so swapping to `sprites/` PNGs (like creatures already do via the
+  `sprite`/`spriteSize` loader, §Creatures) is a one-function change. When you add a new emoji-fronted
+  system, give it its own `xGlyph()` helper rather than inlining the emoji at each render site. (Existing
+  inline-emoji spots — e.g. `EQUIP_ITEMS.emoji`, décor — pre-date this rule; centralize them opportunistically
+  when touched, don't do a blanket retrofit.)
 
 ---
 

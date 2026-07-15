@@ -166,6 +166,8 @@
   .phon-card{background:var(--paper-2);border:2px solid var(--edge);padding:8px 6px;text-align:center;
     box-shadow:2px 2px 0 rgba(0,0,0,.25);display:flex;flex-direction:column;gap:3px;min-height:96px;justify-content:center}
   .phon-card.locked{background:#26233a;gap:6px;color:#4a4560}
+  .phon-fish{font-size:28px;line-height:1}
+  .phon-name{font-family:var(--disp);font-size:7px;color:var(--gold);letter-spacing:.4px}
   .phon-sym{font-family:var(--read);font-size:26px;line-height:1;color:var(--ink)}
   .phon-card.locked .phon-sym{color:#4a4560}
   .phon-roman{font-family:var(--read);font-size:15px;color:var(--ink)}
@@ -415,6 +417,10 @@
   .fish-line{background:var(--paper-2);border:2px solid var(--line);padding:16px;text-align:center;margin:12px 0}
   .fish-symbol{font-family:var(--read);font-size:42px;line-height:1;color:var(--ink)}
   .fish-caught .fish-symbol{color:var(--moss)}
+  .fish-creature{font-size:48px;line-height:1;margin-bottom:6px}
+  .fish-name{font-family:var(--disp);font-size:10px;color:var(--gold);margin-bottom:6px;letter-spacing:.5px}
+  .fish-glyph{display:inline-block}
+  .fish-glyph.silhouette{filter:brightness(0) opacity(.55)}
   .fish-hint{font-family:var(--read);font-size:14px;color:var(--ink-soft);margin-top:8px}
   .fish-bob{font-size:34px;line-height:1;animation:fishbob 1s ease-in-out infinite}
   @keyframes fishbob{0%,100%{transform:translateY(-5px)}50%{transform:translateY(5px)}}
@@ -1689,7 +1695,7 @@ fetch("data/creatures.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>
    Phonicon. This block is JUST the data + the pure lookup helpers (no UI, no modal, no state yet) — the cast
    interaction (step 2) and the shallow/mid loop + Phonicon (steps 3-4) build on these. Kept self-contained so
    nothing in combat or the desk is touched. Inventory is data/phonemes.json (the sound->spelling table). */
-let PHONEMES=null;                 // array of {ipa,roman,accepts,hintWord,tier,depth}
+let PHONEMES=null;                 // array of {ipa,roman,accepts,hintWord,tier,depth, fish,emoji,habitat}
 const PHONEMES_BY_IPA=Object.create(null);
 const PHONEME_TIER_WEIGHT={ common:6, mid:3, rare:1 };   // spawn weight by rarity (rarer bites less)
 fetch("data/phonemes.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{
@@ -1720,6 +1726,14 @@ function pickPhoneme(castDepth, rand){
   let r=rand()*total;
   for(const p of pool){ r-=(PHONEME_TIER_WEIGHT[p.tier]||1); if(r<0) return p; }
   return pool[pool.length-1];
+}
+// The sound-fish creature glyph (§3 "Fish fiction"). SINGLE SWAP POINT: emoji is a PLACEHOLDER — to move the
+// whole game to sprite art, return an <img src=…>/<span class="sprite"> here instead of the emoji; every fishing
+// + Phonicon view renders through this one function. opts.silhouette masks it (used for uncaught slots, and can
+// hide the creature's shape while the player is still guessing) — see docs/inklings.md "Emoji are placeholders".
+function fishGlyph(ph, opts){
+  const g=(ph&&ph.emoji)||"🐟";
+  return '<span class="fish-glyph'+(opts&&opts.silhouette?' silhouette':'')+'" aria-hidden="true">'+g+'</span>';
 }
 // What the line shows for a surfaced phoneme at a given depth (§4.2): shallow reveals symbol + hint word, mid
 // shows the symbol only, deep shows nothing (sound-only — deferred behind an audio source, §4.3). Pure view
@@ -6320,7 +6334,8 @@ function renderFishing(){
   if(s==="biting"){
     const rv=phonemeReveal(fish.target, fish.depth);
     const sym = rv.showSymbol ? '/'+rv.symbol+'/' : '?';
-    let line='<div class="fish-symbol">'+sym+'</div>';
+    // The creature shows while guessing, but NOT its name — the fish must never give the sound away (§3).
+    let line='<div class="fish-creature">'+fishGlyph(fish.target)+'</div><div class="fish-symbol">'+sym+'</div>';
     if(rv.showHint && rv.hintWord) line+='<div class="fish-hint">as in “'+rv.hintWord+'”</div>';
     body.innerHTML =
       '<p class="fish-lead">A sound surfaces on your line — <b>type its spelling</b> to set the hook!</p>'+
@@ -6346,6 +6361,8 @@ function renderFishing(){
     else msg = '🎣 Caught /'+t.ipa+'/ again — now ×'+((rec&&rec.count)||1)+' in your Phonicon.';
     body.innerHTML =
       '<div class="fish-line '+(caught?"fish-caught":"")+'">'+
+        '<div class="fish-creature">'+fishGlyph(t)+'</div>'+
+        (t.fish?'<div class="fish-name">'+esc(t.fish)+'</div>':'')+   // name revealed only now, on the catch/reveal
         '<div class="fish-symbol">/'+t.ipa+'/</div>'+
         '<div class="fish-hint">“'+spell+'” · as in “'+(t.hintWord||"")+'”</div>'+
       '</div>'+
@@ -6385,8 +6402,11 @@ function renderPhonicon(){
   document.getElementById("phon-count").textContent=`· ${caughtN}/${PHONEMES.length} caught`;
   grid.innerHTML=PHONEMES.map(p=>{
     const rec=state.phonicon && state.phonicon[p.ipa];
-    if(!rec) return `<div class="phon-card locked"><div class="phon-sym">?</div><div class="phon-lock">???</div></div>`;
-    return `<div class="phon-card"><div class="phon-sym">/${esc(p.ipa)}/</div>`+
+    // Locked slots show a GENERIC silhouette (fishGlyph(null)) so the specific creature stays a mystery.
+    if(!rec) return `<div class="phon-card locked"><div class="phon-fish">${fishGlyph(null,{silhouette:true})}</div><div class="phon-sym">?</div><div class="phon-lock">???</div></div>`;
+    return `<div class="phon-card"><div class="phon-fish">${fishGlyph(p)}</div>`+
+      `<div class="phon-sym">/${esc(p.ipa)}/</div>`+
+      (p.fish?`<div class="phon-name">${esc(p.fish)}</div>`:``)+
       `<div class="phon-roman">“${esc(p.roman)}”</div>`+
       `<div class="phon-word">as in <b>${esc(p.hintWord)}</b></div>`+
       `<div class="phon-times">×${rec.count||1}</div></div>`;
