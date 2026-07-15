@@ -847,7 +847,8 @@
   <!-- Desktop-only feature toolbar in the left pillar space (auto-hidden on narrow / touch) -->
   <aside id="side-left" class="sidepanel" aria-label="Menu">
     <div class="tb-title">Menu</div>
-    <button class="tb-btn" id="tb-home"><span class="tb-ico">🏡</span><span>Home</span><b>H</b></button>
+    <!-- Home/teleport button disabled for now — kept for a future teleport item/power -->
+    <button class="tb-btn" id="tb-home" style="display:none"><span class="tb-ico">🏡</span><span>Home</span></button>
     <button class="tb-btn" id="tb-dex"><span class="tb-ico">🐾</span><span>Bestiary</span><b>B</b></button>
     <button class="tb-btn" id="tb-phonicon"><span class="tb-ico">🔉</span><span>Fish Phoneme</span></button>
     <button class="tb-btn" id="tb-feats"><span class="tb-ico">✦</span><span>Feats</span><b>C</b></button>
@@ -1337,7 +1338,6 @@
         <div class="ctrl-grid kbd-only">
           <span><b>WASD</b> / <b>↑ ↓ ← →</b></span><span>Move</span>
           <span><b>Space</b></span><span>Attack</span>
-          <span><b>H</b></span><span>Teleport home — to the Wordsmithy in the Wordhoard</span>
           <span><b>E</b></span><span>Use what you're near: shop, the house (enter the Wordhoard), the Wordsmithy, Mad Libris</span>
           <span><b>O</b></span><span>Decorate the Wordhoard (or tap 🖼️): <b>Tab</b>/<b>Shift+Tab</b> pick a piece, <b>Space</b> place</span>
           <span><b>B</b></span><span>Open the bestiary (or tap the 🐾 button)</span>
@@ -1394,7 +1394,8 @@
       <div id="tact">
         <button class="tc-btn atk" id="tc-atk" aria-label="Attack">ATK</button>
         <div class="util-grid">
-          <button class="tc-btn util" id="tc-home" aria-label="Home to bench">HOME</button>
+          <!-- Home/teleport button disabled for now — kept for a future teleport item/power -->
+          <button class="tc-btn util" id="tc-home" aria-label="Home to bench" style="display:none">HOME</button>
           <button class="tc-btn util ico" id="tc-help" aria-label="Controls">?</button>
           <button class="tc-btn util ico" id="tc-dex" aria-label="Bestiary">🐾</button>
           <button class="tc-btn util ico" id="tc-phonicon" aria-label="Fish Phoneme">🔉</button>
@@ -2769,7 +2770,7 @@ addEventListener("keydown",e=>{
     return;                                // swallow the rest so no dialog opens mid-decorate
   }
   if(k==="o"){ togglePlaceMode(); return; }   // decorate: open the tray (Wordhoard for now)
-  if(k==="h") teleportHome();
+  // if(k==="h") teleportHome();   // Home hotkey disabled for now — kept for a future teleport item/power
   if(k==="e") tryUseBench();
   if(k==="b") openBestiary();
   if(k==="1") drinkPotion("size");

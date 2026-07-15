@@ -61,7 +61,7 @@ Home base (writing desk + library)
       → enter a field screen ("book")
       → hunt letter-creatures, attack to make them drop a letter
       → collect letters into your inventory
-      → return home (teleport)
+      → walk back to the home base + enter the library
       → spell a word at the desk
       → dictionary check
       → valid word saved to the library with its definition
@@ -631,8 +631,7 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   stat ladders) — remaining ~11 categories are meant to be filled into the same `VERB_LADDERS` table.
 - Outdoor home base (shop + the **house** that is your Library); bounded **daily map** of screens
   (`MAP_RADIUS`, currently 3×3; walls at the world edge), regenerated each real calendar day; walk-off-edge
-  travel between screens with a smooth **screen-slide** transition; `H` teleports home **to your desk inside
-  the library**; explored-area minimap (resets daily) — in the right desktop side panel / top mobile HUD band, with a
+  travel between screens with a smooth **screen-slide** transition; explored-area minimap (resets daily) — in the right desktop side panel / top mobile HUD band, with a
   translucent bottom-right on-canvas fallback on narrow desktop windows.
 - Attack-based combat (no bump-to-collect); **letter-creatures** (`kind:"letter"`) are captured in a
   **single hit** (`CREATURE_HP = 1`) and drop their letter. The satchel holds a capped number of letters
@@ -760,9 +759,10 @@ See the code map (**Creatures / drops / bestiary**) for the function-level wirin
 
 ## Controls
 
-**Keyboard (desktop):** Move `WASD` / arrows · Attack `Space` · Teleport
-home `H` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B` · Drink potion `1`/`2`/`3`
-(size/speed/reveal) · Controls/help `?` · Close any panel `Esc`.
+**Keyboard (desktop):** Move `WASD` / arrows · Attack `Space` · Use bench when near it `E` · Open library `Tab` · Open bestiary `B` · Drink potion `1`/`2`/`3`
+(size/speed/reveal) · Controls/help `?` · Close any panel `Esc`. (The `H` teleport-home hotkey and its
+Home toolbar/touch buttons are currently disabled — the code and `teleportHome`/`goHome` are kept for a
+future teleport item/power.)
 
 **Touch (mobile):** On touch devices a DOM control overlay (`#touch`) appears over the canvas:
 
