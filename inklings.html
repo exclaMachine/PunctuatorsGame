@@ -155,7 +155,7 @@
     #bestiary .book{height:auto;max-height:92vh;overflow:auto;display:block}
     .bes-grid{grid-template-columns:repeat(2,1fr)}
   }
-  /* ---- The Phonicon (sound-dex) — bestiary-style reveal grid over the fixed phoneme inventory ---- */
+  /* ---- Fish Phoneme (sound-dex) — bestiary-style reveal grid over the fixed phoneme inventory ---- */
   #phonicon{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
     align-items:center;justify-content:center;padding:18px;z-index:7}
   #phonicon.open{display:flex}
@@ -174,6 +174,7 @@
   .phon-word{font-family:var(--read);font-size:12px;color:var(--ink-soft)}
   .phon-word b{color:var(--ink)}
   .phon-times{font-family:var(--disp);font-size:7px;color:var(--gold)}
+  #phonicon .cu-guide{flex:1;min-height:0;overflow-y:auto;padding-right:4px}
   .phon-lock{font-family:var(--disp);font-size:11px;color:#4a4560}
   @media(max-width:560px){
     #phonicon .book{height:auto;max-height:92vh;overflow:auto;display:block}
@@ -848,7 +849,7 @@
     <div class="tb-title">Menu</div>
     <button class="tb-btn" id="tb-home"><span class="tb-ico">🏡</span><span>Home</span><b>H</b></button>
     <button class="tb-btn" id="tb-dex"><span class="tb-ico">🐾</span><span>Bestiary</span><b>B</b></button>
-    <button class="tb-btn" id="tb-phonicon"><span class="tb-ico">🔉</span><span>Phonicon</span></button>
+    <button class="tb-btn" id="tb-phonicon"><span class="tb-ico">🔉</span><span>Fish Phoneme</span></button>
     <button class="tb-btn" id="tb-feats"><span class="tb-ico">✦</span><span>Feats</span><b>C</b></button>
     <button class="tb-btn" id="tb-gear"><span class="tb-ico">🎒</span><span>Equipment</span><b>G</b></button>
     <button class="tb-btn" id="tb-apothecary"><span class="tb-ico">⚗️</span><span>Apothecary</span><b>P</b></button>
@@ -992,14 +993,51 @@
       </div>
     </div>
 
-    <!-- The Phonicon: the sound-dex. Every phoneme you've fished up (symbol · spelling · example word);
-         uncaught sounds stay locked ???. Fixed 40-sound inventory, so 100% is reachable. -->
+    <!-- Fish Phoneme: the sound-dex. Every phoneme you've fished up (symbol · spelling · example word);
+         uncaught sounds stay locked ???. Fixed 40-sound inventory, so 100% is reachable. The Guide tab
+         teaches the phonetic alphabet (IPA), mirroring the Curator / Apothecary guide tabs. -->
     <div id="phonicon">
       <div class="book">
-        <button class="close-x" id="phon-close" aria-label="Close Phonicon" title="Close">✕</button>
-        <h1>Phonicon <span class="dex-count" id="phon-count"></span></h1>
-        <div class="sub">Every sound you've fished up. Cast at any pond and type a sound's spelling to add it.</div>
+        <button class="close-x" id="phon-close" aria-label="Close Fish Phoneme" title="Close">✕</button>
+        <h1>Fish Phoneme <span class="dex-count" id="phon-count"></span></h1>
+        <div class="hb-tabs">
+          <button class="hb-tab active" data-phontab="sounds">Sounds</button>
+          <button class="hb-tab" data-phontab="guide">Guide</button>
+        </div>
+        <div class="sub" id="phon-sub">Every sound you've fished up. Cast at any pond and type a sound's spelling to add it.</div>
         <div class="phon-grid" id="phon-grid"></div>
+        <div class="cu-guide" id="phon-guide" style="display:none">
+          <p class="cu-lead">Every fish here is a <b>sound</b> — a <b>phoneme</b>, the smallest unit of
+          speech. The odd symbols are the <b>International Phonetic Alphabet (IPA)</b>: unlike English
+          spelling, where one letter makes many sounds (the <i>c</i> in <i>cat</i> vs <i>city</i>),
+          <b>each IPA symbol is exactly one sound</b>. Learn the symbol and you can read the pronunciation
+          of any word in a dictionary.</p>
+          <p>In Inklings, <b>letters</b> come from combat and <b>words</b> from the desk — and <b>sounds</b>
+          come from fishing. Cast at any pond; a sound surfaces on the line as its symbol (plus an example
+          word in shallow water). <b>Type how the sound is spelled</b> to reel it in. Spelling is
+          <b>lenient</b> — /u/ accepts “oo”, “u” or “ew” — so it's a hint, not a spelling test.</p>
+          <h3>Consonants</h3>
+          <ul class="hb-gloss">
+            <li><b>/ʃ/</b> = “sh” as in <i>ship</i>; <b>/ʒ/</b> = the buzzy “zh” in <i>vi<b>s</b>ion</i> (its voiced twin).</li>
+            <li><b>/θ/</b> = “th” in <i>thin</i> (breathy); <b>/ð/</b> = “th” in <i>this</i> (voiced).</li>
+            <li><b>/tʃ/</b> = “ch” in <i>chair</i>; <b>/dʒ/</b> = “j” in <i>jump</i>; <b>/ŋ/</b> = “ng” in <i>sing</i>.</li>
+            <li><b>/ɹ/</b> = “r” in <i>red</i>; <b>/j/</b> = “y” in <i>yes</i> (a consonant, not the vowel!).</li>
+          </ul>
+          <h3>Vowels</h3>
+          <ul class="hb-gloss">
+            <li><b>/i/</b> <i>see</i> · <b>/ɪ/</b> <i>sit</i> · <b>/ɛ/</b> <i>bed</i> · <b>/æ/</b> <i>cat</i> — front vowels, high to low.</li>
+            <li><b>/u/</b> <i>moon</i> · <b>/ʊ/</b> <i>put</i> · <b>/ɔ/</b> <i>thought</i> · <b>/ɑ/</b> <i>father</i> — the back vowels.</li>
+            <li><b>/ə/</b> = the <b>schwa</b>, the lazy “uh” in <i>about</i> — the most common vowel in English.</li>
+            <li><b>/ɝ/</b> = the r-coloured vowel in <i>bird</i>.</li>
+          </ul>
+          <h3>Diphthongs (two vowels that glide into one)</h3>
+          <ul class="hb-gloss">
+            <li><b>/eɪ/</b> <i>day</i> · <b>/aɪ/</b> <i>my</i> · <b>/ɔɪ/</b> <i>boy</i> · <b>/oʊ/</b> <i>go</i> · <b>/aʊ/</b> <i>now</i>.</li>
+          </ul>
+          <p class="cu-rule">🎣 <b>Tip:</b> rarer sounds (like /ʒ/ and /ð/) bite in <b>deeper</b> water and
+          wear <b>obscure fish</b> so the name never gives the answer away. Land all 40 to complete your
+          Fish Phoneme.</p>
+        </div>
       </div>
     </div>
 
@@ -1359,7 +1397,7 @@
           <button class="tc-btn util" id="tc-home" aria-label="Home to bench">HOME</button>
           <button class="tc-btn util ico" id="tc-help" aria-label="Controls">?</button>
           <button class="tc-btn util ico" id="tc-dex" aria-label="Bestiary">🐾</button>
-          <button class="tc-btn util ico" id="tc-phonicon" aria-label="Phonicon">🔉</button>
+          <button class="tc-btn util ico" id="tc-phonicon" aria-label="Fish Phoneme">🔉</button>
           <button class="tc-btn util ico" id="tc-stats" aria-label="Feats">✦</button>
           <button class="tc-btn util ico" id="tc-gear" aria-label="Equipment">🎒</button>
           <button class="tc-btn util ico" id="tc-apothecary" aria-label="Apothecary">⚗️</button>
@@ -2636,8 +2674,8 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"){ e.preventDefault(); closeFishing(); }
     return;
   }
-  if(state.phoniconOpen){   // Phonicon (sound-dex): read-only view, close on Esc / Tab
-    if(k==="escape"||k==="tab"){ e.preventDefault(); closePhonicon(); }
+  if(state.phoniconOpen){   // Fish Phoneme (sound-dex): read-only view, close on Esc / Tab
+    if(k==="escape"||k==="tab"){ e.preventDefault(); if(phonTab==="guide") phonShowTab("sounds"); else closePhonicon(); }   // step back from the Guide tab first
     return;
   }
   if(MOVE_KEYS.has(k)) e.preventDefault();
@@ -6357,8 +6395,8 @@ function renderFishing(){
     const rec = state.phonicon && state.phonicon[t.ipa];
     let msg;
     if(!caught) msg = 'It slipped off the line — that one was /'+t.ipa+'/ (“'+spell+'”). Cast again and try to spell it.';
-    else if(fish.wasNew) msg = '✨ A new sound for your Phonicon — /'+t.ipa+'/ (“'+spell+'”)!';
-    else msg = '🎣 Caught /'+t.ipa+'/ again — now ×'+((rec&&rec.count)||1)+' in your Phonicon.';
+    else if(fish.wasNew) msg = '✨ A new sound for your Phoneme Fish — /'+t.ipa+'/ (“'+spell+'”)!';
+    else msg = '🎣 Caught /'+t.ipa+'/ again — now ×'+((rec&&rec.count)||1)+' in your Fish Phoneme.';
     body.innerHTML =
       '<div class="fish-line '+(caught?"fish-caught":"")+'">'+
         '<div class="fish-creature">'+fishGlyph(t)+'</div>'+
@@ -6369,7 +6407,7 @@ function renderFishing(){
       '<p class="fish-msg '+(caught?"ok":"")+'">'+msg+'</p>'+
       '<div class="fish-cast-row">'+
         '<button class="fish-btn" id="fish-again">🎣 Cast again</button>'+
-        '<button class="fish-btn alt" id="fish-phon">🔉 Phonicon</button>'+
+        '<button class="fish-btn alt" id="fish-phon">🔉 Phoneme Fish</button>'+
       '</div>';
     document.getElementById("fish-again").onclick=()=>{ fish.stage="ready"; fish.target=null; renderFishing(); };
     document.getElementById("fish-phon").onclick=()=>{ closeFishing(); openPhonicon(); };
@@ -6383,13 +6421,24 @@ function renderFishing(){
    is the whole 40-phoneme set, so 100% is reachable). Read-only view over state.phonicon; opened from the
    toolbar / a touch button (not contextual — always available like the Bestiary). */
 function phonHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen||state.apothecaryOpen||state.heraldOpen||state.pigpensOpen||state.fishing; }
+let phonTab="sounds";   // Fish Phoneme tab: "sounds" (the reveal grid) | "guide" (the IPA primer)
+// Toggle the Sounds grid vs the phonetic-alphabet Guide (mirrors cuShowTab / the Apothecary guide tab).
+function phonShowTab(t){
+  phonTab=t;
+  document.querySelectorAll("#phonicon .hb-tab").forEach(el=>el.classList.toggle("active", el.dataset.phontab===t));
+  const guide=t==="guide";
+  document.getElementById("phon-guide").style.display = guide?"":"none";
+  document.getElementById("phon-grid").style.display  = guide?"none":"";
+  document.getElementById("phon-sub").style.display   = guide?"none":"";
+  document.getElementById("phon-count").style.display = guide?"none":"";
+}
 function openPhonicon(){
   if(state.phoniconOpen) return;
-  if(!PHONEMES){ showToast("The Phonicon is still loading…"); return; }
+  if(!PHONEMES){ showToast("Fish Phoneme is still loading…"); return; }
   state.phoniconOpen=true;
   document.getElementById("phonicon").classList.add("open");
   document.getElementById("sound-btn").style.display="none";
-  renderPhonicon(); SFX.play("click");
+  renderPhonicon(); phonShowTab("sounds"); SFX.play("click");
 }
 function closePhonicon(){
   state.phoniconOpen=false;
@@ -7172,6 +7221,7 @@ document.getElementById("apothecary").onclick=e=>{ if(e.target.id==="apothecary"
 document.getElementById("fish-close").onclick=()=>{ closeFishing(); SFX.play("click"); };
 document.getElementById("fishing").onclick=e=>{ if(e.target.id==="fishing") closeFishing(); };  // tap backdrop to close
 document.getElementById("phon-close").onclick=()=>{ closePhonicon(); SFX.play("click"); };
+document.querySelectorAll("#phonicon .hb-tab").forEach(t=>t.onclick=()=>{ phonShowTab(t.dataset.phontab); SFX.play("click"); });
 document.getElementById("phonicon").onclick=e=>{ if(e.target.id==="phonicon") closePhonicon(); };  // tap backdrop to close
 document.getElementById("export-btn").onclick=()=>{ exportBackup(); SFX.play("click"); };
 // The label opens the OS picker natively; we just handle the chosen file.

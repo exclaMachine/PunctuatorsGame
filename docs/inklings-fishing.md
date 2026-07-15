@@ -1,4 +1,10 @@
-# Inklings — Phoneme Fishing (the Sound-Fish / the Phonicon)
+# Inklings — Phoneme Fishing (the Sound-Fish / Fish Phoneme)
+
+> **Naming (2026-07-15):** the sound-collection is called **"Fish Phoneme"** in-game (the dev retired the
+> coined word *Phonicon*). This doc still says "Phonicon" in places as the **internal codename** — the code
+> identifiers stay `state.phonicon` / `openPhonicon` / `#phonicon` / `phoniconOpen` for **save
+> compatibility** (save v5 persists `state.phonicon`). Only the **user-facing labels** are "Fish Phoneme".
+
 
 Planning doc. A **fishing** mechanic where you cast into the game's existing **ponds** and reel up
 **sounds**. A phoneme surfaces on your line and you **type its romanized spelling** to set the hook;
@@ -34,7 +40,12 @@ step-5 tuning. **Fish fiction added (2026-07-15):** each phoneme is now a named 
 `habitat` fields on `data/phonemes.json`) — the creature shows on the line while guessing (name hidden until
 the catch), obscure non-hinting fish for rarer sounds, all rendered through the single swap point `fishGlyph()`
 so emoji→sprite is a one-function change (§3.1, §7); `habitat` is a dormant open-vocab tag (pond/lake/river/
-ocean) for future edge-water maps, all catchable in ponds now except the two ocean-only rares. The word-level shared phoneme engine (`data/pronunciations.json` +
+ocean) for future edge-water maps, all catchable in ponds now except the two ocean-only rares. **Renamed +
+Guide tab added (2026-07-15):** the collection's **user-facing name is now "Fish Phoneme"** (the coined word
+*Phonicon* was retired; code identifiers keep `state.phonicon`/`openPhonicon`/`#phonicon` for save compat).
+The view gained a **Guide tab** (`data-phontab` "sounds"/"guide" via `phonShowTab`, mirroring the Curator /
+Apothecary guide tabs) — a **phonetic-alphabet primer** (what IPA is, consonants/vowels/diphthongs, how to
+read the symbols); Esc/Tab steps Guide→Sounds before closing. The word-level shared phoneme engine (`data/pronunciations.json` +
 `rhymeKey`/`syllables`, poetry §11.1) stays **deliberately deferred** — fishing v1's typed loop doesn't
 consume it; stand it up when poetry / the Sound Garden needs it.
 
@@ -157,13 +168,16 @@ This file is **hand-authored** (44 entries — trivial next to the Gutenberg/Wor
 **data-driven** so the romanization map and tiers tune without code. It is the **canonical sound→spelling
 teaching table**, reusable by the Sound Garden later.
 
-### 3.2 The Phonicon (the sound-dex)
+### 3.2 Fish Phoneme (the sound-dex — internal codename "the Phonicon")
 
 - **New saved state `state.phonicon`** — which phonemes you've caught + a count/first-caught record, e.g.
   `{ "ʃ": {count, first}, "θ": {...} }`. Persists forever like `dex` / `resources` / `bestiary`.
-- **A Phonicon view** — a grid of the 44 phonemes, caught ones revealed (symbol + romanization + hint word,
-  clickable for a little sound-fact card), uncaught ones as locked `???` slots. Mirror the **bestiary**
-  reveal pattern (`dexView`-style gating) and its overlay chrome. Opened from the toolbar / a touch button.
+- **A Fish Phoneme view** — a grid of the phonemes, caught ones revealed (sound-fish glyph + symbol + name +
+  romanization + hint word), uncaught ones as locked `???` slots. Mirror the **bestiary** reveal pattern
+  (`dexView`-style gating) and its overlay chrome. Opened from the toolbar / a touch button. **Two tabs**
+  (mirroring the Curator / Apothecary guide tabs): **Sounds** (the reveal grid) and **Guide** — a
+  phonetic-alphabet primer teaching what IPA is (one symbol = one sound), consonants / vowels / diphthongs,
+  and how to read the symbols. Esc/Tab steps back from Guide → Sounds before closing.
 - **Coverage-honest:** the Phonicon's target is the **fixed 44-phoneme inventory**, not the whole
   dictionary, so "100%" is a real, reachable goal (unlike the open-ended word dex).
 
