@@ -3355,6 +3355,20 @@ cv.addEventListener("pointerdown", e=>{
   const px=(e.clientX-r.left)*(cv.width/r.width), py=(e.clientY-r.top)*(cv.height/r.height);
   if(ALaModal.hit(px,py)){ e.preventDefault(); e.stopPropagation(); }
 }, true);
+// Hovering À La Modal's ice cream: cursor turns into a spoon and she frowns + scolds "Don't eat my ice cream!".
+const SPOON_CURSOR = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Cg transform='rotate(35 18 18)' stroke='%2320202a' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round' fill='%23f2f2f5'%3E%3Cellipse cx='18' cy='9' rx='6.5' ry='8.5'/%3E%3Cpath d='M18 16 L18 32'/%3E%3C/g%3E%3C/svg%3E\") 18 9, pointer";
+cv.addEventListener("pointermove", e=>{
+  if(typeof ALaModal==="undefined") return;
+  const r=cv.getBoundingClientRect();
+  const px=(e.clientX-r.left)*(cv.width/r.width), py=(e.clientY-r.top)*(cv.height/r.height);
+  const over=ALaModal.overIce(px,py);
+  if(over!==ALaModal.iceHover){
+    ALaModal.iceHover=over;
+    cv.style.cursor = over ? SPOON_CURSOR : "";
+    if(over) ALaModal.reactIce();
+  }
+});
+cv.addEventListener("pointerleave", ()=>{ if(ALaModal.iceHover){ ALaModal.iceHover=false; cv.style.cursor=""; } });
 // Screen-slide transition: when you cross an edge, the old screen slides out and the new one slides in over
 // TRANS_DUR seconds (gameplay frozen meanwhile — set in goScreen, advanced/cleared in update()).
 let trans=null;
@@ -3490,7 +3504,14 @@ function drawModalSmall(c,cx,cy,S,m){
   c.fillStyle=ALA.pupil;                                   // simplified face
   c.beginPath(); c.arc(cx-bw*0.2, by+bh*0.42, S*0.05, 0,7); c.fill();
   c.beginPath(); c.arc(cx+bw*0.2, by+bh*0.42, S*0.05, 0,7); c.fill();
-  alaSet(c,lw*0.8); c.beginPath(); c.arc(cx, by+bh*0.46, S*0.12, 0.15*Math.PI, 0.85*Math.PI); c.stroke();
+  if(m.iceHover){                                          // "don't eat my ice cream!" — angry brows + frown
+    alaSet(c,lw*0.9);
+    c.beginPath(); c.moveTo(cx-bw*0.32, by+bh*0.26); c.lineTo(cx-bw*0.08, by+bh*0.36);
+    c.moveTo(cx+bw*0.32, by+bh*0.26); c.lineTo(cx+bw*0.08, by+bh*0.36); c.stroke();
+    alaSet(c,lw*0.8); c.beginPath(); c.arc(cx, by+bh*0.68, S*0.12, 1.15*Math.PI, 1.85*Math.PI); c.stroke();
+  } else {
+    alaSet(c,lw*0.8); c.beginPath(); c.arc(cx, by+bh*0.46, S*0.12, 0.15*Math.PI, 0.85*Math.PI); c.stroke();
+  }
 }
 function drawModalLarge(c,cx,cy,S,m,rects){
   const lw=S*0.035, bw=S*0.98, bh=S*0.62, bx=cx-bw/2, by=cy-bh*0.36;
@@ -3549,6 +3570,21 @@ function alaWrap(c,text,x,y,maxW,lh){
   for(const w of words){ const t=line?line+" "+w:w; if(c.measureText(t).width>maxW && line){ c.fillText(line,x,yy); line=w; yy+=lh; } else line=t; }
   if(line) c.fillText(line,x,yy);
 }
+// Tiny scolding bubble above the follow-sprite while the cursor hovers her ice cream ("Don't eat my ice cream!").
+function drawIceGuard(c, sx, sy, S){
+  const txt="Don't eat my ice cream!";
+  c.save();
+  c.font="500 13px 'Baloo 2', system-ui, sans-serif"; c.textAlign="left"; c.textBaseline="top";
+  const pad=8, bw=c.measureText(txt).width+pad*2, bh=26;
+  let bx=sx-bw/2; bx=Math.max(6,Math.min(W-bw-6,bx));
+  let by=sy-S*0.72-bh-12; by=Math.max(6,by);
+  c.fillStyle=ALA.paper; alaSet(c,2.5);
+  roundRectP(c,bx,by,bw,bh,8); c.fill(); c.stroke();            // bubble body
+  const tx=Math.max(bx+12,Math.min(bx+bw-24, sx-6));            // tail pointing down toward the sprite
+  c.fillStyle=ALA.paper; c.beginPath(); c.moveTo(tx,by+bh-1); c.lineTo(tx+8,by+bh+12); c.lineTo(tx+22,by+bh-1); c.closePath(); c.fill(); c.stroke();
+  c.fillStyle=ALA.out; c.fillText(txt, bx+pad, by+pad);
+  c.restore();
+}
 function drawModalSpeak(c,m){
   const e=1-(1-m.popT)*(1-m.popT), S=200*(0.5+0.5*e);       // pop-in scale
   const cx=22+S*0.55, cy=H-16-S*0.5;                        // docked bottom-left
@@ -3566,7 +3602,7 @@ function drawModalSpeak(c,m){
 }
 const ALaModal = {
   mode:"follow", following:false, x:W/2, y:H/2, bob:0, hl:0, hr:0,
-  popT:1, text:"", onYes:null, onNo:null, hitRects:{},
+  popT:1, text:"", onYes:null, onNo:null, hitRects:{}, iceHover:false, _sS:0, _sx:0, _sy:0,
   speak(text, opts){ opts=opts||{};
     this.text=text; this.onYes=opts.onYes||null; this.onNo=opts.onNo||null;
     this.mode="speak"; this.popT=0; try{ SFX.play("newword"); }catch(e){}
@@ -3579,10 +3615,22 @@ const ALaModal = {
     if(this.mode==="speak" && this.popT<1) this.popT=Math.min(1,this.popT+dt*7);
   },
   draw(c){
-    if(!state.started) return;
-    if(this.mode==="speak"){ drawModalSpeak(c, this); return; }   // the big talking sprite always shows
-    if(this.following) drawModalSmall(c, this.x, this.y+Math.sin(this.bob*2.2)*3, 40, this);   // small sprite only if you said YES
+    if(!state.started){ this._sS=0; return; }
+    if(this.mode==="speak"){ this._sS=0; drawModalSpeak(c, this); return; }   // the big talking sprite always shows
+    if(this.following){                                          // small sprite only if you said YES
+      const dy=this.y+Math.sin(this.bob*2.2)*3;
+      this._sx=this.x; this._sy=dy; this._sS=40;                 // remember where the scoop landed (for hover hit-test)
+      drawModalSmall(c, this.x, dy, 40, this);
+      if(this.iceHover) drawIceGuard(c, this.x, dy, 40);         // scolding speech bubble while you hover the ice cream
+    } else this._sS=0;
   },
+  // Is (px,py) over the little follow-sprite's ice-cream scoop? (canvas coords; only while the small sprite shows)
+  overIce(px,py){
+    if(this.mode!=="follow" || !this.following || !this._sS) return false;
+    const S=this._sS, by=this._sy - S*0.5*0.2;                   // box top (mirrors drawModalSmall's `by`)
+    return px>this._sx-S*0.42 && px<this._sx+S*0.42 && py>by-S*0.6 && py<by+S*0.08;
+  },
+  reactIce(){ try{ SFX.play("invalid"); }catch(e){} },           // small annoyed blip when you first hover the scoop
   hit(cx,cy){
     if(this.mode!=="speak" || this.popT<0.6) return false;
     const R=this.hitRects, inb=r=> r && cx>r.x && cx<r.x+r.w && cy>r.y && cy<r.y+r.h;

@@ -953,6 +953,11 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   `onNo`/dismiss (×). `ALaModal.speak(text,{onYes,onNo})` / `dismiss()`. `alaSummon` (key **M** /
   `tc-modal` 💬): the **first** summon each session plays her greeting/intro (`_alaGreeted`); after that it
   shows a placeholder hint from `ALA_HINTS` (modal-verb voice). No greeting fires on open anymore.
+  **Ice-cream easter egg:** hovering the cursor over the follow-sprite's scoop (a `cv` `pointermove` →
+  `ALaModal.overIce`, hit-tested against the last-drawn `_sx/_sy/_sS`) turns the cursor into an SVG **spoon**
+  (`SPOON_CURSOR`) and makes her **frown** (`drawModalSmall` swaps to angry brows + inverted mouth when
+  `m.iceHover`) with a scolding **"Don't eat my ice cream!"** bubble (`drawIceGuard`) + an `invalid` blip
+  (`reactIce`); `pointerleave`/moving off restores the cursor. Only active while the small follow sprite shows.
 - **Interactable obstacles** (`/* INTERACTABLE OBSTACLES */`) — data-driven **`OBSTACLES`** array (`{id, screen:[sx,sy],
   bands:[rect,…] (an L: mid-left arm + down arm), letter:{x,y}, title, prompt, accept:[verbs], success,
   jokes:{verb|@category:line}}`). `obstacleFor(sc)` matches by `sc.sx/sc.sy` (stored on each screen);
