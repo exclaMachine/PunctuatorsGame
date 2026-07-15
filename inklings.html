@@ -565,8 +565,7 @@
   .cu-guide .cu-eg{font-style:italic;color:var(--ink-soft)}
   .cu-guide h3{font-family:var(--disp);font-size:10px;color:var(--gold);border-top:2px solid var(--line);padding-top:10px;margin:12px 0 6px}
   .cu-rico{display:inline-block;width:1.4em;color:var(--gold);font-weight:bold;text-align:center}
-  .cu-word .cu-def{font-size:15px;color:var(--ink-soft);font-style:italic;margin:2px 0 4px;line-height:1.35}
-  .cu-word .cu-deflink{font-family:var(--disp);font-size:8px;color:var(--inkblue);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline}
+  .cu-word .cu-def{font-size:15px;color:var(--ink-soft);font-style:italic;margin:2px 0 8px;line-height:1.35}
   .cu-rel{padding:8px 10px;margin:7px 0;background:var(--paper-2);border:2px solid var(--edge)}
   .cu-rel .cu-relhd{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:5px}
   .cu-rel .cu-relnm{font-family:var(--disp);font-size:9px;color:var(--gold)}
@@ -1040,25 +1039,28 @@
         <div class="sub" id="cu-sub"></div>
         <div id="cu-body"></div>
         <div class="cu-guide" id="cu-guide" style="display:none">
-          <p class="cu-lead">The library is a <b>tree of meanings</b>. Every word you spell is filed by what
-          it <i>is a kind of</i> — so the shelves themselves teach a real relationship linguists call
-          <b>hyponymy</b>. Each book is a broader idea; the words shelved on it are its narrower kinds.</p>
+          <p class="cu-lead">The library is the <b>Nouns wing</b> — every word shelved here is a <b>noun</b>
+          (verbs, adjectives and adverbs get their own homes elsewhere). It's a <b>tree of meanings</b>:
+          every noun is filed by what it <i>is a kind of</i>, so the shelves themselves teach a real
+          relationship linguists call <b>hyponymy</b>. Each book is a broader idea; the words shelved on
+          it are its narrower kinds.</p>
           <p>A book like <i>Bird</i> is a <b>hypernym</b> (the general term). <i>robin</i>, <i>wren</i>,
           <i>finch</i> are its <b>hyponyms</b> (the specific kinds). Words that share a shelf are
           <b>co-hyponyms</b> — siblings under the same parent.</p>
-          <p>Open any collected word (tap it on a shelf page) to see <b>all</b> of its relatives:</p>
+          <p>Open any collected word (tap it on a shelf page) to see how it connects to other nouns:</p>
           <ul class="hb-gloss">
             <li><span class="cu-rico">↑</span><b>Hypernym</b> — a <i>broader</i> kind. A robin <b>is a kind of</b> bird → animal.</li>
             <li><span class="cu-rico">↓</span><b>Hyponym</b> — a <i>narrower</i> kind. Kinds of bird: robin, wren, owl…</li>
             <li><span class="cu-rico">⊂</span><b>Meronym</b> — a <i>part</i> of it. A bird <b>has</b> a beak, a wing.</li>
             <li><span class="cu-rico">⊃</span><b>Holonym</b> — the <i>whole</i> it belongs to. A wing <b>is part of</b> a bird.</li>
-            <li><span class="cu-rico">⇄</span><b>Antonym</b> — the <i>opposite</i>. hot ⇄ cold, open ⇄ shut.</li>
-            <li><span class="cu-rico">↝</span><b>Troponym</b> — a particular <i>way</i> of doing a verb. To <b>march</b> is a way to <b>walk</b>.</li>
+            <li><span class="cu-rico">⇄</span><b>Antonym</b> — the <i>opposite</i>. A few nouns pair up (absence ⇄ presence, ability ⇄ inability).</li>
           </ul>
-          <p class="cu-rule">🌳 <b>Why it matters:</b> these links turn your loose pile of words into a map.
+          <p class="cu-rule">🌳 <b>Why it matters:</b> these links turn your loose pile of nouns into a map.
           Follow a word up to its hypernyms and you generalise; follow it down to hyponyms and you get
-          specific. Explore parts, wholes and opposites and you start to see how the whole dictionary
-          hangs together.</p>
+          specific. Explore parts and wholes and you start to see how the whole dictionary hangs together.</p>
+          <p class="cu-eg">Opposites are really the <i>adjective's &amp; adverb's</i> game (hot ⇄ cold) — over
+          at the <b>Apothecary</b>, an adjective's antonym is one end of its dumbbell, and its <b>synonyms</b>
+          grow the flask. Nouns just borrow the odd antonym.</p>
           <p class="cu-eg">Collected relatives are <b>clickable</b> — hop word to word to wander the tree.
           Words you haven't found yet show greyed out, as a hint of what's still out there.</p>
         </div>
@@ -4149,14 +4151,15 @@ function loadRelations(cb){
       .catch(()=>{ _relLoading=false; }); }
   cb&&cb();
 }
-// The six relations the graph carries, in teaching order. `ex` is a one-liner shown above the word list.
+// The noun relations we surface, in teaching order. `ex` is a one-liner shown above the word list. The
+// graph is POS-blind (lemma-keyed), but the library is the Nouns wing, so we deliberately DON'T list
+// verb-only relations like troponym — a noun's page shows only relations that make sense for a noun.
 const CU_RELS=[
   {k:"hyper", ico:"↑", nm:"Hypernym", tag:"a broader kind",       ex:w=>`“${w}” is a kind of these`},
   {k:"hypo",  ico:"↓", nm:"Hyponym",  tag:"a narrower kind",      ex:w=>`kinds of “${w}”`},
   {k:"mero",  ico:"⊂", nm:"Meronym",  tag:"a part of it",         ex:w=>`parts of “${w}”`},
   {k:"holo",  ico:"⊃", nm:"Holonym",  tag:"the whole it's in",    ex:w=>`“${w}” is a part of these`},
   {k:"ant",   ico:"⇄", nm:"Antonym",  tag:"the opposite",         ex:w=>`the opposite of “${w}”`},
-  {k:"tropo", ico:"↝", nm:"Troponym", tag:"a way of doing it",    ex:w=>`particular ways to “${w}”`},
 ];
 function curationCats(){   // [{cat, found, total, books:[{key,found,total}]}], in shelf/category order, non-empty only
   if(!NOUN_BOOKS) return [];
@@ -4271,8 +4274,7 @@ function renderCurationWord(word){   // page 4: one collected word's WordNet rel
   back.textContent = cuBook ? "← "+bookName(cuBook) : "← All sets";
   document.getElementById("cu-title").textContent=nbCap(word);
   document.getElementById("cu-sub").style.display="none";
-  const defHtml = e ? `<div class="cu-def">${esc(e.def||"A word in your collection.")}</div>`
-                    + `<button class="cu-deflink" data-def="${esc(word)}">read full meaning ↗</button>` : "";
+  const defHtml = e ? `<div class="cu-def">${esc(e.def||"A word in your collection.")}</div>` : "";
   let relHtml="";
   if(!RELATIONS){ loadRelations(); relHtml=`<p class="cu-empty">Gathering this word's relatives…</p>`; }
   else {
@@ -4281,7 +4283,6 @@ function renderCurationWord(word){   // page 4: one collected word's WordNet rel
     relHtml = rows || `<p class="cu-empty">The catalogue lists no relatives for “${esc(word)}” — a lonely word.</p>`;
   }
   const body=document.getElementById("cu-body"); body.style.display=""; body.innerHTML=`<div class="cu-word">${defHtml}${relHtml}</div>`; body.scrollTop=0;
-  const df=body.querySelector("[data-def]"); if(df) df.onclick=()=>openDefModal(df.dataset.def);
   body.querySelectorAll("[data-rel]").forEach(el=>el.onclick=()=>{ if(state.dex[el.dataset.rel]) renderCurationWord(el.dataset.rel); });
   SFX.play("click");
 }

@@ -80,15 +80,19 @@ adjectives feed **potions**, so keep bundles from double-rewarding those — the
 - The librarian delivers short flavor lines (À-La-Modal style, canvas or DOM), teaching hypernym/hyponym as
   she describes each set ("a *fish* is a **kind of** animal…"). Personality/voice is open.
 - **Two tabs on the panel** (`.hb-tab` chrome, reused from the Herald's Bench): **Collection** (the paginated
-  progress pages) and **Guide** — a static primer (`#cu-guide`) that names and explains the WordNet relations
-  the shelves encode (hypernym/hyponym/meronym/holonym/antonym/troponym), the same "explain the grammar"
-  treatment the blazon guide gives heraldry.
+  progress pages) and **Guide** — a static primer (`#cu-guide`) that frames the library as the **Nouns wing**
+  and explains the WordNet relations the shelves encode. It teaches the **noun-native** relations only —
+  hypernym/hyponym/meronym/holonym/antonym — the same "explain the grammar" treatment the blazon guide gives
+  heraldry. **Troponym is deliberately excluded** (it's a verb relation; the graph is POS-blind so it only
+  leaks onto nouns that double as verbs — save it for a future Verbs wing). Antonyms get a cross-ref note that
+  opposites are mainly the adjective/adverb's game (the Apothecary's dumbbell), where synonyms also live.
 - **A fourth page — a word's relatives** (`renderCurationWord`): tap any *collected* word on a shelf page and,
   instead of the bare definition modal, the curator shows that word's real relatives read live from
-  `data/wordnet-relations.json` (`RELATIONS`, lazy-loaded on open): ↑ hypernyms, ↓ hyponyms, ⊂ meronyms,
-  ⊃ holonyms, ⇄ antonyms, ↝ troponyms. Related words **you've collected** are clickable (hop word-to-word to
-  wander the graph); undiscovered ones show greyed as a hint. A "read full meaning ↗" link still opens the
-  definition modal. This is the concrete teaching payload — the tree made explorable.
+  `data/wordnet-relations.json` (`RELATIONS`, lazy-loaded on open). Iterates `CU_RELS` — the five noun
+  relations only (↑ hypernyms, ↓ hyponyms, ⊂ meronyms, ⊃ holonyms, ⇄ antonyms); verb/adjective relations in
+  the graph (troponym, sim, pert…) are **not** shown, keeping a noun's page on-message. Related words **you've
+  collected** are clickable (hop word-to-word to wander the graph); undiscovered ones show greyed as a hint.
+  The word's definition shows inline at the top. This is the concrete teaching payload.
 
 ---
 
@@ -174,8 +178,8 @@ placement anyway, building the shared primitive up front is the efficient path.
    - **Page 2** — that category's books, each with its own bar.
    - **Page 3** — a book's actual words: collected ones as clickable chips (→ the **relatives page**),
      undiscovered ones as `?????` blanks (reuses the shelf view's `.nb-chip` styling).
-   - **Page 4 (relatives)** — `renderCurationWord`: a collected word's WordNet relatives (hyper/hypo/mero/
-     holo/ant/tropo) from `RELATIONS` (`data/wordnet-relations.json`, lazy-loaded via `loadRelations`).
+   - **Page 4 (relatives)** — `renderCurationWord`: a collected word's noun relatives (hyper/hypo/mero/
+     holo/ant — `CU_RELS`; no verb-only troponym) from `RELATIONS` (`data/wordnet-relations.json`, lazy via `loadRelations`).
      Collected relatives are clickable to walk the graph; undiscovered ones greyed. Plus a **Guide** tab
      (`#cu-guide`, `cuShowTab`) explaining each relation in prose. Both teach the relations the shelves encode.
    **Ordering:** anything with ≥1 collected word floats to the top (categories keep shelf order within a group;
