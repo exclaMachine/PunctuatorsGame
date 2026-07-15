@@ -129,7 +129,8 @@ Xanthoceras/Ximenia/Xylopia; Q: Quamash/Quinine bark; Z: Zizia/Zedoary) — all 
 ## 5. IPA / phonetics — parked for later
 - Braille is **orthographic** (letters). A later **"Sound Garden"** pass could teach **IPA/phonetics** — e.g.
   a field laid out like the **IPA articulation chart** (place × manner) where *where* you plant grows *that
-  sound*, harvesting phonemes into words.
+  sound*, harvesting phonemes into words. **Its seed supply is [phoneme fishing](inklings-fishing.md)** — the
+  **Phonicon** (sounds fished from ponds) is where the phonemes you plant here come from (*sounds←fishing*).
 - **Reusable assets** (from the standalone `IPA-fan-game/`): **`ipa_words.js`** (English word → IPA phoneme
   sequences) and **`text-to-ipa-master`** (any word → IPA). Reuse the **data + design**, reimplement in
   Inklings' vanilla style — the fan depends on Howler/GSAP CDN libs; Inklings is dependency-free.

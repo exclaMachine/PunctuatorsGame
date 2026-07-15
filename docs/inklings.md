@@ -23,6 +23,12 @@
 > `ipa_words.js`; meter deferred to a CMU stress fold-in), mad-libs-fill-first with free-compose later, the
 > poet-NPC cast (punny, names not final), and the **Anthology** reward. Read before building the sound layer.
 >
+> **Planning fishing?** See [`inklings-fishing.md`](inklings-fishing.md) — **phoneme fishing** at the existing
+> pond `T_WATER` tiles: a phoneme surfaces on the line and you **type its romanization** to catch a **sound**
+> into the **Phonicon** (fills the empty *sounds←fishing* niche; supplies the parked Sound Garden + the poetry
+> phoneme engine). Typed-input v1, no mic; a **speak-the-phoneme** tier is deferred/desired (online-only,
+> opt-in). Read before building fishing.
+>
 > **Planning the heraldry shield?** See [`inklings-heraldry.md`](inklings-heraldry.md) — the **blazon shield**
 > (compose a valid heraldic phrase → an emblazoned shield with passive, meaning-driven bonuses in the existing
 > equipment slots), the v1 blazon **grammar** (field/division + ordinary + numbered charges + attitude +
