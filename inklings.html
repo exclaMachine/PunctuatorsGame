@@ -163,17 +163,21 @@
     overflow:hidden;max-width:640px}
   #phonicon .book>h1,#phonicon .book>.sub{flex:none}
   .phon-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;overflow-y:auto;flex:1;min-height:0;padding:2px}
-  .phon-card{background:var(--paper-2);border:2px solid var(--edge);padding:8px 6px;text-align:center;
-    box-shadow:2px 2px 0 rgba(0,0,0,.25);display:flex;flex-direction:column;gap:3px;min-height:96px;justify-content:center}
-  .phon-card.locked{background:#26233a;gap:6px;color:#4a4560}
-  .phon-fish{font-size:28px;line-height:1}
+  .phon-card{position:relative;background:var(--paper-2);border:2px solid var(--edge);padding:12px 6px 8px;text-align:center;
+    box-shadow:2px 2px 0 rgba(0,0,0,.25);display:flex;flex-direction:column;gap:3px;min-height:96px;justify-content:flex-start}
+  .phon-card.locked{background:#26233a;gap:6px;color:#4a4560;justify-content:center}
+  /* Glyph + symbol share one row so the text below sits higher and clears the bottom border. */
+  .phon-head{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1px}
+  .phon-fish{font-size:26px;line-height:1.25}
   .phon-name{font-family:var(--disp);font-size:7px;color:var(--gold);letter-spacing:.4px}
   .phon-sym{font-family:var(--read);font-size:26px;line-height:1;color:var(--ink)}
   .phon-card.locked .phon-sym{color:#4a4560}
   .phon-roman{font-family:var(--read);font-size:15px;color:var(--ink)}
   .phon-word{font-family:var(--read);font-size:12px;color:var(--ink-soft)}
   .phon-word b{color:var(--ink)}
-  .phon-times{font-family:var(--disp);font-size:7px;color:var(--gold)}
+  /* Catch-count badge — pinned top-right so it reads as a counter and stays out of the text stack. */
+  .phon-times{position:absolute;top:3px;right:3px;font-family:var(--disp);font-size:8px;line-height:1;
+    color:var(--gold);background:#26233a;border:1px solid var(--edge);border-radius:8px;padding:2px 5px}
   #phonicon .cu-guide{flex:1;min-height:0;overflow-y:auto;padding-right:4px}
   .phon-lock{font-family:var(--disp);font-size:11px;color:#4a4560}
   @media(max-width:560px){
@@ -6524,8 +6528,8 @@ function renderPhonicon(){
     const rec=state.phonicon && state.phonicon[p.ipa];
     // Locked slots show a GENERIC silhouette (fishGlyph(null)) so the specific creature stays a mystery.
     if(!rec) return `<div class="phon-card locked"><div class="phon-fish">${fishGlyph(null,{silhouette:true})}</div><div class="phon-sym">?</div><div class="phon-lock">???</div></div>`;
-    return `<div class="phon-card"><div class="phon-fish">${fishGlyph(p)}</div>`+
-      `<div class="phon-sym">/${esc(p.ipa)}/</div>`+
+    return `<div class="phon-card">`+
+      `<div class="phon-head"><span class="phon-fish">${fishGlyph(p)}</span><span class="phon-sym">/${esc(p.ipa)}/</span></div>`+
       (p.fish?`<div class="phon-name">${esc(p.fish)}</div>`:``)+
       `<div class="phon-roman">“${esc(p.roman)}”</div>`+
       `<div class="phon-word">as in <b>${esc(p.hintWord)}</b></div>`+

@@ -217,7 +217,10 @@ teaching table**, reusable by the Sound Garden later.
 - **New saved state `state.phonicon`** — which phonemes you've caught + a count/first-caught record, e.g.
   `{ "ʃ": {count, first}, "θ": {...} }`. Persists forever like `dex` / `resources` / `bestiary`.
 - **A Fish Phoneme view** — a grid of the phonemes, caught ones revealed (sound-fish glyph + symbol + name +
-  romanization + hint word), uncaught ones as locked `???` slots. Mirror the **bestiary** reveal pattern
+  romanization + hint word + a **catch-count badge** `×N` pinned in the card's top-right corner — you can
+  catch the same sound repeatedly across spots/days and the tally shows there). Uncaught ones are locked `???`
+  slots. (Card content is top-aligned with head-room above the glyph so the fish never pokes over the top
+  border.) Mirror the **bestiary** reveal pattern
   (`dexView`-style gating) and its overlay chrome. Opened from the toolbar / a touch button. **Two tabs**
   (mirroring the Curator / Apothecary guide tabs): **Sounds** (the reveal grid) and **Guide** — a
   phonetic-alphabet primer teaching what IPA is (one symbol = one sound), consonants / vowels / diphthongs,
