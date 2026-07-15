@@ -375,6 +375,32 @@
   #pp-hard.on{background:var(--gold);color:#2a2540}
   .pp-shake{animation:ppshake .32s}
   @keyframes ppshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}60%{transform:translateX(7px)}}
+  /* Fishing modal (docs/inklings-fishing.md) — retro-pixel overlay like the pens/garden */
+  #fishing{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);align-items:center;
+    justify-content:center;padding:18px;z-index:7}
+  #fishing.open{display:flex}
+  #fishing .book{position:relative;display:flex;flex-direction:column;max-width:560px;width:100%;
+    max-height:92vh;overflow:auto}
+  #fishing .book>h1{flex:none}
+  .fish-body{font-family:var(--read);font-size:14px;line-height:1.5;color:var(--ink)}
+  .fish-lead{margin:0 0 4px}
+  .fish-lead b{color:var(--ink)}
+  .fish-cast-row{display:flex;gap:8px;margin:12px 0 2px;flex-wrap:wrap}
+  .fish-btn{font-family:var(--disp);font-size:9px;padding:7px 12px;border:2px solid var(--edge);
+    background:var(--gold);color:#2a2540;cursor:pointer}
+  .fish-btn.alt{background:var(--paper-2);color:var(--ink)}
+  .fish-btn:disabled{opacity:.5;cursor:default}
+  .fish-line{background:var(--paper-2);border:2px solid var(--line);padding:16px;text-align:center;margin:12px 0}
+  .fish-symbol{font-family:var(--read);font-size:42px;line-height:1;color:var(--ink)}
+  .fish-caught .fish-symbol{color:var(--moss)}
+  .fish-hint{font-family:var(--read);font-size:14px;color:var(--ink-soft);margin-top:8px}
+  .fish-bob{font-size:34px;line-height:1;animation:fishbob 1s ease-in-out infinite}
+  @keyframes fishbob{0%,100%{transform:translateY(-5px)}50%{transform:translateY(5px)}}
+  .fish-hook{display:flex;gap:8px;margin:10px 0 0}
+  .fish-hook input{flex:1;min-width:0;font-family:var(--read);font-size:18px;padding:6px 9px;
+    border:2px solid var(--edge);background:var(--paper);color:var(--ink)}
+  .fish-msg{font-family:var(--read);font-size:13.5px;min-height:19px;margin:10px 0 0;color:var(--ink-soft)}
+  .fish-msg.ok{color:var(--moss)}
   #potions{display:flex;gap:5px;margin-top:4px}
   .potion-btn{font-family:var(--disp);font-size:8px;line-height:1;padding:5px 6px;border:2px solid var(--edge);
     background:var(--paper-2);color:var(--ink);cursor:pointer;display:inline-flex;gap:4px;align-items:center;
@@ -808,6 +834,7 @@
     <button class="tb-btn dim" id="tb-shelf"><span class="tb-ico">📚</span><span>Shelf</span></button>
     <button class="tb-btn dim" id="tb-curate"><span class="tb-ico">🗂️</span><span>Curator</span></button>
     <button class="tb-btn dim" id="tb-decor"><span class="tb-ico">🖼️</span><span>Decorate</span></button>
+    <button class="tb-btn dim" id="tb-fish"><span class="tb-ico">🎣</span><span>Fish</span></button>
   </aside>
 
   <div id="stage">
@@ -1015,6 +1042,17 @@
           <button id="pp-hard">Hard: off</button>
         </div>
         <div class="gd-dev" id="pp-dev"></div>
+      </div>
+    </div>
+
+    <!-- Fishing: cast at a field pond (E / CAST) and reel up a phoneme by typing its romanization → the
+         Phonicon. Step 2 = the modal SHELL only (proves you can fish from the bank); the cast→bite→type
+         loop + Phonicon are steps 3-4. See docs/inklings-fishing.md. -->
+    <div id="fishing">
+      <div class="book">
+        <button class="close-x" id="fish-close" aria-label="Close" title="Close">✕</button>
+        <h1>Fishing <span class="dex-count">reel up sounds</span></h1>
+        <div class="fish-body" id="fish-body"></div>
       </div>
     </div>
 
@@ -1296,6 +1334,7 @@
           <button class="tc-btn util" id="tc-shelf" aria-label="Browse shelf">SHELF</button>
           <button class="tc-btn util" id="tc-curate" aria-label="Speak with the curator">CURATE</button>
           <button class="tc-btn util ico" id="tc-decor" aria-label="Decorate the Wordhoard">🖼️</button>
+          <button class="tc-btn util" id="tc-fish" aria-label="Cast a line">CAST</button>
         </div>
       </div>
       <!-- Joystick, bottom-right -->
@@ -1609,6 +1648,57 @@ fetch("data/creatures.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>
   onCreaturesLoaded();
 }).catch(()=>{ console.warn("Inklings: couldn't load data/creatures.json — resource-creatures disabled."); });
 
+/* ---------- FISHING: phoneme engine (docs/inklings-fishing.md §3, build-order step 1) -----------------
+   Sounds are the empty acquisition niche (letters<-combat, words<-desk, SOUNDS<-fishing). You cast at an
+   existing T_WATER tile, a phoneme surfaces, and you TYPE its romanization to set the hook; catches fill the
+   Phonicon. This block is JUST the data + the pure lookup helpers (no UI, no modal, no state yet) — the cast
+   interaction (step 2) and the shallow/mid loop + Phonicon (steps 3-4) build on these. Kept self-contained so
+   nothing in combat or the desk is touched. Inventory is data/phonemes.json (the sound->spelling table). */
+let PHONEMES=null;                 // array of {ipa,roman,accepts,hintWord,tier,depth}
+const PHONEMES_BY_IPA=Object.create(null);
+const PHONEME_TIER_WEIGHT={ common:6, mid:3, rare:1 };   // spawn weight by rarity (rarer bites less)
+fetch("data/phonemes.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{
+  PHONEMES=(data.phonemes||[]).slice();
+  for(const p of PHONEMES) PHONEMES_BY_IPA[p.ipa]=p;
+}).catch(()=>{ console.warn("Inklings: couldn't load data/phonemes.json — fishing disabled."); });
+
+// Normalize a typed answer / accept spelling for matching: lowercase, strip anything but a-z.
+function normPhonemeAnswer(s){ return String(s||"").toLowerCase().replace(/[^a-z]/g,""); }
+// Did the player's typed romanization set the hook? Lenient match against the phoneme's accepts set (§3.1
+// leniency: typing is a teaching aid, not a spelling-bee trap). Returns true/false.
+function phonemeAccepts(ph, typed){
+  if(!ph) return false;
+  const t=normPhonemeAnswer(typed); if(!t) return false;
+  const list=(ph.accepts&&ph.accepts.length)?ph.accepts:[ph.roman];
+  return list.some(a=>normPhonemeAnswer(a)===t);
+}
+// Weighted-random pick of a phoneme biting at a cast of the given depth. Eligible = phonemes whose shallowest
+// depth is <= castDepth (deeper casts also surface everything shallower); weighted by tier so common sounds
+// dominate and rarer ones — which skew to deeper water via their own depth — stay scarce (§4.2). rand()
+// defaults to Math.random but is injectable so a later daySeed-deterministic pond can drive it.
+function pickPhoneme(castDepth, rand){
+  if(!PHONEMES||!PHONEMES.length) return null;
+  rand=rand||Math.random;
+  const pool=PHONEMES.filter(p=>(p.depth||1)<=(castDepth||1));
+  if(!pool.length) return null;
+  let total=0; for(const p of pool) total+=(PHONEME_TIER_WEIGHT[p.tier]||1);
+  let r=rand()*total;
+  for(const p of pool){ r-=(PHONEME_TIER_WEIGHT[p.tier]||1); if(r<0) return p; }
+  return pool[pool.length-1];
+}
+// What the line shows for a surfaced phoneme at a given depth (§4.2): shallow reveals symbol + hint word, mid
+// shows the symbol only, deep shows nothing (sound-only — deferred behind an audio source, §4.3). Pure view
+// helper the step-3 modal will render from.
+function phonemeReveal(ph, castDepth){
+  if(!ph) return { symbol:"", hintWord:"", showSymbol:false, showHint:false };
+  const d=castDepth||1;
+  return {
+    symbol: ph.ipa, hintWord: ph.hintWord||"",
+    showSymbol: d<=2,          // shallow(1)+mid(2) show the IPA symbol; deep(3) hides it
+    showHint: d<=1             // only shallow reveals the teaching hint word
+  };
+}
+
 // --- Library room (roadmap #4) --------------------------------------------------
 // A separate walkable screen (state.room==="library"), loaded from data/rooms/library.json like the other
 // data files. It gets its OWN tile grid (room.cols×room.rows, non-square cells filling the 720×528 canvas)
@@ -1904,7 +1994,7 @@ const state = {
   pigpenHard:false,             // Pig Pens hard mode: hide the reference key (persist)
   decorOwned:{},                // earned-but-unplaced décor: id -> count (persist). docs/inklings-placement.md
   placed:[],                    // placed objects: [{id,kind,where,cx,cy}] — where="library"|"sx,sy" (persist)
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false,
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false, fishing:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -2492,6 +2582,10 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"){ e.preventDefault(); closePigpens(); }
     return;
   }
+  if(state.fishing){   // Fishing modal: will hold a real <input> for the typed romanization (step 3) — DON'T swallow letters; only Esc/Tab close
+    if(k==="escape"||k==="tab"){ e.preventDefault(); closeFishing(); }
+    return;
+  }
   if(MOVE_KEYS.has(k)) e.preventDefault();
   if(k==="?"||k==="/"){ e.preventDefault(); toggleHelp(); return; }
   if(document.getElementById("unlockmodal").classList.contains("open")){   // top-most: dismiss the new-letter notice
@@ -2617,6 +2711,14 @@ function nearHouse(){   // the Library entrance (house) on the outdoor home scre
   return state.room===null && state.screen.sx===0 && state.screen.sy===0 &&
     Math.hypot(state.player.x-HOUSE.doorX, state.player.y-HOUSE.doorY)<80;
 }
+// Fishing (docs/inklings-fishing.md §2): you fish from the BANK — facing a pond tile on a field screen.
+// Reuses the shared tileInFront() primitive; water blocks movement (walkType) so you never stand on it.
+function nearWater(){
+  if(state.room || trans || !state.started) return false;
+  const sc=curScreen(); if(!sc || !sc.tiles) return false;
+  const cell=tileInFront(sc, state.player);
+  return !!cell && sc.tiles[cell.cy][cell.cx]===T_WATER;
+}
 function nearLibraryDesk(){ return state.room==="library" && LIBRARY && LIBRARY.desk && Math.hypot(state.player.x-LIBRARY.desk.cx, state.player.y-LIBRARY.desk.cy)<64; }
 function nearLibraryBook(){ return state.room==="library" && LIBRARY && LIBRARY.book && Math.hypot(state.player.x-LIBRARY.book.cx, state.player.y-LIBRARY.book.cy)<64; }
 function nearLibraryCurator(){ return state.room==="library" && LIBRARY && LIBRARY.curator && Math.hypot(state.player.x-LIBRARY.curator.cx, state.player.y-LIBRARY.curator.cy)<64; }
@@ -2656,6 +2758,7 @@ function tryUseBench(){
   }
   if(nearShop()) openShop();                   // outdoor home: shop or the house (library)
   else if(nearHouse()) enterLibrary();
+  else if(nearWater()) openFishing();          // any field pond: cast a line from the bank
 }
 
 /* ---------- COMBAT ---------------------------------------- */
@@ -2820,7 +2923,7 @@ function update(dt){
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -2906,7 +3009,7 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -2955,9 +3058,10 @@ function update(dt){
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
+  else if(hintReady && nearWater()){ hint.textContent="Press E to cast a line"; hint.classList.add("show"); }
   else hint.classList.remove("show");
 
   // active potion timers
@@ -2976,7 +3080,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.shelfview && !state.curation && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.shelfview && !state.curation && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -3001,7 +3105,7 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !place.active && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.shelfview && !state.curation;
+  const hintReady=!IS_TOUCH && !place.active && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.shelfview && !state.curation;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryCurator()){ hint.textContent="Press E to speak with the curator"; hint.classList.add("show"); }
@@ -3512,10 +3616,11 @@ function refreshToolbar(){
   const shop=started&&!state.room&&nearShop(), book=started&&nearLibraryBook(), shelf=started&&!!nearLibraryShelf();
   const curate=started&&nearLibraryCurator();
   const words=started&&nearLibraryDesk(), decor=started&&state.room==="library";   // Wordsmithy = desk-only; Decorate = anywhere in the Wordhoard
-  const sig=[started,shop,book,shelf,curate,words,decor].join(",");
+  const fish=started&&nearWater();                                                  // Fish = lit only when facing a pond
+  const sig=[started,shop,book,shelf,curate,words,decor,fish].join(",");
   if(sig===_tbSig) return; _tbSig=sig;
   const set=(id,on)=>{ const el=document.getElementById(id); if(el) el.classList.toggle("dim", !on); };
-  set("tb-shop",shop); set("tb-book",book); set("tb-shelf",shelf); set("tb-curate",curate); set("tb-words",words); set("tb-decor",decor);
+  set("tb-shop",shop); set("tb-book",book); set("tb-shelf",shelf); set("tb-curate",curate); set("tb-words",words); set("tb-decor",decor); set("tb-fish",fish);
 }
 // Called each render frame: draw the minimap into whichever surface is active, and refresh the toolbar.
 function refreshSidePanels(){
@@ -6084,6 +6189,118 @@ function closePigpens(){
   document.getElementById("sound-btn").style.display = ppHideSound()?"none":"";
 }
 
+/* ---------- FISHING modal (docs/inklings-fishing.md — build step 2: cast from the bank) ------------------
+   Step 2 stands up the modal SHELL only: a proximity CAST (E / toolbar / touch) at a field pond opens a
+   self-contained overlay, proving you can fish from the bank. The cast→bite→type-the-romanization loop
+   (step 3) and the Phonicon (step 4) build inside this shell, driven by the phoneme engine loaded up top
+   (pickPhoneme / phonemeAccepts / phonemeReveal). No saved state yet — state.fishing is transient UI. */
+let _fishPond=null;   // which pond tile you cast at this session (for step 5's daily "fished-out" question)
+// The in-modal cast loop (step 3). stage: ready → casting (bite telegraph) → biting (a phoneme surfaced,
+// type its romanization) → caught | slip → back to ready. depth: 1 shallow (symbol+hint), 2 deeper (symbol
+// only); the deep sound-only tier (3) is deferred behind an audio source (§4.3), so it isn't offered here.
+const fish = { stage:"ready", depth:1, target:null, timer:null };
+function fishReset(){ if(fish.timer){ clearTimeout(fish.timer); fish.timer=null; } fish.stage="ready"; fish.target=null; }
+function fishHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen||state.apothecaryOpen||state.heraldOpen||state.pigpensOpen; }
+function openFishing(){
+  if(state.fishing) return;
+  if(!nearWater()){ showToast("Find some water to fish."); return; }
+  if(!PHONEMES){ showToast("The water's still settling…"); return; }   // phonemes.json not loaded yet
+  const sc=curScreen(), cell=tileInFront(sc, state.player);
+  _fishPond = cell ? key(cell.cx, cell.cy) : null;
+  state.fishing=true; fishReset();
+  document.getElementById("fishing").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  renderFishing(); SFX.play("click");
+}
+function closeFishing(){
+  fishReset();
+  state.fishing=false; _fishPond=null;
+  document.getElementById("fishing").classList.remove("open");
+  document.getElementById("sound-btn").style.display = fishHideSound()?"none":"";
+}
+// Cast at the chosen depth → a snappy randomized nibble telegraph → a phoneme bites (§4.1).
+function fishCast(depth){
+  if(fish.stage==="casting"||fish.stage==="biting") return;   // one line in the water at a time
+  fish.depth=depth; fish.target=null; fish.stage="casting";
+  SFX.play("swing"); renderFishing();
+  const wait = 500 + Math.random()*1100;                      // 0.5–1.6s: telegraph, snappy not idle-boring
+  fish.timer=setTimeout(()=>{
+    fish.timer=null; if(!state.fishing) return;
+    fish.target = pickPhoneme(depth);
+    if(!fish.target){ fish.stage="ready"; renderFishing(); return; }
+    fish.stage="biting"; SFX.play("known"); renderFishing();   // a nibble ping; render focuses the input
+  }, wait);
+}
+// Set the hook = type the romanization. A lenient accepts-match lands it; a miss lets it slip (no penalty
+// beyond the lost cast — cozy + re-castable, §4.1). Both outcomes reveal the sound→spelling so it teaches.
+function fishSetHook(){
+  if(fish.stage!=="biting" || !fish.target) return;
+  const inp=document.getElementById("fish-input"), typed=inp?inp.value:"";
+  if(!normPhonemeAnswer(typed)){ const m=document.getElementById("fish-msg"); if(m) m.textContent="Type the sound you hear (letters)."; return; }
+  if(phonemeAccepts(fish.target, typed)){ fish.stage="caught"; SFX.play("newword"); }
+  else { fish.stage="slip"; SFX.play("invalid"); }
+  // Step 4 records the catch to state.phonicon here and fires a first-catch flourish through the shared
+  // celebration queue; step 3's praise is the serialized in-modal card below.
+  renderFishing();
+}
+function renderFishing(){
+  const body=document.getElementById("fish-body"); if(!body) return;
+  const s=fish.stage;
+  if(s==="ready"){
+    body.innerHTML =
+      '<p class="fish-lead">Sounds move beneath the surface. Cast, and when one bites, reel it up by '+
+      '<b>typing its spelling</b>. Shallow water reveals the symbol <i>and</i> an example word; deeper water '+
+      'shows the symbol alone.</p>'+
+      '<div class="fish-cast-row">'+
+        '<button class="fish-btn" id="fish-cast-shallow">🎣 Shallow cast</button>'+
+        '<button class="fish-btn alt" id="fish-cast-mid">🎣 Deeper cast</button>'+
+      '</div>';
+    document.getElementById("fish-cast-shallow").onclick=()=>fishCast(1);
+    document.getElementById("fish-cast-mid").onclick=()=>fishCast(2);
+    return;
+  }
+  if(s==="casting"){
+    body.innerHTML='<div class="fish-line"><div class="fish-bob">🎣</div>'+
+      '<div class="fish-hint">The bobber settles… wait for a bite.</div></div>';
+    return;
+  }
+  if(s==="biting"){
+    const rv=phonemeReveal(fish.target, fish.depth);
+    const sym = rv.showSymbol ? '/'+rv.symbol+'/' : '?';
+    let line='<div class="fish-symbol">'+sym+'</div>';
+    if(rv.showHint && rv.hintWord) line+='<div class="fish-hint">as in “'+rv.hintWord+'”</div>';
+    body.innerHTML =
+      '<p class="fish-lead">A sound surfaces on your line — <b>type its spelling</b> to set the hook!</p>'+
+      '<div class="fish-line">'+line+'</div>'+
+      '<div class="fish-hook">'+
+        '<input id="fish-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type the sound (e.g. sh)">'+
+        '<button class="fish-btn" id="fish-hook-btn">Set hook</button>'+
+      '</div>'+
+      '<div class="fish-msg" id="fish-msg"></div>';
+    const inp=document.getElementById("fish-input");
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); fishSetHook(); } });
+    document.getElementById("fish-hook-btn").onclick=fishSetHook;
+    setTimeout(()=>{ try{ inp.focus(); }catch(e){} },0);
+    return;
+  }
+  if(s==="caught" || s==="slip"){
+    const t=fish.target, caught=(s==="caught");
+    const spell = t.roman || (t.accepts&&t.accepts[0]) || "";
+    body.innerHTML =
+      '<div class="fish-line '+(caught?"fish-caught":"")+'">'+
+        '<div class="fish-symbol">/'+t.ipa+'/</div>'+
+        '<div class="fish-hint">“'+spell+'” · as in “'+(t.hintWord||"")+'”</div>'+
+      '</div>'+
+      '<p class="fish-msg '+(caught?"ok":"")+'">'+
+        (caught ? '🎣 Caught the sound /'+t.ipa+'/ — reeled up and studied.'
+                : 'It slipped off the line — that one was /'+t.ipa+'/ (“'+spell+'”). Cast again and try to spell it.')+
+      '</p>'+
+      '<div class="fish-cast-row"><button class="fish-btn" id="fish-again">🎣 Cast again</button></div>';
+    document.getElementById("fish-again").onclick=()=>{ fish.stage="ready"; fish.target=null; renderFishing(); };
+    return;
+  }
+}
+
 /* ---------- CELEBRATION QUEUE (staggered feat / letter dialogues) ---------- */
 // Milestone/letter dialogues are shown ONE AT A TIME so they never stack. commitSpell queues the Feats pop
 // first, then the new-letter modal; each dialogue's close runs the next.
@@ -6782,6 +6999,7 @@ function closeAnyDialog(){
   if(state.equipOpen) closeEquip();
   if(state.gardenOpen) closeGarden();
   if(state.pigpensOpen) closePigpens();
+  if(state.fishing) closeFishing();
   if(state.heraldOpen) closeHerald();
   if(state.shelfview) closeShelfView();
   if(state.curation) closeCuration();
@@ -6807,6 +7025,7 @@ _wireTb("tb-feats",()=> tbSwitch("statsOpen", openStats));
 _wireTb("tb-gear",()=> tbSwitch("equipOpen", openEquip));
 _wireTb("tb-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
 _wireTb("tb-farm",()=> tbSwitch("gardenOpen", openGarden));
+_wireTb("tb-fish",()=> tbSwitch("fishing", openFishing, nearWater));   // Fish: contextual — only near a pond
 if(IS_DEV){ const tp=document.getElementById("tb-pigpens"); if(tp){ tp.style.display=""; _wireTb("tb-pigpens",()=> tbSwitch("pigpensOpen", openPigpens)); } }
 if(IS_DEV){ const th=document.getElementById("tb-herald"); if(th){ th.style.display=""; _wireTb("tb-herald",()=> tbSwitch("heraldOpen", openHerald)); } }
 _wireTb("tb-help",()=> tbSwitch("help", toggleHelp));
@@ -6835,6 +7054,8 @@ document.querySelectorAll("#curation .hb-tab").forEach(t=>t.onclick=()=>{ cuShow
 document.getElementById("curation").onclick=e=>{ if(e.target.id==="curation") closeCuration(); };  // tap backdrop to close
 document.getElementById("ap-close").onclick=()=>{ closeApothecary(); SFX.play("click"); };
 document.getElementById("apothecary").onclick=e=>{ if(e.target.id==="apothecary") closeApothecary(); };  // tap backdrop to close
+document.getElementById("fish-close").onclick=()=>{ closeFishing(); SFX.play("click"); };
+document.getElementById("fishing").onclick=e=>{ if(e.target.id==="fishing") closeFishing(); };  // tap backdrop to close
 document.getElementById("export-btn").onclick=()=>{ exportBackup(); SFX.play("click"); };
 // The label opens the OS picker natively; we just handle the chosen file.
 document.getElementById("import-file").onchange=e=>{
@@ -6857,7 +7078,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.shelfview && !state.curation;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.shelfview && !state.curation;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -6886,6 +7107,8 @@ function syncTouchUI(){
     if(sl) sl.style.display = (!inLib && state.perks && state.perks.slide) ? "" : "none";
     const dc=document.getElementById("tc-decor");   // Decorate: available anywhere inside the Wordhoard
     if(dc) dc.style.display = inLib ? "" : "none";
+    const fc=document.getElementById("tc-fish");    // Cast: field only, when facing a pond tile
+    if(fc) fc.style.display = (!inLib && nearWater()) ? "" : "none";
   }
 }
 if(IS_TOUCH){
@@ -6929,6 +7152,7 @@ if(IS_TOUCH){
   tap("tc-gear",()=> tbSwitch("equipOpen", openEquip));
   tap("tc-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
   tap("tc-farm",()=> tbSwitch("gardenOpen", openGarden));
+  tap("tc-fish",()=> tbSwitch("fishing", openFishing, nearWater));   // field: cast at a pond
   if(IS_DEV){ const tch=document.getElementById("tc-herald"); if(tch){ tch.style.display=""; tap("tc-herald",()=> tbSwitch("heraldOpen", openHerald)); } }
   tap("tc-modal",()=>{ if(state.started) alaSummon(); });
   tap("tc-slide",()=>{ if(state.started) startSlide(); });
@@ -7259,7 +7483,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen || state.pigpensOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen || state.pigpensOpen || state.fishing); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)

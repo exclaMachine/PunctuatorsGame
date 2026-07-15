@@ -8,7 +8,25 @@ is it.
 
 > **letters ← combat · words ← the desk · sounds ← fishing**
 
-Status: **plan only — not implemented.** Reflects a 2026-07 planning session (three settled forks below).
+Status: **build steps 1–3 shipped; rest plan-only.** Reflects a 2026-07 planning session (three settled
+forks below). **Step 1 done (2026-07-15):** the hand-authored inventory `data/phonemes.json` (40 GA phonemes)
++ the pure runtime lookup live in the `/* FISHING */` block of `inklings.html` (`PHONEMES`/`PHONEMES_BY_IPA`,
+`pickPhoneme(castDepth,rand)` weighted by tier + depth-gated, `phonemeAccepts(ph,typed)` lenient match,
+`normPhonemeAnswer`, `phonemeReveal(ph,castDepth)`). **Step 2 done (2026-07-15):** the cast interaction + the
+`#fishing` modal **shell**. `nearWater()` (reuses `tileInFront()`, field-only) gates a **CAST prompt** — `E`
+via `tryUseBench`, a dimmable `tb-fish` toolbar entry (lit only facing a pond, via `refreshToolbar`), and a
+contextual touch `tc-fish` button (`syncTouchUI`). `openFishing`/`closeFishing`/`renderFishing` run a
+self-contained overlay (transient `state.fishing`, added to every overlay guard: movement, `canBeHurt`, the
+hints, `syncTouchUI`, `closeAnyDialog`, `musicDialogueOpen`). **Step 3 done (2026-07-15):** the playable
+cast→bite→type→catch loop inside the modal — a `fish` state machine (`ready`→`casting`→`biting`→`caught`|
+`slip`→`ready`) with a **shallow/deeper** cast choice (depth 1 shows symbol+hint word, depth 2 symbol only;
+deep sound-only tier stays deferred), a snappy 0.5–1.6s nibble telegraph, `fishSetHook` grading the typed
+romanization via `phonemeAccepts` (lenient/normalized), SFX per beat, and a serialized in-modal praise card
+(both catch and miss reveal the sound→spelling, so a miss still teaches). **Catches aren't persisted yet** —
+`state.phonicon` + the first-catch celebration-queue flourish arrive with the Phonicon in step 4. The
+word-level shared phoneme engine (`data/pronunciations.json` +
+`rhymeKey`/`syllables`, poetry §11.1) stays **deliberately deferred** — fishing v1's typed loop doesn't
+consume it; stand it up when poetry / the Sound Garden needs it.
 
 Cross-refs: [`inklings.md`](inklings.md) (the water tiles this reuses; the dex/collection pattern the
 Phonicon mirrors), [`inklings-poetry.md`](inklings-poetry.md) §3 (the **phoneme engine** — `rhymeKey`,
@@ -219,12 +237,22 @@ prematurely:
 
 ## 6. Build order (each a shippable milestone)
 
-1. **The phoneme engine + `data/phonemes.json`** — the 44-entry inventory + romanization/`accepts` map +
-   the runtime lookup. (Shared with poetry §11.1 — build once.) Parse-check known symbols; no UI yet.
+1. **The phoneme engine + `data/phonemes.json`** — the ~44-entry inventory + romanization/`accepts` map +
+   the runtime lookup. Parse-check known symbols; no UI yet. **✓ Shipped 2026-07-15** (40 GA phonemes;
+   `/* FISHING */` block in `inklings.html`). Scope note: only the **fishing-native** inventory+lookup was
+   built; the **word-level** phoneme engine (`data/pronunciations.json`, poetry §11.1) — the "build once"
+   shared piece — was **deferred** since fishing v1's typed loop doesn't consume it (poetry/Sound Garden
+   will stand it up).
 2. **Cast interaction at water** — `tileInFront()` water detection + CAST prompt (`E`/touch/toolbar), the
-   `#fishing` modal shell, overlay guards. Proves you can fish from the bank.
+   `#fishing` modal shell, overlay guards. Proves you can fish from the bank. **✓ Shipped 2026-07-15**
+   (`nearWater()`, `tb-fish`/`tc-fish` proximity buttons, `openFishing`/`closeFishing` overlay + guards;
+   modal body is a step-2 placeholder pending the step-3 loop).
 3. **Shallow + Mid loop** — cast→bite→type-the-romanization→catch, depth hiding the symbol, SFX +
-   celebration-queue praise. The playable core.
+   celebration-queue praise. The playable core. **✓ Shipped 2026-07-15** (`fish` state machine +
+   `fishCast`/`fishSetHook`/`renderFishing`; shallow/deeper cast choice, nibble telegraph, lenient typed
+   grading, in-modal praise that reveals the sound→spelling on both catch and miss). Praise is serialized
+   in-modal for now; the global celebration-queue **first-catch** flourish lands with step 4 (needs
+   `state.phonicon` to know a catch is new). Catches are **not persisted yet** — that's step 4.
 4. **The Phonicon** — `state.phonicon` + the sound-dex view (bestiary-style reveal) + snapshot/version bump.
    Proves the collection + save.
 5. **Tuning pass** — rarity/depth skew, cast feel, any daily "fished-out" cap, first-catch flourish.
