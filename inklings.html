@@ -790,7 +790,6 @@
   <aside id="side-left" class="sidepanel" aria-label="Menu">
     <div class="tb-title">Menu</div>
     <button class="tb-btn" id="tb-home"><span class="tb-ico">🏡</span><span>Home</span><b>H</b></button>
-    <button class="tb-btn" id="tb-words"><span class="tb-ico">📝</span><span>Wordsmithy</span><b>Tab</b></button>
     <button class="tb-btn" id="tb-dex"><span class="tb-ico">🐾</span><span>Bestiary</span><b>B</b></button>
     <button class="tb-btn" id="tb-feats"><span class="tb-ico">✦</span><span>Feats</span><b>C</b></button>
     <button class="tb-btn" id="tb-gear"><span class="tb-ico">🎒</span><span>Equipment</span><b>G</b></button>
@@ -801,6 +800,7 @@
     <button class="tb-btn" id="tb-help"><span class="tb-ico">❓</span><span>Help</span><b>?</b></button>
     <div class="tb-sep">Nearby</div>
     <button class="tb-btn dim" id="tb-shop"><span class="tb-ico">🛒</span><span>Shop</span></button>
+    <button class="tb-btn dim" id="tb-words"><span class="tb-ico">📝</span><span>Wordsmithy</span></button>
     <button class="tb-btn dim" id="tb-book"><span class="tb-ico">📖</span><span>Mad Libris</span></button>
     <button class="tb-btn dim" id="tb-shelf"><span class="tb-ico">📚</span><span>Shelf</span></button>
     <button class="tb-btn dim" id="tb-curate"><span class="tb-ico">🗂️</span><span>Curator</span></button>
@@ -858,7 +858,7 @@
         <div class="foot">
           <div class="keys kbd-only">
             <b>WASD</b>/<b>↑↓←→</b> move &nbsp; <b>Space</b> attack<br>
-            <b>H</b> go to your bench &nbsp; <b>E</b> use bench &nbsp; <b>Tab</b> open library &nbsp; <b>Esc</b> close
+            <b>H</b> go to your bench &nbsp; <b>E</b> use bench &nbsp; <b>O</b> decorate &nbsp; <b>Esc</b> close
           </div>
           <div class="btn-row">
             <button class="ghost" id="export-btn">Export backup</button>
@@ -1220,7 +1220,7 @@
           <span><b>Space</b></span><span>Attack</span>
           <span><b>H</b></span><span>Teleport home — to the Wordsmithy in the Wordhoard</span>
           <span><b>E</b></span><span>Use what you're near: shop, the house (enter the Wordhoard), the Wordsmithy, Mad Libris</span>
-          <span><b>Tab</b></span><span>Open the collection list</span>
+          <span><b>O</b></span><span>Decorate the Wordhoard (or tap 🖼️): <b>Tab</b>/<b>Shift+Tab</b> pick a piece, <b>Space</b> place</span>
           <span><b>B</b></span><span>Open the bestiary (or tap the 🐾 button)</span>
           <span><b>C</b></span><span>Open your Feats (verb milestones — or tap ✦)</span>
           <span><b>G</b></span><span>Open your Equipment — equip &amp; craft gear (or tap 🎒)</span>
@@ -2060,6 +2060,14 @@ function placeScreen(){ return state.room==="library" ? LIBRARY.screen : curScre
 function ownedDecorList(){ return Object.keys(state.decorOwned).filter(id=>state.decorOwned[id]>0 && DECOR[id]); }
 function placedIndexAt(cx,cy){ const v=placeVenue(); return state.placed.findIndex(o=>o.where===v && o.cx===cx && o.cy===cy); }
 function firstOwnedDecor(){ const l=ownedDecorList(); return l.length?l[0]:null; }
+// Tab / Shift+Tab step the held selection through the tray order: ✋ pick-up (null) → each owned piece → wrap.
+function placeCycle(dir){
+  const order=[null, ...ownedDecorList()];
+  if(order.length<=1) return;
+  let i=order.indexOf(place.held); if(i<0) i=0;
+  place.held=order[(i+dir+order.length)%order.length];
+  SFX.play("click"); renderDecorBar();
+}
 // The grid cell directly in front of the player (facing snapped to a cardinal), or null if off-grid. Kept as
 // the shared primitive for the FARM (till/plant/water act on the faced tile); décor uses cursor-picking below.
 function tileInFront(sc,p){
@@ -2123,6 +2131,7 @@ function togglePlaceMode(){
   if(IS_DEV && !ownedDecorList().length){ for(const id in DECOR) state.decorOwned[id]=1; }     // dev test grant
   if(!ownedDecorList().length){ showToast("No decorations yet — earn them from the curator."); return; }
   place.active=true; place.held=firstOwnedDecor(); SFX.play("home"); renderDecorBar();
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();   // drop button focus so Tab cycles pieces, not DOM buttons
 }
 function closePlaceMode(){ if(!place.active) return; place.active=false; renderDecorBar(); SFX.play("click"); }
 // The décor tray: every owned piece shown at once + a ✋ pick-up slot. Click a slot to hold it; Done exits.
@@ -2130,15 +2139,15 @@ function renderDecorBar(){
   const bar=document.getElementById("decorbar"); if(!bar) return;
   if(!place.active){ bar.classList.remove("open"); bar.innerHTML=""; return; }
   const owned=ownedDecorList();
-  let html='<div class="decorbar-tip">Pick a piece (or ✋) · face a tile · Space or Place to drop · onto a piece = swap</div>';
+  let html='<div class="decorbar-tip">Click or Tab to pick a piece (or ✋) · face a tile · Space/Place to drop · onto a piece = swap</div>';
   html+=`<div class="decorslot hand${place.held===null?" sel":""}" data-id="" title="Pick up (empty hand)">✋</div>`;
   for(const id of owned){ const d=DECOR[id];
     html+=`<div class="decorslot${place.held===id?" sel":""}" data-id="${id}" title="${d.name}">${d.emoji}<span class="cnt">${state.decorOwned[id]}</span></div>`; }
   if(!owned.length) html+='<div class="decorbar-tip" style="opacity:.7">No pieces left — pick some back up or earn more.</div>';
-  html+='<button id="decor-place" type="button" title="Place on the tile in front of you (Space)">Place</button>';
-  html+='<button id="decor-done" type="button">Done</button>';
+  html+='<button id="decor-place" type="button" tabindex="-1" title="Place on the tile in front of you (Space)">Place</button>';
+  html+='<button id="decor-done" type="button" tabindex="-1">Done</button>';
   bar.innerHTML=html; bar.classList.add("open");
-  bar.querySelectorAll(".decorslot").forEach(el=>el.onclick=()=>{ const id=el.getAttribute("data-id"); place.held=id||null; SFX.play("click"); renderDecorBar(); });
+  bar.querySelectorAll(".decorslot").forEach(el=>{ el.tabIndex=-1; el.onclick=()=>{ const id=el.getAttribute("data-id"); place.held=id||null; SFX.play("click"); renderDecorBar(); }; });
   const pb=document.getElementById("decor-place"); if(pb) pb.onclick=()=>placeFront();
   const done=document.getElementById("decor-done"); if(done) done.onclick=()=>closePlaceMode();
 }
@@ -2510,7 +2519,8 @@ addEventListener("keydown",e=>{
       else if(k==="tab"||k==="backspace"||/^[a-zA-Z]$/.test(e.key)) e.preventDefault();   // swallow — no editing behind the modal
       return;
     }
-    if(k==="escape"||k==="tab"){ e.preventDefault(); closeOverlay(); return; }
+    if(k==="escape"){ e.preventDefault(); closeOverlay(); return; }   // Tab no longer closes the Wordsmithy (Esc does)
+    if(k==="tab"){ e.preventDefault(); return; }                      // swallow Tab so focus stays in the word builder
     if(k==="enter"){ e.preventDefault(); checkWord(); return; }
     if(k==="backspace"){ e.preventDefault(); if(bench.length){ bench.pop(); renderBench(); } return; }
     if(/^[a-zA-Z]$/.test(e.key)){        // add the letter (Shift+key = capital); only if a copy is available
@@ -2561,8 +2571,9 @@ addEventListener("keydown",e=>{
   }
   if(!state.started) return;
   keys[k]=true;
-  if(place.active){   // decorate mode: face a tile, Space places — keep only walk + Space + O/Esc
+  if(place.active){   // decorate mode: face a tile, Space places — keep only walk + Tab-cycle + Space + O/Esc
     if(k==="o"||k==="escape"){ closePlaceMode(); return; }
+    if(k==="tab"){ e.preventDefault(); placeCycle(e.shiftKey?-1:1); return; }   // Tab / Shift+Tab pick the held piece
     if(k===" "){ placeFront(); return; }   // Spacebar drops/picks-up/swaps on the faced tile (no attack here)
     if(MOVE_KEYS.has(k)) return;            // allow walking (keys[k] already set above)
     return;                                // swallow the rest so no dialog opens mid-decorate
@@ -2574,7 +2585,7 @@ addEventListener("keydown",e=>{
   if(k==="1") drinkPotion("size");
   if(k==="2") drinkPotion("speed");
   if(k==="3") drinkPotion("reveal");
-  if(k==="tab"){ e.preventDefault(); openOverlay(); }
+  if(k==="tab") e.preventDefault();      // Tab is reserved for décor cycling in decorate mode — no longer opens the Wordsmithy (use the desk: E)
   if(k==="shift") startSlide();          // motion perk: forward lunge
   if(k==="c") toggleStats();             // Feats / character sheet
   if(k==="p") toggleApothecary();        // Apothecary (flask rack)
@@ -3497,10 +3508,11 @@ function refreshToolbar(){
   const started=state.started;
   const shop=started&&!state.room&&nearShop(), book=started&&nearLibraryBook(), shelf=started&&!!nearLibraryShelf();
   const curate=started&&nearLibraryCurator();
-  const sig=[started,shop,book,shelf,curate].join(",");
+  const words=started&&nearLibraryDesk(), decor=started&&state.room==="library";   // Wordsmithy = desk-only; Decorate = anywhere in the Wordhoard
+  const sig=[started,shop,book,shelf,curate,words,decor].join(",");
   if(sig===_tbSig) return; _tbSig=sig;
   const set=(id,on)=>{ const el=document.getElementById(id); if(el) el.classList.toggle("dim", !on); };
-  set("tb-shop",shop); set("tb-book",book); set("tb-shelf",shelf); set("tb-curate",curate);
+  set("tb-shop",shop); set("tb-book",book); set("tb-shelf",shelf); set("tb-curate",curate); set("tb-words",words); set("tb-decor",decor);
 }
 // Called each render frame: draw the minimap into whichever surface is active, and refresh the toolbar.
 function refreshSidePanels(){
@@ -6784,7 +6796,7 @@ function tbSwitch(key, open, canOpen){
 // Desktop feature toolbar (left pillar) — mirrors the keyboard shortcuts / mobile util buttons.
 const _wireTb=(id,fn)=>{ const el=document.getElementById(id); if(el) el.onclick=fn; };
 _wireTb("tb-home",()=>{ if(state.started){ closeAnyDialog(); teleportHome(); } });
-_wireTb("tb-words",()=> tbSwitch("overlay", openOverlay));
+_wireTb("tb-words",()=> tbSwitch("overlay", openOverlay, nearLibraryDesk));   // Wordsmithy: desk-only (like the touch SMITHY button)
 _wireTb("tb-dex",()=> tbSwitch("bestiaryOpen", openBestiary));
 _wireTb("tb-feats",()=> tbSwitch("statsOpen", openStats));
 _wireTb("tb-gear",()=> tbSwitch("equipOpen", openEquip));

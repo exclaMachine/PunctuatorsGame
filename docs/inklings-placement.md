@@ -90,14 +90,17 @@ One generic system, reused by décor, seed-planting, and pen-placing. **The load
 
 ### 3c. The tray + face-and-place (built — Stardew tools model)
 - A docked **décor tray** (`#decorbar`, `renderDecorBar`) shows **every owned piece at once** + a leading
-  **✋ pick-up slot**. Click a slot to **hold** that piece (or the empty hand); the held slot highlights.
+  **✋ pick-up slot**. Click a slot — or **Tab / Shift+Tab** (`placeCycle`, cycles ✋ → each piece → wrap) — to
+  **hold** that piece (or the empty hand); the held slot highlights.
 - A translucent green/red **ghost** (`drawPlaceUI`) always sits on the **tile you're facing** as you walk.
 - **Confirm with Space** (`placeFront` → `placeAtCell`) or the tray's **Place** button (touch/mouse): holding a
   piece → **place** it; on an occupied faced tile → **swap** (old piece returns to the tray); holding the
   **✋ hand** → **pick up** the faced piece.
-- **Few hotkeys (dev ask):** only `O` (open/close), `Esc`, and `Space` (place). Entry also via a **🖼️ Decorate**
-  button on the desktop toolbar (`tb-decor`) and touch util bar (`tc-decor`); **Place**/**Done** buttons live in
-  the tray so touch needs no keyboard.
+- **Few hotkeys (dev ask):** `O` (open/close), `Tab`/`Shift+Tab` (pick piece), `Space` (place), `Esc`. Entry also
+  via a **🖼️ Decorate** button on the desktop toolbar (`tb-decor`) and touch util bar (`tc-decor`);
+  **Place**/**Done** buttons live in the tray so touch needs no keyboard.
+- **Tab freed up for this:** it no longer opens the Wordsmithy. The Wordsmithy is now **desk-only** (walk up + `E`,
+  the touch **SMITHY** button, or the desktop **Words** toolbar button — all gated to `nearLibraryDesk`).
 
 ### 3d. Rendering & collision
 - **Render:** placed objects draw as a **pass on top of the venue's baked background** — after `LIBRARY.bg` in
