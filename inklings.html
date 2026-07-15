@@ -5767,7 +5767,9 @@ function renderGarden(){
     for(const d of BRAILLE_DOTS){ const on=cell.dots.includes(""+d), inTarget=target.includes(""+d);
       // Quiz mode hides the ghost guide AND the per-dot right/wrong colour — you find out only when the bed grows.
       const pc = quiz ? ("gd-plot"+(on?" on":"")) : ("gd-plot"+(on?(inTarget?" on":" bad"):(cell.letter&&inTarget?" ghost":"")));
-      const em=on&&cell.letter?cropInfo(cell.season||season,cell.letter)[1]:"";
+      // Stardew-style stages: a planted dot shows a 🌱 sprout while sowing/growing/maturing (and again once
+      // reaped today); the real fruit emoji shows ONLY when the bed is ripe and ready to reap (mature, unreaped).
+      const em=on&&cell.letter?((mature&&!reaped)?cropInfo(cell.season||season,cell.letter)[1]:"🌱"):"";
       plots+='<div class="'+pc+'" data-r="'+r+'" data-c="'+c+'" data-d="'+d+'">'+em+'</div>';
     }
     const tag=cell.letter?('<span class="gd-clabel">'+cell.letter+(grown?(mature?(reaped?" ✓":" ⛏"):" …"):"")+'</span>'):"";

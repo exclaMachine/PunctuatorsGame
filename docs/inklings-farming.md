@@ -155,6 +155,12 @@ Xanthoceras/Ximenia/Xylopia; Q: Quamash/Quinine bark; Z: Zizia/Zedoary) — all 
 - Braille pattern is **required** (must match to grow) — decided; quiz mode hides the hint.
 - Remaining future work: the **walkable §8 zone** (tools, watering, richer growth stages, the shared
   `tileInFront()` placement primitive).
+- **Per-plant harvest timing (future):** `CROP_CFG` is uniform (`matureDays:1`) for now. May later give each of the
+  104 crops a **more realistic relative maturation time** (fast greens vs. slow tree fruit/nuts) instead of a flat
+  overnight ripen — the framework already supports per-season/letter overrides.
+- **Fuller growth cycle (future):** the current visual is two-stage (🌱 sprout → fruit → sprout after reaping). May
+  later expand to a **seed → sprout → fruit** cycle (a distinct just-sown "seed" stage before the sprout) for more
+  Stardew-like progression.
 - The Sound Garden / IPA pass (§5).
 - Other scripts as future cozy variants (Cyrillic "heirloom varieties", Ogham plant-aesthetics, Morse rhythm) —
   from the brainstorm; not planned.
@@ -198,9 +204,13 @@ emoji are still placeholders pending pixel sprites). `BRAILLE[letter]` stays glo
   `SEED_GRANTS`/`checkSeedGrants` (start with A; T/E/S at 3/8/15 words).
 
 **Growth & harvest cadence:**
-- **Instant feedback / validation:** correct plots glow as **ghost** guides; a right dot shows the crop, a wrong
-  dot turns **red**; an incomplete bed is **amber** ("growing"). A bed **grows** (`cellGrown`/`effLetter`, reads
-  as its letter) only when its dots **exactly** match the pattern.
+- **Instant feedback / validation:** correct plots glow as **ghost** guides; a right dot shows a 🌱 **sprout**, a
+  wrong dot turns **red**; an incomplete bed is **amber** ("growing"). A bed **grows** (`cellGrown`/`effLetter`,
+  reads as its letter) only when its dots **exactly** match the pattern.
+- **Stardew-style crop stages (visual):** a planted dot shows a generic 🌱 **sprout** while sowing / growing /
+  maturing overnight (and again once **reaped today**); the crop's actual **fruit emoji** (`cropInfo(...)[1]`)
+  appears **only when the bed is ripe** — mature and not yet reaped (`mature && !reaped` in `renderGarden`). So the
+  garden reads as sprouts that turn into fruit at harvest and revert to sprouts after reaping.
 - **Overnight maturation** (`cellMature`, `CROP_CFG.matureDays` default 1): a grown bed matures the next real day
   (`cell.plantedDay` stamped when it grows), then is harvestable. Cell labels show `…` ripening / `⛏` ready / `✓`
   reaped-today; immature beds/words render dimmed.
