@@ -18,6 +18,7 @@ you add/remove/modify a feature (treat the doc as part of the diff, not an after
 | **Spin Nids** (Ambigram Word Game) — rotatable ambigram-tile word game | `SpinNidIndex.html` | [`docs/spin-nids.md`](docs/spin-nids.md) |
 | **Write. Right!** — sentence-building card game with an exquisite-corpse drawing twist | `WriteRight.html` | [`docs/write-right.md`](docs/write-right.md) |
 | **The Prescriptivist's Gauntlet** — transcribe sentences under stacking linguistic "laws" | `Prescriptivist.html` | [`docs/prescriptivist.md`](docs/prescriptivist.md) |
+| **Pitch Bird** — sing-to-fly voice game; pitch controls the bird's height (Flappy pipes + UltraStar karaoke). *In development, not yet shipped* | `pitch-bird.html` | [`docs/pitch-bird.md`](docs/pitch-bird.md) |
 
 The repo also holds many undocumented tools/pages (ambigram generators, anagram/palindrome builders, an
 IPA game, `typing.html`, `punctuators.html`, etc.). Those have no `docs/` entry yet — read the file

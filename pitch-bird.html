@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pitch Bird — sing to fly</title>
+<style>
+  :root{
+    --sky-top:#1e1838;
+    --panel:#181229;
+    --panel-2:#211836;
+    --ink:#ece8f5;
+    --ink-dim:#9a90b6;
+    --line:#2f2547;
+    --amber:#ffc24b;
+    --jade:#6ee7a8;
+    --warn:#ff7a6b;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(120% 80% at 50% -10%, #2a2147 0%, var(--sky-top) 55%, #120d22 100%);
+    color:var(--ink);
+    font-family:var(--sans);
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ width:100%; max-width:940px; }
+
+  /* ---------- HUD ---------- */
+  .hud{
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    align-items:center;
+    gap:18px;
+    padding:14px 18px;
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line);
+    border-radius:16px 16px 0 0;
+  }
+  .note-readout{ display:flex; align-items:baseline; gap:10px; min-width:138px }
+  .note-name{
+    font-family:var(--mono); font-weight:700; font-size:40px; line-height:1;
+    letter-spacing:-1px; color:var(--ink); min-width:84px; transition:color .12s;
+  }
+  .note-name.intune{ color:var(--jade) }
+  .note-name.silent{ color:var(--ink-dim) }
+  .cents{ font-family:var(--mono); font-size:13px; color:var(--ink-dim) }
+
+  .tuner{ width:100%; max-width:340px; margin:0 auto }
+  .tuner-track{
+    position:relative; height:10px; border-radius:6px;
+    background:#0e0a1c; border:1px solid var(--line); overflow:hidden;
+  }
+  .tuner-center{ position:absolute; left:50%; top:-3px; bottom:-3px; width:2px; background:var(--jade); opacity:.5; transform:translateX(-1px) }
+  .tuner-needle{
+    position:absolute; top:50%; left:50%; width:14px; height:14px; border-radius:50%;
+    background:var(--amber); transform:translate(-50%,-50%);
+    box-shadow:0 0 12px var(--amber); transition:left .06s linear, background .12s;
+  }
+  .tuner-label{ text-align:center; font-size:11px; color:var(--ink-dim); margin-top:5px; letter-spacing:.04em; text-transform:uppercase }
+
+  .score{ text-align:right; min-width:96px }
+  .score .n{ font-family:var(--mono); font-weight:700; font-size:34px; line-height:1 }
+  .score .l{ font-size:11px; color:var(--ink-dim); letter-spacing:.06em; text-transform:uppercase }
+
+  /* ---------- stage ---------- */
+  .stage{ position:relative; line-height:0 }
+  canvas{ display:block; width:100%; height:auto; border-left:1px solid var(--line); border-right:1px solid var(--line); background:#120d22 }
+
+  .overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; gap:14px;
+    padding:24px; background:rgba(12,8,24,.62); backdrop-filter:blur(2px);
+    line-height:1.5;
+  }
+  .overlay.hidden{ display:none }
+  .overlay h2{ margin:0; font-size:26px; font-weight:650; letter-spacing:-.2px }
+  .overlay p{ margin:0; max-width:440px; color:var(--ink-dim); font-size:15px }
+  .overlay .big{ font-family:var(--mono); font-size:52px; font-weight:700; color:var(--amber); letter-spacing:-1px }
+  .overlay.err h2{ color:var(--warn) }
+
+  /* ---------- controls ---------- */
+  .bar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+    padding:14px 18px;
+    background:linear-gradient(0deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line); border-top:none;
+    border-radius:0 0 16px 16px;
+  }
+  button{
+    font-family:var(--sans); font-size:14px; font-weight:600;
+    color:var(--ink); background:#241a3d; border:1px solid var(--line);
+    padding:10px 16px; border-radius:10px; cursor:pointer; transition:.14s;
+  }
+  button:hover:not(:disabled){ border-color:#48386e; background:#2c2049 }
+  button:disabled{ opacity:.4; cursor:not-allowed }
+  button:focus-visible{ outline:2px solid var(--amber); outline-offset:2px }
+  button.primary{ background:var(--amber); color:#231600; border-color:transparent }
+  button.primary:hover:not(:disabled){ background:#ffd071 }
+  .spacer{ flex:1 1 auto }
+  .mic-meter{ display:flex; align-items:center; gap:8px }
+  .mic-meter-l{ font-size:11px; color:var(--ink-dim); letter-spacing:.06em; text-transform:uppercase }
+  .level{ width:90px; height:9px; border-radius:5px; background:#0e0a1c; border:1px solid var(--line); overflow:hidden }
+  .level > span{ display:block; height:100%; width:0; background:linear-gradient(90deg,var(--jade),var(--amber)); transition:width .05s linear }
+  .gear{ padding:10px 13px }
+  .songsel{ font-family:var(--sans); font-size:14px; font-weight:600; color:var(--ink);
+            background:#241a3d; border:1px solid var(--line); border-radius:10px; padding:9px 12px; cursor:pointer }
+  .songsel:hover{ border-color:#48386e }
+
+  .settings{
+    margin-top:10px; width:100%;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px 22px;
+    padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  }
+  .settings.hidden{ display:none }
+  .field{ display:flex; flex-direction:column; gap:6px }
+  .field label{ font-size:12px; color:var(--ink-dim); letter-spacing:.04em; text-transform:uppercase }
+  .field select, .field input[type=range]{ width:100% }
+  .field select{
+    font-family:var(--mono); font-size:14px; color:var(--ink); background:#241a3d;
+    border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+  }
+  .field .val{ font-family:var(--mono); font-size:12px; color:var(--ink-dim) }
+  .check{ display:flex; align-items:center; gap:9px; font-size:14px; color:var(--ink); align-self:end }
+  .check input{ width:17px; height:17px; accent-color:var(--amber) }
+
+  .hint{ margin:12px 2px 0; font-size:12.5px; color:var(--ink-dim); line-height:1.5 }
+  .diag{ margin:8px 2px 0; font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); word-break:break-word }
+  a{ color:var(--amber) }
+  @media (max-width:560px){
+    .hud{ grid-template-columns:auto 1fr; gap:12px }
+    .tuner{ grid-column:1 / -1; order:3 }
+    .note-name{ font-size:32px }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hud">
+    <div class="note-readout">
+      <span id="noteName" class="note-name silent">—</span>
+      <span id="cents" class="cents"></span>
+    </div>
+    <div class="tuner">
+      <div class="tuner-track">
+        <div class="tuner-center"></div>
+        <div id="needle" class="tuner-needle" style="left:50%"></div>
+      </div>
+      <div class="tuner-label" id="tunerLabel">in tune</div>
+    </div>
+    <div class="score">
+      <div class="n" id="score">0</div>
+      <div class="l">best <span id="best">0</span></div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <canvas id="game" width="900" height="540"></canvas>
+    <div id="overlay" class="overlay">
+      <h2>Sing to fly</h2>
+      <p>Higher notes lift the bird, lower notes drop it. Enable your microphone, find your range, then thread the gaps with your voice.</p>
+      <button id="overlayBtn" class="primary">Enable microphone</button>
+    </div>
+  </div>
+
+  <div class="bar">
+    <button id="playBtn" class="primary" disabled>Play</button>
+    <button id="calBtn" disabled>Calibrate range</button>
+    <select id="songSel" class="songsel" title="Choose a song">
+      <option value="">Obstacle mode</option>
+      <option value="twinkle">♪ Twinkle, Twinkle (demo)</option>
+      <option value="__file">Load .txt file…</option>
+    </select>
+    <input id="fileInput" type="file" accept=".txt,.usdx" hidden />
+    <span class="mic-meter"><span class="mic-meter-l">mic</span><span class="level"><span id="levelBar"></span></span></span>
+    <div class="spacer"></div>
+    <button id="gearBtn" class="gear" aria-label="Settings">⚙</button>
+  </div>
+
+  <div id="settings" class="settings hidden">
+    <div class="field">
+      <label for="lowSel">Lowest note (bottom)</label>
+      <select id="lowSel"></select>
+    </div>
+    <div class="field">
+      <label for="highSel">Highest note (top)</label>
+      <select id="highSel"></select>
+    </div>
+    <div class="field">
+      <label for="smooth">Glide / smoothing</label>
+      <input id="smooth" type="range" min="5" max="40" value="18" />
+      <span class="val"><span id="smoothVal">18</span>% per frame</span>
+    </div>
+    <div class="field">
+      <label for="gap">Gap size (obstacle mode)</label>
+      <input id="gap" type="range" min="120" max="260" value="180" />
+      <span class="val"><span id="gapVal">180</span> px</span>
+    </div>
+    <div class="field">
+      <label for="transpose">Transpose (song key)</label>
+      <input id="transpose" type="range" min="-12" max="12" value="0" />
+      <span class="val"><span id="transposeVal">0</span> semitones</span>
+    </div>
+    <label class="check"><input id="gravity" type="checkbox" /> Drift down when silent</label>
+  </div>
+
+  <p class="hint">
+    Tip: hum or sing steady vowels (“ah”, “oo”) — the detector likes sustained tones. If the mic won’t turn on inside this
+    preview, download the file and open it in Chrome, or serve it from <code>http://localhost</code>; microphone access needs a secure context.
+  </p>
+  <p id="diag" class="diag">Mic not started.</p>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- elements ----------
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const overlayBtn = document.getElementById('overlayBtn');
+  const playBtn = document.getElementById('playBtn');
+  const calBtn = document.getElementById('calBtn');
+  const gearBtn = document.getElementById('gearBtn');
+  const settings = document.getElementById('settings');
+  const lowSel = document.getElementById('lowSel');
+  const highSel = document.getElementById('highSel');
+  const smooth = document.getElementById('smooth');
+  const smoothVal = document.getElementById('smoothVal');
+  const gapSlider = document.getElementById('gap');
+  const gapVal = document.getElementById('gapVal');
+  const gravityChk = document.getElementById('gravity');
+  const noteNameEl = document.getElementById('noteName');
+  const centsEl = document.getElementById('cents');
+  const needle = document.getElementById('needle');
+  const tunerLabel = document.getElementById('tunerLabel');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const levelBar = document.getElementById('levelBar');
+  const diagEl = document.getElementById('diag');
+  const songSel = document.getElementById('songSel');
+  const fileInput = document.getElementById('fileInput');
+  const transposeEl = document.getElementById('transpose');
+  const transposeLabel = document.getElementById('transposeVal');
+
+  // ---------- musical helpers ----------
+  const NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const midiToFreq = m => 440 * Math.pow(2, (m - 69) / 12);
+  const freqToMidi = f => 69 + 12 * Math.log2(f / 440);
+  const midiName  = m => NAMES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
+  const isSharp   = m => NAMES[((Math.round(m) % 12) + 12) % 12].includes('#');
+
+  // populate note dropdowns (C2..C6)
+  const LOW_MIDI = 36, HIGH_MIDI = 84;
+  for (let m = LOW_MIDI; m <= HIGH_MIDI; m++) {
+    const o1 = new Option(midiName(m), m); lowSel.add(o1);
+    const o2 = new Option(midiName(m), m); highSel.add(o2);
+  }
+
+  // ---------- tunable range (source of truth) ----------
+  // Easy to change either here or via the dropdowns / Calibrate button.
+  let rangeMin = 48; // C3
+  let rangeMax = 72; // C5
+  lowSel.value = rangeMin;
+  highSel.value = rangeMax;
+  let fMin = midiToFreq(rangeMin);
+  let fMax = midiToFreq(rangeMax);
+
+  function applyRange(min, max) {
+    rangeMin = Math.max(LOW_MIDI, Math.min(min, HIGH_MIDI - 5));
+    rangeMax = Math.min(HIGH_MIDI, Math.max(max, rangeMin + 5)); // keep ≥ ~5 semitones
+    fMin = midiToFreq(rangeMin);
+    fMax = midiToFreq(rangeMax);
+    lowSel.value = nearestOption(lowSel, rangeMin);
+    highSel.value = nearestOption(highSel, rangeMax);
+  }
+  function nearestOption(sel, m) {
+    let best = sel.options[0].value, bd = Infinity;
+    for (const o of sel.options) { const d = Math.abs(+o.value - m); if (d < bd) { bd = d; best = o.value; } }
+    return best;
+  }
+
+  // ---------- layout ----------
+  const GUTTER = 64;            // right-hand note-scale column
+  const PAD = 26;              // vertical inset so extreme notes aren't at the very edge
+  let W = canvas.width, H = canvas.height;
+  let playW = W - GUTTER;
+  let playTop = PAD, playBot = H - PAD;
+
+  function resize() {
+    const cssW = Math.min(canvas.parentElement.clientWidth, 940);
+    const ratio = 540 / 900;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.round(cssW); H = Math.round(cssW * ratio);
+    canvas.style.height = H + 'px';
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    playW = W - GUTTER; playTop = PAD; playBot = H - PAD;
+  }
+  window.addEventListener('resize', resize);
+
+  // map a frequency to a y pixel (log scale, since pitch is logarithmic)
+  function freqToY(f) {
+    const t = (Math.log(f) - Math.log(fMin)) / (Math.log(fMax) - Math.log(fMin));
+    const tc = Math.max(0, Math.min(1, t));
+    return playBot - tc * (playBot - playTop);
+  }
+
+  // ---------- audio / pitch detection ----------
+  let audioCtx = null, analyser = null, buf = null, micReady = false;
+  // IMPORTANT: keep these in scope. If the stream/source are local to initMic,
+  // Chrome garbage-collects them after the function returns and the analyser
+  // silently reads zeros — the classic "mic granted but nothing happens" bug.
+  let micStream = null, micSource = null, silentGain = null, micTrack = null;
+  let inputLevel = 0;
+
+  function onMicEnded() {
+    micReady = false;
+    playBtn.disabled = true; calBtn.disabled = true;
+    showOverlay('Microphone stopped',
+      'Another browser tab or app may have taken the mic (Safari only allows one at a time). Close any other page using the microphone, then enable it again here.',
+      'Enable microphone', enableMic);
+  }
+
+  async function initMic() {
+    try {
+      // Plain request. Safari ends the track if you ask it to disable
+      // echoCancellation/noiseSuppression/autoGainControl on the built-in mic,
+      // so we accept the browser defaults — pitch detection still works fine.
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micTrack = micStream.getAudioTracks()[0] || null;
+      if (micTrack) micTrack.onended = onMicEnded;
+      // Match the context sample rate to the mic's. On macOS the mic commonly runs at
+      // 48000 while the context defaults to the 44100 output rate; that mismatch makes
+      // the source node output pure silence (live, unmuted track, but all-zero samples).
+      const rate = (micTrack && micTrack.getSettings && micTrack.getSettings().sampleRate) || undefined;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      try { audioCtx = new AC(rate ? { sampleRate: rate } : undefined); }
+      catch (_) { audioCtx = new AC(); }
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+      micSource = audioCtx.createMediaStreamSource(micStream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      buf = new Float32Array(analyser.fftSize);
+      // Route source -> analyser -> muted gain -> destination. The muted gain keeps
+      // the graph actively pulled (so audio flows) without any audible echo.
+      silentGain = audioCtx.createGain();
+      silentGain.gain.value = 0;
+      micSource.connect(analyser);
+      analyser.connect(silentGain);
+      silentGain.connect(audioCtx.destination);
+      micReady = true;
+      return true;
+    } catch (e) {
+      showError(e);
+      return false;
+    }
+  }
+
+  function showError(e) {
+    let msg = 'Something blocked the microphone.';
+    if (e && e.name === 'NotAllowedError') msg = 'Mic access was blocked. Allow the microphone in your browser, then press Enable again.';
+    else if (e && e.name === 'NotFoundError') msg = 'No microphone was found. Connect one and try again.';
+    else if (!window.isSecureContext) msg = 'This page needs a secure context for the mic. Download the file and open it in Chrome, or serve it from http://localhost.';
+    overlay.classList.remove('hidden');
+    overlay.classList.add('err');
+    overlay.innerHTML = '<h2>Can’t reach the microphone</h2><p>' + msg + '</p>';
+    const b = document.createElement('button'); b.className = 'primary'; b.textContent = 'Try again';
+    b.onclick = () => { overlay.classList.remove('err'); enableMic(); };
+    overlay.appendChild(b);
+  }
+
+  // Autocorrelation pitch detector (classic ACF with parabolic refinement).
+  function detectPitch(b, sr) {
+    const SIZE = b.length;
+    let rms = 0;
+    for (let i = 0; i < SIZE; i++) rms += b[i] * b[i];
+    rms = Math.sqrt(rms / SIZE);
+    if (rms < 0.006) return -1; // too quiet -> treat as silence
+
+    let r1 = 0, r2 = SIZE - 1; const thres = 0.2;
+    for (let i = 0; i < SIZE / 2; i++) if (Math.abs(b[i]) < thres) { r1 = i; break; }
+    for (let i = 1; i < SIZE / 2; i++) if (Math.abs(b[SIZE - i]) < thres) { r2 = SIZE - i; break; }
+    const trimmed = b.subarray(r1, r2);
+    const n = trimmed.length;
+    if (n < 2) return -1;
+
+    const c = new Float32Array(n);
+    for (let lag = 0; lag < n; lag++) {
+      let sum = 0;
+      for (let i = 0; i < n - lag; i++) sum += trimmed[i] * trimmed[i + lag];
+      c[lag] = sum;
+    }
+    let d = 0; while (d < n - 1 && c[d] > c[d + 1]) d++;   // skip the initial downslope
+    let maxv = -1, maxp = -1;
+    for (let i = d; i < n; i++) if (c[i] > maxv) { maxv = c[i]; maxp = i; }
+    if (maxp <= 0) return -1;
+
+    let T0 = maxp;
+    const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1] || c[T0];
+    const a = (x1 + x3 - 2 * x2) / 2, bb = (x3 - x1) / 2;
+    if (a) T0 = T0 - bb / (2 * a);
+
+    const f = sr / T0;
+    return (f > 55 && f < 2000) ? f : -1;
+  }
+
+  // ---------- game state ----------
+  const S = { IDLE:'idle', READY:'ready', PLAY:'play', OVER:'over', CAL:'cal' };
+  let state = S.IDLE;
+
+  let bird = { x: 0, y: 0, r: 13, trail: [] };
+  let pipes = [];
+  let spawnTimer = 0;
+  let score = 0, best = 0;
+  let speed = 150;           // px/s
+  let gapH = 180;
+  let smoothing = 0.18;      // ease factor for the bird
+  let gravityOnSilence = false;
+
+  let smoothFreq = 0;        // lightly smoothed live frequency (for note + position)
+  let voiceActive = false;
+  let lastValidT = 0;
+
+  // calibration
+  let cal = null;
+
+  function resetGame() {
+    pipes = []; spawnTimer = 0; score = 0;
+    bird.x = playW * 0.30;
+    bird.y = (playTop + playBot) / 2;
+    bird.trail = [];
+    scoreEl.textContent = '0';
+  }
+
+  function spawnPipe() {
+    const margin = 36;
+    // Make sure the gap fits with a visible pipe on each side, even on short canvases.
+    const maxGap = Math.max(80, H - 2 * margin - 60);
+    const half = Math.min(gapH, maxGap) / 2;
+    const lo = margin + half, hi = H - margin - half;
+    const gy = hi > lo ? lo + Math.random() * (hi - lo) : H / 2;
+    pipes.push({ x: playW + 40, gy, half, passed: false, w: 56 });
+  }
+
+  // ---------- song mode (UltraStar .txt karaoke) ----------
+  const VISIBLE_MS = 3200;   // how far ahead the scrolling target notes are shown
+  const LEAD_IN_MS = 2800;   // count-in before the first note reaches the line
+  const NOTE_TOL   = 1.5;    // semitone tolerance to count as "on the note"
+  const HIT_FRAC   = 0.35;   // fraction of a note you must hold in tune to clear it
+
+  let mode = 'pipes';        // 'pipes' (obstacle game) or 'song' (karaoke)
+  let song = null;
+  let songStartT = 0, curSongClock = 0, songCurIdx = 0;
+  let notesHit = 0, notesTotal = 0;
+  let transpose = 0;         // semitone shift to fit the song to the singer
+  let loadedOpt = null, lastSongVal = '';
+
+  // A clean public-domain tune so song mode works out of the box.
+  // UltraStar format: ":" note, "*" golden, "F" freestyle, "-" phrase break, "E" end.
+  // Columns are: type  startBeat  lengthBeat  pitch(=MIDI-60)  syllable
+  const TWINKLE = `#TITLE:Twinkle, Twinkle, Little Star
+#ARTIST:Traditional (Public Domain)
+#LANGUAGE:English
+#BPM:90
+#GAP:400
+: 0 4 0 Twin
+: 4 4 0 kle
+: 8 4 7  twin
+: 12 4 7 kle
+: 16 4 9  lit
+: 20 4 9 tle
+: 24 8 7  star
+- 32
+: 32 4 5 How
+: 36 4 5  I
+: 40 4 4  won
+: 44 4 4 der
+: 48 4 2  what
+: 52 4 2  you
+: 56 8 0  are
+- 64
+: 64 4 7 Up
+: 68 4 7  a
+: 72 4 5 bove
+: 76 4 5  the
+: 80 4 4  world
+: 84 4 4  so
+: 88 8 2  high
+- 96
+: 96 4 7 Like
+: 100 4 7  a
+: 104 4 5  dia
+: 108 4 5 mond
+: 112 4 4  in
+: 116 4 4  the
+: 120 8 2  sky
+- 128
+: 128 4 0 Twin
+: 132 4 0 kle
+: 136 4 7  twin
+: 140 4 7 kle
+: 144 4 9  lit
+: 148 4 9 tle
+: 152 8 7  star
+- 160
+: 160 4 5 How
+: 164 4 5  I
+: 168 4 4  won
+: 172 4 4 der
+: 176 4 2  what
+: 180 4 2  you
+: 184 8 0  are
+E`;
+
+  // Parse an UltraStar .txt into { meta, notes[], lastEndMs }.
+  // Each note: { type, startMs, durMs, endMs, midi, text, hitMs, done, hit }.
+  function parseUltraStar(text) {
+    const meta = {}, notes = [];
+    for (const raw of text.split(/\r?\n/)) {
+      const line = raw.replace(/\s+$/, '');
+      if (!line) continue;
+      if (line[0] === '#') {
+        const i = line.indexOf(':');
+        if (i > 0) meta[line.slice(1, i).trim().toUpperCase()] = line.slice(i + 1).trim();
+        continue;
+      }
+      if (line[0] === 'E') break;
+      if (line[0] === '-') continue;            // phrase break (not needed for scrolling)
+      if (/^[Pp]\d/.test(line)) continue;        // duet player marker — single player only
+      const m = /^([:*FRG])\s+(-?\d+)\s+(\d+)\s+(-?\d+)\s(.*)$/.exec(line);
+      if (!m) continue;
+      const type = m[1] === '*' ? 'golden' : (m[1] === 'F' ? 'freestyle' : 'normal');
+      notes.push({ type, startBeat: +m[2], lenBeat: +m[3], midi: +m[4] + 60, text: m[5] });
+    }
+    const bpm = parseFloat((meta.BPM || '120').replace(',', '.')) || 120;
+    const gap = parseFloat((meta.GAP || '0').replace(',', '.')) || 0;
+    const beatMs = 15000 / bpm;                  // UltraStar beats are 1/4 of a BPM beat
+    let lastEndMs = 0;
+    for (const n of notes) {
+      n.startMs = gap + n.startBeat * beatMs;
+      n.durMs = n.lenBeat * beatMs;
+      n.endMs = n.startMs + n.durMs;
+      n.hitMs = 0; n.done = false; n.hit = false;
+      if (n.endMs > lastEndMs) lastEndMs = n.endMs;
+    }
+    notes.sort((a, b) => a.startMs - b.startMs);
+    return { meta, notes, lastEndMs };
+  }
+
+  // ===== MAD-LIBS HOOK (not wired up yet) =====
+  // Syllables that begin a new word carry a leading space in n.text, so you can
+  // group syllables into words and swap them here later. Currently a no-op.
+  function applyLyricTransform(s) { return s; }
+
+  function fitRangeToSong() {
+    if (!song || !song.notes.length) return;
+    let lo = 999, hi = -999;
+    for (const n of song.notes) { const e = n.midi + transpose; if (e < lo) lo = e; if (e > hi) hi = e; }
+    applyRange(lo - 3, hi + 3);   // pad so notes aren't jammed against the edges
+  }
+
+  function resetSong() {
+    songCurIdx = 0; notesHit = 0;
+    notesTotal = song ? song.notes.filter(n => n.type !== 'freestyle').length : 0;
+    if (song) for (const n of song.notes) { n.hitMs = 0; n.done = false; n.hit = false; }
+    score = 0; scoreEl.textContent = '0';
+    bird.x = playW * 0.30; bird.y = (playTop + playBot) / 2; bird.trail = [];
+  }
+
+  function loadSongText(text, name) {
+    const parsed = parseUltraStar(text);
+    if (!parsed || !parsed.notes.length) {
+      showOverlay('Couldn’t read that song', 'No notes were found — is it an UltraStar .txt file?',
+        'OK', () => overlay.classList.add('hidden'));
+      return false;
+    }
+    song = parsed; mode = 'song'; transpose = 0;
+    if (transposeEl) { transposeEl.value = 0; transposeLabel.textContent = '0'; }
+    fitRangeToSong(); resetSong();
+    const ttl = song.meta.TITLE
+      ? song.meta.TITLE + (song.meta.ARTIST ? ' — ' + song.meta.ARTIST : '')
+      : (name || 'Song loaded');
+    if (micReady) showOverlay(ttl, 'Press Play, then sing each note as it reaches the line. Higher notes sit higher.', 'Play', startSong);
+    else showOverlay(ttl, 'Enable the microphone, then press Play to start singing.', 'Enable microphone', enableMic);
+    return true;
+  }
+
+  function startSong() {
+    if (!micReady || !song) return;
+    mode = 'song'; resetSong();
+    songStartT = performance.now(); state = S.PLAY;
+    overlay.classList.add('hidden');
+  }
+
+  function activeNote(clock) {
+    for (let i = songCurIdx; i < song.notes.length; i++) {
+      const n = song.notes[i];
+      if (clock < n.startMs) return null;
+      if (clock < n.endMs) return n;
+    }
+    return null;
+  }
+
+  function finalizeNote(n) {
+    if (n.done) return;
+    n.done = true;
+    if (n.type === 'freestyle') return;
+    n.hit = n.durMs > 0 && (n.hitMs / n.durMs) >= HIT_FRAC;
+    if (n.hit) { notesHit++; score = notesHit; scoreEl.textContent = score; }
+  }
+
+  function songComplete() {
+    state = S.OVER;
+    const pct = notesTotal ? Math.round(100 * notesHit / notesTotal) : 0;
+    showOverlay('Song complete!', `You nailed ${notesHit} of ${notesTotal} notes (${pct}%).`, 'Sing again', startSong);
+  }
+
+  function drawSong() {
+    if (!song) return;
+    const pxPerMs = (playW - bird.x) / VISIBLE_MS;
+    const clock = curSongClock;
+
+    // "now" line at the bird's x
+    ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(bird.x + 0.5, 0); ctx.lineTo(bird.x + 0.5, H); ctx.stroke();
+
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+    let activeText = '';
+    for (const n of song.notes) {
+      const x = bird.x + (n.startMs - clock) * pxPerMs;
+      const w = Math.max(6, n.durMs * pxPerMs);
+      if (x > playW || x + w < 0) continue;
+      const eff = n.midi + transpose;
+      const y = freqToY(midiToFreq(eff));
+      const isActive = clock >= n.startMs && clock < n.endMs;
+      let col;
+      if (n.done) col = n.hit ? 'rgba(110,231,168,0.5)' : 'rgba(255,122,107,0.38)';
+      else if (isActive) {
+        const matching = voiceActive && Math.abs(freqToMidi(smoothFreq) - eff) <= NOTE_TOL;
+        col = matching ? '#6ee7a8' : '#ffc24b';
+        activeText = applyLyricTransform(n.text).trim() || activeText;
+      } else col = 'rgba(201,191,232,0.55)';
+      ctx.fillStyle = col;
+      roundRect(x, y - 8, w, 16, 6); ctx.fill();
+      const label = applyLyricTransform(n.text).trim();
+      if (w > 9 && label) {
+        ctx.fillStyle = 'rgba(255,255,255,0.82)';
+        ctx.font = '600 11px ' + getSans();
+        ctx.fillText(label, x + w / 2, y + 20);
+      }
+    }
+    if (activeText) {
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.font = '700 26px ' + getSans();
+      ctx.fillText(activeText, playW * 0.5, 26);
+    }
+    if (clock < 0) {   // count-in
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.font = '700 40px ' + getMono();
+      ctx.fillText(String(Math.max(1, Math.ceil(-clock / 1000))), playW * 0.5, H * 0.42);
+    }
+    ctx.textAlign = 'left';
+  }
+
+  function getSans() { return getComputedStyle(document.documentElement).getPropertyValue('--sans'); }
+
+  // ---------- main loop ----------
+  let lastT = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+
+    // --- read pitch ---
+    let f = -1;
+    if (micReady) {
+      analyser.getFloatTimeDomainData(buf);
+      let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
+      inputLevel = Math.sqrt(s / buf.length);
+      if (levelBar) levelBar.style.width = Math.min(100, inputLevel * 350) + '%';
+      if (diagEl && micTrack) {
+        diagEl.textContent = 'device: ' + (micTrack.label || '(unnamed)') +
+          '  ·  muted: ' + micTrack.muted + '  ·  ready: ' + micTrack.readyState +
+          '  ·  ctx: ' + audioCtx.state + '  ·  level: ' + inputLevel.toFixed(3);
+      }
+      f = detectPitch(buf, audioCtx.sampleRate);
+    }
+    if (f > 0) {
+      voiceActive = true; lastValidT = now;
+      smoothFreq = smoothFreq ? smoothFreq + (f - smoothFreq) * 0.28 : f;
+    } else if (now - lastValidT > 140) {
+      voiceActive = false;
+    }
+
+    updateReadout(now);
+
+    // --- bird vertical control ---
+    if (state !== S.IDLE) {
+      let targetY = bird.y;
+      if (voiceActive && smoothFreq > 0) targetY = freqToY(smoothFreq);
+      else if (gravityOnSilence && state === S.PLAY && mode === 'pipes') targetY = bird.y + 280 * dt; // gentle fall
+      bird.y += (targetY - bird.y) * smoothing;
+      bird.y = Math.max(8, Math.min(H - 8, bird.y));
+      bird.trail.push({ x: bird.x, y: bird.y }); if (bird.trail.length > 14) bird.trail.shift();
+    }
+
+    if (state === S.CAL) updateCal(now);
+
+    // --- obstacle (pipes) mode ---
+    if (state === S.PLAY && mode === 'pipes') {
+      spawnTimer -= dt;
+      if (spawnTimer <= 0) { spawnPipe(); spawnTimer = (playW * 0.55) / speed; }
+      for (const p of pipes) p.x -= speed * dt;
+      pipes = pipes.filter(p => p.x + p.w > -10);
+
+      for (const p of pipes) {
+        if (!p.passed && p.x + p.w < bird.x) { p.passed = true; score++; scoreEl.textContent = score; }
+        if (hit(p)) gameOver();
+      }
+    }
+
+    // --- song (karaoke) mode ---
+    if (state === S.PLAY && mode === 'song' && song) {
+      const clock = (now - songStartT) - LEAD_IN_MS;
+      curSongClock = clock;
+      while (songCurIdx < song.notes.length && clock > song.notes[songCurIdx].endMs) {
+        finalizeNote(song.notes[songCurIdx]); songCurIdx++;
+      }
+      const an = activeNote(clock);
+      if (an && voiceActive && smoothFreq > 0 &&
+          Math.abs(freqToMidi(smoothFreq) - (an.midi + transpose)) <= NOTE_TOL) {
+        an.hitMs += dt * 1000;
+      }
+      if (songCurIdx >= song.notes.length && clock > song.lastEndMs + 600) songComplete();
+    }
+
+    try {
+      draw();
+    } catch (err) {
+      console.error('draw error (continuing):', err);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function hit(p) {
+    const bx = bird.x, by = bird.y, r = bird.r;
+    if (bx + r < p.x || bx - r > p.x + p.w) return false;
+    const half = p.half;
+    return (by - r < p.gy - half) || (by + r > p.gy + half);
+  }
+
+  function gameOver() {
+    if (score > best) { best = score; bestEl.textContent = best; }
+    state = S.OVER;
+    showOverlay('Out of tune', `You cleared ${score} gap${score === 1 ? '' : 's'}.`, 'Play again', startPlay);
+  }
+
+  // ---------- readout / tuner ----------
+  function updateReadout(now) {
+    if (voiceActive && smoothFreq > 0) {
+      const m = freqToMidi(smoothFreq);
+      const cents = Math.round((m - Math.round(m)) * 100);
+      noteNameEl.textContent = midiName(m);
+      centsEl.textContent = (cents >= 0 ? '+' : '') + cents + '¢';
+      const intune = Math.abs(cents) <= 12;
+      noteNameEl.className = 'note-name' + (intune ? ' intune' : '');
+      needle.style.left = (50 + Math.max(-50, Math.min(50, cents)) ) + '%';
+      needle.style.background = intune ? 'var(--jade)' : 'var(--amber)';
+      needle.style.boxShadow = '0 0 12px ' + (intune ? 'var(--jade)' : 'var(--amber)');
+      tunerLabel.textContent = intune ? 'in tune' : (cents > 0 ? 'sharp' : 'flat');
+    } else {
+      noteNameEl.textContent = '—'; centsEl.textContent = '';
+      noteNameEl.className = 'note-name silent';
+      needle.style.left = '50%'; tunerLabel.textContent = 'listening…';
+    }
+  }
+
+  // ---------- drawing ----------
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // sky
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#1b1436'); sky.addColorStop(0.55, '#3a2a55'); sky.addColorStop(1, '#a85f54');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, playW, H);
+    // soft horizon glow
+    const glow = ctx.createRadialGradient(playW * 0.5, H + 40, 20, playW * 0.5, H + 40, H * 0.9);
+    glow.addColorStop(0, 'rgba(255,180,120,0.30)'); glow.addColorStop(1, 'rgba(255,180,120,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, playW, H);
+
+    drawStaff();          // the signature: faint note lines across the playfield
+    if (state === S.PLAY || state === S.OVER) {
+      if (mode === 'song') drawSong();
+      else for (const p of pipes) drawPipe(p);
+    }
+    if (state !== S.IDLE) drawBird();
+    drawGutter();         // note-name scale on the right
+  }
+
+  function drawStaff() {
+    ctx.save();
+    ctx.font = '10px ' + getMono();
+    for (let m = rangeMin; m <= rangeMax; m++) {
+      const y = freqToY(midiToFreq(m));
+      const sharp = isSharp(m);
+      ctx.strokeStyle = sharp ? 'rgba(236,232,245,0.05)' : 'rgba(236,232,245,0.11)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(playW, y + 0.5); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawPipe(p) {
+    const half = p.half;
+    const grad = ctx.createLinearGradient(p.x, 0, p.x + p.w, 0);
+    grad.addColorStop(0, '#3aa78d'); grad.addColorStop(0.5, '#56c9aa'); grad.addColorStop(1, '#2f8c76');
+    ctx.fillStyle = grad;
+    roundRect(p.x, -10, p.w, p.gy - half + 10, 8); ctx.fill();
+    roundRect(p.x, p.gy + half, p.w, H - (p.gy + half) + 10, 8); ctx.fill();
+    // lip highlights
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    roundRect(p.x - 3, p.gy - half - 12, p.w + 6, 12, 5); ctx.fill();
+    roundRect(p.x - 3, p.gy + half, p.w + 6, 12, 5); ctx.fill();
+  }
+
+  function drawBird() {
+    const intune = voiceActive && Math.abs((freqToMidi(smoothFreq) - Math.round(freqToMidi(smoothFreq)))) < 0.12;
+    const accent = !voiceActive ? '#8d7fb0' : (intune ? '#7ef0ad' : '#ffc24b');
+    // trail
+    for (let i = 0; i < bird.trail.length; i++) {
+      const t = bird.trail[i], a = i / bird.trail.length;
+      ctx.beginPath(); ctx.fillStyle = accent; ctx.globalAlpha = a * 0.28;
+      ctx.arc(t.x, t.y, bird.r * (0.4 + a * 0.5), 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // glow
+    const g = ctx.createRadialGradient(bird.x, bird.y, 2, bird.x, bird.y, bird.r * 2.6);
+    g.addColorStop(0, accent); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = voiceActive ? 0.5 : 0.25; ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(bird.x, bird.y, bird.r * 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    // body
+    ctx.fillStyle = accent;
+    ctx.beginPath(); ctx.arc(bird.x, bird.y, bird.r, 0, Math.PI * 2); ctx.fill();
+    // belly
+    ctx.fillStyle = 'rgba(255,255,255,0.30)';
+    ctx.beginPath(); ctx.arc(bird.x - 2, bird.y + 3, bird.r * 0.6, 0, Math.PI * 2); ctx.fill();
+    // eye
+    ctx.fillStyle = '#1a1230';
+    ctx.beginPath(); ctx.arc(bird.x + bird.r * 0.4, bird.y - bird.r * 0.3, 2.3, 0, Math.PI * 2); ctx.fill();
+    // beak
+    ctx.fillStyle = '#ff9b3d';
+    ctx.beginPath();
+    ctx.moveTo(bird.x + bird.r * 0.7, bird.y - 1);
+    ctx.lineTo(bird.x + bird.r + 7, bird.y + 1.5);
+    ctx.lineTo(bird.x + bird.r * 0.7, bird.y + 4);
+    ctx.closePath(); ctx.fill();
+  }
+
+  function drawGutter() {
+    const x0 = playW;
+    ctx.fillStyle = '#140e26'; ctx.fillRect(x0, 0, GUTTER, H);
+    ctx.strokeStyle = 'rgba(236,232,245,0.10)'; ctx.beginPath(); ctx.moveTo(x0 + 0.5, 0); ctx.lineTo(x0 + 0.5, H); ctx.stroke();
+
+    const curMidi = (voiceActive && smoothFreq > 0) ? Math.round(freqToMidi(smoothFreq)) : null;
+    ctx.textBaseline = 'middle';
+    for (let m = rangeMin; m <= rangeMax; m++) {
+      if (isSharp(m) && (rangeMax - rangeMin) > 14) continue; // declutter wide ranges: naturals only
+      const y = freqToY(midiToFreq(m));
+      const active = (m === curMidi);
+      ctx.fillStyle = active ? '#ffc24b' : (isSharp(m) ? 'rgba(236,232,245,0.30)' : 'rgba(236,232,245,0.60)');
+      ctx.font = (active ? '700 ' : '500 ') + '11px ' + getMono();
+      ctx.fillText(midiName(m), x0 + 9, y);
+      if (active) {
+        // marker connecting current note to the bird line
+        ctx.strokeStyle = 'rgba(255,194,75,0.5)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(x0, y + 0.5); ctx.stroke();
+      }
+    }
+  }
+
+  // ---------- calibration ----------
+  function startCalibration() {
+    if (!micReady) return;
+    cal = { phase: 'lead-low', t0: performance.now(), low: [], high: [] };
+    state = S.CAL;
+    overlay.classList.add('hidden');
+  }
+  function updateCal(now) {
+    const el = now - cal.t0;
+    const collect = (arr) => { if (voiceActive && smoothFreq > 0) arr.push(smoothFreq); };
+    let title = '', sub = '', big = '';
+    if (cal.phase === 'lead-low') {
+      title = 'Sing your LOWEST comfortable note'; sub = 'Hold it steady…'; big = Math.max(1, Math.ceil((1500 - el) / 1000));
+      if (el > 1500) { cal.phase = 'rec-low'; cal.t0 = now; }
+    } else if (cal.phase === 'rec-low') {
+      collect(cal.low); title = 'Hold your low note'; big = Math.max(1, Math.ceil((3000 - el) / 1000));
+      if (el > 3000) { cal.phase = 'lead-high'; cal.t0 = now; }
+    } else if (cal.phase === 'lead-high') {
+      title = 'Now sing your HIGHEST comfortable note'; sub = 'Hold it steady…'; big = Math.max(1, Math.ceil((1500 - el) / 1000));
+      if (el > 1500) { cal.phase = 'rec-high'; cal.t0 = now; }
+    } else if (cal.phase === 'rec-high') {
+      collect(cal.high); title = 'Hold your high note'; big = Math.max(1, Math.ceil((3000 - el) / 1000));
+      if (el > 3000) { finishCalibration(); return; }
+    }
+    showOverlayCal(title, sub, big);
+  }
+  function median(a) { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; }
+  function finishCalibration() {
+    const lo = median(cal.low), hi = median(cal.high);
+    if (!lo || !hi || hi <= lo) {
+      state = S.READY;
+      showOverlay('Didn’t catch that', 'Try the calibration again and hold each note for the full count.', 'Retry', startCalibration);
+      cal = null; return;
+    }
+    let loM = Math.round(freqToMidi(lo)) - 2;   // a little headroom below
+    let hiM = Math.round(freqToMidi(hi)) + 2;   // and above
+    applyRange(loM, hiM);
+    cal = null; state = S.READY;
+    overlay.classList.add('hidden');
+  }
+
+  // ---------- overlay helpers ----------
+  function showOverlay(title, body, btnText, btnFn) {
+    overlay.classList.remove('hidden', 'err');
+    overlay.innerHTML = '';
+    const h = document.createElement('h2'); h.textContent = title;
+    const p = document.createElement('p'); p.textContent = body;
+    const b = document.createElement('button'); b.className = 'primary'; b.textContent = btnText; b.onclick = btnFn;
+    overlay.append(h, p, b);
+  }
+  function showOverlayCal(title, sub, big) {
+    overlay.classList.remove('hidden', 'err');
+    overlay.innerHTML = '';
+    const h = document.createElement('h2'); h.textContent = title;
+    const d = document.createElement('div'); d.className = 'big'; d.textContent = big;
+    const p = document.createElement('p'); p.textContent = sub;
+    overlay.append(h, d, p);
+  }
+
+  // ---------- flow ----------
+  async function enableMic() {
+    overlayBtn && (overlayBtn.disabled = true);
+    const ok = await initMic();
+    if (!ok) return;
+    state = S.READY;
+    overlay.classList.add('hidden');
+    playBtn.disabled = false; calBtn.disabled = false;
+    resetGame();
+  }
+  function startPlay() {
+    if (!micReady) return;
+    if (mode === 'song' && song) { startSong(); return; }
+    mode = 'pipes';
+    overlay.classList.add('hidden');
+    resetGame();
+    state = S.PLAY;
+  }
+
+  // ---------- events ----------
+  overlayBtn.onclick = enableMic;
+  playBtn.onclick = startPlay;
+  calBtn.onclick = startCalibration;
+  gearBtn.onclick = () => settings.classList.toggle('hidden');
+  lowSel.onchange = () => applyRange(+lowSel.value, +highSel.value);
+  highSel.onchange = () => applyRange(+lowSel.value, +highSel.value);
+  smooth.oninput = () => { smoothing = +smooth.value / 100; smoothVal.textContent = smooth.value; };
+  gapSlider.oninput = () => { gapH = +gapSlider.value; gapVal.textContent = gapSlider.value; };
+  gravityChk.onchange = () => { gravityOnSilence = gravityChk.checked; };
+
+  songSel.onchange = () => {
+    const v = songSel.value;
+    if (v === '__file') { fileInput.value = ''; fileInput.click(); songSel.value = lastSongVal; return; }
+    lastSongVal = v;
+    if (v === '') { mode = 'pipes'; song = null; if (state === S.PLAY) state = S.READY; overlay.classList.add('hidden'); }
+    else if (v === 'twinkle') { loadSongText(TWINKLE, 'Twinkle'); }
+    else if (v === '__loaded' && song) { mode = 'song'; }
+  };
+  fileInput.onchange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (loadSongText(String(reader.result), file.name)) {
+        if (!loadedOpt) { loadedOpt = new Option('', '__loaded'); songSel.add(loadedOpt); }
+        loadedOpt.text = song.meta.TITLE || file.name;
+        songSel.value = '__loaded'; lastSongVal = '__loaded';
+      }
+    };
+    reader.readAsText(file);
+  };
+  if (transposeEl) transposeEl.oninput = () => {
+    transpose = +transposeEl.value;
+    transposeLabel.textContent = (transpose > 0 ? '+' : '') + transpose;
+    if (song) fitRangeToSong();
+  };
+
+  function getMono() { return getComputedStyle(document.documentElement).getPropertyValue('--mono'); }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    if (w <= 0 || h <= 0) return;          // nothing to draw; avoids negative-radius arcTo crash
+    r = Math.max(0, Math.min(r, w / 2, h / 2));
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // ---------- boot ----------
+  resize();
+  resetGame();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
