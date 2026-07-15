@@ -2048,6 +2048,7 @@ const state = {
   screens:new Map(),            // "sx,sy" -> {creatures, tiles, seed, bg, ...}  (date-seeded; never saved)
   visited:new Set(),            // "sx,sy" of screens entered today (minimap only; not saved)
   captured:new Set(),           // "sx,sy,i" of creatures taken today — no respawn, so they stay gone
+  fishedSpots:new Set(),        // "sx,sy,cx,cy" of fish-spots reeled in today — day-scoped like captured. docs/inklings-fishing.md
   bonus:[],                     // [{id,letter}] extra letter-creatures on the home map from just-unlocked letters (same-day)
   day:"", daySeed:0,            // current calendar day + its map seed
   ink:0,                        // currency earned by spelling nouns (persists across days)
@@ -2574,7 +2575,7 @@ function startNewDay(){
   trans=null;
   state.day=todayStr(); state.daySeed=dayHash(state.day);
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
-  state.captured=new Set(); state.bonus=[]; state.visited=new Set(); state.screens=new Map();
+  state.captured=new Set(); state.fishedSpots=new Set(); state.bonus=[]; state.visited=new Set(); state.screens=new Map();
   state.screen={sx:0,sy:0};
   state.player.hearts=maxHearts(); state.player.hurtT=0; state.player.healT=0;
   state.prints=[]; _inkArmed=true; _inkPos=null; _inkPosDay=null;   // fresh ink puddle + clean feet
@@ -2805,11 +2806,47 @@ function nearHouse(){   // the Library entrance (house) on the outdoor home scre
 }
 // Fishing (docs/inklings-fishing.md §2): you fish from the BANK — facing a pond tile on a field screen.
 // Reuses the shared tileInFront() primitive; water blocks movement (walkType) so you never stand on it.
-function nearWater(){
-  if(state.room || trans || !state.started) return false;
-  const sc=curScreen(); if(!sc || !sc.tiles) return false;
-  const cell=tileInFront(sc, state.player);
-  return !!cell && sc.tiles[cell.cy][cell.cx]===T_WATER;
+// Fish-spots (docs/inklings-fishing.md §2/§8): fishing is LIMITED to a sparse set of daily-seeded spots, not
+// every pond. Rarer than monsters — most field screens hold none, and a screen that does holds only 1–2, on
+// bank-reachable water tiles. Each spot has a depth (1 shallow → a fish shadow; 2 deep → rising bubbles) that
+// sets the phoneme tier. Spots are deterministic per (screen, day) and cached on the screen, so they're stable
+// all day and freshly re-rolled tomorrow (Wordle rhythm). A caught spot is recorded in state.fishedSpots
+// (day-scoped like captured) and goes quiet until tomorrow — one catch per spot.
+const FISH_SCREEN_CHANCE = 0.4;   // fraction of field screens that hold ANY fish today (rarer than creatures)
+function fishSpotsFor(sc){
+  if(sc.fishSpots) return sc.fishSpots;
+  const out=[];
+  if(!sc || sc.isLibrary || sc.sx===undefined || !sc.tiles){ sc && (sc.fishSpots=out); return out; }
+  const sx=sc.sx, sy=sc.sy;
+  const rng=mulberry32((hash2(sx,sy) ^ state.daySeed ^ 0xf15b17)>>>0);
+  if(rng() < FISH_SCREEN_CHANCE){
+    // Candidate tiles: water with at least one walkable orthogonal neighbour (so you can fish it from the bank).
+    const cand=[], rows=sc.tiles.length, cols=sc.tiles[0].length;
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+      if(sc.tiles[r][c]!==T_WATER) continue;
+      const bank=(r>0&&walkType(sc.tiles[r-1][c])) || (r<rows-1&&walkType(sc.tiles[r+1][c])) ||
+                 (c>0&&walkType(sc.tiles[r][c-1])) || (c<cols-1&&walkType(sc.tiles[r][c+1]));
+      if(bank) cand.push([c,r]);
+    }
+    if(cand.length){
+      for(let i=cand.length-1;i>0;i--){ const j=(rng()*(i+1))|0, t=cand[i]; cand[i]=cand[j]; cand[j]=t; }   // Fisher–Yates
+      const want=Math.min(cand.length, 1 + (rng()<0.35?1:0));           // usually 1, sometimes 2 — sparse
+      const dist=Math.abs(sx)+Math.abs(sy), deepChance=Math.min(0.6, 0.15+dist*0.08);   // deep skews far from home
+      for(let i=0;i<want;i++){ const [c,r]=cand[i]; out.push({ cx:c, cy:r, depth:(rng()<deepChance)?2:1 }); }
+    }
+  }
+  sc.fishSpots=out; return out;
+}
+function fishSpotKey(sc,cx,cy){ return sc.sx+","+sc.sy+","+cx+","+cy; }
+// The (uncaught) fish-spot on the tile the player faces, or null. Gates every CAST affordance (E / toolbar / touch).
+function nearFishSpot(){
+  if(state.room || trans || !state.started) return null;
+  const sc=curScreen(); if(!sc || !sc.tiles || sc.isLibrary) return null;
+  const cell=tileInFront(sc, state.player); if(!cell || sc.tiles[cell.cy][cell.cx]!==T_WATER) return null;
+  for(const s of fishSpotsFor(sc)) if(s.cx===cell.cx && s.cy===cell.cy){
+    return state.fishedSpots && state.fishedSpots.has(fishSpotKey(sc,s.cx,s.cy)) ? null : s;
+  }
+  return null;
 }
 function nearLibraryDesk(){ return state.room==="library" && LIBRARY && LIBRARY.desk && Math.hypot(state.player.x-LIBRARY.desk.cx, state.player.y-LIBRARY.desk.cy)<64; }
 function nearLibraryBook(){ return state.room==="library" && LIBRARY && LIBRARY.book && Math.hypot(state.player.x-LIBRARY.book.cx, state.player.y-LIBRARY.book.cy)<64; }
@@ -2850,7 +2887,7 @@ function tryUseBench(){
   }
   if(nearShop()) openShop();                   // outdoor home: shop or the house (library)
   else if(nearHouse()) enterLibrary();
-  else if(nearWater()) openFishing();          // any field pond: cast a line from the bank
+  else if(nearFishSpot()) openFishing();       // a field fish-spot (shadow/bubbles): cast a line from the bank
 }
 
 /* ---------- COMBAT ---------------------------------------- */
@@ -3153,7 +3190,7 @@ function update(dt){
   const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
-  else if(hintReady && nearWater()){ hint.textContent="Press E to cast a line"; hint.classList.add("show"); }
+  else if(hintReady && nearFishSpot()){ hint.textContent="Press E to cast a line"; hint.classList.add("show"); }
   else hint.classList.remove("show");
 
   // active potion timers
@@ -3325,6 +3362,10 @@ function renderWorld(sc, ox, oy){
   ensureBg(sc); ctx.drawImage(sc.bg,0,0);
   const tnow=Date.now();
   for(const wt of sc.waterTiles) drawWaterAnim(wt[0],wt[1],tnow);
+  for(const s of fishSpotsFor(sc)){             // fish-spots: a shadow (shallow) or bubbles (deep) mark today's catchable water
+    if(state.fishedSpots && state.fishedSpots.has(fishSpotKey(sc,s.cx,s.cy))) continue;   // caught today → gone
+    drawFishSpot(s.cx, s.cy, s.depth, tnow);
+  }
   drawObstacle(sc, tnow);                       // river / interactable obstacle band, if this screen has one
   drawInk(sc, tnow);                            // today's spilled-ink puddle, if it's on this screen
   drawPrints(sc);                               // inky footprints trail (if the player is marked today)
@@ -3708,7 +3749,7 @@ function refreshToolbar(){
   const shop=started&&!state.room&&nearShop(), book=started&&nearLibraryBook(), shelf=started&&!!nearLibraryShelf();
   const curate=started&&nearLibraryCurator();
   const words=started&&nearLibraryDesk(), decor=started&&state.room==="library";   // Wordsmithy = desk-only; Decorate = anywhere in the Wordhoard
-  const fish=started&&nearWater();                                                  // Fish = lit only when facing a pond
+  const fish=started&&!!nearFishSpot();                                             // Fish = lit only when facing an uncaught fish-spot
   const sig=[started,shop,book,shelf,curate,words,decor,fish].join(",");
   if(sig===_tbSig) return; _tbSig=sig;
   const set=(id,on)=>{ const el=document.getElementById(id); if(el) el.classList.toggle("dim", !on); };
@@ -3782,6 +3823,24 @@ function drawWaterAnim(c,r,tnow){
   const x=c*TS, y=r*TS, ph=tnow/600 + (c*0.6 + r*0.4);
   ctx.fillStyle="rgba(160,205,240,.5)";  ctx.fillRect(x+4+Math.sin(ph)*3, y+8,  TS-12, 2);
   ctx.fillStyle="rgba(120,175,225,.45)"; ctx.fillRect(x+5-Math.cos(ph*1.1)*3, y+15, TS-12, 2);
+}
+// A fish-spot tell drawn live over the water (docs/inklings-fishing.md §2): depth 1 = a fish SHADOW gliding in
+// the shallows; depth 2 = BUBBLES rising from the deep. Purely a "cast here" indicator — the catch is the modal.
+function drawFishSpot(c,r,depth,tnow){
+  const x=c*TS, y=r*TS, mx=x+TS/2;
+  if(depth>=2){
+    ctx.fillStyle="rgba(225,242,255,.72)";
+    for(let i=0;i<3;i++){
+      const ph=((tnow/720)+(i*0.34))%1;                              // each bubble rises + resets
+      const bx=mx + Math.sin((ph+i)*6.283)*3 + (i-1)*3, by=y+TS-3 - ph*(TS-6), rad=1.4+i*0.5;
+      ctx.beginPath(); ctx.arc(bx,by,rad,0,6.283); ctx.fill();
+    }
+  } else {
+    const ph=tnow/900, sxp=mx+Math.sin(ph)*4, syp=y+TS/2+Math.cos(ph*1.3)*2;   // a slow glide
+    ctx.fillStyle="rgba(8,18,32,.34)";
+    ctx.beginPath(); ctx.ellipse(sxp,syp,6,3,Math.sin(ph)*0.4,0,6.283); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(sxp-6,syp); ctx.lineTo(sxp-10,syp-3); ctx.lineTo(sxp-10,syp+3); ctx.closePath(); ctx.fill();   // tail
+  }
 }
 // Crisp filled rect with a chunky 2px ink border — no blur, square corners (the retro-pixel chrome).
 function pxBox(x,y,w,h,fill,bw){ bw=bw||2;
@@ -6286,7 +6345,8 @@ function closePigpens(){
    self-contained overlay, proving you can fish from the bank. The cast→bite→type-the-romanization loop
    (step 3) and the Phonicon (step 4) build inside this shell, driven by the phoneme engine loaded up top
    (pickPhoneme / phonemeAccepts / phonemeReveal). No saved state yet — state.fishing is transient UI. */
-let _fishPond=null;   // which pond tile you cast at this session (for step 5's daily "fished-out" question)
+let _fishSpot=null;   // the fish-spot being fished this session: {sx,sy,cx,cy,depth}. depth comes from the SPOT
+                      // (shadow=shallow, bubbles=deep), not a cast-menu choice; a catch marks it in state.fishedSpots.
 // The in-modal cast loop (step 3). stage: ready → casting (bite telegraph) → biting (a phoneme surfaced,
 // type its romanization) → caught | slip → back to ready. depth: 1 shallow (symbol+hint), 2 deeper (symbol
 // only); the deep sound-only tier (3) is deferred behind an audio source (§4.3), so it isn't offered here.
@@ -6295,10 +6355,11 @@ function fishReset(){ if(fish.timer){ clearTimeout(fish.timer); fish.timer=null;
 function fishHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen||state.apothecaryOpen||state.heraldOpen||state.pigpensOpen; }
 function openFishing(){
   if(state.fishing) return;
-  if(!nearWater()){ showToast("Find some water to fish."); return; }
+  const spot=nearFishSpot();
+  if(!spot){ showToast("Nothing's biting here."); return; }         // only the daily shadow/bubble spots are fishable
   if(!PHONEMES){ showToast("The water's still settling…"); return; }   // phonemes.json not loaded yet
-  const sc=curScreen(), cell=tileInFront(sc, state.player);
-  _fishPond = cell ? key(cell.cx, cell.cy) : null;
+  const sc=curScreen();
+  _fishSpot = { sx:sc.sx, sy:sc.sy, cx:spot.cx, cy:spot.cy, depth:spot.depth||1 };
   state.fishing=true; fishReset();
   document.getElementById("fishing").classList.add("open");
   document.getElementById("sound-btn").style.display="none";
@@ -6306,7 +6367,7 @@ function openFishing(){
 }
 function closeFishing(){
   fishReset();
-  state.fishing=false; _fishPond=null;
+  state.fishing=false; _fishSpot=null;
   document.getElementById("fishing").classList.remove("open");
   document.getElementById("sound-btn").style.display = fishHideSound()?"none":"";
 }
@@ -6341,6 +6402,7 @@ function fishSetHook(){
   if(phonemeAccepts(fish.target, typed)){
     fish.stage="caught";
     fish.wasNew = recordPhonemeCatch(fish.target.ipa);   // first-of-kind → a little louder flourish; count persists
+    if(_fishSpot){ if(!state.fishedSpots) state.fishedSpots=new Set(); state.fishedSpots.add(fishSpotKey(_fishSpot,_fishSpot.cx,_fishSpot.cy)); }  // spot goes quiet till tomorrow (one catch/spot)
     SFX.play(fish.wasNew ? "unlockbig" : "newword");
     scheduleSave();
     // A polished first-catch flourish over the field (via the shared celebration queue) is step-5 tuning;
@@ -6352,16 +6414,18 @@ function renderFishing(){
   const body=document.getElementById("fish-body"); if(!body) return;
   const s=fish.stage;
   if(s==="ready"){
+    const deep=_fishSpot && _fishSpot.depth>=2;
+    const tell = deep
+      ? 'Bubbles rise from the <b>deep water</b> here — something lurks below. Cast, and when it bites, reel it up '+
+        'by <b>typing its spelling</b> (the symbol alone, no example word).'
+      : 'A shadow slips through the <b>shallows</b> here. Cast, and when it bites, reel it up by '+
+        '<b>typing its spelling</b> (the symbol <i>and</i> an example word to help).';
     body.innerHTML =
-      '<p class="fish-lead">Sounds move beneath the surface. Cast, and when one bites, reel it up by '+
-      '<b>typing its spelling</b>. Shallow water reveals the symbol <i>and</i> an example word; deeper water '+
-      'shows the symbol alone.</p>'+
+      '<p class="fish-lead">'+tell+'</p>'+
       '<div class="fish-cast-row">'+
-        '<button class="fish-btn" id="fish-cast-shallow">🎣 Shallow cast</button>'+
-        '<button class="fish-btn alt" id="fish-cast-mid">🎣 Deeper cast</button>'+
+        '<button class="fish-btn" id="fish-cast">🎣 Cast a line</button>'+
       '</div>';
-    document.getElementById("fish-cast-shallow").onclick=()=>fishCast(1);
-    document.getElementById("fish-cast-mid").onclick=()=>fishCast(2);
+    document.getElementById("fish-cast").onclick=()=>fishCast(_fishSpot?_fishSpot.depth:1);
     return;
   }
   if(s==="casting"){
@@ -6397,6 +6461,9 @@ function renderFishing(){
     if(!caught) msg = 'It slipped off the line — that one was /'+t.ipa+'/ (“'+spell+'”). Cast again and try to spell it.';
     else if(fish.wasNew) msg = '✨ A new sound for your Phoneme Fish — /'+t.ipa+'/ (“'+spell+'”)!';
     else msg = '🎣 Caught /'+t.ipa+'/ again — now ×'+((rec&&rec.count)||1)+' in your Fish Phoneme.';
+    // On a catch the spot is spent — the water goes quiet here till tomorrow (no re-cast). A slip keeps the fish,
+    // so you can cast again at the same spot (cozy + low-stakes, §4.1).
+    const quiet = caught ? '<p class="fish-msg">The water goes still here — this spot is fished out until tomorrow.</p>' : '';
     body.innerHTML =
       '<div class="fish-line '+(caught?"fish-caught":"")+'">'+
         '<div class="fish-creature">'+fishGlyph(t)+'</div>'+
@@ -6404,12 +6471,15 @@ function renderFishing(){
         '<div class="fish-symbol">/'+t.ipa+'/</div>'+
         '<div class="fish-hint">“'+spell+'” · as in “'+(t.hintWord||"")+'”</div>'+
       '</div>'+
-      '<p class="fish-msg '+(caught?"ok":"")+'">'+msg+'</p>'+
+      '<p class="fish-msg '+(caught?"ok":"")+'">'+msg+'</p>'+ quiet +
       '<div class="fish-cast-row">'+
-        '<button class="fish-btn" id="fish-again">🎣 Cast again</button>'+
+        (caught
+          ? '<button class="fish-btn" id="fish-done">✓ Done</button>'
+          : '<button class="fish-btn" id="fish-again">🎣 Cast again</button>')+
         '<button class="fish-btn alt" id="fish-phon">🔉 Phoneme Fish</button>'+
       '</div>';
-    document.getElementById("fish-again").onclick=()=>{ fish.stage="ready"; fish.target=null; renderFishing(); };
+    if(caught) document.getElementById("fish-done").onclick=closeFishing;
+    else document.getElementById("fish-again").onclick=()=>{ fish.stage="ready"; fish.target=null; renderFishing(); };
     document.getElementById("fish-phon").onclick=()=>{ closeFishing(); openPhonicon(); };
     return;
   }
@@ -6932,7 +7002,7 @@ function renderMaterials(){
 function snapshot(){
   return { v:5, day:state.day, inv:state.inv, dex:state.dex,
            decorOwned:state.decorOwned, placed:state.placed,
-           bagCap:state.bagCap, captured:[...state.captured], bonus:state.bonus,
+           bagCap:state.bagCap, captured:[...state.captured], fishedSpots:[...state.fishedSpots], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
            restored:state.restored, books:state.books, fables:state.fables,
            resources:state.resources, bestiary:state.bestiary, phonicon:state.phonicon,
@@ -6997,6 +7067,7 @@ function applySnapshot(d){
   if(d.day===state.day){
     if(d.inv) Object.assign(state.inv, d.inv);
     if(Array.isArray(d.captured)) state.captured=new Set(d.captured);
+    if(Array.isArray(d.fishedSpots)) state.fishedSpots=new Set(d.fishedSpots);   // spots reeled in earlier today stay quiet
     if(Array.isArray(d.bonus)) state.bonus=d.bonus;   // uncaught just-unlocked letters still roam home today
   }
   updateTrayHud(); updateRewardHud();
@@ -7189,7 +7260,7 @@ _wireTb("tb-feats",()=> tbSwitch("statsOpen", openStats));
 _wireTb("tb-gear",()=> tbSwitch("equipOpen", openEquip));
 _wireTb("tb-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
 _wireTb("tb-farm",()=> tbSwitch("gardenOpen", openGarden));
-_wireTb("tb-fish",()=> tbSwitch("fishing", openFishing, nearWater));   // Fish: contextual — only near a pond
+_wireTb("tb-fish",()=> tbSwitch("fishing", openFishing, nearFishSpot));   // Fish: contextual — only at a fish-spot
 if(IS_DEV){ const tp=document.getElementById("tb-pigpens"); if(tp){ tp.style.display=""; _wireTb("tb-pigpens",()=> tbSwitch("pigpensOpen", openPigpens)); } }
 if(IS_DEV){ const th=document.getElementById("tb-herald"); if(th){ th.style.display=""; _wireTb("tb-herald",()=> tbSwitch("heraldOpen", openHerald)); } }
 _wireTb("tb-help",()=> tbSwitch("help", toggleHelp));
@@ -7275,7 +7346,7 @@ function syncTouchUI(){
     const dc=document.getElementById("tc-decor");   // Decorate: available anywhere inside the Wordhoard
     if(dc) dc.style.display = inLib ? "" : "none";
     const fc=document.getElementById("tc-fish");    // Cast: field only, when facing a pond tile
-    if(fc) fc.style.display = (!inLib && nearWater()) ? "" : "none";
+    if(fc) fc.style.display = (!inLib && nearFishSpot()) ? "" : "none";
   }
 }
 if(IS_TOUCH){
@@ -7320,7 +7391,7 @@ if(IS_TOUCH){
   tap("tc-gear",()=> tbSwitch("equipOpen", openEquip));
   tap("tc-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
   tap("tc-farm",()=> tbSwitch("gardenOpen", openGarden));
-  tap("tc-fish",()=> tbSwitch("fishing", openFishing, nearWater));   // field: cast at a pond
+  tap("tc-fish",()=> tbSwitch("fishing", openFishing, nearFishSpot));   // field: cast at a fish-spot
   if(IS_DEV){ const tch=document.getElementById("tc-herald"); if(tch){ tch.style.display=""; tap("tc-herald",()=> tbSwitch("heraldOpen", openHerald)); } }
   tap("tc-modal",()=>{ if(state.started) alaSummon(); });
   tap("tc-slide",()=>{ if(state.started) startSlide(); });

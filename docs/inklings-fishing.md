@@ -14,7 +14,10 @@ is it.
 
 > **letters ← combat · words ← the desk · sounds ← fishing**
 
-Status: **build steps 1–4 shipped; rest plan-only.** Reflects a 2026-07 planning session (three settled
+Status: **build steps 1–4 + the daily fish-spot limiter shipped; rest plan-only.** The **fish-spots** system
+(§2/§2.1, shipped 2026-07-15) makes fishing *limited*: sparse daily-seeded spots (rarer than creatures)
+marked by a **shadow** (shallow) or **bubbles** (deep), one catch per spot, hard daily reset — depth now lives
+on the spot, retiring the shallow/deep cast buttons. Reflects a 2026-07 planning session (three settled
 forks below). **Step 1 done (2026-07-15):** the hand-authored inventory `data/phonemes.json` (40 GA phonemes)
 + the pure runtime lookup live in the `/* FISHING */` block of `inklings.html` (`PHONEMES`/`PHONEMES_BY_IPA`,
 `pickPhoneme(castDepth,rand)` weighted by tier + depth-gated, `phonemeAccepts(ph,typed)` lenient match,
@@ -62,14 +65,17 @@ livestock — a later **rhythm-reel** could share their sound/rhythm framing).
 
 ## 0. TL;DR
 
-- **Fish at existing water.** Field screens already grow `T_WATER` ponds (`genTiles`). Fishing is an
-  **`E`-interaction at a water tile** (proximity check like `nearShop`/`nearBench`), **not** a new zone. No
-  new terrain, no authored lake.
+- **Fish at existing water — but only at daily fish-spots.** Field screens already grow `T_WATER` ponds
+  (`genTiles`); fishing is an **`E`-interaction at the water**, **not** a new zone (no new terrain). It is
+  **limited** to a **sparse daily-seeded set of fish-spots** (rarer than creatures — most screens have none),
+  each marked on the canvas: a **shadow** (shallow fish) or **bubbles** (deep fish). One catch per spot, hard
+  daily reset (§2/§2.1).
 - **The catch = a phoneme; the input = typing its romanization.** A phoneme surfaces on the line; you type
   its **romanized spelling** (`/ʃ/ → "sh"`, `/uː/ → "oo"`, `/θ/ → "th"`) to set the hook. Fully offline,
   no new assets, on-theme (Inklings is already a typing game).
-- **Depth = difficulty.** Shallow casts **show the IPA symbol + a hint word**; deeper casts **hide the
-  symbol**; the deepest tier is **sound-only** — deferred until there's an audio source (§4.3, §7).
+- **Depth = difficulty, set by the spot.** A **shadow** spot fishes shallow (**IPA symbol + hint word**); a
+  **bubbles** spot fishes deep (**symbol only**). The deepest **sound-only** tier is deferred until there's an
+  audio source (§4.3, §7). (The old shallow/deep cast *buttons* were retired once depth moved onto the spot.)
 - **Reward = the Phonicon**, a **phoneme collection** (a sound-dex). It is the **supply** for the parked
   **Sound Garden** (farming §5) and a second, raw-phoneme consumer of the poetry phoneme engine. Fishing's
   reward home is **sounds** — it doesn't touch ink / potions / Feats / wood / décor (each POS's home stays
@@ -123,10 +129,48 @@ Fishing needs **no new room**. It rides the field screens' existing water:
   modal helpers, so nothing in combat or the desk is touched.
 
 **Daily-map interaction:** water layout is **deterministic per day** (`daySeed`), so which ponds exist is
-stable all day and fresh tomorrow — same Wordle rhythm as everything else. Whether a given pond is
-"fished out" for the day (a soft daily cap, like creature captures) is an **open tuning question** (§8).
+stable all day and fresh tomorrow — same Wordle rhythm as everything else.
+
+**Fish-spots — the daily limit (SHIPPED 2026-07-15, settled with the dev):** fishing is **not** castable at
+every pond. Each day a **sparse, daily-seeded set of fish-spots** is scattered across the map — **rarer than
+creatures**: most field screens hold **none**, and a screen that does holds only **1–2**, on bank-reachable
+water tiles. This is the limiter (replacing the never-built "every pond, unlimited casts" of the shipped
+steps 1–4): it delivers *both* "not every water is fishable" *and* a "set number per day" in one system, with
+a **hard daily reset** (fresh spots tomorrow, no trickle refill). See §2.1.
+
+- **The spot decides the depth** — the shallow/deep *cast buttons* are **retired**. A spot is either a
+  **shallow** fish (a gliding **shadow**) or a **deep** fish (rising **bubbles**); its depth sets the phoneme
+  tier via `pickPhoneme`. You fish whatever's in front of you.
+- **Visual tell on the world canvas** — `drawFishSpot(c,r,depth,tnow)` animates a dark fish **shadow** for
+  shallow spots and rising **bubbles** for deep ones, right on the water. The CAST affordance (E / toolbar /
+  touch) lights **only** when you face an uncaught spot (`nearFishSpot()`, which replaced the old blanket
+  `nearWater()`).
+- **One catch per spot, day-scoped** — a successful catch records the spot in `state.fishedSpots`
+  (`"sx,sy,cx,cy"`, day-scoped like `state.captured`); the shadow/bubbles vanish and the spot is "fished out"
+  until tomorrow. A **miss does not consume the spot** (cozy, re-castable — cast again at the same shadow).
+  `state.fishedSpots` is in `snapshot`/`applySnapshot` and only restored **same-day** (mirrors `captured`;
+  save stays v5, additive). `startNewDay` clears it.
+
+**Deferred fish-limit ideas (not built):** a global daily catch counter, a **bait economy**, and **slow-trickle
+respawn** were all considered and rejected in favour of the finite daily-spots model (see §8).
 
 ---
+
+### 2.1 Fish-spot generation (`fishSpotsFor(sc)`)
+
+`fishSpotsFor(sc)` computes + caches a screen's spots (`sc.fishSpots`), deterministic per `(sx, sy, daySeed)`
+via its own salted `mulberry32` (independent of the creature rolls):
+
+1. Roll the whole screen: `rng() < FISH_SCREEN_CHANCE` (`0.4`) — most screens hold no fish.
+2. If eligible, collect **bank-reachable** water tiles (a `T_WATER` tile with ≥1 walkable orthogonal
+   neighbour, so you can fish it from land — interior pond tiles are excluded).
+3. Fisher–Yates shuffle, take **1** (35% chance **2**) as spots.
+4. Each spot's depth: `depth = rng() < deepChance ? 2 : 1`, where `deepChance = min(0.6, 0.15 + dist*0.08)`
+   — **deep skews far from home**, reusing the letter-unlock "rare skews far" instinct.
+
+Library / non-field screens return no spots. `nearFishSpot()` samples `tileInFront()`, confirms it's a spot,
+and filters out anything already in `state.fishedSpots`. Tunables: `FISH_SCREEN_CHANCE`, the 1-vs-2 split, and
+the `deepChance` curve.
 
 ## 3. The catch: phonemes & the Phonicon
 
@@ -213,8 +257,9 @@ Caught sounds are a **supply**, not a dead collection:
 
 ### 4.2 Depth = difficulty (the core knob)
 
-Depth is the difficulty dial, chosen at cast (e.g. a shallow vs deep cast, or which pond — bigger/farther
-ponds run deeper). Each tier **hides more**:
+Depth is the difficulty dial. **As shipped (2026-07-15) depth is a property of the fish-spot, not a cast-time
+menu choice** (§2 — the shallow/deep cast buttons were retired): a **shadow** spot fishes shallow, a **bubbles**
+spot fishes deep, and `deepChance` skews deep spots to screens far from home. Each tier **hides more**:
 
 | Depth | Shows | Skill it drills | Notes |
 | ----- | ----- | --------------- | ----- |
@@ -297,7 +342,11 @@ prematurely:
    catch; `#phonicon` reveal grid `X/40 caught` via `tb-phonicon`/`tc-phonicon`; save v4→v5, additive
    restore). First-catch flourish is minimal here (louder SFX + in-modal ✨ card) — the field-level
    celebration-queue pop is step-5 tuning.
-5. **Tuning pass** — rarity/depth skew, cast feel, any daily "fished-out" cap, first-catch flourish.
+5. **Tuning pass** — rarity/depth skew, cast feel, first-catch flourish. **Daily "fished-out" cap ✓ Shipped
+   2026-07-15** as the **fish-spots** system (§2/§2.1): sparse daily-seeded spots (rarer than creatures) are
+   the limiter, depth moved onto the spot (shadow=shallow / bubbles=deep), one catch per spot via
+   `state.fishedSpots` (day-scoped), hard daily reset. Remaining step-5 work is the *feel* pass (spawn-rate
+   tunables `FISH_SCREEN_CHANCE`/deepChance, art, the field-level celebration flourish).
 6. **(Later) Sound Garden hookup** — the Phonicon becomes the Sound Garden's supply (farming §5).
 7. **(Deferred) Deep sound-only tier** — once bundled phoneme audio exists (§4.3).
 8. **(Deferred, desired) Speak-the-phoneme tier** — online-only, opt-in, once recognition can grade isolated
@@ -311,10 +360,13 @@ prematurely:
   §4.3).
 - **Speak-the-phoneme tier** — desired; **online-only, opt-in**, blocked on **speech recognition** being
   good enough at isolated phonemes (§4.4). Accepted scoped exception to the offline rule.
-- **Fished-out / daily cap** — whether ponds have a soft daily catch limit (like creature captures) or are
-  freely re-castable. Tuning.
-- **Depth selection UX** — how the player picks depth (a shallow/deep cast toggle? pond size/distance? a
-  reel/line-length mechanic?).
+- **Fished-out / daily cap — DECIDED & BUILT (2026-07-15):** the **fish-spots** system (§2/§2.1). Sparse
+  daily-seeded spots, rarer than creatures; one catch per spot (`state.fishedSpots`, day-scoped); hard daily
+  reset. Rejected alternatives: a global daily catch counter, a bait economy, slow-trickle respawn. Open
+  sub-item: the *numbers* (`FISH_SCREEN_CHANCE`, 1-vs-2 split, `deepChance`) are first-pass and want playtest
+  tuning.
+- **Depth selection UX — DECIDED (2026-07-15):** the **spot** decides it (shadow = shallow, bubbles = deep);
+  the cast-menu depth toggle was retired. A reel/line-length mechanic remains a possible later flavour layer.
 - **A fishing-native sink** — does the Phonicon *also* power something fishing-only, or is its whole job to
   feed the Sound Garden + poetry? (v1: just fill it.)
 - **Rhythm-reel variant** — an optional reeling minigame reusing the poetry axe-chop timing primitive and/or
