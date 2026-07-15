@@ -29,9 +29,9 @@ built on a separate drop-acquired vocabulary so it doesn't compete with these PO
 | POS                | System(s)                                                                                                                                                 | Teaches                          | Guide                               |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ----------------------------------- |
 | **Noun**           | ink (economy) · **hypernym shelves** (taxonomy) · **attribute-flasks** (grow potion carry — bonus, not a gate) · **proper-noun atlases** (geography, §4b) | IS-A hierarchy; proper vs common | _(taxonomy guide — deferred)_       |
-| **Verb**           | Feats ladders + abilities (existing) · "**action**" obstacle solutions                                                                                    | verb categories                  | _(future)_                          |
-| **Adjective**      | **potions** — the WordNet "dumbbell" (self-buff / antonym-debuff _all beasts on screen_ / world) · "**state**" obstacle solutions                         | antonymy, similar-to, attribute  | **Antonym 🐜** + **Synonomouse 🐭** |
-| **Adverb**         | potion **amplifiers** (adjective→adverb derivation) — later                                                                                               | derivation                       | _(future)_                          |
+| **Verb**           | Feats ladders + abilities (existing) · **relations Guide + relatives page** (§5b) · "**action**" obstacle solutions                                       | verb categories; troponymy       | Feats **Guide** tab (§5b)           |
+| **Adjective**      | **potions** — the WordNet "dumbbell" (self-buff / antonym-debuff _all beasts on screen_ / world) · **relations Guide + relatives page** (§5c) · "**state**" obstacle solutions | antonymy, similar-to, attribute  | Apothecary **Guide** tab (§5c) + **Antonym 🐜** / **Synonomouse 🐭** |
+| **Adverb**         | potion **amplifiers** (adjective→adverb derivation) — later · **relations home staked** in the Apothecary Adverbs tab (§5c)                                | derivation (pertainym)           | Apothecary **Guide** tab (§5c)      |
 | **Modal verb**     | hints / possibility (existing À La Modal)                                                                                                                 | modality                         | **À La Modal**                      |
 | **Function words** | scraps / combine mechanic — later                                                                                                                         | syntax                           | _(future)_                          |
 
@@ -255,6 +255,34 @@ This is **purely additive** to the shipped Option-2 UI: the Guide tab and `rende
 stay; the rebuild just improves the underlying data and lets us add the extra rows + a gloss line. No rework.
 Cost: touches the build pipeline, grows `dictionary.json`, and adds POS-context plumbing to `localLookup`
 (Feats→verb sense, library→noun sense). Not started.
+
+---
+
+## 5c. Apothecary relation teaching — adjectives + adverbs (**shipped**)
+
+Same pattern as §5b, in the **Apothecary** (`#apothecary`, `renderApothecary`), which is the adjective home
+and now the **adverb home** too. Tabs went from Flasks/Words to **Flasks · Words · Adverbs · Guide**:
+
+- **Guide tab** (`renderApothecaryGuide`) — one primer covering both POS: adjectives cluster by *shade of
+  meaning* (similar-to) and pair as opposites (antonym) and describe a quality (attribute); adverbs are mostly
+  an adjective + “-ly” (pertainym) with their own antonyms.
+- **Words tab** (`renderApothecaryWords`) — the existing per-pole adjective lists **plus an “Other
+  adjectives” group** so *every* collected adjective (not just the ~360 pole-mapped dumbbell ones) gets a
+  relatives page. Chips now open the inline relatives page instead of the def modal.
+- **Adverbs tab** (`renderApothecaryAdverbs`) — lists every collected adverb (they have no pole/mechanic yet;
+  amplifiers still deferred, §3.5). Staking the home here is deliberate — adverbs will become the potion
+  **amplifier** layer. A note says as much.
+- **Relatives page** (`renderApWordRelatives`, shared by both tabs) — reuses the curator's `cuRelRow`. Rel
+  sets `ADJ_RELS` (similar-to `sim`, antonym `ant`, attribute-noun `attr`) and `ADV_RELS` (pertainym `pert`,
+  antonym `ant`) — the POS-clean relations only; **hyper/hypo omitted** (noun-sense leakage). No gloss (same
+  reason as §5b). Clicking a collected relative **hops** via `apHopTo`, routing by the target's POS
+  (adjective→Words, adverb→Adverbs); noun/verb-only relatives (e.g. an attribute noun) are inert here.
+- `apWord` tracks the drilled-in word; `← all adjectives/adverbs` back-link + Esc step back to the list.
+
+Note the thematic tie-in: the adjective **similar-to** list *is* the synonym set that grows a flask, and the
+**attribute** noun is the one that grants the flask bonus — so the relations page teaches the exact vocabulary
+the dumbbell mechanic runs on. The **per-POS rebuild TODO above (§5b)** applies here too: it would give
+adjectives a correct gloss and could add cleaner data, but the shipped UI needs no rework.
 
 ---
 

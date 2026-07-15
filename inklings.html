@@ -2258,7 +2258,8 @@ addEventListener("keydown",e=>{
     return;
   }
   if(state.apothecaryOpen){   // Apothecary (flask rack): close on Esc / Tab / P
-    if(k==="escape"||k==="tab"||k==="p"){ e.preventDefault(); toggleApothecary(); }
+    if(k==="escape" && apWord){ e.preventDefault(); apWord=null; renderApothecary(); }   // step back from a word's relatives page first
+    else if(k==="escape"||k==="tab"||k==="p"){ e.preventDefault(); toggleApothecary(); }
     return;
   }
   if(state.obstacle){   // river mad-lib: close on Esc / Tab (picks are click-driven)
@@ -5655,23 +5656,39 @@ function toggleStats(){ if(state.statsOpen){ closeStats(); nextCelebration(); } 
 // An always-available status window (P / ⚗️) showing each attribute's dumbbell: two per-pole flasks whose
 // SIZE grows with the synonyms you collect. Read-only view over state.potions × state.adjCounts × the dex.
 function apothHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen; }
-function openApothecary(){ if(state.apothecaryOpen) return; state.apothecaryOpen=true;
+function openApothecary(){ if(state.apothecaryOpen) return; state.apothecaryOpen=true; apWord=null; loadRelations();
   document.getElementById("apothecary").classList.add("open");
   document.getElementById("sound-btn").style.display="none"; renderApothecary(); }
 function closeApothecary(){ state.apothecaryOpen=false;
   document.getElementById("apothecary").classList.remove("open");
   document.getElementById("sound-btn").style.display = apothHideSound()?"none":""; }
 function toggleApothecary(){ if(state.apothecaryOpen) closeApothecary(); else openApothecary(); SFX.play("click"); }
-let apTab="flasks";   // Apothecary panel tab: "flasks" (the racks) | "words" (collected adjectives per pole)
+let apTab="flasks";   // Apothecary tab: "flasks" (racks) | "words" (adjectives) | "adverbs" | "guide"
+let apWord=null;      // within Words/Adverbs: the word whose relatives page is showing, or null for the list
+// POS-clean relations for adjectives / adverbs (same shape as CU_RELS, so the curator's cuRelRow() renders
+// them). We show only what's reliable in the lemma-keyed graph: adjectives → similar-to (near-synonyms),
+// antonym, attribute-noun; adverbs → pertainym (the adjective they derive from), antonym. hyper/hypo are just
+// noun-sense leakage on multi-POS lemmas, so they're omitted — see docs/inklings-grammar-systems.md.
+const ADJ_RELS=[
+  {k:"sim",  ico:"≈", nm:"Similar",   tag:"near-synonyms",           ex:w=>`shades of “${w}”`},
+  {k:"ant",  ico:"⇄", nm:"Antonym",   tag:"the opposite",            ex:w=>`the opposite of “${w}”`},
+  {k:"attr", ico:"◎", nm:"Attribute", tag:"the quality it describes",ex:w=>`“${w}” is a value of these`},
+];
+const ADV_RELS=[
+  {k:"pert", ico:"↤", nm:"Pertainym", tag:"the adjective it comes from", ex:w=>`“${w}” is formed from these`},
+  {k:"ant",  ico:"⇄", nm:"Antonym",   tag:"the opposite",               ex:w=>`the opposite of “${w}”`},
+];
 function renderApothecary(){
   const tabs=document.getElementById("ap-tabs");
   if(tabs){
-    tabs.innerHTML=[["flasks","Flasks"],["words","Words"]].map(([t,l])=>`<button class="stab${apTab===t?" on":""}" data-tab="${t}">${l}</button>`).join("");
-    tabs.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ apTab=b.dataset.tab; renderApothecary(); SFX.play("click"); });
+    tabs.innerHTML=[["flasks","Flasks"],["words","Words"],["adverbs","Adverbs"],["guide","Guide"]].map(([t,l])=>`<button class="stab${apTab===t?" on":""}" data-tab="${t}">${l}</button>`).join("");
+    tabs.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ apTab=b.dataset.tab; apWord=null; renderApothecary(); SFX.play("click"); });
   }
   const body=document.getElementById("ap-body"); if(!body) return;
+  if(apTab==="guide"){ renderApothecaryGuide(body); return; }
+  if(apTab==="adverbs"){ if(apWord) renderApWordRelatives(body, ADV_RELS, "all adverbs"); else renderApothecaryAdverbs(body); return; }
   if(!ADJ_ATTRS){ body.innerHTML='<div class="sub">Loading adjective data…</div>'; return; }
-  if(apTab==="words"){ renderApothecaryWords(body); return; }
+  if(apTab==="words"){ if(apWord) renderApWordRelatives(body, ADJ_RELS, "all adjectives"); else renderApothecaryWords(body); return; }
   body.innerHTML=APOTHECARY_RACKS.map(rack=>{
     const held=!!(state.dex && state.dex[rack.noun]);
     const noun=held ? `<span class="ap-noun on">✓ ${esc(rack.noun)} flask +${FLASK_NOUN_BONUS}</span>`
@@ -5689,7 +5706,7 @@ function adjWordsByPole(){
 }
 function renderApothecaryWords(body){
   const byPole=adjWordsByPole();
-  body.innerHTML=APOTHECARY_RACKS.map(rack=>{
+  let html=APOTHECARY_RACKS.map(rack=>{
     const poles=[rack.self, rack.anti].map(pole=>{
       const ws=byPole[pole];
       const chips = ws.length
@@ -5699,7 +5716,76 @@ function renderApothecaryWords(body){
     }).join("");
     return `<div class="ap-rack"><div class="ap-attr">${esc(rack.attr)}</div>${poles}</div>`;
   }).join("");
-  body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>openDefModal(el.dataset.w));
+  // Every OTHER collected adjective (not mapped to a potion pole) still gets a relatives page — so the
+  // teaching layer covers all adjectives, not just the ~360 dumbbell ones.
+  const poleSet=new Set(); for(const k in byPole) byPole[k].forEach(w=>poleSet.add(w));
+  const others=[]; for(const w in state.dex){ const e=state.dex[w];
+    if(Array.isArray(e.pos)&&e.pos.includes("adjective")&&!poleSet.has(w)) others.push(w); }
+  others.sort();
+  if(others.length) html+=`<div class="ap-rack"><div class="ap-attr">Other adjectives <span class="ap-wct">(${others.length})</span></div>`
+    + `<div class="nb-chips">`+others.map(w=>`<span class="nb-chip found" data-w="${esc(w)}">${esc(w)}</span>`).join("")+`</div></div>`;
+  html+=`<p class="cu-note" style="margin-top:10px">Tap any adjective to see its near-synonyms, opposite and the quality it describes.</p>`;
+  body.innerHTML=html;
+  body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>{ apWord=el.dataset.w; renderApothecary(); SFX.play("click"); });
+}
+// The Adverbs tab: every collected adverb (they have no pole/mechanic yet — amplifiers are deferred), each
+// opening a relatives page. Pre-stakes the Apothecary as the adverb home.
+function renderApothecaryAdverbs(body){
+  const advs=[]; for(const w in state.dex){ const e=state.dex[w];
+    if(Array.isArray(e.pos)&&e.pos.includes("adverb")) advs.push(w); }
+  advs.sort();
+  body.innerHTML = (advs.length
+      ? `<div class="ap-rack"><div class="ap-attr">Collected adverbs <span class="ap-wct">(${advs.length})</span></div>`
+        + `<div class="nb-chips">`+advs.map(w=>`<span class="nb-chip found" data-w="${esc(w)}">${esc(w)}</span>`).join("")+`</div></div>`
+      : `<div class="ap-empty">No adverbs collected yet — spell some “-ly” words at the Wordsmithy.</div>`)
+    + `<p class="cu-note" style="margin-top:10px">Adverbs will amplify your potions later; for now, tap one to see the adjective it comes from and its opposite.</p>`;
+  body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>{ apWord=el.dataset.w; renderApothecary(); SFX.play("click"); });
+}
+// Shared relatives page for an adjective/adverb (inline — no modal). Reuses cuRelRow(); no gloss (the single
+// stored def is often another POS's sense). Clicking a collected adjective/adverb relative hops to it.
+function renderApWordRelatives(body, rels, backLabel){
+  const word=apWord;
+  let inner=`<button class="cu-backlink" data-back="1">← ${esc(backLabel)}</button><h2 class="cu-wordh">${esc(word)}</h2>`;
+  if(!RELATIONS){ loadRelations(); inner+=`<p class="cu-empty">Gathering this word’s relatives…</p>`; }
+  else {
+    const rec=RELATIONS[word]||{};
+    let rows=""; for(const rel of rels) rows+=cuRelRow(rel, word, rec[rel.k]);
+    inner += rows || `<p class="cu-empty">The catalogue lists no relatives for “${esc(word)}” — a word that stands alone.</p>`;
+  }
+  body.innerHTML=`<div class="cu-word">${inner}</div>`; body.scrollTop=0;
+  const bk=body.querySelector("[data-back]"); if(bk) bk.onclick=()=>{ apWord=null; renderApothecary(); SFX.play("click"); };
+  body.querySelectorAll("[data-rel]").forEach(el=>el.onclick=()=>apHopTo(el.dataset.rel));
+}
+// Hop to a collected relative, routing by its POS so the right lens (adjective vs adverb relations) is used.
+// Noun/verb-only relatives (e.g. an attribute noun) have no Apothecary home, so those chips are inert here.
+function apHopTo(w){
+  const e=state.dex[w]; if(!e||!Array.isArray(e.pos)) return;
+  if(e.pos.includes("adjective")){ apTab="words"; apWord=w; renderApothecary(); SFX.play("click"); }
+  else if(e.pos.includes("adverb")){ apTab="adverbs"; apWord=w; renderApothecary(); SFX.play("click"); }
+}
+// Guide tab: a static primer for adjective + adverb relations, mirroring the Curator/Feats guides.
+function renderApothecaryGuide(body){
+  body.innerHTML=`<div class="cu-guide">
+    <p class="cu-lead">The Apothecary is home to your <b>adjectives</b> — the describing-words — and their
+    kin, the <b>adverbs</b>. Adjectives don't nest in a kind-of tree; instead they cluster by <i>shade of
+    meaning</i> and pair off as <b>opposites</b>.</p>
+    <p><b>Adjectives.</b> Tap one on the <b>Words</b> tab to see how it relates:</p>
+    <ul class="hb-gloss">
+      <li><span class="cu-rico">≈</span><b>Similar</b> — near-synonyms, its <i>shades</i>. <b>hot</b> ≈ sweltering, torrid, scalding. (These are the <b>synonyms</b> that grow a flask!)</li>
+      <li><span class="cu-rico">⇄</span><b>Antonym</b> — the <i>opposite</i>, the other end of the dumbbell. hot ⇄ <b>cold</b>.</li>
+      <li><span class="cu-rico">◎</span><b>Attribute</b> — the <i>quality</i> it measures. <b>hot</b> is a value of <b>temperature</b> (spell that noun for a flask bonus).</li>
+    </ul>
+    <p><b>Adverbs.</b> Most English adverbs are just an adjective wearing “-ly”. Tap one on the <b>Adverbs</b> tab:</p>
+    <ul class="hb-gloss">
+      <li><span class="cu-rico">↤</span><b>Pertainym</b> — the <i>adjective it's formed from</i>. <b>quickly</b> ↤ <b>quick</b>.</li>
+      <li><span class="cu-rico">⇄</span><b>Antonym</b> — the <i>opposite</i>. quickly ⇄ <b>slowly</b>.</li>
+    </ul>
+    <p class="cu-rule">⚗ <b>Why it matters:</b> adjectives and adverbs are how language turns the dial —
+    hot vs. warm vs. scalding. Feeling out their synonyms and opposites is exactly the vocabulary the
+    Apothecary's dumbbells are built on.</p>
+    <p class="cu-eg">Collected adjectives &amp; adverbs are <b>clickable</b> — hop word to word to wander
+    the web of description.</p>
+  </div>`;
 }
 function apVial(pole){
   const doses=state.potions[pole]||0, cap=flaskCap(pole), breadth=(state.adjCounts&&state.adjCounts[pole])||0;
