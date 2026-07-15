@@ -1,33 +1,51 @@
-# Inklings — Poetry (the Versery) & phoneme engine
+# Inklings — Poetry (the Poetrees / the Forest) & phoneme engine
 
 Planning doc. A poem-making mechanic where you **spend your collected vocabulary** to fill poem forms —
 mad-libs style — with the game checking **rhyme, syllable count, and part of speech** for you. It is the
 natural sink for the words the core loop produces, and it teaches poetic form the same way the rest of the
 game teaches grammar: by embodying it, not lecturing it.
 
-Status: **plan only — not implemented.** Reflects the 2026-07 planning session (three forks answered:
-lives **inside Inklings** as a wing/lectern; rhyme/meter from a **bundled phoneme dataset**; ship
-**mad-libs fill first**, free-compose later). Character names below are **candidates, not final.**
+**The poetree reframe:** poetry lives in a **Forest** zone where each poem *form* is a **tree species** (a
+"poetree"). **Composing** a poem *grows* its tree; **chopping it down to its meter** with an **axe** harvests
+the tree's **wood**, which you spend on **cosmetic builds** (decorate the Wordhoard + other buildings). Felled
+poetrees **regrow**, so wood is a renewable sink like ink. The axe is how **meter enters the game** — performed
+in rhythm, not graded from stress data.
+
+Status: **plan only — not implemented.** Reflects two 2026-07 planning sessions. Session 1 (three forks):
+lives **inside Inklings**; rhyme/meter from a **bundled phoneme dataset**; ship **mad-libs fill first**,
+free-compose later. Session 2 (the poetree reframe): forms are **trees in a Forest**, not lectern templates;
+**compose = grow, chop-to-meter = harvest**; wood is **typed per tree**, **cosmetic-only**; trees **replace**
+the human-pun poet cast; meter is **performed with the axe** (retires the deferred CMU-stress plan).
 
 Cross-refs: [`inklings.md`](inklings.md) (the mad-libs module + Wordhoard room this reuses),
 [`inklings-grammar-systems.md`](inklings-grammar-systems.md) (POS-anchored teaching + the word-guide cast this
 extends), [`inklings-farming.md`](inklings-farming.md) §5 (the **parked "Sound Garden" IPA pass** — this doc
-is the first real use of the bundled IPA data), [`inklings-collections.md`](inklings-collections.md) (the
-grant/anthology reward pattern).
+is the first real use of the bundled IPA data; the Forest is a **separate zone, not the farm**),
+[`inklings-collections.md`](inklings-collections.md) (the grant/anthology reward pattern **and the shared
+facing-tile placement primitive** the cosmetic builds reuse).
 
 ---
 
 ## 0. TL;DR
 
-- A **second "book" lectern** in the Wordhoard — the **Versery** — runs **poem templates** instead of prose
-  fables. It reuses the entire mad-libs module (registry → chapter menu → blank-fill picker); poems just add
-  three **phoneme validators** on top.
-- You fill each poem's blanks from your **collected words** (the dex), filtered by the slot's constraints:
-  **POS** (already have it), **syllable count**, and **rhyme group**. Green-light a line when it all checks.
-- The checker runs on a **bundled IPA phoneme dataset the repo already ships** (`IPA-fan-game/ipa_words.js`).
-  Rhyme + syllables work today; **meter** is the one thing that wants stress marks (see §3.4).
-- Poem **forms are taught by punny poet-NPCs** — meet one, learn its form as a reusable template (same grant
-  pattern as fable recovery / the curator). Completed poems are recorded in an **Anthology** (the poetry dex).
+- Poetry lives in a **Forest** zone (its own authored area, **not** the farm). Each poem *form* is a **tree
+  species** — a **poetree**. **Composing** a poem *grows* its tree; **chopping it to its meter** *harvests* the
+  tree's wood. Felled poetrees **regrow** — renewable, like ink.
+- **Composing** reuses the entire mad-libs module (registry → menu → blank-fill picker): you fill each poem's
+  blanks from your **collected words** (the dex), filtered by the slot's constraints — **POS**, **syllable
+  count**, **rhyme group**. Poems just add three **phoneme validators** on top. A fully-filled poem = a
+  grown, choppable tree.
+- **Chopping = meter, performed.** Each species has a signature **chopping rhythm = its form's meter** (an iamb
+  is *tap*-**CHOP**, da-DUM). Clean timing → best wood; a **relaxed/auto-time mode** keeps it inclusive. The
+  axe is the meter — this **retires** the deferred CMU-stress-data plan (§3.4).
+- The checker runs on a **bundled IPA phoneme dataset the repo already ships** (`IPA-fan-game/ipa_words.js`)
+  for **rhyme + syllables**. Meter no longer needs it (it's chopped, not graded).
+- Poem **forms are the trees themselves** — each poetree species is the teacher/character; meeting/felling one
+  grants the form (same one-time grant pattern as fable recovery / the curator). This **replaces** the
+  human-pun poet cast. Completed poems are recorded in an **Anthology** (the poetry dex).
+- **Wood is typed per tree** (cherry, oak, pine, cypress…) and spent **only on cosmetic builds** — decorate the
+  Wordhoard and other buildings you add later, via the **shared facing-tile placement primitive**
+  (collections §5). No content gating, no town.
 - **Mad-libs fill ships first**; **free-compose** (write any line, validators grade it live) is the later
   mastery layer built on the same validators.
 
@@ -36,38 +54,62 @@ grant/anthology reward pattern).
 ## 1. Decisions (settled with the dev)
 
 1. **Lives inside Inklings**, not a standalone file. It spends the vocabulary the game already collects and
-   reuses the mad-libs module, POS tags, the word-guide cast, and the grant/anthology reward pattern.
-2. **Rhyme/meter from a bundled phoneme dataset** (offline, no runtime API — honours decision #9). The dev
-   picked "CMU subset"; the repo **already ships an IPA set** (`ipa_words.js`) that covers rhyme + syllables,
-   so **use that** and only add CMU/stress data **if/when strict meter is built** (§3.4). Flagged, not
-   silently swapped.
+   reuses the mad-libs module, POS tags, and the grant/anthology reward pattern.
+2. **Rhyme + syllables from a bundled phoneme dataset** (offline, no runtime API — honours decision #9). The
+   repo **already ships an IPA set** (`ipa_words.js`) covering rhyme + syllables, so **use that**. **Meter is
+   no longer graded from phonemes** — it's *performed by chopping* (decision #8), so the CMU/stress-data build
+   is **retired**, not merely deferred. Flagged, not silently swapped.
 3. **Mad-libs fill first, free-compose later.** Fill pre-blanked templates from inventory is the on-ramp;
    free-compose with live grading is the mastery layer on the same validators. Both modes, phased.
-4. **Poem forms are characters.** Each form has a punny poet-NPC who teaches it; meeting/beating them grants
-   the form. Names are **not final** — brainstormed candidates only (§6).
+4. **Poem forms are characters — and the characters are trees.** Each form is a **poetree species** that
+   teaches/embodies it; meeting/felling one grants the form. This **replaces** the human-pun poet cast (the
+   Ghazelle, Kat Rain, Sink Wayne…); a couple fold in as fauna (the Ghazelle browses the Acacia). Species/art
+   are **candidates** (§6).
 5. **Poems are a non-destructive use of the collection.** Filling a poem reads the dex; it does **not** lock
-   words forever the way fables do (`usedWordSet`). You can rhyme "moon" in ten poems.
-   There should be some type of limiting factor in place though. (Contrast note §4.4.)
+   words forever the way fables do (`usedWordSet`). You can rhyme "moon" in ten poems. (Contrast note §4.4.)
+
+**Session 2 additions (the poetree reframe):**
+
+6. **Poetry is a Forest, not the farm.** A **separate authored zone** you enter; poetrees are **not** farm
+   crops and don't use the seed/soil loop. (You *do* reuse the collections **placement primitive** for the
+   cosmetic builds — §5 there — but growing a poem-tree is composing, not planting.)
+7. **Compose = grow, chop-to-meter = harvest.** Filling a form's blanks **grows** the poetree; **chopping it
+   down in its meter** yields the wood. Two beats of one loop, both at the tree.
+8. **Meter is performed with the axe, not graded.** Each species' **chopping rhythm is its meter**; strict
+   timing gives the best wood, with a **relaxed/auto-time mode** so rhythm is a *bonus, never a gate*. This is
+   the gameplay-native answer to the §3.4 meter gap and **retires** the stress-data plan.
+9. **Wood is typed per tree; cosmetic-only.** Each poetree drops its own wood (harder meter → harder wood).
+   Wood buys **only decoration** — expand/decorate the Wordhoard and **other buildings added later** — never
+   gated/required content (honours the collections "no gating / no town" rule).
+10. **Poetrees regrow.** Felling isn't permanent; a poetree regrows (day-cycle / timer) so wood stays a
+    **renewable** sink, matching ink. (Contrast fables' permanent word-lock.)
 
 ---
 
-## 2. Where it lives (architecture)
+## 2. Where it lives (architecture) — the Forest
 
-The mad-libs "book" (fables) is already a lectern in the Wordhoard that runs a **registry → chapter menu →
-per-level fill UI**. Poetry is a **sibling lectern** using the same machinery:
+Poetry is a **separate authored zone** — the **Forest of Poetrees** — reached from the map like the Wordhoard
+is its own room (**not** an interactable inside the library, and **not** the farm zone). Inside, individual
+**poetrees** are the interactables. It still **reuses the mad-libs machinery** for the composing step:
 
-- **New interactable:** a **Versery lectern** (an inkwell + scroll / a small writing stand) added to
-  `data/rooms/library.json` (`type:"poetry"`, its own tile like the curator/book), exposed as
-  `LIBRARY.versery`, gated by `nearLibraryVersery()`, drawn in `ensureLibraryBg`'s object loop. Walk up +
-  `E` / touch **VERSE** / desktop toolbar **Versery** opens the `#poetry` modal.
-- **Reuse the mad-libs pipeline:** a poem **form** is a `BOOKS`-style registry entry; a poem **template** is
-  a level (blanked passage + slot specs). `openPoetry` → a **form menu** (which poets you've met → their
-  forms) → `openPoem(form,template)` → `renderPoem` (same passage/needed/picker/completion structure as
-  `renderMadlibs`), plus the phoneme validators. Keep it a **separate module** (`/* VERSERY */`) that calls
-  shared helpers, so the prose mad-libs stays untouched.
-- **Graduating to a room (later, optional):** if the Wordhoard gets crowded, the poets can move into their
-  own **Verse Parlor** room (same room system as the Wordhoard). Start as one lectern; promote only if it
-  earns it. (Mirrors how the library grew from a list into a room.)
+- **New zone:** a **Forest** area with its own tile grid (uses the active-screen cell size the way
+  `blockedAt`/`tileInFront()` already do), authored as `data/rooms/forest.json`. Poetrees are placed objects
+  (`type:"poetree"`, one per available form) drawn in the bg object loop, each gated by a `nearPoetree()`
+  proximity check. Walk up + `E` / touch **CHOP** / desktop toolbar opens the tree's `#poetry` flow.
+- **Two beats at the tree (decision #7):**
+  1. **Grow = compose.** Opening an ungrown poetree runs the **fill UI**: a poem **form** is a `BOOKS`-style
+     registry entry, a **template** is a blanked passage + slot specs. `openPoetree(form,template)` →
+     `renderPoem` (same passage/needed/picker/completion structure as `renderMadlibs`) + the phoneme
+     validators. Completing every blank + rhyme/length rule **grows the tree** (visual: sapling → full).
+  2. **Harvest = chop.** A grown poetree can be **felled** in a short **meter minigame** (§3.4): swings on the
+     stressed beats, telegraphed by a **metronome bough**. A clean fell drops the tree's **typed wood** and
+     records the poem in the Anthology; the tree then **regrows** (decision #10).
+- **Separate module.** Keep it a **`/* FOREST */` module** that calls the shared picker/menu helpers so the
+  prose mad-libs book stays untouched; the chop minigame is its own self-contained function taking the form's
+  meter pattern.
+- **The Versery is retired as a lectern.** The old plan put a writing stand in the Wordhoard; the reframe moves
+  composing into the Forest instead. (The Wordhoard stays the *collection* room — desk, shelves, curator — and
+  is a **destination for the wood** you harvest, §7.)
 
 ---
 
@@ -101,17 +143,30 @@ One dataset unlocks three checks. `ipa_words.js` maps a word to a **space-separa
   shared stressed vowel. These are **bonus scoring**, never required, and they make sound _audible_ as a
   mechanic — the point of using phonemes at all.
 
-### 3.4 Meter — the one gap (deferred / soft)
+### 3.4 Meter — performed with the axe (the chop minigame)
 
-- `ipa_words.js` has **no stress markers**, so true **metrical feet** (iambic pentameter, anapestic
-  limerick) can't be graded strictly from it. Three options, in order of cost:
-  1. **Ship without strict meter.** Enforce **syllable counts + rhyme scheme** only; describe meter in
-     flavor ("da-DUM da-DUM…") without grading it. Covers most forms well. **← recommended for v1.**
-  2. **Soft meter** from syllable counts alone (right length, unstressed-agnostic) — good enough for the
-     limerick's bounce as a _length_ pattern.
-  3. **Add stress** later: fold **CMU Pronouncing Dictionary** stress digits (0/1/2) in via `build_*.py`,
-     keyed to the same words — the one place CMU beats the bundled IPA. Only build this when a form (sonnet)
-     truly needs graded meter. This is the dev's original "CMU subset," scoped down to _just meter_.
+**The reframe's key move:** meter is no longer *graded from the words* — it's **performed by chopping the
+poetree**. This sidesteps the stress-data problem entirely (`ipa_words.js` has no stress markers, so grading
+iambic pentameter from it was impossible without a CMU fold-in; that build is now **retired**, not deferred).
+
+- **Each species' chopping rhythm *is* its form's meter.** The axe swings land on the **stressed** beats; the
+  gaps are the unstressed syllables. An **iamb** is *tap*-**CHOP** (da-DUM); an **anapest** (the limerick's
+  bounce) is *tap-tap*-**CHOP** (da-da-DUM); a **sonnet** is five iambs, 5× *da-DUM*, the hardest fell.
+- **The metronome bough** telegraphs the beat: a swaying branch / falling markers give the player the pulse to
+  swing against (a rhythm-game lane, but themed as a tree). Hitting the stressed beats cleanly = a clean fell.
+- **Scoring → wood quality.** Clean timing yields **full, best-grade wood**; sloppy timing yields **splintered,
+  less wood** (never *zero* — you always get *some*, so a bad sense of rhythm slows you, it doesn't lock a
+  form's wood away). Difficulty of the rhythm scales with the form → harder meter drops **harder wood** (§7).
+- **Relaxed / auto-time mode (decision #8, accessibility).** A setting **auto-times the swings** — the player
+  still chooses to chop, the game snaps each swing onto the beat — so no one is excluded by reflex/timing.
+  Rhythm is a **skill bonus, not a gate**. (Same spirit as the game's other difficulty accommodations.)
+- **Data:** each form carries a **meter pattern** in `data/poems.json` (e.g. `meter:"0101010101"` for iambic
+  pentameter, `0` = unstressed gap, `1` = stressed swing), consumed by the chop minigame. No per-word stress
+  needed — the *form* owns the rhythm, the player performs it.
+
+**Haiku's exception:** haiku has no strict stress meter, so its poetree (the **Japanese Maple**, §6) chops on a
+calm **5-7-5 pulse** — a length rhythm, not a stress pattern. Forms without a metrical foot chop on their
+syllable count instead.
 
 ### 3.5 Coverage & fallback
 
@@ -147,13 +202,15 @@ Show _why_ a word is eligible (a small "2σ · rhymes -oon" tag) so the phonetic
 guard:** if the player owns no word satisfying a rhyme+syllable slot, offer a relaxed filter (drop to slant
 rhyme, or ±1 syllable) rather than dead-ending — surfacing "you need more -oon words" is good teaching.
 
-### 4.3 Completion & scoring
+### 4.3 Completion & scoring (composing grows the tree)
 
-- A poem **completes** when every blank is filled and every rhyme group + length rule passes.
-- **Score/stars** from the soft extras: perfect vs slant rhymes, alliteration/assonance hits, sensory-word
-  bonus, exact syllable match vs range. Stars gate flavor (a poet's praise line), not access.
-- The finished poem is **recorded in the Anthology** (§7) with your specific word choices, re-readable like a
-  library entry.
+- The **compose** step **completes** when every blank is filled and every rhyme group + length rule passes —
+  this **grows the poetree** (sapling → full), making it choppable. The tree isn't harvested yet.
+- **Score/stars** come from two places: the **fill** soft-extras (perfect vs slant rhymes,
+  alliteration/assonance, sensory-word bonus, exact vs range syllables) **plus the chop** (clean-meter timing,
+  §3.4). Together they set **wood quality/quantity** and the tree's praise line. Stars gate flavor, not access.
+- On a clean **fell**, the finished poem is **recorded in the Anthology** (§7) with your specific word choices,
+  re-readable like a library entry, and the tree drops its **typed wood** before regrowing.
 
 ### 4.4 Word reuse (decision #5, contrast with fables)
 
@@ -167,67 +224,80 @@ _letters_, not the word record — grammar-systems §7.8). Reusing "bright" acro
 
 Each form drills a specific skill; ship the cheap ones first (rhyme + syllables), defer meter-heavy ones.
 
-| Form           | Structure                               | Drills                                    | Refrains?   | Tier    |
-| -------------- | --------------------------------------- | ----------------------------------------- | ----------- | ------- |
-| **Couplet**    | 2 lines, AA                             | rhyme (the tutorial)                      | no          | starter |
-| **Haiku**      | 5-7-5 syllables                         | syllable count only (no rhyme)            | no          | starter |
-| **Quatrain**   | 4 lines, ABAB / AABB / ABBA             | rhyme scheme choice                       | no          | early   |
-| **Limerick**   | AABBA, bouncy                           | rhyme + line length (soft meter)          | no          | early   |
-| **Tanka**      | 5-7-5-7-7 syllables                     | longer syllable control                   | no          | early   |
-| **Cinquain**   | 2-4-6-8-2 syllables                     | graded syllable shaping                   | no          | mid     |
-| **Acrostic**   | first letters spell a word              | **spelling** (ties to letter-collecting!) | no          | mid     |
-| **Villanelle** | 19 lines, two refrain lines recur       | repetition + rhyme                        | **yes**     | late    |
-| **Ghazal**     | couplets sharing a refrain word (radif) | refrain + rhyme                           | **yes**     | late    |
-| **Sestina**    | 6 end-words rotate across stanzas       | end-word permutation puzzle               | word-rotate | late    |
-| **Sonnet**     | 14 lines, iambic pentameter, volta      | meter (needs §3.4 stress)                 | no          | endgame |
+| Form           | Poetree            | Structure                               | Drills                                    | Tier    |
+| -------------- | ------------------ | --------------------------------------- | ----------------------------------------- | ------- |
+| **Couplet**    | **Pear** (softwood)| 2 lines, AA                             | rhyme (the tutorial)                      | starter |
+| **Haiku**      | **Japanese Maple** | 5-7-5 syllables                         | syllable count only (no rhyme)            | starter |
+| **Quatrain**   | **Oak** (hardwood) | 4 lines, ABAB / AABB / ABBA             | rhyme scheme choice                       | early   |
+| **Limerick**   | **Lime**           | AABBA, bouncy anapest                   | rhyme + anapestic chop                    | early   |
+| **Tanka**      | **Cherry**         | 5-7-5-7-7 syllables                     | longer syllable control                   | early   |
+| **Cinquain**   | **White Pine**     | 2-4-6-8-2 syllables                     | graded syllable shaping                   | mid     |
+| **Acrostic**   | **Birch**          | first letters spell a word              | **spelling** (ties to letter-collecting!) | mid     |
+| **Villanelle** | **Vanilla vine**   | 19 lines, two refrain lines recur       | repetition + rhyme                        | late    |
+| **Ghazal**     | **Acacia**         | couplets sharing a refrain word (radif) | refrain + rhyme                           | late    |
+| **Sestina**    | **Sassafras**      | 6 end-words rotate across stanzas       | end-word permutation puzzle               | late    |
+| **Sonnet**     | **Cypress**        | 14 lines, iambic pentameter, volta      | strict meter (the hardest chop)           | endgame |
 
-Notes: refrain forms need the identity guard (§3.1) **relaxed** — a repeated line is the point. The
-**acrostic** is a lovely bridge to the core loop: the hidden word is spelled by line-initial letters, so it
-rewards the very letters you hunt. **Sonnet** is explicitly gated behind the meter upgrade — a good
-"why we added stress data" capstone.
-
----
-
-## 6. The character cast (poet-NPCs — names NOT final)
-
-Design pattern: each poet = **a teacher + a validator persona**. Meeting one (a rare field encounter, or a
-Wordhoard visitor) plays a short intro and **grants their form** as a Versery template — same one-time grant
-as fable recovery / curator bundles / À La Modal's opt-in. They deliver form-specific praise/nudge lines
-(reuse the single-at-a-time celebration queue so guides don't clamor — grammar-systems §2).
-
-The phonetically-punny candidates (brainstorm — swap freely):
-
-| Form       | Candidate        | The pun / vibe                                                |
-| ---------- | ---------------- | ------------------------------------------------------------- |
-| Ghazal     | **the Ghazelle** | sounds like _gazelle_ — a graceful antelope reciting couplets |
-| Quatrain   | **Kat Rain**     | a cat conducting a **4-car train** (quat = four)              |
-| Haiku      | **Hi-Coo**       | a zen dove that only coos in 5-7-5                            |
-| Limerick   | **Lim Rick**     | a rowdy leprechaun bard, always a cheeky rhyme                |
-| Sonnet     | **Sunny Sonnet** | a formal sun-faced court poet obsessed with meter             |
-| Villanelle | **Vanilla Nell** | sweet; repeats herself (refrains)                             |
-| Sestina    | **Sister Tina**  | a nun who obsessively rotates the same six words              |
-| Couplet    | **the Cupplets** | twin teacups that finish each other's rhymes (tutorial)       |
-| Acrostic   | **A. Crostic**   | first letters spell a hidden word; ties to letter-collecting  |
-| Cinquain   | **Sink Wayne**   | a little guy in a sink, counts 2-4-6-8-2                      |
-| Tanka      | **Tank-a**       | haiku's armored big sibling                                   |
-
-These are **candidates only** (decision #4). Keep the roster data-driven so names/art swap without code.
+Notes: refrain forms (villanelle/ghazal) need the identity guard (§3.1) **relaxed** — a repeated line is the
+point; their trees chop on a **recurring refrain beat**. The **acrostic**/**Birch** is a lovely bridge to the
+core loop: the hidden word is spelled by line-initial letters (you *carve it down the pale trunk*), rewarding
+the very letters you hunt. **Sonnet**/**Cypress** is the **endgame chop** — strict iambic pentameter performed
+cleanly, the hardest fell for the best wood (no longer gated behind a stress-data build; §3.4). **Wood
+hardness tracks form difficulty** → the harder the meter, the better the wood (§7). Full species rationale and
+per-tree wood in §6.
 
 ---
 
-## 7. Rewards & progression (the Anthology)
+## 6. The cast: the poetrees (species — candidates, not final)
+
+Design pattern (decision #4): each form's teacher/character **is a tree species** — a **poetree**. The tree
+should pun the form's *name* **or** embody its *rule*, ideally both. First encountering a species (a new tree
+appears in the Forest, or a scripted intro) **grants its form**; from then on that poetree can be grown +
+felled at will. This **replaces** the old human-pun poet NPCs — a couple survive as **fauna** that live in the
+tree (the Ghazelle browses the Acacia). Praise/nudge lines still route through the **single-at-a-time
+celebration queue** (grammar-systems §2) so trees don't clamor.
+
+**Each poetree yields its own typed wood (decision #9), harder meter → harder wood:**
+
+| Form       | Poetree            | Why it fits (pun + rule)                                              | Wood → cosmetic build              |
+| ---------- | ------------------ | -------------------------------------------------------------------- | ---------------------------------- |
+| Couplet    | **Pear**           | pear = "**pair**" — two lines rhyming as a pair; partridge charm (tutorial) | soft trim, **poem frames**  |
+| Haiku      | **Japanese Maple** | Japanese; its **seasonal turn** ties to haiku's required season-word (*kigo*) | light seasonal panels      |
+| Tanka      | **Cherry**         | the maple's lineage grown longer — 5-7-5-7-7                          | planks, shelving                   |
+| Quatrain   | **Oak** (four boughs) | steady four-line frame; "**Quatr**-oak"; the reliable workhorse    | **structural beams** — walls/widening |
+| Limerick   | **Lime**           | "**lime**" hides in *limerick*; cheeky, springy, bouncy citrus       | springy softwood, comedic décor    |
+| Cinquain   | **White Pine**     | **five** needles per bundle = the form's five lines (2-4-6-8-2)      | flooring/panels                    |
+| Acrostic   | **Birch**          | pale bark you **carve a vertical word into** — ties to letter-hunting | signage/labels                    |
+| Villanelle | **Vanilla vine**   | "**villa**-" → vanilla; a sweet climber whose **refrains** return    | ornamental repeating trim/wallpaper|
+| Ghazal     | **Acacia**         | the savanna tree the **Ghazelle** browses; couplets + *radif* refrain | exotic hardwood accents           |
+| Sestina    | **Sassafras**      | grows **three different leaf shapes on one tree** = end-word rotation | specialty puzzle-wood              |
+| Sonnet     | **Cypress**        | tall, formal Italian tree = the Petrarchan sonnet; stately endgame   | **premium hardwood** — centerpieces|
+
+These are **candidates only.** Keep the roster **data-driven** (`data/poems.json`, §8) so species/art/wood swap
+without code. **No Bonsai** — it was a nice haiku fit but you can't axe a potted tree, so haiku is the
+**Japanese Maple** (choppable, and its seasonal turn maps to haiku's *kigo*).
+
+---
+
+## 7. Rewards & progression (wood, builds, the Anthology)
 
 - **The Anthology** = poetry's dex: completed poems stored (form + your word choices + star score),
   re-readable, browsable by form. The poetry parallel to the word-library, matching decision #3 ("the
-  collection made physical").
-- **Renewable payout:** completing a poem grants **ink** (consistent with noun→ink), scaled by form
-  difficulty + stars. Keep it additive; don't double-reward with potions/Feats (those are adj/verb homes —
-  grammar-systems §7).
-- **Form unlocks** come from meeting poets (§6), not from a tech tree — you _can_ fill a form the moment you
-  learn it and own eligible words.
-- **Optional décor tie-in:** completing a form's set (all its poet's templates) could grant a **placeable
-  decoration** via the shared facing-tile primitive (collections §5) — a framed poem, a laurel. Reuses that
-  system, doesn't invent a new one. Cosmetic; ship after the core.
+  collection made physical"). Recorded on the **fell**, not the compose.
+- **Renewable payout = typed wood (decision #9).** Felling a poetree grants **that species' wood**, in an
+  amount/quality scaled by **form difficulty + fill stars + chop cleanliness** (§3.4, §4.3). Poetrees **regrow**
+  (decision #10), so wood is a **renewable** sink like ink — **but it replaces ink as poetry's payout** (poetry
+  no longer prints ink; noun→ink stays the noun loop's home). Don't double-reward with potions/Feats (adj/verb
+  homes — grammar-systems §7); **wood is the poem's reward home.**
+- **Wood spends on cosmetic builds only (decision #9).** Wood buys **decoration and space** — never gated or
+  required content. Two build sinks:
+  - **Decorate the Wordhoard** (and **other buildings you add later**) — placed via the **shared facing-tile
+    placement primitive** (collections §5): frames, shelving, trim, structural widening. Each build has a
+    **wood recipe** (typed amounts), so you're nudged to grow a **variety of forms** to afford the fancier
+    pieces (hard builds want Oak beams / Cypress centerpieces).
+  - Some décor ties thematically to its tree (a **framed poem** from Pear wood, a **carved sign** from Birch).
+- **Form unlocks** come from first encountering a poetree species (§6), not a tech tree — you _can_ grow a
+  form the moment you learn it and own eligible words.
 
 ---
 
@@ -240,21 +310,31 @@ These are **candidates only** (decision #4). Keep the roster data-driven so name
   fallbacks are quantified. Precompute rhyme keys + syllable counts here too if the runtime cost matters.
 - **`data/poems.json`** — the form registry + templates: each form's structure, rhyme scheme, line/syllable
   rules, and its blanked passages with slot specs (§4.1). Hand-authored (poems are short — unlike the
-  Gutenberg fable pipeline). Keep poet metadata (name/art/voice) here so §6 is data-driven.
-- **(Deferred) stress data** — only if strict meter (§3.4 option 3) is built: fold CMUdict stress digits into
-  the pronunciation file, keyed to the same words.
+  Gutenberg fable pipeline). Now also carries, per form: the **poetree species metadata** (name/art/fauna),
+  the **meter pattern** the chop minigame performs (`meter:"0101010101"`, §3.4), and the **wood type** it
+  drops (§6/§7) — so the whole roster stays data-driven.
+- **`data/rooms/forest.json`** — the Forest zone layout (tile grid + poetree object placements), authored like
+  `library.json`. One placed `type:"poetree"` per available form.
+- **Build recipes** — the wood cost of each cosmetic build (`{buildId → {woodType: qty}}`), kept with the décor
+  catalog (`DECOR`, collections §4) so poetry's wood plugs into the existing placement system.
+- **No stress data.** The CMUdict stress fold-in is **retired** — meter is performed by chopping (§3.4), not
+  graded, so the pronunciation file needs only rhyme + syllables.
 
 ---
 
 ## 9. State & saves
 
-- New saved state: **`state.poets`** (which forms are unlocked — one-time, like `state.fables`),
-  **`state.anthology`** (completed poems: `{formId, fills, stars, ...}`, persists forever like `dex`).
-  Optionally **`state.poemDecor`** folds into the shared `state.decorOwned` (collections §6) rather than a new
-  key.
+- New saved state: **`state.poetrees`** (which form/species are unlocked — one-time, like `state.fables`),
+  **`state.anthology`** (completed poems: `{formId, fills, stars, ...}`, persists forever like `dex`), and
+  **`state.wood`** (typed wood counts, `{oak: n, cherry: n, …}` — a renewable resource like `state.resources`
+  ink). Placed cosmetic builds fold into the shared **`state.decorOwned`/`state.decor`** (collections §6)
+  rather than a new key.
+- **Forest/grow state** is lightweight: which poetrees are currently **grown vs regrowing** can be day-scoped /
+  transient (like farm regrowth) — a regrow timestamp per tree, not a permanent record. The *unlock*, the
+  *Anthology entry*, and *wood earned* are the durable parts.
 - **Bump the snapshot version** and add the keys to `snapshot()`/`applySnapshot()` + Export/Import (additive;
-  old saves default empty). Form-unlock and score are stored; eligibility is re-derived from `state.dex` on
-  load (retroactive, like Feats/curation).
+  old saves default empty). Form-unlock, wood, and scores are stored; word-eligibility is re-derived from
+  `state.dex` on load (retroactive, like Feats/curation).
 
 ---
 
@@ -262,20 +342,22 @@ These are **candidates only** (decision #4). Keep the roster data-driven so name
 
 1. **Phoneme coverage gap** (§3.5) — dex words missing from `ipa_words.js` can't fill rhyme/syllable slots.
    Mitigate: exclude them from those slots (still fill free-POS slots), quantify coverage at build time.
-2. **No stress markers** (§3.4) — meter can't be graded strictly from the bundled IPA. v1 skips strict
-   meter; CMU stress is the scoped upgrade. **This is the deviation from the dev's "CMU subset" answer —
-   flagged, not silently taken.**
-3. **Reuses the mad-libs module** — keep the Versery a separate module calling shared picker/menu helpers so
-   the fable book is untouched (no regressions to a shipped system).
+2. **Meter is performed, not graded** (§3.4) — the chop minigame **replaces** the deferred CMU-stress build.
+   Watch that the **relaxed/auto-time mode** genuinely unlocks every form's wood so rhythm never gates content.
+3. **Reuses the mad-libs module** — keep the Forest a separate `/* FOREST */` module calling shared
+   picker/menu helpers so the fable book is untouched (no regressions to a shipped system).
 4. **Word reuse policy differs from fables** (§4.4) — poetry is non-destructive by decision; make sure the
    shared picker doesn't drag in `usedWordSet` locking.
-5. **Companion/NPC traffic** — poet intros + praise route through the existing single-at-a-time celebration
+5. **Companion/NPC traffic** — poetree intros + praise route through the existing single-at-a-time celebration
    queue (grammar-systems §2, §4) so they don't clamor with À La Modal / Antonym / Synonomouse.
-6. **Reward routing** — poems pay **ink** (+ optional décor); they don't touch potions/Feats, keeping each
-   POS's reward home clean (grammar-systems §7).
-7. **Room space** — the Versery is one more interactable in an already-busy Wordhoard (desk/book/shelves/
-   curator). Confirm floor/placement; promote to its own Verse Parlor room if crowded (§2).
-8. **Free-compose scope** (phase 2) — grading arbitrary typed lines needs the same validators plus a bench-
+6. **Reward routing** — poems pay **typed wood** (→ cosmetic builds), **replacing** poetry's old ink payout;
+   they don't touch noun→ink / potions / Feats, keeping each POS's reward home clean (grammar-systems §7).
+7. **New zone, not a lectern** — the Forest is a **separate authored area** (`data/rooms/forest.json`), so it
+   doesn't crowd the Wordhoard. But the Wordhoard (and later buildings) must have **clear floor** to place the
+   wood-built décor — coordinate with the collections placement/room-space open question (collections §7).
+8. **Shared placement primitive** — the cosmetic builds ride on collections §5's facing-tile placement; build
+   it once, both features use it. Don't invent a poetry-only placement path.
+9. **Free-compose scope** (phase 2) — grading arbitrary typed lines needs the same validators plus a bench-
    style line editor and live feedback; keep the validator functions pure so both modes share them.
 
 ---
@@ -285,27 +367,36 @@ These are **candidates only** (decision #4). Keep the roster data-driven so name
 1. **Phoneme engine + data** — `build_phonemes.py` → `data/pronunciations.json`; runtime `rhymeKey(word)`,
    `rhymeStrength(a,b)`, `syllables(word)` with the IPA vowel set + cache. Unit-check a few known
    pairs/counts in the browser (parse-check, no harness). No UI yet.
-2. **The Versery lectern + one starter form (Couplet or Haiku)** — new Wordhoard interactable, `#poetry`
-   modal reusing the mad-libs menu/picker, constrained by the new validators. Proves the fill loop end-to-end.
-3. **`data/poems.json` + the starter/early forms** (couplet, haiku, quatrain, limerick, tanka) + the
-   **Anthology** record + ink payout. The playable core.
-4. **Poet-NPCs** — form-granting encounters (`state.poets`), intro/praise voice via the celebration queue,
-   data-driven roster. Turns forms into characters.
-5. **Late forms** (acrostic, villanelle, ghazal, sestina) — refrain/rotation/spelling rules on top of the
-   validators.
-6. **Meter upgrade** (§3.4 option 3) + **Sonnet** — fold CMU stress into the pronunciation file; graded meter.
-7. **Free-compose mode** — a line editor grading typed input with the same validators (mastery layer).
-8. **(Optional) décor tie-in** — framed-poem decorations via the shared facing-tile primitive (collections).
+2. **The Forest zone + one starter poetree (Pear/Couplet or Maple/Haiku)** — new authored area
+   (`data/rooms/forest.json`), a `type:"poetree"` interactable, the **compose** flow (`#poetry` modal reusing
+   the mad-libs menu/picker + validators) that **grows** the tree. Proves the fill loop end-to-end.
+3. **The chop minigame** — the meter-performance fell (metronome bough, swing timing, relaxed/auto mode) that
+   turns a grown tree into **typed wood**. Proves grow→harvest.
+4. **`data/poems.json` + starter/early poetrees** (Pear, Maple, Oak, Lime, Cherry) + the **Anthology** record +
+   **wood payout** + **regrow**. The playable core loop.
+5. **Cosmetic builds** — wire wood → the shared facing-tile placement (collections §5): a first buildable/décor
+   set with wood recipes, placed in the Wordhoard. Proves the sink.
+6. **The poetree cast** — species art/fauna, form-granting first-encounters (`state.poetrees`), intro/praise via
+   the celebration queue, data-driven roster (§6). Turns forms into characters.
+7. **Late poetrees** (Birch/acrostic, Vanilla/villanelle, Acacia/ghazal, Sassafras/sestina) — refrain/rotation/
+   spelling rules + their special chop rhythms.
+8. **Cypress/Sonnet** — the endgame strict-iambic-pentameter chop (no stress-data build needed).
+9. **Free-compose mode** — a line editor grading typed input with the same validators (mastery layer).
 
 ---
 
 ## 12. Deferred / open
 
-- **Strict meter / stress data** (CMU fold-in) — deferred to §11.6; needed only for sonnets.
-- **Free-compose mode** — phase 2 (§11.7).
-- **Poet names & art** — all §6 names are candidates; final naming + sprites open.
-- **Own room vs one lectern** — start as a lectern; promote to a Verse Parlor only if the Wordhoard crowds.
+- **Free-compose mode** — phase 2 (§11.9).
+- **Poetree species & art** — all §6 species are candidates; final naming + sprites (and per-tree chop VFX)
+  open.
+- **Forest layout & regrow tuning** — grove size, whether felled trees regrow on a day-cycle vs timer, how many
+  poetrees are visible at once, how the map connects to the Forest (§9 keeps regrow state light).
+- **Chop feel** — swing count per tree, how the metronome bough telegraphs the beat, difficulty curve, and the
+  exact wood-quality → recipe economy (§7).
+- **The build catalog** — the concrete list of cosmetic builds (Wordhoard widening, frames, shelving, and the
+  "other buildings added later") and their typed-wood recipes.
 - **Slant-rhyme tuning** — how lenient `rhymeStrength` should be per form (villanelles vs strict quatrains).
 - **Poems as décor / gifting / sharing** — export a finished poem as an image? Deferred.
-- **Non-noun collection homes** — poetry is a _use_ for all POS at the desk; confirm it doesn't step on the
-  planned verb/adjective/adverb wings, just consumes their output.
+- **Non-noun collection homes** — poetry is a _use_ for all POS; confirm it doesn't step on the planned
+  verb/adjective/adverb wings, just consumes their output.
