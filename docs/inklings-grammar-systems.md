@@ -199,7 +199,9 @@ Every atlas also teaches _proper vs common (why we capitalize)_.
   shelves (they're instances, not hypernyms).
 - **Rare-capital gating.** Qatar needs Q, etc. — frequency-ordered capitals make some places genuinely
   end-game (fine as aspiration).
-- **Multiword / diacritics.** Start single-word + normalized; add later.
+- **Multiword / diacritics.** Start single-word + normalized; add later. **Diacritics have their own plan
+  now** — see [`inklings-diacritics.md`](inklings-diacritics.md): rare **diacryptids** drop consumable marks
+  you apply at the desk, and owning a mark lights up the accented place-names this atlas normalizes away.
 - **Educational scope.** Adds **geography** as a new subject; the proper-vs-common tie keeps it coherent.
 
 ### Atlas family (deferred — geography first)
