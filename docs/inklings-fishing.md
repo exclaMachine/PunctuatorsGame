@@ -121,7 +121,8 @@ Fishing needs **no new room**. It rides the field screens' existing water:
   `refreshToolbar()` dims Shop/Shelf by proximity). No approach onto the tile (water blocks movement via
   `walkType`); you fish **from the bank**, like walking up to the desk/stall. **Space** (normally the attack
   key) redirects to `openFishing()` when `nearFishSpot()` is true — an attack into water does nothing, so the
-  key is free to cast — otherwise it still swings.
+  key is free to cast — otherwise it still swings. The **on-screen ATK button** (`tc-atk`, the touch mirror
+  of Space) does the same: it casts when facing a fish-spot, else swings.
 - **The cast → bite → set-hook loop** runs in a **self-contained `#fishing` modal** (`state.fishing`,
   styled off the other retro-pixel overlays), added to every overlay guard (movement, `canBeHurt`, hint,
   `syncTouchUI`) the way `state.bestiaryOpen` / `state.apothecaryOpen` are. It does **not** need canvas

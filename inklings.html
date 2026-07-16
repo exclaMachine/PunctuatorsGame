@@ -7544,7 +7544,7 @@ if(IS_TOUCH){
   joyEl.addEventListener("pointercancel",joyEnd);
   // Attack: hold to keep swinging (update() calls doAttack while held).
   const atk=document.getElementById("tc-atk");
-  atk.addEventListener("pointerdown",e=>{ e.preventDefault(); attackHeld=true; doAttack(); });
+  atk.addEventListener("pointerdown",e=>{ e.preventDefault(); if(nearFishSpot()){ openFishing(); return; } attackHeld=true; doAttack(); });   // ATK also casts when facing a fish-spot (mirrors Space)
   const atkUp=e=>{ if(e) e.preventDefault(); attackHeld=false; };
   atk.addEventListener("pointerup",atkUp);
   atk.addEventListener("pointercancel",atkUp);
