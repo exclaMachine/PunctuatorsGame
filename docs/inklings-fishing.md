@@ -116,10 +116,12 @@ livestock — a later **rhythm-reel** could share their sound/rhythm framing).
 Fishing needs **no new room**. It rides the field screens' existing water:
 
 - **Interaction:** when the player faces a `T_WATER` tile (reuse the `tileInFront()` / `blockedAt` sampling
-  the movement code already does), surface a **CAST** prompt — `E` on desktop, a contextual touch button in
-  the `#tact` util row, and a `#side-left` toolbar entry (dim unless near water, exactly like
+  the movement code already does), surface a **CAST** prompt — `E` **or Space** on desktop, a contextual touch
+  button in the `#tact` util row, and a `#side-left` toolbar entry (dim unless near water, exactly like
   `refreshToolbar()` dims Shop/Shelf by proximity). No approach onto the tile (water blocks movement via
-  `walkType`); you fish **from the bank**, like walking up to the desk/stall.
+  `walkType`); you fish **from the bank**, like walking up to the desk/stall. **Space** (normally the attack
+  key) redirects to `openFishing()` when `nearFishSpot()` is true — an attack into water does nothing, so the
+  key is free to cast — otherwise it still swings.
 - **The cast → bite → set-hook loop** runs in a **self-contained `#fishing` modal** (`state.fishing`,
   styled off the other retro-pixel overlays), added to every overlay guard (movement, `canBeHurt`, hint,
   `syncTouchUI`) the way `state.bestiaryOpen` / `state.apothecaryOpen` are. It does **not** need canvas

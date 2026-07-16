@@ -2863,7 +2863,7 @@ addEventListener("keydown",e=>{
   if(k==="k" && IS_DEV) openPigpens();   // Pig Pens (Pigpen cipher) — DEV-only for now
   if(k==="y" && IS_DEV) openHerald();    // Herald's Bench (Blazon Shield) — DEV-only for now
   if(k==="m") alaSummon();               // À La Modal: offer a hint (or dismiss)
-  if(k===" ") doAttack();
+  if(k===" "){ if(nearFishSpot()) openFishing(); else doAttack(); }   // Space also casts when facing a fish-spot (water blocks attacks anyway)
 });
 addEventListener("keyup",e=>{ keys[e.key.toLowerCase()]=false; });
 
