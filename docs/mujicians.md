@@ -166,6 +166,20 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   — the teaching surface.
 - **The pillar — hands are sounded.** `soundCards` plays the selection (chords together, **scale runs
   arpeggiated**) via each card's instrument timbre/register. High score ↔ good sound by construction.
+- **Live learning cues on the pitch grid (FL-Studio-style).** As you select cards, the loop grid gives two
+  instant, no-commitment cues (both computed in `loopStripHTML` from `selectedCards()`, so they update on
+  every select/deselect since `toggleSel` re-renders):
+  - **Placement ghost** — each selected card's landing cell (its row = pitch/register, in the **gold write
+    column**) gets a **white inset ring + a translucent tint of the note's ROYGBIV color** (`.lgcell.ghost`),
+    so you see *exactly where on the staff* a pick will be written before you Play it. On-select only (no
+    hover preview — works the same on touch and desktop).
+  - **"Still sounds good" glow** — rows that are **in the gig's key AND consonant with every note you've
+    currently picked** get a green wash on the cells + a green bold row label (`.lgcell.good`/`.lgrow.good`,
+    via `fitsSelection(pc,key,selPcs)`; consonant = interval class in `CONSONANT_IV` = 3rd/4th/5th/6th, or a
+    doubling). This is the deliberate extension of FL's *static* scale-highlight: because the natural-note
+    deck makes the plain in-key highlight **degenerate in C major** (every row is in-key), the glow instead
+    reacts to your selection so it stays a real teaching signal every gig. Empty selection ⇒ all in-key rows
+    glow (the scale). The off-key **grey** rows are unchanged (still show key membership).
 - **The song loop (Mario-Paint-style "make a song as you go").** Each gig is a **fixed loop of
   `LOOP_BARS` slots** (= `PLAYS`, one per hand). Playing a hand **writes it into the current (gold) slot**
   and advances the write head (wraps to overwrite/refine). A Web Audio **lookahead scheduler** (`startLoop`

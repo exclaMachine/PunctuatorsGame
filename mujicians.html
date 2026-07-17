@@ -51,10 +51,13 @@
     font-size:10px;color:var(--dim);white-space:nowrap;height:16px}
   .lgrow.tonic{color:var(--gold)}
   .lgrow.offkey{opacity:.4;font-style:italic}
+  .lgrow.good{color:var(--good);font-weight:bold}       /* row still sounds good with the current pick */
   .lgcell{height:16px;border-radius:3px;background:#141833;border:1px solid transparent;cursor:pointer;
     transition:background .06s,outline-color .06s}
   .lgcell:hover{background:#20264a}
+  .lgcell.good{background:rgba(91,224,142,.13)}          /* FL-style: shade rows that fit the selection */
   .lgcell.on{border-color:rgba(255,255,255,.4);box-shadow:inset 0 0 0 1px rgba(0,0,0,.35)} /* bg set inline = note color */
+  .lgcell.ghost{box-shadow:inset 0 0 0 2px rgba(255,255,255,.9)} /* where a selected card will land (bg tint set inline = note color) */
   .lgcell.writecol{outline:2px solid var(--gold);outline-offset:-2px}
   .lgcell.playcol{outline:2px solid var(--accent);outline-offset:-2px}
   .lgcorner{}
@@ -561,27 +564,46 @@
     for(const inst of INSTRUMENTS) for(const pc of DIATONIC_C) s.add(inst.baseC+pc);
     return [...s].sort((a,b)=>b-a);   // high pitch at top
   }
+  // "Still sounds good?" — a pitch-class fits the current pick if it's IN KEY and forms a
+  // consonant interval (3rd/4th/5th/6th, or a doubling) with EVERY selected note. Empty
+  // selection ⇒ every in-key row fits (FL-style scale highlight). This is the live teaching cue.
+  function fitsSelection(pc, key, selPcs){
+    if(!key.includes(pc)) return false;
+    return selPcs.every(sp => { const d=(pc-sp+12)%12; return d===0 || CONSONANT_IV.has(d); });
+  }
   function loopStripHTML(){
     if(!run.loop) return "";   // no loop yet (e.g. the pre-gig Muse draft) — nothing to show
     const g = GIGS[run.gigIdx];
     const keyRoot = g.key[0];
     const rows = loopRowMidis();
     const N = LOOP_BARS;
+    // selected cards drive both the "sounds good" glow and the placement ghost
+    const selCards = selectedCards();
+    const selMidis = new Set(selCards.map(c=>c.midi));
+    const selPcs = [...new Set(selCards.map(c=>c.pc))];
+    const wp = run.loop.writePos;
     let grid = "";
     rows.forEach(m=>{
       const pc = m%12, letter = NOTE_LETTER[pc], oct = Math.floor(m/12)-1;
       const inKey = g.key.includes(pc);
+      const fits = fitsSelection(pc, g.key, selPcs);
       const rc = ["lgrow"];
       if(pc===keyRoot) rc.push("tonic");
       else if(!inKey) rc.push("offkey");   // e.g. F in G-major — teaches "out of key"
+      else if(fits) rc.push("good");       // in-key + consonant w/ pick (tonic keeps its gold label)
       grid += `<div class="${rc.join(" ")}">${letter}${oct}</div>`;
       for(let b=0;b<N;b++){
         const bar = run.loop.bars[b];
         const on = bar && bar.cards.some(c=>c.midi===m);
+        const ghost = b===wp && selMidis.has(m);   // a picked card would land here (gold write column)
         const cl = ["lgcell"];
+        if(fits) cl.push("good");
         if(on) cl.push("on");
-        if(b===run.loop.writePos) cl.push("writecol");
-        grid += `<div class="${cl.join(" ")}" data-bar="${b}"${on?` style="background:${COLOR[letter]}"`:""}></div>`;
+        if(ghost) cl.push("ghost");
+        if(b===wp) cl.push("writecol");
+        // bg: a played note shows its full color; a ghost preview shows a translucent tint of it
+        const bg = on ? COLOR[letter] : (ghost ? COLOR[letter]+"66" : "");
+        grid += `<div class="${cl.join(" ")}" data-bar="${b}"${bg?` style="background:${bg}"`:""}></div>`;
       }
     });
     // footer: structure label per bar
@@ -595,7 +617,7 @@
     }
     return `<div class="loopwrap">
       <div class="lhead">
-        <span>YOUR LOOP — <b>${filledBars()}/${LOOP_BARS}</b> bars · each Play fills the <b>gold</b> column; it loops as you go</span>
+        <span>YOUR LOOP — <b>${filledBars()}/${LOOP_BARS}</b> bars · each Play fills the <b>gold</b> column${selMidis.size?" · ringed cells = where your pick lands":""} · <span style="color:var(--good)">green rows</span> still sound good with your pick</span>
         <button class="btn ghost" id="b-loop" style="padding:4px 10px;font-size:11px">${loopOn()?"⏸ pause":"▶ play"}</button>
       </div>
       <div class="loopgrid" style="grid-template-columns:44px repeat(${N},1fr)">${grid}</div>
