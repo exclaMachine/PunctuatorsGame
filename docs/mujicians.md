@@ -1,6 +1,8 @@
 # Mujicians — a music-theory grid-composer
 
-**Entry file:** `mujicians.html` *(not created yet)* · **Status:** design plan only, **no code written**
+**Entry file:** `mujicians.html` · **Status:** **Slice 1 in progress** — grid + Keys lane + chord
+validator + "complete the chord" puzzle + XP/level + `localStorage` persistence are built; the rest of
+this doc is still the plan.
 
 A gamified music-maker that teaches **music theory** by having you build music on a grid. Where
 Inklings collects letters and spells them into words, Mujicians places notes on a grid and assembles
@@ -38,6 +40,36 @@ The direction was chosen deliberately over several alternatives, so we don't rel
   repo, we keep its license notice.
 
 ---
+
+## Implemented so far (slice 1)
+
+Built in `mujicians.html` — self-contained, offline, no dependencies (Web Audio oscillators for sound,
+no assets; runs fine from `file://` since there's no mic). All in one inline `<script>` IIFE:
+
+- **The grid** — DOM CSS-grid, `ROW_MIDIS` = the 7 C-major white keys across two octaves (C4→C6,
+  top = highest), `COLS = 8` beats. Each row is labeled with note name + **scale degree** (`DEGREE`);
+  tonic rows are gold. Column `TARGET_COL` (3) is the highlighted puzzle column.
+- **Keys lane** — click a cell to place/remove a note (`onCellClick`); it sounds immediately via
+  `playMidi` (triangle osc + envelope, `audio()` lazily creates/resumes the `AudioContext` on first
+  gesture). `grid[col]` is a `Set` of MIDI notes.
+- **Chord validator** — `nameChord(pitchClasses)` identifies **major / minor / diminished / augmented**
+  triads (`CHORD_IV` / `TEMPLATES`) from a column's pitch classes (octave-agnostic). This is the "music
+  dictionary" for the slice.
+- **"Complete the chord" puzzle** — `PUZZLES` = the **seven diatonic triads of C major**; `loadPuzzle`
+  pre-places + locks the root (orange), `checkPuzzle` validates the target column live, distinguishing
+  *correct* / *wrong-but-real chord* / *not-a-triad*. Solving arpeggiates it and advances.
+- **Codex** — discovered chords render as chips (`renderCodex`), newest highlighted.
+- **XP / level** — `awardXP` (+30 first discovery, +10 repeat), `levelInfo` rising curve, header bar
+  (`renderLevel`). This is the slice's stand-in for the two-track progression below — for now it's a
+  single global level with no unlocks wired yet.
+- **Persistence** — `save`/`load` to `localStorage["mujicians-save-v1"]` (`{xp, codex, puzzleIdx}`); a
+  **Reset** button clears it.
+- **Playback** — Play loops the 8 columns with a moving playhead (`tick`/`markBeat`, `STEP_MS`); Clear
+  extras wipes non-puzzle columns; Skip advances.
+
+**Not yet:** only the Keys lane (no Bassist/Lead/Drummer), only C major (no circle-of-fifths unlocks),
+no daily puzzle, no 7th/extended chords, no free-compose/pitch-bird input, no level *rewards*. Those are
+later slices — see Open questions.
 
 ## Core loop
 

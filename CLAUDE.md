@@ -19,7 +19,7 @@ you add/remove/modify a feature (treat the doc as part of the diff, not an after
 | **Write. Right!** — sentence-building card game with an exquisite-corpse drawing twist | `WriteRight.html` | [`docs/write-right.md`](docs/write-right.md) |
 | **The Prescriptivist's Gauntlet** — transcribe sentences under stacking linguistic "laws" | `Prescriptivist.html` | [`docs/prescriptivist.md`](docs/prescriptivist.md) |
 | **Pitch Bird** — sing-to-fly voice game; pitch controls the bird's height (Flappy pipes + UltraStar karaoke). *In development, not yet shipped* | `pitch-bird.html` | [`docs/pitch-bird.md`](docs/pitch-bird.md) |
-| **Mujicians** — music-theory grid-composer: place notes on a Song-Maker grid, complete theory puzzles, assemble a band, fill a Codex. *Design plan only, no code yet* | `mujicians.html` *(not created)* | [`docs/mujicians.md`](docs/mujicians.md) |
+| **Mujicians** — music-theory grid-composer: place notes on a Song-Maker grid, complete theory puzzles, assemble a band, fill a Codex. *Slice 1 in progress (grid + Keys lane + chord puzzle + XP/save); rest is plan* | `mujicians.html` | [`docs/mujicians.md`](docs/mujicians.md) |
 
 The repo also holds many undocumented tools/pages (ambigram generators, anagram/palindrome builders, an
 IPA game, `typing.html`, `punctuators.html`, etc.). Those have no `docs/` entry yet — read the file
