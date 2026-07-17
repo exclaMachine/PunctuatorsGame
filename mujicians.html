@@ -36,6 +36,16 @@
   .gigbar .key b{color:var(--gold)}
   .gigbar .counts{font-size:12px;color:var(--dim)}
   .gigbar .counts b{color:var(--ink)}
+  .tempo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap;font-size:13px}
+  .tempo-row label{color:var(--dim);font-weight:bold}
+  .tempo-row input[type=range]{width:min(220px,60vw);accent-color:var(--accent);cursor:pointer}
+  .tempo-row #bpm-label{min-width:130px;text-align:left;color:var(--dim)}
+  .tempo-row #bpm-label b{color:var(--accent)}
+  /* compact variant lives in the gig loop header next to the play/pause button */
+  .tempo-row.compact{margin-top:0;gap:6px;font-size:11px}
+  .tempo-row.compact input[type=range]{width:110px}
+  .tempo-row.compact #bpm-label{min-width:0;letter-spacing:0}
+  .loopwrap .lhead-ctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .scoreline{margin-top:8px;font-size:13px}
   .scoreline b{color:var(--accent)}
   .track{margin-top:6px;height:12px;border-radius:7px;background:#232848;border:1px solid var(--edge);overflow:hidden}
@@ -216,6 +226,19 @@
   // Mario-Paint-style loop: a fixed strip of slots you fill hand-by-hand. Each Play
   // writes the current slot; the loop cycles nonstop (continuous backing groove).
   const LOOP_BARS = PLAYS, BAR_SEC = 0.8;
+  // Tempo: one loop slot = one beat, so bar-seconds = 60/BPM. Default 75 BPM = 0.8s (BAR_SEC).
+  // The global comfort tempo (persist.bpm) drives the live gig loop; saved songs replay at
+  // the tempo they were made at (stored per song). Range spans real sheet-music markings.
+  const DEFAULT_BPM = 75, MIN_BPM = 40, MAX_BPM = 200;
+  const curBarSec = () => 60 / (persist.bpm || DEFAULT_BPM);
+  function tempoTerm(b){
+    if(b < 60) return "Largo";
+    if(b < 76) return "Adagio";
+    if(b < 108) return "Andante";
+    if(b < 120) return "Moderato";
+    if(b < 168) return "Allegro";
+    return "Presto";
+  }
 
   // Gigs: each has a key (scale of allowed in-key pitch classes) + an applause threshold.
   const majorScale = root => [0,2,4,5,7,9,11].map(i => (root+i)%12);
@@ -343,13 +366,14 @@
   /* ================= persistence + daily cap ================= */
   const SAVE_KEY = "mujicians-save-v2";
   function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
-  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[] };
+  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM };
   function loadPersist(){
     try{
       const s = JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
       if(s){ persist = Object.assign(persist, s); }
     }catch(e){}
     if(!Array.isArray(persist.setlist)) persist.setlist = [];   // saved-song Setlist (additive; see docs/mujicians.md)
+    persist.bpm = Math.max(MIN_BPM, Math.min(MAX_BPM, +persist.bpm || DEFAULT_BPM));  // global comfort tempo
     if(persist.day !== todayStr()){ persist.day = todayStr(); persist.runsUsed = 0; savePersist(); }
     // one-time repair: an earlier bug burned runs on a failed render; refund them once.
     if(!persist.capFixV1){ persist.capFixV1 = true; persist.runsUsed = 0; savePersist(); }
@@ -393,20 +417,25 @@
   // A lookahead scheduler cycles a bars array nonstop; a rAF sweeps the playhead.
   // playSrc = { bars, n } is whatever's currently grooving: the live gig loop
   // (run.loop) during a gig, or a saved song's bars during Setlist playback.
-  let schedTimer = null, rafId = null, nextBarTime = 0, nextBarIdx = 0, loopStart = 0, curBar = -1;
+  let schedTimer = null, rafId = null, nextBarTime = 0, nextBarIdx = 0, curBar = -1;
+  let barQueue = [];   // scheduled bar onsets {idx, t}; drives the playhead without assuming a constant tempo
   let playSrc = null;
   function loopOn(){ return !!schedTimer; }
-  function gigSrc(){ return (run && run.loop) ? { bars:run.loop.bars, n:LOOP_BARS } : null; }
+  // Bar-seconds of whatever's grooving: the live gig loop follows the global tempo in real time
+  // (so the Tempo slider works mid-gig); a saved song carries its own fixed barSec.
+  function srcBarSec(){ if(!playSrc) return BAR_SEC; return playSrc.live ? curBarSec() : (playSrc.barSec||BAR_SEC); }
+  function gigSrc(){ return (run && run.loop) ? { bars:run.loop.bars, n:LOOP_BARS, live:true } : null; }
   function scheduleBar(idx, when){
     const bar = playSrc && playSrc.bars[idx];
     if(!bar || !bar.cards.length) return;
     const arp = bar.cls && bar.cls.type==="run";
     const sorted = [...bar.cards].sort((a,b)=>a.midi-b.midi);
     const n = sorted.length || 1;
+    const bs = srcBarSec();
     sorted.forEach((c,i)=>{
       const inst = INSTRUMENTS.find(x=>x.id===c.instId);
-      const dur = (arp ? BAR_SEC/n : BAR_SEC) * 0.92;
-      _tone(c.midi, inst.wave, dur, when + (arp ? i*(BAR_SEC/n) : 0));
+      const dur = (arp ? bs/n : bs) * 0.92;
+      _tone(c.midi, inst.wave, dur, when + (arp ? i*(bs/n) : 0));
     });
   }
   function schedTick(){
@@ -414,7 +443,8 @@
     const n = playSrc ? playSrc.n : LOOP_BARS;
     while(nextBarTime < ac.currentTime + 0.12){
       scheduleBar(nextBarIdx, nextBarTime);
-      nextBarTime += BAR_SEC;
+      barQueue.push({ idx:nextBarIdx, t:nextBarTime });
+      nextBarTime += srcBarSec();
       nextBarIdx = (nextBarIdx+1) % n;
     }
   }
@@ -424,10 +454,10 @@
   }
   function tickPlayhead(){
     if(!schedTimer){ rafId = null; return; }
-    const ac = audio();
-    const n = playSrc ? playSrc.n : LOOP_BARS;
-    let cb = Math.floor((ac.currentTime - loopStart) / BAR_SEC) % n;
-    cb = ((cb % n) + n) % n;
+    const now = audio().currentTime;
+    // the sounding bar = the latest scheduled onset that's already started; drop older entries.
+    while(barQueue.length > 1 && barQueue[1].t <= now) barQueue.shift();
+    const cb = barQueue.length ? barQueue[0].idx : -1;
     if(cb !== curBar){ curBar = cb; paintPlayCol(curBar); }
     rafId = requestAnimationFrame(tickPlayhead);
   }
@@ -437,14 +467,14 @@
     playSrc = src || gigSrc();
     if(!playSrc){ return; }
     const ac = audio();
-    nextBarTime = ac.currentTime + 0.12; loopStart = nextBarTime; nextBarIdx = 0; curBar = -1;
+    nextBarTime = ac.currentTime + 0.12; nextBarIdx = 0; curBar = -1; barQueue = [];
     schedTimer = setInterval(schedTick, 25);
     rafId = requestAnimationFrame(tickPlayhead);
   }
   function stopLoop(){
     if(schedTimer){ clearInterval(schedTimer); schedTimer = null; }
     if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
-    curBar = -1;
+    curBar = -1; barQueue = [];
     paintPlayCol(-1);
   }
 
@@ -540,7 +570,8 @@
       date: todayStr(),
       keyName: g.keyName,
       key: g.key.slice(),
-      tempo: BAR_SEC,
+      tempo: curBarSec(),   // record the tempo it was played at; replays at this speed
+
       bars: bars,
       stars: rep.stars,
       starred: false
@@ -590,7 +621,7 @@
   function toggleSongPlay(id){
     const s = findSong(id); if(!s) return; audio();
     if(loopOn() && galleryPlayId===id){ stopLoop(); galleryPlayId=null; }
-    else { startLoop({ bars:s.bars, n:s.bars.length }); galleryPlayId=id; }
+    else { startLoop({ bars:s.bars, n:s.bars.length, barSec:s.tempo||BAR_SEC }); galleryPlayId=id; }
     renderHome();
   }
   function toggleStar(id){ const s=findSong(id); if(!s) return; s.starred=!s.starred; savePersist(); renderHome(); }
@@ -858,7 +889,7 @@
     return `<div class="loopwrap">
       <div class="lhead">
         <span>YOUR LOOP — <b>${filledBars()}/${LOOP_BARS}</b> bars · each Play fills the <b>gold</b> column${selMidis.size?" · ringed cells = where your pick lands":""} · <span style="color:var(--good)">green rows</span> still sound good with your pick</span>
-        <button class="btn ghost" id="b-loop" style="padding:4px 10px;font-size:11px">${loopOn()?"⏸ pause":"▶ play"}</button>
+        <span class="lhead-ctl">${tempoSliderHTML(true)}<button class="btn ghost" id="b-loop" style="padding:4px 10px;font-size:11px">${loopOn()?"⏸ pause":"▶ play"}</button></span>
       </div>
       <div class="loopgrid" style="grid-template-columns:44px repeat(${N},1fr)">${grid}</div>
     </div>`;
@@ -899,6 +930,7 @@
     });
     const bl = document.getElementById("b-loop");
     if(bl) bl.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderGig(); });
+    wireTempoSlider();   // tempo is adjustable mid-gig; the running loop follows it live
     document.getElementById("b-sort").addEventListener("click", ()=>{
       const chosen = selectedCards();
       run.hand.sort((a,b)=> a.midi-b.midi || a.instId.localeCompare(b.instId));
@@ -946,6 +978,23 @@
       </div>
     </div>`;
   }
+  // Tempo slider — shared by Home and the in-gig loop header so tempo is adjustable any time.
+  function tempoSliderHTML(compact){
+    return `<span class="tempo-row${compact?" compact":""}">
+      <label for="bpm">🎵 Tempo</label>
+      <input type="range" id="bpm" min="${MIN_BPM}" max="${MAX_BPM}" step="1" value="${persist.bpm}"
+             aria-label="Loop tempo in beats per minute">
+      <span id="bpm-label"><b>${persist.bpm}</b> BPM · ${tempoTerm(persist.bpm)}</span>
+    </span>`;
+  }
+  function wireTempoSlider(){
+    const bpm = document.getElementById("bpm"), lbl = document.getElementById("bpm-label");
+    if(!bpm) return;
+    const paint = ()=>{ const v=+bpm.value; if(lbl) lbl.innerHTML = `<b>${v}</b> BPM · ${tempoTerm(v)}`; };
+    // 'input' updates live (drives curBarSec() so the running loop speeds up as you drag); 'change' persists.
+    bpm.addEventListener("input", ()=>{ persist.bpm = +bpm.value; paint(); });
+    bpm.addEventListener("change", ()=>{ persist.bpm = +bpm.value; savePersist(); });
+  }
   function wireSetlist(){
     $game.querySelectorAll(".sb-play").forEach(el=> el.addEventListener("click", ()=>toggleSongPlay(el.dataset.id)));
     $game.querySelectorAll(".sb-star").forEach(el=> el.addEventListener("click", ()=>toggleStar(el.dataset.id)));
@@ -967,10 +1016,12 @@
         </div>
         ${capped?`<p class="hint center">You've used all ${MAX_RUNS_PER_DAY} runs today. Come back tomorrow — or try
           <a href="pitch-bird.html" style="color:var(--accent)">Pitch Bird</a> meanwhile.</p>`:""}
+        <div class="tempo-wrap">${tempoSliderHTML(false)}</div>
       </div>
       ${setlistHTML()}`;
     const b = document.getElementById("b-start");
     if(b) b.addEventListener("click", ()=>{ audio(); startRun(); });
+    wireTempoSlider();
     wireSetlist();
   }
 

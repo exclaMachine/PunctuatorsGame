@@ -206,7 +206,7 @@ default to `[]` on load, no key bump needed). Each saved song stores only what *
 (not full card objects):
 
 ```
-{ id, name, date, key:{root,mode,name}, tempo:BAR_SEC,
+{ id, name, date, key:{root,mode,name}, tempo:curBarSec(),  // bar-seconds it was played at (60/BPM)
   bars:[ { notes:[{pc,letter,instId,midi}], cls:{type,name} }, … ],  // the loop, minimally serialized
   report:{…},        // cached report-card stats (or recompute on open)
   gigThreshold, applause,   // flavor stats
@@ -488,6 +488,25 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   that already-running loop rather than starting it — the "made some music" payoff. `stopLoop` now only fires
   on explicit user actions (Home, starting a new run/gig, the pause toggle). So a gig literally **builds an
   audible loop** you can sit with after the run ends.
+- **Adjustable tempo (global comfort setting, live).** A **Tempo slider** lets the player set the loop
+  speed in **real BPM** (`MIN_BPM 40` → `MAX_BPM 200`), with a live **Italian tempo-marking label**
+  (Largo/Adagio/Andante/Moderato/Allegro/Presto) next to the number — on-brand with the game's teaching
+  angle. It's shown in **two places from one shared helper** (`tempoSliderHTML`/`wireTempoSlider`): a full
+  version on **Home** and a **compact** version in the **in-gig loop header** (next to ▶/⏸), so tempo is
+  adjustable **at any time, including mid-gig** — dragging the slider speeds up/slows the **currently
+  grooving loop live** (the `input` handler updates `persist.bpm`; `change` persists it). The mapping is
+  **one loop slot = one beat**, so bar-seconds = `60/BPM`; the old fixed `BAR_SEC = 0.8` is the **default
+  of 75 BPM** (`DEFAULT_BPM`). BPM persists as `persist.bpm` in `localStorage["mujicians-save-v2"]`
+  (additive; clamped on load). The gig loop **follows the global tempo in real time**: `gigSrc()` is marked
+  `live:true` and `srcBarSec()` returns `curBarSec()` for it each tick (a saved song instead carries a
+  fixed `barSec`). Because a mid-loop tempo change breaks the old constant-rate playhead math, the visual
+  **playhead is now driven by a queue of scheduled bar onsets** (`barQueue` of `{idx,t}` pushed in
+  `schedTick`; `tickPlayhead` advances to the latest onset already started) instead of dividing elapsed
+  time by a fixed `BAR_SEC` — so the sweep stays correct at any speed and through speed changes. **Saved
+  songs replay at their own tempo:** `saveSong` stores `tempo: curBarSec()` (the speed it was played at)
+  and Setlist playback feeds it back as `startLoop({…, barSec:s.tempo})`, so a song sounds the way it was
+  made regardless of the current global setting (older saves stored `0.8` = 75 BPM, correct for when they
+  were made).
 - **Run = a Set of 3 Gigs** (`GIGS`), each with a **key** (C→G→F major, so "in key" is a live choice
   with a natural-note deck) and an escalating **applause threshold** (`650 / 1150 / 1800` — deliberately
   high so a gig can't be cleared in one or two lucky hands; you play several, filling more of the loop);
