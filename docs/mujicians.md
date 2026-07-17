@@ -167,8 +167,15 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   and advances the write head (wraps to overwrite/refine). A Web Audio **lookahead scheduler** (`startLoop`
   /`schedTick`/`scheduleBar`, `BAR_SEC` tempo) cycles the loop **continuously as a backing groove**; each
   filled slot re-sounds every pass (chords together, runs arpeggiated within the bar) and a rAF
-  **playhead** (`tickPlayhead`) sweeps the strip. The strip shows **ROYGBIV note-dots + a short structure
-  label** per slot; click a slot to aim the write head there, and a **pause/play** toggle mutes the groove.
+  **playhead** (`tickPlayhead`→`paintPlayCol`) sweeps the columns. The loop renders as a **pitch grid**
+  (`loopStripHTML`, `.loopgrid`): **rows = every playable pitch across the deck's true range** (`loopRowMidis`
+  — bass register low, piano/guitar high, the empty middle octave skipped since no card lands there), **columns
+  = the `LOOP_BARS` bars**. A played hand lights up its notes as **ROYGBIV cells across the scale** (color =
+  note letter), so note additions are *visible on the staff* rather than a cluster of dots. Row labels mark the
+  gig-key **tonic** (gold) and grey out **off-key** rows (e.g. F in G major — teaches "out of key"); a short
+  **structure label** sits under each column. Click any cell/label in a column to aim the write head there, and a
+  **pause/play** toggle mutes the groove. (This reuses the `mujicians-compose.html` grid concept for the loop
+  display.)
   The loop resets per gig (a fresh song each gig); the win screen offers **"▶ Hear your set"** to replay
   the last gig's loop — the "made some music" payoff. So a gig now literally **builds an audible loop**.
 - **Run = a Set of 3 Gigs** (`GIGS`), each with a **key** (C→G→F major, so "in key" is a live choice

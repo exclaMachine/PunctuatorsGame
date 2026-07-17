@@ -41,23 +41,28 @@
   .track{margin-top:6px;height:12px;border-radius:7px;background:#232848;border:1px solid var(--edge);overflow:hidden}
   .track i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--good));transition:width .3s}
 
-  /* Mario-Paint loop strip */
+  /* Mario-Paint loop — a pitch grid (rows = the visible scale, columns = loop bars) */
   .loopwrap{margin:12px 0}
   .loopwrap .lhead{font-size:11px;color:var(--dim);letter-spacing:.5px;margin-bottom:6px;
     display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
   .loopwrap .lhead b{color:var(--gold)}
-  .loopstrip{display:flex;gap:6px}
-  .loopcell{flex:1 1 0;min-width:0;height:54px;border-radius:8px;background:#131730;border:1px solid var(--edge);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;position:relative;
-    transition:border-color .1s,box-shadow .1s}
-  .loopcell:hover{border-color:var(--accent)}
-  .loopcell.write{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
-  .loopcell.on{box-shadow:0 0 0 2px var(--accent),0 0 16px rgba(77,225,200,.45)}
-  .loopcell .dots{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;max-width:100%}
-  .loopcell .dot{width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.45)}
-  .loopcell .lbl{font-size:9px;color:var(--dim);letter-spacing:.3px;max-width:96%;
+  .loopgrid{display:grid;gap:2px;background:#0f1226;border:1px solid var(--edge);border-radius:8px;padding:6px}
+  .lgrow{display:flex;align-items:center;justify-content:flex-end;gap:5px;padding-right:6px;
+    font-size:10px;color:var(--dim);white-space:nowrap;height:16px}
+  .lgrow.tonic{color:var(--gold)}
+  .lgrow.offkey{opacity:.4;font-style:italic}
+  .lgcell{height:16px;border-radius:3px;background:#141833;border:1px solid transparent;cursor:pointer;
+    transition:background .06s,outline-color .06s}
+  .lgcell:hover{background:#20264a}
+  .lgcell.on{border-color:rgba(255,255,255,.4);box-shadow:inset 0 0 0 1px rgba(0,0,0,.35)} /* bg set inline = note color */
+  .lgcell.writecol{outline:2px solid var(--gold);outline-offset:-2px}
+  .lgcell.playcol{outline:2px solid var(--accent);outline-offset:-2px}
+  .lgcorner{}
+  .lglabel{font-size:9px;color:var(--dim);letter-spacing:.3px;text-align:center;cursor:pointer;padding-top:3px;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .loopcell.empty .lbl{opacity:.45}
+  .lglabel.writecol{color:var(--gold)}
+  .lglabel.playcol{color:var(--accent)}
+  .lglabel.empty{opacity:.4}
 
   .preview{margin:12px 0;min-height:46px;padding:10px 12px;background:#131730;border:1px dashed var(--edge);
     border-radius:10px;font-size:13px}
@@ -352,15 +357,16 @@
       nextBarIdx = (nextBarIdx+1) % LOOP_BARS;
     }
   }
+  function paintPlayCol(col){
+    document.querySelectorAll(".loopgrid .playcol").forEach(e=> e.classList.remove("playcol"));
+    if(col>=0) document.querySelectorAll('.loopgrid [data-bar="'+col+'"]').forEach(e=> e.classList.add("playcol"));
+  }
   function tickPlayhead(){
     if(!schedTimer){ rafId = null; return; }
     const ac = audio();
     let cb = Math.floor((ac.currentTime - loopStart) / BAR_SEC) % LOOP_BARS;
     cb = ((cb % LOOP_BARS) + LOOP_BARS) % LOOP_BARS;
-    if(cb !== curBar){
-      curBar = cb;
-      document.querySelectorAll(".loopcell").forEach((e,i)=> e.classList.toggle("on", i===curBar));
-    }
+    if(cb !== curBar){ curBar = cb; paintPlayCol(curBar); }
     rafId = requestAnimationFrame(tickPlayhead);
   }
   function startLoop(){
@@ -374,7 +380,7 @@
     if(schedTimer){ clearInterval(schedTimer); schedTimer = null; }
     if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
     curBar = -1;
-    document.querySelectorAll(".loopcell.on").forEach(e=> e.classList.remove("on"));
+    paintPlayCol(-1);
   }
 
   /* ================= run state ================= */
@@ -541,26 +547,52 @@
     if(cls.type==="cluster") return "cluster";
     return cls.name; // triad / seventh (e.g. "C major", "C 7")
   }
-  function barDotsHTML(bar){
-    if(!bar || !bar.cards.length) return "";
-    const letters = [...new Set(bar.cards.map(c=>c.letter))];
-    return `<div class="dots">${letters.map(l=>`<span class="dot" style="background:${COLOR[l]}"></span>`).join("")}</div>`;
-  }
   function filledBars(){ return run.loop.bars.filter(Boolean).length; }
+  // Every playable pitch across the deck (bass low → melody high), one row each.
+  // Skips the empty register gap automatically since only these midis can be dealt.
+  function loopRowMidis(){
+    const s = new Set();
+    for(const inst of INSTRUMENTS) for(const pc of DIATONIC_C) s.add(inst.baseC+pc);
+    return [...s].sort((a,b)=>b-a);   // high pitch at top
+  }
   function loopStripHTML(){
     if(!run.loop) return "";   // no loop yet (e.g. the pre-gig Muse draft) — nothing to show
-    const cells = run.loop.bars.map((bar,i)=>{
-      const cl = ["loopcell"];
-      if(i===run.loop.writePos) cl.push("write");
+    const g = GIGS[run.gigIdx];
+    const keyRoot = g.key[0];
+    const rows = loopRowMidis();
+    const N = LOOP_BARS;
+    let grid = "";
+    rows.forEach(m=>{
+      const pc = m%12, letter = NOTE_LETTER[pc], oct = Math.floor(m/12)-1;
+      const inKey = g.key.includes(pc);
+      const rc = ["lgrow"];
+      if(pc===keyRoot) rc.push("tonic");
+      else if(!inKey) rc.push("offkey");   // e.g. F in G-major — teaches "out of key"
+      grid += `<div class="${rc.join(" ")}">${letter}${oct}</div>`;
+      for(let b=0;b<N;b++){
+        const bar = run.loop.bars[b];
+        const on = bar && bar.cards.some(c=>c.midi===m);
+        const cl = ["lgcell"];
+        if(on) cl.push("on");
+        if(b===run.loop.writePos) cl.push("writecol");
+        grid += `<div class="${cl.join(" ")}" data-bar="${b}"${on?` style="background:${COLOR[letter]}"`:""}></div>`;
+      }
+    });
+    // footer: structure label per bar
+    grid += `<div class="lgcorner"></div>`;
+    for(let b=0;b<N;b++){
+      const bar = run.loop.bars[b];
+      const cl = ["lglabel"];
       if(!bar) cl.push("empty");
-      return `<div class="${cl.join(" ")}" data-bar="${i}">${barDotsHTML(bar)}<div class="lbl">${bar?barLabel(bar.cls):"·"}</div></div>`;
-    }).join("");
+      if(b===run.loop.writePos) cl.push("writecol");
+      grid += `<div class="${cl.join(" ")}" data-bar="${b}">${bar?barLabel(bar.cls):"·"}</div>`;
+    }
     return `<div class="loopwrap">
       <div class="lhead">
-        <span>YOUR LOOP — <b>${filledBars()}/${LOOP_BARS}</b> bars · each Play fills the <b>gold</b> slot; it loops as you go</span>
+        <span>YOUR LOOP — <b>${filledBars()}/${LOOP_BARS}</b> bars · each Play fills the <b>gold</b> column; it loops as you go</span>
         <button class="btn ghost" id="b-loop" style="padding:4px 10px;font-size:11px">${loopOn()?"⏸ pause":"▶ play"}</button>
       </div>
-      <div class="loopstrip">${cells}</div>
+      <div class="loopgrid" style="grid-template-columns:44px repeat(${N},1fr)">${grid}</div>
     </div>`;
   }
 
@@ -592,8 +624,8 @@
     });
     document.getElementById("b-play").addEventListener("click", playHand);
     document.getElementById("b-disc").addEventListener("click", discardHand);
-    // loop strip: click a slot to aim the write head there (refine/overwrite it)
-    $game.querySelectorAll(".loopcell").forEach(el=>{
+    // loop grid: click any cell/label in a column to aim the write head there (refine/overwrite it)
+    $game.querySelectorAll(".loopgrid [data-bar]").forEach(el=>{
       el.addEventListener("click", ()=>{ run.loop.writePos = +el.dataset.bar; renderGig(); });
     });
     const bl = document.getElementById("b-loop");
