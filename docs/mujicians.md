@@ -411,13 +411,22 @@ Codex in code or is a new view; and the deferred full retro-pixel reskin.
 
 ---
 
-## Progression — the seven-movement campaign (**planned, not built**)
+## Progression — the seven-movement campaign (**Phase 0 built; movements planned**)
 
-> **Status: designed this pass, not coded.** A long-arc progression system proposed by the dev, grounded
-> in the *Mujicians* graphic-novel structure. Nothing here is built yet; it's recorded so the design
-> survives and the eventual build matches intent. It **layers on top of** (doesn't revert) the current
-> full-feature run — today's game becomes the "everything unlocked" end state (see *Free Play* below).
+> **Status: designed, and Phase 0 (the scaffold) is now built** in `mujicians.html`; the seven movements'
+> *content* is still planned (Phases 1–4 below). A long-arc progression system proposed by the dev,
+> grounded in the *Mujicians* graphic-novel structure. It **layers on top of** (doesn't revert) the current
+> full-feature run — today's game is preserved as the "everything unlocked" **Free Play** mode (see below).
 > Numbers, gate counts, and scoring terms are placeholders to tune in play.
+>
+> **Built (Phase 0 scaffold):** a `MOVEMENTS` registry (7 movements, each with a `maxSelect` and a set of
+> active scoring `terms`); `persist.progress = {movement, gates}` (additive to `mujicians-save-v2`, default
+> `{movement:1}`); `startRun(mode)` sets `run.movement` from the mode (`"campaign"` → the reached movement,
+> `"free"` → 7); `maxSelect()`/`termOn()` helpers drive the select cap and gate `score()`'s terms; a **Home
+> mode select** (Campaign · Movement N vs Free Play, both under the global daily cap); an in-gig HUD badge.
+> Only the already-existing terms are wired — `'inkey'` (M1+) and `'consonant'`/`'resolves'` (M5+); the
+> others (`groove`/`dynamic`/`melodic`/`timbre`/`form`) are declared no-ops until their phase. Free Play
+> (movement 7, all terms on) is byte-for-byte today's game.
 
 ### The core idea (why this exists)
 
@@ -548,6 +557,43 @@ and 7 are medium — so Rhythm is the pole that holds up the tent, plan it first
   until movement ≥ 2.
 - **Mode select on Home:** *Campaign* (movement flow) vs *Free Play* (all on) — both consume the **global
   daily cap**.
+
+### Build order (sequenced)
+
+Organizing principle: **build the enabling refactor once, then walk the whole 7-movement arc "thin"
+end-to-end before deepening the one heavy subsystem (Rhythm).** Proves progression *feels* good fast;
+matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
+
+- **Phase 0 — Progression scaffold (spine, no new mechanic). ✅ BUILT.** Added `persist.progress =
+  {movement, gates}` (additive to the save blob); added the `MOVEMENTS` registry; the select cap and the
+  active `score()` terms now read from `MOVEMENTS[run.movement]` via `maxSelect()`/`termOn()` (the old
+  `MAX_SELECT` constant is gone); **Home mode select: Campaign vs Free Play** (Free Play = `movement:7` =
+  today's exact game). Global daily cap covers both; the "New Run" button keeps the finished run's mode.
+  *Net: today's game reachable via Free Play; Campaign runs at the reached movement (default M1). Pure
+  plumbing, nothing reverted.* Movement content (M1 restrictions, gate advancement) is Phase 1+.
+- **Phase 1 — Movement 1 (Pitch) + the gate engine.** `MAX_SELECT=1`; single-note scoring
+  `chips × (in-key ? 2 : 1)`; **restrict the starting deck to one instrument** (piano — guitar/bass already
+  exist, held back for M6); build the reusable **Codex-gate checker** (gate: catalog all 7 letters in key).
+- **Phase 2 — Thin-slice the middle movements (walk the whole arc).** Get M2→M7 *walkable* with minimal
+  depth: **M2 Rhythm** placeholder (downbeat only, groove stubbed); **M3 Dynamics** done properly (per-hand
+  p/mf/f gain + contrast bonus — low lift); **M4 Melody** (`MAX_SELECT→3` in sequence, interval/run scoring
+  on); **M5 Harmony** (`MAX_SELECT→5`, wire in today's existing consonance/cadence/flush stack); **M6
+  Timbre** (unlock guitar+bass, blend bonus); **M7 Structure** thin form bonus. ⚠️ Real M7 depends on the
+  unbuilt "accumulate one loop across all 3 gigs" — ship a placeholder now, flag the dependency. *Net: full
+  7-chapter campaign playable end-to-end — the "does progression feel good" checkpoint.*
+- **Phase 3 — Deepen Rhythm (the heavy subsystem).** Sub-bar grid (`BEATS` sub-columns); rhythm-figure
+  deck; scheduler beat-offsets reusing the `barQueue` onset-queue playhead → beat queue; real groove
+  scoring + rests. Stage: fixed figures → draftable figures → syncopation.
+- **Phase 4 — Structure payoff & polish.** Build **cross-gig loop accumulation** (unblocks real M7 form
+  scoring); boss-gig capstones as chapter exams; optional mentor/chapter prose.
+
+**Chosen: thin-first** (Phase 2 stubs Rhythm/Dynamics to get a walkable arc fast) over deep-in-order
+(fully building Rhythm before the rest). Fastest to a complete-arc playtest; defers the Rhythm lift.
+
+**Reframe surfaced during sequencing:** the 3 instruments (piano/guitar/bass) *already exist in the deck*,
+so the campaign **restricts** the starting deck to one instrument early and **unlocks** the others at **M6
+Timbre** — it doesn't add new instruments, it gates existing ones. (New instruments beyond the 3 remain a
+separate later addition.)
 
 ### Open items for this feature
 
@@ -686,7 +732,16 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   (`MJ1:` share code), delete**, plus **Import** a pasted code. Full design + code map in the **Save a
   Song** section above.
 
-**Not yet (still plan):** accidentals/more instruments & drums, Étude/Accidental cards, a coin-based
+- **Progression scaffold (Phase 0 of the 7-movement campaign).** A `MOVEMENTS` registry gates the
+  select cap (`maxSelect()`) and scoring terms (`termOn()`) by the run's movement; **Home offers Campaign
+  (at your reached movement, default M1) vs Free Play (all unlocked = today's game)**, both under the daily
+  cap; `persist.progress` persists reached movement (additive). Only existing terms are wired (`inkey`,
+  `consonant`, `resolves`); the rest are declared no-ops. Full design + phase plan in the **Progression**
+  section above.
+
+**Not yet (still plan):** the campaign movement *content* (Phases 1–4: M1 deck/select restrictions +
+gate advancement, Rhythm sub-bar subsystem, Dynamics, cross-gig loop for Structure); accidentals/more
+instruments & drums, Étude/Accidental cards, a coin-based
 shop (draft is free for now), antes/boss-gig constraints, the shared **Daily-Set** seed, set-playback
 export, and a bespoke visual identity (current dark-neon skin is a placeholder; the ROYGBIV cards are
 the start of the real look). Scoring numbers (`STRUCT`, thresholds, chip/mult constants) are **tunable

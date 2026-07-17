@@ -221,7 +221,7 @@
     { id:"guitar", name:"Guitar", emoji:"🎸", wave:"sawtooth", baseC:60 },
     { id:"bass",   name:"Bass",   emoji:"🎻", wave:"sine",     baseC:36 },
   ];
-  const BASE_HAND_SIZE = 4, MAX_SELECT = 5, PLAYS = 6, DISCARDS = 3, COPIES = 2;
+  const BASE_HAND_SIZE = 4, PLAYS = 6, DISCARDS = 3, COPIES = 2;  // select cap is now per-movement — see maxSelect()
   const MAX_RUNS_PER_DAY = 3;
   // Mario-Paint-style loop: a fixed strip of slots you fill hand-by-hand. Each Play
   // writes the current slot; the loop cycles nonstop (continuous backing groove).
@@ -247,6 +247,30 @@
     { keyName:"G major", key:majorScale(7), threshold:1150 },
     { keyName:"F major", key:majorScale(5), threshold:1800 },
   ];
+
+  /* ================= progression — the 7-movement campaign (Phase 0 scaffold) =================
+     Each movement unlocks one mechanic + turns on one scoring term, in the graphic-novel arc:
+     pitch → rhythm → dynamics → melody → harmony → timbre → structure. See docs/mujicians.md.
+     Phase 0 wires only what already exists: `maxSelect` (one-note → sequence → stack) and the
+     score terms 'inkey' (M1+) and 'consonant'/'resolves' (M5+, today's harmony stack). The other
+     terms (groove/dynamic/melodic/timbre/form) are declared here but not yet referenced by score()
+     — they land in later phases. Free Play = movement 7 (everything on = today's exact game). */
+  const MAX_MOVEMENT = 7, FREE_PLAY_MOVEMENT = 7;
+  const MOVEMENTS = [
+    null, // index 0 unused — movements are 1..7
+    { n:1, element:"Pitch",     maxSelect:1, terms:["inkey"] },
+    { n:2, element:"Rhythm",    maxSelect:1, terms:["inkey","groove"] },
+    { n:3, element:"Dynamics",  maxSelect:1, terms:["inkey","groove","dynamic"] },
+    { n:4, element:"Melody",    maxSelect:3, terms:["inkey","groove","dynamic","melodic"] },
+    { n:5, element:"Harmony",   maxSelect:5, terms:["inkey","groove","dynamic","melodic","consonant","resolves"] },
+    { n:6, element:"Timbre",    maxSelect:5, terms:["inkey","groove","dynamic","melodic","consonant","resolves","timbre"] },
+    { n:7, element:"Structure", maxSelect:5, terms:["inkey","groove","dynamic","melodic","consonant","resolves","timbre","form"] },
+  ];
+  // Read the active movement from the current run; outside a run (previews/reports) treat as Free Play.
+  const curMovementN = () => (run && run.movement) ? run.movement : FREE_PLAY_MOVEMENT;
+  const curMovement  = () => MOVEMENTS[curMovementN()];
+  const maxSelect    = () => curMovement().maxSelect;
+  const termOn       = (t) => curMovement().terms.includes(t);
 
   // structure base scores  [chips, mult]
   const STRUCT = {
@@ -315,21 +339,22 @@
     let chips = base.chips, mult = base.mult;
     const lines = [];
 
-    // per-note chips
+    // per-note chips — the in-key reward is the 'inkey' term (Movement 1+)
+    const inkeyOn = termOn("inkey");
     cards.forEach(c => {
       let ch = NOTE_CHIP;
       const ik = gig.key.includes(c.pc);
-      if(ik) ch += INKEY_CHIP;
+      if(ik && inkeyOn) ch += INKEY_CHIP;
       muses.forEach(m => { if(m.onNote) ch += m.onNote(c, gig); });
       chips += ch;
     });
 
-    // theory mult bonuses
+    // theory mult bonuses — each gated by the movement that teaches it
     const allInKey = cards.every(c => gig.key.includes(c.pc));
-    if(allInKey && cards.length>=2){ mult += 1; lines.push("in key +1"); }
-    if(cls.consonant && cards.length>=2){ mult += 1; lines.push("consonant +1"); }
+    if(inkeyOn && allInKey && cards.length>=2){ mult += 1; lines.push("in key +1"); }                 // 'inkey' (M1)
+    if(termOn("consonant") && cls.consonant && cards.length>=2){ mult += 1; lines.push("consonant +1"); }  // 'consonant' (M5)
     const tonicPc = gig.key[0];
-    if((cls.type==="triad"||cls.type==="seventh") && cls.root===tonicPc){ mult += 1; lines.push("resolves to tonic +1"); }
+    if(termOn("resolves") && (cls.type==="triad"||cls.type==="seventh") && cls.root===tonicPc){ mult += 1; lines.push("resolves to tonic +1"); }  // 'resolves' (M5)
 
     // muses (hand-level)
     const ctx = { structType:cls.type, rootPc:cls.root, consonant:cls.consonant, allInKey, gig };
@@ -366,13 +391,16 @@
   /* ================= persistence + daily cap ================= */
   const SAVE_KEY = "mujicians-save-v2";
   function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
-  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM };
+  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, progress:{ movement:1, gates:{} } };
   function loadPersist(){
     try{
       const s = JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
       if(s){ persist = Object.assign(persist, s); }
     }catch(e){}
     if(!Array.isArray(persist.setlist)) persist.setlist = [];   // saved-song Setlist (additive; see docs/mujicians.md)
+    if(!persist.progress || typeof persist.progress!=="object") persist.progress = { movement:1, gates:{} };  // campaign progress (additive)
+    persist.progress.movement = Math.max(1, Math.min(MAX_MOVEMENT, +persist.progress.movement || 1));
+    if(!persist.progress.gates || typeof persist.progress.gates!=="object") persist.progress.gates = {};
     persist.bpm = Math.max(MIN_BPM, Math.min(MAX_BPM, +persist.bpm || DEFAULT_BPM));  // global comfort tempo
     if(persist.day !== todayStr()){ persist.day = todayStr(); persist.runsUsed = 0; savePersist(); }
     // one-time repair: an earlier bug burned runs on a failed render; refund them once.
@@ -674,11 +702,13 @@
   }
   function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
-  function startRun(){
+  function startRun(mode){
     stopLoop(); galleryPlayId = null;
     if(atCap()){ screen="capped"; render(); return; }
     if(!DEV){ persist.runsUsed++; savePersist(); }
-    run = { gigIdx:0, deck:buildDeck(), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[], loop:null, handSize:BASE_HAND_SIZE };
+    // mode "free" = Free Play (all movements on); otherwise Campaign at the reached movement.
+    const movement = mode==="free" ? FREE_PLAY_MOVEMENT : (persist.progress.movement || 1);
+    run = { gigIdx:0, deck:buildDeck(), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[], loop:null, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign") };
     offerDraft();   // draft a Muse before gig 1
   }
   function startGig(){
@@ -802,7 +832,7 @@
 
   function previewHTML(){
     const cards = selectedCards();
-    if(!cards.length) return `<span class="calc">Select up to ${MAX_SELECT} cards to see the structure &amp; score…</span>`;
+    if(!cards.length) return `<span class="calc">Select up to ${maxSelect()} card${maxSelect()===1?"":"s"} to see the structure &amp; score…</span>`;
     const res = score(cards, curGig(), run.muses);
     const bonus = res.lines.length ? " · <span class='m'>"+res.lines.join(", ")+"</span>" : "";
     return `<span class="app">${res.applause}</span>`+
@@ -903,7 +933,7 @@
     $game.innerHTML = `
       <div class="gigbar">
         <div class="row1">
-          <div class="key">Gig <b>${gi+1}</b>/${GIGS.length} · Key <b>${g.keyName}</b></div>
+          <div class="key">Gig <b>${gi+1}</b>/${GIGS.length} · Key <b>${g.keyName}</b> · ${run.mode==="free"?"<b>Free Play</b>":`<b>M${run.movement} ${curMovement().element}</b>`}</div>
           <div class="counts">Hands <b>${run.playsLeft}</b> · Discards <b>${run.discardsLeft}</b> · Hand size <b>${run.handSize}</b> · Deck <b>${run.drawPile.length}</b></div>
         </div>
         <div class="scoreline">Applause <b>${run.gigScore}</b> / ${g.threshold}</div>
@@ -942,7 +972,7 @@
 
   function toggleSel(idx){
     if(run.sel.has(idx)) run.sel.delete(idx);
-    else { if(run.sel.size>=MAX_SELECT) return; run.sel.add(idx);
+    else { if(run.sel.size>=maxSelect()) return; run.sel.add(idx);
       const c = run.hand[idx]; const inst=INSTRUMENTS.find(x=>x.id===c.instId); playTone(c.midi, inst.wave, 0.4); }
     // only the preview + card states need updating, but a full gig re-render is cheap
     renderGig();
@@ -1007,20 +1037,25 @@
 
   function renderHome(){
     const capped = atCap();
+    const mv = persist.progress.movement, mvName = MOVEMENTS[mv].element;
     $game.innerHTML = `
       <div class="gigbar center">
         <p class="big">Play cards that are <b>notes</b>. Combine them into <b>chords &amp; scales</b> —
         the more in-key, consonant, and resolved, the more <b>Applause</b> you score. Beat 3 gigs to finish the Set.</p>
-        <div class="cta" style="display:flex;gap:10px;justify-content:center">
-          <button class="btn" id="b-start" ${capped?"disabled":""}>${capped?"No runs left today":"▶ Start a Set"}</button>
+        <div class="cta" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="btn" id="b-campaign" ${capped?"disabled":""}>${capped?"No runs left today":`▶ Campaign · Movement ${mv} — ${mvName}`}</button>
+          <button class="btn ghost" id="b-free" ${capped?"disabled":""} title="Every mechanic unlocked (today's full game)">Free Play</button>
         </div>
+        <p class="hint center">Campaign teaches music one element at a time — pitch first, then rhythm, dynamics, melody, harmony, timbre, structure. Free Play unlocks everything. Both share the daily run cap.</p>
         ${capped?`<p class="hint center">You've used all ${MAX_RUNS_PER_DAY} runs today. Come back tomorrow — or try
           <a href="pitch-bird.html" style="color:var(--accent)">Pitch Bird</a> meanwhile.</p>`:""}
         <div class="tempo-wrap">${tempoSliderHTML(false)}</div>
       </div>
       ${setlistHTML()}`;
-    const b = document.getElementById("b-start");
-    if(b) b.addEventListener("click", ()=>{ audio(); startRun(); });
+    const bc = document.getElementById("b-campaign");
+    if(bc) bc.addEventListener("click", ()=>{ audio(); startRun("campaign"); });
+    const bf = document.getElementById("b-free");
+    if(bf) bf.addEventListener("click", ()=>{ audio(); startRun("free"); });
     wireTempoSlider();
     wireSetlist();
   }
@@ -1130,7 +1165,7 @@
         ${runsLeft===0?`<p class="hint">Daily cap reached — try <a href="pitch-bird.html" style="color:var(--accent)">Pitch Bird</a> or come back tomorrow.</p>`:""}
       </div></div>`;
     const again = document.getElementById("b-again");
-    if(again) again.addEventListener("click", ()=>{ audio(); startRun(); });
+    if(again) again.addEventListener("click", ()=>{ audio(); startRun(run && run.mode==="free" ? "free" : "campaign"); });
     const replay = document.getElementById("b-replay");
     if(replay) replay.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderEndOverlay(won); });
     const savebtn = document.getElementById("b-savesong");
