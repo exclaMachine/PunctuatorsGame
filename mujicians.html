@@ -41,6 +41,24 @@
   .track{margin-top:6px;height:12px;border-radius:7px;background:#232848;border:1px solid var(--edge);overflow:hidden}
   .track i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--good));transition:width .3s}
 
+  /* Mario-Paint loop strip */
+  .loopwrap{margin:12px 0}
+  .loopwrap .lhead{font-size:11px;color:var(--dim);letter-spacing:.5px;margin-bottom:6px;
+    display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .loopwrap .lhead b{color:var(--gold)}
+  .loopstrip{display:flex;gap:6px}
+  .loopcell{flex:1 1 0;min-width:0;height:54px;border-radius:8px;background:#131730;border:1px solid var(--edge);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;position:relative;
+    transition:border-color .1s,box-shadow .1s}
+  .loopcell:hover{border-color:var(--accent)}
+  .loopcell.write{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+  .loopcell.on{box-shadow:0 0 0 2px var(--accent),0 0 16px rgba(77,225,200,.45)}
+  .loopcell .dots{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;max-width:100%}
+  .loopcell .dot{width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.45)}
+  .loopcell .lbl{font-size:9px;color:var(--dim);letter-spacing:.3px;max-width:96%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .loopcell.empty .lbl{opacity:.45}
+
   .preview{margin:12px 0;min-height:46px;padding:10px 12px;background:#131730;border:1px dashed var(--edge);
     border-radius:10px;font-size:13px}
   .preview .struct{color:var(--gold);font-weight:bold}
@@ -141,6 +159,9 @@
   ];
   const HAND_SIZE = 8, MAX_SELECT = 5, PLAYS = 4, DISCARDS = 3, COPIES = 2;
   const MAX_RUNS_PER_DAY = 3;
+  // Mario-Paint-style loop: a fixed strip of slots you fill hand-by-hand. Each Play
+  // writes the current slot; the loop cycles nonstop (continuous backing groove).
+  const LOOP_BARS = PLAYS, BAR_SEC = 0.8;
 
   // Gigs: each has a key (scale of allowed in-key pitch classes) + an applause threshold.
   const majorScale = root => [0,2,4,5,7,9,11].map(i => (root+i)%12);
@@ -269,16 +290,26 @@
       if(s){ persist = Object.assign(persist, s); }
     }catch(e){}
     if(persist.day !== todayStr()){ persist.day = todayStr(); persist.runsUsed = 0; savePersist(); }
+    // one-time repair: an earlier bug burned runs on a failed render; refund them once.
+    if(!persist.capFixV1){ persist.capFixV1 = true; persist.runsUsed = 0; savePersist(); }
   }
   function savePersist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(persist)); }catch(e){} }
   const codex = new Set();
+
+  /* ===== DEV override — unlimited runs (bypass the daily cap) =====
+     On via ?dev in the URL, or toggle with Ctrl/Cmd+Shift+D (persisted). */
+  const DEV_KEY = "mujicians-dev";
+  let DEV = /[?&]dev\b/i.test(location.search) || localStorage.getItem(DEV_KEY)==="1";
+  function atCap(){ return !DEV && persist.runsUsed >= MAX_RUNS_PER_DAY; }
+  function runsLeftToday(){ return DEV ? Infinity : Math.max(0, MAX_RUNS_PER_DAY - persist.runsUsed); }
+  function runsLeftLabel(){ return DEV ? "∞" : String(runsLeftToday()); }
 
   /* ================= audio ================= */
   let AC = null;
   function audio(){ if(!AC) AC = new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended") AC.resume(); return AC; }
   function midiToFreq(m){ return 440*Math.pow(2,(m-69)/12); }
-  function playTone(midi, wave, dur, when){
-    const ac = audio(), t = ac.currentTime + (when||0);
+  function _tone(midi, wave, dur, t){
+    const ac = audio();
     const o = ac.createOscillator(), g = ac.createGain();
     o.type = wave||"triangle"; o.frequency.value = midiToFreq(midi);
     g.gain.setValueAtTime(0.0001, t);
@@ -286,6 +317,7 @@
     g.gain.exponentialRampToValueAtTime(0.0008, t+(dur||0.5));
     o.connect(g).connect(ac.destination); o.start(t); o.stop(t+(dur||0.5)+0.05);
   }
+  function playTone(midi, wave, dur, when){ _tone(midi, wave, dur, audio().currentTime + (when||0)); }
   function soundCards(cards, cls){
     // scale runs arpeggiate; chords/intervals play together
     const arp = cls && cls.type==="run";
@@ -294,6 +326,55 @@
       const inst = INSTRUMENTS.find(x=>x.id===c.instId);
       playTone(c.midi, inst.wave, arp?0.4:0.7, arp? i*0.12 : 0);
     });
+  }
+
+  /* ========= the repeating loop (Mario-Paint-style backing groove) ========= */
+  // A lookahead scheduler cycles run.loop.bars nonstop; a rAF sweeps the playhead.
+  let schedTimer = null, rafId = null, nextBarTime = 0, nextBarIdx = 0, loopStart = 0, curBar = -1;
+  function loopOn(){ return !!schedTimer; }
+  function scheduleBar(idx, when){
+    const bar = run && run.loop && run.loop.bars[idx];
+    if(!bar || !bar.cards.length) return;
+    const arp = bar.cls && bar.cls.type==="run";
+    const sorted = [...bar.cards].sort((a,b)=>a.midi-b.midi);
+    const n = sorted.length || 1;
+    sorted.forEach((c,i)=>{
+      const inst = INSTRUMENTS.find(x=>x.id===c.instId);
+      const dur = (arp ? BAR_SEC/n : BAR_SEC) * 0.92;
+      _tone(c.midi, inst.wave, dur, when + (arp ? i*(BAR_SEC/n) : 0));
+    });
+  }
+  function schedTick(){
+    const ac = audio();
+    while(nextBarTime < ac.currentTime + 0.12){
+      scheduleBar(nextBarIdx, nextBarTime);
+      nextBarTime += BAR_SEC;
+      nextBarIdx = (nextBarIdx+1) % LOOP_BARS;
+    }
+  }
+  function tickPlayhead(){
+    if(!schedTimer){ rafId = null; return; }
+    const ac = audio();
+    let cb = Math.floor((ac.currentTime - loopStart) / BAR_SEC) % LOOP_BARS;
+    cb = ((cb % LOOP_BARS) + LOOP_BARS) % LOOP_BARS;
+    if(cb !== curBar){
+      curBar = cb;
+      document.querySelectorAll(".loopcell").forEach((e,i)=> e.classList.toggle("on", i===curBar));
+    }
+    rafId = requestAnimationFrame(tickPlayhead);
+  }
+  function startLoop(){
+    stopLoop();
+    const ac = audio();
+    nextBarTime = ac.currentTime + 0.12; loopStart = nextBarTime; nextBarIdx = 0; curBar = -1;
+    schedTimer = setInterval(schedTick, 25);
+    rafId = requestAnimationFrame(tickPlayhead);
+  }
+  function stopLoop(){
+    if(schedTimer){ clearInterval(schedTimer); schedTimer = null; }
+    if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+    curBar = -1;
+    document.querySelectorAll(".loopcell.on").forEach(e=> e.classList.remove("on"));
   }
 
   /* ================= run state ================= */
@@ -315,9 +396,10 @@
   function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
   function startRun(){
-    if(persist.runsUsed >= MAX_RUNS_PER_DAY){ screen="capped"; render(); return; }
-    persist.runsUsed++; savePersist();
-    run = { gigIdx:0, deck:buildDeck(), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[] };
+    stopLoop();
+    if(atCap()){ screen="capped"; render(); return; }
+    if(!DEV){ persist.runsUsed++; savePersist(); }
+    run = { gigIdx:0, deck:buildDeck(), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[], loop:null };
     offerDraft();   // draft a Muse before gig 1
   }
   function startGig(){
@@ -325,8 +407,10 @@
     run.drawPile = shuffle([...run.deck]);
     run.hand = []; run.sel.clear();
     run.playsLeft = PLAYS; run.discardsLeft = DISCARDS; run.gigScore = 0;
+    run.loop = { bars:new Array(LOOP_BARS).fill(null), writePos:0 };  // fresh song per gig
     drawUp();
     screen = "gig"; render();
+    startLoop();   // continuous backing groove begins
   }
   function drawUp(){
     while(run.hand.length < HAND_SIZE && run.drawPile.length) run.hand.push(run.drawPile.pop());
@@ -340,6 +424,9 @@
     const g = GIGS[run.gigIdx];
     const res = score(cards, g, run.muses);
     soundCards(cards, res.cls);
+    // lay this hand into the current loop slot, then advance the write head (wraps)
+    run.loop.bars[run.loop.writePos] = { cards:[...cards], cls:res.cls };
+    run.loop.writePos = (run.loop.writePos + 1) % LOOP_BARS;
     run.gigScore += res.applause;
     persist.totalApplause += res.applause;
     if(res.applause > persist.bestApplause) persist.bestApplause = res.applause;
@@ -369,11 +456,12 @@
   }
 
   function winGig(){
+    stopLoop();
     run.gigIdx++;
     if(run.gigIdx >= GIGS.length){ screen="win"; render(); return; }
     offerDraft();
   }
-  function loseRun(){ screen="lose"; render(); }
+  function loseRun(){ stopLoop(); screen="lose"; render(); }
 
   /* ================= Muse draft ================= */
   let draftChoices = [];
@@ -414,9 +502,9 @@
   function textOn(hex){ return lum(hex) > 0.6 ? "#151515" : "#ffffff"; }
 
   function renderMeta(){
-    const runsLeft = Math.max(0, MAX_RUNS_PER_DAY - persist.runsUsed);
-    $meta.innerHTML = `Renown <b>${renownLevel(persist.totalApplause)}</b> · best hand <b>${persist.bestApplause}</b><br>`+
-                      `Runs today <b>${persist.runsUsed}/${MAX_RUNS_PER_DAY}</b>`;
+    const runs = DEV ? `Runs today <b>${persist.runsUsed}</b> · <b style="color:var(--good)">DEV ∞</b>`
+                     : `Runs today <b>${persist.runsUsed}/${MAX_RUNS_PER_DAY}</b>`;
+    $meta.innerHTML = `Renown <b>${renownLevel(persist.totalApplause)}</b> · best hand <b>${persist.bestApplause}</b><br>`+runs;
   }
   function renownLevel(total){ let lvl=1,rem=total,need=300; while(rem>=need){ rem-=need; lvl++; need=200+lvl*120; } return lvl; }
 
@@ -445,6 +533,37 @@
     return run.muses.map(m=>`<div class="muse"><b>${m.name}</b><br>${m.desc}</div>`).join("");
   }
 
+  function barLabel(cls){
+    if(!cls) return "·";
+    if(cls.type==="run") return "run";
+    if(cls.type==="single") return cls.name==="Unison" ? "unison" : "note";
+    if(cls.type==="interval") return cls.name.replace("perfect ","P").replace("major ","M").replace("minor ","m");
+    if(cls.type==="cluster") return "cluster";
+    return cls.name; // triad / seventh (e.g. "C major", "C 7")
+  }
+  function barDotsHTML(bar){
+    if(!bar || !bar.cards.length) return "";
+    const letters = [...new Set(bar.cards.map(c=>c.letter))];
+    return `<div class="dots">${letters.map(l=>`<span class="dot" style="background:${COLOR[l]}"></span>`).join("")}</div>`;
+  }
+  function filledBars(){ return run.loop.bars.filter(Boolean).length; }
+  function loopStripHTML(){
+    if(!run.loop) return "";   // no loop yet (e.g. the pre-gig Muse draft) — nothing to show
+    const cells = run.loop.bars.map((bar,i)=>{
+      const cl = ["loopcell"];
+      if(i===run.loop.writePos) cl.push("write");
+      if(!bar) cl.push("empty");
+      return `<div class="${cl.join(" ")}" data-bar="${i}">${barDotsHTML(bar)}<div class="lbl">${bar?barLabel(bar.cls):"·"}</div></div>`;
+    }).join("");
+    return `<div class="loopwrap">
+      <div class="lhead">
+        <span>YOUR LOOP — <b>${filledBars()}/${LOOP_BARS}</b> bars · each Play fills the <b>gold</b> slot; it loops as you go</span>
+        <button class="btn ghost" id="b-loop" style="padding:4px 10px;font-size:11px">${loopOn()?"⏸ pause":"▶ play"}</button>
+      </div>
+      <div class="loopstrip">${cells}</div>
+    </div>`;
+  }
+
   function renderGig(){
     const g = GIGS[run.gigIdx];
     const pct = Math.min(100, Math.round(run.gigScore/g.threshold*100));
@@ -458,6 +577,7 @@
         <div class="scoreline">Applause <b>${run.gigScore}</b> / ${g.threshold}</div>
         <div class="track"><i style="width:${pct}%"></i></div>
       </div>
+      ${loopStripHTML()}
       <div class="preview">${previewHTML()}</div>
       <div class="hand">${run.hand.map((c,i)=>cardHTML(c,i)).join("")}</div>
       <div class="controls">
@@ -472,6 +592,12 @@
     });
     document.getElementById("b-play").addEventListener("click", playHand);
     document.getElementById("b-disc").addEventListener("click", discardHand);
+    // loop strip: click a slot to aim the write head there (refine/overwrite it)
+    $game.querySelectorAll(".loopcell").forEach(el=>{
+      el.addEventListener("click", ()=>{ run.loop.writePos = +el.dataset.bar; renderGig(); });
+    });
+    const bl = document.getElementById("b-loop");
+    if(bl) bl.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderGig(); });
     document.getElementById("b-sort").addEventListener("click", ()=>{
       const chosen = selectedCards();
       run.hand.sort((a,b)=> a.midi-b.midi || a.instId.localeCompare(b.instId));
@@ -490,7 +616,7 @@
   }
 
   function renderHome(){
-    const capped = persist.runsUsed >= MAX_RUNS_PER_DAY;
+    const capped = atCap();
     $game.innerHTML = `
       <div class="gigbar center">
         <p class="big">Play cards that are <b>notes</b>. Combine them into <b>chords &amp; scales</b> —
@@ -532,7 +658,7 @@
 
   function renderEndOverlay(won){
     if(screen==="win") renderGigStatic();
-    const runsLeft = Math.max(0, MAX_RUNS_PER_DAY - persist.runsUsed);
+    const runsLeft = runsLeftToday();
     $overlay.innerHTML = `
       <div class="overlay"><div class="modal center">
         <h2>${won?"🎉 Set complete!":"Run over"}</h2>
@@ -541,8 +667,9 @@
           : "You didn't reach the applause threshold in time. Every played chord still counts in your Codex."}</p>
         <p class="big">Best hand: <b>${persist.bestApplause}</b> · Renown Lv <b>${renownLevel(persist.totalApplause)}</b></p>
         <div class="cta">
+          ${won?`<button class="btn ghost" id="b-replay">${loopOn()?"⏸ Stop":"▶ Hear your set"}</button>`:""}
           ${runsLeft>0
-            ? `<button class="btn" id="b-again">▶ New Run (${runsLeft} left today)</button>`
+            ? `<button class="btn" id="b-again">▶ New Run (${runsLeftLabel()} left today)</button>`
             : `<button class="btn ghost" disabled>No runs left today</button>`}
           <button class="btn ghost" id="b-home">Home</button>
         </div>
@@ -550,11 +677,23 @@
       </div></div>`;
     const again = document.getElementById("b-again");
     if(again) again.addEventListener("click", ()=>{ audio(); startRun(); });
-    document.getElementById("b-home").addEventListener("click", ()=>{ screen="home"; run=null; render(); });
+    const replay = document.getElementById("b-replay");
+    if(replay) replay.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderEndOverlay(true); });
+    document.getElementById("b-home").addEventListener("click", ()=>{ stopLoop(); screen="home"; run=null; render(); });
   }
   function renderGigStatic(){ /* keep the last gig board visible behind the win overlay */ if(run) renderGig(); }
 
   /* ================= init ================= */
+  // DEV toggle: Ctrl/Cmd+Shift+D flips unlimited runs on/off (persisted).
+  window.addEventListener("keydown", e=>{
+    if((e.ctrlKey||e.metaKey) && e.shiftKey && (e.key==="D"||e.key==="d")){
+      e.preventDefault();
+      DEV = !DEV;
+      try{ localStorage.setItem(DEV_KEY, DEV?"1":"0"); }catch(_){}
+      if(screen==="capped"){ screen="home"; }
+      render();
+    }
+  });
   loadPersist();
   (persist.codex||[]).forEach(c=>codex.add(c));
   renderCodex(null);

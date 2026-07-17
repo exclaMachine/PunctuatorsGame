@@ -1,7 +1,8 @@
 # Mujicians — a Balatro-style music-theory deckbuilder
 
 **Entry file:** `mujicians.html` · **Status:** **v1 vertical slice built** — a Balatro-style deckbuilder
-(cards = notes, hands = chords/scales, score = theory correctness, hands are sounded). The demoted
+(cards = notes, hands = chords/scales, score = theory correctness, hands are sounded, and every gig now
+**builds a repeating Mario-Paint-style loop** you compose over as you play). The demoted
 slice-1 note-grid is preserved in **`mujicians-compose.html`** (the future free-compose side tool). The
 economy beyond the slice (antes, boss gigs, Étude/Accidental cards, Daily-Set seed, set-playback) is
 still the plan below.
@@ -118,6 +119,11 @@ A run is a sequence of played hands = a little set. At the end of a gig/run you 
 played back**, and share the **seed + your set**. That's the export/brag loop and the answer to "a user
 could make some music that would be made."
 
+**Now partly built:** each gig is a **repeating loop you fill hand-by-hand** (see the "song loop" bullet
+under *Implemented*), and the win screen replays it via **"Hear your set."** Still to do: **accumulate
+one loop across all 3 gigs** (currently the loop resets per gig, and each gig has its own key), plus a
+real **seed + set export/share**.
+
 ---
 
 ## v1 vertical slice (build this first)
@@ -156,13 +162,24 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   — the teaching surface.
 - **The pillar — hands are sounded.** `soundCards` plays the selection (chords together, **scale runs
   arpeggiated**) via each card's instrument timbre/register. High score ↔ good sound by construction.
+- **The song loop (Mario-Paint-style "make a song as you go").** Each gig is a **fixed loop of
+  `LOOP_BARS` slots** (= `PLAYS`, one per hand). Playing a hand **writes it into the current (gold) slot**
+  and advances the write head (wraps to overwrite/refine). A Web Audio **lookahead scheduler** (`startLoop`
+  /`schedTick`/`scheduleBar`, `BAR_SEC` tempo) cycles the loop **continuously as a backing groove**; each
+  filled slot re-sounds every pass (chords together, runs arpeggiated within the bar) and a rAF
+  **playhead** (`tickPlayhead`) sweeps the strip. The strip shows **ROYGBIV note-dots + a short structure
+  label** per slot; click a slot to aim the write head there, and a **pause/play** toggle mutes the groove.
+  The loop resets per gig (a fresh song each gig); the win screen offers **"▶ Hear your set"** to replay
+  the last gig's loop — the "made some music" payoff. So a gig now literally **builds an audible loop**.
 - **Run = a Set of 3 Gigs** (`GIGS`), each with a **key** (C→G→F major, so "in key" is a live choice
   with a natural-note deck) and an escalating **applause threshold**; `PLAYS` hands + `DISCARDS` discards
   per gig. Beat the threshold → next gig; run out → run over.
 - **Muses (the build engine).** Before each gig you **draft 1 of 3** from `MUSE_POOL` (Perfect Pitch,
   Consonance, Low End, Cadence, Arpeggiator, Virtuoso); their `onNote`/`onHand` hooks fold into `score`.
 - **Hard daily cap.** `MAX_RUNS_PER_DAY` (3); `persist.runsUsed` resets when the local date rolls over.
-  When capped, the UI points at Pitch Bird / "come back tomorrow."
+  When capped, the UI points at Pitch Bird / "come back tomorrow." **DEV override** (`DEV`): unlimited
+  runs, on via **`?dev`** in the URL or toggled with **Ctrl/Cmd+Shift+D** (persisted in
+  `localStorage["mujicians-dev"]`); shows a **DEV ∞** badge and doesn't increment `runsUsed`.
 - **Persistence + meta.** `localStorage["mujicians-save-v2"]` holds `{day, runsUsed, codex,
   totalApplause, bestApplause}`. **Renown** level derives from cumulative Applause; the **Codex** logs
   every recognized structure you play.
