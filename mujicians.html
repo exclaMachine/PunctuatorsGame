@@ -139,9 +139,10 @@
   </div>
 
   <p class="hint">
-    Select up to 5 cards, then <b>Play</b> — they'll sound, and score <b>Applause</b> = chips × mult.
+    Select cards (up to 5), then <b>Play</b> — they'll sound, and score <b>Applause</b> = chips × mult.
     You score more by being <b>in the gig's key</b>, playing <b>consonant chords</b>, and <b>resolving</b>
     to the tonic. Beat the threshold before your hands run out. <b>Discard</b> to swap cards.
+    You start with a small hand of <b>4</b>; draft <b>hand-size Muses</b> before each gig to draw more.
   </p>
 </div>
 
@@ -161,7 +162,7 @@
     { id:"guitar", name:"Guitar", emoji:"🎸", wave:"sawtooth", baseC:60 },
     { id:"bass",   name:"Bass",   emoji:"🎻", wave:"sine",     baseC:36 },
   ];
-  const HAND_SIZE = 8, MAX_SELECT = 5, PLAYS = 4, DISCARDS = 3, COPIES = 2;
+  const BASE_HAND_SIZE = 4, MAX_SELECT = 5, PLAYS = 6, DISCARDS = 3, COPIES = 2;
   const MAX_RUNS_PER_DAY = 3;
   // Mario-Paint-style loop: a fixed strip of slots you fill hand-by-hand. Each Play
   // writes the current slot; the loop cycles nonstop (continuous backing groove).
@@ -170,9 +171,9 @@
   // Gigs: each has a key (scale of allowed in-key pitch classes) + an applause threshold.
   const majorScale = root => [0,2,4,5,7,9,11].map(i => (root+i)%12);
   const GIGS = [
-    { keyName:"C major", key:majorScale(0), threshold:220 },
-    { keyName:"G major", key:majorScale(7), threshold:420 },
-    { keyName:"F major", key:majorScale(5), threshold:700 },
+    { keyName:"C major", key:majorScale(0), threshold:650 },
+    { keyName:"G major", key:majorScale(7), threshold:1150 },
+    { keyName:"F major", key:majorScale(5), threshold:1800 },
   ];
 
   // structure base scores  [chips, mult]
@@ -282,6 +283,12 @@
       onHand:(x)=> x.structType==="run"?{mult:3}:null },
     { id:"virtuoso",     name:"Virtuoso",      short:"seventh", desc:"Seventh chords give +3 mult.",
       onHand:(x)=> x.structType==="seventh"?{mult:3}:null },
+    // Hand-size upgrades (Balatro-style): grow the hand you draw. Repeatable, so they
+    // can be drafted again each gig and stack; applied in pickMuse, not in score().
+    { id:"extrahand",    name:"Extra Hand",    short:"+1 hand", desc:"Draw +1 more card each hand. Repeatable — stacks.",
+      handSize:1, repeatable:true },
+    { id:"bighand",      name:"Big Hand",      short:"+2 hand", desc:"Draw +2 more cards each hand. Repeatable — stacks.",
+      handSize:2, repeatable:true },
   ];
 
   /* ================= persistence + daily cap ================= */
@@ -404,7 +411,7 @@
     stopLoop();
     if(atCap()){ screen="capped"; render(); return; }
     if(!DEV){ persist.runsUsed++; savePersist(); }
-    run = { gigIdx:0, deck:buildDeck(), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[], loop:null };
+    run = { gigIdx:0, deck:buildDeck(), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[], loop:null, handSize:BASE_HAND_SIZE };
     offerDraft();   // draft a Muse before gig 1
   }
   function startGig(){
@@ -418,7 +425,7 @@
     startLoop();   // continuous backing groove begins
   }
   function drawUp(){
-    while(run.hand.length < HAND_SIZE && run.drawPile.length) run.hand.push(run.drawPile.pop());
+    while(run.hand.length < run.handSize && run.drawPile.length) run.hand.push(run.drawPile.pop());
   }
 
   function selectedCards(){ return [...run.sel].map(i=>run.hand[i]).filter(Boolean); }
@@ -472,7 +479,7 @@
   let draftChoices = [];
   function offerDraft(){
     const owned = new Set(run.muses.map(m=>m.id));
-    const pool = MUSE_POOL.filter(m=>!owned.has(m.id));
+    const pool = MUSE_POOL.filter(m=> m.repeatable || !owned.has(m.id));
     shuffle(pool);
     draftChoices = pool.slice(0,3);
     if(draftChoices.length === 0){ startGig(); return; }
@@ -480,7 +487,7 @@
   }
   function pickMuse(id){
     const m = MUSE_POOL.find(x=>x.id===id);
-    if(m) run.muses.push(m);
+    if(m){ if(m.handSize) run.handSize += m.handSize; run.muses.push(m); }
     startGig();
   }
 
@@ -603,7 +610,7 @@
       <div class="gigbar">
         <div class="row1">
           <div class="key">Gig <b>${run.gigIdx+1}</b>/${GIGS.length} · Key <b>${g.keyName}</b></div>
-          <div class="counts">Hands <b>${run.playsLeft}</b> · Discards <b>${run.discardsLeft}</b> · Deck <b>${run.drawPile.length}</b></div>
+          <div class="counts">Hands <b>${run.playsLeft}</b> · Discards <b>${run.discardsLeft}</b> · Hand size <b>${run.handSize}</b> · Deck <b>${run.drawPile.length}</b></div>
         </div>
         <div class="scoreline">Applause <b>${run.gigScore}</b> / ${g.threshold}</div>
         <div class="track"><i style="width:${pct}%"></i></div>

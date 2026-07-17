@@ -153,8 +153,10 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   itself — and the instrument shown as an **emoji** (`INSTRUMENTS[].emoji`: 🎹 piano / 🎸 guitar / 🎻 bass,
   name kept on `title` hover) rather than a word. Instrument sets the sounding register (Bass an
   octave-plus lower) and timbre (`INSTRUMENTS[].wave`).
-- **The hand.** Draw to `HAND_SIZE` (8) from a shuffled draw pile; select up to `MAX_SELECT` (5);
-  **Play** or **Discard**; a **Sort by pitch** button. Selecting a card previews it audibly.
+- **The hand.** Draw to `run.handSize` (**starts at `BASE_HAND_SIZE` = 4**, Balatro-style small start) from
+  a shuffled draw pile; select up to `MAX_SELECT` (5); **Play** or **Discard**; a **Sort by pitch** button.
+  Selecting a card previews it audibly. Hand size is **grown mid-run by drafting hand-size Muses** (see
+  Muses below) — the HUD shows the current **Hand size**.
 - **Hand evaluator (`classify`).** Detects single/**unison** · interval (named + consonance) · **triad**
   (maj/min/dim/aug) · **seventh** (maj7/7/m7/m7♭5/°7/mM7) · **scale run** (contiguous diatonic steps) ·
   cluster. This is the "music dictionary."
@@ -181,10 +183,17 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   The loop resets per gig (a fresh song each gig); the win screen offers **"▶ Hear your set"** to replay
   the last gig's loop — the "made some music" payoff. So a gig now literally **builds an audible loop**.
 - **Run = a Set of 3 Gigs** (`GIGS`), each with a **key** (C→G→F major, so "in key" is a live choice
-  with a natural-note deck) and an escalating **applause threshold**; `PLAYS` hands + `DISCARDS` discards
-  per gig. Beat the threshold → next gig; run out → run over.
-- **Muses (the build engine).** Before each gig you **draft 1 of 3** from `MUSE_POOL` (Perfect Pitch,
-  Consonance, Low End, Cadence, Arpeggiator, Virtuoso); their `onNote`/`onHand` hooks fold into `score`.
+  with a natural-note deck) and an escalating **applause threshold** (`650 / 1150 / 1800` — deliberately
+  high so a gig can't be cleared in one or two lucky hands; you play several, filling more of the loop);
+  `PLAYS` (**6**) hands + `DISCARDS` discards per gig. Beat the threshold → next gig; run out → run over.
+  Because `LOOP_BARS = PLAYS`, the song loop is now **6 bars** — you can lay down a 4+-bar phrase before
+  passing.
+- **Muses (the build engine).** Before each gig you **draft 1 of 3** from `MUSE_POOL`. Scoring Muses
+  (Perfect Pitch, Consonance, Low End, Cadence, Arpeggiator, Virtuoso) fold their `onNote`/`onHand` hooks
+  into `score`. Two **hand-size Muses** (Extra Hand +1, Big Hand +2) instead carry a `handSize` field and
+  are `repeatable:true` — `pickMuse` adds their value to `run.handSize` and, because they're repeatable,
+  they can be re-drafted every gig and **stack** (so the hand grows from 4 toward a Balatro-ish ~8). They
+  compete with scoring Muses for the same draft slots — a real tradeoff.
 - **Hard daily cap.** `MAX_RUNS_PER_DAY` (3); `persist.runsUsed` resets when the local date rolls over.
   When capped, the UI points at Pitch Bird / "come back tomorrow." **DEV override** (`DEV`): unlimited
   runs, on via **`?dev`** in the URL or toggled with **Ctrl/Cmd+Shift+D** (persisted in
