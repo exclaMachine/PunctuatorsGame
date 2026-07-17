@@ -128,6 +128,110 @@ set export/share**.
 
 ---
 
+## Notelings — letter-creatures, combos & the Bestiary (**tentative**)
+
+> **Status: design, not built.** A collection + story layer proposed by the dev. Nothing here is coded
+> yet; it's recorded so the reasoning survives and the eventual build matches intent. It **extends**
+> (doesn't replace) the ROYGBIV card model and the Codex. Numbers/rosters are placeholders.
+
+**The seed.** There are only seven note letters (A–G), so there are exactly **seven base creatures** —
+a naturally closed, collectible set. Each note *already* owns a ROYGBIV color in code (`COLOR`), so a
+Noteling arrives **pre-colored**: playing a card summons its creature and the card's existing color *is*
+the creature's color. The theory and the mascot are the same object.
+
+**Starting roster (emoji stand-ins).** The dev's picks, each in its note's ROYGBIV color:
+
+| Note | Noteling | Stand-in | Color |
+|------|----------|----------|-------|
+| A | **Ant** | 🐜 | Red |
+| B | **Blob** | 🫧 | Orange |
+| C | **Chicken** | 🐔 | Yellow |
+| D | **Dog** | 🐕 | Green |
+| E | **Eye** | 👁️ | Blue |
+| F | **Flower** | 🌸 | Indigo |
+| G | **Goat** | 🐐 | Violet |
+
+(Emoji are placeholders; 🫧 for Blob especially. They swap for the dev's pixel sprites later — see *Art &
+swap path* below.)
+
+**What each music concept maps to a visual channel** (so the picture teaches the theory — the same
+alignment the audio already provides):
+
+- **Letter → base form** (which of the seven creatures).
+- **ROYGBIV → color** (already in `COLOR`).
+- **Accidental → morphology.** **Sharp (♯) = more angular / spikier**, **flat (♭) = more squarish /
+  rounder** — teaching "accidentals sit *between* the naturals." Stacks with the doc's existing
+  "accidentals are in-between color shades" (♯ = warmer shade toward the next letter, ♭ = cooler),
+  giving two reinforcing channels. (Accidentals aren't in the deck yet — this waits on the Accidental
+  cards.)
+- **Instrument (suit) → breed / material.** Same letter, different texture: Piano = crystalline,
+  Guitar = furry/wooden, Bass = heavy/stone. Gives 7×3 collectible variants off seven base designs. In
+  the **stand-in phase the card keeps its small instrument emoji** (🎹/🎸/🎻) as the breed mark.
+- **Octave → size.** Bass-register creatures are big elders; high piano ones are tiny — so the loop's
+  pitch grid reads as "big beasts low, little ones high."
+- **Consonance → fusion quality (the load-bearing one).** A consonant hand fuses into a smooth,
+  cohesive creature; a dissonant one fuses badly (mismatched limbs, snarling, coming apart). The **look
+  tracks the sound**, exactly as score already does — the game's pillar extended to the eye.
+- **Chord quality → temperament.** Major = bright/cute, minor = melancholy, diminished = spooky,
+  augmented = uncanny. Same creatures, different mood by interval content.
+- **In-key vs out-of-key → healthy vs feral/corrupted.** In-key Notelings glow; an out-of-key note
+  shows as a greyed, corrupted limb — a direct extension of the loop grid **already greying off-key
+  rows**.
+- **Resolution → the creature settling/evolving.** A cadence (leading-tone→tonic, V→I) lets the chimera
+  resolve into a stable finished form — resolution as a visible payoff.
+- **Tritone → the "devil's interval" monster.** The tritone fuses two creatures into something
+  genuinely unstable/demonic — a memorable teaching beat for why it's special.
+
+**Combos — party for runs, fusion for chords (decided).**
+- A **chord** (interval / triad / 7th) plays as **one fused chimera**: interval = 2-part, triad =
+  3-part, 7th = 4-part. Emergent, striking, but only truly renders with sprites — until then a chord
+  shows its component Noteling emojis **clustered** plus the portmanteau name.
+- A **scale run** plays as a **party**: a segmented parade / conga-line of the contiguous creatures
+  (keeps 5-note hands legible and reads as "stepwise"). Stand-in = the emoji laid out in a line.
+- **Portmanteau names** blend the members (Chicken+Eye+Goat → *"Chiegoat"*) — an on-brand word-game hook
+  for this word-games site, and the label under a summoned chimera.
+
+**Collection & story.**
+- **The Codex becomes the Bestiary.** The Codex already logs every recognized structure (inherited from
+  Inklings); reframed, you're a **Mujician naturalist cataloguing sound-creatures** — each new
+  chord/interval/run adds a specimen. Rare structures (7ths, later 13ths/altered, a clean ii–V–I) unlock
+  **named legendary chimeras** — the Balatro-style "find the combo" carrot. (In code this can start as a
+  relabel/skin of the existing Codex, then grow its own view.)
+- **Meta unlocks.** Wordhoard-style, completing Bestiary sets could grant **new starting creatures/decks**
+  (ties into the existing "unlock new starting decks" meta).
+- **Story frame.** In the *Mujicians* world magic is made of music, so Notelings are **notes given
+  flesh** — you summon them by performing. A gig is a **performance that conjures a menagerie**; the
+  repeating loop is the creatures *living/dancing* in the groove you built; a **boss gig** could be a
+  rival Mujician conducting a deliberately dissonant beast you must out-harmonize. (No prose story in
+  v1 — the flavor is enough, per the doc's stance.)
+
+**Art & swap path (decided).** Mirror **Inklings' load-with-fallback** sprite pipeline (see
+[`inklings.md`](inklings.md) — `SPRITESHEET`/`drawGlyph`, custom `sprite` PNG auto-used once added,
+"no code change needed"):
+
+- A **`NOTELINGS` registry** keyed by letter, each `{ name, emoji, sprite:null }`. The renderer prefers
+  `sprite` (a pixel PNG at a declared path) when present, else falls back to the `emoji`. Drop the dev's
+  art in → it swaps live, no code change. This is the **"swap emojis for my own sprites"** requirement.
+- **Pixel style, phased.** v1 = **pixel creatures inside the current dark-neon skin** — `image-rendering:
+  pixelated` on the creature art, emoji stand-ins now. The **broader retro-pixel chrome port** (square
+  corners, chunky ink borders, hard offset drop-shadows — Inklings' look) is **deferred** (still tracked
+  under the *visual identity* open question).
+- **v1 surfaces:** the **card face** (Noteling art + a **small A–G letter in its ROYGBIV color** kept as
+  the teaching label + the instrument emoji as breed mark) and the **Bestiary** (the reframed Codex).
+  The **summoned party/fusion chimera on Play**, Notelings lighting the **loop-grid** cells, and true
+  procedural fusion are **documented stretch**, gated on real sprites.
+
+**Decided (this pass):** party-for-runs / fusion-for-chords; **skip enharmonics for v1** (one skin per
+pitch — no separate A♯-vs-B♭ creature yet); collective name **"Notelings"**; emoji stand-ins that swap to
+sprites; Inklings pixel look but **pixel-creatures-only** for now (keep the neon skin); card shows
+**creature + small note letter**.
+
+**Still open:** exact procedural-fusion rendering; whether instrument becomes a texture/tint vs. keeping
+the emoji long-term; the legendary-chimera recipe list; party-line layout; whether "Bestiary" renames the
+Codex in code or is a new view; and the deferred full retro-pixel reskin.
+
+---
+
 ## v1 vertical slice (build this first)
 
 Decided: **vertical slice before the full economy.** Must-haves to prove the loop is fun:
@@ -267,7 +371,11 @@ placeholders** — balance in play.
 - The **hard-cap number** (attempts/day) and exactly what resets daily.
 - The **Daily-Set** seed model (shared seed for a social/leaderboard angle?) and set-playback export.
 - **Visual identity / palette** — Mujicians should get its own look (the current dark-neon slice-1 skin
-  is a placeholder; ROYGBIV cards drive the new identity).
+  is a placeholder; ROYGBIV cards drive the new identity). Leaning toward **Inklings' retro-pixel style**;
+  first pass is **pixel creatures only** (see *Notelings*), full chrome reskin deferred.
+- **Notelings collection/story layer** — the letter-creature + Bestiary design is speced as *tentative*
+  (see the **Notelings** section); its own open items (procedural fusion, legendary-chimera recipes,
+  instrument-as-texture, Bestiary-as-rename-vs-view) live there.
 
 ---
 
