@@ -1,12 +1,12 @@
 # Mujicians — a Balatro-style music-theory deckbuilder
 
 **Entry file:** `mujicians.html` · **Status:** **v1 vertical slice built** — a Balatro-style deckbuilder
-(cards = notes, hands = chords/scales, score = theory correctness, hands are sounded, and every gig now
-**builds a repeating Mario-Paint-style loop** you compose over as you play, and you can now **Save a Song**
-you like — name it, read a theory report card, and replay/share it from a Home **Setlist**). The demoted
-slice-1 note-grid is preserved in **`mujicians-compose.html`** (the future free-compose side tool). The
-economy beyond the slice (antes, boss gigs, Étude/Accidental cards, Daily-Set seed, set-playback) is
-still the plan below.
+(cards = notes, hands = chords/scales, score = theory correctness, hands are sounded, and a whole run now
+**builds one continuous Mario-Paint-style song across all 3 gigs** — the loop accumulates and modulates
+C→G→F as you play (Phase 4) — and you can **Save a Song** you like — name the whole-run song, read a theory
+report card, and replay/share it from a Home **Setlist**). The demoted slice-1 note-grid is preserved in
+**`mujicians-compose.html`** (the future free-compose side tool). The economy beyond the slice (antes, boss
+gigs, Étude/Accidental cards, Daily-Set seed, set-playback) is still the plan below.
 
 A roguelike deckbuilder where **cards are notes** and the "poker hands" you play are **chords, scales,
 and progressions**. You score by making music that's *theory-correct* — in key, consonant, resolving,
@@ -120,12 +120,16 @@ A run is a sequence of played hands = a little set. At the end of a gig/run you 
 played back**, and share the **seed + your set**. That's the export/brag loop and the answer to "a user
 could make some music that would be made."
 
-**Now partly built:** each gig is a **repeating loop you fill hand-by-hand** (see the "song loop" bullet
-under *Implemented*), and the loop **keeps playing continuously through the end of a run** — it does not
-cut off when a run finishes (win *or* lose) or when the between-gigs **Muse draft** dialog pops up, so you
-keep hearing your creation while you read the result or pick a Muse. Still to do: **accumulate one loop
-across all 3 gigs** (currently the loop resets per gig, and each gig has its own key), plus a real **seed +
-set export/share**. The **Save a Song** feature below is the first concrete piece of that export/brag loop.
+**Now built:** each run is **one continuous loop you fill hand-by-hand across all 3 gigs** (Phase 4 — see
+the "song loop" bullet under *Implemented*). The loop is allocated once per run and **never resets between
+gigs**; each gig fills its own `SECTION_BARS`-bar section **in that gig's key**, so the accumulated song
+legitimately **modulates C→G→F** across its three sections. The loop **keeps playing continuously through
+the end of a run** — it does not cut off when a run finishes (win *or* lose) or when the between-gigs
+**Muse draft** dialog pops up, so you keep hearing your creation while you read the result or pick a Muse.
+The live loop cycles only the **song so far** (`loopLenNow()` = sections unlocked up to the current gig)
+so early gigs don't loop through empty future bars. Still to do: a real **seed + set export/share**. The
+**Save a Song** feature below (now a **whole-run** capture) is the first concrete piece of that export/brag
+loop.
 
 ---
 
@@ -135,16 +139,20 @@ set export/share**. The **Save a Song** feature below is the first concrete piec
 > report-card stats/thresholds and the prune cap are tunable placeholders. Design notes below describe the
 > shipped behavior; the **detailed** theory breakdown remains the deferred upgrade.
 
-**The problem it solves.** The loop **resets per gig** (`startGig` allocates a fresh `run.loop`), so a
-good little song you built in a gig is **wiped the moment the next gig starts**. Right now you can hear it
-grooving under the Muse draft, then it's gone. This feature lets a player **keep a gig's loop they liked**
-— name it, learn *why* it sounds good, replay it later, and share it.
+**The problem it solves.** A song you build should be **keepable**. This feature lets a player **keep the
+song they made** — name it, learn *why* it sounds good, replay it later, and share it.
 
-**Decided this pass:** save unit = **the just-finished gig's loop** (one save = one ~6-bar song, not the
-whole run — matches the per-gig reset); saved songs live in **both** a Home **Setlist gallery** *and* a
-copyable **share code**; the theory breakdown is a **brief report card** for v1 (designed to grow into a
-detailed teaching breakdown later); song names are **freeform with a suggested Noteling portmanteau**
-prefilled.
+> **⚠️ Phase 4 update (built):** the loop **no longer resets per gig** — it now accumulates across the
+> whole run into one modulating song. So the save unit changed from *"the just-finished gig's loop"* to
+> **the whole run's accumulated song**, captured **once at run's end** (win or lose). The per-gig,
+> before-the-Muse-draft save beat described just below is **retired**; the copy in this section that says
+> "one gig's loop / ~6-bar song / before the Muse draft" is the pre-Phase-4 design, kept for history.
+> `run.saved` is now a single boolean (not a per-gig map). See *As built* and the *Progression* section.
+
+**Decided (pre-Phase-4, superseded above):** save unit = **the just-finished gig's loop** (one save = one
+~6-bar song); saved songs live in **both** a Home **Setlist gallery** *and* a copyable **share code**; the
+theory breakdown is a **brief report card** for v1 (designed to grow into a detailed teaching breakdown
+later); song names are **freeform with a suggested Noteling portmanteau** prefilled.
 
 ### When the dialog appears (the "before the Muse draft" beat)
 
@@ -247,17 +255,22 @@ This **shares its encoder with the eventual Daily-Set seed export**, so building
 
 ### As built (code map)
 
-- **Trigger:** `winGig()` calls `offerSave(finishedGig,"draft")` before `offerDraft()` for non-final wins
-  (skipped when the loop is empty); the **end overlay** (`renderEndOverlay`) shows a **💾 Save this song**
-  button for the final win / any loss (retScreen `"win"`/`"lose"`), disabled to **✓ Saved** once done
-  (tracked in `run.saved[gigIdx]`). `screen==="save"` renders the gig board behind + `renderSaveOverlay()`.
-- **Snapshot/model:** `snapshotBars()` stores per filled bar `{cards:[{pc,letter,instId,midi}], cls}`;
-  `saveSong()` pushes `{id,name,date,keyName,key,tempo,bars,stars,starred}` onto `persist.setlist`
-  (`localStorage["mujicians-save-v2"]`, additive) and `pruneSetlist()` caps at `SETLIST_CAP=30` (★-pinned
-  never pruned).
+- **Trigger (Phase 4 — whole-run):** the save is offered **once, at run's end** — the **end overlay**
+  (`renderEndOverlay`) shows a **💾 Save this song** button on the final win *or* any loss (retScreen
+  `"win"`/`"lose"`), disabled to **✓ Saved** once done (tracked by the single boolean `run.saved`).
+  `offerSave(retScreen)` snapshots the **whole** `run.loop.bars`. `screen==="save"` renders the gig board
+  behind + `renderSaveOverlay()`. *(The pre-Phase-4 per-gig `offerSave(gigIdx,"draft")` before the Muse
+  draft is removed — the loop no longer resets between gigs.)*
+- **Snapshot/model:** `snapshotBars()` stores per filled bar `{cards:[{pc,letter,instId,midi}], cls, dyn,
+  fig, arp}`; `saveSong(bars,name)` pushes `{id,name,date,keyName,key,tempo,bars,stars,starred}` onto
+  `persist.setlist` (`localStorage["mujicians-save-v2"]`, additive) and `pruneSetlist()` caps at
+  `SETLIST_CAP=30` (★-pinned never pruned). A whole-run save stores `keyName:"C→G→F"` (`modKeyName()`, since
+  it modulates) and `key:GIGS[0].key` (home key; Setlist replay is key-agnostic — sound is from MIDI).
 - **Report card:** `songReport(bars,key)` computes `{inKeyPct, structs, consGrade, consRatio, cadence,
-  tritone, topLetter, stars}`; `reportCardHTML()` renders the **brief** subset. The detailed breakdown =
-  same stats, longer view (deferred).
+  tritone, topLetter, stars}`. `key` is either a **pc-array** (single-key songs / imports) or a
+  **function `barIndex→pc-array`** (the whole-run save passes `sectionKey`, so in-key% and cadences are
+  judged **per section against that gig's key**). `reportCardHTML()` renders the **brief** subset; the
+  detailed breakdown = same stats, longer view (deferred).
 - **Naming:** `suggestName(bars)` blends the `NOTELING` names of the top-used notes (C+E+G → "Chiegoat").
 - **Playback:** the scheduler is generalized via `playSrc={bars,n}` — `startLoop()` grooves the live gig
   loop; `startLoop({bars,n})` grooves a saved song (`toggleSongPlay` in the Setlist, `galleryPlayId`).
@@ -411,7 +424,14 @@ Codex in code or is a new view; and the deferred full retro-pixel reskin.
 
 ---
 
-## Progression — the seven-movement campaign (**Phases 0–2 + Phase 3 Stage 1 built; Rhythm depth + Structure planned**)
+## Progression — the seven-movement campaign (**Phases 0–2 + Phase 3 Stage 1 + Phase 4 core built; Rhythm depth remains**)
+
+> **Phase 4 core is now built** (see the Phase 4 build-order bullet for the code map): the loop
+> **accumulates across the whole run into one modulating C→G→F song** (allocated in `startRun`, sectioned
+> per gig, scrollable grid with a per-section key strip), **M7 form scoring is real** (phrase-fingerprint
+> restatement + an A·B·A return bonus over the accumulated bars), the **M7 gate is real** (`hasABA` —
+> compose an A·B·A), and **Save-a-Song is a whole-run capture** at run's end. Deferred: boss-gig capstones,
+> mentor prose, and the rest of the Rhythm subsystem (Phase 3 later stages).
 
 > **Status: designed, and Phases 0 (scaffold) + 1 (Movement 1 + gate/advancement engine) + 2 (the whole
 > M2→M7 arc walkable, thin) + Phase 3 Stage 1 (M2 Rhythm sub-bar grid + fixed figures) are now built** in
@@ -631,9 +651,11 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
   both shipped as flagged placeholders. *Net: full 7-chapter campaign playable end-to-end.*
   **Future (dev):** dynamics should eventually gain explicit **symbols** (crescendo/decrescendo, accents)
   as their own figure-like picks — for now it's the simple per-hand p/mf/f marking.
-- **Phase 3 — Deepen Rhythm (the heavy subsystem). ✅ STAGE 1 BUILT.** Sub-bar grid (`BEATS`=4
-  sub-columns); rhythm-figure deck; scheduler beat-offsets reusing the `barQueue` onset-queue playhead →
-  beat queue; real groove scoring + rests. Stage: **fixed figures (done)** → draftable figures → syncopation.
+- **Phase 3 — Deepen Rhythm (the heavy subsystem). ✅ STAGE 1 BUILT; ⚙️ STAGE 2 = PIVOT TO PER-NOTE
+  DURATIONS (decided, not built).** Sub-bar grid (`BEATS`=4 sub-columns); scheduler beat-offsets reusing the
+  `barQueue` onset-queue playhead → beat queue; real groove scoring. **Stage 1 shipped a fixed rhythm-figure
+  picker**, but playtest exposed a design flaw (see Stage 2) — the figure model **fights melody**, so Stage 2
+  **replaces figures with per-note durations**.
   - **As built (Stage 1):** a bar subdivides into `BEATS`=4 sub-slots. A small **fixed `FIGURES` roster**
     (whole `●○○○` · four-on-the-floor `●●●●` · half `●○●○` · backbeat `○●○●`, each an `onsets:[…]` list)
     is picked per hand via a **`figControlHTML` segmented control** (mirrors the M3 `dynControlHTML`), shown
@@ -654,11 +676,67 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
     placeholder (tunable). **The M2 gate is now real:** *play each rhythm figure* (`gateFigs` Set vs
     `FIGURES.length`), mirroring M3's "play soft/medium/loud" — the old `GATE_HANDS`/`gateHands` placeholder
     is removed.
-  - **Deferred to later Stage-3 stages:** draftable/unlockable figures (a Codex sub-set), syncopation &
-    cross-loop-consistency scoring, and explicit **rests** as their own token (Stage 1's `back`/`half`
-    figures already leave slots silent, but there's no dedicated rest pick yet).
-- **Phase 4 — Structure payoff & polish.** Build **cross-gig loop accumulation** (unblocks real M7 form
-  scoring); boss-gig capstones as chapter exams; optional mentor/chapter prose.
+  - **Stage 2 — per-note durations replace the figure picker (decided, not built).**
+    - **Why the pivot.** The figure model has two knobs that don't compose: a **figure** picks *which beats
+      fire*, then a melody's notes are **spread one-per-onset, sorted ascending** (`scheduleVoices` sorts
+      `[...cards].sort((a,b)=>a.midi-b.midi)`). So any multi-note melody (M4) **always climbs and is evenly
+      spaced** regardless of what you picked — rhythm and melody fight. Playtest verdict: make rhythm
+      **granular** (choose each note's value: eighth/quarter/half/whole) instead of a whole-hand pattern.
+    - **Decided (this pass):** **per-card durations**, notes play **in selection order** (monophonic v1 — a
+      melodic hand is a single line; a chord is its own stacked hand at M5+). **Chords *inside* a melody**
+      (two notes on one beat) are **deferred** — they need a grouping gesture. Good news: selection order is
+      **already preserved** (`run.sel` is an insertion-ordered `Set`; `selectedCards()` returns pick order),
+      so the only reason melodies climb is that one `.sort()` — cheap to fix.
+    - **Model.** A hand = a list of events `(pitch, duration)`. **Sequenced hand** (M4 / any run): events lay
+      **back-to-back from beat 1 in pick order**, each lasting its duration; leftover bar = a **rest**. The
+      durations *are* the rhythm. **Stacked hand** (M5+ harmony): one simultaneous chord, rings the bar
+      (per-note durations ignored; sequencing off, as today). **Single note** (M1–M3): one event + duration +
+      rest — which finally makes **M2 the note-values lesson** the design calls for.
+    - **Duration palette (v1):** **quarter (1 beat) · half (2) · whole (4)** on the existing `BEATS`=4 grid
+      (integer beats → columns stay legible). **Eighths (½ beat) are a fast-follow** needing a grid-resolution
+      bump to `BEATS`=8 (the scheduler is already float-ready via `slot = bs/BEATS`); dotted/tied notes later.
+    - **Code changes.** Store per-card duration index-free in **`run.noteDur[cardId] → durId`** (survives the
+      Sort button, since `card.id` is stable). `scheduleVoices`: **drop the ascending sort** for sequenced
+      hands; compute **cumulative onsets from durations** (clip/rest at the bar edge). Replace `figControlHTML`
+      with a **per-note sequence editor** (`seqControlHTML` — the picked cards left-to-right in order, each
+      with a ♩/𝅗𝅥/𝅝 duration control; shown when the hand is sequenced / at M2–M3), so the **order is visible
+      and editable**. The loop grid lights each note at its start beat and **spans its duration** (a `.held`
+      continuation cell = visible note length). Bars store **`durs`** (parallel to `cards`) instead of `fig`;
+      `snapshotBars`/`scheduleBar` read it; the `MJ1:` code omits it → default quarter (sequenced) / whole
+      (stacked); legacy `fig` bars fall back to whole. **Groove scoring:** `groove +1` on-beat + a
+      **rhythmic-interest +1** for ≥2 distinct durations (tunable). **M2 gate** → *play each note value*
+      (`gateDurs` Set vs the palette), mirroring M3's soft/medium/loud (retires `gateFigs`/`FIGURES`).
+    - **Staging.** **A (core):** the above on quarter/half/whole. **B (fast-follow):** eighths (`BEATS`=8) +
+      dotted notes. **C (later):** chords-in-melody grouping, syncopation & cross-loop-consistency scoring,
+      explicit rest token.
+  - **Deferred to later stages (unchanged):** draftable/unlockable rhythm content (a Codex sub-set),
+    syncopation & cross-loop-consistency scoring, and an explicit **rest** token (durations already leave the
+    bar's tail silent, but there's no dedicated rest pick yet).
+- **Phase 4 — Structure payoff & polish. ✅ CORE BUILT.** **Cross-gig loop accumulation** + real M7 form
+  scoring + a real M7 gate. Boss-gig capstones and mentor/chapter prose are **deferred** (a later polish
+  pass — chosen "core only" this pass).
+  - **As built:** the loop is **one song per run**, allocated once in `startRun` (`run.loop`, sized
+    `LOOP_BARS = SECTION_BARS × GIGS.length` = 18) and **never reset per gig**. `startGig` snaps the write
+    head to `run.gigIdx × SECTION_BARS` so each gig fills its own `SECTION_BARS`-bar **section in that
+    gig's key** — the song **modulates C→G→F**. `playHand`'s write head and click-to-aim are **confined to
+    the current gig's section** (past sections lock). The live loop cycles only the **song so far**
+    (`loopLenNow()` = unlocked sections; `gigSrc().n`), so early gigs don't groove through empty future
+    bars; the last gig plays the full 18-bar song. The **loop grid** renders `loopLenNow()` bars, is now
+    **horizontally scrollable** with a **sticky pitch-label column**, fixed-width sub-columns, **section
+    dividers** (`.secstart`) + a **per-section key strip** (`.lsecbar` — ① C · ② G · ③ F, active lit),
+    and dims **locked** (non-current-section) cells; row-greying keys off the **current section's** key.
+  - **Real M7 form scoring** (`score()`): a **phrase** = a bar's pitch-class fingerprint (`pcSetFp`).
+    Restating an earlier phrase (**motif repetition**) scores `+1`; restating it **after a contrasting
+    phrase** (the **A·B·A** shape) scores `+1` more — read off the whole accumulated `run.loop.bars`.
+    Replaces the Phase-2 thin restatement placeholder.
+  - **Real M7 gate** (`gateStatus` default → `hasABA(run.loop.bars)`): *"compose an A·B·A — state a phrase,
+    contrast it, then return to it."* Replaces the clear-the-Set placeholder. (M7 is terminal, so meeting
+    it is graduation flavor rather than an advance; Free Play stays available regardless.)
+  - **Save-a-Song is now whole-run** (see that section): the per-gig, before-the-draft save is retired;
+    `offerSave(retScreen)` captures the full run at end (win/lose), `run.saved` is a boolean, and the
+    report judges in-key%/cadence **per section** via `sectionKey`.
+  - **Still deferred:** boss-gig capstones as chapter exams; optional mentor/chapter prose; explicit
+    AABA/verse-chorus detection beyond the A·B·A phrase-return heuristic; seed + set export/share.
 
 **Chosen: thin-first** (Phase 2 stubs Rhythm/Dynamics to get a walkable arc fast) over deep-in-order
 (fully building Rhythm before the rest). Fastest to a complete-arc playtest; defers the Rhythm lift.
@@ -673,8 +751,11 @@ separate later addition.)
 - Exact **gate counts** per movement and whether gates are "catalog N distinct" vs "N total."
 - **Rhythm figure roster** and how figures are acquired (unlock vs draft vs both).
 - Whether **Dynamics** is a per-note property, a per-hand marking, or a figure-like pick.
-- **Structure (M7)** scoring: how to detect/reward AABA & phrase form across the 3-gig accumulated song
-  (ties into the still-unbuilt "accumulate one loop across all 3 gigs").
+- **Structure (M7)** scoring: **resolved for Phase 4 core** — the loop now accumulates across all 3 gigs,
+  and form scores on a **pitch-class phrase fingerprint** (restatement + an **A·B·A** return), decoupled
+  from the gig count. *Still open:* richer form detection (AABA, verse/chorus, phrase length) beyond the
+  A·B·A heuristic; whether letting a player edit **earlier** sections (currently locked) is worth the
+  cross-key complexity.
 - Whether Free Play is available **from the start** (menu) or **only after graduating** movement 7.
 - How the **hand-size Muses** stack with the per-movement `MAX_SELECT` floor.
 - Mentor/chapter prose (deferred; the flavor-only stance holds until the arc is built).
@@ -735,29 +816,32 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
     deck makes the plain in-key highlight **degenerate in C major** (every row is in-key), the glow instead
     reacts to your selection so it stays a real teaching signal every gig. Empty selection ⇒ all in-key rows
     glow (the scale). The off-key **grey** rows are unchanged (still show key membership).
-- **The song loop (Mario-Paint-style "make a song as you go").** Each gig is a **fixed loop of
-  `LOOP_BARS` slots** (= `PLAYS`, one per hand). Playing a hand **writes it into the current (gold) slot**
-  and advances the write head (wraps to overwrite/refine). A Web Audio **lookahead scheduler** (`startLoop`
-  /`schedTick`/`scheduleBar`, `BAR_SEC` tempo) cycles the loop **continuously as a backing groove**; each
-  filled slot re-sounds every pass (chords together, runs arpeggiated within the bar) and a rAF
-  **playhead** (`tickPlayhead`→`paintPlayCol`) sweeps the columns. The loop renders as a **pitch grid**
-  (`loopStripHTML`, `.loopgrid`): **rows = every playable pitch across the deck's true range** (`loopRowMidis`
-  — bass register low, piano/guitar high, the empty middle octave skipped since no card lands there), **columns
-  = the `LOOP_BARS` bars**. A played hand lights up its notes as **ROYGBIV cells across the scale** (color =
-  note letter), so note additions are *visible on the staff* rather than a cluster of dots. Row labels mark the
-  gig-key **tonic** (gold) and grey out **off-key** rows (e.g. F in G major — teaches "out of key"); a short
-  **structure label** sits under each column. Click any cell/label in a column to aim the write head there, and a
-  **pause/play** toggle mutes the groove. (This reuses the `mujicians-compose.html` grid concept for the loop
-  display.)
-  The loop resets per gig (a fresh song each gig, swapped in cleanly by `startGig`→`startLoop`, whose
-  `stopLoop` resets the scheduler). The loop **never stops on its own between gig and end state**: `winGig`
-  and `loseRun` no longer call `stopLoop`, so the just-finished gig's loop **keeps grooving under the Muse
-  draft** (rendered behind the draft overlay) and under the **end overlay** (win or lose — `renderEndOverlay`
-  calls `renderGigStatic()` unconditionally so the pitch grid + playhead stay visible behind it). The end
-  overlay's **"▶ Hear your set" / "⏸ Pause your set"** toggle (shown on both win and lose) just pauses/resumes
-  that already-running loop rather than starting it — the "made some music" payoff. `stopLoop` now only fires
-  on explicit user actions (Home, starting a new run/gig, the pause toggle). So a gig literally **builds an
-  audible loop** you can sit with after the run ends.
+- **The song loop (Mario-Paint-style "make a song as you go") — one loop per RUN (Phase 4).** The whole
+  run is **one continuous loop of `LOOP_BARS` slots** (= `SECTION_BARS × GIGS.length` = 18), allocated once
+  in `startRun` and **never reset between gigs**. Each gig fills its own `SECTION_BARS`-bar **section** (its
+  own key): `startGig` snaps the write head to `run.gigIdx × SECTION_BARS`, and `playHand`'s write head +
+  click-to-aim are **confined to the current gig's section** (past sections lock). Playing a hand **writes
+  it into the current (gold) slot** and advances the write head (wraps within the section). A Web Audio
+  **lookahead scheduler** (`startLoop`/`schedTick`/`scheduleBar`, `BAR_SEC` tempo) cycles the **song so far**
+  (`loopLenNow()` = unlocked sections; `gigSrc().n`) **continuously as a backing groove** — so early gigs
+  don't loop through empty future bars; the last gig plays the full 18-bar song. Each filled slot re-sounds
+  every pass (chords together, runs arpeggiated within the bar) and a rAF **playhead**
+  (`tickPlayhead`→`paintPlayCol`) sweeps the columns. The loop renders as a **pitch grid** (`loopStripHTML`,
+  `.loopgrid`): **rows = every playable pitch across the deck's true range** (`loopRowMidis`), **columns =
+  the `loopLenNow()` bars**. The grid is **horizontally scrollable** with a **sticky pitch-label column**,
+  fixed-width sub-columns, **section dividers** (`.secstart`) and a **per-section key strip** (`.lsecbar` —
+  ① C · ② G · ③ F, active section lit); **locked** (non-current-section) cells dim. A played hand lights up
+  its notes as **ROYGBIV cells** (color = note letter). Row labels mark the **current section's** tonic
+  (gold) / grey off-key rows; a short **structure label** sits under each bar. Click a cell/label in the
+  **current section** to aim the write head there; a **pause/play** toggle mutes the groove. (Reuses the
+  `mujicians-compose.html` grid concept.)
+  The loop **never stops on its own between gig and end state**: `winGig` and `loseRun` no longer call
+  `stopLoop`, so the accumulating song **keeps grooving under the Muse draft** (which now notes the song
+  modulates to the next section's key) and under the **end overlay** (win or lose — `renderEndOverlay` calls
+  `renderGigStatic()` unconditionally so the pitch grid + playhead stay visible behind it). The end overlay's
+  **"▶ Hear your set" / "⏸ Pause your set"** toggle just pauses/resumes that already-running loop — the "made
+  some music" payoff. `stopLoop` now only fires on explicit user actions (Home, new run, the pause toggle).
+  So a run literally **builds one audible modulating song** you can sit with after it ends.
 - **Adjustable tempo (global comfort setting, live).** A **Tempo slider** lets the player set the loop
   speed in **real BPM** (`MIN_BPM 40` → `MAX_BPM 200`), with a live **Italian tempo-marking label**
   (Largo/Adagio/Andante/Moderato/Allegro/Presto) next to the number — on-brand with the game's teaching
@@ -781,8 +865,8 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   with a natural-note deck) and an escalating **applause threshold** (`650 / 1150 / 1800` — deliberately
   high so a gig can't be cleared in one or two lucky hands; you play several, filling more of the loop);
   `PLAYS` (**6**) hands + `DISCARDS` discards per gig. Beat the threshold → next gig; run out → run over.
-  Because `LOOP_BARS = PLAYS`, the song loop is now **6 bars** — you can lay down a 4+-bar phrase before
-  passing.
+  Each gig fills a `SECTION_BARS = PLAYS` (**6**)-bar section of the run-long song, so the full song is
+  `LOOP_BARS = 18` bars across the three gigs — a real little three-section, modulating piece (Phase 4).
 - **Muses (the build engine).** Before each gig you **draft 1 of 3** from `MUSE_POOL`. Scoring Muses
   (Perfect Pitch, Consonance, Low End, Cadence, Arpeggiator, Virtuoso) fold their `onNote`/`onHand` hooks
   into `score`. Two **hand-size Muses** (Extra Hand +1, Big Hand +2) instead carry a `handSize` field and
@@ -801,7 +885,9 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   runs, on via **`?dev`** in the URL or toggled with **Ctrl/Cmd+Shift+D** (persisted in
   `localStorage["mujicians-dev"]`); shows a **DEV ∞** badge and doesn't increment `runsUsed`. When DEV is
   on, **Home also shows a movement jumper** (`devMovementBarHTML` — M1…M7 buttons) that sets
-  `persist.progress.movement` directly so you can test any chapter without playing up to it.
+  `persist.progress.movement` directly so you can test any chapter without playing up to it, plus a
+  **↺ Reset all** button (`resetAll()`) that wipes ALL saved progress back to a first-launch state
+  (movement 1, empty Codex/Setlist, zero Renown, pitch gate cleared, runs reset) after a confirm.
 - **Persistence + meta.** `localStorage["mujicians-save-v2"]` holds `{day, runsUsed, codex,
   totalApplause, bestApplause, setlist}`. **Renown** level derives from cumulative Applause; the **Codex**
   logs every recognized structure you play; **`setlist`** holds saved songs (see next bullet).
@@ -814,7 +900,7 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   (`MJ1:` share code), delete**, plus **Import** a pasted code. Full design + code map in the **Save a
   Song** section above.
 
-- **Progression campaign — Phases 0–2 + Phase 3 Stage 1 (of the 7-movement arc).** A `MOVEMENTS` registry
+- **Progression campaign — Phases 0–2 + Phase 3 Stage 1 + Phase 4 core (of the 7-movement arc).** A `MOVEMENTS` registry
   gates the select cap (`maxSelect()`), scoring terms (`termOn()`), the deck's instruments (`instrumentsFor()`
   — piano-only until M6), and each movement's flat campaign threshold (`gigThreshold()`) by the run's
   movement. **Home offers Campaign (at your reached movement, default M1) vs Free Play (all unlocked)**, both
@@ -826,14 +912,19 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   `persist.progress.movement`): M1 = play all 7 in-key letters (**progress persists across runs**, shown as
   a hangman row of 7 slots that reveal each colored letter as it's played — in the HUD, end overlay, and on
   Home), **M2 = play each rhythm figure**, M3 = all 3 dynamics, M4 = intervals+run, M5 = triads+cadence,
-  M6 = multi-instrument blends; only **M7 (clear-the-Set)** is still a flagged placeholder until Phase 4
-  (cross-gig form). HUD gate meter + end-overlay unlock banner. Full design + phase plan in the
-  **Progression** section.
+  M6 = multi-instrument blends; **M7 = compose an A·B·A** (`hasABA` over the accumulated cross-gig song —
+  real as of Phase 4). HUD gate meter + end-overlay unlock banner. **Phase 4 (core) is built:** the loop
+  **accumulates across the whole run into one modulating C→G→F song** (18 bars, allocated in `startRun`,
+  sectioned per gig, scrollable grid with a per-section key strip), **M7 form scoring** rewards
+  phrase-fingerprint restatement + an A·B·A return, and **Save-a-Song is a whole-run capture** at run's end.
+  Full design + phase plan in the **Progression** section.
 
 **Not yet (still plan):** the rest of the campaign depth (Phase 3 *later stages* = draftable/unlockable
 rhythm figures, syncopation + cross-loop-consistency scoring, explicit rest tokens — **Stage 1's sub-bar
-grid + fixed figures + real groove scoring/gate are built**; Phase 4 = cross-gig loop accumulation for real
-M7 Structure form scoring, boss-gig capstones); explicit **dynamics symbols** (crescendo/accents) beyond
+grid + fixed figures + real groove scoring/gate are built**; **Phase 4 core = cross-gig loop accumulation +
+real M7 form scoring/gate + whole-run Save-a-Song are built**, leaving Phase 4 *polish* = boss-gig capstones,
+mentor/chapter prose, and AABA/verse-chorus detection beyond the A·B·A heuristic); explicit **dynamics
+symbols** (crescendo/accents) beyond
 the p/mf/f marking; accidentals/more
 instruments & drums, Étude/Accidental cards, a coin-based
 shop (draft is free for now), antes/boss-gig constraints, the shared **Daily-Set** seed, set-playback

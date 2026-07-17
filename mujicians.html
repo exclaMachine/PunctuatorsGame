@@ -56,9 +56,18 @@
   .loopwrap .lhead{font-size:11px;color:var(--dim);letter-spacing:.5px;margin-bottom:6px;
     display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
   .loopwrap .lhead b{color:var(--gold)}
-  .loopgrid{display:grid;gap:2px;background:#0f1226;border:1px solid var(--edge);border-radius:8px;padding:6px}
+  .loopgrid{display:grid;gap:2px;background:#0f1226;border:1px solid var(--edge);border-radius:8px;padding:6px;overflow-x:auto}
+  /* Phase 4: the song can span many bars, so the pitch-label column sticks while the strip scrolls. */
+  .lgrow,.lgcorner{position:sticky;left:0;z-index:2;background:#0f1226}
   .lgrow{display:flex;align-items:center;justify-content:flex-end;gap:5px;padding-right:6px;
     font-size:10px;color:var(--dim);white-space:nowrap;height:16px}
+  /* per-section (per-gig) markers on the accumulated song */
+  .lsecbar{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+  .lsec{font-size:10px;color:var(--dim);border:1px solid var(--edge);border-radius:10px;padding:2px 8px;letter-spacing:.3px;white-space:nowrap}
+  .lsec.active{color:var(--gold);border-color:var(--gold)}
+  .lgcell.secstart,.lglabel.secstart{border-left:2px solid rgba(255,255,255,.22)}
+  .lgcell.locked{cursor:default;opacity:.7}
+  .lglabel.locked{cursor:default;opacity:.55}
   .lgrow.tonic{color:var(--gold)}
   .lgrow.offkey{opacity:.4;font-style:italic}
   .lgrow.good{color:var(--good);font-weight:bold}       /* row still sounds good with the current pick */
@@ -253,7 +262,10 @@
   const MAX_RUNS_PER_DAY = 3;
   // Mario-Paint-style loop: a fixed strip of slots you fill hand-by-hand. Each Play
   // writes the current slot; the loop cycles nonstop (continuous backing groove).
-  const LOOP_BARS = PLAYS, BAR_SEC = 0.8;
+  // Phase 4: the loop is ONE song across the whole run — each gig fills its own SECTION_BARS-bar
+  // section (in that gig's key), and the loop never resets between gigs. LOOP_BARS (the whole song)
+  // is defined just below GIGS since it depends on the gig count.
+  const SECTION_BARS = PLAYS, BAR_SEC = 0.8;
   // Tempo: one loop slot = one beat, so bar-seconds = 60/BPM. Default 75 BPM = 0.8s (BAR_SEC).
   // The global comfort tempo (persist.bpm) drives the live gig loop; saved songs replay at
   // the tempo they were made at (stored per song). Range spans real sheet-music markings.
@@ -277,6 +289,17 @@
     { keyName:"G major", key:majorScale(7), threshold:1900 },
     { keyName:"F major", key:majorScale(5), threshold:3000 },
   ];
+  // Phase 4: the whole run is one continuous loop = every gig's SECTION_BARS-bar section end to end,
+  // so the song modulates C→G→F across its three sections. loopLenNow() is the "song so far" (the
+  // sections unlocked up to the current gig) — used for the grid width and the scheduler length so
+  // early gigs don't cycle empty future bars; at the end the full song plays.
+  const LOOP_BARS = SECTION_BARS * GIGS.length;
+  const sectionOfBar = (b) => Math.min(GIGS.length-1, Math.floor(b / SECTION_BARS));
+  const sectionKey = (b) => GIGS[sectionOfBar(b)].key;
+  function loopLenNow(){
+    const gi = (run ? Math.min(run.gigIdx, GIGS.length-1) : GIGS.length-1);
+    return (gi + 1) * SECTION_BARS;
+  }
 
   /* ================= progression — the 7-movement campaign (Phase 0 scaffold) =================
      Each movement unlocks one mechanic + turns on one scoring term, in the graphic-novel arc:
@@ -339,9 +362,8 @@
     return GIGS[gigIdxClamped()].threshold;
   }
   // Campaign advancement gate (Codex-style "catalogue the concept" objective). Each movement's gate
-  // forces its own mechanic (Phase 2 wired M2–M6 to real thin gates). M2 Rhythm's real groove gate
-  // waits on the sub-bar subsystem (Phase 3), so it's a "keep the beat" hand-count for now; M7 Structure
-  // waits on cross-gig loop accumulation (Phase 4), so it's a clear-the-Set placeholder. Returns {met,label}.
+  // forces its own mechanic (Phase 2 wired M2–M6 to real thin gates; Phase 3 made M2 real; Phase 4
+  // made M7 real — compose an A·B·A over the accumulated cross-gig song). Returns {met,label}.
   function gateStatus(mv){
     const r = run || {};
     const cap = (n,m)=>Math.min(n,m);
@@ -358,7 +380,8 @@
         return { met:tr>=GATE_TRIADS&&!!r.gateCadence, label:`Harmony gate — log ${GATE_TRIADS} consonant triads (${cap(tr,GATE_TRIADS)}/${GATE_TRIADS}) + a tonic cadence (${cd}/1)` }; }
       case 6: { const h=r.gateBlends||0;
         return { met:h>=GATE_BLENDS, label:`Timbre gate — play ${GATE_BLENDS} multi-instrument blends: ${cap(h,GATE_BLENDS)}/${GATE_BLENDS}` }; }
-      default: return { met:!!r.won, label:"Structure gate — clear the Set (form scoring arrives with cross-gig loops)" };
+      default: { const aba = hasABA(r.loop ? r.loop.bars : []);   // Phase 4: real form gate over the accumulated song
+        return { met:aba, label:`Structure gate — compose an A·B·A: state a phrase, contrast it, then return to it ${aba?"✓":"(A · B · A)"}` }; }
     }
   }
 
@@ -446,6 +469,18 @@
   }
 
   /* ================= scoring (the validator + applause) ================= */
+  // A "phrase" fingerprint = a bar's pitch-class set (order/octave-independent). Two bars restate
+  // each other when their fingerprints match — the basis of Phase-4 form (motif repetition) scoring.
+  const pcSetFp = (cards) => [...new Set(cards.map(c=>c.pc))].sort((a,b)=>a-b).join(".");
+  // Does a sequence of bars contain an A·B·A shape — a phrase stated, contrasted, then restated?
+  function hasABA(bars){
+    const fps = (bars||[]).filter(b=>b && b.cards && b.cards.length).map(b=>pcSetFp(b.cards));
+    for(let i=0;i<fps.length;i++)
+      for(let j=i+1;j<fps.length;j++)
+        if(fps[j]!==fps[i])                                   // a contrasting phrase in between…
+          for(let k=j+1;k<fps.length;k++) if(fps[k]===fps[i]) return true;   // …then the first returns
+    return false;
+  }
   function score(cards, gig, muses){
     const cls = classify(cards);
     const base = STRUCT[cls.type];
@@ -493,10 +528,18 @@
       const voices = new Set(cards.map(c=>c.instId)).size;
       if(voices>=2){ mult += voices-1; lines.push("timbre blend +"+(voices-1)); }
     }
-    // form (M7): thin restatement bonus (placeholder until cross-gig loop accumulation, Phase 4) —
-    // reward restating a structure already in the loop (motif repetition = the seed of form).
-    if(termOn("form") && run && run.loop && run.loop.bars.some(b=>b && b.cls && b.cls.type===cls.type && cls.type!=="cluster")){
-      mult += 1; lines.push("form (restatement) +1");
+    // form (M7): real cross-gig structure scoring over the accumulated song (Phase 4). A phrase =
+    // a bar's pitch-class fingerprint; restating an earlier phrase (motif repetition) scores, and
+    // restating it AFTER a contrasting phrase (the A·B·A shape) scores more. See docs/mujicians.md.
+    if(termOn("form") && run && run.loop){
+      const fpNow = pcSetFp(cards);
+      const priorFps = run.loop.bars
+        .filter((b,idx)=> b && idx!==run.loop.writePos && b.cards && b.cards.length)
+        .map(b=>pcSetFp(b.cards));
+      if(fpNow && priorFps.includes(fpNow)){
+        mult += 1; lines.push("form: restatement +1");
+        if(priorFps.some(f=>f!==fpNow)){ mult += 1; lines.push("form: A·B·A return +1"); }
+      }
     }
 
     // muses (hand-level)
@@ -554,6 +597,18 @@
     if(!persist.capFixV1){ persist.capFixV1 = true; persist.runsUsed = 0; savePersist(); }
   }
   function savePersist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(persist)); }catch(e){} }
+  // DEV-only: wipe ALL saved progress back to a first-launch state (movement 1, empty Codex/Setlist,
+  // zero Renown, pitch gate cleared, runs reset). Keeps the DEV flag on so the button stays reachable.
+  function resetAll(){
+    if(!window.confirm("DEV: wipe ALL saved progress — movement, Codex, Renown, Setlist, pitch gate, runs used? This can't be undone.")) return;
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, capFixV1:true, progress:{ movement:1, gates:{} } };
+    codex.clear();
+    savePersist();
+    stopLoop(); galleryPlayId=null; run=null; screen="home";
+    render();
+    toast("DEV: progress reset to the beginning");
+  }
   const codex = new Set();
 
   /* ===== DEV override — unlimited runs (bypass the daily cap) =====
@@ -627,7 +682,9 @@
   // Bar-seconds of whatever's grooving: the live gig loop follows the global tempo in real time
   // (so the Tempo slider works mid-gig); a saved song carries its own fixed barSec.
   function srcBarSec(){ if(!playSrc) return BAR_SEC; return playSrc.live ? curBarSec() : (playSrc.barSec||BAR_SEC); }
-  function gigSrc(){ return (run && run.loop) ? { bars:run.loop.bars, n:LOOP_BARS, live:true } : null; }
+  // Phase 4: the live loop cycles only the "song so far" (sections unlocked up to the current gig),
+  // so early gigs don't loop through empty future bars; by the last gig it's the full LOOP_BARS song.
+  function gigSrc(){ return (run && run.loop) ? { bars:run.loop.bars, n:loopLenNow(), live:true } : null; }
   function scheduleBar(idx, when){
     const bar = playSrc && playSrc.bars[idx];
     if(!bar || !bar.cards.length) return;
@@ -688,11 +745,11 @@
   }
 
   /* ================= Save a Song — Setlist, report card & export ================= */
-  // A "song" = a snapshot of one gig's loop the player chose to keep. Stored minimally
-  // (just the notes + a light cls per bar); replayable from Home, exportable as a code.
-  // See docs/mujicians.md → "Save a Song".
+  // A "song" = a snapshot of the whole run's accumulated loop (all gigs) the player chose to keep.
+  // Stored minimally (just the notes + a light cls per bar); replayable from Home, exportable as a
+  // code. See docs/mujicians.md → "Save a Song".
   const SETLIST_CAP = 30;
-  let pendingSave = null;   // { gigIdx, bars, retScreen } while the Save modal is up
+  let pendingSave = null;   // { bars, retScreen } while the Save modal is up
   let galleryPlayId = null; // which saved song is auditioning in the Setlist
 
   function esc(s){ return String(s).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
@@ -710,21 +767,27 @@
 
   // The music-theory read of a loop. v1 renders a brief subset (report card); the same
   // stats feed the deferred detailed breakdown. See docs/mujicians.md.
+  // `key` is either a pitch-class array (single-key song) OR a function barIndex→pc-array (Phase 4
+  // whole-run save, where each section is in its own gig's key — the song modulates C→G→F).
   function songReport(bars, key){
-    const filled = bars.filter(b => b && b.cards && b.cards.length);
-    const notes = filled.reduce((a,b)=>a.concat(b.cards), []);
-    const tonic = key[0], dom = key[4];
-    const inKey = notes.filter(c=>key.includes(c.pc)).length;
+    const keyAt = (typeof key==="function") ? key : (()=>key);
+    const filledIdx = [];
+    bars.forEach((b,i)=>{ if(b && b.cards && b.cards.length) filledIdx.push(i); });
+    const filled = filledIdx.map(i=>bars[i]);
+    const notes = [];
+    let inKey = 0;
+    filledIdx.forEach(i=>{ const k=keyAt(i); bars[i].cards.forEach(c=>{ notes.push(c); if(k.includes(c.pc)) inKey++; }); });
     const inKeyPct = notes.length ? Math.round(100*inKey/notes.length) : 0;
     const structs = [...new Set(filled
       .filter(b=>["interval","triad","seventh","run"].includes(b.cls.type))
       .map(b=>b.cls.name))];
     const chordish = filled.filter(b=>["interval","triad","seventh"].includes(b.cls.type));
     const consRatio = chordish.length ? chordish.filter(b=>b.cls.consonant).length/chordish.length : 1;
-    let cadence = filled.some(b=>(b.cls.type==="triad"||b.cls.type==="seventh") && b.cls.root===tonic);
+    // cadence: a tonic-rooted chord (in its own section's key), or a V→I across adjacent bars
+    let cadence = filledIdx.some(i=>(bars[i].cls.type==="triad"||bars[i].cls.type==="seventh") && bars[i].cls.root===keyAt(i)[0]);
     for(let i=0;i<bars.length-1 && !cadence;i++){
       const a=bars[i], b=bars[i+1];
-      if(a&&b&&a.cls&&b.cls&&a.cls.root===dom&&b.cls.root===tonic) cadence=true;
+      if(a&&b&&a.cls&&b.cls&&a.cls.root===keyAt(i)[4]&&b.cls.root===keyAt(i+1)[0]) cadence=true;
     }
     let tritone=false;
     for(const b of filled){
@@ -771,15 +834,17 @@
     persist.setlist = list.filter(s=>keep.includes(s));
   }
 
-  function saveSong(gigIdx, bars, name){
-    const g = GIGS[gigIdx];
-    const rep = songReport(bars, g.key);
+  // Phase 4: a saved song = the whole run's accumulated loop (all gigs), so it modulates across its
+  // sections; the report is computed per-section (sectionKey), and the display key is "C→G→F".
+  const modKeyName = () => GIGS.map(g=>g.keyName.replace(/ (major|minor)/,"")).join("→");
+  function saveSong(bars, name){
+    const rep = songReport(bars, sectionKey);
     const song = {
       id: uid(),
       name: (name||"").trim() || suggestName(bars) || "Untitled",
       date: todayStr(),
-      keyName: g.keyName,
-      key: g.key.slice(),
+      keyName: modKeyName(),      // e.g. "C→G→F" — the song modulates across its sections
+      key: GIGS[0].key.slice(),   // home key (report/display fallback; Setlist replay is key-agnostic)
       tempo: curBarSec(),   // record the tempo it was played at; replays at this speed
 
       bars: bars,
@@ -789,7 +854,7 @@
     persist.setlist.unshift(song);
     pruneSetlist();
     savePersist();
-    if(run){ (run.saved = run.saved || {})[gigIdx] = true; }
+    if(run){ run.saved = true; }
     return song;
   }
 
@@ -852,16 +917,15 @@
     toast('Imported "'+song.name+'"');
   }
 
-  /* --- the Save modal (offered when a gig's loop is about to be lost) --- */
-  function offerSave(gigIdx, retScreen){
-    pendingSave = { gigIdx, bars: snapshotBars(run.loop.bars), retScreen };
+  /* --- the Save modal (offered at run's end — the whole accumulated song is about to be lost) --- */
+  function offerSave(retScreen){
+    pendingSave = { bars: snapshotBars(run.loop.bars), retScreen };
     screen = "save"; render();
   }
   function afterSave(){
     const ret = pendingSave ? pendingSave.retScreen : "home";
     pendingSave = null;
-    if(ret==="draft"){ offerDraft(); }
-    else if(ret==="win"){ screen="win"; render(); }
+    if(ret==="win"){ screen="win"; render(); }
     else if(ret==="lose"){ screen="lose"; render(); }
     else { screen="home"; render(); }
   }
@@ -890,7 +954,9 @@
     if(!DEV){ persist.runsUsed++; savePersist(); }
     // mode "free" = Free Play (all movements on); otherwise Campaign at the reached movement.
     const movement = mode==="free" ? FREE_PLAY_MOVEMENT : (persist.progress.movement || 1);
-    run = { gigIdx:0, deck:buildDeck(movement), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[], loop:null, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), won:false, advancedTo:null,
+    // Phase 4: one loop for the whole run — allocated here, never reset per gig. Each gig fills its
+    // own SECTION_BARS-bar section (startGig snaps the write head to it); the song accumulates C→G→F.
+    run = { gigIdx:0, deck:buildDeck(movement), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[], loop:{ bars:new Array(LOOP_BARS).fill(null), writePos:0 }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), won:false, advancedTo:null,
       curDyn:DEFAULT_DYN,   // M3 dynamics: the p/mf/f marking applied to the next played hand
       curFig:DEFAULT_FIG,   // M2 rhythm: the rhythm figure applied to the next played hand
       // per-movement gate trackers (all cheap to keep; gateStatus reads the frontier movement's).
@@ -904,7 +970,9 @@
     run.drawPile = shuffle([...run.deck]);
     run.hand = []; run.sel.clear();
     run.playsLeft = PLAYS; run.discardsLeft = DISCARDS; run.gigScore = 0;
-    run.loop = { bars:new Array(LOOP_BARS).fill(null), writePos:0 };  // fresh song per gig
+    // Phase 4: don't reset the loop — snap the write head to this gig's section (its own key). The
+    // song keeps everything the prior gigs laid down; this gig fills the next SECTION_BARS bars.
+    run.loop.writePos = run.gigIdx * SECTION_BARS;
     drawUp();
     screen = "gig"; render();
     startLoop();   // continuous backing groove begins
@@ -924,7 +992,9 @@
     // lay this hand into the current loop slot (remembering its dynamic + sequence flag so playback
     // and any saved song reproduce it), then advance the write head (wraps)
     run.loop.bars[run.loop.writePos] = { cards:[...cards], cls:res.cls, dyn:run.curDyn, fig:run.curFig, arp:handIsSequenced(res.cls) };
-    run.loop.writePos = (run.loop.writePos + 1) % LOOP_BARS;
+    // advance the write head, wrapping WITHIN this gig's section (so you refine this section, not the past)
+    const secStart = run.gigIdx * SECTION_BARS;
+    run.loop.writePos = secStart + ((run.loop.writePos - secStart + 1) % SECTION_BARS);
     run.gigScore += res.applause;
     persist.totalApplause += res.applause;
     if(res.applause > persist.bestApplause) persist.bestApplause = res.applause;
@@ -966,13 +1036,11 @@
   }
 
   function winGig(){
-    const finishedGig = run.gigIdx;   // the gig we just cleared (its loop is about to be lost)
     run.gigIdx++;
     if(run.gigIdx >= GIGS.length){ run.won = true; maybeAdvance(); screen="win"; render(); return; }  // final win
-    // between gigs: offer to SAVE the just-finished loop BEFORE the Muse draft; then draft.
-    // The loop keeps grooving under both overlays; startGig()'s startLoop() swaps in the fresh next-gig loop.
-    if(filledBars() > 0) offerSave(finishedGig, "draft");
-    else offerDraft();
+    // Phase 4: the song is NOT saved or reset between gigs — it keeps accumulating. Just draft a Muse;
+    // startGig() snaps the write head to the next gig's section (new key) and the song grows.
+    offerDraft();
   }
   function loseRun(){ maybeAdvance(); screen="lose"; render(); }   // gate may still be met on a loss; loop keeps playing
   // Campaign: if this run met the frontier movement's gate, unlock the next movement (persisted).
@@ -1120,10 +1188,12 @@
     const g = curGig();
     const keyRoot = g.key[0];
     const rows = loopRowMidis();
-    const N = LOOP_BARS;
+    const N = loopLenNow();                       // Phase 4: render the "song so far" (unlocked sections)
+    const secStart = run.gigIdx * SECTION_BARS;   // the section you're composing now (writable); earlier = locked
     // rhythm (M2+): subdivide each bar into BEATS sub-columns so the loop grid shows WHEN notes hit.
     const sub = termOn("groove") ? BEATS : 1;
     gridSub = sub;   // the playhead reads this to sweep beat-by-beat
+    const colW = sub>1 ? 13 : 22;   // fixed px/sub-column so a long, modulating song scrolls instead of squishing
     // precompute each bar's lit (midi:beat) cells once (mirrors how it sounds), + the write-figure onsets for the ghost
     const hitSets = run.loop.bars.map(barHits);
     const wfOnsets = sub>1 ? figOnsets(run.curFig||DEFAULT_FIG) : [0];
@@ -1139,15 +1209,18 @@
       const fits = fitsSelection(pc, g.key, selPcs);
       const rc = ["lgrow"];
       if(pc===keyRoot) rc.push("tonic");
-      else if(!inKey) rc.push("offkey");   // e.g. F in G-major — teaches "out of key"
+      else if(!inKey) rc.push("offkey");   // greyed against the CURRENT section's key (the active gig)
       else if(fits) rc.push("good");       // in-key + consonant w/ pick (tonic keeps its gold label)
       grid += `<div class="${rc.join(" ")}">${letter}${oct}</div>`;
       for(let b=0;b<N;b++){
+        const locked = b < secStart || b >= secStart+SECTION_BARS;   // outside the section you're composing
         for(let k=0;k<sub;k++){
           const on = sub>1 ? hitSets[b].has(m+":"+k) : (run.loop.bars[b] && run.loop.bars[b].cards.some(c=>c.midi===m));
           const ghost = b===wp && selMidis.has(m) && (sub>1 ? wfOnsets.includes(k) : true);  // pick lands here (+ its rhythm)
           const cl = ["lgcell"];
           if(sub>1 && k===0) cl.push("beat0");   // faint bar-group separator
+          if(b%SECTION_BARS===0 && b>0 && k===0) cl.push("secstart");   // heavier divider between gig sections
+          if(locked) cl.push("locked");
           if(fits) cl.push("good");
           if(on) cl.push("on");
           if(ghost) cl.push("ghost");
@@ -1164,15 +1237,25 @@
       const bar = run.loop.bars[b];
       const cl = ["lglabel"];
       if(!bar) cl.push("empty");
+      if(b < secStart || b >= secStart+SECTION_BARS) cl.push("locked");
+      if(b%SECTION_BARS===0 && b>0) cl.push("secstart");
       if(b===run.loop.writePos) cl.push("writecol");
       grid += `<div class="${cl.join(" ")}" data-bar="${b}"${sub>1?` style="grid-column:span ${sub}"`:""}>${bar?barLabel(bar.cls):"·"}</div>`;
     }
+    // section/key strip — the song modulating through its unlocked sections (active one lit gold)
+    const nSec = N / SECTION_BARS, activeSec = Math.min(run.gigIdx, GIGS.length-1);
+    const secNum = ["①","②","③","④","⑤","⑥","⑦"];
+    let secbar = "";
+    for(let s=0;s<nSec;s++){
+      secbar += `<span class="lsec${s===activeSec?" active":""}">${secNum[s]||(s+1)} ${esc(GIGS[s].keyName.replace(/ (major|minor)/,""))}</span>`;
+    }
     return `<div class="loopwrap">
       <div class="lhead">
-        <span>YOUR LOOP — <b>${filledBars()}/${LOOP_BARS}</b> bars · each Play fills the <b>gold</b> column${selMidis.size?" · ringed cells = where your pick lands":""} · <span style="color:var(--good)">green rows</span> still sound good with your pick</span>
+        <span>YOUR SONG — <b>${filledBars()}</b> bars · one loop across all gigs${nSec>1?", modulating":""} · each Play fills the <b>gold</b> column${selMidis.size?" · ringed cells = where your pick lands":""}</span>
         <span class="lhead-ctl">${tempoSliderHTML(true)}<button class="btn ghost" id="b-loop" style="padding:4px 10px;font-size:11px">${loopOn()?"⏸ pause":"▶ play"}</button></span>
       </div>
-      <div class="loopgrid" style="grid-template-columns:44px repeat(${N*sub},1fr)">${grid}</div>
+      <div class="lsecbar">${secbar}</div>
+      <div class="loopgrid" style="grid-template-columns:44px repeat(${N*sub},${colW}px)">${grid}</div>
     </div>`;
   }
 
@@ -1215,7 +1298,11 @@
     document.getElementById("b-disc").addEventListener("click", discardHand);
     // loop grid: click any cell/label in a column to aim the write head there (refine/overwrite it)
     $game.querySelectorAll(".loopgrid [data-bar]").forEach(el=>{
-      el.addEventListener("click", ()=>{ run.loop.writePos = +el.dataset.bar; renderGig(); });
+      el.addEventListener("click", ()=>{
+        const b = +el.dataset.bar, secStart = run.gigIdx*SECTION_BARS;
+        if(b < secStart || b >= secStart+SECTION_BARS) return;   // aim only within the current gig's section
+        run.loop.writePos = b; renderGig();
+      });
     });
     // rhythm: set which beats the next hand plays on (re-render updates the preview's groove bonus + ghost)
     $game.querySelectorAll(".figbtn").forEach(el=> el.addEventListener("click", ()=>{
@@ -1311,7 +1398,8 @@
       btns.push(`<button class="btn ghost dev-mv${n===cur?" on":""}" data-mv="${n}" title="${MOVEMENTS[n].element}" style="padding:4px 9px;font-size:11px${n===cur?";color:var(--good);border-color:var(--good)":""}">M${n}</button>`);
     }
     return `<div class="cta" style="justify-content:center;gap:6px;flex-wrap:wrap">
-      <span class="hint" style="align-self:center">DEV — set movement:</span>${btns.join("")}</div>`;
+      <span class="hint" style="align-self:center">DEV — set movement:</span>${btns.join("")}
+      <button class="btn ghost" id="dev-reset" title="Wipe all saved progress back to the beginning" style="padding:4px 9px;font-size:11px;color:var(--bad);border-color:var(--bad)">↺ Reset all</button></div>`;
   }
   function renderHome(){
     const capped = atCap();
@@ -1340,6 +1428,8 @@
     $game.querySelectorAll(".dev-mv").forEach(el=> el.addEventListener("click", ()=>{
       persist.progress.movement = Math.max(1, Math.min(MAX_MOVEMENT, +el.dataset.mv)); savePersist(); renderHome();
     }));
+    const dr = document.getElementById("dev-reset");
+    if(dr) dr.addEventListener("click", resetAll);
     wireTempoSlider();
     wireSetlist();
   }
@@ -1360,7 +1450,8 @@
     $overlay.innerHTML = `
       <div class="overlay"><div class="modal">
         <h2>Draft a Muse</h2>
-        <p>Pick one to keep for the rest of the run — before Gig ${beforeGig} (${GIGS[run.gigIdx].keyName}).</p>
+        <p>Pick one to keep for the rest of the run — before Gig ${beforeGig}. Your song keeps playing and now
+           <b>modulates to ${GIGS[run.gigIdx].keyName}</b> for its next section.</p>
         <div class="draftrow">
           ${draftChoices.map(m=>`<div class="draftcard" data-id="${m.id}"><div class="mn">${m.name}</div><div class="md">${m.desc}</div></div>`).join("")}
         </div>
@@ -1389,20 +1480,20 @@
 
   function renderSaveOverlay(){
     const ps = pendingSave; if(!ps){ return; }
-    const g = GIGS[ps.gigIdx];
-    const rep = songReport(ps.bars, g.key);
+    const rep = songReport(ps.bars, sectionKey);   // per-section keys (the song modulates)
     const suggested = suggestName(ps.bars);
+    const kn = modKeyName();
     $overlay.innerHTML = `
       <div class="overlay"><div class="modal">
         <h2>💾 Save this song?</h2>
-        <p>Keep the loop you built in Gig ${ps.gigIdx+1} (${esc(g.keyName)}) — <b>${rep.filledCount}/${LOOP_BARS}</b> bars.
+        <p>Keep the whole song you built this run (${esc(kn)}) — <b>${rep.filledCount}/${LOOP_BARS}</b> bars across all three gigs.
            It'll live in your <b>Setlist</b> on the home screen.</p>
         <div class="savename">
           <label for="save-name">NAME YOUR SONG</label>
           <input id="save-name" value="${esc(suggested)}" maxlength="40" autocomplete="off" spellcheck="false" />
           <div class="namehint">suggestion: <b>${esc(suggested)}</b> — a Noteling blend of your top notes; edit freely</div>
         </div>
-        ${reportCardHTML(rep, g.keyName)}
+        ${reportCardHTML(rep, kn)}
         <div class="cta">
           <button class="btn ghost" id="b-audition">${loopOn()?"⏸ Pause":"▶ Hear it"}</button>
           <button class="btn play" id="b-savesong">Save &amp; continue</button>
@@ -1412,7 +1503,7 @@
     document.getElementById("b-audition").addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderSaveOverlay(); });
     document.getElementById("b-savesong").addEventListener("click", ()=>{
       const nm = document.getElementById("save-name").value;
-      const s = saveSong(ps.gigIdx, ps.bars, nm);
+      const s = saveSong(ps.bars, nm);
       toast('Saved "'+s.name+'" to your Setlist');
       afterSave();
     });
@@ -1424,8 +1515,7 @@
   function renderEndOverlay(won){
     renderGigStatic();   // keep the loop grid visible behind the overlay (win or lose) so the playhead sweeps as it plays
     const runsLeft = runsLeftToday();
-    const finishedGig = won ? GIGS.length-1 : run.gigIdx;   // the gig whose loop is still grooving
-    const alreadySaved = !!(run.saved && run.saved[finishedGig]);
+    const alreadySaved = !!run.saved;          // Phase 4: one whole-run song per run
     const canSave = filledBars() > 0;
     $overlay.innerHTML = `
       <div class="overlay"><div class="modal center">
@@ -1460,7 +1550,7 @@
     const replay = document.getElementById("b-replay");
     if(replay) replay.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderEndOverlay(won); });
     const savebtn = document.getElementById("b-savesong");
-    if(savebtn) savebtn.addEventListener("click", ()=> offerSave(finishedGig, won?"win":"lose"));
+    if(savebtn) savebtn.addEventListener("click", ()=> offerSave(won?"win":"lose"));
     document.getElementById("b-home").addEventListener("click", ()=>{ stopLoop(); galleryPlayId=null; screen="home"; run=null; render(); });
   }
   function renderGigStatic(){ /* keep the last gig board visible behind the end overlay (win or lose) so the loop's playhead keeps sweeping */ if(run) renderGig(); }
