@@ -411,21 +411,42 @@ Codex in code or is a new view; and the deferred full retro-pixel reskin.
 
 ---
 
-## Progression — the seven-movement campaign (**Phases 0–1 built; M2+ planned**)
+## Progression — the seven-movement campaign (**Phases 0–2 built; Rhythm depth + Structure planned**)
 
-> **Status: designed, and Phases 0 (scaffold) + 1 (Movement 1 + gate/advancement engine) are now built**
-> in `mujicians.html`; the deeper movement *content* is still planned (Phases 2–4 below). A long-arc
-> progression system proposed by the dev, grounded in the *Mujicians* graphic-novel structure. It **layers
-> on top of** (doesn't revert) the current full-feature run — today's game is preserved as the "everything
-> unlocked" **Free Play** mode (see below). Numbers, gate counts, and scoring terms are placeholders.
+> **Status: designed, and Phases 0 (scaffold) + 1 (Movement 1 + gate/advancement engine) + 2 (the whole
+> M2→M7 arc walkable, thin) are now built** in `mujicians.html`; the deeper *content* still planned is the
+> heavy Rhythm subsystem (Phase 3) and real cross-gig Structure scoring (Phase 4). A long-arc progression
+> system proposed by the dev, grounded in the *Mujicians* graphic-novel structure. It **layers on top of**
+> (doesn't revert) the current full-feature run — today's game is preserved as the "everything unlocked"
+> **Free Play** mode (see below). Numbers, gate counts, and scoring terms are placeholders.
+>
+> **Built (Phase 2 — the middle movements, thin):** every declared scoring term is now wired into `score()`
+> — **groove** (M2, a flat "kept the beat" +1 placeholder until Phase 3's sub-bar timing), **dynamic**
+> (M3, a contrast bonus for varying loudness across the loop), **melodic** (M4, +1 interval / +2 run for
+> stepwise motion), **timbre** (M6, +1 mult per extra distinct instrument voice), **form** (M7, a thin
+> restatement bonus — repeating a structure already in the loop — placeholder until cross-gig accumulation).
+> **M3 Dynamics is done properly:** a per-hand **p / mf / f** segmented control (`dynControlHTML`, shown
+> whenever the `dynamic` term is live) sets the loudness of the next hand; it drives note **gain** via a
+> velocity multiplier on `_tone`/`soundCards`/`scheduleBar` (each loop bar remembers its `dyn`, so playback
+> and saved songs reproduce it), and varying it earns the contrast bonus. **M4 melody plays as a sequence:**
+> `handIsSequenced()` arpeggiates a hand when the movement is melodic-but-not-yet-harmonic (so M4 = notes in
+> a row; M5+ = stacked chords). **M6 unlocks guitar+bass** (already via `instrumentsFor`, `INSTRUMENT_UNLOCK_MV=6`).
+> **Thin real per-mechanic gates** replace the old "clear the Set" placeholders for M3–M6: M3 = play soft +
+> medium + loud; M4 = log `GATE_INTERVALS` intervals + a scale run; M5 = log `GATE_TRIADS` consonant triads
+> + a tonic cadence; M6 = play `GATE_BLENDS` multi-instrument blends. M2 stays a "keep the beat, play
+> `GATE_HANDS` hands" count (real groove gate waits on Phase 3), and M7 stays "clear the Set" (form scoring
+> waits on Phase 4's cross-gig loop). All gate trackers live on `run` and feed `gateStatus(mv)`. Flat
+> campaign thresholds and the Free-Play `GIGS` thresholds were **retuned** as terms switched on (tunable).
 >
 > **Built (Phase 0 scaffold):** a `MOVEMENTS` registry (7 movements, each with `maxSelect`, campaign
 > threshold `thr`, and active scoring `terms`); `persist.progress = {movement, gates}` (additive to
 > `mujicians-save-v2`, default `{movement:1}`); `startRun(mode)` sets `run.movement` from the mode
 > (`"campaign"` → the reached movement, `"free"` → 7); `maxSelect()`/`termOn()` gate the select cap and
 > `score()`'s terms; a **Home mode select** (Campaign · Movement N vs Free Play, both under the daily cap);
-> an in-gig HUD badge. Only existing terms are wired — `'inkey'` (M1+), `'consonant'`/`'resolves'` (M5+);
-> the rest are declared no-ops until their phase. Free Play (movement 7) is byte-for-byte today's game.
+> an in-gig HUD badge. *(As of Phase 2 every term is now wired; at Phase 0 only `'inkey'`/`'consonant'`/
+> `'resolves'` were.)* Free Play (movement 7) = all terms on — it's the campaign's end state, so as Phase 2
+> added terms it grew past the M1-era formula (no longer "byte-for-byte" the pre-progression game, by design:
+> "score grows, never rewrites").
 >
 > **Built (Phase 1 — Movement 1 + the gate engine):**
 > - **Deck restriction by movement** — `buildDeck(mv)` uses `instrumentsFor(mv)`: **piano only until M6**
@@ -436,8 +457,12 @@ Codex in code or is a new view; and the deferred full retro-pixel reskin.
 >   M5 = 520, M6 = 620) so each chapter is winnable with that movement's toolset; Free Play / M7 keep the
 >   escalating `GIGS` thresholds (650/1150/1800). Wired into the win-check, progress bar, and scoreline.
 > - **The gate/advancement engine** — `gateStatus(mv)` returns the Codex-style objective. **M1 is the real
->   one: play every in-key letter (all 7 note names) at least once this run** (`run.gateLetters`, logged in
->   `playHand`). M2–M6 are **placeholder gates** ("clear the Set") until their mechanics land. `maybeAdvance()`
+>   one: play every in-key letter (all 7 note names)** — and this progress **persists across runs**
+>   (`persist.progress.gates.pitch`, an additive letter list; `collectPitchLetter` in `playHand`, read by
+>   `pitchLettersGot`), so a fresh run keeps prior letters instead of resetting to 0/7. It's surfaced as a
+>   **hangman row** (`pitchTrackerHTML`) — seven underscore slots in ROYGBIV order that reveal their colored
+>   letter once played in-key — shown in the in-gig HUD, on the end overlay, and on Home under the Campaign
+>   button. M2–M6 are **placeholder gates** ("clear the Set") until their mechanics land. `maybeAdvance()`
 >   (called from the final `winGig` and from `loseRun` — the gate can be met on a loss too) bumps
 >   `persist.progress.movement` when the frontier movement's gate is met. The in-gig HUD shows live gate
 >   progress; the **end overlay** shows a "🎓 Movement complete — unlocked M_n_" banner, or the gate still
@@ -589,15 +614,22 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
 - **Phase 1 — Movement 1 (Pitch) + the gate engine. ✅ BUILT.** `maxSelect:1` (from Phase 0); single-note
   in-key scoring; **starting deck restricted to piano** (`instrumentsFor`, guitar/bass held for M6);
   movement-scaled flat campaign thresholds (`gigThreshold()`, M1 = 40 so it's winnable); the reusable
-  **gate/advancement engine** (`gateStatus`/`maybeAdvance`) — M1's real gate is "play all 7 in-key letters,"
+  **gate/advancement engine** (`gateStatus`/`maybeAdvance`) — M1's real gate is "play all 7 in-key letters"
+  (**persisted across runs** in `persist.progress.gates.pitch`, shown as a hangman row via `pitchTrackerHTML`),
   M2–M6 are placeholder "clear the Set" gates. HUD gate progress + end-overlay "Movement complete" banner.
-- **Phase 2 — Thin-slice the middle movements (walk the whole arc).** Get M2→M7 *walkable* with minimal
-  depth: **M2 Rhythm** placeholder (downbeat only, groove stubbed); **M3 Dynamics** done properly (per-hand
-  p/mf/f gain + contrast bonus — low lift); **M4 Melody** (`MAX_SELECT→3` in sequence, interval/run scoring
-  on); **M5 Harmony** (`MAX_SELECT→5`, wire in today's existing consonance/cadence/flush stack); **M6
-  Timbre** (unlock guitar+bass, blend bonus); **M7 Structure** thin form bonus. ⚠️ Real M7 depends on the
-  unbuilt "accumulate one loop across all 3 gigs" — ship a placeholder now, flag the dependency. *Net: full
-  7-chapter campaign playable end-to-end — the "does progression feel good" checkpoint.*
+- **Phase 2 — Thin-slice the middle movements (walk the whole arc). ✅ BUILT.** M2→M7 now *walkable*:
+  **M2 Rhythm** placeholder (downbeat only, groove = flat "kept the beat" +1); **M3 Dynamics** done properly
+  (per-hand **p/mf/f** control → note gain via a velocity multiplier + a dynamic-contrast bonus for varying
+  it across the loop; each bar remembers its `dyn` so playback/saved songs reproduce it); **M4 Melody**
+  (`maxSelect→3`, hands **arpeggiate as a sequence** via `handIsSequenced`, interval/run melodic scoring on);
+  **M5 Harmony** (`maxSelect→5`, existing consonance/cadence/flush stack); **M6 Timbre** (guitar+bass unlock
+  via `instrumentsFor`, +1 mult per extra voice blend); **M7 Structure** thin restatement form bonus.
+  **Thin real per-mechanic gates** for M3–M6 (M2 = hand-count, M7 = clear-the-Set) forcing each mechanic.
+  Flat campaign + Free-Play thresholds retuned. ⚠️ Real M7 form still depends on the unbuilt "accumulate one
+  loop across all 3 gigs" (Phase 4); the real groove gate/scoring depends on Phase 3's sub-bar timing —
+  both shipped as flagged placeholders. *Net: full 7-chapter campaign playable end-to-end.*
+  **Future (dev):** dynamics should eventually gain explicit **symbols** (crescendo/decrescendo, accents)
+  as their own figure-like picks — for now it's the simple per-hand p/mf/f marking.
 - **Phase 3 — Deepen Rhythm (the heavy subsystem).** Sub-bar grid (`BEATS` sub-columns); rhythm-figure
   deck; scheduler beat-offsets reusing the `barQueue` onset-queue playhead → beat queue; real groove
   scoring + rests. Stage: fixed figures → draftable figures → syncopation.
@@ -749,17 +781,23 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   (`MJ1:` share code), delete**, plus **Import** a pasted code. Full design + code map in the **Save a
   Song** section above.
 
-- **Progression campaign — Phases 0–1 (of the 7-movement arc).** A `MOVEMENTS` registry gates the select
+- **Progression campaign — Phases 0–2 (of the 7-movement arc).** A `MOVEMENTS` registry gates the select
   cap (`maxSelect()`), scoring terms (`termOn()`), the deck's instruments (`instrumentsFor()` — piano-only
   until M6), and each movement's flat campaign threshold (`gigThreshold()`) by the run's movement. **Home
-  offers Campaign (at your reached movement, default M1) vs Free Play (all unlocked = today's game)**, both
-  under the daily cap. **Movement 1 is fully playable**: single notes, piano deck, threshold 40, and a real
-  advancement gate (`gateStatus`/`maybeAdvance`) — play all 7 in-key letters to unlock M2 (persisted in
-  `persist.progress.movement`); HUD gate meter + end-overlay unlock banner. M2–M6 gates are placeholders
-  ("clear the Set") until their mechanics arrive. Full design + phase plan in the **Progression** section.
+  offers Campaign (at your reached movement, default M1) vs Free Play (all unlocked)**, both under the daily
+  cap. **The whole M1→M7 arc is playable end-to-end:** each movement adds one scoring term (in-key → groove
+  → dynamics → melody → harmony → timbre → form) and one mechanic — single notes (M1) → a per-hand **p/mf/f
+  dynamics** control (M3) → 3-card **melodic sequences** (M4) → 5-card **harmony** stacks (M5) → guitar+bass
+  **timbre** blends (M6). Each has a real advancement gate (`gateStatus`/`maybeAdvance`, persisted in
+  `persist.progress.movement`): M1 = play all 7 in-key letters (**progress persists across runs**, shown as
+  a hangman row of 7 slots that reveal each colored letter as it's played — in the HUD, end overlay, and on
+  Home), M3 = all 3 dynamics, M4 = intervals+run, M5 = triads+cadence, M6 = multi-instrument blends; M2
+  (hand-count) and M7 (clear-the-Set) are flagged placeholders until Phase 3 (rhythm) and Phase 4 (cross-gig
+  form). HUD gate meter + end-overlay unlock banner. Full design + phase plan in the **Progression** section.
 
-**Not yet (still plan):** the deeper campaign movement *content* (Phases 2–4: M2 Rhythm sub-bar subsystem,
-M3 Dynamics, M4 Melody depth, real M5–M7 gates, cross-gig loop for Structure); accidentals/more
+**Not yet (still plan):** the deep campaign subsystems (Phase 3 = M2 Rhythm sub-bar timing/figures/rests +
+real groove scoring; Phase 4 = cross-gig loop accumulation for real M7 Structure form scoring, boss-gig
+capstones); explicit **dynamics symbols** (crescendo/accents) beyond the p/mf/f marking; accidentals/more
 instruments & drums, Étude/Accidental cards, a coin-based
 shop (draft is free for now), antes/boss-gig constraints, the shared **Daily-Set** seed, set-playback
 export, and a bespoke visual identity (current dark-neon skin is a placeholder; the ROYGBIV cards are
