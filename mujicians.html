@@ -509,25 +509,29 @@
     return { cls, chips, mult, applause, lines };
   }
 
-  /* ================= Muses (the build engine) ================= */
+  /* ================= Muses (the build engine) =================
+     `minMv` = the earliest movement whose mechanic a Muse can actually pay out on, so the draft
+     never offers a dead Muse (e.g. Arpeggiator's scale-run reward is impossible until Melody unlocks
+     multi-card sequences at M4; Cadence/Virtuoso need Harmony's chords at M5; Low End needs the bass
+     instrument, which unlocks at Timbre/M6). Free Play (M7) sees them all. See offerDraft(). */
   const MUSE_POOL = [
-    { id:"perfectpitch", name:"Perfect Pitch", short:"in-key",  desc:"In-key notes give +2 extra chips each.",
+    { id:"perfectpitch", name:"Perfect Pitch", short:"in-key",  minMv:1, desc:"In-key notes give +2 extra chips each.",
       onNote:(c,g)=> g.key.includes(c.pc)?2:0 },
-    { id:"consonance",   name:"Consonance",    short:"consonant",desc:"Consonant hands get +2 mult.",
+    { id:"consonance",   name:"Consonance",    short:"consonant",minMv:4, desc:"Consonant hands get +2 mult.",
       onHand:(x)=> x.consonant?{mult:2}:null },
-    { id:"lowend",       name:"Low End",       short:"bass",    desc:"Bass-instrument notes give +4 chips each.",
+    { id:"lowend",       name:"Low End",       short:"bass",    minMv:INSTRUMENT_UNLOCK_MV, desc:"Bass-instrument notes give +4 chips each.",
       onNote:(c)=> c.instId==="bass"?4:0 },
-    { id:"cadence",      name:"Cadence",       short:"tonic",   desc:"A tonic triad/7th gives +4 mult.",
+    { id:"cadence",      name:"Cadence",       short:"tonic",   minMv:5, desc:"A tonic triad/7th gives +4 mult.",
       onHand:(x)=> ((x.structType==="triad"||x.structType==="seventh") && x.rootPc===x.gig.key[0])?{mult:4}:null },
-    { id:"arpeggiator",  name:"Arpeggiator",   short:"run",     desc:"Scale runs give +3 mult.",
+    { id:"arpeggiator",  name:"Arpeggiator",   short:"run",     minMv:4, desc:"Scale runs give +3 mult.",
       onHand:(x)=> x.structType==="run"?{mult:3}:null },
-    { id:"virtuoso",     name:"Virtuoso",      short:"seventh", desc:"Seventh chords give +3 mult.",
+    { id:"virtuoso",     name:"Virtuoso",      short:"seventh", minMv:5, desc:"Seventh chords give +3 mult.",
       onHand:(x)=> x.structType==="seventh"?{mult:3}:null },
     // Hand-size upgrades (Balatro-style): grow the hand you draw. Repeatable, so they
     // can be drafted again each gig and stack; applied in pickMuse, not in score().
-    { id:"extrahand",    name:"Extra Hand",    short:"+1 hand", desc:"Draw +1 more card each hand. Repeatable — stacks.",
+    { id:"extrahand",    name:"Extra Hand",    short:"+1 hand", minMv:1, desc:"Draw +1 more card each hand. Repeatable — stacks.",
       handSize:1, repeatable:true },
-    { id:"bighand",      name:"Big Hand",      short:"+2 hand", desc:"Draw +2 more cards each hand. Repeatable — stacks.",
+    { id:"bighand",      name:"Big Hand",      short:"+2 hand", minMv:1, desc:"Draw +2 more cards each hand. Repeatable — stacks.",
       handSize:2, repeatable:true },
   ];
 
@@ -983,7 +987,9 @@
   let draftChoices = [];
   function offerDraft(){
     const owned = new Set(run.muses.map(m=>m.id));
-    const pool = MUSE_POOL.filter(m=> m.repeatable || !owned.has(m.id));
+    // only offer Muses whose reward can actually pay out at this movement (minMv) and that aren't
+    // already owned (unless repeatable). Free Play (movement 7) clears every minMv, so all appear.
+    const pool = MUSE_POOL.filter(m=> (m.minMv==null || run.movement >= m.minMv) && (m.repeatable || !owned.has(m.id)));
     shuffle(pool);
     draftChoices = pool.slice(0,3);
     if(draftChoices.length === 0){ startGig(); return; }

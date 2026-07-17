@@ -789,6 +789,13 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   are `repeatable:true` — `pickMuse` adds their value to `run.handSize` and, because they're repeatable,
   they can be re-drafted every gig and **stack** (so the hand grows from 4 toward a Balatro-ish ~8). They
   compete with scoring Muses for the same draft slots — a real tradeoff.
+  **Movement-gated draft:** each Muse carries a `minMv` (earliest movement its reward can actually pay out),
+  and `offerDraft` only offers Muses that clear `run.movement` — so the campaign never hands you a dead Muse.
+  Since a Muse's `onHand`/`onNote` fires **per hand** (it sees only the just-played hand's classification,
+  not the whole loop), a chord/run/consonance Muse can never trigger while `maxSelect` is 1: Consonance &
+  Arpeggiator need Melody (M4) multi-card sequences, Cadence & Virtuoso need Harmony (M5) chords, and Low
+  End needs the bass instrument (Timbre/M6). Pitch (M1) therefore drafts from just Perfect Pitch + the two
+  hand-size Muses; the pool grows as chapters unlock, and **Free Play (M7)** sees the whole pool.
 - **Hard daily cap.** `MAX_RUNS_PER_DAY` (3); `persist.runsUsed` resets when the local date rolls over.
   When capped, the UI points at Pitch Bird / "come back tomorrow." **DEV override** (`DEV`): unlimited
   runs, on via **`?dev`** in the URL or toggled with **Ctrl/Cmd+Shift+D** (persisted in
