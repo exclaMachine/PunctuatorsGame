@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<!--
+  Mujicians — music-theory grid-composer.
+  Slice 1: pitch×beat grid + Keys lane + chord validator + "complete the chord" puzzle.
+  Vanilla, single-file, offline. Web Audio for sound (no assets, no deps).
+  Design source of truth: docs/mujicians.md
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mujicians</title>
+<style>
+  :root{
+    --bg:#0e1020; --panel:#171a2e; --edge:#2b3054; --ink:#e7e9ff;
+    --dim:#8890c0; --accent:#4de1c8; --gold:#f5c542; --root:#f5852c;
+    --note:#4de1c8; --target:#26305c; --beat:#3a4488; --bad:#e0567a;
+    --lane-keys:#5a6bff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:radial-gradient(120% 120% at 50% 0%,#1a1f3d 0%,var(--bg) 60%);color:var(--ink);
+    font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:18px 16px 48px}
+  header h1{margin:0;font-size:26px;letter-spacing:2px;
+    background:linear-gradient(90deg,var(--accent),var(--lane-keys),var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  header p{margin:4px 0 0;color:var(--dim);font-size:13px}
+
+  .puzzle{margin:18px 0 12px;padding:12px 14px;background:var(--panel);border:1px solid var(--edge);border-radius:10px}
+  .puzzle .task{font-size:15px}
+  .puzzle .task b{color:var(--gold)}
+  .puzzle .status{margin-top:6px;font-size:13px;color:var(--dim);min-height:18px}
+  .puzzle .status.ok{color:var(--accent)}
+  .puzzle .status.bad{color:var(--bad)}
+
+  .stage{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;overflow-x:auto}
+  .grid{display:grid;gap:3px;min-width:520px}
+  .cell{height:24px;border-radius:4px;cursor:pointer;border:1px solid transparent;background:#20243f;
+    transition:background .06s,transform .04s}
+  .cell:hover{background:#2a2f52}
+  .cell.on{background:var(--note);border-color:#bff8ee;box-shadow:0 0 8px rgba(77,225,200,.5)}
+  .cell.on.root{background:var(--root);border-color:#ffd2ab;box-shadow:0 0 8px rgba(245,133,44,.5)}
+  .cell.locked{cursor:default}
+  .col-target{background:var(--target)}
+  .col-target.on{background:var(--note)}
+  .col-target.on.root{background:var(--root)}
+  .cell.beat{outline:2px solid var(--beat);outline-offset:-1px}
+  .rowlabel{display:flex;align-items:center;justify-content:flex-end;gap:6px;padding-right:8px;
+    font-size:11px;color:var(--dim);height:24px;white-space:nowrap}
+  .rowlabel .deg{color:var(--ink);opacity:.55;font-size:10px}
+  .rowlabel.tonic{color:var(--gold)}
+
+  .controls{display:flex;gap:8px;align-items:center;margin:12px 0}
+  button.btn{font:inherit;font-size:13px;padding:8px 14px;border-radius:8px;cursor:pointer;
+    background:var(--lane-keys);color:#fff;border:1px solid #7a88ff}
+  button.btn.ghost{background:transparent;color:var(--dim);border-color:var(--edge)}
+  button.btn:active{transform:translateY(1px)}
+
+  .codex{margin-top:18px}
+  .codex h2{font-size:13px;letter-spacing:1px;color:var(--dim);margin:0 0 8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:12px;padding:5px 9px;border-radius:20px;background:#232848;border:1px solid var(--edge)}
+  .chip.new{background:#20402f;border-color:#2f7a4f;color:#9ff5c0}
+  .chips .empty{color:var(--dim);font-size:12px}
+
+  .level{display:flex;align-items:center;gap:10px;margin-top:12px}
+  .level .lv{font-size:13px;color:var(--gold);white-space:nowrap}
+  .xpbar{flex:1;max-width:240px;height:10px;border-radius:6px;background:#232848;border:1px solid var(--edge);overflow:hidden}
+  .xpbar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--lane-keys));transition:width .25s}
+  .level .xp{font-size:11px;color:var(--dim);white-space:nowrap}
+
+  .hint{margin-top:14px;color:var(--dim);font-size:12px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>MUJICIANS</h1>
+    <p>Build music on the grid — place notes to complete each chord. (Slice 1: Keys lane · C major)</p>
+    <div class="level" id="level">
+      <span class="lv" id="lv">Lv 1</span>
+      <span class="xpbar"><i id="xpfill"></i></span>
+      <span class="xp" id="xptext">0 / 60 XP</span>
+    </div>
+  </header>
+
+  <div class="puzzle">
+    <div class="task" id="task">—</div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="stage">
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="play">▶ Play</button>
+    <button class="btn ghost" id="clear">Clear extras</button>
+    <button class="btn ghost" id="skip">Skip ▸</button>
+    <button class="btn ghost" id="reset" title="Clear saved progress">Reset</button>
+  </div>
+
+  <div class="codex">
+    <h2>CODEX — chords discovered</h2>
+    <div class="chips" id="codex"><span class="empty">None yet — solve a puzzle to inscribe a chord.</span></div>
+  </div>
+
+  <p class="hint">
+    Click a cell in the highlighted column to add a note. The orange note is the chord's root (locked).
+    Add the missing notes so the column spells the requested chord — any octave of the right note counts.
+    Press <b>Play</b> to hear the grid loop.
+  </p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- musical setup ---------- */
+  const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+  const COLS = 8;
+  const TARGET_COL = 3;                 // the column each puzzle asks you to fill
+
+  // Rows = C-major diatonic pitches, high → low (top of grid = highest pitch).
+  // MIDI 84 (C6) down to 60 (C4): the seven white keys across two octaves.
+  const ROW_MIDIS = [84,83,81,79,77,76,74,72,71,69,67,65,64,62,60];
+  const DEGREE = {0:1,2:2,4:3,5:4,7:5,9:6,11:7};   // pitch-class → scale degree in C major
+
+  const CHORD_IV = { major:[0,4,7], minor:[0,3,7], diminished:[0,3,6], augmented:[0,4,8] };
+  const TEMPLATES = Object.keys(CHORD_IV).map(q => ({ q, iv: CHORD_IV[q] }));
+
+  // The seven diatonic triads of C major, each with a root MIDI to pre-place.
+  const PUZZLES = [
+    { root:"C", rootMidi:60, quality:"major" },
+    { root:"D", rootMidi:62, quality:"minor" },
+    { root:"E", rootMidi:64, quality:"minor" },
+    { root:"F", rootMidi:65, quality:"major" },
+    { root:"G", rootMidi:67, quality:"major" },
+    { root:"A", rootMidi:69, quality:"minor" },
+    { root:"B", rootMidi:71, quality:"diminished" },
+  ];
+
+  /* ---------- grid state ---------- */
+  const grid = Array.from({length:COLS}, () => new Set());   // grid[col] = Set of MIDI notes
+  const cells = Array.from({length:COLS}, () => []);          // cells[col][rowIndex] = <div>
+  let puzzleIdx = 0;
+  let solved = false;
+  const codex = new Set();
+  let xp = 0;
+  const SAVE_KEY = "mujicians-save-v1";
+
+  const $grid = document.getElementById("grid");
+  const $task = document.getElementById("task");
+  const $status = document.getElementById("status");
+  const $codex = document.getElementById("codex");
+  const $lv = document.getElementById("lv");
+  const $xpfill = document.getElementById("xpfill");
+  const $xptext = document.getElementById("xptext");
+
+  /* ---------- audio ---------- */
+  let AC = null;
+  function audio(){
+    if(!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+    if(AC.state === "suspended") AC.resume();
+    return AC;
+  }
+  function midiToFreq(m){ return 440 * Math.pow(2, (m-69)/12); }
+  function playMidi(m, dur=0.35, when=0){
+    const ac = audio(), t = ac.currentTime + when;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = "triangle";
+    o.frequency.value = midiToFreq(m);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.22, t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0008, t+dur);
+    o.connect(g).connect(ac.destination);
+    o.start(t); o.stop(t+dur+0.05);
+  }
+
+  /* ---------- chord naming (the validator) ---------- */
+  function colPitchClasses(col){
+    return [...new Set([...grid[col]].map(m => m % 12))].sort((a,b)=>a-b);
+  }
+  function nameChord(pcs){
+    if(pcs.length !== 3) return null;
+    const set = new Set(pcs);
+    for(const root of pcs){
+      for(const t of TEMPLATES){
+        if(t.iv.every(i => set.has((root+i)%12))){
+          return { root, quality:t.q, name: NOTE_NAMES[root] + " " + t.q };
+        }
+      }
+    }
+    return null;
+  }
+  function targetPCs(pz){
+    const rootPc = pz.rootMidi % 12;
+    return new Set(CHORD_IV[pz.quality].map(i => (rootPc+i)%12));
+  }
+  function setEquals(a,b){ return a.size===b.size && [...a].every(x=>b.has(x)); }
+
+  /* ---------- build the grid DOM ---------- */
+  function buildGrid(){
+    $grid.style.gridTemplateColumns = `86px repeat(${COLS}, 1fr)`;
+    $grid.innerHTML = "";
+    ROW_MIDIS.forEach((m, r) => {
+      const pc = m % 12;
+      const label = document.createElement("div");
+      label.className = "rowlabel" + (pc===0 ? " tonic" : "");
+      label.innerHTML = `${NOTE_NAMES[pc]}${Math.floor(m/12)-1} <span class="deg">${DEGREE[pc]}</span>`;
+      $grid.appendChild(label);
+
+      for(let c=0;c<COLS;c++){
+        const cell = document.createElement("div");
+        cell.className = "cell" + (c===TARGET_COL ? " col-target" : "");
+        cell.dataset.col = c; cell.dataset.midi = m;
+        cell.addEventListener("click", () => onCellClick(c, m, cell));
+        cells[c][r] = cell;
+        $grid.appendChild(cell);
+      }
+    });
+  }
+
+  function cellForMidi(col, midi){
+    const r = ROW_MIDIS.indexOf(midi);
+    return r < 0 ? null : cells[col][r];
+  }
+
+  function onCellClick(col, midi, cell){
+    if(cell.classList.contains("locked")) return;
+    if(grid[col].has(midi)){ grid[col].delete(midi); cell.classList.remove("on"); }
+    else { grid[col].add(midi); cell.classList.add("on"); playMidi(midi, 0.4); }
+    if(col === TARGET_COL) checkPuzzle();
+  }
+
+  /* ---------- puzzle flow ---------- */
+  function loadPuzzle(i){
+    // clear everything
+    for(let c=0;c<COLS;c++){ grid[c].clear(); cells[c].forEach(el=>el.className = el.className.replace(/\bon\b|\broot\b|\blocked\b/g,"").trim()); }
+    // re-apply target-column tint (was stripped above for target cells)
+    for(let r=0;r<ROW_MIDIS.length;r++){
+      cells[TARGET_COL][r].classList.add("col-target");
+    }
+    solved = false;
+
+    if(i >= PUZZLES.length){
+      $task.innerHTML = `🎉 <b>All seven diatonic triads inscribed!</b> Free-play the grid, or press Play.`;
+      $status.textContent = ""; $status.className = "status";
+      return;
+    }
+    const pz = PUZZLES[i];
+    // pre-place + lock the root
+    grid[TARGET_COL].add(pz.rootMidi);
+    const rc = cellForMidi(TARGET_COL, pz.rootMidi);
+    if(rc){ rc.classList.add("on","root","locked"); }
+
+    $task.innerHTML = `Build a <b>${pz.root} ${pz.quality}</b> chord — add the missing notes to the highlighted column.`;
+    $status.textContent = `Root ${pz.root} is placed (orange). It's the ${pz.quality==="major"?"1–3–5":pz.quality==="minor"?"1–♭3–5":pz.quality==="diminished"?"1–♭3–♭5":"1–3–♯5"} of a ${pz.quality} triad.`;
+    $status.className = "status";
+  }
+
+  function checkPuzzle(){
+    if(solved) return;
+    const pz = PUZZLES[puzzleIdx];
+    const built = colPitchClasses(TARGET_COL);
+    const named = nameChord(built);
+    const want = targetPCs(pz);
+
+    if(built.length < 3){
+      $status.textContent = "Add another note…";
+      $status.className = "status";
+      return;
+    }
+    if(setEquals(new Set(built), want)){
+      solved = true;
+      const chordName = `${pz.root} ${pz.quality}`;
+      const firstTime = !codex.has(chordName);   // discovery bonus only the first time
+      const gained = firstTime ? 30 : 10;
+      $status.textContent = `✓ ${chordName}! +${gained} XP · inscribed to the Codex.`;
+      $status.className = "status ok";
+      // arpeggiate the solved chord
+      [...grid[TARGET_COL]].sort((a,b)=>a-b).forEach((m,k)=>playMidi(m,0.5,k*0.09));
+      addToCodex(chordName);
+      awardXP(gained);
+      setTimeout(() => { puzzleIdx++; loadPuzzle(puzzleIdx); save(); }, 1300);
+    } else if(named){
+      $status.textContent = `That's ${named.name} — not the ${pz.root} ${pz.quality} we want. Adjust the notes.`;
+      $status.className = "status bad";
+    } else {
+      $status.textContent = "Not a triad yet — those notes don't stack into a chord.";
+      $status.className = "status bad";
+    }
+  }
+
+  function addToCodex(name){
+    const isNew = !codex.has(name);
+    codex.add(name);
+    renderCodex(isNew ? name : null);
+    save();
+  }
+  function renderCodex(justAdded){
+    if(codex.size === 0){
+      $codex.innerHTML = `<span class="empty">None yet — solve a puzzle to inscribe a chord.</span>`;
+      return;
+    }
+    $codex.innerHTML = "";
+    [...codex].forEach(name => {
+      const chip = document.createElement("span");
+      chip.className = "chip" + (name===justAdded ? " new" : "");
+      chip.textContent = name;
+      $codex.appendChild(chip);
+    });
+  }
+
+  /* ---------- xp / level ---------- */
+  // Simple rising curve: each level costs a bit more than the last.
+  function levelInfo(total){
+    let lvl=1, rem=total, need=60;
+    while(rem >= need){ rem -= need; lvl++; need = 40 + lvl*20; }
+    return { level:lvl, into:rem, need };
+  }
+  function renderLevel(){
+    const li = levelInfo(xp);
+    $lv.textContent = "Lv " + li.level;
+    $xpfill.style.width = Math.round(li.into / li.need * 100) + "%";
+    $xptext.textContent = li.into + " / " + li.need + " XP";
+  }
+  function awardXP(n){ xp += n; renderLevel(); save(); }
+
+  /* ---------- persistence ---------- */
+  function save(){
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify({ xp, codex:[...codex], puzzleIdx })); }
+    catch(e){}
+  }
+  function load(){
+    try{
+      const s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
+      if(s){ xp = s.xp||0; (s.codex||[]).forEach(c=>codex.add(c)); puzzleIdx = s.puzzleIdx||0; }
+    }catch(e){}
+  }
+
+  /* ---------- playback ---------- */
+  let playing = false, step = 0, timer = null;
+  const STEP_MS = 380;
+  const $play = document.getElementById("play");
+
+  function clearBeat(){ for(let c=0;c<COLS;c++) cells[c].forEach(el=>el.classList.remove("beat")); }
+  function markBeat(col){ cells[col].forEach(el=>el.classList.add("beat")); }
+
+  function tick(){
+    clearBeat();
+    const col = step % COLS;
+    markBeat(col);
+    grid[col].forEach(m => playMidi(m, 0.32));
+    step++;
+  }
+  function play(){
+    if(playing){ stop(); return; }
+    audio(); playing = true; step = 0;
+    tick(); timer = setInterval(tick, STEP_MS);
+    $play.textContent = "■ Stop";
+  }
+  function stop(){
+    playing = false; clearInterval(timer); timer = null;
+    clearBeat(); $play.textContent = "▶ Play";
+  }
+
+  /* ---------- wiring ---------- */
+  $play.addEventListener("click", play);
+  document.getElementById("clear").addEventListener("click", () => {
+    // clear all NON-target columns (keep the puzzle intact)
+    for(let c=0;c<COLS;c++){
+      if(c===TARGET_COL) continue;
+      grid[c].clear();
+      cells[c].forEach(el=>el.classList.remove("on","root"));
+    }
+  });
+  document.getElementById("skip").addEventListener("click", () => {
+    if(puzzleIdx < PUZZLES.length){ puzzleIdx++; loadPuzzle(puzzleIdx); save(); }
+  });
+  document.getElementById("reset").addEventListener("click", () => {
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    xp = 0; codex.clear(); puzzleIdx = 0;
+    renderCodex(null); renderLevel(); loadPuzzle(0);
+  });
+
+  load();
+  buildGrid();
+  loadPuzzle(puzzleIdx);
+  renderCodex(null);
+  renderLevel();
+})();
+</script>
+</body>
+</html>

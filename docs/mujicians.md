@@ -1,8 +1,10 @@
 # Mujicians — a Balatro-style music-theory deckbuilder
 
-**Entry file:** `mujicians.html` · **Status:** **pivoting to a Balatro-style roguelike deckbuilder.**
-Slice-1 code (a note-placement grid) is **demoted** to a future free-compose side tool; the card game
-below is the new main mode. No card-game code written yet — this doc is the plan.
+**Entry file:** `mujicians.html` · **Status:** **v1 vertical slice built** — a Balatro-style deckbuilder
+(cards = notes, hands = chords/scales, score = theory correctness, hands are sounded). The demoted
+slice-1 note-grid is preserved in **`mujicians-compose.html`** (the future free-compose side tool). The
+economy beyond the slice (antes, boss gigs, Étude/Accidental cards, Daily-Set seed, set-playback) is
+still the plan below.
 
 A roguelike deckbuilder where **cards are notes** and the "poker hands" you play are **chords, scales,
 and progressions**. You score by making music that's *theory-correct* — in key, consonant, resolving,
@@ -135,15 +137,49 @@ export come **after** the slice reads as fun.
 
 ---
 
-## Reuse from slice-1 code (`mujicians.html` today)
+## Implemented (v1 slice, in `mujicians.html`)
 
-Not a rewrite — the current file already has the useful primitives:
+Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` IIFE. What's built:
 
-- `nameChord()` → grows into the **hand evaluator** (add 7ths, scales, intervals, in-key checks).
-- `playMidi` / `audio()` → the **audible-hand** engine (the pillar).
-- XP + `levelInfo` → **meta-progression** across runs.
-- `save`/`load` (`localStorage`) → run state, the **hard daily cap**, and the persistent **Codex**.
-- The grid UI/`buildGrid` → **demoted** to the future free-compose tool (kept, not deleted).
+- **Cards = notes.** `buildDeck()` = the 7 diatonic C-major notes × 3 instruments (Piano/Guitar/Bass) ×
+  `COPIES` = 42 cards. Each card carries `pc`, `letter`, `instId`, `midi`. Cards render in their
+  **ROYGBIV** color (`COLOR`, A=Red…G=Violet) with auto-contrast text (`textOn`/`lum`); instrument sets
+  the sounding register (Bass an octave-plus lower) and timbre (`INSTRUMENTS[].wave`).
+- **The hand.** Draw to `HAND_SIZE` (8) from a shuffled draw pile; select up to `MAX_SELECT` (5);
+  **Play** or **Discard**; a **Sort by pitch** button. Selecting a card previews it audibly.
+- **Hand evaluator (`classify`).** Detects single/**unison** · interval (named + consonance) · **triad**
+  (maj/min/dim/aug) · **seventh** (maj7/7/m7/m7♭5/°7/mM7) · **scale run** (contiguous diatonic steps) ·
+  cluster. This is the "music dictionary."
+- **Scoring (`score`) = Applause = chips × mult.** Per-note chips (+`INKEY_CHIP` when in the gig's key);
+  mult bonuses for **all-in-key** (flush), **consonant**, and **resolves-to-tonic**; `STRUCT` gives each
+  structure its base chips/mult. A **live preview** shows `structure · N chips × M mult · bonuses · =Applause`
+  — the teaching surface.
+- **The pillar — hands are sounded.** `soundCards` plays the selection (chords together, **scale runs
+  arpeggiated**) via each card's instrument timbre/register. High score ↔ good sound by construction.
+- **Run = a Set of 3 Gigs** (`GIGS`), each with a **key** (C→G→F major, so "in key" is a live choice
+  with a natural-note deck) and an escalating **applause threshold**; `PLAYS` hands + `DISCARDS` discards
+  per gig. Beat the threshold → next gig; run out → run over.
+- **Muses (the build engine).** Before each gig you **draft 1 of 3** from `MUSE_POOL` (Perfect Pitch,
+  Consonance, Low End, Cadence, Arpeggiator, Virtuoso); their `onNote`/`onHand` hooks fold into `score`.
+- **Hard daily cap.** `MAX_RUNS_PER_DAY` (3); `persist.runsUsed` resets when the local date rolls over.
+  When capped, the UI points at Pitch Bird / "come back tomorrow."
+- **Persistence + meta.** `localStorage["mujicians-save-v2"]` holds `{day, runsUsed, codex,
+  totalApplause, bestApplause}`. **Renown** level derives from cumulative Applause; the **Codex** logs
+  every recognized structure you play.
+
+**Not yet (still plan):** accidentals/more instruments & drums, Étude/Accidental cards, a coin-based
+shop (draft is free for now), antes/boss-gig constraints, the shared **Daily-Set** seed, set-playback
+export, and a bespoke visual identity (current dark-neon skin is a placeholder; the ROYGBIV cards are
+the start of the real look). Scoring numbers (`STRUCT`, thresholds, chip/mult constants) are **tunable
+placeholders** — balance in play.
+
+## Reuse from slice-1 code
+
+- `nameChord`-style matching → the `classify` **hand evaluator** (extended to 7ths/scales/intervals).
+- `playMidi`/`audio()` → the **audible-hand** engine (the pillar).
+- `save`/`load` (`localStorage`) → run/cap state + the persistent **Codex**; XP idea → **Renown**.
+- The grid UI/`buildGrid` → **preserved in `mujicians-compose.html`** (kept, not deleted) as the future
+  free-compose tool.
 
 ---
 
