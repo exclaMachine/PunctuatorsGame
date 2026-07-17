@@ -148,9 +148,11 @@ export come **after** the slice reads as fun.
 Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` IIFE. What's built:
 
 - **Cards = notes.** `buildDeck()` = the 7 diatonic C-major notes × 3 instruments (Piano/Guitar/Bass) ×
-  `COPIES` = 42 cards. Each card carries `pc`, `letter`, `instId`, `midi`. Cards render in their
-  **ROYGBIV** color (`COLOR`, A=Red…G=Violet) with auto-contrast text (`textOn`/`lum`); instrument sets
-  the sounding register (Bass an octave-plus lower) and timbre (`INSTRUMENTS[].wave`).
+  `COPIES` = 42 cards. Each card carries `pc`, `letter`, `instId`, `midi`. Cards are **white** with the
+  note **letter drawn in its ROYGBIV color** (`COLOR`, A=Red…G=Violet) — so the color reads as the note
+  itself — and the instrument shown as an **emoji** (`INSTRUMENTS[].emoji`: 🎹 piano / 🎸 guitar / 🎻 bass,
+  name kept on `title` hover) rather than a word. Instrument sets the sounding register (Bass an
+  octave-plus lower) and timbre (`INSTRUMENTS[].wave`).
 - **The hand.** Draw to `HAND_SIZE` (8) from a shuffled draw pile; select up to `MAX_SELECT` (5);
   **Play** or **Discard**; a **Sort by pitch** button. Selecting a card previews it audibly.
 - **Hand evaluator (`classify`).** Detects single/**unison** · interval (named + consonance) · **triad**

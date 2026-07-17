@@ -73,16 +73,15 @@
 
   .hand{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:104px;margin:6px 0 14px}
   .card{width:60px;height:90px;border-radius:9px;cursor:pointer;position:relative;
-    background:var(--cc);border:2px solid rgba(0,0,0,.35);box-shadow:0 3px 0 rgba(0,0,0,.35);
+    background:#fff;border:2px solid rgba(0,0,0,.35);box-shadow:0 3px 0 rgba(0,0,0,.35);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     transition:transform .08s;user-select:none}
   .card:hover{transform:translateY(-5px)}
   .card.sel{transform:translateY(-16px);box-shadow:0 10px 14px rgba(77,225,200,.35);
     outline:2px solid var(--accent);outline-offset:1px}
-  .card .cnote{font-size:26px;font-weight:bold;line-height:1;color:var(--ct)}
-  .card .coct{font-size:10px;color:var(--ct);opacity:.7;margin-top:1px}
-  .card .cinst{position:absolute;bottom:5px;font-size:9px;letter-spacing:.5px;
-    background:rgba(0,0,0,.32);color:#fff;padding:2px 5px;border-radius:8px}
+  .card .cnote{font-size:26px;font-weight:bold;line-height:1;color:var(--cc)}
+  .card .coct{font-size:10px;color:var(--cc);opacity:.75;margin-top:1px}
+  .card .cinst{position:absolute;bottom:4px;font-size:15px;line-height:1}
   .card.off{opacity:.55}
 
   .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:8px}
@@ -158,9 +157,9 @@
   // ROYGBIV — decided A=Red … G=Violet (see docs/mujicians.md)
   const COLOR = { A:"#e23b3b", B:"#e8843c", C:"#e8cf3c", D:"#4caf50", E:"#3d7ae0", F:"#5a4bd6", G:"#9a4bd6" };
   const INSTRUMENTS = [
-    { id:"piano",  name:"Piano",  wave:"triangle", baseC:60 },
-    { id:"guitar", name:"Guitar", wave:"sawtooth", baseC:60 },
-    { id:"bass",   name:"Bass",   wave:"sine",     baseC:36 },
+    { id:"piano",  name:"Piano",  emoji:"🎹", wave:"triangle", baseC:60 },
+    { id:"guitar", name:"Guitar", emoji:"🎸", wave:"sawtooth", baseC:60 },
+    { id:"bass",   name:"Bass",   emoji:"🎻", wave:"sine",     baseC:36 },
   ];
   const HAND_SIZE = 8, MAX_SELECT = 5, PLAYS = 4, DISCARDS = 3, COPIES = 2;
   const MAX_RUNS_PER_DAY = 3;
@@ -519,9 +518,9 @@
     const inst = INSTRUMENTS.find(x=>x.id===c.instId);
     const oct = Math.floor(c.midi/12)-1;
     const selCls = run.sel.has(idx) ? " sel" : "";
-    return `<div class="card${selCls}" data-idx="${idx}" style="--cc:${col};--ct:${textOn(col)}">
+    return `<div class="card${selCls}" data-idx="${idx}" style="--cc:${col}">
       <div class="cnote">${c.letter}</div><div class="coct">${c.letter}${oct}</div>
-      <div class="cinst">${inst.name}</div></div>`;
+      <div class="cinst" title="${inst.name}">${inst.emoji}</div></div>`;
   }
 
   function previewHTML(){
