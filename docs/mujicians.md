@@ -224,7 +224,8 @@ A **"Your Setlist"** section on the home screen lists saved songs (name · key �
   (`scheduleBar`/`schedTick`) to take a **`(bars, tempo)`** pair so both the in-run loop *and* gallery
   playback share one code path (a small `playSong(song)` that feeds the scheduler a transient loop).
 - **★ Favorite** (pin), **✎ Rename**, **🗑 Delete**, **⧉ Export** (copy share code).
-- *(Stretch)* a **mini pitch-grid thumbnail** of the loop, rendered from a static `loopStripHTML`-style pass.
+- *(Future — not built)* a **mini pitch-grid thumbnail** of the loop on each row. Specced under
+  *Future: mini pitch-grid thumbnail* below.
 
 ### Share code (export/import)
 
@@ -237,7 +238,8 @@ This **shares its encoder with the eventual Daily-Set seed export**, so building
 - **★ Favorite / pin** — v1 (also protects from prune).
 - **Mood tag** (major/minor/diminished lean) auto-derived — v1 (part of the report).
 - **Gig applause + rating** shown as stats on the card — v1.
-- **Mini pitch-grid thumbnail** in the gallery — stretch.
+- **Mini pitch-grid thumbnail** in the gallery — **future, not built** (specced below under *Future: mini
+  pitch-grid thumbnail*).
 - **Detailed theory breakdown** (the report card's full form) — deferred, the "down the road" upgrade.
 - **Notelings cross-link** — once Notelings art lands, a saved-song card can show the creatures it
   summoned (the portmanteau already names them); see the **Notelings** section.
@@ -263,6 +265,38 @@ This **shares its encoder with the eventual Daily-Set seed export**, so building
   · 🗑 delete, plus a **paste-code Import** row.
 - **Share code:** `encodeSong()`/`decodeSong()` → `MJ1:` + base64 JSON (bars as `[pc,instId,midi]`, cls
   recomputed via `classify` on import). Shares its encoder with the eventual Daily-Set export.
+
+### Future: mini pitch-grid thumbnail (**not built**)
+
+> **Status: possible future feature, not built.** Recorded so the eventual build matches intent.
+
+Give each **Setlist row** a tiny, non-interactive **pitch-grid preview** of the saved loop — the same
+"rows = pitches, columns = bars, cells = ROYGBIV note colors" language as the live loop grid, shrunk to a
+row-sized glyph. It turns the gallery from a text list into a **visual index** you can scan: a busy
+resolving loop and a sparse two-note loop read differently at a glance, and the colors hint at the key/mood
+before you even hit ▶.
+
+**How it should be built (when we do it):**
+
+- **Reuse, don't fork, the loop renderer.** Factor the cell-painting core out of `loopStripHTML()` into a
+  shared helper that takes `(bars, key, opts)` and can emit a **static, label-less, non-clickable** variant
+  — no write-head/playhead/ghost/"good"-glow decorations, no row labels, just filled color cells on the
+  dark grid. The Setlist thumbnail and the full in-gig grid then share one source of truth for the
+  note→cell→color mapping (keep the ROYGBIV `COLOR` lookup identical so a song looks the same shrunk).
+- **Compact geometry.** Fewer visible rows than the full grid (it spans the whole deck range). Options:
+  collapse to **one row per in-key scale degree** (+ an "off-key" lane), or octave-fold to ~7–12 rows.
+  Cells a few px tall; the whole thumbnail ~a row's height (e.g. 40–56px tall), CSS `image-rendering`
+  left default (it's DOM cells, not a raster). Prefer a **CSS grid of divs** first (matches current
+  approach, no canvas); switch to a cached `<canvas>`/data-URL only if a long Setlist shows lag.
+- **Data is already there.** A saved song's `bars` carry `{cards:[{pc,letter,instId,midi}], cls}` — exactly
+  what the grid needs. No new stored fields; render on the fly from `song.bars` + `song.key`.
+- **Playback tie-in (optional).** If the row is auditioning (`galleryPlayId===song.id`), the thumbnail
+  *could* host the sweeping playhead by reusing `paintPlayCol` against a per-row scoped selector — but this
+  is gravy; a static thumbnail is the feature.
+
+**Open sub-questions:** exact row-collapse scheme (scale-degree vs octave-fold); whether the thumbnail is
+tap-to-play on touch; and whether to also show it on the **Save modal** and the **end overlay** as the
+"here's what you made" glyph.
 
 ### Open items for this feature
 
