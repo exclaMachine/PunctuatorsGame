@@ -125,6 +125,49 @@
   .big{font-size:15px;color:var(--ink)}
   .hint{margin-top:16px;color:var(--dim);font-size:12px;line-height:1.5}
   .center{text-align:center}
+
+  /* Save modal — name field + report card */
+  .savename{margin:14px 0 4px;text-align:left}
+  .savename label{display:block;font-size:11px;letter-spacing:1px;color:var(--dim);margin-bottom:5px}
+  .savename input{width:100%;font:inherit;font-size:16px;padding:9px 11px;border-radius:9px;
+    background:#0f1226;color:var(--ink);border:1px solid var(--edge)}
+  .savename input:focus{outline:none;border-color:var(--accent)}
+  .savename .namehint{font-size:11px;color:var(--dim);margin-top:5px}
+  .savename .namehint b{color:var(--gold)}
+  .report{margin:14px 0 4px;padding:12px 14px;background:#0f1226;border:1px solid var(--edge);border-radius:10px;text-align:left}
+  .report .rtitle{font-size:10px;letter-spacing:1.5px;color:var(--dim);margin-bottom:8px}
+  .report .rrow{font-size:13px;margin:3px 0}
+  .report .rrow span{color:var(--dim)}
+  .report .rrow b{color:var(--ink)}
+  .report .rcall{font-size:12.5px;color:var(--ink);margin:8px 0 6px;line-height:1.5}
+  .report .rcall b{color:var(--gold)}
+  .report .rrate{font-size:13px;color:var(--dim)}
+  .stars{color:var(--gold);letter-spacing:1px}
+
+  /* Home Setlist gallery */
+  .setlist{margin:16px 0 4px}
+  .setlist h2{font-size:12px;letter-spacing:1px;color:var(--dim);margin:0 0 10px}
+  .setlist .empty{color:var(--dim);font-size:12px}
+  .songs{display:flex;flex-direction:column;gap:7px}
+  .song{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:9px 12px;background:var(--panel);border:1px solid var(--edge);border-radius:10px}
+  .song .sinfo{min-width:0;flex:1}
+  .song .sname{font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .song .sname .starpin{color:var(--gold);margin-right:5px}
+  .song .smeta{font-size:11px;color:var(--dim);margin-top:2px}
+  .song .sbtns{display:flex;gap:4px;flex-shrink:0}
+  .song .sbtns .btn{padding:6px 9px;font-size:13px}
+  .importrow{display:flex;gap:8px;margin-top:12px}
+  .importrow input{flex:1;font:inherit;font-size:12px;padding:8px 10px;border-radius:9px;
+    background:#0f1226;color:var(--ink);border:1px solid var(--edge)}
+  .importrow input:focus{outline:none;border-color:var(--accent)}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:#0f1226;color:var(--ink);border:1px solid var(--accent);border-radius:10px;
+    padding:10px 16px;font-size:13px;z-index:40;opacity:0;pointer-events:none;
+    transition:opacity .18s,transform .18s;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -160,6 +203,9 @@
   const DIATONIC_C  = [0,2,4,5,7,9,11];
   // ROYGBIV — decided A=Red … G=Violet (see docs/mujicians.md)
   const COLOR = { A:"#e23b3b", B:"#e8843c", C:"#e8cf3c", D:"#4caf50", E:"#3d7ae0", F:"#5a4bd6", G:"#9a4bd6" };
+  const COLORNAME = { A:"red", B:"orange", C:"yellow", D:"green", E:"blue", F:"indigo", G:"violet" };
+  // Notelings roster (docs/mujicians.md) — used to suggest a portmanteau song name. Names only, no sprites.
+  const NOTELING = { A:"Ant", B:"Blob", C:"Chicken", D:"Dog", E:"Eye", F:"Flower", G:"Goat" };
   const INSTRUMENTS = [
     { id:"piano",  name:"Piano",  emoji:"🎹", wave:"triangle", baseC:60 },
     { id:"guitar", name:"Guitar", emoji:"🎸", wave:"sawtooth", baseC:60 },
@@ -297,12 +343,13 @@
   /* ================= persistence + daily cap ================= */
   const SAVE_KEY = "mujicians-save-v2";
   function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
-  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0 };
+  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[] };
   function loadPersist(){
     try{
       const s = JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
       if(s){ persist = Object.assign(persist, s); }
     }catch(e){}
+    if(!Array.isArray(persist.setlist)) persist.setlist = [];   // saved-song Setlist (additive; see docs/mujicians.md)
     if(persist.day !== todayStr()){ persist.day = todayStr(); persist.runsUsed = 0; savePersist(); }
     // one-time repair: an earlier bug burned runs on a failed render; refund them once.
     if(!persist.capFixV1){ persist.capFixV1 = true; persist.runsUsed = 0; savePersist(); }
@@ -343,11 +390,15 @@
   }
 
   /* ========= the repeating loop (Mario-Paint-style backing groove) ========= */
-  // A lookahead scheduler cycles run.loop.bars nonstop; a rAF sweeps the playhead.
+  // A lookahead scheduler cycles a bars array nonstop; a rAF sweeps the playhead.
+  // playSrc = { bars, n } is whatever's currently grooving: the live gig loop
+  // (run.loop) during a gig, or a saved song's bars during Setlist playback.
   let schedTimer = null, rafId = null, nextBarTime = 0, nextBarIdx = 0, loopStart = 0, curBar = -1;
+  let playSrc = null;
   function loopOn(){ return !!schedTimer; }
+  function gigSrc(){ return (run && run.loop) ? { bars:run.loop.bars, n:LOOP_BARS } : null; }
   function scheduleBar(idx, when){
-    const bar = run && run.loop && run.loop.bars[idx];
+    const bar = playSrc && playSrc.bars[idx];
     if(!bar || !bar.cards.length) return;
     const arp = bar.cls && bar.cls.type==="run";
     const sorted = [...bar.cards].sort((a,b)=>a.midi-b.midi);
@@ -360,10 +411,11 @@
   }
   function schedTick(){
     const ac = audio();
+    const n = playSrc ? playSrc.n : LOOP_BARS;
     while(nextBarTime < ac.currentTime + 0.12){
       scheduleBar(nextBarIdx, nextBarTime);
       nextBarTime += BAR_SEC;
-      nextBarIdx = (nextBarIdx+1) % LOOP_BARS;
+      nextBarIdx = (nextBarIdx+1) % n;
     }
   }
   function paintPlayCol(col){
@@ -373,13 +425,17 @@
   function tickPlayhead(){
     if(!schedTimer){ rafId = null; return; }
     const ac = audio();
-    let cb = Math.floor((ac.currentTime - loopStart) / BAR_SEC) % LOOP_BARS;
-    cb = ((cb % LOOP_BARS) + LOOP_BARS) % LOOP_BARS;
+    const n = playSrc ? playSrc.n : LOOP_BARS;
+    let cb = Math.floor((ac.currentTime - loopStart) / BAR_SEC) % n;
+    cb = ((cb % n) + n) % n;
     if(cb !== curBar){ curBar = cb; paintPlayCol(curBar); }
     rafId = requestAnimationFrame(tickPlayhead);
   }
-  function startLoop(){
+  // startLoop() with no arg grooves the live gig loop; startLoop({bars,n}) grooves a saved song.
+  function startLoop(src){
     stopLoop();
+    playSrc = src || gigSrc();
+    if(!playSrc){ return; }
     const ac = audio();
     nextBarTime = ac.currentTime + 0.12; loopStart = nextBarTime; nextBarIdx = 0; curBar = -1;
     schedTimer = setInterval(schedTick, 25);
@@ -390,6 +446,183 @@
     if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
     curBar = -1;
     paintPlayCol(-1);
+  }
+
+  /* ================= Save a Song — Setlist, report card & export ================= */
+  // A "song" = a snapshot of one gig's loop the player chose to keep. Stored minimally
+  // (just the notes + a light cls per bar); replayable from Home, exportable as a code.
+  // See docs/mujicians.md → "Save a Song".
+  const SETLIST_CAP = 30;
+  let pendingSave = null;   // { gigIdx, bars, retScreen } while the Save modal is up
+  let galleryPlayId = null; // which saved song is auditioning in the Setlist
+
+  function esc(s){ return String(s).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+  function uid(){ return "s"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36); }
+  function starStr(n){ n=Math.max(0,Math.min(5,n|0)); return "★".repeat(n)+"☆".repeat(5-n); }
+
+  // Snapshot the live loop into a minimal, storable bars array (cards + cls per filled bar).
+  function snapshotBars(liveBars){
+    return liveBars.map(b => (b && b.cards && b.cards.length)
+      ? { cards: b.cards.map(c=>({pc:c.pc, letter:c.letter, instId:c.instId, midi:c.midi})),
+          cls: { type:b.cls.type, name:b.cls.name, root:b.cls.root, consonant:b.cls.consonant } }
+      : null);
+  }
+
+  // The music-theory read of a loop. v1 renders a brief subset (report card); the same
+  // stats feed the deferred detailed breakdown. See docs/mujicians.md.
+  function songReport(bars, key){
+    const filled = bars.filter(b => b && b.cards && b.cards.length);
+    const notes = filled.reduce((a,b)=>a.concat(b.cards), []);
+    const tonic = key[0], dom = key[4];
+    const inKey = notes.filter(c=>key.includes(c.pc)).length;
+    const inKeyPct = notes.length ? Math.round(100*inKey/notes.length) : 0;
+    const structs = [...new Set(filled
+      .filter(b=>["interval","triad","seventh","run"].includes(b.cls.type))
+      .map(b=>b.cls.name))];
+    const chordish = filled.filter(b=>["interval","triad","seventh"].includes(b.cls.type));
+    const consRatio = chordish.length ? chordish.filter(b=>b.cls.consonant).length/chordish.length : 1;
+    let cadence = filled.some(b=>(b.cls.type==="triad"||b.cls.type==="seventh") && b.cls.root===tonic);
+    for(let i=0;i<bars.length-1 && !cadence;i++){
+      const a=bars[i], b=bars[i+1];
+      if(a&&b&&a.cls&&b.cls&&a.cls.root===dom&&b.cls.root===tonic) cadence=true;
+    }
+    let tritone=false;
+    for(const b of filled){
+      const pcs=[...new Set(b.cards.map(c=>c.pc))];
+      for(let i=0;i<pcs.length && !tritone;i++) for(let j=i+1;j<pcs.length;j++){ if((((pcs[j]-pcs[i])%12)+12)%12===6){ tritone=true; break; } }
+      if(tritone) break;
+    }
+    const tally={}; notes.forEach(c=>{ tally[c.letter]=(tally[c.letter]||0)+1; });
+    let topLetter=null, topN=-1; for(const L in tally){ if(tally[L]>topN){ topN=tally[L]; topLetter=L; } }
+    const consGrade = consRatio>=.9?"A":consRatio>=.75?"B":consRatio>=.5?"C":consRatio>=.25?"D":"F";
+    let stars = Math.round(inKeyPct/100*2 + consRatio*2 + (cadence?1:0));
+    stars = Math.max(filled.length?1:0, Math.min(5, stars));
+    return { filledCount:filled.length, inKeyPct, structs, consGrade, consRatio, cadence, tritone, topLetter, stars };
+  }
+
+  // Suggest a Noteling portmanteau from the loop's most-used notes (e.g. C+E+G → "Chiegoat").
+  function suggestName(bars){
+    const notes = bars.reduce((a,b)=> (b&&b.cards)?a.concat(b.cards):a, []);
+    if(!notes.length) return "Untitled";
+    const tally={}; notes.forEach(c=>{ tally[c.letter]=(tally[c.letter]||0)+1; });
+    // top 3 letters by count, ties broken by pitch order (A..G handled via letter)
+    const letters = Object.keys(tally).sort((a,b)=> tally[b]-tally[a] || a.localeCompare(b)).slice(0,3);
+    // reorder chosen letters by musical pitch for a nicer blend
+    const order = ["C","D","E","F","G","A","B"];
+    letters.sort((a,b)=> order.indexOf(a)-order.indexOf(b));
+    const names = letters.map(L=>NOTELING[L]).filter(Boolean);
+    if(!names.length) return "Untitled";
+    if(names.length===1) return names[0];
+    // first name keeps a ~third-length prefix, middle names a short fragment, last name stays whole
+    // (e.g. Chicken+Eye+Goat → "Chi"+"e"+"Goat" → "Chiegoat")
+    const parts = names.map((n,i)=> i===names.length-1 ? n : n.slice(0, i===0 ? Math.max(2, Math.ceil(n.length/3)) : 1));
+    const s = parts.join("");
+    return s.charAt(0).toUpperCase()+s.slice(1).toLowerCase();
+  }
+
+  function pruneSetlist(){
+    const list = persist.setlist;
+    if(list.length <= SETLIST_CAP) return;
+    const keep = [];
+    // keep all starred, then most-recent unstarred up to the cap
+    for(const s of list) if(s.starred) keep.push(s);
+    for(const s of list){ if(keep.length>=SETLIST_CAP) break; if(!s.starred) keep.push(s); }
+    // preserve original (recency) order
+    persist.setlist = list.filter(s=>keep.includes(s));
+  }
+
+  function saveSong(gigIdx, bars, name){
+    const g = GIGS[gigIdx];
+    const rep = songReport(bars, g.key);
+    const song = {
+      id: uid(),
+      name: (name||"").trim() || suggestName(bars) || "Untitled",
+      date: todayStr(),
+      keyName: g.keyName,
+      key: g.key.slice(),
+      tempo: BAR_SEC,
+      bars: bars,
+      stars: rep.stars,
+      starred: false
+    };
+    persist.setlist.unshift(song);
+    pruneSetlist();
+    savePersist();
+    if(run){ (run.saved = run.saved || {})[gigIdx] = true; }
+    return song;
+  }
+
+  /* --- share code (MJ1:) — shares its encoder with the eventual Daily-Set export --- */
+  function encodeSong(song){
+    const p = { v:1, n:song.name, kn:song.keyName, k:song.key, t:song.tempo,
+      b: song.bars.map(b => b ? b.cards.map(c=>[c.pc, c.instId, c.midi]) : 0) };
+    try{ return "MJ1:"+btoa(unescape(encodeURIComponent(JSON.stringify(p)))); }catch(e){ return ""; }
+  }
+  function decodeSong(code){
+    const m = String(code||"").trim().match(/^MJ1:([\s\S]*)$/);
+    if(!m) return null;
+    let p; try{ p = JSON.parse(decodeURIComponent(escape(atob(m[1])))); }catch(e){ return null; }
+    if(!p || !Array.isArray(p.b)) return null;
+    const bars = p.b.map(bar => (bar && bar.length) ? (function(){
+      const cards = bar.map(a=>({ pc:a[0], letter:NOTE_LETTER[a[0]]||NOTE_NAMES[a[0]]||"?", instId:a[1], midi:a[2] }));
+      const cl = classify(cards);
+      return { cards, cls:{ type:cl.type, name:cl.name, root:cl.root, consonant:cl.consonant } };
+    })() : null);
+    const key = Array.isArray(p.k) ? p.k : GIGS[0].key;
+    const rep = songReport(bars, key);
+    return { id:uid(), name:(p.n||"Imported").slice(0,40), date:todayStr(),
+             keyName:p.kn||"?", key, tempo:p.t||BAR_SEC, bars, stars:rep.stars, starred:false };
+  }
+  function copyText(t){
+    try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t); return true; } }catch(e){}
+    try{ window.prompt("Copy this share code:", t); }catch(e){}
+    return false;
+  }
+  function toast(msg){
+    let t = document.getElementById("mj-toast");
+    if(!t){ t = document.createElement("div"); t.id="mj-toast"; t.className="toast"; document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove("show"), 1800);
+  }
+
+  /* --- Setlist gallery operations (Home) --- */
+  function findSong(id){ return (persist.setlist||[]).find(s=>s.id===id); }
+  function toggleSongPlay(id){
+    const s = findSong(id); if(!s) return; audio();
+    if(loopOn() && galleryPlayId===id){ stopLoop(); galleryPlayId=null; }
+    else { startLoop({ bars:s.bars, n:s.bars.length }); galleryPlayId=id; }
+    renderHome();
+  }
+  function toggleStar(id){ const s=findSong(id); if(!s) return; s.starred=!s.starred; savePersist(); renderHome(); }
+  function renameSong(id){ const s=findSong(id); if(!s) return; const nn=window.prompt("Rename song:", s.name); if(nn!==null){ s.name=(nn.trim()||s.name).slice(0,40); savePersist(); renderHome(); } }
+  function deleteSong(id){
+    const s=findSong(id); if(!s) return;
+    if(!window.confirm('Delete "'+s.name+'"?')) return;
+    persist.setlist = persist.setlist.filter(x=>x.id!==id);
+    if(galleryPlayId===id){ stopLoop(); galleryPlayId=null; }
+    savePersist(); renderHome();
+  }
+  function exportSong(id){ const s=findSong(id); if(!s) return; const code=encodeSong(s); if(code){ copyText(code); toast("Share code copied"); } }
+  function importCode(){
+    const el=document.getElementById("imp-code");
+    const song=decodeSong(el && el.value);
+    if(!song){ toast("Couldn't read that code"); return; }
+    persist.setlist.unshift(song); pruneSetlist(); savePersist(); renderHome();
+    toast('Imported "'+song.name+'"');
+  }
+
+  /* --- the Save modal (offered when a gig's loop is about to be lost) --- */
+  function offerSave(gigIdx, retScreen){
+    pendingSave = { gigIdx, bars: snapshotBars(run.loop.bars), retScreen };
+    screen = "save"; render();
+  }
+  function afterSave(){
+    const ret = pendingSave ? pendingSave.retScreen : "home";
+    pendingSave = null;
+    if(ret==="draft"){ offerDraft(); }
+    else if(ret==="win"){ screen="win"; render(); }
+    else if(ret==="lose"){ screen="lose"; render(); }
+    else { screen="home"; render(); }
   }
 
   /* ================= run state ================= */
@@ -411,7 +644,7 @@
   function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
   function startRun(){
-    stopLoop();
+    stopLoop(); galleryPlayId = null;
     if(atCap()){ screen="capped"; render(); return; }
     if(!DEV){ persist.runsUsed++; savePersist(); }
     run = { gigIdx:0, deck:buildDeck(), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[], loop:null, handSize:BASE_HAND_SIZE };
@@ -471,10 +704,13 @@
   }
 
   function winGig(){
+    const finishedGig = run.gigIdx;   // the gig we just cleared (its loop is about to be lost)
     run.gigIdx++;
-    if(run.gigIdx >= GIGS.length){ screen="win"; render(); return; }  // final win: leave the loop running so you keep hearing your set
-    // between gigs: keep the just-finished loop grooving under the Muse draft; startGig()'s startLoop() swaps in the fresh next-gig loop
-    offerDraft();
+    if(run.gigIdx >= GIGS.length){ screen="win"; render(); return; }  // final win: save via the end overlay; loop keeps running
+    // between gigs: offer to SAVE the just-finished loop BEFORE the Muse draft; then draft.
+    // The loop keeps grooving under both overlays; startGig()'s startLoop() swaps in the fresh next-gig loop.
+    if(filledBars() > 0) offerSave(finishedGig, "draft");
+    else offerDraft();
   }
   function loseRun(){ screen="lose"; render(); }   // loop keeps playing so you can still hear your creation
 
@@ -536,7 +772,7 @@
   function previewHTML(){
     const cards = selectedCards();
     if(!cards.length) return `<span class="calc">Select up to ${MAX_SELECT} cards to see the structure &amp; score…</span>`;
-    const res = score(cards, GIGS[run.gigIdx], run.muses);
+    const res = score(cards, curGig(), run.muses);
     const bonus = res.lines.length ? " · <span class='m'>"+res.lines.join(", ")+"</span>" : "";
     return `<span class="app">${res.applause}</span>`+
            `<span class="struct">${res.cls.name}</span>`+
@@ -557,6 +793,10 @@
     return cls.name; // triad / seventh (e.g. "C major", "C 7")
   }
   function filledBars(){ return run.loop.bars.filter(Boolean).length; }
+  // The gig to render context from — clamped, since after a final win run.gigIdx == GIGS.length
+  // while the just-finished board/loop still shows behind the end overlay.
+  function gigIdxClamped(){ return Math.min(run.gigIdx, GIGS.length-1); }
+  function curGig(){ return GIGS[gigIdxClamped()]; }
   // Every playable pitch across the deck (bass low → melody high), one row each.
   // Skips the empty register gap automatically since only these midis can be dealt.
   function loopRowMidis(){
@@ -573,7 +813,7 @@
   }
   function loopStripHTML(){
     if(!run.loop) return "";   // no loop yet (e.g. the pre-gig Muse draft) — nothing to show
-    const g = GIGS[run.gigIdx];
+    const g = curGig();
     const keyRoot = g.key[0];
     const rows = loopRowMidis();
     const N = LOOP_BARS;
@@ -625,13 +865,14 @@
   }
 
   function renderGig(){
-    const g = GIGS[run.gigIdx];
+    const gi = gigIdxClamped();
+    const g = GIGS[gi];
     const pct = Math.min(100, Math.round(run.gigScore/g.threshold*100));
     const canPlay = run.sel.size>0;
     $game.innerHTML = `
       <div class="gigbar">
         <div class="row1">
-          <div class="key">Gig <b>${run.gigIdx+1}</b>/${GIGS.length} · Key <b>${g.keyName}</b></div>
+          <div class="key">Gig <b>${gi+1}</b>/${GIGS.length} · Key <b>${g.keyName}</b></div>
           <div class="counts">Hands <b>${run.playsLeft}</b> · Discards <b>${run.discardsLeft}</b> · Hand size <b>${run.handSize}</b> · Deck <b>${run.drawPile.length}</b></div>
         </div>
         <div class="scoreline">Applause <b>${run.gigScore}</b> / ${g.threshold}</div>
@@ -675,6 +916,46 @@
     renderGig();
   }
 
+  function songRowHTML(s){
+    const playing = loopOn() && galleryPlayId===s.id;
+    return `<div class="song" data-id="${s.id}">
+      <div class="sinfo">
+        <div class="sname">${s.starred?'<span class="starpin">★</span>':''}${esc(s.name)}</div>
+        <div class="smeta">${esc(s.keyName)} · <span class="stars">${starStr(s.stars||0)}</span> · ${esc(s.date)}</div>
+      </div>
+      <div class="sbtns">
+        <button class="btn ghost sb-play" data-id="${s.id}" title="play/pause">${playing?"⏸":"▶"}</button>
+        <button class="btn ghost sb-star" data-id="${s.id}" title="favorite">${s.starred?"★":"☆"}</button>
+        <button class="btn ghost sb-rename" data-id="${s.id}" title="rename">✎</button>
+        <button class="btn ghost sb-export" data-id="${s.id}" title="copy share code">⧉</button>
+        <button class="btn ghost sb-del" data-id="${s.id}" title="delete">🗑</button>
+      </div>
+    </div>`;
+  }
+  function setlistHTML(){
+    const list = persist.setlist || [];
+    const rows = list.length
+      ? `<div class="songs">${list.map(songRowHTML).join("")}</div>`
+      : `<p class="empty">No saved songs yet — finish a gig and save a loop you like.</p>`;
+    return `<div class="setlist">
+      <h2>YOUR SETLIST${list.length?` — ${list.length} song${list.length>1?"s":""}`:""}</h2>
+      ${rows}
+      <div class="importrow">
+        <input id="imp-code" placeholder="paste a MJ1:… share code" autocomplete="off" spellcheck="false" />
+        <button class="btn ghost" id="b-import">Import</button>
+      </div>
+    </div>`;
+  }
+  function wireSetlist(){
+    $game.querySelectorAll(".sb-play").forEach(el=> el.addEventListener("click", ()=>toggleSongPlay(el.dataset.id)));
+    $game.querySelectorAll(".sb-star").forEach(el=> el.addEventListener("click", ()=>toggleStar(el.dataset.id)));
+    $game.querySelectorAll(".sb-rename").forEach(el=> el.addEventListener("click", ()=>renameSong(el.dataset.id)));
+    $game.querySelectorAll(".sb-export").forEach(el=> el.addEventListener("click", ()=>exportSong(el.dataset.id)));
+    $game.querySelectorAll(".sb-del").forEach(el=> el.addEventListener("click", ()=>deleteSong(el.dataset.id)));
+    const imp = document.getElementById("b-import");
+    if(imp) imp.addEventListener("click", importCode);
+  }
+
   function renderHome(){
     const capped = atCap();
     $game.innerHTML = `
@@ -686,9 +967,11 @@
         </div>
         ${capped?`<p class="hint center">You've used all ${MAX_RUNS_PER_DAY} runs today. Come back tomorrow — or try
           <a href="pitch-bird.html" style="color:var(--accent)">Pitch Bird</a> meanwhile.</p>`:""}
-      </div>`;
+      </div>
+      ${setlistHTML()}`;
     const b = document.getElementById("b-start");
     if(b) b.addEventListener("click", ()=>{ audio(); startRun(); });
+    wireSetlist();
   }
 
   function render(){
@@ -697,6 +980,7 @@
     if(screen==="home" || screen==="capped"){ renderHome(); return; }
     if(screen==="gig"){ renderGig(); return; }
     if(screen==="draft"){ renderGig(); renderDraftOverlay(); return; }
+    if(screen==="save"){ renderGig(); renderSaveOverlay(); return; }
     if(screen==="win"){ renderEndOverlay(true); return; }
     if(screen==="lose"){ renderEndOverlay(false); return; }
   }
@@ -716,9 +1000,63 @@
     });
   }
 
+  function reportCardHTML(rep, keyName){
+    const structs = rep.structs.length ? rep.structs.join(" · ") : "single notes";
+    let callout;
+    if(rep.cadence) callout = 'Contains a <b>V–I resolution</b> to the tonic — that\'s why it sounds finished. 🎯';
+    else if(rep.tritone) callout = 'Contains a <b>tritone</b> — the spicy "devil\'s interval" tension.';
+    else if(rep.topLetter) callout = `Most-used note: <b style="color:${COLOR[rep.topLetter]||'var(--ink)'}">${rep.topLetter}</b> (${COLORNAME[rep.topLetter]||""}).`;
+    else callout = "A quiet little loop.";
+    return `<div class="report">
+      <div class="rtitle">THE THEORY BEHIND IT</div>
+      <div class="rrow"><span>Key</span> <b>${esc(keyName)}</b></div>
+      <div class="rrow"><span>Structures</span> <b>${esc(structs)}</b></div>
+      <div class="rrow"><span>In-key</span> <b>${rep.inKeyPct}%</b> &nbsp;·&nbsp; <span>Consonance</span> <b>${rep.consGrade}</b></div>
+      <div class="rcall">${callout}</div>
+      <div class="rrate">Rating <span class="stars">${starStr(rep.stars)}</span></div>
+    </div>`;
+  }
+
+  function renderSaveOverlay(){
+    const ps = pendingSave; if(!ps){ return; }
+    const g = GIGS[ps.gigIdx];
+    const rep = songReport(ps.bars, g.key);
+    const suggested = suggestName(ps.bars);
+    $overlay.innerHTML = `
+      <div class="overlay"><div class="modal">
+        <h2>💾 Save this song?</h2>
+        <p>Keep the loop you built in Gig ${ps.gigIdx+1} (${esc(g.keyName)}) — <b>${rep.filledCount}/${LOOP_BARS}</b> bars.
+           It'll live in your <b>Setlist</b> on the home screen.</p>
+        <div class="savename">
+          <label for="save-name">NAME YOUR SONG</label>
+          <input id="save-name" value="${esc(suggested)}" maxlength="40" autocomplete="off" spellcheck="false" />
+          <div class="namehint">suggestion: <b>${esc(suggested)}</b> — a Noteling blend of your top notes; edit freely</div>
+        </div>
+        ${reportCardHTML(rep, g.keyName)}
+        <div class="cta">
+          <button class="btn ghost" id="b-audition">${loopOn()?"⏸ Pause":"▶ Hear it"}</button>
+          <button class="btn play" id="b-savesong">Save &amp; continue</button>
+          <button class="btn ghost" id="b-skipsave">Skip</button>
+        </div>
+      </div></div>`;
+    document.getElementById("b-audition").addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderSaveOverlay(); });
+    document.getElementById("b-savesong").addEventListener("click", ()=>{
+      const nm = document.getElementById("save-name").value;
+      const s = saveSong(ps.gigIdx, ps.bars, nm);
+      toast('Saved "'+s.name+'" to your Setlist');
+      afterSave();
+    });
+    document.getElementById("b-skipsave").addEventListener("click", ()=> afterSave());
+    const inp = document.getElementById("save-name");
+    if(inp){ inp.focus(); inp.select(); }
+  }
+
   function renderEndOverlay(won){
     renderGigStatic();   // keep the loop grid visible behind the overlay (win or lose) so the playhead sweeps as it plays
     const runsLeft = runsLeftToday();
+    const finishedGig = won ? GIGS.length-1 : run.gigIdx;   // the gig whose loop is still grooving
+    const alreadySaved = !!(run.saved && run.saved[finishedGig]);
+    const canSave = filledBars() > 0;
     $overlay.innerHTML = `
       <div class="overlay"><div class="modal center">
         <h2>${won?"🎉 Set complete!":"Run over"}</h2>
@@ -728,6 +1066,11 @@
         <p class="big">Best hand: <b>${persist.bestApplause}</b> · Renown Lv <b>${renownLevel(persist.totalApplause)}</b></p>
         <div class="cta">
           <button class="btn ghost" id="b-replay">${loopOn()?"⏸ Pause your set":"▶ Hear your set"}</button>
+          ${canSave
+            ? (alreadySaved
+                ? `<button class="btn ghost" disabled>✓ Saved to Setlist</button>`
+                : `<button class="btn play" id="b-savesong">💾 Save this song</button>`)
+            : ""}
           ${runsLeft>0
             ? `<button class="btn" id="b-again">▶ New Run (${runsLeftLabel()} left today)</button>`
             : `<button class="btn ghost" disabled>No runs left today</button>`}
@@ -739,7 +1082,9 @@
     if(again) again.addEventListener("click", ()=>{ audio(); startRun(); });
     const replay = document.getElementById("b-replay");
     if(replay) replay.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderEndOverlay(won); });
-    document.getElementById("b-home").addEventListener("click", ()=>{ stopLoop(); screen="home"; run=null; render(); });
+    const savebtn = document.getElementById("b-savesong");
+    if(savebtn) savebtn.addEventListener("click", ()=> offerSave(finishedGig, won?"win":"lose"));
+    document.getElementById("b-home").addEventListener("click", ()=>{ stopLoop(); galleryPlayId=null; screen="home"; run=null; render(); });
   }
   function renderGigStatic(){ /* keep the last gig board visible behind the end overlay (win or lose) so the loop's playhead keeps sweeping */ if(run) renderGig(); }
 

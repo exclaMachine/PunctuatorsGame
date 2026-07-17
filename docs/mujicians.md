@@ -2,7 +2,8 @@
 
 **Entry file:** `mujicians.html` · **Status:** **v1 vertical slice built** — a Balatro-style deckbuilder
 (cards = notes, hands = chords/scales, score = theory correctness, hands are sounded, and every gig now
-**builds a repeating Mario-Paint-style loop** you compose over as you play). The demoted
+**builds a repeating Mario-Paint-style loop** you compose over as you play, and you can now **Save a Song**
+you like — name it, read a theory report card, and replay/share it from a Home **Setlist**). The demoted
 slice-1 note-grid is preserved in **`mujicians-compose.html`** (the future free-compose side tool). The
 economy beyond the slice (antes, boss gigs, Étude/Accidental cards, Daily-Set seed, set-playback) is
 still the plan below.
@@ -124,7 +125,151 @@ under *Implemented*), and the loop **keeps playing continuously through the end 
 cut off when a run finishes (win *or* lose) or when the between-gigs **Muse draft** dialog pops up, so you
 keep hearing your creation while you read the result or pick a Muse. Still to do: **accumulate one loop
 across all 3 gigs** (currently the loop resets per gig, and each gig has its own key), plus a real **seed +
-set export/share**.
+set export/share**. The **Save a Song** feature below is the first concrete piece of that export/brag loop.
+
+---
+
+## Save a Song — Setlist, report card & export (**built**)
+
+> **Status: built** in `mujicians.html`. Extends the existing per-gig loop and `persist` store. The
+> report-card stats/thresholds and the prune cap are tunable placeholders. Design notes below describe the
+> shipped behavior; the **detailed** theory breakdown remains the deferred upgrade.
+
+**The problem it solves.** The loop **resets per gig** (`startGig` allocates a fresh `run.loop`), so a
+good little song you built in a gig is **wiped the moment the next gig starts**. Right now you can hear it
+grooving under the Muse draft, then it's gone. This feature lets a player **keep a gig's loop they liked**
+— name it, learn *why* it sounds good, replay it later, and share it.
+
+**Decided this pass:** save unit = **the just-finished gig's loop** (one save = one ~6-bar song, not the
+whole run — matches the per-gig reset); saved songs live in **both** a Home **Setlist gallery** *and* a
+copyable **share code**; the theory breakdown is a **brief report card** for v1 (designed to grow into a
+detailed teaching breakdown later); song names are **freeform with a suggested Noteling portmanteau**
+prefilled.
+
+### When the dialog appears (the "before the Muse draft" beat)
+
+A **Save Song?** dialog is offered **once per gig, right when that gig's loop is about to be lost** — the
+natural capture point the dev identified:
+
+- **Non-final gig win (gig 1→2, 2→3):** the dialog pops in `winGig()` **before `offerDraft()`** — i.e.
+  *before the Muse draft*, exactly as requested. The just-finished loop is still grooving behind it (the
+  loop already survives into the draft). **Save** or **Skip** → then proceed to the Muse draft.
+- **Final gig win / losing gig (terminal states):** there's no Muse draft after these, so the save option
+  lives as a **"💾 Save this song"** button on the **end overlay** (win *or* lose), alongside the existing
+  "▶ Hear your set" toggle. The terminal gig's loop keeps grooving there, so it's saveable too.
+
+Net: **every gig's loop is saveable exactly once**, at the moment it finishes. Empty/near-empty loops
+(0 filled bars) skip the offer. Saving is always optional and never blocks progression.
+
+### The dialog contents
+
+1. **A live preview** — the loop is already grooving behind the overlay; a **▶/⏸** toggle lets the player
+   audition it while deciding (reuse the existing `loopOn()`/`startLoop`/`stopLoop`).
+2. **The report card** (brief v1 — see below).
+3. **Name field**, prefilled with a **suggested portmanteau** (editable; see below).
+4. **[Save]** and **[Skip]**.
+
+### The report card (brief v1 → detailed later)
+
+A short, plain-language **"why this sounds good"** panel, computed from the loop's filled bars
+(`run.loop.bars` = `{cards, cls}[]`) and the gig key. **v1 (brief) shows ~4–5 lines + a rating:**
+
+- **Key** — e.g. "C major" (the gig's key).
+- **In-key %** — share of notes across all filled bars that are in the key.
+- **Consonance grade** — a letter (A–F) from the share of consonant structures played (reuse
+  `CONSONANT_IV` / each bar's `cls`).
+- **Structures** — the chord/interval/run names played (from each bar's `cls.name`, e.g. "Cmaj7 · G7 · a
+  scale run") — drawn from the same data the Codex logs.
+- **One headline callout** — a single bridge-to-teaching line when present: **"Contains a V–I cadence"**,
+  **"Contains a tritone (tension)"**, or **"Most-used note: E (blue)"**.
+- **Overall rating** — ★☆ (or a letter grade) derived from in-key % + consonance + presence of a
+  resolution. This is the "did I make something good" gut read.
+
+**Design for growth:** compute all stats in **one `songReport(bars, key)` function** and have v1 render a
+subset. The **deferred detailed breakdown** (the dev's "maybe down the road") is the *same* function's full
+output — per-structure explanations, cadence/voice-leading callouts, tritone flags, note-frequency
+histogram, "why it's in/out of key" — shown in a longer view. No re-architecture to upgrade.
+
+### Naming — freeform + Noteling portmanteau
+
+The name field is **prefilled with an auto-suggested portmanteau** the player can accept or overwrite
+(Incredibox-style freeform underneath). The suggestion **blends the creature names of the loop's 2–3
+most-used notes** from the Notelings roster (Ant/Blob/Chicken/Dog/Eye/Flower/Goat) — e.g. a loop leaning
+on C, E, G → Chicken+Eye+Goat → **"Chiegoat"**. This is an on-brand word-game hook for this site and a
+soft tie-in to the **Notelings** layer (it only needs the 7-name table, **no sprites** — so it can ship
+before Notelings art). Optional mood suffix from chord quality (major → "…Blues/Bright", minor → "…Lament").
+
+### Storage model
+
+Add **`persist.setlist = []`** to the existing `localStorage["mujicians-save-v2"]` blob (additive —
+default to `[]` on load, no key bump needed). Each saved song stores only what **playback + report** need
+(not full card objects):
+
+```
+{ id, name, date, key:{root,mode,name}, tempo:BAR_SEC,
+  bars:[ { notes:[{pc,letter,instId,midi}], cls:{type,name} }, … ],  // the loop, minimally serialized
+  report:{…},        // cached report-card stats (or recompute on open)
+  gigThreshold, applause,   // flavor stats
+  starred:false }
+```
+
+**Prune cap:** keep the most-recent **N** (e.g. 20–30); **★-favorited** songs are pinned and never pruned
+(keeps localStorage bounded).
+
+### Home "Setlist" gallery
+
+A **"Your Setlist"** section on the home screen lists saved songs (name · key · ★). Per row:
+
+- **▶ Play** — audition the saved loop standalone. Requires generalizing the scheduler
+  (`scheduleBar`/`schedTick`) to take a **`(bars, tempo)`** pair so both the in-run loop *and* gallery
+  playback share one code path (a small `playSong(song)` that feeds the scheduler a transient loop).
+- **★ Favorite** (pin), **✎ Rename**, **🗑 Delete**, **⧉ Export** (copy share code).
+- *(Stretch)* a **mini pitch-grid thumbnail** of the loop, rendered from a static `loopStripHTML`-style pass.
+
+### Share code (export/import)
+
+Each song has a **compact, versioned code** (e.g. `MJ1:` + base64 of terse JSON: key, tempo, bars as
+`pc+instId+octave` lists). A **"paste code"** box in the Setlist imports it (creates an entry / plays it).
+This **shares its encoder with the eventual Daily-Set seed export**, so building it here advances that too.
+
+### Other additions considered (menu — not all v1)
+
+- **★ Favorite / pin** — v1 (also protects from prune).
+- **Mood tag** (major/minor/diminished lean) auto-derived — v1 (part of the report).
+- **Gig applause + rating** shown as stats on the card — v1.
+- **Mini pitch-grid thumbnail** in the gallery — stretch.
+- **Detailed theory breakdown** (the report card's full form) — deferred, the "down the road" upgrade.
+- **Notelings cross-link** — once Notelings art lands, a saved-song card can show the creatures it
+  summoned (the portmanteau already names them); see the **Notelings** section.
+- **Daily-Set convergence** — the share encoder feeds the planned seed+set export.
+
+### As built (code map)
+
+- **Trigger:** `winGig()` calls `offerSave(finishedGig,"draft")` before `offerDraft()` for non-final wins
+  (skipped when the loop is empty); the **end overlay** (`renderEndOverlay`) shows a **💾 Save this song**
+  button for the final win / any loss (retScreen `"win"`/`"lose"`), disabled to **✓ Saved** once done
+  (tracked in `run.saved[gigIdx]`). `screen==="save"` renders the gig board behind + `renderSaveOverlay()`.
+- **Snapshot/model:** `snapshotBars()` stores per filled bar `{cards:[{pc,letter,instId,midi}], cls}`;
+  `saveSong()` pushes `{id,name,date,keyName,key,tempo,bars,stars,starred}` onto `persist.setlist`
+  (`localStorage["mujicians-save-v2"]`, additive) and `pruneSetlist()` caps at `SETLIST_CAP=30` (★-pinned
+  never pruned).
+- **Report card:** `songReport(bars,key)` computes `{inKeyPct, structs, consGrade, consRatio, cadence,
+  tritone, topLetter, stars}`; `reportCardHTML()` renders the **brief** subset. The detailed breakdown =
+  same stats, longer view (deferred).
+- **Naming:** `suggestName(bars)` blends the `NOTELING` names of the top-used notes (C+E+G → "Chiegoat").
+- **Playback:** the scheduler is generalized via `playSrc={bars,n}` — `startLoop()` grooves the live gig
+  loop; `startLoop({bars,n})` grooves a saved song (`toggleSongPlay` in the Setlist, `galleryPlayId`).
+- **Setlist gallery:** `setlistHTML()`/`wireSetlist()` on Home — ▶ play · ★ favorite · ✎ rename · ⧉ export
+  · 🗑 delete, plus a **paste-code Import** row.
+- **Share code:** `encodeSong()`/`decodeSong()` → `MJ1:` + base64 JSON (bars as `[pc,instId,midi]`, cls
+  recomputed via `classify` on import). Shares its encoder with the eventual Daily-Set export.
+
+### Open items for this feature
+
+- Exact **rating formula** and consonance-grade thresholds (tune in play).
+- Whether a **losing** gig's loop is worth offering to save (leaning yes — it still played).
+- Portmanteau blend rules when notes tie / a two-note loop reads awkwardly (fallback: key + mood name).
+- Prune cap number and whether the gallery paginates.
 
 ---
 
@@ -326,8 +471,16 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   runs, on via **`?dev`** in the URL or toggled with **Ctrl/Cmd+Shift+D** (persisted in
   `localStorage["mujicians-dev"]`); shows a **DEV ∞** badge and doesn't increment `runsUsed`.
 - **Persistence + meta.** `localStorage["mujicians-save-v2"]` holds `{day, runsUsed, codex,
-  totalApplause, bestApplause}`. **Renown** level derives from cumulative Applause; the **Codex** logs
-  every recognized structure you play.
+  totalApplause, bestApplause, setlist}`. **Renown** level derives from cumulative Applause; the **Codex**
+  logs every recognized structure you play; **`setlist`** holds saved songs (see next bullet).
+- **Save a Song (Setlist + report card + share code).** When a gig's loop is about to be lost you can
+  **name and keep it**: a **💾 Save this song?** dialog pops **before the Muse draft** on a non-final gig
+  win (and as a button on the end overlay for the final win / a loss). It prefills a **Noteling
+  portmanteau** name, shows a brief **report card** (key · structures · in-key % · consonance grade · a
+  cadence/tritone/most-used-note callout · ★ rating), and lets you **▶ audition** the loop first. Saved
+  songs live in a **"Your Setlist"** gallery on Home — **play/pause, ★ favorite, rename, export
+  (`MJ1:` share code), delete**, plus **Import** a pasted code. Full design + code map in the **Save a
+  Song** section above.
 
 **Not yet (still plan):** accidentals/more instruments & drums, Étude/Accidental cards, a coin-based
 shop (draft is free for now), antes/boss-gig constraints, the shared **Daily-Set** seed, set-playback
@@ -370,6 +523,8 @@ placeholders** — balance in play.
 - **Boss-gig** constraint list.
 - The **hard-cap number** (attempts/day) and exactly what resets daily.
 - The **Daily-Set** seed model (shared seed for a social/leaderboard angle?) and set-playback export.
+  (Partly answered: the **Save a Song** feature — Setlist gallery + versioned share code — is speced and
+  shares its encoder with this; see that section.)
 - **Visual identity / palette** — Mujicians should get its own look (the current dark-neon slice-1 skin
   is a placeholder; ROYGBIV cards drive the new identity). Leaning toward **Inklings' retro-pixel style**;
   first pass is **pixel creatures only** (see *Notelings*), full chrome reskin deferred.
