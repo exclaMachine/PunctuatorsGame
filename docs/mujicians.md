@@ -1,235 +1,187 @@
-# Mujicians — a music-theory grid-composer
+# Mujicians — a Balatro-style music-theory deckbuilder
 
-**Entry file:** `mujicians.html` · **Status:** **Slice 1 in progress** — grid + Keys lane + chord
-validator + "complete the chord" puzzle + XP/level + `localStorage` persistence are built; the rest of
-this doc is still the plan.
+**Entry file:** `mujicians.html` · **Status:** **pivoting to a Balatro-style roguelike deckbuilder.**
+Slice-1 code (a note-placement grid) is **demoted** to a future free-compose side tool; the card game
+below is the new main mode. No card-game code written yet — this doc is the plan.
 
-A gamified music-maker that teaches **music theory** by having you build music on a grid. Where
-Inklings collects letters and spells them into words, Mujicians places notes on a grid and assembles
-them into validated chords, scales, and phrases — filling a **Codex** as you go. The fantasy comes
-from the dev's *Mujicians* story world (characters who make magic with music), but **there is no
-in-game story yet** — the "music = magic" flavor is enough. This doc is the source of truth for the
-design; prefer what's written here over generic game-dev defaults.
+A roguelike deckbuilder where **cards are notes** and the "poker hands" you play are **chords, scales,
+and progressions**. You score by making music that's *theory-correct* — in key, consonant, resolving,
+moving by the circle of fifths — and because every hand is **played as audio**, a high score literally
+*sounds good*. The fantasy comes from the dev's *Mujicians* story world (magic made of music); **no
+in-game story yet** — the flavor is enough. This doc is the source of truth; prefer it over generic
+game-dev defaults.
 
-> **Relationship to Pitch Bird.** Pitch Bird (`pitch-bird.html`) is a *separate* shipped-track voice
-> game. Mujicians **reuses Pitch Bird's Web Audio pipeline** (oscillators, the audio graph, note math,
-> the autocorrelation pitch detector) and folds the sing-to-play idea in as **one input mode in
-> free-compose** (hum → notes land on the grid) — not as the spine. See [`pitch-bird.md`](pitch-bird.md).
-
----
-
-## How we got here (design history)
-
-The direction was chosen deliberately over several alternatives, so we don't relitigate settled forks:
-
-- **Kept from Inklings:** only the **collection meta** (a dex/Codex you fill) and the idea of an
-  **offline validator dictionary** (Inklings' WordNet check → a music-theory checker). The world,
-  combat, farming, and writing-desk do **not** carry over. Mujicians is "almost entirely a different
-  game," per the dev.
-- **Rejected spines:** auto-battler / merge-tactics (Clash Royale), party monster-collector RPG,
-  rhythm-command army (Patapon), deckbuilder (Balatro). These were good "assemble a band" fits but
-  each locked the game into a battle genre. Parked as possible *modes*, not the spine.
-- **Chosen spine:** a **Chrome Music Lab "Song Maker"-style note grid + puzzles**, because it "doesn't
-  set me in a lane" and the player is *actually making music*. **Incredibox** supplies the
-  **band-of-characters** layer (each character = an instrument lane).
-- **Licensing note (settled):** Chrome Music Lab's GitHub repo is Apache-2.0, but **Song Maker itself
-  is not in that repo** (never open-sourced). "Visible in the browser" ≠ licensed. We reuse the
-  **ideas/UX** (grid, scale-snapping rows, scrolling playhead) — which aren't copyrightable — and build
-  our own in the existing vanilla Web Audio stack. Same for Incredibox: emulate the stack-loops
-  *concept*, never copy its art/audio assets. If we ever lift an actual snippet from the Apache-2.0
-  repo, we keep its license notice.
+> **Relationship to Pitch Bird.** Pitch Bird (`pitch-bird.html`) stays a separate voice game. Mujicians
+> reuses its **Web Audio pipeline** (oscillators, note math, the pitch detector). Sing-input and the
+> slice-1 grid are candidate **side activities**, not the spine. See [`pitch-bird.md`](pitch-bird.md).
 
 ---
 
-## Implemented so far (slice 1)
+## The core pillar (why this pivot)
 
-Built in `mujicians.html` — self-contained, offline, no dependencies (Web Audio oscillators for sound,
-no assets; runs fine from `file://` since there's no mic). All in one inline `<script>` IIFE:
-
-- **The grid** — DOM CSS-grid, `ROW_MIDIS` = the 7 C-major white keys across two octaves (C4→C6,
-  top = highest), `COLS = 8` beats. Each row is labeled with note name + **scale degree** (`DEGREE`);
-  tonic rows are gold. Column `TARGET_COL` (3) is the highlighted puzzle column.
-- **Keys lane** — click a cell to place/remove a note (`onCellClick`); it sounds immediately via
-  `playMidi` (triangle osc + envelope, `audio()` lazily creates/resumes the `AudioContext` on first
-  gesture). `grid[col]` is a `Set` of MIDI notes.
-- **Chord validator** — `nameChord(pitchClasses)` identifies **major / minor / diminished / augmented**
-  triads (`CHORD_IV` / `TEMPLATES`) from a column's pitch classes (octave-agnostic). This is the "music
-  dictionary" for the slice.
-- **"Complete the chord" puzzle** — `PUZZLES` = the **seven diatonic triads of C major**; `loadPuzzle`
-  pre-places + locks the root (orange), `checkPuzzle` validates the target column live, distinguishing
-  *correct* / *wrong-but-real chord* / *not-a-triad*. Solving arpeggiates it and advances.
-- **Codex** — discovered chords render as chips (`renderCodex`), newest highlighted.
-- **XP / level** — `awardXP` (+30 first discovery, +10 repeat), `levelInfo` rising curve, header bar
-  (`renderLevel`). This is the slice's stand-in for the two-track progression below — for now it's a
-  single global level with no unlocks wired yet.
-- **Persistence** — `save`/`load` to `localStorage["mujicians-save-v1"]` (`{xp, codex, puzzleIdx}`); a
-  **Reset** button clears it.
-- **Playback** — Play loops the 8 columns with a moving playhead (`tick`/`markBeat`, `STEP_MS`); Clear
-  extras wipes non-puzzle columns; Skip advances.
-
-**Not yet:** only the Keys lane (no Bassist/Lead/Drummer), only C major (no circle-of-fifths unlocks),
-no daily puzzle, no 7th/extended chords, no free-compose/pitch-bird input, no level *rewards*. Those are
-later slices — see Open questions.
-
-## Core loop
-
-```
-Pick a puzzle (a piece to complete — voice a chord, finish a melody, resolve a cadence)
-   → place notes on the grid across your band's tracks
-   → playhead plays it back; the theory validator checks the puzzle's rule
-   → correct → the chord/scale/cadence is inscribed in the CODEX (name + why it works + replayable)
-   → reward: XP (level up), and unlocks — a new band member (lane), a new key/scale (rows), or an instrument
-   → later puzzles use the new piece
-   → payoff: FREE-COMPOSE mode with everything unlocked — pitch-bird hum-input plugs in here
-```
-
-If placing notes to complete a musically-correct piece is satisfying, the game works. Everything else
-layers on top.
+**In Balatro the poker hand is abstract; here the hand is audible.** When you play notes, they sound.
+So a high-scoring hand (in-key, consonant, resolving) *sounds good* and a low-scoring hand sounds bad —
+the score and your ear teach the same lesson at once. This is the whole reason for the pivot: the
+lesson-grid taught theory but was **boring**; scoring + randomness + an audible payoff make learning a
+side effect of chasing a number that happens to *be music*. Everything in the design should protect
+this: **score must correlate with musical quality.**
 
 ---
 
-## The grid (the canvas)
+## Design history (so the reasoning survives)
 
-Song Maker style: **rows = pitches, columns = beats.** A **playhead** scrolls left→right and sounds
-whatever cells are filled. Click a cell to place/remove a note. Two **bounded limits** give it the
-"bounded, completable" feel that the 26 letters give Inklings:
-
-- **Rows = the current scale.** Start with the 7 diatonic notes of C major (locked/greyed off-scale
-  rows). Unlocking more notes follows the **circle of fifths** — that progression *is* a key-signature
-  lesson. Each row is labeled with its **note name and scale degree** (1–2–3 / do-re-mi): the teaching
-  layer is built into the canvas.
-- **Columns = a fixed bar count** (e.g. 16 = 4 bars of 4/4). Finite canvas → every puzzle is a
-  completable space.
-
-**Fixed-grid rhythm (decided).** Notes snap to the grid; no variable note durations in v1 (simplest,
-most Song-Maker-like). Variable durations / richer rhythm are a later consideration, not v1.
-
----
-
-## Band characters = tracks (the Incredibox layer)
-
-Each band member is an instrument that occupies its **own lane**, and each teaches one concept.
-**Your collection is the band** — unlocking a member opens a new lane *and* the theory it embodies:
-
-| Member | Lane behavior | Teaches |
-| ------ | ------------- | ------- |
-| **Bassist** | one low note per bar | roots / chord tones |
-| **Keys** | stacked simultaneous notes | chords |
-| **Lead** | single-note line | melody, staying in key |
-| **Drummer** | pitchless rhythm lane | meter / subdivision |
-
-(Roster is a starting sketch, names not final.)
+- **v0 — collection idea (from Inklings).** Kept: a **Codex** you fill, and an **offline validator**
+  (Inklings' WordNet check → a music-theory checker). Dropped: the world/combat/farming/desk.
+- **Rejected battle-genre spines:** auto-battler/merge-tactics, party monster-collector RPG,
+  rhythm-command (Patapon), plain deckbuilder. Good "assemble a band" fits but each locked us into a
+  battle genre. Parked as possible modes.
+- **Rejected spine — grid + puzzle (Chrome Music Lab "Song Maker" × Incredibox).** *Was* the chosen
+  spine and is **built as slice 1** (see below). **Why rejected as the main mode:** the puzzle/lesson
+  loop taught theory but played as a dry exercise — "doing these lessons is very boring." It lacked
+  randomness, replay excitement, and a real "I made something" payoff. **Kept** as a likely
+  **free-compose side tool** (and its audio/validator code is reused).
+- **Chosen spine — Balatro-style deckbuilder.** The dev wants Balatro's randomness/excitement, real
+  music as output, and score tied to theory correctness. Suits = instruments; **ROYGBIV colors = the
+  notes** (Newton). Daily play is **hard-capped** so it stays a ritual (and points players at the side
+  games like Pitch Bird for more).
 
 ---
 
-## The theory validator (the "dictionary")
+## Balatro → Mujicians mapping
 
-The direct analog to Inklings' WordNet check. A **deterministic, offline** function/dataset that
-answers questions the puzzles pose:
-
-- Is this pitch-set a **named chord**? (→ name + quality/function, e.g. "C major — bright, stable")
-- Is this melody **in-key** / does it land on the tonic?
-- Does this progression **resolve** (V→I cadence)?
-- Does this drum pattern fit the **meter**?
-
-Built on the existing note math — **no new runtime dependency, no third-party API** (same single-file /
-offline rule as every other game here). If a data file is needed (e.g. a chord/scale table), it's a
-bundled local JSON fetched at startup, like Inklings' `dictionary.json`.
-
----
-
-## Puzzle types (the escalating curriculum)
-
-These are Mujicians' equivalent of Inklings' farming/fishing/combat — different flavors of the one loop:
-
-1. **Match the melody** — hear/see target notes, place them → pitch & staff reading
-2. **Complete the chord** — a root is placed; fill Keys to form a named triad → chord construction
-3. **Stay in key** — write a Lead line using only scale tones that lands on the tonic → scales & resolution
-4. **Make it resolve** — a progression missing its final chord; place the one that cadences (V→I) → functional harmony
-5. **Fill the groove** — place drum hits to complete a meter → rhythm
-
-**Concrete first ~10 minutes:** start with the Keys lane on a C-major grid. Puzzle 1 places a root C
-and asks for two more notes; you place E and G → *"C major — a bright, stable triad,"* logged to the
-Codex, Bassist lane unlocked. Puzzle 2 combines bass + keys into a two-chord move; by session's end
-you've built C, F, and G triads and heard a I–IV–V.
+| Balatro | Mujicians |
+|---|---|
+| Card (rank + suit) | **A note** — pitch (rank) + instrument (suit) |
+| Suits (♠♥♦♣) | **Instruments** — 3–4 melodic to start (e.g. piano / guitar / bass), **drums later** |
+| — | **ROYGBIV color = the note** (see below) |
+| Poker hands (pair, flush, straight…) | **Musical structures** — interval < triad < 7th < arpeggio/scale-run < extended |
+| "Flush" (all one suit) | **All notes in the round's key** (in-key = your flush) |
+| "Straight" | **A scale run** (stepwise) or a **circle-of-fifths** move |
+| Base chips × mult | **Applause** — structure gives the base; theory-correctness gives the mult |
+| Planet cards (level a hand) | **Étude cards** — practice that levels up a chord/structure type |
+| Tarot cards (transform a card) | **Accidental cards** — sharpen/flatten/transpose a note, or modulate the key |
+| Jokers (the build engine) | **Muses** — passive scoring engines ("in-key notes +2 mult," "bass doubles," "a ii–V–I this gig = ×3") |
+| Blinds (score gates) | **Gigs** — hit the applause threshold to pass |
+| Boss blind gimmicks | **Boss gig** constraints — "atonal night: no in-key bonus," "minor key only," "one instrument silenced," "dissonance taxed," "key modulates each hand" |
+| Ante (3 blinds) | **A Set** (3 gigs) |
+| Shop between blinds | Buy Muses, Étude/Accidental cards, more notes/instruments |
+| **Daily Run** (seeded) | **Daily Set** — one seed/day; the **hard-capped** daily play lives here |
+| Unlockable decks/jokers | Meta-unlocks (instruments, Muses, keys, starting decks), persisted in the **Codex** |
 
 ---
 
-## Progression / level-up (battle deferred, but hooked)
+## Cards, suits, and colors
 
-No combat in v1 (**battle deferred**). Progression levels the **musician and the band** — mastery and
-capability, not attack power. Two tracks plus collection milestones:
+- **A card = a note:** a pitch (the "rank") on an instrument (the "suit").
+- **Starting deck = just the notes:** the 7 diatonic notes of C major on one instrument. Within a run
+  you buy more notes, **accidentals**, and instruments (the deck grows, Balatro-style); across runs you
+  unlock new starting decks. The deck should grow to ~20–40 cards so draws have variety.
+- **Suits = instruments:** 3–4 melodic to start (piano / guitar / bass, maybe a 4th). **No drums in
+  v1** — drums are pitchless and break the note model; add a percussion suit later as a special case.
+  Instrument-based Muses are the "suit synergy" analog.
+- **ROYGBIV colors = the notes (Newton).** Decided mapping — the **simplest letter-order** alignment:
 
-**1. Mujician Level (global XP)** — the content gate. Every puzzle grants XP; leveling unlocks, in order:
-new keys/scales (circle-of-fifths order → more rows), new band slots, new puzzle types, and
-free-compose features (longer grids, export, pitch-bird hum-input).
+  | Note | A | B | C | D | E | F | G |
+  |------|---|---|---|---|---|---|---|
+  | Color | Red | Orange | Yellow | Green | Blue | Indigo | Violet |
 
-**2. Instrument Mastery (per band member)** — "use it to grow it." Using a member in puzzles levels
-*that instrument*, unlocking capabilities that are themselves more theory:
-- Bassist → walking basslines, passing tones
-- Keys → wider polyphony (triads → 7ths → extensions = bigger chords the lane will accept)
-- Lead → wider range (more octaves/rows), then chromatic passing notes
-- Drummer → finer subdivisions (quarters → eighths → syncopation)
-
-A low-mastery instrument literally **can't place** the advanced material yet, which paces the
-curriculum.
-
-**Codex milestones (the collection reward)** — the Inklings **curator-bundle** analog, kept intact:
-completing Codex **sets** (all 12 major triads, all 7 modes of a key, all common cadences) grants
-**one-time rewards** (a new instrument, a venue/stage backdrop, an instrument skin). Pure grants,
-nothing gated behind them.
-
-**XP sources:** base puzzle completion · **discovery bonus** (first time building a given chord/scale =
-a new Codex entry) · **daily** + streak · **no-hint / perfect** bonus.
-
-**Battle hook (deferred, free to keep):** everything you level — Mujician Level, Instrument Mastery —
-is a **capability stat** (range, polyphony, subdivision). If a "band battle" mode is ever added, those
-become its power numbers, so deferring battle costs nothing.
+  Sharps/flats are **shades between** their neighbors (A♯ = red-orange, etc.), which also teaches that
+  accidentals sit "between" the naturals. *Historical caveat: Newton's own note↔color assignment varied
+  across his writings; we chose the clean ascending letter mapping for legibility, not fidelity.*
 
 ---
 
-## Daily puzzle
+## Scoring model (sketch, to tune in play)
 
-One **date-seeded** puzzle per real calendar day (same deterministic model as Inklings' Wordle-style
-daily map — seed from the local date). Identical for everyone that day, new tomorrow. Completing it
-grants **bonus XP + a streak counter**; a 7-day streak completes a "setlist" for a bigger reward.
+**Applause = base(structure) × mult(theory) + per-note chips**, roughly:
+
+- **base** — the musical structure played: interval < triad < 7th chord < arpeggio/scale-run <
+  extended chord. Leveled up by **Étude cards** (Balatro planet analog).
+- **mult** — theory correctness stacks: all notes **in the round's key** (flush), **consonant** chord,
+  contains a **resolution** (leading-tone→tonic, or V→I across hands), **circle-of-fifths** adjacency.
+- **per-note chips** — each note adds chips; in-key notes add more.
+- **Muses** stack further modifiers on top (the build engine).
+
+Because the played notes are **sounded**, dissonant/out-of-key hands both **score low and sound bad** —
+the design's load-bearing alignment.
+
+**Per-gig economy (Balatro-faithful):** a limited number of **hands** and **discards** per gig
+(e.g. 4 hands / 3 discards), a **shop** between gigs, escalating **applause thresholds**.
 
 ---
 
-## The Codex (the collection)
+## The "made some music" payoff
 
-The dex made musical: every chord, scale, and cadence you've built by completing a puzzle is
-**inscribed with its name, its theory (what it's built from, its quality/function), and is replayable.**
-This is the collection meta the dev wanted to keep from Inklings, and the substrate for the milestone
-rewards above.
+A run is a sequence of played hands = a little set. At the end of a gig/run you can **hear your set
+played back**, and share the **seed + your set**. That's the export/brag loop and the answer to "a user
+could make some music that would be made."
 
-**Bounded / completable shape:** max Mujician Level = all 12 keys + full band + all puzzle types; full
-mastery on every instrument; a filled Codex → a clear "you've mastered it" end state, with the daily
-puzzle as the forever-loop on top.
+---
+
+## v1 vertical slice (build this first)
+
+Decided: **vertical slice before the full economy.** Must-haves to prove the loop is fun:
+
+1. **A small note-deck** (7 diatonic C-major notes × 1–3 instruments) with **draw + a hand of ~8**.
+2. **Select up to 5 notes → play** → **evaluate the structure** (interval / triad / 7th / scale-run)
+   and **score Applause** = base × theory-mult + chips.
+3. **Audible playback** of the played hand (reuse `playMidi`) — the pillar.
+4. **Limited hands + discards** and **one Gig** with an applause threshold; beat it = slice complete.
+5. **Hard daily cap** on attempts (persisted).
+
+**Stretch within the slice:** a tiny **shop with 3–4 Muses** to prove the build-engine hook. Antes,
+boss gigs, Étude/Accidental cards, multiple instruments, the Daily-Set seed, and the set-playback
+export come **after** the slice reads as fun.
+
+---
+
+## Reuse from slice-1 code (`mujicians.html` today)
+
+Not a rewrite — the current file already has the useful primitives:
+
+- `nameChord()` → grows into the **hand evaluator** (add 7ths, scales, intervals, in-key checks).
+- `playMidi` / `audio()` → the **audible-hand** engine (the pillar).
+- XP + `levelInfo` → **meta-progression** across runs.
+- `save`/`load` (`localStorage`) → run state, the **hard daily cap**, and the persistent **Codex**.
+- The grid UI/`buildGrid` → **demoted** to the future free-compose tool (kept, not deleted).
 
 ---
 
 ## Settled decisions
 
-1. **Spine = grid + puzzle + band** (Song Maker grid × Incredibox band), not a battle genre.
-2. **Fixed-grid rhythm** in v1 (no variable durations).
-3. **Battle deferred**, but progression stats are designed to double as future battle stats.
-4. **Daily puzzle** (date-seeded, streaks).
-5. **Level-up = two tracks** (Mujician Level + Instrument Mastery) + **Codex milestone grants**.
-6. **Reuse only** Inklings' collection-meta idea and the offline-validator idea; reuse Pitch Bird's
-   Web Audio pipeline; pitch-bird sing-input lives in **free-compose**, not the spine.
-7. **Single-file, vanilla, offline** like every game here — theory validator is local (bundled JSON if
-   needed), no third-party runtime API.
-8. **No copied assets** from Chrome Music Lab or Incredibox — ideas/UX only; keep the Apache-2.0 notice
-   if any actual CML snippet is ever used.
+1. **Spine = Balatro-style deckbuilder** (cards = notes, hands = chords/scales, score = theory
+   correctness). Supersedes the grid+puzzle spine (kept as a side tool).
+2. **Card = a note** (pitch = rank, instrument = suit); **deck starts as just the notes** and grows.
+3. **3–4 melodic instruments** in v1; **drums deferred**.
+4. **ROYGBIV = notes**, A=Red … G=Violet; accidentals = in-between shades. (Newton, simplest mapping.)
+5. **Score correlates with sound** — every hand is played; this alignment is protected above all.
+6. **Vertical slice first** (scoring + one gig + hard cap + audible playback), economy layered after.
+7. **Hard daily cap** on plays (not a ranked-plus-practice split) — a daily ritual; more play = the
+   other games (Pitch Bird, etc.).
+8. **Single-file, vanilla, offline** like every game here; validator/scoring are local, no third-party
+   runtime API.
 
 ---
 
 ## Open questions / not yet decided
 
-- Exact **band roster** and names (the four above are a sketch).
-- Grid dimensions (bar count, octave span) and how many rows unlock per key.
-- Whether the **daily puzzle** is authored or fully generated, and the generator's difficulty curve.
-- The **Codex set list** (which collections count as milestones) and their reward tables.
-- Visual identity / palette (Mujicians should get its own look — not an Inklings reskin).
-- Whether a later **battle/performance mode** and/or extra **modes** (à la Clash Royale) are pursued.
+- Exact **hand-type ladder** and the **scoring numbers** (base/mult/chips) — tune in play.
+- **Instrument roster** (which 3–4) and their Muse synergies.
+- The **Muse set** for the slice's shop (3–4) and the broader Muse pool.
+- **Étude / Accidental** card designs and the shop economy.
+- **Boss-gig** constraint list.
+- The **hard-cap number** (attempts/day) and exactly what resets daily.
+- The **Daily-Set** seed model (shared seed for a social/leaderboard angle?) and set-playback export.
+- **Visual identity / palette** — Mujicians should get its own look (the current dark-neon slice-1 skin
+  is a placeholder; ROYGBIV cards drive the new identity).
+
+---
+
+## Originality / licensing note
+
+We take **mechanical inspiration** from Balatro (game mechanics and rules aren't copyrightable) but
+**copy no Balatro assets, art, code, text, or Joker names** — Balatro is a closed-source commercial
+game. Same rule for the earlier references: reuse **ideas/UX** from Chrome Music Lab (its GitHub repo is
+Apache-2.0, but Song Maker itself was never open-sourced) and Incredibox (concept only), never their
+assets. All Mujicians art, audio, and code is our own; if any actual Apache-2.0 snippet is ever used, we
+keep its license notice.
