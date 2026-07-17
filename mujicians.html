@@ -256,21 +256,41 @@
      terms (groove/dynamic/melodic/timbre/form) are declared here but not yet referenced by score()
      — they land in later phases. Free Play = movement 7 (everything on = today's exact game). */
   const MAX_MOVEMENT = 7, FREE_PLAY_MOVEMENT = 7;
+  const INSTRUMENT_UNLOCK_MV = 6;   // instruments (guitar/bass) unlock at M6 Timbre; earlier = piano only
+  // `thr` = campaign flat applause threshold for that movement (scaled to what its toolset can score;
+  // flat across the 3 gigs since a movement's capability doesn't grow within itself). Free Play (M7)
+  // uses the existing escalating GIGS thresholds instead. Tunable placeholders.
   const MOVEMENTS = [
     null, // index 0 unused — movements are 1..7
-    { n:1, element:"Pitch",     maxSelect:1, terms:["inkey"] },
-    { n:2, element:"Rhythm",    maxSelect:1, terms:["inkey","groove"] },
-    { n:3, element:"Dynamics",  maxSelect:1, terms:["inkey","groove","dynamic"] },
-    { n:4, element:"Melody",    maxSelect:3, terms:["inkey","groove","dynamic","melodic"] },
-    { n:5, element:"Harmony",   maxSelect:5, terms:["inkey","groove","dynamic","melodic","consonant","resolves"] },
-    { n:6, element:"Timbre",    maxSelect:5, terms:["inkey","groove","dynamic","melodic","consonant","resolves","timbre"] },
-    { n:7, element:"Structure", maxSelect:5, terms:["inkey","groove","dynamic","melodic","consonant","resolves","timbre","form"] },
+    { n:1, element:"Pitch",     maxSelect:1, thr:40,  terms:["inkey"] },
+    { n:2, element:"Rhythm",    maxSelect:1, thr:40,  terms:["inkey","groove"] },
+    { n:3, element:"Dynamics",  maxSelect:1, thr:40,  terms:["inkey","groove","dynamic"] },
+    { n:4, element:"Melody",    maxSelect:3, thr:220, terms:["inkey","groove","dynamic","melodic"] },
+    { n:5, element:"Harmony",   maxSelect:5, thr:520, terms:["inkey","groove","dynamic","melodic","consonant","resolves"] },
+    { n:6, element:"Timbre",    maxSelect:5, thr:620, terms:["inkey","groove","dynamic","melodic","consonant","resolves","timbre"] },
+    { n:7, element:"Structure", maxSelect:5, thr:null,terms:["inkey","groove","dynamic","melodic","consonant","resolves","timbre","form"] },
   ];
   // Read the active movement from the current run; outside a run (previews/reports) treat as Free Play.
   const curMovementN = () => (run && run.movement) ? run.movement : FREE_PLAY_MOVEMENT;
   const curMovement  = () => MOVEMENTS[curMovementN()];
   const maxSelect    = () => curMovement().maxSelect;
   const termOn       = (t) => curMovement().terms.includes(t);
+  const instrumentsFor = (mv) => (mv>=INSTRUMENT_UNLOCK_MV) ? INSTRUMENTS : INSTRUMENTS.filter(i=>i.id==="piano");
+  // Campaign applause threshold for the current gig (flat per movement); Free Play uses GIGS escalating.
+  function gigThreshold(){
+    if(run && run.mode==="campaign"){ const t = MOVEMENTS[run.movement].thr; if(t!=null) return t; }
+    return GIGS[gigIdxClamped()].threshold;
+  }
+  // Campaign advancement gate (Codex-style objective). Phase 1: M1 is the real one — play every in-key
+  // letter (the 7 note names) at least once this run. M2–M6 are placeholders (clear the Set) until their
+  // own mechanics land in later phases. Returns {met, have, need, label}.
+  function gateStatus(mv){
+    if(mv===1){
+      const have = (run && run.gateLetters) ? run.gateLetters.size : 0;
+      return { met: have>=7, have, need:7, label:`Pitch gate — play every in-key letter: ${have}/7` };
+    }
+    return { met: !!(run && run.won), have:0, need:0, label:"Gate — clear the Set to advance (placeholder)" };
+  }
 
   // structure base scores  [chips, mult]
   const STRUCT = {
@@ -688,10 +708,10 @@
   let run = null;   // { gigIdx, deck, drawPile, hand, sel:Set, playsLeft, discardsLeft, gigScore, muses }
   let screen = "home";
 
-  function buildDeck(){
+  function buildDeck(mv){
     const deck = [];
     let id = 0;
-    for(const inst of INSTRUMENTS){
+    for(const inst of instrumentsFor(mv || FREE_PLAY_MOVEMENT)){
       for(const pc of DIATONIC_C){
         for(let k=0;k<COPIES;k++){
           deck.push({ id:id++, pc, letter:NOTE_LETTER[pc], instId:inst.id, midi:inst.baseC+pc });
@@ -708,7 +728,7 @@
     if(!DEV){ persist.runsUsed++; savePersist(); }
     // mode "free" = Free Play (all movements on); otherwise Campaign at the reached movement.
     const movement = mode==="free" ? FREE_PLAY_MOVEMENT : (persist.progress.movement || 1);
-    run = { gigIdx:0, deck:buildDeck(), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[], loop:null, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign") };
+    run = { gigIdx:0, deck:buildDeck(movement), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[], loop:null, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), gateLetters:new Set(), won:false, advancedTo:null };
     offerDraft();   // draft a Muse before gig 1
   }
   function startGig(){
@@ -740,12 +760,14 @@
     persist.totalApplause += res.applause;
     if(res.applause > persist.bestApplause) persist.bestApplause = res.applause;
     if(["interval","triad","seventh","run"].includes(res.cls.type)) addCodex(res.cls.name);
+    // campaign gate tracking: log every in-key letter played (Movement 1's advancement objective)
+    if(run.mode==="campaign") cards.forEach(c => { if(g.key.includes(c.pc)) run.gateLetters.add(c.letter); });
     savePersist();
     run.playsLeft--;
     // remove played cards from hand, redraw
     removeSelected(); drawUp();
 
-    if(run.gigScore >= g.threshold){ winGig(); return; }
+    if(run.gigScore >= gigThreshold()){ winGig(); return; }
     if(run.playsLeft <= 0 || run.hand.length === 0){ loseRun(); return; }
     render();
   }
@@ -767,13 +789,20 @@
   function winGig(){
     const finishedGig = run.gigIdx;   // the gig we just cleared (its loop is about to be lost)
     run.gigIdx++;
-    if(run.gigIdx >= GIGS.length){ screen="win"; render(); return; }  // final win: save via the end overlay; loop keeps running
+    if(run.gigIdx >= GIGS.length){ run.won = true; maybeAdvance(); screen="win"; render(); return; }  // final win
     // between gigs: offer to SAVE the just-finished loop BEFORE the Muse draft; then draft.
     // The loop keeps grooving under both overlays; startGig()'s startLoop() swaps in the fresh next-gig loop.
     if(filledBars() > 0) offerSave(finishedGig, "draft");
     else offerDraft();
   }
-  function loseRun(){ screen="lose"; render(); }   // loop keeps playing so you can still hear your creation
+  function loseRun(){ maybeAdvance(); screen="lose"; render(); }   // gate may still be met on a loss; loop keeps playing
+  // Campaign: if this run met the frontier movement's gate, unlock the next movement (persisted).
+  function maybeAdvance(){
+    if(!run || run.mode!=="campaign") return;
+    const mv = run.movement;
+    if(mv>=MAX_MOVEMENT || mv!==persist.progress.movement) return;   // only the reached frontier advances
+    if(gateStatus(mv).met){ persist.progress.movement = mv+1; run.advancedTo = mv+1; savePersist(); }
+  }
 
   /* ================= Muse draft ================= */
   let draftChoices = [];
@@ -862,7 +891,9 @@
   // Skips the empty register gap automatically since only these midis can be dealt.
   function loopRowMidis(){
     const s = new Set();
-    for(const inst of INSTRUMENTS) for(const pc of DIATONIC_C) s.add(inst.baseC+pc);
+    // rows follow the run's actual deck (so an instrument-restricted movement doesn't show empty rows)
+    if(run && run.deck) run.deck.forEach(c => s.add(c.midi));
+    else for(const inst of INSTRUMENTS) for(const pc of DIATONIC_C) s.add(inst.baseC+pc);
     return [...s].sort((a,b)=>b-a);   // high pitch at top
   }
   // "Still sounds good?" — a pitch-class fits the current pick if it's IN KEY and forms a
@@ -928,16 +959,20 @@
   function renderGig(){
     const gi = gigIdxClamped();
     const g = GIGS[gi];
-    const pct = Math.min(100, Math.round(run.gigScore/g.threshold*100));
+    const thr = gigThreshold();
+    const pct = Math.min(100, Math.round(run.gigScore/thr*100));
     const canPlay = run.sel.size>0;
+    const campaign = run.mode==="campaign";
+    const gate = campaign ? gateStatus(run.movement) : null;
     $game.innerHTML = `
       <div class="gigbar">
         <div class="row1">
           <div class="key">Gig <b>${gi+1}</b>/${GIGS.length} · Key <b>${g.keyName}</b> · ${run.mode==="free"?"<b>Free Play</b>":`<b>M${run.movement} ${curMovement().element}</b>`}</div>
           <div class="counts">Hands <b>${run.playsLeft}</b> · Discards <b>${run.discardsLeft}</b> · Hand size <b>${run.handSize}</b> · Deck <b>${run.drawPile.length}</b></div>
         </div>
-        <div class="scoreline">Applause <b>${run.gigScore}</b> / ${g.threshold}</div>
+        <div class="scoreline">Applause <b>${run.gigScore}</b> / ${thr}</div>
         <div class="track"><i style="width:${pct}%"></i></div>
+        ${gate ? `<div class="scoreline" style="color:${gate.met?'var(--good)':'var(--dim)'}">${gate.met?'✓ ':''}${gate.label}</div>` : ""}
       </div>
       ${loopStripHTML()}
       <div class="preview">${previewHTML()}</div>
@@ -1146,6 +1181,11 @@
     $overlay.innerHTML = `
       <div class="overlay"><div class="modal center">
         <h2>${won?"🎉 Set complete!":"Run over"}</h2>
+        ${run && run.advancedTo
+          ? `<p class="big" style="color:var(--good)">🎓 Movement complete — unlocked <b>M${run.advancedTo} ${MOVEMENTS[run.advancedTo].element}</b>! Next Campaign run starts there.</p>`
+          : (run && run.mode==="campaign" && run.movement<MAX_MOVEMENT
+              ? `<p class="hint">${gateStatus(run.movement).label} — meet it to advance to <b>M${run.movement+1} ${MOVEMENTS[run.movement+1].element}</b>.</p>`
+              : "")}
         <p>${won
           ? "You passed all three gigs. Your best hand this run is inscribed in the Codex."
           : "You didn't reach the applause threshold in time. Every played chord still counts in your Codex."}</p>

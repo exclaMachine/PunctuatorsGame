@@ -411,22 +411,37 @@ Codex in code or is a new view; and the deferred full retro-pixel reskin.
 
 ---
 
-## Progression — the seven-movement campaign (**Phase 0 built; movements planned**)
+## Progression — the seven-movement campaign (**Phases 0–1 built; M2+ planned**)
 
-> **Status: designed, and Phase 0 (the scaffold) is now built** in `mujicians.html`; the seven movements'
-> *content* is still planned (Phases 1–4 below). A long-arc progression system proposed by the dev,
-> grounded in the *Mujicians* graphic-novel structure. It **layers on top of** (doesn't revert) the current
-> full-feature run — today's game is preserved as the "everything unlocked" **Free Play** mode (see below).
-> Numbers, gate counts, and scoring terms are placeholders to tune in play.
+> **Status: designed, and Phases 0 (scaffold) + 1 (Movement 1 + gate/advancement engine) are now built**
+> in `mujicians.html`; the deeper movement *content* is still planned (Phases 2–4 below). A long-arc
+> progression system proposed by the dev, grounded in the *Mujicians* graphic-novel structure. It **layers
+> on top of** (doesn't revert) the current full-feature run — today's game is preserved as the "everything
+> unlocked" **Free Play** mode (see below). Numbers, gate counts, and scoring terms are placeholders.
 >
-> **Built (Phase 0 scaffold):** a `MOVEMENTS` registry (7 movements, each with a `maxSelect` and a set of
-> active scoring `terms`); `persist.progress = {movement, gates}` (additive to `mujicians-save-v2`, default
-> `{movement:1}`); `startRun(mode)` sets `run.movement` from the mode (`"campaign"` → the reached movement,
-> `"free"` → 7); `maxSelect()`/`termOn()` helpers drive the select cap and gate `score()`'s terms; a **Home
-> mode select** (Campaign · Movement N vs Free Play, both under the global daily cap); an in-gig HUD badge.
-> Only the already-existing terms are wired — `'inkey'` (M1+) and `'consonant'`/`'resolves'` (M5+); the
-> others (`groove`/`dynamic`/`melodic`/`timbre`/`form`) are declared no-ops until their phase. Free Play
-> (movement 7, all terms on) is byte-for-byte today's game.
+> **Built (Phase 0 scaffold):** a `MOVEMENTS` registry (7 movements, each with `maxSelect`, campaign
+> threshold `thr`, and active scoring `terms`); `persist.progress = {movement, gates}` (additive to
+> `mujicians-save-v2`, default `{movement:1}`); `startRun(mode)` sets `run.movement` from the mode
+> (`"campaign"` → the reached movement, `"free"` → 7); `maxSelect()`/`termOn()` gate the select cap and
+> `score()`'s terms; a **Home mode select** (Campaign · Movement N vs Free Play, both under the daily cap);
+> an in-gig HUD badge. Only existing terms are wired — `'inkey'` (M1+), `'consonant'`/`'resolves'` (M5+);
+> the rest are declared no-ops until their phase. Free Play (movement 7) is byte-for-byte today's game.
+>
+> **Built (Phase 1 — Movement 1 + the gate engine):**
+> - **Deck restriction by movement** — `buildDeck(mv)` uses `instrumentsFor(mv)`: **piano only until M6**
+>   (Timbre), all three at M6+. `loopRowMidis()` now derives rows from the run's actual deck, so a
+>   restricted movement doesn't render empty bass/guitar rows. (Instruments already existed; the campaign
+>   *gates* them rather than adding new ones.)
+> - **Campaign thresholds** — `gigThreshold()` returns the movement's flat `thr` (M1–M3 = 40, M4 = 220,
+>   M5 = 520, M6 = 620) so each chapter is winnable with that movement's toolset; Free Play / M7 keep the
+>   escalating `GIGS` thresholds (650/1150/1800). Wired into the win-check, progress bar, and scoreline.
+> - **The gate/advancement engine** — `gateStatus(mv)` returns the Codex-style objective. **M1 is the real
+>   one: play every in-key letter (all 7 note names) at least once this run** (`run.gateLetters`, logged in
+>   `playHand`). M2–M6 are **placeholder gates** ("clear the Set") until their mechanics land. `maybeAdvance()`
+>   (called from the final `winGig` and from `loseRun` — the gate can be met on a loss too) bumps
+>   `persist.progress.movement` when the frontier movement's gate is met. The in-gig HUD shows live gate
+>   progress; the **end overlay** shows a "🎓 Movement complete — unlocked M_n_" banner, or the gate still
+>   needed. "New Run" restarts in the same mode.
 
 ### The core idea (why this exists)
 
@@ -571,9 +586,11 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
   today's exact game). Global daily cap covers both; the "New Run" button keeps the finished run's mode.
   *Net: today's game reachable via Free Play; Campaign runs at the reached movement (default M1). Pure
   plumbing, nothing reverted.* Movement content (M1 restrictions, gate advancement) is Phase 1+.
-- **Phase 1 — Movement 1 (Pitch) + the gate engine.** `MAX_SELECT=1`; single-note scoring
-  `chips × (in-key ? 2 : 1)`; **restrict the starting deck to one instrument** (piano — guitar/bass already
-  exist, held back for M6); build the reusable **Codex-gate checker** (gate: catalog all 7 letters in key).
+- **Phase 1 — Movement 1 (Pitch) + the gate engine. ✅ BUILT.** `maxSelect:1` (from Phase 0); single-note
+  in-key scoring; **starting deck restricted to piano** (`instrumentsFor`, guitar/bass held for M6);
+  movement-scaled flat campaign thresholds (`gigThreshold()`, M1 = 40 so it's winnable); the reusable
+  **gate/advancement engine** (`gateStatus`/`maybeAdvance`) — M1's real gate is "play all 7 in-key letters,"
+  M2–M6 are placeholder "clear the Set" gates. HUD gate progress + end-overlay "Movement complete" banner.
 - **Phase 2 — Thin-slice the middle movements (walk the whole arc).** Get M2→M7 *walkable* with minimal
   depth: **M2 Rhythm** placeholder (downbeat only, groove stubbed); **M3 Dynamics** done properly (per-hand
   p/mf/f gain + contrast bonus — low lift); **M4 Melody** (`MAX_SELECT→3` in sequence, interval/run scoring
@@ -732,15 +749,17 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   (`MJ1:` share code), delete**, plus **Import** a pasted code. Full design + code map in the **Save a
   Song** section above.
 
-- **Progression scaffold (Phase 0 of the 7-movement campaign).** A `MOVEMENTS` registry gates the
-  select cap (`maxSelect()`) and scoring terms (`termOn()`) by the run's movement; **Home offers Campaign
-  (at your reached movement, default M1) vs Free Play (all unlocked = today's game)**, both under the daily
-  cap; `persist.progress` persists reached movement (additive). Only existing terms are wired (`inkey`,
-  `consonant`, `resolves`); the rest are declared no-ops. Full design + phase plan in the **Progression**
-  section above.
+- **Progression campaign — Phases 0–1 (of the 7-movement arc).** A `MOVEMENTS` registry gates the select
+  cap (`maxSelect()`), scoring terms (`termOn()`), the deck's instruments (`instrumentsFor()` — piano-only
+  until M6), and each movement's flat campaign threshold (`gigThreshold()`) by the run's movement. **Home
+  offers Campaign (at your reached movement, default M1) vs Free Play (all unlocked = today's game)**, both
+  under the daily cap. **Movement 1 is fully playable**: single notes, piano deck, threshold 40, and a real
+  advancement gate (`gateStatus`/`maybeAdvance`) — play all 7 in-key letters to unlock M2 (persisted in
+  `persist.progress.movement`); HUD gate meter + end-overlay unlock banner. M2–M6 gates are placeholders
+  ("clear the Set") until their mechanics arrive. Full design + phase plan in the **Progression** section.
 
-**Not yet (still plan):** the campaign movement *content* (Phases 1–4: M1 deck/select restrictions +
-gate advancement, Rhythm sub-bar subsystem, Dynamics, cross-gig loop for Structure); accidentals/more
+**Not yet (still plan):** the deeper campaign movement *content* (Phases 2–4: M2 Rhythm sub-bar subsystem,
+M3 Dynamics, M4 Melody depth, real M5–M7 gates, cross-gig loop for Structure); accidentals/more
 instruments & drums, Étude/Accidental cards, a coin-based
 shop (draft is free for now), antes/boss-gig constraints, the shared **Daily-Set** seed, set-playback
 export, and a bespoke visual identity (current dark-neon skin is a placeholder; the ROYGBIV cards are
