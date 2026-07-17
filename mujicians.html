@@ -471,12 +471,12 @@
   }
 
   function winGig(){
-    stopLoop();
     run.gigIdx++;
-    if(run.gigIdx >= GIGS.length){ screen="win"; render(); return; }
+    if(run.gigIdx >= GIGS.length){ screen="win"; render(); return; }  // final win: leave the loop running so you keep hearing your set
+    // between gigs: keep the just-finished loop grooving under the Muse draft; startGig()'s startLoop() swaps in the fresh next-gig loop
     offerDraft();
   }
-  function loseRun(){ stopLoop(); screen="lose"; render(); }
+  function loseRun(){ screen="lose"; render(); }   // loop keeps playing so you can still hear your creation
 
   /* ================= Muse draft ================= */
   let draftChoices = [];
@@ -717,7 +717,7 @@
   }
 
   function renderEndOverlay(won){
-    if(screen==="win") renderGigStatic();
+    renderGigStatic();   // keep the loop grid visible behind the overlay (win or lose) so the playhead sweeps as it plays
     const runsLeft = runsLeftToday();
     $overlay.innerHTML = `
       <div class="overlay"><div class="modal center">
@@ -727,7 +727,7 @@
           : "You didn't reach the applause threshold in time. Every played chord still counts in your Codex."}</p>
         <p class="big">Best hand: <b>${persist.bestApplause}</b> · Renown Lv <b>${renownLevel(persist.totalApplause)}</b></p>
         <div class="cta">
-          ${won?`<button class="btn ghost" id="b-replay">${loopOn()?"⏸ Stop":"▶ Hear your set"}</button>`:""}
+          <button class="btn ghost" id="b-replay">${loopOn()?"⏸ Pause your set":"▶ Hear your set"}</button>
           ${runsLeft>0
             ? `<button class="btn" id="b-again">▶ New Run (${runsLeftLabel()} left today)</button>`
             : `<button class="btn ghost" disabled>No runs left today</button>`}
@@ -738,10 +738,10 @@
     const again = document.getElementById("b-again");
     if(again) again.addEventListener("click", ()=>{ audio(); startRun(); });
     const replay = document.getElementById("b-replay");
-    if(replay) replay.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderEndOverlay(true); });
+    if(replay) replay.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderEndOverlay(won); });
     document.getElementById("b-home").addEventListener("click", ()=>{ stopLoop(); screen="home"; run=null; render(); });
   }
-  function renderGigStatic(){ /* keep the last gig board visible behind the win overlay */ if(run) renderGig(); }
+  function renderGigStatic(){ /* keep the last gig board visible behind the end overlay (win or lose) so the loop's playhead keeps sweeping */ if(run) renderGig(); }
 
   /* ================= init ================= */
   // DEV toggle: Ctrl/Cmd+Shift+D flips unlimited runs on/off (persisted).

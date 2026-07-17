@@ -120,9 +120,11 @@ played back**, and share the **seed + your set**. That's the export/brag loop an
 could make some music that would be made."
 
 **Now partly built:** each gig is a **repeating loop you fill hand-by-hand** (see the "song loop" bullet
-under *Implemented*), and the win screen replays it via **"Hear your set."** Still to do: **accumulate
-one loop across all 3 gigs** (currently the loop resets per gig, and each gig has its own key), plus a
-real **seed + set export/share**.
+under *Implemented*), and the loop **keeps playing continuously through the end of a run** — it does not
+cut off when a run finishes (win *or* lose) or when the between-gigs **Muse draft** dialog pops up, so you
+keep hearing your creation while you read the result or pick a Muse. Still to do: **accumulate one loop
+across all 3 gigs** (currently the loop resets per gig, and each gig has its own key), plus a real **seed +
+set export/share**.
 
 ---
 
@@ -194,8 +196,15 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   **structure label** sits under each column. Click any cell/label in a column to aim the write head there, and a
   **pause/play** toggle mutes the groove. (This reuses the `mujicians-compose.html` grid concept for the loop
   display.)
-  The loop resets per gig (a fresh song each gig); the win screen offers **"▶ Hear your set"** to replay
-  the last gig's loop — the "made some music" payoff. So a gig now literally **builds an audible loop**.
+  The loop resets per gig (a fresh song each gig, swapped in cleanly by `startGig`→`startLoop`, whose
+  `stopLoop` resets the scheduler). The loop **never stops on its own between gig and end state**: `winGig`
+  and `loseRun` no longer call `stopLoop`, so the just-finished gig's loop **keeps grooving under the Muse
+  draft** (rendered behind the draft overlay) and under the **end overlay** (win or lose — `renderEndOverlay`
+  calls `renderGigStatic()` unconditionally so the pitch grid + playhead stay visible behind it). The end
+  overlay's **"▶ Hear your set" / "⏸ Pause your set"** toggle (shown on both win and lose) just pauses/resumes
+  that already-running loop rather than starting it — the "made some music" payoff. `stopLoop` now only fires
+  on explicit user actions (Home, starting a new run/gig, the pause toggle). So a gig literally **builds an
+  audible loop** you can sit with after the run ends.
 - **Run = a Set of 3 Gigs** (`GIGS`), each with a **key** (C→G→F major, so "in key" is a live choice
   with a natural-note deck) and an escalating **applause threshold** (`650 / 1150 / 1800` — deliberately
   high so a gig can't be cleared in one or two lucky hands; you play several, filling more of the loop);
