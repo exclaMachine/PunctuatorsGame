@@ -411,6 +411,157 @@ Codex in code or is a new view; and the deferred full retro-pixel reskin.
 
 ---
 
+## Progression — the seven-movement campaign (**planned, not built**)
+
+> **Status: designed this pass, not coded.** A long-arc progression system proposed by the dev, grounded
+> in the *Mujicians* graphic-novel structure. Nothing here is built yet; it's recorded so the design
+> survives and the eventual build matches intent. It **layers on top of** (doesn't revert) the current
+> full-feature run — today's game becomes the "everything unlocked" end state (see *Free Play* below).
+> Numbers, gate counts, and scoring terms are placeholders to tune in play.
+
+### The core idea (why this exists)
+
+Today the game drops you straight into **harmony** — triads, 7ths, and scale runs from card one. That's
+teaching jazz voicings before single notes. The graphic novel's arc — **pitch → rhythm → dynamics →
+melody → harmony → texture (timbre) → structure** — is (not coincidentally) the canonical order music is
+actually taught: you can't build harmony before you have pitch, or structure before you have melodies to
+arrange. So progression = **each element is a "movement" that unlocks one mechanic *and* adds one scoring
+term**, in that order. The mechanic *is* the lesson; the current full game is what you arrive at.
+
+The dev's "one card at a time at first, more cards as you advance" is **not an arbitrary XP gate** — it
+*is* the pitch→melody→harmony progression: one note (pitch), then notes-in-a-row (melody), then
+notes-stacked (harmony). Earning more cards and earning theory are the same act.
+
+### Decided this pass
+
+- **Shape = linear 7-movement campaign** (ordered, matches the novel's arc). Not a skill tree.
+- **Gate = Codex/Bestiary milestones.** You advance by *cataloguing the concept* ("log 3 in-key
+  melodies → unlock Harmony"), not by grinding an applause total. Forces playing the idea; most on-brand
+  with the naturalist/Bestiary framing. **Renown** (cumulative applause) stays as a cosmetic prestige
+  title, **not** the gate.
+- **Free Play stays, but daily-capped.** The current all-features run is preserved as a **Free Play /
+  Conservatory** mode = the "movement-7, everything on" state — *nothing is reverted*. But the **hard
+  daily cap (`MAX_RUNS_PER_DAY`) is global** — it applies to Free Play too. The cap is the ritual; Free
+  Play is "play the full game," not "play unlimited." (DEV override still bypasses the cap for testing.)
+- **Plan all 7 movements before building** (including the heavy Rhythm system), then build in order.
+
+### The seven movements
+
+Each movement unlocks a mechanic, turns on one scoring term (so scoring *grows* — it never rewrites), and
+has a Codex/Bestiary graduation gate. Because today's `score()` already **sums bonuses**, the plan is to
+**gate which bonuses are active** by `progress.movement` — so "all terms on" is exactly today's formula,
+which is why Free Play is a no-code-change end state.
+
+| # | Element | Unlocks (mechanic) | Scoring term added | Codex gate to advance (placeholder) | Build lift |
+|---|---------|--------------------|--------------------|--------------------------------------|-----------|
+| 1 | **Pitch** | **One card at a time**; single notes only. Learn the 7 letters + ROYGBIV. | in-key? (×2 / ×1) | catalog all 7 note-letters played **in key** | tiny |
+| 2 | **Rhythm** | **Sub-bar timing** — note placement/duration on beats, rests, a small deck of rhythm figures | groove (on-beat, non-empty) | log N loops that hit a groove threshold | **heavy** |
+| 3 | **Dynamics** | **Velocity per note** (p / mf / f), accents, crescendo shape | dynamic-contrast bonus | log N loops with real dynamic variety | cheap |
+| 4 | **Melody** | **Select 2–3 cards played in *sequence*** — intervals + scale runs turn on; `MAX_SELECT` grows | stepwise-motion / contour | catalog N intervals + 1 scale run | medium |
+| 5 | **Harmony** | **Stack cards *simultaneously*** — triads, 7ths, consonance, cadences (today's core) | the current mult stack (consonant, resolves, flush) | catalog N consonant triads + 1 V–I cadence | **already built** |
+| 6 | **Timbre** | **More instruments/suits unlock here**; multi-voice layering/orchestration | instrument-blend synergy | play N multi-instrument blends | medium |
+| 7 | **Structure** | **Form across bars & across the 3-gig set** — AABA, verse/chorus, the accumulated song | phrase/form bonus | complete one structured form (e.g. AABA) | medium |
+
+Graduating movement 7 unlocks **Free Play** (all terms on = today's game, still daily-capped).
+
+### How the "one card → more cards" arc plays out (the load-bearing detail)
+
+- **M1 Pitch:** `handSize` small, **`MAX_SELECT = 1`**. You play one note; it lands on the bar's downbeat.
+  Score is legible: `chips × (in-key ? 2 : 1)`. A beginner grasps it instantly.
+- **M2 Rhythm / M3 Dynamics:** still one card, but now you place it *in time* and *at a volume* — the same
+  note becomes expressive. New axes, still `MAX_SELECT = 1`.
+- **M4 Melody:** **`MAX_SELECT` rises to ~3**, played **in sequence** (a line across beats — this needs
+  M2's timing). `classify`'s interval + scale-run detection switches on.
+- **M5 Harmony:** **`MAX_SELECT = 5`**, cards can be stacked **simultaneously**; triad/7th/consonance/
+  cadence scoring switches on (today's behavior).
+- **M6–M7:** more instruments and form scoring, no further select growth.
+
+So `MAX_SELECT` and `handSize` **grow as a function of `progress.movement`**, and the existing hand-size
+Muses (Extra Hand / Big Hand) become boosts *on top of* the movement floor.
+
+### Scoring evolution (protecting the pillar)
+
+The pillar is **score correlates with sound**. Progression protects it because each movement
+**multiplies in one more factor** rather than replacing the formula:
+
+```
+M1: chips × inKeyMult
+M2: … × grooveMult
+M3: … × dynamicMult
+M4: … × melodicMult
+M5: … × (consonant, resolves, flush)   ← today's stack
+M6: … × timbreBlendMult
+M7: … × formMult
+```
+
+By movement 7 you've *arrived at* today's full stacked Applause formula — but you understand every term
+because you earned it one at a time. Implementation: keep one `score()` that reads `progress.movement`
+(or an `activeTerms` set) and skips inactive terms; Free Play sets them all active.
+
+### The heavy one — Rhythm (movement 2), designed in full
+
+Rhythm is the only movement that needs a genuinely new subsystem (sub-bar time). Design:
+
+- **Sub-bar grid.** Each bar (currently one loop column) subdivides into **`BEATS` sub-slots** (start with
+  4). The loop pitch-grid gains **sub-columns**: `rows = pitch`, `columns = bars × BEATS`. Cells stay the
+  same ROYGBIV language, just finer.
+- **How a hand gets a rhythm — a small "rhythm figure" deck.** Rather than free note-drawing (too fiddly
+  for a card game), the player **picks a rhythm figure** when placing a hand: e.g. *four-on-the-floor*,
+  *straight eighths*, *a syncopated push*, *dotted*, *with a rest*. Figures are **unlockable/collectible**
+  (a Codex sub-set — teaches note values by name) and later **draftable like Muses/Étude cards**. The
+  figure maps the played note(s) onto beat offsets within the bar.
+- **Scheduler change.** `scheduleBar` today fires a bar's notes at its downbeat (runs arpeggiated). Extend
+  it to schedule each note at **`t + beatOffset × (barSec / BEATS)`** per the chosen figure. The
+  lookahead scheduler and the onset-queue playhead (`barQueue`) already tick per bar — subdivide to a
+  **beat queue** so the sweep lands on sub-columns.
+- **Scoring term — groove.** Reward: notes **on the beat**, **no empty downbeats**, and (later movements)
+  **syncopation** and **rhythmic consistency across the loop**. Audible payoff is immediate — a rhythmic
+  loop sounds like music where a block chord doesn't.
+- **Rests.** A rest is a figure with a silent slot (or a dedicated rest token), teaching that silence is
+  rhythm too. Cheap once the sub-grid exists.
+
+Because this is the big lift, it can be **staged**: ship the sub-bar grid + 3–4 fixed figures first;
+add draftable figures, syncopation scoring, and rests later. (Movements 1, 3, 4 are cheap; 5 is built; 6
+and 7 are medium — so Rhythm is the pole that holds up the tent, plan it first per the dev's call.)
+
+### Framing & tie-ins (free wins)
+
+- **Diegetic arc = the graphic novel.** Each movement is a **chapter/mentor** from the *Mujicians* story;
+  the player learning the seven elements mirrors the protagonist learning music-magic. This is the game's
+  first real story hook (the doc's stance so far is "no prose story yet — flavor is enough"; the
+  movements give a spine to add prose to *later* without inventing new fiction).
+- **Boss gigs = movement capstones.** The already-planned boss-gig constraints become the **exam at the
+  end of each chapter** (a rival Mujician conducting a deliberately dissonant beast, per Notelings).
+- **Codex ⇄ Bestiary.** The graduation gates *are* Codex milestones, so this reuses the existing Codex and
+  strengthens the naturalist framing — you literally catalogue your way to the next element.
+
+### As it would be built (code map, when we do it)
+
+- **New `persist.progress`** in `localStorage["mujicians-save-v2"]` (additive, default `{movement:1}` on
+  load): `{ movement, gates:{…} }` tracking catalogued counts per gate. Free Play sets `movement:7`.
+- **`MOVEMENTS` registry** — an array of `{ element, maxSelect, activeTerms, gate(codex)→bool, mentor }`.
+  `MAX_SELECT` and the active scoring terms **read from `MOVEMENTS[progress.movement]`** instead of being
+  constants.
+- **`score()` gates terms** by `activeTerms` (no formula rewrite).
+- **`classify` unchanged** — it already detects everything; movements just decide which results *score*.
+- **Rhythm subsystem** (sub-bar grid + figure deck + scheduler beat-offsets) is its own module, gated off
+  until movement ≥ 2.
+- **Mode select on Home:** *Campaign* (movement flow) vs *Free Play* (all on) — both consume the **global
+  daily cap**.
+
+### Open items for this feature
+
+- Exact **gate counts** per movement and whether gates are "catalog N distinct" vs "N total."
+- **Rhythm figure roster** and how figures are acquired (unlock vs draft vs both).
+- Whether **Dynamics** is a per-note property, a per-hand marking, or a figure-like pick.
+- **Structure (M7)** scoring: how to detect/reward AABA & phrase form across the 3-gig accumulated song
+  (ties into the still-unbuilt "accumulate one loop across all 3 gigs").
+- Whether Free Play is available **from the start** (menu) or **only after graduating** movement 7.
+- How the **hand-size Muses** stack with the per-movement `MAX_SELECT` floor.
+- Mentor/chapter prose (deferred; the flavor-only stance holds until the arc is built).
+
+---
+
 ## v1 vertical slice (build this first)
 
 Decided: **vertical slice before the full economy.** Must-haves to prove the loop is fun:
@@ -564,6 +715,11 @@ placeholders** — balance in play.
    other games (Pitch Bird, etc.).
 8. **Single-file, vanilla, offline** like every game here; validator/scoring are local, no third-party
    runtime API.
+9. **Progression = a linear 7-movement campaign** matching the graphic novel's arc (pitch → rhythm →
+   dynamics → melody → harmony → timbre → structure); each movement unlocks one mechanic + adds one
+   scoring term; advancement is gated on **Codex/Bestiary milestones** (not Renown grinding). Today's
+   full game is preserved as **Free Play** (the all-unlocked end state — *not reverted*), and the **hard
+   daily cap is global** (Free Play included). Designed this pass, **not built** — see *Progression*.
 
 ---
 
@@ -584,6 +740,10 @@ placeholders** — balance in play.
 - **Notelings collection/story layer** — the letter-creature + Bestiary design is speced as *tentative*
   (see the **Notelings** section); its own open items (procedural fusion, legendary-chimera recipes,
   instrument-as-texture, Bestiary-as-rename-vs-view) live there.
+- **Progression / 7-movement campaign** — the shape (linear, Codex-gated, Free Play preserved but
+  daily-capped) is decided and speced as *planned/not-built* (see the **Progression** section); its own
+  open items (gate counts, rhythm-figure roster, dynamics representation, M7 form scoring, Free-Play
+  availability, mentor prose) live there.
 
 ---
 
