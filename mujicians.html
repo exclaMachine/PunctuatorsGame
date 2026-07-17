@@ -122,14 +122,21 @@
   .dynbtn.on{background:#5a6bff;color:#fff;border-color:#7a88ff}
   .dynbtn:active{transform:translateY(1px)}
 
-  /* M2 rhythm — pick which sub-beats of the bar the next hand plays on (●=hit, ○=rest) */
-  .figctl{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 10px}
-  .figctl .figlbl{color:var(--dim);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
-  .figbtn{font:inherit;padding:6px 12px;border-radius:8px;cursor:pointer;
-    background:#131730;color:var(--dim);border:1px solid var(--edge)}
-  .figbtn .figpat{font-size:12px;letter-spacing:3px}
-  .figbtn.on{background:#5a6bff;color:#fff;border-color:#7a88ff}
-  .figbtn:active{transform:translateY(1px)}
+  /* M2 rhythm (Stage 2) — give each selected note a duration; the row reads as the sequence in play order */
+  .seqctl{display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;margin:0 0 10px}
+  .seqctl .seqlbl{color:var(--dim);font-size:12px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+  .seqctl .seqhint{color:var(--dim);font-size:12px;font-style:italic}
+  .seqrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .seqnote{display:inline-flex;align-items:center;gap:3px;background:#131730;border:1px solid var(--edge);border-radius:8px;padding:3px 5px}
+  .seqnote .seqlet{font-weight:800;font-size:14px;min-width:12px;text-align:center}
+  .seqarrow{color:var(--dim);font-size:13px}
+  .durbtn{font:inherit;font-size:14px;line-height:1;padding:4px 7px;border-radius:6px;cursor:pointer;
+    background:#0e1226;color:var(--dim);border:1px solid var(--edge)}
+  .durbtn.on{background:#5a6bff;color:#fff;border-color:#7a88ff}
+  .durbtn:active{transform:translateY(1px)}
+  /* a longer note's sustained beats (attack = full color .on; held = dimmer continuation, bg set inline) */
+  .lgcell.held{border-color:rgba(255,255,255,.18)}
+  .lgcell.gheld{box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
   /* faint bar-group separators when the loop grid is subdivided into beats */
   .lgcell.beat0:not(:nth-child(2)){border-left:1px solid rgba(255,255,255,.08)}
 
@@ -336,20 +343,23 @@
   ];
   const DEFAULT_DYN = "mf";
   const dynGain = id => (DYN.find(d=>d.id===id)||DYN[1]).gain;
-  // Rhythm (M2, Phase 3 Stage 1): a bar subdivides into BEATS sub-slots; a "rhythm figure" chooses
-  // which slots the next hand sounds on. Stage 1 ships a small FIXED roster (draftable figures,
-  // syncopation scoring, and rests are later Phase-3 stages — see docs/mujicians.md).
+  // Rhythm (M2, Phase 3 Stage 2): a bar subdivides into BEATS sub-slots (= beats). Instead of a
+  // whole-hand "figure", each note carries a DURATION (in beats/slots): a melodic hand lays its notes
+  // back-to-back in PLAY ORDER, each lasting its duration, so the durations ARE the rhythm (a stacked
+  // chord instead rings the bar). v1 palette = quarter/half/whole on the 4-beat grid; eighths (½ beat)
+  // are a fast-follow needing BEATS=8. See docs/mujicians.md → Phase 3 Stage 2.
   const BEATS = 4;
-  const FIGURES = [
-    { id:"whole", name:"Whole — one hit on the downbeat",           onsets:[0]       },
-    { id:"four",  name:"Four on the floor — a hit on every beat",   onsets:[0,1,2,3] },
-    { id:"half",  name:"Half — beats 1 & 3",                        onsets:[0,2]     },
-    { id:"back",  name:"Backbeat — beats 2 & 4 (off the downbeat)", onsets:[1,3]     },
+  const DURATIONS = [
+    { id:"q", label:"♩",  name:"quarter — 1 beat", slots:1 },
+    { id:"h", label:"𝅗𝅥", name:"half — 2 beats",   slots:2 },
+    { id:"w", label:"𝅝", name:"whole — 4 beats",  slots:4 },
   ];
-  const DEFAULT_FIG = "whole";   // = today's single-downbeat behavior; also the fallback for legacy/imported bars
-  const figOf     = id => FIGURES.find(f=>f.id===id) || FIGURES[0];
-  const figOnsets = id => id ? figOf(id).onsets : [0];   // null/undefined ⇒ downbeat only (rhythm term off)
-  const figGlyph  = onsets => { let s=""; for(let b=0;b<BEATS;b++) s += onsets.includes(b)?"●":"○"; return s; };
+  const DEFAULT_DUR = "q";
+  const durOf    = id => DURATIONS.find(d=>d.id===id) || DURATIONS[0];
+  const durSlots = id => durOf(id).slots;
+  // per-card duration lives in run.noteDur[cardId] (keyed by the stable card id so it survives Sort);
+  // default = quarter. Only melodic/single hands use it; a harmony stack rings the bar.
+  const noteDurOf = c => (run && run.noteDur && run.noteDur[c.id]) || DEFAULT_DUR;
   // Read the active movement from the current run; outside a run (previews/reports) treat as Free Play.
   const curMovementN = () => (run && run.movement) ? run.movement : FREE_PLAY_MOVEMENT;
   const curMovement  = () => MOVEMENTS[curMovementN()];
@@ -370,8 +380,8 @@
     switch(mv){
       case 1: { const h=pitchLettersGot().length;   // persisted across runs (see pitchLettersGot)
         return { met:h>=7, label:`Pitch gate — play every in-key letter: ${h}/7` }; }
-      case 2: { const h=r.gateFigs?r.gateFigs.size:0, N=FIGURES.length;   // Phase 3: play each rhythm figure at least once
-        return { met:h>=N, label:`Rhythm gate — play each rhythm figure: ${cap(h,N)}/${N}` }; }
+      case 2: { const h=r.gateDurs?r.gateDurs.size:0, N=DURATIONS.length;   // Phase 3 Stage 2: play each note value
+        return { met:h>=N, label:`Rhythm gate — play each note value (♩ 𝅗𝅥 𝅝): ${cap(h,N)}/${N}` }; }
       case 3: { const h=r.gateDyns?r.gateDyns.size:0;
         return { met:h>=3, label:`Dynamics gate — play soft, medium & loud: ${h}/3` }; }
       case 4: { const iv=r.gateIntervals?r.gateIntervals.size:0, rn=r.gateRun?1:0;
@@ -504,9 +514,11 @@
     // and reward laying an actual figure (more than one hit) rather than a single block. (Tunable;
     // deepens in later stages with syncopation + cross-loop consistency.)
     if(termOn("groove") && cards.length>=1){
-      const onsets = figOnsets(run ? (run.curFig||DEFAULT_FIG) : null);
       mult += 1; lines.push("groove +1");
-      if(onsets.length>=2){ mult += 1; lines.push("rhythmic figure +1"); }
+      if(handIsSequenced(cls, cards.length)){                          // a melodic line — reward varied note values
+        const durs = cards.map(c=>durSlots(noteDurOf(c)));
+        if(new Set(durs).size>=2){ mult += 1; lines.push("rhythmic variety +1"); }
+      }
     }
     // dynamic (M3): contrast bonus — reward varying loudness across the loop (this hand's dynamic
     // differs from a dynamic already laid down). Reads run.curDyn/the live loop; gated so it's inert elsewhere.
@@ -634,37 +646,41 @@
     o.connect(g).connect(ac.destination); o.start(t); o.stop(t+(dur||0.5)+0.05);
   }
   function playTone(midi, wave, dur, when, vel){ _tone(midi, wave, dur, audio().currentTime + (when||0), vel); }
-  // A hand plays as a SEQUENCE (arpeggiated line) rather than a stacked chord when it's a scale run,
-  // or when the active movement is melodic-but-not-yet-harmonic (M4 Melody = notes in a row).
-  function handIsSequenced(cls){ return (cls && cls.type==="run") || (termOn("melodic") && !termOn("consonant")); }
-  // ONE timing path for both the live play-preview and the loop scheduler (Phase 3): a rhythm figure's
-  // onset list governs WHEN a hand sounds within a bar. A non-sequenced hand (chord/single) stabs the
-  // whole stack at each onset; a sequenced hand (run / M4 melody) lays one note per onset in order —
-  // and if it has more notes than onsets, it falls back to an even spread so no note is dropped.
-  // `when` is an ABSOLUTE audio-clock time. figId null/undefined ⇒ a single downbeat (rhythm term off).
-  function scheduleVoices(cards, { arp, vel, figId, bs, when }){
+  // A hand plays as a TIMED SEQUENCE (notes laid in play order, each for its own duration) rather than a
+  // block chord (all together, ringing the bar). Runs always sequence; with rhythm on, single notes
+  // (M2/M3) and melodic hands (M4) sequence too; a multi-note harmony stack (M5+ consonant) rings.
+  function handIsSequenced(cls, n){
+    if(cls && cls.type==="run") return true;
+    if(!termOn("groove")) return false;                    // M1 / rhythm off → block (single downbeat)
+    if(termOn("consonant") && (n||0) >= 2) return false;   // M5+ multi-note = a chord that rings
+    return true;
+  }
+  // ONE timing path for both the live play-preview and the loop scheduler (Phase 3 Stage 2): per-note
+  // durations govern WHEN each note sounds. A sequenced hand lays its notes in PLAY ORDER, back-to-back,
+  // each lasting `durs[i]` slots (clipped/rested at the bar edge — no sort, no dropping). A non-sequenced
+  // hand (chord / rhythm-off single) rings the whole bar. `when` is an ABSOLUTE audio-clock time.
+  function scheduleVoices(cards, { arp, vel, durs, bs, when }){
     if(!cards || !cards.length) return;
-    const onsets = figOnsets(figId);
     const slot = bs / BEATS;
     const wave = id => INSTRUMENTS.find(x=>x.id===id).wave;
-    const sorted = [...cards].sort((a,b)=>a.midi-b.midi);
-    if(arp){
-      if(sorted.length > onsets.length){                                   // more notes than onsets: even spread
-        const n = sorted.length;
-        sorted.forEach((c,i)=> _tone(c.midi, wave(c.instId), (bs/n)*0.92, when + i*(bs/n), vel));
-      } else {                                                             // one note per onset, in order
-        sorted.forEach((c,i)=> _tone(c.midi, wave(c.instId), slot*0.92, when + onsets[i]*slot, vel));
-      }
-    } else {                                                               // stab the full stack at each onset
-      const dur = (onsets.length>1 ? slot : bs) * 0.92;                    // repeated stabs get a slot; a lone hit rings the bar
-      onsets.forEach(o => sorted.forEach(c => _tone(c.midi, wave(c.instId), dur, when + o*slot, vel)));
+    if(arp && durs){
+      let t = 0;                                              // cumulative onset in slots
+      cards.forEach((c,i)=>{
+        if(t >= BEATS) return;                                // past the bar → a rest (note dropped)
+        const d = Math.min(durs[i] || 1, BEATS - t);          // clip so it doesn't spill past the bar
+        _tone(c.midi, wave(c.instId), d*slot*0.92, when + t*slot, vel);
+        t += durs[i] || 1;
+      });
+    } else {
+      cards.forEach(c => _tone(c.midi, wave(c.instId), bs*0.92, when, vel));   // block chord / single, ring the bar
     }
   }
   function soundCards(cards, cls){
+    const seq = handIsSequenced(cls, cards.length);
     scheduleVoices(cards, {
-      arp: handIsSequenced(cls),
+      arp: seq,
       vel: (termOn("dynamic") && run) ? dynGain(run.curDyn||DEFAULT_DYN) : 1,
-      figId: (termOn("groove") && run) ? (run.curFig||DEFAULT_FIG) : null,
+      durs: (termOn("groove") && run && seq) ? cards.map(c=>durSlots(noteDurOf(c))) : null,
       bs: curBarSec(),
       when: audio().currentTime,
     });
@@ -688,10 +704,11 @@
   function scheduleBar(idx, when){
     const bar = playSrc && playSrc.bars[idx];
     if(!bar || !bar.cards.length) return;
-    // the bar remembers how it was played: sequence flag, dynamic, and rhythm figure (all fall back for
-    // legacy/imported bars → DEFAULT_FIG = a single downbeat = unchanged behavior).
+    // the bar remembers how it was played: sequence flag, dynamic, and per-note durations (all fall back
+    // for legacy/imported bars → default quarter notes / a ringing block).
     const arp = ("arp" in bar) ? bar.arp : (bar.cls && bar.cls.type==="run");
-    scheduleVoices(bar.cards, { arp, vel:dynGain(bar.dyn || DEFAULT_DYN), figId:bar.fig || DEFAULT_FIG, bs:srcBarSec(), when });
+    const durs = arp ? (bar.durs || bar.cards.map(()=>1)) : null;
+    scheduleVoices(bar.cards, { arp, vel:dynGain(bar.dyn || DEFAULT_DYN), durs, bs:srcBarSec(), when });
   }
   function schedTick(){
     const ac = audio();
@@ -761,7 +778,7 @@
     return liveBars.map(b => (b && b.cards && b.cards.length)
       ? { cards: b.cards.map(c=>({pc:c.pc, letter:c.letter, instId:c.instId, midi:c.midi})),
           cls: { type:b.cls.type, name:b.cls.name, root:b.cls.root, consonant:b.cls.consonant },
-          dyn: b.dyn || DEFAULT_DYN, fig: b.fig || DEFAULT_FIG, arp: ("arp" in b) ? b.arp : (b.cls && b.cls.type==="run") }
+          dyn: b.dyn || DEFAULT_DYN, durs: b.durs ? b.durs.slice() : null, arp: ("arp" in b) ? b.arp : (b.cls && b.cls.type==="run") }
       : null);
   }
 
@@ -958,10 +975,10 @@
     // own SECTION_BARS-bar section (startGig snaps the write head to it); the song accumulates C→G→F.
     run = { gigIdx:0, deck:buildDeck(movement), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, gigScore:0, muses:[], loop:{ bars:new Array(LOOP_BARS).fill(null), writePos:0 }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), won:false, advancedTo:null,
       curDyn:DEFAULT_DYN,   // M3 dynamics: the p/mf/f marking applied to the next played hand
-      curFig:DEFAULT_FIG,   // M2 rhythm: the rhythm figure applied to the next played hand
+      noteDur:{},   // M2 rhythm: per-card note duration (cardId → durId); default = quarter
       // per-movement gate trackers (all cheap to keep; gateStatus reads the frontier movement's).
       // M1 pitch letters live in persist (cross-run) — see pitchLettersGot; the rest are per-run.
-      gateFigs:new Set(), gateDyns:new Set(), gateIntervals:new Set(), gateRun:false,
+      gateDurs:new Set(), gateDyns:new Set(), gateIntervals:new Set(), gateRun:false,
       gateTriads:new Set(), gateCadence:false, gateBlends:0 };
     offerDraft();   // draft a Muse before gig 1
   }
@@ -991,7 +1008,8 @@
     soundCards(cards, res.cls);
     // lay this hand into the current loop slot (remembering its dynamic + sequence flag so playback
     // and any saved song reproduce it), then advance the write head (wraps)
-    run.loop.bars[run.loop.writePos] = { cards:[...cards], cls:res.cls, dyn:run.curDyn, fig:run.curFig, arp:handIsSequenced(res.cls) };
+    const seq = handIsSequenced(res.cls, cards.length);
+    run.loop.bars[run.loop.writePos] = { cards:[...cards], cls:res.cls, dyn:run.curDyn, arp:seq, durs: seq ? cards.map(c=>durSlots(noteDurOf(c))) : null };
     // advance the write head, wrapping WITHIN this gig's section (so you refine this section, not the past)
     const secStart = run.gigIdx * SECTION_BARS;
     run.loop.writePos = secStart + ((run.loop.writePos - secStart + 1) % SECTION_BARS);
@@ -1003,7 +1021,7 @@
     if(run.mode==="campaign"){
       const cls = res.cls, tonicPc = g.key[0];
       cards.forEach(c => { if(g.key.includes(c.pc)) collectPitchLetter(c.letter); });    // M1: in-key letters (persisted)
-      if(termOn("groove")) run.gateFigs.add(run.curFig);                                 // M2: distinct rhythm figures
+      if(termOn("groove")) cards.forEach(c=> run.gateDurs.add(noteDurOf(c)));            // M2: distinct note values
       if(termOn("dynamic")) run.gateDyns.add(run.curDyn);                                // M3: soft/medium/loud
       if(cls.type==="interval") run.gateIntervals.add(cls.name);                         // M4: distinct intervals
       if(cls.type==="run") run.gateRun = true;                                           // M4: a scale run
@@ -1126,12 +1144,21 @@
     const btns = DYN.map(d=>`<button class="dynbtn${run.curDyn===d.id?" on":""}" data-dyn="${d.id}" title="${d.name}">${d.label}</button>`).join("");
     return `<div class="dynctl" title="Dynamics — how loud the next hand plays"><span class="dynlbl">Dynamics</span>${btns}</div>`;
   }
-  // M2 rhythm: pick which sub-beats of the bar the next hand plays on (● = hit, ○ = rest).
-  function figControlHTML(){
+  // M2 rhythm (Stage 2): give each selected note a duration (♩/𝅗𝅥/𝅝). A melodic hand plays its notes in
+  // PICK ORDER, back-to-back, each lasting its value — so this editor doubles as a left-to-right view of
+  // the sequence you're about to lay. A harmony stack rings the bar, so it just shows a note.
+  function seqControlHTML(){
     if(!termOn("groove")) return "";
-    const cur = run.curFig || DEFAULT_FIG;
-    const btns = FIGURES.map(f=>`<button class="figbtn${cur===f.id?" on":""}" data-fig="${f.id}" title="${f.name}"><span class="figpat">${figGlyph(f.onsets)}</span></button>`).join("");
-    return `<div class="figctl" title="Rhythm — which beats the next hand plays on"><span class="figlbl">Rhythm</span>${btns}</div>`;
+    const cards = selectedCards();
+    if(!cards.length) return `<div class="seqctl"><span class="seqlbl">Rhythm</span><span class="seqhint">select note(s) to set their length</span></div>`;
+    const seq = handIsSequenced(classify(cards), cards.length);
+    if(!seq) return `<div class="seqctl"><span class="seqlbl">Rhythm</span><span class="seqhint">a chord — plays as one hit ringing the bar</span></div>`;
+    const chips = cards.map(c=>{
+      const cur = noteDurOf(c);
+      const btns = DURATIONS.map(d=>`<button class="durbtn${d.id===cur?" on":""}" data-card="${c.id}" data-dur="${d.id}" title="${esc(d.name)}">${d.label}</button>`).join("");
+      return `<span class="seqnote"><b class="seqlet" style="color:${COLOR[c.letter]}">${c.letter}</b>${btns}</span>`;
+    }).join(`<span class="seqarrow">→</span>`);
+    return `<div class="seqctl"><span class="seqlbl">Rhythm — in play order</span><div class="seqrow">${chips}</div></div>`;
   }
   function musesHTML(){
     if(!run.muses.length) return `<span class="none">No Muses yet — draft one before each gig.</span>`;
@@ -1167,21 +1194,31 @@
     if(!key.includes(pc)) return false;
     return selPcs.every(sp => { const d=(pc-sp+12)%12; return d===0 || CONSONANT_IV.has(d); });
   }
-  // Which (midi, beat) cells a bar lights up on the subdivided loop grid — MIRRORS scheduleVoices'
-  // onset logic so the picture matches the sound. Returns a Set of "midi:beat" keys.
-  function barHits(bar){
-    const hits = new Set();
-    if(!bar || !bar.cards || !bar.cards.length) return hits;
-    const arp = ("arp" in bar) ? bar.arp : (bar.cls && bar.cls.type==="run");
-    const onsets = figOnsets(bar.fig || DEFAULT_FIG);
-    const sorted = [...bar.cards].sort((a,b)=>a.midi-b.midi);
-    if(arp){
-      if(sorted.length > onsets.length) sorted.forEach((c,i)=> hits.add(c.midi+":"+Math.min(BEATS-1, Math.floor(i*BEATS/sorted.length))));
-      else sorted.forEach((c,i)=> hits.add(c.midi+":"+onsets[i]));
+  // Which (midi, beat) cells a set of cards lights up on the subdivided loop grid — MIRRORS
+  // scheduleVoices so the picture matches the sound. Returns {on, held}: `on` = each note's attack cell,
+  // `held` = the sustained beats of a longer note (so note length is visible on the grid).
+  function hitsFor(cards, seq, durs){
+    const on = new Set(), held = new Set();
+    if(!cards || !cards.length) return { on, held };
+    if(seq && durs){
+      let t = 0;
+      cards.forEach((c,i)=>{
+        if(t >= BEATS) return;
+        const d = Math.min(durs[i] || 1, BEATS - t);
+        on.add(c.midi+":"+t);
+        for(let k=1;k<d;k++) held.add(c.midi+":"+(t+k));
+        t += durs[i] || 1;
+      });
     } else {
-      onsets.forEach(o => sorted.forEach(c => hits.add(c.midi+":"+o)));
+      cards.forEach(c => { on.add(c.midi+":0"); for(let k=1;k<BEATS;k++) held.add(c.midi+":"+k); });
     }
-    return hits;
+    return { on, held };
+  }
+  function barHits(bar){
+    if(!bar || !bar.cards || !bar.cards.length) return { on:new Set(), held:new Set() };
+    const arp = ("arp" in bar) ? bar.arp : (bar.cls && bar.cls.type==="run");
+    const durs = arp ? (bar.durs || bar.cards.map(()=>1)) : null;
+    return hitsFor(bar.cards, arp, durs);
   }
   function loopStripHTML(){
     if(!run.loop) return "";   // no loop yet (e.g. the pre-gig Muse draft) — nothing to show
@@ -1194,13 +1231,14 @@
     const sub = termOn("groove") ? BEATS : 1;
     gridSub = sub;   // the playhead reads this to sweep beat-by-beat
     const colW = sub>1 ? 13 : 22;   // fixed px/sub-column so a long, modulating song scrolls instead of squishing
-    // precompute each bar's lit (midi:beat) cells once (mirrors how it sounds), + the write-figure onsets for the ghost
+    // precompute each bar's lit (midi:beat) cells once (mirrors how it sounds) — {on, held}
     const hitSets = run.loop.bars.map(barHits);
-    const wfOnsets = sub>1 ? figOnsets(run.curFig||DEFAULT_FIG) : [0];
-    // selected cards drive both the "sounds good" glow and the placement ghost
+    // selected cards drive the "sounds good" glow + the placement ghost (previewing the sequence's rhythm)
     const selCards = selectedCards();
     const selMidis = new Set(selCards.map(c=>c.midi));
     const selPcs = [...new Set(selCards.map(c=>c.pc))];
+    const selSeq = selCards.length ? handIsSequenced(classify(selCards), selCards.length) : false;
+    const ghostHits = sub>1 ? hitsFor(selCards, selSeq, selCards.map(c=>durSlots(noteDurOf(c)))) : null;
     const wp = run.loop.writePos;
     let grid = "";
     rows.forEach(m=>{
@@ -1215,18 +1253,22 @@
       for(let b=0;b<N;b++){
         const locked = b < secStart || b >= secStart+SECTION_BARS;   // outside the section you're composing
         for(let k=0;k<sub;k++){
-          const on = sub>1 ? hitSets[b].has(m+":"+k) : (run.loop.bars[b] && run.loop.bars[b].cards.some(c=>c.midi===m));
-          const ghost = b===wp && selMidis.has(m) && (sub>1 ? wfOnsets.includes(k) : true);  // pick lands here (+ its rhythm)
+          const onCell   = sub>1 ? hitSets[b].on.has(m+":"+k)   : (run.loop.bars[b] && run.loop.bars[b].cards.some(c=>c.midi===m));
+          const heldCell = sub>1 && hitSets[b].held.has(m+":"+k);           // a longer note's sustained beats
+          const gOn   = b===wp && (sub>1 ? !!(ghostHits && ghostHits.on.has(m+":"+k))   : selMidis.has(m));
+          const gHeld = b===wp && sub>1 && !!(ghostHits && ghostHits.held.has(m+":"+k));
           const cl = ["lgcell"];
           if(sub>1 && k===0) cl.push("beat0");   // faint bar-group separator
           if(b%SECTION_BARS===0 && b>0 && k===0) cl.push("secstart");   // heavier divider between gig sections
           if(locked) cl.push("locked");
           if(fits) cl.push("good");
-          if(on) cl.push("on");
-          if(ghost) cl.push("ghost");
+          if(heldCell) cl.push("held");
+          if(onCell) cl.push("on");
+          if(gOn) cl.push("ghost");
+          if(gHeld) cl.push("gheld");
           if(b===wp) cl.push("writecol");
-          // bg: a played note shows its full color; a ghost preview shows a translucent tint of it
-          const bg = on ? COLOR[letter] : (ghost ? COLOR[letter]+"66" : "");
+          // bg: attack = full color; a held beat / ghost preview = translucent tints of it
+          const bg = onCell ? COLOR[letter] : heldCell ? COLOR[letter]+"55" : gOn ? COLOR[letter]+"66" : gHeld ? COLOR[letter]+"2e" : "";
           grid += `<div class="${cl.join(" ")}" data-bar="${b}" data-col="${b*sub+k}"${bg?` style="background:${bg}"`:""}></div>`;
         }
       }
@@ -1281,7 +1323,7 @@
       </div>
       ${loopStripHTML()}
       <div class="preview">${previewHTML()}</div>
-      ${figControlHTML()}
+      ${seqControlHTML()}
       ${dynControlHTML()}
       <div class="hand">${run.hand.map((c,i)=>cardHTML(c,i)).join("")}</div>
       <div class="controls">
@@ -1305,8 +1347,8 @@
       });
     });
     // rhythm: set which beats the next hand plays on (re-render updates the preview's groove bonus + ghost)
-    $game.querySelectorAll(".figbtn").forEach(el=> el.addEventListener("click", ()=>{
-      run.curFig = el.dataset.fig; renderGig();
+    $game.querySelectorAll(".durbtn").forEach(el=> el.addEventListener("click", ()=>{
+      run.noteDur[+el.dataset.card] = el.dataset.dur; renderGig();   // per-card note value; re-render updates preview + grid
     }));
     // dynamics: set the loudness of the next hand (re-render updates the preview's contrast bonus)
     $game.querySelectorAll(".dynbtn").forEach(el=> el.addEventListener("click", ()=>{

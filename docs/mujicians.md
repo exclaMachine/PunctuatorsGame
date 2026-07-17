@@ -21,6 +21,33 @@ game-dev defaults.
 
 ---
 
+## ⚠️ Known issues / fixes to do (noted 2026-07-17, NOT yet fixed)
+
+Playtest feedback captured for a later pass — **no code changed yet.** Listed newest-first.
+
+1. **Do away with gigs (design change).** The 3-gig structure **disrupts play** and the dev "doesn't
+   really care about the Muses." Direction: **drop the 3-gigs-per-run Set**, and **replace the per-gig Muse
+   draft with a single Muse chosen once at the start of a run**. *Implications to work through when we do
+   this:* the per-gig keys (C→G→F) and thresholds, and the whole **Phase 4 cross-gig accumulation / "song
+   modulates across sections"** premise are built on gigs — removing gigs means rethinking what a "run" and
+   the accumulated song are (e.g. one key + one longer loop, or player-chosen modulation). `winGig`/
+   `startGig`/`GIGS`/`offerDraft`/`MUSE_POOL` all touched. Big one — plan before building.
+2. **Whole/half notes don't actually sustain longer (audio bug).** Choosing a **whole note** still *sounds*
+   like a quarter — the duration isn't audibly longer. Likely the synth envelope/`_tone` release is fixed
+   regardless of the `d*slot` length passed by `scheduleVoices`, so longer durations don't ring out. Fix:
+   make the note's amplitude envelope/decay scale with its scheduled duration.
+3. **A 4-beat bar can't hold a whole note plus anything (M4).** The bar is `BEATS`=4 columns = 4 beats, so a
+   **whole note (4 beats) fills the bar** and any additional note in the same hand overflows and is
+   clipped/dropped. Multi-note melodies with long durations don't fit. Fix options: let a melodic hand
+   **span multiple bars**, or lengthen the bar, or cap durations by remaining space in the UI. (Ties into
+   #1 — if gigs go and the loop model changes, revisit bar capacity then.)
+4. **Single-select should swap, not block (M1–M3).** When `maxSelect`=1, clicking a **different** card does
+   nothing (current selection stays). It should **deselect the current card and select the new one**. Fix:
+   in `toggleSel`, when `maxSelect()===1` and a different card is clicked, replace the selection instead of
+   returning early.
+
+---
+
 ## The core pillar (why this pivot)
 
 **In Balatro the poker hand is abstract; here the hand is audible.** When you play notes, they sound.
@@ -651,32 +678,30 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
   both shipped as flagged placeholders. *Net: full 7-chapter campaign playable end-to-end.*
   **Future (dev):** dynamics should eventually gain explicit **symbols** (crescendo/decrescendo, accents)
   as their own figure-like picks — for now it's the simple per-hand p/mf/f marking.
-- **Phase 3 — Deepen Rhythm (the heavy subsystem). ✅ STAGE 1 BUILT; ⚙️ STAGE 2 = PIVOT TO PER-NOTE
-  DURATIONS (decided, not built).** Sub-bar grid (`BEATS`=4 sub-columns); scheduler beat-offsets reusing the
+- **Phase 3 — Deepen Rhythm (the heavy subsystem). ✅ STAGE 1 BUILT (superseded); ✅ STAGE 2A BUILT
+  (per-note durations).** Sub-bar grid (`BEATS`=4 sub-columns); scheduler beat-offsets reusing the
   `barQueue` onset-queue playhead → beat queue; real groove scoring. **Stage 1 shipped a fixed rhythm-figure
-  picker**, but playtest exposed a design flaw (see Stage 2) — the figure model **fights melody**, so Stage 2
-  **replaces figures with per-note durations**.
-  - **As built (Stage 1):** a bar subdivides into `BEATS`=4 sub-slots. A small **fixed `FIGURES` roster**
-    (whole `●○○○` · four-on-the-floor `●●●●` · half `●○●○` · backbeat `○●○●`, each an `onsets:[…]` list)
-    is picked per hand via a **`figControlHTML` segmented control** (mirrors the M3 `dynControlHTML`), shown
-    whenever the `groove` term is live (M2+ and Free Play). `run.curFig` is applied to the next hand and
-    **stored on each loop bar** (`bar.fig`) so playback and **saved songs reproduce the rhythm**
-    (`snapshotBars` carries `fig`; the `MJ1:` share code omits it and falls back to `whole`, same precedent
-    as `dyn`). **One unified timing path — `scheduleVoices(cards,{arp,vel,figId,bs,when})`** now drives both
-    the live play-preview (`soundCards`) *and* the loop scheduler (`scheduleBar`): the figure's onset list
-    governs WHEN a hand sounds — a non-sequenced hand (chord/single) **stabs the full stack at each onset**
-    (single note → a pulse pattern), a sequenced hand (run/M4 melody) **lays one note per onset in order**
-    (with an even-spread fallback when it has more notes than onsets, so none drop). The **loop pitch-grid
-    subdivides** into `bars × BEATS` sub-columns when groove is on (`gridSub`, one column each otherwise);
-    `barHits(bar)` mirrors `scheduleVoices` to light exactly the `(midi,beat)` cells that sound, the write
-    ghost previews the picked figure's onsets, and the **playhead sweeps beat-by-beat** (`tickPlayhead`
-    computes the sub-beat from elapsed-time ÷ slot; `paintPlayCol(bar,beat)` highlights the `data-col`
-    sub-column + the bar's spanning footer label). **Groove scoring is now figure-aware:** `groove +1` for
-    keeping the beat, `rhythmic figure +1` for laying an actual figure (≥2 onsets) — replacing the flat
-    placeholder (tunable). **The M2 gate is now real:** *play each rhythm figure* (`gateFigs` Set vs
-    `FIGURES.length`), mirroring M3's "play soft/medium/loud" — the old `GATE_HANDS`/`gateHands` placeholder
-    is removed.
-  - **Stage 2 — per-note durations replace the figure picker (decided, not built).**
+  picker**, but playtest exposed a design flaw (see Stage 2) — the figure model **fought melody** (multi-note
+  hands always sorted ascending + evenly spread), so **Stage 2A replaced figures with per-note durations**
+  (the `FIGURES` roster / `figControlHTML` / `bar.fig` are gone).
+  - **As built (Stage 2A):** the `FIGURES` picker is replaced by a **`DURATIONS` palette** (quarter `♩` 1
+    beat · half `𝅗𝅥` 2 · whole `𝅝` 4, each `{id,label,slots}`) on the `BEATS`=4 grid. **Each selected note
+    carries its own duration** in `run.noteDur[cardId]` (keyed by the stable card id so it survives Sort;
+    default quarter, `noteDurOf`). A **melodic hand plays its notes in PICK ORDER, back-to-back, each for
+    its duration** (leftover bar = a rest); a harmony stack rings the bar. `handIsSequenced(cls,n)` decides
+    which: runs + rhythm-on single/melodic hands sequence; an M5+ multi-note consonant stack rings. **The
+    ascending sort is gone** — `scheduleVoices(cards,{arp,vel,durs,bs,when})` lays sequenced notes at
+    cumulative onsets from `durs` (clip/rest at the bar edge, no dropping) and drives both the live preview
+    (`soundCards`) and the loop scheduler (`scheduleBar`). Bars store **`durs`** (parallel to `cards`);
+    `snapshotBars`/playback read it; the `MJ1:` code omits it → default quarter (sequenced) / ring (stacked),
+    and legacy `fig` bars fall back to quarters. The loop grid's **`barHits`→`{on,held}`** lights each note's
+    attack (full color) and its **held beats** (`.held`, dimmer) so **note length is visible**; the write
+    ghost previews the selection's rhythm (`hitsFor`, `.ghost`/`.gheld`). The picker is a **`seqControlHTML`
+    sequence editor** — the picked cards left-to-right in play order, each with `♩/𝅗𝅥/𝅝` `durbtn`s (so the
+    order is visible and editable). **Groove scoring:** `groove +1` for keeping the beat + `rhythmic variety
+    +1` for ≥2 distinct durations in a melodic hand (tunable). **The M2 gate:** *play each note value*
+    (`gateDurs` Set vs `DURATIONS.length`), mirroring M3's "play soft/medium/loud".
+  - **Stage 2A design notes (as-built rationale below).**
     - **Why the pivot.** The figure model has two knobs that don't compose: a **figure** picks *which beats
       fire*, then a melody's notes are **spread one-per-onset, sorted ascending** (`scheduleVoices` sorts
       `[...cards].sort((a,b)=>a.midi-b.midi)`). So any multi-note melody (M4) **always climbs and is evenly
@@ -706,9 +731,9 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
       (stacked); legacy `fig` bars fall back to whole. **Groove scoring:** `groove +1` on-beat + a
       **rhythmic-interest +1** for ≥2 distinct durations (tunable). **M2 gate** → *play each note value*
       (`gateDurs` Set vs the palette), mirroring M3's soft/medium/loud (retires `gateFigs`/`FIGURES`).
-    - **Staging.** **A (core):** the above on quarter/half/whole. **B (fast-follow):** eighths (`BEATS`=8) +
-      dotted notes. **C (later):** chords-in-melody grouping, syncopation & cross-loop-consistency scoring,
-      explicit rest token.
+    - **Staging.** **A (core): ✅ BUILT** (quarter/half/whole; see *As built (Stage 2A)* above). **B
+      (fast-follow, not built):** eighths (`BEATS`=8) + dotted notes. **C (later):** chords-in-melody
+      grouping, syncopation & cross-loop-consistency scoring, explicit rest token.
   - **Deferred to later stages (unchanged):** draftable/unlockable rhythm content (a Codex sub-set),
     syncopation & cross-loop-consistency scoring, and an explicit **rest** token (durations already leave the
     bar's tail silent, but there's no dedicated rest pick yet).
@@ -906,12 +931,12 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   movement. **Home offers Campaign (at your reached movement, default M1) vs Free Play (all unlocked)**, both
   under the daily cap. **The whole M1→M7 arc is playable end-to-end:** each movement adds one scoring term
   (in-key → groove → dynamics → melody → harmony → timbre → form) and one mechanic — single notes (M1) → a
-  per-hand **rhythm figure** picker over a 4-beat sub-bar grid (M2) → a per-hand **p/mf/f dynamics** control
-  (M3) → 3-card **melodic sequences** (M4) → 5-card **harmony** stacks (M5) → guitar+bass **timbre** blends
-  (M6). Each has a real advancement gate (`gateStatus`/`maybeAdvance`, persisted in
+  **per-note duration** picker (♩/𝅗𝅥/𝅝) over a 4-beat sub-bar grid (M2) → a per-hand **p/mf/f dynamics** control
+  (M3) → 3-card **melodic sequences played in pick order** (M4) → 5-card **harmony** stacks (M5) → guitar+bass
+  **timbre** blends (M6). Each has a real advancement gate (`gateStatus`/`maybeAdvance`, persisted in
   `persist.progress.movement`): M1 = play all 7 in-key letters (**progress persists across runs**, shown as
   a hangman row of 7 slots that reveal each colored letter as it's played — in the HUD, end overlay, and on
-  Home), **M2 = play each rhythm figure**, M3 = all 3 dynamics, M4 = intervals+run, M5 = triads+cadence,
+  Home), **M2 = play each note value**, M3 = all 3 dynamics, M4 = intervals+run, M5 = triads+cadence,
   M6 = multi-instrument blends; **M7 = compose an A·B·A** (`hasABA` over the accumulated cross-gig song —
   real as of Phase 4). HUD gate meter + end-overlay unlock banner. **Phase 4 (core) is built:** the loop
   **accumulates across the whole run into one modulating C→G→F song** (18 bars, allocated in `startRun`,
@@ -919,12 +944,13 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   phrase-fingerprint restatement + an A·B·A return, and **Save-a-Song is a whole-run capture** at run's end.
   Full design + phase plan in the **Progression** section.
 
-**Not yet (still plan):** the rest of the campaign depth (Phase 3 *later stages* = draftable/unlockable
-rhythm figures, syncopation + cross-loop-consistency scoring, explicit rest tokens — **Stage 1's sub-bar
-grid + fixed figures + real groove scoring/gate are built**; **Phase 4 core = cross-gig loop accumulation +
-real M7 form scoring/gate + whole-run Save-a-Song are built**, leaving Phase 4 *polish* = boss-gig capstones,
-mentor/chapter prose, and AABA/verse-chorus detection beyond the A·B·A heuristic); explicit **dynamics
-symbols** (crescendo/accents) beyond
+**Not yet (still plan):** the rest of the campaign depth (Phase 3 *Stage 2B/C* = **eighths** (`BEATS`=8) +
+dotted notes, **chords inside a melody** (two notes on one beat, needs a grouping gesture), syncopation +
+cross-loop-consistency scoring, explicit rest tokens — **Stage 2A's per-note durations (quarter/half/whole),
+sequential pick-order playback, held-note grid spans, groove scoring/gate are built**; **Phase 4 core =
+cross-gig loop accumulation + real M7 form scoring/gate + whole-run Save-a-Song are built**, leaving Phase 4
+*polish* = boss-gig capstones, mentor/chapter prose, and AABA/verse-chorus detection beyond the A·B·A
+heuristic); explicit **dynamics symbols** (crescendo/accents) beyond
 the p/mf/f marking; accidentals/more
 instruments & drums, Étude/Accidental cards, a coin-based
 shop (draft is free for now), antes/boss-gig constraints, the shared **Daily-Set** seed, set-playback
