@@ -293,7 +293,8 @@
   const MAX_RUNS_PER_DAY = 3;
   // Mario-Paint-style loop: ONE continuous performance in ONE key on a single tick timeline (see the
   // Continuous timeline block below). Each Play appends an event at the write cursor; the whole timeline
-  // cycles nonstop as a backing groove. The only hard limit is running out of stage space (TOTAL_TICKS).
+  // cycles nonstop as a backing groove. The only hard limit is running out of stage space (the stage
+  // starts small and grows to a max of maxStageTicks() — see the Continuous timeline block below).
   const BAR_SEC = 0.8;
   // Tempo: one loop slot = one beat, so bar-seconds = 60/BPM. Default 75 BPM = 0.8s (BAR_SEC).
   // The global comfort tempo (persist.bpm) drives the live gig loop; saved songs replay at
@@ -324,12 +325,27 @@
   const TPB = 24;                                                    // ticks per beat
   const METER = { beatsPerBar:4, beatUnit:4 };                       // fixed 4/4 for now
   const BAR_TICKS = METER.beatsPerBar * TPB * (4/METER.beatUnit);    // ticks per visual bar (=96)
-  const LOOP_BARS = 12;                                              // visual bars of stage space
-  const TOTAL_TICKS = LOOP_BARS * BAR_TICKS;                         // whole-timeline length in ticks
+  const LOOP_BARS = 12;                                              // MAX stage — the hard capacity limit
+  const START_BARS = 4;                                             // the stage STARTS this small and grows as needed
+  const TOTAL_TICKS = LOOP_BARS * BAR_TICKS;                         // max-timeline length in ticks
   const DISPLAY_COLS_PER_BEAT = 1;                                   // piano-roll columns per beat (display only)
-  const TOTAL_COLS = LOOP_BARS * METER.beatsPerBar * DISPLAY_COLS_PER_BEAT;
   const TICKS_PER_COL = TPB / DISPLAY_COLS_PER_BEAT;
   const tickToCol = t => Math.floor(t / TICKS_PER_COL);
+  // The stage GROWS from START_BARS toward the max as the player fills it, so the backing loop stays short
+  // (comes back around fast) instead of showing all 12 bars of empty grid up front. `run.loop.stageBars`
+  // only ever increases; growStageToFit() bumps it to keep one bar of ghost headroom past the cursor.
+  const maxStageBars  = () => LOOP_BARS + ((run && run.loop && run.loop.loopBonus) || 0);   // +loop-bars shop later
+  const maxStageTicks = () => maxStageBars() * BAR_TICKS;
+  const stageBarsNow  = () => (run && run.loop && run.loop.stageBars) || START_BARS;
+  const stageTicksNow = () => stageBarsNow() * BAR_TICKS;
+  function growStageToFit(){
+    if(!run || !run.loop) return;
+    let end = run.loop.cursor + durTicks(run.curDur);                 // where the next play would land+end
+    for(const e of run.loop.events) end = Math.max(end, e.at + e.dur); // …and never hide already-placed notes
+    const needBars = Math.ceil(end / BAR_TICKS) + 1;                   // +1 = keep an empty ghost bar visible ahead
+    const want = Math.max(START_BARS, Math.min(maxStageBars(), needBars));
+    if(want > run.loop.stageBars) run.loop.stageBars = want;           // grow only, never shrink
+  }
 
   /* ================= progression — the 7-movement campaign (Phase 0 scaffold) =================
      Each movement unlocks one mechanic + turns on one scoring term, in the graphic-novel arc:
@@ -702,17 +718,20 @@
   /* ========= the continuous-timeline loop (Mario-Paint-style backing groove) ========= */
   // A lookahead scheduler cycles the whole event list nonstop; a rAF sweeps the playhead column.
   // playSrc = { events, totalTicks, live, barSec }: the live run loop, or a saved song on replay.
-  // NOTE: the LIVE loop reads run.loop.events FRESH each tick (not a captured reference) so notes added
-  // mid-loop — placeEvent reassigns the array — still sound when the loop comes back around. Scheduling is
-  // onset-TIME based (not a persistent index) so a growing/reordered list can't misalign.
-  let schedTimer = null, rafId = null, anchorTime = 0, schedFrom = 0, curCol = -1;
-  let playSrc = null;
+  // NOTES: (1) the LIVE loop reads run.loop.events FRESH each tick (not a captured reference) so notes
+  // added mid-loop — placeEvent reassigns the array — still sound when the loop comes back around.
+  // (2) The loop length is read PER ITERATION (loopTicksNow), so when the stage GROWS the current cycle
+  // finishes at its old length and the next one extends — no mid-cycle playhead jump. The scheduler and
+  // playhead keep their own iteration anchors (the scheduler runs ~0.12s ahead) but roll at the same times.
+  let schedTimer = null, rafId = null, curCol = -1, playSrc = null;
+  let sIterStart = 0, sIterTicks = 0, schedFrom = 0;   // scheduler's current iteration
+  let pIterStart = 0, pIterTicks = 0;                  // playhead's current iteration
   function loopOn(){ return !!schedTimer; }
   // Beat-seconds of whatever's grooving: the live loop follows the global tempo live; a saved song is fixed.
   function srcBeatSec(){ if(!playSrc) return BAR_SEC; return playSrc.live ? curBarSec() : (playSrc.barSec||BAR_SEC); }
   function liveSrc(){ return (run && run.loop) ? { live:true } : null; }
   function schedEvents(){ return playSrc.live ? run.loop.events : (playSrc.events||[]); }
-  function schedTotalTicks(){ return playSrc.live ? TOTAL_TICKS : (playSrc.totalTicks||TOTAL_TICKS); }
+  function loopTicksNow(){ return Math.max(BAR_TICKS, playSrc.live ? stageTicksNow() : (playSrc.totalTicks||TOTAL_TICKS)); }
   function scheduleEvent(ev, when, tickSec){
     if(!ev || ev.rest || !ev.notes || !ev.notes.length) return;   // a rest = silence
     const wave = id => (INSTRUMENTS.find(x=>x.id===id)||INSTRUMENTS[0]).wave;
@@ -724,18 +743,18 @@
     const ac = audio();
     const evs = schedEvents();
     const tickSec = srcBeatSec()/TPB;
-    const loopDur = Math.max(0.05, schedTotalTicks()*tickSec);
     const t1 = ac.currentTime + 0.12;   // schedule everything with an onset up to here
     let guard = 0;
     while(schedFrom < t1 && guard++ < 500){
-      const k = Math.max(0, Math.floor((schedFrom - anchorTime)/loopDur));   // which loop iteration schedFrom is in
-      const iterStart = anchorTime + k*loopDur;
-      const segEnd = Math.min(t1, iterStart + loopDur);
+      const iterEnd = sIterStart + sIterTicks*tickSec;
+      const segEnd = Math.min(t1, iterEnd);
       for(const ev of evs){
-        const when = iterStart + ev.at*tickSec;
+        if(ev.at >= sIterTicks) continue;                     // event past this cycle's length → not this loop
+        const when = sIterStart + ev.at*tickSec;
         if(when >= schedFrom && when < segEnd) scheduleEvent(ev, when, tickSec);
       }
-      schedFrom = segEnd > schedFrom ? segEnd : schedFrom + 0.01;   // always make progress
+      if(iterEnd <= t1){ sIterStart = iterEnd; sIterTicks = loopTicksNow(); schedFrom = iterEnd; }  // roll → re-read length (growth)
+      else schedFrom = segEnd;
     }
   }
   function paintPlayCol(col){
@@ -747,10 +766,13 @@
     if(!schedTimer){ rafId = null; return; }
     const ac = audio();
     const tickSec = srcBeatSec()/TPB;
-    const totalTicks = schedTotalTicks();
-    const loopDur = Math.max(0.05, totalTicks*tickSec);
-    let phase = (ac.currentTime - anchorTime) % loopDur; if(phase < 0) phase += loopDur;
-    const tick = Math.max(0, Math.min(totalTicks-1, Math.floor(phase/tickSec)));
+    let iterDur = pIterTicks*tickSec;
+    let guard = 0;
+    while(iterDur > 0 && ac.currentTime - pIterStart >= iterDur && guard++ < 500){
+      pIterStart += iterDur; pIterTicks = loopTicksNow(); iterDur = pIterTicks*tickSec;   // roll → re-read length (growth)
+    }
+    const phase = Math.max(0, ac.currentTime - pIterStart);
+    const tick = Math.max(0, Math.min(pIterTicks-1, Math.floor(phase/tickSec)));
     const col = tickToCol(tick);
     if(col !== curCol){ curCol = col; paintPlayCol(col); }
     rafId = requestAnimationFrame(tickPlayhead);
@@ -761,7 +783,8 @@
     playSrc = src || liveSrc();
     if(!playSrc){ return; }
     const ac = audio();
-    anchorTime = ac.currentTime + 0.12; schedFrom = anchorTime; curCol = -1;
+    const t0 = ac.currentTime + 0.12, n = loopTicksNow();
+    sIterStart = pIterStart = t0; sIterTicks = pIterTicks = n; schedFrom = t0; curCol = -1;
     schedTimer = setInterval(schedTick, 25);
     rafId = requestAnimationFrame(tickPlayhead);
   }
@@ -976,6 +999,8 @@
   // A saved song = the whole run's accumulated timeline (one fixed key, no modulation).
   function saveSong(events, name){
     const rep = songReport(events, RUN_KEY.key);
+    // loop tightly around the actual song (rounded up to a bar) so replays don't wait through empty stage.
+    const end = (events||[]).reduce((m,e)=>Math.max(m, e.at + e.dur), 0);
     const song = {
       id: uid(),
       name: (name||"").trim() || suggestName(events) || "Untitled",
@@ -985,7 +1010,7 @@
       tempo: curBarSec(),   // record the tempo (per beat) it was played at; replays at this speed
 
       events: events,
-      totalTicks: TOTAL_TICKS,
+      totalTicks: Math.max(BAR_TICKS, Math.ceil(end / BAR_TICKS) * BAR_TICKS),
       stars: rep.stars,
       starred: false
     };
@@ -1112,7 +1137,7 @@
     // mode "free" = Free Play (all movements on); otherwise Campaign at the reached movement.
     const movement = mode==="free" ? FREE_PLAY_MOVEMENT : (persist.progress.movement || 1);
     // One loop for the whole run — one continuous performance in one key, filled hand by hand.
-    run = { deck:buildDeck(movement), drawPile:[], hand:[], sel:new Set(), discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ events:[], cursor:0 }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
+    run = { deck:buildDeck(movement), drawPile:[], hand:[], sel:new Set(), discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ events:[], cursor:0, stageBars:START_BARS }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
       curDyn:DEFAULT_DYN,   // M3 dynamics: the p/mf/f marking applied to the next play
       curDur:DEFAULT_DUR,   // M2 rhythm: the duration (ticks via durTicks) of the next play; default = quarter
       // per-movement gate trackers (all cheap to keep; gateStatus reads the frontier movement's).
@@ -1125,7 +1150,7 @@
     run.drawPile = shuffle([...run.deck]);
     run.hand = []; run.sel.clear();
     run.discardsLeft = DISCARDS; run.runScore = 0;
-    run.loop.events = []; run.loop.cursor = 0;
+    run.loop.events = []; run.loop.cursor = 0; run.loop.stageBars = START_BARS;
     drawUp();
     screen = "gig"; render();
     startLoop();   // continuous backing groove begins
@@ -1134,7 +1159,7 @@
     const drawn = [];
     while(run.hand.length < run.handSize){
       // recycle: reshuffle the whole deck when the draw pile empties, so a single continuous run
-      // doesn't starve. (Stage space — the write cursor reaching TOTAL_TICKS — is the real limiter,
+      // doesn't starve. (Stage space — the write cursor reaching maxStageTicks() — is the real limiter,
       // not deck exhaustion.)
       if(!run.drawPile.length){ run.drawPile = shuffle([...run.deck]); if(!run.drawPile.length) break; }
       const c = run.drawPile.pop(); run.hand.push(c); drawn.push(c.id);
@@ -1152,7 +1177,8 @@
     run.loop.events = run.loop.events.filter(e => e.at < ev.at || e.at >= end);   // overwrite collisions
     run.loop.events.push(ev);
     run.loop.events.sort((a,b)=>a.at-b.at);
-    run.loop.cursor = Math.min(TOTAL_TICKS, end);
+    run.loop.cursor = Math.min(maxStageTicks(), end);
+    growStageToFit();   // extend the stage so the new note (and the next ghost) stay visible
   }
   // Stage-1 timeline scale-run: 3+ single notes in a row moving stepwise (pulled forward from Stage 2 so
   // the M4 melody gate stays clearable now that a stack ≤2 can't form a 3-note run).
@@ -1205,7 +1231,7 @@
     // Open-ended: no applause threshold ends the run. The only hard limit is stage space — when the write
     // cursor reaches the end of the timeline, the performance auto-completes. Otherwise the player keeps
     // going until they press Finish. (A whole note eats 4× a quarter's worth of space.)
-    if(run.loop.cursor >= TOTAL_TICKS || run.hand.length === 0){ finishRun(); flyPlay(flyFrom, at, handSnap); return; }
+    if(run.loop.cursor >= maxStageTicks() || run.hand.length === 0){ finishRun(); flyPlay(flyFrom, at, handSnap); return; }
     render();
     flyPlay(flyFrom, at, handSnap);   // shrink+fly played cards to their timeline cells, then bloom
   }
@@ -1366,9 +1392,11 @@
   // cursor marks where the next play lands (click a cell to aim it). Bars are faint visual gridlines.
   function loopStripHTML(){
     if(!run.loop) return "";   // no loop yet (e.g. the pre-run Muse draft) — nothing to show
+    growStageToFit();   // extend the stage if the cursor/duration now needs more room, before we size the grid
     const keyRoot = RUN_KEY.key[0];
     const rows = loopRowMidis();
-    const cols = TOTAL_COLS;
+    const bars = stageBarsNow();
+    const cols = bars * METER.beatsPerBar;   // only the GROWN stage is drawn (starts at START_BARS, grows)
     const colW = 15;   // fixed px/column so a long song scrolls instead of squishing
     const cov = eventCoverage(run.loop.events);
     // selection drives the "sounds good" glow + a placement ghost (where the next play lands from the cursor)
@@ -1408,7 +1436,7 @@
     });
     // footer: a bar-number ruler (each bar spans its beat columns; click to aim the cursor at the bar)
     grid += `<div class="lgcorner"></div>`;
-    for(let b=0;b<LOOP_BARS;b++){
+    for(let b=0;b<bars;b++){
       const c0 = b*METER.beatsPerBar;
       const cl = ["lglabel"];
       if(wcol>=c0 && wcol<c0+METER.beatsPerBar) cl.push("writecol");
@@ -1427,10 +1455,11 @@
     const canPlay = run.sel.size>0;
     const campaign = run.mode==="campaign";
     const gate = campaign ? gateStatus(run.movement) : null;
-    // Open-ended: no threshold. "Notes left" = remaining stage space in bars (the cursor's distance to the
-    // end of the timeline); it warns near-empty so the auto-finish never ambushes the player.
-    const left = Math.max(0, Math.ceil((TOTAL_TICKS - run.loop.cursor)/BAR_TICKS)), warn = left<=3;
-    const leftPct = Math.round(run.loop.cursor/TOTAL_TICKS*100);
+    // Open-ended: no threshold. "Notes left" = remaining stage space in bars toward the MAX capacity (the
+    // stage grows into it); it warns near-empty so the auto-finish never ambushes the player.
+    const maxTicks = maxStageTicks();
+    const left = Math.max(0, Math.ceil((maxTicks - run.loop.cursor)/BAR_TICKS)), warn = left<=3;
+    const leftPct = Math.round(run.loop.cursor/maxTicks*100);
     $game.innerHTML = `
       <div class="gigbar">
         <div class="row1">
@@ -1438,7 +1467,7 @@
           <div class="counts">Discards <b>${run.discardsLeft}</b> · Hand size <b>${run.handSize}</b> · Deck <b>${run.drawPile.length}</b></div>
         </div>
         <div class="scoreline">Applause <b>${run.runScore}</b> ★</div>
-        <div class="scoreline" style="color:${warn?'var(--bad)':'var(--dim)'}">Notes left: <b>${left}</b> of ${LOOP_BARS} bars${warn?(left>0?' — running out of stage!':' — stage full'):''}</div>
+        <div class="scoreline" style="color:${warn?'var(--bad)':'var(--dim)'}">Notes left: <b>${left}</b> of ${maxStageBars()} bars${warn?(left>0?' — running out of stage!':' — stage full'):''}</div>
         <div class="track"><i style="width:${leftPct}%"></i></div>
         ${campaign && run.movement===1
           ? pitchTrackerHTML()
@@ -1466,7 +1495,7 @@
     // loop grid: click any cell/label to aim the write cursor at that tick (append/overwrite from there)
     $game.querySelectorAll(".loopgrid [data-tick]").forEach(el=>{
       el.addEventListener("click", ()=>{
-        run.loop.cursor = Math.max(0, Math.min(TOTAL_TICKS-1, +el.dataset.tick)); renderGig();
+        run.loop.cursor = Math.max(0, Math.min(maxStageTicks()-1, +el.dataset.tick)); renderGig();
       });
     });
     // rhythm: set the duration of the next play (re-render updates the preview's groove bonus + ghost)

@@ -27,9 +27,17 @@ before changing it.
 
 ## Shared conventions (apply to all of the above)
 
-- **"ship it"** — When the user says "ship it", immediately `git add .`, then `git commit -m '<concise,
-  accurate message reflecting what actually changed>'`, then `git push`. No confirmation needed — just do
-  it. (End commit messages with the `Co-Authored-By` line per the harness instructions.)
+- **"ship it"** — When the user says "ship it": **first run a consistency pass** (unless the commit is
+  trivial/mechanical — a typo, formatting, a rename — where drift is unlikely), then `git add .`, then
+  `git commit -m '<concise, accurate message reflecting what actually changed>'`, then `git push`. No
+  confirmation needed for the commit itself — just do it. (End commit messages with the `Co-Authored-By`
+  line per the harness instructions.)
+  - **Consistency pass (before committing):** review this session's changes for stale/contradictory
+    **code comments in changed files**, **`docs/*.md`** (files changed this session or that describe the
+    changed code — e.g. BUILT/not-built status markers), and **`CLAUDE.md` + the `~/.claude` memory files**.
+    **Auto-fix the obvious** stale wording as part of the same commit; **pause and ask** before committing
+    only when a fix is ambiguous or a judgment call. (Scope is the changed surface — don't audit unrelated
+    unchanged files.)
 - **Vanilla, single-file, no build step.** Each game is one self-contained HTML file (inline CSS + JS),
   no frameworks, no bundler. Don't add dependencies unless a feature truly requires it (say so and why).
   Intentional exceptions are documented per-game (e.g. Inklings fetches a bundled local WordNet dictionary
