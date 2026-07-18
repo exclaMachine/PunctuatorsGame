@@ -51,13 +51,13 @@ newest-first.
    control, or reuse the first/longest picked value) and schedule it as a **held-for-`d`-slots chord**
    through `scheduleVoices` instead of the full-bar `else` branch. Touches `handIsSequenced`/`scheduleVoices`
    /`soundCards`/`scheduleBar` + the grid's `barHits`/`hitsFor` so the held span shows.
-2. **Rhythm needs explicit rests + one-after-another placement (M2 future).** Today a bar is a fixed
-   **4-beat (`BEATS`=4) section** and a sequenced melody's notes lay back-to-back from beat 1, with any
-   leftover **auto-filling as a trailing rest** — so the player has little control over *where* the silence
-   goes. **Desired:** notes flow **one after another**, and silence appears **only where the player
-   purposefully places a rest** (a **rest card / rest token** in the rhythm palette) rather than an implicit
-   tail rest inside a rigid 4-slot bar. This is the already-deferred "explicit rest token," now with a
-   decided shape (**a placeable rest card**). Full plan under **Progression → Phase 3 (Rhythm), Stage 2C**.
+2. **Rhythm/melody — one flowing line, consistent stacking, playable rests.** ⚠️ **REWORK DECIDED
+   2026-07-18, NOT built — see [Continuous timeline + consistent stacking](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-rework-decided-2026-07-18-not-built).**
+   None of the rework is in the code yet (a rest-card + subdivision prototype was reverted). The plan: notes
+   flow **right after each other on one continuous timeline** (no one-play-per-bar gaps), **multiple selected
+   cards always play together** (a chord — the old Melody "sequence the selection" behavior is removed), the
+   stack cap grows 1→2→3→4 by movement, a **rest is playable by itself**, and timing is **integer ticks
+   (`TPB=24`)** so triplets/dotted work. That section is the source of truth.
 3. ~~**Do away with gigs (design change).**~~ **✅ DONE (2026-07-17).** A run is now **one continuous
    performance in one fixed key (C major)** with a **single applause threshold** and **one Muse drafted
    once at the start** — the 3-gig Set, C→G→F modulation, and per-gig re-drafts are removed. See the
@@ -70,15 +70,178 @@ newest-first.
    the duration). Replaced with an **attack–decay–sustain–release** envelope: the note decays to a sustain
    level across its held portion and only releases in the last ~`min(0.12, D/2)`s, so longer `dur` (from
    `d*slot` in `scheduleVoices`) now audibly rings ~4× longer.
-5. **A 4-beat bar can't hold a whole note plus anything (M4).** The bar is `BEATS`=4 columns = 4 beats, so a
-   **whole note (4 beats) fills the bar** and any additional note in the same hand overflows and is
-   clipped/dropped. Multi-note melodies with long durations don't fit. Fix options: let a melodic hand
-   **span multiple bars**, or lengthen the bar, or cap durations by remaining space in the UI. (Ties into
-   the loop model — revisit bar capacity alongside the rest-card / one-after-another rework in #2.)
+5. **A bar can't hold a whole note plus anything (M4).** A bar is `BEATS_PER_BAR`=4 beats, so a **whole
+   note fills the bar** and any additional note/rest in the same hand overflows and is clipped/dropped.
+   **⚠️ SUBSUMED by the [continuous-timeline rework](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-rework-decided-2026-07-18-not-built)** (2026-07-18): once the song is one flowing timeline where
+   the cursor advances by each event's duration, long values simply continue across the (now purely visual)
+   barlines — the separate "multi-bar spanning" mechanism is no longer needed. See that section.
 6. ~~**Single-select should swap, not block (M1–M3).**~~ **✅ DONE (2026-07-17).** When `maxSelect()===1`,
    clicking a **different** card now **clears the current selection and selects the new one** instead of
    returning early — `toggleSel` clears `run.sel` before adding when the cap is 1 (multi-select still
    respects the cap).
+
+---
+
+## Continuous timeline + consistent stacking — the core rhythm/melody rework (DECIDED 2026-07-18, NOT built)
+
+> **Status: DECIDED, not built.** This supersedes several *built* behaviors and earlier plans — read it as
+> the new source of truth for how a hand becomes music. It replaces: the **one-play-per-bar** loop model
+> (from *Removing gigs* / Phase 4), the **`handIsSequenced` "melody sequences the selection"** behavior
+> (Stage 2A), the earlier **rest** designs (palette token; four rest cards; one adjustable rest card as a
+> per-card duration), and the **multi-bar-spanning** spec (Known issue #5 — now subsumed). Known issues #2
+> and #5 fold into this. **Do not start building until this section is signed off.**
+
+**Why.** The system had grown inconsistent: at **Melody** selecting multiple cards played them *in sequence*,
+but at **Harmony** selecting multiple cards played a *chord* — the same gesture meaning two different things.
+And each play filled its own bar, so successive plays didn't butt together — you couldn't build a flowing
+line. This rework makes one gesture mean one thing everywhere and makes the song a single continuous line.
+
+### The four decisions (locked)
+
+1. **One continuous timeline, not one-play-per-bar.** The song is a single flowing sequence of events. A
+   write **cursor** sits at a beat position; each **play appends** its event at the cursor, then the cursor
+   **advances by the event's duration**. So notes come **right after each other** with no per-bar gaps. Bars
+   are **purely visual** — faint gridlines every `BEATS_PER_BAR` (4) beats; an event may cross a barline.
+2. **Multi-select = ALWAYS a simultaneous stack (a chord).** 1 card = a note, 2 = an interval, 3 = a triad,
+   4 = a 7th chord. **Never a sequence.** A *melody* is built by playing notes **one after another** on the
+   timeline (successive single plays), not by selecting several cards. `handIsSequenced` and the whole
+   arp/sequence branch are **deleted**.
+3. **The stack cap grows with the campaign:** **M1 1 · M2 1 · M3 1 · M4 2 · M5 3 · M6 4 · M7 4** (Free Play
+   4). (`MOVEMENTS[].maxSelect` becomes `1,1,1,2,3,4,4`.) 7th chords (4 notes) survive because the cap
+   reaches 4 by M6/M7. *(Note: 7ths becoming available at M6 Timbre rather than M5 Harmony is a little odd
+   pedagogically — flag if you'd rather M5 allow 4. Kept per your pick.)*
+4. **Rests are a card you can play by itself.** One rest card; played **alone** (not inside a stack with
+   notes); appends silence of the chosen duration and advances the cursor. Future **Sleeping Noteling** skin.
+
+### How a play works (the new unified model)
+
+- **An event** is either a **stack** of 1–N notes sounding **together for one shared duration**, or a
+  **rest** of a duration. There is no per-card duration anymore — **one duration per play**.
+- **Duration is a per-play control**, like Dynamics: a single ♩/𝅗𝅥/𝅝 picker sets **`run.curDur`** (the value
+  for the *next* play), shown with note glyphs for a note-stack and rest glyphs (𝄽/𝄼/𝄻) when the selection
+  is the rest card. (Replaces the per-card `run.noteDur[cardId]` chips.) Per-note rhythm in a melody comes
+  from setting `curDur` between successive single plays.
+- **Playing** appends `{ notes:[…], dur, dyn }` (or `{ rest:true, dur, dyn }`) at the cursor and advances
+  the cursor by `dur` **ticks**. **Stage space** = total timeline ticks (`LOOP_BARS × barTicks`); the
+  "notes left" meter becomes **beats/bars remaining** (a whole note eats 4× a quarter). Auto-finish when the
+  timeline is full (warned near the end); the **✓ Finish** button stays.
+- **Duration resolution — integer ticks, tuplet-safe (supersedes the `beats`/`SUBDIV`-only model).** Store
+  every duration as **integer ticks** with **`TPB = 24` ticks per beat** (24 is divisible by 2/3/4/6/8/12,
+  so it covers 8ths/16ths **and triplets and dotted values** with no float drift — the power-of-2 `SUBDIV`
+  model could never do thirds). Reference values: whole `96` · half `48` · quarter `24` · eighth `12` ·
+  sixteenth `6` · **eighth-triplet `8`** · **dotted-quarter `36`**. The same picker drives note-stacks and
+  the rest card, so **8ths/16ths/triplets/dotted arrive for notes AND rests together** — just add the value
+  to the picker. The **on-screen grid resolution is a separate display choice** (how many columns per beat
+  to draw), independent of tick precision.
+- **Meter is a variable, not a constant.** Replace the hard-coded 4-beat bar with a **time signature
+  `{ beatsPerBar, beatUnit }`** (fixed **4/4** for now: `beatsPerBar=4`, `beatUnit=4`), so `barTicks =
+  beatsPerBar × TPB × (4/beatUnit)`. This lets **3/4, 6/8, cut time** become teachable later instead of
+  being baked out of the model. Bars/measures stay purely visual gridlines derived from `barTicks`.
+
+### Scoring becomes timeline-aware
+
+- **The current stack** is classified as today for its base + in-key + consonance + resolution: 1=note,
+  2=interval, 3=triad, 4=7th, else cluster. (No `run` type from a single play anymore.)
+- **Melodic motion (M4)** is scored between the **new note and the previous timeline note** (stepwise motion
+  vs leap), not within a selection.
+- **Scale runs (M4)** are **detected across consecutive single-note timeline events** moving stepwise (3+ in
+  a row) → run bonus + Codex. (This is where the old `run` structure moves to.)
+- **Rhythm/groove (M2)** rewards varied durations across the timeline; a played rest is a rhythmic event.
+- **Form (M7)** reads phrase fingerprints over the timeline (as today, just timeline-based).
+
+### Storage & migration
+
+- The loop becomes an **event list** (`{notes,dur,dyn}` / `{rest,dur,dyn}`) with position from cumulative
+  duration (or an explicit start beat). This **replaces** the `bars[]` (one-per-bar) + `seq`/`durs` model.
+- **Save format changes** (Setlist songs store the event list). Keep a **back-compat read** for old saved
+  songs (interpret legacy `bars[]` as one event per bar). `snapshotBars`/`songReport`/`scheduleBar`/the grid
+  all move from per-bar to per-event.
+
+### UI — the loop grid becomes a piano-roll
+
+- Rows = pitches, columns = beats at the chosen **display resolution** (independent of tick precision). Each
+  event draws as a horizontal bar spanning its duration at its timeline position (rests = gaps). The **write
+  cursor** is a movable vertical line; click a beat to aim it (append/overwrite from there — detailed
+  mid-timeline editing can come later). The hand + duration + dynamics controls set the **next** play.
+- **⚠️ A staff-notation view is a strong future direction the dev may prefer over this color/piano-roll grid**
+  — see the coverage checklist. Keep the render layer swappable so the timeline (event list) can drive
+  either a piano-roll *or* a staff without touching the model.
+
+### Open sub-decisions (defaults I'll use unless you say otherwise)
+
+- **Chord = one shared duration** (a stack rings for `curDur`, then the cursor advances). **[assumed yes]**
+- **Rests are solo-only** (can't be mixed into a note stack). **[assumed yes]**
+- **Click-to-aim** moves the cursor to a beat and overwrites forward; full insert/ripple editing is deferred.
+- **Build staging (proposed):** Stage 1 = timeline + stacking + per-play duration + rest-alone + caps +
+  piano-roll + timeline scheduler + stack/melodic-motion scoring; Stage 2 = timeline run detection, form on
+  the timeline, save-format migration polish.
+
+### Stage 1 — build brief (START HERE — the baseline is the last commit; no rework code exists yet)
+
+Build against the current shipped `mujicians.html` (rest-card/subdivision prototype was reverted). Deliver a
+thin but complete vertical slice of the new model, parse-check as you go, let the dev verify in-browser.
+
+1. **Data model.** Replace the per-bar loop (`run.loop.bars[]`, `handIsSequenced`, per-card `run.noteDur`)
+   with an **event list** `run.loop.events = [ {notes:[{pc,letter,instId,midi}], dur, dyn} | {rest:true, dur, dyn} ]`
+   and a **cursor** (in ticks). `dur` is **ticks**; `TPB = 24`; `meter = {beatsPerBar:4, beatUnit:4}`;
+   `barTicks = beatsPerBar*TPB`. A per-play **`run.curDur`** (default quarter=24) set by one picker; `run.curDyn` stays.
+2. **Play.** `playHand` = take selected cards → **one stack** (all notes together) OR a lone rest → append
+   `{notes,dur:curDur,dyn}`/`{rest,dur:curDur,dyn}` at the cursor → advance cursor by `curDur`. No sequencing.
+3. **Caps.** `MOVEMENTS[].maxSelect` → `1,1,1,2,3,4,4`. Selecting counts notes only; a rest is solo.
+4. **Rest card.** One `{rest:true}` card in the deck at M2+ (groove on); played alone; uses `curDur`.
+5. **Scheduler.** One continuous timeline: schedule each event at its tick offset; a stack sounds together
+   for `dur`; a rest is silence. Loop cycles the whole timeline. Playhead sweeps by ticks.
+6. **Grid → piano-roll.** Rows = pitches, columns = beats at a display resolution; each event = a horizontal
+   bar spanning `dur` at its tick position; rests = gaps; movable write cursor (click a beat to aim).
+7. **Scoring (thin).** Classify the current stack (note/interval/triad/7th/cluster) for base + in-key +
+   consonance + resolution; **melodic motion** vs the previous timeline note. (Run-detection & form → Stage 2.)
+8. **Stage space & finish.** "Notes left" = ticks/bars remaining; auto-finish when full; ✓ Finish stays.
+9. **Save.** Snapshot the event list; keep a back-compat read of old `bars[]` saves (one event per bar).
+
+Defer to Stage 2: timeline scale-run detection, form scoring on the timeline, save-format migration polish,
+chord-inside-melody, eighths/sixteenths/triplets in the picker (the tick model already supports them).
+
+---
+
+## Music-theory coverage — gaps to design around (checklist, mostly not built)
+
+> **Status: a running audit** (started 2026-07-18) of theory concepts the current model can't yet express,
+> so they're recorded and can be tied to movements rather than discovered late. Ordered by how expensive
+> they are to retrofit. **Nothing here is a commitment to build now** — it's the map. Several are already
+> planned elsewhere (accidentals → M1, key change → M4) and cross-referenced.
+
+**Designed in already (from the rework above):**
+- ✅ **Tuplet-safe rhythm** — integer ticks, `TPB=24`, so triplets/dotted/8ths/16ths are all representable.
+- ✅ **Meter as a variable** — `{beatsPerBar,beatUnit}` (fixed 4/4 now) so **3/4, 6/8, cut time** are reachable.
+
+**Structural — cheaper to allow-for now than to retrofit:**
+- **Scale degrees / function vs. absolute color.** ROYGBIV = *absolute* letters, but most theory is
+  *relative* (tonic/dominant, scale degrees 1–7, ii–V–I, solfège). Once the key changes (planned M4), the
+  color stays fixed while the *function* is what's being taught. **Plan:** a scale-degree / solfège overlay
+  so learners think "the 5th (dominant)," not just "G." Keep the key + a `degreeOf(pc, key)` helper central.
+- **Chord inversions & voicing.** Detection is pitch-class-set (mod-12), so a root-position triad and its
+  inversions (or a unison vs. an octave, a 3rd vs. a 10th) are **indistinguishable** to the engine. Inversions
+  / figured bass / voice-leading are central to harmony. **Plan:** track actual `midi`s (register), not just
+  pcs, in classification when harmony matters.
+- **Enharmonic spelling & interval quality.** pc-sets can't tell C♯ from D♭, or an augmented-4th from a
+  diminished-5th — but correct *spelling* (key-dependent) is exactly what theory drills. Ties into the
+  accidentals plan (M1). **Plan:** carry a spelled letter+accidental, not just a pitch class.
+
+**Content — slot into movements / modes later:**
+- **Modes & minor.** C major is fixed; natural/harmonic/melodic minor and the church modes are core.
+  (Partly the planned "minor key" boss.) Needs the accidentals + key work.
+- **Accidentals / chromaticism / key signatures** — already planned (M1 accidentals, M4 key change); listed
+  here so the theory map is complete.
+
+**Pedagogy — how it teaches, not just what it models:**
+- **Name the concept.** Teaching = labeling. Prefer "you played a **ii–V–I** (perfect cadence)" over a bare
+  "+1." Lean on the Codex/report card to *explain*, not just score.
+- **Staff-notation view (strong candidate — dev may prefer it over the color/piano-roll grid).** The
+  color grid is accessible but sidesteps the staff, which is *the* literacy skill in most theory curricula.
+  Because the model is a clean event list, a **staff renderer can be an alternate view** (or the default)
+  driven by the same data. Flagged for a later pass; keep the render layer swappable now.
+- **Ear-training mode.** Hear an interval/chord → name it — the natural complement to the audible-payoff
+  pillar.
 
 ---
 
@@ -378,7 +541,7 @@ persist.loadout = {
   extraCards: [ …note/accidental cards added to the deck… ],
   etude:   { triad:0, seventh:0, run:0, … },  // per-structure base-score levels
   loopBonus: 0,     // extra LOOP_BARS bought (bigger stage)
-  restCards: 0,     // rest tokens for the planned explicit-rest rhythm (Phase 3 Stage 2C)
+  restCards: 0,     // extra copies / special rests (fermata/grand-pause); the basic rest card ships with the rhythm rework
   instruments: [ …extra voices unlocked early… ],
 }
 ```
@@ -394,7 +557,7 @@ persist.loadout = {
 | **Accidental pack** (Tarot analog) | Sharpen/flatten/transpose cards; seeds the M1-accidentals & M4-modulation mechanics. | planned accidentals |
 | **Étude** (Planet analog) | Level up a structure type (triad / 7th / scale-run) → higher **base** score. | `STRUCT` base |
 | **+Loop bars** (bigger stage) | +N `LOOP_BARS` — more room before the space limit auto-finishes you; **the direct sink for "there's only so much screen."** | new `loopBonus` |
-| **Rest cards** | Rest tokens for purposeful silence (the planned one-after-another rhythm). | Phase 3 Stage 2C |
+| **Rest cards** | Extra copies / **special** rests (fermata, grand-pause). The basic rest card ships with the rhythm rework. | rhythm rework |
 | **Instrument voice** | Buy guitar/bass/etc. **early** (before its campaign movement). | `INSTRUMENTS` |
 | **Reroll / restock** | Refresh the shop's offers. | — |
 
@@ -1091,9 +1254,10 @@ Codex in code or is a new view; and the deferred full retro-pixel reskin.
 > mentor prose, and the rest of the Rhythm subsystem (Phase 3 later stages).
 
 > **Status: designed, and Phases 0 (scaffold) + 1 (Movement 1 + gate/advancement engine) + 2 (the whole
-> M2→M7 arc walkable, thin) + Phase 3 Stage 1 (M2 Rhythm sub-bar grid + fixed figures) are now built** in
-> `mujicians.html`; the deeper *content* still planned is the rest of the Rhythm subsystem (Phase 3 later
-> stages — draftable figures, syncopation, explicit rests) and real cross-gig Structure scoring (Phase 4). A long-arc progression
+> M2→M7 arc walkable, thin) + Phase 3 Stage 2A (M2 per-note durations) are built** in `mujicians.html`.
+> **⚠️ The rhythm/melody layer is being reworked** into a continuous timeline with consistent stacking (see
+> that section) — that supersedes the Phase-3 detail here. Still planned beyond it: draftable rhythm content
+> and syncopation scoring. A long-arc progression
 > system proposed by the dev, grounded in the *Mujicians* graphic-novel structure. It **layers on top of**
 > (doesn't revert) the current full-feature run — today's game is preserved as the "everything unlocked"
 > **Free Play** mode (see below). Numbers, gate counts, and scoring terms are placeholders.
@@ -1319,13 +1483,15 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
   both shipped as flagged placeholders. *Net: full 7-chapter campaign playable end-to-end.*
   **Future (dev):** dynamics should eventually gain explicit **symbols** (crescendo/decrescendo, accents)
   as their own figure-like picks — for now it's the simple per-hand p/mf/f marking.
-- **Phase 3 — Deepen Rhythm (the heavy subsystem). ✅ STAGE 1 BUILT (superseded); ✅ STAGE 2A BUILT
-  (per-note durations).** Sub-bar grid (`BEATS`=4 sub-columns); scheduler beat-offsets reusing the
-  `barQueue` onset-queue playhead → beat queue; real groove scoring. **Stage 1 shipped a fixed rhythm-figure
-  picker**, but playtest exposed a design flaw (see Stage 2) — the figure model **fought melody** (multi-note
-  hands always sorted ascending + evenly spread), so **Stage 2A replaced figures with per-note durations**
-  (the `FIGURES` roster / `figControlHTML` / `bar.fig` are gone).
-  - **As built (Stage 2A):** the `FIGURES` picker is replaced by a **`DURATIONS` palette** (quarter `♩` 1
+- **Phase 3 — Rhythm (M2). ✅ built as Stage 2A; ⚠️ NOW BEING REWORKED — see the [continuous-timeline
+  rework](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-rework-decided-2026-07-18-not-built), which is the source of truth for all rhythm/melody work.** *In the current shipped
+  game:* a `BEATS`=4 sub-bar grid where each selected note carries a duration (♩/𝅗𝅥/𝅝 picker → `run.noteDur`),
+  a melodic hand plays its notes back-to-back in pick order (`handIsSequenced`), a stacked chord rings the
+  bar; groove scoring + the M2 "play each note value" gate. **The Stage-2A/2B/2C detail below is SUPERSEDED
+  historical** (the rework replaces one-play-per-bar with a timeline, `handIsSequenced` with always-stack,
+  per-card durations with per-play, and adds ticks/rests) — kept only as context; git holds the rest.
+  - **As built (Stage 2A)** — *⚠️ SUPERSEDED historical (see the rework section); describes the current
+    shipped code, which the rework replaces.* — the `FIGURES` picker is replaced by a **`DURATIONS` palette** (quarter `♩` 1
     beat · half `𝅗𝅥` 2 · whole `𝅝` 4, each `{id,label,slots}`) on the `BEATS`=4 grid. **Each selected note
     carries its own duration** in `run.noteDur[cardId]` (keyed by the stable card id so it survives Sort;
     default quarter, `noteDurOf`). A **melodic hand plays its notes in PICK ORDER, back-to-back, each for
@@ -1374,22 +1540,74 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
       (stacked); legacy `fig` bars fall back to whole. **Groove scoring:** `groove +1` on-beat + a
       **rhythmic-interest +1** for ≥2 distinct durations (tunable). **M2 gate** → *play each note value*
       (`gateDurs` Set vs the palette), mirroring M3's soft/medium/loud (retires `gateFigs`/`FIGURES`).
-    - **Staging.** **A (core): ✅ BUILT** (quarter/half/whole; see *As built (Stage 2A)* above). **B
-      (fast-follow, not built):** eighths (`BEATS`=8) + dotted notes. **C (later, decided shape below):**
-      **explicit rest cards** + **one-after-another placement**, **chord duration** (a stacked chord honors a
-      picked value instead of ringing the bar — see Known issue #1), chords-in-melody grouping, and
-      syncopation & cross-loop-consistency scoring.
-  - **Stage 2C — explicit rests & one-after-another (dev direction, not built).** Today a sequenced hand
-    lays its notes back-to-back from beat 1 and **any leftover of the fixed 4-beat (`BEATS`=4) bar becomes an
-    implicit trailing rest** — so the player can't say *where* silence goes. Decided shape: notes flow
-    **contiguously**, and silence appears **only where the player purposefully places a rest** via a
-    **rest card / rest token** in the rhythm palette (sits in the sequence editor between notes, like a note
-    of a chosen value but silent). This makes silence a deliberate rhythmic choice (the "silence is rhythm
-    too" lesson) and removes the rigid auto-tail-rest. Pairs with Known issue #5 (letting a melodic line
-    **span multiple bars** so long values + rests aren't clipped by the 4-slot bar). **Code touch:** the
-    `DURATIONS` palette gains a **rest entry** (silent, still consumes slots); `scheduleVoices` already rests
-    by advancing `t` without a `_tone`, so a rest event = "advance `t`, emit nothing"; `seqControlHTML` shows
-    a rest chip in the order; `barHits`/`hitsFor` skip it (no lit cell); `snapshotBars`/`MJ1:` store it.
+    - **Staging.** **A (core):** quarter/half/whole per-note durations — in the current shipped code. **B/C
+      (subdivision, rest cards) were prototyped then REVERTED 2026-07-18** and are folded into the
+      continuous-timeline rework instead (ticks, one rest card played alone). See that section.
+
+  - **Stage 2B — subdivision-agnostic timing (⚠️ REVERTED 2026-07-18 — folded into the rework as integer
+    ticks `TPB=24`; this beats/`SUBDIV` version is superseded, kept as context).** The old model conflated "beats per
+    bar" with "grid columns" in one `BEATS`=4 constant and stored durations as integer **slots**, so
+    anything finer than a quarter was impossible. Rebuilt so **eighths now and sixteenths later** just work:
+    - **Durations are stored in BEATS (float).** A shared `VALUES` table gives each note/rest value a `beats`
+      length: whole 4 · half 2 · quarter 1 · **eighth 0.5** (· sixteenth 0.25 — commented out, ready). This
+      is **save-compatible**: legacy bars stored `durs` in slots where quarter=1=1 beat, so old values (1/2/4)
+      are already beats.
+    - **Two constants replace `BEATS`:** `BEATS_PER_BAR = 4` (musical beats/bar, drives the scheduler clip)
+      and **`SUBDIV`** (grid sub-columns **per beat**; **`1` now** = quarter resolution, since the picker only
+      offers quarter/half/whole; set `2` for eighths, `4` for sixteenths), with `COLS = BEATS_PER_BAR *
+      SUBDIV` sub-columns per bar. The scheduler uses `secPerBeat = bs / BEATS_PER_BAR` and places each event
+      at `when + t*secPerBeat` (t in beats); the grid maps a beat-offset to a column via `round(t * SUBDIV)`,
+      and a note spans `round(beats * SUBDIV)` columns.
+    - **To add eighths/sixteenths later:** add the value to `DURATIONS` (the `e`/`s` `VALUES` rows are ready)
+      and set `SUBDIV` to 2/4. No scheduler change. The picker drives note cards **and** the rest card, so
+      both gain the new value together. (The M2 gate reads `DURATIONS.length`.)
+
+  - **Stage 2C — a rest is a CARD (⚠️ REVERTED 2026-07-18 — the rest-as-card concept lives on in the rework
+    (one card, played alone, per-play duration); this build is superseded, kept as context).** Silence is a **real card you draw and
+    play**, not a palette gadget — because rests will eventually become **Sleeping Notelings** (collectible
+    creatures), so they must flow through the deck/hand/animation pipeline like any card. *(An earlier
+    palette-token build, and a four-fixed-cards build, were both reverted at the dev's direction.)*
+    - **One rest card, adjustable duration.** A single `{rest:true}` card whose length you set with the
+      **same ♩/𝅗𝅥/𝅝 picker as a note card** — rendered with rest glyphs (𝄽/𝄼/𝄻) — stored in the shared
+      `run.noteDur[cardId]`. `buildDeck` adds `REST_COPIES` (3) **once rhythm is taught** (any movement whose
+      terms include `groove` → **M2→M7 + Free Play**; M1 Pitch has none). Rendered as a dashed, muted card
+      showing its current value's rest glyph + a **💤** (foreshadowing the Sleeping Noteling); `cardHTML`
+      special-cases `c.rest`. Adding eighth/sixteenth to the picker (Stage 2B) gives the rest card those
+      values automatically.
+    - **The core rhythm rule (as the dev intended):** a sequenced hand plays its cards **in selection
+      (play) order, back-to-back — each note lasts its own duration and the next event starts immediately,
+      UNLESS a rest card is placed, which inserts silence of its value.** So you build a line note-by-note
+      and drop a rest card wherever you want a gap.
+    - **Model — note-only bars + a timing `seq`.** The selection can mix notes and rest cards.
+      `splitSeq(sel)` derives `{ notes (pitched cards only), seq }` where `seq` is the ordered timing list
+      (`{d:beats}` per note, `{r:beats}` per rest). A played **bar stores `cards` = notes only** (so every
+      note-consumer — `classify`/`score`/`songReport`/`suggestName`/`pcSetFp`/`hasABA` — is untouched) **plus
+      `seq`** for timing. `seqEvents(notes, seq)` resolves the two into the event list the scheduler and grid
+      share; `barSeq(bar)` falls back for legacy `durs` bars. `scheduleVoices`/`hitsFor` walk events and a
+      **rest just advances the play-head, emitting no `_tone` and lighting no cell** (a visible gap). Stored
+      in Setlist saves via `snapshotBars` (the `MJ1:` share code stays note-only — rests survive only in the
+      full save).
+    - **Selection & scoring.** Rest cards **don't count against the per-movement note cap** (`toggleSel` only
+      counts pitched cards; M1-style single-select swaps the note but keeps rests) and don't audition a
+      pitch. A hand needs **≥1 note** to Play (a pure-silence bar is disallowed for now); Discard works on a
+      rest-only selection. A placed rest earns the **`rhythmic variety +1`** groove bonus and is never
+      penalized. `classify` filters rests (empty → a `rest` type with a `STRUCT.rest` 0-chip base).
+    - **Deferred:** the rest card as a **Sleeping Noteling** skin (art layer, ties to the Notelings +
+      "collectible card skins" plans); **eighth/sixteenth** values (add to the picker + raise `SUBDIV`);
+      pure-silence bars; special rests (fermata/grand-pause) as shop `restCards`.
+
+  - **Multi-bar spanning (⚠️ SUBSUMED by the rework — a continuous timeline makes long values cross barlines
+    for free; no separate spanning mechanism needed).** *(Original spec kept as context.)* Decouple "one play = one bar" so a phrase (long
+    values + rests) isn't clipped at the `BEATS_PER_BAR` edge — the decided fix for **Known issue #5** and the
+    partner to rest cards. **Model:** a sequenced hand's events total `Σ beats`, occupying **`span = max(1,
+    ceil(total / BEATS_PER_BAR))` consecutive loop bars** from the write head. **Storage (keep the hand
+    whole):** the head bar stores the full hand + a `span`; the following `span-1` bars are `{cont:true}`
+    continuation placeholders the scheduler skips and the grid draws as a spanned continuation (a note
+    sustaining across a barline is one `_tone` longer than `srcBarSec()` — ties fall out free). **Budget:**
+    `playHand` advances `writePos` by `span` and consumes `span` bars of stage space (so `LOOP_BARS===PLAYS`
+    stops holding; the "notes left" meter becomes bars-of-stage), with a UI guard that **caps a phrase to the
+    remaining loop** (disable Play / clip when it won't fit). With spanning the implicit auto-tail-rest fully
+    dies: a hand occupies exactly its events' span.
   - **Deferred to later stages (unchanged otherwise):** draftable/unlockable rhythm content (a Codex
     sub-set), and syncopation & cross-loop-consistency scoring.
 - **Phase 4 — Structure payoff & polish. ✅ CORE BUILT** (⚠️ **partly superseded 2026-07-17 — gigs
@@ -1607,10 +1825,11 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   phrase-fingerprint restatement + an A·B·A return, and **Save-a-Song is a whole-run capture** at run's end.
   Full design + phase plan in the **Progression** section.
 
-**Not yet (still plan):** the rest of the campaign depth (Phase 3 *Stage 2B/C* = **eighths** (`BEATS`=8) +
-dotted notes, **chords inside a melody** (two notes on one beat, needs a grouping gesture), syncopation +
-cross-loop-consistency scoring, explicit rest tokens — **Stage 2A's per-note durations (quarter/half/whole),
-sequential pick-order playback, held-note grid spans, groove scoring/gate are built**; **Phase 4 core =
+**Not yet (still plan):** the **rhythm/melody rework** (continuous timeline, consistent stacking, per-play
+duration, playable rest card, ticks) — the next build, see its section — plus later rhythm depth
+(sixteenths/triplets, dotted notes, draftable rhythm content, syncopation + cross-loop-consistency scoring).
+**Built so far in rhythm: Stage 2A per-note durations (quarter/half/whole) + pick-order playback + groove
+scoring/gate** (the rework replaces the model around them); **Phase 4 core =
 cross-gig loop accumulation + real M7 form scoring/gate + whole-run Save-a-Song are built**, leaving Phase 4
 *polish* = boss-gig capstones, mentor/chapter prose, and AABA/verse-chorus detection beyond the A·B·A
 heuristic); explicit **dynamics symbols** (crescendo/accents) beyond
