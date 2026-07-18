@@ -1,12 +1,13 @@
 # Mujicians — a Balatro-style music-theory deckbuilder
 
 **Entry file:** `mujicians.html` · **Status:** **v1 vertical slice built** — a Balatro-style deckbuilder
-(cards = notes, hands = chords/scales, score = theory correctness, hands are sounded, and a whole run now
-**builds one continuous Mario-Paint-style song across all 3 gigs** — the loop accumulates and modulates
-C→G→F as you play (Phase 4) — and you can **Save a Song** you like — name the whole-run song, read a theory
+(cards = notes, hands = chords/scales, score = theory correctness, hands are sounded, and a whole run
+**builds one continuous Mario-Paint-style song in one fixed key** — **gigs were removed 2026-07-17**, so a
+run is now **one continuous performance** (one key, one applause threshold, one Muse drafted at the start)
+that fills a single loop — and you can **Save a Song** you like — name the whole-run song, read a theory
 report card, and replay/share it from a Home **Setlist**). The demoted slice-1 note-grid is preserved in
 **`mujicians-compose.html`** (the future free-compose side tool). The economy beyond the slice (antes, boss
-gigs, Étude/Accidental cards, Daily-Set seed, set-playback) is still the plan below.
+constraints, Étude/Accidental cards, Daily-Set seed, set-playback) is still the plan below.
 
 A roguelike deckbuilder where **cards are notes** and the "poker hands" you play are **chords, scales,
 and progressions**. You score by making music that's *theory-correct* — in key, consonant, resolving,
@@ -25,12 +26,12 @@ game-dev defaults.
 
 Playtest feedback captured for a later pass — **no code changed yet.** Listed newest-first.
 
-1. **Do away with gigs (design change).** The 3-gig structure **disrupts play** and the dev "doesn't
-   really care about the Muses." Direction: **drop the 3-gigs-per-run Set**, and **replace the per-gig Muse
-   draft with a single Muse chosen once at the start of a run**. **Now planned in full** — see the new
-   **[Removing gigs — a run becomes one performance](#removing-gigs--a-run-becomes-one-performance-planned-not-built)**
-   section below for the decided forks, the recommended (confirm-before-building) defaults, and the code map.
-   (Still **not built.**)
+1. ~~**Do away with gigs (design change).**~~ **✅ DONE (2026-07-17).** A run is now **one continuous
+   performance in one fixed key (C major)** with a **single applause threshold** and **one Muse drafted
+   once at the start** — the 3-gig Set, C→G→F modulation, and per-gig re-drafts are removed. See the
+   **[Removing gigs — a run becomes one performance (BUILT)](#removing-gigs--a-run-becomes-one-performance-built)**
+   section for the as-built code map. *(Follow-ons still planned: key change → Melody (M4), accidentals →
+   Pitch (M1).)*
 2. **Whole/half notes don't actually sustain longer (audio bug).** Choosing a **whole note** still *sounds*
    like a quarter — the duration isn't audibly longer. Likely the synth envelope/`_tone` release is fixed
    regardless of the `d*slot` length passed by `scheduleVoices`, so longer durations don't ring out. Fix:
@@ -47,12 +48,14 @@ Playtest feedback captured for a later pass — **no code changed yet.** Listed 
 
 ---
 
-## Removing gigs — a run becomes one performance (planned, not built)
+## Removing gigs — a run becomes one performance (BUILT)
 
-> **Status: planned, NOT built (noted 2026-07-17).** This is the design + code map for Known-issue #1
-> ("do away with gigs"). Nothing is coded yet. Two forks below are **recommended defaults flagged
-> "confirm before building"**; one fork is **decided** (the Muse draft). When we build this, update the
-> **Progression** and **Implemented** sections and this status line in the same change.
+> **Status: BUILT (2026-07-17)** in `mujicians.html`. A run is now **one continuous performance in one
+> fixed key** with a **single applause threshold** and **one Muse drafted once at the start**. The 3-gig
+> Set, the C→G→F modulation, per-gig thresholds, per-gig Muse re-drafts, and the loop's section/key-strip
+> UI are all gone. The three forks below record the decisions; the **As built** subsection is the code map.
+> *(Follow-ons still open: key change relocated to the Melody movement (M4) and accidentals to Pitch (M1)
+> remain **planned, not built** — see the Progression notes.)*
 
 **Why.** The 3-gig Set **disrupts play** (three separate threshold gates + two between-gig Muse-draft
 interruptions per run), and the dev "doesn't really care about the Muses." Collapsing a run to **one
@@ -144,11 +147,50 @@ The gig structure is concentrated in a handful of spots (`mujicians.html`):
 - **Campaign gates.** Movement gates already advance on the terminal state (`maybeAdvance` in `winGig`/
   `loseRun`); with one terminal state they simplify, no gate logic changes.
 
+### As built (code map)
+
+- **`GIGS` array → `RUN_KEY`** (`{ keyName:"C major", key:majorScale(0) }`) — one fixed key. All former
+  `GIGS[run.gigIdx]` / `curGig()` reads now hit `RUN_KEY`. `sectionOfBar`/`sectionKey`/`gigIdxClamped`/
+  `curGig`/`modKeyName` are **deleted**.
+- **One flat loop.** `SECTION_BARS` is gone; `LOOP_BARS = PLAYS`. The write head advances
+  `(writePos+1) % LOOP_BARS` across the **whole** loop (no per-section confinement; click-to-aim reaches
+  any bar). `loopLenNow()` returns a **constant `LOOP_BARS`** — the full grid is always shown and always
+  grooves (empty bars are rests you fill in). *(This must stay constant: `startLoop` freezes
+  `playSrc.n = loopLenNow()` once, so a growing value would strand the groove on the bars filled at start
+  — the bug in the first cut.)*
+- **Deck recycle.** Gigs used to reshuffle a **fresh full deck each gig** (3 decks/run). With one
+  `startPlay` + one shuffle, `drawUp()` now **reshuffles the whole deck when the draw pile empties**, so a
+  single continuous run doesn't starve — the **`PLAYS` budget**, not deck exhaustion, is the real limiter
+  (the `hand.length===0` loss path is now effectively unreachable).
+- **Budget & threshold.** `PLAYS = 12`, `DISCARDS = 4` are now the **whole-run** budget (were per-gig).
+  `gigThreshold()` → **`runThreshold()`**: campaign uses the movement's `thr` (retuned ~×2 for the longer
+  single run — M1 90 … M6 2000), Free Play/M7 uses the new **`RUN_THRESHOLD = 2600`** (replaced the
+  escalating `GIGS` thresholds). `run.gigScore` → **`run.runScore`**.
+- **Lifecycle.** `run.gigIdx` removed. `startGig()` → **`startPlay()`** (deals the hand, `writePos=0`,
+  starts the groove) — called once after the single draft. `winGig()` (which incremented `gigIdx` and
+  re-drafted) → **`winRun()`** (threshold met = run won, straight to the win screen). `offerDraft()` is
+  called **once** from `startRun`; the `winGig` re-draft is gone (`pickMuse`/empty-pool → `startPlay`).
+- **Loop grid (`loopStripHTML`).** Removed **section dividers** (`.secstart`), the **per-section key strip**
+  (`.lsecbar`), and the **locked-cell** logic — the whole loop is one writable key; row-greying keys off
+  `RUN_KEY.key`. (The now-unused `.lsec/.secstart/.locked` CSS rules are left in place, harmless.)
+- **Save-a-Song.** `saveSong`/`renderSaveOverlay` pass `songReport` the key as the `RUN_KEY.key`
+  **pc-array** (the per-bar `sectionKey` function path is retired for live runs but `songReport` still
+  accepts a function for forward-compat); `keyName` is `"C major"` (not `"C→G→F"`). `decodeSong` falls
+  back to `RUN_KEY.key`.
+- **Copy.** HUD ("Key … · M_n_"), draft dialog (once, no "modulates to…"), save/end overlays
+  ("Performance complete", "beat the applause threshold"), home rules, and the top-of-file header were all
+  de-gigged.
+- **Untouched (as predicted):** `classify`, the scheduler (`scheduleBar`/`scheduleVoices`/`barQueue`),
+  tempo, Codex, `MUSE_POOL` contents, and **M7 `hasABA`/form scoring** (reads the flat `run.loop.bars`).
+  The render function is still named `renderGig` / screen `"gig"` / `.gigbar` CSS — kept as plain names for
+  "the play screen" (no behavior tied to gigs).
+
 ### Open items for this feature
 
-- Final **hand/discard budget** and **loop length** for a one-session run (and the single Free-Play
-  threshold).
-- **Repeatable hand-size Muses** — how they behave without between-gig re-drafts (see fork 3).
+- **Balance the new numbers in play** — `PLAYS`/`DISCARDS`/`LOOP_BARS` (12/4/12) and the retuned
+  thresholds (campaign `thr`, `RUN_THRESHOLD`) are first-pass placeholders.
+- **Repeatable hand-size Muses** — Extra Hand / Big Hand can no longer re-draft to stack across gigs; they
+  now pay out once. Revisit their value/`repeatable` flag (currently unchanged).
 - **Modulation at Melody (M4)** — the design of the player-driven key-change mechanic and its scoring
   lives with the Melody movement, not here (see the **Progression** note). This section only removes the
   *gig-boundary* modulation; M4 reintroduces key change deliberately.
@@ -252,6 +294,12 @@ the design's load-bearing alignment.
 ---
 
 ## The "made some music" payoff
+
+> **⚠️ Note (2026-07-17):** the gig-specific mechanics described in this section and the Phase-4 /
+> Implemented sections below (3 gigs, C→G→F modulation, per-section loop, per-gig Muse re-drafts) were
+> **removed** — a run is now one continuous single-key performance. See **Removing gigs — a run becomes
+> one performance (BUILT)**. The prose below is kept for history; the *one accumulating loop / Save-a-Song*
+> spine survives, just in one key.
 
 A run is a sequence of played hands = a little set. At the end of a gig/run you can **hear your set
 played back**, and share the **seed + your set**. That's the export/brag loop and the answer to "a user
