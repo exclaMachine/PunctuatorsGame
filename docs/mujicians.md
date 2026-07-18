@@ -265,8 +265,11 @@ chord-inside-melody, eighths/sixteenths/triplets in the picker (the tick model a
   / figured bass / voice-leading are central to harmony. **Plan:** track actual `midi`s (register), not just
   pcs, in classification when harmony matters.
 - **Enharmonic spelling & interval quality.** pc-sets can't tell C♯ from D♭, or an augmented-4th from a
-  diminished-5th — but correct *spelling* (key-dependent) is exactly what theory drills. Ties into the
-  accidentals plan (M1). **Plan:** carry a spelled letter+accidental, not just a pitch class.
+  diminished-5th — but correct *spelling* (key-dependent) is exactly what theory drills. **The sharps/flats
+  runs [address the C♯-vs-D♭ half of this](#accidentals--the-sharps--flats-runs--the--boss-planned)** — the
+  two decks spell the same 5 pitches oppositely, forcing a **`letter`+`acc`** field on cards (scoped to
+  display/resolution/naturalize). **Still open (bigger):** interval quality (aug-4 vs dim-5) and full
+  key-signature-aware spelling. **Plan:** carry a spelled letter+accidental, not just a pitch class.
 
 **Content — slot into movements / modes later:**
 - **Modes & minor.** C major is fixed; natural/harmonic/melodic minor and the church modes are core.
@@ -283,6 +286,122 @@ chord-inside-melody, eighths/sixteenths/triplets in the picker (the tick model a
   driven by the same data. Flagged for a later pass; keep the render layer swappable now.
 - **Ear-training mode.** Hear an interval/chord → name it — the natural complement to the audible-payoff
   pillar.
+
+---
+
+## Accidentals — the sharps & flats runs + the ♮ boss (PLANNED)
+
+> **Status: PLANNED, not built (designed 2026-07-18).** This is the concrete design for the long-flagged
+> **"accidentals belong in M1 Pitch"** note (Progression → M1) and resolves its open question ("new cards vs
+> transform vs sub-level gate") in favor of **sub-level runs with dedicated decks**. It also **funds the
+> enharmonic-spelling gap** in the theory-coverage checklist (the engine learns to tell C♯ from D♭ here).
+> Four design forks were decided with the dev (2026-07-18); defaults on the remaining sub-decisions are
+> marked *[recommended]* and are what I'll build unless changed.
+
+**The shape (decided).** Accidentals are taught as **internal levels of the Pitch movement (M1)**, after the
+7 naturals are catalogued:
+
+```
+M1 PITCH
+ ├─ Lv1  Naturals  — catalog the 7 letters in key           ← BUILT (hangman row)
+ ├─ Lv2  Sharps    — a run with the sharps deck; catalog 5 sharps
+ ├─ Lv3  Flats     — a run with the flats deck;  catalog 5 flats
+ └─ BOSS ♮ Natural — a capstone run whose debuff naturalizes every ♯/♭ you play
+```
+
+**Why this doesn't revert "gigs removed."** The 2026-07-18 cut removed per-run **antes/gigs** from normal &
+Free-Play performances (a run is one continuous open-ended song). This boss is **not** that — it's a
+**campaign capstone / special challenge run** (the doc already keeps "boss = movement capstone" alive). Normal
+and Free-Play runs stay threshold-free and open-ended; only the ♮ boss run carries a win target. Keep that
+firewall: **don't** reintroduce antes into the everyday performance.
+
+### The two decks — same 5 pitches, spelled two ways (decided)
+
+The distinguishing lesson is **spelling**, not new sounds:
+
+| Deck | Cards | Color shade | The pull it teaches |
+|---|---|---|---|
+| **Sharps** | C♯ D♯ F♯ G♯ A♯ | **warmer** — each letter's ROYGBIV color nudged toward the **next** letter's | a ♯ **resolves up** a half-step (C♯→D) |
+| **Flats** | D♭ E♭ G♭ A♭ B♭ | **cooler** — nudged toward the **previous** letter's | a ♭ **resolves down** a half-step (D♭→C) |
+
+Same five black-key pitches; the **name, color-shade, and voice-leading pull** differ. This is *the* reason
+spelling matters — **C♯ and D♭ are one key but pull in opposite directions** — and it's what makes the two
+runs feel distinct instead of reskinned. It forces the engine to carry **letter + accidental**, not just a
+pitch class (the enharmonic fix).
+
+### Scoring — chromatic resolution *[recommended; sub-decision]*
+
+The runs are still in **C major**, where every accidental is **out of key** — so plain "in-key = ×2" would
+punish the very cards the level is about. Instead the accidental levels turn on a **chromatic-resolution
+bonus**: a ♯ that moves **up** a half-step to a chord/scale tone (or a ♭ that moves **down**) on the next
+timeline note scores a bonus and a Codex "resolution" note. This
+
+- teaches what accidentals are **for** (leading tones / voice-leading), not just that they exist;
+- reuses the timeline's **melodic-motion** machinery (already scored between the new note and the previous
+  timeline note — a semitone-resolution check sits right beside stepwise-motion);
+- keeps `maxSelect = 1` (still M1): you play the accidental, then play its resolution — a two-play gesture on
+  the continuous timeline. **No key change needed** (that's still M4).
+
+*(Rejected alt: setting the sharps run in a sharp key so accidentals read in-key — pulls in key signatures,
+overlaps M4 modulation, bigger lift. Kept C major + resolution bonus.)*
+
+### The ♮ boss — "the Natural cancels all accidentals" (decided: adapt & keep scoring)
+
+A **capstone run** unlocked once both accidental gates are full. Its debuff: **every ♯/♭ card you play is
+naturalized** — scored *and sounded* as the letter's natural pitch (F♯ → F, D♭ → D — the pitch audibly
+**moves**, since we carry letter+acc). You **win by still making theory-correct music** and hitting a target
+(the boss run **does** carry a win check — the one place a run does). The lesson lands **by absence**: you
+feel what the accidental was doing once it's gone, and you must build a line that still works when your
+color notes collapse to the scale.
+
+- **Reward for beating it:** unlock the **♮ (natural) as a playable Accidental card** — the third accidental,
+  which **cancels** a ♯/♭. That both pays off the boss thematically and seeds the **Accidental-card (Tarot)**
+  shop line. Plus a Codex badge + Tips.
+- **Keep it simple v1:** full naturalization for the whole run (not partial/growing). Growing debuff, or
+  naturalizing only some bars, is a later tuning knob.
+
+### M1 graduation — does the accidental arc gate M2? *[recommended: no]*
+
+**Recommended:** the 7 **naturals still graduate M1→M2** (keep the gentle onramp — "one concept at a time").
+The **sharps/flats/♮-boss arc is an optional deeper M1 track** ("Pitch, advanced") that grants the ♮ card, a
+Codex badge, and Tips, but is **not a hard wall** before Melody. This mirrors M7's terminal gate being
+"flavor rather than an advance," and avoids front-loading all of pitch before any melody. *(Open: the dev may
+prefer accidentals to be **required** before M2 — decide in build.)*
+
+### Code map (when built)
+
+- **Spelled notes (the core retrofit).** Card/note objects gain an **`acc`** field (`0` natural / `+1` sharp
+  / `−1` flat) alongside `pc`/`letter`/`midi`. `C♯` and `D♭` share `pc`/`midi` but differ in `letter`+`acc`.
+  Everything pitch-class-based (`classify`, in-key, consonance) is unaffected; **spelling-aware** bits
+  (display, the resolution bonus, naturalization) read `letter`+`acc`. This is the doc's flagged enharmonic
+  fix, scoped to where it's needed rather than a global rewrite.
+- **Decks & levels.** `buildDeck(mv, level)` gains a **level** (`'naturals'|'sharps'|'flats'|'natboss'`);
+  `run.pitchLevel` is set at run start for M1. Sharps/flats levels = **naturals + the 5 accidental cards** of
+  that spelling (naturals stay so you can resolve into them and still make music).
+- **Color shades.** A `shade(letter, acc)` helper interpolates the base `COLOR[letter]` toward the neighbor
+  letter's color (♯ → next, ♭ → prev). `cardHTML` draws the **accidental glyph** (♯/♭/♮) beside the letter and
+  applies the shade. (Noteling **morphology** — ♯ spikier, ♭ rounder — stays deferred to the art layer.)
+- **Scoring.** Add a **chromatic-resolution** term keyed off the previous timeline note (semitone up for ♯,
+  down for ♭, landing on a scale/chord tone). Slots next to the existing melodic-motion scoring.
+- **Gates (mirror the M1 hangman).** `persist.progress.gates.sharps` / `.flats` — additive 5-slot sets, each
+  surfaced as its own hangman-style tracker (reusing `pitchTrackerHTML`). Both full ⇒ the ♮ boss unlocks;
+  beating it sets a `natBoss` flag / grants the ♮ card.
+- **Boss debuff.** `run.debuff = 'naturalize'` on the boss run; `playHand`/`classify`/`soundStack`/the
+  scheduler map each accidental note to its **letter's natural** `pc`/`midi` before sounding & scoring. The
+  boss run is the **one** run with a win target (`runThreshold()` — the otherwise-vestigial threshold gets a
+  real use here).
+- **Home UI.** Once naturals are catalogued, M1 offers the next level as the run flavor (Sharps ▸ Flats ▸ ♮
+  Boss). Light touch — detail in build. The DEV movement jumper can gain level buttons for testing.
+
+### Open sub-decisions (defaults noted)
+
+- **Scoring** = chromatic-resolution bonus in C major *[recommended]* vs sharp/flat-key framing.
+- **M1 graduation** = naturals still advance; accidental arc optional *[recommended]* vs required before M2.
+- **Boss reward** = unlock the ♮ card *[recommended]*; alt/additional rewards TBD.
+- **Boss debuff** = full naturalization v1 *[recommended]*; growing/partial later.
+- **Enharmonic scope** — carry `acc` only where needed (display/resolution/naturalize) *[recommended]* vs a
+  fuller spelled-pitch model (interval quality, key signatures) — the latter is the theory-coverage
+  checklist's bigger item, kept separate.
 
 ---
 
@@ -1400,13 +1519,15 @@ Graduating movement 7 unlocks **Free Play** (all terms on = today's game, still 
 
 - **M1 Pitch:** `handSize` small, **`MAX_SELECT = 1`**. You play one note; it lands on the bar's downbeat.
   Score is legible: `chips × (in-key ? 2 : 1)`. A beginner grasps it instantly.
-  **Accidentals belong here (planned, not built).** The dev's call: **introduce accidentals (♯/♭ — the 5
-  chromatic notes) within the Pitch movement**, after the 7 naturals are learned — Pitch's own internal
-  "levels" (naturals first → accidentals next). It's the musically correct home (accidentals *are* pitch),
-  and it feeds the already-designed hooks: the ROYGBIV **in-between shades** (♯ warmer toward the next
-  letter, ♭ cooler), the Notelings **morphology** channel (♯ = spikier, ♭ = rounder), and the deck-growth
-  **Accidental cards** (the Tarot analog). Until built, the deck is the 7 naturals only. *(Open: whether
-  accidentals arrive as new deck cards, as an Accidental-card transform, or as a sub-level gate inside M1.)*
+  **Accidentals belong here (planned, not built) — now fully designed: see [Accidentals — the sharps &
+  flats runs + the ♮ boss](#accidentals--the-sharps--flats-runs--the--boss-planned).** The dev's call:
+  **introduce accidentals (♯/♭ — the 5 chromatic notes) within the Pitch movement**, after the 7 naturals
+  are learned — Pitch's own internal "levels" (naturals → **Sharps run → Flats run → ♮ boss**). It's the
+  musically correct home (accidentals *are* pitch), and it feeds the already-designed hooks: the ROYGBIV
+  **in-between shades** (♯ warmer toward the next letter, ♭ cooler), the Notelings **morphology** channel
+  (♯ = spikier, ♭ = rounder), and the deck-growth **Accidental cards** (the Tarot analog). Until built, the
+  deck is the 7 naturals only. *(The earlier open question — new cards vs transform vs sub-level gate — is
+  **resolved: dedicated sub-level decks** (same 5 pitches spelled two ways). See the Accidentals section.)*
 - **M2 Rhythm / M3 Dynamics:** still one card, but now you place it *in time* and *at a volume* — the same
   note becomes expressive. New axes, still `MAX_SELECT = 1`.
 - **M4 Melody:** **`MAX_SELECT` rises to ~3**, played **in sequence** (a line across beats — this needs
