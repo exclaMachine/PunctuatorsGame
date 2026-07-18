@@ -631,10 +631,19 @@
     const o = ac.createOscillator(), g = ac.createGain();
     o.type = wave||"triangle"; o.frequency.value = midiToFreq(midi);
     const peak = 0.16 * (vel||1);   // vel = dynamics loudness multiplier (p/mf/f)
+    // Attack–decay–SUSTAIN–release so a note's *length* is audible: a whole note holds near the sustain
+    // level for most of its duration and only releases at the end, so it rings ~4× longer than a quarter.
+    // (A pure exponential pluck decayed the same steep shape at every length, so all notes sounded alike.)
+    const D   = dur || 0.5;
+    const sus = Math.max(peak * 0.72, 0.0004);       // held level (kept > 0 for exponential ramps)
+    const atk = Math.min(0.02, D * 0.4);             // quick attack
+    const rel = Math.min(0.12, D * 0.5);             // release tail at the very end
+    const relStart = t + Math.max(atk, D - rel);     // sustain runs from attack peak up to here
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(peak, t+0.02);
-    g.gain.exponentialRampToValueAtTime(0.0008, t+(dur||0.5));
-    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+(dur||0.5)+0.05);
+    g.gain.linearRampToValueAtTime(peak, t+atk);          // attack
+    g.gain.exponentialRampToValueAtTime(sus, relStart);   // gentle decay to sustain across the held portion
+    g.gain.exponentialRampToValueAtTime(0.0008, t+D);     // release
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+D+0.05);
   }
   function playTone(midi, wave, dur, when, vel){ _tone(midi, wave, dur, audio().currentTime + (when||0), vel); }
   // A hand plays as a TIMED SEQUENCE (notes laid in play order, each for its own duration) rather than a

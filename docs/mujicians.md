@@ -32,10 +32,12 @@ Playtest feedback captured for a later pass — **no code changed yet.** Listed 
    **[Removing gigs — a run becomes one performance (BUILT)](#removing-gigs--a-run-becomes-one-performance-built)**
    section for the as-built code map. *(Follow-ons still planned: key change → Melody (M4), accidentals →
    Pitch (M1).)*
-2. **Whole/half notes don't actually sustain longer (audio bug).** Choosing a **whole note** still *sounds*
-   like a quarter — the duration isn't audibly longer. Likely the synth envelope/`_tone` release is fixed
-   regardless of the `d*slot` length passed by `scheduleVoices`, so longer durations don't ring out. Fix:
-   make the note's amplitude envelope/decay scale with its scheduled duration.
+2. ~~**Whole/half notes don't actually sustain longer (audio bug).**~~ **✅ DONE (2026-07-17).** `_tone` used
+   a pure **exponential pluck** — it decayed the same steep shape at every length, so the audible front
+   transient was identical and a whole note "sounded like a quarter" (its tail was near-silent by ~40% of
+   the duration). Replaced with an **attack–decay–sustain–release** envelope: the note decays to a sustain
+   level across its held portion and only releases in the last ~`min(0.12, D/2)`s, so longer `dur` (from
+   `d*slot` in `scheduleVoices`) now audibly rings ~4× longer.
 3. **A 4-beat bar can't hold a whole note plus anything (M4).** The bar is `BEATS`=4 columns = 4 beats, so a
    **whole note (4 beats) fills the bar** and any additional note in the same hand overflows and is
    clipped/dropped. Multi-note melodies with long durations don't fit. Fix options: let a melodic hand
