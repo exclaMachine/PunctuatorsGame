@@ -1327,7 +1327,10 @@
 
   function toggleSel(idx){
     if(run.sel.has(idx)) run.sel.delete(idx);
-    else { if(run.sel.size>=maxSelect()) return; run.sel.add(idx);
+    else {
+      // single-select movements swap to the new card instead of blocking; multi-select respects the cap
+      if(run.sel.size>=maxSelect()){ if(maxSelect()===1) run.sel.clear(); else return; }
+      run.sel.add(idx);
       const c = run.hand[idx]; const inst=INSTRUMENTS.find(x=>x.id===c.instId); playTone(c.midi, inst.wave, 0.4); }
     // only the preview + card states need updating, but a full gig re-render is cheap
     renderGig();

@@ -41,10 +41,10 @@ Playtest feedback captured for a later pass — **no code changed yet.** Listed 
    clipped/dropped. Multi-note melodies with long durations don't fit. Fix options: let a melodic hand
    **span multiple bars**, or lengthen the bar, or cap durations by remaining space in the UI. (Ties into
    #1 — if gigs go and the loop model changes, revisit bar capacity then.)
-4. **Single-select should swap, not block (M1–M3).** When `maxSelect`=1, clicking a **different** card does
-   nothing (current selection stays). It should **deselect the current card and select the new one**. Fix:
-   in `toggleSel`, when `maxSelect()===1` and a different card is clicked, replace the selection instead of
-   returning early.
+4. ~~**Single-select should swap, not block (M1–M3).**~~ **✅ DONE (2026-07-17).** When `maxSelect()===1`,
+   clicking a **different** card now **clears the current selection and selects the new one** instead of
+   returning early — `toggleSel` clears `run.sel` before adding when the cap is 1 (multi-select still
+   respects the cap).
 
 ---
 
