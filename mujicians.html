@@ -180,6 +180,53 @@
   .chip.new{background:#20402f;border-color:#2f7a4f;color:#9ff5c0}
   .chips .empty{color:var(--dim);font-size:12px}
 
+  /* Codex button + tabbed dialog */
+  .codexbtn{display:inline-flex;align-items:center;gap:8px}
+  .codexbtn .cxcount{background:#232848;border:1px solid var(--edge);border-radius:20px;
+    font-size:11px;padding:1px 8px;color:var(--dim)}
+  .cxmodal{max-width:640px}
+  .cxtabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 14px;border-bottom:1px solid var(--edge);padding-bottom:12px}
+  .cxtab{font:inherit;font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer;
+    background:transparent;border:1px solid var(--edge);color:var(--dim);transition:border-color .1s,color .1s}
+  .cxtab:hover{color:var(--ink)}
+  .cxtab.on{background:#232848;color:var(--ink);border-color:var(--accent)}
+  .cxtab b{color:var(--good);margin-left:6px;font-size:11px;font-weight:700}
+  .cxbody{min-height:230px}
+  .cxlead{color:var(--dim);font-size:12px;line-height:1.5;margin:0 0 12px}
+  .cxlead b{color:var(--ink)}
+
+  /* interval / run checklist rows */
+  .cxlist{display:flex;flex-direction:column;gap:6px}
+  .cxrow{display:flex;align-items:center;gap:10px;padding:7px 11px;border-radius:9px;
+    background:#0f1226;border:1px solid var(--edge)}
+  .cxrow.found{background:#141a33;border-color:#2f7a4f}
+  .cxrow .cxmark{width:16px;text-align:center;color:var(--dim);font-size:12px}
+  .cxrow.found .cxmark{color:var(--good)}
+  .cxrow .cxname{font-size:13px;color:var(--dim);flex:1}
+  .cxrow.found .cxname{color:var(--ink)}
+  .cxrow .cxtag{font-size:10px;letter-spacing:.5px;padding:2px 8px;border-radius:20px;
+    background:#232848;border:1px solid var(--edge);color:var(--dim)}
+  .cxrow .cxtag.con{color:#9ff5c0;border-color:#2f7a4f}
+  .cxrow .cxtag.dis{color:#f2a3ba;border-color:var(--bad)}
+
+  /* chord grid (root × quality) */
+  .cxgrid{overflow-x:auto;padding-bottom:4px}
+  .cxgrid table{border-collapse:collapse;font-size:11px;margin:0 auto}
+  .cxgrid th,.cxgrid td{padding:3px 4px;text-align:center}
+  .cxgrid th{color:var(--dim);font-weight:600}
+  .cxgrid th.qh{text-align:right;padding-right:10px;white-space:nowrap;color:var(--ink)}
+  .cxcell{width:22px;height:22px;border-radius:6px;background:#0f1226;border:1px solid var(--edge);
+    color:transparent;display:inline-flex;align-items:center;justify-content:center;font-size:11px}
+  .cxcell.diat{border-color:#3d4a80}
+  .cxcell.found{background:#20402f;border-color:#2f7a4f;color:#9ff5c0}
+
+  /* circle of fifths */
+  .cxcircle{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .cxcircle svg{max-width:100%;height:auto}
+  .cxlegend{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-size:11px;color:var(--dim)}
+  .cxlegend span{display:inline-flex;align-items:center;gap:5px}
+  .cxlegend i{width:11px;height:11px;border-radius:50%;display:inline-block;border:1px solid var(--edge)}
+
   /* overlays */
   .overlay{position:fixed;inset:0;background:rgba(6,8,20,.82);display:flex;align-items:center;justify-content:center;
     padding:20px;z-index:20}
@@ -252,8 +299,9 @@
   <div id="game"></div>
 
   <div class="codex">
-    <h2>CODEX — structures discovered</h2>
-    <div class="chips" id="codex"><span class="empty">None yet — play a chord or scale to inscribe it.</span></div>
+    <button class="btn ghost codexbtn" id="codexBtn" type="button" title="Structures you've discovered, by group">
+      📖 Codex <span class="cxcount" id="codexCount">0</span>
+    </button>
   </div>
 
   <p class="hint">
@@ -265,6 +313,7 @@
 </div>
 
 <div id="overlay"></div>
+<div id="codexOverlay"></div>
 
 <!-- card-motion chrome: an animation clone layer + deck/discard pile anchors (outside #game so they
      survive the full-re-render and give stable rects to fly from/to). Populated by syncChrome(). -->
@@ -1281,17 +1330,117 @@
   }
 
   /* ================= codex ================= */
+  // The Codex is a persistent button (in the footer, outside #game) that opens a tabbed dialog grouping
+  // discovered structures by kind (Intervals / Triads / Sevenths / Runs) plus a Circle-of-Fifths map.
+  // It renders into its own overlay (#codexOverlay) so it's independent of the screen state machine.
+  const TRIAD_Q   = ["major","minor","diminished","augmented"];
+  const SEVENTH_Q = ["maj7","7","m7","m7♭5","°7","mM7"];
+  const RUN_LENS   = [3,4,5,6,7];
+  const FIFTHS     = [0,7,2,9,4,11,6,1,8,3,10,5];   // pitch classes clockwise by perfect fifths from C
+  let codexOpen = false, codexTab = "intervals";
+  const $codexOverlay = document.getElementById("codexOverlay");
+
   function addCodex(name){
     const isNew = !codex.has(name);
     codex.add(name);
     if(isNew){ persist.codex = [...codex]; savePersist(); }
-    renderCodex(isNew?name:null);
+    renderCodex();
   }
-  function renderCodex(justAdded){
-    const el = document.getElementById("codex");
-    if(codex.size===0){ el.innerHTML = `<span class="empty">None yet — play a chord or scale to inscribe it.</span>`; return; }
-    el.innerHTML = "";
-    [...codex].forEach(n=>{ const s=document.createElement("span"); s.className="chip"+(n===justAdded?" new":""); s.textContent=n; el.appendChild(s); });
+  function renderCodex(){   // keep the button's count badge in sync; refresh the dialog if it's open
+    const el = document.getElementById("codexCount");
+    if(el) el.textContent = codex.size;
+    if(codexOpen) renderCodexModal();
+  }
+  function openCodex(){ codexOpen = true; renderCodexModal(); }
+  function closeCodex(){ codexOpen = false; $codexOverlay.innerHTML = ""; }
+
+  function cxChordCount(quals){ let n=0; for(const q of quals) for(const nm of NOTE_NAMES) if(codex.has(nm+" "+q)) n++; return n; }
+  function cxDiscoveredRoots(){   // pitch classes that root any discovered triad/7th (for the circle)
+    const roots = new Set();
+    codex.forEach(nm=>{
+      const m = /^([A-G]#?)\s+(.+)$/.exec(nm);
+      if(m && (TRIAD_Q.includes(m[2]) || SEVENTH_Q.includes(m[2]))){
+        const pc = NOTE_NAMES.indexOf(m[1]); if(pc>=0) roots.add(pc);
+      }
+    });
+    return roots;
+  }
+
+  function cxIntervalsHTML(){
+    const rows = Object.keys(INTERVAL_NAME).map(Number).sort((a,b)=>a-b).map(d=>{
+      const nm = INTERVAL_NAME[d], found = codex.has(nm), con = CONSONANT_IV.has(d);
+      return `<div class="cxrow${found?" found":""}"><span class="cxmark">${found?"◆":"◇"}</span>`
+           + `<span class="cxname">${esc(nm)}</span>`
+           + `<span class="cxtag ${con?"con":"dis"}">${con?"consonant":"dissonant"}</span></div>`;
+    }).join("");
+    return `<p class="cxlead">Two notes sounded together. There are <b>11</b> within an octave — from the tense minor 2nd to the sweet perfect 5th.</p><div class="cxlist">${rows}</div>`;
+  }
+  function cxChordHTML(quals, lead){
+    const head = `<tr><th></th>${NOTE_NAMES.map(n=>`<th>${esc(n)}</th>`).join("")}</tr>`;
+    const body = quals.map(q=>{
+      const cells = NOTE_NAMES.map((n,pc)=>{
+        const found = codex.has(n+" "+q), diat = DIATONIC_C.includes(pc);
+        return `<td><span class="cxcell${found?" found":""}${diat?" diat":""}" title="${esc(n+" "+q)}">${found?"✓":""}</span></td>`;
+      }).join("");
+      return `<tr><th class="qh">${esc(q)}</th>${cells}</tr>`;
+    }).join("");
+    return `<p class="cxlead">${lead} Blue-outlined cells sit on an <b>in-key</b> root (a note of C major).</p><div class="cxgrid"><table>${head}${body}</table></div>`;
+  }
+  function cxRunsHTML(){
+    const rows = RUN_LENS.map(n=>{
+      const found = codex.has("Scale run ("+n+")");
+      return `<div class="cxrow${found?" found":""}"><span class="cxmark">${found?"◆":"◇"}</span>`
+           + `<span class="cxname">${n}-note scale run</span><span class="cxtag con">stepwise</span></div>`;
+    }).join("");
+    return `<p class="cxlead">Three or more scale notes in a row, moving stepwise up or down — the melodic "run."</p><div class="cxlist">${rows}</div>`;
+  }
+  function cxCircleHTML(){
+    const roots = cxDiscoveredRoots(), cx=150, cy=150, R=115, nodeR=21;
+    const nodes = FIFTHS.map((pc,i)=>{
+      const ang = (-90 + i*30) * Math.PI/180;
+      const x = cx + R*Math.cos(ang), y = cy + R*Math.sin(ang);
+      const letter = NOTE_LETTER[pc], diat = DIATONIC_C.includes(pc);
+      const col = diat ? COLOR[letter] : "#3a3f57";
+      const txt = diat ? textOn(col) : "#8a90ad";
+      const found = roots.has(pc);
+      return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${nodeR}" fill="${col}" `
+           + `stroke="${found?'#ffd76a':'#2a2f4a'}" stroke-width="${found?3:1.2}"/>`
+           + `<text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" fill="${txt}">${esc(NOTE_NAMES[pc])}</text></g>`;
+    }).join("");
+    return `<div class="cxcircle"><svg viewBox="0 0 300 300" width="300" height="300" role="img" aria-label="Circle of fifths">`
+         + `<circle cx="150" cy="150" r="115" fill="none" stroke="#232848" stroke-width="1"/>`
+         + `<text x="150" y="152" text-anchor="middle" font-size="10" fill="#6b7192">↻ fifths</text>${nodes}</svg>`
+         + `<div class="cxlegend"><span><i style="background:#e8cf3c"></i> in-key (C major)</span>`
+         + `<span><i style="background:#3a3f57"></i> chromatic</span>`
+         + `<span><i style="background:#ffd76a;border-color:#ffd76a"></i> root you've played</span></div>`
+         + `<p class="cxlead" style="text-align:center;margin:0">Each step clockwise is a <b>perfect fifth</b>. The seven in-key notes form one unbroken arc — that's how the circle maps the key.</p></div>`;
+  }
+
+  function renderCodexModal(){
+    const defs = [
+      ["intervals","Intervals", Object.keys(INTERVAL_NAME).filter(d=>codex.has(INTERVAL_NAME[d])).length+"/11"],
+      ["triads","Triads", cxChordCount(TRIAD_Q)+"/"+(12*TRIAD_Q.length)],
+      ["sevenths","Sevenths", cxChordCount(SEVENTH_Q)+"/"+(12*SEVENTH_Q.length)],
+      ["runs","Runs", RUN_LENS.filter(n=>codex.has("Scale run ("+n+")")).length+"/"+RUN_LENS.length],
+      ["circle","Circle of 5ths",""],
+    ];
+    const tabbar = defs.map(([id,lbl,c])=>`<button class="cxtab${codexTab===id?" on":""}" data-cxtab="${id}">${lbl}${c?`<b>${c}</b>`:""}</button>`).join("");
+    let body;
+    if(codexTab==="triads")        body = cxChordHTML(TRIAD_Q,   "Three notes stacked in thirds.");
+    else if(codexTab==="sevenths") body = cxChordHTML(SEVENTH_Q, "Four notes — a triad plus a seventh; the dominant (G 7 in C) pulls hardest home.");
+    else if(codexTab==="runs")     body = cxRunsHTML();
+    else if(codexTab==="circle")   body = cxCircleHTML();
+    else                           body = cxIntervalsHTML();
+    $codexOverlay.innerHTML = `<div class="overlay"><div class="modal cxmodal">
+        <h2>📖 Codex</h2>
+        <p>Structures you've discovered by playing them — <b>${codex.size}</b> inscribed. Browse them by group, or see how they relate on the circle of fifths.</p>
+        <div class="cxtabs">${tabbar}</div>
+        <div class="cxbody">${body}</div>
+        <div class="cta"><button class="btn ghost" id="cx-close">Close</button></div>
+      </div></div>`;
+    $codexOverlay.querySelectorAll(".cxtab").forEach(el=>el.addEventListener("click",()=>{ codexTab = el.dataset.cxtab; renderCodexModal(); }));
+    document.getElementById("cx-close").addEventListener("click", closeCodex);
+    $codexOverlay.querySelector(".overlay").addEventListener("click", e=>{ if(e.target===e.currentTarget) closeCodex(); });
   }
 
   /* ================= rendering ================= */
@@ -1766,9 +1915,11 @@
       render();
     }
   });
+  document.getElementById("codexBtn").addEventListener("click", openCodex);
+  window.addEventListener("keydown", e=>{ if(e.key==="Escape" && codexOpen){ e.preventDefault(); closeCodex(); } });
   loadPersist();
   (persist.codex||[]).forEach(c=>codex.add(c));
-  renderCodex(null);
+  renderCodex();
   render();
 })();
 </script>

@@ -2043,6 +2043,16 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
 - **Persistence + meta.** `localStorage["mujicians-save-v2"]` holds `{day, runsUsed, codex,
   totalApplause, bestApplause, setlist}`. **Renown** level derives from cumulative Applause; the **Codex**
   logs every recognized structure you play; **`setlist`** holds saved songs (see next bullet).
+- **Codex UI — a button → tabbed dialog (BUILT 2026-07-18).** The footer's always-on chip list was
+  replaced by a **📖 Codex** button (with a discovered-count badge) that opens a modal in its own
+  `#codexOverlay` (independent of the `screen` state machine — openable from Home or the play screen; Esc /
+  backdrop / Close to dismiss). Tabs group discoveries by kind against a **complete checklist**: **Intervals**
+  (all 11, consonant/dissonant tagged), **Triads** and **Sevenths** (a root × quality grid — in-key roots
+  blue-outlined), **Runs** (3–7-note scale runs), plus a **Circle of 5ths** map — an inline-SVG relationship
+  view where the 7 in-key notes glow in ROYGBIV as one contiguous arc, chromatic notes are greyed, and any
+  root you've played is ringed gold. `codex` (the `Set`) stays the single data source; grouping is derived by
+  parsing the inscribed names (`INTERVAL_NAME` values, `NOTE_NAMES[root]+" "+quality`, `Scale run (n)`).
+  *(Room to grow into a fuller relationship graph — e.g. a Tonnetz — later; the tab layout is the container.)*
 - **Save a Song (Setlist + report card + share code).** When a gig's loop is about to be lost you can
   **name and keep it**: a **💾 Save this song?** dialog pops **before the Muse draft** on a non-final gig
   win (and as a button on the end overlay for the final win / a loss). It prefills a **Noteling
