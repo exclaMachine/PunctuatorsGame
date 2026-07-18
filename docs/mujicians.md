@@ -107,9 +107,9 @@ The gig structure is concentrated in a handful of spots (`mujicians.html`):
   `GIGS[run.gigIdx]` reads the single config.
 - **`SECTION_BARS` / `LOOP_BARS` / `sectionOfBar` / `sectionKey` / `loopLenNow` (~L275, L303–309).**
   Collapse: `LOOP_BARS` becomes the run's flat loop length; `sectionKey(b)` → the one `RUN_KEY`;
-  `sectionOfBar` is removed. `loopLenNow()` — with no sections — cycles the **filled prefix** of the loop
-  (bars written so far) instead of "sections unlocked up to the current gig," so early play still doesn't
-  groove through empty future bars.
+  `sectionOfBar` is removed. `loopLenNow()` — with no sections — returns a constant `LOOP_BARS` (the full
+  loop is always shown and always grooves). *(Note: an early attempt to shrink it to the "filled prefix"
+  broke the groove — `startLoop` freezes the length once — so it must stay constant. See **As built**.)*
 - **`run.gigIdx` / `startGig` / `winGig` (~L985, L1056).** Remove `gigIdx` and the gig-advance path.
   `startGig` folds into `startRun`. **Win** = threshold met (the check currently in `playHand` at
   `run.gigScore >= gigThreshold()` → now a run-win, not a gig-win → `screen="win"`); **lose** = out of
@@ -906,10 +906,13 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
   - **Deferred to later stages (unchanged):** draftable/unlockable rhythm content (a Codex sub-set),
     syncopation & cross-loop-consistency scoring, and an explicit **rest** token (durations already leave the
     bar's tail silent, but there's no dedicated rest pick yet).
-- **Phase 4 — Structure payoff & polish. ✅ CORE BUILT.** **Cross-gig loop accumulation** + real M7 form
-  scoring + a real M7 gate. Boss-gig capstones and mentor/chapter prose are **deferred** (a later polish
-  pass — chosen "core only" this pass).
-  - **As built:** the loop is **one song per run**, allocated once in `startRun` (`run.loop`, sized
+- **Phase 4 — Structure payoff & polish. ✅ CORE BUILT** (⚠️ **partly superseded 2026-07-17 — gigs
+  removed**). Cross-gig loop accumulation + real M7 form scoring + a real M7 gate. **The M7 form scoring &
+  gate (`pcSetFp`/`hasABA`) survive unchanged** (they read the flat `run.loop.bars`), but the **cross-gig /
+  sectioned / C→G→F-modulating** framing below is gone — the loop is now one flat single-key loop of
+  `LOOP_BARS = PLAYS`. Boss capstones and mentor/chapter prose stay **deferred**. See **Removing gigs — a
+  run becomes one performance (BUILT)**; the sectioned description below is kept for history.
+  - **As built (gig-era, superseded):** the loop is **one song per run**, allocated once in `startRun` (`run.loop`, sized
     `LOOP_BARS = SECTION_BARS × GIGS.length` = 18) and **never reset per gig**. `startGig` snaps the write
     head to `run.gigIdx × SECTION_BARS` so each gig fills its own `SECTION_BARS`-bar **section in that
     gig's key** — the song **modulates C→G→F**. `playHand`'s write head and click-to-aim are **confined to
@@ -1010,8 +1013,13 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
     deck makes the plain in-key highlight **degenerate in C major** (every row is in-key), the glow instead
     reacts to your selection so it stays a real teaching signal every gig. Empty selection ⇒ all in-key rows
     glow (the scale). The off-key **grey** rows are unchanged (still show key membership).
-- **The song loop (Mario-Paint-style "make a song as you go") — one loop per RUN (Phase 4).** The whole
-  run is **one continuous loop of `LOOP_BARS` slots** (= `SECTION_BARS × GIGS.length` = 18), allocated once
+- **The song loop (Mario-Paint-style "make a song as you go") — one loop per RUN.** ⚠️ **The gig details
+  in this bullet are SUPERSEDED (2026-07-17):** gigs were removed, so there are no sections, no `SECTION_BARS`,
+  no C→G→F modulation, no locked cells, and `winGig`/`startGig` are gone. **Current model:** one flat loop of
+  `LOOP_BARS = PLAYS` slots in one fixed key; `loopLenNow()` is a constant `LOOP_BARS` (the full grid always
+  shows and grooves); the write head wraps the whole loop; click-to-aim reaches any bar. See **Removing gigs
+  — a run becomes one performance (BUILT)**. The original (gig-era) description is kept below for history.
+  The whole run is **one continuous loop of `LOOP_BARS` slots** (= `SECTION_BARS × GIGS.length` = 18), allocated once
   in `startRun` and **never reset between gigs**. Each gig fills its own `SECTION_BARS`-bar **section** (its
   own key): `startGig` snaps the write head to `run.gigIdx × SECTION_BARS`, and `playHand`'s write head +
   click-to-aim are **confined to the current gig's section** (past sections lock). Playing a hand **writes

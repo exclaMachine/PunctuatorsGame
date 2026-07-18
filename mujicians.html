@@ -270,8 +270,8 @@
   // Mario-Paint-style loop: a fixed strip of slots you fill hand-by-hand. Each Play
   // writes the current slot; the loop cycles nonstop (continuous backing groove).
   // No gigs: a run is ONE continuous performance in ONE key, filling ONE flat loop of LOOP_BARS
-  // slots (= PLAYS). The write head wraps across the whole loop; loopLenNow() cycles only the
-  // "song so far" (the filled prefix) so early play doesn't groove through empty future bars.
+  // slots (= PLAYS). The write head wraps across the whole loop; the full grid is always shown and
+  // always grooves (empty bars are rests you fill in as you play).
   const BAR_SEC = 0.8;
   // Tempo: one loop slot = one beat, so bar-seconds = 60/BPM. Default 75 BPM = 0.8s (BAR_SEC).
   // The global comfort tempo (persist.bpm) drives the live gig loop; saved songs replay at
@@ -571,8 +571,10 @@
       onHand:(x)=> x.structType==="run"?{mult:3}:null },
     { id:"virtuoso",     name:"Virtuoso",      short:"seventh", minMv:5, desc:"Seventh chords give +3 mult.",
       onHand:(x)=> x.structType==="seventh"?{mult:3}:null },
-    // Hand-size upgrades (Balatro-style): grow the hand you draw. Repeatable, so they
-    // can be drafted again each gig and stack; applied in pickMuse, not in score().
+    // Hand-size upgrades (Balatro-style): grow the hand you draw; applied in pickMuse, not in score().
+    // NOTE: `repeatable`/"stacks" is now vestigial — with gigs gone there's only ONE draft per run, so
+    // these pay out once (they can't re-draft to stack). The desc text + flag await the balance revisit
+    // (see docs/mujicians.md → Removing gigs → Open items).
     { id:"extrahand",    name:"Extra Hand",    short:"+1 hand", minMv:1, desc:"Draw +1 more card each hand. Repeatable — stacks.",
       handSize:1, repeatable:true },
     { id:"bighand",      name:"Big Hand",      short:"+2 hand", minMv:1, desc:"Draw +2 more cards each hand. Repeatable — stacks.",
@@ -687,8 +689,8 @@
   // Bar-seconds of whatever's grooving: the live gig loop follows the global tempo in real time
   // (so the Tempo slider works mid-gig); a saved song carries its own fixed barSec.
   function srcBarSec(){ if(!playSrc) return BAR_SEC; return playSrc.live ? curBarSec() : (playSrc.barSec||BAR_SEC); }
-  // The live loop cycles only the "song so far" (loopLenNow() = filled prefix), so early play doesn't
-  // loop through empty future bars; it grows to the full LOOP_BARS song as you fill the loop.
+  // The live loop grooves the full LOOP_BARS song continuously (empty bars are rests). n is captured
+  // once in startLoop, so loopLenNow() must be constant — see its definition.
   function gigSrc(){ return (run && run.loop) ? { bars:run.loop.bars, n:loopLenNow(), live:true } : null; }
   function scheduleBar(idx, when){
     const bar = playSrc && playSrc.bars[idx];
@@ -1200,7 +1202,7 @@
     if(!run.loop) return "";   // no loop yet (e.g. the pre-run Muse draft) — nothing to show
     const keyRoot = RUN_KEY.key[0];
     const rows = loopRowMidis();
-    const N = loopLenNow();                       // render the "song so far" (filled prefix)
+    const N = loopLenNow();                       // the full loop (constant LOOP_BARS) — always shown
     // rhythm (M2+): subdivide each bar into BEATS sub-columns so the loop grid shows WHEN notes hit.
     const sub = termOn("groove") ? BEATS : 1;
     gridSub = sub;   // the playhead reads this to sweep beat-by-beat
