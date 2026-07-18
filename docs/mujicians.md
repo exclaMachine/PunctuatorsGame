@@ -397,11 +397,95 @@ prefer accidentals to be **required** before M2 — decide in build.)*
 
 - **Scoring** = chromatic-resolution bonus in C major *[recommended]* vs sharp/flat-key framing.
 - **M1 graduation** = naturals still advance; accidental arc optional *[recommended]* vs required before M2.
-- **Boss reward** = unlock the ♮ card *[recommended]*; alt/additional rewards TBD.
+- **Boss reward** = capture **Ranger** as a legendary Muse that grants the ♮ (cancel) power *[recommended]*
+  — see [The character Muses](#the-character-muses--the-graphic-novel-cast-is-the-muse-roster-planned); alt/additional rewards TBD.
 - **Boss debuff** = full naturalization v1 *[recommended]*; growing/partial later.
 - **Enharmonic scope** — carry `acc` only where needed (display/resolution/naturalize) *[recommended]* vs a
   fuller spelled-pitch model (interval quality, key signatures) — the latter is the theory-coverage
   checklist's bigger item, kept separate.
+
+---
+
+## The character Muses — the graphic-novel cast IS the Muse roster (PLANNED)
+
+> **Status: PLANNED, not built (designed 2026-07-18).** Turns the abstract Muse pool into the dev's
+> *Mujicians* graphic-novel characters, and realizes the long-flagged **"each movement is a chapter/mentor
+> from the story"** hook with actual named cast. Three forks decided with the dev (2026-07-18); a fourth
+> (how you earn a character) is defaulted below and flagged open. Supersedes the generic `MUSE_POOL` names.
+
+**The decision (locked).** A character plays **two roles**:
+
+1. **Mentor / tutorial** — introduces and teaches their concept during the relevant lesson (portrait +
+   guidance). This is the game's first real story/tutorial prose, and it's cheap (framing over the existing
+   mechanic).
+2. **A legendary Muse (the Joker analog)** — you earn the character as a **persistent, collected** Muse when
+   you complete their lesson. **The cast replaces the generic Muses** (Perfect Pitch / Consonance / Cadence /
+   … get reskinned to characters) rather than sitting alongside them — one unified named roster.
+
+**Card type = Joker, not Tarot (decided).** Characters are **Muses**, not one-shot consumables — a story
+figure you earn once should be **permanent**, and a burn-once Tarot you can't re-earn feels bad. For the
+**accidental** characters, the Muse *grants or dispenses the transform ability* — so the ♯/♭/♮ **Tarot
+operation lives inside the Joker**. Generic **Accidental/Tarot cards** stay a separate shop consumable that
+these character-Muses can generate; the character is the *master* of the operation, not the disposable card.
+
+### The starting cast (more to come from the dev)
+
+| Character | Class / form | Concept | Lesson home | Muse effect (sketch) |
+|---|---|---|---|---|
+| **Sharpist** | jester | sharps (♯ — raise/brighten) | M1 Pitch · Sharps level | grants the ♯ power; rewards sharp-resolutions (♯→ up a semitone) |
+| **Sir Flat** | knight | flats (♭ — lower/ground) | M1 Pitch · Flats level | grants the ♭ power; rewards flat-resolutions (♭→ down a semitone) |
+| **Ranger** | villain (Ranger class) | naturals (♮ — cancel) | M1 Pitch · ♮ boss | **captured** by defeating the ♮ boss; grants the ♮ (cancel) power |
+| **Slurry** | shapeshifting blob | slurs / legato phrasing | M4 Melody | passive: **connected/legato lines** (smooth stepwise motion) score more; may unlock a per-play **slur** marking that glides two consecutive timeline notes into one legato gesture |
+
+*(Slurry's **shapeshifting** IS the slur — she morphs smoothly from one note-shape to the next with no break,
+exactly like legato. The card art/animation morphs; on the grid a slur draws a curve tying two note cells.)*
+
+The dev has **more characters** not yet assigned — the framework seats each future character at the concept
+its class embodies (M2 Rhythm, M3 Dynamics, M5 Harmony, M6 Timbre, M7 Structure). Mapping is **concept-based,
+not one-per-movement** (M1 already holds three: two hero mentors + the villain).
+
+### Other ways they show up (menu, not all committed)
+
+- **Recurring villain arc** — Ranger returns as escalating bosses in later movements (a throughline
+  antagonist), each defeat deepening his card. *(Open — see below.)*
+- **Equipped companion** — carry one earned character for a run (persistent passive + flavor barks), à la
+  Inklings' story companions; a soft loadout choice. *(Optional.)*
+- **Codex "cast" gallery** — collecting characters fills a cast page (naturalist framing), separate from the
+  note-creature **Notelings**.
+- **Signature decks** — a character themes an alternate starting deck (the Balatro deck-unlock analog).
+
+### Code map (when built)
+
+- **`MUSE_POOL` becomes the character roster.** Each entry gains `name`/`class`/`portrait`/`mentor` (tutorial
+  copy) + `legendary:true`, keeping the existing `onNote`/`onHand` hook shape and `minMv` gating. The current
+  generic Muses (Perfect Pitch, Consonance, Low End, Cadence, Arpeggiator, Virtuoso, + the hand-size Muses)
+  are **reskinned to characters** as the dev supplies names for each effect — until then they keep working
+  under provisional names.
+- **Earning a character** *(recommended default — the open fork)*: completing a character's lesson/gate grants
+  their Muse into an **owned pool** (`persist.loadout.muses`, already planned in the backstage-shop section);
+  heroes join on lesson-clear, villains (Ranger) are captured on **boss defeat**. The run-start draft then
+  offers from **owned + always-available** characters (keeps run-to-run variety; ties into the shop plan).
+- **Accidental-transform Muses.** Sharpist/Sir Flat/Ranger carry a `grants: '#'|'b'|'natural'` power the deck
+  builder / a per-play control can apply (sharpen/flatten/naturalize a note), reusing the accidentals section's
+  `acc` field. Ranger's ♮ is the boss reward (see the Accidentals section's *Boss reward*).
+- **Slurry (legato).** Extends the timeline's melodic-motion scoring with a connected-line bonus; optionally a
+  per-play **slur** control (like duration/dynamics) that ties two consecutive events with no re-articulation
+  (the envelope doesn't retrigger; a short pitch glide), lit on the grid as a tie/curve.
+- **Mentor surface.** A lightweight portrait + tip on entering a character's lesson (first pass); fuller
+  scripted dialogue is a later prose pass (the doc's flavor-only stance relaxes here, using existing fiction).
+
+### Open sub-decisions
+
+- **How earned** = complete the lesson (heroes join / villain captured) *[recommended default]* vs shop-bought
+  vs both. **Left unselected by the dev — confirm.**
+- **Name the rest of the cast** — which of the dev's other characters teach **M2 Rhythm / M3 Dynamics / M5
+  Harmony / M6 Timbre / M7 Structure**, so the generic Muses can be reskinned to them.
+- **Ranger recurrence** — one-and-done M1 boss, or a throughline villain who returns as tougher bosses per
+  movement.
+- **Equipped-companion layer** — build the one-carried-character companion mode, or keep characters purely as
+  drafted Muses.
+- **Slur depth** — passive legato bonus only, or the full per-play slur/glide marking (a new control + audio
+  glide).
 
 ---
 
