@@ -902,6 +902,78 @@ All centralized so "snappy & subtle" can be dialed toward "full Balatro" later w
 
 ---
 
+## Timbre as collectible card skins — editions, not creature breeds (PLANNED)
+
+> **Status: PLANNED, not built (decided 2026-07-18).** Reframes how **timbre** is collected and shown.
+> **Supersedes** the Notelings "**Instrument (suit) → breed / material**" channel below: timbre is no
+> longer a *creature variation* — it becomes a **collectible translucent card skin (an "edition")**, in
+> the spirit of Balatro's Foil / Holographic / Polychrome cards. **Engine decision: hand-rolled Web-Audio
+> synth presets — NOT Tone.js** (considered and declined — the dependency, its own scheduler, and its own
+> AudioContext fight the repo's vanilla single-file rule and the game's existing `scheduleBar` clock; the
+> goal here is *variety to collect*, not realism, which a small preset system delivers with zero assets).
+
+**The idea.** A **timbre skin** is one collectible unit carrying **both**:
+- a **synth preset** — the *sound* (a distinct voice: waveform stack + filter + envelope + maybe one light
+  effect like detune/tremolo), and
+- a **translucent card overlay** — the *look* (a CSS gradient / holo shimmer laid over the card face).
+
+Collect skins, equip one, and a card **sounds and looks** like that timbre — "Foil Pluck," "Holo Bell,"
+"Neon Saw," "Frosted Glass," "Vapor Pad." The name, the sound, and the sheen are the *same object*. That's
+the **collection fantasy** the dev wants, expressed on the card itself rather than as a monster variant.
+
+**Why this beats the old "creature breed" channel.**
+- The skin lives on the **DOM card we already render** (`cardHTML`) as a **pure-CSS overlay** — zero
+  assets, art-agnostic, and it **layers cleanly on the existing card-motion system** (a skin just rides
+  along with the fly/bloom clones). The creature-breed channel needed per-instrument sprite art to read.
+- It frees the **Notelings** creatures to stay a clean **seven-letter set** (color, morphology, size,
+  fusion, mood…) without a 7×N breed explosion.
+- It maps 1:1 onto Balatro's editions — a proven, legible "shiny card you collected" language.
+
+**How it maps onto the current code.**
+- Today "instrument = suit = waveform = timbre" (`INSTRUMENTS`: piano/`triangle`, guitar/`sawtooth`,
+  bass/`sine`, sounded by `_tone`). Under the reframe, **the 3 instruments become the 3 *seed* timbre
+  skins**, and growth = **more presets, each with its own skin** — the deck's collectible "voices."
+- Extend `_tone` (one oscillator) into a small **preset system** behind a `playPreset(midi, preset, …)`
+  seam: a preset is data (`{ oscs:[…], filter, env, fx }`); the scheduler (`scheduleVoices`/`scheduleBar`)
+  calls `playPreset` instead of a bare `wave`. ~150–250 lines, no dependency, drops into the existing
+  clock with no conflict (the reason we skipped Tone.js).
+- A card gains an **equipped-skin id**; `cardHTML` adds the skin's CSS class; the scheduler reads the
+  skin's preset. Sound-preset and overlay stay one unit, so "equip skin" changes both at once.
+
+**Collection & unlock (ties to existing systems).**
+- The **Codex** tracks which timbre skins you've discovered/collected (it already catalogs concepts).
+- The planned **[backstage shop](#the-backstage-shop--tips-economy-planned)** sells skins for **Tips**
+  (a natural Tips sink), and/or they drop from play milestones. **Equip** a skin to an instrument/deck
+  between runs (part of the Free-Play loadout).
+- Because skins are cosmetic-**plus**-audio (not power), they can be pure collectibles without unbalancing
+  score — though a skin *could* later carry a small Muse-like scoring quirk if desired (open item).
+
+**Visual (pure CSS, reduced-motion aware).** The overlay is a translucent gradient / animated sheen over
+the card, gated behind `prefers-reduced-motion` (static sheen when reduced), matching the card-motion
+layer's guard. No images; it inherits any future card reskin for free.
+
+**Interaction with the Timbre movement (M6) — open question.** M6 currently teaches **multi-instrument
+blends** (gate = "play N multi-instrument blends"; term = +mult per extra distinct instrument voice). With
+timbre reframed as skins, M6's mechanic could evolve to **"blend distinct timbre skins"** or **"collect /
+equip your first N skins,"** and the `timbre` scoring term would count distinct *skins* per hand instead of
+distinct *suits*. That's a real change to M6's gate/term — **flagged, not decided here.** The current
+instrument-blend M6 keeps working unchanged until this is built.
+
+**App / portability.** Zero new assets, pure CSS + the existing Web-Audio engine → **fully app- and
+offline-safe**, no CDN, no dependency. This is a big part of *why* Tone.js was declined: the
+collectible-timbre goal is reachable inside the repo's vanilla single-file rules.
+
+**Open items.**
+- **Preset palette** — the starting set of voices/skins and their synth recipes (waveform stacks, filters,
+  a pluck/Karplus voice, a noise voice for a future percussion suit).
+- **Purely cosmetic+audio, or a scoring quirk?** (Leaning purely collectible.)
+- **M6 rework** — whether the Timbre movement's gate/term switches from *instrument* blends to *skin*
+  blends (above).
+- **Skin taxonomy** — a flat list vs. Balatro-style tiers (foil < holo < polychrome) with escalating sheen.
+- **Where equip lives** — per-card, per-instrument, or per-deck; and how it surfaces in the loadout UI.
+
+---
+
 ## Notelings — letter-creatures, combos & the Bestiary (**tentative**)
 
 > **Status: design, not built.** A collection + story layer proposed by the dev. Nothing here is coded
@@ -938,9 +1010,12 @@ alignment the audio already provides):
   "accidentals are in-between color shades" (♯ = warmer shade toward the next letter, ♭ = cooler),
   giving two reinforcing channels. (Accidentals aren't in the deck yet — this waits on the Accidental
   cards.)
-- **Instrument (suit) → breed / material.** Same letter, different texture: Piano = crystalline,
-  Guitar = furry/wooden, Bass = heavy/stone. Gives 7×3 collectible variants off seven base designs. In
-  the **stand-in phase the card keeps its small instrument emoji** (🎹/🎸/🎻) as the breed mark.
+- **Instrument (suit) → ~~breed / material~~ — ⚠️ SUPERSEDED (2026-07-18).** Timbre is no longer shown as
+  a creature breed/material. It moved to a **collectible translucent card skin (edition)** — see
+  **[Timbre as collectible card skins](#timbre-as-collectible-card-skins--editions-not-creature-breeds-planned)**.
+  The Noteling stays defined by letter/color/morphology/size/fusion; the card's small instrument emoji
+  (🎹/🎸/🎻) may remain as a marker, but the *variation you collect* now lives on the **card skin**, not a
+  7×3 creature-breed matrix.
 - **Octave → size.** Bass-register creatures are big elders; high piano ones are tiny — so the loop's
   pitch grid reads as "big beasts low, little ones high."
 - **Consonance → fusion quality (the load-bearing one).** A consonant hand fuses into a smooth,
