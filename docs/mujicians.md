@@ -507,6 +507,92 @@ tap-to-play on touch; and whether to also show it on the **Save modal** and the 
 
 ---
 
+## Animations & card motion (**planned, not built**)
+
+> **Status: designed, not built (2026-07-17).** A Balatro-style card-motion layer. Recorded so the build
+> matches intent. **Decided this pass** (dev): **(1)** build the motion system **now, against today's
+> cards** — the pixel/Inklings reskin stays a separate later track (motion is art-agnostic, so it inherits
+> any future card art for free); **(2)** feel = **snappy & subtle** (fast tweens, light overshoot/settle —
+> not full-Balatro bounce), dial-up-able later; **(3)** add **minimal visible deck + discard piles** as
+> motion anchors; **(4)** first pass = **core card motion only** (deal, play→note, discard, hand reflow,
+> animated Sort, note-cell bloom). Score-juice, idle sway, draft reveal, and screen transitions are deferred.
+
+### The core challenge — a full-re-render DOM
+
+Every action calls `renderGig()`, which does `$game.innerHTML = \`…\``, destroying and rebuilding every card
+node (`cardHTML(c, idx)`, keyed by hand position `data-idx`). DOM nodes have **no identity across renders**,
+so a card can't naturally persist and travel between states (deck→hand, hand→note-cell, hand→discard). The
+plan therefore adds a **motion layer that doesn't rewrite the render model** — no retained-mode refactor.
+Because a card animation just moves a *rectangle*, it's **art-agnostic**: works identically whether the card
+face is today's CSS div, an emoji, or a future pixel sprite. (Cards already carry a stable `c.id`, which the
+FLIP/tracking below keys off.)
+
+### Three reusable primitives (vanilla, no new deps — WAAPI + FLIP)
+
+1. **Flying-clone overlay.** One absolutely-positioned, `pointer-events:none` layer (in the page chrome,
+   **outside `$game`** so it survives re-renders). For deal/play/discard: snapshot source + target rects
+   (`getBoundingClientRect()`), spawn a throwaway clone of the card, animate it across with
+   `element.animate()`, remove it on finish. The real re-rendered DOM sits underneath — game state never has
+   to persist a node.
+2. **FLIP for reflow.** When cards leave the hand or you Sort, the *surviving* cards slide to new spots
+   instead of snapping: record rects **by `c.id`** before render → after render → invert (transform to old
+   spot) → play (transition to zero). ~20 lines, reused by play/discard/sort.
+3. **Note-cell bloom.** When a note is written into the loop grid, its target cell pops/glows in the note's
+   ROYGBIV color — reuses the existing playhead machinery (rAF + `classList`), just a new transient class.
+
+**Select stays CSS-only** (it re-renders constantly and must not animate — the existing `.card.sel`
+transform is enough). Only the "worth animating" transitions get motion. A **`prefers-reduced-motion`**
+guard swaps every animation for an instant cut (one flag checked in the clone/FLIP helpers).
+
+### Deck & discard piles (new, minimal)
+
+Add a small **draw-pile stack** (bottom-left) and **discard-pile stack** (bottom-right) as fixed anchors so
+"dealt from the deck / discarded to a pile" reads. Put them in the **static page chrome (outside `$game`)**
+so their screen rects are stable across re-renders; a tiny updater refreshes the deck count on them (the
+HUD's `Deck N` text moves onto the draw pile). They're the source rect for deal and the target rect for
+discard.
+
+### v1 scope — the core-motion set
+
+| Animation | Trigger | Motion (snappy & subtle) |
+|---|---|---|
+| **Deal-in** | `drawUp()` adds cards | Newly drawn cards fly from the draw pile to their hand slot, **staggered** ~40ms, small settle overshoot. |
+| **Play → note-cell** | `playHand()` | Each selected card shrinks and flies from the hand to **its loop cell** (row = its `midi`, column = the write-position bar), then the cell **blooms** in its color. |
+| **Discard** | `discardHand()` | Selected cards fly to the discard pile with a slight fan + fade. |
+| **Hand reflow** | after play/discard | Surviving cards FLIP-slide to close the gap (concurrent with the fly-out clones). |
+| **Animated Sort** | Sort-by-pitch | Cards FLIP to their sorted positions instead of snapping. |
+
+### Code map (where each hooks in, when built)
+
+- **`playHand()` (~L1003):** capture selected-card rects **before** `removeSelected()/drawUp()/render()`;
+  compute each card's target cell from `run.loop.writePos` (the pre-increment bar) + its `midi` row; after
+  render, fly clones from the captured rects to those cells and trigger the bloom. FLIP the surviving hand.
+- **`discardHand()` (~L1038):** capture rects before `removeSelected()`; fly clones to the discard-pile
+  anchor; FLIP the survivors.
+- **`drawUp()` (~L991) / render:** tag the newly pushed card ids (e.g. `run._justDrawn`); after the next
+  render, animate the matching `.card` nodes in from the draw-pile anchor, staggered.
+- **Sort handler (~L1328):** wrap the existing sort in a FLIP (capture-by-id before, invert+play after).
+- **`loopStripHTML()` / playhead (~L1210, L723):** add the transient bloom class to the just-written cell.
+- **New:** a small `anim.js`-style block **inline** (single-file rule) — `flyClone(fromRect,toRect,opts)`,
+  `flip(container, keyFn)`, `bloomCell(sel)`, plus the pile DOM + `reducedMotion()` guard.
+- **Untouched:** `classify`, `score`, the scheduler/tempo/loop groove, Codex, Save-a-Song, the whole
+  Progression/movement system — motion is purely presentational and reads existing state.
+
+### Tuning knobs (placeholders, tune in play)
+
+Durations (~180–260ms), deal stagger (~40ms), overshoot amount, clone scale on play (~0.35 into the cell).
+All centralized so "snappy & subtle" can be dialed toward "full Balatro" later without touching call sites.
+
+### Deferred (named, not in v1)
+
+- **Score juice** — Applause count-up + per-note "+chips" pips flying off as notes land.
+- **Idle sway / hover-tilt** on the hand; **Muse-draft reveal** (cards flip/deal in); **screen transitions**
+  (home↔gig, win/lose overlay slide-in).
+- **Pixel/Inklings reskin** of the card face + chrome (the doc's open "visual identity" question) — a
+  separate track that the motion layer will inherit for free.
+
+---
+
 ## Notelings — letter-creatures, combos & the Bestiary (**tentative**)
 
 > **Status: design, not built.** A collection + story layer proposed by the dev. Nothing here is coded
