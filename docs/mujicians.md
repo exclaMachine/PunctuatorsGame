@@ -51,13 +51,18 @@ newest-first.
    control, or reuse the first/longest picked value) and schedule it as a **held-for-`d`-slots chord**
    through `scheduleVoices` instead of the full-bar `else` branch. Touches `handIsSequenced`/`scheduleVoices`
    /`soundCards`/`scheduleBar` + the grid's `barHits`/`hitsFor` so the held span shows.
-2. **Rhythm/melody — one flowing line, consistent stacking, playable rests.** ⚠️ **REWORK DECIDED
-   2026-07-18, NOT built — see [Continuous timeline + consistent stacking](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-rework-decided-2026-07-18-not-built).**
-   None of the rework is in the code yet (a rest-card + subdivision prototype was reverted). The plan: notes
-   flow **right after each other on one continuous timeline** (no one-play-per-bar gaps), **multiple selected
-   cards always play together** (a chord — the old Melody "sequence the selection" behavior is removed), the
-   stack cap grows 1→2→3→4 by movement, a **rest is playable by itself**, and timing is **integer ticks
-   (`TPB=24`)** so triplets/dotted work. That section is the source of truth.
+2. **Rhythm/melody — one flowing line, consistent stacking, playable rests.** ✅ **Stage 1 BUILT
+   (2026-07-18) — see [Continuous timeline + consistent stacking](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-rework-decided-2026-07-18-not-built).**
+   Notes now flow **right after each other on one continuous timeline** (`run.loop.events[]` + a tick
+   `cursor`; no one-play-per-bar gaps), **multiple selected cards always play together** (a chord — the old
+   Melody "sequence the selection" behavior + `handIsSequenced` are gone), the **stack cap grows 1→2→3→4 by
+   movement** (`maxSelect` = 1,1,1,2,3,4,4), a **rest card is playable by itself** (M2+), duration is a
+   **per-play** ♩/𝅗𝅥/𝅝 picker (`run.curDur`), timing is **integer ticks (`TPB=24`)**, and the loop grid is a
+   **piano-roll**. Known-issues #1 (chord duration ignored) and #5 (whole-note + more) are subsumed — a stack
+   honors `curDur` and long values simply continue across the (now visual-only) barlines. **Deferred to Stage
+   2:** 8ths/16ths/triplets in the picker (the tick model already fits them), fuller timeline run-detection &
+   form scoring, and save-format migration polish. See that section's *Stage 1 — build brief* for the
+   as-built map.
 3. ~~**Do away with gigs (design change).**~~ **✅ DONE (2026-07-17).** A run is now **one continuous
    performance in one fixed key (C major)** with a **single applause threshold** and **one Muse drafted
    once at the start** — the 3-gig Set, C→G→F modulation, and per-gig re-drafts are removed. See the
@@ -176,7 +181,40 @@ line. This rework makes one gesture mean one thing everywhere and makes the song
   piano-roll + timeline scheduler + stack/melodic-motion scoring; Stage 2 = timeline run detection, form on
   the timeline, save-format migration polish.
 
-### Stage 1 — build brief (START HERE — the baseline is the last commit; no rework code exists yet)
+### Stage 1 — ✅ BUILT (2026-07-18)
+
+All nine points below shipped in `mujicians.html`. **As built:** `run.loop = { events:[], cursor }` (ticks)
+replaced `bars[]`/`writePos`; `TPB=24`, `METER={beatsPerBar:4,beatUnit:4}`, `BAR_TICKS=96`, `LOOP_BARS=12`,
+`TOTAL_TICKS=1152`; `DURATIONS` carry **ticks** + rest glyphs and a per-play `run.curDur` (one `durControlHTML`
+picker, swaps to rest glyphs when the rest card is selected). `playHand` builds **one stack** (or a lone rest)
+→ `placeEvent` (overwrites collisions in the span, sorts by tick, advances the cursor). New timeline
+scheduler (`schedTick`/`scheduleEvent`/`tickPlayhead`) cycles the whole event list and sweeps a playhead
+**column**; `soundStack` is the immediate play-preview. Grid is a **piano-roll** (`eventCoverage` →
+on/held columns; a bar-number ruler footer; gold write-cursor column; click-to-aim by `data-tick`). Scoring
+is timeline-aware (rhythmic variety vs the previous event's dur; dynamic contrast over events; melodic
+**stepwise motion** vs the previous timeline note; form restatement over events). Stage space = the cursor's
+distance to `TOTAL_TICKS` (auto-finish at the end; ✓ Finish stays). Save format is now an **event list**
+(`snapshotEvents`); `songReport`/`suggestName`/`saveSong` take events; **MJ2:** share codes carry events and
+legacy **MJ1:**/`bars[]` saves still read via `eventsFromBars`. Rest cards (`REST_COPIES=3`) join the deck at
+M2+ and are solo-select. **Two deliberate deviations from the brief:** (a) a **minimal timeline scale-run
+detector** (`detectTimelineRun` — 3 stepwise single notes in a row) was pulled forward from Stage 2 so the
+**M4 melody gate stays clearable** now that the M4 cap is 2 (can't stack a 3-note run); (b) the loop-grid
+footer is a **bar-number ruler**, not per-event structure labels (the preview still names the current
+structure). **Deferred to Stage 2 (unchanged):** 8ths/16ths/triplets in the picker (the tick model already
+fits them), fuller run-detection & form scoring, save-format migration polish, chord-inside-melody.
+
+**⚠️ TODO (grow the stage instead of showing all 12 bars at once).** Right now the whole `LOOP_BARS=12`
+(`TOTAL_TICKS`) grid is drawn from the start, so the backing loop takes far too long to come back around to
+the player's first notes. Fix: **start small (≈4 bars) and grow only as the player needs room** — i.e. keep
+the *visible/looping* length **one step ahead of the cursor** so the next play's landing spot is always
+shown (in ghost form) but the loop stays tight. Implementation sketch: track a live `run.loop.lenTicks` (or
+derive `max(minBars, ceil((cursor+curDur)/BAR_TICKS)+1 bars)`), use it for `TOTAL_COLS`/the grid, the
+scheduler's `schedTotalTicks()` (the loop wraps at the *current* length, not the full 12), the notes-left
+meter, and auto-finish. `LOOP_BARS` becomes the **max** stage (and the *+loop-bars* shop item raises it).
+Watch the loop-length change mid-groove (the scheduler reads it fresh each tick, so growing it is safe, but
+verify the playhead phase doesn't jump jarringly when it grows).
+
+<details><summary>Original Stage 1 build brief (the nine points, for reference)</summary>
 
 Build against the current shipped `mujicians.html` (rest-card/subdivision prototype was reverted). Deliver a
 thin but complete vertical slice of the new model, parse-check as you go, let the dev verify in-browser.
@@ -200,6 +238,8 @@ thin but complete vertical slice of the new model, parse-check as you go, let th
 
 Defer to Stage 2: timeline scale-run detection, form scoring on the timeline, save-format migration polish,
 chord-inside-melody, eighths/sixteenths/triplets in the picker (the tick model already supports them).
+
+</details>
 
 ---
 
