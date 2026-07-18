@@ -22,28 +22,48 @@ game-dev defaults.
 
 ---
 
-## ⚠️ Known issues / fixes to do (noted 2026-07-17, NOT yet fixed)
+## ⚠️ Known issues / fixes to do (noted 2026-07-17 – 07-18, NOT yet fixed)
 
-Playtest feedback captured for a later pass — **no code changed yet.** Listed newest-first.
+Playtest feedback captured for a later pass — **no code changed yet** (except where marked DONE). Listed
+newest-first.
 
-1. ~~**Do away with gigs (design change).**~~ **✅ DONE (2026-07-17).** A run is now **one continuous
+1. **Chord duration is ignored — a multi-note (M5+) stacked chord always rings the whole bar (M2/M5).**
+   You can pick a note value (♩/𝅗𝅥/𝅝) for a chord, but it plays for the full bar regardless. `handIsSequenced`
+   returns `false` for a consonant multi-note hand, so `scheduleVoices` takes the **ring-the-bar** branch
+   (`bs*0.92`) and the per-card `noteDur` only governs **sequenced** (melodic/single) hands — never a chord.
+   This is *currently documented as intended* ("stacked hand rings the bar; per-note durations ignored"),
+   but the **desired behavior** is for a chord to **honor a chosen duration**: pick a value and the whole
+   chord sounds for that length, leaving the rest of the bar as a rest. *(Related nit: the **M2 gate** still
+   credits the picked value via `gateDurs` even though the chord didn't audibly play it — tighten when
+   fixed.)* **Fix sketch:** give a stacked chord a single **shared duration** (a dedicated chord-duration
+   control, or reuse the first/longest picked value) and schedule it as a **held-for-`d`-slots chord**
+   through `scheduleVoices` instead of the full-bar `else` branch. Touches `handIsSequenced`/`scheduleVoices`
+   /`soundCards`/`scheduleBar` + the grid's `barHits`/`hitsFor` so the held span shows.
+2. **Rhythm needs explicit rests + one-after-another placement (M2 future).** Today a bar is a fixed
+   **4-beat (`BEATS`=4) section** and a sequenced melody's notes lay back-to-back from beat 1, with any
+   leftover **auto-filling as a trailing rest** — so the player has little control over *where* the silence
+   goes. **Desired:** notes flow **one after another**, and silence appears **only where the player
+   purposefully places a rest** (a **rest card / rest token** in the rhythm palette) rather than an implicit
+   tail rest inside a rigid 4-slot bar. This is the already-deferred "explicit rest token," now with a
+   decided shape (**a placeable rest card**). Full plan under **Progression → Phase 3 (Rhythm), Stage 2C**.
+3. ~~**Do away with gigs (design change).**~~ **✅ DONE (2026-07-17).** A run is now **one continuous
    performance in one fixed key (C major)** with a **single applause threshold** and **one Muse drafted
    once at the start** — the 3-gig Set, C→G→F modulation, and per-gig re-drafts are removed. See the
    **[Removing gigs — a run becomes one performance (BUILT)](#removing-gigs--a-run-becomes-one-performance-built)**
    section for the as-built code map. *(Follow-ons still planned: key change → Melody (M4), accidentals →
    Pitch (M1).)*
-2. ~~**Whole/half notes don't actually sustain longer (audio bug).**~~ **✅ DONE (2026-07-17).** `_tone` used
+4. ~~**Whole/half notes don't actually sustain longer (audio bug).**~~ **✅ DONE (2026-07-17).** `_tone` used
    a pure **exponential pluck** — it decayed the same steep shape at every length, so the audible front
    transient was identical and a whole note "sounded like a quarter" (its tail was near-silent by ~40% of
    the duration). Replaced with an **attack–decay–sustain–release** envelope: the note decays to a sustain
    level across its held portion and only releases in the last ~`min(0.12, D/2)`s, so longer `dur` (from
    `d*slot` in `scheduleVoices`) now audibly rings ~4× longer.
-3. **A 4-beat bar can't hold a whole note plus anything (M4).** The bar is `BEATS`=4 columns = 4 beats, so a
+5. **A 4-beat bar can't hold a whole note plus anything (M4).** The bar is `BEATS`=4 columns = 4 beats, so a
    **whole note (4 beats) fills the bar** and any additional note in the same hand overflows and is
    clipped/dropped. Multi-note melodies with long durations don't fit. Fix options: let a melodic hand
    **span multiple bars**, or lengthen the bar, or cap durations by remaining space in the UI. (Ties into
-   #1 — if gigs go and the loop model changes, revisit bar capacity then.)
-4. ~~**Single-select should swap, not block (M1–M3).**~~ **✅ DONE (2026-07-17).** When `maxSelect()===1`,
+   the loop model — revisit bar capacity alongside the rest-card / one-after-another rework in #2.)
+6. ~~**Single-select should swap, not block (M1–M3).**~~ **✅ DONE (2026-07-17).** When `maxSelect()===1`,
    clicking a **different** card now **clears the current selection and selects the new one** instead of
    returning early — `toggleSel` clears `run.sel` before adding when the cap is 1 (multi-select still
    respects the cap).
@@ -449,10 +469,13 @@ This **shares its encoder with the eventual Daily-Set seed export**, so building
   behind + `renderSaveOverlay()`. *(The pre-Phase-4 per-gig `offerSave(gigIdx,"draft")` before the Muse
   draft is removed — the loop no longer resets between gigs.)*
 - **Snapshot/model:** `snapshotBars()` stores per filled bar `{cards:[{pc,letter,instId,midi}], cls, dyn,
-  fig, arp}`; `saveSong(bars,name)` pushes `{id,name,date,keyName,key,tempo,bars,stars,starred}` onto
+  durs, arp}` (`durs` replaced the old `fig` in Stage 2A); `saveSong(bars,name)` pushes
+  `{id,name,date,keyName,key,tempo,bars,stars,starred}` onto
   `persist.setlist` (`localStorage["mujicians-save-v2"]`, additive) and `pruneSetlist()` caps at
-  `SETLIST_CAP=30` (★-pinned never pruned). A whole-run save stores `keyName:"C→G→F"` (`modKeyName()`, since
-  it modulates) and `key:GIGS[0].key` (home key; Setlist replay is key-agnostic — sound is from MIDI).
+  `SETLIST_CAP=30` (★-pinned never pruned). ⚠️ **Post gig-removal:** a save now stores
+  `keyName: RUN_KEY.keyName` (`"C major"`) and `key: RUN_KEY.key.slice()` — the run's **single** key
+  (Setlist replay is key-agnostic, sound is from MIDI). *(The old `"C→G→F"`/`modKeyName()`/`GIGS[0].key` are
+  gone — see **Removing gigs**.)* `snapshotBars()` also stores per-bar `durs` (see Stage 2A).
 - **Report card:** `songReport(bars,key)` computes `{inKeyPct, structs, consGrade, consRatio, cadence,
   tritone, topLetter, stars}`. `key` is either a **pc-array** (single-key songs / imports) or a
   **function `barIndex→pc-array`** (the whole-run save passes `sectionKey`, so in-key% and cadences are
@@ -507,15 +530,46 @@ tap-to-play on touch; and whether to also show it on the **Save modal** and the 
 
 ---
 
-## Animations & card motion (**planned, not built**)
+## Animations & card motion (**v1 core BUILT 2026-07-17**)
 
-> **Status: designed, not built (2026-07-17).** A Balatro-style card-motion layer. Recorded so the build
-> matches intent. **Decided this pass** (dev): **(1)** build the motion system **now, against today's
-> cards** — the pixel/Inklings reskin stays a separate later track (motion is art-agnostic, so it inherits
-> any future card art for free); **(2)** feel = **snappy & subtle** (fast tweens, light overshoot/settle —
-> not full-Balatro bounce), dial-up-able later; **(3)** add **minimal visible deck + discard piles** as
-> motion anchors; **(4)** first pass = **core card motion only** (deal, play→note, discard, hand reflow,
-> animated Sort, note-cell bloom). Score-juice, idle sway, draft reveal, and screen transitions are deferred.
+> **Status: v1 core BUILT (2026-07-17)** in `mujicians.html` — a Balatro-style card-motion layer.
+> **Decided this pass** (dev): **(1)** build the motion system **now, against today's cards** — the
+> pixel/Inklings reskin stays a separate later track (motion is art-agnostic, so it inherits any future
+> card art for free); **(2)** feel = **snappy & subtle** (fast tweens, light overshoot/settle — not
+> full-Balatro bounce), dial-up-able later; **(3)** add **minimal visible deck + discard piles** as motion
+> anchors; **(4)** first pass = **core card motion only** (deal, play→note, discard, hand reflow, animated
+> Sort, note-cell bloom). Score-juice, idle sway, draft reveal, and screen transitions are deferred.
+>
+> **As built (code map).** A self-contained inline block (`/* card motion (v1 core) */`), no deps, Web
+> Animations API + FLIP. Chrome added **outside `#game`** so it survives the full re-render: `#fxlayer`
+> (the throwaway-clone overlay), `#deckpile` (bottom-left, shows the draw count), `#discardpile`
+> (bottom-right); `syncChrome()` (called from `render()`) shows/refreshes the piles **only while a run's
+> play board is on screen** (`gig`/`save`/`win`/`lose`) and **hides them off-play** (home/capped/pre-run
+> draft). *(Because `.pile` sets `display:flex`, an explicit `.pile[hidden]{display:none}` rule is needed
+> for the `hidden` toggle to actually hide them — an early cut showed the piles on Home.)* Cards now carry
+> **`data-id`** (stable card id) + **`data-midi`**, and loop cells carry **`data-midi`**, so motion can
+> target a card's landing cell and FLIP can track survivors by id.
+> - **`flyClone(srcEl, from, to, opts)`** — clones a card onto `#fxlayer`, animates it `from`→`to` (with
+>   optional `scale`/`fade`), removes it on finish. `srcEl` may be **detached** (already removed by the
+>   re-render) — only the captured rects are read, never the node's live box.
+> - **`snapHand()`/`flipHand(prev)`** — FLIP the hand: record rects by `data-id` before render, slide
+>   survivors from old→new box after (used by play, discard, Sort).
+> - **`dealIn()`** (called at the end of `renderGig`) — cards drawn this render (`run._justDrawn`, set in
+>   `drawUp()`) fly from the deck pile to their hand slot, staggered; the real card is hidden until its
+>   clone lands.
+> - **`flyPlay(flyFrom, bar, handSnap)`** (from `playHand`) — each played card, captured via
+>   `captureSelected()` **before** mutation, shrinks and flies to its loop cell
+>   (`.lgcell[data-bar][data-midi]`), then the cell **blooms** (`bloomCell`).
+> - **`flyDiscard(flyFrom, handSnap)`** (from `discardHand`) — discarded cards fan to the discard pile and
+>   fade.
+> - **Reduced motion:** `reduceMotion()` (`prefers-reduced-motion`) + a CSS `@media` guard cut every
+>   animation to an instant state change (piles/cells still update; no clones fly). Timings live in one
+>   `ANIM` table (`deal/play/discard/stagger/playScale`) for easy dial-up toward "full Balatro" later.
+> - **Untouched:** `classify`, `score`, the scheduler/tempo/loop groove + playhead, Codex, Save-a-Song,
+>   the Progression/movement system — motion is purely presentational and reads existing state.
+>
+> **Deferred (unchanged):** score juice (+chips pips, Applause count-up), idle sway/hover-tilt,
+> Muse-draft reveal, screen transitions, and the pixel/Inklings reskin (the motion layer inherits it free).
 
 ### The core challenge — a full-re-render DOM
 
@@ -972,7 +1026,9 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
     - **Model.** A hand = a list of events `(pitch, duration)`. **Sequenced hand** (M4 / any run): events lay
       **back-to-back from beat 1 in pick order**, each lasting its duration; leftover bar = a **rest**. The
       durations *are* the rhythm. **Stacked hand** (M5+ harmony): one simultaneous chord, rings the bar
-      (per-note durations ignored; sequencing off, as today). **Single note** (M1–M3): one event + duration +
+      (per-note durations ignored; sequencing off, as today). ⚠️ **This "rings the bar" behavior is now
+      flagged for change — see Known issue #1:** a chord should honor a picked value (a shared chord
+      duration) instead of always sounding whole. **Single note** (M1–M3): one event + duration +
       rest — which finally makes **M2 the note-values lesson** the design calls for.
     - **Duration palette (v1):** **quarter (1 beat) · half (2) · whole (4)** on the existing `BEATS`=4 grid
       (integer beats → columns stay legible). **Eighths (½ beat) are a fast-follow** needing a grid-resolution
@@ -989,11 +1045,23 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
       **rhythmic-interest +1** for ≥2 distinct durations (tunable). **M2 gate** → *play each note value*
       (`gateDurs` Set vs the palette), mirroring M3's soft/medium/loud (retires `gateFigs`/`FIGURES`).
     - **Staging.** **A (core): ✅ BUILT** (quarter/half/whole; see *As built (Stage 2A)* above). **B
-      (fast-follow, not built):** eighths (`BEATS`=8) + dotted notes. **C (later):** chords-in-melody
-      grouping, syncopation & cross-loop-consistency scoring, explicit rest token.
-  - **Deferred to later stages (unchanged):** draftable/unlockable rhythm content (a Codex sub-set),
-    syncopation & cross-loop-consistency scoring, and an explicit **rest** token (durations already leave the
-    bar's tail silent, but there's no dedicated rest pick yet).
+      (fast-follow, not built):** eighths (`BEATS`=8) + dotted notes. **C (later, decided shape below):**
+      **explicit rest cards** + **one-after-another placement**, **chord duration** (a stacked chord honors a
+      picked value instead of ringing the bar — see Known issue #1), chords-in-melody grouping, and
+      syncopation & cross-loop-consistency scoring.
+  - **Stage 2C — explicit rests & one-after-another (dev direction, not built).** Today a sequenced hand
+    lays its notes back-to-back from beat 1 and **any leftover of the fixed 4-beat (`BEATS`=4) bar becomes an
+    implicit trailing rest** — so the player can't say *where* silence goes. Decided shape: notes flow
+    **contiguously**, and silence appears **only where the player purposefully places a rest** via a
+    **rest card / rest token** in the rhythm palette (sits in the sequence editor between notes, like a note
+    of a chosen value but silent). This makes silence a deliberate rhythmic choice (the "silence is rhythm
+    too" lesson) and removes the rigid auto-tail-rest. Pairs with Known issue #5 (letting a melodic line
+    **span multiple bars** so long values + rests aren't clipped by the 4-slot bar). **Code touch:** the
+    `DURATIONS` palette gains a **rest entry** (silent, still consumes slots); `scheduleVoices` already rests
+    by advancing `t` without a `_tone`, so a rest event = "advance `t`, emit nothing"; `seqControlHTML` shows
+    a rest chip in the order; `barHits`/`hitsFor` skip it (no lit cell); `snapshotBars`/`MJ1:` store it.
+  - **Deferred to later stages (unchanged otherwise):** draftable/unlockable rhythm content (a Codex
+    sub-set), and syncopation & cross-loop-consistency scoring.
 - **Phase 4 — Structure payoff & polish. ✅ CORE BUILT** (⚠️ **partly superseded 2026-07-17 — gigs
   removed**). Cross-gig loop accumulation + real M7 form scoring + a real M7 gate. **The M7 form scoring &
   gate (`pcSetFp`/`hasABA`) survive unchanged** (they read the flat `run.loop.bars`), but the **cross-gig /

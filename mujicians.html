@@ -137,6 +137,22 @@
   /* a longer note's sustained beats (attack = full color .on; held = dimmer continuation, bg set inline) */
   .lgcell.held{border-color:rgba(255,255,255,.18)}
   .lgcell.gheld{box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
+
+  /* ---- card motion (v1 core): flying-clone overlay + deck/discard piles + note-cell bloom ---- */
+  #fxlayer{position:fixed;inset:0;z-index:15;pointer-events:none;overflow:hidden}
+  .fxcard{position:fixed;margin:0;box-shadow:0 8px 20px rgba(0,0,0,.5);will-change:transform,opacity}
+  .pile{position:fixed;bottom:16px;width:52px;height:74px;border-radius:8px;z-index:12;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    background:#1a1f3d;border:2px solid var(--edge);
+    box-shadow:3px 3px 0 rgba(0,0,0,.35),6px 6px 0 rgba(0,0,0,.2);
+    color:var(--dim);font-size:9px;letter-spacing:.5px;user-select:none;pointer-events:none}
+  .pile[hidden]{display:none}   /* .pile sets display:flex, which would override the [hidden] UA rule — restore it so syncChrome() can hide the piles off-play (home/capped/draft) */
+  #deckpile{left:16px}
+  #discardpile{right:16px;border-style:dashed;opacity:.85}
+  .pile .pilecount{font-size:20px;font-weight:800;color:#fff;line-height:1}
+  @keyframes cellbloom{0%{transform:scale(1.9);filter:brightness(2.2)}60%{transform:scale(1.15)}100%{transform:scale(1);filter:brightness(1)}}
+  .lgcell.bloom{animation:cellbloom .48s cubic-bezier(.22,1,.36,1);z-index:3;position:relative}
+  @media (prefers-reduced-motion:reduce){ .fxcard{display:none} .lgcell.bloom{animation:none} }
   /* faint bar-group separators when the loop grid is subdivided into beats */
   .lgcell.beat0:not(:nth-child(2)){border-left:1px solid rgba(255,255,255,.08)}
 
@@ -247,6 +263,12 @@
 </div>
 
 <div id="overlay"></div>
+
+<!-- card-motion chrome: an animation clone layer + deck/discard pile anchors (outside #game so they
+     survive the full-re-render and give stable rects to fly from/to). Populated by syncChrome(). -->
+<div id="fxlayer" aria-hidden="true"></div>
+<div id="deckpile" class="pile" hidden><span class="pilecount">0</span><span class="pilelbl">DECK</span></div>
+<div id="discardpile" class="pile discard" hidden><span class="pilelbl">DISCARD</span></div>
 
 <script>
 (function(){
@@ -761,6 +783,102 @@
     paintPlayCol(-1, -1);
   }
 
+  /* ================= card motion (v1 core) — overlay clones + FLIP, no deps =================
+     The game is full-re-render (renderGig does $game.innerHTML=…), so card nodes have no identity
+     across renders. Instead of a retained-mode rewrite we animate throwaway CLONES on #fxlayer and
+     FLIP the surviving hand. Motion is art-agnostic (it just moves the card rectangle), so it will
+     inherit any future pixel/sprite card face for free. Feel = snappy & subtle; reduced-motion cuts. */
+  const $fx = document.getElementById("fxlayer");
+  const $deckPile = document.getElementById("deckpile");
+  const $discardPile = document.getElementById("discardpile");
+  const ANIM = { deal:220, play:270, discard:240, stagger:38, playScale:0.34 };
+  function reduceMotion(){ return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+  function centerRect(el){ const r = el.getBoundingClientRect(); return { left:r.left, top:r.top, width:r.width, height:r.height }; }
+  // a card-sized rect centered on a pile (the source for deals, the target for discards)
+  function pileRect(pileEl){ const r = pileEl.getBoundingClientRect(); return { left:r.left+(r.width-60)/2, top:r.top+(r.height-90)/2, width:60, height:90 }; }
+
+  // Fly a throwaway clone of `srcEl` from rect `from` to rect `to`. `srcEl` may be detached (already
+  // removed from the hand by a re-render) — we only read the explicit rects, never the node's live box.
+  function flyClone(srcEl, from, to, opts){
+    opts = opts || {};
+    if(reduceMotion()){ if(opts.onDone) opts.onDone(); return; }
+    const clone = srcEl.cloneNode(true);
+    clone.className = "card fxcard";   // drop .sel and any state classes; keep the card look
+    clone.style.cssText = `left:${from.left}px;top:${from.top}px;width:${from.width}px;height:${from.height}px;visibility:visible;`;
+    clone.style.setProperty("--cc", srcEl.style.getPropertyValue("--cc"));   // preserve the note's ROYGBIV color
+    $fx.appendChild(clone);
+    const dx = to.left - from.left, dy = to.top - from.top;
+    const scale = opts.scale != null ? opts.scale : 1;
+    const anim = clone.animate([
+      { transform:"translate(0,0) scale(1)", opacity:1 },
+      { transform:`translate(${dx}px,${dy}px) scale(${scale})`, opacity: opts.fade ? 0 : 1 }
+    ], { duration: opts.dur || 220, delay: opts.delay || 0, easing: opts.easing || "cubic-bezier(.22,1,.36,1)", fill:"forwards" });
+    anim.onfinish = ()=>{ clone.remove(); if(opts.onDone) opts.onDone(); };
+  }
+
+  // FLIP the hand: snapHand() records each card's rect by stable card id BEFORE re-render; flipHand()
+  // slides survivors from their old box to the new one AFTER re-render (so removals/sort don't snap).
+  function snapHand(){ const m = {}; $game.querySelectorAll(".hand .card").forEach(el=>{ m[el.dataset.id] = centerRect(el); }); return m; }
+  function flipHand(prev){
+    if(reduceMotion() || !prev) return;
+    $game.querySelectorAll(".hand .card").forEach(el=>{
+      const before = prev[el.dataset.id]; if(!before) return;
+      const after = el.getBoundingClientRect();
+      const dx = before.left - after.left, dy = before.top - after.top;
+      if(!dx && !dy) return;
+      el.animate([{ transform:`translate(${dx}px,${dy}px)` }, { transform:"none" }],
+        { duration:200, easing:"cubic-bezier(.22,1,.36,1)" });
+    });
+  }
+
+  // Deal-in: cards drawn this render (run._justDrawn) fly from the deck pile to their hand slot, staggered.
+  function dealIn(){
+    if(!run || !run._justDrawn || !run._justDrawn.length){ if(run) run._justDrawn = null; return; }
+    const ids = run._justDrawn; run._justDrawn = null;
+    if(reduceMotion()) return;
+    const from = pileRect($deckPile);
+    ids.forEach((id, i)=>{
+      const el = $game.querySelector(`.hand .card[data-id="${id}"]`);
+      if(!el) return;
+      const to = centerRect(el);
+      el.style.visibility = "hidden";                                  // hide the real card…
+      flyClone(el, from, to, { dur:ANIM.deal, delay:i*ANIM.stagger, onDone:()=>{ el.style.visibility = ""; } }); // …until its clone lands
+    });
+  }
+
+  // Play: each played card shrinks and flies from the hand to its loop cell (row=midi, col=written bar),
+  // then that cell blooms. `flyFrom` = [{node,rect,midi}] captured BEFORE the re-render; `bar` = write bar.
+  function flyPlay(flyFrom, bar, handSnap){
+    flipHand(handSnap);
+    if(reduceMotion()) return;
+    flyFrom.forEach(f=>{
+      const cell = $game.querySelector(`.loopgrid .lgcell[data-bar="${bar}"][data-midi="${f.midi}"]`);
+      if(!cell) return;
+      const to = centerRect(cell);
+      flyClone(f.node, f.rect, to, { dur:ANIM.play, scale:ANIM.playScale, fade:true, onDone:()=>bloomCell(cell) });
+    });
+  }
+  function flyDiscard(flyFrom, handSnap){
+    flipHand(handSnap);
+    if(reduceMotion()) return;
+    const to = pileRect($discardPile);
+    flyFrom.forEach((f, i)=> flyClone(f.node, f.rect, to,
+      { dur:ANIM.discard, delay:i*20, scale:0.8, fade:true, easing:"cubic-bezier(.4,0,1,1)" }));
+  }
+  function bloomCell(cell){ if(!cell) return; cell.classList.add("bloom"); setTimeout(()=>cell.classList.remove("bloom"), 480); }
+  // capture the currently-selected hand cards as fly sources (nodes stay cloneable after re-render)
+  function captureSelected(){
+    return [...$game.querySelectorAll(".hand .card")].filter(el=> run.sel.has(+el.dataset.idx))
+      .map(el=>({ node:el, rect:centerRect(el), midi:+el.dataset.midi }));
+  }
+  // show/hide + refresh the deck/discard pile anchors for the current screen
+  function syncChrome(){
+    const show = !!run && ["gig","save","win","lose"].includes(screen);
+    if($deckPile) $deckPile.hidden = !show;
+    if($discardPile) $discardPile.hidden = !show;
+    if(show){ const dc = $deckPile.querySelector(".pilecount"); if(dc) dc.textContent = run.drawPile.length; }
+  }
+
   /* ================= Save a Song — Setlist, report card & export ================= */
   // A "song" = a snapshot of the whole run's accumulated loop the player chose to keep.
   // Stored minimally (just the notes + a light cls per bar); replayable from Home, exportable as a
@@ -800,7 +918,8 @@
       .map(b=>b.cls.name))];
     const chordish = filled.filter(b=>["interval","triad","seventh"].includes(b.cls.type));
     const consRatio = chordish.length ? chordish.filter(b=>b.cls.consonant).length/chordish.length : 1;
-    // cadence: a tonic-rooted chord (in its own section's key), or a V→I across adjacent bars
+    // cadence: a tonic-rooted chord in the key at that bar (`keyAt(i)` = the run's one key; per-bar only
+    // for legacy imported multi-key songs), or a V→I across adjacent bars
     let cadence = filledIdx.some(i=>(bars[i].cls.type==="triad"||bars[i].cls.type==="seventh") && bars[i].cls.root===keyAt(i)[0]);
     for(let i=0;i<bars.length-1 && !cadence;i++){
       const a=bars[i], b=bars[i+1];
@@ -989,13 +1108,15 @@
     startLoop();   // continuous backing groove begins
   }
   function drawUp(){
+    const drawn = [];
     while(run.hand.length < run.handSize){
       // recycle: reshuffle the whole deck when the draw pile empties, so a single continuous run
       // doesn't starve. (Gigs used to hand you a fresh deck each gig; now one run cycles it, and the
       // PLAYS budget — not deck exhaustion — is the real limiter.)
       if(!run.drawPile.length){ run.drawPile = shuffle([...run.deck]); if(!run.drawPile.length) break; }
-      run.hand.push(run.drawPile.pop());
+      const c = run.drawPile.pop(); run.hand.push(c); drawn.push(c.id);
     }
+    if(drawn.length) run._justDrawn = (run._justDrawn || []).concat(drawn);   // dealt-in this render — dealIn() animates them
   }
 
   function selectedCards(){ return [...run.sel].map(i=>run.hand[i]).filter(Boolean); }
@@ -1005,6 +1126,11 @@
     if(!cards.length) return;
     const res = score(cards, RUN_KEY, run.muses);
     soundCards(cards, res.cls);
+    // capture card-motion sources BEFORE the loop write / re-render: the played nodes get detached by
+    // the re-render but stay cloneable, and their rects/target bar must be read while still on screen.
+    const flyFrom = captureSelected();
+    const targetBar = run.loop.writePos;
+    const handSnap = snapHand();
     // lay this hand into the current loop slot (remembering its dynamic + sequence flag so playback
     // and any saved song reproduce it), then advance the write head (wraps across the whole loop)
     const seq = handIsSequenced(res.cls, cards.length);
@@ -1031,18 +1157,21 @@
     // remove played cards from hand, redraw
     removeSelected(); drawUp();
 
-    if(run.runScore >= runThreshold()){ winRun(); return; }
-    if(run.playsLeft <= 0 || run.hand.length === 0){ loseRun(); return; }
+    if(run.runScore >= runThreshold()){ winRun(); flyPlay(flyFrom, targetBar, handSnap); return; }
+    if(run.playsLeft <= 0 || run.hand.length === 0){ loseRun(); flyPlay(flyFrom, targetBar, handSnap); return; }
     render();
+    flyPlay(flyFrom, targetBar, handSnap);   // shrink+fly played cards to their loop cells, then bloom
   }
   function discardHand(){
     if(run.discardsLeft <= 0) return;
     const cards = selectedCards();
     if(!cards.length) return;
+    const flyFrom = captureSelected(); const handSnap = snapHand();   // capture before the re-render
     run.discardsLeft--;
     removeSelected(); drawUp();
-    if(run.hand.length === 0){ loseRun(); return; }
+    if(run.hand.length === 0){ loseRun(); flyDiscard(flyFrom, handSnap); return; }
     render();
+    flyDiscard(flyFrom, handSnap);   // fan the discarded cards to the discard pile
   }
   function removeSelected(){
     const idxs = [...run.sel].sort((a,b)=>b-a);
@@ -1112,7 +1241,7 @@
     const inst = INSTRUMENTS.find(x=>x.id===c.instId);
     const oct = Math.floor(c.midi/12)-1;
     const selCls = run.sel.has(idx) ? " sel" : "";
-    return `<div class="card${selCls}" data-idx="${idx}" style="--cc:${col}">
+    return `<div class="card${selCls}" data-idx="${idx}" data-id="${c.id}" data-midi="${c.midi}" style="--cc:${col}">
       <div class="cnote">${c.letter}</div><div class="coct">${c.letter}${oct}</div>
       <div class="cinst" title="${inst.name}">${inst.emoji}</div></div>`;
   }
@@ -1251,7 +1380,7 @@
           if(b===wp) cl.push("writecol");
           // bg: attack = full color; a held beat / ghost preview = translucent tints of it
           const bg = onCell ? COLOR[letter] : heldCell ? COLOR[letter]+"55" : gOn ? COLOR[letter]+"66" : gHeld ? COLOR[letter]+"2e" : "";
-          grid += `<div class="${cl.join(" ")}" data-bar="${b}" data-col="${b*sub+k}"${bg?` style="background:${bg}"`:""}></div>`;
+          grid += `<div class="${cl.join(" ")}" data-bar="${b}" data-col="${b*sub+k}" data-midi="${m}"${bg?` style="background:${bg}"`:""}></div>`;
         }
       }
     });
@@ -1327,11 +1456,14 @@
     wireTempoSlider();   // tempo is adjustable mid-gig; the running loop follows it live
     document.getElementById("b-sort").addEventListener("click", ()=>{
       const chosen = selectedCards();
+      const handSnap = snapHand();   // FLIP: record positions, then slide cards to their sorted spots
       run.hand.sort((a,b)=> a.midi-b.midi || a.instId.localeCompare(b.instId));
       // rebuild selection indexes
       run.sel = new Set(chosen.map(c=>run.hand.indexOf(c)));
       render();
+      flipHand(handSnap);
     });
+    dealIn();   // any cards drawn this render fly in from the deck pile
   }
 
   function toggleSel(idx){
@@ -1449,6 +1581,7 @@
 
   function render(){
     renderMeta();
+    syncChrome();   // show/refresh the deck & discard pile anchors for this screen
     $overlay.innerHTML = "";
     if(screen==="home" || screen==="capped"){ renderHome(); return; }
     if(screen==="gig"){ renderGig(); return; }
