@@ -377,7 +377,9 @@
   const maxSelect    = () => curMovement().maxSelect;
   const termOn       = (t) => curMovement().terms.includes(t);
   const instrumentsFor = (mv) => (mv>=INSTRUMENT_UNLOCK_MV) ? INSTRUMENTS : INSTRUMENTS.filter(i=>i.id==="piano");
-  // The run's applause threshold (campaign: per-movement thr; Free Play / M7: RUN_THRESHOLD).
+  // VESTIGIAL since the no-threshold change (2026-07-18): a performance is now open-ended (no score gate
+  // ends it — see finishRun / renderGig). Kept, unused, as the source for a future *non-blocking* "applause
+  // star" target (MOVEMENTS[].thr / RUN_THRESHOLD would be the star to beat for bragging, never a cutoff).
   function runThreshold(){
     if(run && run.mode==="campaign"){ const t = MOVEMENTS[run.movement].thr; if(t!=null) return t; }
     return RUN_THRESHOLD;
@@ -873,7 +875,7 @@
   }
   // show/hide + refresh the deck/discard pile anchors for the current screen
   function syncChrome(){
-    const show = !!run && ["gig","save","win","lose"].includes(screen);
+    const show = !!run && ["gig","save","win"].includes(screen);
     if($deckPile) $deckPile.hidden = !show;
     if($discardPile) $discardPile.hidden = !show;
     if(show){ const dc = $deckPile.querySelector(".pilecount"); if(dc) dc.textContent = run.drawPile.length; }
@@ -1060,7 +1062,6 @@
     const ret = pendingSave ? pendingSave.retScreen : "home";
     pendingSave = null;
     if(ret==="win"){ screen="win"; render(); }
-    else if(ret==="lose"){ screen="lose"; render(); }
     else { screen="home"; render(); }
   }
 
@@ -1089,7 +1090,7 @@
     // mode "free" = Free Play (all movements on); otherwise Campaign at the reached movement.
     const movement = mode==="free" ? FREE_PLAY_MOVEMENT : (persist.progress.movement || 1);
     // One loop for the whole run — one continuous performance in one key, filled hand by hand.
-    run = { deck:buildDeck(movement), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ bars:new Array(LOOP_BARS).fill(null), writePos:0 }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), won:false, advancedTo:null,
+    run = { deck:buildDeck(movement), drawPile:[], hand:[], sel:new Set(), playsLeft:PLAYS, discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ bars:new Array(LOOP_BARS).fill(null), writePos:0 }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
       curDyn:DEFAULT_DYN,   // M3 dynamics: the p/mf/f marking applied to the next played hand
       noteDur:{},   // M2 rhythm: per-card note duration (cardId → durId); default = quarter
       // per-movement gate trackers (all cheap to keep; gateStatus reads the frontier movement's).
@@ -1157,8 +1158,10 @@
     // remove played cards from hand, redraw
     removeSelected(); drawUp();
 
-    if(run.runScore >= runThreshold()){ winRun(); flyPlay(flyFrom, targetBar, handSnap); return; }
-    if(run.playsLeft <= 0 || run.hand.length === 0){ loseRun(); flyPlay(flyFrom, targetBar, handSnap); return; }
+    // Open-ended: no applause threshold ends the run. The only hard limit is stage space — when the
+    // loop's slots run out (playsLeft<=0, since LOOP_BARS===PLAYS and each play fills one bar) the
+    // performance auto-completes. Otherwise the player keeps going until they press Finish.
+    if(run.playsLeft <= 0 || run.hand.length === 0){ finishRun(); flyPlay(flyFrom, targetBar, handSnap); return; }
     render();
     flyPlay(flyFrom, targetBar, handSnap);   // shrink+fly played cards to their loop cells, then bloom
   }
@@ -1169,7 +1172,7 @@
     const flyFrom = captureSelected(); const handSnap = snapHand();   // capture before the re-render
     run.discardsLeft--;
     removeSelected(); drawUp();
-    if(run.hand.length === 0){ loseRun(); flyDiscard(flyFrom, handSnap); return; }
+    if(run.hand.length === 0){ finishRun(); flyDiscard(flyFrom, handSnap); return; }
     render();
     flyDiscard(flyFrom, handSnap);   // fan the discarded cards to the discard pile
   }
@@ -1179,8 +1182,9 @@
     run.sel.clear();
   }
 
-  function winRun(){ run.won = true; maybeAdvance(); screen="win"; render(); }   // beat the threshold = run won
-  function loseRun(){ maybeAdvance(); screen="lose"; render(); }   // gate may still be met on a loss; loop keeps playing
+  // Open-ended: a performance just COMPLETES — no win/lose. Fired by the player pressing Finish, or
+  // auto-fired when the loop's stage space runs out. maybeAdvance() may still unlock the next movement.
+  function finishRun(){ if(!run || run.done) return; run.done = true; maybeAdvance(); screen="win"; render(); }
   // Campaign: if this run met the frontier movement's gate, unlock the next movement (persisted).
   function maybeAdvance(){
     if(!run || run.mode!=="campaign") return;
@@ -1403,19 +1407,22 @@
   }
 
   function renderGig(){
-    const thr = runThreshold();
-    const pct = Math.min(100, Math.round(run.runScore/thr*100));
     const canPlay = run.sel.size>0;
     const campaign = run.mode==="campaign";
     const gate = campaign ? gateStatus(run.movement) : null;
+    // Open-ended: no threshold. "Notes left" = remaining stage space (playsLeft, since each play fills
+    // one loop bar); it warns near-empty so the auto-finish never ambushes the player.
+    const left = run.playsLeft, warn = left<=3;
+    const leftPct = Math.round((LOOP_BARS-left)/LOOP_BARS*100);
     $game.innerHTML = `
       <div class="gigbar">
         <div class="row1">
           <div class="key">Key <b>${RUN_KEY.keyName}</b> · ${run.mode==="free"?"<b>Free Play</b>":`<b>M${run.movement} ${curMovement().element}</b>`}</div>
-          <div class="counts">Hands <b>${run.playsLeft}</b> · Discards <b>${run.discardsLeft}</b> · Hand size <b>${run.handSize}</b> · Deck <b>${run.drawPile.length}</b></div>
+          <div class="counts">Discards <b>${run.discardsLeft}</b> · Hand size <b>${run.handSize}</b> · Deck <b>${run.drawPile.length}</b></div>
         </div>
-        <div class="scoreline">Applause <b>${run.runScore}</b> / ${thr}</div>
-        <div class="track"><i style="width:${pct}%"></i></div>
+        <div class="scoreline">Applause <b>${run.runScore}</b> ★</div>
+        <div class="scoreline" style="color:${warn?'var(--bad)':'var(--dim)'}">Notes left: <b>${left}</b> of ${LOOP_BARS} bars${warn?(left>0?' — running out of stage!':' — stage full'):''}</div>
+        <div class="track"><i style="width:${leftPct}%"></i></div>
         ${campaign && run.movement===1
           ? pitchTrackerHTML()
           : (gate ? `<div class="scoreline" style="color:${gate.met?'var(--good)':'var(--dim)'}">${gate.met?'✓ ':''}${gate.label}</div>` : "")}
@@ -1429,6 +1436,7 @@
         <button class="btn play" id="b-play" ${canPlay?"":"disabled"}>▶ Play Hand</button>
         <button class="btn disc" id="b-disc" ${(canPlay&&run.discardsLeft>0)?"":"disabled"}>Discard (${run.discardsLeft})</button>
         <button class="btn ghost" id="b-sort">Sort by pitch</button>
+        <button class="btn ghost" id="b-finish" ${filledBars()>0?"":"disabled"}>✓ Finish song</button>
       </div>
       <div class="muses">${musesHTML()}</div>`;
     // wire
@@ -1437,6 +1445,7 @@
     });
     document.getElementById("b-play").addEventListener("click", playHand);
     document.getElementById("b-disc").addEventListener("click", discardHand);
+    document.getElementById("b-finish").addEventListener("click", finishRun);   // player ends the performance when they like
     // loop grid: click any cell/label in a column to aim the write head there (refine/overwrite it)
     $game.querySelectorAll(".loopgrid [data-bar]").forEach(el=>{
       el.addEventListener("click", ()=>{
@@ -1587,8 +1596,7 @@
     if(screen==="gig"){ renderGig(); return; }
     if(screen==="draft"){ renderGig(); renderDraftOverlay(); return; }
     if(screen==="save"){ renderGig(); renderSaveOverlay(); return; }
-    if(screen==="win"){ renderEndOverlay(true); return; }
-    if(screen==="lose"){ renderEndOverlay(false); return; }
+    if(screen==="win"){ renderEndOverlay(); return; }   // "win" = the single performance-complete screen (no win/lose)
   }
 
   function renderDraftOverlay(){
@@ -1657,14 +1665,14 @@
     if(inp){ inp.focus(); inp.select(); }
   }
 
-  function renderEndOverlay(won){
-    renderGigStatic();   // keep the loop grid visible behind the overlay (win or lose) so the playhead sweeps as it plays
+  function renderEndOverlay(){
+    renderGigStatic();   // keep the loop grid visible behind the overlay so the playhead sweeps as it plays
     const runsLeft = runsLeftToday();
     const alreadySaved = !!run.saved;          // Phase 4: one whole-run song per run
     const canSave = filledBars() > 0;
     $overlay.innerHTML = `
       <div class="overlay"><div class="modal center">
-        <h2>${won?"🎉 Performance complete!":"Run over"}</h2>
+        <h2>🎉 Performance complete!</h2>
         ${run && run.advancedTo
           ? `<p class="big" style="color:var(--good)">🎓 Movement complete — unlocked <b>M${run.advancedTo} ${MOVEMENTS[run.advancedTo].element}</b>! Next Campaign run starts there.</p>`
           : (run && run.mode==="campaign" && run.movement<MAX_MOVEMENT
@@ -1672,9 +1680,7 @@
                   ? `<p class="hint">Play every in-key letter to advance to <b>M2 ${MOVEMENTS[2].element}</b> — progress is kept between runs:</p>${pitchTrackerHTML()}`
                   : `<p class="hint">${gateStatus(run.movement).label} — meet it to advance to <b>M${run.movement+1} ${MOVEMENTS[run.movement+1].element}</b>.</p>`)
               : "")}
-        <p>${won
-          ? "You beat the applause threshold. Your best hand this run is inscribed in the Codex."
-          : "You didn't reach the applause threshold in time. Every played chord still counts in your Codex."}</p>
+        <p>You performed a <b>${filledBars()}</b>-bar song for <b>${run.runScore}</b> applause. Every played chord is inscribed in your Codex.</p>
         <p class="big">Best hand: <b>${persist.bestApplause}</b> · Renown Lv <b>${renownLevel(persist.totalApplause)}</b></p>
         <div class="cta">
           <button class="btn ghost" id="b-replay">${loopOn()?"⏸ Pause your set":"▶ Hear your set"}</button>
@@ -1693,9 +1699,9 @@
     const again = document.getElementById("b-again");
     if(again) again.addEventListener("click", ()=>{ audio(); startRun(run && run.mode==="free" ? "free" : "campaign"); });
     const replay = document.getElementById("b-replay");
-    if(replay) replay.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderEndOverlay(won); });
+    if(replay) replay.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderEndOverlay(); });
     const savebtn = document.getElementById("b-savesong");
-    if(savebtn) savebtn.addEventListener("click", ()=> offerSave(won?"win":"lose"));
+    if(savebtn) savebtn.addEventListener("click", ()=> offerSave("win"));
     document.getElementById("b-home").addEventListener("click", ()=>{ stopLoop(); galleryPlayId=null; screen="home"; run=null; render(); });
   }
   function renderGigStatic(){ /* keep the last gig board visible behind the end overlay (win or lose) so the loop's playhead keeps sweeping */ if(run) renderGig(); }

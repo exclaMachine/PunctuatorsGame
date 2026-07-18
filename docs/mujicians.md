@@ -3,11 +3,16 @@
 **Entry file:** `mujicians.html` · **Status:** **v1 vertical slice built** — a Balatro-style deckbuilder
 (cards = notes, hands = chords/scales, score = theory correctness, hands are sounded, and a whole run
 **builds one continuous Mario-Paint-style song in one fixed key** — **gigs were removed 2026-07-17**, so a
-run is now **one continuous performance** (one key, one applause threshold, one Muse drafted at the start)
+run is now **one continuous performance** (one key, one Muse drafted at the start)
 that fills a single loop — and you can **Save a Song** you like — name the whole-run song, read a theory
 report card, and replay/share it from a Home **Setlist**). The demoted slice-1 note-grid is preserved in
-**`mujicians-compose.html`** (the future free-compose side tool). The economy beyond the slice (antes, boss
-constraints, Étude/Accidental cards, Daily-Set seed, set-playback) is still the plan below.
+**`mujicians-compose.html`** (the future free-compose side tool). **The applause threshold was removed
+2026-07-18** — a performance is now **open-ended (you press ✓ Finish when done; loop space is the only
+limit, warned before it fills; win/lose collapse to one "Performance complete")** — see **[Open-ended
+performance (BUILT)](#open-ended-performance--no-threshold-you-decide-when-youre-done-built)**. A partner
+**backstage shop + "Tips" currency** is designed **but not built** — see **[The backstage shop & Tips
+economy](#the-backstage-shop--tips-economy-planned)**. The economy beyond the slice (Étude/Accidental
+cards, Daily-Set seed, set-playback) is still the plan below.
 
 A roguelike deckbuilder where **cards are notes** and the "poker hands" you play are **chords, scales,
 and progressions**. You score by making music that's *theory-correct* — in key, consonant, resolving,
@@ -27,6 +32,13 @@ game-dev defaults.
 Playtest feedback captured for a later pass — **no code changed yet** (except where marked DONE). Listed
 newest-first.
 
+0. ~~**The applause threshold cuts you off mid-song.**~~ **✅ core DONE (2026-07-18).** Beating the
+   threshold ended the run instantly, interrupting performances that were going well. Fixed: the threshold
+   is removed — a performance is **open-ended** (press **✓ Finish song** when done; the only hard limit is
+   loop space, warned at ≤3 bars left), win/lose collapse to one "Performance complete," and campaign
+   movements advance by their **skill-demo gate**. See **[Open-ended performance (BUILT)](#open-ended-performance--no-threshold-you-decide-when-youre-done-built)**.
+   *(Still planned, not built: the partner **[backstage shop & Tips economy](#the-backstage-shop--tips-economy-planned)**,
+   and persisting gate counters across runs — see that section's *deferred* note.)*
 1. **Chord duration is ignored — a multi-note (M5+) stacked chord always rings the whole bar (M2/M5).**
    You can pick a note value (♩/𝅗𝅥/𝅝) for a chord, but it plays for the full bar regardless. `handIsSequenced`
    returns `false` for a consonant multi-note hand, so `scheduleVoices` takes the **ring-the-bar** branch
@@ -86,12 +98,13 @@ song → done*, which is what the "made some music" payoff and Save-a-Song alrea
 
 ### The three forks
 
-1. **Run shape — DECIDED: one session, one threshold.** A run is one continuous performance: a single
-   hand/discard budget and a **single applause threshold** to "pass" (win = beat it, lose = run out of
-   hands). This is the cleanest 1:1 for today's gig loop and keeps the Balatro pass/fail tension the whole
-   design leans on. *(Alternatives surfaced but not chosen: an **endless/no-threshold** sandbox where score
-   is just a report card and Save-a-Song is the only endpoint; or **milestone beats** — one key but 2–3
-   escalating applause milestones inside the run for pacing.)*
+1. **Run shape — ⚠️ SUPERSEDED 2026-07-18.** *Was* DECIDED "one session, one threshold" (win = beat the
+   applause threshold, lose = run out of hands) as the built gig-removal cut. **Playtest reversed this:**
+   the threshold **cut the dev off mid-song**, so it's being removed — a performance is now **open-ended**
+   (you decide when you're done; the only hard limit is loop space). The **endless/no-threshold** option
+   listed here as "surfaced but not chosen" is now the chosen direction. See **[Open-ended performance —
+   no threshold](#open-ended-performance--no-threshold-you-decide-when-youre-done-planned)**. *(The built
+   code still has the threshold win-check; the new section is the plan to delete it.)*
 2. **Key / modulation — DECIDED: one fixed key now; key changes move to the Melody movement (M4) later.**
    Removing gigs, a run stays in **one key** (start with C major) — this kills the gig-boundary C→G→F
    modulation. **Key *change* is not lost, it's relocated:** the dev's call is to **introduce modulation as
@@ -222,6 +235,245 @@ Movement 1 (Pitch)**.)*
 
 ---
 
+## Open-ended performance — no threshold, you decide when you're done (BUILT)
+
+> **Status: ✅ core BUILT (2026-07-18)** in `mujicians.html`. Supersedes **Removing gigs → Fork 1** (which
+> DECIDED "one session, one threshold"). Playtest feedback reversed that call: **the applause threshold
+> that ended a run is removed.** A performance now ends when the **player** presses **✓ Finish song**, or
+> when the **loop runs out of space** — never because a score gate cut them off. The *endless/no-threshold*
+> option that Fork 1 surfaced-but-rejected is now the shipped direction. **One planned piece was
+> deliberately deferred:** persisting the per-run gate counters across runs (see *As built* → deferred).
+
+**Why (the frustration).** The single applause threshold ends the run the moment you cross it — which
+repeatedly **cut the dev off mid-song while a performance was going well**. A tool whose whole payoff is
+"I made some music I like" shouldn't yank the song away the instant a number is hit. Balatro's pass/fail
+tension is wrong for a *creative* toy: the fun is building the song, not clearing a bar.
+
+### The new run shape
+
+- **Applause is a running score, not a gate.** It counts up as you play hands; you watch it climb. There
+  is **no win/lose** — a performance just **completes**.
+- **You decide when you're done.** A **✓ Finish song** control on the play screen ends the performance
+  whenever the player wants (→ the end overlay: report card, Tips earned, Save-a-Song, any movement
+  unlocked).
+- **The only hard limit is space.** The loop has `LOOP_BARS` slots (the "there's only so much room on
+  screen" limit). Each played hand fills one bar and advances the write head; when **every bar is filled,
+  the performance auto-completes** (you're out of canvas). Because a play already writes exactly one bar
+  and `LOOP_BARS = PLAYS`, the **hands budget and the loop-space limit are the same limiter** — they
+  unify, so "no threshold" is mostly *deleting the win-check*, not adding a new limiter.
+- **Warn before the space runs out.** A **notes-left meter** ("Notes left: 6 of 12 bars") sits where the
+  threshold progress bar was; it turns to a warning color at **≤2–3 bars left** so the auto-finish never
+  ambushes the player. (More stage space is buyable — see the **backstage shop**'s *+loop bars*.)
+- **Discards** stay a small separate budget (a light "re-draw" tension), or become generous — tune in
+  play. They are **not** a run-ending limiter anymore; only space is.
+
+### What collapses (the threshold's old jobs)
+
+`runThreshold()` / `MOVEMENTS[].thr` / `RUN_THRESHOLD` fed three things — all replaced:
+
+| Old (threshold) | New (open-ended) |
+|---|---|
+| Win-check in `playHand` (`runScore >= runThreshold()` → `winRun()`) | **Deleted.** No score ends the run. |
+| Scoreline "Applause X / thr" + progress bar | **"Applause X ★"** + a **notes-left meter**. |
+| `winRun()` / `loseRun()` two terminal states | **One `finishRun()`** → end overlay "Performance complete." |
+
+`MOVEMENTS[].thr` and `RUN_THRESHOLD` become **vestigial**. Keep them (optional) only as a **non-blocking
+"applause star"** — a bragging target shown on the report card, never a gate. Otherwise delete.
+
+### The conflict this resolves early — campaign advancement
+
+This is exactly the kind of clash the dev wanted surfaced up front: **movements currently unlock at run
+end via `maybeAdvance()`, and a run ended on the threshold.** Remove the threshold and advancement needs a
+new trigger. Good news: **the gates are already skill-demonstration objectives, not score checks** —
+`gateStatus(mv)` counts *doing the mechanic* (play each note value, log N triads + a cadence, compose an
+A·B·A…), and `maybeAdvance()` already fires on `gateStatus(mv).met`, **not** on beating `thr`. So the
+decision — **"unlock the next movement by demonstrating its skill N times"** — is *already how gates
+work*; the only coupling to sever is *when* the check runs.
+
+**Decided & built:**
+- **Advance on `finishRun()`** (`maybeAdvance()` still runs at performance end): finish a song, and if you
+  met the frontier movement's gate during it, the next movement unlocks. No new UI. **This works better
+  than before** — the old threshold ended a run *early* (M1's `thr` was 90), sometimes before you'd
+  demonstrated the skill; now a performance runs the full ~12 hands (or until you Finish), giving *more*
+  room to hit a gate, not less. So the per-run gates stay clearable in one sitting.
+- **Deferred (not built): persisting the per-run gate counters across runs.** The plan to move
+  `gateDurs`/`gateDyns`/`gateTriads`/… into `persist.progress.gates` so demos accumulate across the
+  daily-capped runs was **left out of this pass** — it's a nicety, not required, because a full-length
+  open-ended performance clears each gate on its own (unlike the old early-ending threshold run). Revisit
+  if playtest shows a gate is hard to clear in one sitting. *(M1 pitch letters already persist.)*
+- *(Optional polish, later, not built)* a **live "🎓 Movement unlocked!" toast** the instant a gate is met
+  mid-song, instead of waiting for the end overlay.
+
+### As built (code map)
+
+- **`playHand`:** deleted the `run.runScore >= runThreshold()` win-check. The `run.playsLeft <= 0 ||
+  hand.length===0` path now **auto-completes** the performance (→ `finishRun()`) instead of a "loss."
+- **`winRun()` / `loseRun()` → one `finishRun()`** — `run.done=true; maybeAdvance(); screen="win"`. Guarded
+  against double-fire. `run.won` init renamed `run.done`. `screen="win"` is kept as the **single**
+  end-of-performance screen; `screen==="lose"` is removed from `render()` and the `syncChrome` pile list.
+- **`runThreshold()`** left **defined-but-unused** (marked vestigial in-code) as the source for a future
+  optional **non-blocking "applause star"**; `RUN_THRESHOLD` / `MOVEMENTS[].thr` kept for the same reason.
+- **HUD (`renderGig`):** dropped the `runScore/thr` progress bar + "Applause X / thr" scoreline. Now shows
+  **"Applause X ★"** and a **notes-left meter** — `Notes left: N of LOOP_BARS bars`, colored `--bad` and
+  captioned "running out of stage!" at **≤3 left** ("stage full" at 0). The `.track` bar now fills with
+  *used* space (`(LOOP_BARS-playsLeft)/LOOP_BARS`). Removed the redundant "Hands" figure from the counts
+  row (the meter replaces it). Added a **✓ Finish song** button to the controls (disabled until ≥1 bar is
+  filled), wired to `finishRun`.
+- **End overlay (`renderEndOverlay()`):** no longer takes a `won` flag; single **"🎉 Performance
+  complete!"** state. Copy reads "You performed an N-bar song for X applause…". The movement-unlock line,
+  Save-a-Song (`offerSave("win")`), replay, and New-Run/Home CTAs are unchanged. `afterSave()` dropped its
+  `"lose"` branch. *(Tips-earned line will be added with the shop.)*
+- **Untouched:** `classify`/`score`/scheduler/loop groove/Codex/Save-a-Song/motion — only *what ends a run*
+  changed. Parse-checked OK.
+- **Untouched:** `classify`/`score`/scheduler/loop groove/Codex/Save-a-Song/motion — the score model and
+  the audible-payoff pillar are unchanged; only *what ends a run* changes.
+
+### Interactions / open items
+
+- **Loop capacity (known-issue #5, #1).** A bigger canvas matters more now that filling it *is* the end
+  condition — revisit letting a melodic/whole-note hand span bars alongside the *+loop bars* shop item.
+- **Free Play vs Campaign.** Both go threshold-free. Free Play's "star" target = the old `RUN_THRESHOLD`
+  (optional). Campaign shows the **gate objective**, not a score bar, as the thing to chase.
+- **Save-a-Song** now has *no losing branch to special-case* — every performance ends the same way and is
+  always saveable. Simplifies `offerSave(retScreen)` (one ret path).
+
+---
+
+## The backstage shop & Tips economy (PLANNED)
+
+> **Status: PLANNED, not built (decided 2026-07-18).** Fills the long-standing "economy" gap (the Balatro
+> shop analog). **Decided:** a **separate currency** ("**Tips**" 💰, working name) — *not* applause;
+> a **persistent Home "backstage" meta-shop** open **between performances**; spending never touches your
+> applause score. Numbers below are first-pass placeholders to tune in play.
+
+**Why a separate currency.** Applause is the **score/achievement** — the thing the report card grades and
+the Setlist brags about. If you *spent* applause, buying things would visibly lower the song you just
+earned (bad). Balatro keeps chips (score) and $ (money) separate for exactly this reason. So performing
+earns **Tips**, a spendable currency; **applause stays pure.**
+
+### Earning Tips
+
+At performance end, convert the run's quality into Tips (tunable):
+
+```
+tips = floor(applause / TIP_DIVISOR)         // the base earn (e.g. TIP_DIVISOR ≈ 150)
+     + structureBonus                        // small bonus per distinct structure played (variety)
+     + gateBonus                             // one-time bonus the run you clear a movement's gate
+```
+
+Kept **modest** (Balatro pays ~3–6 $ a blind) so the shop is a slow burn. Because play is **hard-capped
+at 3 runs/day**, Tips accrue over the *ritual* — which gives the daily cap a **progression reason to
+return**: come back tomorrow, perform, then spend the Tips you banked. Store as **`persist.tips`**
+(additive to the `mujicians-save-v2` blob, default `0`). Show the balance on Home and the end overlay.
+
+### The persistent loadout (why the shop is meta, not per-run)
+
+Balatro's shop is *per-run* (money resets each run). Mujicians is different: **short, single-key,
+daily-capped sessions** — a per-run shop would barely have time to matter. So the shop is a **persistent
+backstage** on Home, and what you buy goes into a **loadout you carry into future performances**:
+
+```
+persist.loadout = {
+  muses:   [ …owned Muse ids… ],   // your collected build-engine pieces
+  extraCards: [ …note/accidental cards added to the deck… ],
+  etude:   { triad:0, seventh:0, run:0, … },  // per-structure base-score levels
+  loopBonus: 0,     // extra LOOP_BARS bought (bigger stage)
+  restCards: 0,     // rest tokens for the planned explicit-rest rhythm (Phase 3 Stage 2C)
+  instruments: [ …extra voices unlocked early… ],
+}
+```
+
+`startRun()` reads the loadout when building the deck / loop / Muse-draft pool.
+
+### What the shop sells
+
+| Item | Effect | Ties to |
+|---|---|---|
+| **Muse** (Joker analog) | Adds a passive scoring engine to your **owned pool**; the run-start draft then offers from a bigger set (targeted acquisition vs. the free random draft). | `MUSE_POOL`, `offerDraft()` |
+| **Note cards / copies** | Grow the deck (the design wants 7 → 20–40 cards for draw variety). | `buildDeck()` |
+| **Accidental pack** (Tarot analog) | Sharpen/flatten/transpose cards; seeds the M1-accidentals & M4-modulation mechanics. | planned accidentals |
+| **Étude** (Planet analog) | Level up a structure type (triad / 7th / scale-run) → higher **base** score. | `STRUCT` base |
+| **+Loop bars** (bigger stage) | +N `LOOP_BARS` — more room before the space limit auto-finishes you; **the direct sink for "there's only so much screen."** | new `loopBonus` |
+| **Rest cards** | Rest tokens for purposeful silence (the planned one-after-another rhythm). | Phase 3 Stage 2C |
+| **Instrument voice** | Buy guitar/bass/etc. **early** (before its campaign movement). | `INSTRUMENTS` |
+| **Reroll / restock** | Refresh the shop's offers. | — |
+
+### Scope guard — economy lives in Free Play, not the teaching campaign
+
+The **campaign movements stay curated** (fixed per-movement deck, instrument gating, one isolated concept
+each) — that isolation is the pillar's teaching contract, and a bought Muse or extra instrument would
+break a movement's "one concept at a time." So the **loadout/shop applies to Free Play** (and
+post-graduation play), the mode that *is* the full deckbuilder. **Tips can still be earned during campaign
+runs** (they teach you the game), but they're **spent on the Free-Play loadout**. This keeps the shop from
+polluting the lessons while still rewarding every performance.
+
+### Shop UI (when built)
+
+- A **"🏪 Backstage"** panel on Home (near the Setlist), showing the **Tips balance** and a small grid of
+  offers (icon · name · effect · 💰 price · Buy). A **reroll** button. Owned Muses/loadout shown as a
+  small "your kit" strip.
+- Prices/stock are placeholders; gate a couple of pricier items behind having graduated far enough so a
+  brand-new player isn't overwhelmed.
+
+### Open items
+
+- **Currency name** — "Tips" is the working name (buskers/applause fit); alternatives: Royalties, Gate
+  (as in door money), Cred. Pick during build.
+- **Tip formula constants** (`TIP_DIVISOR`, bonuses) and **prices** — tune so 3 runs/day feels like
+  steady-but-not-instant progress.
+- **Draft vs. shop for Muses** — does the free run-start draft-of-3 stay (drawn from owned + a few
+  always-available), or does the shop replace it entirely? Leaning **keep the draft**, sourced from the
+  owned pool, for run-to-run variety.
+- **Do campaign runs earn Tips, or only Free Play?** Leaning **earn everywhere, spend on Free-Play
+  loadout** (above), but a "Free-Play-only economy" is simpler — decide in build.
+
+---
+
+## Mobile landscape — more stage room for longer songs (PLANNED)
+
+> **Status: PLANNED, not built (decided 2026-07-18).** Goal: give phones the **horizontal room** the loop
+> grid wants, so a run can hold **more bars** without cramping. **Helpful context — Mujicians is NOT a
+> `<canvas>` game:** the loop grid is a **CSS grid of `<div>`s** (`loopStripHTML` → `.loopgrid`) and the
+> cards are DOM, so the layout **reflows with CSS** — landscape is far easier here than in a fixed-size
+> canvas game.
+
+**The key constraint (why we don't *force* rotation).** The web's **Orientation Lock API**
+(`screen.orientation.lock('landscape')`) works on **Android Chrome only, and only inside fullscreen from a
+user tap**. **iOS Safari does not support it at all** — you cannot force landscape on an iPhone from a web
+page. (This is the one place a *native app* would genuinely win: an app can pin its orientation; mobile
+web can't, on iOS.) So forcing is off the table as the primary approach.
+
+**Decided approach — responsive + a "rotate your phone" nudge** (works on iOS *and* Android):
+- **Detect portrait** via `matchMedia("(orientation: portrait)")` / a CSS `@media (orientation: portrait)`
+  block (or the `innerWidth<innerHeight` fallback).
+- On a **narrow portrait phone**, show a lightweight **"🔄 Turn your phone sideways for more room"**
+  overlay instead of the cramped board; when the player physically rotates, the game renders normally in
+  the wider landscape layout. No fullscreen, no API quirks, no rotated-coordinate hacks.
+- **Progressive enhancement (Android only):** on a tap, *try* `requestFullscreen()` + `orientation.lock`
+  in a `try/catch` and silently ignore failure (iOS just no-ops and falls back to the nudge). Never depend
+  on it.
+- **Rejected:** the **CSS `transform: rotate(90deg)` hack** (forces landscape everywhere but rotates the
+  whole coordinate space — breaks touch hit-testing and the Save-a-Song text input). Not worth it for a
+  DOM app with inputs.
+
+**Landscape ≠ longer songs by itself.** Song length is `LOOP_BARS` (a fixed logical count, today 12) —
+orientation only changes how many bars **fit on screen**. So this pairs with **raising `LOOP_BARS`** (and
+the planned **+loop bars** shop item): landscape supplies the pixels, `LOOP_BARS` supplies the song. Build
+them together so a longer loop doesn't just overflow a phone.
+
+**How it'd be built (when we do it).** Mostly CSS: an `@media (orientation: landscape)` / min-width block
+that lets `.loopgrid` (and the hand row) use the wider viewport (more visible bars, larger cells); a small
+portrait-overlay component gated on `matchMedia`; and an optional tap-to-fullscreen-lock helper for
+Android. Single-file, no deps, in keeping with the repo rules.
+
+**Testing.** **Chrome DevTools → Device Mode** (the phone icon, `⌘⇧M`) — pick an iPhone/Pixel and use the
+**rotate** button — is great for the responsive layout + rotate-nudge (approach above). It **won't**
+faithfully test the *lock API* or reproduce iOS Safari's *lack* of it, so the fullscreen-lock enhancement
+needs a **real Android phone** (and any "does it force on iPhone?" question is answered on a **real
+iPhone** — it won't).
+
+---
+
 ## The core pillar (why this pivot)
 
 **In Balatro the poker hand is abstract; here the hand is audible.** When you play notes, they sound.
@@ -266,10 +518,10 @@ this: **score must correlate with musical quality.**
 | Planet cards (level a hand) | **Étude cards** — practice that levels up a chord/structure type |
 | Tarot cards (transform a card) | **Accidental cards** — sharpen/flatten/transpose a note, or modulate the key |
 | Jokers (the build engine) | **Muses** — passive scoring engines ("in-key notes +2 mult," "bass doubles," "a ii–V–I this gig = ×3") |
-| Blinds (score gates) | **Gigs** — hit the applause threshold to pass |
-| Boss blind gimmicks | **Boss gig** constraints — "atonal night: no in-key bonus," "minor key only," "one instrument silenced," "dissonance taxed," "key modulates each hand" |
-| Ante (3 blinds) | **A Set** (3 gigs) |
-| Shop between blinds | Buy Muses, Étude/Accidental cards, more notes/instruments |
+| Blinds (score gates) | ~~Gigs / applause threshold~~ — **removed.** No score gate; a performance is **open-ended** (loop space is the only limit). Campaign advancement is a **skill-demo gate**, not a score. |
+| Boss blind gimmicks | **Boss constraints** (Free-Play modifiers) — "atonal night: no in-key bonus," "minor key only," "one instrument silenced," "dissonance taxed" (no longer per-gig — tentative) |
+| Ante (3 blinds) | ~~A Set (3 gigs)~~ — **removed** (a run is one continuous performance) |
+| Shop between blinds | **Backstage shop** on Home (persistent, between performances) paid in **Tips** — Muses, Étude/Accidental cards, notes/instruments, +loop bars ([plan](#the-backstage-shop--tips-economy-planned)) |
 | **Daily Run** (seeded) | **Daily Set** — one seed/day; the **hard-capped** daily play lives here |
 | Unlockable decks/jokers | Meta-unlocks (instruments, Muses, keys, starting decks), persisted in the **Codex** |
 
@@ -310,8 +562,11 @@ this: **score must correlate with musical quality.**
 Because the played notes are **sounded**, dissonant/out-of-key hands both **score low and sound bad** —
 the design's load-bearing alignment.
 
-**Per-gig economy (Balatro-faithful):** a limited number of **hands** and **discards** per gig
-(e.g. 4 hands / 3 discards), a **shop** between gigs, escalating **applause thresholds**.
+**Economy — ⚠️ updated 2026-07-18.** The Balatro-faithful "hands/discards + escalating applause
+thresholds + shop between gigs" is superseded: **no thresholds** (open-ended performance, loop space is
+the limit), and the shop is a **persistent Home backstage** paid in **Tips** (a separate currency from
+applause), not a between-gig stop. See **[Open-ended performance](#open-ended-performance--no-threshold-you-decide-when-youre-done-planned)**
+and **[The backstage shop & Tips economy](#the-backstage-shop--tips-economy-planned)**.
 
 ---
 
