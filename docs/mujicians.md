@@ -27,11 +27,10 @@ Playtest feedback captured for a later pass — **no code changed yet.** Listed 
 
 1. **Do away with gigs (design change).** The 3-gig structure **disrupts play** and the dev "doesn't
    really care about the Muses." Direction: **drop the 3-gigs-per-run Set**, and **replace the per-gig Muse
-   draft with a single Muse chosen once at the start of a run**. *Implications to work through when we do
-   this:* the per-gig keys (C→G→F) and thresholds, and the whole **Phase 4 cross-gig accumulation / "song
-   modulates across sections"** premise are built on gigs — removing gigs means rethinking what a "run" and
-   the accumulated song are (e.g. one key + one longer loop, or player-chosen modulation). `winGig`/
-   `startGig`/`GIGS`/`offerDraft`/`MUSE_POOL` all touched. Big one — plan before building.
+   draft with a single Muse chosen once at the start of a run**. **Now planned in full** — see the new
+   **[Removing gigs — a run becomes one performance](#removing-gigs--a-run-becomes-one-performance-planned-not-built)**
+   section below for the decided forks, the recommended (confirm-before-building) defaults, and the code map.
+   (Still **not built.**)
 2. **Whole/half notes don't actually sustain longer (audio bug).** Choosing a **whole note** still *sounds*
    like a quarter — the duration isn't audibly longer. Likely the synth envelope/`_tone` release is fixed
    regardless of the `d*slot` length passed by `scheduleVoices`, so longer durations don't ring out. Fix:
@@ -45,6 +44,117 @@ Playtest feedback captured for a later pass — **no code changed yet.** Listed 
    nothing (current selection stays). It should **deselect the current card and select the new one**. Fix:
    in `toggleSel`, when `maxSelect()===1` and a different card is clicked, replace the selection instead of
    returning early.
+
+---
+
+## Removing gigs — a run becomes one performance (planned, not built)
+
+> **Status: planned, NOT built (noted 2026-07-17).** This is the design + code map for Known-issue #1
+> ("do away with gigs"). Nothing is coded yet. Two forks below are **recommended defaults flagged
+> "confirm before building"**; one fork is **decided** (the Muse draft). When we build this, update the
+> **Progression** and **Implemented** sections and this status line in the same change.
+
+**Why.** The 3-gig Set **disrupts play** (three separate threshold gates + two between-gig Muse-draft
+interruptions per run), and the dev "doesn't really care about the Muses." Collapsing a run to **one
+continuous performance** removes the mid-run gates and drafts, so a run reads as *sit down → build one
+song → done*, which is what the "made some music" payoff and Save-a-Song already want to be.
+
+### The three forks
+
+1. **Run shape — DECIDED: one session, one threshold.** A run is one continuous performance: a single
+   hand/discard budget and a **single applause threshold** to "pass" (win = beat it, lose = run out of
+   hands). This is the cleanest 1:1 for today's gig loop and keeps the Balatro pass/fail tension the whole
+   design leans on. *(Alternatives surfaced but not chosen: an **endless/no-threshold** sandbox where score
+   is just a report card and Save-a-Song is the only endpoint; or **milestone beats** — one key but 2–3
+   escalating applause milestones inside the run for pacing.)*
+2. **Key / modulation — DECIDED: one fixed key now; key changes move to the Melody movement (M4) later.**
+   Removing gigs, a run stays in **one key** (start with C major) — this kills the gig-boundary C→G→F
+   modulation. **Key *change* is not lost, it's relocated:** the dev's call is to **introduce modulation as
+   a Melody-movement (M4) concept** in the campaign, not something bolted onto the run structure. So single
+   fixed key for the gig-removal pass, and **modulation becomes a taught mechanic when Melody unlocks**
+   (a mid-song key-change move the player performs and is scored on — the *player-driven modulation* shape,
+   now with a home in the progression rather than an always-on run feature). **M7 form scoring (`hasABA` /
+   phrase fingerprints) is unaffected either way** — it reads `run.loop.bars` regardless of key. *(An
+   **auto-modulate-by-bar** flag — the old C→G→F feel on a bar cadence — stays a possible stopgap but is
+   not the chosen direction; M4 modulation is.)*
+3. **Muse draft — DECIDED: draft 1 of 3, once, at run start.** `offerDraft()` runs **exactly once**,
+   before the run begins; there are **no between-gig re-drafts**. Keep the existing draft-of-3 UI.
+   ⚠️ **Consequence to resolve:** the two **repeatable hand-size Muses** (Extra Hand +1 / Big Hand +2) were
+   balanced around being **re-draftable every gig to stack** the hand from 4 toward ~8. With a single draft
+   they can't stack that way — options: bump their one-shot value, fold a hand-size bump into the base run,
+   or drop `repeatable` and treat them as ordinary one-pick Muses. Decide during build.
+
+### What "a run" and "the song" become (given the defaults above)
+
+- A run = **one performance in one key**, with one hand budget and one applause threshold, filling **one
+  flat loop** (no sections, no locked past-sections, no per-section key strip).
+- The accumulated song = that single-key loop. **Save-a-Song stays a whole-run capture** (it already is,
+  post-Phase-4) but simplifies: `keyName` is the one key (not `"C→G→F"`), and `songReport` gets the key as
+  a **single pc-array** instead of the `sectionKey` per-bar function.
+- **Loop length:** today's loop is `LOOP_BARS = SECTION_BARS × GIGS.length = 6 × 3 = 18`. Keep the run's
+  loop at a comparable length (**~12–18 bars**) so the song has room; size it to the single-session hand
+  budget (see below). No sections to divide.
+
+### Code map (what gets touched)
+
+The gig structure is concentrated in a handful of spots (`mujicians.html`):
+
+- **`GIGS` array (~L294) → a single run config.** Replace the 3-entry array with one key + one threshold
+  (e.g. `RUN_KEY = majorScale(0)`, plus the per-movement/Free-Play threshold). Everything that indexed
+  `GIGS[run.gigIdx]` reads the single config.
+- **`SECTION_BARS` / `LOOP_BARS` / `sectionOfBar` / `sectionKey` / `loopLenNow` (~L275, L303–309).**
+  Collapse: `LOOP_BARS` becomes the run's flat loop length; `sectionKey(b)` → the one `RUN_KEY`;
+  `sectionOfBar` is removed. `loopLenNow()` — with no sections — cycles the **filled prefix** of the loop
+  (bars written so far) instead of "sections unlocked up to the current gig," so early play still doesn't
+  groove through empty future bars.
+- **`run.gigIdx` / `startGig` / `winGig` (~L985, L1056).** Remove `gigIdx` and the gig-advance path.
+  `startGig` folds into `startRun`. **Win** = threshold met (the check currently in `playHand` at
+  `run.gigScore >= gigThreshold()` → now a run-win, not a gig-win → `screen="win"`); **lose** = out of
+  hands (`loseRun`, unchanged). `maybeAdvance()` (movement gate) fires on the single terminal state.
+- **`offerDraft()` (~L1074) → called once from `startRun` only.** Delete the `winGig` re-draft call.
+  The between-gig **Muse-draft dialog copy** that says the song "modulates to the next gig's key" (~L1491)
+  is removed (it's now a run-start dialog, single key).
+- **`gigThreshold()` (~L370).** Returns one number: the movement's flat `thr` in Campaign; a **single**
+  Free-Play threshold (replacing the escalating `GIGS` `650/1150/1800` — retune to one value for a
+  full-length run).
+- **Budgets `PLAYS` / `DISCARDS` (~L268).** Today `PLAYS = 6` was **per gig** (18 hands/run total across 3
+  gigs). For one session, set the run budget directly (e.g. `PLAYS ≈ 12–18`, `DISCARDS` to match) and size
+  `LOOP_BARS` to it. Tunable.
+- **Loop grid (`loopStripHTML`, ~L1228–1292).** Remove **section dividers** (`.secstart`), the
+  **per-section key strip** (`.lsecbar`), and the **locked-cell** logic (the whole loop is writable in one
+  key). Row-greying keys off `RUN_KEY`. The write head + click-to-aim (~L1344) are no longer confined to a
+  section — the whole loop is aimable.
+- **Save-a-Song (`saveSong`/`songReport` calls, ~L855–864, L1525).** `modKeyName()` → the single key name;
+  pass `songReport` the key as a pc-array (drop the `sectionKey` function path — keep that code branch for
+  imported/legacy songs, but a fresh run uses the simple array).
+- **HUD / end overlay (~L1305–1315, L1491+).** Drop "Gig **X**/3" and per-gig framing; show one key + one
+  threshold + one progress bar. `gigIdxClamped()`/`curGig()` collapse to the single config.
+- **Untouched:** `classify`, the scheduler (`scheduleBar`/`scheduleVoices`/`barQueue`), the tempo system,
+  the Codex, `MUSE_POOL` contents, and **M7 `hasABA` form scoring** — all read the loop bars or a hand, not
+  the gig count. This is why removing gigs is mostly *deletion + collapse*, not a rewrite.
+
+### Interactions with the other open issues
+
+- **Known-issue #3 (a 4-beat bar can't hold a whole note + more).** Independent of gigs — the bar is still
+  `BEATS = 4`. Removing gigs doesn't fix it, but it's a natural moment to revisit **bar capacity / letting a
+  melodic hand span bars** since the loop model is already being reworked here.
+- **Phase 4 "cross-gig accumulation" narrative retires.** The *mechanism* (one accumulating loop per run)
+  **stays** — it just stops being "cross-gig / modulating" and becomes "the run's single-key song." Update
+  the Phase 4 prose in **Progression** when built.
+- **Campaign gates.** Movement gates already advance on the terminal state (`maybeAdvance` in `winGig`/
+  `loseRun`); with one terminal state they simplify, no gate logic changes.
+
+### Open items for this feature
+
+- Final **hand/discard budget** and **loop length** for a one-session run (and the single Free-Play
+  threshold).
+- **Repeatable hand-size Muses** — how they behave without between-gig re-drafts (see fork 3).
+- **Modulation at Melody (M4)** — the design of the player-driven key-change mechanic and its scoring
+  lives with the Melody movement, not here (see the **Progression** note). This section only removes the
+  *gig-boundary* modulation; M4 reintroduces key change deliberately.
+
+*(Forks 1 & 2 are now decided — see above. The **accidentals** direction is recorded in **Progression →
+Movement 1 (Pitch)**.)*
 
 ---
 
@@ -565,10 +675,21 @@ Graduating movement 7 unlocks **Free Play** (all terms on = today's game, still 
 
 - **M1 Pitch:** `handSize` small, **`MAX_SELECT = 1`**. You play one note; it lands on the bar's downbeat.
   Score is legible: `chips × (in-key ? 2 : 1)`. A beginner grasps it instantly.
+  **Accidentals belong here (planned, not built).** The dev's call: **introduce accidentals (♯/♭ — the 5
+  chromatic notes) within the Pitch movement**, after the 7 naturals are learned — Pitch's own internal
+  "levels" (naturals first → accidentals next). It's the musically correct home (accidentals *are* pitch),
+  and it feeds the already-designed hooks: the ROYGBIV **in-between shades** (♯ warmer toward the next
+  letter, ♭ cooler), the Notelings **morphology** channel (♯ = spikier, ♭ = rounder), and the deck-growth
+  **Accidental cards** (the Tarot analog). Until built, the deck is the 7 naturals only. *(Open: whether
+  accidentals arrive as new deck cards, as an Accidental-card transform, or as a sub-level gate inside M1.)*
 - **M2 Rhythm / M3 Dynamics:** still one card, but now you place it *in time* and *at a volume* — the same
   note becomes expressive. New axes, still `MAX_SELECT = 1`.
 - **M4 Melody:** **`MAX_SELECT` rises to ~3**, played **in sequence** (a line across beats — this needs
-  M2's timing). `classify`'s interval + scale-run detection switches on.
+  M2's timing). `classify`'s interval + scale-run detection switches on. **Key change / modulation is
+  introduced here (planned, not built)** — with gigs gone, a run is single-key, and **Melody is the home
+  for teaching modulation**: a player-performed mid-song key-change (moving the melodic line to a new key,
+  scored on smooth/circle-of-fifths pivots). It's deliberately taught, not an always-on run feature — see
+  the **Removing gigs** section, fork 2.
 - **M5 Harmony:** **`MAX_SELECT = 5`**, cards can be stacked **simultaneously**; triad/7th/consonance/
   cadence scoring switches on (today's behavior).
 - **M6–M7:** more instruments and form scoring, no further select growth.
