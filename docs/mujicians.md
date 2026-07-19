@@ -1277,6 +1277,7 @@ discard.
 | **Discard** | `discardHand()` | Selected cards fly to the discard pile with a slight fan + fade. |
 | **Hand reflow** | after play/discard | Surviving cards FLIP-slide to close the gap (concurrent with the fly-out clones). |
 | **Animated Sort** | Sort-by-pitch | Cards FLIP to their sorted positions instead of snapping. |
+| **Dynamics swell** *(BUILT 2026-07-18)* | switch p/mf/f (M3+) | The **selected** card(s) scale to the chosen loudness (**size = volume**: p small, f big) via `.card.dyn-*`; `swellSelected()` plays a WAAPI overshoot tween across the re-render. The landed loop cell keeps the size too (`.lgcell.cdyn-*`, from `eventCoverage().onDyn`); the ghost cell previews the next play's size. |
 
 ### Code map (where each hooks in, when built)
 
@@ -1392,20 +1393,36 @@ a naturally closed, collectible set. Each note *already* owns a ROYGBIV color in
 Noteling arrives **pre-colored**: playing a card summons its creature and the card's existing color *is*
 the creature's color. The theory and the mascot are the same object.
 
-**Starting roster (emoji stand-ins).** The dev's picks, each in its note's ROYGBIV color:
+**Starting roster (emoji stand-ins).** Each letter is a **register pair**: a **grounded** creature (low
+register) and a **flying** creature (high register) that **share the note's first letter *and* its ROYGBIV
+color** — register (octave) is the channel that picks which of the two you see. Same-initial pairs double
+the word-game hook (this is a word-games site) and keep the alphabet gimmick.
 
-| Note | Noteling | Stand-in | Color |
-|------|----------|----------|-------|
-| A | **Ant** | 🐜 | Red |
-| B | **Blob** | 🫧 | Orange |
-| C | **Chicken** | 🐔 | Yellow |
-| D | **Dog** | 🐕 | Green |
-| E | **Eye** | 👁️ | Blue |
-| F | **Flower** | 🌸 | Indigo |
-| G | **Goat** | 🐐 | Violet |
+| Note | Color | Grounded (low) | Flying (high) |
+|------|-------|----------------|---------------|
+| A | Red | **Ant** 🐜 | **Angel** 😇 |
+| B | Orange | **Blob** 🫧 | **Bat** 🦇 |
+| C | Yellow | **Cat** 🐈 | **Chicken** 🐔 |
+| D | Green | **Dog** 🐕 | **Dragonfly** 🪰 |
+| E | Blue | **Elephant** 🐘 | **Eye** 👁️ *(hovering)* |
+| F | Indigo | **Flower** 🌸 | **Firefly** ✨ |
+| G | Violet | **Goat** 🐐 | **Goose** 🦢 |
 
-(Emoji are placeholders; 🫧 for Blob especially. They swap for the dev's pixel sprites later — see *Art &
-swap path* below.)
+(Emoji are placeholders — no true dragonfly/firefly emoji, so 🪰/✨ stand in; 🫧 for Blob especially. They
+swap for the dev's pixel sprites later — see *Art & swap path* below. **"High C" gag:** the flappy Chicken
+is the high-C flyer — the classic hard-to-hit note is a bird that can barely stay airborne.)
+
+**Merge-legibility rule (load-bearing for chord-chimeras).** Because a chord fuses its members into **one
+creature**, every creature needs **one or two unmistakable defining parts** so you can still read which
+animals a fusion is built from. Design each with that silhouette in mind: Ant's antennae/segments vs.
+Angel's halo+wings; Blob's shapelessness vs. Bat's leathery wings+ears; Cat's whiskers+tail vs. Chicken's
+comb+wattle; Dog's floppy ears+snout vs. Dragonfly's iridescent double wings; Elephant's trunk+tusks vs.
+Eye's floating eyeball; Flower's petals vs. Firefly's glowing abdomen; Goat's horns+beard vs. Goose's long
+neck+webbed feet.
+
+*(The shipped portmanteau song-namer — `NOTELING` in `mujicians.html` — predates this split and maps each
+**letter** to a single name for the "Chiegoat"-style blend; it's register-agnostic. Left as-is until
+register/octave is actually a played distinction, at which point it can pick grounded vs. flying by octave.)*
 
 **What each music concept maps to a visual channel** (so the picture teaches the theory — the same
 alignment the audio already provides):
@@ -1423,8 +1440,16 @@ alignment the audio already provides):
   The Noteling stays defined by letter/color/morphology/size/fusion; the card's small instrument emoji
   (🎹/🎸/🎻) may remain as a marker, but the *variation you collect* now lives on the **card skin**, not a
   7×3 creature-breed matrix.
-- **Octave → size.** Bass-register creatures are big elders; high piano ones are tiny — so the loop's
-  pitch grid reads as "big beasts low, little ones high."
+- **Register (octave) → flight, not size.** *(Corrected 2026-07-18 — this channel used to say "octave →
+  size," which collided with dynamics; size now belongs to loudness, below.)* High register = **airborne**
+  (the letter's flying creature — Angel, Bat, Chicken, Dragonfly, Eye, Firefly, Goose), low register =
+  **grounded** (Ant, Blob, Cat, Dog, Elephant, Flower, Goat). Same note-letter and color; register just
+  picks which of the pair is summoned — so the loop's pitch grid reads as "grounded beasts low, fliers high."
+- **Dynamics (loudness) → size** *(**BUILT 2026-07-18** for the card + loop cell)*. A **forte** creature is
+  **big**, a **piano** one is **small** — size *is* volume, a physical, felt mapping. In the live game this
+  already shows on the **hand card** (a selected card swells/shrinks to `run.curDyn` — `.card.dyn-*`, with a
+  WAAPI overshoot "swell" when you switch dynamic) and on the **loop grid cell** (`.lgcell.cdyn-*`, driven by
+  `eventCoverage().onDyn`); the Noteling sprite inherits the same size channel for free.
 - **Consonance → fusion quality (the load-bearing one).** A consonant hand fuses into a smooth,
   cohesive creature; a dissonant one fuses badly (mismatched limbs, snarling, coming apart). The **look
   tracks the sound**, exactly as score already does — the game's pillar extended to the eye.

@@ -79,6 +79,10 @@
   .lgcell.ghost{box-shadow:inset 0 0 0 2px rgba(255,255,255,.9)} /* where a selected card will land (bg tint set inline = note color) */
   .lgcell.writecol{outline:2px solid var(--gold);outline-offset:-2px}
   .lgcell.playcol{outline:2px solid var(--accent);outline-offset:-2px}
+  /* M3 dynamics — a note cell's size on the loop mirrors its loudness (size = volume). Grid items honor
+     z-index, so a forte cell bulges over its neighbours; piano shrinks, leaving a quiet-looking gap. */
+  .lgcell.cdyn-p{transform:scale(.7)}
+  .lgcell.cdyn-f{transform:scale(1.16);z-index:2}
   .lgcorner{}
   .lglabel{font-size:9px;color:var(--dim);letter-spacing:.3px;text-align:center;cursor:pointer;padding-top:3px;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -97,10 +101,13 @@
   .card{width:60px;height:90px;border-radius:9px;cursor:pointer;position:relative;
     background:#fff;border:2px solid rgba(0,0,0,.35);box-shadow:0 3px 0 rgba(0,0,0,.35);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    transition:transform .08s;user-select:none}
-  .card:hover{transform:translateY(-5px)}
-  .card.sel{transform:translateY(-16px);box-shadow:0 10px 14px rgba(77,225,200,.35);
-    outline:2px solid var(--accent);outline-offset:1px}
+    transition:transform .14s cubic-bezier(.22,1,.36,1);user-select:none;--dynscale:1}
+  .card:hover{transform:translateY(-5px) scale(var(--dynscale))}
+  .card.sel{transform:translateY(-16px) scale(var(--dynscale));box-shadow:0 10px 14px rgba(77,225,200,.35);
+    outline:2px solid var(--accent);outline-offset:1px;z-index:2}
+  /* M3 dynamics — a selected card swells to how loud it will play: size = volume (p small, f big). */
+  .card.dyn-p{--dynscale:.82}
+  .card.dyn-f{--dynscale:1.2}
   .card .cnote{font-size:26px;font-weight:bold;line-height:1;color:var(--cc)}
   .card .coct{font-size:10px;color:var(--cc);opacity:.75;margin-top:1px}
   .card .cinst{position:absolute;bottom:4px;font-size:15px;line-height:1}
@@ -431,6 +438,9 @@
   ];
   const DEFAULT_DYN = "mf";
   const dynGain = id => (DYN.find(d=>d.id===id)||DYN[1]).gain;
+  // Loudness → card/cell SIZE (size = volume): a selected hand-card and its landed loop cell scale to
+  // the chosen dynamic. Mirrors the CSS .card.dyn-* / .lgcell.cdyn-* rules (mf = 1, the neutral baseline).
+  const DYN_SCALE = { p:0.82, mf:1, f:1.2 };
   // Rhythm (M2+): a per-PLAY duration (like Dynamics — one value for the NEXT play, not per-card),
   // stored as integer ticks. The same picker drives note-stacks and the rest card (rest glyphs).
   // Per-note rhythm in a melody comes from setting the duration between successive single plays.
@@ -928,6 +938,17 @@
       { dur:ANIM.discard, delay:i*20, scale:0.8, fade:true, easing:"cubic-bezier(.4,0,1,1)" }));
   }
   function bloomCell(cell){ if(!cell) return; cell.classList.add("bloom"); setTimeout(()=>cell.classList.remove("bloom"), 480); }
+  // Swell: switching the dynamic re-renders the hand (nodes are recreated), so we play an explicit WAAPI
+  // tween from the previous size to the new resting scale the CSS .dyn-* class already applied. Size = volume.
+  function swellSelected(prevDyn, nextDyn){
+    if(reduceMotion() || prevDyn===nextDyn) return;
+    const from = DYN_SCALE[prevDyn]||1, to = DYN_SCALE[nextDyn]||1;
+    $game.querySelectorAll(".hand .card.sel[data-midi]").forEach(el=>{
+      el.animate([{ transform:`translateY(-16px) scale(${from})` },
+                  { transform:`translateY(-16px) scale(${to})` }],
+        { duration:190, easing:"cubic-bezier(.34,1.56,.64,1)" });   // slight overshoot = a satisfying swell
+    });
+  }
   // capture the currently-selected note cards as fly sources (rests have no midi → skipped)
   function captureSelected(){
     return [...$game.querySelectorAll(".hand .card")].filter(el=> run.sel.has(+el.dataset.idx) && el.dataset.midi!==undefined)
@@ -1468,7 +1489,9 @@
     const col = COLOR[c.letter];
     const inst = INSTRUMENTS.find(x=>x.id===c.instId);
     const oct = Math.floor(c.midi/12)-1;
-    return `<div class="card${selCls}" data-idx="${idx}" data-id="${c.id}" data-midi="${c.midi}" style="--cc:${col}">
+    // M3+: a selected note card previews its loudness as size (size = volume) via the .dyn-* scale.
+    const dynCls = (termOn("dynamic") && run.sel.has(idx)) ? " dyn-"+(run.curDyn||DEFAULT_DYN) : "";
+    return `<div class="card${selCls}${dynCls}" data-idx="${idx}" data-id="${c.id}" data-midi="${c.midi}" style="--cc:${col}">
       <div class="cnote">${c.letter}</div><div class="coct">${c.letter}${oct}</div>
       <div class="cinst" title="${inst.name}">${inst.emoji}</div></div>`;
   }
@@ -1525,16 +1548,17 @@
   // Per-(midi:col) coverage of the timeline — MIRRORS the scheduler so the picture matches the sound.
   // `on` = each note's attack column; `held` = its sustained columns (so note length is visible).
   function eventCoverage(events){
-    const on = new Set(), held = new Set();
+    const on = new Set(), held = new Set(), onDyn = new Map();   // onDyn: attack cell → its dynamic (size = volume)
     (events||[]).forEach(e=>{
       if(e.rest || !e.notes) return;
       const c0 = tickToCol(e.at), c1 = tickToCol(e.at + e.dur - 1);
       e.notes.forEach(nt=>{
         on.add(nt.midi+":"+c0);
+        onDyn.set(nt.midi+":"+c0, e.dyn||DEFAULT_DYN);
         for(let c=c0+1;c<=c1;c++) held.add(nt.midi+":"+c);
       });
     });
-    return { on, held };
+    return { on, held, onDyn };
   }
   // The loop grid is a piano-roll: rows = pitches, columns = beats at DISPLAY_COLS_PER_BEAT. Each event
   // draws as a horizontal bar spanning its duration at its tick position; rests are gaps. A gold write
@@ -1578,6 +1602,11 @@
         if(gAttack) cl.push("ghost");
         else if(gOn) cl.push("gheld");
         if(c===wcol) cl.push("writecol");
+        // size = volume: the ghost previews the next play's loudness; a landed cell keeps its own.
+        let cdyn = null;
+        if(gAttack && termOn("dynamic")) cdyn = run.curDyn;
+        else if(onCell) cdyn = cov.onDyn.get(m+":"+c);
+        if(cdyn && cdyn!=="mf") cl.push("cdyn-"+cdyn);
         // bg: attack = full color; held / ghost = translucent tints of it
         const bg = onCell ? COLOR[letter] : heldCell ? COLOR[letter]+"55" : gAttack ? COLOR[letter]+"66" : gOn ? COLOR[letter]+"2e" : "";
         grid += `<div class="${cl.join(" ")}" data-tick="${c*TICKS_PER_COL}" data-col="${c}" data-midi="${m}"${bg?` style="background:${bg}"`:""}></div>`;
@@ -1653,7 +1682,8 @@
     }));
     // dynamics: set the loudness of the next hand (re-render updates the preview's contrast bonus)
     $game.querySelectorAll(".dynbtn").forEach(el=> el.addEventListener("click", ()=>{
-      run.curDyn = el.dataset.dyn; renderGig();
+      const prev = run.curDyn; run.curDyn = el.dataset.dyn; renderGig();
+      swellSelected(prev, run.curDyn);   // animate the selected cards from the old size → the new one
     }));
     const bl = document.getElementById("b-loop");
     if(bl) bl.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderGig(); });
