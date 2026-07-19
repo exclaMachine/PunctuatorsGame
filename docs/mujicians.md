@@ -244,14 +244,15 @@ chord-inside-melody, eighths/sixteenths/triplets in the picker (the tick model a
 
 ---
 
-## Call-and-response scoring — making card choice matter (DECIDED 2026-07-18, not built)
+## Call-and-response scoring — making card choice matter (DECIDED 2026-07-18 · M1 BUILT 2026-07-19)
 
-> **Status: DECIDED, not built (designed 2026-07-18).** Fixes a load-bearing flaw the dev hit in playtest:
-> **in the starting movements, card choice doesn't matter.** M1 scores `chips × (in-key ? 2 : 1)`, but all
-> 7 starting cards are the C-major diatonic notes — every card is in-key, every card scores the same, so
-> which note you play is meaningless. This section is the fix and the scoring spine for the whole campaign.
-> Four forks were decided with the dev; two sub-designs (Dynamics' sleeping-creature lesson, the later-movement
-> freeform-consonance turn) are captured below. **Do not build until the per-movement scoring is signed off.**
+> **Status: DECIDED; M1 Pitch call-and-response is ✅ BUILT (2026-07-19)** in `mujicians.html` — see
+> **[M1 — as built](#m1-pitch--as-built-2026-07-19)**. M2–M7 remain designed-not-built. Fixes a load-bearing
+> flaw the dev hit in playtest: **in the starting movements, card choice doesn't matter.** M1 scored
+> `chips × (in-key ? 2 : 1)`, but all 7 starting cards are the C-major diatonic notes — every card is in-key,
+> every card scored the same, so which note you played was meaningless. This section is the fix and the
+> scoring spine for the whole campaign. Four forks were decided with the dev; two sub-designs (Dynamics'
+> sleeping-creature lesson, the later-movement freeform-consonance turn) are captured below.
 
 ### The root cause (why choice is flat)
 
@@ -289,14 +290,13 @@ so it gives every movement a **non-arbitrary** scoring target and maps cleanly o
 4. **Later movements turn toward FREEFORM composition, not just echo — see [The later-movement turn](#the-later-movement-turn--from-echo-to-original-composition) below.** (Dev's explicit ask: don't leave the
    whole campaign as call-and-repeat; reward users for making *original* good-sounding music.)
 
-### Whether the call joins the saved song — LEFT OPEN (build a toggle)
+### Whether the call joins the saved song — DECIDED 2026-07-19: only your notes
 
-Undecided on purpose (the dev wants to playtest first): does the computer's **call** get written to the
-timeline (so the saved song is a **call-and-response duet** — question/answer, theme/echo), or is the call an
-**off-timeline audio cue** (only your responses are the song)? **Plan:** build the model so the call *can* be
-either, and expose it as a **player option** (or decide after playtest) rather than baking one in. Keep
-`placeEvent`/`snapshotEvents` able to tag events as `call` vs `response` so a saved song can include or strip
-the calls.
+**Decided (playtest):** the saved song is **only the notes you enter** — the call is **never written to the
+timeline** (no call-and-response "duet"). This is how M1 shipped: the call is an **off-timeline audio+visual
+cue**, so `snapshotEvents` already captures your responses only. No toggle, no `call`/`response` event tagging
+needed. *(Rejected: writing the call into the loop as a duet — it made the loop playback not line up with what
+you'd played and read as disorienting.)*
 
 ### The per-movement calls
 
@@ -315,6 +315,38 @@ the calls.
 *(Element flavor per the dev's graphic novel: pitch=wind, rhythm=earth, dynamics=fire, melody=water,
 harmony=metal, timbre=wood, structure=**Time** (chosen over "void" — form is a memory-across-time arc; the A
 returns because you remember it. "Void" is a candidate for the rests/silence layer instead).)*
+
+### M1 Pitch — as built (2026-07-19)
+
+The first slice of the frame, shipped in `mujicians.html`:
+
+- **The call.** `run.call = { pc, letter, midi }` — a random **in-key** note (a C-major diatonic pc at the
+  piano register, `midi = 60+pc`, so a hand card can exactly match it). `newCall()` picks a pc (varying from
+  the previous call) and **sounds it** (`soundCall()` → `playTone` on the piano timbre). A first call is set
+  in `startPlay()`; a fresh call is generated after every non-finishing play in `playHand()`.
+- **Scoring — the `respond` term.** Added to `MOVEMENTS[1].terms` (`["inkey","respond"]`) and to `score()`:
+  for a single played note, interval `iv = (playedPc − callPc + 12) % 12` →
+  **exact (`iv===0`): `mult +4, chips +8`** ("🎯 matched the call"); **consonant near-miss (`CONSONANT_IV`):
+  `mult +2`** ("consonant with the call +2" — a good-sounding miss earns partial credit, on-pillar); **dissonant
+  miss: nothing.** So the 7 diatonic cards now score in three tiers (exact ≫ consonant ≫ dissonant) instead of
+  flat. Because `score()` runs live in `previewHTML()`, the bonus shows **before you commit** — instant
+  teaching feedback.
+- **UI.** `callBarHTML()` renders a "🎧 Match this note" bar above the preview with the target as a colored
+  letter chip (**shown**, per the early-ramp decision) + a **🔊 Hear it** replay button. Gated by
+  `callActive()` = `run.mode==="campaign" && run.movement===1 && termOn("respond")`.
+- **Scope / firewall.** `callActive()` is M1-campaign-only, so **Free Play and M2–M7 are untouched** (they
+  don't carry the `respond` term). The existing **M1 gate** (catalog the 7 in-key letters) is unchanged and
+  still fills naturally as you answer random in-key calls.
+- **Saved song = your notes only (decided).** The call is an **off-timeline audio+visual cue**, never written
+  to the loop — so `snapshotEvents` captures only your responses. See [the decision above](#whether-the-call-joins-the-saved-song--decided-2026-07-19-only-your-notes).
+- **Scheduler look-ahead race — fixed (2026-07-19).** Placing a note into the backing loop's already-committed
+  ~120ms look-ahead window skipped its loop echo for that one lap (you'd hear the click-preview, but the
+  playhead swept over it silently until next lap). `catchUpEvent()` (called from `placeEvent`) now schedules
+  that single onset for the current lap when it lands in the committed window; `schedTick` only schedules
+  onsets `≥ schedFrom`, so no double. General fix (all movements + Free Play), inert while paused.
+- **Still deferred:** **ear-only** mode is not built (M1 is always shown); calls stay **single-note per play**
+  (phrase calls arrive with later movements). Proximity is the simple 3-tier consonance-weighted curve above
+  (tunable).
 
 ### Dynamics · Fire — the sleeping-creature lesson (dev's design, teach the notation)
 
@@ -381,7 +413,8 @@ makes *original* music. So the campaign **shifts flavor across the arc**:
 
 - **Call size per movement** — per-play single-note calls (M1) vs multi-note phrase calls (M4) that test
   memory. *[recommended: grows with the movement — 1 note early, a short phrase by M4.]*
-- **Saved-song: call included?** — **left open** (build the toggle; decide after playtest).
+- **Saved-song: call included?** — ✅ **DECIDED 2026-07-19: only your notes** (call never written to the
+  timeline; no toggle). See [the decision](#whether-the-call-joins-the-saved-song--decided-2026-07-19-only-your-notes).
 - **Proximity curve** — how steeply near-misses fall off (linear semitones vs interval-consonance-weighted).
   *[recommended: consonance-weighted so a "wrong but consonant" answer beats a "close but dissonant" one.]*
 - **Dynamics scenario depth** — one creature per run vs a changing scene per phrase; whether "wake the

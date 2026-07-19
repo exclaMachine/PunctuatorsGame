@@ -96,6 +96,15 @@
   .preview .calc{color:var(--dim);font-size:12px;margin-top:3px}
   .preview .calc .m{color:var(--mult)}
   .preview .app{float:right;font-size:18px;color:var(--accent)}
+  /* M1 call-and-response: the target-note "call" bar */
+  .callbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0;padding:8px 12px;
+    background:var(--panel);border:1px solid var(--edge);border-radius:12px}
+  .callbar .clbl{font-weight:bold;color:var(--ink)}
+  .callbar .callnote{display:inline-flex;align-items:center;justify-content:center;width:32px;height:42px;
+    border-radius:7px;background:var(--cc);color:#0a0a12;font-weight:800;font-size:20px;
+    box-shadow:0 3px 0 rgba(0,0,0,.35),inset 0 0 0 1px rgba(0,0,0,.25)}
+  .callbar .callhear{padding:5px 11px;font-size:12px}
+  .callbar .clhint{font-size:12px;color:var(--dim)}
 
   .hand{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:104px;margin:6px 0 14px}
   .card{width:60px;height:90px;border-radius:9px;cursor:pointer;position:relative;
@@ -419,7 +428,7 @@
     null, // index 0 unused — movements are 1..7
     // maxSelect = simultaneous-stack cap, grows 1→2→3→4 by movement (a stack is ALWAYS a chord now —
     // a melody is built by successive single plays, not by selecting several cards). 7ths (4 notes) arrive at M6.
-    { n:1, element:"Pitch",     maxSelect:1, thr:90,   terms:["inkey"] },
+    { n:1, element:"Pitch",     maxSelect:1, thr:90,   terms:["inkey","respond"] },
     { n:2, element:"Rhythm",    maxSelect:1, thr:130,  terms:["inkey","groove"] },
     { n:3, element:"Dynamics",  maxSelect:1, thr:170,  terms:["inkey","groove","dynamic"] },
     { n:4, element:"Melody",    maxSelect:2, thr:800,  terms:["inkey","groove","dynamic","melodic"] },
@@ -612,6 +621,15 @@
     // theory mult bonuses — each gated by the movement that teaches it (score grows, never rewrites)
     const allInKey = cards.every(c => gig.key.includes(c.pc));
     if(inkeyOn && allInKey && cards.length>=2){ mult += 1; lines.push("in key +1"); }                 // 'inkey' (M1)
+    // respond (M1 call-and-response): the computer plays a target note; you answer by matching its pitch.
+    // Graded by proximity — an EXACT match is the lesson (big pop); a consonant near-miss still SOUNDS
+    // good so it earns partial credit; a dissonant miss earns nothing. See docs/mujicians.md.
+    if(termOn("respond") && run && run.call && cards.length===1){
+      const iv = (cards[0].pc - run.call.pc + 12) % 12;
+      if(iv===0){ mult += 4; chips += 8; lines.push("🎯 matched the call"); }
+      else if(CONSONANT_IV.has(iv)){ mult += 2; lines.push("consonant with the call +2"); }
+      // dissonant miss (m2/tritone/m7…): no bonus — base score only.
+    }
     // groove (M2): keep the beat, and reward rhythmic variety — this play's duration differing from the
     // previous timeline event's. (Timeline-aware; deepens in Stage 2 with syncopation / cross-loop consistency.)
     if(termOn("groove")){
@@ -774,6 +792,21 @@
     notes.forEach(nt => _tone(nt.midi, wave(nt.instId), dur*0.95, t, vel));
   }
 
+  /* ========= call-and-response (M1 Pitch) =========
+     The computer (the element-spirit) plays a CALL — a target note — and you RESPOND by matching its
+     pitch (scored by proximity in score()'s 'respond' term). This is what makes early card choice matter:
+     all 7 diatonic cards are in-key (so 'inkey' is flat), but only one MATCHES the call. Campaign M1 only
+     for now; later movements extend the frame (rhythm/melody/…). Free Play has no call. See docs/mujicians.md. */
+  function callActive(){ return !!(run && run.mode==="campaign" && run.movement===1 && termOn("respond")); }
+  function soundCall(when){ if(run && run.call) playTone(run.call.midi, "triangle", 0.7, when||0, 1); }   // piano-timbre target
+  function newCall(delay){
+    if(!run) return;
+    const pcs = RUN_KEY.key, prev = run.call ? run.call.pc : -1;
+    let pc; do { pc = pcs[Math.floor(Math.random()*pcs.length)]; } while(pcs.length>1 && pc===prev);   // vary from the last
+    run.call = { pc, letter:NOTE_LETTER[pc], midi:60+pc };   // 60+pc = piano register, so a hand card can match it
+    soundCall(delay||0);   // delay lets the next call sound just AFTER your response, not on top of it
+  }
+
   /* ========= the continuous-timeline loop (Mario-Paint-style backing groove) ========= */
   // A lookahead scheduler cycles the whole event list nonstop; a rAF sweeps the playhead column.
   // playSrc = { events, totalTicks, live, barSec }: the live run loop, or a saved song on replay.
@@ -796,6 +829,20 @@
     const wave = id => (INSTRUMENTS.find(x=>x.id===id)||INSTRUMENTS[0]).wave;
     const dur = ev.dur*tickSec, vel = dynGain(ev.dyn||DEFAULT_DYN);
     ev.notes.forEach(nt => _tone(nt.midi, wave(nt.instId), dur*0.95, when, vel));   // the stack sounds together
+  }
+  // Fix the look-ahead race: schedTick commits onsets up to `schedFrom` (~120ms ahead of the audible
+  // playhead). A note placed INTO that already-committed window would be skipped this lap — you'd hear it
+  // once via soundStack, but the loop echo is missing as the playhead sweeps over it, so it looks like the
+  // playhead passed a note without sounding it (it self-heals next lap). When placeEvent writes such a note,
+  // schedule that one onset now for the current lap. Its onset is < schedFrom, so schedTick (which only
+  // schedules onsets >= schedFrom) won't double it this cycle. See docs/mujicians.md.
+  function catchUpEvent(ev){
+    if(!loopOn() || !playSrc || !playSrc.live) return;    // only while the live backing loop is grooving
+    if(!ev || ev.rest || !ev.notes || !ev.notes.length) return;
+    if(ev.at >= sIterTicks) return;                       // beyond this cycle's length → the next roll handles it
+    const ac = audio(), tickSec = srcBeatSec()/TPB;
+    const when = sIterStart + ev.at*tickSec;              // this event's onset in the scheduler's current cycle
+    if(when >= ac.currentTime && when < schedFrom) scheduleEvent(ev, when, tickSec);   // committed-but-unplayed → catch it
   }
   function schedTick(){
     if(!playSrc) return;
@@ -1221,7 +1268,9 @@
     run.hand = []; run.sel.clear();
     run.discardsLeft = DISCARDS; run.runScore = 0;
     run.loop.events = []; run.loop.cursor = 0; run.loop.stageBars = START_BARS;
+    run.call = null;
     drawUp();
+    if(callActive()) newCall();   // M1: sound the first target note to match
     screen = "gig"; render();
     startLoop();   // continuous backing groove begins
   }
@@ -1249,6 +1298,7 @@
     run.loop.events.sort((a,b)=>a.at-b.at);
     run.loop.cursor = Math.min(maxStageTicks(), end);
     growStageToFit();   // extend the stage so the new note (and the next ghost) stay visible
+    catchUpEvent(ev);   // if it landed in the scheduler's committed look-ahead window, sound it THIS lap too
   }
   // Stage-1 timeline scale-run: 3+ single notes in a row moving stepwise (pulled forward from Stage 2 so
   // the M4 melody gate stays clearable now that a stack ≤2 can't form a 3-note run).
@@ -1301,7 +1351,9 @@
     // Open-ended: no applause threshold ends the run. The only hard limit is stage space — when the write
     // cursor reaches the end of the timeline, the performance auto-completes. Otherwise the player keeps
     // going until they press Finish. (A whole note eats 4× a quarter's worth of space.)
-    if(run.loop.cursor >= maxStageTicks() || run.hand.length === 0){ finishRun(); flyPlay(flyFrom, at, handSnap); return; }
+    const finishing = run.loop.cursor >= maxStageTicks() || run.hand.length === 0;
+    if(!finishing && callActive() && !rest) newCall(0.45);   // M1: next target, sounded just after your response
+    if(finishing){ finishRun(); flyPlay(flyFrom, at, handSnap); return; }
     render();
     flyPlay(flyFrom, at, handSnap);   // shrink+fly played cards to their timeline cells, then bloom
   }
@@ -1496,6 +1548,17 @@
       <div class="cinst" title="${inst.name}">${inst.emoji}</div></div>`;
   }
 
+  // M1 call-and-response: show the target note to match (shown-early ramp — later movements go ear-only).
+  function callBarHTML(){
+    if(!callActive() || !run.call) return "";
+    const c = run.call;
+    return `<div class="callbar">
+      <span class="clbl">🎧 Match this note</span>
+      <span class="callnote" style="--cc:${COLOR[c.letter]}" title="${c.letter} (${COLORNAME[c.letter]})">${c.letter}</span>
+      <button class="btn ghost callhear" id="b-hear" title="Hear the target again">🔊 Hear it</button>
+      <span class="clhint">Play the matching card — or the closest you can.</span>
+    </div>`;
+  }
   function previewHTML(){
     if(selectedRest()){ const d=durOf(run.curDur); return `<span class="struct">Rest — ${esc(d.name)}</span><div class="calc">silence; advances the cursor by a ${d.name.split(" ")[0]}</div>`; }
     const cards = selectedCards();
@@ -1652,6 +1715,7 @@
           : (gate ? `<div class="scoreline" style="color:${gate.met?'var(--good)':'var(--dim)'}">${gate.met?'✓ ':''}${gate.label}</div>` : "")}
       </div>
       ${loopStripHTML()}
+      ${callBarHTML()}
       <div class="preview">${previewHTML()}</div>
       ${durControlHTML()}
       ${dynControlHTML()}
@@ -1670,6 +1734,8 @@
     document.getElementById("b-play").addEventListener("click", playHand);
     document.getElementById("b-disc").addEventListener("click", discardHand);
     document.getElementById("b-finish").addEventListener("click", finishRun);   // player ends the performance when they like
+    const bh = document.getElementById("b-hear");
+    if(bh) bh.addEventListener("click", ()=>{ audio(); soundCall(); });   // replay the M1 call target
     // loop grid: click any cell/label to aim the write cursor at that tick (append/overwrite from there)
     $game.querySelectorAll(".loopgrid [data-tick]").forEach(el=>{
       el.addEventListener("click", ()=>{
