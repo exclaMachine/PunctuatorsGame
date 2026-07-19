@@ -244,6 +244,154 @@ chord-inside-melody, eighths/sixteenths/triplets in the picker (the tick model a
 
 ---
 
+## Call-and-response scoring — making card choice matter (DECIDED 2026-07-18, not built)
+
+> **Status: DECIDED, not built (designed 2026-07-18).** Fixes a load-bearing flaw the dev hit in playtest:
+> **in the starting movements, card choice doesn't matter.** M1 scores `chips × (in-key ? 2 : 1)`, but all
+> 7 starting cards are the C-major diatonic notes — every card is in-key, every card scores the same, so
+> which note you play is meaningless. This section is the fix and the scoring spine for the whole campaign.
+> Four forks were decided with the dev; two sub-designs (Dynamics' sleeping-creature lesson, the later-movement
+> freeform-consonance turn) are captured below. **Do not build until the per-movement scoring is signed off.**
+
+### The root cause (why choice is flat)
+
+Scoring is **context-free** — each note is judged in isolation against a fixed rubric (in-key? yes for all
+7). Nothing makes one card better than another. The fix is to make scoring **relational** — judge the
+response against a **target/context** instead of a fixed rule. The instant there's something to match, one
+card is best, near ones are decent, far ones are bad, so **every card scores differently and choice matters.**
+
+### The frame: call-and-response (the campaign spine)
+
+The computer (flavored as the movement's **element-spirit / mentor**, tying into the [character-Muse cast](#the-character-muses--the-graphic-novel-cast-is-the-muse-roster-planned))
+plays a **call**; you play a **response**; score = how well the response relates to the call, **graded by
+proximity** (partial credit — "as close as possible," not pass/fail). Two response flavors:
+
+- **Imitate** (echo it back) — pitch, rhythm, dynamics, melody, timbre.
+- **Complement** (answer / harmonize it) — harmony, structure.
+
+Call-and-response is the oldest music-teaching method (echo the phrase, clap it back, answer the question),
+so it gives every movement a **non-arbitrary** scoring target and maps cleanly onto the dev's elements.
+
+### The four decisions (locked)
+
+1. **Call-and-response is the CAMPAIGN scoring spine; Free Play stays open-ended.** Every campaign movement
+   grades your response against a call (so card choice always matters *while learning*). **Free Play has no
+   call** — applause just accumulates, you make whatever you want. This preserves the [open-ended "made some
+   music I like" pillar](#open-ended-performance--no-threshold-you-decide-when-youre-done-built) where it
+   belongs (the creative mode) while making the *teaching* mode demand real choices.
+2. **Graded proximity, not exact match.** Exact = full credit; near = partial; far = little. A gradient is
+   better pedagogy (partial credit) *and* is what makes every wrong card score differently (D scores more
+   than G when the target is E) — the actual fix to the flat-choice problem.
+3. **Shown early, ear-only later (a difficulty ramp).** Early movements **reveal the call's card** (beginners
+   match by sight). Later movements / a boss go **audio-only** ("blindfold") — the call is a sound you must
+   identify and reproduce **by ear**, which is real ear-training. If the call always showed its color it'd be
+   a trivial color-match; hiding it is what turns matching into a music skill.
+4. **Later movements turn toward FREEFORM composition, not just echo — see [The later-movement turn](#the-later-movement-turn--from-echo-to-original-composition) below.** (Dev's explicit ask: don't leave the
+   whole campaign as call-and-repeat; reward users for making *original* good-sounding music.)
+
+### Whether the call joins the saved song — LEFT OPEN (build a toggle)
+
+Undecided on purpose (the dev wants to playtest first): does the computer's **call** get written to the
+timeline (so the saved song is a **call-and-response duet** — question/answer, theme/echo), or is the call an
+**off-timeline audio cue** (only your responses are the song)? **Plan:** build the model so the call *can* be
+either, and expose it as a **player option** (or decide after playtest) rather than baking one in. Keep
+`placeEvent`/`snapshotEvents` able to tag events as `call` vs `response` so a saved song can include or strip
+the calls.
+
+### The per-movement calls
+
+| # | Element | The **call** (computer plays…) | Your **response** | Scored on (graded proximity) |
+|---|---------|-------------------------------|-------------------|------------------------------|
+| **1** | **Pitch · Wind** | a target note "carried on the breeze" | play the matching pitch | pitch proximity — exact=full, semitone off=less, a 5th off=little |
+| — | *M1 Sharps level* | a natural note | play the note **a half-step above** & resolve up | the ♯→up [chromatic resolution](#accidentals--the-sharps--flats-runs--the--boss-planned) |
+| — | *M1 Flats level* | a natural note | play the note **a half-step below** & resolve down | the ♭→down resolution |
+| **2** | **Rhythm · Earth** | a rhythm pattern (the ground's pulse) | clap it back — same onsets/durations | onset + duration match (a played rest is a rhythmic event) |
+| **3** | **Dynamics · Fire** | a **creature scenario** (see below), not a note | play at the demanded loudness (+ rests when sneaking) | matching the target dynamic the scene demands — teaches pp→ff **notation** |
+| **4** | **Melody · Water** | a short melodic phrase (a wave) | **echo it**, or **answer it** (antecedent→consequent) | contour match / a good complementary answer |
+| **5** | **Harmony · Metal** | a single tone (bass/root) to forge onto | **build the chord** that fits it | consonance with the given tone (harmonize the alloy) |
+| **6** | **Timbre · Wood** | a note in a specific tone-color | play a note that **matches / blends** that timbre | timbre match / blend quality |
+| **7** | **Structure · Time** | states an **A** theme | develop (**B**) and **return to A** | form / restatement (the existing `hasABA`) |
+
+*(Element flavor per the dev's graphic novel: pitch=wind, rhythm=earth, dynamics=fire, melody=water,
+harmony=metal, timbre=wood, structure=**Time** (chosen over "void" — form is a memory-across-time arc; the A
+returns because you remember it. "Void" is a candidate for the rests/silence layer instead).)*
+
+### Dynamics · Fire — the sleeping-creature lesson (dev's design, teach the notation)
+
+The Dynamics movement's job is to **teach the notations of loudness** (pp · p · mp · mf · f · ff, plus the
+crescendo/decrescendo hairpins) — not just "match a volume" (only 3 built levels; too trivial to echo). The
+dev's framing does the teaching through a **story/scenario** that also **folds in rests**:
+
+- **A creature is asleep or awake, and has a size.** The scene sets the **target dynamic**:
+  - **Sleeping** → you must **sneak past without waking it**: play **soft** (pp/p) and use **rests**
+    (silence = making no noise). A **big** sleeper raises the stakes — quieter still, more rests.
+  - **Awake** → you must **scare it away**: be as **loud as possible** (ff).
+- So the "call" here is a **situation**, not a pitch — your **dynamic choice matters because the context
+  demands a specific loudness**, and the game labels the required level with its **notation** (pp = "sneak,"
+  ff = "roar"), teaching the vocabulary in play.
+- **Rests get their diegetic home here:** a rest is the quietest possible dynamic — a held breath while you
+  tiptoe past the sleeper. (Ties the [rest card](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-rework-decided-2026-07-18-not-built) to Dynamics as well as Rhythm.)
+- **Reuses size = volume (BUILT):** a big/loud card visibly swells; a big
+  sleeping creature ↔ the need to keep your cards small (quiet).
+- The **A/B/C dynamic ideas** (match-a-swell / answer-with-contrast / feed-the-fire-crescendo) become
+  **deeper Dynamics sub-levels** once the notation basics land — not the intro lesson.
+
+### The later-movement turn — from echo to original composition
+
+**Dev's explicit ask (locked):** the later levels must **not** stay pure call-and-repeat, or the player never
+makes *original* music. So the campaign **shifts flavor across the arc**:
+
+- **Early (M1–M3): imitate.** Call-and-response teaches the atoms (pitch, rhythm, dynamics) — echo the call,
+  scored on proximity. This is where "make choice matter" is won.
+- **Later (M4+): compose.** Scoring turns toward **freeform good-sounding combinations** — reward the player
+  for playing **consonant, in-key** notes that sound good together, i.e. landing in the **green "good" cells**
+  the game already highlights in Free Play. **This is the [`fitsSelection()`](mujicians.html) system**
+  (mujicians.html:1541): a cell glows green when a pitch is **in-key AND forms a consonant interval (3rd/4th/
+  5th/6th or a doubling) with every selected note** (empty selection → all in-key rows glow, FL-Studio-style).
+  Scoring later movements on **how much of your line lands in the green** lets the player build **original
+  soundtracks that sound good**, not just copies of a call.
+- **The bridge:** call-and-response and freeform-consonance **coexist** rather than replace — a later movement
+  can still open with a call (a theme to answer) but reward you for developing it with your *own* consonant,
+  in-key material. This also aligns the campaign's late game with **Free Play's** open scoring, so graduating
+  M7 → Free Play is a smooth handoff (the green-cell reward is already how Free Play grades quality).
+
+### Code map (sketch, when built)
+
+- **A `call` per movement.** A `makeCall(mv, level)` produces the target the response is scored against:
+  a pitch (M1), a rhythm figure (M2), a creature scenario → target dynamic (M3), a phrase/contour (M4), a
+  root tone (M5), a timbre (M6), an A-theme (M7). Stored on `run.call`; re-rolled per call (per-play early,
+  per-phrase later — TBD per movement).
+- **Scoring = proximity to the call**, added alongside today's terms. Each movement's `terms` gains a
+  **`respond`** term (or a per-movement proximity function) that reads `run.call` and the just-played event.
+  For M1, pitch proximity replaces the flat `inkey ? 2 : 1` with a graded distance-to-target. **Free Play
+  omits the `respond` term** (no call) — so `MOVEMENTS[].terms` gates it exactly like every other term.
+- **Shown vs ear-only** = a `run.callHidden` flag (off in early movements, on in later/boss); when set, the
+  call plays as audio only and the UI shows no card/color.
+- **Dynamics scenario:** a small table of `{creature, asleep, size} → targetDyn (+ wantRests)`; the HUD shows
+  the scene + the demanded notation (pp…ff); scoring compares the played `dyn` (and rest usage) to the target.
+- **Later-movement freeform:** reuse `fitsSelection()` — score a per-event/per-line **green-fraction** bonus
+  (how many played notes are in-key + consonant with their context). This is the Free-Play quality signal
+  turned into a campaign scoring term for M4+.
+- **Call on/off the timeline** = tag placed events `role:'call'|'response'`; `snapshotEvents`/`saveSong`
+  include or strip calls per the player option.
+- **Untouched:** `classify`, the scheduler, the loop groove — call-and-response is a **scoring + a target
+  cue**, layered on the existing timeline model, not a rewrite of it.
+
+### Open sub-decisions (defaults noted)
+
+- **Call size per movement** — per-play single-note calls (M1) vs multi-note phrase calls (M4) that test
+  memory. *[recommended: grows with the movement — 1 note early, a short phrase by M4.]*
+- **Saved-song: call included?** — **left open** (build the toggle; decide after playtest).
+- **Proximity curve** — how steeply near-misses fall off (linear semitones vs interval-consonance-weighted).
+  *[recommended: consonance-weighted so a "wrong but consonant" answer beats a "close but dissonant" one.]*
+- **Dynamics scenario depth** — one creature per run vs a changing scene per phrase; whether "wake the
+  sleeper" is an explicit fail-state or just lost points. *[recommended: lost points, no hard fail — matches
+  the no-fail pillar.]*
+- **Where the freeform turn starts** — M4 (melody) *[recommended]* vs M5 (harmony); how much call-and-response
+  survives into the late game.
+
+---
+
 ## Music-theory coverage — gaps to design around (checklist, mostly not built)
 
 > **Status: a running audit** (started 2026-07-18) of theory concepts the current model can't yet express,
