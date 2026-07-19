@@ -521,8 +521,8 @@
     const r = run || {};
     const cap = (n,m)=>Math.min(n,m);
     switch(mv){
-      case 1: { const h=pitchLettersGot().length;   // persisted across runs (see pitchLettersGot)
-        return { met:h>=7, label:`Pitch gate — play every in-key letter: ${h}/7` }; }
+      case 1: { const h=(r.gatePitch)?r.gatePitch.size:pitchLettersGot().length;   // per-run this run; persisted count at home
+        return { met:h>=7, label:`Pitch gate — play every in-key letter (A–G): ${h}/7` }; }
       case 2: { const h=r.gateDurs?r.gateDurs.size:0, N=DURATIONS.length;   // Phase 3 Stage 2: play each note value
         return { met:h>=N, label:`Rhythm gate — play each note value (♩ 𝅗𝅥 𝅝): ${cap(h,N)}/${N}` }; }
       case 3: { const h=r.gateDyns?r.gateDyns.size:0;
@@ -550,7 +550,7 @@
   function collectPitchLetter(L){ const got = pitchLettersGot(); if(!got.includes(L)) got.push(L); }  // caller savePersist()s
   // Seven hangman slots: an underscore until you play that letter in-key, then it reveals in its ROYGBIV color.
   function pitchTrackerHTML(compact){
-    const got = new Set(pitchLettersGot());
+    const got = new Set((run && run.gatePitch) ? run.gatePitch : []);   // per-run goal — fresh each run (empty preview at home)
     const slots = PITCH_TARGETS.map(L=>{
       const on = got.has(L);
       return `<span class="ptslot${on?" on":""}" title="${L} (${COLORNAME[L]})"${on?` style="color:${COLOR[L]}"`:""}>${L}</span>`;
@@ -1349,9 +1349,12 @@
       curDyn:DEFAULT_DYN,   // M3 dynamics: the p/mf/f marking applied to the next play
       curDur:DEFAULT_DUR,   // M2 rhythm: the duration (ticks via durTicks) of the next play; default = quarter
       // per-movement gate trackers (all cheap to keep; gateStatus reads the frontier movement's).
-      // M1 pitch letters live in persist (cross-run) — see pitchLettersGot; the rest are per-run.
-      gateDurs:new Set(), gateDyns:new Set(), gateIntervals:new Set(), gateRun:false,
-      gateTriads:new Set(), gateCadence:false, gateBlends:0 };
+      // ALL per-run now: reaching a movement's goal THIS run is what stops the song + advances (see
+      // runGoalMet / the goal prompt). gatePitch is M1's per-run letter set (persist.pitch is legacy).
+      gatePitch:new Set(), gateDurs:new Set(), gateDyns:new Set(), gateIntervals:new Set(), gateRun:false,
+      gateTriads:new Set(), gateCadence:false, gateBlends:0,
+      respondLog:[],            // M1: each response's semitone distance to its call (for the pitch-accuracy score)
+      goalReached:false, goalAck:false };   // goalReached = prompt shown; goalAck = player chose "keep building"
     offerDraft();   // draft one Muse, once, at the start of the run
   }
   function startPlay(){
@@ -1359,6 +1362,7 @@
     run.hand = []; run.sel.clear();
     run.discardsLeft = DISCARDS; run.runScore = 0;
     run.loop.events = []; run.loop.cursor = 0; run.loop.stageBars = START_BARS;
+    run.gatePitch = new Set(); run.respondLog = []; run.goalReached = false; run.goalAck = false;   // fresh per-run goal state
     run.call = null;
     drawUp();
     if(callActive()) newCall();   // M1: sound the first target note to match
@@ -1426,7 +1430,7 @@
     // campaign gate tracking — feed every per-movement objective (gateStatus reads the frontier one)
     if(run.mode==="campaign" && !rest){
       const cls = res.cls, tonicPc = RUN_KEY.key[0];
-      cards.forEach(c => { if(RUN_KEY.key.includes(c.pc)) collectPitchLetter(c.letter); });    // M1: in-key letters (persisted)
+      cards.forEach(c => { if(RUN_KEY.key.includes(c.pc)){ run.gatePitch.add(c.letter); collectPitchLetter(c.letter); } });   // M1: in-key letters (per-run goal + legacy persist)
       if(termOn("groove")) run.gateDurs.add(run.curDur);                                 // M2: distinct note values (per play)
       if(termOn("dynamic")) run.gateDyns.add(run.curDyn);                                // M3: soft/medium/loud
       if(cls.type==="interval") run.gateIntervals.add(cls.name);                         // M4: distinct intervals
@@ -1436,19 +1440,20 @@
       if(new Set(cards.map(c=>c.instId)).size>=2) run.gateBlends++;                       // M6: multi-instrument blends
     }
     savePersist();
-    // M1 call-and-response: layer the reward chime (brightness tracks proximity) over your just-played note.
-    if(res.respond) respondChime(res.respond);
+    // M1 call-and-response: layer the reward chime (brightness tracks proximity) + log the distance for the score.
+    if(res.respond){ respondChime(res.respond); run.respondLog.push(Math.abs(cards[0].midi - run.call.midi)); }
     // remove played cards from hand, redraw
     removeSelected(); drawUp();
 
-    // Open-ended: no applause threshold ends the run. The only hard limit is stage space — when the write
-    // cursor reaches the end of the timeline, the performance auto-completes. Otherwise the player keeps
-    // going until they press Finish. (A whole note eats 4× a quarter's worth of space.)
+    // Campaign: reaching this movement's GOAL stops the song (with a choice to keep building) — see showGoalPrompt.
+    // Free Play stays open-ended (press ✓ Finish, or auto-complete when the stage fills; a whole note eats 4× a quarter).
     const finishing = run.loop.cursor >= maxStageTicks() || run.hand.length === 0;
-    if(!finishing && callActive() && !rest) newCall(0.45);   // M1: next target, sounded just after your response
+    const goalJustMet = !finishing && !run.goalAck && runGoalMet();   // fires once; goalAck (keep building) silences it
+    if(!finishing && !goalJustMet && callActive() && !rest) newCall(0.45);   // M1: next target, sounded just after your response
     if(finishing){ finishRun(); flyPlay(flyFrom, at, handSnap, res.respond); return; }
     render();
     flyPlay(flyFrom, at, handSnap, res.respond);   // shrink+fly played cards to their timeline cells, then tier-bloom
+    if(goalJustMet){ run.goalReached = true; setTimeout(()=>{ if(run && !run.done && !run.goalAck) showGoalPrompt(); }, 420); }   // let the note land, then offer: finish & score, or keep building
   }
   function discardHand(){
     if(run.discardsLeft <= 0) return;
@@ -1475,6 +1480,41 @@
     const mv = run.movement;
     if(mv>=MAX_MOVEMENT || mv!==persist.progress.movement) return;   // only the reached frontier advances
     if(gateStatus(mv).met){ persist.progress.movement = mv+1; run.advancedTo = mv+1; savePersist(); }
+  }
+  // The per-run GOAL that stops the song (campaign only): the current movement's gate, met THIS run.
+  // (gateStatus reads per-run state now — gatePitch for M1, the run counters for M2–M7.) Free Play = no goal.
+  function runGoalMet(){ return !!(run && run.mode==="campaign" && gateStatus(run.movement).met); }
+  // M1 pitch-accuracy score (the "how close" readout): average per-note nearness over the run's responses,
+  // where a response d semitones off = max(0, 1 − d/12). Null until you've answered at least one call.
+  function pitchAccuracy(){
+    const log = (run && run.respondLog) || [];
+    if(!log.length) return null;
+    const avg = log.reduce((s,d)=>s+Math.max(0,1-d/12),0)/log.length;
+    return Math.round(avg*100);
+  }
+  function accuracyGrade(pct){ return pct>=90?"Perfect ear!":pct>=80?"Great!":pct>=65?"Good":pct>=50?"Getting there":"Keep practicing"; }
+  // The goal-reached choice: finish & see the score, or keep building the song (then a Finish button appears).
+  function showGoalPrompt(){
+    const acc = pitchAccuracy();
+    const accLine = (run.movement===1 && acc!=null)
+      ? `<p class="big" style="color:var(--gold)">🎯 Pitch accuracy so far: <b>${acc}%</b> — ${accuracyGrade(acc)}</p>` : "";
+    const goal = MOVEMENTS[run.movement].element;
+    $overlay.innerHTML = `
+      <div class="overlay"><div class="modal center">
+        <h2>🎯 Goal reached!</h2>
+        <p>You completed the <b>${goal}</b> goal — nicely done. Cap it off, or keep building your song for a bigger performance.</p>
+        ${accLine}
+        <div class="cta">
+          <button class="btn play" id="b-goalfinish">🏁 Finish &amp; score</button>
+          <button class="btn ghost" id="b-goalkeep">✏️ Keep building</button>
+        </div>
+      </div></div>`;
+    document.getElementById("b-goalfinish").addEventListener("click", ()=>{ $overlay.innerHTML=""; finishRun(); });
+    document.getElementById("b-goalkeep").addEventListener("click", ()=>{
+      run.goalAck = true; $overlay.innerHTML="";
+      if(callActive()) newCall(0.2);   // resume M1 calls so you can keep answering
+      render();
+    });
   }
 
   /* ================= Muse draft ================= */
@@ -1825,7 +1865,9 @@
         <button class="btn play" id="b-play" ${canPlay?"":"disabled"}>▶ Play Hand</button>
         <button class="btn disc" id="b-disc" ${(canPlay&&run.discardsLeft>0)?"":"disabled"}>Discard (${run.discardsLeft})</button>
         <button class="btn ghost" id="b-sort">Sort by pitch</button>
-        <button class="btn ghost" id="b-finish" ${filledBars()>0?"":"disabled"}>✓ Finish song</button>
+        ${(run.mode==="free" || run.goalAck)
+          ? `<button class="btn ghost" id="b-finish" ${filledBars()>0?"":"disabled"}>✓ Finish song</button>`
+          : ""}
       </div>
       <div class="muses">${musesHTML()}</div>`;
     // wire
@@ -1834,7 +1876,8 @@
     });
     document.getElementById("b-play").addEventListener("click", playHand);
     document.getElementById("b-disc").addEventListener("click", discardHand);
-    document.getElementById("b-finish").addEventListener("click", finishRun);   // player ends the performance when they like
+    const bf = document.getElementById("b-finish");
+    if(bf) bf.addEventListener("click", finishRun);   // Free Play always; Campaign after "keep building"
     const bh = document.getElementById("b-hear");
     if(bh) bh.addEventListener("click", ()=>{ audio(); soundCall(); });   // replay the M1 call target
     // loop grid: click any cell/label to aim the write cursor at that tick (append/overwrite from there)
@@ -1956,7 +1999,8 @@
     $game.innerHTML = `
       <div class="gigbar center">
         <p class="big">Play cards that are <b>notes</b>. Combine them into <b>chords &amp; scales</b> —
-        the more in-key, consonant, and resolved, the more <b>Applause</b> you score. Beat the threshold to finish your set.</p>
+        the more in-key, consonant, and resolved, the more <b>Applause</b> you score. In <b>Campaign</b>, reach
+        each movement's goal to advance; in <b>Free Play</b>, build freely and finish when you like.</p>
         <div class="cta" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
           <button class="btn" id="b-campaign" ${capped?"disabled":""}>${capped?"No runs left today":`▶ Campaign · Movement ${mv} — ${mvName}`}</button>
           <button class="btn ghost" id="b-free" ${capped?"disabled":""} title="Every mechanic unlocked (today's full game)">Free Play</button>
@@ -2065,15 +2109,19 @@
     const runsLeft = runsLeftToday();
     const alreadySaved = !!run.saved;          // Phase 4: one whole-run song per run
     const canSave = filledBars() > 0;
+    const acc = pitchAccuracy();               // M1 "how close" score (null if no calls answered)
+    const accLine = (run && run.movement===1 && acc!=null)
+      ? `<p class="big" style="color:var(--gold)">🎯 Pitch accuracy: <b>${acc}%</b> — ${accuracyGrade(acc)}</p>` : "";
     $overlay.innerHTML = `
       <div class="overlay"><div class="modal center">
         <h2>🎉 Performance complete!</h2>
+        ${accLine}
         ${run && run.advancedTo
           ? `<p class="big" style="color:var(--good)">🎓 Movement complete — unlocked <b>M${run.advancedTo} ${MOVEMENTS[run.advancedTo].element}</b>! Next Campaign run starts there.</p>`
           : (run && run.mode==="campaign" && run.movement<MAX_MOVEMENT
               ? (run.movement===1
-                  ? `<p class="hint">Play every in-key letter to advance to <b>M2 ${MOVEMENTS[2].element}</b> — progress is kept between runs:</p>${pitchTrackerHTML()}`
-                  : `<p class="hint">${gateStatus(run.movement).label} — meet it to advance to <b>M${run.movement+1} ${MOVEMENTS[run.movement+1].element}</b>.</p>`)
+                  ? `<p class="hint">Play all 7 in-key letters (A–G) in one run to complete <b>M1 Pitch</b> and unlock <b>M2 ${MOVEMENTS[2].element}</b>:</p>${pitchTrackerHTML()}`
+                  : `<p class="hint">${gateStatus(run.movement).label} — meet it in one run to unlock <b>M${run.movement+1} ${MOVEMENTS[run.movement+1].element}</b>.</p>`)
               : "")}
         <p>You performed a <b>${filledBars()}</b>-note song for <b>${run.runScore}</b> applause. Every played chord is inscribed in your Codex.</p>
         <p class="big">Best hand: <b>${persist.bestApplause}</b> · Renown Lv <b>${renownLevel(persist.totalApplause)}</b></p>

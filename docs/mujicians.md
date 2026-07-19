@@ -352,8 +352,9 @@ The first slice of the frame, shipped in `mujicians.html`:
   close / 👍 close / far`) and the preview shows a matching **tier tag** for the currently-selected card, so
   "you've got it" reads *before* you play. Reduced-motion drops the bloom/word (the chime + text stamps remain).
 - **Scope / firewall.** `callActive()` is M1-campaign-only, so **Free Play and M2–M7 are untouched** (they
-  don't carry the `respond` term). The existing **M1 gate** (catalog the 7 in-key letters) is unchanged and
-  still fills naturally as you answer random in-key calls.
+  don't carry the `respond` term). The **M1 gate** (catalog the 7 in-key letters) is now the run's **goal**
+  that stops the song — see **[Run goals (BUILT 2026-07-19)](#run-goals--each-campaign-run-has-a-finish-line-built-2026-07-19)**;
+  it fills naturally as you answer random in-key calls, and the run's pitch-accuracy score reports how close.
 - **Saved song = your notes only (decided).** The call is an **off-timeline audio+visual cue**, never written
   to the loop — so `snapshotEvents` captures only your responses. See [the decision above](#whether-the-call-joins-the-saved-song--decided-2026-07-19-only-your-notes).
 - **Scheduler look-ahead race — fixed (2026-07-19).** Placing a note into the backing loop's already-committed
@@ -842,6 +843,44 @@ Movement 1 (Pitch)**.)*
 
 ---
 
+## Run goals — each campaign run has a finish line (BUILT 2026-07-19)
+
+> **Status: ✅ BUILT (2026-07-19)** in `mujicians.html`. Gives **Campaign** runs a goal that stops the song
+> (with a keep-building escape hatch), while **Free Play stays open-ended**. Partially reverses the
+> [Open-ended pillar](#open-ended-performance--no-threshold-you-decide-when-youre-done-built) for Campaign
+> only. Four decisions locked with the dev.
+
+**Why.** Open-ended is right for the *creative* mode, but a *teaching* run wants a finish line — a clear "you
+did it." So each campaign movement's run now has a **goal = that movement's existing gate**, and meeting it
+ends (or offers to end) the performance and scores it.
+
+**As built:**
+- **The goal, per-run.** Every campaign movement stops at its gate, tracked **this run**: M1 = play all 7
+  in-key letters A–G (`run.gatePitch`); M2 = each note value; M3 = soft/med/loud; M4 = 3 intervals + a run;
+  M5 = 3 triads + a cadence; M6 = 4 blends; M7 = an A·B·A. `runGoalMet()` = `gateStatus(movement).met`, and
+  `gateStatus` now reads **per-run** state (M1's case uses `run.gatePitch`; M2–M7 already used run counters).
+  *(M1 no longer accumulates letters across runs — `pitchLettersGot()`/`collectPitchLetter()` still write
+  `persist…gates.pitch` but it's **legacy/vestigial**; the home hangman previews the goal empty (fresh each
+  run).)*
+- **The choice prompt.** When the goal is first met mid-run, `showGoalPrompt()` overlays **🏁 Finish & score**
+  vs **✏️ Keep building** (forced choice, ~420 ms after the note lands so it's seen). *Finish* → `finishRun()`.
+  *Keep building* → `run.goalAck = true`, dismiss, resume M1 calls, keep playing. `run.goalReached`/`goalAck`
+  gate the one-shot (`goalJustMet` in `playHand`).
+- **Finish button.** **Removed from Campaign** — it renders only when `run.mode==="free" || run.goalAck`
+  (Free Play always; Campaign only after *Keep building*). Free Play is otherwise unchanged (open-ended, stage
+  space the only limit).
+- **The "how close" score (M1).** `pitchAccuracy()` = average per-note nearness over `run.respondLog`
+  (each response's `|played − call|`; `d` off = `max(0, 1 − d/12)`) → a `%`; `accuracyGrade()` maps it to a
+  word (Perfect ear! / Great! / Good / …). Shown on the goal prompt and the end overlay ("🎯 Pitch accuracy:
+  87% — Great!"). Per the dev's pick this is the **simple grade + %** (no per-tier breakdown). Other movements
+  show the standard completion report.
+- **Advancement** now requires meeting the goal **in one run** (`maybeAdvance` → `gateStatus(mv).met`, now
+  per-run). Stage-full auto-finish is still the hard cap (rarely hit before the goal).
+
+**Deferred / notes:** per-movement calls for M2–M7 aren't built yet, so those goals are demonstrate-the-gate,
+not call-and-response; the M1 accuracy readout is M1-only. (Home intro copy updated in the same pass to
+describe Campaign-goal vs Free-Play-open, replacing the stale "Beat the threshold" line.)
+
 ## Open-ended performance — no threshold, you decide when you're done (BUILT)
 
 > **Status: ✅ core BUILT (2026-07-18)** in `mujicians.html`. Supersedes **Removing gigs → Fork 1** (which
@@ -850,6 +889,17 @@ Movement 1 (Pitch)**.)*
 > when the **loop runs out of space** — never because a score gate cut them off. The *endless/no-threshold*
 > option that Fork 1 surfaced-but-rejected is now the shipped direction. **One planned piece was
 > deliberately deferred:** persisting the per-run gate counters across runs (see *As built* → deferred).
+>
+> **⚠️ AMENDED 2026-07-19 — open-ended is now FREE-PLAY-ONLY; Campaign gets a per-run GOAL that stops the
+> song.** Playtest: a *learning* run wants a finish line. So each **campaign** run now ends when you meet
+> that movement's **goal** (its existing gate, tracked **per-run** — M1 = play all 7 letters A–G this run;
+> M2 = each note value; etc.), which pops a **choice: 🏁 Finish & score, or ✏️ Keep building** (dismiss and
+> play on). The **✓ Finish button is removed from Campaign** (it only reappears after you choose *Keep
+> building*); **Free Play keeps the Finish button and stays fully open-ended** (no goal, no prompt). M1's
+> "how close" **pitch-accuracy score** (avg per-note nearness → `%` + a grade word) shows on the goal prompt
+> and the end overlay. Advancement now requires meeting the goal **in one run** (M1 no longer accumulates
+> letters across runs — `persist…gates.pitch` is legacy/vestigial; `run.gatePitch` is the live set). See
+> **[Run goals (BUILT 2026-07-19)](#run-goals--each-campaign-run-has-a-finish-line-built-2026-07-19)**.
 
 **Why (the frustration).** The single applause threshold ends the run the moment you cross it — which
 repeatedly **cut the dev off mid-song while a performance was going well**. A tool whose whole payoff is
