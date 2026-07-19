@@ -648,10 +648,48 @@ figure you earn once should be **permanent**, and a burn-once Tarot you can't re
 operation lives inside the Joker**. Generic **Accidental/Tarot cards** stay a separate shop consumable that
 these character-Muses can generate; the character is the *master* of the operation, not the disposable card.
 
+### Level narration — mentor intros (Dee Composer) — BUILT (2026-07-19)
+
+> **Status: ✅ BUILT** in `mujicians.html` — the **mentor / tutorial** role above, shipped first (as a
+> Balatro-joker-style intro card). Realizes the "each movement is a chapter/mentor" hook. Forks decided with
+> the dev (2026-07-19): intro **before** the Muse draft · **full first time → compact-on-repeat** · **intro
+> card only** (no in-play follower yet) · **Dee narrates every level for now**, framework ready for a different
+> mentor per level later.
+
+At the start of a **campaign** run, before the Muse draft, a **character card + speech bubble** explains the
+movement's **music theory** and the **lesson's task** (kid-friendly voice — Dee is a little girl). **Free Play
+shows no intro** (it's the open creative mode; teaching is campaign-only — same firewall as the call system).
+
+- **Two data registries (both swap-friendly).** `CHARACTERS` — each entry's **art is a token**
+  (`{kind:"emoji", value:"🍄"}` now; change to `{kind:"sprite", src:…}` to move to **pixel art** with no other
+  edits — `charArtHTML()` is the only place art is drawn). `LESSON_INTROS` — keyed by movement (+ sub-level:
+  `"m1"`, `"m1:ear"`, `"m2"`…`"m7"`), each carries **`char`** (who speaks — the seam for a per-level mentor;
+  all `dee` for now, the accidental sub-levels will point to Sharpist/Sir Flat/Ranger), a **`title`** +
+  **`theory[]`** paragraphs + a **`task`** line (the full first-time script), and a **`compact`** one-liner.
+- **Flow.** `startRun()` → **`offerIntro()`** (was `offerDraft()`) → `screen="intro"` (rendered over the empty
+  stage, mirroring the draft) → **"Got it — let's play ▸"** → `offerDraft()` → `pickMuse()` → `startPlay()`.
+  `offerIntro()` falls straight through to the draft when there's no lesson (Free Play).
+- **Full first-time → compact on repeat.** `persist.progress.seenIntros[key]` records that you've seen a level.
+  First time = the full script; after that = the `compact` one-liner with a **"more ▾"** that expands the full
+  text inline (`introExpanded`). `m1` and `m1:ear` are **distinct keys**, so the by-ear level gets its own
+  first-time full intro.
+- **Presentation.** Current-style CSS (`.charcard`/`.charart`/`.speech` with a bubble tail; reuses the theme
+  vars). Pixel-ready: art is a token and the frame is plain CSS, so a future `.pixel` sprite skin is additive.
+  Responsive (stacks under ~520px); reduced-motion drops the bubble pop.
+- **Deferred (unchanged):** a persistent **Jiminy-style corner follower** + in-play barks; **pixel sprite** art
+  + mood variants; **dedicated mentors** for M2–M7 and the accidental sub-levels (swap the `char` field); Dee as
+  an **earnable Muse** (mentor-only for now).
+- **Deferred — dialogue delivery (dev preference, 2026-07-19):** the intro currently renders as a **modal
+  dialog** (the speech bubble lives inside a blocking overlay). Eventually the dev wants the dialogue to come
+  from a **speech bubble anchored to Dee in-scene** (the follower speaking), **not** a modal dialog box. The
+  current bubble markup (`.speech` + tail) is reusable as-is; the change is *where it's anchored* (to the
+  on-screen character rather than centred in an overlay). This is fine as a modal for now.
+
 ### The starting cast (more to come from the dev)
 
 | Character | Class / form | Concept | Lesson home | Muse effect (sketch) |
 |---|---|---|---|---|
+| **Dee Composer** | little girl, mushroom cap (Jiminy-Cricket-style follower) | pitch naturals — the notes, in-key, ear-training | M1 Pitch · Naturals + by-ear | **mentor only for now** (narrates the lesson intro — see [Level narration](#level-narration--mentor-intros-dee-composer--built-2026-07-19)); a Muse effect TBD |
 | **Sharpist** | jester | sharps (♯ — raise/brighten) | M1 Pitch · Sharps level | grants the ♯ power; rewards sharp-resolutions (♯→ up a semitone) |
 | **Sir Flat** | knight | flats (♭ — lower/ground) | M1 Pitch · Flats level | grants the ♭ power; rewards flat-resolutions (♭→ down a semitone) |
 | **Ranger** | villain (Ranger class) | naturals (♮ — cancel) | M1 Pitch · ♮ boss | **captured** by defeating the ♮ boss; grants the ♮ (cancel) power |

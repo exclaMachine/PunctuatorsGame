@@ -142,6 +142,31 @@
   .callbar .clreveal .rvyou{color:var(--dim);font-size:13px;font-weight:600}
   @keyframes revealpop{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
 
+  /* level narration — mentor intro card + speech bubble (current style; art is a swap token → .pixel later) */
+  .introwrap{display:flex;gap:16px;align-items:flex-start;max-width:560px;text-align:left}
+  .charcard{flex:0 0 auto;width:100px;display:flex;flex-direction:column;align-items:center;gap:8px;
+    padding:14px 10px;border-radius:14px;background:var(--panel);border:2px solid var(--edge);box-shadow:0 4px 0 rgba(0,0,0,.35)}
+  .charart{display:flex;align-items:center;justify-content:center;width:72px;height:72px}
+  .charart.emoji{font-size:54px;line-height:1}
+  .charart.pixel{width:72px;height:72px;image-rendering:pixelated;object-fit:contain}
+  .charname{font-size:12px;font-weight:800;color:var(--ink);text-align:center}
+  .speech{position:relative;flex:1 1 auto;background:var(--panel);border:2px solid var(--edge);border-radius:14px;
+    padding:14px 16px;box-shadow:0 4px 0 rgba(0,0,0,.35);animation:speechpop .28s cubic-bezier(.34,1.56,.64,1)}
+  .speech::before{content:"";position:absolute;left:-12px;top:26px;border:7px solid transparent;border-right-color:var(--edge)}
+  .speech::after{content:"";position:absolute;left:-9px;top:27px;border:6px solid transparent;border-right-color:var(--panel)}
+  .speech .ltitle{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+  .speech .ltheory{margin:0 0 8px;font-size:14px;line-height:1.5;color:var(--ink)}
+  .speech .ltask{margin:8px 0 4px;font-size:14px;line-height:1.5;color:var(--ink);
+    background:rgba(255,215,106,.12);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:7px 10px}
+  .speech .ltasklbl{font-weight:800;color:var(--gold)}
+  .speech .lcompact{margin:0 0 8px;font-size:15px;font-weight:700;line-height:1.5;color:var(--ink)}
+  .speech .lmore{padding:3px 10px;font-size:12px}
+  .speech .cta{margin-top:12px}
+  @keyframes speechpop{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){ .speech{animation:none} }
+  @media (max-width:520px){ .introwrap{flex-direction:column;align-items:center;text-align:center}
+    .speech::before,.speech::after{display:none} }
+
   .hand{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:104px;margin:6px 0 14px}
   .card{width:60px;height:90px;border-radius:9px;cursor:pointer;position:relative;
     background:#fff;border:2px solid rgba(0,0,0,.35);box-shadow:0 3px 0 rgba(0,0,0,.35);
@@ -797,6 +822,7 @@
     if(!persist.progress || typeof persist.progress!=="object") persist.progress = { movement:1, gates:{} };  // campaign progress (additive)
     persist.progress.movement = Math.max(1, Math.min(MAX_MOVEMENT, +persist.progress.movement || 1));
     if(!persist.progress.gates || typeof persist.progress.gates!=="object") persist.progress.gates = {};
+    if(!persist.progress.seenIntros || typeof persist.progress.seenIntros!=="object") persist.progress.seenIntros = {};  // per-level mentor-intro "seen" flags → full first time, compact after
     persist.bpm = Math.max(MIN_BPM, Math.min(MAX_BPM, +persist.bpm || DEFAULT_BPM));  // global comfort tempo
     if(persist.day !== todayStr()){ persist.day = todayStr(); persist.runsUsed = 0; savePersist(); }
     // one-time repair: an earlier bug burned runs on a failed render; refund them once.
@@ -1383,7 +1409,7 @@
       pitchLevel: opts.pitchLevel || "naturals",   // M1 sub-level: "naturals" (call shown) or "ear" (call hidden — match by ear)
       callReveal:null,          // by-ear: the just-answered call to name in the callbar until the next call
       goalReached:false, goalAck:false };   // goalReached = prompt shown; goalAck = player chose "keep building"
-    offerDraft();   // draft one Muse, once, at the start of the run
+    offerIntro();   // mentor explains the lesson (campaign only), then the Muse draft, then play
   }
   function startPlay(){
     run.drawPile = shuffle([...run.deck]);
@@ -1549,6 +1575,102 @@
       if(callActive()) newCall(0.2);   // resume M1 calls so you can keep answering
       render();
     });
+  }
+
+  /* ================= level narration — mentor intros (Dee Composer 🍄) =================
+     A card + speech bubble explains the movement's music theory + the lesson's task at run start,
+     BEFORE the Muse draft (campaign only; Free Play skips it). Full script the first time you see a
+     level, a compact one-liner (with a "more" expand) on repeat. See docs/mujicians.md. */
+  // Character registry — art is a SWAPPABLE TOKEN so emoji → pixel sprite is a one-line change later.
+  const CHARACTERS = {
+    dee: { id:"dee", name:"Dee Composer", art:{ kind:"emoji", value:"🍄" } },   // future: {kind:"sprite", src:"art/dee.png"}
+  };
+  // Per-level lesson intros keyed by movement (+ sub-level). `char` = who speaks (swap per level later —
+  // the accidental sub-levels will get Sharpist/Sir Flat/Ranger); theory[] = bubble paragraphs; task = the
+  // "your turn" line; compact = the one-liner shown once you've seen the level. M2–M7 are provisional Dee text.
+  const LESSON_INTROS = {
+    "m1": { char:"dee", title:"Pitch — the notes themselves",
+      theory:[ "Every colour is a musical note — A to G, just like letters!",
+               "Notes that belong together are <b>in key</b>. We're in <b>C major</b>, so all seven colours sound happy together." ],
+      task:"I'll hum a note on the breeze 🌬️ — play the colour that matches it. The closer you get, the more applause!",
+      compact:"🎧 Match the note I hum — the closest colour wins!" },
+    "m1:ear": { char:"dee", title:"Pitch by Ear — no peeking!",
+      theory:[ "Now the tricky part: I <b>won't show</b> you the note — I'll only sing it.",
+               "This is <b>ear training</b> — naming a sound just by hearing it, like real musicians do." ],
+      task:"Listen, picture the colour in your head, then play it. I'll tell you after how close you were!",
+      compact:"🙈 By ear — I only <b>sing</b> the note. Play what you hear!" },
+    "m2": { char:"dee", title:"Rhythm — the beat of the ground",
+      theory:[ "Music moves in <b>time</b>. Each note can be short or long — a <b>quarter</b> ♩, a <b>half</b> 𝅗𝅥, or a whole <b>𝅝</b>.",
+               "Mixing long and short notes — and <b>rests</b> (silences!) — makes a rhythm you can feel." ],
+      task:"Pick a note length before each play, and vary it — a steady groove with some variety scores best.",
+      compact:"🥁 Set each note's length — mix long, short & rests for a groove!" },
+    "m3": { char:"dee", title:"Dynamics — loud and soft",
+      theory:[ "The same note can whisper or shout! <b>p</b> means soft (piano), <b>f</b> means loud (forte).",
+               "A big card is loud, a small card is soft — <b>size is volume</b>." ],
+      task:"Play soft, medium AND loud across your song — contrast is what makes it come alive.",
+      compact:"🔊 Change how LOUD each note is — soft <i>p</i> to loud <i>f</i>!" },
+    "m4": { char:"dee", title:"Melody — a line that sings",
+      theory:[ "Play notes one after another and you get a <b>melody</b> — a tune!",
+               "Notes that step to their neighbours sound smooth; big jumps sound bold. Three steps in a row make a <b>scale run</b>." ],
+      task:"Build a little tune, note by note. Stepwise moves and a scale run score the best.",
+      compact:"🎶 Play notes in a row to make a melody — smooth steps sing!" },
+    "m5": { char:"dee", title:"Harmony — notes stacked together",
+      theory:[ "Stack notes so they sound at the same time and they become a <b>chord</b>. Three make a <b>triad</b>.",
+               "Chords that <b>resolve</b> home to the tonic sound finished and satisfying." ],
+      task:"Stack consonant triads, and land a cadence back on the home note.",
+      compact:"🎹 Stack notes into chords — build triads that resolve home!" },
+    "m6": { char:"dee", title:"Timbre — the colour of sound",
+      theory:[ "The same note sounds different on a piano than a guitar — that's <b>timbre</b>, an instrument's voice.",
+               "Blend different instrument voices together for a richer sound." ],
+      task:"Mix notes from different instruments to earn timbre blends.",
+      compact:"🎨 Blend different instrument voices for a richer sound!" },
+    "m7": { char:"dee", title:"Structure — the shape of a song",
+      theory:[ "A whole song has a <b>form</b>: state an idea (<b>A</b>), go somewhere new (<b>B</b>), then <b>return to A</b>.",
+               "Coming back to your first idea is what makes a song feel whole." ],
+      task:"Compose an <b>A · B · A</b> — a phrase, a contrast, then bring the first phrase back.",
+      compact:"🏛️ Shape a song: state A, contrast with B, then return to A!" },
+  };
+  function lessonKey(){ return "m"+run.movement + (run.movement===1 && run.pitchLevel==="ear" ? ":ear" : ""); }  // generalizes to :sharps/:flats later
+  function currentLesson(){ return (run && run.mode==="campaign") ? LESSON_INTROS[lessonKey()] : null; }   // Free Play = no lesson
+  // Render a character's art — the ONE place art is drawn, so emoji → pixel sprite is a token swap.
+  function charArtHTML(char){
+    const a = char.art;
+    if(a.kind==="sprite") return `<img class="charart pixel" src="${a.src}" alt="${esc(char.name)}">`;
+    return `<div class="charart emoji">${a.value}</div>`;
+  }
+  let introExpanded = false;   // repeat-run compact intros: whether the "more ▾" full text is expanded
+  function offerIntro(){
+    if(!currentLesson()){ offerDraft(); return; }   // Free Play / no lesson for this level → straight to the draft
+    introExpanded = false;
+    screen = "intro"; render();
+  }
+  function dismissIntro(){
+    const key = lessonKey();
+    if(!persist.progress.seenIntros[key]){ persist.progress.seenIntros[key] = true; savePersist(); }   // full once, compact after
+    offerDraft();
+  }
+  function renderIntroOverlay(){
+    const lesson = currentLesson(); if(!lesson){ offerDraft(); return; }
+    const char = CHARACTERS[lesson.char] || CHARACTERS.dee;
+    const seen = !!persist.progress.seenIntros[lessonKey()];
+    const compact = seen && !introExpanded;   // one-liner on repeat, expandable via "more"
+    const body = compact
+      ? `<p class="lcompact">${lesson.compact}</p><button class="btn ghost lmore" id="b-lmore">more ▾</button>`
+      : `<div class="ltitle">${esc(lesson.title)}</div>
+         ${lesson.theory.map(t=>`<p class="ltheory">${t}</p>`).join("")}
+         <p class="ltask"><span class="ltasklbl">Your turn:</span> ${lesson.task}</p>
+         ${seen?`<button class="btn ghost lmore" id="b-lmore">less ▴</button>`:""}`;
+    $overlay.innerHTML = `
+      <div class="overlay"><div class="modal introwrap">
+        <div class="charcard">${charArtHTML(char)}<div class="charname">${esc(char.name)}</div></div>
+        <div class="speech">
+          ${body}
+          <div class="cta"><button class="btn play" id="b-introgo">Got it — let's play ▸</button></div>
+        </div>
+      </div></div>`;
+    document.getElementById("b-introgo").addEventListener("click", dismissIntro);
+    const lm = document.getElementById("b-lmore");
+    if(lm) lm.addEventListener("click", ()=>{ introExpanded = !introExpanded; renderIntroOverlay(); });
   }
 
   /* ================= Muse draft ================= */
@@ -2102,6 +2224,7 @@
     $overlay.innerHTML = "";
     if(screen==="home" || screen==="capped"){ renderHome(); return; }
     if(screen==="gig"){ renderGig(); return; }
+    if(screen==="intro"){ renderGig(); renderIntroOverlay(); return; }   // mentor lesson intro, over the (empty) stage
     if(screen==="draft"){ renderGig(); renderDraftOverlay(); return; }
     if(screen==="save"){ renderGig(); renderSaveOverlay(); return; }
     if(screen==="win"){ renderEndOverlay(); return; }   // "win" = the single performance-complete screen (no win/lose)
