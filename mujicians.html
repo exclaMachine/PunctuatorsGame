@@ -107,16 +107,19 @@
   .callbar .clhint{font-size:12px;color:var(--dim)}
   /* live pre-commit verdict on the selected card — the bar itself glows + a stamp names the tier */
   .callbar.cb-exact{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 16px rgba(255,215,106,.35)}
-  .callbar.cb-near{border-color:var(--good)}
+  .callbar.cb-soclose{border-color:#ffb14e;box-shadow:0 0 12px rgba(255,177,78,.28)}
+  .callbar.cb-close{border-color:var(--good)}
   .callbar .cstamp{font-weight:800;font-size:13px;padding:2px 9px;border-radius:999px}
   .callbar .cs-exact{color:#0a0a12;background:var(--gold)}
-  .callbar .cs-near{color:#06251a;background:var(--good)}
-  .callbar .cs-off{color:var(--dim);border:1px solid var(--edge)}
+  .callbar .cs-soclose{color:#2a1400;background:#ffb14e}
+  .callbar .cs-close{color:#06251a;background:var(--good)}
+  .callbar .cs-far{color:var(--dim);border:1px solid var(--edge)}
   /* preview proximity tag mirrors the tier so the readout matches the pop */
   .preview .rtier{margin-left:8px;font-weight:800;font-size:12px;padding:1px 8px;border-radius:999px;vertical-align:middle}
   .preview .rt-exact{color:#0a0a12;background:var(--gold)}
-  .preview .rt-near{color:#06251a;background:var(--good)}
-  .preview .rt-off{color:var(--dim);border:1px solid var(--edge)}
+  .preview .rt-soclose{color:#2a1400;background:#ffb14e}
+  .preview .rt-close{color:#06251a;background:var(--good)}
+  .preview .rt-far{color:var(--dim);border:1px solid var(--edge)}
 
   .hand{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:104px;margin:6px 0 14px}
   .card{width:60px;height:90px;border-radius:9px;cursor:pointer;position:relative;
@@ -182,22 +185,26 @@
   .pile .pilecount{font-size:20px;font-weight:800;color:#fff;line-height:1}
   @keyframes cellbloom{0%{transform:scale(1.9);filter:brightness(2.2)}60%{transform:scale(1.15)}100%{transform:scale(1);filter:brightness(1)}}
   .lgcell.bloom{animation:cellbloom .48s cubic-bezier(.22,1,.36,1);z-index:3;position:relative}
-  /* M1 call-and-response: the bloom's SIZE/GLOW scales with how close you landed (exact ≫ near ≫ off) —
-     these follow .lgcell.bloom in source order so they win the equal-specificity tie. */
+  /* M1 call-and-response: the bloom's SIZE/GLOW scales with pitch nearness (exact ≫ so-close ≫ close ≫ far),
+     gold→amber→green→gray. These follow .lgcell.bloom in source order so they win the equal-specificity tie. */
   @keyframes bloomExact{0%{transform:scale(2.5);filter:brightness(3)}55%{transform:scale(1.22)}100%{transform:scale(1);filter:brightness(1)}}
-  @keyframes bloomNear{0%{transform:scale(1.75);filter:brightness(2)}60%{transform:scale(1.12)}100%{transform:scale(1);filter:brightness(1)}}
-  @keyframes bloomOff{0%{transform:scale(1.25);filter:brightness(1.3) saturate(.35)}100%{transform:scale(1);filter:brightness(1)}}
+  @keyframes bloomSoclose{0%{transform:scale(2);filter:brightness(2.4)}58%{transform:scale(1.16)}100%{transform:scale(1);filter:brightness(1)}}
+  @keyframes bloomClose{0%{transform:scale(1.6);filter:brightness(1.9)}60%{transform:scale(1.1)}100%{transform:scale(1);filter:brightness(1)}}
+  @keyframes bloomFar{0%{transform:scale(1.25);filter:brightness(1.3) saturate(.35)}100%{transform:scale(1);filter:brightness(1)}}
   .lgcell.bloom.bloom-exact{animation:bloomExact .62s cubic-bezier(.22,1,.36,1);z-index:5;
     box-shadow:0 0 0 3px var(--gold),0 0 24px 7px rgba(255,215,106,.85)}
-  .lgcell.bloom.bloom-near{animation:bloomNear .5s cubic-bezier(.22,1,.36,1);z-index:4;
+  .lgcell.bloom.bloom-soclose{animation:bloomSoclose .55s cubic-bezier(.22,1,.36,1);z-index:4;
+    box-shadow:0 0 0 2px #ffb14e,0 0 20px 5px rgba(255,177,78,.6)}
+  .lgcell.bloom.bloom-close{animation:bloomClose .5s cubic-bezier(.22,1,.36,1);z-index:4;
     box-shadow:0 0 15px 3px rgba(143,240,182,.5)}
-  .lgcell.bloom.bloom-off{animation:bloomOff .34s ease-out;box-shadow:0 0 0 1px rgba(150,155,175,.45)}
+  .lgcell.bloom.bloom-far{animation:bloomFar .34s ease-out;box-shadow:0 0 0 1px rgba(150,155,175,.45)}
   /* the floating rating word that rises off a just-played cell */
   .ratingpop{position:fixed;transform:translate(-50%,-50%);z-index:16;pointer-events:none;font-weight:900;
     white-space:nowrap;text-shadow:0 2px 7px rgba(0,0,0,.7);animation:ratingRise .95s cubic-bezier(.2,1,.3,1) forwards}
   .ratingpop.rp-exact{font-size:27px;color:var(--gold);letter-spacing:.02em}
-  .ratingpop.rp-near{font-size:20px;color:var(--good)}
-  .ratingpop.rp-off{font-size:15px;color:var(--dim);font-weight:700}
+  .ratingpop.rp-soclose{font-size:23px;color:#ffb14e}
+  .ratingpop.rp-close{font-size:19px;color:var(--good)}
+  .ratingpop.rp-far{font-size:15px;color:var(--dim);font-weight:700}
   @keyframes ratingRise{0%{opacity:0;transform:translate(-50%,-25%) scale(.6)}
     18%{opacity:1;transform:translate(-50%,-58%) scale(1.18)}
     42%{transform:translate(-50%,-74%) scale(1)}
@@ -653,17 +660,22 @@
     // theory mult bonuses — each gated by the movement that teaches it (score grows, never rewrites)
     const allInKey = cards.every(c => gig.key.includes(c.pc));
     if(inkeyOn && allInKey && cards.length>=2){ mult += 1; lines.push("in key +1"); }                 // 'inkey' (M1)
-    // respond (M1 call-and-response): the computer plays a target note; you answer by matching its pitch.
-    // Graded by proximity — an EXACT match is the lesson (big pop); a consonant near-miss still SOUNDS
-    // good so it earns partial credit; a dissonant miss earns nothing. `respond` (exact/near/off) is the
-    // scoring-and-feedback tier — it drives the amped reward juice (tiered bloom + rating pop + chime),
-    // so close-vs-far now reads instantly instead of only nudging the applause bar. See docs/mujicians.md.
+    // respond (M1 call-and-response): the computer plays a target note; you answer by matching its PITCH.
+    // Scored by raw pitch nearness (NOT consonance — that's a later Melody lesson): the closer your note is
+    // to the call in semitones, the more you score. It ramps smoothly per-semitone and never hits zero, so
+    // every guess earns something; `respond` (exact/soclose/close/far) is the visual tier the reward juice
+    // (bloom / rating pop / chime) buckets into. See docs/mujicians.md.
     let respond = null;
     if(termOn("respond") && run && run.call && cards.length===1){
-      respond = respondTier(cards[0].pc);
-      if(respond==="exact"){ mult += 4; chips += 8; lines.push("🎯 matched the call"); }
-      else if(respond==="near"){ mult += 2; lines.push("consonant with the call +2"); }
-      // 'off' (semitone/tritone/m7…): no bonus — base score only, but the feedback still names it "off".
+      const d = Math.abs(cards[0].midi - run.call.midi);   // 0..11 semitones (M1 deck is one octave)
+      respond = respondTier(cards[0].midi);
+      const pm = Math.max(1, 5 - Math.floor((d+1)/2));      // proximity mult: 5·4·4·3·3·2·2·1… (floor 1 = never zero)
+      const pc = d===0 ? 8 : (d<=2 ? 4 : 0);                // bonus chips for a bullseye / very close
+      mult += pm; chips += pc;
+      lines.push(respond==="exact"   ? "🎯 nailed the pitch +"+pm
+               : respond==="soclose" ? "🔥 so close +"+pm
+               : respond==="close"   ? "👍 close +"+pm
+               :                       "getting warmer +"+pm);
     }
     // groove (M2): keep the beat, and reward rhythmic variety — this play's duration differing from the
     // previous timeline event's. (Timeline-aware; deepens in Stage 2 with syncopation / cross-loop consistency.)
@@ -834,19 +846,25 @@
      for now; later movements extend the frame (rhythm/melody/…). Free Play has no call. See docs/mujicians.md. */
   function callActive(){ return !!(run && run.mode==="campaign" && run.movement===1 && termOn("respond")); }
   function soundCall(when){ if(run && run.call) playTone(run.call.midi, "triangle", 0.7, when||0, 1); }   // piano-timbre target
-  // Proximity tier of a played pitch-class vs the current call: exact ≫ near (consonant) ≫ off. Single
-  // source of truth for BOTH scoring (score()'s respond term) and the reward feedback (bloom/pop/chime).
-  function respondTier(pc){
+  // Proximity tier by ABSOLUTE pitch distance (M1 = ear-training: match the pitch you hear). The M1 deck is
+  // one octave, so |played − call| is 0..11 semitones — a half-step is "so close," ~an octave is "far," and
+  // C4-vs-B4 (11) is the worst. NOTE: this is raw pitch nearness, NOT consonance — consonance is a later
+  // (Melody) lesson. Four tiers drive the reward juice; the score itself ramps per-semitone (see score()).
+  function respondTier(midi){
     if(!(run && run.call)) return null;
-    const iv = (pc - run.call.pc + 12) % 12;
-    return iv===0 ? "exact" : (CONSONANT_IV.has(iv) ? "near" : "off");
+    const d = Math.abs(midi - run.call.midi);
+    if(d===0) return "exact";
+    if(d<=2)  return "soclose";
+    if(d<=5)  return "close";
+    return "far";
   }
   // A reward tone layered just over your note when a call is live — its brightness/pitch tracks how close
-  // you landed, so an exact match "dings" and a miss "thunks". Scheduled ~as the played card blooms.
+  // you landed, so a bullseye "dings" and a far guess "thunks". Scheduled ~as the played card blooms.
   function respondChime(tier){
-    const spec = { exact:{midi:84,wave:"triangle",dur:0.5,vel:1.1},   // bright high ding (+ a third-above sparkle)
-                   near :{midi:79,wave:"sine",    dur:0.4,vel:0.75},  // softer, still sweet
-                   off  :{midi:52,wave:"sawtooth",dur:0.18,vel:0.5} }[tier];   // dull low thunk
+    const spec = { exact  :{midi:84,wave:"triangle",dur:0.5, vel:1.1},   // bright high ding (+ a third-above sparkle)
+                   soclose:{midi:81,wave:"triangle",dur:0.42,vel:0.9},   // still bright & eager
+                   close  :{midi:76,wave:"sine",    dur:0.38,vel:0.7},   // softer, encouraging
+                   far    :{midi:55,wave:"sawtooth",dur:0.2, vel:0.5} }[tier];   // dull low thunk (still scores a little)
     if(!spec) return;
     const when = ANIM.play/1000;   // land the reward roughly as the card lands + the cell blooms
     playTone(spec.midi, spec.wave, spec.dur, when, spec.vel);
@@ -1046,7 +1064,8 @@
     if(tier) floatRating(cell, tier);          // Balatro-style rating word rising off the cell
   }
   // A rating word that pops up off a just-played cell — the loud, unmissable "how close were you" cue.
-  const RATING = { exact:{txt:"✦ PERFECT! ✦",cls:"exact"}, near:{txt:"~ Nice ~",cls:"near"}, off:{txt:"· off ·",cls:"off"} };
+  const RATING = { exact:{txt:"✦ PERFECT! ✦",cls:"exact"}, soclose:{txt:"🔥 SO CLOSE!",cls:"soclose"},
+                   close:{txt:"👍 Close",cls:"close"}, far:{txt:"· far ·",cls:"far"} };
   function floatRating(cell, tier){
     if(reduceMotion()) return;
     const m = RATING[tier]; if(!m) return;
@@ -1628,8 +1647,8 @@
     const c = run.call;
     // live verdict on the currently-selected card, so you feel "you've got it" BEFORE committing.
     const sel = selectedCards();
-    const tier = sel.length===1 ? respondTier(sel[0].pc) : null;
-    const STAMP = { exact:"✓ match!", near:"≈ close", off:"✗ off" };
+    const tier = sel.length===1 ? respondTier(sel[0].midi) : null;
+    const STAMP = { exact:"✓ match!", soclose:"🔥 so close", close:"👍 close", far:"far" };
     const stamp = tier ? `<span class="cstamp cs-${tier}">${STAMP[tier]}</span>` : "";
     return `<div class="callbar${tier?" cb-"+tier:""}">
       <span class="clbl">🎧 Match this note</span>
@@ -1645,7 +1664,7 @@
     if(!cards.length) return `<span class="calc">Select up to ${maxSelect()} card${maxSelect()===1?"":"s"} to see the structure &amp; score…</span>`;
     const res = score(cards, RUN_KEY, run.muses);
     const bonus = res.lines.length ? " · <span class='m'>"+res.lines.join(", ")+"</span>" : "";
-    const RT = { exact:"✦ exact match", near:"consonant — close", off:"off — try nearer" };
+    const RT = { exact:"✦ exact pitch", soclose:"🔥 so close", close:"👍 close", far:"far — aim nearer" };
     const rtag = res.respond ? `<span class="rtier rt-${res.respond}">${RT[res.respond]}</span>` : "";
     return `<span class="app">${res.applause}</span>`+
            `<span class="struct">${res.cls.name}</span>${rtag}`+

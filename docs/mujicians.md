@@ -302,7 +302,7 @@ you'd played and read as disorienting.)*
 
 | # | Element | The **call** (computer plays…) | Your **response** | Scored on (graded proximity) |
 |---|---------|-------------------------------|-------------------|------------------------------|
-| **1** | **Pitch · Wind** | a target note "carried on the breeze" | play the matching pitch | pitch proximity — exact=full, semitone off=less, a 5th off=little |
+| **1** | **Pitch · Wind** | a target note "carried on the breeze" | play the matching pitch | **absolute pitch distance** — exact=full, a step off=nearly full, ~an octave off=least (NOT consonance — that's Melody) |
 | — | *M1 Sharps level* | a natural note | play the note **a half-step above** & resolve up | the ♯→up [chromatic resolution](#accidentals--the-sharps--flats-runs--the--boss-planned) |
 | — | *M1 Flats level* | a natural note | play the note **a half-step below** & resolve down | the ♭→down resolution |
 | **2** | **Rhythm · Earth** | a rhythm pattern (the ground's pulse) | clap it back — same onsets/durations | onset + duration match (a played rest is a rhythmic event) |
@@ -324,29 +324,33 @@ The first slice of the frame, shipped in `mujicians.html`:
   piano register, `midi = 60+pc`, so a hand card can exactly match it). `newCall()` picks a pc (varying from
   the previous call) and **sounds it** (`soundCall()` → `playTone` on the piano timbre). A first call is set
   in `startPlay()`; a fresh call is generated after every non-finishing play in `playHand()`.
-- **Scoring — the `respond` term.** Added to `MOVEMENTS[1].terms` (`["inkey","respond"]`) and to `score()`:
-  for a single played note, interval `iv = (playedPc − callPc + 12) % 12` →
-  **exact (`iv===0`): `mult +4, chips +8`** ("🎯 matched the call"); **consonant near-miss (`CONSONANT_IV`):
-  `mult +2`** ("consonant with the call +2" — a good-sounding miss earns partial credit, on-pillar); **dissonant
-  miss: nothing.** So the 7 diatonic cards now score in three tiers (exact ≫ consonant ≫ dissonant) instead of
-  flat. Because `score()` runs live in `previewHTML()`, the bonus shows **before you commit** — instant
-  teaching feedback.
+- **Scoring — the `respond` term (raw pitch nearness, reworked 2026-07-19).** Added to `MOVEMENTS[1].terms`
+  (`["inkey","respond"]`) and to `score()`. **M1 grades by absolute pitch distance, NOT consonance** — the
+  lesson is ear-training ("match the pitch you hear"); consonance is deferred to the **Melody** movement (where
+  notes are judged together and the green `fitsSelection()` cells matter). For a single played note,
+  `d = |playedMidi − callMidi|` (0..11 semitones, since the M1 deck is one octave). The bonus **ramps smoothly
+  per-semitone and never hits zero** (every guess scores something — a locked decision): proximity mult
+  `pm = max(1, 5 − floor((d+1)/2))` → `5·4·4·3·3·2·2·1…`, plus bonus chips `+8` for a bullseye (`d=0`) and `+4`
+  when very close (`d≤2`). So the nearest note wins big and it degrades gracefully with distance — and because
+  a half-step is now *close* (not a dissonant "miss"), the grading matches pitch intuition. `respond` also
+  carries a **4-tier bucket** (`exact` 0 · `soclose` 1–2 · `close` 3–5 · `far` 6–11) for the reward juice.
+  Because `score()` runs live in `previewHTML()`, the bonus shows **before you commit** — instant feedback.
+  *(Note: raw semitones means a call in the middle of the octave is inherently easier — nothing is more than
+  ~6 away — an accepted trade-off; C4-vs-B4 = 11 = worst, as intended.)*
 - **UI.** `callBarHTML()` renders a "🎧 Match this note" bar above the preview with the target as a colored
   letter chip (**shown**, per the early-ramp decision) + a **🔊 Hear it** replay button. Gated by
   `callActive()` = `run.mode==="campaign" && run.movement===1 && termOn("respond")`.
-- **Amped reward feedback — the close-vs-far tier reads instantly (2026-07-19).** Playtest note: the three
-  scoring tiers (exact/consonant/miss) only nudged the applause bar — too subtle to feel. Now the tier drives
-  loud, Balatro-style juice. `respondTier(pc)` (exact `iv=0` ≫ near `CONSONANT_IV` ≫ off) is the single source
-  for both scoring and feedback; `score()` returns it as `res.respond`. On commit: a **tier-graded cell bloom**
-  (`bloomCell(cell, tier)` → `.bloom-exact` big gold burst+glow · `.bloom-near` warm green bloom · `.bloom-off`
-  small gray blip), a **floating rating word** rising off the cell (`floatRating` → ✦ PERFECT! / ~ Nice ~ /
-  · off ·), and a **reward chime** whose brightness/pitch tracks proximity (`respondChime` → bright ding +
-  major-third sparkle for exact, soft sine for near, dull low thunk for off; scheduled `~ANIM.play` so it lands
-  with the bloom). **Live pre-commit:** the call bar glows + shows a verdict **stamp** (`✓ match! / ≈ close /
-  ✗ off`) and the preview shows a matching **tier tag** for the currently-selected card, so "you've got it"
-  reads *before* you play. Scoring balance is unchanged (still the locked consonance-weighted 3 tiers — a
-  semitone-away note is still a full miss, just now clearly labeled "off"); this pass is presentation only.
-  Reduced-motion drops the bloom/word (the chime + text stamps remain).
+- **Amped reward feedback — the close-vs-far tier reads instantly (2026-07-19).** Playtest note: proximity only
+  nudged the applause bar — too subtle to feel. The **4 nearness tiers** now drive loud, Balatro-style juice.
+  `respondTier(midi)` (absolute distance → `exact` 0 ≫ `soclose` 1–2 ≫ `close` 3–5 ≫ `far` 6–11) is the single
+  source for both scoring-bucket labels and feedback; `score()` returns it as `res.respond`. On commit: a
+  **tier-graded cell bloom** (`bloomCell(cell, tier)` → gold burst+glow · amber · green · faint gray, scaling
+  down with distance), a **floating rating word** rising off the cell (`floatRating` → ✦ PERFECT! / 🔥 SO
+  CLOSE! / 👍 Close / · far ·), and a **reward chime** whose brightness/pitch tracks nearness (`respondChime`
+  → bright ding + major-third sparkle for exact, down to a dull low thunk for far; scheduled `~ANIM.play` so it
+  lands with the bloom). **Live pre-commit:** the call bar glows + shows a verdict **stamp** (`✓ match! / 🔥 so
+  close / 👍 close / far`) and the preview shows a matching **tier tag** for the currently-selected card, so
+  "you've got it" reads *before* you play. Reduced-motion drops the bloom/word (the chime + text stamps remain).
 - **Scope / firewall.** `callActive()` is M1-campaign-only, so **Free Play and M2–M7 are untouched** (they
   don't carry the `respond` term). The existing **M1 gate** (catalog the 7 in-key letters) is unchanged and
   still fills naturally as you answer random in-key calls.
@@ -358,8 +362,8 @@ The first slice of the frame, shipped in `mujicians.html`:
   that single onset for the current lap when it lands in the committed window; `schedTick` only schedules
   onsets `≥ schedFrom`, so no double. General fix (all movements + Free Play), inert while paused.
 - **Still deferred:** **ear-only** mode is not built (M1 is always shown); calls stay **single-note per play**
-  (phrase calls arrive with later movements). Proximity is the simple 3-tier consonance-weighted curve above
-  (tunable).
+  (phrase calls arrive with later movements). The proximity curve (per-semitone ramp + 4 tiers above) is
+  tunable.
 
 ### Dynamics · Fire — the sleeping-creature lesson (dev's design, teach the notation)
 
@@ -428,8 +432,10 @@ makes *original* music. So the campaign **shifts flavor across the arc**:
   memory. *[recommended: grows with the movement — 1 note early, a short phrase by M4.]*
 - **Saved-song: call included?** — ✅ **DECIDED 2026-07-19: only your notes** (call never written to the
   timeline; no toggle). See [the decision](#whether-the-call-joins-the-saved-song--decided-2026-07-19-only-your-notes).
-- **Proximity curve** — how steeply near-misses fall off (linear semitones vs interval-consonance-weighted).
-  *[recommended: consonance-weighted so a "wrong but consonant" answer beats a "close but dissonant" one.]*
+- **Proximity curve** — ✅ **DECIDED 2026-07-19 for M1: raw semitone distance** (per-semitone ramp, never
+  zero, 4 tiers). Consonance-weighting was **rejected for M1** (a half-step is *close*, not a "miss") and
+  moved to the **Melody** movement where notes are judged together. Later movements may still weight
+  differently; the curve is tunable.
 - **Dynamics scenario depth** — one creature per run vs a changing scene per phrase; whether "wake the
   sleeper" is an explicit fail-state or just lost points. *[recommended: lost points, no hard fail — matches
   the no-fail pillar.]*
