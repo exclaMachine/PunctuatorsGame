@@ -666,6 +666,10 @@ shows no intro** (it's the open creative mode; teaching is campaign-only — sam
   `"m1"`, `"m1:ear"`, `"m2"`…`"m7"`), each carries **`char`** (who speaks — the seam for a per-level mentor;
   all `dee` for now, the accidental sub-levels will point to Sharpist/Sir Flat/Ranger), a **`title`** +
   **`theory[]`** paragraphs + a **`task`** line (the full first-time script), and a **`compact`** one-liner.
+  **All seven movements have real authored Dee dialogue (2026-07-19)** — each tied to its story **element**
+  (rhythm=earth pulse, dynamics=fire, melody=water, harmony=forged metal, timbre=wood voices, structure=time/
+  memory) and accurate to that level's actual mechanic + gate (durations & rests, p/mf/f size-is-volume,
+  stepwise melody + intervals, consonant triads + cadence, multi-instrument blends, A·B·A form).
 - **Flow.** `startRun()` → **`offerIntro()`** (was `offerDraft()`) → `screen="intro"` (rendered over the empty
   stage, mirroring the draft) → **"Got it — let's play ▸"** → `offerDraft()` → `pickMuse()` → `startPlay()`.
   `offerIntro()` falls straight through to the draft when there's no lesson (Free Play).
@@ -673,6 +677,8 @@ shows no intro** (it's the open creative mode; teaching is campaign-only — sam
   First time = the full script; after that = the `compact` one-liner with a **"more ▾"** that expands the full
   text inline (`introExpanded`). `m1` and `m1:ear` are **distinct keys**, so the by-ear level gets its own
   first-time full intro.
+- **Content.** Dee's voice is a warm, playful little girl; theory named plainly but simply, each level flavoured
+  by its element and pointed at what that level actually asks you to do. All M1–M7 authored (no placeholders).
 - **Presentation.** Current-style CSS (`.charcard`/`.charart`/`.speech` with a bubble tail; reuses the theme
   vars). Pixel-ready: art is a token and the frame is plain CSS, so a future `.pixel` sprite skin is additive.
   Responsive (stacks under ~520px); reduced-motion drops the bubble pop.
