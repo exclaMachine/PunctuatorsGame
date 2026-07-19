@@ -105,6 +105,18 @@
     box-shadow:0 3px 0 rgba(0,0,0,.35),inset 0 0 0 1px rgba(0,0,0,.25)}
   .callbar .callhear{padding:5px 11px;font-size:12px}
   .callbar .clhint{font-size:12px;color:var(--dim)}
+  /* live pre-commit verdict on the selected card — the bar itself glows + a stamp names the tier */
+  .callbar.cb-exact{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 16px rgba(255,215,106,.35)}
+  .callbar.cb-near{border-color:var(--good)}
+  .callbar .cstamp{font-weight:800;font-size:13px;padding:2px 9px;border-radius:999px}
+  .callbar .cs-exact{color:#0a0a12;background:var(--gold)}
+  .callbar .cs-near{color:#06251a;background:var(--good)}
+  .callbar .cs-off{color:var(--dim);border:1px solid var(--edge)}
+  /* preview proximity tag mirrors the tier so the readout matches the pop */
+  .preview .rtier{margin-left:8px;font-weight:800;font-size:12px;padding:1px 8px;border-radius:999px;vertical-align:middle}
+  .preview .rt-exact{color:#0a0a12;background:var(--gold)}
+  .preview .rt-near{color:#06251a;background:var(--good)}
+  .preview .rt-off{color:var(--dim);border:1px solid var(--edge)}
 
   .hand{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:104px;margin:6px 0 14px}
   .card{width:60px;height:90px;border-radius:9px;cursor:pointer;position:relative;
@@ -170,7 +182,27 @@
   .pile .pilecount{font-size:20px;font-weight:800;color:#fff;line-height:1}
   @keyframes cellbloom{0%{transform:scale(1.9);filter:brightness(2.2)}60%{transform:scale(1.15)}100%{transform:scale(1);filter:brightness(1)}}
   .lgcell.bloom{animation:cellbloom .48s cubic-bezier(.22,1,.36,1);z-index:3;position:relative}
-  @media (prefers-reduced-motion:reduce){ .fxcard{display:none} .lgcell.bloom{animation:none} }
+  /* M1 call-and-response: the bloom's SIZE/GLOW scales with how close you landed (exact ≫ near ≫ off) —
+     these follow .lgcell.bloom in source order so they win the equal-specificity tie. */
+  @keyframes bloomExact{0%{transform:scale(2.5);filter:brightness(3)}55%{transform:scale(1.22)}100%{transform:scale(1);filter:brightness(1)}}
+  @keyframes bloomNear{0%{transform:scale(1.75);filter:brightness(2)}60%{transform:scale(1.12)}100%{transform:scale(1);filter:brightness(1)}}
+  @keyframes bloomOff{0%{transform:scale(1.25);filter:brightness(1.3) saturate(.35)}100%{transform:scale(1);filter:brightness(1)}}
+  .lgcell.bloom.bloom-exact{animation:bloomExact .62s cubic-bezier(.22,1,.36,1);z-index:5;
+    box-shadow:0 0 0 3px var(--gold),0 0 24px 7px rgba(255,215,106,.85)}
+  .lgcell.bloom.bloom-near{animation:bloomNear .5s cubic-bezier(.22,1,.36,1);z-index:4;
+    box-shadow:0 0 15px 3px rgba(143,240,182,.5)}
+  .lgcell.bloom.bloom-off{animation:bloomOff .34s ease-out;box-shadow:0 0 0 1px rgba(150,155,175,.45)}
+  /* the floating rating word that rises off a just-played cell */
+  .ratingpop{position:fixed;transform:translate(-50%,-50%);z-index:16;pointer-events:none;font-weight:900;
+    white-space:nowrap;text-shadow:0 2px 7px rgba(0,0,0,.7);animation:ratingRise .95s cubic-bezier(.2,1,.3,1) forwards}
+  .ratingpop.rp-exact{font-size:27px;color:var(--gold);letter-spacing:.02em}
+  .ratingpop.rp-near{font-size:20px;color:var(--good)}
+  .ratingpop.rp-off{font-size:15px;color:var(--dim);font-weight:700}
+  @keyframes ratingRise{0%{opacity:0;transform:translate(-50%,-25%) scale(.6)}
+    18%{opacity:1;transform:translate(-50%,-58%) scale(1.18)}
+    42%{transform:translate(-50%,-74%) scale(1)}
+    100%{opacity:0;transform:translate(-50%,-140%) scale(1)}}
+  @media (prefers-reduced-motion:reduce){ .fxcard{display:none} .lgcell.bloom{animation:none} .ratingpop{display:none} }
   /* faint bar-group separators when the loop grid is subdivided into beats */
   .lgcell.beat0:not(:nth-child(2)){border-left:1px solid rgba(255,255,255,.08)}
 
@@ -623,12 +655,15 @@
     if(inkeyOn && allInKey && cards.length>=2){ mult += 1; lines.push("in key +1"); }                 // 'inkey' (M1)
     // respond (M1 call-and-response): the computer plays a target note; you answer by matching its pitch.
     // Graded by proximity — an EXACT match is the lesson (big pop); a consonant near-miss still SOUNDS
-    // good so it earns partial credit; a dissonant miss earns nothing. See docs/mujicians.md.
+    // good so it earns partial credit; a dissonant miss earns nothing. `respond` (exact/near/off) is the
+    // scoring-and-feedback tier — it drives the amped reward juice (tiered bloom + rating pop + chime),
+    // so close-vs-far now reads instantly instead of only nudging the applause bar. See docs/mujicians.md.
+    let respond = null;
     if(termOn("respond") && run && run.call && cards.length===1){
-      const iv = (cards[0].pc - run.call.pc + 12) % 12;
-      if(iv===0){ mult += 4; chips += 8; lines.push("🎯 matched the call"); }
-      else if(CONSONANT_IV.has(iv)){ mult += 2; lines.push("consonant with the call +2"); }
-      // dissonant miss (m2/tritone/m7…): no bonus — base score only.
+      respond = respondTier(cards[0].pc);
+      if(respond==="exact"){ mult += 4; chips += 8; lines.push("🎯 matched the call"); }
+      else if(respond==="near"){ mult += 2; lines.push("consonant with the call +2"); }
+      // 'off' (semitone/tritone/m7…): no bonus — base score only, but the feedback still names it "off".
     }
     // groove (M2): keep the beat, and reward rhythmic variety — this play's duration differing from the
     // previous timeline event's. (Timeline-aware; deepens in Stage 2 with syncopation / cross-loop consistency.)
@@ -685,7 +720,7 @@
     });
 
     const applause = Math.round(chips * mult);
-    return { cls, chips, mult, applause, lines };
+    return { cls, chips, mult, applause, lines, respond };
   }
 
   /* ================= Muses (the build engine) =================
@@ -799,6 +834,24 @@
      for now; later movements extend the frame (rhythm/melody/…). Free Play has no call. See docs/mujicians.md. */
   function callActive(){ return !!(run && run.mode==="campaign" && run.movement===1 && termOn("respond")); }
   function soundCall(when){ if(run && run.call) playTone(run.call.midi, "triangle", 0.7, when||0, 1); }   // piano-timbre target
+  // Proximity tier of a played pitch-class vs the current call: exact ≫ near (consonant) ≫ off. Single
+  // source of truth for BOTH scoring (score()'s respond term) and the reward feedback (bloom/pop/chime).
+  function respondTier(pc){
+    if(!(run && run.call)) return null;
+    const iv = (pc - run.call.pc + 12) % 12;
+    return iv===0 ? "exact" : (CONSONANT_IV.has(iv) ? "near" : "off");
+  }
+  // A reward tone layered just over your note when a call is live — its brightness/pitch tracks how close
+  // you landed, so an exact match "dings" and a miss "thunks". Scheduled ~as the played card blooms.
+  function respondChime(tier){
+    const spec = { exact:{midi:84,wave:"triangle",dur:0.5,vel:1.1},   // bright high ding (+ a third-above sparkle)
+                   near :{midi:79,wave:"sine",    dur:0.4,vel:0.75},  // softer, still sweet
+                   off  :{midi:52,wave:"sawtooth",dur:0.18,vel:0.5} }[tier];   // dull low thunk
+    if(!spec) return;
+    const when = ANIM.play/1000;   // land the reward roughly as the card lands + the cell blooms
+    playTone(spec.midi, spec.wave, spec.dur, when, spec.vel);
+    if(tier==="exact") playTone(88, "triangle", 0.45, when+0.06, 0.7);   // major-third sparkle over the ding
+  }
   function newCall(delay){
     if(!run) return;
     const pcs = RUN_KEY.key, prev = run.call ? run.call.pc : -1;
@@ -966,7 +1019,7 @@
 
   // Play: each played card shrinks and flies from the hand to its timeline cell (row=midi, col=cursor),
   // then that cell blooms. `flyFrom` = [{node,rect,midi}] captured BEFORE the re-render; `atTick` = write pos.
-  function flyPlay(flyFrom, atTick, handSnap){
+  function flyPlay(flyFrom, atTick, handSnap, tier){
     flipHand(handSnap);
     if(reduceMotion()) return;
     const col = tickToCol(atTick);
@@ -974,7 +1027,7 @@
       const cell = $game.querySelector(`.loopgrid .lgcell[data-col="${col}"][data-midi="${f.midi}"]`);
       if(!cell) return;
       const to = centerRect(cell);
-      flyClone(f.node, f.rect, to, { dur:ANIM.play, scale:ANIM.playScale, fade:true, onDone:()=>bloomCell(cell) });
+      flyClone(f.node, f.rect, to, { dur:ANIM.play, scale:ANIM.playScale, fade:true, onDone:()=>bloomCell(cell, tier) });
     });
   }
   function flyDiscard(flyFrom, handSnap){
@@ -984,7 +1037,26 @@
     flyFrom.forEach((f, i)=> flyClone(f.node, f.rect, to,
       { dur:ANIM.discard, delay:i*20, scale:0.8, fade:true, easing:"cubic-bezier(.4,0,1,1)" }));
   }
-  function bloomCell(cell){ if(!cell) return; cell.classList.add("bloom"); setTimeout(()=>cell.classList.remove("bloom"), 480); }
+  function bloomCell(cell, tier){
+    if(!cell) return;
+    cell.classList.add("bloom");
+    const tc = tier ? "bloom-"+tier : null;   // exact = gold burst · near = warm bloom · off = gray blip
+    if(tc) cell.classList.add(tc);
+    setTimeout(()=>{ cell.classList.remove("bloom"); if(tc) cell.classList.remove(tc); }, 640);
+    if(tier) floatRating(cell, tier);          // Balatro-style rating word rising off the cell
+  }
+  // A rating word that pops up off a just-played cell — the loud, unmissable "how close were you" cue.
+  const RATING = { exact:{txt:"✦ PERFECT! ✦",cls:"exact"}, near:{txt:"~ Nice ~",cls:"near"}, off:{txt:"· off ·",cls:"off"} };
+  function floatRating(cell, tier){
+    if(reduceMotion()) return;
+    const m = RATING[tier]; if(!m) return;
+    const r = cell.getBoundingClientRect();
+    const el = document.createElement("div");
+    el.className = "ratingpop rp-"+m.cls; el.textContent = m.txt;
+    el.style.left = (r.left + r.width/2) + "px"; el.style.top = r.top + "px";
+    $fx.appendChild(el);
+    setTimeout(()=>el.remove(), 950);
+  }
   // Swell: switching the dynamic re-renders the hand (nodes are recreated), so we play an explicit WAAPI
   // tween from the previous size to the new resting scale the CSS .dyn-* class already applied. Size = volume.
   function swellSelected(prevDyn, nextDyn){
@@ -1345,6 +1417,8 @@
       if(new Set(cards.map(c=>c.instId)).size>=2) run.gateBlends++;                       // M6: multi-instrument blends
     }
     savePersist();
+    // M1 call-and-response: layer the reward chime (brightness tracks proximity) over your just-played note.
+    if(res.respond) respondChime(res.respond);
     // remove played cards from hand, redraw
     removeSelected(); drawUp();
 
@@ -1353,9 +1427,9 @@
     // going until they press Finish. (A whole note eats 4× a quarter's worth of space.)
     const finishing = run.loop.cursor >= maxStageTicks() || run.hand.length === 0;
     if(!finishing && callActive() && !rest) newCall(0.45);   // M1: next target, sounded just after your response
-    if(finishing){ finishRun(); flyPlay(flyFrom, at, handSnap); return; }
+    if(finishing){ finishRun(); flyPlay(flyFrom, at, handSnap, res.respond); return; }
     render();
-    flyPlay(flyFrom, at, handSnap);   // shrink+fly played cards to their timeline cells, then bloom
+    flyPlay(flyFrom, at, handSnap, res.respond);   // shrink+fly played cards to their timeline cells, then tier-bloom
   }
   function discardHand(){
     if(run.discardsLeft <= 0) return;
@@ -1552,10 +1626,16 @@
   function callBarHTML(){
     if(!callActive() || !run.call) return "";
     const c = run.call;
-    return `<div class="callbar">
+    // live verdict on the currently-selected card, so you feel "you've got it" BEFORE committing.
+    const sel = selectedCards();
+    const tier = sel.length===1 ? respondTier(sel[0].pc) : null;
+    const STAMP = { exact:"✓ match!", near:"≈ close", off:"✗ off" };
+    const stamp = tier ? `<span class="cstamp cs-${tier}">${STAMP[tier]}</span>` : "";
+    return `<div class="callbar${tier?" cb-"+tier:""}">
       <span class="clbl">🎧 Match this note</span>
       <span class="callnote" style="--cc:${COLOR[c.letter]}" title="${c.letter} (${COLORNAME[c.letter]})">${c.letter}</span>
       <button class="btn ghost callhear" id="b-hear" title="Hear the target again">🔊 Hear it</button>
+      ${stamp}
       <span class="clhint">Play the matching card — or the closest you can.</span>
     </div>`;
   }
@@ -1565,8 +1645,10 @@
     if(!cards.length) return `<span class="calc">Select up to ${maxSelect()} card${maxSelect()===1?"":"s"} to see the structure &amp; score…</span>`;
     const res = score(cards, RUN_KEY, run.muses);
     const bonus = res.lines.length ? " · <span class='m'>"+res.lines.join(", ")+"</span>" : "";
+    const RT = { exact:"✦ exact match", near:"consonant — close", off:"off — try nearer" };
+    const rtag = res.respond ? `<span class="rtier rt-${res.respond}">${RT[res.respond]}</span>` : "";
     return `<span class="app">${res.applause}</span>`+
-           `<span class="struct">${res.cls.name}</span>`+
+           `<span class="struct">${res.cls.name}</span>${rtag}`+
            `<div class="calc">${res.chips} chips × ${res.mult} mult${bonus}</div>`;
   }
 

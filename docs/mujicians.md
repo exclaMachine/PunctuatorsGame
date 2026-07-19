@@ -334,6 +334,19 @@ The first slice of the frame, shipped in `mujicians.html`:
 - **UI.** `callBarHTML()` renders a "🎧 Match this note" bar above the preview with the target as a colored
   letter chip (**shown**, per the early-ramp decision) + a **🔊 Hear it** replay button. Gated by
   `callActive()` = `run.mode==="campaign" && run.movement===1 && termOn("respond")`.
+- **Amped reward feedback — the close-vs-far tier reads instantly (2026-07-19).** Playtest note: the three
+  scoring tiers (exact/consonant/miss) only nudged the applause bar — too subtle to feel. Now the tier drives
+  loud, Balatro-style juice. `respondTier(pc)` (exact `iv=0` ≫ near `CONSONANT_IV` ≫ off) is the single source
+  for both scoring and feedback; `score()` returns it as `res.respond`. On commit: a **tier-graded cell bloom**
+  (`bloomCell(cell, tier)` → `.bloom-exact` big gold burst+glow · `.bloom-near` warm green bloom · `.bloom-off`
+  small gray blip), a **floating rating word** rising off the cell (`floatRating` → ✦ PERFECT! / ~ Nice ~ /
+  · off ·), and a **reward chime** whose brightness/pitch tracks proximity (`respondChime` → bright ding +
+  major-third sparkle for exact, soft sine for near, dull low thunk for off; scheduled `~ANIM.play` so it lands
+  with the bloom). **Live pre-commit:** the call bar glows + shows a verdict **stamp** (`✓ match! / ≈ close /
+  ✗ off`) and the preview shows a matching **tier tag** for the currently-selected card, so "you've got it"
+  reads *before* you play. Scoring balance is unchanged (still the locked consonance-weighted 3 tiers — a
+  semitone-away note is still a full miss, just now clearly labeled "off"); this pass is presentation only.
+  Reduced-motion drops the bloom/word (the chime + text stamps remain).
 - **Scope / firewall.** `callActive()` is M1-campaign-only, so **Free Play and M2–M7 are untouched** (they
   don't carry the `respond` term). The existing **M1 gate** (catalog the 7 in-key letters) is unchanged and
   still fills naturally as you answer random in-key calls.
