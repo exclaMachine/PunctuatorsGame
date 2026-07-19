@@ -362,9 +362,25 @@ The first slice of the frame, shipped in `mujicians.html`:
   playhead swept over it silently until next lap). `catchUpEvent()` (called from `placeEvent`) now schedules
   that single onset for the current lap when it lands in the committed window; `schedTick` only schedules
   onsets `≥ schedFrom`, so no double. General fix (all movements + Free Play), inert while paused.
-- **Still deferred:** **ear-only** mode is not built (M1 is always shown); calls stay **single-note per play**
-  (phrase calls arrive with later movements). The proximity curve (per-semitone ramp + 4 tiers above) is
-  tunable.
+- **Blind "by Ear" sub-level — BUILT (2026-07-19).** The [shown-early→ear-only ramp](#the-four-decisions-locked) now exists for M1 as a **separate sub-level** (the frame chosen with the dev, mirroring the
+  planned Sharps/Flats sub-levels). Once the 7 shown naturals are catalogued (`persist.progress.gates.pitch`
+  full), Home shows a **🎧 M1 Pitch — by Ear** button that starts an M1 campaign run with
+  **`run.pitchLevel:"ear"`** (`startRun(mode, opts)` gained `opts.movement`/`opts.pitchLevel`; `callHidden()` =
+  `callActive() && pitchLevel==="ear"`). In ear mode the call **sounds only** — `callBarHTML` draws a **muffled
+  `?` chip** (no colour) + the **🔊 Hear it** button and **no pre-commit verdict**; `previewHTML` **hides the
+  whole numeric readout** (applause/mult would jump on the right card and let you brute-force by watching it).
+  You commit **blind**; the existing bloom + floating-rating word + proximity chime judge you *after*, and a
+  **reveal banner** (its own prominent, tier-coloured row in the call bar) then names what the call was
+  (`run.callReveal` → "The note was **E** ✓ nailed it! — you played **D**"). The reveal **stays up until you
+  select your next answer card** (cleared in `toggleSel`; also reset on `startPlay`) — a short auto-clear timer
+  was too easy to miss while watching the cell bloom. The run's **goal is unchanged** (catalogue the 7 in-key letters — now *by
+  ear*); finishing reports **pitch accuracy "(by ear)"** and sets `persist.progress.gates.pitchEar` for the
+  Home "✓" badge. **Firewall:** ear mode is forced `movement:1` and pins there, so a run past M1 doesn't
+  double-advance (`maybeAdvance` early-returns off-frontier); Free Play & M2–M7 untouched. Reduced-motion keeps
+  the text reveal (drops bloom/word as before).
+- **Still deferred:** calls stay **single-note per play** (phrase calls arrive with later movements); the
+  by-ear ramp is a **discrete sub-level**, not an in-run shown→hidden gradient. The proximity curve
+  (per-semitone ramp + 4 tiers above) is tunable.
 
 ### Dynamics · Fire — the sleeping-creature lesson (dev's design, teach the notation)
 
@@ -415,8 +431,11 @@ makes *original* music. So the campaign **shifts flavor across the arc**:
   **`respond`** term (or a per-movement proximity function) that reads `run.call` and the just-played event.
   For M1, pitch proximity replaces the flat `inkey ? 2 : 1` with a graded distance-to-target. **Free Play
   omits the `respond` term** (no call) — so `MOVEMENTS[].terms` gates it exactly like every other term.
-- **Shown vs ear-only** = a `run.callHidden` flag (off in early movements, on in later/boss); when set, the
-  call plays as audio only and the UI shows no card/color.
+- **Shown vs ear-only** — **BUILT for M1** as `run.pitchLevel` (`"naturals"` shown · `"ear"` hidden) surfaced
+  as a discrete Home sub-level, rather than the originally-sketched `run.callHidden` flag. `callHidden()` gates
+  the audio-only call bar (muffled `?` chip, no pre-commit verdict) + the blank numeric preview + the post-commit
+  reveal banner. Later movements/bosses can reuse the same `callHidden()`-style suppression. See
+  [M1 — as built](#m1-pitch--as-built-2026-07-19).
 - **Dynamics scenario:** a small table of `{creature, asleep, size} → targetDyn (+ wantRests)`; the HUD shows
   the scene + the demanded notation (pp…ff); scoring compares the played `dyn` (and rest usage) to the target.
 - **Later-movement freeform:** reuse `fitsSelection()` — score a per-event/per-line **green-fraction** bonus

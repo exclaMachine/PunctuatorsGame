@@ -120,6 +120,27 @@
   .preview .rt-soclose{color:#2a1400;background:#ffb14e}
   .preview .rt-close{color:#06251a;background:var(--good)}
   .preview .rt-far{color:var(--dim);border:1px solid var(--edge)}
+  /* by-ear (blind) level: the call is hidden — a muffled chip, no colour, no pre-commit verdict */
+  .callbar .callhidden{display:inline-flex;align-items:center;justify-content:center;width:32px;height:42px;
+    border-radius:7px;color:var(--dim);font-weight:800;font-size:20px;
+    background:repeating-linear-gradient(45deg,var(--edge),var(--edge) 4px,var(--panel) 4px,var(--panel) 8px);
+    box-shadow:inset 0 0 0 1px var(--edge)}
+  /* by-ear call bar stacks: a control row, then a full-width reveal row that stays until your next answer */
+  .callbar .cbrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1 1 100%}
+  /* reveal banner — after answering a hidden call, name what it actually was so you learn from misses.
+     Its own prominent row; persists until the next answer; pulses in each time it updates. */
+  .callbar .clreveal{flex:1 1 100%;display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:2px;
+    font-size:15px;font-weight:700;color:var(--ink);padding:8px 12px;border-radius:10px;
+    background:var(--panel);border:1px solid var(--edge);animation:revealpop .32s cubic-bezier(.34,1.56,.64,1)}
+  .callbar .clreveal.cr-exact{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 14px rgba(255,215,106,.3)}
+  .callbar .clreveal.cr-soclose{border-color:#ffb14e}
+  .callbar .clreveal.cr-close{border-color:var(--good)}
+  .callbar .clreveal .rvnote{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:30px;
+    padding:0 7px;border-radius:6px;background:var(--rc);color:#0a0a12;font-weight:800;font-size:18px;
+    box-shadow:0 2px 0 rgba(0,0,0,.3);vertical-align:middle}
+  .callbar .clreveal .rvverd{font-weight:800}
+  .callbar .clreveal .rvyou{color:var(--dim);font-size:13px;font-weight:600}
+  @keyframes revealpop{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
 
   .hand{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:104px;margin:6px 0 14px}
   .card{width:60px;height:90px;border-radius:9px;cursor:pointer;position:relative;
@@ -845,6 +866,9 @@
      all 7 diatonic cards are in-key (so 'inkey' is flat), but only one MATCHES the call. Campaign M1 only
      for now; later movements extend the frame (rhythm/melody/…). Free Play has no call. See docs/mujicians.md. */
   function callActive(){ return !!(run && run.mode==="campaign" && run.movement===1 && termOn("respond")); }
+  // The blind "by ear" M1 sub-level: the call sounds but shows no card/colour — you identify & reproduce it
+  // by ear (the shown→ear-only difficulty ramp). Set via startRun's opts once the shown naturals are catalogued.
+  function callHidden(){ return callActive() && run.pitchLevel === "ear"; }
   function soundCall(when){ if(run && run.call) playTone(run.call.midi, "triangle", 0.7, when||0, 1); }   // piano-timbre target
   // Proximity tier by ABSOLUTE pitch distance (M1 = ear-training: match the pitch you hear). The M1 deck is
   // one octave, so |played − call| is 0..11 semitones — a half-step is "so close," ~an octave is "far," and
@@ -1338,12 +1362,14 @@
   }
   function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
-  function startRun(mode){
+  function startRun(mode, opts){
+    opts = opts || {};
     stopLoop(); galleryPlayId = null;
     if(atCap()){ screen="capped"; render(); return; }
     if(!DEV){ persist.runsUsed++; savePersist(); }
     // mode "free" = Free Play (all movements on); otherwise Campaign at the reached movement.
-    const movement = mode==="free" ? FREE_PLAY_MOVEMENT : (persist.progress.movement || 1);
+    // opts.movement forces a specific movement (the M1 "by Ear" challenge pins movement 1 even past M1).
+    const movement = mode==="free" ? FREE_PLAY_MOVEMENT : (opts.movement || persist.progress.movement || 1);
     // One loop for the whole run — one continuous performance in one key, filled hand by hand.
     run = { deck:buildDeck(movement), drawPile:[], hand:[], sel:new Set(), discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ events:[], cursor:0, stageBars:START_BARS }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
       curDyn:DEFAULT_DYN,   // M3 dynamics: the p/mf/f marking applied to the next play
@@ -1354,6 +1380,8 @@
       gatePitch:new Set(), gateDurs:new Set(), gateDyns:new Set(), gateIntervals:new Set(), gateRun:false,
       gateTriads:new Set(), gateCadence:false, gateBlends:0,
       respondLog:[],            // M1: each response's semitone distance to its call (for the pitch-accuracy score)
+      pitchLevel: opts.pitchLevel || "naturals",   // M1 sub-level: "naturals" (call shown) or "ear" (call hidden — match by ear)
+      callReveal:null,          // by-ear: the just-answered call to name in the callbar until the next call
       goalReached:false, goalAck:false };   // goalReached = prompt shown; goalAck = player chose "keep building"
     offerDraft();   // draft one Muse, once, at the start of the run
   }
@@ -1363,7 +1391,7 @@
     run.discardsLeft = DISCARDS; run.runScore = 0;
     run.loop.events = []; run.loop.cursor = 0; run.loop.stageBars = START_BARS;
     run.gatePitch = new Set(); run.respondLog = []; run.goalReached = false; run.goalAck = false;   // fresh per-run goal state
-    run.call = null;
+    run.call = null; run.callReveal = null;
     drawUp();
     if(callActive()) newCall();   // M1: sound the first target note to match
     screen = "gig"; render();
@@ -1442,6 +1470,9 @@
     savePersist();
     // M1 call-and-response: layer the reward chime (brightness tracks proximity) + log the distance for the score.
     if(res.respond){ respondChime(res.respond); run.respondLog.push(Math.abs(cards[0].midi - run.call.midi)); }
+    // By-ear: remember the just-answered (hidden) call so the bar names it. Persists until your NEXT answer
+    // overwrites it (or the run restarts) — a short timer was too easy to miss while watching the cell bloom.
+    if(callHidden() && res.respond){ run.callReveal = { letter:run.call.letter, tier:res.respond, played:cards[0].letter }; }
     // remove played cards from hand, redraw
     removeSelected(); drawUp();
 
@@ -1473,7 +1504,10 @@
 
   // Open-ended: a performance just COMPLETES — no win/lose. Fired by the player pressing Finish, or
   // auto-fired when the loop's stage space runs out. maybeAdvance() may still unlock the next movement.
-  function finishRun(){ if(!run || run.done) return; run.done = true; maybeAdvance(); screen="win"; render(); }
+  function finishRun(){ if(!run || run.done) return; run.done = true; maybeAdvance();
+    // by-ear M1 challenge: mark it cleared (for the Home "✓" badge) if you catalogued all 7 letters by ear.
+    if(run.pitchLevel==="ear" && gateStatus(1).met){ (persist.progress.gates || (persist.progress.gates={})).pitchEar = true; savePersist(); }
+    screen="win"; render(); }
   // Campaign: if this run met the frontier movement's gate, unlock the next movement (persisted).
   function maybeAdvance(){
     if(!run || run.mode!=="campaign") return;
@@ -1685,6 +1719,27 @@
   function callBarHTML(){
     if(!callActive() || !run.call) return "";
     const c = run.call;
+    if(callHidden()){
+      // Blind "by ear" level: the call sounds only — no colour, and NO pre-commit verdict (else you could
+      // brute-force by cycling cards and watching the stamp). The 🔊 button + the sound are the only cues.
+      const rev = run.callReveal;
+      const RSTAMP = { exact:"✓ nailed it!", soclose:"🔥 so close", close:"👍 close", far:"just off" };
+      // The reveal gets its OWN prominent row and stays until your next answer, so it can't be missed.
+      const youPlayed = (rev && rev.played && rev.played!==rev.letter)
+        ? ` <span class="rvyou">— you played <span class="rvnote" style="--rc:${COLOR[rev.played]}">${rev.played}</span></span>` : "";
+      const revealHTML = rev ? `<div class="clreveal cr-${rev.tier}">The note was
+        <span class="rvnote" style="--rc:${COLOR[rev.letter]}">${rev.letter}</span>
+        <b class="rvverd">${RSTAMP[rev.tier]||""}</b>${youPlayed}</div>` : "";
+      return `<div class="callbar">
+        <div class="cbrow">
+          <span class="clbl">🎧 Match this note — <b>by ear</b></span>
+          <span class="callhidden" title="Hidden — identify it by ear">?</span>
+          <button class="btn ghost callhear" id="b-hear" title="Hear the target again">🔊 Hear it</button>
+          <span class="clhint">Listen, then play the note you hear — no peeking.</span>
+        </div>
+        ${revealHTML}
+      </div>`;
+    }
     // live verdict on the currently-selected card, so you feel "you've got it" BEFORE committing.
     const sel = selectedCards();
     const tier = sel.length===1 ? respondTier(sel[0].midi) : null;
@@ -1701,6 +1756,13 @@
   function previewHTML(){
     if(selectedRest()){ const d=durOf(run.curDur); return `<span class="struct">Rest — ${esc(d.name)}</span><div class="calc">silence; advances the cursor by a ${d.name.split(" ")[0]}</div>`; }
     const cards = selectedCards();
+    // Blind (by-ear) level: hide the numeric preview entirely — the applause/mult would jump on the right card
+    // and let you brute-force by watching the number. You commit blind; the reveal + bloom judge you after.
+    if(callHidden()){
+      return cards.length
+        ? `<span class="struct">🎧 Ready — play it to hear how close you got</span>`
+        : `<span class="calc">Listen to the call (🔊 Hear it), then play the note you hear.</span>`;
+    }
     if(!cards.length) return `<span class="calc">Select up to ${maxSelect()} card${maxSelect()===1?"":"s"} to see the structure &amp; score…</span>`;
     const res = score(cards, RUN_KEY, run.muses);
     const bonus = res.lines.length ? " · <span class='m'>"+res.lines.join(", ")+"</span>" : "";
@@ -1919,6 +1981,8 @@
     // single-select movements swap to the new card instead of blocking; multi-select respects the cap
     if(run.sel.size>=maxSelect()){ if(maxSelect()===1) run.sel.clear(); else return; }
     run.sel.add(idx);
+    if(run.callReveal) run.callReveal = null;   // by-ear: picking your next answer dismisses the previous reveal
+
     const inst = INSTRUMENTS.find(x=>x.id===c.instId); if(inst) playTone(c.midi, inst.wave, 0.4);
     // only the preview + card states need updating, but a full gig re-render is cheap
     renderGig();
@@ -2006,6 +2070,9 @@
           <button class="btn ghost" id="b-free" ${capped?"disabled":""} title="Every mechanic unlocked (today's full game)">Free Play</button>
         </div>
         ${mv===1?`<div class="cta" style="justify-content:center">${pitchTrackerHTML()}</div>`:""}
+        ${pitchLettersGot().length>=7?`<div class="cta" style="justify-content:center">
+          <button class="btn ghost" id="b-ear" ${capped?"disabled":""} title="Replay M1 Pitch with the call hidden — identify each note by ear">🎧 M1 Pitch — by Ear${(persist.progress.gates&&persist.progress.gates.pitchEar)?" ✓":""}</button>
+        </div>`:""}
         ${devMovementBarHTML()}
         <p class="hint center">Campaign teaches music one element at a time — pitch first, then rhythm, dynamics, melody, harmony, timbre, structure. Free Play unlocks everything. Both share the daily run cap.</p>
         ${capped?`<p class="hint center">You've used all ${MAX_RUNS_PER_DAY} runs today. Come back tomorrow — or try
@@ -2017,6 +2084,8 @@
     if(bc) bc.addEventListener("click", ()=>{ audio(); startRun("campaign"); });
     const bf = document.getElementById("b-free");
     if(bf) bf.addEventListener("click", ()=>{ audio(); startRun("free"); });
+    const be = document.getElementById("b-ear");
+    if(be) be.addEventListener("click", ()=>{ audio(); startRun("campaign", {movement:1, pitchLevel:"ear"}); });
     // DEV movement jumper: set the reached frontier, then re-render so the Campaign button updates
     $game.querySelectorAll(".dev-mv").forEach(el=> el.addEventListener("click", ()=>{
       persist.progress.movement = Math.max(1, Math.min(MAX_MOVEMENT, +el.dataset.mv)); savePersist(); renderHome();
@@ -2111,18 +2180,20 @@
     const canSave = filledBars() > 0;
     const acc = pitchAccuracy();               // M1 "how close" score (null if no calls answered)
     const accLine = (run && run.movement===1 && acc!=null)
-      ? `<p class="big" style="color:var(--gold)">🎯 Pitch accuracy: <b>${acc}%</b> — ${accuracyGrade(acc)}</p>` : "";
+      ? `<p class="big" style="color:var(--gold)">🎯 Pitch accuracy${run.pitchLevel==="ear"?" (by ear)":""}: <b>${acc}%</b> — ${accuracyGrade(acc)}</p>` : "";
     $overlay.innerHTML = `
       <div class="overlay"><div class="modal center">
         <h2>🎉 Performance complete!</h2>
         ${accLine}
         ${run && run.advancedTo
           ? `<p class="big" style="color:var(--good)">🎓 Movement complete — unlocked <b>M${run.advancedTo} ${MOVEMENTS[run.advancedTo].element}</b>! Next Campaign run starts there.</p>`
-          : (run && run.mode==="campaign" && run.movement<MAX_MOVEMENT
-              ? (run.movement===1
-                  ? `<p class="hint">Play all 7 in-key letters (A–G) in one run to complete <b>M1 Pitch</b> and unlock <b>M2 ${MOVEMENTS[2].element}</b>:</p>${pitchTrackerHTML()}`
-                  : `<p class="hint">${gateStatus(run.movement).label} — meet it in one run to unlock <b>M${run.movement+1} ${MOVEMENTS[run.movement+1].element}</b>.</p>`)
-              : "")}
+          : (run && run.pitchLevel==="ear"
+              ? `<p class="hint">🎧 <b>By-ear challenge</b> — how sharp is your ear? Play again to beat your accuracy.</p>`
+              : (run && run.mode==="campaign" && run.movement<MAX_MOVEMENT
+                  ? (run.movement===1
+                      ? `<p class="hint">Play all 7 in-key letters (A–G) in one run to complete <b>M1 Pitch</b> and unlock <b>M2 ${MOVEMENTS[2].element}</b>:</p>${pitchTrackerHTML()}`
+                      : `<p class="hint">${gateStatus(run.movement).label} — meet it in one run to unlock <b>M${run.movement+1} ${MOVEMENTS[run.movement+1].element}</b>.</p>`)
+                  : ""))}
         <p>You performed a <b>${filledBars()}</b>-note song for <b>${run.runScore}</b> applause. Every played chord is inscribed in your Codex.</p>
         <p class="big">Best hand: <b>${persist.bestApplause}</b> · Renown Lv <b>${renownLevel(persist.totalApplause)}</b></p>
         <div class="cta">
@@ -2140,7 +2211,9 @@
         ${runsLeft===0?`<p class="hint">Daily cap reached — try <a href="pitch-bird.html" style="color:var(--accent)">Pitch Bird</a> or come back tomorrow.</p>`:""}
       </div></div>`;
     const again = document.getElementById("b-again");
-    if(again) again.addEventListener("click", ()=>{ audio(); startRun(run && run.mode==="free" ? "free" : "campaign"); });
+    if(again) again.addEventListener("click", ()=>{ audio();
+      if(run && run.pitchLevel==="ear") startRun("campaign", {movement:1, pitchLevel:"ear"});   // stay in the by-ear challenge
+      else startRun(run && run.mode==="free" ? "free" : "campaign"); });
     const replay = document.getElementById("b-replay");
     if(replay) replay.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderEndOverlay(); });
     const savebtn = document.getElementById("b-savesong");
