@@ -475,6 +475,14 @@
     const n = (flats?FLAT_NOTES:SHARP_NOTES).find(x=>x.pc===pc);
     return n ? n.letter + (flats?"♭":"♯") : "?";
   }
+  // Piano-roll row COLOUR — naturals use their ROYGBIV colour; black keys use the spelled accidental's
+  // shade (COLOR[] is keyed by bare letter, so COLOR["C♯"] is undefined → cells would render black).
+  function rowColor(pc){
+    if(NOTE_LETTER[pc]!=null) return COLOR[NOTE_LETTER[pc]];
+    const flats = run && run.pitchLevel==="flats";
+    const n = (flats?FLAT_NOTES:SHARP_NOTES).find(x=>x.pc===pc);
+    return n ? shadeFor({pc, letter:n.letter, acc:flats?-1:1}) : "#888";
+  }
   // Notelings roster (docs/mujicians.md) — used to suggest a portmanteau song name. Names only, no sprites.
   const NOTELING = { A:"Ant", B:"Blob", C:"Chicken", D:"Dog", E:"Eye", F:"Flower", G:"Goat" };
   const INSTRUMENTS = [
@@ -2182,7 +2190,7 @@
     const gCol0 = wcol, gCol1 = tickToCol(run.loop.cursor + durTicks(run.curDur) - 1);
     let grid = "";
     rows.forEach(m=>{
-      const pc = m%12, letter = rowLetter(pc), oct = Math.floor(m/12)-1;
+      const pc = m%12, letter = rowLetter(pc), oct = Math.floor(m/12)-1, col = rowColor(pc);
       const inKey = RUN_KEY.key.includes(pc);
       const fits = fitsSelection(pc, RUN_KEY.key, selPcs);
       const rc = ["lgrow"];
@@ -2209,7 +2217,7 @@
         else if(onCell) cdyn = cov.onDyn.get(m+":"+c);
         if(cdyn && cdyn!=="mf") cl.push("cdyn-"+cdyn);
         // bg: attack = full color; held / ghost = translucent tints of it
-        const bg = onCell ? COLOR[letter] : heldCell ? COLOR[letter]+"55" : gAttack ? COLOR[letter]+"66" : gOn ? COLOR[letter]+"2e" : "";
+        const bg = onCell ? col : heldCell ? col+"55" : gAttack ? col+"66" : gOn ? col+"2e" : "";
         grid += `<div class="${cl.join(" ")}" data-tick="${c*TICKS_PER_COL}" data-col="${c}" data-midi="${m}"${bg?` style="background:${bg}"`:""}></div>`;
       }
     });
