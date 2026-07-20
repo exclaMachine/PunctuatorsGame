@@ -483,6 +483,11 @@
     const n = (flats?FLAT_NOTES:SHARP_NOTES).find(x=>x.pc===pc);
     return n ? shadeFor({pc, letter:n.letter, acc:flats?-1:1}) : "#888";
   }
+  // Both spellings of a black key ("C♯/D♭") — for the piano-roll row label once both accidentals are unlocked.
+  function enharmonicPair(pc){
+    const s = SHARP_NOTES.find(x=>x.pc===pc), f = FLAT_NOTES.find(x=>x.pc===pc);
+    return (s?s.letter+"♯":"") + (s&&f?"/":"") + (f?f.letter+"♭":"");
+  }
   // Notelings roster (docs/mujicians.md) — used to suggest a portmanteau song name. Names only, no sprites.
   const NOTELING = { A:"Ant", B:"Blob", C:"Chicken", D:"Dog", E:"Eye", F:"Flower", G:"Goat" };
   const INSTRUMENTS = [
@@ -491,6 +496,7 @@
     { id:"bass",   name:"Bass",   emoji:"🎻", wave:"sine",     baseC:36 },
   ];
   const BASE_HAND_SIZE = 4, DISCARDS = 4, COPIES = 2, REST_COPIES = 3;  // select cap is now per-movement — see maxSelect()
+  const ACC_COPIES = 1, MAX_TIMBRES = 4;   // once accidentals unlock: 1 of each spelling per instrument, deck capped at 4 timbres
   const MAX_RUNS_PER_DAY = 3;
   // Mario-Paint-style loop: ONE continuous performance in ONE key on a single tick timeline (see the
   // Continuous timeline block below). Each Play appends an event at the write cursor; the whole timeline
@@ -803,10 +809,11 @@
                  :                       "getting warmer +"+pm);
       }
     }
-    // Chromatic resolution (M1 Sharps/Flats): after an accidental, stepping a half-step in its pull
-    // direction (♯→up · ♭→down) onto an in-key scale tone RESOLVES it — what accidentals are FOR.
+    // Chromatic resolution: after an accidental, stepping a half-step in its pull direction (♯→up · ♭→down)
+    // onto an in-key scale tone RESOLVES it — what accidentals are FOR. Taught in M1 Sharps/Flats, but rewarded
+    // in EVERY mode once accidentals are unlocked (leading/passing tones in the later movements + Free Play).
     let resolved = false;
-    if(isAccidentalLevel() && run && cards.length===1 && !cards[0].acc){
+    if((isAccidentalLevel() || accidentalsUnlocked()) && run && cards.length===1 && !cards[0].acc){
       const pe = noteEventBefore(run.loop.cursor);
       const prev = (pe && pe.notes && pe.notes.length===1) ? pe.notes[0] : null;
       if(prev && prev.acc){
@@ -1507,24 +1514,38 @@
   let run = null;   // { deck, drawPile, hand, sel:Set, discardsLeft, runScore, muses, loop:{events,cursor}, curDur, curDyn }
   let screen = "home";
 
+  // Accidentals graduate out of M1 once BOTH lessons are cleared (M1 done → progress.movement>1): every later
+  // Campaign movement AND Free Play then carry them. Gated on campaign progress, so a first-timer who jumps
+  // straight into Free Play doesn't meet them before they're taught.
+  function accidentalsUnlocked(){ return (persist.progress.movement||1) > 1; }
   function buildDeck(mv, level){
     const m = mv || FREE_PLAY_MOVEMENT;
     const deck = [];
     let id = 0;
-    for(const inst of instrumentsFor(m)){
+    const insts = instrumentsFor(m).slice(0, MAX_TIMBRES);   // cap the deck at 4 timbres
+    for(const inst of insts){
       for(const pc of DIATONIC_C){
         for(let k=0;k<COPIES;k++){
           deck.push({ id:id++, pc, letter:NOTE_LETTER[pc], instId:inst.id, midi:inst.baseC+pc, acc:0 });
         }
       }
     }
-    // M1 accidental sub-levels: keep the naturals (so a ♯/♭ can resolve INTO a scale tone) and add the
-    // 5 spelled accidental cards of that deck. Piano only (M1 has no instrument choice yet).
+    // M1 accidental sub-levels: single spelling (the lesson) — keep the naturals (so a ♯/♭ can resolve INTO a
+    // scale tone) and add the 5 spelled cards of THAT deck. Piano only (M1 has no instrument choice yet).
     if(m===1 && (level==="sharps" || level==="flats")){
       const set = level==="sharps" ? SHARP_NOTES : FLAT_NOTES, acc = level==="sharps"?1:-1;
-      const baseC = instrumentsFor(1)[0].baseC;
+      const baseC = insts[0].baseC;
       for(const n of set) for(let k=0;k<COPIES;k++){
-        deck.push({ id:id++, pc:n.pc, letter:n.letter, instId:instrumentsFor(1)[0].id, midi:baseC+n.pc, acc });
+        deck.push({ id:id++, pc:n.pc, letter:n.letter, instId:insts[0].id, midi:baseC+n.pc, acc });
+      }
+    }
+    // Later modes + Free Play (once unlocked): BOTH spellings of every black key — the enharmonic pair
+    // (C♯ AND D♭, …) — 1 copy per timbre. Same pitch, different colour/name; a future enharmonics lesson.
+    else if(m>=2 && accidentalsUnlocked()){
+      for(const inst of insts) for(const spec of [ {set:SHARP_NOTES,acc:1}, {set:FLAT_NOTES,acc:-1} ]){
+        for(const n of spec.set) for(let k=0;k<ACC_COPIES;k++){
+          deck.push({ id:id++, pc:n.pc, letter:n.letter, instId:inst.id, midi:inst.baseC+n.pc, acc:spec.acc });
+        }
       }
     }
     // Rest cards (M2+ / rhythm on): played ALONE, they append silence of the chosen duration.
@@ -1631,6 +1652,7 @@
     persist.totalApplause += res.applause;
     if(res.applause > persist.bestApplause) persist.bestApplause = res.applause;
     if(["interval","triad","seventh","run"].includes(res.cls.type)) addCodex(res.cls.name);
+    if(res.resolved) addCodex("Chromatic resolution");   // any mode (M1 gate also flips gateResolved below)
     // campaign gate tracking — feed every per-movement objective (gateStatus reads the frontier one)
     if(run.mode==="campaign" && !rest){
       const cls = res.cls, tonicPc = RUN_KEY.key[0];
@@ -1639,7 +1661,7 @@
         cards.forEach(c => { if(c.acc) run.gateAcc.add(spellId(c)); });                 // land the exact accidental spellings (gate needs ≥1)
         if(!run.call.awaitingResolve && cards[0] && (cards[0].midi - run.call.midi)*run.call.dir > 0)
           run.gateDir = (run.gateDir||0) + 1;                                           // forgiving: count each correct-direction response
-        if(res.resolved){ run.gateResolved = true; addCodex("Chromatic resolution"); }  // resolution is now an optional BONUS
+        if(res.resolved) run.gateResolved = true;                                        // resolution is now an optional BONUS (Codex added above)
       }
       if(termOn("groove")) run.gateDurs.add(run.curDur);                                 // M2: distinct note values (per play)
       if(termOn("dynamic")) run.gateDyns.add(run.curDyn);                                // M3: soft/medium/loud
@@ -2157,17 +2179,19 @@
   // Per-(midi:col) coverage of the timeline — MIRRORS the scheduler so the picture matches the sound.
   // `on` = each note's attack column; `held` = its sustained columns (so note length is visible).
   function eventCoverage(events){
-    const on = new Set(), held = new Set(), onDyn = new Map();   // onDyn: attack cell → its dynamic (size = volume)
+    const on = new Set(), held = new Set(), onDyn = new Map(), col = new Map();   // onDyn: attack cell → dynamic; col: cell → the played spelling's colour
     (events||[]).forEach(e=>{
       if(e.rest || !e.notes) return;
       const c0 = tickToCol(e.at), c1 = tickToCol(e.at + e.dur - 1);
       e.notes.forEach(nt=>{
+        const cc = shadeFor(nt) || COLOR[nt.letter];   // honour the played spelling (C♯ warm vs D♭ cool)
         on.add(nt.midi+":"+c0);
         onDyn.set(nt.midi+":"+c0, e.dyn||DEFAULT_DYN);
-        for(let c=c0+1;c<=c1;c++) held.add(nt.midi+":"+c);
+        col.set(nt.midi+":"+c0, cc);
+        for(let c=c0+1;c<=c1;c++){ held.add(nt.midi+":"+c); col.set(nt.midi+":"+c, cc); }
       });
     });
-    return { on, held, onDyn };
+    return { on, held, onDyn, col };
   }
   // The loop grid is a piano-roll: rows = pitches, columns = beats at DISPLAY_COLS_PER_BEAT. Each event
   // draws as a horizontal bar spanning its duration at its tick position; rests are gaps. A gold write
@@ -2185,12 +2209,17 @@
     const selCards = selectedCards();
     const restSel = !!selectedRest();
     const selMidis = new Set(selCards.map(c=>c.midi));
+    const selCol = new Map(selCards.map(c=>[c.midi, shadeFor(c) || COLOR[c.letter]]));   // ghost colour honours the selected spelling
     const selPcs = [...new Set(selCards.map(c=>c.pc))];
     const wcol = tickToCol(run.loop.cursor);
     const gCol0 = wcol, gCol1 = tickToCol(run.loop.cursor + durTicks(run.curDur) - 1);
     let grid = "";
     rows.forEach(m=>{
-      const pc = m%12, letter = rowLetter(pc), oct = Math.floor(m/12)-1, col = rowColor(pc);
+      const pc = m%12, oct = Math.floor(m/12)-1, col = rowColor(pc);
+      // Black-key rows show BOTH spellings once accidentals are unlocked (enharmonic), else the deck's spelling.
+      const isBlack = NOTE_LETTER[pc]==null;
+      const letter = (isBlack && accidentalsUnlocked() && run.pitchLevel!=="sharps" && run.pitchLevel!=="flats")
+        ? enharmonicPair(pc) : rowLetter(pc);
       const inKey = RUN_KEY.key.includes(pc);
       const fits = fitsSelection(pc, RUN_KEY.key, selPcs);
       const rc = ["lgrow"];
@@ -2217,7 +2246,8 @@
         else if(onCell) cdyn = cov.onDyn.get(m+":"+c);
         if(cdyn && cdyn!=="mf") cl.push("cdyn-"+cdyn);
         // bg: attack = full color; held / ghost = translucent tints of it
-        const bg = onCell ? col : heldCell ? col+"55" : gAttack ? col+"66" : gOn ? col+"2e" : "";
+        const placed = cov.col.get(m+":"+c), gcol = selCol.get(m) || col;   // placed cell = played spelling; ghost = selected spelling
+        const bg = onCell ? (placed||col) : heldCell ? (placed||col)+"55" : gAttack ? gcol+"66" : gOn ? gcol+"2e" : "";
         grid += `<div class="${cl.join(" ")}" data-tick="${c*TICKS_PER_COL}" data-col="${c}" data-midi="${m}"${bg?` style="background:${bg}"`:""}></div>`;
       }
     });

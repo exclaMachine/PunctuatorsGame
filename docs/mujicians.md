@@ -572,6 +572,34 @@ M1 PITCH  (a gated ladder — each stage unlocks the next; only past Flats does 
   stage. Dee still narrates Naturals + by-Ear.
 - **Deferred (unchanged):** the **♮ boss**, its naturalize debuff, and the ♮-card / Ranger reward.
 
+### Accidentals graduate to every later mode + Free Play (BUILT 2026-07-20)
+
+Once **both** M1 accidental lessons are cleared (finishing Flats bumps `persist.progress.movement>1`),
+accidentals stop being M1-only and join **every later Campaign movement (M2–M7) and Free Play**:
+
+- **Unlock gate.** `accidentalsUnlocked()` = `persist.progress.movement > 1`. Gated on **campaign progress**,
+  not the run's movement — so a first-timer who jumps straight into **Free Play** (a run at movement 7) still
+  won't meet accidentals until they've actually been taught them.
+- **A mix of BOTH spellings.** `buildDeck` (the `else if(m>=2 && accidentalsUnlocked())` branch) adds **both**
+  the sharp AND flat spelling of every black key — the enharmonic pair (C♯ *and* D♭, D♯ *and* E♭, …) — at
+  **`ACC_COPIES` (1)** copy **per unlocked timbre**. The whole deck is **capped at `MAX_TIMBRES` (4)** timbres
+  (`instrumentsFor(m).slice(0,4)`) so it can't explode as more instruments arrive. (M1's own Sharps/Flats
+  sub-levels keep their **single**-spelling teaching deck; this is the separate graduated deck.)
+- **They're worth playing — resolution rewarded everywhere.** The **chromatic-resolution bonus** (play an
+  accidental, then step a half-step in its pull direction onto an in-key scale tone → `+2 mult/+6 chips` +
+  Codex "Chromatic resolution") is no longer M1-only — its guard is now `(isAccidentalLevel() ||
+  accidentalsUnlocked())`, so accidentals function as **leading/passing tones** in the later movements and Free
+  Play. (They're still out-of-key in C major, so they get no `inkey ×2` on their own — resolving them is the
+  payoff.) `addCodex("Chromatic resolution")` fires in any mode; the M1 gate's `gateResolved` still only flips
+  during the Sharps/Flats sub-levels.
+- **Piano-roll honours the spelling.** `eventCoverage` now carries a per-cell **colour** (`shadeFor(nt)`), so a
+  played **C♯ looks warm** and a **D♭ looks cool** even though they share a row/pitch; the placement **ghost**
+  uses the selected card's spelling colour (`selCol`). Black-key **row labels** show **both** spellings
+  (`enharmonicPair` → "C♯/D♭") once unlocked (single spelling inside the M1 sub-levels).
+- **Future: an enharmonics lesson.** C♯ and D♭ are the same pitch spelled two ways — a natural dedicated
+  **enharmonics lesson** (why spelling depends on key/direction) is flagged as a future movement/sub-level;
+  seeding both spellings into the deck now sets it up. *(Not built.)*
+
 **Why this doesn't revert "gigs removed."** The 2026-07-18 cut removed per-run **antes/gigs** from normal &
 Free-Play performances (a run is one continuous open-ended song). This boss is **not** that — it's a
 **campaign capstone / special challenge run** (the doc already keeps "boss = movement capstone" alive). Normal
