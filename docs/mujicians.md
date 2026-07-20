@@ -303,8 +303,8 @@ you'd played and read as disorienting.)*
 | # | Element | The **call** (computer plays…) | Your **response** | Scored on (graded proximity) |
 |---|---------|-------------------------------|-------------------|------------------------------|
 | **1** | **Pitch · Wind** | a target note "carried on the breeze" | play the matching pitch | **absolute pitch distance** — exact=full, a step off=nearly full, ~an octave off=least (NOT consonance — that's Melody) |
-| — | *M1 Sharps level* | a natural note | play the note **a half-step above** & resolve up | the ♯→up [chromatic resolution](#accidentals--the-sharps--flats-runs--the--boss-planned) |
-| — | *M1 Flats level* | a natural note | play the note **a half-step below** & resolve down | the ♭→down resolution |
+| — | *M1 Sharps level* | a natural note | play **any note higher** (bonus: the exact ♯, then resolve up) | direction (higher) + exact-♯ bonus + optional ♯→up [resolution](#accidentals--the-sharps--flats-runs--the--boss-planned) |
+| — | *M1 Flats level* | a natural note | play **any note lower** (bonus: the exact ♭, then resolve down) | direction (lower) + exact-♭ bonus + optional ♭→down resolution |
 | **2** | **Rhythm · Earth** | a rhythm pattern (the ground's pulse) | clap it back — same onsets/durations | onset + duration match (a played rest is a rhythmic event) |
 | **3** | **Dynamics · Fire** | a **creature scenario** (see below), not a note | play at the demanded loudness (+ rests when sneaking) | matching the target dynamic the scene demands — teaches pp→ff **notation** |
 | **4** | **Melody · Water** | a short melodic phrase (a wave) | **echo it**, or **answer it** (antecedent→consequent) | contour match / a good complementary answer |
@@ -362,9 +362,12 @@ The first slice of the frame, shipped in `mujicians.html`:
   playhead swept over it silently until next lap). `catchUpEvent()` (called from `placeEvent`) now schedules
   that single onset for the current lap when it lands in the committed window; `schedTick` only schedules
   onsets `≥ schedFrom`, so no double. General fix (all movements + Free Play), inert while paused.
-- **Blind "by Ear" sub-level — BUILT (2026-07-19).** The [shown-early→ear-only ramp](#the-four-decisions-locked) now exists for M1 as a **separate sub-level** (the frame chosen with the dev, mirroring the
-  planned Sharps/Flats sub-levels). Once the 7 shown naturals are catalogued (`persist.progress.gates.pitch`
-  full), Home shows a **🎧 M1 Pitch — by Ear** button that starts an M1 campaign run with
+- **Blind "by Ear" sub-level — BUILT (2026-07-19).** *(Superseded 2026-07-19: by-Ear is no longer a standalone
+  Home button — it's **stage 2 of the gated M1 ladder** (Naturals → **by-Ear** → Sharps → Flats), driven by
+  `persist.progress.pitchStage`. See [Accidentals → M1 ladder as built](#m1-ladder--as-built-2026-07-19). The
+  original design below is kept for the ear-mode mechanics, which are unchanged.)* The [shown-early→ear-only ramp](#the-four-decisions-locked) exists for M1 as a **sub-level** (the frame chosen with the dev, mirroring the
+  Sharps/Flats sub-levels). Originally, once the 7 shown naturals were catalogued (`persist.progress.gates.pitch`
+  full), Home showed a **🎧 M1 Pitch — by Ear** button that starts an M1 campaign run with
   **`run.pitchLevel:"ear"`** (`startRun(mode, opts)` gained `opts.movement`/`opts.pitchLevel`; `callHidden()` =
   `callActive() && pitchLevel==="ear"`). In ear mode the call **sounds only** — `callBarHTML` draws a **muffled
   `?` chip** (no colour) + the **🔊 Hear it** button and **no pre-commit verdict**; `previewHTML` **hides the
@@ -509,25 +512,65 @@ makes *original* music. So the campaign **shifts flavor across the arc**:
 
 ---
 
-## Accidentals — the sharps & flats runs + the ♮ boss (PLANNED)
+## Accidentals — the sharps & flats runs + the ♮ boss (Sharps/Flats BUILT 2026-07-19; boss deferred)
 
-> **Status: PLANNED, not built (designed 2026-07-18).** This is the concrete design for the long-flagged
-> **"accidentals belong in M1 Pitch"** note (Progression → M1) and resolves its open question ("new cards vs
-> transform vs sub-level gate") in favor of **sub-level runs with dedicated decks**. It also **funds the
-> enharmonic-spelling gap** in the theory-coverage checklist (the engine learns to tell C♯ from D♭ here).
-> Four design forks were decided with the dev (2026-07-18); defaults on the remaining sub-decisions are
-> marked *[recommended]* and are what I'll build unless changed.
+> **Status: ✅ Sharps & Flats BUILT 2026-07-19** in `mujicians.html`; the **♮ boss is deferred** (dev's call).
+> This realizes the long-flagged **"accidentals belong in M1 Pitch"** note in favor of **sub-level runs with
+> dedicated decks**, and **funds the enharmonic-spelling gap** (the engine now carries `acc` and tells C♯ from
+> D♭). Forks locked with the dev (2026-07-19): **full mechanic** (spelled cards + colour shades + chromatic-
+> resolution scoring + per-deck 5-card gates), **call-and-response + resolution** play, gate = **catalogue 5
+> spellings + one correct resolution**, mentors **🎭 Sharpist** (jester) / **🤺 Sir Flatterer** (knight). See
+> **[M1 ladder — as built](#m1-ladder--as-built-2026-07-19)** below.
 
-**The shape (decided).** Accidentals are taught as **internal levels of the Pitch movement (M1)**, after the
-7 naturals are catalogued:
+**The shape (BUILT).** Accidentals are **internal levels of the Pitch movement (M1)**, walked as a **gated
+ladder** before M2 Rhythm unlocks — and **ear training now sits in that ladder** (moved out of a standalone
+Home button; dev's ask 2026-07-19 — ear comes right after the first pitch lesson, not after Rhythm):
 
 ```
-M1 PITCH
- ├─ Lv1  Naturals  — catalog the 7 letters in key           ← BUILT (hangman row)
- ├─ Lv2  Sharps    — a run with the sharps deck; catalog 5 sharps
- ├─ Lv3  Flats     — a run with the flats deck;  catalog 5 flats
- └─ BOSS ♮ Natural — a capstone run whose debuff naturalizes every ♯/♭ you play
+M1 PITCH  (a gated ladder — each stage unlocks the next; only past Flats does M2 Rhythm open)
+ ├─ Naturals  — catalogue the 7 letters in key (shown call)         ← BUILT (hangman row)
+ ├─ by Ear    — the 7 naturals again, call HIDDEN (ear training)    ← BUILT (was a side button; now in-line)
+ ├─ Sharps    — call-and-response: play any note HIGHER (bonus: exact ♯ + resolve UP)  ← BUILT (🎭 Sharpist)
+ ├─ Flats     — call-and-response: play any note LOWER (bonus: exact ♭ + resolve DOWN) ← BUILT (🤺 Sir Flatterer)
+ └─ BOSS ♮    — capstone whose debuff naturalizes every ♯/♭          ← DEFERRED (not built)
 ```
+
+### M1 ladder — as built (2026-07-19)
+
+- **`persist.progress.pitchStage`** ∈ `naturals → ear → sharps → flats` is the M1 frontier stage. While
+  `movement===1`, the Home **Campaign** button follows it (label `▶ Campaign · M1 Pitch — <stage>`), and a
+  **ladder strip** (`pitchLadderHTML`) shows done/current stages. `maybeAdvance` advances the *stage* (not
+  the movement) until Flats clears, which finally bumps `movement→2`. **Migration:** old saves derive the
+  stage from prior gates (`movement>1`→done · `gates.pitchEar`→sharps · 7 naturals→ear · else naturals). Once
+  past M1 a compact **🎼 Pitch practice** row (`pitchPracticeHTML`) replays any sub-level.
+- **`startRun(mode,opts)`** resolves `pitchLevel` from `opts.pitchLevel || pitchStage` (M1 only). The old
+  standalone **🎧 by-Ear** Home button is gone (folded into the ladder); "New Run" just follows the frontier.
+- **Spelled cards.** Card/note objects carry **`acc`** (`0`/`+1`/`−1`); `buildDeck(mv, level)` adds the 5
+  accidental cards to the naturals for `sharps`/`flats` (`SHARP_NOTES` C♯D♯F♯G♯A♯ · `FLAT_NOTES` D♭E♭G♭A♭B♭ —
+  same pcs/midis, different `letter`+`acc`). `noteLabel`/`spellId` render/key the spelling; `shadeFor` tints
+  each accidental toward the natural it **resolves to** (♯→next letter up, ♭→prev letter down — colour shows
+  the voice-leading pull). `rowLetter` labels the black-key piano-roll rows to match the deck.
+- **Call-and-response — forgiving DIRECTION play (reworked 2026-07-20).** Because it's a random card game you
+  rarely draw the exact accidental, so demanding it was frustrating. Now the mentor **sounds a natural** and you
+  just answer with **any note higher** (♯) / **lower** (♭); landing the **exact accidental** is a *bonus*, and
+  only after an exact hit does the two-play **resolution** open (also a bonus, `run.call.awaitingResolve`).
+  Scoring (`score()` respond term, accidental first-play branch): **exact ♯/♭** `+5 mult/+8 chips`; **correct
+  direction** (`(played−call)·dir>0`) `+3 mult/+2 chips`; **wrong way** `+1 mult` (never zero). `respondTier`
+  is direction-aware (`exact` ≫ `soclose`/`close` for right-way ≫ `far` for wrong-way) so the bloom/rating/chime
+  and the live call-bar stamp read direction. The **chromatic-resolution bonus** (`+2 mult/+6 chips` + Codex) is
+  unchanged but now purely optional. Calls stay in **C major** (accidentals are out of key — no flat `inkey ×2`
+  to punish them). `newCall` **never calls a note with no room in the required direction** (filters the natural
+  pool by the deck's pitch range — nothing above for ♯ / below for ♭ would be unanswerable). `callBarHTML`'s
+  accidental branch says "play any note **higher/lower** — bonus for the exact ♯/♭" (mentor face + natural chip +
+  target chip + live direction stamp).
+- **Gate (`gateStatus` case 1 branch) — direction + one exact.** Sharps/Flats met = **`ACC_DIR_TARGET` (4)
+  correct-direction responses** (`run.gateDir`) **+ one exact accidental landed** (`run.gateAcc.size≥1`).
+  Resolution is **no longer required** to advance (optional bonus). Shown in-gig via `accTrackerHTML`
+  (higher/lower count + the 5 exact-spelling slots + an "exact ✓" + a "resolve ✓ bonus").
+- **Mentors.** `CHARACTERS.sharpist` (🎭, giddy/upward) and `CHARACTERS.flatter` (🤺, glum/downward) narrate
+  `LESSON_INTROS["m1:sharps"]` / `["m1:flats"]`; `lessonKey()` returns `m1:<level>` for any non-naturals M1
+  stage. Dee still narrates Naturals + by-Ear.
+- **Deferred (unchanged):** the **♮ boss**, its naturalize debuff, and the ♮-card / Ranger reward.
 
 **Why this doesn't revert "gigs removed."** The 2026-07-18 cut removed per-run **antes/gigs** from normal &
 Free-Play performances (a run is one continuous open-ended song). This boss is **not** that — it's a
@@ -550,6 +593,13 @@ runs feel distinct instead of reskinned. It forces the engine to carry **letter 
 pitch class (the enharmonic fix).
 
 ### Scoring — chromatic resolution *[recommended; sub-decision]*
+
+> **AMENDED 2026-07-20 — forgiving direction is the primary score; resolution is a bonus.** Requiring the
+> *exact* accidental was frustrating in a random card game (you rarely drew it). The accidental levels now
+> score first on **playing the right DIRECTION** (higher for ♯ / lower for ♭) with the **exact ♯/♭ as a bonus**;
+> the chromatic-resolution bonus below only opens after an exact hit and is **optional** (not gated). The
+> gate became **direction ×`ACC_DIR_TARGET` + one exact** (not "all 5 + resolve"). See
+> [M1 ladder — as built](#m1-ladder--as-built-2026-07-19). The rest of this section is the original resolution design.
 
 The runs are still in **C major**, where every accidental is **out of key** — so plain "in-key = ×2" would
 punish the very cards the level is about. Instead the accidental levels turn on a **chromatic-resolution
@@ -580,15 +630,22 @@ color notes collapse to the scale.
 - **Keep it simple v1:** full naturalization for the whole run (not partial/growing). Growing debuff, or
   naturalizing only some bars, is a later tuning knob.
 
-### M1 graduation — does the accidental arc gate M2? *[recommended: no]*
+### M1 graduation — does the accidental arc gate M2? **DECIDED 2026-07-19: yes, gated ladder**
 
-**Recommended:** the 7 **naturals still graduate M1→M2** (keep the gentle onramp — "one concept at a time").
-The **sharps/flats/♮-boss arc is an optional deeper M1 track** ("Pitch, advanced") that grants the ♮ card, a
-Codex badge, and Tips, but is **not a hard wall** before Melody. This mirrors M7's terminal gate being
-"flavor rather than an advance," and avoids front-loading all of pitch before any melody. *(Open: the dev may
-prefer accidentals to be **required** before M2 — decide in build.)*
+**Built as a required ladder** (dev reversed the earlier "optional track" recommendation): M2 Rhythm only
+unlocks after the **whole** M1 arc — **Naturals → by-Ear → Sharps → Flats** — is cleared in sequence. This
+also moved **ear training** to sit right after the first pitch lesson (it used to be a standalone Home button
+that appeared *alongside* Rhythm's unlock). The **♮ boss** remains deferred, so Flats is the final stage that
+graduates M1→M2 for now.
 
-### Code map (when built)
+### Code map (Sharps/Flats built — see [as built](#m1-ladder--as-built-2026-07-19); ♮-boss rows below are TODO)
+
+> The Sharps/Flats rows are **built** (with deliberate deviations from this original sketch: the gate is
+> **per-run** — `run.gateDir` correct-direction count + `run.gateAcc` for the one-exact requirement (resolution
+> `run.gateResolved` is an optional bonus, not gated) — matching M1's other per-run gates, **not** persisted
+> `gates.sharps`/`.flats`; the ladder frontier `persist.progress.pitchStage` is what persists; and play is the
+> **forgiving DIRECTION** model, not "play the exact accidental," per the 2026-07-20 rework). The **boss
+> debuff / ♮-card / Home boss-unlock** rows remain unbuilt.
 
 - **Spelled notes (the core retrofit).** Card/note objects gain an **`acc`** field (`0` natural / `+1` sharp
   / `−1` flat) alongside `pc`/`letter`/`midi`. `C♯` and `D♭` share `pc`/`midi` but differ in `letter`+`acc`.

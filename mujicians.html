@@ -141,6 +141,17 @@
   .callbar .clreveal .rvverd{font-weight:800}
   .callbar .clreveal .rvyou{color:var(--dim);font-size:13px;font-weight:600}
   @keyframes revealpop{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
+  /* accidental (♯/♭) chips in the call bar are 2 glyphs wide */
+  .callbar .callnote.acc{width:auto;min-width:32px;padding:0 9px;font-size:18px}
+  /* accidental cards: shaded toward their resolution, with a subtly slanted, glassy look */
+  .card.acc .cnote{font-size:26px}
+  .card.acc{font-style:italic;box-shadow:0 3px 0 rgba(0,0,0,.18),inset 0 0 0 1px rgba(255,255,255,.14)}
+  /* M1 pitch ladder on Home — the sub-levels walked before Rhythm unlocks */
+  .pitchladder{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;font-size:12px}
+  .pitchladder .plstep{padding:3px 9px;border-radius:999px;border:1px solid var(--edge);color:var(--dim);white-space:nowrap}
+  .pitchladder .plstep.done{color:var(--good);border-color:var(--good)}
+  .pitchladder .plstep.here{color:var(--ink);border-color:var(--accent);box-shadow:0 0 10px rgba(120,140,255,.25);font-weight:700}
+  .pitchladder .plsep{color:var(--dim);opacity:.6}
 
   /* level narration — mentor intro card + speech bubble (current style; art is a swap token → .pixel later) */
   .introwrap{display:flex;gap:16px;align-items:flex-start;max-width:560px;text-align:left}
@@ -432,6 +443,38 @@
   // ROYGBIV — decided A=Red … G=Violet (see docs/mujicians.md)
   const COLOR = { A:"#e23b3b", B:"#e8843c", C:"#e8cf3c", D:"#4caf50", E:"#3d7ae0", F:"#5a4bd6", G:"#9a4bd6" };
   const COLORNAME = { A:"red", B:"orange", C:"yellow", D:"green", E:"blue", F:"indigo", G:"violet" };
+  /* ---- Accidentals (M1 sub-levels: Sharps / Flats) ----
+     The 5 black-key pitches, spelled two ways. Same pcs/midis; the LETTER + acc differ (this is the
+     enharmonic lesson — C♯ and D♭ are one key but pull opposite directions). A ♯ resolves UP a half-step
+     to the next natural (C♯→D); a ♭ resolves DOWN (D♭→C). See docs/mujicians.md → Accidentals. */
+  const SHARP_NOTES = [ {pc:1,letter:"C"}, {pc:3,letter:"D"}, {pc:6,letter:"F"}, {pc:8,letter:"G"}, {pc:10,letter:"A"} ];  // acc +1 (C♯ D♯ F♯ G♯ A♯)
+  const FLAT_NOTES  = [ {pc:1,letter:"D"}, {pc:3,letter:"E"}, {pc:6,letter:"G"}, {pc:8,letter:"A"}, {pc:10,letter:"B"} ];  // acc −1 (D♭ E♭ G♭ A♭ B♭)
+  const accGlyph = acc => acc>0?"♯":acc<0?"♭":"";
+  const noteLabel = c => (c.letter||"") + accGlyph(c.acc||0);            // "C♯" / "D♭" / "C"
+  const spellId   = c => (c.letter||"") + (c.acc>0?"#":c.acc<0?"b":"");  // stable key for the catalogue gate
+  // Blend two #rrggbb colours (t=0 → a, 1 → b).
+  function mixHex(a, b, t){
+    const p = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+    const [ar,ag,ab]=p(a), [br,bg,bb]=p(b);
+    const c = (x,y)=>Math.round(x+(y-x)*t).toString(16).padStart(2,"0");
+    return "#"+c(ar,br)+c(ag,bg)+c(ab,bb);
+  }
+  // An accidental's colour = its letter's ROYGBIV colour nudged toward the natural it RESOLVES to
+  // (♯→next letter up / ♭→next letter down), so the colour literally shows the voice-leading pull.
+  function shadeFor(c){
+    if(!c || !c.acc) return COLOR[c.letter];
+    const tgtPc = (c.pc + (c.acc>0?1:-1) + 12)%12;
+    const tgt = COLOR[NOTE_LETTER[tgtPc]] || COLOR[c.letter];
+    return mixHex(COLOR[c.letter], tgt, 0.42);
+  }
+  const PITCH_STAGES = ["naturals","ear","sharps","flats"];   // the M1 ladder (walked before M2 Rhythm unlocks)
+  // Piano-roll row label for a pitch class — naturals by name, black keys spelled to match the run's deck.
+  function rowLetter(pc){
+    if(NOTE_LETTER[pc]!=null) return NOTE_LETTER[pc];
+    const flats = run && run.pitchLevel==="flats";
+    const n = (flats?FLAT_NOTES:SHARP_NOTES).find(x=>x.pc===pc);
+    return n ? n.letter + (flats?"♭":"♯") : "?";
+  }
   // Notelings roster (docs/mujicians.md) — used to suggest a portmanteau song name. Names only, no sprites.
   const NOTELING = { A:"Ant", B:"Blob", C:"Chicken", D:"Dog", E:"Eye", F:"Flower", G:"Goat" };
   const INSTRUMENTS = [
@@ -523,6 +566,7 @@
   ];
   // Phase 2 thin-gate targets (catalog-the-concept counts, tunable) + dynamics model.
   const GATE_INTERVALS = 3, GATE_TRIADS = 3, GATE_BLENDS = 4;
+  const ACC_DIR_TARGET = 4;   // M1 Sharps/Flats gate: this many correct-DIRECTION responses (higher for ♯ / lower for ♭) + one exact accidental
   // Dynamics (M3): per-hand p/mf/f marking → a loudness multiplier on note gain. (Future: crescendo/
   // accent symbols as their own figure-like picks — see docs/mujicians.md.)
   const DYN = [
@@ -567,7 +611,11 @@
     const r = run || {};
     const cap = (n,m)=>Math.min(n,m);
     switch(mv){
-      case 1: { const h=(r.gatePitch)?r.gatePitch.size:pitchLettersGot().length;   // per-run this run; persisted count at home
+      case 1: {
+        if(r.pitchLevel==="sharps" || r.pitchLevel==="flats"){   // accidental sub-levels: correct direction a few times + one exact
+          const dir=(r.gateDir||0), ex=(r.gateAcc?r.gateAcc.size:0)>=1?1:0, sharp=r.pitchLevel==="sharps", sym=sharp?"♯":"♭", N=ACC_DIR_TARGET;
+          return { met:dir>=N && ex>=1, label:`${sharp?"Sharps":"Flats"} gate — play ${N} notes ${sharp?"higher":"lower"} (${cap(dir,N)}/${N}) + land one exact ${sym} (${ex}/1)` }; }
+        const h=(r.gatePitch)?r.gatePitch.size:pitchLettersGot().length;   // per-run this run; persisted count at home
         return { met:h>=7, label:`Pitch gate — play every in-key letter (A–G): ${h}/7` }; }
       case 2: { const h=r.gateDurs?r.gateDurs.size:0, N=DURATIONS.length;   // Phase 3 Stage 2: play each note value
         return { met:h>=N, label:`Rhythm gate — play each note value (♩ 𝅗𝅥 𝅝): ${cap(h,N)}/${N}` }; }
@@ -605,6 +653,20 @@
     return `<div class="pitchtrack${compact?" compact":""}">
       <span class="ptlbl">Pitch gate ${done?"✓":`${got.size}/7`}</span>
       <span class="ptslots">${slots}</span></div>`;
+  }
+  // M1 Sharps/Flats tracker: correct-DIRECTION count (the gate) + the 5 accidental slots (fill as you land each
+  // exact spelling — you only need one) + a "resolve" check (an optional bonus, not required to advance).
+  function accTrackerHTML(){
+    const sharp = run.pitchLevel==="sharps", set = sharp?SHARP_NOTES:FLAT_NOTES, acc = sharp?1:-1, N = ACC_DIR_TARGET;
+    const got = run.gateAcc || new Set(), dir = run.gateDir||0;
+    const slots = set.map(n=>{ const c={pc:n.pc,letter:n.letter,acc}, on=got.has(spellId(c));
+      return `<span class="ptslot${on?" on":""}" title="${noteLabel(c)}"${on?` style="color:${shadeFor(c)}"`:""}>${noteLabel(c)}</span>`; }).join("");
+    const rz = !!run.gateResolved, dirDone = dir>=N, exDone = got.size>=1;
+    return `<div class="pitchtrack">
+      <span class="ptlbl">${sharp?"higher":"lower"} ${dirDone?"✓":`${Math.min(dir,N)}/${N}`}</span>
+      <span class="ptslots">${slots}</span>
+      <span class="ptlbl" style="margin-left:8px">exact ${exDone?"✓":"·"}</span>
+      <span class="ptlbl" style="margin-left:8px">resolve ${rz?"✓":"·"} <i style="opacity:.6">bonus</i></span></div>`;
   }
 
   // structure base scores  [chips, mult]
@@ -713,15 +775,39 @@
     // (bloom / rating pop / chime) buckets into. See docs/mujicians.md.
     let respond = null;
     if(termOn("respond") && run && run.call && cards.length===1){
-      const d = Math.abs(cards[0].midi - run.call.midi);   // 0..11 semitones (M1 deck is one octave)
-      respond = respondTier(cards[0].midi);
-      const pm = Math.max(1, 5 - Math.floor((d+1)/2));      // proximity mult: 5·4·4·3·3·2·2·1… (floor 1 = never zero)
-      const pc = d===0 ? 8 : (d<=2 ? 4 : 0);                // bonus chips for a bullseye / very close
-      mult += pm; chips += pc;
-      lines.push(respond==="exact"   ? "🎯 nailed the pitch +"+pm
-               : respond==="soclose" ? "🔥 so close +"+pm
-               : respond==="close"   ? "👍 close +"+pm
-               :                       "getting warmer +"+pm);
+      const played = cards[0].midi, tgt = callTargetMidi();
+      respond = respondTier(played);
+      if(isAccidentalLevel() && !run.call.awaitingResolve){
+        // Forgiving DIRECTION scoring: any note the right way (higher for ♯ / lower for ♭) scores well; the
+        // exact accidental is the bonus. Wrong way still earns a little (never zero). See docs/mujicians.md.
+        const dir = run.call.dir, sym = dir>0 ? "♯" : "♭";
+        if(played===tgt){ mult += 5; chips += 8; lines.push(`🎯 exact ${sym} +5`); }
+        else if((played - run.call.midi)*dir > 0){ mult += 3; chips += 2; lines.push((dir>0?"👍 higher than the call +3":"👍 lower than the call +3")); }
+        else { mult += 1; lines.push(dir>0 ? "go higher! +1" : "go lower! +1"); }
+      } else {
+        const d = Math.abs(played - tgt);                    // semitones from the current target (note / resolution)
+        const pm = Math.max(1, 5 - Math.floor((d+1)/2));     // proximity mult: 5·4·4·3·3·2·2·1… (floor 1 = never zero)
+        const pcb = d===0 ? 8 : (d<=2 ? 4 : 0);              // bonus chips for a bullseye / very close
+        mult += pm; chips += pcb;
+        lines.push(respond==="exact"   ? "🎯 nailed the pitch +"+pm
+                 : respond==="soclose" ? "🔥 so close +"+pm
+                 : respond==="close"   ? "👍 close +"+pm
+                 :                       "getting warmer +"+pm);
+      }
+    }
+    // Chromatic resolution (M1 Sharps/Flats): after an accidental, stepping a half-step in its pull
+    // direction (♯→up · ♭→down) onto an in-key scale tone RESOLVES it — what accidentals are FOR.
+    let resolved = false;
+    if(isAccidentalLevel() && run && cards.length===1 && !cards[0].acc){
+      const pe = noteEventBefore(run.loop.cursor);
+      const prev = (pe && pe.notes && pe.notes.length===1) ? pe.notes[0] : null;
+      if(prev && prev.acc){
+        const dir = prev.acc>0 ? 1 : -1;
+        if(cards[0].midi === prev.midi + dir && gig.key.includes(cards[0].pc)){
+          resolved = true; mult += 2; chips += 6;
+          lines.push(prev.acc>0 ? "♯ resolved up +2" : "♭ resolved down +2");
+        }
+      }
     }
     // groove (M2): keep the beat, and reward rhythmic variety — this play's duration differing from the
     // previous timeline event's. (Timeline-aware; deepens in Stage 2 with syncopation / cross-loop consistency.)
@@ -778,7 +864,7 @@
     });
 
     const applause = Math.round(chips * mult);
-    return { cls, chips, mult, applause, lines, respond };
+    return { cls, chips, mult, applause, lines, respond, resolved };
   }
 
   /* ================= Muses (the build engine) =================
@@ -812,7 +898,7 @@
   /* ================= persistence + daily cap ================= */
   const SAVE_KEY = "mujicians-save-v2";
   function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
-  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, progress:{ movement:1, gates:{} } };
+  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, progress:{ movement:1, gates:{}, pitchStage:"naturals" } };
   function loadPersist(){
     try{
       const s = JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
@@ -823,6 +909,12 @@
     persist.progress.movement = Math.max(1, Math.min(MAX_MOVEMENT, +persist.progress.movement || 1));
     if(!persist.progress.gates || typeof persist.progress.gates!=="object") persist.progress.gates = {};
     if(!persist.progress.seenIntros || typeof persist.progress.seenIntros!=="object") persist.progress.seenIntros = {};  // per-level mentor-intro "seen" flags → full first time, compact after
+    if(PITCH_STAGES.indexOf(persist.progress.pitchStage)<0){   // M1 ladder frontier stage (naturals→ear→sharps→flats); derive from prior progress
+      const g = persist.progress.gates || {};
+      persist.progress.pitchStage = persist.progress.movement>1 ? "flats"
+        : g.pitchEar ? "sharps"
+        : (Array.isArray(g.pitch) && g.pitch.length>=7) ? "ear" : "naturals";
+    }
     persist.bpm = Math.max(MIN_BPM, Math.min(MAX_BPM, +persist.bpm || DEFAULT_BPM));  // global comfort tempo
     if(persist.day !== todayStr()){ persist.day = todayStr(); persist.runsUsed = 0; savePersist(); }
     // one-time repair: an earlier bug burned runs on a failed render; refund them once.
@@ -834,7 +926,7 @@
   function resetAll(){
     if(!window.confirm("DEV: wipe ALL saved progress — movement, Codex, Renown, Setlist, pitch gate, runs used? This can't be undone.")) return;
     try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
-    persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, capFixV1:true, progress:{ movement:1, gates:{} } };
+    persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, capFixV1:true, progress:{ movement:1, gates:{}, pitchStage:"naturals" } };
     codex.clear();
     savePersist();
     stopLoop(); galleryPlayId=null; run=null; screen="home";
@@ -895,14 +987,33 @@
   // The blind "by ear" M1 sub-level: the call sounds but shows no card/colour — you identify & reproduce it
   // by ear (the shown→ear-only difficulty ramp). Set via startRun's opts once the shown naturals are catalogued.
   function callHidden(){ return callActive() && run.pitchLevel === "ear"; }
+  // M1 Sharps/Flats sub-levels: the spirit sounds a NATURAL, you play the accidental (♯ above / ♭ below)
+  // and then RESOLVE it (♯→up · ♭→down onto a scale tone). A two-play gesture on one call. See docs/mujicians.md.
+  function isAccidentalLevel(){ return callActive() && (run.pitchLevel==="sharps" || run.pitchLevel==="flats"); }
+  // The pitch the response is graded AGAINST right now: the accidental to play, or (once played) its
+  // resolution note; for naturals/ear it's just the called note.
+  function callTargetMidi(){
+    if(!(run && run.call)) return null;
+    if(run.call.awaitingResolve && run.call.resolveMidi!=null) return run.call.resolveMidi;
+    return run.call.targetMidi!=null ? run.call.targetMidi : run.call.midi;
+  }
   function soundCall(when){ if(run && run.call) playTone(run.call.midi, "triangle", 0.7, when||0, 1); }   // piano-timbre target
   // Proximity tier by ABSOLUTE pitch distance (M1 = ear-training: match the pitch you hear). The M1 deck is
   // one octave, so |played − call| is 0..11 semitones — a half-step is "so close," ~an octave is "far," and
   // C4-vs-B4 (11) is the worst. NOTE: this is raw pitch nearness, NOT consonance — consonance is a later
   // (Melody) lesson. Four tiers drive the reward juice; the score itself ramps per-semitone (see score()).
   function respondTier(midi){
-    if(!(run && run.call)) return null;
-    const d = Math.abs(midi - run.call.midi);
+    const t = callTargetMidi();
+    if(t==null) return null;
+    // Sharps/Flats first play: judged by DIRECTION (play higher for ♯ / lower for ♭), not exact match — you
+    // rarely draw the exact accidental. Any note the right way scores; the exact ♯/♭ is the bonus (peak tier).
+    if(isAccidentalLevel() && run.call && !run.call.awaitingResolve){
+      if(midi===t) return "exact";                                    // the exact accidental
+      const delta = (midi - run.call.midi) * run.call.dir;            // >0 = correct direction
+      if(delta<=0) return "far";                                      // wrong way / same pitch
+      return Math.abs(midi - t)<=2 ? "soclose" : "close";             // right way; nearer the ♯/♭ = warmer
+    }
+    const d = Math.abs(midi - t);
     if(d===0) return "exact";
     if(d<=2)  return "soclose";
     if(d<=5)  return "close";
@@ -922,9 +1033,26 @@
   }
   function newCall(delay){
     if(!run) return;
-    const pcs = RUN_KEY.key, prev = run.call ? run.call.pc : -1;
-    let pc; do { pc = pcs[Math.floor(Math.random()*pcs.length)]; } while(pcs.length>1 && pc===prev);   // vary from the last
-    run.call = { pc, letter:NOTE_LETTER[pc], midi:60+pc };   // 60+pc = piano register, so a hand card can match it
+    const prev = run.call ? run.call.pc : -1;
+    if(isAccidentalLevel()){
+      // Call a NATURAL whose accidental exists in the deck: ♯ = a half-step above (C→C♯), ♭ = below (D→D♭).
+      const sharp = run.pitchLevel==="sharps";
+      const dir = sharp ? 1 : -1;
+      // NEVER call a note with no room in the required direction — you respond by playing HIGHER (♯) / LOWER (♭),
+      // so the top note (nothing above) / bottom note (nothing below) would be unanswerable. Filter by the deck's range.
+      const midis = run.deck.filter(c=>!c.rest).map(c=>c.midi), hi=Math.max(...midis), lo=Math.min(...midis);
+      let naturals = (sharp ? SHARP_NOTES.map(n=>n.pc-1) : FLAT_NOTES.map(n=>n.pc+1))   // {C,D,F,G,A} · {D,E,G,A,B}
+        .filter(pc => dir>0 ? (60+pc) < hi : (60+pc) > lo);
+      if(!naturals.length) naturals = (sharp ? SHARP_NOTES.map(n=>n.pc-1) : FLAT_NOTES.map(n=>n.pc+1));   // safety
+      let pc; do { pc = naturals[Math.floor(Math.random()*naturals.length)]; } while(naturals.length>1 && pc===prev);
+      run.call = { pc, letter:NOTE_LETTER[pc], midi:60+pc, kind:(sharp?"sharpen":"flatten"), dir,
+                   targetPc:(pc+dir+12)%12, targetLetter:NOTE_LETTER[pc], targetAcc:dir, targetMidi:60+pc+dir,
+                   resolvePc:(pc+2*dir+12)%12, resolveMidi:60+pc+2*dir, awaitingResolve:false };
+    } else {
+      const pcs = RUN_KEY.key;
+      let pc; do { pc = pcs[Math.floor(Math.random()*pcs.length)]; } while(pcs.length>1 && pc===prev);   // vary from the last
+      run.call = { pc, letter:NOTE_LETTER[pc], midi:60+pc };   // 60+pc = piano register, so a hand card can match it
+    }
     soundCall(delay||0);   // delay lets the next call sound just AFTER your response, not on top of it
   }
 
@@ -1166,7 +1294,7 @@
   function snapshotEvents(events){
     return (events||[]).map(e => e.rest
       ? { rest:true, dur:e.dur, dyn:e.dyn||DEFAULT_DYN, at:e.at }
-      : { notes: e.notes.map(n=>({pc:n.pc, letter:n.letter, instId:n.instId, midi:n.midi})),
+      : { notes: e.notes.map(n=>({pc:n.pc, letter:n.letter, instId:n.instId, midi:n.midi, acc:n.acc||0})),
           cls: { type:e.cls.type, name:e.cls.name, root:e.cls.root, consonant:e.cls.consonant },
           dur:e.dur, dyn:e.dyn||DEFAULT_DYN, at:e.at });
   }
@@ -1371,15 +1499,24 @@
   let run = null;   // { deck, drawPile, hand, sel:Set, discardsLeft, runScore, muses, loop:{events,cursor}, curDur, curDyn }
   let screen = "home";
 
-  function buildDeck(mv){
+  function buildDeck(mv, level){
     const m = mv || FREE_PLAY_MOVEMENT;
     const deck = [];
     let id = 0;
     for(const inst of instrumentsFor(m)){
       for(const pc of DIATONIC_C){
         for(let k=0;k<COPIES;k++){
-          deck.push({ id:id++, pc, letter:NOTE_LETTER[pc], instId:inst.id, midi:inst.baseC+pc });
+          deck.push({ id:id++, pc, letter:NOTE_LETTER[pc], instId:inst.id, midi:inst.baseC+pc, acc:0 });
         }
+      }
+    }
+    // M1 accidental sub-levels: keep the naturals (so a ♯/♭ can resolve INTO a scale tone) and add the
+    // 5 spelled accidental cards of that deck. Piano only (M1 has no instrument choice yet).
+    if(m===1 && (level==="sharps" || level==="flats")){
+      const set = level==="sharps" ? SHARP_NOTES : FLAT_NOTES, acc = level==="sharps"?1:-1;
+      const baseC = instrumentsFor(1)[0].baseC;
+      for(const n of set) for(let k=0;k<COPIES;k++){
+        deck.push({ id:id++, pc:n.pc, letter:n.letter, instId:instrumentsFor(1)[0].id, midi:baseC+n.pc, acc });
       }
     }
     // Rest cards (M2+ / rhythm on): played ALONE, they append silence of the chosen duration.
@@ -1396,8 +1533,12 @@
     // mode "free" = Free Play (all movements on); otherwise Campaign at the reached movement.
     // opts.movement forces a specific movement (the M1 "by Ear" challenge pins movement 1 even past M1).
     const movement = mode==="free" ? FREE_PLAY_MOVEMENT : (opts.movement || persist.progress.movement || 1);
+    // M1 walks a ladder of sub-levels (naturals → ear → sharps → flats) before M2 unlocks. The Campaign
+    // button follows the frontier stage; an explicit opts.pitchLevel (replay/DEV) overrides it.
+    const pitchLevel = (mode!=="free" && movement===1)
+      ? (opts.pitchLevel || persist.progress.pitchStage || "naturals") : "naturals";
     // One loop for the whole run — one continuous performance in one key, filled hand by hand.
-    run = { deck:buildDeck(movement), drawPile:[], hand:[], sel:new Set(), discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ events:[], cursor:0, stageBars:START_BARS }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
+    run = { deck:buildDeck(movement, pitchLevel), drawPile:[], hand:[], sel:new Set(), discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ events:[], cursor:0, stageBars:START_BARS }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
       curDyn:DEFAULT_DYN,   // M3 dynamics: the p/mf/f marking applied to the next play
       curDur:DEFAULT_DUR,   // M2 rhythm: the duration (ticks via durTicks) of the next play; default = quarter
       // per-movement gate trackers (all cheap to keep; gateStatus reads the frontier movement's).
@@ -1405,8 +1546,9 @@
       // runGoalMet / the goal prompt). gatePitch is M1's per-run letter set (persist.pitch is legacy).
       gatePitch:new Set(), gateDurs:new Set(), gateDyns:new Set(), gateIntervals:new Set(), gateRun:false,
       gateTriads:new Set(), gateCadence:false, gateBlends:0,
+      gateAcc:new Set(), gateResolved:false, gateDir:0,   // M1 Sharps/Flats: correct-direction responses + one exact accidental (resolution = optional bonus)
       respondLog:[],            // M1: each response's semitone distance to its call (for the pitch-accuracy score)
-      pitchLevel: opts.pitchLevel || "naturals",   // M1 sub-level: "naturals" (call shown) or "ear" (call hidden — match by ear)
+      pitchLevel,               // M1 sub-level: naturals (call shown) · ear (call hidden) · sharps · flats
       callReveal:null,          // by-ear: the just-answered call to name in the callbar until the next call
       goalReached:false, goalAck:false };   // goalReached = prompt shown; goalAck = player chose "keep building"
     offerIntro();   // mentor explains the lesson (campaign only), then the Muse draft, then play
@@ -1416,7 +1558,7 @@
     run.hand = []; run.sel.clear();
     run.discardsLeft = DISCARDS; run.runScore = 0;
     run.loop.events = []; run.loop.cursor = 0; run.loop.stageBars = START_BARS;
-    run.gatePitch = new Set(); run.respondLog = []; run.goalReached = false; run.goalAck = false;   // fresh per-run goal state
+    run.gatePitch = new Set(); run.gateAcc = new Set(); run.gateResolved = false; run.gateDir = 0; run.respondLog = []; run.goalReached = false; run.goalAck = false;   // fresh per-run goal state
     run.call = null; run.callReveal = null;
     drawUp();
     if(callActive()) newCall();   // M1: sound the first target note to match
@@ -1473,7 +1615,7 @@
     } else {
       res = score(cards, RUN_KEY, run.muses);
       soundStack(cards, dur, run.curDyn);
-      const notes = cards.map(c=>({pc:c.pc, letter:c.letter, instId:c.instId, midi:c.midi}));
+      const notes = cards.map(c=>({pc:c.pc, letter:c.letter, instId:c.instId, midi:c.midi, acc:c.acc||0}));
       ev = { notes, cls:res.cls, dyn:run.curDyn, dur, at };
     }
     placeEvent(ev);
@@ -1485,6 +1627,12 @@
     if(run.mode==="campaign" && !rest){
       const cls = res.cls, tonicPc = RUN_KEY.key[0];
       cards.forEach(c => { if(RUN_KEY.key.includes(c.pc)){ run.gatePitch.add(c.letter); collectPitchLetter(c.letter); } });   // M1: in-key letters (per-run goal + legacy persist)
+      if(isAccidentalLevel()){                                                          // M1 Sharps/Flats
+        cards.forEach(c => { if(c.acc) run.gateAcc.add(spellId(c)); });                 // land the exact accidental spellings (gate needs ≥1)
+        if(!run.call.awaitingResolve && cards[0] && (cards[0].midi - run.call.midi)*run.call.dir > 0)
+          run.gateDir = (run.gateDir||0) + 1;                                           // forgiving: count each correct-direction response
+        if(res.resolved){ run.gateResolved = true; addCodex("Chromatic resolution"); }  // resolution is now an optional BONUS
+      }
       if(termOn("groove")) run.gateDurs.add(run.curDur);                                 // M2: distinct note values (per play)
       if(termOn("dynamic")) run.gateDyns.add(run.curDyn);                                // M3: soft/medium/loud
       if(cls.type==="interval") run.gateIntervals.add(cls.name);                         // M4: distinct intervals
@@ -1495,7 +1643,15 @@
     }
     savePersist();
     // M1 call-and-response: layer the reward chime (brightness tracks proximity) + log the distance for the score.
-    if(res.respond){ respondChime(res.respond); run.respondLog.push(Math.abs(cards[0].midi - run.call.midi)); }
+    if(res.respond){
+      respondChime(res.respond);
+      // Sharps/Flats grade the DIRECTION (any note the right way is a success), so log a tier-based nearness
+      // rather than raw distance-to-exact — else "correct but far" would tank the pitch-accuracy readout.
+      const dist = (isAccidentalLevel() && !run.call.awaitingResolve)
+        ? ({exact:0, soclose:2, close:4, far:9}[res.respond])
+        : Math.abs(cards[0].midi - callTargetMidi());
+      run.respondLog.push(dist);
+    }
     // By-ear: remember the just-answered (hidden) call so the bar names it. Persists until your NEXT answer
     // overwrites it (or the run restarts) — a short timer was too easy to miss while watching the cell bloom.
     if(callHidden() && res.respond){ run.callReveal = { letter:run.call.letter, tier:res.respond, played:cards[0].letter }; }
@@ -1506,7 +1662,15 @@
     // Free Play stays open-ended (press ✓ Finish, or auto-complete when the stage fills; a whole note eats 4× a quarter).
     const finishing = run.loop.cursor >= maxStageTicks() || run.hand.length === 0;
     const goalJustMet = !finishing && !run.goalAck && runGoalMet();   // fires once; goalAck (keep building) silences it
-    if(!finishing && !goalJustMet && callActive() && !rest) newCall(0.45);   // M1: next target, sounded just after your response
+    // M1 next target, sounded just after your response. Sharps/Flats are a two-play gesture: playing the
+    // exact accidental holds the SAME call and switches it to "now resolve"; anything else rolls a fresh call.
+    if(!finishing && !goalJustMet && callActive() && !rest){
+      if(isAccidentalLevel() && !run.call.awaitingResolve && cards[0] && cards[0].midi===run.call.targetMidi){
+        run.call.awaitingResolve = true;
+      } else {
+        newCall(0.45);
+      }
+    }
     if(finishing){ finishRun(); flyPlay(flyFrom, at, handSnap, res.respond); return; }
     render();
     flyPlay(flyFrom, at, handSnap, res.respond);   // shrink+fly played cards to their timeline cells, then tier-bloom
@@ -1539,7 +1703,18 @@
     if(!run || run.mode!=="campaign") return;
     const mv = run.movement;
     if(mv>=MAX_MOVEMENT || mv!==persist.progress.movement) return;   // only the reached frontier advances
-    if(gateStatus(mv).met){ persist.progress.movement = mv+1; run.advancedTo = mv+1; savePersist(); }
+    if(!gateStatus(mv).met) return;
+    if(mv===1){
+      // M1 is a ladder (naturals → ear → sharps → flats); each frontier stage clears to the next, and
+      // only completing FLATS finally unlocks M2 Rhythm. Replaying an earlier stage doesn't advance.
+      const stage = run.pitchLevel || "naturals";
+      if(stage !== (persist.progress.pitchStage || "naturals")) return;
+      const i = PITCH_STAGES.indexOf(stage);
+      if(i>=0 && i < PITCH_STAGES.length-1){ persist.progress.pitchStage = PITCH_STAGES[i+1]; run.advancedStage = PITCH_STAGES[i+1]; }
+      else { persist.progress.movement = 2; run.advancedTo = 2; }
+      savePersist(); return;
+    }
+    persist.progress.movement = mv+1; run.advancedTo = mv+1; savePersist();
   }
   // The per-run GOAL that stops the song (campaign only): the current movement's gate, met THIS run.
   // (gateStatus reads per-run state now — gatePitch for M1, the run counters for M2–M7.) Free Play = no goal.
@@ -1558,7 +1733,8 @@
     const acc = pitchAccuracy();
     const accLine = (run.movement===1 && acc!=null)
       ? `<p class="big" style="color:var(--gold)">🎯 Pitch accuracy so far: <b>${acc}%</b> — ${accuracyGrade(acc)}</p>` : "";
-    const goal = MOVEMENTS[run.movement].element;
+    const goal = (run.movement===1 && run.pitchLevel && run.pitchLevel!=="naturals")
+      ? "Pitch — "+PITCH_STAGE_LABEL[run.pitchLevel] : MOVEMENTS[run.movement].element;
     $overlay.innerHTML = `
       <div class="overlay"><div class="modal center">
         <h2>🎯 Goal reached!</h2>
@@ -1583,7 +1759,9 @@
      level, a compact one-liner (with a "more" expand) on repeat. See docs/mujicians.md. */
   // Character registry — art is a SWAPPABLE TOKEN so emoji → pixel sprite is a one-line change later.
   const CHARACTERS = {
-    dee: { id:"dee", name:"Dee Composer", art:{ kind:"emoji", value:"🍄" } },   // future: {kind:"sprite", src:"art/dee.png"}
+    dee:      { id:"dee",      name:"Dee Composer",   art:{ kind:"emoji", value:"🍄" } },   // future: {kind:"sprite", src:"art/dee.png"}
+    sharpist: { id:"sharpist", name:"Sharpist",       art:{ kind:"emoji", value:"🎭" } },   // jester — sharps, giddy & upward
+    flatter:  { id:"flatter",  name:"Sir Flatterer",  art:{ kind:"emoji", value:"🤺" } },   // knight — flats, glum & downward
   };
   // Per-level lesson intros keyed by movement (+ sub-level). `char` = who speaks (swap per level later —
   // the accidental sub-levels will get Sharpist/Sir Flat/Ranger); theory[] = bubble paragraphs; task = the
@@ -1599,6 +1777,16 @@
                "This is <b>ear training</b> — naming a sound just by hearing it, like real musicians do." ],
       task:"Listen, picture the colour in your head, then play it. I'll tell you after how close you were!",
       compact:"🙈 By ear — I only <b>sing</b> the note. Play what you hear!" },
+    "m1:sharps": { char:"sharpist", title:"Sharps — raise it UP! ♯",
+      theory:[ "OH it's YOU — marvellous, MARVELLOUS! I'm <b>Sharpist</b>, and I make notes go <b>UP UP UP!</b> ⬆️ A <b>sharp</b> ♯ nudges a note a <b>half-step higher</b> — the tiniest tippy-toe step there is!",
+               "Here's the DELICIOUS part: a sharp is <i>restless</i> — it <b>leans upward</b> and simply MUST fall into the note just above it. C♯ aches to become D! That leap-and-land is called a <b>resolution</b>, and OH it feels good!" ],
+      task:"I'll sing a plain note — you answer with any note <b>HIGHER</b> than mine! ⬆️ Land the <b>exact ♯</b> for BONUS points (and you can resolve it UP for more!). Play a few notes up high and nail one exact sharp — up up UP!!",
+      compact:"🎭 Answer <b>HIGHER ↑</b> than my note — bonus for the exact ♯ (then resolve up!)." },
+    "m1:flats": { char:"flatter", title:"Flats — everything sinks down… ♭",
+      theory:[ "…oh. It's another one. I am <b>Sir Flatterer</b>. I make notes go <b>down</b>. Down, like my spirits. A <b>flat</b> ♭ lowers a note a <b>half-step</b>… a small, weary step toward the floor.",
+               "A flat leans <i>downward</i>… it slumps into the note just below it. D♭ gives up and sinks to C. They call it a <b>resolution</b>. I suppose it is the one thing that brings me… relief." ],
+      task:"I shall sigh out a note — you answer with any note <b>LOWER</b> than mine… ⬇️ Sink to the <b>exact ♭</b> for bonus points (and let it resolve DOWN for more, if you must). A few notes below and one exact flat is all I ask.",
+      compact:"🤺 Answer <b>LOWER ↓</b> than my note — bonus for the exact ♭ (then let it fall down)." },
     "m2": { char:"dee", title:"Rhythm — the pulse of the earth",
       theory:[ "Notes don't just have colour — they have <b>length</b>! Feel the ground humming? That steady <b>pulse</b> under everything is the beat.",
                "A <b>quarter</b> ♩ lasts one beat, a <b>half</b> 𝅗𝅥 lasts two, a whole <b>𝅝</b> lasts four. And a <b>rest</b> 𝄽 is a beat of <i>silence</i> — leaving space is music too!" ],
@@ -1630,7 +1818,7 @@
       task:"Compose an <b>A · B · A</b>: play a phrase, contrast it with something different, then bring your very first phrase back.",
       compact:"🏛️ Shape the whole song: state A, contrast with B, then return to A!" },
   };
-  function lessonKey(){ return "m"+run.movement + (run.movement===1 && run.pitchLevel==="ear" ? ":ear" : ""); }  // generalizes to :sharps/:flats later
+  function lessonKey(){ return (run.movement===1 && run.pitchLevel && run.pitchLevel!=="naturals") ? "m1:"+run.pitchLevel : "m"+run.movement; }  // m1 · m1:ear · m1:sharps · m1:flats · m2…m7
   function currentLesson(){ return (run && run.mode==="campaign") ? LESSON_INTROS[lessonKey()] : null; }   // Free Play = no lesson
   // Render a character's art — the ONE place art is drawn, so emoji → pixel sprite is a token swap.
   function charArtHTML(char){
@@ -1827,13 +2015,14 @@
       return `<div class="card rest${selCls}" data-idx="${idx}" data-id="${c.id}" data-rest="1">
         <div class="cnote" style="color:#5a5f7a">${g}</div><div class="coct" style="color:#5a5f7a">rest</div></div>`;
     }
-    const col = COLOR[c.letter];
+    const col = c.acc ? shadeFor(c) : COLOR[c.letter];
+    const lbl = noteLabel(c);
     const inst = INSTRUMENTS.find(x=>x.id===c.instId);
     const oct = Math.floor(c.midi/12)-1;
     // M3+: a selected note card previews its loudness as size (size = volume) via the .dyn-* scale.
     const dynCls = (termOn("dynamic") && run.sel.has(idx)) ? " dyn-"+(run.curDyn||DEFAULT_DYN) : "";
-    return `<div class="card${selCls}${dynCls}" data-idx="${idx}" data-id="${c.id}" data-midi="${c.midi}" style="--cc:${col}">
-      <div class="cnote">${c.letter}</div><div class="coct">${c.letter}${oct}</div>
+    return `<div class="card${selCls}${dynCls}${c.acc?" acc":""}" data-idx="${idx}" data-id="${c.id}" data-midi="${c.midi}" style="--cc:${col}">
+      <div class="cnote">${lbl}</div><div class="coct">${lbl}${oct}</div>
       <div class="cinst" title="${inst.name}">${inst.emoji}</div></div>`;
   }
 
@@ -1860,6 +2049,30 @@
           <span class="clhint">Listen, then play the note you hear — no peeking.</span>
         </div>
         ${revealHTML}
+      </div>`;
+    }
+    if(isAccidentalLevel()){
+      // Sharps/Flats (forgiving DIRECTION play): the mentor sang a natural — play any note HIGHER (♯) / LOWER (♭);
+      // the exact accidental is a bonus and only an exact hit opens the optional resolve step. See docs/mujicians.md.
+      const c = run.call, sharp = run.pitchLevel==="sharps";
+      const face = sharp ? "🎭" : "🤺", who = sharp ? "Sharpist" : "Sir Flatterer";
+      const accCard = { pc:c.targetPc, letter:c.targetLetter, acc:c.targetAcc };
+      const resLetter = NOTE_LETTER[c.resolvePc];
+      const natChip = `<span class="callnote" style="--cc:${COLOR[c.letter]}" title="${c.letter}">${c.letter}</span>`;
+      const accChip = `<span class="callnote acc" style="--cc:${shadeFor(accCard)}" title="${noteLabel(accCard)}">${noteLabel(accCard)}</span>`;
+      const resChip = `<span class="callnote" style="--cc:${COLOR[resLetter]}" title="${resLetter}">${resLetter}</span>`;
+      const sel = selectedCards();
+      const tier = sel.length===1 ? respondTier(sel[0].midi) : null;
+      const STAMP = { exact:"✓ exact!", soclose:"🔥 so close", close:"👍 good", far:(sharp?"go higher ↑":"go lower ↓") };
+      const stamp = tier ? `<span class="cstamp cs-${tier}">${STAMP[tier]}</span>` : "";
+      const instr = c.awaitingResolve
+        ? `Nice — the exact ${sharp?"♯":"♭"}! Now <b>resolve ${sharp?"up ↑":"down ↓"}</b> to ${resChip} for a bonus`
+        : `Play any note <b>${sharp?"higher ↑":"lower ↓"}</b> than ${natChip} — bonus for the exact ${accChip}`;
+      return `<div class="callbar${tier?" cb-"+tier:""}">
+        <span class="clbl">${face} ${who} sang ${natChip}</span>
+        <button class="btn ghost callhear" id="b-hear" title="Hear the note again">🔊 Hear it</button>
+        <span class="clhint">${instr}</span>
+        ${stamp}
       </div>`;
     }
     // live verdict on the currently-selected card, so you feel "you've got it" BEFORE committing.
@@ -1969,7 +2182,7 @@
     const gCol0 = wcol, gCol1 = tickToCol(run.loop.cursor + durTicks(run.curDur) - 1);
     let grid = "";
     rows.forEach(m=>{
-      const pc = m%12, letter = NOTE_LETTER[pc], oct = Math.floor(m/12)-1;
+      const pc = m%12, letter = rowLetter(pc), oct = Math.floor(m/12)-1;
       const inKey = RUN_KEY.key.includes(pc);
       const fits = fitsSelection(pc, RUN_KEY.key, selPcs);
       const rc = ["lgrow"];
@@ -2036,7 +2249,7 @@
         <div class="scoreline" style="color:${warn?'var(--bad)':'var(--dim)'}">Notes left: <b>${left}</b> of ${maxStageBars()} bars${warn?(left>0?' — running out of stage!':' — stage full'):''}</div>
         <div class="track"><i style="width:${leftPct}%"></i></div>
         ${campaign && run.movement===1
-          ? pitchTrackerHTML()
+          ? (isAccidentalLevel() ? accTrackerHTML() : pitchTrackerHTML())
           : (gate ? `<div class="scoreline" style="color:${gate.met?'var(--good)':'var(--dim)'}">${gate.met?'✓ ':''}${gate.label}</div>` : "")}
       </div>
       ${loopStripHTML()}
@@ -2179,22 +2392,37 @@
       <span class="hint" style="align-self:center">DEV — set movement:</span>${btns.join("")}
       <button class="btn ghost" id="dev-reset" title="Wipe all saved progress back to the beginning" style="padding:4px 9px;font-size:11px;color:var(--bad);border-color:var(--bad)">↺ Reset all</button></div>`;
   }
+  const PITCH_STAGE_LABEL = { naturals:"Naturals", ear:"by Ear 🎧", sharps:"Sharps ♯", flats:"Flats ♭" };
+  const pitchStageIdx = () => Math.max(0, PITCH_STAGES.indexOf(persist.progress.pitchStage||"naturals"));
+  // The M1 ladder shown on Home: which pitch sub-levels are done / current (Rhythm only unlocks past Flats).
+  function pitchLadderHTML(){
+    const cur = persist.progress.movement>1 ? PITCH_STAGES.length : pitchStageIdx();
+    return `<div class="pitchladder">`+PITCH_STAGES.map((s,i)=>{
+      const done=i<cur, here=i===cur && persist.progress.movement===1;
+      return `<span class="plstep${done?" done":""}${here?" here":""}">${done?"✓ ":here?"▸ ":""}${PITCH_STAGE_LABEL[s]}</span>`;
+    }).join(`<span class="plsep">→</span>`)+`</div>`;
+  }
+  // Once the whole M1 arc is behind you (M2+), any pitch sub-level can be replayed for practice.
+  function pitchPracticeHTML(){
+    const btns = PITCH_STAGES.map(s=>`<button class="btn ghost pp-stage" data-stage="${s}" ${atCap()?"disabled":""} title="Replay M1 Pitch — ${PITCH_STAGE_LABEL[s]}">${PITCH_STAGE_LABEL[s]}</button>`).join("");
+    return `<div class="cta" style="justify-content:center;flex-wrap:wrap;gap:6px"><span class="hint" style="align-self:center">🎼 Pitch practice:</span>${btns}</div>`;
+  }
   function renderHome(){
     const capped = atCap();
     const mv = persist.progress.movement, mvName = MOVEMENTS[mv].element;
+    const stage = persist.progress.pitchStage || "naturals";
+    const campLabel = capped ? "No runs left today"
+      : (mv===1 ? `▶ Campaign · M1 Pitch — ${PITCH_STAGE_LABEL[stage]}` : `▶ Campaign · Movement ${mv} — ${mvName}`);
     $game.innerHTML = `
       <div class="gigbar center">
         <p class="big">Play cards that are <b>notes</b>. Combine them into <b>chords &amp; scales</b> —
         the more in-key, consonant, and resolved, the more <b>Applause</b> you score. In <b>Campaign</b>, reach
         each movement's goal to advance; in <b>Free Play</b>, build freely and finish when you like.</p>
         <div class="cta" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button class="btn" id="b-campaign" ${capped?"disabled":""}>${capped?"No runs left today":`▶ Campaign · Movement ${mv} — ${mvName}`}</button>
+          <button class="btn" id="b-campaign" ${capped?"disabled":""}>${campLabel}</button>
           <button class="btn ghost" id="b-free" ${capped?"disabled":""} title="Every mechanic unlocked (today's full game)">Free Play</button>
         </div>
-        ${mv===1?`<div class="cta" style="justify-content:center">${pitchTrackerHTML()}</div>`:""}
-        ${pitchLettersGot().length>=7?`<div class="cta" style="justify-content:center">
-          <button class="btn ghost" id="b-ear" ${capped?"disabled":""} title="Replay M1 Pitch with the call hidden — identify each note by ear">🎧 M1 Pitch — by Ear${(persist.progress.gates&&persist.progress.gates.pitchEar)?" ✓":""}</button>
-        </div>`:""}
+        ${mv===1?`<div class="cta" style="justify-content:center">${pitchLadderHTML()}</div>`:pitchPracticeHTML()}
         ${devMovementBarHTML()}
         <p class="hint center">Campaign teaches music one element at a time — pitch first, then rhythm, dynamics, melody, harmony, timbre, structure. Free Play unlocks everything. Both share the daily run cap.</p>
         ${capped?`<p class="hint center">You've used all ${MAX_RUNS_PER_DAY} runs today. Come back tomorrow — or try
@@ -2206,11 +2434,14 @@
     if(bc) bc.addEventListener("click", ()=>{ audio(); startRun("campaign"); });
     const bf = document.getElementById("b-free");
     if(bf) bf.addEventListener("click", ()=>{ audio(); startRun("free"); });
-    const be = document.getElementById("b-ear");
-    if(be) be.addEventListener("click", ()=>{ audio(); startRun("campaign", {movement:1, pitchLevel:"ear"}); });
+    $game.querySelectorAll(".pp-stage").forEach(el=> el.addEventListener("click", ()=>{
+      audio(); startRun("campaign", {movement:1, pitchLevel:el.dataset.stage}); }));
     // DEV movement jumper: set the reached frontier, then re-render so the Campaign button updates
     $game.querySelectorAll(".dev-mv").forEach(el=> el.addEventListener("click", ()=>{
-      persist.progress.movement = Math.max(1, Math.min(MAX_MOVEMENT, +el.dataset.mv)); savePersist(); renderHome();
+      const to = Math.max(1, Math.min(MAX_MOVEMENT, +el.dataset.mv));
+      persist.progress.movement = to;
+      if(to===1) persist.progress.pitchStage = "naturals";   // DEV: restart the M1 ladder from the top for testing
+      savePersist(); renderHome();
     }));
     const dr = document.getElementById("dev-reset");
     if(dr) dr.addEventListener("click", resetAll);
@@ -2309,14 +2540,14 @@
         <h2>🎉 Performance complete!</h2>
         ${accLine}
         ${run && run.advancedTo
-          ? `<p class="big" style="color:var(--good)">🎓 Movement complete — unlocked <b>M${run.advancedTo} ${MOVEMENTS[run.advancedTo].element}</b>! Next Campaign run starts there.</p>`
-          : (run && run.pitchLevel==="ear"
-              ? `<p class="hint">🎧 <b>By-ear challenge</b> — how sharp is your ear? Play again to beat your accuracy.</p>`
-              : (run && run.mode==="campaign" && run.movement<MAX_MOVEMENT
-                  ? (run.movement===1
-                      ? `<p class="hint">Play all 7 in-key letters (A–G) in one run to complete <b>M1 Pitch</b> and unlock <b>M2 ${MOVEMENTS[2].element}</b>:</p>${pitchTrackerHTML()}`
-                      : `<p class="hint">${gateStatus(run.movement).label} — meet it in one run to unlock <b>M${run.movement+1} ${MOVEMENTS[run.movement+1].element}</b>.</p>`)
-                  : ""))}
+          ? `<p class="big" style="color:var(--good)">🎓 <b>M1 Pitch</b> complete — unlocked <b>M${run.advancedTo} ${MOVEMENTS[run.advancedTo].element}</b>! Next Campaign run starts there.</p>`
+          : run && run.advancedStage
+            ? `<p class="big" style="color:var(--good)">🎓 Pitch — <b>${PITCH_STAGE_LABEL[run.pitchLevel]}</b> cleared! Unlocked <b>${PITCH_STAGE_LABEL[run.advancedStage]}</b> — your next step toward Rhythm.</p>`
+            : run && run.mode==="campaign" && run.movement===1
+                ? `<p class="hint">${gateStatus(1).label} — meet it in one run to advance the Pitch ladder.</p>${isAccidentalLevel()?accTrackerHTML():pitchTrackerHTML()}`
+                : run && run.mode==="campaign" && run.movement<MAX_MOVEMENT
+                    ? `<p class="hint">${gateStatus(run.movement).label} — meet it in one run to unlock <b>M${run.movement+1} ${MOVEMENTS[run.movement+1].element}</b>.</p>`
+                    : ""}
         <p>You performed a <b>${filledBars()}</b>-note song for <b>${run.runScore}</b> applause. Every played chord is inscribed in your Codex.</p>
         <p class="big">Best hand: <b>${persist.bestApplause}</b> · Renown Lv <b>${renownLevel(persist.totalApplause)}</b></p>
         <div class="cta">
@@ -2335,8 +2566,8 @@
       </div></div>`;
     const again = document.getElementById("b-again");
     if(again) again.addEventListener("click", ()=>{ audio();
-      if(run && run.pitchLevel==="ear") startRun("campaign", {movement:1, pitchLevel:"ear"});   // stay in the by-ear challenge
-      else startRun(run && run.mode==="free" ? "free" : "campaign"); });
+      // Follow the frontier: a campaign New Run picks up the current movement / pitch-ladder stage.
+      startRun(run && run.mode==="free" ? "free" : "campaign"); });
     const replay = document.getElementById("b-replay");
     if(replay) replay.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderEndOverlay(); });
     const savebtn = document.getElementById("b-savesong");
