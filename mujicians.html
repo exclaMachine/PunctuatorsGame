@@ -196,6 +196,49 @@
   .card.rest{background:#e7e8f2}   /* rest card — played alone, appends silence */
   .card.rest .cnote{font-size:28px}
 
+  /* ===== SKIN OVERLAYS — timbre "editions" (foil / holo / …), pure CSS, no assets =====
+     A `.cskin` child fills the card face with a translucent sheen that reads as the timbre. The note
+     text is lifted above it (z-index) so it stays legible. To ADD a skin, add a `.cskin.sk-<id>` rule
+     here + an entry in the SKINS registry (search "Timbre skins" in the JS). To use your OWN ART, set
+     the skin's `art` field — `.cskin.sk-art` then paints that image instead of the gradient. */
+  .card > .cnote, .card > .coct{position:relative;z-index:2}   /* keep text above the sheen */
+  .card > .cinst{z-index:2}                                    /* already absolute — just lift it */
+  /* Normal blend + tuned opacity so overlays read on the WHITE card face (multiply would erase the
+     white glint; screen would wash pale tints out). The glint is a bright sweeping band. */
+  .cskin{position:absolute;inset:0;z-index:1;border-radius:inherit;overflow:hidden;pointer-events:none}
+  .cskin::before{content:"";position:absolute;top:-20%;bottom:-20%;left:0;width:45%;
+    background:linear-gradient(105deg,transparent 20%,rgba(255,255,255,.9) 50%,transparent 80%);
+    transform:translateX(-160%);will-change:transform}
+  /* Foil — brushed-metal silver bands with a sweeping glint (guitar). */
+  .cskin.sk-foil{opacity:.62;
+    background:linear-gradient(135deg,#cfd3e2 0%,#9ca1b8 24%,#f4f6ff 50%,#9ca1b8 76%,#cfd3e2 100%)}
+  .cskin.sk-foil::before{animation:skGlint 2.8s linear infinite}
+  /* Holographic — shifting rainbow wash + glint (bass). */
+  .cskin.sk-holo{opacity:.5;background-size:300% 300%;
+    background-image:linear-gradient(115deg,#ff6b8b,#ffd36b,#7afcc6,#6bb8ff,#c56bff,#ff6b8b);
+    animation:skHolo 5s ease-in-out infinite}
+  .cskin.sk-holo::before{animation:skGlint 3.4s linear infinite}
+  /* Frosted Glass — soft translucent frost + slow streak (spare). */
+  .cskin.sk-glass{opacity:.72;
+    background:linear-gradient(160deg,rgba(226,236,247,.9),rgba(150,180,214,.55) 45%,rgba(232,240,250,.85))}
+  .cskin.sk-glass::before{animation:skGlint 4.6s linear infinite}
+  /* Neon — glowing aura + inner rim (spare). */
+  .cskin.sk-neon{opacity:.85;
+    background:radial-gradient(120% 90% at 50% 120%,rgba(64,240,200,.7),rgba(64,240,200,.12) 55%,transparent 72%);
+    box-shadow:inset 0 0 12px rgba(64,240,200,.7)}
+  .cskin.sk-neon::before{display:none}
+  /* Your-own-art override — paints the `art` image, drops the CSS gradient/animation entirely. */
+  .cskin.sk-art{background:var(--skin-art) center/cover no-repeat !important;
+    opacity:1;mix-blend-mode:normal;animation:none;box-shadow:none}
+  .cskin.sk-art::before{display:none}
+  @keyframes skGlint{from{transform:translateX(-160%)}to{transform:translateX(360%)}}
+  @keyframes skHolo{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  /* Reduced motion: keep the static sheen, stop the moving highlights/hue shift. */
+  @media (prefers-reduced-motion:reduce){
+    .cskin::before{animation:none !important;transform:translateX(60%)}
+    .cskin.sk-holo{animation:none}
+  }
+
   .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:8px}
   button.btn{font:inherit;font-size:13px;padding:9px 16px;border-radius:9px;cursor:pointer;
     background:#5a6bff;color:#fff;border:1px solid #7a88ff}
@@ -490,11 +533,34 @@
   }
   // Notelings roster (docs/mujicians.md) — used to suggest a portmanteau song name. Names only, no sprites.
   const NOTELING = { A:"Ant", B:"Blob", C:"Chicken", D:"Dog", E:"Eye", F:"Flower", G:"Goat" };
+  // ---- Timbre skins — Balatro-style "editions" (foil / holographic / …) ----
+  // A skin is a COLLECTIBLE card LOOK that stands in for a TIMBRE. This first pass is LOOK-ONLY: a
+  // translucent, pure-CSS overlay laid over the card face — no image assets, art-agnostic, reduced-motion
+  // aware. Sound is still the instrument's oscillator `wave`; the synth-preset half of the plan
+  // ("skin = sound + look, one object") is a stubbed `preset` seam for a later pass. See
+  // docs/mujicians.md → "Timbre as collectible card skins".
+  //
+  //   • TO ADD A SKIN: add an entry here, then a matching `.cskin.sk-<id>` rule in the CSS (search
+  //     "SKIN OVERLAYS"). Assign it to an instrument via that instrument's `skin` field below.
+  //   • TO USE YOUR OWN ART instead of the built-in CSS shimmer: set `art` to an image URL or a
+  //     data-URI on the skin — it overrides the gradient (drawn as a cover background on the overlay).
+  //     Leave `art:null` to keep the pure-CSS look.
+  //   • `preset` is reserved (null for now) for the future per-skin synth voice.
+  const SKINS = {
+    foil:  { id:"foil",  name:"Foil",          art:null, preset:null },
+    holo:  { id:"holo",  name:"Holographic",   art:null, preset:null },
+    glass: { id:"glass", name:"Frosted Glass", art:null, preset:null },  // spare — not yet assigned
+    neon:  { id:"neon",  name:"Neon",          art:null, preset:null },  // spare — not yet assigned
+  };
+  // `skin` binds an instrument to a skin id (or null for the plain default card). Piano stays plain;
+  // guitar wears Foil, bass wears Holographic. glass/neon are defined above, ready to attach here.
   const INSTRUMENTS = [
-    { id:"piano",  name:"Piano",  emoji:"🎹", wave:"triangle", baseC:60 },
-    { id:"guitar", name:"Guitar", emoji:"🎸", wave:"sawtooth", baseC:60 },
-    { id:"bass",   name:"Bass",   emoji:"🎻", wave:"sine",     baseC:36 },
+    { id:"piano",  name:"Piano",  emoji:"🎹", wave:"triangle", baseC:60, skin:null   },
+    { id:"guitar", name:"Guitar", emoji:"🎸", wave:"sawtooth", baseC:60, skin:"foil" },
+    { id:"bass",   name:"Bass",   emoji:"🎻", wave:"sine",     baseC:36, skin:"holo" },
   ];
+  // The skin object for a card's instrument (null = plain card). Used by cardHTML to lay the overlay.
+  const skinFor = (instId) => { const i = INSTRUMENTS.find(x=>x.id===instId); return (i && i.skin) ? SKINS[i.skin] : null; };
   const BASE_HAND_SIZE = 4, DISCARDS = 4, COPIES = 2, REST_COPIES = 3;  // select cap is now per-movement — see maxSelect()
   const ACC_COPIES = 1, MAX_TIMBRES = 4;   // once accidentals unlock: 1 of each spelling per instrument, deck capped at 4 timbres
   const MAX_RUNS_PER_DAY = 3;
@@ -2051,8 +2117,14 @@
     const oct = Math.floor(c.midi/12)-1;
     // M3+: a selected note card previews its loudness as size (size = volume) via the .dyn-* scale.
     const dynCls = (termOn("dynamic") && run.sel.has(idx)) ? " dyn-"+(run.curDyn||DEFAULT_DYN) : "";
+    // Timbre skin overlay (Balatro-style edition) — a translucent CSS sheen that reads as the timbre.
+    // Kept as a CHILD element (not a card class) so it survives the FLIP/fly cloneNode(true) for free.
+    const skin = skinFor(c.instId);
+    const skinEl = skin
+      ? `<div class="cskin sk-${skin.id}${skin.art?" sk-art":""}"${skin.art?` style="--skin-art:url('${skin.art}')"`:""}></div>`
+      : "";
     return `<div class="card${selCls}${dynCls}${c.acc?" acc":""}" data-idx="${idx}" data-id="${c.id}" data-midi="${c.midi}" style="--cc:${col}">
-      <div class="cnote">${lbl}</div><div class="coct">${lbl}${oct}</div>
+      ${skinEl}<div class="cnote">${lbl}</div><div class="coct">${lbl}${oct}</div>
       <div class="cinst" title="${inst.name}">${inst.emoji}</div></div>`;
   }
 

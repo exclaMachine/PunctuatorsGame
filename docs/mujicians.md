@@ -1708,15 +1708,43 @@ All centralized so "snappy & subtle" can be dialed toward "full Balatro" later w
 
 ---
 
-## Timbre as collectible card skins — editions, not creature breeds (PLANNED)
+## Timbre as collectible card skins — editions, not creature breeds (LOOK-ONLY SLICE BUILT 2026-07-20)
 
-> **Status: PLANNED, not built (decided 2026-07-18).** Reframes how **timbre** is collected and shown.
-> **Supersedes** the Notelings "**Instrument (suit) → breed / material**" channel below: timbre is no
+> **Status: the LOOK-ONLY slice is ✅ BUILT (2026-07-20)** in `mujicians.html`; the **synth-preset (sound)
+> half is still planned** (a stubbed `preset:null` seam per skin). Reframes how **timbre** is collected and
+> shown. **Supersedes** the Notelings "**Instrument (suit) → breed / material**" channel below: timbre is no
 > longer a *creature variation* — it becomes a **collectible translucent card skin (an "edition")**, in
 > the spirit of Balatro's Foil / Holographic / Polychrome cards. **Engine decision: hand-rolled Web-Audio
 > synth presets — NOT Tone.js** (considered and declined — the dependency, its own scheduler, and its own
 > AudioContext fight the repo's vanilla single-file rule and the game's existing `scheduleBar` clock; the
 > goal here is *variety to collect*, not realism, which a small preset system delivers with zero assets).
+
+### Look-only slice — as built (2026-07-20)
+
+The **visual** half of the reframe shipped first (sound unchanged; the per-skin synth voice is the next pass):
+
+- **`SKINS` registry** (near `INSTRUMENTS`) — one entry per skin (`{id, name, art, preset}`); `preset:null`
+  is the reserved seam for the future synth voice. Add a skin = add an entry + a `.cskin.sk-<id>` CSS rule.
+- **Binding rides `instId`, decided with the dev:** an instrument carries a `skin` field. **Piano = plain
+  (no skin)**; **Guitar = Foil**; **Bass = Holographic**. Two spares (**Frosted Glass**, **Neon**) are
+  defined in the registry and CSS, unassigned, ready to attach. `skinFor(instId)` resolves the skin object.
+- **Render.** `cardHTML` lays the skin as a **child `.cskin` element** (first child of the card), *not* a
+  class on the card — so it survives the FLIP/fly `cloneNode(true)` (which resets the card's `className`)
+  for free, riding the deal/play/discard animations. Note text is lifted above the sheen with `z-index`.
+- **Pure CSS, no assets, reduced-motion aware.** Each skin is a translucent overlay + a sweeping glint
+  (`skGlint`) / hue shift (`skHolo`); `@media (prefers-reduced-motion:reduce)` freezes the motion but keeps
+  a static sheen — matching the card-motion layer's guard.
+- **Bring-your-own-art seam.** Set a skin's **`art`** to an image URL / data-URI → `cardHTML` adds
+  `.cskin.sk-art` + a `--skin-art` var, and the CSS paints that image (cover) **instead of** the gradient,
+  dropping the animation. `art:null` keeps the built-in CSS look. (Editing the `.cskin.sk-<id>` gradient
+  directly is the other art path.)
+- **Where they show.** Skins appear wherever **guitar/bass cards** do — **Campaign M6+** (`INSTRUMENT_UNLOCK_MV=6`)
+  and **Free Play** (all instruments), plus the graduated accidental decks (`instrumentsFor(m).slice(0,MAX_TIMBRES)`).
+  Before M6 the deck is piano-only, so cards stay plain.
+- **Deferred (unchanged):** the per-skin **synth preset** (`playPreset` seam — the "sound" half), skins as a
+  **separate collectible/equip layer** independent of the 3 instruments, the shop/Tips unlock, skinning the
+  **piano-roll loop cells** (this slice skins the hand cards + their clones only), and the M6 gate/term
+  possibly counting distinct *skins* instead of distinct *instruments*.
 
 **The idea.** A **timbre skin** is one collectible unit carrying **both**:
 - a **synth preset** — the *sound* (a distinct voice: waveform stack + filter + envelope + maybe one light
