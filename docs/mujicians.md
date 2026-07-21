@@ -244,6 +244,160 @@ chord-inside-melody, eighths/sixteenths/triplets in the picker (the tick model a
 
 ---
 
+## Rhythm — live finger-drumming (DECIDED 2026-07-20, NOT built)
+
+> **Status: DECIDED, not built.** This is the source of truth for the **M2 Rhythm** movement and
+> **supersedes** the earlier rhythm-as-composition plans for M2: the **"clap it back" call-and-response**
+> row (in the table below), the **backing-groove menu-pick**, the **two-pass card-placement** sketch, and
+> the **rest-card-in-rhythm** design. Rhythm becomes a **live, timed rhythm game** (finger-drumming) rather
+> than grid composition. The continuous-timeline data model (`events[]`, ticks, `TPB=24`) is **reused
+> unchanged** — this is a new *input + scoring* layer on top of it, plus a percussion voice.
+
+### The core idea
+
+A run is performed **live in time** — you play *with* the looping backing track, not by placing cards on a
+static grid. Two live passes over the same loop:
+
+- **Round 1 — Melody (live).** Pitched cards are bound to the home row; you play notes **in time** as the
+  loop cycles (loop-pedal style — keep adding over laps until you Finish).
+- **Round 2 — The beat (live, one pass).** The loop replays your melody; you now hold **drum cards only**
+  and lay the beat over it in **a single committed lap**.
+
+This turns the rhythm movement into a real rhythm game (DDR / finger-drumming lineage), which the dev finds
+far more fun than grid composition, gives the browser **real performance shortcut keys**, and makes rhythm a
+**skill you get better at**.
+
+### The input scheme (locked)
+
+- **Home-row keys = refilling hand slots.** `j k l ;` (right-handed) or `a s d f` (left-handed) each hold one
+  card. Pressing a key **fires that card at the playhead and immediately refills the slot from the deck** — so
+  which drum a key plays **drifts as you burn the deck** (embraced randomness; the only stable voice is the
+  bass). A handedness toggle swaps the key set.
+- **Space = bass/kick — always stable.** The one fixed voice, the backbone of the beat.
+- **Polyphonic.** Held keys live in a Set; each press schedules independently, so `j`+`k`+space together = a
+  stacked hit on one tick. Never swallow simultaneous presses (`e.repeat` guard; `preventDefault` on space so
+  the page doesn't scroll).
+- **Mobile = touch pads.** The slots become on-screen pads (a big bass pad + refilling drum pads);
+  `touchstart`/`changedTouches` feed the **same** "fire slot N at the playhead" function as the keys, with
+  multi-touch for simultaneous hits (`touch-action:none`). One code path for keyboard + touch.
+
+### The M2 lesson ladder (progressive, like the pitch ladder)
+
+`persist.progress.rhythmStage`, walked in order; M3 opens only past the last stage (mirrors M1's `pitchStage`):
+
+1. **Match the beat (shown).** Four-on-the-floor is drawn as a **ghost overlay**; you tap **space** on each
+   beat to match it. A couple of tries; timing-window feedback. The gentle on-ramp.
+2. **New grooves (shown → memory).** More overlays to match — backbeat → son clave → shuffle — first shown,
+   then hidden so you reproduce from memory. Each nailed groove is collected.
+3. **Free take.** Play your own one-pass beat over your melody; it becomes the song's backing loop.
+
+(The old M2 "play each note value" `gateDurs` gate is replaced by **timing accuracy** against the overlay;
+note-values move to the deferred hold-to-sustain melody control.)
+
+### Scoring — rhythm-game timing
+
+- Each hit is judged against the nearest grid tick: **Perfect / Good / Miss** (timing windows), reusing M1's
+  bloom / floating-rating-word / proximity-chime juice.
+- A **combo streak** of on-beat hits ramps the applause **mult** (skill → score).
+- The run reports a **rhythm accuracy %** (reuse `pitchAccuracy()`'s shape).
+- Hits are stored **lightly quantized** (snap to the nearest subdivision so playback grooves clean) while
+  scoring reflects **raw** timing. (Default chosen to test; a raw-feel / quantize-toggle is an open
+  sub-decision below.)
+
+### Rests are free
+
+In a live take, **a rest is simply not pressing a key** — silence falls out for nothing. This **deletes the
+rest card / rest creature** from the rhythm design entirely (they were only needed in the grid-composition
+model; the shipped `REST_COPIES` rest card can retire from M2 when this lands).
+
+### The creatures — Beatlings (drum-pun beetles)
+
+The percussion voices are **Beatlings**: one beetle species, a variation per drum voice, each name a
+**percussion-synonym pun**. Confirmed so far: **Boombardier** (kick/space — the bombardier beetle really
+fires with an audible bang), **Snarab** (snare + scarab), **Ticker** (hi-hat). A 4th+ is TBD (the refill
+model means voices aren't permanently key-bound, so the pool can grow freely; *Rimshot/Tapper were floated
+and rejected*). Their **card skins ride the existing foil/holo `SKINS` system to swap drum timbres**
+(collecting skins = collecting drum sounds). Sibling class to the pitched **Notelings**.
+
+### Graduation (like accidentals)
+
+`rhythmUnlocked()` = `persist.progress.movement > 2` (mirrors `accidentalsUnlocked()` = `> 1`). Once M2 clears:
+
+- **Both live rounds become the standard run flow** in M3–M7 + Free Play — every run is a live melody pass +
+  a live drum pass.
+- The **Round-2 beat loops under the song and is saved with it** (`snapshotEvents` gains the drum events / a
+  groove field; back-compat read for pre-drum saves; the MJ share code bumps a version).
+- Timing/combo scoring stays on across later movements (the `groove` term is already in every M2+ `terms`
+  list).
+
+### MVP staging (to "see if it works" cheapest)
+
+- **Stage 1 — the fun test. ✅ BUILT 2026-07-21 as a standalone "🥁 Beat Lab" practice screen** (Home button,
+  **no daily cap** — it's a feel test, deliberately isolated from the run/movement/save flow so nothing else is
+  destabilised). As built in `mujicians.html`: a **2-bar C-major riff loops** (`LAB_MELODY`) while you drum
+  **live in time**; **Space = kick** (Boombardier, stable) and three **home-row slots** (`j k l` / `a s d`,
+  handedness toggle) fire whatever Beatling is loaded and **refill from a small snare/hat drum deck**
+  (`labDrawDrum`); **keyboard *and* touch**, **polyphonic** (a `labPressed` Set ignores auto-repeat, each pad is
+  its own touch target, `preventDefault` on Space stops page-scroll). Hits are judged by **timing vs the
+  8th-note grid** — Perfect ≤60 ms / Good ≤140 ms / Miss — driving a **combo**, a live **accuracy %**, a
+  per-pad glow + floating rating word (reusing the `.ratingpop` juice), and a grid-cell flash. Hits are stored
+  **lightly quantized** to the nearest 8th and **loop back** (loop-pedal): a dedicated lookahead scheduler
+  (`labSchedTick`) + rAF playhead (`labTickHead`) run **separately from the game loop**, and each recorded hit
+  is **skipped on its creation lap** (it already played live on keypress) so it isn't doubled, then repeats
+  every later lap. New **`_drum(voice,t,vel)`** vanilla Web-Audio synths (kick/snare/hat via a cached noise
+  buffer) — the reserved "noise voice." Four-on-the-floor shows as a **gold ghost on the kick lane**; a **↺
+  Clear beat** wipes the loop. *(Simplifications vs the full design, deferred to Stage 2: the overlay is a
+  visual guide — scoring is grid-tightness, not per-target-hit matching; the lab loops continuously with rolling
+  stats rather than a single committed one-pass take; no gate/advancement/save wiring yet.)*
+- **Stage 2:** Round 1 **melody goes live** (loop-pedal placement in time), the rest of the groove ladder,
+  graduation to M3–M7 + Free Play, save-format update.
+- **Later:** **hold-to-sustain** note length in the melody round (dev likes it, deferred); more
+  Beatlings/grooves; raw-feel toggle; a metronome count-in.
+
+### Beat Lab — feedback to address (2026-07-21 playtest)
+
+- **Recorded beats eventually stop looping — to FIX (NOT by design).** The loop-pedal is meant to repeat
+  your hits forever; in play the played beats drop out after a while while the backing riff keeps going.
+  Most likely tied to **unbounded hit accumulation** (no cap — see the next item; hundreds of scheduled
+  voices per lap can choke the AudioContext). **Preferred behaviour (dev):** the **backing melody is only a
+  tempo scaffold and should fade/stop once you've locked in** ("training wheels off"), while **your recorded
+  beats keep looping**. So the fix is two parts: (1) make your beats persist reliably, and (2) **stop the
+  backing tone** after a few laps / on demand, keeping the beat you built.
+- **Cap the percussion — a tweakable limit so you can't overload the beat.** Right now you can mash every pad
+  and stack **unlimited** hits, burying the groove in everything-at-once. Add a **limited number of drum
+  cards/hits** — a **tunable cap, or a percentage of the loop's slots** (e.g. "no more than X% of the grid
+  filled") — so the beat stays legible and playing well means *choosing* hits, not spamming. Ties to the
+  deck/hand model: the refilling slots should draw from a **finite drum deck** with a **max active-hits
+  budget**. Tune the number/percentage in play.
+
+### Code map (sketch, when built)
+
+- **New audio voice** `_drum(voice, t, vel)` — vanilla Web-Audio noise/click synths (kick = sine pitch-drop +
+  click, snare = filtered noise burst + tone, hat = short high-passed noise). This is the "noise voice for a
+  future percussion suit" the doc reserved; `_tone` stays pitched-only.
+- **Live input module:** `keydown`/`touchstart` → `fireSlot(n)` → read the current playhead tick (the
+  scheduler/`tickPlayhead` already exist) → place a drum (or note) event there + immediate audio preview;
+  the slot refills from the deck. A handedness toggle swaps the key set.
+- **Loop length:** live rounds want a **fixed** loop length (loop-pedal semantics, stable loop point) rather
+  than `growStageToFit` — pick at run start (default 4 bars). Open sub-decision.
+- **Overlay lesson:** a target pattern in a `GROOVES` registry (`{id,name,hits:[{tick,voice}]}`) drawn as
+  ghost cells on the drum lanes; score each of your hits vs the nearest target hit.
+- **Untouched:** `classify`, the pitch scoring, the scheduler/loop groove, Codex, Save-a-Song — this is a
+  live **input + a percussion voice + timing scoring**, layered on the existing timeline.
+
+### Open sub-decisions (defaults noted)
+
+- **Quantize vs raw feel** — default **light quantize** (clean playback, honest scoring); a raw-feel or
+  player toggle is TBD (dev: "not sure what this means, let's test it out").
+- **Round-1 laps** — default **loop-pedal** (multiple laps until Finish) for melody; **Round 2 stays one pass.**
+- **Loop length** — default **fixed** length chosen at run start for live mode (vs the grow-to-fit stage of
+  the composition model).
+- **Note length in the melody round** — default **fixed quarter per tap** for the MVP; **hold-to-sustain** is
+  the liked-but-deferred upgrade (dev: "I like this idea, but it can be a later addition").
+- **4th+ Beatling voice/name** — TBD; the refill model keeps the pool open.
+
+---
+
 ## Call-and-response scoring — making card choice matter (DECIDED 2026-07-18 · M1 BUILT 2026-07-19)
 
 > **Status: DECIDED; M1 Pitch call-and-response is ✅ BUILT (2026-07-19)** in `mujicians.html` — see
@@ -315,6 +469,11 @@ you'd played and read as disorienting.)*
 *(Element flavor per the dev's graphic novel: pitch=wind, rhythm=earth, dynamics=fire, melody=water,
 harmony=metal, timbre=wood, structure=**Time** (chosen over "void" — form is a memory-across-time arc; the A
 returns because you remember it. "Void" is a candidate for the rests/silence layer instead).)*
+
+> **⚠️ Rhythm (M2) update 2026-07-20:** the M2 "clap it back — same onsets/durations" row above is
+> **superseded** — M2 is now a **live finger-drumming rhythm game**, not a call-and-response echo. See
+> **[Rhythm — live finger-drumming](#rhythm--live-finger-drumming-decided-2026-07-20-not-built)**. The
+> other movements' calls stand.
 
 ### M1 Pitch — as built (2026-07-19)
 

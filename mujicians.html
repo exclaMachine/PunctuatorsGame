@@ -442,6 +442,49 @@
     padding:10px 16px;font-size:13px;z-index:40;opacity:0;pointer-events:none;
     transition:opacity .18s,transform .18s;box-shadow:0 8px 24px rgba(0,0,0,.5)}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ===== Beat Lab — Stage-1 live finger-drumming MVP (see docs/mujicians.md) ===== */
+  .lab{margin-top:8px}
+  .labtop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .labtitle{font-weight:800;color:var(--ink)}
+  .labtitle b{color:var(--accent)}
+  .labhint{font-size:12px;color:var(--dim);margin:8px 0 10px;line-height:1.5}
+  .labhint b{color:var(--ink)}
+  .labhud{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:10px;padding:10px 12px;
+    background:var(--panel);border:1px solid var(--edge);border-radius:10px}
+  .labhud .hudbig{font-size:13px;color:var(--dim)}
+  .labhud .hudbig b{font-size:26px;color:var(--gold);margin-left:5px;vertical-align:-2px}
+  .labhud .hudstat{font-size:12px;color:var(--dim)}
+  .labhud .hudstat b{color:var(--ink);font-size:14px}
+  .labhud .hudtempo{margin-left:auto}
+  .labgrid{display:grid;gap:2px;background:#0f1226;border:1px solid var(--edge);border-radius:8px;padding:6px;overflow-x:auto}
+  .lablabel{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);white-space:nowrap;padding-right:4px}
+  .labcell{height:26px;border-radius:4px;background:#141833;border:1px solid transparent;position:relative;min-width:16px}
+  .labcell.beatcol{border-left:1px solid rgba(255,255,255,.11)}
+  .labcell.target{box-shadow:inset 0 0 0 2px rgba(245,197,66,.30)}
+  .labcell.playcol{outline:2px solid var(--accent);outline-offset:-2px;z-index:2}
+  .labcell.hit{background:var(--_hc,#4de1c8)}
+  .labcell.hit-kick{--_hc:#ff8f5a}
+  .labcell.hit-snare{--_hc:#f5c542}
+  .labcell.hit-hat{--_hc:#4de1c8}
+  .labcell.flash{animation:labflash .3s ease-out}
+  @keyframes labflash{0%{filter:brightness(2.4);transform:scale(1.12)}100%{filter:none;transform:none}}
+  .labpads{display:flex;flex-direction:column;gap:12px;margin:14px 0}
+  .padrow{display:flex;gap:12px;flex-wrap:wrap}
+  .pad{flex:1 1 120px;min-height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+    background:var(--panel);border:1px solid var(--edge);border-radius:12px;color:var(--ink);cursor:pointer;
+    user-select:none;-webkit-user-select:none;touch-action:none;transition:transform .05s,background .1s,box-shadow .1s}
+  .pad:active,.pad.down{transform:translateY(2px) scale(.98);background:#20264a}
+  .pad .padkey{font-size:11px;color:var(--dim);border:1px solid var(--edge);border-radius:5px;padding:1px 8px;letter-spacing:.08em}
+  .pad .padname{font-weight:700;font-size:13px}
+  .pad .padrole{font-size:10px;color:var(--dim)}
+  .kickpad{min-height:64px;background:#241a1a;border-color:#5a3a2a}
+  .kickpad .padname{color:var(--mult)}
+  .pad.hit-exact{box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(245,197,66,.45)}
+  .pad.hit-close{box-shadow:0 0 0 2px var(--good)}
+  .pad.hit-far{box-shadow:0 0 0 2px var(--bad)}
+  .labctl{display:flex;justify-content:center;gap:10px;margin-top:4px}
+  @media (prefers-reduced-motion:reduce){ .labcell.flash{animation:none} }
 </style>
 </head>
 <body>
@@ -1057,6 +1100,42 @@
     const wave = id => (INSTRUMENTS.find(x=>x.id===id)||INSTRUMENTS[0]).wave;
     const t = audio().currentTime;
     notes.forEach(nt => _tone(nt.midi, wave(nt.instId), dur*0.95, t, vel));
+  }
+
+  /* ========= percussion voice — the "noise voice" reserved for the Beatlings (Beat Lab / M2 rhythm) =========
+     Pitchless drum synths, pure vanilla Web-Audio (no _tone pitch model): kick = a sine that drops in pitch,
+     snare = a filtered noise burst + a short tone body, hat = a brief high-passed noise tick. See docs/mujicians.md. */
+  let _noiseBuf = null;
+  function _noiseBuffer(ac){
+    if(_noiseBuf && _noiseBuf.sampleRate===ac.sampleRate) return _noiseBuf;
+    const n = (ac.sampleRate*0.3)|0, b = ac.createBuffer(1,n,ac.sampleRate), d = b.getChannelData(0);
+    for(let i=0;i<n;i++) d[i] = Math.random()*2-1;
+    _noiseBuf = b; return _noiseBuf;
+  }
+  function _drum(voice, t, vel){
+    const ac = audio(); vel = vel||1;
+    if(voice==="kick"){
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.type="sine"; o.frequency.setValueAtTime(155,t); o.frequency.exponentialRampToValueAtTime(46,t+0.12);
+      g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.95*vel,t+0.005); g.gain.exponentialRampToValueAtTime(0.0008,t+0.2);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t+0.22);
+      return;
+    }
+    if(voice==="snare"){
+      const src=ac.createBufferSource(); src.buffer=_noiseBuffer(ac);
+      const bp=ac.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1750; bp.Q.value=0.7;
+      const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.6*vel,t+0.002); g.gain.exponentialRampToValueAtTime(0.0006,t+0.16);
+      src.connect(bp).connect(g).connect(ac.destination); src.start(t); src.stop(t+0.18);
+      const o=ac.createOscillator(), g2=ac.createGain(); o.type="triangle"; o.frequency.value=190;
+      g2.gain.setValueAtTime(0.0001,t); g2.gain.linearRampToValueAtTime(0.26*vel,t+0.003); g2.gain.exponentialRampToValueAtTime(0.0006,t+0.11);
+      o.connect(g2).connect(ac.destination); o.start(t); o.stop(t+0.13);
+      return;
+    }
+    // hat: a short, bright high-passed noise tick
+    const src=ac.createBufferSource(); src.buffer=_noiseBuffer(ac);
+    const hp=ac.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=7200;
+    const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.34*vel,t+0.001); g.gain.exponentialRampToValueAtTime(0.0006,t+0.05);
+    src.connect(hp).connect(g).connect(ac.destination); src.start(t); src.stop(t+0.06);
   }
 
   /* ========= call-and-response (M1 Pitch) =========
@@ -2531,6 +2610,7 @@
         <div class="cta" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
           <button class="btn" id="b-campaign" ${capped?"disabled":""}>${campLabel}</button>
           <button class="btn ghost" id="b-free" ${capped?"disabled":""} title="Every mechanic unlocked (today's full game)">Free Play</button>
+          <button class="btn ghost" id="b-beatlab" title="Practice live finger-drumming (rhythm MVP) — no daily cap">🥁 Beat Lab</button>
         </div>
         ${mv===1?`<div class="cta" style="justify-content:center">${pitchLadderHTML()}</div>`:pitchPracticeHTML()}
         ${devMovementBarHTML()}
@@ -2544,6 +2624,8 @@
     if(bc) bc.addEventListener("click", ()=>{ audio(); startRun("campaign"); });
     const bf = document.getElementById("b-free");
     if(bf) bf.addEventListener("click", ()=>{ audio(); startRun("free"); });
+    const blab = document.getElementById("b-beatlab");
+    if(blab) blab.addEventListener("click", ()=>{ audio(); enterBeatLab(); });
     $game.querySelectorAll(".pp-stage").forEach(el=> el.addEventListener("click", ()=>{
       audio(); startRun("campaign", {movement:1, pitchLevel:el.dataset.stage}); }));
     // DEV movement jumper: set the reached frontier, then re-render so the Campaign button updates
@@ -2564,6 +2646,7 @@
     syncChrome();   // show/refresh the deck & discard pile anchors for this screen
     $overlay.innerHTML = "";
     if(screen==="home" || screen==="capped"){ renderHome(); return; }
+    if(screen==="beatlab"){ renderBeatLab(); return; }
     if(screen==="gig"){ renderGig(); return; }
     if(screen==="intro"){ renderGig(); renderIntroOverlay(); return; }   // mentor lesson intro, over the (empty) stage
     if(screen==="draft"){ renderGig(); renderDraftOverlay(); return; }
@@ -2685,6 +2768,219 @@
     document.getElementById("b-home").addEventListener("click", ()=>{ stopLoop(); galleryPlayId=null; screen="home"; run=null; render(); });
   }
   function renderGigStatic(){ /* keep the last gig board visible behind the end overlay (win or lose) so the loop's playhead keeps sweeping */ if(run) renderGig(); }
+
+  /* ================= Beat Lab — Stage-1 live finger-drumming MVP =================
+     A self-contained practice screen to test whether live finger-drumming feels fun BEFORE we rewire the
+     campaign. A short backing melody loops; you play drums LIVE in time — Space = the bass (Boombardier,
+     stable), the home-row slots fire whatever Beatling is loaded and REFILL from a small drum deck. Hits are
+     scored by timing (Perfect/Good/Miss) vs the 8th-note grid, with a combo + accuracy %, and they LOOP back
+     (loop-pedal) so you build a beat. Keyboard + touch, polyphonic. See docs/mujicians.md. */
+  const LAB_BARS = 2, LAB_SUB = 2;                            // 2-bar loop; 8th-note display/scoring grid
+  const LAB_TICKS = LAB_BARS * BAR_TICKS;                     // 192 ticks
+  const LAB_COLS = LAB_BARS * METER.beatsPerBar * LAB_SUB;    // 16 columns
+  const LAB_GRID_TICKS = TPB / LAB_SUB;                       // 12 ticks per 8th (the scoring grid)
+  const labTickToCol = t => Math.floor(((((t%LAB_TICKS)+LAB_TICKS)%LAB_TICKS)) / LAB_GRID_TICKS);
+  const LAB_LANES = ["hat","snare","kick"];                   // grid rows, top → bottom (kick at the floor)
+  const DRUMS = {
+    kick:  { name:"Boombardier", emoji:"🪲", role:"bass"   },
+    snare: { name:"Snarab",      emoji:"🥁", role:"snare"  },
+    hat:   { name:"Ticker",      emoji:"✨", role:"hi-hat" },
+  };
+  // a simple 2-bar C-major riff (8 quarter notes) to groove over
+  const LAB_MELODY = [60,64,67,64,62,65,67,62].map((midi,i)=>({ midi, at:i*TPB, dur:TPB }));
+
+  let labSched=null, labRaf=null, labT0=0, labBeatSec=BAR_SEC, labTickSec=BAR_SEC/TPB, labLoopSec=0, labSchedFrom=0, labCol=-1;
+  let labHits=[], labSlots=[], labPool=[], labHand="right";
+  let labStats={ perfect:0, good:0, miss:0, combo:0, best:0, total:0 };
+
+  function labDrawDrum(){ if(!labPool.length) labPool = shuffle(["snare","hat","snare","hat","snare","hat"]); return labPool.pop(); }
+  function labInitSlots(){ labPool=[]; labSlots=[0,1,2].map(()=>({ voice:labDrawDrum() })); }
+
+  function enterBeatLab(){
+    audio(); stopLoop(); galleryPlayId=null;
+    labHits=[]; labStats={ perfect:0, good:0, miss:0, combo:0, best:0, total:0 };
+    labInitSlots();
+    screen="beatlab"; render();
+    labStartLoop();
+  }
+  function exitBeatLab(){ labStopLoop(); screen="home"; render(); }
+
+  function labStartLoop(){
+    labStopLoop();
+    const ac = audio();
+    labBeatSec = curBarSec(); labTickSec = labBeatSec/TPB; labLoopSec = LAB_TICKS*labTickSec;
+    labT0 = ac.currentTime + 0.15; labSchedFrom = labT0; labCol = -1;
+    labSched = setInterval(labSchedTick, 25);
+    labRaf = requestAnimationFrame(labTickHead);
+  }
+  function labStopLoop(){
+    if(labSched){ clearInterval(labSched); labSched=null; }
+    if(labRaf){ cancelAnimationFrame(labRaf); labRaf=null; }
+    labCol = -1;
+  }
+  // Lookahead scheduler: schedule the backing melody + your RECORDED hits for the rolling ~120ms window,
+  // rolling across lap boundaries. A hit is SKIPPED on the lap it was created (it already played live on
+  // keypress) so it isn't doubled; it plays on every subsequent lap (the loop-pedal repeat).
+  function labSchedTick(){
+    if(!labSched) return;
+    const ac = audio(), until = ac.currentTime + 0.12; let guard=0;
+    while(labSchedFrom < until && guard++ < 500){
+      const lap = Math.floor((labSchedFrom - labT0)/labLoopSec);
+      const lapStart = labT0 + lap*labLoopSec, lapEnd = lapStart + labLoopSec;
+      const segEnd = Math.min(until, lapEnd);
+      for(const nt of LAB_MELODY){ const w = lapStart + nt.at*labTickSec; if(w>=labSchedFrom && w<segEnd) _tone(nt.midi,"triangle",nt.dur*labTickSec*0.9,w,0.42); }
+      for(const h of labHits){ if(h.createdLap===lap) continue; const w = lapStart + h.tick*labTickSec; if(w>=labSchedFrom && w<segEnd) _drum(h.voice, w, 1); }
+      labSchedFrom = segEnd>=lapEnd ? lapEnd : segEnd;
+    }
+  }
+  function labTickHead(){
+    if(!labSched){ labRaf=null; return; }
+    const ac = audio(), elapsed = Math.max(0, ac.currentTime - labT0);
+    const phase = elapsed % labLoopSec;
+    const tick = Math.min(LAB_TICKS-1, Math.floor(phase/labTickSec));
+    const col = labTickToCol(tick);
+    if(col !== labCol){ labCol = col; labPaintCol(col); }
+    labRaf = requestAnimationFrame(labTickHead);
+  }
+  function labPaintCol(col){
+    document.querySelectorAll(".labgrid .playcol").forEach(e=> e.classList.remove("playcol"));
+    document.querySelectorAll('.labgrid [data-col="'+col+'"]').forEach(e=> e.classList.add("playcol"));
+  }
+
+  // Fire a voice NOW (live), score its timing vs the nearest 8th, record it (lightly quantized) for the loop.
+  function labHit(voice, slotIdx){
+    if(!labSched) return;
+    const ac = audio(), now = ac.currentTime, elapsed = Math.max(0, now - labT0);
+    const lap = Math.floor(elapsed/labLoopSec), phase = elapsed - lap*labLoopSec;
+    const rawTick = phase/labTickSec;
+    const gridTick = Math.round(rawTick/LAB_GRID_TICKS)*LAB_GRID_TICKS;          // nearest 8th (score + quantized playback)
+    const errMs = Math.abs(rawTick - gridTick) * labTickSec * 1000;
+    const tier = errMs<=60 ? "exact" : errMs<=140 ? "close" : "far";            // Perfect / Good / Miss
+    _drum(voice, now, 1);
+    labHits.push({ voice, tick:((gridTick%LAB_TICKS)+LAB_TICKS)%LAB_TICKS, createdLap:lap });
+    labStats.total++;
+    if(tier==="far"){ labStats.miss++; labStats.combo=0; }
+    else { if(tier==="exact") labStats.perfect++; else labStats.good++; labStats.combo++; if(labStats.combo>labStats.best) labStats.best=labStats.combo; }
+    labFlash(voice, slotIdx, tier, labTickToCol(gridTick));
+    labUpdateHUD();
+  }
+  function labFireSlot(i){ if(!labSlots[i]) return; labHit(labSlots[i].voice, i); labSlots[i].voice = labDrawDrum(); labUpdateSlotPad(i); }
+  function labFireKick(){ labHit("kick", -1); }
+
+  function labFlash(voice, slotIdx, tier, col){
+    const cell = document.querySelector('.labgrid [data-lane="'+voice+'"][data-col="'+col+'"]');
+    if(cell){ cell.classList.add("hit","hit-"+voice,"flash"); setTimeout(()=>cell.classList.remove("flash"), 300); }
+    const pad = slotIdx<0 ? document.querySelector(".pad.kickpad") : document.querySelector('.pad[data-slot="'+slotIdx+'"]');
+    if(pad){ pad.classList.add("down","hit-"+tier); setTimeout(()=>pad.classList.remove("down","hit-"+tier), 150); labPop(pad, tier); }
+  }
+  function labPop(el, tier){
+    if(reduceMotion()) return;
+    const RT = { exact:{t:"✦ PERFECT",c:"rp-exact"}, close:{t:"👍 good",c:"rp-close"}, far:{t:"✕ off",c:"rp-far"} }[tier];
+    if(!RT) return;
+    const r = el.getBoundingClientRect(), p = document.createElement("div");
+    p.className = "ratingpop "+RT.c; p.textContent = RT.t;
+    p.style.left = (r.left + r.width/2)+"px"; p.style.top = r.top+"px";
+    $fx.appendChild(p); setTimeout(()=>p.remove(), 950);
+  }
+  function labUpdateHUD(){
+    const acc = labStats.total ? Math.round(100*(labStats.perfect + labStats.good*0.5)/labStats.total) : null;
+    const set = (id,v)=>{ const e=document.getElementById(id); if(e) e.textContent = v; };
+    set("lab-combo", labStats.combo); set("lab-acc", acc==null?"—":acc+"%");
+    set("lab-perfect", labStats.perfect); set("lab-good", labStats.good); set("lab-miss", labStats.miss);
+  }
+  function labUpdateSlotPad(i){
+    const d = DRUMS[labSlots[i].voice];
+    const nameEl = document.querySelector('[data-slotname="'+i+'"]'); if(nameEl) nameEl.innerHTML = d.emoji+" "+esc(d.name);
+    const pad = document.querySelector('.pad[data-slot="'+i+'"]'); if(pad){ const role = pad.querySelector(".padrole"); if(role) role.textContent = d.role; }
+  }
+  function labClearBeat(){
+    labHits = [];
+    document.querySelectorAll(".labgrid .hit").forEach(e=> e.classList.remove("hit","hit-kick","hit-snare","hit-hat"));
+  }
+  function labApplyHits(){   // re-draw recorded hit markers after a full re-render
+    labHits.forEach(h=>{ const cell = document.querySelector('.labgrid [data-lane="'+h.voice+'"][data-col="'+labTickToCol(h.tick)+'"]'); if(cell) cell.classList.add("hit","hit-"+h.voice); });
+  }
+
+  function renderBeatLab(){
+    const keys = labHand==="left" ? ["a","s","d"] : ["j","k","l"];
+    let grid = "";
+    LAB_LANES.forEach(lane=>{
+      const d = DRUMS[lane];
+      grid += `<div class="lablabel">${d.emoji} ${esc(d.name)}</div>`;
+      for(let c=0;c<LAB_COLS;c++){
+        const cl = ["labcell"];
+        if(c%LAB_SUB===0) cl.push("beatcol");
+        if(lane==="kick" && c%LAB_SUB===0) cl.push("target");   // four-on-the-floor ghost = a kick on every beat
+        grid += `<div class="${cl.join(" ")}" data-lane="${lane}" data-col="${c}"></div>`;
+      }
+    });
+    const slotPads = keys.map((k,i)=>{
+      const d = DRUMS[labSlots[i].voice];
+      return `<button class="pad slotpad" data-slot="${i}">
+        <span class="padkey">${k.toUpperCase()}</span>
+        <span class="padname" data-slotname="${i}">${d.emoji} ${esc(d.name)}</span>
+        <span class="padrole">${d.role}</span></button>`;
+    }).join("");
+    $game.innerHTML = `
+      <div class="lab">
+        <div class="labtop">
+          <button class="btn ghost" id="lab-back">← Home</button>
+          <div class="labtitle">🥁 Beat Lab — <b>live finger-drumming</b></div>
+          <button class="btn ghost" id="lab-hand" title="Switch key hand">${labHand==="left"?"✋ Left · a s d":"🤚 Right · j k l"}</button>
+        </div>
+        <p class="labhint">The loop's rolling — play drums <b>in time</b>. <b>Space</b> = the bass (Boombardier),
+          <b>${keys.map(k=>k.toUpperCase()).join(" · ")}</b> fire whatever Beatling is on each pad (they refill as you go).
+          Aim for the beat — the kick lane's gold cells are <b>four-on-the-floor</b>. On a phone, tap the pads. Your hits <b>loop back</b>, so you build a beat.</p>
+        <div class="labhud">
+          <div class="hudbig">Combo <b id="lab-combo">0</b></div>
+          <div class="hudstat">Accuracy <b id="lab-acc">—</b></div>
+          <div class="hudstat">✦ <b id="lab-perfect">0</b> · 👍 <b id="lab-good">0</b> · ✕ <b id="lab-miss">0</b></div>
+          <div class="hudtempo">${tempoSliderHTML(true)}</div>
+        </div>
+        <div class="labgrid" style="grid-template-columns:64px repeat(${LAB_COLS},1fr)">${grid}</div>
+        <div class="labpads">
+          <div class="padrow">${slotPads}</div>
+          <button class="pad kickpad" data-slot="-1">
+            <span class="padkey">SPACE</span>
+            <span class="padname">🪲 Boombardier</span>
+            <span class="padrole">bass — always here</span></button>
+        </div>
+        <div class="labctl">
+          <button class="btn ghost" id="lab-clear">↺ Clear beat</button>
+        </div>
+      </div>`;
+    document.getElementById("lab-back").addEventListener("click", exitBeatLab);
+    document.getElementById("lab-hand").addEventListener("click", ()=>{ labHand = labHand==="left"?"right":"left"; renderBeatLab(); });
+    document.getElementById("lab-clear").addEventListener("click", labClearBeat);
+    // pads: mouse (desktop) + touch (mobile), polyphonic — each pad is its own target so multi-touch stacks
+    $game.querySelectorAll(".pad.slotpad").forEach(el=>{
+      const i = +el.dataset.slot;
+      el.addEventListener("mousedown", e=>{ e.preventDefault(); labFireSlot(i); });
+      el.addEventListener("touchstart", e=>{ e.preventDefault(); labFireSlot(i); }, { passive:false });
+    });
+    const kp = document.querySelector(".pad.kickpad");
+    kp.addEventListener("mousedown", e=>{ e.preventDefault(); labFireKick(); });
+    kp.addEventListener("touchstart", e=>{ e.preventDefault(); labFireKick(); }, { passive:false });
+    // tempo: changing it restarts the lab loop (its timing anchors are fixed at the current tempo)
+    wireTempoSlider();
+    const bpm = document.getElementById("bpm");
+    // a tempo change restarts the loop (lap 0 again) — clear createdLap so recorded hits aren't spuriously skipped
+    if(bpm) bpm.addEventListener("change", ()=>{ if(screen==="beatlab"){ labHits.forEach(h=>h.createdLap=-1); labStartLoop(); } });
+    labApplyHits();
+  }
+
+  // Keyboard input for the Beat Lab: Space = kick, home-row keys = the three slots. Polyphonic (a Set of
+  // held keys ignores auto-repeat), preventDefault on Space so the page doesn't scroll. Only while in the lab.
+  const labPressed = new Set();
+  window.addEventListener("keydown", e=>{
+    if(screen!=="beatlab" || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key===" " ? " " : e.key.toLowerCase();
+    const slotKeys = labHand==="left" ? ["a","s","d"] : ["j","k","l"];
+    if(k===" "){ e.preventDefault(); if(!e.repeat && !labPressed.has(k)){ labPressed.add(k); labFireKick(); } return; }
+    const i = slotKeys.indexOf(k);
+    if(i>=0){ e.preventDefault(); if(!e.repeat && !labPressed.has(k)){ labPressed.add(k); labFireSlot(i); } }
+  });
+  window.addEventListener("keyup", e=>{ labPressed.delete(e.key===" "?" ":e.key.toLowerCase()); });
 
   /* ================= init ================= */
   // DEV toggle: Ctrl/Cmd+Shift+D flips unlimited runs on/off (persisted).
