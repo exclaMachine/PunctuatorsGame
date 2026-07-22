@@ -349,8 +349,20 @@ and rejected*). Their **card skins ride the existing foil/holo `SKINS` system to
   Clear beat** wipes the loop. *(Simplifications vs the full design, deferred to Stage 2: the overlay is a
   visual guide — scoring is grid-tightness, not per-target-hit matching; the lab loops continuously with rolling
   stats rather than a single committed one-pass take; no gate/advancement/save wiring yet.)*
-- **Stage 2:** Round 1 **melody goes live** (loop-pedal placement in time), the rest of the groove ladder,
-  graduation to M3–M7 + Free Play, save-format update.
+- **Stage 2 — in progress.** Broken into increments:
+  - **S2.1 — Drums are first-class timeline events + "Keep this beat." ✅ BUILT 2026-07-21.** A drum is now a
+    timeline event **`{drum:<voice>, at, dyn}`** (pitchless one-shot, `dur:0`) alongside note/rest events —
+    `DRUM_VOICES = ["kick","snare","hat"]` is the canonical **save-order index** (append-only). `scheduleEvent`
+    plays a drum via `_drum` (so saved songs with drums replay), `snapshotEvents` stores them, and the **MJ2**
+    share code gained **kind `2` = `[2, at, voiceIdx]`** (additive — old codes never contain it, so old saves
+    still decode; no version bump). `eventCoverage` already skips no-note events, so nothing else changed. The
+    Beat Lab gained **💾 Keep this beat** (`labKeepBeat`/`labSongEvents`): the backing riff (as note events) +
+    your recorded beat (as drum events) become one song saved to the **Setlist** — replay/star/rename/export/
+    import like any other (per the dev's pick, melody **and** beat are saved together).
+  - **S2.2 — Round 1 melody goes live** (loop-pedal placement in time, reusing the live input module). *Next.*
+  - **S2.3 — Campaign M2 integration:** the groove ladder (overlay-matching lessons), the M2 gate, and
+    graduation of drums to M3–M7 + Free Play (they'll need drum lanes in the in-run piano-roll — `eventCoverage`
+    + the grid render). *Not built.*
 - **Later:** **hold-to-sustain** note length in the melody round (dev likes it, deferred); more
   Beatlings/grooves; raw-feel toggle; a metronome count-in.
 

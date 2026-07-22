@@ -712,6 +712,10 @@
     { id:"w", label:"𝅝", rest:"𝄻", name:"whole — 4 beats",  ticks:TPB*4 },   // 96
   ];
   const DEFAULT_DUR = "q";
+  // Percussion voices (the Beatlings) — canonical order = the save/share-code index, so DON'T reorder
+  // (append only). A drum is a first-class timeline event `{drum:<voice>, at, dyn}` (pitchless, dur 0).
+  // The Beat Lab's DRUMS registry (art/names) is keyed by these ids. See docs/mujicians.md.
+  const DRUM_VOICES = ["kick","snare","hat"];
   const durOf    = id => DURATIONS.find(d=>d.id===id) || DURATIONS[0];
   const durTicks = id => durOf(id).ticks;
   // Read the active movement from the current run; outside a run (previews/reports) treat as Free Play.
@@ -1234,7 +1238,9 @@
   function schedEvents(){ return playSrc.live ? run.loop.events : (playSrc.events||[]); }
   function loopTicksNow(){ return Math.max(BAR_TICKS, playSrc.live ? stageTicksNow() : (playSrc.totalTicks||TOTAL_TICKS)); }
   function scheduleEvent(ev, when, tickSec){
-    if(!ev || ev.rest || !ev.notes || !ev.notes.length) return;   // a rest = silence
+    if(!ev || ev.rest) return;   // a rest = silence
+    if(ev.drum){ _drum(ev.drum, when, dynGain(ev.dyn||DEFAULT_DYN)); return; }   // a pitchless percussion one-shot
+    if(!ev.notes || !ev.notes.length) return;
     const wave = id => (INSTRUMENTS.find(x=>x.id===id)||INSTRUMENTS[0]).wave;
     const dur = ev.dur*tickSec, vel = dynGain(ev.dyn||DEFAULT_DYN);
     ev.notes.forEach(nt => _tone(nt.midi, wave(nt.instId), dur*0.95, when, vel));   // the stack sounds together
@@ -1454,6 +1460,8 @@
   function snapshotEvents(events){
     return (events||[]).map(e => e.rest
       ? { rest:true, dur:e.dur, dyn:e.dyn||DEFAULT_DYN, at:e.at }
+      : e.drum
+      ? { drum:e.drum, dur:0, dyn:e.dyn||DEFAULT_DYN, at:e.at }
       : { notes: e.notes.map(n=>({pc:n.pc, letter:n.letter, instId:n.instId, midi:n.midi, acc:n.acc||0})),
           cls: { type:e.cls.type, name:e.cls.name, root:e.cls.root, consonant:e.cls.consonant },
           dur:e.dur, dyn:e.dyn||DEFAULT_DYN, at:e.at });
@@ -1571,11 +1579,15 @@
   function encodeSong(song){
     const evs = songEvents(song);
     const p = { v:2, n:song.name, kn:song.keyName, k:song.key, t:song.tempo, tt:song.totalTicks||TOTAL_TICKS,
-      e: evs.map(e => e.rest ? [1, e.dur, e.at] : [0, e.dur, e.at, e.notes.map(c=>[c.pc, c.instId, c.midi])]) };
+      e: evs.map(e => e.drum ? [2, e.at, DRUM_VOICES.indexOf(e.drum)]     // kind 2 = drum (at, voice-index)
+                    : e.rest ? [1, e.dur, e.at]                          // kind 1 = rest
+                    : [0, e.dur, e.at, e.notes.map(c=>[c.pc, c.instId, c.midi])]) };   // kind 0 = note stack
+    // (still MJ2: kind 2 is additive — old codes never contain it, so old saves still decode)
     try{ return "MJ2:"+btoa(unescape(encodeURIComponent(JSON.stringify(p)))); }catch(e){ return ""; }
   }
   function eventFromCode(a){   // one MJ2 event tuple → a live event
     if(a[0]===1) return { rest:true, dur:a[1], dyn:DEFAULT_DYN, at:a[2] };
+    if(a[0]===2) return { drum:DRUM_VOICES[a[2]]||"kick", dur:0, dyn:DEFAULT_DYN, at:a[1] };   // kind 2 = drum
     const notes = a[3].map(n=>({ pc:n[0], letter:NOTE_LETTER[n[0]]||NOTE_NAMES[n[0]]||"?", instId:n[1], midi:n[2] }));
     const cl = classify(notes);
     return { notes, cls:{ type:cl.type, name:cl.name, root:cl.root, consonant:cl.consonant }, dur:a[1], dyn:DEFAULT_DYN, at:a[2] };
@@ -2939,6 +2951,28 @@
   // Re-summon the backing riff (reset its fade to full) if you lose the pulse — a tempo scaffold on demand.
   function labReplayBacking(){ const ac=audio(); labMelodyBaseLap = Math.floor(Math.max(0, ac.currentTime - labT0)/labLoopSec); }
 
+  // S2.1 — "Keep this beat": turn the backing melody + your recorded beat into a real timeline event list and
+  // save it to the Setlist (replayable/exportable like any song; drums are first-class `{drum}` events now).
+  function labSongEvents(){
+    const evs = [];
+    LAB_MELODY.forEach(nt=>{                                    // the backing riff → note events (piano)
+      const pc = nt.midi%12, notes = [{ pc, letter:NOTE_LETTER[pc], instId:"piano", midi:nt.midi }];
+      const cl = classify(notes);
+      evs.push({ notes, cls:{ type:cl.type, name:cl.name, root:cl.root, consonant:cl.consonant }, dur:nt.dur, dyn:DEFAULT_DYN, at:nt.at });
+    });
+    labLoop.forEach(h=> evs.push({ drum:h.voice, dur:0, dyn:DEFAULT_DYN, at:h.tick }));   // your beat → drum events
+    evs.sort((a,b)=> a.at-b.at);
+    return evs;
+  }
+  function labKeepBeat(){
+    if(!labLoop.length){ toast("Play a beat first, then keep it"); return; }
+    const events = snapshotEvents(labSongEvents());
+    const nm = window.prompt("Name this beat:", suggestName(events) || "Beat Lab groove");
+    if(nm===null) return;   // cancelled
+    const song = saveSong(events, nm);
+    toast('Saved "'+song.name+'" to your Setlist');
+  }
+
   function renderBeatLab(){
     const keys = labHand==="left" ? ["a","s","d"] : ["j","k","l"];
     let grid = "";
@@ -2985,6 +3019,7 @@
         </div>
         <div class="labctl">
           <button class="btn ghost" id="lab-backing" title="Bring back the fading tempo riff">🎵 Backing riff</button>
+          <button class="btn" id="lab-keep" title="Save the backing riff + your beat to your Setlist">💾 Keep this beat</button>
           <button class="btn ghost" id="lab-clear">↺ Clear beat</button>
         </div>
       </div>`;
@@ -2992,6 +3027,7 @@
     document.getElementById("lab-hand").addEventListener("click", ()=>{ labHand = labHand==="left"?"right":"left"; renderBeatLab(); });
     document.getElementById("lab-clear").addEventListener("click", labClearBeat);
     document.getElementById("lab-backing").addEventListener("click", labReplayBacking);
+    document.getElementById("lab-keep").addEventListener("click", labKeepBeat);
     // pads: mouse (desktop) + touch (mobile), polyphonic — each pad is its own target so multi-touch stacks
     $game.querySelectorAll(".pad.slotpad").forEach(el=>{
       const i = +el.dataset.slot;
