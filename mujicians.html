@@ -605,6 +605,22 @@
   // The skin object for a card's instrument (null = plain card). Used by cardHTML to lay the overlay.
   const skinFor = (instId) => { const i = INSTRUMENTS.find(x=>x.id===instId); return (i && i.skin) ? SKINS[i.skin] : null; };
   const BASE_HAND_SIZE = 4, DISCARDS = 4, COPIES = 2, REST_COPIES = 3;  // select cap is now per-movement — see maxSelect()
+  const MAX_HAND_SIZE = 6;   // gig keyboard shortcuts map a hand of up to 6 cards (a Muse rework to respect this cap is deferred)
+  // ---- Gig keyboard shortcuts (S2.2): select a card like clicking it, Space = Play Hand ----
+  // Composition itself is UNCHANGED (you still build at your own pace); keys are just a shortcut layer.
+  // `persist.hand` picks a side; the home row (a s d f / j k l ;) covers 4 cards and extends OUTWARD as the
+  // hand grows — the 5th card takes the left key (Caps / h), the 6th takes the right key (g / '). See docs.
+  const HAND_KEYSETS = {
+    left:  { home:["a","s","d","f"], lo:"CapsLock", hi:"g" },
+    right: { home:["j","k","l",";"], lo:"h",        hi:"'" },
+  };
+  function handKeysFor(n, side){
+    const ks = HAND_KEYSETS[side==="left" ? "left" : "right"];
+    n = Math.max(0, Math.min(MAX_HAND_SIZE, n|0));
+    if(n<=4) return ks.home.slice(0,n);         // 4 or fewer → just the home row
+    if(n===5) return [ks.lo, ...ks.home];        // 5 → prepend the outer-left key for the new leftmost card
+    return [ks.lo, ...ks.home, ks.hi];           // 6 → add the outer-right key too
+  }
   const ACC_COPIES = 1, MAX_TIMBRES = 4;   // once accidentals unlock: 1 of each spelling per instrument, deck capped at 4 timbres
   const MAX_RUNS_PER_DAY = 3;
   // Mario-Paint-style loop: ONE continuous performance in ONE key on a single tick timeline (see the
@@ -1026,7 +1042,7 @@
   /* ================= persistence + daily cap ================= */
   const SAVE_KEY = "mujicians-save-v2";
   function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
-  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, progress:{ movement:1, gates:{}, pitchStage:"naturals" } };
+  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, hand:"right", progress:{ movement:1, gates:{}, pitchStage:"naturals" } };
   function loadPersist(){
     try{
       const s = JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
@@ -1044,6 +1060,7 @@
         : (Array.isArray(g.pitch) && g.pitch.length>=7) ? "ear" : "naturals";
     }
     persist.bpm = Math.max(MIN_BPM, Math.min(MAX_BPM, +persist.bpm || DEFAULT_BPM));  // global comfort tempo
+    if(persist.hand!=="left" && persist.hand!=="right") persist.hand = "right";       // keyboard handedness (gig shortcuts + Beat Lab)
     if(persist.day !== todayStr()){ persist.day = todayStr(); persist.runsUsed = 0; savePersist(); }
     // one-time repair: an earlier bug burned runs on a failed render; refund them once.
     if(!persist.capFixV1){ persist.capFixV1 = true; persist.runsUsed = 0; savePersist(); }
@@ -2062,7 +2079,7 @@
   }
   function pickMuse(id){
     const m = MUSE_POOL.find(x=>x.id===id);
-    if(m){ if(m.handSize) run.handSize += m.handSize; run.muses.push(m); }
+    if(m){ if(m.handSize) run.handSize = Math.min(MAX_HAND_SIZE, run.handSize + m.handSize); run.muses.push(m); }   // cap at 6 (keyboard maps ≤6; Muse rework deferred)
     startPlay();
   }
 
@@ -2463,6 +2480,7 @@
         <button class="btn play" id="b-play" ${canPlay?"":"disabled"}>▶ Play Hand</button>
         <button class="btn disc" id="b-disc" ${(canPlay&&run.discardsLeft>0)?"":"disabled"}>Discard (${run.discardsLeft})</button>
         <button class="btn ghost" id="b-sort">Sort by pitch</button>
+        <button class="btn ghost" id="b-hand" title="Keyboard hand — which side the card-select keys sit on (Space always plays)">${persist.hand==="left"?"✋ Left keys":"🤚 Right keys"}</button>
         ${(run.mode==="free" || run.goalAck)
           ? `<button class="btn ghost" id="b-finish" ${filledBars()>0?"":"disabled"}>✓ Finish song</button>`
           : ""}
@@ -2478,6 +2496,8 @@
     if(bf) bf.addEventListener("click", finishRun);   // Free Play always; Campaign after "keep building"
     const bh = document.getElementById("b-hear");
     if(bh) bh.addEventListener("click", ()=>{ audio(); soundCall(); });   // replay the M1 call target
+    const bhand = document.getElementById("b-hand");   // keyboard handedness (shared with the Beat Lab via persist.hand)
+    if(bhand) bhand.addEventListener("click", ()=>{ persist.hand = persist.hand==="left"?"right":"left"; savePersist(); renderGig(); });
     // loop grid: click any cell/label to aim the write cursor at that tick (append/overwrite from there)
     $game.querySelectorAll(".loopgrid [data-tick]").forEach(el=>{
       el.addEventListener("click", ()=>{
@@ -2810,7 +2830,7 @@
   const LAB_LEAD_LAPS = 4;
 
   let labSched=null, labRaf=null, labT0=0, labBeatSec=BAR_SEC, labTickSec=BAR_SEC/TPB, labLoopSec=0, labSchedFrom=0, labCol=-1;
-  let labLoop=[], labSlots=[], labPool=[], labHand="right", labMelodyBaseLap=0;   // labLoop = the recorded beat: {voice,tick,bornLap}
+  let labLoop=[], labSlots=[], labPool=[], labMelodyBaseLap=0;   // labLoop = the recorded beat: {voice,tick,bornLap}; handedness = persist.hand
   let labStats={ perfect:0, good:0, miss:0, combo:0, best:0, total:0 };
 
   function labDrawDrum(){ if(!labPool.length) labPool = shuffle(["snare","hat","snare","hat","snare","hat"]); return labPool.pop(); }
@@ -2974,7 +2994,7 @@
   }
 
   function renderBeatLab(){
-    const keys = labHand==="left" ? ["a","s","d"] : ["j","k","l"];
+    const keys = persist.hand==="left" ? ["a","s","d"] : ["j","k","l"];
     let grid = "";
     LAB_LANES.forEach(lane=>{
       const d = DRUMS[lane];
@@ -2998,7 +3018,7 @@
         <div class="labtop">
           <button class="btn ghost" id="lab-back">← Home</button>
           <div class="labtitle">🥁 Beat Lab — <b>live finger-drumming</b></div>
-          <button class="btn ghost" id="lab-hand" title="Switch key hand">${labHand==="left"?"✋ Left · a s d":"🤚 Right · j k l"}</button>
+          <button class="btn ghost" id="lab-hand" title="Switch key hand">${persist.hand==="left"?"✋ Left · a s d":"🤚 Right · j k l"}</button>
         </div>
         <p class="labhint">The loop's rolling — play drums <b>in time</b>. <b>Space</b> = the bass (Boombardier),
           <b>${keys.map(k=>k.toUpperCase()).join(" · ")}</b> fire whatever Beatling is on each pad (they refill as you go).
@@ -3024,7 +3044,7 @@
         </div>
       </div>`;
     document.getElementById("lab-back").addEventListener("click", exitBeatLab);
-    document.getElementById("lab-hand").addEventListener("click", ()=>{ labHand = labHand==="left"?"right":"left"; renderBeatLab(); });
+    document.getElementById("lab-hand").addEventListener("click", ()=>{ persist.hand = persist.hand==="left"?"right":"left"; savePersist(); renderBeatLab(); });
     document.getElementById("lab-clear").addEventListener("click", labClearBeat);
     document.getElementById("lab-backing").addEventListener("click", labReplayBacking);
     document.getElementById("lab-keep").addEventListener("click", labKeepBeat);
@@ -3051,12 +3071,27 @@
   window.addEventListener("keydown", e=>{
     if(screen!=="beatlab" || e.ctrlKey || e.metaKey || e.altKey) return;
     const k = e.key===" " ? " " : e.key.toLowerCase();
-    const slotKeys = labHand==="left" ? ["a","s","d"] : ["j","k","l"];
+    const slotKeys = persist.hand==="left" ? ["a","s","d"] : ["j","k","l"];
     if(k===" "){ e.preventDefault(); if(!e.repeat && !labPressed.has(k)){ labPressed.add(k); labFireKick(); } return; }
     const i = slotKeys.indexOf(k);
     if(i>=0){ e.preventDefault(); if(!e.repeat && !labPressed.has(k)){ labPressed.add(k); labFireSlot(i); } }
   });
   window.addEventListener("keyup", e=>{ labPressed.delete(e.key===" "?" ":e.key.toLowerCase()); });
+
+  // Gig keyboard shortcuts (S2.2): select a hand card like clicking it, Space = Play Hand. Composition is
+  // otherwise UNCHANGED (build at your own pace) — this is only a shortcut layer over the existing screen.
+  // Ignored while typing in an input, when a modal overlay is up, or off the gig screen. `persist.hand` + the
+  // current hand size decide which key selects which card (handKeysFor), matching the on-screen key badges.
+  window.addEventListener("keydown", e=>{
+    if(screen!=="gig" || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    if(e.target && /^(input|textarea|select|button)$/i.test(e.target.tagName)) return;   // don't hijack the tempo slider or a focused button (native Space)
+    if($overlay && $overlay.children.length) return;                              // a modal (e.g. the goal prompt) is open
+    if(!run || !run.hand) return;
+    if(e.key===" "){ e.preventDefault(); if(run.sel.size>0) playHand(); return; }   // Space = Play Hand
+    const key = e.key==="CapsLock" ? "CapsLock" : (e.key.length===1 ? e.key.toLowerCase() : e.key);
+    const i = handKeysFor(run.hand.length, persist.hand).indexOf(key);
+    if(i>=0 && i<run.hand.length){ e.preventDefault(); toggleSel(i); }             // select/deselect that card, like a click
+  });
 
   /* ================= init ================= */
   // DEV toggle: Ctrl/Cmd+Shift+D flips unlimited runs on/off (persisted).

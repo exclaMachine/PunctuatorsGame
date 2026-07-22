@@ -255,17 +255,19 @@ chord-inside-melody, eighths/sixteenths/triplets in the picker (the tick model a
 
 ### The core idea
 
-A run is performed **live in time** — you play *with* the looping backing track, not by placing cards on a
-static grid. Two live passes over the same loop:
+The **beat (percussion) is performed live in time** — you play *with* the looping backing track. The
+**melody is NOT live** (dev decision 2026-07-22): it's composed **at your own pace** with the existing
+card→duration→Play flow, just with **keyboard shortcuts** added (select a card like clicking it, Space =
+Play). The two rounds:
 
-- **Round 1 — Melody (live).** Pitched cards are bound to the home row; you play notes **in time** as the
-  loop cycles (loop-pedal style — keep adding over laps until you Finish).
-- **Round 2 — The beat (live, one pass).** The loop replays your melody; you now hold **drum cards only**
-  and lay the beat over it in **a single committed lap**.
+- **Round 1 — Melody (own pace).** The existing composition flow, unchanged — place cards on the timeline at
+  your own pace. **S2.2** adds keyboard shortcuts only (see the staging list below). *(A future, separate
+  mode may let the melody also be played live like the beat — deferred, not a replacement.)*
+- **Round 2 — The beat (live, one pass).** The loop replays your melody; you hold **drum cards only** and lay
+  the beat over it in a live pass.
 
-This turns the rhythm movement into a real rhythm game (DDR / finger-drumming lineage), which the dev finds
-far more fun than grid composition, gives the browser **real performance shortcut keys**, and makes rhythm a
-**skill you get better at**.
+This makes the **beat** a real rhythm game (DDR / finger-drumming lineage) — fun, a skill you get better at,
+and real performance shortcut keys — while keeping **melodic composition** thoughtful and un-rushed.
 
 ### The input scheme (locked)
 
@@ -359,7 +361,17 @@ and rejected*). Their **card skins ride the existing foil/holo `SKINS` system to
     Beat Lab gained **💾 Keep this beat** (`labKeepBeat`/`labSongEvents`): the backing riff (as note events) +
     your recorded beat (as drum events) become one song saved to the **Setlist** — replay/star/rename/export/
     import like any other (per the dev's pick, melody **and** beat are saved together).
-  - **S2.2 — Round 1 melody goes live** (loop-pedal placement in time, reusing the live input module). *Next.*
+  - **S2.2 — Gig keyboard shortcuts. ✅ BUILT 2026-07-22.** *(Reframed from "melody goes live" per the dev —
+    melody composition stays **at your own pace**; a live-melody mode is a deferred future option, not this.)*
+    On the gig screen you can now **select a hand card with a key** (like clicking it) and **Space = Play
+    Hand**. `persist.hand` (`"right"`/`"left"`, shared with the Beat Lab) picks a side; the home row covers 4
+    cards and **extends outward** as the hand grows — the **5th** card takes the outer-left key (Caps / h), the
+    **6th** the outer-right (g / '): right = `h j k l ; '`, left = `⇪ a s d f g` (`handKeysFor`). **No on-card
+    key badge** (removed 2026-07-22 — dev wants the card face clear for future art); a **🤚/✋ hand toggle**
+    button in the gig controls is the only surfaced hint. Hand size is **capped at
+    `MAX_HAND_SIZE` (6)** (a Muse rework to respect this is deferred). Guards: ignored while typing in an input,
+    on a focused button (native Space), or when a modal (goal prompt) is open. *(Caveat: CapsLock is an
+    unreliable game key — it toggles the OS caps state — flagged for a possible swap.)*
   - **S2.3 — Campaign M2 integration:** the groove ladder (overlay-matching lessons), the M2 gate, and
     graduation of drums to M3–M7 + Free Play (they'll need drum lanes in the in-run piano-roll — `eventCoverage`
     + the grid render). *Not built.*
