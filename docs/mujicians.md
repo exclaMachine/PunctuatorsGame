@@ -354,21 +354,22 @@ and rejected*). Their **card skins ride the existing foil/holo `SKINS` system to
 - **Later:** **hold-to-sustain** note length in the melody round (dev likes it, deferred); more
   Beatlings/grooves; raw-feel toggle; a metronome count-in.
 
-### Beat Lab — feedback to address (2026-07-21 playtest)
+### Beat Lab — feedback fixed (2026-07-21)
 
-- **Recorded beats eventually stop looping — to FIX (NOT by design).** The loop-pedal is meant to repeat
-  your hits forever; in play the played beats drop out after a while while the backing riff keeps going.
-  Most likely tied to **unbounded hit accumulation** (no cap — see the next item; hundreds of scheduled
-  voices per lap can choke the AudioContext). **Preferred behaviour (dev):** the **backing melody is only a
-  tempo scaffold and should fade/stop once you've locked in** ("training wheels off"), while **your recorded
-  beats keep looping**. So the fix is two parts: (1) make your beats persist reliably, and (2) **stop the
-  backing tone** after a few laps / on demand, keeping the beat you built.
-- **Cap the percussion — a tweakable limit so you can't overload the beat.** Right now you can mash every pad
-  and stack **unlimited** hits, burying the groove in everything-at-once. Add a **limited number of drum
-  cards/hits** — a **tunable cap, or a percentage of the loop's slots** (e.g. "no more than X% of the grid
-  filled") — so the beat stays legible and playing well means *choosing* hits, not spamming. Ties to the
-  deck/hand model: the refilling slots should draw from a **finite drum deck** with a **max active-hits
-  budget**. Tune the number/percentage in play.
+Both playtest items are now ✅ **fixed** in `mujicians.html`:
+
+- **Recorded beats no longer stop looping + the backing riff fades once you've locked in.** Root cause was
+  **unbounded hit accumulation** (hundreds of scheduled voices/lap could choke the AudioContext). The recorded
+  beat is now a **bounded, deduped set** (`labLoop` of `{voice,tick,bornLap}` — see the cap below), and the
+  scheduler gained a **fell-behind snap** (`if(labSchedFrom < now) labSchedFrom = now`) so a throttled
+  background tab resumes cleanly instead of runaway-catching-up the past. The **backing melody is now an
+  explicit tempo scaffold** — `labMelodyGain(lap)` fades it linearly to silence over **`LAB_LEAD_LAPS` (4)**
+  laps ("training wheels off"), while your beats keep looping; a **🎵 Backing riff** button (`labReplayBacking`)
+  re-summons it (resets the fade) if you lose the pulse.
+- **Percussion is capped — tunable.** `LAB_MAX_HITS = round(lanes × cols × LAB_FILL_PCT)` with **`LAB_FILL_PCT
+  = 0.35`** (~17 of 48 slots — tweak the %). Recording is **deduped by (voice, column-slot)** (re-hitting a
+  slot just refreshes it, never grows the loop) and **FIFO-evicts the oldest** hit past the cap, so you keep
+  playing but the beat stays legible — good play means *choosing* hits, not spamming every pad.
 
 ### Code map (sketch, when built)
 
