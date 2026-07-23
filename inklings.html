@@ -137,6 +137,17 @@
   .sc-said{font-family:var(--read);font-size:18px;font-weight:700;line-height:1.35}
   .sc-meta{font-family:var(--read);font-size:13px;color:var(--ink-soft)}
   .sc-note{font-family:var(--read);font-size:13px;font-style:italic;color:var(--ink-soft)}
+  /* Snowclone of the Day banner (top of the Codex list) */
+  .sc-daily{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:10px;
+    background:#f4e6bf;border:2px solid var(--gold);padding:10px 12px;box-shadow:2px 2px 0 rgba(0,0,0,.2)}
+  .sc-daily.claimed{background:var(--paper-2);border-color:var(--edge)}
+  .sc-daily-tag{font-family:var(--disp);font-size:9px;color:var(--gold)}
+  .sc-daily.claimed .sc-daily-tag{color:var(--ink-soft)}
+  .sc-daily-title{font-family:var(--read);font-size:18px;font-weight:700;color:var(--ink)}
+  .sc-daily-msg{font-family:var(--read);font-size:13px;color:var(--ink-soft)}
+  .sc-daily-btn{font-family:var(--disp);font-size:10px;background:var(--inkblue);border:2px solid var(--inkblue);
+    color:#f4f0e6;padding:6px 10px;cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .sc-daily-btn:hover{background:var(--ink)}
   .ml-err{color:#9a3b2e}
   /* Bestiary overlay (creature dex) */
   #bestiary{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
@@ -1718,8 +1729,11 @@ function canBindFable(){ return state.fables < fableTotal() && Object.keys(FABLE
    alternating with {type:"blank", id, pos, answer}. Titles use X/Y placeholders for the
    menu; the fillable sentence lives in `segments`. `note` = the origin/attribution.
    Phase 1 is a curated starter set; the registry is a plain array so the full catalog
-   (snowclones.org / the Wikipedia "list of snowclones") can be dropped in later, and a
-   daily-featured frame + promote-to-plaque décor are the planned Phase 2/3 twists. */
+   (snowclones.org / the Wikipedia "list of snowclones") can be dropped in later.
+   Phase 2 (BUILT) adds a daily-featured "Snowclone of the Day" (seeded pick, cycles back
+   through the finite set) that grants a once-a-day ink bonus and is RE-COINABLE — you can
+   re-fill a frame you've already coined; the Codex keeps one card per frame (your latest
+   coining). Promote-to-plaque décor is the planned Phase 3 twist. */
 const SNOWCLONE_EXACT_BONUS = 5;   // ink per blank filled with the canonical original word
 const SNOWCLONES = [
   { id:"new-x-y", title:"X is the new Y", note:"after “Orange Is the New Black”",
@@ -1744,9 +1758,81 @@ const SNOWCLONES = [
     segments:[ {type:"blank",id:"a",pos:"noun",answer:"danger"}, {type:"text",value:" is my middle name."} ] },
   { id:"one-does-not", title:"One does not simply X into Mordor", note:"after the “Lord of the Rings” meme",
     segments:[ {type:"text",value:"One does not simply "}, {type:"blank",id:"a",pos:"verb",answer:"walk"},
-               {type:"text",value:" into Mordor."} ] }
+               {type:"text",value:" into Mordor."} ] },
+  { id:"to-be-or-not", title:"To X or not to X", note:"after Hamlet’s soliloquy",
+    segments:[ {type:"text",value:"To "}, {type:"blank",id:"a",pos:"verb",answer:"be"},
+               {type:"text",value:" or not to "}, {type:"blank",id:"b",pos:"verb",answer:"be"}, {type:"text",value:"."} ] },
+  { id:"mind-killer", title:"X is the mind-killer", note:"after the litany against fear in “Dune”",
+    segments:[ {type:"blank",id:"a",pos:"noun",answer:"fear"}, {type:"text",value:" is the mind-killer."} ] },
+  { id:"cant-believe-not", title:"I can’t believe it’s not X!", note:"after the margarine slogan",
+    segments:[ {type:"text",value:"I can’t believe it’s not "}, {type:"blank",id:"a",pos:"noun",answer:"butter"}, {type:"text",value:"!"} ] },
+  { id:"final-frontier", title:"X: the final frontier", note:"after the opening of “Star Trek”",
+    segments:[ {type:"blank",id:"a",pos:"noun",answer:"space"}, {type:"text",value:": the final frontier."} ] },
+  { id:"resistance-futile", title:"Resistance is X", note:"after the Borg in “Star Trek”",
+    segments:[ {type:"text",value:"Resistance is "}, {type:"blank",id:"a",pos:"adjective",answer:"futile"}, {type:"text",value:"."} ] },
+  { id:"the-x-awakens", title:"The X awakens", note:"after “The Force Awakens”",
+    segments:[ {type:"text",value:"The "}, {type:"blank",id:"a",pos:"noun",answer:"force"}, {type:"text",value:" awakens."} ] },
+  { id:"may-the-x", title:"May the X be with you", note:"after “Star Wars”",
+    segments:[ {type:"text",value:"May the "}, {type:"blank",id:"a",pos:"noun",answer:"force"}, {type:"text",value:" be with you."} ] },
+  { id:"x-never-changes", title:"X. X never changes.", note:"after the opening of “Fallout”",
+    segments:[ {type:"blank",id:"a",pos:"noun",answer:"war"}, {type:"text",value:". "},
+               {type:"blank",id:"b",pos:"noun",answer:"war"}, {type:"text",value:" never changes."} ] },
+  { id:"nobody-puts-x", title:"Nobody puts X in a corner", note:"after “Dirty Dancing”",
+    segments:[ {type:"text",value:"Nobody puts "}, {type:"blank",id:"a",pos:"noun",answer:"baby"}, {type:"text",value:" in a corner."} ] },
+  { id:"little-x", title:"Say hello to my little X", note:"after “Scarface”",
+    segments:[ {type:"text",value:"Say hello to my little "}, {type:"blank",id:"a",pos:"noun",answer:"friend"}, {type:"text",value:"!"} ] },
+  { id:"no-place-like", title:"There’s no X like home", note:"after “The Wizard of Oz”",
+    segments:[ {type:"text",value:"There’s no "}, {type:"blank",id:"a",pos:"noun",answer:"place"}, {type:"text",value:" like home."} ] },
+  { id:"x-sweet-x", title:"X, sweet X", note:"after the embroidered sampler",
+    segments:[ {type:"blank",id:"a",pos:"noun",answer:"home"}, {type:"text",value:", sweet "},
+               {type:"blank",id:"b",pos:"noun",answer:"home"}, {type:"text",value:"."} ] },
+  { id:"all-your-x", title:"All your X are belong to us", note:"after the “Zero Wing” meme",
+    segments:[ {type:"text",value:"All your "}, {type:"blank",id:"a",pos:"noun",answer:"base"}, {type:"text",value:" are belong to us."} ] },
+  { id:"its-a-bird", title:"It’s a X, it’s a plane…", note:"after “Superman”",
+    segments:[ {type:"text",value:"It’s a "}, {type:"blank",id:"a",pos:"noun",answer:"bird"}, {type:"text",value:", it’s a plane — it’s Superman!"} ] },
+  { id:"great-power", title:"With great X comes great responsibility", note:"after “Spider-Man”",
+    segments:[ {type:"text",value:"With great "}, {type:"blank",id:"a",pos:"noun",answer:"power"}, {type:"text",value:" comes great responsibility."} ] },
+  { id:"box-of-x", title:"Life is like a box of X", note:"after “Forrest Gump”",
+    segments:[ {type:"text",value:"Life is like a box of "}, {type:"blank",id:"a",pos:"noun",answer:"chocolates"}, {type:"text",value:"."} ] },
+  { id:"houston-problem", title:"Houston, we have a X", note:"after “Apollo 13”",
+    segments:[ {type:"text",value:"Houston, we have a "}, {type:"blank",id:"a",pos:"noun",answer:"problem"}, {type:"text",value:"."} ] },
+  { id:"wax-on", title:"X on, X off", note:"after “The Karate Kid”",
+    segments:[ {type:"blank",id:"a",pos:"verb",answer:"wax"}, {type:"text",value:" on, "},
+               {type:"blank",id:"b",pos:"verb",answer:"wax"}, {type:"text",value:" off."} ] },
+  { id:"show-me-x", title:"Show me the X!", note:"after “Jerry Maguire”",
+    segments:[ {type:"text",value:"Show me the "}, {type:"blank",id:"a",pos:"noun",answer:"money"}, {type:"text",value:"!"} ] },
+  { id:"cant-handle-x", title:"You can’t handle the X!", note:"after “A Few Good Men”",
+    segments:[ {type:"text",value:"You can’t handle the "}, {type:"blank",id:"a",pos:"noun",answer:"truth"}, {type:"text",value:"!"} ] },
+  { id:"looking-at-you", title:"Here’s looking at you, X", note:"after “Casablanca”",
+    segments:[ {type:"text",value:"Here’s looking at you, "}, {type:"blank",id:"a",pos:"noun",answer:"kid"}, {type:"text",value:"."} ] },
+  { id:"need-for-x", title:"I feel the need — the need for X", note:"after “Top Gun”",
+    segments:[ {type:"text",value:"I feel the need — the need for "}, {type:"blank",id:"a",pos:"noun",answer:"speed"}, {type:"text",value:"."} ] },
+  { id:"why-so-x", title:"Why so X?", note:"after “The Dark Knight”",
+    segments:[ {type:"text",value:"Why so "}, {type:"blank",id:"a",pos:"adjective",answer:"serious"}, {type:"text",value:"?"} ] },
+  { id:"x-is-a-lie", title:"The X is a lie", note:"after “Portal”",
+    segments:[ {type:"text",value:"The "}, {type:"blank",id:"a",pos:"noun",answer:"cake"}, {type:"text",value:" is a lie."} ] },
+  { id:"there-is-no-x", title:"Do or do not — there is no X", note:"after Yoda in “Star Wars”",
+    segments:[ {type:"text",value:"Do or do not — there is no "}, {type:"blank",id:"a",pos:"noun",answer:"try"}, {type:"text",value:"."} ] },
+  { id:"not-the-x", title:"These aren’t the X you’re looking for", note:"after “Star Wars”",
+    segments:[ {type:"text",value:"These aren’t the "}, {type:"blank",id:"a",pos:"noun",answer:"droids"}, {type:"text",value:" you’re looking for."} ] },
+  { id:"considered-harmful", title:"X considered harmful", note:"after Dijkstra’s “Go To Statement Considered Harmful”",
+    segments:[ {type:"blank",id:"a",pos:"noun",answer:"goto"}, {type:"text",value:" considered harmful."} ] },
+  { id:"you-had-me-at", title:"You had me at X", note:"after “Jerry Maguire”",
+    segments:[ {type:"text",value:"You had me at "}, {type:"blank",id:"a",pos:"noun",answer:"hello"}, {type:"text",value:"."} ] }
 ];
 const SNOWCLONE_BY_ID={}; for(const f of SNOWCLONES) SNOWCLONE_BY_ID[f.id]=f;
+const SNOWCLONE_DAILY_BONUS = 10;   // ink for coining the daily-featured "Snowclone of the Day" (once/day)
+// Today's featured snowclone — a deterministic day-seeded pick, cached per day. Seed is offset from the
+// map/word-of-the-day seed so the two dailies don't correlate. The finite set naturally "comes around" again.
+let _snowFod=null, _snowFodDay=null;
+function snowcloneOfDay(){
+  if(_snowFodDay===state.day && _snowFod) return _snowFod;
+  if(!SNOWCLONES.length) return null;
+  _snowFod=SNOWCLONES[Math.floor(mulberry32(((state.daySeed>>>0)^0x5c10)>>>0)()*SNOWCLONES.length)];
+  _snowFodDay=state.day;
+  return _snowFod;
+}
+function snowDailyClaimed(){ return state.snowDailyDay===state.day; }
 
 /* ---------- CREATURES / DROPS / BESTIARY (data-driven) --------------------------
    data/creatures.json is the SINGLE SOURCE OF TRUTH for both the spawner (tier/hp/spawn/drops) and the
@@ -2205,6 +2291,7 @@ const state = {
   books:[],                     // ids of books fully restored (added to your library) (persist)
   fables:1,                     // how many Aesop chapters are RECOVERED (unlocked), in book order — chapter 1 is free (persist)
   snowclones:{},                // snowclone progress: frameId -> {fills:{blankId:word}, done, exact} (persist; second Mad Libris tab, free word reuse)
+  snowDailyDay:"",              // day-string on which the Snowclone-of-the-Day bonus was last claimed (persist)
   verbCounts:{},                // verb category -> distinct verbs collected (persist; re-derived from dex on load)
   perks:{ speed:0, attack:0, satchel:0, hearts:0, slide:false, finisher:false, combo:false, divine:false, treasure:0, magnet:false, secondwind:false },  // derived from verbCounts
   divineDay:"",                 // date-string of the last Divine peek (day-scoped like the WOTD)
@@ -5458,15 +5545,20 @@ function completionHTML(lvl,R){
    logic. Reuses the shared passageHTML/pickerHTML/wirePicker/neededHTML helpers. */
 let mlTab="fables";              // which Mad Libris tab is active: "fables" | "snow"
 let scLevel=null, scActive=null; // open snowclone frame + active blank id
+// scRec = the record the open fill session reads/writes. Normally the saved state.snowclones[id];
+// in RE-COIN mode it's a throwaway draft (cloned from the saved fills) so an abandoned re-coin never
+// clobbers your kept saying — the draft only commits to the saved record in scComplete.
+let scRec=null, scRecoin=false;
 function ensureSnow(id){ return (state.snowclones[id] = state.snowclones[id] || { fills:{}, done:false }); }
 // Words whose cached POS matches — NO used-word lock (snowclone fills are free to reuse).
 function snowWords(pos){
   return Object.keys(state.dex).filter(w=>{ const p=state.dex[w].pos; return Array.isArray(p) && p.includes(pos); }).sort();
 }
-// Assemble the coined saying from a frame + its fills (first letter capitalised for polish).
+// Assemble the coined saying from a frame + its fills, capitalising the start of each sentence
+// (so two-sentence frames like "War. War never changes." read right).
 function snowText(frame,R){
   const t=frame.segments.map(s=> s.type==="text" ? s.value : (R.fills[s.id]||"____")).join("");
-  return t.charAt(0).toUpperCase()+t.slice(1);
+  return t.replace(/(^|[.!?]\s+)([a-z])/g, (m,p,c)=>p+c.toUpperCase());
 }
 // How many blanks match the canonical original filling (the bonus), and how many total.
 function snowExact(frame,R){
@@ -5485,14 +5577,28 @@ function mlSwitchTab(tab){
 }
 // The snowclone menu doubles as the Cliché Codex: done frames render as filled saying-cards.
 function renderSnowMenu(){
-  scActive=null; scLevel=null;
+  scActive=null; scLevel=null; scRec=null; scRecoin=false;
   document.getElementById("ml-back").style.display="none";
   document.getElementById("ml-title").textContent="Snowclones";
-  document.getElementById("ml-sub").innerHTML="Coin your own sayings — fill a cliché frame with words from your library. Words are <b>free to reuse</b> here.";
+  document.getElementById("ml-sub").innerHTML="A <b>snowclone</b> is a fill-in-the-blank cliché template — a fixed phrase with swappable slots (like “X is the new Y”). Fill one with words from your library to coin your own saying. Words are <b>free to reuse</b> here.";
   document.getElementById("ml-panel").innerHTML="";
   const coined=SNOWCLONES.filter(f=>{ const R=state.snowclones[f.id]; return R&&R.done; }).length;
+  // Snowclone of the Day: a day-seeded feature that grants a once-daily ink bonus and is re-coinable.
+  const fod=snowcloneOfDay();
+  let banner="";
+  if(fod){
+    const claimed=snowDailyClaimed(), doneFod=!!(state.snowclones[fod.id]&&state.snowclones[fod.id].done);
+    banner=`<div class="sc-daily${claimed?" claimed":""}">`
+      +`<div class="sc-daily-tag">✶ Snowclone of the Day</div>`
+      +`<div class="sc-daily-title">${esc(fod.title)}</div>`
+      +(claimed
+        ? `<div class="sc-daily-msg">Coined today ✓ · +${SNOWCLONE_DAILY_BONUS} ink earned — a new one comes around tomorrow.</div>`
+        : `<button class="sc-daily-btn" data-fod="${esc(fod.id)}">${doneFod?"↻ Re-coin it":"Coin it"} · +${SNOWCLONE_DAILY_BONUS} ink</button>`)
+      +`</div>`;
+  }
   const pas=document.getElementById("ml-passage");
-  pas.innerHTML=`<div class="sc-count">${coined}/${SNOWCLONES.length} sayings coined — your Cliché Codex</div>`
+  pas.innerHTML=banner
+    +`<div class="sc-count">${coined}/${SNOWCLONES.length} sayings coined — your Cliché Codex</div>`
     +'<div class="ml-chapters">'+SNOWCLONES.map(f=>{
       const R=state.snowclones[f.id], done=R&&R.done, blanks=f.segments.filter(s=>s.type==="blank").length;
       if(done){
@@ -5508,60 +5614,90 @@ function renderSnowMenu(){
         +`<span class="sc-meta">${blanks} blank${blanks>1?"s":""} · ${filled?filled+"/"+blanks+" filled":"not yet coined"}</span></button>`;
     }).join("")+'</div>';
   pas.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>openSnowclone(b.dataset.id));
+  const fb=pas.querySelector("[data-fod]");
+  if(fb) fb.onclick=()=>openSnowclone(fb.dataset.fod, { recoin:true });   // re-coin only kicks in if it's already done
 }
-function openSnowclone(id){
+// Open a frame to coin it. opts.recoin re-coins an already-done frame via a throwaway draft (used by the
+// daily banner); opening a done frame normally (from its Codex card) just shows the saved saying.
+function openSnowclone(id, opts){
   scLevel=SNOWCLONE_BY_ID[id]; if(!scLevel) return;
   scActive=null;
+  const real=ensureSnow(id);
+  scRecoin = !!(opts&&opts.recoin) && !!real.done;
+  scRec = scRecoin ? { fills:Object.assign({}, real.fills), done:false } : real;
   const bk=document.getElementById("ml-back"); bk.textContent="← Snowclones"; bk.style.display="";
   renderSnowclone(); SFX.play("click");
 }
 function scSelectBlank(bId){ scActive=bId; renderSnowclone(); }
 function scPickWord(w){
-  if(!scLevel || !scActive) return;
-  const R=ensureSnow(scLevel.id);
-  R.fills[scActive]=w; scActive=null;
+  if(!scLevel || !scActive || !scRec) return;
+  scRec.fills[scActive]=w; scActive=null;
   SFX.play("newword");
-  if(snowAllFilled(scLevel,R)) scComplete(); else scheduleSave();
+  // First coining auto-completes when the last blank lands; re-coining commits via its own button
+  // (everything is prefilled, so there's no "last blank" moment).
+  if(!scRecoin && snowAllFilled(scLevel,scRec)) scComplete(); else scheduleSave();
   renderSnowclone();
 }
 function scClearActive(){
-  if(!scLevel || !scActive) return;
-  delete ensureSnow(scLevel.id).fills[scActive];
+  if(!scLevel || !scActive || !scRec) return;
+  delete scRec.fills[scActive];
   SFX.play("click"); scheduleSave(); renderSnowclone();
 }
 function scComplete(){
-  const f=scLevel, R=ensureSnow(f.id);
-  if(R.done){ scheduleSave(); return; }
-  R.done=true;
-  const ex=snowExact(f,R); R.exact=ex.exact;
-  if(R.exact){ state.ink+=R.exact*SNOWCLONE_EXACT_BONUS; updateRewardHud(); }
+  const f=scLevel, real=ensureSnow(f.id);
+  const firstTime=!real.done;
+  if(scRec!==real) real.fills=Object.assign({}, scRec.fills);   // commit the re-coin draft
+  real.done=true;
+  const ex=snowExact(f,real); real.exact=ex.exact;
+  let gained=0;
+  // Canonical bonus is a FIRST-coining reward only (so re-coining the daily can't farm it).
+  if(firstTime && ex.exact){ gained+=ex.exact*SNOWCLONE_EXACT_BONUS; }
+  // Daily bonus: once per day for coining today's featured frame (any entry path).
+  const fod=snowcloneOfDay(), daily=(fod && fod.id===f.id && !snowDailyClaimed());
+  if(daily){ gained+=SNOWCLONE_DAILY_BONUS; state.snowDailyDay=state.day; }
+  if(gained){ state.ink+=gained; updateRewardHud(); }
   SFX.play("unlock");
   const star=ex.exact===ex.total;
-  showToast((star?"★ Original uncovered: ":"✦ Coined: ")+"“"+snowText(f,R)+"”"+(R.exact?` · +${R.exact*SNOWCLONE_EXACT_BONUS} ink`:""));
+  const bits=[]; if(firstTime && ex.exact) bits.push(`+${ex.exact*SNOWCLONE_EXACT_BONUS} original`); if(daily) bits.push(`+${SNOWCLONE_DAILY_BONUS} daily`);
+  showToast((star&&firstTime?"★ Original uncovered: ":"✦ Coined: ")+"“"+snowText(f,real)+"”"+(bits.length?" · "+bits.join(" · ")+" ink":""));
+  scRec=real; scRecoin=false;   // settle back onto the saved record
   scheduleSave();
 }
 function renderSnowclone(){
-  const f=scLevel; if(!f) return;
-  const R=ensureSnow(f.id);
+  const f=scLevel; if(!f || !scRec) return;
+  const R=scRec;
   document.getElementById("ml-title").textContent=f.title;
   document.getElementById("ml-sub").innerHTML = R.done
     ? "Coined ✓ — reread your saying below."
-    : "Fill each blank with a word from your library that matches its part of speech. Words are <b>free to reuse</b>.";
+    : scRecoin
+      ? "Re-coin this snowclone — change any blank you like, then coin it again for today's bonus."
+      : "Fill each blank with a word from your library that matches its part of speech. Words are <b>free to reuse</b>.";
   const pas=document.getElementById("ml-passage");
   pas.innerHTML=passageHTML(f,R,scActive);
   if(!R.done) pas.querySelectorAll("[data-b]").forEach(el=>el.onclick=()=>scSelectBlank(el.dataset.b));
   const panel=document.getElementById("ml-panel");
-  if(R.done) panel.innerHTML=snowCompletionHTML(f,R);
+  if(R.done) panel.innerHTML=snowCompletionHTML(f,ensureSnow(f.id));
   else if(scActive){ const bl=f.segments.find(s=>s.type==="blank"&&s.id===scActive);
     panel.innerHTML=pickerHTML(f,R,scActive, snowWords(bl.pos), `No <b>${bl.pos}</b> in your library yet — go spell some ${bl.pos}s at the bench, then come back.`);
     wirePicker(panel,{ pick:scPickWord, clear:scClearActive, cancel:()=>{ scActive=null; renderSnowclone(); } }); }
-  else panel.innerHTML=neededHTML(f,R);
+  else {
+    let h=neededHTML(f,R);
+    if(scRecoin && snowAllFilled(f,R)){
+      const daily=(snowcloneOfDay()&&snowcloneOfDay().id===f.id&&!snowDailyClaimed());
+      h+=`<div class="ml-pickrow"><button class="ml-pick" data-act="recoin">↻ Coin this saying${daily?` · +${SNOWCLONE_DAILY_BONUS} ink`:""}</button></div>`;
+    }
+    panel.innerHTML=h;
+    const rb=panel.querySelector("[data-act='recoin']");
+    if(rb) rb.onclick=()=>{ scComplete(); renderSnowclone(); };
+  }
 }
 function snowCompletionHTML(f,R){
   const ex=snowExact(f,R), star=ex.exact===ex.total;
-  const bonus=R.exact?` <span style="color:var(--gold)">+${R.exact*SNOWCLONE_EXACT_BONUS} ink for ${R.exact} original word${R.exact>1?"s":""}</span>`:"";
+  // A neutral status (not "+ink") since the canonical bonus is a first-coining reward — this panel also
+  // shows on re-reads and re-coins, where no ink is (re)awarded.
+  const orig=ex.exact?` <span style="color:var(--gold)">${ex.exact===ex.total?"matches the original":ex.exact+" original word"+(ex.exact>1?"s":"")}</span>`:"";
   return `<div class="ml-complete">
-    <div class="ml-restored">${star?"★ You uncovered the original!":"✦ Saying coined!"}${bonus}</div>
+    <div class="ml-restored">${star?"★ You uncovered the original!":"✦ Saying coined!"}${orig}</div>
     <div class="sc-said" style="margin-bottom:8px">${esc(snowText(f,R))}</div>
     <div class="sc-note">${esc(f.note||"")}</div>
     <div class="ml-hint" style="margin-top:8px">Kept in your Cliché Codex — press ← Snowclones to see them all.</div>
@@ -7369,7 +7505,7 @@ function snapshot(){
            decorOwned:state.decorOwned, placed:state.placed, bundles:state.bundles,
            bagCap:state.bagCap, captured:[...state.captured], fishedSpots:[...state.fishedSpots], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
-           restored:state.restored, books:state.books, fables:state.fables, snowclones:state.snowclones,
+           restored:state.restored, books:state.books, fables:state.fables, snowclones:state.snowclones, snowDailyDay:state.snowDailyDay,
            resources:state.resources, bestiary:state.bestiary, phonicon:state.phonicon,
            verbCounts:state.verbCounts, divineDay:state.divineDay, divine:state.divine,
            obstacleDay:state.obstacleDay, obstacleGot:state.obstacleGot, riverCrossed:state.riverCrossed,
@@ -7392,6 +7528,7 @@ function applySnapshot(d){
   if(Array.isArray(d.books)) state.books=d.books;
   if(typeof d.fables==="number") state.fables=Math.max(1, d.fables);   // recovered-fable count (chapter 1 always free)
   if(d.snowclones && typeof d.snowclones==="object") state.snowclones=d.snowclones;   // coined-saying progress (additive; old saves default {})
+  if(typeof d.snowDailyDay==="string") state.snowDailyDay=d.snowDailyDay;              // Snowclone-of-the-Day claim day (re-arms when the date rolls over)
   // Binding materials + bestiary progress persist forever (earned progress, like the collection).
   if(d.resources && typeof d.resources==="object") state.resources=d.resources;
   if(d.bestiary && typeof d.bestiary==="object") state.bestiary=d.bestiary;
