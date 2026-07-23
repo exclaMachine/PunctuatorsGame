@@ -400,14 +400,28 @@ and rejected*). Their **card skins ride the existing foil/holo `SKINS` system to
       Meeting the gate pops the **`rhythmwin`** end screen
       (`renderRhythmEnd`) and `maybeAdvance` walks the ladder / unlocks **M3** past "free". Scoring/loop/pads/
       keyboard are the **shared** Beat Lab engine.
+    - **The "free" stage melody round. ✅ BUILT 2026-07-23** — "play your own one-pass beat over your melody;
+      it becomes the song's backing loop." Two phases: **Phase 1 — compose (gig).** The free stage no longer
+      skips the Muse draft (`dismissIntro` routes only match/grooves to `enterRhythmStage`; free falls through to
+      the normal draft → gig), so you build a melody **at your own pace** on the piano-roll. The Campaign
+      **✓ Finish** button is replaced by **🥁 Lay a beat over it** (enabled at ≥`FREE_MELODY_NOTES`(6) notes,
+      `melodyNoteCount`); filling the whole stage ends the *composing* phase (not the run) with a nudge, and the
+      goal-prompt never fires (the gate needs the beat). **Phase 2 — drum over it (`enterFreeBeat`).** The
+      composed melody becomes the drum session's **backing loop** via `labSetBacking` — a new
+      `labBacking`/`labBackingTicks`/`labBackingFades` that plays the melody at **full volume, looped at its own
+      whole-bar length**, decoupled from the fixed 2-bar drum loop (`labSchedBackingSeg` schedules it
+      independently; the scaffold `LAB_MELODY` still fades for practice/match/grooves). You finger-drum over it
+      (same shared engine); passing on ≥`FREE_TAKE_HITS` hits **bakes** the recorded 2-bar beat across the song
+      as first-class `{drum}` events (`bakeFreeBeat`) so `run.loop.events` = melody + beat, one keepable track.
+      The `rhythmwin` end screen (`renderRhythmEnd`) shows a **💾 Save this song** button for the free stage.
+      Two-part gate label in `gateStatus`.
     - **Still simplified / next increments:** the **grooves** stage currently matches one target (the
       kick-1&3 + snare-or-ticker-2&4 `backbeat`), drawn **clearly** — not yet the backbeat→son-clave→shuffle
       walk with a **shown→from-memory** reveal (the `GROOVES` set + the `.tghost.hidden` CSS are in place for
-      it; son-clave/shuffle slot data is provisional); the
-      **free** stage passes on ≥`FREE_TAKE_HITS` recorded hits and does
-      **not yet run the melody round** (own-pace compose, then a beat over it); and **graduation** of live drums
+      it; son-clave/shuffle slot data is provisional); and **graduation** of live drums
       to M3–M7 + Free Play (drum lanes in the in-run piano-roll — `eventCoverage` + the grid render) is untouched.
-      Free Play M2 keeps the legacy "play each note value" `gateDurs` gate.
+      Free Play M2 keeps the legacy "play each note value" `gateDurs` gate. (Free-stage edge, deferred: exiting
+      the drum phase with **← Give up** discards the composed melody, like the other campaign stages.)
 - **Later:** **hold-to-sustain** note length in the melody round (dev likes it, deferred); more
   Beatlings/grooves; raw-feel toggle; a metronome count-in.
 
