@@ -563,9 +563,10 @@ The first slice of the frame, shipped in `mujicians.html`:
   source for both scoring-bucket labels and feedback; `score()` returns it as `res.respond`. On commit: a
   **tier-graded cell bloom** (`bloomCell(cell, tier)` → gold burst+glow · amber · green · faint gray, scaling
   down with distance), a **floating rating word** rising off the cell (`floatRating` → ✦ PERFECT! / 🔥 SO
-  CLOSE! / 👍 Close / · far ·), and a **reward chime** whose brightness/pitch tracks nearness (`respondChime`
-  → bright ding + major-third sparkle for exact, down to a dull low thunk for far; scheduled `~ANIM.play` so it
-  lands with the bloom). **Live pre-commit:** the call bar glows + shows a verdict **stamp** (`✓ match! / 🔥 so
+  CLOSE! / 👍 Close / · far ·), and a **reward chime** whose warmth/pitch tracks nearness (`respondChime` →
+  a soft **inharmonic bell** via `_bell()` — a two-note rising sparkle for exact, down to a single dim low bell
+  for far; scheduled `~ANIM.play` so it lands with the bloom. The bell's struck-metal partial ratios keep it
+  deliberately un-grating and distinct from the melody's plain oscillator notes, not "another loud note."). **Live pre-commit:** the call bar glows + shows a verdict **stamp** (`✓ match! / 🔥 so
   close / 👍 close / far`) and the preview shows a matching **tier tag** for the currently-selected card, so
   "you've got it" reads *before* you play. Reduced-motion drops the bloom/word (the chime + text stamps remain).
 - **Scope / firewall.** `callActive()` is M1-campaign-only, so **Free Play and M2–M7 are untouched** (they

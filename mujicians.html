@@ -1242,15 +1242,33 @@
   }
   // A reward tone layered just over your note when a call is live — its brightness/pitch tracks how close
   // you landed, so a bullseye "dings" and a far guess "thunks". Scheduled ~as the played card blooms.
+  // A soft struck bell/chime — inharmonic partials (non-integer ratios) give a glass/metal timbre the plain
+  // melody oscillators (triangle/saw/sine at 12-TET pitches) can never make, so the reward reads as its own
+  // sound rather than "another loud note." Gentle attack + fast decay keeps it un-grating.
+  function _bell(freq, dur, t, vel){
+    const ac = audio(); vel = vel||1;
+    const partials = [ {r:1, g:1}, {r:2.76, g:0.42}, {r:5.40, g:0.18} ];   // real-ish bell overtone ratios
+    for(const p of partials){
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.type="sine"; o.frequency.value=freq*p.r;
+      const peak = 0.085*vel*p.g, pdur = dur*(p.r>1?0.55:1);   // higher partials ring shorter, like a real bell
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(peak, t+0.006);           // soft attack (no click)
+      g.gain.exponentialRampToValueAtTime(0.0006, t+pdur);     // smooth decay tail
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t+pdur+0.05);
+    }
+  }
   function respondChime(tier){
-    const spec = { exact  :{midi:84,wave:"triangle",dur:0.5, vel:1.1},   // bright high ding (+ a third-above sparkle)
-                   soclose:{midi:81,wave:"triangle",dur:0.42,vel:0.9},   // still bright & eager
-                   close  :{midi:76,wave:"sine",    dur:0.38,vel:0.7},   // softer, encouraging
-                   far    :{midi:55,wave:"sawtooth",dur:0.2, vel:0.5} }[tier];   // dull low thunk (still scores a little)
-    if(!spec) return;
-    const when = ANIM.play/1000;   // land the reward roughly as the card lands + the cell blooms
-    playTone(spec.midi, spec.wave, spec.dur, when, spec.vel);
-    if(tier==="exact") playTone(88, "triangle", 0.45, when+0.06, 0.7);   // major-third sparkle over the ding
+    const ac = audio(), when = ANIM.play/1000, t = ac.currentTime + when;   // land as the card lands + the cell blooms
+    if(tier==="exact"){
+      _bell(1318.5, 0.62, t, 0.95);          // a gentle two-note rising bell sparkle — celebratory, not shrill
+      _bell(1975.5, 0.80, t+0.10, 0.7);
+      return;
+    }
+    const spec = { soclose:{f:1244.5,dur:0.52,vel:0.7 },   // single warm bell, a touch dimmer each tier down
+                   close  :{f:987.8, dur:0.46,vel:0.5 },
+                   far    :{f:659.3, dur:0.36,vel:0.38} }[tier];   // soft low bell (still scores a little)
+    if(spec) _bell(spec.f, spec.dur, t, spec.vel);
   }
   function newCall(delay){
     if(!run) return;
