@@ -486,6 +486,27 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   State: `state.restored` (per-level `{fills,done,exact,bookId}`) + `state.books` + `state.fables`, all saved.
   `mlReg`/`mlBook`/`mlLevel`/`mlActive` are the open session. Blank fills come from the dex filtered by
   cached POS; a word used anywhere is locked forever (`usedWordSet`).
+- **Snowclones module** (second lectern tab, `/* SNOWCLONES */`) — **Phase 1 BUILT 2026-07-23.** The
+  `#madlibs` overlay now has a **tab bar** (`.ml-tabs`: `📜 Fables` / `✶ Snowclones`, `mlTab`,
+  `mlSwitchTab`). Snowclones are short **reusable cliché frames** ("X is the new Y", "In space, no one can
+  hear you X") you fill mad-lib style to **coin your own saying**. `SNOWCLONES` is a plain registry (8
+  starter frames; `SNOWCLONE_BY_ID`) whose `segments` mirror the fable level format (`{type:"text"}` runs +
+  `{type:"blank",id,pos,answer}`); `title` uses X/Y placeholders for the menu, `note` is the origin
+  attribution, and each blank's `answer` is the **canonical original filling**. Reuses the shared
+  `passageHTML(active)`/`pickerHTML(words,emptyHint)`/`wirePicker(handlers)`/`neededHTML` helpers (refactored
+  out of the fable path). **Free word reuse** — `snowWords(pos)` ignores `usedWordSet`, so a word here is
+  never locked out of a fable or another frame (that's the point; own store `state.snowclones` =
+  `{fills,done,exact}`, saved, snapshot **`v:7`**, additive to old saves). **Canonical-match bonus**
+  (`snowExact` → `SNOWCLONE_EXACT_BONUS`(5) ink per matching blank, never required); matching **every** blank
+  stars the card (★ "you uncovered the original!"). The **snowclone menu doubles as the Cliché Codex**
+  (`renderSnowMenu`): done frames render as filled **saying-cards** (`.sc-card`, `snowText` assembles the
+  sentence); unfilled ones show the frame + blank count. Session globals `scLevel`/`scActive`;
+  `openSnowclone`/`renderSnowclone`/`scSelectBlank`/`scPickWord`/`scClearActive`/`scComplete`/
+  `snowCompletionHTML`. **Deferred (Phase 2/3):** a **daily-featured frame** (seeded, cycles back — the
+  finite set "comes around" again, coining a fresh filling each time); **progressive unlock** gating; the
+  full catalog (snowclones.org / Wikipedia "list of snowclones") dropped into the registry; **promote a
+  favorite coined saying to a placeable plaque** décor (reusing `tileInFront` + the décor tray); Codex
+  milestones → décor grants (mirroring the noun-bundle loop).
 - **Level content pipeline** (`build_levels.py`, project root) — offline, run once per book: turns a
   Project Gutenberg plain-text book into one mad-libs level JSON per chapter/fable (spaCy POS-tagging; POS
   blanks spaced apart, single-occurrence, never sentence-initial) + an `index.json`. **The book text is

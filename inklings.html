@@ -117,6 +117,26 @@
   .ml-restored{font-family:var(--disp);font-size:11px;color:var(--gold);margin-bottom:8px}
   .ml-moral{margin-bottom:8px}
   .ml-bookdone{font-family:var(--disp);font-size:10px;color:var(--moss)}
+  /* Mad Libris tab bar (Fables · Snowclones) */
+  .ml-tabs{display:flex;gap:6px;margin:0 34px 8px 0}
+  .ml-tab{font-family:var(--disp);font-size:10px;background:var(--paper);border:2px solid var(--edge);
+    color:var(--ink-soft);padding:6px 10px;cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.2)}
+  .ml-tab:hover{background:#dcd0b2;color:var(--ink)}
+  .ml-tab.active{background:var(--inkblue);border-color:var(--inkblue);color:#f4f0e6;box-shadow:none}
+  /* Snowclone menu = the Cliché Codex; done frames render as filled saying-cards */
+  .sc-count{font-family:var(--disp);font-size:9px;color:var(--ink-soft);margin-bottom:8px}
+  .sc-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;width:100%;
+    background:var(--paper-2);border:2px solid var(--edge);color:var(--ink);padding:10px 12px;
+    cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .sc-card:hover{background:#dcd0b2}
+  .sc-card:active{transform:translate(2px,2px);box-shadow:0 0 0 rgba(0,0,0,0)}
+  .sc-card.done{background:#e2edd6;border-color:var(--moss)}
+  .sc-card.star{background:#f4e6bf;border-color:var(--gold)}
+  .sc-frame{font-family:var(--disp);font-size:10px;color:var(--inkblue)}
+  .sc-card.done .sc-frame{color:var(--moss)}
+  .sc-said{font-family:var(--read);font-size:18px;font-weight:700;line-height:1.35}
+  .sc-meta{font-family:var(--read);font-size:13px;color:var(--ink-soft)}
+  .sc-note{font-family:var(--read);font-size:13px;font-style:italic;color:var(--ink-soft)}
   .ml-err{color:#9a3b2e}
   /* Bestiary overlay (creature dex) */
   #bestiary{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
@@ -991,6 +1011,10 @@
     <div id="madlibs">
       <div class="book">
         <button class="close-x" id="ml-close" aria-label="Close book" title="Close">✕</button>
+        <div class="ml-tabs">
+          <button class="ml-tab active" id="ml-tab-fables">📜 Fables</button>
+          <button class="ml-tab" id="ml-tab-snow">✶ Snowclones</button>
+        </div>
         <h1 id="ml-title">Restore the Chapter</h1>
         <div class="sub" id="ml-sub"></div>
         <div class="ml-passage" id="ml-passage"></div>
@@ -1681,6 +1705,49 @@ const FABLE_DROP_CHANCE = 0.10;              // ~1 in 10 beat beasts drops a fab
 function fableTotal(){ const c=BOOKS[0].chapters; return (c&&c.length) || 140; }
 function canBindFable(){ return state.fables < fableTotal() && Object.keys(FABLE_COST).every(m=>(state.resources[m]||0) >= FABLE_COST[m]); }
 
+/* ---------- SNOWCLONES (second Mad Libris tab) ------------------------------------
+   A snowclone is a reusable cliché frame — a fixed phrasal scaffold with variable slots
+   ("X is the new Y", "In space, no one can hear you X"). You fill each slot with a word
+   from your library (POS-typed, same picker as fables) to COIN your own saying; every
+   coined saying is kept in the Cliché Codex (the snowclone menu doubles as it). Unlike
+   fables, snowclone fills are FREE TO REUSE — a word here never gets locked out of a
+   fable or another frame (reusability is the whole point). Each frame carries a
+   canonical `answer` per blank (the famous original filling); matching it is a bonus
+   (ink + a ★ on the card) but is never required — the snowclone analog of the fable's
+   exact-original bonus. `segments` mirror the fable level format: {type:"text"} runs
+   alternating with {type:"blank", id, pos, answer}. Titles use X/Y placeholders for the
+   menu; the fillable sentence lives in `segments`. `note` = the origin/attribution.
+   Phase 1 is a curated starter set; the registry is a plain array so the full catalog
+   (snowclones.org / the Wikipedia "list of snowclones") can be dropped in later, and a
+   daily-featured frame + promote-to-plaque décor are the planned Phase 2/3 twists. */
+const SNOWCLONE_EXACT_BONUS = 5;   // ink per blank filled with the canonical original word
+const SNOWCLONES = [
+  { id:"new-x-y", title:"X is the new Y", note:"after “Orange Is the New Black”",
+    segments:[ {type:"blank",id:"a",pos:"noun",answer:"orange"}, {type:"text",value:" is the new "},
+               {type:"blank",id:"b",pos:"noun",answer:"black"}, {type:"text",value:"."} ] },
+  { id:"have-x-will-travel", title:"Have X, will travel", note:"after “Have Gun – Will Travel”",
+    segments:[ {type:"text",value:"Have "}, {type:"blank",id:"a",pos:"noun",answer:"gun"},
+               {type:"text",value:", will travel."} ] },
+  { id:"in-space", title:"In space, no one can hear you X", note:"after the tagline for “Alien”",
+    segments:[ {type:"text",value:"In space, no one can hear you "}, {type:"blank",id:"a",pos:"verb",answer:"scream"},
+               {type:"text",value:"."} ] },
+  { id:"mother-of-all", title:"The mother of all X", note:"a phrase for the biggest of its kind",
+    segments:[ {type:"text",value:"The mother of all "}, {type:"blank",id:"a",pos:"noun",answer:"battles"},
+               {type:"text",value:"."} ] },
+  { id:"got-x", title:"Got X?", note:"after the “Got Milk?” ads",
+    segments:[ {type:"text",value:"Got "}, {type:"blank",id:"a",pos:"noun",answer:"milk"},
+               {type:"text",value:"?"} ] },
+  { id:"keep-calm", title:"Keep calm and X on", note:"after “Keep Calm and Carry On”",
+    segments:[ {type:"text",value:"Keep calm and "}, {type:"blank",id:"a",pos:"verb",answer:"carry"},
+               {type:"text",value:" on."} ] },
+  { id:"middle-name", title:"X is my middle name", note:"a boast that you embody something",
+    segments:[ {type:"blank",id:"a",pos:"noun",answer:"danger"}, {type:"text",value:" is my middle name."} ] },
+  { id:"one-does-not", title:"One does not simply X into Mordor", note:"after the “Lord of the Rings” meme",
+    segments:[ {type:"text",value:"One does not simply "}, {type:"blank",id:"a",pos:"verb",answer:"walk"},
+               {type:"text",value:" into Mordor."} ] }
+];
+const SNOWCLONE_BY_ID={}; for(const f of SNOWCLONES) SNOWCLONE_BY_ID[f.id]=f;
+
 /* ---------- CREATURES / DROPS / BESTIARY (data-driven) --------------------------
    data/creatures.json is the SINGLE SOURCE OF TRUTH for both the spawner (tier/hp/spawn/drops) and the
    bestiary UI (dex.*). Loaded once at startup, same pattern as the mad-libs chapter JSON. Kill/seen
@@ -2137,6 +2204,7 @@ const state = {
   restored:{},                  // mad-libs progress: levelId -> {fills:{blankId:word}, done, exact, bookId} (persist)
   books:[],                     // ids of books fully restored (added to your library) (persist)
   fables:1,                     // how many Aesop chapters are RECOVERED (unlocked), in book order — chapter 1 is free (persist)
+  snowclones:{},                // snowclone progress: frameId -> {fills:{blankId:word}, done, exact} (persist; second Mad Libris tab, free word reuse)
   verbCounts:{},                // verb category -> distinct verbs collected (persist; re-derived from dex on load)
   perks:{ speed:0, attack:0, satchel:0, hearts:0, slide:false, finisher:false, combo:false, divine:false, treasure:0, magnet:false, secondwind:false },  // derived from verbCounts
   divineDay:"",                 // date-string of the last Divine peek (day-scoped like the WOTD)
@@ -5232,6 +5300,9 @@ async function openBook(){
   state.madlibs=true;
   document.getElementById("madlibs").classList.add("open");
   document.getElementById("sound-btn").style.display="none";
+  mlTab="fables";                                  // always open on the Fables tab (preserves prior behaviour)
+  document.getElementById("ml-tab-fables").classList.add("active");
+  document.getElementById("ml-tab-snow").classList.remove("active");
   SFX.play("click");
   showChapterMenu();
 }
@@ -5279,7 +5350,7 @@ async function openChapter(path){
   if(!state.madlibs) return;
   if(!d){ pas.innerHTML='<p class="ml-err">Couldn’t open this chapter (needs http, not <code>file://</code>).</p>'; return; }
   mlBook=d.book; mlLevel=d.level; mlActive=null;
-  document.getElementById("ml-back").style.display="";
+  const bk=document.getElementById("ml-back"); bk.textContent="← Chapters"; bk.style.display="";
   renderMadlibs();
 }
 function backToChapters(){ mlActive=null; showChapterMenu(); }
@@ -5323,14 +5394,16 @@ function renderMadlibs(){
     ? `<b>${esc(mlBook.title)}</b> — restored ✓`
     : `<b>${esc(mlBook.title)}</b> — fill each blank with a word from your library that matches its part of speech. Each collected word can be used only once, ever.`;
   const pas=document.getElementById("ml-passage");
-  pas.innerHTML=passageHTML(lvl,R);
+  pas.innerHTML=passageHTML(lvl,R,mlActive);
   if(!R.done) pas.querySelectorAll("[data-b]").forEach(el=>el.onclick=()=>selectBlank(el.dataset.b));
   const panel=document.getElementById("ml-panel");
   if(R.done) panel.innerHTML=completionHTML(lvl,R);
-  else if(mlActive){ panel.innerHTML=pickerHTML(lvl,R,mlActive); wirePicker(panel); }
+  else if(mlActive){ const bl=lvl.segments.find(s=>s.type==="blank"&&s.id===mlActive);
+    panel.innerHTML=pickerHTML(lvl,R,mlActive, eligibleWords(bl.pos), `No unused <b>${bl.pos}</b> in your library yet — go spell some ${bl.pos}s at the bench, then come back.`);
+    wirePicker(panel,{ pick:pickWord, clear:clearActive, cancel:()=>{ mlActive=null; renderMadlibs(); } }); }
   else panel.innerHTML=neededHTML(lvl,R);
 }
-function passageHTML(lvl,R){
+function passageHTML(lvl,R,active){
   let html="";
   for(const seg of lvl.segments){
     if(seg.type==="text"){ html+=esc(seg.value).replace(/\n\n/g,"</p><p>"); continue; }
@@ -5338,7 +5411,7 @@ function passageHTML(lvl,R){
     if(R.done || w){ const ex=w===seg.answer;
       html+=`<span class="ml-word${ex?" exact":""}"${R.done?"":` data-b="${seg.id}"`} title="${seg.pos}${ex?" · original word":""}">${esc(w||"")}</span>`;
     } else {
-      html+=`<button class="ml-blank${seg.id===mlActive?" active":""}" data-b="${seg.id}">${seg.pos}</button>`;
+      html+=`<button class="ml-blank${seg.id===active?" active":""}" data-b="${seg.id}">${seg.pos}</button>`;
     }
   }
   return `<p>${html}</p>`;
@@ -5351,21 +5424,23 @@ function neededHTML(lvl,R){
   return `<div class="ml-needed">Still needed: ${parts.join("  ·  ")}</div>
     <div class="ml-hint">${left?"Tap a blank to fill it from your library.":"Every blank is filled!"}</div>`;
 }
-function pickerHTML(lvl,R,bId){
+// Shared by fables + snowclones: caller supplies the eligible `words` list (they differ on the
+// used-word lock) and the `emptyHint` shown when none match.
+function pickerHTML(lvl,R,bId,words,emptyHint){
   const blank=lvl.segments.find(s=>s.type==="blank"&&s.id===bId), cur=R.fills[bId];
-  const words=eligibleWords(blank.pos);
   const list=words.length
     ? `<div class="ml-picks">${words.map(w=>`<button class="ml-pick" data-w="${esc(w)}">${esc(w)}</button>`).join("")}</div>`
-    : `<div class="ml-empty">No unused <b>${blank.pos}</b> in your library yet — go spell some ${blank.pos}s at the bench, then come back.</div>`;
+    : `<div class="ml-empty">${emptyHint}</div>`;
   const clear=cur?`<button class="ml-clear" data-act="clear">Remove “${esc(cur)}”</button>`:"";
   return `<div class="ml-picktitle">Choose a <b>${blank.pos}</b>${cur?` (currently “${esc(cur)}”)`:""}:</div>
     ${list}
     <div class="ml-pickrow">${clear}<button class="ml-cancel" data-act="cancel">Cancel</button></div>`;
 }
-function wirePicker(panel){
-  panel.querySelectorAll(".ml-pick").forEach(b=>b.onclick=()=>pickWord(b.dataset.w));
-  panel.querySelectorAll("[data-act='clear']").forEach(b=>b.onclick=clearActive);
-  panel.querySelectorAll("[data-act='cancel']").forEach(b=>b.onclick=()=>{ mlActive=null; renderMadlibs(); });
+// Wire a rendered picker to caller-supplied handlers {pick(word), clear(), cancel()}.
+function wirePicker(panel,h){
+  panel.querySelectorAll(".ml-pick").forEach(b=>b.onclick=()=>h.pick(b.dataset.w));
+  panel.querySelectorAll("[data-act='clear']").forEach(b=>b.onclick=h.clear);
+  panel.querySelectorAll("[data-act='cancel']").forEach(b=>b.onclick=h.cancel);
 }
 function completionHTML(lvl,R){
   const bonus=R.exact?` <span style="color:var(--gold)">+${R.exact*MADLIB_EXACT_BONUS} ink for ${R.exact} original word${R.exact>1?"s":""}</span>`:"";
@@ -5375,6 +5450,122 @@ function completionHTML(lvl,R){
     <div class="ml-restored">✦ Chapter restored!${bonus}</div>
     <div class="ml-moral"><b>Moral:</b> ${esc(lvl.moral||"")}</div>
     ${bookLine}</div>`;
+}
+
+/* ---------- SNOWCLONES: coin your own sayings (second tab) -----------------
+   Parallels the fable fill loop but with its own state (state.snowclones), free word
+   reuse (snowWords ignores usedWordSet), and a canonical-match bonus instead of book
+   logic. Reuses the shared passageHTML/pickerHTML/wirePicker/neededHTML helpers. */
+let mlTab="fables";              // which Mad Libris tab is active: "fables" | "snow"
+let scLevel=null, scActive=null; // open snowclone frame + active blank id
+function ensureSnow(id){ return (state.snowclones[id] = state.snowclones[id] || { fills:{}, done:false }); }
+// Words whose cached POS matches — NO used-word lock (snowclone fills are free to reuse).
+function snowWords(pos){
+  return Object.keys(state.dex).filter(w=>{ const p=state.dex[w].pos; return Array.isArray(p) && p.includes(pos); }).sort();
+}
+// Assemble the coined saying from a frame + its fills (first letter capitalised for polish).
+function snowText(frame,R){
+  const t=frame.segments.map(s=> s.type==="text" ? s.value : (R.fills[s.id]||"____")).join("");
+  return t.charAt(0).toUpperCase()+t.slice(1);
+}
+// How many blanks match the canonical original filling (the bonus), and how many total.
+function snowExact(frame,R){
+  const blanks=frame.segments.filter(s=>s.type==="blank");
+  return { exact:blanks.filter(b=>R.fills[b.id]===b.answer).length, total:blanks.length };
+}
+function snowAllFilled(frame,R){ return frame.segments.filter(s=>s.type==="blank").every(s=>R.fills[s.id]); }
+// Switch between the two Mad Libris tabs (buttons only; resets to that tab's menu).
+function mlSwitchTab(tab){
+  mlTab=tab;
+  document.getElementById("ml-tab-fables").classList.toggle("active", tab==="fables");
+  document.getElementById("ml-tab-snow").classList.toggle("active", tab==="snow");
+  if(tab==="fables"){ mlActive=null; mlLevel=null; showChapterMenu(); }
+  else renderSnowMenu();
+  SFX.play("click");
+}
+// The snowclone menu doubles as the Cliché Codex: done frames render as filled saying-cards.
+function renderSnowMenu(){
+  scActive=null; scLevel=null;
+  document.getElementById("ml-back").style.display="none";
+  document.getElementById("ml-title").textContent="Snowclones";
+  document.getElementById("ml-sub").innerHTML="Coin your own sayings — fill a cliché frame with words from your library. Words are <b>free to reuse</b> here.";
+  document.getElementById("ml-panel").innerHTML="";
+  const coined=SNOWCLONES.filter(f=>{ const R=state.snowclones[f.id]; return R&&R.done; }).length;
+  const pas=document.getElementById("ml-passage");
+  pas.innerHTML=`<div class="sc-count">${coined}/${SNOWCLONES.length} sayings coined — your Cliché Codex</div>`
+    +'<div class="ml-chapters">'+SNOWCLONES.map(f=>{
+      const R=state.snowclones[f.id], done=R&&R.done, blanks=f.segments.filter(s=>s.type==="blank").length;
+      if(done){
+        const ex=snowExact(f,R), star=ex.exact===ex.total;
+        return `<button class="sc-card done${star?" star":""}" data-id="${esc(f.id)}">`
+          +`<span class="sc-frame">${star?"★ ":"✦ "}${esc(f.title)}</span>`
+          +`<span class="sc-said">${esc(snowText(f,R))}</span>`
+          +`<span class="sc-note">${esc(f.note||"")}${star?" · you uncovered the original!":""}</span></button>`;
+      }
+      const filled=R?Object.keys(R.fills||{}).length:0;
+      return `<button class="sc-card" data-id="${esc(f.id)}">`
+        +`<span class="sc-frame">${esc(f.title)}</span>`
+        +`<span class="sc-meta">${blanks} blank${blanks>1?"s":""} · ${filled?filled+"/"+blanks+" filled":"not yet coined"}</span></button>`;
+    }).join("")+'</div>';
+  pas.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>openSnowclone(b.dataset.id));
+}
+function openSnowclone(id){
+  scLevel=SNOWCLONE_BY_ID[id]; if(!scLevel) return;
+  scActive=null;
+  const bk=document.getElementById("ml-back"); bk.textContent="← Snowclones"; bk.style.display="";
+  renderSnowclone(); SFX.play("click");
+}
+function scSelectBlank(bId){ scActive=bId; renderSnowclone(); }
+function scPickWord(w){
+  if(!scLevel || !scActive) return;
+  const R=ensureSnow(scLevel.id);
+  R.fills[scActive]=w; scActive=null;
+  SFX.play("newword");
+  if(snowAllFilled(scLevel,R)) scComplete(); else scheduleSave();
+  renderSnowclone();
+}
+function scClearActive(){
+  if(!scLevel || !scActive) return;
+  delete ensureSnow(scLevel.id).fills[scActive];
+  SFX.play("click"); scheduleSave(); renderSnowclone();
+}
+function scComplete(){
+  const f=scLevel, R=ensureSnow(f.id);
+  if(R.done){ scheduleSave(); return; }
+  R.done=true;
+  const ex=snowExact(f,R); R.exact=ex.exact;
+  if(R.exact){ state.ink+=R.exact*SNOWCLONE_EXACT_BONUS; updateRewardHud(); }
+  SFX.play("unlock");
+  const star=ex.exact===ex.total;
+  showToast((star?"★ Original uncovered: ":"✦ Coined: ")+"“"+snowText(f,R)+"”"+(R.exact?` · +${R.exact*SNOWCLONE_EXACT_BONUS} ink`:""));
+  scheduleSave();
+}
+function renderSnowclone(){
+  const f=scLevel; if(!f) return;
+  const R=ensureSnow(f.id);
+  document.getElementById("ml-title").textContent=f.title;
+  document.getElementById("ml-sub").innerHTML = R.done
+    ? "Coined ✓ — reread your saying below."
+    : "Fill each blank with a word from your library that matches its part of speech. Words are <b>free to reuse</b>.";
+  const pas=document.getElementById("ml-passage");
+  pas.innerHTML=passageHTML(f,R,scActive);
+  if(!R.done) pas.querySelectorAll("[data-b]").forEach(el=>el.onclick=()=>scSelectBlank(el.dataset.b));
+  const panel=document.getElementById("ml-panel");
+  if(R.done) panel.innerHTML=snowCompletionHTML(f,R);
+  else if(scActive){ const bl=f.segments.find(s=>s.type==="blank"&&s.id===scActive);
+    panel.innerHTML=pickerHTML(f,R,scActive, snowWords(bl.pos), `No <b>${bl.pos}</b> in your library yet — go spell some ${bl.pos}s at the bench, then come back.`);
+    wirePicker(panel,{ pick:scPickWord, clear:scClearActive, cancel:()=>{ scActive=null; renderSnowclone(); } }); }
+  else panel.innerHTML=neededHTML(f,R);
+}
+function snowCompletionHTML(f,R){
+  const ex=snowExact(f,R), star=ex.exact===ex.total;
+  const bonus=R.exact?` <span style="color:var(--gold)">+${R.exact*SNOWCLONE_EXACT_BONUS} ink for ${R.exact} original word${R.exact>1?"s":""}</span>`:"";
+  return `<div class="ml-complete">
+    <div class="ml-restored">${star?"★ You uncovered the original!":"✦ Saying coined!"}${bonus}</div>
+    <div class="sc-said" style="margin-bottom:8px">${esc(snowText(f,R))}</div>
+    <div class="sc-note">${esc(f.note||"")}</div>
+    <div class="ml-hint" style="margin-top:8px">Kept in your Cliché Codex — press ← Snowclones to see them all.</div>
+  </div>`;
 }
 
 /* ---------- BESTIARY (creature dex) ----------------------- */
@@ -7174,11 +7365,11 @@ function renderMaterials(){
 // Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
-  return { v:6, day:state.day, inv:state.inv, dex:state.dex,
+  return { v:7, day:state.day, inv:state.inv, dex:state.dex,
            decorOwned:state.decorOwned, placed:state.placed, bundles:state.bundles,
            bagCap:state.bagCap, captured:[...state.captured], fishedSpots:[...state.fishedSpots], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
-           restored:state.restored, books:state.books, fables:state.fables,
+           restored:state.restored, books:state.books, fables:state.fables, snowclones:state.snowclones,
            resources:state.resources, bestiary:state.bestiary, phonicon:state.phonicon,
            verbCounts:state.verbCounts, divineDay:state.divineDay, divine:state.divine,
            obstacleDay:state.obstacleDay, obstacleGot:state.obstacleGot, riverCrossed:state.riverCrossed,
@@ -7200,6 +7391,7 @@ function applySnapshot(d){
   if(d.restored && typeof d.restored==="object") state.restored=d.restored;
   if(Array.isArray(d.books)) state.books=d.books;
   if(typeof d.fables==="number") state.fables=Math.max(1, d.fables);   // recovered-fable count (chapter 1 always free)
+  if(d.snowclones && typeof d.snowclones==="object") state.snowclones=d.snowclones;   // coined-saying progress (additive; old saves default {})
   // Binding materials + bestiary progress persist forever (earned progress, like the collection).
   if(d.resources && typeof d.resources==="object") state.resources=d.resources;
   if(d.bestiary && typeof d.bestiary==="object") state.bestiary=d.bestiary;
@@ -7359,7 +7551,9 @@ document.getElementById("shop-close").onclick=()=>{ closeShop(); SFX.play("click
 document.getElementById("shop-done").onclick=()=>{ closeShop(); SFX.play("click"); };
 document.getElementById("ml-close").onclick=()=>{ closeBook(); SFX.play("click"); };
 document.getElementById("ml-done").onclick=()=>{ closeBook(); SFX.play("click"); };
-document.getElementById("ml-back").onclick=()=>{ backToChapters(); SFX.play("click"); };
+document.getElementById("ml-back").onclick=()=>{ if(mlTab==="snow") renderSnowMenu(); else backToChapters(); SFX.play("click"); };
+document.getElementById("ml-tab-fables").onclick=()=>{ if(mlTab!=="fables") mlSwitchTab("fables"); };
+document.getElementById("ml-tab-snow").onclick=()=>{ if(mlTab!=="snow") mlSwitchTab("snow"); };
 document.getElementById("lib-close").onclick=()=>{ closeOverlay(); SFX.play("click"); };
 document.getElementById("bes-close").onclick=()=>{ closeBestiary(); SFX.play("click"); };
 document.getElementById("stats-close").onclick=()=>{ toggleStats(); };
