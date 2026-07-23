@@ -450,6 +450,9 @@
   .labtitle b{color:var(--accent)}
   .labhint{font-size:12px;color:var(--dim);margin:8px 0 10px;line-height:1.5}
   .labhint b{color:var(--ink)}
+  .labgate{margin:0 0 10px;padding:8px 12px;border-radius:8px;background:rgba(122,140,255,.10);
+    border:1px solid var(--edge);font-size:13px;color:var(--dim)}
+  .labgate b{color:var(--ink)}
   .labhud{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:10px;padding:10px 12px;
     background:var(--panel);border:1px solid var(--edge);border-radius:10px}
   .labhud .hudbig{font-size:13px;color:var(--dim)}
@@ -462,6 +465,9 @@
   .labcell{height:26px;border-radius:4px;background:#141833;border:1px solid transparent;position:relative;min-width:16px}
   .labcell.beatcol{border-left:1px solid rgba(255,255,255,.11)}
   .labcell.target{box-shadow:inset 0 0 0 2px rgba(245,197,66,.30)}
+  .labcell.tghost{box-shadow:inset 0 0 0 2px rgba(122,140,255,.55);background:rgba(122,140,255,.10)}   /* campaign target you must hit */
+  .labcell.tghost.hidden{box-shadow:inset 0 0 0 2px rgba(122,140,255,.14);background:transparent}       /* grooves stage: from memory */
+  .labcell.tmatch{box-shadow:inset 0 0 0 2px var(--good),0 0 8px rgba(91,224,142,.4);background:rgba(91,224,142,.20)}   /* target matched this session */
   .labcell.playcol{outline:2px solid var(--accent);outline-offset:-2px;z-index:2}
   .labcell.hit{background:var(--_hc,#4de1c8)}
   .labcell.hit-kick{--_hc:#ff8f5a}
@@ -554,6 +560,7 @@
     return mixHex(COLOR[c.letter], tgt, 0.42);
   }
   const PITCH_STAGES = ["naturals","ear","sharps","flats"];   // the M1 ladder (walked before M2 Rhythm unlocks)
+  const RHYTHM_STAGES = ["match","grooves","free"];           // the M2 ladder (live finger-drumming; walked before M3 Dynamics unlocks)
   // Piano-roll row label for a pitch class — naturals by name, black keys spelled to match the run's deck.
   function rowLetter(pc){
     if(NOTE_LETTER[pc]!=null) return NOTE_LETTER[pc];
@@ -732,6 +739,28 @@
   // (append only). A drum is a first-class timeline event `{drum:<voice>, at, dyn}` (pitchless, dur 0).
   // The Beat Lab's DRUMS registry (art/names) is keyed by these ids. See docs/mujicians.md.
   const DRUM_VOICES = ["kick","snare","hat"];
+  // Target grooves for the M2 lesson ladder — onsets over a LAB_BARS(2)-bar / 192-tick loop, voice ∈ DRUM_VOICES.
+  // A groove is a list of SLOTS on the 8th-note grid (16 cols / 2 bars — the Beat Lab's LAB grid). Each slot is
+  // one gate unit at a column, satisfiable by ANY of its `voices` (an OR — e.g. a backbeat you can play with a
+  // snare OR a hi-hat, since the pads refill randomly). Landing any voice clears the whole slot. `col`s are the
+  // 8 beat columns (0,2,…,14). Stage "match" uses `four`; "grooves" walks the rest. See docs/mujicians.md (S2.3).
+  const BEAT_COLS = [0,2,4,6,8,10,12,14];                                   // the 8 beat columns over 2 bars (8th grid)
+  const OFF13 = [0,4,8,12], OFF24 = [2,6,10,14];                            // beats 1&3 vs 2&4 (each bar), as columns
+  const GROOVES = [
+    { id:"four",     name:"Four-on-the-floor",
+      slots: BEAT_COLS.map(col=>({ col, voices:["kick"] })) },                              // kick on every beat
+    { id:"backbeat", name:"Backbeat",
+      slots: [ ...OFF13.map(col=>({ col, voices:["kick"] })),                               // kick on beats 1,3 (Space)
+               ...OFF24.map(col=>({ col, voices:["snare","hat"] })) ] },                    // beats 2,4 = snare OR ticker
+    { id:"son",      name:"Son clave",
+      slots: [0,3,6,10,12].map(col=>({ col, voices:["snare","hat"] })) },                   // 3-2 son clave (any wood-y voice)
+    { id:"shuffle",  name:"Shuffle",
+      slots: [ ...OFF13.map(col=>({ col, voices:["kick"] })),
+               ...OFF24.map(col=>({ col, voices:["snare","hat"] })) ] },                    // provisional (true triplet feel deferred)
+  ];
+  const grooveById = id => GROOVES.find(g=>g.id===id) || GROOVES[0];
+  const grooveSlotCount = g => g.slots.length;                             // one gate unit per slot
+  const grooveSlotAt = (g, col) => g.slots.find(s=> s.col===col);          // the slot (if any) at an 8th column
   const durOf    = id => DURATIONS.find(d=>d.id===id) || DURATIONS[0];
   const durTicks = id => durOf(id).ticks;
   // Read the active movement from the current run; outside a run (previews/reports) treat as Free Play.
@@ -760,7 +789,16 @@
           return { met:dir>=N && ex>=1, label:`${sharp?"Sharps":"Flats"} gate — play ${N} notes ${sharp?"higher":"lower"} (${cap(dir,N)}/${N}) + land one exact ${sym} (${ex}/1)` }; }
         const h=(r.gatePitch)?r.gatePitch.size:pitchLettersGot().length;   // per-run this run; persisted count at home
         return { met:h>=7, label:`Pitch gate — play every in-key letter (A–G): ${h}/7` }; }
-      case 2: { const h=r.gateDurs?r.gateDurs.size:0, N=DURATIONS.length;   // Phase 3 Stage 2: play each note value
+      case 2: {
+        if(rhythmCampaign(r)){                                             // S2.3: live finger-drumming ladder (match → grooves → free)
+          if(r.rhythmStage==="free"){
+            const hits = Math.min(labLoop.length, FREE_TAKE_HITS);
+            return { met:!!r.grooveMet, label:`Rhythm gate — lay a beat of your own (${cap(hits,FREE_TAKE_HITS)}/${FREE_TAKE_HITS} hits)` };
+          }
+          const g = grooveById(r.grooveId), tot = grooveSlotCount(g), got = r.grooveMatched ? r.grooveMatched.size : 0;
+          return { met:!!r.grooveMet, label:`Rhythm gate — match the ${g.name} beat (${cap(got,tot)}/${tot})` };
+        }
+        const h=r.gateDurs?r.gateDurs.size:0, N=DURATIONS.length;          // Free Play / legacy: play each note value
         return { met:h>=N, label:`Rhythm gate — play each note value (♩ 𝅗𝅥 𝅝): ${cap(h,N)}/${N}` }; }
       case 3: { const h=r.gateDyns?r.gateDyns.size:0;
         return { met:h>=3, label:`Dynamics gate — play soft, medium & loud: ${h}/3` }; }
@@ -1042,7 +1080,7 @@
   /* ================= persistence + daily cap ================= */
   const SAVE_KEY = "mujicians-save-v2";
   function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
-  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, hand:"right", progress:{ movement:1, gates:{}, pitchStage:"naturals" } };
+  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, hand:"right", progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"match" } };
   function loadPersist(){
     try{
       const s = JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
@@ -1059,6 +1097,8 @@
         : g.pitchEar ? "sharps"
         : (Array.isArray(g.pitch) && g.pitch.length>=7) ? "ear" : "naturals";
     }
+    if(RHYTHM_STAGES.indexOf(persist.progress.rhythmStage)<0)   // M2 ladder frontier stage (match→grooves→free); done if past M2
+      persist.progress.rhythmStage = persist.progress.movement>2 ? "free" : "match";
     persist.bpm = Math.max(MIN_BPM, Math.min(MAX_BPM, +persist.bpm || DEFAULT_BPM));  // global comfort tempo
     if(persist.hand!=="left" && persist.hand!=="right") persist.hand = "right";       // keyboard handedness (gig shortcuts + Beat Lab)
     if(persist.day !== todayStr()){ persist.day = todayStr(); persist.runsUsed = 0; savePersist(); }
@@ -1071,7 +1111,7 @@
   function resetAll(){
     if(!window.confirm("DEV: wipe ALL saved progress — movement, Codex, Renown, Setlist, pitch gate, runs used? This can't be undone.")) return;
     try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
-    persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, capFixV1:true, progress:{ movement:1, gates:{}, pitchStage:"naturals" } };
+    persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, capFixV1:true, progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"match" } };
     codex.clear();
     savePersist();
     stopLoop(); galleryPlayId=null; run=null; screen="home";
@@ -1692,6 +1732,11 @@
   // Campaign movement AND Free Play then carry them. Gated on campaign progress, so a first-timer who jumps
   // straight into Free Play doesn't meet them before they're taught.
   function accidentalsUnlocked(){ return (persist.progress.movement||1) > 1; }
+  // Live drums graduate to M3–M7 + Free Play once M2 is fully cleared (mirrors accidentalsUnlocked). Not yet
+  // consumed — S2.3 graduation (drum lanes in the in-run piano-roll) is the next increment. See docs/mujicians.md.
+  function rhythmUnlocked(){ return (persist.progress.movement||1) > 2; }
+  // Is this run a live-drum M2 campaign stage (the new ladder)? Free Play M2 keeps the legacy note-value gate.
+  function rhythmCampaign(r){ return !!(r && r.mode==="campaign" && r.movement===2 && r.rhythmStage); }
   function buildDeck(mv, level){
     const m = mv || FREE_PLAY_MOVEMENT;
     const deck = [];
@@ -1740,6 +1785,10 @@
     // button follows the frontier stage; an explicit opts.pitchLevel (replay/DEV) overrides it.
     const pitchLevel = (mode!=="free" && movement===1)
       ? (opts.pitchLevel || persist.progress.pitchStage || "naturals") : "naturals";
+    // M2 walks a live-drumming ladder (match → grooves → free) before M3 unlocks; the Campaign button follows
+    // the frontier stage, an explicit opts.rhythmStage (DEV/replay) overrides. Only campaign M2 uses it.
+    const rhythmStage = (mode!=="free" && movement===2)
+      ? (opts.rhythmStage || persist.progress.rhythmStage || "match") : null;
     // One loop for the whole run — one continuous performance in one key, filled hand by hand.
     run = { deck:buildDeck(movement, pitchLevel), drawPile:[], hand:[], sel:new Set(), discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ events:[], cursor:0, stageBars:START_BARS }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
       curDyn:DEFAULT_DYN,   // M3 dynamics: the p/mf/f marking applied to the next play
@@ -1753,6 +1802,10 @@
       respondLog:[],            // M1: each response's semitone distance to its call (for the pitch-accuracy score)
       pitchLevel,               // M1 sub-level: naturals (call shown) · ear (call hidden) · sharps · flats
       callReveal:null,          // by-ear: the just-answered call to name in the callbar until the next call
+      rhythmStage,              // M2 sub-level: match (four-on-the-floor) · grooves · free (null off M2/Free Play)
+      grooveId:(rhythmStage==="match"?"four":rhythmStage==="grooves"?"backbeat":null),   // the target groove to match this stage (free = no target)
+      grooveMatched:new Map(),  // satisfied target slots this session (Map col→voice-you-hit) — the M2 gate collects them all
+      grooveMet:false,          // the drum gate has been reached this run
       goalReached:false, goalAck:false };   // goalReached = prompt shown; goalAck = player chose "keep building"
     offerIntro();   // mentor explains the lesson (campaign only), then the Muse draft, then play
   }
@@ -1918,6 +1971,16 @@
       else { persist.progress.movement = 2; run.advancedTo = 2; }
       savePersist(); return;
     }
+    if(mv===2 && rhythmCampaign(run)){
+      // M2 is a live-drumming ladder (match → grooves → free); each frontier stage clears to the next,
+      // and only completing the last stage unlocks M3 Dynamics. Replaying an earlier stage doesn't advance.
+      const stage = run.rhythmStage || "match";
+      if(stage !== (persist.progress.rhythmStage || "match")) return;
+      const i = RHYTHM_STAGES.indexOf(stage);
+      if(i>=0 && i < RHYTHM_STAGES.length-1){ persist.progress.rhythmStage = RHYTHM_STAGES[i+1]; run.advancedStage = RHYTHM_STAGES[i+1]; }
+      else { persist.progress.movement = 3; run.advancedTo = 3; }
+      savePersist(); return;
+    }
     persist.progress.movement = mv+1; run.advancedTo = mv+1; savePersist();
   }
   // The per-run GOAL that stops the song (campaign only): the current movement's gate, met THIS run.
@@ -1992,10 +2055,20 @@
       task:"I shall sigh out a note — you answer with any note <b>LOWER</b> than mine… ⬇️ Sink to the <b>exact ♭</b> for bonus points (and let it resolve DOWN for more, if you must). A few notes below and one exact flat is all I ask.",
       compact:"🤺 Answer <b>LOWER ↓</b> than my note — bonus for the exact ♭ (then let it fall down)." },
     "m2": { char:"dee", title:"Rhythm — the pulse of the earth",
-      theory:[ "Notes don't just have colour — they have <b>length</b>! Feel the ground humming? That steady <b>pulse</b> under everything is the beat.",
-               "A <b>quarter</b> ♩ lasts one beat, a <b>half</b> 𝅗𝅥 lasts two, a whole <b>𝅝</b> lasts four. And a <b>rest</b> 𝄽 is a beat of <i>silence</i> — leaving space is music too!" ],
-      task:"Set a length before each note. Give me a short ♩, a long 𝅗𝅥, <i>and</i> a whole 𝅝 — mix them (drop in a rest!) and you've got a groove.",
-      compact:"🥁 Set each note's length — mix ♩ 𝅗𝅥 𝅝 and a rest into a groove!" },
+      theory:[ "Feel the ground humming? That steady <b>pulse</b> under everything is the <b>beat</b> — and rhythm is best <i>felt</i>, not placed. So this time you'll <b>drum it live</b>, in time with the loop!",
+               "The simplest, sturdiest beat there is: a <b>kick on every beat</b> — one, two, three, four. They call it <b>four-on-the-floor</b>, and it's the heartbeat of half the music you love." ],
+      task:"Tap <b>Space</b> right on each glowing beat to match the kick pattern. Land every beat cleanly and the groove is yours!",
+      compact:"🥁 Tap <b>Space</b> on the beat — match four-on-the-floor live!" },
+    "m2:grooves": { char:"dee", title:"Grooves — patterns with swing",
+      theory:[ "Once you can hold a steady pulse, you can bend it into a <b>groove</b> — a repeating pattern with its own feel.",
+               "A <b>backbeat</b> snaps a snare on beats 2 and 4; a <b>clave</b> skips and syncopates. Watch the ghost cells, then feel it in your hands." ],
+      task:"Drum the pattern shown on the pads — kick, snare and hats where the ghosts light up. Match the whole groove!",
+      compact:"🥁 Match the groove shown on the pads — kick, snare & hats!" },
+    "m2:free": { char:"dee", title:"Free take — your own beat",
+      theory:[ "You've got the pulse and the grooves. Now make one <b>your own</b>.",
+               "Lay a beat live over the loop — whatever feels good. This is the backing your songs will ride on." ],
+      task:"Drum a beat you like — a few solid hits and it's a keeper. Make it groove!",
+      compact:"🥁 Free take — drum your own beat over the loop!" },
     "m3": { char:"dee", title:"Dynamics — the fire in your playing",
       theory:[ "The very same note can <b>whisper</b> or <b>roar</b> — that's <b>dynamics</b>, how loud or soft you play.",
                "Musicians mark it with letters: <b>p</b> is <i>piano</i> (soft), <b>mf</b> is medium, <b>f</b> is <i>forte</i> (loud). Watch — a loud card grows <b>big</b>, a soft one shrinks <b>small</b>. Size <i>is</i> loudness!" ],
@@ -2022,7 +2095,11 @@
       task:"Compose an <b>A · B · A</b>: play a phrase, contrast it with something different, then bring your very first phrase back.",
       compact:"🏛️ Shape the whole song: state A, contrast with B, then return to A!" },
   };
-  function lessonKey(){ return (run.movement===1 && run.pitchLevel && run.pitchLevel!=="naturals") ? "m1:"+run.pitchLevel : "m"+run.movement; }  // m1 · m1:ear · m1:sharps · m1:flats · m2…m7
+  function lessonKey(){   // m1 · m1:ear/sharps/flats · m2 (match) · m2:grooves · m2:free · m3…m7
+    if(run.movement===1 && run.pitchLevel && run.pitchLevel!=="naturals") return "m1:"+run.pitchLevel;
+    if(run.movement===2 && run.rhythmStage && run.rhythmStage!=="match") return "m2:"+run.rhythmStage;
+    return "m"+run.movement;
+  }
   function currentLesson(){ return (run && run.mode==="campaign") ? LESSON_INTROS[lessonKey()] : null; }   // Free Play = no lesson
   // Render a character's art — the ONE place art is drawn, so emoji → pixel sprite is a token swap.
   function charArtHTML(char){
@@ -2039,6 +2116,7 @@
   function dismissIntro(){
     const key = lessonKey();
     if(!persist.progress.seenIntros[key]){ persist.progress.seenIntros[key] = true; savePersist(); }   // full once, compact after
+    if(rhythmCampaign(run)){ enterRhythmStage(); return; }   // M2 drum-only stages skip the Muse draft → live drumming
     offerDraft();
   }
   function renderIntroOverlay(){
@@ -2623,6 +2701,16 @@
       return `<span class="plstep${done?" done":""}${here?" here":""}">${done?"✓ ":here?"▸ ":""}${PITCH_STAGE_LABEL[s]}</span>`;
     }).join(`<span class="plsep">→</span>`)+`</div>`;
   }
+  const RHYTHM_STAGE_LABEL = { match:"Match 🥁", grooves:"Grooves", free:"Free take" };
+  const rhythmStageIdx = () => Math.max(0, RHYTHM_STAGES.indexOf(persist.progress.rhythmStage||"match"));
+  // The M2 ladder shown on Home while on Rhythm: which live-drum stages are done / current (M3 unlocks past Free).
+  function rhythmLadderHTML(){
+    const cur = persist.progress.movement>2 ? RHYTHM_STAGES.length : rhythmStageIdx();
+    return `<div class="pitchladder">`+RHYTHM_STAGES.map((s,i)=>{
+      const done=i<cur, here=i===cur && persist.progress.movement===2;
+      return `<span class="plstep${done?" done":""}${here?" here":""}">${done?"✓ ":here?"▸ ":""}${RHYTHM_STAGE_LABEL[s]}</span>`;
+    }).join(`<span class="plsep">→</span>`)+`</div>`;
+  }
   // Once the whole M1 arc is behind you (M2+), any pitch sub-level can be replayed for practice.
   function pitchPracticeHTML(){
     const btns = PITCH_STAGES.map(s=>`<button class="btn ghost pp-stage" data-stage="${s}" ${atCap()?"disabled":""} title="Replay M1 Pitch — ${PITCH_STAGE_LABEL[s]}">${PITCH_STAGE_LABEL[s]}</button>`).join("");
@@ -2632,8 +2720,10 @@
     const capped = atCap();
     const mv = persist.progress.movement, mvName = MOVEMENTS[mv].element;
     const stage = persist.progress.pitchStage || "naturals";
+    const rStage = persist.progress.rhythmStage || "match";
     const campLabel = capped ? "No runs left today"
-      : (mv===1 ? `▶ Campaign · M1 Pitch — ${PITCH_STAGE_LABEL[stage]}` : `▶ Campaign · Movement ${mv} — ${mvName}`);
+      : (mv===1 ? `▶ Campaign · M1 Pitch — ${PITCH_STAGE_LABEL[stage]}`
+      : (mv===2 ? `▶ Campaign · M2 Rhythm — ${RHYTHM_STAGE_LABEL[rStage]}` : `▶ Campaign · Movement ${mv} — ${mvName}`));
     $game.innerHTML = `
       <div class="gigbar center">
         <p class="big">Play cards that are <b>notes</b>. Combine them into <b>chords &amp; scales</b> —
@@ -2644,7 +2734,9 @@
           <button class="btn ghost" id="b-free" ${capped?"disabled":""} title="Every mechanic unlocked (today's full game)">Free Play</button>
           <button class="btn ghost" id="b-beatlab" title="Practice live finger-drumming (rhythm MVP) — no daily cap">🥁 Beat Lab</button>
         </div>
-        ${mv===1?`<div class="cta" style="justify-content:center">${pitchLadderHTML()}</div>`:pitchPracticeHTML()}
+        ${mv===1?`<div class="cta" style="justify-content:center">${pitchLadderHTML()}</div>`
+          :mv===2?`<div class="cta" style="justify-content:center">${rhythmLadderHTML()}</div>`
+          :pitchPracticeHTML()}
         ${devMovementBarHTML()}
         <p class="hint center">Campaign teaches music one element at a time — pitch first, then rhythm, dynamics, melody, harmony, timbre, structure. Free Play unlocks everything. Both share the daily run cap.</p>
         ${capped?`<p class="hint center">You've used all ${MAX_RUNS_PER_DAY} runs today. Come back tomorrow — or try
@@ -2665,6 +2757,7 @@
       const to = Math.max(1, Math.min(MAX_MOVEMENT, +el.dataset.mv));
       persist.progress.movement = to;
       if(to===1) persist.progress.pitchStage = "naturals";   // DEV: restart the M1 ladder from the top for testing
+      if(to<=2) persist.progress.rhythmStage = "match";      // DEV: restart the M2 ladder too
       savePersist(); renderHome();
     }));
     const dr = document.getElementById("dev-reset");
@@ -2684,6 +2777,7 @@
     if(screen==="draft"){ renderGig(); renderDraftOverlay(); return; }
     if(screen==="save"){ renderGig(); renderSaveOverlay(); return; }
     if(screen==="win"){ renderEndOverlay(); return; }   // "win" = the single performance-complete screen (no win/lose)
+    if(screen==="rhythmwin"){ renderRhythmEnd(); return; }   // M2 live-drum stage cleared
   }
 
   function renderDraftOverlay(){
@@ -2800,6 +2894,33 @@
     document.getElementById("b-home").addEventListener("click", ()=>{ stopLoop(); galleryPlayId=null; screen="home"; run=null; render(); });
   }
   function renderGigStatic(){ /* keep the last gig board visible behind the end overlay (win or lose) so the loop's playhead keeps sweeping */ if(run) renderGig(); }
+  // The M2 live-drum stage's completion screen (own screen — the gig end overlay assumes a note-song).
+  function renderRhythmEnd(){
+    const runsLeft = runsLeftToday();
+    const acc = labStats.total ? Math.round(100*(labStats.perfect + labStats.good*0.5)/labStats.total) : null;
+    const g = labCfg.target ? labCfg.target.name : "your own beat";
+    const advance = run && run.advancedTo
+      ? `<p class="big" style="color:var(--good)">🎓 <b>M2 Rhythm</b> complete — unlocked <b>M${run.advancedTo} ${MOVEMENTS[run.advancedTo].element}</b>! Next Campaign run starts there.</p>`
+      : run && run.advancedStage
+        ? `<p class="big" style="color:var(--good)">🥁 <b>${RHYTHM_STAGE_LABEL[run.rhythmStage]}</b> cleared! Unlocked <b>${RHYTHM_STAGE_LABEL[run.advancedStage]}</b> — your next step toward Dynamics.</p>`
+        : `<p class="hint">Already cleared — replaying for practice.</p>`;
+    $overlay.innerHTML = `
+      <div class="overlay"><div class="modal center">
+        <h2>🥁 Beat matched!</h2>
+        <p>You drummed <b>${esc(g)}</b> live${acc!=null?` at <b>${acc}%</b> timing accuracy`:""}. Nicely played!</p>
+        ${advance}
+        <div class="cta">
+          ${runsLeft>0
+            ? `<button class="btn" id="b-again">▶ New Run (${runsLeftLabel()} left today)</button>`
+            : `<button class="btn ghost" disabled>No runs left today</button>`}
+          <button class="btn ghost" id="b-home">Home</button>
+        </div>
+        ${runsLeft===0?`<p class="hint">Daily cap reached — come back tomorrow.</p>`:""}
+      </div></div>`;
+    const again = document.getElementById("b-again");
+    if(again) again.addEventListener("click", ()=>{ audio(); startRun("campaign"); });
+    document.getElementById("b-home").addEventListener("click", ()=>{ galleryPlayId=null; screen="home"; run=null; render(); });
+  }
 
   /* ================= Beat Lab — Stage-1 live finger-drumming MVP =================
      A self-contained practice screen to test whether live finger-drumming feels fun BEFORE we rewire the
@@ -2832,18 +2953,35 @@
   let labSched=null, labRaf=null, labT0=0, labBeatSec=BAR_SEC, labTickSec=BAR_SEC/TPB, labLoopSec=0, labSchedFrom=0, labCol=-1;
   let labLoop=[], labSlots=[], labPool=[], labMelodyBaseLap=0;   // labLoop = the recorded beat: {voice,tick,bornLap}; handedness = persist.hand
   let labStats={ perfect:0, good:0, miss:0, combo:0, best:0, total:0 };
+  // The Beat Lab is now a configurable live-drum ENGINE with two consumers (S2.3): free "practice" (Home
+  // button, no run) and "campaign" (M2's rhythm ladder — match a target groove to clear a gate). labCfg selects
+  // the chrome + scoring; the scheduler / timing-judge / pads / loop are shared. See docs/mujicians.md.
+  let labCfg = { mode:"practice", target:null };
+  const labCampaign = () => labCfg.mode==="campaign";
+  const FREE_TAKE_HITS = 17;                                   // "free" stage: this many distinct recorded hits = a real beat (was 6 — ended too early)
 
   function labDrawDrum(){ if(!labPool.length) labPool = shuffle(["snare","hat","snare","hat","snare","hat"]); return labPool.pop(); }
   function labInitSlots(){ labPool=[]; labSlots=[0,1,2].map(()=>({ voice:labDrawDrum() })); }
 
+  function labReset(){ labLoop=[]; labStats={ perfect:0, good:0, miss:0, combo:0, best:0, total:0 }; labInitSlots(); }
   function enterBeatLab(){
     audio(); stopLoop(); galleryPlayId=null;
-    labLoop=[]; labStats={ perfect:0, good:0, miss:0, combo:0, best:0, total:0 };
-    labInitSlots();
+    labCfg = { mode:"practice", target:null };
+    labReset();
     screen="beatlab"; render();
     labStartLoop();
   }
-  function exitBeatLab(){ labStopLoop(); screen="home"; render(); }
+  // Campaign M2: enter the live-drum ladder for run.rhythmStage (match → grooves → free). Reuses the whole
+  // Beat Lab engine; the only differences are the target overlay, the match-scoring, and the pass/advance flow.
+  function enterRhythmStage(){
+    audio(); stopLoop(); galleryPlayId=null;
+    labCfg = { mode:"campaign", stage:run.rhythmStage, target:(run.grooveId ? grooveById(run.grooveId) : null) };
+    run.grooveMatched = new Map(); run.grooveMet = false;
+    labReset();
+    screen="beatlab"; render();
+    labStartLoop();
+  }
+  function exitBeatLab(){ labStopLoop(); if(labCampaign()) run=null; screen="home"; render(); }
 
   function labStartLoop(){
     labStopLoop();
@@ -2902,6 +3040,9 @@
     const existing = labLoop.find(h=> h.voice===voice && h.tick===tick);
     if(existing){ existing.bornLap = lap; return; }         // same slot re-hit → refresh, don't grow
     labLoop.push({ voice, tick, bornLap:lap });
+    // Every placed beat gets the orange record-fill so you can SEE it (and it matches what the loop plays). In
+    // campaign, a matched target is upgraded to green afterwards (labCampaignScore / labApplyLoop) so it's still
+    // easy to tell landed targets from off-beat/uncounted hits.
     labMarkCell(voice, tick, true);
     while(labLoop.length > LAB_MAX_HITS){                    // over the cap → drop the oldest so the beat stays legible
       const old = labLoop.shift();
@@ -2930,6 +3071,47 @@
     else { if(tier==="exact") labStats.perfect++; else labStats.good++; labStats.combo++; if(labStats.combo>labStats.best) labStats.best=labStats.combo; }
     labFlash(voice, slotIdx, tier, labTickToCol(tick));
     labUpdateHUD();
+    if(labCampaign()) labCampaignScore(voice, tick, tier);
+  }
+  // Campaign M2 scoring: a Good+ hit that lands a target SLOT (right column, and its voice is one the slot
+  // accepts) satisfies it — the gate collects every slot (like M1's "play all 7 letters"). A slot can be an
+  // OR (snare-or-ticker backbeat), so landing one voice clears the whole slot and un-ghosts its alternatives.
+  // Free take: any beat you record that reaches FREE_TAKE_HITS distinct hits passes. On pass, stop + advance.
+  function labCampaignScore(voice, tick, tier){
+    if(!run || run.grooveMet) return;
+    if(labCfg.target){
+      if(tier==="far") return;
+      const col = labTickToCol(tick);
+      const slot = grooveSlotAt(labCfg.target, col);
+      if(slot && slot.voices.includes(voice)){
+        const wasNew = !run.grooveMatched.has(col);
+        run.grooveMatched.set(col, voice);
+        labMarkSlotMatched(slot, voice);            // green the voice you hit, un-ghost the slot's alternatives
+        if(wasNew){
+          labUpdateGateHUD();
+          if(run.grooveMatched.size >= grooveSlotCount(labCfg.target)) rhythmStagePass();
+        }
+      }
+    } else {   // free take — no target; a real beat of your own
+      if(labLoop.length >= FREE_TAKE_HITS){ run.grooveMet = true; run.grooveMatched = new Map(); rhythmStagePass(); }
+    }
+  }
+  function labUpdateGateHUD(){
+    const el = document.getElementById("lab-gate"); if(!el || !run) return;
+    el.textContent = gateStatus(2).label;
+  }
+  function rhythmStagePass(){
+    if(!run || run.done) return;
+    run.grooveMet = true;
+    labStopLoop();
+    finishRhythmStage();
+  }
+  // The M2 drum session's own completion screen (the gig end overlay assumes a note-song; this one reports the
+  // groove + advancement). maybeAdvance walks the rhythm ladder / unlocks M3.
+  function finishRhythmStage(){
+    if(!run || run.done) return;
+    run.done = true; maybeAdvance();
+    screen="rhythmwin"; render();
   }
   function labFireSlot(i){ if(!labSlots[i]) return; labHit(labSlots[i].voice, i); labSlots[i].voice = labDrawDrum(); labUpdateSlotPad(i); }
   function labFireKick(){ labHit("kick", -1); }
@@ -2963,10 +3145,29 @@
   }
   function labClearBeat(){
     labLoop = [];
+    if(labCampaign() && run){   // campaign: reset collected slots + restore the ghosts by re-rendering fresh
+      run.grooveMatched = new Map();
+      renderBeatLab();
+      return;
+    }
     document.querySelectorAll(".labgrid .hit").forEach(e=> e.classList.remove("hit","hit-kick","hit-snare","hit-hat"));
   }
-  function labApplyLoop(){   // re-draw the recorded beat's markers after a full re-render
-    labLoop.forEach(h=> labMarkCell(h.voice, h.tick, true));
+  function labApplyLoop(){   // re-draw the recorded beat's markers (+ campaign matched-target slots) after a full re-render
+    labLoop.forEach(h=> labMarkCell(h.voice, h.tick, true));                       // orange record-fill for every placed beat
+    if(labCampaign() && labCfg.target && run && run.grooveMatched)                 // re-apply landed slots (green + un-ghost alternatives)
+      run.grooveMatched.forEach((voice,col)=>{ const slot = grooveSlotAt(labCfg.target, col); if(slot) labMarkSlotMatched(slot, voice); });
+  }
+  // A landed slot: green the cell for the voice you actually hit (strip its orange record-fill + un-ghost it),
+  // and UN-GHOST the slot's other (alternative) voices too — you satisfied the slot with one, so the others are
+  // no longer required. Green wins cleanly with no specificity fight; off-beat/uncounted hits stay orange.
+  function labMarkSlotMatched(slot, hitVoice){
+    slot.voices.forEach(v=>{
+      const cell = document.querySelector('.labgrid [data-lane="'+v+'"][data-col="'+slot.col+'"]');
+      if(!cell) return;
+      cell.classList.remove("tghost","hidden");
+      if(v===hitVoice){ cell.classList.remove("hit","hit-kick","hit-snare","hit-hat"); cell.classList.add("tmatch"); }
+      else cell.classList.remove("hit","hit-"+v,"tmatch");   // alternative voice → plain, un-ghosted cell
+    });
   }
   // Re-summon the backing riff (reset its fade to full) if you lose the pulse — a tempo scaffold on demand.
   function labReplayBacking(){ const ac=audio(); labMelodyBaseLap = Math.floor(Math.max(0, ac.currentTime - labT0)/labLoopSec); }
@@ -2994,7 +3195,14 @@
   }
 
   function renderBeatLab(){
+    const camp = labCampaign();
     const keys = persist.hand==="left" ? ["a","s","d"] : ["j","k","l"];
+    // Campaign: ghost the target groove's cells (voice+8th-column) on each involved lane. Practice: the classic
+    // four-on-the-floor kick ghost. (The grooves "shown → from memory" faint reveal is a later increment, so
+    // ghosts are drawn clearly for now.)
+    const targetCells = new Set();
+    const ghostHidden = false;
+    if(camp && labCfg.target) labCfg.target.slots.forEach(s=> s.voices.forEach(v=> targetCells.add(v+":"+s.col)));   // ghost every voice of each slot (OR-alternatives show on all their rows)
     let grid = "";
     LAB_LANES.forEach(lane=>{
       const d = DRUMS[lane];
@@ -3002,7 +3210,8 @@
       for(let c=0;c<LAB_COLS;c++){
         const cl = ["labcell"];
         if(c%LAB_SUB===0) cl.push("beatcol");
-        if(lane==="kick" && c%LAB_SUB===0) cl.push("target");   // four-on-the-floor ghost = a kick on every beat
+        if(camp){ if(targetCells.has(lane+":"+c)){ cl.push("tghost"); if(ghostHidden) cl.push("hidden"); } }
+        else if(lane==="kick" && c%LAB_SUB===0) cl.push("target");   // practice: four-on-the-floor ghost
         grid += `<div class="${cl.join(" ")}" data-lane="${lane}" data-col="${c}"></div>`;
       }
     });
@@ -3013,16 +3222,27 @@
         <span class="padname" data-slotname="${i}">${d.emoji} ${esc(d.name)}</span>
         <span class="padrole">${d.role}</span></button>`;
     }).join("");
+    const title = camp
+      ? `🥁 M2 Rhythm — <b>${RHYTHM_STAGE_LABEL[run.rhythmStage]}</b>`
+      : `🥁 Beat Lab — <b>live finger-drumming</b>`;
+    const hint = camp ? (
+        labCfg.stage==="free"
+          ? `Free take — drum <b>any beat you like</b> over the loop. <b>Space</b> = bass, <b>${keys.map(k=>k.toUpperCase()).join(" · ")}</b> the pads. A few solid hits and it's yours.`
+        : labCfg.stage==="grooves"
+          ? `Match the <b>${esc(labCfg.target.name)}</b> — <b>Space</b> for the kick on beats 1 &amp; 3, and on beats 2 &amp; 4 hit <b>either Snarab or Ticker</b> (whichever pad you've got). Landing one clears both ghosts and glows <b>green</b>.`
+          : `Tap <b>Space</b> right on each <b>glowing beat</b> to match <b>four-on-the-floor</b>. Land every beat cleanly — they glow <b>green</b> — to clear the gate. On a phone, tap the pads.`
+      ) : `The loop's rolling — play drums <b>in time</b>. <b>Space</b> = the bass (Boombardier),
+          <b>${keys.map(k=>k.toUpperCase()).join(" · ")}</b> fire whatever Beatling is on each pad (they refill as you go).
+          Aim for the beat — the kick lane's gold cells are <b>four-on-the-floor</b>. On a phone, tap the pads. Your hits <b>loop back</b> (up to ${LAB_MAX_HITS}, oldest drop off), so you build a beat — and the backing riff <b>fades</b> as you lock in.`;
     $game.innerHTML = `
       <div class="lab">
         <div class="labtop">
-          <button class="btn ghost" id="lab-back">← Home</button>
-          <div class="labtitle">🥁 Beat Lab — <b>live finger-drumming</b></div>
+          <button class="btn ghost" id="lab-back">${camp?"← Give up":"← Home"}</button>
+          <div class="labtitle">${title}</div>
           <button class="btn ghost" id="lab-hand" title="Switch key hand">${persist.hand==="left"?"✋ Left · a s d":"🤚 Right · j k l"}</button>
         </div>
-        <p class="labhint">The loop's rolling — play drums <b>in time</b>. <b>Space</b> = the bass (Boombardier),
-          <b>${keys.map(k=>k.toUpperCase()).join(" · ")}</b> fire whatever Beatling is on each pad (they refill as you go).
-          Aim for the beat — the kick lane's gold cells are <b>four-on-the-floor</b>. On a phone, tap the pads. Your hits <b>loop back</b> (up to ${LAB_MAX_HITS}, oldest drop off), so you build a beat — and the backing riff <b>fades</b> as you lock in.</p>
+        <p class="labhint">${hint}</p>
+        ${camp?`<div class="labgate">🎯 <b id="lab-gate">${gateStatus(2).label}</b></div>`:""}
         <div class="labhud">
           <div class="hudbig">Combo <b id="lab-combo">0</b></div>
           <div class="hudstat">Accuracy <b id="lab-acc">—</b></div>
@@ -3039,7 +3259,7 @@
         </div>
         <div class="labctl">
           <button class="btn ghost" id="lab-backing" title="Bring back the fading tempo riff">🎵 Backing riff</button>
-          <button class="btn" id="lab-keep" title="Save the backing riff + your beat to your Setlist">💾 Keep this beat</button>
+          ${camp?"":`<button class="btn" id="lab-keep" title="Save the backing riff + your beat to your Setlist">💾 Keep this beat</button>`}
           <button class="btn ghost" id="lab-clear">↺ Clear beat</button>
         </div>
       </div>`;
@@ -3047,7 +3267,8 @@
     document.getElementById("lab-hand").addEventListener("click", ()=>{ persist.hand = persist.hand==="left"?"right":"left"; savePersist(); renderBeatLab(); });
     document.getElementById("lab-clear").addEventListener("click", labClearBeat);
     document.getElementById("lab-backing").addEventListener("click", labReplayBacking);
-    document.getElementById("lab-keep").addEventListener("click", labKeepBeat);
+    const keepBtn = document.getElementById("lab-keep");
+    if(keepBtn) keepBtn.addEventListener("click", labKeepBeat);
     // pads: mouse (desktop) + touch (mobile), polyphonic — each pad is its own target so multi-touch stacks
     $game.querySelectorAll(".pad.slotpad").forEach(el=>{
       const i = +el.dataset.slot;

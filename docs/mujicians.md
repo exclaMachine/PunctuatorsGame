@@ -372,9 +372,42 @@ and rejected*). Their **card skins ride the existing foil/holo `SKINS` system to
     `MAX_HAND_SIZE` (6)** (a Muse rework to respect this is deferred). Guards: ignored while typing in an input,
     on a focused button (native Space), or when a modal (goal prompt) is open. *(Caveat: CapsLock is an
     unreliable game key — it toggles the OS caps state — flagged for a possible swap.)*
-  - **S2.3 — Campaign M2 integration:** the groove ladder (overlay-matching lessons), the M2 gate, and
-    graduation of drums to M3–M7 + Free Play (they'll need drum lanes in the in-run piano-roll — `eventCoverage`
-    + the grid render). *Not built.*
+  - **S2.3 — Campaign M2 integration. 🚧 Increment 1 BUILT 2026-07-22 (foundation + Stage 1 "Match").** The
+    Beat Lab engine is now a **configurable live-drum session** with two consumers via a `labCfg`
+    (`{mode,stage,target}`): free **practice** (Home 🥁 Beat Lab, unchanged) and **campaign** (M2's ladder).
+    - **The M2 ladder** — `persist.progress.rhythmStage` walked in order **match → grooves → free** (mirrors
+      M1's `pitchStage`; migration in `loadPersist`; `RHYTHM_STAGES`). `rhythmUnlocked()` = `movement>2` (for the
+      later graduation, not yet consumed). A **rhythm-ladder strip** on Home when `mv===2` (`rhythmLadderHTML`)
+      and the Campaign button follows the frontier stage.
+    - **Flow.** A campaign M2 run gets the **Dee mentor intro** (rewritten to the live-drumming lesson — the old
+      note-value text is gone; per-stage keys `m2` / `m2:grooves` / `m2:free`), then **skips the Muse draft**
+      (`dismissIntro`→`enterRhythmStage`) straight into the drum session (drum-only lessons, per the dev's pick).
+    - **Stage 1 "Match" (playable).** A groove is a list of **slots** (`GROOVES` registry
+      `{id,name,slots:[{col,voices:[…]}]}`) on the 8th-note grid; each slot is one gate unit at a column,
+      satisfiable by **any** of its `voices` (an **OR** — e.g. a backbeat playable with snare **or** ticker,
+      since the pads refill randomly). Slots are drawn as a **blue ghost overlay** on every voice-lane they
+      involve; a **Good+** hit whose voice the slot accepts satisfies it (`run.grooveMatched` = Map col→voice),
+      **greening the cell you hit and un-ghosting the slot's alternatives** (`labMarkSlotMatched`). The **gate**
+      collects **every** slot (cumulative like M1's "play all 7 letters", `run.grooveMet`), shown live in a
+      `.labgate` HUD line. Four-on-the-floor (match) = 8 kick slots; the backbeat (grooves) = kick on 1 & 3
+      (Space) + a snare-or-ticker slot on 2 & 4. **Every placed beat keeps its orange record-fill**
+      (`.hit` — so you can see it, and it matches what the loop plays back); a **landed slot is un-ghosted and
+      turned green** (`labMarkSlotMatched` strips `.hit` **and** `.tghost`/`.hidden`, then adds `.tmatch` on the
+      hit voice and un-ghosts the slot's alternative voices — the un-ghost also avoids a CSS-specificity fight
+      where `.tghost.hidden` would out-rank `.tmatch`), leaving the states unmistakable: **blue ghost** = not yet
+      landed, **green** = landed, **orange** = a beat you placed that isn't a clean target hit. For an OR-slot
+      (backbeat's 2 & 4) the ghost shows on **both** the snare and hat rows, and landing either clears both.
+      Meeting the gate pops the **`rhythmwin`** end screen
+      (`renderRhythmEnd`) and `maybeAdvance` walks the ladder / unlocks **M3** past "free". Scoring/loop/pads/
+      keyboard are the **shared** Beat Lab engine.
+    - **Still simplified / next increments:** the **grooves** stage currently matches one target (the
+      kick-1&3 + snare-or-ticker-2&4 `backbeat`), drawn **clearly** — not yet the backbeat→son-clave→shuffle
+      walk with a **shown→from-memory** reveal (the `GROOVES` set + the `.tghost.hidden` CSS are in place for
+      it; son-clave/shuffle slot data is provisional); the
+      **free** stage passes on ≥`FREE_TAKE_HITS` recorded hits and does
+      **not yet run the melody round** (own-pace compose, then a beat over it); and **graduation** of live drums
+      to M3–M7 + Free Play (drum lanes in the in-run piano-roll — `eventCoverage` + the grid render) is untouched.
+      Free Play M2 keeps the legacy "play each note value" `gateDurs` gate.
 - **Later:** **hold-to-sustain** note length in the melody round (dev likes it, deferred); more
   Beatlings/grooves; raw-feel toggle; a metronome count-in.
 
