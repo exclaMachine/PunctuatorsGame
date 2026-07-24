@@ -344,8 +344,10 @@ teaches them.)
 > notation→live; `RHYTHM_STAGE_LABEL` + the Home ladder strip + the win-screen advancement text are all
 > movement-aware. **Simplified for MVP:** the rests gate is "each rest value" (not yet "one pattern mixing notes
 > + rests"); the durations stage is a value-checklist, not a shown/sounded target rhythm to match. **Not yet
-> built:** gestures (snap-swipe Break / swipe-up Merge) + Dynamics double-tap/drag A/B + length-bar fade
-> (Increment 3).
+> built — Increment 3:** gestures (snap-swipe Break / swipe-up Merge) + Dynamics double-tap/drag A/B +
+> length-bar fade + **the gate-label/intro glyph cleanup** (the note/rest glyphs still Unicode in `gateStatus`
+> labels + `LESSON_INTROS` prose + `DURATIONS.rest` may tofu — replace with `noteheadSVG`/`restSVG` or a legible
+> ASCII fallback in those flowing-text contexts).
 >
 > **Duration becomes a per-card property (default = quarter).** Under Break, a card *carries* a value: **every
 > note/rest card defaults to a quarter note (♩)**, and the player **Breaks it shorter or Merges it longer** from
@@ -450,9 +452,10 @@ playing-card index (creature art fills the center):
   filled + stem + flag.** **Rests:** whole = filled bar **hanging below** a faint staff line · half = filled bar
   **sitting on** the line (the line disambiguates the two otherwise-identical bars) · quarter = the squiggle ·
   eighth = a slanted stroke + one flag. Bonus: the notehead *is* the lesson (filled→hollow, stem→no-stem is the
-  exact notation being taught). **Still Unicode (may tofu — future cleanup):** the note/rest glyphs inside
-  **gate labels and mentor-intro prose** (`gateStatus`, `LESSON_INTROS`) and the `DURATIONS.rest` field — those
-  are flowing-text contexts where inlining SVG is fiddlier.
+  exact notation being taught). **Still Unicode (may tofu — folded into Increment 3):** the note/rest glyphs
+  inside **gate labels and mentor-intro prose** (`gateStatus`, `LESSON_INTROS`) and the `DURATIONS.rest` field —
+  flowing-text contexts where inlining SVG is fiddlier; Increment 3 replaces them with `noteheadSVG`/`restSVG` or
+  a legible ASCII fallback.
 - **Bottom length-bar (teaching aid, fadeable).** A thin bar along the card's bottom edge whose **width is
   proportional to the value** (♪ = ¼ width · ♩ = ½ · 𝅗𝅥 = ¾-ish · 𝅝 = full), mapping the abstract symbol to
   visible *length* — reinforcing that duration = time = horizontal on the grid. Shown during the **M2 Break
