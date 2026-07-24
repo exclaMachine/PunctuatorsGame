@@ -630,6 +630,8 @@
   }
   const ACC_COPIES = 1, MAX_TIMBRES = 4;   // once accidentals unlock: 1 of each spelling per instrument, deck capped at 4 timbres
   const MAX_RUNS_PER_DAY = 3;
+  // TEMP (2026-07-23): daily run cap disabled so friends can playtest freely. Flip back to true to restore it.
+  const RUN_CAP_ON = false;
   // Mario-Paint-style loop: ONE continuous performance in ONE key on a single tick timeline (see the
   // Continuous timeline block below). Each Play appends an event at the write cursor; the whole timeline
   // cycles nonstop as a backing groove. The only hard limit is running out of stage space (the stage
@@ -1125,9 +1127,9 @@
      On via ?dev in the URL, or toggle with Ctrl/Cmd+Shift+D (persisted). */
   const DEV_KEY = "mujicians-dev";
   let DEV = /[?&]dev\b/i.test(location.search) || localStorage.getItem(DEV_KEY)==="1";
-  function atCap(){ return !DEV && persist.runsUsed >= MAX_RUNS_PER_DAY; }
-  function runsLeftToday(){ return DEV ? Infinity : Math.max(0, MAX_RUNS_PER_DAY - persist.runsUsed); }
-  function runsLeftLabel(){ return DEV ? "∞" : String(runsLeftToday()); }
+  function atCap(){ return RUN_CAP_ON && !DEV && persist.runsUsed >= MAX_RUNS_PER_DAY; }
+  function runsLeftToday(){ return (DEV || !RUN_CAP_ON) ? Infinity : Math.max(0, MAX_RUNS_PER_DAY - persist.runsUsed); }
+  function runsLeftLabel(){ return runsLeftToday()===Infinity ? "∞" : String(runsLeftToday()); }
 
   /* ================= audio ================= */
   let AC = null;
@@ -2311,6 +2313,7 @@
 
   function renderMeta(){
     const runs = DEV ? `Runs today <b>${persist.runsUsed}</b> · <b style="color:var(--good)">DEV ∞</b>`
+                     : !RUN_CAP_ON ? `Runs today <b>${persist.runsUsed}</b> · <b style="color:var(--good)">free playtest ∞</b>`
                      : `Runs today <b>${persist.runsUsed}/${MAX_RUNS_PER_DAY}</b>`;
     $meta.innerHTML = `Renown <b>${renownLevel(persist.totalApplause)}</b> · best hand <b>${persist.bestApplause}</b><br>`+runs;
   }
@@ -2768,7 +2771,7 @@
           :mv===2?`<div class="cta" style="justify-content:center">${rhythmLadderHTML()}</div>`
           :pitchPracticeHTML()}
         ${devMovementBarHTML()}
-        <p class="hint center">Campaign teaches music one element at a time — pitch first, then rhythm, dynamics, melody, harmony, timbre, structure. Free Play unlocks everything. Both share the daily run cap.</p>
+        <p class="hint center">Campaign teaches music one element at a time — pitch first, then rhythm, dynamics, melody, harmony, timbre, structure. Free Play unlocks everything.${RUN_CAP_ON?" Both share the daily run cap.":""}</p>
         ${capped?`<p class="hint center">You've used all ${MAX_RUNS_PER_DAY} runs today. Come back tomorrow — or try
           <a href="pitch-bird.html" style="color:var(--accent)">Pitch Bird</a> meanwhile.</p>`:""}
         <div class="tempo-wrap">${tempoSliderHTML(false)}</div>

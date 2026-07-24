@@ -12,7 +12,10 @@ limit, warned before it fills; win/lose collapse to one "Performance complete")*
 performance (BUILT)](#open-ended-performance--no-threshold-you-decide-when-youre-done-built)**. A partner
 **backstage shop + "Tips" currency** is designed **but not built** — see **[The backstage shop & Tips
 economy](#the-backstage-shop--tips-economy-planned)**. The economy beyond the slice (Étude/Accidental
-cards, Daily-Set seed, set-playback) is still the plan below.
+cards, Daily-Set seed, set-playback) is still the plan below. **The game is now linked from the site hub
+(`index.html`).** **TEMP (2026-07-23): the daily run cap is disabled for open playtesting** — a single
+`RUN_CAP_ON = false` toggle (near `MAX_RUNS_PER_DAY`) short-circuits `atCap()`/`runsLeftToday()` and swaps the
+run counter to "free playtest ∞"; flip it back to `true` to restore the 3-runs-a-day cap.
 
 A roguelike deckbuilder where **cards are notes** and the "poker hands" you play are **chords, scales,
 and progressions**. You score by making music that's *theory-correct* — in key, consonant, resolving,
