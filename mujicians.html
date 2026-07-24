@@ -202,6 +202,13 @@
   .card.off{opacity:.55}
   .card.rest{background:#e7e8f2}   /* rest card — played alone, appends silence */
   .card.rest .cnote{font-size:28px}
+  /* Break: per-card duration shown playing-card-style — corner notehead + bottom length-bar (width ∝ value). */
+  .card .cdur{position:absolute;top:3px;right:4px;z-index:2;line-height:0}
+  .card .cdur .ndhead{display:block}
+  .card .lenbar{position:absolute;left:5px;right:5px;bottom:2px;height:3px;border-radius:2px;
+    background:rgba(0,0,0,.12);z-index:2;overflow:hidden}
+  .card .lenbar > i{display:block;height:100%;border-radius:2px;background:var(--cc,#5a6bff);opacity:.85}
+  .card.rest .lenbar > i{background:#5a5f7a}
 
   /* ===== SKIN OVERLAYS — timbre "editions" (foil / holo / …), pure CSS, no assets =====
      A `.cskin` child fills the card face with a translucent sheen that reads as the timbre. The note
@@ -274,6 +281,8 @@
     background:#0e1226;color:var(--dim);border:1px solid var(--edge)}
   .durbtn.on{background:#5a6bff;color:#fff;border-color:#7a88ff}
   .durbtn:active{transform:translateY(1px)}
+  .durbtn:disabled{opacity:.38;cursor:default}
+  .brkctl .curdur{font-size:18px;line-height:1;min-width:22px;text-align:center;color:var(--ink)}
   /* a longer note's sustained beats (attack = full color .on; held = dimmer continuation, bg set inline) */
   .lgcell.held{border-color:rgba(255,255,255,.18)}
   .lgcell.gheld{box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
@@ -694,7 +703,7 @@
   const stageTicksNow = () => stageBarsNow() * BAR_TICKS;
   function growStageToFit(){
     if(!run || !run.loop) return;
-    let end = run.loop.cursor + durTicks(run.curDur);                 // where the next play would land+end
+    let end = run.loop.cursor + selDurTicks();                        // where the next play would land+end (per-card dur)
     for(const e of run.loop.events) end = Math.max(end, e.at + e.dur); // …and never hide already-placed notes
     const needBars = Math.ceil(end / BAR_TICKS) + 1;                   // +1 = keep an empty ghost bar visible ahead
     const want = Math.max(START_BARS, Math.min(maxStageBars(), needBars));
@@ -745,9 +754,10 @@
   // Per-note rhythm in a melody comes from setting the duration between successive single plays.
   // v1 palette = quarter/half/whole; 8ths/16ths/triplets are a fast-follow (the tick model already fits).
   const DURATIONS = [
-    { id:"q", label:"♩",  rest:"𝄽", name:"quarter — 1 beat", ticks:TPB },     // 24
+    { id:"e", label:"♪",  rest:"𝄾", name:"eighth — ½ beat",  ticks:TPB/2 },   // 12  (the Break floor)
+    { id:"q", label:"♩",  rest:"𝄽", name:"quarter — 1 beat", ticks:TPB },     // 24  (default)
     { id:"h", label:"𝅗𝅥", rest:"𝄼", name:"half — 2 beats",   ticks:TPB*2 },   // 48
-    { id:"w", label:"𝅝", rest:"𝄻", name:"whole — 4 beats",  ticks:TPB*4 },   // 96
+    { id:"w", label:"𝅝", rest:"𝄻", name:"whole — 4 beats",  ticks:TPB*4 },   // 96  (the Merge ceiling)
   ];
   const DEFAULT_DUR = "q";
   // Percussion voices (the Beatlings) — canonical order = the save/share-code index, so DON'T reorder
@@ -776,8 +786,14 @@
   const grooveById = id => GROOVES.find(g=>g.id===id) || GROOVES[0];
   const grooveSlotCount = g => g.slots.length;                             // one gate unit per slot
   const grooveSlotAt = (g, col) => g.slots.find(s=> s.col===col);          // the slot (if any) at an 8th column
-  const durOf    = id => DURATIONS.find(d=>d.id===id) || DURATIONS[0];
+  const durOf    = id => DURATIONS.find(d=>d.id===id) || DURATIONS.find(d=>d.id===DEFAULT_DUR);
   const durTicks = id => durOf(id).ticks;
+  // Break/Merge — duration is now a per-CARD value (curDur retired). The note-value ladder as ids,
+  // shortest→longest: Break halves a card (step down; eighth is the floor), Merge fuses two equal cards
+  // (step up; whole is the ceiling). See docs/mujicians.md "the Break mechanic".
+  const DUR_LADDER = ["e","q","h","w"];
+  const halfDur    = id => { const i = DUR_LADDER.indexOf(id); return i>0 ? DUR_LADDER[i-1] : null; };
+  const doubleDur  = id => { const i = DUR_LADDER.indexOf(id); return (i>=0 && i<DUR_LADDER.length-1) ? DUR_LADDER[i+1] : null; };
   // Read the active movement from the current run; outside a run (previews/reports) treat as Free Play.
   const curMovementN = () => (run && run.movement) ? run.movement : FREE_PLAY_MOVEMENT;
   const curMovement  = () => MOVEMENTS[curMovementN()];
@@ -814,8 +830,8 @@
           const g = grooveById(r.grooveId), tot = grooveSlotCount(g), got = r.grooveMatched ? r.grooveMatched.size : 0;
           return { met:!!r.grooveMet, label:`Rhythm gate — match the ${g.name} beat (${cap(got,tot)}/${tot})` };
         }
-        const h=r.gateDurs?r.gateDurs.size:0, N=DURATIONS.length;          // Free Play / legacy: play each note value
-        return { met:h>=N, label:`Rhythm gate — play each note value (♩ 𝅗𝅥 𝅝): ${cap(h,N)}/${N}` }; }
+        const h=r.gateDurs?r.gateDurs.size:0, N=DURATIONS.length;          // Free Play / legacy: play each note value (Break to reach ♪)
+        return { met:h>=N, label:`Rhythm gate — play each note value (♪ ♩ 𝅗𝅥 𝅝): ${cap(h,N)}/${N}` }; }
       case 3: { const h=r.gateDyns?r.gateDyns.size:0;
         return { met:h>=3, label:`Dynamics gate — play soft, medium & loud: ${h}/3` }; }
       case 4: { const iv=r.gateIntervals?r.gateIntervals.size:0, rn=r.gateRun?1:0;
@@ -1012,7 +1028,7 @@
     if(termOn("groove")){
       mult += 1; lines.push("groove +1");
       const pe = prevEvent();
-      if(pe && pe.dur !== durTicks(run ? run.curDur : DEFAULT_DUR)){ mult += 1; lines.push("rhythmic variety +1"); }
+      if(pe && pe.dur !== (run ? selDurTicks() : durTicks(DEFAULT_DUR))){ mult += 1; lines.push("rhythmic variety +1"); }
     }
     // dynamic (M3): contrast bonus — this play's dynamic differs from one already on the timeline.
     if(termOn("dynamic") && run){
@@ -1759,7 +1775,7 @@
   }
 
   /* ================= run state ================= */
-  let run = null;   // { deck, drawPile, hand, sel:Set, discardsLeft, runScore, muses, loop:{events,cursor}, curDur, curDyn }
+  let run = null;   // { deck, drawPile, hand, sel:Set, discardsLeft, runScore, muses, loop:{events,cursor}, cardSeq, curDyn }
   let screen = "home";
 
   // Accidentals graduate out of M1 once BOTH lessons are cleared (M1 done → progress.movement>1): every later
@@ -1803,8 +1819,9 @@
         }
       }
     }
-    // Rest cards (M2+ / rhythm on): played ALONE, they append silence of the chosen duration.
+    // Rest cards (M2+ / rhythm on): played ALONE, they append silence of the card's duration.
     if(m>=2) for(let k=0;k<REST_COPIES;k++) deck.push({ id:id++, rest:true });
+    deck.forEach(c => { c.dur = DEFAULT_DUR; });   // Break: every card carries its own duration (default ♩), reshaped by Break/Merge
     return deck;
   }
   function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -1828,7 +1845,7 @@
     // One loop for the whole run — one continuous performance in one key, filled hand by hand.
     run = { deck:buildDeck(movement, pitchLevel), drawPile:[], hand:[], sel:new Set(), discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ events:[], cursor:0, stageBars:START_BARS }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
       curDyn:DEFAULT_DYN,   // M3 dynamics: the p/mf/f marking applied to the next play
-      curDur:DEFAULT_DUR,   // M2 rhythm: the duration (ticks via durTicks) of the next play; default = quarter
+      cardSeq:10000,        // Break/Merge: id source for cards spawned by breaking (well above deck ids)
       // per-movement gate trackers (all cheap to keep; gateStatus reads the frontier movement's).
       // ALL per-run now: reaching a movement's goal THIS run is what stops the song + advances (see
       // runGoalMet / the goal prompt). gatePitch is M1's per-run letter set (persist.pitch is legacy).
@@ -1873,6 +1890,52 @@
   function selectedCards(){ return [...run.sel].map(i=>run.hand[i]).filter(c=>c && !c.rest); }
   function selectedRest(){ return [...run.sel].map(i=>run.hand[i]).find(c=>c && c.rest) || null; }
 
+  // Duration of the pending play — per-card now (curDur retired). A note stack shares ONE duration =
+  // the LONGEST selected card's value (so nothing gets cut short); a rest uses its own value; nothing
+  // selected falls back to the default (♩) for ghost/headroom previews.
+  function selDurId(){
+    const rest = selectedRest();
+    if(rest) return rest.dur || DEFAULT_DUR;
+    const cs = selectedCards();
+    if(!cs.length) return DEFAULT_DUR;
+    return cs.reduce((best,c)=> durTicks(c.dur||DEFAULT_DUR) > durTicks(best) ? (c.dur||DEFAULT_DUR) : best, DUR_LADDER[0]);
+  }
+  function selDurTicks(){ return durTicks(selDurId()); }
+
+  // ---- Break / Merge (per-card duration control) ----
+  const nextCardId = () => run.cardSeq++;
+  function selectedSingleIdx(){ return run.sel.size===1 ? [...run.sel][0] : -1; }   // Break/Merge act on a single selected card
+  function mergeable(a,b){                                                          // two cards fuse only if truly the "same thing"
+    if(a.rest && b.rest) return true;
+    if(a.rest || b.rest) return false;
+    return a.pc===b.pc && a.instId===b.instId && a.midi===b.midi;
+  }
+  function mergeTargetIdx(idx){                                                     // an ADJACENT equal-value, mergeable neighbour (prefer the right)
+    if(idx<0) return -1;
+    const c = run.hand[idx]; if(!c || !doubleDur(c.dur||DEFAULT_DUR)) return -1;    // whole is the ceiling
+    for(const j of [idx+1, idx-1]){
+      const n = run.hand[j];
+      if(n && (n.dur||DEFAULT_DUR)===(c.dur||DEFAULT_DUR) && mergeable(c,n)) return j;
+    }
+    return -1;
+  }
+  function breakSelected(){                                                         // ♩ → two ♪ : one card becomes two half-value copies
+    const idx = selectedSingleIdx(); if(idx<0) return;
+    const c = run.hand[idx]; const h = halfDur(c.dur||DEFAULT_DUR); if(!h) return;   // already at the floor (eighth)
+    const mk = () => Object.assign({}, c, { id:nextCardId(), dur:h });
+    run.hand.splice(idx, 1, mk(), mk());   // replace with two adjacent halves
+    run.sel = new Set([idx]);              // keep the first half selected so you can keep breaking
+    renderGig();
+  }
+  function mergeSelected(){                                                         // two ♩ → one 𝅗𝅥 : fuse the selected card with an equal neighbour
+    const idx = selectedSingleIdx(); if(idx<0) return;
+    const j = mergeTargetIdx(idx); if(j<0) return;
+    const lo = Math.min(idx,j), c = run.hand[lo];
+    run.hand.splice(lo, 2, Object.assign({}, c, { id:nextCardId(), dur:doubleDur(c.dur||DEFAULT_DUR) }));
+    run.sel = new Set([lo]);
+    renderGig();
+  }
+
   // Append an event at the write cursor (overwriting any event that started in the span), keep the
   // event list sorted by tick, and advance the cursor by the event's duration.
   function placeEvent(ev){
@@ -1897,7 +1960,7 @@
     const cards = selectedCards();
     const rest = selectedRest();
     if(!cards.length && !rest) return;
-    const dur = durTicks(run.curDur), at = run.loop.cursor;
+    const durId = selDurId(), dur = durTicks(durId), at = run.loop.cursor;   // per-card duration (curDur retired)
     // capture card-motion sources BEFORE the timeline write / re-render (played nodes get detached).
     const flyFrom = captureSelected();
     const handSnap = snapHand();
@@ -1927,7 +1990,7 @@
           run.gateDir = (run.gateDir||0) + 1;                                           // forgiving: count each correct-direction response
         if(res.resolved) run.gateResolved = true;                                        // resolution is now an optional BONUS (Codex added above)
       }
-      if(termOn("groove")) run.gateDurs.add(run.curDur);                                 // M2: distinct note values (per play)
+      if(termOn("groove")) run.gateDurs.add(durId);                                      // M2: distinct note values (per play)
       if(termOn("dynamic")) run.gateDyns.add(run.curDyn);                                // M3: soft/medium/loud
       if(cls.type==="interval") run.gateIntervals.add(cls.name);                         // M4: distinct intervals
       if(cls.type==="run" || detectTimelineRun()) run.gateRun = true;                    // M4: a scale run (stacked, or across the timeline)
@@ -2332,12 +2395,32 @@
   }
   function renownLevel(total){ let lvl=1,rem=total,need=300; while(rem>=need){ rem-=need; lvl++; need=200+lvl*120; } return lvl; }
 
+  // Break: a card wears its duration playing-card-style — a corner notehead (SVG, not the astral-plane
+  // Unicode half/whole glyphs, which tofu at small sizes) + a bottom length-bar (width ∝ value). Shown only
+  // where duration matters (termOn("groove") = M2+ / Free Play); M1 pitch stays plain (all quarters).
+  function noteheadSVG(durId, color){
+    const c = color || "#333";
+    const head   = `<ellipse cx="6" cy="11.5" rx="4" ry="2.9" fill="${c}"/>`;
+    const hollow = `<ellipse cx="6" cy="11.5" rx="4" ry="2.9" fill="none" stroke="${c}" stroke-width="1.5"/>`;
+    const stem   = `<line x1="9.6" y1="10.6" x2="9.6" y2="1.5" stroke="${c}" stroke-width="1.4"/>`;
+    const flag   = `<path d="M9.6 1.6 q4.2 1.6 2.2 5.6" fill="none" stroke="${c}" stroke-width="1.4"/>`;
+    const inner = durId==="e" ? head+stem+flag
+                : durId==="q" ? head+stem
+                : durId==="h" ? hollow+stem
+                : hollow;   // whole = hollow head, no stem
+    return `<svg class="ndhead" viewBox="0 0 14 15" width="12" height="13" aria-hidden="true">${inner}</svg>`;
+  }
+  function lenBarHTML(durId){
+    const pct = Math.round(durTicks(durId) / durTicks("w") * 100);   // whole = full width
+    return `<div class="lenbar"><i style="width:${pct}%"></i></div>`;
+  }
   function cardHTML(c, idx){
     const selCls = run.sel.has(idx) ? " sel" : "";
+    const showDur = termOn("groove");   // duration is meaningful (and Breakable) from M2 / Free Play onward
     if(c.rest){
-      const g = durOf(run.curDur).rest;   // the rest glyph tracks the chosen duration
+      const g = durOf(c.dur||DEFAULT_DUR).rest;   // the rest glyph is the card's own value now (curDur retired)
       return `<div class="card rest${selCls}" data-idx="${idx}" data-id="${c.id}" data-rest="1">
-        <div class="cnote" style="color:#5a5f7a">${g}</div><div class="coct" style="color:#5a5f7a">rest</div></div>`;
+        <div class="cnote" style="color:#5a5f7a">${g}</div><div class="coct" style="color:#5a5f7a">rest</div>${showDur?lenBarHTML(c.dur):""}</div>`;
     }
     const col = c.acc ? shadeFor(c) : COLOR[c.letter];
     const lbl = noteLabel(c);
@@ -2351,9 +2434,10 @@
     const skinEl = skin
       ? `<div class="cskin sk-${skin.id}${skin.art?" sk-art":""}"${skin.art?` style="--skin-art:url('${skin.art}')"`:""}></div>`
       : "";
+    const durCorner = showDur ? `<div class="cdur">${noteheadSVG(c.dur, col)}</div>` : "";
     return `<div class="card${selCls}${dynCls}${c.acc?" acc":""}" data-idx="${idx}" data-id="${c.id}" data-midi="${c.midi}" style="--cc:${col}">
-      ${skinEl}<div class="cnote">${lbl}</div><div class="coct">${lbl}${oct}</div>
-      <div class="cinst" title="${inst.name}">${inst.emoji}</div></div>`;
+      ${skinEl}${durCorner}<div class="cnote">${lbl}</div><div class="coct">${lbl}${oct}</div>
+      <div class="cinst" title="${inst.name}">${inst.emoji}</div>${showDur?lenBarHTML(c.dur):""}</div>`;
   }
 
   // M1 call-and-response: show the target note to match (shown-early ramp — later movements go ear-only).
@@ -2419,7 +2503,7 @@
     </div>`;
   }
   function previewHTML(){
-    if(selectedRest()){ const d=durOf(run.curDur); return `<span class="struct">Rest — ${esc(d.name)}</span><div class="calc">silence; advances the cursor by a ${d.name.split(" ")[0]}</div>`; }
+    if(selectedRest()){ const d=durOf(selectedRest().dur||DEFAULT_DUR); return `<span class="struct">Rest — ${esc(d.name)}</span><div class="calc">silence; advances the cursor by a ${d.name.split(" ")[0]}</div>`; }
     const cards = selectedCards();
     // Blind (by-ear) level: hide the numeric preview entirely — the applause/mult would jump on the right card
     // and let you brute-force by watching the number. You commit blind; the reveal + bloom judge you after.
@@ -2446,13 +2530,22 @@
     const btns = DYN.map(d=>`<button class="dynbtn${run.curDyn===d.id?" on":""}" data-dyn="${d.id}" title="${d.name}">${d.label}</button>`).join("");
     return `<div class="dynctl" title="Dynamics — how loud the next hand plays"><span class="dynlbl">Dynamics</span>${btns}</div>`;
   }
-  // M2 rhythm: a single ♩/𝅗𝅥/𝅝 picker sets the duration of the NEXT play (a stack OR the rest card),
-  // like Dynamics. Per-note rhythm in a melody comes from changing this between successive single plays.
-  function durControlHTML(){
+  // Break/Merge is the duration control (curDur retired): pick ONE card, then Break it in half (♩→♪♪) or
+  // Merge it with an equal neighbour (♩♩→𝅗𝅥). The middle glyph shows the selected card's current value.
+  function breakControlHTML(){
     if(!termOn("groove")) return "";
-    const rest = !!selectedRest();
-    const btns = DURATIONS.map(d=>`<button class="durbtn${run.curDur===d.id?" on":""}" data-dur="${d.id}" title="${esc(d.name)}">${rest?d.rest:d.label}</button>`).join("");
-    return `<div class="dynctl" title="Duration — how long the next play lasts"><span class="dynlbl">${rest?"Rest length":"Duration"}</span>${btns}</div>`;
+    const idx = selectedSingleIdx();
+    const c = idx>=0 ? run.hand[idx] : null;
+    const canBreak = !!(c && halfDur(c.dur||DEFAULT_DUR));
+    const canMerge = !!(c && mergeTargetIdx(idx)>=0);
+    const d = c ? durOf(c.dur||DEFAULT_DUR) : null;
+    const cur = d ? (c.rest ? d.rest : d.label) : "—";
+    return `<div class="dynctl brkctl" title="Break a card in half / Merge two equal cards — this sets note length">
+      <span class="dynlbl">Length</span>
+      <button class="durbtn" id="b-break" ${canBreak?"":"disabled"} title="Break in half — key: x">⤵ Break</button>
+      <span class="curdur" title="selected card's value">${cur}</span>
+      <button class="durbtn" id="b-merge" ${canMerge?"":"disabled"} title="Merge two equal — key: m">Merge ⤴</button>
+    </div>`;
   }
   function musesHTML(){
     if(!run.muses.length) return `<span class="none">No Muses yet — draft one at the start of a run.</span>`;
@@ -2518,7 +2611,7 @@
     const selCol = new Map(selCards.map(c=>[c.midi, shadeFor(c) || COLOR[c.letter]]));   // ghost colour honours the selected spelling
     const selPcs = [...new Set(selCards.map(c=>c.pc))];
     const wcol = tickToCol(run.loop.cursor);
-    const gCol0 = wcol, gCol1 = tickToCol(run.loop.cursor + durTicks(run.curDur) - 1);
+    const gCol0 = wcol, gCol1 = tickToCol(run.loop.cursor + selDurTicks() - 1);
     let grid = "";
     rows.forEach(m=>{
       const pc = m%12, oct = Math.floor(m/12)-1, col = rowColor(pc);
@@ -2613,7 +2706,7 @@
       ${loopStripHTML()}
       ${callBarHTML()}
       <div class="preview">${previewHTML()}</div>
-      ${durControlHTML()}
+      ${breakControlHTML()}
       ${dynControlHTML()}
       <div class="hand">${run.hand.map((c,i)=>cardHTML(c,i)).join("")}</div>
       <div class="controls">
@@ -2656,10 +2749,9 @@
         run.loop.cursor = Math.max(0, Math.min(maxStageTicks()-1, +el.dataset.tick)); renderGig();
       });
     });
-    // rhythm: set the duration of the next play (re-render updates the preview's groove bonus + ghost)
-    $game.querySelectorAll(".durbtn").forEach(el=> el.addEventListener("click", ()=>{
-      run.curDur = el.dataset.dur; renderGig();
-    }));
+    // Break/Merge: reshape the selected card's duration (re-render updates the preview + ghost span)
+    const bBreak = document.getElementById("b-break"); if(bBreak) bBreak.addEventListener("click", breakSelected);
+    const bMerge = document.getElementById("b-merge"); if(bMerge) bMerge.addEventListener("click", mergeSelected);
     // dynamics: set the loudness of the next hand (re-render updates the preview's contrast bonus)
     $game.querySelectorAll(".dynbtn").forEach(el=> el.addEventListener("click", ()=>{
       const prev = run.curDyn; run.curDyn = el.dataset.dyn; renderGig();
@@ -3529,6 +3621,8 @@
     if(!run || !run.hand) return;
     if(e.key===" "){ e.preventDefault(); if(run.sel.size>0) playHand(); return; }   // Space = Play Hand
     const key = e.key==="CapsLock" ? "CapsLock" : (e.key.length===1 ? e.key.toLowerCase() : e.key);
+    if(key==="x" && termOn("groove")){ e.preventDefault(); breakSelected(); return; }   // x = Break the selected card in half
+    if(key==="m" && termOn("groove")){ e.preventDefault(); mergeSelected(); return; }   // m = Merge with an equal neighbour
     const i = handKeysFor(run.hand.length, persist.hand).indexOf(key);
     if(i>=0 && i<run.hand.length){ e.preventDefault(); toggleSel(i); }             // select/deselect that card, like a click
   });

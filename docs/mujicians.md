@@ -309,13 +309,27 @@ teaches them.)
 
 ### Note-value & rest notation — the **Break** mechanic (front of the ladder)
 
-> **Status: DESIGNED, not built (2026-07-24).** The M2 *notation* stages (ladder stages 1–2) **teach** the
-> mechanic — note-value and rest *notation*, the symbols and their halving relationships — before the
-> live-timing half applies them. But **Break is not lessons-only: it's a first-class control in Free Play too**
-> (dev 2026-07-24). Runs on the **M1 self-paced place-a-note gig engine**, not the live drum engine, so a value
-> is legible on the unified 8th-note grid (a whole note visibly spans 8 columns, a quarter spans 2). Verb is
-> **Break** (chosen over "Split" 2026-07-24 — could revert if "Split" reads clearer; "cut/slice" rejected —
-> reads violent, collides with musical "cut time", and is odd on a rest).
+> **Status: Increment 1 BUILT (2026-07-24); M2 notation-ladder stages + gesture juice still DESIGNED.** The M2
+> *notation* stages (ladder stages 1–2) **teach** the mechanic — note-value and rest *notation*, the symbols and
+> their halving relationships — before the live-timing half applies them. But **Break is not lessons-only: it's a
+> first-class control in Free Play too** (dev 2026-07-24). Runs on the **M1 self-paced place-a-note gig engine**,
+> not the live drum engine, so a value is legible on the unified 8th-note grid (a whole note visibly spans 8
+> columns, a quarter spans 2). Verb is **Break** (chosen over "Split" 2026-07-24 — could revert if "Split" reads
+> clearer; "cut/slice" rejected — reads violent, collides with musical "cut time", and is odd on a rest).
+>
+> **Increment 1 as built (2026-07-24):** the data model + core verb, Free-Play-first. `DURATIONS` gained an
+> **eighth (`"e"`, 12 ticks)** as the Break floor; a `DUR_LADDER`/`halfDur`/`doubleDur` drive it. Every card
+> carries **`c.dur`** (default `"q"`; set in `buildDeck`). **`run.curDur` is retired** — `selDurId()`/`selDurTicks()`
+> read the selected card(s) (a note **stack shares the longest** selected card's value), and all ~10 callsites
+> (playHand, `growStageToFit`, `score()` variety, ghost preview, rest glyph, the M2 `gateDurs` gate) use them.
+> **`breakSelected()`/`mergeSelected()`** act on a **single** selected card: Break splices it into two half-value
+> copies (new ids from `run.cardSeq`); Merge fuses it with an **adjacent equal** mergeable neighbour (same
+> pc+instId+midi, or two rests). A **`breakControlHTML`** row (⤵ Break / value / Merge ⤴, keys **`x`/`m`**)
+> replaces `durControlHTML`. The card shows its value: a **corner `noteheadSVG`** (filled/hollow/stem/flag — not
+> the astral-plane Unicode glyphs) + a **bottom length-bar** (`lenBarHTML`, width ∝ value), both gated to
+> `termOn("groove")` (M2+/Free Play; **M1 stays plain, all quarters**). Chords (M4+) disable Break/Merge — they
+> need a single selection. **Not yet built:** the M2 durations/rests **ladder stages** + gates + mentor intros
+> (Increment 2); gestures + Dynamics A/B + length-bar fade (Increment 3).
 >
 > **Duration becomes a per-card property (default = quarter).** Under Break, a card *carries* a value: **every
 > note/rest card defaults to a quarter note (♩)**, and the player **Breaks it shorter or Merges it longer** from
@@ -354,8 +368,9 @@ start exercises the whole mechanic immediately. (Supersedes the earlier "start w
 `mergeSelected()` are plain functions bound to **both** a button **and** a gesture; the button (+ a keyboard
 key, e.g. `x` / `/`, for parity with M2's existing shortcuts and desktop testability) is the always-works
 substrate, and the gesture is **juice layered on top, never the only path**:
-- **MVP:** a **Break button** above the dynamics row + a keyboard key. Ships the lesson, zero gesture risk,
-  fully testable on desktop.
+- **MVP ✅ BUILT (2026-07-24):** a **Break/Merge control row** above the dynamics row + keyboard keys **`x`**
+  (Break) / **`m`** (Merge). Zero gesture risk, fully testable on desktop. *(Keys are `x`/`m`, not the
+  earlier-sketched `x`/`/` — `m` reads as "merge" and neither collides with the hand-select home row.)*
 - **Layer 2 (juice):** bind the same function to a **single-pointer downward "snap" swipe** across the card
   (`touch-action:none` so the browser can't steal it for scroll), with a crack-and-fall-apart animation.
   Merge = the inverse upward swipe. **Single-pointer only** — robust on mouse and touch alike.
@@ -372,9 +387,19 @@ pinch fights browser zoom and has no clean desktop equivalent; keep it at most a
 flourish.
 
 **Tentative future extensions (flagged, not v1):**
-- **Uneven / directional Break → dotted values.** Straight-down = clean halve; down-and-to-a-side = uneven
-  split (a dotted note / its rest). Same gesture family, but more edge-case headaches (unequal ticks, grid
-  fit) — **deferred, tentative.**
+- **Merge *unequal* same-pitch cards → dotted / tied values (preferred dotted-note route).** Relax Merge so two
+  cards of the **same pitch + instrument** (or two rests) fuse **even when their durations differ**, **summing
+  their ticks** — e.g. a ♩(24) + ♪(12) A-Guitar → a **dotted quarter (36t)**; ♩+♩+♪ → dotted half; etc. This is
+  almost certainly **easier and more discoverable than the uneven-Break swipe** (dev 2026-07-24): it reuses the
+  existing Merge verb/gesture and just drops the "equal value" guard. **Build cost:** the merged value is
+  **off-ladder** (36t isn't a `DURATIONS` id), so `c.dur` must stop being a bare id — either store **raw ticks**
+  or add a **dot/tie flag** — and `noteheadSVG`/`lenBarHTML`/the save format must render the dot. `TPB=24`
+  divides cleanly (dotted-quarter 36, dotted-half 72). **Deferred, tentative** (needs the dotted-duration
+  representation; Increment 1 Merge still requires equal values). *Supersedes the uneven-Break approach below as
+  the primary path.*
+- **Uneven / directional Break → dotted values (alternative).** Straight-down = clean halve; down-and-to-a-side
+  = uneven split. Same gesture family, but more edge-case headaches (unequal ticks, grid fit) than the
+  unequal-Merge route above — **deferred, tentative, lower priority.**
 - **Prism tool-card (Balatro-style).** A **Prism** action-card played *onto* a note to break it — like a
   Balatro Tarot/Spectral card that modifies another card. Thematically apt: notes are **ROYGBIV**, and a prism
   *refracts* one into two. **Note:** base Break/Merge is **free** in both the lessons *and* Free Play (above), so
