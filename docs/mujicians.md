@@ -293,9 +293,9 @@ The ladder has **two halves — self-paced *notation* first, then live *timing**
 learn the symbol calmly, then feel it live):
 
 1. **Durations (notation, self-paced).** Learn note-values 𝅝/𝅗𝅥/♩/♪ on the calm place-a-note gig grid via the
-   **Break** mechanic (below). No live timing. *(Designed 2026-07-24.)*
+   **Break** mechanic (below). No live timing. *(BUILT 2026-07-24 — gate: play each value.)*
 2. **Rests (notation, self-paced).** Same **Break** verb on a rest card; learn 𝄻/𝄼/𝄽 as the silent mirrors of
-   the durations just learned. *(Designed 2026-07-24.)*
+   the durations just learned. *(BUILT 2026-07-24 — gate: place each rest value.)*
 3. **Match the beat (shown).** Four-on-the-floor is drawn as a **ghost overlay**; you tap **space** on each
    beat to match it. A couple of tries; timing-window feedback. The gentle on-ramp *into live play*.
 4. **New grooves (shown → memory).** More overlays to match — backbeat → son clave → shuffle — first shown,
@@ -309,7 +309,7 @@ teaches them.)
 
 ### Note-value & rest notation — the **Break** mechanic (front of the ladder)
 
-> **Status: Increment 1 BUILT (2026-07-24); M2 notation-ladder stages + gesture juice still DESIGNED.** The M2
+> **Status: Increments 1 & 2 BUILT (2026-07-24); gesture juice (Increment 3) still DESIGNED.** The M2
 > *notation* stages (ladder stages 1–2) **teach** the mechanic — note-value and rest *notation*, the symbols and
 > their halving relationships — before the live-timing half applies them. But **Break is not lessons-only: it's a
 > first-class control in Free Play too** (dev 2026-07-24). Runs on the **M1 self-paced place-a-note gig engine**,
@@ -323,13 +323,29 @@ teaches them.)
 > read the selected card(s) (a note **stack shares the longest** selected card's value), and all ~10 callsites
 > (playHand, `growStageToFit`, `score()` variety, ghost preview, rest glyph, the M2 `gateDurs` gate) use them.
 > **`breakSelected()`/`mergeSelected()`** act on a **single** selected card: Break splices it into two half-value
-> copies (new ids from `run.cardSeq`); Merge fuses it with an **adjacent equal** mergeable neighbour (same
-> pc+instId+midi, or two rests). A **`breakControlHTML`** row (⤵ Break / value / Merge ⤴, keys **`x`/`m`**)
-> replaces `durControlHTML`. The card shows its value: a **corner `noteheadSVG`** (filled/hollow/stem/flag — not
-> the astral-plane Unicode glyphs) + a **bottom length-bar** (`lenBarHTML`, width ∝ value), both gated to
-> `termOn("groove")` (M2+/Free Play; **M1 stays plain, all quarters**). Chords (M4+) disable Break/Merge — they
-> need a single selection. **Not yet built:** the M2 durations/rests **ladder stages** + gates + mentor intros
-> (Increment 2); gestures + Dynamics A/B + length-bar fade (Increment 3).
+> copies (new ids from `run.cardSeq`); Merge fuses it with the **nearest equal** mergeable partner **anywhere in
+> hand** (same pc+instId+midi, or two rests). *(Relaxed from "adjacent" during Increment 2 — adjacency made
+> reaching half/whole in the lesson too luck-dependent.)* A **`breakControlHTML`** row (⤵ Break / value / Merge ⤴,
+> keys **`x`/`m`**) replaces `durControlHTML`. The card shows its value: a **corner `noteheadSVG`**
+> (filled/hollow/stem/flag — not the astral-plane Unicode glyphs) + a **bottom length-bar** (`lenBarHTML`, width ∝
+> value), both gated to `termOn("groove")` (M2+/Free Play; **M1 stays plain, all quarters**). Chords (M4+) disable
+> Break/Merge — they need a single selection.
+>
+> **Increment 2 as built (2026-07-24) — the M2 notation ladder stages.** `RHYTHM_STAGES` is now
+> **`["durations","rests","match","grooves","free"]`** (default/DEV-reset → `durations`; a one-time
+> `rhythmNotationV1` migration rolls anyone still on/at M2 to `durations`). The two notation stages run on the
+> **normal self-paced gig** (`dismissIntro` routes only `match`/`grooves` to the drum engine; durations/rests/free
+> compose on the gig), reuse the standard **campaign goal→finish→`maybeAdvance`** flow (they advance the same
+> `RHYTHM_STAGES` ladder), and use a **duration-focused deck** (`buildNotationDeck` — one tonic pitch + generous
+> rest copies, so pitch is irrelevant and Break/Merge can reach every value incl. the whole, which the normal
+> 2-copy deck can't). **Gates:** durations = play each of ♪ ♩ 𝅗𝅥 𝅝 (reuses `gateDurs`, `>= DURATIONS.length`);
+> rests = place each of 𝄾 𝄽 𝄼 𝄻 (new `run.gateRestDurs`, fed in `playHand` since rests are excluded from the
+> note-gate block). Two Dee intros (`m2:durations`/`m2:rests`) + a rewritten `m2` (match) intro that bridges
+> notation→live; `RHYTHM_STAGE_LABEL` + the Home ladder strip + the win-screen advancement text are all
+> movement-aware. **Simplified for MVP:** the rests gate is "each rest value" (not yet "one pattern mixing notes
+> + rests"); the durations stage is a value-checklist, not a shown/sounded target rhythm to match. **Not yet
+> built:** gestures (snap-swipe Break / swipe-up Merge) + Dynamics double-tap/drag A/B + length-bar fade
+> (Increment 3).
 >
 > **Duration becomes a per-card property (default = quarter).** Under Break, a card *carries* a value: **every
 > note/rest card defaults to a quarter note (♩)**, and the player **Breaks it shorter or Merges it longer** from
@@ -349,17 +365,20 @@ binary tree of note-values made tactile: ♩→two ♪, 𝅗𝅥→two ♩, 𝅝
 `TPB=24`). **The same verb works on a rest card** (𝄽→two shorter rests) — which is exactly why the ladder does
 **durations first, rests second**: the Rests stage reuses a verb the player already owns.
 
-**Merge — the inverse.** Two **adjacent equal** cards **Merge** into one of double the value (an upward swipe /
-drag-together). Break and Merge are a matched pair (down = halve, up = combine); Merge also teaches **ties**.
+**Merge — the inverse.** Two **equal-value** mergeable cards **Merge** into one of double the value (an upward
+swipe / drag-together). *As built, the partner is the **nearest equal card anywhere in hand**, not strictly the
+neighbour — adjacency made reaching half/whole too luck-dependent.* Break and Merge are a matched pair (down =
+halve, up = combine); Merge also teaches **ties**.
 
 **Start at the quarter note, not the whole.** Because Merge exists, the lesson **starts in the middle of the
 value tree (♩)** so the player can go **both directions from turn one** — Break a ♩ *down* into ♪♪, *and* Merge
 ♩+♩ *up* into 𝅗𝅥 (then 𝅗𝅥+𝅗𝅥 into 𝅝). Starting at the whole note would only allow breaking downward; the quarter
 start exercises the whole mechanic immediately. (Supersedes the earlier "start with a whole note" sketch.)
 
-**Lesson flow.**
+**Lesson flow.** *(Built Increment 2 as a value-checklist; the shown/sounded target-rhythm framing below is the
+richer future version.)*
 - **Durations stage.** Mentor shows/sounds a target rhythm on the grid; you Break/Merge from a starting ♩ to
-  build the matching values. **Gate:** produce each of 𝅝/𝅗𝅥/♩ at least once (add ♪ if desired).
+  build the matching values. **Gate (as built):** play each of **♪ ♩ 𝅗𝅥 𝅝** at least once (`gateDurs`).
 - **Rests stage.** Same Break/Merge, now on a **rest card**; a target pattern has sounding beats and gaps —
   fill sounds with notes, gaps with rests of matching value. **Gate:** place each rest value 𝄻/𝄼/𝄽 and build
   one pattern mixing notes + rests.
@@ -419,6 +438,11 @@ playing-card index (creature art fills the center):
   (text-shadow), not boxed out, to keep the art big. Follow the poker convention — **top-left + bottom-right**
   so the index peeks out when the hand is fanned (match to whichever way the hand actually fans); the second
   index may be rotated 180° for card authenticity.
+- **⚠️ To fix (dev feedback 2026-07-24): the corner notehead must NOT use the note's colour.** Increment 1 draws
+  it in the note's own colour (`noteheadSVG(c.dur, col)`), and **yellow (C) is nearly invisible** on the white
+  card face. Give the notehead a **fixed dark/neutral colour** (e.g. an ink/`#333`-ish tone, or a subtle
+  contrast halo) so the *value* reads regardless of the *pitch* colour. The letter can stay note-coloured; the
+  duration glyph should be legibility-first. *(Not yet applied — flagged for Increment 3 / card-layout polish.)*
 - **Draw the noteheads as tiny inline SVG, not Unicode.** `♩` (U+2669) is widely supported, but **`𝅗𝅥`/`𝅝`
   (half/whole) live in the astral-plane Musical Symbols block and render as tofu in many system fonts** — and
   get muddy at ~12px regardless. A ~10w × 13h SVG per value stays crisp cross-platform: **quarter = filled

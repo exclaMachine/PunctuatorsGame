@@ -582,7 +582,7 @@
     return mixHex(COLOR[c.letter], tgt, 0.42);
   }
   const PITCH_STAGES = ["naturals","ear","sharps","flats"];   // the M1 ladder (walked before M2 Rhythm unlocks)
-  const RHYTHM_STAGES = ["match","grooves","free"];           // the M2 ladder (live finger-drumming; walked before M3 Dynamics unlocks)
+  const RHYTHM_STAGES = ["durations","rests","match","grooves","free"];   // the M2 ladder: self-paced NOTATION first (note values + rests via Break/Merge, on the gig), then live finger-drumming (match/grooves/free); walked before M3 unlocks
   // Piano-roll row label for a pitch class — naturals by name, black keys spelled to match the run's deck.
   function rowLetter(pc){
     if(NOTE_LETTER[pc]!=null) return NOTE_LETTER[pc];
@@ -821,7 +821,13 @@
         const h=(r.gatePitch)?r.gatePitch.size:pitchLettersGot().length;   // per-run this run; persisted count at home
         return { met:h>=7, label:`Pitch gate — play every in-key letter (A–G): ${h}/7` }; }
       case 2: {
-        if(rhythmCampaign(r)){                                             // S2.3: live finger-drumming ladder (match → grooves → free)
+        if(rhythmCampaign(r)){                                             // M2 ladder — notation (durations/rests) then live drumming (match/grooves/free)
+          if(r.rhythmStage==="durations"){                                 // self-paced NOTATION: play each note value (Break/Merge to reach ♪ and 𝅝)
+            const h=r.gateDurs?r.gateDurs.size:0, N=DURATIONS.length;
+            return { met:h>=N, label:`Durations — play each note value (♪ ♩ 𝅗𝅥 𝅝) via Break/Merge: ${cap(h,N)}/${N}` }; }
+          if(r.rhythmStage==="rests"){                                     // self-paced NOTATION: place each rest value (the rest card, Broken/Merged)
+            const h=r.gateRestDurs?r.gateRestDurs.size:0, N=DURATIONS.length;
+            return { met:h>=N, label:`Rests — place each rest value (𝄾 𝄽 𝄼 𝄻) via the rest card + Break/Merge: ${cap(h,N)}/${N}` }; }
           if(r.rhythmStage==="free"){
             const mel = melodyNoteCount(r), melDone = mel>=FREE_MELODY_NOTES;
             const hits = labStats.total;   // total drums you've played this take (not distinct cells) — "a few solid hits and it's a keeper"
@@ -1112,7 +1118,7 @@
   /* ================= persistence + daily cap ================= */
   const SAVE_KEY = "mujicians-save-v2";
   function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
-  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, hand:"right", progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"match" } };
+  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, hand:"right", progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"durations" } };
   function loadPersist(){
     try{
       const s = JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
@@ -1129,8 +1135,15 @@
         : g.pitchEar ? "sharps"
         : (Array.isArray(g.pitch) && g.pitch.length>=7) ? "ear" : "naturals";
     }
-    if(RHYTHM_STAGES.indexOf(persist.progress.rhythmStage)<0)   // M2 ladder frontier stage (match→grooves→free); done if past M2
-      persist.progress.rhythmStage = persist.progress.movement>2 ? "free" : "match";
+    if(RHYTHM_STAGES.indexOf(persist.progress.rhythmStage)<0)   // M2 ladder frontier stage; done if past M2
+      persist.progress.rhythmStage = persist.progress.movement>2 ? "free" : "durations";
+    // One-time: the notation stages (durations/rests) were prepended to the M2 ladder — roll anyone still
+    // on/at M2 back to its new first stage so they get the note-value lesson. Players past M2 are untouched.
+    if(!persist.progress.rhythmNotationV1){
+      persist.progress.rhythmNotationV1 = true;
+      if((persist.progress.movement||1) <= 2) persist.progress.rhythmStage = "durations";
+      savePersist();
+    }
     persist.bpm = Math.max(MIN_BPM, Math.min(MAX_BPM, +persist.bpm || DEFAULT_BPM));  // global comfort tempo
     if(persist.hand!=="left" && persist.hand!=="right") persist.hand = "right";       // keyboard handedness (gig shortcuts + Beat Lab)
     if(persist.day !== todayStr()){ persist.day = todayStr(); persist.runsUsed = 0; savePersist(); }
@@ -1143,7 +1156,7 @@
   function resetAll(){
     if(!window.confirm("DEV: wipe ALL saved progress — movement, Codex, Renown, Setlist, pitch gate, runs used? This can't be undone.")) return;
     try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
-    persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, capFixV1:true, progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"match" } };
+    persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, capFixV1:true, progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"durations", rhythmNotationV1:true } };
     codex.clear();
     savePersist();
     stopLoop(); galleryPlayId=null; run=null; screen="home";
@@ -1824,6 +1837,19 @@
     deck.forEach(c => { c.dur = DEFAULT_DUR; });   // Break: every card carries its own duration (default ♩), reshaped by Break/Merge
     return deck;
   }
+  // M2 notation stages (durations/rests): a duration-FOCUSED deck. Pitch is irrelevant to a note-value lesson,
+  // so it's all one tonic pitch (piano) plus rest cards — generous copies so Break/Merge can reach every value
+  // (a whole needs merging 4 quarters, unreachable in the normal 2-copy deck). All quarters by default.
+  function buildNotationDeck(stage){
+    const deck = []; let id = 0;
+    const inst = instrumentsFor(2)[0], pc = DIATONIC_C[0];   // piano, tonic C
+    const notes = stage==="rests" ? 6 : 12;                  // durations leans on notes; rests leans on the rest card
+    const rests = stage==="rests" ? 12 : 3;
+    for(let k=0;k<notes;k++) deck.push({ id:id++, pc, letter:NOTE_LETTER[pc], instId:inst.id, midi:inst.baseC+pc, acc:0 });
+    for(let k=0;k<rests;k++) deck.push({ id:id++, rest:true });
+    deck.forEach(c => { c.dur = DEFAULT_DUR; });
+    return deck;
+  }
   function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
   function startRun(mode, opts){
@@ -1841,15 +1867,18 @@
     // M2 walks a live-drumming ladder (match → grooves → free) before M3 unlocks; the Campaign button follows
     // the frontier stage, an explicit opts.rhythmStage (DEV/replay) overrides. Only campaign M2 uses it.
     const rhythmStage = (mode!=="free" && movement===2)
-      ? (opts.rhythmStage || persist.progress.rhythmStage || "match") : null;
+      ? (opts.rhythmStage || persist.progress.rhythmStage || "durations") : null;
+    // Notation stages (durations/rests) teach note VALUES, so the deck is duration-focused (one tonic pitch
+    // + rest cards, generous copies) — pitch is irrelevant, and it lets Break/Merge reach every value freely.
+    const notationStage = (rhythmStage==="durations" || rhythmStage==="rests");
     // One loop for the whole run — one continuous performance in one key, filled hand by hand.
-    run = { deck:buildDeck(movement, pitchLevel), drawPile:[], hand:[], sel:new Set(), discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ events:[], cursor:0, stageBars:START_BARS }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
+    run = { deck:(notationStage ? buildNotationDeck(rhythmStage) : buildDeck(movement, pitchLevel)), drawPile:[], hand:[], sel:new Set(), discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ events:[], cursor:0, stageBars:START_BARS }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
       curDyn:DEFAULT_DYN,   // M3 dynamics: the p/mf/f marking applied to the next play
       cardSeq:10000,        // Break/Merge: id source for cards spawned by breaking (well above deck ids)
       // per-movement gate trackers (all cheap to keep; gateStatus reads the frontier movement's).
       // ALL per-run now: reaching a movement's goal THIS run is what stops the song + advances (see
       // runGoalMet / the goal prompt). gatePitch is M1's per-run letter set (persist.pitch is legacy).
-      gatePitch:new Set(), gateDurs:new Set(), gateDyns:new Set(), gateIntervals:new Set(), gateRun:false,
+      gatePitch:new Set(), gateDurs:new Set(), gateRestDurs:new Set(), gateDyns:new Set(), gateIntervals:new Set(), gateRun:false,
       gateTriads:new Set(), gateCadence:false, gateBlends:0,
       gateAcc:new Set(), gateResolved:false, gateDir:0,   // M1 Sharps/Flats: correct-direction responses + one exact accidental (resolution = optional bonus)
       respondLog:[],            // M1: each response's semitone distance to its call (for the pitch-accuracy score)
@@ -1910,14 +1939,16 @@
     if(a.rest || b.rest) return false;
     return a.pc===b.pc && a.instId===b.instId && a.midi===b.midi;
   }
-  function mergeTargetIdx(idx){                                                     // an ADJACENT equal-value, mergeable neighbour (prefer the right)
+  function mergeTargetIdx(idx){                                                     // the NEAREST equal-value, mergeable partner anywhere in hand
     if(idx<0) return -1;
     const c = run.hand[idx]; if(!c || !doubleDur(c.dur||DEFAULT_DUR)) return -1;    // whole is the ceiling
-    for(const j of [idx+1, idx-1]){
+    let best=-1, bestDist=Infinity;
+    for(let j=0;j<run.hand.length;j++){
+      if(j===idx) continue;
       const n = run.hand[j];
-      if(n && (n.dur||DEFAULT_DUR)===(c.dur||DEFAULT_DUR) && mergeable(c,n)) return j;
+      if(n && (n.dur||DEFAULT_DUR)===(c.dur||DEFAULT_DUR) && mergeable(c,n) && Math.abs(j-idx)<bestDist){ best=j; bestDist=Math.abs(j-idx); }
     }
-    return -1;
+    return best;
   }
   function breakSelected(){                                                         // ♩ → two ♪ : one card becomes two half-value copies
     const idx = selectedSingleIdx(); if(idx<0) return;
@@ -1927,11 +1958,14 @@
     run.sel = new Set([idx]);              // keep the first half selected so you can keep breaking
     renderGig();
   }
-  function mergeSelected(){                                                         // two ♩ → one 𝅗𝅥 : fuse the selected card with an equal neighbour
+  function mergeSelected(){                                                         // two ♩ → one 𝅗𝅥 : fuse the selected card with an equal partner (anywhere in hand)
     const idx = selectedSingleIdx(); if(idx<0) return;
     const j = mergeTargetIdx(idx); if(j<0) return;
-    const lo = Math.min(idx,j), c = run.hand[lo];
-    run.hand.splice(lo, 2, Object.assign({}, c, { id:nextCardId(), dur:doubleDur(c.dur||DEFAULT_DUR) }));
+    const c = run.hand[idx];
+    const merged = Object.assign({}, c, { id:nextCardId(), dur:doubleDur(c.dur||DEFAULT_DUR) });
+    const lo = Math.min(idx,j), hi = Math.max(idx,j);
+    run.hand.splice(hi, 1);            // drop the partner (higher index first so lo stays valid)
+    run.hand.splice(lo, 1, merged);    // the merged (longer) card takes the selected card's place
     run.sel = new Set([lo]);
     renderGig();
   }
@@ -1998,6 +2032,7 @@
       if((cls.type==="triad"||cls.type==="seventh") && cls.root===tonicPc) run.gateCadence = true;  // M5: tonic cadence
       if(new Set(cards.map(c=>c.instId)).size>=2) run.gateBlends++;                       // M6: multi-instrument blends
     }
+    if(run.mode==="campaign" && rest && termOn("groove")) run.gateRestDurs.add(durId);   // M2 Rests stage: distinct rest values (rests are excluded from the note-gate block above)
     savePersist();
     // M1 call-and-response: layer the reward chime (brightness tracks proximity) + log the distance for the score.
     if(res.respond){
@@ -2158,8 +2193,18 @@
                "A flat leans <i>downward</i>… it slumps into the note just below it. D♭ gives up and sinks to C. They call it a <b>resolution</b>. I suppose it is the one thing that brings me… relief." ],
       task:"I shall sigh out a note — you answer with any note <b>LOWER</b> than mine… ⬇️ Sink to the <b>exact ♭</b> for bonus points (and let it resolve DOWN for more, if you must). A few notes below and one exact flat is all I ask.",
       compact:"🤺 Answer <b>LOWER ↓</b> than my note — bonus for the exact ♭ (then let it fall down)." },
-    "m2": { char:"dee", title:"Rhythm — the pulse of the earth",
-      theory:[ "Feel the ground humming? That steady <b>pulse</b> under everything is the <b>beat</b> — and rhythm is best <i>felt</i>, not placed. So this time you'll <b>drum it live</b>, in time with the loop!",
+    "m2:durations": { char:"dee", title:"Rhythm — how long a note lasts",
+      theory:[ "Feel the ground humming? That steady <b>pulse</b> is the <b>beat</b>. But notes don't all last the same — some are long, some short. That length is a note's <b>value</b>.",
+               "A quarter note <b>♩</b> lasts one beat. <b>Break</b> it in half and you get two eighths <b>♪</b>; <b>Merge</b> two quarters into a half <b>𝅗𝅥</b>, two halves into a whole <b>𝅝</b>. Longer note → wider card." ],
+      task:"Every card starts as a quarter <b>♩</b>. Press <b>Break (x)</b> for shorter notes and <b>Merge (m)</b> for longer ones — play each value at least once: <b>♪ ♩ 𝅗𝅥 𝅝</b>.",
+      compact:"🎵 Break (x) &amp; Merge (m) to play each note value — ♪ ♩ 𝅗𝅥 𝅝!" },
+    "m2:rests": { char:"dee", title:"Rests — the shape of silence",
+      theory:[ "Music breathes. A <b>rest</b> is a silence with a length, just like a note — a quarter rest <b>𝄽</b> lasts exactly as long as a quarter note <b>♩</b>.",
+               "Same moves: the <b>rest card</b> starts as a quarter rest. <b>Break</b> it into shorter silences, <b>Merge</b> into longer ones. Every note value has a matching rest." ],
+      task:"Play the <b>rest card</b>, and Break/Merge it to place each rest value: <b>𝄾 𝄽 𝄼 𝄻</b>.",
+      compact:"🤫 Break &amp; Merge the rest card to place each rest value — 𝄾 𝄽 𝄼 𝄻!" },
+    "m2": { char:"dee", title:"Rhythm — feel the pulse live",
+      theory:[ "You've learned how long notes and rests <i>last</i>. But rhythm is best <i>felt</i>, not just placed — so now you'll <b>drum it live</b>, in time with the loop!",
                "The simplest, sturdiest beat there is: a <b>kick on every beat</b> — one, two, three, four. They call it <b>four-on-the-floor</b>, and it's the heartbeat of half the music you love." ],
       task:"Tap <b>Space</b> right on each glowing beat to match the kick pattern. Land every beat cleanly and the groove is yours!",
       compact:"🥁 Tap <b>Space</b> on the beat — match four-on-the-floor live!" },
@@ -2220,7 +2265,7 @@
   function dismissIntro(){
     const key = lessonKey();
     if(!persist.progress.seenIntros[key]){ persist.progress.seenIntros[key] = true; savePersist(); }   // full once, compact after
-    if(rhythmCampaign(run) && run.rhythmStage!=="free"){ enterRhythmStage(); return; }   // M2 match/grooves skip the draft → live drumming; free composes a melody first (normal gig), then drums over it
+    if(rhythmCampaign(run) && (run.rhythmStage==="match" || run.rhythmStage==="grooves")){ enterRhythmStage(); return; }   // only the LIVE-drum stages skip the draft → drumming; durations/rests/free compose on the normal gig
     offerDraft();
   }
   function renderIntroOverlay(){
@@ -2867,7 +2912,7 @@
       return `<span class="plstep${done?" done":""}${here?" here":""}">${done?"✓ ":here?"▸ ":""}${PITCH_STAGE_LABEL[s]}</span>`;
     }).join(`<span class="plsep">→</span>`)+`</div>`;
   }
-  const RHYTHM_STAGE_LABEL = { match:"Match 🥁", grooves:"Grooves", free:"Free take" };
+  const RHYTHM_STAGE_LABEL = { durations:"Note values 🎵", rests:"Rests 🤫", match:"Match 🥁", grooves:"Grooves", free:"Free take" };
   const rhythmStageIdx = () => Math.max(0, RHYTHM_STAGES.indexOf(persist.progress.rhythmStage||"match"));
   // The M2 ladder shown on Home while on Rhythm: which live-drum stages are done / current (M3 unlocks past Free).
   function rhythmLadderHTML(){
@@ -2923,7 +2968,7 @@
       const to = Math.max(1, Math.min(MAX_MOVEMENT, +el.dataset.mv));
       persist.progress.movement = to;
       if(to===1) persist.progress.pitchStage = "naturals";   // DEV: restart the M1 ladder from the top for testing
-      if(to<=2) persist.progress.rhythmStage = "match";      // DEV: restart the M2 ladder too
+      if(to<=2) persist.progress.rhythmStage = "durations";  // DEV: restart the M2 ladder from its first (notation) stage
       savePersist(); renderHome();
     }));
     const dr = document.getElementById("dev-reset");
@@ -3025,14 +3070,18 @@
         <h2>🎉 Performance complete!</h2>
         ${accLine}
         ${run && run.advancedTo
-          ? `<p class="big" style="color:var(--good)">🎓 <b>M1 Pitch</b> complete — unlocked <b>M${run.advancedTo} ${MOVEMENTS[run.advancedTo].element}</b>! Next Campaign run starts there.</p>`
+          ? `<p class="big" style="color:var(--good)">🎓 <b>M${run.movement} ${MOVEMENTS[run.movement].element}</b> complete — unlocked <b>M${run.advancedTo} ${MOVEMENTS[run.advancedTo].element}</b>! Next Campaign run starts there.</p>`
           : run && run.advancedStage
-            ? `<p class="big" style="color:var(--good)">🎓 Pitch — <b>${PITCH_STAGE_LABEL[run.pitchLevel]}</b> cleared! Unlocked <b>${PITCH_STAGE_LABEL[run.advancedStage]}</b> — your next step toward Rhythm.</p>`
+            ? (run.movement===1
+                ? `<p class="big" style="color:var(--good)">🎓 Pitch — <b>${PITCH_STAGE_LABEL[run.pitchLevel]}</b> cleared! Unlocked <b>${PITCH_STAGE_LABEL[run.advancedStage]}</b> — your next step toward Rhythm.</p>`
+                : `<p class="big" style="color:var(--good)">🎓 Rhythm — <b>${RHYTHM_STAGE_LABEL[run.rhythmStage]}</b> cleared! Unlocked <b>${RHYTHM_STAGE_LABEL[run.advancedStage]}</b> — your next step toward the live beat.</p>`)
             : run && run.mode==="campaign" && run.movement===1
                 ? `<p class="hint">${gateStatus(1).label} — meet it in one run to advance the Pitch ladder.</p>${isAccidentalLevel()?accTrackerHTML():pitchTrackerHTML()}`
-                : run && run.mode==="campaign" && run.movement<MAX_MOVEMENT
-                    ? `<p class="hint">${gateStatus(run.movement).label} — meet it in one run to unlock <b>M${run.movement+1} ${MOVEMENTS[run.movement+1].element}</b>.</p>`
-                    : ""}
+                : run && run.mode==="campaign" && run.movement===2
+                    ? `<p class="hint">${gateStatus(2).label} — meet it in one run to advance the Rhythm ladder.</p>`
+                    : run && run.mode==="campaign" && run.movement<MAX_MOVEMENT
+                        ? `<p class="hint">${gateStatus(run.movement).label} — meet it in one run to unlock <b>M${run.movement+1} ${MOVEMENTS[run.movement+1].element}</b>.</p>`
+                        : ""}
         <p>You performed a <b>${filledBars()}</b>-note song for <b>${run.runScore}</b> applause. Every played chord is inscribed in your Codex.</p>
         <p class="big">Best hand: <b>${persist.bestApplause}</b> · Renown Lv <b>${renownLevel(persist.totalApplause)}</b></p>
         <div class="cta">
