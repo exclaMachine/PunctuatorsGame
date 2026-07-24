@@ -89,6 +89,13 @@
   .lglabel.writecol{color:var(--gold)}
   .lglabel.playcol{color:var(--accent)}
   .lglabel.empty{opacity:.4}
+  /* drum lanes under the piano-roll — one unified grid, one playhead (graduated from the Beat Lab) */
+  .lgrow.lgdrumlbl{color:var(--accent);border-top:1px solid var(--edge)}
+  .lgcell.lgdrum{border-top:1px solid rgba(255,255,255,.05)}
+  .lgcell.lgdrum.on{border-color:rgba(255,255,255,.4)}
+  .lgcell.dhit-kick.on{background:#ff8f5a}
+  .lgcell.dhit-snare.on{background:#f5c542}
+  .lgcell.dhit-hat.on{background:#4de1c8}
 
   .preview{margin:12px 0;min-height:46px;padding:10px 12px;background:#131730;border:1px dashed var(--edge);
     border-radius:10px;font-size:13px}
@@ -443,6 +450,12 @@
     transition:opacity .18s,transform .18s;box-shadow:0 8px 24px rgba(0,0,0,.5)}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+  /* count-in — a band-style "1·2·3·4" before any LIVE drum pass, so you're ready when recording starts */
+  .countin{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:45;pointer-events:none}
+  .countin b{font-size:120px;font-weight:900;color:var(--gold);text-shadow:0 6px 34px rgba(0,0,0,.65);animation:countpop .5s ease-out}
+  @keyframes countpop{0%{transform:scale(.4);opacity:0}28%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:.92}}
+  @media (prefers-reduced-motion:reduce){ .countin b{animation:none} }
+
   /* ===== Beat Lab — Stage-1 live finger-drumming MVP (see docs/mujicians.md) ===== */
   .lab{margin-top:8px}
   .labtop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -669,7 +682,7 @@
   const LOOP_BARS = 12;                                              // MAX stage — the hard capacity limit
   const START_BARS = 4;                                             // the stage STARTS this small and grows as needed
   const TOTAL_TICKS = LOOP_BARS * BAR_TICKS;                         // max-timeline length in ticks
-  const DISPLAY_COLS_PER_BEAT = 1;                                   // piano-roll columns per beat (display only)
+  const DISPLAY_COLS_PER_BEAT = 2;                                   // piano-roll columns per beat (8th-note grid — shared by notes AND the drum lanes so one playhead sweeps both)
   const TICKS_PER_COL = TPB / DISPLAY_COLS_PER_BEAT;
   const tickToCol = t => Math.floor(t / TICKS_PER_COL);
   // The stage GROWS from START_BARS toward the max as the player fills it, so the backing loop stays short
@@ -2489,9 +2502,15 @@
     const keyRoot = RUN_KEY.key[0];
     const rows = loopRowMidis();
     const bars = stageBarsNow();
-    const cols = bars * METER.beatsPerBar;   // only the GROWN stage is drawn (starts at START_BARS, grows)
+    const colsPerBar = METER.beatsPerBar * DISPLAY_COLS_PER_BEAT;   // 8 (8th-note columns per bar)
+    const cols = bars * colsPerBar;   // only the GROWN stage is drawn (starts at START_BARS, grows)
     const colW = 15;   // fixed px/column so a long song scrolls instead of squishing
     const cov = eventCoverage(run.loop.events);
+    // Drums are first-class {drum} events on the same timeline — collect voice→column so the lanes beneath
+    // the piano-roll draw them at their true 8th position (they were invisible in the gig before this).
+    const drumCov = new Set();
+    (run.loop.events||[]).forEach(e=>{ if(e.drum) drumCov.add(e.drum+":"+tickToCol(e.at)); });
+    const showDrumLanes = rhythmUnlocked() || drumCov.size>0;   // graduated (past M2) or a song that already has a beat
     // selection drives the "sounds good" glow + a placement ghost (where the next play lands from the cursor)
     const selCards = selectedCards();
     const restSel = !!selectedRest();
@@ -2520,7 +2539,7 @@
         const gOn      = !restSel && selMidis.has(m) && c>=gCol0 && c<=gCol1;   // ghost span from the cursor
         const gAttack  = gOn && c===gCol0;
         const cl = ["lgcell"];
-        if(c%METER.beatsPerBar===0) cl.push("beat0");   // faint bar-group separator
+        if(c%colsPerBar===0) cl.push("beat0");   // faint bar-group separator (each bar = colsPerBar 8th-columns)
         if(fits) cl.push("good");
         if(heldCell) cl.push("held");
         if(onCell) cl.push("on");
@@ -2538,13 +2557,27 @@
         grid += `<div class="${cl.join(" ")}" data-tick="${c*TICKS_PER_COL}" data-col="${c}" data-midi="${m}"${bg?` style="background:${bg}"`:""}></div>`;
       }
     });
-    // footer: a bar-number ruler (each bar spans its beat columns; click to aim the cursor at the bar)
+    // drum lanes beneath the piano-roll — same columns/playhead as the notes (one unified grid). Each lane
+    // draws a {drum} event as a colored cell at its 8th column; graduated from M2 to M3–M7 + Free Play.
+    if(showDrumLanes){
+      LAB_LANES.forEach(voice=>{   // hat, snare, kick (kick at the floor)
+        const d = DRUMS[voice];
+        grid += `<div class="lgrow lgdrumlbl">${d.emoji} ${esc(d.name)}</div>`;
+        for(let c=0;c<cols;c++){
+          const cl = ["lgcell","lgdrum"];
+          if(c%colsPerBar===0) cl.push("beat0");
+          if(drumCov.has(voice+":"+c)) cl.push("on","dhit-"+voice);
+          grid += `<div class="${cl.join(" ")}" data-tick="${c*TICKS_PER_COL}" data-col="${c}" data-drum="${voice}"></div>`;
+        }
+      });
+    }
+    // footer: a bar-number ruler (each bar spans its 8th columns; click to aim the cursor at the bar)
     grid += `<div class="lgcorner"></div>`;
     for(let b=0;b<bars;b++){
-      const c0 = b*METER.beatsPerBar;
+      const c0 = b*colsPerBar;
       const cl = ["lglabel"];
-      if(wcol>=c0 && wcol<c0+METER.beatsPerBar) cl.push("writecol");
-      grid += `<div class="${cl.join(" ")}" data-tick="${b*BAR_TICKS}" data-col="${c0}" style="grid-column:span ${METER.beatsPerBar}">${b+1}</div>`;
+      if(wcol>=c0 && wcol<c0+colsPerBar) cl.push("writecol");
+      grid += `<div class="${cl.join(" ")}" data-tick="${b*BAR_TICKS}" data-col="${c0}" style="grid-column:span ${colsPerBar}">${b+1}</div>`;
     }
     return `<div class="loopwrap">
       <div class="lhead">
@@ -2590,6 +2623,12 @@
         <button class="btn ghost" id="b-hand" title="Keyboard hand — which side the card-select keys sit on (Space always plays)">${persist.hand==="left"?"✋ Left keys":"🤚 Right keys"}</button>
         ${(campaign && run.movement===2 && run.rhythmStage==="free")
           ? `<button class="btn play" id="b-laybeat" ${melodyNoteCount(run)>=FREE_MELODY_NOTES?"":"disabled"} title="Compose ${FREE_MELODY_NOTES} notes, then drum a beat over them">🥁 Lay a beat over it (${Math.min(melodyNoteCount(run),FREE_MELODY_NOTES)}/${FREE_MELODY_NOTES}) ▸</button>`
+          : ""}
+        ${graduatedBeatContext()
+          ? `<button class="btn play" id="b-gradbeat" ${melodyNoteCount(run)>=FREE_MELODY_NOTES?"":"disabled"} title="Compose ${FREE_MELODY_NOTES} notes, then drum a live beat over them — it joins the song">🥁 Lay a beat over it (${Math.min(melodyNoteCount(run),FREE_MELODY_NOTES)}/${FREE_MELODY_NOTES}) ▸</button>`
+          : ""}
+        ${(campaign && run.movement===2 && run.rhythmStage==="free")
+          ? ""
           : (run.mode==="free" || run.goalAck)
           ? `<button class="btn ghost" id="b-finish" ${filledBars()>0?"":"disabled"}>✓ Finish song</button>`
           : ""}
@@ -2605,6 +2644,8 @@
     if(bf) bf.addEventListener("click", finishRun);   // Free Play always; Campaign after "keep building"
     const blb = document.getElementById("b-laybeat");
     if(blb) blb.addEventListener("click", enterFreeBeat);   // M2 free stage: melody done → drum a beat over it
+    const bgb = document.getElementById("b-gradbeat");
+    if(bgb) bgb.addEventListener("click", layBeatOverSong);   // graduated (M3–M7 / Free Play): drum a beat, return to the gig
     const bh = document.getElementById("b-hear");
     if(bh) bh.addEventListener("click", ()=>{ audio(); soundCall(); });   // replay the M1 call target
     const bhand = document.getElementById("b-hand");   // keyboard handedness (shared with the Beat Lab via persist.hand)
@@ -3029,7 +3070,7 @@
     labCfg = { mode:"practice", target:null };
     labResetBacking(); labReset();
     screen="beatlab"; render();
-    labStartLoop();
+    countInThen(labStartLoop);   // count you in before the loop starts recording
   }
   // Campaign M2: enter the live-drum ladder for run.rhythmStage (match → grooves → free). Reuses the whole
   // Beat Lab engine; the only differences are the target overlay, the match-scoring, and the pass/advance flow.
@@ -3039,7 +3080,7 @@
     run.grooveMatched = new Map(); run.grooveMet = false;
     labResetBacking(); labReset();
     screen="beatlab"; render();
-    labStartLoop();
+    countInThen(labStartLoop);
   }
   // M2 "free" stage, phase 2: the melody composed in the gig (phase 1) becomes the backing loop, and you
   // finger-drum a beat over it — "play your own one-pass beat over your melody; it becomes the song's backing loop."
@@ -3052,9 +3093,66 @@
     run.grooveMatched = new Map(); run.grooveMet = false;
     labReset();
     screen="beatlab"; render();
-    labStartLoop();
+    countInThen(labStartLoop);
   }
-  function exitBeatLab(){ labStopLoop(); if(labCampaign()) run=null; screen="home"; render(); }
+  function exitBeatLab(){
+    clearCountIn(); labStopLoop();
+    if(run && run.beatReturn){ run.beatReturn=false; labCfg={ mode:"practice", target:null }; screen="gig"; render(); return; }   // graduated beat: give up → back to the gig, melody intact
+    if(labCampaign()) run=null;
+    screen="home"; render();
+  }
+  // Graduation (M2 cleared → M3–M7 + Free Play): drums become part of every run. Once you've composed a
+  // melody you can "Lay a beat over it" — the SAME live-drum pass as M2's free stage, but it RETURNS to the
+  // gig (not the rhythm-end screen), so your song lands back on the unified grid with melody + drums and you
+  // Finish normally. The button is SHOWN (next to Play/Discard) in this context — past M2 (rhythmUnlocked),
+  // in Free Play or any campaign movement ≥ 3 — and is disabled with an (n/6) counter until you've composed
+  // ≥ FREE_MELODY_NOTES notes, so it's always discoverable (mirrors the M2-free button). Enabled ⇒ ready.
+  function graduatedBeatContext(){
+    if(!run || !run.loop) return false;
+    if(run.mode==="campaign" && run.movement===2) return false;    // M2 has its own ladder/flow
+    return rhythmUnlocked() && (run.mode==="free" || run.movement>=3);   // drums graduate only after M2 clears
+  }
+  function layBeatOverSong(){
+    if(melodyNoteCount(run) < FREE_MELODY_NOTES){ toast(`Place ${FREE_MELODY_NOTES} notes first, then lay a beat`); return; }
+    audio(); stopLoop(); galleryPlayId=null;
+    run.beatReturn = true;                            // after the beat pass, drop back to the gig (unified grid shows the drums)
+    labSetBacking(run.loop.events);                  // your composed melody plays under the drums (notes only; bake filters drums)
+    labCfg = { mode:"campaign", stage:"free", target:null };   // reuse the free-take engine (count total hits)
+    run.grooveMatched = new Map(); run.grooveMet = false;
+    labReset();
+    screen="beatlab"; render();
+    countInThen(labStartLoop);
+  }
+  // Graduated pass: the loop keeps running (loop-pedal) until the player is happy and presses ✓ Done — THEN
+  // the beat bakes into the song and we drop back to the gig (rhythmStagePass' beatReturn branch).
+  function finishGraduatedBeat(){
+    if(!run || !run.beatReturn) return;
+    if(!labLoop.length){ toast("Play a beat first, then press Done"); return; }
+    rhythmStagePass();
+  }
+
+  // A band counts you in before playing — so does the Beat Lab. A 4-beat count-in at the current tempo
+  // (big 1·2·3·4 + a hat click on each) runs BEFORE the loop starts recording, giving you a moment to get
+  // your hands set. Used by every live-drum entry (practice, M2 match/grooves/free, the graduated free-beat);
+  // NOT on a mid-session tempo-change restart (that would interrupt the groove).
+  let countTimer=null, $countin=null;
+  function clearCountIn(){ if(countTimer){ clearTimeout(countTimer); countTimer=null; } if($countin){ $countin.remove(); $countin=null; } }
+  function countInThen(cb){
+    clearCountIn();
+    const ac = audio();
+    const beatMs = (curBarSec()/METER.beatsPerBar) * 1000;
+    const labels = ["1","2","3","4"];
+    $countin = document.createElement("div"); $countin.className = "countin"; document.body.appendChild($countin);
+    let i = 0;
+    const step = ()=>{
+      if(i >= labels.length){ clearCountIn(); cb(); return; }
+      $countin.innerHTML = `<b>${labels[i]}</b>`;
+      _drum("hat", audio().currentTime + 0.001, 0.9);   // a click on the beat (the "and-a-1, and-a-2")
+      i++;
+      countTimer = setTimeout(step, beatMs);
+    };
+    step();
+  }
 
   function labStartLoop(){
     labStopLoop();
@@ -3176,19 +3274,29 @@
           if(run.grooveMatched.size >= grooveSlotCount(labCfg.target)) rhythmStagePass();
         }
       }
-    } else {   // free take — no target; a real beat of your own. Count total hits played (lenient, creative) and keep the HUD live.
+    } else {   // free take — no target; a real beat of your own. Count total hits played and keep the HUD live.
       labUpdateGateHUD();
-      if(labStats.total >= FREE_TAKE_HITS){ run.grooveMet = true; run.grooveMatched = new Map(); rhythmStagePass(); }
+      // M2-free stage auto-passes once you've played a real beat. The GRADUATED pass (run.beatReturn) is a
+      // loop-pedal: it keeps looping so you can build/refine until YOU press ✓ Done (finishGraduatedBeat).
+      if(!run.beatReturn && labStats.total >= FREE_TAKE_HITS){ run.grooveMet = true; run.grooveMatched = new Map(); rhythmStagePass(); }
     }
   }
   function labUpdateGateHUD(){
     const el = document.getElementById("lab-gate"); if(!el || !run) return;
-    el.textContent = gateStatus(2).label;
+    el.textContent = beatGateLabel();
   }
   function rhythmStagePass(){
     if(!run || run.done) return;
-    run.grooveMet = true;
     labStopLoop();
+    if(run.beatReturn){                            // graduated M3–M7 / Free Play: bake the beat, drop back to the gig
+      bakeFreeBeat();
+      run.beatReturn = false; run.grooveMet = false; run.grooveMatched = new Map();
+      labCfg = { mode:"practice", target:null };
+      screen="gig"; startLoop(); render();         // groove the whole song on return — playhead sweeps notes + drums (render after startLoop so ▶/⏸ shows correctly)
+      toast("Beat added — your song now has drums 🥁");
+      return;
+    }
+    run.grooveMet = true;
     if(run.rhythmStage==="free") bakeFreeBeat();   // fold the recorded beat into the song (melody + drums) so it's one keepable track
     finishRhythmStage();
   }
@@ -3291,8 +3399,15 @@
     toast('Saved "'+song.name+'" to your Setlist');
   }
 
+  // The drum-session gate line. M2 stages route through gateStatus(2); the graduated pass (a beat over an
+  // existing song, run.beatReturn) has no M2 ladder, so it shows its own "play a beat" progress.
+  function beatGateLabel(){
+    if(run && run.beatReturn){ return `Drumming over your song — ${labStats.total} hits · press ✓ Done when it grooves`; }
+    return gateStatus(2).label;
+  }
   function renderBeatLab(){
     const camp = labCampaign();
+    const grad = !!(run && run.beatReturn);   // graduated beat pass (M3–M7 / Free Play) — returns to the gig
     const keys = persist.hand==="left" ? ["a","s","d"] : ["j","k","l"];
     // Campaign: ghost the target groove's cells (voice+8th-column) on each involved lane. Practice: the classic
     // four-on-the-floor kick ghost. (The grooves "shown → from memory" faint reveal is a later increment, so
@@ -3319,10 +3434,14 @@
         <span class="padname" data-slotname="${i}">${d.emoji} ${esc(d.name)}</span>
         <span class="padrole">${d.role}</span></button>`;
     }).join("");
-    const title = camp
+    const title = grad
+      ? `🥁 Lay a beat — <b>over your song</b>`
+      : camp
       ? `🥁 M2 Rhythm — <b>${RHYTHM_STAGE_LABEL[run.rhythmStage]}</b>`
       : `🥁 Beat Lab — <b>live finger-drumming</b>`;
-    const hint = camp ? (
+    const hint = grad
+      ? `<b>Your song is playing</b> — drum <b>any beat you like</b> over it. <b>Space</b> = bass, <b>${keys.map(k=>k.toUpperCase()).join(" · ")}</b> the pads. The loop <b>keeps running</b> — build and refine as long as you like, then press <b>✓ Done</b> to bake it into your song.`
+      : camp ? (
         labCfg.stage==="free"
           ? `Free take — <b>your melody is playing</b>; drum <b>any beat you like</b> over it. <b>Space</b> = bass, <b>${keys.map(k=>k.toUpperCase()).join(" · ")}</b> the pads. A few solid hits and the song is yours to keep.`
         : labCfg.stage==="grooves"
@@ -3334,12 +3453,12 @@
     $game.innerHTML = `
       <div class="lab">
         <div class="labtop">
-          <button class="btn ghost" id="lab-back">${camp?"← Give up":"← Home"}</button>
+          <button class="btn ghost" id="lab-back">${grad?"← Back to song":camp?"← Give up":"← Home"}</button>
           <div class="labtitle">${title}</div>
           <button class="btn ghost" id="lab-hand" title="Switch key hand">${persist.hand==="left"?"✋ Left · a s d":"🤚 Right · j k l"}</button>
         </div>
         <p class="labhint">${hint}</p>
-        ${camp?`<div class="labgate">🎯 <b id="lab-gate">${gateStatus(2).label}</b></div>`:""}
+        ${camp?`<div class="labgate">🎯 <b id="lab-gate">${beatGateLabel()}</b></div>`:""}
         <div class="labhud">
           <div class="hudbig">Combo <b id="lab-combo">0</b></div>
           <div class="hudstat">Accuracy <b id="lab-acc">—</b></div>
@@ -3357,6 +3476,7 @@
         <div class="labctl">
           <button class="btn ghost" id="lab-backing" title="Bring back the fading tempo riff">🎵 Backing riff</button>
           ${camp?"":`<button class="btn" id="lab-keep" title="Save the backing riff + your beat to your Setlist">💾 Keep this beat</button>`}
+          ${grad?`<button class="btn play" id="lab-done" title="Bake this beat into your song and go back">✓ Done — back to song</button>`:""}
           <button class="btn ghost" id="lab-clear">↺ Clear beat</button>
         </div>
       </div>`;
@@ -3366,6 +3486,8 @@
     document.getElementById("lab-backing").addEventListener("click", labReplayBacking);
     const keepBtn = document.getElementById("lab-keep");
     if(keepBtn) keepBtn.addEventListener("click", labKeepBeat);
+    const doneBtn = document.getElementById("lab-done");
+    if(doneBtn) doneBtn.addEventListener("click", finishGraduatedBeat);   // graduated pass: bake + return to the gig
     // pads: mouse (desktop) + touch (mobile), polyphonic — each pad is its own target so multi-touch stacks
     $game.querySelectorAll(".pad.slotpad").forEach(el=>{
       const i = +el.dataset.slot;

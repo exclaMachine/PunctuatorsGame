@@ -326,12 +326,15 @@ and rejected*). Their **card skins ride the existing foil/holo `SKINS` system to
 
 ### Graduation (like accidentals)
 
-`rhythmUnlocked()` = `persist.progress.movement > 2` (mirrors `accidentalsUnlocked()` = `> 1`). Once M2 clears:
+`rhythmUnlocked()` = `persist.progress.movement > 2` (mirrors `accidentalsUnlocked()` = `> 1`). **✅ BUILT
+2026-07-23** (see the S2.3 "Graduation" increment above for the as-built map). Once M2 clears:
 
-- **Both live rounds become the standard run flow** in M3–M7 + Free Play — every run is a live melody pass +
-  a live drum pass.
-- The **Round-2 beat loops under the song and is saved with it** (`snapshotEvents` gains the drum events / a
-  groove field; back-compat read for pre-drum saves; the MJ share code bumps a version).
+- **The live drum pass becomes an OPTIONAL round in M3–M7 + Free Play** — compose the melody at your own pace,
+  then **🥁 Lay a beat over it** runs the live drum pass and returns you to the (now unified) gig. *(The melody
+  round stays own-pace, per the 2026-07-22 reframe; it is not forced live.)*
+- The **beat loops under the song and is saved with it** — `bakeFreeBeat` folds the recorded beat into
+  `run.loop.events` as first-class `{drum}` events (already in `snapshotEvents` + the MJ2 kind-`2` share code
+  from S2.1; no version bump needed — additive).
 - Timing/combo scoring stays on across later movements (the `groove` term is already in every M2+ `terms`
   list).
 
@@ -418,15 +421,44 @@ and rejected*). Their **card skins ride the existing foil/holo `SKINS` system to
       as first-class `{drum}` events (`bakeFreeBeat`) so `run.loop.events` = melody + beat, one keepable track.
       The `rhythmwin` end screen (`renderRhythmEnd`) shows a **💾 Save this song** button for the free stage.
       Two-part gate label in `gateStatus`.
+    - **Graduation — live drums in M3–M7 + Free Play + the UNIFIED grid. ✅ BUILT 2026-07-23.** Once M2
+      clears (`rhythmUnlocked()` = `persist.progress.movement>2`), drums join every run and the **gig
+      piano-roll and the drum grid become one grid with one playhead** (the dev ask). **Display:** the gig
+      display resolution went from 1 col/beat to **8th-note columns** (`DISPLAY_COLS_PER_BEAT = 2`) so notes
+      **and** drums share one column grid; `loopStripHTML` now draws **kick/snare/hat lanes beneath the note
+      rows** (`showDrumLanes` = graduated **or** the song already has drums), rendering each `{drum}` event at
+      its true 8th column (`drumCov`), and the existing gig playhead (`paintPlayCol` → `.loopgrid [data-col]`)
+      sweeps **both** with no new scheduler. **Input:** a **🥁 Lay a beat over it** button sits next to
+      Play/Discard in Free Play and any campaign movement ≥ 3 (`graduatedBeatContext()` — past M2, mode free or
+      mv≥3), **always visible** so it's discoverable, **disabled with an `(n/6)` counter** until you've composed
+      ≥`FREE_MELODY_NOTES` notes (mirrors the M2-free button; no goal-prompt gating) → `layBeatOverSong()` reuses the **same live free-take drum engine** as
+      M2's free stage but sets **`run.beatReturn`**. Unlike M2-free (which auto-passes at `FREE_TAKE_HITS`), the
+      graduated pass is a **loop-pedal that keeps running** — the `labCampaignScore` auto-finish is guarded by
+      `!run.beatReturn`, so you build/refine indefinitely and press **✓ Done — back to song** (`finishGraduatedBeat`,
+      needs ≥1 recorded hit) when it grooves. That routes through `rhythmStagePass`' `beatReturn` branch, which
+      **bakes the beat and drops back to the gig** (`screen="gig"`, not the `rhythmwin` end screen) with melody +
+      drums on the unified grid, and **auto-starts the loop** (`startLoop()`) so the playhead immediately grooves
+      the whole song (notes + drums) on return — you Finish/Save normally. Give-up (`exitBeatLab`) returns to the gig, melody
+      intact. `renderBeatLab`/`beatGateLabel` show graduated chrome (title, hint, live-hit gate, ✓ Done) when `run.beatReturn`.
+    - **Count-in before every live drum pass. ✅ BUILT 2026-07-23** (dev ask — "the band counts you in").
+      `countInThen(cb)` runs a **4-beat count-in at the current tempo** (big `1·2·3·4` overlay + a hat click on
+      each beat via `_drum`) **before the loop starts recording**, wrapping the `labStartLoop` call in every
+      live-drum entry (Beat Lab practice, M2 match/grooves/free, the graduated free-beat) — **not** on a
+      mid-session tempo-change restart. `clearCountIn()` on exit; reduced-motion drops the pop animation only.
     - **Still simplified / next increments:** the **grooves** stage currently matches one target (the
       kick-1&3 + snare-or-ticker-2&4 `backbeat`), drawn **clearly** — not yet the backbeat→son-clave→shuffle
       walk with a **shown→from-memory** reveal (the `GROOVES` set + the `.tghost.hidden` CSS are in place for
-      it; son-clave/shuffle slot data is provisional); and **graduation** of live drums
-      to M3–M7 + Free Play (drum lanes in the in-run piano-roll — `eventCoverage` + the grid render) is untouched.
-      Free Play M2 keeps the legacy "play each note value" `gateDurs` gate. (Free-stage edge, deferred: exiting
-      the drum phase with **← Give up** discards the composed melody, like the other campaign stages.)
+      it; son-clave/shuffle slot data is provisional). Free Play M2 keeps the legacy "play each note value"
+      `gateDurs` gate. The graduated beat pass is a **free-form** take (no target overlay) at 8th-note quantize;
+      in-gig **placement/editing** of individual drums (click a drum lane to drop a hit) is not built — drums
+      come from the live pass or a bake. **Dev asks (deferred, 2026-07-24):** (1) the live drum pass should
+      happen **on the small unified gig grid itself** (drum lanes + notes, one playhead) rather than routing to
+      the separate larger-celled Beat Lab screen — *the current larger grid is "fine for now"*; (2) the
+      **Beatling pads should look like the note cards** (the collectible card treatment / `SKINS`), not the
+      current wide buttons. (Free-stage edge, deferred: exiting the drum phase with **← Give up**
+      discards the composed melody, like the other campaign stages.)
 - **Later:** **hold-to-sustain** note length in the melody round (dev likes it, deferred); more
-  Beatlings/grooves; raw-feel toggle; a metronome count-in.
+  Beatlings/grooves; raw-feel toggle; a **count-in variant** (a swung "and-a-1, and-a-2").
 
 ### Beat Lab — feedback fixed (2026-07-21)
 
