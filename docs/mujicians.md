@@ -438,17 +438,21 @@ playing-card index (creature art fills the center):
   (text-shadow), not boxed out, to keep the art big. Follow the poker convention — **top-left + bottom-right**
   so the index peeks out when the hand is fanned (match to whichever way the hand actually fans); the second
   index may be rotated 180° for card authenticity.
-- **⚠️ To fix (dev feedback 2026-07-24): the corner notehead must NOT use the note's colour.** Increment 1 draws
-  it in the note's own colour (`noteheadSVG(c.dur, col)`), and **yellow (C) is nearly invisible** on the white
-  card face. Give the notehead a **fixed dark/neutral colour** (e.g. an ink/`#333`-ish tone, or a subtle
-  contrast halo) so the *value* reads regardless of the *pitch* colour. The letter can stay note-coloured; the
-  duration glyph should be legibility-first. *(Not yet applied — flagged for Increment 3 / card-layout polish.)*
-- **Draw the noteheads as tiny inline SVG, not Unicode.** `♩` (U+2669) is widely supported, but **`𝅗𝅥`/`𝅝`
-  (half/whole) live in the astral-plane Musical Symbols block and render as tofu in many system fonts** — and
-  get muddy at ~12px regardless. A ~10w × 13h SVG per value stays crisp cross-platform: **quarter = filled
+- **✅ Fixed 2026-07-24: the glyphs use a fixed dark ink (`GLYPH_INK`), NOT the note's colour.** Increment 1 drew
+  the notehead in the note's own colour, and **yellow (C) was nearly invisible** on the white card. Now the
+  duration glyph is legibility-first ink; the pitch is carried by the letter colour. (Applies to `noteheadSVG`
+  and `restSVG`.)
+- **Draw the noteheads AND rests as inline SVG, not Unicode. ✅ BUILT 2026-07-24 (`noteheadSVG`, `restSVG`).**
+  `♩` (U+2669) is widely supported, but **`𝅗𝅥`/`𝅝` (half/whole) and ALL the rests (`𝄾 𝄽 𝄼 𝄻`) live in the
+  astral-plane Musical Symbols block and render as tofu rectangles in many system fonts** — the rest cards were
+  showing bare rectangles. SVG per value stays crisp cross-platform: **quarter = filled
   ellipse + stem · half = hollow (stroke-only) ellipse + stem · whole = hollow ellipse, no stem · eighth =
-  filled + stem + flag.** Bonus: the notehead *is* the lesson (filled→hollow, stem→no-stem is the exact
-  notation being taught). Keep the Unicode glyphs only for the larger duration picker if they already render.
+  filled + stem + flag.** **Rests:** whole = filled bar **hanging below** a faint staff line · half = filled bar
+  **sitting on** the line (the line disambiguates the two otherwise-identical bars) · quarter = the squiggle ·
+  eighth = a slanted stroke + one flag. Bonus: the notehead *is* the lesson (filled→hollow, stem→no-stem is the
+  exact notation being taught). **Still Unicode (may tofu — future cleanup):** the note/rest glyphs inside
+  **gate labels and mentor-intro prose** (`gateStatus`, `LESSON_INTROS`) and the `DURATIONS.rest` field — those
+  are flowing-text contexts where inlining SVG is fiddlier.
 - **Bottom length-bar (teaching aid, fadeable).** A thin bar along the card's bottom edge whose **width is
   proportional to the value** (♪ = ¼ width · ♩ = ½ · 𝅗𝅥 = ¾-ish · 𝅝 = full), mapping the abstract symbol to
   visible *length* — reinforcing that duration = time = horizontal on the grid. Shown during the **M2 Break

@@ -282,7 +282,8 @@
   .durbtn.on{background:#5a6bff;color:#fff;border-color:#7a88ff}
   .durbtn:active{transform:translateY(1px)}
   .durbtn:disabled{opacity:.38;cursor:default}
-  .brkctl .curdur{font-size:18px;line-height:1;min-width:22px;text-align:center;color:var(--ink)}
+  .brkctl .curdur{display:inline-flex;align-items:center;justify-content:center;min-width:22px;min-height:20px;color:var(--ink)}
+  .card.rest .cnote.restglyph{display:flex;align-items:center;justify-content:center;height:34px}
   /* a longer note's sustained beats (attack = full color .on; held = dimmer continuation, bg set inline) */
   .lgcell.held{border-color:rgba(255,255,255,.18)}
   .lgcell.gheld{box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
@@ -2443,8 +2444,11 @@
   // Break: a card wears its duration playing-card-style — a corner notehead (SVG, not the astral-plane
   // Unicode half/whole glyphs, which tofu at small sizes) + a bottom length-bar (width ∝ value). Shown only
   // where duration matters (termOn("groove") = M2+ / Free Play); M1 pitch stays plain (all quarters).
+  // GLYPH_INK is a FIXED dark ink — the value must read regardless of the note's pitch colour (yellow C was
+  // illegible when the notehead used the note colour). Pitch = letter colour; duration = ink.
+  const GLYPH_INK = "#2c2f48";
   function noteheadSVG(durId, color){
-    const c = color || "#333";
+    const c = color || GLYPH_INK;
     const head   = `<ellipse cx="6" cy="11.5" rx="4" ry="2.9" fill="${c}"/>`;
     const hollow = `<ellipse cx="6" cy="11.5" rx="4" ry="2.9" fill="none" stroke="${c}" stroke-width="1.5"/>`;
     const stem   = `<line x1="9.6" y1="10.6" x2="9.6" y2="1.5" stroke="${c}" stroke-width="1.4"/>`;
@@ -2455,6 +2459,20 @@
                 : hollow;   // whole = hollow head, no stem
     return `<svg class="ndhead" viewBox="0 0 14 15" width="12" height="13" aria-hidden="true">${inner}</svg>`;
   }
+  // Rest symbols as SVG too — the Unicode rests (𝄾 𝄽 𝄼 𝄻) are astral-plane and render as tofu rectangles.
+  // Half sits ON a staff line, whole HANGS below one (a faint line disambiguates the two bars); quarter is the
+  // squiggle; eighth is a slanted stroke with one flag.
+  function restSVG(durId, w){
+    const c = GLYPH_INK, width = w || 22, height = Math.round(width*1.4);
+    const inner = durId==="w"
+        ? `<line x1="4" y1="10" x2="16" y2="10" stroke="${c}" stroke-width="1" opacity=".5"/><rect x="6" y="10" width="8" height="4.6" rx=".5" fill="${c}"/>`
+      : durId==="h"
+        ? `<line x1="4" y1="16" x2="16" y2="16" stroke="${c}" stroke-width="1" opacity=".5"/><rect x="6" y="11.4" width="8" height="4.6" rx=".5" fill="${c}"/>`
+      : durId==="q"
+        ? `<path d="M11 4 L7.5 9 L11 12.5 L7.5 16 Q12 17.5 8.5 22" fill="none" stroke="${c}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`
+        : `<line x1="12.4" y1="7.6" x2="7" y2="20.5" stroke="${c}" stroke-width="1.7" stroke-linecap="round"/><circle cx="9.6" cy="9" r="2.2" fill="${c}"/><path d="M9.6 9 Q13 8 12.3 11" fill="none" stroke="${c}" stroke-width="1.3"/>`;   // eighth
+    return `<svg class="restsvg" viewBox="0 0 20 28" width="${width}" height="${height}" aria-hidden="true">${inner}</svg>`;
+  }
   function lenBarHTML(durId){
     const pct = Math.round(durTicks(durId) / durTicks("w") * 100);   // whole = full width
     return `<div class="lenbar"><i style="width:${pct}%"></i></div>`;
@@ -2463,9 +2481,8 @@
     const selCls = run.sel.has(idx) ? " sel" : "";
     const showDur = termOn("groove");   // duration is meaningful (and Breakable) from M2 / Free Play onward
     if(c.rest){
-      const g = durOf(c.dur||DEFAULT_DUR).rest;   // the rest glyph is the card's own value now (curDur retired)
       return `<div class="card rest${selCls}" data-idx="${idx}" data-id="${c.id}" data-rest="1">
-        <div class="cnote" style="color:#5a5f7a">${g}</div><div class="coct" style="color:#5a5f7a">rest</div>${showDur?lenBarHTML(c.dur):""}</div>`;
+        <div class="cnote restglyph">${restSVG(c.dur||DEFAULT_DUR, 22)}</div><div class="coct" style="color:#5a5f7a">rest</div>${showDur?lenBarHTML(c.dur):""}</div>`;
     }
     const col = c.acc ? shadeFor(c) : COLOR[c.letter];
     const lbl = noteLabel(c);
@@ -2479,7 +2496,7 @@
     const skinEl = skin
       ? `<div class="cskin sk-${skin.id}${skin.art?" sk-art":""}"${skin.art?` style="--skin-art:url('${skin.art}')"`:""}></div>`
       : "";
-    const durCorner = showDur ? `<div class="cdur">${noteheadSVG(c.dur, col)}</div>` : "";
+    const durCorner = showDur ? `<div class="cdur">${noteheadSVG(c.dur)}</div>` : "";   // fixed ink, NOT the note colour (yellow C was illegible)
     return `<div class="card${selCls}${dynCls}${c.acc?" acc":""}" data-idx="${idx}" data-id="${c.id}" data-midi="${c.midi}" style="--cc:${col}">
       ${skinEl}${durCorner}<div class="cnote">${lbl}</div><div class="coct">${lbl}${oct}</div>
       <div class="cinst" title="${inst.name}">${inst.emoji}</div>${showDur?lenBarHTML(c.dur):""}</div>`;
@@ -2583,8 +2600,7 @@
     const c = idx>=0 ? run.hand[idx] : null;
     const canBreak = !!(c && halfDur(c.dur||DEFAULT_DUR));
     const canMerge = !!(c && mergeTargetIdx(idx)>=0);
-    const d = c ? durOf(c.dur||DEFAULT_DUR) : null;
-    const cur = d ? (c.rest ? d.rest : d.label) : "—";
+    const cur = c ? (c.rest ? restSVG(c.dur||DEFAULT_DUR, 13) : noteheadSVG(c.dur||DEFAULT_DUR)) : "—";   // SVG glyphs (Unicode half/whole/rests tofu)
     return `<div class="dynctl brkctl" title="Break a card in half / Merge two equal cards — this sets note length">
       <span class="dynlbl">Length</span>
       <button class="durbtn" id="b-break" ${canBreak?"":"disabled"} title="Break in half — key: x">⤵ Break</button>
