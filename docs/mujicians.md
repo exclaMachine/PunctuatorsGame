@@ -288,16 +288,87 @@ and real performance shortcut keys — while keeping **melodic composition** tho
 
 ### The M2 lesson ladder (progressive, like the pitch ladder)
 
-`persist.progress.rhythmStage`, walked in order; M3 opens only past the last stage (mirrors M1's `pitchStage`):
+`persist.progress.rhythmStage`, walked in order; M3 opens only past the last stage (mirrors M1's `pitchStage`).
+The ladder has **two halves — self-paced *notation* first, then live *timing*** (echoes M1's shown→ear ramp:
+learn the symbol calmly, then feel it live):
 
-1. **Match the beat (shown).** Four-on-the-floor is drawn as a **ghost overlay**; you tap **space** on each
-   beat to match it. A couple of tries; timing-window feedback. The gentle on-ramp.
-2. **New grooves (shown → memory).** More overlays to match — backbeat → son clave → shuffle — first shown,
+1. **Durations (notation, self-paced).** Learn note-values 𝅝/𝅗𝅥/♩/♪ on the calm place-a-note gig grid via the
+   **Break** mechanic (below). No live timing. *(Designed 2026-07-24.)*
+2. **Rests (notation, self-paced).** Same **Break** verb on a rest card; learn 𝄻/𝄼/𝄽 as the silent mirrors of
+   the durations just learned. *(Designed 2026-07-24.)*
+3. **Match the beat (shown).** Four-on-the-floor is drawn as a **ghost overlay**; you tap **space** on each
+   beat to match it. A couple of tries; timing-window feedback. The gentle on-ramp *into live play*.
+4. **New grooves (shown → memory).** More overlays to match — backbeat → son clave → shuffle — first shown,
    then hidden so you reproduce from memory. Each nailed groove is collected.
-3. **Free take.** Play your own one-pass beat over your melody; it becomes the song's backing loop.
+5. **Free take.** Play your own one-pass beat over your melody; it becomes the song's backing loop.
 
-(The old M2 "play each note value" `gateDurs` gate is replaced by **timing accuracy** against the overlay;
-note-values move to the deferred hold-to-sustain melody control.)
+(The old M2 "play each note value" `gateDurs` gate is superseded on two fronts: **note-value *notation*** by the
+**Durations stage** above, and **groove** by **timing accuracy** against the overlay. The deferred
+hold-to-sustain melody control becomes a later *expressive* way to speak the values, **not** the lesson that
+teaches them.)
+
+### Note-value & rest notation — the **Break** mechanic (front of the ladder)
+
+> **Status: DESIGNED, not built (2026-07-24).** The self-paced *notation* half of M2 (ladder stages 1–2).
+> Teaches note-value and rest *notation* — the symbols and their halving relationships — before the
+> live-timing half applies them. Runs on the **M1 self-paced place-a-note gig engine**, not the live drum
+> engine, so a value is legible on the unified 8th-note grid (a whole note visibly spans 8 columns, a quarter
+> spans 2). Verb is **Break** (chosen over "Split" 2026-07-24 — could revert if "Split" reads clearer;
+> "cut/slice" rejected — reads violent, collides with musical "cut time", and is odd on a rest).
+
+**The core verb — Break in half.** Select a card and **Break** it → it becomes **two cards of half the value**
+(a single downward "snap" stroke; the card cracks down the middle and falls into two halves). This *is* the
+binary tree of note-values made tactile: ♩→two ♪, 𝅗𝅥→two ♩, 𝅝→two 𝅗𝅥 (ticks 24→12·12, 48→24·24, 96→48·48 at
+`TPB=24`). **The same verb works on a rest card** (𝄽→two shorter rests) — which is exactly why the ladder does
+**durations first, rests second**: the Rests stage reuses a verb the player already owns.
+
+**Merge — the inverse.** Two **adjacent equal** cards **Merge** into one of double the value (an upward swipe /
+drag-together). Break and Merge are a matched pair (down = halve, up = combine); Merge also teaches **ties**.
+
+**Start at the quarter note, not the whole.** Because Merge exists, the lesson **starts in the middle of the
+value tree (♩)** so the player can go **both directions from turn one** — Break a ♩ *down* into ♪♪, *and* Merge
+♩+♩ *up* into 𝅗𝅥 (then 𝅗𝅥+𝅗𝅥 into 𝅝). Starting at the whole note would only allow breaking downward; the quarter
+start exercises the whole mechanic immediately. (Supersedes the earlier "start with a whole note" sketch.)
+
+**Lesson flow.**
+- **Durations stage.** Mentor shows/sounds a target rhythm on the grid; you Break/Merge from a starting ♩ to
+  build the matching values. **Gate:** produce each of 𝅝/𝅗𝅥/♩ at least once (add ♪ if desired).
+- **Rests stage.** Same Break/Merge, now on a **rest card**; a target pattern has sounding beats and gaps —
+  fill sounds with notes, gaps with rests of matching value. **Gate:** place each rest value 𝄻/𝄼/𝄽 and build
+  one pattern mixing notes + rests.
+
+**Input — action decoupled from gesture (so nothing load-bearing can break).** `breakSelected()` /
+`mergeSelected()` are plain functions bound to **both** a button **and** a gesture; the button (+ a keyboard
+key, e.g. `x` / `/`, for parity with M2's existing shortcuts and desktop testability) is the always-works
+substrate, and the gesture is **juice layered on top, never the only path**:
+- **MVP:** a **Break button** above the dynamics row + a keyboard key. Ships the lesson, zero gesture risk,
+  fully testable on desktop.
+- **Layer 2 (juice):** bind the same function to a **single-pointer downward "snap" swipe** across the card
+  (`touch-action:none` so the browser can't steal it for scroll), with a crack-and-fall-apart animation.
+  Merge = the inverse upward swipe. **Single-pointer only** — robust on mouse and touch alike.
+- **Do NOT use tap-and-hold for Break** — hold is reserved for the deferred **hold-to-sustain** expressive
+  duration control; one gesture, one meaning.
+
+**Dynamics gesture (parallel exploration).** Keep the **p / mf / f buttons**; *add* a card-level gesture for
+loudness and **A/B two candidates** to see which feels better:
+- **Double-tap / double-click the card = louder** — a quick, robust shortcut (dev's lean 2026-07-24).
+- **Single-pointer vertical drag** — up = louder/bigger, down = softer/smaller ("size = volume").
+
+Both are single-pointer and dodge browser-zoom conflicts. **Pinch/expand is *not* load-bearing** — two-finger
+pinch fights browser zoom and has no clean desktop equivalent; keep it at most as an optional touch-only
+flourish.
+
+**Tentative future extensions (flagged, not v1):**
+- **Uneven / directional Break → dotted values.** Straight-down = clean halve; down-and-to-a-side = uneven
+  split (a dotted note / its rest). Same gesture family, but more edge-case headaches (unequal ticks, grid
+  fit) — **deferred, tentative.**
+- **Prism tool-card (Balatro-style).** Instead of a gesture on the note, play a **Prism** action-card *onto* a
+  note to break it — like a Balatro Tarot/Spectral card that modifies another card. Thematically apt: notes
+  are **ROYGBIV**, and a prism *refracts* one into two. Makes breaking a **resource/choice** (a hook into the
+  deferred **Tips shop** economy) rather than free — so it's a **Free-Play/economy** version, kept out of the
+  *lessons* where breaking should feel free. **Deferred, tentative.**
+- **A "Break-ling" creature** — a cell/mitosis bug that *divides* when a card breaks; sibling to the Beatlings.
+  Tentative, art-later.
 
 ### Scoring — rhythm-game timing
 
@@ -309,11 +380,13 @@ note-values move to the deferred hold-to-sustain melody control.)
   scoring reflects **raw** timing. (Default chosen to test; a raw-feel / quantize-toggle is an open
   sub-decision below.)
 
-### Rests are free
+### Rests are free (in the live half)
 
-In a live take, **a rest is simply not pressing a key** — silence falls out for nothing. This **deletes the
-rest card / rest creature** from the rhythm design entirely (they were only needed in the grid-composition
-model; the shipped `REST_COPIES` rest card can retire from M2 when this lands).
+In a **live take** (the Match / grooves / free stages), **a rest is simply not pressing a key** — silence falls
+out for nothing. This **deletes the rest card / rest creature** from the *live* rhythm design (they were only
+needed in the grid-composition model; the shipped `REST_COPIES` rest card can retire from live M2 when this
+lands). Note the rest card **does** return in the self-paced **Rests notation stage** above — a different job
+(teach the *symbol* 𝄽/𝄼/𝄻 via Break), not live timing.
 
 ### The creatures — Beatlings (drum-pun beetles)
 
