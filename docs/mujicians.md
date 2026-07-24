@@ -309,12 +309,25 @@ teaches them.)
 
 ### Note-value & rest notation — the **Break** mechanic (front of the ladder)
 
-> **Status: DESIGNED, not built (2026-07-24).** The self-paced *notation* half of M2 (ladder stages 1–2).
-> Teaches note-value and rest *notation* — the symbols and their halving relationships — before the
-> live-timing half applies them. Runs on the **M1 self-paced place-a-note gig engine**, not the live drum
-> engine, so a value is legible on the unified 8th-note grid (a whole note visibly spans 8 columns, a quarter
-> spans 2). Verb is **Break** (chosen over "Split" 2026-07-24 — could revert if "Split" reads clearer;
-> "cut/slice" rejected — reads violent, collides with musical "cut time", and is odd on a rest).
+> **Status: DESIGNED, not built (2026-07-24).** The M2 *notation* stages (ladder stages 1–2) **teach** the
+> mechanic — note-value and rest *notation*, the symbols and their halving relationships — before the
+> live-timing half applies them. But **Break is not lessons-only: it's a first-class control in Free Play too**
+> (dev 2026-07-24). Runs on the **M1 self-paced place-a-note gig engine**, not the live drum engine, so a value
+> is legible on the unified 8th-note grid (a whole note visibly spans 8 columns, a quarter spans 2). Verb is
+> **Break** (chosen over "Split" 2026-07-24 — could revert if "Split" reads clearer; "cut/slice" rejected —
+> reads violent, collides with musical "cut time", and is odd on a rest).
+>
+> **Duration becomes a per-card property (default = quarter).** Under Break, a card *carries* a value: **every
+> note/rest card defaults to a quarter note (♩)**, and the player **Breaks it shorter or Merges it longer** from
+> there. This is the **Free Play** model too — you compose by placing quarter cards and reshaping their length
+> in place. **Decision (2026-07-24): `curDur` retires in favour of Break — everywhere.** The per-play
+> `run.curDur` picker (one duration for the *next* play) is **replaced** by the **per-card** value: cards carry
+> their own duration (default ♩), reshaped by Break/Merge, in **every** mode (M2 lessons, later movements, and
+> Free Play). No "cast the next N cards at value X" convenience is kept — Break *is* the duration control. *(This
+> is a design decision; `curDur` is still the live shipped control until Break is built — migrating the `curDur`
+> callsites, incl. M4+ and the `durControlHTML` picker, to per-card values is part of building Break, not a
+> separate change. The per-play-`curDur` descriptions elsewhere in this doc describe the current, to-be-retired
+> model.)*
 
 **The core verb — Break in half.** Select a card and **Break** it → it becomes **two cards of half the value**
 (a single downward "snap" stroke; the card cracks down the middle and falls into two halves). This *is* the
@@ -362,13 +375,39 @@ flourish.
 - **Uneven / directional Break → dotted values.** Straight-down = clean halve; down-and-to-a-side = uneven
   split (a dotted note / its rest). Same gesture family, but more edge-case headaches (unequal ticks, grid
   fit) — **deferred, tentative.**
-- **Prism tool-card (Balatro-style).** Instead of a gesture on the note, play a **Prism** action-card *onto* a
-  note to break it — like a Balatro Tarot/Spectral card that modifies another card. Thematically apt: notes
-  are **ROYGBIV**, and a prism *refracts* one into two. Makes breaking a **resource/choice** (a hook into the
-  deferred **Tips shop** economy) rather than free — so it's a **Free-Play/economy** version, kept out of the
-  *lessons* where breaking should feel free. **Deferred, tentative.**
+- **Prism tool-card (Balatro-style).** A **Prism** action-card played *onto* a note to break it — like a
+  Balatro Tarot/Spectral card that modifies another card. Thematically apt: notes are **ROYGBIV**, and a prism
+  *refracts* one into two. **Note:** base Break/Merge is **free** in both the lessons *and* Free Play (above), so
+  Prism is **not** the way you break — it's an **optional flavour/economy extra** (e.g. a fancier break, a
+  one-tap "break to eighths", or a Tips-shop collectible), never a gate on the core verb. **Deferred, tentative.**
 - **A "Break-ling" creature** — a cell/mitosis bug that *divides* when a card breaks; sibling to the Beatlings.
   Tentative, art-later.
+
+**Card layout — showing a card's duration.** With duration now a per-card value, the card wears it like a
+playing-card index (creature art fills the center):
+
+- **Base card 71×95 px** (classic SVG playing-card size, ratio ~0.75).
+- **Corner index (primary).** Two diagonally-opposite corners carry **note letter (the "rank") + duration
+  notehead (the "suit")**, stacked, ~4–5px inset. Sizes for legibility at this scale: **letter 16px bold**
+  (range 15–17, cap-height ~11px; floor 14px), **duration glyph 12px** (range 11–13) centered ~1px under the
+  letter; index footprint ~13w × ~28h px. Overlay the indices **on top of the art** with a contrast halo
+  (text-shadow), not boxed out, to keep the art big. Follow the poker convention — **top-left + bottom-right**
+  so the index peeks out when the hand is fanned (match to whichever way the hand actually fans); the second
+  index may be rotated 180° for card authenticity.
+- **Draw the noteheads as tiny inline SVG, not Unicode.** `♩` (U+2669) is widely supported, but **`𝅗𝅥`/`𝅝`
+  (half/whole) live in the astral-plane Musical Symbols block and render as tofu in many system fonts** — and
+  get muddy at ~12px regardless. A ~10w × 13h SVG per value stays crisp cross-platform: **quarter = filled
+  ellipse + stem · half = hollow (stroke-only) ellipse + stem · whole = hollow ellipse, no stem · eighth =
+  filled + stem + flag.** Bonus: the notehead *is* the lesson (filled→hollow, stem→no-stem is the exact
+  notation being taught). Keep the Unicode glyphs only for the larger duration picker if they already render.
+- **Bottom length-bar (teaching aid, fadeable).** A thin bar along the card's bottom edge whose **width is
+  proportional to the value** (♪ = ¼ width · ♩ = ½ · 𝅗𝅥 = ¾-ish · 𝅝 = full), mapping the abstract symbol to
+  visible *length* — reinforcing that duration = time = horizontal on the grid. Shown during the **M2 Break
+  stages** as a scaffold; **faded out** once values are learned (like the M1 shown→ear ramp). Pairs *with* the
+  corner index, not instead of it.
+- **When the index shows.** The corner duration reflects the **card's own value** in every mode — Free Play,
+  the M2 stages, and later movements — since `curDur` retires in favour of per-card Break (see the decision
+  above). Cards always carry a value (default ♩), so the index is always meaningful.
 
 ### Scoring — rhythm-game timing
 
