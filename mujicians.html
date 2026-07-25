@@ -360,7 +360,7 @@
   .muse b{color:var(--good)}
   .muses .none{color:var(--dim);font-size:12px}
 
-  .codex{margin-top:18px}
+  .codex{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
   .codex h2{font-size:12px;letter-spacing:1px;color:var(--dim);margin:0 0 8px}
   .chips{display:flex;flex-wrap:wrap;gap:6px}
   .chip{font-size:11px;padding:5px 9px;border-radius:20px;background:#232848;border:1px solid var(--edge)}
@@ -395,6 +395,12 @@
     background:#232848;border:1px solid var(--edge);color:var(--dim)}
   .cxrow .cxtag.con{color:#9ff5c0;border-color:#2f7a4f}
   .cxrow .cxtag.dis{color:#f2a3ba;border-color:var(--bad)}
+  /* Sound Collective — a ▶ sample button per collected voice (reuses the .cxrow list) */
+  .cxrow .sndplay{font:inherit;font-size:12px;width:28px;height:26px;border-radius:7px;cursor:pointer;
+    background:#1a1f3a;border:1px solid var(--edge);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;padding:0}
+  .cxrow .sndplay:hover{border-color:var(--accent)}
+  .cxrow .sndplay.off{opacity:.3;cursor:default}
+  .cxrow .snddesc{font-size:11px;color:var(--dim);flex-basis:100%;margin:2px 0 0 26px}
 
   /* chord grid (root × quality) */
   .cxgrid{overflow-x:auto;padding-bottom:4px}
@@ -544,11 +550,15 @@
     <button class="btn ghost codexbtn" id="codexBtn" type="button" title="Structures you've discovered, by group">
       📖 Codex <span class="cxcount" id="codexCount">0</span>
     </button>
+    <button class="btn ghost codexbtn" id="soundBtn" type="button" title="Sound voices you've collected">
+      🔊 Sound Collective <span class="cxcount" id="soundCount">0</span>
+    </button>
   </div>
 </div>
 
 <div id="overlay"></div>
 <div id="codexOverlay"></div>
+<div id="soundsOverlay"></div>
 
 <!-- card-motion chrome: an animation clone layer + deck/discard pile anchors (outside #game so they
      survive the full-re-render and give stable rects to fly from/to). Populated by syncChrome(). -->
@@ -635,11 +645,26 @@
   };
   // `skin` binds an instrument to a skin id (or null for the plain default card). Piano stays plain;
   // guitar wears Foil, bass wears Holographic. glass/neon are defined above, ready to attach here.
+  // `voice` names a VOICES preset (the actual SOUND — see the Sound Collective below); `wave` is a legacy
+  // fallback for the old bare-oscillator path. `core:true` marks the curated campaign trio (piano/guitar/bass)
+  // that instrumentsFor() gates; the rest are COLLECTIBLE voices that only surface in Free Play decks.
   const INSTRUMENTS = [
-    { id:"piano",  name:"Piano",  emoji:"🎹", wave:"triangle", baseC:60, skin:null   },
-    { id:"guitar", name:"Guitar", emoji:"🎸", wave:"sawtooth", baseC:60, skin:"foil" },
-    { id:"bass",   name:"Bass",   emoji:"🎻", wave:"sine",     baseC:36, skin:"holo" },
+    // core trio — curated campaign timbres (piano until M6, then guitar/bass). Gating unchanged.
+    { id:"piano",  name:"Piano",      emoji:"🎹", wave:"triangle", baseC:60, skin:null,    voice:"grand",      core:true },
+    { id:"guitar", name:"Guitar",     emoji:"🎸", wave:"sawtooth", baseC:60, skin:"foil",  voice:"pluck",      core:true },
+    { id:"bass",   name:"Bass",       emoji:"🎻", wave:"sine",     baseC:36, skin:"holo",  voice:"roundbass",  core:true },
+    // collectible voices — appear in Free Play (a shuffled handful each run); campaign stays curated.
+    { id:"bell",   name:"Bell",       emoji:"🔔", wave:"sine",     baseC:60, skin:null,    voice:"glassbell"  },
+    { id:"organ",  name:"Organ",      emoji:"🎛️", wave:"square",   baseC:60, skin:null,    voice:"reedorgan"  },
+    { id:"synth",  name:"Synth Lead", emoji:"🎚️", wave:"sawtooth", baseC:60, skin:"neon",  voice:"neonsaw"    },
+    { id:"pad",    name:"Warm Pad",   emoji:"🌫️", wave:"triangle", baseC:48, skin:null,    voice:"warmpad"    },
+    { id:"box",    name:"Music Box",  emoji:"🎶", wave:"sine",     baseC:72, skin:null,    voice:"musicbox"   },
+    { id:"vibes",  name:"Vibraphone", emoji:"🎐", wave:"sine",     baseC:60, skin:"glass", voice:"vibraphone" },
   ];
+  // The curated campaign trio — the only instruments the teaching movements ever draw (piano gated → M6).
+  const CORE_INSTRUMENTS = INSTRUMENTS.filter(i=>i.core);
+  const instById = (id) => INSTRUMENTS.find(x=>x.id===id) || INSTRUMENTS[0];
+  const voiceForInst = (id) => instById(id).voice || "grand";
   // The skin object for a card's instrument (null = plain card). Used by cardHTML to lay the overlay.
   const skinFor = (instId) => { const i = INSTRUMENTS.find(x=>x.id===instId); return (i && i.skin) ? SKINS[i.skin] : null; };
   const BASE_HAND_SIZE = 4, DISCARDS = 4, COPIES = 2, REST_COPIES = 3;  // select cap is now per-movement — see maxSelect()
@@ -808,7 +833,10 @@
   const curMovement  = () => MOVEMENTS[curMovementN()];
   const maxSelect    = () => curMovement().maxSelect;
   const termOn       = (t) => curMovement().terms.includes(t);
-  const instrumentsFor = (mv) => (mv>=INSTRUMENT_UNLOCK_MV) ? INSTRUMENTS : INSTRUMENTS.filter(i=>i.id==="piano");
+  // Campaign timbre gating draws ONLY from the curated core trio (so widening the collectible palette can't
+  // leak extra voices into a teaching movement, incl. M6's blend count). Free Play uses the full palette — see
+  // freePlayInstruments() in buildDeck.
+  const instrumentsFor = (mv) => (mv>=INSTRUMENT_UNLOCK_MV) ? CORE_INSTRUMENTS : CORE_INSTRUMENTS.filter(i=>i.id==="piano");
   // VESTIGIAL since the no-threshold change (2026-07-18): a performance is now open-ended (no score gate
   // ends it — see finishRun / renderGig). Kept, unused, as the source for a future *non-blocking* "applause
   // star" target (MOVEMENTS[].thr / RUN_THRESHOLD would be the star to beat for bragging, never a cutoff).
@@ -1134,6 +1162,7 @@
       if(s){ persist = Object.assign(persist, s); }
     }catch(e){}
     if(!Array.isArray(persist.setlist)) persist.setlist = [];   // saved-song Setlist (additive; see docs/mujicians.md)
+    if(!Array.isArray(persist.sounds)) persist.sounds = [];     // Sound Collective — voices heard (additive)
     if(!persist.progress || typeof persist.progress!=="object") persist.progress = { movement:1, gates:{} };  // campaign progress (additive)
     persist.progress.movement = Math.max(1, Math.min(MAX_MOVEMENT, +persist.progress.movement || 1));
     if(!persist.progress.gates || typeof persist.progress.gates!=="object") persist.progress.gates = {};
@@ -1165,14 +1194,19 @@
   function resetAll(){
     if(!window.confirm("DEV: wipe ALL saved progress — movement, Codex, Renown, Setlist, pitch gate, runs used? This can't be undone.")) return;
     try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
-    persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, capFixV1:true, progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"durations", rhythmNotationV1:true } };
+    persist = { day:todayStr(), runsUsed:0, codex:[], sounds:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, capFixV1:true, progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"durations", rhythmNotationV1:true } };
     codex.clear();
+    sounds.clear();
     savePersist();
+    renderSounds();
     stopLoop(); galleryPlayId=null; run=null; screen="home";
     render();
     toast("DEV: progress reset to the beginning");
   }
   const codex = new Set();
+  // The Sound Collective — voice ids you've HEARD in play (the main collection). Catalogued by catalogSound()
+  // from playVoice, persisted in persist.sounds. See renderSoundsModal + docs/mujicians.md.
+  const sounds = new Set();
 
   /* ===== DEV override — unlimited runs (bypass the daily cap) =====
      On via ?dev in the URL, or toggle with Ctrl/Cmd+Shift+D (persisted). */
@@ -1206,15 +1240,94 @@
     o.connect(g).connect(ac.destination); o.start(t); o.stop(t+D+0.05);
   }
   function playTone(midi, wave, dur, when, vel){ _tone(midi, wave, dur, audio().currentTime + (when||0), vel); }
+
+  /* ========= Voices — the collectible pitched timbres (the Sound Collective) =========
+     Each voice is a small DATA preset — an oscillator stack (wave + semitone offset + detune cents + gain),
+     a shared amplitude ADSR, and an optional lowpass sweep / tremolo — rendered by playVoice() in vanilla
+     Web-Audio (no Tone.js, no assets). A card's INSTRUMENT names its voice; hearing a voice catalogues it
+     (catalogSound). "Named preset now, art later." TO ADD A VOICE: add an entry here + point an instrument's
+     `voice` at it. See docs/mujicians.md → "Timbre as collectible card skins / the Sound Collective". */
+  const VOICES = {
+    grand:      { id:"grand",      name:"Grand",       fam:"keys",    desc:"Soft triangle piano — the house voice.",
+                  peak:0.16, oscs:[{wave:"triangle",semi:0,g:1},{wave:"sine",semi:12,g:0.22}],
+                  env:{a:0.005,d:0.55,s:0.5,r:0.16}, filter:{f0:5200,f1:2400} },
+    pluck:      { id:"pluck",      name:"Nylon Pluck", fam:"strings", desc:"Bright string that decays fast.",
+                  peak:0.15, oscs:[{wave:"sawtooth",semi:0,g:1},{wave:"sawtooth",semi:0,det:8,g:0.5}],
+                  env:{a:0.004,d:0.26,s:0.14,r:0.12}, filter:{f0:6000,f1:800} },
+    roundbass:  { id:"roundbass",  name:"Round Bass",  fam:"bass",    desc:"Deep sine with a low sub.",
+                  peak:0.2,  oscs:[{wave:"sine",semi:0,g:1},{wave:"sine",semi:-12,g:0.4},{wave:"triangle",semi:0,g:0.2}],
+                  env:{a:0.008,d:0.4,s:0.55,r:0.14}, filter:{f0:1500,f1:700} },
+    glassbell:  { id:"glassbell",  name:"Glass Bell",  fam:"bells",   desc:"Struck sine partials, ringing bright.",
+                  peak:0.12, oscs:[{wave:"sine",semi:0,g:1},{wave:"sine",semi:12,g:0.5},{wave:"sine",semi:19,g:0.3}],
+                  env:{a:0.003,d:0.7,s:0.06,r:0.2}, filter:{f0:8000,f1:4000} },
+    reedorgan:  { id:"reedorgan",  name:"Reed Organ",  fam:"keys",    desc:"Stacked reeds — steady and full.",
+                  peak:0.11, oscs:[{wave:"square",semi:0,g:0.6},{wave:"sawtooth",semi:12,g:0.28},{wave:"sine",semi:0,g:0.4}],
+                  env:{a:0.05,d:0.15,s:0.85,r:0.12}, filter:{f0:3200,f1:3000} },
+    neonsaw:    { id:"neonsaw",    name:"Neon Saw",    fam:"synth",   desc:"Detuned saws with a resonant sweep.",
+                  peak:0.11, oscs:[{wave:"sawtooth",semi:0,det:-9,g:1},{wave:"sawtooth",semi:0,det:9,g:1},{wave:"sawtooth",semi:12,g:0.28}],
+                  env:{a:0.012,d:0.3,s:0.6,r:0.15}, filter:{f0:4200,f1:1500,q:6} },
+    warmpad:    { id:"warmpad",    name:"Warm Pad",    fam:"pad",     desc:"Slow-blooming cushion of fifths.",
+                  peak:0.1,  oscs:[{wave:"triangle",semi:0,g:1},{wave:"sawtooth",semi:7,g:0.32},{wave:"sine",semi:12,g:0.24}],
+                  env:{a:0.16,d:0.4,s:0.9,r:0.3}, filter:{f0:2600,f1:1700}, trem:{rate:5.2,depth:0.14} },
+    musicbox:   { id:"musicbox",   name:"Music Box",   fam:"bells",   desc:"Tiny plucked sine — a wind-up chime.",
+                  peak:0.13, oscs:[{wave:"sine",semi:0,g:1},{wave:"sine",semi:19,g:0.35}],
+                  env:{a:0.002,d:0.2,s:0.03,r:0.12}, filter:{f0:9000,f1:6000} },
+    vibraphone: { id:"vibraphone", name:"Vibraphone",  fam:"mallets", desc:"Mellow mallet with a shimmering vibrato.",
+                  peak:0.13, oscs:[{wave:"sine",semi:0,g:1},{wave:"sine",semi:12,g:0.4},{wave:"triangle",semi:0,g:0.2}],
+                  env:{a:0.004,d:0.5,s:0.3,r:0.2}, filter:{f0:4600,f1:2600}, trem:{rate:6,depth:0.22} },
+  };
+  // Render a voice at absolute AudioContext time `t`. Oscillator stack → optional lowpass sweep → shared ADSR
+  // gain → destination; an optional tremolo LFO rides the gain. Envelope times clamp to the note's length so
+  // short notes still articulate. Mirrors _tone's proven attack→decay→sustain→release shape, generalised.
+  function playVoice(voiceId, midi, dur, t, vel){
+    const ac = audio();
+    const V = VOICES[voiceId] || VOICES.grand;
+    vel = vel||1;
+    const D = dur || 0.5, e = V.env || {a:0.005,d:0.4,s:0.5,r:0.14};
+    const peak = (V.peak!=null?V.peak:0.15) * vel;
+    const atk = Math.min(e.a!=null?e.a:0.005, D*0.4);
+    const rel = Math.min(e.r!=null?e.r:0.14, D*0.5);
+    const sus = Math.max(peak * (e.s!=null?e.s:0.5), 0.0004);
+    const relStart = t + Math.max(atk, D - rel);
+    let decEnd = t + atk + (e.d!=null?e.d:0.3);
+    if(decEnd > relStart) decEnd = relStart;
+    const g = ac.createGain();
+    let node = g;                                   // where the oscillators connect (filter sits before g)
+    if(V.filter){
+      const bq = ac.createBiquadFilter(); bq.type = "lowpass"; bq.Q.value = V.filter.q || 0.7;
+      bq.frequency.setValueAtTime(V.filter.f0, t);
+      bq.frequency.exponentialRampToValueAtTime(Math.max(60, V.filter.f1), decEnd);
+      bq.connect(g); node = bq;
+    }
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t+atk);          // attack
+    g.gain.exponentialRampToValueAtTime(sus, decEnd);     // decay to sustain
+    if(decEnd < relStart) g.gain.setValueAtTime(sus, relStart);   // hold sustain until release
+    g.gain.exponentialRampToValueAtTime(0.0008, t+D);     // release
+    g.connect(ac.destination);
+    if(V.trem){                                     // gentle amplitude wobble (pad/vibraphone)
+      const lfo = ac.createOscillator(), la = ac.createGain();
+      lfo.frequency.value = V.trem.rate; la.gain.value = peak * V.trem.depth;
+      lfo.connect(la).connect(g.gain); lfo.start(t); lfo.stop(t+D+0.06);
+    }
+    for(const o of V.oscs){
+      const osc = ac.createOscillator(), og = ac.createGain();
+      osc.type = o.wave || "sine";
+      osc.frequency.value = midiToFreq(midi + (o.semi||0));
+      if(o.det) osc.detune.value = o.det;
+      og.gain.value = o.g!=null ? o.g : 1;
+      osc.connect(og).connect(node); osc.start(t); osc.stop(t+D+0.06);
+    }
+    catalogSound(voiceId);                          // hearing a voice adds it to the Sound Collective
+  }
   // Sound a stack of notes TOGETHER for `dTicks` ticks at the live tempo — the immediate play-preview.
   // (curBarSec() returns seconds per BEAT; one tick = beatSec/TPB.) A melody is built by successive plays.
   function soundStack(notes, dTicks, dynId){
     if(!notes || !notes.length) return;
     const tickSec = curBarSec()/TPB;
     const dur = dTicks*tickSec, vel = (termOn("dynamic")&&run) ? dynGain(dynId||DEFAULT_DYN) : 1;
-    const wave = id => (INSTRUMENTS.find(x=>x.id===id)||INSTRUMENTS[0]).wave;
     const t = audio().currentTime;
-    notes.forEach(nt => _tone(nt.midi, wave(nt.instId), dur*0.95, t, vel));
+    notes.forEach(nt => playVoice(voiceForInst(nt.instId), nt.midi, dur*0.95, t, vel));
   }
 
   /* ========= percussion voice — the "noise voice" reserved for the Beatlings (Beat Lab / M2 rhythm) =========
@@ -1385,9 +1498,8 @@
     if(!ev || ev.rest) return;   // a rest = silence
     if(ev.drum){ _drum(ev.drum, when, dynGain(ev.dyn||DEFAULT_DYN)); return; }   // a pitchless percussion one-shot
     if(!ev.notes || !ev.notes.length) return;
-    const wave = id => (INSTRUMENTS.find(x=>x.id===id)||INSTRUMENTS[0]).wave;
     const dur = ev.dur*tickSec, vel = dynGain(ev.dyn||DEFAULT_DYN);
-    ev.notes.forEach(nt => _tone(nt.midi, wave(nt.instId), dur*0.95, when, vel));   // the stack sounds together
+    ev.notes.forEach(nt => playVoice(voiceForInst(nt.instId), nt.midi, dur*0.95, when, vel));   // the stack sounds together
   }
   // Fix the look-ahead race: schedTick commits onsets up to `schedFrom` (~120ms ahead of the audible
   // playhead). A note placed INTO that already-committed window would be skipped this lap — you'd hear it
@@ -1883,11 +1995,15 @@
   function rhythmCampaign(r){ return !!(r && r.mode==="campaign" && r.movement===2 && r.rhythmStage); }
   // The M2 "free" stage's phase 1: composing the melody in the gig (before you drum a beat over it in phase 2).
   function freeComposePhase(){ return !!(run && run.mode==="campaign" && run.movement===2 && run.rhythmStage==="free" && run.freePhase!=="beat"); }
-  function buildDeck(mv, level){
+  // Free Play draws from the FULL pitched palette, shuffled, so a varied few timbres appear each run — you
+  // DISCOVER new voices over many runs while the deck stays capped at MAX_TIMBRES. Campaign uses the curated
+  // core (instrumentsFor). Piano is nudged to the front sometimes so a run isn't always exotic.
+  function freePlayInstruments(){ return shuffle([...INSTRUMENTS]); }
+  function buildDeck(mv, level, isFree){
     const m = mv || FREE_PLAY_MOVEMENT;
     const deck = [];
     let id = 0;
-    const insts = instrumentsFor(m).slice(0, MAX_TIMBRES);   // cap the deck at 4 timbres
+    const insts = (isFree ? freePlayInstruments() : instrumentsFor(m)).slice(0, MAX_TIMBRES);   // cap the deck at 4 timbres
     for(const inst of insts){
       for(const pc of DIATONIC_C){
         for(let k=0;k<COPIES;k++){
@@ -1953,7 +2069,7 @@
     // + rest cards, generous copies) — pitch is irrelevant, and it lets Break/Merge reach every value freely.
     const notationStage = (rhythmStage==="durations" || rhythmStage==="rests");
     // One loop for the whole run — one continuous performance in one key, filled hand by hand.
-    run = { deck:(notationStage ? buildNotationDeck(rhythmStage) : buildDeck(movement, pitchLevel)), drawPile:[], hand:[], sel:new Set(), discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ events:[], cursor:0, stageBars:START_BARS }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
+    run = { deck:(notationStage ? buildNotationDeck(rhythmStage) : buildDeck(movement, pitchLevel, mode==="free")), drawPile:[], hand:[], sel:new Set(), discardsLeft:DISCARDS, runScore:0, muses:[], loop:{ events:[], cursor:0, stageBars:START_BARS }, saved:false, handSize:BASE_HAND_SIZE, movement, mode:(mode==="free"?"free":"campaign"), done:false, advancedTo:null,
       curDyn:DEFAULT_DYN,   // M3 dynamics: the p/mf/f marking applied to the next play
       cardSeq:10000,        // Break/Merge: id source for cards spawned by breaking (well above deck ids)
       // per-movement gate trackers (all cheap to keep; gateStatus reads the frontier movement's).
@@ -2542,6 +2658,54 @@
     $codexOverlay.querySelector(".overlay").addEventListener("click", e=>{ if(e.target===e.currentTarget) closeCodex(); });
   }
 
+  /* ================= Sound Collective ================= */
+  // A sibling to the Codex: the collection of VOICES (timbres) you've HEARD in play. catalogSound() is called
+  // by playVoice whenever a voice sounds, so the Collective fills as you perform. The dialog lets you replay a
+  // little arpeggio of any collected voice (▶). Locked voices show as silhouettes. See docs/mujicians.md.
+  let soundsOpen = false;
+  const $soundsOverlay = document.getElementById("soundsOverlay");
+  function catalogSound(id){
+    if(!id || !VOICES[id] || sounds.has(id)) return;
+    sounds.add(id); persist.sounds = [...sounds]; savePersist(); renderSounds();
+  }
+  function renderSounds(){   // keep the button's count badge in sync; refresh the dialog if it's open
+    const el = document.getElementById("soundCount");
+    if(el) el.textContent = sounds.size;
+    if(soundsOpen) renderSoundsModal();
+  }
+  function openSounds(){ soundsOpen = true; renderSoundsModal(); }
+  function closeSounds(){ soundsOpen = false; $soundsOverlay.innerHTML = ""; }
+  // Preview a collected voice: a short rising C–E–G–C so its character sings (does NOT re-catalogue, already owned).
+  function sampleVoice(id){
+    if(!VOICES[id]) return;
+    const t0 = audio().currentTime + 0.02;
+    [0,4,7,12].forEach((n,i)=> playVoice(id, 60+n, i<3?0.34:0.7, t0 + i*0.17, 1));
+  }
+  function renderSoundsModal(){
+    const ids = Object.keys(VOICES);
+    const rows = ids.map(id=>{
+      const V = VOICES[id], got = sounds.has(id);
+      return `<div class="cxrow${got?" found":""}">`
+           + `<span class="cxmark">${got?"◆":"◇"}</span>`
+           + `<span class="cxname">${got?esc(V.name):"— locked —"}</span>`
+           + `<span class="cxtag ${got?"con":"dis"}" style="text-transform:capitalize">${got?esc(V.fam||"voice"):"???"}</span>`
+           + (got ? `<button class="sndplay" data-snd="${id}" title="Hear ${esc(V.name)}">▶</button>`
+                  : `<span class="sndplay off">▶</span>`)
+           + (got && V.desc ? `<span class="snddesc">${esc(V.desc)}</span>` : "")
+           + `</div>`;
+    }).join("");
+    $soundsOverlay.innerHTML = `<div class="overlay"><div class="modal cxmodal">
+        <h2>🔊 Sound Collective</h2>
+        <p>Voices you've heard in play — <b>${sounds.size}/${ids.length}</b> gathered. Each timbre is catalogued the first time it sounds; tap ▶ to hear one again.</p>
+        <div class="cxbody"><div class="cxlist">${rows}</div>
+        <p class="cxlead" style="margin-top:14px">New voices appear in <b>Free Play</b> — a different handful of timbres each run. Perform to hear them all and complete the Collective.</p></div>
+        <div class="cta"><button class="btn ghost" id="snd-close">Close</button></div>
+      </div></div>`;
+    $soundsOverlay.querySelectorAll(".sndplay[data-snd]").forEach(b=>b.addEventListener("click",()=>sampleVoice(b.dataset.snd)));
+    document.getElementById("snd-close").addEventListener("click", closeSounds);
+    $soundsOverlay.querySelector(".overlay").addEventListener("click", e=>{ if(e.target===e.currentTarget) closeSounds(); });
+  }
+
   /* ================= rendering ================= */
   const $game = document.getElementById("game");
   const $meta = document.getElementById("meta");
@@ -2744,7 +2908,7 @@
     const s = new Set();
     // rows follow the run's actual deck (so an instrument-restricted movement doesn't show empty rows)
     if(run && run.deck) run.deck.forEach(c => { if(c.midi!=null) s.add(c.midi); });   // skip rest cards (no midi)
-    else for(const inst of INSTRUMENTS) for(const pc of DIATONIC_C) s.add(inst.baseC+pc);
+    else for(const inst of CORE_INSTRUMENTS) for(const pc of DIATONIC_C) s.add(inst.baseC+pc);
     return [...s].sort((a,b)=>b-a);   // high pitch at top
   }
   // "Still sounds good?" — a pitch-class fits the current pick if it's IN KEY and forms a
@@ -2978,7 +3142,7 @@
     run.sel.add(idx);
     if(run.callReveal) run.callReveal = null;   // by-ear: picking your next answer dismisses the previous reveal
 
-    const inst = INSTRUMENTS.find(x=>x.id===c.instId); if(inst) playTone(c.midi, inst.wave, 0.4);
+    if(c.midi!=null) playVoice(voiceForInst(c.instId), c.midi, 0.4, audio().currentTime, 1);   // preview the card's timbre
     // only the preview + card states need updating, but a full gig re-render is cheap
     renderGig();
   }
@@ -3844,10 +4008,17 @@
     }
   });
   document.getElementById("codexBtn").addEventListener("click", openCodex);
-  window.addEventListener("keydown", e=>{ if(e.key==="Escape" && codexOpen){ e.preventDefault(); closeCodex(); } });
+  document.getElementById("soundBtn").addEventListener("click", openSounds);
+  window.addEventListener("keydown", e=>{
+    if(e.key!=="Escape") return;
+    if(soundsOpen){ e.preventDefault(); closeSounds(); }
+    else if(codexOpen){ e.preventDefault(); closeCodex(); }
+  });
   loadPersist();
   (persist.codex||[]).forEach(c=>codex.add(c));
+  (persist.sounds||[]).forEach(v=>{ if(VOICES[v]) sounds.add(v); });
   renderCodex();
+  renderSounds();
   render();
 })();
 </script>

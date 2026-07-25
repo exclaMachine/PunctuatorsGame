@@ -2167,14 +2167,60 @@ All centralized so "snappy & subtle" can be dialed toward "full Balatro" later w
 
 ## Timbre as collectible card skins — editions, not creature breeds (LOOK-ONLY SLICE BUILT 2026-07-20)
 
-> **Status: the LOOK-ONLY slice is ✅ BUILT (2026-07-20)** in `mujicians.html`; the **synth-preset (sound)
-> half is still planned** (a stubbed `preset:null` seam per skin). Reframes how **timbre** is collected and
+> **Status: the LOOK-ONLY skin slice is ✅ BUILT (2026-07-20); the SOUND engine + a "Sound Collective"
+> collection are ✅ BUILT (2026-07-25) — see [The Sound Collective](#the-sound-collective--sound-is-the-main-collection-built-2026-07-25) below.** Reframes how **timbre** is collected and
 > shown. **Supersedes** the Notelings "**Instrument (suit) → breed / material**" channel below: timbre is no
 > longer a *creature variation* — it becomes a **collectible translucent card skin (an "edition")**, in
 > the spirit of Balatro's Foil / Holographic / Polychrome cards. **Engine decision: hand-rolled Web-Audio
 > synth presets — NOT Tone.js** (considered and declined — the dependency, its own scheduler, and its own
 > AudioContext fight the repo's vanilla single-file rule and the game's existing `scheduleBar` clock; the
 > goal here is *variety to collect*, not realism, which a small preset system delivers with zero assets).
+
+### The Sound Collective — sound is the main collection (BUILT 2026-07-25)
+
+> **Dev decision (2026-07-25): collecting SOUNDS is the game's main collection system.** Scope picked this
+> pass: **pitched melody voices** (drums/sfx/ambient deferred); a **separate "Sound Collective" panel** (a
+> sibling to the Codex, not a tab); **discover-by-hearing** (a voice is catalogued the first time it sounds);
+> and **named presets now, creature/edition art later**.
+
+Built in `mujicians.html`:
+
+- **A data-driven voice engine.** `VOICES` registry (near `INSTRUMENTS`) — each entry is a small preset:
+  an **oscillator stack** (`{wave, semi, det(cents), g}`), a shared **ADSR** `env{a,d,s,r}`, an optional
+  **lowpass sweep** `filter{f0,f1,q}`, and an optional **tremolo** `trem{rate,depth}`. **`playVoice(voiceId,
+  midi, dur, t, vel)`** renders it in vanilla Web-Audio (mirrors `_tone`'s attack→decay→sustain→release,
+  generalised; envelope times clamp to the note length). This **fills the `preset` seam** the look-only slice
+  reserved. **9 voices shipped:** `grand` (piano), `pluck` (guitar), `roundbass` (bass) — the core trio —
+  plus collectibles **`glassbell`, `reedorgan`, `neonsaw`, `warmpad`, `musicbox`, `vibraphone`**. Add a voice
+  = add a `VOICES` entry + point an instrument's `voice` at it.
+- **Instruments now carry a `voice`.** `INSTRUMENTS` gained a `voice` field (the old `wave` kept as a legacy
+  fallback) and a `core:true` flag; the melodic sound paths (`soundStack`, `scheduleEvent`, the card-click
+  preview) route through `playVoice(voiceForInst(instId), …)` instead of the bare oscillator. So the existing
+  3 instruments **immediately sound richer/distinct**, and every card's timbre is a named voice.
+- **The palette widened without touching campaign.** Six **collectible instruments** (bell/organ/synth/pad/
+  box/vibes) were added to `INSTRUMENTS`, but **`instrumentsFor()` now draws only from `CORE_INSTRUMENTS`**
+  (the piano/guitar/bass trio) — so campaign teaching (incl. the M6 blend count) is **unchanged**. **Free
+  Play** builds its deck from a **shuffled full palette** (`freePlayInstruments()`), sliced to `MAX_TIMBRES`
+  (4), so **a different handful of voices appears each run** — you meet the whole palette over many runs.
+  `buildDeck(mv, level, isFree)` gained the `isFree` flag (passed from `startRun` when `mode==="free"`).
+  Save-safe: `instId` is stored as a **string** (never an index), so new instruments don't disturb old
+  saved songs; unknown ids fall back to piano.
+- **The Sound Collective collection.** A `sounds` `Set` (persisted in `persist.sounds`, additive; hydrated on
+  load, cleared by the DEV reset) that **`catalogSound(voiceId)` fills from inside `playVoice`** — so any
+  voice you *hear* in play is collected (Codex-style discovery). A **🔊 Sound Collective** button + count
+  badge sits beside the Codex; its dialog (`#soundsOverlay`, mirroring the Codex modal) lists all voices —
+  collected ones show name + family + description + a **▶ sample** button (plays a rising C–E–G–C so the
+  timbre sings), locked ones show a silhouette. Count = collected / total.
+- **Skins ride along for free.** The two spare skins finally attach — **synth = Neon, vibes = Frosted
+  Glass** — so those Free-Play cards wear their edition sheen (piano/guitar/bass unchanged).
+
+**Deferred / next:** per-voice **creature or edition art** (this pass is named-presets-only); **drum / sfx /
+ambient** collection families (scope was pitched-only); an **equip / loadout** layer (choose which voice a
+Free-Play deck uses) — pairs with the [backstage shop](#the-backstage-shop--tips-economy-planned) so voices
+can be a Tips sink and/or milestone drops; the **M6 gate/term** possibly counting distinct *voices* instead
+of distinct *instruments*; and **skinning the piano-roll loop cells** (skins still ride the hand cards only).
+The wide register spread of a random Free-Play palette (bass at C2, music box at C5) is left as-is for now —
+tune `baseC` per voice if the loop grid grows too tall.
 
 ### Look-only slice — as built (2026-07-20)
 
@@ -2198,10 +2244,12 @@ The **visual** half of the reframe shipped first (sound unchanged; the per-skin 
 - **Where they show.** Skins appear wherever **guitar/bass cards** do — **Campaign M6+** (`INSTRUMENT_UNLOCK_MV=6`)
   and **Free Play** (all instruments), plus the graduated accidental decks (`instrumentsFor(m).slice(0,MAX_TIMBRES)`).
   Before M6 the deck is piano-only, so cards stay plain.
-- **Deferred (unchanged):** the per-skin **synth preset** (`playPreset` seam — the "sound" half), skins as a
-  **separate collectible/equip layer** independent of the 3 instruments, the shop/Tips unlock, skinning the
-  **piano-roll loop cells** (this slice skins the hand cards + their clones only), and the M6 gate/term
-  possibly counting distinct *skins* instead of distinct *instruments*.
+- **Update (2026-07-25):** the per-voice **synth preset** — the "sound" half — is now **BUILT** as
+  `playVoice`/`VOICES` (the `playPreset` seam this bullet reserved), and sound became a **collectible layer**
+  (the [Sound Collective](#the-sound-collective--sound-is-the-main-collection-built-2026-07-25)). Still
+  deferred: an **equip** layer (the shop/Tips unlock; choose a Free-Play deck's voice), **skinning the
+  piano-roll loop cells** (skins ride the hand cards + clones only), and the M6 gate/term possibly counting
+  distinct *voices/skins* instead of distinct *instruments*.
 
 **The idea.** A **timbre skin** is one collectible unit carrying **both**:
 - a **synth preset** — the *sound* (a distinct voice: waveform stack + filter + envelope + maybe one light
@@ -2220,16 +2268,18 @@ the **collection fantasy** the dev wants, expressed on the card itself rather th
   fusion, mood…) without a 7×N breed explosion.
 - It maps 1:1 onto Balatro's editions — a proven, legible "shiny card you collected" language.
 
-**How it maps onto the current code.**
+**How it maps onto the current code.** *(Much of this is now BUILT — see [The Sound Collective](#the-sound-collective--sound-is-the-main-collection-built-2026-07-25). The bullets below are the original plan sketch.)*
 - Today "instrument = suit = waveform = timbre" (`INSTRUMENTS`: piano/`triangle`, guitar/`sawtooth`,
   bass/`sine`, sounded by `_tone`). Under the reframe, **the 3 instruments become the 3 *seed* timbre
-  skins**, and growth = **more presets, each with its own skin** — the deck's collectible "voices."
+  skins**, and growth = **more presets, each with its own skin** — the deck's collectible "voices." **(Built:
+  each instrument now carries a `voice`; 6 collectible voices were added; Free Play surfaces them.)**
 - Extend `_tone` (one oscillator) into a small **preset system** behind a `playPreset(midi, preset, …)`
   seam: a preset is data (`{ oscs:[…], filter, env, fx }`); the scheduler (`scheduleVoices`/`scheduleBar`)
   calls `playPreset` instead of a bare `wave`. ~150–250 lines, no dependency, drops into the existing
-  clock with no conflict (the reason we skipped Tone.js).
+  clock with no conflict (the reason we skipped Tone.js). **(Built as `playVoice`/`VOICES`.)**
 - A card gains an **equipped-skin id**; `cardHTML` adds the skin's CSS class; the scheduler reads the
-  skin's preset. Sound-preset and overlay stay one unit, so "equip skin" changes both at once.
+  skin's preset. Sound-preset and overlay stay one unit, so "equip skin" changes both at once. **(Equip layer
+  still deferred — voice binds to the instrument for now, not a per-card equip.)**
 
 **Collection & unlock (ties to existing systems).**
 - The **Codex** tracks which timbre skins you've discovered/collected (it already catalogs concepts).
@@ -2255,9 +2305,11 @@ offline-safe**, no CDN, no dependency. This is a big part of *why* Tone.js was d
 collectible-timbre goal is reachable inside the repo's vanilla single-file rules.
 
 **Open items.**
-- **Preset palette** — the starting set of voices/skins and their synth recipes (waveform stacks, filters,
-  a pluck/Karplus voice, a noise voice for a future percussion suit).
-- **Purely cosmetic+audio, or a scoring quirk?** (Leaning purely collectible.)
+- ~~**Preset palette** — the starting set of voices/skins and their synth recipes.~~ **✅ First set BUILT
+  2026-07-25** (9 `VOICES`: grand/pluck/roundbass + glassbell/reedorgan/neonsaw/warmpad/musicbox/vibraphone).
+  A pluck/Karplus voice and a noise voice for a future percussion suit can still be added.
+- **Purely cosmetic+audio, or a scoring quirk?** (Leaning purely collectible; **built purely collectible** —
+  a voice carries no score effect.)
 - **M6 rework** — whether the Timbre movement's gate/term switches from *instrument* blends to *skin*
   blends (above).
 - **Skin taxonomy** — a flat list vs. Balatro-style tiers (foil < holo < polychrome) with escalating sheen.
