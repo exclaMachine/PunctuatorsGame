@@ -309,7 +309,7 @@ teaches them.)
 
 ### Note-value & rest notation — the **Break** mechanic (front of the ladder)
 
-> **Status: Increments 1 & 2 BUILT (2026-07-24); gesture juice (Increment 3) still DESIGNED.** The M2
+> **Status: Increments 1–3 BUILT (2026-07-24).** The M2
 > *notation* stages (ladder stages 1–2) **teach** the mechanic — note-value and rest *notation*, the symbols and
 > their halving relationships — before the live-timing half applies them. But **Break is not lessons-only: it's a
 > first-class control in Free Play too** (dev 2026-07-24). Runs on the **M1 self-paced place-a-note gig engine**,
@@ -343,11 +343,24 @@ teaches them.)
 > note-gate block). Two Dee intros (`m2:durations`/`m2:rests`) + a rewritten `m2` (match) intro that bridges
 > notation→live; `RHYTHM_STAGE_LABEL` + the Home ladder strip + the win-screen advancement text are all
 > movement-aware. **Simplified for MVP:** the rests gate is "each rest value" (not yet "one pattern mixing notes
-> + rests"); the durations stage is a value-checklist, not a shown/sounded target rhythm to match. **Not yet
-> built — Increment 3:** gestures (snap-swipe Break / swipe-up Merge) + Dynamics double-tap/drag A/B +
-> length-bar fade + **the gate-label/intro glyph cleanup** (the note/rest glyphs still Unicode in `gateStatus`
-> labels + `LESSON_INTROS` prose + `DURATIONS.rest` may tofu — replace with `noteheadSVG`/`restSVG` or a legible
-> ASCII fallback in those flowing-text contexts).
+> + rests"); the durations stage is a value-checklist, not a shown/sounded target rhythm to match.
+>
+> **Increment 3 as built (2026-07-24) — gestures, dynamics gesture, length-bar fade, glyph cleanup.**
+> **Card gestures** (pointer events, single `pointerup` handler with `setPointerCapture`; `.card` gets
+> `touch-action:none`): a **vertical swipe** = Break (down) / Merge (up) via `breakAt(idx)`/`mergeAt(idx)` (the
+> button/key `breakSelected`/`mergeSelected` are thin wrappers now); a **tap** = select; a **double-tap** =
+> louder (`onCardTap` → `loudenCard`, cycles `run.curDyn` p→mf→f→p + swell, M3+ only). **Axis conflict resolved
+> (dev 2026-07-24):** vertical swipe was wanted for both Break/Merge *and* Dynamics — since Break/Merge own the
+> vertical swipe, **Dynamics uses double-tap, not a drag** (the doc's earlier drag idea is dropped; pinch was
+> never load-bearing). Thresholds: `CARD_SWIPE_MIN`=24px vertical (must dominate horizontal ×1.3),
+> `CARD_TAP_MAX`=14px; double-tap window 320ms; gesture state is module-scope so it survives the re-render each
+> gesture triggers. **Length-bar fade:** `lenBarHTML` adds `.faded` (opacity .28) unless `notationLesson()`
+> (a campaign durations/rests run) — full scaffold during the lessons, ghosted once values are learned.
+> **Glyph cleanup:** `noteGlyph`/`restGlyph` (inline SVG, `currentColor`) replace the tofu-prone Unicode
+> note/rest glyphs in the M2 gate labels + the `m2:durations`/`m2:rests` intros (`.ndhead`/`.restsvg` get
+> `vertical-align:middle`; `restSVG` gained a colour param). *(Load-order: `noteGlyph`/`restGlyph` are hoisted
+> function declarations since `LESSON_INTROS` evaluates them at module-load.)* The `DURATIONS.label`/`.rest`
+> Unicode fields remain but are dead-for-display (only `.ticks`/`.name`/`.id` are read).
 >
 > **Duration becomes a per-card property (default = quarter).** Under Break, a card *carries* a value: **every
 > note/rest card defaults to a quarter note (♩)**, and the player **Breaks it shorter or Merges it longer** from
@@ -392,20 +405,19 @@ substrate, and the gesture is **juice layered on top, never the only path**:
 - **MVP ✅ BUILT (2026-07-24):** a **Break/Merge control row** above the dynamics row + keyboard keys **`x`**
   (Break) / **`m`** (Merge). Zero gesture risk, fully testable on desktop. *(Keys are `x`/`m`, not the
   earlier-sketched `x`/`/` — `m` reads as "merge" and neither collides with the hand-select home row.)*
-- **Layer 2 (juice):** bind the same function to a **single-pointer downward "snap" swipe** across the card
-  (`touch-action:none` so the browser can't steal it for scroll), with a crack-and-fall-apart animation.
-  Merge = the inverse upward swipe. **Single-pointer only** — robust on mouse and touch alike.
+- **Layer 2 (juice) ✅ BUILT (Increment 3, 2026-07-24):** a **single-pointer vertical swipe** across the card —
+  **down = Break, up = Merge** (`touch-action:none` so the browser can't steal it for scroll; `setPointerCapture`
+  so the swipe completes even off-card). **Single-pointer only** — robust on mouse and touch alike. *(A
+  crack-and-fall-apart animation is not built — functional gesture only.)*
 - **Do NOT use tap-and-hold for Break** — hold is reserved for the deferred **hold-to-sustain** expressive
   duration control; one gesture, one meaning.
 
-**Dynamics gesture (parallel exploration).** Keep the **p / mf / f buttons**; *add* a card-level gesture for
-loudness and **A/B two candidates** to see which feels better:
-- **Double-tap / double-click the card = louder** — a quick, robust shortcut (dev's lean 2026-07-24).
-- **Single-pointer vertical drag** — up = louder/bigger, down = softer/smaller ("size = volume").
-
-Both are single-pointer and dodge browser-zoom conflicts. **Pinch/expand is *not* load-bearing** — two-finger
-pinch fights browser zoom and has no clean desktop equivalent; keep it at most as an optional touch-only
-flourish.
+**Dynamics gesture ✅ BUILT (Increment 3, 2026-07-24) — double-tap = louder.** Keep the **p / mf / f buttons**;
+the card gesture is **double-tap = louder** (`onCardTap`→`loudenCard`, cycles p→mf→f→p + size-swell, M3+ only).
+**The A/B resolved to double-tap by necessity:** vertical swipe is taken by Break/Merge, so a vertical *drag*
+for dynamics would collide — double-tap sits on a free axis (and was the dev's lean anyway). The earlier
+**vertical-drag** idea is **dropped**; **pinch** was never load-bearing (two-finger pinch fights browser zoom,
+no clean desktop equivalent).
 
 **Tentative future extensions (flagged, not v1):**
 - **Merge *unequal* same-pitch cards → dotted / tied values (preferred dotted-note route).** Relax Merge so two
@@ -452,15 +464,15 @@ playing-card index (creature art fills the center):
   filled + stem + flag.** **Rests:** whole = filled bar **hanging below** a faint staff line · half = filled bar
   **sitting on** the line (the line disambiguates the two otherwise-identical bars) · quarter = the squiggle ·
   eighth = a slanted stroke + one flag. Bonus: the notehead *is* the lesson (filled→hollow, stem→no-stem is the
-  exact notation being taught). **Still Unicode (may tofu — folded into Increment 3):** the note/rest glyphs
-  inside **gate labels and mentor-intro prose** (`gateStatus`, `LESSON_INTROS`) and the `DURATIONS.rest` field —
-  flowing-text contexts where inlining SVG is fiddlier; Increment 3 replaces them with `noteheadSVG`/`restSVG` or
-  a legible ASCII fallback.
-- **Bottom length-bar (teaching aid, fadeable).** A thin bar along the card's bottom edge whose **width is
-  proportional to the value** (♪ = ¼ width · ♩ = ½ · 𝅗𝅥 = ¾-ish · 𝅝 = full), mapping the abstract symbol to
-  visible *length* — reinforcing that duration = time = horizontal on the grid. Shown during the **M2 Break
-  stages** as a scaffold; **faded out** once values are learned (like the M1 shown→ear ramp). Pairs *with* the
-  corner index, not instead of it.
+  exact notation being taught). **✅ Increment 3 (2026-07-24): gate labels + the `m2:durations`/`m2:rests`
+  intros now use inline SVG** (`noteGlyph`/`restGlyph`, `currentColor`, `.ndhead`/`.restsvg` get
+  `vertical-align:middle`). The `DURATIONS.label`/`.rest` Unicode fields remain but are dead-for-display (only
+  `.ticks`/`.name`/`.id` are read), so no user-facing tofu remains.
+- **Bottom length-bar (teaching aid, fadeable). ✅ BUILT (fade in Increment 3).** A thin bar along the card's
+  bottom edge whose **width is proportional to the value** (♪ = ¼ width · ♩ = ½ · 𝅗𝅥 = ½+ · 𝅝 = full), mapping
+  the abstract symbol to visible *length* — reinforcing that duration = time = horizontal on the grid. **Full
+  during the M2 notation lessons** (`notationLesson()`), **faded to .28 opacity** everywhere else once values are
+  learned (like the M1 shown→ear ramp). Pairs *with* the corner index, not instead of it.
 - **When the index shows.** The corner duration reflects the **card's own value** in every mode — Free Play,
   the M2 stages, and later movements — since `curDur` retires in favour of per-card Break (see the decision
   above). Cards always carry a value (default ♩), so the index is always meaningful.

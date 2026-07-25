@@ -189,7 +189,7 @@
   .card{width:60px;height:90px;border-radius:9px;cursor:pointer;position:relative;
     background:#fff;border:2px solid rgba(0,0,0,.35);box-shadow:0 3px 0 rgba(0,0,0,.35);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    transition:transform .14s cubic-bezier(.22,1,.36,1);user-select:none;--dynscale:1}
+    transition:transform .14s cubic-bezier(.22,1,.36,1);user-select:none;--dynscale:1;touch-action:none}
   .card:hover{transform:translateY(-5px) scale(var(--dynscale))}
   .card.sel{transform:translateY(-16px) scale(var(--dynscale));box-shadow:0 10px 14px rgba(77,225,200,.35);
     outline:2px solid var(--accent);outline-offset:1px;z-index:2}
@@ -206,9 +206,12 @@
   .card .cdur{position:absolute;top:3px;right:4px;z-index:2;line-height:0}
   .card .cdur .ndhead{display:block}
   .card .lenbar{position:absolute;left:5px;right:5px;bottom:2px;height:3px;border-radius:2px;
-    background:rgba(0,0,0,.12);z-index:2;overflow:hidden}
+    background:rgba(0,0,0,.12);z-index:2;overflow:hidden;transition:opacity .3s ease}
   .card .lenbar > i{display:block;height:100%;border-radius:2px;background:var(--cc,#5a6bff);opacity:.85}
   .card.rest .lenbar > i{background:#5a5f7a}
+  .card .lenbar.faded{opacity:.28}                         /* teaching scaffold: faded once note values are learned (past the M2 notation lessons) */
+  /* inline value glyphs (gate labels + intro prose) sit on the text baseline */
+  .ndhead, .restsvg{vertical-align:middle}
 
   /* ===== SKIN OVERLAYS — timbre "editions" (foil / holo / …), pure CSS, no assets =====
      A `.cskin` child fills the card face with a translucent sheen that reads as the timbre. The note
@@ -825,10 +828,10 @@
         if(rhythmCampaign(r)){                                             // M2 ladder — notation (durations/rests) then live drumming (match/grooves/free)
           if(r.rhythmStage==="durations"){                                 // self-paced NOTATION: play each note value (Break/Merge to reach ♪ and 𝅝)
             const h=r.gateDurs?r.gateDurs.size:0, N=DURATIONS.length;
-            return { met:h>=N, label:`Durations — play each note value (♪ ♩ 𝅗𝅥 𝅝) via Break/Merge: ${cap(h,N)}/${N}` }; }
+            return { met:h>=N, label:`Durations — play each note value (${noteGlyph("e")} ${noteGlyph("q")} ${noteGlyph("h")} ${noteGlyph("w")}) via Break/Merge: ${cap(h,N)}/${N}` }; }
           if(r.rhythmStage==="rests"){                                     // self-paced NOTATION: place each rest value (the rest card, Broken/Merged)
             const h=r.gateRestDurs?r.gateRestDurs.size:0, N=DURATIONS.length;
-            return { met:h>=N, label:`Rests — place each rest value (𝄾 𝄽 𝄼 𝄻) via the rest card + Break/Merge: ${cap(h,N)}/${N}` }; }
+            return { met:h>=N, label:`Rests — place each rest value (${restGlyph("e")} ${restGlyph("q")} ${restGlyph("h")} ${restGlyph("w")}) via the rest card + Break/Merge: ${cap(h,N)}/${N}` }; }
           if(r.rhythmStage==="free"){
             const mel = melodyNoteCount(r), melDone = mel>=FREE_MELODY_NOTES;
             const hits = labStats.total;   // total drums you've played this take (not distinct cells) — "a few solid hits and it's a keeper"
@@ -838,7 +841,7 @@
           return { met:!!r.grooveMet, label:`Rhythm gate — match the ${g.name} beat (${cap(got,tot)}/${tot})` };
         }
         const h=r.gateDurs?r.gateDurs.size:0, N=DURATIONS.length;          // Free Play / legacy: play each note value (Break to reach ♪)
-        return { met:h>=N, label:`Rhythm gate — play each note value (♪ ♩ 𝅗𝅥 𝅝): ${cap(h,N)}/${N}` }; }
+        return { met:h>=N, label:`Rhythm gate — play each note value (${noteGlyph("e")} ${noteGlyph("q")} ${noteGlyph("h")} ${noteGlyph("w")}): ${cap(h,N)}/${N}` }; }
       case 3: { const h=r.gateDyns?r.gateDyns.size:0;
         return { met:h>=3, label:`Dynamics gate — play soft, medium & loud: ${h}/3` }; }
       case 4: { const iv=r.gateIntervals?r.gateIntervals.size:0, rn=r.gateRun?1:0;
@@ -1951,17 +1954,18 @@
     }
     return best;
   }
-  function breakSelected(){                                                         // ♩ → two ♪ : one card becomes two half-value copies
-    const idx = selectedSingleIdx(); if(idx<0) return;
-    const c = run.hand[idx]; const h = halfDur(c.dur||DEFAULT_DUR); if(!h) return;   // already at the floor (eighth)
+  // breakAt/mergeAt act on ANY card index (a swipe targets the card under the finger, selected or not);
+  // breakSelected/mergeSelected are the button/key wrappers that act on the single selected card.
+  function breakAt(idx){                                                            // ♩ → two ♪ : one card becomes two half-value copies
+    if(idx<0) return; const c = run.hand[idx]; if(!c) return;
+    const h = halfDur(c.dur||DEFAULT_DUR); if(!h) return;                            // already at the floor (eighth)
     const mk = () => Object.assign({}, c, { id:nextCardId(), dur:h });
     run.hand.splice(idx, 1, mk(), mk());   // replace with two adjacent halves
     run.sel = new Set([idx]);              // keep the first half selected so you can keep breaking
     renderGig();
   }
-  function mergeSelected(){                                                         // two ♩ → one 𝅗𝅥 : fuse the selected card with an equal partner (anywhere in hand)
-    const idx = selectedSingleIdx(); if(idx<0) return;
-    const j = mergeTargetIdx(idx); if(j<0) return;
+  function mergeAt(idx){                                                            // two ♩ → one 𝅗𝅥 : fuse with an equal partner (anywhere in hand)
+    if(idx<0) return; const j = mergeTargetIdx(idx); if(j<0) return;
     const c = run.hand[idx];
     const merged = Object.assign({}, c, { id:nextCardId(), dur:doubleDur(c.dur||DEFAULT_DUR) });
     const lo = Math.min(idx,j), hi = Math.max(idx,j);
@@ -1969,6 +1973,29 @@
     run.hand.splice(lo, 1, merged);    // the merged (longer) card takes the selected card's place
     run.sel = new Set([lo]);
     renderGig();
+  }
+  function breakSelected(){ breakAt(selectedSingleIdx()); }
+  function mergeSelected(){ mergeAt(selectedSingleIdx()); }
+  // ---- Card pointer gestures (Increment 3): vertical swipe = Break(down)/Merge(up); tap = select; double-tap
+  // = louder. State is module-scope so it survives the re-render each gesture triggers. ----
+  let _dtapIdx = -1, _dtapTs = 0;
+  const CARD_SWIPE_MIN = 24, CARD_TAP_MAX = 14;   // px: vertical-swipe threshold / max movement still read as a tap
+  function onCardTap(idx){
+    const now = Date.now();
+    if(termOn("dynamic") && _dtapIdx===idx && (now - _dtapTs) < 320){ _dtapIdx = -1; loudenCard(idx); return; }   // double-tap → louder
+    _dtapIdx = idx; _dtapTs = now;
+    toggleSel(idx);
+  }
+  // Dynamics double-tap gesture (M3+): tapping a card twice steps its loudness up (p→mf→f→p), selecting the
+  // card so the size-swell previews it. (Vertical swipe is taken by Break/Merge, so dynamics uses double-tap.)
+  function loudenCard(idx){
+    if(!termOn("dynamic") || idx<0 || !run.hand[idx]) return;
+    const order = DYN.map(d=>d.id), cur = run.curDyn||DEFAULT_DYN;
+    const prev = run.curDyn;
+    run.curDyn = order[(order.indexOf(cur)+1) % order.length];
+    run.sel = new Set([idx]);   // select so the swell shows on this card
+    renderGig();
+    swellSelected(prev, run.curDyn);
   }
 
   // Append an event at the write cursor (overwriting any event that started in the span), keep the
@@ -2196,14 +2223,14 @@
       compact:"🤺 Answer <b>LOWER ↓</b> than my note — bonus for the exact ♭ (then let it fall down)." },
     "m2:durations": { char:"dee", title:"Rhythm — how long a note lasts",
       theory:[ "Feel the ground humming? That steady <b>pulse</b> is the <b>beat</b>. But notes don't all last the same — some are long, some short. That length is a note's <b>value</b>.",
-               "A quarter note <b>♩</b> lasts one beat. <b>Break</b> it in half and you get two eighths <b>♪</b>; <b>Merge</b> two quarters into a half <b>𝅗𝅥</b>, two halves into a whole <b>𝅝</b>. Longer note → wider card." ],
-      task:"Every card starts as a quarter <b>♩</b>. Press <b>Break (x)</b> for shorter notes and <b>Merge (m)</b> for longer ones — play each value at least once: <b>♪ ♩ 𝅗𝅥 𝅝</b>.",
-      compact:"🎵 Break (x) &amp; Merge (m) to play each note value — ♪ ♩ 𝅗𝅥 𝅝!" },
+               `A quarter note ${noteGlyph("q")} lasts one beat. <b>Break</b> it in half and you get two eighths ${noteGlyph("e")}; <b>Merge</b> two quarters into a half ${noteGlyph("h")}, two halves into a whole ${noteGlyph("w")}. Longer note → wider card.` ],
+      task:`Every card starts as a quarter ${noteGlyph("q")}. Press <b>Break (x)</b> for shorter notes and <b>Merge (m)</b> for longer ones — play each value at least once: ${noteGlyph("e")} ${noteGlyph("q")} ${noteGlyph("h")} ${noteGlyph("w")}.`,
+      compact:`🎵 Break (x) &amp; Merge (m) to play each note value — ${noteGlyph("e")} ${noteGlyph("q")} ${noteGlyph("h")} ${noteGlyph("w")}!` },
     "m2:rests": { char:"dee", title:"Rests — the shape of silence",
-      theory:[ "Music breathes. A <b>rest</b> is a silence with a length, just like a note — a quarter rest <b>𝄽</b> lasts exactly as long as a quarter note <b>♩</b>.",
+      theory:[ `Music breathes. A <b>rest</b> is a silence with a length, just like a note — a quarter rest ${restGlyph("q")} lasts exactly as long as a quarter note ${noteGlyph("q")}.`,
                "Same moves: the <b>rest card</b> starts as a quarter rest. <b>Break</b> it into shorter silences, <b>Merge</b> into longer ones. Every note value has a matching rest." ],
-      task:"Play the <b>rest card</b>, and Break/Merge it to place each rest value: <b>𝄾 𝄽 𝄼 𝄻</b>.",
-      compact:"🤫 Break &amp; Merge the rest card to place each rest value — 𝄾 𝄽 𝄼 𝄻!" },
+      task:`Play the <b>rest card</b>, and Break/Merge it to place each rest value: ${restGlyph("e")} ${restGlyph("q")} ${restGlyph("h")} ${restGlyph("w")}.`,
+      compact:`🤫 Break &amp; Merge the rest card to place each rest value — ${restGlyph("e")} ${restGlyph("q")} ${restGlyph("h")} ${restGlyph("w")}!` },
     "m2": { char:"dee", title:"Rhythm — feel the pulse live",
       theory:[ "You've learned how long notes and rests <i>last</i>. But rhythm is best <i>felt</i>, not just placed — so now you'll <b>drum it live</b>, in time with the loop!",
                "The simplest, sturdiest beat there is: a <b>kick on every beat</b> — one, two, three, four. They call it <b>four-on-the-floor</b>, and it's the heartbeat of half the music you love." ],
@@ -2462,8 +2489,8 @@
   // Rest symbols as SVG too — the Unicode rests (𝄾 𝄽 𝄼 𝄻) are astral-plane and render as tofu rectangles.
   // Half sits ON a staff line, whole HANGS below one (a faint line disambiguates the two bars); quarter is the
   // squiggle; eighth is a slanted stroke with one flag.
-  function restSVG(durId, w){
-    const c = GLYPH_INK, width = w || 22, height = Math.round(width*1.4);
+  function restSVG(durId, w, color){
+    const c = color || GLYPH_INK, width = w || 22, height = Math.round(width*1.4);
     const inner = durId==="w"
         ? `<line x1="4" y1="10" x2="16" y2="10" stroke="${c}" stroke-width="1" opacity=".5"/><rect x="6" y="10" width="8" height="4.6" rx=".5" fill="${c}"/>`
       : durId==="h"
@@ -2473,9 +2500,16 @@
         : `<line x1="12.4" y1="7.6" x2="7" y2="20.5" stroke="${c}" stroke-width="1.7" stroke-linecap="round"/><circle cx="9.6" cy="9" r="2.2" fill="${c}"/><path d="M9.6 9 Q13 8 12.3 11" fill="none" stroke="${c}" stroke-width="1.3"/>`;   // eighth
     return `<svg class="restsvg" viewBox="0 0 20 28" width="${width}" height="${height}" aria-hidden="true">${inner}</svg>`;
   }
+  // Inline value glyphs for gate labels + intro prose (the Unicode note/rest glyphs tofu). currentColor so they
+  // inherit the surrounding text colour; sized to sit on the text baseline (see .ndhead/.restsvg vertical-align).
+  // Function declarations (hoisted) — LESSON_INTROS evaluates these at module-load, before this line.
+  function noteGlyph(id){ return noteheadSVG(id, "currentColor"); }
+  function restGlyph(id){ return restSVG(id, 11, "currentColor"); }
+  // The length-bar is a teaching scaffold: full during the M2 notation lessons, faded once values are learned.
+  function notationLesson(){ return !!(run && run.mode==="campaign" && run.movement===2 && (run.rhythmStage==="durations" || run.rhythmStage==="rests")); }
   function lenBarHTML(durId){
     const pct = Math.round(durTicks(durId) / durTicks("w") * 100);   // whole = full width
-    return `<div class="lenbar"><i style="width:${pct}%"></i></div>`;
+    return `<div class="lenbar${notationLesson()?"":" faded"}"><i style="width:${pct}%"></i></div>`;
   }
   function cardHTML(c, idx){
     const selCls = run.sel.has(idx) ? " sel" : "";
@@ -2790,7 +2824,17 @@
       <div class="muses">${musesHTML()}</div>`;
     // wire
     $game.querySelectorAll(".card").forEach(el=>{
-      el.addEventListener("click", ()=> toggleSel(+el.dataset.idx));
+      const idx = +el.dataset.idx;
+      let sx=0, sy=0, down=false;
+      el.addEventListener("pointerdown", e=>{ sx=e.clientX; sy=e.clientY; down=true; try{ el.setPointerCapture(e.pointerId); }catch(_){}} );
+      el.addEventListener("pointerup", e=>{
+        if(!down) return; down=false;
+        const dx=e.clientX-sx, dy=e.clientY-sy, adx=Math.abs(dx), ady=Math.abs(dy);
+        if(termOn("groove") && ady>=CARD_SWIPE_MIN && ady>adx*1.3){ if(dy>0) breakAt(idx); else mergeAt(idx); return; }   // vertical swipe = Break↓ / Merge↑
+        if(adx>CARD_TAP_MAX || ady>CARD_TAP_MAX) return;   // ambiguous drag — neither a clean swipe nor a tap
+        onCardTap(idx);   // tap = select · double-tap = louder (M3+)
+      });
+      el.addEventListener("pointercancel", ()=>{ down=false; });
     });
     document.getElementById("b-play").addEventListener("click", playHand);
     document.getElementById("b-disc").addEventListener("click", discardHand);
