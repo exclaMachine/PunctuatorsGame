@@ -149,6 +149,37 @@
     color:#f4f0e6;padding:6px 10px;cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.25)}
   .sc-daily-btn:hover{background:var(--ink)}
   .ml-err{color:#9a3b2e}
+  /* Excla Machine tab (daily interjection puzzle) */
+  .ex-card{background:#f4e6bf;border:2px solid var(--gold);padding:12px 14px;margin-bottom:12px;
+    box-shadow:2px 2px 0 rgba(0,0,0,.2)}
+  .ex-tag{font-family:var(--disp);font-size:9px;color:var(--gold);margin-bottom:8px}
+  .ex-scene{font-family:var(--read);font-size:19px;font-weight:700;line-height:1.35;color:var(--ink);margin-bottom:12px}
+  .ex-slots{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px}
+  .ex-slot{display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px}
+  .ex-slot-lbl{font-family:var(--disp);font-size:8px;color:var(--ink-soft)}
+  .ex-slot-lbl b{color:var(--inkblue);font-size:11px}
+  .ex-slot input{font-family:var(--read);font-size:18px;padding:6px 9px;border:2px solid var(--edge);
+    background:var(--paper);color:var(--ink);min-width:0}
+  .ex-slot input:disabled{opacity:.7}
+  .ex-bang{font-family:var(--read);font-size:22px;font-weight:700;color:var(--ink-soft);align-self:center;padding-top:14px}
+  .ex-go{font-family:var(--disp);font-size:10px;background:var(--inkblue);border:2px solid var(--inkblue);
+    color:#f4f0e6;padding:7px 12px;cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .ex-go:hover{background:var(--ink)}
+  .ex-go:disabled{opacity:.5;cursor:default}
+  .ex-msg{font-family:var(--read);font-size:14px;min-height:19px;margin-top:9px;color:var(--ink-soft)}
+  .ex-msg.ok{color:var(--moss)}
+  .ex-msg.bad{color:#b3372f}
+  .ex-solved{font-family:var(--read);font-size:15px;color:var(--moss);line-height:1.4}
+  .ex-yell{font-family:var(--read);font-size:22px;font-weight:700;color:var(--ink)}
+  .ex-count{font-family:var(--disp);font-size:9px;color:var(--ink-soft);margin-bottom:8px}
+  .ex-gallery{display:flex;flex-direction:column;gap:8px}
+  .ex-gcard{display:flex;flex-direction:column;gap:3px;text-align:left;background:#e2edd6;border:2px solid var(--moss);
+    color:var(--ink);padding:10px 12px;box-shadow:2px 2px 0 rgba(0,0,0,.2)}
+  .ex-gcard.allit{background:#f4e6bf;border-color:var(--gold)}
+  .ex-gsaid{font-family:var(--read);font-size:18px;font-weight:700;color:var(--moss)}
+  .ex-gcard.allit .ex-gsaid{color:var(--gold-2,#a9781f)}
+  .ex-gscene{font-family:var(--read);font-size:13px;font-style:italic;color:var(--ink-soft)}
+  .ex-shake{animation:ppshake .32s}
   /* Bestiary overlay (creature dex) */
   #bestiary{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
     align-items:center;justify-content:center;padding:18px;z-index:7}
@@ -1025,6 +1056,7 @@
         <div class="ml-tabs">
           <button class="ml-tab active" id="ml-tab-fables">📜 Fables</button>
           <button class="ml-tab" id="ml-tab-snow">✶ Snowclones</button>
+          <button class="ml-tab" id="ml-tab-excla">❗ Excla Machine</button>
         </div>
         <h1 id="ml-title">Restore the Chapter</h1>
         <div class="sub" id="ml-sub"></div>
@@ -1834,6 +1866,79 @@ function snowcloneOfDay(){
 }
 function snowDailyClaimed(){ return state.snowDailyDay===state.day; }
 
+// --- Excla Machine (daily interjection puzzle) ----------------------------------
+// Invent a two-word interjection — an ADJECTIVE + a NOUN — reacting to an absurd daily scenario, where the
+// adjective must start with letter L1 and the noun with L2. Day-seeded like the WOTD/Snowclone-of-the-Day
+// (same all day, rotates daily); a third Mad Libris tab (sibling to Snowclones). Any valid adjective+noun
+// pair wins — there's no single answer. Solving pays a one-per-day ink bonus (+ an extra if L1==L2, an
+// alliterative yell). Validation reuses the bundled WordNet lookup (localLookup) — no network.
+const EXCLA_BONUS = 25;         // ink for solving today's interjection (mirrors WOTD_BONUS)
+const EXCLA_ALLIT_BONUS = 10;   // extra ink when the day's letters match (L1==L2) and you alliterate
+const EXCLA_ADJ_MIN = 100;      // a letter is a valid adjective-start only if the bundle has ≥ this many (excludes j/k/q/x/y/z)
+const EXCLA_NOUN_MIN = 150;     // …and a valid noun-start only if ≥ this many nouns start with it (excludes x/y/z)
+const EXCLA_ALLIT_CHANCE = 0.3; // fraction of days that deliberately use the same letter for both (alliteration days)
+// Hand-written absurd scenarios carry the comedy (data/excla-scenarios.json). Fetched at startup like the
+// other data files; a small inline fallback keeps the puzzle playable if the fetch fails.
+let EXCLA_SCENARIOS = null;
+const EXCLA_FALLBACK = ["a pigeon stole your homework","your soup started telling jokes",
+  "your friend turned into a turtle","the toaster proposed marriage","gravity took the afternoon off",
+  "a goose is doing your taxes","your coffee began reciting poetry","the ocean asked for directions"];
+fetch("data/excla-scenarios.json").then(r=>r.ok?r.json():Promise.reject())
+  .then(list=>{ if(Array.isArray(list) && list.length) EXCLA_SCENARIOS=list.map(String); else EXCLA_SCENARIOS=EXCLA_FALLBACK;
+    if(state.madlibs && mlTab==="excla") renderExclaTab(); })
+  .catch(()=>{ EXCLA_SCENARIOS=EXCLA_FALLBACK; if(state.madlibs && mlTab==="excla") renderExclaTab(); });
+dictReady.then(()=>{ if(state.madlibs && mlTab==="excla") renderExclaTab(); });   // pools become available once the bundle loads → refresh an open puzzle
+// Per-first-letter adjective/noun counts over the bundle → the eligible starting-letter pools. Precomputed
+// once the dictionary loads (memoized). Each pool entry weights by count so common letters come up more
+// often (easier puzzles fall out naturally); the ≥MIN thresholds guarantee every chosen letter has plenty
+// of valid answers (solvability guarantee). Null until DICT is ready.
+let _exclaPools = null;
+function exclaPools(){
+  if(_exclaPools) return _exclaPools;
+  if(!DICT) return null;                  // dictionary still loading — caller shows "loading…"
+  const adj={}, noun={};
+  for(const w in DICT){ const c=w[0]; if(c<"a"||c>"z") continue; const pos=DICT[w].pos||[];
+    if(pos.includes("adjective")) adj[c]=(adj[c]||0)+1;
+    if(pos.includes("noun")) noun[c]=(noun[c]||0)+1; }
+  const adjLetters=Object.keys(adj).filter(c=>adj[c]>=EXCLA_ADJ_MIN).sort();
+  const nounLetters=Object.keys(noun).filter(c=>noun[c]>=EXCLA_NOUN_MIN).sort();
+  const both=adjLetters.filter(c=>nounLetters.includes(c));
+  _exclaPools={ adj, noun, adjLetters, nounLetters, both };
+  return _exclaPools;
+}
+// Weighted pick of one letter from `letters`, biased by its count in `counts`, using the seeded rng.
+function exclaPickLetter(letters, counts, rng){
+  let total=0; for(const c of letters) total+=counts[c];
+  let r=rng()*total; for(const c of letters){ r-=counts[c]; if(r<0) return c; }
+  return letters[letters.length-1];
+}
+let _excla=null, _exclaDay=null;
+function exclaOfDay(){
+  if(_exclaDay===state.day && _excla) return _excla;
+  const pools=exclaPools(); if(!pools || !EXCLA_SCENARIOS) return null;   // still loading
+  const rng=mulberry32(((state.daySeed>>>0)^0x3c1a)>>>0);                 // distinct offset so it doesn't correlate with the map/WOTD/snowclone dailies
+  const scenario=EXCLA_SCENARIOS[Math.floor(rng()*EXCLA_SCENARIOS.length)];
+  let L1, L2;
+  // ~EXCLA_ALLIT_CHANCE of days are alliteration days (same required letter for both, drawn from the pool
+  // of letters valid for BOTH an adjective and a noun). Other days pick independently — so alliteration is
+  // possible but not the only case (a coincidental match still counts for the bonus).
+  if(pools.both.length && rng()<EXCLA_ALLIT_CHANCE){ L1=L2=exclaPickLetter(pools.both, pools.noun, rng); }
+  else { L1=exclaPickLetter(pools.adjLetters, pools.adj, rng); L2=exclaPickLetter(pools.nounLetters, pools.noun, rng); }
+  _excla={ scenario, L1, L2, allit:L1===L2 }; _exclaDay=state.day;
+  return _excla;
+}
+function exclaSolvedToday(){ return state.exclaDay===state.day; }
+function exclaTodayYell(){ return exclaSolvedToday() ? state.exclaYells.find(y=>y.day===state.day) : null; }
+// Validate one word against a required POS + starting letter; returns a friendly problem string, or "" if OK.
+function exclaCheckWord(word, pos, letter, label){
+  if(!word) return "Type your "+label+".";
+  if(word[0]!==letter) return "Your "+label+" must start with “"+letter.toUpperCase()+"”.";
+  const r=localLookup(word);
+  if(!r.ok) return "“"+word+"” isn't a word I know.";
+  if(!(r.pos||[]).includes(pos)) return "“"+word+"” isn't "+(pos==="adjective"?"an adjective":"a noun")+".";
+  return "";
+}
+
 /* ---------- CREATURES / DROPS / BESTIARY (data-driven) --------------------------
    data/creatures.json is the SINGLE SOURCE OF TRUTH for both the spawner (tier/hp/spawn/drops) and the
    bestiary UI (dex.*). Loaded once at startup, same pattern as the mad-libs chapter JSON. Kill/seen
@@ -2292,6 +2397,8 @@ const state = {
   fables:1,                     // how many Aesop chapters are RECOVERED (unlocked), in book order — chapter 1 is free (persist)
   snowclones:{},                // snowclone progress: frameId -> {fills:{blankId:word}, done, exact} (persist; second Mad Libris tab, free word reuse)
   snowDailyDay:"",              // day-string on which the Snowclone-of-the-Day bonus was last claimed (persist)
+  exclaDay:"",                  // day-string on which the Excla Machine daily interjection was solved (persist; re-arms on rollover)
+  exclaYells:[],                // gallery of coined interjections: [{day, scenario, adj, noun, allit}] (persist; third Mad Libris tab)
   verbCounts:{},                // verb category -> distinct verbs collected (persist; re-derived from dex on load)
   perks:{ speed:0, attack:0, satchel:0, hearts:0, slide:false, finisher:false, combo:false, divine:false, treasure:0, magnet:false, secondwind:false },  // derived from verbCounts
   divineDay:"",                 // date-string of the last Divine peek (day-scoped like the WOTD)
@@ -2913,8 +3020,11 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"){ e.preventDefault(); if(phonTab==="guide") phonShowTab("sounds"); else closePhonicon(); }   // step back from the Guide tab first
     return;
   }
-  if(MOVE_KEYS.has(k)) e.preventDefault();
-  if(k==="?"||k==="/"){ e.preventDefault(); toggleHelp(); return; }
+  // Don't swallow W/A/S/D (or the other movement keys) while typing in an Excla Machine input — they're
+  // letters there, not movement (the madlibs branch below handles the tab, but this preventDefault runs first).
+  const inExclaInput = state.madlibs && mlTab==="excla" && e.target && e.target.tagName==="INPUT";
+  if(MOVE_KEYS.has(k) && !inExclaInput) e.preventDefault();
+  if((k==="?"||k==="/") && !inExclaInput){ e.preventDefault(); toggleHelp(); return; }
   if(document.getElementById("unlockmodal").classList.contains("open")){   // top-most: dismiss the new-letter notice
     e.preventDefault(); if(k==="enter"||k==="escape"||k===" ") closeUnlockModal(); return;
   }
@@ -2961,7 +3071,9 @@ addEventListener("keydown",e=>{
     return;
   }
   if(state.madlibs){   // book/mad-libs window open: close on Esc / Tab / E (clicks drive the rest)
-    if(k==="escape"||k==="tab"||k==="e"){ e.preventDefault(); closeBook(); }
+    if(k==="escape"){ e.preventDefault(); closeBook(); return; }
+    if(mlTab==="excla" && e.target && e.target.tagName==="INPUT") return;   // let the Excla text inputs receive typing (Enter submits via their own handler); don't swallow letters
+    if(k==="tab"||k==="e"){ e.preventDefault(); closeBook(); }
     return;
   }
   if(state.bestiaryOpen){   // bestiary open: close on Esc / Tab / B
@@ -5543,7 +5655,7 @@ function completionHTML(lvl,R){
    Parallels the fable fill loop but with its own state (state.snowclones), free word
    reuse (snowWords ignores usedWordSet), and a canonical-match bonus instead of book
    logic. Reuses the shared passageHTML/pickerHTML/wirePicker/neededHTML helpers. */
-let mlTab="fables";              // which Mad Libris tab is active: "fables" | "snow"
+let mlTab="fables";              // which Mad Libris tab is active: "fables" | "snow" | "excla"
 let scLevel=null, scActive=null; // open snowclone frame + active blank id
 // scRec = the record the open fill session reads/writes. Normally the saved state.snowclones[id];
 // in RE-COIN mode it's a throwaway draft (cloned from the saved fills) so an abandoned re-coin never
@@ -5571,9 +5683,87 @@ function mlSwitchTab(tab){
   mlTab=tab;
   document.getElementById("ml-tab-fables").classList.toggle("active", tab==="fables");
   document.getElementById("ml-tab-snow").classList.toggle("active", tab==="snow");
+  document.getElementById("ml-tab-excla").classList.toggle("active", tab==="excla");
   if(tab==="fables"){ mlActive=null; mlLevel=null; showChapterMenu(); }
+  else if(tab==="excla") renderExclaTab();
   else renderSnowMenu();
   SFX.play("click");
+}
+// ---- Excla Machine tab (daily interjection puzzle) ----
+function setExMsg(text, cls){ const m=document.getElementById("ex-msg"); if(m){ m.textContent=text; m.className="ex-msg"+(cls?" "+cls:""); } }
+function exShake(){ const c=document.getElementById("ex-card"); if(c){ c.classList.remove("ex-shake"); void c.offsetWidth; c.classList.add("ex-shake"); } }
+function exCap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+function exYellText(adj, noun){ return "“"+exCap(adj)+" "+noun+"!”"; }
+// Read the two inputs, validate (adjective@L1 + noun@L2), and — on a valid, not-yet-solved-today pair —
+// award the daily ink (+ alliteration extra when L1==L2), record the yell, and re-render into the solved state.
+function exclaSubmit(){
+  if(!state.madlibs || mlTab!=="excla") return;
+  const p=exclaOfDay(); if(!p){ setExMsg("The word bundle is still loading…","bad"); return; }
+  if(exclaSolvedToday()){ setExMsg("You've already yelled today — a fresh scenario tomorrow.","bad"); return; }
+  const clean=v=>((v||"").trim().toLowerCase().replace(/[^a-z]/g,""));
+  const adj=clean(document.getElementById("ex-adj") && document.getElementById("ex-adj").value);
+  const noun=clean(document.getElementById("ex-noun") && document.getElementById("ex-noun").value);
+  const e1=exclaCheckWord(adj, "adjective", p.L1, "adjective");
+  if(e1){ setExMsg(e1,"bad"); exShake(); SFX.play("invalid"); return; }
+  const e2=exclaCheckWord(noun, "noun", p.L2, "noun");
+  if(e2){ setExMsg(e2,"bad"); exShake(); SFX.play("invalid"); return; }
+  // Valid interjection! Pay the daily bonus (+ alliteration extra) once, record the yell.
+  let gained=EXCLA_BONUS; if(p.allit) gained+=EXCLA_ALLIT_BONUS;
+  state.ink+=gained; state.exclaDay=state.day;
+  state.exclaYells.push({ day:state.day, scenario:p.scenario, adj, noun, allit:p.allit });
+  updateRewardHud(); scheduleSave();
+  SFX.play(p.allit?"unlock":"newword");
+  const bits=["+"+EXCLA_BONUS+" ink"]; if(p.allit) bits.push("+"+EXCLA_ALLIT_BONUS+" Excla! (alliteration)");
+  showToast((p.allit?"❗ ":"✦ ")+"Yelled "+exYellText(adj,noun)+" · "+bits.join(" · "));
+  renderExclaTab();
+}
+function renderExclaTab(){
+  document.getElementById("ml-back").style.display="none";
+  document.getElementById("ml-title").textContent="Excla Machine";
+  document.getElementById("ml-sub").innerHTML="An <b>interjection</b> is a word or phrase yelled to express feeling (“Yikes!”, “Good grief!”). Invent a two-word one — an <b>adjective + a noun</b> — reacting to today's absurd scenario, using the required starting letters. Any real pair wins.";
+  document.getElementById("ml-panel").innerHTML="";
+  const pas=document.getElementById("ml-passage");
+  const p=exclaOfDay();
+  let card;
+  if(!p){
+    card='<div class="ex-card"><div class="ex-tag">❗ Excla Machine of the Day</div>'
+      +'<div class="ex-scene">The word bundle is still loading…</div></div>';
+  } else if(exclaSolvedToday()){
+    const y=exclaTodayYell()||{adj:"?",noun:"?"};
+    card='<div class="ex-card" id="ex-card"><div class="ex-tag">❗ Excla Machine of the Day</div>'
+      +'<div class="ex-scene">What would you yell if '+esc(p.scenario)+'?</div>'
+      +'<div class="ex-solved">Solved ✓ — you yelled <span class="ex-yell">'+esc(exYellText(y.adj,y.noun))+'</span>'
+      +(p.allit?" and pulled off the alliteration! ❗":".")+' A fresh scenario tomorrow.</div></div>';
+  } else {
+    card='<div class="ex-card" id="ex-card"><div class="ex-tag">❗ Excla Machine of the Day</div>'
+      +'<div class="ex-scene">What would you yell if '+esc(p.scenario)+'?</div>'
+      +'<div class="ex-slots">'
+      +'<div class="ex-slot"><div class="ex-slot-lbl">ADJECTIVE starting <b>'+p.L1.toUpperCase()+'</b></div>'
+      +'<input id="ex-adj" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+p.L1+'…"></div>'
+      +'<div class="ex-bang">+</div>'
+      +'<div class="ex-slot"><div class="ex-slot-lbl">NOUN starting <b>'+p.L2.toUpperCase()+'</b></div>'
+      +'<input id="ex-noun" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+p.L2+'…"></div>'
+      +'</div>'
+      +'<button class="ex-go" id="ex-go">Yell it! · +'+EXCLA_BONUS+' ink'+(p.allit?" (❗ alliteration day: +"+EXCLA_ALLIT_BONUS+")":"")+'</button>'
+      +'<div class="ex-msg" id="ex-msg"></div></div>';
+  }
+  // Gallery of past yells (most recent first) — your Excla Codex.
+  const yells=state.exclaYells.slice().reverse();
+  let gallery='<div class="ex-count">'+yells.length+' yell'+(yells.length===1?"":"s")+' coined — your Excla Codex</div>';
+  if(yells.length){
+    gallery+='<div class="ex-gallery">'+yells.map(y=>
+      '<div class="ex-gcard'+(y.allit?" allit":"")+'">'
+      +'<span class="ex-gsaid">'+(y.allit?"❗ ":"✦ ")+esc(exYellText(y.adj,y.noun))+'</span>'
+      +'<span class="ex-gscene">when '+esc(y.scenario)+'</span></div>').join("")+'</div>';
+  } else {
+    gallery+='<div class="ex-gscene">No yells yet — solve today’s scenario to start your collection.</div>';
+  }
+  pas.innerHTML=card+gallery;
+  const go=document.getElementById("ex-go"); if(go) go.onclick=exclaSubmit;
+  const adjEl=document.getElementById("ex-adj"), nounEl=document.getElementById("ex-noun");
+  const onEnter=e=>{ if(e.key==="Enter"){ e.preventDefault(); exclaSubmit(); } };
+  if(adjEl){ adjEl.addEventListener("keydown",onEnter); setTimeout(()=>{ try{ adjEl.focus(); }catch(_){} },0); }
+  if(nounEl) nounEl.addEventListener("keydown",onEnter);
 }
 // The snowclone menu doubles as the Cliché Codex: done frames render as filled saying-cards.
 function renderSnowMenu(){
@@ -7501,11 +7691,12 @@ function renderMaterials(){
 // Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
-  return { v:7, day:state.day, inv:state.inv, dex:state.dex,
+  return { v:8, day:state.day, inv:state.inv, dex:state.dex,
            decorOwned:state.decorOwned, placed:state.placed, bundles:state.bundles,
            bagCap:state.bagCap, captured:[...state.captured], fishedSpots:[...state.fishedSpots], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
            restored:state.restored, books:state.books, fables:state.fables, snowclones:state.snowclones, snowDailyDay:state.snowDailyDay,
+           exclaDay:state.exclaDay, exclaYells:state.exclaYells,
            resources:state.resources, bestiary:state.bestiary, phonicon:state.phonicon,
            verbCounts:state.verbCounts, divineDay:state.divineDay, divine:state.divine,
            obstacleDay:state.obstacleDay, obstacleGot:state.obstacleGot, riverCrossed:state.riverCrossed,
@@ -7529,6 +7720,9 @@ function applySnapshot(d){
   if(typeof d.fables==="number") state.fables=Math.max(1, d.fables);   // recovered-fable count (chapter 1 always free)
   if(d.snowclones && typeof d.snowclones==="object") state.snowclones=d.snowclones;   // coined-saying progress (additive; old saves default {})
   if(typeof d.snowDailyDay==="string") state.snowDailyDay=d.snowDailyDay;              // Snowclone-of-the-Day claim day (re-arms when the date rolls over)
+  // Excla Machine: the daily-solve claim day (re-arms on rollover) + the persisted gallery of coined interjections.
+  if(typeof d.exclaDay==="string") state.exclaDay=d.exclaDay;
+  if(Array.isArray(d.exclaYells)) state.exclaYells=d.exclaYells;
   // Binding materials + bestiary progress persist forever (earned progress, like the collection).
   if(d.resources && typeof d.resources==="object") state.resources=d.resources;
   if(d.bestiary && typeof d.bestiary==="object") state.bestiary=d.bestiary;
@@ -7691,6 +7885,7 @@ document.getElementById("ml-done").onclick=()=>{ closeBook(); SFX.play("click");
 document.getElementById("ml-back").onclick=()=>{ if(mlTab==="snow") renderSnowMenu(); else backToChapters(); SFX.play("click"); };
 document.getElementById("ml-tab-fables").onclick=()=>{ if(mlTab!=="fables") mlSwitchTab("fables"); };
 document.getElementById("ml-tab-snow").onclick=()=>{ if(mlTab!=="snow") mlSwitchTab("snow"); };
+document.getElementById("ml-tab-excla").onclick=()=>{ if(mlTab!=="excla") mlSwitchTab("excla"); };
 document.getElementById("lib-close").onclick=()=>{ closeOverlay(); SFX.play("click"); };
 document.getElementById("bes-close").onclick=()=>{ closeBestiary(); SFX.play("click"); };
 document.getElementById("stats-close").onclick=()=>{ toggleStats(); };

@@ -520,6 +520,42 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   noun/verb/adjective/adverb). **Deferred (Phase 3):** the rest of the full catalog (snowclones.org /
   Wikipedia "list of snowclones"); **promote a favorite coined saying to a placeable plaque** décor (reusing
   `tileInFront` + the décor tray); Codex milestones → décor grants (mirroring the noun-bundle loop).
+- **Excla Machine module** (third lectern tab, `/* EXCLA MACHINE */`) — **BUILT 2026-07-24.** A **daily
+  interjection puzzle** (sibling to Snowclones/WOTD): invent a two-word interjection — an **adjective + a
+  noun** — reacting to an absurd daily scenario, where the adjective must start with letter **L1** and the
+  noun with **L2**. Any real adjective+noun pair wins (no single answer — that's the fun). **Content =
+  hybrid:** hand-written scenarios in **`data/excla-scenarios.json`** (a flat array of absurd strings, e.g.
+  "your soup started telling jokes"; fetched at startup like the other data files, `EXCLA_FALLBACK` inline
+  if the fetch fails — expand the list freely) + **procedural letters**. `exclaOfDay()` is day-seeded
+  (`mulberry32`, seed offset `^0x3c1a` so it doesn't correlate with the map/WOTD/snowclone dailies; cached
+  per day) and picks `{scenario, L1, L2, allit}`. **Solvability guarantee:** `exclaPools()` precomputes
+  per-first-letter adjective/noun counts over `DICT` once it loads (memoized); a letter is eligible only
+  with `≥EXCLA_ADJ_MIN`(100) adjectives / `≥EXCLA_NOUN_MIN`(150) nouns starting with it (excludes the
+  starved letters — adj j/k/q/x/y/z, noun x/y/z), and `exclaPickLetter` weights the pick by count so common
+  letters dominate (easy puzzles fall out naturally). **~`EXCLA_ALLIT_CHANCE`(0.3) of days are alliteration
+  days** (L1==L2, drawn from the both-eligible pool); others pick independently (a coincidental match still
+  counts) — so alliteration is possible but not the only case. **Validation** reuses `localLookup` (offline
+  WordNet): `exclaCheckWord` accepts iff the word's `pos` includes the required part of speech **and** it
+  starts with the required letter, returning a friendly per-slot problem string otherwise (not-a-word /
+  wrong-POS / wrong-start-letter). **Input = two text `<input>`s** (adjective + noun; NOT the satchel
+  bench — the fun is inventing *any* valid pair, so requiring caught letters would fight the design; the
+  madlibs keydown branch was updated to not swallow letters/`e` while an Excla input is focused). **Reward:**
+  first solve of the day pays `EXCLA_BONUS`(25) ink (mirrors WOTD; `state.exclaDay` re-arms on rollover),
+  plus `EXCLA_ALLIT_BONUS`(10) + a special toast/SFX (`unlock`) when L1==L2. Solved yells are recorded to
+  **`state.exclaYells`** (`[{day,scenario,adj,noun,allit}]`, persisted) and shown as a gallery ("your Excla
+  Codex") in the tab. One solve/day (inputs lock after solving, like Pig Pens' decoded state). `renderExclaTab`
+  reuses the `#madlibs` overlay's shared `#ml-title/#ml-sub/#ml-passage`; `mlTab` gained `"excla"`.
+  **New saved state:** `state.exclaDay` + `state.exclaYells` (snapshot **`v:8`**, additive to old saves).
+  **Content TODO — grow the scenario pool past its fixed 30:** `data/excla-scenarios.json` is currently 30
+  flat strings, so the daily rotation only ever draws from those 30. **Expand it**, and consider making some
+  scenarios *templated* — a scenario string with a **swappable noun slot** (e.g. "a pigeon stole your
+  {object}" where `{object}` is filled from a small word list, or from the WordNet noun bundle) so the number
+  of possible daily scenarios multiplies well beyond 30 without hand-writing each one. (Keep the comedy
+  human-written: the frames stay authored, only the swapped noun is procedural — like the snowclone frames.)
+  If templating lands, `exclaOfDay()` would resolve the slot with a day-seeded pick before returning the
+  scenario string; nothing downstream (validation/reward) changes.
+  **Deferred/future:** make the structure a collectible (the yells gallery is the seed); promote a favorite
+  yell to a placeable plaque (like the deferred snowclone plaque); ♮-style scenario packs.
 - **Level content pipeline** (`build_levels.py`, project root) — offline, run once per book: turns a
   Project Gutenberg plain-text book into one mad-libs level JSON per chapter/fable (spaCy POS-tagging; POS
   blanks spaced apart, single-occurrence, never sentence-initial) + an `index.json`. **The book text is
@@ -721,8 +757,14 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   (`data/levels/`; **147 Aesop fables**, listed from `index.json` — see the Level content pipeline). Pick a chapter, then
   fill each blank with a **collected word** matching its part of speech; exact-original matches earn bonus
   ink (never required). Words are single-use across all books (you keep learning new vocab). Completing a
-  chapter restores it; completing a book adds it to your library. Persisted. (POS uses the FreeDictionary
-  data cached on each dex word — WordNet bundle is future.)
+  chapter restores it; completing a book adds it to your library. Persisted. (POS is cached on each dex
+  word from the bundled WordNet dataset.)
+- **Excla Machine (daily interjection puzzle)** — the lectern's **third tab** (after Fables + Snowclones):
+  a day-seeded scenario ("What would you yell if your soup started telling jokes?") asks you to invent a
+  two-word interjection — an **adjective starting L1 + a noun starting L2** — any valid pair wins. Solving
+  pays a one-per-day ink bonus (+ an "Excla!" extra when L1==L2), and each yell is kept in a persisted
+  gallery. Scenarios are hand-written (`data/excla-scenarios.json`); the letters are procedurally chosen
+  from the WordNet bundle so a solution always exists. See the **Excla Machine module** in the code map.
 - Backup: export state to JSON, import it back (also the manual cross-device transfer).
 - Keyboard on desktop; **on-screen touch controls on mobile** (joystick bottom-left, action cluster
   bottom-right — movement under the left thumb, ATK under the right, matching the usual mobile/controller
