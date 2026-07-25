@@ -1433,12 +1433,25 @@ instead of nothing (his sleep-weapon becomes your syncopation tool).
 
 ## Morendo — the M3 Dynamics boss: "Scorch the Bones" (DESIGNED 2026-07-25, not built)
 
-> **Status: DESIGNED, not built.** The second fleshed-out boss (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built)) and the **most ambitious** — it goes **off-grid** into a
-> first-person mini-game, becoming the game's **loudness set-piece** (sibling to Pitch Bird, whose **mic
-> pipeline it reuses** — amplitude is *easier* to read than pitch). Morendo is the **M3 Dynamics capstone**
-> (gating M4). Same boss template as Sandmar: one win-target run, telegraphed debuffs, capture → Muse; but a
-> **new render surface + mic input**, so the biggest lift so far. `run.debuff='draining'`; Morendo's HP reuses
-> the vestigial `runThreshold`.
+> **Status: DESIGNED; standalone MVP BUILT 2026-07-25 (`scorch-bones.html`).** The second fleshed-out boss
+> (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built)) and the **most
+> ambitious** — it goes **off-grid** into a first-person mini-game, becoming the game's **loudness set-piece**
+> (sibling to Pitch Bird, whose **mic pipeline it reuses** — amplitude is *easier* to read than pitch). Morendo
+> is the **M3 Dynamics capstone** (gating M4). Same boss template as Sandmar: one win-target run, telegraphed
+> debuffs, capture → Muse; but a **new render surface + mic input**, so the biggest lift so far.
+> `run.debuff='draining'`; Morendo's HP reuses the vestigial `runThreshold`.
+>
+> **MVP as built (`scorch-bones.html`, standalone — isolated like the Beat Lab / mujicians-compose prototypes,
+> to feel-test before porting into `mujicians.html`):** the **full core loop** — mic loudness (`getUserMedia`
+> → `AnalyserNode` RMS, reusing Pitch Bird's sample-rate-match + muted-gain graph), a **sensitivity slider** +
+> live level readout for calibration, the **three zones** (silence / whisper / forte) with guide lines, the
+> **fire as bottom peak-meter bars**, a distance-**scaling** 💀 sprite, the **wander → whisper-aggro (`!`) →
+> approach** AI, **erupt-scorch-when-close** (flat damage) with a scare-off if blasted from afar, the **Breath**
+> recharge gate, **Torch-light** life (strike flash) + darkness overlay, win/lose + retry, and a **no-mic
+> keyboard/touch pump** fallback (hold Space). Tunables are constants at the top. **Not yet built (next
+> steps):** the voice-steal → hidden-size p/mf/f **card quiz**, the three **phases** (feints), the old-PC
+> **canvas** look, the **contrast-combo** (tentative), Crescendra's intro, capture → the "Dying Fall" Muse,
+> and porting into `mujicians.html` as a real M3 capstone.
 
 **Fantasy.** Morendo (skeleton; the marking *morendo* = "dying away") stalks a dark crypt, snuffing the light.
 Crescendra taught you that a flame *flickers* — dynamic **contrast** is life — so you fight with fire and your

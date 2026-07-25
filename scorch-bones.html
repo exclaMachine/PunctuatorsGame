@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Scorch the Bones — Morendo (prototype)</title>
+<style>
+  :root{
+    --ink:#e9e4d8; --dim:#9a9384; --hot:#ff8a2a; --hot2:#ff3b2f;
+    --blue:#5aa9ff; --panel:#16130f; --line:#3a3226;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; overflow:hidden; background:#000;
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; color:var(--ink);
+    -webkit-user-select:none; user-select:none; touch-action:none; }
+  #scene{ position:fixed; inset:0; overflow:hidden;
+    background:
+      radial-gradient(120% 80% at 50% 8%, #1a1712 0%, #0d0b08 55%, #050403 100%);
+  }
+  /* crypt floor perspective */
+  #floor{ position:absolute; left:0; right:0; bottom:0; height:46%;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 6.5%, rgba(120,90,50,.10) 6.6%, transparent 6.7%),
+      linear-gradient(#0000, #1c150c);
+    transform:perspective(340px) rotateX(58deg); transform-origin:bottom center; opacity:.55; }
+
+  /* Morendo sprite (placeholder emoji, scaled by distance) */
+  #morendo{ position:absolute; left:50%; bottom:40%; font-size:64px; line-height:1;
+    transform-origin:bottom center; will-change:transform; filter:drop-shadow(0 0 10px #000);
+    transition:filter .12s linear; }
+  #morendo.scorched{ filter:drop-shadow(0 0 14px var(--hot)) brightness(1.5) sepia(.5) hue-rotate(-20deg); }
+  #excl{ position:absolute; left:50%; bottom:calc(40% + 10px); transform:translate(-50%,-100%);
+    color:#ffd23b; font-size:34px; font-weight:900; text-shadow:0 0 8px #000,0 2px 0 #000;
+    opacity:0; transition:opacity .1s; pointer-events:none; }
+  #excl.show{ opacity:1; animation:exclpop .35s ease-out; }
+  @keyframes exclpop{ 0%{ transform:translate(-50%,-70%) scale(.4);} 60%{ transform:translate(-50%,-115%) scale(1.25);} 100%{ transform:translate(-50%,-100%) scale(1);} }
+
+  /* darkness / life overlay */
+  #dark{ position:absolute; inset:0; background:#000; pointer-events:none; opacity:.3; }
+
+  /* flame = live loudness peak meter, rising from the bottom */
+  #flamewrap{ position:absolute; left:0; right:0; bottom:0; height:34%;
+    display:flex; align-items:flex-end; gap:2px; padding:0 3vw; pointer-events:none; }
+  .bar{ flex:1; height:2px; border-radius:3px 3px 0 0;
+    background:linear-gradient(#ffe08a, var(--hot) 45%, var(--hot2)); opacity:.85;
+    box-shadow:0 0 8px rgba(255,120,30,.5); transition:none; }
+  /* zone guide lines over the flame area */
+  #zones{ position:absolute; left:0; right:0; bottom:0; height:34%; pointer-events:none; }
+  #zones .zl{ position:absolute; left:0; right:0; border-top:1px dashed; font-size:11px; padding:1px 3vw; }
+  #zl-whisper{ border-color:rgba(90,169,255,.5); color:var(--blue); }
+  #zl-forte{ border-color:rgba(255,120,30,.6); color:var(--hot); }
+
+  /* HUD */
+  #hud{ position:absolute; inset:0; pointer-events:none; }
+  .barwrap{ position:absolute; background:rgba(0,0,0,.45); border:1px solid var(--line);
+    border-radius:6px; overflow:hidden; }
+  .fill{ height:100%; width:100%; transform-origin:left; }
+  #hpwrap{ top:14px; left:50%; transform:translateX(-50%); width:min(60vw,420px); height:16px; }
+  #hpfill{ background:linear-gradient(90deg,#d8d2c4,#8b8577); }
+  #hplabel{ position:absolute; top:34px; left:50%; transform:translateX(-50%);
+    font-size:12px; color:var(--dim); letter-spacing:.08em; }
+  #breathwrap{ left:3vw; bottom:calc(34% + 14px); width:min(34vw,220px); height:12px; }
+  #breathfill{ background:linear-gradient(90deg,#7fe0ff,#2b8fbf); }
+  #lifewrap{ right:3vw; bottom:calc(34% + 14px); width:min(34vw,220px); height:12px; }
+  #lifefill{ background:linear-gradient(90deg,#ffd23b,#ff8a2a); }
+  .cap{ position:absolute; font-size:11px; color:var(--dim); letter-spacing:.06em; }
+  #breathcap{ left:3vw; bottom:calc(34% + 28px); }
+  #lifecap{ right:3vw; bottom:calc(34% + 28px); text-align:right; }
+  #zone{ position:absolute; top:56px; left:50%; transform:translateX(-50%);
+    font-size:13px; letter-spacing:.12em; font-weight:700; }
+
+  /* overlays */
+  .overlay{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(3,2,1,.82); backdrop-filter:blur(2px); z-index:10; text-align:center; padding:20px; }
+  .panel{ max-width:520px; background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:26px 24px; }
+  .panel h1{ margin:.1em 0 .3em; font-size:24px; }
+  .panel p{ color:var(--dim); line-height:1.5; font-size:14px; }
+  .btn{ pointer-events:auto; cursor:pointer; margin-top:14px; font:inherit; font-weight:700;
+    background:var(--hot); color:#1a0d00; border:0; border-radius:10px; padding:12px 20px; font-size:15px; }
+  .btn.ghost{ background:transparent; color:var(--ink); border:1px solid var(--line); margin-left:8px; }
+  .hidden{ display:none!important; }
+  #err{ color:var(--hot2); font-size:13px; margin-top:10px; min-height:1em; }
+
+  /* dev/calibration strip */
+  #dev{ position:absolute; top:8px; left:8px; z-index:9; font-size:11px; color:var(--dim);
+    background:rgba(0,0,0,.4); border:1px solid var(--line); border-radius:8px; padding:6px 8px;
+    display:flex; gap:8px; align-items:center; pointer-events:auto; }
+  #dev input[type=range]{ width:90px; }
+  #dev b{ color:var(--ink); }
+</style>
+</head>
+<body>
+<div id="scene" aria-hidden="true">
+  <div id="floor"></div>
+  <div id="excl">!</div>
+  <div id="morendo">💀</div>
+  <div id="dark"></div>
+
+  <div id="zones">
+    <div class="zl" id="zl-forte">forte — scorch</div>
+    <div class="zl" id="zl-whisper">whisper — lure</div>
+  </div>
+  <div id="flamewrap"></div>
+
+  <div id="hud">
+    <div class="barwrap" id="hpwrap"><div class="fill" id="hpfill"></div></div>
+    <div id="hplabel">MORENDO</div>
+    <div id="zone">—</div>
+    <div class="cap" id="breathcap">BREATH</div>
+    <div class="barwrap" id="breathwrap"><div class="fill" id="breathfill"></div></div>
+    <div class="cap" id="lifecap">TORCH</div>
+    <div class="barwrap" id="lifewrap"><div class="fill" id="lifefill"></div></div>
+  </div>
+
+  <div id="dev">
+    sens <input id="sens" type="range" min="1" max="24" step="0.5" value="8">
+    <span>lvl <b id="lvlout">0.00</b></span>
+  </div>
+</div>
+
+<!-- start -->
+<div class="overlay" id="startOverlay">
+  <div class="panel">
+    <h1>🔥 Scorch the Bones</h1>
+    <p><b>Morendo</b> stalks the dark. Stay near-silent and he wanders, oblivious.
+    <b style="color:var(--blue)">Whisper</b> to catch his eye — a <b>!</b> appears and he comes for you.
+    Let him get <b>close</b>, then go <b style="color:var(--hot)">loud</b> to erupt the fire and scorch him.
+    Blasting while he's far only scares him off — and every eruption spends <b>Breath</b>, so you can't just scream.
+    Don't let your <b>Torch</b> go dark.</p>
+    <p style="font-size:12px">Use your voice, a harmonica, a piano — anything. No need to shout; a quick loud note is plenty.</p>
+    <button class="btn" id="micBtn">Enable microphone</button>
+    <button class="btn ghost" id="keyBtn">Play without mic</button>
+    <div id="err"></div>
+  </div>
+</div>
+
+<!-- end -->
+<div class="overlay hidden" id="endOverlay">
+  <div class="panel">
+    <h1 id="endTitle">—</h1>
+    <p id="endMsg">—</p>
+    <button class="btn" id="retryBtn">Again</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const clamp = (v,a,b)=> v<a?a : v>b?b : v;
+  const lerp = (a,b,t)=> a+(b-a)*t;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---- tunables ------------------------------------------------------------
+  const SIL_MAX   = 0.09;   // loudness (0..1) below this = silence
+  const FORTE_MIN = 0.52;   // at/above this = forte (scorch)
+  const CLOSE_RANGE = 0.40; // dist below this: forte scorches him
+  const STRIKE_RANGE= 0.14; // dist below this: he strikes your torch
+  const APPROACH  = 0.16;   // dist/s he closes when aggroed
+  const WANDER_OUT = 0.05;  // dist/s he drifts away when oblivious
+  const SCORCH_DMG = 0.32;  // HP/s while scorching
+  const SCORCH_PUSH= 0.55;  // dist/s he recoils while scorched
+  const BREATH_DRAIN=0.55;  // /s while erupting (forte)
+  const BREATH_FILL =0.30;  // /s otherwise
+  const STRIKE_DMG = 0.14;  // torch lost per strike
+  const STRIKE_INT = 0.75;  // s between strikes
+  const SCARE_PUSH = 0.7;   // dist/s he flees when blasted from afar
+  const LOSE_AGGRO = 2.6;   // s of silence before he loses interest
+  const ATTACK=0.55, RELEASE=0.18; // loudness envelope
+
+  // ---- state ---------------------------------------------------------------
+  let mode = null;            // "mic" | "key"
+  let running = false;
+  let loud = 0;               // smoothed loudness 0..1
+  let sens = 8;
+  // mic
+  let micStream=null, micTrack=null, audioCtx=null, analyser=null, buf=null, silentGain=null;
+  // keyboard fallback
+  let keyHeld = false;
+  // game
+  let dist, aggroed, silenceT, strikeT, hp, breath, life, exclShown;
+
+  function resetGame(){
+    dist = 1; aggroed=false; silenceT=0; strikeT=0;
+    hp=1; breath=1; life=1; loud=0; exclShown=false;
+    $("morendo").classList.remove("scorched");
+  }
+
+  // ---- flame bars ----------------------------------------------------------
+  const BARC = 22; const bars=[];
+  (function buildBars(){
+    const w=$("flamewrap");
+    for(let i=0;i<BARC;i++){ const b=document.createElement("div"); b.className="bar"; w.appendChild(b); bars.push(b); }
+  })();
+  function paintFlame(){
+    const maxH = $("flamewrap").clientHeight;
+    for(let i=0;i<BARC;i++){
+      const flick = reduceMotion ? 1 : (0.72 + Math.random()*0.28);
+      const edge = 0.6 + 0.4*Math.sin((i/BARC)*Math.PI); // taller in the middle
+      const h = clamp(loud*maxH*flick*edge, 2, maxH);
+      bars[i].style.height = h+"px";
+      bars[i].style.opacity = 0.35 + loud*0.6;
+    }
+  }
+  // set once (percentage of the 34% flame area)
+  $("zl-forte").style.bottom = (FORTE_MIN*100)+"%";
+  $("zl-whisper").style.bottom = (SIL_MAX*100)+"%";
+
+  function zoneOf(l){ return l<SIL_MAX ? "silence" : l<FORTE_MIN ? "whisper" : "forte"; }
+
+  // ---- mic -----------------------------------------------------------------
+  async function initMic(){
+    try{
+      micStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      micTrack = micStream.getAudioTracks()[0] || null;
+      const rate = (micTrack && micTrack.getSettings && micTrack.getSettings().sampleRate) || undefined;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      try{ audioCtx = new AC(rate ? { sampleRate:rate } : undefined); }
+      catch(_){ audioCtx = new AC(); }
+      if(audioCtx.state==="suspended") await audioCtx.resume();
+      const src = audioCtx.createMediaStreamSource(micStream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      buf = new Float32Array(analyser.fftSize);
+      silentGain = audioCtx.createGain(); silentGain.gain.value = 0; // keep graph pulled, no echo
+      src.connect(analyser); analyser.connect(silentGain); silentGain.connect(audioCtx.destination);
+      return true;
+    }catch(e){
+      let msg = "Something blocked the microphone.";
+      if(e && e.name==="NotAllowedError") msg="Mic access was blocked. Allow it in your browser, or play without mic.";
+      $("err").textContent = msg;
+      return false;
+    }
+  }
+  function readMicLoud(){
+    analyser.getFloatTimeDomainData(buf);
+    let sum=0; for(let i=0;i<buf.length;i++){ const s=buf[i]; sum+=s*s; }
+    const rms = Math.sqrt(sum/buf.length);
+    return clamp(rms*sens, 0, 1);
+  }
+
+  // ---- loop ----------------------------------------------------------------
+  let last = 0;
+  function frame(now){
+    if(!running) return;
+    const dt = Math.min(0.05, (now-last)/1000 || 0); last = now;
+
+    // 1) loudness
+    const raw = mode==="mic" ? readMicLoud() : (keyHeld?1:0);
+    loud += (raw>loud?ATTACK:RELEASE)*(raw-loud);
+    loud = clamp(loud,0,1);
+    const zone = zoneOf(loud);
+    $("lvlout").textContent = loud.toFixed(2);
+
+    // 2) breath
+    if(zone==="forte") breath = clamp(breath - BREATH_DRAIN*dt, 0, 1);
+    else               breath = clamp(breath + BREATH_FILL*dt, 0, 1);
+
+    // 3) aggro
+    if(zone==="whisper"){ if(!aggroed){ aggroed=true; showExcl(); } silenceT=0; }
+    else if(zone==="silence"){ silenceT+=dt; if(silenceT>LOSE_AGGRO) aggroed=false; }
+    else silenceT=0; // forte
+
+    // 4) movement + combat
+    let scorching=false;
+    if(zone==="forte"){
+      if(dist<=CLOSE_RANGE && breath>0.04){          // erupt in range → scorch
+        scorching=true;
+        hp = clamp(hp - SCORCH_DMG*dt, 0, 1);
+        dist = clamp(dist + SCORCH_PUSH*dt, 0, 1);    // knock him back
+      } else if(dist>CLOSE_RANGE){                    // blasted from afar → scare him off
+        aggroed=false;
+        dist = clamp(dist + SCARE_PUSH*dt, 0, 1);
+      }
+    }
+    if(!scorching){
+      if(aggroed) dist = clamp(dist - APPROACH*dt, 0, 1);
+      else        dist = clamp(dist + WANDER_OUT*dt, 0, 1);
+    }
+
+    // 5) he strikes if he reaches you
+    if(dist<STRIKE_RANGE){
+      strikeT += dt;
+      if(strikeT>=STRIKE_INT){ strikeT=0; life=clamp(life-STRIKE_DMG,0,1); dist=clamp(dist+0.22,0,1); flashStrike(); }
+    } else strikeT=0;
+
+    // 6) render
+    render(zone, scorching);
+
+    // 7) end?
+    if(hp<=0)  return endGame(true);
+    if(life<=0)return endGame(false);
+    requestAnimationFrame(frame);
+  }
+
+  function render(zone, scorching){
+    // sprite scale by distance (far small → near huge) + gentle lateral wander
+    const s = lerp(2.7, 0.32, dist);
+    const wob = aggroed ? 0 : Math.sin(performance.now()/700)*(6+dist*10);
+    const m = $("morendo");
+    m.style.transform = `translateX(calc(-50% + ${wob}px)) scale(${s})`;
+    m.classList.toggle("scorched", scorching);
+
+    // darkness: darker as torch fades; forte flares light back
+    const dk = clamp(0.28 + (1-life)*0.6 - loud*0.35, 0, 0.9);
+    $("dark").style.opacity = dk.toFixed(3);
+
+    // bars + hud
+    paintFlame();
+    $("hpfill").style.transform = `scaleX(${hp})`;
+    $("breathfill").style.transform = `scaleX(${breath})`;
+    $("lifefill").style.transform = `scaleX(${life})`;
+    const z = $("zone");
+    if(zone==="silence"){ z.textContent="· silence ·"; z.style.color="var(--dim)"; }
+    else if(zone==="whisper"){ z.textContent="🤫 whisper (piano)"; z.style.color="var(--blue)"; }
+    else { z.textContent = (dist<=CLOSE_RANGE?"🔥 SCORCH! (forte)":"🔥 forte — too far!"); z.style.color="var(--hot)"; }
+  }
+
+  let exclT=null;
+  function showExcl(){
+    const e=$("excl"); e.classList.remove("show"); void e.offsetWidth; e.classList.add("show");
+    clearTimeout(exclT); exclT=setTimeout(()=>e.classList.remove("show"), 700);
+  }
+  function flashStrike(){
+    if(reduceMotion) return;
+    const d=$("dark"); d.style.transition="none"; d.style.background="#5a0000";
+    setTimeout(()=>{ d.style.background="#000"; d.style.transition=""; }, 90);
+  }
+
+  // ---- start / end ---------------------------------------------------------
+  function start(){
+    resetGame(); $("startOverlay").classList.add("hidden"); $("endOverlay").classList.add("hidden");
+    running=true; last=performance.now(); requestAnimationFrame(frame);
+  }
+  function endGame(win){
+    running=false;
+    $("endTitle").textContent = win ? "🔥 Scorched!" : "🕯️ The torch goes dark…";
+    $("endMsg").textContent = win
+      ? "Morendo crumbles to ash. You kept the fire alive — that's dynamics: silence, then the strike."
+      : "Morendo drained the last light. Lure him close, save your Breath, and erupt when he's right on you.";
+    $("endOverlay").classList.remove("hidden");
+  }
+
+  // ---- wire ----------------------------------------------------------------
+  $("micBtn").addEventListener("click", async ()=>{
+    $("err").textContent="";
+    const ok = await initMic(); if(!ok) return;
+    mode="mic"; start();
+  });
+  $("keyBtn").addEventListener("click", ()=>{ mode="key"; start(); });
+  $("retryBtn").addEventListener("click", start);
+  $("sens").addEventListener("input", e=> sens = parseFloat(e.target.value));
+  sens = parseFloat($("sens").value);
+
+  // keyboard fallback: hold Space to pump loudness (tap = whisper, hold = forte)
+  addEventListener("keydown", e=>{ if(e.code==="Space"){ e.preventDefault(); keyHeld=true; } });
+  addEventListener("keyup",   e=>{ if(e.code==="Space"){ e.preventDefault(); keyHeld=false; } });
+  // touch pump for no-mic on mobile
+  $("scene").addEventListener("pointerdown", ()=>{ if(mode==="key") keyHeld=true; });
+  addEventListener("pointerup", ()=>{ keyHeld=false; });
+})();
+</script>
+</body>
+</html>
