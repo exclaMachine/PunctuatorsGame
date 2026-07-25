@@ -1294,9 +1294,10 @@ holds five: four chord heroes + the boss).
 - **Recurring villain arc** — *(reframed 2026-07-25)* each movement now has its **own** villain (Sandmar,
   Morendo, Slurry, Tritony, Wormwood, The Bartender) rather than Ranger recurring, so the antagonist arc is a
   **rogues' gallery** — one boss per movement, dialogue-first now (see the roster's locked decisions). A
-  throughline where one villain recurs is no longer the plan. **The first fleshed-out boss design is
+  throughline where one villain recurs is no longer the plan. **Fleshed-out boss designs so far:
   [Sandmar — "The Lullaby Duel"](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built)**
-  (M2 Rhythm), the template for turning a seated villain into a fight.
+  (M2 Rhythm, the template) and **[Morendo — "Scorch the Bones"](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built)**
+  (M3 Dynamics, an off-grid first-person loudness/mic set-piece).
 - **Equipped companion** — carry one earned character for a run (persistent passive + flavor barks), à la
   Inklings' story companions; a soft loadout choice. *(Optional.)*
 - **Codex "cast" gallery** — collecting characters fills a cast page (naturalist framing), separate from the
@@ -1427,6 +1428,108 @@ instead of nothing (his sleep-weapon becomes your syncopation tool).
   the trade-fours final phase, and the capture → add Sandmar to the Muse pool.
 - **Open sub-decisions:** echo-only vs whole-fight trade-fours (above); phase count / length / difficulty
   tuning; whether the sleep aura scales with phase; exact `Gravity Groove` numbers.
+
+---
+
+## Morendo — the M3 Dynamics boss: "Scorch the Bones" (DESIGNED 2026-07-25, not built)
+
+> **Status: DESIGNED, not built.** The second fleshed-out boss (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built)) and the **most ambitious** — it goes **off-grid** into a
+> first-person mini-game, becoming the game's **loudness set-piece** (sibling to Pitch Bird, whose **mic
+> pipeline it reuses** — amplitude is *easier* to read than pitch). Morendo is the **M3 Dynamics capstone**
+> (gating M4). Same boss template as Sandmar: one win-target run, telegraphed debuffs, capture → Muse; but a
+> **new render surface + mic input**, so the biggest lift so far. `run.debuff='draining'`; Morendo's HP reuses
+> the vestigial `runThreshold`.
+
+**Fantasy.** Morendo (skeleton; the marking *morendo* = "dying away") stalks a dark crypt, snuffing the light.
+Crescendra taught you that a flame *flickers* — dynamic **contrast** is life — so you fight with fire and your
+own voice: coax the skeleton close in near-silence, then flare **loud** to scorch him. The design's cleverness
+is that the loop **is** the M3 lesson — the gameplay is maximum dynamic contrast (near-silence → BLAST) — and
+it stays **voice-safe** because you're silent most of the time and only burst occasionally (a short forte, never
+a sustained scream).
+
+### The controller — loudness, mic-default
+
+- **Input = live amplitude** (voice / **harmonica** / **piano** / clap — source-agnostic), read off Pitch Bird's
+  mic pipeline. **Mic is the default** (it's the fun of it); an **opt-out** swaps to a **tap-pump** (soft taps =
+  lure, a hard burst = erupt) so the fight is fully playable silently / mic-less.
+- **The three mic zones ARE the three dynamic levels** — the pedagogical spine:
+  - **Silence** (a **rest**) → Morendo wanders, oblivious, drifting away.
+  - **Whisper** (***piano***) → an **!** pops over his head (classic stealth aggro tell) and he turns and
+    **approaches you**. The whisper literally *is* the piano lesson.
+  - **Loud** (***forte***) → the **fire erupts** (below). The blast *is* the forte lesson.
+- **Crescendra's intro** carries the **pianoforte** hook: the piano is *named* for this soft/loud control
+  (Cristofori's "gravicembalo col piano e forte"), so "grab a piano or harmonica if you've got one" lands
+  in-world *and* is the safest controller.
+
+### The fire — a peak meter, not a projectile (dev call 2026-07-25)
+
+The flames are **peak-meter bars rising from the bottom edge of the screen = your true, live loudness** (a
+direct, satisfying correlation to how loud you actually are). **You don't hurl fire — he walks into it.** The
+blaze is **local to you** (your hearth/torch roaring up in the foreground) and **short-range**, so **he must be
+close to burn**. Luring him in is the risk; the payoff is the scorch.
+
+### The loop — lure, let him close, erupt
+
+- **Whisper to aggro** (he's oblivious in silence; keep coaxing).
+- **Let him come close** — the fire is short-range, so he has to be right on you to burn.
+- **Erupt (forte) in range** — the peak bars shoot past the **forte line** and the local blaze **scorches him
+  where he stands** (flat scorch damage — MVP). Blasting while he's **far** flares an empty fire (whiff) **and a
+  skeleton is wary of fire, so it can scare him back to wandering** — you re-whisper and start over. Teaches
+  patience + real control, not noise-spam.
+- **Breath / Ember recharge (your "mana")** — every erupt spends a **Breath meter** that refills over time;
+  empty = you can't flare and you're **exposed** while it recovers. Rations loudness (**voice-safe**) and makes
+  each flare a real decision. *(Dev liked the recharge — "like MP, you can't just scream as much as you want.")*
+
+### Meters (boss-standard, retryable)
+
+- **Morendo's HP** — he **chars/cracks** as you scorch him (reuses `runThreshold`). Empty → banished (win).
+- **Torch-light = your life** — he **strikes it when he reaches you**; the scene darkens as it drops; fully dark
+  → torch gutters out, **you lose → instant retry**.
+- **Breath / Ember** — the recharge gate on erupting.
+- Distance + breath are the live tensions between his HP and your life.
+
+### His signature debuff — "he steals your voice" → the notation quiz
+
+Periodically Morendo **hushes** you (mutes the mic for a stretch). The **cards stand in** — dealt as
+**p / mf / f with their size cue hidden** — and they map to the **same three verbs**: **p = whisper/lure ·
+f = erupt · mf = a weak middle.** To scorch you must **remember which symbol is loud** and play **f**; pick
+**p** thinking it's loud and you fizzle while he advances. The **mic layer tests dynamics as *feel***, the
+**card layer tests it as *notation*** — same three levels, both ways. (Also a graceful fallback if a mic flakes.)
+
+### Three phases (escalating)
+
+1. **The Wander** — he drifts; learn whisper-to-aggro → let-close → erupt. Wide windows.
+2. **The Hush** — faster approach; introduces the **voice-steal card quiz**.
+3. **The Reckoning** — frenzied rushes, **feints**, combined hush + rush; a point-blank forte (or a resonant
+   building crescendo) shatters his bones to dust.
+
+### Presentation
+
+**First-person old-PC dungeon-crawler** view (Wizardry / early-Doom — dithered, limited palette, optional CRT
+scanlines): you face down a dark crypt corridor, your **torch-fire fills the bottom foreground** (the peak
+meter). **Morendo is a scaling sprite — tiny in the distance, looming huge as he nears.** The scene **darkens**
+as your torch-light drops (he thrives in the dark); a forte flare floods light and reveals him.
+
+### Capture reward — the Morendo Muse "Dying Fall"
+
+*(named for the poetic "dying fall" — a fading cadence.)* His hush, tamed into expression: grants a controlled
+**fade-out phrase ending** (end on an intentional decrescendo) **plus a dynamic-contrast bonus** — fitting,
+since the whole fight rewarded contrast. Mirrors Sandmar's "weapon → your tool."
+
+### Placement, reuse & scope
+
+- **Placement:** M3 Dynamics capstone, gating M4. (If M3 grows a lesson ladder like M1/M2, the boss sits at its
+  end.)
+- **Reuse:** Pitch Bird's **mic pipeline** (amplitude), the **card system** for the quiz (just suppress the
+  size overlay), the mentor/intro, `run.debuff` + `runThreshold`, a boss end-screen.
+- **New (bigger than Sandmar):** the **first-person scaling-sprite render surface** (a self-contained little
+  canvas), the **amplitude → scorch** mapping, the **approach AI** (wander / aggro-on-whisper / rush / feint),
+  the **Breath recharge**, phase/meter logic, and capture → add Morendo to the Muse pool. It's the game's
+  **loudness set-piece**, which justifies the lift.
+- **Open sub-decisions:** **contrast-combo layer** *(tentative)* — chaining clean whisper→erupt→whisper→erupt
+  for a rising damage multiplier (scores *range*, not raw volume — very on-theme), held for after the flat-damage
+  MVP; feint/"hit-the-tell" depth; exact recharge/HP/range tuning; whether the finisher is a point-blank forte
+  or a true building crescendo (needs a continuous-swell read, vs. the discrete p/mf/f model today).
 
 ---
 
