@@ -2398,14 +2398,37 @@
      BEFORE the Muse draft (campaign only; Free Play skips it). Full script the first time you see a
      level, a compact one-liner (with a "more" expand) on repeat. See docs/mujicians.md. */
   // Character registry — art is a SWAPPABLE TOKEN so emoji → pixel sprite is a one-line change later.
+  // The Mujicians graphic-novel cast (see docs/mujicians.md "The full cast"). Art is a token:
+  // {kind:"emoji"} now (illustrative), swap to {kind:"sprite", src:…} for pixel art with no other edits —
+  // charArtHTML() is the only place art is drawn. Villains are seated now (dialogue-first) and referenced
+  // in the heroes' intros; their boss-fight mechanics are a later stage (Ranger's ♮ boss is the template).
   const CHARACTERS = {
-    dee:      { id:"dee",      name:"Dee Composer",   art:{ kind:"emoji", value:"🍄" } },   // future: {kind:"sprite", src:"art/dee.png"}
-    sharpist: { id:"sharpist", name:"Sharpist",       art:{ kind:"emoji", value:"🎭" } },   // jester — sharps, giddy & upward
-    flatter:  { id:"flatter",  name:"Sir Flatterer",  art:{ kind:"emoji", value:"🤺" } },   // knight — flats, glum & downward
+    // — Heroes (lesson mentors) —
+    dee:        { id:"dee",        name:"Dee Composer",  art:{ kind:"emoji", value:"🍄"  } },  // M1 Pitch · little girl, mushroom cap
+    sharpist:   { id:"sharpist",   name:"Sharpist",      art:{ kind:"emoji", value:"🎭"  } },  // M1 ♯ · jester, giddy & upward
+    flatter:    { id:"flatter",    name:"Sir Flatterer", art:{ kind:"emoji", value:"🤺"  } },  // M1 ♭ · knight, glum & downward
+    gaia:       { id:"gaia",       name:"Gaia",          art:{ kind:"emoji", value:"🧝"  } },  // M2 Rhythm · City Gnome, the earth-pulse
+    crescendra: { id:"crescendra", name:"Crescendra",    art:{ kind:"emoji", value:"🧟‍♀️" } },  // M3 Dynamics · Frankenstein woman, the spark
+    cantrip:    { id:"cantrip",    name:"Cantrip",       art:{ kind:"emoji", value:"👺"  } },  // M4 Melody · goblin, clean stepwise line
+    mageorc:    { id:"mageorc",    name:"Mage Orc",      art:{ kind:"emoji", value:"🧙"  } },  // M5 Harmony · wizard-orc, MAJOR chord
+    minerminor: { id:"minerminor", name:"Miner Minor",   art:{ kind:"emoji", value:"⛏️"  } },  // M5 · dwarf, minor chord
+    demonish:   { id:"demonish",   name:"Demonish",      art:{ kind:"emoji", value:"😈"  } },  // M5 · demon, diminished chord
+    augminotaur:{ id:"augminotaur",name:"Augminotaur",   art:{ kind:"emoji", value:"🐂"  } },  // M5 · minotaur, augmented chord
+    timbrewolf: { id:"timbrewolf", name:"Timbrewolf",    art:{ kind:"emoji", value:"🐺"  } },  // M6 Timbre · wolf of many voices
+    thekey:     { id:"thekey",     name:"The Key",       art:{ kind:"emoji", value:"🗝️"  } },  // M7 Structure · rogue, unlocks the return home
+    // — Villains (dialogue foils now; bosses later) —
+    ranger:     { id:"ranger",     name:"Ranger",        art:{ kind:"emoji", value:"🏹"  }, villain:true },  // M1 · ♮ naturalizes accidentals
+    sandmar:    { id:"sandmar",    name:"Sandmar",       art:{ kind:"emoji", value:"💤"  }, villain:true },  // M2 · Sand Kobold; gravity + rest-sleep
+    morendo:    { id:"morendo",    name:"Morendo",       art:{ kind:"emoji", value:"💀"  }, villain:true },  // M3 · skeleton; drains volume to nothing
+    slurry:     { id:"slurry",     name:"Slurry",        art:{ kind:"emoji", value:"🫠"  }, villain:true },  // M4 · blob; smears notes into mush
+    tritony:    { id:"tritony",    name:"Tritony",       art:{ kind:"emoji", value:"👿"  }, villain:true },  // M5 · the band's fallen leader; dissonance
+    wormwood:   { id:"wormwood",   name:"Wormwood",      art:{ kind:"emoji", value:"🪱"  }, villain:true },  // M6 · busker w/ wooden teeth; flattens voices (made Timbrewolf)
+    bartender:  { id:"bartender",  name:"The Bartender", art:{ kind:"emoji", value:"🍸"  }, villain:true },  // M7 · "bars"/last call; muddles memory
   };
-  // Per-level lesson intros keyed by movement (+ sub-level). `char` = who speaks (swap per level later —
-  // the accidental sub-levels will get Sharpist/Sir Flat/Ranger); theory[] = bubble paragraphs; task = the
-  // "your turn" line; compact = the one-liner shown once you've seen the level. M2–M7 are provisional Dee text.
+  // Per-level lesson intros keyed by movement (+ sub-level). `char` = who speaks — each movement's hero
+  // narrates its own lesson in-voice (Dee M1 naturals · Sharpist/Sir Flatterer M1 ♯/♭ · Gaia M2 · Crescendra
+  // M3 · Cantrip M4 · Mage Orc M5 · Timbrewolf M6 · The Key M7), each foiling its villain in the dialogue.
+  // theory[] = bubble paragraphs; task = the "your turn" line; compact = the one-liner shown after first view.
   const LESSON_INTROS = {
     "m1": { char:"dee", title:"Pitch — the notes themselves",
       theory:[ "Every colour is a musical note — A to G, just like letters!",
@@ -2427,54 +2450,54 @@
                "A flat leans <i>downward</i>… it slumps into the note just below it. D♭ gives up and sinks to C. They call it a <b>resolution</b>. I suppose it is the one thing that brings me… relief." ],
       task:"I shall sigh out a note — you answer with any note <b>LOWER</b> than mine… ⬇️ Sink to the <b>exact ♭</b> for bonus points (and let it resolve DOWN for more, if you must). A few notes below and one exact flat is all I ask.",
       compact:"🤺 Answer <b>LOWER ↓</b> than my note — bonus for the exact ♭ (then let it fall down)." },
-    "m2:durations": { char:"dee", title:"Rhythm — how long a note lasts",
-      theory:[ "Feel the ground humming? That steady <b>pulse</b> is the <b>beat</b>. But notes don't all last the same — some are long, some short. That length is a note's <b>value</b>.",
-               `A quarter note ${noteGlyph("q")} lasts one beat. <b>Break</b> it in half and you get two eighths ${noteGlyph("e")}; <b>Merge</b> two quarters into a half ${noteGlyph("h")}, two halves into a whole ${noteGlyph("w")}. Longer note → wider card.` ],
+    "m2:durations": { char:"gaia", title:"Rhythm — how long a note lasts",
+      theory:[ "I'm <b>Gaia</b> — I live down in the roots under the city, where every footstep and subway rumble comes through as one big <b>pulse</b>. That steady thump is the <b>beat</b>. But notes don't all last the same — some stretch long, some scurry short. That length is a note's <b>value</b>.",
+               `A quarter note ${noteGlyph("q")} lasts one beat of that pulse. <b>Break</b> it in half for two eighths ${noteGlyph("e")}; <b>Merge</b> two quarters into a half ${noteGlyph("h")}, two halves into a whole ${noteGlyph("w")}. Longer note, wider card — like a bigger stone sits heavier in the earth.` ],
       task:`Every card starts as a quarter ${noteGlyph("q")}. Press <b>Break (x)</b> for shorter notes and <b>Merge (m)</b> for longer ones — play each value at least once: ${noteGlyph("e")} ${noteGlyph("q")} ${noteGlyph("h")} ${noteGlyph("w")}.`,
-      compact:`🎵 Break (x) &amp; Merge (m) to play each note value — ${noteGlyph("e")} ${noteGlyph("q")} ${noteGlyph("h")} ${noteGlyph("w")}!` },
-    "m2:rests": { char:"dee", title:"Rests — the shape of silence",
-      theory:[ `Music breathes. A <b>rest</b> is a silence with a length, just like a note — a quarter rest ${restGlyph("q")} lasts exactly as long as a quarter note ${noteGlyph("q")}.`,
-               "Same moves: the <b>rest card</b> starts as a quarter rest. <b>Break</b> it into shorter silences, <b>Merge</b> into longer ones. Every note value has a matching rest." ],
+      compact:`🥁 Break (x) &amp; Merge (m) to play each note value — ${noteGlyph("e")} ${noteGlyph("q")} ${noteGlyph("h")} ${noteGlyph("w")}!` },
+    "m2:rests": { char:"gaia", title:"Rests — the shape of silence",
+      theory:[ `Even the ground breathes between footsteps. A <b>rest</b> is a silence with a length, just like a note — a quarter rest ${restGlyph("q")} lasts exactly as long as a quarter note ${noteGlyph("q")}.`,
+               "Same moves you know: the <b>rest card</b> starts as a quarter rest — <b>Break</b> it into shorter silences, <b>Merge</b> into longer ones. Careful down in the tunnels, though — a Sand Kobold called <b>Sandmar</b> <i>loves</i> a rest, and uses them to lull folk to sleep. Rests are yours to place, not his to trap you with!" ],
       task:`Play the <b>rest card</b>, and Break/Merge it to place each rest value: ${restGlyph("e")} ${restGlyph("q")} ${restGlyph("h")} ${restGlyph("w")}.`,
       compact:`🤫 Break &amp; Merge the rest card to place each rest value — ${restGlyph("e")} ${restGlyph("q")} ${restGlyph("h")} ${restGlyph("w")}!` },
-    "m2": { char:"dee", title:"Rhythm — feel the pulse live",
-      theory:[ "You've learned how long notes and rests <i>last</i>. But rhythm is best <i>felt</i>, not just placed — so now you'll <b>drum it live</b>, in time with the loop!",
-               "The simplest, sturdiest beat there is: a <b>kick on every beat</b> — one, two, three, four. They call it <b>four-on-the-floor</b>, and it's the heartbeat of half the music you love." ],
-      task:"Tap <b>Space</b> right on each glowing beat to match the kick pattern. Land every beat cleanly and the groove is yours!",
+    "m2": { char:"gaia", title:"Rhythm — feel the pulse live",
+      theory:[ "You know how long notes and rests <i>last</i> — but a beat is meant to be <b>felt</b>, not just placed. So put your hands on the ground and <b>drum it live</b>, in time with the loop!",
+               "The sturdiest beat there is: a <b>kick on every beat</b> — one, two, three, four. They call it <b>four-on-the-floor</b>, and it's the heartbeat under every city street." ],
+      task:"Tap <b>Space</b> right on each glowing beat to match the kick. Land them all clean and the groove is yours — don't let Sandmar's gravity drag you behind the beat!",
       compact:"🥁 Tap <b>Space</b> on the beat — match four-on-the-floor live!" },
-    "m2:grooves": { char:"dee", title:"Grooves — patterns with swing",
-      theory:[ "Once you can hold a steady pulse, you can bend it into a <b>groove</b> — a repeating pattern with its own feel.",
-               "A <b>backbeat</b> snaps a snare on beats 2 and 4; a <b>clave</b> skips and syncopates. Watch the ghost cells, then feel it in your hands." ],
+    "m2:grooves": { char:"gaia", title:"Grooves — patterns with swing",
+      theory:[ "Once you can hold a steady pulse, you can bend it into a <b>groove</b> — a repeating pattern with its own swagger.",
+               "A <b>backbeat</b> cracks a snare on beats 2 and 4; a <b>clave</b> skips and syncopates. Watch the ghost cells glow, then feel it in your hands." ],
       task:"Drum the pattern shown on the pads — kick, snare and hats where the ghosts light up. Match the whole groove!",
       compact:"🥁 Match the groove shown on the pads — kick, snare & hats!" },
-    "m2:free": { char:"dee", title:"Free take — your own song",
-      theory:[ "You've got the pulse and the grooves. Now make something <b>your own</b>.",
-               "First <b>compose a little melody</b> — play notes onto the loop at your own pace. Then <b>drum a beat live over it</b>. Melody + beat = one song you can keep." ],
-      task:"Lay down a short melody, then finger-drum a beat over it. A few solid hits and it's a keeper — make it groove!",
+    "m2:free": { char:"gaia", title:"Free take — your own song",
+      theory:[ "You've got the pulse and the grooves. Now make something that's <b>yours</b>.",
+               "First <b>compose a little melody</b> — lay notes onto the loop at your own pace. Then <b>drum a beat live over it</b>. Melody plus beat is one whole song you can keep." ],
+      task:"Lay down a short tune, then finger-drum a beat over it. A few solid hits and it's a keeper — make it move!",
       compact:"🎶 Free take — compose a melody, then drum a beat over it!" },
-    "m3": { char:"dee", title:"Dynamics — the fire in your playing",
-      theory:[ "The very same note can <b>whisper</b> or <b>roar</b> — that's <b>dynamics</b>, how loud or soft you play.",
-               "Musicians mark it with letters: <b>p</b> is <i>piano</i> (soft), <b>mf</b> is medium, <b>f</b> is <i>forte</i> (loud). Watch — a loud card grows <b>big</b>, a soft one shrinks <b>small</b>. Size <i>is</i> loudness!" ],
-      task:"Don't stay one volume — that's a fire that never flickers. Play something soft (<b>p</b>), something medium (<b>mf</b>), and something loud (<b>f</b>).",
+    "m3": { char:"crescendra", title:"Dynamics — the spark of life",
+      theory:[ "They stitched me together and ran the lightning through — and in that instant I learned the first secret of sound: the very same note can <b>whisper</b>… or <b>ROAR</b>. That is <b>dynamics</b> — how loud or soft you play. It is the <i>life</i> in the music!",
+               "We mark it with letters: <b>p</b> is <i>piano</i> (soft), <b>mf</b> is medium, <b>f</b> is <i>forte</i> (LOUD). Watch — a loud card swells <b>big</b>, a soft one shrinks <b>small</b>. Size <i>is</i> loudness! And beware the rattling skeleton <b>Morendo</b> — he drains the fire from every note until it fades to nothing." ],
+      task:"Never stay one volume — a flame that never flickers is a dead one. Give me something soft (<b>p</b>), something medium (<b>mf</b>), and something <b>LOUD</b> (<b>f</b>)!",
       compact:"🔥 Change the loudness — soft <i>p</i>, medium <i>mf</i>, loud <i>f</i>. Size is volume!" },
-    "m4": { char:"dee", title:"Melody — a line that flows like water",
-      theory:[ "Play notes <b>one after another</b> and they join into a <b>melody</b> — a tune that flows like a little stream.",
-               "Notes that step to their <b>neighbours</b> flow smooth; big leaps make a splash. Three steps in a row make a <b>scale run</b>. And you can stack <b>two</b> notes now for an <b>interval</b> — two pitches ringing at once." ],
-      task:"Build a flowing tune note by note — smooth steps and a scale run sound best. Try a few two-note intervals in there too!",
+    "m4": { char:"cantrip", title:"Melody — a line that flows like water",
+      theory:[ "Heh — name's <b>Cantrip</b>. I hop note to note like stones across a stream, and done right they join into a <b>melody</b> — a tune that flows like water.",
+               "Notes that step to their <b>neighbours</b> flow smooth; big leaps make a splash. Three little steps in a row make a <b>scale run</b>. You can stack <b>two</b> notes now for an <b>interval</b>, too. Just watch for <b>Slurry</b> — that gloopy blob smears every note into mush. Keep your steps <i>clean</i> and she can't touch you!" ],
+      task:"Build a flowing tune note by note — smooth steps and a scale run sound sweetest. Slip a couple of two-note intervals in there too!",
       compact:"🎶 Play notes in a row for a melody — smooth steps flow; stack 2 for an interval!" },
-    "m5": { char:"dee", title:"Harmony — notes forged together",
-      theory:[ "Stack notes so they ring <b>at the same time</b> and they fuse into a <b>chord</b>, strong as forged metal. <b>Three</b> notes make a <b>triad</b>.",
-               "A chord that <b>resolves</b> home to the <b>tonic</b> — the key's home note — sounds settled and <i>finished</i>. That homecoming is called a <b>cadence</b>." ],
-      task:"Stack sweet-sounding (<b>consonant</b>) triads, then land one back on home for a cadence.",
+    "m5": { char:"mageorc", title:"Harmony — notes forged together",
+      theory:[ "<b>MAGE ORC</b>, at your service — I forge the <b>major</b> chords, bright as a struck anvil. Stack notes so they ring <b>at the same time</b> and they fuse into a <b>chord</b>, strong as tempered metal. <b>Three</b> notes make a <b>triad</b>.",
+               "My old company forges the rest — Miner Minor the sombre dwarf, Demonish the crooked, Augminotaur the towering augment. A chord that <b>resolves</b> home to the <b>tonic</b> sounds settled and <i>finished</i> — a <b>cadence</b>. We learned that the hard way when our leader <b>Tritony</b> fell to pure dissonance… but that's a tale for another day." ],
+      task:"Stack sweet-sounding (<b>consonant</b>) triads, then land one back home for a cadence.",
       compact:"🎹 Stack 3 notes into consonant triads — and resolve one home for a cadence!" },
-    "m6": { char:"dee", title:"Timbre — the voice of each instrument",
-      theory:[ "Play the exact same note on a piano and a guitar — sounds <b>different</b>, doesn't it? That flavour is <b>timbre</b>, an instrument's own voice. Like different woods, each rings its own way.",
-               "You've got more than one instrument to play with now — <b>blend</b> their voices together for a sound with real depth." ],
-      task:"Mix notes from <b>different instruments</b> in your chords — those blends are exactly what I'm listening for.",
+    "m6": { char:"timbrewolf", title:"Timbre — the voice of each instrument",
+      theory:[ "<i>A low howl.</i> I am <b>Timbrewolf</b>. Once I was only a wolf — until Wormwood's wooden bite gave me a hundred voices. Play the same note on a piano and a guitar and it sounds <b>different</b>: that flavour is <b>timbre</b>, an instrument's own voice, like every wood rings its own way.",
+               "You've more than one instrument to play with now — <b>blend</b> their voices for a sound with real depth. That's the opposite of what <b>Wormwood</b> wants: he bites folk into one flat choir, all the same. Give me <i>many</i> voices instead." ],
+      task:"Mix notes from <b>different instruments</b> in your chords — those blends are exactly what my ears are hunting for.",
       compact:"🎨 Blend different instrument voices — piano, guitar and more, together!" },
-    "m7": { char:"dee", title:"Structure — the shape of the whole song",
-      theory:[ "Everything you've learned comes together now — into a <b>whole song</b>, with a shape that unfolds across <b>time</b>.",
-               "The oldest shape is <b>A · B · A</b>: state an idea (<b>A</b>), wander somewhere new (<b>B</b>), then <b>come home to A</b>. Returning to your first idea is what makes a song feel <i>whole</i> — because we <b>remember</b> it." ],
+    "m7": { char:"thekey", title:"Structure — the shape of the whole song",
+      theory:[ "Psst — they call me <b>The Key</b>. I pick locks, and a song's shape is the finest lock there is. Everything you've learned comes together now into a <b>whole song</b>, unfolding across <b>time</b>.",
+               "The oldest shape is <b>A · B · A</b>: state an idea (<b>A</b>), slip somewhere new (<b>B</b>), then <b>come home to A</b>. Bringing your first idea back is what makes a song feel <i>whole</i> — because we <b>remember</b> it. Which is why <b>The Bartender</b> keeps pouring: muddle your memory and you forget the way home. Hold onto that first phrase!" ],
       task:"Compose an <b>A · B · A</b>: play a phrase, contrast it with something different, then bring your very first phrase back.",
       compact:"🏛️ Shape the whole song: state A, contrast with B, then return to A!" },
   };
