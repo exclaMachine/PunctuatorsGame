@@ -1170,10 +1170,12 @@ graduates M1→M2 for now.
 
 ## The character Muses — the graphic-novel cast IS the Muse roster (PLANNED)
 
-> **Status: PLANNED, not built (designed 2026-07-18).** Turns the abstract Muse pool into the dev's
-> *Mujicians* graphic-novel characters, and realizes the long-flagged **"each movement is a chapter/mentor
-> from the story"** hook with actual named cast. Three forks decided with the dev (2026-07-18); a fourth
-> (how you earn a character) is defaulted below and flagged open. Supersedes the generic `MUSE_POOL` names.
+> **Status: PLANNED, not built (designed 2026-07-18; full roster + two more decisions 2026-07-25).** Turns the
+> abstract Muse pool into the dev's *Mujicians* graphic-novel characters, and realizes the long-flagged **"each
+> movement is a chapter/mentor from the story"** hook with actual named cast. **The complete M1–M7 hero/villain
+> roster is now mapped — see [The full cast](#the-full-cast--movement-roster-dev-supplied-2026-07-25).** Two
+> decisions locked 2026-07-25: **villains debut dialogue-first** (boss mechanics staged later) and **each hero
+> narrates its own lesson** (Dee stays M1). Supersedes the generic `MUSE_POOL` names.
 
 **The decision (locked).** A character plays **two roles**:
 
@@ -1233,27 +1235,61 @@ shows no intro** (it's the open creative mode; teaching is campaign-only — sam
   current bubble markup (`.speech` + tail) is reusable as-is; the change is *where it's anchored* (to the
   on-screen character rather than centred in an overlay). This is fine as a modal for now.
 
-### The starting cast (more to come from the dev)
+### The full cast — movement roster (dev-supplied 2026-07-25)
 
-| Character | Class / form | Concept | Lesson home | Muse effect (sketch) |
-|---|---|---|---|---|
-| **Dee Composer** | little girl, mushroom cap (Jiminy-Cricket-style follower) | pitch naturals — the notes, in-key, ear-training | M1 Pitch · Naturals + by-ear | **mentor only for now** (narrates the lesson intro — see [Level narration](#level-narration--mentor-intros-dee-composer--built-2026-07-19)); a Muse effect TBD |
-| **Sharpist** | jester | sharps (♯ — raise/brighten) | M1 Pitch · Sharps level | grants the ♯ power; rewards sharp-resolutions (♯→ up a semitone) |
-| **Sir Flat** | knight | flats (♭ — lower/ground) | M1 Pitch · Flats level | grants the ♭ power; rewards flat-resolutions (♭→ down a semitone) |
-| **Ranger** | villain (Ranger class) | naturals (♮ — cancel) | M1 Pitch · ♮ boss | **captured** by defeating the ♮ boss; grants the ♮ (cancel) power |
-| **Slurry** | shapeshifting blob | slurs / legato phrasing | M4 Melody | passive: **connected/legato lines** (smooth stepwise motion) score more; may unlock a per-play **slur** marking that glides two consecutive timeline notes into one legato gesture |
+The *Mujicians* graphic-novel cast is now mapped across all seven movements. **Two decisions locked
+2026-07-25:** (1) **villains debut dialogue-first** — every villain is seated in `CHARACTERS` now with a
+taunt / the hero's warning inside the lesson intro; their **boss-fight debuff mechanics come later, one at a
+time** (Ranger's ♮ boss is the already-designed template). (2) **Each movement's hero narrates its own lesson
+in-voice** (like Sharpist/Sir Flatterer), with **Dee Composer staying the M1 Pitch mentor**.
 
-*(Slurry's **shapeshifting** IS the slur — she morphs smoothly from one note-shape to the next with no break,
-exactly like legato. The card art/animation morphs; on the grid a slur draws a curve tying two note cells.)*
+| Movement (element) | Hero(es) — narrates the lesson | Villain — dialogue foil now, boss later |
+|---|---|---|
+| **M1 Pitch** | 🎭 **Sharpist** (jester, ♯) · 🤺 **Sir Flatterer** (knight, ♭) · *(Dee Composer narrates naturals)* | 🏹 **Ranger** (♮ — nature *cancels* the accidental) |
+| **M2 Rhythm** (earth pulse) | 🧝 **Gaia** — City Gnome (the beat / groove) | 💤 **Sandmar** — Sand Kobold; raises **gravity** + puts you to sleep with **rest symbols** (a Sandman) |
+| **M3 Dynamics** (fire) | ⚡ **Crescendra** — Frankenstein woman (the swell / spark) | 💀 **Morendo** — skeleton; drains your volume ("dying away") |
+| **M4 Melody** (water) | 👺 **Cantrip** — goblin (a clean, flowing stepwise line) | 🫠 **Slurry** — shapeshifting blob; smears distinct notes into legato **mush** |
+| **M5 Harmony** (forged metal) | ⛏️ **Miner Minor** (dwarf, minor) · 🧙 **Mage Orc** (wizard, major) · 😈 **Demonish** (demon, diminished) · 🐂 **Augminotaur** (augmented minotaur) | 🎻 **Tritony** — the band's **former leader** turned villain (the "devil's interval," dissonance) |
+| **M6 Timbre** (wood voices) | 🐺 **Timbrewolf** (many voices in one) | 🪱 **Wormwood** *(tentative; a.k.a. **Woodworm**)* — see lore below |
+| **M7 Structure** (time / memory) | 🗝️ **The Key** — rogue (unlocks the return home) | 🍸 **The Bartender** — "**bars**" / last call; muddles memory (structure *is* memory) |
 
-The dev has **more characters** not yet assigned — the framework seats each future character at the concept
-its class embodies (M2 Rhythm, M3 Dynamics, M5 Harmony, M6 Timbre, M7 Structure). Mapping is **concept-based,
-not one-per-movement** (M1 already holds three: two hero mentors + the villain).
+*(Emoji here are illustrative doc placeholders; the `CHARACTERS` registry art tokens get chosen when Stage A
+is built. Dee, Sharpist and Sir Flatterer are already in code.)*
+
+**Names still tentative — M6 timbre villain:** recorded as **Wormwood** (dev pick), alt **Woodworm**. Other
+options that fit his lore (wooden teeth, a busker, bites to homogenise voices): **Timberjaw** (the wooden
+teeth, and it echoes Timbrewolf's *timber* root), **Cordwood** (chord/cord + wood), **Maestro Wormwood / The
+Choirmaster** (his choir), **Gnash**.
+
+**Cast lore (dev-supplied 2026-07-25):**
+- **The Harmony heroes were a band of adventurers, and Tritony was their leader** before she fell to villainy
+  — so M5's four chord-quality heroes (Miner Minor / Mage Orc / Demonish / Augminotaur) and their boss share
+  a **fallen-leader** backstory. (The tritone she embodies is the classic *diabolus in musica* dissonance.)
+- **Wormwood / Woodworm (M6 villain)** was a **street busker** who gained **wooden teeth**. When he **bites a
+  person**, they **sound more like him** — he is assembling a homogenous **choir**, which *is* his
+  timbre-flattening villainy (one voice swallowing the many). But when he bites an **animal**, it becomes
+  **more human-like and better at music** — and **that is how Timbrewolf was created** (the M6 hero is
+  Wormwood's accidental masterpiece). Hero and villain are linked by origin.
+- **Slurry is now a VILLAIN (reframe 2026-07-25).** She was previously written as a *hero* Muse (legato/slur
+  bonus). Recast: her shapeshifting slur **smears distinct notes into indistinct mush**, and the goblin hero
+  **Cantrip** teaches the crisp stepwise line that fights it. *(The old legato-bonus Muse mechanic can migrate
+  onto Cantrip or become Slurry's boss debuff — TBD when the M4 boss is built.)*
+
+**Muse-effect sketches** (for Stage D, when the cast becomes the collectible Muse roster): Gaia = groove /
+rhythmic-variety bonus · Crescendra = dynamic-contrast bonus · Cantrip = stepwise-melody / scale-run bonus ·
+the four Harmony heroes = their chord quality (minor / major / dim / aug) · Timbrewolf = timbre-blend bonus ·
+The Key = form / A·B·A-return bonus. Villains are **captured** on boss defeat and grant their gimmick (Ranger
+♮ cancel is the template).
+
+Mapping is **concept-based, not one-per-movement** (M1 holds three: two hero mentors + Dee + the villain; M5
+holds five: four chord heroes + the boss).
 
 ### Other ways they show up (menu, not all committed)
 
-- **Recurring villain arc** — Ranger returns as escalating bosses in later movements (a throughline
-  antagonist), each defeat deepening his card. *(Open — see below.)*
+- **Recurring villain arc** — *(reframed 2026-07-25)* each movement now has its **own** villain (Sandmar,
+  Morendo, Slurry, Tritony, Wormwood, The Bartender) rather than Ranger recurring, so the antagonist arc is a
+  **rogues' gallery** — one boss per movement, dialogue-first now (see the roster's locked decisions). A
+  throughline where one villain recurs is no longer the plan.
 - **Equipped companion** — carry one earned character for a run (persistent passive + flavor barks), à la
   Inklings' story companions; a soft loadout choice. *(Optional.)*
 - **Codex "cast" gallery** — collecting characters fills a cast page (naturalist framing), separate from the
@@ -1274,24 +1310,30 @@ not one-per-movement** (M1 already holds three: two hero mentors + the villain).
 - **Accidental-transform Muses.** Sharpist/Sir Flat/Ranger carry a `grants: '#'|'b'|'natural'` power the deck
   builder / a per-play control can apply (sharpen/flatten/naturalize a note), reusing the accidentals section's
   `acc` field. Ranger's ♮ is the boss reward (see the Accidentals section's *Boss reward*).
-- **Slurry (legato).** Extends the timeline's melodic-motion scoring with a connected-line bonus; optionally a
-  per-play **slur** control (like duration/dynamics) that ties two consecutive events with no re-articulation
-  (the envelope doesn't retrigger; a short pitch glide), lit on the grid as a tie/curve.
+- **Slurry (now the M4 villain — reframe 2026-07-25).** The old legato-*bonus* mechanic (connected-line
+  scoring; an optional per-play **slur** control that ties two consecutive events with no re-articulation — a
+  short pitch glide, lit on the grid as a tie/curve) now has two possible homes: give it to the **hero Cantrip**
+  as his stepwise-line reward, or make **over-slurring Slurry's boss debuff** (she smears your notes into mush;
+  you fight by playing crisp, separated steps). TBD when the M4 boss is built.
 - **Mentor surface.** A lightweight portrait + tip on entering a character's lesson (first pass); fuller
   scripted dialogue is a later prose pass (the doc's flavor-only stance relaxes here, using existing fiction).
 
 ### Open sub-decisions
 
+- ~~**Name the rest of the cast.**~~ **✅ RESOLVED 2026-07-25** — full roster mapped above (Gaia / Crescendra /
+  Cantrip / the four Harmony heroes / Timbrewolf / The Key, with villains Sandmar / Morendo / Slurry / Tritony /
+  Wormwood / The Bartender).
+- ~~**Ranger recurrence.**~~ **✅ RESOLVED 2026-07-25** — not a throughline; each movement gets its **own**
+  villain (a rogues' gallery).
 - **How earned** = complete the lesson (heroes join / villain captured) *[recommended default]* vs shop-bought
-  vs both. **Left unselected by the dev — confirm.**
-- **Name the rest of the cast** — which of the dev's other characters teach **M2 Rhythm / M3 Dynamics / M5
-  Harmony / M6 Timbre / M7 Structure**, so the generic Muses can be reskinned to them.
-- **Ranger recurrence** — one-and-done M1 boss, or a throughline villain who returns as tougher bosses per
-  movement.
+  vs both. **Still open — confirm when Stage D (Muse roster) is built.**
+- **M6 timbre villain name** — **Wormwood** (tentative) vs Woodworm / Timberjaw / Cordwood / Maestro Wormwood.
+- **M5 intro narrator** — which of the four Harmony heroes opens the lesson (default: **Mage Orc**, major),
+  or a tag-team, with the others surfacing as their chord quality comes up.
+- **Slurry's legato mechanic** — migrate the old per-play slur/glide bonus onto the hero **Cantrip**, or make
+  it **Slurry's boss debuff** (see the code map).
 - **Equipped-companion layer** — build the one-carried-character companion mode, or keep characters purely as
   drafted Muses.
-- **Slur depth** — passive legato bonus only, or the full per-play slur/glide marking (a new control + audio
-  glide).
 
 ---
 
