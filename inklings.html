@@ -1877,16 +1877,27 @@ const EXCLA_ALLIT_BONUS = 10;   // extra ink when the day's letters match (L1==L
 const EXCLA_ADJ_MIN = 100;      // a letter is a valid adjective-start only if the bundle has ≥ this many (excludes j/k/q/x/y/z)
 const EXCLA_NOUN_MIN = 150;     // …and a valid noun-start only if ≥ this many nouns start with it (excludes x/y/z)
 const EXCLA_ALLIT_CHANCE = 0.3; // fraction of days that deliberately use the same letter for both (alliteration days)
-// Hand-written absurd scenarios carry the comedy (data/excla-scenarios.json). Fetched at startup like the
-// other data files; a small inline fallback keeps the puzzle playable if the fetch fails.
-let EXCLA_SCENARIOS = null;
-const EXCLA_FALLBACK = ["a pigeon stole your homework","your soup started telling jokes",
-  "your friend turned into a turtle","the toaster proposed marriage","gravity took the afternoon off",
-  "a goose is doing your taxes","your coffee began reciting poetry","the ocean asked for directions"];
+// Hand-written absurd scenarios carry the comedy (data/excla-scenarios.json). Each scenario is a FRAME that
+// may contain one or more `{noun}` slots — swappable nouns filled at random (day-seeded) from a shared noun
+// list, so the pool of possible daily scenarios multiplies well beyond the number of frames. The file is
+// `{scenarios:[…frames…], nouns:[…]}`; a plain array (old shape) is still accepted (nouns → fallback).
+// Fetched at startup like the other data files; small inline fallbacks keep the puzzle playable if it fails.
+let EXCLA_SCENARIOS = null, EXCLA_NOUNS = null;
+const EXCLA_FALLBACK = ["a {noun} stole your {noun}","your {noun} started telling jokes",
+  "your {noun} turned into a {noun}","the {noun} proposed marriage","gravity took the afternoon off",
+  "a {noun} is doing your taxes","your {noun} began reciting poetry","the {noun} asked for directions"];
+const EXCLA_NOUN_FALLBACK = ["pigeon","goose","turtle","toaster","goblin","wizard","octopus","bicycle",
+  "penguin","houseplant","dragon","sandwich","umbrella","raccoon","cloud","gnome"];
 fetch("data/excla-scenarios.json").then(r=>r.ok?r.json():Promise.reject())
-  .then(list=>{ if(Array.isArray(list) && list.length) EXCLA_SCENARIOS=list.map(String); else EXCLA_SCENARIOS=EXCLA_FALLBACK;
-    if(state.madlibs && mlTab==="excla") renderExclaTab(); })
-  .catch(()=>{ EXCLA_SCENARIOS=EXCLA_FALLBACK; if(state.madlibs && mlTab==="excla") renderExclaTab(); });
+  .then(data=>{
+    if(Array.isArray(data) && data.length){ EXCLA_SCENARIOS=data.map(String); EXCLA_NOUNS=EXCLA_NOUN_FALLBACK; }
+    else if(data && Array.isArray(data.scenarios) && data.scenarios.length){
+      EXCLA_SCENARIOS=data.scenarios.map(String);
+      EXCLA_NOUNS=(Array.isArray(data.nouns)&&data.nouns.length?data.nouns:EXCLA_NOUN_FALLBACK).map(String);
+    } else { EXCLA_SCENARIOS=EXCLA_FALLBACK; EXCLA_NOUNS=EXCLA_NOUN_FALLBACK; }
+    if(state.madlibs && mlTab==="excla") renderExclaTab();
+  })
+  .catch(()=>{ EXCLA_SCENARIOS=EXCLA_FALLBACK; EXCLA_NOUNS=EXCLA_NOUN_FALLBACK; if(state.madlibs && mlTab==="excla") renderExclaTab(); });
 dictReady.then(()=>{ if(state.madlibs && mlTab==="excla") renderExclaTab(); });   // pools become available once the bundle loads → refresh an open puzzle
 // Per-first-letter adjective/noun counts over the bundle → the eligible starting-letter pools. Precomputed
 // once the dictionary loads (memoized). Each pool entry weights by count so common letters come up more
@@ -1912,12 +1923,24 @@ function exclaPickLetter(letters, counts, rng){
   let r=rng()*total; for(const c of letters){ r-=counts[c]; if(r<0) return c; }
   return letters[letters.length-1];
 }
+// Fill a scenario frame's {noun} slots with random nouns (from the seeded rng, so it's stable all day).
+// Avoids repeating a noun within one scenario, and fixes the article when a slot sits right after "a"/"an"
+// (→ "an octopus" vs "a goblin"; first-letter vowel heuristic — good enough for whimsical copy).
+function exclaFillScenario(tmpl, rng){
+  const nouns=EXCLA_NOUNS||EXCLA_NOUN_FALLBACK, used=new Set();
+  return tmpl.replace(/(\ban?\s+)?\{noun\}/gi, (m, art) => {
+    let noun=nouns[Math.floor(rng()*nouns.length)];
+    for(let i=0;i<8 && used.has(noun);i++) noun=nouns[Math.floor(rng()*nouns.length)];   // prefer a fresh noun per slot
+    used.add(noun);
+    return art ? (/^[aeiou]/i.test(noun)?"an ":"a ")+noun : noun;
+  });
+}
 let _excla=null, _exclaDay=null;
 function exclaOfDay(){
   if(_exclaDay===state.day && _excla) return _excla;
-  const pools=exclaPools(); if(!pools || !EXCLA_SCENARIOS) return null;   // still loading
+  const pools=exclaPools(); if(!pools || !EXCLA_SCENARIOS || !EXCLA_NOUNS) return null;   // still loading
   const rng=mulberry32(((state.daySeed>>>0)^0x3c1a)>>>0);                 // distinct offset so it doesn't correlate with the map/WOTD/snowclone dailies
-  const scenario=EXCLA_SCENARIOS[Math.floor(rng()*EXCLA_SCENARIOS.length)];
+  const scenario=exclaFillScenario(EXCLA_SCENARIOS[Math.floor(rng()*EXCLA_SCENARIOS.length)], rng);
   let L1, L2;
   // ~EXCLA_ALLIT_CHANCE of days are alliteration days (same required letter for both, drawn from the pool
   // of letters valid for BOTH an adjective and a noun). Other days pick independently — so alliteration is

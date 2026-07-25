@@ -49,7 +49,8 @@ before changing it.
   (`data/adj-attrs.json`, built by `build_adj_attrs.py`), room layouts (`data/rooms/*.json`), the heraldry
   blazon roster for the DEV-only Blazon Shield (`data/blazon.json`), the WordNet relation graph that powers
   the Curator's per-word relatives page (`data/wordnet-relations.json`, lazy-loaded on first curator open),
-  the hand-written scenario list for the Excla Machine daily interjection puzzle (`data/excla-scenarios.json`),
+  the hand-written scenario frames + swappable noun list for the Excla Machine daily interjection puzzle
+  (`data/excla-scenarios.json`),
   and `2of12.txt` — all local project files, no runtime third-party API).
 - **Ask clarifying questions before non-trivial work.** For any meaningful change, surface the genuine
   design forks and get answers before writing code. Prefer a recommendation over an exhaustive survey.

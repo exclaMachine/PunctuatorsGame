@@ -524,11 +524,18 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   interjection puzzle** (sibling to Snowclones/WOTD): invent a two-word interjection — an **adjective + a
   noun** — reacting to an absurd daily scenario, where the adjective must start with letter **L1** and the
   noun with **L2**. Any real adjective+noun pair wins (no single answer — that's the fun). **Content =
-  hybrid:** hand-written scenarios in **`data/excla-scenarios.json`** (a flat array of absurd strings, e.g.
-  "your soup started telling jokes"; fetched at startup like the other data files, `EXCLA_FALLBACK` inline
-  if the fetch fails — expand the list freely) + **procedural letters**. `exclaOfDay()` is day-seeded
-  (`mulberry32`, seed offset `^0x3c1a` so it doesn't correlate with the map/WOTD/snowclone dailies; cached
-  per day) and picks `{scenario, L1, L2, allit}`. **Solvability guarantee:** `exclaPools()` precomputes
+  hybrid:** hand-written scenario *frames* + **procedural nouns + procedural letters**.
+  **`data/excla-scenarios.json`** is `{scenarios:[…frames…], nouns:[…]}` (a plain array is still accepted →
+  nouns fall back); fetched at startup like the other data files (`EXCLA_FALLBACK`/`EXCLA_NOUN_FALLBACK`
+  inline if it fails — add frames/nouns freely). A frame may carry one or more **`{noun}` slots**
+  (e.g. "a `{noun}` stole your `{noun}`") that `exclaFillScenario` fills at random from the noun list, so the
+  space of possible daily scenarios multiplies well past the ~30 frames without hand-writing each; the fill
+  **avoids repeating a noun within one scenario** and **fixes the article** when a slot sits right after
+  "a"/"an" (→ "an octopus" vs "a goblin", first-letter-vowel heuristic). Frames stay authored (the comedy is
+  human-written) — only the swapped noun is procedural. `exclaOfDay()` is day-seeded (`mulberry32`, seed
+  offset `^0x3c1a` so it doesn't correlate with the map/WOTD/snowclone dailies; cached per day), fills the
+  chosen frame's slots from the same seeded rng (so the resolved scenario is stable all day + stored verbatim
+  in the yells gallery), and returns `{scenario, L1, L2, allit}`. **Solvability guarantee:** `exclaPools()` precomputes
   per-first-letter adjective/noun counts over `DICT` once it loads (memoized); a letter is eligible only
   with `≥EXCLA_ADJ_MIN`(100) adjectives / `≥EXCLA_NOUN_MIN`(150) nouns starting with it (excludes the
   starved letters — adj j/k/q/x/y/z, noun x/y/z), and `exclaPickLetter` weights the pick by count so common
@@ -546,14 +553,13 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   Codex") in the tab. One solve/day (inputs lock after solving, like Pig Pens' decoded state). `renderExclaTab`
   reuses the `#madlibs` overlay's shared `#ml-title/#ml-sub/#ml-passage`; `mlTab` gained `"excla"`.
   **New saved state:** `state.exclaDay` + `state.exclaYells` (snapshot **`v:8`**, additive to old saves).
-  **Content TODO — grow the scenario pool past its fixed 30:** `data/excla-scenarios.json` is currently 30
-  flat strings, so the daily rotation only ever draws from those 30. **Expand it**, and consider making some
-  scenarios *templated* — a scenario string with a **swappable noun slot** (e.g. "a pigeon stole your
-  {object}" where `{object}` is filled from a small word list, or from the WordNet noun bundle) so the number
-  of possible daily scenarios multiplies well beyond 30 without hand-writing each one. (Keep the comedy
-  human-written: the frames stay authored, only the swapped noun is procedural — like the snowclone frames.)
-  If templating lands, `exclaOfDay()` would resolve the slot with a day-seeded pick before returning the
-  scenario string; nothing downstream (validation/reward) changes.
+  **Content — noun templating BUILT 2026-07-25** (the earlier "grow past a fixed 30" TODO): ~20 of the 30
+  frames now carry `{noun}` slots and there are ~56 nouns, so the daily rotation draws from far more than 30
+  possibilities. **To keep growing it, just add frames and nouns to the JSON** — no code change. Keep nouns
+  **concrete/countable/singular** so they read after "a"/"the"/"your" (the a/an fix is automatic, but a
+  mass/plural noun like "homework" after "a" still reads oddly); a slot can also live after "the"/"your"/"a
+  live"/"a very small" to sidestep the article entirely. Possible next step: pull slot fills from the WordNet
+  noun bundle instead of a hand list (bigger space, less curated tone).
   **Deferred/future:** make the structure a collectible (the yells gallery is the seed); promote a favorite
   yell to a placeable plaque (like the deferred snowclone plaque); ♮-style scenario packs.
 - **Level content pipeline** (`build_levels.py`, project root) — offline, run once per book: turns a
@@ -763,8 +769,9 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   a day-seeded scenario ("What would you yell if your soup started telling jokes?") asks you to invent a
   two-word interjection — an **adjective starting L1 + a noun starting L2** — any valid pair wins. Solving
   pays a one-per-day ink bonus (+ an "Excla!" extra when L1==L2), and each yell is kept in a persisted
-  gallery. Scenarios are hand-written (`data/excla-scenarios.json`); the letters are procedurally chosen
-  from the WordNet bundle so a solution always exists. See the **Excla Machine module** in the code map.
+  gallery. Scenario *frames* are hand-written (`data/excla-scenarios.json`) with swappable `{noun}` slots
+  filled from a noun list (so the daily pool is far larger than the frame count); the required letters are
+  procedurally chosen from the WordNet bundle so a solution always exists. See the **Excla Machine module**.
 - Backup: export state to JSON, import it back (also the manual cross-device transfer).
 - Keyboard on desktop; **on-screen touch controls on mobile** (joystick bottom-left, action cluster
   bottom-right — movement under the left thumb, ATK under the right, matching the usual mobile/controller
