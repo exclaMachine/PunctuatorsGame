@@ -1294,7 +1294,9 @@ holds five: four chord heroes + the boss).
 - **Recurring villain arc** — *(reframed 2026-07-25)* each movement now has its **own** villain (Sandmar,
   Morendo, Slurry, Tritony, Wormwood, The Bartender) rather than Ranger recurring, so the antagonist arc is a
   **rogues' gallery** — one boss per movement, dialogue-first now (see the roster's locked decisions). A
-  throughline where one villain recurs is no longer the plan.
+  throughline where one villain recurs is no longer the plan. **The first fleshed-out boss design is
+  [Sandmar — "The Lullaby Duel"](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built)**
+  (M2 Rhythm), the template for turning a seated villain into a fight.
 - **Equipped companion** — carry one earned character for a run (persistent passive + flavor barks), à la
   Inklings' story companions; a soft loadout choice. *(Optional.)*
 - **Codex "cast" gallery** — collecting characters fills a cast page (naturalist framing), separate from the
@@ -1339,6 +1341,92 @@ holds five: four chord heroes + the boss).
   it **Slurry's boss debuff** (see the code map).
 - **Equipped-companion layer** — build the one-carried-character companion mode, or keep characters purely as
   drafted Muses.
+
+---
+
+## Sandmar — the M2 Rhythm boss: "The Lullaby Duel" (DESIGNED 2026-07-25, not built)
+
+> **Status: DESIGNED, not built.** The first fleshed-out villain **boss encounter** (the cast's bosses were
+> seated dialogue-first in Stage A; this is the template for turning one into a fight). Sandmar is the **M2
+> Rhythm capstone**. Like Ranger's ♮ boss, a boss run is the **one run that carries a win target** — normal
+> and Free-Play runs stay open-ended. Runs on the **live Beat Lab drum engine** (Space = kick, refilling
+> snare/hat pads, Perfect/Good/Miss + combo, `countInThen`, `GROOVES` ghost overlays), so it's mostly a new
+> *input-pressure + win/lose* layer over shipped systems. Two forks locked with the dev (2026-07-25):
+> **call-and-response duel** format · **tug-of-war, retryable** fail-state.
+
+**Fantasy.** Sandmar (Sand Kobold, a Sandman) is a **DJ lulling the crowd — and you — to sleep**. Rhythm is
+wakefulness: you drum to stay awake and wake the room back up. His two story powers map straight to mechanics:
+**rest symbols → sleep pressure** (the fail-state) and **gravity → timing warp** (his attack).
+
+### The meter — his HP *and* your fail-state (one tug-of-war bar)
+
+```
+😴 Asleep  ◀————————[●]————————▶  Awake 🎉
+```
+
+Starts ~25% toward Awake. **Clean echoes + combos push Awake; misses + his hits pull Asleep; a passive sleep
+aura always drifts sleepward** so you can't coast. **Win** = fill Awake (crowd roars, Sandmar defeated).
+**Lose** = fill Asleep (you nod off) → **instant retry** (challenge-run framing — you lose the *fight*, not a
+saved song). Reuses the vestigial `runThreshold`/`RUN_THRESHOLD` as the Awake target; `run.debuff='drowsy'`.
+
+### The round loop — a call-and-response drum duel
+
+Sandmar plays a short groove, shown as a **ghost overlay** (his *call*); you **echo it back live** over the
+next bar. Echo scoring reuses the grooves-stage **OR-slot matching + Perfect/Good/Miss** windows: a clean echo
+**staggers him** (a damage window) and lights the meter Awake; a sloppy bar lets the lull win it. *(Format
+picked over "survival — hold one groove" and "freeform — just don't sleep"; it's the capstone **exam** of the
+grooves the ladder taught.)*
+
+- **Echo core + trade-fours flourish (defaulted — adjustable).** The fight is **Simon-says echo** for its
+  teachable phases, with the **final phase turning into trading fours** (he plays a bar, you answer with your
+  *own* bar) as the climactic flourish. *Open:* make the **whole** fight a freeform **trading-fours** jam
+  instead (cooler set-piece, but scored on freeform-fit rather than the clean OR-slot echo) — flag if preferred.
+
+### Three phases, escalating (reuse `GROOVES` as his calls + the "shown → memory" ramp)
+
+1. **Warm-up** — four-on-the-floor echoes; introduces the **rest hex**.
+2. **Groove** — backbeat / syncopated calls; adds the **gravity drag**.
+3. **Nightmare** — clave-ish calls, **yawn blackouts**, combined attacks, and the **trade-fours** climax; final
+   push to Awake.
+
+### His debuff kit (every attack telegraphed, so it's fair)
+
+- **Rest hex** ⭐ (sleep) — a rest glyph winds up over a drum lane, then **mutes that voice for a bar**
+  (Sandmar *silences* a pad — weaponizing the rest symbol the Rests stage taught). You **reroute** to other
+  pads; the grooves' **OR-slots** (a beat playable with snare *or* hat) keep it survivable. **Fairness rule:**
+  his call **never requires the lane he just muted** (the same "never ask the unanswerable" guard M1's `newCall`
+  uses for out-of-range accidentals).
+- **Gravity drag** ⭐ (gravity) — a telegraphed **tempo sag / late-feel** for 1–2 bars; you resist by hitting
+  **early** to stay on the true grid, and holding the groove through it **staggers him**. *(Held back: literal
+  input latency / "heavy pads" — reads like lag/jank unless very clearly telegraphed; drag the *feel*, not the
+  registration.)*
+- **Yawn blackout** (sleep) — a brief sleepy-eyelid wipe **hides the ghost overlay/playhead for a beat**, so you
+  echo from **memory** (calls back the grooves "shown → memory" ramp).
+
+### Presentation
+
+Desaturation + a **Zzz vignette** closing in as you near Asleep; color floods back on a clean streak; the
+crowd cheers awake on the win. Sandmar's backing is a **slow, low, dreamy half-tempo lull**. Reuses
+`countInThen`, the timing bloom / floating-rating juice, and a **boss variant of `renderRhythmEnd`** for the
+win/lose screens.
+
+### Capture reward — the Sandmar Muse "Gravity Groove"
+
+Beating him **captures Sandmar as a Muse** (villains join on boss defeat — the planned earn path; Ranger's ♮ is
+the template). *Gravity Groove* = his powers tamed: **steadies your tempo + widens the Good/Perfect windows a
+hair** (gravity mastered = rock-steady time), and your **placed rests now give a small combo/score bump**
+instead of nothing (his sleep-weapon becomes your syncopation tool).
+
+### Where it sits & build reuse
+
+- **Placement:** the M2 ladder is durations → rests → match → grooves → **free** → **Sandmar**, gating the jump
+  to M3 (today `maybeAdvance` unlocks M3 past "free"; the boss slots in as the capstone before that unlock).
+- **Reuse map:** the Beat Lab live engine (pads/timing/combo), `GROOVES` for his calls, `countInThen`, the
+  ghost overlay (shown call → hidden for the echo), `run.debuff` + `runThreshold`, `renderRhythmEnd`. **New:**
+  the tug-of-war meter, the three telegraphed debuffs (lane-mute / tempo-sag / overlay-hide), phase escalation,
+  the trade-fours final phase, and the capture → add Sandmar to the Muse pool.
+- **Open sub-decisions:** echo-only vs whole-fight trade-fours (above); phase count / length / difficulty
+  tuning; whether the sleep aura scales with phase; exact `Gravity Groove` numbers.
 
 ---
 
