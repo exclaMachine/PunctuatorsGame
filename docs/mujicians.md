@@ -407,8 +407,18 @@ substrate, and the gesture is **juice layered on top, never the only path**:
   earlier-sketched `x`/`/` — `m` reads as "merge" and neither collides with the hand-select home row.)*
 - **Layer 2 (juice) ✅ BUILT (Increment 3, 2026-07-24):** a **single-pointer vertical swipe** across the card —
   **down = Break, up = Merge** (`touch-action:none` so the browser can't steal it for scroll; `setPointerCapture`
-  so the swipe completes even off-card). **Single-pointer only** — robust on mouse and touch alike. *(A
-  crack-and-fall-apart animation is not built — functional gesture only.)*
+  so the swipe completes even off-card). **Single-pointer only** — robust on mouse and touch alike.
+- **Layer 3 (crack-and-fall-apart animation) ✅ BUILT (2026-07-24):** Break/Merge are no longer instant
+  re-renders — they animate on `#fxlayer` like the other card motion (overlay clones + FLIP, art-agnostic,
+  reduced-motion cuts to the instant swap). **Break** (`flyBreak`): a bright **crack flash** (`.crackflash`,
+  tinted by the note's `--cc`) runs down the card's centre; two clip-path half-clones (`.fxhalf`, left = `inset(0
+  50% 0 0)`, right = `inset(0 0 0 50%)`) recoil then **fall to the two new slots** while the real half-value
+  cards **pop in** there (`.card.popin` `cardpop` keyframe, 90ms delay so the halves land first). **Merge**
+  (`flyMerge`): the two source clones **slide together into the merged card's slot** and fade as the real
+  double-value card pops in. Both are driven by `breakAt`/`mergeAt` capturing the source rect(s) + `--cc` colour
+  **before** the re-render (so every input path — button, key, swipe — gets it for free). A short **SFX**
+  (`_crack(merge)`, filtered-noise burst + woody transient) plays on both, even under reduced motion: Break =
+  bright pitch-dropping snap; Merge = lower pitch-rising clunk.
 - **Do NOT use tap-and-hold for Break** — hold is reserved for the deferred **hold-to-sustain** expressive
   duration control; one gesture, one meaning.
 

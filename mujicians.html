@@ -330,6 +330,18 @@
     42%{transform:translate(-50%,-74%) scale(1)}
     100%{opacity:0;transform:translate(-50%,-140%) scale(1)}}
   @media (prefers-reduced-motion:reduce){ .fxcard{display:none} .lgcell.bloom{animation:none} .ratingpop{display:none} }
+  /* Break/Merge (M2 note-value lesson) card motion: on Break the source card cracks down the middle and its
+     two halves fall to the new slots; on Merge two halves slide together and fuse. Overlay clones on #fxlayer
+     like the other card motion — art-agnostic, reduced-motion cuts to an instant re-render (SFX still plays). */
+  .fxhalf{position:fixed;margin:0;box-shadow:0 8px 20px rgba(0,0,0,.5);will-change:transform,opacity;backface-visibility:hidden}
+  .crackflash{position:fixed;z-index:16;pointer-events:none;border-radius:2px;
+    background:linear-gradient(180deg,rgba(255,255,255,0),#fff 16%,#fff 84%,rgba(255,255,255,0));
+    box-shadow:0 0 10px 3px rgba(255,255,255,.9),0 0 22px 8px var(--cc,#fff);
+    animation:crackflash .2s ease-out forwards}
+  @keyframes crackflash{0%{opacity:0;transform:scaleY(.25)}30%{opacity:1;transform:scaleY(1.06)}100%{opacity:0;transform:scaleY(1)}}
+  @keyframes cardpop{0%{transform:scale(.4);opacity:0}55%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}
+  .card.popin{animation:cardpop .3s cubic-bezier(.22,1.4,.4,1) both}
+  @media (prefers-reduced-motion:reduce){ .fxhalf,.crackflash{display:none} .card.popin{animation:none} }
   /* faint bar-group separators when the loop grid is subdivided into beats */
   .lgcell.beat0:not(:nth-child(2)){border-left:1px solid rgba(255,255,255,.08)}
 
@@ -1240,6 +1252,21 @@
     const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.34*vel,t+0.001); g.gain.exponentialRampToValueAtTime(0.0006,t+0.05);
     src.connect(hp).connect(g).connect(ac.destination); src.start(t); src.stop(t+0.06);
   }
+  // A short percussive "snap" for Break / "fuse" for Merge — a filtered noise burst + a woody pitch transient.
+  // Break = bright, pitch dropping (a twig cracking); Merge = lower, pitch rising (two halves clunking together).
+  function _crack(merge){
+    const ac = audio(), t = ac.currentTime;
+    const src=ac.createBufferSource(); src.buffer=_noiseBuffer(ac);
+    const bp=ac.createBiquadFilter(); bp.type="bandpass"; bp.Q.value=0.8;
+    bp.frequency.setValueAtTime(merge?900:2600, t);
+    bp.frequency.exponentialRampToValueAtTime(merge?1500:640, t+0.08);
+    const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(merge?0.42:0.5,t+0.004); g.gain.exponentialRampToValueAtTime(0.0006,t+0.13);
+    src.connect(bp).connect(g).connect(ac.destination); src.start(t); src.stop(t+0.15);
+    const o=ac.createOscillator(), g2=ac.createGain(); o.type="triangle";
+    o.frequency.setValueAtTime(merge?170:440,t); o.frequency.exponentialRampToValueAtTime(merge?270:120,t+0.06);
+    g2.gain.setValueAtTime(0.0001,t); g2.gain.linearRampToValueAtTime(0.36,t+0.003); g2.gain.exponentialRampToValueAtTime(0.0006,t+0.09);
+    o.connect(g2).connect(ac.destination); o.start(t); o.stop(t+0.1);
+  }
 
   /* ========= call-and-response (M1 Pitch) =========
      The computer (the element-spirit) plays a CALL — a target note — and you RESPOND by matching its
@@ -1536,6 +1563,63 @@
     el.style.left = (r.left + r.width/2) + "px"; el.style.top = r.top + "px";
     $fx.appendChild(el);
     setTimeout(()=>el.remove(), 950);
+  }
+  // Break/Merge card motion — orchestrated by breakAt/mergeAt, which capture the source rect(s) BEFORE the
+  // re-render (nodes get detached, but clones read only the explicit rects). Reduced-motion returns after the
+  // SFX so the split still *sounds*; the cards were already placed by the re-render.
+  function handCardEl(i){ return $game.querySelector(`.hand .card[data-idx="${i}"]`); }
+  const ANIM_BREAK = 320, ANIM_MERGE = 260;
+  // Break: the source cracks down the middle; two half-clones fall to the new slots while the real half-value
+  // cards (leftEl at idx, rightEl at idx+1) pop in there. A bright flash marks the fracture line.
+  function flyBreak(srcNode, srcRect, srcCol, leftRect, rightRect, leftEl, rightEl){
+    _crack(false);
+    if(reduceMotion() || !srcNode || !srcRect) return;
+    const cx = srcRect.left + srcRect.width/2;
+    const fl = document.createElement("div");
+    fl.className = "crackflash";
+    fl.style.cssText = `left:${cx-1.5}px;top:${srcRect.top-4}px;width:3px;height:${srcRect.height+8}px;`;
+    if(srcCol) fl.style.setProperty("--cc", srcCol);
+    $fx.appendChild(fl);
+    setTimeout(()=>fl.remove(), 220);
+    const mkHalf = (side, toRect)=>{                                   // side: -1 left · +1 right
+      const h = srcNode.cloneNode(true);
+      h.className = "card fxhalf";
+      h.style.cssText = `left:${srcRect.left}px;top:${srcRect.top}px;width:${srcRect.width}px;height:${srcRect.height}px;visibility:visible;`
+        + (side<0 ? "clip-path:inset(0 50% 0 0);" : "clip-path:inset(0 0 0 50%);");
+      if(srcCol) h.style.setProperty("--cc", srcCol);
+      $fx.appendChild(h);
+      const dx = (toRect.left + toRect.width/2) - cx, dy = toRect.top - srcRect.top;
+      h.animate([
+        { transform:"translate(0,0) rotate(0)", opacity:1 },
+        { transform:`translate(${side*4}px,-3px) rotate(${side*3}deg)`, opacity:1, offset:0.16 },   // recoil
+        { transform:`translate(${dx*0.9}px,${dy*0.9 + 10}px) rotate(${side*16}deg)`, opacity:0 }    // fall to the slot
+      ], { duration:ANIM_BREAK, easing:"cubic-bezier(.3,.7,.3,1)", fill:"forwards" }).onfinish = ()=>h.remove();
+    };
+    mkHalf(-1, leftRect);
+    mkHalf( 1, rightRect);
+    [leftEl, rightEl].forEach(el=>{ if(el){ el.classList.add("popin"); el.style.animationDelay = "90ms"; } });  // reconstitute as the halves land
+  }
+  // Merge: two source clones slide together into the merged card's slot and fuse; the real double-value card
+  // pops in as they converge.
+  function flyMerge(aNode, aRect, aCol, bNode, bRect, bCol, toRect, toEl){
+    _crack(true);
+    if(reduceMotion() || !toRect) return;
+    const slide = (node, from, col)=>{
+      if(!node || !from) return;
+      const cl = node.cloneNode(true);
+      cl.className = "card fxhalf";
+      cl.style.cssText = `left:${from.left}px;top:${from.top}px;width:${from.width}px;height:${from.height}px;visibility:visible;`;
+      if(col) cl.style.setProperty("--cc", col);
+      $fx.appendChild(cl);
+      const dx = toRect.left - from.left, dy = toRect.top - from.top;
+      cl.animate([
+        { transform:"translate(0,0) scale(1)", opacity:1 },
+        { transform:`translate(${dx}px,${dy}px) scale(.9)`, opacity:0 }
+      ], { duration:ANIM_MERGE, easing:"cubic-bezier(.5,0,.4,1)", fill:"forwards" }).onfinish = ()=>cl.remove();
+    };
+    slide(aNode, aRect, aCol);
+    slide(bNode, bRect, bCol);
+    if(toEl){ toEl.style.visibility = "hidden"; setTimeout(()=>{ toEl.style.visibility = ""; toEl.classList.add("popin"); }, 170); }   // fuse in as the clones meet
   }
   // Swell: switching the dynamic re-renders the hand (nodes are recreated), so we play an explicit WAAPI
   // tween from the previous size to the new resting scale the CSS .dyn-* class already applied. Size = volume.
@@ -1952,20 +2036,33 @@
   function breakAt(idx){                                                            // ♩ → two ♪ : one card becomes two half-value copies
     if(idx<0) return; const c = run.hand[idx]; if(!c) return;
     const h = halfDur(c.dur||DEFAULT_DUR); if(!h) return;                            // already at the floor (eighth)
+    const srcEl = handCardEl(idx), srcRect = srcEl ? centerRect(srcEl) : null;       // capture BEFORE the re-render detaches the node
+    const srcCol = srcEl ? srcEl.style.getPropertyValue("--cc") : "";
+    const handSnap = snapHand();
     const mk = () => Object.assign({}, c, { id:nextCardId(), dur:h });
     run.hand.splice(idx, 1, mk(), mk());   // replace with two adjacent halves
     run.sel = new Set([idx]);              // keep the first half selected so you can keep breaking
     renderGig();
+    flipHand(handSnap);                                                              // slide the surviving cards to their new slots
+    const lEl = handCardEl(idx), rEl = handCardEl(idx+1);
+    flyBreak(srcEl, srcRect, srcCol, lEl?centerRect(lEl):null, rEl?centerRect(rEl):null, lEl, rEl);
   }
   function mergeAt(idx){                                                            // two ♩ → one 𝅗𝅥 : fuse with an equal partner (anywhere in hand)
     if(idx<0) return; const j = mergeTargetIdx(idx); if(j<0) return;
     const c = run.hand[idx];
+    const aEl = handCardEl(idx), bEl = handCardEl(j);                                 // capture both sources BEFORE the re-render
+    const aRect = aEl?centerRect(aEl):null, bRect = bEl?centerRect(bEl):null;
+    const aCol = aEl?aEl.style.getPropertyValue("--cc"):"", bCol = bEl?bEl.style.getPropertyValue("--cc"):"";
+    const handSnap = snapHand();
     const merged = Object.assign({}, c, { id:nextCardId(), dur:doubleDur(c.dur||DEFAULT_DUR) });
     const lo = Math.min(idx,j), hi = Math.max(idx,j);
     run.hand.splice(hi, 1);            // drop the partner (higher index first so lo stays valid)
     run.hand.splice(lo, 1, merged);    // the merged (longer) card takes the selected card's place
     run.sel = new Set([lo]);
     renderGig();
+    flipHand(handSnap);
+    const mEl = handCardEl(lo);
+    flyMerge(aEl, aRect, aCol, bEl, bRect, bCol, mEl?centerRect(mEl):null, mEl);
   }
   function breakSelected(){ breakAt(selectedSingleIdx()); }
   function mergeSelected(){ mergeAt(selectedSingleIdx()); }
