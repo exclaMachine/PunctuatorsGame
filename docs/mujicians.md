@@ -1299,7 +1299,10 @@ holds five: four chord heroes + the boss).
   (M2 Rhythm, the template), **[Morendo — "Scorch the Bones"](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built)**
   (M3 Dynamics, an off-grid first-person loudness/mic set-piece — standalone MVP built), and
   **[Slurry — "Stepping Stones"](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built)**
-  (M4 Melody, a voice-**pitch** stepping-stone crossing). Sandmar = timing · Morendo = loudness · Slurry = pitch.
+  (M4 Melody, a voice-**pitch** stepping-stone crossing), and
+  **[Tritony — "The Devil's Forge"](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25-not-built)**
+  (M5 Harmony, an off-grid **chord-forging** Opus-Magnum-style craft puzzle — the *vertical* axis).
+  Sandmar = timing · Morendo = loudness · Slurry = pitch · Tritony = harmony (chord-forging).
 - **Equipped companion** — carry one earned character for a run (persistent passive + flavor barks), à la
   Inklings' story companions; a soft loadout choice. *(Optional.)*
 - **Codex "cast" gallery** — collecting characters fills a cast page (naturalist framing), separate from the
@@ -1626,6 +1629,102 @@ Sandmar/Morendo's "weapon → your tool."
 - **Open sub-decisions:** exact pitch tolerance / hold time to "land"; flood ramp + fall penalty tuning; melody
   source (authored lines vs. generated stepwise); whether Clarity⟷Mush is ever preferred over cross-and-chip;
   reviving the tentative slur-pull / glissando-resist debuffs once (if) glide-detection is added.
+
+---
+
+## Tritony — the M5 Harmony boss: "The Devil's Forge" (DESIGNED 2026-07-25, not built)
+
+> **Status: DESIGNED, not built.** The fourth fleshed-out boss (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built), [Morendo](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built), [Slurry](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built)). Tritony is the **M5 Harmony capstone** (gating M6). It **breaks the pattern of the first three on purpose:** those are all **off-grid, monophonic, mic-driven** set-pieces — Sandmar = timing, Morendo = loudness, Slurry = pitch — i.e. the three *horizontal, single-line* modalities. Harmony is the **vertical** axis (simultaneity, intervals, consonance vs. dissonance), so this fight is a **craft / assembly puzzle** — an **Opus-Magnum-style forge** where you **stack tones into chords** — **not** a fourth mic game and **not** the note-grid. Same boss template as the others: one win-target run, telegraphed attacks, retryable, capture → Muse. `run.debuff='dissonant'`; Tritony's HP reuses the vestigial `runThreshold`.
+>
+> **Two forks locked with the dev (2026-07-25):** (1) **MVP = a linear stack-builder** — pick ops in order → **Run** → strike-test the chord; the fuller **spatial** Opus-Magnum contraption (placeable arms/tracks you program) is deferred — **but the MVP must carry real puzzle difficulty** (a two-click "M3 then m3" recipe isn't a puzzle), so the challenge comes from **composable primitives + economy/optimization scoring + a heat budget + avoid-the-flaw** (see *The puzzle*). (2) **Build-to-spec orders first** ("forge a *minor* triad on this root"); **resolve-the-tritone orders are tentative** (a phase-3 climax / later layer, since they lean on the Temper piece the base MVP can otherwise defer). **No MVP built yet** — this section is the design; a standalone `forge-quench.html` (the Morendo/`scorch-bones.html` precedent) is the eventual first cut.
+
+**Fantasy.** Tritony (the band's fallen leader; the **tritone**, *diabolus in musica* — the dissonance the whole movement is set against) fights at a **forge**, since M5's element is **metal**. The design's central metaphor: **an alloy *is* a chord** — several metals melted into one material, exactly as several notes sound as one. You smith weapon-instruments by folding tones together; **consonant blends forge a sound weapon that rings true when struck; dissonant blends come out brittle and crack** (the *Forged in Fire* "there's a *crack* in your blade — you're out" test). Tritony is forged of pure dissonance, so you can only shatter her with weapons that **ring**.
+
+### The core loop — stack thirds to forge a chord (and the theory is free)
+
+Every triad is **two thirds stacked**, and *which* thirds decide the quality — so the mechanic teaches chord quality almost automatically, because you physically choose which third to hammer on:
+
+| Weapon quality | Recipe (root → top) | Reads as |
+|---|---|---|
+| **Major** ☀️ | major-3rd, then minor-3rd | bright, balanced — a gleaming leaf-blade |
+| **Minor** 🌙 | minor-3rd, then major-3rd | dark, somber — a curved saber |
+| **Diminished** 💀 | minor-3rd, then minor-3rd | tense — *contains the tritone* — a jagged serrated dagger |
+| **Augmented** 🐂 | major-3rd, then major-3rd | overreaching, unstable — an oversized greathammer |
+
+Tritony's "order" hands you a **root ingot** — the bass tone to forge onto (this **is** the shipped M5 call: *"a single tone to forge onto → build the chord that fits it,"* scored by consonance). You stack tones on top, **Quench**, then **strike-test**: the finished weapon **plays its chord** (reuses the game's chord audio) — a consonant, on-spec weapon **rings clean and holds** (full damage to Tritony); a dissonant / un-tempered-tritone weapon **buzzes, cracks, and shatters** (the blow whiffs, she hits back). Because every weapon rings when struck, each is a **weapon-instrument combo**, and a player can **read the theory off the silhouette** (major blade vs. jagged dim dagger vs. augmented greathammer).
+
+### Real metals & alloys — the accuracy layer (dev keeper 2026-07-26)
+
+The metals aren't arbitrary flavor — use the **actual metals and alloys instruments are made from**, so the forge teaches metallurgy the way the stack teaches harmony. Two axes, kept separate and honest:
+
+- **The chord = the weapon's *pitch* (harmony)** — stacking thirds → consonance + quality (above). Unchanged.
+- **The alloy = the weapon's *timbre* (voice) — and the M5→M6 bridge.** You forge the chord *out of* a real instrument metal, and it **rings in that metal's voice** — brass → trumpet-bright, bronze → bell/cymbal, aluminum → vibraphone, steel → piano-wire, silver → flute. This literally hands the player into **M6 Timbre** (the shipped `VOICES` registry / `playVoice`) at the exact moment the campaign moves there.
+
+| Alloy / metal | Real recipe | Instruments | Voice it forges |
+|---|---|---|---|
+| **Brass** | copper + zinc (~70/30) | trumpet, trombone, horn, tuba, sax bodies | bright, brassy, projecting |
+| **Bronze** | copper + tin | bells, gongs, wound strings | warm, resonant, long sustain |
+| **Bell bronze (B20)** | ~80% Cu / 20% tin | cymbals, orchestral & hand bells | shimmering, complex ring — *near-brittle by design* |
+| **Nickel silver** | copper + nickel + zinc (*no actual silver*) | student flutes, cornets, frets | mellow, even, "silvery" |
+| **Sterling silver** | ~92.5% Ag + copper | pro flutes | warm, rich |
+| **Gold** | gold (plating or karat alloy) | pro flute plating, mouthpieces, reeds | dense, warm, prestige |
+| **Aluminum** | aluminum | vibraphone bars | ringing, mellow, sustaining |
+| **Steel (high-carbon)** | iron + carbon | piano wire, guitar strings, glockenspiel, saw | bright, hard, cutting |
+| **Phosphor bronze** | copper + tin + trace phosphorus | acoustic guitar & harp strings | warm, complex overtones |
+| **Titanium / platinum** | Ti / Pt | modern & ultra-pro flutes | Ti = light/fast · Pt = dark/powerful |
+
+- **The metallurgy puzzle (a second craft axis — DEFERRED past MVP).** To *make* an alloy you fold **base metals in the right proportion** — copper+zinc → brass, copper+tin → bronze — and a **wrong ratio yields a brittle ingot that cracks on the strike-test regardless of the chord** (a second fail-source, parallel to dissonance). Real backing that keeps it honest, not arbitrary: **bell bronze sits deliberately near the brittle edge (~20–23% tin) *because* that near-brittleness is what lets it ring** — so the game's "brittle-but-rings" trade is literally how bells are made. It's a very Opus-Magnum second optimization axis (combine elements to spec), and orders can then demand **both** — e.g. *"forge a **minor** triad in **bell bronze**"* (harmony **and** metallurgy) — but it stays out of the first cut.
+- **MVP inclusion (lean but accurate):** the **root ingot is a real instrument metal that sets the weapon's timbre** (a `VOICES`-backed audio/visual reskin — brass / bronze / aluminum / steel / silver), pure flavor + timbre in the first cut; the **alloy-ratio mixing puzzle is the deferred second axis** above.
+- **Colour note (flavor only, not a mechanic):** real metals have signature colours (gold, coppery bronze, yellow brass, blue-grey steel, white nickel/silver) — good for the ingot/weapon art, but kept **off** the ROYGBIV note-colours, which already encode pitch (don't overload the colour channel).
+
+### The Opus-Magnum bones (what transfers)
+
+- **A palette of parts** you place, and **a sequence you assemble, then press ▶ Run** — an "arm" walks your sequence, welding each tone on in turn (each strike sounds its note; the finished stack rings the full chord).
+- **Optimization = quality.** Fewer, cleaner strikes forge a **masterwork** (big damage); a sloppy/over-worked path forges a merely **serviceable** weapon (less). This is the Zachtronics "can I do it more elegantly?" itch, and it maps straight onto the game's existing **Balatro chips×mult** scoring — **elegance → damage**.
+
+**The parts (MVP core = the two hammers + Quench; the rest are the "piston" layer, deferred):**
+- **⚒ +M3 / +m3 hammers** (core) — weld a major / minor third above the current top tone.
+- **⚒ Temper ±1** — nudge the top tone a **half step**: the voice-leading tool that **resolves a dissonance** or adds a leading tone (and the antidote to her flaw attack).
+- **↻ Invert** — octave-flip the bottom tone up (teaches **inversions**; changes the weapon's balance).
+- **⛓ Fifth-frame** — clamp on the perfect fifth: the stable frame/guard.
+- **🗡 7th-barb** — stack one more third → a **7th chord** (a barbed weapon; ties to the M5→M6 stack-cap growth).
+- **🔥 Quench** — finalize and lock for the strike test.
+
+### The puzzle — where the difficulty lives (dev keeper 2026-07-25)
+
+The MVP is a *linear* builder, but it must feel like a puzzle, not a recipe. Four difficulty sources, none of which need the spatial contraption:
+
+1. **Composable primitives, not ready-made answers.** Orders go beyond plain root-position triads — a **specific inversion / voicing**, a **7th**, or landing the exact perfect fifth — so reaching the target is a small reasoning + ordering problem (which ops, in what sequence), the way an Opus-Magnum arm program is. **Difficulty dial (deferred hard mode):** strip the ready-made **+M3** so a major third must be *composed* (`+m3`, then `Temper +1`) — which also surfaces the tritone lesson mechanically, since **two stacked minor thirds = a diminished fifth (6 semitones = a tritone)**, and you must Temper the top **up** to reach a consonant perfect fifth (7). Her own interval is literally the thing you learn to temper.
+2. **Economy / optimization scoring (the Opus-Magnum soul).** chips×mult on **strikes used · heat spent · cleanliness**; a valid weapon just gets you by, a **masterwork** (minimal, elegant) does the real damage → replay depth and the "can I do it in fewer moves?" pull.
+3. **A heat / energy budget per weapon.** Each op costs heat; you can't brute-force by hammering endlessly. The budget is the puzzle pressure (and keeps the arm from being a slot machine).
+4. **Avoid-the-flaw.** The stack must ring **consonant** — a wrong path that leaves an **un-tempered tritone** cracks the weapon on the strike test, so the *path* matters, not just the endpoint. (This is also the seam for the tentative **resolve-the-tritone** order framing.)
+
+### Her signature attack + phases (boss template)
+
+- **⚡ Flaw injection (signature debuff, `run.debuff='dissonant'`)** — mid-forge she **cracks a tritone into your workspace**: a flaw-tone welds itself onto your stack, and if you **Quench without Tempering it out**, the weapon shatters. Her weapon (the devil's interval) turned into *your* puzzle — the exact parallel to Sandmar's rest-hex / Morendo's hush / Slurry's blur.
+- **🔥 Cooling** — a light time pressure: the ingot cools, so you can't dawdle forever (not a twitch layer — the forge, not a metronome).
+
+**Three phases (escalating):**
+1. **The Forge-fire** — forge plain **major/minor** triads on a given root; learn the two hammers + the strike test. Wide, self-paced.
+2. **The Flaw** — **diminished/augmented** targets appear, and she begins **injecting tritone-flaws** you must Temper out (introduces the piston layer).
+3. **The Devil's Interval** — she forges tritone-weapons *at* you; you out-forge her with consonant masterworks, and the finisher is forging the one weapon that **resolves her** — a **dominant-7th that pulls to the tonic**, shattering her on the cadence (tension → release ends the fight — the ideal harmony payoff).
+
+### Meters (boss-standard, retryable)
+
+- **Tritony's HP** — she **cracks and dulls** as your sound weapons land (reuses `runThreshold`). Empty → shattered (win).
+- **The forge / your life** — a botched strike (a cracked weapon) lets her strike back; enough failed forges → the fire goes out, **you lose → instant retry** (challenge-run framing — you lose the *fight*, not a saved song).
+- **Heat / budget** — the per-weapon economy gate (see *The puzzle* #3).
+
+### Capture reward — the Tritony Muse "The Devil's Bargain"
+
+Beating her **captures the tritone, tamed** ("weapon → your tool," like the others). *The Devil's Bargain* = a **controlled tritone / dominant-function** tool: play a tension note (or a diminished/dominant colour) that **resolves** and you bank a big bonus — and/or it **unlocks the 7th-barb** in normal runs. Her dissonance becomes your most powerful cadence. Mirrors Sandmar's "Gravity Groove" / Morendo's "Dying Fall" / Slurry's tamed portamento.
+
+### Placement, reuse & scope
+
+- **Placement:** M5 Harmony capstone, gating M6. Mage Orc (major) / Miner Minor (minor) — with Demonish (dim) / Augminotaur (aug) surfacing as their qualities come up — narrate the intro and, in fiction, hand you the recipes at the forge (the deferred party angle: heroes-as-allies at the anvil).
+- **Reuse:** the game's **chord classifier + consonance scoring** (`classify` / consonance term), the **chord audio** (the strike-test *is* sounding the stack), the **`VOICES`/`playVoice` timbre system** (real instrument metal → its voice — the M5→M6 bridge, see *Real metals & alloys*), the mentor/intro system, `run.debuff` + `runThreshold`, a boss end-screen. **New:** the **forge render surface** (a self-contained little canvas/DOM stage), the **op-sequence → stack** builder, **economy scoring**, the **heat budget**, the **flaw-injection** debuff, phase logic, and capture → add Tritony to the Muse pool.
+- **Distinct modality:** Sandmar = timing · Morendo = loudness · Slurry = pitch · **Tritony = harmony (chord-forging / consonance)** — the vertical axis, on a craft-puzzle surface rather than a mic.
+- **Open sub-decisions:** MVP fidelity beyond the linear builder (when/whether to add the spatial contraption); exact **heat budget / economy weights / masterwork thresholds**; whether the composable-primitives *hard mode* (no ready-made +M3) is the default or a later dial; how much of the **piston layer** (Temper/Invert/Fifth-frame/7th-barb) lands in the first non-MVP pass; whether **resolve-the-tritone** graduates from tentative to a real phase-3 mode; weapon-silhouette art; and the party/heroes-at-the-anvil layer (deferred).
 
 ---
 
