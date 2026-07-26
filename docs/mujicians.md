@@ -1507,7 +1507,12 @@ instead of nothing (his sleep-weapon becomes your syncopation tool).
 > **fire as bottom peak-meter bars**, a distance-**scaling** 💀 sprite, the **wander → whisper-aggro (`!`) →
 > approach** AI, **erupt-scorch-when-close** (flat damage) with a scare-off if blasted from afar, the **Breath**
 > recharge gate, **Torch-light** life (strike flash) + darkness overlay, win/lose + retry, and a **no-mic
-> keyboard/touch pump** fallback (hold Space). Tunables are constants at the top. **Not yet built (next
+> keyboard/touch pump** fallback (hold Space). Tunables are constants at the top. **Scorch → flee-and-re-lure
+> round loop (tightened 2026-07-26):** damage is **discrete — one clean scorch = one hit**, and `HITS_TO_WIN`
+> (default **4**, a top-of-file tunable) defeats him. The first touch of fire lands the hit and **commits Morendo
+> to bolting** — he sprints fully **offscreen** (`FLEE_SPEED`, sliding to a random side + fading into the dark)
+> and goes **deaf to your whisper** for a short cooldown (`FLEE_COOLDOWN`), so the fight is a tight series of
+> **lure → scorch → flee → re-lure** rounds instead of one continuous burn. **Not yet built (next
 > steps):** the voice-steal → hidden-size p/mf/f **card quiz**, the three **phases** (feints), the old-PC
 > **canvas** look, the **contrast-combo** (tentative), Crescendra's intro, capture → the "Dying Fall" Muse,
 > and porting into `mujicians.html` as a real M3 capstone.
