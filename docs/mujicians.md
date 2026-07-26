@@ -1296,8 +1296,10 @@ holds five: four chord heroes + the boss).
   **rogues' gallery** — one boss per movement, dialogue-first now (see the roster's locked decisions). A
   throughline where one villain recurs is no longer the plan. **Fleshed-out boss designs so far:
   [Sandmar — "The Lullaby Duel"](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built)**
-  (M2 Rhythm, the template) and **[Morendo — "Scorch the Bones"](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built)**
-  (M3 Dynamics, an off-grid first-person loudness/mic set-piece).
+  (M2 Rhythm, the template), **[Morendo — "Scorch the Bones"](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built)**
+  (M3 Dynamics, an off-grid first-person loudness/mic set-piece — standalone MVP built), and
+  **[Slurry — "Stepping Stones"](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built)**
+  (M4 Melody, a voice-**pitch** stepping-stone crossing). Sandmar = timing · Morendo = loudness · Slurry = pitch.
 - **Equipped companion** — carry one earned character for a run (persistent passive + flavor barks), à la
   Inklings' story companions; a soft loadout choice. *(Optional.)*
 - **Codex "cast" gallery** — collecting characters fills a cast page (naturalist framing), separate from the
@@ -1320,9 +1322,10 @@ holds five: four chord heroes + the boss).
   `acc` field. Ranger's ♮ is the boss reward (see the Accidentals section's *Boss reward*).
 - **Slurry (now the M4 villain — reframe 2026-07-25).** The old legato-*bonus* mechanic (connected-line
   scoring; an optional per-play **slur** control that ties two consecutive events with no re-articulation — a
-  short pitch glide, lit on the grid as a tie/curve) now has two possible homes: give it to the **hero Cantrip**
-  as his stepwise-line reward, or make **over-slurring Slurry's boss debuff** (she smears your notes into mush;
-  you fight by playing crisp, separated steps). TBD when the M4 boss is built.
+  short pitch glide, lit on the grid as a tie/curve) **lands on Slurry's capture Muse** (tamed portamento +
+  smooth-stepwise bonus) — decided in the ["Stepping Stones" M4 boss design](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built).
+  The boss itself fights via **discrete pitch targets** (slurring fails to land), so it doesn't need glide
+  detection.
 - **Mentor surface.** A lightweight portrait + tip on entering a character's lesson (first pass); fuller
   scripted dialogue is a later prose pass (the doc's flavor-only stance relaxes here, using existing fiction).
 
@@ -1338,8 +1341,8 @@ holds five: four chord heroes + the boss).
 - **M6 timbre villain name** — **Wormwood** (tentative) vs Woodworm / Timberjaw / Cordwood / Maestro Wormwood.
 - **M5 intro narrator** — which of the four Harmony heroes opens the lesson (default: **Mage Orc**, major),
   or a tag-team, with the others surfacing as their chord quality comes up.
-- **Slurry's legato mechanic** — migrate the old per-play slur/glide bonus onto the hero **Cantrip**, or make
-  it **Slurry's boss debuff** (see the code map).
+- ~~**Slurry's legato mechanic.**~~ **✅ RESOLVED 2026-07-25** — the old slur/glide bonus lands on **Slurry's
+  capture Muse** (tamed portamento + smooth-stepwise bonus), per the ["Stepping Stones" boss design](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built).
 - **Equipped-companion layer** — build the one-carried-character companion mode, or keep characters purely as
   drafted Muses.
 
@@ -1543,6 +1546,86 @@ since the whole fight rewarded contrast. Mirrors Sandmar's "weapon → your tool
   for a rising damage multiplier (scores *range*, not raw volume — very on-theme), held for after the flat-damage
   MVP; feint/"hit-the-tell" depth; exact recharge/HP/range tuning; whether the finisher is a point-blank forte
   or a true building crescendo (needs a continuous-swell read, vs. the discrete p/mf/f model today).
+
+---
+
+## Slurry — the M4 Melody boss: "Stepping Stones" (DESIGNED 2026-07-25, not built)
+
+> **Status: DESIGNED, not built.** The third fleshed-out boss (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built) and [Morendo](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built)),
+> and the game's **pitch set-piece** — it introduces **voice-pitch control** (Pitch Bird's mechanic + detection
+> pipeline). Slurry is the **M4 Melody capstone** (gating M5). Same boss template: one win-target run,
+> telegraphed debuffs, capture → Muse. Modality is distinct from the other two: **Sandmar = timing (drums),
+> Morendo = loudness (mic amplitude), Slurry = pitch (mic pitch).** `run.debuff='smear'`; Slurry's HP is the
+> crossing progress (see meters).
+
+**Fantasy.** Slurry (shapeshifting blob) **smears distinct pitches into legato mush**; the hero **Cantrip**
+(goblin) teaches the opposite — a clean line **hopped stone to stone across a stream** (M4's stepwise melody).
+So the fight's core skill is the anti-mush: **hitting clean, discrete pitches** with your voice. Water element
+throughout (melody = water; a slurry is sludge). This makes Slurry the **pitch** sibling to Pitch Bird, the way
+Morendo is the loudness one.
+
+### The controller & core loop — sing the stone's pitch to hop
+
+- **Side-scrolling stream; pitch = height** (Pitch Bird's voice-pitch-to-vertical-position). A line of **stones**
+  spells a **melody** — each stone sits at the vertical position of **its pitch**.
+- **Pitch-accuracy on discrete targets (dev call — no glide detection).** Sing a stone's pitch (match within a
+  tolerance window) and Cantrip **hops** to it; land the whole line to cross. Slurring/gliding simply **fails to
+  land** you — you slip into the water where Slurry waits — so the slur is punished *implicitly*, no
+  hop-vs-slur re-articulation detection needed for the MVP. *(That deeper "reward clean re-articulation" read
+  stays a tentative future layer.)*
+- **Stepwise-favoring melody** (small hops) with occasional **leaps** (bigger pitch jumps), so **intervals** get
+  taught naturally.
+- **Cantrip is an active ally**, not just an intro: he **hops a stone ahead** demonstrating the line and **hums
+  the blurred note** to give you an ear reference (below).
+
+### Slurry's signature debuff — Blur the note (dev keeper)
+
+She **smears an upcoming stone so its pitch/height is hidden** — you must **sing it by ear** from the melodic
+context (Cantrip's hum + the line's direction). This is **M1 ear-training paying off inside a melody**, and
+it's her defining move — the mush turned into a puzzle. (Parallels Morendo's blackout / Sandmar's yawn.)
+
+**Support debuffs (escalate later):** **Flood** — rising sludge adds pace and forces you to keep moving /
+ascend; **Shapeshift splash** — the path reshapes suddenly. *(The earlier "slur-pull / don't-follow-the-
+glissando" ideas are held **tentative** — they lean on the glide-detection the MVP skips.)*
+
+### Meters (boss-standard, retryable)
+
+- **The Crossing = Slurry's HP** — each stone cleared **cleanly advances you across *and* dissolves her**
+  (progress **is** damage); completing the line → a final clean phrase pops her.
+- **Flood = your fail-state** — misses/falls **raise the sludge**; if it engulfs you, you're smeared → **instant
+  retry**.
+- **Pace (dev default):** mostly **self-paced** early (hop when ready); the **flood** is the pressure that
+  **ramps in later phases** — not timed from the start.
+
+### Three phases (escalating)
+
+1. **The Crossing** — gentle stepwise stones; learn sing-to-hop. Wide windows, self-paced.
+2. **The Murk** — introduces **blur-the-note** (ear); wider **leaps**.
+3. **The Flood** — rising sludge for pace, rapid blurs, a shapeshift or two; a final **ascending clean phrase**
+   to pop her.
+
+### Fallback layer (mic-less / robustness)
+
+When she **gloops your voice** (mic muted/muddled), drop to **note cards** and trace the melody by **interval**
+— is the next stone a *step* or a *leap*? Melody as *reading*, mirroring Morendo's card-quiz and giving a
+mic-less path.
+
+### Capture reward — the Slurry Muse (tamed slur)
+
+Her slur becomes **yours as expression**: a **controlled portamento / glissando** tool (the *good* use of a
+slide) plus a **smooth-stepwise / scale-run bonus**. **This resolves the character-Muses section's open "where
+does Slurry's old legato bonus live" question — it lands here, on her capture** (not on Cantrip). Mirrors
+Sandmar/Morendo's "weapon → your tool."
+
+### Placement & reuse
+
+- **Placement:** M4 Melody capstone, gating M5.
+- **Reuse:** Pitch Bird's **pitch-detection** pipeline + note math, the mentor/intro, `run.debuff`, a boss
+  end-screen. **New:** a **2D side-scroll render**, a **stone-spawner** that lays a melody out by pitch-height,
+  **pitch → hop** landing detection, the **blur** debuff, the **flood**, and the meters.
+- **Open sub-decisions:** exact pitch tolerance / hold time to "land"; flood ramp + fall penalty tuning; melody
+  source (authored lines vs. generated stepwise); whether Clarity⟷Mush is ever preferred over cross-and-chip;
+  reviving the tentative slur-pull / glissando-resist debuffs once (if) glide-detection is added.
 
 ---
 
