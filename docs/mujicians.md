@@ -1560,6 +1560,8 @@ since the whole fight rewarded contrast. Mirrors Sandmar's "weapon → your tool
 > telegraphed debuffs, capture → Muse. Modality is distinct from the other two: **Sandmar = timing (drums),
 > Morendo = loudness (mic amplitude), Slurry = pitch (mic pitch).** `run.debuff='smear'`; Slurry's HP is the
 > crossing progress (see meters).
+>
+> **Extra element beyond a plain pitch-platformer (dev keeper 2026-07-26):** **Cantrip's garments = scales/modes** — his graphic-novel power (gain a skill by wearing someone's garment; impart a skill into a garment for others) becomes a **swap-a-scale-to-bridge-the-gap** puzzle layer (see *Cantrip's garments = scales & modes*). The **platformer is the MVP**; the garment/mode system is the second pass that gives M4 its own identity.
 
 **Fantasy.** Slurry (shapeshifting blob) **smears distinct pitches into legato mush**; the hero **Cantrip**
 (goblin) teaches the opposite — a clean line **hopped stone to stone across a stream** (M4's stepwise melody).
@@ -1580,6 +1582,41 @@ Morendo is the loudness one.
   taught naturally.
 - **Cantrip is an active ally**, not just an intro: he **hops a stone ahead** demonstrating the line and **hums
   the blurred note** to give you an ear reference (below).
+
+### Cantrip's garments = scales & modes — the extra element (dev keeper 2026-07-26)
+
+**The hook (from the graphic novel):** Cantrip's power is that he **absorbs a person's skills by wearing a piece of their clothing/armor**, and he can **imbue a garment with an ability and hand it to someone else** to grant them that same power. Map that onto **scales/modes**: a **garment *is* a scale**. Donning one **re-tunes the whole crossing to that mode** — changing its colour/mood *and* reshaping **which stepping-stones exist**. This is the element that lifts M4 above a plain pitch-platformer: **reading a gap and choosing/swapping the right garment (scale) to bridge it** is a music-theory puzzle laid over the singing, and the mechanic *is* the lesson (you learn a mode by its defining note because that's the note that drops the stone you need).
+
+**How it layers on the platformer:**
+- The stream is **set in a mode**, and the **stepping-stones are that scale's degrees** — the garment defines the "keyboard" you sing on. An in-scale pitch → a stone is there to land on; an out-of-scale pitch → open water (you fall).
+- **A gap is only bridgeable in the right garment.** See the gap → pick the mode whose **characteristic note** puts a stone where you need it → sing the line. (Primary design: swapping garments **changes the stone layout / opens alternate paths** — the navigation puzzle. A lighter alt — garment only constrains which pitches are "safe" on a fixed path — is in *Open sub-decisions*.)
+- **Cantrip imparts garments to you** (the teaching path): he hands you a mode-cloak before a section; in the deferred party layer he can **impart one to an ally** who crosses a parallel path — his give-to-others power.
+
+**The garments (real modes, correct characteristic notes):**
+
+| Garment (scale) | Real mode | Characteristic note(s) vs. major | Feel / what it unlocks |
+|---|---|---|---|
+| **Pentatonic poncho** | major/minor pentatonic (5 notes) | *no half-steps — no "wrong" note* | the beginner garment: forgiving, clash-proof crossings (great MVP default) |
+| **Ionian coat** | major | — (the reference) | bright; the default path |
+| **Aeolian cloak** | natural minor | ♭3 ♭6 ♭7 | dark path; minor-only stones |
+| **Dorian jerkin** | Dorian | ♭3 ♭7, **natural 6** | hopeful-minor; a raised-6th stone Aeolian lacks |
+| **Lydian mantle** | Lydian | **♯4** | floating/"magic"; a high ♯4 stone reaches a ledge nothing else can |
+| **Mixolydian vest** | Mixolydian | ♭7 | bluesy/folk; a lowered-7th bridge stone |
+| **Phrygian shawl** | Phrygian | ♭2 ♭3 ♭6 ♭7 | Spanish/dark; a low ♭2 stone |
+| **Locrian rag** | Locrian | ♭2 ♭5 … | unstable (the diminished mode) — a late/hazard garment |
+
+*(Pentatonic + Ionian + one minor mode are plenty for the first pass; the rest ramp in — and this is the real modes taught by their **one** defining note, the same "accuracy layer" spirit as Tritony's metals.)*
+
+**Slurry vs. the garments (her conflict, made mechanical):** Slurry is a formless blob — *no distinct identity* — the exact opposite of Cantrip, who *is* the identities he wears. So her attacks target the wardrobe:
+- **Soak** — she dissolves your current garment; you're briefly **bare** (chromatic / no safe stones) and must **re-don** one under pressure.
+- **Smear the mode** (extends her shipped *blur-the-note*) — she muddies *which* scale you're wearing, so you identify the mode **by ear** (Cantrip's hum + the stones' colour) before you can trust the path.
+
+**Collectible payoff — the Wardrobe:** clearing each mode-gated crossing adds that garment to a **Wardrobe** (a collection, sibling to the Codex / Sound Collective), and cleared modes become **selectable garments in Free Play** (a scale-choice loadout). So the boss *teaches* the modes and the collection *keeps* them. (Slurry's capture Muse — tamed portamento + smooth-stepwise bonus — is unchanged and stacks with this.)
+
+**MVP vs. this layer:**
+- **MVP = the platformer** (sing-pitch-to-hop across stones, flood fail-state) in a **single forgiving scale** (pentatonic or major) — no garment-swapping yet.
+- **This extra element** (garments = modes, swap-to-bridge-gaps, Wardrobe, Slurry's soak/smear) is the **second pass** that gives M4 its own identity.
+- **Deferred:** the **impart-to-an-ally** party path (Cantrip's give-to-others power → a co-op / parallel-path layer; ties to the deferred Mujicians party angle).
 
 ### Slurry's signature debuff — Blur the note (dev keeper)
 
@@ -1602,10 +1639,10 @@ glissando" ideas are held **tentative** — they lean on the glide-detection the
 
 ### Three phases (escalating)
 
-1. **The Crossing** — gentle stepwise stones; learn sing-to-hop. Wide windows, self-paced.
-2. **The Murk** — introduces **blur-the-note** (ear); wider **leaps**.
+1. **The Crossing** — gentle stepwise stones; learn sing-to-hop. Wide windows, self-paced. *(Garment layer: the **pentatonic poncho** — clash-proof.)*
+2. **The Murk** — introduces **blur-the-note** (ear); wider **leaps**. *(Garment layer: the first **mode-swap** — a gap only the right garment bridges.)*
 3. **The Flood** — rising sludge for pace, rapid blurs, a shapeshift or two; a final **ascending clean phrase**
-   to pop her.
+   to pop her. *(Garment layer: Slurry's **soak** — she strips your garment mid-crossing.)*
 
 ### Fallback layer (mic-less / robustness)
 
@@ -1625,10 +1662,15 @@ Sandmar/Morendo's "weapon → your tool."
 - **Placement:** M4 Melody capstone, gating M5.
 - **Reuse:** Pitch Bird's **pitch-detection** pipeline + note math, the mentor/intro, `run.debuff`, a boss
   end-screen. **New:** a **2D side-scroll render**, a **stone-spawner** that lays a melody out by pitch-height,
-  **pitch → hop** landing detection, the **blur** debuff, the **flood**, and the meters.
+  **pitch → hop** landing detection, the **blur** debuff, the **flood**, and the meters. **Second pass:** the
+  **garment = scale/mode** system (a scale registry → per-mode stone layouts, garment-swap UI, the Wardrobe
+  collection, Slurry's soak/smear) — see *Cantrip's garments = scales & modes*.
 - **Open sub-decisions:** exact pitch tolerance / hold time to "land"; flood ramp + fall penalty tuning; melody
   source (authored lines vs. generated stepwise); whether Clarity⟷Mush is ever preferred over cross-and-chip;
-  reviving the tentative slur-pull / glissando-resist debuffs once (if) glide-detection is added.
+  reviving the tentative slur-pull / glissando-resist debuffs once (if) glide-detection is added; **for the
+  garment layer:** does a garment-swap **change the stone layout** (navigation puzzle — primary) or only
+  constrain which pitches are "safe" on a fixed path (lighter alt); how you swap (a wheel/menu vs. Cantrip
+  hands them at fixed points); how many modes in the first non-MVP pass; whether the Wardrobe feeds Free Play.
 
 ---
 
