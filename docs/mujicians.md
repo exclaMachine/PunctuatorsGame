@@ -1102,6 +1102,8 @@ overlaps M4 modulation, bigger lift. Kept C major + resolution bonus.)*
 
 ### The ♮ boss — "the Natural cancels all accidentals" (decided: adapt & keep scoring)
 
+> **The *encounter* is now fleshed out** as **[Ranger — "Natural Selection"](#ranger--the-m1-pitch-boss-natural-selection-designed-2026-07-26-not-built)** (fantasy / feel / phases / capture). This subsection remains the **mechanics spec + code map**; that section rounds out the fight without restating it. **Still not built.**
+
 A **capstone run** unlocked once both accidental gates are full. Its debuff: **every ♯/♭ card you play is
 naturalized** — scored *and sounded* as the letter's natural pitch (F♯ → F, D♭ → D — the pitch audibly
 **moves**, since we carry letter+acc). You **win by still making theory-correct music** and hitting a target
@@ -1120,8 +1122,8 @@ color notes collapse to the scale.
 **Built as a required ladder** (dev reversed the earlier "optional track" recommendation): M2 Rhythm only
 unlocks after the **whole** M1 arc — **Naturals → by-Ear → Sharps → Flats** — is cleared in sequence. This
 also moved **ear training** to sit right after the first pitch lesson (it used to be a standalone Home button
-that appeared *alongside* Rhythm's unlock). The **♮ boss** remains deferred, so Flats is the final stage that
-graduates M1→M2 for now.
+that appeared *alongside* Rhythm's unlock). The **♮ boss** is now **designed ([Ranger — "Natural Selection"](#ranger--the-m1-pitch-boss-natural-selection-designed-2026-07-26-not-built), 2026-07-26) but not
+built**, so Flats is the final stage that graduates M1→M2 for now.
 
 ### Code map (Sharps/Flats built — see [as built](#m1-ladder--as-built-2026-07-19); ♮-boss rows below are TODO)
 
@@ -1294,8 +1296,11 @@ holds five: four chord heroes + the boss).
 - **Recurring villain arc** — *(reframed 2026-07-25)* each movement now has its **own** villain (Sandmar,
   Morendo, Slurry, Tritony, Wormwood, The Bartender) rather than Ranger recurring, so the antagonist arc is a
   **rogues' gallery** — one boss per movement, dialogue-first now (see the roster's locked decisions). A
-  throughline where one villain recurs is no longer the plan. **Fleshed-out boss designs so far:
-  [Sandmar — "The Lullaby Duel"](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built)**
+  throughline where one villain recurs is no longer the plan. **All seven bosses now have fleshed-out designs
+  (all designed, none built):
+  [Ranger — "Natural Selection"](#ranger--the-m1-pitch-boss-natural-selection-designed-2026-07-26-not-built)**
+  (M1 Pitch, the on-the-gig **Boss Blind** — ♮ arrows naturalize your accidentals),
+  **[Sandmar — "The Lullaby Duel"](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built)**
   (M2 Rhythm, the template), **[Morendo — "Scorch the Bones"](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built)**
   (M3 Dynamics, an off-grid first-person loudness/mic set-piece — standalone MVP built), and
   **[Slurry — "Stepping Stones"](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built)**
@@ -1305,8 +1310,8 @@ holds five: four chord heroes + the boss).
   **[Wormwood — "Wormwood's Choir"](#wormwood--the-m6-timbre-boss-wormwoods-choir-designed-2026-07-26-not-built)**
   (M6 Timbre, a **pure-listening** find-the-odd-voice game — pluck true timbres out of his homogenized choir), and
   **[The Bartender — "Last Call"](#the-bartender--the-m7-structure-boss-last-call-designed-2026-07-26-not-built)**
-  (M7 Structure, the **capstone/final boss** — a **musical-staff** memory fight: state an A theme, the night blurs, then *D.S. al Coda* recall it home from memory). **Only Ranger's M1 ♮ remains undesigned.**
-  Sandmar = timing · Morendo = loudness · Slurry = pitch · Tritony = harmony · Wormwood = timbre · The Bartender = structure (form/memory).
+  (M7 Structure, the **capstone/final boss** — a **musical-staff** memory fight: state an A theme, the night blurs, then *D.S. al Coda* recall it home from memory).
+  Ranger = accidentals (♮/voice-leading, on-gig Boss Blind) · Sandmar = timing · Morendo = loudness · Slurry = pitch · Tritony = harmony · Wormwood = timbre · The Bartender = structure (form/memory).
 - **Equipped companion** — carry one earned character for a run (persistent passive + flavor barks), à la
   Inklings' story companions; a soft loadout choice. *(Optional.)*
 - **Codex "cast" gallery** — collecting characters fills a cast page (naturalist framing), separate from the
@@ -1352,6 +1357,50 @@ holds five: four chord heroes + the boss).
   capture Muse** (tamed portamento + smooth-stepwise bonus), per the ["Stepping Stones" boss design](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built).
 - **Equipped-companion layer** — build the one-carried-character companion mode, or keep characters purely as
   drafted Muses.
+
+---
+
+## Ranger — the M1 Pitch boss: "Natural Selection" (DESIGNED 2026-07-26, not built)
+
+> **Status: DESIGNED, not built.** The seventh fleshed boss — **completing the set** (Ranger is M1, so it sits *first* in movement order; the others are M2–M7). This section is the **fantasy / feel / phases**; the **mechanics spec + code map already live** in [the Accidentals section's *♮ boss*](#the--boss--the-natural-cancels-all-accidentals-decided-adapt--keep-scoring) (`run.debuff='naturalize'`, `buildDeck` `'natboss'` level, the ♮-card reward, `runThreshold` as the win target) — this rounds out the *encounter*, it doesn't restate those. **Distinct by design:** Ranger is the **one boss fought on the core card-play gig** — Mujicians' first **Balatro-style Boss Blind** (a constraint on the normal hand, not a bespoke set-piece) — which is exactly right for a *first* boss: home turf, one twist. That's the deliberate contrast to the escalating set-pieces of M2–M7 (drum duel / crypt / stream / forge / choir / staff). Same boss template otherwise: retryable, capture → Muse; and it's the **one everyday run that carries a win target** (the doc's firewall — normal & Free-Play runs stay open-ended). `run.debuff='naturalize'`.
+
+**Fantasy.** **Ranger** (🏹 a wilderness archer/warden — **♮ = *nature***) believes the accidentals are *artificial* — cultivated, civilized alterations of the wild — and his job is to **let nature reclaim them**. His ♮ arrows **cancel** your ♯/♭ back to their natural pitch (F♯ → F, D♭ → D); the wild **overgrows** your color notes until the loop is all naturals. The pun is the whole character: *natural* = nature, and the ♮ sign literally **cancels** a sharp/flat. Sharpist (🎭) and Sir Flatterer (🤺) — the mentors who *taught* you the accidentals — stand with you: this is the **capstone exam** of their two lessons, and Ranger is out to undo both. The lesson lands **by absence** — you feel what a leading tone was *doing* only once it's gone.
+
+### The render surface — the core gig, one twist (a Boss Blind)
+
+No new surface: you play the **normal card-play gig** (deal a hand, stack/play notes onto the timeline), and Ranger is a **debuff modifier** over it — Balatro's Boss-Blind pattern, themed. Presentation is a light overlay, not a new engine: **Ranger stalks the edge of the screen**, the loop's margins **overgrow with vines**, and each naturalized note gets a quick **♮-arrow strike** cue (an accidental card collapsing to its natural, the pitch audibly *moving*). This "home turf, one rule change" framing is *why* it's the gentle first boss — the fundamentals you already know, bent.
+
+### The core loop — make theory-correct music while your accidentals collapse
+
+You still compose on the timeline, but **every ♯/♭ you play is naturalized** — scored *and sounded* as the letter's natural (carried via the `acc` field). So you **win by still making music that works** and clearing the run's applause target (`runThreshold` — the one everyday run with a win check). The skill: build lines that hold up when the color notes fall to the scale, and — the taught counter — **resolve an accidental *before* it's canceled** (play it and step a half-step onto its target: the **chromatic-resolution** the Sharps/Flats levels taught, now under fire). Beating Ranger = a strong, target-hitting line delivered *despite* the reclaiming.
+
+### Ranger's signature move — Naturalize (the ♮ arrow)
+
+His debuff is the M1-flavored sibling of the others' perception/tool-robbers (Sandmar's yawn / Morendo's hush / Slurry's smear / Wormwood's flatten / the Bartender's muddle): where they rob a *sense*, Ranger **strips your alteration** — the ♯/♭ you're counting on reverts to natural. **v1 (MVP, per the Accidentals spec): full naturalization the whole run** (a clean constraint — every accidental always collapses). The **deferred "make it a real duel" layer** turns it into an archer's telegraph: Ranger **nocks a ♮ arrow at a queued accidental** (a drawn-bow tell + a reticle on the card), and you race to **resolve it before he looses** — miss the window and it's canceled; escalating **volleys** grow the naturalization phase by phase.
+
+### Phases (escalating — the deferred archer layer)
+
+1. **The Clearing** — occasional naturalize; wide windows to resolve first. Learn to lead-and-resolve under threat.
+2. **The Overgrowth** — faster, multi-arrow **volleys**; more of the loop reverts each bar.
+3. **Second Nature** — **full** naturalization + press; you must land the target line entirely in the naturals (the v1 constraint becomes the climax). *(MVP ships the full-naturalization end-state directly; the ramp is the polish pass.)*
+
+### Meters (boss-standard, retryable)
+
+- **Ranger's HP = the applause target** — hitting `runThreshold` under naturalization banishes him (win). *(The one everyday run that carries a win check.)*
+- **Fail-state** — running out of hands without reaching the target → **instant retry** (challenge-run framing; you lose the fight, not a saved song).
+
+### Capture reward — capture Ranger → the ♮ (natural) card + Muse
+
+Beating him **captures Ranger** (villains join on boss defeat — the planned earn path, and Ranger is its **template**): unlock the **♮ (natural) as a playable Accidental card** — the *third* accidental, which **cancels** a ♯/♭ — plus a legendary **Ranger Muse** granting the ♮/cancel power (naturalize a note at will: a leading-tone reset / an enharmonic tool). His weapon becomes yours, and it **seeds the Accidental-card (Tarot) shop line**. (Codex badge + Tips too.) "Weapon → your tool," like the rest — see [the Accidentals section's *Reward*](#the--boss--the-natural-cancels-all-accidentals-decided-adapt--keep-scoring).
+
+### Placement, reuse & scope
+
+- **Placement:** M1 Pitch capstone — the **final stage of the M1 gated ladder** (Naturals → by-Ear → Sharps → Flats → **♮ boss**), gating M2. *(Today `pitchStage` graduates M1→M2 at Flats since the boss is unbuilt; the boss slots in as the capstone before that unlock when built.)* Sharpist & Sir Flatterer narrate the intro, foiling Ranger.
+- **Reuse (small — that's the point):** the **whole core gig** (deck/hand/timeline/scoring), the built **`acc` spelling** + **naturalize** mapping, **`runThreshold`** as the win target, the mentor/intro system, a boss end-screen. **New:** the Boss-Blind **overlay presentation** (Ranger sprite, vine overgrowth, the ♮-arrow strike cue), and — deferred — the **telegraphed-arrow / volley** phase logic, plus capture → the Ranger Muse + ♮ card.
+- **Distinct modality:** the six others are timing · loudness · pitch · harmony · timbre · structure; **Ranger owns the *accidentals* axis — ♯/♭/♮ spelling & voice-leading** (M1). Both Ranger and Slurry are pitch-family but distinct: Slurry = *singing discrete pitches* (mic set-piece), Ranger = *the alteration of a note* (♮ cancel, on the deck). It's also the only **on-the-gig / Boss-Blind** boss.
+- **Steal-from:** **Balatro's Boss Blinds** (a debuff that changes the rules of the normal hand — e.g. a suit gets debuffed) is the exact model; Ranger debuffs the *accidental* cards.
+- **MVP:** the naturalize **Boss-Blind run** (full naturalization + `runThreshold` win + retry) with the light Ranger/vine overlay, and capture → the ♮ card. **Deferred:** the telegraphed **♮-arrow / volley** phases (growing naturalization), the Ranger Muse's cancel power beyond the card, sprite/vine art polish.
+- **Open sub-decisions:** full vs. growing naturalization as the shipped default (Accidentals spec says full v1); whether resolving-before-canceled is a real timing window (needs the arrow telegraph) or just "resolve early helps"; exact `runThreshold` for the boss run; whether Sharpist/Sir Flatterer get active ally barks or just the intro.
 
 ---
 
