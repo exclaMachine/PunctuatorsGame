@@ -1301,8 +1301,10 @@ holds five: four chord heroes + the boss).
   **[Slurry — "Stepping Stones"](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built)**
   (M4 Melody, a voice-**pitch** stepping-stone crossing), and
   **[Tritony — "The Devil's Forge"](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25-not-built)**
-  (M5 Harmony, an off-grid **chord-forging** Opus-Magnum-style craft puzzle — the *vertical* axis).
-  Sandmar = timing · Morendo = loudness · Slurry = pitch · Tritony = harmony (chord-forging).
+  (M5 Harmony, an off-grid **chord-forging** Opus-Magnum-style craft puzzle — the *vertical* axis), and
+  **[Wormwood — "Wormwood's Choir"](#wormwood--the-m6-timbre-boss-wormwoods-choir-designed-2026-07-26-not-built)**
+  (M6 Timbre, a **pure-listening** find-the-odd-voice game — pluck true timbres out of his homogenized choir).
+  Sandmar = timing · Morendo = loudness · Slurry = pitch · Tritony = harmony · Wormwood = timbre (listening).
 - **Equipped companion** — carry one earned character for a run (persistent passive + flavor barks), à la
   Inklings' story companions; a soft loadout choice. *(Optional.)*
 - **Codex "cast" gallery** — collecting characters fills a cast page (naturalist framing), separate from the
@@ -1767,6 +1769,59 @@ Beating her **captures the tritone, tamed** ("weapon → your tool," like the ot
 - **Reuse:** the game's **chord classifier + consonance scoring** (`classify` / consonance term), the **chord audio** (the strike-test *is* sounding the stack), the **`VOICES`/`playVoice` timbre system** (real instrument metal → its voice — the M5→M6 bridge, see *Real metals & alloys*), the mentor/intro system, `run.debuff` + `runThreshold`, a boss end-screen. **New:** the **forge render surface** (a self-contained little canvas/DOM stage), the **op-sequence → stack** builder, **economy scoring**, the **heat budget**, the **flaw-injection** debuff, phase logic, and capture → add Tritony to the Muse pool.
 - **Distinct modality:** Sandmar = timing · Morendo = loudness · Slurry = pitch · **Tritony = harmony (chord-forging / consonance)** — the vertical axis, on a craft-puzzle surface rather than a mic.
 - **Open sub-decisions:** MVP fidelity beyond the linear builder (when/whether to add the spatial contraption); exact **heat budget / economy weights / masterwork thresholds**; whether the composable-primitives *hard mode* (no ready-made +M3) is the default or a later dial; how much of the **piston layer** (Temper/Invert/Fifth-frame/7th-barb) lands in the first non-MVP pass; whether **resolve-the-tritone** graduates from tentative to a real phase-3 mode; weapon-silhouette art; and the party/heroes-at-the-anvil layer (deferred).
+
+---
+
+## Wormwood — the M6 Timbre boss: "Wormwood's Choir" (DESIGNED 2026-07-26, not built)
+
+> **Status: DESIGNED, not built.** The fifth fleshed-out boss (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built), [Morendo](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built), [Slurry](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built), [Tritony](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25-not-built)). Wormwood is the **M6 Timbre capstone** (gating M7). It owns the one modality the others don't: **timbre = the ear for *color*** — not *which* pitch, but *what* voice. And that skill is **listening and discriminating, not performing**, so this is the roster's **first "pure listening, point-don't-perform" boss** — no fourth mic game, and distinct from Tritony's craft puzzle. It is also the **payoff for the built [Sound Collective](#the-sound-collective--sound-is-the-main-collection-built-2026-07-25)**: the `VOICES` you discovered by hearing become the voices you must identify under pressure. Same boss template: one win-target run, telegraphed attacks, retryable, capture → Muse. `run.debuff='flatten'`; Wormwood's HP is the count of true voices restored (see meters).
+>
+> **Forks locked with the dev (2026-07-26):** (1) **Core interaction = "find the odd voice"** (scan the droning choir, pluck the timbre that *doesn't* match the flatten) — pure discrimination; the **match-the-twin** variant (Timbrewolf hums a target voice, find its match) is a **later phase**, not the MVP spine. (2) **Strictly point-and-listen** — the mic does **not** come back in (an optional *sing-in-a-voice's-timbre* idea was set aside: matching timbre with your voice is genuinely hard and would drift toward a fourth mic game). **No MVP built yet** — this section is the design; a standalone `wormwoods-choir.html` (the Morendo/`scorch-bones.html` precedent) is the eventual first cut.
+
+**Fantasy.** Wormwood (a street busker who grew **wooden teeth**) **bites people and they start to sound like him** — one flat, wooden voice swallowing the many. His villainy *is* **homogenization** (timbre-flattening). The hero **Timbrewolf** is *"many voices in one"* — and **Wormwood's accidental masterpiece** (a wolf he bit became more human and musical), so hero and villain are linked by origin. You fight by **restoring the distinct voices** he has flattened: the anti-homogenization. Wood element throughout (timbre = wood voices).
+
+### The core loop — pluck the true voice out of the choir
+
+Wormwood conducts a **choir of hooded figures, all droning in the same flattened wooden timbre**. Hidden among them are **true voices** — victims not yet fully bitten, still singing in their own distinct `VOICES` colour (glassbell, vibraphone, reedorgan, …), but **visually identical** (hooded), so you can only find them **by ear**.
+
+- **Scan and solo** — click/hover a figure to hear it **isolated** — and **tag** the one whose timbre **isn't the wooden flatten**. Restoring a true voice throws off the hood (its colour floods back) and it joins Timbrewolf's side.
+- **Restore enough → the choir loses cohesion → Wormwood is exposed** and defeated. The final pluck is picking **his own voice** (the conductor) out of the last thin ranks.
+- **Difficulty = timbral closeness.** Early rounds hide an obvious outlier (a bright glassbell among wooden drones); later rounds hide **near-twins** (reedorgan vs. warmpad), add more figures, and press you for time.
+
+### Timbrewolf — your ear-guide (active ally)
+
+Not just an intro. As *"many voices in one,"* he **howls** to briefly make one true voice **ring out** (a hint), and he demonstrates distinctness by **splitting into his many voices**. In the deferred **match-the-twin** phase, *he's the one who hums the target voice* you must find in the choir.
+
+### Wormwood's signature debuff — the Bite / Flatten (parallel to the others' perception-robbers)
+
+He **bites**, and one of two things happens (each robs the ear the way Sandmar's yawn / Morendo's hush / Slurry's smear rob their senses):
+- **Flatten** — momentarily **homogenizes the whole choir** so even a true voice sounds flat for a beat; you must act from **memory** of where it was (the isolate/solo cue is suppressed).
+- **Re-bite** — pulls a **restored** voice back into the choir if you linger, so you can't dawdle after freeing one.
+
+### Meters (boss-standard, retryable)
+
+- **Wormwood's HP = true voices restored** — each freed voice thins his choir (progress **is** damage); the last is his own.
+- **Homogenization = your fail-state** — a wrong tag (flattening an ally) or letting re-bites win **raises a "grey" meter**; if the whole choir goes flat, the town's voice is lost → **instant retry** (challenge-run framing).
+- **Pace (default):** self-paced scanning early; the **re-bite / time pressure** ramps in later phases.
+
+### Three phases (escalating)
+
+1. **The Buskers** — a small choir, one obvious outlier voice; learn scan → solo → tag. Wide, self-paced.
+2. **The Congregation** — bigger choir, **near-twin** timbres, introduces the **Flatten** (memory) and the **match-the-twin** variant (Timbrewolf hums a target).
+3. **The Choirmaster** — dense choir, rapid **re-bites**, combined Flatten + press; thin the ranks and **pick out his own voice** to end it.
+
+### Capture reward — the Wormwood Muse "Choirmaster"
+
+His identity-theft, tamed ("weapon → your tool," like the others): **recolor any note into a collected voice** — he stole voices; now *you* can wear any voice — plus a **timbre-variety bonus** (rewards using **distinct** voices, which is the M6 gate skill). Turns his homogenization into your palette.
+
+### Placement, reuse & scope
+
+- **Placement:** M6 Timbre capstone, gating M7. Timbrewolf narrates the intro (foiling Wormwood in the dialogue — the origin link is the hook).
+- **Reuse:** the built **`VOICES` / `playVoice`** engine (the timbres to identify) and the **Sound Collective** (`sounds` / `persist.sounds` — the discovered voices become the pool that can appear, so the boss is the collection's exam), the card **`SKINS`** system for the colour-flood-back on restore, the mentor/intro system, `run.debuff` + `runThreshold`, a boss end-screen.
+- **New:** the **choir render surface** (a crowd of hooded figures), the **scan/solo listening interaction** + tag/restore, the **Flatten / re-bite** debuffs, phase logic, the **match-the-twin** later phase, and capture → add Wormwood to the Muse pool.
+- **Distinct modality:** Sandmar = timing · Morendo = loudness · Slurry = pitch · Tritony = harmony · **Wormwood = timbre (ear-for-colour / voice discrimination — the first pure-listening, non-mic, point-don't-perform boss).**
+- **MVP:** the choir + **find-the-odd-voice** (scan/solo/tag/restore) over the Sound Collective's voices, obvious timbre contrasts, Wormwood HP + a simple homogenization loss, single difficulty. **Deferred:** the near-twin phases, the **Flatten / re-bite** signature debuffs, Timbrewolf's howl hints, the **match-the-twin** phase, the conductor finale, capture → the Choirmaster Muse, canvas/wood-cut art, and porting into `mujicians.html`.
+- **Open sub-decisions:** exact solo/scan interaction (hover-to-hear vs. click-to-solo vs. a "listen cursor"); how many voices in a choir + how many true voices per round; timbre-closeness ramp / scoring for a clean vs. sloppy sweep; whether restored voices **stay** freed or need protecting (re-bite tuning); whether the **name-the-voice** angle (label which `VOICES` it is, not just "odd one") is ever layered on for a reading/quiz variant; the villain **name** (Wormwood vs. Woodworm / Timberjaw / Cordwood — still tentative per the roster).
 
 ---
 
