@@ -1303,8 +1303,10 @@ holds five: four chord heroes + the boss).
   **[Tritony — "The Devil's Forge"](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25-not-built)**
   (M5 Harmony, an off-grid **chord-forging** Opus-Magnum-style craft puzzle — the *vertical* axis), and
   **[Wormwood — "Wormwood's Choir"](#wormwood--the-m6-timbre-boss-wormwoods-choir-designed-2026-07-26-not-built)**
-  (M6 Timbre, a **pure-listening** find-the-odd-voice game — pluck true timbres out of his homogenized choir).
-  Sandmar = timing · Morendo = loudness · Slurry = pitch · Tritony = harmony · Wormwood = timbre (listening).
+  (M6 Timbre, a **pure-listening** find-the-odd-voice game — pluck true timbres out of his homogenized choir), and
+  **[The Bartender — "Last Call"](#the-bartender--the-m7-structure-boss-last-call-designed-2026-07-26-not-built)**
+  (M7 Structure, the **capstone/final boss** — a **musical-staff** memory fight: state an A theme, the night blurs, then *D.S. al Coda* recall it home from memory). **Only Ranger's M1 ♮ remains undesigned.**
+  Sandmar = timing · Morendo = loudness · Slurry = pitch · Tritony = harmony · Wormwood = timbre · The Bartender = structure (form/memory).
 - **Equipped companion** — carry one earned character for a run (persistent passive + flavor barks), à la
   Inklings' story companions; a soft loadout choice. *(Optional.)*
 - **Codex "cast" gallery** — collecting characters fills a cast page (naturalist framing), separate from the
@@ -1822,6 +1824,67 @@ His identity-theft, tamed ("weapon → your tool," like the others): **recolor a
 - **Distinct modality:** Sandmar = timing · Morendo = loudness · Slurry = pitch · Tritony = harmony · **Wormwood = timbre (ear-for-colour / voice discrimination — the first pure-listening, non-mic, point-don't-perform boss).**
 - **MVP:** the choir + **find-the-odd-voice** (scan/solo/tag/restore) over the Sound Collective's voices, obvious timbre contrasts, Wormwood HP + a simple homogenization loss, single difficulty. **Deferred:** the near-twin phases, the **Flatten / re-bite** signature debuffs, Timbrewolf's howl hints, the **match-the-twin** phase, the conductor finale, capture → the Choirmaster Muse, canvas/wood-cut art, and porting into `mujicians.html`.
 - **Open sub-decisions:** exact solo/scan interaction (hover-to-hear vs. click-to-solo vs. a "listen cursor"); how many voices in a choir + how many true voices per round; timbre-closeness ramp / scoring for a clean vs. sloppy sweep; whether restored voices **stay** freed or need protecting (re-bite tuning); whether the **name-the-voice** angle (label which `VOICES` it is, not just "odd one") is ever layered on for a reading/quiz variant; the villain **name** (Wormwood vs. Woodworm / Timberjaw / Cordwood — still tentative per the roster).
+
+---
+
+## The Bartender — the M7 Structure boss: "Last Call" (DESIGNED 2026-07-26, not built)
+
+> **Status: DESIGNED, not built.** The sixth fleshed-out boss and the **campaign capstone / final boss** (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built), [Morendo](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built), [Slurry](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built), [Tritony](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25-not-built), [Wormwood](#wormwood--the-m6-timbre-boss-wormwoods-choir-designed-2026-07-26-not-built); only Ranger's M1 ♮ remains). The Bartender is the **M7 Structure boss** — the last movement. He owns the one modality set apart from all six before it: **structure lives *across* time — form, repetition, and the *return home*** — so it can't be a reflex test, it's a **memory** test. Reuses the **built M7 form scoring** directly (`pcSetFp` phrase fingerprints, `hasABA`). Same boss template: one win-target run, telegraphed attacks, retryable, capture → Muse. `run.debuff='muddle'`; his HP is the song getting home (see meters).
+>
+> **Forks locked with the dev (2026-07-26):** (1) **Render surface = a real musical staff** — the level *looks like a staff* (five lines, barlines, bars, notes, and the roadmap symbols drawn **in place**), **not** the piano-roll grid, so you read/compose real notation and the navigation symbols live exactly where a musician sees them. (2) **MVP = the memory-recall A·B·A + a minimal "D.S. al Coda brings A home" beat** — you mark your A theme with a segno and write *D.S. al Coda* to recap it, taught minimally from the first cut; the fuller map-routing (extra symbols, repeats/voltas, a Snakes-&-Ladders board) is deferred. **No MVP built yet** — a standalone `last-call.html` (the Morendo/`scorch-bones.html` precedent) is the eventual first cut.
+
+**Fantasy.** The Bartender runs the last bar at the end of the night — and **"bars"** is the whole pun (musical bars = the pub's bar; last call; closing time; your running **tab** = the song accumulating all campaign). His weapon is **making you forget**: the night blurs, the lights come up, and if you can't remember the tune you walked in humming, you can't bring it back — no recap, no A·B·A, and the song dissolves into forgettable mush. **The Key** — the rogue who *"unlocks the return home"* — is your ally, because the **recapitulation *is* the door home**. Structure *is* memory.
+
+### The render surface — a real musical staff (dev call 2026-07-26)
+
+The whole fight is drawn as a **musical staff**: five lines, **barlines** dividing the **bars**, your phrase sitting on the staff as notes, and — crucially — the **roadmap symbols in place** (segno 𝄋, the *To Coda* mark, the **Coda** 𝄌, *Fine*, *D.S. al Coda* written under the staff, repeat barlines 𝄆 𝄇 later). This is what makes M7 read as its own thing: not the piano-roll grid — you're **reading and composing real notation**, and the navigation symbols sit where they belong. It also makes the "get home" goal legible — you can *see* the coda (the exit) at the end of the staff.
+
+### The core loop — the fight's shape *is* A·B·A
+
+1. **State the A theme** — you play a short phrase; it lands on the staff, is **fingerprinted** (`pcSetFp`), and gets **marked with a segno** (𝄋 — "the sign," pinned). The Bartender pours you a drink.
+2. **The B section — the night blurs** — you're pulled into a contrasting phrase, and here he **muddles your memory of A** (fogs the pinned bars / floats a false-memory decoy — below).
+3. **The Return — get home before last call** — you write **D.S. al Coda** (*"go back to the sign, replay A, then jump to the Coda and out"*) and must **restate A from memory** on the staff (the pin is fogged; you recall by ear and must reject his decoy). Match the fingerprint → the song has form (**A·B·A**, `hasABA`) → you close the night and beat him. Fail → you never make it home → **retry**.
+
+### Coda / D.S. / segno — the notation of "remember & reuse" (the M7 teaching)
+
+Why these belong in Structure: **the roadmap symbols exist so you *don't rewrite* music you've already stated** — *D.S. al Coda* literally means "replay the remembered section, then exit through the coda." That **is the recapitulation, written down**, so the symbols and the "structure = memory" theme are the *same idea*. The MVP teaches the core three by *using* them: **segno** (mark A) → **D.S. al Coda** (bring it back) → **Coda** (the way out / home). Deferred symbols ramp in later — **D.C. al Fine**, **Fine**, **repeat barlines** 𝄆 𝄇, **voltas** (1st/2nd endings) — each a new "jump" on the staff-board.
+
+### The Key — the return hero (and the key-signature note)
+
+**The Key** narrates the intro and is your **return specialist**: he owns the roadmap symbols (the segno/coda are *doors*, D.S. is the instruction to go back and unlock the return), and can **"pick the lock" on a foggy memory** — handing back a fragment of A when you're truly lost (a hint). His name puns on both keys, but the *theory* stays where it's taught: **key-signature (the sharps/flats that define a key) is a pitch idea — M1 accidentals / M4 scales & modes — not M7.** The Key the *character* owns structure's **route home**; a one-liner can tip his hat to "the other kind of key" without re-teaching it. (Hero/villain foil: The Key routes you home, the Bartender scrambles the route.)
+
+### The Bartender's signature debuff — "Muddle" (parallel to the others' perception-robbers)
+
+He **makes you forget** — the memory version of Slurry's smear / Wormwood's flatten:
+- **Fog** — the pinned A bars blur on the staff, so you restate from memory, not by reading.
+- **False-memory decoy** ⭐ — he plays a *plausible-but-wrong* version of your A ("no, it went like *this*…"); the test is genuine recall vs. a convincing impostor (the distinct twist over plain Simon).
+- **Scramble the map** (later) — he slides/erases the segno or coda, so you must re-place the route correctly.
+- **Last call** is a soft countdown — pressure ramps as the lights come up.
+
+### Meters (boss-standard, retryable)
+
+- **The Bartender's HP = getting the song home** — completing the A·B·A (a clean D.S. al Coda with A recalled) is the damage; the final recap closes his tab.
+- **Closing time = your fail-state** — a botched recall (wrong A / falling for the decoy) or letting last call run out **raises the "lights-up" meter**; full → you black out, the night's forgotten → **instant retry** (challenge-run framing).
+- **Pace:** self-paced through A and B; **last-call** pressure ramps in the final phase.
+
+### Three phases (escalating)
+
+1. **Happy Hour** — state A, a short B, one clean **D.S. al Coda** home; learn segno → recall → coda. Wide, no decoy.
+2. **The Blur** — introduces the **false-memory decoy** and **Fog**; longer B; a second sign to track.
+3. **Last Call** — **scramble-the-map**, rapid decoys, the countdown; a longer form (toward AABA / an added repeat) and a final recap-from-memory to close the bar.
+
+### Capture reward — the Bartender Muse "The Regular" (a.k.a. "Reprise")
+
+The Key already owns the plain A·B·A bonus, so the Bartender's capture is **complementary**: his false-memory decoys become **your power of theme-and-variations** — restate a theme **with a twist** for a form bonus — plus a **callback/reprise** that re-summons an earlier phrase (a *D.S.* you can invoke). His muddle → your craft. "Weapon → your tool," like the rest. (Named for **the regular** — the patron who always *returns* — the recapitulation as a person.)
+
+### Placement, reuse & scope
+
+- **Placement:** M7 Structure capstone — the campaign's **final boss** (nothing gates past it; it closes the arc). The Key narrates the intro, foiling the Bartender.
+- **Reuse:** the **built M7 form scoring** (`pcSetFp` fingerprints, `hasABA`, the A·B·A-return bonus), the note-playing to state phrases, the mentor/intro system, `run.debuff` + `runThreshold`, a boss end-screen. **New:** the **staff render surface** (five-line staff, barlines, notes, and roadmap-symbol glyphs — 𝄋 𝄌 etc. drawn as **inline SVG** like the Break-mechanic `noteheadSVG`/`restSVG`, since the astral-plane Unicode music symbols tofu), the **recall/decoy** memory logic, **segno/coda placement + D.S.-al-Coda routing**, the **Muddle** debuffs, phases, and capture → add the Bartender to the Muse pool.
+- **Distinct modality:** Sandmar = timing · Morendo = loudness · Slurry = pitch · Tritony = harmony · Wormwood = timbre · **The Bartender = structure (form / memory across time — the only *across-time* modality; a staff-notation recall + roadmap-symbol fight).**
+- **MVP:** the **staff**; **state A (segno) → B → D.S. al Coda recall-from-memory → Coda** over the built `hasABA`; one **false-memory decoy**; Bartender HP + a closing-time loss; single difficulty. **Deferred:** Fog / scramble-the-map, the extra symbols (D.C./Fine/repeats/voltas), the countdown pressure, AABA/longer forms, The Key's lock-pick hint, capture → the Regular Muse, staff-art polish, and porting into `mujicians.html`.
+- **Alternate cores considered (deferred):** the **Closing-Time Loop** (Outer Wilds / Groundhog Day — retain memory across a repeating "last call," building the form a little more each loop), the pure **Roadmap Navigator** (Braid / Snakes-&-Ladders / Portal — route a playhead through a score-board via segno/coda jumps), and the **Arranger** (drag phrase-blocks + place symbols into a valid form). The **recall + staff + D.S.-al-Coda synthesis** was chosen as most capstone-y — it's how you'd actually *notate* the A·B·A the whole campaign builds toward.
+- **Open sub-decisions:** how "A recalled correctly" is judged (fingerprint tolerance — exact vs. close); how the segno/coda are placed (auto on state vs. player-placed); decoy difficulty ramp; whether the countdown is always-on or final-phase-only; how much of the roadmap family graduates from MVP; staff input (play notes onto the staff vs. pick from a phrase palette).
 
 ---
 
