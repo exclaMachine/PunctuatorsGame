@@ -5,18 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>The Devil's Forge — Tritony (prototype)</title>
 <!--
-  Standalone MVP feel-test for Mujicians' M5 Harmony boss, "The Devil's Forge" (Tritony).
-  Opus-Magnum-style chord-forging: stack thirds onto a root ingot, Quench, strike-test.
-  Rings clean (on-spec) → damage; cracks (off-spec / untempered tritone) → she strikes back.
-  Ops MVP = +M3 / +m3 / Temper ±1 / Quench.  Difficulty = build-to-spec orders + heat budget +
-  economy scoring (elegance→damage) + flaw-injection debuff.  Isolated to tune feel before porting
-  into mujicians.html.  See docs/mujicians.md → "Tritony — the M5 Harmony boss".
+  Standalone feel-test for Mujicians' M5 Harmony boss, "The Devil's Forge" (Tritony).
+  Opus-Magnum-style chord-forging as a PROGRAMMED MACHINE: you lay an instruction TAPE (a smithing
+  pattern) from a glyph palette, DRAFT it freely (ghost preview, no score), then ▶ FORGE it once —
+  an arm walks the tape, welding tones, ending in a strike-test.  On-spec → rings (damage);
+  off-spec / untempered tritone → cracks (she strikes back).
+    Ops: +M3 / +m3 / Temper ±1 / Grind (invert) / Etch (add 7th) / Anneal (resolve dissonance).
+    Difficulty: build-to-spec orders (quality × root × metal × voicing) + flaw-injection debuff.
+    Scoring: Opus-Magnum triad — Cost (heat) · Cycles (swings) · Parts (distinct glyphs) → masterwork.
+  Isolated to tune feel before porting into mujicians.html.  See docs/mujicians.md → "Tritony".
 -->
 <style>
   :root{
     --ink:#efe7d6; --dim:#a49a86; --line:#4a3d2c; --panel:#1a140d;
     --ember:#ff8a2a; --ember2:#ff3b2f; --gold:#ffd257; --crack:#ff4d4d;
-    --sel:#8fe3ff; --ghost:#6b5c44; --forge:#2a1c10;
+    --preview:#7fd4ff; --ghost:#6b5c44; --forge:#2a1c10;
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; height:100%; overflow:hidden; background:#000;
@@ -26,92 +29,106 @@
     background:radial-gradient(130% 90% at 50% 0%, #241a11 0%, #150f09 55%, #060402 100%); }
 
   /* ---- boss row ---- */
-  #bossrow{ flex:0 0 auto; padding:10px 14px 4px; text-align:center; position:relative; }
-  #tritony{ font-size:52px; line-height:1; display:inline-block; transform-origin:50% 80%;
+  #bossrow{ flex:0 0 auto; padding:8px 14px 2px; text-align:center; position:relative; }
+  #tritony{ font-size:46px; line-height:1; display:inline-block; transform-origin:50% 80%;
     filter:drop-shadow(0 0 12px rgba(255,60,60,.5)); transition:filter .15s; }
   #tritony.hurt{ animation:shake .3s; filter:drop-shadow(0 0 16px var(--crack)) brightness(1.4); }
   #tritony.attack{ animation:lunge .35s; }
   @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px) rotate(-4deg)} 75%{transform:translateX(8px) rotate(4deg)} }
-  @keyframes lunge{ 0%{transform:translateY(0) scale(1)} 40%{transform:translateY(14px) scale(1.18)} 100%{transform:translateY(0) scale(1)} }
-  #bossname{ font-size:13px; color:var(--crack); letter-spacing:.5px; margin-top:2px; }
+  @keyframes lunge{ 0%{transform:translateY(0) scale(1)} 40%{transform:translateY(12px) scale(1.16)} 100%{transform:translateY(0) scale(1)} }
+  #bossname{ font-size:12px; color:var(--crack); letter-spacing:.5px; margin-top:2px; }
   #phasetag{ font-size:11px; color:var(--dim); }
-  #hpwrap{ margin:6px auto 0; width:min(70vw,460px); height:14px; background:rgba(0,0,0,.5);
+  #hpwrap{ margin:5px auto 0; width:min(70vw,460px); height:13px; background:rgba(0,0,0,.5);
     border:1px solid var(--line); border-radius:7px; overflow:hidden; }
   #hpfill{ height:100%; width:100%; transform-origin:left; transform:scaleX(1);
     background:linear-gradient(90deg,#7a1b1b,#d83b3b 60%,#ff6a6a); transition:transform .4s cubic-bezier(.2,.7,.3,1); }
-  #torch{ position:absolute; top:12px; left:14px; font-size:13px; color:var(--gold); }
-  #toast{ position:absolute; top:12px; right:14px; font-size:12px; max-width:44%; text-align:right;
+  #torch{ position:absolute; top:10px; left:14px; font-size:13px; color:var(--gold); }
+  #toast{ position:absolute; top:10px; right:14px; font-size:11px; max-width:42%; text-align:right;
     color:var(--ember); min-height:1em; transition:opacity .3s; }
 
   /* ---- order card ---- */
-  #order{ flex:0 0 auto; margin:8px auto 0; padding:8px 16px; max-width:min(92vw,560px);
+  #order{ flex:0 0 auto; margin:6px auto 0; padding:6px 16px; max-width:min(94vw,600px);
     background:rgba(0,0,0,.4); border:1px solid var(--line); border-radius:10px; text-align:center; }
   #ordertitle{ font-size:15px; font-weight:700; }
   #orderq{ color:var(--gold); }
-  #recipe{ font-size:11px; color:var(--dim); margin-top:3px; }
+  #recipe{ font-size:11px; color:var(--dim); margin-top:2px; }
 
   /* ---- forge / anvil ---- */
-  #forge{ flex:1 1 auto; position:relative; margin:8px 14px; border:1px solid var(--line);
+  #forge{ flex:1 1 auto; position:relative; margin:6px 14px; border:1px solid var(--line);
     border-radius:12px; background:
       radial-gradient(70% 55% at 50% 100%, rgba(255,120,30,.14), transparent 70%),
-      linear-gradient(#120c07, var(--forge)); overflow:hidden; min-height:180px; }
+      linear-gradient(#120c07, var(--forge)); overflow:hidden; min-height:140px; }
   #anvil{ position:absolute; inset:0; }
-  .tone{ position:absolute; left:50%; height:26px; border-radius:6px; transform:translate(-50%,-50%);
-    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#1a120a;
-    box-shadow:0 2px 0 rgba(0,0,0,.4), inset 0 1px 2px rgba(255,255,255,.35); cursor:pointer;
-    transition:top .18s cubic-bezier(.2,.8,.3,1), width .18s, background .2s; white-space:nowrap; }
-  .tone.sel{ outline:2px solid var(--sel); outline-offset:2px; }
+  .tone{ position:absolute; left:50%; height:24px; border-radius:6px; transform:translate(-50%,-50%);
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#1a120a;
+    box-shadow:0 2px 0 rgba(0,0,0,.4), inset 0 1px 2px rgba(255,255,255,.35);
+    transition:top .16s cubic-bezier(.2,.8,.3,1), width .16s; white-space:nowrap; }
+  .tone.preview{ opacity:.72; color:#04121c; box-shadow:0 0 10px rgba(127,212,255,.5);
+    background:linear-gradient(180deg,var(--preview),#3a92c4)!important; }
   .tone.flaw{ color:#fff; background:repeating-linear-gradient(45deg,#7a1010,#7a1010 5px,#c22 5px,#c22 10px)!important;
     animation:flawpulse 1s infinite; }
   @keyframes flawpulse{ 0%,100%{box-shadow:0 0 4px var(--crack)} 50%{box-shadow:0 0 16px var(--crack)} }
   .tone.pop{ animation:pop .25s; }
   @keyframes pop{ 0%{transform:translate(-50%,-50%) scale(.4)} 60%{transform:translate(-50%,-50%) scale(1.15)} 100%{transform:translate(-50%,-50%) scale(1)} }
-  .ghost{ position:absolute; left:50%; height:26px; width:120px; transform:translate(-50%,-50%);
-    border:2px dashed var(--ghost); border-radius:6px; opacity:.6;
+  .ghost{ position:absolute; left:50%; height:24px; width:118px; transform:translate(-50%,-50%);
+    border:2px dashed var(--ghost); border-radius:6px; opacity:.55;
     display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--ghost); }
-  #arm{ position:absolute; left:50%; top:8px; transform:translateX(-50%); font-size:26px; opacity:.75;
+  #arm{ position:absolute; left:50%; top:8px; transform:translateX(-50%); font-size:24px; opacity:.8;
     transition:top .12s; pointer-events:none; }
   #strikefx{ position:absolute; inset:0; pointer-events:none; opacity:0; }
   #strikefx.ring{ animation:ringflash .7s; }
   #strikefx.crack{ animation:crackflash .5s; }
   @keyframes ringflash{ 0%{opacity:.9; background:radial-gradient(circle at 50% 60%, var(--gold), transparent 60%)} 100%{opacity:0} }
   @keyframes crackflash{ 0%,20%,40%{opacity:.85; background:radial-gradient(circle at 50% 60%, var(--crack), transparent 55%)} 10%,30%{opacity:.2} 100%{opacity:0} }
-  #verdict{ position:absolute; left:50%; top:20px; transform:translateX(-50%); font-size:20px; font-weight:800;
-    text-align:center; opacity:0; pointer-events:none; text-shadow:0 2px 6px #000; }
-  #verdict.show{ animation:vpop 1.1s; }
-  @keyframes vpop{ 0%{opacity:0; transform:translate(-50%,6px) scale(.7)} 20%{opacity:1; transform:translate(-50%,0) scale(1.1)} 80%{opacity:1} 100%{opacity:0} }
+  #verdict{ position:absolute; left:50%; top:14px; transform:translateX(-50%); font-size:18px; font-weight:800;
+    text-align:center; opacity:0; pointer-events:none; text-shadow:0 2px 6px #000; max-width:92%; }
+  #verdict.show{ animation:vpop 1.4s; }
+  @keyframes vpop{ 0%{opacity:0; transform:translate(-50%,6px) scale(.7)} 14%{opacity:1; transform:translate(-50%,0) scale(1.08)} 85%{opacity:1} 100%{opacity:0} }
+  #draftlabel{ position:absolute; left:8px; bottom:6px; font-size:11px; color:var(--preview); opacity:0; transition:opacity .2s; }
+  #statline{ position:absolute; right:8px; bottom:6px; font-size:11px; color:var(--dim); }
 
-  /* ---- meters ---- */
-  #meters{ flex:0 0 auto; display:flex; gap:12px; padding:0 16px; align-items:center; font-size:11px; color:var(--dim); }
-  .meter{ flex:1; }
-  .meter .lbl{ display:flex; justify-content:space-between; }
-  .track{ height:8px; background:rgba(0,0,0,.5); border:1px solid var(--line); border-radius:5px; overflow:hidden; margin-top:2px; }
-  .track > div{ height:100%; transform-origin:left; }
-  #heatfill{ background:linear-gradient(90deg,#ffcf5a,var(--ember) 60%,var(--ember2)); transition:transform .2s; }
-  #coolfill{ background:linear-gradient(90deg,#5aa9ff,#8fe3ff); transition:transform .2s linear; }
+  /* ---- tape ---- */
+  #tapewrap{ flex:0 0 auto; padding:4px 14px 0; }
+  #tapelbl{ font-size:10px; color:var(--dim); display:flex; justify-content:space-between; }
+  #tape{ display:flex; gap:5px; flex-wrap:wrap; min-height:40px; align-items:center; padding:6px;
+    background:rgba(0,0,0,.35); border:1px solid var(--line); border-radius:8px; }
+  #tape:empty::before{ content:"press glyphs below to program the forge, then ▶ Forge"; color:#6b6152; font-size:11px; }
+  .chip{ display:inline-flex; flex-direction:column; align-items:center; padding:3px 7px; border-radius:7px;
+    background:linear-gradient(#2c2013,#1a1109); border:1px solid var(--line); cursor:pointer; font-size:13px; line-height:1.1; }
+  .chip .cl{ font-size:8px; color:var(--dim); }
+  .chip:hover{ border-color:var(--crack); }
+  .chip .num{ font-size:8px; color:var(--ember); }
 
-  /* ---- op controls ---- */
-  #ops{ flex:0 0 auto; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:10px 14px 16px; }
-  .op{ padding:12px 6px; border:1px solid var(--line); border-radius:10px; background:linear-gradient(#241a10,#160f08);
-    color:var(--ink); font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; text-align:center;
-    display:flex; flex-direction:column; align-items:center; gap:2px; -webkit-tap-highlight-color:transparent; }
-  .op:active{ transform:translateY(1px); }
-  .op:disabled{ opacity:.35; cursor:not-allowed; }
-  .op .k{ font-size:10px; color:var(--dim); font-weight:400; }
-  .op.quench{ grid-column:span 2; background:linear-gradient(#7a3410,#3a1806); border-color:var(--ember); color:var(--gold); font-size:16px; }
-  .op.reset{ background:linear-gradient(#1b2836,#0e161f); border-color:#345; }
+  /* ---- palette + controls ---- */
+  #palette{ flex:0 0 auto; display:grid; grid-template-columns:repeat(6,1fr); gap:6px; padding:8px 14px 4px; }
+  .glyph{ padding:8px 4px; border:1px solid var(--line); border-radius:9px; background:linear-gradient(#241a10,#160f08);
+    color:var(--ink); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:1px; -webkit-tap-highlight-color:transparent; }
+  .glyph:active{ transform:translateY(1px); }
+  .glyph:disabled{ opacity:.32; cursor:not-allowed; }
+  .glyph small{ font-size:9px; color:var(--dim); font-weight:400; }
+  #controls{ flex:0 0 auto; display:grid; grid-template-columns:1fr 1.4fr 1fr 1fr; gap:6px; padding:2px 14px 14px; }
+  .ctrl{ padding:11px 4px; border:1px solid var(--line); border-radius:10px; font-family:inherit; font-size:14px;
+    font-weight:700; cursor:pointer; background:linear-gradient(#241a10,#160f08); color:var(--ink); }
+  .ctrl:active{ transform:translateY(1px); }
+  .ctrl:disabled{ opacity:.35; cursor:not-allowed; }
+  #btn-forge{ background:linear-gradient(#7a3410,#3a1806); border-color:var(--ember); color:var(--gold); font-size:16px; }
+  #btn-draft{ background:linear-gradient(#123048,#08161f); border-color:#3a7; color:#8fe3ff; }
+  #btn-reheat{ background:linear-gradient(#1b2836,#0e161f); border-color:#345; }
+  .ctrl small{ display:block; font-size:9px; color:var(--dim); font-weight:400; }
 
   /* ---- overlays ---- */
-  .overlay{ position:fixed; inset:0; background:rgba(4,2,0,.86); display:flex; flex-direction:column;
-    align-items:center; justify-content:center; text-align:center; padding:24px; z-index:20; }
+  .overlay{ position:fixed; inset:0; background:rgba(4,2,0,.88); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; padding:24px; z-index:20; overflow:auto; }
   .overlay.hidden{ display:none; }
-  .overlay h1{ font-size:26px; margin:0 0 6px; }
-  .overlay .who{ font-size:60px; margin-bottom:4px; }
-  .overlay p{ max-width:520px; color:var(--dim); line-height:1.5; font-size:14px; }
-  .overlay .say{ color:var(--ink); font-style:italic; margin:10px 0; }
-  .btn{ margin-top:16px; padding:12px 26px; font-family:inherit; font-size:16px; font-weight:700; cursor:pointer;
+  .overlay h1{ font-size:24px; margin:0 0 6px; }
+  .overlay .who{ font-size:54px; margin-bottom:4px; }
+  .overlay p{ max-width:540px; color:var(--dim); line-height:1.5; font-size:13.5px; }
+  .overlay .say{ color:var(--ink); font-style:italic; margin:8px 0; }
+  .btn{ margin-top:14px; padding:12px 26px; font-family:inherit; font-size:16px; font-weight:700; cursor:pointer;
     border:1px solid var(--ember); border-radius:10px; background:linear-gradient(#7a3410,#3a1806); color:var(--gold); }
-  .hint{ margin-top:14px; font-size:11px; color:#6b6152; max-width:460px; line-height:1.6; }
+  .hint{ margin-top:12px; font-size:11px; color:#6b6152; max-width:500px; line-height:1.7; text-align:left; }
+  .hint b{ color:var(--dim); }
 </style>
 </head>
 <body>
@@ -135,21 +152,22 @@
     <div id="arm">⚒</div>
     <div id="strikefx"></div>
     <div id="verdict"></div>
+    <div id="draftlabel"></div>
+    <div id="statline"></div>
   </div>
 
-  <div id="meters">
-    <div class="meter"><div class="lbl"><span>HEAT</span><span id="heattxt"></span></div><div class="track"><div id="heatfill"></div></div></div>
-    <div class="meter"><div class="lbl"><span>INGOT TEMP</span><span id="cooltxt">hot</span></div><div class="track"><div id="coolfill"></div></div></div>
+  <div id="tapewrap">
+    <div id="tapelbl"><span>SMITHING TAPE — the program (tap a glyph to remove it)</span><span id="tapemeter"></span></div>
+    <div id="tape"></div>
   </div>
 
-  <div id="ops">
-    <button class="op" id="op-M3">⚒ +M3<span class="k">major 3rd · A</span></button>
-    <button class="op" id="op-m3">⚒ +m3<span class="k">minor 3rd · S</span></button>
-    <button class="op" id="op-tdn">⚒ Temper ▼<span class="k">−½ step · ,</span></button>
-    <button class="op" id="op-tup">⚒ Temper ▲<span class="k">+½ step · .</span></button>
-    <button class="op quench" id="op-quench">🔥 QUENCH & STRIKE<span class="k">space</span></button>
-    <button class="op" id="op-undo">↶ Undo<span class="k">U</span></button>
-    <button class="op reset" id="op-reset">↺ Reset<span class="k">R</span></button>
+  <div id="palette"></div>
+
+  <div id="controls">
+    <button class="ctrl" id="btn-clear">✕ Clear<small>tape</small></button>
+    <button class="ctrl" id="btn-forge">🔥 FORGE<small>run it · space</small></button>
+    <button class="ctrl" id="btn-draft">◌ Draft<small>preview · D</small></button>
+    <button class="ctrl" id="btn-reheat">↺ Re-heat<small>new ingot · R</small></button>
   </div>
 </div>
 
@@ -157,12 +175,16 @@
 <div class="overlay" id="introOv">
   <div class="who">🎻</div>
   <h1>The Devil's Forge</h1>
-  <p class="say">"An alloy is a chord — several metals melted into one, just as several notes sound as one. You want to shatter me? Then forge me a weapon that <b>rings</b>. Anything dissonant comes out brittle… and <i>cracks</i>."</p>
-  <p>Stack thirds onto the root ingot to build the ordered chord, then <b>Quench</b> to strike-test it.
-     A clean, on-spec weapon rings and cuts her; a dissonant one shatters and she strikes back.
-     Fewer, cleaner strikes forge a <b>masterwork</b> (more damage).</p>
+  <p class="say">"An alloy is a chord — several metals melted into one, just as several notes sound as one. Don't <i>fumble</i> at my anvil, smith. <b>Program the forge</b>, then run it clean. Forge me a weapon that <b>rings</b> — anything dissonant comes out brittle, and <i>cracks</i>."</p>
+  <p>Lay a <b>tape</b> of forge-glyphs (the program), <b>Draft</b> it to preview the blade, then <b>▶ Forge</b> to run it once and strike-test. On-spec rings and cuts her; dissonant shatters and she strikes back. Fewer, cleaner glyphs forge a <b>masterwork</b>.</p>
   <button class="btn" id="startBtn">Light the forge</button>
-  <div class="hint"><b>+M3</b> then <b>+m3</b> = major · <b>+m3</b> then <b>+M3</b> = minor · <b>Temper</b> nudges the selected ingot a half-step (resolve her tritone flaws with it). Click an ingot to select it.</div>
+  <div class="hint">
+    <b>⚒ +M3 / +m3</b> — weld a major / minor 3rd on top. +M3 then +m3 = major; +m3 then +M3 = minor.<br>
+    <b>🔧 Temper ▲▼</b> — nudge the top tone a half-step (compose thirds, add leading tones).<br>
+    <b>🪨 Grind</b> — invert: lift the lowest tone an octave (for inversion orders).<br>
+    <b>🧪 Etch</b> — add a 7th color (turn a triad into a 7th chord).<br>
+    <b>🔥 Anneal</b> — resolve the harshest dissonance — the antidote to her injected <b>tritone flaw ⚡</b>.
+  </div>
 </div>
 
 <!-- win/lose -->
@@ -181,7 +203,7 @@ const TRIADS   = { major:[0,4,7], minor:[0,3,7], diminished:[0,3,6], augmented:[
 const SEVENTHS = { "maj7":[0,4,7,11], "7":[0,4,7,10], "m7":[0,3,7,10], "m7♭5":[0,3,6,10], "°7":[0,3,6,9], "mM7":[0,3,7,11] };
 const INTERVAL_NAME = {1:"minor 2nd",2:"major 2nd",3:"minor 3rd",4:"major 3rd",5:"perfect 4th",6:"tritone",7:"perfect 5th",8:"minor 6th",9:"major 6th",10:"minor 7th",11:"major 7th"};
 const CONSONANT_IV = new Set([3,4,5,7,8,9]);
-const uniqPcs = cards => [...new Set(cards.map(c=>c.pc))].sort((a,b)=>a-b);
+const uniqPcs = arr => [...new Set(arr.map(m=>((m%12)+12)%12))].sort((a,b)=>a-b);
 function matchChord(pcs, templates){
   const set = new Set(pcs);
   for(const pc of pcs) for(const q in templates){
@@ -190,8 +212,8 @@ function matchChord(pcs, templates){
   }
   return null;
 }
-function classify(cards){
-  const pcs = uniqPcs(cards);
+function classify(midis){
+  const pcs = uniqPcs(midis);
   if(pcs.length===1) return {name:"Single tone", consonant:true};
   if(pcs.length===2){ const d=(pcs[1]-pcs[0]); return {name:INTERVAL_NAME[d]||"interval", consonant:CONSONANT_IV.has(d)}; }
   if(pcs.length===4){ const s=matchChord(pcs,SEVENTHS); if(s) return {name:NOTE_NAMES[s.root]+" "+s.quality, consonant:(s.quality==="maj7"||s.quality==="m7")}; }
@@ -227,20 +249,18 @@ function playVoice(voiceId, midi, dur, t, vel){
     osc.frequency.value=midiToFreq(midi+(o.semi||0)); if(o.det) osc.detune.value=o.det; og.gain.value=o.g!=null?o.g:1;
     osc.connect(og).connect(node); osc.start(t); osc.stop(t+D+0.06); }
 }
-// metallic hammer clang (filtered noise burst) + shatter (down-swept noise)
 let _nb=null;
 function noiseBuf(){ const ac=audio(); if(_nb&&_nb.sampleRate===ac.sampleRate) return _nb;
   const n=(ac.sampleRate*0.4)|0, b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0);
   for(let i=0;i<n;i++) d[i]=Math.random()*2-1; _nb=b; return _nb; }
 function clang(bright){ const ac=audio(), t=ac.currentTime, s=ac.createBufferSource(); s.buffer=noiseBuf();
   const bp=ac.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=bright?2600:1500; bp.Q.value=1.2;
-  const g=ac.createGain(); g.gain.setValueAtTime(0.22,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+  const g=ac.createGain(); g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
   s.connect(bp).connect(g).connect(ac.destination); s.start(t); s.stop(t+0.14); }
 function shatter(){ const ac=audio(), t=ac.currentTime, s=ac.createBufferSource(); s.buffer=noiseBuf();
   const lp=ac.createBiquadFilter(); lp.type="lowpass"; lp.frequency.setValueAtTime(4000,t); lp.frequency.exponentialRampToValueAtTime(300,t+0.4);
   const g=ac.createGain(); g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.45);
   s.connect(lp).connect(g).connect(ac.destination); s.start(t); s.stop(t+0.5);
-  // + a snapped dissonant dyad
   [0,6].forEach(iv=>playVoice("grand",50+iv,0.3,t,0.5)); }
 
 /* ================= metals (timbre reskin — the M5→M6 bridge) ================= */
@@ -252,208 +272,262 @@ const METALS = {
   silver:   { name:"Silver",   color:"#e4e9ef", voice:"warmpad"    },
 };
 
-/* ================= game constants ================= */
-const HAMMER_HEAT=3, TEMPER_HEAT=2, HEAT_BUDGET=13;
-const COOL_MS=26000;                          // ingot cools over ~26s (light pressure, not a twitch layer)
-const BASE_DMG={1:22,2:20,3:26}, MASTERWORK_MULT=1.45;
-const QUAL={                                  // display + interval recipe (root-position)
-  major:      { label:"major triad ☀️",   iv:[0,4,7],    recipe:"stack +M3, then +m3" },
-  minor:      { label:"minor triad 🌙",   iv:[0,3,7],    recipe:"stack +m3, then +M3" },
-  diminished: { label:"diminished triad 💀", iv:[0,3,6], recipe:"stack +m3, then +m3 (holds the tritone)" },
-  augmented:  { label:"augmented triad 🐂", iv:[0,4,8],  recipe:"stack +M3, then +M3" },
-  dom7:       { label:"dominant 7th ⚡",  iv:[0,4,7,10], recipe:"+M3, +m3, +m3 — the weapon that resolves her" },
-};
-
-/* ================= state ================= */
-let boss, run, coolTimer=null, coolStart=0, busy=false;
-function newGame(){
-  boss={ hp:100, max:100, phase:1, torch:3 };
-  updateHP(); updateTorch(); setPhaseTag();
-  newWeapon();
+/* ================= forge glyphs — the op registry (data-driven; each = one theory concept) =================
+   A tape is an ordered list of op-ids. simulate() folds them over a STACK of tagged tones {m,flaw} (m=midi,
+   flaw=an injected tritone), starting from the ingot. apply(st, ctx) mutates `st` (ctx.rootMidi = the given
+   ingot, ctx.target = the ordered pitch-classes). Keep every op teachable. */
+const mids = st => st.map(e=>e.m);
+function topChordIdx(st){ let bi=-1; for(let i=0;i<st.length;i++) if(!st[i].flaw && (bi<0||st[i].m>st[bi].m)) bi=i; return bi<0?idxMax(st):bi; }
+function idxMax(st){ let bi=0; for(let i=1;i<st.length;i++) if(st[i].m>st[bi].m) bi=i; return bi; }
+function idxMin(st){ let bi=0; for(let i=1;i<st.length;i++) if(st[i].m<st[bi].m) bi=i; return bi; }
+function topChordM(st){ return st[topChordIdx(st)].m; }         // highest non-flaw tone = where thirds stack
+function resolveFlaw(st, ctx){                                  // snap the lowest flaw tone onto its nearest chord tone
+  const fi=st.findIndex(e=>e.flaw); if(fi<0) return; const fm=st[fi].m;
+  let best=null;
+  for(const pc of ctx.target) for(const oct of [-12,0,12]){
+    const cand=ctx.rootMidi + (((pc-ctx.rootMidi)%12+12)%12) + oct;
+    if(best===null || Math.abs(cand-fm)<Math.abs(best-fm)) best=cand;
+  }
+  st[fi].m=best; st[fi].flaw=false;
 }
+const OPS = {
+  M3:     { label:"+M3",     glyph:"⚒", cl:"major 3rd", key:"a", heat:3, apply:(st)=>st.push({m:topChordM(st)+4,flaw:false}) },
+  m3:     { label:"+m3",     glyph:"⚒", cl:"minor 3rd", key:"s", heat:3, apply:(st)=>st.push({m:topChordM(st)+3,flaw:false}) },
+  tup:    { label:"Temper▲", glyph:"🔧", cl:"top +½",   key:".", heat:2, apply:(st)=>{ st[topChordIdx(st)].m+=1; } },
+  tdn:    { label:"Temper▼", glyph:"🔧", cl:"top −½",   key:",", heat:2, apply:(st)=>{ st[topChordIdx(st)].m-=1; } },
+  grind:  { label:"Grind",   glyph:"🪨", cl:"invert",   key:"g", heat:2, apply:(st)=>{ st[idxMin(st)].m+=12; } },
+  etch:   { label:"Etch",    glyph:"🧪", cl:"+7th",     key:"e", heat:3, apply:(st,ctx)=>st.push({m:ctx.rootMidi+10,flaw:false}) },
+  anneal: { label:"Anneal",  glyph:"🔥", cl:"resolve",  key:"n", heat:2, apply:(st,ctx)=>resolveFlaw(st,ctx) },
+};
+const OP_ORDER = ["M3","m3","tup","tdn","grind","etch","anneal"];
+
+/* ================= game constants ================= */
+const HEAT_BUDGET = 16;                          // caps the tape's total Cost (charcoal/fuel)
+const COOL_MS = 34000;                           // ingot slowly cools while you program (light pressure)
+const BASE_DMG = {1:20, 2:20, 3:26};
+const MW_MULT = 1.8;                             // masterwork threshold on the combined multiplier
+let boss, run, coolTimer=null, coolStart=0, busy=false, drafted=false;
+
+/* ================= orders ================= */
 function phaseFor(){ const f=boss.hp/boss.max; return f>0.66?1:(f>0.33?2:3); }
 function setPhaseTag(){
   const names={1:"Phase 1 · The Forge-fire",2:"Phase 2 · The Flaw",3:"Phase 3 · The Devil's Interval"};
   document.getElementById("phasetag").textContent=names[boss.phase];
 }
+const QUAL={
+  major:      { label:"major triad ☀️",   iv:[0,4,7],    recipe:"+M3, then +m3" },
+  minor:      { label:"minor triad 🌙",   iv:[0,3,7],    recipe:"+m3, then +M3" },
+  diminished: { label:"diminished triad 💀", iv:[0,3,6], recipe:"+m3, then +m3 (holds the tritone)" },
+  augmented:  { label:"augmented triad 🐂", iv:[0,4,8],  recipe:"+M3, then +M3" },
+  dom7:       { label:"dominant 7th ⚡",  iv:[0,4,7,10], recipe:"+M3, +m3, then Etch — the weapon that resolves her" },
+};
 function rollOrder(){
   boss.phase=phaseFor(); setPhaseTag();
-  const rootPc=[0,2,4,5,7,9][Math.floor(Math.random()*6)];      // C D E F G A — easy-to-hear roots
-  let qual, metalPool;
-  if(boss.phase===1){ qual=Math.random()<0.5?"major":"minor"; metalPool=["brass","bronze"]; }
-  else if(boss.phase===2){ qual=["major","minor","diminished","augmented"][Math.floor(Math.random()*4)]; metalPool=["brass","bronze","steel","aluminum"]; }
-  else { qual=Math.random()<0.6?"dom7":["major","minor"][Math.floor(Math.random()*2)]; metalPool=["steel","aluminum","silver"]; }
+  const rootPc=[0,2,4,5,7,9][Math.floor(Math.random()*6)];
+  let qual, metalPool, invAllowed;
+  if(boss.phase===1){ qual=Math.random()<0.5?"major":"minor"; metalPool=["brass","bronze"]; invAllowed=false; }
+  else if(boss.phase===2){ qual=["major","minor","diminished","augmented"][Math.floor(Math.random()*4)]; metalPool=["brass","bronze","steel","aluminum"]; invAllowed=true; }
+  else { qual=Math.random()<0.6?"dom7":["major","minor"][Math.floor(Math.random()*2)]; metalPool=["steel","aluminum","silver"]; invAllowed=true; }
   const metal=metalPool[Math.floor(Math.random()*metalPool.length)];
-  const rootMidi=48+rootPc;                                     // C3-ish base
-  const target=QUAL[qual].iv.map(i=>(rootPc+i)%12).sort((a,b)=>a-b);
-  return { rootPc, rootMidi, qual, metal, target };
+  const rootMidi=48+rootPc;
+  const iv=QUAL[qual].iv;
+  const target=iv.map(i=>(rootPc+i)%12).sort((a,b)=>a-b);
+  // voicing spec (gives Grind a job): sometimes require a specific bass note = an inversion
+  let inv=0, bassPc=null;
+  if(invAllowed && Math.random()<0.34){ inv=1+Math.floor(Math.random()*Math.min(2,iv.length-1)); bassPc=(rootPc+iv[inv])%12; }
+  // flaw injection (phase ≥2): a tritone welded on the ingot — but not when the target legitimately holds it
+  let flaw=false, flawMidi=null;
+  if(boss.phase>=2 && !target.includes((rootPc+6)%12) && Math.random()<0.5){ flaw=true; flawMidi=rootMidi+6; }
+  // par cycles for the economy score
+  const parCycles=(qual==="dom7"?3:2) + (inv?1:0) + (flaw?1:0);
+  return { rootPc, rootMidi, qual, metal, target, inv, bassPc, flaw, flawMidi, parCycles };
 }
-function newWeapon(){
-  run={ ...rollOrder(), stack:[], heat:0, ops:0, sel:-1, flaw:false };
-  run.stack.push({ midi:run.rootMidi, kind:"root" });
-  // flaw injection (phase ≥2): weld a tritone flaw onto the ingot — but only when the target itself
-  // doesn't already contain root+6 (skip diminished, which legitimately holds the tritone).
-  const targetHasTritone = run.target.includes((run.rootPc+6)%12);
-  if(boss.phase>=2 && !targetHasTritone && Math.random()<0.55){
-    run.flaw=true;
-    run.stack.push({ midi:run.rootMidi+6, kind:"flaw" });
-    toast("⚡ Tritony cracks a tritone into your forge — Temper it out!");
-  }
-  run.sel=run.stack.length-1;
-  drawOrder(); renderAnvil(); updateHeat(); startCooling(); refreshOps();
+function ingotStack(){ const st=[{m:run.rootMidi,flaw:false}]; if(run.flaw) st.push({m:run.flawMidi,flaw:true}); return st; }
+
+/* ================= tape (the program) ================= */
+function tapeHeat(){ return run.tape.reduce((s,id)=>s+OPS[id].heat,0); }
+function tapeParts(){ return new Set(run.tape).size; }
+function addOp(id){ if(busy) return; if(tapeHeat()+OPS[id].heat>HEAT_BUDGET){ toast("Not enough heat left in the ingot."); return; }
+  run.tape.push(id); drafted=false; clearPreview(); renderTape(); refreshControls(); clang(id==="M3"); }
+function removeOp(i){ if(busy) return; run.tape.splice(i,1); drafted=false; clearPreview(); renderTape(); refreshControls(); }
+function clearTape(){ if(busy) return; run.tape=[]; drafted=false; clearPreview(); renderTape(); refreshControls(); }
+function simulate(tape){ const st=ingotStack(); const ctx={rootMidi:run.rootMidi,target:run.target}; for(const id of tape) OPS[id].apply(st,ctx); return st; }
+
+/* ================= new weapon ================= */
+function newWeapon(reheat){
+  const ord=rollOrder();
+  run={ ...ord, tape:[], reheated:!!reheat };
+  drafted=false;
+  if(run.flaw) toast("⚡ Tritony cracks a tritone into the ingot — Anneal it out!");
+  drawOrder(); renderAnvil(); renderTape(); refreshControls(); startCooling();
 }
 
 /* ================= rendering ================= */
 function drawOrder(){
   document.getElementById("orderq").textContent=QUAL[run.qual].label;
-  document.getElementById("orderroot").textContent=NOTE_NAMES[run.rootPc]+" ("+METALS[run.metal].name+")";
-  document.getElementById("recipe").textContent="recipe: "+QUAL[run.qual].recipe;
+  let root=NOTE_NAMES[run.rootPc]+" ("+METALS[run.metal].name+")";
+  if(run.inv) root+=" · "+(run.inv===1?"1st":"2nd")+" inversion, bass "+NOTE_NAMES[run.bassPc];
+  document.getElementById("orderroot").innerHTML=root;
   document.getElementById("orderroot").style.color=METALS[run.metal].color;
+  let rec="recipe: "+QUAL[run.qual].recipe;
+  if(run.inv) rec+=" · Grind to put "+NOTE_NAMES[run.bassPc]+" on the bottom";
+  if(run.flaw) rec+=" · Anneal out the ⚡tritone";
+  document.getElementById("recipe").textContent=rec;
 }
-const SPAN_LO=-1, SPAN_HI=14;                       // semitones above root shown on the anvil
-function yFor(midi){ const rel=midi-run.rootMidi; const f=(rel-SPAN_LO)/(SPAN_HI-SPAN_LO); return (1-f)*100; }
-function renderAnvil(){
-  const a=document.getElementById("anvil"); a.innerHTML="";
-  const col=METALS[run.metal].color;
-  // target ghosts (root-position silhouette to fill)
-  run.target.forEach(pc=>{
-    // choose the octave nearest above root for the ghost height
-    let midi=run.rootMidi + ((pc-run.rootPc)%12+12)%12;
-    const g=document.createElement("div"); g.className="ghost"; g.style.top=yFor(midi)+"%";
-    g.textContent=NOTE_NAMES[pc]; a.appendChild(g);
-  });
-  // player tones
-  run.stack.forEach((t,i)=>{
-    const el=document.createElement("div");
-    el.className="tone"+(t.kind==="flaw"?" flaw":"")+(i===run.sel?" sel":"");
-    el.style.top=yFor(t.midi)+"%";
-    el.style.width=(t.kind==="root"?150:120)+"px";
-    if(t.kind!=="flaw") el.style.background="linear-gradient(180deg,"+col+", "+shade(col,-30)+")";
-    const iv=((t.midi-run.rootMidi)%12+12)%12;
-    el.textContent=NOTE_NAMES[t.midi%12]+(t.kind==="root"?" ◆ root":(t.kind==="flaw"?" ⚡tritone":" ·"+(INTERVAL_NAME[iv]||"")));
-    el.onclick=()=>{ if(busy||t.kind==="root") return; run.sel=i; renderAnvil(); };
-    a.appendChild(el);
-  });
-}
+let SPAN_LO=-2, SPAN_HI=26;
+function yFor(midi){ let f=(midi-run.rootMidi-SPAN_LO)/(SPAN_HI-SPAN_LO); f=Math.max(0,Math.min(1,f)); return (1-f)*100; }
 function shade(hex,amt){ const n=parseInt(hex.slice(1),16); let r=(n>>16)+amt,g=((n>>8)&255)+amt,b=(n&255)+amt;
   r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b));
   return "#"+(r<<16|g<<8|b).toString(16).padStart(6,"0"); }
-
+// Render tones. `stack` = solid welded tones (the ingot, or a live forge). `preview` = simulated ghost tones.
+function renderAnvil(stack, preview){
+  const a=document.getElementById("anvil"); a.innerHTML="";
+  const col=METALS[run.metal].color;
+  run.target.forEach((pc,k)=>{                                   // target silhouette (root-position ghosts)
+    const midi=run.rootMidi + ((pc-run.rootPc)%12+12)%12;
+    const g=document.createElement("div"); g.className="ghost"; g.style.top=yFor(midi)+"%";
+    g.textContent=NOTE_NAMES[pc]+(run.bassPc===pc?" (bass)":""); a.appendChild(g);
+  });
+  const solid = stack || ingotStack();
+  const lowIdx = idxMin(solid);
+  solid.forEach((e,i)=>{
+    const el=document.createElement("div");
+    el.className="tone"+(e.flaw?" flaw":"");
+    el.style.top=yFor(e.m)+"%"; el.style.width=(i===lowIdx?150:120)+"px";
+    if(!e.flaw) el.style.background="linear-gradient(180deg,"+col+","+shade(col,-30)+")";
+    el.textContent=NOTE_NAMES[((e.m%12)+12)%12]+(e.flaw?" ⚡tritone":(i===lowIdx?" ◆bass":""));
+    a.appendChild(el);
+  });
+  if(preview) preview.forEach(e=>{                               // draft preview overlay
+    const el=document.createElement("div"); el.className="tone preview";
+    el.style.top=yFor(e.m)+"%"; el.style.width="110px";
+    el.textContent=NOTE_NAMES[((e.m%12)+12)%12]; a.appendChild(el);
+  });
+  updateStatline();
+}
+function renderTape(){
+  const t=document.getElementById("tape"); t.innerHTML="";
+  run.tape.forEach((id,i)=>{ const op=OPS[id];
+    const c=document.createElement("div"); c.className="chip"; c.title="remove";
+    c.innerHTML='<span class="num">'+(i+1)+'</span><span>'+op.glyph+' '+op.label+'</span><span class="cl">'+op.cl+'</span>';
+    c.onclick=()=>removeOp(i); t.appendChild(c);
+  });
+  document.getElementById("tapemeter").textContent =
+    run.tape.length+" swings · "+tapeParts()+" glyphs · heat "+tapeHeat()+"/"+HEAT_BUDGET;
+}
+function updateStatline(){ document.getElementById("statline").textContent =
+  "COST "+tapeHeat()+" · CYCLES "+run.tape.length+" · PARTS "+tapeParts()+"  (par "+run.parCycles+")"; }
 function updateHP(){ document.getElementById("hpfill").style.transform="scaleX("+Math.max(0,boss.hp/boss.max)+")"; }
 function updateTorch(){ document.getElementById("torch").textContent="🔥".repeat(Math.max(0,boss.torch))||"💨 out"; }
-function updateHeat(){
-  document.getElementById("heatfill").style.transform="scaleX("+Math.min(1,run.heat/HEAT_BUDGET)+")";
-  document.getElementById("heattxt").textContent=run.heat+" / "+HEAT_BUDGET;
-}
 let toastT=null;
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.style.opacity="1";
-  clearTimeout(toastT); toastT=setTimeout(()=>t.style.opacity="0",2600); }
+  clearTimeout(toastT); toastT=setTimeout(()=>t.style.opacity="0",2800); }
+function clearPreview(){ document.getElementById("draftlabel").style.opacity="0"; renderAnvil(); }
 
-/* ================= cooling loop ================= */
-function startCooling(){ if(coolTimer) clearInterval(coolTimer); coolStart=performance.now();
-  coolTimer=setInterval(tickCool,120); tickCool(); }
+/* ================= controls state ================= */
+function refreshControls(){
+  const h=tapeHeat();
+  OP_ORDER.forEach(id=>{ const b=document.getElementById("g-"+id); if(b) b.disabled=busy||(h+OPS[id].heat>HEAT_BUDGET); });
+  document.getElementById("btn-forge").disabled=busy||run.tape.length===0;
+  document.getElementById("btn-draft").disabled=busy;
+  document.getElementById("btn-clear").disabled=busy||run.tape.length===0;
+  document.getElementById("btn-reheat").disabled=busy;
+}
+
+/* ================= cooling ================= */
+function startCooling(){ if(coolTimer) clearInterval(coolTimer); coolStart=performance.now(); coolTimer=setInterval(tickCool,140); }
 function tickCool(){
-  const left=Math.max(0,1-(performance.now()-coolStart)/COOL_MS);
-  document.getElementById("coolfill").style.transform="scaleX("+left+")";
-  const txt=document.getElementById("cooltxt");
-  txt.textContent = left>0.5?"hot":left>0.2?"cooling":"nearly cold";
-  txt.style.color = left>0.2?"var(--dim)":"var(--crack)";
-  if(left<=0 && !busy){ toast("The ingot went cold — re-heating."); resetWeapon(); }
+  const left=1-(performance.now()-coolStart)/COOL_MS;
+  if(left<=0 && !busy && !run.reheated){ run.reheated=true; toast("The ingot cooled — you'll forfeit the Single-Heat bonus."); }
 }
 
-/* ================= ops ================= */
-function topMidi(){ return Math.max(...run.stack.map(t=>t.midi)); }
-function canAfford(cost){ return run.heat+cost<=HEAT_BUDGET; }
-function refreshOps(){
-  const dis=(id,v)=>document.getElementById(id).disabled=v;
-  const hammerBlocked=busy||!canAfford(HAMMER_HEAT);
-  const temperBlocked=busy||!canAfford(TEMPER_HEAT)||run.sel<0||run.stack[run.sel].kind==="root";
-  dis("op-M3",hammerBlocked); dis("op-m3",hammerBlocked);
-  dis("op-tdn",temperBlocked); dis("op-tup",temperBlocked);
-  dis("op-undo",busy||!run.stack.some(t=>t.kind==="weld"));
-  dis("op-quench",busy); dis("op-reset",busy);
+/* ================= draft (free preview, no score) ================= */
+function draft(){
+  if(busy) return; audio();
+  const st=simulate(run.tape);
+  renderAnvil(null, st);
+  const cls=classify(mids(st));
+  const { rings, why } = evalStrike(st);
+  const lbl=document.getElementById("draftlabel");
+  lbl.textContent = "◌ draft → "+cls.name+" — "+(rings?"would RING ✓":"would crack: "+why);
+  lbl.style.color = rings?"#8fe3ff":"var(--crack)";
+  lbl.style.opacity="1";
+  drafted=true;
 }
-function armTo(midi){ const arm=document.getElementById("arm"); arm.style.top=Math.max(2,yFor(midi)-6)+"%";
-  setTimeout(()=>arm.style.top="8px",180); }
-function hammer(iv){
-  if(busy||!canAfford(HAMMER_HEAT)) return;
-  const midi=topMidi()+iv;
-  run.stack.push({ midi, kind:"weld" }); run.heat+=HAMMER_HEAT; run.ops++; run.sel=run.stack.length-1;
-  armTo(midi); clang(iv===4); playVoice(METALS[run.metal].voice,midi,0.4,audio().currentTime,0.9);
-  renderAnvil(); flashNew(); updateHeat(); refreshOps();
-}
-function temper(dir){
-  if(busy||run.sel<0) return; const t=run.stack[run.sel];
-  if(t.kind==="root"||!canAfford(TEMPER_HEAT)) return;
-  t.midi+=dir; if(t.kind==="flaw"){ /* a tempered flaw is now a normal tone */ t.kind="weld"; }
-  run.heat+=TEMPER_HEAT; run.ops++;
-  clang(false); playVoice(METALS[run.metal].voice,t.midi,0.28,audio().currentTime,0.7);
-  renderAnvil(); updateHeat(); refreshOps();
-}
-function undo(){
-  if(busy) return;
-  for(let i=run.stack.length-1;i>=0;i--) if(run.stack[i].kind==="weld"){
-    run.stack.splice(i,1); run.heat=Math.max(0,run.heat-HAMMER_HEAT); run.ops=Math.max(0,run.ops-1);
-    run.sel=run.stack.length-1; break;
+
+/* ================= forge (the committed run) ================= */
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+async function forge(){
+  if(busy||run.tape.length===0) return; busy=true; drafted=false; refreshControls();
+  document.getElementById("draftlabel").style.opacity="0";
+  const arm=document.getElementById("arm"); const ctx={rootMidi:run.rootMidi,target:run.target};
+  const st=ingotStack(); renderAnvil(st);
+  const voice=METALS[run.metal].voice;
+  for(const id of run.tape){                                    // arm walks the tape, welding each op
+    OPS[id].apply(st,ctx); renderAnvil(st);
+    const el=document.querySelectorAll("#anvil .tone"); const last=el[el.length-1];
+    const hi=st[idxMax(st)].m;
+    if(last){ last.classList.add("pop"); arm.style.top=Math.max(2,yFor(hi)-6)+"%"; }
+    clang(id==="M3"); playVoice(voice, hi, 0.34, audio().currentTime, 0.85);
+    await sleep(340); arm.style.top="8px";
   }
-  renderAnvil(); updateHeat(); refreshOps();
+  await sleep(160);
+  // quench + strike-test: the whole chord rings in the metal's voice
+  arm.textContent="🔨"; arm.style.top="46%";
+  const t0=audio().currentTime; mids(st).forEach(m=>playVoice(voice,m,1.1,t0,1));
+  await sleep(420); arm.style.top="8px"; arm.textContent="⚒";
+  resolveStrike(st);
 }
-function resetWeapon(){ if(busy) return; newWeapon(); }
-function flashNew(){ const a=document.getElementById("anvil"); const els=a.querySelectorAll(".tone");
-  const last=els[els.length-1]; if(last){ last.classList.add("pop"); setTimeout(()=>last.classList.remove("pop"),260); } }
-
-/* ================= quench / strike-test ================= */
-function quench(){
-  if(busy) return; busy=true; refreshOps();
-  const notes=run.stack.map(t=>({pc:t.midi%12}));
-  const builtPcs=uniqPcs(notes);
-  const onSpec = builtPcs.length===run.target.length && builtPcs.every((p,i)=>p===run.target[i]);
-  const cls=classify(notes);
-  // strike animation: arm falls, whole chord sounds in the metal's voice
-  const arm=document.getElementById("arm"); arm.textContent="🔨"; arm.style.top="46%";
-  const t0=audio().currentTime;
-  run.stack.forEach(tn=>playVoice(METALS[run.metal].voice,tn.midi,1.1,t0,1));
-  setTimeout(()=>{ arm.style.top="8px"; arm.textContent="⚒"; resolveStrike(onSpec,cls,builtPcs); },420);
+// Would this stack ring? (used by both draft preview and the real strike)
+function evalStrike(st){
+  const pcs=uniqPcs(mids(st));
+  const onSpec = pcs.length===run.target.length && pcs.every((p,i)=>p===run.target[i]);
+  const bassOK = run.bassPc==null || (((st[idxMin(st)].m%12)+12)%12)===run.bassPc;
+  const flawLeft = st.some(e=>e.flaw);
+  let why="";
+  if(flawLeft) why="you left the ⚡tritone flaw — Anneal it";
+  else if(!onSpec) why = pcs.length<run.target.length ? "unfinished — keep stacking"
+                      : "wrong chord — "+classify(mids(st)).name;
+  else if(!bassOK) why="wrong bass — needs "+NOTE_NAMES[run.bassPc]+" on the bottom";
+  return { rings:(onSpec && bassOK && !flawLeft), why };
 }
-function resolveStrike(onSpec,cls,builtPcs){
-  const fx=document.getElementById("strikefx"), vr=document.getElementById("verdict");
-  const leftoverTritone = run.flaw && builtPcs.includes((run.rootPc+6)%12) && !run.target.includes((run.rootPc+6)%12);
-  if(onSpec && !leftoverTritone){
-    // rings — damage scaled by economy (heat left = elegance)
-    const heatLeft=HEAT_BUDGET-run.heat;
-    const mult=Math.max(1, 1 + (heatLeft/HEAT_BUDGET)*1.1);
-    const master=mult>=MASTERWORK_MULT;
-    const dmg=Math.round(BASE_DMG[boss.phase]*mult);
-    fx.className="ring"; void fx.offsetWidth; fx.className="strikefx ring";
+function resolveStrike(st){
+  const fx=document.getElementById("strikefx"), vr=document.getElementById("verdict"), cls=classify(mids(st));
+  const { rings, why } = evalStrike(st);
+  if(rings){
+    // economy → damage: Cost (heat) · Cycles (swings vs par) · Parts (distinct glyphs) + Single-Heat bonus
+    const heatEff = 1 - tapeHeat()/HEAT_BUDGET;
+    const cycEff  = Math.max(0, 1 - Math.max(0, run.tape.length-run.parCycles)*0.25);
+    const partEff = Math.max(0, 1 - Math.max(0, tapeParts()-3)*0.34);
+    const single  = run.reheated ? 0 : 0.2;
+    const mult = 1 + 0.45*heatEff + 0.40*cycEff + 0.15*partEff + single;
+    const master = (run.tape.length<=run.parCycles) && mult>=MW_MULT;
+    const dmg = Math.round(BASE_DMG[boss.phase]*mult);
+    fx.className="ring"; void fx.offsetWidth; fx.className="strikefx ring"; clang(true);
     vr.style.color=master?"var(--gold)":"var(--ink)";
-    vr.textContent=(master?"⚔️ MASTERWORK! ":"✓ Rings clean! ")+cls.name+"  −"+dmg;
+    vr.innerHTML=(master?"⚔️ MASTERWORK! ":"✓ Rings clean! ")+cls.name+" &nbsp;×"+mult.toFixed(2)+" → −"+dmg
+      +(single?" &nbsp;<span style='color:var(--gold)'>+Single-Heat</span>":"");
     showVerdict();
-    clang(true);
-    boss.hp=Math.max(0,boss.hp-dmg); updateHP();
-    hurtBoss();
-    if(boss.hp<=0){ setTimeout(()=>endGame(true),700); return; }
+    boss.hp=Math.max(0,boss.hp-dmg); updateHP(); hurtBoss();
+    if(boss.hp<=0){ setTimeout(()=>endGame(true),800); return; }
     if(phaseFor()!==boss.phase) toast("Tritony's form shifts…");
-    setTimeout(nextAfterStrike,900);
+    setTimeout(nextAfter,1050);
   } else {
-    // cracks — off-spec or an untempered tritone remains
-    fx.className="crack"; void fx.offsetWidth; fx.className="strikefx crack";
-    let why = leftoverTritone ? "you left the tritone flaw"
-            : builtPcs.length<run.target.length ? "unfinished — keep stacking"
-            : "wrong chord — forged "+cls.name;
+    fx.className="crack"; void fx.offsetWidth; fx.className="strikefx crack"; shatter();
     vr.style.color="var(--crack)"; vr.textContent="✗ CRACKED — "+why; showVerdict();
-    shatter();
     boss.torch--; updateTorch(); attackBoss();
-    if(boss.torch<=0){ setTimeout(()=>endGame(false),700); return; }
-    setTimeout(nextAfterStrike,1000);
+    if(boss.torch<=0){ setTimeout(()=>endGame(false),800); return; }
+    setTimeout(nextAfter,1150);
   }
 }
 function showVerdict(){ const vr=document.getElementById("verdict"); vr.classList.remove("show"); void vr.offsetWidth; vr.classList.add("show"); }
 function hurtBoss(){ const b=document.getElementById("tritony"); b.classList.remove("hurt"); void b.offsetWidth; b.classList.add("hurt"); }
 function attackBoss(){ const b=document.getElementById("tritony"); b.classList.remove("attack"); void b.offsetWidth; b.classList.add("attack");
   document.getElementById("stage").animate([{transform:"translateX(0)"},{transform:"translateX(-6px)"},{transform:"translateX(6px)"},{transform:"translateX(0)"}],{duration:260}); }
-function nextAfterStrike(){ busy=false; newWeapon(); }
+function nextAfter(){ busy=false; newWeapon(false); }
 
-/* ================= end screens ================= */
+/* ================= game / end ================= */
+function newGame(){ boss={ hp:100, max:100, phase:1, torch:3 }; updateHP(); updateTorch(); setPhaseTag(); newWeapon(false); }
 function endGame(win){
   if(coolTimer) clearInterval(coolTimer); busy=true;
   const ov=document.getElementById("endOv");
@@ -461,28 +535,35 @@ function endGame(win){
   document.getElementById("endTitle").textContent=win?"Tritony Shattered!":"The fire went out";
   document.getElementById("endSay").textContent=win
     ? '"The tritone… tamed. Take it — The Devil\'s Bargain. A tension that resolves is the sharpest weapon of all."'
-    : '"Brittle work. The forge is cold and I am still standing. Try again, smith."';
+    : '"Brittle work. The forge is cold and I am still standing. Program it cleaner, smith."';
   document.getElementById("endBtn").textContent=win?"Forge again":"Retry";
   ov.classList.remove("hidden");
 }
 
-/* ================= input ================= */
-document.getElementById("op-M3").onclick=()=>hammer(4);
-document.getElementById("op-m3").onclick=()=>hammer(3);
-document.getElementById("op-tup").onclick=()=>temper(1);
-document.getElementById("op-tdn").onclick=()=>temper(-1);
-document.getElementById("op-undo").onclick=undo;
-document.getElementById("op-quench").onclick=quench;
-document.getElementById("op-reset").onclick=resetWeapon;
+/* ================= build palette + wire input ================= */
+(function buildPalette(){
+  const p=document.getElementById("palette");
+  OP_ORDER.forEach(id=>{ const op=OPS[id];
+    const b=document.createElement("button"); b.className="glyph"; b.id="g-"+id;
+    b.innerHTML=op.glyph+" "+op.label+"<small>"+op.cl+" · "+op.key.toUpperCase()+"</small>";
+    b.onclick=()=>addOp(id); p.appendChild(b);
+  });
+})();
+document.getElementById("btn-forge").onclick=forge;
+document.getElementById("btn-draft").onclick=draft;
+document.getElementById("btn-clear").onclick=clearTape;
+document.getElementById("btn-reheat").onclick=()=>{ if(!busy) newWeapon(true); };
 document.addEventListener("keydown",e=>{
   if(!document.getElementById("introOv").classList.contains("hidden")) return;
   if(!document.getElementById("endOv").classList.contains("hidden")) return;
   const k=e.key.toLowerCase();
-  if(k==="a") hammer(4); else if(k==="s") hammer(3);
-  else if(k===".") temper(1); else if(k===",") temper(-1);
-  else if(k==="u"||k==="backspace") undo();
-  else if(k===" "||k==="enter"){ e.preventDefault(); quench(); }
-  else if(k==="r") resetWeapon();
+  const op=OP_ORDER.find(id=>OPS[id].key===k);
+  if(op){ addOp(op); return; }
+  if(k===" "||k==="enter"){ e.preventDefault(); forge(); }
+  else if(k==="d") draft();
+  else if(k==="backspace"){ e.preventDefault(); if(run.tape.length) removeOp(run.tape.length-1); }
+  else if(k==="c") clearTape();
+  else if(k==="r"){ if(!busy) newWeapon(true); }
 });
 document.getElementById("startBtn").onclick=()=>{ audio(); document.getElementById("introOv").classList.add("hidden"); newGame(); };
 document.getElementById("endBtn").onclick=()=>{ document.getElementById("endOv").classList.add("hidden"); newGame(); };
