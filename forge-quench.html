@@ -10,8 +10,11 @@
   pattern) from a glyph palette, DRAFT it freely (ghost preview, no score), then ▶ FORGE it once —
   an arm walks the tape, welding tones, ending in a strike-test.  On-spec → rings (damage);
   off-spec / untempered tritone → cracks (she strikes back).
-    Ops: +M3 / +m3 / Temper ±1 / Grind (invert) / Etch (add 7th) / Anneal (resolve dissonance).
-    Difficulty: build-to-spec orders (quality × root × metal × voicing) + flaw-injection debuff.
+    Ops: De-rust / Straighten (salvage) · +M3 / +m3 / Temper ±1 / Grind (invert) / Etch (7th) / Anneal.
+    Recycling theme (the Harmony band was a Recycled Orchestra of Cateura): you forge from salvaged junk —
+    real recycled instruments (oil drum→steelpan, cans→guitar, forks→mbira, pipe→pan-pipe, bottles→xylo) —
+    that spawns with DEFECTS (rust/dents) you must restore first (a 2nd fail-source), with a redemption bonus.
+    Difficulty: build-to-spec orders (quality × root × source × voicing) + flaw-injection + salvage repair.
     Scoring: Opus-Magnum triad — Cost (heat) · Cycles (swings) · Parts (distinct glyphs) → masterwork.
   Isolated to tune feel before porting into mujicians.html.  See docs/mujicians.md → "Tritony".
 -->
@@ -100,7 +103,9 @@
   .chip .num{ font-size:8px; color:var(--ember); }
 
   /* ---- palette + controls ---- */
-  #palette{ flex:0 0 auto; display:grid; grid-template-columns:repeat(6,1fr); gap:6px; padding:8px 14px 4px; }
+  #palette{ flex:0 0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(60px,1fr)); gap:6px; padding:8px 14px 4px; }
+  .glyph.salvage{ border-color:#3a7; }
+  .glyph.salvage small{ color:#7fc7b0; }
   .glyph{ padding:8px 4px; border:1px solid var(--line); border-radius:9px; background:linear-gradient(#241a10,#160f08);
     color:var(--ink); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; text-align:center;
     display:flex; flex-direction:column; align-items:center; gap:1px; -webkit-tap-highlight-color:transparent; }
@@ -175,10 +180,11 @@
 <div class="overlay" id="introOv">
   <div class="who">🎻</div>
   <h1>The Devil's Forge</h1>
-  <p class="say">"An alloy is a chord — several metals melted into one, just as several notes sound as one. Don't <i>fumble</i> at my anvil, smith. <b>Program the forge</b>, then run it clean. Forge me a weapon that <b>rings</b> — anything dissonant comes out brittle, and <i>cracks</i>."</p>
-  <p>Lay a <b>tape</b> of forge-glyphs (the program), <b>Draft</b> it to preview the blade, then <b>▶ Forge</b> to run it once and strike-test. On-spec rings and cuts her; dissonant shatters and she strikes back. Fewer, cleaner glyphs forge a <b>masterwork</b>.</p>
+  <p class="say">"We were a <b>Recycled Orchestra</b> once — five kids who built every instrument out of the landfill, because nothing is truly junk. Even the devil's interval can be made to sing. I <i>taught</i> them that… and then I kept all the good scrap for myself. Bring me trash, smith. <b>Restore it, program the forge,</b> and make me a weapon that <b>rings</b> — or it comes out brittle, and <i>cracks</i>."</p>
+  <p>Every order hands you a piece of <b>salvage</b> (a real recycled instrument). <b>Restore it</b> (de-rust / straighten), lay a <b>tape</b> of forge-glyphs, <b>Draft</b> to preview, then <b>▶ Forge</b> once and strike-test. Fewer, cleaner glyphs — and reviving worse scrap — forge a <b>masterwork</b>.</p>
   <button class="btn" id="startBtn">Light the forge</button>
   <div class="hint">
+    <b>🧽 De-rust / 🔨 Straighten</b> — restore the salvaged scrap; brittle rust/dents crack the weapon.<br>
     <b>⚒ +M3 / +m3</b> — weld a major / minor 3rd on top. +M3 then +m3 = major; +m3 then +M3 = minor.<br>
     <b>🔧 Temper ▲▼</b> — nudge the top tone a half-step (compose thirds, add leading tones).<br>
     <b>🪨 Grind</b> — invert: lift the lowest tone an octave (for inversion orders).<br>
@@ -263,14 +269,18 @@ function shatter(){ const ac=audio(), t=ac.currentTime, s=ac.createBufferSource(
   s.connect(lp).connect(g).connect(ac.destination); s.start(t); s.stop(t+0.5);
   [0,6].forEach(iv=>playVoice("grand",50+iv,0.3,t,0.5)); }
 
-/* ================= metals (timbre reskin — the M5→M6 bridge) ================= */
-const METALS = {
-  brass:    { name:"Brass",    color:"#d9b24a", voice:"reedorgan"  },
-  bronze:   { name:"Bronze",   color:"#b06b3a", voice:"glassbell"  },
-  steel:    { name:"Steel",    color:"#9aa6b3", voice:"grand"      },
-  aluminum: { name:"Aluminum", color:"#cfd6da", voice:"vibraphone" },
-  silver:   { name:"Silver",   color:"#e4e9ef", voice:"warmpad"    },
+/* ================= salvage sources — the Recycled Orchestra (Cateura) timbre palette =================
+   You forge from repurposed junk, not clean metal. Each source is a REAL recycled instrument → a VOICES
+   timbre (the M5→M6 bridge) + a colour. Scrap spawns with DEFECTS (rust/dents) you must repair before it
+   rings. Theme = the Harmony band was a Recycled Orchestra; "nothing is junk, even the tritone can sing." */
+const SOURCES = {
+  drum:    { junk:"🛢️", name:"oil drum",      inst:"steelpan",         voice:"glassbell",  color:"#6f8ea6" },
+  cans:    { junk:"🥫", name:"tin cans",       inst:"can guitar",       voice:"grand",      color:"#b98a52" },
+  forks:   { junk:"🍴", name:"bent forks",     inst:"mbira",            voice:"vibraphone", color:"#cfd6da" },
+  pipe:    { junk:"🎋", name:"PVC pipe",        inst:"pan-pipe",         voice:"warmpad",    color:"#8fbf9a" },
+  bottles: { junk:"🍾", name:"glass bottles",   inst:"bottle xylophone", voice:"reedorgan",  color:"#7fc7b0" },
 };
+const DEFECTS = { rust:{ icon:"🦠", label:"rust", fix:"derust" }, dent:{ icon:"🔩", label:"dent", fix:"straighten" } };
 
 /* ================= forge glyphs — the op registry (data-driven; each = one theory concept) =================
    A tape is an ordered list of op-ids. simulate() folds them over a STACK of tagged tones {m,flaw} (m=midi,
@@ -291,6 +301,10 @@ function resolveFlaw(st, ctx){                                  // snap the lowe
   st[fi].m=best; st[fi].flaw=false;
 }
 const OPS = {
+  // salvage glyphs — restore the junk before forging (each clears one defect; apply is a no-op on the stack,
+  // its effect is computed from the tape by remainingDefects()). "You can't forge good steel from rust."
+  derust:     { label:"De-rust",   glyph:"🧽", cl:"strip rust",  key:"1", heat:2, salvage:true, repairs:"rust", apply:()=>{} },
+  straighten: { label:"Straighten",glyph:"🔨", cl:"hammer dents",key:"2", heat:2, salvage:true, repairs:"dent", apply:()=>{} },
   M3:     { label:"+M3",     glyph:"⚒", cl:"major 3rd", key:"a", heat:3, apply:(st)=>st.push({m:topChordM(st)+4,flaw:false}) },
   m3:     { label:"+m3",     glyph:"⚒", cl:"minor 3rd", key:"s", heat:3, apply:(st)=>st.push({m:topChordM(st)+3,flaw:false}) },
   tup:    { label:"Temper▲", glyph:"🔧", cl:"top +½",   key:".", heat:2, apply:(st)=>{ st[topChordIdx(st)].m+=1; } },
@@ -299,7 +313,9 @@ const OPS = {
   etch:   { label:"Etch",    glyph:"🧪", cl:"+7th",     key:"e", heat:3, apply:(st,ctx)=>st.push({m:ctx.rootMidi+10,flaw:false}) },
   anneal: { label:"Anneal",  glyph:"🔥", cl:"resolve",  key:"n", heat:2, apply:(st,ctx)=>resolveFlaw(st,ctx) },
 };
-const OP_ORDER = ["M3","m3","tup","tdn","grind","etch","anneal"];
+const OP_ORDER = ["derust","straighten","M3","m3","tup","tdn","grind","etch","anneal"];
+// which defects are still unrepaired given the current tape (order-independent; a matching glyph anywhere clears it)
+function remainingDefects(){ return [...run.defects].filter(d => !run.tape.some(id => OPS[id].repairs===d)); }
 
 /* ================= game constants ================= */
 const HEAT_BUDGET = 16;                          // caps the tape's total Cost (charcoal/fuel)
@@ -324,11 +340,11 @@ const QUAL={
 function rollOrder(){
   boss.phase=phaseFor(); setPhaseTag();
   const rootPc=[0,2,4,5,7,9][Math.floor(Math.random()*6)];
-  let qual, metalPool, invAllowed;
-  if(boss.phase===1){ qual=Math.random()<0.5?"major":"minor"; metalPool=["brass","bronze"]; invAllowed=false; }
-  else if(boss.phase===2){ qual=["major","minor","diminished","augmented"][Math.floor(Math.random()*4)]; metalPool=["brass","bronze","steel","aluminum"]; invAllowed=true; }
-  else { qual=Math.random()<0.6?"dom7":["major","minor"][Math.floor(Math.random()*2)]; metalPool=["steel","aluminum","silver"]; invAllowed=true; }
-  const metal=metalPool[Math.floor(Math.random()*metalPool.length)];
+  let qual, invAllowed;
+  if(boss.phase===1){ qual=Math.random()<0.5?"major":"minor"; invAllowed=false; }
+  else if(boss.phase===2){ qual=["major","minor","diminished","augmented"][Math.floor(Math.random()*4)]; invAllowed=true; }
+  else { qual=Math.random()<0.6?"dom7":["major","minor"][Math.floor(Math.random()*2)]; invAllowed=true; }
+  const source=Object.keys(SOURCES)[Math.floor(Math.random()*Object.keys(SOURCES).length)];
   const rootMidi=48+rootPc;
   const iv=QUAL[qual].iv;
   const target=iv.map(i=>(rootPc+i)%12).sort((a,b)=>a-b);
@@ -338,16 +354,24 @@ function rollOrder(){
   // flaw injection (phase ≥2): a tritone welded on the ingot — but not when the target legitimately holds it
   let flaw=false, flawMidi=null;
   if(boss.phase>=2 && !target.includes((rootPc+6)%12) && Math.random()<0.5){ flaw=true; flawMidi=rootMidi+6; }
-  // par cycles for the economy score
-  const parCycles=(qual==="dom7"?3:2) + (inv?1:0) + (flaw?1:0);
-  return { rootPc, rootMidi, qual, metal, target, inv, bassPc, flaw, flawMidi, parCycles };
+  // salvage defects (rust/dent) you must repair before the scrap will ring (a 2nd fail-source, like a bad alloy)
+  const pool=["rust","dent"], defects=new Set();
+  const maxDef = boss.phase===1 ? 1 : 2;
+  const nDef = Math.floor(Math.random()*(maxDef+1));
+  for(let i=0;i<nDef;i++) defects.add(pool[Math.floor(Math.random()*pool.length)]);
+  if(flaw && defects.size>1){ const first=[...defects][0]; defects.clear(); defects.add(first); } // don't overload
+  // par cycles for the economy score (repairs are mandatory when defects present)
+  const parCycles=(qual==="dom7"?3:2) + (inv?1:0) + (flaw?1:0) + defects.size;
+  return { rootPc, rootMidi, qual, source, target, inv, bassPc, flaw, flawMidi, defects, parCycles };
 }
 function ingotStack(){ const st=[{m:run.rootMidi,flaw:false}]; if(run.flaw) st.push({m:run.flawMidi,flaw:true}); return st; }
 
 /* ================= tape (the program) ================= */
 function tapeHeat(){ return run.tape.reduce((s,id)=>s+OPS[id].heat,0); }
 function tapeParts(){ return new Set(run.tape).size; }
-function addOp(id){ if(busy) return; if(tapeHeat()+OPS[id].heat>HEAT_BUDGET){ toast("Not enough heat left in the ingot."); return; }
+function addOp(id){ if(busy) return; const op=OPS[id];
+  if(op.salvage && (!run.defects.has(op.repairs) || run.tape.includes(id))){ toast("No "+op.repairs+" to fix on this scrap."); return; }
+  if(tapeHeat()+op.heat>HEAT_BUDGET){ toast("Not enough heat left in the ingot."); return; }
   run.tape.push(id); drafted=false; clearPreview(); renderTape(); refreshControls(); clang(id==="M3"); }
 function removeOp(i){ if(busy) return; run.tape.splice(i,1); drafted=false; clearPreview(); renderTape(); refreshControls(); }
 function clearTape(){ if(busy) return; run.tape=[]; drafted=false; clearPreview(); renderTape(); refreshControls(); }
@@ -358,18 +382,22 @@ function newWeapon(reheat){
   const ord=rollOrder();
   run={ ...ord, tape:[], reheated:!!reheat };
   drafted=false;
-  if(run.flaw) toast("⚡ Tritony cracks a tritone into the ingot — Anneal it out!");
+  if(run.defects.size) toast("♻ Salvaged "+SOURCES[run.source].junk+" "+SOURCES[run.source].name+" — restore it, then forge.");
+  else if(run.flaw) toast("⚡ Tritony cracks a tritone into the ingot — Anneal it out!");
   drawOrder(); renderAnvil(); renderTape(); refreshControls(); startCooling();
 }
 
 /* ================= rendering ================= */
 function drawOrder(){
+  const S=SOURCES[run.source];
   document.getElementById("orderq").textContent=QUAL[run.qual].label;
-  let root=NOTE_NAMES[run.rootPc]+" ("+METALS[run.metal].name+")";
+  let root=NOTE_NAMES[run.rootPc]+" from "+S.junk+" "+S.name+" → <i>"+S.inst+"</i>";
   if(run.inv) root+=" · "+(run.inv===1?"1st":"2nd")+" inversion, bass "+NOTE_NAMES[run.bassPc];
   document.getElementById("orderroot").innerHTML=root;
-  document.getElementById("orderroot").style.color=METALS[run.metal].color;
-  let rec="recipe: "+QUAL[run.qual].recipe;
+  document.getElementById("orderroot").style.color=S.color;
+  let rec="recipe: ";
+  if(run.defects.size) rec += [...run.defects].map(d=>DEFECTS[d].fix==="derust"?"De-rust":"Straighten").join(" + ")+", then ";
+  rec += QUAL[run.qual].recipe;
   if(run.inv) rec+=" · Grind to put "+NOTE_NAMES[run.bassPc]+" on the bottom";
   if(run.flaw) rec+=" · Anneal out the ⚡tritone";
   document.getElementById("recipe").textContent=rec;
@@ -382,7 +410,8 @@ function shade(hex,amt){ const n=parseInt(hex.slice(1),16); let r=(n>>16)+amt,g=
 // Render tones. `stack` = solid welded tones (the ingot, or a live forge). `preview` = simulated ghost tones.
 function renderAnvil(stack, preview){
   const a=document.getElementById("anvil"); a.innerHTML="";
-  const col=METALS[run.metal].color;
+  const col=SOURCES[run.source].color;
+  const openDef=remainingDefects();                              // still-unrepaired defects → badge the raw scrap
   run.target.forEach((pc,k)=>{                                   // target silhouette (root-position ghosts)
     const midi=run.rootMidi + ((pc-run.rootPc)%12+12)%12;
     const g=document.createElement("div"); g.className="ghost"; g.style.top=yFor(midi)+"%";
@@ -395,7 +424,10 @@ function renderAnvil(stack, preview){
     el.className="tone"+(e.flaw?" flaw":"");
     el.style.top=yFor(e.m)+"%"; el.style.width=(i===lowIdx?150:120)+"px";
     if(!e.flaw) el.style.background="linear-gradient(180deg,"+col+","+shade(col,-30)+")";
-    el.textContent=NOTE_NAMES[((e.m%12)+12)%12]+(e.flaw?" ⚡tritone":(i===lowIdx?" ◆bass":""));
+    let badge = e.flaw ? " ⚡tritone" : (i===lowIdx ? " ◆bass" : "");
+    if(i===lowIdx && openDef.length) badge += " " + openDef.map(d=>DEFECTS[d].icon).join("");
+    el.textContent=NOTE_NAMES[((e.m%12)+12)%12]+badge;
+    if(i===lowIdx && openDef.length) el.style.filter="grayscale(.5) brightness(.85)";  // rusty until restored
     a.appendChild(el);
   });
   if(preview) preview.forEach(e=>{                               // draft preview overlay
@@ -427,7 +459,12 @@ function clearPreview(){ document.getElementById("draftlabel").style.opacity="0"
 /* ================= controls state ================= */
 function refreshControls(){
   const h=tapeHeat();
-  OP_ORDER.forEach(id=>{ const b=document.getElementById("g-"+id); if(b) b.disabled=busy||(h+OPS[id].heat>HEAT_BUDGET); });
+  OP_ORDER.forEach(id=>{ const b=document.getElementById("g-"+id); if(!b) return;
+    const op=OPS[id];
+    // salvage glyphs only apply to a defect this order actually has, and only once
+    const salvageN = op.salvage && (!run.defects.has(op.repairs) || run.tape.includes(id));
+    b.disabled = busy || (h+op.heat>HEAT_BUDGET) || salvageN;
+  });
   document.getElementById("btn-forge").disabled=busy||run.tape.length===0;
   document.getElementById("btn-draft").disabled=busy;
   document.getElementById("btn-clear").disabled=busy||run.tape.length===0;
@@ -462,7 +499,7 @@ async function forge(){
   document.getElementById("draftlabel").style.opacity="0";
   const arm=document.getElementById("arm"); const ctx={rootMidi:run.rootMidi,target:run.target};
   const st=ingotStack(); renderAnvil(st);
-  const voice=METALS[run.metal].voice;
+  const voice=SOURCES[run.source].voice;
   for(const id of run.tape){                                    // arm walks the tape, welding each op
     OPS[id].apply(st,ctx); renderAnvil(st);
     const el=document.querySelectorAll("#anvil .tone"); const last=el[el.length-1];
@@ -484,12 +521,14 @@ function evalStrike(st){
   const onSpec = pcs.length===run.target.length && pcs.every((p,i)=>p===run.target[i]);
   const bassOK = run.bassPc==null || (((st[idxMin(st)].m%12)+12)%12)===run.bassPc;
   const flawLeft = st.some(e=>e.flaw);
+  const openDef = remainingDefects();                            // brittle scrap = a 2nd fail-source
   let why="";
-  if(flawLeft) why="you left the ⚡tritone flaw — Anneal it";
+  if(openDef.length) why="brittle "+openDef.map(d=>DEFECTS[d].label).join(" & ")+" — restore the scrap first";
+  else if(flawLeft) why="you left the ⚡tritone flaw — Anneal it";
   else if(!onSpec) why = pcs.length<run.target.length ? "unfinished — keep stacking"
                       : "wrong chord — "+classify(mids(st)).name;
   else if(!bassOK) why="wrong bass — needs "+NOTE_NAMES[run.bassPc]+" on the bottom";
-  return { rings:(onSpec && bassOK && !flawLeft), why };
+  return { rings:(onSpec && bassOK && !flawLeft && !openDef.length), why };
 }
 function resolveStrike(st){
   const fx=document.getElementById("strikefx"), vr=document.getElementById("verdict"), cls=classify(mids(st));
@@ -500,13 +539,15 @@ function resolveStrike(st){
     const cycEff  = Math.max(0, 1 - Math.max(0, run.tape.length-run.parCycles)*0.25);
     const partEff = Math.max(0, 1 - Math.max(0, tapeParts()-3)*0.34);
     const single  = run.reheated ? 0 : 0.2;
-    const mult = 1 + 0.45*heatEff + 0.40*cycEff + 0.15*partEff + single;
+    const redeem  = run.defects.size * 0.15;                     // reviving worse scrap = a bigger redemption bonus
+    const mult = 1 + 0.45*heatEff + 0.40*cycEff + 0.15*partEff + single + redeem;
     const master = (run.tape.length<=run.parCycles) && mult>=MW_MULT;
     const dmg = Math.round(BASE_DMG[boss.phase]*mult);
     fx.className="ring"; void fx.offsetWidth; fx.className="strikefx ring"; clang(true);
     vr.style.color=master?"var(--gold)":"var(--ink)";
     vr.innerHTML=(master?"⚔️ MASTERWORK! ":"✓ Rings clean! ")+cls.name+" &nbsp;×"+mult.toFixed(2)+" → −"+dmg
-      +(single?" &nbsp;<span style='color:var(--gold)'>+Single-Heat</span>":"");
+      +(single?" &nbsp;<span style='color:var(--gold)'>+Single-Heat</span>":"")
+      +(redeem?" &nbsp;<span style='color:#7fc7b0'>♻ +Redemption</span>":"");
     showVerdict();
     boss.hp=Math.max(0,boss.hp-dmg); updateHP(); hurtBoss();
     if(boss.hp<=0){ setTimeout(()=>endGame(true),800); return; }
@@ -544,7 +585,7 @@ function endGame(win){
 (function buildPalette(){
   const p=document.getElementById("palette");
   OP_ORDER.forEach(id=>{ const op=OPS[id];
-    const b=document.createElement("button"); b.className="glyph"; b.id="g-"+id;
+    const b=document.createElement("button"); b.className="glyph"+(op.salvage?" salvage":""); b.id="g-"+id;
     b.innerHTML=op.glyph+" "+op.label+"<small>"+op.cl+" · "+op.key.toUpperCase()+"</small>";
     b.onclick=()=>addOp(id); p.appendChild(b);
   });
