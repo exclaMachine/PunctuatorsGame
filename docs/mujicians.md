@@ -1880,6 +1880,50 @@ He **bites**, and one of two things happens (each robs the ear the way Sandmar's
 2. **The Congregation** — bigger choir, **near-twin** timbres, introduces the **Flatten** (memory) and the **match-the-twin** variant (Timbrewolf hums a target).
 3. **The Choirmaster** — dense choir, rapid **re-bites**, combined Flatten + press; thin the ranks and **pick out his own voice** to end it.
 
+### Variant — "The Choir Line-Up," a Murdle-style deduction layer (design fork, not the locked MVP)
+
+> **Status: alternative framing, considered 2026-07-27, not locked.** The locked MVP spine is still *find-the-odd-voice by ear* (the forks above). This section records a **logic-deduction variant** — a Murdle / whodunit lens on the same choir — as either a **harder later phase** or a **distinct mode**, not a replacement for the reflex-discrimination MVP.
+
+**Why timbre (and only timbre) fits a deduction puzzle.** Murdle works because a crime has **several independent, describable attributes** (suspect × weapon × location) that clues cross-eliminate. Pitch/rhythm/dynamics are ~single-axis, so "deduce it" collapses to guessing. **Timbre is genuinely multi-dimensional and every axis has real teachable vocabulary** — so the choir *is* a deduction grid:
+
+- **Brightness** (spectral centroid — dark/mellow ↔ bright/piercing)
+- **Attack** (plucked / bowed / struck / breathed)
+- **Material** (wood / metal / reed / glass / string)
+- **Sustain** (a struck bell decays; an organ holds)
+- **Roughness / purity** (a pure flute vs. a reedy saw)
+
+These map onto the shipped `VOICES` registry almost for free (glassbell, vibraphone, reedorgan, neonsaw… already differ along exactly these axes), so the **Sound Collective becomes your case file** — the voices you catalogued by hearing are the suspects you now identify under pressure (the boss = the collection's exam, as already framed).
+
+**The one rule that keeps it ear-training, not a logic puzzle in costume.** If clues were pure text, you could solve without listening and the ear-training evaporates. So: **the grid records what you can only learn by ear.** You *solo* a chorister to hear its attributes and mark them; clues let you *deduce* the ones you haven't soloed. A **listening budget** (solo only N per round) means deduction genuinely saves you ear-checking everyone. Listening = data-gathering; logic = payoff. The reflex spine survives; reasoning sits on top.
+
+**Whodunit framing (best thematic match).** Wormwood *bites* people — so literally: **one hooded figure is still an un-bitten true voice to rescue**, or **Wormwood is hiding in his own ranks** (already the "final pluck = the conductor"). "Which figure is the true voice?" *is* "whodunit," and the climax resurrects the deferred **name-the-voice** beat as an accusation — *"I accuse… the glassbell!"*
+
+**Clue types (each one teaches a timbre concept), all ear-verifiable:**
+- Comparative — *"The true voice is brighter than the reed but darker than the bell."*
+- Material — *"No metal voice is un-bitten."*
+- Positional (Zebra/Einstein-puzzle) — *"The struck voice stands directly left of the breathy one."*
+- Attack — *"The bitten voices all have a soft attack; the true one bites hard."*
+
+**The signature debuffs map onto Murdle twists** (no new fiction needed): **Flatten** → a clue turns *unreliable* (a lying witness you must re-verify by ear); **Re-bite** → a solved grid cell *scrambles* if you dawdle (the case reopens); a contradictory clue you must catch as false.
+
+**Lighter deduction cousins** if a full logic grid is too heavy/slow for the boss pace:
+
+| Framing | How it plays | Timbre fit |
+| --- | --- | --- |
+| **Murdle (deduction grid)** | Choristers × attributes, cross-eliminate to the true voice | richest; slowest |
+| **Guess Who** | Ask *attribute* questions ("is it metal?") to narrow the lineup | fast, playful, very teachable |
+| **Mastermind** | Guess a voice-combo, get graded hot/cold feedback | strong ear-feedback loop |
+| **Sudoku-of-timbre** | Each choir "section" must hold **distinct** voices — fill so none repeat | **is literally the M6 timbre-variety gate** |
+| **Set / odd-one-out** | Spot the figure differing on one attribute | closest to the current MVP; keep as phase 1 |
+
+Guess Who and Sudoku-of-timbre are the sneaky-good ones — the Sudoku framing makes the **win condition itself teach timbre variety** (the actual M6 gate).
+
+**Timbrewolf's role fits unchanged:** his howl hint = a **free testimony** (one clue on the house); "splitting into his many voices" = him **demonstrating the attribute axes** at run start, i.e. teaching you to read the grid.
+
+**Resolving the pace tension (Murdle is untimed/cerebral; the boss template is a retryable real-time set-piece):** keep the **deduction untimed as each phase's spine**, and add Wormwood's **re-bite / Flatten pressure only as phases ramp** — phase 1 pure "detective," the Choirmaster finale "solve it before last call." Cerebral satisfaction early, adrenaline late; still **point-and-listen, no mic** (consistent with the locked forks). Difficulty ramp = **grid dimensions** (more figures, more attribute columns, near-twin timbres, one contradictory clue).
+
+**Open fork (decide before building):** is this Wormwood's **actual MVP**, or a **distinct harder mode** layered over the shipped find-the-odd-voice? The locked forks make find-the-odd-voice the MVP with match-the-twin as a later phase; a full deduction grid is a bigger swing than that — so this stays a documented alternative until the dev picks.
+
 ### Capture reward — the Wormwood Muse "Choirmaster"
 
 His identity-theft, tamed ("weapon → your tool," like the others): **recolor any note into a collected voice** — he stole voices; now *you* can wear any voice — plus a **timbre-variety bonus** (rewards using **distinct** voices, which is the M6 gate skill). Turns his homogenization into your palette.
@@ -1891,7 +1935,7 @@ His identity-theft, tamed ("weapon → your tool," like the others): **recolor a
 - **New:** the **choir render surface** (a crowd of hooded figures), the **scan/solo listening interaction** + tag/restore, the **Flatten / re-bite** debuffs, phase logic, the **match-the-twin** later phase, and capture → add Wormwood to the Muse pool.
 - **Distinct modality:** Sandmar = timing · Morendo = loudness · Slurry = pitch · Tritony = harmony · **Wormwood = timbre (ear-for-colour / voice discrimination — the first pure-listening, non-mic, point-don't-perform boss).**
 - **MVP:** the choir + **find-the-odd-voice** (scan/solo/tag/restore) over the Sound Collective's voices, obvious timbre contrasts, Wormwood HP + a simple homogenization loss, single difficulty. **Deferred:** the near-twin phases, the **Flatten / re-bite** signature debuffs, Timbrewolf's howl hints, the **match-the-twin** phase, the conductor finale, capture → the Choirmaster Muse, canvas/wood-cut art, and porting into `mujicians.html`.
-- **Open sub-decisions:** exact solo/scan interaction (hover-to-hear vs. click-to-solo vs. a "listen cursor"); how many voices in a choir + how many true voices per round; timbre-closeness ramp / scoring for a clean vs. sloppy sweep; whether restored voices **stay** freed or need protecting (re-bite tuning); whether the **name-the-voice** angle (label which `VOICES` it is, not just "odd one") is ever layered on for a reading/quiz variant; the villain **name** (Wormwood vs. Woodworm / Timberjaw / Cordwood — still tentative per the roster).
+- **Open sub-decisions:** exact solo/scan interaction (hover-to-hear vs. click-to-solo vs. a "listen cursor"); how many voices in a choir + how many true voices per round; timbre-closeness ramp / scoring for a clean vs. sloppy sweep; whether restored voices **stay** freed or need protecting (re-bite tuning); whether the **name-the-voice** angle (label which `VOICES` it is, not just "odd one") is ever layered on for a reading/quiz variant (see the *Choir Line-Up* Murdle-deduction variant above — where name-the-voice becomes the "accusation"); whether that deduction layer is Wormwood's MVP, a later phase, or a distinct mode; the villain **name** (Wormwood vs. Woodworm / Timberjaw / Cordwood — still tentative per the roster).
 
 ---
 
