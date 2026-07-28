@@ -232,8 +232,9 @@ else the synth preset — **Drum/Conga stay synth** (unpitched). `instrument-sou
 preview that plays any of the 7 at any pitch through the same engine. Loads via fetch/decodeAudioData → **serve
 over http**, not `file://`.
 
-**Next — Mujicians:** the same sampler + shared samples get a **sampled-voice branch** in Mujicians' `playVoice`
-so these instruments become **pitched cards** (the reuse the anchor sampler was built for).
+**Mujicians (BUILT 2026-07-28):** the same sampler + shared samples now power a **sampled-voice branch** in
+Mujicians' `playVoice` (`type:"sample"` VOICES + a `renderSample`/`renderSynth` split) — the 7 real instruments
+are **pitched cards** in Free Play and catalogue into the Sound Collective. See `docs/mujicians.md` → Sound Collective.
 
 - **Sounds:** **VSCO2 Community Edition** (**CC0**), **VCSL — Versilian Community Sample Library** (**CC0**),
   **University of Iowa MIS** (free, no restrictions), **Philharmonia** (free; quality varies),

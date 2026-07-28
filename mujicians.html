@@ -660,6 +660,15 @@
     { id:"pad",    name:"Warm Pad",   emoji:"🌫️", wave:"triangle", baseC:48, skin:null,    voice:"warmpad"    },
     { id:"box",    name:"Music Box",  emoji:"🎶", wave:"sine",     baseC:72, skin:null,    voice:"musicbox"   },
     { id:"vibes",  name:"Vibraphone", emoji:"🎐", wave:"sine",     baseC:60, skin:"glass", voice:"vibraphone" },
+    // real recorded instruments — sampled voices (see the sampler below + sounds/instruments/). Collectible,
+    // surface in Free Play like the other non-core voices; the same shared samples power Critter Hunt.
+    { id:"violin", name:"Violin",       emoji:"🎻", wave:"sawtooth", baseC:60, skin:null, voice:"realviolin"  },
+    { id:"flute",  name:"Flute",        emoji:"🪈", wave:"sine",     baseC:60, skin:null, voice:"realflute"   },
+    { id:"trumpet",name:"Trumpet",      emoji:"🎺", wave:"sawtooth", baseC:60, skin:null, voice:"realtrumpet" },
+    { id:"nguitar",name:"Nylon Guitar", emoji:"🎸", wave:"triangle", baseC:60, skin:null, voice:"realguitar"  },
+    { id:"sax",    name:"Saxophone",    emoji:"🎷", wave:"sawtooth", baseC:60, skin:null, voice:"realsax"     },
+    { id:"tbell",  name:"Tubular Bells",emoji:"🛎️", wave:"sine",     baseC:60, skin:null, voice:"realbell"    },
+    { id:"banjo",  name:"Banjo",        emoji:"🪕", wave:"triangle", baseC:60, skin:null, voice:"realbanjo"   },
   ];
   // The curated campaign trio — the only instruments the teaching movements ever draw (piano gated → M6).
   const CORE_INSTRUMENTS = INSTRUMENTS.filter(i=>i.core);
@@ -1275,13 +1284,58 @@
     vibraphone: { id:"vibraphone", name:"Vibraphone",  fam:"mallets", desc:"Mellow mallet with a shimmering vibrato.",
                   peak:0.13, oscs:[{wave:"sine",semi:0,g:1},{wave:"sine",semi:12,g:0.4},{wave:"triangle",semi:0,g:0.2}],
                   env:{a:0.004,d:0.5,s:0.3,r:0.2}, filter:{f0:4600,f1:2600}, trem:{rate:6,depth:0.22} },
+    // REAL recorded instruments (type:"sample"): played from shared anchor samples, pitched by playbackRate —
+    // see the sampler under playVoice. `fallback` = the synth voice used for the split-second before buffers
+    // load. `peak` scales the sample gain (× velocity). Same samples power Critter Hunt (sounds/instruments/).
+    realviolin:  { id:"realviolin",  name:"Violin",        fam:"strings", desc:"Real bowed violin.",         type:"sample", sample:"violin",                fallback:"pluck",     peak:0.5 },
+    realflute:   { id:"realflute",   name:"Flute",         fam:"winds",   desc:"Real breathy flute.",        type:"sample", sample:"flute",                 fallback:"reedorgan", peak:0.5 },
+    realtrumpet: { id:"realtrumpet", name:"Trumpet",       fam:"brass",   desc:"Real bright trumpet.",       type:"sample", sample:"trumpet",               fallback:"reedorgan", peak:0.45 },
+    realguitar:  { id:"realguitar",  name:"Nylon Guitar",  fam:"strings", desc:"Real nylon-string guitar.",  type:"sample", sample:"acoustic_guitar_nylon", fallback:"pluck",     peak:0.55 },
+    realsax:     { id:"realsax",     name:"Saxophone",     fam:"winds",   desc:"Real tenor saxophone.",      type:"sample", sample:"tenor_sax",             fallback:"reedorgan", peak:0.5 },
+    realbell:    { id:"realbell",    name:"Tubular Bells", fam:"bells",   desc:"Real struck tubular bells.", type:"sample", sample:"tubular_bells",         fallback:"glassbell", peak:0.45 },
+    realbanjo:   { id:"realbanjo",   name:"Banjo",         fam:"strings", desc:"Real plucked banjo.",        type:"sample", sample:"banjo",                 fallback:"pluck",     peak:0.55 },
   };
-  // Render a voice at absolute AudioContext time `t`. Oscillator stack → optional lowpass sweep → shared ADSR
-  // gain → destination; an optional tremolo LFO rides the gain. Envelope times clamp to the note's length so
-  // short notes still articulate. Mirrors _tone's proven attack→decay→sustain→release shape, generalised.
-  function playVoice(voiceId, midi, dur, t, vel){
+  /* ---- Real-instrument sampler: shared anchor samples (with Critter Hunt), pitched by playbackRate ----
+     A type:"sample" voice keeps ONE recording every 3 semitones (C3–C6) in sounds/instruments/<sample>/; play
+     picks the nearest and shifts it ≤1.5 semitones. Buffers load async (fetch→decode, cached in _sbuf); until a
+     buffer is ready a note borrows the voice's synth `fallback` so it's never silent. buildDeck() preloads a
+     run's sample voices so play is real from the first note. Provenance: sounds/CREDITS.md. */
+  const SAMPLE_BASE = "sounds/instruments/";
+  const ANCHOR_MIDIS = [48,51,54,57,60,63,66,69,72,75,78,81,84];
+  const ANCHOR_NAMES = ["C3","Eb3","Gb3","A3","C4","Eb4","Gb4","A4","C5","Eb5","Gb5","A5","C6"];
+  const _sbuf = {}, _sload = {};
+  const anchorForSample = (m) => { let best=ANCHOR_MIDIS[0], bd=99;
+    for(const a of ANCHOR_MIDIS){ const d=Math.abs(a-m); if(d<bd){bd=d;best=a;} } return best; };
+  function loadSamples(folder){
+    if(_sload[folder]) return _sload[folder];
+    const ac = audio(); _sbuf[folder] = {};
+    _sload[folder] = Promise.all(ANCHOR_MIDIS.map((m,i) =>
+      fetch(SAMPLE_BASE+folder+"/"+ANCHOR_NAMES[i]+".mp3").then(r=>{ if(!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(ab => ac.decodeAudioData(ab)).then(b => { _sbuf[folder][m] = b; }).catch(()=>{})
+    ));
+    return _sload[folder];
+  }
+  function preloadVoiceSamples(voiceId){ const V = VOICES[voiceId]; if(V && V.type==="sample") loadSamples(V.sample); }
+  // Play a sample voice at `midi`. Returns false if the needed buffer isn't decoded yet (caller falls back).
+  function renderSample(V, midi, dur, t, vel){
+    const bank = _sbuf[V.sample]; if(!bank) return false;
+    const a = anchorForSample(midi), buf = bank[a]; if(!buf) return false;
+    const ac = audio(), D = dur || 0.5, peak = (V.peak!=null?V.peak:0.5) * (vel||1);
+    const src = ac.createBufferSource(); src.buffer = buf; src.playbackRate.value = Math.pow(2,(midi-a)/12);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t+0.004);                 // tiny declick attack (the recording keeps its own)
+    g.gain.setValueAtTime(peak, Math.max(t+0.004, t+D-0.05));
+    g.gain.exponentialRampToValueAtTime(0.0008, t+D+0.02);         // release at the note's end
+    src.connect(g).connect(ac.destination); src.start(t);
+    try{ src.stop(t+D+0.09); }catch(e){}
+    return true;
+  }
+  // Render a SYNTH voice OBJECT: oscillator stack → optional lowpass sweep → shared ADSR gain → destination, with
+  // an optional tremolo LFO. Envelope times clamp to the note's length. Split out of playVoice so a sample voice
+  // can borrow it as a fallback. Does NOT catalogue — playVoice does.
+  function renderSynth(V, midi, dur, t, vel){
     const ac = audio();
-    const V = VOICES[voiceId] || VOICES.grand;
     vel = vel||1;
     const D = dur || 0.5, e = V.env || {a:0.005,d:0.4,s:0.5,r:0.14};
     const peak = (V.peak!=null?V.peak:0.15) * vel;
@@ -1318,7 +1372,21 @@
       og.gain.value = o.g!=null ? o.g : 1;
       osc.connect(og).connect(node); osc.start(t); osc.stop(t+D+0.06);
     }
-    catalogSound(voiceId);                          // hearing a voice adds it to the Sound Collective
+  }
+  // Sound a voice at absolute AudioContext time `t`. A sample voice plays a real recording (pitched); if its
+  // buffer isn't ready it borrows the synth `fallback` for that one note and kicks off the load. Either way the
+  // voice is catalogued (Sound Collective).
+  function playVoice(voiceId, midi, dur, t, vel){
+    const V = VOICES[voiceId] || VOICES.grand;
+    if(V.type==="sample"){
+      if(!renderSample(V, midi, dur, t, vel)){        // buffer not ready → fall back this note + load for next time
+        loadSamples(V.sample);
+        renderSynth(VOICES[V.fallback] || VOICES.grand, midi, dur, t, vel);
+      }
+    } else {
+      renderSynth(V, midi, dur, t, vel);
+    }
+    catalogSound(voiceId);                            // hearing a voice adds it to the Sound Collective
   }
   // Sound a stack of notes TOGETHER for `dTicks` ticks at the live tempo — the immediate play-preview.
   // (curBarSec() returns seconds per BEAT; one tick = beatSec/TPB.) A melody is built by successive plays.
@@ -2004,6 +2072,7 @@
     const deck = [];
     let id = 0;
     const insts = (isFree ? freePlayInstruments() : instrumentsFor(m)).slice(0, MAX_TIMBRES);   // cap the deck at 4 timbres
+    insts.forEach(inst => preloadVoiceSamples(inst.voice));   // warm real-instrument sample buffers before play
     for(const inst of insts){
       for(const pc of DIATONIC_C){
         for(let k=0;k<COPIES;k++){

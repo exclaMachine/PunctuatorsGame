@@ -2888,6 +2888,16 @@ All centralized so "snappy & subtle" can be dialed toward "full Balatro" later w
 > sibling to the Codex, not a tab); **discover-by-hearing** (a voice is catalogued the first time it sounds);
 > and **named presets now, creature/edition art later**.
 
+**AMENDED 2026-07-28 — real sampled instrument voices.** The `VOICES` engine now also supports **`type:"sample"`
+voices**: real instrument recordings played from the shared **anchor samples** in `sounds/instruments/` (the same
+set Critter Hunt uses — 13 mp3s/instrument, one every 3 semitones C3–C6, nearest pitch-shifted ≤1.5 st via
+`playbackRate`). `playVoice` gained a **`renderSample`** branch (the old synth body is factored into
+**`renderSynth`**); a sample voice borrows its synth **`fallback`** for the split-second before buffers decode,
+and **`buildDeck` preloads** a run's sample voices so play is real from the first note. Seven added — **violin,
+flute, trumpet, nylon guitar, saxophone, tubular bells, banjo** — as collectible `INSTRUMENTS` that surface in
+**Free Play** (~93% of free runs draw at least one) and catalogue into the Collective by ear, like the synth
+collectibles. (Provenance: `sounds/CREDITS.md`; loads via fetch/decodeAudioData → needs http serving.)
+
 Built in `mujicians.html`:
 
 - **A data-driven voice engine.** `VOICES` registry (near `INSTRUMENTS`) — each entry is a small preset:
