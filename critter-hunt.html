@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Critter Hunt — a real-data deduction game</title>
+<style>
+  :root{
+    --bg:#f4efe6; --panel:#fffdf8; --ink:#2b2620; --muted:#7d7364; --line:#d8cebb;
+    --accent:#2f7d63; --accent2:#b5532a; --yes:#2f7d63; --no:#b5532a; --cell:#fbf7ee;
+    --shadow:0 2px 0 #e6ddc9, 0 6px 18px rgba(60,50,30,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);}
+  header{padding:14px 18px;border-bottom:2px solid var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--panel)}
+  header h1{font-size:20px;margin:0;letter-spacing:.3px}
+  header .sub{color:var(--muted);font-size:13px}
+  .wrap{max-width:1080px;margin:0 auto;padding:18px;display:grid;grid-template-columns:1fr;gap:18px}
+  @media(min-width:900px){.wrap{grid-template-columns:1.35fr 1fr}}
+  .panel{background:var(--panel);border:2px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px}
+  .panel h2{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  button{font:inherit;cursor:pointer;border:2px solid var(--line);background:var(--panel);border-radius:10px;padding:7px 12px;box-shadow:0 2px 0 #e6ddc9}
+  button:hover{background:#fff}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button.warn{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  /* grids */
+  .grids{display:flex;flex-direction:column;gap:22px}
+  .grid{--n:4;display:grid;gap:3px}
+  .gtitle{font-size:13px;color:var(--muted);margin:0 0 6px;font-weight:600}
+  .ghead,.grow{display:grid;grid-template-columns:120px repeat(var(--n),40px);gap:3px;align-items:center}
+  .cornerlbl{font-size:11px;color:var(--muted)}
+  .colh,.rowh{display:flex;align-items:center;justify-content:center;font-size:22px;height:40px;user-select:none}
+  .colh{flex-direction:column;gap:0;cursor:default}
+  .colh small,.rowh small{font-size:9px;color:var(--muted);line-height:1}
+  .rowh{justify-content:flex-start;gap:6px;font-size:20px;width:120px}
+  .rowh small{font-size:10px}
+  .colh .play{font-size:11px;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:0 4px;background:var(--cell)}
+  .cell{height:40px;width:40px;background:var(--cell);border:1.5px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;font-weight:700}
+  .cell.x{color:var(--no)} .cell.y{color:var(--yes);background:#eaf3ee;border-color:var(--yes)}
+  .cell:hover{border-color:var(--muted)}
+  /* clues */
+  .clue{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--cell);display:flex;gap:8px;align-items:flex-start}
+  .clue .n{font-weight:700;color:var(--muted);min-width:18px}
+  .clue.audio{border-color:var(--accent);background:#eef5f1}
+  .clue .listen{margin-left:auto;white-space:nowrap}
+  .legend{font-size:12px;color:var(--muted);margin-top:4px}
+  /* collection */
+  #collection{display:flex;flex-wrap:wrap;gap:8px}
+  .card{border:2px solid var(--line);border-radius:12px;padding:8px 10px;min-width:74px;text-align:center;background:var(--cell)}
+  .card .em{font-size:30px}
+  .card .nm{font-size:12px;font-weight:600}
+  .card .tag{font-size:10px;color:var(--muted)}
+  .card button{padding:2px 8px;font-size:12px;margin-top:4px}
+  /* overlay */
+  .overlay{position:fixed;inset:0;background:rgba(30,25,18,.5);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
+  .overlay.on{display:flex}
+  .modal{background:var(--panel);border:2px solid var(--line);border-radius:16px;max-width:520px;width:100%;padding:20px;box-shadow:var(--shadow)}
+  .modal h2{margin:.1em 0 .4em}
+  .fieldnotes{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0}
+  .fn{flex:1;min-width:140px;border:1.5px solid var(--line);border-radius:12px;padding:10px;background:var(--cell)}
+  .fn .big{font-size:34px} .fn ul{margin:6px 0 0;padding-left:16px;font-size:12px;color:var(--muted)}
+  .rewardpick{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  /* flip */
+  .flip{perspective:600px}
+  .flip .inner{transition:transform .5s;transform-style:preserve-3d;position:relative}
+  .flip.done .inner{transform:rotateY(360deg)}
+  .msg{font-size:13px;color:var(--muted);min-height:18px}
+  @media (prefers-reduced-motion: reduce){.flip .inner{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔍 Critter Hunt</h1>
+  <span class="sub">Deduce which animal played which instrument, and where. Clues are real facts.</span>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="controls" style="margin-bottom:12px">
+      <button class="primary" id="btnSolve">Make the accusation</button>
+      <button id="btnNew">New case</button>
+      <button id="btnReveal" title="dev">Reveal (dev)</button>
+      <span class="msg" id="msg"></span>
+    </div>
+    <div class="grids" id="grids"></div>
+    <div class="legend">Click a cell to cycle blank → ✗ → ✓. A ✓ auto-✗’s the rest of its row &amp; column. Set one ✓ per animal for both instrument and location, then accuse.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:18px">
+    <div class="panel">
+      <h2>The Case File</h2>
+      <div id="clues"></div>
+    </div>
+    <div class="panel">
+      <h2>Your Sound Collection</h2>
+      <div id="collection"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div id="modalBody"></div>
+    <div style="text-align:right;margin-top:14px"><button id="modalClose">Close</button></div>
+  </div>
+</div>
+
+<script>
+/* ============================ DATA POOLS (emoji placeholders) ============================ */
+// Each entity carries real-world attribute TAGS; the visuals are emoji for the MVP.
+const ANIMALS = [
+  {em:"🦊",nm:"Fox",     cls:"mammal",   diet:"carnivore",  size:"medium", habitat:"forest"},
+  {em:"🐸",nm:"Frog",    cls:"amphibian",diet:"insectivore",size:"small",  habitat:"wetland"},
+  {em:"🦜",nm:"Parrot",  cls:"bird",     diet:"frugivore",  size:"small",  habitat:"jungle"},
+  {em:"🐘",nm:"Elephant",cls:"mammal",   diet:"herbivore",  size:"huge",   habitat:"savanna"},
+  {em:"🐍",nm:"Snake",   cls:"reptile",  diet:"carnivore",  size:"medium", habitat:"desert"},
+  {em:"🦉",nm:"Owl",     cls:"bird",     diet:"carnivore",  size:"small",  habitat:"forest"},
+  {em:"🐢",nm:"Turtle",  cls:"reptile",  diet:"herbivore",  size:"medium", habitat:"wetland"},
+  {em:"🦇",nm:"Bat",     cls:"mammal",   diet:"insectivore",size:"small",  habitat:"cave"},
+  {em:"🐬",nm:"Dolphin", cls:"mammal",   diet:"piscivore",  size:"large",  habitat:"ocean"},
+  {em:"🦗",nm:"Cricket", cls:"insect",   diet:"herbivore",  size:"tiny",   habitat:"grassland"},
+];
+const INSTRUMENTS = [
+  {em:"🎺",nm:"Trumpet", fam:"aerophone",    mat:"metal", play:"blown",   preset:"aero_metal"},
+  {em:"🎻",nm:"Violin",  fam:"chordophone",  mat:"wood",  play:"bowed",   preset:"chord_bowed"},
+  {em:"🥁",nm:"Drum",    fam:"membranophone",mat:"skin",  play:"struck",  preset:"membrane"},
+  {em:"🎸",nm:"Guitar",  fam:"chordophone",  mat:"wood",  play:"plucked", preset:"chord_pluck"},
+  {em:"🎷",nm:"Sax",     fam:"aerophone",    mat:"metal", play:"blown",   preset:"aero_metal"},
+  {em:"🔔",nm:"Bell",    fam:"idiophone",    mat:"metal", play:"struck",  preset:"idio_bell"},
+  {em:"🪕",nm:"Banjo",   fam:"chordophone",  mat:"wood",  play:"plucked", preset:"chord_pluck"},
+  {em:"🪈",nm:"Flute",   fam:"aerophone",    mat:"wood",  play:"blown",   preset:"aero_wood"},
+  {em:"🪘",nm:"Conga",   fam:"membranophone",mat:"wood",  play:"struck",  preset:"membrane"},
+];
+const LOCATIONS = [
+  {em:"🏜️",nm:"Desert",  climate:"hot"},
+  {em:"🌊",nm:"Reef",    climate:"aquatic"},
+  {em:"🌲",nm:"Forest",  climate:"temperate"},
+  {em:"🌴",nm:"Jungle",  climate:"tropical"},
+  {em:"❄️",nm:"Tundra",  climate:"cold"},
+  {em:"🏔️",nm:"Mountain",climate:"cold"},
+  {em:"🏙️",nm:"City",    climate:"urban"},
+  {em:"🌾",nm:"Savanna", climate:"warm"},
+];
+// Which attributes each category exposes as clue descriptors, and how they read in a sentence.
+const ATTRS = {
+  animal:["cls","diet","size","habitat"],
+  instrument:["fam","mat","play"],
+  location:["climate"],
+};
+function attrLabel(cat, key, val){
+  if(cat==="animal"){
+    if(key==="cls")  return "the "+val;                       // "the reptile"
+    if(key==="diet") return "the "+val;                       // "the carnivore"
+    if(key==="size") return "the "+val+" animal";
+    if(key==="habitat") return "the animal native to the "+val;
+  }
+  if(cat==="instrument"){
+    if(key==="fam"){ return {aerophone:"the wind instrument (aerophone)",chordophone:"the string instrument (chordophone)",
+                             membranophone:"the drum (membranophone)",idiophone:"the bell-type instrument (idiophone)"}[val]; }
+    if(key==="mat")  return "the "+val+" instrument";
+    if(key==="play") return "the "+val+" instrument";
+  }
+  if(cat==="location"){
+    if(key==="climate") return "the "+val+" biome";
+  }
+  return "the "+val;
+}
+// Audible timbre phrasing (for the AUDIO clue type — predicate is still instrument family).
+const TIMBRE = {aerophone:"like breath through a pipe", chordophone:"like a plucked or bowed string",
+                membranophone:"like a struck drumhead", idiophone:"like ringing metal"};
+
+/* ============================ WEB-AUDIO INSTRUMENT SYNTH ============================ */
+// A small playVoice-style synth so the AUDIO clue is real from day one (instruments only).
+let AC=null; const ac=()=>AC||(AC=new (window.AudioContext||window.webkitAudioContext)());
+function playPreset(preset, freq=277.18){ // ~C#4
+  const c=ac(); if(c.state==="suspended")c.resume();
+  const t=c.currentTime, out=c.createGain(); out.connect(c.destination); out.gain.value=0.9;
+  const env=(g,atk,dec,sus,rel,peak=.7)=>{g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(peak,t+atk);g.gain.linearRampToValueAtTime(sus*peak,t+atk+dec);
+    g.gain.setValueAtTime(sus*peak,t+atk+dec+.15);g.gain.linearRampToValueAtTime(0,t+atk+dec+.15+rel);};
+  const stopAt=t+2;
+  if(preset==="membrane"){ // drum: noise + low thump
+    const n=c.createBufferSource();const b=c.createBuffer(1,c.sampleRate*0.3,c.sampleRate);
+    const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);
+    n.buffer=b;const ng=c.createGain();ng.gain.value=.5;n.connect(ng).connect(out);n.start(t);
+    const o=c.createOscillator();o.type="sine";o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(55,t+.18);
+    const og=c.createGain();env(og,.001,.12,0,.12,.9);o.connect(og).connect(out);o.start(t);o.stop(t+.4);return;
+  }
+  if(preset==="idio_bell"){ // inharmonic partials, long decay
+    [1,2.76,5.4,8.9].forEach((r,i)=>{const o=c.createOscillator();o.type="sine";o.frequency.value=freq*r;
+      const g=c.createGain();env(g,.002,.4,0,1.4,.5/(i+1));o.connect(g).connect(out);o.start(t);o.stop(t+1.9);});return;
+  }
+  const specs={
+    aero_metal:{waves:["sawtooth"],atk:.04,dec:.1,sus:.7,rel:.25,cut:2600,q:3,vib:5},
+    aero_wood: {waves:["sine","triangle"],atk:.06,dec:.1,sus:.6,rel:.3,cut:3200,q:1,vib:4},
+    chord_bowed:{waves:["sawtooth"],atk:.12,dec:.1,sus:.7,rel:.3,cut:2200,q:2,vib:6},
+    chord_pluck:{waves:["triangle","sawtooth"],atk:.004,dec:.5,sus:.0,rel:.35,cut:2800,q:1,vib:0},
+  }[preset]||{waves:["sine"],atk:.02,dec:.1,sus:.6,rel:.2,cut:4000,q:1,vib:0};
+  const filt=c.createBiquadFilter();filt.type="lowpass";filt.frequency.value=specs.cut;filt.Q.value=specs.q;filt.connect(out);
+  const g=c.createGain();env(g,specs.atk,specs.dec,specs.sus,specs.rel);g.connect(filt);
+  specs.waves.forEach((w,i)=>{const o=c.createOscillator();o.type=w;o.frequency.value=freq*(i?1.005:1);
+    if(specs.vib){const lfo=c.createOscillator();lfo.frequency.value=specs.vib;const la=c.createGain();la.gain.value=freq*0.01;
+      lfo.connect(la).connect(o.frequency);lfo.start(t);lfo.stop(stopAt);}
+    o.connect(g);o.start(t);o.stop(stopAt);});
+}
+
+/* ============================ GENERATOR + CLUE TEMPLATES ============================ */
+const rnd=n=>Math.floor(Math.random()*n);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+function permutations(n){ // all permutations of [0..n-1]
+  const res=[];const rec=(cur,left)=>{if(!left.length){res.push(cur);return;}
+    for(let i=0;i<left.length;i++)rec(cur.concat(left[i]),left.slice(0,i).concat(left.slice(i+1)));};
+  rec([],[...Array(n).keys()]);return res;
+}
+// Refs for one entity: always a name ref, plus any UNIQUELY discriminating attribute in the cast.
+function refsFor(cat, cast, idx){
+  const e=cast[idx], refs=[{kind:"name",label:"the "+e.em+" "+e.nm}];
+  for(const key of ATTRS[cat]){
+    const val=e[key];
+    const uniq=cast.filter(x=>x[key]===val).length===1;
+    if(uniq) refs.push({kind:"attr",key,val,label:attrLabel(cat,key,val),cat});
+  }
+  return refs;
+}
+function sampleCast(N){
+  const A=shuffle(ANIMALS).slice(0,N);
+  // instruments: greedily prefer distinct families (so the family/audio descriptor is discriminating)
+  const seen=new Set(),I=[];
+  for(const x of shuffle(INSTRUMENTS)){ if(I.length<N && !seen.has(x.fam)){I.push(x);seen.add(x.fam);} }
+  for(const x of shuffle(INSTRUMENTS)){ if(I.length<N && !I.includes(x)) I.push(x); }
+  const L=shuffle(LOCATIONS).slice(0,N);
+  return {A,I,L};
+}
+function buildCluePool(cast, sol, N){
+  const rA=cast.A.map((_,i)=>refsFor("animal",cast.A,i));
+  const rI=cast.I.map((_,i)=>refsFor("instrument",cast.I,i));
+  const rL=cast.L.map((_,i)=>refsFor("location",cast.L,i));
+  const pool=[]; const seen=new Set();
+  const add=(clue)=>{ if(seen.has(clue.sig))return; seen.add(clue.sig); pool.push(clue); };
+  const teachOf=(ref)=> ref.kind==="attr"? [ref.cat+"."+ref.key+"="+ref.val] : [];
+  // relation: plays (animal↔instrument)
+  for(let a=0;a<N;a++)for(let i=0;i<N;i++){
+    const truth=sol.pi[a]===i, pol=truth?"pos":"neg";
+    for(const ra of rA[a])for(const ri of rI[i]){
+      const audio=(pol==="pos"&&ri.kind==="attr"&&ri.key==="fam");
+      const iText=audio? ("an instrument that sounds "+TIMBRE[ri.val]) : ri.label;
+      const text=cap(ra.label+(pol==="pos"?" played ":" did not play ")+iText+".");
+      add(mk("plays",a,i,pol,ra,ri,audio,text,teachOf(ra).concat(teachOf(ri))));
+    }
+  }
+  // relation: at (animal↔location)
+  for(let a=0;a<N;a++)for(let l=0;l<N;l++){
+    const truth=sol.sg[a]===l, pol=truth?"pos":"neg";
+    for(const ra of rA[a])for(const rl of rL[l])
+      add(mk("at",a,l,pol,ra,rl,false,cap(ra.label+(pol==="pos"?" was found in ":" was not in ")+rl.label+"."),teachOf(ra).concat(teachOf(rl))));
+  }
+  // relation: here (instrument↔location)  — instrument's player's location
+  for(let i=0;i<N;i++)for(let l=0;l<N;l++){
+    const a=sol.pi.indexOf(i); const truth=sol.sg[a]===l, pol=truth?"pos":"neg";
+    for(const ri of rI[i])for(const rl of rL[l]){
+      const audio=(pol==="pos"&&ri.kind==="attr"&&ri.key==="fam");
+      const iText=audio? ("The instrument that sounds "+TIMBRE[ri.val]) : cap2(ri.label);
+      const text=iText+(pol==="pos"?" was heard in ":" was not heard in ")+rl.label+".";
+      add(mk("here",i,l,pol,ri,rl,audio,text,teachOf(ri).concat(teachOf(rl))));
+    }
+  }
+  return pool;
+  function mk(rel,p,q,pol,refP,refQ,audio,text,teaches){
+    const sig=[rel,pol,refP.kind+refP.label,refQ.kind+refQ.label].join("|");
+    const direct=(pol==="pos"&&refP.kind==="name"&&refQ.kind==="name");
+    const attrCount=(refP.kind==="attr"?1:0)+(refQ.kind==="attr"?1:0);
+    let test;
+    if(rel==="plays") test=(arr)=>(arr.pi[p]===q)===(pol==="pos");
+    else if(rel==="at") test=(arr)=>(arr.sg[p]===q)===(pol==="pos");
+    else test=(arr)=>{const a=arr.pi.indexOf(p);return (arr.sg[a]===q)===(pol==="pos");};
+    return {rel,pol,audio,text,teaches,direct,attrCount,test,sig};
+  }
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function cap2(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+function generatePuzzle(N){
+  for(let tries=0;tries<40;tries++){
+    const cast=sampleCast(N);
+    const sol={pi:shuffle([...Array(N).keys()]), sg:shuffle([...Array(N).keys()])};
+    // arrangement space
+    const perms=permutations(N);
+    const arrangements=[];
+    for(const pi of perms)for(const sg of perms)arrangements.push({pi,sg});
+    const pool=buildCluePool(cast,sol,N);
+    // ---- select to uniqueness (bias toward teaching + a required audio clue) ----
+    const score=c=> c.attrCount*2 + (c.audio?1.5:0) - (c.direct?3:0) + Math.random()*0.6;
+    const ranked=pool.slice().sort((a,b)=>score(b)-score(a));
+    let survivors=arrangements, selected=[];
+    const survFor=cl=>survivors.filter(a=>cl.test(a));
+    // force one audio clue first if any reduces
+    const audio=ranked.find(c=>c.audio && survFor(c).length<survivors.length);
+    if(audio){selected.push(audio);survivors=survFor(audio);}
+    // greedy add reducing clues
+    let guard=0;
+    while(survivors.length>1 && guard++<200){
+      let picked=null;
+      for(const c of ranked){ if(selected.includes(c))continue;
+        const s2=survivors.filter(a=>c.test(a)); if(s2.length<survivors.length){picked=c;survivors=s2;break;} }
+      if(!picked)break;
+      selected.push(picked);
+    }
+    if(survivors.length!==1) continue; // unlucky cast, retry
+    // ---- prune to minimal (drop redundant clues) ----
+    for(let i=selected.length-1;i>=0;i--){
+      const without=selected.slice(0,i).concat(selected.slice(i+1));
+      const surv=arrangements.filter(a=>without.every(c=>c.test(a)));
+      if(surv.length===1) selected.splice(i,1);
+    }
+    // order clues for reading: audio & attribute-rich first-ish, but keep it simple → shuffle lightly
+    selected=selected.sort((a,b)=>(b.audio-a.audio)||(b.attrCount-a.attrCount));
+    return {cast,sol,clues:selected,N};
+  }
+  return null;
+}
+
+/* ============================ GAME STATE + UI ============================ */
+let G=null, marks=null; // marks.ai[a][i], marks.al[a][l], marks.il[i][l] ∈ {0 blank,1 ✗,2 ✓}
+function newGame(){
+  G=generatePuzzle(4);
+  marks={ai:blank(4,4),al:blank(4,4),il:blank(4,4)};
+  document.getElementById("msg").textContent="";
+  renderGrids(); renderClues();
+}
+function blank(r,c){return Array.from({length:r},()=>Array(c).fill(0));}
+
+function renderGrids(){
+  const {A,I,L}=G.cast, N=G.N, host=document.getElementById("grids"); host.innerHTML="";
+  host.appendChild(gridEl("Animals × Instruments", A, I, marks.ai, true));
+  host.appendChild(gridEl("Animals × Locations",   A, L, marks.al, false));
+  host.appendChild(gridEl("Instruments × Locations",I, L, marks.il, "instr"));
+}
+function gridEl(title, rowEnts, colEnts, mk, playCols){
+  const N=rowEnts.length;
+  const wrap=document.createElement("div"); wrap.className="grid"; wrap.style.setProperty("--n",N);
+  const p=document.createElement("p"); p.className="gtitle"; p.textContent=title; wrap.appendChild(p);
+  // header row
+  const head=document.createElement("div"); head.className="ghead";
+  const corner=document.createElement("div"); corner.className="cornerlbl"; head.appendChild(corner);
+  colEnts.forEach((e,ci)=>{
+    const h=document.createElement("div"); h.className="colh";
+    h.innerHTML="<span>"+e.em+"</span><small>"+e.nm+"</small>";
+    if(playCols===true||playCols==="instr"){ /* columns are instruments only in AxI; IxL has instrument rows */ }
+    head.appendChild(h);
+  });
+  wrap.appendChild(head);
+  rowEnts.forEach((re,ri)=>{
+    const row=document.createElement("div"); row.className="grow";
+    const rh=document.createElement("div"); rh.className="rowh";
+    let inner=re.em+" <small>"+re.nm+"</small>";
+    // add a ▶ to play instrument sound when the row is an instrument (IxL grid)
+    if(playCols==="instr"){ inner+=' <span class="play" title="hear it">▶</span>'; }
+    rh.innerHTML=inner;
+    if(playCols==="instr"){ rh.querySelector(".play").onclick=()=>playPreset(re.preset); }
+    row.appendChild(rh);
+    colEnts.forEach((ce,ci)=>{
+      const cell=document.createElement("div"); cell.className="cell";
+      paint(cell,mk[ri][ci]);
+      cell.onclick=()=>{ mk[ri][ci]=(mk[ri][ci]+1)%3; if(mk[ri][ci]===2)autoX(mk,ri,ci); renderGrids(); };
+      row.appendChild(cell);
+    });
+    wrap.appendChild(row);
+  });
+  // In the AxI grid, put a ▶ on each instrument column header
+  if(playCols===true){
+    const cols=head.querySelectorAll(".colh");
+    colEnts.forEach((e,ci)=>{ const b=document.createElement("span"); b.className="play"; b.textContent="▶";
+      b.title="hear it"; b.onclick=()=>playPreset(e.preset); cols[ci].appendChild(b); });
+  }
+  return wrap;
+}
+function paint(cell,v){ cell.classList.remove("x","y"); cell.textContent=v===1?"✗":v===2?"✓":"";
+  if(v===1)cell.classList.add("x"); if(v===2)cell.classList.add("y"); }
+function autoX(mk,r,c){ // a ✓ rules out the rest of its row & column (within this grid)
+  for(let i=0;i<mk[r].length;i++) if(i!==c && mk[r][i]===0) mk[r][i]=1;
+  for(let i=0;i<mk.length;i++)   if(i!==r && mk[i][c]===0) mk[i][c]=1;
+}
+function renderClues(){
+  const host=document.getElementById("clues"); host.innerHTML="";
+  G.clues.forEach((c,i)=>{
+    const d=document.createElement("div"); d.className="clue"+(c.audio?" audio":"");
+    d.innerHTML='<span class="n">'+(i+1)+'.</span><span>'+(c.audio?"🔊 ":"")+c.text+'</span>';
+    if(c.audio){ const b=document.createElement("button"); b.className="listen"; b.textContent="which one?";
+      b.title="click the ▶ on each instrument to compare timbres";
+      b.onclick=()=>{document.getElementById("msg").textContent="Use the ▶ next to each instrument to hear which matches the clue.";};
+      d.appendChild(b); }
+    host.appendChild(d);
+  });
+}
+
+/* ============================ ACCUSATION / JUDGING ============================ */
+function readAssignment(mk){ // returns array row->col if each row has exactly one ✓, else null
+  const out=[];
+  for(let r=0;r<mk.length;r++){ const ys=mk[r].map((v,i)=>v===2?i:-1).filter(i=>i>=0);
+    if(ys.length!==1) return null; out[r]=ys[0]; }
+  if(new Set(out).size!==out.length) return null; // must be a bijection
+  return out;
+}
+function accuse(){
+  const pi=readAssignment(marks.ai), sg=readAssignment(marks.al);
+  const msg=document.getElementById("msg");
+  if(!pi||!sg){ msg.textContent="Mark one ✓ per animal for BOTH its instrument and its location first."; return; }
+  const okI=pi.every((v,a)=>v===G.sol.pi[a]), okL=sg.every((v,a)=>v===G.sol.sg[a]);
+  if(okI&&okL){ winModal(); }
+  else { const nI=pi.filter((v,a)=>v===G.sol.pi[a]).length, nL=sg.filter((v,a)=>v===G.sol.sg[a]).length;
+    msg.textContent="Not solved. Instruments right: "+nI+"/"+G.N+" · Locations right: "+nL+"/"+G.N+". Keep deducing."; }
+}
+
+/* ============================ REWARD + COLLECTION ============================ */
+const KEY="critterhunt.collection";
+const loadCol=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[];}catch(e){return [];}};
+const saveCol=(c)=>localStorage.setItem(KEY,JSON.stringify(c));
+function winModal(){
+  // pick a solved pairing to offer as a reward: one random animal, its instrument, its location
+  const a=rnd(G.N), i=G.sol.pi[a], l=G.sol.sg[a];
+  const A=G.cast.A[a], I=G.cast.I[i], L=G.cast.L[l];
+  const body=document.getElementById("modalBody");
+  body.innerHTML='<h2>🎉 Case solved!</h2>'+
+    '<p>Field notes on the culprit trio — and pick one sound to add to your collection:</p>'+
+    '<div class="fieldnotes">'+
+      fnCard(A.em,A.nm,["class: "+A.cls,"diet: "+A.diet,"native to: "+A.habitat])+
+      fnCard(I.em,I.nm,["family: "+I.fam,"material: "+I.mat,"played: "+I.play])+
+      fnCard(L.em,L.nm,["biome: "+L.nm,"climate: "+L.climate])+
+    '</div>'+
+    '<div class="rewardpick">'+
+      '<button class="primary" id="pickI">Keep '+I.em+' '+I.nm+' — a playable timbre</button>'+
+      '<button id="pickA">Keep '+A.em+' '+A.nm+' — a percussion sound</button>'+
+    '</div>';
+  document.getElementById("overlay").classList.add("on");
+  document.getElementById("pickI").onclick=()=>{ addToCollection({type:"instrument",em:I.em,nm:I.nm,preset:I.preset,
+    facts:["family: "+I.fam,"material: "+I.mat,"played: "+I.play]}); closeModal(); };
+  document.getElementById("pickA").onclick=()=>{ addToCollection({type:"animal",em:A.em,nm:A.nm,
+    facts:["class: "+A.cls,"diet: "+A.diet,"native to: "+A.habitat]}); closeModal(); };
+}
+function fnCard(em,nm,lines){ return '<div class="fn"><div class="big">'+em+'</div><div><b>'+nm+'</b></div><ul>'+
+  lines.map(l=>"<li>"+l+"</li>").join("")+'</ul></div>'; }
+function addToCollection(card){ const c=loadCol(); c.push(card); saveCol(c); renderCollection();
+  document.getElementById("msg").textContent="Added "+card.em+" "+card.nm+" to your collection!"; }
+function renderCollection(){
+  const host=document.getElementById("collection"); const c=loadCol();
+  if(!c.length){ host.innerHTML='<span class="tag" style="color:var(--muted)">Win a case to collect instrument timbres (playable) and animal percussion sounds.</span>'; return; }
+  host.innerHTML="";
+  c.forEach((card,i)=>{ const d=document.createElement("div"); d.className="card flip";
+    d.innerHTML='<div class="inner"><div class="em">'+card.em+'</div><div class="nm">'+card.nm+'</div>'+
+      '<div class="tag">'+(card.type==="instrument"?"timbre":"percussion")+'</div></div>';
+    if(card.type==="instrument"){ const b=document.createElement("button"); b.textContent="▶ play";
+      b.onclick=()=>{ playPreset(card.preset); d.classList.add("done"); setTimeout(()=>d.classList.remove("done"),520); };
+      d.appendChild(b);
+    } else { const s=document.createElement("div"); s.className="tag"; s.textContent="(silent placeholder)"; d.appendChild(s); }
+    host.appendChild(d);
+  });
+}
+
+/* ============================ WIRING ============================ */
+function closeModal(){document.getElementById("overlay").classList.remove("on");}
+document.getElementById("btnSolve").onclick=accuse;
+document.getElementById("btnNew").onclick=newGame;
+document.getElementById("modalClose").onclick=closeModal;
+document.getElementById("btnReveal").onclick=()=>{
+  const {A,I,L}=G.cast; const lines=A.map((a,ai)=>a.em+" "+a.nm+" → "+I[G.sol.pi[ai]].em+" "+I[G.sol.pi[ai]].nm+" @ "+L[G.sol.sg[ai]].em+" "+L[G.sol.sg[ai]].nm);
+  document.getElementById("msg").textContent="ANSWER — "+lines.join(" · ");
+};
+newGame(); renderCollection();
+</script>
+</body>
+</html>

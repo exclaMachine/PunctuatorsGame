@@ -1,10 +1,44 @@
-# Critter Hunt — a Murdle-style real-data deduction game (DESIGNED 2026-07-27, not built)
+# Critter Hunt — a Murdle-style real-data deduction game (MVP BUILT 2026-07-27)
 
-> **Status: DESIGNED, not built.** A standalone spinoff of the *Mujicians* M6 Timbre boss (Wormwood)
-> and its [Murdle-style deduction variant](mujicians.md#variant--the-choir-line-up-a-murdle-style-deduction-layer-design-fork-not-the-locked-mvp).
-> **Working title "Critter Hunt"** (placeholder — name doesn't matter). No entry file yet; the eventual first
-> cut is a self-contained `critter-hunt.html` (the repo's standalone-game pattern, e.g. `scorch-bones.html` /
-> `forge-quench.html`). **Supersedes the earlier bird-only "Birdle" framing and the 2-axis animals-only cut.**
+> **Status: MVP BUILT** in `critter-hunt.html` (standalone, the repo's single-file pattern). A spinoff of the
+> *Mujicians* M6 Timbre boss (Wormwood) and its
+> [Murdle-style deduction variant](mujicians.md#variant--the-choir-line-up-a-murdle-style-deduction-layer-design-fork-not-the-locked-mvp).
+> **Working title "Critter Hunt"** (placeholder — name doesn't matter). **Supersedes the earlier bird-only
+> "Birdle" framing and the 2-axis animals-only cut.** The design below is the full vision; see
+> **[MVP — what shipped](#mvp--what-shipped-2026-07-27)** for the current state vs. deferred.
+
+## MVP — what shipped (2026-07-27)
+
+A playable `critter-hunt.html`, **emoji visuals**, the three locked forks (full-grid solve · N=4 · synth
+instrument audio clues):
+
+- **Data pools** — 10 animals / 9 instruments / 8 biomes, each with real attribute **tags** (animal:
+  class/diet/size/habitat · instrument: Hornbostel–Sachs family/material/play-method · location: climate).
+  Emoji stand in for art.
+- **Procedural generator + brute-force solver** (`generatePuzzle`) — rolls a solution (two bijections
+  `pi`/`sg`), builds the **true-clue pool** from templates, **selects to uniqueness** over all `(4!)²`=576
+  arrangements (biased toward attribute/teaching clues, a required audio clue, penalising direct-name clues),
+  then **prunes to a minimal set**. Retries on an unlucky cast.
+- **The clue-template system** — a clue is `link(refX, refY)` where each **ref** is a `name` or a *uniquely
+  discriminating* real-attribute descriptor (`refsFor` enforces uniqueness in the cast). Relations `plays`
+  (A↔I) / `at` (A↔L) / `here` (I↔L, the derived grid) × polarity; the **audio** clue is an association clue
+  whose instrument ref is expressed by *timbre* (family) instead of name. Each clue carries `test(arr)`
+  (solver predicate), `text` (render), and `meta` (audio/direct/attrCount/teaches).
+- **Three-grid deduction board** — Animals×Instruments, Animals×Locations, Instruments×Locations; cells cycle
+  blank→✗→✓; a ✓ **auto-✗’s the rest of its row & column** (within-grid). Accuse reads the ✓ assignment and
+  judges against the solution (reports instruments/locations correct count on a miss). "New case", dev "Reveal".
+- **Synth instrument audio** (`playPreset`) — a small vanilla Web-Audio synth (aero/chord/membrane/idio
+  presets: filtered saw/bowed/plucked, noise+thump drum, inharmonic bell) so the **audio clue is real now**;
+  ▶ on each instrument lets you compare timbres.
+- **Reward → collection** — solving offers a **field-notes** card (real facts on the culprit trio) and lets
+  you **keep one sound**: the instrument (a playable synth timbre) or the animal (a percussion slot). Stored in
+  `localStorage` (`critterhunt.collection`); instrument cards replay, with a card-flip.
+
+**Deferred / stubbed in the MVP:** real sound files (animals are a **silent placeholder**; only synth
+instruments sound — so an audio clue is currently somewhat redundant with the visible emoji, meaningful once
+art/samples abstract the instrument); **cross-grid** auto-inference (only within-grid auto-X); relational/set
+clue types; difficulty ramp (N fixed at 4) & daily-seeded mode; Mujicians integration (`persist.sounds`/
+`VOICES`); Wormwood impostor skin; the tentative extensions below. See the design sections for the full plan.
 
 ## The pitch — a real-data Murdle with three axes
 

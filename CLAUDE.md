@@ -23,6 +23,7 @@ you add/remove/modify a feature (treat the doc as part of the diff, not an after
 selected card + its loop cell scale to the chosen loudness (p small / f big, **size = volume**), with a WAAPI
 "swell" tween; docs' Notelings channel corrected so **register/octave = flight** (grounded vs. flying
 same-initial creature: Ant/Angel … Elephant/Eye), freeing size for loudness.* | `mujicians.html` | [`docs/mujicians.md`](docs/mujicians.md) |
+| **Critter Hunt** — a real-data **Murdle-style deduction game**: deduce which **animal** (=suspect) played which **instrument** (=weapon) **where** (=biome), on a three-grid auto-X board; clues are mostly **true facts** (real habitats / Hornbostel–Sachs families / biomes) so solving teaches, plus a synth-backed **audio** clue. **Procedurally generated** (roll solution → true-clue pool → brute-force uniqueness solver → prune-to-minimal). Win → keep a **playable sound card** (instrument timbre / animal percussion) toward feeding Mujicians' Sound Collection. **MVP BUILT 2026-07-27** (emoji visuals, N=4, full-grid solve). Spinoff of the Mujicians M6 Timbre boss; evolved from a bird-only "Birdle" then an animals-only 2-axis cut. | `critter-hunt.html` | [`docs/critter-hunt.md`](docs/critter-hunt.md) |
 
 The repo also holds many undocumented tools/pages (ambigram generators, anagram/palindrome builders, an
 IPA game, `typing.html`, `punctuators.html`, etc.). Those have no `docs/` entry yet — read the file
@@ -64,16 +65,6 @@ before changing it.
 
 ## Notes
 
-- **Critter Hunt** ([`docs/critter-hunt.md`](docs/critter-hunt.md)) — a **designed-not-built** standalone
-  spinoff of the Mujicians M6 Timbre boss: a **real-data Murdle** with three axes — **animals** (=suspects) ×
-  **instruments** (=weapons) × **locations/biomes** (=locations), solved on Murdle's card-flip + auto-X grid.
-  Clues are mostly **true facts** (real habitats/instrument families/biomes) so solving *teaches*, plus an
-  **audio** clue type. **Procedurally generated** (roll a solution → true-clue pool → brute-force uniqueness
-  solver → prune to minimal; trivial at N≤5; seeded-daily falls out free). Win → a **playable sound card**:
-  **instrument = a melodic `VOICES` timbre** (tonal, pitches cleanly), **animal = a percussion one-shot** —
-  feeding Mujicians' Sound Collection. Sounds: VSCO2/VCSL (CC0 instruments) + Freesound/ESC-50/iNaturalist
-  (CC animals), facts from Wikidata; bundle-locally, no runtime API, attribution manifest. Evolved from a
-  bird-only "Birdle" then an animals-only 2-axis cut. No entry file yet.
 - The git remote reports it moved to `github.com/exclaMachine/PunctuatorsGame.git` (origin still points at
   the old `CanvasPunctuatorsGame` URL; pushes redirect fine).
 - A persistent memory store at `~/.claude/projects/.../memory/` holds cross-session feedback/preferences;
