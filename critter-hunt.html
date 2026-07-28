@@ -28,21 +28,28 @@
   .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
   .msg{font-size:13px;color:var(--muted);min-height:18px}
 
-  /* ---------- flip cards (suspects / weapons / scenes) ---------- */
-  .cards{display:flex;flex-direction:column;gap:12px}
-  .cardgroup h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
-  .cardrow{display:flex;flex-wrap:wrap;gap:8px}
-  .pcard{width:88px;height:112px;perspective:640px;cursor:pointer}
+  /* ---------- category tabs + flip cards ---------- */
+  .cardpanel{padding:14px;max-width:352px}          /* caps to ~2 big cards per row (2×2 for N=4) */
+  @media(max-width:919px){.cardpanel{max-width:none}}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;border-bottom:2px solid var(--line);padding-bottom:10px}
+  .tab{display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:13px;font-weight:600;border:2px solid var(--line);border-radius:10px 10px 8px 8px;background:var(--cell);color:var(--muted)}
+  .tab .tabemoji{font-size:18px}
+  .tab:hover{background:#fff}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .cardhead{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink);margin:0 0 12px}
+  .cardhead .sub2{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+  .cardrow{display:flex;flex-wrap:wrap;gap:12px}
+  .pcard{width:150px;height:200px;perspective:900px;cursor:pointer}
   .pcard .inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
   .pcard.flipped .inner{transform:rotateY(180deg)}
-  .pface{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2px solid var(--line);border-radius:12px;background:var(--cell);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;text-align:center;overflow:hidden}
-  .pface .em{font-size:38px;line-height:1}
-  .pface .nm{font-size:12px;font-weight:700;margin-top:3px}
-  .pface .hint{font-size:9px;color:var(--muted);margin-top:2px}
-  .pface.back{transform:rotateY(180deg);justify-content:flex-start;padding:9px 7px;font-size:11px;color:var(--ink)}
-  .pface.back b{font-size:11px}
-  .pface.back ul{margin:5px 0 0;padding-left:14px;color:var(--muted);text-align:left;font-size:10.5px;line-height:1.35}
-  .pcard .play{position:absolute;top:4px;right:5px;font-size:11px;border:1px solid var(--line);border-radius:6px;padding:0 4px;background:var(--panel);z-index:2}
+  .pface{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2px solid var(--line);border-radius:14px;background:var(--cell);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;text-align:center;overflow:hidden;box-shadow:var(--shadow)}
+  .pface .em{font-size:64px;line-height:1}
+  .pface .nm{font-size:16px;font-weight:700;margin-top:8px}
+  .pface .hint{font-size:11px;color:var(--muted);margin-top:6px}
+  .pface.back{transform:rotateY(180deg);justify-content:flex-start;padding:14px 13px;color:var(--ink)}
+  .pface.back b{font-size:15px;display:block;margin-bottom:4px}
+  .pface.back ul{margin:6px 0 0;padding-left:16px;color:var(--muted);text-align:left;font-size:12.5px;line-height:1.5}
+  .pcard .play{position:absolute;top:7px;right:8px;font-size:14px;border:1px solid var(--line);border-radius:7px;padding:1px 7px;background:var(--panel);z-index:2}
   @media (prefers-reduced-motion: reduce){.pcard .inner{transition:none}}
 
   /* ---------- L-shaped deduction grid ---------- */
@@ -104,9 +111,10 @@
 
 <div class="wrap">
   <div class="stage">
-    <!-- left: flip cards for the three categories -->
-    <div class="panel">
-      <div class="cards" id="cards"></div>
+    <!-- left: tabbed flip-cards, one category at a time (data-driven off CATEGORIES) -->
+    <div class="panel cardpanel">
+      <div class="tabs" id="tabs"></div>
+      <div class="cardarea" id="cardarea"></div>
     </div>
     <!-- right: the L-shaped deduction grid -->
     <div class="panel board">
@@ -176,7 +184,26 @@ const LOCATIONS = [
   {em:"🏙️",nm:"City",    climate:"urban"},
   {em:"🌾",nm:"Savanna", climate:"warm"},
 ];
-const ATTRS = { animal:["cls","diet","size","habitat"], instrument:["fam","mat","play"], location:["climate"] };
+/* ---- CATEGORY REGISTRY — the deduction axes, source of truth for the CARD UI ----
+   The card layer (tabs, flip-cards, field notes) is fully data-driven off this list, so a
+   4th+ axis surfaces automatically once its data exists. Adding an axis to the *cards* is just
+   another entry here. NOTE: the deduction ENGINE (generator/grid/solver/clues) is still 3-axis
+   — wiring a 4th axis (planned: "Genre / musical style") needs the engine work documented in
+   docs/critter-hunt.md → "Extending past 3 axes". `castKey` = where the cast list lives in G.cast;
+   `facts(e)` feeds both the card back and the win-modal field notes. */
+const CATEGORIES = [
+  { id:"animal", role:"Suspects", noun:"animals", tabEmoji:"🐾", castKey:"A", pool:ANIMALS,
+    attrs:["cls","diet","size","habitat"], playable:false,
+    facts:e=>["class: "+e.cls, "diet: "+e.diet+(GLOSS[e.diet]?" — "+GLOSS[e.diet]:""), "size: "+e.size, "native to "+e.habitat] },
+  { id:"instrument", role:"Weapons", noun:"instruments", tabEmoji:"🎵", castKey:"I", pool:INSTRUMENTS,
+    attrs:["fam","mat","play"], playable:true,
+    facts:e=>["family: "+e.fam+(GLOSS[e.fam]?" — "+GLOSS[e.fam]:""), "material: "+e.mat, "played: "+e.play] },
+  { id:"location", role:"Scenes", noun:"biomes", tabEmoji:"🗺️", castKey:"L", pool:LOCATIONS,
+    attrs:["climate"], playable:false,
+    facts:e=>["biome: "+e.nm, "climate: "+e.climate] },
+];
+const CAT = Object.fromEntries(CATEGORIES.map(c=>[c.id,c]));
+const ATTRS = Object.fromEntries(CATEGORIES.map(c=>[c.id,c.attrs]));   // derived → refsFor/generator
 // Plain-language glosses (so the card backs actually teach — "frugivore = eats fruit").
 const GLOSS = {
   carnivore:"eats meat", herbivore:"eats plants", insectivore:"eats insects", frugivore:"eats fruit", piscivore:"eats fish",
@@ -358,7 +385,7 @@ function generatePuzzle(N){
 }
 
 /* ============================ GAME STATE ============================ */
-let G=null, marks=null; // marks.ai[a][i], marks.al[a][l], marks.il[i][l] ∈ {0 blank,1 ✗,2 ✓}
+let G=null, marks=null, activeCat=0; // marks.ai[a][i], marks.al[a][l], marks.il[i][l] ∈ {0 blank,1 ✗,2 ✓}; activeCat = which card tab is open
 function newGame(){
   G=generatePuzzle(4);
   marks={ai:blank(4,4),al:blank(4,4),il:blank(4,4)};
@@ -368,34 +395,39 @@ function newGame(){
 }
 function blank(r,c){return Array.from({length:r},()=>Array(c).fill(0));}
 
-/* ============================ FLIP CARDS (left) ============================ */
-function renderCards(){
-  const host=document.getElementById("cards"); host.innerHTML="";
-  host.appendChild(cardGroup("Suspects (animals)", G.cast.A, "animal"));
-  host.appendChild(cardGroup("Weapons (instruments)", G.cast.I, "instrument"));
-  host.appendChild(cardGroup("Scenes (locations)", G.cast.L, "location"));
+/* ============================ CATEGORY CARDS (left, tabbed) ============================ */
+// One category shown at a time; click a tab to switch. Everything is driven off CATEGORIES,
+// so a 4th+ axis (e.g. Genre) surfaces here automatically once its engine data exists.
+function renderCards(){ renderTabs(); renderCardArea(); }
+function renderTabs(){
+  const host=document.getElementById("tabs"); host.innerHTML="";
+  CATEGORIES.forEach((cat,idx)=>{
+    const b=document.createElement("button");
+    b.className="tab"+(idx===activeCat?" active":"");
+    b.innerHTML='<span class="tabemoji">'+cat.tabEmoji+'</span> '+cat.role;
+    b.onclick=()=>{ activeCat=idx; renderCards(); };
+    host.appendChild(b);
+  });
 }
-function cardGroup(title, ents, cat){
-  const g=document.createElement("div"); g.className="cardgroup";
-  const h=document.createElement("h3"); h.textContent=title; g.appendChild(h);
+function renderCardArea(){
+  const cat=CATEGORIES[activeCat], host=document.getElementById("cardarea"); host.innerHTML="";
+  const h=document.createElement("div"); h.className="cardhead";
+  h.innerHTML=cat.role+' <span class="sub2">— the '+cat.noun+'</span>';
+  host.appendChild(h);
   const row=document.createElement("div"); row.className="cardrow";
-  ents.forEach(e=>row.appendChild(flipCard(e,cat)));
-  g.appendChild(row); return g;
+  G.cast[cat.castKey].forEach(e=>row.appendChild(flipCard(e,cat)));
+  host.appendChild(row);
 }
 function flipCard(e, cat){
   const c=document.createElement("div"); c.className="pcard";
-  const back = cat==="animal"
-      ? "<b>"+e.nm+"</b><ul><li>"+e.cls+"</li><li>"+e.diet+(GLOSS[e.diet]?" — "+GLOSS[e.diet]:"")+"</li><li>size: "+e.size+"</li><li>native to "+e.habitat+"</li></ul>"
-    : cat==="instrument"
-      ? "<b>"+e.nm+"</b><ul><li>"+e.fam+(GLOSS[e.fam]?" — "+GLOSS[e.fam]:"")+"</li><li>"+e.mat+"</li><li>"+e.play+"</li></ul>"
-      : "<b>"+e.nm+"</b><ul><li>biome</li><li>climate: "+e.climate+"</li></ul>";
-  const playBtn = cat==="instrument" ? '<span class="play" title="hear it">▶</span>' : '';
+  const back="<b>"+e.nm+"</b><ul>"+cat.facts(e).map(x=>"<li>"+x+"</li>").join("")+"</ul>";
+  const playBtn = cat.playable ? '<span class="play" title="hear it">▶</span>' : '';
   c.innerHTML='<div class="inner">'+
       '<div class="pface front">'+playBtn+'<div class="em">'+e.em+'</div><div class="nm">'+e.nm+'</div><div class="hint">tap to flip</div></div>'+
       '<div class="pface back">'+back+'</div>'+
     '</div>';
   c.onclick=()=>c.classList.toggle("flipped");
-  if(cat==="instrument"){ const b=c.querySelector(".play"); b.onclick=(ev)=>{ev.stopPropagation();playPreset(e.preset);}; }
+  if(cat.playable){ const b=c.querySelector(".play"); b.onclick=(ev)=>{ev.stopPropagation();playPreset(e.preset);}; }
   return c;
 }
 
@@ -486,9 +518,9 @@ function winModal(){
   body.innerHTML='<h2>🐺 Wormwood unmasked!</h2>'+
     '<p><b>'+A.em+' '+A.nm+'</b> was the impostor. Field notes on Wormwood’s disguise — and pick one sound to keep:</p>'+
     '<div class="fieldnotes">'+
-      fnCard(A.em,A.nm,["class: "+A.cls,"diet: "+A.diet+(GLOSS[A.diet]?" ("+GLOSS[A.diet]+")":""),"native to: "+A.habitat])+
-      fnCard(I.em,I.nm,["family: "+I.fam+(GLOSS[I.fam]?" ("+GLOSS[I.fam]+")":""),"material: "+I.mat,"played: "+I.play])+
-      fnCard(L.em,L.nm,["biome: "+L.nm,"climate: "+L.climate])+
+      fnCard(A.em,A.nm,CAT.animal.facts(A))+
+      fnCard(I.em,I.nm,CAT.instrument.facts(I))+
+      fnCard(L.em,L.nm,CAT.location.facts(L))+
     '</div>'+
     '<div class="rewardpick">'+
       '<button class="primary" id="pickI">Keep '+I.em+' '+I.nm+' — a playable timbre</button>'+

@@ -17,7 +17,16 @@ always closes the Case File and pins the impostor **through the solved grid** �
 instrument they played or the biome they were found in (often the **timbre**, so it doubles as an audio clue,
 on-theme for the timbre boss; falls back to naming the instrument). Win = **name the impostor** (🐺 Unmask
 Wormwood → `judgeAccusation`), Murdle-style; the grid is now the scratchpad you decode that clue with, and the
-old full-grid check (`readAssignment`/`accuse`) is retired. The rest below reflects the original ship:
+old full-grid check (`readAssignment`/`accuse`) is retired.
+
+**AMENDED 2026-07-28 (UI) — tabbed, enlarged category cards + a `CATEGORIES` registry.** The three card
+categories now sit behind **tabs** (one shown at a time, Murdle-style) and the cards are **much bigger**
+(150×200) so the fact backs no longer clip. All card rendering — tabs, flip-cards, win-modal field notes, and
+the derived `ATTRS` — is driven off a single **`CATEGORIES`** list, so the card/presentation layer is now
+**N-axis-ready**; the deduction engine (grid/solver/clues) stays 3-axis. Planned 4th axis = **Genre / musical
+style** (real-data, keeps the teaching angle — *not* Murdle's flavour "motive"); see **Extending past 3 axes** below.
+
+Except where the two amendments above note, the rest below reflects the original ship:
 
 - **Data pools** — 10 animals / 9 instruments / 8 biomes, each with real attribute **tags** (animal:
   class/diet/size/habitat · instrument: Hornbostel–Sachs family/material/play-method · location: climate).
@@ -31,8 +40,8 @@ old full-grid check (`readAssignment`/`accuse`) is retired. The rest below refle
   (A↔I) / `at` (A↔L) / `here` (I↔L, the derived grid) × polarity; the **audio** clue is an association clue
   whose instrument ref is expressed by *timbre* (family) instead of name. Each clue carries `test(arr)`
   (solver predicate), `text` (render), and `meta` (audio/direct/attrCount/teaches).
-- **UI: classic logic-grid layout** (reworked 2026-07-27 from three separate grids). **Left = flip-cards** for
-  the three categories (Suspects/animals · Weapons/instruments · Scenes/locations): front = emoji + name, **back =
+- **UI: classic logic-grid layout** (reworked 2026-07-27 from three separate grids). **Left = tabbed flip-cards** — one category shown at a time
+  (Suspects/animals · Weapons/instruments · Scenes/biomes), **enlarged** so the backs don't clip: front = emoji + name, **back =
   the real facts in plain language** (`GLOSS` glosses jargon — "frugivore → eats fruit", "aerophone → wind"),
   so a new term is one tap away; instrument card fronts have a ▶. **Right = one upside-down-L combined grid**
   (Animals×Instruments + Animals×Locations across the top band, Locations×Instruments in the lower-left corner —
@@ -150,6 +159,38 @@ checking is fine. The pipeline:
 
 **Seeded daily mode** falls out for free: seed the RNG with the date → everyone gets the same puzzle (Wordle-
 style shareable), consistent with the site's daily-puzzle pattern (Excla Machine).
+
+## Extending past 3 axes (the 4th axis: Genre / musical style)
+
+Murdle runs up to 4 categories (suspect · weapon · location · **motive**), sometimes more. Critter Hunt is
+built to grow the same way — but the planned 4th axis is **Genre / musical style** (jazz / classical / folk /
+blues / …), *not* Murdle's flavour **motive**, so the new axis still carries **real facts** (style, era, origin)
+and keeps the teaching angle that differentiates the game. **The 4th axis is not built yet — this is the plan.**
+
+**Already N-ready — the card / presentation layer.** All card UI is data-driven off the **`CATEGORIES`** registry
+(`{id, role, noun, tabEmoji, castKey, pool, attrs, playable, facts(e)}`). The tabs, flip-cards, the win-modal
+field notes, and the derived `ATTRS` all iterate it, so **adding a category's cards = one registry entry**.
+`castKey` points at where that cast list lives in `G.cast`; `facts(e)` feeds both the card back and the field
+notes (one source, no duplication).
+
+**Still 3-axis — the deduction engine.** To actually *play* a 4th axis, wire it through:
+
+1. **Data pool** — a `GENRES` array with real-fact tags (e.g. `era`, `origin`, `feel`) + a `CATEGORIES` entry
+   (`castKey:"Gn"`, its `attrs`, `facts`).
+2. **`attrLabel` + `GLOSS`** — add clue-text label cases + glosses for the new attributes (the clue-text helpers
+   are keyed by category id and aren't in the registry yet — a documented extension point).
+3. **`sampleCast`** — draw N genres, return them in the cast (e.g. `cast.Gn`).
+4. **Solution** — add a 3rd bijection (e.g. `sol.gn: animal→genre`) alongside `pi`/`sg`.
+5. **Grid** — generalise the upside-down-L into a **4-category staircase**: every pairwise sub-grid
+   (A×I, A×L, **A×G**, I×L, **I×G**, **L×G**) with marks + within-grid auto-X. `renderBoard`/`marks` are the main
+   rewrite; a category-pair-driven grid builder is the clean version.
+6. **Clues** — `buildCluePool` grows a loop for each new pair (A↔G, I↔G, L↔G) × polarity, reusing `refsFor`; the
+   audio/attribute clue machinery is already generic.
+7. **Uniqueness** — the brute-force filter grows from `(N!)²` to `(N!)³` arrangements (still trivial at N≤5).
+8. **Unmasking clue** — `buildUnmaskClue` already routes through the culprit's instrument/biome; extend its ref
+   pool to include the 4th axis so the impostor can also be pinned via genre.
+
+Difficulty knob: the **number of active categories** (3 → 4 → …) becomes another generator dial, on top of N.
 
 ## Rewards → playable sound cards (the Mujicians feeder)
 
