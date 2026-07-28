@@ -26,7 +26,17 @@ the derived `ATTRS` — is driven off a single **`CATEGORIES`** list, so the car
 **N-axis-ready**; the deduction engine (grid/solver/clues) stays 3-axis. Planned 4th axis = **Genre / musical
 style** (real-data, keeps the teaching angle — *not* Murdle's flavour "motive"); see **Extending past 3 axes** below.
 
-Except where the two amendments above note, the rest below reflects the original ship:
+**AMENDED 2026-07-28 (audio) — all 10 animals now have real vocalisation samples.** The silent-placeholder
+animals are gone: each animal carries a `snd` slug → `sounds/animals/<slug>.mp3`, a **hand-curated Wikimedia-Commons
+recording** (CC0 / Public-domain / CC-BY-SA — none ND, so repitch-safe; provenance in `data/critter-credits.json`,
+fetched + trimmed + loudness-normalised to mp3 by `fetch-animal-samples.sh`). A new `playAnimalSound(slug)`
+(lazy-load + cache, one-shot, **no pitch-shift**) plays them, and the card ▶ is now driven by a per-category
+**`hear(e)`** handler in the `CATEGORIES` registry (instruments → `playInstrument`, animals → `playAnimalSound`),
+so **animal cards *and* the won collection are both ▶-playable** (the old "(silent placeholder)" is gone).
+Left deliberately open (per dev): **which animals become Mujicians pitched voices vs percussion one-shots** — the
+samples play as-is for now so that call can be made by ear. (Serve over http, like the instrument samples.)
+
+Except where the amendments above note, the rest below reflects the original ship:
 
 - **Data pools** — 10 animals / 9 instruments / 8 biomes, each with real attribute **tags** (animal:
   class/diet/size/habitat · instrument: Hornbostel–Sachs family/material/play-method · location: climate).
@@ -52,15 +62,18 @@ Except where the two amendments above note, the rest below reflects the original
 - **Instrument audio** — the 7 pitched instruments play **real recorded samples** (`playInstrument`→`playSample`,
   anchor + pitch-shift); Drum/Conga fall back to the small vanilla Web-Audio synth (`playPreset`: aero/chord/
   membrane/idio presets). ▶ on each instrument card lets you compare timbres.
+- **Animal audio (BUILT 2026-07-28)** — all 10 animals play **real hand-curated vocalisation samples**
+  (`playAnimalSound`, one file each in `sounds/animals/`, one-shot, no pitch). ▶ on each animal card too.
 - **Reward → collection** — solving offers a **field-notes** card (real facts on the culprit trio) and lets
-  you **keep one sound**: the instrument (a playable synth timbre) or the animal (a percussion slot). Stored in
-  `localStorage` (`critterhunt.collection`); instrument cards replay, with a card-flip.
+  you **keep one sound**: the instrument (a playable timbre) or the animal (its real vocalisation). Stored in
+  `localStorage` (`critterhunt.collection`); **both instrument and animal cards replay** with a card-flip.
 
-**Deferred / stubbed in the MVP:** real sound files (the **7 pitched instruments now use real recordings** — see
-Data sources → Instrument sounds; **animals** remain a **silent placeholder** and Drum/Conga stay synth, so the
-audio clue carries real timbre for instruments now, and gets richer once animal samples land too); **cross-grid** auto-inference (only within-grid auto-X); difficulty ramp
-(N fixed at 4) & daily-seeded mode; Mujicians integration (`persist.sounds`/`VOICES`); the tentative extensions
-below.
+**Deferred / stubbed in the MVP:** ~~real sound files~~ — **now real recordings on both axes:** the 7 pitched
+**instruments** use anchor+pitch-shift samples (Data sources → Instrument sounds) and **all 10 animals** play
+hand-curated vocalisations (Data sources → Animal sounds); only the Drum/Conga instruments stay synth. Still
+deferred: wiring an **animal-cry audio clue** (the audio clue still keys off *instrument* timbre); **cross-grid**
+auto-inference (only within-grid auto-X); difficulty ramp (N fixed at 4) & daily-seeded mode; Mujicians
+integration (`persist.sounds`/`VOICES`); the tentative extensions below.
 
 **Next planned — richer clues.** The current single-relation templates read a bit **"one-note."** Still to do
 (fully programmatic): **compound / conditional / comparative** clue templates (e.g. "the animal in the colder
@@ -215,8 +228,17 @@ Repo convention: flat static, vanilla, **no runtime third-party API** (like Inkl
 Curate + download **once**, commit the data, play offline.
 
 ### Animal sounds & facts
-- **Sounds:** **Freesound** (CC0/CC-BY, primary), **ESC-50/FSD50K** (curated, ESC-10 subset CC-BY),
-  **iNaturalist Sounds** (~230k files, CC), **Xeno-canto** (birds + now mammals/amphibians/bats/insects).
+
+**Sounds — BUILT 2026-07-28 (all 10 from Wikimedia Commons).** One curated clip per animal; `fetch-animal-samples.sh`
+downloads → trims to a short one-shot → mono → loudness-normalises → mp3 (licences/authors in
+`data/critter-credits.json` + `sounds/CREDITS.md`). All **CC0 / Public-domain / CC-BY-SA** (none ND → repitch-safe).
+*Curation gotchas for a re-fetch:* Commons search buries real cries under name-collisions (a "Red Fox **Sparrow**",
+an "Oriental **turtle dove**") and spoken-word Wikipedia audio — force the name into the *filename* (`intitle:`) or
+use scientific names (`Vulpes vulpes`, `Bubo virginianus`, `Ara severus`); snake = a public-domain rattlesnake
+rattle, turtle = a real tortoise grunt.
+- Other viable sources (not used here): **Freesound** (CC0/CC-BY, but needs an API key), **ESC-50/FSD50K**
+  (CC-BY subset, but its animal classes barely overlap this cast), **iNaturalist Sounds** (CC), **Xeno-canto**
+  (birds/amphibians/bats/insects — but its free v2 API is retired for a key-gated v3).
 - **Facts:** **Wikidata/Wikipedia** (class, diet, habitat, size, region); optional per-class trait sets
   (AVONET birds, PanTHERIA/EltonTraits mammals, AmphiBIO amphibians).
 

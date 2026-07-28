@@ -22,3 +22,30 @@ Re-fetch / add instruments with `fetch-instrument-samples.sh` in the repo root.
 
 If strict CC0 is required later, swap to **VSCO2 Community Edition** or **VCSL** (both CC0) — the
 loader and folder layout stay identical.
+
+---
+
+# Bundled animal sample credits
+
+The animal vocalisations in `sounds/animals/<slug>.mp3` are **hand-curated from Wikimedia Commons**
+(one clip per animal), then trimmed to a short one-shot, downmixed to mono, loudness-normalised, and
+re-encoded to mp3 by `fetch-animal-samples.sh`. Used by **Critter Hunt** (▶ each animal) and available
+to feed **Mujicians'** Sound Collection.
+
+Full machine-readable manifest (author + source page + license per clip): **`data/critter-credits.json`**.
+All sources are **CC0 / Public-domain / CC-BY-SA** — none are ND, so they're safe to re-pitch/loop.
+
+| Animal | Source (Commons) | Author | License |
+| --- | --- | --- | --- |
+| Fox | *Vulpes vulpes* … XC108315 | Alexander Kurthy | CC BY-SA 4.0 |
+| Frog | Single Frog Croak | MichaeltheFox8621 | CC BY-SA 4.0 |
+| Parrot | *Ara severus* — Chestnut-fronted Macaw XC519607 | Oliver Komar | CC BY-SA 4.0 |
+| Elephant | Elephant voice - trumpeting | தகவலுழவன் | CC0 |
+| Snake | Rattlesnake | (public domain) | Public domain |
+| Owl | *Bubo virginianus* — Great Horned Owl XC450919 | Michael & Katie LaTour | CC BY-SA 4.0 |
+| Turtle | tortoise vocalisation (grunt) | Amada44 | CC BY-SA 3.0 |
+| Bat | Hoary bat chirp recording | Kaldari | CC0 |
+| Dolphin | dolphin call (Caribbean) | Félix Blume | CC0 |
+| Cricket | Field cricket *Gryllus pennsylvanicus* | Thatcher | CC BY-SA 3.0 |
+
+Re-fetch / re-trim with `fetch-animal-samples.sh` (edit a row's start/dur to change the window).

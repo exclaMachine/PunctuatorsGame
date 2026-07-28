@@ -26,7 +26,11 @@
       "Bash(perl -0pi -e 's/&& !state\\\\.equipOpen\\(?!\\\\w\\)/&& !state.equipOpen && !state.gardenOpen/g' inklings.html)",
       "Bash(python3 *)",
       "Bash(awk 'NR>528 && /<\\\\/script>/{exit} NR>528{print}' mujicians.html)",
-      "Bash(awk *)"
+      "Bash(awk *)",
+      "Bash(curl -sI --max-time 15 https://raw.githubusercontent.com/gleitz/midi-js-soundfonts/gh-pages/FluidR3_GM/violin-mp3/A4.mp3)",
+      "Bash(curl -sI --max-time 15 https://philharmonia.co.uk)",
+      "Bash(curl -s -o /dev/null -w \"lab page: HTTP %{http_code}\\\\n\" http://localhost:8000/instrument-sound-lab.html)",
+      "Bash(curl -s -o /dev/null -w \"violin C4 sample: HTTP %{http_code}\\\\n\" http://localhost:8000/sounds/instruments/violin/C4.mp3)"
     ]
   }
 }

@@ -151,17 +151,19 @@
 
 <script>
 /* ============================ DATA POOLS (emoji placeholders) ============================ */
+// `snd` = the real vocalisation sample folder-slug in sounds/animals/<snd>.mp3 (▶-playable, hand-curated
+// from Wikimedia Commons — provenance in data/critter-credits.json). All 10 have one.
 const ANIMALS = [
-  {em:"🦊",nm:"Fox",     cls:"mammal",   diet:"carnivore",  size:"medium", habitat:"forest"},
-  {em:"🐸",nm:"Frog",    cls:"amphibian",diet:"insectivore",size:"small",  habitat:"wetland"},
-  {em:"🦜",nm:"Parrot",  cls:"bird",     diet:"frugivore",  size:"small",  habitat:"jungle"},
-  {em:"🐘",nm:"Elephant",cls:"mammal",   diet:"herbivore",  size:"huge",   habitat:"savanna"},
-  {em:"🐍",nm:"Snake",   cls:"reptile",  diet:"carnivore",  size:"medium", habitat:"desert"},
-  {em:"🦉",nm:"Owl",     cls:"bird",     diet:"carnivore",  size:"small",  habitat:"forest"},
-  {em:"🐢",nm:"Turtle",  cls:"reptile",  diet:"herbivore",  size:"medium", habitat:"wetland"},
-  {em:"🦇",nm:"Bat",     cls:"mammal",   diet:"insectivore",size:"small",  habitat:"cave"},
-  {em:"🐬",nm:"Dolphin", cls:"mammal",   diet:"piscivore",  size:"large",  habitat:"ocean"},
-  {em:"🦗",nm:"Cricket", cls:"insect",   diet:"herbivore",  size:"tiny",   habitat:"grassland"},
+  {em:"🦊",nm:"Fox",     cls:"mammal",   diet:"carnivore",  size:"medium", habitat:"forest",    snd:"fox"},
+  {em:"🐸",nm:"Frog",    cls:"amphibian",diet:"insectivore",size:"small",  habitat:"wetland",   snd:"frog"},
+  {em:"🦜",nm:"Parrot",  cls:"bird",     diet:"frugivore",  size:"small",  habitat:"jungle",    snd:"parrot"},
+  {em:"🐘",nm:"Elephant",cls:"mammal",   diet:"herbivore",  size:"huge",   habitat:"savanna",   snd:"elephant"},
+  {em:"🐍",nm:"Snake",   cls:"reptile",  diet:"carnivore",  size:"medium", habitat:"desert",    snd:"snake"},
+  {em:"🦉",nm:"Owl",     cls:"bird",     diet:"carnivore",  size:"small",  habitat:"forest",    snd:"owl"},
+  {em:"🐢",nm:"Turtle",  cls:"reptile",  diet:"herbivore",  size:"medium", habitat:"wetland",   snd:"turtle"},
+  {em:"🦇",nm:"Bat",     cls:"mammal",   diet:"insectivore",size:"small",  habitat:"cave",      snd:"bat"},
+  {em:"🐬",nm:"Dolphin", cls:"mammal",   diet:"piscivore",  size:"large",  habitat:"ocean",     snd:"dolphin"},
+  {em:"🦗",nm:"Cricket", cls:"insect",   diet:"herbivore",  size:"tiny",   habitat:"grassland", snd:"cricket"},
 ];
 const INSTRUMENTS = [   // `sample` = real-recording folder in sounds/instruments/ (pitched); Drum/Conga stay synth
   {em:"🎺",nm:"Trumpet", fam:"aerophone",    mat:"metal", play:"blown",   preset:"aero_metal", sample:"trumpet"},
@@ -190,13 +192,14 @@ const LOCATIONS = [
    another entry here. NOTE: the deduction ENGINE (generator/grid/solver/clues) is still 3-axis
    — wiring a 4th axis (planned: "Genre / musical style") needs the engine work documented in
    docs/critter-hunt.md → "Extending past 3 axes". `castKey` = where the cast list lives in G.cast;
-   `facts(e)` feeds both the card back and the win-modal field notes. */
+   `facts(e)` feeds both the card back and the win-modal field notes; optional `hear(e)` makes the
+   card ▶-playable (instruments → timbre sample, animals → real vocalisation sample). */
 const CATEGORIES = [
   { id:"animal", role:"Suspects", noun:"animals", tabEmoji:"🐾", castKey:"A", pool:ANIMALS,
-    attrs:["cls","diet","size","habitat"], playable:false,
+    attrs:["cls","diet","size","habitat"], playable:false, hear:e=>playAnimalSound(e.snd),
     facts:e=>["class: "+e.cls, "diet: "+e.diet+(GLOSS[e.diet]?" — "+GLOSS[e.diet]:""), "size: "+e.size, "native to "+e.habitat] },
   { id:"instrument", role:"Weapons", noun:"instruments", tabEmoji:"🎵", castKey:"I", pool:INSTRUMENTS,
-    attrs:["fam","mat","play"], playable:true,
+    attrs:["fam","mat","play"], playable:true, hear:e=>playInstrument(e),
     facts:e=>["family: "+e.fam+(GLOSS[e.fam]?" — "+GLOSS[e.fam]:""), "material: "+e.mat, "played: "+e.play] },
   { id:"location", role:"Scenes", noun:"biomes", tabEmoji:"🗺️", castKey:"L", pool:LOCATIONS,
     attrs:["climate"], playable:false,
@@ -290,6 +293,25 @@ function playSample(folder, midi=60, dur=1.4){
 }
 // Play an instrument's real sample if it has one, else fall back to the synth preset (Drum/Conga).
 function playInstrument(inst){ if(inst.sample) playSample(inst.sample); else playPreset(inst.preset); }
+
+/* ============================ ANIMAL VOCALISATION SAMPLES (one-shot, no pitch) ============================ */
+// Real recorded animal cries in sounds/animals/<slug>.mp3 (hand-curated CC0 / CC-BY-SA — provenance in
+// data/critter-credits.json, fetched by fetch-animal-samples.sh). One file per animal, played as-is (no
+// pitch-shift): some read as percussion, some as pitched cries — which is which (and which later become
+// Mujicians pitched voices vs drum one-shots) is a deferred call. Lazy-loaded + cached; needs http serving.
+const ANIMAL_BASE="sounds/animals/";
+const _abuf={}, _aload={};
+function playAnimalSound(slug){
+  if(!slug) return;
+  const c=ac(); if(c.state==="suspended")c.resume();
+  const fire=()=>{ const buf=_abuf[slug]; if(!buf) return;
+    const src=c.createBufferSource(); src.buffer=buf;
+    const g=c.createGain(); g.gain.value=0.9; src.connect(g).connect(c.destination); src.start(c.currentTime); };
+  if(_abuf[slug]){ fire(); return; }
+  if(!_aload[slug]) _aload[slug]=fetch(ANIMAL_BASE+slug+".mp3").then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();})
+    .then(ab=>c.decodeAudioData(ab)).then(b=>{_abuf[slug]=b;}).catch(()=>{});
+  _aload[slug].then(fire);
+}
 
 /* ============================ GENERATOR + CLUE TEMPLATES ============================ */
 const rnd=n=>Math.floor(Math.random()*n);
@@ -450,13 +472,13 @@ function renderCardArea(){
 function flipCard(e, cat){
   const c=document.createElement("div"); c.className="pcard";
   const back="<b>"+e.nm+"</b><ul>"+cat.facts(e).map(x=>"<li>"+x+"</li>").join("")+"</ul>";
-  const playBtn = cat.playable ? '<span class="play" title="hear it">▶</span>' : '';
+  const playBtn = cat.hear ? '<span class="play" title="hear it">▶</span>' : '';
   c.innerHTML='<div class="inner">'+
       '<div class="pface front">'+playBtn+'<div class="em">'+e.em+'</div><div class="nm">'+e.nm+'</div><div class="hint">tap to flip</div></div>'+
       '<div class="pface back">'+back+'</div>'+
     '</div>';
   c.onclick=()=>c.classList.toggle("flipped");
-  if(cat.playable){ const b=c.querySelector(".play"); b.onclick=(ev)=>{ev.stopPropagation();playInstrument(e);}; }
+  if(cat.hear){ const b=c.querySelector(".play"); b.onclick=(ev)=>{ev.stopPropagation();cat.hear(e);}; }
   return c;
 }
 
@@ -553,11 +575,11 @@ function winModal(){
     '</div>'+
     '<div class="rewardpick">'+
       '<button class="primary" id="pickI">Keep '+I.em+' '+I.nm+' — a playable timbre</button>'+
-      '<button id="pickA">Keep '+A.em+' '+A.nm+' — a percussion sound</button>'+
+      '<button id="pickA">Keep '+A.em+' '+A.nm+' — its real animal sound</button>'+
     '</div>';
   document.getElementById("overlay").classList.add("on");
   document.getElementById("pickI").onclick=()=>{ addToCollection({type:"instrument",em:I.em,nm:I.nm,preset:I.preset,sample:I.sample}); closeModal(); };
-  document.getElementById("pickA").onclick=()=>{ addToCollection({type:"animal",em:A.em,nm:A.nm}); closeModal(); };
+  document.getElementById("pickA").onclick=()=>{ addToCollection({type:"animal",em:A.em,nm:A.nm,snd:A.snd}); closeModal(); };
 }
 function fnCard(em,nm,lines){ return '<div class="fn"><div class="big">'+em+'</div><div><b>'+nm+'</b></div><ul>'+
   lines.map(l=>"<li>"+l+"</li>").join("")+'</ul></div>'; }
@@ -565,15 +587,15 @@ function addToCollection(card){ const c=loadCol(); c.push(card); saveCol(c); ren
   document.getElementById("msg").textContent="Added "+card.em+" "+card.nm+" to your collection!"; }
 function renderCollection(){
   const host=document.getElementById("collection"); const c=loadCol();
-  if(!c.length){ host.innerHTML='<span class="tag" style="color:var(--muted)">Win a case to collect instrument timbres (playable) and animal percussion sounds.</span>'; return; }
+  if(!c.length){ host.innerHTML='<span class="tag" style="color:var(--muted)">Win a case to collect instrument timbres and real animal sounds — both ▶-playable.</span>'; return; }
   host.innerHTML="";
   c.forEach((card)=>{ const d=document.createElement("div"); d.className="card flip";
     d.innerHTML='<div class="inner"><div class="em">'+card.em+'</div><div class="nm">'+card.nm+'</div>'+
-      '<div class="tag">'+(card.type==="instrument"?"timbre":"percussion")+'</div></div>';
-    if(card.type==="instrument"){ const b=document.createElement("button"); b.textContent="▶ play";
-      b.onclick=()=>{ playInstrument(card); d.classList.add("done"); setTimeout(()=>d.classList.remove("done"),520); };
-      d.appendChild(b);
-    } else { const s=document.createElement("div"); s.className="tag"; s.textContent="(silent placeholder)"; d.appendChild(s); }
+      '<div class="tag">'+(card.type==="instrument"?"timbre":"animal")+'</div></div>';
+    const b=document.createElement("button"); b.textContent="▶ play";
+    if(card.type==="instrument"){ b.onclick=()=>{ playInstrument(card); d.classList.add("done"); setTimeout(()=>d.classList.remove("done"),520); }; }
+    else { b.onclick=()=>{ playAnimalSound(card.snd||card.nm.toLowerCase()); d.classList.add("done"); setTimeout(()=>d.classList.remove("done"),520); }; }
+    d.appendChild(b);
     host.appendChild(d);
   });
 }
