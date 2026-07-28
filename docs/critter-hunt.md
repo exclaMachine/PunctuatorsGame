@@ -9,8 +9,15 @@
 
 ## MVP — what shipped (2026-07-27)
 
-A playable `critter-hunt.html`, **emoji visuals**, the three locked forks (full-grid solve · N=4 · synth
-instrument audio clues):
+A playable `critter-hunt.html`, **emoji visuals**, N=4, synth instrument audio clues.
+
+**AMENDED 2026-07-28 — unmasking Wormwood is now the mandatory endgoal (forks #4 + #6 resolved).** One
+animal is Wormwood in disguise (`G.culprit`); a **final determining "THE UNMASKING" clue** (`buildUnmaskClue`)
+always closes the Case File and pins the impostor **through the solved grid** — via a *unique* attribute of the
+instrument they played or the biome they were found in (often the **timbre**, so it doubles as an audio clue,
+on-theme for the timbre boss; falls back to naming the instrument). Win = **name the impostor** (🐺 Unmask
+Wormwood → `judgeAccusation`), Murdle-style; the grid is now the scratchpad you decode that clue with, and the
+old full-grid check (`readAssignment`/`accuse`) is retired. The rest below reflects the original ship:
 
 - **Data pools** — 10 animals / 9 instruments / 8 biomes, each with real attribute **tags** (animal:
   class/diet/size/habitat · instrument: Hornbostel–Sachs family/material/play-method · location: climate).
@@ -30,8 +37,9 @@ instrument audio clues):
   so a new term is one tap away; instrument card fronts have a ▶. **Right = one upside-down-L combined grid**
   (Animals×Instruments + Animals×Locations across the top band, Locations×Instruments in the lower-left corner —
   the standard decades-old logic-grid shape, our own CSS, **not** Murdle's stylesheet). Cells cycle blank→✗→✓;
-  a ✓ **auto-✗’s the rest of its row & column** (within-grid). Accuse reads the ✓ assignment and judges against
-  the solution (reports instruments/locations correct count on a miss). "New case", dev "Reveal".
+  a ✓ **auto-✗’s the rest of its row & column** (within-grid). **🐺 Unmask Wormwood** opens an accusation strip
+  of the N animals; clicking one judges it against `G.culprit` (win, or a "not the impostor" nudge). "New case",
+  dev "Reveal" (also names Wormwood).
 - **Synth instrument audio** (`playPreset`) — a small vanilla Web-Audio synth (aero/chord/membrane/idio
   presets: filtered saw/bowed/plucked, noise+thump drum, inharmonic bell) so the **audio clue is real now**;
   ▶ on each instrument lets you compare timbres.
@@ -45,13 +53,11 @@ art/samples abstract the instrument); **cross-grid** auto-inference (only within
 (N fixed at 4) & daily-seeded mode; Mujicians integration (`persist.sounds`/`VOICES`); the tentative extensions
 below.
 
-**Next planned — richer clues + the Murdle "4 clues + reveal" shape.** The current templates are
-single-relation and read a bit **"one-note."** Planned (still fully programmatic): **compound / conditional /
-comparative** clue templates (e.g. "the animal in the colder biome played the wooden instrument"; ordinal
-size/register comparisons), and tuning the generator to a Murdle-like **~4-clue target** plus a **final "reveal"
-clue** that pins **which animal Wormwood is impersonating** — the Wormwood impostor skin becomes the culprit
-answer (Murdle's structure: a handful of clues + the closing accusation line). This shifts win-mode toward
-culprit-ID and needs a `reveal`/culprit clue template + a generator target-count knob.
+**Next planned — richer clues.** The current single-relation templates read a bit **"one-note."** Still to do
+(fully programmatic): **compound / conditional / comparative** clue templates (e.g. "the animal in the colder
+biome played the wooden instrument"; ordinal size/register comparisons), and tuning the generator toward a
+Murdle-like **~4-clue target**. *(The **final "reveal" clue** + culprit-ID win-mode that were planned here are
+now **BUILT** — see the 2026-07-28 amendment above.)*
 
 ## The pitch — a real-data Murdle with three axes
 
@@ -64,7 +70,7 @@ A **Murdle-style logic-deduction puzzle** with Murdle's exact three-category str
 | **Locations** | **Locations / biomes** | biome, climate, continent |
 
 You solve by cross-referencing clues in a **deduction grid** (mark ✗/✓, auto-eliminate) to recover *which
-animal played which instrument in which location*, then make the accusation (the triple). Each entity can also
+animal played which instrument in which location*, then unmask the impostor (Wormwood's disguise). Each entity can also
 **play its sound**, so at least one clue type is **audio** — the timbre-discrimination DNA this whole idea grew
 out of, and the tie back to Mujicians.
 
@@ -91,10 +97,10 @@ in the **instrument's country/culture of origin** as the independent axis.)
 ## The story framing
 
 A **light music-mystery**, not murder: N animals each played an instrument somewhere, and something went wrong
-— *someone played the sour note / stole the melody / crashed the recital.* Solve who, with what, where.
-**Wormwood is an optional villain skin:** the culprit is "the one he bit" — the impostor hiding in the band —
-which maps exactly onto Murdle's "find the one guilty suspect." Ship without him and it's a neutral "solve the
-case." (Own detective character + art — not Murdle's.)
+— *someone played the sour note / stole the melody / crashed the recital.* **Wormwood — the timbre-thief — is
+disguised as one of the band, and unmasking him is always the endgoal** (maps exactly onto Murdle's "find the
+one guilty suspect"): you solve the grid to work out who played what where, then the **final determining clue**
+names the impostor. (Own detective character + art — not Murdle's.)
 
 ## Core loop (reuse Murdle's proven layout)
 
@@ -105,7 +111,8 @@ Murdle's UI is a known-good pattern and its mechanics/layout aren't protectable 
    **card-flip entities** and **auto-X'ing**: ✓ a cell → auto-✗ the rest of that row/column in the sub-grid and
    cross-infer across sub-grids. (This auto-elimination *is* the constraint propagation the generator uses.)
 3. **Play the sounds** — ▶ any animal or instrument to hear it (verifies audio clues).
-4. **The accusation** — commit the full triple set (or just name the culprit triple in Wormwood mode).
+4. **The accusation** — read the **final determining clue**, then **name the impostor** (Wormwood's disguise)
+   via 🐺 Unmask Wormwood. The grid deduction is the scratchpad that lets you decode that clue.
 
 ## Procedural level generation (the core algorithm)
 
@@ -238,18 +245,20 @@ Curate + download **once**, commit the data, play offline.
 1. **Standalone vs. Mujicians-integrated** — own collection, or write rewards into `persist.sounds` / `VOICES`?
 2. **Daily seeded puzzle vs. endless generated** — (both are cheap given the generator; could ship both).
 3. **Grid size / difficulty ramp** — N = 3→4→5; which clue types unlock when; audio-clue-required tiers.
-4. **Wormwood mandatory or optional** — impostor-culprit theme always on, a boss finale, or a neutral-case toggle.
+4. ~~**Wormwood mandatory or optional**~~ — **RESOLVED 2026-07-28: always on.** Unmask-the-impostor is the
+   permanent endgoal (a boss finale stays a possible future layer).
 5. **Reward = player's choice vs. fixed** — pick instrument *or* animal, or the puzzle dictates which.
-6. **Accusation input** — full triple-set vs. just the culprit triple (Wormwood mode).
+6. ~~**Accusation input**~~ — **RESOLVED 2026-07-28: name the impostor** (Murdle-style single-culprit pick),
+   not the full triple-set.
 
 ## MVP scope
 
 **MVP:** standalone `critter-hunt.html`; the **procedural generator + brute-force uniqueness solver** at N=3–4;
 ~20–30 animals + ~15 instruments + ~10 biomes seeded from Wikidata with real attribute tags; CC0/CC-BY sounds
 (instruments from VSCO2/VCSL, animals from Freesound/ESC-50); the three-sub-grid deduction UI with card-flip +
-auto-X; direct + negative + **attribute** + one **audio** clue type; accuse-the-triple; a "field notes" reward
+auto-X; direct + negative + **attribute** + one **audio** clue type; unmask-the-impostor (name the culprit); a "field notes" reward
 card granting one playable sound (instrument = a `VOICES`-ready sample, animal = a percussion one-shot) into a
-local collection. Wormwood as an optional impostor skin.
+local collection. Wormwood as the **mandatory impostor to unmask** — a final determining clue + name-the-culprit win.
 
 **Deferred:** relational/positional clues (ordered axis), the daily-seeded shareable mode, N=5+ and richer
 difficulty tuning, larger rosters + more biomes, animated art/detective, **Mujicians integration**

@@ -63,6 +63,15 @@
   .clue .n{font-weight:700;color:var(--muted);min-width:18px}
   .clue.audio{border-color:var(--accent);background:#eef5f1}
   .clue .listen{margin-left:auto;white-space:nowrap;font-size:12px;padding:2px 8px}
+  .clue.final{border:2px solid #6b4a2f;background:#f3ece1;margin-top:14px}
+  .clue.final .n{color:#6b4a2f;font-size:18px}
+  .clue.final.audio{border-color:#6b4a2f;background:#f1ece2}
+
+  /* ---------- accusation strip ---------- */
+  .accuse{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;padding:10px 12px;border:2px dashed #6b4a2f;border-radius:12px;background:#f6efe4}
+  .accuselbl{font-weight:700;font-size:13px;color:#6b4a2f}
+  .accbtn{padding:5px 10px}
+  .accbtn:hover{background:#fff;border-color:#6b4a2f}
 
   /* ---------- collection ---------- */
   #collection{display:flex;flex-wrap:wrap;gap:8px}
@@ -90,7 +99,7 @@
 <body>
 <header>
   <h1>🔍 Critter Hunt</h1>
-  <span class="sub">Deduce which animal played which instrument, and where. Clues are real facts — flip a card if a word is new.</span>
+  <span class="sub">🐺 Wormwood the timbre-thief is disguised as one of the band. Deduce who played what and where, then read THE UNMASKING clue to name the impostor. Clues are real facts — flip a card if a word is new.</span>
 </header>
 
 <div class="wrap">
@@ -102,13 +111,14 @@
     <!-- right: the L-shaped deduction grid -->
     <div class="panel board">
       <div class="controls">
-        <button class="primary" id="btnSolve">Make the accusation</button>
+        <button class="primary" id="btnUnmask">🐺 Unmask Wormwood</button>
         <button id="btnNew">New case</button>
         <button id="btnReveal" title="dev">Reveal (dev)</button>
       </div>
+      <div class="accuse" id="accuseStrip" style="display:none"></div>
       <div class="lgrid" id="lgrid"></div>
       <div class="msg" id="msg"></div>
-      <div class="legend">Click a cell to cycle blank → ✗ → ✓. A ✓ auto-✗’s the rest of its row &amp; column. Set one ✓ per animal for both its instrument and its location, then accuse.</div>
+      <div class="legend">Click a cell to cycle blank → ✗ → ✓. A ✓ auto-✗’s the rest of its row &amp; column. Solve the grid, then use THE UNMASKING clue (foot of the Case File) to see which animal Wormwood is hiding as — and accuse them with 🐺 Unmask Wormwood.</div>
     </div>
   </div>
 
@@ -294,6 +304,24 @@ function buildCluePool(cast, sol, N){
 }
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 
+// The final "unmasking" clue: always present, always the closing line. Points at the culprit
+// (Wormwood's disguise) THROUGH the solved grid — via a unique attribute of the instrument they
+// played or the biome they were found in, so you must deduce the grid to know WHICH animal it is.
+function buildUnmaskClue(cast, sol, culprit){
+  const i=sol.pi[culprit], l=sol.sg[culprit];
+  const iAttrs=refsFor("instrument",cast.I,i).filter(r=>r.kind==="attr");
+  const lAttrs=refsFor("location",cast.L,l).filter(r=>r.kind==="attr");
+  const pool=iAttrs.map(r=>({via:"instrument",ref:r})).concat(lAttrs.map(r=>({via:"location",ref:r})));
+  let via,ref;
+  if(pool.length){ const p=pool[rnd(pool.length)]; via=p.via; ref=p.ref; }
+  else { via="instrument"; ref=refsFor("instrument",cast.I,i)[0]; } // fall back to naming it (a name ref is always unique)
+  const audio=(via==="instrument" && ref.kind==="attr" && ref.key==="fam"); // timbre ref → an ear clue (on-theme for the timbre boss)
+  const phrase = via==="instrument"
+    ? "played "+(audio ? "the instrument that sounds "+TIMBRE[ref.val] : ref.label)
+    : "was found in "+ref.label;
+  return {final:true, audio, text:"Wormwood is hiding as the critter who "+phrase+". Unmask the impostor."};
+}
+
 function generatePuzzle(N){
   for(let tries=0;tries<40;tries++){
     const cast=sampleCast(N);
@@ -323,7 +351,8 @@ function generatePuzzle(N){
       if(surv.length===1) selected.splice(i,1);
     }
     selected=selected.sort((a,b)=>(b.audio-a.audio)||(b.attrCount-a.attrCount));
-    return {cast,sol,clues:selected,N};
+    const culprit=rnd(N);
+    return {cast,sol,clues:selected,finalClue:buildUnmaskClue(cast,sol,culprit),culprit,N};
   }
   return null;
 }
@@ -334,6 +363,7 @@ function newGame(){
   G=generatePuzzle(4);
   marks={ai:blank(4,4),al:blank(4,4),il:blank(4,4)};
   document.getElementById("msg").textContent="";
+  document.getElementById("accuseStrip").style.display="none";
   renderCards(); renderBoard(); renderClues();
 }
 function blank(r,c){return Array.from({length:r},()=>Array(c).fill(0));}
@@ -415,24 +445,33 @@ function renderClues(){
       d.appendChild(b); }
     host.appendChild(d);
   });
+  // The final determining clue — always present, always the closing line: it pins the impostor.
+  const f=G.finalClue;
+  const d=document.createElement("div"); d.className="clue final"+(f.audio?" audio":"");
+  d.innerHTML='<span class="n">🐺</span><span><b>THE UNMASKING.</b> '+(f.audio?"🔊 ":"")+f.text+'</span>';
+  if(f.audio){ const b=document.createElement("button"); b.className="listen"; b.textContent="which one?";
+    b.onclick=()=>{document.getElementById("msg").textContent="Use the ▶ on each instrument card to hear which timbre Wormwood is hiding behind.";};
+    d.appendChild(b); }
+  host.appendChild(d);
 }
 
 /* ============================ ACCUSATION / JUDGING ============================ */
-function readAssignment(mk){
-  const out=[];
-  for(let r=0;r<mk.length;r++){ const ys=mk[r].map((v,i)=>v===2?i:-1).filter(i=>i>=0);
-    if(ys.length!==1) return null; out[r]=ys[0]; }
-  if(new Set(out).size!==out.length) return null;
-  return out;
+// The endgoal is always to name the impostor. The grid is your scratchpad; THE UNMASKING clue
+// pins the culprit through it.
+function renderAccuse(){
+  const strip=document.getElementById("accuseStrip");
+  strip.innerHTML='<span class="accuselbl">🐺 Who is Wormwood? Click the impostor:</span>';
+  G.cast.A.forEach((a,ai)=>{
+    const b=document.createElement("button"); b.className="accbtn";
+    b.innerHTML=a.em+' '+a.nm;
+    b.onclick=()=>judgeAccusation(ai);
+    strip.appendChild(b);
+  });
 }
-function accuse(){
-  const pi=readAssignment(marks.ai), sg=readAssignment(marks.al);
+function judgeAccusation(ai){
   const msg=document.getElementById("msg");
-  if(!pi||!sg){ msg.textContent="Mark one ✓ per animal for BOTH its instrument and its location first."; return; }
-  const okI=pi.every((v,a)=>v===G.sol.pi[a]), okL=sg.every((v,a)=>v===G.sol.sg[a]);
-  if(okI&&okL){ winModal(); }
-  else { const nI=pi.filter((v,a)=>v===G.sol.pi[a]).length, nL=sg.filter((v,a)=>v===G.sol.sg[a]).length;
-    msg.textContent="Not solved. Instruments right: "+nI+"/"+G.N+" · Locations right: "+nL+"/"+G.N+". Keep deducing."; }
+  if(ai===G.culprit){ winModal(); }
+  else { msg.textContent="🐺 "+G.cast.A[ai].em+" "+G.cast.A[ai].nm+" isn’t the impostor — re-check your grid against THE UNMASKING clue."; }
 }
 
 /* ============================ REWARD + COLLECTION ============================ */
@@ -440,11 +479,12 @@ const KEY="critterhunt.collection";
 const loadCol=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[];}catch(e){return [];}};
 const saveCol=(c)=>localStorage.setItem(KEY,JSON.stringify(c));
 function winModal(){
-  const a=rnd(G.N), i=G.sol.pi[a], l=G.sol.sg[a];
+  const a=G.culprit, i=G.sol.pi[a], l=G.sol.sg[a];
   const A=G.cast.A[a], I=G.cast.I[i], L=G.cast.L[l];
+  document.getElementById("accuseStrip").style.display="none";
   const body=document.getElementById("modalBody");
-  body.innerHTML='<h2>🎉 Case solved!</h2>'+
-    '<p>Field notes on the culprit trio — and pick one sound to add to your collection:</p>'+
+  body.innerHTML='<h2>🐺 Wormwood unmasked!</h2>'+
+    '<p><b>'+A.em+' '+A.nm+'</b> was the impostor. Field notes on Wormwood’s disguise — and pick one sound to keep:</p>'+
     '<div class="fieldnotes">'+
       fnCard(A.em,A.nm,["class: "+A.cls,"diet: "+A.diet+(GLOSS[A.diet]?" ("+GLOSS[A.diet]+")":""),"native to: "+A.habitat])+
       fnCard(I.em,I.nm,["family: "+I.fam+(GLOSS[I.fam]?" ("+GLOSS[I.fam]+")":""),"material: "+I.mat,"played: "+I.play])+
@@ -479,12 +519,17 @@ function renderCollection(){
 
 /* ============================ WIRING ============================ */
 function closeModal(){document.getElementById("overlay").classList.remove("on");}
-document.getElementById("btnSolve").onclick=accuse;
+document.getElementById("btnUnmask").onclick=()=>{
+  const strip=document.getElementById("accuseStrip");
+  const show=strip.style.display==="none";
+  strip.style.display=show?"flex":"none";
+  if(show) renderAccuse();
+};
 document.getElementById("btnNew").onclick=newGame;
 document.getElementById("modalClose").onclick=closeModal;
 document.getElementById("btnReveal").onclick=()=>{
   const {A,I,L}=G.cast; const lines=A.map((a,ai)=>a.em+" "+a.nm+" → "+I[G.sol.pi[ai]].em+" "+I[G.sol.pi[ai]].nm+" @ "+L[G.sol.sg[ai]].em+" "+L[G.sol.sg[ai]].nm);
-  document.getElementById("msg").textContent="ANSWER — "+lines.join(" · ");
+  document.getElementById("msg").textContent="ANSWER — "+lines.join(" · ")+"  ·  🐺 Wormwood = "+A[G.culprit].em+" "+A[G.culprit].nm;
 };
 newGame(); renderCollection();
 </script>
