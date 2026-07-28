@@ -65,11 +65,15 @@ before changing it.
 ## Notes
 
 - **Critter Hunt** ([`docs/critter-hunt.md`](docs/critter-hunt.md)) — a **designed-not-built** standalone
-  spinoff of the Mujicians M6 Timbre boss: a Murdle-style **animal-sound** *deduction* game (species × class ×
-  habitat × diet grid, clues are real natural-history facts + the animal's cry; Wormwood hides in the pack as
-  the odd-timbre impostor). Generalized from an earlier bird-only "Birdle" framing (all animals = richer grid +
-  more iconic sounds). Data plan = Freesound/ESC-50/iNaturalist/Xeno-canto sounds (per-clip CC, bundle locally
-  + attribution manifest) + Wikidata facts, no runtime API. No entry file yet.
+  spinoff of the Mujicians M6 Timbre boss: a **real-data Murdle** with three axes — **animals** (=suspects) ×
+  **instruments** (=weapons) × **locations/biomes** (=locations), solved on Murdle's card-flip + auto-X grid.
+  Clues are mostly **true facts** (real habitats/instrument families/biomes) so solving *teaches*, plus an
+  **audio** clue type. **Procedurally generated** (roll a solution → true-clue pool → brute-force uniqueness
+  solver → prune to minimal; trivial at N≤5; seeded-daily falls out free). Win → a **playable sound card**:
+  **instrument = a melodic `VOICES` timbre** (tonal, pitches cleanly), **animal = a percussion one-shot** —
+  feeding Mujicians' Sound Collection. Sounds: VSCO2/VCSL (CC0 instruments) + Freesound/ESC-50/iNaturalist
+  (CC animals), facts from Wikidata; bundle-locally, no runtime API, attribution manifest. Evolved from a
+  bird-only "Birdle" then an animals-only 2-axis cut. No entry file yet.
 - The git remote reports it moved to `github.com/exclaMachine/PunctuatorsGame.git` (origin still points at
   the old `CanvasPunctuatorsGame` URL; pushes redirect fine).
 - A persistent memory store at `~/.claude/projects/.../memory/` holds cross-session feedback/preferences;

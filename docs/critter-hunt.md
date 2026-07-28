@@ -1,165 +1,210 @@
-# Critter Hunt — an animal-sound deduction game (DESIGNED 2026-07-27, not built)
+# Critter Hunt — a Murdle-style real-data deduction game (DESIGNED 2026-07-27, not built)
 
 > **Status: DESIGNED, not built.** A standalone spinoff of the *Mujicians* M6 Timbre boss (Wormwood)
 > and its [Murdle-style deduction variant](mujicians.md#variant--the-choir-line-up-a-murdle-style-deduction-layer-design-fork-not-the-locked-mvp).
-> **Working title "Critter Hunt"** (placeholder — name doesn't matter; picked because *Birdle* and the
-> bird-only framing are already well-trodden, and generalizing to **all animals** is both more original and
-> a better game — see below). No entry file yet; the eventual first cut is a self-contained
-> `critter-hunt.html` (the repo's standalone-game pattern, e.g. `scorch-bones.html` / `forge-quench.html`).
-> **Supersedes the earlier bird-only "Birdle" framing.**
+> **Working title "Critter Hunt"** (placeholder — name doesn't matter). No entry file yet; the eventual first
+> cut is a self-contained `critter-hunt.html` (the repo's standalone-game pattern, e.g. `scorch-bones.html` /
+> `forge-quench.html`). **Supersedes the earlier bird-only "Birdle" framing and the 2-axis animals-only cut.**
 
-## The pitch
+## The pitch — a real-data Murdle with three axes
 
-A **Murdle-style logic-deduction puzzle where the evidence is sound.** A lineup of animals; clues (real
-natural-history facts) plus each animal's **call/cry** let you cross-eliminate to the answer. It's a whodunit
-where "whodunit" is decided partly by **listening** — which is what makes it distinct from a trivia quiz or a
-pure logic grid.
+A **Murdle-style logic-deduction puzzle** with Murdle's exact three-category structure, remapped:
 
-**Why the deduction scaffold earns its place:** identifying an animal from sound alone is uneven (a lion is
-obvious, two frog species are not). The clue grid makes it *fair* — you don't need to know a sound cold; the
-facts narrow the suspects and the sound confirms. Facts corner the answer, the ear closes it. (Same principle
-as the Mujicians choir variant: the grid records what you can only learn by ear, so listening is the
-data-gathering and logic is the payoff, not a bypass.)
+| Murdle | Critter Hunt | Real-world attributes each carries (the teaching) |
+| --- | --- | --- |
+| **Suspects** | **Animals** | class (mammal/bird/…), diet, real habitat, size, region |
+| **Weapons** | **Instruments** | family (string/wind/brass/percussion), material, how it's played, culture/origin |
+| **Locations** | **Locations / biomes** | biome, climate, continent |
 
-## Why "all animals" beats bird-only
+You solve by cross-referencing clues in a **deduction grid** (mark ✗/✓, auto-eliminate) to recover *which
+animal played which instrument in which location*, then make the accusation (the triple). Each entity can also
+**play its sound**, so at least one clue type is **audio** — the timbre-discrimination DNA this whole idea grew
+out of, and the tie back to Mujicians.
 
-The bird→animals generalization isn't just for originality; it makes the design stronger:
+**Design decision — location is an independent axis (LOCKED 2026-07-27).** The location is **where the entity
+was *found* for this case**, *not* the animal's natural habitat — so it stays a free, randomizable third axis
+(Murdle-style). Each animal's **real habitat is instead a clue attribute** (e.g. "the animal native to the
+desert wasn't in the tundra"), which keeps the full 3-axis puzzle *and* still teaches habitats. (Rejected
+alternative: location = the animal's real habitat — that fixes animal→location by real data and collapses the
+puzzle to a thin 2-axis matching. If a free third axis is ever wanted *without* the found-vs-home framing, swap
+in the **instrument's country/culture of origin** as the independent axis.)
 
-- **Richer deduction columns.** Birds share a lot; animals span the whole grid — **taxonomic class**
-  (mammal / bird / amphibian / insect / fish / reptile) becomes a real variable, **habitat** now spans
-  ocean / savanna / jungle / tundra / wetland / city, and **size** ranges from cricket to whale. More
-  independent axes = a better Murdle grid.
-- **More iconic, casual-friendly sounds.** A lion's roar or a frog's croak is instantly graspable, so casual
-  players aren't stuck cold-IDing near-identical bird calls.
-- **Tradeoff (handled):** cross-taxa sounds are *less subtle* than bird-call twins, so pure "name it" gets
-  easier — but the **deduction layer + Wormwood-the-impostor** is what carries the challenge, plus a
-  **within-group hard mode** (three big cats / three frogs) restores fine discrimination when wanted.
-- **Birds are a subset, not lost** — a bird-only round/theme still works inside the general frame.
+## What makes it *not* just a Murdle clone
 
-## The story hook — Wormwood, the impostor in the pack
+1. **Real-world data is the content.** The clues are (mostly) **true facts** — real animal habitats, real
+   instrument families/materials, real biomes — so solving *teaches*. "The carnivore wasn't found in the
+   wetland," "the brass instrument's player lives somewhere cold," "the animal native to the rainforest played
+   something wooden." Each clue is simultaneously a logic constraint and a factlet. That's the differentiator
+   (mechanics aren't ownable — see IP — but this content angle is genuinely distinct).
+2. **Sound is evidence.** Instruments and animals are audible; an **audio clue type** keeps ear-training in the
+   loop (Murdle is silent).
+3. **It feeds a second game.** Winning grants a **playable sound card** (below) that flows into Mujicians' Sound
+   Collection — Critter Hunt becomes a *feeder*, not a detached spinoff.
 
-Reuses the *Mujicians* villain as connective tissue (the dev likes the character; the game otherwise stands
-alone). **Wormwood** — the busker who *bites* creatures so they sound like him — is **hiding among real
-animals, mimicking one badly.** Every other candidate is a real animal sound; he is a **flattened, wooden
-odd-one-out**. So the deduction narrows *which animal he's impersonating*, and your **ear catches the fake.**
-This fuses the two skills instead of stacking them: **facts shrink the suspect list; timbre-discrimination
-makes the arrest.** It's the "sus him out" framing directly, and it keeps *listening* as the payoff rather
-than flavor. (Ship without Wormwood and the same structure works as plain "identify the animal" — the
-impostor is an optional villain mode.)
+## The story framing
 
-## Core loop
+A **light music-mystery**, not murder: N animals each played an instrument somewhere, and something went wrong
+— *someone played the sour note / stole the melody / crashed the recital.* Solve who, with what, where.
+**Wormwood is an optional villain skin:** the culprit is "the one he bit" — the impostor hiding in the band —
+which maps exactly onto Murdle's "find the one guilty suspect." Ship without him and it's a neutral "solve the
+case." (Own detective character + art — not Murdle's.)
 
-1. **The lineup** — N animals (silhouetted/hooded or named), each with a **▶ sound** you can play (solo it).
-2. **The clues** — a handful of constraints from real facts (below), some **fact-only** (readable) and some
-   **ear-only** (you must play the sound to verify — e.g. "the culprit is nocturnal and lower-pitched than
-   the wolf").
-3. **The grid** — a Murdle-style deduction table (species × attribute) you mark with ✗/✓ as clues + sounds
-   eliminate rows/cells.
-4. **The accusation** — name the animal (and, in Wormwood mode, whether *this* one is the real animal or the
-   fake).
+## Core loop (reuse Murdle's proven layout)
 
-## Deduction variables (the grid columns)
+Murdle's UI is a known-good pattern and its mechanics/layout aren't protectable (own art/name — see IP):
 
-Animals come pre-loaded with several **independent, describable** attributes:
+1. **The case** — a prompt naming N animals, N instruments, N locations, and a short list of **clues**.
+2. **The grid** — the three pairwise sub-grids (animal×instrument, animal×location, instrument×location) with
+   **card-flip entities** and **auto-X'ing**: ✓ a cell → auto-✗ the rest of that row/column in the sub-grid and
+   cross-infer across sub-grids. (This auto-elimination *is* the constraint propagation the generator uses.)
+3. **Play the sounds** — ▶ any animal or instrument to hear it (verifies audio clues).
+4. **The accusation** — commit the full triple set (or just name the culprit triple in Wormwood mode).
 
-- **Taxonomic class** — mammal / bird / amphibian / insect / fish / reptile (the axis birds alone can't give).
-- **Habitat / "location"** — ocean / wetland / forest / savanna / desert / tundra / mountain / city.
-- **Diet** — herbivore / carnivore / insectivore / omnivore / filter-feeder.
-- **Fourth axis** (pick per-puzzle for variety): **size class**, **continent/region**, **activity**
-  (nocturnal vs. diurnal — pleasingly audio-adjacent), **locomotion** (flies / swims / walks / burrows), or
-  **conservation status**.
+## Procedural level generation (the core algorithm)
 
-## Clue types (each is both a constraint and a real fact)
+The dev requirement: **levels are generated, not hand-authored.** This is a standard constraint-puzzle
+(Zebra/Einstein) generation problem, and at these grid sizes it's trivial compute — brute-force uniqueness
+checking is fine. The pipeline:
 
-- **Fact / eliminative:** *"No ocean animal in the lineup is an insectivore." · "The culprit is a mammal."*
-- **Comparative-audio (ear-only):** *"The culprit's cry is lower-pitched than the wolf's." · "It chirps; it
-  doesn't roar."*
-- **Positional (Zebra/Einstein-puzzle):** *"The filter-feeder is directly left of the nocturnal one."*
-- **Wormwood tell (impostor mode):** *"One voice here isn't an animal at all"* — the flat/wooden timbre among
-  real cries; deduction says which species he's *failing* to imitate.
+1. **Pick N** (grid size / difficulty — 3 easy, 4 standard, 5 hard).
+2. **Sample the cast** — draw N animals, N instruments, N locations from the datasets, biased so their **real
+   attribute tags are diverse enough** that discriminating clues exist (e.g. not all N animals are mammals).
+3. **Roll the solution** — two random bijections `π: animal→instrument` and `σ: animal→location`. That's the
+   hidden answer (N triples, each element used once).
+4. **Build the true-clue pool** — enumerate every clue that is **true under the solution**, from templated
+   types (below). Attribute clues pull the entity's real tags, so they're accurate factlets.
+5. **Select to uniqueness** — start with all `(N!)²` candidate arrangements (≤14,400 for N≤5 — brute-forceable);
+   add clues one at a time (biased by difficulty/type), re-filtering the candidate set after each, until
+   **exactly one arrangement remains**. Guarantees *solvable & unique*.
+6. **Prune to minimal** — try removing each clue; if the puzzle stays unique without it, drop it. Yields an
+   elegant, no-redundancy clue set that forces real deduction.
+7. **Difficulty knobs** — N; which clue types are allowed (ban direct-positive links for hard mode); target
+   clue count; the ratio of **indirect attribute clues** (more = more learning *and* harder); whether an
+   **audio clue is required**.
+
+**Clue types (all templated, all verified true under the solution):**
+- **Direct link** — "the [koala] played the [flute]" (easy; reveals a cell).
+- **Negative** — "the [tuba] was not in the [reef]."
+- **Attribute (the educational engine)** — references a real tag to identify an entity indirectly:
+  "the **carnivore** played something made of **brass**," "the animal native to the **desert** wasn't in the
+  **tundra**." (Generator only uses a tag value that's **unique among the N chosen entities**, so it names
+  exactly one.)
+- **Audio** — "the culprit's instrument sounds **reedy**," "the guilty animal's cry is **low-pitched**"
+  (verified by ear; keeps the listening skill load-bearing).
+- **Relational (optional)** — needs an ordered axis (a lineup, or size order): "the string player stood left
+  of the amphibian."
+
+**Seeded daily mode** falls out for free: seed the RNG with the date → everyone gets the same puzzle (Wordle-
+style shareable), consistent with the site's daily-puzzle pattern (Excla Machine).
+
+## Rewards → playable sound cards (the Mujicians feeder)
+
+Win → the player **picks one** to keep as a playable card:
+
+- **Instrument → a melodic timbre.** Instruments are *tonal and built to play notes*, so they **pitch cleanly**
+  and drop straight into Mujicians' `VOICES` / `playVoice` as a real sampled (or synth-preset) instrument. This
+  is the **easy half** — the earlier animal pitch-shifting worry doesn't apply; instruments come as chromatic
+  samples or already exist as `VOICES` presets.
+- **Animal → a percussion one-shot** (barks/stomps/chirps), dropped into the `{drum}` event path / `DRUM_VOICES`
+  — **no pitch-shifting needed** (the deferred tonal-animal work stays deferred). Rarer/harder puzzles → rarer
+  sounds.
+
+Both register in the **Sound Collection** (`sounds` / `persist.sounds`) — Critter Hunt *is* the collection's
+gameplay source. A post-solve **"field notes" card** shows each entity's real facts (reinforces learning +
+doubles as the collectible art). *(Standalone-first: the reward can be a local collection, wired to Mujicians'
+`persist.sounds` only if/when integrated — see forks.)*
 
 ## Data sources (all open / CC — bundle locally, no runtime API)
 
-Follows the repo convention (flat static, vanilla, **no runtime third-party API** — like Inklings shipping a
-local `data/dictionary.json` instead of calling WordNet live). Download + curate **once**, commit the data,
-game runs offline.
+Repo convention: flat static, vanilla, **no runtime third-party API** (like Inklings' bundled `dictionary.json`).
+Curate + download **once**, commit the data, play offline.
 
-### Sounds
+### Animal sounds & facts
+- **Sounds:** **Freesound** (CC0/CC-BY, primary), **ESC-50/FSD50K** (curated, ESC-10 subset CC-BY),
+  **iNaturalist Sounds** (~230k files, CC), **Xeno-canto** (birds + now mammals/amphibians/bats/insects).
+- **Facts:** **Wikidata/Wikipedia** (class, diet, habitat, size, region); optional per-class trait sets
+  (AVONET birds, PanTHERIA/EltonTraits mammals, AmphiBIO amphibians).
 
-| Source | What it is | Fit |
-| --- | --- | --- |
-| **Freesound** (freesound.org) | Huge collaborative CC sound library; transparent per-clip licensing (CC0 / CC-BY / CC-BY-NC). | **Primary for a general MVP** — search CC0/CC-BY for lion / frog / cricket / whale / wolf / etc. |
-| **ESC-50 / FSD50K** | Curated datasets built *from* Freesound. ESC-50 = 2,000 clips, 50 classes incl. an Animals category (dog, cat, cow, frog, hen, insects, birds…); the **ESC-10 subset is CC-BY**. | Clean, pre-labeled, one-zip download — great starter roster. |
-| **iNaturalist Sounds** (iNatSounds) | ~230,000 audio files across 5,500+ species, real observations, CC-licensed (uploader's choice). | Broadest species coverage; filter to CC. |
-| **Xeno-canto** | Was birds-only, now **expanding to all taxa** — land mammals, amphibians, bats, grasshoppers (added ultrasound WAV support). CC per-recording. | Best for birds + insects + bats; increasingly general. |
-| **Watkins Marine Mammal DB / Tierstimmenarchiv (Berlin)** | Specialist archives (marine mammals; general animal sounds). | Fill ocean / exotic gaps. |
-| **Macaulay Library** (Cornell) | World's largest animal-media archive (3.2M audio across birds, mammals, amphibians, fish, insects). | Highest quality but **restrictive reuse** — reference, don't redistribute. |
+### Instrument sounds & facts (NEW)
+- **Sounds:** **VSCO2 Community Edition** (**CC0**), **VCSL — Versilian Community Sample Library** (**CC0**),
+  **University of Iowa MIS** (free, no restrictions), **Philharmonia** (free; quality varies),
+  **Sonatina Symphonic Orchestra** (free) — all offer **individual chromatic notes**, ideal for a web sampler.
+  Many "instruments" can also just **reuse existing Mujicians `VOICES` synth presets** (no samples needed).
+- **Facts:** **Wikidata** (Hornbostel–Sachs family, material, playing method, country/culture of origin).
 
-### Facts (the grid columns)
+### Locations / biomes
+- A small **curated list** (~8–12 biomes: rainforest, wetland, savanna, desert, tundra, coral reef, mountain,
+  temperate forest, coast, city…) with `{climate, continent}` tags. Curated by hand — small and stable.
 
-- **Wikidata / Wikipedia** — the **general** source across all taxa: class, habitat, diet, size, range,
-  conservation status; CC-licensed and structured. Primary fact seed.
-- **Per-class trait datasets (optional enrichment):** **AVONET** (birds — habitat/diet/morphology, the old
-  bird-doc source), **PanTHERIA / EltonTraits** (mammal & bird diet/body traits), **AmphiBIO** (amphibians).
-  Only worth it if a puzzle needs finer attributes than Wikidata gives.
+### Licensing plan
+- **Filter to CC0 / CC-BY / CC-BY-NC.** Instruments are the *easy* half (VSCO2/VCSL are CC0). For animals,
+  **avoid CC-BY-ND for anything you pitch/loop/trim** — using a clip as a playable instrument is a derivative
+  work (whole-clip playback in the puzzle is fine under ND, repitching is not).
+- **Attribution manifest** — `data/critter-credits.json` (author, source+ID, license per clip) + an in-game
+  "ⓘ credits" screen.
+- **Store locally** — `sounds/{animals,instruments}/*.mp3|ogg` + `data/critters.json` + credits, all committed.
 
-### Licensing plan (the one real upfront cost)
+## Originality / IP (not legal advice)
 
-The only non-trivial work is **curation + attribution** for the ~30–60 species of an MVP:
-
-- **Filter licenses:** keep CC0 / CC-BY / CC-BY-NC. **Avoid CC-BY-ND if you clip/trim** the audio (playing a
-  recording whole is fine under ND; editing it is not). Non-commercial (NC) is fine for a free educational game.
-- **Attribution manifest:** a `data/critter-credits.json` (or a visible Credits page) listing per clip: author,
-  source + ID, and license. Show it in-game (a "ⓘ recordings" screen).
-- **Store locally:** `sounds/critters/*.mp3|ogg` + `data/critters.json` (facts) + the credits manifest, all
-  committed; no live calls at play time.
-
-## Originality / IP (informed the pivot; not legal advice)
-
-- **Game mechanics/rules aren't protected by copyright** — copyright covers *expression* (art, text, code, the
-  distinctive audiovisual look), not the system/idea. That's why Wordle/Murdle-likes proliferate legally.
-- **Avoid copying the specific expression:** the **name** (trademark — use your own), art, exact UI/trade dress,
-  and copy.
-- **Patents on mechanics exist but are rare/hard** (the famous exceptions: WB's **Nemesis System**, Nintendo's
-  **Palworld** patents). A generic "deduction grid + play a sound" is prior-art-saturated (Murdle, Guess Who,
-  Mastermind), so not patent-exposed.
-- **Net:** a free educational animal-sound deduction game with original name/art/copy carries essentially no IP
-  risk. The real chore is the CC **attribution manifest** above.
+- **Game mechanics/rules/layout aren't protected by copyright** — copyright covers *expression* (art, text,
+  code, distinctive audiovisual look), not the system. Reusing Murdle's grid + card-flip + auto-X *structure*
+  is fine; the **real-data content** is our own and is the distinctive part.
+- **Avoid copying specific expression:** the **name** (trademark — use our own), Murdle's art/characters
+  ("Deductive Logico" etc.), exact copy, and trade dress. Own detective, own styling.
+- **Patents on mechanics are rare/hard** (exceptions: WB's Nemesis System, Nintendo's Palworld patents); a
+  generic deduction grid is prior-art-saturated (Murdle, Guess Who, Mastermind).
+- **Net:** a free educational game with original name/art/copy carries essentially no IP risk. The real chore
+  is the CC **attribution manifest**.
 
 ## Tech / repo fit
 
-- **Standalone `critter-hunt.html`** — one self-contained file (inline CSS + JS), the repo's standard game
-  shape. No framework, no build step.
-- **Data:** `data/critters.json` (species → {class, habitat, diet, size, region, activity, soundFile}), the
-  credits manifest, and a `sounds/` folder. Mirrors the local-data precedent (WordNet, blazon, scenarios).
-- **Audio:** plain `<audio>` / Web Audio playback of the bundled clips — no synthesis needed (these are real
-  recordings, unlike Mujicians' `VOICES`).
-- **If wired into Mujicians instead of standalone:** it becomes an M6-adjacent mode; then it *could* reuse the
-  choir render surface and Sound Collective framing — but the data pipeline (real recordings + facts JSON) is
-  the same either way. **This is the first open fork.**
+- **Standalone `critter-hunt.html`** — one self-contained file (inline CSS + JS), no framework, no build step.
+- **Data:** `data/critters.json` (animals + instruments + biomes with attribute tags + sound-file refs), credits
+  manifest, `sounds/` folder. Mirrors the local-data precedent (WordNet, blazon, scenarios).
+- **Generator + solver:** pure JS (brute-force arrangement filter — trivial at N≤5). No dependency.
+- **Audio:** `<audio>` / Web Audio playback of bundled clips; instrument repitch (if melodic play is wanted
+  later) is `playbackRate` for now — the granular/Tone.js question only arises for *sustained tonal* play and
+  stays **tentative/deferred** (instruments pitch far better than animals, so it may never be needed).
+- **If wired into Mujicians:** rewards write to `persist.sounds`; instruments join `VOICES`, animals join the
+  drum voices. The data pipeline is identical whether standalone or integrated. **First open fork.**
+
+## Tentative extensions (nice-to-haves, not locked)
+
+- **"Found far from home" twist** — a clue like *"the animal was found in a biome it doesn't naturally live in"*
+  is both a deduction hook and a pure habitat lesson (leans directly into the independent-location decision).
+- **Themed case packs** — constrain a puzzle's cast to one ecosystem ("The Reef Recital," "Tundra Trio") so each
+  case teaches a coherent unit — and makes it usable as a **classroom tool** (a real angle for an educational
+  game).
+- **Hornbostel–Sachs instrument axis** — use the real instrument-family taxonomy
+  (chordophone / aerophone / idiophone / membranophone) for clues; quietly teaches musicology and maps onto
+  Mujicians' timbre families.
+- **Learn-mode vs. Expert toggle** — Learn shows fact tooltips inline and keeps a direct-link clue or two;
+  Expert hides facts and bans direct links (forces indirect attribute chains). Same generator, different knobs.
+- **Guarantee one un-skippable audio clue** — the generator *requires* an audio clue in every puzzle, so the
+  listening skill (the origin of this whole idea) is always load-bearing and never bypassed by pure text logic.
+- **Spoiler-free share grid** — Wordle-style emoji summary of the solve path for the daily puzzle; cheap virality.
+- **Collection completion → Mujicians payoff** — filling the "Menagerie" (percussion) and "Instrument Case"
+  (timbres) unlocks a fuller Free-Play palette / a "full orchestra" loadout, closing the feeder loop.
 
 ## Open forks (decide before building)
 
-1. **Standalone vs. Mujicians mode** — its own puzzle game (Wormwood = flavor) or an actual M6-adjacent mode
-   reusing Mujicians' screens? Decides whether it starts clean or couples to `mujicians.html`.
-2. **Daily puzzle vs. endless** — a Wordle/Murdle-style *one seeded puzzle per day* (fits the site's daily
-   pattern, e.g. the Excla Machine) vs. an endless/generated grid.
-3. **Grid size / difficulty ramp** — species count, attribute-column count, clue count; **within-group twins**
-   (three big cats / three frogs) as the hard tier.
-4. **Wormwood mandatory or optional** — impostor always present (every puzzle = "is one of these fake?"), a boss
-   finale, or a toggle?
-5. **How the answer is entered** — accuse a species by name (reading/spelling), pick from the lineup, or both.
+1. **Standalone vs. Mujicians-integrated** — own collection, or write rewards into `persist.sounds` / `VOICES`?
+2. **Daily seeded puzzle vs. endless generated** — (both are cheap given the generator; could ship both).
+3. **Grid size / difficulty ramp** — N = 3→4→5; which clue types unlock when; audio-clue-required tiers.
+4. **Wormwood mandatory or optional** — impostor-culprit theme always on, a boss finale, or a neutral-case toggle.
+5. **Reward = player's choice vs. fixed** — pick instrument *or* animal, or the puzzle dictates which.
+6. **Accusation input** — full triple-set vs. just the culprit triple (Wormwood mode).
 
 ## MVP scope
 
-**MVP:** standalone `critter-hunt.html`; ~30–60 curated CC-BY/CC0 species **spanning several classes** (mammals,
-birds, amphibians, insects) with one sound clip each + a `critters.json` of 3 attributes (class + habitat + diet)
-seeded from Wikidata; a fixed deduction grid UI (play sound, mark ✗/✓, accuse); fact-only + one ear-only clue
-type; a visible credits manifest. Wormwood as a single "find the impostor" mode.
+**MVP:** standalone `critter-hunt.html`; the **procedural generator + brute-force uniqueness solver** at N=3–4;
+~20–30 animals + ~15 instruments + ~10 biomes seeded from Wikidata with real attribute tags; CC0/CC-BY sounds
+(instruments from VSCO2/VCSL, animals from Freesound/ESC-50); the three-sub-grid deduction UI with card-flip +
+auto-X; direct + negative + **attribute** + one **audio** clue type; accuse-the-triple; a "field notes" reward
+card granting one playable sound (instrument = a `VOICES`-ready sample, animal = a percussion one-shot) into a
+local collection. Wormwood as an optional impostor skin.
 
-**Smaller-lift alternative:** a **bird-only first cut** that's architected to expand to all animals (same schema,
-just a filtered roster) — a smaller curation job, at the cost of the accessibility/originality wins above.
-
-**Deferred:** the full daily-seeded generator, positional/Zebra clue logic, within-group twin difficulty tiers,
-larger roster, animated art, the Mujicians integration (Sound Collective / `VOICES` reuse), and any
-mic/"name it by imitating" angle (out of scope — this is point-and-listen, like the choir boss).
+**Deferred:** relational/positional clues (ordered axis), the daily-seeded shareable mode, N=5+ and richer
+difficulty tuning, larger rosters + more biomes, animated art/detective, **Mujicians integration**
+(`persist.sounds`/`VOICES` wiring), sustained **tonal-animal** timbres (granular/Tone.js — still tentative), and
+any mic/"imitate it" angle (out of scope — point-and-listen).
