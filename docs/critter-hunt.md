@@ -49,16 +49,16 @@ Except where the two amendments above note, the rest below reflects the original
   a ✓ **auto-✗’s the rest of its row & column** (within-grid). **🐺 Unmask Wormwood** opens an accusation strip
   of the N animals; clicking one judges it against `G.culprit` (win, or a "not the impostor" nudge). "New case",
   dev "Reveal" (also names Wormwood).
-- **Synth instrument audio** (`playPreset`) — a small vanilla Web-Audio synth (aero/chord/membrane/idio
-  presets: filtered saw/bowed/plucked, noise+thump drum, inharmonic bell) so the **audio clue is real now**;
-  ▶ on each instrument lets you compare timbres.
+- **Instrument audio** — the 7 pitched instruments play **real recorded samples** (`playInstrument`→`playSample`,
+  anchor + pitch-shift); Drum/Conga fall back to the small vanilla Web-Audio synth (`playPreset`: aero/chord/
+  membrane/idio presets). ▶ on each instrument card lets you compare timbres.
 - **Reward → collection** — solving offers a **field-notes** card (real facts on the culprit trio) and lets
   you **keep one sound**: the instrument (a playable synth timbre) or the animal (a percussion slot). Stored in
   `localStorage` (`critterhunt.collection`); instrument cards replay, with a card-flip.
 
-**Deferred / stubbed in the MVP:** real sound files (animals are a **silent placeholder**; only synth
-instruments sound — so an audio clue is currently somewhat redundant with the visible emoji, meaningful once
-art/samples abstract the instrument); **cross-grid** auto-inference (only within-grid auto-X); difficulty ramp
+**Deferred / stubbed in the MVP:** real sound files (the **7 pitched instruments now use real recordings** — see
+Data sources → Instrument sounds; **animals** remain a **silent placeholder** and Drum/Conga stay synth, so the
+audio clue carries real timbre for instruments now, and gets richer once animal samples land too); **cross-grid** auto-inference (only within-grid auto-X); difficulty ramp
 (N fixed at 4) & daily-seeded mode; Mujicians integration (`persist.sounds`/`VOICES`); the tentative extensions
 below.
 
@@ -221,6 +221,20 @@ Curate + download **once**, commit the data, play offline.
   (AVONET birds, PanTHERIA/EltonTraits mammals, AmphiBIO amphibians).
 
 ### Instrument sounds & facts (NEW)
+
+**Real instrument samples — BUILT in Critter Hunt (2026-07-28).** The 7 pitched instruments now play **real
+recordings** via an **anchor + pitch-shift sampler**: 13 mp3s per instrument (one every 3 semitones, C3–C6);
+playback picks the nearest and shifts it ≤1.5 semitones with `playbackRate` (chosen over per-note sampling —
+indistinguishable in testing, ~⅓ the files). Samples live in `sounds/instruments/<name>/<Note>.mp3` (FluidR3_GM
+via gleitz/midi-js-soundfonts; `sounds/CREDITS.md`; refetch/add with `fetch-instrument-samples.sh` — black keys
+are **flats**). Each `INSTRUMENTS` entry carries a `sample` folder; `playInstrument()`→`playSample()` uses it,
+else the synth preset — **Drum/Conga stay synth** (unpitched). `instrument-sound-lab.html` is a standalone
+preview that plays any of the 7 at any pitch through the same engine. Loads via fetch/decodeAudioData → **serve
+over http**, not `file://`.
+
+**Next — Mujicians:** the same sampler + shared samples get a **sampled-voice branch** in Mujicians' `playVoice`
+so these instruments become **pitched cards** (the reuse the anchor sampler was built for).
+
 - **Sounds:** **VSCO2 Community Edition** (**CC0**), **VCSL — Versilian Community Sample Library** (**CC0**),
   **University of Iowa MIS** (free, no restrictions), **Philharmonia** (free; quality varies),
   **Sonatina Symphonic Orchestra** (free) — all offer **individual chromatic notes**, ideal for a web sampler.

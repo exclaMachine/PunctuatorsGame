@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instrument Sample Preview</title>
+<style>
+  :root{--bg:#f4efe6;--panel:#fffdf8;--ink:#2b2620;--muted:#7d7364;--line:#d8cebb;--accent:#2f7d63;--accent2:#b5532a;--cell:#fbf7ee;--shadow:0 2px 0 #e6ddc9,0 6px 18px rgba(60,50,30,.10);}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:14px 18px;border-bottom:2px solid var(--line);background:var(--panel)}
+  header h1{font-size:20px;margin:0}
+  header .sub{color:var(--muted);font-size:13px}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px;display:flex;flex-direction:column;gap:16px}
+  .panel{background:var(--panel);border:2px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px}
+  h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  button{font:inherit;cursor:pointer;border:2px solid var(--line);background:var(--panel);border-radius:10px;padding:7px 12px;box-shadow:0 2px 0 #e6ddc9}
+  button:hover{background:#fff}
+  button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .row:last-child{margin-bottom:0}
+  .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-right:2px}
+  .readout{font-size:14px;color:var(--ink);min-height:22px;font-variant-numeric:tabular-nums;font-weight:600}
+  .status{font-size:12px;color:var(--muted);min-height:18px}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.5;max-width:760px}
+  .note b{color:var(--ink)}
+  .pianowrap{overflow-x:auto;padding-bottom:8px}
+  .piano{position:relative;display:flex;height:170px;width:max-content;user-select:none}
+  .wkey{width:36px;height:170px;border:1px solid #b9ad95;border-top:none;border-radius:0 0 6px 6px;background:linear-gradient(#ffffff,#f3ecdd);display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:9px;color:var(--muted);cursor:pointer}
+  .wkey.hit{background:linear-gradient(#eaf3ee,#cfe5da)}
+  .bkey{position:absolute;top:0;width:24px;height:104px;background:linear-gradient(#3a342b,#211d16);border:1px solid #171310;border-radius:0 0 5px 5px;z-index:2;cursor:pointer}
+  .bkey.hit{background:linear-gradient(#2f7d63,#1e5342)}
+  @media(max-width:520px){.wkey{width:30px}.bkey{width:20px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎻 Instrument Sample Preview</h1>
+  <span class="sub">Hear the real instrument samples at any pitch — the anchor + pitch-shift engine that ships in Critter Hunt &amp; Mujicians.</span>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Instrument</h2>
+    <div class="row" id="instRow"></div>
+    <div class="readout" id="readout">Click a key to play.</div>
+    <div class="status" id="status"></div>
+    <div class="note">Only <b>13 samples</b> per instrument are stored (one every 3 semitones, C3–C6); any key you press plays the nearest sample <b>pitch-shifted ≤1.5 semitones</b>. The readout shows which sample and the shift.</div>
+  </div>
+
+  <div class="panel">
+    <h2>Keyboard (C3 – C6)</h2>
+    <div class="pianowrap"><div class="piano" id="piano"></div></div>
+    <div class="row" style="margin-top:12px">
+      <button id="btnScale">▶ C-major scale</button>
+      <button id="btnMelody">▶ Little melody</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== audio + sampler (same anchor engine the games ship) ===== */
+let _ac; const AC=()=>_ac||(_ac=new (window.AudioContext||window.webkitAudioContext)());
+const NAMES=["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+const noteName=m=>NAMES[m%12]+(Math.floor(m/12)-1);         // MIDI 60 -> "C4"
+const LOW=48, HIGH=84;
+const ANCHOR_MIDIS=[48,51,54,57,60,63,66,69,72,75,78,81,84];
+const ANCHOR_NAMES=["C3","Eb3","Gb3","A3","C4","Eb4","Gb4","A4","C5","Eb5","Gb5","A5","C6"];
+function anchorFor(m){ m=Math.max(LOW,Math.min(HIGH,m)); let best=ANCHOR_MIDIS[0],bd=99;
+  for(const a of ANCHOR_MIDIS){const d=Math.abs(a-m); if(d<bd){bd=d;best=a;}} return best; }
+
+const INSTS=[
+  {folder:"violin", nm:"Violin", em:"🎻"},
+  {folder:"flute", nm:"Flute", em:"🪈"},
+  {folder:"trumpet", nm:"Trumpet", em:"🎺"},
+  {folder:"acoustic_guitar_nylon", nm:"Guitar", em:"🎸"},
+  {folder:"tenor_sax", nm:"Sax", em:"🎷"},
+  {folder:"tubular_bells", nm:"Bell", em:"🔔"},
+  {folder:"banjo", nm:"Banjo", em:"🪕"},
+];
+let cur=INSTS[0];
+const buffers={}, loading={};
+const setStatus=t=>document.getElementById("status").textContent=t;
+const setReadout=t=>document.getElementById("readout").textContent=t;
+
+function load(folder){
+  if(loading[folder]) return loading[folder];
+  buffers[folder]={}; const c=AC(); let done=0, fails=0;
+  setStatus("Loading "+folder+"…");
+  loading[folder]=Promise.all(ANCHOR_MIDIS.map((m,i)=>
+    fetch("sounds/instruments/"+folder+"/"+ANCHOR_NAMES[i]+".mp3").then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();})
+      .then(ab=>c.decodeAudioData(ab)).then(b=>{buffers[folder][m]=b;}).catch(()=>{fails++;})
+      .finally(()=>{done++;})
+  )).then(()=>{ const n=Object.keys(buffers[folder]).length;
+    setStatus(n? (cur.folder===folder?cur.nm:folder)+" ready — "+n+" samples"
+      : "⚠ Couldn't load samples. Serve over http (e.g. `python3 -m http.server`), not file://."); });
+  return loading[folder];
+}
+function play(midi, dur){
+  const c=AC(); if(c.state==="suspended") c.resume();
+  const a=anchorFor(midi);
+  const go=()=>{ const buf=buffers[cur.folder]&&buffers[cur.folder][a]; if(!buf) return;
+    const t=c.currentTime, src=c.createBufferSource(); src.buffer=buf; src.playbackRate.value=Math.pow(2,(midi-a)/12);
+    const g=c.createGain(); g.gain.setValueAtTime(0.9,t); src.connect(g).connect(c.destination); src.start(t);
+    const end=t+(dur||1.3); g.gain.setValueAtTime(0.9,Math.max(t,end-0.09));
+    g.gain.exponentialRampToValueAtTime(0.0008,end+0.02); try{src.stop(end+0.06);}catch(e){} };
+  if(buffers[cur.folder]&&buffers[cur.folder][a]) go(); else load(cur.folder).then(go);
+}
+function hit(midi, el){
+  if(el){ el.classList.add("hit"); setTimeout(()=>el.classList.remove("hit"),150); }
+  play(midi,1.4);
+  const a=anchorFor(midi), s=midi-a;
+  setReadout("♪ "+noteName(midi)+" · "+cur.nm+" — sample "+noteName(a)+(s?(" shifted "+(s>0?"+":"")+s+" st"):" (exact)"));
+}
+
+/* ===== sequences ===== */
+const SCALE=[60,62,64,65,67,69,71,72];
+const MELODY=[60,60,67,67,69,69,67,65,65,64,64,62,62,60];   // Twinkle, C major
+function seq(midis, nd){ const c=AC(); if(c.state==="suspended")c.resume();
+  let t=c.currentTime+0.06; midis.forEach(m=>{ playAt(m,nd*0.92,t); t+=nd; }); }
+function playAt(midi,dur,t){ const c=AC(), a=anchorFor(midi), buf=buffers[cur.folder]&&buffers[cur.folder][a]; if(!buf) return;
+  const src=c.createBufferSource(); src.buffer=buf; src.playbackRate.value=Math.pow(2,(midi-a)/12);
+  const g=c.createGain(); g.gain.setValueAtTime(0.9,t); src.connect(g).connect(c.destination); src.start(t);
+  const end=t+dur; g.gain.setValueAtTime(0.9,Math.max(t,end-0.06)); g.gain.exponentialRampToValueAtTime(0.0008,end+0.02); try{src.stop(end+0.05);}catch(e){} }
+
+/* ===== piano ===== */
+const WHITE_PC=[0,2,4,5,7,9,11], BLACK_PC=[1,3,6,8,10];
+function buildPiano(){
+  const piano=document.getElementById("piano"); piano.innerHTML=""; const whiteEls={};
+  for(let m=LOW;m<=HIGH;m++){ if(!WHITE_PC.includes(m%12)) continue;
+    const k=document.createElement("div"); k.className="wkey"; if(m%12===0) k.textContent=noteName(m);
+    k.onclick=()=>hit(m,k); piano.appendChild(k); whiteEls[m]=k; }
+  for(let m=LOW;m<=HIGH;m++){ if(!BLACK_PC.includes(m%12)) continue;
+    const leftWhite=whiteEls[m-1]; if(!leftWhite) continue;
+    const b=document.createElement("div"); b.className="bkey"; b.style.left=(leftWhite.offsetLeft+36-12)+"px";
+    b.onclick=e=>{ e.stopPropagation(); hit(m,b); }; piano.appendChild(b); }
+}
+
+/* ===== wiring ===== */
+function selectInst(inst){ cur=inst; document.querySelectorAll(".instbtn").forEach(b=>b.classList.toggle("on",b.dataset.f===inst.folder)); load(inst.folder); }
+function buildInstRow(){
+  const row=document.getElementById("instRow");
+  INSTS.forEach((inst,i)=>{ const b=document.createElement("button"); b.className="instbtn"+(i===0?" on":""); b.dataset.f=inst.folder;
+    b.innerHTML=inst.em+" "+inst.nm; b.onclick=()=>selectInst(inst); row.appendChild(b); });
+}
+document.getElementById("btnScale").onclick=()=>{ setReadout("▶ Scale · "+cur.nm); seq(SCALE,0.34); };
+document.getElementById("btnMelody").onclick=()=>{ setReadout("▶ Melody · "+cur.nm); seq(MELODY,0.42); };
+
+buildInstRow(); buildPiano(); load("violin");
+</script>
+</body>
+</html>
