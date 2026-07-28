@@ -24,9 +24,14 @@ instrument audio clues):
   (A↔I) / `at` (A↔L) / `here` (I↔L, the derived grid) × polarity; the **audio** clue is an association clue
   whose instrument ref is expressed by *timbre* (family) instead of name. Each clue carries `test(arr)`
   (solver predicate), `text` (render), and `meta` (audio/direct/attrCount/teaches).
-- **Three-grid deduction board** — Animals×Instruments, Animals×Locations, Instruments×Locations; cells cycle
-  blank→✗→✓; a ✓ **auto-✗’s the rest of its row & column** (within-grid). Accuse reads the ✓ assignment and
-  judges against the solution (reports instruments/locations correct count on a miss). "New case", dev "Reveal".
+- **UI: classic logic-grid layout** (reworked 2026-07-27 from three separate grids). **Left = flip-cards** for
+  the three categories (Suspects/animals · Weapons/instruments · Scenes/locations): front = emoji + name, **back =
+  the real facts in plain language** (`GLOSS` glosses jargon — "frugivore → eats fruit", "aerophone → wind"),
+  so a new term is one tap away; instrument card fronts have a ▶. **Right = one upside-down-L combined grid**
+  (Animals×Instruments + Animals×Locations across the top band, Locations×Instruments in the lower-left corner —
+  the standard decades-old logic-grid shape, our own CSS, **not** Murdle's stylesheet). Cells cycle blank→✗→✓;
+  a ✓ **auto-✗’s the rest of its row & column** (within-grid). Accuse reads the ✓ assignment and judges against
+  the solution (reports instruments/locations correct count on a miss). "New case", dev "Reveal".
 - **Synth instrument audio** (`playPreset`) — a small vanilla Web-Audio synth (aero/chord/membrane/idio
   presets: filtered saw/bowed/plucked, noise+thump drum, inharmonic bell) so the **audio clue is real now**;
   ▶ on each instrument lets you compare timbres.
@@ -36,9 +41,17 @@ instrument audio clues):
 
 **Deferred / stubbed in the MVP:** real sound files (animals are a **silent placeholder**; only synth
 instruments sound — so an audio clue is currently somewhat redundant with the visible emoji, meaningful once
-art/samples abstract the instrument); **cross-grid** auto-inference (only within-grid auto-X); relational/set
-clue types; difficulty ramp (N fixed at 4) & daily-seeded mode; Mujicians integration (`persist.sounds`/
-`VOICES`); Wormwood impostor skin; the tentative extensions below. See the design sections for the full plan.
+art/samples abstract the instrument); **cross-grid** auto-inference (only within-grid auto-X); difficulty ramp
+(N fixed at 4) & daily-seeded mode; Mujicians integration (`persist.sounds`/`VOICES`); the tentative extensions
+below.
+
+**Next planned — richer clues + the Murdle "4 clues + reveal" shape.** The current templates are
+single-relation and read a bit **"one-note."** Planned (still fully programmatic): **compound / conditional /
+comparative** clue templates (e.g. "the animal in the colder biome played the wooden instrument"; ordinal
+size/register comparisons), and tuning the generator to a Murdle-like **~4-clue target** plus a **final "reveal"
+clue** that pins **which animal Wormwood is impersonating** — the Wormwood impostor skin becomes the culprit
+answer (Murdle's structure: a handful of clues + the closing accusation line). This shifts win-mode toward
+culprit-ID and needs a `reveal`/culprit clue template + a generator target-count knob.
 
 ## The pitch — a real-data Murdle with three axes
 
