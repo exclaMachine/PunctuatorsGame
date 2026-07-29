@@ -669,6 +669,21 @@
     { id:"sax",    name:"Saxophone",    emoji:"🎷", wave:"sawtooth", baseC:60, skin:null, voice:"realsax"     },
     { id:"tbell",  name:"Tubular Bells",emoji:"🛎️", wave:"sine",     baseC:60, skin:null, voice:"realbell"    },
     { id:"banjo",  name:"Banjo",        emoji:"🪕", wave:"triangle", baseC:60, skin:null, voice:"realbanjo"   },
+    // Obscure/world real-instrument set — collectible in Free Play + the Sound Collective (freePlayInstruments
+    // shuffles ALL of these; MAX_TIMBRES caps a run at 4, so the palette varies run to run). See VOICES above.
+    { id:"shamisen",name:"Shamisen",    emoji:"🎴", wave:"sawtooth", baseC:60, skin:null, voice:"realshamisen"},
+    { id:"koto",   name:"Koto",         emoji:"🎏", wave:"triangle", baseC:60, skin:null, voice:"realkoto"    },
+    { id:"shaku",  name:"Shakuhachi",   emoji:"🎋", wave:"sine",     baseC:60, skin:null, voice:"realshaku"   },
+    { id:"sitar",  name:"Sitar",        emoji:"🪷", wave:"sawtooth", baseC:60, skin:null, voice:"realsitar"   },
+    { id:"shanai", name:"Shehnai",      emoji:"🐍", wave:"sawtooth", baseC:60, skin:null, voice:"realshanai"  },
+    { id:"bagpipe",name:"Bagpipes",     emoji:"🏴", wave:"sawtooth", baseC:60, skin:null, voice:"realbagpipe" },
+    { id:"kalimba",name:"Kalimba",      emoji:"👍", wave:"sine",     baseC:60, skin:null, voice:"realkalimba" },
+    { id:"marimba",name:"Marimba",      emoji:"🌴", wave:"sine",     baseC:60, skin:null, voice:"realmarimba" },
+    { id:"glock",  name:"Glockenspiel", emoji:"🔔", wave:"sine",     baseC:72, skin:null, voice:"realglock"   },
+    { id:"celesta",name:"Celesta",      emoji:"❄️", wave:"sine",     baseC:72, skin:null, voice:"realcelesta" },
+    { id:"harpsi", name:"Harpsichord",  emoji:"🎼", wave:"sawtooth", baseC:60, skin:null, voice:"realharpsi"  },
+    { id:"dulcimer",name:"Dulcimer",    emoji:"🔨", wave:"triangle", baseC:60, skin:null, voice:"realdulcimer"},
+    { id:"harp",   name:"Harp",         emoji:"🎶", wave:"triangle", baseC:60, skin:null, voice:"realharp"    },
   ];
   // The curated campaign trio — the only instruments the teaching movements ever draw (piano gated → M6).
   const CORE_INSTRUMENTS = INSTRUMENTS.filter(i=>i.core);
@@ -1298,6 +1313,21 @@
     realsax:     { id:"realsax",     name:"Saxophone",     fam:"winds",   desc:"Real tenor saxophone.",      type:"sample", sample:"tenor_sax",             fallback:"reedorgan", peak:0.5 },
     realbell:    { id:"realbell",    name:"Tubular Bells", fam:"bells",   desc:"Real struck tubular bells.", type:"sample", sample:"tubular_bells",         fallback:"glassbell", peak:0.45 },
     realbanjo:   { id:"realbanjo",   name:"Banjo",         fam:"strings", desc:"Real plucked banjo.",        type:"sample", sample:"banjo",                 fallback:"pluck",     peak:0.55 },
+    // More real instruments — the obscure/world set (FluidR3_GM), collectible in Free Play + the Sound
+    // Collective and used by the M6 Timbre boss (Critter Hunt). Same anchor+pitch-shift sampler.
+    realshamisen:{ id:"realshamisen",name:"Shamisen",      fam:"strings", desc:"Real Japanese 3-string lute — dry, twangy.",    type:"sample", sample:"shamisen",        fallback:"pluck",     peak:0.55 },
+    realkoto:    { id:"realkoto",    name:"Koto",          fam:"strings", desc:"Real Japanese zither — plucked and watery.",     type:"sample", sample:"koto",            fallback:"pluck",     peak:0.55 },
+    realshaku:   { id:"realshaku",   name:"Shakuhachi",    fam:"winds",   desc:"Real Japanese bamboo flute — breathy.",         type:"sample", sample:"shakuhachi",      fallback:"reedorgan", peak:0.5  },
+    realsitar:   { id:"realsitar",   name:"Sitar",         fam:"strings", desc:"Real sitar — buzzing sympathetic strings.",     type:"sample", sample:"sitar",           fallback:"pluck",     peak:0.55 },
+    realshanai:  { id:"realshanai",  name:"Shehnai",       fam:"winds",   desc:"Real double-reed shehnai — nasal, keening.",    type:"sample", sample:"shanai",          fallback:"reedorgan", peak:0.5  },
+    realbagpipe: { id:"realbagpipe", name:"Bagpipes",      fam:"winds",   desc:"Real bagpipes — droning reeds.",                type:"sample", sample:"bagpipe",         fallback:"reedorgan", peak:0.45 },
+    realkalimba: { id:"realkalimba", name:"Kalimba",       fam:"mallets", desc:"Real thumb piano — plinky and round.",          type:"sample", sample:"kalimba",         fallback:"musicbox",  peak:0.55 },
+    realmarimba: { id:"realmarimba", name:"Marimba",       fam:"mallets", desc:"Real wooden mallet bars — warm.",               type:"sample", sample:"marimba",         fallback:"vibraphone",peak:0.5  },
+    realglock:   { id:"realglock",   name:"Glockenspiel",  fam:"bells",   desc:"Real struck metal bars — bright and glassy.",   type:"sample", sample:"glockenspiel",    fallback:"glassbell", peak:0.4  },
+    realcelesta: { id:"realcelesta", name:"Celesta",       fam:"bells",   desc:"Real celesta — a chiming bell-piano.",          type:"sample", sample:"celesta",         fallback:"musicbox",  peak:0.5  },
+    realharpsi:  { id:"realharpsi",  name:"Harpsichord",   fam:"keys",    desc:"Real harpsichord — plucked baroque keys.",      type:"sample", sample:"harpsichord",     fallback:"pluck",     peak:0.5  },
+    realdulcimer:{ id:"realdulcimer",name:"Dulcimer",      fam:"strings", desc:"Real hammered dulcimer — shimmering.",          type:"sample", sample:"dulcimer",        fallback:"pluck",     peak:0.5  },
+    realharp:    { id:"realharp",    name:"Harp",          fam:"strings", desc:"Real orchestral harp — soft plucked strings.",  type:"sample", sample:"orchestral_harp", fallback:"pluck",     peak:0.5  },
   };
   /* ---- Real-instrument sampler: shared anchor samples (with Critter Hunt), pitched by playbackRate ----
      A type:"sample" voice keeps ONE recording every 3 semitones (C3–C6) in sounds/instruments/<sample>/; play
@@ -2445,7 +2475,11 @@
   // synth-only Drum/Conga have no Mujicians voice yet — they stay in Critter Hunt's own collection; the
   // animal→VOICES pipeline is deferred, see docs/critter-hunt.md.)
   const CRITTER_SAMPLE_VOICE = { trumpet:"realtrumpet", violin:"realviolin", acoustic_guitar_nylon:"realguitar",
-                                 tenor_sax:"realsax", tubular_bells:"realbell", banjo:"realbanjo", flute:"realflute" };
+                                 tenor_sax:"realsax", tubular_bells:"realbell", banjo:"realbanjo", flute:"realflute",
+                                 shamisen:"realshamisen", koto:"realkoto", shakuhachi:"realshaku", sitar:"realsitar",
+                                 shanai:"realshanai", bagpipe:"realbagpipe", kalimba:"realkalimba", marimba:"realmarimba",
+                                 glockenspiel:"realglock", celesta:"realcelesta", harpsichord:"realharpsi",
+                                 dulcimer:"realdulcimer", orchestral_harp:"realharp" };
   let bossBanner = null;   // one-shot Home banner after a boss return (reward + granted voice name)
   function launchBoss(){ stopLoop(); location.href = "critter-hunt.html?boss=mujicians"; }
   function grantBossReward(reward){   // → the granted VOICES display name, or null if nothing mapped

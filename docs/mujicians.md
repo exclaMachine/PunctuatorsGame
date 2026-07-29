@@ -2907,10 +2907,14 @@ voices**: real instrument recordings played from the shared **anchor samples** i
 set Critter Hunt uses — 13 mp3s/instrument, one every 3 semitones C3–C6, nearest pitch-shifted ≤1.5 st via
 `playbackRate`). `playVoice` gained a **`renderSample`** branch (the old synth body is factored into
 **`renderSynth`**); a sample voice borrows its synth **`fallback`** for the split-second before buffers decode,
-and **`buildDeck` preloads** a run's sample voices so play is real from the first note. Seven added — **violin,
-flute, trumpet, nylon guitar, saxophone, tubular bells, banjo** — as collectible `INSTRUMENTS` that surface in
-**Free Play** (~93% of free runs draw at least one) and catalogue into the Collective by ear, like the synth
-collectibles. (Provenance: `sounds/CREDITS.md`; loads via fetch/decodeAudioData → needs http serving.)
+and **`buildDeck` preloads** a run's sample voices so play is real from the first note. Seven added first —
+**violin, flute, trumpet, nylon guitar, saxophone, tubular bells, banjo** — then a **13-strong obscure/world set
+on 2026-07-29** (**shamisen, koto, shakuhachi, sitar, shehnai, bagpipes, kalimba, marimba, glockenspiel, celesta,
+harpsichord, dulcimer, harp** — **20 sampled voices total**), all as collectible `INSTRUMENTS` that surface in
+**Free Play** and catalogue into the Collective by ear, like the synth collectibles. The obscure set is also
+wired into the **M6 Timbre boss (Critter Hunt)** as instruments/rewards — a boss win maps a kept instrument's
+sample folder → its matching sampled voice (`CRITTER_SAMPLE_VOICE`). (Provenance: `sounds/CREDITS.md`; loads via
+fetch/decodeAudioData → needs http serving.)
 
 Built in `mujicians.html`:
 
