@@ -1164,7 +1164,7 @@
   /* ================= persistence + daily cap ================= */
   const SAVE_KEY = "mujicians-save-v2";
   function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
-  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, hand:"right", progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"durations" } };
+  let persist = { day:todayStr(), runsUsed:0, codex:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, hand:"right", progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"durations", timbreStage:"lesson" } };
   function loadPersist(){
     try{
       const s = JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
@@ -1184,6 +1184,10 @@
     }
     if(RHYTHM_STAGES.indexOf(persist.progress.rhythmStage)<0)   // M2 ladder frontier stage; done if past M2
       persist.progress.rhythmStage = persist.progress.movement>2 ? "free" : "durations";
+    // M6 is a capstone: a "lesson" gig (learn to blend timbres) then the Wormwood "boss" (Critter Hunt,
+    // launched out to critter-hunt.html; winning it unlocks M7). timbreStage tracks that sub-step.
+    if(persist.progress.timbreStage!=="lesson" && persist.progress.timbreStage!=="boss")
+      persist.progress.timbreStage = persist.progress.movement>6 ? "boss" : "lesson";
     // One-time: the notation stages (durations/rests) were prepended to the M2 ladder — roll anyone still
     // on/at M2 back to its new first stage so they get the note-value lesson. Players past M2 are untouched.
     if(!persist.progress.rhythmNotationV1){
@@ -1203,7 +1207,7 @@
   function resetAll(){
     if(!window.confirm("DEV: wipe ALL saved progress — movement, Codex, Renown, Setlist, pitch gate, runs used? This can't be undone.")) return;
     try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
-    persist = { day:todayStr(), runsUsed:0, codex:[], sounds:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, capFixV1:true, progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"durations", rhythmNotationV1:true } };
+    persist = { day:todayStr(), runsUsed:0, codex:[], sounds:[], totalApplause:0, bestApplause:0, setlist:[], bpm:DEFAULT_BPM, capFixV1:true, progress:{ movement:1, gates:{}, pitchStage:"naturals", rhythmStage:"durations", timbreStage:"lesson", rhythmNotationV1:true } };
     codex.clear();
     sounds.clear();
     savePersist();
@@ -2423,8 +2427,52 @@
       else { persist.progress.movement = 3; run.advancedTo = 3; }
       savePersist(); return;
     }
+    if(mv===6 && (persist.progress.timbreStage||"lesson")==="lesson"){
+      // M6 is a capstone: clearing the timbre-BLEND lesson unlocks the Wormwood BOSS (Critter Hunt). It's
+      // winning that boss — handled on return in handleBossReturn — that finally unlocks M7. Don't advance yet.
+      persist.progress.timbreStage = "boss"; run.advancedToBoss = true; savePersist(); return;
+    }
     persist.progress.movement = mv+1; run.advancedTo = mv+1; savePersist();
   }
+  /* ================= M6 Timbre boss — Critter Hunt (Wormwood) =================
+     The boss is the standalone Murdle-style deduction game in critter-hunt.html. Mujicians launches out to
+     it (?boss=mujicians); on a win it writes the kept sound to localStorage and returns to
+     mujicians.html?boss=win, which handleBossReturn() picks up on load — advancing M6→M7 and granting the
+     sound into the Sound Collective. See docs/critter-hunt.md + docs/mujicians.md ("M6 Timbre boss"). */
+  const BOSS_RETURN_KEY = "mujicians.boss";
+  // A Critter-Hunt instrument reward carries its sample-folder name; the 7 sampled instruments map 1:1 to
+  // Mujicians' real sampled VOICES, so an instrument prize joins the Sound Collective. (Animal cries and the
+  // synth-only Drum/Conga have no Mujicians voice yet — they stay in Critter Hunt's own collection; the
+  // animal→VOICES pipeline is deferred, see docs/critter-hunt.md.)
+  const CRITTER_SAMPLE_VOICE = { trumpet:"realtrumpet", violin:"realviolin", acoustic_guitar_nylon:"realguitar",
+                                 tenor_sax:"realsax", tubular_bells:"realbell", banjo:"realbanjo", flute:"realflute" };
+  let bossBanner = null;   // one-shot Home banner after a boss return (reward + granted voice name)
+  function launchBoss(){ stopLoop(); location.href = "critter-hunt.html?boss=mujicians"; }
+  function grantBossReward(reward){   // → the granted VOICES display name, or null if nothing mapped
+    if(reward && reward.type==="instrument" && reward.sample){
+      const vid = CRITTER_SAMPLE_VOICE[reward.sample];
+      if(vid && VOICES[vid]){
+        if(!sounds.has(vid)) sounds.add(vid);
+        if(!persist.sounds.includes(vid)) persist.sounds.push(vid);
+        return VOICES[vid].name;
+      }
+    }
+    return null;
+  }
+  function handleBossReturn(){
+    let params; try{ params = new URLSearchParams(location.search); }catch(e){ return; }
+    if(params.get("boss")!=="win") return;
+    let data=null; try{ data = JSON.parse(localStorage.getItem(BOSS_RETURN_KEY)||"null"); }catch(e){}
+    try{ localStorage.removeItem(BOSS_RETURN_KEY); }catch(e){}
+    try{ history.replaceState({}, "", location.pathname); }catch(e){}   // drop ?boss=win so a refresh can't re-trigger
+    if(!data || data.result!=="win") return;
+    // Only the M6-boss frontier advances (guards a stale/replayed return once you're already past M6).
+    if(persist.progress.movement===6 && (persist.progress.timbreStage||"lesson")==="boss") persist.progress.movement = 7;
+    const voiceName = grantBossReward(data.reward);
+    savePersist();
+    bossBanner = { reward:data.reward, voiceName };
+  }
+
   // The per-run GOAL that stops the song (campaign only): the current movement's gate, met THIS run.
   // (gateStatus reads per-run state now — gatePitch for M1, the run counters for M2–M7.) Free Play = no goal.
   function runGoalMet(){ return !!(run && run.mode==="campaign" && gateStatus(run.movement).met); }
@@ -3335,23 +3383,29 @@
   }
   function renderHome(){
     const capped = atCap();
+    const banner = bossBanner; bossBanner = null;   // one-shot post-boss-return celebration
     const mv = persist.progress.movement, mvName = MOVEMENTS[mv].element;
     const stage = persist.progress.pitchStage || "naturals";
     const rStage = persist.progress.rhythmStage || "match";
-    const campLabel = capped ? "No runs left today"
+    // M6 boss stage: the Campaign button becomes "Unmask Wormwood" and launches Critter Hunt (no run cost).
+    const m6boss = mv===6 && (persist.progress.timbreStage||"lesson")==="boss";
+    const campLabel = m6boss ? "🐺 Boss — Unmask Wormwood"
+      : capped ? "No runs left today"
       : (mv===1 ? `▶ Campaign · M1 Pitch — ${PITCH_STAGE_LABEL[stage]}`
       : (mv===2 ? `▶ Campaign · M2 Rhythm — ${RHYTHM_STAGE_LABEL[rStage]}` : `▶ Campaign · Movement ${mv} — ${mvName}`));
     $game.innerHTML = `
       <div class="gigbar center">
+        ${banner?`<div class="cta" style="justify-content:center"><p class="big" style="color:var(--gold)">🐺 Wormwood unmasked — <b>M6 Timbre</b> complete! ${banner.voiceName?`New voice added to your Sound Collective: <b>${esc(banner.voiceName)}</b>.`:`You kept <b>${esc((banner.reward&&banner.reward.nm)||"a sound")}</b> in Critter Hunt.`} Campaign continues at <b>M7 Structure</b>.</p></div>`:""}
         <p class="big">Play cards that are <b>notes</b>. Combine them into <b>chords &amp; scales</b> —
         the more in-key, consonant, and resolved, the more <b>Applause</b> you score. In <b>Campaign</b>, reach
         each movement's goal to advance; in <b>Free Play</b>, build freely and finish when you like.</p>
         <div class="cta" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button class="btn" id="b-campaign" ${capped?"disabled":""}>${campLabel}</button>
+          <button class="btn" id="b-campaign" ${(capped && !m6boss)?"disabled":""}>${campLabel}</button>
           <button class="btn ghost" id="b-free" ${capped?"disabled":""} title="Every mechanic unlocked (today's full game)">Free Play</button>
           <button class="btn ghost" id="b-beatlab" title="Practice live finger-drumming (rhythm MVP) — no daily cap">🥁 Beat Lab</button>
         </div>
-        ${mv===1?`<div class="cta" style="justify-content:center">${pitchLadderHTML()}</div>`
+        ${m6boss?`<p class="hint center">🐺 <b>Timbre boss:</b> Timbrewolf's tutor is done — now <b>Wormwood the timbre-thief</b> is hiding among the band. Face him in <b>Critter Hunt</b>: deduce who played what where, then unmask the impostor to win a voice and unlock <b>M7 Structure</b>.</p>`
+          :mv===1?`<div class="cta" style="justify-content:center">${pitchLadderHTML()}</div>`
           :mv===2?`<div class="cta" style="justify-content:center">${rhythmLadderHTML()}</div>`
           :pitchPracticeHTML()}
         ${devMovementBarHTML()}
@@ -3362,7 +3416,7 @@
       </div>
       ${setlistHTML()}`;
     const bc = document.getElementById("b-campaign");
-    if(bc) bc.addEventListener("click", ()=>{ audio(); startRun("campaign"); });
+    if(bc) bc.addEventListener("click", ()=>{ audio(); if(m6boss) launchBoss(); else startRun("campaign"); });
     const bf = document.getElementById("b-free");
     if(bf) bf.addEventListener("click", ()=>{ audio(); startRun("free"); });
     const blab = document.getElementById("b-beatlab");
@@ -3375,6 +3429,7 @@
       persist.progress.movement = to;
       if(to===1) persist.progress.pitchStage = "naturals";   // DEV: restart the M1 ladder from the top for testing
       if(to<=2) persist.progress.rhythmStage = "durations";  // DEV: restart the M2 ladder from its first (notation) stage
+      persist.progress.timbreStage = to>6 ? "boss" : "lesson";   // DEV: jump to 6 → play the lesson first; past 6 → boss done
       savePersist(); renderHome();
     }));
     const dr = document.getElementById("dev-reset");
@@ -3475,7 +3530,9 @@
       <div class="overlay"><div class="modal center">
         <h2>🎉 Performance complete!</h2>
         ${accLine}
-        ${run && run.advancedTo
+        ${run && run.advancedToBoss
+          ? `<p class="big" style="color:var(--gold)">🐺 <b>M6 Timbre</b> lesson cleared! Now <b>Wormwood the timbre-thief</b> is hiding among the band — face him in <b>Critter Hunt</b> and unmask the impostor to unlock <b>M7 Structure</b>.</p>`
+          : run && run.advancedTo
           ? `<p class="big" style="color:var(--good)">🎓 <b>M${run.movement} ${MOVEMENTS[run.movement].element}</b> complete — unlocked <b>M${run.advancedTo} ${MOVEMENTS[run.advancedTo].element}</b>! Next Campaign run starts there.</p>`
           : run && run.advancedStage
             ? (run.movement===1
@@ -3497,9 +3554,11 @@
                 ? `<button class="btn ghost" disabled>✓ Saved to Setlist</button>`
                 : `<button class="btn play" id="b-savesong">💾 Save this song</button>`)
             : ""}
-          ${runsLeft>0
-            ? `<button class="btn" id="b-again">▶ New Run (${runsLeftLabel()} left today)</button>`
-            : `<button class="btn ghost" disabled>No runs left today</button>`}
+          ${run.advancedToBoss
+            ? `<button class="btn play" id="b-faceboss">🐺 Face Wormwood →</button>`
+            : runsLeft>0
+              ? `<button class="btn" id="b-again">▶ New Run (${runsLeftLabel()} left today)</button>`
+              : `<button class="btn ghost" disabled>No runs left today</button>`}
           <button class="btn ghost" id="b-home">Home</button>
         </div>
         ${runsLeft===0?`<p class="hint">Daily cap reached — try <a href="pitch-bird.html" style="color:var(--accent)">Pitch Bird</a> or come back tomorrow.</p>`:""}
@@ -3512,6 +3571,8 @@
     if(replay) replay.addEventListener("click", ()=>{ if(loopOn()) stopLoop(); else startLoop(); renderEndOverlay(); });
     const savebtn = document.getElementById("b-savesong");
     if(savebtn) savebtn.addEventListener("click", ()=> offerSave("win"));
+    const faceboss = document.getElementById("b-faceboss");
+    if(faceboss) faceboss.addEventListener("click", ()=>{ audio(); launchBoss(); });
     document.getElementById("b-home").addEventListener("click", ()=>{ stopLoop(); galleryPlayId=null; screen="home"; run=null; render(); });
   }
   function renderGigStatic(){ /* keep the last gig board visible behind the end overlay (win or lose) so the loop's playhead keeps sweeping */ if(run) renderGig(); }
@@ -4109,6 +4170,7 @@
   loadPersist();
   (persist.codex||[]).forEach(c=>codex.add(c));
   (persist.sounds||[]).forEach(v=>{ if(VOICES[v]) sounds.add(v); });
+  handleBossReturn();   // returning from the Critter Hunt (M6) boss: advance M6→M7 + grant the sound
   renderCodex();
   renderSounds();
   render();

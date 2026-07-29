@@ -1842,9 +1842,23 @@ Beating her **captures the tritone, tamed** ("weapon → your tool," like the ot
 
 ---
 
-## Wormwood — the M6 Timbre boss: "Wormwood's Choir" (DESIGNED 2026-07-26, not built)
+## Wormwood — the M6 Timbre boss: "Wormwood's Choir" (DESIGNED 2026-07-26)
 
-> **Status: DESIGNED, not built.** The fifth fleshed-out boss (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built), [Morendo](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built), [Slurry](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built), [Tritony](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25-not-built)). Wormwood is the **M6 Timbre capstone** (gating M7). It owns the one modality the others don't: **timbre = the ear for *color*** — not *which* pitch, but *what* voice. And that skill is **listening and discriminating, not performing**, so this is the roster's **first "pure listening, point-don't-perform" boss** — no fourth mic game, and distinct from Tritony's craft puzzle. It is also the **payoff for the built [Sound Collective](#the-sound-collective--sound-is-the-main-collection-built-2026-07-25)**: the `VOICES` you discovered by hearing become the voices you must identify under pressure. Same boss template: one win-target run, telegraphed attacks, retryable, capture → Muse. `run.debuff='flatten'`; Wormwood's HP is the count of true voices restored (see meters).
+> **M6 BOSS SLOT NOW FILLED (2026-07-29) — by Critter Hunt, not this "Wormwood's Choir" set-piece.** The M6
+> Timbre boss that actually ships is the **[Critter Hunt](critter-hunt.md)** Murdle-style deduction game — i.e.
+> the **[Choir Line-Up deduction variant](#variant--the-choir-line-up-a-murdle-style-deduction-layer-design-fork-not-the-locked-mvp)**
+> below, grown into its own standalone game (`critter-hunt.html`) and **wired in as the boss via link-out**. M6 is
+> a **capstone**: clear the timbre-**blend** lesson gig (Timbrewolf's tutor) → `persist.progress.timbreStage`
+> flips `"lesson"→"boss"` (instead of unlocking M7) → the Home/win-screen Campaign button becomes **🐺 Boss —
+> Unmask Wormwood** and launches `critter-hunt.html?boss=mujicians`. A **win** hands the kept sound back
+> (`localStorage["mujicians.boss"]` → `mujicians.html?boss=win`); `handleBossReturn()` **advances M6→M7** and
+> **grants the sound into the Sound Collective** (a kept instrument's `sample` folder → its matching sampled
+> `VOICE`; animal cries / synth Drum-Conga have no voice yet → stay in Critter Hunt's own collection). Forfeit
+> (**← Back to Mujicians**) returns with no advance, so the boss is retryable. See `docs/critter-hunt.md` →
+> "wired into Mujicians as the M6 Timbre boss". The **find-the-odd-voice "Wormwood's Choir" set-piece described
+> in the rest of this section remains an unbuilt alternative** design (a possible richer/second boss cut).
+>
+> **Status of the design below: DESIGNED, not built.** The fifth fleshed-out boss (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built), [Morendo](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built), [Slurry](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built), [Tritony](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25-not-built)). Wormwood is the **M6 Timbre capstone** (gating M7). It owns the one modality the others don't: **timbre = the ear for *color*** — not *which* pitch, but *what* voice. And that skill is **listening and discriminating, not performing**, so this is the roster's **first "pure listening, point-don't-perform" boss** — no fourth mic game, and distinct from Tritony's craft puzzle. It is also the **payoff for the built [Sound Collective](#the-sound-collective--sound-is-the-main-collection-built-2026-07-25)**: the `VOICES` you discovered by hearing become the voices you must identify under pressure. Same boss template: one win-target run, telegraphed attacks, retryable, capture → Muse. `run.debuff='flatten'`; Wormwood's HP is the count of true voices restored (see meters).
 >
 > **Forks locked with the dev (2026-07-26):** (1) **Core interaction = "find the odd voice"** (scan the droning choir, pluck the timbre that *doesn't* match the flatten) — pure discrimination; the **match-the-twin** variant (Timbrewolf hums a target voice, find its match) is a **later phase**, not the MVP spine. (2) **Strictly point-and-listen** — the mic does **not** come back in (an optional *sing-in-a-voice's-timbre* idea was set aside: matching timbre with your voice is genuinely hard and would drift toward a fourth mic game). **No MVP built yet** — this section is the design; a standalone `wormwoods-choir.html` (the Morendo/`scorch-bones.html` precedent) is the eventual first cut.
 

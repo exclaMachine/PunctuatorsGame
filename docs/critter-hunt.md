@@ -11,6 +11,23 @@
 
 A playable `critter-hunt.html`, **emoji visuals**, N=4, synth instrument audio clues.
 
+**AMENDED 2026-07-29 — wired into Mujicians as the M6 Timbre boss (forks #1 resolved: link-out + return).**
+M6 Timbre is now a **capstone**: you first clear the normal timbre-blend lesson gig (Timbrewolf's tutor), which
+sets `persist.progress.timbreStage="lesson"→"boss"` instead of unlocking M7; the Home Campaign button then
+becomes **🐺 Boss — Unmask Wormwood** and **launches out to `critter-hunt.html?boss=mujicians`** (Mujicians links
+to standalone pages by relative path, like `pitch-bird.html`; the boss costs no daily run). Critter Hunt detects
+`?boss=mujicians` (`BOSS`), reframes its header as the M6 boss, and adds a **← Back to Mujicians** forfeit button
+(returns with no advance, so the boss is retryable). On a **win**, the reward-pick (`claimReward`) still saves the
+sound to Critter Hunt's own collection **and** hands it back: it writes `{result:"win",reward}` to
+`localStorage["mujicians.boss"]` and navigates to `mujicians.html?boss=win`. Mujicians' `handleBossReturn()`
+(run on load) reads + clears that key, **advances M6→M7**, and **grants the sound into the Sound Collective**
+(`grantBossReward` maps a kept **instrument's `sample` folder → the matching sampled VOICE** — the 7 real
+instruments map 1:1: `trumpet→realtrumpet`, `violin→realviolin`, `acoustic_guitar_nylon→realguitar`,
+`tenor_sax→realsax`, `tubular_bells→realbell`, `banjo→realbanjo`, `flute→realflute` — added to `persist.sounds`).
+A kept **animal cry** or a **synth-only Drum/Conga** has no Mujicians voice yet, so it stays in Critter Hunt's own
+collection (the animal→`VOICES` pipeline is still deferred). See `docs/mujicians.md` → "M6 Timbre boss". Standalone
+play is unchanged when there's no `?boss` param.
+
 **AMENDED 2026-07-28 — unmasking Wormwood is now the mandatory endgoal (forks #4 + #6 resolved).** One
 animal is Wormwood in disguise (`G.culprit`); a **final determining "THE UNMASKING" clue** (`buildUnmaskClue`)
 always closes the Case File and pins the impostor **through the solved grid** — via a *unique* attribute of the
@@ -344,7 +361,9 @@ are **pitched cards** in Free Play and catalogue into the Sound Collective. See 
 
 ## Open forks (decide before building)
 
-1. **Standalone vs. Mujicians-integrated** — own collection, or write rewards into `persist.sounds` / `VOICES`?
+1. ~~**Standalone vs. Mujicians-integrated**~~ — **RESOLVED 2026-07-29: BOTH.** Standalone play is unchanged; when
+   launched as the **Mujicians M6 boss** (`?boss=mujicians`) a win writes the kept instrument into
+   `persist.sounds` (mapped to a sampled `VOICE`) and advances M6→M7. See the 2026-07-29 amendment above.
 2. **Daily seeded puzzle vs. endless generated** — (both are cheap given the generator; could ship both).
 3. **Grid size / difficulty ramp** — N = 3→4→5; which clue types unlock when; audio-clue-required tiers.
 4. ~~**Wormwood mandatory or optional**~~ — **RESOLVED 2026-07-28: always on.** Unmask-the-impostor is the
@@ -363,6 +382,7 @@ card granting one playable sound (instrument = a `VOICES`-ready sample, animal =
 local collection. Wormwood as the **mandatory impostor to unmask** — a final determining clue + name-the-culprit win.
 
 **Deferred:** relational/positional clues (ordered axis), the daily-seeded shareable mode, N=5+ and richer
-difficulty tuning, larger rosters + more biomes, animated art/detective, **Mujicians integration**
-(`persist.sounds`/`VOICES` wiring), sustained **tonal-animal** timbres (granular/Tone.js — still tentative), and
-any mic/"imitate it" angle (out of scope — point-and-listen).
+difficulty tuning, larger rosters + more biomes, animated art/detective, sustained **tonal-animal** timbres
+(granular/Tone.js — still tentative; also the reason a kept **animal** cry can't yet grant a Mujicians voice),
+and any mic/"imitate it" angle (out of scope — point-and-listen). **Mujicians integration is now BUILT** (the M6
+Timbre boss — see the 2026-07-29 amendment); the remaining piece is wiring **animals** into `VOICES`/`DRUM_VOICES`.

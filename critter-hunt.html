@@ -719,6 +719,16 @@ function judgeAccusation(ai){
 }
 
 /* ============================ REWARD + COLLECTION ============================ */
+// Boss mode: launched from Mujicians as its M6 Timbre boss (critter-hunt.html?boss=mujicians). On a win we
+// hand the kept sound back via localStorage and return to mujicians.html?boss=win, which advances M6→M7 and
+// grants the sound into its Sound Collective. See docs/critter-hunt.md ("Mujicians integration").
+const BOSS = (()=>{ try{ return new URLSearchParams(location.search).get("boss")==="mujicians"; }catch(e){ return false; } })();
+function returnToMujicians(result, reward){
+  try{ localStorage.setItem("mujicians.boss", JSON.stringify({result, reward, t:Date.now()})); }catch(e){}
+  location.href = "mujicians.html?boss=win";
+}
+// Keep the prize in Critter Hunt's own collection AND (in boss mode) carry it back to Mujicians.
+function claimReward(r){ addToCollection(r); if(BOSS){ returnToMujicians("win", r); } else { closeModal(); } }
 const KEY="critterhunt.collection";
 const loadCol=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[];}catch(e){return [];}};
 const saveCol=(c)=>localStorage.setItem(KEY,JSON.stringify(c));
@@ -728,7 +738,8 @@ function winModal(){
   document.getElementById("accuseStrip").style.display="none";
   const body=document.getElementById("modalBody");
   body.innerHTML='<h2>🐺 Wormwood unmasked!</h2>'+
-    '<p><b>'+A.em+' '+A.nm+'</b> was the impostor. Field notes on Wormwood’s disguise — and pick one sound to keep:</p>'+
+    '<p><b>'+A.em+' '+A.nm+'</b> was the impostor. Field notes on Wormwood’s disguise — '+
+      (BOSS?'pick one sound to carry back into Mujicians’ Sound Collective:':'and pick one sound to keep:')+'</p>'+
     '<div class="fieldnotes">'+
       fnCard(A.em,A.nm,CAT.animal.facts(A))+
       fnCard(I.em,I.nm,CAT.instrument.facts(I))+
@@ -739,8 +750,8 @@ function winModal(){
       '<button id="pickA">Keep '+A.em+' '+A.nm+' — its real animal sound</button>'+
     '</div>';
   document.getElementById("overlay").classList.add("on");
-  document.getElementById("pickI").onclick=()=>{ addToCollection({type:"instrument",em:I.em,nm:I.nm,preset:I.preset,sample:I.sample}); closeModal(); };
-  document.getElementById("pickA").onclick=()=>{ addToCollection({type:"animal",em:A.em,nm:A.nm,snd:A.snd}); closeModal(); };
+  document.getElementById("pickI").onclick=()=>{ claimReward({type:"instrument",em:I.em,nm:I.nm,preset:I.preset,sample:I.sample}); };
+  document.getElementById("pickA").onclick=()=>{ claimReward({type:"animal",em:A.em,nm:A.nm,snd:A.snd}); };
 }
 function fnCard(em,nm,lines){ return '<div class="fn"><div class="big">'+em+'</div><div><b>'+nm+'</b></div><ul>'+
   lines.map(l=>"<li>"+l+"</li>").join("")+'</ul></div>'; }
@@ -775,6 +786,17 @@ document.getElementById("btnReveal").onclick=()=>{
   const {A,I,L}=G.cast; const lines=A.map((a,ai)=>a.em+" "+a.nm+" → "+I[G.sol.pi[ai]].em+" "+I[G.sol.pi[ai]].nm+" @ "+L[G.sol.sg[ai]].em+" "+L[G.sol.sg[ai]].nm);
   document.getElementById("msg").textContent="ANSWER — "+lines.join(" · ")+"  ·  🐺 Wormwood = "+A[G.culprit].em+" "+A[G.culprit].nm;
 };
+// Boss chrome: reframe the header as the Mujicians M6 boss and add a "back" (forfeit) button.
+if(BOSS){
+  const h1=document.querySelector("header h1"); if(h1) h1.textContent="🐺 The Timbre Boss — Unmask Wormwood";
+  const sub=document.querySelector("header .sub");
+  if(sub) sub.innerHTML="<b>Mujicians · Movement 6 (Timbre).</b> Wormwood the timbre-thief is disguised as one of the band. Deduce who played what and where, then read THE UNMASKING clue to name the impostor — win to carry a voice back into Mujicians and unlock M7.";
+  const back=document.createElement("button");
+  back.textContent="← Back to Mujicians";
+  back.title="Return without unmasking Wormwood (you can retry the boss)";
+  back.onclick=()=>{ location.href="mujicians.html"; };   // forfeit — no advance
+  const ctr=document.querySelector(".controls"); if(ctr) ctr.appendChild(back);
+}
 newGame(); renderCollection();
 </script>
 </body>
