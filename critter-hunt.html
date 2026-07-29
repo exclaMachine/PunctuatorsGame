@@ -69,6 +69,7 @@
   .clue{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--cell);display:flex;gap:8px;align-items:flex-start}
   .clue .n{font-weight:700;color:var(--muted);min-width:18px}
   .clue.audio{border-color:var(--accent);background:#eef5f1}
+  .clue.compound{border-color:#7a5da8;background:#f2eef8}          /* the richer logic clues (XOR/either/if-then/comparative) */
   .clue .listen{margin-left:auto;white-space:nowrap;font-size:12px;padding:2px 8px}
   .clue.final{border:2px solid #6b4a2f;background:#f3ece1;margin-top:14px}
   .clue.final .n{color:#6b4a2f;font-size:18px}
@@ -338,13 +339,16 @@ function sampleCast(N){
   const L=shuffle(LOCATIONS).slice(0,N);
   return {A,I,L};
 }
+// A clue's "teaches" tags (real-fact factlets it exposes) — a positive attr ref teaches that fact.
+function teachOf(ref){ return ref.kind==="attr"? [ref.cat+"."+ref.key+"="+ref.val] : []; }
+const SIZE_RANK={tiny:0,small:1,medium:2,large:3,huge:4};   // real size ordering → comparative clues
+
 function buildCluePool(cast, sol, N){
   const rA=cast.A.map((_,i)=>refsFor("animal",cast.A,i));
   const rI=cast.I.map((_,i)=>refsFor("instrument",cast.I,i));
   const rL=cast.L.map((_,i)=>refsFor("location",cast.L,i));
   const pool=[]; const seen=new Set();
   const add=(clue)=>{ if(seen.has(clue.sig))return; seen.add(clue.sig); pool.push(clue); };
-  const teachOf=(ref)=> ref.kind==="attr"? [ref.cat+"."+ref.key+"="+ref.val] : [];
   for(let a=0;a<N;a++)for(let i=0;i<N;i++){
     const truth=sol.pi[a]===i, pol=truth?"pos":"neg";
     for(const ra of rA[a])for(const ri of rI[i]){
@@ -382,6 +386,130 @@ function buildCluePool(cast, sol, N){
 }
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 
+/* ============================ COMPOUND (Murdle-style) CLUES ============================
+   Richer logic clues, all still TRUE under the solution and all expressed via the same
+   test(arr) predicate the uniqueness solver uses:
+     • XOR      — "Either P or Q, but not both."          test = P xor Q          (badge ⚖️)
+     • either2  — "The X did either A or B."               test = A or B           (badge 🔀)
+     • cond     — "If P, then Q."                          test = !P or Q          (badge ➡️)
+     • comp     — "The critter that … is bigger than …"    test = size ordering    (badge 📏)
+   The atoms these compose from are positive single-relation facts (animal↔instrument /
+   animal↔location / instrument↔location), each described by a name or a *uniquely
+   discriminating* real-attribute ref (so they teach). */
+function atomsFor(cast, sol, N){
+  const rA=cast.A.map((_,i)=>refsFor("animal",cast.A,i));
+  const rI=cast.I.map((_,i)=>refsFor("instrument",cast.I,i));
+  const rL=cast.L.map((_,i)=>refsFor("location",cast.L,i));
+  const atoms=[];
+  for(let a=0;a<N;a++)for(let i=0;i<N;i++){                 // plays: animal a plays instrument i
+    const truth=sol.pi[a]===i;
+    for(const ra of rA[a])for(const ri of rI[i])
+      atoms.push({truth, text:ra.label+" played "+ri.label, cellsig:"P"+a+"-"+i,
+        refs:[ra,ri], teaches:teachOf(ra).concat(teachOf(ri)), test:arr=>arr.pi[a]===i});
+  }
+  for(let a=0;a<N;a++)for(let l=0;l<N;l++){                 // at: animal a found in location l
+    const truth=sol.sg[a]===l;
+    for(const ra of rA[a])for(const rl of rL[l])
+      atoms.push({truth, text:ra.label+" was found in "+rl.label, cellsig:"T"+a+"-"+l,
+        refs:[ra,rl], teaches:teachOf(ra).concat(teachOf(rl)), test:arr=>arr.sg[a]===l});
+  }
+  for(let i=0;i<N;i++)for(let l=0;l<N;l++){                 // here: instrument i heard in location l
+    const a=sol.pi.indexOf(i), truth=sol.sg[a]===l;
+    for(const ri of rI[i])for(const rl of rL[l])
+      atoms.push({truth, text:ri.label+" was heard in "+rl.label, cellsig:"H"+i+"-"+l,
+        refs:[ri,rl], teaches:teachOf(ri).concat(teachOf(rl)),
+        test:arr=>{const aa=arr.pi.indexOf(i);return arr.sg[aa]===l;}});
+  }
+  return atoms;
+}
+function buildCompoundPool(cast, sol, N){
+  const rA=cast.A.map((_,i)=>refsFor("animal",cast.A,i));
+  const rI=cast.I.map((_,i)=>refsFor("instrument",cast.I,i));
+  const rL=cast.L.map((_,i)=>refsFor("location",cast.L,i));
+  const atoms=atomsFor(cast,sol,N);
+  const trueA=shuffle(atoms.filter(a=>a.truth)), falseA=shuffle(atoms.filter(a=>!a.truth));
+  const out=[], seen=new Set();
+  const attrOf=refs=>refs.reduce((n,r)=>n+(r.kind==="attr"?1:0),0);
+  const push=o=>{ if(seen.has(o.sig))return; seen.add(o.sig); out.push(o); };
+
+  // --- XOR: two independent props, exactly one true (true atom vs false atom) ---
+  let n=0;
+  xorLoop: for(const P of trueA){ for(const Q of falseA){
+    if(P.cellsig===Q.cellsig) continue;
+    push({ctype:"xor", compound:true, audio:false, direct:false,
+      attrCount:attrOf(P.refs.concat(Q.refs)), teaches:P.teaches.concat(Q.teaches),
+      text:"Either "+P.text+" or "+Q.text+", but not both.",
+      test:arr=>P.test(arr)!==Q.test(arr),
+      sig:"xor|"+[P.cellsig,Q.cellsig].sort().join("|")+"|"+P.text+"|"+Q.text});
+    if(++n>=90) break xorLoop;
+  }}
+  // --- Conditional: if P then Q (both true under the solution) ---
+  n=0;
+  condLoop: for(const P of trueA){ for(const Q of trueA){
+    if(P.cellsig===Q.cellsig) continue;
+    push({ctype:"cond", compound:true, audio:false, direct:false,
+      attrCount:attrOf(P.refs.concat(Q.refs)), teaches:P.teaches.concat(Q.teaches),
+      text:cap("if "+P.text+", then "+Q.text+"."),
+      test:arr=>!P.test(arr)||Q.test(arr),
+      sig:"cond|"+P.cellsig+"=>"+Q.cellsig+"|"+P.text+"|"+Q.text});
+    if(++n>=60) break condLoop;
+  }}
+  // --- Narrow-to-two: "The X did either A or B" (true partner + one decoy) ---
+  const narrow=[];
+  for(let a=0;a<N;a++){ const it=sol.pi[a];                 // animal → two instruments
+    for(let jf=0;jf<N;jf++){ if(jf===it)continue;
+      for(const ra of rA[a])for(const rt of rI[it])for(const rf of rI[jf])
+        narrow.push({ctype:"either2", compound:true, audio:false, direct:false,
+          attrCount:attrOf([ra,rt,rf]), teaches:teachOf(ra).concat(teachOf(rt),teachOf(rf)),
+          text:cap(ra.label+" played either "+rt.label+" or "+rf.label+"."),
+          test:arr=>arr.pi[a]===it||arr.pi[a]===jf,
+          sig:"e2P|"+a+"|"+[it,jf].sort().join(",")+"|"+ra.label+rt.label+rf.label}); }}
+  for(let a=0;a<N;a++){ const lt=sol.sg[a];                 // animal → two locations
+    for(let lf=0;lf<N;lf++){ if(lf===lt)continue;
+      for(const ra of rA[a])for(const rt of rL[lt])for(const rf of rL[lf])
+        narrow.push({ctype:"either2", compound:true, audio:false, direct:false,
+          attrCount:attrOf([ra,rt,rf]), teaches:teachOf(ra).concat(teachOf(rt),teachOf(rf)),
+          text:cap(ra.label+" was found in either "+rt.label+" or "+rf.label+"."),
+          test:arr=>arr.sg[a]===lt||arr.sg[a]===lf,
+          sig:"e2T|"+a+"|"+[lt,lf].sort().join(",")+"|"+ra.label+rt.label+rf.label}); }}
+  for(let i=0;i<N;i++){ const a=sol.pi.indexOf(i), lt=sol.sg[a];   // instrument → two locations
+    for(let lf=0;lf<N;lf++){ if(lf===lt)continue;
+      for(const ri of rI[i])for(const rt of rL[lt])for(const rf of rL[lf])
+        narrow.push({ctype:"either2", compound:true, audio:false, direct:false,
+          attrCount:attrOf([ri,rt,rf]), teaches:teachOf(ri).concat(teachOf(rt),teachOf(rf)),
+          text:cap(ri.label+" was heard in either "+rt.label+" or "+rf.label+"."),
+          test:arr=>{const aa=arr.pi.indexOf(i);return arr.sg[aa]===lt||arr.sg[aa]===lf;},
+          sig:"e2H|"+i+"|"+[lt,lf].sort().join(",")+"|"+ri.label+rt.label+rf.label}); }}
+  shuffle(narrow).slice(0,70).forEach(push);
+  // --- Comparative: size ordering between two indirectly-named critters ---
+  const solArr={pi:sol.pi,sg:sol.sg}, descs=[];
+  for(let i=0;i<N;i++)for(const ri of rI[i])
+    descs.push({resolve:arr=>arr.pi.indexOf(i), text:"the critter that played "+ri.label, key:"pi"+i+ri.label, refs:[ri]});
+  for(let l=0;l<N;l++)for(const rl of rL[l])
+    descs.push({resolve:arr=>arr.sg.indexOf(l), text:"the critter found in "+rl.label, key:"sg"+l+rl.label, refs:[rl]});
+  const comps=[];
+  for(const d1 of descs)for(const d2 of descs){
+    if(d1.key>=d2.key)continue;                             // one direction only (avoid dup mirror)
+    const a1=d1.resolve(solArr), a2=d2.resolve(solArr);
+    if(a1===a2)continue;                                    // must be two distinct critters
+    const r1=SIZE_RANK[cast.A[a1].size], r2=SIZE_RANK[cast.A[a2].size];
+    if(r1===r2)continue;                                    // sizes must differ
+    const dir=r1>r2?"bigger":"smaller";
+    comps.push({ctype:"comp", compound:true, audio:false, direct:false,
+      attrCount:attrOf(d1.refs.concat(d2.refs))+1, teaches:[],
+      text:cap(d1.text+" is "+dir+" than "+d2.text+"."),
+      test:arr=>{const x=d1.resolve(arr),y=d2.resolve(arr); if(x===y)return false;
+        const rx=SIZE_RANK[cast.A[x].size], ry=SIZE_RANK[cast.A[y].size];
+        if(rx===ry)return false; return (rx>ry)===(dir==="bigger");},
+      sig:"comp|"+d1.key+"|"+d2.key});
+  }
+  shuffle(comps).slice(0,70).forEach(push);
+  return out;
+}
+const CTYPE_BADGE={xor:"⚖️ ", either2:"🔀 ", cond:"➡️ ", comp:"📏 "};
+// A compound clue is "unclear" — it needs inference and doesn't resolve to a single grid mark. A puzzle
+// gets exactly ONE of these; every other clue is "clear" (a definite ✓/✗ on a specific cell pair).
+
 // The final "unmasking" clue: always present, always the closing line. Points at the culprit
 // (Wormwood's disguise) THROUGH the solved grid — via a unique attribute of the instrument they
 // played or the biome they were found in, so you must deduce the grid to know WHICH animal it is.
@@ -400,39 +528,63 @@ function buildUnmaskClue(cast, sol, culprit){
   return {final:true, audio, text:"Wormwood is hiding as the critter who "+phrase+". Unmask the impostor."};
 }
 
+// Target shape (Murdle-ish, per dev): ~3 CLEAR clues + exactly ONE "unclear" compound clue +
+// the closing UNMASKING clue. We sample many casts and keep the one whose minimal clear-clue
+// count lands closest to the target (returning early on an exact hit).
 function generatePuzzle(N){
-  for(let tries=0;tries<40;tries++){
+  const TARGET_CLEAR=3;
+  const perms=permutations(N);
+  let best=null;
+  for(let tries=0;tries<90;tries++){
     const cast=sampleCast(N);
     const sol={pi:shuffle([...Array(N).keys()]), sg:shuffle([...Array(N).keys()])};
-    const perms=permutations(N);
     const arrangements=[];
     for(const pi of perms)for(const sg of perms)arrangements.push({pi,sg});
-    const pool=buildCluePool(cast,sol,N);
-    const score=c=> c.attrCount*2 + (c.audio?1.5:0) - (c.direct?3:0) + Math.random()*0.6;
+    const pool=buildCluePool(cast,sol,N).concat(buildCompoundPool(cast,sol,N));
+    const score=c=> c.attrCount*2 + (c.audio?1.5:0) + (c.compound?2.5:0) - (c.direct?3:0) + Math.random()*0.6;
     const ranked=pool.slice().sort((a,b)=>score(b)-score(a));
     let survivors=arrangements, selected=[];
     const survFor=cl=>survivors.filter(a=>cl.test(a));
+    // Seed one audio clue (a clear timbre clue) + one compound (the single "unclear" clue),
+    // each only if it discriminates; both are protected from the minimal-prune below.
     const audio=ranked.find(c=>c.audio && survFor(c).length<survivors.length);
     if(audio){selected.push(audio);survivors=survFor(audio);}
+    const comp=ranked.find(c=>c.compound && !selected.includes(c) && survFor(c).length<survivors.length);
+    if(comp){selected.push(comp);survivors=survFor(comp);}
+    // Fill to a unique solution with CLEAR clues only — never a second compound.
     let guard=0;
     while(survivors.length>1 && guard++<200){
       let picked=null;
       for(const c of ranked){ if(selected.includes(c))continue;
+        if(c.compound && selected.some(x=>x.compound)) continue;   // exactly one unclear clue per puzzle
         const s2=survivors.filter(a=>c.test(a)); if(s2.length<survivors.length){picked=c;survivors=s2;break;} }
       if(!picked)break;
       selected.push(picked);
     }
     if(survivors.length!==1) continue;
+    const protect=new Set([audio,comp].filter(Boolean));   // keep the seeded audio + the one unclear clue
     for(let i=selected.length-1;i>=0;i--){
+      if(protect.has(selected[i])) continue;
       const without=selected.slice(0,i).concat(selected.slice(i+1));
       const surv=arrangements.filter(a=>without.every(c=>c.test(a)));
       if(surv.length===1) selected.splice(i,1);
     }
+    // Guarantee exactly one compound clue even if none was load-bearing (a true clue never removes
+    // the solution, so uniqueness is preserved).
+    if(!selected.some(c=>c.compound)){
+      const solArr={pi:sol.pi,sg:sol.sg};
+      const extra=ranked.find(c=>c.compound && c.test(solArr));
+      if(extra) selected.push(extra);
+    }
     selected=selected.sort((a,b)=>(b.audio-a.audio)||(b.attrCount-a.attrCount));
     const culprit=rnd(N);
-    return {cast,sol,clues:selected,finalClue:buildUnmaskClue(cast,sol,culprit),culprit,N};
+    const puzzle={cast,sol,clues:selected,finalClue:buildUnmaskClue(cast,sol,culprit),culprit,N};
+    const nComp=selected.filter(c=>c.compound).length, nClear=selected.length-nComp;
+    if(nComp===1 && nClear===TARGET_CLEAR) return puzzle;          // exact Murdle shape
+    const badness=(nComp===1?0:10)+Math.abs(nClear-TARGET_CLEAR);  // else keep the closest candidate
+    if(!best || badness<best.badness) best={puzzle,badness};
   }
-  return null;
+  return best?best.puzzle:null;
 }
 
 /* ============================ GAME STATE ============================ */
@@ -521,8 +673,9 @@ function autoX(mk,r,c){
 function renderClues(){
   const host=document.getElementById("clues"); host.innerHTML="";
   G.clues.forEach((c,i)=>{
-    const d=document.createElement("div"); d.className="clue"+(c.audio?" audio":"");
-    d.innerHTML='<span class="n">'+(i+1)+'.</span><span>'+(c.audio?"🔊 ":"")+c.text+'</span>';
+    const d=document.createElement("div"); d.className="clue"+(c.audio?" audio":"")+(c.compound?" compound":"");
+    const badge=c.compound?(CTYPE_BADGE[c.ctype]||""):"";
+    d.innerHTML='<span class="n">'+(i+1)+'.</span><span>'+(c.audio?"🔊 ":"")+badge+c.text+'</span>';
     if(c.audio){ const b=document.createElement("button"); b.className="listen"; b.textContent="which one?";
       b.onclick=()=>{document.getElementById("msg").textContent="Use the ▶ on each instrument card to hear which one matches the clue.";};
       d.appendChild(b); }

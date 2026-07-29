@@ -75,11 +75,32 @@ deferred: wiring an **animal-cry audio clue** (the audio clue still keys off *in
 auto-inference (only within-grid auto-X); difficulty ramp (N fixed at 4) & daily-seeded mode; Mujicians
 integration (`persist.sounds`/`VOICES`); the tentative extensions below.
 
-**Next planned — richer clues.** The current single-relation templates read a bit **"one-note."** Still to do
-(fully programmatic): **compound / conditional / comparative** clue templates (e.g. "the animal in the colder
-biome played the wooden instrument"; ordinal size/register comparisons), and tuning the generator toward a
-Murdle-like **~4-clue target**. *(The **final "reveal" clue** + culprit-ID win-mode that were planned here are
-now **BUILT** — see the 2026-07-28 amendment above.)*
+**AMENDED 2026-07-28 (clues) — Murdle-style compound clues BUILT.** The old single-relation templates read a bit
+**"one-note"**; the generator now also builds **four compound clue types**, all still *true under the solution* and
+all expressed through the same `test(arr)` predicate the uniqueness solver already uses, so they slot in with zero
+solver changes (`atomsFor` = positive single-relation "atoms" from a name/attribute ref; `buildCompoundPool`
+composes them):
+- **XOR** ⚖️ — *"Either P or Q, but not both."* (`test = P xor Q`) — the flagship Murdle disjunction (a true atom
+  paired with a false one → exactly one holds), e.g. *"Either the 🦊 Fox played the 🎻 Violin or the desert critter
+  was found in the City, but not both."*
+- **Narrow-to-two** 🔀 — *"The X did either A or B."* (true partner + one decoy; `test = A or B`) over animal→instrument,
+  animal→location, or instrument→location.
+- **Conditional** ➡️ — *"If P, then Q."* (both true under the solution; `test = !P or Q`).
+- **Comparative** 📏 — *"The critter that played [X] is bigger than the critter found in [Y]."* using the **real
+  size ordering** (`SIZE_RANK` tiny→huge; two indirectly-named critters, distinct + differing size).
+
+**Clue shape (per dev, tightened 2026-07-28): exactly ONE compound clue per puzzle.** A compound clue is treated as
+the single **"unclear"** clue (it needs inference, doesn't resolve to one grid mark); *all four types share the one
+slot* — multiple inferential clues stacked read too hard. Everything else is **"clear"** (a definite ✓/✗: direct /
+negative / attribute / the audio timbre clue). The generator seeds one compound (protected from the minimal-prune),
+**caps compounds at one** in the greedy fill (`c.compound && selected.some(x=>x.compound)` guard), and a guarantee
+appends one if none was load-bearing. It then **best-of-samples ~90 casts** to hit the target shape **≈3 clear + 1
+unclear + the closing UNMASKING clue** (`TARGET_CLEAR`; returns early on an exact hit, else keeps the candidate whose
+minimal clear-count is nearest 3 — full-grid uniqueness sometimes needs 4). Compounds rendered with a per-type badge +
+purple `.clue.compound` style.
+Rendered with a per-type badge + a purple `.clue.compound` style. *(The **final "reveal" clue** + culprit-ID
+win-mode that were also planned here are **BUILT** — see the earlier 2026-07-28 amendment.)* **Still deferred:**
+register/pitch comparatives (needs an ordered instrument-register axis), and a difficulty selector (Easy/Standard/Hard).
 
 ## The pitch — a real-data Murdle with three axes
 
