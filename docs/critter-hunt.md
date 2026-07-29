@@ -55,8 +55,11 @@ Except where the amendments above note, the rest below reflects the original shi
   the real facts in plain language** (`GLOSS` glosses jargon — "frugivore → eats fruit", "aerophone → wind"),
   so a new term is one tap away; instrument card fronts have a ▶. **Right = one upside-down-L combined grid**
   (Animals×Instruments + Animals×Locations across the top band, Locations×Instruments in the lower-left corner —
-  the standard decades-old logic-grid shape, our own CSS, **not** Murdle's stylesheet). Cells cycle blank→✗→✓;
-  a ✓ **auto-✗’s the rest of its row & column** (within-grid). **🐺 Unmask Wormwood** opens an accusation strip
+  the standard decades-old logic-grid shape, our own CSS, **not** Murdle's stylesheet). Cells cycle
+  **blank→✗→✓→?** (the `?` = Murdle's "maybe" mark); a ✓ **auto-✗’s the rest of its row & column** (within-grid).
+  Those auto-✗’s are **derived, not written** (`displayVal`), so — Murdle-style — clearing a ✓ (clicking it on to
+  `?`) instantly removes its auto-✗’s, while any cell still forced by *another* ✓ in its row/column stays ✗, and an
+  explicit user ✗/✓/? is never overwritten. **🐺 Unmask Wormwood** opens an accusation strip
   of the N animals; clicking one judges it against `G.culprit` (win, or a "not the impostor" nudge). "New case",
   dev "Reveal" (also names Wormwood).
 - **Instrument audio** — the 7 pitched instruments play **real recorded samples** (`playInstrument`→`playSample`,
