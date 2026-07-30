@@ -28,6 +28,12 @@ game-dev defaults.
 > reuses its **Web Audio pipeline** (oscillators, note math, the pitch detector). Sing-input and the
 > slice-1 grid are candidate **side activities**, not the spine. See [`pitch-bird.md`](pitch-bird.md).
 
+> **Voice set-pieces (tentative, split into sub-docs 2026-07-30).** Exploring making *playing* each
+> movement a **voice-only mic mini-game** (keeping the grid as the lesson/composer). Two candidates so
+> far, both designed-not-built: **Beatbox Boxing** (Punch-Out-style rhythm boxing, M2/earth) —
+> [`mujicians-voice-boxing.md`](mujicians-voice-boxing.md); and **Vowel Monkey** (formant/vowel control,
+> team-up-with-a-monkey, M6 Timbre/wood) — [`mujicians-voice-monkey.md`](mujicians-voice-monkey.md).
+
 ---
 
 ## ⚠️ Known issues / fixes to do (noted 2026-07-17 – 07-18, NOT yet fixed)
