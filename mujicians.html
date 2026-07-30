@@ -3233,7 +3233,7 @@
       ${dynControlHTML()}
       <div class="hand">${run.hand.map((c,i)=>cardHTML(c,i)).join("")}</div>
       <div class="controls">
-        <button class="btn play" id="b-play" ${canPlay?"":"disabled"}>▶ Play Hand</button>
+        <button class="btn play" id="b-play" ${canPlay?"":"disabled"}>▶ Play ${maxSelect()===1?"Card":"Hand"}</button>
         <button class="btn disc" id="b-disc" ${(canPlay&&run.discardsLeft>0)?"":"disabled"}>Discard (${run.discardsLeft})</button>
         <button class="btn ghost" id="b-sort">Sort by pitch</button>
         <button class="btn ghost" id="b-hand" title="Keyboard hand — which side the card-select keys sit on (Space always plays)">${persist.hand==="left"?"✋ Left keys":"🤚 Right keys"}</button>
