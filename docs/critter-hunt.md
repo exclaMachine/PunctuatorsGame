@@ -9,7 +9,9 @@
 
 ## MVP — what shipped (2026-07-27)
 
-A playable `critter-hunt.html`, **emoji visuals**, N=4, synth instrument audio clues.
+A playable `critter-hunt.html`, **emoji visuals**, N=3 (Murdle-matching — `AXIS_N`; was N=4 through 2026-07-29,
+dropped to 3 on 2026-07-30 to mirror Murdle's 3-per-category and ease the transition when the 4th axis lands),
+synth instrument audio clues.
 
 **AMENDED 2026-07-29 — wired into Mujicians as the M6 Timbre boss (forks #1 resolved: link-out + return).**
 M6 Timbre is now a **capstone**: you first clear the normal timbre-blend lesson gig (Timbrewolf's tutor), which
@@ -61,7 +63,7 @@ Except where the amendments above note, the rest below reflects the original shi
   koto, shakuhachi, sitar, shehnai, bagpipes, kalimba, marimba, glockenspiel, celesta, harpsichord, dulcimer,
   harp — all real FluidR3_GM samples, reusing the existing H-S-family / material / play-method attribute values.)*
 - **Procedural generator + brute-force solver** (`generatePuzzle`) — rolls a solution (two bijections
-  `pi`/`sg`), builds the **true-clue pool** from templates, **selects to uniqueness** over all `(4!)²`=576
+  `pi`/`sg`), builds the **true-clue pool** from templates, **selects to uniqueness** over all `(3!)²`=36
   arrangements (biased toward attribute/teaching clues, a required audio clue, penalising direct-name clues),
   then **prunes to a minimal set**. Retries on an unlucky cast.
 - **The clue-template system** — a clue is `link(refX, refY)` where each **ref** is a `name` or a *uniquely
@@ -94,7 +96,7 @@ Except where the amendments above note, the rest below reflects the original shi
 **instruments** use anchor+pitch-shift samples (Data sources → Instrument sounds) and **all 10 animals** play
 hand-curated vocalisations (Data sources → Animal sounds); only the Drum/Conga instruments stay synth. Still
 deferred: wiring an **animal-cry audio clue** (the audio clue still keys off *instrument* timbre); **cross-grid**
-auto-inference (only within-grid auto-X); difficulty ramp (N fixed at 4) & daily-seeded mode; Mujicians
+auto-inference (only within-grid auto-X); difficulty ramp (N fixed at 3 via `AXIS_N`) & daily-seeded mode; Mujicians
 integration (`persist.sounds`/`VOICES`); the tentative extensions below.
 
 **AMENDED 2026-07-28 (clues) — Murdle-style compound clues BUILT.** The old single-relation templates read a bit

@@ -29,7 +29,7 @@
   .msg{font-size:13px;color:var(--muted);min-height:18px}
 
   /* ---------- category tabs + flip cards ---------- */
-  .cardpanel{padding:14px;max-width:352px}          /* caps to ~2 big cards per row (2×2 for N=4) */
+  .cardpanel{padding:14px;max-width:352px}          /* caps to ~2 big cards per row (2 + 1 for N=3) */
   @media(max-width:919px){.cardpanel{max-width:none}}
   .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;border-bottom:2px solid var(--line);padding-bottom:10px}
   .tab{display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:13px;font-weight:600;border:2px solid var(--line);border-radius:10px 10px 8px 8px;background:var(--cell);color:var(--muted)}
@@ -605,9 +605,10 @@ function generatePuzzle(N){
 
 /* ============================ GAME STATE ============================ */
 let G=null, marks=null, activeCat=0; // marks.ai[a][i], marks.al[a][l], marks.il[i][l] ∈ {0 blank,1 ✗,2 ✓,3 ?} (auto-✗ is derived, not stored); activeCat = which card tab is open
+const AXIS_N=3;  // entities per category (Murdle uses 3; grows to 4 when the genre axis lands)
 function newGame(){
-  G=generatePuzzle(4);
-  marks={ai:blank(4,4),al:blank(4,4),il:blank(4,4)};
+  G=generatePuzzle(AXIS_N);
+  marks={ai:blank(AXIS_N,AXIS_N),al:blank(AXIS_N,AXIS_N),il:blank(AXIS_N,AXIS_N)};
   document.getElementById("msg").textContent="";
   document.getElementById("accuseStrip").style.display="none";
   renderCards(); renderBoard(); renderClues();
