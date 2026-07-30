@@ -2014,6 +2014,22 @@ The Key already owns the plain A·B·A bonus, so the Bartender's capture is **co
 
 ---
 
+## Paint by music — the song colors a painting (TENTATIVE, not built)
+
+> **Status: brainstorm only, not designed in full.** An M7-Structure feature idea: as your run's song plays, it **paints an image** — paint-by-numbers, but the "numbers" are music.
+
+**The native hook:** Mujicians' notes are already **ROYGBIV colors** (C red → B violet), so every note you play *is* a pigment. Painting-from-music isn't a bolt-on metaphor here — the color↔note mapping already exists.
+
+**Weak vs. strong framing.** The *weak* version (region has a target color → play the matching note to fill it) is really a **pitch** exercise (M1/M4) in disguise and teaches nothing about structure. The *strong* version makes the **canvas composition mirror the song's form**, so it belongs in M7: state **A** → the left panel paints; drift to **B** → the center paints in a contrasting palette; **recapitulate A** (the built `hasABA` gate / "return home") → the right panel paints as a **mirror of the left**, completing a symmetric triptych. A song with no reprise leaves the picture lopsided and unfinished — so "finish the painting" *is* "give the song form." Micro (notes paint in their color) and macro (composition = A·B·A) can both be true at once.
+
+**Cheapest first cut:** a **generative "album cover"** on the existing **Save-a-Song** screen — render the finished run's song + its `hasABA`/`pcSetFp` form to a canvas as a keepsake, no new scoring. The *interactive* paint-by-form version (a standalone `paint-by-music.html` MVP first, per the `scorch-bones.html` precedent) is the richer later step, and could tie into the Bartender's `muddle` debuff (fog a panel; the D.S.-al-Coda recap un-fogs it).
+
+**Prior art to check** (none nails "correct music → predetermined image"): **SimTunes** (Iwai — paint *is* the score, reverse direction), **Child of Eden** (Mizuguchi — restore color/life to a world by playing to the beat, the thematic bullseye), Chrome Music Lab's **Kandinsky** (free, instant), **Chime** (fill the canvas → build the music).
+
+**Open forks:** target-image (scored, paint-by-numbers) vs. generative artifact (no wrong answer); where it lives (M7 lesson / Bartender boss / Save-a-Song reward — not exclusive); paints live-as-you-play vs. rendered at the end.
+
+---
+
 ## Removing gigs — a run becomes one performance (BUILT)
 
 > **Status: BUILT (2026-07-17)** in `mujicians.html`. A run is now **one continuous performance in one
