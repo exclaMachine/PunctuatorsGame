@@ -59,7 +59,9 @@ Except where the amendments above note, the rest below reflects the original shi
 
 - **Data pools** — 10 animals / **22 instruments** / 8 biomes, each with real attribute **tags** (animal:
   class/diet/size/habitat · instrument: Hornbostel–Sachs family/material/play-method · location: climate).
-  Emoji stand in for art. *(The instrument pool grew 9→22 on 2026-07-29 with an obscure/world set — shamisen,
+  Emoji stand in for art. *(Each instrument also carries a real **`origin`** — place of origin, shown as a
+  card-back fact + in the field notes, added 2026-07-30; display-only, not yet a clue attribute — universal
+  instruments like drum/flute read "ancient, worldwide".)* *(The instrument pool grew 9→22 on 2026-07-29 with an obscure/world set — shamisen,
   koto, shakuhachi, sitar, shehnai, bagpipes, kalimba, marimba, glockenspiel, celesta, harpsichord, dulcimer,
   harp — all real FluidR3_GM samples, reusing the existing H-S-family / material / play-method attribute values.)*
 - **Procedural generator + brute-force solver** (`generatePuzzle`) — rolls a solution (two bijections
