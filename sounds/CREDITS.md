@@ -31,24 +31,35 @@ loader and folder layout stay identical.
 # Bundled animal sample credits
 
 The animal vocalisations in `sounds/animals/<slug>.mp3` are **hand-curated from Wikimedia Commons**
-(one clip per animal), then trimmed to a short one-shot, downmixed to mono, loudness-normalised, and
-re-encoded to mp3 by `fetch-animal-samples.sh`. Used by **Critter Hunt** (▶ each animal) and available
-to feed **Mujicians'** Sound Collection.
+(one clip per species), then trimmed to a short one-shot, downmixed to mono, loudness-normalised, and
+re-encoded to mp3 by `fetch-animal-samples.sh`. **20 species** — each clip is a recording OF the named
+species, so the in-game name matches the actual call. Used by **Critter Hunt** (▶ each animal) and
+available to feed **Mujicians'** Sound Collection.
 
-Full machine-readable manifest (author + source page + license per clip): **`data/critter-credits.json`**.
-All sources are **CC0 / Public-domain / CC-BY-SA** — none are ND, so they're safe to re-pitch/loop.
+Full machine-readable manifest (species + author + source page + license per clip): **`data/critter-credits.json`**.
+All sources are **CC0 / Public-domain / CC-BY / CC-BY-SA** — none are ND, so they're safe to re-pitch/loop.
 
-| Animal | Source (Commons) | Author | License |
+| Animal | Species | Author | License |
 | --- | --- | --- | --- |
-| Fox | *Vulpes vulpes* … XC108315 | Alexander Kurthy | CC BY-SA 4.0 |
-| Frog | Single Frog Croak | MichaeltheFox8621 | CC BY-SA 4.0 |
-| Parrot | *Ara severus* — Chestnut-fronted Macaw XC519607 | Oliver Komar | CC BY-SA 4.0 |
-| Elephant | Elephant voice - trumpeting | தகவலுழவன் | CC0 |
-| Snake | Rattlesnake | (public domain) | Public domain |
-| Owl | *Bubo virginianus* — Great Horned Owl XC450919 | Michael & Katie LaTour | CC BY-SA 4.0 |
-| Turtle | tortoise vocalisation (grunt) | Amada44 | CC BY-SA 3.0 |
-| Bat | Hoary bat chirp recording | Kaldari | CC0 |
-| Dolphin | dolphin call (Caribbean) | Félix Blume | CC0 |
-| Cricket | Field cricket *Gryllus pennsylvanicus* | Thatcher | CC BY-SA 3.0 |
+| Red Fox | *Vulpes vulpes* | Alexander Kurthy | CC BY-SA 4.0 |
+| Chestnut-fronted Macaw | *Ara severus* | Oliver Komar | CC BY-SA 4.0 |
+| Rattlesnake | *Crotalus sp.* | (public domain) | Public domain |
+| Great Horned Owl | *Bubo virginianus* | Michael & Katie LaTour | CC BY-SA 4.0 |
+| Hoary Bat | *Lasiurus cinereus* | Kaldari | CC0 |
+| Field Cricket | *Gryllus pennsylvanicus* | Thatcher | CC BY-SA 3.0 |
+| Banded Bullfrog | *Kaloula pulchra* | Inspector | CC BY-SA 3.0 |
+| African Elephant | *Loxodonta africana* | King L, Soltis J, et al. (PLOS ONE) | CC BY 2.5 |
+| American Alligator | *Alligator mississippiensis* | (public domain) | Public domain |
+| Orca | *Orcinus orca* | (public domain) | Public domain |
+| Gray Wolf | *Canis lupus* | (public domain) | Public domain |
+| Humpback Whale | *Megaptera novaeangliae* | Spyrogumas | CC0 |
+| Mallard | *Anas platyrhynchos* | Jonathon Jongsma | CC BY-SA 3.0 |
+| Indian Peafowl | *Pavo cristatus* | Ke4roh | Public domain |
+| Mantled Howler Monkey | *Alouatta palliata* | Wikimedia Commons contributor | CC BY 4.0 |
+| Wild Turkey | *Meleagris gallopavo* | Jonathon Jongsma | CC BY-SA 3.0 |
+| Domestic Goat | *Capra hircus* | stephan | Public domain |
+| Rooster | *Gallus gallus domesticus* | Filo gèn' | CC BY-SA 4.0 |
+| Cow | *Bos taurus* | MichaeltheFox8621 | CC BY-SA 4.0 |
+| Sheep | *Ovis aries* | earthcalling | Public domain |
 
 Re-fetch / re-trim with `fetch-animal-samples.sh` (edit a row's start/dur to change the window).

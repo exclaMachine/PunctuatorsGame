@@ -158,18 +158,30 @@
 <script>
 /* ============================ DATA POOLS (emoji placeholders) ============================ */
 // `snd` = the real vocalisation sample folder-slug in sounds/animals/<snd>.mp3 (▶-playable, hand-curated
-// from Wikimedia Commons — provenance in data/critter-credits.json). All 10 have one.
+// from Wikimedia Commons — provenance in data/critter-credits.json). All 20 have one, and every `nm` is a
+// SPECIFIC species whose bundled clip is a recording OF that species — so the name matches the actual call
+// (Rattlesnake rattles, Great Horned Owl hoots, Orca clicks). Attributes (class/diet/size/habitat) are real.
 const ANIMALS = [
-  {em:"🦊",nm:"Fox",     cls:"mammal",   diet:"carnivore",  size:"medium", habitat:"forest",    snd:"fox"},
-  {em:"🐸",nm:"Frog",    cls:"amphibian",diet:"insectivore",size:"small",  habitat:"wetland",   snd:"frog"},
-  {em:"🦜",nm:"Parrot",  cls:"bird",     diet:"frugivore",  size:"small",  habitat:"jungle",    snd:"parrot"},
-  {em:"🐘",nm:"Elephant",cls:"mammal",   diet:"herbivore",  size:"huge",   habitat:"savanna",   snd:"elephant"},
-  {em:"🐍",nm:"Snake",   cls:"reptile",  diet:"carnivore",  size:"medium", habitat:"desert",    snd:"snake"},
-  {em:"🦉",nm:"Owl",     cls:"bird",     diet:"carnivore",  size:"small",  habitat:"forest",    snd:"owl"},
-  {em:"🐢",nm:"Turtle",  cls:"reptile",  diet:"herbivore",  size:"medium", habitat:"wetland",   snd:"turtle"},
-  {em:"🦇",nm:"Bat",     cls:"mammal",   diet:"insectivore",size:"small",  habitat:"cave",      snd:"bat"},
-  {em:"🐬",nm:"Dolphin", cls:"mammal",   diet:"piscivore",  size:"large",  habitat:"ocean",     snd:"dolphin"},
-  {em:"🦗",nm:"Cricket", cls:"insect",   diet:"herbivore",  size:"tiny",   habitat:"grassland", snd:"cricket"},
+  {em:"🦊",nm:"Red Fox",               cls:"mammal",   diet:"omnivore",   size:"small",  habitat:"forest",    snd:"fox"},
+  {em:"🦜",nm:"Chestnut-fronted Macaw",cls:"bird",     diet:"frugivore",  size:"small",  habitat:"jungle",    snd:"parrot"},
+  {em:"🐍",nm:"Rattlesnake",           cls:"reptile",  diet:"carnivore",  size:"medium", habitat:"desert",    snd:"snake"},
+  {em:"🦉",nm:"Great Horned Owl",      cls:"bird",     diet:"carnivore",  size:"medium", habitat:"forest",    snd:"owl"},
+  {em:"🦇",nm:"Hoary Bat",             cls:"mammal",   diet:"insectivore",size:"small",  habitat:"forest",    snd:"bat"},
+  {em:"🦗",nm:"Field Cricket",         cls:"insect",   diet:"omnivore",   size:"tiny",   habitat:"grassland", snd:"cricket"},
+  {em:"🐸",nm:"Banded Bullfrog",       cls:"amphibian",diet:"insectivore",size:"small",  habitat:"wetland",   snd:"bullfrog"},
+  {em:"🐘",nm:"African Elephant",      cls:"mammal",   diet:"herbivore",  size:"huge",   habitat:"savanna",   snd:"elephant"},
+  {em:"🐊",nm:"American Alligator",    cls:"reptile",  diet:"carnivore",  size:"large",  habitat:"wetland",   snd:"alligator"},
+  {em:"🐳",nm:"Orca",                  cls:"mammal",   diet:"carnivore",  size:"large",  habitat:"ocean",     snd:"orca"},
+  {em:"🐺",nm:"Gray Wolf",             cls:"mammal",   diet:"carnivore",  size:"large",  habitat:"forest",    snd:"wolf"},
+  {em:"🐋",nm:"Humpback Whale",        cls:"mammal",   diet:"carnivore",  size:"huge",   habitat:"ocean",     snd:"whale"},
+  {em:"🦆",nm:"Mallard",               cls:"bird",     diet:"omnivore",   size:"small",  habitat:"wetland",   snd:"mallard"},
+  {em:"🦚",nm:"Indian Peafowl",        cls:"bird",     diet:"omnivore",   size:"medium", habitat:"jungle",    snd:"peafowl"},
+  {em:"🐒",nm:"Howler Monkey",         cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"jungle",    snd:"howler"},
+  {em:"🦃",nm:"Wild Turkey",           cls:"bird",     diet:"omnivore",   size:"medium", habitat:"forest",    snd:"turkey"},
+  {em:"🐐",nm:"Domestic Goat",         cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"mountain",  snd:"goat"},
+  {em:"🐓",nm:"Rooster",               cls:"bird",     diet:"omnivore",   size:"small",  habitat:"grassland", snd:"rooster"},
+  {em:"🐄",nm:"Cow",                   cls:"mammal",   diet:"herbivore",  size:"large",  habitat:"grassland", snd:"cow"},
+  {em:"🐑",nm:"Sheep",                 cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"mountain",  snd:"sheep"},
 ];
 const INSTRUMENTS = [   // `sample` = real-recording folder in sounds/instruments/ (pitched); Drum/Conga stay synth
   // `origin` = real place of origin of the instrument as commonly attributed; truly universal/ancient
@@ -270,7 +282,7 @@ const PAIR_REL={
 };
 // Plain-language glosses (so the card backs actually teach — "frugivore = eats fruit").
 const GLOSS = {
-  carnivore:"eats meat", herbivore:"eats plants", insectivore:"eats insects", frugivore:"eats fruit", piscivore:"eats fish",
+  carnivore:"eats meat", herbivore:"eats plants", insectivore:"eats insects", frugivore:"eats fruit", piscivore:"eats fish", omnivore:"eats plants and animals",
   aerophone:"wind — vibrating air", chordophone:"strings", membranophone:"drum — vibrating skin", idiophone:"struck, self-sounding",
 };
 function attrLabel(cat, key, val){

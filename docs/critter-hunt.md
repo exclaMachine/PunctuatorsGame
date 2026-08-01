@@ -75,9 +75,25 @@ class shrinks them (26px cells) so all 9 columns fit ~284px, inside a `.gridscro
 the page never scrolls sideways. `AXIS_N` (entities per category) stays **3**. Everything below that says
 "3-axis engine / 4th axis not built" is superseded by this.
 
+**AMENDED 2026-08-01 — animals are now 20 SPECIFIC species, each named for its actual call.** The pool grew
+`ANIMALS` **10→20** and every entry is now a real species whose bundled clip is a recording *of that species*, so
+the in-game name matches the sound: the six already-species-specific recordings were renamed to their species (Fox
+→ **Red Fox**, Parrot → **Chestnut-fronted Macaw**, Snake → **Rattlesnake**, Owl → **Great Horned Owl**, Bat →
+**Hoary Bat** — its `habitat` fixed `cave`→`forest` — Cricket → **Field Cricket**), and the four ex-generic clips
+were **re-sourced** to a labelled species (Frog → **Banded Bullfrog**, Elephant → **African Elephant**, Turtle →
+**American Alligator** 🐊, Dolphin → **Orca** 🐳 — turtle/dolphin had no reliably-labelled Commons recording, so
+they became an equally iconic, provably-labelled species). Ten new species were added — **Gray Wolf, Humpback
+Whale, Mallard, Indian Peafowl, Howler Monkey, Wild Turkey, Domestic Goat, Rooster, Cow, Sheep** (lion & seal were
+tried but Commons audio for them is junk — pronunciation clips / name-collisions — so they were skipped). New attribute
+value: **`omnivore`** (added to `GLOSS`). No engine change was needed — the bigger, more attribute-overlapping pool
+is safe because `refsFor`'s uniqueness guard falls back to the always-unique animal name, and `generatePuzzle`
+retries an unlucky cast. Provenance for all 20 (species + author + license, all non-ND) is in
+`data/critter-credits.json` / `sounds/CREDITS.md`; fetched by `fetch-animal-samples.sh` (now sends a descriptive
+User-Agent — Wikimedia 429s default curl UAs under load).
+
 Except where the amendments above note, the rest below reflects the original ship:
 
-- **Data pools** — 10 animals / **22 instruments** / 8 biomes, each with real attribute **tags** (animal:
+- **Data pools** — 20 animals (see 2026-08-01 amendment) / **22 instruments** / 8 biomes, each with real attribute **tags** (animal:
   class/diet/size/habitat · instrument: Hornbostel–Sachs family/material/play-method · location: climate).
   Emoji stand in for art. *(Each instrument also carries a real **`origin`** — place of origin, shown as a
   card-back fact + in the field notes, added 2026-07-30; display-only, not yet a clue attribute — universal
@@ -108,14 +124,14 @@ Except where the amendments above note, the rest below reflects the original shi
 - **Instrument audio** — the 20 pitched instruments play **real recorded samples** (`playInstrument`→`playSample`,
   anchor + pitch-shift); Drum/Conga fall back to the small vanilla Web-Audio synth (`playPreset`: aero/chord/
   membrane/idio presets). ▶ on each instrument card lets you compare timbres.
-- **Animal audio (BUILT 2026-07-28)** — all 10 animals play **real hand-curated vocalisation samples**
+- **Animal audio (BUILT 2026-07-28; grown to 20 species 2026-08-01)** — all animals play **real hand-curated vocalisation samples**
   (`playAnimalSound`, one file each in `sounds/animals/`, one-shot, no pitch). ▶ on each animal card too.
 - **Reward → collection** — solving offers a **field-notes** card (real facts on the culprit trio) and lets
   you **keep one sound**: the instrument (a playable timbre) or the animal (its real vocalisation). Stored in
   `localStorage` (`critterhunt.collection`); **both instrument and animal cards replay** with a card-flip.
 
 **Deferred / stubbed in the MVP:** ~~real sound files~~ — **now real recordings on both axes:** the 20 pitched
-**instruments** use anchor+pitch-shift samples (Data sources → Instrument sounds) and **all 10 animals** play
+**instruments** use anchor+pitch-shift samples (Data sources → Instrument sounds) and **all 20 animals** play
 hand-curated vocalisations (Data sources → Animal sounds); only the Drum/Conga instruments stay synth. Still
 deferred: wiring an **animal-cry audio clue** (the audio clue still keys off *instrument* timbre); **cross-grid**
 auto-inference (only within-grid auto-X); difficulty ramp (N fixed at 3 via `AXIS_N`) & daily-seeded mode; Mujicians
@@ -127,7 +143,7 @@ all expressed through the same `test(arr)` predicate the uniqueness solver alrea
 solver changes (`atomsFor` = positive single-relation "atoms" from a name/attribute ref; `buildCompoundPool`
 composes them):
 - **XOR** ⚖️ — *"Either P or Q, but not both."* (`test = P xor Q`) — the flagship Murdle disjunction (a true atom
-  paired with a false one → exactly one holds), e.g. *"Either the 🦊 Fox played the 🎻 Violin or the desert critter
+  paired with a false one → exactly one holds), e.g. *"Either the 🦊 Red Fox played the 🎻 Violin or the desert critter
   was found in the City, but not both."*
 - **Narrow-to-two** 🔀 — *"The X did either A or B."* (true partner + one decoy; `test = A or B`) over animal→instrument,
   animal→location, or instrument→location.
@@ -301,13 +317,16 @@ Curate + download **once**, commit the data, play offline.
 
 ### Animal sounds & facts
 
-**Sounds — BUILT 2026-07-28 (all 10 from Wikimedia Commons).** One curated clip per animal; `fetch-animal-samples.sh`
-downloads → trims to a short one-shot → mono → loudness-normalises → mp3 (licences/authors in
-`data/critter-credits.json` + `sounds/CREDITS.md`). All **CC0 / Public-domain / CC-BY-SA** (none ND → repitch-safe).
-*Curation gotchas for a re-fetch:* Commons search buries real cries under name-collisions (a "Red Fox **Sparrow**",
-an "Oriental **turtle dove**") and spoken-word Wikipedia audio — force the name into the *filename* (`intitle:`) or
-use scientific names (`Vulpes vulpes`, `Bubo virginianus`, `Ara severus`); snake = a public-domain rattlesnake
-rattle, turtle = a real tortoise grunt.
+**Sounds — BUILT 2026-07-28 (10 from Wikimedia Commons); grown to 20 SPECIFIC species 2026-08-01.** One curated clip
+per species, each a recording *of that species* so the name matches the call; `fetch-animal-samples.sh`
+downloads → trims to a short one-shot → mono → loudness-normalises → mp3 (species/licences/authors in
+`data/critter-credits.json` + `sounds/CREDITS.md`). All **CC0 / Public-domain / CC-BY / CC-BY-SA** (none ND → repitch-safe).
+*Curation gotchas for a re-fetch:* (1) Commons search buries real cries under name-collisions (a "Red Fox **Sparrow**",
+an "Oriental **turtle dove**"), **spoken-word / Lingua-Libre pronunciation clips** (`En-us-…`, `LL-Q…` — someone
+*saying* the animal's name), and songs/music — filter with **`filetype:audio`**, force the name into the *filename*
+(`intitle:`), or use scientific names (`Vulpes vulpes`, `Bubo virginianus`, `Ara severus`); (2) some species (lion,
+seal, a labelled bottlenose dolphin) have essentially no usable Commons cry — swap for an iconic species that does
+(orca, wolf, whale); (3) Wikimedia **429s default curl User-Agents under load** → the script sends a descriptive UA.
 - Other viable sources (not used here): **Freesound** (CC0/CC-BY, but needs an API key), **ESC-50/FSD50K**
   (CC-BY subset, but its animal classes barely overlap this cast), **iNaturalist Sounds** (CC), **Xeno-canto**
   (birds/amphibians/bats/insects — but its free v2 API is retired for a key-gated v3).
