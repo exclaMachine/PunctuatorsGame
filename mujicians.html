@@ -640,57 +640,67 @@
   const SKINS = {
     foil:  { id:"foil",  name:"Foil",          art:null, preset:null },
     holo:  { id:"holo",  name:"Holographic",   art:null, preset:null },
-    glass: { id:"glass", name:"Frosted Glass", art:null, preset:null },  // spare — not yet assigned
-    neon:  { id:"neon",  name:"Neon",          art:null, preset:null },  // spare — not yet assigned
+    glass: { id:"glass", name:"Frosted Glass", art:null, preset:null },
+    neon:  { id:"neon",  name:"Neon",          art:null, preset:null },
   };
-  // `skin` binds an instrument to a skin id (or null for the plain default card). Piano stays plain;
-  // guitar wears Foil, bass wears Holographic. glass/neon are defined above, ready to attach here.
-  // `voice` names a VOICES preset (the actual SOUND — see the Sound Collective below); `wave` is a legacy
-  // fallback for the old bare-oscillator path. `core:true` marks the curated campaign trio (piano/guitar/bass)
-  // that instrumentsFor() gates; the rest are COLLECTIBLE voices that only surface in Free Play decks.
+  // A card's skin is driven by the instrument's HORNBOSTEL–SACHS FAMILY (its `fam` — the same taxonomy
+  // Critter Hunt tags instruments with), NOT the specific instrument. So every string instrument reads
+  // the same, every wind reads the same, etc. FAM_SKIN maps a family → a skin id (null = plain card).
+  // To re-pair a family with a different look, edit one line here.
+  const FAM_SKIN = {
+    chordophone:  "foil",   // strings (bowed/plucked/struck) — brushed-metal sheen
+    idiophone:    "glass",  // struck/self-sounding metal & wood — crystalline
+    aerophone:    "holo",   // winds / free-reed — airy rainbow shimmer
+    membranophone: null,    // drums / vibrating skin — plain matte (no card voices use it yet)
+    electrophone: "neon",   // synth / electronic — neon
+  };
+  // `fam` = the Hornbostel–Sachs family that picks the skin (see FAM_SKIN). `voice` names a VOICES preset
+  // (the actual SOUND — see the Sound Collective below); `wave` is a legacy fallback for the old
+  // bare-oscillator path. `core:true` marks the curated campaign trio (piano/guitar/bass) that
+  // instrumentsFor() gates; the rest are COLLECTIBLE voices that only surface in Free Play decks.
   const INSTRUMENTS = [
     // core trio — curated campaign timbres (piano until M6, then guitar/bass). Gating unchanged.
-    { id:"piano",  name:"Piano",      emoji:"🎹", wave:"triangle", baseC:60, skin:null,    voice:"grand",      core:true },
-    { id:"guitar", name:"Guitar",     emoji:"🎸", wave:"sawtooth", baseC:60, skin:"foil",  voice:"pluck",      core:true },
-    { id:"bass",   name:"Bass",       emoji:"🎻", wave:"sine",     baseC:36, skin:"holo",  voice:"roundbass",  core:true },
+    { id:"piano",  name:"Piano",      emoji:"🎹", wave:"triangle", baseC:60, fam:"chordophone",  voice:"grand",      core:true },
+    { id:"guitar", name:"Guitar",     emoji:"🎸", wave:"sawtooth", baseC:60, fam:"chordophone",  voice:"pluck",      core:true },
+    { id:"bass",   name:"Bass",       emoji:"🎻", wave:"sine",     baseC:36, fam:"chordophone",  voice:"roundbass",  core:true },
     // collectible voices — appear in Free Play (a shuffled handful each run); campaign stays curated.
-    { id:"bell",   name:"Bell",       emoji:"🔔", wave:"sine",     baseC:60, skin:null,    voice:"glassbell"  },
-    { id:"organ",  name:"Organ",      emoji:"🎛️", wave:"square",   baseC:60, skin:null,    voice:"reedorgan"  },
-    { id:"synth",  name:"Synth Lead", emoji:"🎚️", wave:"sawtooth", baseC:60, skin:"neon",  voice:"neonsaw"    },
-    { id:"pad",    name:"Warm Pad",   emoji:"🌫️", wave:"triangle", baseC:48, skin:null,    voice:"warmpad"    },
-    { id:"box",    name:"Music Box",  emoji:"🎶", wave:"sine",     baseC:72, skin:null,    voice:"musicbox"   },
-    { id:"vibes",  name:"Vibraphone", emoji:"🎐", wave:"sine",     baseC:60, skin:"glass", voice:"vibraphone" },
+    { id:"bell",   name:"Bell",       emoji:"🔔", wave:"sine",     baseC:60, fam:"idiophone",    voice:"glassbell"  },
+    { id:"organ",  name:"Organ",      emoji:"🎛️", wave:"square",   baseC:60, fam:"aerophone",    voice:"reedorgan"  },  // free-reed
+    { id:"synth",  name:"Synth Lead", emoji:"🎚️", wave:"sawtooth", baseC:60, fam:"electrophone", voice:"neonsaw"    },
+    { id:"pad",    name:"Warm Pad",   emoji:"🌫️", wave:"triangle", baseC:48, fam:"electrophone", voice:"warmpad"    },
+    { id:"box",    name:"Music Box",  emoji:"🎶", wave:"sine",     baseC:72, fam:"idiophone",    voice:"musicbox"   },
+    { id:"vibes",  name:"Vibraphone", emoji:"🎐", wave:"sine",     baseC:60, fam:"idiophone",    voice:"vibraphone" },
     // real recorded instruments — sampled voices (see the sampler below + sounds/instruments/). Collectible,
     // surface in Free Play like the other non-core voices; the same shared samples power Critter Hunt.
-    { id:"violin", name:"Violin",       emoji:"🎻", wave:"sawtooth", baseC:60, skin:null, voice:"realviolin"  },
-    { id:"flute",  name:"Flute",        emoji:"🪈", wave:"sine",     baseC:60, skin:null, voice:"realflute"   },
-    { id:"trumpet",name:"Trumpet",      emoji:"🎺", wave:"sawtooth", baseC:60, skin:null, voice:"realtrumpet" },
-    { id:"nguitar",name:"Nylon Guitar", emoji:"🎸", wave:"triangle", baseC:60, skin:null, voice:"realguitar"  },
-    { id:"sax",    name:"Saxophone",    emoji:"🎷", wave:"sawtooth", baseC:60, skin:null, voice:"realsax"     },
-    { id:"tbell",  name:"Tubular Bells",emoji:"🛎️", wave:"sine",     baseC:60, skin:null, voice:"realbell"    },
-    { id:"banjo",  name:"Banjo",        emoji:"🪕", wave:"triangle", baseC:60, skin:null, voice:"realbanjo"   },
+    { id:"violin", name:"Violin",       emoji:"🎻", wave:"sawtooth", baseC:60, fam:"chordophone", voice:"realviolin"  },
+    { id:"flute",  name:"Flute",        emoji:"🪈", wave:"sine",     baseC:60, fam:"aerophone",   voice:"realflute"   },
+    { id:"trumpet",name:"Trumpet",      emoji:"🎺", wave:"sawtooth", baseC:60, fam:"aerophone",   voice:"realtrumpet" },
+    { id:"nguitar",name:"Nylon Guitar", emoji:"🎸", wave:"triangle", baseC:60, fam:"chordophone", voice:"realguitar"  },
+    { id:"sax",    name:"Saxophone",    emoji:"🎷", wave:"sawtooth", baseC:60, fam:"aerophone",   voice:"realsax"     },
+    { id:"tbell",  name:"Tubular Bells",emoji:"🛎️", wave:"sine",     baseC:60, fam:"idiophone",   voice:"realbell"    },
+    { id:"banjo",  name:"Banjo",        emoji:"🪕", wave:"triangle", baseC:60, fam:"chordophone", voice:"realbanjo"   },
     // Obscure/world real-instrument set — collectible in Free Play + the Sound Collective (freePlayInstruments
     // shuffles ALL of these; MAX_TIMBRES caps a run at 4, so the palette varies run to run). See VOICES above.
-    { id:"shamisen",name:"Shamisen",    emoji:"🎴", wave:"sawtooth", baseC:60, skin:null, voice:"realshamisen"},
-    { id:"koto",   name:"Koto",         emoji:"🎏", wave:"triangle", baseC:60, skin:null, voice:"realkoto"    },
-    { id:"shaku",  name:"Shakuhachi",   emoji:"🎋", wave:"sine",     baseC:60, skin:null, voice:"realshaku"   },
-    { id:"sitar",  name:"Sitar",        emoji:"🪷", wave:"sawtooth", baseC:60, skin:null, voice:"realsitar"   },
-    { id:"shanai", name:"Shehnai",      emoji:"🐍", wave:"sawtooth", baseC:60, skin:null, voice:"realshanai"  },
-    { id:"bagpipe",name:"Bagpipes",     emoji:"🏴", wave:"sawtooth", baseC:60, skin:null, voice:"realbagpipe" },
-    { id:"kalimba",name:"Kalimba",      emoji:"👍", wave:"sine",     baseC:60, skin:null, voice:"realkalimba" },
-    { id:"marimba",name:"Marimba",      emoji:"🌴", wave:"sine",     baseC:60, skin:null, voice:"realmarimba" },
-    { id:"glock",  name:"Glockenspiel", emoji:"🔔", wave:"sine",     baseC:72, skin:null, voice:"realglock"   },
-    { id:"celesta",name:"Celesta",      emoji:"❄️", wave:"sine",     baseC:72, skin:null, voice:"realcelesta" },
-    { id:"harpsi", name:"Harpsichord",  emoji:"🎼", wave:"sawtooth", baseC:60, skin:null, voice:"realharpsi"  },
-    { id:"dulcimer",name:"Dulcimer",    emoji:"🔨", wave:"triangle", baseC:60, skin:null, voice:"realdulcimer"},
-    { id:"harp",   name:"Harp",         emoji:"🎶", wave:"triangle", baseC:60, skin:null, voice:"realharp"    },
+    { id:"shamisen",name:"Shamisen",    emoji:"🎴", wave:"sawtooth", baseC:60, fam:"chordophone", voice:"realshamisen"},
+    { id:"koto",   name:"Koto",         emoji:"🎏", wave:"triangle", baseC:60, fam:"chordophone", voice:"realkoto"    },
+    { id:"shaku",  name:"Shakuhachi",   emoji:"🎋", wave:"sine",     baseC:60, fam:"aerophone",   voice:"realshaku"   },
+    { id:"sitar",  name:"Sitar",        emoji:"🪷", wave:"sawtooth", baseC:60, fam:"chordophone", voice:"realsitar"   },
+    { id:"shanai", name:"Shehnai",      emoji:"🐍", wave:"sawtooth", baseC:60, fam:"aerophone",   voice:"realshanai"  },
+    { id:"bagpipe",name:"Bagpipes",     emoji:"🏴", wave:"sawtooth", baseC:60, fam:"aerophone",   voice:"realbagpipe" },
+    { id:"kalimba",name:"Kalimba",      emoji:"👍", wave:"sine",     baseC:60, fam:"idiophone",   voice:"realkalimba" },
+    { id:"marimba",name:"Marimba",      emoji:"🌴", wave:"sine",     baseC:60, fam:"idiophone",   voice:"realmarimba" },
+    { id:"glock",  name:"Glockenspiel", emoji:"🔔", wave:"sine",     baseC:72, fam:"idiophone",   voice:"realglock"   },
+    { id:"celesta",name:"Celesta",      emoji:"❄️", wave:"sine",     baseC:72, fam:"idiophone",   voice:"realcelesta" },
+    { id:"harpsi", name:"Harpsichord",  emoji:"🎼", wave:"sawtooth", baseC:60, fam:"chordophone", voice:"realharpsi"  },
+    { id:"dulcimer",name:"Dulcimer",    emoji:"🔨", wave:"triangle", baseC:60, fam:"chordophone", voice:"realdulcimer"},
+    { id:"harp",   name:"Harp",         emoji:"🎶", wave:"triangle", baseC:60, fam:"chordophone", voice:"realharp"    },
   ];
   // The curated campaign trio — the only instruments the teaching movements ever draw (piano gated → M6).
   const CORE_INSTRUMENTS = INSTRUMENTS.filter(i=>i.core);
   const instById = (id) => INSTRUMENTS.find(x=>x.id===id) || INSTRUMENTS[0];
   const voiceForInst = (id) => instById(id).voice || "grand";
   // The skin object for a card's instrument (null = plain card). Used by cardHTML to lay the overlay.
-  const skinFor = (instId) => { const i = INSTRUMENTS.find(x=>x.id===instId); return (i && i.skin) ? SKINS[i.skin] : null; };
+  const skinFor = (instId) => { const i = INSTRUMENTS.find(x=>x.id===instId); const sk = i && FAM_SKIN[i.fam]; return sk ? SKINS[sk] : null; };
   const BASE_HAND_SIZE = 4, DISCARDS = 4, COPIES = 2, REST_COPIES = 3;  // select cap is now per-movement — see maxSelect()
   const MAX_HAND_SIZE = 6;   // gig keyboard shortcuts map a hand of up to 6 cards (a Muse rework to respect this cap is deferred)
   // ---- Gig keyboard shortcuts (S2.2): select a card like clicking it, Space = Play Hand ----

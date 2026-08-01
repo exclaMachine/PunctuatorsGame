@@ -2966,8 +2966,8 @@ Built in `mujicians.html`:
   badge sits beside the Codex; its dialog (`#soundsOverlay`, mirroring the Codex modal) lists all voices —
   collected ones show name + family + description + a **▶ sample** button (plays a rising C–E–G–C so the
   timbre sings), locked ones show a silhouette. Count = collected / total.
-- **Skins ride along for free.** The two spare skins finally attach — **synth = Neon, vibes = Frosted
-  Glass** — so those Free-Play cards wear their edition sheen (piano/guitar/bass unchanged).
+- **Skins ride along for free.** All four skins are now in play via the family mapping below (chordophone =
+  Foil, idiophone = Frosted Glass, aerophone = Holographic, electrophone = Neon).
 
 **Deferred / next:** per-voice **creature or edition art** (this pass is named-presets-only); **drum / sfx /
 ambient** collection families (scope was pitched-only); an **equip / loadout** layer (choose which voice a
@@ -2977,15 +2977,28 @@ of distinct *instruments*; and **skinning the piano-roll loop cells** (skins sti
 The wide register spread of a random Free-Play palette (bass at C2, music box at C5) is left as-is for now —
 tune `baseC` per voice if the loop grid grows too tall.
 
+**Future — earn the edition (more Balatro-accurate; tentative):** right now the family *is* the edition —
+a chordophone card is always Foil, an aerophone always Holographic. Closer to Balatro, the base card would
+render **plain**, and Foil / Holographic / etc. would be **special upgrades you earn or roll** (a rare drop,
+a shop/Tips purchase, a milestone) that then ride on top. The family mapping (`FAM_SKIN`) would stay as the
+*style* a card gets *when* it becomes special (so a "shiny" string is Foil, a shiny wind is Holo), but a
+plain-until-upgraded default becomes possible. Needs a per-card/per-instrument "edition earned" flag +
+`skinFor` gating on it; pairs naturally with the deferred equip/loadout + Tips economy above.
+
 ### Look-only slice — as built (2026-07-20)
 
 The **visual** half of the reframe shipped first (sound unchanged; the per-skin synth voice is the next pass):
 
 - **`SKINS` registry** (near `INSTRUMENTS`) — one entry per skin (`{id, name, art, preset}`); `preset:null`
   is the reserved seam for the future synth voice. Add a skin = add an entry + a `.cskin.sk-<id>` CSS rule.
-- **Binding rides `instId`, decided with the dev:** an instrument carries a `skin` field. **Piano = plain
-  (no skin)**; **Guitar = Foil**; **Bass = Holographic**. Two spares (**Frosted Glass**, **Neon**) are
-  defined in the registry and CSS, unassigned, ready to attach. `skinFor(instId)` resolves the skin object.
+- **Binding rides the instrument's TYPE (updated 2026-08-01):** the skin is driven by the instrument's
+  **Hornbostel–Sachs family** (`fam`, the same taxonomy Critter Hunt tags instruments with), *not* the
+  specific instrument — so every string reads the same, every wind the same, etc. A `FAM_SKIN` map pairs
+  **chordophone → Foil · idiophone → Frosted Glass · aerophone → Holographic · electrophone → Neon ·
+  membranophone → plain** (no card voices use membranophone yet — drums are separate `DRUM_VOICES`).
+  `skinFor(instId)` looks up the instrument's `fam` → `FAM_SKIN` → the skin object. Re-pair a family by
+  editing one `FAM_SKIN` line. *(Was per-instrument: piano plain / guitar Foil / bass Holo — replaced so
+  that, e.g., the whole piano/guitar/bass/harp/violin string family now shares the Foil look.)*
 - **Render.** `cardHTML` lays the skin as a **child `.cskin` element** (first child of the card), *not* a
   class on the card — so it survives the FLIP/fly `cloneNode(true)` (which resets the card's `className`)
   for free, riding the deal/play/discard animations. Note text is lifted above the sheen with `z-index`.
@@ -2998,7 +3011,8 @@ The **visual** half of the reframe shipped first (sound unchanged; the per-skin 
   directly is the other art path.)
 - **Where they show.** Skins appear wherever **guitar/bass cards** do — **Campaign M6+** (`INSTRUMENT_UNLOCK_MV=6`)
   and **Free Play** (all instruments), plus the graduated accidental decks (`instrumentsFor(m).slice(0,MAX_TIMBRES)`).
-  Before M6 the deck is piano-only, so cards stay plain.
+  Before M6 the deck is piano-only; piano is a chordophone, so those campaign cards now wear the **Foil**
+  string look (was plain under the old per-instrument binding).
 - **Update (2026-07-25):** the per-voice **synth preset** — the "sound" half — is now **BUILT** as
   `playVoice`/`VOICES` (the `playPreset` seam this bullet reserved), and sound became a **collectible layer**
   (the [Sound Collective](#the-sound-collective--sound-is-the-main-collection-built-2026-07-25)). Still
