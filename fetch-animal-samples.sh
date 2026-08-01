@@ -29,24 +29,24 @@ UA="PunctuatorsGame-sample-fetch/1.0 (https://github.com/exclaMachine/Punctuator
 # equally iconic, well-recorded ones (orca, wolf, whale, …). Provenance: data/critter-credits.json.
 ROWS=(
 # --- the original six: recording already IS this species, kept as-is ---
-"fox|https://upload.wikimedia.org/wikipedia/commons/0/0b/Vulpes_vulpes%2C_at_Henclov%C3%A1%2C_Slovakia_XC108315.mp3|0|4.0"          # Red Fox
-"parrot|https://upload.wikimedia.org/wikipedia/commons/d/d6/Ara_severus_-_Chestnut-fronted_Macaw_XC519607.mp3|10.3|3.5"             # Chestnut-fronted Macaw
+"fox|https://upload.wikimedia.org/wikipedia/commons/0/0b/Vulpes_vulpes%2C_at_Henclov%C3%A1%2C_Slovakia_XC108315.mp3|1.4|2.5"        # Red Fox (bark at ~1.5s; trimmed leading ambient)
+"parrot|https://upload.wikimedia.org/wikipedia/commons/d/d6/Ara_severus_-_Chestnut-fronted_Macaw_XC519607.mp3|11.8|2.5"             # Chestnut-fronted Macaw (call at ~11.8s; trimmed leading ambient)
 "snake|https://upload.wikimedia.org/wikipedia/commons/2/22/Rattlesnake.ogg|0.3|3.0"                                                 # Rattlesnake
-"owl|https://upload.wikimedia.org/wikipedia/commons/6/6f/Bubo_virginianus_-_Great_Horned_Owl_XC450919.mp3|0|5.0"                    # Great Horned Owl
-"bat|https://upload.wikimedia.org/wikipedia/commons/b/b4/Hoary_bat_chirp_recording.wav|0|3.0"                                       # Hoary Bat
+"owl|https://upload.wikimedia.org/wikipedia/commons/6/6f/Bubo_virginianus_-_Great_Horned_Owl_XC450919.mp3|2.2|2.8"                  # Great Horned Owl (hoot at ~2.3s; trimmed leading ambient)
+"bat|https://upload.wikimedia.org/wikipedia/commons/b/b4/Hoary_bat_chirp_recording.wav|0.78|0.8"                                    # Hoary Bat (chirp at ~0.8s; trimmed leading silence)
 "cricket|https://upload.wikimedia.org/wikipedia/commons/8/80/Field_cricket_Gryllus_pennsylvanicus.ogg|1.0|3.0"                      # Field Cricket
 # --- the four ex-generic slots, re-sourced to a KNOWN species ---
 "bullfrog|https://upload.wikimedia.org/wikipedia/commons/c/c5/Banded_Bull_Frog_Call.ogg|0|3.0"                                     # Banded Bullfrog (was generic "frog")
 "elephant|https://upload.wikimedia.org/wikipedia/commons/f/f5/Bee-Threat-Elicits-Alarm-Call-in-African-Elephants-pone.0010346.s002.ogg|0|4.0"  # African Elephant (labelled; alt trims: s001/s003)
-"alligator|https://upload.wikimedia.org/wikipedia/commons/1/1a/Alligatorbellow1.ogg|0|4.0"                                         # American Alligator (was generic "turtle")
-"orca|https://upload.wikimedia.org/wikipedia/commons/7/79/Killer_whale.ogg|0|3.5"                                                   # Orca / Killer Whale (was generic "dolphin")
+"alligator|https://upload.wikimedia.org/wikipedia/commons/1/1a/Alligatorbellow1.ogg|1.5|3.0"                                       # American Alligator (bellow at ~1.6s; trimmed leading ambient)
+"orca|https://upload.wikimedia.org/wikipedia/commons/7/79/Killer_whale.ogg|0.7|2.8"                                                 # Orca / Killer Whale (call at ~0.8s; trimmed leading ambient)
 # --- ten new species ---
 "wolf|https://upload.wikimedia.org/wikipedia/commons/8/87/Wolf_howls.ogg|0|4.0"                                                     # Gray Wolf
 "whale|https://upload.wikimedia.org/wikipedia/commons/1/13/Humpbackwhale2.ogg|0|4.0"                                                # Humpback Whale
-"mallard|https://upload.wikimedia.org/wikipedia/commons/6/69/Anas_platyrhynchos_-_Mallard_XC62258.mp3|0|3.0"                        # Mallard
+"mallard|https://upload.wikimedia.org/wikipedia/commons/6/69/Anas_platyrhynchos_-_Mallard_XC62258.mp3|1.0|2.4"                      # Mallard (quack at ~1.0s; trimmed leading silence)
 "peafowl|https://upload.wikimedia.org/wikipedia/commons/0/05/Pavo_cristatus_%28call%29.ogg|0|3.0"                                   # Indian Peafowl
-"howler|https://upload.wikimedia.org/wikipedia/commons/8/81/Mantled_Howler_Monkey_%28Alouatta_palliata%29_%28W_ALOUATTA_PALLIATA_R1_C2%29.ogg|0|4.0"  # Mantled Howler Monkey
-"turkey|https://upload.wikimedia.org/wikipedia/commons/f/f3/Meleagris_gallopavo_-_Wild_Turkey_XC136045.ogg|0|3.0"                   # Wild Turkey
+"howler|https://upload.wikimedia.org/wikipedia/commons/8/81/Mantled_Howler_Monkey_%28Alouatta_palliata%29_%28W_ALOUATTA_PALLIATA_R1_C2%29.ogg|1.0|3.1"  # Mantled Howler Monkey (howl at ~1.1s; trimmed leading silence)
+"turkey|https://upload.wikimedia.org/wikipedia/commons/f/f3/Meleagris_gallopavo_-_Wild_Turkey_XC136045.ogg|2.5|1.5"                 # Wild Turkey (gobble at ~2.6s; trimmed leading ambient + trailing silence)
 "goat|https://upload.wikimedia.org/wikipedia/commons/b/bc/Herd_of_goats_bleating.ogg|0|3.0"                                         # Domestic Goat
 "rooster|https://upload.wikimedia.org/wikipedia/commons/c/c5/Rooster_crowing.ogg|0|3.0"                                             # Rooster (Red Junglefowl)
 "cow|https://upload.wikimedia.org/wikipedia/commons/a/a5/Single_Cow_Moo.ogg|0|3.0"                                                  # Cow
