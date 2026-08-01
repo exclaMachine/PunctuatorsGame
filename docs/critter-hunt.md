@@ -55,6 +55,26 @@ so **animal cards *and* the won collection are both ▶-playable** (the old "(si
 Left deliberately open (per dev): **which animals become Mujicians pitched voices vs percussion one-shots** — the
 samples play as-is for now so that call can be made by ear. (Serve over http, like the instrument samples.)
 
+**AMENDED 2026-07-31 — the 4th axis (Genre) is now BUILT: cases sometimes have 4 variables / 6 sub-grids.**
+The deduction engine is no longer 3-axis-only. Each `New case` calls `rollAcats()`, which appends the optional
+**`genre`** axis ~`FOUR_VAR_CHANCE`(0.35) of the time → a 4-variable case (`G.acats` = the active axes). The
+engine was generalised to any axis count, anchored on **animal**: the hidden solution is `sol[catId]` = one
+bijection animal→X per non-anchor axis, and every pairwise relation resolves *through the animal*
+(`partner()`/`pairHolds()`), so anchor↔other and other↔other pairs are uniform. Concretely: `GENRES` pool (real
+facts origin/era/feel; a `genre` `CATEGORIES` entry with `nameLabel`); `pairKey`/`ORD`/`PAIR_REL` (per-pair clue
+phrasing); `buildCluePool`/`atomsFor`/`buildCompoundPool`/`buildUnmaskClue` all loop over active category **pairs**
+(so genre gets its own clues, compounds and unmasking route); `allArrangements` = the cartesian product of one
+permutation per non-anchor axis (uniqueness search space `(N!)^(K-1)`, 216 at N=3/K=4 — still trivial); `marks`
+is now a matrix **per active pair** keyed by `pairKey`; `renderBoard` draws the **classic staircase generalised to
+K categories** (columns = non-anchor cats; anchor top band + reversed lower rows `cats[K-1..2]`, fillers past the
+diagonal) → the familiar upside-down-L at K=3, **6 sub-grids at K=4**; the card tabs iterate `activeCats()` so the
+**Genre tab only appears in 4-var cases**. **Feasible/solvable:** unchanged guarantee — `generatePuzzle` only
+returns after `survivors.length===1` (unique), with `TARGET_CLEAR` bumped 3→5 for K=4 (a couple more clear clues to
+pin the extra bijection) and one compound as before. **Mobile fit:** grid cell/label sizes are CSS vars; a `.k4`
+class shrinks them (26px cells) so all 9 columns fit ~284px, inside a `.gridscroll` (overflow-x) safety wrapper so
+the page never scrolls sideways. `AXIS_N` (entities per category) stays **3**. Everything below that says
+"3-axis engine / 4th axis not built" is superseded by this.
+
 Except where the amendments above note, the rest below reflects the original ship:
 
 - **Data pools** — 10 animals / **22 instruments** / 8 biomes, each with real attribute **tags** (animal:
@@ -222,10 +242,15 @@ style shareable), consistent with the site's daily-puzzle pattern (Excla Machine
 
 ## Extending past 3 axes (the 4th axis: Genre / musical style)
 
+**BUILT 2026-07-31** (see the 2026-07-31 amendment up top) — the plan below is the design that was realised;
+the axis is **Genre / musical style**, surfacing in ~35% of cases as a 4-variable / 6-sub-grid puzzle. The
+steps below describe how it was wired (a few names differ from the final code — the engine went fully
+axis-generic rather than adding one hardcoded `sol.gn`).
+
 Murdle runs up to 4 categories (suspect · weapon · location · **motive**), sometimes more. Critter Hunt is
-built to grow the same way — but the planned 4th axis is **Genre / musical style** (jazz / classical / folk /
+built to grow the same way — but the 4th axis is **Genre / musical style** (jazz / classical / folk /
 blues / …), *not* Murdle's flavour **motive**, so the new axis still carries **real facts** (style, era, origin)
-and keeps the teaching angle that differentiates the game. **The 4th axis is not built yet — this is the plan.**
+and keeps the teaching angle that differentiates the game.
 
 **Already N-ready — the card / presentation layer.** All card UI is data-driven off the **`CATEGORIES`** registry
 (`{id, role, noun, tabEmoji, castKey, pool, attrs, playable, facts(e)}`). The tabs, flip-cards, the win-modal

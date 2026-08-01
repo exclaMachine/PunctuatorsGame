@@ -53,17 +53,21 @@
   @media (prefers-reduced-motion: reduce){.pcard .inner{transition:none}}
 
   /* ---------- L-shaped deduction grid ---------- */
+  /* Cell/label sizes are CSS vars so 4-variable cases (6 sub-grids, 9 columns) can shrink to fit
+     a phone; --cell is the CREAM background colour (declared in :root) — the SIZE vars are --csz/--lbl. */
   .board .msg{margin-top:8px}
-  .lgrid{display:grid;gap:3px;justify-content:start}
-  .hd{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:20px;user-select:none}
-  .hd.corner{width:42px}
-  .lgrid .hd:first-child{width:42px}
-  .cell{width:34px;height:34px;background:var(--cell);border:1.5px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;font-weight:700}
+  .gridscroll{overflow-x:auto;max-width:100%;padding-bottom:2px}     /* never force the whole page to scroll sideways on tiny screens */
+  .lgrid{display:grid;justify-content:start;--csz:34px;--lbl:42px;--gap:3px;--em:20px;--mk:18px;gap:var(--gap)}
+  .lgrid.k4{--csz:26px;--lbl:32px;--gap:2px;--em:15px;--mk:14px}     /* 4-variable case: shrink so all 6 sub-grids fit a phone (≈284px wide) */
+  .hd{width:var(--csz);height:var(--csz);display:flex;align-items:center;justify-content:center;font-size:var(--em);user-select:none}
+  .hd.corner{width:var(--lbl)}
+  .lgrid .hd:first-child{width:var(--lbl)}
+  .cell{width:var(--csz);height:var(--csz);background:var(--cell);border:1.5px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:var(--mk);cursor:pointer;font-weight:700}
   .cell.x{color:var(--no)} .cell.y{color:var(--yes);background:#eaf3ee;border-color:var(--yes)}
   .cell.q{color:var(--muted)}       /* "?" = maybe / candidate (Murdle's third mark) */
   .cell:hover{border-color:var(--muted)}
-  .fill{width:34px;height:34px}
-  .rowlbl{width:42px;height:34px;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .fill{width:var(--csz);height:var(--csz)}
+  .rowlbl{width:var(--lbl);height:var(--csz);display:flex;align-items:center;justify-content:center;font-size:var(--em)}
   .legend{font-size:12px;color:var(--muted);margin-top:10px;max-width:420px}
 
   /* ---------- clues ---------- */
@@ -126,7 +130,7 @@
         <button id="btnReveal" title="dev">Reveal (dev)</button>
       </div>
       <div class="accuse" id="accuseStrip" style="display:none"></div>
-      <div class="lgrid" id="lgrid"></div>
+      <div class="gridscroll"><div class="lgrid" id="lgrid"></div></div>
       <div class="msg" id="msg"></div>
       <div class="legend">Click a cell to cycle blank → ✗ → ✓ → ?. A ✓ auto-✗’s the rest of its row &amp; column; click the ✓ again (to ?) to clear those auto-✗’s. Solve the grid, then use THE UNMASKING clue (foot of the Case File) to see which animal Wormwood is hiding as — and accuse them with 🐺 Unmask Wormwood.</div>
     </div>
@@ -205,6 +209,19 @@ const LOCATIONS = [
   {em:"🏙️",nm:"City",    climate:"urban"},
   {em:"🌾",nm:"Savanna", climate:"warm"},
 ];
+// GENRES — the optional 4th axis (present only in "4-variable" cases). Each animal played in one genre;
+// like locations it's an independent bijection (animal→genre). Attributes are real-ish music facts so a
+// genre clue still teaches: origin (region), era, feel. `feel` is the most reliably distinct discriminator.
+const GENRES = [
+  {em:"🎷",nm:"Jazz",      origin:"American", era:"1920s", feel:"swung"},
+  {em:"🎼",nm:"Classical", origin:"European", era:"1700s", feel:"orchestral"},
+  {em:"🪕",nm:"Folk",      origin:"worldwide",era:"traditional", feel:"acoustic"},
+  {em:"🎸",nm:"Blues",     origin:"American", era:"1900s", feel:"soulful"},
+  {em:"🤘",nm:"Rock",      origin:"British",  era:"1950s", feel:"electric"},
+  {em:"🎛️",nm:"Electronic",origin:"German",   era:"1970s", feel:"synthetic"},
+  {em:"🕺",nm:"Disco",     origin:"American", era:"1970s", feel:"danceable"},
+  {em:"🎤",nm:"Pop",       origin:"worldwide",era:"1980s", feel:"catchy"},
+];
 /* ---- CATEGORY REGISTRY — the deduction axes, source of truth for the CARD UI ----
    The card layer (tabs, flip-cards, field notes) is fully data-driven off this list, so a
    4th+ axis surfaces automatically once its data exists. Adding an axis to the *cards* is just
@@ -223,9 +240,34 @@ const CATEGORIES = [
   { id:"location", role:"Scenes", noun:"biomes", tabEmoji:"🗺️", castKey:"L", pool:LOCATIONS,
     attrs:["climate"], playable:false,
     facts:e=>["biome: "+e.nm, "climate: "+e.climate] },
+  // The optional 4th axis. Only surfaces (tab + grid) when the case rolls "4 variables" — see rollAcats()
+  // / G.acats. `nameLabel` makes clue text read "…played 🎷 Jazz" rather than "…played the 🎷 Jazz".
+  { id:"genre", role:"Styles", noun:"musical styles", tabEmoji:"🎶", castKey:"G", pool:GENRES,
+    attrs:["origin","era","feel"], playable:false, nameLabel:e=>e.em+" "+e.nm,
+    facts:e=>["origin: "+e.origin, "era: "+e.era, "feel: "+e.feel] },
 ];
 const CAT = Object.fromEntries(CATEGORIES.map(c=>[c.id,c]));
 const ATTRS = Object.fromEntries(CATEGORIES.map(c=>[c.id,c.attrs]));   // derived → refsFor/generator
+/* ---- AXIS ALGEBRA (works for any number of active categories) ----
+   The engine is anchored on "animal": the hidden solution is one bijection animal→X per non-anchor axis
+   (sol[catId] = a permutation array indexed by animal). Every pairwise relation resolves THROUGH the animal,
+   so anchor↔other and other↔other pairs are all handled by partner()/pairHolds() below. Arrangements (the
+   uniqueness search space) are the cartesian product of one permutation per non-anchor axis: (N!)^(K-1). */
+const ANCHOR="animal";
+const ORD=Object.fromEntries(CATEGORIES.map((c,i)=>[c.id,i]));         // category order (animal<instrument<location<genre)
+function pairKey(a,b){ return ORD[a]<ORD[b] ? a+"|"+b : b+"|"+a; }     // canonical (order-independent) sub-grid key
+function anchorOf(cat,idx,assign){ return cat===ANCHOR ? idx : assign[cat].indexOf(idx); }
+function partner(from,iFrom,to,assign){ const a=anchorOf(from,iFrom,assign); return to===ANCHOR ? a : assign[to][a]; }
+function pairHolds(cA,iA,cB,iB,assign){ return partner(cA,iA,cB,assign)===iB; }
+// Clue phrasing per (canonical) category pair — `subj` names which side is the sentence subject.
+const PAIR_REL={
+  "animal|instrument":  {subj:"animal",     pos:" played ",         neg:" did not play "},
+  "animal|location":    {subj:"animal",     pos:" was found in ",   neg:" was not found in "},
+  "animal|genre":       {subj:"animal",     pos:" played ",         neg:" did not play "},
+  "instrument|location":{subj:"instrument", pos:" was heard in ",   neg:" was not heard in "},
+  "instrument|genre":   {subj:"instrument", pos:" played ",         neg:" did not play "},
+  "location|genre":     {subj:"genre",      pos:" was played in ",  neg:" was not played in "},
+};
 // Plain-language glosses (so the card backs actually teach — "frugivore = eats fruit").
 const GLOSS = {
   carnivore:"eats meat", herbivore:"eats plants", insectivore:"eats insects", frugivore:"eats fruit", piscivore:"eats fish",
@@ -245,6 +287,7 @@ function attrLabel(cat, key, val){
     if(key==="play") return "the "+val+" instrument";
   }
   if(cat==="location"){ if(key==="climate") return "the "+val+" biome"; }
+  if(cat==="genre"){ return "the "+val+" genre"; }   // origin/era/feel → "the American genre", "the swung genre"
   return "the "+val;
 }
 const TIMBRE = {aerophone:"like breath through a pipe", chordophone:"like a plucked or bowed string",
@@ -341,7 +384,8 @@ function permutations(n){
   rec([],[...Array(n).keys()]);return res;
 }
 function refsFor(cat, cast, idx){
-  const e=cast[idx], refs=[{kind:"name",label:"the "+e.em+" "+e.nm}];
+  const e=cast[idx], nameLbl=CAT[cat].nameLabel?CAT[cat].nameLabel(e):("the "+e.em+" "+e.nm);
+  const refs=[{kind:"name",label:nameLbl}];
   for(const key of ATTRS[cat]){
     const val=e[key];
     const uniq=cast.filter(x=>x[key]===val).length===1;
@@ -349,57 +393,71 @@ function refsFor(cat, cast, idx){
   }
   return refs;
 }
-function sampleCast(N){
+function sampleCast(N, acats){
   const A=shuffle(ANIMALS).slice(0,N);
   const seen=new Set(),I=[];
   for(const x of shuffle(INSTRUMENTS)){ if(I.length<N && !seen.has(x.fam)){I.push(x);seen.add(x.fam);} }
   for(const x of shuffle(INSTRUMENTS)){ if(I.length<N && !I.includes(x)) I.push(x); }
   const L=shuffle(LOCATIONS).slice(0,N);
-  return {A,I,L};
+  const cast={A,I,L};
+  if(acats.includes("genre")){   // bias toward distinct `feel` so discriminating genre clues exist
+    const gs=new Set(),Gn=[];
+    for(const x of shuffle(GENRES)){ if(Gn.length<N && !gs.has(x.feel)){Gn.push(x);gs.add(x.feel);} }
+    for(const x of shuffle(GENRES)){ if(Gn.length<N && !Gn.includes(x)) Gn.push(x); }
+    cast.G=Gn;
+  }
+  return cast;
 }
 // A clue's "teaches" tags (real-fact factlets it exposes) — a positive attr ref teaches that fact.
 function teachOf(ref){ return ref.kind==="attr"? [ref.cat+"."+ref.key+"="+ref.val] : []; }
 const SIZE_RANK={tiny:0,small:1,medium:2,large:3,huge:4};   // real size ordering → comparative clues
 
-function buildCluePool(cast, sol, N){
-  const rA=cast.A.map((_,i)=>refsFor("animal",cast.A,i));
-  const rI=cast.I.map((_,i)=>refsFor("instrument",cast.I,i));
-  const rL=cast.L.map((_,i)=>refsFor("location",cast.L,i));
-  const pool=[]; const seen=new Set();
-  const add=(clue)=>{ if(seen.has(clue.sig))return; seen.add(clue.sig); pool.push(clue); };
-  for(let a=0;a<N;a++)for(let i=0;i<N;i++){
-    const truth=sol.pi[a]===i, pol=truth?"pos":"neg";
-    for(const ra of rA[a])for(const ri of rI[i]){
-      const audio=(pol==="pos"&&ri.kind==="attr"&&ri.key==="fam");
-      const iText=audio? ("an instrument that sounds "+TIMBRE[ri.val]) : ri.label;
-      const text=cap(ra.label+(pol==="pos"?" played ":" did not play ")+iText+".");
-      add(mk("plays",a,i,pol,ra,ri,audio,text,teachOf(ra).concat(teachOf(ri))));
+// refs for every entity of every active category → R[catId][entityIdx] = [refs].
+function allRefs(cast, acats){
+  const R={}; acats.forEach(id=>R[id]=cast[CAT[id].castKey].map((_,i)=>refsFor(id,cast[CAT[id].castKey],i))); return R;
+}
+// Render a clue linking one entity of cA to one of cB. `plain` skips the timbre substitution (used by
+// compound atoms, which read as flat facts). Returns {text, audio}. Audio fires when the instrument is
+// referenced by its family (fam) attribute under a positive clue → an ear clue expressed as timbre.
+function clueText(cA,refA,cB,refB,pol,plain){
+  const rel=PAIR_REL[pairKey(cA,cB)];
+  let subjCat,subjRef,objCat,objRef;
+  if(rel.subj===cA){ subjCat=cA;subjRef=refA;objCat=cB;objRef=refB; } else { subjCat=cB;subjRef=refB;objCat=cA;objRef=refA; }
+  let audio=false;
+  const render=(catId,ref,isSubj)=>{
+    if(!plain && pol==="pos" && catId==="instrument" && ref.kind==="attr" && ref.key==="fam"){
+      audio=true; return (isSubj?"the instrument that sounds ":"an instrument that sounds ")+TIMBRE[ref.val];
     }
-  }
-  for(let a=0;a<N;a++)for(let l=0;l<N;l++){
-    const truth=sol.sg[a]===l, pol=truth?"pos":"neg";
-    for(const ra of rA[a])for(const rl of rL[l])
-      add(mk("at",a,l,pol,ra,rl,false,cap(ra.label+(pol==="pos"?" was found in ":" was not in ")+rl.label+"."),teachOf(ra).concat(teachOf(rl))));
-  }
-  for(let i=0;i<N;i++)for(let l=0;l<N;l++){
-    const a=sol.pi.indexOf(i); const truth=sol.sg[a]===l, pol=truth?"pos":"neg";
-    for(const ri of rI[i])for(const rl of rL[l]){
-      const audio=(pol==="pos"&&ri.kind==="attr"&&ri.key==="fam");
-      const iText=audio? ("The instrument that sounds "+TIMBRE[ri.val]) : cap(ri.label);
-      const text=iText+(pol==="pos"?" was heard in ":" was not heard in ")+rl.label+".";
-      add(mk("here",i,l,pol,ri,rl,audio,text,teachOf(ri).concat(teachOf(rl))));
+    return ref.label;
+  };
+  return {text:cap(render(subjCat,subjRef,true)+(pol==="pos"?rel.pos:rel.neg)+render(objCat,objRef,false)+"."), audio};
+}
+// Positive fact, plain labels, no leading cap / trailing period — for embedding in compound clues.
+function plainPair(cA,refA,cB,refB){
+  const rel=PAIR_REL[pairKey(cA,cB)];
+  const [s,o]= rel.subj===cA ? [refA,refB] : [refB,refA];
+  return s.label+rel.pos+o.label;
+}
+function buildCluePool(cast, sol, N, acats){
+  const R=allRefs(cast,acats), pool=[], seen=new Set();
+  const add=(clue)=>{ if(seen.has(clue.sig))return; seen.add(clue.sig); pool.push(clue); };
+  for(let x=0;x<acats.length;x++)for(let y=x+1;y<acats.length;y++){    // every active category pair → a sub-grid
+    const cA=acats[x], cB=acats[y];
+    for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+      const pol=pairHolds(cA,i,cB,j,sol)?"pos":"neg";
+      for(const ra of R[cA][i])for(const rb of R[cB][j]){
+        const {text,audio}=clueText(cA,ra,cB,rb,pol,false);
+        add(mk(cA,i,cB,j,pol,ra,rb,audio,text,teachOf(ra).concat(teachOf(rb))));
+      }
     }
   }
   return pool;
-  function mk(rel,p,q,pol,refP,refQ,audio,text,teaches){
-    const sig=[rel,pol,refP.kind+refP.label,refQ.kind+refQ.label].join("|");
+  function mk(cA,i,cB,j,pol,refP,refQ,audio,text,teaches){
+    const sig=[pairKey(cA,cB),cA+i,cB+j,pol,refP.kind+refP.label,refQ.kind+refQ.label].join("|");
     const direct=(pol==="pos"&&refP.kind==="name"&&refQ.kind==="name");
     const attrCount=(refP.kind==="attr"?1:0)+(refQ.kind==="attr"?1:0);
-    let test;
-    if(rel==="plays") test=(arr)=>(arr.pi[p]===q)===(pol==="pos");
-    else if(rel==="at") test=(arr)=>(arr.sg[p]===q)===(pol==="pos");
-    else test=(arr)=>{const a=arr.pi.indexOf(p);return (arr.sg[a]===q)===(pol==="pos");};
-    return {rel,pol,audio,text,teaches,direct,attrCount,test,sig};
+    const test=arr=>pairHolds(cA,i,cB,j,arr)===(pol==="pos");
+    return {pol,audio,text,teaches,direct,attrCount,test,sig};
   }
 }
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
@@ -414,37 +472,23 @@ function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
    The atoms these compose from are positive single-relation facts (animal↔instrument /
    animal↔location / instrument↔location), each described by a name or a *uniquely
    discriminating* real-attribute ref (so they teach). */
-function atomsFor(cast, sol, N){
-  const rA=cast.A.map((_,i)=>refsFor("animal",cast.A,i));
-  const rI=cast.I.map((_,i)=>refsFor("instrument",cast.I,i));
-  const rL=cast.L.map((_,i)=>refsFor("location",cast.L,i));
-  const atoms=[];
-  for(let a=0;a<N;a++)for(let i=0;i<N;i++){                 // plays: animal a plays instrument i
-    const truth=sol.pi[a]===i;
-    for(const ra of rA[a])for(const ri of rI[i])
-      atoms.push({truth, text:ra.label+" played "+ri.label, cellsig:"P"+a+"-"+i,
-        refs:[ra,ri], teaches:teachOf(ra).concat(teachOf(ri)), test:arr=>arr.pi[a]===i});
-  }
-  for(let a=0;a<N;a++)for(let l=0;l<N;l++){                 // at: animal a found in location l
-    const truth=sol.sg[a]===l;
-    for(const ra of rA[a])for(const rl of rL[l])
-      atoms.push({truth, text:ra.label+" was found in "+rl.label, cellsig:"T"+a+"-"+l,
-        refs:[ra,rl], teaches:teachOf(ra).concat(teachOf(rl)), test:arr=>arr.sg[a]===l});
-  }
-  for(let i=0;i<N;i++)for(let l=0;l<N;l++){                 // here: instrument i heard in location l
-    const a=sol.pi.indexOf(i), truth=sol.sg[a]===l;
-    for(const ri of rI[i])for(const rl of rL[l])
-      atoms.push({truth, text:ri.label+" was heard in "+rl.label, cellsig:"H"+i+"-"+l,
-        refs:[ri,rl], teaches:teachOf(ri).concat(teachOf(rl)),
-        test:arr=>{const aa=arr.pi.indexOf(i);return arr.sg[aa]===l;}});
+function atomsFor(cast, sol, N, acats){
+  const R=allRefs(cast,acats), atoms=[];
+  for(let x=0;x<acats.length;x++)for(let y=x+1;y<acats.length;y++){    // one atom family per active sub-grid
+    const cA=acats[x], cB=acats[y], key=pairKey(cA,cB);
+    for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+      const truth=pairHolds(cA,i,cB,j,sol);
+      for(const ra of R[cA][i])for(const rb of R[cB][j])
+        atoms.push({truth, text:plainPair(cA,ra,cB,rb), cellsig:key+":"+i+"-"+j,
+          refs:[ra,rb], teaches:teachOf(ra).concat(teachOf(rb)),
+          test:arr=>pairHolds(cA,i,cB,j,arr)});
+    }
   }
   return atoms;
 }
-function buildCompoundPool(cast, sol, N){
-  const rA=cast.A.map((_,i)=>refsFor("animal",cast.A,i));
-  const rI=cast.I.map((_,i)=>refsFor("instrument",cast.I,i));
-  const rL=cast.L.map((_,i)=>refsFor("location",cast.L,i));
-  const atoms=atomsFor(cast,sol,N);
+function buildCompoundPool(cast, sol, N, acats){
+  const R=allRefs(cast,acats), others=acats.slice(1);
+  const atoms=atomsFor(cast,sol,N,acats);
   const trueA=shuffle(atoms.filter(a=>a.truth)), falseA=shuffle(atoms.filter(a=>!a.truth));
   const out=[], seen=new Set();
   const attrOf=refs=>refs.reduce((n,r)=>n+(r.kind==="attr"?1:0),0);
@@ -472,43 +516,31 @@ function buildCompoundPool(cast, sol, N){
       sig:"cond|"+P.cellsig+"=>"+Q.cellsig+"|"+P.text+"|"+Q.text});
     if(++n>=60) break condLoop;
   }}
-  // --- Narrow-to-two: "The X did either A or B" (true partner + one decoy) ---
+  // --- Narrow-to-two: "The X did either A or B" (true partner + one decoy) over every active pair ---
   const narrow=[];
-  for(let a=0;a<N;a++){ const it=sol.pi[a];                 // animal → two instruments
-    for(let jf=0;jf<N;jf++){ if(jf===it)continue;
-      for(const ra of rA[a])for(const rt of rI[it])for(const rf of rI[jf])
-        narrow.push({ctype:"either2", compound:true, audio:false, direct:false,
-          attrCount:attrOf([ra,rt,rf]), teaches:teachOf(ra).concat(teachOf(rt),teachOf(rf)),
-          text:cap(ra.label+" played either "+rt.label+" or "+rf.label+"."),
-          test:arr=>arr.pi[a]===it||arr.pi[a]===jf,
-          sig:"e2P|"+a+"|"+[it,jf].sort().join(",")+"|"+ra.label+rt.label+rf.label}); }}
-  for(let a=0;a<N;a++){ const lt=sol.sg[a];                 // animal → two locations
-    for(let lf=0;lf<N;lf++){ if(lf===lt)continue;
-      for(const ra of rA[a])for(const rt of rL[lt])for(const rf of rL[lf])
-        narrow.push({ctype:"either2", compound:true, audio:false, direct:false,
-          attrCount:attrOf([ra,rt,rf]), teaches:teachOf(ra).concat(teachOf(rt),teachOf(rf)),
-          text:cap(ra.label+" was found in either "+rt.label+" or "+rf.label+"."),
-          test:arr=>arr.sg[a]===lt||arr.sg[a]===lf,
-          sig:"e2T|"+a+"|"+[lt,lf].sort().join(",")+"|"+ra.label+rt.label+rf.label}); }}
-  for(let i=0;i<N;i++){ const a=sol.pi.indexOf(i), lt=sol.sg[a];   // instrument → two locations
-    for(let lf=0;lf<N;lf++){ if(lf===lt)continue;
-      for(const ri of rI[i])for(const rt of rL[lt])for(const rf of rL[lf])
-        narrow.push({ctype:"either2", compound:true, audio:false, direct:false,
-          attrCount:attrOf([ri,rt,rf]), teaches:teachOf(ri).concat(teachOf(rt),teachOf(rf)),
-          text:cap(ri.label+" was heard in either "+rt.label+" or "+rf.label+"."),
-          test:arr=>{const aa=arr.pi.indexOf(i);return arr.sg[aa]===lt||arr.sg[aa]===lf;},
-          sig:"e2H|"+i+"|"+[lt,lf].sort().join(",")+"|"+ri.label+rt.label+rf.label}); }}
+  for(let x=0;x<acats.length;x++)for(let y=x+1;y<acats.length;y++){
+    const cA=acats[x], cB=acats[y], rel=PAIR_REL[pairKey(cA,cB)];
+    const subjCat=rel.subj, objCat=(subjCat===cA?cB:cA);              // subject fixed; two options of the object cat
+    for(let s=0;s<N;s++){ const tp=partner(subjCat,s,objCat,sol);
+      for(let f=0;f<N;f++){ if(f===tp)continue;
+        for(const rs of R[subjCat][s])for(const rt of R[objCat][tp])for(const rf of R[objCat][f])
+          narrow.push({ctype:"either2", compound:true, audio:false, direct:false,
+            attrCount:attrOf([rs,rt,rf]), teaches:teachOf(rs).concat(teachOf(rt),teachOf(rf)),
+            text:cap(rs.label+rel.pos+"either "+rt.label+" or "+rf.label+"."),
+            test:arr=>{const p=partner(subjCat,s,objCat,arr);return p===tp||p===f;},
+            sig:"e2|"+pairKey(cA,cB)+"|"+subjCat+s+"|"+[tp,f].sort().join(",")+"|"+rs.label+rt.label+rf.label}); } }
+  }
   shuffle(narrow).slice(0,70).forEach(push);
-  // --- Comparative: size ordering between two indirectly-named critters ---
-  const solArr={pi:sol.pi,sg:sol.sg}, descs=[];
-  for(let i=0;i<N;i++)for(const ri of rI[i])
-    descs.push({resolve:arr=>arr.pi.indexOf(i), text:"the critter that played "+ri.label, key:"pi"+i+ri.label, refs:[ri]});
-  for(let l=0;l<N;l++)for(const rl of rL[l])
-    descs.push({resolve:arr=>arr.sg.indexOf(l), text:"the critter found in "+rl.label, key:"sg"+l+rl.label, refs:[rl]});
+  // --- Comparative: size ordering between two indirectly-named critters (via any non-anchor axis) ---
+  const descs=[];
+  for(const oc of others)for(let e=0;e<N;e++)for(const r of R[oc][e]){
+    const t = oc==="location" ? "the critter found in " : "the critter that played ";
+    descs.push({resolve:arr=>partner(oc,e,"animal",arr), text:t+r.label, key:oc+e+r.label, refs:[r]});
+  }
   const comps=[];
   for(const d1 of descs)for(const d2 of descs){
     if(d1.key>=d2.key)continue;                             // one direction only (avoid dup mirror)
-    const a1=d1.resolve(solArr), a2=d2.resolve(solArr);
+    const a1=d1.resolve(sol), a2=d2.resolve(sol);
     if(a1===a2)continue;                                    // must be two distinct critters
     const r1=SIZE_RANK[cast.A[a1].size], r2=SIZE_RANK[cast.A[a2].size];
     if(r1===r2)continue;                                    // sizes must differ
@@ -531,34 +563,43 @@ const CTYPE_BADGE={xor:"⚖️ ", either2:"🔀 ", cond:"➡️ ", comp:"📏 "}
 // The final "unmasking" clue: always present, always the closing line. Points at the culprit
 // (Wormwood's disguise) THROUGH the solved grid — via a unique attribute of the instrument they
 // played or the biome they were found in, so you must deduce the grid to know WHICH animal it is.
-function buildUnmaskClue(cast, sol, culprit){
-  const i=sol.pi[culprit], l=sol.sg[culprit];
-  const iAttrs=refsFor("instrument",cast.I,i).filter(r=>r.kind==="attr");
-  const lAttrs=refsFor("location",cast.L,l).filter(r=>r.kind==="attr");
-  const pool=iAttrs.map(r=>({via:"instrument",ref:r})).concat(lAttrs.map(r=>({via:"location",ref:r})));
-  let via,ref;
-  if(pool.length){ const p=pool[rnd(pool.length)]; via=p.via; ref=p.ref; }
-  else { via="instrument"; ref=refsFor("instrument",cast.I,i)[0]; } // fall back to naming it (a name ref is always unique)
+function buildUnmaskClue(cast, sol, culprit, acats){
+  // Pin the impostor THROUGH the solved grid: a unique attribute of any entity the culprit is linked to
+  // (instrument / biome / genre). Prefer a timbre (fam) ref so it doubles as an ear clue.
+  const pool=[];
+  for(const oc of acats.slice(1)){
+    const idx=partner("animal",culprit,oc,sol);
+    refsFor(oc,cast[CAT[oc].castKey],idx).filter(r=>r.kind==="attr").forEach(r=>pool.push({via:oc,idx,ref:r}));
+  }
+  let via,ref,idx;
+  if(pool.length){ const p=pool[rnd(pool.length)]; via=p.via; ref=p.ref; idx=p.idx; }
+  else { via="instrument"; idx=partner("animal",culprit,"instrument",sol); ref=refsFor("instrument",cast.I,idx)[0]; } // name fallback (always unique)
   const audio=(via==="instrument" && ref.kind==="attr" && ref.key==="fam"); // timbre ref → an ear clue (on-theme for the timbre boss)
-  const phrase = via==="instrument"
-    ? "played "+(audio ? "the instrument that sounds "+TIMBRE[ref.val] : ref.label)
-    : "was found in "+ref.label;
+  const phrase = via==="location" ? "was found in "+ref.label
+    : via==="genre" ? "played "+ref.label
+    : "played "+(audio ? "the instrument that sounds "+TIMBRE[ref.val] : ref.label);
   return {final:true, audio, text:"Wormwood is hiding as the critter who "+phrase+". Unmask the impostor."};
 }
 
 // Target shape (Murdle-ish, per dev): ~3 CLEAR clues + exactly ONE "unclear" compound clue +
 // the closing UNMASKING clue. We sample many casts and keep the one whose minimal clear-clue
 // count lands closest to the target (returning early on an exact hit).
-function generatePuzzle(N){
-  const TARGET_CLEAR=3;
+// Cartesian product of one permutation per non-anchor axis → the uniqueness search space, (N!)^(others).
+function allArrangements(others, perms){
+  let acc=[{}];
+  for(const oc of others){ const next=[]; for(const base of acc)for(const p of perms)next.push({...base,[oc]:p}); acc=next; }
+  return acc;
+}
+function generatePuzzle(N, acats){
+  const others=acats.slice(1);
+  const TARGET_CLEAR = acats.length>=4 ? 5 : 3;   // more axes → more cells to pin → a couple more clear clues
   const perms=permutations(N);
+  const arrangements=allArrangements(others,perms);
   let best=null;
-  for(let tries=0;tries<90;tries++){
-    const cast=sampleCast(N);
-    const sol={pi:shuffle([...Array(N).keys()]), sg:shuffle([...Array(N).keys()])};
-    const arrangements=[];
-    for(const pi of perms)for(const sg of perms)arrangements.push({pi,sg});
-    const pool=buildCluePool(cast,sol,N).concat(buildCompoundPool(cast,sol,N));
+  for(let tries=0;tries<120;tries++){
+    const cast=sampleCast(N,acats);
+    const sol={}; others.forEach(oc=> sol[oc]=shuffle([...Array(N).keys()]));
+    const pool=buildCluePool(cast,sol,N,acats).concat(buildCompoundPool(cast,sol,N,acats));
     const score=c=> c.attrCount*2 + (c.audio?1.5:0) + (c.compound?2.5:0) - (c.direct?3:0) + Math.random()*0.6;
     const ranked=pool.slice().sort((a,b)=>score(b)-score(a));
     let survivors=arrangements, selected=[];
@@ -571,7 +612,7 @@ function generatePuzzle(N){
     if(comp){selected.push(comp);survivors=survFor(comp);}
     // Fill to a unique solution with CLEAR clues only — never a second compound.
     let guard=0;
-    while(survivors.length>1 && guard++<200){
+    while(survivors.length>1 && guard++<400){
       let picked=null;
       for(const c of ranked){ if(selected.includes(c))continue;
         if(c.compound && selected.some(x=>x.compound)) continue;   // exactly one unclear clue per puzzle
@@ -590,13 +631,12 @@ function generatePuzzle(N){
     // Guarantee exactly one compound clue even if none was load-bearing (a true clue never removes
     // the solution, so uniqueness is preserved).
     if(!selected.some(c=>c.compound)){
-      const solArr={pi:sol.pi,sg:sol.sg};
-      const extra=ranked.find(c=>c.compound && c.test(solArr));
+      const extra=ranked.find(c=>c.compound && c.test(sol));   // sol IS an arrangement (the true one)
       if(extra) selected.push(extra);
     }
     selected=selected.sort((a,b)=>(b.audio-a.audio)||(b.attrCount-a.attrCount));
     const culprit=rnd(N);
-    const puzzle={cast,sol,clues:selected,finalClue:buildUnmaskClue(cast,sol,culprit),culprit,N};
+    const puzzle={cast,sol,clues:selected,finalClue:buildUnmaskClue(cast,sol,culprit,acats),culprit,N,acats};
     const nComp=selected.filter(c=>c.compound).length, nClear=selected.length-nComp;
     if(nComp===1 && nClear===TARGET_CLEAR) return puzzle;          // exact Murdle shape
     const badness=(nComp===1?0:10)+Math.abs(nClear-TARGET_CLEAR);  // else keep the closest candidate
@@ -606,16 +646,26 @@ function generatePuzzle(N){
 }
 
 /* ============================ GAME STATE ============================ */
-let G=null, marks=null, activeCat=0; // marks.ai[a][i], marks.al[a][l], marks.il[i][l] ∈ {0 blank,1 ✗,2 ✓,3 ?} (auto-✗ is derived, not stored); activeCat = which card tab is open
-const AXIS_N=3;  // entities per category (Murdle uses 3; grows to 4 when the genre axis lands)
+// marks[pairKey] is an N×N matrix of {0 blank,1 ✗,2 ✓,3 ?} per active sub-grid, indexed
+// [entityIdx of the canonically-first category][entityIdx of the second]; auto-✗ is derived, not stored.
+let G=null, marks=null, activeCat=0;   // activeCat = index into the ACTIVE card tabs (activeCats())
+const AXIS_N=3;                        // entities per category (Murdle uses 3)
+const FOUR_VAR_CHANCE=0.35;            // ~a third of cases roll the extra Genre axis → 4 variables / 6 sub-grids
+// Which deduction axes this case uses. Always animal/instrument/location; sometimes + genre.
+function rollAcats(){ const base=["animal","instrument","location"]; if(Math.random()<FOUR_VAR_CHANCE) base.push("genre"); return base; }
 function newGame(){
-  G=generatePuzzle(AXIS_N);
-  marks={ai:blank(AXIS_N,AXIS_N),al:blank(AXIS_N,AXIS_N),il:blank(AXIS_N,AXIS_N)};
+  const acats=rollAcats();
+  G=generatePuzzle(AXIS_N, acats);
+  activeCat=0;
+  marks={};   // one blank matrix per active category pair (6 for 4-var, 3 for 3-var)
+  const cats=G.acats;
+  for(let x=0;x<cats.length;x++)for(let y=x+1;y<cats.length;y++) marks[pairKey(cats[x],cats[y])]=blank(AXIS_N,AXIS_N);
   document.getElementById("msg").textContent="";
   document.getElementById("accuseStrip").style.display="none";
   renderCards(); renderBoard(); renderClues();
 }
 function blank(r,c){return Array.from({length:r},()=>Array(c).fill(0));}
+function activeCats(){ return CATEGORIES.filter(c=>G.acats.includes(c.id)); }
 
 /* ============================ CATEGORY CARDS (left, tabbed) ============================ */
 // One category shown at a time; click a tab to switch. Everything is driven off CATEGORIES,
@@ -623,7 +673,7 @@ function blank(r,c){return Array.from({length:r},()=>Array(c).fill(0));}
 function renderCards(){ renderTabs(); renderCardArea(); }
 function renderTabs(){
   const host=document.getElementById("tabs"); host.innerHTML="";
-  CATEGORIES.forEach((cat,idx)=>{
+  activeCats().forEach((cat,idx)=>{                 // only the axes this case actually uses (Genre tab appears in 4-var cases)
     const b=document.createElement("button");
     b.className="tab"+(idx===activeCat?" active":"");
     b.innerHTML='<span class="tabemoji">'+cat.tabEmoji+'</span> '+cat.role;
@@ -632,7 +682,7 @@ function renderTabs(){
   });
 }
 function renderCardArea(){
-  const cat=CATEGORIES[activeCat], host=document.getElementById("cardarea"); host.innerHTML="";
+  const cat=activeCats()[activeCat], host=document.getElementById("cardarea"); host.innerHTML="";
   const h=document.createElement("div"); h.className="cardhead";
   h.innerHTML=cat.role+' <span class="sub2">— the '+cat.noun+'</span>';
   host.appendChild(h);
@@ -653,24 +703,42 @@ function flipCard(e, cat){
   return c;
 }
 
-/* ============================ L-SHAPED GRID (right) ============================ */
+/* ============================ L-SHAPED GRID (right) ============================
+   The classic logic-grid staircase, generalised to K categories: columns are the non-anchor
+   categories (cats[1..K-1]); the top band rows are the anchor (animal) and pair with every
+   column; then reversed lower rows cats[K-1]…cats[2] each pair only with the columns BEFORE
+   them (fillers elsewhere). K=3 → the familiar upside-down-L; K=4 → 6 sub-grids. */
 function renderBoard(){
-  const {A,I,L}=G.cast, N=G.N, g=document.getElementById("lgrid");
-  g.style.gridTemplateColumns='42px '+('34px '.repeat(2*N)).trim();
+  const cats=G.acats, K=cats.length, N=G.N, g=document.getElementById("lgrid");
+  const colCats=cats.slice(1);                          // categories that head columns
+  g.className="lgrid"+(K>=4?" k4":"");
+  g.style.gridTemplateColumns='var(--lbl) '+('var(--csz) '.repeat(colCats.length*N)).trim();
   g.innerHTML="";
   g.appendChild(hd("","", true));                       // corner
-  I.forEach(e=>g.appendChild(hd(e.em,e.nm)));            // instrument column heads
-  L.forEach(e=>g.appendChild(hd(e.em,e.nm)));            // location column heads
-  A.forEach((a,ai)=>{                                    // animal rows: A×I then A×L
-    g.appendChild(rowlbl(a));
-    I.forEach((_,ii)=>g.appendChild(markCell(marks.ai,ai,ii)));
-    L.forEach((_,li)=>g.appendChild(markCell(marks.al,ai,li)));
+  colCats.forEach(cid=> G.cast[CAT[cid].castKey].forEach(e=>g.appendChild(hd(e.em,e.nm))));   // column heads
+  // anchor (top) band: rows = animals, cells under every column category
+  G.cast[CAT[cats[0]].castKey].forEach((rowE,r)=>{
+    g.appendChild(rowlbl(rowE));
+    colCats.forEach(cid=> G.cast[CAT[cid].castKey].forEach((_,c)=> g.appendChild(cellFor(cats[0],r,cid,c))));
   });
-  L.forEach((l,li)=>{                                    // location rows: I×L (transposed) then fillers
-    g.appendChild(rowlbl(l));
-    I.forEach((_,ii)=>g.appendChild(markCell(marks.il,ii,li)));
-    for(let k=0;k<N;k++) g.appendChild(fillerCell());
-  });
+  // reversed lower rows: cats[K-1] down to cats[2]; row cats[ri] pairs cols cats[1..ri-1], fillers after
+  for(let ri=K-1; ri>=2; ri--){
+    const rowCid=cats[ri];
+    G.cast[CAT[rowCid].castKey].forEach((rowE,r)=>{
+      g.appendChild(rowlbl(rowE));
+      colCats.forEach((cid,p0)=>{ const p=p0+1;                 // this column category is cats[p]
+        if(p<ri) G.cast[CAT[cid].castKey].forEach((_,c)=> g.appendChild(cellFor(rowCid,r,cid,c)));
+        else for(let k=0;k<N;k++) g.appendChild(fillerCell());
+      });
+    });
+  }
+}
+// Resolve a cell for (rowCat entity r) × (colCat entity c) onto its canonical marks matrix (transposing
+// when the row category sorts after the column category), then hand off to the shared markCell.
+function cellFor(rowCid,r,colCid,c){
+  const m=marks[pairKey(rowCid,colCid)];
+  const rowFirst=ORD[rowCid]<ORD[colCid];
+  return markCell(m, rowFirst?r:c, rowFirst?c:r);
 }
 function hd(em,name,corner){ const d=document.createElement("div"); d.className="hd"+(corner?" corner":"");
   d.textContent=em; if(name)d.title=name; return d; }
@@ -750,19 +818,17 @@ function claimReward(r){ addToCollection(r); if(BOSS){ returnToMujicians("win", 
 const KEY="critterhunt.collection";
 const loadCol=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[];}catch(e){return [];}};
 const saveCol=(c)=>localStorage.setItem(KEY,JSON.stringify(c));
+// The entity of category `cid` the animal `a` is linked to under the solution (animal → itself).
+function linked(a,cid){ return G.cast[CAT[cid].castKey][partner("animal",a,cid,G.sol)]; }
 function winModal(){
-  const a=G.culprit, i=G.sol.pi[a], l=G.sol.sg[a];
-  const A=G.cast.A[a], I=G.cast.I[i], L=G.cast.L[l];
+  const a=G.culprit, A=G.cast.A[a], I=linked(a,"instrument");
   document.getElementById("accuseStrip").style.display="none";
   const body=document.getElementById("modalBody");
+  const notes=activeCats().map(cat=>{ const e=linked(a,cat.id); return fnCard(e.em,e.nm,cat.facts(e)); }).join("");
   body.innerHTML='<h2>🐺 Wormwood unmasked!</h2>'+
     '<p><b>'+A.em+' '+A.nm+'</b> was the impostor. Field notes on Wormwood’s disguise — '+
       (BOSS?'pick one sound to carry back into Mujicians’ Sound Collective:':'and pick one sound to keep:')+'</p>'+
-    '<div class="fieldnotes">'+
-      fnCard(A.em,A.nm,CAT.animal.facts(A))+
-      fnCard(I.em,I.nm,CAT.instrument.facts(I))+
-      fnCard(L.em,L.nm,CAT.location.facts(L))+
-    '</div>'+
+    '<div class="fieldnotes">'+notes+'</div>'+
     '<div class="rewardpick">'+
       '<button class="primary" id="pickI">Keep '+I.em+' '+I.nm+' — a playable timbre</button>'+
       '<button id="pickA">Keep '+A.em+' '+A.nm+' — its real animal sound</button>'+
@@ -801,8 +867,9 @@ document.getElementById("btnUnmask").onclick=()=>{
 document.getElementById("btnNew").onclick=newGame;
 document.getElementById("modalClose").onclick=closeModal;
 document.getElementById("btnReveal").onclick=()=>{
-  const {A,I,L}=G.cast; const lines=A.map((a,ai)=>a.em+" "+a.nm+" → "+I[G.sol.pi[ai]].em+" "+I[G.sol.pi[ai]].nm+" @ "+L[G.sol.sg[ai]].em+" "+L[G.sol.sg[ai]].nm);
-  document.getElementById("msg").textContent="ANSWER — "+lines.join(" · ")+"  ·  🐺 Wormwood = "+A[G.culprit].em+" "+A[G.culprit].nm;
+  const others=G.acats.slice(1);
+  const lines=G.cast.A.map((a,ai)=>a.em+" "+a.nm+" → "+others.map(cid=>{const e=linked(ai,cid);return e.em+" "+e.nm;}).join(" · "));
+  document.getElementById("msg").textContent="ANSWER — "+lines.join("  |  ")+"  ·  🐺 Wormwood = "+G.cast.A[G.culprit].em+" "+G.cast.A[G.culprit].nm;
 };
 // Boss chrome: reframe the header as the Mujicians M6 boss and add a "back" (forfeit) button.
 if(BOSS){
