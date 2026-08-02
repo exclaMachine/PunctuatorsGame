@@ -5,52 +5,62 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Critter Hunt — a real-data deduction game</title>
 <style>
+  /* Pixel/bitmap display font for CHROME ONLY (titles, tabs, buttons, section headers, entity names).
+     Body & clue text stays a legible sans so nothing gets hard to read on a phone. Pixelify Sans,
+     SIL OFL 1.1, bundled locally (fonts/PixelifySans-latin.woff2 + PixelifySans-OFL.txt). */
+  @font-face{font-family:'Pixelify';src:url('fonts/PixelifySans-latin.woff2') format('woff2');font-weight:400 700;font-display:swap}
   :root{
-    --bg:#f4efe6; --panel:#fffdf8; --ink:#2b2620; --muted:#7d7364; --line:#d8cebb;
+    --bg:#efe6d2; --panel:#fffdf6; --ink:#2b2620; --muted:#857a68; --line:#d8cebb; --edge:#3f362a;
     --accent:#2f7d63; --accent2:#b5532a; --yes:#2f7d63; --no:#b5532a; --cell:#fbf7ee;
-    --shadow:0 2px 0 #e6ddc9, 0 6px 18px rgba(60,50,30,.10);
+    --pix:'Pixelify',ui-monospace,Menlo,Consolas,monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
+    /* cozy-retro pixel chrome: hard 90° corners (radius:0), a dark warm outline, an offset BLOCK shadow (no blur) */
+    --shadow:4px 4px 0 var(--edge); --shadow-sm:3px 3px 0 var(--edge);
   }
   *{box-sizing:border-box}
-  body{margin:0;font:16px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);}
-  header{padding:14px 18px;border-bottom:2px solid var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--panel)}
-  header h1{font-size:20px;margin:0;letter-spacing:.3px}
-  header .sub{color:var(--muted);font-size:13px}
+  body{margin:0;font:16px/1.55 var(--sans);background:var(--bg);color:var(--ink);}
+  /* chrome elements share the pixel font; everything text-heavy stays sans for legibility */
+  header h1,.tab,button,.panel h2,.cardhead,.pface .nm,.pface.back b,.accuselbl,.card .nm,.modal h2,.dailybadge,.statsline,.clue .n{font-family:var(--pix);letter-spacing:.5px}
+  header{padding:14px 18px;border-bottom:4px solid var(--edge);display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--panel)}
+  header h1{font-size:22px;margin:0;letter-spacing:.5px}
+  header .sub{color:var(--muted);font-size:13.5px;line-height:1.5}
   .wrap{max-width:1180px;margin:0 auto;padding:18px;display:flex;flex-direction:column;gap:18px}
   .stage{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
   @media(min-width:920px){.stage{grid-template-columns:auto 1fr}}
-  .panel{background:var(--panel);border:2px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px}
-  .panel h2{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  .panel{background:var(--panel);border:3px solid var(--edge);border-radius:0;box-shadow:var(--shadow);padding:14px}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
   .lower{display:grid;grid-template-columns:1fr;gap:18px}
   @media(min-width:920px){.lower{grid-template-columns:1.3fr 1fr}}
-  button{font:inherit;cursor:pointer;border:2px solid var(--line);background:var(--panel);border-radius:10px;padding:7px 12px;box-shadow:0 2px 0 #e6ddc9}
+  button{font:inherit;font-family:var(--pix);cursor:pointer;border:3px solid var(--edge);background:var(--panel);border-radius:0;padding:8px 13px;box-shadow:var(--shadow-sm);letter-spacing:.5px}
   button:hover{background:#fff}
-  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-  button:disabled,button.locked{opacity:.5;cursor:default;box-shadow:none}
+  button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--edge)}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--edge)}
+  button:disabled,button.locked{opacity:.5;cursor:default;box-shadow:none;transform:none}
   button:disabled:hover,button.locked:hover{background:var(--accent)}
-  .dailybadge{margin-left:auto;font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:4px 9px;background:#faf6ec}
+  .dailybadge{margin-left:auto;font-size:11px;color:var(--muted);border:2px solid var(--line);border-radius:0;padding:5px 9px;background:#faf6ec}
   .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
   .msg{font-size:13px;color:var(--muted);min-height:18px}
   /* Phase 4 — share + stats */
-  .sharebtn{font-size:13px;padding:5px 11px;box-shadow:0 2px 0 #e6ddc9}
+  .sharebtn{font-size:13px;padding:6px 11px;box-shadow:var(--shadow-sm)}
   .statsline{font-size:12px;color:var(--muted);font-weight:600}
-  .sharebar{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:9px;align-items:flex-start}
-  .sharepreview{font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre;margin:0;padding:8px 11px;background:#faf6ec;border:1px solid var(--line);border-radius:8px;color:var(--ink)}
+  .sharebar{margin-top:14px;padding-top:12px;border-top:2px dashed var(--line);display:flex;flex-direction:column;gap:9px;align-items:flex-start}
+  .sharepreview{font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre;margin:0;padding:8px 11px;background:#faf6ec;border:2px solid var(--edge);border-radius:0;color:var(--ink)}
 
   /* ---------- category tabs + flip cards ---------- */
   .cardpanel{padding:14px;max-width:352px}          /* caps to ~2 big cards per row (2 + 1 for N=3) */
   @media(max-width:919px){.cardpanel{max-width:none}}
-  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;border-bottom:2px solid var(--line);padding-bottom:10px}
-  .tab{display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:13px;font-weight:600;border:2px solid var(--line);border-radius:10px 10px 8px 8px;background:var(--cell);color:var(--muted)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;border-bottom:3px solid var(--edge);padding-bottom:10px}
+  .tab{display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:13px;font-weight:600;border:3px solid var(--edge);border-radius:0;background:var(--cell);color:var(--muted);box-shadow:var(--shadow-sm)}
   .tab .tabemoji{font-size:18px}
   .tab:hover{background:#fff}
-  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .cardhead{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink);margin:0 0 12px}
-  .cardhead .sub2{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--edge)}
+  .cardhead{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink);margin:0 0 12px}
+  .cardhead .sub2{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0;font-family:var(--sans)}
   .cardrow{display:flex;flex-wrap:wrap;gap:12px}
   .pcard{width:150px;height:200px;perspective:900px;cursor:pointer}
   .pcard .inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
   .pcard.flipped .inner{transform:rotateY(180deg)}
-  .pface{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2px solid var(--line);border-radius:14px;background:var(--cell);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;text-align:center;overflow:hidden;box-shadow:var(--shadow)}
+  .pface{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:3px solid var(--edge);border-radius:0;background:var(--cell);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;text-align:center;overflow:hidden;box-shadow:var(--shadow-sm)}
   .pface .em{font-size:64px;line-height:1}
   /* Pixel-art animal sprite: sized to 1em so it inherits whatever font-size its context already sets
      (64px flip card, var(--em) grid heads, 30px collection…). Nearest-neighbour scaling for crisp pixels. */
@@ -60,8 +70,8 @@
   .pface .hint{font-size:11px;color:var(--muted);margin-top:6px}
   .pface.back{transform:rotateY(180deg);justify-content:flex-start;padding:14px 13px;color:var(--ink)}
   .pface.back b{font-size:15px;display:block;margin-bottom:4px}
-  .pface.back ul{margin:6px 0 0;padding-left:16px;color:var(--muted);text-align:left;font-size:12.5px;line-height:1.5}
-  .pcard .play{position:absolute;top:7px;right:8px;font-size:14px;border:1px solid var(--line);border-radius:7px;padding:1px 7px;background:var(--panel);z-index:2}
+  .pface.back ul{margin:6px 0 0;padding-left:16px;color:var(--muted);text-align:left;font-size:12.5px;line-height:1.55}
+  .pcard .play{position:absolute;top:7px;right:8px;font-size:14px;border:2px solid var(--edge);border-radius:0;padding:1px 7px;background:var(--panel);z-index:2}
   @media (prefers-reduced-motion: reduce){.pcard .inner{transition:none}}
 
   /* ---------- L-shaped deduction grid ---------- */
@@ -74,37 +84,37 @@
   .hd{width:var(--csz);height:var(--csz);display:flex;align-items:center;justify-content:center;font-size:var(--em);user-select:none}
   .hd.corner{width:var(--lbl)}
   .lgrid .hd:first-child{width:var(--lbl)}
-  .cell{width:var(--csz);height:var(--csz);background:var(--cell);border:1.5px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:var(--mk);cursor:pointer;font-weight:700}
-  .cell.x{color:var(--no)} .cell.y{color:var(--yes);background:#eaf3ee;border-color:var(--yes)}
+  .cell{width:var(--csz);height:var(--csz);background:var(--cell);border:2px solid var(--edge);border-radius:0;display:flex;align-items:center;justify-content:center;font-size:var(--mk);cursor:pointer;font-weight:700}
+  .cell.x{color:var(--no)} .cell.y{color:var(--yes);background:#dcecdf;border-color:var(--yes)}
   .cell.q{color:var(--muted)}       /* "?" = maybe / candidate (Murdle's third mark) */
-  .cell:hover{border-color:var(--muted)}
+  .cell:hover{border-color:var(--accent2)}
   .fill{width:var(--csz);height:var(--csz)}
   .rowlbl{width:var(--lbl);height:var(--csz);display:flex;align-items:center;justify-content:center;font-size:var(--em)}
-  .legend{font-size:12px;color:var(--muted);margin-top:10px;max-width:420px}
+  .legend{font-size:12px;color:var(--muted);margin-top:10px;max-width:420px;line-height:1.5}
 
   /* ---------- clues ---------- */
-  .clue{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--cell);display:flex;gap:8px;align-items:flex-start}
+  .clue{padding:10px 12px;border:2px solid var(--edge);border-radius:0;margin-bottom:8px;background:var(--cell);display:flex;gap:8px;align-items:flex-start;box-shadow:var(--shadow-sm)}
   .clue .n{font-weight:700;color:var(--muted);min-width:18px}
-  .clue.audio{border-color:var(--accent);background:#eef5f1}
-  .clue.compound{border-color:#7a5da8;background:#f2eef8}          /* the richer logic clues (XOR/either/if-then/comparative) */
-  .clue .listen{margin-left:auto;white-space:nowrap;font-size:12px;padding:2px 8px}
-  .clue.final{border:2px solid #6b4a2f;background:#f3ece1;margin-top:14px}
+  .clue.audio{border-color:var(--accent);background:#eaf3ee}
+  .clue.compound{border-color:#6b4a8f;background:#efe9f6}          /* the richer logic clues (XOR/either/if-then/comparative) */
+  .clue .listen{margin-left:auto;white-space:nowrap;font-size:12px;padding:3px 8px}
+  .clue.final{border:3px solid var(--edge);background:#f3ece1;margin-top:14px;box-shadow:var(--shadow)}
   .clue.final .n{color:#6b4a2f;font-size:18px}
-  .clue.final.audio{border-color:#6b4a2f;background:#f1ece2}
+  .clue.final.audio{border-color:var(--accent);background:#f1ece2}
 
   /* ---------- accusation strip ---------- */
-  .accuse{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;padding:10px 12px;border:2px dashed #6b4a2f;border-radius:12px;background:#f6efe4}
+  .accuse{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;padding:11px 12px;border:3px dashed var(--edge);border-radius:0;background:#f6efe4}
   .accuselbl{font-weight:700;font-size:13px;color:#6b4a2f}
-  .accbtn{padding:5px 10px}
-  .accbtn:hover{background:#fff;border-color:#6b4a2f}
+  .accbtn{padding:6px 10px}
+  .accbtn:hover{background:#fff;border-color:var(--edge)}
 
   /* ---------- collection ---------- */
   #collection{display:flex;flex-wrap:wrap;gap:8px}
-  .card{border:2px solid var(--line);border-radius:12px;padding:8px 10px;min-width:74px;text-align:center;background:var(--cell)}
+  .card{border:3px solid var(--edge);border-radius:0;padding:8px 10px;min-width:74px;text-align:center;background:var(--cell);box-shadow:var(--shadow-sm)}
   .card .em{font-size:30px}
   .card .nm{font-size:12px;font-weight:600}
   .card .tag{font-size:10px;color:var(--muted)}
-  .card button{padding:2px 8px;font-size:12px;margin-top:4px}
+  .card button{padding:3px 8px;font-size:12px;margin-top:4px}
   .tunebtn{float:right;font-size:12px;padding:3px 9px;text-transform:none;letter-spacing:0;color:var(--ink)}
   .card.flip{perspective:600px}
   .card.flip .inner{transition:transform .5s;transform-style:preserve-3d}
@@ -114,10 +124,10 @@
   /* ---------- overlay ---------- */
   .overlay{position:fixed;inset:0;background:rgba(30,25,18,.5);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
   .overlay.on{display:flex}
-  .modal{background:var(--panel);border:2px solid var(--line);border-radius:16px;max-width:520px;width:100%;padding:20px;box-shadow:var(--shadow)}
-  .modal h2{margin:.1em 0 .4em}
+  .modal{background:var(--panel);border:4px solid var(--edge);border-radius:0;max-width:520px;width:100%;padding:20px;box-shadow:var(--shadow)}
+  .modal h2{margin:.1em 0 .4em;letter-spacing:.5px}
   .fieldnotes{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0}
-  .fn{flex:1;min-width:140px;border:1.5px solid var(--line);border-radius:12px;padding:10px;background:var(--cell)}
+  .fn{flex:1;min-width:140px;border:3px solid var(--edge);border-radius:0;padding:10px;background:var(--cell)}
   .fn .big{font-size:34px} .fn ul{margin:6px 0 0;padding-left:16px;font-size:12px;color:var(--muted)}
   .rewardpick{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
 </style>
@@ -280,7 +290,7 @@ const CATEGORIES = [
   { id:"animal", role:"Suspects", noun:"animals", tabEmoji:"🐾", castKey:"A", pool:ANIMALS,
     attrs:["cls","diet","size","habitat"], playable:false, hear:e=>playAnimalSound(e.snd),
     facts:e=>["class: "+e.cls, "diet: "+e.diet+(GLOSS[e.diet]?" — "+GLOSS[e.diet]:""), "size: "+e.size, "native to "+e.habitat] },
-  { id:"instrument", role:"Weapons", noun:"instruments", tabEmoji:"🎵", castKey:"I", pool:INSTRUMENTS,
+  { id:"instrument", role:"Instruments", noun:"instruments", tabEmoji:"🎵", castKey:"I", pool:INSTRUMENTS,
     attrs:["fam","mat","play"], playable:true, hear:e=>playInstrument(e),
     facts:e=>["family: "+e.fam+(GLOSS[e.fam]?" — "+GLOSS[e.fam]:""), "material: "+e.mat, "played: "+e.play, "origin: "+e.origin] },
   { id:"location", role:"Scenes", noun:"biomes", tabEmoji:"🗺️", castKey:"L", pool:LOCATIONS,
@@ -898,7 +908,8 @@ function faceHTML(e){
 function renderCardArea(){
   const cat=activeCats()[activeCat], host=document.getElementById("cardarea"); host.innerHTML="";
   const h=document.createElement("div"); h.className="cardhead";
-  h.innerHTML=cat.role+' <span class="sub2">— the '+cat.noun+'</span>';
+  // Drop the "— the <noun>" subtitle when it'd just echo the role (e.g. "Instruments — the instruments").
+  h.innerHTML=cat.role+(cat.role.toLowerCase()===cat.noun.toLowerCase()?'':' <span class="sub2">— the '+cat.noun+'</span>');
   host.appendChild(h);
   const row=document.createElement("div"); row.className="cardrow";
   G.cast[cat.castKey].forEach(e=>row.appendChild(flipCard(e,cat)));

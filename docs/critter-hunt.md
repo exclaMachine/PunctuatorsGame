@@ -140,7 +140,8 @@ Except where the amendments above note, the rest below reflects the original shi
   whose instrument ref is expressed by *timbre* (family) instead of name. Each clue carries `test(arr)`
   (solver predicate), `text` (render), and `meta` (audio/direct/attrCount/teaches).
 - **UI: classic logic-grid layout** (reworked 2026-07-27 from three separate grids). **Left = tabbed flip-cards** — one category shown at a time
-  (Suspects/animals · Weapons/instruments · Scenes/biomes), **enlarged** so the backs don't clip: front = emoji + name, **back =
+  (Suspects/animals · **Instruments** · Scenes/biomes — the instrument tab is labelled *Instruments*, not Murdle's "Weapons",
+  since these are instruments), **enlarged** so the backs don't clip: front = emoji + name, **back =
   the real facts in plain language** (`GLOSS` glosses jargon — "frugivore → eats fruit", "aerophone → wind"),
   so a new term is one tap away; instrument card fronts have a ▶. **Right = one upside-down-L combined grid**
   (Animals×Instruments + Animals×Locations across the top band, Locations×Instruments in the lower-left corner —
@@ -417,6 +418,16 @@ are **pitched cards** in Free Play and catalogue into the Sound Collective. See 
 ## Tech / repo fit
 
 - **Standalone `critter-hunt.html`** — one self-contained file (inline CSS + JS), no framework, no build step.
+- **Cozy-retro pixel restyle (BUILT 2026-08-02).** The whole chrome is a simple pixel look: **hard 90° corners
+  (`border-radius:0`), chunky dark-warm outlines (`--edge:#3f362a`), and offset BLOCK shadows with no blur**
+  (`--shadow`/`--shadow-sm`; buttons "press in" on `:active`). Colours stay the original warm cream/green/rust
+  palette (dev pick: keep the cozy hues, just pixel-ify the shapes). Typography is a **hybrid** so phone legibility
+  never suffers: a bundled bitmap font, **Pixelify Sans** (SIL OFL 1.1 — `fonts/PixelifySans-latin.woff2`, variable
+  400–700 latin subset, ~12 KB; licence in `fonts/PixelifySans-OFL.txt`; the repo's documented "bundle-locally"
+  exception, no runtime API), is used for **chrome only** (`--pix`: title, tabs, buttons, section headers, entity
+  names, clue numbers), while all dense text — clue sentences, card-back fact lists, the header instruction — stays
+  a legible sans (`--sans`). Emoji faces are unchanged (chrome-only pass). Font loads via `@font-face` → needs http
+  serving like the samples. *(Scope: Critter Hunt only; Mujicians keeps its current look.)*
 - **Animal sprites (BUILT 2026-08-02).** Animals can render as pixel-art PNGs instead
   of emoji: drop `sprites/animals/<file>.png` (square, pixelated style) and set
   `sprite:"<file>.png"` on that `ANIMALS` entry. **9 wired so far** (fox, mallard, rooster, goat, orca, cricket,
