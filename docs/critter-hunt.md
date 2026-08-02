@@ -93,24 +93,30 @@ User-Agent — Wikimedia 429s default curl UAs under load).
 
 **AMENDED 2026-08-01 — a won animal cry now feeds Mujicians as a PLAYER-TUNED card (no dev per-animal authoring).**
 The old plan had the dev decide pitched-vs-percussion + crop for each of the 20 (growing) animals by ear. Instead the
-**player** does it: keeping a won animal opens a **tuner** in the win flow (`showAnimalTuner`) — a role toggle (🎵 Pitched
-/ 🥁 One-shot) + three sliders (**note length / anchor pitch / start offset**) + a ▶ preview (`previewAnimalCfg`,
-cropped+pitched via `playAnimalTuned`, mirroring Mujicians' `renderSample`). Saving writes the config to a **shared
-store** `localStorage["critterhunt.animalVoices"]` = `{slug:{nm,em,role,anchor,off,len}}` (starting role guessed by call
-type in `ROLE_GUESS`/`DEFAULT_CFG`, all retunable) and claims the reward carrying the cfg. **Mujicians** reads that store
+**player** does it — but **not** as a blocking win-flow dialog (the inline `showAnimalTuner` was **removed 2026-08-02**).
+Keeping a won animal now **claims it immediately with a forgiving default** (`DEFAULT_CFG` — role guess + a wide **1.5 s**
+window from `off:0`, so no clip is silent out of the box; boss mode carries it straight back to Mujicians, standalone
+offers a link into the lab). The player then **tunes it whenever they like in `animal-sound-lab.html`** — the shared,
+re-openable editor: a role toggle (🎵 Pitched / 🥁 One-shot) + note-length / anchor / start-offset sliders + a
+keyboard/scale/melody/drum-loop **audition** surface + per-animal **Save**. The lab lists **only collected animals**
+(union of `critterhunt.collection` animals + tuned-store keys; `?all=1` restores the full dev feel-test roster) and its
+Save writes the config to the **shared store** `localStorage["critterhunt.animalVoices"]` =
+`{slug:{nm,em,role,anchor,off,len}}` (starting role guessed by call type in `ROLE_GUESS`/`DEFAULT_CFG`, all retunable). **Mujicians** reads that store
 at load (`registerAnimalVoices`) and builds, per animal: a **`type:"animal"` VOICE** (`renderAnimal` — one-file
 `sounds/animals/<slug>.mp3`, cropped to the note + pitch-shifted; pitched repitches from anchor & holds the note length,
 one-shot = fixed pitch (anchor vs C4) + fixed `len`), a **Free-Play `INSTRUMENTS` card**, and a **Sound-Collective**
 entry; a boss-return animal reward grants the same via `grantBossReward`. This is decoupled from boss mode — *any*
 won+tuned animal (standalone play too) surfaces in Mujicians Free Play. The collection ▶ here also honours the tuned
-config. `animal-sound-lab.html` is a standalone preview toy (the tuner's origin). **Still deferred:** routing one-shot
+config. `animal-sound-lab.html` is now that shared editor — opened from the Critter Hunt **win modal** (🎚 Tune it in
+the Sound Lab), the Sound Collection's **🎚 Tune sounds** button, and a Mujicians **Home 🐾 Tune Sounds** button (shown
+once any animal is tuned) — reachable any time, `?from=` sets its ← Back target. **Still deferred:** routing one-shot
 animals through the true `{drum}`/`DRUM_VOICES` lane (kept off the canonical MJ2 drum save-index for now — they play as
 fixed-pitch VOICES); campaign decks stay curated (animals are Free-Play only).
 
-> **REWORK NOTE (dev, 2026-08-02):** the embedded `showAnimalTuner` dialog should probably be replaced by just
-> **sending the player to `animal-sound-lab.html`** to play with the sound themselves — the smaller inline dialog
-> wasn't really needed and was a bit confusing (its ▶ preview overlapped several pitches at once). Keep the current
-> tuner for now; fix later (make the lab the shared, saveable tuning surface both the win flow and a Home button open).
+> **REWORK DONE (2026-08-02):** the embedded `showAnimalTuner` dialog was removed in favour of
+> **`animal-sound-lab.html` as the shared, saveable tuning surface** (its ▶ preview had overlapped several pitches at
+> once; the lab's keyboard/scale/drum audition is clearer). Keeping an animal claims a default and the lab is opened
+> from the win modal, the collection, and a Mujicians Home button — see the AMENDED-2026-08-01 paragraph above.
 
 Except where the amendments above note, the rest below reflects the original ship:
 

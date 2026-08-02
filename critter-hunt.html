@@ -96,6 +96,7 @@
   .card .nm{font-size:12px;font-weight:600}
   .card .tag{font-size:10px;color:var(--muted)}
   .card button{padding:2px 8px;font-size:12px;margin-top:4px}
+  .tunebtn{float:right;font-size:12px;padding:3px 9px;text-transform:none;letter-spacing:0;color:var(--ink)}
   .card.flip{perspective:600px}
   .card.flip .inner{transition:transform .5s;transform-style:preserve-3d}
   .card.flip.done .inner{transform:rotateY(360deg)}
@@ -110,15 +111,6 @@
   .fn{flex:1;min-width:140px;border:1.5px solid var(--line);border-radius:12px;padding:10px;background:var(--cell)}
   .fn .big{font-size:34px} .fn ul{margin:6px 0 0;padding-left:16px;font-size:12px;color:var(--muted)}
   .rewardpick{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
-  .rolepick{display:flex;gap:10px;margin:10px 0 4px}
-  .rbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px}
-  .rbtn small{font-size:11px;color:var(--muted)}
-  .rbtn.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
-  .tuner{margin:8px 0}
-  .tunerrow{display:flex;align-items:center;gap:10px;margin:7px 0}
-  .tunerrow label{min-width:96px;font-size:13px;color:var(--muted)}
-  .tunerrow input[type=range]{flex:1;accent-color:var(--accent)}
-  .tunerrow .tval{min-width:58px;text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
 </style>
 </head>
 <body>
@@ -155,7 +147,7 @@
       <div id="clues"></div>
     </div>
     <div class="panel">
-      <h2>Your Sound Collection</h2>
+      <h2>Your Sound Collection <button id="btnTune" class="tunebtn" title="Fine-tune how your collected animal cries play in Mujicians — anytime">🎚 Tune sounds</button></h2>
       <div id="collection"></div>
     </div>
   </div>
@@ -428,8 +420,11 @@ function saveAV(slug,cfg){ const s=loadAV(); s[slug]=cfg; try{ localStorage.setI
 // Starting role guess by call type (verified by ear in the tuner) — the rest default in DEFAULT_CFG.
 const ROLE_GUESS={ owl:"pitched",bat:"pitched",bullfrog:"pitched",elephant:"pitched",orca:"pitched",wolf:"pitched",
   whale:"pitched",goat:"pitched",cow:"pitched",sheep:"pitched" };  // everything else defaults to one-shot
-const DEFAULT_CFG=(slug,nm,em)=>{ const role=ROLE_GUESS[slug]||"oneshot";
-  return { nm, em, role, anchor:60, off:0, len: role==="pitched"?0.5:0.3 }; };
+// Default `len` is a deliberately LONG 1.5 s window from off:0 — many trimmed clips still have a quiet lead-in,
+// so a short crop can land on silence. A wide window guarantees the cry is audible out of the box (players tighten
+// it later in the Sound Lab). Pitched voices in Mujicians drive duration from note length, so this only affects
+// one-shot playback + previews. See docs/critter-hunt.md ("Animal → Mujicians voice").
+const DEFAULT_CFG=(slug,nm,em)=>({ nm, em, role: ROLE_GUESS[slug]||"oneshot", anchor:60, off:0, len:1.5 });
 // Play `slug` cropped to the config: pitched → repitch card `midi` from anchor & hold `len`; one-shot → fixed
 // pitch (anchor vs C4) and fixed `len`. Same envelope shape Mujicians uses so the preview matches the game.
 function playAnimalTuned(slug, midi, cfg, t){
@@ -1002,45 +997,28 @@ function winModal(){
     '</div>';
   document.getElementById("overlay").classList.add("on");
   document.getElementById("pickI").onclick=()=>{ claimReward({type:"instrument",em:I.em,nm:I.nm,preset:I.preset,sample:I.sample}); };
-  document.getElementById("pickA").onclick=()=>{ showAnimalTuner(A); };
+  document.getElementById("pickA").onclick=()=>{ keepAnimal(A); };
 }
-// The player tunes a won cry into a Mujicians card (replaces the dev hand-authoring each animal). Saves the
-// config to the shared AV store and claims the reward (carrying the cfg back to Mujicians in boss mode).
-const NOTE_NM=["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
-const noteNm=m=>NOTE_NM[((m%12)+12)%12]+(Math.floor(m/12)-1);
-function showAnimalTuner(A){
+// Keeping a cry claims it immediately with a forgiving DEFAULT config (audible out of the box). Tuning is no
+// longer a blocking dialog — it happens later in animal-sound-lab.html (the shared, re-openable editor). Boss
+// mode carries the reward back to Mujicians right away; standalone offers a link into the lab. The cfg is written
+// to the shared AV store first so Mujicians' registerAnimalVoices() picks it up.
+function keepAnimal(A){
   const slug=A.snd, cfg=Object.assign(DEFAULT_CFG(slug,A.nm,A.em), loadAV()[slug]||{});
+  saveAV(slug,cfg);
+  const reward={type:"animal",em:A.em,nm:A.nm,snd:slug,cfg};
+  if(BOSS){ claimReward(reward); return; }        // → collection + straight back to Mujicians (retune later)
+  addToCollection(reward);                          // → collection, then offer the Sound Lab
   const body=document.getElementById("modalBody");
-  const sl=(id,lbl,min,max,step,val,fmt)=>`<div class="tunerrow"><label>${lbl}</label>`+
-    `<input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}"><span class="tval" id="${id}V">${fmt(val)}</span></div>`;
-  body.innerHTML='<h2>'+A.em+' Tune '+A.nm+'</h2>'+
-    '<p>Set how this cry plays as a card in <b>Mujicians</b>. Preview it, then save — no need to get it perfect, you can retune it later.</p>'+
-    '<div class="rolepick">'+
-      '<button class="rbtn" data-role="pitched">🎵 Pitched<small>plays melodies</small></button>'+
-      '<button class="rbtn" data-role="oneshot">🥁 One-shot<small>fixed hit</small></button>'+
-    '</div>'+
-    '<div class="tuner">'+
-      sl("tLen","Note length","0.06","1.6","0.02",cfg.len,v=>(+v).toFixed(2)+" s")+
-      sl("tAnc","Anchor pitch","48","72","1",cfg.anchor,v=>noteNm(+v))+
-      sl("tOff","Start offset","0","0.8","0.01",cfg.off,v=>(+v).toFixed(2)+" s")+
-    '</div>'+
+  body.innerHTML='<h2>'+A.em+' '+A.nm+' kept!</h2>'+
+    '<p>Its real cry is in your collection and ready to play in <b>Mujicians</b>. You can fine-tune how it '+
+    'sounds — pitched vs. one-shot, length, pitch — any time in the Sound Lab. No rush.</p>'+
     '<div class="rewardpick">'+
-      '<button id="tBack">↩ Back</button>'+
-      '<button id="tPrev">▶ Preview</button>'+
-      '<button class="primary" id="tSave">Save & keep this sound</button>'+
+      '<button class="primary" id="tuneNow">🎚 Tune it in the Sound Lab</button>'+
+      '<button id="tuneLater">Done</button>'+
     '</div>';
-  document.getElementById("tBack").onclick=winModal;
-  const get=()=>({ nm:A.nm, em:A.em, role:cfg.role, anchor:+document.getElementById("tAnc").value,
-                   off:+document.getElementById("tOff").value, len:+document.getElementById("tLen").value });
-  const paintRole=()=>document.querySelectorAll(".rbtn").forEach(b=>b.classList.toggle("on",b.dataset.role===cfg.role));
-  paintRole();
-  document.querySelectorAll(".rbtn").forEach(b=>b.onclick=()=>{ cfg.role=b.dataset.role; paintRole(); });
-  [["tLen",v=>(+v).toFixed(2)+" s"],["tAnc",v=>noteNm(+v)],["tOff",v=>(+v).toFixed(2)+" s"]].forEach(([id,fmt])=>{
-    document.getElementById(id).addEventListener("input",e=>{ document.getElementById(id+"V").textContent=fmt(e.target.value); });
-  });
-  document.getElementById("tPrev").onclick=()=>previewAnimalCfg(slug, get());
-  document.getElementById("tSave").onclick=()=>{ const c=get(); saveAV(slug,c);
-    claimReward({type:"animal",em:A.em,nm:A.nm,snd:slug,cfg:c}); };
+  document.getElementById("tuneNow").onclick=()=>{ location.href="animal-sound-lab.html?from=critter-hunt"; };
+  document.getElementById("tuneLater").onclick=closeModal;
 }
 function fnCard(em,nm,lines){ return '<div class="fn"><div class="big">'+em+'</div><div><b>'+nm+'</b></div><ul>'+
   lines.map(l=>"<li>"+l+"</li>").join("")+'</ul></div>'; }
@@ -1082,6 +1060,7 @@ function listenToCase(){
 }
 function closeModal(){document.getElementById("overlay").classList.remove("on");}
 document.getElementById("btnListen").onclick=listenToCase;
+document.getElementById("btnTune").onclick=()=>{ location.href="animal-sound-lab.html?from=critter-hunt"; };
 document.getElementById("btnUnmask").onclick=()=>{
   const strip=document.getElementById("accuseStrip");
   const show=strip.style.display==="none";

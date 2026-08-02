@@ -1425,6 +1425,9 @@
     }
     return store;
   }
+  // Any Critter-Hunt animal voices to (re)tune? Gates the Home "Tune Sounds" button.
+  function hasAnimalVoices(){ try{ return Object.keys(JSON.parse(localStorage.getItem(AV_STORE_KEY)||"{}")).length>0; }catch(e){ return false; } }
+  function openAnimalLab(){ stopLoop(); location.href = "animal-sound-lab.html?from=mujicians"; }
   // Render a SYNTH voice OBJECT: oscillator stack → optional lowpass sweep → shared ADSR gain → destination, with
   // an optional tremolo LFO. Envelope times clamp to the note's length. Split out of playVoice so a sample voice
   // can borrow it as a fallback. Does NOT catalogue — playVoice does.
@@ -3509,6 +3512,7 @@
           <button class="btn" id="b-campaign" ${(capped && !m6boss)?"disabled":""}>${campLabel}</button>
           <button class="btn ghost" id="b-free" ${capped?"disabled":""} title="Every mechanic unlocked (today's full game)">Free Play</button>
           <button class="btn ghost" id="b-beatlab" title="Practice live finger-drumming (rhythm MVP) — no daily cap">🥁 Beat Lab</button>
+          ${hasAnimalVoices()?`<button class="btn ghost" id="b-tunelab" title="Tune how your collected Critter Hunt animal cries play — anytime">🐾 Tune Sounds</button>`:""}
         </div>
         ${m6boss?`<p class="hint center">🐺 <b>Timbre boss:</b> Timbrewolf's tutor is done — now <b>Wormwood the timbre-thief</b> is hiding among the band. Face him in <b>Critter Hunt</b>: deduce who played what where, then unmask the impostor to win a voice and unlock <b>M7 Structure</b>.</p>`
           :mv===1?`<div class="cta" style="justify-content:center">${pitchLadderHTML()}</div>`
@@ -3527,6 +3531,8 @@
     if(bf) bf.addEventListener("click", ()=>{ audio(); startRun("free"); });
     const blab = document.getElementById("b-beatlab");
     if(blab) blab.addEventListener("click", ()=>{ audio(); enterBeatLab(); });
+    const btl = document.getElementById("b-tunelab");
+    if(btl) btl.addEventListener("click", ()=>{ audio(); openAnimalLab(); });
     $game.querySelectorAll(".pp-stage").forEach(el=> el.addEventListener("click", ()=>{
       audio(); startRun("campaign", {movement:1, pitchLevel:el.dataset.stage}); }));
     // DEV movement jumper: set the reached frontier, then re-render so the Campaign button updates

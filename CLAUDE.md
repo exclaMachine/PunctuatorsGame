@@ -90,12 +90,16 @@ before changing it.
   via **ffmpeg** (now with a descriptive User-Agent — Wikimedia 429s default curl UAs), provenance in `data/critter-credits.json` + `sounds/CREDITS.md`). Unlike the instruments these are
   **one one-shot per animal** — played by `playAnimalSound` (full clip) *and*, cropped+pitched, by `playAnimalTuned`;
   animals are ▶-playable on their cards + in the won collection. **Animal → Mujicians voice BUILT 2026-08-01:** rather
-  than a dev deciding pitched-vs-percussion per animal, the **player tunes a won cry** in Critter Hunt's win flow
-  (`showAnimalTuner` — role pitched/one-shot + crop length / start-offset / anchor-pitch sliders + preview) and the
-  config saves to a **shared store `localStorage["critterhunt.animalVoices"]`** ({slug:{nm,em,role,anchor,off,len}}).
-  Mujicians' `registerAnimalVoices()` (run at load) reads that store → builds a `type:"animal"` VOICE (`renderAnimal`:
-  single-file `sounds/animals/<slug>.mp3`, cropped+pitched — pitched repitches the card's note from anchor & holds the
-  note's length; one-shot = fixed pitch + fixed `len`) + a Free-Play `INSTRUMENTS` card + a Sound-Collective entry per
-  animal; a boss-return animal reward grants the same. `animal-sound-lab.html` = a standalone preview toy (the tuner's
-  origin). **Deferred:** routing one-shot animals through the true `{drum}`/`DRUM_VOICES` lane (they play as fixed-pitch
-  VOICES for now); campaign decks stay curated (animals are Free-Play only). Same http-serving requirement.
+  than a dev deciding pitched-vs-percussion per animal, the **player tunes a won cry**. **REWORKED 2026-08-02:** the old
+  inline win-flow dialog (`showAnimalTuner`) was **removed** — keeping an animal now claims it with a forgiving default
+  (`DEFAULT_CFG`: role guess + a wide **1.5 s** window from `off:0` so nothing is silent out of the box), and tuning
+  moved into **`animal-sound-lab.html` as the shared, re-openable editor** (role toggle + note-length/anchor/start-offset
+  sliders + keyboard/scale/drum audition + per-animal **Save**; lists **only collected animals** — `?all=1` = full dev
+  roster). The lab's Save writes the **shared store `localStorage["critterhunt.animalVoices"]`** ({slug:{nm,em,role,anchor,off,len}}),
+  opened from Critter Hunt's win modal + a collection **🎚 Tune sounds** button + a Mujicians **Home 🐾 Tune Sounds**
+  button. Mujicians' `registerAnimalVoices()` (run at load) reads that store → builds a `type:"animal"` VOICE
+  (`renderAnimal`: single-file `sounds/animals/<slug>.mp3`, cropped+pitched — pitched repitches the card's note from
+  anchor & holds the note's length; one-shot = fixed pitch + fixed `len`) + a Free-Play `INSTRUMENTS` card + a
+  Sound-Collective entry per animal; a boss-return animal reward grants the same. **Deferred:** routing one-shot animals
+  through the true `{drum}`/`DRUM_VOICES` lane (they play as fixed-pitch VOICES for now); campaign decks stay curated
+  (animals are Free-Play only). Same http-serving requirement.
