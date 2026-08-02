@@ -3,7 +3,8 @@
 **Entry file:** `mujicians.html` · **Status:** **v1 vertical slice built** — a Balatro-style deckbuilder
 (cards = notes, hands = chords/scales, score = theory correctness, hands are sounded, and a whole run
 **builds one continuous Mario-Paint-style song in one fixed key** — **gigs were removed 2026-07-17**, so a
-run is now **one continuous performance** (one key, one Muse drafted at the start)
+run is now **one continuous performance** (one key; the per-run **Muse draft is disabled** as of
+2026-08-02 — see [Muse draft disabled](#muse-draft-disabled-2026-08-02))
 that fills a single loop — and you can **Save a Song** you like — name the whole-run song, read a theory
 report card, and replay/share it from a Home **Setlist**). The demoted slice-1 note-grid is preserved in
 **`mujicians-compose.html`** (the future free-compose side tool). **The applause threshold was removed
@@ -74,7 +75,7 @@ newest-first.
    as-built map.
 3. ~~**Do away with gigs (design change).**~~ **✅ DONE (2026-07-17).** A run is now **one continuous
    performance in one fixed key (C major)** with a **single applause threshold** and **one Muse drafted
-   once at the start** — the 3-gig Set, C→G→F modulation, and per-gig re-drafts are removed. See the
+   once at the start** *(the Muse draft was later disabled 2026-08-02 — see [Muse draft disabled](#muse-draft-disabled-2026-08-02))* — the 3-gig Set, C→G→F modulation, and per-gig re-drafts are removed. See the
    **[Removing gigs — a run becomes one performance (BUILT)](#removing-gigs--a-run-becomes-one-performance-built)**
    section for the as-built code map. *(Follow-ons still planned: key change → Melody (M4), accidentals →
    Pitch (M1).)*
@@ -604,8 +605,9 @@ and rejected*). Their **card skins ride the existing foil/holo `SKINS` system to
       keyboard are the **shared** Beat Lab engine.
     - **The "free" stage melody round. ✅ BUILT 2026-07-23** — "play your own one-pass beat over your melody;
       it becomes the song's backing loop." Two phases: **Phase 1 — compose (gig).** The free stage no longer
-      skips the Muse draft (`dismissIntro` routes only match/grooves to `enterRhythmStage`; free falls through to
-      the normal draft → gig), so you build a melody **at your own pace** on the piano-roll. The Campaign
+      skips the drum session (`dismissIntro` routes only match/grooves to `enterRhythmStage`; free falls through to
+      `offerDraft` → gig — and since the [Muse draft is disabled](#muse-draft-disabled-2026-08-02) that's now
+      straight to the gig), so you build a melody **at your own pace** on the piano-roll. The Campaign
       **✓ Finish** button is replaced by **🥁 Lay a beat over it** (enabled at ≥`FREE_MELODY_NOTES`(6) notes,
       `melodyNoteCount`); filling the whole stage ends the *composing* phase (not the run) with a nudge, and the
       goal-prompt never fires (the gate needs the beat). **Phase 2 — drum over it (`enterFreeBeat`).** The
@@ -1226,8 +1228,10 @@ shows no intro** (it's the open creative mode; teaching is campaign-only — sam
   that level's actual mechanic + gate (durations & rests, p/mf/f size-is-volume, stepwise melody + intervals,
   consonant triads + cadence, multi-instrument blends, A·B·A form), and naming its villain as a foil.
 - **Flow.** `startRun()` → **`offerIntro()`** (was `offerDraft()`) → `screen="intro"` (rendered over the empty
-  stage, mirroring the draft) → **"Got it — let's play ▸"** → `offerDraft()` → `pickMuse()` → `startPlay()`.
-  `offerIntro()` falls straight through to the draft when there's no lesson (Free Play).
+  stage) → **"Got it — let's play ▸"** → `offerDraft()` → `startPlay()`. As of 2026-08-02 the Muse draft is
+  **disabled** (`MUSE_DRAFT_ENABLED=false`), so `offerDraft()` short-circuits straight to `startPlay()` and the
+  `screen="draft"` overlay/`pickMuse()` never run — see [Muse draft disabled](#muse-draft-disabled-2026-08-02).
+  `offerIntro()` falls straight through when there's no lesson (Free Play).
 - **Full first-time → compact on repeat.** `persist.progress.seenIntros[key]` records that you've seen a level.
   First time = the full script; after that = the `compact` one-liner with a **"more ▾"** that expands the full
   text inline (`introExpanded`). `m1` and `m1:ear` are **distinct keys**, so the by-ear level gets its own
@@ -2040,7 +2044,8 @@ The Key already owns the plain A·B·A bonus, so the Bartender's capture is **co
 ## Removing gigs — a run becomes one performance (BUILT)
 
 > **Status: BUILT (2026-07-17)** in `mujicians.html`. A run is now **one continuous performance in one
-> fixed key** with a **single applause threshold** and **one Muse drafted once at the start**. The 3-gig
+> fixed key** with a **single applause threshold** and **one Muse drafted once at the start** *(the Muse
+> draft was later disabled 2026-08-02 — see [Muse draft disabled](#muse-draft-disabled-2026-08-02))*. The 3-gig
 > Set, the C→G→F modulation, per-gig thresholds, per-gig Muse re-drafts, and the loop's section/key-strip
 > UI are all gone. The three forks below record the decisions; the **As built** subsection is the code map.
 > *(Follow-ons still open: key change relocated to the Melody movement (M4) and accidentals to Pitch (M1)
@@ -2050,6 +2055,24 @@ The Key already owns the plain A·B·A bonus, so the Bartender's capture is **co
 interruptions per run), and the dev "doesn't really care about the Muses." Collapsing a run to **one
 continuous performance** removes the mid-run gates and drafts, so a run reads as *sit down → build one
 song → done*, which is what the "made some music" payoff and Save-a-Song already want to be.
+
+### Muse draft disabled (2026-08-02)
+
+The **per-run Muse draft is turned off.** It doesn't fit the game yet — especially the early movements,
+where the pool is mostly the two hand-size upgrades, so the "choice" is between two near-identical
+buffs and carries no real decision. Rather than delete the machinery, it's gated behind a flag so a
+better use can re-enable it later.
+
+- **One flag.** `MUSE_DRAFT_ENABLED = false` (just above `offerDraft()`). When false, `offerDraft()`
+  short-circuits straight to `startPlay()` — the `screen="draft"` overlay, `renderDraftOverlay()`, and
+  `pickMuse()` never run, so **every** run (campaign + Free Play) goes lesson-intro → gig with no
+  Muse-pick step. `run.muses` therefore stays empty for the whole run.
+- **UI.** The gig's Muses panel is only rendered when `run.muses.length` (`renderGig`), so an empty,
+  stale "draft one at the start" prompt no longer shows.
+- **Kept intact for later:** `MUSE_POOL`, `pickMuse`, `musesHTML`, the draft overlay, and the
+  `score()` Muse hooks are all untouched — flip the flag back to `true` (or wire a new trigger) to
+  restore drafting. The planned character-Muse roster (the graphic-novel cast as earnable Muses) is
+  unaffected — it's a separate, still-future design.
 
 ### The three forks
 

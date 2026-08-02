@@ -2777,7 +2777,12 @@
 
   /* ================= Muse draft ================= */
   let draftChoices = [];
+  // DISABLED 2026-08-02: the per-run Muse draft is turned off — it doesn't fit the game yet (esp. the
+  // early levels where two hand-size Muses swamp the choice). Machinery below (MUSE_POOL/pickMuse/draft
+  // overlay) is kept intact so a better use can re-enable it; for now every run skips straight to play.
+  const MUSE_DRAFT_ENABLED = false;
   function offerDraft(){
+    if(!MUSE_DRAFT_ENABLED){ startPlay(); return; }
     const owned = new Set(run.muses.map(m=>m.id));
     // only offer Muses whose reward can actually pay out at this movement (minMv) and that aren't
     // already owned (unless repeatable). Free Play (movement 7) clears every minMv, so all appear.
@@ -3324,7 +3329,7 @@
           ? `<button class="btn ghost" id="b-finish" ${filledBars()>0?"":"disabled"}>✓ Finish song</button>`
           : ""}
       </div>
-      <div class="muses">${musesHTML()}</div>`;
+      ${run.muses.length ? `<div class="muses">${musesHTML()}</div>` : ""}`;
     // wire
     $game.querySelectorAll(".card").forEach(el=>{
       const idx = +el.dataset.idx;
