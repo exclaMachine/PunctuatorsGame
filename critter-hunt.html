@@ -30,6 +30,11 @@
   .dailybadge{margin-left:auto;font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:4px 9px;background:#faf6ec}
   .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
   .msg{font-size:13px;color:var(--muted);min-height:18px}
+  /* Phase 4 — share + stats */
+  .sharebtn{font-size:13px;padding:5px 11px;box-shadow:0 2px 0 #e6ddc9}
+  .statsline{font-size:12px;color:var(--muted);font-weight:600}
+  .sharebar{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:9px;align-items:flex-start}
+  .sharepreview{font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre;margin:0;padding:8px 11px;background:#faf6ec;border:1px solid var(--line);border-radius:8px;color:var(--ink)}
 
   /* ---------- category tabs + flip cards ---------- */
   .cardpanel{padding:14px;max-width:352px}          /* caps to ~2 big cards per row (2 + 1 for N=3) */
@@ -494,7 +499,30 @@ function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+String(d.get
 const DAILY_KEY="critterhunt.daily";
 function dailyState(){ try{ return JSON.parse(localStorage.getItem(DAILY_KEY))||{}; }catch(e){ return {}; } }
 function dailySolvedToday(){ const s=dailyState(); return s.date===todayStr() && !!s.solved; }
-function markDailySolved(){ try{ localStorage.setItem(DAILY_KEY, JSON.stringify({date:todayStr(), solved:true})); }catch(e){} }
+// Solving stamps the day's result (misses = wrong accusations before the right one, k = axis count) so the
+// share card can be regenerated on reload, and folds it into streak/stats.
+function markDailySolved(misses,k){
+  try{ localStorage.setItem(DAILY_KEY, JSON.stringify({date:todayStr(), solved:true, misses:misses|0, k:k|0})); }catch(e){}
+  recordStats(misses|0);
+}
+
+/* ============================ STREAK + STATS (Phase 4 — social) ============================ */
+// There is no fail state (you accuse until right), so the skill signal is HOW MANY wrong guesses it took.
+// Stats track that distribution plus a consecutive-day streak. Boss mode never records.
+const STATS_KEY="critterhunt.stats";
+function loadStats(){ try{ return JSON.parse(localStorage.getItem(STATS_KEY))||{}; }catch(e){ return {}; } }
+function saveStats(s){ try{ localStorage.setItem(STATS_KEY, JSON.stringify(s)); }catch(e){} }
+function yesterdayStr(){ const d=new Date(); d.setDate(d.getDate()-1); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function recordStats(misses){
+  const s=loadStats(), today=todayStr();
+  if(s.lastSolved===today) return s;                          // idempotent — the daily lock already blocks re-solves
+  s.played=(s.played||0)+1;
+  s.streak=(s.lastSolved===yesterdayStr())?(s.streak||0)+1:1; // consecutive days; a gap resets to 1
+  s.maxStreak=Math.max(s.maxStreak||0, s.streak);
+  s.dist=s.dist||{}; s.dist[misses]=(s.dist[misses]||0)+1;    // guess-count histogram (0 = solved first try)
+  s.lastSolved=today;
+  saveStats(s); return s;
+}
 
 /* ============================ GENERATOR + CLUE TEMPLATES ============================ */
 const rnd=n=>Math.floor(RNG()*n);
@@ -802,6 +830,7 @@ function newGame(){
   // Boss mode stays endless/retryable (unseeded), so "New case" re-rolls a fresh boss.
   RNG = BOSS ? Math.random : mulberry32(hashStr("critterhunt:"+todayStr()));
   if(typeof stopListen==="function") stopListen();   // cancel any in-progress "listen to the case"
+  dailyMisses=0;
   const acats=rollAcats();
   G=generatePuzzle(AXIS_N, acats);
   activeCat=0;
@@ -960,10 +989,11 @@ function renderAccuse(){
     strip.appendChild(b);
   });
 }
+let dailyMisses=0;   // wrong accusations on today's Daily Case (drives the share squares); reset in newGame
 function judgeAccusation(ai){
   const msg=document.getElementById("msg");
-  if(ai===G.culprit){ if(!BOSS){ markDailySolved(); applyDailyLock(); } winModal(); }
-  else { msg.textContent="🐺 "+G.cast.A[ai].em+" "+G.cast.A[ai].nm+" isn’t the impostor — re-check your grid against THE UNMASKING clue."; }
+  if(ai===G.culprit){ if(!BOSS){ markDailySolved(dailyMisses, G.acats.length); applyDailyLock(); } winModal(); }
+  else { dailyMisses++; msg.textContent="🐺 "+G.cast.A[ai].em+" "+G.cast.A[ai].nm+" isn’t the impostor — re-check your grid against THE UNMASKING clue."; }
 }
 
 /* ============================ REWARD + COLLECTION ============================ */
@@ -982,6 +1012,30 @@ const loadCol=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[];}catch(e
 const saveCol=(c)=>localStorage.setItem(KEY,JSON.stringify(c));
 // The entity of category `cid` the animal `a` is linked to under the solution (animal → itself).
 function linked(a,cid){ return G.cast[CAT[cid].castKey][partner("animal",a,cid,G.sol)]; }
+
+/* ============================ SHARE (Phase 4 — spoiler-free result) ============================ */
+// Regenerated from the stored day-result + stats, so it survives a reload. Spoiler-free: it names nothing —
+// only how many wrong guesses (❌) it took to land the unmask (🟩), the streak, and the case's axis count.
+function shareText(){
+  const st=dailyState(), stats=loadStats(), misses=st.misses|0;
+  const squares="❌".repeat(Math.min(misses,10))+"🟩";
+  const line2=[]; if(stats.streak) line2.push("🔥 Streak "+stats.streak); if(st.k) line2.push("🧩 "+st.k+"-var");
+  return ("🔍 Critter Hunt · "+(st.date||todayStr())+"\n🐺 "+squares+(line2.length?"\n"+line2.join(" · "):"")).trim();
+}
+function fallbackCopy(txt,done){
+  try{ const ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
+    ta.focus(); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); done&&done(true); }catch(e){ done&&done(false); }
+}
+function copyShare(btn){
+  const txt=shareText();
+  const done=(ok)=>{ if(!btn) return; const o=btn.dataset.label||btn.textContent; btn.dataset.label=o;
+    btn.textContent=ok===false?"⚠ Copy failed":"✓ Copied!"; setTimeout(()=>{ btn.textContent=o; },1700); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(()=>done(true),()=>fallbackCopy(txt,done));
+  else fallbackCopy(txt,done);
+}
+function makeShareBtn(label){ const b=document.createElement("button"); b.className="sharebtn"; b.textContent=label||"📋 Share result"; b.onclick=()=>copyShare(b); return b; }
+function statsSummary(){ const s=loadStats(); return s.played?("Solved "+s.played+" · 🔥 Streak "+(s.streak||0)+" · 🏆 Best "+(s.maxStreak||0)):""; }
+
 function winModal(){
   const a=G.culprit, A=G.cast.A[a], I=linked(a,"instrument");
   document.getElementById("accuseStrip").style.display="none";
@@ -998,6 +1052,13 @@ function winModal(){
   document.getElementById("overlay").classList.add("on");
   document.getElementById("pickI").onclick=()=>{ claimReward({type:"instrument",em:I.em,nm:I.nm,preset:I.preset,sample:I.sample}); };
   document.getElementById("pickA").onclick=()=>{ keepAnimal(A); };
+  // Standalone daily: a spoiler-free share + running stats. (Boss mode has no daily/streak.)
+  if(!BOSS){
+    const bar=document.createElement("div"); bar.className="sharebar";
+    const ss=statsSummary(); if(ss){ const sp=document.createElement("div"); sp.className="statsline"; sp.textContent=ss; bar.appendChild(sp); }
+    const pre=document.createElement("pre"); pre.className="sharepreview"; pre.textContent=shareText(); bar.appendChild(pre);
+    bar.appendChild(makeShareBtn("📋 Share result")); body.appendChild(bar);
+  }
 }
 // Keeping a cry claims it immediately with a forgiving DEFAULT config (audible out of the box). Tuning is no
 // longer a blocking dialog — it happens later in animal-sound-lab.html (the shared, re-openable editor). Boss
@@ -1099,7 +1160,11 @@ function applyDailyLock(){
   if(dailySolvedToday()){
     const un=document.getElementById("btnUnmask");
     if(un){ un.disabled=true; un.classList.add("locked"); }
-    document.getElementById("msg").innerHTML="✓ You already cracked today’s Daily Case — come back tomorrow for a new one.";
+    const msg=document.getElementById("msg");
+    const ss=statsSummary();
+    msg.innerHTML="✓ You already cracked today’s Daily Case — come back tomorrow for a new one."+
+      (ss?" <span class='statsline'>"+ss+"</span>":"")+" ";
+    msg.appendChild(makeShareBtn());
   }
 }
 newGame(); applyDailyLock(); renderCollection();

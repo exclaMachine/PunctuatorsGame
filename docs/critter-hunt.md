@@ -437,14 +437,14 @@ are **pitched cards** in Free Play and catalogue into the Sound Collective. See 
 - **Collection completion → Mujicians payoff** — filling the "Menagerie" (percussion) and "Instrument Case"
   (timbres) unlocks a fuller Free-Play palette / a "full orchestra" loadout, closing the feeder loop.
 
-## Daily-game expansion (PLANNED 2026-08-02; Phases 1–3 BUILT 2026-08-02)
+## Daily-game expansion (PLANNED 2026-08-02; Phases 1–4 BUILT 2026-08-02)
 
 Critter Hunt becomes a **first-class daily game** in its own right (not only the M6 boss): a **strict
 daily-only shared puzzle** (Wordle-model), an **audio-first evidence layer** (every axis identifiable by
 ear), a new **note/pitch** clue mechanic (the strongest Mujicians tie-in), and a **shareable result**.
 Decisions locked with the dev 2026-08-02; genre/biome audio is **real PD/CC0 recordings only — NO synth
 fallback** (dev call: synth beds/riffs sounded bad; a sourceless axis just plays nothing).
-**Phases 1–3 are BUILT; Phases 4–5 remain planned.**
+**Phases 1–4 are BUILT; Phase 5 remains planned.**
 
 **Phase 1 — Daily-only shared puzzle (BUILT 2026-08-02).**
 - **Seeded PRNG.** A `mulberry32` PRNG + `hashStr` feed a module-level `RNG` that the *entire generation
@@ -498,10 +498,19 @@ fallback** (dev call: synth beds/riffs sounded bad; a sourceless axis just plays
 - **Scope note:** this is the *evidence* half of accessibility. A fully blind-playable **grid** (keyboard +
   ARIA + audio mark confirmation) is deliberately **deferred** — a separate, larger effort.
 
-**Phase 4 — Social (pure code).**
-- **Shareable spoiler-free emoji result** (date + outcome + streak), copy-to-clipboard — the daily's virality
-  hook (see "Spoiler-free share grid" in Tentative extensions).
-- **Streak + stats** in `localStorage`.
+**Phase 4 — Social (BUILT 2026-08-02, pure code).**
+- **Shareable spoiler-free emoji result**, copy-to-clipboard — the daily's virality hook. Because the daily
+  has **no fail state** (you accuse until right), the skill signal is **how many wrong guesses** it took: a
+  `dailyMisses` counter (bumped on each wrong `judgeAccusation`, reset in `newGame`) renders as `❌…🟩`
+  squares. `shareText()` is regenerated from the stored day-result + stats so it survives a reload, and names
+  nothing (spoiler-free) — only the date, the guess squares, the streak, and the case's axis count
+  (`🧩 3/4-var`). `copyShare()` uses `navigator.clipboard` with a hidden-textarea `execCommand` fallback.
+- **Streak + stats** in `localStorage["critterhunt.stats"]` = `{played, streak, maxStreak, lastSolved, dist}`.
+  `markDailySolved(misses,k)` now also stamps `misses`/`k` into `DAILY_KEY` and folds the result into
+  `recordStats()` (consecutive-day streak off `yesterdayStr()`, idempotent via `lastSolved`, a guess-count
+  histogram `dist`). Boss mode records nothing.
+- **Where it surfaces:** a preview + `📋 Share result` + a `statsSummary()` line in the win modal (standalone
+  only), and the same button + stats in the daily-locked "come back tomorrow" state (`applyDailyLock`).
 
 **Phase 5 — Mujicians Home button (one line).**
 - A Home button next to Beat Lab opening `critter-hunt.html` (no `?boss` → daily standalone), parallel to how
@@ -536,7 +545,8 @@ local collection. Wormwood as the **mandatory impostor to unmask** — a final d
 
 **Deferred:** relational/positional clues (ordered axis); the **daily-only seeded mode + note/pitch clue +
 audio-first evidence layer (real biome/genre recordings + listen-to-case) are BUILT** (Phases 1–3, 2026-08-02)
-while the shareable result + Mujicians Home button remain **PLANNED** (Phases 4–5; see "Daily-game expansion"
++ the shareable spoiler-free result & streak/stats are BUILT (Phase 4) while the Mujicians Home button remains
+**PLANNED** (Phase 5; see "Daily-game expansion"
 above); N=5+ and richer
 difficulty tuning, larger rosters + more biomes, animated art/detective, sustained **tonal-animal** timbres
 (granular/Tone.js — still tentative; also the reason a kept **animal** cry can't yet grant a Mujicians voice),
