@@ -410,6 +410,19 @@ are **pitched cards** in Free Play and catalogue into the Sound Collective. See 
 ## Tech / repo fit
 
 - **Standalone `critter-hunt.html`** — one self-contained file (inline CSS + JS), no framework, no build step.
+- **Animal sprites (BUILT 2026-08-02).** Animals can render as pixel-art PNGs instead
+  of emoji: drop `sprites/animals/<file>.png` (square, pixelated style) and set
+  `sprite:"<file>.png"` on that `ANIMALS` entry. **9 wired so far** (fox, mallard, rooster, goat, orca, cricket,
+  bullfrog, howler=monkey, peafowl) — cut from a 3×3 source sheet (`sprites/animals/_source-sheet-3x3.png`) via
+  per-animal centered ffmpeg crops → 200×200 (mostly 280×280 squares; the wide orca uses 340×340 so its tail
+  fits); the slight dark glow background is kept (reads near-white at the tight crop). The other 11 animals still
+  show emoji. A single `faceHTML(e)` helper returns an `<img class="asprite">`
+  when the entity has a `sprite`, else the emoji — so it's a **per-animal migration** (unmigrated animals keep
+  their emoji) and non-animal categories (instruments/biomes/genres carry no `sprite`) always fall through to
+  emoji. Sprites show **everywhere** an animal's face appears: flip cards, grid column heads + row labels,
+  accusation buttons, win-modal field notes, and the kept-sound collection (the animal reward carries `sprite`).
+  `.asprite` is sized `1em` so it inherits each context's existing font-size (64px flip card → var(--em) 15–20px
+  grid heads → 30px collection), scaled nearest-neighbour (`image-rendering:pixelated`).
 - **Data:** `data/critters.json` (animals + instruments + biomes with attribute tags + sound-file refs), credits
   manifest, `sounds/` folder. Mirrors the local-data precedent (WordNet, blazon, scenarios).
 - **Generator + solver:** pure JS (brute-force arrangement filter — trivial at N≤5). No dependency.

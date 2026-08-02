@@ -52,6 +52,10 @@
   .pcard.flipped .inner{transform:rotateY(180deg)}
   .pface{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2px solid var(--line);border-radius:14px;background:var(--cell);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;text-align:center;overflow:hidden;box-shadow:var(--shadow)}
   .pface .em{font-size:64px;line-height:1}
+  /* Pixel-art animal sprite: sized to 1em so it inherits whatever font-size its context already sets
+     (64px flip card, var(--em) grid heads, 30px collection…). Nearest-neighbour scaling for crisp pixels. */
+  .asprite{display:inline-block;height:1em;width:1em;object-fit:contain;vertical-align:middle;
+    image-rendering:pixelated;image-rendering:crisp-edges}
   .pface .nm{font-size:16px;font-weight:700;margin-top:8px}
   .pface .hint{font-size:11px;color:var(--muted);margin-top:6px}
   .pface.back{transform:rotateY(180deg);justify-content:flex-start;padding:14px 13px;color:var(--ink)}
@@ -171,25 +175,28 @@
 // from Wikimedia Commons — provenance in data/critter-credits.json). All 20 have one, and every `nm` is a
 // SPECIFIC species whose bundled clip is a recording OF that species — so the name matches the actual call
 // (Rattlesnake rattles, Great Horned Owl hoots, Orca clicks). Attributes (class/diet/size/habitat) are real.
+// Emoji are placeholder art. To swap an animal to a pixel-art sprite, add sprites/animals/<file>.png
+// (square) and set `sprite:"<file>.png"` on that entry — faceHTML() then shows the PNG everywhere;
+// animals without a sprite keep their emoji (migrate one at a time). 9 wired so far (see docs).
 const ANIMALS = [
-  {em:"🦊",nm:"Red Fox",               cls:"mammal",   diet:"omnivore",   size:"small",  habitat:"forest",    snd:"fox"},
+  {em:"🦊",nm:"Red Fox",               cls:"mammal",   diet:"omnivore",   size:"small",  habitat:"forest",    snd:"fox", sprite:"fox.png"},
   {em:"🦜",nm:"Chestnut-fronted Macaw",cls:"bird",     diet:"frugivore",  size:"small",  habitat:"jungle",    snd:"parrot"},
   {em:"🐍",nm:"Rattlesnake",           cls:"reptile",  diet:"carnivore",  size:"medium", habitat:"desert",    snd:"snake"},
   {em:"🦉",nm:"Great Horned Owl",      cls:"bird",     diet:"carnivore",  size:"medium", habitat:"forest",    snd:"owl"},
   {em:"🦇",nm:"Hoary Bat",             cls:"mammal",   diet:"insectivore",size:"small",  habitat:"forest",    snd:"bat"},
-  {em:"🦗",nm:"Field Cricket",         cls:"insect",   diet:"omnivore",   size:"tiny",   habitat:"grassland", snd:"cricket"},
-  {em:"🐸",nm:"Banded Bullfrog",       cls:"amphibian",diet:"insectivore",size:"small",  habitat:"wetland",   snd:"bullfrog"},
+  {em:"🦗",nm:"Field Cricket",         cls:"insect",   diet:"omnivore",   size:"tiny",   habitat:"grassland", snd:"cricket", sprite:"cricket.png"},
+  {em:"🐸",nm:"Banded Bullfrog",       cls:"amphibian",diet:"insectivore",size:"small",  habitat:"wetland",   snd:"bullfrog", sprite:"bullfrog.png"},
   {em:"🐘",nm:"African Elephant",      cls:"mammal",   diet:"herbivore",  size:"huge",   habitat:"savanna",   snd:"elephant"},
   {em:"🐊",nm:"American Alligator",    cls:"reptile",  diet:"carnivore",  size:"large",  habitat:"wetland",   snd:"alligator"},
-  {em:"🐳",nm:"Orca",                  cls:"mammal",   diet:"carnivore",  size:"large",  habitat:"ocean",     snd:"orca"},
+  {em:"🐳",nm:"Orca",                  cls:"mammal",   diet:"carnivore",  size:"large",  habitat:"ocean",     snd:"orca", sprite:"orca.png"},
   {em:"🐺",nm:"Gray Wolf",             cls:"mammal",   diet:"carnivore",  size:"large",  habitat:"forest",    snd:"wolf"},
   {em:"🐋",nm:"Humpback Whale",        cls:"mammal",   diet:"carnivore",  size:"huge",   habitat:"ocean",     snd:"whale"},
-  {em:"🦆",nm:"Mallard",               cls:"bird",     diet:"omnivore",   size:"small",  habitat:"wetland",   snd:"mallard"},
-  {em:"🦚",nm:"Indian Peafowl",        cls:"bird",     diet:"omnivore",   size:"medium", habitat:"jungle",    snd:"peafowl"},
-  {em:"🐒",nm:"Howler Monkey",         cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"jungle",    snd:"howler"},
+  {em:"🦆",nm:"Mallard",               cls:"bird",     diet:"omnivore",   size:"small",  habitat:"wetland",   snd:"mallard", sprite:"mallard.png"},
+  {em:"🦚",nm:"Indian Peafowl",        cls:"bird",     diet:"omnivore",   size:"medium", habitat:"jungle",    snd:"peafowl", sprite:"peafowl.png"},
+  {em:"🐒",nm:"Howler Monkey",         cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"jungle",    snd:"howler", sprite:"howler.png"},
   {em:"🦃",nm:"Wild Turkey",           cls:"bird",     diet:"omnivore",   size:"medium", habitat:"forest",    snd:"turkey"},
-  {em:"🐐",nm:"Domestic Goat",         cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"mountain",  snd:"goat"},
-  {em:"🐓",nm:"Rooster",               cls:"bird",     diet:"omnivore",   size:"small",  habitat:"grassland", snd:"rooster"},
+  {em:"🐐",nm:"Domestic Goat",         cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"mountain",  snd:"goat", sprite:"goat.png"},
+  {em:"🐓",nm:"Rooster",               cls:"bird",     diet:"omnivore",   size:"small",  habitat:"grassland", snd:"rooster", sprite:"rooster.png"},
   {em:"🐄",nm:"Cow",                   cls:"mammal",   diet:"herbivore",  size:"large",  habitat:"grassland", snd:"cow"},
   {em:"🐑",nm:"Sheep",                 cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"mountain",  snd:"sheep"},
 ];
@@ -858,6 +865,19 @@ function renderTabs(){
     host.appendChild(b);
   });
 }
+// Card face for any entity: a pixel-art <img> when the entity carries a `sprite` (a filename under
+// sprites/animals/), else its emoji. Only ANIMALS carry sprites today, so instruments/biomes/genres
+// fall through to emoji automatically — and animals without art yet keep their emoji too (per-animal
+// migration). To add one: drop e.g. sprites/animals/red-fox.png and set sprite:"red-fox.png" on that
+// ANIMALS entry. Author square (a light or slight-dark background is fine — it reads OK on the UI),
+// pixelated look; the sprite is drawn at 1em so its on-screen size follows each context's font-size.
+const ANIMAL_SPRITE_DIR = "sprites/animals/";
+function faceHTML(e){
+  if(!e) return "";
+  return e.sprite
+    ? '<img class="asprite" src="'+ANIMAL_SPRITE_DIR+e.sprite+'" alt="'+(e.nm||"")+'" draggable="false">'
+    : e.em;
+}
 function renderCardArea(){
   const cat=activeCats()[activeCat], host=document.getElementById("cardarea"); host.innerHTML="";
   const h=document.createElement("div"); h.className="cardhead";
@@ -874,7 +894,7 @@ function flipCard(e, cat){
   const canHear = cat.hear && (!cat.soundPath || hasClip(cat.soundPath(e)));
   const playBtn = canHear ? '<span class="play" title="hear it">▶</span>' : '';
   c.innerHTML='<div class="inner">'+
-      '<div class="pface front">'+playBtn+'<div class="em">'+e.em+'</div><div class="nm">'+e.nm+'</div><div class="hint">tap to flip</div></div>'+
+      '<div class="pface front">'+playBtn+'<div class="em">'+faceHTML(e)+'</div><div class="nm">'+e.nm+'</div><div class="hint">tap to flip</div></div>'+
       '<div class="pface back">'+back+'</div>'+
     '</div>';
   c.onclick=()=>c.classList.toggle("flipped");
@@ -894,7 +914,7 @@ function renderBoard(){
   g.style.gridTemplateColumns='var(--lbl) '+('var(--csz) '.repeat(colCats.length*N)).trim();
   g.innerHTML="";
   g.appendChild(hd("","", true));                       // corner
-  colCats.forEach(cid=> G.cast[CAT[cid].castKey].forEach(e=>g.appendChild(hd(e.em,e.nm))));   // column heads
+  colCats.forEach(cid=> G.cast[CAT[cid].castKey].forEach(e=>g.appendChild(hd(faceHTML(e),e.nm))));   // column heads
   // anchor (top) band: rows = animals, cells under every column category
   G.cast[CAT[cats[0]].castKey].forEach((rowE,r)=>{
     g.appendChild(rowlbl(rowE));
@@ -919,9 +939,9 @@ function cellFor(rowCid,r,colCid,c){
   const rowFirst=ORD[rowCid]<ORD[colCid];
   return markCell(m, rowFirst?r:c, rowFirst?c:r);
 }
-function hd(em,name,corner){ const d=document.createElement("div"); d.className="hd"+(corner?" corner":"");
-  d.textContent=em; if(name)d.title=name; return d; }
-function rowlbl(e){ const d=document.createElement("div"); d.className="rowlbl"; d.textContent=e.em; d.title=e.nm; return d; }
+function hd(html,name,corner){ const d=document.createElement("div"); d.className="hd"+(corner?" corner":"");
+  d.innerHTML=html||""; if(name)d.title=name; return d; }   // html = faceHTML() output (sprite <img> or emoji)
+function rowlbl(e){ const d=document.createElement("div"); d.className="rowlbl"; d.innerHTML=faceHTML(e); d.title=e.nm; return d; }
 function fillerCell(){ const d=document.createElement("div"); d.className="fill"; return d; }
 function markCell(mk,r,c){
   const cell=document.createElement("div"); cell.className="cell"; paint(cell,displayVal(mk,r,c));
@@ -984,7 +1004,7 @@ function renderAccuse(){
   strip.innerHTML='<span class="accuselbl">🐺 Who is Wormwood? Click the impostor:</span>';
   G.cast.A.forEach((a,ai)=>{
     const b=document.createElement("button"); b.className="accbtn";
-    b.innerHTML=a.em+' '+a.nm;
+    b.innerHTML=faceHTML(a)+' '+a.nm;
     b.onclick=()=>judgeAccusation(ai);
     strip.appendChild(b);
   });
@@ -1040,14 +1060,14 @@ function winModal(){
   const a=G.culprit, A=G.cast.A[a], I=linked(a,"instrument");
   document.getElementById("accuseStrip").style.display="none";
   const body=document.getElementById("modalBody");
-  const notes=activeCats().map(cat=>{ const e=linked(a,cat.id); return fnCard(e.em,e.nm,cat.facts(e)); }).join("");
+  const notes=activeCats().map(cat=>{ const e=linked(a,cat.id); return fnCard(e,cat.facts(e)); }).join("");
   body.innerHTML='<h2>🐺 Wormwood unmasked!</h2>'+
-    '<p><b>'+A.em+' '+A.nm+'</b> was the impostor. Field notes on Wormwood’s disguise — '+
+    '<p><b>'+faceHTML(A)+' '+A.nm+'</b> was the impostor. Field notes on Wormwood’s disguise — '+
       (BOSS?'pick one sound to carry back into Mujicians’ Sound Collective:':'and pick one sound to keep:')+'</p>'+
     '<div class="fieldnotes">'+notes+'</div>'+
     '<div class="rewardpick">'+
       '<button class="primary" id="pickI">Keep '+I.em+' '+I.nm+' — a playable timbre</button>'+
-      '<button id="pickA">Keep '+A.em+' '+A.nm+' — its real animal sound</button>'+
+      '<button id="pickA">Keep '+faceHTML(A)+' '+A.nm+' — its real animal sound</button>'+
     '</div>';
   document.getElementById("overlay").classList.add("on");
   document.getElementById("pickI").onclick=()=>{ claimReward({type:"instrument",em:I.em,nm:I.nm,preset:I.preset,sample:I.sample}); };
@@ -1067,11 +1087,11 @@ function winModal(){
 function keepAnimal(A){
   const slug=A.snd, cfg=Object.assign(DEFAULT_CFG(slug,A.nm,A.em), loadAV()[slug]||{});
   saveAV(slug,cfg);
-  const reward={type:"animal",em:A.em,nm:A.nm,snd:slug,cfg};
+  const reward={type:"animal",em:A.em,sprite:A.sprite,nm:A.nm,snd:slug,cfg};
   if(BOSS){ claimReward(reward); return; }        // → collection + straight back to Mujicians (retune later)
   addToCollection(reward);                          // → collection, then offer the Sound Lab
   const body=document.getElementById("modalBody");
-  body.innerHTML='<h2>'+A.em+' '+A.nm+' kept!</h2>'+
+  body.innerHTML='<h2>'+faceHTML(A)+' '+A.nm+' kept!</h2>'+
     '<p>Its real cry is in your collection and ready to play in <b>Mujicians</b>. You can fine-tune how it '+
     'sounds — pitched vs. one-shot, length, pitch — any time in the Sound Lab. No rush.</p>'+
     '<div class="rewardpick">'+
@@ -1081,7 +1101,7 @@ function keepAnimal(A){
   document.getElementById("tuneNow").onclick=()=>{ location.href="animal-sound-lab.html?from=critter-hunt"; };
   document.getElementById("tuneLater").onclick=closeModal;
 }
-function fnCard(em,nm,lines){ return '<div class="fn"><div class="big">'+em+'</div><div><b>'+nm+'</b></div><ul>'+
+function fnCard(e,lines){ return '<div class="fn"><div class="big">'+faceHTML(e)+'</div><div><b>'+e.nm+'</b></div><ul>'+
   lines.map(l=>"<li>"+l+"</li>").join("")+'</ul></div>'; }
 function addToCollection(card){ const c=loadCol(); c.push(card); saveCol(c); renderCollection();
   document.getElementById("msg").textContent="Added "+card.em+" "+card.nm+" to your collection!"; }
@@ -1090,7 +1110,7 @@ function renderCollection(){
   if(!c.length){ host.innerHTML='<span class="tag" style="color:var(--muted)">Win a case to collect instrument timbres and real animal sounds — both ▶-playable.</span>'; return; }
   host.innerHTML="";
   c.forEach((card)=>{ const d=document.createElement("div"); d.className="card flip";
-    d.innerHTML='<div class="inner"><div class="em">'+card.em+'</div><div class="nm">'+card.nm+'</div>'+
+    d.innerHTML='<div class="inner"><div class="em">'+faceHTML(card)+'</div><div class="nm">'+card.nm+'</div>'+
       '<div class="tag">'+(card.type==="instrument"?"timbre":"animal")+'</div></div>';
     const b=document.createElement("button"); b.textContent="▶ play";
     if(card.type==="instrument"){ b.onclick=()=>{ playInstrument(card); d.classList.add("done"); setTimeout(()=>d.classList.remove("done"),520); }; }
