@@ -2,21 +2,20 @@
 
 **Entry file:** `mujicians.html` · **Status:** **v1 vertical slice built** — a Balatro-style deckbuilder
 (cards = notes, hands = chords/scales, score = theory correctness, hands are sounded, and a whole run
-**builds one continuous Mario-Paint-style song in one fixed key** — **gigs were removed 2026-07-17**, so a
-run is now **one continuous performance** (one key; the per-run **Muse draft is disabled** as of
-2026-08-02 — see [Muse draft disabled](#muse-draft-disabled-2026-08-02))
-that fills a single loop — and you can **Save a Song** you like — name the whole-run song, read a theory
-report card, and replay/share it from a Home **Setlist**). The demoted slice-1 note-grid is preserved in
-**`mujicians-compose.html`** (the future free-compose side tool). **The applause threshold was removed
-2026-07-18** — a performance is now **open-ended (you press ✓ Finish when done; loop space is the only
-limit, warned before it fills; win/lose collapse to one "Performance complete")** — see **[Open-ended
-performance (BUILT)](#open-ended-performance--no-threshold-you-decide-when-youre-done-built)**. A partner
-**backstage shop + "Tips" currency** is designed **but not built** — see **[The backstage shop & Tips
-economy](#the-backstage-shop--tips-economy-planned)**. The economy beyond the slice (Étude/Accidental
-cards, Daily-Set seed, set-playback) is still the plan below. **The game is now linked from the site hub
-(`index.html`).** **TEMP (2026-07-23): the daily run cap is disabled for open playtesting** — a single
-`RUN_CAP_ON = false` toggle (near `MAX_RUNS_PER_DAY`) short-circuits `atCap()`/`runsLeftToday()` and swaps the
-run counter to "free playtest ∞"; flip it back to `true` to restore the 3-runs-a-day cap.
+**builds one continuous Mario-Paint-style song in one fixed key** that fills a single loop). A run is
+**one continuous, open-ended performance** — you press **✓ Finish** when done (loop space is the only hard
+limit, warned before it fills; there's no win/lose, just "Performance complete") — see **[Open-ended
+performance (BUILT)](#open-ended-performance--no-threshold-you-decide-when-youre-done-built)**. You can
+**Save a Song** you like — name the whole-run song, read a theory report card, and replay/share it from a
+Home **Setlist**. The per-run **Muse draft is currently disabled** (machinery kept behind a flag) — see
+**[Muse draft disabled](#muse-draft-disabled-2026-08-02)**. The slice-1 note-grid lives on in
+**`mujicians-compose.html`** (a future free-compose side tool). A partner **backstage shop + "Tips"
+currency** is designed **but not built** — see **[The backstage shop & Tips economy](#the-backstage-shop--tips-economy-planned)**.
+The economy beyond the slice (Étude/Accidental cards, Daily-Set seed, set-playback) is still the plan below.
+**The game is linked from the site hub (`index.html`).** **TEMP: the daily run cap is disabled for open
+playtesting** — a single `RUN_CAP_ON = false` toggle (near `MAX_RUNS_PER_DAY`) short-circuits
+`atCap()`/`runsLeftToday()` and swaps the run counter to "free playtest ∞"; flip it back to `true` to restore
+the 3-runs-a-day cap.
 
 A roguelike deckbuilder where **cards are notes** and the "poker hands" you play are **chords, scales,
 and progressions**. You score by making music that's *theory-correct* — in key, consonant, resolving,
@@ -37,74 +36,15 @@ game-dev defaults.
 
 ---
 
-## ⚠️ Known issues / fixes to do (noted 2026-07-17 – 07-18, NOT yet fixed)
+## Continuous timeline + consistent stacking — the core rhythm/melody model (Stage 1 BUILT 2026-07-18)
 
-Playtest feedback captured for a later pass — **no code changed yet** (except where marked DONE). Listed
-newest-first.
-
-0. ~~**The applause threshold cuts you off mid-song.**~~ **✅ core DONE (2026-07-18).** Beating the
-   threshold ended the run instantly, interrupting performances that were going well. Fixed: the threshold
-   is removed — a performance is **open-ended** (press **✓ Finish song** when done; the only hard limit is
-   loop space, warned at ≤3 bars left), win/lose collapse to one "Performance complete," and campaign
-   movements advance by their **skill-demo gate**. See **[Open-ended performance (BUILT)](#open-ended-performance--no-threshold-you-decide-when-youre-done-built)**.
-   *(Still planned, not built: the partner **[backstage shop & Tips economy](#the-backstage-shop--tips-economy-planned)**,
-   and persisting gate counters across runs — see that section's *deferred* note.)*
-1. **Chord duration is ignored — a multi-note (M5+) stacked chord always rings the whole bar (M2/M5).**
-   You can pick a note value (♩/𝅗𝅥/𝅝) for a chord, but it plays for the full bar regardless. `handIsSequenced`
-   returns `false` for a consonant multi-note hand, so `scheduleVoices` takes the **ring-the-bar** branch
-   (`bs*0.92`) and the per-card `noteDur` only governs **sequenced** (melodic/single) hands — never a chord.
-   This is *currently documented as intended* ("stacked hand rings the bar; per-note durations ignored"),
-   but the **desired behavior** is for a chord to **honor a chosen duration**: pick a value and the whole
-   chord sounds for that length, leaving the rest of the bar as a rest. *(Related nit: the **M2 gate** still
-   credits the picked value via `gateDurs` even though the chord didn't audibly play it — tighten when
-   fixed.)* **Fix sketch:** give a stacked chord a single **shared duration** (a dedicated chord-duration
-   control, or reuse the first/longest picked value) and schedule it as a **held-for-`d`-slots chord**
-   through `scheduleVoices` instead of the full-bar `else` branch. Touches `handIsSequenced`/`scheduleVoices`
-   /`soundCards`/`scheduleBar` + the grid's `barHits`/`hitsFor` so the held span shows.
-2. **Rhythm/melody — one flowing line, consistent stacking, playable rests.** ✅ **Stage 1 BUILT
-   (2026-07-18) — see [Continuous timeline + consistent stacking](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-rework-decided-2026-07-18-not-built).**
-   Notes now flow **right after each other on one continuous timeline** (`run.loop.events[]` + a tick
-   `cursor`; no one-play-per-bar gaps), **multiple selected cards always play together** (a chord — the old
-   Melody "sequence the selection" behavior + `handIsSequenced` are gone), the **stack cap grows 1→2→3→4 by
-   movement** (`maxSelect` = 1,1,1,2,3,4,4), a **rest card is playable by itself** (M2+), duration is a
-   **per-play** ♩/𝅗𝅥/𝅝 picker (`run.curDur`), timing is **integer ticks (`TPB=24`)**, and the loop grid is a
-   **piano-roll**. Known-issues #1 (chord duration ignored) and #5 (whole-note + more) are subsumed — a stack
-   honors `curDur` and long values simply continue across the (now visual-only) barlines. **Deferred to Stage
-   2:** 8ths/16ths/triplets in the picker (the tick model already fits them), fuller timeline run-detection &
-   form scoring, and save-format migration polish. See that section's *Stage 1 — build brief* for the
-   as-built map.
-3. ~~**Do away with gigs (design change).**~~ **✅ DONE (2026-07-17).** A run is now **one continuous
-   performance in one fixed key (C major)** with a **single applause threshold** and **one Muse drafted
-   once at the start** *(the Muse draft was later disabled 2026-08-02 — see [Muse draft disabled](#muse-draft-disabled-2026-08-02))* — the 3-gig Set, C→G→F modulation, and per-gig re-drafts are removed. See the
-   **[Removing gigs — a run becomes one performance (BUILT)](#removing-gigs--a-run-becomes-one-performance-built)**
-   section for the as-built code map. *(Follow-ons still planned: key change → Melody (M4), accidentals →
-   Pitch (M1).)*
-4. ~~**Whole/half notes don't actually sustain longer (audio bug).**~~ **✅ DONE (2026-07-17).** `_tone` used
-   a pure **exponential pluck** — it decayed the same steep shape at every length, so the audible front
-   transient was identical and a whole note "sounded like a quarter" (its tail was near-silent by ~40% of
-   the duration). Replaced with an **attack–decay–sustain–release** envelope: the note decays to a sustain
-   level across its held portion and only releases in the last ~`min(0.12, D/2)`s, so longer `dur` (from
-   `d*slot` in `scheduleVoices`) now audibly rings ~4× longer.
-5. **A bar can't hold a whole note plus anything (M4).** A bar is `BEATS_PER_BAR`=4 beats, so a **whole
-   note fills the bar** and any additional note/rest in the same hand overflows and is clipped/dropped.
-   **⚠️ SUBSUMED by the [continuous-timeline rework](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-rework-decided-2026-07-18-not-built)** (2026-07-18): once the song is one flowing timeline where
-   the cursor advances by each event's duration, long values simply continue across the (now purely visual)
-   barlines — the separate "multi-bar spanning" mechanism is no longer needed. See that section.
-6. ~~**Single-select should swap, not block (M1–M3).**~~ **✅ DONE (2026-07-17).** When `maxSelect()===1`,
-   clicking a **different** card now **clears the current selection and selects the new one** instead of
-   returning early — `toggleSel` clears `run.sel` before adding when the cap is 1 (multi-select still
-   respects the cap).
-
----
-
-## Continuous timeline + consistent stacking — the core rhythm/melody rework (DECIDED 2026-07-18, NOT built)
-
-> **Status: DECIDED, not built.** This supersedes several *built* behaviors and earlier plans — read it as
-> the new source of truth for how a hand becomes music. It replaces: the **one-play-per-bar** loop model
-> (from *Removing gigs* / Phase 4), the **`handIsSequenced` "melody sequences the selection"** behavior
-> (Stage 2A), the earlier **rest** designs (palette token; four rest cards; one adjustable rest card as a
-> per-card duration), and the **multi-bar-spanning** spec (Known issue #5 — now subsumed). Known issues #2
-> and #5 fold into this. **Do not start building until this section is signed off.**
+> **Status: Stage 1 ✅ BUILT.** This is the source of truth for how a hand becomes music. The song is one
+> continuous timeline of events; multiple selected cards always play together as a chord (there is no
+> "sequence the selection"); the stack cap grows 1→2→3→4 by movement; a rest card is playable by itself
+> (M2+); timing is integer ticks (`TPB=24`); and the loop grid is a piano-roll. Duration is now a
+> **per-card** value set by the **Break** mechanic (see [Rhythm — the Break mechanic](#note-value--rest-notation--the-break-mechanic-front-of-the-ladder)). **Stage 2 depth pending:**
+> 8ths/16ths/triplets in the value ladder, fuller timeline run-detection & form scoring, save-format
+> migration polish.
 
 **Why.** The system had grown inconsistent: at **Melody** selecting multiple cards played them *in sequence*,
 but at **Harmony** selecting multiple cards played a *chord* — the same gesture meaning two different things.
@@ -119,8 +59,8 @@ line. This rework makes one gesture mean one thing everywhere and makes the song
    are **purely visual** — faint gridlines every `BEATS_PER_BAR` (4) beats; an event may cross a barline.
 2. **Multi-select = ALWAYS a simultaneous stack (a chord).** 1 card = a note, 2 = an interval, 3 = a triad,
    4 = a 7th chord. **Never a sequence.** A *melody* is built by playing notes **one after another** on the
-   timeline (successive single plays), not by selecting several cards. `handIsSequenced` and the whole
-   arp/sequence branch are **deleted**.
+   timeline (successive single plays), not by selecting several cards — there is no sequence/arpeggiate
+   branch.
 3. **The stack cap grows with the campaign:** **M1 1 · M2 1 · M3 1 · M4 2 · M5 3 · M6 4 · M7 4** (Free Play
    4). (`MOVEMENTS[].maxSelect` becomes `1,1,1,2,3,4,4`.) 7th chords (4 notes) survive because the cap
    reaches 4 by M6/M7. *(Note: 7ths becoming available at M6 Timbre rather than M5 Harmony is a little odd
@@ -132,10 +72,10 @@ line. This rework makes one gesture mean one thing everywhere and makes the song
 
 - **An event** is either a **stack** of 1–N notes sounding **together for one shared duration**, or a
   **rest** of a duration. There is no per-card duration anymore — **one duration per play**.
-- **Duration is a per-play control**, like Dynamics: a single ♩/𝅗𝅥/𝅝 picker sets **`run.curDur`** (the value
-  for the *next* play), shown with note glyphs for a note-stack and rest glyphs (𝄽/𝄼/𝄻) when the selection
-  is the rest card. (Replaces the per-card `run.noteDur[cardId]` chips.) Per-note rhythm in a melody comes
-  from setting `curDur` between successive single plays.
+- **Duration is a per-card value** set by the **Break** mechanic (Break a card to halve its value, Merge to
+  double it); a stack sounds for the longest selected card's value, and a rest card carries its own value the
+  same way. Per-note rhythm in a melody comes from Breaking/Merging cards as you place them. See
+  [the Break mechanic](#note-value--rest-notation--the-break-mechanic-front-of-the-ladder).
 - **Playing** appends `{ notes:[…], dur, dyn }` (or `{ rest:true, dur, dyn }`) at the cursor and advances
   the cursor by `dur` **ticks**. **Stage space** = total timeline ticks (`LOOP_BARS × barTicks`); the
   "notes left" meter becomes **beats/bars remaining** (a whole note eats 4× a quarter). Auto-finish when the
@@ -182,75 +122,30 @@ line. This rework makes one gesture mean one thing everywhere and makes the song
   — see the coverage checklist. Keep the render layer swappable so the timeline (event list) can drive
   either a piano-roll *or* a staff without touching the model.
 
-### Open sub-decisions (defaults I'll use unless you say otherwise)
+### As built (2026-07-18)
 
-- **Chord = one shared duration** (a stack rings for `curDur`, then the cursor advances). **[assumed yes]**
-- **Rests are solo-only** (can't be mixed into a note stack). **[assumed yes]**
-- **Click-to-aim** moves the cursor to a beat and overwrites forward; full insert/ripple editing is deferred.
-- **Build staging (proposed):** Stage 1 = timeline + stacking + per-play duration + rest-alone + caps +
-  piano-roll + timeline scheduler + stack/melodic-motion scoring; Stage 2 = timeline run detection, form on
-  the timeline, save-format migration polish.
+`run.loop = { events:[], cursor }` (ticks) replaced the old `bars[]`/`writePos`; `TPB=24`,
+`METER={beatsPerBar:4,beatUnit:4}`, `BAR_TICKS=96`, `LOOP_BARS=12` (max capacity). `playHand` builds **one
+stack** (or a lone rest) → `placeEvent` (overwrites collisions in the span, sorts by tick, advances the cursor
+by the card's Break value). A timeline scheduler (`schedTick`/`scheduleEvent`/`tickPlayhead`) cycles the whole
+event list and sweeps a playhead **column**; `soundStack` is the immediate play-preview. The grid is a
+**piano-roll** (`eventCoverage` → on/held columns; a bar-number ruler footer; gold write-cursor column;
+click-to-aim by `data-tick`). Scoring is timeline-aware (rhythmic variety vs the previous event's duration;
+dynamic contrast over events; melodic **stepwise motion** vs the previous timeline note; form restatement over
+events; a `detectTimelineRun` scale-run detector — 3 stepwise single notes in a row). Save format is an
+**event list** (`snapshotEvents`); `songReport`/`suggestName`/`saveSong` take events; **MJ2:** share codes
+carry events and legacy **MJ1:**/`bars[]` saves still read via `eventsFromBars`. Rest cards (`REST_COPIES=3`)
+join the deck at M2+ and are solo-select. **Deferred to Stage 2:** 8ths/16ths/triplets in the value ladder,
+fuller run-detection & form scoring, save-format migration polish, chord-inside-melody.
 
-### Stage 1 — ✅ BUILT (2026-07-18)
-
-All nine points below shipped in `mujicians.html`. **As built:** `run.loop = { events:[], cursor }` (ticks)
-replaced `bars[]`/`writePos`; `TPB=24`, `METER={beatsPerBar:4,beatUnit:4}`, `BAR_TICKS=96`, `LOOP_BARS=12`,
-`TOTAL_TICKS=1152`; `DURATIONS` carry **ticks** + rest glyphs and a per-play `run.curDur` (one `durControlHTML`
-picker, swaps to rest glyphs when the rest card is selected). `playHand` builds **one stack** (or a lone rest)
-→ `placeEvent` (overwrites collisions in the span, sorts by tick, advances the cursor). New timeline
-scheduler (`schedTick`/`scheduleEvent`/`tickPlayhead`) cycles the whole event list and sweeps a playhead
-**column**; `soundStack` is the immediate play-preview. Grid is a **piano-roll** (`eventCoverage` →
-on/held columns; a bar-number ruler footer; gold write-cursor column; click-to-aim by `data-tick`). Scoring
-is timeline-aware (rhythmic variety vs the previous event's dur; dynamic contrast over events; melodic
-**stepwise motion** vs the previous timeline note; form restatement over events). Stage space = the cursor's
-distance to the stage end (`TOTAL_TICKS` at Stage 1; now `maxStageTicks()` — see *Grow the stage* below;
-auto-finish at the end; ✓ Finish stays). Save format is now an **event list**
-(`snapshotEvents`); `songReport`/`suggestName`/`saveSong` take events; **MJ2:** share codes carry events and
-legacy **MJ1:**/`bars[]` saves still read via `eventsFromBars`. Rest cards (`REST_COPIES=3`) join the deck at
-M2+ and are solo-select. **Two deliberate deviations from the brief:** (a) a **minimal timeline scale-run
-detector** (`detectTimelineRun` — 3 stepwise single notes in a row) was pulled forward from Stage 2 so the
-**M4 melody gate stays clearable** now that the M4 cap is 2 (can't stack a 3-note run); (b) the loop-grid
-footer is a **bar-number ruler**, not per-event structure labels (the preview still names the current
-structure). **Deferred to Stage 2 (unchanged):** 8ths/16ths/triplets in the picker (the tick model already
-fits them), fuller run-detection & form scoring, save-format migration polish, chord-inside-melody.
-
-**✅ Grow the stage (BUILT 2026-07-18).** The stage now **starts at `START_BARS=4` and grows only as the
-player needs room** — `run.loop.stageBars` (grow-only) is bumped by `growStageToFit()` to keep one empty
-**ghost bar of headroom** past the cursor (`needBars = ceil((max(cursor+curDur, lastEventEnd))/BAR_TICKS)+1`,
-clamped `[START_BARS, maxStageBars()]`). Only the grown stage is drawn (grid cols = `stageBarsNow()×beats`)
-and the backing **loop wraps at the current length** so it comes back around fast. `LOOP_BARS=12` is now the
-**max capacity** (`maxStageBars()`/`maxStageTicks()`, `+loopBonus` reserved for the *+loop-bars* shop) — the
-notes-left meter and auto-finish key off the max, so the stage grows *into* it. **No mid-cycle playhead
-jump:** the scheduler + playhead read the loop length **per iteration** (`loopTicksNow()`), so a growth
-mid-groove only takes effect at the next loop boundary. Saved songs store a **tight** `totalTicks` (rounded
-up to the last bar) so Setlist replays loop around the actual song, not empty stage.
-
-<details><summary>Original Stage 1 build brief (the nine points, for reference)</summary>
-
-Build against the current shipped `mujicians.html` (rest-card/subdivision prototype was reverted). Deliver a
-thin but complete vertical slice of the new model, parse-check as you go, let the dev verify in-browser.
-
-1. **Data model.** Replace the per-bar loop (`run.loop.bars[]`, `handIsSequenced`, per-card `run.noteDur`)
-   with an **event list** `run.loop.events = [ {notes:[{pc,letter,instId,midi}], dur, dyn} | {rest:true, dur, dyn} ]`
-   and a **cursor** (in ticks). `dur` is **ticks**; `TPB = 24`; `meter = {beatsPerBar:4, beatUnit:4}`;
-   `barTicks = beatsPerBar*TPB`. A per-play **`run.curDur`** (default quarter=24) set by one picker; `run.curDyn` stays.
-2. **Play.** `playHand` = take selected cards → **one stack** (all notes together) OR a lone rest → append
-   `{notes,dur:curDur,dyn}`/`{rest,dur:curDur,dyn}` at the cursor → advance cursor by `curDur`. No sequencing.
-3. **Caps.** `MOVEMENTS[].maxSelect` → `1,1,1,2,3,4,4`. Selecting counts notes only; a rest is solo.
-4. **Rest card.** One `{rest:true}` card in the deck at M2+ (groove on); played alone; uses `curDur`.
-5. **Scheduler.** One continuous timeline: schedule each event at its tick offset; a stack sounds together
-   for `dur`; a rest is silence. Loop cycles the whole timeline. Playhead sweeps by ticks.
-6. **Grid → piano-roll.** Rows = pitches, columns = beats at a display resolution; each event = a horizontal
-   bar spanning `dur` at its tick position; rests = gaps; movable write cursor (click a beat to aim).
-7. **Scoring (thin).** Classify the current stack (note/interval/triad/7th/cluster) for base + in-key +
-   consonance + resolution; **melodic motion** vs the previous timeline note. (Run-detection & form → Stage 2.)
-8. **Stage space & finish.** "Notes left" = ticks/bars remaining; auto-finish when full; ✓ Finish stays.
-9. **Save.** Snapshot the event list; keep a back-compat read of old `bars[]` saves (one event per bar).
-
-Defer to Stage 2: timeline scale-run detection, form scoring on the timeline, save-format migration polish,
-chord-inside-melody, eighths/sixteenths/triplets in the picker (the tick model already supports them).
-
-</details>
+**Grow the stage.** The stage **starts at `START_BARS=4` and grows only as the player needs room** —
+`run.loop.stageBars` (grow-only) is bumped by `growStageToFit()` to keep one empty **ghost bar of headroom**
+past the cursor, clamped `[START_BARS, maxStageBars()]`. Only the grown stage is drawn and the backing loop
+wraps at the current length so it comes back around fast. `LOOP_BARS=12` is the **max capacity**
+(`maxStageBars()`/`maxStageTicks()`, `+loopBonus` reserved for the *+loop-bars* shop). The scheduler +
+playhead read the loop length **per iteration** (`loopTicksNow()`), so a growth mid-groove only takes effect
+at the next loop boundary. Saved songs store a **tight** `totalTicks` (rounded up to the last bar) so Setlist
+replays loop around the actual song, not empty stage.
 
 ---
 
@@ -369,17 +264,11 @@ teaches them.)
 > function declarations since `LESSON_INTROS` evaluates them at module-load.)* The `DURATIONS.label`/`.rest`
 > Unicode fields remain but are dead-for-display (only `.ticks`/`.name`/`.id` are read).
 >
-> **Duration becomes a per-card property (default = quarter).** Under Break, a card *carries* a value: **every
+> **Duration is a per-card property (default = quarter).** Under Break, a card *carries* a value: **every
 > note/rest card defaults to a quarter note (♩)**, and the player **Breaks it shorter or Merges it longer** from
-> there. This is the **Free Play** model too — you compose by placing quarter cards and reshaping their length
-> in place. **Decision (2026-07-24): `curDur` retires in favour of Break — everywhere.** The per-play
-> `run.curDur` picker (one duration for the *next* play) is **replaced** by the **per-card** value: cards carry
-> their own duration (default ♩), reshaped by Break/Merge, in **every** mode (M2 lessons, later movements, and
-> Free Play). No "cast the next N cards at value X" convenience is kept — Break *is* the duration control. *(This
-> is a design decision; `curDur` is still the live shipped control until Break is built — migrating the `curDur`
-> callsites, incl. M4+ and the `durControlHTML` picker, to per-card values is part of building Break, not a
-> separate change. The per-play-`curDur` descriptions elsewhere in this doc describe the current, to-be-retired
-> model.)*
+> there — in **every** mode (M2 lessons, later movements, and Free Play). This replaced the old per-play
+> `run.curDur` picker (now retired): `selDurId()`/`selDurTicks()` read the selected card(s), and there's no
+> "cast the next N cards at value X" convenience — Break *is* the duration control.
 
 **The core verb — Break in half.** Select a card and **Break** it → it becomes **two cards of half the value**
 (a single downward "snap" stroke; the card cracks down the middle and falls into two halves). This *is* the
@@ -570,7 +459,7 @@ and rejected*). Their **card skins ride the existing foil/holo `SKINS` system to
     Hand**. `persist.hand` (`"right"`/`"left"`, shared with the Beat Lab) picks a side; the home row covers 4
     cards and **extends outward** as the hand grows — the **5th** card takes the outer-left key (Caps / h), the
     **6th** the outer-right (g / '): right = `h j k l ; '`, left = `⇪ a s d f g` (`handKeysFor`). **No on-card
-    key badge** (removed 2026-07-22 — dev wants the card face clear for future art); a **🤚/✋ hand toggle**
+    key badge** (the card face is kept clear for future art); a **🤚/✋ hand toggle**
     button in the gig controls is the only surfaced hint. Hand size is **capped at
     `MAX_HAND_SIZE` (6)** (a Muse rework to respect this is deferred). Guards: ignored while typing in an input,
     on a focused button (native Space), or when a modal (goal prompt) is open. *(Caveat: CapsLock is an
@@ -762,7 +651,7 @@ you'd played and read as disorienting.)*
 | # | Element | The **call** (computer plays…) | Your **response** | Scored on (graded proximity) |
 |---|---------|-------------------------------|-------------------|------------------------------|
 | **1** | **Pitch · Wind** | a target note "carried on the breeze" | play the matching pitch | **absolute pitch distance** — exact=full, a step off=nearly full, ~an octave off=least (NOT consonance — that's Melody) |
-| — | *M1 Sharps level* | a natural note | play **any note higher** (bonus: the exact ♯, then resolve up) | direction (higher) + exact-♯ bonus + optional ♯→up [resolution](#accidentals--the-sharps--flats-runs--the--boss-planned) |
+| — | *M1 Sharps level* | a natural note | play **any note higher** (bonus: the exact ♯, then resolve up) | direction (higher) + exact-♯ bonus + optional ♯→up [resolution](#accidentals--the-sharps--flats-runs--the--boss-sharpsflats-built-2026-07-19-boss-deferred) |
 | — | *M1 Flats level* | a natural note | play **any note lower** (bonus: the exact ♭, then resolve down) | direction (lower) + exact-♭ bonus + optional ♭→down resolution |
 | **2** | **Rhythm · Earth** | a rhythm pattern (the ground's pulse) | clap it back — same onsets/durations | onset + duration match (a played rest is a rhythmic event) |
 | **3** | **Dynamics · Fire** | a **creature scenario** (see below), not a note | play at the demanded loudness (+ rests when sneaking) | matching the target dynamic the scene demands — teaches pp→ff **notation** |
@@ -827,14 +716,11 @@ The first slice of the frame, shipped in `mujicians.html`:
   playhead swept over it silently until next lap). `catchUpEvent()` (called from `placeEvent`) now schedules
   that single onset for the current lap when it lands in the committed window; `schedTick` only schedules
   onsets `≥ schedFrom`, so no double. General fix (all movements + Free Play), inert while paused.
-- **Blind "by Ear" sub-level — BUILT (2026-07-19).** *(Superseded 2026-07-19: by-Ear is no longer a standalone
-  Home button — it's **stage 2 of the gated M1 ladder** (Naturals → **by-Ear** → Sharps → Flats), driven by
-  `persist.progress.pitchStage`. See [Accidentals → M1 ladder as built](#m1-ladder--as-built-2026-07-19). The
-  original design below is kept for the ear-mode mechanics, which are unchanged.)* The [shown-early→ear-only ramp](#the-four-decisions-locked) exists for M1 as a **sub-level** (the frame chosen with the dev, mirroring the
-  Sharps/Flats sub-levels). Originally, once the 7 shown naturals were catalogued (`persist.progress.gates.pitch`
-  full), Home showed a **🎧 M1 Pitch — by Ear** button that starts an M1 campaign run with
-  **`run.pitchLevel:"ear"`** (`startRun(mode, opts)` gained `opts.movement`/`opts.pitchLevel`; `callHidden()` =
-  `callActive() && pitchLevel==="ear"`). In ear mode the call **sounds only** — `callBarHTML` draws a **muffled
+- **Blind "by Ear" sub-level — BUILT (2026-07-19).** The [shown-early→ear-only ramp](#the-four-decisions-locked)
+  is **stage 2 of the gated M1 ladder** (Naturals → **by-Ear** → Sharps → Flats), driven by
+  `persist.progress.pitchStage` (see [Accidentals → M1 ladder as built](#m1-ladder--as-built-2026-07-19)). A
+  by-Ear run sets **`run.pitchLevel:"ear"`** (`startRun(mode, opts)` takes `opts.movement`/`opts.pitchLevel`;
+  `callHidden()` = `callActive() && pitchLevel==="ear"`). In ear mode the call **sounds only** — `callBarHTML` draws a **muffled
   `?` chip** (no colour) + the **🔊 Hear it** button and **no pre-commit verdict**; `previewHTML` **hides the
   whole numeric readout** (applause/mult would jump on the right card and let you brute-force by watching it).
   You commit **blind**; the existing bloom + floating-rating word + proximity chime judge you *after*, and a
@@ -864,7 +750,7 @@ dev's framing does the teaching through a **story/scenario** that also **folds i
   demands a specific loudness**, and the game labels the required level with its **notation** (pp = "sneak,"
   ff = "roar"), teaching the vocabulary in play.
 - **Rests get their diegetic home here:** a rest is the quietest possible dynamic — a held breath while you
-  tiptoe past the sleeper. (Ties the [rest card](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-rework-decided-2026-07-18-not-built) to Dynamics as well as Rhythm.)
+  tiptoe past the sleeper. (Ties the [rest card](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-model-stage-1-built-2026-07-18) to Dynamics as well as Rhythm.)
 - **Reuses size = volume (BUILT):** a big/loud card visibly swells; a big
   sleeping creature ↔ the need to keep your cards small (quiet).
 - The **A/B/C dynamic ideas** (match-a-swell / answer-with-contrast / feed-the-fire-crescendo) become
@@ -954,7 +840,7 @@ makes *original* music. So the campaign **shifts flavor across the arc**:
   pcs, in classification when harmony matters.
 - **Enharmonic spelling & interval quality.** pc-sets can't tell C♯ from D♭, or an augmented-4th from a
   diminished-5th — but correct *spelling* (key-dependent) is exactly what theory drills. **The sharps/flats
-  runs [address the C♯-vs-D♭ half of this](#accidentals--the-sharps--flats-runs--the--boss-planned)** — the
+  runs [address the C♯-vs-D♭ half of this](#accidentals--the-sharps--flats-runs--the--boss-sharpsflats-built-2026-07-19-boss-deferred)** — the
   two decks spell the same 5 pitches oppositely, forcing a **`letter`+`acc`** field on cards (scoped to
   display/resolution/naturalize). **Still open (bigger):** interval quality (aug-4 vs dim-5) and full
   key-signature-aware spelling. **Plan:** carry a spelled letter+accidental, not just a pitch class.
@@ -1065,11 +951,9 @@ accidentals stop being M1-only and join **every later Campaign movement (M2–M7
   **enharmonics lesson** (why spelling depends on key/direction) is flagged as a future movement/sub-level;
   seeding both spellings into the deck now sets it up. *(Not built.)*
 
-**Why this doesn't revert "gigs removed."** The 2026-07-18 cut removed per-run **antes/gigs** from normal &
-Free-Play performances (a run is one continuous open-ended song). This boss is **not** that — it's a
-**campaign capstone / special challenge run** (the doc already keeps "boss = movement capstone" alive). Normal
-and Free-Play runs stay threshold-free and open-ended; only the ♮ boss run carries a win target. Keep that
-firewall: **don't** reintroduce antes into the everyday performance.
+**Firewall — the boss win-target is boss-only.** A normal or Free-Play run is one continuous, open-ended,
+threshold-free performance. This boss is a **campaign capstone / special challenge run**, so it (uniquely)
+carries a win target; that must **not** leak back into everyday performances.
 
 ### The two decks — same 5 pitches, spelled two ways (decided)
 
@@ -1315,9 +1199,9 @@ holds five: four chord heroes + the boss).
   (M3 Dynamics, an off-grid first-person loudness/mic set-piece — standalone MVP built), and
   **[Slurry — "Stepping Stones"](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built)**
   (M4 Melody, a voice-**pitch** stepping-stone crossing), and
-  **[Tritony — "The Devil's Forge"](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25-not-built)**
+  **[Tritony — "The Devil's Forge"](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25--core-loop-mvp-built-2026-07-26-in-forge-quenchhtml)**
   (M5 Harmony, an off-grid **chord-forging** Opus-Magnum-style craft puzzle — the *vertical* axis — standalone MVP built), and
-  **[Wormwood — "Wormwood's Choir"](#wormwood--the-m6-timbre-boss-wormwoods-choir-designed-2026-07-26-not-built)**
+  **[Wormwood — "Wormwood's Choir"](#wormwood--the-m6-timbre-boss-wormwoods-choir-designed-2026-07-26)**
   (M6 Timbre, a **pure-listening** find-the-odd-voice game — pluck true timbres out of his homogenized choir), and
   **[The Bartender — "Last Call"](#the-bartender--the-m7-structure-boss-last-call-designed-2026-07-26-not-built)**
   (M7 Structure, the **capstone/final boss** — a **musical-staff** memory fight: state an A theme, the night blurs, then *D.S. al Coda* recall it home from memory).
@@ -1869,7 +1753,7 @@ Beating her **captures the tritone, tamed** ("weapon → your tool," like the ot
 > "wired into Mujicians as the M6 Timbre boss". The **find-the-odd-voice "Wormwood's Choir" set-piece described
 > in the rest of this section remains an unbuilt alternative** design (a possible richer/second boss cut).
 >
-> **Status of the design below: DESIGNED, not built.** The fifth fleshed-out boss (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built), [Morendo](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built), [Slurry](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built), [Tritony](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25-not-built)). Wormwood is the **M6 Timbre capstone** (gating M7). It owns the one modality the others don't: **timbre = the ear for *color*** — not *which* pitch, but *what* voice. And that skill is **listening and discriminating, not performing**, so this is the roster's **first "pure listening, point-don't-perform" boss** — no fourth mic game, and distinct from Tritony's craft puzzle. It is also the **payoff for the built [Sound Collective](#the-sound-collective--sound-is-the-main-collection-built-2026-07-25)**: the `VOICES` you discovered by hearing become the voices you must identify under pressure. Same boss template: one win-target run, telegraphed attacks, retryable, capture → Muse. `run.debuff='flatten'`; Wormwood's HP is the count of true voices restored (see meters).
+> **Status of the design below: DESIGNED, not built.** The fifth fleshed-out boss (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built), [Morendo](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built), [Slurry](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built), [Tritony](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25--core-loop-mvp-built-2026-07-26-in-forge-quenchhtml)). Wormwood is the **M6 Timbre capstone** (gating M7). It owns the one modality the others don't: **timbre = the ear for *color*** — not *which* pitch, but *what* voice. And that skill is **listening and discriminating, not performing**, so this is the roster's **first "pure listening, point-don't-perform" boss** — no fourth mic game, and distinct from Tritony's craft puzzle. It is also the **payoff for the built [Sound Collective](#the-sound-collective--sound-is-the-main-collection-built-2026-07-25)**: the `VOICES` you discovered by hearing become the voices you must identify under pressure. Same boss template: one win-target run, telegraphed attacks, retryable, capture → Muse. `run.debuff='flatten'`; Wormwood's HP is the count of true voices restored (see meters).
 >
 > **Forks locked with the dev (2026-07-26):** (1) **Core interaction = "find the odd voice"** (scan the droning choir, pluck the timbre that *doesn't* match the flatten) — pure discrimination; the **match-the-twin** variant (Timbrewolf hums a target voice, find its match) is a **later phase**, not the MVP spine. (2) **Strictly point-and-listen** — the mic does **not** come back in (an optional *sing-in-a-voice's-timbre* idea was set aside: matching timbre with your voice is genuinely hard and would drift toward a fourth mic game). **No MVP built yet** — this section is the design; a standalone `wormwoods-choir.html` (the Morendo/`scorch-bones.html` precedent) is the eventual first cut.
 
@@ -1966,7 +1850,7 @@ His identity-theft, tamed ("weapon → your tool," like the others): **recolor a
 
 ## The Bartender — the M7 Structure boss: "Last Call" (DESIGNED 2026-07-26, not built)
 
-> **Status: DESIGNED, not built.** The sixth fleshed-out boss and the **campaign capstone / final boss** (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built), [Morendo](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built), [Slurry](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built), [Tritony](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25-not-built), [Wormwood](#wormwood--the-m6-timbre-boss-wormwoods-choir-designed-2026-07-26-not-built); only Ranger's M1 ♮ remains). The Bartender is the **M7 Structure boss** — the last movement. He owns the one modality set apart from all six before it: **structure lives *across* time — form, repetition, and the *return home*** — so it can't be a reflex test, it's a **memory** test. Reuses the **built M7 form scoring** directly (`pcSetFp` phrase fingerprints, `hasABA`). Same boss template: one win-target run, telegraphed attacks, retryable, capture → Muse. `run.debuff='muddle'`; his HP is the song getting home (see meters).
+> **Status: DESIGNED, not built.** The sixth fleshed-out boss and the **campaign capstone / final boss** (after [Sandmar](#sandmar--the-m2-rhythm-boss-the-lullaby-duel-designed-2026-07-25-not-built), [Morendo](#morendo--the-m3-dynamics-boss-scorch-the-bones-designed-2026-07-25-not-built), [Slurry](#slurry--the-m4-melody-boss-stepping-stones-designed-2026-07-25-not-built), [Tritony](#tritony--the-m5-harmony-boss-the-devils-forge-designed-2026-07-25--core-loop-mvp-built-2026-07-26-in-forge-quenchhtml), [Wormwood](#wormwood--the-m6-timbre-boss-wormwoods-choir-designed-2026-07-26); only Ranger's M1 ♮ remains). The Bartender is the **M7 Structure boss** — the last movement. He owns the one modality set apart from all six before it: **structure lives *across* time — form, repetition, and the *return home*** — so it can't be a reflex test, it's a **memory** test. Reuses the **built M7 form scoring** directly (`pcSetFp` phrase fingerprints, `hasABA`). Same boss template: one win-target run, telegraphed attacks, retryable, capture → Muse. `run.debuff='muddle'`; his HP is the song getting home (see meters).
 >
 > **Forks locked with the dev (2026-07-26):** (1) **Render surface = a real musical staff** — the level *looks like a staff* (five lines, barlines, bars, notes, and the roadmap symbols drawn **in place**), **not** the piano-roll grid, so you read/compose real notation and the navigation symbols live exactly where a musician sees them. (2) **MVP = the memory-recall A·B·A + a minimal "D.S. al Coda brings A home" beat** — you mark your A theme with a segno and write *D.S. al Coda* to recap it, taught minimally from the first cut; the fuller map-routing (extra symbols, repeats/voltas, a Snakes-&-Ladders board) is deferred. **No MVP built yet** — a standalone `last-call.html` (the Morendo/`scorch-bones.html` precedent) is the eventual first cut.
 
@@ -2041,22 +1925,7 @@ The Key already owns the plain A·B·A bonus, so the Bartender's capture is **co
 
 ---
 
-## Removing gigs — a run becomes one performance (BUILT)
-
-> **Status: BUILT (2026-07-17)** in `mujicians.html`. A run is now **one continuous performance in one
-> fixed key** with a **single applause threshold** and **one Muse drafted once at the start** *(the Muse
-> draft was later disabled 2026-08-02 — see [Muse draft disabled](#muse-draft-disabled-2026-08-02))*. The 3-gig
-> Set, the C→G→F modulation, per-gig thresholds, per-gig Muse re-drafts, and the loop's section/key-strip
-> UI are all gone. The three forks below record the decisions; the **As built** subsection is the code map.
-> *(Follow-ons still open: key change relocated to the Melody movement (M4) and accidentals to Pitch (M1)
-> remain **planned, not built** — see the Progression notes.)*
-
-**Why.** The 3-gig Set **disrupts play** (three separate threshold gates + two between-gig Muse-draft
-interruptions per run), and the dev "doesn't really care about the Muses." Collapsing a run to **one
-continuous performance** removes the mid-run gates and drafts, so a run reads as *sit down → build one
-song → done*, which is what the "made some music" payoff and Save-a-Song already want to be.
-
-### Muse draft disabled (2026-08-02)
+## Muse draft disabled (2026-08-02)
 
 The **per-run Muse draft is turned off.** It doesn't fit the game yet — especially the early movements,
 where the pool is mostly the two hand-size upgrades, so the "choice" is between two near-identical
@@ -2074,142 +1943,12 @@ better use can re-enable it later.
   restore drafting. The planned character-Muse roster (the graphic-novel cast as earnable Muses) is
   unaffected — it's a separate, still-future design.
 
-### The three forks
-
-1. **Run shape — ⚠️ SUPERSEDED 2026-07-18.** *Was* DECIDED "one session, one threshold" (win = beat the
-   applause threshold, lose = run out of hands) as the built gig-removal cut. **Playtest reversed this:**
-   the threshold **cut the dev off mid-song**, so it's being removed — a performance is now **open-ended**
-   (you decide when you're done; the only hard limit is loop space). The **endless/no-threshold** option
-   listed here as "surfaced but not chosen" is now the chosen direction. See **[Open-ended performance —
-   no threshold](#open-ended-performance--no-threshold-you-decide-when-youre-done-planned)**. *(The built
-   code still has the threshold win-check; the new section is the plan to delete it.)*
-2. **Key / modulation — DECIDED: one fixed key now; key changes move to the Melody movement (M4) later.**
-   Removing gigs, a run stays in **one key** (start with C major) — this kills the gig-boundary C→G→F
-   modulation. **Key *change* is not lost, it's relocated:** the dev's call is to **introduce modulation as
-   a Melody-movement (M4) concept** in the campaign, not something bolted onto the run structure. So single
-   fixed key for the gig-removal pass, and **modulation becomes a taught mechanic when Melody unlocks**
-   (a mid-song key-change move the player performs and is scored on — the *player-driven modulation* shape,
-   now with a home in the progression rather than an always-on run feature). **M7 form scoring (`hasABA` /
-   phrase fingerprints) is unaffected either way** — it reads `run.loop.bars` regardless of key. *(An
-   **auto-modulate-by-bar** flag — the old C→G→F feel on a bar cadence — stays a possible stopgap but is
-   not the chosen direction; M4 modulation is.)*
-3. **Muse draft — DECIDED: draft 1 of 3, once, at run start.** `offerDraft()` runs **exactly once**,
-   before the run begins; there are **no between-gig re-drafts**. Keep the existing draft-of-3 UI.
-   ⚠️ **Consequence to resolve:** the two **repeatable hand-size Muses** (Extra Hand +1 / Big Hand +2) were
-   balanced around being **re-draftable every gig to stack** the hand from 4 toward ~8. With a single draft
-   they can't stack that way — options: bump their one-shot value, fold a hand-size bump into the base run,
-   or drop `repeatable` and treat them as ordinary one-pick Muses. Decide during build.
-
-### What "a run" and "the song" become (given the defaults above)
-
-- A run = **one performance in one key**, with one hand budget and one applause threshold, filling **one
-  flat loop** (no sections, no locked past-sections, no per-section key strip).
-- The accumulated song = that single-key loop. **Save-a-Song stays a whole-run capture** (it already is,
-  post-Phase-4) but simplifies: `keyName` is the one key (not `"C→G→F"`), and `songReport` gets the key as
-  a **single pc-array** instead of the `sectionKey` per-bar function.
-- **Loop length:** today's loop is `LOOP_BARS = SECTION_BARS × GIGS.length = 6 × 3 = 18`. Keep the run's
-  loop at a comparable length (**~12–18 bars**) so the song has room; size it to the single-session hand
-  budget (see below). No sections to divide.
-
-### Code map (what gets touched)
-
-The gig structure is concentrated in a handful of spots (`mujicians.html`):
-
-- **`GIGS` array (~L294) → a single run config.** Replace the 3-entry array with one key + one threshold
-  (e.g. `RUN_KEY = majorScale(0)`, plus the per-movement/Free-Play threshold). Everything that indexed
-  `GIGS[run.gigIdx]` reads the single config.
-- **`SECTION_BARS` / `LOOP_BARS` / `sectionOfBar` / `sectionKey` / `loopLenNow` (~L275, L303–309).**
-  Collapse: `LOOP_BARS` becomes the run's flat loop length; `sectionKey(b)` → the one `RUN_KEY`;
-  `sectionOfBar` is removed. `loopLenNow()` — with no sections — returns a constant `LOOP_BARS` (the full
-  loop is always shown and always grooves). *(Note: an early attempt to shrink it to the "filled prefix"
-  broke the groove — `startLoop` freezes the length once — so it must stay constant. See **As built**.)*
-- **`run.gigIdx` / `startGig` / `winGig` (~L985, L1056).** Remove `gigIdx` and the gig-advance path.
-  `startGig` folds into `startRun`. **Win** = threshold met (the check currently in `playHand` at
-  `run.gigScore >= gigThreshold()` → now a run-win, not a gig-win → `screen="win"`); **lose** = out of
-  hands (`loseRun`, unchanged). `maybeAdvance()` (movement gate) fires on the single terminal state.
-- **`offerDraft()` (~L1074) → called once from `startRun` only.** Delete the `winGig` re-draft call.
-  The between-gig **Muse-draft dialog copy** that says the song "modulates to the next gig's key" (~L1491)
-  is removed (it's now a run-start dialog, single key).
-- **`gigThreshold()` (~L370).** Returns one number: the movement's flat `thr` in Campaign; a **single**
-  Free-Play threshold (replacing the escalating `GIGS` `650/1150/1800` — retune to one value for a
-  full-length run).
-- **Budgets `PLAYS` / `DISCARDS` (~L268).** Today `PLAYS = 6` was **per gig** (18 hands/run total across 3
-  gigs). For one session, set the run budget directly (e.g. `PLAYS ≈ 12–18`, `DISCARDS` to match) and size
-  `LOOP_BARS` to it. Tunable.
-- **Loop grid (`loopStripHTML`, ~L1228–1292).** Remove **section dividers** (`.secstart`), the
-  **per-section key strip** (`.lsecbar`), and the **locked-cell** logic (the whole loop is writable in one
-  key). Row-greying keys off `RUN_KEY`. The write head + click-to-aim (~L1344) are no longer confined to a
-  section — the whole loop is aimable.
-- **Save-a-Song (`saveSong`/`songReport` calls, ~L855–864, L1525).** `modKeyName()` → the single key name;
-  pass `songReport` the key as a pc-array (drop the `sectionKey` function path — keep that code branch for
-  imported/legacy songs, but a fresh run uses the simple array).
-- **HUD / end overlay (~L1305–1315, L1491+).** Drop "Gig **X**/3" and per-gig framing; show one key + one
-  threshold + one progress bar. `gigIdxClamped()`/`curGig()` collapse to the single config.
-- **Untouched:** `classify`, the scheduler (`scheduleBar`/`scheduleVoices`/`barQueue`), the tempo system,
-  the Codex, `MUSE_POOL` contents, and **M7 `hasABA` form scoring** — all read the loop bars or a hand, not
-  the gig count. This is why removing gigs is mostly *deletion + collapse*, not a rewrite.
-
-### Interactions with the other open issues
-
-- **Known-issue #3 (a 4-beat bar can't hold a whole note + more).** Independent of gigs — the bar is still
-  `BEATS = 4`. Removing gigs doesn't fix it, but it's a natural moment to revisit **bar capacity / letting a
-  melodic hand span bars** since the loop model is already being reworked here.
-- **Phase 4 "cross-gig accumulation" narrative retires.** The *mechanism* (one accumulating loop per run)
-  **stays** — it just stops being "cross-gig / modulating" and becomes "the run's single-key song." Update
-  the Phase 4 prose in **Progression** when built.
-- **Campaign gates.** Movement gates already advance on the terminal state (`maybeAdvance` in `winGig`/
-  `loseRun`); with one terminal state they simplify, no gate logic changes.
-
-### As built (code map)
-
-- **`GIGS` array → `RUN_KEY`** (`{ keyName:"C major", key:majorScale(0) }`) — one fixed key. All former
-  `GIGS[run.gigIdx]` / `curGig()` reads now hit `RUN_KEY`. `sectionOfBar`/`sectionKey`/`gigIdxClamped`/
-  `curGig`/`modKeyName` are **deleted**.
-- **One flat loop.** `SECTION_BARS` is gone; `LOOP_BARS = PLAYS`. The write head advances
-  `(writePos+1) % LOOP_BARS` across the **whole** loop (no per-section confinement; click-to-aim reaches
-  any bar). `loopLenNow()` returns a **constant `LOOP_BARS`** — the full grid is always shown and always
-  grooves (empty bars are rests you fill in). *(This must stay constant: `startLoop` freezes
-  `playSrc.n = loopLenNow()` once, so a growing value would strand the groove on the bars filled at start
-  — the bug in the first cut.)*
-- **Deck recycle.** Gigs used to reshuffle a **fresh full deck each gig** (3 decks/run). With one
-  `startPlay` + one shuffle, `drawUp()` now **reshuffles the whole deck when the draw pile empties**, so a
-  single continuous run doesn't starve — the **`PLAYS` budget**, not deck exhaustion, is the real limiter
-  (the `hand.length===0` loss path is now effectively unreachable).
-- **Budget & threshold.** `PLAYS = 12`, `DISCARDS = 4` are now the **whole-run** budget (were per-gig).
-  `gigThreshold()` → **`runThreshold()`**: campaign uses the movement's `thr` (retuned ~×2 for the longer
-  single run — M1 90 … M6 2000), Free Play/M7 uses the new **`RUN_THRESHOLD = 2600`** (replaced the
-  escalating `GIGS` thresholds). `run.gigScore` → **`run.runScore`**.
-- **Lifecycle.** `run.gigIdx` removed. `startGig()` → **`startPlay()`** (deals the hand, `writePos=0`,
-  starts the groove) — called once after the single draft. `winGig()` (which incremented `gigIdx` and
-  re-drafted) → **`winRun()`** (threshold met = run won, straight to the win screen). `offerDraft()` is
-  called **once** from `startRun`; the `winGig` re-draft is gone (`pickMuse`/empty-pool → `startPlay`).
-- **Loop grid (`loopStripHTML`).** Removed **section dividers** (`.secstart`), the **per-section key strip**
-  (`.lsecbar`), and the **locked-cell** logic — the whole loop is one writable key; row-greying keys off
-  `RUN_KEY.key`. (The now-unused `.lsec/.secstart/.locked` CSS rules are left in place, harmless.)
-- **Save-a-Song.** `saveSong`/`renderSaveOverlay` pass `songReport` the key as the `RUN_KEY.key`
-  **pc-array** (the per-bar `sectionKey` function path is retired for live runs but `songReport` still
-  accepts a function for forward-compat); `keyName` is `"C major"` (not `"C→G→F"`). `decodeSong` falls
-  back to `RUN_KEY.key`.
-- **Copy.** HUD ("Key … · M_n_"), draft dialog (once, no "modulates to…"), save/end overlays
-  ("Performance complete", "beat the applause threshold"), home rules, and the top-of-file header were all
-  de-gigged.
-- **Untouched (as predicted):** `classify`, the scheduler (`scheduleBar`/`scheduleVoices`/`barQueue`),
-  tempo, Codex, `MUSE_POOL` contents, and **M7 `hasABA`/form scoring** (reads the flat `run.loop.bars`).
-  The render function is still named `renderGig` / screen `"gig"` / `.gigbar` CSS — kept as plain names for
-  "the play screen" (no behavior tied to gigs).
-
-### Open items for this feature
-
-- **Balance the new numbers in play** — `PLAYS`/`DISCARDS`/`LOOP_BARS` (12/4/12) and the retuned
-  thresholds (campaign `thr`, `RUN_THRESHOLD`) are first-pass placeholders.
-- **Repeatable hand-size Muses** — Extra Hand / Big Hand can no longer re-draft to stack across gigs; they
-  now pay out once. Revisit their value/`repeatable` flag (currently unchanged).
-- **Modulation at Melody (M4)** — the design of the player-driven key-change mechanic and its scoring
-  lives with the Melody movement, not here (see the **Progression** note). This section only removes the
-  *gig-boundary* modulation; M4 reintroduces key change deliberately.
-
-*(Forks 1 & 2 are now decided — see above. The **accidentals** direction is recorded in **Progression →
-Movement 1 (Pitch)**.)*
+> **Run-shape context.** A run is one continuous, open-ended performance in **one fixed key** (C major) —
+> `RUN_KEY`, one flat loop of `LOOP_BARS`, no sections/modulation. Key change / modulation is a planned
+> **Melody (M4)** teaching mechanic (a player-performed mid-song key-change), not an always-on run feature —
+> see the Progression notes. The `runThreshold()` / `RUN_THRESHOLD` / `MOVEMENTS[].thr` values are kept
+> **vestigial** (a future non-blocking "applause star," and the win-target for boss runs), never a gate on
+> an everyday performance.
 
 ---
 
@@ -2253,116 +1992,49 @@ describe Campaign-goal vs Free-Play-open, replacing the stale "Beat the threshol
 
 ## Open-ended performance — no threshold, you decide when you're done (BUILT)
 
-> **Status: ✅ core BUILT (2026-07-18)** in `mujicians.html`. Supersedes **Removing gigs → Fork 1** (which
-> DECIDED "one session, one threshold"). Playtest feedback reversed that call: **the applause threshold
-> that ended a run is removed.** A performance now ends when the **player** presses **✓ Finish song**, or
-> when the **loop runs out of space** — never because a score gate cut them off. The *endless/no-threshold*
-> option that Fork 1 surfaced-but-rejected is now the shipped direction. **One planned piece was
-> deliberately deferred:** persisting the per-run gate counters across runs (see *As built* → deferred).
->
-> **⚠️ AMENDED 2026-07-19 — open-ended is now FREE-PLAY-ONLY; Campaign gets a per-run GOAL that stops the
-> song.** Playtest: a *learning* run wants a finish line. So each **campaign** run now ends when you meet
-> that movement's **goal** (its existing gate, tracked **per-run** — M1 = play all 7 letters A–G this run;
-> M2 = each note value; etc.), which pops a **choice: 🏁 Finish & score, or ✏️ Keep building** (dismiss and
-> play on). The **✓ Finish button is removed from Campaign** (it only reappears after you choose *Keep
-> building*); **Free Play keeps the Finish button and stays fully open-ended** (no goal, no prompt). M1's
+> **Status: ✅ BUILT.** There is **no win/lose** — a performance just **completes** (`finishRun()`;
+> `screen="win"` = "🎉 Performance complete!", no `"lose"` screen). In **Free Play** you press **✓ Finish
+> song** whenever you like (the only hard limit is loop space, warned before it fills). In **Campaign**, each
+> run has a **per-run goal** (that movement's gate — M1 = play all 7 letters A–G this run; M2 = each note
+> value; …); meeting it pops a **choice: 🏁 Finish & score, or ✏️ Keep building** (dismiss and play on). The
+> **✓ Finish button is Campaign-hidden until you choose *Keep building***; Free Play always shows it. M1's
 > "how close" **pitch-accuracy score** (avg per-note nearness → `%` + a grade word) shows on the goal prompt
-> and the end overlay. Advancement now requires meeting the goal **in one run** (M1 no longer accumulates
-> letters across runs — `persist…gates.pitch` is legacy/vestigial; `run.gatePitch` is the live set). See
-> **[Run goals (BUILT 2026-07-19)](#run-goals--each-campaign-run-has-a-finish-line-built-2026-07-19)**.
+> and the end overlay. See **[Run goals (BUILT 2026-07-19)](#run-goals--each-campaign-run-has-a-finish-line-built-2026-07-19)**.
 
-**Why (the frustration).** The single applause threshold ends the run the moment you cross it — which
+**Why (the frustration).** A single applause threshold used to end the run the moment you crossed it — which
 repeatedly **cut the dev off mid-song while a performance was going well**. A tool whose whole payoff is
 "I made some music I like" shouldn't yank the song away the instant a number is hit. Balatro's pass/fail
 tension is wrong for a *creative* toy: the fun is building the song, not clearing a bar.
 
-### The new run shape
+### The run shape
 
-- **Applause is a running score, not a gate.** It counts up as you play hands; you watch it climb. There
-  is **no win/lose** — a performance just **completes**.
-- **You decide when you're done.** A **✓ Finish song** control on the play screen ends the performance
-  whenever the player wants (→ the end overlay: report card, Tips earned, Save-a-Song, any movement
-  unlocked).
-- **The only hard limit is space.** The loop has `LOOP_BARS` slots (the "there's only so much room on
-  screen" limit). Each played hand fills one bar and advances the write head; when **every bar is filled,
-  the performance auto-completes** (you're out of canvas). Because a play already writes exactly one bar
-  and `LOOP_BARS = PLAYS`, the **hands budget and the loop-space limit are the same limiter** — they
-  unify, so "no threshold" is mostly *deleting the win-check*, not adding a new limiter.
-- **Warn before the space runs out.** A **notes-left meter** ("Notes left: 6 of 12 bars") sits where the
-  threshold progress bar was; it turns to a warning color at **≤2–3 bars left** so the auto-finish never
+- **Applause is a running score, not a gate.** It counts up as you play hands; you watch it climb.
+- **You decide when you're done** (Free Play) — a **✓ Finish song** control ends the performance whenever the
+  player wants (→ the end overlay: report card, Save-a-Song, any movement unlocked).
+- **The only hard limit is space.** When the stage fills, the performance **auto-completes**. A **notes-left
+  meter** sits where the threshold bar was, turning to a warning colour at ≤2–3 bars left so auto-finish never
   ambushes the player. (More stage space is buyable — see the **backstage shop**'s *+loop bars*.)
-- **Discards** stay a small separate budget (a light "re-draw" tension), or become generous — tune in
-  play. They are **not** a run-ending limiter anymore; only space is.
+- **Discards** stay a small separate budget, not a run-ending limiter.
+- **Terminals collapse to one `finishRun()`.** `runThreshold()`/`RUN_THRESHOLD`/`MOVEMENTS[].thr` are kept
+  **vestigial** (a future non-blocking "applause star," and the boss-run win target), never a gate on an
+  everyday run.
 
-### What collapses (the threshold's old jobs)
+### Campaign advancement
 
-`runThreshold()` / `MOVEMENTS[].thr` / `RUN_THRESHOLD` fed three things — all replaced:
+Movements unlock at performance end via `maybeAdvance()`, which fires on `gateStatus(mv).met` — the gate is a
+**skill-demonstration** objective (play each note value, log N triads + a cadence, compose an A·B·A…), not a
+score check. A full-length open-ended performance clears each gate in one sitting.
 
-| Old (threshold) | New (open-ended) |
-|---|---|
-| Win-check in `playHand` (`runScore >= runThreshold()` → `winRun()`) | **Deleted.** No score ends the run. |
-| Scoreline "Applause X / thr" + progress bar | **"Applause X ★"** + a **notes-left meter**. |
-| `winRun()` / `loseRun()` two terminal states | **One `finishRun()`** → end overlay "Performance complete." |
+**Deferred (not built):** persisting the per-run gate counters across runs (a nicety — a full run clears each
+gate on its own; M1 pitch letters already persist); a live "🎓 Movement unlocked!" toast mid-song.
 
-`MOVEMENTS[].thr` and `RUN_THRESHOLD` become **vestigial**. Keep them (optional) only as a **non-blocking
-"applause star"** — a bragging target shown on the report card, never a gate. Otherwise delete.
+### Open items
 
-### The conflict this resolves early — campaign advancement
-
-This is exactly the kind of clash the dev wanted surfaced up front: **movements currently unlock at run
-end via `maybeAdvance()`, and a run ended on the threshold.** Remove the threshold and advancement needs a
-new trigger. Good news: **the gates are already skill-demonstration objectives, not score checks** —
-`gateStatus(mv)` counts *doing the mechanic* (play each note value, log N triads + a cadence, compose an
-A·B·A…), and `maybeAdvance()` already fires on `gateStatus(mv).met`, **not** on beating `thr`. So the
-decision — **"unlock the next movement by demonstrating its skill N times"** — is *already how gates
-work*; the only coupling to sever is *when* the check runs.
-
-**Decided & built:**
-- **Advance on `finishRun()`** (`maybeAdvance()` still runs at performance end): finish a song, and if you
-  met the frontier movement's gate during it, the next movement unlocks. No new UI. **This works better
-  than before** — the old threshold ended a run *early* (M1's `thr` was 90), sometimes before you'd
-  demonstrated the skill; now a performance runs the full ~12 hands (or until you Finish), giving *more*
-  room to hit a gate, not less. So the per-run gates stay clearable in one sitting.
-- **Deferred (not built): persisting the per-run gate counters across runs.** The plan to move
-  `gateDurs`/`gateDyns`/`gateTriads`/… into `persist.progress.gates` so demos accumulate across the
-  daily-capped runs was **left out of this pass** — it's a nicety, not required, because a full-length
-  open-ended performance clears each gate on its own (unlike the old early-ending threshold run). Revisit
-  if playtest shows a gate is hard to clear in one sitting. *(M1 pitch letters already persist.)*
-- *(Optional polish, later, not built)* a **live "🎓 Movement unlocked!" toast** the instant a gate is met
-  mid-song, instead of waiting for the end overlay.
-
-### As built (code map)
-
-- **`playHand`:** deleted the `run.runScore >= runThreshold()` win-check. The `run.playsLeft <= 0 ||
-  hand.length===0` path now **auto-completes** the performance (→ `finishRun()`) instead of a "loss."
-- **`winRun()` / `loseRun()` → one `finishRun()`** — `run.done=true; maybeAdvance(); screen="win"`. Guarded
-  against double-fire. `run.won` init renamed `run.done`. `screen="win"` is kept as the **single**
-  end-of-performance screen; `screen==="lose"` is removed from `render()` and the `syncChrome` pile list.
-- **`runThreshold()`** left **defined-but-unused** (marked vestigial in-code) as the source for a future
-  optional **non-blocking "applause star"**; `RUN_THRESHOLD` / `MOVEMENTS[].thr` kept for the same reason.
-- **HUD (`renderGig`):** dropped the `runScore/thr` progress bar + "Applause X / thr" scoreline. Now shows
-  **"Applause X ★"** and a **notes-left meter** — `Notes left: N of LOOP_BARS bars`, colored `--bad` and
-  captioned "running out of stage!" at **≤3 left** ("stage full" at 0). The `.track` bar now fills with
-  *used* space (`(LOOP_BARS-playsLeft)/LOOP_BARS`). Removed the redundant "Hands" figure from the counts
-  row (the meter replaces it). Added a **✓ Finish song** button to the controls (disabled until ≥1 bar is
-  filled), wired to `finishRun`.
-- **End overlay (`renderEndOverlay()`):** no longer takes a `won` flag; single **"🎉 Performance
-  complete!"** state. Copy reads "You performed an N-bar song for X applause…". The movement-unlock line,
-  Save-a-Song (`offerSave("win")`), replay, and New-Run/Home CTAs are unchanged. `afterSave()` dropped its
-  `"lose"` branch. *(Tips-earned line will be added with the shop.)*
-- **Untouched:** `classify`/`score`/scheduler/loop groove/Codex/Save-a-Song/motion — only *what ends a run*
-  changed. Parse-checked OK.
-- **Untouched:** `classify`/`score`/scheduler/loop groove/Codex/Save-a-Song/motion — the score model and
-  the audible-payoff pillar are unchanged; only *what ends a run* changes.
-
-### Interactions / open items
-
-- **Loop capacity (known-issue #5, #1).** A bigger canvas matters more now that filling it *is* the end
-  condition — revisit letting a melodic/whole-note hand span bars alongside the *+loop bars* shop item.
-- **Free Play vs Campaign.** Both go threshold-free. Free Play's "star" target = the old `RUN_THRESHOLD`
-  (optional). Campaign shows the **gate objective**, not a score bar, as the thing to chase.
-- **Save-a-Song** now has *no losing branch to special-case* — every performance ends the same way and is
-  always saveable. Simplifies `offerSave(retScreen)` (one ret path).
+- **Loop capacity.** A bigger canvas matters more now that filling it *is* the end condition — pairs with the
+  *+loop bars* shop item.
+- **Free Play vs Campaign.** Both are threshold-free. Free Play's optional "star" target = `RUN_THRESHOLD`;
+  Campaign shows the **gate objective**, not a score bar. Save-a-Song has no losing branch to special-case —
+  every performance ends the same way and is always saveable.
 
 ---
 
@@ -2544,10 +2216,10 @@ this: **score must correlate with musical quality.**
 | Base chips × mult | **Applause** — structure gives the base; theory-correctness gives the mult |
 | Planet cards (level a hand) | **Étude cards** — practice that levels up a chord/structure type |
 | Tarot cards (transform a card) | **Accidental cards** — sharpen/flatten/transpose a note, or modulate the key |
-| Jokers (the build engine) | **Muses** — passive scoring engines ("in-key notes +2 mult," "bass doubles," "a ii–V–I this gig = ×3") |
-| Blinds (score gates) | ~~Gigs / applause threshold~~ — **removed.** No score gate; a performance is **open-ended** (loop space is the only limit). Campaign advancement is a **skill-demo gate**, not a score. |
-| Boss blind gimmicks | **Boss constraints** (Free-Play modifiers) — "atonal night: no in-key bonus," "minor key only," "one instrument silenced," "dissonance taxed" (no longer per-gig — tentative) |
-| Ante (3 blinds) | ~~A Set (3 gigs)~~ — **removed** (a run is one continuous performance) |
+| Jokers (the build engine) | **Muses** — passive scoring engines ("in-key notes +2 mult," "bass doubles," "a ii–V–I this run = ×3") |
+| Blinds (score gates) | **No score gate** — a performance is **open-ended** (loop space is the only limit). Campaign advancement is a **skill-demo gate**, not a score. |
+| Boss blind gimmicks | **Boss constraints** (Free-Play modifiers) — "atonal night: no in-key bonus," "minor key only," "one instrument silenced," "dissonance taxed" (tentative) |
+| Ante (3 blinds) | **A run is one continuous performance** (no per-run antes/gigs) |
 | Shop between blinds | **Backstage shop** on Home (persistent, between performances) paid in **Tips** — Muses, Étude/Accidental cards, notes/instruments, +loop bars ([plan](#the-backstage-shop--tips-economy-planned)) |
 | **Daily Run** (seeded) | **Daily Set** — one seed/day; the **hard-capped** daily play lives here |
 | Unlockable decks/jokers | Meta-unlocks (instruments, Muses, keys, starting decks), persisted in the **Codex** |
@@ -2589,74 +2261,40 @@ this: **score must correlate with musical quality.**
 Because the played notes are **sounded**, dissonant/out-of-key hands both **score low and sound bad** —
 the design's load-bearing alignment.
 
-**Economy — ⚠️ updated 2026-07-18.** The Balatro-faithful "hands/discards + escalating applause
-thresholds + shop between gigs" is superseded: **no thresholds** (open-ended performance, loop space is
-the limit), and the shop is a **persistent Home backstage** paid in **Tips** (a separate currency from
-applause), not a between-gig stop. See **[Open-ended performance](#open-ended-performance--no-threshold-you-decide-when-youre-done-planned)**
+**Economy.** There are **no applause thresholds** (open-ended performance — loop space is the only limit),
+and the shop is a **persistent Home backstage** paid in **Tips** (a separate currency from applause), open
+between performances. See **[Open-ended performance](#open-ended-performance--no-threshold-you-decide-when-youre-done-built)**
 and **[The backstage shop & Tips economy](#the-backstage-shop--tips-economy-planned)**.
 
 ---
 
 ## The "made some music" payoff
 
-> **⚠️ Note (2026-07-17):** the gig-specific mechanics described in this section and the Phase-4 /
-> Implemented sections below (3 gigs, C→G→F modulation, per-section loop, per-gig Muse re-drafts) were
-> **removed** — a run is now one continuous single-key performance. See **Removing gigs — a run becomes
-> one performance (BUILT)**. The prose below is kept for history; the *one accumulating loop / Save-a-Song*
-> spine survives, just in one key.
-
-A run is a sequence of played hands = a little set. At the end of a gig/run you can **hear your set
-played back**, and share the **seed + your set**. That's the export/brag loop and the answer to "a user
-could make some music that would be made."
-
-**Now built:** each run is **one continuous loop you fill hand-by-hand across all 3 gigs** (Phase 4 — see
-the "song loop" bullet under *Implemented*). The loop is allocated once per run and **never resets between
-gigs**; each gig fills its own `SECTION_BARS`-bar section **in that gig's key**, so the accumulated song
-legitimately **modulates C→G→F** across its three sections. The loop **keeps playing continuously through
-the end of a run** — it does not cut off when a run finishes (win *or* lose) or when the between-gigs
-**Muse draft** dialog pops up, so you keep hearing your creation while you read the result or pick a Muse.
-The live loop cycles only the **song so far** (`loopLenNow()` = sections unlocked up to the current gig)
-so early gigs don't loop through empty future bars. Still to do: a real **seed + set export/share**. The
-**Save a Song** feature below (now a **whole-run** capture) is the first concrete piece of that export/brag
-loop.
+A run is a sequence of played hands = a little set — the answer to "a user could make some music that would
+be made." Each run is **one continuous single-key loop you fill hand-by-hand**, allocated once per run. The
+loop **keeps playing continuously through the end of a run** — it doesn't cut off when a run finishes or an
+overlay pops, so you keep hearing your creation while you read the result. The live loop cycles the **song so
+far** so it comes back around fast. Still to do: a real **seed + set export/share**. The **Save a Song**
+feature below (a whole-run capture) is the first concrete piece of that export/brag loop.
 
 ---
 
 ## Save a Song — Setlist, report card & export (**built**)
 
-> **Status: built** in `mujicians.html`. Extends the existing per-gig loop and `persist` store. The
-> report-card stats/thresholds and the prune cap are tunable placeholders. Design notes below describe the
-> shipped behavior; the **detailed** theory breakdown remains the deferred upgrade.
+> **Status: built** in `mujicians.html`. The save unit is **the whole run's accumulated song**, captured
+> **once at run's end**; `run.saved` is a single boolean. The report-card stats and the prune cap are
+> tunable placeholders; the **detailed** theory breakdown remains the deferred upgrade. Saved songs live in
+> both a Home **Setlist gallery** and a copyable **share code**; names are **freeform with a suggested
+> Noteling portmanteau** prefilled.
 
 **The problem it solves.** A song you build should be **keepable**. This feature lets a player **keep the
 song they made** — name it, learn *why* it sounds good, replay it later, and share it.
 
-> **⚠️ Phase 4 update (built):** the loop **no longer resets per gig** — it now accumulates across the
-> whole run into one modulating song. So the save unit changed from *"the just-finished gig's loop"* to
-> **the whole run's accumulated song**, captured **once at run's end** (win or lose). The per-gig,
-> before-the-Muse-draft save beat described just below is **retired**; the copy in this section that says
-> "one gig's loop / ~6-bar song / before the Muse draft" is the pre-Phase-4 design, kept for history.
-> `run.saved` is now a single boolean (not a per-gig map). See *As built* and the *Progression* section.
+### When the dialog appears
 
-**Decided (pre-Phase-4, superseded above):** save unit = **the just-finished gig's loop** (one save = one
-~6-bar song); saved songs live in **both** a Home **Setlist gallery** *and* a copyable **share code**; the
-theory breakdown is a **brief report card** for v1 (designed to grow into a detailed teaching breakdown
-later); song names are **freeform with a suggested Noteling portmanteau** prefilled.
-
-### When the dialog appears (the "before the Muse draft" beat)
-
-A **Save Song?** dialog is offered **once per gig, right when that gig's loop is about to be lost** — the
-natural capture point the dev identified:
-
-- **Non-final gig win (gig 1→2, 2→3):** the dialog pops in `winGig()` **before `offerDraft()`** — i.e.
-  *before the Muse draft*, exactly as requested. The just-finished loop is still grooving behind it (the
-  loop already survives into the draft). **Save** or **Skip** → then proceed to the Muse draft.
-- **Final gig win / losing gig (terminal states):** there's no Muse draft after these, so the save option
-  lives as a **"💾 Save this song"** button on the **end overlay** (win *or* lose), alongside the existing
-  "▶ Hear your set" toggle. The terminal gig's loop keeps grooving there, so it's saveable too.
-
-Net: **every gig's loop is saveable exactly once**, at the moment it finishes. Empty/near-empty loops
-(0 filled bars) skip the offer. Saving is always optional and never blocks progression.
+The save is offered **once, at run's end** — a **💾 Save this song** button on the end overlay (disabled to
+**✓ Saved** once done). The finished loop keeps grooving behind it, and an empty loop (0 filled bars) skips
+the offer. Saving is always optional and never blocks progression.
 
 ### The dialog contents
 
@@ -2668,10 +2306,10 @@ Net: **every gig's loop is saveable exactly once**, at the moment it finishes. E
 
 ### The report card (brief v1 → detailed later)
 
-A short, plain-language **"why this sounds good"** panel, computed from the loop's filled bars
-(`run.loop.bars` = `{cards, cls}[]`) and the gig key. **v1 (brief) shows ~4–5 lines + a rating:**
+A short, plain-language **"why this sounds good"** panel, computed from the loop's timeline events and the
+run's key. **v1 (brief) shows ~4–5 lines + a rating:**
 
-- **Key** — e.g. "C major" (the gig's key).
+- **Key** — e.g. "C major" (the run's key).
 - **In-key %** — share of notes across all filled bars that are in the key.
 - **Consonance grade** — a letter (A–F) from the share of consonant structures played (reuse
   `CONSONANT_IV` / each bar's `cls`).
@@ -2682,7 +2320,7 @@ A short, plain-language **"why this sounds good"** panel, computed from the loop
 - **Overall rating** — ★☆ (or a letter grade) derived from in-key % + consonance + presence of a
   resolution. This is the "did I make something good" gut read.
 
-**Design for growth:** compute all stats in **one `songReport(bars, key)` function** and have v1 render a
+**Design for growth:** compute all stats in **one `songReport(events, key)` function** and have v1 render a
 subset. The **deferred detailed breakdown** (the dev's "maybe down the road") is the *same* function's full
 output — per-structure explanations, cadence/voice-leading callouts, tritone flags, note-frequency
 histogram, "why it's in/out of key" — shown in a longer view. No re-architecture to upgrade.
@@ -2703,10 +2341,9 @@ default to `[]` on load, no key bump needed). Each saved song stores only what *
 (not full card objects):
 
 ```
-{ id, name, date, key:{root,mode,name}, tempo:curBarSec(),  // bar-seconds it was played at (60/BPM)
-  bars:[ { notes:[{pc,letter,instId,midi}], cls:{type,name} }, … ],  // the loop, minimally serialized
-  report:{…},        // cached report-card stats (or recompute on open)
-  gigThreshold, applause,   // flavor stats
+{ id, name, date, keyName, key, tempo:curBarSec(),  // bar-seconds it was played at (60/BPM)
+  events:[ { notes:[{pc,letter,instId,midi}], dur, dyn } | { rest:true, dur } | { drum, at } , … ],
+  totalTicks, report:{…},   // cached report-card stats (or recompute on open)
   starred:false }
 ```
 
@@ -2734,7 +2371,7 @@ This **shares its encoder with the eventual Daily-Set seed export**, so building
 
 - **★ Favorite / pin** — v1 (also protects from prune).
 - **Mood tag** (major/minor/diminished lean) auto-derived — v1 (part of the report).
-- **Gig applause + rating** shown as stats on the card — v1.
+- **Applause + rating** shown as stats on the card — v1.
 - **Mini pitch-grid thumbnail** in the gallery — **future, not built** (specced below under *Future: mini
   pitch-grid thumbnail*).
 - **Detailed theory breakdown** (the report card's full form) — deferred, the "down the road" upgrade.
@@ -2744,32 +2381,25 @@ This **shares its encoder with the eventual Daily-Set seed export**, so building
 
 ### As built (code map)
 
-- **Trigger (Phase 4 — whole-run):** the save is offered **once, at run's end** — the **end overlay**
-  (`renderEndOverlay`) shows a **💾 Save this song** button on the final win *or* any loss (retScreen
-  `"win"`/`"lose"`), disabled to **✓ Saved** once done (tracked by the single boolean `run.saved`).
-  `offerSave(retScreen)` snapshots the **whole** `run.loop.bars`. `screen==="save"` renders the gig board
-  behind + `renderSaveOverlay()`. *(The pre-Phase-4 per-gig `offerSave(gigIdx,"draft")` before the Muse
-  draft is removed — the loop no longer resets between gigs.)*
-- **Snapshot/model:** `snapshotBars()` stores per filled bar `{cards:[{pc,letter,instId,midi}], cls, dyn,
-  durs, arp}` (`durs` replaced the old `fig` in Stage 2A); `saveSong(bars,name)` pushes
-  `{id,name,date,keyName,key,tempo,bars,stars,starred}` onto
-  `persist.setlist` (`localStorage["mujicians-save-v2"]`, additive) and `pruneSetlist()` caps at
-  `SETLIST_CAP=30` (★-pinned never pruned). ⚠️ **Post gig-removal:** a save now stores
-  `keyName: RUN_KEY.keyName` (`"C major"`) and `key: RUN_KEY.key.slice()` — the run's **single** key
-  (Setlist replay is key-agnostic, sound is from MIDI). *(The old `"C→G→F"`/`modKeyName()`/`GIGS[0].key` are
-  gone — see **Removing gigs**.)* `snapshotBars()` also stores per-bar `durs` (see Stage 2A).
-- **Report card:** `songReport(bars,key)` computes `{inKeyPct, structs, consGrade, consRatio, cadence,
-  tritone, topLetter, stars}`. `key` is either a **pc-array** (single-key songs / imports) or a
-  **function `barIndex→pc-array`** (the whole-run save passes `sectionKey`, so in-key% and cadences are
-  judged **per section against that gig's key**). `reportCardHTML()` renders the **brief** subset; the
-  detailed breakdown = same stats, longer view (deferred).
-- **Naming:** `suggestName(bars)` blends the `NOTELING` names of the top-used notes (C+E+G → "Chiegoat").
-- **Playback:** the scheduler is generalized via `playSrc={bars,n}` — `startLoop()` grooves the live gig
-  loop; `startLoop({bars,n})` grooves a saved song (`toggleSongPlay` in the Setlist, `galleryPlayId`).
+- **Trigger:** the save is offered **once, at run's end** — the **end overlay** (`renderEndOverlay`) shows a
+  **💾 Save this song** button, disabled to **✓ Saved** once done (tracked by `run.saved`). `offerSave(retScreen)`
+  snapshots the **whole** timeline; `screen==="save"` renders the play board behind + `renderSaveOverlay()`.
+- **Snapshot/model:** `snapshotEvents(events)` captures the timeline; `saveSong(events, name)` pushes
+  `{id, name, date, keyName:RUN_KEY.keyName, key:RUN_KEY.key.slice(), tempo, events, totalTicks, …}` onto
+  `persist.setlist` (`localStorage["mujicians-save-v2"]`, additive), and `pruneSetlist()` caps at
+  `SETLIST_CAP=30` (★-pinned never pruned). The run's **single key** is stored for report/display; Setlist
+  replay is key-agnostic (sound is from MIDI). `totalTicks` is rounded up to the last bar so replays loop
+  tightly around the actual song.
+- **Report card:** `songReport(events, key)` computes `{inKeyPct, structs, consGrade, consRatio, cadence,
+  tritone, topLetter, stars}` over the events against the single-key pc-array. `reportCardHTML()` renders the
+  **brief** subset; the detailed breakdown = same stats, longer view (deferred).
+- **Naming:** `suggestName(events)` blends the `NOTELING` names of the top-used notes (C+E+G → "Chiegoat").
+- **Playback:** the scheduler is generalized so `startLoop()` grooves the live loop and a saved song alike
+  (`toggleSongPlay` in the Setlist, `galleryPlayId`).
 - **Setlist gallery:** `setlistHTML()`/`wireSetlist()` on Home — ▶ play · ★ favorite · ✎ rename · ⧉ export
   · 🗑 delete, plus a **paste-code Import** row.
-- **Share code:** `encodeSong()`/`decodeSong()` → `MJ1:` + base64 JSON (bars as `[pc,instId,midi]`, cls
-  recomputed via `classify` on import). Shares its encoder with the eventual Daily-Set export.
+- **Share code:** `encodeSong()`/`decodeSong()` → **`MJ2:`** + base64 (timeline events; legacy `MJ1:`/`bars[]`
+  codes still decode via `eventsFromBars`). Shares its encoder with the eventual Daily-Set export.
 
 ### Future: mini pitch-grid thumbnail (**not built**)
 
@@ -2806,7 +2436,6 @@ tap-to-play on touch; and whether to also show it on the **Save modal** and the 
 ### Open items for this feature
 
 - Exact **rating formula** and consonance-grade thresholds (tune in play).
-- Whether a **losing** gig's loop is worth offering to save (leaning yes — it still played).
 - Portmanteau blend rules when notes tie / a two-note loop reads awkwardly (fallback: key + mood name).
 - Prune cap number and whether the gallery paginates.
 
@@ -3173,11 +2802,10 @@ alignment the audio already provides):
   "accidentals are in-between color shades" (♯ = warmer shade toward the next letter, ♭ = cooler),
   giving two reinforcing channels. (Accidentals aren't in the deck yet — this waits on the Accidental
   cards.)
-- **Instrument (suit) → ~~breed / material~~ — ⚠️ SUPERSEDED (2026-07-18).** Timbre is no longer shown as
-  a creature breed/material. It moved to a **collectible translucent card skin (edition)** — see
-  **[Timbre as collectible card skins](#timbre-as-collectible-card-skins--editions-not-creature-breeds-planned)**.
+- **Instrument (suit) → a collectible card skin, not a creature breed.** Timbre lives on a **collectible
+  translucent card skin (edition)** — see **[Timbre as collectible card skins](#timbre-as-collectible-card-skins--editions-not-creature-breeds-look-only-slice-built-2026-07-20)**.
   The Noteling stays defined by letter/color/morphology/size/fusion; the card's small instrument emoji
-  (🎹/🎸/🎻) may remain as a marker, but the *variation you collect* now lives on the **card skin**, not a
+  (🎹/🎸/🎻) may remain as a marker, but the *variation you collect* lives on the **card skin**, not a
   7×3 creature-breed matrix.
 - **Register (octave) → flight, not size.** *(Corrected 2026-07-18 — this channel used to say "octave →
   size," which collided with dynamics; size now belongs to loudness, below.)* High register = **airborne**
@@ -3254,69 +2882,25 @@ Codex in code or is a new view; and the deferred full retro-pixel reskin.
 
 ## Progression — the seven-movement campaign (**Phases 0–2 + Phase 3 Stage 1 + Phase 4 core built; Rhythm depth remains**)
 
-> **Phase 4 core is now built** (see the Phase 4 build-order bullet for the code map): the loop
-> **accumulates across the whole run into one modulating C→G→F song** (allocated in `startRun`, sectioned
-> per gig, scrollable grid with a per-section key strip), **M7 form scoring is real** (phrase-fingerprint
-> restatement + an A·B·A return bonus over the accumulated bars), the **M7 gate is real** (`hasABA` —
-> compose an A·B·A), and **Save-a-Song is a whole-run capture** at run's end. Deferred: boss-gig capstones,
-> mentor prose, and the rest of the Rhythm subsystem (Phase 3 later stages).
-
-> **Status: designed, and Phases 0 (scaffold) + 1 (Movement 1 + gate/advancement engine) + 2 (the whole
-> M2→M7 arc walkable, thin) + Phase 3 Stage 2A (M2 per-note durations) are built** in `mujicians.html`.
-> **⚠️ The rhythm/melody layer is being reworked** into a continuous timeline with consistent stacking (see
-> that section) — that supersedes the Phase-3 detail here. Still planned beyond it: draftable rhythm content
-> and syncopation scoring. A long-arc progression
-> system proposed by the dev, grounded in the *Mujicians* graphic-novel structure. It **layers on top of**
-> (doesn't revert) the current full-feature run — today's game is preserved as the "everything unlocked"
-> **Free Play** mode (see below). Numbers, gate counts, and scoring terms are placeholders.
+> **Status: Phases 0–2 + Phase 3 Stage 1 + Phase 4 core built** in `mujicians.html`. A `MOVEMENTS` registry
+> (7 movements, each with `maxSelect`, a scoring-term set, and a campaign `thr`) plus `persist.progress =
+> {movement, gates}` drive a **Campaign vs Free Play** mode select (Free Play = movement 7, all terms on);
+> `maxSelect()`/`termOn()`/`instrumentsFor()` gate the select cap, scoring terms, and deck instruments (piano
+> only until M6) by the run's movement, all under the global daily cap. It **layers on top of** the
+> full-feature game (preserved as Free Play — *nothing reverted*). Numbers/gate counts are placeholders.
 >
-> **Built (Phase 2 — the middle movements, thin):** every declared scoring term is now wired into `score()`
-> — **groove** (M2, a flat "kept the beat" +1 placeholder until Phase 3's sub-bar timing), **dynamic**
-> (M3, a contrast bonus for varying loudness across the loop), **melodic** (M4, +1 interval / +2 run for
-> stepwise motion), **timbre** (M6, +1 mult per extra distinct instrument voice), **form** (M7, a thin
-> restatement bonus — repeating a structure already in the loop — placeholder until cross-gig accumulation).
-> **M3 Dynamics is done properly:** a per-hand **p / mf / f** segmented control (`dynControlHTML`, shown
-> whenever the `dynamic` term is live) sets the loudness of the next hand; it drives note **gain** via a
-> velocity multiplier on `_tone`/`soundCards`/`scheduleBar` (each loop bar remembers its `dyn`, so playback
-> and saved songs reproduce it), and varying it earns the contrast bonus. **M4 melody plays as a sequence:**
-> `handIsSequenced()` arpeggiates a hand when the movement is melodic-but-not-yet-harmonic (so M4 = notes in
-> a row; M5+ = stacked chords). **M6 unlocks guitar+bass** (already via `instrumentsFor`, `INSTRUMENT_UNLOCK_MV=6`).
-> **Thin real per-mechanic gates** replace the old "clear the Set" placeholders for M3–M6: M3 = play soft +
-> medium + loud; M4 = log `GATE_INTERVALS` intervals + a scale run; M5 = log `GATE_TRIADS` consonant triads
-> + a tonic cadence; M6 = play `GATE_BLENDS` multi-instrument blends. M2 stays a "keep the beat, play
-> `GATE_HANDS` hands" count (real groove gate waits on Phase 3), and M7 stays "clear the Set" (form scoring
-> waits on Phase 4's cross-gig loop). All gate trackers live on `run` and feed `gateStatus(mv)`. Flat
-> campaign thresholds and the Free-Play `GIGS` thresholds were **retuned** as terms switched on (tunable).
->
-> **Built (Phase 0 scaffold):** a `MOVEMENTS` registry (7 movements, each with `maxSelect`, campaign
-> threshold `thr`, and active scoring `terms`); `persist.progress = {movement, gates}` (additive to
-> `mujicians-save-v2`, default `{movement:1}`); `startRun(mode)` sets `run.movement` from the mode
-> (`"campaign"` → the reached movement, `"free"` → 7); `maxSelect()`/`termOn()` gate the select cap and
-> `score()`'s terms; a **Home mode select** (Campaign · Movement N vs Free Play, both under the daily cap);
-> an in-gig HUD badge. *(As of Phase 2 every term is now wired; at Phase 0 only `'inkey'`/`'consonant'`/
-> `'resolves'` were.)* Free Play (movement 7) = all terms on — it's the campaign's end state, so as Phase 2
-> added terms it grew past the M1-era formula (no longer "byte-for-byte" the pre-progression game, by design:
-> "score grows, never rewrites").
->
-> **Built (Phase 1 — Movement 1 + the gate engine):**
-> - **Deck restriction by movement** — `buildDeck(mv)` uses `instrumentsFor(mv)`: **piano only until M6**
->   (Timbre), all three at M6+. `loopRowMidis()` now derives rows from the run's actual deck, so a
->   restricted movement doesn't render empty bass/guitar rows. (Instruments already existed; the campaign
->   *gates* them rather than adding new ones.)
-> - **Campaign thresholds** — `gigThreshold()` returns the movement's flat `thr` (M1–M3 = 40, M4 = 220,
->   M5 = 520, M6 = 620) so each chapter is winnable with that movement's toolset; Free Play / M7 keep the
->   escalating `GIGS` thresholds (650/1150/1800). Wired into the win-check, progress bar, and scoreline.
-> - **The gate/advancement engine** — `gateStatus(mv)` returns the Codex-style objective. **M1 is the real
->   one: play every in-key letter (all 7 note names)** — and this progress **persists across runs**
->   (`persist.progress.gates.pitch`, an additive letter list; `collectPitchLetter` in `playHand`, read by
->   `pitchLettersGot`), so a fresh run keeps prior letters instead of resetting to 0/7. It's surfaced as a
->   **hangman row** (`pitchTrackerHTML`) — seven underscore slots in ROYGBIV order that reveal their colored
->   letter once played in-key — shown in the in-gig HUD, on the end overlay, and on Home under the Campaign
->   button. M2–M6 are **placeholder gates** ("clear the Set") until their mechanics land. `maybeAdvance()`
->   (called from the final `winGig` and from `loseRun` — the gate can be met on a loss too) bumps
->   `persist.progress.movement` when the frontier movement's gate is met. The in-gig HUD shows live gate
->   progress; the **end overlay** shows a "🎓 Movement complete — unlocked M_n_" banner, or the gate still
->   needed. "New Run" restarts in the same mode.
+> **The whole M1→M7 arc is walkable.** Each movement turns on one scoring term (in-key → groove → dynamics →
+> melody → harmony → timbre → form — scoring *grows*, never rewrites) and one mechanic, and has a real
+> per-mechanic advancement gate (`gateStatus(mv)`/`maybeAdvance`, persisted in `persist.progress.movement`):
+> M1 = play all 7 in-key letters (a **hangman row**, `pitchTrackerHTML`); M3 = soft/med/loud; M4 = intervals +
+> a scale run; M5 = consonant triads + a cadence; M6 = multi-instrument blends; M7 = compose an **A·B·A**
+> (`hasABA`, real as of Phase 4). The end overlay shows a "🎓 Movement complete — unlocked M_n_" banner.
+> **Phase 4 core:** the loop accumulates into one **single-key** song, M7 form scoring rewards
+> phrase-fingerprint restatement + an A·B·A return, and Save-a-Song is a whole-run capture. **M2 Rhythm** is
+> now the [live finger-drumming ladder](#rhythm--live-finger-drumming-decided-2026-07-20-not-built); the older
+> thin-slice groove/dynamics/sequence detail was superseded by the [continuous-timeline model](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-model-stage-1-built-2026-07-18)
+> and the [Break mechanic](#note-value--rest-notation--the-break-mechanic-front-of-the-ladder). Still deferred:
+> boss capstones, mentor prose, and the rest of the Rhythm subsystem.
 
 ### The core idea (why this exists)
 
@@ -3368,7 +2952,7 @@ Graduating movement 7 unlocks **Free Play** (all terms on = today's game, still 
 - **M1 Pitch:** `handSize` small, **`MAX_SELECT = 1`**. You play one note; it lands on the bar's downbeat.
   Score is legible: `chips × (in-key ? 2 : 1)`. A beginner grasps it instantly.
   **Accidentals belong here (planned, not built) — now fully designed: see [Accidentals — the sharps &
-  flats runs + the ♮ boss](#accidentals--the-sharps--flats-runs--the--boss-planned).** The dev's call:
+  flats runs + the ♮ boss](#accidentals--the-sharps--flats-runs--the--boss-sharpsflats-built-2026-07-19-boss-deferred).** The dev's call:
   **introduce accidentals (♯/♭ — the 5 chromatic notes) within the Pitch movement**, after the 7 naturals
   are learned — Pitch's own internal "levels" (naturals → **Sharps run → Flats run → ♮ boss**). It's the
   musically correct home (accidentals *are* pitch), and it feeds the already-designed hooks: the ROYGBIV
@@ -3382,8 +2966,7 @@ Graduating movement 7 unlocks **Free Play** (all terms on = today's game, still 
   M2's timing). `classify`'s interval + scale-run detection switches on. **Key change / modulation is
   introduced here (planned, not built)** — with gigs gone, a run is single-key, and **Melody is the home
   for teaching modulation**: a player-performed mid-song key-change (moving the melodic line to a new key,
-  scored on smooth/circle-of-fifths pivots). It's deliberately taught, not an always-on run feature — see
-  the **Removing gigs** section, fork 2.
+  scored on smooth/circle-of-fifths pivots). It's deliberately taught, not an always-on run feature.
 - **M5 Harmony:** **`MAX_SELECT = 5`**, cards can be stacked **simultaneously**; triad/7th/consonance/
   cadence scoring switches on (today's behavior).
 - **M6–M7:** more instruments and form scoring, no further select growth.
@@ -3474,179 +3057,34 @@ matches the doc's vertical-slice philosophy. Each phase is a shippable unit.
   today's exact game). Global daily cap covers both; the "New Run" button keeps the finished run's mode.
   *Net: today's game reachable via Free Play; Campaign runs at the reached movement (default M1). Pure
   plumbing, nothing reverted.* Movement content (M1 restrictions, gate advancement) is Phase 1+.
-- **Phase 1 — Movement 1 (Pitch) + the gate engine. ✅ BUILT.** `maxSelect:1` (from Phase 0); single-note
-  in-key scoring; **starting deck restricted to piano** (`instrumentsFor`, guitar/bass held for M6);
-  movement-scaled flat campaign thresholds (`gigThreshold()`, M1 = 40 so it's winnable); the reusable
-  **gate/advancement engine** (`gateStatus`/`maybeAdvance`) — M1's real gate is "play all 7 in-key letters"
-  (**persisted across runs** in `persist.progress.gates.pitch`, shown as a hangman row via `pitchTrackerHTML`),
-  M2–M6 are placeholder "clear the Set" gates. HUD gate progress + end-overlay "Movement complete" banner.
-- **Phase 2 — Thin-slice the middle movements (walk the whole arc). ✅ BUILT.** M2→M7 now *walkable*:
-  **M2 Rhythm** placeholder (downbeat only, groove = flat "kept the beat" +1); **M3 Dynamics** done properly
-  (per-hand **p/mf/f** control → note gain via a velocity multiplier + a dynamic-contrast bonus for varying
-  it across the loop; each bar remembers its `dyn` so playback/saved songs reproduce it); **M4 Melody**
-  (`maxSelect→3`, hands **arpeggiate as a sequence** via `handIsSequenced`, interval/run melodic scoring on);
-  **M5 Harmony** (`maxSelect→5`, existing consonance/cadence/flush stack); **M6 Timbre** (guitar+bass unlock
-  via `instrumentsFor`, +1 mult per extra voice blend); **M7 Structure** thin restatement form bonus.
-  **Thin real per-mechanic gates** for M3–M6 (M2 = hand-count, M7 = clear-the-Set) forcing each mechanic.
-  Flat campaign + Free-Play thresholds retuned. ⚠️ Real M7 form still depends on the unbuilt "accumulate one
-  loop across all 3 gigs" (Phase 4); the real groove gate/scoring depends on Phase 3's sub-bar timing —
-  both shipped as flagged placeholders. *Net: full 7-chapter campaign playable end-to-end.*
-  **Future (dev):** dynamics should eventually gain explicit **symbols** (crescendo/decrescendo, accents)
-  as their own figure-like picks — for now it's the simple per-hand p/mf/f marking.
-- **Phase 3 — Rhythm (M2). ✅ built as Stage 2A; ⚠️ NOW BEING REWORKED — see the [continuous-timeline
-  rework](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-rework-decided-2026-07-18-not-built), which is the source of truth for all rhythm/melody work.** *In the current shipped
-  game:* a `BEATS`=4 sub-bar grid where each selected note carries a duration (♩/𝅗𝅥/𝅝 picker → `run.noteDur`),
-  a melodic hand plays its notes back-to-back in pick order (`handIsSequenced`), a stacked chord rings the
-  bar; groove scoring + the M2 "play each note value" gate. **The Stage-2A/2B/2C detail below is SUPERSEDED
-  historical** (the rework replaces one-play-per-bar with a timeline, `handIsSequenced` with always-stack,
-  per-card durations with per-play, and adds ticks/rests) — kept only as context; git holds the rest.
-  - **As built (Stage 2A)** — *⚠️ SUPERSEDED historical (see the rework section); describes the current
-    shipped code, which the rework replaces.* — the `FIGURES` picker is replaced by a **`DURATIONS` palette** (quarter `♩` 1
-    beat · half `𝅗𝅥` 2 · whole `𝅝` 4, each `{id,label,slots}`) on the `BEATS`=4 grid. **Each selected note
-    carries its own duration** in `run.noteDur[cardId]` (keyed by the stable card id so it survives Sort;
-    default quarter, `noteDurOf`). A **melodic hand plays its notes in PICK ORDER, back-to-back, each for
-    its duration** (leftover bar = a rest); a harmony stack rings the bar. `handIsSequenced(cls,n)` decides
-    which: runs + rhythm-on single/melodic hands sequence; an M5+ multi-note consonant stack rings. **The
-    ascending sort is gone** — `scheduleVoices(cards,{arp,vel,durs,bs,when})` lays sequenced notes at
-    cumulative onsets from `durs` (clip/rest at the bar edge, no dropping) and drives both the live preview
-    (`soundCards`) and the loop scheduler (`scheduleBar`). Bars store **`durs`** (parallel to `cards`);
-    `snapshotBars`/playback read it; the `MJ1:` code omits it → default quarter (sequenced) / ring (stacked),
-    and legacy `fig` bars fall back to quarters. The loop grid's **`barHits`→`{on,held}`** lights each note's
-    attack (full color) and its **held beats** (`.held`, dimmer) so **note length is visible**; the write
-    ghost previews the selection's rhythm (`hitsFor`, `.ghost`/`.gheld`). The picker is a **`seqControlHTML`
-    sequence editor** — the picked cards left-to-right in play order, each with `♩/𝅗𝅥/𝅝` `durbtn`s (so the
-    order is visible and editable). **Groove scoring:** `groove +1` for keeping the beat + `rhythmic variety
-    +1` for ≥2 distinct durations in a melodic hand (tunable). **The M2 gate:** *play each note value*
-    (`gateDurs` Set vs `DURATIONS.length`), mirroring M3's "play soft/medium/loud".
-  - **Stage 2A design notes (as-built rationale below).**
-    - **Why the pivot.** The figure model has two knobs that don't compose: a **figure** picks *which beats
-      fire*, then a melody's notes are **spread one-per-onset, sorted ascending** (`scheduleVoices` sorts
-      `[...cards].sort((a,b)=>a.midi-b.midi)`). So any multi-note melody (M4) **always climbs and is evenly
-      spaced** regardless of what you picked — rhythm and melody fight. Playtest verdict: make rhythm
-      **granular** (choose each note's value: eighth/quarter/half/whole) instead of a whole-hand pattern.
-    - **Decided (this pass):** **per-card durations**, notes play **in selection order** (monophonic v1 — a
-      melodic hand is a single line; a chord is its own stacked hand at M5+). **Chords *inside* a melody**
-      (two notes on one beat) are **deferred** — they need a grouping gesture. Good news: selection order is
-      **already preserved** (`run.sel` is an insertion-ordered `Set`; `selectedCards()` returns pick order),
-      so the only reason melodies climb is that one `.sort()` — cheap to fix.
-    - **Model.** A hand = a list of events `(pitch, duration)`. **Sequenced hand** (M4 / any run): events lay
-      **back-to-back from beat 1 in pick order**, each lasting its duration; leftover bar = a **rest**. The
-      durations *are* the rhythm. **Stacked hand** (M5+ harmony): one simultaneous chord, rings the bar
-      (per-note durations ignored; sequencing off, as today). ⚠️ **This "rings the bar" behavior is now
-      flagged for change — see Known issue #1:** a chord should honor a picked value (a shared chord
-      duration) instead of always sounding whole. **Single note** (M1–M3): one event + duration +
-      rest — which finally makes **M2 the note-values lesson** the design calls for.
-    - **Duration palette (v1):** **quarter (1 beat) · half (2) · whole (4)** on the existing `BEATS`=4 grid
-      (integer beats → columns stay legible). **Eighths (½ beat) are a fast-follow** needing a grid-resolution
-      bump to `BEATS`=8 (the scheduler is already float-ready via `slot = bs/BEATS`); dotted/tied notes later.
-    - **Code changes.** Store per-card duration index-free in **`run.noteDur[cardId] → durId`** (survives the
-      Sort button, since `card.id` is stable). `scheduleVoices`: **drop the ascending sort** for sequenced
-      hands; compute **cumulative onsets from durations** (clip/rest at the bar edge). Replace `figControlHTML`
-      with a **per-note sequence editor** (`seqControlHTML` — the picked cards left-to-right in order, each
-      with a ♩/𝅗𝅥/𝅝 duration control; shown when the hand is sequenced / at M2–M3), so the **order is visible
-      and editable**. The loop grid lights each note at its start beat and **spans its duration** (a `.held`
-      continuation cell = visible note length). Bars store **`durs`** (parallel to `cards`) instead of `fig`;
-      `snapshotBars`/`scheduleBar` read it; the `MJ1:` code omits it → default quarter (sequenced) / whole
-      (stacked); legacy `fig` bars fall back to whole. **Groove scoring:** `groove +1` on-beat + a
-      **rhythmic-interest +1** for ≥2 distinct durations (tunable). **M2 gate** → *play each note value*
-      (`gateDurs` Set vs the palette), mirroring M3's soft/medium/loud (retires `gateFigs`/`FIGURES`).
-    - **Staging.** **A (core):** quarter/half/whole per-note durations — in the current shipped code. **B/C
-      (subdivision, rest cards) were prototyped then REVERTED 2026-07-18** and are folded into the
-      continuous-timeline rework instead (ticks, one rest card played alone). See that section.
-
-  - **Stage 2B — subdivision-agnostic timing (⚠️ REVERTED 2026-07-18 — folded into the rework as integer
-    ticks `TPB=24`; this beats/`SUBDIV` version is superseded, kept as context).** The old model conflated "beats per
-    bar" with "grid columns" in one `BEATS`=4 constant and stored durations as integer **slots**, so
-    anything finer than a quarter was impossible. Rebuilt so **eighths now and sixteenths later** just work:
-    - **Durations are stored in BEATS (float).** A shared `VALUES` table gives each note/rest value a `beats`
-      length: whole 4 · half 2 · quarter 1 · **eighth 0.5** (· sixteenth 0.25 — commented out, ready). This
-      is **save-compatible**: legacy bars stored `durs` in slots where quarter=1=1 beat, so old values (1/2/4)
-      are already beats.
-    - **Two constants replace `BEATS`:** `BEATS_PER_BAR = 4` (musical beats/bar, drives the scheduler clip)
-      and **`SUBDIV`** (grid sub-columns **per beat**; **`1` now** = quarter resolution, since the picker only
-      offers quarter/half/whole; set `2` for eighths, `4` for sixteenths), with `COLS = BEATS_PER_BAR *
-      SUBDIV` sub-columns per bar. The scheduler uses `secPerBeat = bs / BEATS_PER_BAR` and places each event
-      at `when + t*secPerBeat` (t in beats); the grid maps a beat-offset to a column via `round(t * SUBDIV)`,
-      and a note spans `round(beats * SUBDIV)` columns.
-    - **To add eighths/sixteenths later:** add the value to `DURATIONS` (the `e`/`s` `VALUES` rows are ready)
-      and set `SUBDIV` to 2/4. No scheduler change. The picker drives note cards **and** the rest card, so
-      both gain the new value together. (The M2 gate reads `DURATIONS.length`.)
-
-  - **Stage 2C — a rest is a CARD (⚠️ REVERTED 2026-07-18 — the rest-as-card concept lives on in the rework
-    (one card, played alone, per-play duration); this build is superseded, kept as context).** Silence is a **real card you draw and
-    play**, not a palette gadget — because rests will eventually become **Sleeping Notelings** (collectible
-    creatures), so they must flow through the deck/hand/animation pipeline like any card. *(An earlier
-    palette-token build, and a four-fixed-cards build, were both reverted at the dev's direction.)*
-    - **One rest card, adjustable duration.** A single `{rest:true}` card whose length you set with the
-      **same ♩/𝅗𝅥/𝅝 picker as a note card** — rendered with rest glyphs (𝄽/𝄼/𝄻) — stored in the shared
-      `run.noteDur[cardId]`. `buildDeck` adds `REST_COPIES` (3) **once rhythm is taught** (any movement whose
-      terms include `groove` → **M2→M7 + Free Play**; M1 Pitch has none). Rendered as a dashed, muted card
-      showing its current value's rest glyph + a **💤** (foreshadowing the Sleeping Noteling); `cardHTML`
-      special-cases `c.rest`. Adding eighth/sixteenth to the picker (Stage 2B) gives the rest card those
-      values automatically.
-    - **The core rhythm rule (as the dev intended):** a sequenced hand plays its cards **in selection
-      (play) order, back-to-back — each note lasts its own duration and the next event starts immediately,
-      UNLESS a rest card is placed, which inserts silence of its value.** So you build a line note-by-note
-      and drop a rest card wherever you want a gap.
-    - **Model — note-only bars + a timing `seq`.** The selection can mix notes and rest cards.
-      `splitSeq(sel)` derives `{ notes (pitched cards only), seq }` where `seq` is the ordered timing list
-      (`{d:beats}` per note, `{r:beats}` per rest). A played **bar stores `cards` = notes only** (so every
-      note-consumer — `classify`/`score`/`songReport`/`suggestName`/`pcSetFp`/`hasABA` — is untouched) **plus
-      `seq`** for timing. `seqEvents(notes, seq)` resolves the two into the event list the scheduler and grid
-      share; `barSeq(bar)` falls back for legacy `durs` bars. `scheduleVoices`/`hitsFor` walk events and a
-      **rest just advances the play-head, emitting no `_tone` and lighting no cell** (a visible gap). Stored
-      in Setlist saves via `snapshotBars` (the `MJ1:` share code stays note-only — rests survive only in the
-      full save).
-    - **Selection & scoring.** Rest cards **don't count against the per-movement note cap** (`toggleSel` only
-      counts pitched cards; M1-style single-select swaps the note but keeps rests) and don't audition a
-      pitch. A hand needs **≥1 note** to Play (a pure-silence bar is disallowed for now); Discard works on a
-      rest-only selection. A placed rest earns the **`rhythmic variety +1`** groove bonus and is never
-      penalized. `classify` filters rests (empty → a `rest` type with a `STRUCT.rest` 0-chip base).
-    - **Deferred:** the rest card as a **Sleeping Noteling** skin (art layer, ties to the Notelings +
-      "collectible card skins" plans); **eighth/sixteenth** values (add to the picker + raise `SUBDIV`);
-      pure-silence bars; special rests (fermata/grand-pause) as shop `restCards`.
-
-  - **Multi-bar spanning (⚠️ SUBSUMED by the rework — a continuous timeline makes long values cross barlines
-    for free; no separate spanning mechanism needed).** *(Original spec kept as context.)* Decouple "one play = one bar" so a phrase (long
-    values + rests) isn't clipped at the `BEATS_PER_BAR` edge — the decided fix for **Known issue #5** and the
-    partner to rest cards. **Model:** a sequenced hand's events total `Σ beats`, occupying **`span = max(1,
-    ceil(total / BEATS_PER_BAR))` consecutive loop bars** from the write head. **Storage (keep the hand
-    whole):** the head bar stores the full hand + a `span`; the following `span-1` bars are `{cont:true}`
-    continuation placeholders the scheduler skips and the grid draws as a spanned continuation (a note
-    sustaining across a barline is one `_tone` longer than `srcBarSec()` — ties fall out free). **Budget:**
-    `playHand` advances `writePos` by `span` and consumes `span` bars of stage space (so `LOOP_BARS===PLAYS`
-    stops holding; the "notes left" meter becomes bars-of-stage), with a UI guard that **caps a phrase to the
-    remaining loop** (disable Play / clip when it won't fit). With spanning the implicit auto-tail-rest fully
-    dies: a hand occupies exactly its events' span.
-  - **Deferred to later stages (unchanged otherwise):** draftable/unlockable rhythm content (a Codex
-    sub-set), and syncopation & cross-loop-consistency scoring.
-- **Phase 4 — Structure payoff & polish. ✅ CORE BUILT** (⚠️ **partly superseded 2026-07-17 — gigs
-  removed**). Cross-gig loop accumulation + real M7 form scoring + a real M7 gate. **The M7 form scoring &
-  gate (`pcSetFp`/`hasABA`) survive unchanged** (they read the flat `run.loop.bars`), but the **cross-gig /
-  sectioned / C→G→F-modulating** framing below is gone — the loop is now one flat single-key loop of
-  `LOOP_BARS = PLAYS`. Boss capstones and mentor/chapter prose stay **deferred**. See **Removing gigs — a
-  run becomes one performance (BUILT)**; the sectioned description below is kept for history.
-  - **As built (gig-era, superseded):** the loop is **one song per run**, allocated once in `startRun` (`run.loop`, sized
-    `LOOP_BARS = SECTION_BARS × GIGS.length` = 18) and **never reset per gig**. `startGig` snaps the write
-    head to `run.gigIdx × SECTION_BARS` so each gig fills its own `SECTION_BARS`-bar **section in that
-    gig's key** — the song **modulates C→G→F**. `playHand`'s write head and click-to-aim are **confined to
-    the current gig's section** (past sections lock). The live loop cycles only the **song so far**
-    (`loopLenNow()` = unlocked sections; `gigSrc().n`), so early gigs don't groove through empty future
-    bars; the last gig plays the full 18-bar song. The **loop grid** renders `loopLenNow()` bars, is now
-    **horizontally scrollable** with a **sticky pitch-label column**, fixed-width sub-columns, **section
-    dividers** (`.secstart`) + a **per-section key strip** (`.lsecbar` — ① C · ② G · ③ F, active lit),
-    and dims **locked** (non-current-section) cells; row-greying keys off the **current section's** key.
+- **Phase 1 — Movement 1 (Pitch) + the gate engine. ✅ BUILT.** `maxSelect:1`; single-note in-key scoring;
+  **starting deck restricted to piano** (`instrumentsFor`, guitar/bass held for M6); the reusable
+  **gate/advancement engine** (`gateStatus`/`maybeAdvance`) — M1's gate is "play all 7 in-key letters this
+  run," a hangman row (`pitchTrackerHTML`). HUD gate progress + end-overlay "Movement complete" banner.
+- **Phase 2 — Thin-slice the middle movements (walk the whole arc). ✅ BUILT.** M2→M7 made *walkable* end to
+  end: every movement's scoring term is wired into `score()` (groove / dynamic / melodic / timbre / form) with
+  a real per-mechanic gate for M3–M6 — **M3 Dynamics** shipped properly (a per-hand **p/mf/f** control drives
+  note gain + a dynamic-contrast bonus). The rhythm/melody mechanics that were thin here (M2 groove, M4
+  sequencing) were later reworked — see Phase 3. *Net: full 7-chapter campaign playable end-to-end.*
+  **Future (dev):** dynamics should eventually gain explicit **symbols** (crescendo/decrescendo, accents) as
+  their own picks — for now it's the simple per-hand p/mf/f marking.
+- **Phase 3 — Rhythm (M2).** The rhythm/melody layer has been reworked past the original figure/`FIGURES`
+  and per-card-`noteDur` prototypes: it now lives in the **[continuous-timeline model](#continuous-timeline--consistent-stacking--the-core-rhythmmelody-model-stage-1-built-2026-07-18)**
+  (events + ticks, always-stack), the **[Break mechanic](#note-value--rest-notation--the-break-mechanic-front-of-the-ladder)**
+  (per-card note values), and the **[live finger-drumming M2](#rhythm--live-finger-drumming-decided-2026-07-20-not-built)** —
+  those sections are the source of truth for all rhythm/melody work. Still deferred here: draftable/unlockable
+  rhythm content (a Codex sub-set) and syncopation & cross-loop-consistency scoring.
+- **Phase 4 — Structure payoff & polish. ✅ CORE BUILT.** The run's loop **accumulates into one single-key
+  song** (`run.loop`, one flat loop up to `LOOP_BARS`; no sections/modulation).
   - **Real M7 form scoring** (`score()`): a **phrase** = a bar's pitch-class fingerprint (`pcSetFp`).
     Restating an earlier phrase (**motif repetition**) scores `+1`; restating it **after a contrasting
-    phrase** (the **A·B·A** shape) scores `+1` more — read off the whole accumulated `run.loop.bars`.
-    Replaces the Phase-2 thin restatement placeholder.
-  - **Real M7 gate** (`gateStatus` default → `hasABA(run.loop.bars)`): *"compose an A·B·A — state a phrase,
-    contrast it, then return to it."* Replaces the clear-the-Set placeholder. (M7 is terminal, so meeting
-    it is graduation flavor rather than an advance; Free Play stays available regardless.)
-  - **Save-a-Song is now whole-run** (see that section): the per-gig, before-the-draft save is retired;
-    `offerSave(retScreen)` captures the full run at end (win/lose), `run.saved` is a boolean, and the
-    report judges in-key%/cadence **per section** via `sectionKey`.
-  - **Still deferred:** boss-gig capstones as chapter exams; optional mentor/chapter prose; explicit
+    phrase** (the **A·B·A** shape) scores `+1` more — read off the whole accumulated timeline. Replaces the
+    Phase-2 thin restatement placeholder.
+  - **Real M7 gate** (`gateStatus` default → `hasABA`): *"compose an A·B·A — state a phrase, contrast it,
+    then return to it."* Replaces the clear-the-Set placeholder. (M7 is terminal, so meeting it is graduation
+    flavor rather than an advance; Free Play stays available regardless.)
+  - **Save-a-Song is a whole-run capture** at run's end (see that section); `run.saved` is a boolean.
+  - **Still deferred:** boss capstones as chapter exams; optional mentor/chapter prose; explicit
     AABA/verse-chorus detection beyond the A·B·A phrase-return heuristic; seed + set export/share.
 
 **Chosen: thin-first** (Phase 2 stubs Rhythm/Dynamics to get a walkable arc fast) over deep-in-order
@@ -3662,11 +3100,9 @@ separate later addition.)
 - Exact **gate counts** per movement and whether gates are "catalog N distinct" vs "N total."
 - **Rhythm figure roster** and how figures are acquired (unlock vs draft vs both).
 - Whether **Dynamics** is a per-note property, a per-hand marking, or a figure-like pick.
-- **Structure (M7)** scoring: **resolved for Phase 4 core** — the loop now accumulates across all 3 gigs,
-  and form scores on a **pitch-class phrase fingerprint** (restatement + an **A·B·A** return), decoupled
-  from the gig count. *Still open:* richer form detection (AABA, verse/chorus, phrase length) beyond the
-  A·B·A heuristic; whether letting a player edit **earlier** sections (currently locked) is worth the
-  cross-key complexity.
+- **Structure (M7)** scoring: **resolved for Phase 4 core** — the loop accumulates into one single-key song,
+  and form scores on a **pitch-class phrase fingerprint** (restatement + an **A·B·A** return). *Still open:*
+  richer form detection (AABA, verse/chorus, phrase length) beyond the A·B·A heuristic.
 - Whether Free Play is available **from the start** (menu) or **only after graduating** movement 7.
 - How the **hand-size Muses** stack with the per-movement `MAX_SELECT` floor.
 - Mentor/chapter prose (deferred; the flavor-only stance holds until the arc is built).
@@ -3707,7 +3143,7 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
 - **Hand evaluator (`classify`).** Detects single/**unison** · interval (named + consonance) · **triad**
   (maj/min/dim/aug) · **seventh** (maj7/7/m7/m7♭5/°7/mM7) · **scale run** (contiguous diatonic steps) ·
   cluster. This is the "music dictionary."
-- **Scoring (`score`) = Applause = chips × mult.** Per-note chips (+`INKEY_CHIP` when in the gig's key);
+- **Scoring (`score`) = Applause = chips × mult.** Per-note chips (+`INKEY_CHIP` when in the run's key);
   mult bonuses for **all-in-key** (flush), **consonant**, and **resolves-to-tonic**; `STRUCT` gives each
   structure its base chips/mult. A **live preview** shows `structure · N chips × M mult · bonuses · =Applause`
   — the teaching surface.
@@ -3720,44 +3156,25 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
     column**) gets a **white inset ring + a translucent tint of the note's ROYGBIV color** (`.lgcell.ghost`),
     so you see *exactly where on the staff* a pick will be written before you Play it. On-select only (no
     hover preview — works the same on touch and desktop).
-  - **"Still sounds good" glow** — rows that are **in the gig's key AND consonant with every note you've
+  - **"Still sounds good" glow** — rows that are **in the run's key AND consonant with every note you've
     currently picked** get a green wash on the cells + a green bold row label (`.lgcell.good`/`.lgrow.good`,
     via `fitsSelection(pc,key,selPcs)`; consonant = interval class in `CONSONANT_IV` = 3rd/4th/5th/6th, or a
     doubling). This is the deliberate extension of FL's *static* scale-highlight: because the natural-note
     deck makes the plain in-key highlight **degenerate in C major** (every row is in-key), the glow instead
-    reacts to your selection so it stays a real teaching signal every gig. Empty selection ⇒ all in-key rows
+    reacts to your selection so it stays a real teaching signal every run. Empty selection ⇒ all in-key rows
     glow (the scale). The off-key **grey** rows are unchanged (still show key membership).
-- **The song loop (Mario-Paint-style "make a song as you go") — one loop per RUN.** ⚠️ **The gig details
-  in this bullet are SUPERSEDED (2026-07-17):** gigs were removed, so there are no sections, no `SECTION_BARS`,
-  no C→G→F modulation, no locked cells, and `winGig`/`startGig` are gone. **Current model:** one flat loop of
-  `LOOP_BARS = PLAYS` slots in one fixed key; `loopLenNow()` is a constant `LOOP_BARS` (the full grid always
-  shows and grooves); the write head wraps the whole loop; click-to-aim reaches any bar. See **Removing gigs
-  — a run becomes one performance (BUILT)**. The original (gig-era) description is kept below for history.
-  The whole run is **one continuous loop of `LOOP_BARS` slots** (= `SECTION_BARS × GIGS.length` = 18), allocated once
-  in `startRun` and **never reset between gigs**. Each gig fills its own `SECTION_BARS`-bar **section** (its
-  own key): `startGig` snaps the write head to `run.gigIdx × SECTION_BARS`, and `playHand`'s write head +
-  click-to-aim are **confined to the current gig's section** (past sections lock). Playing a hand **writes
-  it into the current (gold) slot** and advances the write head (wraps within the section). A Web Audio
-  **lookahead scheduler** (`startLoop`/`schedTick`/`scheduleBar`, `BAR_SEC` tempo) cycles the **song so far**
-  (`loopLenNow()` = unlocked sections; `gigSrc().n`) **continuously as a backing groove** — so early gigs
-  don't loop through empty future bars; the last gig plays the full 18-bar song. Each filled slot re-sounds
-  every pass (chords together, runs arpeggiated within the bar) and a rAF **playhead**
-  (`tickPlayhead`→`paintPlayCol`) sweeps the columns. The loop renders as a **pitch grid** (`loopStripHTML`,
-  `.loopgrid`): **rows = every playable pitch across the deck's true range** (`loopRowMidis`), **columns =
-  the `loopLenNow()` bars**. The grid is **horizontally scrollable** with a **sticky pitch-label column**,
-  fixed-width sub-columns, **section dividers** (`.secstart`) and a **per-section key strip** (`.lsecbar` —
-  ① C · ② G · ③ F, active section lit); **locked** (non-current-section) cells dim. A played hand lights up
-  its notes as **ROYGBIV cells** (color = note letter). Row labels mark the **current section's** tonic
-  (gold) / grey off-key rows; a short **structure label** sits under each bar. Click a cell/label in the
-  **current section** to aim the write head there; a **pause/play** toggle mutes the groove. (Reuses the
-  `mujicians-compose.html` grid concept.)
-  The loop **never stops on its own between gig and end state**: `winGig` and `loseRun` no longer call
-  `stopLoop`, so the accumulating song **keeps grooving under the Muse draft** (which now notes the song
-  modulates to the next section's key) and under the **end overlay** (win or lose — `renderEndOverlay` calls
-  `renderGigStatic()` unconditionally so the pitch grid + playhead stay visible behind it). The end overlay's
-  **"▶ Hear your set" / "⏸ Pause your set"** toggle just pauses/resumes that already-running loop — the "made
-  some music" payoff. `stopLoop` now only fires on explicit user actions (Home, new run, the pause toggle).
-  So a run literally **builds one audible modulating song** you can sit with after it ends.
+- **The song loop (Mario-Paint-style "make a song as you go") — one loop per RUN.** The whole run is **one
+  continuous single-key loop** (`run.loop.events` on a tick timeline; `LOOP_BARS` is the max capacity and the
+  stage grows into it). Playing a hand **appends its event at the write cursor** and advances the cursor. A
+  Web-Audio **lookahead scheduler** (`startLoop`/`schedTick`/`scheduleEvent`) cycles the song-so-far
+  **continuously as a backing groove**, and a rAF **playhead** (`tickPlayhead`→`paintPlayCol`) sweeps the
+  columns. The loop renders as a **pitch-grid piano-roll** (`loopStripHTML`, `.loopgrid`): rows = every
+  playable pitch across the deck's range (`loopRowMidis`), columns = beats. Row labels mark the tonic (gold) /
+  grey off-key rows; click a cell to aim the write cursor; a **pause/play** toggle mutes the groove. The loop
+  **never stops on its own** between play and end state — it keeps grooving under the end overlay
+  (`renderEndOverlay` calls `renderGigStatic()` so the grid + playhead stay visible behind it), and the
+  overlay's **"▶ Hear your set"** toggle just pauses/resumes it. So a run literally **builds one audible song**
+  you can sit with after it ends. (Reuses the `mujicians-compose.html` grid concept.)
 - **Adjustable tempo (global comfort setting, live).** A **Tempo slider** lets the player set the loop
   speed in **real BPM** (`MIN_BPM 40` → `MAX_BPM 200`), with a live **Italian tempo-marking label**
   (Largo/Adagio/Andante/Moderato/Allegro/Presto) next to the number — on-brand with the game's teaching
@@ -3777,25 +3194,15 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   and Setlist playback feeds it back as `startLoop({…, barSec:s.tempo})`, so a song sounds the way it was
   made regardless of the current global setting (older saves stored `0.8` = 75 BPM, correct for when they
   were made).
-- **Run = a Set of 3 Gigs** (`GIGS`), each with a **key** (C→G→F major, so "in key" is a live choice
-  with a natural-note deck) and an escalating **applause threshold** (`650 / 1150 / 1800` — deliberately
-  high so a gig can't be cleared in one or two lucky hands; you play several, filling more of the loop);
-  `PLAYS` (**6**) hands + `DISCARDS` discards per gig. Beat the threshold → next gig; run out → run over.
-  Each gig fills a `SECTION_BARS = PLAYS` (**6**)-bar section of the run-long song, so the full song is
-  `LOOP_BARS = 18` bars across the three gigs — a real little three-section, modulating piece (Phase 4).
-- **Muses (the build engine).** Before each gig you **draft 1 of 3** from `MUSE_POOL`. Scoring Muses
-  (Perfect Pitch, Consonance, Low End, Cadence, Arpeggiator, Virtuoso) fold their `onNote`/`onHand` hooks
-  into `score`. Two **hand-size Muses** (Extra Hand +1, Big Hand +2) instead carry a `handSize` field and
-  are `repeatable:true` — `pickMuse` adds their value to `run.handSize` and, because they're repeatable,
-  they can be re-drafted every gig and **stack** (so the hand grows from 4 toward a Balatro-ish ~8). They
-  compete with scoring Muses for the same draft slots — a real tradeoff.
-  **Movement-gated draft:** each Muse carries a `minMv` (earliest movement its reward can actually pay out),
-  and `offerDraft` only offers Muses that clear `run.movement` — so the campaign never hands you a dead Muse.
-  Since a Muse's `onHand`/`onNote` fires **per hand** (it sees only the just-played hand's classification,
-  not the whole loop), a chord/run/consonance Muse can never trigger while `maxSelect` is 1: Consonance &
-  Arpeggiator need Melody (M4) multi-card sequences, Cadence & Virtuoso need Harmony (M5) chords, and Low
-  End needs the bass instrument (Timbre/M6). Pitch (M1) therefore drafts from just Perfect Pitch + the two
-  hand-size Muses; the pool grows as chapters unlock, and **Free Play (M7)** sees the whole pool.
+- **Run = one open-ended performance.** `PLAYS` hands + `DISCARDS` discards are the whole-run budget; the run
+  stays in **one fixed key** (`RUN_KEY`, C major) so "in key" is a live choice with a natural-note deck. There's
+  **no score threshold** — the run ends when you Finish or the stage fills (see **[Open-ended performance](#open-ended-performance--no-threshold-you-decide-when-youre-done-built)**).
+- **Muses (the build engine) — draft currently disabled.** `MUSE_POOL` scoring Muses (Perfect Pitch,
+  Consonance, Low End, Cadence, Arpeggiator, Virtuoso) fold their `onNote`/`onHand` hooks into `score`; two
+  **hand-size Muses** (Extra Hand +1, Big Hand +2) bump `run.handSize`. Each Muse carries a `minMv` gate
+  (earliest movement its reward can pay out), so a chord/run/consonance Muse never triggers while `maxSelect`
+  is 1. The per-run **draft is turned off** (`MUSE_DRAFT_ENABLED=false`; see [Muse draft disabled](#muse-draft-disabled-2026-08-02)),
+  so `run.muses` stays empty — the machinery is kept intact for a future re-enable.
 - **Hard daily cap.** `MAX_RUNS_PER_DAY` (3); `persist.runsUsed` resets when the local date rolls over.
   When capped, the UI points at Pitch Bird / "come back tomorrow." **DEV override** (`DEV`): unlimited
   runs, on via **`?dev`** in the URL or toggled with **Ctrl/Cmd+Shift+D** (persisted in
@@ -3817,48 +3224,34 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
   root you've played is ringed gold. `codex` (the `Set`) stays the single data source; grouping is derived by
   parsing the inscribed names (`INTERVAL_NAME` values, `NOTE_NAMES[root]+" "+quality`, `Scale run (n)`).
   *(Room to grow into a fuller relationship graph — e.g. a Tonnetz — later; the tab layout is the container.)*
-- **Save a Song (Setlist + report card + share code).** When a gig's loop is about to be lost you can
-  **name and keep it**: a **💾 Save this song?** dialog pops **before the Muse draft** on a non-final gig
-  win (and as a button on the end overlay for the final win / a loss). It prefills a **Noteling
-  portmanteau** name, shows a brief **report card** (key · structures · in-key % · consonance grade · a
-  cadence/tritone/most-used-note callout · ★ rating), and lets you **▶ audition** the loop first. Saved
-  songs live in a **"Your Setlist"** gallery on Home — **play/pause, ★ favorite, rename, export
-  (`MJ1:` share code), delete**, plus **Import** a pasted code. Full design + code map in the **Save a
+- **Save a Song (Setlist + report card + share code).** At run's end you can **name and keep** the song: a
+  **💾 Save this song** button on the end overlay prefills a **Noteling portmanteau** name and shows a brief
+  **report card** (key · structures · in-key % · consonance grade · a cadence/tritone/most-used-note callout ·
+  ★ rating). Saved songs live in a **"Your Setlist"** gallery on Home — **play/pause, ★ favorite, rename,
+  export (`MJ2:` share code), delete**, plus **Import** a pasted code. Full design + code map in the **Save a
   Song** section above.
 
-- **Progression campaign — Phases 0–2 + Phase 3 Stage 1 + Phase 4 core (of the 7-movement arc).** A `MOVEMENTS` registry
-  gates the select cap (`maxSelect()`), scoring terms (`termOn()`), the deck's instruments (`instrumentsFor()`
-  — piano-only until M6), and each movement's flat campaign threshold (`gigThreshold()`) by the run's
+- **Progression campaign — Phases 0–2 + Phase 3 Stage 1 + Phase 4 core (of the 7-movement arc).** A
+  `MOVEMENTS` registry gates the select cap (`maxSelect()`), scoring terms (`termOn()`), the deck's
+  instruments (`instrumentsFor()` — piano-only until M6), and each movement's campaign `thr` by the run's
   movement. **Home offers Campaign (at your reached movement, default M1) vs Free Play (all unlocked)**, both
   under the daily cap. **The whole M1→M7 arc is playable end-to-end:** each movement adds one scoring term
-  (in-key → groove → dynamics → melody → harmony → timbre → form) and one mechanic — single notes (M1) → a
-  **per-note duration** picker (♩/𝅗𝅥/𝅝) over a 4-beat sub-bar grid (M2) → a per-hand **p/mf/f dynamics** control
-  (M3) → 3-card **melodic sequences played in pick order** (M4) → 5-card **harmony** stacks (M5) → guitar+bass
-  **timbre** blends (M6). Each has a real advancement gate (`gateStatus`/`maybeAdvance`, persisted in
-  `persist.progress.movement`): M1 = play all 7 in-key letters (**progress persists across runs**, shown as
-  a hangman row of 7 slots that reveal each colored letter as it's played — in the HUD, end overlay, and on
-  Home), **M2 = play each note value**, M3 = all 3 dynamics, M4 = intervals+run, M5 = triads+cadence,
-  M6 = multi-instrument blends; **M7 = compose an A·B·A** (`hasABA` over the accumulated cross-gig song —
-  real as of Phase 4). HUD gate meter + end-overlay unlock banner. **Phase 4 (core) is built:** the loop
-  **accumulates across the whole run into one modulating C→G→F song** (18 bars, allocated in `startRun`,
-  sectioned per gig, scrollable grid with a per-section key strip), **M7 form scoring** rewards
-  phrase-fingerprint restatement + an A·B·A return, and **Save-a-Song is a whole-run capture** at run's end.
-  Full design + phase plan in the **Progression** section.
+  (in-key → groove → dynamics → melody → harmony → timbre → form) and one mechanic, with a real advancement
+  gate (`gateStatus`/`maybeAdvance`, persisted in `persist.progress.movement`): M1 = play all 7 in-key letters
+  (a hangman row), M2 = the live rhythm ladder, M3 = all 3 dynamics, M4 = intervals+run, M5 = triads+cadence,
+  M6 = multi-instrument blends, **M7 = compose an A·B·A** (`hasABA`, real as of Phase 4). **Phase 4 core:** the
+  loop accumulates into one **single-key** song, M7 form scoring rewards phrase-fingerprint restatement + an
+  A·B·A return, and Save-a-Song is a whole-run capture. Full design + phase plan in the **Progression**
+  section.
 
-**Not yet (still plan):** the **rhythm/melody rework** (continuous timeline, consistent stacking, per-play
-duration, playable rest card, ticks) — the next build, see its section — plus later rhythm depth
-(sixteenths/triplets, dotted notes, draftable rhythm content, syncopation + cross-loop-consistency scoring).
-**Built so far in rhythm: Stage 2A per-note durations (quarter/half/whole) + pick-order playback + groove
-scoring/gate** (the rework replaces the model around them); **Phase 4 core =
-cross-gig loop accumulation + real M7 form scoring/gate + whole-run Save-a-Song are built**, leaving Phase 4
-*polish* = boss-gig capstones, mentor/chapter prose, and AABA/verse-chorus detection beyond the A·B·A
-heuristic); explicit **dynamics symbols** (crescendo/accents) beyond
-the p/mf/f marking; accidentals/more
-instruments & drums, Étude/Accidental cards, a coin-based
-shop (draft is free for now), antes/boss-gig constraints, the shared **Daily-Set** seed, set-playback
-export, and a bespoke visual identity (current dark-neon skin is a placeholder; the ROYGBIV cards are
-the start of the real look). Scoring numbers (`STRUCT`, thresholds, chip/mult constants) are **tunable
-placeholders** — balance in play.
+**Not yet (still plan):** later rhythm depth (sixteenths/triplets, dotted notes, draftable rhythm content,
+syncopation + cross-loop-consistency scoring); Phase 4 *polish* (boss capstones, mentor/chapter prose,
+AABA/verse-chorus detection beyond the A·B·A heuristic); explicit **dynamics symbols** (crescendo/accents)
+beyond the p/mf/f marking; a Tips-based backstage **shop** (the Muse draft is currently disabled);
+Étude/Accidental cards, boss constraints/fights, the shared **Daily-Set** seed, set-playback export, and a
+bespoke visual identity (the current dark-neon skin is a placeholder; the ROYGBIV cards are the start of the
+real look). Scoring numbers (`STRUCT`, thresholds, chip/mult constants) are **tunable placeholders** —
+balance in play.
 
 ## Reuse from slice-1 code
 
@@ -3878,7 +3271,7 @@ placeholders** — balance in play.
 3. **3–4 melodic instruments** in v1; **drums deferred**.
 4. **ROYGBIV = notes**, A=Red … G=Violet; accidentals = in-between shades. (Newton, simplest mapping.)
 5. **Score correlates with sound** — every hand is played; this alignment is protected above all.
-6. **Vertical slice first** (scoring + one gig + hard cap + audible playback), economy layered after.
+6. **Vertical slice first** (scoring + one run + hard cap + audible playback), economy layered after.
 7. **Hard daily cap** on plays (not a ranked-plus-practice split) — a daily ritual; more play = the
    other games (Pitch Bird, etc.).
 8. **Single-file, vanilla, offline** like every game here; validator/scoring are local, no third-party
