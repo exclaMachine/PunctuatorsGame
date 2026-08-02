@@ -1859,7 +1859,8 @@ Beating her **captures the tritone, tamed** ("weapon → your tool," like the ot
 > Unmask Wormwood** and launches `critter-hunt.html?boss=mujicians`. A **win** hands the kept sound back
 > (`localStorage["mujicians.boss"]` → `mujicians.html?boss=win`); `handleBossReturn()` **advances M6→M7** and
 > **grants the sound into the Sound Collective** (a kept instrument's `sample` folder → its matching sampled
-> `VOICE`; animal cries / synth Drum-Conga have no voice yet → stay in Critter Hunt's own collection). Forfeit
+> `VOICE`; a kept **animal cry** → a **player-tuned `type:"animal"` VOICE** via `registerAnimalVoices`, see the
+> Sound Collective section; only synth Drum-Conga stay Critter-Hunt-local). Forfeit
 > (**← Back to Mujicians**) returns with no advance, so the boss is retryable. See `docs/critter-hunt.md` →
 > "wired into Mujicians as the M6 Timbre boss". The **find-the-odd-voice "Wormwood's Choir" set-piece described
 > in the rest of this section remains an unbuilt alternative** design (a possible richer/second boss cut).
@@ -2937,6 +2938,17 @@ harpsichord, dulcimer, harp** — **20 sampled voices total**), all as collectib
 wired into the **M6 Timbre boss (Critter Hunt)** as instruments/rewards — a boss win maps a kept instrument's
 sample folder → its matching sampled voice (`CRITTER_SAMPLE_VOICE`). (Provenance: `sounds/CREDITS.md`; loads via
 fetch/decodeAudioData → needs http serving.)
+
+**AMENDED 2026-08-01 — player-tuned ANIMAL voices from Critter Hunt.** A third voice type, **`type:"animal"`**, plays
+a **single-file** cry (`sounds/animals/<slug>.mp3`) cropped to the note + pitch-shifted (`renderAnimal`). Unlike the
+sampled instruments (a 13-anchor set, dev-curated), an animal is **tuned by the player** in Critter Hunt's win flow —
+role **pitched** (repitch from anchor, hold the note length) or **one-shot** (fixed pitch anchor-vs-C4, fixed `len`) +
+crop/offset — and saved to a shared store `localStorage["critterhunt.animalVoices"]`. **`registerAnimalVoices()`** (run
+at load) reads it → one VOICE + one Free-Play `INSTRUMENTS` card + one Sound-Collective entry per won animal;
+`grantBossReward` grants a boss-return animal the same way. So the roster grows with no dev per-animal work. **Deferred:**
+one-shots don't yet route through the true `{drum}`/`DRUM_VOICES` lane (kept off the canonical MJ2 drum save-index) —
+they play as fixed-pitch VOICES; animals stay Free-Play (campaign decks curated). See `docs/critter-hunt.md` → the
+2026-08-01 amendment.
 
 Built in `mujicians.html`:
 

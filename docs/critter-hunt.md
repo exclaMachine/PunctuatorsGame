@@ -26,8 +26,8 @@ sound to Critter Hunt's own collection **and** hands it back: it writes `{result
 (`grantBossReward` maps a kept **instrument's `sample` folder → the matching sampled VOICE** — the 7 real
 instruments map 1:1: `trumpet→realtrumpet`, `violin→realviolin`, `acoustic_guitar_nylon→realguitar`,
 `tenor_sax→realsax`, `tubular_bells→realbell`, `banjo→realbanjo`, `flute→realflute` — added to `persist.sounds`).
-A kept **animal cry** or a **synth-only Drum/Conga** has no Mujicians voice yet, so it stays in Critter Hunt's own
-collection (the animal→`VOICES` pipeline is still deferred). See `docs/mujicians.md` → "M6 Timbre boss". Standalone
+A kept **animal cry** now also grants — a player-tuned `type:"animal"` voice (see the 2026-08-01 amendment); only a
+**synth-only Drum/Conga** stays Critter-Hunt-local. See `docs/mujicians.md` → "M6 Timbre boss". Standalone
 play is unchanged when there's no `?boss` param.
 
 **AMENDED 2026-07-28 — unmasking Wormwood is now the mandatory endgoal (forks #4 + #6 resolved).** One
@@ -90,6 +90,27 @@ is safe because `refsFor`'s uniqueness guard falls back to the always-unique ani
 retries an unlucky cast. Provenance for all 20 (species + author + license, all non-ND) is in
 `data/critter-credits.json` / `sounds/CREDITS.md`; fetched by `fetch-animal-samples.sh` (now sends a descriptive
 User-Agent — Wikimedia 429s default curl UAs under load).
+
+**AMENDED 2026-08-01 — a won animal cry now feeds Mujicians as a PLAYER-TUNED card (no dev per-animal authoring).**
+The old plan had the dev decide pitched-vs-percussion + crop for each of the 20 (growing) animals by ear. Instead the
+**player** does it: keeping a won animal opens a **tuner** in the win flow (`showAnimalTuner`) — a role toggle (🎵 Pitched
+/ 🥁 One-shot) + three sliders (**note length / anchor pitch / start offset**) + a ▶ preview (`previewAnimalCfg`,
+cropped+pitched via `playAnimalTuned`, mirroring Mujicians' `renderSample`). Saving writes the config to a **shared
+store** `localStorage["critterhunt.animalVoices"]` = `{slug:{nm,em,role,anchor,off,len}}` (starting role guessed by call
+type in `ROLE_GUESS`/`DEFAULT_CFG`, all retunable) and claims the reward carrying the cfg. **Mujicians** reads that store
+at load (`registerAnimalVoices`) and builds, per animal: a **`type:"animal"` VOICE** (`renderAnimal` — one-file
+`sounds/animals/<slug>.mp3`, cropped to the note + pitch-shifted; pitched repitches from anchor & holds the note length,
+one-shot = fixed pitch (anchor vs C4) + fixed `len`), a **Free-Play `INSTRUMENTS` card**, and a **Sound-Collective**
+entry; a boss-return animal reward grants the same via `grantBossReward`. This is decoupled from boss mode — *any*
+won+tuned animal (standalone play too) surfaces in Mujicians Free Play. The collection ▶ here also honours the tuned
+config. `animal-sound-lab.html` is a standalone preview toy (the tuner's origin). **Still deferred:** routing one-shot
+animals through the true `{drum}`/`DRUM_VOICES` lane (kept off the canonical MJ2 drum save-index for now — they play as
+fixed-pitch VOICES); campaign decks stay curated (animals are Free-Play only).
+
+> **REWORK NOTE (dev, 2026-08-02):** the embedded `showAnimalTuner` dialog should probably be replaced by just
+> **sending the player to `animal-sound-lab.html`** to play with the sound themselves — the smaller inline dialog
+> wasn't really needed and was a bit confusing (its ▶ preview overlapped several pitches at once). Keep the current
+> tuner for now; fix later (make the lab the shared, saveable tuning surface both the win flow and a Home button open).
 
 Except where the amendments above note, the rest below reflects the original ship:
 
@@ -301,9 +322,10 @@ Win → the player **picks one** to keep as a playable card:
   and drop straight into Mujicians' `VOICES` / `playVoice` as a real sampled (or synth-preset) instrument. This
   is the **easy half** — the earlier animal pitch-shifting worry doesn't apply; instruments come as chromatic
   samples or already exist as `VOICES` presets.
-- **Animal → a percussion one-shot** (barks/stomps/chirps), dropped into the `{drum}` event path / `DRUM_VOICES`
-  — **no pitch-shifting needed** (the deferred tonal-animal work stays deferred). Rarer/harder puzzles → rarer
-  sounds.
+- **Animal → a player-tuned voice** (BUILT 2026-08-01, see the amendment up top) — the player picks **pitched**
+  (repitches into a scale) or **one-shot** (fixed hit) + crop/anchor in the win-flow tuner; it becomes a
+  `type:"animal"` VOICE + Free-Play card in Mujicians. (True `{drum}`/`DRUM_VOICES`-lane routing for one-shots
+  stays deferred — see the amendment.)
 
 Both register in the **Sound Collection** (`sounds` / `persist.sounds`) — Critter Hunt *is* the collection's
 gameplay source. A post-solve **"field notes" card** shows each entity's real facts (reinforces learning +
@@ -435,4 +457,4 @@ local collection. Wormwood as the **mandatory impostor to unmask** — a final d
 difficulty tuning, larger rosters + more biomes, animated art/detective, sustained **tonal-animal** timbres
 (granular/Tone.js — still tentative; also the reason a kept **animal** cry can't yet grant a Mujicians voice),
 and any mic/"imitate it" angle (out of scope — point-and-listen). **Mujicians integration is now BUILT** (the M6
-Timbre boss — see the 2026-07-29 amendment); the remaining piece is wiring **animals** into `VOICES`/`DRUM_VOICES`.
+Timbre boss — see the 2026-07-29 amendment); wiring **animals** into `VOICES` is **BUILT** (2026-08-01, below).

@@ -1375,6 +1375,56 @@
     try{ src.stop(t+D+0.09); }catch(e){}
     return true;
   }
+
+  /* ---- Animal voices (from Critter Hunt) -------------------------------------------------------------------
+     Won-and-tuned animal cries become playable cards here. Config lives in a SHARED store the player tunes in
+     Critter Hunt's win flow ({slug:{nm,em,role,anchor,off,len}} — no dev per-animal authoring). A `type:"animal"`
+     VOICE plays a single-file sample (sounds/animals/<slug>.mp3), cropped+pitched like renderSample: pitched →
+     repitch the card's note from `anchor`, hold the note's length; one-shot → fixed pitch (anchor vs C4) and a
+     fixed short `len`. registerAnimalVoices() (run at load) reads the store → one VOICE + one Free-Play
+     INSTRUMENTS entry + Sound-Collective entry per animal. See docs/critter-hunt.md ("Animal → Mujicians voice"). */
+  const ANIMAL_BASE = "sounds/animals/";
+  const AV_STORE_KEY = "critterhunt.animalVoices";
+  const _abuf = {}, _aload = {};
+  function loadAnimalBuf(slug){
+    if(_abuf[slug]) return Promise.resolve(_abuf[slug]);
+    if(!_aload[slug]) _aload[slug] = fetch(ANIMAL_BASE+slug+".mp3").then(r=>{ if(!r.ok) throw 0; return r.arrayBuffer(); })
+      .then(ab=>audio().decodeAudioData(ab)).then(b=>{ _abuf[slug]=b; return b; }).catch(()=>{ _aload[slug]=null; return null; });
+    return _aload[slug];
+  }
+  function renderAnimal(V, midi, dur, t, vel){
+    const buf = _abuf[V.slug]; if(!buf){ loadAnimalBuf(V.slug); return false; }
+    const ac = audio(), perc = V.role!=="pitched", anchor = V.anchor||60;
+    const rate = perc ? Math.pow(2,(anchor-60)/12) : Math.pow(2,(midi-anchor)/12);
+    const D = perc ? Math.max(0.1, V.len||0.3) : (dur || 0.5);
+    const off = Math.min(V.off||0, buf.duration-0.02), peak = (V.peak!=null?V.peak:0.6) * (vel||1);
+    const src = ac.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t+0.005);
+    g.gain.setValueAtTime(peak, Math.max(t+0.006, t+D-0.045));
+    g.gain.exponentialRampToValueAtTime(0.0008, t+D+0.02);
+    src.connect(g).connect(ac.destination);
+    try{ src.start(t, Math.max(0,off)); }catch(e){ src.start(t); }
+    try{ src.stop(t+D+0.06); }catch(e){}
+    return true;
+  }
+  // Read the shared store and register each won animal as a VOICE + a Free-Play INSTRUMENTS card + a collected
+  // Sound-Collective entry. Idempotent (safe to call again after a boss return). Returns the slug→voiceId map.
+  function registerAnimalVoices(){
+    let store; try{ store = JSON.parse(localStorage.getItem(AV_STORE_KEY)||"{}") || {}; }catch(e){ store = {}; }
+    for(const slug in store){
+      const cfg = store[slug], id = "animal_"+slug;
+      VOICES[id] = { id, name: cfg.nm||slug, fam:"animal", desc:(cfg.em?cfg.em+" ":"")+"Real "+(cfg.nm||slug)+" cry — "+(cfg.role==="pitched"?"pitched":"one-shot")+".",
+                     type:"animal", slug, role:cfg.role||"oneshot", anchor:cfg.anchor||60, off:cfg.off||0, len:cfg.len||0.3, peak:0.6 };
+      if(!INSTRUMENTS.some(i=>i.id===id))
+        INSTRUMENTS.push({ id, name:cfg.nm||slug, emoji:cfg.em||"🐾", wave:"triangle", baseC:cfg.anchor||60, fam:"animal", voice:id });
+      if(!sounds.has(id)) sounds.add(id);
+      if(!persist.sounds.includes(id)) persist.sounds.push(id);
+      loadAnimalBuf(slug);   // warm the buffer so the first card isn't silent
+    }
+    return store;
+  }
   // Render a SYNTH voice OBJECT: oscillator stack → optional lowpass sweep → shared ADSR gain → destination, with
   // an optional tremolo LFO. Envelope times clamp to the note's length. Split out of playVoice so a sample voice
   // can borrow it as a fallback. Does NOT catalogue — playVoice does.
@@ -1427,6 +1477,8 @@
         loadSamples(V.sample);
         renderSynth(VOICES[V.fallback] || VOICES.grand, midi, dur, t, vel);
       }
+    } else if(V.type==="animal"){
+      renderAnimal(V, midi, dur, t, vel);             // Critter-Hunt cry: single-file, cropped+pitched (silent until buffer loads)
     } else {
       renderSynth(V, midi, dur, t, vel);
     }
@@ -2116,7 +2168,8 @@
     const deck = [];
     let id = 0;
     const insts = (isFree ? freePlayInstruments() : instrumentsFor(m)).slice(0, MAX_TIMBRES);   // cap the deck at 4 timbres
-    insts.forEach(inst => preloadVoiceSamples(inst.voice));   // warm real-instrument sample buffers before play
+    insts.forEach(inst => { preloadVoiceSamples(inst.voice);   // warm real-instrument sample buffers before play
+      const V = VOICES[inst.voice]; if(V && V.type==="animal") loadAnimalBuf(V.slug); });   // …and animal-cry buffers
     for(const inst of insts){
       for(const pc of DIATONIC_C){
         for(let k=0;k<COPIES;k++){
@@ -2480,10 +2533,10 @@
      mujicians.html?boss=win, which handleBossReturn() picks up on load — advancing M6→M7 and granting the
      sound into the Sound Collective. See docs/critter-hunt.md + docs/mujicians.md ("M6 Timbre boss"). */
   const BOSS_RETURN_KEY = "mujicians.boss";
-  // A Critter-Hunt instrument reward carries its sample-folder name; the 7 sampled instruments map 1:1 to
-  // Mujicians' real sampled VOICES, so an instrument prize joins the Sound Collective. (Animal cries and the
-  // synth-only Drum/Conga have no Mujicians voice yet — they stay in Critter Hunt's own collection; the
-  // animal→VOICES pipeline is deferred, see docs/critter-hunt.md.)
+  // A Critter-Hunt instrument reward carries its sample-folder name; the sampled instruments map 1:1 to
+  // Mujicians' real sampled VOICES, so an instrument prize joins the Sound Collective. An ANIMAL reward carries
+  // its player-tuned cfg (already saved to the shared AV store) → registerAnimalVoices() builds it a VOICE.
+  // (The synth-only Drum/Conga still have no Mujicians voice — they stay in Critter Hunt's own collection.)
   const CRITTER_SAMPLE_VOICE = { trumpet:"realtrumpet", violin:"realviolin", acoustic_guitar_nylon:"realguitar",
                                  tenor_sax:"realsax", tubular_bells:"realbell", banjo:"realbanjo", flute:"realflute",
                                  shamisen:"realshamisen", koto:"realkoto", shakuhachi:"realshaku", sitar:"realsitar",
@@ -2496,6 +2549,15 @@
     if(reward && reward.type==="instrument" && reward.sample){
       const vid = CRITTER_SAMPLE_VOICE[reward.sample];
       if(vid && VOICES[vid]){
+        if(!sounds.has(vid)) sounds.add(vid);
+        if(!persist.sounds.includes(vid)) persist.sounds.push(vid);
+        return VOICES[vid].name;
+      }
+    }
+    if(reward && reward.type==="animal" && reward.snd){
+      registerAnimalVoices();                 // the cry was tuned + saved to the shared store before returning
+      const vid = "animal_"+reward.snd;
+      if(VOICES[vid]){
         if(!sounds.has(vid)) sounds.add(vid);
         if(!persist.sounds.includes(vid)) persist.sounds.push(vid);
         return VOICES[vid].name;
@@ -4212,6 +4274,7 @@
     else if(codexOpen){ e.preventDefault(); closeCodex(); }
   });
   loadPersist();
+  registerAnimalVoices();   // rebuild won-and-tuned Critter Hunt animal cries as VOICES/Free-Play cards (before sounds reconstruct)
   (persist.codex||[]).forEach(c=>codex.add(c));
   (persist.sounds||[]).forEach(v=>{ if(VOICES[v]) sounds.add(v); });
   handleBossReturn();   // returning from the Critter Hunt (M6) boss: advance M6→M7 + grant the sound
