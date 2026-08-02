@@ -154,7 +154,7 @@ Except where the amendments above note, the rest below reflects the original shi
 **Deferred / stubbed in the MVP:** ~~real sound files~~ — **now real recordings on both axes:** the 20 pitched
 **instruments** use anchor+pitch-shift samples (Data sources → Instrument sounds) and **all 20 animals** play
 hand-curated vocalisations (Data sources → Animal sounds); only the Drum/Conga instruments stay synth. Still
-deferred: wiring an **animal-cry audio clue** (the audio clue still keys off *instrument* timbre); **cross-grid**
+deferred: wiring an **animal-cry audio clue** (audio clues key off the *instrument* — timbre or, since Phase 2, its assigned **note** — not the animal's cry); **cross-grid**
 auto-inference (only within-grid auto-X); difficulty ramp (N fixed at 3 via `AXIS_N`) & daily-seeded mode; Mujicians
 integration (`persist.sounds`/`VOICES`); the tentative extensions below.
 
@@ -431,13 +431,13 @@ are **pitched cards** in Free Play and catalogue into the Sound Collective. See 
 - **Collection completion → Mujicians payoff** — filling the "Menagerie" (percussion) and "Instrument Case"
   (timbres) unlocks a fuller Free-Play palette / a "full orchestra" loadout, closing the feeder loop.
 
-## Daily-game expansion (PLANNED 2026-08-02; Phase 1 BUILT 2026-08-02)
+## Daily-game expansion (PLANNED 2026-08-02; Phases 1–2 BUILT 2026-08-02)
 
 Critter Hunt becomes a **first-class daily game** in its own right (not only the M6 boss): a **strict
 daily-only shared puzzle** (Wordle-model), an **audio-first evidence layer** (every axis identifiable by
 ear), a new **note/pitch** clue mechanic (the strongest Mujicians tie-in), and a **shareable result**.
 Decisions locked with the dev 2026-08-02; genre/biome audio prefers **PD/CC0 samples**, synth fallback.
-**Phase 1 is BUILT; Phases 2–5 remain planned.**
+**Phases 1–2 are BUILT; Phases 3–5 remain planned.**
 
 **Phase 1 — Daily-only shared puzzle (BUILT 2026-08-02).**
 - **Seeded PRNG.** A `mulberry32` PRNG + `hashStr` feed a module-level `RNG` that the *entire generation
@@ -452,15 +452,24 @@ Decisions locked with the dev 2026-08-02; genre/biome audio prefers **PD/CC0 sam
 - **Boss mode stays endless.** `?boss=mujicians` (`BOSS`) **bypasses** the seed + lock (`RNG = Math.random`,
   "New case" kept, no badge) so the M6 boss is still retryable. Important carve-out.
 
-**Phase 2 — Note/pitch per instrument (pure code, Mujicians tie-in).**
-- Each case assigns instruments **distinct, widely-spaced pitches** from a set like C3·G3·C4·G4·C5
-  (MIDI 48/55/60/67/72) — a seeded instrument→pitch bijection, spaced to be easy to tell apart by ear.
-- `playInstrument` already takes a MIDI arg (`playSample(folder, midi)`), so ▶ on an instrument card plays it
-  **at its case note**.
-- Add **pitch as an audio-expressible clue ref**, parallel to the timbre clue (`TIMBRE[ref.val]`):
-  *"the animal that played the C♯ was found in the desert."* Plays the note + shows the note name as text
-  fallback; badged as an **audio** clue (ear-driven, not a free direct link). Deferred harder variant: pitch as
-  a non-name-identifying attribute you must cross-deduce.
+**Phase 2 — Note/pitch per instrument (BUILT 2026-08-02, the Mujicians tie-in).**
+- `sampleCast` now **clones** the cast instruments per-case and stamps each **pitched** one (has a `sample`;
+  Drum/Conga stay unpitched) with a distinct note from `PITCH_POOL = [48,55,62,69,76]` (**C3·G3·D4·A4·E5** —
+  fifth/octave gaps, all naturals, so they're easy to tell apart by ear; `noteName(midi)` + `NOTE_NAMES` render
+  the label). Sharps / a wider pool are a later difficulty knob.
+- `playInstrument(inst)` passes `inst.pitch` into `playSample`, so a card's ▶ plays it **at its case note**;
+  unpitched instruments fall through to the synth preset.
+- **Pitch is a real audio clue ref**, parallel to the timbre (`fam`) clue: `refsFor` emits a `key:"pitch"` ref
+  for pitched instruments (always uniquely discriminating); `clueText` renders *"…the instrument that plays the
+  note E5…"*, flags it `audio`, and carries the reference `note` (threaded through `mk`). It flows through single
+  clues, compounds (text form via `attrLabel`'s pitch case), and `buildUnmaskClue` (Wormwood can be pinned by
+  note). In the Case File a pitch clue shows a **▶ the note** button that plays the target note on a **neutral
+  triangle** (`playNote` — so timbre doesn't give it away); you then match it against the instrument cards — the
+  accessibility payoff (a blind player hears the target note and compares).
+- **"Sometimes," per the dev ask:** `pitchCluesOn` is drawn once per case from the seeded RNG
+  (`PITCH_CLUE_CHANCE = 0.55`) so ~half of cases *offer* pitch clues (and the single audio slot may pick pitch or
+  timbre); cards still play their notes regardless. Seeded → the daily is identical for everyone. Deferred harder
+  variant: pitch as a non-name-identifying attribute you must cross-deduce; routing compounds through the note ▶.
 
 **Phase 3 — Audio-first evidence layer (code + one sourcing task).**
 - **Genre riffs** — short characteristic riffs per genre, **PD/CC0 samples preferred** (Musopen for classical
@@ -511,9 +520,9 @@ auto-X; direct + negative + **attribute** + one **audio** clue type; unmask-the-
 card granting one playable sound (instrument = a `VOICES`-ready sample, animal = a percussion one-shot) into a
 local collection. Wormwood as the **mandatory impostor to unmask** — a final determining clue + name-the-culprit win.
 
-**Deferred:** relational/positional clues (ordered axis); the **daily-only seeded mode is BUILT** (Phase 1,
-2026-08-02) while the audio-first evidence layer + note/pitch clue + shareable result remain **PLANNED**
-(Phases 2–5; see "Daily-game expansion" above); N=5+ and richer
+**Deferred:** relational/positional clues (ordered axis); the **daily-only seeded mode + note/pitch clue are
+BUILT** (Phases 1–2, 2026-08-02) while the rest of the audio-first evidence layer (biome ambient + genre riffs +
+listen-to-case) + shareable result remain **PLANNED** (Phases 3–5; see "Daily-game expansion" above); N=5+ and richer
 difficulty tuning, larger rosters + more biomes, animated art/detective, sustained **tonal-animal** timbres
 (granular/Tone.js — still tentative; also the reason a kept **animal** cry can't yet grant a Mujicians voice),
 and any mic/"imitate it" angle (out of scope — point-and-listen). **Mujicians integration is now BUILT** (the M6
