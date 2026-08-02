@@ -437,14 +437,14 @@ are **pitched cards** in Free Play and catalogue into the Sound Collective. See 
 - **Collection completion → Mujicians payoff** — filling the "Menagerie" (percussion) and "Instrument Case"
   (timbres) unlocks a fuller Free-Play palette / a "full orchestra" loadout, closing the feeder loop.
 
-## Daily-game expansion (PLANNED 2026-08-02; Phases 1–4 BUILT 2026-08-02)
+## Daily-game expansion (PLANNED 2026-08-02; Phases 1–5 BUILT 2026-08-02)
 
 Critter Hunt becomes a **first-class daily game** in its own right (not only the M6 boss): a **strict
 daily-only shared puzzle** (Wordle-model), an **audio-first evidence layer** (every axis identifiable by
 ear), a new **note/pitch** clue mechanic (the strongest Mujicians tie-in), and a **shareable result**.
 Decisions locked with the dev 2026-08-02; genre/biome audio is **real PD/CC0 recordings only — NO synth
 fallback** (dev call: synth beds/riffs sounded bad; a sourceless axis just plays nothing).
-**Phases 1–4 are BUILT; Phase 5 remains planned.**
+**Phases 1–5 are all BUILT.**
 
 **Phase 1 — Daily-only shared puzzle (BUILT 2026-08-02).**
 - **Seeded PRNG.** A `mulberry32` PRNG + `hashStr` feed a module-level `RNG` that the *entire generation
@@ -512,9 +512,11 @@ fallback** (dev call: synth beds/riffs sounded bad; a sourceless axis just plays
 - **Where it surfaces:** a preview + `📋 Share result` + a `statsSummary()` line in the win modal (standalone
   only), and the same button + stats in the daily-locked "come back tomorrow" state (`applyDailyLock`).
 
-**Phase 5 — Mujicians Home button (one line).**
-- A Home button next to Beat Lab opening `critter-hunt.html` (no `?boss` → daily standalone), parallel to how
-  Beat Lab is reachable from Home.
+**Phase 5 — Mujicians Home button (BUILT 2026-08-02).**
+- A **🔍 Critter Hunt** ghost button on the Mujicians Home CTA row, next to 🥁 Beat Lab, opens
+  `critter-hunt.html` (no `?boss` → today's standalone daily), parallel to how Beat Lab is reachable from Home
+  (`b-critter` → `stopLoop()` + navigate). Distinct from the M6-boss launch (`launchBoss` → `?boss=mujicians`),
+  which stays gated behind clearing the timbre lesson.
 
 **Sequencing:** Phases 1, 2, 4, 5 are self-contained code and ship without new asset files; only the biome
 ambient (and any sampled genre riffs) need sourcing + a fetch run over http (Live Server).
@@ -545,9 +547,8 @@ local collection. Wormwood as the **mandatory impostor to unmask** — a final d
 
 **Deferred:** relational/positional clues (ordered axis); the **daily-only seeded mode + note/pitch clue +
 audio-first evidence layer (real biome/genre recordings + listen-to-case) are BUILT** (Phases 1–3, 2026-08-02)
-+ the shareable spoiler-free result & streak/stats are BUILT (Phase 4) while the Mujicians Home button remains
-**PLANNED** (Phase 5; see "Daily-game expansion"
-above); N=5+ and richer
++ the shareable spoiler-free result & streak/stats (Phase 4) + the Mujicians Home button (Phase 5) are BUILT
+(see "Daily-game expansion" above); N=5+ and richer
 difficulty tuning, larger rosters + more biomes, animated art/detective, sustained **tonal-animal** timbres
 (granular/Tone.js — still tentative; also the reason a kept **animal** cry can't yet grant a Mujicians voice),
 and any mic/"imitate it" angle (out of scope — point-and-listen). **Mujicians integration is now BUILT** (the M6

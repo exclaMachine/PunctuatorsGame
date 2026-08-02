@@ -3512,6 +3512,7 @@
           <button class="btn" id="b-campaign" ${(capped && !m6boss)?"disabled":""}>${campLabel}</button>
           <button class="btn ghost" id="b-free" ${capped?"disabled":""} title="Every mechanic unlocked (today's full game)">Free Play</button>
           <button class="btn ghost" id="b-beatlab" title="Practice live finger-drumming (rhythm MVP) — no daily cap">🥁 Beat Lab</button>
+          <button class="btn ghost" id="b-critter" title="Today's Critter Hunt — a Murdle-style deduction daily; win sounds for your collection">🔍 Critter Hunt</button>
           ${hasAnimalVoices()?`<button class="btn ghost" id="b-tunelab" title="Tune how your collected Critter Hunt animal cries play — anytime">🐾 Tune Sounds</button>`:""}
         </div>
         ${m6boss?`<p class="hint center">🐺 <b>Timbre boss:</b> Timbrewolf's tutor is done — now <b>Wormwood the timbre-thief</b> is hiding among the band. Face him in <b>Critter Hunt</b>: deduce who played what where, then unmask the impostor to win a voice and unlock <b>M7 Structure</b>.</p>`
@@ -3531,6 +3532,8 @@
     if(bf) bf.addEventListener("click", ()=>{ audio(); startRun("free"); });
     const blab = document.getElementById("b-beatlab");
     if(blab) blab.addEventListener("click", ()=>{ audio(); enterBeatLab(); });
+    const bch = document.getElementById("b-critter");   // today's standalone Critter Hunt daily (no ?boss)
+    if(bch) bch.addEventListener("click", ()=>{ audio(); stopLoop(); location.href="critter-hunt.html"; });
     const btl = document.getElementById("b-tunelab");
     if(btl) btl.addEventListener("click", ()=>{ audio(); openAnimalLab(); });
     $game.querySelectorAll(".pp-stage").forEach(el=> el.addEventListener("click", ()=>{
