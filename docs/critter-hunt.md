@@ -120,13 +120,16 @@ fixed-pitch VOICES); campaign decks stay curated (animals are Free-Play only).
 
 Except where the amendments above note, the rest below reflects the original ship:
 
-- **Data pools** — 20 animals (see 2026-08-01 amendment) / **22 instruments** / 8 biomes, each with real attribute **tags** (animal:
+- **Data pools** — 20 animals (see 2026-08-01 amendment) / **34 instruments** / 8 biomes, each with real attribute **tags** (animal:
   class/diet/size/habitat · instrument: Hornbostel–Sachs family/material/play-method · location: climate).
   Emoji stand in for art. *(Each instrument also carries a real **`origin`** — place of origin, shown as a
   card-back fact + in the field notes, added 2026-07-30; display-only, not yet a clue attribute — universal
   instruments like drum/flute read "ancient, worldwide".)* *(The instrument pool grew 9→22 on 2026-07-29 with an obscure/world set — shamisen,
   koto, shakuhachi, sitar, shehnai, bagpipes, kalimba, marimba, glockenspiel, celesta, harpsichord, dulcimer,
-  harp — all real FluidR3_GM samples, reusing the existing H-S-family / material / play-method attribute values.)*
+  harp — then **22→34 on 2026-08-02** with an orchestral / world / chromatic-percussion set — piano, cello, trombone,
+  tuba, clarinet, oboe, pan flute, accordion, xylophone, steel drums, timpani, taiko — all real FluidR3_GM samples,
+  reusing the existing H-S-family / material / play-method attribute values (accordion adds a novel `play:"squeezed"`;
+  Timpani/Taiko are the first **sampled + pitched** membranophones — only Drum/Conga stay synth/unpitched).)*
 - **Procedural generator + brute-force solver** (`generatePuzzle`) — rolls a solution (two bijections
   `pi`/`sg`), builds the **true-clue pool** from templates, **selects to uniqueness** over all `(3!)²`=36
   arrangements (biased toward attribute/teaching clues, a required audio clue, penalising direct-name clues),
@@ -148,7 +151,11 @@ Except where the amendments above note, the rest below reflects the original shi
   explicit user ✗/✓/? is never overwritten. **🐺 Unmask Wormwood** opens an accusation strip
   of the N animals; clicking one judges it against `G.culprit` (win, or a "not the impostor" nudge). "New case",
   dev "Reveal" (also names Wormwood).
-- **Instrument audio** — the 20 pitched instruments play **real recorded samples** (`playInstrument`→`playSample`,
+- **Dev sound-test panel (`?dev=1`)** — `renderDevPanel()` appends a panel that ▶-plays **every** instrument,
+  animal, biome and genre regardless of the current case (instruments at C4; biome/genre buttons disabled when no
+  clip is bundled) — the fast way to audition newly-added sounds. Off by default (`DEV` URL flag; never shown to
+  players). Requires http serving, like all sample playback.
+- **Instrument audio** — the 32 pitched instruments play **real recorded samples** (`playInstrument`→`playSample`,
   anchor + pitch-shift); Drum/Conga fall back to the small vanilla Web-Audio synth (`playPreset`: aero/chord/
   membrane/idio presets). ▶ on each instrument card lets you compare timbres.
 - **Animal audio (BUILT 2026-07-28; grown to 20 species 2026-08-01)** — all animals play **real hand-curated vocalisation samples**
@@ -157,7 +164,7 @@ Except where the amendments above note, the rest below reflects the original shi
   you **keep one sound**: the instrument (a playable timbre) or the animal (its real vocalisation). Stored in
   `localStorage` (`critterhunt.collection`); **both instrument and animal cards replay** with a card-flip.
 
-**Deferred / stubbed in the MVP:** ~~real sound files~~ — **now real recordings on both axes:** the 20 pitched
+**Deferred / stubbed in the MVP:** ~~real sound files~~ — **now real recordings on both axes:** the 32 pitched
 **instruments** use anchor+pitch-shift samples (Data sources → Instrument sounds) and **all 20 animals** play
 hand-curated vocalisations (Data sources → Animal sounds); only the Drum/Conga instruments stay synth. Still
 deferred: wiring an **animal-cry audio clue** (audio clues key off the *instrument* — timbre or, since Phase 2, its assigned **note** — not the animal's cry); **cross-grid**
@@ -363,7 +370,7 @@ seal, a labelled bottlenose dolphin) have essentially no usable Commons cry — 
 
 ### Instrument sounds & facts (NEW)
 
-**Real instrument samples — BUILT in Critter Hunt (2026-07-28; grown to 20 on 2026-07-29).** The pitched
+**Real instrument samples — BUILT in Critter Hunt (2026-07-28; grown to 20 on 2026-07-29; to 32 on 2026-08-02).** The pitched
 instruments now play **real recordings** via an **anchor + pitch-shift sampler**: 13 mp3s per instrument (one every 3 semitones, C3–C6);
 playback picks the nearest and shifts it ≤1.5 semitones with `playbackRate` (chosen over per-note sampling —
 indistinguishable in testing, ~⅓ the files). Samples live in `sounds/instruments/<name>/<Note>.mp3` (FluidR3_GM

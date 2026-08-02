@@ -694,6 +694,20 @@
     { id:"harpsi", name:"Harpsichord",  emoji:"🎼", wave:"sawtooth", baseC:60, fam:"chordophone", voice:"realharpsi"  },
     { id:"dulcimer",name:"Dulcimer",    emoji:"🔨", wave:"triangle", baseC:60, fam:"chordophone", voice:"realdulcimer"},
     { id:"harp",   name:"Harp",         emoji:"🎶", wave:"triangle", baseC:60, fam:"chordophone", voice:"realharp"    },
+    // Orchestral / world / chromatic-percussion batch (added 2026-08-02) — collectible in Free Play + the
+    // Sound Collective, same shared samples as Critter Hunt. Timpani/Taiko are membranophones (plain skin).
+    { id:"gpiano",   name:"Grand Piano",emoji:"🎹", wave:"triangle", baseC:60, fam:"chordophone",   voice:"realpiano"    },
+    { id:"cello",    name:"Cello",      emoji:"🎻", wave:"sawtooth", baseC:48, fam:"chordophone",   voice:"realcello"    },
+    { id:"trombone", name:"Trombone",   emoji:"🎺", wave:"sawtooth", baseC:48, fam:"aerophone",     voice:"realtrombone" },
+    { id:"tuba",     name:"Tuba",       emoji:"📯", wave:"sawtooth", baseC:36, fam:"aerophone",     voice:"realtuba"     },
+    { id:"clarinet", name:"Clarinet",   emoji:"🎵", wave:"sine",     baseC:60, fam:"aerophone",     voice:"realclarinet" },
+    { id:"oboe",     name:"Oboe",       emoji:"🎶", wave:"sawtooth", baseC:60, fam:"aerophone",     voice:"realoboe"     },
+    { id:"panflute", name:"Pan Flute",  emoji:"🪈", wave:"sine",     baseC:60, fam:"aerophone",     voice:"realpanflute" },
+    { id:"accordion",name:"Accordion",  emoji:"🪗", wave:"sawtooth", baseC:60, fam:"aerophone",     voice:"realaccordion"},
+    { id:"xylo",     name:"Xylophone",  emoji:"🪵", wave:"triangle", baseC:72, fam:"idiophone",     voice:"realxylo"     },
+    { id:"steeldrums",name:"Steel Drums",emoji:"🛢️",wave:"sine",     baseC:60, fam:"idiophone",     voice:"realsteel"    },
+    { id:"timpani",  name:"Timpani",    emoji:"🥁", wave:"sine",     baseC:36, fam:"membranophone", voice:"realtimpani"  },
+    { id:"taiko",    name:"Taiko",      emoji:"🪘", wave:"triangle", baseC:36, fam:"membranophone", voice:"realtaiko"    },
   ];
   // The curated campaign trio — the only instruments the teaching movements ever draw (piano gated → M6).
   const CORE_INSTRUMENTS = INSTRUMENTS.filter(i=>i.core);
@@ -1338,6 +1352,19 @@
     realharpsi:  { id:"realharpsi",  name:"Harpsichord",   fam:"keys",    desc:"Real harpsichord — plucked baroque keys.",      type:"sample", sample:"harpsichord",     fallback:"pluck",     peak:0.5  },
     realdulcimer:{ id:"realdulcimer",name:"Dulcimer",      fam:"strings", desc:"Real hammered dulcimer — shimmering.",          type:"sample", sample:"dulcimer",        fallback:"pluck",     peak:0.5  },
     realharp:    { id:"realharp",    name:"Harp",          fam:"strings", desc:"Real orchestral harp — soft plucked strings.",  type:"sample", sample:"orchestral_harp", fallback:"pluck",     peak:0.5  },
+    // Orchestral / world / chromatic-percussion batch (added 2026-08-02) — same shared samples power Critter Hunt.
+    realpiano:   { id:"realpiano",   name:"Grand Piano",   fam:"keys",    desc:"Real acoustic grand piano.",                   type:"sample", sample:"acoustic_grand_piano", fallback:"grand",  peak:0.5  },
+    realcello:   { id:"realcello",   name:"Cello",         fam:"strings", desc:"Real bowed cello — deep and warm.",            type:"sample", sample:"cello",           fallback:"violin",    peak:0.5  },
+    realtrombone:{ id:"realtrombone",name:"Trombone",      fam:"brass",   desc:"Real trombone — brassy and bold.",             type:"sample", sample:"trombone",        fallback:"trumpet",   peak:0.45 },
+    realtuba:    { id:"realtuba",    name:"Tuba",          fam:"brass",   desc:"Real tuba — low brass foundation.",            type:"sample", sample:"tuba",            fallback:"trumpet",   peak:0.45 },
+    realclarinet:{ id:"realclarinet",name:"Clarinet",      fam:"winds",   desc:"Real clarinet — woody and round.",             type:"sample", sample:"clarinet",        fallback:"reedorgan", peak:0.5  },
+    realoboe:    { id:"realoboe",    name:"Oboe",          fam:"winds",   desc:"Real oboe — reedy and plaintive.",             type:"sample", sample:"oboe",            fallback:"reedorgan", peak:0.5  },
+    realpanflute:{ id:"realpanflute",name:"Pan Flute",     fam:"winds",   desc:"Real pan flute — airy and hollow.",            type:"sample", sample:"pan_flute",       fallback:"flute",     peak:0.5  },
+    realaccordion:{id:"realaccordion",name:"Accordion",    fam:"winds",   desc:"Real accordion — squeezed free reeds.",        type:"sample", sample:"accordion",       fallback:"reedorgan", peak:0.5  },
+    realxylo:    { id:"realxylo",    name:"Xylophone",     fam:"mallets", desc:"Real xylophone — bright wooden bars.",         type:"sample", sample:"xylophone",       fallback:"marimba",   peak:0.5  },
+    realsteel:   { id:"realsteel",   name:"Steel Drums",   fam:"mallets", desc:"Real steel pan — Trinidadian and shimmering.", type:"sample", sample:"steel_drums",     fallback:"marimba",   peak:0.45 },
+    realtimpani: { id:"realtimpani", name:"Timpani",       fam:"mallets", desc:"Real timpani — a tuned orchestral drum.",      type:"sample", sample:"timpani",         fallback:"marimba",   peak:0.5  },
+    realtaiko:   { id:"realtaiko",   name:"Taiko",         fam:"mallets", desc:"Real taiko — thunderous Japanese drum.",       type:"sample", sample:"taiko_drum",      fallback:"marimba",   peak:0.5  },
   };
   /* ---- Real-instrument sampler: shared anchor samples (with Critter Hunt), pitched by playbackRate ----
      A type:"sample" voice keeps ONE recording every 3 semitones (C3–C6) in sounds/instruments/<sample>/; play
@@ -2545,7 +2572,11 @@
                                  shamisen:"realshamisen", koto:"realkoto", shakuhachi:"realshaku", sitar:"realsitar",
                                  shanai:"realshanai", bagpipe:"realbagpipe", kalimba:"realkalimba", marimba:"realmarimba",
                                  glockenspiel:"realglock", celesta:"realcelesta", harpsichord:"realharpsi",
-                                 dulcimer:"realdulcimer", orchestral_harp:"realharp" };
+                                 dulcimer:"realdulcimer", orchestral_harp:"realharp",
+                                 acoustic_grand_piano:"realpiano", cello:"realcello", trombone:"realtrombone",
+                                 tuba:"realtuba", clarinet:"realclarinet", oboe:"realoboe", pan_flute:"realpanflute",
+                                 accordion:"realaccordion", xylophone:"realxylo", steel_drums:"realsteel",
+                                 timpani:"realtimpani", taiko_drum:"realtaiko" };
   let bossBanner = null;   // one-shot Home banner after a boss return (reward + granted voice name)
   function launchBoss(){ stopLoop(); location.href = "critter-hunt.html?boss=mujicians"; }
   function grantBossReward(reward){   // → the granted VOICES display name, or null if nothing mapped

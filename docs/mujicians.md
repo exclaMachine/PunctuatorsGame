@@ -2585,11 +2585,13 @@ set Critter Hunt uses — 13 mp3s/instrument, one every 3 semitones C3–C6, nea
 and **`buildDeck` preloads** a run's sample voices so play is real from the first note. Seven added first —
 **violin, flute, trumpet, nylon guitar, saxophone, tubular bells, banjo** — then a **13-strong obscure/world set
 on 2026-07-29** (**shamisen, koto, shakuhachi, sitar, shehnai, bagpipes, kalimba, marimba, glockenspiel, celesta,
-harpsichord, dulcimer, harp** — **20 sampled voices total**), all as collectible `INSTRUMENTS` that surface in
-**Free Play** and catalogue into the Collective by ear, like the synth collectibles. The obscure set is also
-wired into the **M6 Timbre boss (Critter Hunt)** as instruments/rewards — a boss win maps a kept instrument's
-sample folder → its matching sampled voice (`CRITTER_SAMPLE_VOICE`). (Provenance: `sounds/CREDITS.md`; loads via
-fetch/decodeAudioData → needs http serving.)
+harpsichord, dulcimer, harp**), then a **12-strong orchestral/world/chromatic-percussion set on 2026-08-02**
+(**grand piano, cello, trombone, tuba, clarinet, oboe, pan flute, accordion, xylophone, steel drums, timpani, taiko**
+— **32 sampled voices total**; timpani/taiko are the first sampled *membranophone* deck cards, plain-skin), all as
+collectible `INSTRUMENTS` that surface in **Free Play** and catalogue into the Collective by ear, like the synth
+collectibles. These sets are also wired into the **M6 Timbre boss (Critter Hunt)** as instruments/rewards — a boss
+win maps a kept instrument's sample folder → its matching sampled voice (`CRITTER_SAMPLE_VOICE`). (Provenance:
+`sounds/CREDITS.md`; loads via fetch/decodeAudioData → needs http serving.)
 
 **AMENDED 2026-08-01 — player-tuned ANIMAL voices from Critter Hunt.** A third voice type, **`type:"animal"`**, plays
 a **single-file** cry (`sounds/animals/<slug>.mp3`) cropped to the note + pitch-shifted (`renderAnimal`). Unlike the

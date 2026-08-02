@@ -14,12 +14,14 @@ General-MIDI soundfont (by Frank Wen), sliced into per-note mp3s by the
 `C3 Eb3 Gb3 A3 C4 Eb4 Gb4 A4 C5 Eb5 Gb5 A5 C6`. At playback the nearest anchor is pitch-shifted
 ≤1.5 semitones (`playbackRate`) — indistinguishable from per-note sampling in testing, ~⅓ the files.
 
-**Instruments bundled (20 pitched, → GM folder):**
+**Instruments bundled (32 pitched, → GM folder):**
 - *Core:* trumpet · violin · Guitar=`acoustic_guitar_nylon` · Sax=`tenor_sax` · flute · Bell=`tubular_bells` · banjo.
 - *Obscure / world set (added 2026-07-29):* shamisen · koto · shakuhachi · sitar · Shehnai=`shanai` · bagpipe ·
   kalimba · marimba · glockenspiel · celesta · harpsichord · dulcimer · Harp=`orchestral_harp`.
+- *Orchestral / world / chromatic-percussion set (added 2026-08-02):* Piano=`acoustic_grand_piano` · cello ·
+  trombone · tuba · clarinet · oboe · `pan_flute` · accordion · xylophone · `steel_drums` · timpani · Taiko=`taiko_drum`.
 
-(Drum/Conga percussion stay on the synth for now — unpitched.)
+(Drum/Conga percussion stay on the synth for now — unpitched. Timpani/Taiko above ARE sampled + pitched.)
 
 Re-fetch / add instruments with `fetch-instrument-samples.sh` in the repo root.
 

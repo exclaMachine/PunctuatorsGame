@@ -227,6 +227,23 @@ const INSTRUMENTS = [   // `sample` = real-recording folder in sounds/instrument
   {em:"🎼",nm:"Harpsichord", fam:"chordophone", mat:"wood",  play:"plucked", origin:"Italy",                preset:"chord_pluck", sample:"harpsichord"},
   {em:"🔨",nm:"Dulcimer",   fam:"chordophone",  mat:"metal", play:"struck",  origin:"Middle East",          preset:"chord_pluck", sample:"dulcimer"},
   {em:"🎶",nm:"Harp",       fam:"chordophone",  mat:"wood",  play:"plucked", origin:"ancient (Egypt/Mesopotamia)", preset:"chord_pluck", sample:"orchestral_harp"},
+  // Orchestral / world / chromatic-percussion batch (added 2026-08-02) — all real FluidR3_GM samples, same
+  // source + sampler as above. Reuses the existing H-S-family / material / play attribute values (accordion
+  // adds play:"squeezed" — a novel, uniquely-discriminating value). Timpani/Taiko are membranophones WITH a
+  // sample, so they play pitched (only Drum/Conga stay synth + unpitched). Emoji are approximate (some reuse
+  // an existing icon) — pixel sprites are a later art pass, mirroring the animal sprites.
+  {em:"🎹",nm:"Piano",      fam:"chordophone",  mat:"wood",  play:"struck",  origin:"Italy",          preset:"chord_pluck", sample:"acoustic_grand_piano"},
+  {em:"🎻",nm:"Cello",      fam:"chordophone",  mat:"wood",  play:"bowed",   origin:"Italy",          preset:"chord_bowed", sample:"cello"},
+  {em:"🎺",nm:"Trombone",   fam:"aerophone",    mat:"metal", play:"blown",   origin:"Europe",         preset:"aero_metal",  sample:"trombone"},
+  {em:"📯",nm:"Tuba",       fam:"aerophone",    mat:"metal", play:"blown",   origin:"Germany",        preset:"aero_metal",  sample:"tuba"},
+  {em:"🎵",nm:"Clarinet",   fam:"aerophone",    mat:"wood",  play:"blown",   origin:"Germany",        preset:"aero_wood",   sample:"clarinet"},
+  {em:"🎶",nm:"Oboe",       fam:"aerophone",    mat:"wood",  play:"blown",   origin:"France",         preset:"aero_wood",   sample:"oboe"},
+  {em:"🪈",nm:"Pan Flute",  fam:"aerophone",    mat:"wood",  play:"blown",   origin:"South America",  preset:"aero_wood",   sample:"pan_flute"},
+  {em:"🪗",nm:"Accordion",  fam:"aerophone",    mat:"metal", play:"squeezed",origin:"Austria",        preset:"aero_wood",   sample:"accordion"},
+  {em:"🪵",nm:"Xylophone",  fam:"idiophone",    mat:"wood",  play:"struck",  origin:"Africa",         preset:"idio_bell",   sample:"xylophone"},
+  {em:"🛢️",nm:"Steel Drums",fam:"idiophone",    mat:"metal", play:"struck",  origin:"Trinidad",       preset:"idio_bell",   sample:"steel_drums"},
+  {em:"🥁",nm:"Timpani",    fam:"membranophone",mat:"skin",  play:"struck",  origin:"Europe",         preset:"membrane",    sample:"timpani"},
+  {em:"🪘",nm:"Taiko",      fam:"membranophone",mat:"skin",  play:"struck",  origin:"Japan",          preset:"membrane",    sample:"taiko_drum"},
 ];
 const LOCATIONS = [
   {em:"🏜️",nm:"Desert",  climate:"hot"},
@@ -1021,6 +1038,9 @@ function judgeAccusation(ai){
 // hand the kept sound back via localStorage and return to mujicians.html?boss=win, which advances M6→M7 and
 // grants the sound into its Sound Collective. See docs/critter-hunt.md ("Mujicians integration").
 const BOSS = (()=>{ try{ return new URLSearchParams(location.search).get("boss")==="mujicians"; }catch(e){ return false; } })();
+// Dev sound-test: ?dev=1 shows a panel that ▶-plays EVERY instrument, animal, biome and genre — regardless
+// of the current case — so new sounds are quick to audition. Off by default (never shown to players).
+const DEV = (()=>{ try{ return !!new URLSearchParams(location.search).get("dev"); }catch(e){ return false; } })();
 function returnToMujicians(result, reward){
   try{ localStorage.setItem("mujicians.boss", JSON.stringify({result, reward, t:Date.now()})); }catch(e){}
   location.href = "mujicians.html?boss=win";
@@ -1189,7 +1209,36 @@ function applyDailyLock(){
 }
 newGame(); applyDailyLock(); renderCollection();
 // Probe which biome/genre clips exist, then re-render so their ▶ / clue-cues appear only for real recordings.
-probeAmbience().then(()=>{ if(G){ renderCards(); renderClues(); } });
+probeAmbience().then(()=>{ if(G){ renderCards(); renderClues(); } if(DEV) renderDevPanel(); });
+
+/* ---- DEV sound-test panel (?dev=1) — audition every sound without waiting for a case to draw it ---- */
+function renderDevPanel(){
+  document.getElementById("devpanel")?.remove();
+  const wrap=document.querySelector(".wrap")||document.body;
+  const p=document.createElement("div");
+  p.id="devpanel"; p.className="panel";
+  p.style.cssText="margin-top:14px;border:2px dashed var(--accent,#c084fc)";
+  const chip=(label,onclick,ok=true)=>{
+    const b=document.createElement("button");
+    b.textContent=label; b.disabled=!ok;
+    b.style.cssText="margin:3px;font-size:13px"+(ok?"":";opacity:.4");
+    if(ok) b.onclick=onclick; return b;
+  };
+  const section=(title,nodes)=>{
+    const h=document.createElement("div"); h.style.cssText="font-weight:700;margin:10px 0 2px;font-size:13px"; h.textContent=title;
+    const row=document.createElement("div"); row.style.cssText="display:flex;flex-wrap:wrap"; nodes.forEach(n=>row.appendChild(n));
+    p.appendChild(h); p.appendChild(row);
+  };
+  const head=document.createElement("h2"); head.textContent="🔧 Dev — Sound Test  ("+INSTRUMENTS.length+" instruments · "+ANIMALS.length+" animals)"; p.appendChild(head);
+  const note=document.createElement("div"); note.style.cssText="font-size:11px;color:var(--muted);margin-bottom:4px";
+  note.textContent="Plays each sound directly (instruments at C4; percussive samples are naturally short). Biome/genre buttons are disabled when no recording is bundled. Requires http serving.";
+  p.appendChild(note);
+  section("Instruments", INSTRUMENTS.map(i=>chip((i.sample?"":"(synth) ")+i.em+" "+i.nm+" ▶", ()=>playInstrument(i))));
+  section("Animals", ANIMALS.map(a=>chip(a.em+" "+a.nm+" ▶", ()=>playAnimalSound(a.snd))));
+  section("Biomes", LOCATIONS.map(l=>chip(l.em+" "+l.nm+" ▶", ()=>playBiome(l), hasClip(biomePath(l)))));
+  section("Genres", GENRES.map(g=>chip(g.em+" "+g.nm+" ▶", ()=>playGenre(g), hasClip(genrePath(g)))));
+  wrap.appendChild(p);
+}
 </script>
 </body>
 </html>
