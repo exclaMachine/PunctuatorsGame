@@ -63,5 +63,41 @@
     { "slug": "sheep", "name": "Sheep", "species": "Ovis aries", "file": "Sheep bleating.ogg",
       "page": "https://commons.wikimedia.org/wiki/File:Sheep_bleating.ogg",
       "author": "earthcalling", "license": "Public domain", "license_url": "" }
+  ],
+  "_biomes_about": "Attribution for the BIOME ambience beds in sounds/biomes/<slug>.mp3 (Critter Hunt Phase 3, fetched by fetch-biome-samples.sh — trimmed, mono, loudness-normalised, mp3). All Wikimedia Commons; each biome is a distinct real recording so they're ear-distinguishable. `desert` has NO clip (no recognisably-desert PD/CC0 recording exists) and intentionally plays nothing.",
+  "biomes": [
+    { "slug": "reef", "name": "Reef", "file": "Oceanwavescrushing.ogg",
+      "page": "https://commons.wikimedia.org/wiki/File:Oceanwavescrushing.ogg",
+      "author": "Luftrum", "license": "CC BY 3.0", "license_url": "https://creativecommons.org/licenses/by/3.0/" },
+    { "slug": "forest", "name": "Forest", "file": "Birds forest.ogg",
+      "page": "https://commons.wikimedia.org/wiki/File:Birds_forest.ogg",
+      "author": "Barracuda1983", "license": "Public domain", "license_url": "" },
+    { "slug": "jungle", "name": "Jungle", "file": "20090610 0 ambience.ogg",
+      "page": "https://commons.wikimedia.org/wiki/File:20090610_0_ambience.ogg",
+      "author": "nille", "license": "Public domain", "license_url": "", "note": "Costa Rica rainforest — birds/insects/wind" },
+    { "slug": "tundra", "name": "Tundra", "file": "Howling wind.ogg",
+      "page": "https://commons.wikimedia.org/wiki/File:Howling_wind.ogg",
+      "author": "Tvabutzku1234", "license": "CC0", "license_url": "https://creativecommons.org/publicdomain/zero/1.0/" },
+    { "slug": "mountain", "name": "Mountain", "file": "Wind in Swedish pine forest at 25 mps.ogg",
+      "page": "https://commons.wikimedia.org/wiki/File:Wind_in_Swedish_pine_forest_at_25_mps.ogg",
+      "author": "W.carter", "license": "CC BY-SA 4.0", "license_url": "https://creativecommons.org/licenses/by-sa/4.0/" },
+    { "slug": "city", "name": "City", "file": "Sunday in the city street noise2.ogg",
+      "page": "https://commons.wikimedia.org/wiki/File:Sunday_in_the_city_street_noise2.ogg",
+      "author": "cori", "license": "Public domain", "license_url": "" },
+    { "slug": "savanna", "name": "Savanna", "file": "Crickets choir.ogg",
+      "page": "https://commons.wikimedia.org/wiki/File:Crickets_choir.ogg",
+      "author": "Serg Childed", "license": "CC BY-SA 4.0", "license_url": "https://creativecommons.org/licenses/by-sa/4.0/" }
+  ],
+  "_genres_about": "Attribution for the GENRE style-riff clips in sounds/genres/<slug>.mp3 (Critter Hunt Phase 3, fetched by fetch-genre-samples.sh). Shipped: jazz, classical, folk (pre-1926 / released-to-PD). Silent (no clip): blues (a PD Bessie Smith clip was auditioned + rejected as poor — awaiting a suitable replacement) and rock/electronic/disco/pop (no recognisable PD/CC0 example). A missing clip plays nothing by design.",
+  "genres": [
+    { "slug": "jazz", "name": "Jazz", "file": "Original Dixieland Jass Band - Livery Stable Blues (1917) with hiss reduction.ogg",
+      "page": "https://commons.wikimedia.org/wiki/File:Original_Dixieland_Jass_Band_-_Livery_Stable_Blues_(1917)_with_hiss_reduction.ogg",
+      "author": "Original Dixieland Jass Band (1917)", "license": "Public domain", "license_url": "", "note": "first commercial jazz recording; PD in US (pre-1926)" },
+    { "slug": "classical", "name": "Classical", "file": "Ludwig van Beethoven - symphony no. 5 in c minor, op. 67 - i. allegro con brio.ogg",
+      "page": "https://commons.wikimedia.org/wiki/File:Ludwig_van_Beethoven_-_symphony_no._5_in_c_minor,_op._67_-_i._allegro_con_brio.ogg",
+      "author": "Skidmore College orchestra", "license": "Public domain", "license_url": "", "note": "released into the public domain by the performers" },
+    { "slug": "folk", "name": "Folk", "file": "CrippleCreek.ogg",
+      "page": "https://commons.wikimedia.org/wiki/File:CrippleCreek.ogg",
+      "author": "Gid Tanner and his Skillet Lickers", "license": "Public domain", "license_url": "", "note": "old-time fiddle/banjo; PD in US (pre-1926)" }
   ]
 }

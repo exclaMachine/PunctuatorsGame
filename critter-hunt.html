@@ -138,6 +138,7 @@
     <div class="panel board">
       <div class="controls">
         <button class="primary" id="btnUnmask">🐺 Unmask Wormwood</button>
+        <button id="btnListen" title="Play every suspect, instrument, biome (and style) in turn — solve by ear">🔊 Listen to the case</button>
         <button id="btnNew">New case</button>
         <button id="btnReveal" title="dev">Reveal (dev)</button>
       </div>
@@ -262,12 +263,12 @@ const CATEGORIES = [
     attrs:["fam","mat","play"], playable:true, hear:e=>playInstrument(e),
     facts:e=>["family: "+e.fam+(GLOSS[e.fam]?" — "+GLOSS[e.fam]:""), "material: "+e.mat, "played: "+e.play, "origin: "+e.origin] },
   { id:"location", role:"Scenes", noun:"biomes", tabEmoji:"🗺️", castKey:"L", pool:LOCATIONS,
-    attrs:["climate"], playable:false,
+    attrs:["climate"], playable:false, hear:e=>playBiome(e), soundPath:e=>biomePath(e),
     facts:e=>["biome: "+e.nm, "climate: "+e.climate] },
   // The optional 4th axis. Only surfaces (tab + grid) when the case rolls "4 variables" — see rollAcats()
   // / G.acats. `nameLabel` makes clue text read "…played 🎷 Jazz" rather than "…played the 🎷 Jazz".
   { id:"genre", role:"Styles", noun:"musical styles", tabEmoji:"🎶", castKey:"G", pool:GENRES,
-    attrs:["origin","era","feel"], playable:false, nameLabel:e=>e.em+" "+e.nm,
+    attrs:["origin","era","feel"], playable:false, nameLabel:e=>e.em+" "+e.nm, hear:e=>playGenre(e), soundPath:e=>genrePath(e),
     facts:e=>["origin: "+e.origin, "era: "+e.era, "feel: "+e.feel] },
 ];
 const CAT = Object.fromEntries(CATEGORIES.map(c=>[c.id,c]));
@@ -459,6 +460,30 @@ function previewAnimalCfg(slug, cfg){
   _aload[slug].then(fire);
 }
 
+/* ============================ BIOME + GENRE AMBIENCE (audio-first evidence) ============================ */
+// Make every axis ear-identifiable (accessibility): biomes get a real ambient bed, genres a real style clip.
+// Curated PD/CC0 recordings (sounds/{biomes,genres}/<slug>.mp3, fetched by fetch-biome/genre-samples.sh) are
+// the ONLY source — NO synth fallback (dev call 2026-08-02: synthesised beds/riffs sounded bad). A slug with
+// no recording simply plays nothing, and its card ▶ / clue-cue is hidden — availability is probed once at load
+// into `_has`, so we never show a dead button. Used by the card ▶, per-clue ▶ cues, and "Listen to the case".
+const slugify=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+const biomePath=l=>"sounds/biomes/"+slugify(l.nm)+".mp3";
+const genrePath=g=>"sounds/genres/"+slugify(g.nm)+".mp3";
+const _clip={};
+function loadClip(path){ return _clip[path]||(_clip[path]=fetch(path).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(b=>ac().decodeAudioData(b))); }
+function playClip(path, vol=0.9, dur=null){ return loadClip(path).then(buf=>{ const c=ac(); if(c.state==="suspended")c.resume();
+  const t=c.currentTime, src=c.createBufferSource(); src.buffer=buf; const g=c.createGain(); g.gain.value=vol;
+  src.connect(g).connect(c.destination); src.start(t);
+  if(dur){ g.gain.setValueAtTime(vol,t+Math.max(0,dur-0.15)); g.gain.exponentialRampToValueAtTime(0.0006,t+dur); try{src.stop(t+dur+0.05);}catch(e){} }
+  return true; }); }
+function playGenre(g){ playClip(genrePath(g),0.9,3.0).catch(()=>{}); }   // no clip → silence (dev preference)
+function playBiome(l){ playClip(biomePath(l),0.7,3.2).catch(()=>{}); }
+// Availability probe: which biome/genre clips actually exist, so a missing one shows no ▶ (never a dead button).
+const _has={};
+function hasClip(path){ return _has[path]===true; }
+function probeClip(path){ return fetch(path,{method:"HEAD"}).then(r=>{_has[path]=r.ok;}).catch(()=>{_has[path]=false;}); }
+function probeAmbience(){ return Promise.all([...LOCATIONS.map(biomePath), ...GENRES.map(genrePath)].map(probeClip)); }
+
 /* ============================ SEEDED RNG (daily shared puzzle) ============================ */
 // The whole generation path (rnd/shuffle/clue-scoring/rollAcats) draws from RNG, not Math.random,
 // so seeding it with the date makes everyone's Daily Case identical. Endless/boss mode leaves RNG
@@ -556,17 +581,24 @@ function buildCluePool(cast, sol, N, acats){
       const pol=pairHolds(cA,i,cB,j,sol)?"pos":"neg";
       for(const ra of R[cA][i])for(const rb of R[cB][j]){
         const {text,audio,note}=clueText(cA,ra,cB,rb,pol,false);
-        add(mk(cA,i,cB,j,pol,ra,rb,audio,note,text,teachOf(ra).concat(teachOf(rb))));
+        // A ▶ cue lets you hear the referenced biome/genre right on the clue (pitch already has its own note ▶).
+        let cue=null;
+        if(note==null && pol==="pos"){
+          const soundOf=(cid,idx)=> cid==="genre" ? {label:"the style",path:genrePath(cast.G[idx]),play:()=>playGenre(cast.G[idx])}
+                                  : cid==="location" ? {label:"the biome",path:biomePath(cast.L[idx]),play:()=>playBiome(cast.L[idx])} : null;
+          cue=soundOf(cB,j)||soundOf(cA,i);
+        }
+        add(mk(cA,i,cB,j,pol,ra,rb,audio,note,cue,text,teachOf(ra).concat(teachOf(rb))));
       }
     }
   }
   return pool;
-  function mk(cA,i,cB,j,pol,refP,refQ,audio,note,text,teaches){
+  function mk(cA,i,cB,j,pol,refP,refQ,audio,note,cue,text,teaches){
     const sig=[pairKey(cA,cB),cA+i,cB+j,pol,refP.kind+refP.label,refQ.kind+refQ.label].join("|");
     const direct=(pol==="pos"&&refP.kind==="name"&&refQ.kind==="name");
     const attrCount=(refP.kind==="attr"?1:0)+(refQ.kind==="attr"?1:0);
     const test=arr=>pairHolds(cA,i,cB,j,arr)===(pol==="pos");
-    return {pol,audio,note,text,teaches,direct,attrCount,test,sig};
+    return {pol,audio,note,cue,text,teaches,direct,attrCount,test,sig};
   }
 }
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
@@ -691,7 +723,9 @@ function buildUnmaskClue(cast, sol, culprit, acats){
     : "played "+(isFam ? "the instrument that sounds "+TIMBRE[ref.val]
                : isPitch ? "the instrument that plays the note "+noteName(ref.val)
                : ref.label);
-  return {final:true, audio, note, text:"Wormwood is hiding as the critter who "+phrase+". Unmask the impostor."};
+  const cue = via==="location" ? {label:"the biome",path:biomePath(cast.L[idx]),play:()=>playBiome(cast.L[idx])}
+            : via==="genre" ? {label:"the style",path:genrePath(cast.G[idx]),play:()=>playGenre(cast.G[idx])} : null;
+  return {final:true, audio, note, cue, text:"Wormwood is hiding as the critter who "+phrase+". Unmask the impostor."};
 }
 
 // Target shape (Murdle-ish, per dev): ~3 CLEAR clues + exactly ONE "unclear" compound clue +
@@ -772,6 +806,7 @@ function newGame(){
   // Standalone = the shared Daily Case (seed = local date, so everyone gets the same puzzle).
   // Boss mode stays endless/retryable (unseeded), so "New case" re-rolls a fresh boss.
   RNG = BOSS ? Math.random : mulberry32(hashStr("critterhunt:"+todayStr()));
+  if(typeof stopListen==="function") stopListen();   // cancel any in-progress "listen to the case"
   const acats=rollAcats();
   G=generatePuzzle(AXIS_N, acats);
   activeCat=0;
@@ -811,13 +846,15 @@ function renderCardArea(){
 function flipCard(e, cat){
   const c=document.createElement("div"); c.className="pcard";
   const back="<b>"+e.nm+"</b><ul>"+cat.facts(e).map(x=>"<li>"+x+"</li>").join("")+"</ul>";
-  const playBtn = cat.hear ? '<span class="play" title="hear it">▶</span>' : '';
+  // ▶ only when a sound really exists: animals/instruments always; biome/genre only if the clip was found.
+  const canHear = cat.hear && (!cat.soundPath || hasClip(cat.soundPath(e)));
+  const playBtn = canHear ? '<span class="play" title="hear it">▶</span>' : '';
   c.innerHTML='<div class="inner">'+
       '<div class="pface front">'+playBtn+'<div class="em">'+e.em+'</div><div class="nm">'+e.nm+'</div><div class="hint">tap to flip</div></div>'+
       '<div class="pface back">'+back+'</div>'+
     '</div>';
   c.onclick=()=>c.classList.toggle("flipped");
-  if(cat.hear){ const b=c.querySelector(".play"); b.onclick=(ev)=>{ev.stopPropagation();cat.hear(e);}; }
+  if(canHear){ const b=c.querySelector(".play"); b.onclick=(ev)=>{ev.stopPropagation();cat.hear(e);}; }
   return c;
 }
 
@@ -891,6 +928,9 @@ function renderClues(){
     if(c.note!=null){ const b=document.createElement("button"); b.className="listen"; b.textContent="▶ the note";
       b.onclick=()=>{playNote(c.note);document.getElementById("msg").textContent="That’s the target note — now use the ▶ on each instrument card to find which one plays it.";};
       d.appendChild(b); }
+    else if(c.cue && hasClip(c.cue.path)){ const b=document.createElement("button"); b.className="listen"; b.textContent="▶ "+c.cue.label;
+      b.onclick=()=>{try{c.cue.play();}catch(e){}};
+      d.appendChild(b); }
     else if(c.audio){ const b=document.createElement("button"); b.className="listen"; b.textContent="which one?";
       b.onclick=()=>{document.getElementById("msg").textContent="Use the ▶ on each instrument card to hear which one matches the clue.";};
       d.appendChild(b); }
@@ -902,6 +942,9 @@ function renderClues(){
   d.innerHTML='<span class="n">🐺</span><span><b>THE UNMASKING.</b> '+(f.audio?"🔊 ":"")+f.text+'</span>';
   if(f.note!=null){ const b=document.createElement("button"); b.className="listen"; b.textContent="▶ the note";
     b.onclick=()=>{playNote(f.note);document.getElementById("msg").textContent="That’s Wormwood’s note — find the instrument card that plays it, then trace it through the grid.";};
+    d.appendChild(b); }
+  else if(f.cue && hasClip(f.cue.path)){ const b=document.createElement("button"); b.className="listen"; b.textContent="▶ "+f.cue.label;
+    b.onclick=()=>{try{f.cue.play();}catch(e){}document.getElementById("msg").textContent="That’s Wormwood’s scene — trace it through the grid to the impostor.";};
     d.appendChild(b); }
   else if(f.audio){ const b=document.createElement("button"); b.className="listen"; b.textContent="which one?";
     b.onclick=()=>{document.getElementById("msg").textContent="Use the ▶ on each instrument card to hear which timbre Wormwood is hiding behind.";};
@@ -1021,7 +1064,24 @@ function renderCollection(){
 }
 
 /* ============================ WIRING ============================ */
+// "Listen to the case": play every suspect cry → each instrument (at its note) → each biome → each style,
+// in turn, announcing each in #msg. The audio-first spine — the case is fully surveyable by ear.
+let caseTimer=null;
+function stopListen(){ if(caseTimer){clearTimeout(caseTimer);caseTimer=null;} const b=document.getElementById("btnListen"); if(b)b.textContent="🔊 Listen to the case"; }
+function listenToCase(){
+  if(caseTimer){ stopListen(); document.getElementById("msg").textContent="Playback stopped."; return; }
+  const seq=[];
+  G.cast.A.forEach(a=>seq.push(["🐾 "+a.nm, ()=>playAnimalSound(a.snd), 1300]));
+  G.cast.I.forEach(i=>seq.push(["🎵 "+i.nm+(i.pitch!=null?" — "+noteName(i.pitch):""), ()=>playInstrument(i), 1400]));
+  G.cast.L.forEach(l=>{ if(hasClip(biomePath(l))) seq.push(["🗺️ "+l.nm, ()=>playBiome(l), 2900]); });   // only biomes with a real clip
+  if(G.acats.includes("genre")) G.cast.G.forEach(g=>{ if(hasClip(genrePath(g))) seq.push(["🎶 "+g.nm, ()=>playGenre(g), 3300]); });
+  const btn=document.getElementById("btnListen"); if(btn)btn.textContent="⏹ Stop";
+  const msg=document.getElementById("msg"); let k=0;
+  (function step(){ if(k>=seq.length){ caseTimer=null; if(btn)btn.textContent="🔊 Listen to the case"; msg.textContent="— end of case audio —"; return; }
+    const [label,play,gap]=seq[k++]; msg.textContent="🔊 "+label; try{play();}catch(e){} caseTimer=setTimeout(step,gap); })();
+}
 function closeModal(){document.getElementById("overlay").classList.remove("on");}
+document.getElementById("btnListen").onclick=listenToCase;
 document.getElementById("btnUnmask").onclick=()=>{
   const strip=document.getElementById("accuseStrip");
   const show=strip.style.display==="none";
@@ -1064,6 +1124,8 @@ function applyDailyLock(){
   }
 }
 newGame(); applyDailyLock(); renderCollection();
+// Probe which biome/genre clips exist, then re-render so their ▶ / clue-cues appear only for real recordings.
+probeAmbience().then(()=>{ if(G){ renderCards(); renderClues(); } });
 </script>
 </body>
 </html>

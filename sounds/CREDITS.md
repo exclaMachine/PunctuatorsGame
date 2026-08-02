@@ -63,3 +63,38 @@ All sources are **CC0 / Public-domain / CC-BY / CC-BY-SA** — none are ND, so t
 | Sheep | *Ovis aries* | earthcalling | Public domain |
 
 Re-fetch / re-trim with `fetch-animal-samples.sh` (edit a row's start/dur to change the window).
+
+---
+
+# Bundled biome ambience credits
+
+Environmental beds in `sounds/biomes/<slug>.mp3` make Critter Hunt's **location** axis ear-identifiable
+(Phase 3). All from **Wikimedia Commons**, each a distinct real recording (none ND → trim-safe). Fetched /
+trimmed / normalised by `fetch-biome-samples.sh`. **`desert` intentionally has no clip** — no recognisably
+desert PD/CC0 recording exists on Commons — so it plays nothing. Full provenance: `data/critter-credits.json`.
+
+| Biome | Recording | Author | License |
+| --- | --- | --- | --- |
+| Reef | ocean waves on shore | Luftrum | CC BY 3.0 |
+| Forest | Fontainebleau birdsong (wrens) | Barracuda1983 | Public domain |
+| Jungle | Costa Rica rainforest (birds/insects) | nille | Public domain |
+| Tundra | howling wind | Tvabutzku1234 | CC0 |
+| Mountain | strong wind in Swedish pines (25 m/s) | W.carter | CC BY-SA 4.0 |
+| City | urban street traffic | cori | Public domain |
+| Savanna | cricket chorus | Serg Childed | CC BY-SA 4.0 |
+| Desert | — (no clip; silent) | — | — |
+
+# Bundled genre style-clip credits
+
+Style riffs in `sounds/genres/<slug>.mp3` make the **genre** axis ear-identifiable. **Shipped: jazz,
+classical, folk** (pre-1926 / released-to-PD). **Silent (no clip):** **blues** (a PD Bessie Smith clip was
+auditioned and rejected as poor — awaiting a suitable replacement) and the four modern styles (**rock,
+electronic, disco, pop** — no recognisable PD/CC0 example). A missing clip plays nothing by design (dev
+preference over a bad or synth riff). Fetched by `fetch-genre-samples.sh`. Provenance: `data/critter-credits.json`.
+
+| Genre | Recording | Performer | License |
+| --- | --- | --- | --- |
+| Jazz | "Livery Stable Blues" (1917, first jazz record) | Original Dixieland Jass Band | Public domain (US, pre-1926) |
+| Classical | Beethoven Symphony No. 5, mvt I | Skidmore College orchestra | Public domain (released) |
+| Folk | "Cripple Creek" (old-time fiddle/banjo) | Gid Tanner and his Skillet Lickers | Public domain (US, pre-1926) |
+| Blues / Rock / Electronic / Disco / Pop | — (no clip; silent) | — | — |

@@ -431,13 +431,14 @@ are **pitched cards** in Free Play and catalogue into the Sound Collective. See 
 - **Collection completion → Mujicians payoff** — filling the "Menagerie" (percussion) and "Instrument Case"
   (timbres) unlocks a fuller Free-Play palette / a "full orchestra" loadout, closing the feeder loop.
 
-## Daily-game expansion (PLANNED 2026-08-02; Phases 1–2 BUILT 2026-08-02)
+## Daily-game expansion (PLANNED 2026-08-02; Phases 1–3 BUILT 2026-08-02)
 
 Critter Hunt becomes a **first-class daily game** in its own right (not only the M6 boss): a **strict
 daily-only shared puzzle** (Wordle-model), an **audio-first evidence layer** (every axis identifiable by
 ear), a new **note/pitch** clue mechanic (the strongest Mujicians tie-in), and a **shareable result**.
-Decisions locked with the dev 2026-08-02; genre/biome audio prefers **PD/CC0 samples**, synth fallback.
-**Phases 1–2 are BUILT; Phases 3–5 remain planned.**
+Decisions locked with the dev 2026-08-02; genre/biome audio is **real PD/CC0 recordings only — NO synth
+fallback** (dev call: synth beds/riffs sounded bad; a sourceless axis just plays nothing).
+**Phases 1–3 are BUILT; Phases 4–5 remain planned.**
 
 **Phase 1 — Daily-only shared puzzle (BUILT 2026-08-02).**
 - **Seeded PRNG.** A `mulberry32` PRNG + `hashStr` feed a module-level `RNG` that the *entire generation
@@ -471,16 +472,23 @@ Decisions locked with the dev 2026-08-02; genre/biome audio prefers **PD/CC0 sam
   timbre); cards still play their notes regardless. Seeded → the daily is identical for everyone. Deferred harder
   variant: pitch as a non-name-identifying attribute you must cross-deduce; routing compounds through the note ▶.
 
-**Phase 3 — Audio-first evidence layer (code + one sourcing task).**
-- **Genre riffs** — short characteristic riffs per genre, **PD/CC0 samples preferred** (Musopen for classical
-  PD; Freesound CC0 for jazz/blues/folk loops), **synth fallback** for any genre without a clean clip. Wired as
-  the genre card ▶ + a genre audio clue. Genre appears in ~35% of cases (`FOUR_VAR_CHANCE`).
-- **Ambient biome loops** — the **one sourcing dependency** (no biome sounds exist today). Add
-  `sounds/biomes/<slug>.mp3` for the 8 biomes via a `fetch-biome-samples.sh` (CC0/Freesound), mirroring
-  `fetch-animal-samples.sh`, credited in `data/critter-credits.json`. Biome cards get ▶ and biomes become
-  audio-identifiable (biome audio clues).
-- **"🔊 Listen to the case" play-all** — sequentially plays every suspect cry → each instrument at its note →
-  each biome ambient → genre riff. The backbone that makes the evidence surveyable by ear.
+**Phase 3 — Audio-first evidence layer (BUILT 2026-08-02, real recordings only).**
+- **Real recordings only, no synth.** The first cut had synth genre riffs + climate-keyed biome beds as a
+  fallback; the dev judged them bad and had them **removed**. `playGenre`/`playBiome` now play a curated
+  **PD/CC0 recording** (`sounds/{biomes,genres}/<slug>.mp3`) or **nothing** — a sourceless axis is silent, and
+  its card ▶ / clue-cue is **hidden** (never a dead button). Availability is probed once at load
+  (`probeAmbience`/`hasClip`, a HEAD per slug) and the cards/clues re-render after.
+- **Biome ▶ + genre ▶** — added `hear`/`soundPath` to the location & genre `CATEGORIES`; `biomePath`/`genrePath`
+  derive the file from `slugify(nm)`.
+- **Per-clue ▶ cue** — biome/genre-referencing clues (and the UNMASKING clue) carry a `cue {label,path,play}`
+  (threaded through `buildCluePool`→`mk`), rendered as a `▶ the biome/style` button **only if `hasClip`**.
+- **"🔊 Listen to the case" play-all** (`listenToCase`) — sequences every suspect cry → each instrument at its
+  note → each biome → each genre (skipping any without a clip), announcing each in `#msg`; toggles ⏹ Stop.
+- **Sourced clips (Wikimedia Commons, verified):** biomes = reef/forest/jungle/tundra/mountain/city/savanna
+  (**desert silent** — no recognisable-desert PD/CC0 recording); genres = jazz/classical/folk
+  (**blues silent** — a PD clip was auditioned + rejected as poor, awaiting a replacement; **rock/electronic/
+  disco/pop silent** — no PD/CC0 example). Fetched by `fetch-biome-samples.sh` / `fetch-genre-samples.sh`
+  (`SILENT` sentinel skips a slug); provenance in `data/critter-credits.json` + `sounds/CREDITS.md`.
 - **Scope note:** this is the *evidence* half of accessibility. A fully blind-playable **grid** (keyboard +
   ARIA + audio mark confirmation) is deliberately **deferred** — a separate, larger effort.
 
@@ -520,9 +528,10 @@ auto-X; direct + negative + **attribute** + one **audio** clue type; unmask-the-
 card granting one playable sound (instrument = a `VOICES`-ready sample, animal = a percussion one-shot) into a
 local collection. Wormwood as the **mandatory impostor to unmask** — a final determining clue + name-the-culprit win.
 
-**Deferred:** relational/positional clues (ordered axis); the **daily-only seeded mode + note/pitch clue are
-BUILT** (Phases 1–2, 2026-08-02) while the rest of the audio-first evidence layer (biome ambient + genre riffs +
-listen-to-case) + shareable result remain **PLANNED** (Phases 3–5; see "Daily-game expansion" above); N=5+ and richer
+**Deferred:** relational/positional clues (ordered axis); the **daily-only seeded mode + note/pitch clue +
+audio-first evidence layer (real biome/genre recordings + listen-to-case) are BUILT** (Phases 1–3, 2026-08-02)
+while the shareable result + Mujicians Home button remain **PLANNED** (Phases 4–5; see "Daily-game expansion"
+above); N=5+ and richer
 difficulty tuning, larger rosters + more biomes, animated art/detective, sustained **tonal-animal** timbres
 (granular/Tone.js — still tentative; also the reason a kept **animal** cry can't yet grant a Mujicians voice),
 and any mic/"imitate it" angle (out of scope — point-and-listen). **Mujicians integration is now BUILT** (the M6
