@@ -431,12 +431,67 @@ are **pitched cards** in Free Play and catalogue into the Sound Collective. See 
 - **Collection completion → Mujicians payoff** — filling the "Menagerie" (percussion) and "Instrument Case"
   (timbres) unlocks a fuller Free-Play palette / a "full orchestra" loadout, closing the feeder loop.
 
+## Daily-game expansion (PLANNED 2026-08-02, not built)
+
+Critter Hunt becomes a **first-class daily game** in its own right (not only the M6 boss): a **strict
+daily-only shared puzzle** (Wordle-model), an **audio-first evidence layer** (every axis identifiable by
+ear), a new **note/pitch** clue mechanic (the strongest Mujicians tie-in), and a **shareable result**.
+Decisions locked with the dev 2026-08-02; genre/biome audio prefers **PD/CC0 samples**, synth fallback.
+
+**Phase 1 — Daily-only shared puzzle (pure code).**
+- **Seeded PRNG.** Generation currently uses `Math.random()` (`rnd`, `shuffle`, clue scoring, `rollAcats`).
+  Add a mulberry32 PRNG seeded from the date and route the *generation path* through it → everyone gets the
+  identical case that day. Non-generation randomness (the noise buffer) stays `Math.random`.
+- **Seed = local date** (`YYYY-MM-DD`) — Wordle-style "new puzzle at your midnight." (UTC is the alternative.)
+- **Daily lock.** Standalone checks `localStorage["critterhunt.daily"]`; once today's is solved/failed it shows
+  the result instead of a fresh case. The endless **"New case"** button is **hidden in standalone daily mode**
+  (the real consequence of daily-only).
+- **Boss mode stays endless.** `?boss=mujicians` **bypasses** the daily seed + lock so the M6 boss is still
+  retryable (its own random/`Math.random` seed). Important carve-out.
+
+**Phase 2 — Note/pitch per instrument (pure code, Mujicians tie-in).**
+- Each case assigns instruments **distinct, widely-spaced pitches** from a set like C3·G3·C4·G4·C5
+  (MIDI 48/55/60/67/72) — a seeded instrument→pitch bijection, spaced to be easy to tell apart by ear.
+- `playInstrument` already takes a MIDI arg (`playSample(folder, midi)`), so ▶ on an instrument card plays it
+  **at its case note**.
+- Add **pitch as an audio-expressible clue ref**, parallel to the timbre clue (`TIMBRE[ref.val]`):
+  *"the animal that played the C♯ was found in the desert."* Plays the note + shows the note name as text
+  fallback; badged as an **audio** clue (ear-driven, not a free direct link). Deferred harder variant: pitch as
+  a non-name-identifying attribute you must cross-deduce.
+
+**Phase 3 — Audio-first evidence layer (code + one sourcing task).**
+- **Genre riffs** — short characteristic riffs per genre, **PD/CC0 samples preferred** (Musopen for classical
+  PD; Freesound CC0 for jazz/blues/folk loops), **synth fallback** for any genre without a clean clip. Wired as
+  the genre card ▶ + a genre audio clue. Genre appears in ~35% of cases (`FOUR_VAR_CHANCE`).
+- **Ambient biome loops** — the **one sourcing dependency** (no biome sounds exist today). Add
+  `sounds/biomes/<slug>.mp3` for the 8 biomes via a `fetch-biome-samples.sh` (CC0/Freesound), mirroring
+  `fetch-animal-samples.sh`, credited in `data/critter-credits.json`. Biome cards get ▶ and biomes become
+  audio-identifiable (biome audio clues).
+- **"🔊 Listen to the case" play-all** — sequentially plays every suspect cry → each instrument at its note →
+  each biome ambient → genre riff. The backbone that makes the evidence surveyable by ear.
+- **Scope note:** this is the *evidence* half of accessibility. A fully blind-playable **grid** (keyboard +
+  ARIA + audio mark confirmation) is deliberately **deferred** — a separate, larger effort.
+
+**Phase 4 — Social (pure code).**
+- **Shareable spoiler-free emoji result** (date + outcome + streak), copy-to-clipboard — the daily's virality
+  hook (see "Spoiler-free share grid" in Tentative extensions).
+- **Streak + stats** in `localStorage`.
+
+**Phase 5 — Mujicians Home button (one line).**
+- A Home button next to Beat Lab opening `critter-hunt.html` (no `?boss` → daily standalone), parallel to how
+  Beat Lab is reachable from Home.
+
+**Sequencing:** Phases 1, 2, 4, 5 are self-contained code and ship without new asset files; only the biome
+ambient (and any sampled genre riffs) need sourcing + a fetch run over http (Live Server).
+
 ## Open forks (decide before building)
 
 1. ~~**Standalone vs. Mujicians-integrated**~~ — **RESOLVED 2026-07-29: BOTH.** Standalone play is unchanged; when
    launched as the **Mujicians M6 boss** (`?boss=mujicians`) a win writes the kept instrument into
    `persist.sounds` (mapped to a sampled `VOICE`) and advances M6→M7. See the 2026-07-29 amendment above.
-2. **Daily seeded puzzle vs. endless generated** — (both are cheap given the generator; could ship both).
+2. ~~**Daily seeded puzzle vs. endless generated**~~ — **RESOLVED 2026-08-02: strict daily-only** for standalone
+   (seeded PRNG, one shared puzzle/day, endless "New case" hidden); **boss mode stays endless/retryable.** See
+   the "Daily-game expansion" section above.
 3. **Grid size / difficulty ramp** — N = 3→4→5; which clue types unlock when; audio-clue-required tiers.
 4. ~~**Wormwood mandatory or optional**~~ — **RESOLVED 2026-07-28: always on.** Unmask-the-impostor is the
    permanent endgoal (a boss finale stays a possible future layer).
@@ -453,7 +508,8 @@ auto-X; direct + negative + **attribute** + one **audio** clue type; unmask-the-
 card granting one playable sound (instrument = a `VOICES`-ready sample, animal = a percussion one-shot) into a
 local collection. Wormwood as the **mandatory impostor to unmask** — a final determining clue + name-the-culprit win.
 
-**Deferred:** relational/positional clues (ordered axis), the daily-seeded shareable mode, N=5+ and richer
+**Deferred:** relational/positional clues (ordered axis); the daily-seeded shareable mode + audio-first
+evidence layer + note/pitch clue are now **PLANNED, not built** (see "Daily-game expansion" above); N=5+ and richer
 difficulty tuning, larger rosters + more biomes, animated art/detective, sustained **tonal-animal** timbres
 (granular/Tone.js — still tentative; also the reason a kept **animal** cry can't yet grant a Mujicians voice),
 and any mic/"imitate it" angle (out of scope — point-and-listen). **Mujicians integration is now BUILT** (the M6
