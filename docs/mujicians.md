@@ -3141,7 +3141,7 @@ Self-contained, offline, no deps (Web Audio, no assets). One inline `<script>` I
 - **The hand.** Draw to `run.handSize` (**starts at `BASE_HAND_SIZE` = 4**, Balatro-style small start) from
   a shuffled draw pile; select up to `MAX_SELECT` (5); **Play** or **Discard**; a **Sort by pitch** button.
   Selecting a card previews it audibly. Hand size is **grown mid-run by drafting hand-size Muses** (see
-  Muses below) — the HUD shows the current **Hand size**.
+  Muses below).
 - **Hand evaluator (`classify`).** Detects single/**unison** · interval (named + consonance) · **triad**
   (maj/min/dim/aug) · **seventh** (maj7/7/m7/m7♭5/°7/mM7) · **scale run** (contiguous diatonic steps) ·
   cluster. This is the "music dictionary."

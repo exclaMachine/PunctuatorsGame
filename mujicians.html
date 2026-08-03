@@ -34,8 +34,6 @@
   .gigbar .row1{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
   .gigbar .key{font-size:13px}
   .gigbar .key b{color:var(--gold)}
-  .gigbar .counts{font-size:12px;color:var(--dim)}
-  .gigbar .counts b{color:var(--ink)}
   .tempo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap;font-size:13px}
   .tempo-row label{color:var(--dim);font-weight:bold}
   .tempo-row input[type=range]{width:min(220px,60vw);accent-color:var(--accent);cursor:pointer}
@@ -3328,7 +3326,6 @@
       <div class="gigbar">
         <div class="row1">
           <div class="key">Key <b>${RUN_KEY.keyName}</b> · ${run.mode==="free"?"<b>Free Play</b>":`<b>M${run.movement} ${curMovement().element}</b>`}</div>
-          <div class="counts">Discards <b>${run.discardsLeft}</b> · Hand size <b>${run.handSize}</b> · Deck <b>${run.drawPile.length}</b></div>
         </div>
         <div class="scoreline">Applause <b>${run.runScore}</b> ★</div>
         <div class="scoreline" style="color:${warn?'var(--bad)':'var(--dim)'}">Notes left: <b>${left}</b> of ${maxStageBars()} bars${warn?(left>0?' — running out of stage!':' — stage full'):''}</div>
