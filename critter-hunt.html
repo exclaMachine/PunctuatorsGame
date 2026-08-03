@@ -187,7 +187,8 @@
 // (Rattlesnake rattles, Great Horned Owl hoots, Orca clicks). Attributes (class/diet/size/habitat) are real.
 // Emoji are placeholder art. To swap an animal to a pixel-art sprite, add sprites/animals/<file>.png
 // (square) and set `sprite:"<file>.png"` on that entry — faceHTML() then shows the PNG everywhere;
-// animals without a sprite keep their emoji (migrate one at a time). 9 wired so far (see docs).
+// animals without a sprite keep their emoji (migrate one at a time). 13 wired so far (see docs).
+// Instruments migrate the same way with a subfoldered path (sprite:"instruments/<file>.png").
 const ANIMALS = [
   {em:"🦊",nm:"Red Fox",               cls:"mammal",   diet:"omnivore",   size:"small",  habitat:"forest",    snd:"fox", sprite:"fox.png"},
   {em:"🦜",nm:"Chestnut-fronted Macaw",cls:"bird",     diet:"frugivore",  size:"small",  habitat:"jungle",    snd:"parrot"},
@@ -200,26 +201,26 @@ const ANIMALS = [
   {em:"🐊",nm:"American Alligator",    cls:"reptile",  diet:"carnivore",  size:"large",  habitat:"wetland",   snd:"alligator"},
   {em:"🐳",nm:"Orca",                  cls:"mammal",   diet:"carnivore",  size:"large",  habitat:"ocean",     snd:"orca", sprite:"orca.png"},
   {em:"🐺",nm:"Gray Wolf",             cls:"mammal",   diet:"carnivore",  size:"large",  habitat:"forest",    snd:"wolf"},
-  {em:"🐋",nm:"Humpback Whale",        cls:"mammal",   diet:"carnivore",  size:"huge",   habitat:"ocean",     snd:"whale"},
+  {em:"🐋",nm:"Humpback Whale",        cls:"mammal",   diet:"carnivore",  size:"huge",   habitat:"ocean",     snd:"whale", sprite:"humpback-whale.png"},
   {em:"🦆",nm:"Mallard",               cls:"bird",     diet:"omnivore",   size:"small",  habitat:"wetland",   snd:"mallard", sprite:"mallard.png"},
   {em:"🦚",nm:"Indian Peafowl",        cls:"bird",     diet:"omnivore",   size:"medium", habitat:"jungle",    snd:"peafowl", sprite:"peafowl.png"},
   {em:"🐒",nm:"Howler Monkey",         cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"jungle",    snd:"howler", sprite:"howler.png"},
-  {em:"🦃",nm:"Wild Turkey",           cls:"bird",     diet:"omnivore",   size:"medium", habitat:"forest",    snd:"turkey"},
+  {em:"🦃",nm:"Wild Turkey",           cls:"bird",     diet:"omnivore",   size:"medium", habitat:"forest",    snd:"turkey", sprite:"wild-turkey.png"},
   {em:"🐐",nm:"Domestic Goat",         cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"mountain",  snd:"goat", sprite:"goat.png"},
   {em:"🐓",nm:"Rooster",               cls:"bird",     diet:"omnivore",   size:"small",  habitat:"grassland", snd:"rooster", sprite:"rooster.png"},
-  {em:"🐄",nm:"Cow",                   cls:"mammal",   diet:"herbivore",  size:"large",  habitat:"grassland", snd:"cow"},
-  {em:"🐑",nm:"Sheep",                 cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"mountain",  snd:"sheep"},
+  {em:"🐄",nm:"Cow",                   cls:"mammal",   diet:"herbivore",  size:"large",  habitat:"grassland", snd:"cow", sprite:"cow.png"},
+  {em:"🐑",nm:"Sheep",                 cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"mountain",  snd:"sheep", sprite:"sheep.png"},
 ];
 const INSTRUMENTS = [   // `sample` = real-recording folder in sounds/instruments/ (pitched); Drum/Conga stay synth
   // `origin` = real place of origin of the instrument as commonly attributed; truly universal/ancient
   // instruments (drum, flute) are marked "ancient, worldwide" rather than pinned to one country.
-  {em:"🎺",nm:"Trumpet", fam:"aerophone",    mat:"metal", play:"blown",   origin:"Europe",             preset:"aero_metal", sample:"trumpet"},
-  {em:"🎻",nm:"Violin",  fam:"chordophone",  mat:"wood",  play:"bowed",   origin:"Italy",              preset:"chord_bowed", sample:"violin"},
-  {em:"🥁",nm:"Drum",    fam:"membranophone",mat:"skin",  play:"struck",  origin:"ancient, worldwide", preset:"membrane"},
+  {em:"🎺",nm:"Trumpet", fam:"aerophone",    mat:"metal", play:"blown",   origin:"Europe",             preset:"aero_metal", sample:"trumpet", sprite:"instruments/trumpet.png"},
+  {em:"🎻",nm:"Violin",  fam:"chordophone",  mat:"wood",  play:"bowed",   origin:"Italy",              preset:"chord_bowed", sample:"violin", sprite:"instruments/violin.png"},
+  {em:"🥁",nm:"Drum",    fam:"membranophone",mat:"skin",  play:"struck",  origin:"ancient, worldwide", preset:"membrane", sprite:"instruments/drum.png"},
   {em:"🎸",nm:"Guitar",  fam:"chordophone",  mat:"wood",  play:"plucked", origin:"Spain",              preset:"chord_pluck", sample:"acoustic_guitar_nylon"},
-  {em:"🎷",nm:"Sax",     fam:"aerophone",    mat:"metal", play:"blown",   origin:"Belgium",            preset:"aero_metal", sample:"tenor_sax"},
-  {em:"🔔",nm:"Bell",    fam:"idiophone",    mat:"metal", play:"struck",  origin:"England",            preset:"idio_bell", sample:"tubular_bells"},
-  {em:"🪕",nm:"Banjo",   fam:"chordophone",  mat:"wood",  play:"plucked", origin:"Americas (West African roots)", preset:"chord_pluck", sample:"banjo"},
+  {em:"🎷",nm:"Sax",     fam:"aerophone",    mat:"metal", play:"blown",   origin:"Belgium",            preset:"aero_metal", sample:"tenor_sax", sprite:"instruments/sax.png"},
+  {em:"🔔",nm:"Bell",    fam:"idiophone",    mat:"metal", play:"struck",  origin:"England",            preset:"idio_bell", sample:"tubular_bells", sprite:"instruments/bell.png"},
+  {em:"🪕",nm:"Banjo",   fam:"chordophone",  mat:"wood",  play:"plucked", origin:"Americas (West African roots)", preset:"chord_pluck", sample:"banjo", sprite:"instruments/banjo.png"},
   {em:"🪈",nm:"Flute",   fam:"aerophone",    mat:"wood",  play:"blown",   origin:"ancient, worldwide", preset:"aero_wood", sample:"flute"},
   {em:"🪘",nm:"Conga",   fam:"membranophone",mat:"wood",  play:"struck",  origin:"Cuba",               preset:"membrane"},
   // Obscure/world instruments — all real FluidR3_GM samples (shared with Mujicians). Attributes are real:
@@ -892,17 +893,20 @@ function renderTabs(){
     host.appendChild(b);
   });
 }
-// Card face for any entity: a pixel-art <img> when the entity carries a `sprite` (a filename under
-// sprites/animals/), else its emoji. Only ANIMALS carry sprites today, so instruments/biomes/genres
-// fall through to emoji automatically — and animals without art yet keep their emoji too (per-animal
-// migration). To add one: drop e.g. sprites/animals/red-fox.png and set sprite:"red-fox.png" on that
-// ANIMALS entry. Author square (a light or slight-dark background is fine — it reads OK on the UI),
-// pixelated look; the sprite is drawn at 1em so its on-screen size follows each context's font-size.
-const ANIMAL_SPRITE_DIR = "sprites/animals/";
+// Card face for any entity: a pixel-art <img> when the entity carries a `sprite`, else its emoji.
+// Both ANIMALS and INSTRUMENTS carry sprites (biomes/genres still fall through to emoji), and any
+// entity without art yet keeps its emoji (per-entity migration). `sprite` is resolved by spriteSrc():
+// a value WITH a "/" is a path under sprites/ (e.g. "instruments/bell.png"); a BARE filename is an
+// animal sprite (sprites/animals/…, back-compat with the original animals-only set). Author a square,
+// pixelated PNG; it's drawn at 1em so its on-screen size follows each context's font-size. Several
+// sprites are baked from the system emoji by bake-emoji-sprites.py (40² grid, 8-level posterize).
+const SPRITE_BASE = "sprites/";
+const ANIMAL_SPRITE_DIR = SPRITE_BASE+"animals/";
+function spriteSrc(s){ return s.indexOf("/")>=0 ? SPRITE_BASE+s : ANIMAL_SPRITE_DIR+s; }
 function faceHTML(e){
   if(!e) return "";
   return e.sprite
-    ? '<img class="asprite" src="'+ANIMAL_SPRITE_DIR+e.sprite+'" alt="'+(e.nm||"")+'" draggable="false">'
+    ? '<img class="asprite" src="'+spriteSrc(e.sprite)+'" alt="'+(e.nm||"")+'" draggable="false">'
     : e.em;
 }
 function renderCardArea(){

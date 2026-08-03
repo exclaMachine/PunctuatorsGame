@@ -428,19 +428,28 @@ are **pitched cards** in Free Play and catalogue into the Sound Collective. See 
   names, clue numbers), while all dense text — clue sentences, card-back fact lists, the header instruction — stays
   a legible sans (`--sans`). Emoji faces are unchanged (chrome-only pass). Font loads via `@font-face` → needs http
   serving like the samples. *(Scope: Critter Hunt only; Mujicians keeps its current look.)*
-- **Animal sprites (BUILT 2026-08-02).** Animals can render as pixel-art PNGs instead
-  of emoji: drop `sprites/animals/<file>.png` (square, pixelated style) and set
-  `sprite:"<file>.png"` on that `ANIMALS` entry. **9 wired so far** (fox, mallard, rooster, goat, orca, cricket,
-  bullfrog, howler=monkey, peafowl) — cut from a 3×3 source sheet (`sprites/animals/_source-sheet-3x3.png`) via
-  per-animal centered ffmpeg crops → 200×200 (mostly 280×280 squares; the wide orca uses 340×340 so its tail
-  fits); the slight dark glow background is kept (reads near-white at the tight crop). The other 11 animals still
-  show emoji. A single `faceHTML(e)` helper returns an `<img class="asprite">`
-  when the entity has a `sprite`, else the emoji — so it's a **per-animal migration** (unmigrated animals keep
-  their emoji) and non-animal categories (instruments/biomes/genres carry no `sprite`) always fall through to
-  emoji. Sprites show **everywhere** an animal's face appears: flip cards, grid column heads + row labels,
-  accusation buttons, win-modal field notes, and the kept-sound collection (the animal reward carries `sprite`).
-  `.asprite` is sized `1em` so it inherits each context's existing font-size (64px flip card → var(--em) 15–20px
-  grid heads → 30px collection), scaled nearest-neighbour (`image-rendering:pixelated`).
+- **Pixel-art sprites (BUILT 2026-08-02; extended to instruments + emoji-baked set 2026-08-02).** Entities can
+  render as pixel-art PNGs instead of emoji. A single `faceHTML(e)` helper returns an `<img class="asprite">`
+  when the entity has a `sprite`, else the emoji — a **per-entity migration** (unmigrated entities keep their
+  emoji). `sprite` is resolved by **`spriteSrc()`**: a value **with a `/`** is a path under `sprites/`
+  (e.g. `"instruments/bell.png"`); a **bare filename** is an animal sprite (`sprites/animals/…`, back-compat with
+  the original animals-only set). Sprites show **everywhere** a face appears: flip cards, grid column heads + row
+  labels, accusation buttons, win-modal field notes, and the kept-sound collection. `.asprite` is sized `1em` so
+  it inherits each context's font-size (64px flip card → var(--em) 15–20px grid heads → 30px collection), scaled
+  nearest-neighbour (`image-rendering:pixelated`).
+  - **Animals — 13 wired.** The original **9** (fox, mallard, rooster, goat, orca, cricket, bullfrog,
+    howler=monkey, peafowl) were cut from a 3×3 source sheet (`sprites/animals/_source-sheet-3x3.png`) via
+    per-animal centered ffmpeg crops → 200×200 (mostly 280×280 squares; the wide orca uses 340×340; the slight
+    dark glow background reads near-white at the tight crop). Plus **4 emoji-baked** (sheep, cow, wild-turkey,
+    humpback-whale). The other 7 animals still show emoji.
+  - **Instruments — 6 wired (emoji-baked):** trumpet, violin, drum, sax, bell, banjo (`sprites/instruments/`). The
+    other 28 instruments, and all biomes/genres, still show emoji.
+  - **Emoji-baked sprites** are produced by **`bake-emoji-sprites.py`** (one-off tool; Pillow renders the system
+    emoji at the Apple Color Emoji 160px strike, premultiplies α → LANCZOS downscale to a **40² grid** → **8-level
+    colour posterize** + a hard α edge → a tiny 40×40 PNG the game upscales nearest-neighbour). The recipe (grid
+    40, posterize, 8 levels) was chosen in a standalone browser-canvas preview. **Caveat:** an
+    emoji-baked sprite is frozen at the *authoring* platform's emoji (Apple's), unlike runtime emoji which follow
+    the player's device — the tradeoff for cross-platform consistency.
 - **Data:** `data/critters.json` (animals + instruments + biomes with attribute tags + sound-file refs), credits
   manifest, `sounds/` folder. Mirrors the local-data precedent (WordNet, blazon, scenarios).
 - **Generator + solver:** pure JS (brute-force arrangement filter — trivial at N≤5). No dependency.
