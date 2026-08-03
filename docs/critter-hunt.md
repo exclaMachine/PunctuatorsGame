@@ -447,9 +447,14 @@ are **pitched cards** in Free Play and catalogue into the Sound Collective. See 
   - **Emoji-baked sprites** are produced by **`bake-emoji-sprites.py`** (one-off tool; Pillow renders the system
     emoji at the Apple Color Emoji 160px strike, premultiplies α → LANCZOS downscale to a **40² grid** → **8-level
     colour posterize** + a hard α edge → a tiny 40×40 PNG the game upscales nearest-neighbour). The recipe (grid
-    40, posterize, 8 levels) was chosen in a standalone browser-canvas preview. **Caveat:** an
-    emoji-baked sprite is frozen at the *authoring* platform's emoji (Apple's), unlike runtime emoji which follow
-    the player's device — the tradeoff for cross-platform consistency.
+    40, posterize, 8 levels) is chosen interactively in **`emoji-pixelizer.html`** — a standalone dev tool (repo
+    root, opened from Critter Hunt's `?dev=1` panel; warm cozy-retro pixel styling + the bundled Pixelify font).
+    It's **dynamic**: type/paste any emoji *or* drag-and-drop your own image files, tune grid/posterize/levels,
+    preview at real card sizes, and **download a game-ready PNG** (native S×S) per item to drop into
+    `sprites/{instruments,animals}/`. Same pixelization math as `bake-emoji-sprites.py` (the batch renderer for
+    doing many at once from the CLI). **Caveat:** an emoji-baked sprite is frozen at the *authoring* platform's
+    emoji (Apple's), unlike runtime emoji which follow the player's device — the tradeoff for cross-platform
+    consistency.
 - **Data:** `data/critters.json` (animals + instruments + biomes with attribute tags + sound-file refs), credits
   manifest, `sounds/` folder. Mirrors the local-data precedent (WordNet, blazon, scenarios).
 - **Generator + solver:** pure JS (brute-force arrangement filter — trivial at N≤5). No dependency.

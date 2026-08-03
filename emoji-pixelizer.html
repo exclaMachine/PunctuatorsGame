@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emoji Pixelizer — bake pixel-art sprites for Critter Hunt</title>
+<style>
+  /* Same bundled pixel font the game uses (SIL OFL 1.1). Served over http (Live Server), like the game. */
+  @font-face{font-family:'Pixelify';src:url('fonts/PixelifySans-latin.woff2') format('woff2');font-weight:400 700;font-display:swap}
+
+  /* Critter Hunt's warm cozy-retro screen — deliberately single-theme. */
+  :root{
+    --bg:#e9dfca; --panel:#fffdf6; --cell:#fbf7ee; --ink:#2b2620; --muted:#857a68;
+    --edge:#3f362a; --line:#d8cebb; --accent:#2f7d63; --accent2:#b5532a;
+    --pix:'Pixelify',ui-monospace,Menlo,Consolas,monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
+    --sh:4px 4px 0 var(--edge); --sh2:3px 3px 0 var(--edge);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  body.drag{outline:5px dashed var(--accent);outline-offset:-10px}
+  .page{max-width:1040px;margin:0 auto;padding:22px 20px 70px;display:flex;flex-direction:column;gap:20px}
+  canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+  canvas.smooth{image-rendering:auto}
+
+  /* header */
+  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{font-family:var(--pix);font-size:13px;letter-spacing:1.5px;color:var(--accent2)}
+  h1{font-family:var(--pix);font-weight:700;font-size:clamp(24px,4.5vw,36px);line-height:1.1;letter-spacing:.5px;margin:6px 0 0;text-wrap:balance;width:100%}
+  .lede{max-width:64ch;color:var(--muted);font-size:15px;margin:8px 0 0}
+
+  /* shared button look */
+  .btn{font-family:var(--pix);font-size:13px;letter-spacing:.5px;cursor:pointer;border:3px solid var(--edge);
+    background:var(--panel);color:var(--ink);box-shadow:var(--sh2);padding:8px 13px;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{background:#fff}
+  .btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--edge)}
+  .btn.go{background:var(--accent);color:#fff}
+  .btn.sm{font-size:11px;padding:5px 9px;border-width:2px;box-shadow:2px 2px 0 var(--edge)}
+
+  /* control panels */
+  .panel{background:var(--panel);border:3px solid var(--edge);box-shadow:var(--sh);padding:16px 18px}
+  .panelttl{font-family:var(--pix);font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+  .add{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-end}
+  .field{display:flex;flex-direction:column;gap:7px}
+  .field .lab{font-family:var(--pix);font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink)}
+  input[type=text]{font:16px var(--sans);border:3px solid var(--edge);background:var(--cell);color:var(--ink);padding:8px 10px;min-width:180px}
+  input[type=text]:focus-visible{outline:3px solid var(--accent2);outline-offset:2px}
+  .hintline{color:var(--muted);font-size:12.5px;width:100%;margin-top:2px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:20px 30px;align-items:flex-end}
+  .ctrl{display:flex;flex-direction:column;gap:7px;min-width:190px}
+  .ctrl .lab{font-family:var(--pix);font-size:12px;letter-spacing:.6px;text-transform:uppercase;display:flex;justify-content:space-between;gap:12px}
+  .ctrl .val{color:var(--accent);font-variant-numeric:tabular-nums}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;background:var(--cell);border:2px solid var(--edge);cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--accent);border:2px solid var(--edge);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;background:var(--accent);border:2px solid var(--edge);cursor:pointer;border-radius:0}
+  input[type=range]:focus-visible{outline:3px solid var(--accent2);outline-offset:2px}
+  .toggle{display:flex;align-items:center;gap:10px;font-family:var(--pix);font-size:12px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;user-select:none;padding-bottom:2px}
+  .toggle input{width:20px;height:20px;accent-color:var(--accent);cursor:pointer}
+  .lvlctrl{transition:opacity .15s}
+
+  /* item cards */
+  .cards{display:flex;flex-direction:column;gap:20px}
+  .empty{color:var(--muted);font-size:15px;padding:8px 0}
+  .card{background:var(--panel);border:3px solid var(--edge);box-shadow:var(--sh);padding:16px 18px 18px}
+  .cardhd{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-bottom:14px}
+  .cardhd .kind{font-family:var(--pix);font-size:11px;letter-spacing:.6px;color:var(--muted);border:2px solid var(--line);padding:3px 7px}
+  .cardhd input[type=text]{min-width:150px;padding:6px 9px}
+  .cardhd .suffix{font-family:var(--pix);font-size:12px;color:var(--muted);margin-left:-6px}
+  .cardhd .spacer{flex:1}
+  .rowlbl{font-family:var(--pix);font-size:11px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin:16px 0 9px}
+  .glance,.ramp,.ctx,.dl{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+  .tile{display:flex;flex-direction:column;align-items:center;gap:7px}
+  .tilebox{background:var(--cell);border:3px solid var(--edge);box-shadow:var(--sh2);display:flex;align-items:center;justify-content:center;padding:10px}
+  .tile.mini .tilebox{border-width:2px;box-shadow:2px 2px 0 var(--edge);padding:6px}
+  .cap{font-family:var(--pix);font-size:11px;letter-spacing:.5px;color:var(--muted)}
+  .mock{display:flex;flex-direction:column;align-items:center;gap:7px}
+  .mockcard{width:96px;height:118px;background:var(--cell);border:3px solid var(--edge);box-shadow:var(--sh2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+  .mockcard .mn{font-family:var(--pix);font-size:12px;letter-spacing:.4px;max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mockhead{width:34px;height:34px;background:var(--cell);border:2px solid var(--edge);display:flex;align-items:center;justify-content:center}
+  .mocklbl{font-family:var(--pix);font-size:10px;letter-spacing:.5px;color:var(--muted)}
+
+  .foot{border-top:3px dashed var(--edge);padding-top:18px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:10px}
+  .foot b{color:var(--ink);font-family:var(--pix);font-weight:400;letter-spacing:.3px}
+  code{background:var(--cell);border:1px solid var(--line);padding:1px 5px;font-size:.92em}
+  @media (prefers-reduced-motion: reduce){.btn:active{transform:none}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top">
+    <button class="btn sm" id="back">← Back</button>
+    <span class="brand">🔍 CRITTER HUNT · SPRITE LAB</span>
+  </div>
+  <header>
+    <h1>Emoji Pixelizer</h1>
+    <p class="lede">Turn any emoji — or your own image files — into pixel-art sprites for the game. Tune the recipe once, preview at real card sizes, then download a game-ready PNG. Instruments go in <code>sprites/instruments/</code>, animals in <code>sprites/animals/</code>. Same pixelization as <code>bake-emoji-sprites.py</code>, just interactive.</p>
+  </header>
+
+  <section class="panel">
+    <p class="panelttl">Add something to pixelize</p>
+    <div class="add">
+      <div class="field">
+        <span class="lab">Emoji (type or paste any)</span>
+        <input type="text" id="emojiIn" placeholder="🎹 🎸 🐸 …" autocomplete="off">
+      </div>
+      <button class="btn" id="addEmoji">＋ Add emoji</button>
+      <div class="field">
+        <span class="lab">Image files</span>
+        <button class="btn" id="pickImg">🖼 Choose images…</button>
+        <input type="file" id="fileIn" accept="image/*" multiple hidden>
+      </div>
+      <p class="hintline">You can also drag &amp; drop image files anywhere on this page. PNG with transparency crops to the shape; opaque images fill the square.</p>
+    </div>
+  </section>
+
+  <section class="panel controls" aria-label="Pixelizer recipe">
+    <div class="ctrl">
+      <div class="lab"><span>Pixel grid</span><span class="val" id="gridOut">40²</span></div>
+      <input type="range" id="grid" min="12" max="64" value="40" step="1" aria-label="Pixel grid size">
+    </div>
+    <label class="toggle"><input type="checkbox" id="post" checked> Posterize <span style="color:var(--muted)">(blocky pixel-art)</span></label>
+    <div class="ctrl lvlctrl" id="lvlwrap">
+      <div class="lab"><span>Colour levels</span><span class="val" id="lvlOut">8</span></div>
+      <input type="range" id="lvl" min="2" max="8" value="8" step="1" aria-label="Colour levels">
+    </div>
+  </section>
+
+  <div class="cards" id="cards"></div>
+
+  <footer class="foot">
+    <p><b>How the sprite is used:</b> the download is a tiny <span id="dlnote">40×40</span> PNG at the pixel grid's native size; the game upscales it nearest-neighbour (<code>image-rendering:pixelated</code>), so small is correct. Drop it in <code>sprites/instruments/</code> or <code>sprites/animals/</code> and set <code>sprite:"instruments/&lt;file&gt;.png"</code> (or a bare <code>"&lt;file&gt;.png"</code> for an animal) on that entry in <code>critter-hunt.html</code>.</p>
+    <p><b>Caveat:</b> an emoji renders with <em>your</em> device's emoji font (Apple on a Mac), so the baked PNG freezes that look for every player — the tradeoff for cross-platform consistency.</p>
+  </footer>
+</div>
+
+<script>
+  // ---- state ----
+  const items = [   // seeded with the classic trio; fully editable/removable
+    {type:'emoji', ch:'🔔', name:'bell'},
+    {type:'emoji', ch:'🎷', name:'sax'},
+    {type:'emoji', ch:'🥁', name:'drum'},
+  ];
+  const RAMP = [16,24,32,40,48];
+  const srcCache = new WeakMap();          // item -> {canvas,bbox}
+
+  const $ = id => document.getElementById(id);
+  const gridEl=$('grid'), postEl=$('post'), lvlEl=$('lvl'),
+        gridOut=$('gridOut'), lvlOut=$('lvlOut'), lvlwrap=$('lvlwrap'),
+        cardsEl=$('cards'), dlnote=$('dlnote');
+
+  // ---- source rasterisation (emoji or image) → high-res canvas + tight bbox ----
+  function alphaBBox(ctx,N){
+    const d=ctx.getImageData(0,0,N,N).data;
+    let x0=N,y0=N,x1=0,y1=0,found=false;
+    for(let py=0;py<N;py++)for(let px=0;px<N;px++){
+      if(d[(py*N+px)*4+3]>10){found=true; if(px<x0)x0=px; if(px>x1)x1=px; if(py<y0)y0=py; if(py>y1)y1=py;}
+    }
+    return found?{x0,y0,w:x1-x0+1,h:y1-y0+1}:{x0:0,y0:0,w:N,h:N};
+  }
+  function getSource(item){
+    if(srcCache.has(item)) return srcCache.get(item);
+    const N=256, c=document.createElement('canvas'); c.width=c.height=N;
+    const x=c.getContext('2d');
+    if(item.type==='emoji'){
+      x.textAlign='center'; x.textBaseline='middle';
+      x.font='210px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",sans-serif';
+      x.fillText(item.ch, N/2, N/2+6);
+    } else {
+      const img=item.img, box=236, sc=Math.min(box/img.width, box/img.height), w=img.width*sc, h=img.height*sc;
+      x.drawImage(img, (N-w)/2, (N-h)/2, w, h);
+    }
+    const r={canvas:c, bbox:alphaBBox(x,N)};
+    srcCache.set(item,r); return r;
+  }
+  const clut = L => { const t=new Uint8Array(256); for(let v=0;v<256;v++) t[v]=Math.round(Math.round(v/255*(L-1))/(L-1)*255); return t; };
+
+  // ---- the pixelizer: crop bbox → S×S (premultiplied) → posterize + hard alpha ----
+  function pixelSmall(src,S,post,L){
+    const s=document.createElement('canvas'); s.width=s.height=S;
+    const sx=s.getContext('2d'); sx.imageSmoothingEnabled=true; sx.imageSmoothingQuality='high';
+    const b=src.bbox, side=Math.max(b.w,b.h), sc=S/side, dw=b.w*sc, dh=b.h*sc;
+    sx.drawImage(src.canvas, b.x0,b.y0,b.w,b.h, (S-dw)/2,(S-dh)/2, dw,dh);
+    if(post){
+      const lut=clut(L), id=sx.getImageData(0,0,S,S), a=id.data;
+      for(let i=0;i<a.length;i+=4){
+        a[i]=lut[a[i]]; a[i+1]=lut[a[i+1]]; a[i+2]=lut[a[i+2]];
+        a[i+3]=a[i+3]<110?0:255;
+      }
+      sx.putImageData(id,0,0);
+    }
+    return s;
+  }
+  function upscale(small,disp){
+    const o=document.createElement('canvas'); o.width=o.height=disp;
+    const ox=o.getContext('2d'); ox.imageSmoothingEnabled=false;
+    ox.drawImage(small,0,0,disp,disp); return o;
+  }
+  function original(src,disp){
+    const o=document.createElement('canvas'); o.width=o.height=disp;
+    const ox=o.getContext('2d'); ox.imageSmoothingEnabled=true; ox.imageSmoothingQuality='high';
+    const b=src.bbox, side=Math.max(b.w,b.h), sc=disp/side, dw=b.w*sc, dh=b.h*sc;
+    ox.drawImage(src.canvas, b.x0,b.y0,b.w,b.h, (disp-dw)/2,(disp-dh)/2, dw,dh);
+    o.className='smooth'; return o;
+  }
+
+  // ---- dom helpers ----
+  function el(t,c,txt){const n=document.createElement(t); if(c)n.className=c; if(txt!=null)n.textContent=txt; return n;}
+  function tile(canvas,cap,extra){
+    const d=el('div','tile'+(extra?' '+extra:'')), box=el('div','tilebox');
+    box.appendChild(canvas); d.appendChild(box);
+    if(cap) d.appendChild(el('div','cap',cap));
+    return d;
+  }
+  function slug(s){ return (s||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+  function download(canvas,name){
+    canvas.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+      a.download=(slug(name)||'sprite')+'.png'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1500); }, 'image/png');
+  }
+
+  function render(){
+    const S=+gridEl.value, post=postEl.checked, L=+lvlEl.value;
+    gridOut.textContent=S+'²'; lvlOut.textContent=L; dlnote.textContent=S+'×'+S;
+    lvlwrap.style.opacity=post?1:.4; lvlEl.disabled=!post;
+    cardsEl.innerHTML='';
+    if(!items.length){ cardsEl.appendChild(el('div','empty','Nothing yet — add an emoji or drop an image above.')); return; }
+
+    items.forEach(item=>{
+      const src=getSource(item), card=el('div','card');
+
+      // header: kind chip + editable filename + remove
+      const hd=el('div','cardhd');
+      hd.appendChild(el('span','kind', item.type==='emoji' ? item.ch+'  EMOJI' : 'IMAGE'));
+      const nameIn=el('input'); nameIn.type='text'; nameIn.value=item.name||''; nameIn.placeholder='file-name';
+      nameIn.addEventListener('input',e=>item.name=e.target.value);
+      hd.appendChild(nameIn); hd.appendChild(el('span','suffix','.png'));
+      hd.appendChild(el('div','spacer'));
+      const rm=el('button','btn sm','✕ Remove'); rm.addEventListener('click',()=>{ const i=items.indexOf(item); if(i>-1)items.splice(i,1); render(); });
+      hd.appendChild(rm);
+      card.appendChild(hd);
+
+      // glance
+      const glance=el('div','glance');
+      glance.appendChild(tile(original(src,120),'Original'));
+      glance.appendChild(tile(upscale(pixelSmall(src,S,post,L),120),'Pixel · '+S+'²'));
+      card.appendChild(glance);
+
+      // ramp
+      card.appendChild(el('div','rowlbl','Resolution ramp — lower = chunkier'));
+      const ramp=el('div','ramp');
+      RAMP.forEach(s=>ramp.appendChild(tile(upscale(pixelSmall(src,s,post,L),56), s+'²','mini')));
+      card.appendChild(ramp);
+
+      // in-game mocks
+      card.appendChild(el('div','rowlbl','In the game — at real sizes'));
+      const ctx=el('div','ctx');
+      const m1=el('div','mock'), mc=el('div','mockcard');
+      mc.appendChild(upscale(pixelSmall(src,S,post,L),64)); mc.appendChild(el('div','mn',item.name||'—'));
+      m1.appendChild(mc); m1.appendChild(el('div','mocklbl','Card front (64px)')); ctx.appendChild(m1);
+      const m2=el('div','mock'), mh=el('div','mockhead');
+      mh.appendChild(upscale(pixelSmall(src,S,post,L),26));
+      m2.appendChild(mh); m2.appendChild(el('div','mocklbl','Grid head (26px)')); ctx.appendChild(m2);
+      card.appendChild(ctx);
+
+      // downloads
+      card.appendChild(el('div','rowlbl','Download'));
+      const dl=el('div','dl');
+      const b1=el('button','btn go','⬇ '+S+'² PNG (game-ready)');
+      b1.addEventListener('click',()=>download(pixelSmall(src,S,post,L), item.name));
+      const b2=el('button','btn','⬇ 8× preview');
+      b2.addEventListener('click',()=>download(upscale(pixelSmall(src,S,post,L), S*8), (item.name||'sprite')+'-8x'));
+      dl.appendChild(b1); dl.appendChild(b2);
+      card.appendChild(dl);
+
+      cardsEl.appendChild(card);
+    });
+  }
+
+  // ---- adding items ----
+  function graphemes(str){
+    if(window.Intl&&Intl.Segmenter){ const seg=new Intl.Segmenter('en',{granularity:'grapheme'});
+      return [...seg.segment(str)].map(s=>s.segment).filter(s=>s.trim()); }
+    return Array.from(str).filter(s=>s.trim());
+  }
+  function addEmoji(){
+    const v=$('emojiIn').value; if(!v.trim())return;
+    graphemes(v).forEach(ch=>items.push({type:'emoji',ch,name:''}));
+    $('emojiIn').value=''; render();
+  }
+  function addFiles(fileList){
+    [...fileList].filter(f=>f.type.startsWith('image/')).forEach(f=>{
+      const url=URL.createObjectURL(f), img=new Image();
+      img.onload=()=>{ items.push({type:'img',img,name:f.name.replace(/\.[^.]+$/,'')}); URL.revokeObjectURL(url); render(); };
+      img.src=url;
+    });
+  }
+
+  $('addEmoji').addEventListener('click',addEmoji);
+  $('emojiIn').addEventListener('keydown',e=>{ if(e.key==='Enter')addEmoji(); });
+  $('pickImg').addEventListener('click',()=>$('fileIn').click());
+  $('fileIn').addEventListener('change',e=>addFiles(e.target.files));
+  ['grid','lvl'].forEach(id=>$(id).addEventListener('input',render));
+  postEl.addEventListener('change',render);
+
+  // drag & drop images anywhere
+  let dragN=0;
+  window.addEventListener('dragenter',e=>{ if([...e.dataTransfer.types].includes('Files')){ e.preventDefault(); dragN++; document.body.classList.add('drag'); }});
+  window.addEventListener('dragover',e=>{ if([...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+  window.addEventListener('dragleave',()=>{ if(--dragN<=0){ dragN=0; document.body.classList.remove('drag'); }});
+  window.addEventListener('drop',e=>{ e.preventDefault(); dragN=0; document.body.classList.remove('drag'); if(e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
+
+  // back button (honours ?from=, defaults to the game)
+  const from=new URLSearchParams(location.search).get('from');
+  $('back').addEventListener('click',()=>{ location.href = from || 'critter-hunt.html'; });
+
+  render();
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(render);
+</script>
+</body>
+</html>

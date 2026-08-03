@@ -1248,6 +1248,12 @@ function renderDevPanel(){
   const note=document.createElement("div"); note.style.cssText="font-size:11px;color:var(--muted);margin-bottom:4px";
   note.textContent="Plays each sound directly (instruments at C4; percussive samples are naturally short). Biome/genre buttons are disabled when no recording is bundled. Requires http serving.";
   p.appendChild(note);
+  const tools=document.createElement("div"); tools.style.cssText="margin:2px 0 8px";
+  const tlink=document.createElement("a");
+  tlink.href="emoji-pixelizer.html?from="+encodeURIComponent("critter-hunt.html"+location.search);
+  tlink.textContent="🎨 Emoji Pixelizer — bake pixel-art sprites →";
+  tlink.style.cssText="font-size:12px;font-weight:700;color:var(--accent2,#b5532a)";
+  tools.appendChild(tlink); p.appendChild(tools);
   section("Instruments", INSTRUMENTS.map(i=>chip((i.sample?"":"(synth) ")+i.em+" "+i.nm+" ▶", ()=>playInstrument(i))));
   section("Animals", ANIMALS.map(a=>chip(a.em+" "+a.nm+" ▶", ()=>playAnimalSound(a.snd))));
   section("Biomes", LOCATIONS.map(l=>chip(l.em+" "+l.nm+" ▶", ()=>playBiome(l), hasClip(biomePath(l)))));
