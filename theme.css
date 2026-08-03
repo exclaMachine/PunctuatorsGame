@@ -138,6 +138,16 @@
   place-items: center;
   font-size: 3.4rem;
 }
+/* Pixel-baked emoji icon (Critter Hunt sprite recipe): centered, nearest-neighbour
+   upscaled, never cropped — overrides the cover rule above. */
+.hub-card__media img.sprite-pixel {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: auto; height: 62%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
 /* For art with its own white/transparent background (team poster, alphabet):
    show the whole image on white instead of cropping it. */
 .hub-card__media--contain { background: #fff; }

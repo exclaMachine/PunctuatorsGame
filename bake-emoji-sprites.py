@@ -56,6 +56,10 @@ JOBS = [
     ("\U0001F404", "sprites/animals/cow.png"),             # 🐄
     ("\U0001F983", "sprites/animals/wild-turkey.png"),     # 🦃
     ("\U0001F40B", "sprites/animals/humpback-whale.png"),  # 🐋
+    # index.html hub game icons
+    ("\U0001F4D6", "sprites/games/inklings.png"),          # 📖 Inklings
+    ("\U0001F3B9", "sprites/games/mujicians.png"),         # 🎹 Mujicians
+    ("⌨️", "sprites/games/typow.png"),           # ⌨️ TyPow!
 ]
 for emo, out in JOBS:
     bake(emo, out)
