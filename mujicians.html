@@ -14,13 +14,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mujicians</title>
 <style>
-  :root{
+  /* html:root (specificity 0,1,1) so these tokens outrank the shared theme.css
+     :root tokens that nav.js injects AFTER this inline <style>. Without the
+     bump, theme.css's light --bg / near-black --ink would clobber this game's
+     dark palette and wreck text contrast. */
+  html:root{
     --bg:#0e1020; --panel:#171a2e; --edge:#2b3054; --ink:#e7e9ff; --dim:#8890c0;
     --accent:#4de1c8; --gold:#f5c542; --good:#5be08e; --bad:#e0567a; --mult:#ff8f5a;
   }
   *{box-sizing:border-box}
   html,body{margin:0;min-height:100%;background:radial-gradient(120% 120% at 50% 0%,#1a1f3d 0%,var(--bg) 60%);
     color:var(--ink);font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;-webkit-font-smoothing:antialiased}
+  body{padding-top:44px}   /* clear the fixed shared nav bar (nav.js, --nav-h) */
   .wrap{max-width:920px;margin:0 auto;padding:16px 14px 60px}
 
   header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -4325,5 +4330,6 @@
   render();
 })();
 </script>
+<script src="./nav.js"></script>
 </body>
 </html>
