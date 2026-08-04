@@ -112,16 +112,29 @@ span[data-alternate="The"] {
     animation-iteration-count: 3;
   }
 
-  .rightside-up {
+/* Ambigram two-face spin reveal (ported from Spin Nids' chip-rot). The word
+   spins 180° about its center; the back face is pre-rotated 180° so it reads
+   upright the instant the parent reaches 180°, crossfading in as the front
+   fades out. `forwards` leaves the flipped word as the resting state. */
+.ambi-spinning {
     position: relative;
-    transform: rotate(180deg);
-}
-
-.upside-down {
-    transition: 1s;
     display: inline-block;
-    transform: rotate(-180deg);
+    transform-origin: 50% 50%;
 }
+.ambi-face { display: inline-block; }
+.ambi-back {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%) rotate(180deg);
+    white-space: nowrap;
+}
+.ambi-spin { animation: ambiSpin 1s ease-in-out forwards; }
+.ambi-spin .ambi-front { animation: ambiCrossOut 1s ease-in-out forwards; }
+.ambi-spin .ambi-back  { animation: ambiCrossIn 1s ease-in-out forwards; }
+@keyframes ambiSpin { from { transform: rotate(0deg); } to { transform: rotate(180deg); } }
+@keyframes ambiCrossOut { 0%, 40% { opacity: 1; } 60%, 100% { opacity: 0; } }
+@keyframes ambiCrossIn { 0%, 45% { opacity: 0; } 65%, 100% { opacity: 1; } }
 
 @keyframes floatUpToLeft {
     0% { transform: translateY(0) translateX(0); opacity: 1; }

@@ -11,7 +11,7 @@ import {
 } from "./utils/contractionFunc.js";
 import { textRevealSpeeds, changeTextToSpeechBubble } from "./speechbubble.js";
 import { shakeAndBorderizeArticle } from "./articleFunc.js";
-import { makeAmbigram } from "./AmbigramFunc.js";
+import { hasAmbigrams } from "./AmbigramFunc.js";
 import { hasAnagrams } from "./anagrams.js";
 import { hasHomophones } from "./HomophonesFuncs.js";
 //import { swapWord } from "./spoonerismFunc.js";
@@ -325,6 +325,13 @@ removePuncButton.addEventListener("click", () => {
     ) {
       return (errorMessage.innerText =
         "No homophones found in your sentence — try different words!");
+    }
+    if (
+      selectedOption === "ambigrams" &&
+      !hasAmbigrams(initialTypedSentence.value)
+    ) {
+      return (errorMessage.innerText =
+        "No ambigrams found in your sentence — try different words!");
     }
     addSpansAndIdsForWordPlay(initialTypedSentence.value, out1, selectedOption);
   }
@@ -1648,18 +1655,23 @@ function animate() {
                     punctuationSymbol.innerText.toUpperCase();
                   setClassName("blackhole-collapse", punctuationSymbol);
                 }, 1800);
-              } else if (
-                punctuationSymbol.id === ambigram.symbol
-                //&& punctuationSymbol.className === "rightside-up"
-              ) {
-                setClassName("upside-down", punctuationSymbol);
-                setTimeout(() => {
-                  punctuationSymbol.innerText = makeAmbigram(
-                    punctuationSymbol.innerText,
-                  );
-                  setClassName("rightside-up", punctuationSymbol);
-                  punctuationSymbol.classList.remove("upside-down");
-                }, 1800);
+              } else if (punctuationSymbol.id === ambigram.symbol) {
+                // Two-face spin reveal (ported from Spin Nids' chip-rot): the word
+                // spins 180° and lands reading as its dictionary-validated partner,
+                // which is pre-stashed in data-ambigram. One-shot per word.
+                const span = punctuationSymbol;
+                if (
+                  span.hasAttribute("data-ambigram") &&
+                  !span.classList.contains("ambi-spinning")
+                ) {
+                  span.classList.add("ambi-spinning");
+                  span.innerHTML =
+                    `<span class="ambi-face ambi-front">${span.textContent}</span>` +
+                    `<span class="ambi-face ambi-back">${span.getAttribute(
+                      "data-ambigram",
+                    )}</span>`;
+                  span.classList.add("ambi-spin");
+                }
               } else if (punctuationSymbol.id === phonia.symbol) {
                 if (punctuationSymbol.hasAttribute("data-homophones")) {
                   const span = punctuationSymbol;

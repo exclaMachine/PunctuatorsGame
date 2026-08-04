@@ -657,7 +657,11 @@ export const findAndSurroundAmbigramWordsWithSpan = (
       continue; //This messes up wasn't contraction. Also what is a sem???
     }
     if (ambigramPOJO[word]) {
-      formattedWords.push(`<span id="Ambigrambador">${word}</span>`);
+      // Stash the validated 180° partner so the Ambigrambador reveal can read it
+      // directly (like homophones/anagrams do), instead of recomputing on hit.
+      formattedWords.push(
+        `<span id="Ambigrambador" data-ambigram="${ambigramPOJO[word]}">${word}</span>`
+      );
     } else {
       formattedWords.push(word);
     }
@@ -667,43 +671,10 @@ export const findAndSurroundAmbigramWordsWithSpan = (
   return joinedSentence;
 };
 
-let pairs = {
-  a: "e",
-  b: "q",
-  d: "p",
-  e: "a",
-  h: "y",
-  i: "i",
-  j: "r",
-  l: "l",
-  m: "w",
-  n: "u",
-  o: "o",
-  p: "d",
-  q: "b",
-  r: "j",
-  s: "s",
-  t: "t",
-  u: "n",
-  v: "r",
-  w: "m",
-  x: "x",
-  y: "h",
-  z: "z",
-};
-
-export const makeAmbigram = (word) => {
-  // if (word.includes('c') || word.includes('f') || word.includes('k')) return false;  //this can be replaced with the if statement in loop. more dynamic
-
-  let arr = word.split("").reverse();
-
-  for (let i = 0; i < arr.length; i++) {
-    if (pairs[arr[i]] === undefined) {
-      return false;
-    } else {
-      arr[i] = pairs[arr[i]];
-    }
-  }
-
-  return arr.join("");
+// True if any word in the sentence has a 180° ambigram partner. Mirrors the
+// detection above (same was/you skip) so the wordplay guard and the wrapper agree.
+export const hasAmbigrams = (sentence) => {
+  return sentence
+    .split(" ")
+    .some((word) => word !== "was" && word !== "you" && ambigramPOJO[word]);
 };

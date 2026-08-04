@@ -66,6 +66,15 @@ before changing it.
   the old `CanvasPunctuatorsGame` URL; pushes redirect fine).
 - A persistent memory store at `~/.claude/projects/.../memory/` holds cross-session feedback/preferences;
   its `MEMORY.md` index is loaded each session.
+- **Punctuators ambigram wordplay (Ambigrambador).** The `ambigramPOJO` in `AmbigramFunc.js` (`word →
+  180°-partner`) is **generated offline** by `build-ambigram-pojo.js` from `enable1.txt` using Spin Nids'
+  `AM` 180° map — a word counts iff every letter maps and the reversed+mapped result is itself a real word
+  (636 dictionary-validated pairs, partners lowercased for a normal-font reveal; re-run the script to
+  regenerate). Detection wraps matches as `<span data-ambigram="…">` and the hit-time reveal is a two-face
+  180° spin (`.ambi-spin` in `index.css`, ported from Spin Nids' `chip-rot`) landing on the partner word.
+  Each wordplay mode with no matches in the sentence notifies the player instead of running (shared guard
+  pattern: `hasAmbigrams`/`hasHomophones`/`hasAnagrams`). **Only 180° rotational is ported so far**; Spin
+  Nids' 90°/270° rotations and horizontal/vertical mirrors (`MH`/`MV` maps) are a possible follow-up.
 - **Real instrument samples (started 2026-07-28).** `sounds/instruments/<name>/<Note>.mp3` holds real-recording
   mp3s (FluidR3_GM via gleitz/midi-js-soundfonts; `sounds/CREDITS.md`; refetch/add with
   `fetch-instrument-samples.sh` — **black keys are flats**, source folder `<name>-mp3`). Approach chosen =
