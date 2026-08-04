@@ -273,6 +273,94 @@ function animateAnagramSwirl(span, nextWord, nextIndex) {
   Promise.all(finished).then(popBubble).then(settle).catch(settle);
 }
 
+// Homophones sound identical but are spelled differently, so the swap plays as a
+// "struck tuning fork": the word shudders with a damped lateral vibration (the
+// shared pitch ringing out) while a metallic shimmer sweeps across, and the
+// spelling morphs under the brightest pass of the sweep. One shared pitch, a new
+// spelling — the audio-flavoured cousin of the anagram swirl / ambigram spin.
+function animateHomophoneShiver(span, nextWord, nextIndex) {
+  if (span.dataset.homophoneAnimating === "true") return;
+
+  // Leave the span as a plain word so the next hit can read className/textContent.
+  const settle = () => {
+    span.textContent = nextWord;
+    span.className = `word-${nextIndex}`;
+    span.style.position = "";
+    span.style.transform = "";
+    span.dataset.homophoneAnimating = "false";
+  };
+
+  // Reduced-motion users (and the degenerate empty case) just get the swap.
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduced || span.textContent.length === 0) {
+    settle();
+    return;
+  }
+
+  span.dataset.homophoneAnimating = "true";
+
+  const box = span.getBoundingClientRect();
+  const currentWord = span.textContent;
+
+  // Hold the text in an inner span so its spelling can crossfade without wiping
+  // the shimmer overlay that sits alongside it.
+  span.style.position = "relative";
+  span.innerHTML = `<span class="homophone-word">${currentWord}</span>`;
+  const wordEl = span.querySelector(".homophone-word");
+
+  const padX = 12;
+  const padY = 7;
+  const shimmer = document.createElement("span");
+  shimmer.className = "homophone-shimmer";
+  shimmer.style.left = -padX + "px";
+  shimmer.style.top = -padY + "px";
+  shimmer.style.width = box.width + padX * 2 + "px";
+  shimmer.style.height = box.height + padY * 2 + "px";
+  span.appendChild(shimmer);
+
+  const dur = 520;
+
+  // Damped lateral vibration + a hair of rotation = a struck tuning fork ringing
+  // down to rest. Amplitude decays to 0 so the word settles flush in place.
+  const N = 22;
+  const maxAmp = 5.5;
+  const cycles = 6;
+  const vibe = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const s = Math.sin(t * Math.PI * 2 * cycles) * maxAmp * (1 - t);
+    vibe.push({
+      transform: `translateX(${s.toFixed(2)}px) rotate(${(s * 0.2).toFixed(
+        2,
+      )}deg)`,
+    });
+  }
+  span.animate(vibe, { duration: dur, easing: "linear" });
+
+  // The shimmer sweeps left→right, brightest across the middle of the ring.
+  shimmer.animate(
+    [
+      { transform: "translateX(-120%)", opacity: 0 },
+      { transform: "translateX(-25%)", opacity: 1, offset: 0.35 },
+      { transform: "translateX(25%)", opacity: 1, offset: 0.6 },
+      { transform: "translateX(120%)", opacity: 0 },
+    ],
+    { duration: dur, easing: "ease-in-out", fill: "forwards" },
+  );
+
+  // Crossfade the spelling under the shimmer's brightest pass: dip the word out,
+  // swap the letters at the trough, fade the new spelling back in.
+  wordEl.animate(
+    [{ opacity: 1 }, { opacity: 0.1, offset: 0.5 }, { opacity: 1 }],
+    { duration: 300, delay: dur * 0.28, easing: "ease-in-out" },
+  );
+  setTimeout(() => {
+    if (wordEl.isConnected) wordEl.textContent = nextWord;
+  }, dur * 0.28 + 150);
+
+  setTimeout(settle, dur + 40);
+}
+
 const buttonSounds = {
   clicky: new Howl({
     src: ["./sounds/click.mp3"],
@@ -1685,9 +1773,13 @@ function animate() {
                   // Get the next index, or loop back to 0 if we're at the last word
                   let nextIndex = (currentIndex + 1) % homophonesList.length;
 
-                  // Update the content and class
-                  span.textContent = homophonesList[nextIndex];
-                  span.className = `word-${nextIndex}`;
+                  // Tuning-fork shiver: the word vibrates and shimmers, then
+                  // settles on the next same-sounding spelling.
+                  animateHomophoneShiver(
+                    span,
+                    homophonesList[nextIndex],
+                    nextIndex,
+                  );
                 }
               } else if (punctuationSymbol.id === parenthesis.symbol) {
                 if (punctuationSymbol.hasAttribute("data-anagrams")) {

@@ -969,3 +969,23 @@ span[data-hint] {
   transform: translate(-50%, -50%);
   background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95), rgba(180, 220, 255, 0.6));
 }
+
+/* Homophone tuning-fork shiver: the word holder crossfades its spelling while a
+   metallic band sweeps across (JS drives the vibration + sweep via WAAPI). */
+.homophone-word {
+  display: inline-block;
+}
+.homophone-shimmer {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 6px;
+  /* A struck-metal highlight: warm-amber edges around a bright white core. */
+  background: linear-gradient(
+    100deg,
+    rgba(255, 220, 150, 0) 30%,
+    rgba(255, 225, 160, 0.35) 44%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(255, 225, 160, 0.35) 56%,
+    rgba(255, 220, 150, 0) 70%
+  );
+}
