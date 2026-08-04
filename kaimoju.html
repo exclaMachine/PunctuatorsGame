@@ -748,12 +748,81 @@ const N5_WORDS = [
   { jp:'わるい',   romaji:'warui',   en:'bad'     },
 ];
 
+// ── Japanese sound effects (擬音語 onomatopoeia) ─────────────────────
+// Manga-style impact SFX that burst over the rubble on a destroy. These are
+// LEARNING-FIRST: every burst shows the katakana + romaji + meaning, so the
+// player passively absorbs real onomatopoeia while smashing. Tiered so the
+// weight of the sound matches the size of the moment (one cell → whole floor
+// → whole building → Find-Mode wipe). Fired by addSfxBurst() from doHit,
+// collapseDestroyedFloors, checkCollapsed, and doFindBurst.
+const SFX_IMPACT = {
+  cell: [
+    { jp:'ガシャン', romaji:'gashan', en:'shatter'  },
+    { jp:'バキッ',   romaji:'baki',   en:'snap'     },
+    { jp:'ゴツン',   romaji:'gotsun', en:'thud'     },
+    { jp:'ガツン',   romaji:'gatsun', en:'hard hit' },
+    { jp:'バタン',   romaji:'batan',  en:'slam'     },
+    { jp:'ドン',     romaji:'don',    en:'boom'     },
+  ],
+  floor: [
+    { jp:'ドシン',   romaji:'doshin',   en:'heavy landing' },
+    { jp:'ドスン',   romaji:'dosun',    en:'big fall'      },
+    { jp:'ズシン',   romaji:'zushin',   en:'deep impact'   },
+    { jp:'ガラガラ', romaji:'garagara', en:'clatter down'  },
+  ],
+  building: [
+    { jp:'ドカーン',   romaji:'dokaan',  en:'huge blast'  },
+    { jp:'ドッカーン', romaji:'dokkaan', en:'massive boom'},
+  ],
+  blast: [
+    { jp:'ドドド',   romaji:'dododo',   en:'rumbling wipe' },
+    { jp:'メリメリ', romaji:'merimeri', en:'splintering'   },
+    { jp:'ドカン',   romaji:'dokan',    en:'explosion'     },
+  ],
+};
+// SFX-mode vocabulary — a broad onomatopoeia lesson (weather / fire·water /
+// animals / feelings / texture / light·motion). Katakana, the way giongo are
+// written in manga, so it doubles as katakana reading practice. Same
+// {jp,romaji,en} shape as N5_WORDS, so it plugs into makeWordBuildings.
+const SFX_WORDS = [
+  { jp:'ゴロゴロ',     romaji:'gorogoro',   en:'thunder rumbling' },
+  { jp:'ザーザー',     romaji:'zaazaa',     en:'heavy rain'    },
+  { jp:'ピューピュー', romaji:'pyuupyuu',   en:'howling wind'  },
+  { jp:'ポカポカ',     romaji:'pokapoka',   en:'warm & sunny'  },
+  { jp:'メラメラ',     romaji:'meramera',   en:'flames rising' },
+  { jp:'ゴボゴボ',     romaji:'gobogobo',   en:'water gushing' },
+  { jp:'ポタポタ',     romaji:'potapota',   en:'dripping'      },
+  { jp:'グツグツ',     romaji:'gutsugutsu', en:'simmering'     },
+  { jp:'ワンワン',     romaji:'wanwan',     en:'dog barks'     },
+  { jp:'ニャーニャー', romaji:'nyaanyaa',   en:'cat meows'     },
+  { jp:'ケロケロ',     romaji:'kerokero',   en:'frog croaks'   },
+  { jp:'コケコッコー', romaji:'kokekokkoo', en:'rooster crows' },
+  { jp:'ドキドキ',     romaji:'dokidoki',   en:'pounding heart'},
+  { jp:'ワクワク',     romaji:'wakuwaku',   en:'excited'       },
+  { jp:'イライラ',     romaji:'iraira',     en:'irritated'     },
+  { jp:'ウトウト',     romaji:'utouto',     en:'dozing off'    },
+  { jp:'サクサク',     romaji:'sakusaku',   en:'crunchy'       },
+  { jp:'フワフワ',     romaji:'fuwafuwa',   en:'fluffy'        },
+  { jp:'モチモチ',     romaji:'mochimochi', en:'chewy'         },
+  { jp:'ツルツル',     romaji:'tsurutsuru', en:'slippery'      },
+  { jp:'キラキラ',     romaji:'kirakira',   en:'sparkling'     },
+  { jp:'ピカピカ',     romaji:'pikapika',   en:'shiny'         },
+  { jp:'グルグル',     romaji:'guruguru',   en:'spinning'      },
+  { jp:'ピョン',       romaji:'pyon',       en:'a hop'         },
+];
+const SFX_BURST_COOLDOWN = 22;   // frames between per-cell impact bursts (anti-clutter)
+const SFX_COL      = '#ffd23f';  // amber — small/medium impact bursts
+const SFX_COL_BIG  = '#ff7a2f';  // orange-red — floor/building/blast bursts
+const SFX_BANNER_MS = 2600;      // how long the centered "meaning" banner holds
+const SFX_BANNER_Y  = 200;       // banner center-y (upper-middle, over the sky)
+
 // ── Difficulty modes ────────────────────────────────────────────────
 const MODES = {
   katakana: { label:'カタカナ  KATAKANA', desc:'71 angular characters — base 46 + dakuon/handakuon', chars: {...KR, ...DKR}, sample:'ア  ガ  ジ  ダ  バ  パ' },
   hiragana: { label:'ひらがな  HIRAGANA', desc:'71 rounded characters — base 46 + dakuon/handakuon', chars: {...HR, ...DR}, sample:'あ  が  じ  だ  ば  ぱ' },
   kanji:    { label:'漢字    KANJI',       desc:'JLPT N5 essentials — one reading per kanji', chars: KJR, sample:'一  日  月  火  水  山' },
   words:    { label:'日本語  WORDS',       desc:'N5 vocabulary — destroy a word, learn its meaning', isWords:true, words: N5_WORDS, sample:'ねこ  がっこう  ともだち' },
+  sfx:      { label:'擬音語  SOUND FX',    desc:'onomatopoeia — smash the sound, learn what it means', isWords:true, words: SFX_WORDS, sample:'ドキドキ  キラキラ  ザーザー' },
 };
 const MODE_KEYS = Object.keys(MODES);
 let gameMode = 'katakana';
@@ -1087,8 +1156,11 @@ let SELECT_TITLE_Y = 100, SELECT_SUB_Y = 132, SELECT_BACK_Y = 573;
 function layoutSelect() {
   const n = MODE_KEYS.length;
   if (!IS_MOBILE) {
-    // Desktop — fixed layout. Toggle sits ABOVE the cards (under the subtitle).
-    const cardW = 580, cardH = 80, gap = 16;
+    // Desktop. Toggle sits ABOVE the cards (under the subtitle). Card height
+    // is packed into the space between the toggle and the back hint so the
+    // list scales with the mode count (4 → ~80px tall w/ descriptions; a 5th
+    // mode shrinks them to ~65px, still tall enough to keep descriptions).
+    const cardW = 580, gap = 10;
     const w = 460, h = 30, x = (W - w) / 2, y = 148;  // toggle row
     const segW = 130, segH = h - 8, segY = y + 4;
     const seg2x = x + w - 8 - segW, seg1x = seg2x - 6 - segW;
@@ -1096,11 +1168,14 @@ function layoutSelect() {
       seg1: { x: seg1x, y: segY, w: segW, h: segH },
       seg2: { x: seg2x, y: segY, w: segW, h: segH } };
     const y0 = y + h + 14;   // cards start just below the toggle
+    const backY = H - 7, cardsBottom = backY - 16;
+    let cardH = (cardsBottom - y0 - (n - 1) * gap) / n;
+    cardH = Math.max(56, Math.min(80, cardH));
     SELECT_CARDS = MODE_KEYS.map((key, i) => ({
       key, x: (W - cardW) / 2, y: y0 + i * (cardH + gap),
       w: cardW, h: cardH, num: String(i + 1),
     }));
-    SELECT_TITLE_Y = 100; SELECT_SUB_Y = 132; SELECT_BACK_Y = H - 7;
+    SELECT_TITLE_Y = 100; SELECT_SUB_Y = 132; SELECT_BACK_Y = backY;
     return;
   }
   // Mobile — pack everything between the title and the bottom of the canvas.
@@ -1550,7 +1625,7 @@ function startGame(mode) {
 // the player clears all buildings (advance to next level). Score/combo/HP
 // persist across levels — only the world is regenerated.
 function initGame() {
-  inputBuf=''; particles=[]; floats=[]; lasers=[];
+  inputBuf=''; particles=[]; floats=[]; lasers=[]; sfxBurstCd=0; sfxBanner.until=0;
   flash={alpha:0, col:P.hit_bd};
   // Clear active highlight (buildings are about to be regenerated) but
   // preserve the streak charge — it carries across levels so the player
@@ -1978,6 +2053,20 @@ function doHit(bIdx, f, c) {
   // off to the right so the two don't overlap as they rise.
   if (cell.en) addFloat(cell.en, cx + 6, cy - 4, '#9adfff', 16, 2.0, -0.6);
 
+  // Manga impact SFX over the rubble (char modes only — word/SFX modes already
+  // float their own meaning, and a kana burst would crowd the wide word cell).
+  // Throttled so rapid typing doesn't stack a wall of onomatopoeia.
+  if (!b.isWords && sfxBurstCd <= 0) {
+    addSfxBurst(pick(SFX_IMPACT.cell), cx, cy - 20, 22, SFX_COL);
+    sfxBurstCd = SFX_BURST_COOLDOWN;
+  }
+
+  // SOUND FX mode: the word you just typed IS an onomatopoeia — put it on the
+  // same centered banner (with its meaning) so it lands after a correct hit.
+  if (gameMode === 'sfx' && cell.romaji) {
+    setSfxBanner({ jp: cell.char, romaji: cell.romaji, en: cell.en || '' }, SFX_COL);
+  }
+
   // Find mode: if this char matches, burst ALL highlighted instances
   const triggeredFindBurst = findMode.on && cell.char === findMode.char;
   if (triggeredFindBurst) {
@@ -2055,6 +2144,8 @@ function doFindBurst(triggerBIdx) {
     combo += n;
     flash.alpha = 0.4; flash.col = P.find_fl;
     addFloat(`FIND ×${n}!  +${bonus}`, W/2, 200, P.find_fl, 22);
+    // Explosion onomatopoeia for the multi-target laser wipe.
+    addSfxBurst(pick(SFX_IMPACT.blast), W/2, 244, 30, SFX_COL_BIG);
     sndFindBurst(n);
   }
 
@@ -2120,11 +2211,15 @@ function collapseDestroyedFloors(b) {
   if (collapsed > 0) {
     b.shakeX = Math.max(b.shakeX, 6);
     flash.alpha = Math.max(flash.alpha, 0.15);
-    // Skip the "FLOOR!" callout in word mode — every cell is its own floor,
-    // so the message just adds float-text clutter on top of the translation.
+    // Skip the "FLOOR!" callout + heavy SFX in word mode — every cell is its
+    // own floor, so they'd fire every hit and clutter over the translation.
     if (!b.isWords) {
       addFloat(collapsed > 1 ? `FLOOR x${collapsed}!` : 'FLOOR!',
                b.x + b.width/2, GY - b.floors*CH - 14, '#ff9933', 14);
+      // Heavier onomatopoeia for a whole floor giving way (ignores the
+      // per-cell cooldown — a floor collapse is a big-enough moment to show).
+      addSfxBurst(pick(SFX_IMPACT.floor),
+                  b.x + b.width/2, GY - b.floors*CH - 34, 26, SFX_COL_BIG);
     }
     sndFloorCollapse();
   }
@@ -2136,6 +2231,8 @@ function checkCollapsed(bIdx) {
     b.collapsed = true;
     score += 200;
     addFloat('BUILDING DESTROYED! +200', b.x + b.width/2, GY - b.floors*CH/2, '#ff7700', 16);
+    // Biggest impact SFX for a whole building coming down (all modes).
+    addSfxBurst(pick(SFX_IMPACT.building), b.x + b.width/2, GY - b.floors*CH/2 - 30, 30, SFX_COL_BIG);
     sndCollapse();
     player.tgt = nearestBuilding();
     if (buildings.every(b => b.collapsed)) {
@@ -2267,6 +2364,27 @@ function addFloat(txt, x, y, col=P.score_fl, sz=15, vx=0, vy=-1.5) {
   floats.push({ txt, x, y, vx, vy, life:75, maxLife:75, col, sz });
 }
 
+// Manga-style onomatopoeia burst. Two parts: (1) a katakana pop that rises off
+// the rubble at (x,y) as pure spectacle, and (2) the LEARNING payoff — a
+// centered `sfxBanner` that parks the katakana + romaji + meaning in the middle
+// of the screen and holds SFX_BANNER_MS so it's actually readable (the rising
+// float was too small/fast to read). `entry` is a {jp,romaji,en} from
+// SFX_IMPACT; `pop` is a brief spawn scale-up drawn in drawFloats.
+let sfxBurstCd = 0;  // frames until the next per-cell impact burst is allowed
+let sfxBanner = { jp:'', romaji:'', en:'', col:SFX_COL, start:0, until:0 };
+// Park an onomatopoeia on the centered readable banner (newest wins, timer
+// resets). `entry` is any {jp,romaji,en} — an SFX_IMPACT tier OR, in SOUND FX
+// mode, the word the player just typed.
+function setSfxBanner(entry, col=SFX_COL) {
+  sfxBanner.jp = entry.jp; sfxBanner.romaji = entry.romaji; sfxBanner.en = entry.en;
+  sfxBanner.col = col; sfxBanner.start = Date.now();
+  sfxBanner.until = sfxBanner.start + SFX_BANNER_MS;
+}
+function addSfxBurst(entry, x, y, sz=22, col=SFX_COL) {
+  floats.push({ txt: entry.jp, x, y, vx:0, vy:-0.55, life:70, maxLife:70, col, sz, pop:8 });
+  setSfxBanner(entry, col);
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  UPDATE
 // ═══════════════════════════════════════════════════════════════════
@@ -2282,6 +2400,7 @@ function update() {
 
   // Flash decay
   if (flash.alpha > 0) flash.alpha = Math.max(0, flash.alpha - 0.022);
+  if (sfxBurstCd > 0) sfxBurstCd--;   // throttle per-cell onomatopoeia bursts
 
   // Find Mode is now streak-gated, not time-gated — nothing to tick down.
   if (!findMode.on) clearHighlights();
@@ -2369,7 +2488,7 @@ function update() {
   updateLasers();
 
   // Float texts
-  floats = floats.filter(ft => { ft.y+=ft.vy; ft.x += (ft.vx||0); ft.life--; return ft.life>0; });
+  floats = floats.filter(ft => { ft.y+=ft.vy; ft.x += (ft.vx||0); if (ft.pop) ft.pop--; ft.life--; return ft.life>0; });
 }
 
 // Cloud drift runs every frame (menu, gameover, playing) so the sky always moves.
@@ -2454,6 +2573,7 @@ function render() {
   drawParticles();
   drawLasers();
   drawFloats();
+  drawSfxBanner();
   drawPlayer();
   drawInputPanel();
   drawHUD();
@@ -2832,7 +2952,9 @@ function drawFloats() {
   ctx.textAlign = 'center';
   floats.forEach(ft => {
     ctx.globalAlpha = Math.min(1, ft.life/ft.maxLife * 2);
-    ctx.font        = `bold ${ft.sz}px "Courier New"`;
+    // SFX bursts pop up ~25% larger on spawn, then settle to their size.
+    const popK = ft.pop ? 1 + 0.25 * (ft.pop / 8) : 1;
+    ctx.font        = `bold ${Math.round(ft.sz * popK)}px "Courier New"`;
     ctx.fillStyle   = ft.col;
     ctx.shadowBlur  = 6; ctx.shadowColor = ft.col;
     ctx.fillText(ft.txt, ft.x, ft.y);
@@ -2840,6 +2962,57 @@ function drawFloats() {
   });
   ctx.globalAlpha = 1;
   ctx.textAlign   = 'left';
+}
+
+// Centered onomatopoeia banner — the readable "what did that sound mean?"
+// card. Parks the katakana + romaji + meaning in the upper-middle behind a
+// dark panel (legible over any building/sky) and holds SFX_BANNER_MS, with a
+// quick fade-in and a half-second fade-out. addSfxBurst refreshes it.
+function drawSfxBanner() {
+  const now = Date.now();
+  if (now >= sfxBanner.until || !sfxBanner.jp) return;
+  const age  = now - sfxBanner.start;
+  const life = sfxBanner.until - now;
+  let a = 1;
+  if (age  < 120) a = age / 120;                 // fade-in
+  if (life < 500) a = Math.min(a, life / 500);   // fade-out
+
+  const cx = W / 2, cy = SFX_BANNER_Y;
+  ctx.save();
+  ctx.textAlign = 'center';
+
+  // Size the panel to fit the wider of the two text lines.
+  ctx.font = 'bold 34px "Courier New"';
+  const w1 = ctx.measureText(sfxBanner.jp).width;
+  const line2 = sfxBanner.romaji + '  —  ' + sfxBanner.en;
+  ctx.font = 'bold 17px "Courier New"';
+  const w2 = ctx.measureText(line2).width;
+  const panelW = Math.max(240, Math.max(w1, w2) + 44);
+  const panelH = 78;
+
+  // Dark backing panel + colored border for legibility over anything.
+  ctx.globalAlpha = a * 0.8;
+  ctx.fillStyle = 'rgba(8,10,16,0.92)';
+  ctx.fillRect(cx - panelW/2, cy - panelH/2, panelW, panelH);
+  ctx.globalAlpha = a;
+  ctx.lineWidth = 2; ctx.strokeStyle = sfxBanner.col;
+  ctx.strokeRect(cx - panelW/2 + 0.5, cy - panelH/2 + 0.5, panelW - 1, panelH - 1);
+
+  // Big katakana
+  ctx.shadowBlur = 10; ctx.shadowColor = sfxBanner.col;
+  ctx.fillStyle  = sfxBanner.col;
+  ctx.font = 'bold 34px "Courier New"';
+  ctx.fillText(sfxBanner.jp, cx, cy - 4);
+  ctx.shadowBlur = 0;
+
+  // romaji — meaning
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 17px "Courier New"';
+  ctx.fillText(line2, cx, cy + 24);
+
+  ctx.restore();
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left';
 }
 
 // ── Player (Kaomoji Monster) ──────────────────────────────────────────

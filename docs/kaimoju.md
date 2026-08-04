@@ -67,6 +67,34 @@ These are locked-in. All of the following are the user's decisions:
 - **No external dependencies** — one file, drop-in ready
 - **Day / Night themes** — `THEME_DAY` and `THEME_NIGHT` palettes are spread into the live `P` palette by `applyTheme(name)`. Night = warm yellow-lit windows on dark masonry walls under a navy/purple sky; Day = cool light-blue windows on tan walls under a pale sky (windows are a _darker_ blue than the sky so they read as glass). `currentTheme` defaults to OS `prefers-color-scheme` and live-updates on system change. A `[☀]/[☾]` button (top-right, just left of `[?]`) and a click handler in pointerdown let the user toggle manually. Cells are rendered as `wall_bg`/`wall_bd` rectangles with an inset `pane_bg`/`pane_bd` window pane plus a faint mullion cross — this is what made buildings actually read as buildings. State changes (idle / active / find / hit) swap pane color **and** border thickness **and** shadow glow so red-green or blue-yellow colorblind users can still parse them. Stars are skipped in day mode. Body CSS bg is repainted from JS to match. Many menu/select/gameover hardcoded greens were swapped for theme-aware `P.hud` / `P.hud_dim`.
 - **Character-order toggle (kana modes)** — a two-segment toggle on the difficulty-select screen (`SELECT_TOGGLE`, drawn below the mode cards) lets the player pick `SEQUENTIAL` (default) or `RANDOM` order. Click either segment (`seg1`/`seg2` hitboxes in the pointer handler) or press `R` on the select screen to flip it. It's **session-only — not persisted** (resets to SEQUENTIAL on reload) and **kana-only** (no effect on kanji/words; left open to extend to words later). The ramp/HP/hint scaffolding is unchanged — only the _order_ the gojuon chars are introduced changes: when `randomOrder` is true, `startGame` builds `runOrder = shuffleArr(baseGojuon(mode).slice())` once per run, and `gojuonOrder()` returns `runOrder` (falling back to the fixed `GOJUON_KATA`/`GOJUON_HIRA` via `baseGojuon` when off). So level 1's 6 starter chars and each level's single new char (`poolForLevel`/`newCharForLevel`, both routed through `gojuonOrder`) become random but stay consistent across that run's levels. Built to solve "early chars repeat forever, later chars take ~65 levels to reach." `runOrder` is rebuilt every `startGame`, so each run gets a fresh shuffle. **Two separate UIs — keep them in sync.** The difficulty-select screen is canvas-rendered on desktop (`renderSelect` + `SELECT_TOGGLE`, positioned by `layoutSelect()` which is recomputed from `sizeCanvas`; `SELECT_CARDS`/`SELECT_TOGGLE`/`SELECT_TITLE_Y`/`SELECT_SUB_Y`/`SELECT_BACK_Y` are `let`s) **but on mobile it is a DOM overlay** (`#mob-select`, shown by `updateMobOverlays`), NOT the canvas. So the toggle exists twice: the canvas `SELECT_TOGGLE` (desktop, click `seg1`/`seg2` or press `R`) and a DOM mirror `#mob-order` (mobile — `.mob-order-seg` SEQUENTIAL/RANDOM buttons, `syncMobOrder()` keeps the `.active` class in sync). Both just flip the same module-level `randomOrder` flag. The original mobile bug was that the toggle was only ever drawn on the canvas, which is `visibility:hidden` behind the mobile overlay — so it never showed on phones until the `#mob-order` DOM control was added. When changing the toggle, update **both** paths.
+- **Japanese sound-effect bursts (擬音語 onomatopoeia) — learning-first** — every destroy pops a
+  manga-style katakana SFX over the rubble, AND parks the meaning in a **centered readable banner** so
+  the player actually absorbs real onomatopoeia while smashing. Data lives in `SFX_IMPACT` (four tiers:
+  `cell` / `floor` / `building` / `blast`), each an array of `{jp, romaji, en}`. `addSfxBurst(entry, x,
+  y, sz, col)` does two things: (1) pushes a **kana-only** float that rises off the rubble as spectacle
+  (`pop` = a brief spawn scale-up drawn in `drawFloats`), and (2) refreshes `sfxBanner` — a single
+  centered card (`drawSfxBanner`, upper-middle at `SFX_BANNER_Y` behind a dark panel) that holds the
+  big katakana + `romaji — meaning` for `SFX_BANNER_MS` (~2.6s, quick fade-in / ½s fade-out), newest
+  SFX wins. The banner exists because the original rising subtitle was too small/fast to read. Tiers
+  are wired to the size of the moment: **per-cell** bursts fire from `doHit`
+  (**char modes only** — word/SFX cells already float their own meaning) and are throttled by a frame
+  cooldown (`sfxBurstCd` / `SFX_BURST_COOLDOWN`, decremented in `update`, reset in `initGame`) so rapid
+  typing can't stack a wall of text; **floor** bursts fire from `collapseDestroyedFloors` (also char-only,
+  gated with the existing `FLOOR!` callout since word cells are one-per-floor); **building** bursts fire
+  from `checkCollapsed` and **blast** bursts from `doFindBurst` — both in **all modes**, ignoring the
+  cooldown (big enough moments). Colors: `SFX_COL` (amber, small) / `SFX_COL_BIG` (orange-red, big).
+  The banner-set is factored into `setSfxBanner(entry, col)` (called by `addSfxBurst`); in **SOUND FX
+  mode** `doHit` also calls it directly on a correct hit with the just-typed word `{jp:cell.char,
+  romaji, en}`, so the onomatopoeia you smashed lands on the same centered card with its meaning.
+- **SFX difficulty mode (`sfx`)** — a fifth `MODES` entry using the words-shape (`isWords:true`,
+  `words: SFX_WORDS`). `SFX_WORDS` is a broad onomatopoeia lesson (~24 katakana entries across
+  weather / fire·water / animals / feelings / texture / light·motion, same `{jp, romaji, en}` shape as
+  `N5_WORDS`), so it reuses `makeWordBuildings` with zero engine changes — smash the sound-word, its
+  English floats up. Katakana is authentic for giongo and doubles as katakana reading practice. Adding
+  the 5th card meant the **desktop select layout** stopped being fixed-height: `layoutSelect`'s desktop
+  branch now packs card height between the toggle and the back hint (`cardH` clamped 56–80, `gap` 10) so
+  the list scales with mode count — 4 modes ≈ 80px w/ descriptions, 5 ≈ 65px still tall enough to keep
+  them. Mobile was already adaptive. `renderSelect` already scales card text to `card.h`.
 - **Mobile on-screen keyboard** — on touch devices the OS soft keyboard is no longer used; a custom DOM keyboard (`#mob-kbd`) is built and wired in JS (`buildMobKeyboard` / `kbdPress`). QWERTY layout, **no spacebar** (romaji never needs one). The four letters that never appear in any romaji — `l`, `q`, `v`, `x` (`KBD_DISABLED`) — are shown but grayed/disabled. A `⌫` backspace (→ `deleteOneFromBuf`) and a wide `CLEAR` (wipes `inputBuf`) sit below the letters. Keys fire on `pointerdown` (a key tap also skips the level-start intro, mirroring the canvas tap). It's only `.show`n while `gState==='playing'` (hidden behind menu/select/help overlays). Styling reuses the overlay theme CSS vars (`--kj-*`) so it follows day/night. `sizeCanvas` reserves a fixed bottom band via `--kbd-h` (≈40% of viewport, clamped 190–280px) and sizes the canvas to `innerHeight − 44 − kbdH`; the legacy hidden `#ki` input and `focusMobileInput()` are kept but `focusMobileInput` is now a no-op (blurs `#ki`) so the OS keyboard never opens.
 
 ---
@@ -114,7 +142,9 @@ These are locked-in. All of the following are the user's decisions:
 ```
 
 **`particles[]`** — ASCII explosion effect particles
-**`floats[]`** — floating score/status text
+**`floats[]`** — floating score/status text. Base fields `{txt, x, y, vx, vy, life, maxLife, col, sz}`;
+onomatopoeia rubble pops (`addSfxBurst`) add an optional `pop` (spawn scale-up counter, decremented per
+frame, rendered in `drawFloats`). The SFX *meaning* is not a float — it lives in `sfxBanner`
 **`lasers[]`** — find-mode beams: `{ x1,y1, x2,y2, bIdx,f,c, life, hitAt, maxLife, hit, isLast }`. `hitAt` is when the beam reaches the target (and destroys the cell); the `isLast` beam (latest `hitAt`) triggers `collapseDestroyedFloors` for all buildings once it lands
 
 ### Input System
@@ -150,6 +180,26 @@ menu  →  [Enter]  →  select  →  [1/2 or tap card]  →  playing  →  all 
 
 The following ideas were discussed but are **not confirmed**. Ask the user before implementing any of them:
 
+- **Voice / mic onomatopoeia detection (experiment)** — test whether the player can *speak* an
+  onomatopoeia to trigger an in-game action, reading the mic with the Web Audio analyser (the same
+  approach Pitch Bird already uses) rather than real speech recognition — because onomatopoeia are
+  acoustically iconic, the meaning lives in **measurable features**, not the words: loudness, duration,
+  pitch height/contour, repetition/rhythm (e.g. **ドキドキ doki-doki** = a two-beat amplitude pulse),
+  onset sharpness, noisy-vs-tonal spectrum. First cheap probes worth trying: **ピカピカ pika-pika**
+  (bright/repeated → a flash or power-up) and **ドキドキ doki-doki** (rhythmic pulse → charge a meter /
+  pump the kaiju) — wire each to a small action and see if the analyser reliably distinguishes them.
+  Stays offline/vanilla (no ASR API). An optional online-only `ja-JP` Web Speech tier could be layered
+  later, matching the Inklings "speak-the-phoneme (deferred, online-only, opt-in)" precedent.
+- **Kotodama Caster (擬音語 side game — proposed, not built)** — a *separate but related* game where the
+  player **speaks sound-effects to affect the world**, themed on 言霊 *kotodama* ("word-spirit": spoken
+  words carry power). Each onomatopoeia is a "spell": ゴロゴロ summons thunder, ザーザー rain, メラメラ
+  fire, ピューピュー wind, キラキラ makes things sparkle — a zen sandbox or element-combining puzzle
+  (rain + fire = steam). Same offline **acoustic-feature detection** as the mic experiment above (low +
+  sustained = rumble, noisy + steady = rain, noisy + rising = fire), so it shares that tech if the
+  Kaimoju mic probe pans out. Would live as its own single HTML file. Related sibling concepts discussed:
+  a voice-fed creature/Tamagotchi, onomatopoeia karaoke (match a word's loudness/duration/pitch
+  envelope — the most detection-honest), voice cooking (じゅうじゅう sear → ぐつぐつ simmer → サクサク
+  crisp), and a reduplication rhythm/beatbox mode (ties into the Mujicians Beat Lab).
 - **Kanji expansion** — extend `KJR` toward full JLPT N5 (~80 kanji) or up to N4. Furigana hint overlays still tentative.
 - **Oni Mode** — timed typing windows, no romaji hints, buildings "fight back"
 - **Kaomoji unlock/collection system** — earn new heads/bodies by destroying buildings
