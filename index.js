@@ -13,6 +13,7 @@ import { textRevealSpeeds, changeTextToSpeechBubble } from "./speechbubble.js";
 import { shakeAndBorderizeArticle } from "./articleFunc.js";
 import { makeAmbigram } from "./AmbigramFunc.js";
 import { hasAnagrams } from "./anagrams.js";
+import { hasHomophones } from "./HomophonesFuncs.js";
 //import { swapWord } from "./spoonerismFunc.js";
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
@@ -317,6 +318,13 @@ removePuncButton.addEventListener("click", () => {
     ) {
       return (errorMessage.innerText =
         "No anagrams found in your sentence — try different words!");
+    }
+    if (
+      selectedOption === "homophones" &&
+      !hasHomophones(initialTypedSentence.value)
+    ) {
+      return (errorMessage.innerText =
+        "No homophones found in your sentence — try different words!");
     }
     addSpansAndIdsForWordPlay(initialTypedSentence.value, out1, selectedOption);
   }

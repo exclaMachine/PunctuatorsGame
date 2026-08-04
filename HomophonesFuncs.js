@@ -885,6 +885,14 @@ const homophones = {
   "": [],
 };
 
+export const hasHomophones = (sentence) => {
+  // Note: the map has an empty-string key ("": []) and [] is truthy, so
+  // require a non-empty word with at least one real alternative.
+  return sentence
+    .split(/\b/)
+    .some((word) => word && homophones[word] && homophones[word].length > 0);
+};
+
 export const wrapHomophones = (sentence) => {
   // let placeholders = [];
   // let tempSentence = sentence.replace(/<span[^>]*>(.*?)<\/span>/g, (match) => {
