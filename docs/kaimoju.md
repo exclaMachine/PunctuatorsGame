@@ -180,23 +180,44 @@ menu  →  [Enter]  →  select  →  [1/2 or tap card]  →  playing  →  all 
 
 The following ideas were discussed but are **not confirmed**. Ask the user before implementing any of them:
 
-- **Voice / mic onomatopoeia detection (experiment)** — test whether the player can *speak* an
-  onomatopoeia to trigger an in-game action, reading the mic with the Web Audio analyser (the same
-  approach Pitch Bird already uses) rather than real speech recognition — because onomatopoeia are
-  acoustically iconic, the meaning lives in **measurable features**, not the words: loudness, duration,
-  pitch height/contour, repetition/rhythm (e.g. **ドキドキ doki-doki** = a two-beat amplitude pulse),
-  onset sharpness, noisy-vs-tonal spectrum. First cheap probes worth trying: **ピカピカ pika-pika**
-  (bright/repeated → a flash or power-up) and **ドキドキ doki-doki** (rhythmic pulse → charge a meter /
-  pump the kaiju) — wire each to a small action and see if the analyser reliably distinguishes them.
-  Stays offline/vanilla (no ASR API). An optional online-only `ja-JP` Web Speech tier could be layered
-  later, matching the Inklings "speak-the-phoneme (deferred, online-only, opt-in)" precedent.
+- **Voice / mic onomatopoeia detection — PROOF-OF-CONCEPT BUILT 2026-08-04 (standalone, NOT yet in
+  `kaimoju.html`).** Goal: let the player **speak** a SOUND-FX onomatopoeia to trigger an in-game action.
+  Three approaches were evaluated in throwaway probe files; the third won:
+  1. **Acoustic pattern only** (loudness + rhythm + pitch contour, Web-Audio analyser) — *rejected as
+     insufficient alone.* It reliably reads the **shape** (e.g. ドキドキ = a two-beat amplitude pulse) but
+     **cannot tell which word** — pika-pika / kira-kira / doki-doki are all 2-beat, so any same-rhythm
+     utterance ("na-na") triggers the same. Good for spectacle, useless for "did you say *this* sound."
+  2. **Web Speech ASR** (`webkitSpeechRecognition`) — *rejected.* Online-only (streams audio to Google),
+     needs a **secure context** (`localhost`/https) + internet, is Chrome/Edge-only, and **mis-hears
+     non-lexical onomatopoeia** (doki-doki → "donkey"). A throwaway probe (`onomatopoeia-game.html`) was
+     hardened with a secure-context guard, flip-flop kill-switch, real error messages, and an EN/JA
+     toggle, then deemed a dead end and **deleted** — do not resurrect this path.
+  3. **Local template matching (MFCC + DTW, speaker-enrolled)** — ✅ **the chosen approach**, offline /
+     vanilla, no server. `kaimoju-mic-test.html` records the mic (Web Audio, with Pitch Bird's capture
+     fixes: module-scoped source so Chrome can't GC it to zeros, context sample-rate matched to the mic,
+     silent-gain sink), segments each utterance (RMS voice-gate), turns it into a sequence of **MFCC**
+     frames (mel filterbank → log → DCT — a timbre-over-time fingerprint of the actual phonetics), and
+     matches it against templates **the player records in their own voice** (`localStorage`
+     `kaimoju.voiceTemplates.v1`) via **DTW** distance (which absorbs tempo differences). Because it keys
+     on phonetic content, it *does* separate pika/doki/zaa/wan/gao. **Result: all 5 test words matched
+     ≥85%** for the enrolling speaker. Tunable match-threshold + voice-gate sliders.
+  - **Key properties / limits:** speaker-dependent (enroll your own voice first — most accurate as a
+    personal PoC, worse cross-speaker); needs an **acoustically-distinct vocabulary** (confusable pairs
+    are the failure mode → curate the word list); needs a **secure context** (`localhost`) for mic access.
+  - **Probe file (standalone, drop-in, not linked from the game):** `kaimoju-mic-test.html` — the winning
+    template-matcher. (The rejected ASR probe `onomatopoeia-game.html` was deleted.)
+  - **NEXT STEP (fresh session):** decide how to graduate this into **SOUND FX mode** — e.g. speak-to-
+    destroy the active SFX target cell as an alternate/added input; an in-game enrollment UX (record your
+    voice per sound); curate a distinct subset of `SFX_WORDS`; and handle the speaker-dependent enrollment
+    flow + reject/confidence thresholds inside the game. Still gated behind user approval before touching
+    `kaimoju.html`.
 - **Kotodama Caster (擬音語 side game — proposed, not built)** — a *separate but related* game where the
   player **speaks sound-effects to affect the world**, themed on 言霊 *kotodama* ("word-spirit": spoken
   words carry power). Each onomatopoeia is a "spell": ゴロゴロ summons thunder, ザーザー rain, メラメラ
   fire, ピューピュー wind, キラキラ makes things sparkle — a zen sandbox or element-combining puzzle
-  (rain + fire = steam). Same offline **acoustic-feature detection** as the mic experiment above (low +
-  sustained = rumble, noisy + steady = rain, noisy + rising = fire), so it shares that tech if the
-  Kaimoju mic probe pans out. Would live as its own single HTML file. Related sibling concepts discussed:
+  (rain + fire = steam). Could reuse the **local MFCC+DTW template-matching** tech proven by the Kaimoju
+  mic probe above (speaker-enrolled, offline) instead of raw acoustic-feature detection — a spell fires
+  when the spoken utterance matches its enrolled template. Would live as its own single HTML file. Related sibling concepts discussed:
   a voice-fed creature/Tamagotchi, onomatopoeia karaoke (match a word's loudness/duration/pitch
   envelope — the most detection-honest), voice cooking (じゅうじゅう sear → ぐつぐつ simmer → サクサク
   crisp), and a reduplication rhythm/beatbox mode (ties into the Mujicians Beat Lab).

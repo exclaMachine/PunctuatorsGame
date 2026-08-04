@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Kaimoju · Voice Match probe (offline template matching)</title>
+<style>
+  :root{
+    --bg:#080c08; --panel:#0e140e; --panel2:#101a10; --bd:#1e3a1e;
+    --fg:#7dff7d; --dim:#3f7d3f; --amber:#ffd23f; --orange:#ff7a2f; --red:#ff5555; --blue:#6cc6ff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:'Courier New',monospace}
+  body{padding:14px;max-width:960px;margin:0 auto;
+    background-image:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0 2px,rgba(0,20,0,.22) 2px 4px)}
+  h1{font-size:19px;margin:0 0 2px;letter-spacing:1px}
+  h1 .jp{color:var(--amber)}
+  .sub{color:var(--dim);font-size:12px;margin:0 0 12px;line-height:1.55}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .card{background:var(--panel);border:1px solid var(--bd);padding:10px 12px;border-radius:2px}
+  button{font-family:inherit;font-size:14px;cursor:pointer;background:var(--panel2);color:var(--fg);
+    border:1px solid var(--bd);padding:8px 14px;border-radius:2px;letter-spacing:.4px}
+  button:hover{border-color:var(--fg)}
+  button:disabled{opacity:.4;cursor:default}
+  button.primary{background:#16301a;border-color:var(--fg)}
+  #status{color:var(--dim);font-size:12px;margin:8px 0}
+  #status.err{color:var(--red)} #status.live{color:var(--amber)}
+  code{color:var(--amber)}
+
+  /* big result / reaction panel */
+  #result{margin:12px 0;text-align:center;border:2px solid var(--bd);border-radius:3px;
+    background:var(--panel);padding:16px 12px;transition:all .08s}
+  #result .emo{font-size:56px;line-height:1;display:block;margin-bottom:6px}
+  #result .word{font-size:22px;letter-spacing:1px}
+  #result .conf{font-size:13px;color:var(--dim);margin-top:4px}
+  #result.hit{border-color:var(--fg);box-shadow:0 0 22px rgba(125,255,125,.35)}
+  #result.miss{border-color:var(--red)}
+  #result.rec{border-color:var(--amber);box-shadow:0 0 22px rgba(255,210,63,.3)}
+
+  .lvlwrap{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim)}
+  .lvl{width:180px;height:12px;background:#03210b;border:1px solid var(--bd);border-radius:2px;overflow:hidden}
+  .lvl > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#1f7d1f,#7dff7d)}
+
+  /* word cards */
+  .words{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:12px}
+  .w{border:1px solid var(--bd);border-radius:3px;padding:10px;background:var(--panel2)}
+  .w.armed{border-color:var(--amber);box-shadow:0 0 12px rgba(255,210,63,.3)}
+  .w .top{display:flex;justify-content:space-between;align-items:baseline}
+  .w .emo{font-size:22px}
+  .w .jp{font-size:15px} .w .r{color:var(--dim);font-size:12px}
+  .w .takes{font-size:11px;color:var(--dim);margin:6px 0}
+  .w .takes b{color:var(--fg);font-weight:normal}
+  .w .dist{font-size:11px;color:var(--dim);min-height:14px}
+  .w .btns{display:flex;gap:6px;margin-top:6px}
+  .w button{font-size:12px;padding:5px 8px;flex:1}
+
+  .tune{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--dim);margin-top:12px}
+  .tune label{display:flex;flex-direction:column;gap:2px}
+  .tune input[type=range]{width:150px}
+  .tune b{color:var(--fg);font-weight:normal}
+
+  #log{max-height:150px;overflow:auto;font-size:12px;line-height:1.5;margin-top:8px}
+  #log .ev{padding:3px 0;border-bottom:1px dashed var(--bd)}
+  #log .ev .hit{color:var(--fg)} #log .ev .miss{color:var(--red)} #log .ev .d{color:var(--dim)}
+</style>
+</head>
+<body>
+  <h1>KAIMOJU · <span class="jp">声マッチ</span> VOICE-MATCH PROBE</h1>
+  <p class="sub">
+    Offline, no server, no speech-to-text. It records the mic (Web Audio), turns each utterance into
+    <b>MFCC</b> features (a mini-spectrogram of timbre over time), and compares it against templates
+    <b>you record in your own voice</b> using <b>DTW</b>. That captures the actual phonetics — so it can
+    tell <code>pika</code> from <code>kira</code> from <code>doki</code>, not just "a 2-beat pattern."
+    <b>Speaker-dependent:</b> record each sound a few times first, then say it and watch it match.
+  </p>
+
+  <div class="row">
+    <button id="startBtn" class="primary">▶ Start microphone</button>
+    <span class="lvlwrap">mic <span class="lvl"><i id="lvlBar"></i></span></span>
+    <button id="clearBtn">Clear all takes</button>
+  </div>
+  <div id="status">Mic idle. Click “Start microphone” (a user gesture is required to open audio).</div>
+
+  <div id="result">
+    <span class="emo" id="rEmo">🎙️</span>
+    <span class="word" id="rWord">start the mic, then record your sounds</span>
+    <div class="conf" id="rConf"></div>
+  </div>
+
+  <div class="words" id="words"></div>
+
+  <div class="tune">
+    <label>match threshold <b><span id="thVal">55</span></b>
+      <input type="range" id="thRange" min="10" max="140" value="55" step="1"></label>
+    <label>voice gate <b><span id="gateVal">0.012</span></b>
+      <input type="range" id="gateRange" min="3" max="40" value="12" step="1"></label>
+    <span>lower threshold = stricter match · raise the gate if room noise triggers it</span>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Recent utterances</div>
+    <div id="log"></div>
+  </div>
+
+<script>
+"use strict";
+
+// ── vocabulary: 5 deliberately acoustically-distinct onomatopoeia ──────
+const WORDS = [
+  { key:'pika', jp:'ピカピカ', r:'pika pika', en:'sparkle', emo:'✨' },
+  { key:'doki', jp:'ドキドキ', r:'doki doki', en:'heartbeat', emo:'💓' },
+  { key:'zaa',  jp:'ザーザー', r:'zaa zaa',  en:'rain',     emo:'🌧️' },
+  { key:'wan',  jp:'ワンワン', r:'wan wan',  en:'bark',     emo:'🐶' },
+  { key:'gao',  jp:'ガオー',   r:'gao',      en:'roar',     emo:'🦁' },
+];
+const MAX_TAKES = 3;
+const LS_KEY = 'kaimoju.voiceTemplates.v1';
+
+// templates[key] = array of utterances; each utterance = array of MFCC frames (13-dim arrays)
+let templates = loadTemplates();
+function loadTemplates(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)) || {}; }catch(_){ return {}; } }
+function saveTemplates(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(templates)); }catch(_){ } }
+
+// ── DOM ────────────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const startBtn=$('startBtn'), clearBtn=$('clearBtn'), statusEl=$('status'), lvlBar=$('lvlBar');
+const resultEl=$('result'), rEmo=$('rEmo'), rWord=$('rWord'), rConf=$('rConf');
+const wordsEl=$('words'), logEl=$('log');
+const thRange=$('thRange'), thVal=$('thVal'), gateRange=$('gateRange'), gateVal=$('gateVal');
+
+let MATCH_TH = 55;      // DTW distance below which we accept a match
+let VOICE_GATE = 0.012; // RMS above which we consider it voiced
+thRange.oninput = ()=>{ MATCH_TH=+thRange.value; thVal.textContent=MATCH_TH; };
+gateRange.oninput = ()=>{ VOICE_GATE=(+gateRange.value)/1000; gateVal.textContent=VOICE_GATE.toFixed(3); };
+
+// ── audio graph (module-scoped so Chrome doesn't GC the source → zeros) ─
+let ac=null, analyser=null, micStream=null, micSource=null, micTrack=null, silentGain=null, running=false;
+let timeBuf=null, freqBuf=null;
+
+// mel filterbank + DCT table, built once we know sampleRate/binCount
+let melFilters=null, dctTable=null, NUM_MEL=26, NUM_MFCC=13;
+
+startBtn.onclick = async ()=>{
+  if (running){ stopMic(); return; }
+  try{
+    // Plain request — asking to disable AGC/NS can make some browsers kill the track.
+    micStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
+  }catch(err){
+    statusEl.textContent = 'Mic denied / unavailable: '+err.name+' — '+err.message +
+      (!window.isSecureContext ? '  (also: not a secure context — open via http://localhost)' : '');
+    statusEl.className='err'; return;
+  }
+  micTrack = micStream.getAudioTracks()[0] || null;
+  if (micTrack) micTrack.onended = ()=>{ statusEl.textContent='Mic track ended (another app took it?). Restart.'; statusEl.className='err'; running=false; };
+  // Match context rate to the mic's — a 44100/48000 mismatch can make the source emit pure zeros.
+  const rate = (micTrack && micTrack.getSettings && micTrack.getSettings().sampleRate) || undefined;
+  const AC = window.AudioContext||window.webkitAudioContext;
+  try{ ac = new AC(rate ? {sampleRate:rate} : undefined); }catch(_){ ac = new AC(); }
+  if (ac.state==='suspended') await ac.resume();
+  micSource = ac.createMediaStreamSource(micStream);
+  analyser = ac.createAnalyser();
+  analyser.fftSize = 2048;
+  analyser.smoothingTimeConstant = 0;
+  timeBuf = new Float32Array(analyser.fftSize);
+  freqBuf = new Float32Array(analyser.frequencyBinCount);
+  // source -> analyser -> muted gain -> destination keeps the graph pulled (audio actually flows).
+  silentGain = ac.createGain(); silentGain.gain.value = 0;
+  micSource.connect(analyser); analyser.connect(silentGain); silentGain.connect(ac.destination);
+
+  buildMel(ac.sampleRate, analyser.frequencyBinCount);
+  running=true;
+  startBtn.textContent='■ Stop microphone'; startBtn.classList.remove('primary');
+  statusEl.textContent='Live — '+ac.sampleRate+' Hz. Record each sound (● Rec), then say it.';
+  statusEl.className='live';
+  setResult('🎙️','listening…','',null);
+  loop();
+};
+
+function stopMic(){
+  running=false;
+  if (micStream) micStream.getTracks().forEach(t=>t.stop());
+  if (ac) ac.close();
+  ac=analyser=micStream=micSource=silentGain=null;
+  startBtn.textContent='▶ Start microphone'; startBtn.classList.add('primary');
+  statusEl.textContent='Mic stopped.'; statusEl.className='';
+}
+
+// ── mel filterbank + DCT ───────────────────────────────────────────
+const hzToMel=f=>2595*Math.log10(1+f/700);
+const melToHz=m=>700*(Math.pow(10,m/2595)-1);
+function buildMel(sr, bins){
+  const lowHz=80, highHz=Math.min(sr/2, 8000);
+  const lowMel=hzToMel(lowHz), highMel=hzToMel(highHz);
+  const pts=[]; for (let i=0;i<NUM_MEL+2;i++){ pts.push(melToHz(lowMel+(highMel-lowMel)*i/(NUM_MEL+1))); }
+  const binOf=hz=>Math.floor((analyser.fftSize+1)*hz/sr);
+  const fb=pts.map(binOf);
+  melFilters=[];
+  for (let m=1;m<=NUM_MEL;m++){
+    const a=fb[m-1], b=fb[m], c=fb[m+1], w=[];
+    for (let k=a;k<c;k++){
+      if (k<0||k>=bins) continue;
+      let g = k<b ? (k-a)/Math.max(1,(b-a)) : (c-k)/Math.max(1,(c-b));
+      if (g>0) w.push({bin:k, g});
+    }
+    melFilters.push(w);
+  }
+  // DCT-II table [k][n]
+  dctTable=[];
+  for (let k=0;k<NUM_MFCC;k++){ const row=new Float32Array(NUM_MEL);
+    for (let n=0;n<NUM_MEL;n++) row[n]=Math.cos(Math.PI/NUM_MEL*(n+0.5)*k);
+    dctTable.push(row);
+  }
+}
+
+// one MFCC frame from the current analyser frequency data (dB per bin)
+function mfccFrame(){
+  const mel=new Float32Array(NUM_MEL);
+  for (let m=0;m<NUM_MEL;m++){
+    let e=0; const w=melFilters[m];
+    for (let i=0;i<w.length;i++){ const db=freqBuf[w[i].bin];
+      const mag = db<=-140 ? 0 : Math.pow(10, db/20);
+      e += mag*mag*w[i].g;
+    }
+    mel[m]=Math.log(e+1e-8);
+  }
+  const c=new Array(NUM_MFCC);
+  for (let k=0;k<NUM_MFCC;k++){ let s=0; const row=dctTable[k];
+    for (let n=0;n<NUM_MEL;n++) s+=mel[n]*row[n]; c[k]=s; }
+  return c;
+}
+
+// cepstral mean normalization over an utterance (kills channel/level offset)
+function cmn(frames){
+  const m=frames.length, d=frames[0].length, mean=new Float64Array(d);
+  for (const f of frames) for (let i=0;i<d;i++) mean[i]+=f[i];
+  for (let i=0;i<d;i++) mean[i]/=m;
+  return frames.map(f=>f.map((v,i)=>v-mean[i]));
+}
+
+// DTW distance between two frame sequences (Euclidean local cost, length-normalized)
+function dtw(A,B){
+  const m=A.length, n=B.length;
+  // standard DTW init: D[0][0]=0, rest of the first row = Infinity
+  let prev=new Float64Array(n+1).fill(Infinity); prev[0]=0;
+  let cur=new Float64Array(n+1);
+  for (let i=1;i<=m;i++){
+    cur.fill(Infinity); cur[0]=Infinity;
+    const Ai=A[i-1];
+    for (let j=1;j<=n;j++){
+      const Bj=B[j-1];
+      let d=0; for (let k=0;k<Ai.length;k++){ const x=Ai[k]-Bj[k]; d+=x*x; } d=Math.sqrt(d);
+      cur[j]=d+Math.min(prev[j], cur[j-1], prev[j-1]);
+    }
+    const t=prev; prev=cur; cur=t;
+  }
+  return prev[n]/(m+n);
+}
+
+// ── utterance segmentation (VAD) ───────────────────────────────────
+let inUtter=false, utterFrames=[], silence=0;
+const HANG_FRAMES=10;   // ~frames of quiet that end an utterance
+const MIN_FRAMES=4;     // reject blips
+let armedKey=null;      // when set, next utterance is stored as a template for this word
+
+function loop(){
+  if (!running) return;
+  requestAnimationFrame(loop);
+  analyser.getFloatTimeDomainData(timeBuf);
+  analyser.getFloatFrequencyData(freqBuf);
+
+  let rms=0; for (let i=0;i<timeBuf.length;i++) rms+=timeBuf[i]*timeBuf[i];
+  rms=Math.sqrt(rms/timeBuf.length);
+  lvlBar.style.width = Math.min(100, rms/0.15*100)+'%';
+
+  const voiced = rms > VOICE_GATE;
+  if (voiced){
+    if (!inUtter){ inUtter=true; utterFrames=[]; silence=0; }
+    silence=0;
+    utterFrames.push(mfccFrame());
+  } else if (inUtter){
+    if (++silence >= HANG_FRAMES){
+      inUtter=false;
+      if (utterFrames.length >= MIN_FRAMES) finishUtterance(utterFrames.slice());
+      utterFrames=[];
+    }
+  }
+}
+
+function finishUtterance(frames){
+  const norm = cmn(frames);
+  if (armedKey){                       // enrollment: store a template
+    const k=armedKey; armedKey=null;
+    templates[k] = templates[k]||[];
+    templates[k].push(norm);
+    if (templates[k].length>MAX_TAKES) templates[k].shift();
+    saveTemplates();
+    const w=WORDS.find(x=>x.key===k);
+    setResult(w.emo, 'saved: '+w.r, templates[k].length+'/'+MAX_TAKES+' takes', 'rec');
+    renderWords();
+    return;
+  }
+  classify(norm, frames.length);
+}
+
+// ── match an utterance against all templates ───────────────────────
+function classify(norm, nFrames){
+  let best=null, bestD=Infinity, second=Infinity;
+  const perWord={};
+  for (const w of WORDS){
+    const ts=templates[w.key]||[]; let md=Infinity;
+    for (const t of ts) md=Math.min(md, dtw(norm, t));
+    perWord[w.key]=md;
+    if (md<bestD){ second=bestD; bestD=md; best=w; }
+    else if (md<second){ second=md; }
+  }
+  renderWords(perWord);
+  const anyTemplates = Object.values(templates).some(a=>a&&a.length);
+  if (!anyTemplates){ setResult('🎙️','record some sounds first','use ● Rec on a card', null); return; }
+
+  if (best && bestD < MATCH_TH){
+    const conf=Math.round(100*Math.max(0,Math.min(1,1-bestD/MATCH_TH)));
+    const margin = isFinite(second) ? ' · margin '+(second-bestD).toFixed(1) : '';
+    setResult(best.emo, '✓ '+best.r, 'match '+conf+'%  (dist '+bestD.toFixed(1)+margin+')', 'hit');
+    react(best);
+    logEvent(true, best.r+' '+conf+'% (d='+bestD.toFixed(1)+')');
+  } else {
+    const near = best ? best.r+' d='+bestD.toFixed(1) : '—';
+    setResult('🤷','no confident match','closest: '+near+'  (need < '+MATCH_TH+')', 'miss');
+    logEvent(false, 'no match · closest '+near);
+  }
+}
+
+// ── UI helpers ─────────────────────────────────────────────────────
+function setResult(emo, word, conf, cls){
+  rEmo.textContent=emo; rWord.textContent=word; rConf.textContent=conf||'';
+  resultEl.className=''; if (cls) resultEl.classList.add(cls);
+}
+let reactT=null;
+function react(w){
+  rEmo.style.transform='scale(1.25)';
+  clearTimeout(reactT);
+  reactT=setTimeout(()=>{ rEmo.style.transform='scale(1)'; }, 220);
+}
+function logEvent(hit, txt){
+  const d=document.createElement('div'); d.className='ev';
+  d.innerHTML='<span class="'+(hit?'hit':'miss')+'">'+(hit?'✓':'✗')+'</span> '+
+    '<span class="d">'+new Date().toLocaleTimeString()+'</span> '+txt;
+  logEl.prepend(d); while (logEl.children.length>40) logEl.lastChild.remove();
+}
+
+function renderWords(perWord){
+  wordsEl.innerHTML='';
+  for (const w of WORDS){
+    const n=(templates[w.key]||[]).length;
+    const el=document.createElement('div');
+    el.className='w'+(armedKey===w.key?' armed':'');
+    const dist = perWord && isFinite(perWord[w.key]) ? 'last dist: '+perWord[w.key].toFixed(1) : '';
+    el.innerHTML =
+      '<div class="top"><span class="jp">'+w.jp+' <span class="r">'+w.r+'</span></span><span class="emo">'+w.emo+'</span></div>'+
+      '<div class="takes">takes: <b>'+n+'/'+MAX_TAKES+'</b> · '+w.en+'</div>'+
+      '<div class="dist">'+dist+'</div>'+
+      '<div class="btns"></div>';
+    const btns=el.querySelector('.btns');
+    const rec=document.createElement('button');
+    rec.textContent = armedKey===w.key ? '● say it now' : '● Rec';
+    rec.onclick=()=>{ armedKey = armedKey===w.key ? null : w.key;
+      if (armedKey) setResult(w.emo,'recording: say '+w.r,'speak now — one utterance','rec');
+      renderWords(); };
+    btns.appendChild(rec);
+    const del=document.createElement('button');
+    del.textContent='✕'; del.title='clear takes'; del.style.flex='0 0 auto';
+    del.disabled = n===0;
+    del.onclick=()=>{ delete templates[w.key]; saveTemplates(); renderWords(); };
+    btns.appendChild(del);
+    wordsEl.appendChild(el);
+  }
+}
+
+clearBtn.onclick=()=>{ templates={}; saveTemplates(); armedKey=null; renderWords();
+  setResult('🎙️','all takes cleared','record your sounds again', null); };
+
+renderWords();
+</script>
+</body>
+</html>
