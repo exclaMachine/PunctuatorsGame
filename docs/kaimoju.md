@@ -206,11 +206,32 @@ The following ideas were discussed but are **not confirmed**. Ask the user befor
     are the failure mode → curate the word list); needs a **secure context** (`localhost`) for mic access.
   - **Probe file (standalone, drop-in, not linked from the game):** `kaimoju-mic-test.html` — the winning
     template-matcher. (The rejected ASR probe `onomatopoeia-game.html` was deleted.)
-  - **NEXT STEP (fresh session):** decide how to graduate this into **SOUND FX mode** — e.g. speak-to-
-    destroy the active SFX target cell as an alternate/added input; an in-game enrollment UX (record your
-    voice per sound); curate a distinct subset of `SFX_WORDS`; and handle the speaker-dependent enrollment
-    flow + reject/confidence thresholds inside the game. Still gated behind user approval before touching
-    `kaimoju.html`.
+  - **GRADUATION DESIGN — CONFIRMED 2026-08-04 (not yet built; still gated before touching `kaimoju.html`).**
+    How the probe becomes in-game "speak the SFX to smash it," all decisions locked with the user:
+    - **Alt input inside the existing `sfx` mode** (NOT a new mode). In SFX mode the player can **type OR
+      speak** the active target; the typed path is unchanged.
+    - **Matcher = verify-the-active-target** for v1: compare the utterance only to the *glowing* word's
+      template + a reject threshold (1-vs-rest, so the "confusable vocabulary" failure mode mostly
+      disappears — the mic never has to pick between 24 words). **Classify-any-on-screen** (speak any word,
+      Find-Mode-style) is deliberately left open as a **future toggle**, not v1.
+    - **All 24 `SFX_WORDS` voice-able, calibrated LAZILY.** First time voice is enabled → a short **guided
+      calibration** overlay: (a) ~1 s of silence auto-sets the RMS voice-gate from room noise (the
+      Yousician-style "find your baseline" moment — the probe hand-tunes this today); (b) enroll a curated
+      **starter handful** (~4–5 most-common / most-acoustically-distinct words), 2–3 takes each. Every other
+      word then enrolls **on first appearance** as a target ("🎙 say it to teach me — take 1/2"). Templates
+      persist (`kaimoju.voiceTemplates.v1`, shared format with the probe); a re-calibrate entry redoes them.
+    - **Forgiving misses:** a non-match breaks nothing — combo holds, retry freely, no HP/miss (closest-dist
+      shown only under `?dev`). A match funnels into the **same `doHit` path** as a correct type (destroy,
+      punch, SFX meaning banner, combo++).
+    - **Recommended (tunable, not locked): push-to-talk** (hold the 🎙 button / a key) rather than
+      always-listening, since voice runs *alongside* typing — always-on VAD can fire on keystroke/ambient
+      noise and cause phantom matches.
+    - **Build shape:** port the probe into one **IIFE-wrapped `VoiceFX` module** inside `kaimoju.html`
+      (encapsulated like `TraceMode`, rip-out-able): hardened mic capture + VAD + MFCC + CMN + DTW, public
+      surface `enable()/disable()`, `armEnroll(key)`, `verify(target)→{matched,dist,conf}`. A 🎙 toggle
+      (on-canvas + mobile DOM mirror), `isSecureContext`-guarded, gesture-gated; denied/insecure → toast +
+      silently stays typing-only (GH Pages https works; `file://` gets no mic). Behind a `VOICE_FX_ENABLED`
+      flag.
 - **Kotodama Caster (擬音語 side game — proposed, not built)** — a *separate but related* game where the
   player **speaks sound-effects to affect the world**, themed on 言霊 *kotodama* ("word-spirit": spoken
   words carry power). Each onomatopoeia is a "spell": ゴロゴロ summons thunder, ザーザー rain, メラメラ
