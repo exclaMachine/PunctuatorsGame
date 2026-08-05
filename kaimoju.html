@@ -1143,6 +1143,10 @@ let HELP_BTN = IS_MOBILE
 let THEME_BTN = IS_MOBILE
   ? { x: W-80, y: 6, w: 34, h: 34 }
   : { x: W-62, y: 6, w: 24, h: 24 };
+// VoiceFX 🎙 toggle (sits just left of the theme button; only shown in sfx mode)
+let MIC_BTN = IS_MOBILE
+  ? { x: W-120, y: 6, w: 34, h: 34 }
+  : { x: W-92, y: 6, w: 24, h: 24 };
 
 // Difficulty-select layout (cards + character-order toggle). Computed by
 // layoutSelect() and recomputed from sizeCanvas() so it fits the live W/H.
@@ -1247,10 +1251,12 @@ function sizeCanvas() {
   if (IS_MOBILE) {
     HELP_BTN  = { x: W-40, y: 6, w: 34, h: 34 };
     THEME_BTN = { x: W-80, y: 6, w: 34, h: 34 };
+    MIC_BTN   = { x: W-120, y: 6, w: 34, h: 34 };
     FIND_BTN  = { x: 8,    y: H-30, w: W-16, h: 26 };
   } else {
     HELP_BTN  = { x: W-32, y: 6, w: 24, h: 24 };
     THEME_BTN = { x: W-62, y: 6, w: 24, h: 24 };
+    MIC_BTN   = { x: W-92, y: 6, w: 24, h: 24 };
     FIND_BTN  = { x: 300,  y: 538, w: 600, h: 26 };
   }
   // Re-fit the difficulty-select cards + order toggle to the new W/H.
@@ -1607,6 +1613,8 @@ function maybeStartIntroSong() {
 function startGame(mode) {
   stopSong();
   gameMode = mode in MODES ? mode : 'katakana';
+  // VoiceFX: mic input only belongs to sfx mode — kill it if switching away.
+  if (VOICE_FX_ENABLED && gameMode !== 'sfx' && VoiceFX.isOn()) VoiceFX.off();
   // Random-order: shuffle the gojuon order once for this run so starter chars
   // and each level's new char arrive in random order (kana modes only).
   runOrder = (randomOrder && isProgressionMode(gameMode))
@@ -1927,6 +1935,8 @@ function handleKey(e) {
   if (e.key === 'Escape') {
     // TraceMode: ESC exits the tracing overlay first
     if (TraceMode.isActive()) { TraceMode.exit(); e.preventDefault(); return; }
+    // VoiceFX: ESC cancels calibration (turns voice off)
+    if (VOICE_FX_ENABLED && VoiceFX.overlayActive()) { VoiceFX.handleEsc(); e.preventDefault(); return; }
     if (showHelp) { showHelp = false; activeStartTime = Date.now(); e.preventDefault(); return; }
     if (gState === 'select') { gState = 'menu'; e.preventDefault(); return; }
     return;
@@ -1937,6 +1947,8 @@ function handleKey(e) {
   if (TraceMode.isActive()) return;
   // Swallow all other input while the help overlay is open
   if (showHelp) return;
+  // VoiceFX: swallow input while the calibration overlay is open
+  if (VOICE_FX_ENABLED && VoiceFX.overlayActive()) return;
 
   // Any key skips the level-start intro. Don't `return` — clearing introActive
   // also releases the kaiju (kaijuLocked() goes false), so we let the key fall
@@ -1963,6 +1975,8 @@ function handleKey(e) {
 
   // Playing
   if (findMod && e.key.toLowerCase()==='f') { activateFind(); return; }
+  // VoiceFX: 'v' toggles the mic in sfx mode ('v' is never a valid romaji char)
+  if (VOICE_FX_ENABLED && gameMode==='sfx' && e.key.toLowerCase()==='v') { VoiceFX.toggle(); return; }
   if (e.key==='Backspace') { inputBuf = inputBuf.slice(0,-1); return; }
 
   // Letter input (a-z only, no ctrl/meta/alt combos)
@@ -2391,6 +2405,7 @@ function addSfxBurst(entry, x, y, sz=22, col=SFX_COL) {
 function update() {
   if (gState !== 'playing') return;
   if (showHelp) return;  // freeze gameplay while the help overlay is open
+  if (VOICE_FX_ENABLED && VoiceFX.overlayActive()) return;  // VoiceFX: freeze during calibration
   frame++;
 
   // Crowd overlay expires after INTRO_DUR, but the kaomoji is only held for
@@ -2577,6 +2592,7 @@ function render() {
   drawPlayer();
   drawInputPanel();
   drawHUD();
+  drawMicButton();   // VoiceFX: 🎙 toggle (sfx mode only)
 
   if (introActive) drawIntroOverlay();
 
@@ -2590,6 +2606,7 @@ function render() {
 
   drawScanlines();
   drawMissReveal();
+  if (VOICE_FX_ENABLED) VoiceFX.render();   // VoiceFX: status pill + calibration overlay
   if (showHelp) drawHelpOverlay();
   TraceMode.render();   // TraceMode: overlay on top of everything when active
 }
@@ -3245,6 +3262,28 @@ function drawFindButton(act) {
   ctx.textAlign = 'center';
   ctx.fillText(label, x + w/2, y + h/2 + 4);
   ctx.shadowBlur = 0;
+}
+
+// VoiceFX: 🎙 toggle button, top bar (only in sfx mode). Lit when the mic is on.
+function drawMicButton() {
+  if (!VOICE_FX_ENABLED || gameMode !== 'sfx') return;
+  const b = MIC_BTN, on = VoiceFX.isOn();
+  ctx.fillStyle   = on ? P.hud : P.hud_bg;
+  ctx.fillRect(b.x, b.y, b.w, b.h);
+  ctx.strokeStyle = on ? P.find_fl : P.panel_bd;
+  ctx.lineWidth   = on ? 1.5 : 1;
+  ctx.strokeRect(b.x+0.5, b.y+0.5, b.w-1, b.h-1);
+  if (on) { ctx.shadowBlur = 5; ctx.shadowColor = P.find_fl; }
+  ctx.font = `${IS_MOBILE ? 18 : 14}px "Courier New"`;
+  ctx.textAlign = 'center';
+  ctx.fillText('🎙', b.x + b.w/2, b.y + b.h/2 + (IS_MOBILE ? 6 : 5));
+  ctx.shadowBlur = 0;
+  // Off-state hint so players discover it (desktop; 'V' key mirrors the tap)
+  if (!on && !IS_MOBILE) {
+    ctx.font = '9px "Courier New"'; ctx.fillStyle = P.hud_dim;
+    ctx.fillText('[V] speak', b.x + b.w/2, b.y + b.h + 9);
+  }
+  ctx.textAlign = 'left';
 }
 
 // ── HUD ───────────────────────────────────────────────────────────────
@@ -4046,6 +4085,380 @@ const TraceMode = (() => {
   return { start, exit, isActive, pointer, render, availableChars };
 })();
 
+// ╔═══════════════════════════════════════════════════════════════════╗
+// ║  VoiceFX — speak the onomatopoeia to smash it (SOUND FX mode)      ║
+// ║                                                                   ║
+// ║  Alt input for the `sfx` mode: type OR speak the glowing target.  ║
+// ║  Offline, no server, no speech-to-text — records the player's own ║
+// ║  voice as MFCC templates (localStorage) and verifies the ACTIVE   ║
+// ║  target only (1-vs-rest DTW distance). Ported from the standalone ║
+// ║  probe kaimoju-mic-test.html. Speaker-dependent; needs a secure   ║
+// ║  context (https / localhost) for the mic.                         ║
+// ║                                                                   ║
+// ║  TO REMOVE THIS FEATURE ENTIRELY:                                 ║
+// ║    1. Set VOICE_FX_ENABLED = false (kills every entry point), or  ║
+// ║    2. Delete this block + the call sites tagged "// VoiceFX:" in  ║
+// ║       handleKey, update, render, drawMicButton, the pointer       ║
+// ║       handler, startGame, and updateMobOverlays.                  ║
+// ║  No other game code reads or writes VoiceFX state.                ║
+// ╚═══════════════════════════════════════════════════════════════════╝
+const VOICE_FX_ENABLED = true;
+const VoiceFX = (() => {
+  // v2: v1 stores were polluted by the old trust-and-smash path (a template was
+  // saved on EVERY utterance), so v1 templates match almost anything. Bumping the
+  // key discards them and forces one clean recalibration.
+  const LS_KEY   = 'kaimoju.voiceFX.v2';
+  const NUM_MEL  = 26, NUM_MFCC = 13;
+  const HANG_FRAMES = 10;   // frames of quiet that end an utterance
+  const MIN_FRAMES  = 4;    // reject blips
+  const MATCH_TH  = 50;     // absolute DTW ceiling — target must at least be this close
+  const REJECT_RATIO = 0.80;// discriminative gate — target must be ≤80% of the best OTHER word's distance
+  const MIN_TAKES = 2;      // takes stored before a word can be voice-matched (below this = enroll only)
+  const ACT_COOLDOWN = 700; // ms between voice actions — one utterance can't cascade into many destroys
+  const BASE_GATE = 0.008;  // floor for the auto-calibrated voice gate
+  const NOISE_FRAMES = 72;  // ~1.2 s of room tone to set the gate
+  // Curated starter handful (acoustically distinct + common) for guided enroll.
+  const STARTER  = ['gorogoro', 'wanwan', 'pikapika', 'dokidoki', 'zaazaa'];
+  const DEBUG    = /[?&]dev=1\b/.test(location.search);
+
+  // persisted store: { gate, calibrated, templates:{ romaji: [ [mfccFrame,…], … ] } }
+  let store = load();
+  function load() {
+    try { const o = JSON.parse(localStorage.getItem(LS_KEY));
+      return (o && o.templates) ? o : { gate:0.012, calibrated:false, templates:{} }; }
+    catch (_) { return { gate:0.012, calibrated:false, templates:{} }; }
+  }
+  function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch (_) {} }
+
+  // audio graph (module-scoped so Chrome can't GC the source to zeros)
+  let ac=null, analyser=null, micStream=null, micSource=null, micTrack=null, silentGain=null, running=false;
+  let timeBuf=null, freqBuf=null, melFilters=null, dctTable=null, level=0;
+
+  // utterance segmentation (VAD)
+  let inUtter=false, utterFrames=[], silence=0;
+  let lastAct=0;              // timestamp of the last voice action (anti-cascade cooldown)
+
+  // calibration / feedback state
+  let calibStep=null;         // null | 'intro' | 'noise' | 'enroll' | 'done'
+  let qi=0, takeCount=0;      // enrollment-queue cursor
+  let noiseSamples=[];
+  let fb={txt:'', cls:'', t:0};
+  let btns=[];                // overlay hit-boxes, rebuilt each render
+
+  const entryOf = rom =>
+    (typeof SFX_WORDS !== 'undefined' ? SFX_WORDS.find(w=>w.romaji===rom) : null) || {jp:rom, romaji:rom, en:''};
+  function feedback(txt, cls) { fb = {txt, cls, t:Date.now()}; }
+
+  // ── public state ──────────────────────────────────────────────────
+  function isSupported() {
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext;
+  }
+  function isOn() { return running; }
+  function overlayActive() { return running && !!calibStep; }
+
+  // ── enable / disable ──────────────────────────────────────────────
+  async function toggle() { if (running) { disable(); return; } await enable(); }
+  async function enable() {
+    if (!isSupported()) {
+      // running is still false here, so the status pill can't show it — float it.
+      addFloat(window.isSecureContext ? 'mic unavailable on this device'
+                                      : 'voice needs https / localhost', W/2, 130, P.hit_bd, 14, 0, -0.5);
+      return;
+    }
+    try { micStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false }); }
+    catch (err) { addFloat('mic blocked ('+err.name+')', W/2, 130, P.hit_bd, 14, 0, -0.5); return; }
+    micTrack = micStream.getAudioTracks()[0] || null;
+    if (micTrack) micTrack.onended = () => disable();
+    // Match context rate to the mic's — a 44100/48000 mismatch can emit zeros.
+    const rate = (micTrack && micTrack.getSettings && micTrack.getSettings().sampleRate) || undefined;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    try { ac = new AC(rate ? {sampleRate:rate} : undefined); } catch (_) { ac = new AC(); }
+    if (ac.state === 'suspended') await ac.resume();
+    micSource = ac.createMediaStreamSource(micStream);
+    analyser  = ac.createAnalyser();
+    analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0;
+    timeBuf = new Float32Array(analyser.fftSize);
+    freqBuf = new Float32Array(analyser.frequencyBinCount);
+    silentGain = ac.createGain(); silentGain.gain.value = 0;   // pull the graph without audible output
+    micSource.connect(analyser); analyser.connect(silentGain); silentGain.connect(ac.destination);
+    buildMel(ac.sampleRate, analyser.frequencyBinCount);
+    running=true; inUtter=false; utterFrames=[]; silence=0;
+    // First run ever → guided calibration; otherwise straight to listening.
+    if (!store.calibrated) calibStep='intro';
+    else { calibStep=null; feedback('🎙 voice on — say the glowing sound', 'live'); }
+    micLoop();
+  }
+  function disable() {
+    running=false; calibStep=null;
+    if (micStream) micStream.getTracks().forEach(t=>t.stop());
+    if (ac) { try { ac.close(); } catch (_) {} }
+    ac=analyser=micStream=micSource=silentGain=null;
+    inUtter=false; utterFrames=[];
+  }
+  function handleEsc() { disable(); }
+
+  // ── capture loop ──────────────────────────────────────────────────
+  function micLoop() {
+    if (!running) return;
+    requestAnimationFrame(micLoop);
+    analyser.getFloatTimeDomainData(timeBuf);
+    analyser.getFloatFrequencyData(freqBuf);
+    let rms=0; for (let i=0;i<timeBuf.length;i++) rms += timeBuf[i]*timeBuf[i];
+    rms = Math.sqrt(rms/timeBuf.length);
+    level = level*0.6 + Math.min(1, rms/0.15)*0.4;
+
+    if (calibStep==='noise') {                 // room-tone sampling — set the gate, no VAD
+      noiseSamples.push(rms);
+      if (noiseSamples.length >= NOISE_FRAMES) finishNoise();
+      return;
+    }
+    if (calibStep==='intro' || calibStep==='done') return;  // waiting on a button
+
+    const gate = store.gate || 0.012;
+    if (rms > gate) {
+      if (!inUtter) { inUtter=true; utterFrames=[]; silence=0; }
+      silence=0; utterFrames.push(mfccFrame());
+    } else if (inUtter) {
+      if (++silence >= HANG_FRAMES) {
+        inUtter=false;
+        if (utterFrames.length >= MIN_FRAMES) onUtterance(utterFrames.slice());
+        utterFrames=[];
+      }
+    }
+  }
+
+  function finishNoise() {
+    const mean = noiseSamples.reduce((a,b)=>a+b,0) / Math.max(1,noiseSamples.length);
+    store.gate = Math.max(BASE_GATE, mean*3); save();
+    noiseSamples=[]; qi=0; takeCount=0; calibStep='enroll';
+    inUtter=false; utterFrames=[]; silence=0;
+  }
+
+  // ── an utterance finished: enroll it, or match it ─────────────────
+  function onUtterance(frames) {
+    const norm = cmn(frames);
+    if (calibStep==='enroll') {
+      if (qi >= STARTER.length) return;
+      const rom = STARTER[qi];
+      storeTake(rom, norm); takeCount++;
+      feedback('saved “'+rom+'” '+takeCount+'/'+MIN_TAKES, 'rec');
+      if (takeCount >= MIN_TAKES) { qi++; takeCount=0; if (qi >= STARTER.length) finishCalib(); }
+      return;
+    }
+    // normal play
+    if (gState!=='playing' || gameMode!=='sfx' || kaijuLocked()) return;
+    if (Date.now()-lastAct < ACT_COOLDOWN) return;   // one voice action at a time — no cascades
+    const act = activeTarget(); if (!act) return;
+    lastAct = Date.now();
+    const rom = act.cell.romaji;
+    const takes = store.templates[rom] || [];
+    if (takes.length < MIN_TAKES) {
+      // Brand-new sound: no template to verify against yet, so DON'T smash on an
+      // unmatched guess — silently enroll this take and let the player type it this
+      // time. It becomes voice-matchable once MIN_TAKES are banked.
+      storeTake(rom, norm);
+      const remain = MIN_TAKES - takes.length - 1;
+      feedback(remain > 0 ? '✎ learning “'+rom+'” — type it ('+remain+' more to unlock voice)'
+                          : '✓ voice unlocked “'+rom+'” — say it next time', 'rec');
+      return;
+    }
+    // Discriminative match: an absolute "close enough" threshold accepts almost
+    // anything, so also require the utterance to look more like THIS word than any
+    // other enrolled word — by a margin. That's what rejects "say anything".
+    const dTarget = minDist(norm, takes);
+    let dOther = Infinity, otherRom = '';
+    for (const r in store.templates) {
+      if (r === rom) continue;
+      const ts = store.templates[r]; if (ts.length < MIN_TAKES) continue;
+      const d = minDist(norm, ts);
+      if (d < dOther) { dOther = d; otherRom = r; }
+    }
+    if (DEBUG) console.log('[VoiceFX] target', rom, 'd='+dTarget.toFixed(1),
+      '| best other:', otherRom||'(none)', isFinite(dOther) ? 'd='+dOther.toFixed(1) : '');
+    const wins = dTarget < MATCH_TH && dTarget <= dOther * REJECT_RATIO;
+    if (wins) hit(act, DEBUG ? 'd='+dTarget.toFixed(1) : '');
+    else feedback('🤷 didn’t catch it'
+      +(DEBUG ? ' (d='+dTarget.toFixed(1)+(isFinite(dOther)?' vs '+otherRom+' '+dOther.toFixed(1):'')+')' : ''), 'miss');
+  }
+
+  function storeTake(rom, norm) {
+    const a = store.templates[rom] || (store.templates[rom]=[]);
+    a.push(norm); while (a.length>3) a.shift();   // keep the last 3 takes
+    save();
+  }
+  function hit(act, note) {
+    inputBuf='';                                  // clear any half-typed romaji
+    doHit(player.tgt, act.f, act.c);              // same destroy path as a correct type
+    feedback('✓ '+act.cell.romaji+(note ? '  '+note : ''), 'hit');
+  }
+  function finishCalib() { calibStep='done'; store.calibrated=true; save();
+    feedback('✓ ready — speak the glowing sound', 'hit'); }
+
+  // ── button actions ────────────────────────────────────────────────
+  function startNoise() { calibStep='noise'; noiseSamples=[]; inUtter=false; utterFrames=[]; }
+  function skipCalib()  { store.calibrated=true; save(); calibStep=null;
+    feedback('🎙 voice on — say the glowing sound', 'live'); }
+  function skipWord()   { takeCount=0; qi++; if (qi >= STARTER.length) finishCalib(); }
+
+  // ── mel filterbank + DCT + MFCC + CMN + DTW (ported from the probe) ─
+  const hzToMel = f => 2595*Math.log10(1+f/700);
+  const melToHz = m => 700*(Math.pow(10, m/2595)-1);
+  function buildMel(sr, bins) {
+    const lowHz=80, highHz=Math.min(sr/2, 8000);
+    const lowMel=hzToMel(lowHz), highMel=hzToMel(highHz);
+    const pts=[]; for (let i=0;i<NUM_MEL+2;i++) pts.push(melToHz(lowMel+(highMel-lowMel)*i/(NUM_MEL+1)));
+    const binOf = hz => Math.floor((analyser.fftSize+1)*hz/sr);
+    const fbk = pts.map(binOf);
+    melFilters=[];
+    for (let m=1;m<=NUM_MEL;m++) {
+      const a=fbk[m-1], b=fbk[m], c=fbk[m+1], w=[];
+      for (let k=a;k<c;k++) {
+        if (k<0||k>=bins) continue;
+        const g = k<b ? (k-a)/Math.max(1,(b-a)) : (c-k)/Math.max(1,(c-b));
+        if (g>0) w.push({bin:k, g});
+      }
+      melFilters.push(w);
+    }
+    dctTable=[];
+    for (let k=0;k<NUM_MFCC;k++) { const row=new Float32Array(NUM_MEL);
+      for (let n=0;n<NUM_MEL;n++) row[n]=Math.cos(Math.PI/NUM_MEL*(n+0.5)*k);
+      dctTable.push(row);
+    }
+  }
+  function mfccFrame() {
+    const mel=new Float32Array(NUM_MEL);
+    for (let m=0;m<NUM_MEL;m++) {
+      let e=0; const w=melFilters[m];
+      for (let i=0;i<w.length;i++) { const db=freqBuf[w[i].bin];
+        const mag = db<=-140 ? 0 : Math.pow(10, db/20);
+        e += mag*mag*w[i].g;
+      }
+      mel[m]=Math.log(e+1e-8);
+    }
+    const c=new Array(NUM_MFCC);
+    for (let k=0;k<NUM_MFCC;k++) { let s=0; const row=dctTable[k];
+      for (let n=0;n<NUM_MEL;n++) s+=mel[n]*row[n]; c[k]=s; }
+    return c;
+  }
+  function cmn(frames) {   // cepstral mean normalization — kills channel/level offset
+    const m=frames.length, d=frames[0].length, mean=new Float64Array(d);
+    for (const f of frames) for (let i=0;i<d;i++) mean[i]+=f[i];
+    for (let i=0;i<d;i++) mean[i]/=m;
+    return frames.map(f=>f.map((v,i)=>v-mean[i]));
+  }
+  function minDist(norm, takes) {   // best (smallest) DTW distance to any of a word's takes
+    let d=Infinity; for (const t of takes) d=Math.min(d, dtw(norm, t)); return d;
+  }
+  function dtw(A,B) {       // length-normalized DTW, Euclidean local cost
+    const m=A.length, n=B.length;
+    let prev=new Float64Array(n+1).fill(Infinity); prev[0]=0;
+    let cur=new Float64Array(n+1);
+    for (let i=1;i<=m;i++) {
+      cur.fill(Infinity); cur[0]=Infinity;
+      const Ai=A[i-1];
+      for (let j=1;j<=n;j++) {
+        const Bj=B[j-1];
+        let d=0; for (let k=0;k<Ai.length;k++){ const x=Ai[k]-Bj[k]; d+=x*x; } d=Math.sqrt(d);
+        cur[j]=d+Math.min(prev[j], cur[j-1], prev[j-1]);
+      }
+      const t=prev; prev=cur; cur=t;
+    }
+    return prev[n]/(m+n);
+  }
+
+  // ── rendering ─────────────────────────────────────────────────────
+  function fbColor(cls) {
+    return cls==='hit'  ? P.hud
+         : cls==='miss' ? P.hit_bd
+         : cls==='rec'  ? SFX_COL
+         : cls==='live' ? SFX_COL : P.hud;
+  }
+  function drawBtn(label, x, y, w, h, fn, primary) {
+    ctx.fillStyle = primary ? '#16301a' : P.hud_bg;
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = primary ? P.find_fl : P.panel_bd;
+    ctx.lineWidth = 1; ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
+    ctx.fillStyle = primary ? P.find_fl : P.hud;
+    ctx.font = 'bold 14px "Courier New"'; ctx.textAlign = 'center';
+    ctx.fillText(label, x+w/2, y+h/2+5);
+    btns.push({x, y, w, h, fn});
+  }
+  function drawLevelBar(bx, by, bw) {
+    ctx.fillStyle='#03210b'; ctx.fillRect(bx, by, bw, 12);
+    ctx.fillStyle=P.find_fl; ctx.fillRect(bx, by, bw*Math.min(1,level), 12);
+    ctx.strokeStyle=P.panel_bd; ctx.lineWidth=1; ctx.strokeRect(bx+0.5, by+0.5, bw-1, 11);
+  }
+  function drawStatusPill() {
+    let txt='🎙 say the sound', col=P.hud_dim;
+    if (fb.txt && Date.now()-fb.t < 2000) { txt=fb.txt; col=fbColor(fb.cls); }
+    ctx.font='bold 13px "Courier New"'; ctx.textAlign='center';
+    const w=ctx.measureText(txt).width+34, x=W/2-w/2, y=HUD_H+6, h=22;
+    ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle=P.panel_bd; ctx.lineWidth=1; ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
+    ctx.fillStyle=col; ctx.fillText(txt, W/2, y+15);
+    ctx.textAlign='left';
+  }
+  function render() {
+    // compact status pill during play (voice on, no overlay)
+    if (running && !calibStep && gState==='playing' && gameMode==='sfx') drawStatusPill();
+    if (!overlayActive()) return;
+
+    ctx.fillStyle='rgba(0,0,0,0.72)'; ctx.fillRect(0,0,W,H);
+    btns=[];
+    const pw=Math.min(W-40, 520), ph=270, px=(W-pw)/2, py=(H-ph)/2;
+    ctx.fillStyle=P.hud_bg; ctx.fillRect(px, py, pw, ph);
+    ctx.strokeStyle=P.find_fl; ctx.lineWidth=2; ctx.strokeRect(px+1, py+1, pw-2, ph-2);
+
+    ctx.textAlign='center';
+    ctx.fillStyle=P.find_fl; ctx.font='bold 18px "Courier New"';
+    ctx.fillText('🎙 VOICE FX', W/2, py+32);
+    ctx.fillStyle=P.hud; ctx.font='13px "Courier New"';
+
+    if (calibStep==='intro') {
+      const lines=['Teach the game your voice so it can tell your sounds',
+                   'apart. Record a few now, or skip and it learns each',
+                   'sound the first time you say it in play.'];
+      lines.forEach((l,i)=>ctx.fillText(l, W/2, py+68+i*20));
+      drawBtn('▶ Record my voice',      W/2-150, py+150, 300, 34, startNoise, true);
+      drawBtn('Skip — learn as I play', W/2-150, py+194, 300, 30, skipCalib, false);
+    } else if (calibStep==='noise') {
+      ctx.fillText('Measuring the room — stay quiet…', W/2, py+88);
+      ctx.fillStyle=P.hud_dim;
+      ctx.fillText(Math.round(noiseSamples.length/NOISE_FRAMES*100)+'%', W/2, py+116);
+      drawLevelBar(px+40, py+ph-70, pw-80);
+    } else if (calibStep==='enroll') {
+      const rom=STARTER[qi], e=entryOf(rom);
+      ctx.fillStyle=P.hud_dim; ctx.font='12px "Courier New"';
+      ctx.fillText('sound '+(qi+1)+' / '+STARTER.length, W/2, py+62);
+      ctx.fillStyle=P.hud; ctx.font='bold 30px "Courier New"';
+      ctx.fillText(e.jp, W/2, py+102);
+      ctx.font='15px "Courier New"';
+      ctx.fillText('“'+rom+'”  —  '+e.en, W/2, py+128);
+      ctx.fillStyle=P.find_fl; ctx.font='14px "Courier New"';
+      ctx.fillText('● say it — take '+(takeCount+1)+' / '+MIN_TAKES, W/2, py+156);
+      drawLevelBar(px+40, py+ph-70, pw-80);
+      drawBtn('Skip this sound', W/2-90, py+ph-40, 180, 28, skipWord, false);
+    } else if (calibStep==='done') {
+      ctx.fillText('Ready! Speak the glowing sound to smash it.', W/2, py+96);
+      drawBtn('Start smashing', W/2-110, py+150, 220, 34, ()=>{ calibStep=null; }, true);
+    }
+
+    drawBtn('✕', px+pw-34, py+8, 26, 26, disable, false);   // turn voice off
+
+    if (fb.txt && Date.now()-fb.t < 2400) {
+      ctx.fillStyle=fbColor(fb.cls); ctx.font='12px "Courier New"';
+      ctx.fillText(fb.txt, W/2, py+ph-8);
+    }
+    ctx.textAlign='left';
+  }
+  function pointer(x, y) {
+    for (const b of btns) if (x>=b.x && x<=b.x+b.w && y>=b.y && y<=b.y+b.h) { b.fn(); return true; }
+    return false;
+  }
+
+  return { isSupported, isOn, toggle, off:disable, overlayActive, handleEsc, pointer, render };
+})();
+
 // ═══════════════════════════════════════════════════════════════════
 //  GAME LOOP
 // ═══════════════════════════════════════════════════════════════════
@@ -4135,8 +4548,10 @@ function updateMobOverlays() {
   // canvas-rendered drawHelpOverlay never has to fit in a 400-px box.
   mobHelpEl  .classList.toggle('show', showHelp);
   document.body.classList.toggle('mob-overlay-active', showMenu || showSelect || showHelp);
-  // The custom keyboard only shows during play (hidden behind overlays/help).
-  if (mobKbdEl) mobKbdEl.classList.toggle('show', gState === 'playing' && !showHelp);
+  // The custom keyboard only shows during play (hidden behind overlays/help,
+  // and behind the VoiceFX calibration overlay).
+  if (mobKbdEl) mobKbdEl.classList.toggle('show',
+    gState === 'playing' && !showHelp && !(VOICE_FX_ENABLED && VoiceFX.overlayActive()));
   // Cycle the kaomoji preview ~3×/sec so the menu feels alive even though
   // it's all DOM. Cheap textContent updates.
   if (showMenu) {
@@ -4292,6 +4707,9 @@ c.addEventListener('pointerdown', ev => {
   // TraceMode: hand pointer events to the tracing overlay first
   if (TraceMode.isActive()) { TraceMode.pointer('down', x, y); return; }
 
+  // VoiceFX: calibration overlay eats taps while it's open
+  if (VOICE_FX_ENABLED && VoiceFX.overlayActive()) { VoiceFX.pointer(x, y); return; }
+
   // Theme toggle (top-right, just left of [?]) — works in any state
   const tb = THEME_BTN;
   if (x >= tb.x && x <= tb.x+tb.w && y >= tb.y && y <= tb.y+tb.h) {
@@ -4338,6 +4756,11 @@ c.addEventListener('pointerdown', ev => {
     return;
   }
   if (gState === 'playing') {
+    // VoiceFX: 🎙 toggle (sfx mode only)
+    if (VOICE_FX_ENABLED && gameMode === 'sfx') {
+      const m = MIC_BTN;
+      if (x >= m.x && x <= m.x+m.w && y >= m.y && y <= m.y+m.h) { VoiceFX.toggle(); return; }
+    }
     const b = FIND_BTN;
     if (x >= b.x && x <= b.x+b.w && y >= b.y && y <= b.y+b.h) {
       activateFind();
