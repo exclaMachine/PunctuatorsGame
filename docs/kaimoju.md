@@ -81,8 +81,9 @@ These are locked-in. All of the following are the user's decisions:
   cooldown (`sfxBurstCd` / `SFX_BURST_COOLDOWN`, decremented in `update`, reset in `initGame`) so rapid
   typing can't stack a wall of text; **floor** bursts fire from `collapseDestroyedFloors` (also char-only,
   gated with the existing `FLOOR!` callout since word cells are one-per-floor); **building** bursts fire
-  from `checkCollapsed` and **blast** bursts from `doFindBurst` — both in **all modes**, ignoring the
-  cooldown (big enough moments). Colors: `SFX_COL` (amber, small) / `SFX_COL_BIG` (orange-red, big).
+  from `checkCollapsed` (all modes **except `sfx`** — there the banner already holds the onomatopoeia you
+  just solved, so a building burst would overwrite it and confuse which sound you smashed) and **blast**
+  bursts from `doFindBurst` — ignoring the cooldown (big enough moments). Colors: `SFX_COL` (amber, small) / `SFX_COL_BIG` (orange-red, big).
   The banner-set is factored into `setSfxBanner(entry, col)` (called by `addSfxBurst`); in **SOUND FX
   mode** `doHit` also calls it directly on a correct hit with the just-typed word `{jp:cell.char,
   romaji, en}`, so the onomatopoeia you smashed lands on the same centered card with its meaning.

@@ -2245,8 +2245,12 @@ function checkCollapsed(bIdx) {
     b.collapsed = true;
     score += 200;
     addFloat('BUILDING DESTROYED! +200', b.x + b.width/2, GY - b.floors*CH/2, '#ff7700', 16);
-    // Biggest impact SFX for a whole building coming down (all modes).
-    addSfxBurst(pick(SFX_IMPACT.building), b.x + b.width/2, GY - b.floors*CH/2 - 30, 30, SFX_COL_BIG);
+    // Biggest impact SFX for a whole building coming down. Skipped in SOUND FX
+    // mode: there the banner is the onomatopoeia you just solved, and a building
+    // burst would overwrite it — confusing which sound you actually smashed.
+    if (gameMode !== 'sfx') {
+      addSfxBurst(pick(SFX_IMPACT.building), b.x + b.width/2, GY - b.floors*CH/2 - 30, 30, SFX_COL_BIG);
+    }
     sndCollapse();
     player.tgt = nearestBuilding();
     if (buildings.every(b => b.collapsed)) {
