@@ -51,6 +51,13 @@ ROWS=(
 "rooster|https://upload.wikimedia.org/wikipedia/commons/c/c5/Rooster_crowing.ogg|0|3.0"                                             # Rooster (Red Junglefowl)
 "cow|https://upload.wikimedia.org/wikipedia/commons/a/a5/Single_Cow_Moo.ogg|0|3.0"                                                  # Cow
 "sheep|https://upload.wikimedia.org/wikipedia/commons/1/13/Sheep_bleating.ogg|0|3.0"                                               # Sheep
+# --- batch added 2026-08-05 (start/dur are best-guess windows — audition in the game and nudge) ---
+"horse|https://upload.wikimedia.org/wikipedia/commons/d/db/Wiehern.ogg|0|2.5"                                                       # Horse (neigh)
+"loon|https://upload.wikimedia.org/wikipedia/commons/8/80/Gavia_immer_-_Common_Loon_XC139388.mp3|0.5|3.0"                           # Common Loon (call; trim any leading ambient)
+"gecko|https://upload.wikimedia.org/wikipedia/commons/9/91/Mating_call_of_a_male_Tokay_gecko_%28Gekko_gecko%29.ogg|0|3.0"           # Tokay Gecko ("gecko-gecko" call)
+"bee|https://upload.wikimedia.org/wikipedia/commons/1/11/263673_ylearkisto_mehilainen-tarhamehilainen-parvi-bees-honeybees-a-swarm-of-bees-buzzing-among-the-flowers-apis-mellifera.wav|0.5|3.0"  # Honey Bee (swarm buzz, continuous)
+"cat|https://upload.wikimedia.org/wikipedia/commons/5/53/Felis_silvestris_catus_meows.ogg|0|2.0"                                    # Domestic Cat (meow)
+"penguin|https://upload.wikimedia.org/wikipedia/commons/2/29/Vocal-individuality-cues-in-the-African-penguin-%28Spheniscus-demersus%29-a-source-filter-theory-srep17255-s2.oga|0|3.0"  # African Penguin (bray)
 )
 
 want=("$@")

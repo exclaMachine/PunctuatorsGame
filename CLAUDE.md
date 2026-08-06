@@ -89,11 +89,11 @@ before changing it.
   clarinet, oboe, pan flute, accordion, xylophone, steel drums, timpani, taiko) — all **wired into BOTH games**
   (Mujicians VOICES/INSTRUMENTS + Critter Hunt's pool + `CRITTER_SAMPLE_VOICE` boss-reward map). Loads via
   fetch/decodeAudioData → needs http serving, not `file://`.
-- **Real animal samples (2026-07-28; grown to 20 SPECIFIC species 2026-08-01).** A parallel set for **Critter Hunt**: `sounds/animals/<slug>.mp3` holds
-  **20 hand-curated Wikimedia-Commons animal cries**, each a recording OF a specific species so the name matches the
+- **Real animal samples (2026-07-28; grown to 20 species 2026-08-01; 26 on 2026-08-05).** A parallel set for **Critter Hunt**: `sounds/animals/<slug>.mp3` holds
+  **26 hand-curated Wikimedia-Commons animal cries**, each a recording OF a specific species so the name matches the
   call (Red Fox, Chestnut-fronted Macaw, Rattlesnake, Great Horned Owl, Hoary Bat, Field Cricket, Banded Bullfrog,
   African Elephant, American Alligator, Orca, Gray Wolf, Humpback Whale, Mallard, Indian Peafowl, Howler Monkey, Wild
-  Turkey, Goat, Rooster, Cow, Sheep;
+  Turkey, Goat, Rooster, Cow, Sheep, Horse, Common Loon, Tokay Gecko, Honey Bee, Domestic Cat, African Penguin;
   CC0 / Public-domain / CC-BY / CC-BY-SA, **none ND** → repitch-safe; `fetch-animal-samples.sh` downloads+trims+normalises
   via **ffmpeg** (now with a descriptive User-Agent — Wikimedia 429s default curl UAs), provenance in `data/critter-credits.json` + `sounds/CREDITS.md`). Unlike the instruments these are
   **one one-shot per animal** — played by `playAnimalSound` (full clip) *and*, cropped+pitched, by `playAnimalTuned`;

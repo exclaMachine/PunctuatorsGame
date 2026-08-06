@@ -91,6 +91,14 @@ retries an unlucky cast. Provenance for all 20 (species + author + license, all 
 `data/critter-credits.json` / `sounds/CREDITS.md`; fetched by `fetch-animal-samples.sh` (now sends a descriptive
 User-Agent — Wikimedia 429s default curl UAs under load).
 
+**AMENDED 2026-08-05 — pool grown 20→26 species.** Six more, each with a real Commons clip OF that species
+(all non-ND — PD / CC-BY / CC-BY-SA; rows in `fetch-animal-samples.sh`, provenance in the credits manifest):
+**Horse, Common Loon, Tokay Gecko, Honey Bee, Domestic Cat, African Penguin.** Picked for **distinct emoji**
+(no reuse of an existing 🐺/🦗/🐸) and **class spread** (adds a reptile + an insect; loon/penguin use the
+`piscivore` diet, previously unused). New attribute value **`habitat:"city"`** (Domestic Cat) — free-form clue
+text only, no engine/GLOSS change. No sprites yet → they render as emoji. (Same no-engine-change safety as the
+2026-08-01 batch.)
+
 **AMENDED 2026-08-01 — a won animal cry now feeds Mujicians as a PLAYER-TUNED card (no dev per-animal authoring).**
 The old plan had the dev decide pitched-vs-percussion + crop for each of the 20 (growing) animals by ear. Instead the
 **player** does it — but **not** as a blocking win-flow dialog (the inline `showAnimalTuner` was **removed 2026-08-02**).
@@ -120,7 +128,7 @@ fixed-pitch VOICES); campaign decks stay curated (animals are Free-Play only).
 
 Except where the amendments above note, the rest below reflects the original ship:
 
-- **Data pools** — 20 animals (see 2026-08-01 amendment) / **34 instruments** / 8 biomes, each with real attribute **tags** (animal:
+- **Data pools** — 26 animals (see 2026-08-01 & 2026-08-05 amendments) / **34 instruments** / 8 biomes, each with real attribute **tags** (animal:
   class/diet/size/habitat · instrument: Hornbostel–Sachs family/material/play-method · location: climate).
   Emoji stand in for art. *(Each instrument also carries a real **`origin`** — place of origin, shown as a
   card-back fact + in the field notes, added 2026-07-30; display-only, not yet a clue attribute — universal

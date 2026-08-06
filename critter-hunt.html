@@ -210,6 +210,14 @@ const ANIMALS = [
   {em:"🐓",nm:"Rooster",               cls:"bird",     diet:"omnivore",   size:"small",  habitat:"grassland", snd:"rooster", sprite:"rooster.png"},
   {em:"🐄",nm:"Cow",                   cls:"mammal",   diet:"herbivore",  size:"large",  habitat:"grassland", snd:"cow", sprite:"cow.png"},
   {em:"🐑",nm:"Sheep",                 cls:"mammal",   diet:"herbivore",  size:"medium", habitat:"mountain",  snd:"sheep", sprite:"sheep.png"},
+  // Batch added 2026-08-05 — 6 more species, each with a real Commons clip OF that species (fetch-animal-samples.sh).
+  // Chosen for DISTINCT emoji (no reuse of an existing 🐺/🦗/🐸) + class spread (adds a reptile/insect). No sprites yet → emoji.
+  {em:"🐴",nm:"Horse",                 cls:"mammal",   diet:"herbivore",  size:"large",  habitat:"grassland", snd:"horse"},
+  {em:"🐦",nm:"Common Loon",           cls:"bird",     diet:"piscivore",  size:"medium", habitat:"wetland",   snd:"loon"},
+  {em:"🦎",nm:"Tokay Gecko",           cls:"reptile",  diet:"insectivore",size:"small",  habitat:"jungle",    snd:"gecko"},
+  {em:"🐝",nm:"Honey Bee",             cls:"insect",   diet:"herbivore",  size:"tiny",   habitat:"grassland", snd:"bee"},
+  {em:"🐱",nm:"Domestic Cat",          cls:"mammal",   diet:"carnivore",  size:"small",  habitat:"city",      snd:"cat"},
+  {em:"🐧",nm:"African Penguin",       cls:"bird",     diet:"piscivore",  size:"medium", habitat:"ocean",     snd:"penguin"},
 ];
 const INSTRUMENTS = [   // `sample` = real-recording folder in sounds/instruments/ (pitched); Drum/Conga stay synth
   // `origin` = real place of origin of the instrument as commonly attributed; truly universal/ancient

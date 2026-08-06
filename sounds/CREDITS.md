@@ -34,7 +34,7 @@ loader and folder layout stay identical.
 
 The animal vocalisations in `sounds/animals/<slug>.mp3` are **hand-curated from Wikimedia Commons**
 (one clip per species), then trimmed to a short one-shot, downmixed to mono, loudness-normalised, and
-re-encoded to mp3 by `fetch-animal-samples.sh`. **20 species** — each clip is a recording OF the named
+re-encoded to mp3 by `fetch-animal-samples.sh`. **26 species** — each clip is a recording OF the named
 species, so the in-game name matches the actual call. Used by **Critter Hunt** (▶ each animal) and
 available to feed **Mujicians'** Sound Collection.
 
@@ -63,6 +63,12 @@ All sources are **CC0 / Public-domain / CC-BY / CC-BY-SA** — none are ND, so t
 | Rooster | *Gallus gallus domesticus* | Filo gèn' | CC BY-SA 4.0 |
 | Cow | *Bos taurus* | MichaeltheFox8621 | CC BY-SA 4.0 |
 | Sheep | *Ovis aries* | earthcalling | Public domain |
+| Horse | *Equus caballus* | Hü | Public domain |
+| Common Loon | *Gavia immer* | Jonathon Jongsma | CC BY-SA 3.0 |
+| Tokay Gecko | *Gekko gecko* | Richard Ling | Public domain |
+| Honey Bee | *Apis mellifera* | YleArkisto | CC BY 3.0 |
+| Domestic Cat | *Felis catus* | Tobias Puderer | CC BY-SA 3.0 |
+| African Penguin | *Spheniscus demersus* | Favaro L, Gamba M, et al. (Sci. Reports) | CC BY 4.0 |
 
 Re-fetch / re-trim with `fetch-animal-samples.sh` (edit a row's start/dur to change the window).
 
