@@ -552,9 +552,9 @@
     align-items:center;justify-content:center;padding:18px;z-index:9}
   #respell.open{display:flex}
   /* New-letter-unlocked notice — solid card over a dark scrim; dismissed with OK / ✕ */
-  #unlockmodal{position:absolute;inset:0;display:none;background:rgba(21,19,28,.9);
+  #unlockmodal,#soundunlock{position:absolute;inset:0;display:none;background:rgba(21,19,28,.9);
     align-items:center;justify-content:center;padding:18px;z-index:10}
-  #unlockmodal.open{display:flex}
+  #unlockmodal.open,#soundunlock.open{display:flex}
   /* Feats panel (verb stat ladders) */
   #stats{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
     align-items:center;justify-content:center;padding:18px;z-index:8}
@@ -1118,9 +1118,26 @@
           <b>each IPA symbol is exactly one sound</b>. Learn the symbol and you can read the pronunciation
           of any word in a dictionary.</p>
           <p>In Inklings, <b>letters</b> come from combat and <b>words</b> from the desk — and <b>sounds</b>
-          come from fishing. Cast at any pond; a sound surfaces on the line as its symbol (plus an example
+          come from fishing. Cast at a fish-spot; a sound surfaces on the line as its symbol (plus an example
           word in shallow water). <b>Type how the sound is spelled</b> to reel it in. Spelling is
           <b>lenient</b> — /u/ accepts “oo”, “u” or “ew” — so it's a hint, not a spelling test.</p>
+          <h3>🌊 The water is your mouth</h3>
+          <p class="cu-lead">Some spots — the ones with a glowing <b style="color:#7fd3ff">cyan</b> or
+          <b style="color:#ffcd78">amber</b> ring — open a <b>side-view of the water that <i>is</i> the IPA
+          chart</b>. Where a sound lives in the water is <b>where it's made in your mouth</b>:</p>
+          <ul class="hb-gloss">
+            <li><b>Distance from shore = place.</b> Sounds made at the <b>front</b> of the mouth (lips: /p/ /b/ /m/,
+            front vowels /i/ /æ/) bite <b>near the bank</b>; sounds made at the <b>back</b> (throat: /k/ /g/ /h/,
+            back vowels /u/ /ɑ/) bite <b>far out in open water</b>.</li>
+            <li><b>Depth = manner / height.</b> Down the water follows the chart's own top-to-bottom order — hard
+            <b>stops</b> (/p/ /t/ /k/) and <b>close</b> vowels (/i/ /u/) ride near the surface; airy
+            <b>glides</b> and <b>open</b> vowels (/ɑ/) sink to the deep.</li>
+            <li>Two waters: the <b style="color:#7fd3ff">🌊 Consonant Sea</b> (place × manner) and the
+            <b style="color:#ffcd78">🗣 Vowel Lagoon</b> (backness × height).</li>
+          </ul>
+          <p>You <b>cast twice</b>: tap once to lock the sweeping marker's <b>distance</b>, tap again to stop the
+          sinking hook's <b>depth</b>. The nearest sound bites — then <b>type its spelling</b> to land it, same as
+          any catch. So <i>where</i> you fish teaches <i>how</i> the sound is articulated.</p>
           <h3>Consonants</h3>
           <ul class="hb-gloss">
             <li><b>/ʃ/</b> = “sh” as in <i>ship</i>; <b>/ʒ/</b> = the buzzy “zh” in <i>vi<b>s</b>ion</i> (its voiced twin).</li>
@@ -1429,6 +1446,23 @@
           <div class="note">It now roams the wild — one is waiting for you near home. Go catch it!</div>
           <div class="btn-row" style="margin-top:18px;justify-content:center">
             <button class="primary" id="unlock-ok">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- New-sound-caught flourish (fishing M5) — the sound-collection counterpart to the new-letter notice;
+         queued through the shared celebration queue so it pops over the field after the fishing modal closes. -->
+    <div id="soundunlock">
+      <div class="book" style="max-width:380px;text-align:center">
+        <button class="close-x" id="soundunlock-x" aria-label="Close" title="Close">✕</button>
+        <div class="reveal">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">New sound caught!</div>
+          <div id="soundunlock-fish" style="font-size:40px;margin:8px 0"></div>
+          <div id="soundunlock-sym" style="font-family:var(--disp);font-size:30px;color:var(--inkblue);margin:2px 0"></div>
+          <div id="soundunlock-name" class="note" style="font-weight:700"></div>
+          <div class="note">It's swimming in your Fish Phoneme now. Reel up the whole chart!</div>
+          <div class="btn-row" style="margin-top:18px;justify-content:center">
+            <button class="primary" id="soundunlock-ok">OK</button>
           </div>
         </div>
       </div>
@@ -3098,6 +3132,9 @@ addEventListener("keydown",e=>{
   if((k==="?"||k==="/") && !inExclaInput){ e.preventDefault(); toggleHelp(); return; }
   if(document.getElementById("unlockmodal").classList.contains("open")){   // top-most: dismiss the new-letter notice
     e.preventDefault(); if(k==="enter"||k==="escape"||k===" ") closeUnlockModal(); return;
+  }
+  if(document.getElementById("soundunlock").classList.contains("open")){   // top-most: dismiss the new-sound flourish
+    e.preventDefault(); if(k==="enter"||k==="escape"||k===" ") closeSoundUnlock(); return;
   }
   if(document.getElementById("defmodal").classList.contains("open")){
     if(k==="escape"){ e.preventDefault(); closeDefModal(); } return;   // close the def modal first
@@ -5488,6 +5525,17 @@ function showUnlockModal(letters){
   SFX.play("unlockbig");
 }
 function closeUnlockModal(){ document.getElementById("unlockmodal").classList.remove("open"); nextCelebration(); }
+// The new-sound flourish (fishing M5): a field-level celebration for a FIRST-of-kind catch, queued through the
+// shared celebration queue so it pops after the fishing modal closes (and doesn't clamor with the companions).
+function showSoundUnlock(ph){
+  if(!ph) { nextCelebration(); return; }
+  document.getElementById("soundunlock-fish").innerHTML=fishGlyph(ph);
+  document.getElementById("soundunlock-sym").textContent="/"+ph.ipa+"/";
+  document.getElementById("soundunlock-name").textContent=(ph.fish?ph.fish+" · ":"")+"“"+(ph.roman||(ph.accepts&&ph.accepts[0])||"")+"”";
+  document.getElementById("soundunlock").classList.add("open");
+  SFX.play("unlockbig");
+}
+function closeSoundUnlock(){ document.getElementById("soundunlock").classList.remove("open"); nextCelebration(); }
 // Result shown in the bench area: the word + what it earned (ink for nouns, a potion for adjectives,
 // plus the Word-of-the-Day bonus if this was it).
 function showSpellResult(word, known, ink, brewed, wotdBonus, brewFull){
@@ -7129,6 +7177,7 @@ function closePigpens(){
    self-contained overlay, proving you can fish from the bank. The cast→bite→type-the-romanization loop
    (step 3) and the Phonicon (step 4) build inside this shell, driven by the phoneme engine loaded up top
    (pickPhoneme / phonemeAccepts / phonemeReveal). No saved state yet — state.fishing is transient UI. */
+let _pendingSoundUnlock=null;   // M5: a first-of-kind catch awaiting its field-level flourish (fired when the modal closes)
 let _fishSpot=null;   // the fish-spot being fished this session: {sx,sy,cx,cy,depth}. depth comes from the SPOT
                       // (shadow=shallow, bubbles=deep), not a cast-menu choice; a catch marks it in state.fishedSpots.
 // The in-modal cast loop (step 3). stage: ready → casting (bite telegraph) → biting (a phoneme surfaced,
@@ -7166,6 +7215,9 @@ function closeFishing(){
   state.fishing=false; _fishSpot=null;
   document.getElementById("fishing").classList.remove("open");
   document.getElementById("sound-btn").style.display = fishHideSound()?"none":"";
+  // M5: a held first-catch flourish fires now (field-level, queued) — unless the player is leaving to the
+  // Phonicon, where the collection view is itself the reveal (that path clears _pendingSoundUnlock first).
+  if(_pendingSoundUnlock){ const ph=_pendingSoundUnlock; _pendingSoundUnlock=null; queueCelebration(()=>showSoundUnlock(ph)); nextCelebration(); }
 }
 // Cast at the chosen depth → a snappy randomized nibble telegraph → a phoneme bites (§4.1).
 function fishCast(depth){
@@ -7201,8 +7253,9 @@ function fishSetHook(){
     if(_fishSpot){ if(!state.fishedSpots) state.fishedSpots=new Set(); state.fishedSpots.add(fishSpotKey(_fishSpot,_fishSpot.cx,_fishSpot.cy)); }  // spot goes quiet till tomorrow (one catch/spot)
     SFX.play(fish.wasNew ? "unlockbig" : "newword");
     scheduleSave();
-    // A polished first-catch flourish over the field (via the shared celebration queue) is step-5 tuning;
-    // the serialized in-modal "New sound!" card below is the step-4 flourish (the modal already can't clamor).
+    // M5: a first-of-kind catch also earns a field-level flourish through the shared celebration queue — held
+    // here and fired when the fishing modal closes (closeFishing), so it doesn't clamor with the in-modal card.
+    if(fish.wasNew) _pendingSoundUnlock=fish.target;
   } else { fish.stage="slip"; SFX.play("invalid"); }
   renderFishing();
 }
@@ -7278,7 +7331,7 @@ function renderFishing(){
     if(fish.preview || (!caught && fish.chart)) document.getElementById("fish-again").onclick=()=>{ fish.target=null; renderFishingChart(); };   // back to the 2D chart (dev preview, or a chart-spot slip — spot not consumed)
     else if(caught) document.getElementById("fish-done").onclick=closeFishing;
     else document.getElementById("fish-again").onclick=()=>{ fish.stage="ready"; fish.target=null; renderFishing(); };
-    document.getElementById("fish-phon").onclick=()=>{ closeFishing(); openPhonicon(); };
+    document.getElementById("fish-phon").onclick=()=>{ _pendingSoundUnlock=null; closeFishing(); openPhonicon(); };   // Phonicon is itself the reveal — skip the field flourish
     return;
   }
 }
@@ -8273,6 +8326,9 @@ document.getElementById("respell").onclick=e=>{ if(e.target.id==="respell") canc
 document.getElementById("unlock-ok").onclick=()=>{ closeUnlockModal(); SFX.play("click"); };
 document.getElementById("unlock-x").onclick=()=>{ closeUnlockModal(); SFX.play("click"); };
 document.getElementById("unlockmodal").onclick=e=>{ if(e.target.id==="unlockmodal") closeUnlockModal(); };   // tap scrim to dismiss
+document.getElementById("soundunlock-ok").onclick=()=>{ closeSoundUnlock(); SFX.play("click"); };
+document.getElementById("soundunlock-x").onclick=()=>{ closeSoundUnlock(); SFX.play("click"); };
+document.getElementById("soundunlock").onclick=e=>{ if(e.target.id==="soundunlock") closeSoundUnlock(); };   // tap scrim to dismiss
 document.getElementById("sv-close").onclick=()=>{ closeShelfView(); SFX.play("click"); };
 document.getElementById("sv-back").onclick=()=>{ renderShelfList(); SFX.play("click"); };
 document.getElementById("shelfview").onclick=e=>{ if(e.target.id==="shelfview") closeShelfView(); };  // tap backdrop to close

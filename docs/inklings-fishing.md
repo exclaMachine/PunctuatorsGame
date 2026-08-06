@@ -52,7 +52,7 @@ read the symbols); Esc/Tab steps Guide→Sounds before closing. The word-level s
 `rhymeKey`/`syllables`, poetry §11.1) stays **deliberately deferred** — fishing v1's typed loop doesn't
 consume it; stand it up when poetry / the Sound Garden needs it.
 
-**PLANNED (2026-08-06; M1 data + M2 renderer + M3 cast mechanic + M4 spot routing BUILT, M5 plan-only): the 2D "articulatory water" cast-and-reel mode (§9).** The
+**PLANNED (2026-08-06; M1–M5 all BUILT — data · renderer · cast mechanic · spot routing · teaching/flourish): the 2D "articulatory water" cast-and-reel mode (§9).** The
 shipped modal is a quick typed loop where `depth` is only a *difficulty* knob. The planned evolution turns
 fishing into a **side-view (Mario-style) cross-section of water whose two axes *are* the IPA chart's axes** —
 **distance from shore = the mouth→throat place/backness axis** (front-of-mouth sounds bite near the bank,
@@ -490,7 +490,7 @@ velar (back) constriction (it is labial-velar); `ɹ` is filed under alveolar; vo
 5 bins so multiple vowels legitimately share a row (backness disambiguates); `voice` is authored but not yet
 an axis (reserved for a later voiced/voiceless tell).
 
-### 9.4 Build order (each a shippable milestone; M1–M4 BUILT, M5 plan-only)
+### 9.4 Build order (each a shippable milestone; M1–M5 all BUILT)
 
 1. **M1 — Articulatory data pass (no UI). ✓ BUILT 2026-08-06.** Added the feature fields above to
    `data/phonemes.json` (all 40 entries); in the `/* FISHING */` engine block added feature-ordered lookup
@@ -544,10 +544,20 @@ an axis (reserved for a later voiced/voiceless tell).
    the chart without consuming the spot. This `spot.chart` branch is the **seam** decision #5 will use to delete
    the legacy modal later. No save-version bump (the spot `chart` is daily-transient like `depth`). Tuning knob:
    `FISH_CHART_CHANCE`.
-5. **M5 — Teaching, polish, save.** Add the "the water is your mouth" explainer to the Fish Phoneme **Guide
-   tab**; route the first-catch flourish through the existing celebration queue; confirm no save-version bump
-   (the spot `chart` is daily-transient like `depth`; `state.phonicon`/`state.fishedSpots` already persist).
-   Real fish sprite art stays a one-function `fishGlyph` change, out of scope here.
+5. **M5 — Teaching, polish, save. ✓ BUILT 2026-08-06.** Added the **"🌊 The water is your mouth"** explainer to
+   the Fish Phoneme **Guide tab** (distance = place, depth = manner/height; the cyan Consonant Sea / amber Vowel
+   Lagoon; the two-tap cast — so *where* you fish teaches *how* the sound is articulated). Routed the
+   **first-catch flourish** through the shared celebration queue: a first-of-kind catch is held in
+   `_pendingSoundUnlock` and, when the fishing modal closes, `queueCelebration`d as a field-level
+   `#soundunlock` pop (`showSoundUnlock`/`closeSoundUnlock`, mirroring the new-letter `#unlockmodal` — fish glyph
+   + symbol + name, `unlockbig` SFX, Esc/Enter/Space/✕/scrim dismiss, `nextCelebration` chaining); the "🔉
+   Phoneme Fish" path clears the pending flourish since the collection view is itself the reveal. **No
+   save-version bump** — the spot `chart` is daily-transient like `depth`, `_pendingSoundUnlock` is transient UI,
+   and `state.phonicon`/`state.fishedSpots` already persist. Real fish sprite art stays a one-function
+   `fishGlyph` change, out of scope here.
+
+**All five milestones (M1–M5) BUILT.** Remaining work is the §9.5 deferred set (retire the legacy modal, full
+IPA inventory, vowel-chart verification, angler sprite, custom fish art).
 
 ### 9.5 Deferred (beyond this mode's v1)
 
