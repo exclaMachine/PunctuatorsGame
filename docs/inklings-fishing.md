@@ -52,7 +52,7 @@ read the symbols); Esc/Tab steps Guide→Sounds before closing. The word-level s
 `rhymeKey`/`syllables`, poetry §11.1) stays **deliberately deferred** — fishing v1's typed loop doesn't
 consume it; stand it up when poetry / the Sound Garden needs it.
 
-**PLANNED (2026-08-06; M1 data pass BUILT, M2–M5 plan-only): the 2D "articulatory water" cast-and-reel mode (§9).** The
+**PLANNED (2026-08-06; M1 data pass + M2 static renderer BUILT, M3–M5 plan-only): the 2D "articulatory water" cast-and-reel mode (§9).** The
 shipped modal is a quick typed loop where `depth` is only a *difficulty* knob. The planned evolution turns
 fishing into a **side-view (Mario-style) cross-section of water whose two axes *are* the IPA chart's axes** —
 **distance from shore = the mouth→throat place/backness axis** (front-of-mouth sounds bite near the bank,
@@ -498,13 +498,20 @@ an axis (reserved for a later voiced/voiceless tell).
    shore→open / surface→deep) + `chartCell(ph)` → `{chart,col,row,cols,rows}` (null if a phoneme lacks usable
    features; diphthongs resolve to their starting-vowel cell). Pure data + lookup, no UI/state. JSON + inline
    `<script>` both parse-checked.
-2. **M2 — The 2D cross-section renderer (static first).** The `#fishing` modal is pure DOM today and nothing
-   competes for a canvas — add a `<canvas>` into `#fish-body` + a self-contained `requestAnimationFrame` draw
-   module, started in `openFishing()` / stopped in `closeFishing()`, independent of the world `render()` loop.
-   Draw the side cross-section (bank, depth-darkening water, shoreline) and plot each phoneme as a **silhouette
-   fish** at its `chartCell`, reusing the identity-hiding `fishGlyph(ph,{silhouette})`. **Reveal level becomes
-   the difficulty knob** (novice water shows the IPA symbol on each fish; harder water shows blank silhouettes
-   so you navigate by the remembered map) — replacing the old shallow/mid symbol-hiding.
+2. **M2 — The 2D cross-section renderer (static first). ✓ BUILT 2026-08-06.** A self-contained `<canvas>` +
+   `requestAnimationFrame` module (`fishChart` state + `fishChartStart`/`fishChartStop`/`drawFishChart`),
+   independent of the world `render()` loop, started/stopped from the fishing modal (`fishChartStop()` added to
+   `closeFishing()`). `drawFishChart` draws the side cross-section — a sloping **bank** (left shore), a
+   **depth-darkening** water gradient, a rippling **shoreline**, and faint **chart-cell guide lines** (the aim
+   bins) — sizing the backing store to the element × dpr each frame. The phoneme fish are **DOM spans layered
+   over the canvas** (so `fishGlyph(ph,{silhouette})` is reused verbatim) at their `chartCell` coords via shared
+   fractional insets `FCX_BANK`/`FCX_SURF`; fish sharing a cell (voiced/voiceless pairs, colliding vowels) are
+   **spread horizontally** within the cell so they don't stack. **Reveal level is the difficulty knob**
+   (`fishChart.reveal`: symbols on = novice; silhouettes only = navigate by the remembered map) — replacing the
+   old shallow/mid symbol-hiding. **Surfaced as a DEV-gated preview** (decision: build the canvas flow behind a
+   dev seam before M4 wires it to daily spots): `openFishingPreview()` (press **J** on the field, `IS_DEV`
+   only) opens the modal straight into the chart with a **Consonant Sea / Vowel Lagoon** toggle + a symbols
+   on/off toggle; the shipped typed loop (`openFishing`) is **untouched**. No new save state (transient UI).
 3. **M3 — The cast → sink → reel mechanic.** Extend the `fish` state machine with `aiming` (power bar → cast
    distance = x) and `sinking` (descend, reel press → depth = y); resolve to the nearest fish within a
    tolerance → `biting`; empty landing → `slip` (re-castable). Hand off to the shipped `fishSetHook` typed
@@ -523,6 +530,17 @@ an axis (reserved for a later voiced/voiceless tell).
 - **Retire the legacy DOM modal** so 2D handles *all* spots (the reason M4 keeps a clean seam).
 - **Diphthong drifting-fish** animation across the glide (v1 plots the start point).
 - **Voiced/voiceless stacked-cell tell** using the authored `voice` field.
+- **Full IPA inventory (dev want, 2026-08-06).** The current `data/phonemes.json` is **General-American English
+  only** (~40 phonemes) — the dev has flagged that on the articulatory chart it's visibly missing sounds, and
+  eventually wants the **whole IPA** (non-English consonants/vowels: clicks, uvulars, pharyngeals, front rounded
+  & back unrounded vowels, etc.), not just the sounds heard in English. This grows the inventory and fills out
+  the charts' empty cells; it's a data pass (`type`/`place`/`manner`/`backness`/`height` already exist, so the
+  chart geometry absorbs new entries with no code change) plus fish-fiction + `accepts`/`hintWord` authoring for
+  each new sound. Keep the GA set as the catchable default; a full-IPA set may want its own water / unlock.
+- **Verify the vowel chart layout (dev flag, 2026-08-06).** The dev notes our **Vowel Lagoon axes differ
+  slightly from the standard IPA vowel quadrilateral** they've seen — double-check `VOWEL_BACK` (3 bins) and
+  especially `VOWEL_HEIGHT` (compressed to 5 bins, §9.3) against the canonical chart before this mode ships for
+  real, and reconcile (the quadrilateral is a trapezoid, not a grid; front/back have different height ranges).
 - Deep sound-only / speak-the-phoneme tiers stay blocked on audio/recognition (§4.3/§4.4, unchanged).
 
 ### 9.6 How it fits the existing sinks

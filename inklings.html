@@ -496,6 +496,24 @@
     border:2px solid var(--edge);background:var(--paper);color:var(--ink)}
   .fish-msg{font-family:var(--read);font-size:13.5px;min-height:19px;margin:10px 0 0;color:var(--ink-soft)}
   .fish-msg.ok{color:var(--moss)}
+  /* M2: the 2D "articulatory water" cross-section (docs/inklings-fishing.md §9) — DEV preview for now.
+     The <canvas> draws the water (bank + depth-darkening open water + shoreline); the phoneme fish are DOM
+     spans layered over it (so fishGlyph(ph,{silhouette}) is reused verbatim) at their chartCell coords. */
+  .fish-chart-wrap{position:relative;width:100%;height:300px;border:2px solid var(--line);
+    background:#0d2530;margin:8px 0;overflow:hidden}
+  .fish-chart-wrap canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .fcx-fish{position:absolute;transform:translate(-50%,-50%);z-index:2;pointer-events:none}
+  .fcx-bob{display:flex;flex-direction:column;align-items:center;line-height:1;text-align:center;
+    animation:fcxbob 2.6s ease-in-out infinite}
+  @keyframes fcxbob{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
+  .fcx-fish .fish-glyph{font-size:22px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+  .fcx-sym{font-family:var(--read);font-size:12px;color:#eaf4f7;margin-top:1px;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+  .fcx-axis{position:absolute;font-family:var(--disp);font-size:7px;color:#cfe6ee;letter-spacing:.5px;
+    opacity:.9;z-index:3;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+  .fcx-x{left:16%;right:6px;bottom:4px;text-align:center}
+  .fcx-y{top:52%;left:3px;transform:rotate(-90deg);transform-origin:left center;white-space:nowrap}
+  .fish-chart-dev{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:4px 0 2px}
+  .fish-chart-dev .gd-devlabel{font-family:var(--disp);font-size:8px;background:var(--gold);color:#2a2540;padding:2px 5px}
   #potions{display:flex;gap:5px;margin-top:4px}
   .potion-btn{font-family:var(--disp);font-size:8px;line-height:1;padding:5px 6px;border:2px solid var(--edge);
     background:var(--paper-2);color:var(--ink);cursor:pointer;display:inline-flex;gap:4px;align-items:center;
@@ -1210,9 +1228,9 @@
       </div>
     </div>
 
-    <!-- Fishing: cast at a field pond (E / CAST) and reel up a phoneme by typing its romanization → the
-         Phonicon. Step 2 = the modal SHELL only (proves you can fish from the bank); the cast→bite→type
-         loop + Phonicon are steps 3-4. See docs/inklings-fishing.md. -->
+    <!-- Fishing: cast at a daily fish-spot (E / Space / CAST) and reel up a phoneme by typing its
+         romanization → the Phonicon (shipped steps 1-4). #fish-body also hosts the M2 "articulatory water"
+         2D cross-section preview (DEV: press J). See docs/inklings-fishing.md. -->
     <div id="fishing">
       <div class="book">
         <button class="close-x" id="fish-close" aria-label="Close" title="Close">✕</button>
@@ -3181,6 +3199,7 @@ addEventListener("keydown",e=>{
   if(k==="f") openGarden();              // Garden (crossword farm)
   if(k==="k" && IS_DEV) openPigpens();   // Pig Pens (Pigpen cipher) — DEV-only for now
   if(k==="y" && IS_DEV) openHerald();    // Herald's Bench (Blazon Shield) — DEV-only for now
+  if(k==="j" && IS_DEV) openFishingPreview();   // M2 articulatory-water cross-section preview — DEV-only
   if(k==="m") alaSummon();               // À La Modal: offer a hint (or dismiss)
   if(k===" "){ if(nearFishSpot()) openFishing(); else doAttack(); }   // Space also casts when facing a fish-spot (water blocks attacks anyway)
 });
@@ -7110,7 +7129,7 @@ function openFishing(){
   renderFishing(); SFX.play("click");
 }
 function closeFishing(){
-  fishReset();
+  fishReset(); fishChartStop(); fish.preview=false;   // stop the M2 canvas RAF (harmless if it wasn't running)
   state.fishing=false; _fishSpot=null;
   document.getElementById("fishing").classList.remove("open");
   document.getElementById("sound-btn").style.display = fishHideSound()?"none":"";
@@ -7227,6 +7246,115 @@ function renderFishing(){
     document.getElementById("fish-phon").onclick=()=>{ closeFishing(); openPhonicon(); };
     return;
   }
+}
+
+/* ---------- M2: the 2D "articulatory water" cross-section renderer (docs/inklings-fishing.md §9.4) --------
+   The water IS the IPA chart: distance from shore = the place/backness (mouth→throat) axis, depth = the
+   manner/height axis, so where a fish lives teaches how its sound is articulated. A self-contained <canvas>
+   + requestAnimationFrame module (independent of the world render() loop) draws the side-view water — a
+   sloping bank, depth-darkening open water, a rippling shoreline, faint chart-cell guides — and the phoneme
+   fish are DOM spans layered over it at their chartCell (§9.2). The `reveal` flag is the difficulty knob:
+   symbols on = novice; silhouettes only = fish by the remembered map (replacing the old shallow/mid tiers).
+   DEV-gated preview for now (press J); M3 adds the cast→sink→reel mechanic, M4 routes it to daily spots. */
+const FCX_BANK=0.15, FCX_SURF=0.10;   // fractional insets shared by the canvas water rect AND the DOM fish
+const fishChart={ chart:"consonant", reveal:true, raf:0, cv:null, ctx:null, t0:0 };
+// The phonemes that live on the active chart, each paired with its resolved cell (§9.2 / chartCell).
+function fishChartData(){
+  if(!PHONEMES) return [];
+  return PHONEMES.map(p=>({p,cell:chartCell(p)})).filter(o=>o.cell && o.cell.chart===fishChart.chart);
+}
+function fishChartStop(){ if(fishChart.raf){ cancelAnimationFrame(fishChart.raf); fishChart.raf=0; } fishChart.cv=null; fishChart.ctx=null; }
+function fishChartStart(){
+  const cv=document.getElementById("fish-chart-cv"); if(!cv) return;
+  fishChart.cv=cv; fishChart.ctx=cv.getContext("2d"); fishChart.t0=performance.now();
+  const loop=t=>{ if(!fishChart.cv) return; drawFishChart((t-fishChart.t0)/1000); fishChart.raf=requestAnimationFrame(loop); };
+  fishChart.raf=requestAnimationFrame(loop);
+}
+// Draw the water cross-section into the canvas (fish are DOM, placed by renderFishingChart). Redraws each
+// frame so the shoreline can ripple; re-syncs the backing-store size to the element (× dpr) when it changes.
+function drawFishChart(t){
+  const cv=fishChart.cv, g=fishChart.ctx; if(!cv||!g) return;
+  const wrap=cv.parentElement, dpr=Math.min(2, window.devicePixelRatio||1);
+  const W=wrap.clientWidth, H=wrap.clientHeight; if(!W||!H) return;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
+  g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+  const surfY=H*FCX_SURF, bankX=W*FCX_BANK;
+  g.fillStyle="#cfe0e3"; g.fillRect(0,0,W,surfY);                           // air above the waterline
+  const grd=g.createLinearGradient(0,surfY,0,H);                           // water: bright surface → dark deep
+  grd.addColorStop(0,"#4f93a6"); grd.addColorStop(1,"#0b2029");
+  g.fillStyle=grd; g.fillRect(0,surfY,W,H-surfY);
+  const data=fishChartData();
+  const cols=data.length?data[0].cell.cols:1, rows=data.length?data[0].cell.rows:1;
+  g.strokeStyle="rgba(255,255,255,.07)"; g.lineWidth=1;                     // faint chart-cell guides (the aim bins)
+  for(let c=1;c<cols;c++){ const x=bankX+(c/cols)*(W-bankX); g.beginPath(); g.moveTo(x,surfY); g.lineTo(x,H); g.stroke(); }
+  for(let r=1;r<rows;r++){ const y=surfY+(r/rows)*(H-surfY); g.beginPath(); g.moveTo(bankX,y); g.lineTo(W,y); g.stroke(); }
+  g.fillStyle="#5b4526"; g.beginPath();                                     // the bank (left shore) — you fish from here
+  g.moveTo(0,0); g.lineTo(bankX*0.7,0); g.lineTo(bankX,H); g.lineTo(0,H); g.closePath(); g.fill();
+  g.fillStyle="#6f8a3c"; g.beginPath();                                     // grassy lip
+  g.moveTo(0,0); g.lineTo(bankX*0.7,0); g.lineTo(bankX*0.8,H*0.12); g.lineTo(0,H*0.1); g.closePath(); g.fill();
+  g.strokeStyle="#bfe6ef"; g.lineWidth=2; g.beginPath();                    // rippling shoreline
+  for(let x=bankX;x<=W;x+=6){ const y=surfY+Math.sin(x*0.05+t*1.6)*2; if(x===bankX) g.moveTo(x,y); else g.lineTo(x,y); }
+  g.stroke();
+}
+function fishPreviewAxes(){
+  return fishChart.chart==="consonant"
+    ? { x:"shore · lips → throat · open water", y:"surface: stops → deep: glides" }
+    : { x:"shore · front → back · open water",  y:"surface: close → deep: open" };
+}
+// Build the preview UI in #fish-body and layer the fish. Voiced/voiceless (and any) fish sharing a cell are
+// spread horizontally within the cell so they don't stack (the voiced/voiceless tell is a later pass, §9.5).
+function renderFishingChart(){
+  const body=document.getElementById("fish-body"); if(!body) return;
+  const ax=fishPreviewAxes(), which=fishChart.chart==="consonant"?"Consonant Sea":"Vowel Lagoon";
+  body.innerHTML =
+    '<p class="fish-lead"><b>DEV preview (M2).</b> The water <i>is</i> the IPA chart — distance from shore = '+
+      'place/backness, depth = manner/height. <b>'+which+'</b>. Toggle symbols off to fish by memory.</p>'+
+    '<div class="fish-chart-wrap" id="fish-chart-wrap">'+
+      '<canvas id="fish-chart-cv"></canvas>'+
+      '<div class="fcx-axis fcx-x">'+esc(ax.x)+'</div>'+
+      '<div class="fcx-axis fcx-y">'+esc(ax.y)+'</div>'+
+    '</div>'+
+    '<div class="fish-chart-dev">'+
+      '<span class="gd-devlabel">DEV</span>'+
+      '<button class="fish-btn'+(fishChart.chart==="consonant"?"":" alt")+'" id="fcx-cons">🌊 Consonant Sea</button>'+
+      '<button class="fish-btn'+(fishChart.chart==="vowel"?"":" alt")+'" id="fcx-vow">🗣 Vowel Lagoon</button>'+
+      '<button class="fish-btn alt" id="fcx-reveal">'+(fishChart.reveal?"👁 Symbols: on":"🙈 Symbols: off")+'</button>'+
+    '</div>';
+  const wrap=document.getElementById("fish-chart-wrap");
+  const groups={};                                                         // bucket fish by cell to de-stack collisions
+  fishChartData().forEach(o=>{ const k=o.cell.col+","+o.cell.row; (groups[k]=groups[k]||[]).push(o); });
+  let gi=0;
+  for(const k in groups){
+    const arr=groups[k], cell=arr[0].cell, n=arr.length;
+    const cellW=(1-FCX_BANK)/cell.cols;
+    arr.forEach((o,j)=>{
+      const spread=n>1 ? (j-(n-1)/2)*cellW*0.42 : 0;                       // nudge stacked fish apart within the cell
+      const fx=FCX_BANK+((cell.col+0.5)/cell.cols)*(1-FCX_BANK)+spread;
+      const fy=FCX_SURF+((cell.row+0.5)/cell.rows)*(1-FCX_SURF);
+      const el=document.createElement("div");
+      el.className="fcx-fish";
+      el.style.left=(fx*100)+"%"; el.style.top=(fy*100)+"%";
+      el.title=o.p.fish+" — /"+o.p.ipa+"/";
+      el.innerHTML='<div class="fcx-bob" style="animation-delay:'+(-(gi%7)*0.35).toFixed(2)+'s">'+
+        fishGlyph(o.p,{silhouette:!fishChart.reveal})+
+        (fishChart.reveal?'<div class="fcx-sym">'+esc(o.p.ipa)+'</div>':'')+'</div>';
+      wrap.appendChild(el); gi++;
+    });
+  }
+  document.getElementById("fcx-cons").onclick=()=>{ fishChart.chart="consonant"; renderFishingChart(); SFX.play("click"); };
+  document.getElementById("fcx-vow").onclick=()=>{ fishChart.chart="vowel"; renderFishingChart(); SFX.play("click"); };
+  document.getElementById("fcx-reveal").onclick=()=>{ fishChart.reveal=!fishChart.reveal; renderFishingChart(); SFX.play("click"); };
+  fishChartStop(); fishChartStart();
+}
+// DEV-only entry (press J anywhere in the field): open the fishing modal straight into the M2 chart preview,
+// bypassing the daily-spot gate (spot-routing is M4). The shipped typed loop (openFishing) is untouched.
+function openFishingPreview(){
+  if(!IS_DEV || state.fishing) return;
+  if(!PHONEMES){ showToast("The water's still settling…"); return; }
+  fish.preview=true; state.fishing=true; fishReset();
+  document.getElementById("fishing").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  renderFishingChart(); SFX.play("click");
 }
 
 /* ---------- THE PHONICON (the sound-dex — docs/inklings-fishing.md §3.2) --------------------------------
