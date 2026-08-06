@@ -52,6 +52,15 @@ read the symbols); Esc/Tab steps Guide→Sounds before closing. The word-level s
 `rhymeKey`/`syllables`, poetry §11.1) stays **deliberately deferred** — fishing v1's typed loop doesn't
 consume it; stand it up when poetry / the Sound Garden needs it.
 
+**PLANNED (2026-08-06, plan-only — not built): the 2D "articulatory water" cast-and-reel mode (§9).** The
+shipped modal is a quick typed loop where `depth` is only a *difficulty* knob. The planned evolution turns
+fishing into a **side-view (Mario-style) cross-section of water whose two axes *are* the IPA chart's axes** —
+**distance from shore = the mouth→throat place/backness axis** (front-of-mouth sounds bite near the bank,
+back-of-mouth sounds far out) and **depth = the manner/tongue-height axis** — so *where* you fish teaches
+*how* the sound is articulated. Catch verb becomes a real fishing-game loop (timing power-cast → sink →
+reel), then the **existing type-the-romanization grading lands it**. Two waters (Consonant Sea / Vowel
+Lagoon). Layered on top of the current modal for now, built to eventually replace it. Full design in §9.
+
 Cross-refs: [`inklings.md`](inklings.md) (the water tiles this reuses; the dex/collection pattern the
 Phonicon mirrors), [`inklings-poetry.md`](inklings-poetry.md) §3 (the **phoneme engine** — `rhymeKey`,
 `syllables`, the IPA vowel set, `data/pronunciations.json` — fishing is the **first raw per-phoneme use** of
@@ -407,3 +416,111 @@ prematurely:
    growing it into an authored lake zone unless play clearly demands it (that's the Forest's job for poetry).
 7. **Daily determinism** — water is `daySeed`-deterministic, so the fishing map is stable-all-day / fresh-
    tomorrow like everything else; keep any fished-out state day-scoped, not durable.
+
+---
+
+## 9. The 2D "articulatory water" cast-and-reel mode (PLANNED 2026-08-06 — plan-only, not built)
+
+The shipped fishing loop (§4, steps 1–4) is a **pure-DOM modal**: cast → a phoneme bites → **type its
+romanization** → the Phonicon fills. Its `depth` is only a **difficulty knob** and carries no phonetic
+meaning. This planned evolution makes the water a **side-view (Mario-style) cross-section whose two axes
+*are* the IPA chart's axes**, so **where you fish teaches how the sound is articulated**:
+
+- **Distance from shore = the mouth→throat axis** (place for consonants, backness for vowels). Front-of-mouth
+  sounds (lips: /p/ /b/ /m/, front vowels /i/ /æ/) bite **near the bank**; back-of-mouth sounds (velar/glottal
+  /k/ /g/ /h/, back vowels /u/ /ɑ/) bite **far out in open water**.
+- **Depth = the manner / tongue-height axis**, mirroring the IPA chart's own top→bottom row order (plosives at
+  the surface → approximants deep; close/high vowels shallow → open/low vowels deep).
+
+The catch verb becomes a **real fishing-game loop**: a **timing power-cast bar** picks the horizontal
+distance, then the hook **sinks** and a **reel** press picks the depth; the phoneme-fish nearest that (x, y)
+coordinate bites, and the **existing type-the-romanization grading lands it** (the shipped
+`fishSetHook`/`phonemeAccepts`/`recordPhonemeCatch` path is reused unchanged — the grading is not rebuilt).
+
+### 9.1 Decisions (settled with the dev, 2026-08-06)
+
+Continuing §1's numbering:
+
+5. **Layer the 2D mode on top of the current modal for now, but build it self-contained so the old modal can
+   be removed entirely later.** The 2D canvas flow is a new spot kind alongside the legacy typed modal; when
+   every spot is chart-typed, the legacy DOM renderer + its branch are deleted and 2D becomes the sole UI.
+6. **Two separate waters** — a **Consonant Sea** (place × manner) and a **Vowel Lagoon** (backness × height) —
+   *not* one shared body and *not* a vowels-only first cut. Their charts are different shapes, so each gets its
+   own clean cross-section. These are **spot kinds**, not authored map zones — decision #2 (no new terrain) holds.
+7. **Catch = aim then type.** Cast is a **timing/power bar** setting cast distance (the horizontal axis); the
+   hook then **sinks until a reel press** sets the depth (the vertical axis); whatever phoneme lives at that
+   articulatory coordinate bites; the player **types its romanization** to land it. Position teaches
+   articulation; typing still teaches the sound→spelling map. A miss (empty landing) is **re-castable, spot not
+   consumed** (cozy tone, matching the shipped slip behaviour).
+
+### 9.2 The articulatory mapping (the heart of it)
+
+**Consonant Sea** — x = place (front→back), y = manner (chart's top→bottom):
+
+| Axis | Bins (shore → open water / surface → deep) |
+| ---- | ------------------------------------------ |
+| Distance (place) | bilabial · labiodental · dental · alveolar · postalveolar · palatal · velar · glottal |
+| Depth (manner) | plosive · affricate · nasal · fricative · approximant · lateral-approximant |
+
+**Vowel Lagoon** — x = backness, y = height (chart's top→bottom):
+
+| Axis | Bins (shore → open / surface → deep) |
+| ---- | ------------------------------------ |
+| Distance (backness) | front · central · back |
+| Depth (height) | close · near-close · mid · open-mid · open |
+
+- **Diphthongs move on the chart**, so v1 plots each at its **starting** vowel's coordinate and flags it
+  `glide:true` (a later pass can animate a drifting fish).
+- **Voicing** (`voice: "voiced"|"voiceless"`) is authored but is **not an axis in v1** — reserved for a later
+  "which of the two stacked fish" tell (voiced/voiceless minimal pairs share a chart cell).
+
+### 9.3 The data gap this needs first
+
+`data/phonemes.json` today has **no articulatory metadata** — `tier`/`depth` encode rarity/difficulty only,
+and the consonant/vowel split exists solely as blank-line groupings + Guide-tab prose. The mode therefore
+depends on a **data pass** (M1 below) adding real features:
+
+- Consonants: `type:"consonant"`, `place`, `manner`, `voice`.
+- Vowels/diphthongs: `type:"vowel"`, `backness`, `height`, `round` (bool), `glide` (bool).
+
+All existing fields (`ipa/roman/accepts/hintWord/tier/depth/fish/emoji/habitat`) stay untouched. This is
+trivial hand-authoring (40 entries, one line each) and keeps the file the canonical data-driven source.
+
+### 9.4 Build order (each a shippable milestone; plan-only)
+
+1. **M1 — Articulatory data pass (no UI).** Add the feature fields above to `data/phonemes.json`; in the
+   `/* FISHING */` engine block add feature-ordered lookup arrays (`CONSONANT_PLACES`/`CONSONANT_MANNERS`/
+   `VOWEL_BACK`/`VOWEL_HEIGHT`) + a `chartCell(ph)` → `{col,row}` helper resolving a phoneme to its grid
+   coordinate. Parse-check only.
+2. **M2 — The 2D cross-section renderer (static first).** The `#fishing` modal is pure DOM today and nothing
+   competes for a canvas — add a `<canvas>` into `#fish-body` + a self-contained `requestAnimationFrame` draw
+   module, started in `openFishing()` / stopped in `closeFishing()`, independent of the world `render()` loop.
+   Draw the side cross-section (bank, depth-darkening water, shoreline) and plot each phoneme as a **silhouette
+   fish** at its `chartCell`, reusing the identity-hiding `fishGlyph(ph,{silhouette})`. **Reveal level becomes
+   the difficulty knob** (novice water shows the IPA symbol on each fish; harder water shows blank silhouettes
+   so you navigate by the remembered map) — replacing the old shallow/mid symbol-hiding.
+3. **M3 — The cast → sink → reel mechanic.** Extend the `fish` state machine with `aiming` (power bar → cast
+   distance = x) and `sinking` (descend, reel press → depth = y); resolve to the nearest fish within a
+   tolerance → `biting`; empty landing → `slip` (re-castable). Hand off to the shipped `fishSetHook` typed
+   grading to land it. Tolerance + bar speed are the skill-vs-cozy tuning knobs.
+4. **M4 — Spot routing (layer cleanly).** Add a daily-seeded `chart` field (`null | "consonant" | "vowel"`) to
+   `fishSpotsFor(sc)`; `null` = today's legacy modal spot, unchanged. `drawFishSpot` distinguishes the two
+   waters on the world canvas; `openFishing()` branches on `_fishSpot.chart` (legacy DOM flow vs the new canvas
+   flow). This branch is the **seam** that lets decision #5 delete the legacy modal later.
+5. **M5 — Teaching, polish, save.** Add the "the water is your mouth" explainer to the Fish Phoneme **Guide
+   tab**; route the first-catch flourish through the existing celebration queue; confirm no save-version bump
+   (the spot `chart` is daily-transient like `depth`; `state.phonicon`/`state.fishedSpots` already persist).
+   Real fish sprite art stays a one-function `fishGlyph` change, out of scope here.
+
+### 9.5 Deferred (beyond this mode's v1)
+
+- **Retire the legacy DOM modal** so 2D handles *all* spots (the reason M4 keeps a clean seam).
+- **Diphthong drifting-fish** animation across the glide (v1 plots the start point).
+- **Voiced/voiceless stacked-cell tell** using the authored `voice` field.
+- Deep sound-only / speak-the-phoneme tiers stay blocked on audio/recognition (§4.3/§4.4, unchanged).
+
+### 9.6 How it fits the existing sinks
+
+Unchanged from §3.3: caught sounds still fill the **Phonicon** ("Fish Phoneme"), which supplies the parked
+**Sound Garden** (farming §5) and is the raw-phoneme counterpart to the poetry **phoneme engine** (poetry §3).
+This mode changes the *acquisition verb*, not the reward home — fishing still pays **sounds only** (§8.1).
