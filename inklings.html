@@ -2034,7 +2034,7 @@ fetch("data/creatures.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>
    Phonicon. This block is JUST the data + the pure lookup helpers (no UI, no modal, no state yet) — the cast
    interaction (step 2) and the shallow/mid loop + Phonicon (steps 3-4) build on these. Kept self-contained so
    nothing in combat or the desk is touched. Inventory is data/phonemes.json (the sound->spelling table). */
-let PHONEMES=null;                 // array of {ipa,roman,accepts,hintWord,tier,depth, fish,emoji,habitat}
+let PHONEMES=null;                 // array of {ipa,roman,accepts,hintWord,tier,depth, fish,emoji,habitat, + §9 articulatory features: type & (consonant: place,manner,voice | vowel: backness,height,round,glide)}
 const PHONEMES_BY_IPA=Object.create(null);
 const PHONEME_TIER_WEIGHT={ common:6, mid:3, rare:1 };   // spawn weight by rarity (rarer bites less)
 fetch("data/phonemes.json").then(r=>r.ok?r.json():Promise.reject()).then(data=>{
@@ -2085,6 +2085,35 @@ function phonemeReveal(ph, castDepth){
     showSymbol: d<=2,          // shallow(1)+mid(2) show the IPA symbol; deep(3) hides it
     showHint: d<=1             // only shallow reveals the teaching hint word
   };
+}
+
+// --- Articulatory chart geometry (docs/inklings-fishing.md §9, M1) --------------------------------------
+// The planned 2D "articulatory water" fishing mode maps the IPA chart's own axes onto the water: distance
+// from shore = the place/backness (mouth->throat) axis, depth = the manner/height axis. These ordered arrays
+// are the two charts' axes, indexed shore->open (columns) and surface->deep (rows) — mirroring the real IPA
+// chart's left->right / top->bottom. chartCell(ph) resolves a phoneme (with its data/phonemes.json §9
+// features) to a grid coordinate for its chart; the M2 renderer normalizes col/cols & row/rows to canvas x/y.
+// Pure data + lookup — no UI, no state; consumed later by the cross-section renderer.
+const CONSONANT_PLACES=["bilabial","labiodental","dental","alveolar","postalveolar","palatal","velar","glottal"]; // shore->open water (front of mouth -> throat)
+const CONSONANT_MANNERS=["plosive","affricate","nasal","fricative","approximant","lateral-approximant"];           // surface->deep (chart top->bottom rows)
+const VOWEL_BACK=["front","central","back"];                                                                       // shore->open water
+const VOWEL_HEIGHT=["close","near-close","mid","open-mid","open"];                                                 // surface->deep (close/high -> open/low)
+// Resolve a phoneme to its articulatory-chart cell, or null if it has no usable features. Returns which chart
+// it belongs to plus the col/row index and the grid dimensions, so the renderer can place fish without
+// re-deriving the axes. Diphthongs (glide:true) resolve to their STARTING vowel's coordinate (they carry it).
+function chartCell(ph){
+  if(!ph) return null;
+  if(ph.type==="consonant"){
+    const col=CONSONANT_PLACES.indexOf(ph.place), row=CONSONANT_MANNERS.indexOf(ph.manner);
+    if(col<0||row<0) return null;
+    return { chart:"consonant", col, row, cols:CONSONANT_PLACES.length, rows:CONSONANT_MANNERS.length };
+  }
+  if(ph.type==="vowel"){
+    const col=VOWEL_BACK.indexOf(ph.backness), row=VOWEL_HEIGHT.indexOf(ph.height);
+    if(col<0||row<0) return null;
+    return { chart:"vowel", col, row, cols:VOWEL_BACK.length, rows:VOWEL_HEIGHT.length };
+  }
+  return null;
 }
 
 // --- Library room (roadmap #4) --------------------------------------------------

@@ -52,7 +52,7 @@ read the symbols); Esc/Tab steps Guide→Sounds before closing. The word-level s
 `rhymeKey`/`syllables`, poetry §11.1) stays **deliberately deferred** — fishing v1's typed loop doesn't
 consume it; stand it up when poetry / the Sound Garden needs it.
 
-**PLANNED (2026-08-06, plan-only — not built): the 2D "articulatory water" cast-and-reel mode (§9).** The
+**PLANNED (2026-08-06; M1 data pass BUILT, M2–M5 plan-only): the 2D "articulatory water" cast-and-reel mode (§9).** The
 shipped modal is a quick typed loop where `depth` is only a *difficulty* knob. The planned evolution turns
 fishing into a **side-view (Mario-style) cross-section of water whose two axes *are* the IPA chart's axes** —
 **distance from shore = the mouth→throat place/backness axis** (front-of-mouth sounds bite near the bank,
@@ -474,24 +474,30 @@ Continuing §1's numbering:
 - **Voicing** (`voice: "voiced"|"voiceless"`) is authored but is **not an axis in v1** — reserved for a later
   "which of the two stacked fish" tell (voiced/voiceless minimal pairs share a chart cell).
 
-### 9.3 The data gap this needs first
+### 9.3 The data gap this needs first — FILLED (M1, 2026-08-06)
 
-`data/phonemes.json` today has **no articulatory metadata** — `tier`/`depth` encode rarity/difficulty only,
-and the consonant/vowel split exists solely as blank-line groupings + Guide-tab prose. The mode therefore
-depends on a **data pass** (M1 below) adding real features:
+`data/phonemes.json` previously had **no articulatory metadata** — `tier`/`depth` encoded rarity/difficulty
+only, and the consonant/vowel split existed solely as blank-line groupings + Guide-tab prose. **M1 added the
+features** (all 40 entries):
 
-- Consonants: `type:"consonant"`, `place`, `manner`, `voice`.
-- Vowels/diphthongs: `type:"vowel"`, `backness`, `height`, `round` (bool), `glide` (bool).
+- Consonants (24): `type:"consonant"`, `place`, `manner`, `voice`.
+- Vowels/diphthongs (16 = 11 monophthongs + 5 diphthongs): `type:"vowel"`, `backness`, `height`, `round`
+  (bool), `glide` (bool — the 5 diphthongs, which store their **starting** vowel's coordinate).
 
-All existing fields (`ipa/roman/accepts/hintWord/tier/depth/fish/emoji/habitat`) stay untouched. This is
-trivial hand-authoring (40 entries, one line each) and keeps the file the canonical data-driven source.
+All existing fields (`ipa/roman/accepts/hintWord/tier/depth/fish/emoji/habitat`) are untouched and the file
+stays the canonical data-driven source. Simplifications recorded in the file's `_doc`: `w` is placed at its
+velar (back) constriction (it is labial-velar); `ɹ` is filed under alveolar; vowel `height` is compressed to
+5 bins so multiple vowels legitimately share a row (backness disambiguates); `voice` is authored but not yet
+an axis (reserved for a later voiced/voiceless tell).
 
 ### 9.4 Build order (each a shippable milestone; plan-only)
 
-1. **M1 — Articulatory data pass (no UI).** Add the feature fields above to `data/phonemes.json`; in the
-   `/* FISHING */` engine block add feature-ordered lookup arrays (`CONSONANT_PLACES`/`CONSONANT_MANNERS`/
-   `VOWEL_BACK`/`VOWEL_HEIGHT`) + a `chartCell(ph)` → `{col,row}` helper resolving a phoneme to its grid
-   coordinate. Parse-check only.
+1. **M1 — Articulatory data pass (no UI). ✓ BUILT 2026-08-06.** Added the feature fields above to
+   `data/phonemes.json` (all 40 entries); in the `/* FISHING */` engine block added feature-ordered lookup
+   arrays (`CONSONANT_PLACES` 8 · `CONSONANT_MANNERS` 6 · `VOWEL_BACK` 3 · `VOWEL_HEIGHT` 5, each ordered
+   shore→open / surface→deep) + `chartCell(ph)` → `{chart,col,row,cols,rows}` (null if a phoneme lacks usable
+   features; diphthongs resolve to their starting-vowel cell). Pure data + lookup, no UI/state. JSON + inline
+   `<script>` both parse-checked.
 2. **M2 — The 2D cross-section renderer (static first).** The `#fishing` modal is pure DOM today and nothing
    competes for a canvas — add a `<canvas>` into `#fish-body` + a self-contained `requestAnimationFrame` draw
    module, started in `openFishing()` / stopped in `closeFishing()`, independent of the world `render()` loop.
