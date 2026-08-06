@@ -1229,8 +1229,8 @@
     </div>
 
     <!-- Fishing: cast at a daily fish-spot (E / Space / CAST) and reel up a phoneme by typing its
-         romanization → the Phonicon (shipped steps 1-4). #fish-body also hosts the M2 "articulatory water"
-         2D cross-section preview (DEV: press J). See docs/inklings-fishing.md. -->
+         romanization → the Phonicon (shipped steps 1-4). #fish-body also hosts the 2D "articulatory water"
+         cast-and-reel preview (§9; DEV: press J). See docs/inklings-fishing.md. -->
     <div id="fishing">
       <div class="book">
         <button class="close-x" id="fish-close" aria-label="Close" title="Close">✕</button>
@@ -3083,7 +3083,8 @@ addEventListener("keydown",e=>{
     return;
   }
   if(state.fishing){   // Fishing modal: holds a real <input> for the typed romanization — DON'T swallow letters; only Esc/Tab close (Enter is the input's own)
-    if(k==="escape"||k==="tab"){ e.preventDefault(); closeFishing(); }
+    if(k==="escape"||k==="tab"){ e.preventDefault(); closeFishing(); return; }
+    if(fish.preview && k===" " && (fish.stage==="chartready"||fish.stage==="aiming"||fish.stage==="sinking")){ e.preventDefault(); fishChartTap(); return; }   // Space drives the 2D two-tap cast (biting stage keeps Space for the input)
     return;
   }
   if(state.phoniconOpen){   // Fish Phoneme (sound-dex): read-only view, close on Esc / Tab
@@ -7225,8 +7226,12 @@ function renderFishing(){
     else if(fish.wasNew) msg = '✨ A new sound for your Phoneme Fish — /'+t.ipa+'/ (“'+spell+'”)!';
     else msg = '🎣 Caught /'+t.ipa+'/ again — now ×'+((rec&&rec.count)||1)+' in your Fish Phoneme.';
     // On a catch the spot is spent — the water goes quiet here till tomorrow (no re-cast). A slip keeps the fish,
-    // so you can cast again at the same spot (cozy + low-stakes, §4.1).
-    const quiet = caught ? '<p class="fish-msg">The water goes still here — this spot is fished out until tomorrow.</p>' : '';
+    // so you can cast again at the same spot (cozy + low-stakes, §4.1). In the 2D DEV preview there's no spot,
+    // so skip the "fished out" line and let both outcomes cast again (back to the chart).
+    const quiet = (caught && !fish.preview) ? '<p class="fish-msg">The water goes still here — this spot is fished out until tomorrow.</p>' : '';
+    const primary = (fish.preview || !caught)
+      ? '<button class="fish-btn" id="fish-again">🎣 Cast again</button>'
+      : '<button class="fish-btn" id="fish-done">✓ Done</button>';
     body.innerHTML =
       '<div class="fish-line '+(caught?"fish-caught":"")+'">'+
         '<div class="fish-creature">'+fishGlyph(t)+'</div>'+
@@ -7235,29 +7240,34 @@ function renderFishing(){
         '<div class="fish-hint">“'+spell+'” · as in “'+(t.hintWord||"")+'”</div>'+
       '</div>'+
       '<p class="fish-msg '+(caught?"ok":"")+'">'+msg+'</p>'+ quiet +
-      '<div class="fish-cast-row">'+
-        (caught
-          ? '<button class="fish-btn" id="fish-done">✓ Done</button>'
-          : '<button class="fish-btn" id="fish-again">🎣 Cast again</button>')+
+      '<div class="fish-cast-row">'+ primary +
         '<button class="fish-btn alt" id="fish-phon">🔉 Phoneme Fish</button>'+
       '</div>';
-    if(caught) document.getElementById("fish-done").onclick=closeFishing;
+    if(fish.preview) document.getElementById("fish-again").onclick=()=>{ fish.target=null; renderFishingChart(); };   // back to the 2D chart
+    else if(caught) document.getElementById("fish-done").onclick=closeFishing;
     else document.getElementById("fish-again").onclick=()=>{ fish.stage="ready"; fish.target=null; renderFishing(); };
     document.getElementById("fish-phon").onclick=()=>{ closeFishing(); openPhonicon(); };
     return;
   }
 }
 
-/* ---------- M2: the 2D "articulatory water" cross-section renderer (docs/inklings-fishing.md §9.4) --------
+/* ---------- M2/M3: the 2D "articulatory water" cast-and-reel mode (docs/inklings-fishing.md §9.4) --------
    The water IS the IPA chart: distance from shore = the place/backness (mouth→throat) axis, depth = the
    manner/height axis, so where a fish lives teaches how its sound is articulated. A self-contained <canvas>
    + requestAnimationFrame module (independent of the world render() loop) draws the side-view water — a
    sloping bank, depth-darkening open water, a rippling shoreline, faint chart-cell guides — and the phoneme
    fish are DOM spans layered over it at their chartCell (§9.2). The `reveal` flag is the difficulty knob:
    symbols on = novice; silhouettes only = fish by the remembered map (replacing the old shallow/mid tiers).
-   DEV-gated preview for now (press J); M3 adds the cast→sink→reel mechanic, M4 routes it to daily spots. */
+   M3 (2026-08-06) makes it PLAYABLE: a two-tap cast — tap 1 locks the sweeping marker's cast distance (X =
+   place/backness), tap 2 stops the sinking hook's depth (Y = manner/height); the nearest fish within a
+   cozy tolerance bites and hands off to the shipped fishSetHook typed grading (empty water = re-castable
+   slip). DEV-gated preview for now (press J); M4 routes it to daily spots. Tuning knobs below. */
 const FCX_BANK=0.15, FCX_SURF=0.10;   // fractional insets shared by the canvas water rect AND the DOM fish
-const fishChart={ chart:"consonant", reveal:true, raf:0, cv:null, ctx:null, t0:0 };
+const FCX_MARK_SPEED=2.4;             // aiming: marker sweep rate (rad/s) — higher = harder to time
+const FCX_SINK_SPEED=0.42;            // sinking: hook descent rate (fraction of depth / s)
+const FCX_TOL=0.30;                   // cozy-snap: max fractional distance from landing to a fish that still bites
+const fishChart={ chart:"consonant", reveal:true, raf:0, cv:null, ctx:null, t0:0, now:0,
+  plotted:[], markerX:null, hookY:null, lockX:0, lockY:null, sinkStart:0, msg:"" };
 // The phonemes that live on the active chart, each paired with its resolved cell (§9.2 / chartCell).
 function fishChartData(){
   if(!PHONEMES) return [];
@@ -7267,13 +7277,15 @@ function fishChartStop(){ if(fishChart.raf){ cancelAnimationFrame(fishChart.raf)
 function fishChartStart(){
   const cv=document.getElementById("fish-chart-cv"); if(!cv) return;
   fishChart.cv=cv; fishChart.ctx=cv.getContext("2d"); fishChart.t0=performance.now();
-  const loop=t=>{ if(!fishChart.cv) return; drawFishChart((t-fishChart.t0)/1000); fishChart.raf=requestAnimationFrame(loop); };
+  const loop=t=>{ if(!fishChart.cv){ fishChart.raf=0; return; } drawFishChart((t-fishChart.t0)/1000); if(fishChart.cv) fishChart.raf=requestAnimationFrame(loop); };
   fishChart.raf=requestAnimationFrame(loop);
 }
 // Draw the water cross-section into the canvas (fish are DOM, placed by renderFishingChart). Redraws each
-// frame so the shoreline can ripple; re-syncs the backing-store size to the element (× dpr) when it changes.
+// frame so the shoreline can ripple + the M3 cast overlays (sweeping marker / sinking hook) animate; also
+// re-syncs the backing-store size to the element (× dpr) when it changes.
 function drawFishChart(t){
   const cv=fishChart.cv, g=fishChart.ctx; if(!cv||!g) return;
+  fishChart.now=t;
   const wrap=cv.parentElement, dpr=Math.min(2, window.devicePixelRatio||1);
   const W=wrap.clientWidth, H=wrap.clientHeight; if(!W||!H) return;
   if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
@@ -7295,24 +7307,83 @@ function drawFishChart(t){
   g.strokeStyle="#bfe6ef"; g.lineWidth=2; g.beginPath();                    // rippling shoreline
   for(let x=bankX;x<=W;x+=6){ const y=surfY+Math.sin(x*0.05+t*1.6)*2; if(x===bankX) g.moveTo(x,y); else g.lineTo(x,y); }
   g.stroke();
+  // --- M3 cast overlays (two-tap: sweep the marker for X, drop the hook for Y) ---
+  if(fish.preview && fish.stage==="aiming"){
+    const sweep=0.5-0.5*Math.cos(t*FCX_MARK_SPEED);                         // smooth ping-pong 0..1 across the water
+    const mx=FCX_BANK+sweep*(1-FCX_BANK); fishChart.markerX=mx;
+    const px=mx*W;
+    g.strokeStyle="rgba(255,224,138,.55)"; g.setLineDash([4,4]); g.lineWidth=1;
+    g.beginPath(); g.moveTo(px,surfY); g.lineTo(px,H); g.stroke(); g.setLineDash([]);
+    g.fillStyle="#ffe08a"; g.beginPath();                                   // marker pointer sitting on the surface
+    g.moveTo(px,surfY-1); g.lineTo(px-6,surfY-12); g.lineTo(px+6,surfY-12); g.closePath(); g.fill();
+  } else if(fish.preview && fish.stage==="sinking"){
+    const elapsed=Math.max(0, t-fishChart.sinkStart);
+    const hy=Math.min(1, FCX_SURF + elapsed*FCX_SINK_SPEED); fishChart.hookY=hy;
+    const px=fishChart.lockX*W, py=hy*H;
+    g.strokeStyle="rgba(255,255,255,.75)"; g.lineWidth=1;                   // the line down from the rod
+    g.beginPath(); g.moveTo(px,surfY); g.lineTo(px,py); g.stroke();
+    g.fillStyle="#ffe08a"; g.beginPath(); g.arc(px,py,4,0,7); g.fill();     // the hook/bobber
+    if(hy>=1 && fish.stage==="sinking") fishChartResolve();                 // reached the bed without a tap → resolve there
+  }
 }
 function fishPreviewAxes(){
   return fishChart.chart==="consonant"
     ? { x:"shore · lips → throat · open water", y:"surface: stops → deep: glides" }
     : { x:"shore · front → back · open water",  y:"surface: close → deep: open" };
 }
-// Build the preview UI in #fish-body and layer the fish. Voiced/voiceless (and any) fish sharing a cell are
-// spread horizontally within the cell so they don't stack (the voiced/voiceless tell is a later pass, §9.5).
+// Per-stage prompt + primary-button label for the two-tap cast (updated without rebuilding the scene).
+function fishChartInstr(){
+  if(fishChart.msg) return esc(fishChart.msg);
+  if(fish.stage==="aiming")  return "<b>Distance = place/backness.</b> Tap to lock the sweeping marker (shore → open water).";
+  if(fish.stage==="sinking") return "<b>Depth = manner/height.</b> Tap to stop the hook as it sinks (surface → deep).";
+  return "The water <i>is</i> the mouth. Tap <b>Cast</b>, then tap to set distance, then tap to drop the hook — the nearest sound bites.";
+}
+function fishChartActLabel(){ return fish.stage==="aiming" ? "⟂ Set distance" : fish.stage==="sinking" ? "🪝 Stop the hook" : "🎣 Cast"; }
+function fishChartUpdateControls(){
+  const instr=document.getElementById("fcx-instr"); if(instr) instr.innerHTML=fishChartInstr();
+  const act=document.getElementById("fcx-act"); if(act) act.textContent=fishChartActLabel();
+}
+// The two-tap cast state machine: chartready → aiming (lock X) → sinking (lock Y) → resolve. Fed by the act
+// button, a tap on the water, or Space (§ keydown fishing guard).
+function fishChartTap(){
+  if(!fish.preview) return;
+  if(fish.stage==="chartready"){ fishChart.msg=""; fish.stage="aiming"; SFX.play("swing"); fishChartUpdateControls(); return; }
+  if(fish.stage==="aiming"){ fishChart.lockX=(fishChart.markerX!=null?fishChart.markerX:FCX_BANK); fishChart.sinkStart=fishChart.now; fish.stage="sinking"; SFX.play("click"); fishChartUpdateControls(); return; }
+  if(fish.stage==="sinking"){ fishChart.lockY=(fishChart.hookY!=null?fishChart.hookY:FCX_SURF); fishChartResolve(); return; }
+}
+// Resolve the landing (lockX,lockY) to the nearest plotted fish within FCX_TOL (cozy snap). Hit → hand off to
+// the shipped typed grading (renderFishing biting stage → fishSetHook). Miss (empty water) → re-castable slip.
+function fishChartResolve(){
+  if(fish.stage!=="sinking") return;
+  const fx=fishChart.lockX, fy=(fishChart.lockY!=null?fishChart.lockY:fishChart.hookY)||FCX_SURF;
+  let best=null, bd=Infinity;
+  for(const o of (fishChart.plotted||[])){ const d=Math.hypot(o.fx-fx, o.fy-fy); if(d<bd){ bd=d; best=o; } }
+  if(best && bd<=FCX_TOL){
+    fishChartStop();                                                        // leave the canvas; #fish-body becomes the typed-input card
+    fish.target=best.p; fish.depth=1; fish.stage="biting"; SFX.play("known");
+    renderFishing();
+  } else {
+    fish.stage="chartready"; fishChart.msg="The hook came up empty — nothing was biting there. Aim closer to a fish.";
+    SFX.play("invalid"); fishChartUpdateControls();
+  }
+}
+// Build the scene in #fish-body and layer the fish. Voiced/voiceless (and any) fish sharing a cell are spread
+// horizontally within the cell so they don't stack (the voiced/voiceless tell is a later pass, §9.5). Each
+// fish's PLOTTED fractional (fx,fy) is stored in fishChart.plotted so the cast can snap to it.
 function renderFishingChart(){
   const body=document.getElementById("fish-body"); if(!body) return;
+  fish.stage="chartready"; fishChart.msg=""; fishChart.markerX=null; fishChart.hookY=null;
   const ax=fishPreviewAxes(), which=fishChart.chart==="consonant"?"Consonant Sea":"Vowel Lagoon";
   body.innerHTML =
-    '<p class="fish-lead"><b>DEV preview (M2).</b> The water <i>is</i> the IPA chart — distance from shore = '+
-      'place/backness, depth = manner/height. <b>'+which+'</b>. Toggle symbols off to fish by memory.</p>'+
+    '<p class="fish-lead"><b>DEV preview.</b> <b>'+which+'</b> — the water is the IPA chart (distance = place/backness, depth = manner/height).</p>'+
+    '<p class="fish-msg" id="fcx-instr">'+fishChartInstr()+'</p>'+
     '<div class="fish-chart-wrap" id="fish-chart-wrap">'+
       '<canvas id="fish-chart-cv"></canvas>'+
       '<div class="fcx-axis fcx-x">'+esc(ax.x)+'</div>'+
       '<div class="fcx-axis fcx-y">'+esc(ax.y)+'</div>'+
+    '</div>'+
+    '<div class="fish-cast-row">'+
+      '<button class="fish-btn" id="fcx-act">'+fishChartActLabel()+'</button>'+
     '</div>'+
     '<div class="fish-chart-dev">'+
       '<span class="gd-devlabel">DEV</span>'+
@@ -7321,6 +7392,7 @@ function renderFishingChart(){
       '<button class="fish-btn alt" id="fcx-reveal">'+(fishChart.reveal?"👁 Symbols: on":"🙈 Symbols: off")+'</button>'+
     '</div>';
   const wrap=document.getElementById("fish-chart-wrap");
+  fishChart.plotted=[];
   const groups={};                                                         // bucket fish by cell to de-stack collisions
   fishChartData().forEach(o=>{ const k=o.cell.col+","+o.cell.row; (groups[k]=groups[k]||[]).push(o); });
   let gi=0;
@@ -7331,6 +7403,7 @@ function renderFishingChart(){
       const spread=n>1 ? (j-(n-1)/2)*cellW*0.42 : 0;                       // nudge stacked fish apart within the cell
       const fx=FCX_BANK+((cell.col+0.5)/cell.cols)*(1-FCX_BANK)+spread;
       const fy=FCX_SURF+((cell.row+0.5)/cell.rows)*(1-FCX_SURF);
+      fishChart.plotted.push({p:o.p, fx, fy});                             // where the cast snaps to
       const el=document.createElement("div");
       el.className="fcx-fish";
       el.style.left=(fx*100)+"%"; el.style.top=(fy*100)+"%";
@@ -7341,12 +7414,14 @@ function renderFishingChart(){
       wrap.appendChild(el); gi++;
     });
   }
+  wrap.onclick=fishChartTap;                                               // tap the water to advance the cast
+  document.getElementById("fcx-act").onclick=fishChartTap;
   document.getElementById("fcx-cons").onclick=()=>{ fishChart.chart="consonant"; renderFishingChart(); SFX.play("click"); };
   document.getElementById("fcx-vow").onclick=()=>{ fishChart.chart="vowel"; renderFishingChart(); SFX.play("click"); };
   document.getElementById("fcx-reveal").onclick=()=>{ fishChart.reveal=!fishChart.reveal; renderFishingChart(); SFX.play("click"); };
   fishChartStop(); fishChartStart();
 }
-// DEV-only entry (press J anywhere in the field): open the fishing modal straight into the M2 chart preview,
+// DEV-only entry (press J anywhere in the field): open the fishing modal straight into the 2D cast preview,
 // bypassing the daily-spot gate (spot-routing is M4). The shipped typed loop (openFishing) is untouched.
 function openFishingPreview(){
   if(!IS_DEV || state.fishing) return;

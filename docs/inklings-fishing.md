@@ -52,7 +52,7 @@ read the symbols); Esc/Tab steps Guide→Sounds before closing. The word-level s
 `rhymeKey`/`syllables`, poetry §11.1) stays **deliberately deferred** — fishing v1's typed loop doesn't
 consume it; stand it up when poetry / the Sound Garden needs it.
 
-**PLANNED (2026-08-06; M1 data pass + M2 static renderer BUILT, M3–M5 plan-only): the 2D "articulatory water" cast-and-reel mode (§9).** The
+**PLANNED (2026-08-06; M1 data + M2 renderer + M3 cast mechanic BUILT, M4–M5 plan-only): the 2D "articulatory water" cast-and-reel mode (§9).** The
 shipped modal is a quick typed loop where `depth` is only a *difficulty* knob. The planned evolution turns
 fishing into a **side-view (Mario-style) cross-section of water whose two axes *are* the IPA chart's axes** —
 **distance from shore = the mouth→throat place/backness axis** (front-of-mouth sounds bite near the bank,
@@ -512,10 +512,20 @@ an axis (reserved for a later voiced/voiceless tell).
    dev seam before M4 wires it to daily spots): `openFishingPreview()` (press **J** on the field, `IS_DEV`
    only) opens the modal straight into the chart with a **Consonant Sea / Vowel Lagoon** toggle + a symbols
    on/off toggle; the shipped typed loop (`openFishing`) is **untouched**. No new save state (transient UI).
-3. **M3 — The cast → sink → reel mechanic.** Extend the `fish` state machine with `aiming` (power bar → cast
-   distance = x) and `sinking` (descend, reel press → depth = y); resolve to the nearest fish within a
-   tolerance → `biting`; empty landing → `slip` (re-castable). Hand off to the shipped `fishSetHook` typed
-   grading to land it. Tolerance + bar speed are the skill-vs-cozy tuning knobs.
+3. **M3 — The cast → sink → reel mechanic. ✓ BUILT 2026-08-06.** A **two-tap cast** (settled with the dev):
+   **tap 1** locks the horizontally **sweeping marker** → cast distance (X = place/backness); **tap 2** stops
+   the **sinking hook** → depth (Y = manner/height). The landing resolves to the **nearest plotted fish within
+   a cozy tolerance** (`FCX_TOL`) → `biting`, which **hands off to the shipped `fishSetHook` typed grading**
+   unchanged (`fish.target`/`fish.depth=1` set, `renderFishing()` draws the type-the-spelling card); an empty
+   landing = a re-castable **slip** back to the chart (spot not consumed). Implemented as new `fish.stage`
+   values `chartready`→`aiming`→`sinking` driven by `fishChartTap()` (the act button, a tap on the water, or
+   **Space** — the biting stage keeps Space for the `<input>`); the marker/hook are drawn on the canvas RAF
+   (`drawFishChart`), fish snap-targets are cached in `fishChart.plotted` (the plotted fractional coords,
+   including the collision-spread offset). `renderFishing`'s caught/slip branch now returns to the 2D chart in
+   preview mode instead of the legacy "Done"/"fished out" flow. **Cozy-snap** chosen over precise landing (a
+   landing near a cluster hooks the nearest; only open water far from any fish slips). **Tuning knobs**:
+   `FCX_MARK_SPEED` (sweep rate), `FCX_SINK_SPEED` (descent rate), `FCX_TOL` (snap tolerance). Still DEV-gated
+   (press J); M4 wires it to daily spots.
 4. **M4 — Spot routing (layer cleanly).** Add a daily-seeded `chart` field (`null | "consonant" | "vowel"`) to
    `fishSpotsFor(sc)`; `null` = today's legacy modal spot, unchanged. `drawFishSpot` distinguishes the two
    waters on the world canvas; `openFishing()` branches on `_fishSpot.chart` (legacy DOM flow vs the new canvas
@@ -541,6 +551,16 @@ an axis (reserved for a later voiced/voiceless tell).
   slightly from the standard IPA vowel quadrilateral** they've seen — double-check `VOWEL_BACK` (3 bins) and
   especially `VOWEL_HEIGHT` (compressed to 5 bins, §9.3) against the canonical chart before this mode ships for
   real, and reconcile (the quadrilateral is a trapezoid, not a grid; front/back have different height ranges).
+- **Angler-on-the-shore sprite (dev want, 2026-08-06).** Eventually draw the **character standing on the bank
+  casting a line** into the 2D water (the rod/line the hook descends from would attach to them), instead of
+  today's abstract marker + bare line. **The dev will provide this sprite.** It sits on the canvas bank (left
+  shore, `FCX_BANK`) and the cast line originates from the rod tip; a cast/reel animation is a later polish.
+- **Custom / pixelated art for the fish (dev want, 2026-08-06).** The fish are placeholder **emoji** rendered
+  through the single swap point `fishGlyph()` (§3.1). The dev eventually wants to **replace them with their own
+  art** — or, as an alternative, **pixelate the emoji** to a consistent look, which the repo already has a
+  pipeline for: `emoji-pixelizer.html` (dev tool) + `bake-emoji-sprites.py` bake Apple Color Emoji to game-ready
+  pixel PNGs (see CLAUDE.md / Critter Hunt's sprite path). Either route is a one-function change in `fishGlyph`
+  (bare emoji → `<img>`), the same swap already used for animal/instrument sprites elsewhere. Not blocking.
 - Deep sound-only / speak-the-phoneme tiers stay blocked on audio/recognition (§4.3/§4.4, unchanged).
 
 ### 9.6 How it fits the existing sinks
