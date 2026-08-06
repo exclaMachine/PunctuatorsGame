@@ -52,7 +52,7 @@ read the symbols); Esc/Tab steps Guide→Sounds before closing. The word-level s
 `rhymeKey`/`syllables`, poetry §11.1) stays **deliberately deferred** — fishing v1's typed loop doesn't
 consume it; stand it up when poetry / the Sound Garden needs it.
 
-**PLANNED (2026-08-06; M1 data + M2 renderer + M3 cast mechanic BUILT, M4–M5 plan-only): the 2D "articulatory water" cast-and-reel mode (§9).** The
+**PLANNED (2026-08-06; M1 data + M2 renderer + M3 cast mechanic + M4 spot routing BUILT, M5 plan-only): the 2D "articulatory water" cast-and-reel mode (§9).** The
 shipped modal is a quick typed loop where `depth` is only a *difficulty* knob. The planned evolution turns
 fishing into a **side-view (Mario-style) cross-section of water whose two axes *are* the IPA chart's axes** —
 **distance from shore = the mouth→throat place/backness axis** (front-of-mouth sounds bite near the bank,
@@ -490,7 +490,7 @@ velar (back) constriction (it is labial-velar); `ɹ` is filed under alveolar; vo
 5 bins so multiple vowels legitimately share a row (backness disambiguates); `voice` is authored but not yet
 an axis (reserved for a later voiced/voiceless tell).
 
-### 9.4 Build order (each a shippable milestone; plan-only)
+### 9.4 Build order (each a shippable milestone; M1–M4 BUILT, M5 plan-only)
 
 1. **M1 — Articulatory data pass (no UI). ✓ BUILT 2026-08-06.** Added the feature fields above to
    `data/phonemes.json` (all 40 entries); in the `/* FISHING */` engine block added feature-ordered lookup
@@ -526,10 +526,24 @@ an axis (reserved for a later voiced/voiceless tell).
    landing near a cluster hooks the nearest; only open water far from any fish slips). **Tuning knobs**:
    `FCX_MARK_SPEED` (sweep rate), `FCX_SINK_SPEED` (descent rate), `FCX_TOL` (snap tolerance). Still DEV-gated
    (press J); M4 wires it to daily spots.
-4. **M4 — Spot routing (layer cleanly).** Add a daily-seeded `chart` field (`null | "consonant" | "vowel"`) to
-   `fishSpotsFor(sc)`; `null` = today's legacy modal spot, unchanged. `drawFishSpot` distinguishes the two
-   waters on the world canvas; `openFishing()` branches on `_fishSpot.chart` (legacy DOM flow vs the new canvas
-   flow). This branch is the **seam** that lets decision #5 delete the legacy modal later.
+4. **M4 — Spot routing (layer cleanly). ✓ BUILT 2026-08-06.** `fishSpotsFor(sc)` now rolls a daily-seeded
+   `chart` field per spot (`null | "consonant" | "vowel"`, `FISH_CHART_CHANCE`=0.5 then a 50/50 sea/lagoon
+   split); `null` = today's legacy typed modal, unchanged. The spot's `depth` roll carries over as the chart
+   spot's **reveal difficulty** (shallow → symbols on, deep → silhouettes only), reusing the "deep skews far
+   from home" curve. `drawFishSpot(c,r,depth,tnow,chart)` distinguishes the two waters on the world canvas —
+   a chart spot draws the **same depth tell** (shadow/bubbles) as a legacy spot **plus** a bold tinted **ring
+   halo** (Consonant Sea = cool cyan, Vowel Lagoon = warm amber), so it's never *less* visible than a legacy
+   spot and its water reads at a glance (the first cut's faint stand-alone rings were too easy to walk past). `openFishing()` **branches on `spot.chart`**: a chart spot fixes
+   `fishChart.chart` + `fishChart.reveal` and enters the 2D flow via `renderFishingChart()`; else the legacy
+   `renderFishing()`. The M3 two-tap cast mechanics were generalised off `fish.preview` onto a new **`fish.chart`**
+   flag (true for the dev preview **and** real chart spots — it gates the tap/marker/hook), leaving `fish.preview`
+   to gate only the **dev-only chrome** (the "DEV preview" lead, the Consonant/Vowel/Symbols toggle row,
+   cast-again-on-catch). For a real chart spot the toggle row is hidden and the lead reads cozy ("the water *is*
+   the mouth"); a catch **consumes the spot** (`state.fishedSpots` via the unchanged `fishSetHook`) → ✓ Done +
+   the "fished out" line, while a slip (typed wrong, or empty-water landing) is **re-castable** and returns to
+   the chart without consuming the spot. This `spot.chart` branch is the **seam** decision #5 will use to delete
+   the legacy modal later. No save-version bump (the spot `chart` is daily-transient like `depth`). Tuning knob:
+   `FISH_CHART_CHANCE`.
 5. **M5 — Teaching, polish, save.** Add the "the water is your mouth" explainer to the Fish Phoneme **Guide
    tab**; route the first-catch flourish through the existing celebration queue; confirm no save-version bump
    (the spot `chart` is daily-transient like `depth`; `state.phonicon`/`state.fishedSpots` already persist).
