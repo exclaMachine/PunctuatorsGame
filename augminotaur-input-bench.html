@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Augminotaur — Input Bench</title>
+<style>
+  :root{
+    --stone-0:#0e1116;
+    --stone-1:#161b23;
+    --stone-2:#222a35;
+    --stone-3:#36414f;
+    --bone:#ded6c6;
+    --dust:#828d9d;
+    --boom:#e2703a;
+    --tss:#6fcfe6;
+    --hold:#a893e6;
+    --hiss:#5f9ea8;
+    --bad:#c8474b;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{ margin:0; background:var(--stone-0); color:var(--bone); }
+
+  body{
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    padding:20px 16px 64px;
+  }
+
+  .wrap{ max-width:1060px; margin:0 auto; }
+
+  /* ---------- header ---------- */
+
+  .masthead{
+    display:flex; flex-wrap:wrap; gap:14px;
+    align-items:flex-end; justify-content:space-between;
+    border-bottom:1px solid var(--stone-2);
+    padding-bottom:14px; margin-bottom:18px;
+  }
+  .masthead h1{
+    margin:0; font-size:15px; font-weight:700;
+    letter-spacing:.24em; text-transform:uppercase;
+  }
+  .masthead p{
+    margin:4px 0 0; color:var(--dust);
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  }
+  .head-actions{ display:flex; gap:8px; align-items:center; }
+
+  /* ---------- controls ---------- */
+
+  button{
+    font-family:inherit; font-size:11px; font-weight:700;
+    letter-spacing:.16em; text-transform:uppercase;
+    color:var(--bone); background:var(--stone-1);
+    border:1px solid var(--stone-3); border-radius:2px;
+    padding:9px 14px; cursor:pointer;
+  }
+  button:hover:not(:disabled){ background:var(--stone-2); }
+  button:disabled{ opacity:.35; cursor:not-allowed; }
+  button:focus-visible{ outline:2px solid var(--tss); outline-offset:2px; }
+  button.primary{ background:var(--bone); color:var(--stone-0); border-color:var(--bone); }
+  button.primary:hover:not(:disabled){ background:#fff; }
+  button.live{ background:var(--bad); border-color:var(--bad); color:#fff; }
+
+  .pill{
+    font-size:10px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--dust); border:1px solid var(--stone-2);
+    border-radius:2px; padding:6px 10px; white-space:nowrap;
+  }
+  .pill.on{ color:var(--stone-0); background:var(--bone); border-color:var(--bone); }
+
+  /* ---------- panels ---------- */
+
+  .panel{
+    background:var(--stone-1);
+    border:1px solid var(--stone-2);
+    border-radius:3px;
+    padding:14px;
+  }
+  .panel > h2{
+    margin:0 0 12px; font-size:10px; font-weight:700;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--dust);
+  }
+
+  .scope-panel{ padding:0; overflow:hidden; margin-bottom:14px; }
+  canvas{ display:block; width:100%; height:250px; }
+
+  .grid{ display:grid; gap:14px; }
+  .grid.readouts{ grid-template-columns:1.15fr 1fr 1fr 1fr; margin-bottom:14px; }
+  .grid.lower{ grid-template-columns:1fr 1fr; align-items:start; }
+
+  /* ---------- readouts ---------- */
+
+  .verb{ display:flex; flex-direction:column; justify-content:center; min-height:104px; }
+  .verb .value{
+    font-size:38px; font-weight:700; letter-spacing:.1em;
+    line-height:1; color:var(--stone-3);
+  }
+  .verb .sub{ margin-top:8px; font-size:11px; color:var(--dust); }
+
+  .stat .value{ font-size:26px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }
+  .stat .sub{ margin-top:6px; font-size:11px; color:var(--dust); }
+
+  .bar{ height:5px; background:var(--stone-2); border-radius:3px; margin-top:12px; overflow:hidden; }
+  .bar span{ display:block; height:100%; width:0%; background:var(--bone); }
+  .bar.split span{ background:linear-gradient(90deg, var(--tss), var(--boom)); }
+
+  /* ---------- tuning ---------- */
+
+  .knob{ display:grid; grid-template-columns:1fr auto; gap:2px 10px; margin-bottom:12px; }
+  .knob label{ font-size:11px; color:var(--dust); }
+  .knob output{ font-size:11px; font-variant-numeric:tabular-nums; }
+  .knob input{ grid-column:1 / -1; width:100%; accent-color:var(--bone); margin:2px 0 0; }
+  .knob input:focus-visible{ outline:2px solid var(--tss); outline-offset:3px; }
+
+  .note{ color:var(--dust); font-size:11px; margin:12px 0 0; }
+  .note.warn{ color:var(--boom); }
+
+  /* ---------- log ---------- */
+
+  .log{ height:236px; overflow-y:auto; font-size:11px; }
+  .log .row{
+    display:grid; grid-template-columns:56px 60px 1fr;
+    gap:8px; padding:3px 0; border-bottom:1px solid var(--stone-2);
+    font-variant-numeric:tabular-nums;
+  }
+  .log .row .t{ color:var(--dust); }
+  .log .row .v{ font-weight:700; letter-spacing:.08em; }
+  .log .row .d{ color:var(--dust); }
+  .log .empty{ color:var(--dust); padding-top:6px; }
+
+  /* ---------- timing rig ---------- */
+
+  .timing-head{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .hits{ display:flex; gap:3px; align-items:flex-end; height:66px; margin-bottom:10px; }
+  .hits i{ flex:1; background:var(--stone-2); border-radius:1px; min-height:2px; }
+  .hits i.perfect{ background:var(--tss); }
+  .hits i.good{ background:var(--hold); }
+  .hits i.late{ background:var(--boom); }
+  .hits i.miss{ background:var(--bad); }
+  .tally{ display:flex; gap:16px; font-size:11px; color:var(--dust); }
+  .tally b{ color:var(--bone); font-variant-numeric:tabular-nums; }
+
+  .c-boom{ color:var(--boom); } .c-tss{ color:var(--tss); }
+  .c-hold{ color:var(--hold); } .c-hiss{ color:var(--hiss); }
+
+  @media (max-width:860px){
+    .grid.readouts{ grid-template-columns:1fr 1fr; }
+    .grid.lower{ grid-template-columns:1fr; }
+    canvas{ height:190px; }
+    .verb{ min-height:88px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <h1>Augminotaur — Input Bench</h1>
+      <p>Offline mouth-verb detection · no network, no speech recognition</p>
+    </div>
+    <div class="head-actions">
+      <span class="pill" id="status">Microphone off</span>
+      <button class="primary" id="armBtn">Arm microphone</button>
+    </div>
+  </header>
+
+  <div class="panel scope-panel">
+    <canvas id="scope"></canvas>
+  </div>
+
+  <div class="grid readouts">
+    <div class="panel verb">
+      <div class="value" id="verbValue">—</div>
+      <div class="sub" id="verbSub">Say “buh”, “tss”, or “aaah”</div>
+    </div>
+    <div class="panel stat">
+      <div class="value" id="levelValue">0</div>
+      <div class="sub">Level (dB above floor)</div>
+      <div class="bar"><span id="levelBar"></span></div>
+    </div>
+    <div class="panel stat">
+      <div class="value" id="tiltValue">—</div>
+      <div class="sub">Tilt · high ◄──► low</div>
+      <div class="bar split"><span id="tiltBar"></span></div>
+    </div>
+    <div class="panel stat">
+      <div class="value" id="zcrValue">—</div>
+      <div class="sub">Zero crossings (Hz)</div>
+      <div class="bar"><span id="zcrBar"></span></div>
+    </div>
+  </div>
+
+  <div class="grid lower">
+
+    <div class="panel">
+      <h2>Timing rig · 76 BPM</h2>
+      <div class="timing-head">
+        <button id="metroBtn" disabled>Start metronome</button>
+        <button id="latencyBtn" disabled>Measure latency</button>
+        <span class="pill" id="latencyPill">Offset 0 ms</span>
+      </div>
+      <div class="hits" id="hits"></div>
+      <div class="tally">
+        <span>Perfect <b id="tPerfect">0</b></span>
+        <span>Good <b id="tGood">0</b></span>
+        <span>Loose <b id="tLate">0</b></span>
+        <span>Miss <b id="tMiss">0</b></span>
+        <span>Mean <b id="tMean">—</b></span>
+      </div>
+      <p class="note">Hit every click. Bar height is absolute error; colour is the window it landed in. Use headphones — the speaker will trigger the detector otherwise.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Event log</h2>
+      <div class="log" id="log"><div class="empty">Nothing detected yet.</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Onset tuning</h2>
+      <div class="knob">
+        <label for="kGate">Gate — level over noise floor</label><output id="oGate"></output>
+        <input type="range" id="kGate" min="1.5" max="12" step="0.1" value="4">
+      </div>
+      <div class="knob">
+        <label for="kRise">Rise ratio — jump over running average</label><output id="oRise"></output>
+        <input type="range" id="kRise" min="1.1" max="4" step="0.05" value="1.7">
+      </div>
+      <div class="knob">
+        <label for="kRefract">Refractory (ms)</label><output id="oRefract"></output>
+        <input type="range" id="kRefract" min="30" max="200" step="5" value="80">
+      </div>
+      <p class="note">Raise the gate if the room retriggers you. Raise the rise ratio if one plosive lands as two.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Verb tuning</h2>
+      <div class="knob">
+        <label for="kBoom">Tilt above this = BOOM</label><output id="oBoom"></output>
+        <input type="range" id="kBoom" min="0.4" max="0.9" step="0.01" value="0.62">
+      </div>
+      <div class="knob">
+        <label for="kTss">Tilt below this = TSS</label><output id="oTss"></output>
+        <input type="range" id="kTss" min="0.1" max="0.6" step="0.01" value="0.42">
+      </div>
+      <div class="knob">
+        <label for="kHold">Sustain before HOLD (ms)</label><output id="oHold"></output>
+        <input type="range" id="kHold" min="120" max="600" step="10" value="250">
+      </div>
+      <div class="knob">
+        <label for="kVoiced">Voiced ceiling (Hz) — above is HISS</label><output id="oVoiced"></output>
+        <input type="range" id="kVoiced" min="800" max="4000" step="50" value="2000">
+      </div>
+      <button id="calBtn" disabled>Recalibrate noise floor</button>
+      <p class="note" id="floorNote">Noise floor not measured.</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   VoiceInput — offline mouth-verb detector
+   ---------------------------------------------------------------------
+   Emits four verbs with no speech recognition and no network:
+
+     BOOM  plosive, energy below 250 Hz        "buh" / "puh"
+     TSS   sibilant, energy above 3 kHz        "ts" / "ss"
+     HOLD  sustained + voiced                  "aaah"
+     HISS  sustained + unvoiced                "shhh"
+
+   BOOM and TSS fire on the attack, so they are timing-accurate.
+   HOLD and HISS are upgrades: a sustained note starts life as a BOOM or
+   TSS, and is reclassified once it outlives the sustain threshold. The
+   original event is emitted immediately (keeps rhythm honest) and then
+   retracted via a `replaces` field.
+   ===================================================================== */
+
+const VERB_COLORS = { BOOM:'--boom', TSS:'--tss', HOLD:'--hold', HISS:'--hiss' };
+
+class VoiceInput {
+  constructor(onEvent){
+    this.onEvent = onEvent;
+    this.ctx = null;
+    this.stream = null;
+    this.running = false;
+
+    // Tunables (mirrored by the sliders)
+    this.gateMult    = 4.0;
+    this.riseRatio   = 1.7;
+    this.refractMs   = 80;
+    this.tiltBoom    = 0.62;
+    this.tiltTss     = 0.42;
+    this.holdMs      = 250;
+    this.voicedMaxHz = 2000;
+
+    // Fixed constants
+    this.captureMs   = 55;    // window used to classify an attack
+    this.lowHz       = 250;
+    this.highHz      = 3000;
+    this.floorFloor  = 0.0008;
+
+    // State
+    this.noiseFloor = 0.004;
+    this.slowAvg    = 0;
+    this.lastOnset  = -1e9;
+    this.capture    = null;
+    this.sustain    = null;
+    this.eventId    = 0;
+    this.frame      = { rms:0, low:0, high:0, tilt:0.5, zcr:0, t:0 };
+    this.history    = [];
+  }
+
+  async start(){
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    await this.ctx.resume();
+
+    this.stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        // All three of these mangle plosives and sibilants. Off, always.
+        echoCancellation:false,
+        noiseSuppression:false,
+        autoGainControl:false,
+        channelCount:1
+      }
+    });
+
+    const src = this.ctx.createMediaStreamSource(this.stream);
+
+    const mkAnalyser = () => {
+      const a = this.ctx.createAnalyser();
+      a.fftSize = 1024;            // ~21 ms at 48 kHz
+      a.smoothingTimeConstant = 0;
+      return a;
+    };
+
+    this.aFull = mkAnalyser();
+    this.aLow  = mkAnalyser();
+    this.aHigh = mkAnalyser();
+
+    // Two cascaded biquads per band = 24 dB/oct, enough separation that a
+    // "buh" and a "tss" sit at opposite ends of the tilt axis.
+    const chain = (type, freq, dest) => {
+      const f1 = this.ctx.createBiquadFilter();
+      const f2 = this.ctx.createBiquadFilter();
+      f1.type = f2.type = type;
+      f1.frequency.value = f2.frequency.value = freq;
+      f1.Q.value = f2.Q.value = 0.707;
+      src.connect(f1); f1.connect(f2); f2.connect(dest);
+    };
+
+    src.connect(this.aFull);
+    chain('lowpass',  this.lowHz,  this.aLow);
+    chain('highpass', this.highHz, this.aHigh);
+
+    this.buf     = new Float32Array(this.aFull.fftSize);
+    this.bufLow  = new Float32Array(this.aLow.fftSize);
+    this.bufHigh = new Float32Array(this.aHigh.fftSize);
+
+    this.running = true;
+    await this.calibrate();
+    return this;
+  }
+
+  stop(){
+    this.running = false;
+    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+    if (this.ctx) this.ctx.close();
+  }
+
+  /** Listen to an empty room for 1.6 s and set the gate from what's there. */
+  calibrate(){
+    return new Promise(resolve => {
+      const samples = [];
+      const until = performance.now() + 1600;
+      const tick = () => {
+        this.aFull.getFloatTimeDomainData(this.buf);
+        samples.push(rms(this.buf));
+        if (performance.now() < until) return requestAnimationFrame(tick);
+        samples.sort((a,b) => a-b);
+        const median = samples[Math.floor(samples.length * 0.5)];
+        const p90    = samples[Math.floor(samples.length * 0.9)];
+        this.noiseFloor = Math.max(this.floorFloor, median * 0.6 + p90 * 0.4);
+        this.slowAvg = this.noiseFloor;
+        resolve(this.noiseFloor);
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+
+  /** Call once per animation frame. Returns the current feature frame. */
+  update(){
+    if (!this.running) return this.frame;
+    const now = performance.now();
+
+    this.aFull.getFloatTimeDomainData(this.buf);
+    this.aLow.getFloatTimeDomainData(this.bufLow);
+    this.aHigh.getFloatTimeDomainData(this.bufHigh);
+
+    const e     = rms(this.buf);
+    const eLow  = rms(this.bufLow);
+    const eHigh = rms(this.bufHigh);
+    const tilt  = eLow / (eLow + eHigh + 1e-9);
+    const zcr   = zeroCrossRate(this.buf, this.ctx.sampleRate);
+    const gate  = this.noiseFloor * this.gateMult;
+
+    const prevAvg = this.slowAvg;
+    this.slowAvg = this.slowAvg * 0.90 + e * 0.10;
+
+    // ---- onset ----
+    const loud   = e > gate;
+    const rising = e > prevAvg * this.riseRatio;
+    const free   = now - this.lastOnset > this.refractMs;
+
+    if (loud && rising && free && !this.capture){
+      this.lastOnset = now;
+      this.capture = { t:now, maxLow:eLow, maxHigh:eHigh, zcrSum:zcr, n:1 };
+    }
+
+    // ---- classify the attack ----
+    if (this.capture){
+      const c = this.capture;
+      c.maxLow  = Math.max(c.maxLow, eLow);
+      c.maxHigh = Math.max(c.maxHigh, eHigh);
+      c.zcrSum += zcr; c.n++;
+
+      if (now - c.t >= this.captureMs){
+        const cTilt = c.maxLow / (c.maxLow + c.maxHigh + 1e-9);
+        const cZcr  = c.zcrSum / c.n;
+        let verb;
+        if (cTilt >= this.tiltBoom)      verb = 'BOOM';
+        else if (cTilt <= this.tiltTss)  verb = 'TSS';
+        else                             verb = cZcr < this.voicedMaxHz ? 'BOOM' : 'TSS';
+
+        const id = ++this.eventId;
+        this.emit({ id, verb, t:c.t, tilt:cTilt, zcr:cZcr, level:c.maxLow + c.maxHigh });
+        this.sustain = { id, t:c.t, zcrSum:0, n:0, resolved:false };
+        this.capture = null;
+      }
+    }
+
+    // ---- upgrade to a sustained verb ----
+    if (this.sustain){
+      const s = this.sustain;
+      if (e > gate * 0.6){
+        s.zcrSum += zcr; s.n++;
+        if (!s.resolved && now - s.t >= this.holdMs){
+          const avgZcr = s.zcrSum / Math.max(1, s.n);
+          const verb = avgZcr < this.voicedMaxHz ? 'HOLD' : 'HISS';
+          this.emit({ id:++this.eventId, verb, t:s.t, tilt, zcr:avgZcr, level:e, replaces:s.id });
+          s.resolved = true;
+          s.verb = verb;
+        }
+      } else {
+        if (s.resolved){
+          this.emit({ id:++this.eventId, verb:s.verb + '_END', t:now,
+                      duration:now - s.t, tilt, zcr, level:e, silent:true });
+        }
+        this.sustain = null;
+      }
+    }
+
+    this.frame = { rms:e, low:eLow, high:eHigh, tilt, zcr, t:now, gate };
+    this.history.push({ t:now, rms:e, tilt, gate });
+    const cutoff = now - 6000;
+    while (this.history.length && this.history[0].t < cutoff) this.history.shift();
+
+    return this.frame;
+  }
+
+  emit(ev){ if (this.onEvent) this.onEvent(ev); }
+}
+
+function rms(b){
+  let s = 0;
+  for (let i = 0; i < b.length; i++) s += b[i] * b[i];
+  return Math.sqrt(s / b.length);
+}
+
+function zeroCrossRate(b, sampleRate){
+  let c = 0;
+  for (let i = 1; i < b.length; i++){
+    if ((b[i-1] < 0 && b[i] >= 0) || (b[i-1] >= 0 && b[i] < 0)) c++;
+  }
+  return (c * sampleRate) / (2 * b.length);
+}
+
+/* =====================================================================
+   Bench UI
+   ===================================================================== */
+
+const $ = id => document.getElementById(id);
+let vi = null;
+let events = [];
+
+const WINDOWS = { perfect:120, good:220, loose:300 };
+const BPM = 76;
+
+/* ---- arming ---- */
+
+$('armBtn').addEventListener('click', async () => {
+  if (vi){ teardown(); return; }
+  $('armBtn').disabled = true;
+  setStatus('Requesting…');
+  try {
+    vi = await new VoiceInput(handleEvent).start();
+  } catch (err) {
+    vi = null;
+    $('armBtn').disabled = false;
+    setStatus(describeError(err), true);
+    return;
+  }
+  readKnobs();
+  $('armBtn').disabled = false;
+  $('armBtn').textContent = 'Disarm';
+  $('armBtn').classList.remove('primary');
+  $('armBtn').classList.add('live');
+  ['metroBtn','latencyBtn','calBtn'].forEach(id => $(id).disabled = false);
+  setStatus('Listening');
+  showFloor();
+  loop();
+});
+
+function teardown(){
+  stopMetronome();
+  vi.stop(); vi = null;
+  $('armBtn').textContent = 'Arm microphone';
+  $('armBtn').classList.add('primary');
+  $('armBtn').classList.remove('live');
+  ['metroBtn','latencyBtn','calBtn'].forEach(id => $(id).disabled = true);
+  setStatus('Microphone off');
+}
+
+function describeError(err){
+  if (!window.isSecureContext) return 'Needs https or localhost';
+  if (err && err.name === 'NotAllowedError') return 'Microphone blocked';
+  if (err && err.name === 'NotFoundError')  return 'No microphone found';
+  return 'Could not open microphone';
+}
+
+function setStatus(text, bad){
+  const el = $('status');
+  el.textContent = text;
+  el.classList.toggle('on', !bad && text === 'Listening');
+  el.style.color = bad ? 'var(--bad)' : '';
+}
+
+function showFloor(){
+  const db = 20 * Math.log10(vi.noiseFloor);
+  $('floorNote').textContent = 'Noise floor ' + db.toFixed(1) + ' dBFS. Recalibrate whenever the room changes.';
+}
+
+$('calBtn').addEventListener('click', async () => {
+  $('calBtn').disabled = true;
+  setStatus('Measuring room…');
+  await vi.calibrate();
+  showFloor();
+  setStatus('Listening');
+  $('calBtn').disabled = false;
+});
+
+/* ---- events ---- */
+
+function handleEvent(ev){
+  if (ev.verb.endsWith('_END')){
+    logRow(ev.t, ev.verb, 'held ' + Math.round(ev.duration) + ' ms');
+    return;
+  }
+  if (ev.replaces) events = events.filter(e => e.id !== ev.replaces);
+  events.push(ev);
+  if (events.length > 200) events.shift();
+
+  flashVerb(ev.verb, ev);
+  logRow(ev.t, ev.verb,
+         'tilt ' + ev.tilt.toFixed(2) + ' · zcr ' + Math.round(ev.zcr) +
+         (ev.replaces ? ' · upgraded' : ''));
+
+  if (metro.running && !ev.replaces) scoreHit(ev.t);
+}
+
+function flashVerb(verb, ev){
+  const v = $('verbValue');
+  const color = 'var(' + VERB_COLORS[verb] + ')';
+  v.textContent = verb;
+  v.style.color = color;
+  $('verbSub').textContent = 'tilt ' + ev.tilt.toFixed(2) + ' · zcr ' + Math.round(ev.zcr) + ' Hz';
+}
+
+function logRow(t, verb, detail){
+  const log = $('log');
+  const empty = log.querySelector('.empty');
+  if (empty) empty.remove();
+  const row = document.createElement('div');
+  row.className = 'row';
+  const cls = 'c-' + verb.replace('_END','').toLowerCase();
+  row.innerHTML =
+    '<span class="t">' + (t/1000).toFixed(2) + '</span>' +
+    '<span class="v ' + cls + '">' + verb + '</span>' +
+    '<span class="d"></span>';
+  row.lastChild.textContent = detail;
+  log.prepend(row);
+  while (log.children.length > 60) log.lastChild.remove();
+}
+
+/* ---- knobs ---- */
+
+const KNOBS = [
+  ['kGate','oGate','gateMult',   v => v.toFixed(1) + '×'],
+  ['kRise','oRise','riseRatio',  v => v.toFixed(2) + '×'],
+  ['kRefract','oRefract','refractMs', v => v + ' ms'],
+  ['kBoom','oBoom','tiltBoom',   v => v.toFixed(2)],
+  ['kTss','oTss','tiltTss',      v => v.toFixed(2)],
+  ['kHold','oHold','holdMs',     v => v + ' ms'],
+  ['kVoiced','oVoiced','voicedMaxHz', v => v + ' Hz']
+];
+
+function readKnobs(){
+  KNOBS.forEach(([input, out, prop, fmt]) => {
+    const val = parseFloat($(input).value);
+    $(out).textContent = fmt(val);
+    if (vi) vi[prop] = val;
+  });
+}
+KNOBS.forEach(([input]) => $(input).addEventListener('input', readKnobs));
+readKnobs();
+
+/* ---- metronome + timing rig ---- */
+
+const metro = { running:false, beats:[], timer:null, next:0, offsetMs:0, hits:[] };
+
+$('metroBtn').addEventListener('click', () => metro.running ? stopMetronome() : startMetronome());
+
+function startMetronome(){
+  const ctx = vi.ctx;
+  metro.running = true;
+  metro.beats = [];
+  metro.hits = [];
+  metro.next = ctx.currentTime + 0.4;
+  $('metroBtn').textContent = 'Stop metronome';
+  $('metroBtn').classList.add('live');
+  renderHits();
+  metro.timer = setInterval(() => {
+    const period = 60 / BPM;
+    while (metro.next < ctx.currentTime + 0.15){
+      click(metro.next, 1200);
+      // Convert AudioContext time to performance.now() time so beats and
+      // detected onsets live on the same clock.
+      metro.beats.push((metro.next - ctx.currentTime) * 1000 + performance.now());
+      metro.next += period;
+    }
+    const cutoff = performance.now() - 8000;
+    while (metro.beats.length > 40 && metro.beats[0] < cutoff) metro.beats.shift();
+  }, 25);
+}
+
+function stopMetronome(){
+  metro.running = false;
+  clearInterval(metro.timer);
+  $('metroBtn').textContent = 'Start metronome';
+  $('metroBtn').classList.remove('live');
+}
+
+function click(when, freq){
+  const ctx = vi.ctx;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'square';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, when);
+  gain.gain.exponentialRampToValueAtTime(0.28, when + 0.002);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.035);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(when); osc.stop(when + 0.06);
+}
+
+function scoreHit(t){
+  const adj = t - metro.offsetMs;
+  let best = null;
+  for (const b of metro.beats){
+    const d = adj - b;
+    if (best === null || Math.abs(d) < Math.abs(best)) best = d;
+  }
+  if (best === null || Math.abs(best) > 900) return;
+  metro.hits.push(best);
+  if (metro.hits.length > 24) metro.hits.shift();
+  renderHits();
+}
+
+function renderHits(){
+  const box = $('hits');
+  box.innerHTML = '';
+  let p = 0, g = 0, l = 0, m = 0, sum = 0;
+  for (const h of metro.hits){
+    const a = Math.abs(h);
+    const bar = document.createElement('i');
+    let cls;
+    if (a <= WINDOWS.perfect)      { cls = 'perfect'; p++; }
+    else if (a <= WINDOWS.good)    { cls = 'good';    g++; }
+    else if (a <= WINDOWS.loose)   { cls = 'late';    l++; }
+    else                           { cls = 'miss';    m++; }
+    bar.className = cls;
+    bar.style.height = Math.min(100, (a / 400) * 100) + '%';
+    bar.title = (h > 0 ? '+' : '') + Math.round(h) + ' ms';
+    box.appendChild(bar);
+    sum += h;
+  }
+  for (let i = metro.hits.length; i < 24; i++) box.appendChild(document.createElement('i'));
+  $('tPerfect').textContent = p;
+  $('tGood').textContent = g;
+  $('tLate').textContent = l;
+  $('tMiss').textContent = m;
+  $('tMean').textContent = metro.hits.length
+    ? (sum / metro.hits.length > 0 ? '+' : '') + Math.round(sum / metro.hits.length) + ' ms'
+    : '—';
+}
+
+/* ---- latency ---- */
+
+$('latencyBtn').addEventListener('click', async () => {
+  $('latencyBtn').disabled = true;
+  const wasRunning = metro.running;
+  if (wasRunning) stopMetronome();
+  setStatus('Measuring latency…');
+
+  const measured = [];
+  for (let i = 0; i < 4; i++){
+    const at = vi.ctx.currentTime + 0.25;
+    const emittedAt = performance.now() + 250;
+    click(at, 2400);
+    const heard = await waitForOnset(700);
+    if (heard !== null) measured.push(heard - emittedAt);
+    await sleep(450);
+  }
+
+  if (measured.length >= 2){
+    measured.sort((a,b) => a-b);
+    metro.offsetMs = Math.max(0, measured[Math.floor(measured.length/2)]);
+    $('latencyPill').textContent = 'Offset ' + Math.round(metro.offsetMs) + ' ms';
+    $('latencyPill').classList.add('on');
+    setStatus('Listening');
+  } else {
+    $('latencyPill').textContent = 'Offset — no echo heard';
+    $('latencyPill').classList.remove('on');
+    setStatus('Turn speakers up, then retry', true);
+  }
+  $('latencyBtn').disabled = false;
+});
+
+function waitForOnset(timeoutMs){
+  return new Promise(resolve => {
+    const before = vi.onEvent;
+    const done = val => { vi.onEvent = before; resolve(val); };
+    vi.onEvent = ev => {
+      if (ev.silent || ev.replaces) return;
+      done(ev.t);
+    };
+    setTimeout(() => { if (vi.onEvent !== before) done(null); }, timeoutMs);
+  });
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ---- scope ---- */
+
+const canvas = $('scope');
+const g = canvas.getContext('2d');
+
+function sizeCanvas(){
+  const dpr = window.devicePixelRatio || 1;
+  const r = canvas.getBoundingClientRect();
+  canvas.width  = Math.max(1, Math.round(r.width  * dpr));
+  canvas.height = Math.max(1, Math.round(r.height * dpr));
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+new ResizeObserver(sizeCanvas).observe(canvas);
+sizeCanvas();
+
+function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+function drawScope(){
+  const r = canvas.getBoundingClientRect();
+  const W = r.width, H = r.height, now = performance.now(), span = 6000;
+  const x = t => W - ((now - t) / span) * W;
+
+  g.clearRect(0, 0, W, H);
+  g.fillStyle = css('--stone-1');
+  g.fillRect(0, 0, W, H);
+
+  // tilt lane sits in the lower third, energy trace above it
+  const energyH = H * 0.62, tiltTop = H * 0.68, tiltH = H * 0.24;
+
+  g.strokeStyle = css('--stone-2');
+  g.lineWidth = 1;
+  for (let s = 1; s <= 6; s++){
+    const gx = Math.round(W - (s / 6) * W) + 0.5;
+    g.beginPath(); g.moveTo(gx, 0); g.lineTo(gx, H); g.stroke();
+  }
+  g.beginPath(); g.moveTo(0, tiltTop + tiltH/2); g.lineTo(W, tiltTop + tiltH/2); g.stroke();
+
+  if (!vi || !vi.history.length){
+    g.fillStyle = css('--dust');
+    g.font = '11px ' + css('--mono');
+    g.fillText('Arm the microphone to see the trace.', 14, 24);
+    return;
+  }
+
+  const scale = v => Math.min(1, Math.sqrt(v / 0.35));
+
+  // energy
+  g.beginPath();
+  g.moveTo(x(vi.history[0].t), energyH);
+  for (const h of vi.history) g.lineTo(x(h.t), energyH - scale(h.rms) * (energyH - 10));
+  g.lineTo(x(vi.history[vi.history.length-1].t), energyH);
+  g.closePath();
+  g.fillStyle = 'rgba(222,214,198,0.10)';
+  g.fill();
+
+  g.beginPath();
+  vi.history.forEach((h, i) => {
+    const px = x(h.t), py = energyH - scale(h.rms) * (energyH - 10);
+    i ? g.lineTo(px, py) : g.moveTo(px, py);
+  });
+  g.strokeStyle = css('--bone');
+  g.lineWidth = 1.5;
+  g.stroke();
+
+  // gate line
+  const gy = energyH - scale(vi.history[vi.history.length-1].gate) * (energyH - 10);
+  g.setLineDash([3,4]);
+  g.strokeStyle = css('--stone-3');
+  g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, gy); g.lineTo(W, gy); g.stroke();
+  g.setLineDash([]);
+
+  // tilt lane — swings low for TSS, high for BOOM
+  g.beginPath();
+  vi.history.forEach((h, i) => {
+    const px = x(h.t);
+    const py = tiltTop + tiltH - h.tilt * tiltH;
+    i ? g.lineTo(px, py) : g.moveTo(px, py);
+  });
+  g.strokeStyle = css('--dust');
+  g.lineWidth = 1;
+  g.stroke();
+
+  // metronome beats
+  if (metro.running){
+    g.strokeStyle = css('--stone-3');
+    for (const b of metro.beats){
+      const bx = Math.round(x(b - metro.offsetMs)) + 0.5;
+      if (bx < 0 || bx > W) continue;
+      g.beginPath(); g.moveTo(bx, energyH - 8); g.lineTo(bx, energyH); g.stroke();
+    }
+  }
+
+  // onsets
+  g.font = '700 9px ' + css('--mono');
+  for (const ev of events){
+    const ex = x(ev.t);
+    if (ex < -20 || ex > W + 20) continue;
+    const color = css(VERB_COLORS[ev.verb]);
+    g.strokeStyle = color;
+    g.lineWidth = 1;
+    g.beginPath(); g.moveTo(ex, 6); g.lineTo(ex, energyH); g.stroke();
+    g.fillStyle = color;
+    g.fillText(ev.verb.slice(0,4), Math.min(W - 26, ex + 3), 14);
+  }
+
+  g.fillStyle = css('--dust');
+  g.font = '9px ' + css('--mono');
+  g.fillText('ENERGY', 8, energyH - 4);
+  g.fillText('TILT', 8, tiltTop + tiltH - 2);
+}
+
+/* ---- main loop ---- */
+
+function loop(){
+  if (!vi) { drawScope(); return; }
+  const f = vi.update();
+
+  const db = 20 * Math.log10(Math.max(f.rms, 1e-8) / Math.max(vi.noiseFloor, 1e-8));
+  $('levelValue').textContent = (db > 0 ? '+' : '') + db.toFixed(0);
+  $('levelBar').style.width = Math.max(0, Math.min(100, db * 2.2)) + '%';
+
+  const live = f.rms > f.gate * 0.5;
+  $('tiltValue').textContent = live ? f.tilt.toFixed(2) : '—';
+  $('tiltBar').style.width = (f.tilt * 100).toFixed(0) + '%';
+  $('zcrValue').textContent = live ? Math.round(f.zcr) : '—';
+  $('zcrBar').style.width = Math.min(100, (f.zcr / 6000) * 100) + '%';
+
+  drawScope();
+  requestAnimationFrame(loop);
+}
+
+drawScope();
+</script>
+</body>
+</html>
