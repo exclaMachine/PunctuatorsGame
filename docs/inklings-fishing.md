@@ -14,7 +14,8 @@ is it.
 
 > **letters ← combat · words ← the desk · sounds ← fishing**
 
-Status: **build steps 1–4 + the daily fish-spot limiter shipped; rest plan-only.** The **fish-spots** system
+Status: **build steps 1–4 + the daily fish-spot limiter shipped; the 2D "articulatory water" mode (§9, M1–M5)
+BUILT and now the SOLE fishing UI — the original typed modal was retired 2026-08-06.** The **fish-spots** system
 (§2/§2.1, shipped 2026-07-15) makes fishing *limited*: sparse daily-seeded spots (rarer than creatures)
 marked by a **shadow** (shallow) or **bubbles** (deep), one catch per spot, hard daily reset — depth now lives
 on the spot, retiring the shallow/deep cast buttons. Reflects a 2026-07 planning session (three settled
@@ -52,14 +53,14 @@ read the symbols); Esc/Tab steps Guide→Sounds before closing. The word-level s
 `rhymeKey`/`syllables`, poetry §11.1) stays **deliberately deferred** — fishing v1's typed loop doesn't
 consume it; stand it up when poetry / the Sound Garden needs it.
 
-**PLANNED (2026-08-06; M1–M5 all BUILT — data · renderer · cast mechanic · spot routing · teaching/flourish): the 2D "articulatory water" cast-and-reel mode (§9).** The
-shipped modal is a quick typed loop where `depth` is only a *difficulty* knob. The planned evolution turns
-fishing into a **side-view (Mario-style) cross-section of water whose two axes *are* the IPA chart's axes** —
+**BUILT (2026-08-06; M1–M5 + legacy-modal retirement): the 2D "articulatory water" cast-and-reel mode is now the SOLE fishing UI (§9).** The
+original quick typed modal (where `depth` was only a *difficulty* knob) has been **retired** — every fish-spot
+is now a **side-view (Mario-style) cross-section of water whose two axes *are* the IPA chart's axes**:
 **distance from shore = the mouth→throat place/backness axis** (front-of-mouth sounds bite near the bank,
 back-of-mouth sounds far out) and **depth = the manner/tongue-height axis** — so *where* you fish teaches
-*how* the sound is articulated. Catch verb becomes a real fishing-game loop (timing power-cast → sink →
-reel), then the **existing type-the-romanization grading lands it**. Two waters (Consonant Sea / Vowel
-Lagoon). Layered on top of the current modal for now, built to eventually replace it. Full design in §9.
+*how* the sound is articulated. The catch verb is a real fishing-game loop (two-tap cast → sink → reel), then
+the **existing type-the-romanization grading lands it**. Two waters (Consonant Sea / Vowel Lagoon). Full
+design + build log in §9.
 
 Cross-refs: [`inklings.md`](inklings.md) (the water tiles this reuses; the dex/collection pattern the
 Phonicon mirrors), [`inklings-poetry.md`](inklings-poetry.md) §3 (the **phoneme engine** — `rhymeKey`,
@@ -442,8 +443,11 @@ coordinate bites, and the **existing type-the-romanization grading lands it** (t
 Continuing §1's numbering:
 
 5. **Layer the 2D mode on top of the current modal for now, but build it self-contained so the old modal can
-   be removed entirely later.** The 2D canvas flow is a new spot kind alongside the legacy typed modal; when
-   every spot is chart-typed, the legacy DOM renderer + its branch are deleted and 2D becomes the sole UI.
+   be removed entirely later. — DONE (2026-08-06).** The 2D canvas flow first shipped as a new spot kind
+   alongside the legacy typed modal; now that it's proven, **every spot is chart-typed** and the legacy DOM
+   cast path (`fishCast`, the `ready`/`casting` renderer branches + their CSS) has been **deleted** — 2D is
+   the sole UI. `fishSpotsFor` no longer rolls `chart:null`; `renderFishing` survives only as the shared
+   type-the-spelling card the chart flow hands off to (stages `biting`→`caught`|`slip`).
 6. **Two separate waters** — a **Consonant Sea** (place × manner) and a **Vowel Lagoon** (backness × height) —
    *not* one shared body and *not* a vowels-only first cut. Their charts are different shapes, so each gets its
    own clean cross-section. These are **spot kinds**, not authored map zones — decision #2 (no new terrain) holds.
@@ -533,17 +537,18 @@ an axis (reserved for a later voiced/voiceless tell).
    from home" curve. `drawFishSpot(c,r,depth,tnow,chart)` distinguishes the two waters on the world canvas —
    a chart spot draws the **same depth tell** (shadow/bubbles) as a legacy spot **plus** a bold tinted **ring
    halo** (Consonant Sea = cool cyan, Vowel Lagoon = warm amber), so it's never *less* visible than a legacy
-   spot and its water reads at a glance (the first cut's faint stand-alone rings were too easy to walk past). `openFishing()` **branches on `spot.chart`**: a chart spot fixes
-   `fishChart.chart` + `fishChart.reveal` and enters the 2D flow via `renderFishingChart()`; else the legacy
-   `renderFishing()`. The M3 two-tap cast mechanics were generalised off `fish.preview` onto a new **`fish.chart`**
+   spot and its water reads at a glance (the first cut's faint stand-alone rings were too easy to walk past). At M4, `openFishing()` **branched on `spot.chart`**: a chart spot fixed
+   `fishChart.chart` + `fishChart.reveal` and entered the 2D flow via `renderFishingChart()`, else the legacy
+   `renderFishing()` (that legacy branch is since gone — see the seam note below). The M3 two-tap cast mechanics were generalised off `fish.preview` onto a new **`fish.chart`**
    flag (true for the dev preview **and** real chart spots — it gates the tap/marker/hook), leaving `fish.preview`
    to gate only the **dev-only chrome** (the "DEV preview" lead, the Consonant/Vowel/Symbols toggle row,
    cast-again-on-catch). For a real chart spot the toggle row is hidden and the lead reads cozy ("the water *is*
    the mouth"); a catch **consumes the spot** (`state.fishedSpots` via the unchanged `fishSetHook`) → ✓ Done +
    the "fished out" line, while a slip (typed wrong, or empty-water landing) is **re-castable** and returns to
-   the chart without consuming the spot. This `spot.chart` branch is the **seam** decision #5 will use to delete
-   the legacy modal later. No save-version bump (the spot `chart` is daily-transient like `depth`). Tuning knob:
-   `FISH_CHART_CHANCE`.
+   the chart without consuming the spot. This `spot.chart` branch was the **seam** decision #5 later used to
+   retire the legacy modal — **now done**: every spot is a chart spot, and the `chart:null` legacy branch +
+   its `FISH_CHART_CHANCE` gate are gone (see §9.5). No save-version bump (the spot `chart` is daily-transient
+   like `depth`).
 5. **M5 — Teaching, polish, save. ✓ BUILT 2026-08-06.** Added the **"🌊 The water is your mouth"** explainer to
    the Fish Phoneme **Guide tab** (distance = place, depth = manner/height; the cyan Consonant Sea / amber Vowel
    Lagoon; the two-tap cast — so *where* you fish teaches *how* the sound is articulated). Routed the
@@ -556,12 +561,17 @@ an axis (reserved for a later voiced/voiceless tell).
    and `state.phonicon`/`state.fishedSpots` already persist. Real fish sprite art stays a one-function
    `fishGlyph` change, out of scope here.
 
-**All five milestones (M1–M5) BUILT.** Remaining work is the §9.5 deferred set (retire the legacy modal, full
-IPA inventory, vowel-chart verification, angler sprite, custom fish art).
+**All five milestones (M1–M5) BUILT, and the legacy modal is now retired** (decision #5 done — 2D is the sole
+UI). Remaining work is the rest of the §9.5 deferred set (full IPA inventory, vowel-chart verification, angler
+sprite, custom fish art, diphthong drift, voiced/voiceless tell).
 
 ### 9.5 Deferred (beyond this mode's v1)
 
-- **Retire the legacy DOM modal** so 2D handles *all* spots (the reason M4 keeps a clean seam).
+- **Retire the legacy DOM modal so 2D handles *all* spots — DONE (2026-08-06).** Every fish-spot is now a
+  chart spot (`fishSpotsFor` no longer rolls `chart:null`); the legacy pure-DOM cast path was deleted
+  (`fishCast`, the `ready`/`casting` branches of `renderFishing`, the `.fish-bob`/`fishbob` CSS, the
+  `FISH_CHART_CHANCE` gate). `renderFishing` remains only as the shared type-the-spelling card the chart flow
+  hands off to (`biting`→`caught`|`slip`).
 - **Diphthong drifting-fish** animation across the glide (v1 plots the start point).
 - **Voiced/voiceless stacked-cell tell** using the authored `voice` field.
 - **Full IPA inventory (dev want, 2026-08-06).** The current `data/phonemes.json` is **General-American English

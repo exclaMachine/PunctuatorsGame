@@ -489,8 +489,6 @@
   .fish-glyph{display:inline-block}
   .fish-glyph.silhouette{filter:brightness(0) opacity(.55)}
   .fish-hint{font-family:var(--read);font-size:14px;color:var(--ink-soft);margin-top:8px}
-  .fish-bob{font-size:34px;line-height:1;animation:fishbob 1s ease-in-out infinite}
-  @keyframes fishbob{0%,100%{transform:translateY(-5px)}50%{transform:translateY(5px)}}
   .fish-hook{display:flex;gap:8px;margin:10px 0 0}
   .fish-hook input{flex:1;min-width:0;font-family:var(--read);font-size:18px;padding:6px 9px;
     border:2px solid var(--edge);background:var(--paper);color:var(--ink)}
@@ -3268,7 +3266,6 @@ function nearHouse(){   // the Library entrance (house) on the outdoor home scre
 // all day and freshly re-rolled tomorrow (Wordle rhythm). A caught spot is recorded in state.fishedSpots
 // (day-scoped like captured) and goes quiet until tomorrow — one catch per spot.
 const FISH_SCREEN_CHANCE = 0.4;   // fraction of field screens that hold ANY fish today (rarer than creatures)
-const FISH_CHART_CHANCE  = 0.5;   // M4: fraction of spots that are the 2D articulatory-water kind (else the legacy typed modal)
 function fishSpotsFor(sc){
   if(sc.fishSpots) return sc.fishSpots;
   const out=[];
@@ -3290,10 +3287,10 @@ function fishSpotsFor(sc){
       const dist=Math.abs(sx)+Math.abs(sy), deepChance=Math.min(0.6, 0.15+dist*0.08);   // deep skews far from home
       for(let i=0;i<want;i++){ const [c,r]=cand[i];
         const depth=(rng()<deepChance)?2:1;
-        // M4: some spots are the 2D "articulatory water" kind (a Consonant Sea or Vowel Lagoon); the rest stay
-        // today's legacy typed modal (chart:null). Depth carries over as the reveal difficulty for chart spots
-        // (shallow shows symbols, deep hides them — §9.4), reusing the "deep skews far from home" curve.
-        const chart = rng()<FISH_CHART_CHANCE ? (rng()<0.5?"consonant":"vowel") : null;
+        // Every spot is now the 2D "articulatory water" kind — a Consonant Sea or a Vowel Lagoon (the legacy
+        // typed modal was retired, §9.5). Depth carries over as the chart's reveal difficulty (shallow shows
+        // symbols, deep hides them — §9.4), reusing the "deep skews far from home" curve.
+        const chart = rng()<0.5 ? "consonant" : "vowel";
         out.push({ cx:c, cy:r, depth, chart });
       }
     }
@@ -7180,12 +7177,12 @@ function closePigpens(){
 let _pendingSoundUnlock=null;   // M5: a first-of-kind catch awaiting its field-level flourish (fired when the modal closes)
 let _fishSpot=null;   // the fish-spot being fished this session: {sx,sy,cx,cy,depth}. depth comes from the SPOT
                       // (shadow=shallow, bubbles=deep), not a cast-menu choice; a catch marks it in state.fishedSpots.
-// The in-modal cast loop (step 3). stage: ready → casting (bite telegraph) → biting (a phoneme surfaced,
-// type its romanization) → caught | slip → back to ready. depth: 1 shallow (symbol+hint), 2 deeper (symbol
-// only); the deep sound-only tier (3) is deferred behind an audio source (§4.3), so it isn't offered here.
-// preview = the DEV-only chart preview (press J, no real spot); chart = this session uses the 2D chart flow
-// (true for the preview AND for real M4 chart spots) — it gates the two-tap cast mechanics, preview gates only
-// the dev chrome (toggle row, cast-again-on-catch).
+// The fishing session. Every session now runs the 2D "articulatory water" chart flow (the legacy pure-DOM
+// typed cast was retired, §9.5): stage chartready → aiming (sweep X) → sinking (drop Y) → biting (a phoneme
+// surfaced — type its romanization) → caught | slip. depth stays 1 in the typed card (symbol+hint); the
+// chart's `reveal` flag, set from the SPOT's depth, is the real difficulty knob (symbols vs silhouettes).
+// preview = the DEV-only chart preview (press J, no real spot — enables the sea/lagoon + symbols toggles and
+// cast-again-on-catch); chart is true for both the preview and every real spot.
 const fish = { stage:"ready", depth:1, target:null, timer:null, preview:false, chart:false };
 function fishReset(){ if(fish.timer){ clearTimeout(fish.timer); fish.timer=null; } fish.stage="ready"; fish.target=null; }
 function fishHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen||state.apothecaryOpen||state.heraldOpen||state.pigpensOpen; }
@@ -7199,15 +7196,11 @@ function openFishing(){
   state.fishing=true; fishReset(); fish.preview=false;
   document.getElementById("fishing").classList.add("open");
   document.getElementById("sound-btn").style.display="none";
-  if(spot.chart){                                     // M4: the 2D articulatory-water flow — fixed to this spot's water
-    fish.chart=true;
-    fishChart.chart=spot.chart;                        // Consonant Sea | Vowel Lagoon (no in-modal toggle for a real spot)
-    fishChart.reveal=(_fishSpot.depth<2);             // depth = difficulty: shallow shows symbols, deep hides them
-    renderFishingChart();
-  } else {
-    fish.chart=false;
-    renderFishing();
-  }
+  // Every spot is the 2D articulatory-water flow now — fixed to this spot's water (legacy typed modal retired, §9.5).
+  fish.chart=true;
+  fishChart.chart=spot.chart||"consonant";             // Consonant Sea | Vowel Lagoon (no in-modal toggle for a real spot)
+  fishChart.reveal=(_fishSpot.depth<2);                // depth = difficulty: shallow shows symbols, deep hides them
+  renderFishingChart();
   SFX.play("click");
 }
 function closeFishing(){
@@ -7218,19 +7211,6 @@ function closeFishing(){
   // M5: a held first-catch flourish fires now (field-level, queued) — unless the player is leaving to the
   // Phonicon, where the collection view is itself the reveal (that path clears _pendingSoundUnlock first).
   if(_pendingSoundUnlock){ const ph=_pendingSoundUnlock; _pendingSoundUnlock=null; queueCelebration(()=>showSoundUnlock(ph)); nextCelebration(); }
-}
-// Cast at the chosen depth → a snappy randomized nibble telegraph → a phoneme bites (§4.1).
-function fishCast(depth){
-  if(fish.stage==="casting"||fish.stage==="biting") return;   // one line in the water at a time
-  fish.depth=depth; fish.target=null; fish.stage="casting";
-  SFX.play("swing"); renderFishing();
-  const wait = 500 + Math.random()*1100;                      // 0.5–1.6s: telegraph, snappy not idle-boring
-  fish.timer=setTimeout(()=>{
-    fish.timer=null; if(!state.fishing) return;
-    fish.target = pickPhoneme(depth);
-    if(!fish.target){ fish.stage="ready"; renderFishing(); return; }
-    fish.stage="biting"; SFX.play("known"); renderFishing();   // a nibble ping; render focuses the input
-  }, wait);
 }
 // Record a caught sound into the Phonicon (the sound-dex). Returns true if it's the FIRST time this phoneme
 // is caught (a new entry), false for a repeat (bumps the count). Persists forever like the word dex.
@@ -7259,29 +7239,12 @@ function fishSetHook(){
   } else { fish.stage="slip"; SFX.play("invalid"); }
   renderFishing();
 }
+// Renders the type-the-spelling card that the 2D chart flow hands off to once a fish bites (stages biting →
+// caught | slip). The old ready/casting DOM cast stages were retired with the legacy modal (§9.5) — the cast
+// now lives entirely on the chart (renderFishingChart / fishChartTap → fishChartResolve).
 function renderFishing(){
   const body=document.getElementById("fish-body"); if(!body) return;
   const s=fish.stage;
-  if(s==="ready"){
-    const deep=_fishSpot && _fishSpot.depth>=2;
-    const tell = deep
-      ? 'Bubbles rise from the <b>deep water</b> here — something lurks below. Cast, and when it bites, reel it up '+
-        'by <b>typing its spelling</b> (the symbol alone, no example word).'
-      : 'A shadow slips through the <b>shallows</b> here. Cast, and when it bites, reel it up by '+
-        '<b>typing its spelling</b> (the symbol <i>and</i> an example word to help).';
-    body.innerHTML =
-      '<p class="fish-lead">'+tell+'</p>'+
-      '<div class="fish-cast-row">'+
-        '<button class="fish-btn" id="fish-cast">🎣 Cast a line</button>'+
-      '</div>';
-    document.getElementById("fish-cast").onclick=()=>fishCast(_fishSpot?_fishSpot.depth:1);
-    return;
-  }
-  if(s==="casting"){
-    body.innerHTML='<div class="fish-line"><div class="fish-bob">🎣</div>'+
-      '<div class="fish-hint">The bobber settles… wait for a bite.</div></div>';
-    return;
-  }
   if(s==="biting"){
     const rv=phonemeReveal(fish.target, fish.depth);
     const sym = rv.showSymbol ? '/'+rv.symbol+'/' : '?';
@@ -7328,9 +7291,8 @@ function renderFishing(){
       '<div class="fish-cast-row">'+ primary +
         '<button class="fish-btn alt" id="fish-phon">🔉 Phoneme Fish</button>'+
       '</div>';
-    if(fish.preview || (!caught && fish.chart)) document.getElementById("fish-again").onclick=()=>{ fish.target=null; renderFishingChart(); };   // back to the 2D chart (dev preview, or a chart-spot slip — spot not consumed)
-    else if(caught) document.getElementById("fish-done").onclick=closeFishing;
-    else document.getElementById("fish-again").onclick=()=>{ fish.stage="ready"; fish.target=null; renderFishing(); };
+    if(fish.preview || !caught) document.getElementById("fish-again").onclick=()=>{ fish.target=null; renderFishingChart(); };   // back to the 2D chart (dev preview, or a slip — spot not consumed)
+    else document.getElementById("fish-done").onclick=closeFishing;
     document.getElementById("fish-phon").onclick=()=>{ _pendingSoundUnlock=null; closeFishing(); openPhonicon(); };   // Phonicon is itself the reveal — skip the field flourish
     return;
   }
