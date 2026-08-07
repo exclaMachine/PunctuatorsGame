@@ -111,3 +111,10 @@ before changing it.
   Sound-Collective entry per animal; a boss-return animal reward grants the same. **Deferred:** routing one-shot animals
   through the true `{drum}`/`DRUM_VOICES` lane (they play as fixed-pitch VOICES for now); campaign decks stay curated
   (animals are Free-Play only). Same http-serving requirement.
+- **Phonetic palindromes / semordnilaps (for the IPA fan game).** `build-phonetic-wordplay.js` (repo root,
+  `node build-phonetic-wordplay.js` to regenerate) scans **enable1.txt** words × **text-to-ipa** pronunciations
+  (`text-to-ipa-master/lib/ipadict.txt`, CMU→IPA), tokenises by phoneme (diphthongs/affricates atomic), and
+  converts symbols to **IPA-fan-game/ipa_words.js convention** (ə ɝ tʃ dʒ eɪ oʊ aɪ aʊ ɔɪ ɡ). Emits three files:
+  `data/ipa-palindromes.json` (sound reads same reversed — 94), `data/ipa-semordnilaps-exact.json` (phoneme-exact
+  reversal pairs incl. `-s` reversals — 658), `data/ipa-semordnilaps-loose.json` (loose-only pairs after merging
+  near-equiv vowels {i,ɪ}{u,ʊ}{ə,ɝ}{ɑ,ɔ}, disjoint from exact — 371). **Data only; not yet wired into any game.**

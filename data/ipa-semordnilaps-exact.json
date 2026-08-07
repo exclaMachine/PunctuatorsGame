@@ -1,0 +1,4614 @@
+{
+  "_doc": "Phonetic semordnilaps (EXACT) — word pairs where one's phoneme sequence is the exact reverse of the other's (e.g. dervish<->shivered, cats<->stack). Built by build-phonetic-wordplay.js.",
+  "source": "enable1.txt words × text-to-ipa ipadict.txt pronunciations; symbols in IPA-fan-game/ipa_words.js convention",
+  "generated": "2026-08-07",
+  "count": 658,
+  "pairs": [
+    {
+      "a": "clucks",
+      "b": "skulk",
+      "ipaA": "k l ə k s",
+      "ipaB": "s k ə l k",
+      "n": 5
+    },
+    {
+      "a": "crops",
+      "b": "spark",
+      "ipaA": "k ɹ ɑ p s",
+      "ipaB": "s p ɑ ɹ k",
+      "n": 5
+    },
+    {
+      "a": "dervish",
+      "b": "shivered",
+      "ipaA": "d ɝ v ɪ ʃ",
+      "ipaB": "ʃ ɪ v ɝ d",
+      "n": 5
+    },
+    {
+      "a": "drops",
+      "b": "sparred",
+      "ipaA": "d ɹ ɑ p s",
+      "ipaB": "s p ɑ ɹ d",
+      "n": 5
+    },
+    {
+      "a": "frocks",
+      "b": "scarf",
+      "ipaA": "f ɹ ɑ k s",
+      "ipaB": "s k ɑ ɹ f",
+      "n": 5
+    },
+    {
+      "a": "juggle",
+      "b": "luggage",
+      "ipaA": "dʒ ə ɡ ə l",
+      "ipaB": "l ə ɡ ə dʒ",
+      "n": 5
+    },
+    {
+      "a": "nugget",
+      "b": "tigon",
+      "ipaA": "n ə ɡ ɪ t",
+      "ipaB": "t ɪ ɡ ə n",
+      "n": 5
+    },
+    {
+      "a": "plaques",
+      "b": "scalp",
+      "ipaA": "p l æ k s",
+      "ipaB": "s k æ l p",
+      "n": 5
+    },
+    {
+      "a": "pollute",
+      "b": "tulip",
+      "ipaA": "p ə l u t",
+      "ipaB": "t u l ə p",
+      "n": 5
+    },
+    {
+      "a": "scoops",
+      "b": "spooks",
+      "ipaA": "s k u p s",
+      "ipaB": "s p u k s",
+      "n": 5
+    },
+    {
+      "a": "scopes",
+      "b": "spokes",
+      "ipaA": "s k oʊ p s",
+      "ipaB": "s p oʊ k s",
+      "n": 5
+    },
+    {
+      "a": "scots",
+      "b": "stocks",
+      "ipaA": "s k ɑ t s",
+      "ipaB": "s t ɑ k s",
+      "n": 5
+    },
+    {
+      "a": "skates",
+      "b": "stakes",
+      "ipaA": "s k eɪ t s",
+      "ipaB": "s t eɪ k s",
+      "n": 5
+    },
+    {
+      "a": "skates",
+      "b": "steaks",
+      "ipaA": "s k eɪ t s",
+      "ipaB": "s t eɪ k s",
+      "n": 5
+    },
+    {
+      "a": "skits",
+      "b": "sticks",
+      "ipaA": "s k ɪ t s",
+      "ipaB": "s t ɪ k s",
+      "n": 5
+    },
+    {
+      "a": "spots",
+      "b": "stops",
+      "ipaA": "s p ɑ t s",
+      "ipaB": "s t ɑ p s",
+      "n": 5
+    },
+    {
+      "a": "start",
+      "b": "trots",
+      "ipaA": "s t ɑ ɹ t",
+      "ipaB": "t ɹ ɑ t s",
+      "n": 5
+    },
+    {
+      "a": "backs",
+      "b": "scab",
+      "ipaA": "b æ k s",
+      "ipaB": "s k æ b",
+      "n": 4
+    },
+    {
+      "a": "bats",
+      "b": "stab",
+      "ipaA": "b æ t s",
+      "ipaB": "s t æ b",
+      "n": 4
+    },
+    {
+      "a": "batts",
+      "b": "stab",
+      "ipaA": "b æ t s",
+      "ipaB": "s t æ b",
+      "n": 4
+    },
+    {
+      "a": "bulk",
+      "b": "club",
+      "ipaA": "b ə l k",
+      "ipaB": "k l ə b",
+      "n": 4
+    },
+    {
+      "a": "buts",
+      "b": "stub",
+      "ipaA": "b ə t s",
+      "ipaB": "s t ə b",
+      "n": 4
+    },
+    {
+      "a": "butts",
+      "b": "stub",
+      "ipaA": "b ə t s",
+      "ipaB": "s t ə b",
+      "n": 4
+    },
+    {
+      "a": "capes",
+      "b": "spake",
+      "ipaA": "k eɪ p s",
+      "ipaB": "s p eɪ k",
+      "n": 4
+    },
+    {
+      "a": "cates",
+      "b": "stake",
+      "ipaA": "k eɪ t s",
+      "ipaB": "s t eɪ k",
+      "n": 4
+    },
+    {
+      "a": "cates",
+      "b": "steak",
+      "ipaA": "k eɪ t s",
+      "ipaB": "s t eɪ k",
+      "n": 4
+    },
+    {
+      "a": "cats",
+      "b": "stack",
+      "ipaA": "k æ t s",
+      "ipaB": "s t æ k",
+      "n": 4
+    },
+    {
+      "a": "chance",
+      "b": "snatch",
+      "ipaA": "tʃ æ n s",
+      "ipaB": "s n æ tʃ",
+      "n": 4
+    },
+    {
+      "a": "chart",
+      "b": "troche",
+      "ipaA": "tʃ ɑ ɹ t",
+      "ipaB": "t ɹ ɑ tʃ",
+      "n": 4
+    },
+    {
+      "a": "checks",
+      "b": "sketch",
+      "ipaA": "tʃ ɛ k s",
+      "ipaB": "s k ɛ tʃ",
+      "n": 4
+    },
+    {
+      "a": "chits",
+      "b": "stich",
+      "ipaA": "tʃ ɪ t s",
+      "ipaB": "s t ɪ tʃ",
+      "n": 4
+    },
+    {
+      "a": "chits",
+      "b": "stitch",
+      "ipaA": "tʃ ɪ t s",
+      "ipaB": "s t ɪ tʃ",
+      "n": 4
+    },
+    {
+      "a": "coats",
+      "b": "stoke",
+      "ipaA": "k oʊ t s",
+      "ipaB": "s t oʊ k",
+      "n": 4
+    },
+    {
+      "a": "copes",
+      "b": "spoke",
+      "ipaA": "k oʊ p s",
+      "ipaB": "s p oʊ k",
+      "n": 4
+    },
+    {
+      "a": "cotes",
+      "b": "stoke",
+      "ipaA": "k oʊ t s",
+      "ipaB": "s t oʊ k",
+      "n": 4
+    },
+    {
+      "a": "cots",
+      "b": "stock",
+      "ipaA": "k ɑ t s",
+      "ipaB": "s t ɑ k",
+      "n": 4
+    },
+    {
+      "a": "coupes",
+      "b": "spook",
+      "ipaA": "k u p s",
+      "ipaB": "s p u k",
+      "n": 4
+    },
+    {
+      "a": "crop",
+      "b": "park",
+      "ipaA": "k ɹ ɑ p",
+      "ipaB": "p ɑ ɹ k",
+      "n": 4
+    },
+    {
+      "a": "crosse",
+      "b": "sark",
+      "ipaA": "k ɹ ɑ s",
+      "ipaB": "s ɑ ɹ k",
+      "n": 4
+    },
+    {
+      "a": "cuts",
+      "b": "stuck",
+      "ipaA": "k ə t s",
+      "ipaB": "s t ə k",
+      "n": 4
+    },
+    {
+      "a": "dared",
+      "b": "dread",
+      "ipaA": "d ɛ ɹ d",
+      "ipaB": "d ɹ ɛ d",
+      "n": 4
+    },
+    {
+      "a": "dart",
+      "b": "trod",
+      "ipaA": "d ɑ ɹ t",
+      "ipaB": "t ɹ ɑ d",
+      "n": 4
+    },
+    {
+      "a": "dates",
+      "b": "stade",
+      "ipaA": "d eɪ t s",
+      "ipaB": "s t eɪ d",
+      "n": 4
+    },
+    {
+      "a": "dates",
+      "b": "staid",
+      "ipaA": "d eɪ t s",
+      "ipaB": "s t eɪ d",
+      "n": 4
+    },
+    {
+      "a": "dates",
+      "b": "stayed",
+      "ipaA": "d eɪ t s",
+      "ipaB": "s t eɪ d",
+      "n": 4
+    },
+    {
+      "a": "debts",
+      "b": "stead",
+      "ipaA": "d ɛ t s",
+      "ipaB": "s t ɛ d",
+      "n": 4
+    },
+    {
+      "a": "deets",
+      "b": "steed",
+      "ipaA": "d i t s",
+      "ipaB": "s t i d",
+      "n": 4
+    },
+    {
+      "a": "dicks",
+      "b": "skid",
+      "ipaA": "d ɪ k s",
+      "ipaB": "s k ɪ d",
+      "n": 4
+    },
+    {
+      "a": "drawer",
+      "b": "roared",
+      "ipaA": "d ɹ ɔ ɹ",
+      "ipaB": "ɹ ɔ ɹ d",
+      "n": 4
+    },
+    {
+      "a": "drawl",
+      "b": "lord",
+      "ipaA": "d ɹ ɔ l",
+      "ipaB": "l ɔ ɹ d",
+      "n": 4
+    },
+    {
+      "a": "drip",
+      "b": "peered",
+      "ipaA": "d ɹ ɪ p",
+      "ipaB": "p ɪ ɹ d",
+      "n": 4
+    },
+    {
+      "a": "dross",
+      "b": "soared",
+      "ipaA": "d ɹ ɔ s",
+      "ipaB": "s ɔ ɹ d",
+      "n": 4
+    },
+    {
+      "a": "dross",
+      "b": "sword",
+      "ipaA": "d ɹ ɔ s",
+      "ipaB": "s ɔ ɹ d",
+      "n": 4
+    },
+    {
+      "a": "ducks",
+      "b": "scud",
+      "ipaA": "d ə k s",
+      "ipaB": "s k ə d",
+      "n": 4
+    },
+    {
+      "a": "eaten",
+      "b": "nutty",
+      "ipaA": "i t ə n",
+      "ipaB": "n ə t i",
+      "n": 4
+    },
+    {
+      "a": "fats",
+      "b": "staff",
+      "ipaA": "f æ t s",
+      "ipaB": "s t æ f",
+      "n": 4
+    },
+    {
+      "a": "fats",
+      "b": "staph",
+      "ipaA": "f æ t s",
+      "ipaB": "s t æ f",
+      "n": 4
+    },
+    {
+      "a": "faux",
+      "b": "scoff",
+      "ipaA": "f ɔ k s",
+      "ipaB": "s k ɔ f",
+      "n": 4
+    },
+    {
+      "a": "fits",
+      "b": "stiff",
+      "ipaA": "f ɪ t s",
+      "ipaB": "s t ɪ f",
+      "n": 4
+    },
+    {
+      "a": "fix",
+      "b": "skiff",
+      "ipaA": "f ɪ k s",
+      "ipaB": "s k ɪ f",
+      "n": 4
+    },
+    {
+      "a": "flesh",
+      "b": "shelf",
+      "ipaA": "f l ɛ ʃ",
+      "ipaB": "ʃ ɛ l f",
+      "n": 4
+    },
+    {
+      "a": "flog",
+      "b": "golf",
+      "ipaA": "f l ɑ ɡ",
+      "ipaB": "ɡ ɑ l f",
+      "n": 4
+    },
+    {
+      "a": "fort",
+      "b": "trough",
+      "ipaA": "f ɔ ɹ t",
+      "ipaB": "t ɹ ɔ f",
+      "n": 4
+    },
+    {
+      "a": "fucks",
+      "b": "scuff",
+      "ipaA": "f ə k s",
+      "ipaB": "s k ə f",
+      "n": 4
+    },
+    {
+      "a": "gulp",
+      "b": "plug",
+      "ipaA": "ɡ ə l p",
+      "ipaB": "p l ə ɡ",
+      "n": 4
+    },
+    {
+      "a": "herbal",
+      "b": "lubber",
+      "ipaA": "ɝ b ə l",
+      "ipaB": "l ə b ɝ",
+      "n": 4
+    },
+    {
+      "a": "jerks",
+      "b": "scourge",
+      "ipaA": "dʒ ɝ k s",
+      "ipaB": "s k ɝ dʒ",
+      "n": 4
+    },
+    {
+      "a": "kats",
+      "b": "stack",
+      "ipaA": "k æ t s",
+      "ipaB": "s t æ k",
+      "n": 4
+    },
+    {
+      "a": "keeps",
+      "b": "speak",
+      "ipaA": "k i p s",
+      "ipaB": "s p i k",
+      "n": 4
+    },
+    {
+      "a": "kits",
+      "b": "stick",
+      "ipaA": "k ɪ t s",
+      "ipaB": "s t ɪ k",
+      "n": 4
+    },
+    {
+      "a": "knacks",
+      "b": "scan",
+      "ipaA": "n æ k s",
+      "ipaB": "s k æ n",
+      "n": 4
+    },
+    {
+      "a": "knights",
+      "b": "stein",
+      "ipaA": "n aɪ t s",
+      "ipaB": "s t aɪ n",
+      "n": 4
+    },
+    {
+      "a": "lakes",
+      "b": "scale",
+      "ipaA": "l eɪ k s",
+      "ipaB": "s k eɪ l",
+      "n": 4
+    },
+    {
+      "a": "leaps",
+      "b": "spiel",
+      "ipaA": "l i p s",
+      "ipaB": "s p i l",
+      "n": 4
+    },
+    {
+      "a": "licks",
+      "b": "skill",
+      "ipaA": "l ɪ k s",
+      "ipaB": "s k ɪ l",
+      "n": 4
+    },
+    {
+      "a": "lights",
+      "b": "stile",
+      "ipaA": "l aɪ t s",
+      "ipaB": "s t aɪ l",
+      "n": 4
+    },
+    {
+      "a": "lights",
+      "b": "style",
+      "ipaA": "l aɪ t s",
+      "ipaB": "s t aɪ l",
+      "n": 4
+    },
+    {
+      "a": "lips",
+      "b": "spill",
+      "ipaA": "l ɪ p s",
+      "ipaB": "s p ɪ l",
+      "n": 4
+    },
+    {
+      "a": "lits",
+      "b": "still",
+      "ipaA": "l ɪ t s",
+      "ipaB": "s t ɪ l",
+      "n": 4
+    },
+    {
+      "a": "loops",
+      "b": "spool",
+      "ipaA": "l u p s",
+      "ipaB": "s p u l",
+      "n": 4
+    },
+    {
+      "a": "lucks",
+      "b": "scull",
+      "ipaA": "l ə k s",
+      "ipaB": "s k ə l",
+      "n": 4
+    },
+    {
+      "a": "lucks",
+      "b": "skull",
+      "ipaA": "l ə k s",
+      "ipaB": "s k ə l",
+      "n": 4
+    },
+    {
+      "a": "lutes",
+      "b": "stool",
+      "ipaA": "l u t s",
+      "ipaB": "s t u l",
+      "n": 4
+    },
+    {
+      "a": "lutz",
+      "b": "stull",
+      "ipaA": "l ə t s",
+      "ipaB": "s t ə l",
+      "n": 4
+    },
+    {
+      "a": "lux",
+      "b": "scull",
+      "ipaA": "l ə k s",
+      "ipaB": "s k ə l",
+      "n": 4
+    },
+    {
+      "a": "lux",
+      "b": "skull",
+      "ipaA": "l ə k s",
+      "ipaB": "s k ə l",
+      "n": 4
+    },
+    {
+      "a": "macks",
+      "b": "scam",
+      "ipaA": "m æ k s",
+      "ipaB": "s k æ m",
+      "n": 4
+    },
+    {
+      "a": "macs",
+      "b": "scam",
+      "ipaA": "m æ k s",
+      "ipaB": "s k æ m",
+      "n": 4
+    },
+    {
+      "a": "max",
+      "b": "scam",
+      "ipaA": "m æ k s",
+      "ipaB": "s k æ m",
+      "n": 4
+    },
+    {
+      "a": "meats",
+      "b": "steam",
+      "ipaA": "m i t s",
+      "ipaB": "s t i m",
+      "n": 4
+    },
+    {
+      "a": "meets",
+      "b": "steam",
+      "ipaA": "m i t s",
+      "ipaB": "s t i m",
+      "n": 4
+    },
+    {
+      "a": "mix",
+      "b": "skim",
+      "ipaA": "m ɪ k s",
+      "ipaB": "s k ɪ m",
+      "n": 4
+    },
+    {
+      "a": "mutts",
+      "b": "stum",
+      "ipaA": "m ə t s",
+      "ipaB": "s t ə m",
+      "n": 4
+    },
+    {
+      "a": "naps",
+      "b": "span",
+      "ipaA": "n æ p s",
+      "ipaB": "s p æ n",
+      "n": 4
+    },
+    {
+      "a": "neighbor",
+      "b": "urbane",
+      "ipaA": "n eɪ b ɝ",
+      "ipaB": "ɝ b eɪ n",
+      "n": 4
+    },
+    {
+      "a": "nicks",
+      "b": "skin",
+      "ipaA": "n ɪ k s",
+      "ipaB": "s k ɪ n",
+      "n": 4
+    },
+    {
+      "a": "nights",
+      "b": "stein",
+      "ipaA": "n aɪ t s",
+      "ipaB": "s t aɪ n",
+      "n": 4
+    },
+    {
+      "a": "nips",
+      "b": "spin",
+      "ipaA": "n ɪ p s",
+      "ipaB": "s p ɪ n",
+      "n": 4
+    },
+    {
+      "a": "nix",
+      "b": "skin",
+      "ipaA": "n ɪ k s",
+      "ipaB": "s k ɪ n",
+      "n": 4
+    },
+    {
+      "a": "notes",
+      "b": "stone",
+      "ipaA": "n oʊ t s",
+      "ipaB": "s t oʊ n",
+      "n": 4
+    },
+    {
+      "a": "nuts",
+      "b": "stun",
+      "ipaA": "n ə t s",
+      "ipaB": "s t ə n",
+      "n": 4
+    },
+    {
+      "a": "pets",
+      "b": "step",
+      "ipaA": "p ɛ t s",
+      "ipaB": "s t ɛ p",
+      "n": 4
+    },
+    {
+      "a": "pets",
+      "b": "steppe",
+      "ipaA": "p ɛ t s",
+      "ipaB": "s t ɛ p",
+      "n": 4
+    },
+    {
+      "a": "picks",
+      "b": "skip",
+      "ipaA": "p ɪ k s",
+      "ipaB": "s k ɪ p",
+      "n": 4
+    },
+    {
+      "a": "pix",
+      "b": "skip",
+      "ipaA": "p ɪ k s",
+      "ipaB": "s k ɪ p",
+      "n": 4
+    },
+    {
+      "a": "pokes",
+      "b": "scope",
+      "ipaA": "p oʊ k s",
+      "ipaB": "s k oʊ p",
+      "n": 4
+    },
+    {
+      "a": "pots",
+      "b": "stop",
+      "ipaA": "p ɑ t s",
+      "ipaB": "s t ɑ p",
+      "n": 4
+    },
+    {
+      "a": "reps",
+      "b": "spare",
+      "ipaA": "ɹ ɛ p s",
+      "ipaB": "s p ɛ ɹ",
+      "n": 4
+    },
+    {
+      "a": "rex",
+      "b": "scare",
+      "ipaA": "ɹ ɛ k s",
+      "ipaB": "s k ɛ ɹ",
+      "n": 4
+    },
+    {
+      "a": "riffs",
+      "b": "sphere",
+      "ipaA": "ɹ ɪ f s",
+      "ipaB": "s f ɪ ɹ",
+      "n": 4
+    },
+    {
+      "a": "rinse",
+      "b": "sneer",
+      "ipaA": "ɹ ɪ n s",
+      "ipaB": "s n ɪ ɹ",
+      "n": 4
+    },
+    {
+      "a": "rips",
+      "b": "spear",
+      "ipaA": "ɹ ɪ p s",
+      "ipaB": "s p ɪ ɹ",
+      "n": 4
+    },
+    {
+      "a": "rips",
+      "b": "speer",
+      "ipaA": "ɹ ɪ p s",
+      "ipaB": "s p ɪ ɹ",
+      "n": 4
+    },
+    {
+      "a": "rips",
+      "b": "speir",
+      "ipaA": "ɹ ɪ p s",
+      "ipaB": "s p ɪ ɹ",
+      "n": 4
+    },
+    {
+      "a": "ritz",
+      "b": "steer",
+      "ipaA": "ɹ ɪ t s",
+      "ipaB": "s t ɪ ɹ",
+      "n": 4
+    },
+    {
+      "a": "rocks",
+      "b": "scar",
+      "ipaA": "ɹ ɑ k s",
+      "ipaB": "s k ɑ ɹ",
+      "n": 4
+    },
+    {
+      "a": "rots",
+      "b": "star",
+      "ipaA": "ɹ ɑ t s",
+      "ipaB": "s t ɑ ɹ",
+      "n": 4
+    },
+    {
+      "a": "scare",
+      "b": "wrecks",
+      "ipaA": "s k ɛ ɹ",
+      "ipaB": "ɹ ɛ k s",
+      "n": 4
+    },
+    {
+      "a": "scat",
+      "b": "tacks",
+      "ipaA": "s k æ t",
+      "ipaB": "t æ k s",
+      "n": 4
+    },
+    {
+      "a": "scat",
+      "b": "tax",
+      "ipaA": "s k æ t",
+      "ipaB": "t æ k s",
+      "n": 4
+    },
+    {
+      "a": "sipes",
+      "b": "spice",
+      "ipaA": "s aɪ p s",
+      "ipaB": "s p aɪ s",
+      "n": 4
+    },
+    {
+      "a": "skate",
+      "b": "takes",
+      "ipaA": "s k eɪ t",
+      "ipaB": "t eɪ k s",
+      "n": 4
+    },
+    {
+      "a": "skirt",
+      "b": "turks",
+      "ipaA": "s k ɝ t",
+      "ipaB": "t ɝ k s",
+      "n": 4
+    },
+    {
+      "a": "skit",
+      "b": "ticks",
+      "ipaA": "s k ɪ t",
+      "ipaB": "t ɪ k s",
+      "n": 4
+    },
+    {
+      "a": "skit",
+      "b": "tics",
+      "ipaA": "s k ɪ t",
+      "ipaB": "t ɪ k s",
+      "n": 4
+    },
+    {
+      "a": "spat",
+      "b": "taps",
+      "ipaA": "s p æ t",
+      "ipaB": "t æ p s",
+      "n": 4
+    },
+    {
+      "a": "spate",
+      "b": "tapes",
+      "ipaA": "s p eɪ t",
+      "ipaB": "t eɪ p s",
+      "n": 4
+    },
+    {
+      "a": "spit",
+      "b": "tips",
+      "ipaA": "s p ɪ t",
+      "ipaB": "t ɪ p s",
+      "n": 4
+    },
+    {
+      "a": "spite",
+      "b": "types",
+      "ipaA": "s p aɪ t",
+      "ipaB": "t aɪ p s",
+      "n": 4
+    },
+    {
+      "a": "spot",
+      "b": "tops",
+      "ipaA": "s p ɑ t",
+      "ipaB": "t ɑ p s",
+      "n": 4
+    },
+    {
+      "a": "steer",
+      "b": "writs",
+      "ipaA": "s t ɪ ɹ",
+      "ipaB": "ɹ ɪ t s",
+      "n": 4
+    },
+    {
+      "a": "stout",
+      "b": "touts",
+      "ipaA": "s t aʊ t",
+      "ipaB": "t aʊ t s",
+      "n": 4
+    },
+    {
+      "a": "stove",
+      "b": "votes",
+      "ipaA": "s t oʊ v",
+      "ipaB": "v oʊ t s",
+      "n": 4
+    },
+    {
+      "a": "tart",
+      "b": "trot",
+      "ipaA": "t ɑ ɹ t",
+      "ipaB": "t ɹ ɑ t",
+      "n": 4
+    },
+    {
+      "a": "ala",
+      "b": "allay",
+      "ipaA": "eɪ l ə",
+      "ipaB": "ə l eɪ",
+      "n": 3
+    },
+    {
+      "a": "arb",
+      "b": "bra",
+      "ipaA": "ɑ ɹ b",
+      "ipaB": "b ɹ ɑ",
+      "n": 3
+    },
+    {
+      "a": "ates",
+      "b": "stay",
+      "ipaA": "eɪ t s",
+      "ipaB": "s t eɪ",
+      "n": 3
+    },
+    {
+      "a": "bach",
+      "b": "cob",
+      "ipaA": "b ɑ k",
+      "ipaB": "k ɑ b",
+      "n": 3
+    },
+    {
+      "a": "bach",
+      "b": "cobb",
+      "ipaA": "b ɑ k",
+      "ipaB": "k ɑ b",
+      "n": 3
+    },
+    {
+      "a": "back",
+      "b": "cab",
+      "ipaA": "b æ k",
+      "ipaB": "k æ b",
+      "n": 3
+    },
+    {
+      "a": "bad",
+      "b": "dab",
+      "ipaA": "b æ d",
+      "ipaB": "d æ b",
+      "n": 3
+    },
+    {
+      "a": "badge",
+      "b": "jab",
+      "ipaA": "b æ dʒ",
+      "ipaB": "dʒ æ b",
+      "n": 3
+    },
+    {
+      "a": "bag",
+      "b": "gab",
+      "ipaA": "b æ ɡ",
+      "ipaB": "ɡ æ b",
+      "n": 3
+    },
+    {
+      "a": "bal",
+      "b": "lab",
+      "ipaA": "b æ l",
+      "ipaB": "l æ b",
+      "n": 3
+    },
+    {
+      "a": "balm",
+      "b": "mob",
+      "ipaA": "b ɑ m",
+      "ipaB": "m ɑ b",
+      "n": 3
+    },
+    {
+      "a": "ban",
+      "b": "nab",
+      "ipaA": "b æ n",
+      "ipaB": "n æ b",
+      "n": 3
+    },
+    {
+      "a": "bar",
+      "b": "rob",
+      "ipaA": "b ɑ ɹ",
+      "ipaB": "ɹ ɑ b",
+      "n": 3
+    },
+    {
+      "a": "bat",
+      "b": "tab",
+      "ipaA": "b æ t",
+      "ipaB": "t æ b",
+      "n": 3
+    },
+    {
+      "a": "batt",
+      "b": "tab",
+      "ipaA": "b æ t",
+      "ipaB": "t æ b",
+      "n": 3
+    },
+    {
+      "a": "baud",
+      "b": "daub",
+      "ipaA": "b ɔ d",
+      "ipaB": "d ɔ b",
+      "n": 3
+    },
+    {
+      "a": "baud",
+      "b": "daube",
+      "ipaA": "b ɔ d",
+      "ipaB": "d ɔ b",
+      "n": 3
+    },
+    {
+      "a": "bawd",
+      "b": "daub",
+      "ipaA": "b ɔ d",
+      "ipaB": "d ɔ b",
+      "n": 3
+    },
+    {
+      "a": "bawd",
+      "b": "daube",
+      "ipaA": "b ɔ d",
+      "ipaB": "d ɔ b",
+      "n": 3
+    },
+    {
+      "a": "bed",
+      "b": "deb",
+      "ipaA": "b ɛ d",
+      "ipaB": "d ɛ b",
+      "n": 3
+    },
+    {
+      "a": "been",
+      "b": "nib",
+      "ipaA": "b ɪ n",
+      "ipaB": "n ɪ b",
+      "n": 3
+    },
+    {
+      "a": "beer",
+      "b": "rib",
+      "ipaA": "b ɪ ɹ",
+      "ipaB": "ɹ ɪ b",
+      "n": 3
+    },
+    {
+      "a": "big",
+      "b": "gib",
+      "ipaA": "b ɪ ɡ",
+      "ipaB": "ɡ ɪ b",
+      "n": 3
+    },
+    {
+      "a": "bill",
+      "b": "lib",
+      "ipaA": "b ɪ l",
+      "ipaB": "l ɪ b",
+      "n": 3
+    },
+    {
+      "a": "bin",
+      "b": "nib",
+      "ipaA": "b ɪ n",
+      "ipaB": "n ɪ b",
+      "n": 3
+    },
+    {
+      "a": "birk",
+      "b": "curb",
+      "ipaA": "b ɝ k",
+      "ipaB": "k ɝ b",
+      "n": 3
+    },
+    {
+      "a": "birk",
+      "b": "kerb",
+      "ipaA": "b ɝ k",
+      "ipaB": "k ɝ b",
+      "n": 3
+    },
+    {
+      "a": "bis",
+      "b": "sib",
+      "ipaA": "b ɪ s",
+      "ipaB": "s ɪ b",
+      "n": 3
+    },
+    {
+      "a": "bock",
+      "b": "cob",
+      "ipaA": "b ɑ k",
+      "ipaB": "k ɑ b",
+      "n": 3
+    },
+    {
+      "a": "bock",
+      "b": "cobb",
+      "ipaA": "b ɑ k",
+      "ipaB": "k ɑ b",
+      "n": 3
+    },
+    {
+      "a": "boff",
+      "b": "fob",
+      "ipaA": "b ɔ f",
+      "ipaB": "f ɔ b",
+      "n": 3
+    },
+    {
+      "a": "bog",
+      "b": "gob",
+      "ipaA": "b ɑ ɡ",
+      "ipaB": "ɡ ɑ b",
+      "n": 3
+    },
+    {
+      "a": "bole",
+      "b": "lobe",
+      "ipaA": "b oʊ l",
+      "ipaB": "l oʊ b",
+      "n": 3
+    },
+    {
+      "a": "boll",
+      "b": "lobe",
+      "ipaA": "b oʊ l",
+      "ipaB": "l oʊ b",
+      "n": 3
+    },
+    {
+      "a": "bomb",
+      "b": "mob",
+      "ipaA": "b ɑ m",
+      "ipaB": "m ɑ b",
+      "n": 3
+    },
+    {
+      "a": "bonne",
+      "b": "knob",
+      "ipaA": "b ɑ n",
+      "ipaB": "n ɑ b",
+      "n": 3
+    },
+    {
+      "a": "boot",
+      "b": "tube",
+      "ipaA": "b u t",
+      "ipaB": "t u b",
+      "n": 3
+    },
+    {
+      "a": "bos",
+      "b": "sob",
+      "ipaA": "b ɑ s",
+      "ipaB": "s ɑ b",
+      "n": 3
+    },
+    {
+      "a": "boss",
+      "b": "sob",
+      "ipaA": "b ɑ s",
+      "ipaB": "s ɑ b",
+      "n": 3
+    },
+    {
+      "a": "boule",
+      "b": "lube",
+      "ipaA": "b u l",
+      "ipaB": "l u b",
+      "n": 3
+    },
+    {
+      "a": "bowl",
+      "b": "lobe",
+      "ipaA": "b oʊ l",
+      "ipaB": "l oʊ b",
+      "n": 3
+    },
+    {
+      "a": "buck",
+      "b": "cub",
+      "ipaA": "b ə k",
+      "ipaB": "k ə b",
+      "n": 3
+    },
+    {
+      "a": "bud",
+      "b": "dub",
+      "ipaA": "b ə d",
+      "ipaB": "d ə b",
+      "n": 3
+    },
+    {
+      "a": "bun",
+      "b": "nub",
+      "ipaA": "b ə n",
+      "ipaB": "n ə b",
+      "n": 3
+    },
+    {
+      "a": "bunn",
+      "b": "nub",
+      "ipaA": "b ə n",
+      "ipaB": "n ə b",
+      "n": 3
+    },
+    {
+      "a": "burke",
+      "b": "curb",
+      "ipaA": "b ɝ k",
+      "ipaB": "k ɝ b",
+      "n": 3
+    },
+    {
+      "a": "burke",
+      "b": "kerb",
+      "ipaA": "b ɝ k",
+      "ipaB": "k ɝ b",
+      "n": 3
+    },
+    {
+      "a": "bus",
+      "b": "sub",
+      "ipaA": "b ə s",
+      "ipaB": "s ə b",
+      "n": 3
+    },
+    {
+      "a": "buss",
+      "b": "sub",
+      "ipaA": "b ə s",
+      "ipaB": "s ə b",
+      "n": 3
+    },
+    {
+      "a": "but",
+      "b": "tub",
+      "ipaA": "b ə t",
+      "ipaB": "t ə b",
+      "n": 3
+    },
+    {
+      "a": "butt",
+      "b": "tub",
+      "ipaA": "b ə t",
+      "ipaB": "t ə b",
+      "n": 3
+    },
+    {
+      "a": "cache",
+      "b": "shack",
+      "ipaA": "k æ ʃ",
+      "ipaB": "ʃ æ k",
+      "n": 3
+    },
+    {
+      "a": "cad",
+      "b": "dak",
+      "ipaA": "k æ d",
+      "ipaB": "d æ k",
+      "n": 3
+    },
+    {
+      "a": "cage",
+      "b": "jake",
+      "ipaA": "k eɪ dʒ",
+      "ipaB": "dʒ eɪ k",
+      "n": 3
+    },
+    {
+      "a": "calm",
+      "b": "mach",
+      "ipaA": "k ɑ m",
+      "ipaB": "m ɑ k",
+      "n": 3
+    },
+    {
+      "a": "calm",
+      "b": "mock",
+      "ipaA": "k ɑ m",
+      "ipaB": "m ɑ k",
+      "n": 3
+    },
+    {
+      "a": "cam",
+      "b": "mac",
+      "ipaA": "k æ m",
+      "ipaB": "m æ k",
+      "n": 3
+    },
+    {
+      "a": "cam",
+      "b": "mack",
+      "ipaA": "k æ m",
+      "ipaB": "m æ k",
+      "n": 3
+    },
+    {
+      "a": "came",
+      "b": "make",
+      "ipaA": "k eɪ m",
+      "ipaB": "m eɪ k",
+      "n": 3
+    },
+    {
+      "a": "can",
+      "b": "knack",
+      "ipaA": "k æ n",
+      "ipaB": "n æ k",
+      "n": 3
+    },
+    {
+      "a": "cap",
+      "b": "pac",
+      "ipaA": "k æ p",
+      "ipaB": "p æ k",
+      "n": 3
+    },
+    {
+      "a": "cap",
+      "b": "pack",
+      "ipaA": "k æ p",
+      "ipaB": "p æ k",
+      "n": 3
+    },
+    {
+      "a": "cape",
+      "b": "paik",
+      "ipaA": "k eɪ p",
+      "ipaB": "p eɪ k",
+      "n": 3
+    },
+    {
+      "a": "car",
+      "b": "roc",
+      "ipaA": "k ɑ ɹ",
+      "ipaB": "ɹ ɑ k",
+      "n": 3
+    },
+    {
+      "a": "car",
+      "b": "rock",
+      "ipaA": "k ɑ ɹ",
+      "ipaB": "ɹ ɑ k",
+      "n": 3
+    },
+    {
+      "a": "care",
+      "b": "rec",
+      "ipaA": "k ɛ ɹ",
+      "ipaB": "ɹ ɛ k",
+      "n": 3
+    },
+    {
+      "a": "care",
+      "b": "reck",
+      "ipaA": "k ɛ ɹ",
+      "ipaB": "ɹ ɛ k",
+      "n": 3
+    },
+    {
+      "a": "care",
+      "b": "wreck",
+      "ipaA": "k ɛ ɹ",
+      "ipaB": "ɹ ɛ k",
+      "n": 3
+    },
+    {
+      "a": "carr",
+      "b": "roc",
+      "ipaA": "k ɑ ɹ",
+      "ipaB": "ɹ ɑ k",
+      "n": 3
+    },
+    {
+      "a": "carr",
+      "b": "rock",
+      "ipaA": "k ɑ ɹ",
+      "ipaB": "ɹ ɑ k",
+      "n": 3
+    },
+    {
+      "a": "case",
+      "b": "sake",
+      "ipaA": "k eɪ s",
+      "ipaB": "s eɪ k",
+      "n": 3
+    },
+    {
+      "a": "cash",
+      "b": "shack",
+      "ipaA": "k æ ʃ",
+      "ipaB": "ʃ æ k",
+      "n": 3
+    },
+    {
+      "a": "cat",
+      "b": "tack",
+      "ipaA": "k æ t",
+      "ipaB": "t æ k",
+      "n": 3
+    },
+    {
+      "a": "cate",
+      "b": "take",
+      "ipaA": "k eɪ t",
+      "ipaB": "t eɪ k",
+      "n": 3
+    },
+    {
+      "a": "caul",
+      "b": "loch",
+      "ipaA": "k ɑ l",
+      "ipaB": "l ɑ k",
+      "n": 3
+    },
+    {
+      "a": "caul",
+      "b": "lock",
+      "ipaA": "k ɑ l",
+      "ipaB": "l ɑ k",
+      "n": 3
+    },
+    {
+      "a": "cel",
+      "b": "less",
+      "ipaA": "s ɛ l",
+      "ipaB": "l ɛ s",
+      "n": 3
+    },
+    {
+      "a": "cell",
+      "b": "less",
+      "ipaA": "s ɛ l",
+      "ipaB": "l ɛ s",
+      "n": 3
+    },
+    {
+      "a": "cham",
+      "b": "mache",
+      "ipaA": "tʃ æ m",
+      "ipaB": "m æ tʃ",
+      "n": 3
+    },
+    {
+      "a": "cham",
+      "b": "match",
+      "ipaA": "tʃ æ m",
+      "ipaB": "m æ tʃ",
+      "n": 3
+    },
+    {
+      "a": "chap",
+      "b": "patch",
+      "ipaA": "tʃ æ p",
+      "ipaB": "p æ tʃ",
+      "n": 3
+    },
+    {
+      "a": "cheap",
+      "b": "peach",
+      "ipaA": "tʃ i p",
+      "ipaB": "p i tʃ",
+      "n": 3
+    },
+    {
+      "a": "cheat",
+      "b": "teach",
+      "ipaA": "tʃ i t",
+      "ipaB": "t i tʃ",
+      "n": 3
+    },
+    {
+      "a": "check",
+      "b": "ketch",
+      "ipaA": "tʃ ɛ k",
+      "ipaB": "k ɛ tʃ",
+      "n": 3
+    },
+    {
+      "a": "cheer",
+      "b": "rich",
+      "ipaA": "tʃ ɪ ɹ",
+      "ipaB": "ɹ ɪ tʃ",
+      "n": 3
+    },
+    {
+      "a": "chic",
+      "b": "quiche",
+      "ipaA": "ʃ i k",
+      "ipaB": "k i ʃ",
+      "n": 3
+    },
+    {
+      "a": "chick",
+      "b": "kitsch",
+      "ipaA": "tʃ ɪ k",
+      "ipaB": "k ɪ tʃ",
+      "n": 3
+    },
+    {
+      "a": "chill",
+      "b": "lich",
+      "ipaA": "tʃ ɪ l",
+      "ipaB": "l ɪ tʃ",
+      "n": 3
+    },
+    {
+      "a": "chin",
+      "b": "niche",
+      "ipaA": "tʃ ɪ n",
+      "ipaB": "n ɪ tʃ",
+      "n": 3
+    },
+    {
+      "a": "chip",
+      "b": "pitch",
+      "ipaA": "tʃ ɪ p",
+      "ipaB": "p ɪ tʃ",
+      "n": 3
+    },
+    {
+      "a": "chirp",
+      "b": "perch",
+      "ipaA": "tʃ ɝ p",
+      "ipaB": "p ɝ tʃ",
+      "n": 3
+    },
+    {
+      "a": "choke",
+      "b": "coach",
+      "ipaA": "tʃ oʊ k",
+      "ipaB": "k oʊ tʃ",
+      "n": 3
+    },
+    {
+      "a": "chon",
+      "b": "notch",
+      "ipaA": "tʃ ɑ n",
+      "ipaB": "n ɑ tʃ",
+      "n": 3
+    },
+    {
+      "a": "chum",
+      "b": "much",
+      "ipaA": "tʃ ə m",
+      "ipaB": "m ə tʃ",
+      "n": 3
+    },
+    {
+      "a": "chum",
+      "b": "mutch",
+      "ipaA": "tʃ ə m",
+      "ipaB": "m ə tʃ",
+      "n": 3
+    },
+    {
+      "a": "chute",
+      "b": "touche",
+      "ipaA": "ʃ u t",
+      "ipaB": "t u ʃ",
+      "n": 3
+    },
+    {
+      "a": "cirque",
+      "b": "curse",
+      "ipaA": "s ɝ k",
+      "ipaB": "k ɝ s",
+      "n": 3
+    },
+    {
+      "a": "cod",
+      "b": "doc",
+      "ipaA": "k ɑ d",
+      "ipaB": "d ɑ k",
+      "n": 3
+    },
+    {
+      "a": "cod",
+      "b": "dock",
+      "ipaA": "k ɑ d",
+      "ipaB": "d ɑ k",
+      "n": 3
+    },
+    {
+      "a": "cog",
+      "b": "gawk",
+      "ipaA": "k ɔ ɡ",
+      "ipaB": "ɡ ɔ k",
+      "n": 3
+    },
+    {
+      "a": "comb",
+      "b": "moke",
+      "ipaA": "k oʊ m",
+      "ipaB": "m oʊ k",
+      "n": 3
+    },
+    {
+      "a": "combe",
+      "b": "moke",
+      "ipaA": "k oʊ m",
+      "ipaB": "m oʊ k",
+      "n": 3
+    },
+    {
+      "a": "come",
+      "b": "muck",
+      "ipaA": "k ə m",
+      "ipaB": "m ə k",
+      "n": 3
+    },
+    {
+      "a": "con",
+      "b": "knock",
+      "ipaA": "k ɑ n",
+      "ipaB": "n ɑ k",
+      "n": 3
+    },
+    {
+      "a": "con",
+      "b": "nock",
+      "ipaA": "k ɑ n",
+      "ipaB": "n ɑ k",
+      "n": 3
+    },
+    {
+      "a": "conn",
+      "b": "knock",
+      "ipaA": "k ɑ n",
+      "ipaB": "n ɑ k",
+      "n": 3
+    },
+    {
+      "a": "conn",
+      "b": "nock",
+      "ipaA": "k ɑ n",
+      "ipaB": "n ɑ k",
+      "n": 3
+    },
+    {
+      "a": "coon",
+      "b": "nuke",
+      "ipaA": "k u n",
+      "ipaB": "n u k",
+      "n": 3
+    },
+    {
+      "a": "coos",
+      "b": "souk",
+      "ipaA": "k u s",
+      "ipaB": "s u k",
+      "n": 3
+    },
+    {
+      "a": "cop",
+      "b": "pock",
+      "ipaA": "k ɑ p",
+      "ipaB": "p ɑ k",
+      "n": 3
+    },
+    {
+      "a": "cope",
+      "b": "poke",
+      "ipaA": "k oʊ p",
+      "ipaB": "p oʊ k",
+      "n": 3
+    },
+    {
+      "a": "cuff",
+      "b": "fuck",
+      "ipaA": "k ə f",
+      "ipaB": "f ə k",
+      "n": 3
+    },
+    {
+      "a": "cull",
+      "b": "luck",
+      "ipaA": "k ə l",
+      "ipaB": "l ə k",
+      "n": 3
+    },
+    {
+      "a": "cum",
+      "b": "muck",
+      "ipaA": "k ə m",
+      "ipaB": "m ə k",
+      "n": 3
+    },
+    {
+      "a": "cup",
+      "b": "puck",
+      "ipaA": "k ə p",
+      "ipaB": "p ə k",
+      "n": 3
+    },
+    {
+      "a": "curd",
+      "b": "dirk",
+      "ipaA": "k ɝ d",
+      "ipaB": "d ɝ k",
+      "n": 3
+    },
+    {
+      "a": "curl",
+      "b": "lurk",
+      "ipaA": "k ɝ l",
+      "ipaB": "l ɝ k",
+      "n": 3
+    },
+    {
+      "a": "curt",
+      "b": "turk",
+      "ipaA": "k ɝ t",
+      "ipaB": "t ɝ k",
+      "n": 3
+    },
+    {
+      "a": "cuss",
+      "b": "suck",
+      "ipaA": "k ə s",
+      "ipaB": "s ə k",
+      "n": 3
+    },
+    {
+      "a": "cut",
+      "b": "tuck",
+      "ipaA": "k ə t",
+      "ipaB": "t ə k",
+      "n": 3
+    },
+    {
+      "a": "dag",
+      "b": "gad",
+      "ipaA": "d æ ɡ",
+      "ipaB": "ɡ æ d",
+      "n": 3
+    },
+    {
+      "a": "dal",
+      "b": "lad",
+      "ipaA": "d æ l",
+      "ipaB": "l æ d",
+      "n": 3
+    },
+    {
+      "a": "dale",
+      "b": "lade",
+      "ipaA": "d eɪ l",
+      "ipaB": "l eɪ d",
+      "n": 3
+    },
+    {
+      "a": "dale",
+      "b": "laid",
+      "ipaA": "d eɪ l",
+      "ipaB": "l eɪ d",
+      "n": 3
+    },
+    {
+      "a": "dam",
+      "b": "mad",
+      "ipaA": "d æ m",
+      "ipaB": "m æ d",
+      "n": 3
+    },
+    {
+      "a": "dame",
+      "b": "made",
+      "ipaA": "d eɪ m",
+      "ipaB": "m eɪ d",
+      "n": 3
+    },
+    {
+      "a": "dame",
+      "b": "maid",
+      "ipaA": "d eɪ m",
+      "ipaB": "m eɪ d",
+      "n": 3
+    },
+    {
+      "a": "damn",
+      "b": "mad",
+      "ipaA": "d æ m",
+      "ipaB": "m æ d",
+      "n": 3
+    },
+    {
+      "a": "dare",
+      "b": "read",
+      "ipaA": "d ɛ ɹ",
+      "ipaB": "ɹ ɛ d",
+      "n": 3
+    },
+    {
+      "a": "dare",
+      "b": "red",
+      "ipaA": "d ɛ ɹ",
+      "ipaB": "ɹ ɛ d",
+      "n": 3
+    },
+    {
+      "a": "dare",
+      "b": "redd",
+      "ipaA": "d ɛ ɹ",
+      "ipaB": "ɹ ɛ d",
+      "n": 3
+    },
+    {
+      "a": "dash",
+      "b": "shad",
+      "ipaA": "d æ ʃ",
+      "ipaB": "ʃ æ d",
+      "n": 3
+    },
+    {
+      "a": "dawn",
+      "b": "gnawed",
+      "ipaA": "d ɔ n",
+      "ipaB": "n ɔ d",
+      "n": 3
+    },
+    {
+      "a": "deaf",
+      "b": "fed",
+      "ipaA": "d ɛ f",
+      "ipaB": "f ɛ d",
+      "n": 3
+    },
+    {
+      "a": "dean",
+      "b": "knead",
+      "ipaA": "d i n",
+      "ipaB": "n i d",
+      "n": 3
+    },
+    {
+      "a": "dean",
+      "b": "kneed",
+      "ipaA": "d i n",
+      "ipaB": "n i d",
+      "n": 3
+    },
+    {
+      "a": "dean",
+      "b": "need",
+      "ipaA": "d i n",
+      "ipaB": "n i d",
+      "n": 3
+    },
+    {
+      "a": "dear",
+      "b": "rid",
+      "ipaA": "d ɪ ɹ",
+      "ipaB": "ɹ ɪ d",
+      "n": 3
+    },
+    {
+      "a": "dearth",
+      "b": "third",
+      "ipaA": "d ɝ θ",
+      "ipaB": "θ ɝ d",
+      "n": 3
+    },
+    {
+      "a": "debt",
+      "b": "ted",
+      "ipaA": "d ɛ t",
+      "ipaB": "t ɛ d",
+      "n": 3
+    },
+    {
+      "a": "deem",
+      "b": "mead",
+      "ipaA": "d i m",
+      "ipaB": "m i d",
+      "n": 3
+    },
+    {
+      "a": "deep",
+      "b": "peed",
+      "ipaA": "d i p",
+      "ipaB": "p i d",
+      "n": 3
+    },
+    {
+      "a": "deer",
+      "b": "rid",
+      "ipaA": "d ɪ ɹ",
+      "ipaB": "ɹ ɪ d",
+      "n": 3
+    },
+    {
+      "a": "deet",
+      "b": "teed",
+      "ipaA": "d i t",
+      "ipaB": "t i d",
+      "n": 3
+    },
+    {
+      "a": "del",
+      "b": "lead",
+      "ipaA": "d ɛ l",
+      "ipaB": "l ɛ d",
+      "n": 3
+    },
+    {
+      "a": "del",
+      "b": "led",
+      "ipaA": "d ɛ l",
+      "ipaB": "l ɛ d",
+      "n": 3
+    },
+    {
+      "a": "dell",
+      "b": "lead",
+      "ipaA": "d ɛ l",
+      "ipaB": "l ɛ d",
+      "n": 3
+    },
+    {
+      "a": "dell",
+      "b": "led",
+      "ipaA": "d ɛ l",
+      "ipaB": "l ɛ d",
+      "n": 3
+    },
+    {
+      "a": "deuce",
+      "b": "sued",
+      "ipaA": "d u s",
+      "ipaB": "s u d",
+      "n": 3
+    },
+    {
+      "a": "dhole",
+      "b": "load",
+      "ipaA": "d oʊ l",
+      "ipaB": "l oʊ d",
+      "n": 3
+    },
+    {
+      "a": "dhole",
+      "b": "lode",
+      "ipaA": "d oʊ l",
+      "ipaB": "l oʊ d",
+      "n": 3
+    },
+    {
+      "a": "dice",
+      "b": "side",
+      "ipaA": "d aɪ s",
+      "ipaB": "s aɪ d",
+      "n": 3
+    },
+    {
+      "a": "dice",
+      "b": "sighed",
+      "ipaA": "d aɪ s",
+      "ipaB": "s aɪ d",
+      "n": 3
+    },
+    {
+      "a": "dick",
+      "b": "kid",
+      "ipaA": "d ɪ k",
+      "ipaB": "k ɪ d",
+      "n": 3
+    },
+    {
+      "a": "dill",
+      "b": "lid",
+      "ipaA": "d ɪ l",
+      "ipaB": "l ɪ d",
+      "n": 3
+    },
+    {
+      "a": "dim",
+      "b": "mid",
+      "ipaA": "d ɪ m",
+      "ipaB": "m ɪ d",
+      "n": 3
+    },
+    {
+      "a": "dire",
+      "b": "ride",
+      "ipaA": "d aɪ ɹ",
+      "ipaB": "ɹ aɪ d",
+      "n": 3
+    },
+    {
+      "a": "dive",
+      "b": "vide",
+      "ipaA": "d aɪ v",
+      "ipaB": "v aɪ d",
+      "n": 3
+    },
+    {
+      "a": "dive",
+      "b": "vied",
+      "ipaA": "d aɪ v",
+      "ipaB": "v aɪ d",
+      "n": 3
+    },
+    {
+      "a": "doer",
+      "b": "rood",
+      "ipaA": "d u ɹ",
+      "ipaB": "ɹ u d",
+      "n": 3
+    },
+    {
+      "a": "doer",
+      "b": "rude",
+      "ipaA": "d u ɹ",
+      "ipaB": "ɹ u d",
+      "n": 3
+    },
+    {
+      "a": "dole",
+      "b": "load",
+      "ipaA": "d oʊ l",
+      "ipaB": "l oʊ d",
+      "n": 3
+    },
+    {
+      "a": "dole",
+      "b": "lode",
+      "ipaA": "d oʊ l",
+      "ipaB": "l oʊ d",
+      "n": 3
+    },
+    {
+      "a": "dome",
+      "b": "mode",
+      "ipaA": "d oʊ m",
+      "ipaB": "m oʊ d",
+      "n": 3
+    },
+    {
+      "a": "dome",
+      "b": "mowed",
+      "ipaA": "d oʊ m",
+      "ipaB": "m oʊ d",
+      "n": 3
+    },
+    {
+      "a": "don",
+      "b": "nod",
+      "ipaA": "d ɑ n",
+      "ipaB": "n ɑ d",
+      "n": 3
+    },
+    {
+      "a": "doom",
+      "b": "mood",
+      "ipaA": "d u m",
+      "ipaB": "m u d",
+      "n": 3
+    },
+    {
+      "a": "dos",
+      "b": "sawed",
+      "ipaA": "d ɔ s",
+      "ipaB": "s ɔ d",
+      "n": 3
+    },
+    {
+      "a": "dose",
+      "b": "sewed",
+      "ipaA": "d oʊ s",
+      "ipaB": "s oʊ d",
+      "n": 3
+    },
+    {
+      "a": "doss",
+      "b": "sawed",
+      "ipaA": "d ɔ s",
+      "ipaB": "s ɔ d",
+      "n": 3
+    },
+    {
+      "a": "dot",
+      "b": "tod",
+      "ipaA": "d ɑ t",
+      "ipaB": "t ɑ d",
+      "n": 3
+    },
+    {
+      "a": "dote",
+      "b": "toad",
+      "ipaA": "d oʊ t",
+      "ipaB": "t oʊ d",
+      "n": 3
+    },
+    {
+      "a": "dote",
+      "b": "toed",
+      "ipaA": "d oʊ t",
+      "ipaB": "t oʊ d",
+      "n": 3
+    },
+    {
+      "a": "dote",
+      "b": "towed",
+      "ipaA": "d oʊ t",
+      "ipaB": "t oʊ d",
+      "n": 3
+    },
+    {
+      "a": "doth",
+      "b": "thawed",
+      "ipaA": "d ɔ θ",
+      "ipaB": "θ ɔ d",
+      "n": 3
+    },
+    {
+      "a": "douche",
+      "b": "shooed",
+      "ipaA": "d u ʃ",
+      "ipaB": "ʃ u d",
+      "n": 3
+    },
+    {
+      "a": "douse",
+      "b": "sowed",
+      "ipaA": "d aʊ s",
+      "ipaB": "s aʊ d",
+      "n": 3
+    },
+    {
+      "a": "dowse",
+      "b": "sowed",
+      "ipaA": "d aʊ s",
+      "ipaB": "s aʊ d",
+      "n": 3
+    },
+    {
+      "a": "draw",
+      "b": "oared",
+      "ipaA": "d ɹ ɔ",
+      "ipaB": "ɔ ɹ d",
+      "n": 3
+    },
+    {
+      "a": "duce",
+      "b": "sued",
+      "ipaA": "d u s",
+      "ipaB": "s u d",
+      "n": 3
+    },
+    {
+      "a": "dumb",
+      "b": "mud",
+      "ipaA": "d ə m",
+      "ipaB": "m ə d",
+      "n": 3
+    },
+    {
+      "a": "dune",
+      "b": "nude",
+      "ipaA": "d u n",
+      "ipaB": "n u d",
+      "n": 3
+    },
+    {
+      "a": "dupe",
+      "b": "poohed",
+      "ipaA": "d u p",
+      "ipaB": "p u d",
+      "n": 3
+    },
+    {
+      "a": "durn",
+      "b": "nerd",
+      "ipaA": "d ɝ n",
+      "ipaB": "n ɝ d",
+      "n": 3
+    },
+    {
+      "a": "earthy",
+      "b": "ether",
+      "ipaA": "ɝ θ i",
+      "ipaB": "i θ ɝ",
+      "n": 3
+    },
+    {
+      "a": "eights",
+      "b": "stay",
+      "ipaA": "eɪ t s",
+      "ipaB": "s t eɪ",
+      "n": 3
+    },
+    {
+      "a": "ergo",
+      "b": "ogre",
+      "ipaA": "ɝ ɡ oʊ",
+      "ipaB": "oʊ ɡ ɝ",
+      "n": 3
+    },
+    {
+      "a": "face",
+      "b": "safe",
+      "ipaA": "f eɪ s",
+      "ipaB": "s eɪ f",
+      "n": 3
+    },
+    {
+      "a": "fag",
+      "b": "gaff",
+      "ipaA": "f æ ɡ",
+      "ipaB": "ɡ æ f",
+      "n": 3
+    },
+    {
+      "a": "fag",
+      "b": "gaffe",
+      "ipaA": "f æ ɡ",
+      "ipaB": "ɡ æ f",
+      "n": 3
+    },
+    {
+      "a": "fair",
+      "b": "ref",
+      "ipaA": "f ɛ ɹ",
+      "ipaB": "ɹ ɛ f",
+      "n": 3
+    },
+    {
+      "a": "fare",
+      "b": "ref",
+      "ipaA": "f ɛ ɹ",
+      "ipaB": "ɹ ɛ f",
+      "n": 3
+    },
+    {
+      "a": "fear",
+      "b": "riff",
+      "ipaA": "f ɪ ɹ",
+      "ipaB": "ɹ ɪ f",
+      "n": 3
+    },
+    {
+      "a": "feel",
+      "b": "leaf",
+      "ipaA": "f i l",
+      "ipaB": "l i f",
+      "n": 3
+    },
+    {
+      "a": "feel",
+      "b": "lief",
+      "ipaA": "f i l",
+      "ipaB": "l i f",
+      "n": 3
+    },
+    {
+      "a": "file",
+      "b": "life",
+      "ipaA": "f aɪ l",
+      "ipaB": "l aɪ f",
+      "n": 3
+    },
+    {
+      "a": "fine",
+      "b": "knife",
+      "ipaA": "f aɪ n",
+      "ipaB": "n aɪ f",
+      "n": 3
+    },
+    {
+      "a": "fit",
+      "b": "tiff",
+      "ipaA": "f ɪ t",
+      "ipaB": "t ɪ f",
+      "n": 3
+    },
+    {
+      "a": "foal",
+      "b": "loaf",
+      "ipaA": "f oʊ l",
+      "ipaB": "l oʊ f",
+      "n": 3
+    },
+    {
+      "a": "gal",
+      "b": "lag",
+      "ipaA": "ɡ æ l",
+      "ipaB": "l æ ɡ",
+      "n": 3
+    },
+    {
+      "a": "gall",
+      "b": "log",
+      "ipaA": "ɡ ɔ l",
+      "ipaB": "l ɔ ɡ",
+      "n": 3
+    },
+    {
+      "a": "gan",
+      "b": "nag",
+      "ipaA": "ɡ æ n",
+      "ipaB": "n æ ɡ",
+      "n": 3
+    },
+    {
+      "a": "gas",
+      "b": "sag",
+      "ipaA": "ɡ æ s",
+      "ipaB": "s æ ɡ",
+      "n": 3
+    },
+    {
+      "a": "gash",
+      "b": "shag",
+      "ipaA": "ɡ æ ʃ",
+      "ipaB": "ʃ æ ɡ",
+      "n": 3
+    },
+    {
+      "a": "gat",
+      "b": "tag",
+      "ipaA": "ɡ æ t",
+      "ipaB": "t æ ɡ",
+      "n": 3
+    },
+    {
+      "a": "gave",
+      "b": "vague",
+      "ipaA": "ɡ eɪ v",
+      "ipaB": "v eɪ ɡ",
+      "n": 3
+    },
+    {
+      "a": "gear",
+      "b": "rig",
+      "ipaA": "ɡ ɪ ɹ",
+      "ipaB": "ɹ ɪ ɡ",
+      "n": 3
+    },
+    {
+      "a": "gees",
+      "b": "siege",
+      "ipaA": "dʒ i s",
+      "ipaB": "s i dʒ",
+      "n": 3
+    },
+    {
+      "a": "gel",
+      "b": "ledge",
+      "ipaA": "dʒ ɛ l",
+      "ipaB": "l ɛ dʒ",
+      "n": 3
+    },
+    {
+      "a": "germ",
+      "b": "merge",
+      "ipaA": "dʒ ɝ m",
+      "ipaB": "m ɝ dʒ",
+      "n": 3
+    },
+    {
+      "a": "give",
+      "b": "vig",
+      "ipaA": "ɡ ɪ v",
+      "ipaB": "v ɪ ɡ",
+      "n": 3
+    },
+    {
+      "a": "gnat",
+      "b": "tan",
+      "ipaA": "n æ t",
+      "ipaB": "t æ n",
+      "n": 3
+    },
+    {
+      "a": "gneiss",
+      "b": "sign",
+      "ipaA": "n aɪ s",
+      "ipaB": "s aɪ n",
+      "n": 3
+    },
+    {
+      "a": "gneiss",
+      "b": "sine",
+      "ipaA": "n aɪ s",
+      "ipaB": "s aɪ n",
+      "n": 3
+    },
+    {
+      "a": "gnome",
+      "b": "moan",
+      "ipaA": "n oʊ m",
+      "ipaB": "m oʊ n",
+      "n": 3
+    },
+    {
+      "a": "gnome",
+      "b": "mon",
+      "ipaA": "n oʊ m",
+      "ipaB": "m oʊ n",
+      "n": 3
+    },
+    {
+      "a": "guess",
+      "b": "segue",
+      "ipaA": "ɡ ɛ s",
+      "ipaB": "s ɛ ɡ",
+      "n": 3
+    },
+    {
+      "a": "gul",
+      "b": "lug",
+      "ipaA": "ɡ ə l",
+      "ipaB": "l ə ɡ",
+      "n": 3
+    },
+    {
+      "a": "gull",
+      "b": "lug",
+      "ipaA": "ɡ ə l",
+      "ipaB": "l ə ɡ",
+      "n": 3
+    },
+    {
+      "a": "gum",
+      "b": "mug",
+      "ipaA": "ɡ ə m",
+      "ipaB": "m ə ɡ",
+      "n": 3
+    },
+    {
+      "a": "gut",
+      "b": "tug",
+      "ipaA": "ɡ ə t",
+      "ipaB": "t ə ɡ",
+      "n": 3
+    },
+    {
+      "a": "gym",
+      "b": "midge",
+      "ipaA": "dʒ ɪ m",
+      "ipaB": "m ɪ dʒ",
+      "n": 3
+    },
+    {
+      "a": "jeer",
+      "b": "ridge",
+      "ipaA": "dʒ ɪ ɹ",
+      "ipaB": "ɹ ɪ dʒ",
+      "n": 3
+    },
+    {
+      "a": "jell",
+      "b": "ledge",
+      "ipaA": "dʒ ɛ l",
+      "ipaB": "l ɛ dʒ",
+      "n": 3
+    },
+    {
+      "a": "jess",
+      "b": "sedge",
+      "ipaA": "dʒ ɛ s",
+      "ipaB": "s ɛ dʒ",
+      "n": 3
+    },
+    {
+      "a": "joule",
+      "b": "luge",
+      "ipaA": "dʒ u l",
+      "ipaB": "l u dʒ",
+      "n": 3
+    },
+    {
+      "a": "jun",
+      "b": "nudge",
+      "ipaA": "dʒ ə n",
+      "ipaB": "n ə dʒ",
+      "n": 3
+    },
+    {
+      "a": "kaas",
+      "b": "sock",
+      "ipaA": "k ɑ s",
+      "ipaB": "s ɑ k",
+      "n": 3
+    },
+    {
+      "a": "kail",
+      "b": "lake",
+      "ipaA": "k eɪ l",
+      "ipaB": "l eɪ k",
+      "n": 3
+    },
+    {
+      "a": "kale",
+      "b": "lake",
+      "ipaA": "k eɪ l",
+      "ipaB": "l eɪ k",
+      "n": 3
+    },
+    {
+      "a": "kat",
+      "b": "tack",
+      "ipaA": "k æ t",
+      "ipaB": "t æ k",
+      "n": 3
+    },
+    {
+      "a": "keel",
+      "b": "leak",
+      "ipaA": "k i l",
+      "ipaB": "l i k",
+      "n": 3
+    },
+    {
+      "a": "keel",
+      "b": "leek",
+      "ipaA": "k i l",
+      "ipaB": "l i k",
+      "n": 3
+    },
+    {
+      "a": "keep",
+      "b": "peak",
+      "ipaA": "k i p",
+      "ipaB": "p i k",
+      "n": 3
+    },
+    {
+      "a": "keep",
+      "b": "peek",
+      "ipaA": "k i p",
+      "ipaB": "p i k",
+      "n": 3
+    },
+    {
+      "a": "keep",
+      "b": "pique",
+      "ipaA": "k i p",
+      "ipaB": "p i k",
+      "n": 3
+    },
+    {
+      "a": "keir",
+      "b": "reek",
+      "ipaA": "k i ɹ",
+      "ipaB": "ɹ i k",
+      "n": 3
+    },
+    {
+      "a": "keir",
+      "b": "wreak",
+      "ipaA": "k i ɹ",
+      "ipaB": "ɹ i k",
+      "n": 3
+    },
+    {
+      "a": "ken",
+      "b": "neck",
+      "ipaA": "k ɛ n",
+      "ipaB": "n ɛ k",
+      "n": 3
+    },
+    {
+      "a": "khan",
+      "b": "knock",
+      "ipaA": "k ɑ n",
+      "ipaB": "n ɑ k",
+      "n": 3
+    },
+    {
+      "a": "khan",
+      "b": "nock",
+      "ipaA": "k ɑ n",
+      "ipaB": "n ɑ k",
+      "n": 3
+    },
+    {
+      "a": "kier",
+      "b": "rick",
+      "ipaA": "k ɪ ɹ",
+      "ipaB": "ɹ ɪ k",
+      "n": 3
+    },
+    {
+      "a": "kill",
+      "b": "lick",
+      "ipaA": "k ɪ l",
+      "ipaB": "l ɪ k",
+      "n": 3
+    },
+    {
+      "a": "kin",
+      "b": "nick",
+      "ipaA": "k ɪ n",
+      "ipaB": "n ɪ k",
+      "n": 3
+    },
+    {
+      "a": "kip",
+      "b": "pic",
+      "ipaA": "k ɪ p",
+      "ipaB": "p ɪ k",
+      "n": 3
+    },
+    {
+      "a": "kip",
+      "b": "pick",
+      "ipaA": "k ɪ p",
+      "ipaB": "p ɪ k",
+      "n": 3
+    },
+    {
+      "a": "kir",
+      "b": "rick",
+      "ipaA": "k ɪ ɹ",
+      "ipaB": "ɹ ɪ k",
+      "n": 3
+    },
+    {
+      "a": "kirsch",
+      "b": "shirk",
+      "ipaA": "k ɝ ʃ",
+      "ipaB": "ʃ ɝ k",
+      "n": 3
+    },
+    {
+      "a": "kiss",
+      "b": "sic",
+      "ipaA": "k ɪ s",
+      "ipaB": "s ɪ k",
+      "n": 3
+    },
+    {
+      "a": "kiss",
+      "b": "sick",
+      "ipaA": "k ɪ s",
+      "ipaB": "s ɪ k",
+      "n": 3
+    },
+    {
+      "a": "kit",
+      "b": "tic",
+      "ipaA": "k ɪ t",
+      "ipaB": "t ɪ k",
+      "n": 3
+    },
+    {
+      "a": "kit",
+      "b": "tick",
+      "ipaA": "k ɪ t",
+      "ipaB": "t ɪ k",
+      "n": 3
+    },
+    {
+      "a": "kite",
+      "b": "tike",
+      "ipaA": "k aɪ t",
+      "ipaB": "t aɪ k",
+      "n": 3
+    },
+    {
+      "a": "kite",
+      "b": "tyke",
+      "ipaA": "k aɪ t",
+      "ipaB": "t aɪ k",
+      "n": 3
+    },
+    {
+      "a": "knave",
+      "b": "vain",
+      "ipaA": "n eɪ v",
+      "ipaB": "v eɪ n",
+      "n": 3
+    },
+    {
+      "a": "knave",
+      "b": "vane",
+      "ipaA": "n eɪ v",
+      "ipaB": "v eɪ n",
+      "n": 3
+    },
+    {
+      "a": "knave",
+      "b": "vein",
+      "ipaA": "n eɪ v",
+      "ipaB": "v eɪ n",
+      "n": 3
+    },
+    {
+      "a": "kneel",
+      "b": "lean",
+      "ipaA": "n i l",
+      "ipaB": "l i n",
+      "n": 3
+    },
+    {
+      "a": "kneel",
+      "b": "lien",
+      "ipaA": "n i l",
+      "ipaB": "l i n",
+      "n": 3
+    },
+    {
+      "a": "knight",
+      "b": "tine",
+      "ipaA": "n aɪ t",
+      "ipaB": "t aɪ n",
+      "n": 3
+    },
+    {
+      "a": "knight",
+      "b": "tyne",
+      "ipaA": "n aɪ t",
+      "ipaB": "t aɪ n",
+      "n": 3
+    },
+    {
+      "a": "knit",
+      "b": "tin",
+      "ipaA": "n ɪ t",
+      "ipaB": "t ɪ n",
+      "n": 3
+    },
+    {
+      "a": "knoll",
+      "b": "loan",
+      "ipaA": "n oʊ l",
+      "ipaB": "l oʊ n",
+      "n": 3
+    },
+    {
+      "a": "knoll",
+      "b": "lone",
+      "ipaA": "n oʊ l",
+      "ipaB": "l oʊ n",
+      "n": 3
+    },
+    {
+      "a": "knows",
+      "b": "zone",
+      "ipaA": "n oʊ z",
+      "ipaB": "z oʊ n",
+      "n": 3
+    },
+    {
+      "a": "kos",
+      "b": "sock",
+      "ipaA": "k ɑ s",
+      "ipaB": "s ɑ k",
+      "n": 3
+    },
+    {
+      "a": "kyte",
+      "b": "tike",
+      "ipaA": "k aɪ t",
+      "ipaB": "t aɪ k",
+      "n": 3
+    },
+    {
+      "a": "kyte",
+      "b": "tyke",
+      "ipaA": "k aɪ t",
+      "ipaB": "t aɪ k",
+      "n": 3
+    },
+    {
+      "a": "lace",
+      "b": "sail",
+      "ipaA": "l eɪ s",
+      "ipaB": "s eɪ l",
+      "n": 3
+    },
+    {
+      "a": "lace",
+      "b": "sale",
+      "ipaA": "l eɪ s",
+      "ipaB": "s eɪ l",
+      "n": 3
+    },
+    {
+      "a": "lain",
+      "b": "nail",
+      "ipaA": "l eɪ n",
+      "ipaB": "n eɪ l",
+      "n": 3
+    },
+    {
+      "a": "lame",
+      "b": "mail",
+      "ipaA": "l eɪ m",
+      "ipaB": "m eɪ l",
+      "n": 3
+    },
+    {
+      "a": "lame",
+      "b": "maile",
+      "ipaA": "l eɪ m",
+      "ipaB": "m eɪ l",
+      "n": 3
+    },
+    {
+      "a": "lame",
+      "b": "male",
+      "ipaA": "l eɪ m",
+      "ipaB": "m eɪ l",
+      "n": 3
+    },
+    {
+      "a": "lane",
+      "b": "nail",
+      "ipaA": "l eɪ n",
+      "ipaB": "n eɪ l",
+      "n": 3
+    },
+    {
+      "a": "lap",
+      "b": "pal",
+      "ipaA": "l æ p",
+      "ipaB": "p æ l",
+      "n": 3
+    },
+    {
+      "a": "las",
+      "b": "sol",
+      "ipaA": "l ɑ s",
+      "ipaB": "s ɑ l",
+      "n": 3
+    },
+    {
+      "a": "lash",
+      "b": "shall",
+      "ipaA": "l æ ʃ",
+      "ipaB": "ʃ æ l",
+      "n": 3
+    },
+    {
+      "a": "lass",
+      "b": "sal",
+      "ipaA": "l æ s",
+      "ipaB": "s æ l",
+      "n": 3
+    },
+    {
+      "a": "late",
+      "b": "tail",
+      "ipaA": "l eɪ t",
+      "ipaB": "t eɪ l",
+      "n": 3
+    },
+    {
+      "a": "late",
+      "b": "tale",
+      "ipaA": "l eɪ t",
+      "ipaB": "t eɪ l",
+      "n": 3
+    },
+    {
+      "a": "lave",
+      "b": "vail",
+      "ipaA": "l eɪ v",
+      "ipaB": "v eɪ l",
+      "n": 3
+    },
+    {
+      "a": "lave",
+      "b": "vale",
+      "ipaA": "l eɪ v",
+      "ipaB": "v eɪ l",
+      "n": 3
+    },
+    {
+      "a": "lave",
+      "b": "veil",
+      "ipaA": "l eɪ v",
+      "ipaB": "v eɪ l",
+      "n": 3
+    },
+    {
+      "a": "leap",
+      "b": "peal",
+      "ipaA": "l i p",
+      "ipaB": "p i l",
+      "n": 3
+    },
+    {
+      "a": "leap",
+      "b": "peel",
+      "ipaA": "l i p",
+      "ipaB": "p i l",
+      "n": 3
+    },
+    {
+      "a": "lear",
+      "b": "rill",
+      "ipaA": "l ɪ ɹ",
+      "ipaB": "ɹ ɪ l",
+      "n": 3
+    },
+    {
+      "a": "leas",
+      "b": "zeal",
+      "ipaA": "l i z",
+      "ipaB": "z i l",
+      "n": 3
+    },
+    {
+      "a": "lease",
+      "b": "seal",
+      "ipaA": "l i s",
+      "ipaB": "s i l",
+      "n": 3
+    },
+    {
+      "a": "lease",
+      "b": "seel",
+      "ipaA": "l i s",
+      "ipaB": "s i l",
+      "n": 3
+    },
+    {
+      "a": "leash",
+      "b": "shiel",
+      "ipaA": "l i ʃ",
+      "ipaB": "ʃ i l",
+      "n": 3
+    },
+    {
+      "a": "leave",
+      "b": "veal",
+      "ipaA": "l i v",
+      "ipaB": "v i l",
+      "n": 3
+    },
+    {
+      "a": "lees",
+      "b": "zeal",
+      "ipaA": "l i z",
+      "ipaB": "z i l",
+      "n": 3
+    },
+    {
+      "a": "leet",
+      "b": "teal",
+      "ipaA": "l i t",
+      "ipaB": "t i l",
+      "n": 3
+    },
+    {
+      "a": "leet",
+      "b": "teel",
+      "ipaA": "l i t",
+      "ipaB": "t i l",
+      "n": 3
+    },
+    {
+      "a": "less",
+      "b": "sel",
+      "ipaA": "l ɛ s",
+      "ipaB": "s ɛ l",
+      "n": 3
+    },
+    {
+      "a": "less",
+      "b": "sell",
+      "ipaA": "l ɛ s",
+      "ipaB": "s ɛ l",
+      "n": 3
+    },
+    {
+      "a": "less",
+      "b": "selle",
+      "ipaA": "l ɛ s",
+      "ipaB": "s ɛ l",
+      "n": 3
+    },
+    {
+      "a": "let",
+      "b": "tel",
+      "ipaA": "l ɛ t",
+      "ipaB": "t ɛ l",
+      "n": 3
+    },
+    {
+      "a": "let",
+      "b": "tell",
+      "ipaA": "l ɛ t",
+      "ipaB": "t ɛ l",
+      "n": 3
+    },
+    {
+      "a": "life",
+      "b": "phyle",
+      "ipaA": "l aɪ f",
+      "ipaB": "f aɪ l",
+      "n": 3
+    },
+    {
+      "a": "light",
+      "b": "tile",
+      "ipaA": "l aɪ t",
+      "ipaB": "t aɪ l",
+      "n": 3
+    },
+    {
+      "a": "limb",
+      "b": "mil",
+      "ipaA": "l ɪ m",
+      "ipaB": "m ɪ l",
+      "n": 3
+    },
+    {
+      "a": "limb",
+      "b": "mill",
+      "ipaA": "l ɪ m",
+      "ipaB": "m ɪ l",
+      "n": 3
+    },
+    {
+      "a": "limb",
+      "b": "mille",
+      "ipaA": "l ɪ m",
+      "ipaB": "m ɪ l",
+      "n": 3
+    },
+    {
+      "a": "lime",
+      "b": "mile",
+      "ipaA": "l aɪ m",
+      "ipaB": "m aɪ l",
+      "n": 3
+    },
+    {
+      "a": "lin",
+      "b": "nil",
+      "ipaA": "l ɪ n",
+      "ipaB": "n ɪ l",
+      "n": 3
+    },
+    {
+      "a": "lin",
+      "b": "nill",
+      "ipaA": "l ɪ n",
+      "ipaB": "n ɪ l",
+      "n": 3
+    },
+    {
+      "a": "linn",
+      "b": "nil",
+      "ipaA": "l ɪ n",
+      "ipaB": "n ɪ l",
+      "n": 3
+    },
+    {
+      "a": "linn",
+      "b": "nill",
+      "ipaA": "l ɪ n",
+      "ipaB": "n ɪ l",
+      "n": 3
+    },
+    {
+      "a": "lip",
+      "b": "pill",
+      "ipaA": "l ɪ p",
+      "ipaB": "p ɪ l",
+      "n": 3
+    },
+    {
+      "a": "lis",
+      "b": "sill",
+      "ipaA": "l ɪ s",
+      "ipaB": "s ɪ l",
+      "n": 3
+    },
+    {
+      "a": "lit",
+      "b": "til",
+      "ipaA": "l ɪ t",
+      "ipaB": "t ɪ l",
+      "n": 3
+    },
+    {
+      "a": "lit",
+      "b": "till",
+      "ipaA": "l ɪ t",
+      "ipaB": "t ɪ l",
+      "n": 3
+    },
+    {
+      "a": "lite",
+      "b": "tile",
+      "ipaA": "l aɪ t",
+      "ipaB": "t aɪ l",
+      "n": 3
+    },
+    {
+      "a": "live",
+      "b": "vile",
+      "ipaA": "l aɪ v",
+      "ipaB": "v aɪ l",
+      "n": 3
+    },
+    {
+      "a": "loam",
+      "b": "mole",
+      "ipaA": "l oʊ m",
+      "ipaB": "m oʊ l",
+      "n": 3
+    },
+    {
+      "a": "loath",
+      "b": "thole",
+      "ipaA": "l oʊ θ",
+      "ipaB": "θ oʊ l",
+      "n": 3
+    },
+    {
+      "a": "loop",
+      "b": "pool",
+      "ipaA": "l u p",
+      "ipaB": "p u l",
+      "n": 3
+    },
+    {
+      "a": "loot",
+      "b": "tool",
+      "ipaA": "l u t",
+      "ipaB": "t u l",
+      "n": 3
+    },
+    {
+      "a": "lop",
+      "b": "pall",
+      "ipaA": "l ɑ p",
+      "ipaB": "p ɑ l",
+      "n": 3
+    },
+    {
+      "a": "lope",
+      "b": "pole",
+      "ipaA": "l oʊ p",
+      "ipaB": "p oʊ l",
+      "n": 3
+    },
+    {
+      "a": "lope",
+      "b": "poll",
+      "ipaA": "l oʊ p",
+      "ipaB": "p oʊ l",
+      "n": 3
+    },
+    {
+      "a": "loss",
+      "b": "sall",
+      "ipaA": "l ɔ s",
+      "ipaB": "s ɔ l",
+      "n": 3
+    },
+    {
+      "a": "loss",
+      "b": "saul",
+      "ipaA": "l ɔ s",
+      "ipaB": "s ɔ l",
+      "n": 3
+    },
+    {
+      "a": "loup",
+      "b": "pool",
+      "ipaA": "l u p",
+      "ipaB": "p u l",
+      "n": 3
+    },
+    {
+      "a": "loupe",
+      "b": "pool",
+      "ipaA": "l u p",
+      "ipaB": "p u l",
+      "n": 3
+    },
+    {
+      "a": "lum",
+      "b": "mull",
+      "ipaA": "l ə m",
+      "ipaB": "m ə l",
+      "n": 3
+    },
+    {
+      "a": "lute",
+      "b": "tool",
+      "ipaA": "l u t",
+      "ipaB": "t u l",
+      "n": 3
+    },
+    {
+      "a": "lyre",
+      "b": "rile",
+      "ipaA": "l aɪ ɹ",
+      "ipaB": "ɹ aɪ l",
+      "n": 3
+    },
+    {
+      "a": "mace",
+      "b": "same",
+      "ipaA": "m eɪ s",
+      "ipaB": "s eɪ m",
+      "n": 3
+    },
+    {
+      "a": "main",
+      "b": "name",
+      "ipaA": "m eɪ n",
+      "ipaB": "n eɪ m",
+      "n": 3
+    },
+    {
+      "a": "mair",
+      "b": "rem",
+      "ipaA": "m ɛ ɹ",
+      "ipaB": "ɹ ɛ m",
+      "n": 3
+    },
+    {
+      "a": "man",
+      "b": "nam",
+      "ipaA": "m æ n",
+      "ipaB": "n æ m",
+      "n": 3
+    },
+    {
+      "a": "mane",
+      "b": "name",
+      "ipaA": "m eɪ n",
+      "ipaB": "n eɪ m",
+      "n": 3
+    },
+    {
+      "a": "map",
+      "b": "pam",
+      "ipaA": "m æ p",
+      "ipaB": "p æ m",
+      "n": 3
+    },
+    {
+      "a": "mar",
+      "b": "rom",
+      "ipaA": "m ɑ ɹ",
+      "ipaB": "ɹ ɑ m",
+      "n": 3
+    },
+    {
+      "a": "mare",
+      "b": "rem",
+      "ipaA": "m ɛ ɹ",
+      "ipaB": "ɹ ɛ m",
+      "n": 3
+    },
+    {
+      "a": "mash",
+      "b": "sham",
+      "ipaA": "m æ ʃ",
+      "ipaB": "ʃ æ m",
+      "n": 3
+    },
+    {
+      "a": "mat",
+      "b": "tam",
+      "ipaA": "m æ t",
+      "ipaB": "t æ m",
+      "n": 3
+    },
+    {
+      "a": "mate",
+      "b": "tame",
+      "ipaA": "m eɪ t",
+      "ipaB": "t eɪ m",
+      "n": 3
+    },
+    {
+      "a": "matt",
+      "b": "tam",
+      "ipaA": "m æ t",
+      "ipaB": "t æ m",
+      "n": 3
+    },
+    {
+      "a": "matte",
+      "b": "tam",
+      "ipaA": "m æ t",
+      "ipaB": "t æ m",
+      "n": 3
+    },
+    {
+      "a": "meat",
+      "b": "team",
+      "ipaA": "m i t",
+      "ipaB": "t i m",
+      "n": 3
+    },
+    {
+      "a": "meat",
+      "b": "teem",
+      "ipaA": "m i t",
+      "ipaB": "t i m",
+      "n": 3
+    },
+    {
+      "a": "meet",
+      "b": "team",
+      "ipaA": "m i t",
+      "ipaB": "t i m",
+      "n": 3
+    },
+    {
+      "a": "meet",
+      "b": "teem",
+      "ipaA": "m i t",
+      "ipaB": "t i m",
+      "n": 3
+    },
+    {
+      "a": "mere",
+      "b": "rim",
+      "ipaA": "m ɪ ɹ",
+      "ipaB": "ɹ ɪ m",
+      "n": 3
+    },
+    {
+      "a": "mete",
+      "b": "team",
+      "ipaA": "m i t",
+      "ipaB": "t i m",
+      "n": 3
+    },
+    {
+      "a": "mete",
+      "b": "teem",
+      "ipaA": "m i t",
+      "ipaB": "t i m",
+      "n": 3
+    },
+    {
+      "a": "might",
+      "b": "time",
+      "ipaA": "m aɪ t",
+      "ipaB": "t aɪ m",
+      "n": 3
+    },
+    {
+      "a": "mir",
+      "b": "rim",
+      "ipaA": "m ɪ ɹ",
+      "ipaB": "ɹ ɪ m",
+      "n": 3
+    },
+    {
+      "a": "mire",
+      "b": "rhyme",
+      "ipaA": "m aɪ ɹ",
+      "ipaB": "ɹ aɪ m",
+      "n": 3
+    },
+    {
+      "a": "mirth",
+      "b": "therm",
+      "ipaA": "m ɝ θ",
+      "ipaB": "θ ɝ m",
+      "n": 3
+    },
+    {
+      "a": "mis",
+      "b": "sim",
+      "ipaA": "m ɪ s",
+      "ipaB": "s ɪ m",
+      "n": 3
+    },
+    {
+      "a": "miss",
+      "b": "sim",
+      "ipaA": "m ɪ s",
+      "ipaB": "s ɪ m",
+      "n": 3
+    },
+    {
+      "a": "mite",
+      "b": "time",
+      "ipaA": "m aɪ t",
+      "ipaB": "t aɪ m",
+      "n": 3
+    },
+    {
+      "a": "moan",
+      "b": "nome",
+      "ipaA": "m oʊ n",
+      "ipaB": "n oʊ m",
+      "n": 3
+    },
+    {
+      "a": "moat",
+      "b": "tome",
+      "ipaA": "m oʊ t",
+      "ipaB": "t oʊ m",
+      "n": 3
+    },
+    {
+      "a": "mon",
+      "b": "nome",
+      "ipaA": "m oʊ n",
+      "ipaB": "n oʊ m",
+      "n": 3
+    },
+    {
+      "a": "moos",
+      "b": "zoom",
+      "ipaA": "m u z",
+      "ipaB": "z u m",
+      "n": 3
+    },
+    {
+      "a": "moot",
+      "b": "tomb",
+      "ipaA": "m u t",
+      "ipaB": "t u m",
+      "n": 3
+    },
+    {
+      "a": "mop",
+      "b": "palm",
+      "ipaA": "m ɑ p",
+      "ipaB": "p ɑ m",
+      "n": 3
+    },
+    {
+      "a": "mote",
+      "b": "tome",
+      "ipaA": "m oʊ t",
+      "ipaB": "t oʊ m",
+      "n": 3
+    },
+    {
+      "a": "mott",
+      "b": "tom",
+      "ipaA": "m ɑ t",
+      "ipaB": "t ɑ m",
+      "n": 3
+    },
+    {
+      "a": "motte",
+      "b": "tom",
+      "ipaA": "m ɑ t",
+      "ipaB": "t ɑ m",
+      "n": 3
+    },
+    {
+      "a": "mun",
+      "b": "numb",
+      "ipaA": "m ə n",
+      "ipaB": "n ə m",
+      "n": 3
+    },
+    {
+      "a": "nap",
+      "b": "pan",
+      "ipaA": "n æ p",
+      "ipaB": "p æ n",
+      "n": 3
+    },
+    {
+      "a": "nave",
+      "b": "vain",
+      "ipaA": "n eɪ v",
+      "ipaB": "v eɪ n",
+      "n": 3
+    },
+    {
+      "a": "nave",
+      "b": "vane",
+      "ipaA": "n eɪ v",
+      "ipaB": "v eɪ n",
+      "n": 3
+    },
+    {
+      "a": "nave",
+      "b": "vein",
+      "ipaA": "n eɪ v",
+      "ipaB": "v eɪ n",
+      "n": 3
+    },
+    {
+      "a": "neat",
+      "b": "teen",
+      "ipaA": "n i t",
+      "ipaB": "t i n",
+      "n": 3
+    },
+    {
+      "a": "ness",
+      "b": "sen",
+      "ipaA": "n ɛ s",
+      "ipaB": "s ɛ n",
+      "n": 3
+    },
+    {
+      "a": "net",
+      "b": "ten",
+      "ipaA": "n ɛ t",
+      "ipaB": "t ɛ n",
+      "n": 3
+    },
+    {
+      "a": "nett",
+      "b": "ten",
+      "ipaA": "n ɛ t",
+      "ipaB": "t ɛ n",
+      "n": 3
+    },
+    {
+      "a": "newt",
+      "b": "toon",
+      "ipaA": "n u t",
+      "ipaB": "t u n",
+      "n": 3
+    },
+    {
+      "a": "newt",
+      "b": "tune",
+      "ipaA": "n u t",
+      "ipaB": "t u n",
+      "n": 3
+    },
+    {
+      "a": "nice",
+      "b": "sign",
+      "ipaA": "n aɪ s",
+      "ipaB": "s aɪ n",
+      "n": 3
+    },
+    {
+      "a": "nice",
+      "b": "sine",
+      "ipaA": "n aɪ s",
+      "ipaB": "s aɪ n",
+      "n": 3
+    },
+    {
+      "a": "niece",
+      "b": "scene",
+      "ipaA": "n i s",
+      "ipaB": "s i n",
+      "n": 3
+    },
+    {
+      "a": "niece",
+      "b": "seen",
+      "ipaA": "n i s",
+      "ipaB": "s i n",
+      "n": 3
+    },
+    {
+      "a": "night",
+      "b": "tine",
+      "ipaA": "n aɪ t",
+      "ipaB": "t aɪ n",
+      "n": 3
+    },
+    {
+      "a": "night",
+      "b": "tyne",
+      "ipaA": "n aɪ t",
+      "ipaB": "t aɪ n",
+      "n": 3
+    },
+    {
+      "a": "nip",
+      "b": "pin",
+      "ipaA": "n ɪ p",
+      "ipaB": "p ɪ n",
+      "n": 3
+    },
+    {
+      "a": "nit",
+      "b": "tin",
+      "ipaA": "n ɪ t",
+      "ipaB": "t ɪ n",
+      "n": 3
+    },
+    {
+      "a": "nite",
+      "b": "tine",
+      "ipaA": "n aɪ t",
+      "ipaB": "t aɪ n",
+      "n": 3
+    },
+    {
+      "a": "nite",
+      "b": "tyne",
+      "ipaA": "n aɪ t",
+      "ipaB": "t aɪ n",
+      "n": 3
+    },
+    {
+      "a": "noes",
+      "b": "zone",
+      "ipaA": "n oʊ z",
+      "ipaB": "z oʊ n",
+      "n": 3
+    },
+    {
+      "a": "noose",
+      "b": "soon",
+      "ipaA": "n u s",
+      "ipaB": "s u n",
+      "n": 3
+    },
+    {
+      "a": "nose",
+      "b": "zone",
+      "ipaA": "n oʊ z",
+      "ipaB": "z oʊ n",
+      "n": 3
+    },
+    {
+      "a": "note",
+      "b": "tone",
+      "ipaA": "n oʊ t",
+      "ipaB": "t oʊ n",
+      "n": 3
+    },
+    {
+      "a": "nous",
+      "b": "soon",
+      "ipaA": "n u s",
+      "ipaB": "s u n",
+      "n": 3
+    },
+    {
+      "a": "nut",
+      "b": "ton",
+      "ipaA": "n ə t",
+      "ipaB": "t ə n",
+      "n": 3
+    },
+    {
+      "a": "nut",
+      "b": "tonne",
+      "ipaA": "n ə t",
+      "ipaB": "t ə n",
+      "n": 3
+    },
+    {
+      "a": "oats",
+      "b": "stow",
+      "ipaA": "oʊ t s",
+      "ipaB": "s t oʊ",
+      "n": 3
+    },
+    {
+      "a": "ops",
+      "b": "spa",
+      "ipaA": "ɑ p s",
+      "ipaB": "s p ɑ",
+      "n": 3
+    },
+    {
+      "a": "pair",
+      "b": "rep",
+      "ipaA": "p ɛ ɹ",
+      "ipaB": "ɹ ɛ p",
+      "n": 3
+    },
+    {
+      "a": "pair",
+      "b": "repp",
+      "ipaA": "p ɛ ɹ",
+      "ipaB": "ɹ ɛ p",
+      "n": 3
+    },
+    {
+      "a": "pare",
+      "b": "rep",
+      "ipaA": "p ɛ ɹ",
+      "ipaB": "ɹ ɛ p",
+      "n": 3
+    },
+    {
+      "a": "pare",
+      "b": "repp",
+      "ipaA": "p ɛ ɹ",
+      "ipaB": "ɹ ɛ p",
+      "n": 3
+    },
+    {
+      "a": "pass",
+      "b": "sap",
+      "ipaA": "p æ s",
+      "ipaB": "s æ p",
+      "n": 3
+    },
+    {
+      "a": "pat",
+      "b": "tap",
+      "ipaA": "p æ t",
+      "ipaB": "t æ p",
+      "n": 3
+    },
+    {
+      "a": "pate",
+      "b": "tape",
+      "ipaA": "p eɪ t",
+      "ipaB": "t eɪ p",
+      "n": 3
+    },
+    {
+      "a": "peace",
+      "b": "seep",
+      "ipaA": "p i s",
+      "ipaB": "s i p",
+      "n": 3
+    },
+    {
+      "a": "pear",
+      "b": "rep",
+      "ipaA": "p ɛ ɹ",
+      "ipaB": "ɹ ɛ p",
+      "n": 3
+    },
+    {
+      "a": "pear",
+      "b": "repp",
+      "ipaA": "p ɛ ɹ",
+      "ipaB": "ɹ ɛ p",
+      "n": 3
+    },
+    {
+      "a": "peer",
+      "b": "rip",
+      "ipaA": "p ɪ ɹ",
+      "ipaB": "ɹ ɪ p",
+      "n": 3
+    },
+    {
+      "a": "peeve",
+      "b": "veep",
+      "ipaA": "p i v",
+      "ipaB": "v i p",
+      "n": 3
+    },
+    {
+      "a": "phut",
+      "b": "tough",
+      "ipaA": "f ə t",
+      "ipaB": "t ə f",
+      "n": 3
+    },
+    {
+      "a": "phut",
+      "b": "tuff",
+      "ipaA": "f ə t",
+      "ipaB": "t ə f",
+      "n": 3
+    },
+    {
+      "a": "piece",
+      "b": "seep",
+      "ipaA": "p i s",
+      "ipaB": "s i p",
+      "n": 3
+    },
+    {
+      "a": "pier",
+      "b": "rip",
+      "ipaA": "p ɪ ɹ",
+      "ipaB": "ɹ ɪ p",
+      "n": 3
+    },
+    {
+      "a": "piss",
+      "b": "sip",
+      "ipaA": "p ɪ s",
+      "ipaB": "s ɪ p",
+      "n": 3
+    },
+    {
+      "a": "pit",
+      "b": "tip",
+      "ipaA": "p ɪ t",
+      "ipaB": "t ɪ p",
+      "n": 3
+    },
+    {
+      "a": "posh",
+      "b": "shop",
+      "ipaA": "p ɑ ʃ",
+      "ipaB": "ʃ ɑ p",
+      "n": 3
+    },
+    {
+      "a": "posh",
+      "b": "shoppe",
+      "ipaA": "p ɑ ʃ",
+      "ipaB": "ʃ ɑ p",
+      "n": 3
+    },
+    {
+      "a": "pot",
+      "b": "top",
+      "ipaA": "p ɑ t",
+      "ipaB": "t ɑ p",
+      "n": 3
+    },
+    {
+      "a": "pus",
+      "b": "sup",
+      "ipaA": "p ə s",
+      "ipaB": "s ə p",
+      "n": 3
+    },
+    {
+      "a": "quiche",
+      "b": "sheik",
+      "ipaA": "k i ʃ",
+      "ipaB": "ʃ i k",
+      "n": 3
+    },
+    {
+      "a": "quiche",
+      "b": "sheikh",
+      "ipaA": "k i ʃ",
+      "ipaB": "ʃ i k",
+      "n": 3
+    },
+    {
+      "a": "resh",
+      "b": "share",
+      "ipaA": "ɹ ɛ ʃ",
+      "ipaB": "ʃ ɛ ɹ",
+      "n": 3
+    },
+    {
+      "a": "ret",
+      "b": "tear",
+      "ipaA": "ɹ ɛ t",
+      "ipaB": "t ɛ ɹ",
+      "n": 3
+    },
+    {
+      "a": "right",
+      "b": "tyre",
+      "ipaA": "ɹ aɪ t",
+      "ipaB": "t aɪ ɹ",
+      "n": 3
+    },
+    {
+      "a": "rite",
+      "b": "tyre",
+      "ipaA": "ɹ aɪ t",
+      "ipaB": "t aɪ ɹ",
+      "n": 3
+    },
+    {
+      "a": "rot",
+      "b": "tar",
+      "ipaA": "ɹ ɑ t",
+      "ipaB": "t ɑ ɹ",
+      "n": 3
+    },
+    {
+      "a": "sat",
+      "b": "tass",
+      "ipaA": "s æ t",
+      "ipaB": "t æ s",
+      "n": 3
+    },
+    {
+      "a": "save",
+      "b": "vase",
+      "ipaA": "s eɪ v",
+      "ipaB": "v eɪ s",
+      "n": 3
+    },
+    {
+      "a": "serve",
+      "b": "verse",
+      "ipaA": "s ɝ v",
+      "ipaB": "v ɝ s",
+      "n": 3
+    },
+    {
+      "a": "shoot",
+      "b": "touche",
+      "ipaA": "ʃ u t",
+      "ipaB": "t u ʃ",
+      "n": 3
+    },
+    {
+      "a": "shot",
+      "b": "tosh",
+      "ipaA": "ʃ ɑ t",
+      "ipaB": "t ɑ ʃ",
+      "n": 3
+    },
+    {
+      "a": "shott",
+      "b": "tosh",
+      "ipaA": "ʃ ɑ t",
+      "ipaB": "t ɑ ʃ",
+      "n": 3
+    },
+    {
+      "a": "shute",
+      "b": "touche",
+      "ipaA": "ʃ u t",
+      "ipaB": "t u ʃ",
+      "n": 3
+    },
+    {
+      "a": "sieve",
+      "b": "vis",
+      "ipaA": "s ɪ v",
+      "ipaB": "v ɪ s",
+      "n": 3
+    },
+    {
+      "a": "sot",
+      "b": "toss",
+      "ipaA": "s ɔ t",
+      "ipaB": "t ɔ s",
+      "n": 3
+    },
+    {
+      "a": "sought",
+      "b": "toss",
+      "ipaA": "s ɔ t",
+      "ipaB": "t ɔ s",
+      "n": 3
+    },
+    {
+      "a": "tor",
+      "b": "wrought",
+      "ipaA": "t ɔ ɹ",
+      "ipaB": "ɹ ɔ t",
+      "n": 3
+    },
+    {
+      "a": "tore",
+      "b": "wrought",
+      "ipaA": "t ɔ ɹ",
+      "ipaB": "ɹ ɔ t",
+      "n": 3
+    },
+    {
+      "a": "torr",
+      "b": "wrought",
+      "ipaA": "t ɔ ɹ",
+      "ipaB": "ɹ ɔ t",
+      "n": 3
+    },
+    {
+      "a": "tyre",
+      "b": "wright",
+      "ipaA": "t aɪ ɹ",
+      "ipaB": "ɹ aɪ t",
+      "n": 3
+    },
+    {
+      "a": "tyre",
+      "b": "write",
+      "ipaA": "t aɪ ɹ",
+      "ipaB": "ɹ aɪ t",
+      "n": 3
+    },
+    {
+      "a": "ace",
+      "b": "say",
+      "ipaA": "eɪ s",
+      "ipaB": "s eɪ",
+      "n": 2
+    },
+    {
+      "a": "ache",
+      "b": "cay",
+      "ipaA": "eɪ k",
+      "ipaB": "k eɪ",
+      "n": 2
+    },
+    {
+      "a": "ache",
+      "b": "kay",
+      "ipaA": "eɪ k",
+      "ipaB": "k eɪ",
+      "n": 2
+    },
+    {
+      "a": "age",
+      "b": "jay",
+      "ipaA": "eɪ dʒ",
+      "ipaB": "dʒ eɪ",
+      "n": 2
+    },
+    {
+      "a": "aid",
+      "b": "day",
+      "ipaA": "eɪ d",
+      "ipaB": "d eɪ",
+      "n": 2
+    },
+    {
+      "a": "aid",
+      "b": "dey",
+      "ipaA": "eɪ d",
+      "ipaB": "d eɪ",
+      "n": 2
+    },
+    {
+      "a": "aide",
+      "b": "day",
+      "ipaA": "eɪ d",
+      "ipaB": "d eɪ",
+      "n": 2
+    },
+    {
+      "a": "aide",
+      "b": "dey",
+      "ipaA": "eɪ d",
+      "ipaB": "d eɪ",
+      "n": 2
+    },
+    {
+      "a": "ail",
+      "b": "lay",
+      "ipaA": "eɪ l",
+      "ipaB": "l eɪ",
+      "n": 2
+    },
+    {
+      "a": "ail",
+      "b": "lei",
+      "ipaA": "eɪ l",
+      "ipaB": "l eɪ",
+      "n": 2
+    },
+    {
+      "a": "ail",
+      "b": "ley",
+      "ipaA": "eɪ l",
+      "ipaB": "l eɪ",
+      "n": 2
+    },
+    {
+      "a": "aim",
+      "b": "mae",
+      "ipaA": "eɪ m",
+      "ipaB": "m eɪ",
+      "n": 2
+    },
+    {
+      "a": "aim",
+      "b": "may",
+      "ipaA": "eɪ m",
+      "ipaB": "m eɪ",
+      "n": 2
+    },
+    {
+      "a": "aisle",
+      "b": "lie",
+      "ipaA": "aɪ l",
+      "ipaB": "l aɪ",
+      "n": 2
+    },
+    {
+      "a": "aisle",
+      "b": "lye",
+      "ipaA": "aɪ l",
+      "ipaB": "l aɪ",
+      "n": 2
+    },
+    {
+      "a": "ale",
+      "b": "lay",
+      "ipaA": "eɪ l",
+      "ipaB": "l eɪ",
+      "n": 2
+    },
+    {
+      "a": "ale",
+      "b": "lei",
+      "ipaA": "eɪ l",
+      "ipaB": "l eɪ",
+      "n": 2
+    },
+    {
+      "a": "ale",
+      "b": "ley",
+      "ipaA": "eɪ l",
+      "ipaB": "l eɪ",
+      "n": 2
+    },
+    {
+      "a": "all",
+      "b": "law",
+      "ipaA": "ɔ l",
+      "ipaB": "l ɔ",
+      "n": 2
+    },
+    {
+      "a": "ane",
+      "b": "nay",
+      "ipaA": "eɪ n",
+      "ipaB": "n eɪ",
+      "n": 2
+    },
+    {
+      "a": "ape",
+      "b": "pay",
+      "ipaA": "eɪ p",
+      "ipaB": "p eɪ",
+      "n": 2
+    },
+    {
+      "a": "ar",
+      "b": "rah",
+      "ipaA": "ɑ ɹ",
+      "ipaB": "ɹ ɑ",
+      "n": 2
+    },
+    {
+      "a": "ar",
+      "b": "raw",
+      "ipaA": "ɑ ɹ",
+      "ipaB": "ɹ ɑ",
+      "n": 2
+    },
+    {
+      "a": "are",
+      "b": "rah",
+      "ipaA": "ɑ ɹ",
+      "ipaB": "ɹ ɑ",
+      "n": 2
+    },
+    {
+      "a": "are",
+      "b": "raw",
+      "ipaA": "ɑ ɹ",
+      "ipaB": "ɹ ɑ",
+      "n": 2
+    },
+    {
+      "a": "ate",
+      "b": "tae",
+      "ipaA": "eɪ t",
+      "ipaB": "t eɪ",
+      "n": 2
+    },
+    {
+      "a": "awed",
+      "b": "daw",
+      "ipaA": "ɔ d",
+      "ipaB": "d ɔ",
+      "n": 2
+    },
+    {
+      "a": "awry",
+      "b": "eyer",
+      "ipaA": "ɝ aɪ",
+      "ipaB": "aɪ ɝ",
+      "n": 2
+    },
+    {
+      "a": "birr",
+      "b": "herb",
+      "ipaA": "b ɝ",
+      "ipaB": "ɝ b",
+      "n": 2
+    },
+    {
+      "a": "bur",
+      "b": "herb",
+      "ipaA": "b ɝ",
+      "ipaB": "ɝ b",
+      "n": 2
+    },
+    {
+      "a": "burr",
+      "b": "herb",
+      "ipaA": "b ɝ",
+      "ipaB": "ɝ b",
+      "n": 2
+    },
+    {
+      "a": "chao",
+      "b": "ouch",
+      "ipaA": "tʃ aʊ",
+      "ipaB": "aʊ tʃ",
+      "n": 2
+    },
+    {
+      "a": "chow",
+      "b": "ouch",
+      "ipaA": "tʃ aʊ",
+      "ipaB": "aʊ tʃ",
+      "n": 2
+    },
+    {
+      "a": "ciao",
+      "b": "ouch",
+      "ipaA": "tʃ aʊ",
+      "ipaB": "aʊ tʃ",
+      "n": 2
+    },
+    {
+      "a": "cur",
+      "b": "irk",
+      "ipaA": "k ɝ",
+      "ipaB": "ɝ k",
+      "n": 2
+    },
+    {
+      "a": "die",
+      "b": "eide",
+      "ipaA": "d aɪ",
+      "ipaB": "aɪ d",
+      "n": 2
+    },
+    {
+      "a": "die",
+      "b": "eyed",
+      "ipaA": "d aɪ",
+      "ipaB": "aɪ d",
+      "n": 2
+    },
+    {
+      "a": "doe",
+      "b": "ode",
+      "ipaA": "d oʊ",
+      "ipaB": "oʊ d",
+      "n": 2
+    },
+    {
+      "a": "doe",
+      "b": "owed",
+      "ipaA": "d oʊ",
+      "ipaB": "oʊ d",
+      "n": 2
+    },
+    {
+      "a": "dough",
+      "b": "ode",
+      "ipaA": "d oʊ",
+      "ipaB": "oʊ d",
+      "n": 2
+    },
+    {
+      "a": "dough",
+      "b": "owed",
+      "ipaA": "d oʊ",
+      "ipaB": "oʊ d",
+      "n": 2
+    },
+    {
+      "a": "dye",
+      "b": "eide",
+      "ipaA": "d aɪ",
+      "ipaB": "aɪ d",
+      "n": 2
+    },
+    {
+      "a": "dye",
+      "b": "eyed",
+      "ipaA": "d aɪ",
+      "ipaB": "aɪ d",
+      "n": 2
+    },
+    {
+      "a": "ear",
+      "b": "ree",
+      "ipaA": "i ɹ",
+      "ipaB": "ɹ i",
+      "n": 2
+    },
+    {
+      "a": "ease",
+      "b": "zee",
+      "ipaA": "i z",
+      "ipaB": "z i",
+      "n": 2
+    },
+    {
+      "a": "eat",
+      "b": "tea",
+      "ipaA": "i t",
+      "ipaB": "t i",
+      "n": 2
+    },
+    {
+      "a": "eat",
+      "b": "tee",
+      "ipaA": "i t",
+      "ipaB": "t i",
+      "n": 2
+    },
+    {
+      "a": "eat",
+      "b": "ti",
+      "ipaA": "i t",
+      "ipaB": "t i",
+      "n": 2
+    },
+    {
+      "a": "eave",
+      "b": "vee",
+      "ipaA": "i v",
+      "ipaB": "v i",
+      "n": 2
+    },
+    {
+      "a": "eel",
+      "b": "lea",
+      "ipaA": "i l",
+      "ipaB": "l i",
+      "n": 2
+    },
+    {
+      "a": "eel",
+      "b": "lee",
+      "ipaA": "i l",
+      "ipaB": "l i",
+      "n": 2
+    },
+    {
+      "a": "eel",
+      "b": "li",
+      "ipaA": "i l",
+      "ipaB": "l i",
+      "n": 2
+    },
+    {
+      "a": "eight",
+      "b": "tae",
+      "ipaA": "eɪ t",
+      "ipaB": "t eɪ",
+      "n": 2
+    },
+    {
+      "a": "eke",
+      "b": "kea",
+      "ipaA": "i k",
+      "ipaB": "k i",
+      "n": 2
+    },
+    {
+      "a": "eke",
+      "b": "key",
+      "ipaA": "i k",
+      "ipaB": "k i",
+      "n": 2
+    },
+    {
+      "a": "eke",
+      "b": "quai",
+      "ipaA": "i k",
+      "ipaB": "k i",
+      "n": 2
+    },
+    {
+      "a": "eke",
+      "b": "quay",
+      "ipaA": "i k",
+      "ipaB": "k i",
+      "n": 2
+    },
+    {
+      "a": "eve",
+      "b": "vee",
+      "ipaA": "i v",
+      "ipaB": "v i",
+      "n": 2
+    },
+    {
+      "a": "ice",
+      "b": "psi",
+      "ipaA": "aɪ s",
+      "ipaB": "s aɪ",
+      "n": 2
+    },
+    {
+      "a": "ice",
+      "b": "sigh",
+      "ipaA": "aɪ s",
+      "ipaB": "s aɪ",
+      "n": 2
+    },
+    {
+      "a": "ire",
+      "b": "rye",
+      "ipaA": "aɪ ɹ",
+      "ipaB": "ɹ aɪ",
+      "n": 2
+    },
+    {
+      "a": "ire",
+      "b": "wry",
+      "ipaA": "aɪ ɹ",
+      "ipaB": "ɹ aɪ",
+      "n": 2
+    },
+    {
+      "a": "isle",
+      "b": "lie",
+      "ipaA": "aɪ l",
+      "ipaB": "l aɪ",
+      "n": 2
+    },
+    {
+      "a": "isle",
+      "b": "lye",
+      "ipaA": "aɪ l",
+      "ipaB": "l aɪ",
+      "n": 2
+    },
+    {
+      "a": "know",
+      "b": "own",
+      "ipaA": "n oʊ",
+      "ipaB": "oʊ n",
+      "n": 2
+    },
+    {
+      "a": "lo",
+      "b": "ole",
+      "ipaA": "l oʊ",
+      "ipaB": "oʊ l",
+      "n": 2
+    },
+    {
+      "a": "lough",
+      "b": "owl",
+      "ipaA": "l aʊ",
+      "ipaB": "aʊ l",
+      "n": 2
+    },
+    {
+      "a": "low",
+      "b": "ole",
+      "ipaA": "l oʊ",
+      "ipaB": "oʊ l",
+      "n": 2
+    },
+    {
+      "a": "lowe",
+      "b": "ole",
+      "ipaA": "l oʊ",
+      "ipaB": "oʊ l",
+      "n": 2
+    },
+    {
+      "a": "mo",
+      "b": "ohm",
+      "ipaA": "m oʊ",
+      "ipaB": "oʊ m",
+      "n": 2
+    },
+    {
+      "a": "mow",
+      "b": "ohm",
+      "ipaA": "m oʊ",
+      "ipaB": "oʊ m",
+      "n": 2
+    },
+    {
+      "a": "na",
+      "b": "on",
+      "ipaA": "n ɑ",
+      "ipaB": "ɑ n",
+      "n": 2
+    },
+    {
+      "a": "nah",
+      "b": "on",
+      "ipaA": "n ɑ",
+      "ipaB": "ɑ n",
+      "n": 2
+    },
+    {
+      "a": "naw",
+      "b": "on",
+      "ipaA": "n ɑ",
+      "ipaB": "ɑ n",
+      "n": 2
+    },
+    {
+      "a": "no",
+      "b": "own",
+      "ipaA": "n oʊ",
+      "ipaB": "oʊ n",
+      "n": 2
+    },
+    {
+      "a": "noh",
+      "b": "own",
+      "ipaA": "n oʊ",
+      "ipaB": "oʊ n",
+      "n": 2
+    },
+    {
+      "a": "oat",
+      "b": "toe",
+      "ipaA": "oʊ t",
+      "ipaB": "t oʊ",
+      "n": 2
+    },
+    {
+      "a": "oat",
+      "b": "tow",
+      "ipaA": "oʊ t",
+      "ipaB": "t oʊ",
+      "n": 2
+    },
+    {
+      "a": "oohs",
+      "b": "xu",
+      "ipaA": "u z",
+      "ipaB": "z u",
+      "n": 2
+    },
+    {
+      "a": "oohs",
+      "b": "zoo",
+      "ipaA": "u z",
+      "ipaB": "z u",
+      "n": 2
+    },
+    {
+      "a": "ooze",
+      "b": "xu",
+      "ipaA": "u z",
+      "ipaB": "z u",
+      "n": 2
+    },
+    {
+      "a": "ooze",
+      "b": "zoo",
+      "ipaA": "u z",
+      "ipaB": "z u",
+      "n": 2
+    },
+    {
+      "a": "op",
+      "b": "pa",
+      "ipaA": "ɑ p",
+      "ipaB": "p ɑ",
+      "n": 2
+    },
+    {
+      "a": "out",
+      "b": "tao",
+      "ipaA": "aʊ t",
+      "ipaB": "t aʊ",
+      "n": 2
+    }
+  ]
+}

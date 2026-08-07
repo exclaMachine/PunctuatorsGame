@@ -1,0 +1,478 @@
+{
+  "_doc": "Phonetic palindromes — words whose phoneme sequence reads the same reversed (compared by token). Built by build-phonetic-wordplay.js.",
+  "source": "enable1.txt words × text-to-ipa ipadict.txt pronunciations; symbols in IPA-fan-game/ipa_words.js convention",
+  "generated": "2026-08-07",
+  "count": 94,
+  "palindromes": [
+    {
+      "word": "canonic",
+      "ipa": "k ə n ɑ n ə k",
+      "n": 7
+    },
+    {
+      "word": "falloff",
+      "ipa": "f ɔ l ɔ f",
+      "n": 5
+    },
+    {
+      "word": "rehear",
+      "ipa": "ɹ i h i ɹ",
+      "n": 5
+    },
+    {
+      "word": "revere",
+      "ipa": "ɹ ɪ v ɪ ɹ",
+      "n": 5
+    },
+    {
+      "word": "states",
+      "ipa": "s t eɪ t s",
+      "n": 5
+    },
+    {
+      "word": "stats",
+      "ipa": "s t æ t s",
+      "n": 5
+    },
+    {
+      "word": "towboat",
+      "ipa": "t oʊ b oʊ t",
+      "n": 5
+    },
+    {
+      "word": "aha",
+      "ipa": "ɑ h ɑ",
+      "n": 3
+    },
+    {
+      "word": "babe",
+      "ipa": "b eɪ b",
+      "n": 3
+    },
+    {
+      "word": "bib",
+      "ipa": "b ɪ b",
+      "n": 3
+    },
+    {
+      "word": "bibb",
+      "ipa": "b ɪ b",
+      "n": 3
+    },
+    {
+      "word": "bob",
+      "ipa": "b ɑ b",
+      "n": 3
+    },
+    {
+      "word": "boob",
+      "ipa": "b u b",
+      "n": 3
+    },
+    {
+      "word": "bub",
+      "ipa": "b ə b",
+      "n": 3
+    },
+    {
+      "word": "cake",
+      "ipa": "k eɪ k",
+      "n": 3
+    },
+    {
+      "word": "calk",
+      "ipa": "k ɔ k",
+      "n": 3
+    },
+    {
+      "word": "caulk",
+      "ipa": "k ɑ k",
+      "n": 3
+    },
+    {
+      "word": "cease",
+      "ipa": "s i s",
+      "n": 3
+    },
+    {
+      "word": "church",
+      "ipa": "tʃ ɝ tʃ",
+      "n": 3
+    },
+    {
+      "word": "cock",
+      "ipa": "k ɑ k",
+      "n": 3
+    },
+    {
+      "word": "coke",
+      "ipa": "k oʊ k",
+      "n": 3
+    },
+    {
+      "word": "cook",
+      "ipa": "k ʊ k",
+      "n": 3
+    },
+    {
+      "word": "dad",
+      "ipa": "d æ d",
+      "n": 3
+    },
+    {
+      "word": "dead",
+      "ipa": "d ɛ d",
+      "n": 3
+    },
+    {
+      "word": "deed",
+      "ipa": "d i d",
+      "n": 3
+    },
+    {
+      "word": "did",
+      "ipa": "d ɪ d",
+      "n": 3
+    },
+    {
+      "word": "died",
+      "ipa": "d aɪ d",
+      "n": 3
+    },
+    {
+      "word": "dud",
+      "ipa": "d ə d",
+      "n": 3
+    },
+    {
+      "word": "dude",
+      "ipa": "d u d",
+      "n": 3
+    },
+    {
+      "word": "dyed",
+      "ipa": "d aɪ d",
+      "n": 3
+    },
+    {
+      "word": "earner",
+      "ipa": "ɝ n ɝ",
+      "n": 3
+    },
+    {
+      "word": "easy",
+      "ipa": "i z i",
+      "n": 3
+    },
+    {
+      "word": "fief",
+      "ipa": "f i f",
+      "n": 3
+    },
+    {
+      "word": "fife",
+      "ipa": "f aɪ f",
+      "n": 3
+    },
+    {
+      "word": "gag",
+      "ipa": "ɡ æ ɡ",
+      "n": 3
+    },
+    {
+      "word": "gig",
+      "ipa": "ɡ ɪ ɡ",
+      "n": 3
+    },
+    {
+      "word": "judge",
+      "ipa": "dʒ ə dʒ",
+      "n": 3
+    },
+    {
+      "word": "keck",
+      "ipa": "k ɛ k",
+      "n": 3
+    },
+    {
+      "word": "kick",
+      "ipa": "k ɪ k",
+      "n": 3
+    },
+    {
+      "word": "kirk",
+      "ipa": "k ɝ k",
+      "n": 3
+    },
+    {
+      "word": "known",
+      "ipa": "n oʊ n",
+      "n": 3
+    },
+    {
+      "word": "kook",
+      "ipa": "k u k",
+      "n": 3
+    },
+    {
+      "word": "lall",
+      "ipa": "l ɔ l",
+      "n": 3
+    },
+    {
+      "word": "leal",
+      "ipa": "l i l",
+      "n": 3
+    },
+    {
+      "word": "loll",
+      "ipa": "l ɑ l",
+      "n": 3
+    },
+    {
+      "word": "lull",
+      "ipa": "l ə l",
+      "n": 3
+    },
+    {
+      "word": "maim",
+      "ipa": "m eɪ m",
+      "n": 3
+    },
+    {
+      "word": "malm",
+      "ipa": "m ɑ m",
+      "n": 3
+    },
+    {
+      "word": "mim",
+      "ipa": "m ɪ m",
+      "n": 3
+    },
+    {
+      "word": "mime",
+      "ipa": "m aɪ m",
+      "n": 3
+    },
+    {
+      "word": "mom",
+      "ipa": "m ɑ m",
+      "n": 3
+    },
+    {
+      "word": "mum",
+      "ipa": "m ə m",
+      "n": 3
+    },
+    {
+      "word": "mumm",
+      "ipa": "m ə m",
+      "n": 3
+    },
+    {
+      "word": "nan",
+      "ipa": "n æ n",
+      "n": 3
+    },
+    {
+      "word": "nene",
+      "ipa": "n i n",
+      "n": 3
+    },
+    {
+      "word": "nine",
+      "ipa": "n aɪ n",
+      "n": 3
+    },
+    {
+      "word": "none",
+      "ipa": "n ə n",
+      "n": 3
+    },
+    {
+      "word": "noon",
+      "ipa": "n u n",
+      "n": 3
+    },
+    {
+      "word": "noun",
+      "ipa": "n aʊ n",
+      "n": 3
+    },
+    {
+      "word": "nun",
+      "ipa": "n ə n",
+      "n": 3
+    },
+    {
+      "word": "oboe",
+      "ipa": "oʊ b oʊ",
+      "n": 3
+    },
+    {
+      "word": "pap",
+      "ipa": "p æ p",
+      "n": 3
+    },
+    {
+      "word": "peep",
+      "ipa": "p i p",
+      "n": 3
+    },
+    {
+      "word": "pep",
+      "ipa": "p ɛ p",
+      "n": 3
+    },
+    {
+      "word": "pip",
+      "ipa": "p ɪ p",
+      "n": 3
+    },
+    {
+      "word": "pipe",
+      "ipa": "p aɪ p",
+      "n": 3
+    },
+    {
+      "word": "poop",
+      "ipa": "p u p",
+      "n": 3
+    },
+    {
+      "word": "pop",
+      "ipa": "p ɑ p",
+      "n": 3
+    },
+    {
+      "word": "pope",
+      "ipa": "p oʊ p",
+      "n": 3
+    },
+    {
+      "word": "pup",
+      "ipa": "p ə p",
+      "n": 3
+    },
+    {
+      "word": "rare",
+      "ipa": "ɹ ɛ ɹ",
+      "n": 3
+    },
+    {
+      "word": "rear",
+      "ipa": "ɹ ɪ ɹ",
+      "n": 3
+    },
+    {
+      "word": "roar",
+      "ipa": "ɹ ɔ ɹ",
+      "n": 3
+    },
+    {
+      "word": "sass",
+      "ipa": "s æ s",
+      "n": 3
+    },
+    {
+      "word": "sauce",
+      "ipa": "s ɔ s",
+      "n": 3
+    },
+    {
+      "word": "seis",
+      "ipa": "s i s",
+      "n": 3
+    },
+    {
+      "word": "sis",
+      "ipa": "s ɪ s",
+      "n": 3
+    },
+    {
+      "word": "suss",
+      "ipa": "s ə s",
+      "n": 3
+    },
+    {
+      "word": "tat",
+      "ipa": "t æ t",
+      "n": 3
+    },
+    {
+      "word": "tate",
+      "ipa": "t eɪ t",
+      "n": 3
+    },
+    {
+      "word": "taught",
+      "ipa": "t ɔ t",
+      "n": 3
+    },
+    {
+      "word": "taut",
+      "ipa": "t ɔ t",
+      "n": 3
+    },
+    {
+      "word": "teat",
+      "ipa": "t i t",
+      "n": 3
+    },
+    {
+      "word": "tet",
+      "ipa": "t ɛ t",
+      "n": 3
+    },
+    {
+      "word": "tight",
+      "ipa": "t aɪ t",
+      "n": 3
+    },
+    {
+      "word": "tit",
+      "ipa": "t ɪ t",
+      "n": 3
+    },
+    {
+      "word": "toot",
+      "ipa": "t u t",
+      "n": 3
+    },
+    {
+      "word": "tot",
+      "ipa": "t ɑ t",
+      "n": 3
+    },
+    {
+      "word": "tote",
+      "ipa": "t oʊ t",
+      "n": 3
+    },
+    {
+      "word": "tout",
+      "ipa": "t aʊ t",
+      "n": 3
+    },
+    {
+      "word": "tut",
+      "ipa": "t ə t",
+      "n": 3
+    },
+    {
+      "word": "verve",
+      "ipa": "v ɝ v",
+      "n": 3
+    },
+    {
+      "word": "vive",
+      "ipa": "v i v",
+      "n": 3
+    },
+    {
+      "word": "zoos",
+      "ipa": "z u z",
+      "n": 3
+    }
+  ]
+}
