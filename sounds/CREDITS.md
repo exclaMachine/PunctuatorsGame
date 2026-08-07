@@ -106,3 +106,59 @@ preference over a bad or synth riff). Fetched by `fetch-genre-samples.sh`. Prove
 | Classical | Beethoven Symphony No. 5, mvt I | Skidmore College orchestra | Public domain (released) |
 | Folk | "Cripple Creek" (old-time fiddle/banjo) | Gid Tanner and his Skillet Lickers | Public domain (US, pre-1926) |
 | Blues / Rock / Electronic / Disco / Pop | — (no clip; silent) | — | — |
+
+---
+
+# Bundled phoneme sample credits
+
+Per-phoneme audio in `sounds/phonemes/<ipa>.mp3` supplies **Inklings' Phoneme Fishing** — the deep,
+sound-only fishing tier (`docs/inklings-fishing.md` §4.3/§7). **35 clips** (24 consonants + 11 monophthong
+vowels; the 5 diphthongs reuse their start-vowel clip) **hand-fetched from Wikimedia Commons** by
+`fetch-phoneme-samples.sh`, then trimmed, downmixed to mono, loudness-normalised, and re-encoded to mp3.
+Commons names each file by its **articulatory description**; the mp3 is renamed to the **IPA symbol** so it
+matches `data/phonemes.json` / `PHONEMES_BY_IPA`. Full machine-readable manifest (author + source page +
+license per clip): **`data/phoneme-credits.json`**.
+
+All are **CC BY-SA 3.0 except /dʒ/ (public domain)** — none ND, so they're safe to re-pitch/loop. Per
+CC-BY-SA the author + license must ship with them (this table + the JSON manifest). "Karmosin~commonswiki"
+is Peter Isotalo's former Commons username; credited as recorded on each file.
+
+| IPA | roman | Recording (articulation) | Author | License |
+| --- | --- | --- | --- | --- |
+| /p/ | p | Voiceless bilabial plosive | Joni~commonswiki | CC BY-SA 3.0 |
+| /b/ | b | Voiced bilabial plosive | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /t/ | t | Voiceless alveolar plosive | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /d/ | d | Voiced alveolar plosive | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /k/ | k | Voiceless velar plosive | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /g/ | g | Voiced velar plosive | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /tʃ/ | ch | Voiceless palato-alveolar affricate | Peter Isotalo | CC BY-SA 3.0 |
+| /dʒ/ | j | Voiced palato-alveolar affricate | Octane (English Wikipedia) | Public domain |
+| /f/ | f | Voiceless labiodental fricative | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /v/ | v | Voiced labiodental fricative | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /θ/ | th | Voiceless dental fricative | Peter Isotalo | CC BY-SA 3.0 |
+| /ð/ | th | Voiced dental fricative | Peter Isotalo | CC BY-SA 3.0 |
+| /s/ | s | Voiceless alveolar sibilant | Peter Isotalo | CC BY-SA 3.0 |
+| /z/ | z | Voiced alveolar sibilant | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /ʃ/ | sh | Voiceless palato-alveolar sibilant | Peter Isotalo | CC BY-SA 3.0 |
+| /ʒ/ | zh | Voiced palato-alveolar sibilant | Peter Isotalo | CC BY-SA 3.0 |
+| /h/ | h | Voiceless glottal fricative | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /m/ | m | Bilabial nasal | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /n/ | n | Alveolar nasal | Peter Isotalo | CC BY-SA 3.0 |
+| /ŋ/ | ng | Velar nasal | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /l/ | l | Alveolar lateral approximant | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /ɹ/ | r | Alveolar approximant | Erutuon | CC BY-SA 3.0 |
+| /w/ | w | Voiced labio-velar approximant | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /j/ | y | Palatal approximant | Karmosin~commonswiki | CC BY-SA 3.0 |
+| /i/ | ee | Close front unrounded vowel | Denelson83 | CC BY-SA 3.0 |
+| /ɪ/ | i | Near-close near-front unrounded vowel | Denelson83 | CC BY-SA 3.0 |
+| /ɛ/ | e | Open-mid front unrounded vowel | Denelson83 | CC BY-SA 3.0 |
+| /æ/ | a | Near-open front unrounded vowel | Denelson83 | CC BY-SA 3.0 |
+| /ə/ | uh | Mid-central vowel | Denelson83 | CC BY-SA 3.0 |
+| /ɑ/ | ah | Open back unrounded vowel | Denelson83 | CC BY-SA 3.0 |
+| /ɔ/ | aw | Open-mid back rounded vowel | Denelson83 | CC BY-SA 3.0 |
+| /ʊ/ | oo | Near-close near-back rounded vowel | Denelson83 | CC BY-SA 3.0 |
+| /u/ | oo | Close back rounded vowel | Denelson83 | CC BY-SA 3.0 |
+| /ʌ/ | u | Open-mid back unrounded vowel | Denelson83 | CC BY-SA 3.0 |
+| /ɝ/ | er | En-us-er (American English "er") | Dvortygirl | CC BY-SA 3.0 |
+
+Re-fetch / re-trim with `fetch-phoneme-samples.sh` (edit a row's start/dur to change the window).
