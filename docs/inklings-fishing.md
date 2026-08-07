@@ -84,9 +84,10 @@ livestock — a later **rhythm-reel** could share their sound/rhythm framing).
   its **romanized spelling** (`/ʃ/ → "sh"`, `/uː/ → "oo"`, `/θ/ → "th"`) to set the hook. Fully offline,
   no new assets, on-theme (Inklings is already a typing game).
 - **Depth = difficulty, set by the spot.** A **shadow** spot fishes shallow (**IPA symbol + hint word**); a
-  **bubbles** spot fishes deep (**symbol only**). The deepest **sound-only** tier now has its **audio source
-  bundled** (`sounds/phonemes/`, §4.3) but the play-by-ear tier itself is **not built yet** (§4.3, §7). (The
-  old shallow/deep cast *buttons* were retired once depth moved onto the spot.)
+  **bubbles** spot fishes deep (**symbol only**). The clips also **play in-game now** — a ▶ on every caught
+  Fish-Phoneme card and an auto-play on the catch/reveal card (the **▶ playback layer**, BUILT 2026-08-06,
+  §4.3) — but the deepest **sound-only *catchable*** tier (ID by ear, symbol hidden) is **not built yet**
+  (§4.3, §7). (The old shallow/deep cast *buttons* were retired once depth moved onto the spot.)
 - **Reward = the Phonicon**, a **phoneme collection** (a sound-dex). It is the **supply** for the parked
   **Sound Garden** (farming §5) and a second, raw-phoneme consumer of the poetry phoneme engine. Fishing's
   reward home is **sounds** — it doesn't touch ink / potions / Feats / wood / décor (each POS's home stays
@@ -282,12 +283,12 @@ spot fishes deep, and `deepChance` skews deep spots to screens far from home. Ea
 | ----- | ----- | --------------- | ----- |
 | **Shallow** | IPA symbol **+ hint word** (`/ʃ/`, "ship") | learn the symbol→sound→spelling map | the tutorial tier |
 | **Mid** | IPA symbol **only** (`/ʃ/`) | recall the sound from the symbol alone | the staple tier |
-| **Deep** | **nothing visual** — sound-only | pure ear ID | **deferred** — audio bundled, playback not built (§4.3) |
+| **Deep** | **nothing visual** — sound-only | pure ear ID | **catchable tier deferred** — audio + ▶ playback built, ear-only *cast* not (§4.3) |
 
 Rarer phonemes (`tier`) skew to deeper/farther water, so depth also paces **what** you can catch, not just
 **how hard** it is — reusing the letter-unlock "rare skews far from home" instinct.
 
-### 4.3 The deep (sound-only) tier — audio source now bundled (playback not yet built)
+### 4.3 The deep (sound-only) tier — audio bundled + ▶ playback built (ear-only *catchable* cast deferred)
 
 Deep fishing "on sound alone" requires **playing the phoneme** so the player IDs it by ear — which needed a
 per-phoneme audio source the game didn't have. **That source now exists (fetched 2026-08-06):** the
@@ -304,11 +305,17 @@ The rejected alternative, for the record: **OS `speechSynthesis`** — local + o
 robotic and **word-oriented**; coaxing it to utter a bare IPA phoneme is unreliable. Usable as a stopgap for
 `hintWord` playback, not clean phoneme ID.
 
-**Still deferred = the deep-tier *playback + UI*, not the audio.** The clips are on disk but **nothing in the
-game plays them yet**, and Deep is **not a catchable tier** — v1 fishing still ships Shallow + Mid (visual,
-typed) only. What's unblocked is the **source**; wiring `sounds/phonemes/` into a play-by-ear cast (and a ▶
-button on caught Fish-Phoneme cards) is the remaining build (§6 step 7, §7). Flag before it becomes
-load-bearing.
+**The ▶ playback layer is now BUILT (2026-08-06); the ear-only *catchable* tier stays deferred.** The clips
+play in-game through **`PhonemeAudio.play(ph)`** + **`phonemeClipIpa(ph)`** (a plain `HTMLAudioElement`,
+independent of the oscillator SFX graph, respecting the SFX mute; works over `file://` too since it's a media
+element, not fetch/decode) at `sounds/phonemes/<ipa>.mp3`. Two wire points: a **▶ on every caught Fish-Phoneme
+card** (`renderPhonicon`) and an **auto-play + ▶ replay on the catch/reveal card** (`renderFishing` — the sound
+plays on both a catch and a slip, since the reveal is the teaching moment). The **guessing (`biting`) stage
+stays silent** so the typed challenge never gives the answer away. Diphthongs (no clean single-file Commons
+clip) carry an **`audio`** field in `data/phonemes.json` naming the monophthong clip to reuse (eɪ→ɛ, aɪ→æ,
+ɔɪ→ɔ, oʊ→ɔ, aʊ→ɑ) so all 40 phonemes resolve to a real clip. **Still deferred:** the ear-only **catchable
+*deep* tier** (a cast where the sound *is* the only clue) — the audio + playback are ready; standing that tier
+up as a difficulty mode is the remaining build (§6 step 7, §7).
 
 ### 4.4 Microphone / "speak the phoneme" — deferred, and why (decision #4)
 
@@ -375,8 +382,10 @@ prematurely:
    `state.fishedSpots` (day-scoped), hard daily reset. Remaining step-5 work is the *feel* pass (spawn-rate
    tunables `FISH_SCREEN_CHANCE`/deepChance, art, the field-level celebration flourish).
 6. **(Later) Sound Garden hookup** — the Phonicon becomes the Sound Garden's supply (farming §5).
-7. **(Deferred) Deep sound-only tier** — the **audio now exists** (`sounds/phonemes/`, fetched 2026-08-06,
-   §4.3); remaining = wiring play-by-ear playback + a ▶ on caught cards into the tier.
+7. **Deep sound-only tier** — the **audio exists** (`sounds/phonemes/`, fetched 2026-08-06, §4.3) and the **▶
+   playback layer is BUILT (2026-08-06)**: `PhonemeAudio.play` / `phonemeClipIpa`, a ▶ on caught Fish-Phoneme
+   cards + auto-play on the catch/reveal card (§4.3). **Still deferred** = the ear-only *catchable* tier (a
+   cast where the sound is the only clue, symbol hidden).
 8. **(Deferred, desired) Speak-the-phoneme tier** — online-only, opt-in, once recognition can grade isolated
    phonemes (§4.4).
 
@@ -384,9 +393,10 @@ prematurely:
 
 ## 7. Deferred / open
 
-- **Deep sound-only tier** — the **audio source is no longer the blocker**: 35 bundled phoneme clips
-  (`sounds/phonemes/`, fetched from Wikimedia Commons, §4.3). Remaining = building the **play-by-ear tier**
-  itself (playback in the cast + a ▶ on caught Fish-Phoneme cards).
+- **Deep sound-only tier** — the **audio source and the ▶ playback layer are both done** (35 bundled clips
+  `sounds/phonemes/`, §4.3; `PhonemeAudio.play` / ▶ on caught cards + reveal-card auto-play, BUILT 2026-08-06).
+  Remaining = the ear-only **catchable tier** itself — a cast where the sound is the sole clue (symbol hidden),
+  IDed by ear.
 - **Speak-the-phoneme tier** — desired; **online-only, opt-in**, blocked on **speech recognition** being
   good enough at isolated phonemes (§4.4). Accepted scoped exception to the offline rule.
 - **Fished-out / daily cap — DECIDED & BUILT (2026-07-15):** the **fish-spots** system (§2/§2.1). Sparse
@@ -608,8 +618,9 @@ sprite, custom fish art, diphthong drift, voiced/voiceless tell).
   pipeline for: `emoji-pixelizer.html` (dev tool) + `bake-emoji-sprites.py` bake Apple Color Emoji to game-ready
   pixel PNGs (see CLAUDE.md / Critter Hunt's sprite path). Either route is a one-function change in `fishGlyph`
   (bare emoji → `<img>`), the same swap already used for animal/instrument sprites elsewhere. Not blocking.
-- Deep sound-only tier: **audio now bundled** (`sounds/phonemes/`, §4.3) — only the play-by-ear playback/UI
-  remains; speak-the-phoneme stays blocked on recognition (§4.4, unchanged).
+- Deep sound-only tier: **audio bundled + ▶ playback BUILT** (`sounds/phonemes/`, §4.3; `PhonemeAudio.play`,
+  ▶ on caught cards + reveal-card auto-play) — only the ear-only *catchable* tier remains; speak-the-phoneme
+  stays blocked on recognition (§4.4, unchanged).
 
 ### 9.6 How it fits the existing sinks
 

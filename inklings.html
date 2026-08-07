@@ -240,6 +240,13 @@
   /* Catch-count badge — pinned top-right so it reads as a counter and stays out of the text stack. */
   .phon-times{position:absolute;top:3px;right:3px;font-family:var(--disp);font-size:8px;line-height:1;
     color:var(--gold);background:#26233a;border:1px solid var(--edge);border-radius:8px;padding:2px 5px}
+  /* ▶ hear the caught sound (sounds/phonemes/<ipa>.mp3, §7). On cards it sits under the text; on the fishing
+     reveal card it sits inline beside the /symbol/. */
+  .phon-play{margin-top:auto;align-self:center;cursor:pointer;font-size:11px;line-height:1;color:var(--ink);
+    background:var(--paper);border:2px solid var(--edge);border-radius:8px;padding:3px 10px;box-shadow:1px 1px 0 rgba(0,0,0,.25)}
+  .phon-play:hover{background:var(--gold);color:#26233a}
+  .phon-play:active{transform:translate(1px,1px);box-shadow:none}
+  .fish-symbol .phon-play{margin:0 0 0 8px;vertical-align:middle;font-size:12px;padding:2px 9px}
   #phonicon .cu-guide{flex:1;min-height:0;overflow-y:auto;padding-right:4px}
   .phon-lock{font-family:var(--disp);font-size:11px;color:#4a4560}
   @media(max-width:560px){
@@ -1119,6 +1126,8 @@
           come from fishing. Cast at a fish-spot; a sound surfaces on the line as its symbol (plus an example
           word in shallow water). <b>Type how the sound is spelled</b> to reel it in. Spelling is
           <b>lenient</b> — /u/ accepts “oo”, “u” or “ew” — so it's a hint, not a spelling test.</p>
+          <p>Once a sound is caught, tap its <b>▶</b> on the card here (or on the catch card) to <b>hear it</b> —
+          real recorded phonemes, so you learn the symbol <i>and</i> the sound it stands for.</p>
           <h3>🌊 The water is your mouth</h3>
           <p class="cu-lead">Some spots — the ones with a glowing <b style="color:#7fd3ff">cyan</b> or
           <b style="color:#ffcd78">amber</b> ring — open a <b>side-view of the water that <i>is</i> the IPA
@@ -2136,6 +2145,28 @@ function phonemeReveal(ph, castDepth){
     showHint: d<=1             // only shallow reveals the teaching hint word
   };
 }
+
+// --- Phoneme audio playback (docs/inklings-fishing.md §4.3/§7 — the ▶ playback layer) -------------------
+// The 35 bundled clips live at sounds/phonemes/<ipa>.mp3 (24 consonants + 11 monophthong vowels). Diphthongs
+// carry an `audio` field naming the monophthong clip to reuse (no clean single-file diphthong recording on
+// Commons — the documented start-vowel stopgap). Every phoneme therefore resolves to a real clip. Played
+// through a plain HTMLAudioElement (not the WebAudio SFX graph) so it works over file:// too and stays
+// independent of the oscillator SFX; respects the SFX mute. Used on the catch/reveal card + the ▶ on caught
+// Fish-Phoneme cards. NOT played while the player is still guessing (the typed tier must stay silent so the
+// sound isn't given away — the ear-only "deep" tier is a separate deferred build, §7).
+function phonemeClipIpa(ph){ return (ph && (ph.audio || ph.ipa)) || ""; }   // diphthongs → their start-vowel clip
+const PhonemeAudio=(()=>{
+  const cache=Object.create(null);   // clip-ipa → HTMLAudioElement (one per sound, reused)
+  let cur=null;
+  function play(ph){
+    if(SFX.isMuted()) return;
+    const ipa=phonemeClipIpa(ph); if(!ipa) return;
+    let a=cache[ipa];
+    if(!a){ a=cache[ipa]=new Audio("sounds/phonemes/"+encodeURIComponent(ipa)+".mp3"); a.preload="auto"; }
+    try{ if(cur && cur!==a){ cur.pause(); try{cur.currentTime=0;}catch(e){} } cur=a; a.currentTime=0; const pr=a.play(); if(pr&&pr.catch) pr.catch(()=>{}); }catch(e){}
+  }
+  return { play };
+})();
 
 // --- Articulatory chart geometry (docs/inklings-fishing.md §9, M1) --------------------------------------
 // The planned 2D "articulatory water" fishing mode maps the IPA chart's own axes onto the water: distance
@@ -7284,7 +7315,7 @@ function renderFishing(){
       '<div class="fish-line '+(caught?"fish-caught":"")+'">'+
         '<div class="fish-creature">'+fishGlyph(t)+'</div>'+
         (t.fish?'<div class="fish-name">'+esc(t.fish)+'</div>':'')+   // name revealed only now, on the catch/reveal
-        '<div class="fish-symbol">/'+t.ipa+'/</div>'+
+        '<div class="fish-symbol">/'+t.ipa+'/ <button class="phon-play" id="fish-hear" title="Hear it again" aria-label="Hear the sound again">▶</button></div>'+
         '<div class="fish-hint">“'+spell+'” · as in “'+(t.hintWord||"")+'”</div>'+
       '</div>'+
       '<p class="fish-msg '+(caught?"ok":"")+'">'+msg+'</p>'+ quiet +
@@ -7294,6 +7325,8 @@ function renderFishing(){
     if(fish.preview || !caught) document.getElementById("fish-again").onclick=()=>{ fish.target=null; renderFishingChart(); };   // back to the 2D chart (dev preview, or a slip — spot not consumed)
     else document.getElementById("fish-done").onclick=closeFishing;
     document.getElementById("fish-phon").onclick=()=>{ _pendingSoundUnlock=null; closeFishing(); openPhonicon(); };   // Phonicon is itself the reveal — skip the field flourish
+    const hearBtn=document.getElementById("fish-hear"); if(hearBtn) hearBtn.onclick=()=>PhonemeAudio.play(t);
+    PhonemeAudio.play(t);   // the reveal teaches the sound — hear it on both a catch and a slip (§7 playback layer)
     return;
   }
 }
@@ -7530,8 +7563,12 @@ function renderPhonicon(){
       (p.fish?`<div class="phon-name">${esc(p.fish)}</div>`:``)+
       `<div class="phon-roman">“${esc(p.roman)}”</div>`+
       `<div class="phon-word">as in <b>${esc(p.hintWord)}</b></div>`+
+      `<button class="phon-play" data-ipa="${esc(p.ipa)}" title="Hear /${esc(p.ipa)}/" aria-label="Hear /${esc(p.ipa)}/">▶</button>`+
       `<div class="phon-times">×${rec.count||1}</div></div>`;
   }).join("");
+  // ▶ hears the caught sound (docs/inklings-fishing.md §7 playback layer). Delegated once per render.
+  grid.querySelectorAll(".phon-play").forEach(btn=>{ btn.onclick=e=>{ e.stopPropagation();
+    PhonemeAudio.play(PHONEMES_BY_IPA[btn.getAttribute("data-ipa")]); }; });
 }
 
 /* ---------- CELEBRATION QUEUE (staggered feat / letter dialogues) ---------- */
