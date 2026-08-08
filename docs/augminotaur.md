@@ -21,7 +21,7 @@ Entry file: `augminotaur.html` · modules in `augminotaur/` · input research be
 | **M2** — `VoiceInput` module + calibration entry flow | **BUILT** (`ecd44ab`) |
 | M3 — `AudioContext.currentTime` beat clock + wall-shading pulse | not built |
 | M4 — Movement 1 (call & response, 4 patterns, win/lose) | not built |
-| Snare **"ka"** verb (this doc, below) | **designed, not built** |
+| Snare **"ka"** verb (this doc, below) | **BUILT** in `voice.js` + bench — default thresholds pending mic tuning |
 | Procedural maze + voice-only traversal | **tentative** (parked — see below) |
 
 ## Architecture
@@ -41,25 +41,32 @@ ES-module split so audio/game systems drop in without a rewrite:
 
 ## The detector (`VoiceInput`)
 
-Offline mouth-verb detector, tuned against a real mic in `augminotaur-input-bench.html` (sliders + a live
-scope). **Don't reinvent it; tune it in the bench, then port settled constants to `voice.js`.**
+Offline mouth-verb detector. **`augminotaur/voice.js` is the single source of truth** — the bench
+(`augminotaur-input-bench.html`) now **imports it as a module**, so tuning happens against the exact code
+the game runs (no more duplicated class to keep in sync). Tune the constants in the bench (sliders + a live
+scope), then commit the settled defaults into `voice.js`. **Don't reinvent the detector.**
 
-Four verbs today:
+Five verbs:
 
 | Verb | Player does | Signature |
 | --- | --- | --- |
 | `BOOM` | "buh" / "puh" | transient, energy **below 250 Hz** (tilt high) |
 | `TSS`  | "ts" / "ss"   | transient, energy **above 3 kHz** (tilt low) |
+| `KA`   | "kah" (snare) | transient, **mid-band dominant** (`kaMidShare`) — the gap between the crossovers |
 | `HOLD` | sustained "aaah" | voiced (low zero-crossing rate), outlives the ~250 ms sustain threshold |
 | `HISS` | sustained "shhh" | unvoiced sustain — reserved, not used this level |
 
-How it decides an attack: two cascaded biquads each isolate a **low** band (lowpass 250 Hz) and a **high**
-band (highpass 3 kHz). `tilt = eLow / (eLow + eHigh)` — high tilt = BOOM, low tilt = TSS, and the
-ambiguous middle is broken by zero-crossing rate. **`HOLD` arrives late by design:** a sustained note's
-attack is indistinguishable from a `BOOM`, so `BOOM` fires immediately (keeps rhythm honest) and a `HOLD`
-is emitted later with a `replaces:<id>` field once the note outlives the sustain threshold. **Always score
-sustained notes on `ev.t`** (when the note started), never on arrival. Event shape:
-`{ id, verb, t, tilt, zcr, level, replaces? }`; `*_END` events carry `duration` and don't count as hits.
+How it decides an attack: cascaded biquads isolate a **low** band (lowpass 250 Hz), a **high** band
+(highpass 3 kHz), and a **mid** bandpass (`midHz`/`midQ`, the gap between them). `tilt = eLow / (eLow + eHigh)`
+— high tilt = BOOM, low tilt = TSS. **`KA` is checked first** on `midShare = maxMid / (maxLow+maxMid+maxHigh)`:
+mid-dominant → snare; a real "buh"/"tss" stays low-/high-dominant so its mid share stays under `kaMidShare`
+and it falls through to the untouched BOOM/TSS logic (the old zcr tiebreak still resolves anything left in
+the middle). **`HOLD` arrives late by design:** a sustained note's attack is indistinguishable from a
+`BOOM`, so `BOOM` fires immediately (keeps rhythm honest) and a `HOLD` is emitted later with a
+`replaces:<id>` field once the note outlives the sustain threshold — **`KA` is attack-only and spawns no
+sustain-watch.** **Always score sustained notes on `ev.t`** (when the note started), never on arrival.
+Event shape: `{ id, verb, t, tilt, mid, zcr, level, replaces? }` (`mid` = mid share on attacks); `*_END`
+events carry `duration` and don't count as hits.
 
 `getUserMedia` requests `echoCancellation:false, noiseSuppression:false, autoGainControl:false` — all three
 default on and all three destroy the signal (noise suppression literally deletes "tss"). Never change that.
@@ -75,11 +82,17 @@ Measured offset is stashed as `vi.latencyOffsetMs` for the beat clock to subtrac
 
 ---
 
-## DESIGN — Snare "ka" verb (proposed, not built)
+## Snare "ka" verb — BUILT (defaults pending mic tuning)
 
-**Goal:** add a beatbox **snare** — "ka" (velar plosive + open vowel) / dry "k" / "kt" — as a new
-attack verb alongside `BOOM` and `TSS`, without disturbing the tuned BOOM/TSS/HOLD/HISS. Completes the
-classic beatbox kit: kick (`BOOM`), hi-hat (`TSS`), snare (`KA`).
+Chose the **"kah"** (open-vowel) snare over a dry "k"/"kt" click: the click is bright and high-zcr —
+TSS's corner of the feature space — whereas "kah" sits in the mid band at *moderate* zcr, cleanly separated
+from all four other verbs, and its vowel makes onset detection robust on a cheap mic. Completes the classic
+beatbox kit: kick (`BOOM`), hi-hat (`TSS`), snare (`KA`). **What remains is dialing the default
+`kaMidShare` / `midHz` / `midQ` against a real mic in the bench, then committing those numbers.** Design
+record below.
+
+**Goal:** a beatbox **snare** — "kah" — as a new attack verb alongside `BOOM` and `TSS`, without
+disturbing the tuned BOOM/TSS/HOLD/HISS.
 
 **Why the current detector can't hear it.** The tilt axis measures only **low (<250 Hz)** vs
 **high (>3 kHz)**. A snare's energy sits in the **mid band** — the /k/ burst peaks around ~1–2 kHz, and
@@ -100,14 +113,16 @@ the snare lives, which is why "ka" currently misfires.
 3. **KA is attack-only.** A snare is a hit, not a sustain, so KA does **not** spawn a sustain-watch (no
    HOLD/HISS upgrade). Event shape unchanged: `{ id, verb:'KA', t, tilt, zcr, level }`.
 
-**Bench-first tuning (the workflow, non-negotiable):** add `KA` to the verb legend + a `--ka` swatch, a
-mid readout/lane on the scope, and knobs (`kaMidShare`, mid band center/width) mirroring the existing knob
-pattern (`kBoom`/`kTss`/… table). Dial "ka" in live against a real mic — the same way BOOM/TSS were tuned —
-**then** port the settled constants into `voice.js`. Don't hand-guess final thresholds.
+**Bench tuning (the workflow):** the bench exposes a `--ka` swatch, a **Mid share** readout (with the KA
+line), a `mid` column in the event log, and three knobs — **Mid share above this = KA**, **Mid band center
+(Hz)**, **Mid band width (Q)** — the last two written live onto the running bandpass. Dial "kah" in against
+a real mic (the same way BOOM/TSS were tuned), then commit the settled `kaMidShare` / `midHz` / `midQ`
+defaults into `voice.js`. Don't hand-guess final thresholds. **Resolved:** the bench now imports
+`voice.js`, so there is one source of truth — no duplicated class to keep in sync.
 
-**Note — bench/voice.js are duplicated.** `voice.js` is a verbatim copy of the bench's inline `VoiceInput`.
-Any detector change must land in both (or, cleaner, refactor the bench to import `voice.js` — decide before
-coding).
+**Open items:** verify BOOM/TSS are undisturbed at the tuned `kaMidShare` (the mid bandpass overlaps the
+lower skirt of sibilance, so a bright "kt" could leak — the upper-Q/center is the guard); confirm a quick
+"kah" never accidentally reads as the start of a HOLD (it can't upgrade, but the plosive still fires).
 
 **Open questions for review:**
 

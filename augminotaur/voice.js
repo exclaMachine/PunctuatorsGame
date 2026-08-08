@@ -43,6 +43,13 @@ export class VoiceInput {
     this.holdMs      = 250;
     this.voicedMaxHz = 2000;
 
+    // Snare "ka" (a beatbox snare — "kah"). A mid-band plosive that lives
+    // between the low/high crossovers, where the two-pole tilt can't see
+    // it. Carved out by mid-share so BOOM/TSS keep their tuned thresholds.
+    this.kaMidShare  = 0.45;   // mid must be at least this share of low+mid+high
+    this.midHz       = 1500;   // bandpass center for the /k/ burst
+    this.midQ        = 0.9;    // bandpass width
+
     // Fixed constants
     this.captureMs   = 55;    // window used to classify an attack
     this.lowHz       = 250;
@@ -86,6 +93,7 @@ export class VoiceInput {
     this.aFull = mkAnalyser();
     this.aLow  = mkAnalyser();
     this.aHigh = mkAnalyser();
+    this.aMid  = mkAnalyser();
 
     // Two cascaded biquads per band = 24 dB/oct, enough separation that a
     // "buh" and a "tss" sit at opposite ends of the tilt axis.
@@ -102,9 +110,21 @@ export class VoiceInput {
     chain('lowpass',  this.lowHz,  this.aLow);
     chain('highpass', this.highHz, this.aHigh);
 
+    // Mid band (bandpass) captures the snare "ka" burst that sits between
+    // the crossovers. Filter refs are kept so center/Q stay live-tunable
+    // (update() writes the current midHz/midQ each frame).
+    const mf1 = this.ctx.createBiquadFilter();
+    const mf2 = this.ctx.createBiquadFilter();
+    mf1.type = mf2.type = 'bandpass';
+    mf1.frequency.value = mf2.frequency.value = this.midHz;
+    mf1.Q.value = mf2.Q.value = this.midQ;
+    src.connect(mf1); mf1.connect(mf2); mf2.connect(this.aMid);
+    this.midFilters = [mf1, mf2];
+
     this.buf     = new Float32Array(this.aFull.fftSize);
     this.bufLow  = new Float32Array(this.aLow.fftSize);
     this.bufHigh = new Float32Array(this.aHigh.fftSize);
+    this.bufMid  = new Float32Array(this.aMid.fftSize);
 
     this.running = true;
     await this.calibrate();
@@ -142,13 +162,21 @@ export class VoiceInput {
     if (!this.running) return this.frame;
     const now = performance.now();
 
+    // Keep the mid bandpass in step with the live-tuned knobs.
+    if (this.midFilters){
+      this.midFilters[0].frequency.value = this.midFilters[1].frequency.value = this.midHz;
+      this.midFilters[0].Q.value = this.midFilters[1].Q.value = this.midQ;
+    }
+
     this.aFull.getFloatTimeDomainData(this.buf);
     this.aLow.getFloatTimeDomainData(this.bufLow);
     this.aHigh.getFloatTimeDomainData(this.bufHigh);
+    this.aMid.getFloatTimeDomainData(this.bufMid);
 
     const e     = rms(this.buf);
     const eLow  = rms(this.bufLow);
     const eHigh = rms(this.bufHigh);
+    const eMid  = rms(this.bufMid);
     const tilt  = eLow / (eLow + eHigh + 1e-9);
     const zcr   = zeroCrossRate(this.buf, this.ctx.sampleRate);
     const gate  = this.noiseFloor * this.gateMult;
@@ -163,27 +191,35 @@ export class VoiceInput {
 
     if (loud && rising && free && !this.capture){
       this.lastOnset = now;
-      this.capture = { t:now, maxLow:eLow, maxHigh:eHigh, zcrSum:zcr, n:1 };
+      this.capture = { t:now, maxLow:eLow, maxMid:eMid, maxHigh:eHigh, zcrSum:zcr, n:1 };
     }
 
     // ---- classify the attack ----
     if (this.capture){
       const c = this.capture;
       c.maxLow  = Math.max(c.maxLow, eLow);
+      c.maxMid  = Math.max(c.maxMid, eMid);
       c.maxHigh = Math.max(c.maxHigh, eHigh);
       c.zcrSum += zcr; c.n++;
 
       if (now - c.t >= this.captureMs){
         const cTilt = c.maxLow / (c.maxLow + c.maxHigh + 1e-9);
+        const cMid  = c.maxMid / (c.maxLow + c.maxMid + c.maxHigh + 1e-9);
         const cZcr  = c.zcrSum / c.n;
+        // KA is checked first: a real "buh"/"tss" is low-/high-dominant so
+        // its mid share stays below the threshold and it falls through to
+        // the untouched BOOM/TSS logic.
         let verb;
-        if (cTilt >= this.tiltBoom)      verb = 'BOOM';
+        if (cMid >= this.kaMidShare)     verb = 'KA';
+        else if (cTilt >= this.tiltBoom) verb = 'BOOM';
         else if (cTilt <= this.tiltTss)  verb = 'TSS';
         else                             verb = cZcr < this.voicedMaxHz ? 'BOOM' : 'TSS';
 
         const id = ++this.eventId;
-        this.emit({ id, verb, t:c.t, tilt:cTilt, zcr:cZcr, level:c.maxLow + c.maxHigh });
-        this.sustain = { id, t:c.t, zcrSum:0, n:0, resolved:false };
+        this.emit({ id, verb, t:c.t, tilt:cTilt, mid:cMid, zcr:cZcr,
+                    level:c.maxLow + c.maxMid + c.maxHigh });
+        // A snare is a hit, not a sustain — KA doesn't spawn a HOLD/HISS watch.
+        if (verb !== 'KA') this.sustain = { id, t:c.t, zcrSum:0, n:0, resolved:false };
         this.capture = null;
       }
     }
@@ -209,7 +245,7 @@ export class VoiceInput {
       }
     }
 
-    this.frame = { rms:e, low:eLow, high:eHigh, tilt, zcr, t:now, gate };
+    this.frame = { rms:e, low:eLow, mid:eMid, high:eHigh, tilt, zcr, t:now, gate };
     this.history.push({ t:now, rms:e, tilt, gate });
     const cutoff = now - 6000;
     while (this.history.length && this.history[0].t < cutoff) this.history.shift();

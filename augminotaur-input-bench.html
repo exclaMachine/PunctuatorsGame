@@ -14,6 +14,7 @@
     --dust:#828d9d;
     --boom:#e2703a;
     --tss:#6fcfe6;
+    --ka:#d9b24a;
     --hold:#a893e6;
     --hiss:#5f9ea8;
     --bad:#c8474b;
@@ -92,7 +93,7 @@
   canvas{ display:block; width:100%; height:250px; }
 
   .grid{ display:grid; gap:14px; }
-  .grid.readouts{ grid-template-columns:1.15fr 1fr 1fr 1fr; margin-bottom:14px; }
+  .grid.readouts{ grid-template-columns:1.15fr 1fr 1fr 1fr 1fr; margin-bottom:14px; }
   .grid.lower{ grid-template-columns:1fr 1fr; align-items:start; }
 
   /* ---------- readouts ---------- */
@@ -147,8 +148,9 @@
   .tally{ display:flex; gap:16px; font-size:11px; color:var(--dust); }
   .tally b{ color:var(--bone); font-variant-numeric:tabular-nums; }
 
-  .c-boom{ color:var(--boom); } .c-tss{ color:var(--tss); }
+  .c-boom{ color:var(--boom); } .c-tss{ color:var(--tss); } .c-ka{ color:var(--ka); }
   .c-hold{ color:var(--hold); } .c-hiss{ color:var(--hiss); }
+  .bar.mid span{ background:var(--ka); }
 
   @media (max-width:860px){
     .grid.readouts{ grid-template-columns:1fr 1fr; }
@@ -179,7 +181,7 @@
   <div class="grid readouts">
     <div class="panel verb">
       <div class="value" id="verbValue">—</div>
-      <div class="sub" id="verbSub">Say “buh”, “tss”, or “aaah”</div>
+      <div class="sub" id="verbSub">Say “buh”, “tss”, “ka”, or “aaah”</div>
     </div>
     <div class="panel stat">
       <div class="value" id="levelValue">0</div>
@@ -195,6 +197,11 @@
       <div class="value" id="zcrValue">—</div>
       <div class="sub">Zero crossings (Hz)</div>
       <div class="bar"><span id="zcrBar"></span></div>
+    </div>
+    <div class="panel stat">
+      <div class="value" id="midValue">—</div>
+      <div class="sub">Mid share · KA above line</div>
+      <div class="bar mid"><span id="midBar"></span></div>
     </div>
   </div>
 
@@ -251,6 +258,18 @@
         <input type="range" id="kTss" min="0.1" max="0.6" step="0.01" value="0.42">
       </div>
       <div class="knob">
+        <label for="kKa">Mid share above this = KA (snare)</label><output id="oKa"></output>
+        <input type="range" id="kKa" min="0.25" max="0.75" step="0.01" value="0.45">
+      </div>
+      <div class="knob">
+        <label for="kMidHz">Mid band center (Hz)</label><output id="oMidHz"></output>
+        <input type="range" id="kMidHz" min="700" max="2600" step="50" value="1500">
+      </div>
+      <div class="knob">
+        <label for="kMidQ">Mid band width (Q)</label><output id="oMidQ"></output>
+        <input type="range" id="kMidQ" min="0.4" max="2.5" step="0.1" value="0.9">
+      </div>
+      <div class="knob">
         <label for="kHold">Sustain before HOLD (ms)</label><output id="oHold"></output>
         <input type="range" id="kHold" min="120" max="600" step="10" value="250">
       </div>
@@ -265,232 +284,16 @@
   </div>
 </div>
 
-<script>
-/* =====================================================================
-   VoiceInput — offline mouth-verb detector
-   ---------------------------------------------------------------------
-   Emits four verbs with no speech recognition and no network:
+<script type="module">
+import { VoiceInput } from './augminotaur/voice.js';
 
-     BOOM  plosive, energy below 250 Hz        "buh" / "puh"
-     TSS   sibilant, energy above 3 kHz        "ts" / "ss"
-     HOLD  sustained + voiced                  "aaah"
-     HISS  sustained + unvoiced                "shhh"
+/* This bench drives the detector that lives in augminotaur/voice.js — the
+   single source of truth, imported here so tuning happens against the exact
+   code the game runs (no more duplicated class to keep in sync). Everything
+   below is bench chrome: scope, timing rig, event log, and the knobs that
+   write straight onto the live VoiceInput instance. VERB_COLORS is UI only. */
 
-   BOOM and TSS fire on the attack, so they are timing-accurate.
-   HOLD and HISS are upgrades: a sustained note starts life as a BOOM or
-   TSS, and is reclassified once it outlives the sustain threshold. The
-   original event is emitted immediately (keeps rhythm honest) and then
-   retracted via a `replaces` field.
-   ===================================================================== */
-
-const VERB_COLORS = { BOOM:'--boom', TSS:'--tss', HOLD:'--hold', HISS:'--hiss' };
-
-class VoiceInput {
-  constructor(onEvent){
-    this.onEvent = onEvent;
-    this.ctx = null;
-    this.stream = null;
-    this.running = false;
-
-    // Tunables (mirrored by the sliders)
-    this.gateMult    = 4.0;
-    this.riseRatio   = 1.7;
-    this.refractMs   = 80;
-    this.tiltBoom    = 0.62;
-    this.tiltTss     = 0.42;
-    this.holdMs      = 250;
-    this.voicedMaxHz = 2000;
-
-    // Fixed constants
-    this.captureMs   = 55;    // window used to classify an attack
-    this.lowHz       = 250;
-    this.highHz      = 3000;
-    this.floorFloor  = 0.0008;
-
-    // State
-    this.noiseFloor = 0.004;
-    this.slowAvg    = 0;
-    this.lastOnset  = -1e9;
-    this.capture    = null;
-    this.sustain    = null;
-    this.eventId    = 0;
-    this.frame      = { rms:0, low:0, high:0, tilt:0.5, zcr:0, t:0 };
-    this.history    = [];
-  }
-
-  async start(){
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    await this.ctx.resume();
-
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        // All three of these mangle plosives and sibilants. Off, always.
-        echoCancellation:false,
-        noiseSuppression:false,
-        autoGainControl:false,
-        channelCount:1
-      }
-    });
-
-    const src = this.ctx.createMediaStreamSource(this.stream);
-
-    const mkAnalyser = () => {
-      const a = this.ctx.createAnalyser();
-      a.fftSize = 1024;            // ~21 ms at 48 kHz
-      a.smoothingTimeConstant = 0;
-      return a;
-    };
-
-    this.aFull = mkAnalyser();
-    this.aLow  = mkAnalyser();
-    this.aHigh = mkAnalyser();
-
-    // Two cascaded biquads per band = 24 dB/oct, enough separation that a
-    // "buh" and a "tss" sit at opposite ends of the tilt axis.
-    const chain = (type, freq, dest) => {
-      const f1 = this.ctx.createBiquadFilter();
-      const f2 = this.ctx.createBiquadFilter();
-      f1.type = f2.type = type;
-      f1.frequency.value = f2.frequency.value = freq;
-      f1.Q.value = f2.Q.value = 0.707;
-      src.connect(f1); f1.connect(f2); f2.connect(dest);
-    };
-
-    src.connect(this.aFull);
-    chain('lowpass',  this.lowHz,  this.aLow);
-    chain('highpass', this.highHz, this.aHigh);
-
-    this.buf     = new Float32Array(this.aFull.fftSize);
-    this.bufLow  = new Float32Array(this.aLow.fftSize);
-    this.bufHigh = new Float32Array(this.aHigh.fftSize);
-
-    this.running = true;
-    await this.calibrate();
-    return this;
-  }
-
-  stop(){
-    this.running = false;
-    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
-    if (this.ctx) this.ctx.close();
-  }
-
-  /** Listen to an empty room for 1.6 s and set the gate from what's there. */
-  calibrate(){
-    return new Promise(resolve => {
-      const samples = [];
-      const until = performance.now() + 1600;
-      const tick = () => {
-        this.aFull.getFloatTimeDomainData(this.buf);
-        samples.push(rms(this.buf));
-        if (performance.now() < until) return requestAnimationFrame(tick);
-        samples.sort((a,b) => a-b);
-        const median = samples[Math.floor(samples.length * 0.5)];
-        const p90    = samples[Math.floor(samples.length * 0.9)];
-        this.noiseFloor = Math.max(this.floorFloor, median * 0.6 + p90 * 0.4);
-        this.slowAvg = this.noiseFloor;
-        resolve(this.noiseFloor);
-      };
-      requestAnimationFrame(tick);
-    });
-  }
-
-  /** Call once per animation frame. Returns the current feature frame. */
-  update(){
-    if (!this.running) return this.frame;
-    const now = performance.now();
-
-    this.aFull.getFloatTimeDomainData(this.buf);
-    this.aLow.getFloatTimeDomainData(this.bufLow);
-    this.aHigh.getFloatTimeDomainData(this.bufHigh);
-
-    const e     = rms(this.buf);
-    const eLow  = rms(this.bufLow);
-    const eHigh = rms(this.bufHigh);
-    const tilt  = eLow / (eLow + eHigh + 1e-9);
-    const zcr   = zeroCrossRate(this.buf, this.ctx.sampleRate);
-    const gate  = this.noiseFloor * this.gateMult;
-
-    const prevAvg = this.slowAvg;
-    this.slowAvg = this.slowAvg * 0.90 + e * 0.10;
-
-    // ---- onset ----
-    const loud   = e > gate;
-    const rising = e > prevAvg * this.riseRatio;
-    const free   = now - this.lastOnset > this.refractMs;
-
-    if (loud && rising && free && !this.capture){
-      this.lastOnset = now;
-      this.capture = { t:now, maxLow:eLow, maxHigh:eHigh, zcrSum:zcr, n:1 };
-    }
-
-    // ---- classify the attack ----
-    if (this.capture){
-      const c = this.capture;
-      c.maxLow  = Math.max(c.maxLow, eLow);
-      c.maxHigh = Math.max(c.maxHigh, eHigh);
-      c.zcrSum += zcr; c.n++;
-
-      if (now - c.t >= this.captureMs){
-        const cTilt = c.maxLow / (c.maxLow + c.maxHigh + 1e-9);
-        const cZcr  = c.zcrSum / c.n;
-        let verb;
-        if (cTilt >= this.tiltBoom)      verb = 'BOOM';
-        else if (cTilt <= this.tiltTss)  verb = 'TSS';
-        else                             verb = cZcr < this.voicedMaxHz ? 'BOOM' : 'TSS';
-
-        const id = ++this.eventId;
-        this.emit({ id, verb, t:c.t, tilt:cTilt, zcr:cZcr, level:c.maxLow + c.maxHigh });
-        this.sustain = { id, t:c.t, zcrSum:0, n:0, resolved:false };
-        this.capture = null;
-      }
-    }
-
-    // ---- upgrade to a sustained verb ----
-    if (this.sustain){
-      const s = this.sustain;
-      if (e > gate * 0.6){
-        s.zcrSum += zcr; s.n++;
-        if (!s.resolved && now - s.t >= this.holdMs){
-          const avgZcr = s.zcrSum / Math.max(1, s.n);
-          const verb = avgZcr < this.voicedMaxHz ? 'HOLD' : 'HISS';
-          this.emit({ id:++this.eventId, verb, t:s.t, tilt, zcr:avgZcr, level:e, replaces:s.id });
-          s.resolved = true;
-          s.verb = verb;
-        }
-      } else {
-        if (s.resolved){
-          this.emit({ id:++this.eventId, verb:s.verb + '_END', t:now,
-                      duration:now - s.t, tilt, zcr, level:e, silent:true });
-        }
-        this.sustain = null;
-      }
-    }
-
-    this.frame = { rms:e, low:eLow, high:eHigh, tilt, zcr, t:now, gate };
-    this.history.push({ t:now, rms:e, tilt, gate });
-    const cutoff = now - 6000;
-    while (this.history.length && this.history[0].t < cutoff) this.history.shift();
-
-    return this.frame;
-  }
-
-  emit(ev){ if (this.onEvent) this.onEvent(ev); }
-}
-
-function rms(b){
-  let s = 0;
-  for (let i = 0; i < b.length; i++) s += b[i] * b[i];
-  return Math.sqrt(s / b.length);
-}
-
-function zeroCrossRate(b, sampleRate){
-  let c = 0;
-  for (let i = 1; i < b.length; i++){
-    if ((b[i-1] < 0 && b[i] >= 0) || (b[i-1] >= 0 && b[i] < 0)) c++;
-  }
-  return (c * sampleRate) / (2 * b.length);
-}
+const VERB_COLORS = { BOOM:'--boom', TSS:'--tss', KA:'--ka', HOLD:'--hold', HISS:'--hiss' };
 
 /* =====================================================================
    Bench UI
@@ -579,7 +382,9 @@ function handleEvent(ev){
 
   flashVerb(ev.verb, ev);
   logRow(ev.t, ev.verb,
-         'tilt ' + ev.tilt.toFixed(2) + ' · zcr ' + Math.round(ev.zcr) +
+         'tilt ' + ev.tilt.toFixed(2) +
+         (ev.mid != null ? ' · mid ' + ev.mid.toFixed(2) : '') +
+         ' · zcr ' + Math.round(ev.zcr) +
          (ev.replaces ? ' · upgraded' : ''));
 
   if (metro.running && !ev.replaces) scoreHit(ev.t);
@@ -590,7 +395,9 @@ function flashVerb(verb, ev){
   const color = 'var(' + VERB_COLORS[verb] + ')';
   v.textContent = verb;
   v.style.color = color;
-  $('verbSub').textContent = 'tilt ' + ev.tilt.toFixed(2) + ' · zcr ' + Math.round(ev.zcr) + ' Hz';
+  $('verbSub').textContent = 'tilt ' + ev.tilt.toFixed(2) +
+    (ev.mid != null ? ' · mid ' + ev.mid.toFixed(2) : '') +
+    ' · zcr ' + Math.round(ev.zcr) + ' Hz';
 }
 
 function logRow(t, verb, detail){
@@ -617,6 +424,9 @@ const KNOBS = [
   ['kRefract','oRefract','refractMs', v => v + ' ms'],
   ['kBoom','oBoom','tiltBoom',   v => v.toFixed(2)],
   ['kTss','oTss','tiltTss',      v => v.toFixed(2)],
+  ['kKa','oKa','kaMidShare',     v => v.toFixed(2)],
+  ['kMidHz','oMidHz','midHz',    v => v + ' Hz'],
+  ['kMidQ','oMidQ','midQ',       v => v.toFixed(1)],
   ['kHold','oHold','holdMs',     v => v + ' ms'],
   ['kVoiced','oVoiced','voicedMaxHz', v => v + ' Hz']
 ];
@@ -894,6 +704,10 @@ function loop(){
   $('tiltBar').style.width = (f.tilt * 100).toFixed(0) + '%';
   $('zcrValue').textContent = live ? Math.round(f.zcr) : '—';
   $('zcrBar').style.width = Math.min(100, (f.zcr / 6000) * 100) + '%';
+
+  const midShare = f.mid / (f.low + f.mid + f.high + 1e-9);
+  $('midValue').textContent = live ? midShare.toFixed(2) : '—';
+  $('midBar').style.width = Math.min(100, midShare * 100) + '%';
 
   drawScope();
   requestAnimationFrame(loop);
