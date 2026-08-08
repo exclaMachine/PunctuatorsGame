@@ -77,6 +77,42 @@
     font-size:10px; letter-spacing:.14em; text-transform:uppercase;
     padding:0 12px 10px;
   }
+
+  /* ---- debug verb readout (toggles with fps) ---- */
+  #verb{
+    position:absolute; top:6px; right:8px;
+    font-size:13px; letter-spacing:.14em; font-weight:600;
+    color:var(--bone); text-shadow:0 1px 2px #000;
+    pointer-events:none;
+  }
+
+  /* ---- entry / calibration overlay ---- */
+  #entry{
+    position:absolute; inset:0; z-index:10;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:22px; padding:32px;
+    text-align:center;
+    background:radial-gradient(120% 90% at 50% 40%, var(--stone-1), #000 90%);
+    transition:opacity .6s ease;
+  }
+  #entry.ready-tap{ cursor:pointer; }
+  #entry.gone{ opacity:0; pointer-events:none; }
+  #entry-title{
+    font-size:26px; letter-spacing:.42em; font-weight:600;
+    color:var(--bone); text-indent:.42em;              /* balance the tracking */
+    min-height:1.2em;
+  }
+  #entry-prompt{
+    font-size:15px; letter-spacing:.06em; color:var(--bone);
+    min-height:1.3em;
+  }
+  #entry-sub{
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--dust); min-height:1.3em;
+  }
+  #entry.ready-tap #entry-prompt{ animation:pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
 </style>
 </head>
 <body>
@@ -84,6 +120,12 @@
   <div class="screen">
     <canvas id="view"></canvas>
     <div id="fps">— fps</div>
+    <div id="verb"></div>
+    <div id="entry">
+      <div id="entry-title">AUGMINOTAUR</div>
+      <div id="entry-prompt">tap to descend</div>
+      <div id="entry-sub">headphones recommended</div>
+    </div>
   </div>
   <div class="pad">
     <button id="btn-left"  aria-label="Turn left">◀</button>
