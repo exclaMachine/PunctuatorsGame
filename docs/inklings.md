@@ -264,9 +264,11 @@ it does **not** fade like a toast. `maybeNotifyCleared()`only plays the one-time
   drops the screen cache so pre-load field screens repopulate. `CREATURES_BY_ID` indexes it; `RESOURCE_POOL`
   = entries with `spawn.weight>0` (so weight-0 `inkling` is excluded — it's the existing letter-creature,
   present only for its bestiary entry).
-  - **Spawn:** `genScreen` rolls `RES_PER_SCREEN_MIN..MAX` (1–3) resource-creatures per **field** screen
-    **after** the letters (so `letterScatter` stays the first `rng()` draw and `screenCreatureCount`/
-    `dayTotalCreatures` are unchanged). `rollResourceCreature(rng,dist)` is a weighted pick gated by
+  - **Spawn:** `genScreen` rolls `beastCount(rng)` resource-creatures per **field** screen — **sparse and
+    below the letter rate** (0 @45% / 1 @40% / 2 @15%, avg ~0.7) — **after** the letters (so `letterScatter`
+    stays the first `rng()` draw and `screenCreatureCount`/`dayTotalCreatures` are unchanged). **No beasts in
+    the 3×3 ring around home** (`Math.max(|sx|,|sy|) ≤ 1` → skipped entirely), so the screens you first step
+    into are calm. `rollResourceCreature(rng,dist)` is a weighted pick gated by
     `spawn.minDist ≤ (|sx|+|sy|)`. Writer's Block is folded into this roll but keeps its `kind:"cube"` art/
     behavior; every other new creature is a generic `kind:"resource"` (`makeResourceCreature`). Resource-
     creatures are **not** added to `state.captured` (that set stays letters-only so the "all captured"
@@ -820,7 +822,8 @@ not deleted; move an entry back into `creatures` to revive it.
 **Design intent.** HP is deliberately low (there's no weapon-upgrade system yet — see decision #6), so
 creatures differ by **behavior**, not bulk (The Proofreaper mini-boss at hp 5 is the deliberate exception).
 **Every non-letter creature costs a heart on contact** (`contactDamage:1`); the nuisance pests *also* harass.
-Letters remain the scarce prize; resource-creatures are a modest 1–3 per field screen and drop **book-binding
+Letters remain the prize; resource-creatures are now **sparser than letters** (0–2 per field screen, avg ~0.7,
+none in the 3×3 ring around home) and drop **book-binding
 materials** — the future "bind a finished book onto the shelf" gate will spend these (that gate is **not
 built yet**; for now materials just collect in `state.resources`). Roster: **Writer's Block** (cube,
 cheese/glue), **The Slush Pile** (bulk paper), **The Typo** (graphite/blank-tile, swaps a carried letter),

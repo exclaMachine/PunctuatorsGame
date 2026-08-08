@@ -2029,7 +2029,7 @@ function exclaCheckWord(word, pos, letter, label){
 let CREATURES_DATA=null;              // full parsed JSON (also gates the bestiary UI open)
 const CREATURES_BY_ID={};             // id -> creature entry
 let RESOURCE_POOL=[];                 // creatures with spawn.weight>0 — the resource-creature roll pool
-const RES_PER_SCREEN_MIN=1, RES_PER_SCREEN_MAX=3;   // resource-creatures per FIELD screen (modest; letters stay scarce)
+// resource-creatures per FIELD screen: see beastCount() — sparse, below the letter rate, none in the home ring.
 const SPEED_OF={ still:0, slow:42, medium:70, fast:104 };    // named creature speeds → px/s (player moves at 180)
 const PICKUP_DIST=26;                 // collect radius (auto-grabbed at this range)
 const PICKUP_MAGNET=110;             // within this, a dropped material homes toward you (auto-collect)
@@ -2969,6 +2969,9 @@ function makeResourceCreature(rng, cre, tiles){
 // Thin, even scatter of loose letters: usually none, sometimes 1–2 (letters are meant to feel rare now).
 // Uses exactly one rng() draw so screenCreatureCount can replay it deterministically.
 function letterScatter(rng){ const r=rng(); return r<0.6 ? 0 : (r<0.87 ? 1 : 2); }
+// Beasts (resource-creatures) are sparse and sit BELOW the letter rate: usually none, sometimes 1, rarely 2.
+// One rng() draw, mirroring letterScatter. Beasts are kept out of the 3×3 ring around home entirely (see genScreen).
+function beastCount(rng){ const r=rng(); return r<0.45 ? 0 : (r<0.85 ? 1 : 2); }
 // Bonus letter-creatures: when a new letter unlocks, one is placed on the HOME screen (0,0) so you can go
 // catch it that day even if the map is already cleared. Tracked in state.bonus until captured.
 function makeBonusCreature(tiles, letter, id){
@@ -3009,8 +3012,10 @@ function genScreen(sx,sy){
     // roll also spawns Writer's Block (weight 20), which keeps its existing cube art/behaviour. Resource
     // creatures are NOT added to state.captured (that set stays letters-only for the "all captured" banner),
     // so like today's cubes they regenerate on reload.
-    if(RESOURCE_POOL.length){
-      const rc = RES_PER_SCREEN_MIN + ((rng()*(RES_PER_SCREEN_MAX-RES_PER_SCREEN_MIN+1))|0);
+    // Beast-free ring: no resource-creatures on the 8 screens immediately around home — beasts start 2 out.
+    const inSafeRing = Math.max(Math.abs(sx),Math.abs(sy)) <= 1;
+    if(RESOURCE_POOL.length && !inSafeRing){
+      const rc = beastCount(rng);
       for(let i=0;i<rc;i++){
         const pick=rollResourceCreature(rng, dist); if(!pick) continue;
         let mk;
