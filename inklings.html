@@ -3139,7 +3139,12 @@ if(IS_DEV){   // a small corner badge so it's obvious the debug build is active 
     const b=document.createElement("div"); b.id="devbadge"; b.textContent="DEV · ` grants letters";
     b.style.cssText="position:fixed;left:6px;bottom:6px;z-index:99;font:10px 'Press Start 2P',monospace;"+
       "color:#e3d8bd;background:rgba(38,35,58,.82);border:2px solid #c89b3c;padding:4px 7px;pointer-events:none";
-    document.body.appendChild(b); };
+    document.body.appendChild(b);
+    // DEV-only launcher for the standalone IPA Scrabble MVP (docs/ipa-scrabble.md).
+    const s=document.createElement("a"); s.id="dev-ipascrabble"; s.href="ipa-scrabble.html"; s.textContent="🔤 IPA Scrabble";
+    s.style.cssText="position:fixed;left:6px;bottom:34px;z-index:99;font:10px 'Press Start 2P',monospace;"+
+      "color:#26233a;background:#c89b3c;border:2px solid #26233a;padding:4px 7px;text-decoration:none;cursor:pointer";
+    document.body.appendChild(s); };
   if(document.body) mk(); else addEventListener("DOMContentLoaded", mk);
 }
 addEventListener("keydown",e=>{

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>IPA Scrabble (dev) — Inklings</title>
+<!--
+  IPA SCRABBLE — an Inklings dev-only word game (MVP, score-attack).
+  Spell by SOUND, not letters: arrange phoneme tiles into any real word's PRONUNCIATION.
+  Validity = the phoneme sequence you lay matches some real word's IPA (so /t u/ = two/too/to,
+  and homophones collapse into one). Data: IPA-fan-game/ipa_words.js (word -> space-separated IPA).
+  Tile point-values + bag distribution are derived from real phoneme frequency in that dataset.
+  Self-contained single file (per repo convention); imports the IPA module -> needs http serving
+  (Live Server), not file://. Aesthetic: Inklings retro-pixel ink/paper.
+  See docs/ipa-scrabble.md.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#26233a; --paper:#ece3cf; --parch:#e3d8bd; --gold:#c89b3c;
+    --blue:#3b4a7a; --moss:#5b7a4b; --violet:#7a4a9a; --bg:#15131c;
+    --edge:#26233a; --disp:'Press Start 2P',monospace; --read:'VT323',monospace;
+    --good:#5b7a4b; --bad:#9a4a4a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--read);
+    -webkit-font-smoothing:none; image-rendering:pixelated;
+    padding:14px; display:flex; justify-content:center;
+  }
+  .wrap{width:100%; max-width:720px}
+  h1{
+    font-family:var(--disp); font-size:15px; color:var(--gold); margin:0 0 4px;
+    text-shadow:2px 2px 0 #000; letter-spacing:1px;
+  }
+  .sub{ font-size:18px; color:var(--parch); margin:0 0 12px; line-height:1.2 }
+  .sub b{ color:var(--gold) }
+  .ipa{ font-family:var(--read) } /* IPA glyphs read fine in VT323/system fallback */
+
+  .panel{
+    background:var(--paper); border:3px solid var(--edge);
+    box-shadow:6px 6px 0 rgba(0,0,0,.55); padding:12px; margin-bottom:12px;
+  }
+  .statbar{ display:flex; gap:14px; flex-wrap:wrap; align-items:center;
+    font-family:var(--disp); font-size:11px; color:var(--ink); margin-bottom:10px }
+  .statbar .v{ color:var(--blue) }
+  .statbar .sc{ color:var(--gold); font-size:14px }
+
+  .label{ font-family:var(--disp); font-size:9px; color:var(--ink); opacity:.7;
+    text-transform:uppercase; letter-spacing:1px; margin:0 0 6px }
+
+  /* the word you're assembling */
+  .build{
+    min-height:64px; background:var(--parch); border:3px dashed #b9a877;
+    padding:8px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;
+  }
+  .build.empty::before{
+    content:"click rack tiles below to spell a sound…";
+    font-size:18px; color:#9a8f74; font-family:var(--read);
+  }
+  .status{ min-height:22px; margin-top:8px; font-size:19px; line-height:1.15 }
+  .status.ok{ color:var(--good) } .status.no{ color:#8a7c5c }
+  .status b{ color:var(--ink) }
+
+  .rack{
+    min-height:64px; background:#dcd0b3; border:3px solid var(--edge);
+    padding:8px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;
+  }
+
+  .tile{
+    position:relative; width:52px; height:56px; background:#f3ead2;
+    border:3px solid var(--edge); box-shadow:3px 3px 0 rgba(0,0,0,.45);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    font-size:26px; color:var(--ink); user-select:none; flex:0 0 auto;
+    transition:transform .05s steps(2);
+  }
+  .tile:hover{ transform:translate(-1px,-1px) }
+  .tile:active{ transform:translate(1px,1px); box-shadow:1px 1px 0 rgba(0,0,0,.45) }
+  .tile.vowel{ background:#f0e2c9; color:var(--violet) }
+  .tile .val{ position:absolute; right:3px; bottom:1px; font-family:var(--disp);
+    font-size:8px; color:#7a6f52 }
+  .build .tile{ box-shadow:3px 3px 0 rgba(0,0,0,.3) }
+  .build.win .tile{ border-color:var(--good) }
+  @keyframes shakex{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)}
+    75%{transform:translateX(6px)} }
+  .build.shake{ animation:shakex .18s steps(2) 2 }
+
+  .btnrow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px }
+  button{
+    font-family:var(--disp); font-size:10px; color:var(--paper); cursor:pointer;
+    background:var(--blue); border:3px solid var(--edge); padding:9px 11px;
+    box-shadow:3px 3px 0 rgba(0,0,0,.5); text-transform:uppercase; letter-spacing:1px;
+  }
+  button:hover{ filter:brightness(1.12) }
+  button:active{ transform:translate(1px,1px); box-shadow:1px 1px 0 rgba(0,0,0,.5) }
+  button:disabled{ opacity:.4; cursor:default; filter:none; transform:none }
+  button.play{ background:var(--moss) }
+  button.warn{ background:#7a5a3a }
+  button.ghost{ background:#6a6480 }
+
+  .found h2{ font-family:var(--disp); font-size:11px; color:var(--gold); margin:0 0 8px }
+  .foundlist{ display:flex; flex-direction:column; gap:5px; max-height:220px; overflow:auto }
+  .fw{ display:flex; justify-content:space-between; gap:10px; background:var(--parch);
+    border:2px solid var(--edge); padding:5px 8px; font-size:19px; align-items:baseline }
+  .fw .p{ color:var(--blue); font-size:20px }
+  .fw .w{ color:var(--ink); opacity:.85 }
+  .fw .pts{ font-family:var(--disp); font-size:10px; color:var(--gold) }
+  .empty-note{ font-size:18px; color:#9a8f74 }
+
+  .msg{ font-family:var(--disp); font-size:9px; color:var(--moss); min-height:14px; margin-top:6px }
+  .msg.err{ color:var(--bad) }
+  .loaderr{ color:var(--bad); font-size:20px; line-height:1.35 }
+  code{ font-family:var(--read); font-size:19px; background:#00000018; padding:0 4px }
+  @media (max-width:480px){
+    .tile{ width:44px; height:48px; font-size:22px } h1{ font-size:12px }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>IPA SCRABBLE <span style="font-size:9px;color:#9a8f74">· dev · Inklings</span></h1>
+  <p class="sub">Spell by <b>sound</b>, not letters. Arrange phoneme tiles into any real word's
+    <b>pronunciation</b> — <span class="ipa">/t ɹ i/</span> = <b>tree</b>, <span class="ipa">/t u/</span> = two·too·to.</p>
+
+  <div id="game" style="display:none">
+    <div class="panel">
+      <div class="statbar">
+        <span>SCORE <span class="sc" id="score">0</span></span>
+        <span>BAG <span class="v" id="bag">0</span></span>
+        <span>WORDS <span class="v" id="wcount">0</span></span>
+      </div>
+
+      <p class="label">Your sound (click to take a tile back)</p>
+      <div class="build empty" id="build"></div>
+      <div class="status no" id="status"></div>
+
+      <p class="label" style="margin-top:12px">Rack — click a tile to add it</p>
+      <div class="rack" id="rack"></div>
+
+      <div class="btnrow">
+        <button class="play" id="lay">✓ Lay word</button>
+        <button class="ghost" id="recall">↩ Recall</button>
+        <button class="ghost" id="shuffle">⇄ Shuffle</button>
+        <button class="warn" id="trade">♻ Trade rack</button>
+        <button id="hint">💡 Hint</button>
+        <button class="warn" id="newgame">✦ New game</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <div class="panel found">
+      <h2>WORD HOARD</h2>
+      <div class="foundlist" id="found"><span class="empty-note">No sounds laid yet.</span></div>
+    </div>
+  </div>
+
+  <div class="panel" id="loading"><span style="font-size:20px">Loading the pronunciation lexicon…</span></div>
+</div>
+
+<script type="module">
+import { ipaWords } from './IPA-fan-game/ipa_words.js';
+
+/* ---------- CONFIG ---------- */
+const RACK_SIZE = 7;
+const BAG_TARGET = 100;          // approx total tiles in the bag (Scrabble ~100)
+const BINGO_BONUS = 20;          // using ALL rack tiles in one word
+const VOWELS = new Set("i ɪ ɛ æ ə ʌ ɑ ɔ ʊ u ɝ eɪ aɪ ɔɪ oʊ aʊ".split(" "));
+
+/* value by phoneme rarity (% of all phonemes in the lexicon). Higher = rarer. */
+function valueForPct(p){
+  if(p>=4)   return 1;
+  if(p>=2)   return 2;
+  if(p>=1.2) return 3;
+  if(p>=0.8) return 4;
+  if(p>=0.5) return 5;
+  if(p>=0.2) return 8;
+  return 10;
+}
+
+/* ---------- BUILD LEXICON + PHONEME TABLE (from the real data) ---------- */
+const VALID = new Set();                 // pronunciation strings that are real words
+const PRON_WORDS = new Map();            // pron -> shortest example spelling
+const freq = {}; let totalTok = 0;
+
+for(const w in ipaWords){
+  const pron = ipaWords[w].trim();
+  if(!pron) continue;
+  VALID.add(pron);
+  const prev = PRON_WORDS.get(pron);
+  const clean = w.replace(/_/g," ");
+  if(!prev || clean.length < prev.length || (clean.length===prev.length && clean < prev)){
+    PRON_WORDS.set(pron, clean);
+  }
+  for(const t of pron.split(" ")){ if(t){ freq[t]=(freq[t]||0)+1; totalTok++; } }
+}
+
+// phoneme -> {val, count(in bag), vowel}
+const PHONEMES = {};
+const bagTemplate = [];
+for(const t in freq){
+  const pct = 100*freq[t]/totalTok;
+  const val = valueForPct(pct);
+  const count = Math.max(1, Math.round(pct/100 * BAG_TARGET));
+  PHONEMES[t] = { val, count, vowel: VOWELS.has(t) };
+  for(let i=0;i<count;i++) bagTemplate.push(t);
+}
+
+/* ---------- STATE ---------- */
+let bag = [];        // remaining tile tokens
+let rack = [];       // tile objects on the rack: {id, tok, val, vowel}
+let build = [];      // tile objects laid into the current sound
+let score = 0;
+let found = [];      // {pron, word, pts}
+let tileSeq = 0;
+
+const $ = id => document.getElementById(id);
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function mkTile(tok){ const m=PHONEMES[tok]; return { id:++tileSeq, tok, val:m.val, vowel:m.vowel }; }
+
+function drawToFull(){
+  while(rack.length < RACK_SIZE && bag.length){ rack.push(mkTile(bag.pop())); }
+}
+
+function newGame(){
+  bag = shuffle(bagTemplate.slice());
+  rack = []; build = []; score = 0; found = [];
+  drawToFull();
+  msg("New bag. Spell by sound!");
+  renderAll();
+}
+
+/* ---------- ACTIONS ---------- */
+function pickFromRack(id){
+  const i = rack.findIndex(t=>t.id===id); if(i<0) return;
+  build.push(rack[i]); rack.splice(i,1);
+  renderAll();
+}
+function returnToRack(id){
+  const i = build.findIndex(t=>t.id===id); if(i<0) return;
+  rack.push(build[i]); build.splice(i,1);
+  renderAll();
+}
+function recall(){ while(build.length){ rack.push(build.pop()); } renderAll(); }
+
+function currentPron(){ return build.map(t=>t.tok).join(" "); }
+function isValid(){ return build.length>0 && VALID.has(currentPron()); }
+
+function layWord(){
+  if(!isValid()){
+    const b=$('build'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+    msg("Not a real word's sound — try another arrangement.", true);
+    return;
+  }
+  const pron = currentPron();
+  const usedAll = (build.length===RACK_SIZE);
+  let pts = build.reduce((s,t)=>s+t.val, 0) + (usedAll?BINGO_BONUS:0);
+  score += pts;
+  found.unshift({ pron, word: PRON_WORDS.get(pron)||"?", pts });
+  build = [];                    // tiles are consumed
+  drawToFull();                  // refill from the bag
+  msg((usedAll?"BINGO! +"+BINGO_BONUS+"  ":"") + "Laid /"+pron+"/  +"+pts+" pts");
+  renderAll();
+}
+
+function trade(){
+  recall();                      // pull any built tiles back first
+  bag.push(...rack.map(t=>t.tok));   // dump the rack back into the bag
+  rack = [];
+  shuffle(bag);
+  drawToFull();
+  msg("Traded your rack for fresh tiles.");
+  renderAll();
+}
+
+/* find one playable word from the current rack (subsets x permutations, longest first) */
+function findHint(){
+  const toks = rack.map(t=>t.tok);
+  const n = toks.length;
+  let best = null;
+  // try larger subsets first for a juicier hint
+  for(let size=n; size>=1 && !best; size--){
+    const idxs = combos(n, size);
+    for(const combo of idxs){
+      const sub = combo.map(i=>toks[i]);
+      const hit = permHit(sub);
+      if(hit){ best = hit; break; }
+    }
+  }
+  return best;
+}
+function combos(n,k){
+  const out=[], cur=[];
+  (function rec(start){
+    if(cur.length===k){ out.push(cur.slice()); return; }
+    for(let i=start;i<n;i++){ cur.push(i); rec(i+1); cur.pop(); }
+  })(0);
+  return out;
+}
+function permHit(arr){
+  let result=null;
+  const used=new Array(arr.length).fill(false); const cur=[];
+  const seen=new Set();
+  (function rec(){
+    if(result) return;
+    if(cur.length===arr.length){
+      const pron=cur.join(" ");
+      if(VALID.has(pron)) result={pron, word:PRON_WORDS.get(pron)};
+      return;
+    }
+    for(let i=0;i<arr.length;i++){
+      if(used[i]) continue;
+      // skip duplicate tokens at the same depth to cut the search
+      const key=cur.length+"|"+arr[i];
+      if(seen.has(key) && i>0 && arr[i]===arr[i-1] && !used[i-1]) continue;
+      used[i]=true; cur.push(arr[i]); seen.add(key);
+      rec();
+      used[i]=false; cur.pop();
+      if(result) return;
+    }
+  })();
+  return result;
+}
+function hint(){
+  const h = findHint();
+  if(h) msg("Try /"+h.pron+"/  ("+h.word+")");
+  else  msg("No word hides in this rack — try ♻ Trade.", true);
+}
+
+/* ---------- RENDER ---------- */
+let msgTimer=null;
+function msg(t, err){ const m=$('msg'); m.textContent=t; m.className='msg'+(err?' err':''); }
+
+function tileEl(t, onClick){
+  const d=document.createElement('div');
+  d.className='tile'+(t.vowel?' vowel':'');
+  d.innerHTML='<span class="ipa">'+t.tok+'</span><span class="val">'+t.val+'</span>';
+  d.onclick=()=>onClick(t.id);
+  return d;
+}
+function renderRack(){
+  const r=$('rack'); r.innerHTML='';
+  if(!rack.length){ r.innerHTML='<span class="empty-note">Rack empty — bag exhausted.</span>'; return; }
+  rack.forEach(t=> r.appendChild(tileEl(t, pickFromRack)));
+}
+function renderBuild(){
+  const b=$('build'); b.innerHTML=''; b.classList.remove('shake');
+  b.classList.toggle('empty', build.length===0);
+  b.classList.toggle('win', isValid());
+  build.forEach(t=> b.appendChild(tileEl(t, returnToRack)));
+
+  const s=$('status');
+  if(!build.length){ s.textContent=''; s.className='status no'; }
+  else if(isValid()){
+    const pron=currentPron();
+    const w=PRON_WORDS.get(pron);
+    s.innerHTML='✓ <b>'+esc(w)+'</b> &nbsp;<span class="ipa">/'+esc(pron)+'/</span> — real word! Lay it.';
+    s.className='status ok';
+  } else {
+    s.innerHTML='<span class="ipa">/'+esc(currentPron())+'/</span> — not a word yet';
+    s.className='status no';
+  }
+}
+function renderFound(){
+  const f=$('found'); f.innerHTML='';
+  if(!found.length){ f.innerHTML='<span class="empty-note">No sounds laid yet.</span>'; return; }
+  for(const e of found){
+    const d=document.createElement('div'); d.className='fw';
+    d.innerHTML='<span class="p ipa">/'+esc(e.pron)+'/</span>'+
+                '<span class="w">'+esc(e.word)+'</span>'+
+                '<span class="pts">+'+e.pts+'</span>';
+    f.appendChild(d);
+  }
+}
+function renderStats(){
+  $('score').textContent=score; $('bag').textContent=bag.length; $('wcount').textContent=found.length;
+  $('lay').disabled=!isValid();
+  $('recall').disabled=!build.length;
+  $('hint').disabled=!rack.length;
+  $('trade').disabled=!(rack.length||build.length);
+}
+function renderAll(){ renderRack(); renderBuild(); renderFound(); renderStats(); }
+function esc(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+/* ---------- WIRE + BOOT ---------- */
+$('lay').onclick=layWord;
+$('recall').onclick=recall;
+$('shuffle').onclick=()=>{ shuffle(rack); renderRack(); };
+$('trade').onclick=trade;
+$('hint').onclick=hint;
+$('newgame').onclick=newGame;
+
+$('loading').style.display='none';
+$('game').style.display='';
+newGame();
+</script>
+
+<script>
+/* Module load failure (e.g. opened via file://, where module imports are CORS-blocked):
+   swap the loading panel for a friendly hint. Runs if the module script above never boots. */
+setTimeout(()=>{
+  const g=document.getElementById('game'), l=document.getElementById('loading');
+  if(g && g.style.display==='none' && l){
+    l.innerHTML='<div class="loaderr">Couldn\'t load the pronunciation lexicon.<br>'+
+      'This page imports an ES module, so it must be served over <b>http</b> '+
+      '(e.g. VS Code <code>Live Server</code>) — not opened as a <code>file://</code>.</div>';
+  }
+}, 1500);
+</script>
+</body>
+</html>
