@@ -154,6 +154,7 @@
         <button class="warn" id="trade">♻ Trade rack</button>
         <button id="hint">💡 Rack idea</button>
         <button class="warn" id="newgame">✦ New game</button>
+        <button class="ghost" id="mute">🔊 Sound</button>
       </div>
       <div class="msg" id="msg"></div>
     </div>
@@ -224,6 +225,68 @@ let lastCell;         // {r,c} | null — where the last tile was placed (seeds 
 let placedStack;      // ordered keys of this turn's placements (for Backspace undo)
 
 const $ = id => document.getElementById(id);
+
+/* ---------- SOUND FX ----------
+   Tiny procedural WebAudio chiptune — matches the 8-bit look, ships no assets, works file://.
+   Lazily builds a (suspended-until-gesture) AudioContext; every cue is fired from a click/keypress
+   so it resumes fine. Mute state persists in localStorage. */
+const SFX = (()=>{
+  let ac=null, master=null;
+  let muted = localStorage.getItem('ipascrabble.muted')==='1';
+  function ctx(){
+    if(!ac){ const AC=window.AudioContext||window.webkitAudioContext; ac=new AC();
+      master=ac.createGain(); master.gain.value=0.22; master.connect(ac.destination); }
+    if(ac.state==='suspended') ac.resume();
+    return ac;
+  }
+  function tone(freq, dur, o={}){                       // one oscillator voice w/ gain envelope + optional glide
+    if(muted) return;
+    const a=ctx(), start=a.currentTime+(o.when||0);
+    const osc=a.createOscillator(), g=a.createGain();
+    osc.type=o.type||'square';
+    osc.frequency.setValueAtTime(freq, start);
+    if(o.freq2) osc.frequency.exponentialRampToValueAtTime(Math.max(30,o.freq2), start+dur);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(o.vol||0.5, start+(o.attack||0.005));
+    g.gain.exponentialRampToValueAtTime(0.0001, start+dur);
+    osc.connect(g); g.connect(master);
+    osc.start(start); osc.stop(start+dur+0.03);
+  }
+  function seq(notes){ let when=0; for(const n of notes){ tone(n.f, n.d, {when, type:n.type, vol:n.vol, freq2:n.f2}); when+=(n.t!=null?n.t:n.d); } }
+  function noise(dur, o={}){                             // filtered noise burst (shuffle/trade swoosh)
+    if(muted) return;
+    const a=ctx(), start=a.currentTime+(o.when||0), n=Math.floor(a.sampleRate*dur);
+    const buf=a.createBuffer(1,n,a.sampleRate), ch=buf.getChannelData(0);
+    for(let i=0;i<n;i++) ch[i]=(Math.random()*2-1)*(1-i/n);
+    const src=a.createBufferSource(); src.buffer=buf;
+    const bp=a.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=0.7;
+    bp.frequency.setValueAtTime(o.from||1000, start); bp.frequency.exponentialRampToValueAtTime(o.to||400, start+dur);
+    const g=a.createGain(); g.gain.value=o.vol||0.2;
+    src.connect(bp); bp.connect(g); g.connect(master);
+    src.start(start);
+  }
+  return {
+    get muted(){ return muted; },
+    toggle(){ muted=!muted; localStorage.setItem('ipascrabble.muted', muted?'1':'0'); if(!muted) ctx(); return muted; },
+    select(){ tone(660,0.06,{vol:0.4,freq2:880}); },
+    deselect(){ tone(440,0.05,{vol:0.3,freq2:330}); },
+    place(n){ const base=420+Math.min(n,7)*70; tone(base,0.05,{vol:0.5,attack:0.002}); tone(base*2,0.04,{vol:0.14,when:0.004}); },
+    pickup(){ tone(500,0.07,{type:'triangle',vol:0.4,freq2:300}); },
+    move(){ tone(880,0.02,{vol:0.1}); },
+    error(){ tone(200,0.12,{type:'sawtooth',vol:0.35,freq2:120}); },
+    hint(){ seq([{f:988,d:0.06,type:'triangle',vol:0.35},{f:1319,d:0.11,type:'triangle',vol:0.35}]); },
+    shuffle(){ noise(0.16,{from:700,to:1500,vol:0.18}); },
+    trade(){ noise(0.28,{from:1500,to:300,vol:0.22}); },
+    newgame(){ seq([523,659,784,1047].map((f,i)=>({f,d:i===3?0.16:0.09,vol:0.4}))); },
+    gameover(){ seq([{f:659,d:0.14},{f:523,d:0.14},{f:392,d:0.30}].map(x=>({...x,type:'triangle',vol:0.4}))); },
+    play(pts, bingo){                                    // valid word: major arpeggio; bigger with points; bingo fanfare
+      if(bingo){ seq([523,659,784,1047,1319,1047,1319].map((f,i)=>({f,d:i===6?0.24:0.08,vol:0.45}))); return; }
+      const notes=[523,659,784,1047,1319], k=Math.max(3,Math.min(5, 2+Math.floor(pts/12)));
+      seq(notes.slice(0,k).map((f,i)=>({f,d:i===k-1?0.18:0.07,vol:0.42})));
+    },
+  };
+})();
+
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function mkTile(tok){ const m=PHONEMES[tok]; return { id:++tileSeq, tok, val:m.val, vowel:m.vowel }; }
 function drawToFull(){ while(rack.length<RACK_SIZE && bag.length) rack.push(mkTile(bag.pop())); }
@@ -392,8 +455,8 @@ function evaluateTurn(){
 
 /* ---------- ACTIONS ---------- */
 function selectTile(id){                 // pick/toggle a rack tile; seed the cursor onto a valid square
-  if(held===id){ held=null; cursor=null; }
-  else { held=id; cursor=nearestTarget(validTargets(), lastCell||{r:CENTER,c:CENTER}); }
+  if(held===id){ held=null; cursor=null; SFX.deselect(); }
+  else { held=id; cursor=nearestTarget(validTargets(), lastCell||{r:CENTER,c:CENTER}); SFX.select(); }
   renderAll();
 }
 function clickRack(id){ selectTile(id); }
@@ -401,6 +464,7 @@ function pickUp(key){                     // return a pending tile to the rack
   if(!pending.has(key)) return false;
   rack.push(pending.get(key)); pending.delete(key);
   placedStack = placedStack.filter(k=>k!==key);
+  SFX.pickup();
   return true;
 }
 function placeAt(r,c){                    // drop the selected tile at (r,c)
@@ -408,11 +472,12 @@ function placeAt(r,c){                    // drop the selected tile at (r,c)
   const key=r+","+c;
   pending.set(key, rack[i]); rack.splice(i,1);
   placedStack.push(key); lastCell={r,c}; held=null; cursor=null;
+  SFX.place(pending.size);               // rising pitch as the turn's tiles stack up
   return true;
 }
 function placeSelected(){                 // Enter / Space
   if(held==null){ msg("Pick a tile first (1–7 or click)."); return; }
-  if(!cursor){ msg("No open square next to a letter — Recall or aim elsewhere."); return; }
+  if(!cursor){ SFX.error(); msg("No open square next to a letter — Recall or aim elsewhere."); return; }
   placeAt(cursor.r, cursor.c); renderAll();
 }
 function clickCell(r,c){
@@ -421,13 +486,13 @@ function clickCell(r,c){
     pickUp(key); if(held!=null) cursor=nearestTarget(validTargets(), {r,c}); renderAll(); return;
   }
   if(board[r][c]) return;                 // committed tile — immovable
-  if(held==null){ msg("Pick a rack tile first (click or 1–7)."); return; }
+  if(held==null){ SFX.error(); msg("Pick a rack tile first (click or 1–7)."); return; }
   if(!validTargets().some(t=>t.r===r&&t.c===c)){   // click is held to the same single-line targets as the cursor
-    msg("That square would break the line — place onto a highlighted square, continuing the tiles you're laying.", true); return;
+    SFX.error(); msg("That square would break the line — place onto a highlighted square, continuing the tiles you're laying.", true); return;
   }
   placeAt(r,c); renderAll();
 }
-function recall(){ for(const [,t] of pending){ rack.push(t); } pending.clear(); placedStack=[]; held=null; cursor=null; renderAll(); }
+function recall(){ if(pending.size) SFX.pickup(); for(const [,t] of pending){ rack.push(t); } pending.clear(); placedStack=[]; held=null; cursor=null; renderAll(); }
 
 /* ---------- KEYBOARD (select → aim → place) ---------- */
 function onKey(e){
@@ -438,9 +503,9 @@ function onKey(e){
     if(held==null) return;                // the cursor only exists while a tile is selected
     e.preventDefault();
     const d={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[k];
-    moveCursor(d[0],d[1]); renderAll(); return;
+    moveCursor(d[0],d[1]); SFX.move(); renderAll(); return;
   }
-  if(k==='Tab'){ if(held==null) return; e.preventDefault(); cycleCursor(e.shiftKey?-1:1); renderAll(); return; }
+  if(k==='Tab'){ if(held==null) return; e.preventDefault(); cycleCursor(e.shiftKey?-1:1); SFX.move(); renderAll(); return; }
   if(k===' '||k==='Enter'){ if(held!=null){ e.preventDefault(); placeSelected(); } return; }
   if(k==='Escape'){ if(held!=null||cursor){ held=null; cursor=null; renderAll(); } return; }
   if(k==='Backspace'){
@@ -454,7 +519,8 @@ function onKey(e){
 
 function play(){
   const ev=evaluateTurn();
-  if(!ev.ok){ msg(ev.error||"Not a legal play.", true); return; }
+  if(!ev.ok){ SFX.error(); msg(ev.error||"Not a legal play.", true); return; }
+  SFX.play(ev.total, ev.bingo);
   for(const [k,t] of pending){ const [r,c]=k.split(",").map(Number); board[r][c]={tok:t.tok,val:t.val,vowel:t.vowel}; boardCount++; }
   score += ev.total;
   const stamp = Date.now();
@@ -463,10 +529,10 @@ function play(){
   pending.clear(); held=null; cursor=null; lastCell=null; placedStack=[]; drawToFull();
   msg("Played for +"+ev.total+(ev.bingo?"  (BINGO!)":"")+" pts.");
   renderAll();
-  if(!bag.length && !rack.length) msg("Bag & rack empty — game over. Final score "+score+".");
+  if(!bag.length && !rack.length){ msg("Bag & rack empty — game over. Final score "+score+"."); setTimeout(()=>SFX.gameover(), 700); }
 }
 
-function trade(){ recall(); bag.push(...rack.map(t=>t.tok)); rack=[]; shuffle(bag); drawToFull(); msg("Traded your rack for fresh tiles."); renderAll(); }
+function trade(){ recall(); bag.push(...rack.map(t=>t.tok)); rack=[]; shuffle(bag); drawToFull(); SFX.trade(); msg("Traded your rack for fresh tiles."); renderAll(); }
 
 /* rack-only nudge: a pronunciation the rack could spell (placement still up to you) */
 function findRackWord(){
@@ -487,7 +553,7 @@ function permHit(arr){
       used[i]=true; cur.push(arr[i]); rec(); used[i]=false; cur.pop(); if(res) return; } })();
   return res;
 }
-function hint(){ const h=findRackWord(); msg(h ? "Your rack could spell /"+h.pron+"/ ("+h.word+")" : "No word hides in this rack — try ♻ Trade.", !h); }
+function hint(){ const h=findRackWord(); if(h) SFX.hint(); else SFX.error(); msg(h ? "Your rack could spell /"+h.pron+"/ ("+h.word+")" : "No word hides in this rack — try ♻ Trade.", !h); }
 
 /* ---------- RENDER ---------- */
 function msg(t,err){ const m=$('msg'); m.textContent=t; m.className='msg'+(err?' err':''); }
@@ -569,10 +635,13 @@ function renderAll(){ renderBoard(); renderRack(); renderStatus(); renderFound()
 /* ---------- WIRE + BOOT ---------- */
 $('lay').onclick=play;
 $('recall').onclick=recall;
-$('shuffle').onclick=()=>{ shuffle(rack); renderRack(); };
+$('shuffle').onclick=()=>{ SFX.shuffle(); shuffle(rack); renderRack(); };
 $('trade').onclick=trade;
 $('hint').onclick=hint;
-$('newgame').onclick=newGame;
+$('newgame').onclick=()=>{ newGame(); SFX.newgame(); };
+function syncMute(){ $('mute').textContent = SFX.muted ? '🔇 Muted' : '🔊 Sound'; }
+$('mute').onclick=()=>{ const m=SFX.toggle(); syncMute(); if(!m) SFX.select(); msg(m?'Sound off.':'Sound on.'); };
+syncMute();
 document.addEventListener('keydown', onKey);
 
 $('loading').style.display='none';

@@ -68,6 +68,15 @@ Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 1
 - **Aids:** **↩ Recall** (return all pending to rack), **⇄ Shuffle** (reorder rack), **♻ Trade rack** (dump
   rack to bag, redraw — no penalty), **💡 Rack idea** (brute-forces the rack for one spellable pronunciation
   as a nudge — placement still up to you), **✦ New game**. Game ends when bag and rack are both empty.
+- **Sound FX** (BUILT 2026-08-09) — a tiny **procedural WebAudio chiptune** engine (`SFX`, no assets, works
+  even `file://`; matches the 8-bit look, distinct from the game's other real-recording audio which needs
+  http). A lazily-built (suspended-until-first-gesture) `AudioContext` drives short oscillator blips + a
+  filtered-noise swoosh: **select/deselect** tile, **place** (pitch rises as the turn's tiles stack, via
+  `SFX.place(pending.size)`), **pick-up/recall**, keyboard **cursor move** (very quiet), **error** (illegal
+  placement / illegal play / dead hint), a **valid-word arpeggio** (longer/brighter with points; a big
+  **BINGO** fanfare), **shuffle/trade** swooshes, a **hint** sparkle, a **new-game** jingle, and a
+  **game-over** cadence. A **🔊 Sound / 🔇 Muted** button toggles all of it, persisted in
+  `localStorage["ipascrabble.muted"]`.
 
 ## Known bugs
 - *(none currently)*
