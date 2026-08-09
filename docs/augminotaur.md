@@ -19,7 +19,7 @@ Entry file: `augminotaur.html` · modules in `augminotaur/` · input research be
 | --- | --- |
 | **M1** — raycaster + grid-step movement | **BUILT** (`99bb194`) |
 | **M2** — `VoiceInput` module + calibration entry flow | **BUILT** (`ecd44ab`) |
-| M3 — `AudioContext.currentTime` beat clock + wall-shading pulse | not built |
+| **M3** — `AudioContext.currentTime` beat clock + wall-shading pulse | **BUILT** (`clock.js`) |
 | M4 — Movement 1 (call & response, 4 patterns, win/lose) | not built |
 | Snare **"ka"** verb (this doc, below) | **BUILT** in `voice.js` + bench — default thresholds pending mic tuning |
 | Procedural maze + voice-only traversal | **tentative** (parked — see below) |
@@ -31,7 +31,9 @@ ES-module split so audio/game systems drop in without a rewrite:
 - `augminotaur.html` — shell: 320×200 pixelated canvas, three thumb buttons, the entry/calibration
   overlay, and two debug readouts (FPS + last mouth-verb, toggle `F`). No HUD in the final.
 - `augminotaur/main.js` — wiring + game loop. Runs the entry flow at load, pumps `vi.update()` each
-  frame once the mic is live, stashes `vi.latencyOffsetMs` for the coming beat clock.
+  frame once the mic is live, creates the `BeatClock` once the AudioContext is live, and feeds
+  `pulseLight(clock)` into the raycaster each frame. Stashes `vi.latencyOffsetMs` for M4 hit-scoring.
+- `augminotaur/clock.js` — the shared beat clock (below).
 - `augminotaur/map.js` — the labyrinth grid + spawn (currently a hardcoded 16×16: outer ring + central plus).
 - `augminotaur/player.js` — grid-step/tank movement (90° snap-turns, one-cell steps, dt-tweened, wall-bump nudge).
 - `augminotaur/raycaster.js` — DDA raycaster, flat-shaded walls with a `light` multiplier ready for the beat pulse.
@@ -78,7 +80,24 @@ overlay: **AUGMINOTAUR → tap to descend → "Be silent…"** (1.6 s noise-floo
 `start()`) **→ "Listen…"** (four latency clicks played and heard back through the mic). Latency measurement
 needs the speaker→mic acoustic path, so it **fails on headphones** — that's expected: graceful fallback to a
 0 ms offset with a tap-to-retry. The diegetic "put on the mask" framing for the headphone case is deferred.
-Measured offset is stashed as `vi.latencyOffsetMs` for the beat clock to subtract from every hit.
+Measured offset is stashed as `vi.latencyOffsetMs` for M4's hit-scoring to subtract from every hit.
+
+## The beat clock (`clock.js`) — BUILT
+
+The single shared timebase, driven by **`AudioContext.currentTime`** (never `setTimeout`/`rAF`): audio
+time is monotonic and drift-free, so once the Augminotaur's drums and the player's scored hits exist they
+line up against one ruler. `BeatClock(ctx, bpm=76, beatsPerBar=4)` is created in `main.js` off the live mic
+context (`vi.ctx`) the moment calibration finishes; before that the walls hold at full light. It's a **pure
+timing source** — makes no sound, touches no canvas — exposing `beats()` (continuous float since start) and
+`barPhase()` (beats since the last downbeat). Tempo is HANDOFF's opening 76 BPM.
+
+M3's only consumer is the **wall-shading pulse**: `pulseLight(clock)` returns the raycaster's `light`
+multiplier — a **subtle few-percent brighten on the downbeat** (`PULSE_AMP=0.06`) that decays fast
+(`PULSE_TAU=0.17` beats → ~10% of peak within ~0.4 beat), a flash-and-fade "visual metronome" rather than a
+bar-long throb. **Silent by design** for now: the augmented-triad drone and his drums arrive with M4+.
+Everything later (call-&-response windows, the groove loop, the seam) schedules against these same beat
+numbers. The latency offset is *not* applied to the pulse (it's a pure visual); M4 will subtract it from
+scored mic hits.
 
 ---
 

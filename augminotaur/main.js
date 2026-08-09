@@ -1,9 +1,11 @@
 /* =====================================================================
    main.js — wiring + game loop
    ---------------------------------------------------------------------
-   Milestone 2: raycaster + grid-step movement, plus the VoiceInput mic
-   detector wired in behind a calibration entry screen. Still no beat
-   clock and no Augminotaur — those are the next steps.
+   Milestone 3: raycaster + grid-step movement, the VoiceInput mic detector
+   behind a calibration entry screen, and now the AudioContext-driven beat
+   clock feeding the wall-shading pulse. Still no Augminotaur — call &
+   response (Movement 1) is the next step, and it schedules against this
+   same clock.
 
    Two on-screen readouts (FPS + the last mouth-verb) are debug aids,
    toggled with F, not part of the game — the final has no HUD.
@@ -14,6 +16,7 @@ import { Player } from "./player.js";
 import { render } from "./raycaster.js";
 import { createInput } from "./input.js";
 import { runEntry } from "./calibrate.js";
+import { BeatClock, pulseLight } from "./clock.js";
 
 const W = 320, H = 200;
 const canvas = document.getElementById("view");
@@ -47,6 +50,10 @@ addEventListener("keydown", e => {
 let vi = null;
 let lastVerbAt = -1e9;
 
+// The beat clock, created once the AudioContext is live (post-calibration).
+// Until then there is no beat and the walls hold at full light.
+let clock = null;
+
 // ---- loop ----
 let last = performance.now();
 function frame(now) {
@@ -66,7 +73,8 @@ function frame(now) {
     else if (intent.right)   player.turn(+1);
   }
   player.update(dt);
-  render(g, W, H, player, MAP);
+  const light = clock ? pulseLight(clock) : 1;
+  render(g, W, H, player, MAP, light);
 
   if (showDbg) {
     fps += ((1000 / Math.max(dt, 1)) - fps) * 0.1;
@@ -85,9 +93,14 @@ runEntry({
   sub:     document.getElementById("entry-sub"),
 }).then(({ vi: v, offsetMs }) => {
   vi = v;
-  // Latency offset isn't used until the beat clock exists (next step); we
-  // stash it on the detector so the clock can subtract it from every hit.
+  // Stash the measured latency on the detector. The clock itself doesn't
+  // need it (the pulse is a pure visual), but Movement 1's scoring will
+  // subtract it from every hit's timestamp before comparing to a beat.
   vi.latencyOffsetMs = offsetMs;
+
+  // Start the shared beat clock off the live AudioContext. From here the
+  // walls pulse on every downbeat; later systems schedule against it too.
+  clock = new BeatClock(vi.ctx);
   // Route detected verbs to the debug readout. HOLD/HISS upgrades replace
   // the plosive shown a moment earlier; _END events don't count.
   vi.onEvent = ev => {
