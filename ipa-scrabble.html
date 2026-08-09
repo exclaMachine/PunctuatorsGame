@@ -242,16 +242,42 @@ function newGame(){
 function inb(r,c){ return r>=0 && r<N && c>=0 && c<N; }
 function cellTile(r,c){ if(!inb(r,c)) return null; return pending.get(r+","+c) || board[r][c]; }
 
-/* Valid squares to move the cursor onto: empty cells adjacent to a letter already down (committed OR
-   this turn's pending). On the very first placement of the game there's nothing to touch, so the only
-   target is the ★ center (the first word must cross it). Full legality (single line, no gaps) is still
-   judged at ✓ Play — this just keeps the cursor on sensible squares. */
+/* Valid squares to place onto this turn — keeps the placement a single contiguous line (real Scrabble):
+   - No tile placed yet: the ★ center on an empty board, else any empty cell touching a committed tile
+     (the play must connect to the board somewhere).
+   - Exactly one tile placed: its four empty orthogonal neighbors — the second tile locks the axis.
+   - Two+ tiles placed: the axis is fixed by them; offer the empty cell extending each end (skipping
+     over committed tiles, which may bridge the line) plus any empty gap between placed tiles (so a
+     picked-up middle tile can be refilled). Full legality is still re-checked at ✓ Play. */
 function validTargets(){
-  const out=[], seeded = boardCount>0 || pending.size>0;
-  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
-    if(cellTile(r,c)) continue;
-    if(!seeded){ if(r===CENTER && c===CENTER) out.push({r,c}); continue; }
-    if(cellTile(r-1,c)||cellTile(r+1,c)||cellTile(r,c-1)||cellTile(r,c+1)) out.push({r,c});
+  const out=[];
+  if(pending.size===0){                                     // nothing placed yet this turn
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      if(cellTile(r,c)) continue;
+      if(boardCount===0){ if(r===CENTER && c===CENTER) out.push({r,c}); }
+      else if(cellTile(r-1,c)||cellTile(r+1,c)||cellTile(r,c-1)||cellTile(r,c+1)) out.push({r,c});
+    }
+    return out;
+  }
+  const keys=[...pending.keys()].map(k=>k.split(",").map(Number));
+  if(keys.length===1){                                      // axis not yet decided → four neighbors
+    const [r,c]=keys[0];
+    for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+      const rr=r+dr, cc=c+dc;
+      if(inb(rr,cc) && !cellTile(rr,cc)) out.push({r:rr,c:cc});
+    }
+    return out;
+  }
+  const sameRow=keys.every(([r])=>r===keys[0][0]);          // axis fixed by the placed tiles
+  const dr=sameRow?0:1, dc=sameRow?1:0;
+  keys.sort((a,b)=>(a[0]-b[0])+(a[1]-b[1]));
+  const lo=keys[0], hi=keys[keys.length-1];
+  for(let r=lo[0]+dr,c=lo[1]+dc; !(r===hi[0]&&c===hi[1]); r+=dr,c+=dc)   // interior gaps
+    if(inb(r,c) && !cellTile(r,c)) out.push({r,c});
+  for(const [er,ec,sdr,sdc] of [[lo[0],lo[1],-dr,-dc],[hi[0],hi[1],dr,dc]]){  // extend each end
+    let r=er+sdr, c=ec+sdc;
+    while(inb(r,c) && board[r][c]){ r+=sdr; c+=sdc; }        // skip over committed (bridge) tiles
+    if(inb(r,c) && !cellTile(r,c)) out.push({r,c});
   }
   return out;
 }
@@ -388,7 +414,10 @@ function clickCell(r,c){
   }
   if(board[r][c]) return;                 // committed tile — immovable
   if(held==null){ msg("Pick a rack tile first (click or 1–7)."); return; }
-  placeAt(r,c); renderAll();              // mouse can drop on any empty cell; keyboard is guided to targets
+  if(!validTargets().some(t=>t.r===r&&t.c===c)){   // click is held to the same single-line targets as the cursor
+    msg("That square would break the line — place onto a highlighted square, continuing the tiles you're laying.", true); return;
+  }
+  placeAt(r,c); renderAll();
 }
 function recall(){ for(const [,t] of pending){ rack.push(t); } pending.clear(); placedStack=[]; held=null; cursor=null; renderAll(); }
 

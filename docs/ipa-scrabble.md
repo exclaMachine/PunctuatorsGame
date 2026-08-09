@@ -48,19 +48,35 @@ Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 1
   run against `VALID`, and scores via `scoreCells` (letter/word premiums count only for `isNew` tiles). A
   **live status** under the board previews each run (green valid `/pron/ word +pts`, red ✗) and the turn
   total, and **✓ Play** is disabled until every run is a real word.
-- **Placement UX** — two ways, both share `pending`/`evaluateTurn`:
-  - *Click:* click a rack tile to hold it (gold), click an empty cell to drop it, click a pending tile to
-    pick it back up. Vowels tinted.
+- **Placement UX** — two ways, both share `pending`/`evaluateTurn` **and the same single-line target set**
+  (`validTargets`), so click and keyboard obey identical rules:
+  - **Single-line targeting** (`validTargets`) keeps a turn's tiles on one contiguous line as you lay them,
+    instead of letting each tile land next to any unrelated word: *no tile placed yet* → the ★ center on an
+    empty board, else any empty cell touching a committed tile (the play must connect somewhere); *one tile
+    placed* → its four empty orthogonal neighbors (the second tile locks the axis); *two+ tiles placed* → the
+    axis is fixed, so only the empty cell extending **each end** (skipping over committed tiles, which may
+    bridge the line, per real Scrabble) plus any empty **interior gap** between placed tiles (so a picked-up
+    middle tile can be refilled). Full legality (single line, no gaps, every run a real word) is still
+    re-checked at ✓ Play.
+  - *Click:* click a rack tile to hold it (gold), click a **highlighted** target cell to drop it (a click on
+    any other empty cell is rejected with a hint), click a pending tile to pick it back up. Vowels tinted.
   - *Keyboard (select → aim → place):* `1`–`7` (or a click) **select** a rack tile; a **cursor** then only
-    visits **valid squares** — empty cells adjacent to a letter already down (or the ★ center on the first
-    placement of the game). Arrow keys move the cursor to the nearest valid square that way, `Tab` cycles
-    them; **`Enter`/`Space` places** the selected tile there. `Backspace` picks up the last placed tile,
-    `Esc` deselects. No direction/orientation to manage — full legality (single line, no gaps) is still
-    judged at ✓ Play. Helpers: `validTargets`/`moveCursor`/`cycleCursor`/`placeAt`; rack tiles show their
-    `1–7` slot number.
+    visits the valid target squares above. Arrow keys move the cursor to the nearest valid square that way,
+    `Tab` cycles them; **`Enter`/`Space` places** the selected tile there. `Backspace` picks up the last
+    placed tile, `Esc` deselects. No direction/orientation to manage. Helpers:
+    `validTargets`/`moveCursor`/`cycleCursor`/`placeAt`; rack tiles show their `1–7` slot number.
 - **Aids:** **↩ Recall** (return all pending to rack), **⇄ Shuffle** (reorder rack), **♻ Trade rack** (dump
   rack to bag, redraw — no penalty), **💡 Rack idea** (brute-forces the rack for one spellable pronunciation
   as a nudge — placement still up to you), **✦ New game**. Game ends when bag and rack are both empty.
+
+## Known bugs
+- **Single-line targeting is too strict right after the first tile connects (2026-08-09).** When your
+  first placed tile of a turn lands next to an existing **committed** letter, the axis is still treated as
+  undecided, so `validTargets` only offers that tile's four neighbors. It should let you continue in a
+  **continuous line off the committed letter you connected to** — i.e. the second tile should be placeable
+  extending that existing word's line, not only adjacent to your own first tile. (Consequence of the
+  "all-4-neighbors until the second tile locks the axis" rule colliding with the "bridge through committed
+  tiles" rule.) **Fix later**, not now.
 
 ## Not built / deferred
 - **AI opponent** (currently solo score-attack), **wildcard/blank tiles**, turn timer.
