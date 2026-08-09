@@ -70,6 +70,11 @@
   .cell.tile.vowel .gl{ color:var(--violet) }
   .cell .gl{ font-size:17px } .cell .tv{ position:absolute; right:2px; bottom:0;
     font-family:var(--disp); font-size:7px; color:#7a6f52 }
+  /* keyboard caret */
+  .cell.caret{ outline:3px solid var(--gold); outline-offset:-3px; }
+  .caretarrow{ position:absolute; top:0; right:2px; color:var(--gold); font-size:12px;
+    line-height:1; text-shadow:0 0 2px #000; animation:caretblink 1s steps(1) infinite; }
+  @keyframes caretblink{ 50%{ opacity:0 } }
 
   .status{ min-height:24px; margin-top:8px; font-size:18px; line-height:1.25 }
   .status.ok{ color:var(--good) } .status.no{ color:#8a7c5c } .status.err{ color:var(--bad) }
@@ -89,6 +94,14 @@
   .rtile.vowel{ color:var(--violet) }
   .rtile .val{ position:absolute; right:3px; bottom:1px; font-family:var(--disp);
     font-size:8px; color:#7a6f52 }
+  .rtile .slot{ position:absolute; left:3px; top:1px; font-family:var(--disp);
+    font-size:8px; color:#9a8f74 }
+  .rtile.placed{ opacity:.34; box-shadow:none; }
+  .rtile.placed .slot{ color:var(--gold) }
+  .rtile.empty{ background:#d3c7a9; border-style:dashed; box-shadow:none; cursor:default; }
+  .klegend{ font-family:var(--disp); font-size:8px; color:#9a8f74; margin:7px 0 0;
+    letter-spacing:0; line-height:1.5 }
+  .klegend b{ color:var(--blue) }
 
   .btnrow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px }
   button{ font-family:var(--disp); font-size:10px; color:var(--paper); cursor:pointer;
@@ -131,8 +144,10 @@
       <div class="boardscroll"><div class="board" id="board"></div></div>
       <div class="status no" id="status"></div>
 
-      <p class="label" style="margin-top:12px">Rack — click a tile, then click a board cell</p>
+      <p class="label" style="margin-top:12px">Rack — click a tile then a cell, or use the keyboard</p>
       <div class="rack" id="rack"></div>
+      <p class="klegend"><b>1–7</b> place tile at caret · <b>← ↑ ↓ →</b> move caret ·
+        <b>click cell</b> set caret · <b>Enter</b> flip ▸/▾ · <b>Backspace</b> undo · <b>Esc</b> clear</p>
 
       <div class="btnrow">
         <button class="play" id="lay">✓ Play</button>
@@ -205,17 +220,22 @@ for(const t in freq){
 let board;            // board[r][c] = {tok,val,vowel} | null (committed tiles)
 let boardCount;       // committed tiles on board
 let bag, rack, score, found, tileSeq, held;
-let pending;          // Map "r,c" -> tile object (this turn's placements)
+                      // rack = fixed-length slot array (tile|null), length RACK_SIZE, stable numbering per turn
+let pending;          // Map "r,c" -> tile object (this turn's placements; the same object stays in its rack slot, ghosted)
+let caret;            // {r,c,dir:'h'|'v'} | null — keyboard placement cursor
 
 const $ = id => document.getElementById(id);
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function mkTile(tok){ const m=PHONEMES[tok]; return { id:++tileSeq, tok, val:m.val, vowel:m.vowel }; }
-function drawToFull(){ while(rack.length<RACK_SIZE && bag.length) rack.push(mkTile(bag.pop())); }
+function drawToFull(){ for(let i=0;i<RACK_SIZE;i++){ if(!rack[i] && bag.length) rack[i]=mkTile(bag.pop()); } }
+function isPlaced(t){ if(!t) return false; for(const x of pending.values()) if(x.id===t.id) return true; return false; }
+function rackTiles(){ return rack.filter(Boolean); }              // slots that hold a tile
+function availTiles(){ return rack.filter(t=>t && !isPlaced(t)); } // holds a tile not on the board this turn
 
 function newGame(){
   board = Array.from({length:N},()=>Array(N).fill(null));
   boardCount = 0; bag = shuffle(bagTemplate.slice());
-  rack = []; pending = new Map(); score = 0; found = []; tileSeq = 0; held = null;
+  rack = Array(RACK_SIZE).fill(null); pending = new Map(); score = 0; found = []; tileSeq = 0; held = null; caret = null;
   drawToFull();
   msg("New bag. First word must cross the ★ center.");
   renderAll();
@@ -224,6 +244,12 @@ function newGame(){
 /* ---------- BOARD HELPERS ---------- */
 function inb(r,c){ return r>=0 && r<N && c>=0 && c<N; }
 function cellTile(r,c){ if(!inb(r,c)) return null; return pending.get(r+","+c) || board[r][c]; }
+function caretDelta(dir){ return dir==='v' ? [1,0] : [0,1]; }
+function nextEmpty(r,c,dr,dc){         // first empty in-bounds cell after (r,c) in a direction, skipping filled cells
+  let rr=r+dr, cc=c+dc;
+  while(inb(rr,cc) && cellTile(rr,cc)){ rr+=dr; cc+=dc; }
+  return inb(rr,cc) ? {r:rr,c:cc} : null;
+}
 function runAt(r,c,dr,dc){          // maximal contiguous filled run through (r,c)
   if(!cellTile(r,c)) return [];
   let sr=r, sc=c;
@@ -300,39 +326,86 @@ function evaluateTurn(){
 }
 
 /* ---------- ACTIONS ---------- */
-function clickRack(id){ held = (held===id) ? null : id; renderRack(); }
+function clickRack(i){                   // i = rack slot index
+  const t=rack[i]; if(!t) return;
+  if(isPlaced(t)){                       // click a ghosted (placed) slot → pick that tile back up
+    for(const [k,x] of pending){ if(x.id===t.id){ pending.delete(k); break; } }
+    held=null; renderAll(); return;
+  }
+  held = (held===t.id) ? null : t.id; renderRack();
+}
+function dropAt(r,c,t){                   // place tile t at (r,c); move caret to the next open cell
+  pending.set(r+","+c, t);
+  const [dr,dc]=caretDelta(caret?caret.dir:'h'), nx=nextEmpty(r,c,dr,dc);
+  caret = nx ? {r:nx.r,c:nx.c,dir:caret?caret.dir:'h'} : {r,c,dir:caret?caret.dir:'h'};
+}
 function clickCell(r,c){
   const key=r+","+c;
-  if(pending.has(key)){                 // pick a pending tile back up
-    rack.push(pending.get(key)); pending.delete(key); renderAll(); return;
+  if(pending.has(key)){ pending.delete(key); renderAll(); return; }  // pick a pending tile back up
+  if(board[r][c]) return;                                            // committed tile — immovable
+  if(held!=null){                                                    // drop the held tile here
+    const t=rack.find(x=>x&&x.id===held); if(!t){ held=null; renderAll(); return; }
+    dropAt(r,c,t); held=null; renderAll(); return;
   }
-  if(board[r][c]) return;               // committed tile — immovable
-  if(held==null){ msg("Pick a rack tile first, then click a cell."); return; }
-  const i=rack.findIndex(t=>t.id===held); if(i<0){ held=null; return; }
-  pending.set(key, rack[i]); rack.splice(i,1); held=null;
+  // nothing held → set / flip / hide the keyboard caret
+  if(caret && caret.r===r && caret.c===c) caret = caret.dir==='h' ? {r,c,dir:'v'} : null;
+  else caret = {r,c,dir:'h'};
   renderAll();
 }
-function recall(){ for(const [k,t] of pending){ rack.push(t); } pending.clear(); held=null; renderAll(); }
+function recall(){ pending.clear(); held=null; renderAll(); }        // tiles stay in their slots — just un-place them
+
+/* ---------- KEYBOARD (board caret) ---------- */
+function onKey(e){
+  if($('game').style.display==='none') return;
+  const k=e.key;
+  if(k==='Escape'){ if(caret||held!=null){ caret=null; held=null; renderAll(); } return; }
+  if(k==='ArrowUp'||k==='ArrowDown'||k==='ArrowLeft'||k==='ArrowRight'){
+    e.preventDefault();
+    const d={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[k];
+    if(!caret){ caret={r:CENTER,c:CENTER,dir:(k==='ArrowUp'||k==='ArrowDown')?'v':'h'}; renderAll(); return; }
+    const nr=caret.r+d[0], nc=caret.c+d[1];
+    if(inb(nr,nc)) caret={r:nr,c:nc,dir:caret.dir};
+    renderAll(); return;
+  }
+  if(k==='Enter'){ if(caret){ e.preventDefault(); caret={r:caret.r,c:caret.c,dir:caret.dir==='h'?'v':'h'}; renderAll(); } return; }
+  if(k==='Backspace'){
+    e.preventDefault(); if(!caret) return;
+    const [dr,dc]=caretDelta(caret.dir); let rr=caret.r-dr, cc=caret.c-dc;
+    while(inb(rr,cc) && board[rr][cc] && !pending.has(rr+","+cc)){ rr-=dr; cc-=dc; }  // skip committed tiles
+    if(inb(rr,cc)){ pending.delete(rr+","+cc); caret={r:rr,c:cc,dir:caret.dir}; renderAll(); }
+    return;
+  }
+  if(/^[1-7]$/.test(k)){
+    e.preventDefault();
+    const t=rack[+k-1];
+    if(!t || isPlaced(t)){ msg("Slot "+k+" has no tile to place."); return; }
+    if(!caret){ held=(held===t.id)?null:t.id; renderRack(); return; }   // no caret → select/hold, like clicking
+    let target = cellTile(caret.r,caret.c) ? nextEmpty(caret.r,caret.c,...caretDelta(caret.dir)) : {r:caret.r,c:caret.c};
+    if(!target){ msg("No open cell that direction — move the caret."); return; }
+    dropAt(target.r,target.c,t); held=null; renderAll();
+  }
+}
 
 function play(){
   const ev=evaluateTurn();
   if(!ev.ok){ msg(ev.error||"Not a legal play.", true); return; }
-  for(const [k,t] of pending){ const [r,c]=k.split(",").map(Number); board[r][c]={tok:t.tok,val:t.val,vowel:t.vowel}; boardCount++; }
+  for(const [k,t] of pending){ const [r,c]=k.split(",").map(Number); board[r][c]={tok:t.tok,val:t.val,vowel:t.vowel}; boardCount++;
+    const i=rack.findIndex(x=>x&&x.id===t.id); if(i>=0) rack[i]=null; }   // empty the slots the played tiles came from
   score += ev.total;
   const stamp = Date.now();
   ev.words.forEach(w=> found.unshift({ ...w, pts:w.pts, turn:stamp }));
   if(ev.bingo) found.unshift({ pron:"— all 7 tiles —", word:"BINGO", pts:BINGO_BONUS, valid:true, turn:stamp });
-  pending.clear(); held=null; drawToFull();
+  pending.clear(); held=null; caret=null; drawToFull();
   msg("Played for +"+ev.total+(ev.bingo?"  (BINGO!)":"")+" pts.");
   renderAll();
-  if(!bag.length && !rack.length) msg("Bag & rack empty — game over. Final score "+score+".");
+  if(!bag.length && !rackTiles().length) msg("Bag & rack empty — game over. Final score "+score+".");
 }
 
-function trade(){ recall(); bag.push(...rack.map(t=>t.tok)); rack=[]; shuffle(bag); drawToFull(); msg("Traded your rack for fresh tiles."); renderAll(); }
+function trade(){ recall(); bag.push(...rackTiles().map(t=>t.tok)); rack=Array(RACK_SIZE).fill(null); shuffle(bag); drawToFull(); msg("Traded your rack for fresh tiles."); renderAll(); }
 
 /* rack-only nudge: a pronunciation the rack could spell (placement still up to you) */
 function findRackWord(){
-  const toks=rack.map(t=>t.tok), n=toks.length;
+  const toks=availTiles().map(t=>t.tok), n=toks.length;
   for(let size=n; size>=2; size--){
     for(const combo of combos(n,size)){
       const hit=permHit(combo.map(i=>toks[i])); if(hit) return hit;
@@ -369,18 +442,23 @@ function renderBoard(){
       else if(pm) d.innerHTML='<span class="pm">'+pm+'</span>';
     }
     if(pend || (!t && held!=null)) d.classList.add('playable');
+    if(caret && caret.r===r && caret.c===c){
+      d.classList.add('caret');
+      const a=document.createElement('span'); a.className='caretarrow'; a.textContent=caret.dir==='v'?'▾':'▸'; d.appendChild(a);
+    }
     d.onclick=()=>clickCell(r,c);
     b.appendChild(d);
   }
 }
 function renderRack(){
   const r=$('rack'); r.innerHTML='';
-  if(!rack.length){ r.innerHTML='<span class="empty-note">Rack empty.</span>'; return; }
-  for(const t of rack){
-    const d=document.createElement('div');
-    d.className='rtile'+(t.vowel?' vowel':'')+(held===t.id?' sel':'');
-    d.innerHTML='<span class="ipa">'+esc(t.tok)+'</span><span class="val">'+t.val+'</span>';
-    d.onclick=()=>clickRack(t.id);
+  for(let i=0;i<RACK_SIZE;i++){
+    const t=rack[i], d=document.createElement('div');
+    if(!t){ d.className='rtile empty'; d.innerHTML='<span class="slot">'+(i+1)+'</span>'; r.appendChild(d); continue; }
+    const placed=isPlaced(t);
+    d.className='rtile'+(t.vowel?' vowel':'')+(held===t.id&&!placed?' sel':'')+(placed?' placed':'');
+    d.innerHTML='<span class="slot">'+(i+1)+'</span><span class="ipa">'+esc(t.tok)+'</span><span class="val">'+t.val+'</span>';
+    d.onclick=()=>clickRack(i);
     r.appendChild(d);
   }
 }
@@ -409,7 +487,7 @@ function renderFound(){
 function renderStats(){
   $('score').textContent=score; $('bag').textContent=bag.length;
   $('wcount').textContent=found.filter(e=>e.word!=='BINGO').length;
-  $('hint').disabled=!rack.length; $('trade').disabled=!(rack.length||pending.size);
+  $('hint').disabled=!availTiles().length; $('trade').disabled=!(rackTiles().length||pending.size);
 }
 function renderAll(){ renderBoard(); renderRack(); renderStatus(); renderFound(); renderStats(); }
 
@@ -420,6 +498,7 @@ $('shuffle').onclick=()=>{ shuffle(rack); renderRack(); };
 $('trade').onclick=trade;
 $('hint').onclick=hint;
 $('newgame').onclick=newGame;
+document.addEventListener('keydown', onKey);
 
 $('loading').style.display='none';
 $('game').style.display='';

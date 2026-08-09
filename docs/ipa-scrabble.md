@@ -50,9 +50,55 @@ Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 1
   total, and **✓ Play** is disabled until every run is a real word.
 - **Placement UX** (click-to-place, matching the bench convention): click a rack tile to hold it (gold
   highlight), click an empty board cell to drop it, click a pending tile to pick it back up. Vowels tinted.
+  Also a **keyboard caret** for fast entry — see the "Keyboard caret placement" section below.
 - **Aids:** **↩ Recall** (return all pending to rack), **⇄ Shuffle** (reorder rack), **♻ Trade rack** (dump
   rack to bag, redraw — no penalty), **💡 Rack idea** (brute-forces the rack for one spellable pronunciation
   as a nudge — placement still up to you), **✦ New game**. Game ends when bag and rack are both empty.
+
+## Keyboard caret placement (BUILT 2026-08-09)
+
+Goal: lay a whole word in a few keystrokes instead of alternating click-tile / click-cell. Model chosen =
+a **board caret** (the text-cursor pattern real Scrabble apps like Woogles use). **Click-to-place stays
+fully intact** — the keyboard layer is additive and shares the same `pending` map + `evaluateTurn`.
+
+### Interaction
+- **Set the caret.** Click an empty board cell (or press an arrow key from cold) to drop a blinking caret
+  there. Direction starts **across** (`▸`). Clicking the caret cell again flips it to **down** (`▾`);
+  clicking a third time hides it. `Enter` also flips `▸`⇄`▾`.
+- **Move the caret.** Arrow keys move it one cell (clamped to the board). Movement does not skip.
+- **Drop a tile.** `1`–`7` drop the rack tile in that **slot** at the caret, then the caret **auto-advances**
+  one step in its direction, **skipping over any already-filled cells** (committed *or* pending) until it
+  lands on an empty cell or the board edge. So `caret on ★ → 3 1` can lay `/t u/`, and playing off an
+  existing word flows because the caret hops over the tiles already there.
+- **Undo.** `Backspace` steps the caret back one cell (opposite its direction, skipping filled-by-others
+  cells); if that cell holds one of *this turn's* pending tiles, it returns to its rack slot and the caret
+  parks on it. Mirrors text-editing backspace.
+- **Esc** hides the caret and clears any held/selected tile. **Space / Enter on caret** does not play —
+  ✓ Play stays the explicit commit (button; may also bind a key later).
+- Number keys with **no caret** set act as **select/hold** (same as clicking the rack tile) so numbers are
+  useful in both the keyboard and click flows.
+
+### Stable rack slots during a turn (the one refactor it required)
+So `3 1 5` is predictable, `rack` is a **fixed-length slot array** (length `RACK_SIZE`, entries tile|null)
+rather than a splicing list. Placing a tile (by key **or** click) keeps the same tile object in its slot but
+**ghosts it** (the object also goes into `pending`); the slot keeps its number. Picking it back up un-ghosts
+the slot (`recall` un-places everything; clicking a ghosted slot picks that one up). `Play` (commit) is the
+only thing that nulls played slots, then `drawToFull` refills nulls. `Shuffle` reorders slots; `Trade`
+rebuilds them. `isPlaced`/`rackTiles`/`availTiles` read this model; both input methods share it.
+
+### Visuals
+- Caret: a cell overlay with a blinking `▸`/`▾` arrow in `--gold`; distinct from the `held` gold ring.
+- Rack tiles show a small **slot-number badge** (`1`–`7`) in a corner; placed-this-turn slots render ghosted
+  (low opacity) but keep their number so you can see what `Backspace` will return.
+- A one-line **keyboard legend** under the rack (e.g. `1–7 place · ← ↑ ↓ → move · Enter flip · Backspace undo · Esc clear`).
+
+### Implementation notes
+- A single `keydown` listener on the game container; `preventDefault()` on arrows/Backspace so the page
+  doesn't scroll. Desktop-focused (mobile keeps touch/click).
+- New state: `caret = {r,c,dir}|null` where `dir` is `'h'|'v'`. Auto-advance/undo use a
+  `nextEmpty(r,c,dr,dc)` helper over `cellTile`.
+- `clickCell` branches: if a tile is `held` → drop (existing behavior); else → set/flip/hide the caret.
+- No change to `evaluateTurn`, scoring, or validity — placement only.
 
 ## Not built / deferred
 - **AI opponent** (currently solo score-attack), **wildcard/blank tiles**, turn timer.
