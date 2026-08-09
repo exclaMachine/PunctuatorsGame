@@ -70,13 +70,15 @@ Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 1
   as a nudge — placement still up to you), **✦ New game**. Game ends when bag and rack are both empty.
 
 ## Known bugs
-- **Single-line targeting is too strict right after the first tile connects (2026-08-09).** When your
-  first placed tile of a turn lands next to an existing **committed** letter, the axis is still treated as
-  undecided, so `validTargets` only offers that tile's four neighbors. It should let you continue in a
-  **continuous line off the committed letter you connected to** — i.e. the second tile should be placeable
-  extending that existing word's line, not only adjacent to your own first tile. (Consequence of the
-  "all-4-neighbors until the second tile locks the axis" rule colliding with the "bridge through committed
-  tiles" rule.) **Fix later**, not now.
+- *(none currently)*
+
+## Fixed
+- **Single-line targeting too strict right after the first tile connects (fixed 2026-08-09).** When your
+  first placed tile of a turn lands next to an existing **committed** letter, `validTargets` used to offer
+  only that tile's four neighbors, so you couldn't continue the existing word's line (e.g. place `x` left of
+  committed `A T`, then extend past `T`). Now, when a single placed tile abuts a committed tile along an
+  axis, that axis is treated as set: the bridged extension along it (skipping over committed tiles) is
+  offered too, while the four neighbors are still offered so a perpendicular word can start.
 
 ## Not built / deferred
 - **AI opponent** (currently solo score-attack), **wildcard/blank tiles**, turn timer.

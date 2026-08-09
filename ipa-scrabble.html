@@ -260,11 +260,19 @@ function validTargets(){
     return out;
   }
   const keys=[...pending.keys()].map(k=>k.split(",").map(Number));
-  if(keys.length===1){                                      // axis not yet decided → four neighbors
+  if(keys.length===1){                                      // one tile placed
     const [r,c]=keys[0];
-    for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
-      const rr=r+dr, cc=c+dc;
-      if(inb(rr,cc) && !cellTile(rr,cc)) out.push({r:rr,c:cc});
+    const add=(rr,cc)=>{ if(inb(rr,cc) && !cellTile(rr,cc) && !out.some(t=>t.r===rr&&t.c===cc)) out.push({r:rr,c:cc}); };
+    for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) add(r+dr,c+dc);   // four neighbors (perp word may start)
+    // If the tile abuts a committed tile along an axis, that axis is set: extend its line, bridging committed tiles.
+    for(const [dr,dc] of [[1,0],[0,1]]){
+      if(cellTile(r-dr,c-dc) || cellTile(r+dr,c+dc)){
+        for(const [sdr,sdc] of [[-dr,-dc],[dr,dc]]){
+          let rr=r+sdr, cc=c+sdc;
+          while(inb(rr,cc) && board[rr][cc]) { rr+=sdr; cc+=sdc; }       // skip over committed (bridge) tiles
+          add(rr,cc);
+        }
+      }
     }
     return out;
   }
