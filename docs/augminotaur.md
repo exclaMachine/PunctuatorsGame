@@ -118,10 +118,20 @@ answer with your voice, not your feet.
 
 **Modules:** `drums.js` (procedural kick/hat/snare = BOOM/TSS/KA one-shots at `AudioContext` times, short &
 dry so a CALL can't bleed into the ANSWER; + a `resolve()` triad for the win), `sprite.js` (depth-tested
-horned silhouette, pre-rendered once to an offscreen canvas then blitted column-by-column against the z-buffer;
-live ember eyes; lunges on CALL hits; grows as he closes), `movement1.js` (the state machine: ladder,
-CALL→ANSWER scheduling, scoring, distance tug-of-war, win/lose). Supporting changes: `raycaster.js` z-buffer,
-`clock.js` `timeAtBeat`/`perfAtBeat`.
+billboard, blitted column-by-column against the z-buffer; live ember eyes; lunges on CALL hits; grows as he
+closes), `movement1.js` (the state machine: ladder, CALL→ANSWER scheduling, scoring, distance tug-of-war,
+win/lose). Supporting changes: `raycaster.js` z-buffer, `clock.js` `timeAtBeat`/`perfAtBeat`.
+
+**Swappable art:** the horned bull is only `sprite.js`'s *default*. To use your own picture, drop a
+transparent PNG (camera-facing) in the repo and either set `CREATURE_SPRITE_SRC` at the top of `sprite.js`
+or call `setAugminotaurSprite({ src: "sprites/augminotaur.png" })` once at startup (returns a load Promise).
+Any aspect ratio works — width follows the image, world height is `HEIGHT` cells. If the art already has
+eyes, pass `eyes:false` to turn off the drawn embers. Nothing else changes; a bad path falls back to the bull.
+
+**Dev readout (F):** a bottom-left panel (alongside fps/verb, same F toggle) shows the live fight state —
+current pattern `n/4`, his distance, the CALL pattern laid out on the bar (`B · K ·`), and, during ANSWER,
+each of your hits as it lands with its grade and signed ms offset (`BPERF+8  KGOOD-40`); after judging, a
+per-slot recap (`got: B✓ K✗ +1 extra`). `movement1.dbgText()` builds it; final game has no HUD.
 
 **Ladder** (four patterns, `{beat,verb}` on a 4-beat bar, in `movement1.js`): `BOOM . KA .` → `BOOM KA BOOM .`
 → `BOOM . TSS KA` → `BOOM TSS KA BOOM` (2→4 hits, with a rest).

@@ -1,36 +1,66 @@
 /* =====================================================================
    sprite.js — the Augminotaur billboard
    ---------------------------------------------------------------------
-   One depth-tested sprite: a dark horned silhouette standing down the
-   corridor. Projected with the raycaster's exact FOV (PLANE_LEN) so it
-   sits in the world, and blitted column-by-column against the wall
-   z-buffer so it hides correctly behind corners.
+   One depth-tested sprite standing down the corridor. Projected with the
+   raycaster's exact FOV (PLANE_LEN) so it sits in the world, and blitted
+   column-by-column against the wall z-buffer so it hides behind corners.
 
-   The body is a near-black shadow that reads as a looming mass; distance
-   is the whole point (he grows as he closes in — "damage is distance"),
-   so there is deliberately little detail. His eyes are drawn live on top,
-   two embers that brighten while he's listening for your answer.
+   Distance is the whole point (he grows as he closes in — "damage is
+   distance"). Optional live ember eyes are drawn on top, brightening while
+   he listens for your answer.
 
-   No image asset: the silhouette is drawn once to an offscreen canvas at
-   load, then scaled per frame.
+   ─── SWAP IN YOUR OWN ART ────────────────────────────────────────────
+   The built-in bull is just the DEFAULT. To use your own picture, drop a
+   PNG in the repo (transparent background, facing the camera) and either:
+     • set CREATURE_SPRITE_SRC below to its path, or
+     • call setAugminotaurSprite({ src: "sprites/augminotaur.png" }) once
+       at startup (returns a Promise that resolves when the image loads).
+   Any aspect ratio works — width follows the image, height is HEIGHT cells.
+   If your art already has eyes, pass eyes:false (or set CREATURE_EYES=null)
+   to turn off the drawn embers. Nothing else in the game needs to change.
    ===================================================================== */
 
 import { PLANE_LEN } from "./raycaster.js";
 
-// Source silhouette resolution. Small — it's a pixel-art shadow, upscaled.
-const SRC_W = 64, SRC_H = 96;
+// ---- swap point: point this at your own image, or leave null for the bull.
+const CREATURE_SPRITE_SRC = null;               // e.g. "sprites/augminotaur.png"
+let CREATURE_EYES = { y: 0.30, dx: 0.16 };      // eye anchors (fractions); null = none
+
 // World height in cell-units: >1 so he looms taller than a wall is high.
 const HEIGHT = 1.75;
+// Default silhouette resolution (only used when no image is supplied).
+const SRC_W = 64, SRC_H = 96;
 
-// Where the eyes sit in source space (fraction of SRC_W/SRC_H), so the live
-// glow tracks the baked head no matter the on-screen size.
-const EYE_Y = 0.30;
-const EYE_DX = 0.16;
+// The active art: { canvas, w, h, eyes }. `canvas` is any CanvasImageSource
+// (an offscreen canvas or a loaded <img>), so drawImage blits either the
+// same. Lazily set to the procedural default on first draw if left unset.
+let art = null;
 
-let creature = null; // lazily-built offscreen canvas
+/**
+ * Replace the sprite art. Pass no src to restore the built-in silhouette.
+ * @param {object} [opts]  { src?:string, eyes?:{y,dx}|false }
+ * @returns {Promise<void>} resolves once the image (if any) has loaded
+ */
+export function setAugminotaurSprite(opts = {}) {
+  const eyes = opts.eyes === false ? null : (opts.eyes || CREATURE_EYES);
+  if (!opts.src) { art = buildDefaultArt(eyes); return Promise.resolve(); }
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      art = { canvas: img, w: img.naturalWidth || SRC_W, h: img.naturalHeight || SRC_H, eyes };
+      resolve();
+    };
+    img.onerror = () => {
+      // Fall back to the bull rather than drawing nothing.
+      art = buildDefaultArt(eyes);
+      reject(new Error(`sprite load failed: ${opts.src}`));
+    };
+    img.src = opts.src;
+  });
+}
 
-/** Build the silhouette once: horns + head + hunched body, near-black. */
-function buildCreature() {
+/** The procedural bull: horns + head + hunched body, near-black. */
+function buildDefaultArt(eyes = CREATURE_EYES) {
   const c = document.createElement("canvas");
   c.width = SRC_W; c.height = SRC_H;
   const x = c.getContext("2d");
@@ -68,7 +98,7 @@ function buildCreature() {
   x.lineWidth = 1;
   x.stroke();
 
-  creature = c;
+  return { canvas: c, w: SRC_W, h: SRC_H, eyes };
 }
 
 /**
@@ -80,7 +110,7 @@ function buildCreature() {
  * @param zbuf    Float32Array(W) of wall depths from render()
  */
 export function drawAugminotaur(g, W, H, player, aug, zbuf) {
-  if (!creature) buildCreature();
+  if (!art) art = buildDefaultArt();
   if (aug.alpha <= 0) return;
 
   // World offset, then into camera space (standard raycaster sprite maths).
@@ -98,12 +128,13 @@ export function drawAugminotaur(g, W, H, player, aug, zbuf) {
   const scale = aug.scale || 1;
   const wallH = Math.abs(H / depth);          // a 1-unit wall at this depth
   const spriteH = wallH * HEIGHT * scale;
-  const spriteW = spriteH * (SRC_W / SRC_H);
+  const spriteW = spriteH * (art.w / art.h);
   // Stand him on the floor line (bottom of a wall stripe at this depth).
   const feetY = H / 2 + wallH * 0.5;
   const topY = feetY - spriteH;
 
-  const x0 = Math.floor(screenX - spriteW / 2);
+  const left = screenX - spriteW / 2;
+  const x0 = Math.floor(left);
   const x1 = Math.ceil(screenX + spriteW / 2);
 
   g.globalAlpha = aug.alpha;
@@ -111,18 +142,19 @@ export function drawAugminotaur(g, W, H, player, aug, zbuf) {
     if (sx < 0 || sx >= W) continue;
     if (zbuf && depth >= zbuf[sx]) continue; // wall is nearer — occluded
     // Which source column maps to this screen column.
-    const u = (sx - (screenX - spriteW / 2)) / spriteW;
-    const srcX = Math.min(SRC_W - 1, Math.max(0, Math.floor(u * SRC_W)));
-    g.drawImage(creature, srcX, 0, 1, SRC_H, sx, topY, 1, spriteH);
+    const u = (sx - left) / spriteW;
+    const srcX = Math.min(art.w - 1, Math.max(0, Math.floor(u * art.w)));
+    g.drawImage(art.canvas, srcX, 0, 1, art.h, sx, topY, 1, spriteH);
   }
   g.globalAlpha = 1;
 
-  // ---- eyes: two embers, live glow (only if his centre isn't occluded) --
+  // ---- eyes: two embers, live glow (only if the art wants them + visible) --
+  if (!art.eyes) return;
   const centreCol = Math.round(screenX);
   const seen = !zbuf || centreCol < 0 || centreCol >= W || depth < zbuf[centreCol];
   const glow = aug.eyeGlow || 0;
   if (seen && glow > 0.01) {
-    const eyeY = topY + spriteH * EYE_Y;
+    const eyeY = topY + spriteH * art.eyes.y;
     const eyeR = Math.max(1, spriteH * 0.018);
     const lit = Math.min(1, glow);
     // ember -> hot: red rising toward orange as he listens harder
@@ -131,9 +163,14 @@ export function drawAugminotaur(g, W, H, player, aug, zbuf) {
     g.shadowBlur = eyeR * 4 * lit;
     for (const s of [-1, 1]) {
       g.beginPath();
-      g.arc(screenX + s * spriteW * EYE_DX, eyeY, eyeR, 0, Math.PI * 2);
+      g.arc(screenX + s * spriteW * art.eyes.dx, eyeY, eyeR, 0, Math.PI * 2);
       g.fill();
     }
     g.shadowBlur = 0;
   }
+}
+
+// Honor the top-of-file swap point at load (bull stays the default if null).
+if (CREATURE_SPRITE_SRC) {
+  setAugminotaurSprite({ src: CREATURE_SPRITE_SRC }).catch(err => console.warn(err.message));
 }

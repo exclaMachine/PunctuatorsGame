@@ -24,7 +24,9 @@
 import { Drums } from "./drums.js";
 
 // Tuned timing windows (HANDOFF), milliseconds around the expected beat.
-const WIN_COUNTS = 300;   // beyond this = a miss (perfect/good are inside)
+const WIN_PERFECT = 120;  // finer grades, surfaced in the dev readout
+const WIN_GOOD    = 220;
+const WIN_COUNTS  = 300;   // beyond this = a miss
 
 // Phrase geometry, in beats.
 const LEAD = 2;           // beats before the first call of a phrase
@@ -47,6 +49,17 @@ const LADDER = [
   [ {beat:0,verb:"BOOM"}, {beat:2,verb:"TSS"}, {beat:3,verb:"KA"} ],
   [ {beat:0,verb:"BOOM"}, {beat:1,verb:"TSS"}, {beat:2,verb:"KA"}, {beat:3,verb:"BOOM"} ],
 ];
+
+// ---- dev-readout formatting helpers ----------------------------------
+const SHORT = { BOOM: "B", TSS: "T", KA: "K" };
+const short = v => SHORT[v] || "?";
+const fmtMs = ms => (ms >= 0 ? "+" : "") + ms;   // signed offset
+/** "B · K ·" — the pattern laid out across a 4-beat bar. */
+function labelPattern(pat) {
+  const slots = ["·", "·", "·", "·"];
+  for (const h of pat) if (h.beat < 4) slots[h.beat] = short(h.verb);
+  return slots.join(" ");
+}
 
 export class Movement1 {
   /**
@@ -85,6 +98,7 @@ export class Movement1 {
     this.nextBeat = this.judgeBeat + REST;
 
     const pat = LADDER[this.rung];
+    this.patternLabel = labelPattern(pat);
 
     // His call: schedule the audio ahead (sample-accurate), and remember the
     // beats so update() can trigger a visual lunge as each one lands.
@@ -92,13 +106,17 @@ export class Movement1 {
     for (const h of this.callHits) this.drums.hit(h.verb, this.clock.timeAtBeat(h.beat));
 
     // The answer he's owed, as perf-domain timestamps to match mic hits to.
+    // `_live` = claimed by the live dev readout; `matched` = the authoritative
+    // judge result (independent of `_live`).
     this.expected = pat.map(h => ({
       verb: h.verb,
       perf: this.clock.perfAtBeat(this.answerStart + h.beat),
+      _live: false, matched: false,
     }));
     this.recOpen  = this.clock.perfAtBeat(this.answerStart) - REC_PAD_MS;
     this.recClose = this.clock.perfAtBeat(this.answerEnd)   + REC_PAD_MS;
     this.recorded = [];
+    this._summary = "";
 
     this.state = "call";
     this._judged = false;
@@ -111,7 +129,29 @@ export class Movement1 {
     if (ev.verb !== "BOOM" && ev.verb !== "TSS" && ev.verb !== "KA") return;
     const t = ev.t - this.latencyMs;               // undo measured round-trip latency
     if (t < this.recOpen || t > this.recClose) return;
-    this.recorded.push({ t, verb: ev.verb });
+    this.recorded.push({ t, verb: ev.verb, ann: this._annotate(t, ev.verb) });
+  }
+
+  /**
+   * Instant per-hit read for the dev readout: nearest same-verb expected
+   * slot not yet claimed live. (The authoritative score is judge()'s greedy
+   * pass; this is a live approximation so you see each hit land.)
+   */
+  _annotate(t, verb) {
+    let best = -1, bd = WIN_COUNTS + 1;
+    for (let i = 0; i < this.expected.length; i++) {
+      const e = this.expected[i];
+      if (e._live || e.verb !== verb) continue;
+      const d = Math.abs(t - e.perf);
+      if (d <= WIN_COUNTS && d < bd) { bd = d; best = i; }
+    }
+    if (best >= 0) {
+      this.expected[best]._live = true;
+      const dt = Math.round(t - this.expected[best].perf);
+      const grade = bd <= WIN_PERFECT ? "PERF" : bd <= WIN_GOOD ? "GOOD" : "ok";
+      return { ok: true, dt, grade };
+    }
+    return { ok: false, dt: 0, grade: "extra" }; // wrong verb or out of window
   }
 
   update(dt) {
@@ -155,12 +195,17 @@ export class Movement1 {
         const dt = Math.abs(rec[i].t - e.perf);
         if (dt <= WIN_COUNTS && dt < bestDt) { best = i; bestDt = dt; }
       }
-      if (best >= 0) rec[best].used = true; else misses++;
+      if (best >= 0) { rec[best].used = true; e.matched = true; } else misses++;
     }
     const extras = rec.filter(r => !r.used).length;
     const errs = misses + extras;
     const clean = errs === 0;
 
+    // Per-slot recap for the dev readout: expected verbs with ✓/✗, + extras.
+    const got = this.expected.map(e => short(e.verb) + (e.matched ? "✓" : "✗")).join(" ");
+    this._summary = clean
+      ? `CLEAN ${got}`
+      : `${got}${extras ? `  +${extras} extra` : ""}`;
     this.onDebug(clean ? `✓ ${this.rung + 1}/${LADDER.length}` : `✗ ${errs}`);
     this._eyeTarget = 0.25;
 
@@ -195,5 +240,27 @@ export class Movement1 {
     this.result = null;
     this.aug.alpha = 1;
     this.startPhrase();
+  }
+
+  /** Multi-line dev readout of the current phrase (rendered when F is on). */
+  dbgText() {
+    const PHASE = {
+      call: "CALL — his turn", answer: "ANSWER — your turn",
+      rest: "…", win: "WIN", lose: "LOSE",
+    };
+    const lines = [
+      `M1  pattern ${Math.min(this.rung + 1, LADDER.length)}/${LADDER.length}   he's at ${this.distance.toFixed(0)}`,
+      `call:  ${this.patternLabel}`,
+    ];
+    if (this.state === "answer") {
+      const you = this.recorded
+        .map(r => short(r.verb) + (r.ann.ok ? `${r.ann.grade}${fmtMs(r.ann.dt)}` : "✗"))
+        .join("  ");
+      lines.push(`you:   ${you || "…"}`);
+    } else if (this._summary) {
+      lines.push(`got:   ${this._summary}`);
+    }
+    lines.push(PHASE[this.state] || this.state);
+    return lines.join("\n");
   }
 }

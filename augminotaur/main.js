@@ -38,6 +38,7 @@ const intent = createInput({
 // ---- debug readouts (F toggles both) ----
 const fpsEl = document.getElementById("fps");
 const verbEl = document.getElementById("verb");
+const dbgEl = document.getElementById("dbg");
 let fps = 60, showDbg = true;
 addEventListener("keydown", e => {
   if (e.code === "KeyF") {
@@ -45,6 +46,7 @@ addEventListener("keydown", e => {
     const d = showDbg ? "block" : "none";
     fpsEl.style.display = d;
     verbEl.style.display = d;
+    dbgEl.style.display = d;
   }
 });
 
@@ -94,6 +96,7 @@ function frame(now) {
     fps += ((1000 / Math.max(dt, 1)) - fps) * 0.1;
     fpsEl.textContent = fps.toFixed(0) + " fps";
     if (now - lastVerbAt > 700) verbEl.textContent = "";
+    if (movement) dbgEl.textContent = movement.dbgText();
   }
   requestAnimationFrame(frame);
 }
