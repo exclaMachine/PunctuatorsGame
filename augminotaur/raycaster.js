@@ -12,7 +12,9 @@
    ===================================================================== */
 
 const FOV = (66 * Math.PI) / 180;
-const PLANE_LEN = Math.tan(FOV / 2);
+// Camera-plane half-length. Exported so the sprite billboard projects with
+// the exact same FOV as the walls (or it would drift across the view).
+export const PLANE_LEN = Math.tan(FOV / 2);
 
 // Palette (matches the input bench's stone/bone tones).
 const CEIL  = [12, 14, 20];    // near-black, cold
@@ -30,8 +32,10 @@ const rgb = c => `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;
  * @param player {x, y, angle}
  * @param map    MAP[y][x]
  * @param light  brightness multiplier (1 = normal; >1 for the beat pulse later)
+ * @param zbuf   optional Float32Array(W); filled with per-column wall depth
+ *               so a billboard sprite can be depth-tested against the walls
  */
-export function render(g, W, H, player, map, light = 1) {
+export function render(g, W, H, player, map, light = 1, zbuf = null) {
   // Ceiling and floor as two flat halves.
   g.fillStyle = rgb(CEIL);  g.fillRect(0, 0, W, H >> 1);
   g.fillStyle = rgb(FLOOR); g.fillRect(0, H >> 1, W, H - (H >> 1));
@@ -70,6 +74,7 @@ export function render(g, W, H, player, map, light = 1) {
     // Perpendicular distance (no fisheye).
     let perp = side === 0 ? sideDistX - deltaX : sideDistY - deltaY;
     if (perp < 1e-4) perp = 1e-4;
+    if (zbuf) zbuf[x] = perp;
 
     const lineH = Math.floor(H / perp);
     let y0 = ((H - lineH) >> 1);

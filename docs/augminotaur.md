@@ -20,7 +20,7 @@ Entry file: `augminotaur.html` · modules in `augminotaur/` · input research be
 | **M1** — raycaster + grid-step movement | **BUILT** (`99bb194`) |
 | **M2** — `VoiceInput` module + calibration entry flow | **BUILT** (`ecd44ab`) |
 | **M3** — `AudioContext.currentTime` beat clock + wall-shading pulse | **BUILT** (`clock.js`) |
-| M4 — Movement 1 (call & response, 4 patterns, win/lose) | not built |
+| **M4** — Movement 1 (call & response, 4 patterns, win/lose) | **BUILT** (`movement1.js` + `sprite.js` + `drums.js`) |
 | Snare **"ka"** verb (this doc, below) | **BUILT** in `voice.js` + bench — default thresholds pending mic tuning |
 | Procedural maze + voice-only traversal | **tentative** (parked — see below) |
 
@@ -33,10 +33,16 @@ ES-module split so audio/game systems drop in without a rewrite:
 - `augminotaur/main.js` — wiring + game loop. Runs the entry flow at load, pumps `vi.update()` each
   frame once the mic is live, creates the `BeatClock` once the AudioContext is live, and feeds
   `pulseLight(clock)` into the raycaster each frame. Stashes `vi.latencyOffsetMs` for M4 hit-scoring.
-- `augminotaur/clock.js` — the shared beat clock (below).
+- `augminotaur/clock.js` — the shared beat clock (below). `timeAtBeat`/`perfAtBeat` bridge audio time
+  (scheduling sound) and `performance.now()` (mic-event stamps) for M4 scoring.
+- `augminotaur/movement1.js` — Movement 1, the call-and-response fight controller (below).
+- `augminotaur/drums.js` — his procedural kit (kick/hat/snare = BOOM/TSS/KA) + the win-resolve triad. No assets.
+- `augminotaur/sprite.js` — the depth-tested Augminotaur billboard (horned silhouette + live eye-glow),
+  occluded against the raycaster's z-buffer.
 - `augminotaur/map.js` — the labyrinth grid + spawn (currently a hardcoded 16×16: outer ring + central plus).
 - `augminotaur/player.js` — grid-step/tank movement (90° snap-turns, one-cell steps, dt-tweened, wall-bump nudge).
-- `augminotaur/raycaster.js` — DDA raycaster, flat-shaded walls with a `light` multiplier ready for the beat pulse.
+- `augminotaur/raycaster.js` — DDA raycaster, flat-shaded walls with a `light` multiplier (beat pulse) and an
+  optional per-column z-buffer (`render(...)` fills it) so `sprite.js` occludes the creature behind walls.
 - `augminotaur/input.js` — keyboard (arrows/WASD) + touch intents.
 - `augminotaur/voice.js` — the detector (below), extracted verbatim from the bench.
 - `augminotaur/calibrate.js` — the entry overlay + calibration flow (below).
@@ -98,6 +104,45 @@ bar-long throb. **Silent by design** for now: the augmented-triad drone and his 
 Everything later (call-&-response windows, the groove loop, the seam) schedules against these same beat
 numbers. The latency offset is *not* applied to the pulse (it's a pure visual); M4 will subtract it from
 scored mic hits.
+
+---
+
+## M4 — Movement 1 (Mimicry / call & response) — BUILT
+
+The tutorial fight. Strict turn-taking: the Augminotaur drums a pattern (**CALL**), then falls silent while
+the player echoes it back by voice (**ANSWER**). Because he never drums during the answer window, his output
+can't trip the player's own onset detector — the self-triggering problem is solved by *structure*, not DSP.
+Introduces the game's **first audio** (his drums) and **first creature presence** (the billboard). Everything
+schedules against the M3 `BeatClock`. Movement is locked during the fight — it's a stationary face-off; you
+answer with your voice, not your feet.
+
+**Modules:** `drums.js` (procedural kick/hat/snare = BOOM/TSS/KA one-shots at `AudioContext` times, short &
+dry so a CALL can't bleed into the ANSWER; + a `resolve()` triad for the win), `sprite.js` (depth-tested
+horned silhouette, pre-rendered once to an offscreen canvas then blitted column-by-column against the z-buffer;
+live ember eyes; lunges on CALL hits; grows as he closes), `movement1.js` (the state machine: ladder,
+CALL→ANSWER scheduling, scoring, distance tug-of-war, win/lose). Supporting changes: `raycaster.js` z-buffer,
+`clock.js` `timeAtBeat`/`perfAtBeat`.
+
+**Ladder** (four patterns, `{beat,verb}` on a 4-beat bar, in `movement1.js`): `BOOM . KA .` → `BOOM KA BOOM .`
+→ `BOOM . TSS KA` → `BOOM TSS KA BOOM` (2→4 hits, with a rest).
+
+**Turn-taking & scoring:** phrase = CALL bar (scoring off) → 1 breath beat → ANSWER bar (scoring on, eyes
+brighten) → judge → short rest, all in beats off the clock. A hit scores only if its **verb matches** the
+expected verb **and** it lands within the tuned window (`WIN_COUNTS`=±300 ms; ±120/±220 are the finer grades
+the data carries) after subtracting the calibrated latency (`ev.t - latencyMs`, mapped via `perfAtBeat`).
+Verb-match is enforced from the first pattern (the CALL demonstrates it). Extra/spurious hits count as errors.
+`_END` and HOLD/HISS `replaces` upgrades are ignored — score on the attack, per the detector contract.
+
+**Distance tug-of-war:** a **clean** answer (no misses, no extras) advances the ladder and pushes him back
+(`+PUSHBACK`); a flawed answer keeps the pattern and steps him closer by the error count (capped `MISS_CAP`
+per phrase, so one whiff isn't instant death). Clear the ladder → **win** (his augmented triad `resolve()`s to
+major, he fades — "IT RESOLVES"). He reaches you (`distance ≤ DIST_MIN`, fills the screen) → **lose** ("THE
+MAZE KEEPS YOU"), tutorial-forgiving restart from pattern 1 after ~3 beats. Win/lose text is the only on-screen
+copy; otherwise audio + his size/eyes are the UI (no HUD). Debug (F) shows the answer grade.
+
+**Tuning note:** the `drums.js` synth params were dev-tuned by ear (not mic-dependent, no bench). If the
+per-hit distance step feels too punishing/lenient once played on a real mic, adjust `PUSHBACK`/`MISS_CAP`/
+`DIST_*` in `movement1.js`.
 
 ---
 

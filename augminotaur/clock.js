@@ -25,7 +25,8 @@ export class BeatClock {
     this.ctx = ctx;
     this.bpm = bpm;
     this.beatsPerBar = beatsPerBar;
-    this.t0 = ctx.currentTime;   // audio time the clock started
+    this.t0 = ctx.currentTime;         // audio time the clock started
+    this.t0Perf = performance.now();   // same instant in the perf domain
   }
 
   /** Seconds per beat. */
@@ -34,6 +35,21 @@ export class BeatClock {
   /** Continuous beat position since start (float, monotonic). */
   beats() {
     return (this.ctx.currentTime - this.t0) / this.spb;
+  }
+
+  /** AudioContext time of a beat number — for scheduling sound ahead. */
+  timeAtBeat(beat) {
+    return this.t0 + beat * this.spb;
+  }
+
+  /**
+   * performance.now() timestamp of a beat number. Mic events (`ev.t`) are
+   * stamped in the perf domain while the clock runs in audio time; this
+   * bridges them so scoring can compare a hit to an expected beat in one
+   * domain. (Drift over a phrase is sub-millisecond.)
+   */
+  perfAtBeat(beat) {
+    return this.t0Perf + beat * this.spb * 1000;
   }
 
   /**
