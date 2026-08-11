@@ -229,12 +229,13 @@ for **verbs**, inside the **Feats** panel (`#stats`). Two additions to the exist
   Reads the lazy-loaded `RELATIONS` graph and renders rows via the curator's `cuRelRow()`. Collected
   relatives are clickable to hop verb→verb; a `← all verbs` back-link + Esc step back to the list.
 
-**Which relations (and why only these).** The graph (`data/wordnet-relations.json`) is **lemma-keyed and
-POS-blind**, so a multi-POS lemma carries *all* its senses' relations mashed together. We therefore surface
-only the relations that are **reliably verb-clean** as-is (`VERB_RELS`): **troponym** (`tropo` = verb
-hyponyms by construction), **entailment** and **cause** (verb-only), and **antonym**. We deliberately **omit
-hypernym/hyponym** here — a verb's `hyper`/`hypo` lists leak noun senses (e.g. `tote`'s "broader" list is
-`[bag, transport, carry]`; `bank`'s mixes `slope/incline` with `enclose/transact`).
+**Which relations (and why only these).** `VERB_RELS` surfaces the verb-clean relations: **broader**
+(`vhyper` = verb hypernyms — the more general action), **troponym** (`tropo` = verb hyponyms = a particular
+way, by construction), **entailment** and **cause** (verb-only), and **antonym**. `vhyper` is **POS-scoped in
+the build** — `build_dictionary_and_relations` now keeps plain `hyper`/`hypo` **noun-only** and routes verb
+hypernyms to a separate `vhyper` key, so the old noun-sense leakage is gone: `tote` is `hyper:[bag]` +
+`vhyper:[transport, carry]` (was one pooled `hyper:[bag, transport, carry]`); `bank`'s noun `hyper` no longer
+mixes in `enclose/transact`. **Built 2026-08-10** (the per-POS *relations* half of the rebuild TODO below).
 
 **No gloss on the verb page — by design (for now).** `dictionary.json` stores a **single** definition per
 lemma (`synsets[0].definition()`, the most common sense across *all* parts of speech), so multi-POS verbs
@@ -245,18 +246,18 @@ in a verbs context, the page teaches by relation only.
 inline relatives page removes that path; `#defmodal` was also bumped to **z:12** so it can never open behind
 any parent panel again.
 
-### ⏭ TODO — the per-POS rebuild (deferred, agreed 2026-07)
-The clean fix for both limitations is a **`build_dictionary.py` regeneration** (§6) that splits by part of
-speech:
-- **Per-POS definitions** — emit e.g. `def` per POS (or a `defs:{n,v,a,r}` map) so Feats can show the *verb*
-  sense ("tote → carry with difficulty") and the library the *noun* sense.
-- **Per-POS relations** — split `hyper`/`hypo` by POS so verbs get a clean **broader/narrower verb** view
-  (add those rows to `VERB_RELS`), and drop the noun leakage.
+### ⏭ TODO — the per-POS rebuild (started 2026-07, agreed; two halves)
+A **`build_dictionary.py` regeneration** (§6) that splits by part of speech, in two independent halves:
+- **Per-POS relations — ✅ BUILT 2026-08-10.** `hyper`/`hypo` are now **noun-scoped** and a new **`vhyper`**
+  key (verb hypernyms) gives the verb page a clean **broader** row (narrower is already `tropo`); the noun
+  leakage is dropped. Regenerated `data/wordnet-relations.json`; `VERB_RELS` gained the `vhyper` row.
+- **Per-POS definitions — ⏭ not started.** Emit e.g. a `defs:{n,v,a,r}` map in `dictionary.json` so Feats can
+  show the *verb* sense ("tote → carry with difficulty") and the library the *noun* sense. This is what still
+  leaves the **"No gloss on the verb page"** limitation above. Cost: grows `dictionary.json` and adds
+  POS-context plumbing to `localLookup` (Feats→verb sense, library→noun sense).
 
-This is **purely additive** to the shipped Option-2 UI: the Guide tab and `renderVerbRelatives`/`cuRelRow`
-stay; the rebuild just improves the underlying data and lets us add the extra rows + a gloss line. No rework.
-Cost: touches the build pipeline, grows `dictionary.json`, and adds POS-context plumbing to `localLookup`
-(Feats→verb sense, library→noun sense). Not started.
+Both halves are **purely additive** to the shipped Option-2 UI: the Guide tab and `renderVerbRelatives`/
+`cuRelRow` stay; the rebuild just improves the underlying data. No rework.
 
 ---
 
@@ -276,15 +277,15 @@ and now the **adverb home** too. Tabs went from Flasks/Words to **Flasks · Word
   **amplifier** layer. A note says as much.
 - **Relatives page** (`renderApWordRelatives`, shared by both tabs) — reuses the curator's `cuRelRow`. Rel
   sets `ADJ_RELS` (similar-to `sim`, antonym `ant`, attribute-noun `attr`) and `ADV_RELS` (pertainym `pert`,
-  antonym `ant`) — the POS-clean relations only; **hyper/hypo omitted** (noun-sense leakage). No gloss (same
-  reason as §5b). Clicking a collected relative **hops** via `apHopTo`, routing by the target's POS
+  antonym `ant`) — the POS-clean relations only; **hyper/hypo omitted** (they're noun-scoped relations, not
+  meaningful on an adjective/adverb page). No gloss (same reason as §5b). Clicking a collected relative **hops** via `apHopTo`, routing by the target's POS
   (adjective→Words, adverb→Adverbs); noun/verb-only relatives (e.g. an attribute noun) are inert here.
 - `apWord` tracks the drilled-in word; `← all adjectives/adverbs` back-link + Esc step back to the list.
 
 Note the thematic tie-in: the adjective **similar-to** list *is* the synonym set that grows a flask, and the
 **attribute** noun is the one that grants the flask bonus — so the relations page teaches the exact vocabulary
-the dumbbell mechanic runs on. The **per-POS rebuild TODO above (§5b)** applies here too: it would give
-adjectives a correct gloss and could add cleaner data, but the shipped UI needs no rework.
+the dumbbell mechanic runs on. The remaining **per-POS *gloss* TODO (§5b)** applies here too: it would give
+adjectives a correct-sense gloss, but the shipped UI needs no rework.
 
 ---
 

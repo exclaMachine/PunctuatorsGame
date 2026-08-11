@@ -5243,9 +5243,9 @@ function loadRelations(cb){
       .catch(()=>{ _relLoading=false; }); }
   cb&&cb();
 }
-// The noun relations we surface, in teaching order. `ex` is a one-liner shown above the word list. The
-// graph is POS-blind (lemma-keyed), but the library is the Nouns wing, so we deliberately DON'T list
-// verb-only relations like troponym — a noun's page shows only relations that make sense for a noun.
+// The noun relations we surface, in teaching order. `ex` is a one-liner shown above the word list. hyper/hypo
+// are NOUN-scoped in the build (a multi-POS lemma's verb senses go to vhyper/tropo instead), so a noun's
+// "broader/narrower kind" no longer leaks verb senses; we still DON'T list verb-only relations like troponym.
 const CU_RELS=[
   {k:"hyper", ico:"↑", nm:"Hypernym", tag:"a broader kind",       ex:w=>`“${w}” is a kind of these`},
   {k:"hypo",  ico:"↓", nm:"Hyponym",  tag:"a narrower kind",      ex:w=>`kinds of “${w}”`},
@@ -7772,12 +7772,12 @@ function showFeatProgress(cat, n){
 }
 let statsTab="ladders";   // Feats panel tab: "ladders" (milestones) | "words" (verbs) | "guide" (relations primer)
 let featWord=null;        // within Words: the verb whose relatives page is showing, or null for the list
-// The verb relations we surface on a verb's relatives page. We deliberately show only the relations that are
-// POS-CLEAN in the current lemma-keyed graph: troponym (verb hyponyms, by construction), entailment and cause
-// (verb-only), and antonym. Hypernym/hyponym are POS-MIXED here (a verb's "broader" list leaks noun senses),
-// so they wait on the per-POS rebuild — see docs/inklings-grammar-systems.md. Same shape as CU_RELS, so the
-// curator's cuRelRow() renders these too.
+// The verb relations we surface on a verb's relatives page — all POS-clean in the graph: vhyper (verb
+// hypernyms = the broader action, POS-scoped in the build so it no longer leaks noun senses), troponym (verb
+// hyponyms = a particular way, by construction), entailment and cause (verb-only), and antonym. Plain hyper/
+// hypo stay noun-scoped and are used only by the curator. Same shape as CU_RELS, so cuRelRow() renders these.
 const VERB_RELS=[
+  {k:"vhyper", ico:"⇞", nm:"Broader",    tag:"a more general action",       ex:w=>`“${w}” is a way to do these`},
   {k:"tropo",  ico:"⇝", nm:"Troponym",   tag:"a particular way to do it",   ex:w=>`ways to “${w}”`},
   {k:"entail", ico:"↪", nm:"Entailment", tag:"what it necessarily involves", ex:w=>`“${w}” can’t happen without these`},
   {k:"cause",  ico:"⚡", nm:"Cause",      tag:"what it makes happen",         ex:w=>`“${w}” brings these about`},
@@ -7830,8 +7830,9 @@ function renderVerbWords(body){
   body.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>{ featWord=el.dataset.w; renderStats(); SFX.play("click"); });
 }
 // A collected verb's relatives page (inline — no modal, so it can never open behind the Feats panel). Reuses
-// the curator's cuRelRow(); shows the POS-clean verb relations from RELATIONS. No gloss: the single stored
-// definition is often a noun sense (e.g. "tote" → a bag), so we teach by relation until the per-POS rebuild.
+// the curator's cuRelRow(); shows the POS-clean verb relations from RELATIONS. No gloss: dictionary.json still
+// stores ONE definition per lemma (often the noun sense, e.g. "tote" → a bag), so we teach by relation until
+// the per-POS *gloss* rebuild (the relations half is done; see docs/inklings-grammar-systems.md §5b).
 function renderVerbRelatives(body){
   const word=featWord;
   let inner=`<button class="cu-backlink" data-back="1">← all verbs</button><h2 class="cu-wordh">${esc(word)}</h2>`;

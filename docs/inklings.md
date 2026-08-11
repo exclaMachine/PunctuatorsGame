@@ -1191,11 +1191,13 @@ BAG_BASE_CAP)`, Korok-seed style); `buyBagUpgrade()` spends ink + raises `bagCap
   "genre books" idea); the library becomes a shelf of restored books; word-effects become an
   optional secondary reward layered on top of blank-filling.
 
-12. **Future mechanics (WordNet relationships)** — **Status: NOT STARTED (data bundled, unused).** The
-    WordNet migration also ships `data/wordnet-relations.json` — a per-word relation graph
-    (`hyper`/`hypo`/`mero`/`holo`/`tropo`/`entail`/`cause`/`ant`/`sim`/`attr`/`pert`/`deriv`, each resolved
-    to single-word lemmas). Nothing loads it yet; it's bundled so these ideas can be *designed later, not
-    built now* — the payoff of the migration, reusing the graph instead of hand-tagging content:
+12. **Future mechanics (WordNet relationships)** — **Status: the graph is now loaded** by the relatives
+    pages (curator / Feats / Apothecary — see [`inklings-grammar-systems.md`](inklings-grammar-systems.md)
+    §5b–5c), but the *game mechanics* below are **NOT STARTED.** The WordNet migration ships
+    `data/wordnet-relations.json` — a per-word relation graph
+    (`hyper`/`hypo`/`vhyper`/`mero`/`holo`/`tropo`/`entail`/`cause`/`ant`/`sim`/`attr`/`pert`/`deriv`, each
+    resolved to single-word lemmas; `hyper`/`hypo` are noun-scoped, `vhyper`/`tropo` are the verb view). The
+    graph is reusable instead of hand-tagging content — the payoff of the migration:
     - **Category hunts / collect-a-family** (`hypo`): "spell 4 kinds of BIRD" — auto-generate themed
       library shelves from the graph.
     - **Word ladders** (`hyper` chains): climb OAK → TREE → PLANT → ORGANISM, each rung verified.

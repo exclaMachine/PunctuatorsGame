@@ -9,8 +9,10 @@ the shipped game just fetches the generated JSON and does plain map lookups.
 Outputs (into data/):
   dictionary.json        {word: {pos, def, syn}}   validation core (all single-word lemmas)
   inflections.json       {inflectedForm: lemma}     so plurals/tenses/etc. validate (no JS lemmatizer)
-  wordnet-relations.json {word: {hyper,hypo,mero,holo,tropo,entail,cause,ant,sim,attr,pert,deriv}}
-                         the relation graph — DORMANT (no runtime feature yet; ready for future mechanics)
+  wordnet-relations.json {word: {hyper,hypo,vhyper,mero,holo,tropo,entail,cause,ant,sim,attr,pert,deriv}}
+                         the relation graph. hyper/hypo are NOUN-scoped (broader/narrower KIND); vhyper =
+                         verb hypernyms (broader ACTION) + tropo = verb hyponyms (a particular way) give the
+                         verb view without noun leakage. Powers the curator + Feats/Apothecary relatives pages.
 
 Example sentences are the ONLY thing WordNet offers that we drop.
 
@@ -112,9 +114,14 @@ def build_dictionary_and_relations():
         dictionary[word] = {"pos": pos, "def": definition, "syn": syn}
 
         # --- relation graph (direct pointers only; resolved to single-word lemmas) ---
-        hyper = hypo = mero = holo = tropo = entail = cause = sim = attr = None
-        hyper = lemma_names([x for s in synsets for x in s.hypernyms() + s.instance_hypernyms()])
-        hypo  = lemma_names([x for s in synsets for x in s.hyponyms() + s.instance_hyponyms()])
+        # hyper/hypo are NOUN-scoped so a multi-POS lemma's "broader/narrower kind" no longer leaks its verb
+        # senses into the noun curator (e.g. old `tote` hyper = [bag, transport, carry]). The verb view is
+        # served separately: vhyper = verb hypernyms (the more general action), tropo = verb hyponyms (a
+        # particular way). mero/holo are noun-only relations in WordNet, so they never needed scoping.
+        hyper = vhyper = hypo = mero = holo = tropo = entail = cause = sim = attr = None
+        hyper = lemma_names([x for s in synsets if s.pos() == "n" for x in s.hypernyms() + s.instance_hypernyms()])
+        hypo  = lemma_names([x for s in synsets if s.pos() == "n" for x in s.hyponyms() + s.instance_hyponyms()])
+        vhyper = lemma_names([x for s in synsets if s.pos() == "v" for x in s.hypernyms()])  # verb hypernyms = broader action
         mero  = lemma_names([x for s in synsets for x in s.part_meronyms() + s.member_meronyms() + s.substance_meronyms()])
         holo  = lemma_names([x for s in synsets for x in s.part_holonyms() + s.member_holonyms() + s.substance_holonyms()])
         tropo = lemma_names([x for s in synsets if s.pos() == "v" for x in s.hyponyms()])  # verb hyponyms = troponyms
@@ -140,7 +147,7 @@ def build_dictionary_and_relations():
                         seen_d.add(d.name()); deriv.append(d.name())
 
         rel = {}
-        for key, val in (("hyper", hyper), ("hypo", hypo), ("mero", mero), ("holo", holo),
+        for key, val in (("hyper", hyper), ("hypo", hypo), ("vhyper", vhyper), ("mero", mero), ("holo", holo),
                          ("tropo", tropo), ("entail", entail), ("cause", cause), ("ant", ant),
                          ("sim", sim), ("attr", attr), ("pert", pert), ("deriv", deriv)):
             val = [v for v in val if v != word]
