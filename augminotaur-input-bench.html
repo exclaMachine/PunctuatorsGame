@@ -150,7 +150,23 @@
 
   .c-boom{ color:var(--boom); } .c-tss{ color:var(--tss); } .c-ka{ color:var(--ka); }
   .c-hold{ color:var(--hold); } .c-hiss{ color:var(--hiss); }
+  .c-enroll{ color:var(--bone); }
   .bar.mid span{ background:var(--ka); }
+
+  /* ---------- enrollment ---------- */
+
+  .enroll{ display:grid; gap:6px; margin-bottom:16px; }
+  .enroll .row{
+    display:grid; grid-template-columns:58px 1fr auto auto;
+    gap:8px; align-items:center; font-size:11px;
+    font-variant-numeric:tabular-nums;
+  }
+  .enroll .name{ font-weight:700; letter-spacing:.08em; }
+  .enroll .takes{ color:var(--dust); }
+  .enroll .dist{ color:var(--dust); text-align:right; }
+  .enroll .dist.win{ color:var(--bone); font-weight:700; }
+  .enroll button{ padding:4px 10px; font-size:11px; }
+  .enroll button.arm{ background:var(--bad); border-color:var(--bad); color:#120d0a; }
 
   @media (max-width:860px){
     .grid.readouts{ grid-template-columns:1fr 1fr; }
@@ -281,11 +297,30 @@
       <p class="note" id="floorNote">Noise floor not measured.</p>
     </div>
 
+    <div class="panel">
+      <h2>Enroll — your voice</h2>
+      <p class="note">Record your own BOOM / TSS / KA. Once all three have a take, templates
+        <b>replace</b> the tilt/mid-share classifier and those knobs above become the fallback path.
+        Hit <b>Rec</b>, then make the sound once.</p>
+      <div class="enroll" id="enrollRows"></div>
+      <div class="knob">
+        <label for="kMatch">Match threshold — accept below this distance</label><output id="oMatch"></output>
+        <input type="range" id="kMatch" min="10" max="80" step="1" value="34">
+      </div>
+      <div class="knob">
+        <label for="kMargin">Margin — best ÷ runner-up must beat this</label><output id="oMargin"></output>
+        <input type="range" id="kMargin" min="0.4" max="1" step="0.01" value="0.8">
+      </div>
+      <button id="clearTmplBtn">Clear all templates</button>
+      <p class="note" id="enrollNote">No templates — running on thresholds.</p>
+    </div>
+
   </div>
 </div>
 
 <script type="module">
 import { VoiceInput } from './augminotaur/voice.js';
+import { VerbMatcher, VERBS } from './augminotaur/verbmatch.js';
 
 /* This bench drives the detector that lives in augminotaur/voice.js — the
    single source of truth, imported here so tuning happens against the exact
@@ -293,7 +328,13 @@ import { VoiceInput } from './augminotaur/voice.js';
    below is bench chrome: scope, timing rig, event log, and the knobs that
    write straight onto the live VoiceInput instance. VERB_COLORS is UI only. */
 
-const VERB_COLORS = { BOOM:'--boom', TSS:'--tss', KA:'--ka', HOLD:'--hold', HISS:'--hiss' };
+const VERB_COLORS = { BOOM:'--boom', TSS:'--tss', KA:'--ka', HOLD:'--hold', HISS:'--hiss',
+                      ENROLL:'--bone' };
+
+/* One matcher, shared with the VoiceInput we arm, so the panel below reads
+   the same templates the detector is matching against (and can show counts
+   from localStorage before the mic is even open). */
+const matcher = new VerbMatcher();
 
 /* =====================================================================
    Bench UI
@@ -313,7 +354,9 @@ $('armBtn').addEventListener('click', async () => {
   $('armBtn').disabled = true;
   setStatus('Requesting…');
   try {
-    vi = await new VoiceInput(handleEvent).start();
+    vi = new VoiceInput(handleEvent);
+    vi.matcher = matcher;      // share before start() — start() configures it
+    await vi.start();
   } catch (err) {
     vi = null;
     $('armBtn').disabled = false;
@@ -372,6 +415,14 @@ $('calBtn').addEventListener('click', async () => {
 /* ---- events ---- */
 
 function handleEvent(ev){
+  if (ev.verb === 'ENROLL'){
+    renderEnroll();
+    logRow(ev.t, 'ENROLL', ev.takes
+      ? 'stored ' + ev.target + ' — take ' + ev.takes
+      : ev.target + ' rejected — too short, say it again');
+    setEnrollNote(ev.takes ? '' : 'That burst was too short to featurise. Try a fuller sound.');
+    return;
+  }
   if (ev.verb.endsWith('_END')){
     logRow(ev.t, ev.verb, 'held ' + Math.round(ev.duration) + ' ms');
     return;
@@ -380,14 +431,23 @@ function handleEvent(ev){
   events.push(ev);
   if (events.length > 200) events.shift();
 
+  if (ev.per) renderEnroll(ev.per, ev.verb);
   flashVerb(ev.verb, ev);
   logRow(ev.t, ev.verb,
+         (ev.path ? pathTag(ev) + ' · ' : '') +
          'tilt ' + ev.tilt.toFixed(2) +
          (ev.mid != null ? ' · mid ' + ev.mid.toFixed(2) : '') +
          ' · zcr ' + Math.round(ev.zcr) +
          (ev.replaces ? ' · upgraded' : ''));
 
   if (metro.running && !ev.replaces) scoreHit(ev.t);
+}
+
+/** Which classifier decided this hit — the whole point of the panel. */
+function pathTag(ev){
+  if (ev.path === 'template') return 'T ' + ev.dist.toFixed(1);
+  if (ev.path === 'fallback') return 'F' + (ev.dist != null ? ' ' + ev.dist.toFixed(1) : '') + '↩';
+  return 'th';
 }
 
 function flashVerb(verb, ev){
@@ -440,6 +500,76 @@ function readKnobs(){
 }
 KNOBS.forEach(([input]) => $(input).addEventListener('input', readKnobs));
 readKnobs();
+
+/* ---- enrollment ---- */
+
+function readMatchKnobs(){
+  matcher.matchTh = parseFloat($('kMatch').value);
+  matcher.margin  = parseFloat($('kMargin').value);
+  $('oMatch').textContent  = matcher.matchTh.toFixed(0);
+  $('oMargin').textContent = matcher.margin.toFixed(2);
+}
+['kMatch','kMargin'].forEach(id => $(id).addEventListener('input', readMatchKnobs));
+readMatchKnobs();
+
+/**
+ * One row per verb: take count, live DTW distance from the last hit, and
+ * the Rec button that arms the detector for the next attack.
+ */
+function renderEnroll(per, winner){
+  const counts = matcher.counts();
+  const box = $('enrollRows');
+  box.innerHTML = '';
+  for (const verb of VERBS){
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const name = document.createElement('span');
+    name.className = 'name c-' + verb.toLowerCase();
+    name.textContent = verb;
+
+    const takes = document.createElement('span');
+    takes.className = 'takes';
+    takes.textContent = counts[verb] ? counts[verb] + ' take' + (counts[verb] > 1 ? 's' : '') : 'none';
+
+    const dist = document.createElement('span');
+    dist.className = 'dist' + (per && verb === winner ? ' win' : '');
+    dist.textContent = per && isFinite(per[verb]) ? per[verb].toFixed(1) : '—';
+
+    const rec = document.createElement('button');
+    const armed = vi && vi.enrollArm === verb;
+    rec.textContent = armed ? 'say it…' : '● Rec';
+    if (armed) rec.classList.add('arm');
+    rec.addEventListener('click', () => {
+      if (!vi){ setEnrollNote('Arm the microphone first.'); return; }
+      if (vi.enrollArm === verb) vi.cancelEnroll();
+      else vi.enrollNext(verb);
+      renderEnroll();
+    });
+
+    row.append(name, takes, dist, rec);
+    box.append(row);
+  }
+  setEnrollNote();
+}
+
+function setEnrollNote(msg){
+  if (msg){ $('enrollNote').textContent = msg; return; }
+  const counts = matcher.counts();
+  const missing = VERBS.filter(v => !counts[v]);
+  $('enrollNote').textContent = missing.length
+    ? 'Thresholds in charge — still need: ' + missing.join(', ') +
+      '. (Templates are all-or-nothing; a partial set would bias every hit.)'
+    : 'Templates in charge. Log shows T = template decided, F↩ = no clear winner, fell back.';
+}
+
+$('clearTmplBtn').addEventListener('click', () => {
+  matcher.clear();
+  if (vi) vi.cancelEnroll();
+  renderEnroll();
+});
+
+renderEnroll();
 
 /* ---- metronome + timing rig ---- */
 

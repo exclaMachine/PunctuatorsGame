@@ -1,23 +1,24 @@
 /* =====================================================================
    voice.js — offline mouth-verb detector
    ---------------------------------------------------------------------
-   Extracted verbatim from augminotaur-input-bench.html (the tuned bench).
-   Behaviour is intentionally unchanged — only the surrounding bench UI
-   was dropped. Emits four verbs with no speech recognition and no
-   network:
+   The single source of truth for detection: augminotaur-input-bench.html
+   imports this module, so tuning happens against the exact code the game
+   runs. Emits five verbs with no speech recognition and no network:
 
      BOOM  plosive, energy below 250 Hz        "buh" / "puh"
      TSS   sibilant, energy above 3 kHz        "ts" / "ss"
+     KA    snare, mid-band dominant            "kah"
      HOLD  sustained + voiced                  "aaah"
      HISS  sustained + unvoiced                "shhh"
 
-   BOOM and TSS fire on the attack, so they are timing-accurate.
+   BOOM, TSS and KA fire on the attack, so they are timing-accurate.
    HOLD and HISS are upgrades: a sustained note starts life as a BOOM or
    TSS, and is reclassified once it outlives the sustain threshold. The
    original event is emitted immediately (keeps rhythm honest) and then
-   retracted via a `replaces` field.
+   retracted via a `replaces` field. KA is attack-only — a snare is a hit,
+   not a sustain, so it spawns no sustain-watch.
 
-   Event shape: { id, verb, t, tilt, zcr, level, replaces? }.
+   Event shape: { id, verb, t, tilt, mid, zcr, level, path?, replaces? }.
    `t` is a performance.now() timestamp; always score sustained notes on
    `ev.t` (when the note started), never on when the event arrived.
    *_END events carry `duration` and should not count as hits.
@@ -25,7 +26,16 @@
    getUserMedia requests echoCancellation/noiseSuppression/autoGainControl
    all OFF — every one of them mangles plosives and sibilants. Do not
    change that.
+
+   ATTACK CLASSIFICATION: once the player has enrolled their own voice
+   (see verbmatch.js) the tilt/mid-share cascade below stops being the
+   decision-maker and becomes the FALLBACK — used when nothing is
+   enrolled, when the burst is too short to featurise, or when no
+   template wins clearly. The onset detector is untouched either way, so
+   `t` is exactly as accurate as it always was.
    ===================================================================== */
+
+import { VerbMatcher } from "./verbmatch.js";
 
 export class VoiceInput {
   constructor(onEvent){
@@ -51,16 +61,25 @@ export class VoiceInput {
     this.midQ        = 0.9;    // bandpass width
 
     // Fixed constants
-    this.captureMs   = 55;    // window used to classify an attack
+    this.captureMs   = 55;    // window used to measure tilt/mid/zcr
     this.lowHz       = 250;
     this.highHz      = 3000;
     this.floorFloor  = 0.0008;
+
+    // Speaker-enrolled templates. The classify window is longer than the
+    // feature window: 55 ms is only ~3 rAF frames, too thin a spectrogram
+    // for a burst. Waiting to ~110 ms delays the EMIT, never `t`.
+    this.matcher     = new VerbMatcher();
+    this.classifyMs  = 110;
+    this.enrollArm   = null;  // verb name → next attack is stored as a take
 
     // State
     this.noiseFloor = 0.004;
     this.slowAvg    = 0;
     this.lastOnset  = -1e9;
     this.capture    = null;
+    this.pending    = [];     // attacks awaiting their classify window
+    this.mfccRing   = [];     // recent MFCC frames, stamped
     this.sustain    = null;
     this.eventId    = 0;
     this.frame      = { rms:0, low:0, high:0, tilt:0.5, zcr:0, t:0 };
@@ -126,6 +145,12 @@ export class VoiceInput {
     this.bufHigh = new Float32Array(this.aHigh.fftSize);
     this.bufMid  = new Float32Array(this.aMid.fftSize);
 
+    // MFCCs come off the full-band analyser — same signal the onset
+    // detector sees, so enrolled frames and matched frames share a path.
+    this.freqBuf = new Float32Array(this.aFull.frequencyBinCount);
+    this.matcher.configure(this.ctx.sampleRate, this.aFull.fftSize,
+                           this.aFull.frequencyBinCount);
+
     this.running = true;
     await this.calibrate();
     return this;
@@ -173,6 +198,18 @@ export class VoiceInput {
     this.aHigh.getFloatTimeDomainData(this.bufHigh);
     this.aMid.getFloatTimeDomainData(this.bufMid);
 
+    // Keep a rolling window of MFCC frames. A ring rather than per-capture
+    // collection is what lets a second onset arrive while the previous
+    // attack is still inside its classify window (refractMs is shorter).
+    if (this.templatesActive()){
+      this.aFull.getFloatFrequencyData(this.freqBuf);
+      const c = this.matcher.frame(this.freqBuf);
+      if (c) this.mfccRing.push({ t:now, c });
+      while (this.mfccRing.length && this.mfccRing[0].t < now - 600) this.mfccRing.shift();
+    } else if (this.mfccRing.length){
+      this.mfccRing.length = 0;
+    }
+
     const e     = rms(this.buf);
     const eLow  = rms(this.bufLow);
     const eHigh = rms(this.bufHigh);
@@ -215,13 +252,19 @@ export class VoiceInput {
         else if (cTilt <= this.tiltTss)  verb = 'TSS';
         else                             verb = cZcr < this.voicedMaxHz ? 'BOOM' : 'TSS';
 
-        const id = ++this.eventId;
-        this.emit({ id, verb, t:c.t, tilt:cTilt, mid:cMid, zcr:cZcr,
-                    level:c.maxLow + c.maxMid + c.maxHigh });
-        // A snare is a hit, not a sustain — KA doesn't spawn a HOLD/HISS watch.
-        if (verb !== 'KA') this.sustain = { id, t:c.t, zcrSum:0, n:0, resolved:false };
+        const hit = { t:c.t, tilt:cTilt, mid:cMid, zcr:cZcr,
+                      level:c.maxLow + c.maxMid + c.maxHigh, fallback:verb };
+        // Release the capture slot immediately either way, so the next
+        // onset isn't blocked by a classification still in flight.
         this.capture = null;
+        if (this.templatesActive()) this.pending.push(hit);
+        else this.finishAttack(hit, verb, 'threshold');
       }
+    }
+
+    // ---- attacks whose classify window has elapsed (oldest first) ----
+    while (this.pending.length && now - this.pending[0].t >= this.classifyMs){
+      this.judge(this.pending.shift());
     }
 
     // ---- upgrade to a sustained verb ----
@@ -251,6 +294,60 @@ export class VoiceInput {
     while (this.history.length && this.history[0].t < cutoff) this.history.shift();
 
     return this.frame;
+  }
+
+  /** Are we running MFCCs at all? Only if they'd be used. */
+  templatesActive(){
+    return !!this.enrollArm || this.matcher.ready();
+  }
+
+  /**
+   * Arm enrollment: the next detected attack is stored as a take for
+   * `verb` instead of being emitted as a hit. Capturing takes through the
+   * live onset detector is deliberate — enrolled frames have to come from
+   * the same path that produces the frames they'll be matched against.
+   */
+  enrollNext(verb){ this.enrollArm = verb; }
+  cancelEnroll(){ this.enrollArm = null; }
+
+  /** MFCC frames the ring holds for a burst that started at `t0`. */
+  mfccWindow(t0){
+    const t1 = t0 + this.classifyMs;
+    return this.mfccRing.filter(f => f.t >= t0 && f.t <= t1).map(f => f.c);
+  }
+
+  /** Decide a pending attack: enroll it, or match it, or fall back. */
+  judge(hit){
+    const frames = this.mfccWindow(hit.t);
+
+    if (this.enrollArm){
+      const verb  = this.enrollArm;
+      const takes = this.matcher.enroll(verb, frames);
+      this.enrollArm = null;
+      // Not a hit — `silent` keeps it out of scoring (movement1 drops it).
+      this.emit({ id:++this.eventId, verb:'ENROLL', target:verb, takes,
+                  t:hit.t, tilt:hit.tilt, mid:hit.mid, zcr:hit.zcr,
+                  level:hit.level, silent:true });
+      return;
+    }
+
+    // ready() re-checked here, not just at routing time: a partial set must
+    // never decide a hit (it would bias every burst toward whichever verbs
+    // happen to be enrolled).
+    const m = this.matcher.ready() ? this.matcher.classify(frames) : null;
+    if (m && m.ok) this.finishAttack(hit, m.verb, 'template', m);
+    else           this.finishAttack(hit, hit.fallback, 'fallback', m);
+  }
+
+  /** Emit a classified attack and start its sustain watch. */
+  finishAttack(hit, verb, path, m){
+    const id = ++this.eventId;
+    this.emit({ id, verb, t:hit.t, tilt:hit.tilt, mid:hit.mid, zcr:hit.zcr,
+                level:hit.level, path,
+                dist: m ? m.dist : undefined,
+                per:  m ? m.per  : undefined });
+    // A snare is a hit, not a sustain — KA doesn't spawn a HOLD/HISS watch.
+    if (verb !== 'KA') this.sustain = { id, t:hit.t, zcrSum:0, n:0, resolved:false };
   }
 
   emit(ev){ if (this.onEvent) this.onEvent(ev); }

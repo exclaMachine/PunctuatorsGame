@@ -22,6 +22,7 @@ Entry file: `augminotaur.html` · modules in `augminotaur/` · input research be
 | **M3** — `AudioContext.currentTime` beat clock + wall-shading pulse | **BUILT** (`clock.js`) |
 | **M4** — Movement 1 (call & response, 4 patterns, win/lose) | **BUILT** (`movement1.js` + `sprite.js` + `drums.js`) |
 | Snare **"ka"** verb (this doc, below) | **BUILT** in `voice.js` + bench — default thresholds pending mic tuning |
+| **Speaker-enrolled verb templates** (MFCC + DTW) | **BUILT** (`verbmatch.js`) — `MATCH_TH`/`MARGIN` pending mic tuning |
 | Procedural maze + voice-only traversal | **tentative** (parked — see below) |
 
 ## Architecture
@@ -44,8 +45,9 @@ ES-module split so audio/game systems drop in without a rewrite:
 - `augminotaur/raycaster.js` — DDA raycaster, flat-shaded walls with a `light` multiplier (beat pulse) and an
   optional per-column z-buffer (`render(...)` fills it) so `sprite.js` occludes the creature behind walls.
 - `augminotaur/input.js` — keyboard (arrows/WASD) + touch intents.
-- `augminotaur/voice.js` — the detector (below), extracted verbatim from the bench.
+- `augminotaur/voice.js` — the detector (below). The bench imports it, so there's one source of truth.
 - `augminotaur/calibrate.js` — the entry overlay + calibration flow (below).
+- `augminotaur/verbmatch.js` — MFCC/DTW template matching for speaker-enrolled verbs (below).
 
 ## The detector (`VoiceInput`)
 
@@ -83,10 +85,14 @@ default on and all three destroy the signal (noise suppression literally deletes
 
 `getUserMedia` + `AudioContext` need a user gesture, so the descent starts behind a tap. In-theme guided
 overlay: **AUGMINOTAUR → tap to descend → "Be silent…"** (1.6 s noise-floor calibration, runs inside
-`start()`) **→ "Listen…"** (four latency clicks played and heard back through the mic). Latency measurement
-needs the speaker→mic acoustic path, so it **fails on headphones** — that's expected: graceful fallback to a
-0 ms offset with a tap-to-retry. The diegetic "put on the mask" framing for the headphone case is deferred.
-Measured offset is stashed as `vi.latencyOffsetMs` for M4's hit-scoring to subtract from every hit.
+`start()`) **→ "Speak in his tongue"** (voice enrollment — skippable, skipped outright for a returning
+player; see the templates section) **→ "Listen…"** (four latency clicks played and heard back through the
+mic). Latency measurement needs the speaker→mic acoustic path, so it **fails on headphones** — graceful
+fallback to a 0 ms offset with a tap-to-retry. The diegetic "put on the mask" framing for the headphone
+case is deferred. Measured offset is stashed as `vi.latencyOffsetMs` for M4's hit-scoring to subtract from
+every hit. The overlay runs its own rAF `pump(vi)` while it owns the screen — `main.js` doesn't start
+pumping the detector until `runEntry` resolves, and both enrollment and the latency clicks need onset
+events to fire.
 
 ## The beat clock (`clock.js`) — BUILT
 
@@ -205,7 +211,129 @@ lower skirt of sibilance, so a bright "kt" could leak — the upper-Q/center is 
   mid band center and whether zcr is a secondary cue.
 - **Mid vs TSS separation** is the crux (both are un-low). May need the mid bandpass tuned tight and an
   upper guard so a bright "kt" doesn't leak into TSS.
-- **Sync strategy:** patch both files, or refactor the bench to import the module first?
+- **Sync strategy:** patch both files, or refactor the bench to import the module first? **Resolved** —
+  the bench imports `voice.js`.
+
+**Superseded, partly:** the planned template matcher below takes over as the *primary* classifier. The
+tilt/mid-share thresholds stay as the fallback path, so `kaMidShare`/`midHz`/`midQ` still want mic tuning
+— just for the un-enrolled case rather than for everyone.
+
+---
+
+## Speaker-enrolled verb templates (MFCC + DTW) — BUILT
+
+**BUILT 2026-08-12.** **Full replacement of the attack classifier with per-player templates, thresholds
+kept as fallback**, enrollment **in the entry flow but skippable**. `MATCH_TH`/`MARGIN` defaults are
+first guesses — **tune them in the bench against a real mic and commit the numbers**, exactly as with
+BOOM/TSS/KA.
+
+**Why.** Hand-tuning `tiltBoom`/`tiltTss`/`kaMidShare` picks one set of numbers for every mouth, every mic
+and every room — and `KA` is the verb that suffers, because it lives in exactly the ambiguous middle the
+two-pole tilt can't resolve. Kaimoju's probe (`kaimoju-mic-test.html`, `docs/kaimoju.md`) already proved the
+alternative works offline: local MFCC + DTW matching against templates **the player records in their own
+voice** hit ≥85% on five deliberately confusable Japanese onomatopoeia with 3 takes each. Three beatbox
+verbs is a far easier problem than five words. Constraints hold — this is speaker-enrolled *timbre*
+matching on the player's own recordings, **not speech recognition**, and nothing leaves the device.
+
+**The one structural difference from Kaimoju.** The probe endpoints a whole utterance (RMS VAD →
+`HANG_FRAMES` of silence → `finishUtterance`) and classifies *after the sound ends* — fine when the payoff
+is a building collapsing, fatal here, where hits are scored to ±120 ms against `clock.js`. So the split is:
+
+> **The onset detector keeps owning *when*. Templates only own *what*.**
+
+`capture.t` and therefore `ev.t` are untouched, so `movement1.js` scoring, `latencyOffsetMs` and the
+HOLD/HISS sustain path all keep working exactly as they do today.
+
+### Module split
+
+- **`augminotaur/verbmatch.js`** — `VerbMatcher`: mel filterbank + DCT (`frame()`), `cmn`, `resample`,
+  `dtw`, and the template store. **Ported from `kaimoju-mic-test.html`**, which is working tuned code —
+  same rule as the detector: don't reinvent it. Kept Augminotaur-local rather than shared with Kaimoju:
+  that file is a standalone POC and coupling two games through it buys nothing yet.
+- **`voice.js`** — owns a `VerbMatcher`, keeps the MFCC ring, and routes attacks through `judge()`.
+- **`calibrate.js`** — the enrollment ritual (and, now, the rAF pump — see below).
+- **`augminotaur-input-bench.html`** — the Enroll panel: take counts, live per-verb distances,
+  `MATCH_TH`/`MARGIN` sliders, and a per-hit tag in the log showing which classifier decided.
+
+### Features and matching
+
+- **Frames** off the existing `aFull` analyser via `getFloatFrequencyData`: `NUM_MEL=26`, `NUM_MFCC=13`,
+  80 Hz–8 kHz, same as the probe. `aFull.fftSize` stays **1024** (the probe uses 2048) — the ~21 ms window
+  is what the onset detector needs; the filterbank is built off the live `frequencyBinCount` so nothing
+  hardcodes a bin count.
+- **Two windows, not one.** `captureMs=55` still measures tilt/mid/zcr (the fallback features are computed
+  exactly as before); `classifyMs=110` is the longer window the templates need (~7 rAF frames — 55 ms is
+  only ~3, too thin a spectrogram for a burst). The timestamp is still `c.t`, so **only the emit is later**,
+  by ~55 ms, and only when templates are active. Scoring is unaffected; the visible cost is the sprite lunge
+  reacting slightly later.
+- **CMN per burst**, then resample to `NORM_FRAMES=8` — kills mic/level offset and normalises burst length.
+- **DTW** for the distance. Overkill for a plosive on its own, but it's free (ported) and burst lengths
+  genuinely vary between a lazy "tss" and a sharp one. 3 verbs × 3 takes is trivial cost per hit.
+- **Decision** (`VoiceInput.judge`): best distance across each verb's takes; accept if `bestD < matchTh`
+  **and** `bestD/second < margin`; otherwise fall through to the threshold cascade. **Never drop the hit** —
+  a dropped real hit reads as a miss in `movement1.js`, which is worse than a misclassification. Events
+  gain `path` (`template` / `fallback` / `threshold`) plus `dist`/`per` for the readouts; the game's F
+  readout shows `BOOM·T` / `BOOM·F`.
+- **`ready()` is re-checked at the decision site**, not just when routing, so a partial set can never
+  decide a hit.
+
+### Storage
+
+`localStorage["augminotaur.verbTemplates.v1"]` = `{BOOM:[take…], TSS:[…], KA:[…]}`, each take an array of
+13-dim frames; `MAX_TAKES=3`. Versioned key so a feature change invalidates cleanly. **All-or-nothing:** if
+the parse fails or *any* verb has zero takes, the whole template path switches off and the thresholds run —
+a partial set would bias every hit toward the verbs that happen to be enrolled.
+
+### Enrollment (in-flow, skippable)
+
+Slots into `calibrate.js` **after the noise floor** (it needs the gate) and **before the latency clicks**
+(the clicks are the boring part; a player who bails has still given us the valuable half).
+
+> **AUGMINOTAUR** → tap to descend → **"Be silent…"** (noise floor) → **"Speak in his tongue"** (enroll) →
+> **"Listen…"** (latency) → enter
+
+Three prompts, three takes each (~15 s), progress dots, in-theme copy, with a visible skip (*"three sounds
+— tap to skip"*) and an 8 s per-take silence timeout that also bails. Ends on **"He knows your voice."** or
+**"He will misunderstand you."** A returning player with a full stored set skips the step entirely;
+force a re-enroll with **`?enroll=1`** (fresh takes evict the old ones via `MAX_TAKES`).
+
+**Each take is captured by the same onset detector the game uses** — `vi.enrollNext(verb)` arms it, the
+next real attack is stored, and an `ENROLL` event (`silent:true`, so `movement1.js` and the verb readout
+drop it) reports back. Deliberate departure from the probe, which uses one RMS VAD for both paths:
+enrolled frames have to come from the exact code path that will produce the frames they're matched
+against, or the templates encode the recorder rather than the mouth.
+
+### Two implementation notes worth keeping
+
+**The MFCC ring, not per-capture collection.** `refractMs=80` is shorter than the 110 ms classify window,
+so a fast second hit arrives while the first is still being judged. Frames therefore go into a rolling
+600 ms ring (`mfccRing`), and an attack pulls its own window out of it by timestamp (`mfccWindow`). The
+capture slot is released at 55 ms and the attack moves to a `pending` queue, so **an in-flight
+classification never blocks the next onset**. Raising `refractMs` instead would have cost real drumming
+speed. The ring only runs when templates are active (nothing enrolled = zero added cost, and behaviour is
+bit-for-bit what it was before).
+
+**Nothing was pumping the detector during the entry flow.** `main.js` only starts calling `vi.update()`
+once `runEntry` resolves, so no onset event could fire while the overlay was up. Enrollment needs
+events — and so did the latency measurement, which means **the four latency clicks were never being
+heard**: `measureLatency` always timed out and fell back to a 0 ms offset, indistinguishable from the
+documented headphone case. `calibrate.js` now runs its own rAF `pump(vi)` for the duration of the overlay
+and hands off to `main.js` at `finish()`. Latency measurement should actually work now (on speakers);
+worth re-checking what offset it reports.
+
+### Open items
+
+- **Tune `matchTh` (34) and `margin` (0.80) in the bench** — both are unverified first guesses. Watch the
+  live per-verb distance columns while drumming each verb; `matchTh` wants to sit above your worst true
+  match and below your best false one, and `margin` rejects the ties. Then commit the numbers into
+  `verbmatch.js`.
+- **BOOM vs. the start of a HOLD.** A sustained "aaah" spends its first 110 ms looking like something the
+  matcher will judge. The sustain upgrade keys off the emitted `id` so the mechanism still works; enroll
+  BOOM with short "buh" takes only and let the sustain watch do its job.
+- **Mic/room drift** — templates recorded on the laptop mic, then played with headphones plugged in. The
+  fallback covers it; an automatic "re-enroll?" prompt when the match rate collapses is deferred.
+- **Three takes may not be enough** for a verb you produce inconsistently. `MAX_TAKES` is one constant in
+  `verbmatch.js` if the bench says otherwise.
 
 ---
 

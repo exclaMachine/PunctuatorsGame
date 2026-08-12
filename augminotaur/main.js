@@ -148,6 +148,9 @@ runEntry({
     movement.onVerb(ev);
     if (ev.silent) return;
     lastVerbAt = performance.now();
-    verbEl.textContent = ev.verb;
+    // ·T = an enrolled template decided this; ·F = no clear winner, the
+    // tilt/mid-share thresholds did. Blank = nothing enrolled.
+    verbEl.textContent = ev.verb +
+      (ev.path === "template" ? "·T" : ev.path === "fallback" ? "·F" : "");
   };
 });
