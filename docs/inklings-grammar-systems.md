@@ -160,6 +160,12 @@ adverbs = how good each use is.** Layer on after the core works.
 
 ## 4b. Proper nouns → Atlases (geography first — the capital-letters payoff)
 
+> **The full plan now lives in [`inklings-atlas.md`](inklings-atlas.md)** — board rendering, the
+> `build_geo.py` Natural Earth raster, dual-dictionary validation, flags as décor, and the **daily capital
+> letter** (a guaranteed capital letter-creature spawning in the world from day one) that makes the Atlas
+> playable long before the `CAP_ORDER` word gate. This section is the origin sketch; the atlas doc
+> supersedes its detail.
+
 **The hook (already set up in code):** capitals are deliberately end-game — `CAP_ORDER` (frequency-ordered),
 `weightedLetter` skews capitals "rare, end-game, far from home," and comments reserve them for
 _"geography/proper-noun content — roadmap #10."_ `build_dictionary.py` **excludes** proper nouns (filters
