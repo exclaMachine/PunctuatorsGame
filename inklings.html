@@ -535,6 +535,11 @@
      next row as they fill — the panel width never changes, so nothing (incl. the 🔊 button) gets shifted. */
   #tray-hud{display:grid;grid-template-columns:repeat(auto-fill,30px);gap:4px;width:234px;margin-left:auto}
   #tray-hud .lchip{width:30px;min-width:0;padding:0}
+  #caps-hud{margin-top:2px}
+  #caps-hud .lchip{width:30px;min-width:0;padding:0}
+  #caps-label{margin-top:6px}
+  /* The day's capital, still out in the world: dashed + dimmed, so it reads as "not yours yet". */
+  .lchip.abroad{border-style:dashed;opacity:.7}
   #tray-hud .lchip b{margin-left:2px}
   #tray-hud .empty{grid-column:1/-1;justify-self:end}
   .lchip{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;
@@ -984,6 +989,9 @@
       <div class="panel" id="tray-hud-wrap" style="text-align:right">
         <div class="small">Satchel <span id="bag-count"></span></div>
         <div id="tray-hud"><span class="empty" style="font-weight:600;color:var(--ink-soft);font-size:12px">empty</span></div>
+        <!-- Capital bank + the day's "a capital is abroad" signpost. Hidden until either has something. -->
+        <div class="small" id="caps-label" style="display:none">Capitals</div>
+        <div id="caps-hud" style="display:none"></div>
       </div>
       <button id="sound-btn" aria-label="Mute sound" title="Sound on/off">🔊</button>
     </div>
@@ -1764,6 +1772,57 @@ function wotdGuaranteed(){
   return _wotdGuar;
 }
 
+// --- The daily capital letter (World Atlas) --------------------------------------
+// Every day the world carries at least one CAPITAL letter-creature, from day one — regardless of the
+// CAP_ORDER word gate, which stays put as the separate "capitals in quantity, on demand" unlock. This one
+// is an ordinary member of the day's population: it counts toward dayTotalCreatures() and you have to go
+// and hunt it. It is NOT granted to your bag. See docs/inklings-atlas.md §2.
+//
+// Which letter: a plain FREQ-weighted roll over all 26, so the common ones turn up far more often and a Q
+// or a Z is an event. Day-seeded off a distinct offset so it doesn't correlate with the WOTD / Snowclone /
+// Excla dailies, and cached per day like wordOfTheDay().
+let _dailyCap=null, _dailyCapDay=null;
+function dailyCapital(){
+  if(_dailyCapDay===state.day && _dailyCap) return _dailyCap;
+  const rng=mulberry32(((state.daySeed>>>0)^0xca9174)>>>0);
+  let total=0; for(const c of CAP_ORDER) total+=freqOf(c);
+  let r=rng()*total, pick=CAP_ORDER[0];
+  for(const c of CAP_ORDER){ r-=freqOf(c); if(r<=0){ pick=c; break; } }
+  _dailyCap=pick; _dailyCapDay=state.day;
+  return pick;
+}
+// Which screen it's on: day-seeded, never home (it should be worth a trek — the same instinct as
+// weightedLetter's far-from-home skew for capitals) and never a screen carrying an obstacle, so it can't
+// spawn inside the river's walled-off corner and sit unreachable until you've solved the crossing.
+let _dailyCapSpot=null, _dailyCapSpotDay=null;
+function dailyCapitalSpot(){
+  if(_dailyCapSpotDay===state.day && _dailyCapSpot) return _dailyCapSpot;
+  const screens=[];
+  for(let sy=-MAP_RADIUS;sy<=MAP_RADIUS;sy++) for(let sx=-MAP_RADIUS;sx<=MAP_RADIUS;sx++){
+    if(!sx && !sy) continue;                                                 // never home
+    if(OBSTACLES.some(o=>o.screen[0]===sx && o.screen[1]===sy)) continue;    // never behind a crossing
+    screens.push({sx,sy});
+  }
+  const rng=mulberry32(((state.daySeed>>>0)^0xca9175)>>>0);
+  _dailyCapSpot=screens[Math.floor(rng()*screens.length)] || {sx:1,sy:0};
+  _dailyCapSpotDay=state.day; return _dailyCapSpot;
+}
+// The letters a screen is REQUIRED to spawn today: the day's capital if this is its screen, then the
+// Word-of-the-Day letters pinned here. genScreen and screenCreatureCount both read this one function, so
+// the world and the daily total can never disagree.
+// The capital goes FIRST on purpose: creature ids are positional (sx,sy,i), and wotdGuaranteed() is empty
+// until 2of12 finishes loading — so anything after it would shift index mid-session and break the
+// "already caught today" lookup. At index 0 the capital's id is stable whatever the loader is doing.
+function forcedLetters(sx,sy){
+  if(!sx && !sy) return [];                     // home spawns its own tutorial letter; nothing is pinned there
+  const list=(wotdGuaranteed()[sx+","+sy]||[]).slice();
+  const s=dailyCapitalSpot();
+  if(s.sx===sx && s.sy===sy) list.unshift(dailyCapital());
+  return list;
+}
+function dailyCapitalId(){ const s=dailyCapitalSpot(); return s.sx+","+s.sy+",0"; }   // always index 0 — see forcedLetters
+function dailyCapitalCaught(){ return state.captured.has(dailyCapitalId()); }
+
 // --- Local dictionary (bundled WordNet) -----------------------------------------
 // Validation, definitions, and parts of speech come from data/dictionary.json — built OFFLINE from WordNet
 // by build_dictionary.py (no third-party API, fully offline). Inflected forms (plurals, tenses, comparatives,
@@ -2512,6 +2571,10 @@ const state = {
   player:{ x:W/2, y:H/2+TILE, r:15, speed:180, face:{x:0,y:1}, atkCd:0, atkAnim:0, hearts:PLAYER_MAX_HEARTS, hurtT:0, healT:0, slipT:0, slipCd:0, slipDir:null, slideT:0, slideCd:0, slideDir:null },
   screen:{ sx:0, sy:0 },
   inv:{},                       // letter -> count
+  caps:{},                      // CAPITAL letter -> count. A separate, PERSISTENT, UNCAPPED bank: capitals
+                                // never sit in the satchel (no bagCap cost) and survive the nightly wipe,
+                                // because you only ever need one per place name and you may have to hold it
+                                // until you can think of a country that starts with it. docs/inklings-atlas.md §3
   dex:{},                       // word -> {def, found}
   bagCap:10,                    // max letters the satchel can hold (raise later via items)
   screens:new Map(),            // "sx,sy" -> {creatures, tiles, seed, bg, ...}  (date-seeded; never saved)
@@ -2565,6 +2628,17 @@ state.day = todayStr(); state.daySeed = dayHash(state.day);   // set before any 
 // Total letters currently carried, and whether the satchel is at capacity.
 function satchelCount(){ let n=0; for(const l in state.inv) n+=state.inv[l]; return n; }
 function satchelFull(){ return satchelCount()>=satchelCap(); }
+// Banked capitals are deliberately OUTSIDE those two: they don't fill the satchel and can't be blocked by it.
+function capsCount(){ let n=0; for(const l in state.caps) n+=state.caps[l]; return n; }
+// How many copies of a letter you can place on the bench: the satchel, plus the capital bank for A–Z.
+// (Old saves can still hold capitals in the satchel itself, so both are counted.)
+function letterAvail(l){ return (state.inv[l]||0) + (isUpper(l) ? (state.caps[l]||0) : 0); }
+// Spend one copy — satchel first, bank second. The satchel copy is day-scoped and would be wiped at
+// rollover anyway, so spending it first is the player-friendly order.
+function spendLetter(l){
+  if((state.inv[l]||0)>0){ state.inv[l]--; return; }
+  if(isUpper(l) && (state.caps[l]||0)>0) state.caps[l]--;
+}
 
 /* ---------- SCREEN GENERATION ----------------------------- */
 function key(sx,sy){ return sx+","+sy; }
@@ -3000,11 +3074,11 @@ function genScreen(sx,sy){
     for(const b of state.bonus) creatures.push(makeBonusCreature(tiles, b.letter, b.id));   // just-unlocked letters
   }
   if(!isBase){
-    const guar = wotdGuaranteed()[sx+","+sy] || [];   // WOTD letters pinned to this screen (enough copies)
-    const n = Math.max(letterScatter(rng), guar.length);   // ensure the day's word letters always fit
+    const guar = forcedLetters(sx,sy);   // WOTD letters pinned here (enough copies) + today's capital, if this is its screen
+    const n = Math.max(letterScatter(rng), guar.length);   // ensure the pinned letters always fit
     for(let i=0;i<n;i++){
       const cr=makeCreature(rng, dist, tiles); cr.id=sx+","+sy+","+i;
-      if(i<guar.length) cr.letter=guar[i];   // force in the day's word letters so the WOTD is always makeable
+      if(i<guar.length) cr.letter=guar[i];   // force them in, so the WOTD is always makeable and the capital always exists
       if(!state.captured.has(cr.id)) creatures.push(cr);   // already taken today → stays gone (no respawn)
     }
     // resource-creatures (data-driven). Rolled AFTER the letters, so letterScatter stays the first rng()
@@ -3061,7 +3135,8 @@ function startNewDay(){
   goHome();                         // wake up at the library desk (home)
   gardenSeasonSync(true);           // a new day may cross a season boundary → wither out-of-season crops
   updateTrayHud(); saveNow();
-  showToast("A new day dawns — a fresh map awaits.");
+  // The signpost: name today's capital so you know one is out there and what it is — never where it is.
+  showToast("A new day dawns — a fresh map awaits. A capital "+dailyCapital()+" is abroad.");
 }
 // Tell the player they've hit the world boundary (throttled so it doesn't spam while they hold into it).
 let edgeMsgAt=0;
@@ -3130,7 +3205,9 @@ const IS_DEV = location.protocol==="file:" || /^(localhost|127\.0\.0\.1|0\.0\.0\
 function debugGrantLetters(){
   const s=prompt("DEBUG — grant letters (type any; e.g. 'qzx', or 'aaa' for three a's):");
   if(!s) return;
-  let n=0; for(const ch of s){ if(/[a-zA-Z]/.test(ch)){ state.inv[ch]=(state.inv[ch]||0)+1; n++; } }
+  // Capitals go to the persistent bank, same as a caught one — so granting them actually exercises it.
+  let n=0; for(const ch of s){ if(/[a-zA-Z]/.test(ch)){
+    if(isUpper(ch)) state.caps[ch]=(state.caps[ch]||0)+1; else state.inv[ch]=(state.inv[ch]||0)+1; n++; } }
   updateTrayHud(); if(state.overlay) renderBench(); scheduleSave();
   showToast("DEBUG: granted "+n+" letter"+(n===1?"":"s"));
 }
@@ -3208,7 +3285,7 @@ addEventListener("keydown",e=>{
       e.preventDefault();
       const ch=e.key;                    // e.key preserves case, unlike the lowercased `k`
       const used={}; bench.forEach(l=>used[l]=(used[l]||0)+1);
-      if((state.inv[ch]||0)-(used[ch]||0) > 0){ bench.push(ch); renderBench(); }
+      if(letterAvail(ch)-(used[ch]||0) > 0){ bench.push(ch); renderBench(); }   // satchel + capital bank
       return;
     }
     return;
@@ -3418,12 +3495,14 @@ function doAttack(){
       if(c.hp<=0){ defeatCreature(c, sc); sc.creatures.splice(i,1); }
       continue;
     }
-    // letter-creature
-    if(full){ blockedLetter=true; continue; }   // can't hold more — leave the letter in the wild
+    // letter-creature. Capitals bypass the satchel entirely (they bank in state.caps, uncapped), so a full
+    // satchel can never cost you the day's capital — the one letter you can't just come back for tomorrow.
+    if(full && !isUpper(c.letter)){ blockedLetter=true; continue; }
     c.hp-=hit; c.flash=0.15; hitAny=true;
     const kb=22; c.x+=(dx/(d||1))*kb; c.y+=(dy/(d||1))*kb;
     if(c.hp<=0){
-      state.inv[c.letter]=(state.inv[c.letter]||0)+1;
+      if(isUpper(c.letter)) state.caps[c.letter]=(state.caps[c.letter]||0)+1;   // banked: persistent, uncapped
+      else state.inv[c.letter]=(state.inv[c.letter]||0)+1;
       state.fx.push({x:c.x,y:c.y,text:"+"+c.letter,life:0.9,color:colorFor(c.letter)});
       sc.creatures.splice(i,1);
       if(c.bonus) state.bonus=state.bonus.filter(b=>b.id!==c.id);   // a just-unlocked bonus letter (not part of the day total)
@@ -3505,8 +3584,8 @@ function faint(){
 function screenCreatureCount(sx,sy){   // letters only (cubes/resource-creatures don't count toward the daily collection)
   if(sx===0 && sy===0) return 1;       // home base has one guaranteed tutorial letter-creature per day
   const rng=mulberry32((hash2(sx,sy) ^ state.daySeed)>>>0);
-  const guar=(wotdGuaranteed()[sx+","+sy]||[]).length;
-  return Math.max(letterScatter(rng), guar);   // mirrors genScreen's first rng() draw + WOTD minimum
+  const guar=forcedLetters(sx,sy).length;
+  return Math.max(letterScatter(rng), guar);   // mirrors genScreen's first rng() draw + the pinned minimum
 }
 // How many of a screen's creatures are still uncaptured (used by the reveal potion's minimap).
 function screenRemaining(sx,sy){
@@ -3777,7 +3856,8 @@ function swapCarried(c){
   const owned=Object.keys(state.inv).filter(l=>state.inv[l]>0);
   if(!owned.length){ c.swapT=0.6; return; }
   const from=owned[(Math.random()*owned.length)|0];
-  const pool=[...unlockedLetters()].filter(l=>l!==from);
+  // Lowercase only: the Typo messes with your day-scoped satchel, it can't mint a banked capital for you.
+  const pool=[...unlockedLetters()].filter(l=>l!==from && !isUpper(l));
   const to=pool.length ? pool[(Math.random()*pool.length)|0] : from;
   state.inv[from]=Math.max(0,(state.inv[from]||0)-1); state.inv[to]=(state.inv[to]||0)+1;
   c.swapT=1.4; updateTrayHud(); scheduleSave();
@@ -4980,8 +5060,25 @@ function updateTrayHud(){
   const cnt=document.getElementById("bag-count");
   if(cnt){ cnt.textContent=satchelCount()+"/"+satchelCap(); cnt.classList.toggle("full", satchelFull()); }
   const have=Object.keys(state.inv).filter(l=>state.inv[l]>0);
-  if(!have.length){ el.innerHTML='<span class="empty" style="font-weight:600;color:var(--ink-soft);font-size:12px">empty</span>'; return; }
-  el.innerHTML=have.map(l=>`<span class="lchip" style="border-color:${colorFor(l)}">${l}<b>${state.inv[l]}</b></span>`).join("");
+  el.innerHTML = have.length
+    ? have.map(l=>`<span class="lchip" style="border-color:${colorFor(l)}">${l}<b>${state.inv[l]}</b></span>`).join("")
+    : '<span class="empty" style="font-weight:600;color:var(--ink-soft);font-size:12px">empty</span>';
+  updateCapsHud();
+}
+// The capital bank, shown separately from the satchel because the two behave differently: the satchel is
+// wiped every night, capitals are kept. Also carries the day's SIGNPOST — a dashed chip naming the capital
+// that's out in the world right now (that it exists, never where it is), so nobody plays for a week without
+// discovering capitals appear at all. docs/inklings-atlas.md §2.3
+function updateCapsHud(){
+  const el=document.getElementById("caps-hud"), lab=document.getElementById("caps-label");
+  if(!el || !lab) return;
+  const held=Object.keys(state.caps).filter(l=>state.caps[l]>0).sort();
+  const abroad=(state.started && !dailyCapitalCaught()) ? dailyCapital() : null;
+  if(!held.length && !abroad){ el.style.display="none"; lab.style.display="none"; return; }
+  el.style.display=""; lab.style.display="";
+  const chips=held.map(l=>`<span class="lchip" style="border-color:${colorFor(l)}">${l}<b>${state.caps[l]}</b></span>`);
+  if(abroad) chips.push(`<span class="lchip abroad" title="A capital ${abroad} is somewhere in the world today — go and find it">${abroad}<b>?</b></span>`);
+  el.innerHTML=chips.join("");
 }
 // Ink counter + potion buttons. A potion button is disabled when you have none, or while its effect is
 // already running (no stacking). Clicking drinks it.
@@ -5081,14 +5178,15 @@ function closeOverlay(){ state.overlay=false; closeRespell(); document.getElemen
 const KB_ROWS=["qwertyuiop","asdfghjkl","zxcvbnm"];
 function renderBench(){
   // tray = full keyboard; letters you don't have (or have all on the bench) are greyed + unclickable.
-  // A ⇧ toggle (shown once capitals are unlocked) flips the tray to the capital letters.
-  const caps=hasUnlockedCapital(); if(!caps) benchShift=false;
+  // A ⇧ toggle flips the tray to the capital letters. Shown once capitals are unlocked by the word gate,
+  // OR as soon as you've banked one — the daily capital arrives long before that gate.
+  const caps=hasUnlockedCapital() || capsCount()>0; if(!caps) benchShift=false;
   const used={}; bench.forEach(l=>used[l]=(used[l]||0)+1);
   const trayEl=document.getElementById("tray");
   trayEl.innerHTML = KB_ROWS.map((row,ri)=>{
     let keys = row.split("").map(low=>{
       const l = benchShift ? low.toUpperCase() : low;   // actual char (case) this key places
-      const owned=state.inv[l]||0;
+      const owned=letterAvail(l);                       // satchel + (for capitals) the persistent bank
       const avail=owned-(used[l]||0);
       const off=avail<=0;                               // no copies left to place
       return `<span class="lchip${off?" off":""}"${off?"":` data-l="${l}"`} `+
@@ -5501,7 +5599,7 @@ async function checkWord(){
 // checkWord so a re-spell of a word you already own can ask before committing (see askRespell).
 function commitSpell(word, def, pos, isNoun, isAdj, wotdUnclaimed, known){
   pendingRespell=null;
-  bench.forEach(l=>{ state.inv[l]=Math.max(0,(state.inv[l]||0)-1); });
+  bench.forEach(spendLetter);   // satchel first, capital bank second
   let earnedInk=0, brewed=null, wotdBonus=0, brewFull=null;
   if(isNoun){ earnedInk=inkForWord(word); state.ink+=earnedInk; }
   if(wotdUnclaimed){ wotdBonus=WOTD_BONUS; state.ink+=wotdBonus; state.wotdDay=state.day; }
@@ -6963,7 +7061,7 @@ function harvestGarden(){
     const low=cell.letter.toLowerCase(); state.inv[low]=(state.inv[low]||0)+1; cell.lastHarvest=today; letters++;
     // Stage 2 bonuses: rarity-scaled self-propagating seed, + a rare capital drop (early path past the word-gate).
     if(Math.random() < bonusSeedChance(cell.letter)){ addSeeds(cell.season||season, cell.letter, 1); bonusSeeds++; }
-    if(Math.random() < UPPER_DROP_CHANCE){ const up=cell.letter.toUpperCase(); state.inv[up]=(state.inv[up]||0)+1; caps++; }
+    if(Math.random() < UPPER_DROP_CHANCE){ const up=cell.letter.toUpperCase(); state.caps[up]=(state.caps[up]||0)+1; caps++; }   // banks like any capital
   }
   const words=gardenScan();
   let ink=0, potions=0, newWords=0;
@@ -8049,7 +8147,7 @@ function renderMaterials(){
 // Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
-  return { v:8, day:state.day, inv:state.inv, dex:state.dex,
+  return { v:9, day:state.day, inv:state.inv, caps:state.caps, dex:state.dex,
            decorOwned:state.decorOwned, placed:state.placed, bundles:state.bundles,
            bagCap:state.bagCap, captured:[...state.captured], fishedSpots:[...state.fishedSpots], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
@@ -8067,6 +8165,8 @@ function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
   if(d.dex) state.dex=d.dex;
   if(typeof d.bagCap==="number") state.bagCap=d.bagCap;
+  // The capital bank persists FOREVER — restored outside the same-day check below, unlike the satchel.
+  if(d.caps) Object.assign(state.caps, d.caps);
   // Ink + potions persist across days (earned progress, like the collection).
   if(typeof d.ink==="number") state.ink=d.ink;
   if(d.potions) for(const t of POTION_ALL) if(typeof d.potions[t]==="number") state.potions[t]=d.potions[t];
@@ -8200,6 +8300,7 @@ function startGame(){
   if(state.started) return;
   SFX.resume(); SFX.play("click"); state.started=true;
   document.getElementById("startcard").style.display="none";
+  updateTrayHud();   // now that play has begun, show today's "a capital is abroad" signpost
   // À La Modal no longer greets on open (it was intrusive) — her intro shows the first time you summon her
   // with M / the 💬 button (see alaSummon).
 }

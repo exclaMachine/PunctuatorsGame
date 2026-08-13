@@ -2,10 +2,11 @@
 
 Planning doc. **Read this before touching capital letters, proper-noun validation, or the Atlas board.**
 
-Status: **M1 (the data build) is BUILT — 2026-08-13. M2–M5 are plan only.** `build_geo.py` +
-`data/atlas-world.json` exist and are described in §5; no game code has been touched yet. The rest is the
-full spec for the feature sketched in [`inklings-grammar-systems.md`](inklings-grammar-systems.md) §4b, plus
-the **daily capital letter** that makes it playable from day one.
+Status: **M1 (data build) and M2 (the daily capital letter) are BUILT — 2026-08-13. M3–M5 are plan only.**
+`build_geo.py` + `data/atlas-world.json` exist (§5), and capital letters now spawn daily and bank
+persistently in `inklings.html` (§2, §3). **The Atlas board itself does not exist yet** — M2 deliberately
+ships first so capitals accumulate before there's a place to spend them. The rest is the full spec for the
+feature sketched in [`inklings-grammar-systems.md`](inklings-grammar-systems.md) §4b.
 
 > **Terminology, kept strict throughout:** a **capital letter** is `A`–`Z`. A **capital city** is Paris,
 > Tokyo, Lima. The feature runs on the pun, so the doc never lets the two words blur.
@@ -33,14 +34,17 @@ dependency, see §3) · [`inklings-placement.md`](inklings-placement.md) (where 
    never wiped at rollover. Spelling a place consumes one as normal.
 5. **The Atlas is a Library overlay board**, same pattern as the garden / Pig Pens / heraldry overlays.
    It does **not** wait on the unbuilt authored-map pipeline.
-6. **Region shapes come from a build script**: `build_geo.py` rasterizes public-domain Natural Earth borders
-   into a coarse grid → `data/atlas-world.json`. Real positions and adjacency for free, all 194 countries,
+6. **Region shapes come from a build script**: `build_geo.py` rasterizes public-domain Natural Earth data
+   into a coarse grid → `data/atlas-world.json`. Real positions and adjacency for free, all 196 countries,
    and the chunky grid *is* the pixel-parchment look.
-7. **Whole world open from the start**; the seven continents are completion sub-goals.
-8. **Rewards:** ink for spelling a country *or* its capital city; **pairing both earns that country's flag**,
+7. **The board is layered, not just political.** Countries and capital cities, plus **seas & oceans, lakes
+   and named mountain peaks** — 475 spellable names in all. Layers mean one cell can be both "France" and
+   "Alps", which is what lets rivers and mountain ranges drop in later without a renderer rewrite (§5.1).
+8. **Whole world open from the start**; the seven continents are completion sub-goals.
+9. **Rewards:** ink for spelling a country *or* its capital city; **pairing both earns that country's flag**,
    flown on a placeable flagpole (one object, any earned flag assigned to it) in the Library or cozy square.
-9. **The existing word-count capital gate stays.** Daily spawn = the trickle; `CAP_ORDER` at ~130 words =
-   the floodgate.
+10. **The existing word-count capital gate stays.** Daily spawn = the trickle; `CAP_ORDER` at ~130 words =
+    the floodgate.
 
 ---
 
@@ -79,9 +83,15 @@ through the weighting rather than through gating machinery.
 
 ### 2.3 Where it spawns
 
-Day-seeded onto a walkable tile on one screen of the world. Biased **away from home** (`dist >= 1`),
-matching the existing `weightedLetter` treatment of capitals as a thing worth travelling for, but always
-reachable inside the 5×5 world and never behind an unsolved obstacle.
+`dailyCapitalSpot()` — a day-seeded uniform pick over every screen that is **not home** and **carries no
+obstacle**, so it's always worth a short trek (the same instinct as `weightedLetter`'s far-from-home skew
+for capitals) and can never spawn inside the river's walled-off corner, unreachable until you've solved the
+crossing. Within the screen it takes an ordinary walkable spawn.
+
+**It is pinned at creature index 0** (`forcedLetters` puts it ahead of the WOTD letters). Creature ids are
+positional — `sx,sy,i` — and `wotdGuaranteed()` returns nothing until `2of12.txt` finishes loading, so a
+capital pinned *after* the word letters would shift index mid-session and break the "already caught today"
+lookup. At index 0 its id is stable no matter what the loader is doing.
 
 It is an ordinary member of the day's population, so it **counts toward `dayTotal()`** (decided) and
 therefore toward the Wordle-style "all of today's letters collected → day done" rule. One consistent rule
@@ -108,10 +118,18 @@ Two things I previously got wrong, recorded so they don't creep back in:
 state.caps = {}    // "F" -> count. Persistent; NOT wiped by startNewDay(); NOT counted by satchelCount().
 ```
 
-- **Uncapped.** No 10-slot limit — hold as many as you like.
+- **Uncapped.** No 10-slot limit — hold as many as you like. `capsCount()` is deliberately *not* part of
+  `satchelCount()`.
 - **Persistent.** Survives the nightly wipe that clears `state.inv`. Lowercase letters still reset daily.
 - **Consumed on use.** Spelling a place spends one capital letter like any other letter; catching a letter
   is not a permanent unlock of it.
+- **A full satchel never blocks a capital.** The capture path skips the `satchelFull()` guard for uppercase,
+  because a capital doesn't go in the satchel — and it's the one letter you can't just come back for
+  tomorrow.
+- **Every source banks.** Caught creature, the garden's `UPPER_DROP_CHANCE`, and the dev letter-grant all
+  route uppercase to `state.caps`. The Typo's swap is restricted to lowercase so a hostile creature can't
+  mint a banked capital for you. The Erazor only reaches into `state.inv`, so banked capitals are safe
+  from it.
 
 **Why banking matters** (and it isn't what I first assumed): you only ever need **one** capital letter per
 place — the initial. You bank them because on the day you catch a `G` you may not be able to *think* of a
@@ -161,118 +179,155 @@ board data is authored in a neutral schema anyway, so a future walkable version 
 
 ## 5. Data — `build_geo.py` → `data/atlas-world.json`  ✅ BUILT 2026-08-13
 
-`python3 build_geo.py` (add `--report` for the diagnostic tables). Runs in ~1 s and writes a **62 KB**
-`data/atlas-world.json`. **Stdlib only, no pip installs** — GeoJSON via `json`, polygons via a scanline
-rasterizer in the script. Downloads are cached in `build-cache/` (gitignored); `--refresh` re-fetches.
+`python3 build_geo.py` (add `--report` for the diagnostic tables). Runs in ~2 s, deterministic, and writes
+a **135 KB** `data/atlas-world.json`. **Stdlib only, no pip installs** — GeoJSON via `json`, polygons via a
+scanline rasterizer in the script. Downloads cache in `build-cache/` (gitignored); `--refresh` re-fetches.
 
-### 5.1 Sources (offline, open-licensed, no runtime dependency)
+### 5.1 Layers — why the grid is not one-owner-per-cell
 
-- **Natural Earth 1:50m Admin 0 – Countries** (public domain) — borders to rasterize.
-- **Natural Earth 1:50m Populated Places** (public domain) — capital cities (`ADM0CAP=1`) with lat/long.
+The board carries **four layers**, each with its own grid, so one cell can be both "France" and "Alps".
+Physical features force this: the Nile crosses six countries, the Andes seven, the Sahara ten — none of
+them can *own* a political cell. Settling it in the data now means the M3 renderer is written against the
+final shape instead of being retrofitted after the fact.
+
+| Layer | Source (all Natural Earth 1:50m, public domain) | Drawn | Spellable |
+| --- | --- | --- | --- |
+| `political` | `admin_0_countries` + `populated_places` (capitals) | 210 | 162 countries · 166 capitals |
+| `marine` | `geography_marine_polys` — oceans, seas, gulfs, straits | 100 | 90 |
+| `lakes` | `lakes`, filtered to `min_zoom ≤ 2` | 38 | 30 |
+| `peaks` | `geography_regions_elevation_points` (points, no grid) | 72 | 45 |
+
+**Not included, and both are drop-ins later — which is the point of layering:** *rivers* are line geometry
+and need a line rasterizer (~25 lines the polygon filler can't do); *mountain ranges and deserts*
+(`geography_regions_polys`) carry **no `featurecla` at the 50m scale**, so that file mixes ranges and
+deserts together with continents, whole countries and US states, and needs curation before it is safe.
 
 **50m, not the 110m originally specced:** 110m omits *every* microstate (Singapore, Vatican, Monaco,
 Malta, San Marino…), which would make the "no country may be invisible" invariant vacuous for exactly the
-countries that need it. 50m carries 242 features and 200 admin-0 capitals; only 2 countries lack a capital
-in the source (South Sudan, Nauru), covered by `CAPITAL_OVERRIDES`.
+countries that need it.
 
-**Roster policy is explicit, not inherited.** NE's `TYPE` is the base rule — "Sovereign country", plus
-"Country" entries that are their own sovereign (which is how NE models France, the UK, China, Denmark, and
-which correctly excludes Jersey, Macao, Greenland, Aruba and Åland as dependencies). NE then files some
-widely-taught countries under "Disputed"/"Indeterminate", so `FORCE_COUNTRY` / `NEVER_COUNTRY` in the script
-name the promotions and exclusions in one place rather than letting a shapefile's editorial choices decide a
-children's geography game. Everything not on the roster still gets **drawn** as terrain — never claimable.
+### 5.1a Naming rules
 
-**Names come from the unabbreviated fields.** NE's `NAME` is abbreviated for map labels ("Dem. Rep. Congo",
-"St. Vin. and Gren.") — unusable as something to spell. Countries take the *shortest* of
-`NAME`/`NAME_LONG`/`ADMIN`/`NAME_EN` that contains no abbreviating period, which lands on the everyday name
-(Congo over "Republic of the Congo", Czechia over "Czech Republic", United States over "United States of
-America"). Capital cities prefer `NAME_EN`, since `NAME` is the local form — that's what turns København
-into **Copenhagen** and NE's plain-wrong "Andorra" into **Andorra la Vella**.
+- **Countries** take the *shortest* of `NAME`/`NAME_LONG`/`ADMIN`/`NAME_EN` containing no abbreviating
+  period. NE's `NAME` is abbreviated for map labels ("Dem. Rep. Congo", "St. Vin. and Gren.") and unusable
+  as something to spell; shortest-without-a-period lands on the everyday name (Congo, Czechia, United
+  States).
+- **Capital cities** prefer `NAME_EN`, since `NAME` is the local form — that's what turns København into
+  **Copenhagen** and NE's plain-wrong "Andorra" into **Andorra la Vella**.
+- **Physical features drop the generic word.** "Pacific Ocean" is spelled **Pacific**, "Mount Everest" is
+  **Everest**, "Lake Baikal" is **Baikal**, "Gulf of Mexico" is **Mexico**. This is both how people
+  actually say them and the only way these layers are spellable at all — raw, the marine file contains
+  **zero** single-word names. NE's `name_en` already does half the job for lakes ("Lake Ladoga" → Ladoga)
+  and reunites features it splits geographically (North + South Pacific → one Pacific).
+- **Roster policy is explicit, not inherited.** `SOVEREIGN_TYPES` covers NE's "Sovereign country" *and*
+  "Sovereignty" (which is how it files **Cuba and Kazakhstan** — missing that quietly demoted two UN member
+  states to unspellable terrain). "Country" entries count only when self-sovereign, which correctly keeps
+  Jersey, Macao, Greenland, Aruba and Åland as dependencies. `FORCE_COUNTRY` / `NEVER_COUNTRY` then name
+  the promotions and exclusions in one editable place rather than letting a shapefile's editorial choices
+  decide a children's geography game. Everything off the roster is still **drawn** — never claimable.
+- **Capitals are corrected, not trusted.** NE's populated-places file is not maintained as a capitals
+  register: it lags renames and prefers the largest city over the official seat. `CAPITAL_OVERRIDES` fixes
+  Burundi (Gitega, not Bujumbura), Benin (Porto-Novo), Palau (Ngerulmud), Tanzania (Dodoma), Kazakhstan
+  (Astana, renamed back in 2022) and Sri Lanka; `MULTI_CAPITAL` picks the official capital over the seat of
+  government for South Africa (Pretoria), Ivory Coast (Yamoussoukro) and Bolivia (Sucre). Every one of
+  these is a fact a player would be *taught* by a fact card, so none is left to the source.
 
-### 5.2 Output shape (actual)
+### 5.2 Output shape (actual, `schemaVersion: 2`)
 
 ```jsonc
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "source": "Natural Earth 1:50m (public domain) via nvkelso/natural-earth-vector",
-  "grid": {
-    "cols": 240, "rows": 96, "proj": "equirect",
-    "lonMin": -180, "lonMax": 180, "latMin": -60, "latMax": 84,
-    "rows_rle": [[[33,null],[6,"CAN"],[2,null],...], ...]  // per row: [runLength, iso3|null]
+  "grid": { "cols": 240, "rows": 96, "proj": "equirect",
+            "lonMin": -180, "lonMax": 180, "latMin": -60, "latMax": 84 },
+  "layers": {
+    "political": { "label": "Countries",
+                   "rows_rle": [[[33,null],[6,"CAN"],...], ...] },   // per row: [runLength, id|null]
+    "marine":    { "label": "Seas & oceans", "rows_rle": [...] },
+    "lakes":     { "label": "Lakes",         "rows_rle": [...] },
+    "peaks":     { "label": "Mountains",     "points": true }        // points only — no grid
   },
   "places": {
-    "FRA": {
-      "country": "France", "capital": "Paris", "continent": "Europe",
-      "kind": "country",             // country | dependency | other  — only "country" is claimable
-      "iso2": "FR", "flag": "🇫🇷",
-      "cells": 45,                   // how much of the grid it owns
-      "capCell": [121, 23],          // grid cell of the capital city (pin position)
-      "labelCell": [120, 23],        // cell in the widest horizontal run — room for a name label
-      "spellable": { "country": true, "capital": true }   // false = multiword, deferred (§5.3)
-    }
-  }
+    "FRA":          { "layer": "political", "kind": "country", "name": "France",
+                      "continent": "Europe", "iso2": "FR", "flag": "🇫🇷",
+                      "cells": 45, "labelCell": [120,23],
+                      "capital": "Paris", "capCell": [121,23],
+                      "spellable": { "country": true, "capital": true } },
+    "sea:pacific":  { "layer": "marine", "kind": "ocean", "name": "Pacific",
+                      "full": "Pacific Ocean", "cells": 900, "labelCell": [...],
+                      "spellable": { "name": true } },
+    "lake:baikal":  { "layer": "lakes", "kind": "lake", "name": "Baikal", "full": "Lake Baikal", ... },
+    "peak:everest": { "layer": "peaks", "kind": "mountain", "name": "Everest",
+                      "full": "Mount Everest", "cell": [204,26], "elevation": 8848,
+                      "note": "Worlds highest point", "summit": true,
+                      "spellable": { "name": true } }
+  },
+  "index": { "Mexico": [["MEX","country"], ["sea:mexico","name"]], ... }   // see §6.1
 }
 ```
 
-`country_accented` / `capital_accented` appear **only when they differ** from the folded form (Curaçao,
-Bogotá) — the hook [`inklings-diacritics.md`](inklings-diacritics.md) later lights up. RLE keeps 240×96 =
-23,040 cells to 62 KB. Load lazily on first Atlas open (the `data/wordnet-relations.json` pattern), not at
-startup.
+`*_accented` fields appear **only when they differ** from the folded form (Curaçao, Bogotá) — the hook
+[`inklings-diacritics.md`](inklings-diacritics.md) later lights up. Load lazily on first Atlas open (the
+`data/wordnet-relations.json` pattern), not at startup.
 
 ### 5.2a What the build produced
 
 | | |
 | --- | --- |
-| Grid | 240×96, 1.5° cells, latitude windowed to −60..84 |
-| Land cells | 7,962 of 23,040 (35%) |
-| Places | 210 — **194 countries**, 9 dependencies, 7 other |
-| **Spellable countries** | **160** (the rest are multiword: United States, New Zealand, Costa Rica…) |
-| **Fully completable pairs** | **139** (country *and* capital city both single-word) |
-| Forced onto the grid | 25, all genuine microstates/island nations |
+| Grid | 240×96, 1.5° cells, latitude windowed to −60..84, 3×3 supersampled |
+| Land cells | 7,952 of 23,040 (35%) |
+| Places | **420** across four layers |
+| Countries | **196** (+ 9 dependencies, 5 other) |
+| **Spellable names, total** | **475** — 162 countries · 166 capitals · 90 marine · 30 lakes · 45 peaks |
+| Fully completable country+capital pairs | **142** |
+| Colliding names | 18 (see §6.1) |
+| Placed by hand | 25 microstates — 10 borrowed from a neighbour, 15 in open water (all genuine island nations) |
+| Capital pins snapped inside their country | 24 |
 
-**Grid resolution was measured, not eyeballed** (this settles the old open question). 240×96 is the
-*coarsest* grid on which **no country has to take a cell from a neighbour**: at 180×72 the fallback had to
-carve Rwanda and Burundi out of DR Congo, Qatar out of Saudi Arabia and Slovenia out of Italy. It also
-happens to render at exactly **720 px wide at 3 px/cell** — the width of the game canvas. Finer grids buy
-only file size (360 cols → 75 KB, still 22 forced).
+**Grid resolution was measured, not eyeballed.** 240×96 renders at exactly **720 px wide at 3 px/cell** —
+the width of the game canvas — and is fine enough that every non-microstate wins cells honestly. The
+earlier justification for it ("no country has to steal a cell from a neighbour") was **wrong reasoning**:
+the steal branch never fired because the placement fallback searched for *unowned* cells, and unowned means
+ocean, so it always found sea first. The honest metric is §5.3's — where hand-placed countries end up — and
+on that metric the 15 open-water placements are exactly the 15 island nations, which is correct.
 
 **Cells are supersampled 3×3 and assigned by vote** (`--subsample`). Sampling once per cell centre silently
-drops every country narrower than a cell — and raising resolution does *not* fix that, it only changes which
-countries fall through. Voting also puts borders where the land actually is rather than wherever a single
-sample point happened to land.
+drops every feature narrower than a cell — and raising resolution does *not* fix that, it only changes
+which features fall through. Voting also puts borders where the land actually is.
 
 ### 5.3 Build-time invariants
 
-- **No country may be invisible.** A nation too small to win a cell on its own (Singapore, Vatican, Malta,
-  island microstates) is **forced** onto the grid: it takes its capital city's cell, else the nearest free
-  cell within a 3-cell spiral, else — last resort — one cell from the largest neighbour that can spare it.
-  Guarantees every place in `places` is findable and fillable. A deterministic script rule, not a
-  hand-authored override file. **At the tuned 240×96 default, 25 microstates are forced and the
-  steal-from-a-neighbour branch never fires** (that's what picked the resolution, §5.2a).
-- **Names are normalized:** ASCII-folded, accents stripped (Bogotá → Bogota), per §4b. Keep the accented
-  form in the data — it's the hook [`inklings-diacritics.md`](inklings-diacritics.md) later lights up, and
-  keeping it now means no rebuild then.
-- **v1 spellability = single-word only.** Every country is **drawn**, but a name containing a space or hyphen
-  gets `spellable:false` and shows as deferred:
-  - single-word country + single-word capital city → fully completable (France/Paris, Japan/Tokyo, Chile/Santiago)
-  - single-word country + multiword capital city → region fillable, pin deferred (Malaysia/Kuala Lumpur)
-  - multiword country → fully deferred (New Zealand, United States, Costa Rica, Sri Lanka…)
-
-  Measured: **160 of 194** countries are spellable, **139** are fully completable pairs. The board still
-  reads as a world; multiword names are a well-scoped later increment (the bench would need a space tile).
-
-- **Five places are their own capital city** — Andorra, Djibouti, Luxembourg, Monaco, Singapore. Spelling
-  the word once satisfies *both* halves, so `spellPlace` (§6.1) must award the country, the capital city and
-  the pairing flag in a single submission rather than assuming two separate solves.
+- **No country may be invisible.** A nation too small to win a cell (Singapore, Vatican, Malta, island
+  microstates) is placed by hand near where it really is. Order matters, and the first version got it
+  backwards: it looked for a *free* cell, and free means unowned, which means **ocean** — so it dropped
+  every landlocked microstate into the sea (Liechtenstein into the Adriatic, Luxembourg into the North
+  Sea, Vatican into the Tyrrhenian). `force_onto_grid` now walks outward from the true position and, within
+  each ring, **prefers borrowing a cell from a large neighbour over open water** — so Liechtenstein takes a
+  cell from Switzerland and lands between Switzerland and Austria, while genuine island nations, whose own
+  cell *is* ocean at radius 0, stay exactly where they belong. If even that fails the build **warns loudly**
+  rather than silently shipping a missing nation.
+- **A capital pin must sit inside its own country.** `capCell` comes from lat/long, and at 1.5° a coastal
+  or border capital lands in a neighbour or in open water — Kinshasa drew inside Congo-Brazzaville,
+  Copenhagen inside Sweden, Brussels and Bern inside France, and Baku, Praia, Suva and Kingston in the sea.
+  Every pin is now snapped to its country's own nearest cell (24 of them needed it).
+- **Names are normalized:** ASCII-folded, accents stripped (Bogotá → Bogota). The accented form is kept in
+  the data, so [`inklings-diacritics.md`](inklings-diacritics.md) needs no rebuild.
+- **v1 spellability = single-word only.** Everything is **drawn**; a name with a space or hyphen gets
+  `spellable:false`. **A capital city is judged on its own merits** — it used to require a spellable
+  *country* too, which deferred London, Seoul, Riyadh, Pyongyang, Wellington, Kinshasa and Pretoria purely
+  because "United Kingdom" and "South Korea" have spaces.
+- **Four places are their own capital city and spellable** — Djibouti, Luxembourg, Monaco, Singapore. One
+  submission must award the country, the capital *and* the pairing flag (§6.1). (San Marino is a fifth
+  such case, currently deferred for being multiword.) This list is generated from the data, not
+  hand-written — an earlier hand-written version named Andorra, which had stopped being true two fixes
+  earlier.
 
 ### 5.4 Satchel length constraint
 
 The capital letter comes from `state.caps`, so the satchel only carries the **tail**: a name of length *n*
 needs *n−1* satchel slots. At the base `bagCap` of 10 that's names up to 11 characters (Afghanistan ✓,
-Liechtenstein ✗). The shop's existing repeatable `+1 satchel` upgrade is the progression that opens the long
-ones — no new system needed.
-
----
+Liechtenstein ✗). The shop's existing repeatable `+1 satchel` upgrade is the progression that opens the
+long ones — no new system needed.
 
 ## 6. Spelling a place, and what it pays
 
@@ -291,6 +346,22 @@ Then, **before** the WordNet lookup, a proper-noun branch:
 ```
 if (/^[A-Z][a-z]+$/.test(raw) && atlasLookup(raw))  →  spellPlace(raw)
 ```
+
+**`atlasLookup` reads the prebuilt `index`, and one word can claim several places.** The build emits
+`index: { "Mexico": [["MEX","country"], ["sea:mexico","name"]] }` — 475 names, **18 of them colliding**,
+and the collisions are some of the best teaching in the whole feature:
+
+| Word | Claims |
+| --- | --- |
+| Mexico · Japan · Oman · Panama · Guinea · Honduras · Thailand · Taiwan · Finland · Mozambique | the country **and** the sea/gulf named after it |
+| Kenya · Washington | the country/capital **and** the mountain |
+| Malawi · Nicaragua | the country **and** the lake |
+| Djibouti · Luxembourg · Monaco · Singapore | its own capital city (§5.3) |
+
+So `spellPlace` takes a *list* of claims, not one. The natural reading — and the one that matches the
+turkey/Turkey lesson — is that one submission fills **every** place with that name and the fact card shows
+them together ("Mexico: the country, and the Gulf of Mexico"). That is an M4 decision, but the data is
+already shaped for it.
 
 `spellPlace(raw)`:
 
@@ -331,7 +402,7 @@ assignment on the placed instance:
 state.placed: [{ id:"flagpole", kind:"decor", where:"library", cx:8, cy:14, flag:"FRA" }]
 ```
 
-One piece of art total, 194 possible faces drawn from the emoji, no décor-inventory clutter, and it scales
+One piece of art total, 196 possible faces drawn from the emoji, no décor-inventory clutter, and it scales
 to any future atlas ([`inklings-grammar-systems.md`](inklings-grammar-systems.md) §4b's Star Atlas /
 Pantheon) without new objects. The only addition to the placement pipeline is a per-instance field and the
 picker — `state.atlasFlags` is the authority on which flags a pole may display.
@@ -357,8 +428,9 @@ state.atlasFlags  = {}     // ISO3 -> dayString earned (the pairing reward; feed
 state.atlasContinents = {} // "Europe" -> dayString claimed (one-time continent rewards)
 ```
 
-All JSON-clean; folded into `snapshot()` / `applySnapshot()` with a save-version bump (currently `v:8`), and
-all **persist-forever** — never touched by `startNewDay()`.
+All JSON-clean and **persist-forever** — never touched by `startNewDay()`. `state.caps` shipped with M2:
+`snapshot()` is now **`v:9`**, and `applySnapshot()` restores `caps` *outside* the same-day guard that
+gates the satchel, which is what makes the bank survive rollover. The M4 fields are not added yet.
 
 Note there is no `atlasStampDay`-style idempotence field any more: the daily capital letter is a world spawn
 derived from `state.daySeed`, so it's inherently idempotent and stateless. Reloading regenerates the same
@@ -370,13 +442,21 @@ world with the same capital letter in the same place; capturing it uses the exis
 
 Each phase is shippable and leaves the game working.
 
-- **M1 — Data. ✅ BUILT 2026-08-13.** `build_geo.py` + `data/atlas-world.json` (62 KB, 240×96, 194 countries,
-  160 spellable, 139 completable pairs). Stdlib-only, ~1 s, sources cached in gitignored `build-cache/`.
-  §5.3 invariants verified; raster spot-checked by rendering it back as ASCII. No game change.
-- **M2 — The daily capital letter.** `dailyCapital()`, the guaranteed spawn in world generation,
-  `state.caps` (persistent + uncapped), the ⇧ tray reading it, the HUD display. **Ships on its own** — even
-  before the Atlas exists, capital letters become catchable and bankable from day one, so players arrive at
-  the board with a stock in hand.
+- **M1 — Data. ✅ BUILT 2026-08-13, revised the same day after review.** `build_geo.py` +
+  `data/atlas-world.json` (135 KB, `schemaVersion:2`, 240×96, four layers, 420 places, **475 spellable
+  names**). Stdlib-only, ~2 s, deterministic, sources cached in gitignored `build-cache/`. §5.3 invariants
+  verified; raster spot-checked by rendering it back as ASCII. No game change.
+  The revision fixed a batch of real defects found by code review — Cuba and Kazakhstan silently demoted to
+  unspellable terrain, seven landlocked microstates placed **in the ocean**, 32 capital pins drawn inside
+  the wrong country, six stale or wrong capital cities, and capitals needlessly gated on their country's
+  spellability — and added the marine/lakes/peaks layers. See §5.
+- **M2 — The daily capital letter. ✅ BUILT 2026-08-13.** `dailyCapital()` (FREQ-weighted day-seeded roll),
+  `dailyCapitalSpot()`, `forcedLetters()` (one shared function feeding *both* `genScreen` and
+  `screenCreatureCount`, so the world and the daily total can never disagree), `state.caps` +
+  `capsCount()`/`letterAvail()`/`spendLetter()`, capture banking, the ⇧ tray and keyboard reading the bank,
+  a separate HUD panel with the "abroad" signpost chip, the rollover toast, and save `v:9`. Ships on its
+  own — capital letters are now catchable and bankable from day one, so players will arrive at the board
+  with a stock in hand.
 - **M3 — Board, read-only.** Globe object, `state.atlasOpen` + the ~7 overlay-list additions, canvas render
   with everything unfilled, continent tabs, click → fact card.
 - **M4 — Spelling.** Case-preserving `checkWord`, `atlasLookup`, `spellPlace`, `state.atlas`, region fill +
@@ -427,3 +507,11 @@ board's arrival feel earned rather than empty.
    "Disputed" bucket; `NEVER_COUNTRY` leaves W. Sahara, Somaliland, N. Cyprus, Palestine and Antarctica
    drawn-but-unclaimable. Both lists are one edit away in `build_geo.py` if you'd rather draw those lines
    differently.
+6. **Sri Lanka's capital** is set to the official **Sri Jayawardenepura Kotte**, which is multiword and so
+   unspellable, rather than the commonly-taught **Colombo** (the commercial capital). Factually defensible,
+   but it costs a well-known name — one line in `CAPITAL_OVERRIDES` to flip.
+7. **Colliding names** (§6.1) — does one submission fill every place with that name, or does the player
+   pick? The data supports either; the fill-everything reading is the one that matches turkey/Turkey.
+8. **Rivers and mountain ranges** are the obvious next layers. Rivers need a line rasterizer (~25 lines);
+   ranges/deserts need curation, because `geography_regions_polys` has no `featurecla` at 50m and mixes in
+   continents, whole countries and US states. Neither needs a schema change — that's what §5.1 bought.
