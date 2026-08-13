@@ -12,7 +12,7 @@ you add/remove/modify a feature (treat the doc as part of the diff, not an after
 
 | Game | Entry file | Doc |
 | ---- | ---------- | --- |
-| **Inklings** — word-collecting adventure (hunt letter-creatures, spell words at a desk, fill a library) | `inklings.html` | [`docs/inklings.md`](docs/inklings.md) · [architecture/maps/portability](docs/inklings-architecture.md) · [grammar systems/edu design](docs/inklings-grammar-systems.md) · [world atlas/capitals (tentative)](docs/inklings-atlas.md) · [farming/scripts](docs/inklings-farming.md) · [collections/curation/decoration](docs/inklings-collections.md) · [object placement/cozy square (0,1)](docs/inklings-placement.md) · [poetry/phoneme engine](docs/inklings-poetry.md) · [phoneme fishing (tentative)](docs/inklings-fishing.md) · [heraldry/blazon shield](docs/inklings-heraldry.md) · [story companions](docs/inklings-companions.md) · [signal flags/omen mast (tentative)](docs/inklings-signal-flags.md) · [cipher menagerie (tentative)](docs/inklings-ciphers.md) · [sound-effect minibosses/shouts (tentative)](docs/inklings-shouts.md) · [diacritics/diacryptids (tentative)](docs/inklings-diacritics.md) |
+| **Inklings** — word-collecting adventure (hunt letter-creatures, spell words at a desk, fill a library) | `inklings.html` | [`docs/inklings.md`](docs/inklings.md) · [architecture/maps/portability](docs/inklings-architecture.md) · [grammar systems/edu design](docs/inklings-grammar-systems.md) · [world atlas/capitals (M1 data BUILT, rest planned)](docs/inklings-atlas.md) · [farming/scripts](docs/inklings-farming.md) · [collections/curation/decoration](docs/inklings-collections.md) · [object placement/cozy square (0,1)](docs/inklings-placement.md) · [poetry/phoneme engine](docs/inklings-poetry.md) · [phoneme fishing (tentative)](docs/inklings-fishing.md) · [heraldry/blazon shield](docs/inklings-heraldry.md) · [story companions](docs/inklings-companions.md) · [signal flags/omen mast (tentative)](docs/inklings-signal-flags.md) · [cipher menagerie (tentative)](docs/inklings-ciphers.md) · [sound-effect minibosses/shouts (tentative)](docs/inklings-shouts.md) · [diacritics/diacryptids (tentative)](docs/inklings-diacritics.md) |
 | **Kaimoju** — Rampage-style kaiju that destroys buildings by typing romaji for kana/kanji | `kaimoju.html` | [`docs/kaimoju.md`](docs/kaimoju.md) |
 | **Specimen Lab** (Exquisite Corpse) — Rummikub-style monster-parts card game on canvas | `exquisite-corpse-rummy.html` | [`docs/exquisite-corpse.md`](docs/exquisite-corpse.md) |
 | **Spin Nids** (Ambigram Word Game) — rotatable ambigram-tile word game | `SpinNidIndex.html` | [`docs/spin-nids.md`](docs/spin-nids.md) |
@@ -50,7 +50,8 @@ before changing it.
   blazon roster for the DEV-only Blazon Shield (`data/blazon.json`), the WordNet relation graph that powers
   the Curator's per-word relatives page (`data/wordnet-relations.json`, lazy-loaded on first curator open),
   the hand-written scenario frames + swappable noun list for the Excla Machine daily interjection puzzle
-  (`data/excla-scenarios.json`),
+  (`data/excla-scenarios.json`), the World Atlas country/capital raster (`data/atlas-world.json`, built by
+  `build_geo.py` from public-domain Natural Earth; lazy-load on first Atlas open),
   and `2of12.txt` — all local project files, no runtime third-party API).
 - **Ask clarifying questions before non-trivial work.** For any meaningful change, surface the genuine
   design forks and get answers before writing code. Prefer a recommendation over an exhaustive survey.
