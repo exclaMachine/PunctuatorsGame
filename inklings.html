@@ -434,6 +434,41 @@
     .gd-cell{--plot:15px}
   }
 
+  /* ---- The Atlas (the library globe → world board). Read-only in M3: every place is still
+     redacted, so the board can't be read as an answer key. See docs/inklings-atlas.md §4. ---- */
+  #atlas{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);align-items:center;
+    justify-content:center;padding:18px;z-index:7}
+  #atlas.open{display:flex}
+  #atlas .book{position:relative;display:flex;flex-direction:column;max-width:720px;width:100%;
+    height:min(620px,92vh);overflow:hidden}
+  #atlas .book>h1{flex:none}
+  .at-wrap{display:flex;flex-direction:column;gap:7px;flex:1;min-height:0}
+  #at-map{width:100%;height:auto;image-rendering:pixelated;background:#cfd8d2;border:3px solid var(--edge);
+    box-shadow:3px 3px 0 rgba(0,0,0,.3);flex:none;cursor:crosshair;touch-action:manipulation}
+  .at-layers{display:flex;flex-wrap:wrap;gap:5px;align-items:center;flex:none}
+  .at-layers button{font-family:var(--disp);font-size:7px;padding:4px 6px;border:2px solid var(--edge);
+    background:var(--paper-2);color:var(--ink);cursor:pointer}
+  .at-layers button.on{background:var(--gold);color:#2a2540}
+  .at-abroad{font-family:var(--read);font-size:13px;color:var(--ink-soft);margin-left:auto;white-space:nowrap}
+  .at-abroad b{font-family:var(--disp);font-size:9px;color:var(--gold)}
+  .at-card{flex:1;min-height:64px;overflow-y:auto;border:2px solid var(--line);background:var(--paper-2);
+    padding:7px 9px;font-family:var(--read);font-size:14px;line-height:1.45;color:var(--ink)}
+  .at-card .at-kind{font-family:var(--disp);font-size:8px;color:var(--gold)}
+  .at-card .at-where{color:var(--ink-soft)}
+  .at-blanks{font-family:var(--disp);font-size:11px;color:var(--ink);margin:4px 0;line-height:1.6}
+  .at-blanks i{display:inline-block;width:10px;height:13px;margin-right:4px;vertical-align:-2px;
+    border-bottom:2px solid var(--ink);font-style:normal}
+  .at-blanks.at-later i{border-bottom-color:#8a5a34;opacity:.7}
+  .at-blanks .at-gap{padding:0 5px;color:var(--ink-soft);font-size:9px}
+  .at-hint{color:var(--ink-soft);font-size:13px}
+  .at-later{color:#8a5a34}
+  #atlas .hb-tabs{flex-wrap:wrap}
+  #atlas .hb-tab{font-size:8px;padding:5px 8px}
+  @media(max-width:560px){
+    #atlas .book{height:auto;max-height:92vh;overflow:auto;display:block}
+    .at-card{min-height:80px}
+  }
+
   /* ---- Pig Pens (Pigpen cipher — DEV-only). Each pen draws a letter's Pigpen cell (walls) and a 🐖 pig = its
      dotted twin. Read the daily pens, type the word → it enters the library (no letters spent). See docs/inklings-ciphers.md ---- */
   #pigpens{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);align-items:center;
@@ -973,6 +1008,7 @@
     <button class="tb-btn dim" id="tb-book"><span class="tb-ico">📖</span><span>Mad Libris</span></button>
     <button class="tb-btn dim" id="tb-shelf"><span class="tb-ico">📚</span><span>Shelf</span></button>
     <button class="tb-btn dim" id="tb-curate"><span class="tb-ico">🗂️</span><span>Curator</span></button>
+    <button class="tb-btn dim" id="tb-atlas"><span class="tb-ico">🌍</span><span>Atlas</span></button>
     <button class="tb-btn dim" id="tb-decor"><span class="tb-ico">🖼️</span><span>Decorate</span></button>
     <button class="tb-btn dim" id="tb-fish"><span class="tb-ico">🎣</span><span>Fish</span></button>
   </aside>
@@ -1346,6 +1382,22 @@
       </div>
     </div>
 
+    <!-- The Atlas: the library globe opens a flat world board built from data/atlas-world.json (Natural
+         Earth, four layers). READ-ONLY in M3 — nothing is spelled yet, so every place is redacted to its
+         kind · continent · letter count. Spelling arrives in M4. See docs/inklings-atlas.md §4. -->
+    <div id="atlas">
+      <div class="book">
+        <button class="close-x" id="at-close" aria-label="Close the Atlas" title="Close">✕</button>
+        <h1>The Atlas <span class="dex-count" id="at-count"></span></h1>
+        <div class="hb-tabs" id="at-tabs"></div>
+        <div class="at-wrap">
+          <canvas id="at-map" width="720" height="288"></canvas>
+          <div class="at-layers" id="at-layers"></div>
+          <div class="at-card" id="at-card"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Interactable obstacle (river) mad-lib: fill the blank with a collected verb -->
     <div id="obstacle">
       <div class="book" style="max-width:470px">
@@ -1518,6 +1570,12 @@
           <p>Rewards repeat: re-spelling a word spends its letters again and pays again.</p>
           <p><b>Word of the Day.</b> Each day the Wordsmithy shows a bonus word — always built from letters you've unlocked, so you can always collect what you need. Spell it once for a big ink bonus.</p>
           <p><b>Mad Libris.</b> The lectern right of the Wordsmithy. You start with one fable; <b>recover</b> the rest one at a time — beasts rarely drop a <b>page</b>, or <b>bind</b> the next one at the Stall with materials beasts drop. Restore a story by filling each blank with a collected word that matches the needed part of speech (noun/verb/adjective/adverb). Matching the original word earns bonus ink. A word can be used in a chapter only <b>once, ever</b> — so keep learning new ones. Finish every recovered chapter to add the book to your Wordhoard.</p>
+          <p><b>The Atlas.</b> The <b>globe</b> in the Wordhoard, right of the lectern. It opens a world board of
+          countries, seas, lakes and mountain peaks — every one of them a <b>proper noun</b>, and every proper noun
+          starts with a <b>capital letter</b>. That's why a capital is <b>abroad in the world every day</b>: hunt it
+          like any other letter-creature and it <b>banks</b> (capitals are kept overnight and never fill your satchel).
+          Places on the board stay <b>redacted</b> — you get its kind, its continent and how many letters it has, but
+          the name is yours to remember. Spelling them in comes soon.</p>
           <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground — walk over it to collect (the <b>Magnet</b> feat later makes drops drift to you) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
           <p><b>Feats (<b>C</b>).</b> Collecting <b>verbs</b> levels you up along word-count milestones per category (1, then every few — bigger categories space rewards out further). Rewards interleave passive boosts and abilities: <b>Motion</b> → move speed + <b>Slide</b>; <b>Competition</b> → attack + <b>Finisher</b>/<b>Combo</b>; <b>Perception</b> → <b>Divine</b> (a daily letter peek in the library) + <b>Treasure Sense</b> (drops glint); <b>Possession</b> → satchel space + <b>Magnet</b>; <b>Body</b> → max hearts + <b>Second Wind</b> (recover a heart when you stay out of combat). More verb categories arrive later.</p>
         </div>
@@ -1566,6 +1624,7 @@
           <button class="tc-btn util" id="tc-book" aria-label="Open Mad Libris">LIBRIS</button>
           <button class="tc-btn util" id="tc-shelf" aria-label="Browse shelf">SHELF</button>
           <button class="tc-btn util" id="tc-curate" aria-label="Speak with the curator">CURATE</button>
+          <button class="tc-btn util" id="tc-atlas" aria-label="Open the Atlas">ATLAS</button>
           <button class="tc-btn util ico" id="tc-decor" aria-label="Decorate the Wordhoard">🖼️</button>
           <button class="tc-btn util" id="tc-fish" aria-label="Cast a line">CAST</button>
         </div>
@@ -2509,6 +2568,7 @@ function buildLibrary(room){
     desk: interactPt("desk"),      // the writing desk (opens the collection/bench)
     book: interactPt("book"),      // the book lectern (opens mad-libs)
     curator: interactPt("curator"),// the curator's desk (opens the curation panel)
+    globe: interactPt("globe"),    // the globe (opens the Atlas board — docs/inklings-atlas.md §4)
     shelves: room.objects.filter(o=>o.shelf).map(o=>({ id:o.id, rect:{x:o.col*cw, y:o.row*ch, w:o.w*cw, h:o.h*ch} })),
     bg:null
   };
@@ -2620,7 +2680,7 @@ const state = {
   decorOwned:{},                // earned-but-unplaced décor: id -> count (persist). docs/inklings-placement.md
   placed:[],                    // placed objects: [{id,kind,where,cx,cy}] — where="library"|"sx,sy" (persist)
   bundles:{},                   // claimed category-milestone ids ("cat:threshold" -> true), one-time (persist). docs/inklings-collections.md
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false, fishing:false, phoniconOpen:false,
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false, fishing:false, phoniconOpen:false, atlasOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -3241,6 +3301,11 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"){ e.preventDefault(); if(phonTab==="guide") phonShowTab("sounds"); else closePhonicon(); }   // step back from the Guide tab first
     return;
   }
+  if(state.atlasOpen){   // Atlas board: Esc backs a framed continent out to the world, then closes; Tab/E close
+    if(k==="escape"){ e.preventDefault(); if(atContinent){ atSetContinent(null); } else closeAtlas(); }
+    else if(k==="tab"||k==="e"){ e.preventDefault(); closeAtlas(); }
+    return;
+  }
   // Don't swallow W/A/S/D (or the other movement keys) while typing in an Excla Machine input — they're
   // letters there, not movement (the madlibs branch below handles the tab, but this preventDefault runs first).
   const inExclaInput = state.madlibs && mlTab==="excla" && e.target && e.target.tagName==="INPUT";
@@ -3429,6 +3494,7 @@ function nearFishSpot(){
 function nearLibraryDesk(){ return state.room==="library" && LIBRARY && LIBRARY.desk && Math.hypot(state.player.x-LIBRARY.desk.cx, state.player.y-LIBRARY.desk.cy)<64; }
 function nearLibraryBook(){ return state.room==="library" && LIBRARY && LIBRARY.book && Math.hypot(state.player.x-LIBRARY.book.cx, state.player.y-LIBRARY.book.cy)<64; }
 function nearLibraryCurator(){ return state.room==="library" && LIBRARY && LIBRARY.curator && Math.hypot(state.player.x-LIBRARY.curator.cx, state.player.y-LIBRARY.curator.cy)<64; }
+function nearLibraryGlobe(){ return state.room==="library" && LIBRARY && LIBRARY.globe && Math.hypot(state.player.x-LIBRARY.globe.cx, state.player.y-LIBRARY.globe.cy)<64; }
 // The bookshelf whose front the player is standing at (nearest within range), or null. Distance is measured
 // from the player's feet to the shelf rectangle, so you can approach from below or the side.
 function nearLibraryShelf(){
@@ -3460,6 +3526,7 @@ function tryUseBench(){
     if(nearLibraryDesk()) openOverlay();       // the desk → collection/bench
     else if(nearLibraryBook()) openBook();     // the lectern → mad-libs
     else if(nearLibraryCurator()) openCuration();  // the curator → collection subgoals
+    else if(nearLibraryGlobe()) openAtlas();       // the globe → the world Atlas
     else { const sh=nearLibraryShelf(); if(sh) openShelfView(sh); }   // a bookshelf → its books
     return;
   }
@@ -3637,7 +3704,7 @@ function update(dt){
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -3723,7 +3790,7 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -3772,7 +3839,7 @@ function update(dt){
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else if(hintReady && nearFishSpot()){ hint.textContent="Press E to cast a line"; hint.classList.add("show"); }
@@ -3794,7 +3861,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.shelfview && !state.curation && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.shelfview && !state.curation && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -3819,10 +3886,11 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !place.active && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.shelfview && !state.curation;
+  const hintReady=!IS_TOUCH && !place.active && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.shelfview && !state.curation;
   if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryCurator()){ hint.textContent="Press E to speak with the curator"; hint.classList.add("show"); }
+  else if(hintReady && nearLibraryGlobe()){ hint.textContent="Press E to open the Atlas"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryShelf()){ hint.textContent="Press E to browse this shelf"; hint.classList.add("show"); }
   else if(hintReady && ownedDecorList().length){ hint.textContent="Press O to place decorations"; hint.classList.add("show"); }
   else hint.classList.remove("show");
@@ -4381,13 +4449,13 @@ function refreshToolbar(){
   if(!panelsShown()) return;
   const started=state.started;
   const shop=started&&!state.room&&nearShop(), book=started&&nearLibraryBook(), shelf=started&&!!nearLibraryShelf();
-  const curate=started&&nearLibraryCurator();
+  const curate=started&&nearLibraryCurator(), globe=started&&nearLibraryGlobe();
   const words=started&&nearLibraryDesk(), decor=started&&state.room==="library";   // Wordsmithy = desk-only; Decorate = anywhere in the Wordhoard
   const fish=started&&!!nearFishSpot();                                             // Fish = lit only when facing an uncaught fish-spot
-  const sig=[started,shop,book,shelf,curate,words,decor,fish].join(",");
+  const sig=[started,shop,book,shelf,curate,globe,words,decor,fish].join(",");
   if(sig===_tbSig) return; _tbSig=sig;
   const set=(id,on)=>{ const el=document.getElementById(id); if(el) el.classList.toggle("dim", !on); };
-  set("tb-shop",shop); set("tb-book",book); set("tb-shelf",shelf); set("tb-curate",curate); set("tb-words",words); set("tb-decor",decor); set("tb-fish",fish);
+  set("tb-shop",shop); set("tb-book",book); set("tb-shelf",shelf); set("tb-curate",curate); set("tb-atlas",globe); set("tb-words",words); set("tb-decor",decor); set("tb-fish",fish);
 }
 // Called each render frame: draw the minimap into whichever surface is active, and refresh the toolbar.
 function refreshSidePanels(){
@@ -4627,6 +4695,19 @@ function ensureLibraryBg(){
       g.fillStyle="#efe6cf"; g.fillRect(cx-8, y+h*0.24, 4, 4); g.fillRect(cx+4, y+h*0.24, 4, 4);  // collar/hands
       g.fillStyle="#26233a"; g.font="7px 'Press Start 2P', monospace"; g.textAlign="center"; g.textBaseline="alphabetic";
       g.fillText("CURATOR", cx, y-3);
+    } else if(o.type==="globe"){                                          // the globe → the Atlas board
+      const cx=x+w/2, gr=Math.min(w,h)*0.30, gy=y+h*0.42;                 // sphere on a tilted ring + tripod
+      box(cx-9, y+h*0.78, 18, 4, "#6f5436");                              // foot
+      g.fillStyle="#5a4630"; g.fillRect(cx-2, gy+gr-2, 4, h*0.78-(gy+gr-2-y));  // stem
+      g.fillStyle="#8a6a44"; g.beginPath(); g.arc(cx, gy, gr+3, 0, Math.PI*2); g.fill();   // meridian ring
+      g.fillStyle="#3b6ea5"; g.beginPath(); g.arc(cx, gy, gr, 0, Math.PI*2); g.fill();     // ocean
+      g.fillStyle="#5b7a4b";                                              // three coarse landmasses
+      g.fillRect(cx-gr*0.75, gy-gr*0.45, gr*0.7, gr*0.5);
+      g.fillRect(cx-gr*0.15, gy-gr*0.15, gr*0.55, gr*0.85);
+      g.fillRect(cx+gr*0.3, gy-gr*0.7, gr*0.45, gr*0.35);
+      g.fillStyle="rgba(255,255,255,.22)"; g.beginPath(); g.arc(cx-gr*0.35, gy-gr*0.35, gr*0.28, 0, Math.PI*2); g.fill();  // glint
+      g.fillStyle="#26233a"; g.font="7px 'Press Start 2P', monospace"; g.textAlign="center"; g.textBaseline="alphabetic";
+      g.fillText("ATLAS", cx, y-3);
     } else if(o.type==="chair"){
       box(x+3, y+2, w-6, h-4, "#6f5436");
       g.fillStyle="#5a4630"; g.fillRect(x+3, y+2, w-6, 3);
@@ -7679,6 +7760,347 @@ function renderPhonicon(){
     PhonemeAudio.play(PHONEMES_BY_IPA[btn.getAttribute("data-ipa")]); }; });
 }
 
+/* ---------- THE ATLAS (the library globe → the world board — docs/inklings-atlas.md §4) --------------
+   A flat equirectangular board drawn from data/atlas-world.json: four layers (countries, seas & oceans,
+   lakes, mountain peaks) over a 240×96 raster of public-domain Natural Earth. Flat, not a rendered sphere,
+   on purpose — the data IS an equirect raster, so a globe would re-project the same coarse cells while
+   hiding half the world and making click hit-testing an inverse-projection problem.
+   M3 is READ-ONLY: nothing is spellable yet, so every place is REDACTED to kind · continent · letter count.
+   That is deliberate (§10 Q2) — a board that printed 475 names would turn open-ended recall into copy-typing.
+   Spelling (M4) fills regions and un-redacts their cards; the render already branches on atlasSolved(). */
+let ATLAS=null, _atLoading=false, _atFailed=false;   // the parsed atlas-world.json (lazy: 135 KB, first open only)
+let atCells=null;                   // {layer: rows[r][c] = placeId|null} — the RLE rows decoded once
+let atByPlace=null;                 // placeId -> [cellIndex...] (r*cols+c), for highlight + continent framing
+let atContinent=null;               // framed continent name, or null for the whole world
+let atLayerOn={ political:true, marine:true, lakes:true, peaks:true };
+let atSel=null;                     // the clicked place id (its fact card is showing)
+let atHover=null;
+let atView={ x:0, y:0, w:240, h:96, s:3 };   // cell-space window + px-per-cell, recomputed per render
+const AT_CONTINENTS=["Africa","Asia","Europe","North America","South America","Oceania"];
+function loadAtlas(cb){
+  if(ATLAS){ cb&&cb(); return; }
+  if(_atLoading) return;
+  _atLoading=true; _atFailed=false;   // a later open retries a failed fetch rather than staying broken
+  fetch("data/atlas-world.json").then(r=>r.ok?r.json():Promise.reject()).then(j=>{
+    ATLAS=j; _atLoading=false; atDecode();
+    if(state.atlasOpen) renderAtlas();            // arrived while the board was already open
+  }).catch(()=>{ _atLoading=false; _atFailed=true; if(state.atlasOpen) renderAtlas(); });
+  cb&&cb();
+}
+// Decode every layer's run-length rows into a flat lookup + a per-place cell list (done once).
+function atDecode(){
+  const cols=ATLAS.grid.cols, rows=ATLAS.grid.rows;
+  atCells={}; atByPlace={};
+  for(const key in ATLAS.layers){
+    const L=ATLAS.layers[key]; if(!L.rows_rle) continue;              // peaks are points, no grid
+    const grid=[];
+    L.rows_rle.forEach((runs,r)=>{
+      const row=new Array(cols).fill(null); let c=0;
+      for(const [n,id] of runs){
+        for(let k=0;k<n && c<cols;k++,c++){
+          row[c]=id;
+          if(id) (atByPlace[id]||(atByPlace[id]=[])).push(r*cols+c);
+        }
+      }
+      grid.push(row);
+    });
+    atCells[key]=grid;
+  }
+  for(const id in ATLAS.places){                                       // peaks: one cell each
+    const p=ATLAS.places[id];
+    if(p.cell && !atByPlace[id]) atByPlace[id]=[p.cell[1]*cols+p.cell[0]];
+  }
+}
+// Progress is counted in NAMES, not in place-slots: the build's `index` is keyed by name, so its 475 keys
+// already collapse the 18 collisions where one word claims two places (Mexico the country / the gulf — §6.1).
+// Counting slots would read 493 and disagree with every other number in the feature.
+function atSpellableCount(){ return Object.keys(ATLAS.index||{}).length; }
+// M4 fills state.atlas; until then this is always false and the board renders wholly unfilled. Reading it
+// defensively (rather than adding the field now) keeps M3 off the save format — snapshot() stays v:9.
+function atlasSolved(id, which){
+  const rec=state.atlas && state.atlas[id]; if(!rec) return false;
+  return which==="capital" ? !!rec.k : !!rec.c;
+}
+function atSolvedCount(){                       // distinct names inked, to match atSpellableCount's denominator
+  const names=new Set();
+  for(const id in (state.atlas||{})){
+    const rec=state.atlas[id], p=ATLAS.places[id]; if(!p) continue;
+    if(rec.c) names.add(p.name);
+    if(rec.k && p.capital) names.add(p.capital);
+  }
+  return names.size;
+}
+function atPlaceContinent(p){ return p.layer==="political" ? (p.continent||null) : null; }
+// Which places the current continent tab keeps in focus (null tab = the whole world, everything focused).
+function atInFocus(id){
+  if(!atContinent) return true;
+  const p=ATLAS.places[id]; if(!p) return false;
+  return atPlaceContinent(p)===atContinent;
+}
+// Continent windows are AUTHORED in degrees, not derived from the countries in them. Deriving fails twice
+// over: Natural Earth files Russia as Europe, so a bounding box of "Europe" is the whole northern hemisphere
+// at x2 zoom; and Oceania straddles the antimeridian (Fiji at +178, Tonga at −175), so its box is the full
+// width of the grid. A window may run PAST the right edge (Oceania does) — the draw/pick code wraps columns.
+const AT_FRAMES={                       //          lonW  lonE   latS  latN
+  "Africa":        [ -21,   54,  -37,  39],
+  "Asia":          [  24,  150,  -11,  56],
+  "Europe":        [ -25,   46,   34,  72],
+  "North America": [-172,   -8,    5,  75],
+  "South America": [ -83,  -33,  -57,  14],
+  "Oceania":       [ 110,  195,  -50,  12]    // 195 = 15° past the seam, to keep Tonga and Samoa in frame
+};
+let _atFrames={};   // continent -> the computed window, memoized (atDrawMap runs on every mousemove)
+function atFrame(){
+  const G=ATLAS.grid, cols=G.cols, rows=G.rows;
+  const key=atContinent||"";
+  if(_atFrames[key]){ Object.assign(atView, _atFrames[key]); return; }
+  const put=v=>{ Object.assign(atView, v); _atFrames[key]=v; };
+  if(!atContinent){ put({x:0,y:0,w:cols,h:rows}); return; }
+  const f=AT_FRAMES[atContinent];
+  if(f){
+    const [lonW,lonE,latS,latN]=f;
+    const colOf=lon=>Math.round((lon-G.lonMin)/(G.lonMax-G.lonMin)*cols);
+    const rowOf=lat=>Math.round((G.latMax-lat)/(G.latMax-G.latMin)*rows);
+    const y=Math.max(0, rowOf(latN)), y1=Math.min(rows, rowOf(latS));
+    put({ x:(colOf(lonW)+cols)%cols, y, w:Math.min(cols, colOf(lonE)-colOf(lonW)), h:Math.max(1, y1-y) });
+    return;
+  }
+  let x0=cols, y0=rows, x1=0, y1=0, any=false;        // fallback: the bounding box of that continent's cells
+  for(const id in ATLAS.places){
+    if(atPlaceContinent(ATLAS.places[id])!==atContinent) continue;
+    for(const ci of (atByPlace[id]||[])){
+      const c=ci%cols, r=(ci-c)/cols; any=true;
+      if(c<x0)x0=c; if(c>x1)x1=c; if(r<y0)y0=r; if(r>y1)y1=r;
+    }
+  }
+  if(!any){ put({x:0,y:0,w:cols,h:rows}); return; }
+  const pad=3, x=Math.max(0,x0-pad), y=Math.max(0,y0-pad);
+  put({ x, y, w:Math.min(cols-x, x1-x0+1+pad*2), h:Math.min(rows-y, y1-y0+1+pad*2) });
+}
+function atSetContinent(name){
+  atContinent=name; atSel=null;
+  document.querySelectorAll("#at-tabs .hb-tab").forEach(el=>el.classList.toggle("active", (el.dataset.atcont||"")===(name||"")));
+  renderAtlas(); SFX.play("click");
+}
+function atToggleLayer(key){ atLayerOn[key]=!atLayerOn[key]; if(atSel && !atLayerOn[(ATLAS.places[atSel]||{}).layer]) atSel=null; renderAtlas(); SFX.play("click"); }
+function openAtlas(){
+  if(state.atlasOpen) return;
+  loadAtlas();
+  state.atlasOpen=true;
+  document.getElementById("atlas").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  atSel=null; atHover=null;
+  renderAtlas(); SFX.play("click");
+}
+function closeAtlas(){
+  state.atlasOpen=false;
+  document.getElementById("atlas").classList.remove("open");
+  document.getElementById("sound-btn").style.display = phonHideSound() ? "none" : "";
+}
+function renderAtlas(){
+  const cvs=document.getElementById("at-map"); if(!cvs) return;
+  const g=cvs.getContext("2d");
+  if(!ATLAS){                                       // still fetching (or it failed) — say so on the board itself
+    g.fillStyle="#cfd8d2"; g.fillRect(0,0,cvs.width,cvs.height);
+    g.fillStyle="#26233a"; g.font="12px 'Press Start 2P', monospace"; g.textAlign="center";
+    g.fillText(_atFailed?"the atlas is missing":"unrolling the atlas…", cvs.width/2, cvs.height/2);
+    g.textAlign="left";
+    document.getElementById("at-card").innerHTML = _atFailed
+      ? '<div class="at-hint">data/atlas-world.json didn\'t load. Like the dictionary and the room layouts, the '+
+        'atlas is fetched — the game has to be <b>served over http</b> (Live Server), not opened as a file.</div>'
+      : '<div class="at-hint">One moment — the world is still being drawn.</div>';
+    return;
+  }
+  // tabs (built once)
+  const tabs=document.getElementById("at-tabs");
+  if(!tabs.children.length){
+    tabs.innerHTML='<button class="hb-tab active" data-atcont="">World</button>'+
+      AT_CONTINENTS.map(c=>`<button class="hb-tab" data-atcont="${esc(c)}">${esc(c)}</button>`).join("");
+    tabs.querySelectorAll(".hb-tab").forEach(b=>{ b.onclick=()=> atSetContinent(b.dataset.atcont||null); });
+  }
+  atDrawMap(cvs,g);
+  atRenderChrome();
+  atRenderCard();
+}
+// Colours: unfilled land is parchment, water is a pale wash, and a place lights gold once it's inked (M4).
+const AT_SEA="#b9cbd4", AT_SEA2="#adc2cd", AT_LAKE="#7fa8bd", AT_LAND="#e0d5b6", AT_LAND2="#d6c9a5",
+      AT_LINE="rgba(38,35,58,.34)", AT_LATER="#c3b697", AT_INK="#c89b3c", AT_DIM="rgba(207,199,175,.62)";
+function atDrawMap(cvs,g){
+  const cols=ATLAS.grid.cols, rows=ATLAS.grid.rows;
+  atFrame();
+  const s=Math.max(1, Math.floor(Math.min(cvs.width/atView.w, cvs.height/atView.h)));
+  atView.s=s;
+  const ox=Math.floor((cvs.width - atView.w*s)/2), oy=Math.floor((cvs.height - atView.h*s)/2);
+  atView.ox=ox; atView.oy=oy;
+  // Loops run over SCREEN columns k (0..view.w) and wrap into grid columns, so a window may cross the
+  // antimeridian (Oceania does). colAt/kOf are the two directions of that mapping — everything that touches
+  // a column goes through them, including the neighbour lookups that draw borders.
+  const colAt=k=>(atView.x+k)%cols;
+  const kOf=c=>((c-atView.x)%cols+cols)%cols;
+  const cellX=k=>ox+k*s, cellY=r=>oy+(r-atView.y)*s;
+  g.fillStyle="#9fb3bd"; g.fillRect(0,0,cvs.width,cvs.height);                 // deep water beyond the frame
+  g.fillStyle=AT_SEA;    g.fillRect(ox,oy,atView.w*s,atView.h*s);
+  const pol=atCells.political, mar=atCells.marine, lak=atCells.lakes;
+  const r0=atView.y, r1=Math.min(rows, atView.y+atView.h);
+  // named seas get a faint alternating wash so neighbouring bodies of water read as separate places
+  if(atLayerOn.marine && mar) for(let r=r0;r<r1;r++){
+    for(let k=0;k<atView.w;k++){
+      const id=mar[r][colAt(k)]; if(!id) continue;
+      g.fillStyle = atlasSolved(id) ? AT_INK : (atHash(id)&1 ? AT_SEA2 : AT_SEA);
+      g.fillRect(cellX(k),cellY(r),s,s);
+    }
+  }
+  if(atLayerOn.lakes && lak) for(let r=r0;r<r1;r++){
+    for(let k=0;k<atView.w;k++){
+      const id=lak[r][colAt(k)]; if(!id) continue;
+      g.fillStyle = atlasSolved(id) ? AT_INK : AT_LAKE;
+      g.fillRect(cellX(k),cellY(r),s,s);
+    }
+  }
+  if(atLayerOn.political && pol){
+    for(let r=r0;r<r1;r++){
+      for(let k=0;k<atView.w;k++){
+        const c=colAt(k), id=pol[r][c]; if(!id) continue;
+        const p=ATLAS.places[id], sp=(p&&p.spellable)||{};
+        const later=!sp.country;                  // multiword: drawn, but nothing to spell yet (§5.3 / §9)
+        g.fillStyle = atlasSolved(id) ? AT_INK : later ? AT_LATER : (atHash(id)&1) ? AT_LAND2 : AT_LAND;
+        g.fillRect(cellX(k),cellY(r),s,s);
+        // …and it wears a checker so "deferred" reads as a deliberate treatment, not a rendering bug
+        if(later && ((c+r)&1)===0){ g.fillStyle="rgba(38,35,58,.16)"; g.fillRect(cellX(k),cellY(r),s,s); }
+      }
+    }
+    g.fillStyle=AT_LINE;                                                        // borders: where ownership changes
+    for(let r=r0;r<r1;r++){
+      for(let k=0;k<atView.w;k++){
+        const c=colAt(k), id=pol[r][c]; if(!id) continue;
+        const x=cellX(k), y=cellY(r);
+        if(pol[r][(c+1)%cols]!==id)          g.fillRect(x+s-1,y,1,s);
+        if(r+1>=rows || pol[r+1][c]!==id)    g.fillRect(x,y+s-1,s,1);
+        if(pol[r][(c-1+cols)%cols]!==id)     g.fillRect(x,y,1,s);
+        if(r===0 || pol[r-1][c]!==id)        g.fillRect(x,y,s,1);
+      }
+    }
+  }
+  if(atContinent){                                                              // frame: wash out everything off-continent
+    g.fillStyle=AT_DIM;
+    for(let r=r0;r<r1;r++) for(let k=0;k<atView.w;k++){
+      const id=pol&&pol[r][colAt(k)];
+      if(!(id && atInFocus(id))) g.fillRect(cellX(k),cellY(r),s,s);
+    }
+  }
+  // capital-city pins: only once that capital has been spelled (M4) — an unspelled board shows no answers
+  if(atLayerOn.political) for(const id in ATLAS.places){
+    const p=ATLAS.places[id];
+    if(p.layer!=="political" || !p.capCell || !atlasSolved(id,"capital")) continue;
+    const [c,r]=p.capCell; if(!atInView(c,r)) continue;
+    g.fillStyle="#8a2f2f"; g.fillRect(cellX(kOf(c))-1, cellY(r)-1, s+2, s+2);
+  }
+  // peaks are points, not regions: a small ▲ at the summit cell
+  if(atLayerOn.peaks) for(const id in ATLAS.places){
+    const p=ATLAS.places[id];
+    if(p.layer!=="peaks" || !p.cell) continue;
+    const [c,r]=p.cell; if(!atInView(c,r)) continue;
+    atTri(g, cellX(kOf(c))+s/2, cellY(r)+s/2, Math.max(3,s*1.4), atlasSolved(id)?AT_INK:"#6b5a3e");
+  }
+  const focus=atSel||atHover;                                                   // outline the pointed-at place
+  if(focus && atByPlace[focus]){
+    const p=ATLAS.places[focus];
+    g.fillStyle= atSel===focus ? "rgba(200,155,60,.45)" : "rgba(200,155,60,.24)";
+    if(p.layer==="peaks"){ const [c,r]=p.cell; g.fillRect(cellX(kOf(c))-s,cellY(r)-s,s*3,s*3); }
+    else for(const ci of atByPlace[focus]){
+      const c=ci%cols, r=(ci-c)/cols; if(!atInView(c,r)) continue;
+      g.fillRect(cellX(kOf(c)),cellY(r),s,s);
+    }
+  }
+}
+function atInView(c,r){   // wrap-aware: the window may run past the right edge of the grid
+  const cols=ATLAS.grid.cols, k=((c-atView.x)%cols+cols)%cols;
+  return k<atView.w && r>=atView.y && r<atView.y+atView.h;
+}
+function atHash(id){ let h=0; for(let i=0;i<id.length;i++) h=(h*31+id.charCodeAt(i))>>>0; return h; }
+function atTri(g,cx,cy,size,col){
+  g.fillStyle=col; g.beginPath();
+  g.moveTo(cx, cy-size/2); g.lineTo(cx+size/2, cy+size/2); g.lineTo(cx-size/2, cy+size/2);
+  g.closePath(); g.fill();
+}
+// Layer toggles + the day's capital-letter signpost (§2.3: tell the player THAT it exists, never where).
+function atRenderChrome(){
+  const total=atSpellableCount(), done=atSolvedCount();
+  document.getElementById("at-count").textContent=`· ${done}/${total} names inked`;
+  const row=document.getElementById("at-layers");
+  const defs=[["political","Countries"],["marine","Seas"],["lakes","Lakes"],["peaks","Peaks"]];
+  const abroad=(state.started && !dailyCapitalCaught()) ? dailyCapital() : null;
+  row.innerHTML=defs.map(([k,label])=>`<button class="${atLayerOn[k]?"on":""}" data-atlayer="${k}">${esc(label)}</button>`).join("")+
+    (abroad?`<span class="at-abroad">a capital <b>${abroad}</b> is abroad today</span>`:"");
+  row.querySelectorAll("[data-atlayer]").forEach(b=>{ b.onclick=()=> atToggleLayer(b.dataset.atlayer); });
+}
+const AT_KINDS={ country:"country", dependency:"territory", ocean:"ocean", sea:"sea", gulf:"gulf", bay:"bay",
+  strait:"strait", channel:"channel", sound:"sound", river:"river", lake:"lake", mountain:"mountain", other:"place" };
+// One redacted name: a ruled blank per letter, a wider gap between words, and the letter count. Blanks are
+// drawn as bordered <i>s rather than a box-drawing character — U+2581 isn't in the bundled pixel fonts, so a
+// glyph would silently fall back to a system font and break the line's rhythm. Solved names print as text.
+function atBlanks(name){
+  return name.split(/[\s-]+/).map(w=>"<i></i>".repeat(w.length)).join('<span class="at-gap">·</span>');
+}
+function atNameLine(name, solved){
+  const letters=name.replace(/[^A-Za-z]/g,"").length;
+  return solved ? `<div class="at-blanks">${esc(name)}</div>`
+                : `<div class="at-blanks">${atBlanks(name)} <span class="at-gap">${letters}</span></div>`;
+}
+function atRenderCard(){
+  const el=document.getElementById("at-card");
+  if(!atSel){
+    el.innerHTML='<div class="at-hint">Click anywhere on the board to study a place. Nothing here is named yet — '+
+      'a place gives up its name when <b>you</b> can spell it at the Wordsmithy, and every name starts with a '+
+      '<b>capital letter</b>. Use the tabs to frame a continent.</div>';
+    return;
+  }
+  const p=ATLAS.places[atSel], sp=p.spellable||{};
+  const kind=AT_KINDS[p.kind]||p.kind;
+  const where=p.layer==="political" ? (p.continent||"") : (ATLAS.layers[p.layer]||{}).label||"";
+  const solvedName=atlasSolved(atSel);
+  let html=`<div><span class="at-kind">${solvedName?esc(p.name):"???"}</span> `+
+    `<span class="at-where">· ${esc(kind)}${where?" · "+esc(where):""}</span></div>`;
+  const spellableName = sp.country || sp.name;
+  if(spellableName) html+=atNameLine(p.name, solvedName);
+  else html+=`<div class="at-blanks at-later">${atBlanks(p.name)}</div>`+
+             `<div class="at-hint at-later">Its name is more than one word — the bench can't spell it yet.</div>`;
+  if(p.layer==="political" && p.capital){
+    const capSolved=atlasSolved(atSel,"capital");
+    html+=`<div class="at-hint">its capital city:</div>`;
+    html+= sp.capital ? atNameLine(p.capital, capSolved)
+                      : `<div class="at-blanks at-later">${atBlanks(p.capital)}</div>`;
+  }
+  if(p.elevation) html+=`<div class="at-hint">${p.elevation.toLocaleString()} m${p.note?" · "+esc(p.note):""}</div>`;
+  if(solvedName && p.flag) html+=`<div class="at-blanks">${p.flag}</div>`;
+  if(spellableName && !solvedName)
+    html+=`<div class="at-hint">Think of it, then spell it at the Wordsmithy — one <b>capital letter</b> to start, `+
+          `the rest from your satchel.</div>`;
+  el.innerHTML=html;
+}
+// Hit-test a canvas point: topmost drawn layer wins (a peak sits on a country sits on the sea).
+function atPick(cvs, ev){
+  if(!ATLAS) return null;
+  const r=cvs.getBoundingClientRect();
+  const px=(ev.clientX-r.left)*(cvs.width/r.width), py=(ev.clientY-r.top)*(cvs.height/r.height);
+  const s=atView.s, k=Math.floor((px-atView.ox)/s), row=Math.floor((py-atView.oy)/s)+atView.y;
+  if(k<0 || k>=atView.w || row<atView.y || row>=atView.y+atView.h || row>=ATLAS.grid.rows) return null;
+  const c=(atView.x+k)%ATLAS.grid.cols;
+  if(atLayerOn.peaks){                                     // peaks are single cells — allow a small grab radius
+    let best=null, bd=1e9;
+    for(const id in ATLAS.places){ const p=ATLAS.places[id];
+      if(p.layer!=="peaks" || !p.cell) continue;
+      const d=Math.hypot(p.cell[0]-c, p.cell[1]-row);
+      if(d<=1.5 && d<bd){ bd=d; best=id; } }
+    if(best) return best;
+  }
+  for(const key of ["lakes","political","marine"]){
+    if(!atLayerOn[key] || !atCells[key]) continue;
+    const id=atCells[key][row][c];
+    if(id) return id;
+  }
+  return null;
+}
 /* ---------- CELEBRATION QUEUE (staggered feat / letter dialogues) ---------- */
 // Milestone/letter dialogues are shown ONE AT A TIME so they never stack. commitSpell queues the Feats pop
 // first, then the new-letter modal; each dialogue's close runs the next.
@@ -8368,6 +8790,17 @@ document.getElementById("pp-hard").onclick=()=>{ state.pigpenHard=!state.pigpenH
 // Herald's Bench (Blazon Shield — DEV MVP).
 document.getElementById("hb-close").onclick=()=>{ closeHerald(); SFX.play("click"); };
 document.getElementById("herald").onclick=e=>{ if(e.target.id==="herald") closeHerald(); };  // tap backdrop to close
+document.getElementById("at-close").onclick=()=>{ closeAtlas(); SFX.play("click"); };
+document.getElementById("atlas").onclick=e=>{ if(e.target.id==="atlas") closeAtlas(); };     // tap backdrop to close
+(()=>{                                                                                      // the board: hover + click
+  const cvs=document.getElementById("at-map"); if(!cvs) return;
+  cvs.addEventListener("mousemove",e=>{ if(!state.atlasOpen) return;
+    const id=atPick(cvs,e); if(id===atHover) return; atHover=id; atDrawMap(cvs,cvs.getContext("2d")); });
+  cvs.addEventListener("mouseleave",()=>{ if(atHover){ atHover=null; if(state.atlasOpen) atDrawMap(cvs,cvs.getContext("2d")); } });
+  cvs.addEventListener("click",e=>{ if(!state.atlasOpen) return;
+    const id=atPick(cvs,e); atSel=id; atHover=id;
+    atDrawMap(cvs,cvs.getContext("2d")); atRenderCard(); SFX.play(id?"click":"invalid"); });
+})();
 document.getElementById("hb-equip").onclick=equipBlazon;
 document.getElementById("hb-unequip").onclick=unequipBlazon;
 document.getElementById("hb-reset").onclick=()=>{ _hbBlazon=newBlazon(); SFX.play("click"); renderHerald(); };
@@ -8394,6 +8827,7 @@ function closeAnyDialog(){
   if(state.pigpensOpen) closePigpens();
   if(state.fishing) closeFishing();
   if(state.phoniconOpen) closePhonicon();
+  if(state.atlasOpen) closeAtlas();
   if(state.heraldOpen) closeHerald();
   if(state.shelfview) closeShelfView();
   if(state.curation) closeCuration();
@@ -8428,6 +8862,7 @@ _wireTb("tb-shop",()=> tbSwitch("shop", openShop, ()=> !state.room && nearShop()
 _wireTb("tb-book",()=> tbSwitch("madlibs", openBook, nearLibraryBook));
 _wireTb("tb-shelf",()=> tbSwitch("shelfview", ()=>{ const s=nearLibraryShelf(); if(s) openShelfView(s); }, nearLibraryShelf));
 _wireTb("tb-curate",()=> tbSwitch("curation", openCuration, nearLibraryCurator));
+_wireTb("tb-atlas",()=> tbSwitch("atlasOpen", openAtlas, nearLibraryGlobe));   // Atlas: globe-only (contextual)
 _wireTb("tb-decor",()=> togglePlaceMode());   // decorate: place/pick-up décor (Wordhoard for now)
 document.getElementById("defmodal-close").onclick=()=>{ closeDefModal(); SFX.play("click"); };
 document.getElementById("defmodal").onclick=e=>{ if(e.target.id==="defmodal") closeDefModal(); };  // tap backdrop to close
@@ -8479,7 +8914,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.shelfview && !state.curation;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.shelfview && !state.curation;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -8496,14 +8931,17 @@ function syncTouchUI(){
     const inLib = state.room==="library";
     const sh=document.getElementById("tc-shop"), hs=document.getElementById("tc-house"),
           dv=document.getElementById("tc-desk"), bk=document.getElementById("tc-book"),
-          sf=document.getElementById("tc-shelf"), cu=document.getElementById("tc-curate");
-    const atDesk=inLib&&nearLibraryDesk(), atBook=inLib&&nearLibraryBook(), atCurator=inLib&&nearLibraryCurator();
+          sf=document.getElementById("tc-shelf"), cu=document.getElementById("tc-curate"),
+          gl=document.getElementById("tc-atlas");
+    const atDesk=inLib&&nearLibraryDesk(), atBook=inLib&&nearLibraryBook(), atCurator=inLib&&nearLibraryCurator(),
+          atGlobe=inLib&&nearLibraryGlobe();
     if(sh) sh.style.display = (!inLib && nearShop())        ? "" : "none";
     if(hs) hs.style.display = (!inLib && nearHouse())       ? "" : "none";
     if(dv) dv.style.display = ( atDesk)                     ? "" : "none";
     if(bk) bk.style.display = ( atBook)                     ? "" : "none";
     if(cu) cu.style.display = ( atCurator)                  ? "" : "none";
-    if(sf) sf.style.display = ( inLib && !atDesk && !atBook && !atCurator && nearLibraryShelf()) ? "" : "none";
+    if(gl) gl.style.display = ( atGlobe)                    ? "" : "none";
+    if(sf) sf.style.display = ( inLib && !atDesk && !atBook && !atCurator && !atGlobe && nearLibraryShelf()) ? "" : "none";
     const sl=document.getElementById("tc-slide");   // Slide: field only, once the motion perk is unlocked
     if(sl) sl.style.display = (!inLib && state.perks && state.perks.slide) ? "" : "none";
     const dc=document.getElementById("tc-decor");   // Decorate: available anywhere inside the Wordhoard
@@ -8547,6 +8985,7 @@ if(IS_TOUCH){
   tap("tc-book",()=> tbSwitch("madlibs", openBook, nearLibraryBook));                               // library: lectern → mad-libs
   tap("tc-shelf",()=> tbSwitch("shelfview", ()=>{ const s=nearLibraryShelf(); if(s) openShelfView(s); }, nearLibraryShelf));  // shelf → books
   tap("tc-curate",()=> tbSwitch("curation", openCuration, nearLibraryCurator));                     // library: curator → subgoals
+  tap("tc-atlas",()=> tbSwitch("atlasOpen", openAtlas, nearLibraryGlobe));                          // library: globe → the Atlas
   tap("tc-decor",()=> togglePlaceMode());                                                            // library: décor tray
   tap("tc-dex",()=> tbSwitch("bestiaryOpen", openBestiary));
   tap("tc-phonicon",()=> tbSwitch("phoniconOpen", openPhonicon));
@@ -8885,7 +9324,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen || state.pigpensOpen || state.fishing || state.phoniconOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen || state.pigpensOpen || state.fishing || state.phoniconOpen || state.atlasOpen); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)

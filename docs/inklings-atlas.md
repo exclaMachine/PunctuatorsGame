@@ -2,11 +2,11 @@
 
 Planning doc. **Read this before touching capital letters, proper-noun validation, or the Atlas board.**
 
-Status: **M1 (data build) and M2 (the daily capital letter) are BUILT — 2026-08-13. M3–M5 are plan only.**
-`build_geo.py` + `data/atlas-world.json` exist (§5), and capital letters now spawn daily and bank
-persistently in `inklings.html` (§2, §3). **The Atlas board itself does not exist yet** — M2 deliberately
-ships first so capitals accumulate before there's a place to spend them. The rest is the full spec for the
-feature sketched in [`inklings-grammar-systems.md`](inklings-grammar-systems.md) §4b.
+Status: **M1 (data), M2 (the daily capital letter) and M3 (the board, read-only) are BUILT — 2026-08-13.
+M4–M5 are plan only.** `build_geo.py` + `data/atlas-world.json` exist (§5); capital letters spawn daily and
+bank persistently; and the Library globe now opens a flat, layered world board (§4) where **every place is
+redacted** — nothing is spellable until M4. The rest is the full spec for the feature sketched in
+[`inklings-grammar-systems.md`](inklings-grammar-systems.md) §4b.
 
 > **Terminology, kept strict throughout:** a **capital letter** is `A`–`Z`. A **capital city** is Paris,
 > Tokyo, Lima. The feature runs on the pun, so the doc never lets the two words blur.
@@ -146,30 +146,50 @@ nightly and the other isn't.
 
 ---
 
-## 4. The Atlas board (a Library overlay)
+## 4. The Atlas board (a Library overlay)  ✅ BUILT read-only 2026-08-13 (M3)
 
-- **Entry point:** a new object in `data/rooms/library.json` —
-  `{ "type":"globe", "id":"globe", "col":24, "row":19, "w":2, "h":2, "solid":true, "interact":"openAtlas" }`
-  — drawn and wired through the same room-object pipeline as `desk` / `book` / `curator`.
-- **Overlay flag:** `state.atlasOpen`, added to `state` and to the overlay lists that gate movement, damage,
-  hints and HUD hiding. **This is the known chore:** those enumerations appear in ~7 places (movement gate,
-  `canBeHurt`, two hint-ready checks, the HUD `hide` expression, `ppHideSound()`, the key handler). Grep
-  `state.pigpensOpen` and add alongside every hit.
-- **Render:** a `<canvas>` drawing `atlas-world.json` cells at ~4–6 px. Cell states:
+- **Entry point:** a `globe` object in `data/rooms/library.json` at (24,19), 2×2, solid,
+  `interact:"openAtlas"` — drawn and wired through the same room-object pipeline as `desk` / `book` /
+  `curator` (`LIBRARY.globe`, `nearLibraryGlobe()`, `tryUseBench`, the E-hint, a **🌍 Atlas** toolbar button
+  and an **ATLAS** touch button, both contextual). The furniture is a globe; **the board it opens is flat**
+  (see below).
+- **Overlay flag:** `state.atlasOpen`, in `state` and in every overlay enumeration that gates movement,
+  damage, hints, the HUD and `closeAnyDialog`. Esc backs a framed continent out to the world before closing;
+  Tab/E close outright.
+- **Flat board, not a rendered globe (decided at build time).** The data *is* a 240×96 equirectangular
+  raster, so projecting it onto a sphere recovers no accuracy — it would re-project the same coarse cells
+  while hiding half the world, squashing everything near the limb, and turning click hit-testing into an
+  inverse-projection problem. The globe stays the furniture; the board stays flat.
+- **Render:** a 720×288 `<canvas>` (3 px/cell at world view, scaled up when a continent is framed), drawn
+  from the decoded RLE rows. Cell states:
 
   | State | Look |
   | --- | --- |
-  | Unfilled | parchment fill, faint ink border |
-  | Country spelled | inked/tinted region, name label at its anchor cell |
-  | Capital city spelled | a pin dot at that city's cell |
-  | Both (paired) | region lights gold — and the flag is earned (§6.2) |
-  | Not spellable in v1 (multiword) | greyed with a small "later" marker (§5.3) |
+  | Unfilled | parchment fill (two alternating tones so neighbours read apart), faint ink border |
+  | Sea / lake | pale water wash · lakes a shade deeper |
+  | Peak | a small ▲ at the summit cell |
+  | Country spelled *(M4)* | inked gold region, name label at its anchor cell |
+  | Capital city spelled *(M4)* | a pin dot at that city's cell |
+  | Both (paired) *(M4)* | region lights gold — and the flag is earned (§6.2) |
+  | Not spellable in v1 (multiword) | greyed **and checkered**, so "deferred" reads as deliberate, not as a rendering bug (§5.3) |
 
-- **Interaction:** fit-to-view by default; click a region → its fact card; a continent tab row filters and
-  frames. No pan/zoom rig in v1 beyond continent framing.
-- **Fact card:** country, capital city, continent, flag. **The flag needs no asset** — an ISO-3166 alpha-2
-  code maps to regional-indicator code points (`FR` → 🇫🇷). Platforms that don't render flag emoji show the
-  letter pair, a fine fallback.
+- **Interaction:** fit-to-view by default; hover highlights, click selects → the fact card; a continent tab
+  row frames and dims off-continent land; four layer toggles (Countries · Seas · Lakes · Peaks). No pan/zoom
+  rig beyond continent framing. Hit-testing goes topmost-first: peak → lake → country → sea.
+- **Continent frames are authored in degrees (`AT_FRAMES`), not derived.** Deriving a bounding box from the
+  countries in a continent fails twice over: Natural Earth files **Russia as Europe**, so "Europe" boxes the
+  whole northern hemisphere at ×2 zoom; and **Oceania straddles the antimeridian** (Fiji +178, Tonga −175),
+  so its box is the full width of the grid. A window may therefore run *past* the right edge — the draw and
+  pick paths map screen column → grid column through `colAt`/`kOf` and wrap.
+- **Fact card, redacted (§10 Q2, decided).** An unspelled place gives up its **kind, its continent/layer and
+  its letter count** — one ruled blank per letter, a wider gap between words — and nothing else. A board that
+  printed 475 names would turn open-ended recall into copy-typing. Solved places (M4) un-redact in place; the
+  render already branches on `atlasSolved()`. **The flag needs no asset** — an ISO-3166 alpha-2 code maps to
+  regional-indicator code points (`FR` → 🇫🇷). Platforms that don't render flag emoji show the letter pair.
+- **Progress is counted in names, not slots:** `Object.keys(index).length` = **475**, which already collapses
+  the 18 collisions (§6.1). Counting per-place slots reads 493 and disagrees with every other number here.
+- **M3 touches no save data.** `atlasSolved()` reads `state.atlas` defensively, so the field can stay absent
+  until M4 and `snapshot()` stays `v:9`.
 
 **Why an overlay, not walkable terrain:** the walkable version needs the whole Phase 1–4 map-seam refactor
 in [`inklings-architecture.md`](inklings-architecture.md), and it fights the daily-rerolled overworld. The
@@ -457,8 +477,12 @@ Each phase is shippable and leaves the game working.
   a separate HUD panel with the "abroad" signpost chip, the rollover toast, and save `v:9`. Ships on its
   own — capital letters are now catchable and bankable from day one, so players will arrive at the board
   with a stock in hand.
-- **M3 — Board, read-only.** Globe object, `state.atlasOpen` + the ~7 overlay-list additions, canvas render
-  with everything unfilled, continent tabs, click → fact card.
+- **M3 — Board, read-only. ✅ BUILT 2026-08-13.** The `globe` object + `openAtlas`/`closeAtlas`,
+  `state.atlasOpen` through every overlay enumeration, lazy `loadAtlas()`/`atDecode()` of the RLE rows, a
+  wrap-aware canvas render of all four layers, authored continent frames (`AT_FRAMES`), layer toggles, the
+  day's capital-letter signpost repeated on the board, hover/click hit-testing and the **redacted** fact
+  card. No save-format change. Everything is unfilled by construction — `atlasSolved()` has nothing to
+  read until M4.
 - **M4 — Spelling.** Case-preserving `checkWord`, `atlasLookup`, `spellPlace`, `state.atlas`, region fill +
   pin + pair lighting, fact card, ink. **The feature is real here.**
 - **M5 — Flags & continents.** Pairing → flag décor grant + placement, continent rewards, the homograph
@@ -497,8 +521,8 @@ board's arrival feel earned rather than empty.
 
 1. **More than one per day, ever?** "At least one" is spec'd as exactly one. Should clearing a day, or
    completing continents, raise it?
-2. **Locked fact cards** — before you've spelled a place, does clicking its region show nothing, its shape
-   only, or a redacted card with the letter count?
+2. ~~**Locked fact cards**~~ — **decided at M3: a redacted card** (kind · continent · one ruled blank per
+   letter · the letter count), so the board can never be read as an answer key. See §4.
 3. **Multiword names** — a space tile at the bench, or auto-joined words? Deferred, but the answer shapes
    how §5.3's `spellable:false` places are presented.
 4. **Atlas family** (Star Atlas, Pantheon, Calendar, languages — §4b) stays deferred until a second atlas is
