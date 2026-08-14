@@ -2,12 +2,13 @@
 
 Planning doc. **Read this before touching capital letters, proper-noun validation, or the Atlas board.**
 
-Status: **M1 (data), M2 (the daily capital letter), M3 (the board) and M4 (spelling) are BUILT — 2026-08-13.
-M5 is plan only.** `build_geo.py` + `data/atlas-world.json` exist (§5); capital letters spawn daily and bank
-persistently; the Library globe opens a flat, layered world board (§4); and **places are spelled at the desk**
-— a Capitalized bench inks a region or drops a capital pin, un-redacts that card, and pairing a country with
-its capital city earns its flag. M5 is what the flag *becomes* (flagpole décor) plus continent rewards. The
-rest is the full spec for the feature sketched in
+Status: **M1–M5 are all BUILT — M1 (data), M2 (the daily capital letter), M3 (the board) and M4 (spelling) on
+2026-08-13; M5 (flags & continents) on 2026-08-14.** `build_geo.py` + `data/atlas-world.json` exist (§5);
+capital letters spawn daily and bank persistently; the Library globe opens a flat, layered world board (§4);
+**places are spelled at the desk** — a Capitalized bench inks a region or drops a capital pin, un-redacts that
+card, and pairing a country with its capital city earns its flag; and an earned flag now **flies from a
+flagpole** you buy with ink and plant in the Wordhoard, while each continent pays out at 25 / 50 / 100% of its
+own spellable names (§6.3). The rest is the full spec for the feature sketched in
 [`inklings-grammar-systems.md`](inklings-grammar-systems.md) §4b.
 
 > **Terminology, kept strict throughout:** a **capital letter** is `A`–`Z`. A **capital city** is Paris,
@@ -42,9 +43,11 @@ dependency, see §3) · [`inklings-placement.md`](inklings-placement.md) (where 
 7. **The board is layered, not just political.** Countries and capital cities, plus **seas & oceans, lakes
    and named mountain peaks** — 475 spellable names in all. Layers mean one cell can be both "France" and
    "Alps", which is what lets rivers and mountain ranges drop in later without a renderer rewrite (§5.1).
-8. **Whole world open from the start**; the seven continents are completion sub-goals.
+8. **Whole world open from the start**; the six continent tabs are **proportional** sub-goals — 25 / 50 /
+   100% of each continent's own spellable names, because the continents are wildly uneven (§6.3).
 9. **Rewards:** ink for spelling a country *or* its capital city; **pairing both earns that country's flag**,
-   flown on a placeable flagpole (one object, any earned flag assigned to it) in the Library or cozy square.
+   flown from a placeable flagpole (one object, any earned flag assigned to it) — in the Wordhoard today,
+   and in the cozy square once [`inklings-placement.md`](inklings-placement.md) step 2 opens `(0,1)`.
 10. **The existing word-count capital gate stays.** Daily spawn = the trickle; `CAP_ORDER` at ~130 words =
     the floodgate.
 
@@ -418,7 +421,7 @@ from 475 spellable names to ~336.
    and records the flag in `state.atlasFlags`.
 4. Pays ink via the existing `inkForWord()` — **once per submission**, even when it fills two slots.
 5. Shows the **fact card** in place of the definition panel.
-6. *(M5)* Fires the continent-completion check.
+6. Fires `claimContinents()` — any continent rung this name just carried over pays out here (§6.3).
 
 **The atlas is fetched at the desk, not just at the board.** `openOverlay()` kicks off `loadAtlas()` (a local
 135 KB file, once a session) and `checkWord` awaits it before judging a capitalized bench — a player can
@@ -440,16 +443,18 @@ Atlas goes by that name"), so a failed place attempt never reads as a broken dic
 | --- | --- |
 | Country spelled ✅ | region fills · fact card · ink (`inkForWord`) |
 | Capital city spelled ✅ | pin drops · fact card · ink (`inkForWord`) |
-| **Pair completed** (country + its capital city) ✅ | region lights brighter gold · the "capital of" line + the flag on the fact card · **the flag is earned** (`state.atlasFlags`, toast + fanfare) — *flying it on a flagpole is M5* |
-| Continent completed *(M5)* | one-time ink lump + a larger décor grant, through the existing [`inklings-collections.md`](inklings-collections.md) milestone-grant path |
+| **Pair completed** (country + its capital city) ✅ | region lights brighter gold · the "capital of" line + the flag on the fact card · **the flag is earned** (`state.atlasFlags`, toast + fanfare) and can be flown from a flagpole |
+| Continent milestone ✅ | 25 / 50 / 100% of that continent's names → ink lump (+ a flagpole at 50%, a Framed Map at 100%) — see §6.3 |
 
-**The earn and the display are split** (decided at M4): pairing *records* the flag now, so M5 only has to
-build the flagpole, the picker and the shop row — nobody who pairs countries before M5 ships needs a
-migration pass to be granted flags retroactively.
+**The earn and the display are split** (decided at M4): pairing *records* the flag, so M5 only had to build
+the flagpole, the picker and the shop row — nobody who paired countries before M5 shipped needed a migration
+pass to be granted flags retroactively.
 
 **The flag as décor** is the headline reward: a shelf of completed countries becomes a visible row of flags
 in the world rather than a number on a screen. It grants through the existing décor/placement systems
-([`inklings-placement.md`](inklings-placement.md)) — flyable in the Library or the cozy square at (0,1).
+([`inklings-placement.md`](inklings-placement.md)) — flyable in the Wordhoard today, and in the cozy square at
+(0,1) the moment placement step 2 opens that venue (poles need no extra work for it: `placeAtCell` is the
+only library-only guard).
 
 **Form (decided): one flagpole object that displays whichever earned flag you assign it.** *Not* 194
 distinct décor entries. Placing a flagpole opens a picker of the flags you've earned; the pole stores its
@@ -464,15 +469,62 @@ to any future atlas ([`inklings-grammar-systems.md`](inklings-grammar-systems.md
 Pantheon) without new objects. The only addition to the placement pipeline is a per-instance field and the
 picker — `state.atlasFlags` is the authority on which flags a pole may display.
 
-**Poles are a shop item, bought with ink, unlimited (decided).** A fourth row in the shop alongside
-*Bigger Satchel* / *Bind a Fable Page* / *Seed Rack* (they're hardcoded `.shop-item` rows in the markup, so
-this is one more), repeatable at a flat cost, adding to `state.decorOwned.flagpole`. This splits the reward
-cleanly: **spelling earns the flag** (the achievement, unbuyable), **ink buys the pole** (the display
-surface). Wanting to fly more of your collection becomes an ink sink, which also gives the ink paid by
-Atlas solves somewhere of its own to go. A pole with no flags earned yet is buyable but empty — acceptable,
-or gate the shop row behind the first earned flag (minor call, decide at build time).
+**Poles are a shop item, bought with ink, unlimited.** A fourth `.shop-item` row alongside *Bigger Satchel* /
+*Bind a Fable Page* / *Seed Rack*, repeatable at a flat **`POLE_COST` = 25 ink**, adding to
+`state.decorOwned.flagpole`. This splits the reward cleanly: **spelling earns the flag** (the achievement,
+unbuyable), **ink buys the pole** (the display surface). Wanting to fly more of your collection becomes an ink
+sink, which also gives the ink paid by Atlas solves somewhere of its own to go. **The row is always visible
+but disabled until the first flag is earned** (decided at M5) — it reads "Pair a country with its capital city
+to earn a flag first", which advertises the reward without letting ink buy a pole with nothing to fly.
+
+**Raising a flag: place the pole, then face it and press E** (decided at M5). Poles go up bare; walking up to
+one and pressing **E** — the same verb as the desk, the lectern and the globe — opens the picker, a grid of
+every flag you've earned plus a *bare pole* option, and the picker also opens automatically the moment you
+place a pole. The alternative (a tray slot per flag: 🇫🇷 pole, 🇯🇵 pole, …) was rejected because the tray
+shows every owned piece at once and would grow by one slot per country you pair. Consequences of the chosen
+model, both intended: re-flagging is free and instant, and **picking a pole back up drops its assignment**
+(it returns to the tray as a generic pole, since `state.decorOwned` counts ids, not instances).
+
+The picker (`openFlagPicker`/`renderFlagPick`/`flyFlag`, `state.flagpickOpen`, `fpTarget` = the index in
+`state.placed`) is a modal like any other dialog, so it appears in every overlay enumeration and dismisses the
+décor tray on open. `flyFlag` re-checks `state.atlasFlags` before assigning — the authority is the earn
+ledger, never the DOM. A placed pole draws through `decorFace()`, which falls back to the bare 🏳️ until the
+atlas is loaded; `atlasHold()` kicks off that fetch on entering the Wordhoard whenever a flagged pole stands
+there, so the fallback is only ever momentary.
 
 No grammar-codex entry in v1 — the fact card plus the case discriminator carry the proper-vs-common lesson.
+
+### 6.3 Continent milestones  ✅ BUILT 2026-08-14
+
+**Three rungs per continent, measured against that continent's own spellable names** (its countries + their
+capital cities), not a flat global number:
+
+| Rung | Reward |
+| --- | --- |
+| 25% of the continent's names | +25 ink |
+| 50% | +60 ink · a **Flagpole** |
+| 100% | +150 ink · a **Framed Map** (`DECOR.atlasmap`) |
+
+**Why a share and not "complete the continent"** (decided 2026-08-14): the continents are wildly uneven —
+Africa carries **89** spellable names, Europe 83, Asia 81, but Oceania only 20 and South America 23. A single
+all-or-nothing goal would be a shrug for South America and an unlit marathon for Africa. A proportional ladder
+gives every continent the same three-rung shape, hands the long tail the structure §9 asks for, and makes the
+first rung reachable on any continent the player happens to like.
+
+- **Auto-granted, not claimed at a counter** (unlike [`inklings-collections.md`](inklings-collections.md)'s
+  bundles, which have the curator as a natural claim surface): the trigger is a submission at the desk, so the
+  payout lands in the same breath as the word — a line in the result panel, a toast, and `unlockbig`. A
+  continent milestone outranks a flag for the single toast slot.
+- `claimContinents()` re-derives from `state.atlas` every time it runs and writes one-time keys into
+  `state.atlasContinents`, so it is **idempotent**. It runs on every place spelled *and* once when
+  `loadAtlas()` resolves — which is what pays a save (or an import) made before M5 existed, with no migration.
+- **Only the six continent tabs have goals.** The 151 marine/lake/peak names carry no continent, and neither
+  do the five Natural Earth files under "Seven seas (open ocean)" (Maldives, Seychelles, Mauritius) — all of
+  them count toward the world total only. The sum of the six continent totals is therefore *less* than 475,
+  by design.
+- **On the board:** framing a continent switches the header count to that continent (`21/83 Europe names
+  inked`), puts the three rungs in the layer row as lit/unlit pips, and — with nothing selected — fills the
+  card with the ladder: a progress bar, each rung's threshold in names, and what it pays.
 
 ---
 
@@ -481,13 +533,16 @@ No grammar-codex entry in v1 — the fact card plus the case discriminator carry
 ```js
 state.caps        = {}     // capital letter -> count (persistent, uncapped, outside satchelCap(); §3)
 state.atlas       = {}     // placeId -> { c: dayString|null, k: dayString|null }  country/feature · capital city
-state.atlasFlags  = {}     // ISO3 -> dayString earned (the pairing reward; M5's flagpole picker reads it)
-state.atlasContinents = {} // "Europe" -> dayString claimed (one-time continent rewards)   ← M5, not added yet
+state.atlasFlags  = {}     // ISO3 -> dayString earned (the pairing reward; the flagpole picker reads it)
+state.atlasContinents = {} // "Europe:50" -> dayString paid (one-time continent milestones; §6.3)
+state.placed[i].flag       // on a placed flagpole: the place id whose flag it flies (or absent = bare)
 ```
 
 All JSON-clean and **persist-forever** — never touched by `startNewDay()`. `state.caps` shipped with M2;
-`atlas` + `atlasFlags` shipped with M4 and took `snapshot()` to **`v:10`**. `applySnapshot()` restores all
-three *outside* the same-day guard that gates the satchel, which is what makes them survive rollover.
+`atlas` + `atlasFlags` shipped with M4 at `snapshot()` **`v:10`**; `atlasContinents` shipped with M5 at
+**`v:11`**. `applySnapshot()` restores them *outside* the same-day guard that gates the satchel, which is what
+makes them survive rollover. The milestone ledger is keyed **per rung** (`continent:tier`), not per continent
+— the shape `bundleId()` uses — because a continent pays out three times.
 The key of `state.atlas` is the **place id**, not always an ISO3 — `"FRA"` for a country but `"sea:baltic"`,
 `"lake:baikal"`, `"peak:everest"` for the physical layers, which have no country code.
 
@@ -528,8 +583,13 @@ Each phase is shippable and leaves the game working.
   fact card on both the board and the desk, ink, the flag earned on pairing, the `atlasNudge` homograph line,
   and a promise-based `loadAtlas()` the desk awaits. Shipped alongside `build_geo.py`'s collision-promotion
   pass (§5.1a). **The feature is real here.**
-- **M5 — Flags & continents.** The flagpole décor + shop row + per-instance flag picker (`state.atlasFlags`
-  is already populated), continent-completion rewards + `state.atlasContinents`, sounds.
+- **M5 — Flags & continents. ✅ BUILT 2026-08-14.** `DECOR.flagpole` (+ `DECOR.atlasmap`, the 100% trophy)
+  with the flag assignment on the **placed instance** (`decorFace`/`atlasHold`), the face-it-and-press-E
+  picker (`poleInFront`/`openFlagPicker`/`flyFlag`, `state.flagpickOpen`, an E-hint and a touch 🏳️ button),
+  the Stall's fourth row (`POLE_COST` = 25 ink, disabled until the first flag), continent milestones
+  (`AT_CONT_TIERS`/`atContStats`/`claimContinents` at 25/50/100%, auto-granted and idempotent) with
+  `state.atlasContinents` at save **`v:11`**, the board's per-continent count + rung pips + ladder card, and
+  the existing SFX palette (`unlock` on raising a flag, `unlockbig` on a milestone).
 
 M2 deliberately precedes the board: it's small, it's the part you asked for, and banked capitals make the
 board's arrival feel earned rather than empty.
@@ -551,8 +611,8 @@ board's arrival feel earned rather than empty.
   reads `bench` per-letter, so `spendLetter` and the tray were already case-correct.
 - **Open-ended recall has no difficulty curve of its own.** The only pacing is letter availability, so a
   player who knows a lot of geography will burn through the easy countries fast and then stall on the ones
-  they can't name. The continent tabs and the flag wall are what give the long tail a shape; watch for
-  whether that's enough once M4 is playable.
+  they can't name. The continent tabs, the flag wall and (since M5) the 25/50/100% rungs are what give the
+  long tail a shape; watch whether that's enough now that the whole thing is playable.
 - **Deferred multiword names** need a visible, non-frustrating treatment on the board, or players will read
   a greyed United States as a bug. Handled by the grey + checker fill and the card's "its name is more than
   one word" line — and the §5.1a promotions (Gulf of Mexico, Mount Kenya) joined that set, so it now covers

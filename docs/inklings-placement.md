@@ -123,12 +123,20 @@ One generic system, reused by décor, seed-planting, and pen-placing. **The load
   that granted them ("birds set → stuffed-owl trophy"). MVP **cosmetic**; keep a `perk` field spare for later.
 - **Second grant type:** a themed set can grant a **story companion** instead of / alongside décor — same
   one-time trigger, see [`inklings-companions.md`](inklings-companions.md).
+- **Second *source*, and the one piece with per-instance state — the Atlas flagpole (BUILT 2026-08-14).**
+  `DECOR.flagpole` is bought with ink at the Stall (not gifted) and `DECOR.atlasmap` is a continent-milestone
+  trophy; see [`inklings-atlas.md`](inklings-atlas.md) §6.2–6.3. The flagpole is the first piece whose *placed
+  instance* carries data: `{ id:"flagpole", …, flag:"FRA" }`, the place whose flag it flies. It's rendered
+  through `decorFace(o,d)` (instance data > catalog emoji) and assigned by facing the pole and pressing **E**
+  (`poleInFront` → `openFlagPicker`), which also fires right after you place one. Picking a pole back up drops
+  the assignment, since `state.decorOwned` counts ids rather than instances. Any future piece with
+  per-instance state should follow the same two hooks rather than growing the catalog.
 
 ---
 
 ## 5. State & saves
 - **`state.decorOwned`** — earned, unplaced décor (ids + counts).
-- **`state.placed`** — every placed object: `[{ id, kind, where, cx, cy }]`, where `kind ∈ {decor, crop, pen}`
+- **`state.placed`** — every placed object: `[{ id, kind, where, cx, cy }]` (+ `flag` on a flagpole, §4), where `kind ∈ {decor, crop, pen}`
   and **`where ∈ {"library", "0,1"}`** (the venue). Décor can appear under either `where`; crops/pens only under
   `"0,1"`. Renderers/collision filter by the current venue.
 - **`state.bundles`** — claimed category-milestone ids (one-time), from [`inklings-collections.md`](inklings-collections.md) §6.

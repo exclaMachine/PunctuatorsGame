@@ -464,10 +464,34 @@
   .at-later{color:#8a5a34}
   #atlas .hb-tabs{flex-wrap:wrap}
   #atlas .hb-tab{font-size:8px;padding:5px 8px}
+  /* the continent milestone ladder (25/50/100% of that continent's own spellable names — §6.3) */
+  .at-prog{font-family:var(--read);font-size:13px;color:var(--ink-soft);margin-left:auto;white-space:nowrap}
+  .at-prog b{font-family:var(--disp);font-size:8px;color:var(--gold);margin-left:5px}
+  .at-prog b.off{color:var(--ink-soft);opacity:.6}
+  .at-bar{height:9px;border:2px solid var(--edge);background:var(--paper-2);margin:5px 0 6px}
+  .at-bar i{display:block;height:100%;background:var(--gold)}
+  .at-tiers{display:flex;gap:6px;flex-wrap:wrap;font-family:var(--read);font-size:13px}
+  .at-tier{border:2px solid var(--line);padding:3px 6px;color:var(--ink-soft)}
+  .at-tier.done{border-color:var(--gold);color:var(--ink)}
   @media(max-width:560px){
     #atlas .book{height:auto;max-height:92vh;overflow:auto;display:block}
     .at-card{min-height:80px}
   }
+
+  /* ---- The flagpole's flag picker: one pole object flies any flag you've EARNED (state.atlasFlags), so
+     the assignment lives on the placed instance. See docs/inklings-atlas.md §6.2 ---- */
+  #flagpick{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);align-items:center;
+    justify-content:center;padding:18px;z-index:8}
+  #flagpick.open{display:flex}
+  #flagpick .book{position:relative;max-width:460px;width:100%;max-height:88vh;overflow:auto}
+  .fp-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .fp-flag{display:flex;flex-direction:column;align-items:center;gap:3px;width:74px;padding:6px 3px;
+    border:2px solid var(--line);background:var(--paper-2);cursor:pointer;font-family:var(--read);
+    font-size:11px;color:var(--ink);line-height:1.15;text-align:center}
+  .fp-flag:hover{border-color:var(--gold)}
+  .fp-flag.on{border-color:var(--gold);background:var(--gold);color:#2a2540}
+  .fp-flag .fp-em{font-size:26px;line-height:1}
+  .fp-none{color:var(--ink-soft);font-family:var(--read);font-size:14px}
 
   /* ---- Pig Pens (Pigpen cipher — DEV-only). Each pen draws a letter's Pigpen cell (walls) and a 🐖 pig = its
      dotted twin. Read the daily pens, type the word → it enters the library (no letters spent). See docs/inklings-ciphers.md ---- */
@@ -1110,6 +1134,13 @@
           </div>
           <button class="primary" id="shop-seed-buy">Buy · <b id="shop-seed-cost">0</b> ink</button>
         </div>
+        <div class="shop-item">
+          <div>
+            <div class="shop-item-name">Flagpole</div>
+            <div class="shop-item-desc" id="shop-pole-desc">Fly a flag you've earned</div>
+          </div>
+          <button class="primary" id="shop-pole-buy">Buy · <b id="shop-pole-cost">25</b> ink</button>
+        </div>
         <div class="btn-row" style="margin-top:18px;justify-content:flex-end">
           <button class="primary" id="shop-done">Done</button>
         </div>
@@ -1398,6 +1429,21 @@
       </div>
     </div>
 
+    <!-- Flagpole picker: walk up to a placed flagpole and press E to choose which EARNED flag it flies
+         (state.atlasFlags is the authority — flags are earned by pairing a country with its capital city,
+         never bought; the pole itself is the ink purchase). See docs/inklings-atlas.md §6.2. -->
+    <div id="flagpick">
+      <div class="book">
+        <button class="close-x" id="fp-close" aria-label="Close" title="Close">✕</button>
+        <h1>The Flagpole</h1>
+        <div class="sub" id="fp-sub"></div>
+        <div class="fp-grid" id="fp-grid"></div>
+        <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
+          <button class="primary" id="fp-done">Done</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Interactable obstacle (river) mad-lib: fill the blank with a collected verb -->
     <div id="obstacle">
       <div class="book" style="max-width:470px">
@@ -1543,7 +1589,7 @@
         <div class="ctrl-grid kbd-only">
           <span><b>WASD</b> / <b>↑ ↓ ← →</b></span><span>Move</span>
           <span><b>Space</b></span><span>Attack</span>
-          <span><b>E</b></span><span>Use what you're near: shop, the house (enter the Wordhoard), the Wordsmithy, Mad Libris</span>
+          <span><b>E</b></span><span>Use what you're near: shop, the house (enter the Wordhoard), the Wordsmithy, Mad Libris, the globe (the Atlas), a flagpole you're facing (raise a flag)</span>
           <span><b>O</b></span><span>Decorate the Wordhoard (or tap 🖼️): <b>Tab</b>/<b>Shift+Tab</b> pick a piece, <b>Space</b> place</span>
           <span><b>B</b></span><span>Open the bestiary (or tap the 🐾 button)</span>
           <span><b>C</b></span><span>Open your Feats (verb milestones — or tap ✦)</span>
@@ -1630,6 +1676,7 @@
           <button class="tc-btn util" id="tc-curate" aria-label="Speak with the curator">CURATE</button>
           <button class="tc-btn util" id="tc-atlas" aria-label="Open the Atlas">ATLAS</button>
           <button class="tc-btn util ico" id="tc-decor" aria-label="Decorate the Wordhoard">🖼️</button>
+          <button class="tc-btn util ico" id="tc-flag" aria-label="Raise a flag on this flagpole">🏳️</button>
           <button class="tc-btn util" id="tc-fish" aria-label="Cast a line">CAST</button>
         </div>
       </div>
@@ -2688,8 +2735,10 @@ const state = {
                                 // spelled (null = still unspelled). Proper nouns are their OWN namespace: a place
                                 // never enters state.dex, which paces the whole letter-unlock curve. (persist)
   atlasFlags:{},                // ISO3 -> day-string the country+capital pair was completed = the flag earned.
-                                // M5's flagpole picker reads this as its authority. docs/inklings-atlas.md §6.2
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false, fishing:false, phoniconOpen:false, atlasOpen:false,
+                                // The flagpole picker reads this as its authority. docs/inklings-atlas.md §6.2
+  atlasContinents:{},           // "Europe:50" -> day-string a continent milestone was paid out (one-time, auto-
+                                // granted at 25/50/100% of that continent's own spellable names). §6.3
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false, fishing:false, phoniconOpen:false, atlasOpen:false, flagpickOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -2848,7 +2897,14 @@ const DECOR = {
   candle:  { name:"Candelabra",    emoji:"🕯️", solid:false },
   terrarium:{name:"Terrarium",     emoji:"🌱", solid:true  },
   rug:     { name:"Round Rug",     emoji:"🟤", solid:false },
-  hourglass:{name:"Hourglass",     emoji:"⏳", solid:false }
+  hourglass:{name:"Hourglass",     emoji:"⏳", solid:false },
+  // ── Atlas rewards (docs/inklings-atlas.md §6.2) ──────────────────────────────────────────────
+  // ONE flagpole object that flies whichever earned flag you assign to it — not 196 décor entries.
+  // The assignment lives on the PLACED instance (`flag`: a place id like "FRA"), so one piece of art
+  // has 196 faces and the picker scales to any future atlas. Bought with ink at the Stall; the flags
+  // themselves are unbuyable (state.atlasFlags — you earn them by pairing a country with its capital).
+  flagpole:{name:"Flagpole",       emoji:"🏳️", solid:true, pole:true },
+  atlasmap:{name:"Framed Map",     emoji:"🗺️", solid:false }   // the 100%-of-a-continent trophy
 };
 // Session-only placement UI: `held` = the décor id being held (a string), or null = the ✋ "pick-up" hand.
 // Targeting is the tile IN FRONT of the character (tileInFront), confirmed with Space / the tray's Place button.
@@ -2918,9 +2974,13 @@ function placeAtCell(cell){
   if(i>=0){                                      // occupied → swap: return the old piece, then drop the new one
     const old=state.placed[i]; state.decorOwned[old.id]=(state.decorOwned[old.id]||0)+1; state.placed.splice(i,1);
   }
+  const pole=(DECOR[place.held]||{}).pole;
   state.placed.push({ id:place.held, kind:"decor", where:placeVenue(), cx:cell.cx, cy:cell.cy });
+  const idx=state.placed.length-1;
   if(--state.decorOwned[place.held]<=0){ delete state.decorOwned[place.held]; place.held=firstOwnedDecor(); }
   SFX.play("capture"); afterDecorChange();
+  // A pole goes up bare, then asks what it should fly — walking up to it later and pressing E re-opens this.
+  if(pole && flagsEarned().length) openFlagPicker(idx);
 }
 function afterDecorChange(){ scheduleSave(); renderDecorBar(); }
 function togglePlaceMode(){
@@ -2957,8 +3017,29 @@ function drawPlacedDecor(sc){
   const cw=sc.cw||TS, ch=sc.ch||TS, sz=Math.floor(Math.min(cw,ch)*0.92);
   ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font=sz+"px serif";
   for(const o of state.placed){ if(o.where!==v) continue; const d=DECOR[o.id]; if(!d) continue;
-    ctx.fillText(d.emoji, (o.cx+0.5)*cw, (o.cy+0.5)*ch); }
+    ctx.fillText(decorFace(o,d), (o.cx+0.5)*cw, (o.cy+0.5)*ch); }
   ctx.textBaseline="alphabetic";
+}
+// What a placed piece actually shows: normally its own emoji, but a flagpole wears the flag assigned to
+// that instance. The flag glyph comes from the atlas (an ISO-3166 pair as regional indicators), so a pole
+// falls back to the bare 🏳️ until data/atlas-world.json is in hand — atlasHold() warms it for exactly this.
+function decorFace(o,d){
+  if(!d.pole || !o.flag) return d.emoji;
+  const p = ATLAS && ATLAS.places[o.flag];
+  return (p && p.flag) || d.emoji;
+}
+// The placed flagpole on the tile the player is facing (its index in state.placed), or -1.
+function poleInFront(){
+  if(state.room!=="library" || !state.placed.length) return -1;
+  const cell=tileInFront(placeScreen(), state.player); if(!cell) return -1;
+  const i=placedIndexAt(cell.cx,cell.cy);
+  return (i>=0 && (DECOR[state.placed[i].id]||{}).pole) ? i : -1;
+}
+// Any flagpole standing in this venue means the board's flag glyphs are needed to draw the room: fetch the
+// atlas once (it's a local 135 KB file, and loadAtlas is idempotent) rather than drawing bare poles forever.
+function atlasHold(){
+  if(ATLAS || _atFailed) return;
+  for(const o of state.placed) if(o.flag && (DECOR[o.id]||{}).pole){ loadAtlas(); return; }
 }
 // Place / pick up / swap on the tile in front of the character (Spacebar, or the tray's Place button).
 function placeFront(){ placeAtCell(tileInFront(placeScreen(), state.player)); }
@@ -3310,6 +3391,10 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"){ e.preventDefault(); if(phonTab==="guide") phonShowTab("sounds"); else closePhonicon(); }   // step back from the Guide tab first
     return;
   }
+  if(state.flagpickOpen){   // Flagpole picker: modal over the room (and over decorate mode) — Esc/Tab/E close
+    if(k==="escape"||k==="tab"||k==="e"){ e.preventDefault(); closeFlagPicker(); }
+    return;
+  }
   if(state.atlasOpen){   // Atlas board: Esc backs a framed continent out to the world, then closes; Tab/E close
     if(k==="escape"){ e.preventDefault(); if(atContinent){ atSetContinent(null); } else closeAtlas(); }
     else if(k==="tab"||k==="e"){ e.preventDefault(); closeAtlas(); }
@@ -3518,7 +3603,7 @@ function nearLibraryShelf(){
   return best;
 }
 // Enter/leave the Library room (a cut, not the field-grid slide). state.room is session-only.
-function enterLibraryAt(x,y,face){ trans=null; state.room="library"; LIBRARY.bg=null; const p=state.player; p.x=x; p.y=y; p.face=face; p.moving=false; SFX.play("home"); }
+function enterLibraryAt(x,y,face){ trans=null; state.room="library"; LIBRARY.bg=null; const p=state.player; p.x=x; p.y=y; p.face=face; p.moving=false; atlasHold(); SFX.play("home"); }
 function enterLibrary(){   // in through the house door → arrive at the entrance mat
   if(!LIBRARY || !LIBRARY.screen){ showToast("The library is still loading…"); return; }
   enterLibraryAt(LIBRARY.entrancePx.x, LIBRARY.entrancePx.y-26, {x:0,y:-1}); showToast("The Wordhoard.");
@@ -3532,6 +3617,7 @@ function exitLibrary(){   // out the entrance mat → outdoor home, just below t
 // E interacts with whatever you're standing by.
 function tryUseBench(){
   if(state.room==="library"){
+    const pi=poleInFront(); if(pi>=0){ openFlagPicker(pi); return; }   // a flagpole you're facing → its flag picker
     if(nearLibraryDesk()) openOverlay();       // the desk → collection/bench
     else if(nearLibraryBook()) openBook();     // the lectern → mad-libs
     else if(nearLibraryCurator()) openCuration();  // the curator → collection subgoals
@@ -3713,7 +3799,7 @@ function update(dt){
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -3799,7 +3885,7 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -3848,7 +3934,7 @@ function update(dt){
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else if(hintReady && nearFishSpot()){ hint.textContent="Press E to cast a line"; hint.classList.add("show"); }
@@ -3870,7 +3956,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.shelfview && !state.curation && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -3895,8 +3981,9 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !place.active && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.shelfview && !state.curation;
-  if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
+  const hintReady=!IS_TOUCH && !place.active && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation;
+  if(hintReady && poleInFront()>=0){ hint.textContent="Press E to raise a flag"; hint.classList.add("show"); }
+  else if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryCurator()){ hint.textContent="Press E to speak with the curator"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryGlobe()){ hint.textContent="Press E to open the Atlas"; hint.classList.add("show"); }
@@ -5206,7 +5293,27 @@ function updateShop(){
   if(fdesc) fdesc.textContent = doneAll ? "Every fable recovered ✓" : `Recover the next fable (${state.fables}/${total})`;
   if(fcost) fcost.textContent = Object.keys(FABLE_COST).map(m=>`${FABLE_COST[m]} ${prettyItem(m)}`).join(" + ");
   if(fbtn) fbtn.disabled = !canBindFable();
+  // "Flagpole" — the display surface for Atlas flags. The row is always visible (it advertises the reward)
+  // but stays disabled until the first flag is earned, so ink never buys a pole with nothing to fly.
+  const flags=Object.keys(state.atlasFlags||{}).length;
+  const pdesc=document.getElementById("shop-pole-desc"), pcost=document.getElementById("shop-pole-cost"),
+        pbtn=document.getElementById("shop-pole-buy");
+  if(pcost) pcost.textContent=POLE_COST;
+  if(pdesc) pdesc.textContent = flags
+    ? `Fly one of your ${flags} flag${flags===1?"":"s"} in the Wordhoard (own ${state.decorOwned.flagpole||0})`
+    : "Pair a country with its capital city to earn a flag first";
+  if(pbtn) pbtn.disabled = !flags || state.ink<POLE_COST;
   updateShopSeeds();
+}
+// Flagpoles are a flat, repeatable ink sink — spelling earns the flag, ink buys somewhere to fly it (§6.2).
+const POLE_COST=25;
+function buyFlagpole(){
+  if(!Object.keys(state.atlasFlags||{}).length || state.ink<POLE_COST){ SFX.play("invalid"); return; }
+  state.ink-=POLE_COST; state.decorOwned.flagpole=(state.decorOwned.flagpole||0)+1;
+  SFX.play("unlock");
+  showToast("A flagpole for the Wordhoard — place it with 🖼️, then press E at it to raise a flag.");
+  updateShop(); updateRewardHud(); scheduleSave();
+  if(place.active) renderDecorBar();
 }
 // Seed Rack — buy any quantity of a CURRENT-season crop's seed; price scales with letter rarity.
 function updateShopSeeds(){
@@ -7835,6 +7942,10 @@ function loadAtlas(){
   _atFailed=false;
   _atPromise = fetch("data/atlas-world.json").then(r=>r.ok?r.json():Promise.reject()).then(j=>{
     ATLAS=j; atDecode();
+    // A save made before continent milestones existed (or an import) may already have crossed some: the
+    // ledger is re-derived from state.atlas the moment the data lands, so nobody has to re-spell anything.
+    const owed=claimContinents();
+    if(owed.length){ scheduleSave(); updateRewardHud(); showToast(contToast(owed[owed.length-1])); }
     if(state.atlasOpen) renderAtlas();            // arrived while the board was already open
     return j;
   }).catch(()=>{
@@ -7879,6 +7990,102 @@ function atlasSolved(id, which){
 }
 // A country is PAIRED once both it and its capital city are inked — the flag reward (§6.2).
 function atlasPaired(id){ const r=state.atlas && state.atlas[id]; return !!(r && r.c && r.k); }
+
+/* ---------- M5: FLAGS FLOWN, AND CONTINENT MILESTONES (docs/inklings-atlas.md §6.2–6.3) -------------
+   The earn and the display are split: pairing a country with its capital city EARNS the flag (unbuyable,
+   state.atlasFlags); ink buys the POLE at the Stall (unlimited). One pole object flies any earned flag —
+   the assignment is a `flag` field on the placed instance, so 196 faces cost one piece of art. */
+// Earned flags, alphabetical by country once the atlas is in hand (the ids alone before that).
+function flagsEarned(){
+  const ids=Object.keys(state.atlasFlags||{});
+  if(!ATLAS) return ids;
+  return ids.filter(id=>ATLAS.places[id]).sort((a,b)=>ATLAS.places[a].name.localeCompare(ATLAS.places[b].name));
+}
+let fpTarget=-1;    // the index in state.placed of the pole being flagged (the picker is modal, so it holds)
+function openFlagPicker(idx){
+  const o=state.placed[idx]; if(!o || !(DECOR[o.id]||{}).pole) return;
+  if(place.active) closePlaceMode();       // the picker owns the keyboard while it's up
+  fpTarget=idx; state.flagpickOpen=true;
+  document.getElementById("flagpick").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  loadAtlas().then(()=>{ if(state.flagpickOpen) renderFlagPick(); });   // names + glyphs come from the atlas
+  renderFlagPick(); SFX.play("click");
+}
+function closeFlagPicker(){
+  state.flagpickOpen=false; fpTarget=-1;
+  document.getElementById("flagpick").classList.remove("open");
+  document.getElementById("sound-btn").style.display="";
+}
+function renderFlagPick(){
+  const o=state.placed[fpTarget]; if(!o) return;
+  const grid=document.getElementById("fp-grid");
+  const sub=document.getElementById("fp-sub");
+  const flags=flagsEarned();
+  sub.textContent = flags.length
+    ? "Fly one of the flags you've earned. Pair a country with its capital city to earn more."
+    : "No flags yet — pair a country with its capital city at the Wordsmithy and its flag is yours.";
+  if(!ATLAS){
+    grid.innerHTML='<div class="fp-none">'+(_atFailed?"The atlas didn't load, so its flags can't be drawn."
+      :"Unrolling the atlas…")+'</div>';
+    return;
+  }
+  let html=`<button class="fp-flag${o.flag?"":" on"}" type="button" data-flag=""><span class="fp-em">🏳️</span>bare pole</button>`;
+  for(const id of flags){ const p=ATLAS.places[id];
+    html+=`<button class="fp-flag${o.flag===id?" on":""}" type="button" data-flag="${esc(id)}">`+
+          `<span class="fp-em">${p.flag||p.iso2||""}</span>${esc(p.name)}</button>`; }
+  grid.innerHTML=html;
+  grid.querySelectorAll("[data-flag]").forEach(b=>b.onclick=()=>flyFlag(b.dataset.flag||null));
+}
+function flyFlag(id){
+  const o=state.placed[fpTarget]; if(!o) return;
+  if(id && !state.atlasFlags[id]) return;      // only an EARNED flag may be flown
+  o.flag=id||null;
+  SFX.play(id?"unlock":"click"); scheduleSave(); renderFlagPick();
+}
+// ── Continent milestones ────────────────────────────────────────────────────────────────────────
+// Measured as a share of THAT continent's own spellable names (countries + their capital cities), because
+// a flat rule lands hopelessly unevenly: Africa carries 89 spellable names, Oceania 20. Three rungs give
+// the long tail a shape (§9) and give South America a reachable first rung on the same ladder as Africa.
+// Marine/lake/peak names carry no continent and count only toward the world total; so do the five names
+// Natural Earth files under "Seven seas (open ocean)" (Maldives, Seychelles, Mauritius), which has no tab.
+const AT_CONT_TIERS=[
+  { key:"25",  pct:0.25, ink:25,  decor:null,       label:"a quarter of" },
+  { key:"50",  pct:0.5,  ink:60,  decor:"flagpole", label:"half of" },
+  { key:"100", pct:1,    ink:150, decor:"atlasmap", label:"every name in" }
+];
+function atContStats(cont){
+  let total=0, done=0;
+  if(ATLAS) for(const id in ATLAS.places){
+    const p=ATLAS.places[id];
+    if(p.layer!=="political" || p.continent!==cont) continue;
+    const sp=p.spellable||{};
+    if(sp.country){ total++; if(atlasSolved(id)) done++; }
+    if(sp.capital){ total++; if(atlasSolved(id,"capital")) done++; }
+  }
+  return { total, done };
+}
+function atContNeed(t,total){ return Math.max(1, Math.ceil(total*t.pct)); }
+function atContClaimed(cont,t){ return !!(state.atlasContinents||{})[cont+":"+t.key]; }
+// Pay out every continent milestone that's newly reached. Auto-granted (not claimed at a counter) because
+// the trigger is a submission at the desk, and the reward should land in the same breath as the word.
+function claimContinents(){
+  const got=[];
+  if(!ATLAS) return got;
+  for(const cont of AT_CONTINENTS){
+    const st=atContStats(cont); if(!st.total) continue;
+    for(const t of AT_CONT_TIERS){
+      if(atContClaimed(cont,t) || st.done < atContNeed(t,st.total)) continue;
+      state.atlasContinents[cont+":"+t.key]=state.day;
+      state.ink+=t.ink;
+      if(t.decor) state.decorOwned[t.decor]=(state.decorOwned[t.decor]||0)+1;
+      got.push({ cont, t, st });
+    }
+  }
+  return got;
+}
+function contToast(g){
+  return `${g.cont} — ${g.t.label} it inked! +${g.t.ink} ink`+(g.t.decor?` · ${DECOR[g.t.decor].name}`:"");
+}
 // One spelled word -> every place it claims, from the build's prebuilt `index` (keyed by the exact
 // Capitalized name). build_geo.py's disambiguation pass sends a feature back to its FULL name whenever its
 // short one collides with a country or capital — the gulf is "Gulf of Mexico", so the country keeps the
@@ -7909,11 +8116,14 @@ function spellPlace(name, claims){
     if(p && p.flag && atlasPaired(id) && !state.atlasFlags[id]){ state.atlasFlags[id]=state.day; flags.push(id); }
   }
   const ink=inkForWord(name); state.ink+=ink;   // one submission, one payment — even when it fills two slots
+  const conts=claimContinents();          // …and any continent milestone this name just carried over (§6.3)
   bench=[];
   updateTrayHud(); updateRewardHud(); renderBench();
-  showPlaceResult(name, fresh, ink, flags);
-  SFX.play(flags.length?"unlock":"newword");
-  if(flags.length){
+  showPlaceResult(name, fresh, ink, flags, conts);
+  SFX.play(conts.length?"unlockbig":flags.length?"unlock":"newword");
+  // One toast, biggest first: a continent milestone outranks a flag, which outranks the plain ink line.
+  if(conts.length) showToast(contToast(conts[conts.length-1]));
+  else if(flags.length){
     const p=ATLAS.places[flags[0]];
     showToast((p.flag?p.flag+" ":"")+p.name.toUpperCase()+" paired — its flag is yours!");
   }
@@ -7923,7 +8133,7 @@ function spellPlace(name, claims){
 // The fact card, shown in the desk's result panel in place of a definition. It keeps the board's redaction:
 // an unspelled partner (a country's capital city, or a capital's country) stays blanked, so spelling one
 // half is never a free answer to the other.
-function showPlaceResult(name, fresh, ink, flags){
+function showPlaceResult(name, fresh, ink, flags, conts){
   const byId={}; fresh.forEach(([id,slot])=>{ (byId[id]||(byId[id]=[])).push(slot); });
   const rows=Object.keys(byId).map(id=>{
     const p=ATLAS.places[id], slots=byId[id], sp=p.spellable||{};
@@ -7950,12 +8160,17 @@ function showPlaceResult(name, fresh, ink, flags){
   const flagNote=flags.map(id=>{
     const p=ATLAS.places[id];
     return `<div class="note" style="color:var(--gold)">${p.flag||""} ${esc(p.capital)} is the capital city of `+
-           `${esc(p.name)} — <b>flag earned</b>.</div>`;
+           `${esc(p.name)} — <b>flag earned</b>. Fly it from a flagpole in the Wordhoard.</div>`;
   }).join("");
+  // Continent milestones pay out in the same breath as the word that crossed them (§6.3).
+  const contNote=(conts||[]).map(g=>
+    `<div class="note" style="color:var(--gold)">🌍 <b>${esc(g.cont)}</b> — ${esc(g.t.label)} its names inked `+
+    `(${g.st.done}/${g.st.total}). <b>+${g.t.ink} ink</b>${g.t.decor?` · <b>${esc(DECOR[g.t.decor].name)}</b> for the décor tray`:""}.</div>`
+  ).join("");
   document.getElementById("result").innerHTML=`<div class="reveal">
     <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">Inked on the Atlas</div>
     <div class="word">${esc(name)}</div>
-    ${rows}${flagNote}
+    ${rows}${flagNote}${contNote}
     <div class="note"><span style="color:var(--gold)">+${ink} ink</span></div>
   </div>`;
 }
@@ -8166,13 +8381,19 @@ function atTri(g,cx,cy,size,col){
 }
 // Layer toggles + the day's capital-letter signpost (§2.3: tell the player THAT it exists, never where).
 function atRenderChrome(){
-  const total=atSpellableCount(), done=atSolvedCount();
-  document.getElementById("at-count").textContent=`· ${done}/${total} names inked`;
+  const cs=atContinent?atContStats(atContinent):null;
+  document.getElementById("at-count").textContent = cs
+    ? `· ${cs.done}/${cs.total} ${atContinent} names inked`
+    : `· ${atSolvedCount()}/${atSpellableCount()} names inked`;
   const row=document.getElementById("at-layers");
   const defs=[["political","Countries"],["marine","Seas"],["lakes","Lakes"],["peaks","Peaks"]];
   const abroad=(state.started && !dailyCapitalCaught()) ? dailyCapital() : null;
-  row.innerHTML=defs.map(([k,label])=>`<button class="${atLayerOn[k]?"on":""}" data-atlayer="${k}">${esc(label)}</button>`).join("")+
-    (abroad?`<span class="at-abroad">a capital <b>${abroad}</b> is abroad today</span>`:"");
+  // A framed continent shows its milestone rungs here instead of the day's capital-letter signpost.
+  const tail = cs && cs.total
+    ? `<span class="at-prog">milestones${AT_CONT_TIERS.map(t=>
+         `<b class="${atContClaimed(atContinent,t)?"":"off"}">${t.key}%</b>`).join("")}</span>`
+    : (abroad?`<span class="at-abroad">a capital <b>${abroad}</b> is abroad today</span>`:"");
+  row.innerHTML=defs.map(([k,label])=>`<button class="${atLayerOn[k]?"on":""}" data-atlayer="${k}">${esc(label)}</button>`).join("")+tail;
   row.querySelectorAll("[data-atlayer]").forEach(b=>{ b.onclick=()=> atToggleLayer(b.dataset.atlayer); });
 }
 const AT_KINDS={ country:"country", dependency:"territory", ocean:"ocean", sea:"sea", gulf:"gulf", bay:"bay",
@@ -8190,6 +8411,22 @@ function atNameLine(name, solved){
 }
 function atRenderCard(){
   const el=document.getElementById("at-card");
+  // A framed continent with nothing selected shows its milestone ladder — the shape of the long tail (§6.3).
+  if(!atSel && atContinent){
+    const st=atContStats(atContinent);
+    const pct=st.total?Math.round(st.done/st.total*100):0;
+    el.innerHTML=`<div><span class="at-kind">${esc(atContinent)}</span> <span class="at-where">· `+
+      `${st.done}/${st.total} names inked · ${pct}%</span></div>`+
+      `<div class="at-bar"><i style="width:${pct}%"></i></div>`+
+      `<div class="at-tiers">`+AT_CONT_TIERS.map(t=>{
+        const need=atContNeed(t,st.total), had=atContClaimed(atContinent,t);
+        return `<span class="at-tier${had?" done":""}">${had?"✓":"○"} ${t.key}% · ${need} names · `+
+               `+${t.ink} ink${t.decor?" · "+esc(DECOR[t.decor].name):""}</span>`;
+      }).join("")+`</div>`+
+      `<div class="at-hint" style="margin-top:6px">Countries and their capital cities on this continent. `+
+      `Rewards are paid the moment a name carries you over a rung — click a place to study it.</div>`;
+    return;
+  }
   if(!atSel){
     el.innerHTML='<div class="at-hint">Click anywhere on the board to study a place. A place gives up its name '+
       'when <b>you</b> can spell it at the Wordsmithy, and every name starts with a <b>capital letter</b>. '+
@@ -8716,8 +8953,8 @@ function renderMaterials(){
 // Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
-  return { v:10, day:state.day, inv:state.inv, caps:state.caps, dex:state.dex,
-           atlas:state.atlas, atlasFlags:state.atlasFlags,
+  return { v:11, day:state.day, inv:state.inv, caps:state.caps, dex:state.dex,
+           atlas:state.atlas, atlasFlags:state.atlasFlags, atlasContinents:state.atlasContinents,
            decorOwned:state.decorOwned, placed:state.placed, bundles:state.bundles,
            bagCap:state.bagCap, captured:[...state.captured], fishedSpots:[...state.fishedSpots], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
@@ -8740,6 +8977,7 @@ function applySnapshot(d){
   // …and so does the Atlas: places inked and flags earned are permanent progress, like the collection.
   if(d.atlas && typeof d.atlas==="object") state.atlas=d.atlas;
   if(d.atlasFlags && typeof d.atlasFlags==="object") state.atlasFlags=d.atlasFlags;
+  if(d.atlasContinents && typeof d.atlasContinents==="object") state.atlasContinents=d.atlasContinents;   // paid continent milestones
   // Ink + potions persist across days (earned progress, like the collection).
   if(typeof d.ink==="number") state.ink=d.ink;
   if(d.potions) for(const t of POTION_ALL) if(typeof d.potions[t]==="number") state.potions[t]=d.potions[t];
@@ -8908,6 +9146,9 @@ document.getElementById("clear-btn").onclick=()=>{ closeRespell(); bench=[]; ren
 document.getElementById("shop-bag-buy").onclick=buyBagUpgrade;
 document.getElementById("shop-fable-buy").onclick=buyFable;
 document.getElementById("shop-seed-buy").onclick=buySeeds;
+document.getElementById("shop-pole-buy").onclick=buyFlagpole;
+document.getElementById("fp-close").onclick=closeFlagPicker;
+document.getElementById("fp-done").onclick=closeFlagPicker;
 document.getElementById("shop-seed-letter").onchange=e=>{ _shopSeed=e.target.value; updateShopSeeds(); };
 document.getElementById("shop-seed-qty").oninput=updateShopSeeds;
 document.getElementById("shop-close").onclick=()=>{ closeShop(); SFX.play("click"); };
@@ -8943,6 +9184,7 @@ document.getElementById("hb-close").onclick=()=>{ closeHerald(); SFX.play("click
 document.getElementById("herald").onclick=e=>{ if(e.target.id==="herald") closeHerald(); };  // tap backdrop to close
 document.getElementById("at-close").onclick=()=>{ closeAtlas(); SFX.play("click"); };
 document.getElementById("atlas").onclick=e=>{ if(e.target.id==="atlas") closeAtlas(); };     // tap backdrop to close
+document.getElementById("flagpick").onclick=e=>{ if(e.target.id==="flagpick") closeFlagPicker(); };
 (()=>{                                                                                      // the board: hover + click
   const cvs=document.getElementById("at-map"); if(!cvs) return;
   cvs.addEventListener("mousemove",e=>{ if(!state.atlasOpen) return;
@@ -8979,6 +9221,7 @@ function closeAnyDialog(){
   if(state.fishing) closeFishing();
   if(state.phoniconOpen) closePhonicon();
   if(state.atlasOpen) closeAtlas();
+  if(state.flagpickOpen) closeFlagPicker();
   if(state.heraldOpen) closeHerald();
   if(state.shelfview) closeShelfView();
   if(state.curation) closeCuration();
@@ -9065,7 +9308,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.shelfview && !state.curation;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -9099,6 +9342,8 @@ function syncTouchUI(){
     if(dc) dc.style.display = inLib ? "" : "none";
     const fc=document.getElementById("tc-fish");    // Cast: field only, when facing a pond tile
     if(fc) fc.style.display = (!inLib && nearFishSpot()) ? "" : "none";
+    const fl=document.getElementById("tc-flag");    // Raise a flag: only when facing a placed flagpole
+    if(fl) fl.style.display = (inLib && poleInFront()>=0) ? "" : "none";
   }
 }
 if(IS_TOUCH){
@@ -9138,6 +9383,7 @@ if(IS_TOUCH){
   tap("tc-curate",()=> tbSwitch("curation", openCuration, nearLibraryCurator));                     // library: curator → subgoals
   tap("tc-atlas",()=> tbSwitch("atlasOpen", openAtlas, nearLibraryGlobe));                          // library: globe → the Atlas
   tap("tc-decor",()=> togglePlaceMode());                                                            // library: décor tray
+  tap("tc-flag",()=>{ const i=poleInFront(); if(i>=0) openFlagPicker(i); });                        // library: a faced flagpole → its flag picker
   tap("tc-dex",()=> tbSwitch("bestiaryOpen", openBestiary));
   tap("tc-phonicon",()=> tbSwitch("phoniconOpen", openPhonicon));
   tap("tc-stats",()=> tbSwitch("statsOpen", openStats));
@@ -9475,7 +9721,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen || state.pigpensOpen || state.fishing || state.phoniconOpen || state.atlasOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen || state.pigpensOpen || state.fishing || state.phoniconOpen || state.atlasOpen || state.flagpickOpen); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)
