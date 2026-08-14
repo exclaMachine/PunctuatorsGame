@@ -81,6 +81,7 @@
   .status.ok{ color:var(--good) } .status.no{ color:#8a7c5c } .status.err{ color:var(--bad) }
   .status b{ color:var(--ink) } .status .w{ margin-right:10px; white-space:nowrap }
   .status .w.bad{ color:var(--bad) } .status .w.good{ color:var(--good) }
+  .status .wp{ color:var(--gold) }        /* palindrome / semordnilap preview on a run */
 
   /* ---- rack ---- */
   .rack{ min-height:60px; background:#dcd0b3; border:3px solid var(--edge);
@@ -117,6 +118,9 @@
   .fw .p{ color:var(--blue); font-size:19px } .fw .w{ color:var(--ink); opacity:.85 }
   .fw .pts{ font-family:var(--disp); font-size:10px; color:var(--gold) }
   .fw.turn{ border-color:var(--gold) }
+  .fw .w .tag{ color:var(--gold); margin-right:4px }
+  .fw.bonus{ background:transparent; border-style:dashed; border-color:var(--gold) }
+  .fw.bonus .p{ font-family:var(--disp); font-size:9px; color:var(--gold) }
   .empty-note{ font-size:17px; color:#9a8f74 }
   .msg{ font-family:var(--disp); font-size:9px; color:var(--moss); min-height:14px; margin-top:6px }
   .msg.err{ color:var(--bad) }
@@ -138,6 +142,7 @@
         <span>SCORE <span class="sc" id="score">0</span></span>
         <span>BAG <span class="v" id="bag">0</span></span>
         <span>WORDS <span class="v" id="wcount">0</span></span>
+        <span>↔ WORDPLAY <span class="v" id="wpcount">0</span></span>
       </div>
       <div class="boardscroll"><div class="board" id="board"></div></div>
       <div class="status no" id="status"></div>
@@ -179,6 +184,12 @@ const N = 15, CENTER = 7;
 const RACK_SIZE = 7;
 const BAG_TARGET = 100;
 const BINGO_BONUS = 50;
+/* sound-wordplay bonuses (see docs/ipa-scrabble.md). Palindromes scale with length because the long ones
+   are vanishingly rare (86 in the lexicon: 79 at 3 phonemes, 6 at 5, only "canonic" at 7); semordnilaps
+   stay a small flat nod because they're ~10x more common (824 run-directions). */
+const PALINDROME_PER_PHONEME = 10;
+const SEMORDNILAP_BONUS = 10;
+const WORDPLAY_MIN = 3;           // phonemes; below this the mirrors are trivial (see wordplayFor)
 const VOWELS = new Set("i ɪ ɛ æ ə ʌ ɑ ɔ ʊ u ɝ eɪ aɪ ɔɪ oʊ aʊ".split(" "));
 function valueForPct(p){
   if(p>=4) return 1; if(p>=2) return 2; if(p>=1.2) return 3;
@@ -284,6 +295,13 @@ const SFX = (()=>{
       const notes=[523,659,784,1047,1319], k=Math.max(3,Math.min(5, 2+Math.floor(pts/12)));
       seq(notes.slice(0,k).map((f,i)=>({f,d:i===k-1?0.18:0.07,vol:0.42})));
     },
+    palindrome(){                                        // the sound IS the concept: up, then the same notes back down
+      const up=[523,659,784,1047,1319], notes=up.concat(up.slice(0,4).reverse());
+      seq(notes.map((f,i)=>({f,d:i===notes.length-1?0.22:0.07,type:'triangle',vol:0.42})));
+    },
+    semordnilap(){                                       // a rising pair answered by the same pair falling
+      seq([{f:659,d:0.08},{f:988,d:0.13},{f:988,d:0.08},{f:659,d:0.18}].map(x=>({...x,type:'triangle',vol:0.4})));
+    },
   };
 })();
 
@@ -386,6 +404,21 @@ function runAt(r,c,dr,dc){          // maximal contiguous filled run through (r,
   while(cellTile(cr,cc)){ cells.push({ r:cr, c:cc, tile:cellTile(cr,cc), isNew:pending.has(cr+","+cc) }); cr+=dr; cc+=dc; }
   return cells;
 }
+/* Sound-wordplay bonus on a run that already validated as a real pronunciation.
+   Both tests run live against VALID, so no extra data file is loaded -- the prebuilt
+   data/ipa-palindromes.json + data/ipa-semordnilaps-*.json stay build-time artifacts.
+   The WORDPLAY_MIN floor drops the 10 one-phoneme words that are palindromes by accident
+   (/aɪ/, /u/) and the 72 cheap two-phoneme mirrors (/p ɑ/ pa <-> /ɑ p/ op) that would
+   otherwise pay out constantly on throwaway glue tiles.
+   -> null | {kind:'pal'|'sem', bonus, mirror?} */
+function wordplayFor(pron){
+  const toks=pron.split(" ");
+  if(toks.length<WORDPLAY_MIN) return null;
+  const rev=toks.slice().reverse().join(" ");
+  if(rev===pron) return { kind:'pal', bonus:toks.length*PALINDROME_PER_PHONEME };
+  if(VALID.has(rev)) return { kind:'sem', bonus:SEMORDNILAP_BONUS, mirror:PRON_WORDS.get(rev)||"?" };
+  return null;
+}
 function scoreCells(cells){
   let sum=0, wm=1;
   for(const cell of cells){
@@ -398,7 +431,7 @@ function scoreCells(cells){
 }
 
 /* Evaluate the current pending placement.
-   -> {ok, error, words:[{pron,word,valid,pts}], total, bingo} */
+   -> {ok, error, words:[{pron,word,valid,pts,wp}], total, bingo} */
 function evaluateTurn(){
   const placed=[...pending.entries()].map(([k,tile])=>{ const[r,c]=k.split(",").map(Number); return {r,c,tile}; });
   if(!placed.length) return { ok:false, error:"", words:[], total:0, bingo:false };
@@ -445,8 +478,10 @@ function evaluateTurn(){
     const pron=cells.map(c=>c.tile.tok).join(" ");
     const valid=VALID.has(pron);
     const pts=valid?scoreCells(cells):0;
-    if(valid) total+=pts; else allValid=false;
-    out.push({ pron, word:PRON_WORDS.get(pron)||"?", valid, pts });
+    // wordplay bonus is a flat add, like BINGO -- a premium square multiplies the word, never the bonus
+    const wp=valid?wordplayFor(pron):null;
+    if(valid) total+=pts+(wp?wp.bonus:0); else allValid=false;
+    out.push({ pron, word:PRON_WORDS.get(pron)||"?", valid, pts, wp });
   }
   const bingo = allValid && placed.length===RACK_SIZE;
   if(bingo) total+=BINGO_BONUS;
@@ -521,15 +556,34 @@ function play(){
   const ev=evaluateTurn();
   if(!ev.ok){ SFX.error(); msg(ev.error||"Not a legal play.", true); return; }
   SFX.play(ev.total, ev.bingo);
+  const wps=ev.words.filter(w=>w.wp);          // palindromes / semordnilaps formed this turn
+  if(wps.length) setTimeout(()=>{              // after the word arpeggio, not instead of it
+    if(wps.some(w=>w.wp.kind==='pal')) SFX.palindrome(); else SFX.semordnilap();
+  }, ev.bingo?900:520);
   for(const [k,t] of pending){ const [r,c]=k.split(",").map(Number); board[r][c]={tok:t.tok,val:t.val,vowel:t.vowel}; boardCount++; }
   score += ev.total;
   const stamp = Date.now();
-  ev.words.forEach(w=> found.unshift({ ...w, pts:w.pts, turn:stamp }));
+  ev.words.forEach(w=>{
+    found.unshift({ ...w, pts:w.pts, turn:stamp });
+    if(w.wp) found.unshift({ ...bonusLine(w), valid:true, turn:stamp, bonus:true });   // its own line, as BINGO gets
+  });
   if(ev.bingo) found.unshift({ pron:"— all 7 tiles —", word:"BINGO", pts:BINGO_BONUS, valid:true, turn:stamp });
   pending.clear(); held=null; cursor=null; lastCell=null; placedStack=[]; drawToFull();
-  msg("Played for +"+ev.total+(ev.bingo?"  (BINGO!)":"")+" pts.");
+  msg(wps.map(wordplayBanner).concat("Played for +"+ev.total+(ev.bingo?"  (BINGO!)":"")+" pts.").join("   "));
   renderAll();
   if(!bag.length && !rack.length){ msg("Bag & rack empty — game over. Final score "+score+"."); setTimeout(()=>SFX.gameover(), 700); }
+}
+
+/* Name the wordplay in plain language -- half the reward is learning the word. */
+function wordplayBanner(w){
+  return w.wp.kind==='pal'
+    ? "↔ PALINDROME! "+w.word+" sounds the same backwards — +"+w.wp.bonus
+    : "⇄ SEMORDNILAP! "+w.word+" backwards is "+w.wp.mirror+" — +"+w.wp.bonus;
+}
+function bonusLine(w){
+  return w.wp.kind==='pal'
+    ? { pron:"↔ palindrome", word:w.word, pts:w.wp.bonus }
+    : { pron:"⇄ semordnilap", word:w.word+" ⇄ "+w.wp.mirror, pts:w.wp.bonus };
 }
 
 function trade(){ recall(); bag.push(...rack.map(t=>t.tok)); rack=[]; shuffle(bag); drawToFull(); SFX.trade(); msg("Traded your rack for fresh tiles."); renderAll(); }
@@ -609,7 +663,8 @@ function renderStatus(){
   $('recall').disabled=false;
   if(ev.words.length){
     s.innerHTML = ev.words.map(w=>'<span class="w '+(w.valid?'good':'bad')+'"><span class="ipa">/'+esc(w.pron)+'/</span> '+
-      (w.valid?('<b>'+esc(w.word)+'</b> +'+w.pts):'✗')+'</span>').join('') +
+      (w.valid?('<b>'+esc(w.word)+'</b> +'+w.pts+(w.wp?'<span class="wp"> '+                 // preview the bonus before you commit
+        (w.wp.kind==='pal'?'↔ palindrome':'⇄ '+esc(w.wp.mirror))+' +'+w.wp.bonus+'</span>':'')):'✗')+'</span>').join('') +
       (ev.ok?('<b>= '+ev.total+' pts'+(ev.bingo?' · BINGO +50':'')+'</b>'):'');
     s.className='status '+(ev.ok?'ok':'err');
   } else { s.textContent=ev.error||''; s.className='status err'; }
@@ -620,14 +675,17 @@ function renderFound(){
   if(!found.length){ f.innerHTML='<span class="empty-note">No words laid yet.</span>'; return; }
   let lastTurn=null;
   for(const e of found){
-    const d=document.createElement('div'); d.className='fw'+(e.turn!==lastTurn?' turn':''); lastTurn=e.turn;
-    d.innerHTML='<span class="p ipa">/'+esc(e.pron)+'/</span><span class="w">'+esc(e.word)+'</span><span class="pts">+'+e.pts+'</span>';
+    const d=document.createElement('div'); d.className='fw'+(e.turn!==lastTurn?' turn':'')+(e.bonus?' bonus':''); lastTurn=e.turn;
+    const tag = e.wp ? '<span class="tag">'+(e.wp.kind==='pal'?'↔':'⇄')+'</span>' : '';
+    d.innerHTML='<span class="p'+(e.bonus?'':' ipa')+'">'+(e.bonus?esc(e.pron):'/'+esc(e.pron)+'/')+'</span>'+
+      '<span class="w">'+tag+esc(e.word)+'</span><span class="pts">+'+e.pts+'</span>';
     f.appendChild(d);
   }
 }
 function renderStats(){
   $('score').textContent=score; $('bag').textContent=bag.length;
-  $('wcount').textContent=found.filter(e=>e.word!=='BINGO').length;
+  $('wcount').textContent=found.filter(e=>!e.bonus && e.word!=='BINGO').length;
+  $('wpcount').textContent=found.filter(e=>e.bonus).length;
   $('hint').disabled=!rack.length; $('trade').disabled=!(rack.length||pending.size);
 }
 function renderAll(){ renderBoard(); renderRack(); renderStatus(); renderFound(); renderStats(); }

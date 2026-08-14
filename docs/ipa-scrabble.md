@@ -6,7 +6,8 @@ a play is valid when the phoneme sequence you lay matches **some real word's pro
 
 **Status:** **BUILT 2026-08-08** — standalone `ipa-scrabble.html`, launched from Inklings' DEV badge.
 Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 15×15 board game** with
-**play-off-others** (below). Not yet integrated into `inklings.html` proper.
+**play-off-others** (below), and on **2026-08-14** gained **sound-wordplay bonuses** (phonetic palindromes &
+semordnilaps). Not yet integrated into `inklings.html` proper.
 
 ## Design decisions (settled with the dev)
 - **Spell by sound.** Validity = the laid phoneme string is a real word's IPA (not a spelling). Homophones
@@ -74,11 +75,12 @@ Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 1
   filtered-noise swoosh: **select/deselect** tile, **place** (pitch rises as the turn's tiles stack, via
   `SFX.place(pending.size)`), **pick-up/recall**, keyboard **cursor move** (very quiet), **error** (illegal
   placement / illegal play / dead hint), a **valid-word arpeggio** (longer/brighter with points; a big
-  **BINGO** fanfare), **shuffle/trade** swooshes, a **hint** sparkle, a **new-game** jingle, and a
+  **BINGO** fanfare), the **palindrome/semordnilap** cues (below), **shuffle/trade** swooshes, a **hint**
+  sparkle, a **new-game** jingle, and a
   **game-over** cadence. A **🔊 Sound / 🔇 Muted** button toggles all of it, persisted in
   `localStorage["ipascrabble.muted"]`.
 
-## Wordplay bonuses — phonetic palindromes & semordnilaps (PLANNED 2026-08-14, not built)
+## Wordplay bonuses — phonetic palindromes & semordnilaps (BUILT 2026-08-14)
 
 The point of a spell-by-sound game is that sound-wordplay becomes *mechanically* real: `/b ɪ b/` reads the
 same backwards as phonemes even where spelling wouldn't tell you, and `stop` ⇄ `pots` only mirror in IPA.
@@ -108,6 +110,9 @@ Yield over the game's 48,365 pronunciations (measured, not estimated):
   `u`…) and 72 cheap 2-phoneme mirrors (`pa`⇄`op`, `ti`⇄`eat`, `lo`⇄`ole`) that would otherwise pay out
   constantly on throwaway glue tiles.
 
+Implemented as **`wordplayFor(pron)`** → `null | {kind:'pal'|'sem', bonus, mirror?}`, called from
+`evaluateTurn`'s scoring loop; the constants are `PALINDROME_PER_PHONEME`, `SEMORDNILAP_BONUS`, `WORDPLAY_MIN`.
+
 ### Scoring (dev-chosen)
 - **Palindrome: +10 per phoneme** — `+30` for the common 3s, `+50` for `states`, `+70` for `canonic`.
   Length-scaled so the rare long ones are the prize; the top end sits just above BINGO territory.
@@ -118,16 +123,19 @@ Yield over the game's 48,365 pronunciations (measured, not estimated):
   one turn each pay, and either stacks with BINGO.
 
 ### Presentation (all three, dev-chosen)
-- **Live status preview** (`renderStatus`) — the per-run chip gains its tag *before* you commit, so you can
+- **Live status preview** (`renderStatus`) — the per-run chip gains a gold tag *before* you commit, so you can
   see the bonus coming and choose to chase it: `/b ɪ b/ bib +6 ↔ palindrome +30`, `/s t ɑ p/ stop +7 ⇄ pots +10`.
   The `= N pts` total already includes them.
-- **Banner + special SFX on play** — `msg()` names the wordplay in plain language, because half the value here
-  is teaching the word: `↔ PALINDROME! bib sounds the same backwards — +30` /
-  `⇄ SEMORDNILAP! stop backwards is pots — +10`. New `SFX.palindrome()` is a **mirrored arpeggio** (run up,
-  then the identical notes back down — the sound *is* the concept); `SFX.semordnilap()` is a short two-note
-  swap (a rising pair answered by the same pair falling). Both play after `SFX.play(...)`, not instead of it.
-- **Found-words list** — palindromic/semordnilap entries carry `↔`/`⇄` in `renderFound`, the bonus is its own
-  entry line (as BINGO already is), and the header gains a **↔ count** next to the word count.
+- **Banner + special SFX on play** — `wordplayBanner()` names the wordplay in plain language through `msg()`,
+  because half the value here is teaching the word: `↔ PALINDROME! bib sounds the same backwards — +30` /
+  `⇄ SEMORDNILAP! stop backwards is pots — +10` (then the usual `Played for +N pts.`). `SFX.palindrome()` is a
+  **mirrored arpeggio** (run up, then the identical notes back down — the sound *is* the concept);
+  `SFX.semordnilap()` is a two-note swap (a rising pair answered by the same pair falling). Both fire on a
+  short timer *after* `SFX.play(...)` so they don't collide with the word arpeggio (longer wait after a BINGO);
+  a turn showing both kinds plays the palindrome cue.
+- **Found-words list** — word entries carry a gold `↔`/`⇄` tag, the bonus gets its own dashed line beneath
+  (`bonusLine()`, as BINGO already does), and the statbar gains an **↔ WORDPLAY** counter beside WORDS
+  (`wpcount`; bonus lines are excluded from the word count).
 
 ### Open/deferred inside this feature
 - **Mirror-on-the-board combo** (playing `stop` while `pots` is already committed somewhere) — considered and
