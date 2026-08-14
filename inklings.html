@@ -449,6 +449,9 @@
   .at-layers button{font-family:var(--disp);font-size:7px;padding:4px 6px;border:2px solid var(--edge);
     background:var(--paper-2);color:var(--ink);cursor:pointer}
   .at-layers button.on{background:var(--gold);color:#2a2540}
+  /* ◀ ▶ step between places (the twin of the [ ] keys) — set apart from the layer toggles they're scoped by */
+  .at-layers .at-nav{font-size:9px;padding:3px 7px}
+  .at-layers .at-nav[data-atnav="-1"]{margin-left:9px}
   .at-abroad{font-family:var(--read);font-size:13px;color:var(--ink-soft);margin-left:auto;white-space:nowrap}
   .at-abroad b{font-family:var(--disp);font-size:9px;color:var(--gold)}
   .at-card{flex:1;min-height:64px;overflow-y:auto;border:2px solid var(--line);background:var(--paper-2);
@@ -1597,6 +1600,7 @@
           <span><b>P</b></span><span>Open the Apothecary — your potion flasks &amp; how they grow (or tap ⚗️)</span>
           <span><b>Shift</b></span><span>Slide — a quick forward lunge (once unlocked; tap SLIDE)</span>
           <span><b>1</b> / <b>2</b> / <b>3</b></span><span>Drink a Size / Speed / Reveal potion (or tap its HUD button)</span>
+          <span><b>↑ ↓ ← →</b> / <b>[</b> <b>]</b> / <b>1</b>–<b>7</b></span><span>On the <b>Atlas</b> board only: arrows (or WASD) step to the neighbouring country, sea, lake or peak; <b>[</b>/<b>]</b> sweep one layer west to east (or tap <b>◀ ▶</b>); <b>1</b>–<b>7</b> frame the World and the six continents</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
           <span><b>Esc</b></span><span>Close any panel</span>
         </div>
@@ -1625,7 +1629,9 @@
           start with a capital letter (<b>⇧</b> on the tray) and finish from your satchel. Case is the whole trick —
           <i>turkey</i> is a bird, <b>Turkey</b> is a country. Spell a country <i>and</i> its capital city and the
           region lights up and you earn that country's <b>flag</b>. Place names live in the Atlas, not your word
-          collection.</p>
+          collection. You can travel the board without the mouse: the <b>arrow keys</b> step to the neighbouring
+          place the way a map reads, <b>[</b> and <b>]</b> (or the <b>◀ ▶</b> buttons) sweep one layer west to
+          east, and <b>1</b>–<b>7</b> frame the World and each continent.</p>
           <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground — walk over it to collect (the <b>Magnet</b> feat later makes drops drift to you) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
           <p><b>Feats (<b>C</b>).</b> Collecting <b>verbs</b> levels you up along word-count milestones per category (1, then every few — bigger categories space rewards out further). Rewards interleave passive boosts and abilities: <b>Motion</b> → move speed + <b>Slide</b>; <b>Competition</b> → attack + <b>Finisher</b>/<b>Combo</b>; <b>Perception</b> → <b>Divine</b> (a daily letter peek in the library) + <b>Treasure Sense</b> (drops glint); <b>Possession</b> → satchel space + <b>Magnet</b>; <b>Body</b> → max hearts + <b>Second Wind</b> (recover a heart when you stay out of combat). More verb categories arrive later.</p>
         </div>
@@ -3396,8 +3402,14 @@ addEventListener("keydown",e=>{
     return;
   }
   if(state.atlasOpen){   // Atlas board: Esc backs a framed continent out to the world, then closes; Tab/E close
+    // Movement is gated while the board is up, so WASD/arrows are free to travel the MAP instead: arrows step
+    // to the neighbouring place, [ ] sweep a layer, 1–7 frame World + the six continents (docs §4).
     if(k==="escape"){ e.preventDefault(); if(atContinent){ atSetContinent(null); } else closeAtlas(); }
     else if(k==="tab"||k==="e"){ e.preventDefault(); closeAtlas(); }
+    else if(AT_NAV_KEYS[k]){ e.preventDefault(); atNavStep(AT_NAV_KEYS[k]); }
+    else if(k==="["||k===","){ e.preventDefault(); atNavCycle(-1); }
+    else if(k==="]"||k==="."){ e.preventDefault(); atNavCycle(1); }
+    else if(k>="1"&&k<="7"){ e.preventDefault(); atSetContinent(k==="1"?null:AT_CONTINENTS[+k-2]); }
     return;
   }
   // Don't swallow W/A/S/D (or the other movement keys) while typing in an Excla Machine input — they're
@@ -7928,6 +7940,7 @@ function renderPhonicon(){
 let ATLAS=null, _atFailed=false, _atPromise=null;   // the parsed atlas-world.json (lazy: 135 KB, fetched once)
 let atCells=null;                   // {layer: rows[r][c] = placeId|null} — the RLE rows decoded once
 let atByPlace=null;                 // placeId -> [cellIndex...] (r*cols+c), for highlight + continent framing
+let atPeakAt=null;                  // cellIndex -> peak id, so the arrow-key march resolves a summit in O(1)
 let atContinent=null;               // framed continent name, or null for the whole world
 let atLayerOn={ political:true, marine:true, lakes:true, peaks:true };
 let atSel=null;                     // the clicked place id (its fact card is showing)
@@ -7958,7 +7971,7 @@ function loadAtlas(){
 // Decode every layer's run-length rows into a flat lookup + a per-place cell list (done once).
 function atDecode(){
   const cols=ATLAS.grid.cols, rows=ATLAS.grid.rows;
-  atCells={}; atByPlace={};
+  atCells={}; atByPlace={}; atPeakAt={}; atNavDrop();
   for(const key in ATLAS.layers){
     const L=ATLAS.layers[key]; if(!L.rows_rle) continue;              // peaks are points, no grid
     const grid=[];
@@ -7975,8 +7988,10 @@ function atDecode(){
     atCells[key]=grid;
   }
   for(const id in ATLAS.places){                                       // peaks: one cell each
-    const p=ATLAS.places[id];
-    if(p.cell && !atByPlace[id]) atByPlace[id]=[p.cell[1]*cols+p.cell[0]];
+    const p=ATLAS.places[id]; if(!p.cell) continue;
+    const ci=p.cell[1]*cols+p.cell[0];
+    if(!atByPlace[id]) atByPlace[id]=[ci];
+    if(p.layer==="peaks") atPeakAt[ci]=id;
   }
 }
 // Progress is counted in NAMES, not in place-slots: the build's `index` is keyed by name, so its 475 keys
@@ -8231,11 +8246,11 @@ function atFrame(){
   put({ x, y, w:Math.min(cols-x, x1-x0+1+pad*2), h:Math.min(rows-y, y1-y0+1+pad*2) });
 }
 function atSetContinent(name){
-  atContinent=name; atSel=null;
+  atContinent=name; atSel=null; atNavDrop();      // the frame decides what the keyboard can reach
   document.querySelectorAll("#at-tabs .hb-tab").forEach(el=>el.classList.toggle("active", (el.dataset.atcont||"")===(name||"")));
   renderAtlas(); SFX.play("click");
 }
-function atToggleLayer(key){ atLayerOn[key]=!atLayerOn[key]; if(atSel && !atLayerOn[(ATLAS.places[atSel]||{}).layer]) atSel=null; renderAtlas(); SFX.play("click"); }
+function atToggleLayer(key){ atLayerOn[key]=!atLayerOn[key]; atNavDrop(); if(atSel && !atLayerOn[(ATLAS.places[atSel]||{}).layer]) atSel=null; renderAtlas(); SFX.play("click"); }
 function openAtlas(){
   if(state.atlasOpen) return;
   loadAtlas();
@@ -8393,8 +8408,12 @@ function atRenderChrome(){
     ? `<span class="at-prog">milestones${AT_CONT_TIERS.map(t=>
          `<b class="${atContClaimed(atContinent,t)?"":"off"}">${t.key}%</b>`).join("")}</span>`
     : (abroad?`<span class="at-abroad">a capital <b>${abroad}</b> is abroad today</span>`:"");
-  row.innerHTML=defs.map(([k,label])=>`<button class="${atLayerOn[k]?"on":""}" data-atlayer="${k}">${esc(label)}</button>`).join("")+tail;
+  // …and the two nav buttons, which sweep whichever layer you're in — the touch/mouse twin of [ and ].
+  const nav=`<button class="at-nav" data-atnav="-1" aria-label="Previous place" title="Previous place, west to east — [">◀</button>`+
+            `<button class="at-nav" data-atnav="1" aria-label="Next place" title="Next place, west to east — ]">▶</button>`;
+  row.innerHTML=defs.map(([k,label])=>`<button class="${atLayerOn[k]?"on":""}" data-atlayer="${k}">${esc(label)}</button>`).join("")+nav+tail;
   row.querySelectorAll("[data-atlayer]").forEach(b=>{ b.onclick=()=> atToggleLayer(b.dataset.atlayer); });
+  row.querySelectorAll("[data-atnav]").forEach(b=>{ b.onclick=()=> atNavCycle(+b.dataset.atnav); });
 }
 const AT_KINDS={ country:"country", dependency:"territory", ocean:"ocean", sea:"sea", gulf:"gulf", bay:"bay",
   strait:"strait", channel:"channel", sound:"sound", river:"river", lake:"lake", mountain:"mountain", other:"place" };
@@ -8431,7 +8450,9 @@ function atRenderCard(){
     el.innerHTML='<div class="at-hint">Click anywhere on the board to study a place. A place gives up its name '+
       'when <b>you</b> can spell it at the Wordsmithy, and every name starts with a <b>capital letter</b>. '+
       'Spell a country <i>and</i> its capital city to light the region and earn its <b>flag</b>. '+
-      'Use the tabs to frame a continent.</div>';
+      'Use the tabs (or <b>1</b>–<b>7</b>) to frame a continent — and travel the board without the mouse: '+
+      'the <b>arrow keys</b> step to the neighbouring country or sea, <b>◀ ▶</b> (or <b>[</b> <b>]</b>) sweep '+
+      'one layer west to east.</div>';
     return;
   }
   const p=ATLAS.places[atSel], sp=p.spellable||{};
@@ -8484,6 +8505,118 @@ function atPick(cvs, ev){
     if(id) return id;
   }
   return null;
+}
+/* ---------- MOVING BETWEEN PLACES WITHOUT A MOUSE (docs/inklings-atlas.md §4.1) ----------
+   Arrows / WASD step to the nearest place in that compass direction by MARCHING the grid, so the board reads
+   the way a map does — ↓ from France lands on Spain, → from Peru on the Atlantic. [ and ] sweep one layer's
+   places west→east, which is how you enumerate every sea. Both honour the layer toggles and the framed
+   continent, so the keyboard reaches exactly what a click reaches and nothing more.
+   The sweep order is GEOGRAPHIC, never alphabetical: unspelled names are redacted, and an alphabetical sweep
+   would leak the first letter of every one of them — the board must never be readable as an answer key. */
+const AT_NAV_LAYERS=["political","marine","lakes","peaks"];
+const AT_DIRS={ n:[0,-1], s:[0,1], w:[-1,0], e:[1,0] };
+// WASD doubles for the arrows, as it does out in the world. `e` is NOT east here — it closes the board.
+const AT_NAV_KEYS={ arrowup:"n", w:"n", arrowdown:"s", s:"s", arrowleft:"w", a:"w", arrowright:"e", d:"e" };
+let _atNav=null;                    // memoized visible-place list; dropped when the frame or the layers change
+function atNavDrop(){ _atNav=null; }
+// Layer on, and — when a continent is framed — only that continent's own countries, matching the wash that
+// dims the rest. The physical layers stay reachable inside a frame: they're drawn there, and they answer to
+// their own toggle rather than to the continent.
+function atNavOk(id){
+  const p=ATLAS.places[id];
+  if(!p || !atLayerOn[p.layer]) return false;
+  return !(atContinent && p.layer==="political" && !atInFocus(id));
+}
+// Every reachable place, anchored on its own label cell — the middle of the country, so a step starts where
+// the place reads from. A frame can cut that cell off (the Atlantic's label sits outside a Europe window while
+// the ocean is plainly on screen), and then the anchor falls back to its visible cell nearest the frame's centre.
+function atNavList(){
+  if(_atNav) return _atNav;
+  atFrame();
+  const cols=ATLAS.grid.cols, kOf=c=>((c-atView.x)%cols+cols)%cols;
+  const cx=atView.w/2, cy=atView.y+atView.h/2, out=[];
+  for(const id in atByPlace){
+    if(!atNavOk(id)) continue;
+    const p=ATLAS.places[id], lab=p.labelCell||p.cell;
+    let bc=-1, br=-1, bd=1e9;
+    if(lab && atInView(lab[0],lab[1])){ bc=lab[0]; br=lab[1]; }
+    else for(const ci of atByPlace[id]){
+      const c=ci%cols, r=(ci-c)/cols;
+      if(!atInView(c,r)) continue;
+      const d=Math.hypot(kOf(c)-cx, r-cy);            // screen column, so the antimeridian doesn't skew it
+      if(d<bd){ bd=d; bc=c; br=r; }
+    }
+    if(bc>=0) out.push({ id, c:bc, r:br, layer:p.layer });
+  }
+  out.sort((a,b)=> kOf(a.c)-kOf(b.c) || a.r-b.r);     // west→east across the window
+  return (_atNav=out);
+}
+// What a marched cell resolves to, in the board's own topmost-first order (a peak sits on a country sits on
+// the sea) — the same priority atPick gives the mouse.
+function atNavAt(c,r){
+  const id=atPeakAt[r*ATLAS.grid.cols+c];
+  if(atLayerOn.peaks && id && atNavOk(id)) return id;
+  for(const key of ["lakes","political","marine"]){
+    if(!atLayerOn[key] || !atCells[key]) continue;
+    const q=atCells[key][r][c];
+    if(q && atNavOk(q)) return q;
+  }
+  return null;
+}
+function atSelect(id){
+  if(!id){ SFX.play("invalid"); return; }
+  atSel=id; atHover=id;
+  const cvs=document.getElementById("at-map");
+  if(cvs) atDrawMap(cvs,cvs.getContext("2d"));
+  atRenderCard(); SFX.play("click");
+}
+function atNavStep(dir){
+  if(!ATLAS) return;
+  const list=atNavList(), d=AT_DIRS[dir];
+  if(!list.length || !d) return;
+  const cur=atSel && list.find(o=>o.id===atSel);
+  if(!cur){                                            // nothing picked yet: start from the middle of the frame
+    const cols=ATLAS.grid.cols, kOf=c=>((c-atView.x)%cols+cols)%cols;
+    let best=null, bd=1e9;
+    for(const o of list){ const q=Math.hypot(kOf(o.c)-atView.w/2, o.r-(atView.y+atView.h/2));
+      if(q<bd){ bd=q; best=o.id; } }
+    atSelect(best); return;
+  }
+  const cols=ATLAS.grid.cols;
+  let c=cur.c, r=cur.r;
+  for(let i=0, n=Math.max(atView.w,atView.h); i<n; i++){
+    c=(c+d[0]+cols)%cols; r+=d[1];
+    if(!atInView(c,r)) break;                          // the frame is the edge of the world
+    const id=atNavAt(c,r);
+    if(id && id!==atSel){ atSelect(id); return; }
+  }
+  atSelect(atNavAim(cur,d));                           // the ray found nothing (a lone peak on a thin board)
+}
+// Fallback for a ray that hits nothing: the nearest place lying that way at all, with sideways drift weighted
+// so ↑ can't fling the selection halfway round the map.
+function atNavAim(cur,d){
+  const cols=ATLAS.grid.cols; let best=null, bd=1e9;
+  for(const o of atNavList()){
+    if(o.id===atSel) continue;
+    const dx=((o.c-cur.c+cols*1.5)%cols)-cols/2, dy=o.r-cur.r;   // shortest way round the antimeridian
+    const along=dx*d[0]+dy*d[1];
+    if(along<=0) continue;
+    const score=along+(Math.abs(dx*d[1])+Math.abs(dy*d[0]))*2;
+    if(score<bd){ bd=score; best=o.id; }
+  }
+  return best;
+}
+// [ / ] and the ◀ ▶ buttons sweep ONE layer — the one you're standing in, else the first that's switched on.
+function atNavCycle(step){
+  if(!ATLAS) return;
+  const list=atNavList(); if(!list.length) return;
+  const cur=atSel && ATLAS.places[atSel];
+  const layer=(cur && atLayerOn[cur.layer]) ? cur.layer : AT_NAV_LAYERS.find(k=>atLayerOn[k]);
+  const seq=list.filter(o=>o.layer===layer);
+  if(!seq.length){ SFX.play("invalid"); return; }
+  let i=seq.findIndex(o=>o.id===atSel);
+  i = i<0 ? (step>0?0:seq.length-1) : (i+step+seq.length)%seq.length;
+  atSelect(seq[i].id);
 }
 /* ---------- CELEBRATION QUEUE (staggered feat / letter dialogues) ---------- */
 // Milestone/letter dialogues are shown ONE AT A TIME so they never stack. commitSpell queues the Feats pop

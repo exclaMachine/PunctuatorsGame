@@ -2,8 +2,8 @@
 
 Planning doc. **Read this before touching capital letters, proper-noun validation, or the Atlas board.**
 
-Status: **M1–M5 are all BUILT — M1 (data), M2 (the daily capital letter), M3 (the board) and M4 (spelling) on
-2026-08-13; M5 (flags & continents) on 2026-08-14.** `build_geo.py` + `data/atlas-world.json` exist (§5);
+Status: **M1–M6 are all BUILT — M1 (data), M2 (the daily capital letter), M3 (the board) and M4 (spelling) on
+2026-08-13; M5 (flags & continents) and M6 (board navigation, §4.1) on 2026-08-14.** `build_geo.py` + `data/atlas-world.json` exist (§5);
 capital letters spawn daily and bank persistently; the Library globe opens a flat, layered world board (§4);
 **places are spelled at the desk** — a Capitalized bench inks a region or drops a capital pin, un-redacts that
 card, and pairing a country with its capital city earns its flag; and an earned flag now **flies from a
@@ -183,6 +183,8 @@ nightly and the other isn't.
 - **Interaction:** fit-to-view by default; hover highlights, click selects → the fact card; a continent tab
   row frames and dims off-continent land; four layer toggles (Countries · Seas · Lakes · Peaks). No pan/zoom
   rig beyond continent framing. Hit-testing goes topmost-first: peak → lake → country → sea.
+- **Travelling the board without a mouse (§4.1)** — arrows/WASD step to the neighbouring place, `[` `]` and a
+  **◀ ▶** button pair sweep one layer west→east, `1`–`7` frame the World and the six continents.
 - **Continent frames are authored in degrees (`AT_FRAMES`), not derived.** Deriving a bounding box from the
   countries in a continent fails twice over: Natural Earth files **Russia as Europe**, so "Europe" boxes the
   whole northern hemisphere at ×2 zoom; and **Oceania straddles the antimeridian** (Fiji +178, Tonga −175),
@@ -199,6 +201,41 @@ nightly and the other isn't.
 - **Progress is counted in names, not slots:** `Object.keys(index).length` = **475**, which already collapses
   the 4 remaining collisions (§6.1). Counting per-place slots reads 479 and disagrees with every other number
   here.
+
+### 4.1 Moving between places  ✅ BUILT 2026-08-14
+
+The board shipped mouse-only, which made it unusable by keyboard and awkward on a trackpad — and clicking is
+a poor way to *browse* 475 redacted places when you're hunting for something you can spell. Two motions,
+because they answer different questions:
+
+| Input | Motion |
+| --- | --- |
+| **↑ ↓ ← →** (or **WASD**) | step to the **nearest place in that compass direction** |
+| **`[` `]`** (or the **◀ ▶** buttons, or `,` `.`) | **sweep one layer west→east**, wrapping |
+| **`1`–`7`** | frame the World / Africa / Asia / Europe / North America / South America / Oceania |
+
+- **The arrows march the grid, they don't score a list.** From the selected place's anchor cell the step walks
+  one cell at a time in that direction and takes the first eligible place it crosses — so ↓ from France lands
+  on Spain and → from Peru on the Pacific, because that is literally what is next on the map. A list-scoring
+  version reads adjacency off label positions and gets it wrong exactly where geography is interesting
+  (long thin countries, big oceans). `atNavAim` is the fallback for a ray that finds nothing at all — a lone
+  peak with every other layer switched off — so an arrow key is never dead.
+- **The march wraps at the antimeridian** (← from Alaska reaches Russia) and **stops at the frame edge**: a
+  framed continent is the edge of the world.
+- **`atNavOk` is the whole eligibility rule** — layer toggled on, and inside a continent frame only that
+  continent's own countries (matching the wash that dims the rest). The physical layers stay reachable inside
+  a frame: they're drawn there and they answer to their own toggle, not to the continent. Nav therefore
+  reaches exactly what a click reaches and nothing more.
+- **The sweep order is geographic, never alphabetical.** Alphabetical is the obvious ordering and it is
+  disqualified: names are redacted, so stepping through them alphabetically would leak the first letter of
+  every unspelled place — the board must never be readable as an answer key (§4, §10 Q2). West→east also
+  pairs with the arrows instead of fighting them.
+- **`[` `]` stay within one layer** — the layer of the selected place, else the first one switched on — which
+  is what makes "show me every sea" possible. Crossing between layers is the arrows' job.
+- **Anchors are label cells** (`labelCell`/`cell`), falling back to the visible cell nearest the frame's centre
+  when a frame cuts the label off. `atNavList` memoizes the whole set and is dropped whenever the frame or the
+  layer toggles change.
+- `e` is **not** "east" here: it closes the board, as it does everywhere else in the game. `d` is east.
 
 **Why an overlay, not walkable terrain:** the walkable version needs the whole Phase 1–4 map-seam refactor
 in [`inklings-architecture.md`](inklings-architecture.md), and it fights the daily-rerolled overworld. The
@@ -590,6 +627,10 @@ Each phase is shippable and leaves the game working.
   (`AT_CONT_TIERS`/`atContStats`/`claimContinents` at 25/50/100%, auto-granted and idempotent) with
   `state.atlasContinents` at save **`v:11`**, the board's per-continent count + rung pips + ladder card, and
   the existing SFX palette (`unlock` on raising a flag, `unlockbig` on a milestone).
+- **M6 — Board navigation. ✅ BUILT 2026-08-14.** Keystrokes and buttons for moving between places without a
+  mouse: `atNavList`/`atNavOk`/`atNavAt`/`atNavStep`/`atNavAim`/`atNavCycle`/`atSelect`, `AT_NAV_KEYS`,
+  `AT_DIRS`, the `atPeakAt` cell→peak lookup, the **◀ ▶** pair in the layer row, and `1`–`7` on the continent
+  tabs. No data or save change. See §4.1.
 
 M2 deliberately precedes the board: it's small, it's the part you asked for, and banked capitals make the
 board's arrival feel earned rather than empty.
