@@ -555,9 +555,52 @@ def build(args):
         stats["spellable_peaks"] += bool(rec["spellable"]["name"])
     layers["peaks"] = {"label": "Mountains", "points": True}
 
+    # ---------- collision disambiguation (decided 2026-08-13, M4) ----------
+    # A physical feature whose SHORT name is already claimed by another place is promoted back to its FULL
+    # name: the gulf is "Gulf of Mexico", not "Mexico", so the country keeps the bare word and the two stop
+    # fighting over it.  The promoted name is multiword, so it goes deferred (drawn + redacted) until the
+    # desk grows a space tile — see docs/inklings-atlas.md §5.3a / §10 Q3.  Only names claimed by two
+    # DIFFERENT places are promoted: Djibouti/Luxembourg/Monaco/Singapore are one place that is its own
+    # capital city, which no fuller name can separate and which §5.3 already settles.
+    # Natural Earth's lakes carry no generic word at all (name_en is plain "Malawi"), so the generic half
+    # is synthesized from the feature's kind for exactly those.
+    GENERIC_FOR = {"lake": "Lake %s", "mountain": "Mount %s", "river": "%s River",
+                   "sea": "%s Sea", "gulf": "Gulf of %s", "bay": "%s Bay",
+                   "strait": "%s Strait", "channel": "%s Channel", "sound": "%s Sound"}
+    claimants = defaultdict(set)
+    for pid, rec in places.items():
+        for slot, ok in rec["spellable"].items():
+            if ok:
+                claimants[rec["capital"] if slot == "capital" else rec["name"]].add(pid)
+    promoted, unresolved = [], []
+    for word, pids in sorted(claimants.items()):
+        if len(pids) < 2:
+            continue
+        for pid in sorted(pids):
+            rec = places[pid]
+            if rec["layer"] == "political":
+                continue                                   # the country/capital keeps the bare word
+            full = rec.get("full") or rec["name"]
+            if full == rec["name"]:                        # no generic word in the source — synthesize one
+                pattern = GENERIC_FOR.get(rec["kind"])
+                if not pattern:
+                    unresolved.append((word, pid, rec["kind"]))
+                    continue
+                full = pattern % rec["name"]
+                if rec.get("full_accented"):
+                    rec["full_accented"] = pattern % rec["full_accented"]
+            was = rec["name"]
+            rec["name"] = rec["full"] = full
+            rec["spellable"]["name"] = is_single_word(full)
+            stats["spellable_" + rec["layer"]] -= 1
+            promoted.append((was, full, pid))
+    if unresolved:
+        print("  WARNING: %d colliding names could not be promoted to a full name (no generic word for "
+              "that kind): %s" % (len(unresolved), ", ".join("%s/%s(%s)" % u for u in unresolved)))
+
     # ---------- name index (one spelled word -> every place it claims) ----------
-    # M4's atlasLookup reads this.  Collisions are real and expected — Congo is a country and a river,
-    # Victoria is a lake and Seychelles' capital, Mexico is a country and a gulf — so the value is a LIST.
+    # M4's atlasLookup reads this.  After the pass above the only surviving collisions are the four places
+    # that ARE their own capital city, where one submission is meant to fill both slots (§5.3, §6.1).
     index = defaultdict(list)
     for pid, rec in places.items():
         for slot, ok in rec["spellable"].items():
@@ -602,7 +645,10 @@ def build(args):
         for a3, name, how in forced:
             print("    %-4s %-24s %s" % (a3, name, how))
         print("\n  capital pins snapped inside their country: " + ", ".join("%s(%s)" % (a, n) for a, n in snapped))
-        print("\n  colliding names (one word, several places — M4's atlasLookup must handle these):")
+        print("\n  features promoted to their FULL name to clear a collision (now multiword → deferred):")
+        for was, full, pid in sorted(promoted):
+            print("    %-18s -> %-24s %s" % (was, full, pid))
+        print("\n  colliding names that REMAIN (a place that is its own capital city — fills both):")
         for w, v in sorted(collisions.items()):
             print("    %-18s %s" % (w, ", ".join("%s:%s" % (pid, slot) for pid, slot in v)))
         print("\n  the Seven Summits:")

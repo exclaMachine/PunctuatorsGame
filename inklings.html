@@ -434,8 +434,8 @@
     .gd-cell{--plot:15px}
   }
 
-  /* ---- The Atlas (the library globe → world board). Read-only in M3: every place is still
-     redacted, so the board can't be read as an answer key. See docs/inklings-atlas.md §4. ---- */
+  /* ---- The Atlas (the library globe → world board). An unspelled place stays redacted, so the board
+     can never be read as an answer key; spelling one inks it. See docs/inklings-atlas.md §4. ---- */
   #atlas{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);align-items:center;
     justify-content:center;padding:18px;z-index:7}
   #atlas.open{display:flex}
@@ -1383,8 +1383,8 @@
     </div>
 
     <!-- The Atlas: the library globe opens a flat world board built from data/atlas-world.json (Natural
-         Earth, four layers). READ-ONLY in M3 — nothing is spelled yet, so every place is redacted to its
-         kind · continent · letter count. Spelling arrives in M4. See docs/inklings-atlas.md §4. -->
+         Earth, four layers). An unspelled place is redacted to its kind · continent · letter count; spell it
+         at the Wordsmithy and it inks itself in here. See docs/inklings-atlas.md §4. -->
     <div id="atlas">
       <div class="book">
         <button class="close-x" id="at-close" aria-label="Close the Atlas" title="Close">✕</button>
@@ -1575,7 +1575,11 @@
           starts with a <b>capital letter</b>. That's why a capital is <b>abroad in the world every day</b>: hunt it
           like any other letter-creature and it <b>banks</b> (capitals are kept overnight and never fill your satchel).
           Places on the board stay <b>redacted</b> — you get its kind, its continent and how many letters it has, but
-          the name is yours to remember. Spelling them in comes soon.</p>
+          the name is yours to remember. <b>Spell a place at the Wordsmithy</b> and it inks itself onto the board:
+          start with a capital letter (<b>⇧</b> on the tray) and finish from your satchel. Case is the whole trick —
+          <i>turkey</i> is a bird, <b>Turkey</b> is a country. Spell a country <i>and</i> its capital city and the
+          region lights up and you earn that country's <b>flag</b>. Place names live in the Atlas, not your word
+          collection.</p>
           <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground — walk over it to collect (the <b>Magnet</b> feat later makes drops drift to you) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
           <p><b>Feats (<b>C</b>).</b> Collecting <b>verbs</b> levels you up along word-count milestones per category (1, then every few — bigger categories space rewards out further). Rewards interleave passive boosts and abilities: <b>Motion</b> → move speed + <b>Slide</b>; <b>Competition</b> → attack + <b>Finisher</b>/<b>Combo</b>; <b>Perception</b> → <b>Divine</b> (a daily letter peek in the library) + <b>Treasure Sense</b> (drops glint); <b>Possession</b> → satchel space + <b>Magnet</b>; <b>Body</b> → max hearts + <b>Second Wind</b> (recover a heart when you stay out of combat). More verb categories arrive later.</p>
         </div>
@@ -2680,6 +2684,11 @@ const state = {
   decorOwned:{},                // earned-but-unplaced décor: id -> count (persist). docs/inklings-placement.md
   placed:[],                    // placed objects: [{id,kind,where,cx,cy}] — where="library"|"sx,sy" (persist)
   bundles:{},                   // claimed category-milestone ids ("cat:threshold" -> true), one-time (persist). docs/inklings-collections.md
+  atlas:{},                     // Atlas progress: placeId -> {c,k} = the day the COUNTRY / its CAPITAL CITY was
+                                // spelled (null = still unspelled). Proper nouns are their OWN namespace: a place
+                                // never enters state.dex, which paces the whole letter-unlock curve. (persist)
+  atlasFlags:{},                // ISO3 -> day-string the country+capital pair was completed = the flag earned.
+                                // M5's flagpole picker reads this as its authority. docs/inklings-atlas.md §6.2
   started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false, fishing:false, phoniconOpen:false, atlasOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
@@ -5252,7 +5261,9 @@ function buyFable(){
 /* ---------- BENCH / LIBRARY OVERLAY ----------------------- */
 let bench=[];   // letters currently on the bench line
 let benchShift=false;   // tray showing capital letters (only offered once capitals are unlocked)
-function openOverlay(){ state.overlay=true; document.getElementById("overlay").classList.add("open"); document.getElementById("sound-btn").style.display="none"; renderBench(); renderDex(); updateWotd(); SFX.play("click"); }
+// The desk is where places are spelled and where the homograph nudge is read, so the atlas fetch starts
+// here rather than waiting for the board to be opened — it's a local 135 KB file, once per session.
+function openOverlay(){ state.overlay=true; loadAtlas(); document.getElementById("overlay").classList.add("open"); document.getElementById("sound-btn").style.display="none"; renderBench(); renderDex(); updateWotd(); SFX.play("click"); }
 function openShop(){ state.shop=true; document.getElementById("shop").classList.add("open"); document.getElementById("sound-btn").style.display="none"; updateShop(); SFX.play("click"); }
 function closeShop(){ state.shop=false; document.getElementById("shop").classList.remove("open"); document.getElementById("sound-btn").style.display=""; }
 function closeOverlay(){ state.overlay=false; closeRespell(); document.getElementById("overlay").classList.remove("open"); document.getElementById("sound-btn").style.display=""; closeDefModal(); bench=[]; document.getElementById("result").innerHTML=""; }
@@ -5278,7 +5289,10 @@ function renderBench(){
       keys = `<span class="lchip shift${benchShift?" on":""}" data-shift="1" title="Capital letters">⇧</span>` + keys;
     return `<div class="kb-row">${keys}</div>`;
   }).join("");
-  trayEl.querySelectorAll("[data-l]").forEach(ch=>ch.onclick=()=>{ bench.push(ch.dataset.l); renderBench(); });
+  // ⇧ is momentary, like a real keyboard: placing a capital drops the tray back to lowercase. Every place
+  // name is exactly one capital letter + a lowercase tail, so this is the whole Atlas flow in one click.
+  trayEl.querySelectorAll("[data-l]").forEach(ch=>ch.onclick=()=>{
+    bench.push(ch.dataset.l); benchShift=false; renderBench(); });
   const sh=trayEl.querySelector("[data-shift]"); if(sh) sh.onclick=()=>{ benchShift=!benchShift; renderBench(); };
 
   const benchEl=document.getElementById("bench");
@@ -5613,9 +5627,27 @@ let pendingRespell=null;   // when a "spell it again?" prompt is showing, the ca
 async function checkWord(){
   if(checking) return;
   pendingRespell=null;     // a fresh check supersedes any pending re-spell prompt
-  const word=bench.join("").toLowerCase();
+  // Case carries the meaning here, so the bench is read RAW first and only then folded: `Turkey` is a
+  // country on the Atlas, `turkey` is the bird in WordNet. Everything downstream still works on `word`.
+  const raw=bench.join(""), word=raw.toLowerCase();
+  const proper=/^[A-Z][a-z]+$/.test(raw);          // one leading capital = the shape of a place name
   const res=document.getElementById("result");
   if(word.length<2){ res.innerHTML='<div class="msg-bad">Words need at least two letters.</div>'; SFX.play("invalid"); return; }
+
+  // The Atlas is its own dictionary AND its own namespace, checked BEFORE WordNet (docs/inklings-atlas.md
+  // §6.1). A place never lands in state.dex — place names must not accelerate the letter-unlock curve.
+  if(proper){
+    if(!ATLAS && !_atFailed){        // the board may never have been opened this session — fetch it now
+      checking=true;
+      const btn=document.getElementById("check-btn"); if(btn) btn.disabled=true;
+      res.innerHTML='<div class="msg-known">Unrolling the atlas…</div>';
+      await loadAtlas();
+      checking=false; if(btn) btn.disabled=false;
+      if(bench.join("")!==raw) return;   // bench changed while it loaded — abort
+    }
+    const claims=atlasLookup(raw);
+    if(claims){ spellPlace(raw, claims); return; }
+  }
   const known=!!state.dex[word];
   const wotdUnclaimed = (word===wordOfTheDay() && !wotdClaimed());   // today's bonus word, not yet claimed
 
@@ -5639,7 +5671,9 @@ async function checkWord(){
       if(!wotdUnclaimed){
         res.innerHTML = DICT_FAILED
           ? '<div class="msg-bad">The dictionary didn’t load — reload the page.</div>'
-          : `<div class="msg-bad">“${esc(word.toUpperCase())}” isn’t a word we know.</div>`;
+          // A capitalized miss failed the Atlas too (the branch above), so say so — otherwise "isn't a word"
+          // reads as a bug to someone who was deliberately trying to spell a place.
+          : `<div class="msg-bad">“${esc(word.toUpperCase())}” isn’t a word we know${proper?" — and no place on the Atlas goes by that name":""}.</div>`;
         SFX.play("invalid"); return;
       }
       pos=[]; def="A word in the dictionary.";
@@ -5768,8 +5802,24 @@ function showSpellResult(word, known, ink, brewed, wotdBonus, brewFull){
   res.innerHTML=`<div class="reveal">
     <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">${known?"Spelled again":"New word collected"}</div>
     <div class="word">${esc(word)}</div>
-    ${note}
+    ${note}${atlasNudge(word)}
   </div>`;
+}
+// The case discriminator is the whole lesson: turkey is a bird, Turkey is a country. When a word you just
+// spelled ALSO names a place, say so — the cheapest, best-placed grammar teaching in the game, and the thing
+// that tells a player the Atlas is spellable at all (docs/inklings-atlas.md §6.1). Silent until the atlas is
+// loaded (openOverlay starts that fetch) and once the place has been inked — a landed lesson shouldn't nag.
+function atlasNudge(word){
+  if(!ATLAS || !/^[a-z]+$/.test(word)) return "";
+  const cap=word[0].toUpperCase()+word.slice(1);
+  const claims=atlasLookup(cap); if(!claims) return "";
+  const open=claims.filter(([id,slot])=>!atlasSolved(id, slot==="capital"?"capital":"name"));
+  if(!open.length) return "";
+  const [id,slot]=open[0], p=ATLAS.places[id];
+  const kind = slot==="capital" ? "a capital city"
+             : p.kind==="country" ? "a country" : "a "+(AT_KINDS[p.kind]||p.kind);
+  return `<div class="note at-hint">…and with a capital ${cap[0]}, <b>${esc(cap)}</b> is ${kind}. `+
+         `Spell it that way and the Atlas will take it.</div>`;
 }
 // Word-of-the-Day banner in the desk overlay (reveals the target + bonus, or "claimed" once done).
 function updateWotd(){
@@ -7765,10 +7815,10 @@ function renderPhonicon(){
    lakes, mountain peaks) over a 240×96 raster of public-domain Natural Earth. Flat, not a rendered sphere,
    on purpose — the data IS an equirect raster, so a globe would re-project the same coarse cells while
    hiding half the world and making click hit-testing an inverse-projection problem.
-   M3 is READ-ONLY: nothing is spellable yet, so every place is REDACTED to kind · continent · letter count.
-   That is deliberate (§10 Q2) — a board that printed 475 names would turn open-ended recall into copy-typing.
-   Spelling (M4) fills regions and un-redacts their cards; the render already branches on atlasSolved(). */
-let ATLAS=null, _atLoading=false, _atFailed=false;   // the parsed atlas-world.json (lazy: 135 KB, first open only)
+   Unspelled places stay REDACTED — kind · continent · letter count, never the name (§10 Q2): a board that
+   printed 475 names would turn open-ended recall into copy-typing. M4 spelling (see spellPlace, and the
+   proper-noun branch in checkWord) inks a region, drops a capital pin and un-redacts that card in place. */
+let ATLAS=null, _atFailed=false, _atPromise=null;   // the parsed atlas-world.json (lazy: 135 KB, fetched once)
 let atCells=null;                   // {layer: rows[r][c] = placeId|null} — the RLE rows decoded once
 let atByPlace=null;                 // placeId -> [cellIndex...] (r*cols+c), for highlight + continent framing
 let atContinent=null;               // framed continent name, or null for the whole world
@@ -7777,15 +7827,22 @@ let atSel=null;                     // the clicked place id (its fact card is sh
 let atHover=null;
 let atView={ x:0, y:0, w:240, h:96, s:3 };   // cell-space window + px-per-cell, recomputed per render
 const AT_CONTINENTS=["Africa","Asia","Europe","North America","South America","Oceania"];
-function loadAtlas(cb){
-  if(ATLAS){ cb&&cb(); return; }
-  if(_atLoading) return;
-  _atLoading=true; _atFailed=false;   // a later open retries a failed fetch rather than staying broken
-  fetch("data/atlas-world.json").then(r=>r.ok?r.json():Promise.reject()).then(j=>{
-    ATLAS=j; _atLoading=false; atDecode();
+// Resolves once the atlas is in hand (or has failed) — checkWord awaits this before judging a capitalized
+// bench, since the player can try to spell a place without ever having opened the board.
+function loadAtlas(){
+  if(ATLAS) return Promise.resolve(ATLAS);
+  if(_atPromise) return _atPromise;
+  _atFailed=false;
+  _atPromise = fetch("data/atlas-world.json").then(r=>r.ok?r.json():Promise.reject()).then(j=>{
+    ATLAS=j; atDecode();
     if(state.atlasOpen) renderAtlas();            // arrived while the board was already open
-  }).catch(()=>{ _atLoading=false; _atFailed=true; if(state.atlasOpen) renderAtlas(); });
-  cb&&cb();
+    return j;
+  }).catch(()=>{
+    _atFailed=true; _atPromise=null;              // a later attempt retries rather than staying broken
+    if(state.atlasOpen) renderAtlas();
+    return null;
+  });
+  return _atPromise;
 }
 // Decode every layer's run-length rows into a flat lookup + a per-place cell list (done once).
 function atDecode(){
@@ -7815,11 +7872,92 @@ function atDecode(){
 // already collapse the 18 collisions where one word claims two places (Mexico the country / the gulf — §6.1).
 // Counting slots would read 493 and disagree with every other number in the feature.
 function atSpellableCount(){ return Object.keys(ATLAS.index||{}).length; }
-// M4 fills state.atlas; until then this is always false and the board renders wholly unfilled. Reading it
-// defensively (rather than adding the field now) keeps M3 off the save format — snapshot() stays v:9.
+// state.atlas: placeId -> {c,k} = the day the country/feature name and its capital city were spelled.
 function atlasSolved(id, which){
   const rec=state.atlas && state.atlas[id]; if(!rec) return false;
   return which==="capital" ? !!rec.k : !!rec.c;
+}
+// A country is PAIRED once both it and its capital city are inked — the flag reward (§6.2).
+function atlasPaired(id){ const r=state.atlas && state.atlas[id]; return !!(r && r.c && r.k); }
+// One spelled word -> every place it claims, from the build's prebuilt `index` (keyed by the exact
+// Capitalized name). build_geo.py's disambiguation pass sends a feature back to its FULL name whenever its
+// short one collides with a country or capital — the gulf is "Gulf of Mexico", so the country keeps the
+// bare word — which leaves exactly four names claiming two slots: Djibouti, Luxembourg, Monaco and
+// Singapore, each a country that IS its own capital city. One submission fills both of those (§5.3).
+function atlasLookup(name){
+  const claims = ATLAS && ATLAS.index && ATLAS.index[name];
+  return (claims && claims.length) ? claims : null;
+}
+// Spelling a place. Nothing here touches state.dex, the noun shelves, the POS ladders or wordsCollected():
+// proper nouns are their own namespace, and a place name must never accelerate the letter-unlock curve (§9).
+function spellPlace(name, claims){
+  const slotOf=slot=>slot==="capital"?"capital":"name";
+  const fresh=claims.filter(([id,slot])=>!atlasSolved(id, slotOf(slot)));
+  if(!fresh.length){                      // already inked — mirror the known-word path: no reward, letters back
+    document.getElementById("result").innerHTML=
+      `<div class="msg-known">The Atlas already has “${esc(name)}”. Letters returned.</div>`;
+    bench=[]; renderBench(); SFX.play("known"); return;
+  }
+  bench.forEach(spendLetter);             // satchel first, capital bank second (§3)
+  for(const [id,slot] of fresh){
+    const rec = state.atlas[id] || (state.atlas[id]={ c:null, k:null });
+    if(slot==="capital") rec.k=state.day; else rec.c=state.day;
+  }
+  const flags=[];                         // pairing the country with its capital city earns its flag (§6.2)
+  for(const [id] of fresh){
+    const p=ATLAS.places[id];
+    if(p && p.flag && atlasPaired(id) && !state.atlasFlags[id]){ state.atlasFlags[id]=state.day; flags.push(id); }
+  }
+  const ink=inkForWord(name); state.ink+=ink;   // one submission, one payment — even when it fills two slots
+  bench=[];
+  updateTrayHud(); updateRewardHud(); renderBench();
+  showPlaceResult(name, fresh, ink, flags);
+  SFX.play(flags.length?"unlock":"newword");
+  if(flags.length){
+    const p=ATLAS.places[flags[0]];
+    showToast((p.flag?p.flag+" ":"")+p.name.toUpperCase()+" paired — its flag is yours!");
+  }
+  if(state.atlasOpen) renderAtlas();
+  scheduleSave();
+}
+// The fact card, shown in the desk's result panel in place of a definition. It keeps the board's redaction:
+// an unspelled partner (a country's capital city, or a capital's country) stays blanked, so spelling one
+// half is never a free answer to the other.
+function showPlaceResult(name, fresh, ink, flags){
+  const byId={}; fresh.forEach(([id,slot])=>{ (byId[id]||(byId[id]=[])).push(slot); });
+  const rows=Object.keys(byId).map(id=>{
+    const p=ATLAS.places[id], slots=byId[id], sp=p.spellable||{};
+    const own=(AT_KINDS[p.kind]||p.kind);
+    const kind = slots.length>1 ? own+" — and its own capital city"     // Djibouti, Luxembourg, Monaco, Singapore
+               : slots[0]==="capital" ? "capital city" : own;
+    const where = p.layer==="political" ? (p.continent||"") : ((ATLAS.layers[p.layer]||{}).label||"");
+    let h=`<div><span class="at-kind">${esc(kind)}</span>${where?` <span class="at-where">· ${esc(where)}</span>`:""}</div>`;
+    if(slots.length===1 && slots[0]==="capital"){
+      const cSolved=atlasSolved(id);
+      h+=`<div class="at-hint">the capital city of${cSolved?" "+esc(p.name):"…"}</div>`;
+      if(!cSolved) h+= sp.country ? atNameLine(p.name,false)
+                                  : `<div class="at-blanks at-later">${atBlanks(p.name)}</div>`;
+    } else if(p.layer==="political" && p.capital && slots.length===1){
+      const kSolved=atlasSolved(id,"capital");
+      h+=`<div class="at-hint">its capital city${kSolved?": "+esc(p.capital):"…"}</div>`;
+      if(!kSolved) h+= sp.capital ? atNameLine(p.capital,false)
+                                  : `<div class="at-blanks at-later">${atBlanks(p.capital)}</div>`;
+    }
+    if(p.full && p.full!==p.name) h+=`<div class="at-hint">in full: ${esc(p.full)}</div>`;
+    if(p.elevation) h+=`<div class="at-hint">${p.elevation.toLocaleString()} m${p.note?" · "+esc(p.note):""}</div>`;
+    return h;
+  }).join("");
+  const flagNote=flags.map(id=>{
+    const p=ATLAS.places[id];
+    return `<div class="note" style="color:var(--gold)">${p.flag||""} ${esc(p.capital)} is the capital city of `+
+           `${esc(p.name)} — <b>flag earned</b>.</div>`;
+  }).join("");
+  document.getElementById("result").innerHTML=`<div class="reveal">
+    <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase">Inked on the Atlas</div>
+    <div class="word">${esc(name)}</div>
+    ${rows}${flagNote}
+    <div class="note"><span style="color:var(--gold)">+${ink} ink</span></div>
+  </div>`;
 }
 function atSolvedCount(){                       // distinct names inked, to match atSpellableCount's denominator
   const names=new Set();
@@ -7922,9 +8060,11 @@ function renderAtlas(){
   atRenderChrome();
   atRenderCard();
 }
-// Colours: unfilled land is parchment, water is a pale wash, and a place lights gold once it's inked (M4).
+// Colours: unfilled land is parchment, water is a pale wash, and a place lights gold once it's inked.
+// AT_INK = a name inked; AT_PAIR = a country whose capital city is inked too, so the region lights (§6.2).
 const AT_SEA="#b9cbd4", AT_SEA2="#adc2cd", AT_LAKE="#7fa8bd", AT_LAND="#e0d5b6", AT_LAND2="#d6c9a5",
-      AT_LINE="rgba(38,35,58,.34)", AT_LATER="#c3b697", AT_INK="#c89b3c", AT_DIM="rgba(207,199,175,.62)";
+      AT_LINE="rgba(38,35,58,.34)", AT_LATER="#c3b697", AT_INK="#c89b3c", AT_PAIR="#efc463",
+      AT_DIM="rgba(207,199,175,.62)";
 function atDrawMap(cvs,g){
   const cols=ATLAS.grid.cols, rows=ATLAS.grid.rows;
   atFrame();
@@ -7963,7 +8103,8 @@ function atDrawMap(cvs,g){
         const c=colAt(k), id=pol[r][c]; if(!id) continue;
         const p=ATLAS.places[id], sp=(p&&p.spellable)||{};
         const later=!sp.country;                  // multiword: drawn, but nothing to spell yet (§5.3 / §9)
-        g.fillStyle = atlasSolved(id) ? AT_INK : later ? AT_LATER : (atHash(id)&1) ? AT_LAND2 : AT_LAND;
+        g.fillStyle = atlasPaired(id) ? AT_PAIR : atlasSolved(id) ? AT_INK
+                    : later ? AT_LATER : (atHash(id)&1) ? AT_LAND2 : AT_LAND;
         g.fillRect(cellX(k),cellY(r),s,s);
         // …and it wears a checker so "deferred" reads as a deliberate treatment, not a rendering bug
         if(later && ((c+r)&1)===0){ g.fillStyle="rgba(38,35,58,.16)"; g.fillRect(cellX(k),cellY(r),s,s); }
@@ -7988,7 +8129,7 @@ function atDrawMap(cvs,g){
       if(!(id && atInFocus(id))) g.fillRect(cellX(k),cellY(r),s,s);
     }
   }
-  // capital-city pins: only once that capital has been spelled (M4) — an unspelled board shows no answers
+  // capital-city pins: only once that capital has been spelled — an unspelled board shows no answers
   if(atLayerOn.political) for(const id in ATLAS.places){
     const p=ATLAS.places[id];
     if(p.layer!=="political" || !p.capCell || !atlasSolved(id,"capital")) continue;
@@ -8050,21 +8191,23 @@ function atNameLine(name, solved){
 function atRenderCard(){
   const el=document.getElementById("at-card");
   if(!atSel){
-    el.innerHTML='<div class="at-hint">Click anywhere on the board to study a place. Nothing here is named yet — '+
-      'a place gives up its name when <b>you</b> can spell it at the Wordsmithy, and every name starts with a '+
-      '<b>capital letter</b>. Use the tabs to frame a continent.</div>';
+    el.innerHTML='<div class="at-hint">Click anywhere on the board to study a place. A place gives up its name '+
+      'when <b>you</b> can spell it at the Wordsmithy, and every name starts with a <b>capital letter</b>. '+
+      'Spell a country <i>and</i> its capital city to light the region and earn its <b>flag</b>. '+
+      'Use the tabs to frame a continent.</div>';
     return;
   }
   const p=ATLAS.places[atSel], sp=p.spellable||{};
   const kind=AT_KINDS[p.kind]||p.kind;
   const where=p.layer==="political" ? (p.continent||"") : (ATLAS.layers[p.layer]||{}).label||"";
-  const solvedName=atlasSolved(atSel);
+  const solvedName=atlasSolved(atSel), paired=atlasPaired(atSel);
   let html=`<div><span class="at-kind">${solvedName?esc(p.name):"???"}</span> `+
     `<span class="at-where">· ${esc(kind)}${where?" · "+esc(where):""}</span></div>`;
   const spellableName = sp.country || sp.name;
   if(spellableName) html+=atNameLine(p.name, solvedName);
   else html+=`<div class="at-blanks at-later">${atBlanks(p.name)}</div>`+
              `<div class="at-hint at-later">Its name is more than one word — the bench can't spell it yet.</div>`;
+  if(solvedName && p.full && p.full!==p.name) html+=`<div class="at-hint">in full: ${esc(p.full)}</div>`;
   if(p.layer==="political" && p.capital){
     const capSolved=atlasSolved(atSel,"capital");
     html+=`<div class="at-hint">its capital city:</div>`;
@@ -8072,10 +8215,14 @@ function atRenderCard(){
                       : `<div class="at-blanks at-later">${atBlanks(p.capital)}</div>`;
   }
   if(p.elevation) html+=`<div class="at-hint">${p.elevation.toLocaleString()} m${p.note?" · "+esc(p.note):""}</div>`;
-  if(solvedName && p.flag) html+=`<div class="at-blanks">${p.flag}</div>`;
+  // The flag is the PAIRING reward, so it appears only once both halves are inked (§6.2).
+  if(paired) html+=`<div class="at-blanks">${p.flag||""}</div>`+
+    `<div class="at-hint">${esc(p.capital)} is the capital city of ${esc(p.name)} — flag earned.</div>`;
   if(spellableName && !solvedName)
     html+=`<div class="at-hint">Think of it, then spell it at the Wordsmithy — one <b>capital letter</b> to start, `+
           `the rest from your satchel.</div>`;
+  else if(!paired && sp.capital && !atlasSolved(atSel,"capital"))
+    html+=`<div class="at-hint">Spell its capital city too and the region lights — that earns the flag.</div>`;
   el.innerHTML=html;
 }
 // Hit-test a canvas point: topmost drawn layer wins (a peak sits on a country sits on the sea).
@@ -8569,7 +8716,8 @@ function renderMaterials(){
 // Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
-  return { v:9, day:state.day, inv:state.inv, caps:state.caps, dex:state.dex,
+  return { v:10, day:state.day, inv:state.inv, caps:state.caps, dex:state.dex,
+           atlas:state.atlas, atlasFlags:state.atlasFlags,
            decorOwned:state.decorOwned, placed:state.placed, bundles:state.bundles,
            bagCap:state.bagCap, captured:[...state.captured], fishedSpots:[...state.fishedSpots], bonus:state.bonus,
            ink:state.ink, potions:state.potions, wotdDay:state.wotdDay,
@@ -8589,6 +8737,9 @@ function applySnapshot(d){
   if(typeof d.bagCap==="number") state.bagCap=d.bagCap;
   // The capital bank persists FOREVER — restored outside the same-day check below, unlike the satchel.
   if(d.caps) Object.assign(state.caps, d.caps);
+  // …and so does the Atlas: places inked and flags earned are permanent progress, like the collection.
+  if(d.atlas && typeof d.atlas==="object") state.atlas=d.atlas;
+  if(d.atlasFlags && typeof d.atlasFlags==="object") state.atlasFlags=d.atlasFlags;
   // Ink + potions persist across days (earned progress, like the collection).
   if(typeof d.ink==="number") state.ink=d.ink;
   if(d.potions) for(const t of POTION_ALL) if(typeof d.potions[t]==="number") state.potions[t]=d.potions[t];

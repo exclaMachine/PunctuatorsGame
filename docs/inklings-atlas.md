@@ -2,10 +2,12 @@
 
 Planning doc. **Read this before touching capital letters, proper-noun validation, or the Atlas board.**
 
-Status: **M1 (data), M2 (the daily capital letter) and M3 (the board, read-only) are BUILT — 2026-08-13.
-M4–M5 are plan only.** `build_geo.py` + `data/atlas-world.json` exist (§5); capital letters spawn daily and
-bank persistently; and the Library globe now opens a flat, layered world board (§4) where **every place is
-redacted** — nothing is spellable until M4. The rest is the full spec for the feature sketched in
+Status: **M1 (data), M2 (the daily capital letter), M3 (the board) and M4 (spelling) are BUILT — 2026-08-13.
+M5 is plan only.** `build_geo.py` + `data/atlas-world.json` exist (§5); capital letters spawn daily and bank
+persistently; the Library globe opens a flat, layered world board (§4); and **places are spelled at the desk**
+— a Capitalized bench inks a region or drops a capital pin, un-redacts that card, and pairing a country with
+its capital city earns its flag. M5 is what the flag *becomes* (flagpole décor) plus continent rewards. The
+rest is the full spec for the feature sketched in
 [`inklings-grammar-systems.md`](inklings-grammar-systems.md) §4b.
 
 > **Terminology, kept strict throughout:** a **capital letter** is `A`–`Z`. A **capital city** is Paris,
@@ -139,14 +141,16 @@ lets a letter wait until the idea or the tail arrives. It is not a savings accou
 **At the desk:** the bench already has `benchShift`, a ⇧ toggle that flips the tray to capitals once
 `hasUnlockedCapital()`. It now also appears whenever `state.caps` is non-empty, and the capital tray shows
 `state.inv[C] + state.caps[C]`, spending **`state.inv` first, `state.caps` second** — the satchel copy is
-day-scoped and would be wiped tonight anyway, so that order is the player-friendly one.
+day-scoped and would be wiped tonight anyway, so that order is the player-friendly one. Since M4, ⇧ is
+**momentary**: placing a letter releases it, because a place name is always one capital plus a lowercase
+tail, which makes the whole Atlas flow ⇧ → letter → type the rest.
 
 **HUD:** capital letters need their own visibly separate display from the satchel, since one store is wiped
 nightly and the other isn't.
 
 ---
 
-## 4. The Atlas board (a Library overlay)  ✅ BUILT read-only 2026-08-13 (M3)
+## 4. The Atlas board (a Library overlay)  ✅ BUILT 2026-08-13 (M3 read-only · M4 spelling)
 
 - **Entry point:** a `globe` object in `data/rooms/library.json` at (24,19), 2×2, solid,
   `interact:"openAtlas"` — drawn and wired through the same room-object pipeline as `desk` / `book` /
@@ -168,9 +172,9 @@ nightly and the other isn't.
   | Unfilled | parchment fill (two alternating tones so neighbours read apart), faint ink border |
   | Sea / lake | pale water wash · lakes a shade deeper |
   | Peak | a small ▲ at the summit cell |
-  | Country spelled *(M4)* | inked gold region, name label at its anchor cell |
-  | Capital city spelled *(M4)* | a pin dot at that city's cell |
-  | Both (paired) *(M4)* | region lights gold — and the flag is earned (§6.2) |
+  | Country spelled | inked gold region (`AT_INK`) |
+  | Capital city spelled | a pin dot at that city's cell |
+  | Both (paired) | region lights brighter gold (`AT_PAIR`) — and the flag is earned (§6.2) |
   | Not spellable in v1 (multiword) | greyed **and checkered**, so "deferred" reads as deliberate, not as a rendering bug (§5.3) |
 
 - **Interaction:** fit-to-view by default; hover highlights, click selects → the fact card; a continent tab
@@ -183,13 +187,15 @@ nightly and the other isn't.
   pick paths map screen column → grid column through `colAt`/`kOf` and wrap.
 - **Fact card, redacted (§10 Q2, decided).** An unspelled place gives up its **kind, its continent/layer and
   its letter count** — one ruled blank per letter, a wider gap between words — and nothing else. A board that
-  printed 475 names would turn open-ended recall into copy-typing. Solved places (M4) un-redact in place; the
-  render already branches on `atlasSolved()`. **The flag needs no asset** — an ISO-3166 alpha-2 code maps to
-  regional-indicator code points (`FR` → 🇫🇷). Platforms that don't render flag emoji show the letter pair.
+  printed 475 names would turn open-ended recall into copy-typing. Solved places un-redact in place (and show
+  their `full` name when it differs — you spell *Pacific*, the card then reads "in full: Pacific Ocean").
+  **The redaction is one-way per half:** spelling a country does **not** reveal its capital city and spelling
+  a capital does not reveal its country — on the board *or* in the desk's result panel — so one half is never
+  a free answer to the other. **The flag needs no asset** — an ISO-3166 alpha-2 code maps to regional-indicator
+  code points (`FR` → 🇫🇷). Platforms that don't render flag emoji show the letter pair.
 - **Progress is counted in names, not slots:** `Object.keys(index).length` = **475**, which already collapses
-  the 18 collisions (§6.1). Counting per-place slots reads 493 and disagrees with every other number here.
-- **M3 touches no save data.** `atlasSolved()` reads `state.atlas` defensively, so the field can stay absent
-  until M4 and `snapshot()` stays `v:9`.
+  the 4 remaining collisions (§6.1). Counting per-place slots reads 479 and disagrees with every other number
+  here.
 
 **Why an overlay, not walkable terrain:** the walkable version needs the whole Phase 1–4 map-seam refactor
 in [`inklings-architecture.md`](inklings-architecture.md), and it fights the daily-rerolled overworld. The
@@ -213,9 +219,12 @@ final shape instead of being retrofitted after the fact.
 | Layer | Source (all Natural Earth 1:50m, public domain) | Drawn | Spellable |
 | --- | --- | --- | --- |
 | `political` | `admin_0_countries` + `populated_places` (capitals) | 210 | 162 countries · 166 capitals |
-| `marine` | `geography_marine_polys` — oceans, seas, gulfs, straits | 100 | 90 |
-| `lakes` | `lakes`, filtered to `min_zoom ≤ 2` | 38 | 30 |
-| `peaks` | `geography_regions_elevation_points` (points, no grid) | 72 | 45 |
+| `marine` | `geography_marine_polys` — oceans, seas, gulfs, straits | 100 | 80 |
+| `lakes` | `lakes`, filtered to `min_zoom ≤ 2` | 38 | 28 |
+| `peaks` | `geography_regions_elevation_points` (points, no grid) | 72 | 43 |
+
+(Spellable counts are *after* the collision promotion in §5.1a — 14 features gave their bare word back to a
+country and became multiword-deferred.)
 
 **Not included, and both are drop-ins later — which is the point of layering:** *rivers* are line geometry
 and need a line rasterizer (~25 lines the polygon filler can't do); *mountain ranges and deserts*
@@ -235,10 +244,18 @@ countries that need it.
 - **Capital cities** prefer `NAME_EN`, since `NAME` is the local form — that's what turns København into
   **Copenhagen** and NE's plain-wrong "Andorra" into **Andorra la Vella**.
 - **Physical features drop the generic word.** "Pacific Ocean" is spelled **Pacific**, "Mount Everest" is
-  **Everest**, "Lake Baikal" is **Baikal**, "Gulf of Mexico" is **Mexico**. This is both how people
-  actually say them and the only way these layers are spellable at all — raw, the marine file contains
-  **zero** single-word names. NE's `name_en` already does half the job for lakes ("Lake Ladoga" → Ladoga)
-  and reunites features it splits geographically (North + South Pacific → one Pacific).
+  **Everest**, "Lake Baikal" is **Baikal**. This is both how people actually say them and the only way
+  these layers are spellable at all — raw, the marine file contains **zero** single-word names. NE's
+  `name_en` already does half the job for lakes ("Lake Ladoga" → Ladoga) and reunites features it splits
+  geographically (North + South Pacific → one Pacific).
+- **…except where the short name is already taken, where the full name is required instead** (decided
+  2026-08-13). A feature whose stripped name collides with a country or capital city is **promoted back to
+  its full form**: the gulf is **Gulf of Mexico**, not Mexico; the mountain is **Mount Kenya**; the lake is
+  **Lake Malawi**. The country keeps the bare word and the two stop fighting over it. See §6.1 — this is
+  what replaced the old "one word claims several places" reading, and it costs nothing in spellable names
+  (the promoted names were only ever *sharing* a key). The promoted form is multiword, so those 14 features
+  are drawn-and-redacted until the bench grows a space tile (§10 Q3), where they'll light up as the honest
+  names people actually use.
 - **Roster policy is explicit, not inherited.** `SOVEREIGN_TYPES` covers NE's "Sovereign country" *and*
   "Sovereignty" (which is how it files **Cuba and Kazakhstan** — missing that quietly demoted two UN member
   states to unspellable terrain). "Country" entries count only when self-sovereign, which correctly keeps
@@ -298,9 +315,9 @@ countries that need it.
 | Land cells | 7,952 of 23,040 (35%) |
 | Places | **420** across four layers |
 | Countries | **196** (+ 9 dependencies, 5 other) |
-| **Spellable names, total** | **475** — 162 countries · 166 capitals · 90 marine · 30 lakes · 45 peaks |
+| **Spellable names, total** | **475** — 162 countries · 166 capitals · 80 marine · 28 lakes · 43 peaks |
 | Fully completable country+capital pairs | **142** |
-| Colliding names | 18 (see §6.1) |
+| Colliding names | **4** — down from 18; see §5.1a and §6.1 |
 | Placed by hand | 25 microstates — 10 borrowed from a neighbour, 15 in open water (all genuine island nations) |
 | Capital pins snapped inside their country | 24 |
 
@@ -332,6 +349,13 @@ which features fall through. Voting also puts borders where the land actually is
   Every pin is now snapped to its country's own nearest cell (24 of them needed it).
 - **Names are normalized:** ASCII-folded, accents stripped (Bogotá → Bogota). The accented form is kept in
   the data, so [`inklings-diacritics.md`](inklings-diacritics.md) needs no rebuild.
+- **No two places may answer to the same word** — except the four that genuinely *are* the same place
+  (§5.3's country-is-its-own-capital list). A physical feature colliding with a country or capital is
+  promoted to its full name (§5.1a); the pass runs after the layers are built and before the `index`, warns
+  loudly if it can't find a generic word for a kind, and reports every promotion under `--report`. **NE's
+  lakes carry no generic word at all** (`name_en` is a plain "Malawi"), so for those the generic half is
+  synthesized from the feature's kind — this is the one place the build *adds* a word rather than stripping
+  one.
 - **v1 spellability = single-word only.** Everything is **drawn**; a name with a space or hyphen gets
   `spellable:false`. **A capital city is judged on its own merits** — it used to require a spellable
   *country* too, which deferred London, Seoul, Riyadh, Pyongyang, Wellington, Kinshasa and Pretoria purely
@@ -349,7 +373,7 @@ needs *n−1* satchel slots. At the base `bagCap` of 10 that's names up to 11 ch
 Liechtenstein ✗). The shop's existing repeatable `+1 satchel` upgrade is the progression that opens the
 long ones — no new system needed.
 
-## 6. Spelling a place, and what it pays
+## 6. Spelling a place, and what it pays  ✅ BUILT 2026-08-13 (M4)
 
 ### 6.1 The dual dictionary at the desk
 
@@ -367,48 +391,61 @@ Then, **before** the WordNet lookup, a proper-noun branch:
 if (/^[A-Z][a-z]+$/.test(raw) && atlasLookup(raw))  →  spellPlace(raw)
 ```
 
-**`atlasLookup` reads the prebuilt `index`, and one word can claim several places.** The build emits
-`index: { "Mexico": [["MEX","country"], ["sea:mexico","name"]] }` — 475 names, **18 of them colliding**,
-and the collisions are some of the best teaching in the whole feature:
+**`atlasLookup` reads the prebuilt `index`.** The value is a *list* of claims, so `spellPlace` takes a list —
+but after the §5.1a promotion pass **only four names claim two slots**, and all four are one place that is
+its own capital city: **Djibouti · Luxembourg · Monaco · Singapore**. One submission fills the country, the
+capital city *and* the pairing flag.
 
-| Word | Claims |
-| --- | --- |
-| Mexico · Japan · Oman · Panama · Guinea · Honduras · Thailand · Taiwan · Finland · Mozambique | the country **and** the sea/gulf named after it |
-| Kenya · Washington | the country/capital **and** the mountain |
-| Malawi · Nicaragua | the country **and** the lake |
-| Djibouti · Luxembourg · Monaco · Singapore | its own capital city (§5.3) |
+**Why the collisions were removed rather than embraced (decided 2026-08-13).** The earlier reading was that
+one submission should fill *every* place with that name — spell "Mexico", get the country and the Gulf of
+Mexico. The better answer is that **the gulf's name is not "Mexico."** Requiring the full name gives each
+place its real name back, removes 14 of the 18 collisions structurally, and needs no picker modal and no
+"which did you mean?" ambiguity anywhere in the flow. It costs nothing in the count of spellable names — the
+promoted features were only ever *sharing* a key with the country — and it turns a fudge into a teaching
+moment: the board says the gulf's name is more than one word, and one day you'll be able to spell it.
 
-So `spellPlace` takes a *list* of claims, not one. The natural reading — and the one that matches the
-turkey/Turkey lesson — is that one submission fills **every** place with that name and the fact card shows
-them together ("Mexico: the country, and the Gulf of Mexico"). That is an M4 decision, but the data is
-already shaped for it.
+The alternative considered and rejected was adopting full names for **every** physical feature at once
+(Lake Baikal, Pacific Ocean, Mount Everest). That is the honest long-term rule and is where §10 Q3 should
+land — but doing it before the bench has a space tile would send the entire physical layer dark, cutting v1
+from 475 spellable names to ~336.
 
-`spellPlace(raw)`:
+`spellPlace(raw, claims)`:
 
 1. Spends the bench letters (`state.inv` first, then `state.caps` — §3).
 2. Records into `state.atlas` — **not** `state.dex`, so noun shelves, verb Feats, adjective flasks and the
    POS ladders are all untouched. Proper nouns are their own namespace, as §4b requires.
 3. Fills the region (country) or drops the pin (capital city); if both are now spelled, lights the pairing
-   and awards the flag.
-4. Pays ink via the existing `inkForWord()`.
+   and records the flag in `state.atlasFlags`.
+4. Pays ink via the existing `inkForWord()` — **once per submission**, even when it fills two slots.
 5. Shows the **fact card** in place of the definition panel.
-6. Fires the continent-completion check.
+6. *(M5)* Fires the continent-completion check.
+
+**The atlas is fetched at the desk, not just at the board.** `openOverlay()` kicks off `loadAtlas()` (a local
+135 KB file, once a session) and `checkWord` awaits it before judging a capitalized bench — a player can
+perfectly well try to spell a place having never opened the globe.
 
 **The case discriminator is the whole lesson.** `Turkey` → country; `turkey` → the bird via the normal
-WordNet path, no special-casing. When a player spells a lowercase homograph, the result panel can add a
-one-line nudge ("…and with a capital T, it's a country") — the cheapest, best-placed grammar teaching in the
-game.
+WordNet path, no special-casing. Spelling a lowercase homograph adds a one-line nudge to the result panel
+(`atlasNudge`) — "…and with a capital T, **Turkey** is a country" — the cheapest, best-placed grammar
+teaching in the game, and in practice the thing that tells players the Atlas is spellable at all. It stays
+silent once that place is inked; a landed lesson shouldn't nag.
 
 Re-spelling an already-filled place: no reward, letters returned (mirroring the existing `msg-known` path).
+A capitalized word that is neither a place nor a dictionary word says so explicitly ("…and no place on the
+Atlas goes by that name"), so a failed place attempt never reads as a broken dictionary.
 
 ### 6.2 Rewards
 
 | Event | Reward |
 | --- | --- |
-| Country spelled | region fills · fact card · ink (`inkForWord`) |
-| Capital city spelled | pin drops · fact card · ink (`inkForWord`) |
-| **Pair completed** (country + its capital city) | region lights gold · **the country's flag, as a placeable décor** · the "capital of" line on the fact card |
-| Continent completed | one-time ink lump + a larger décor grant, through the existing [`inklings-collections.md`](inklings-collections.md) milestone-grant path |
+| Country spelled ✅ | region fills · fact card · ink (`inkForWord`) |
+| Capital city spelled ✅ | pin drops · fact card · ink (`inkForWord`) |
+| **Pair completed** (country + its capital city) ✅ | region lights brighter gold · the "capital of" line + the flag on the fact card · **the flag is earned** (`state.atlasFlags`, toast + fanfare) — *flying it on a flagpole is M5* |
+| Continent completed *(M5)* | one-time ink lump + a larger décor grant, through the existing [`inklings-collections.md`](inklings-collections.md) milestone-grant path |
+
+**The earn and the display are split** (decided at M4): pairing *records* the flag now, so M5 only has to
+build the flagpole, the picker and the shop row — nobody who pairs countries before M5 ships needs a
+migration pass to be granted flags retroactively.
 
 **The flag as décor** is the headline reward: a shelf of completed countries becomes a visible row of flags
 in the world rather than a number on a screen. It grants through the existing décor/placement systems
@@ -443,14 +480,16 @@ No grammar-codex entry in v1 — the fact card plus the case discriminator carry
 
 ```js
 state.caps        = {}     // capital letter -> count (persistent, uncapped, outside satchelCap(); §3)
-state.atlas       = {}     // ISO3 -> { c: dayString|null, k: dayString|null }   country / capital city
-state.atlasFlags  = {}     // ISO3 -> dayString earned (the pairing reward; feeds decorOwned)
-state.atlasContinents = {} // "Europe" -> dayString claimed (one-time continent rewards)
+state.atlas       = {}     // placeId -> { c: dayString|null, k: dayString|null }  country/feature · capital city
+state.atlasFlags  = {}     // ISO3 -> dayString earned (the pairing reward; M5's flagpole picker reads it)
+state.atlasContinents = {} // "Europe" -> dayString claimed (one-time continent rewards)   ← M5, not added yet
 ```
 
-All JSON-clean and **persist-forever** — never touched by `startNewDay()`. `state.caps` shipped with M2:
-`snapshot()` is now **`v:9`**, and `applySnapshot()` restores `caps` *outside* the same-day guard that
-gates the satchel, which is what makes the bank survive rollover. The M4 fields are not added yet.
+All JSON-clean and **persist-forever** — never touched by `startNewDay()`. `state.caps` shipped with M2;
+`atlas` + `atlasFlags` shipped with M4 and took `snapshot()` to **`v:10`**. `applySnapshot()` restores all
+three *outside* the same-day guard that gates the satchel, which is what makes them survive rollover.
+The key of `state.atlas` is the **place id**, not always an ISO3 — `"FRA"` for a country but `"sea:baltic"`,
+`"lake:baikal"`, `"peak:everest"` for the physical layers, which have no country code.
 
 Note there is no `atlasStampDay`-style idempotence field any more: the daily capital letter is a world spawn
 derived from `state.daySeed`, so it's inherently idempotent and stateless. Reloading regenerates the same
@@ -483,10 +522,14 @@ Each phase is shippable and leaves the game working.
   day's capital-letter signpost repeated on the board, hover/click hit-testing and the **redacted** fact
   card. No save-format change. Everything is unfilled by construction — `atlasSolved()` has nothing to
   read until M4.
-- **M4 — Spelling.** Case-preserving `checkWord`, `atlasLookup`, `spellPlace`, `state.atlas`, region fill +
-  pin + pair lighting, fact card, ink. **The feature is real here.**
-- **M5 — Flags & continents.** Pairing → flag décor grant + placement, continent rewards, the homograph
-  nudge copy, sounds.
+- **M4 — Spelling. ✅ BUILT 2026-08-13.** Case-preserving `checkWord` (`raw` vs `word`) with the proper-noun
+  branch ahead of WordNet, `atlasLookup`/`atlasPaired`/`spellPlace`/`showPlaceResult`, `state.atlas` +
+  `state.atlasFlags` at save `v:10`, region fill + capital pin + `AT_PAIR` pair lighting, the un-redacting
+  fact card on both the board and the desk, ink, the flag earned on pairing, the `atlasNudge` homograph line,
+  and a promise-based `loadAtlas()` the desk awaits. Shipped alongside `build_geo.py`'s collision-promotion
+  pass (§5.1a). **The feature is real here.**
+- **M5 — Flags & continents.** The flagpole décor + shop row + per-instance flag picker (`state.atlasFlags`
+  is already populated), continent-completion rewards + `state.atlasContinents`, sounds.
 
 M2 deliberately precedes the board: it's small, it's the part you asked for, and banked capitals make the
 board's arrival feel earned rather than empty.
@@ -503,14 +546,17 @@ board's arrival feel earned rather than empty.
   Curator, mad-libs POS fills, and `wordsCollected()` — which paces the entire letter-unlock curve. Place
   names landing in `state.dex` would silently accelerate letter unlocks. Keeping the namespaces separate is
   the single most important implementation constraint in this doc.
-- **`bench.join("").toLowerCase()` appears in more than one place.** Audit every bench read before changing
-  the case handling.
+- **Bench reads were audited at M4** — the only case-sensitive ones are inside `checkWord` (the submission
+  and the "bench changed while the dictionary loaded" guard, which now compares `raw`). Everything else
+  reads `bench` per-letter, so `spendLetter` and the tray were already case-correct.
 - **Open-ended recall has no difficulty curve of its own.** The only pacing is letter availability, so a
   player who knows a lot of geography will burn through the easy countries fast and then stall on the ones
   they can't name. The continent tabs and the flag wall are what give the long tail a shape; watch for
   whether that's enough once M4 is playable.
 - **Deferred multiword names** need a visible, non-frustrating treatment on the board, or players will read
-  a greyed United States as a bug.
+  a greyed United States as a bug. Handled by the grey + checker fill and the card's "its name is more than
+  one word" line — and the §5.1a promotions (Gulf of Mexico, Mount Kenya) joined that set, so it now covers
+  a few places whose *short* name a player may well try first.
 - **Uncapped persistent capitals** mean a long-absent player returns to a healthy stack. That's intended
   (banking is the point), but it does mean the Atlas can be played in bursts rather than daily — fine for a
   side collection, worth noticing if it ever cannibalizes the daily loop.
@@ -523,8 +569,11 @@ board's arrival feel earned rather than empty.
    completing continents, raise it?
 2. ~~**Locked fact cards**~~ — **decided at M3: a redacted card** (kind · continent · one ruled blank per
    letter · the letter count), so the board can never be read as an answer key. See §4.
-3. **Multiword names** — a space tile at the bench, or auto-joined words? Deferred, but the answer shapes
-   how §5.3's `spellable:false` places are presented.
+3. **Multiword names** — a space tile at the bench, or auto-joined words? Still deferred, and now the
+   biggest single unlock left in the feature: it would open **48 deferred countries** (United States, South
+   Korea, Costa Rica…), **31 deferred capitals** (Buenos Aires, New Delhi, Mexico City…) *and* the 14
+   features promoted in §5.1a (Gulf of Mexico, Mount Kenya, Lake Malawi). Satchel math already works —
+   most full names need 8–10 slots against the base `bagCap` of 10, since each capital comes from the bank.
 4. **Atlas family** (Star Atlas, Pantheon, Calendar, languages — §4b) stays deferred until a second atlas is
    greenlit; generalize the board then, not now.
 5. **Roster edge calls** — `FORCE_COUNTRY` promotes Israel, Kosovo and Taiwan out of Natural Earth's
@@ -534,8 +583,9 @@ board's arrival feel earned rather than empty.
 6. **Sri Lanka's capital** is set to the official **Sri Jayawardenepura Kotte**, which is multiword and so
    unspellable, rather than the commonly-taught **Colombo** (the commercial capital). Factually defensible,
    but it costs a well-known name — one line in `CAPITAL_OVERRIDES` to flip.
-7. **Colliding names** (§6.1) — does one submission fill every place with that name, or does the player
-   pick? The data supports either; the fill-everything reading is the one that matches turkey/Turkey.
+7. ~~**Colliding names**~~ — **decided at M4: neither.** A feature whose short name collides is promoted to
+   its full name, so the collision stops existing (§5.1a / §6.1). The four remaining collisions are places
+   that are their own capital city, where one submission fills both by design.
 8. **Rivers and mountain ranges** are the obvious next layers. Rivers need a line rasterizer (~25 lines);
    ranges/deserts need curation, because `geography_regions_polys` has no `featurecla` at 50m and mixes in
    continents, whole countries and US states. Neither needs a schema change — that's what §5.1 bought.
