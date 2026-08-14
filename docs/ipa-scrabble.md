@@ -78,6 +78,62 @@ Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 1
   **game-over** cadence. A **🔊 Sound / 🔇 Muted** button toggles all of it, persisted in
   `localStorage["ipascrabble.muted"]`.
 
+## Wordplay bonuses — phonetic palindromes & semordnilaps (PLANNED 2026-08-14, not built)
+
+The point of a spell-by-sound game is that sound-wordplay becomes *mechanically* real: `/b ɪ b/` reads the
+same backwards as phonemes even where spelling wouldn't tell you, and `stop` ⇄ `pots` only mirror in IPA.
+So a played run that is a **phonetic palindrome** (or reverses into **another** real word) pays a bonus and
+is called out by name.
+
+### Detection — live check, no new data file
+Both tests are one line against the lexicon already in memory, so **nothing new is fetched** (`data/ipa-palindromes.json`
+and `data/ipa-semordnilaps-*.json` stay build-time artifacts of `build-phonetic-wordplay.js`, unused here):
+
+```
+toks = run's phoneme tokens          rev = toks.slice().reverse().join(" ")
+palindrome  : rev === pron                        && toks.length >= 3
+semordnilap : rev !== pron && VALID.has(rev)      && toks.length >= 3
+```
+
+Checked **per run** inside `evaluateTurn`'s validate-and-score loop (`ipa-scrabble.html:444`), so the main
+word *and* every cross-word it forms are each eligible — a single play can fire more than one. Only runs
+that already passed `VALID` are tested; nothing else in the turn-legality path changes.
+
+Yield over the game's 48,365 pronunciations (measured, not estimated):
+- **Palindromes: 86** — 79 at 3 phonemes (`bib`, `mime`, `kayak`, `gag`, `sees`…), 6 at 5 (`states`,
+  `stats`, `towboat`, `revere`, `falloff`, `rehear`), 1 at 7 (`canonic`). Rare enough to feel like a find.
+- **Semordnilaps: 824 run-directions** (412 pairs) — 540 at 3 phonemes, 180 at 4, 32 at 5 (`spots`⇄`stops`,
+  `skits`⇄`sticks`, `trots`⇄`start`, `tulip`⇄`pollute`, `luggage`⇄`juggle`, `scalp`⇄`plaques`).
+- **The `n >= 3` floor matters.** It drops 10 single-phoneme words that are trivially palindromic (`ɔ`, `aɪ`,
+  `u`…) and 72 cheap 2-phoneme mirrors (`pa`⇄`op`, `ti`⇄`eat`, `lo`⇄`ole`) that would otherwise pay out
+  constantly on throwaway glue tiles.
+
+### Scoring (dev-chosen)
+- **Palindrome: +10 per phoneme** — `+30` for the common 3s, `+50` for `states`, `+70` for `canonic`.
+  Length-scaled so the rare long ones are the prize; the top end sits just above BINGO territory.
+- **Semordnilap: flat +10.** Deliberately small and flat — they're ~10× more common than palindromes, so
+  they read as a nice noticing rather than a payday.
+- Both are **flat adds after `scoreCells`**, like `BINGO_BONUS` — *not* multiplied by a DW/TW the run sits on.
+- Both stack: a run can only be one or the other (mutually exclusive by definition), but different runs in
+  one turn each pay, and either stacks with BINGO.
+
+### Presentation (all three, dev-chosen)
+- **Live status preview** (`renderStatus`) — the per-run chip gains its tag *before* you commit, so you can
+  see the bonus coming and choose to chase it: `/b ɪ b/ bib +6 ↔ palindrome +30`, `/s t ɑ p/ stop +7 ⇄ pots +10`.
+  The `= N pts` total already includes them.
+- **Banner + special SFX on play** — `msg()` names the wordplay in plain language, because half the value here
+  is teaching the word: `↔ PALINDROME! bib sounds the same backwards — +30` /
+  `⇄ SEMORDNILAP! stop backwards is pots — +10`. New `SFX.palindrome()` is a **mirrored arpeggio** (run up,
+  then the identical notes back down — the sound *is* the concept); `SFX.semordnilap()` is a short two-note
+  swap (a rising pair answered by the same pair falling). Both play after `SFX.play(...)`, not instead of it.
+- **Found-words list** — palindromic/semordnilap entries carry `↔`/`⇄` in `renderFound`, the bonus is its own
+  entry line (as BINGO already is), and the header gains a **↔ count** next to the word count.
+
+### Open/deferred inside this feature
+- **Mirror-on-the-board combo** (playing `stop` while `pots` is already committed somewhere) — considered and
+  set aside; the live-reverse check above doesn't care where the partner word is. Could be a later escalation.
+- No persistence, so palindrome finds don't accumulate across games (matches the rest of the file today).
+
 ## Known bugs
 - *(none currently)*
 
