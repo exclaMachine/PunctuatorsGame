@@ -72,6 +72,8 @@
     font-family:var(--disp); font-size:7px; color:#7a6f52 }
   /* keyboard placement: valid target squares + the cursor (only shown while a tile is selected) */
   .cell.target{ box-shadow: inset 0 0 0 2px rgba(47,109,240,.5); cursor:pointer }
+  /* reach-only: legal, but only because the rest of your rack can carry the word to the board */
+  .cell.target.far{ box-shadow: inset 0 0 0 2px rgba(47,109,240,.16) }
   .cell.cursor{ box-shadow: inset 0 0 0 3px #2f6df0; z-index:2;
     animation:curpulse 1s ease-in-out infinite; }
   @keyframes curpulse{ 50%{ box-shadow: inset 0 0 0 3px #86a9ff; } }
@@ -323,51 +325,90 @@ function newGame(){
 function inb(r,c){ return r>=0 && r<N && c>=0 && c<N; }
 function cellTile(r,c){ if(!inb(r,c)) return null; return pending.get(r+","+c) || board[r][c]; }
 
-/* Valid squares to place onto this turn — keeps the placement a single contiguous line (real Scrabble):
-   - No tile placed yet: the ★ center on an empty board, else any empty cell touching a committed tile
-     (the play must connect to the board somewhere).
-   - Exactly one tile placed: its four empty orthogonal neighbors — the second tile locks the axis.
-   - Two+ tiles placed: the axis is fixed by them; offer the empty cell extending each end (skipping
+/* A "hook": the empty square a play has to cover (opening move) or sit against (every later move)
+   for the play to be legal. On an empty board that is the ★ center itself; afterwards it's any empty
+   square orthogonally touching a committed tile. Pending tiles are your own and hook nothing. */
+function committed(r,c){ return inb(r,c) && !!board[r][c]; }
+function isHook(r,c){
+  if(!inb(r,c) || board[r][c]) return false;
+  if(boardCount===0) return r===CENTER && c===CENTER;
+  return committed(r-1,c) || committed(r+1,c) || committed(r,c-1) || committed(r,c+1);
+}
+/* Could a play that currently occupies `cells` (one line along (dr,dc)) still reach a hook using
+   `remaining` tiles from hand? Committed tiles inside the span bridge the line for free and cost
+   nothing, so only empty squares you'd have to fill count against the budget. */
+function canStillHook(cells, dr, dc, remaining){
+  for(const p of cells) if(isHook(p.r,p.c)) return true;    // already on/against the board
+  const s=cells.slice().sort((a,b)=>(a.r-b.r)+(a.c-b.c));
+  const lo=s[0], hi=s[s.length-1];
+  for(const [er,ec,sdr,sdc] of [[lo.r,lo.c,-dr,-dc],[hi.r,hi.c,dr,dc]]){
+    let r=er+sdr, c=ec+sdc, used=0;
+    while(inb(r,c) && used<remaining){
+      if(board[r][c]){ r+=sdr; c+=sdc; continue; }          // bridge a committed tile for free
+      used++;
+      if(isHook(r,c)) return true;
+      r+=sdr; c+=sdc;
+    }
+  }
+  return false;
+}
+
+/* Valid squares to place onto this turn — keeps the placement a single contiguous line (real Scrabble)
+   and only offers squares the play can still finish legally from. It's the *play* that must connect,
+   not the tile you happen to lay first, so reach is bounded by how many tiles you hold: with 7 in hand
+   you may start 6 squares out and hook the board with your last one.
+   - No tile placed yet: every empty square that can reach a hook within your rack count.
+   - Exactly one tile placed: its four empty orthogonal neighbors — the second tile locks the axis —
+     plus, if the axis is already set by an abutting committed tile, that line's extensions.
+   - Two+ tiles placed: the axis is fixed by them; offer the empty square extending each end (skipping
      over committed tiles, which may bridge the line) plus any empty gap between placed tiles (so a
-     picked-up middle tile can be refilled). Full legality is still re-checked at ✓ Play. */
+     picked-up middle tile can be refilled).
+   Every candidate is then dropped unless the play can still reach a hook with the tiles left after it,
+   so you can never strand yourself. Full legality is still re-checked at ✓ Play.
+   -> [{r,c,near}]  (near = the square touches the board / is the ★, so it hooks on its own) */
 function validTargets(){
-  const out=[];
+  const out=[], budget=rack.length;
+  const push=(r,c)=>{ if(!out.some(t=>t.r===r&&t.c===c)) out.push({r,c,near:isHook(r,c)}); };
   if(pending.size===0){                                     // nothing placed yet this turn
     for(let r=0;r<N;r++) for(let c=0;c<N;c++){
       if(cellTile(r,c)) continue;
-      if(boardCount===0){ if(r===CENTER && c===CENTER) out.push({r,c}); }
-      else if(cellTile(r-1,c)||cellTile(r+1,c)||cellTile(r,c-1)||cellTile(r,c+1)) out.push({r,c});
+      const cell=[{r,c}];
+      if(canStillHook(cell,0,1,budget-1) || canStillHook(cell,1,0,budget-1)) push(r,c);
     }
     return out;
   }
   const keys=[...pending.keys()].map(k=>k.split(",").map(Number));
+  const cells=keys.map(([r,c])=>({r,c}));
+  const cand=[];                                            // [{r,c,dr,dc}] — square + the axis it would set
   if(keys.length===1){                                      // one tile placed
     const [r,c]=keys[0];
-    const add=(rr,cc)=>{ if(inb(rr,cc) && !cellTile(rr,cc) && !out.some(t=>t.r===rr&&t.c===cc)) out.push({r:rr,c:cc}); };
-    for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) add(r+dr,c+dc);   // four neighbors (perp word may start)
+    const add=(rr,cc,dr,dc)=>{ if(inb(rr,cc) && !cellTile(rr,cc)) cand.push({r:rr,c:cc,dr,dc}); };
+    for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) add(r+dr,c+dc,Math.abs(dr),Math.abs(dc)); // four neighbors (perp word may start)
     // If the tile abuts a committed tile along an axis, that axis is set: extend its line, bridging committed tiles.
     for(const [dr,dc] of [[1,0],[0,1]]){
       if(cellTile(r-dr,c-dc) || cellTile(r+dr,c+dc)){
         for(const [sdr,sdc] of [[-dr,-dc],[dr,dc]]){
           let rr=r+sdr, cc=c+sdc;
           while(inb(rr,cc) && board[rr][cc]) { rr+=sdr; cc+=sdc; }       // skip over committed (bridge) tiles
-          add(rr,cc);
+          add(rr,cc,dr,dc);
         }
       }
     }
-    return out;
+  } else {
+    const sameRow=keys.every(([r])=>r===keys[0][0]);        // axis fixed by the placed tiles
+    const dr=sameRow?0:1, dc=sameRow?1:0;
+    keys.sort((a,b)=>(a[0]-b[0])+(a[1]-b[1]));
+    const lo=keys[0], hi=keys[keys.length-1];
+    for(let r=lo[0]+dr,c=lo[1]+dc; !(r===hi[0]&&c===hi[1]); r+=dr,c+=dc) // interior gaps
+      if(inb(r,c) && !cellTile(r,c)) cand.push({r,c,dr,dc});
+    for(const [er,ec,sdr,sdc] of [[lo[0],lo[1],-dr,-dc],[hi[0],hi[1],dr,dc]]){  // extend each end
+      let r=er+sdr, c=ec+sdc;
+      while(inb(r,c) && board[r][c]){ r+=sdr; c+=sdc; }      // skip over committed (bridge) tiles
+      if(inb(r,c) && !cellTile(r,c)) cand.push({r,c,dr,dc});
+    }
   }
-  const sameRow=keys.every(([r])=>r===keys[0][0]);          // axis fixed by the placed tiles
-  const dr=sameRow?0:1, dc=sameRow?1:0;
-  keys.sort((a,b)=>(a[0]-b[0])+(a[1]-b[1]));
-  const lo=keys[0], hi=keys[keys.length-1];
-  for(let r=lo[0]+dr,c=lo[1]+dc; !(r===hi[0]&&c===hi[1]); r+=dr,c+=dc)   // interior gaps
-    if(inb(r,c) && !cellTile(r,c)) out.push({r,c});
-  for(const [er,ec,sdr,sdc] of [[lo[0],lo[1],-dr,-dc],[hi[0],hi[1],dr,dc]]){  // extend each end
-    let r=er+sdr, c=ec+sdc;
-    while(inb(r,c) && board[r][c]){ r+=sdr; c+=sdc; }        // skip over committed (bridge) tiles
-    if(inb(r,c) && !cellTile(r,c)) out.push({r,c});
-  }
+  for(const t of cand)                                      // drop dead ends: ✓ Play must stay reachable
+    if(canStillHook(cells.concat({r:t.r,c:t.c}), t.dr, t.dc, budget-1)) push(t.r,t.c);
   return out;
 }
 function nearestTarget(targets, ref){
@@ -512,7 +553,7 @@ function placeAt(r,c){                    // drop the selected tile at (r,c)
 }
 function placeSelected(){                 // Enter / Space
   if(held==null){ msg("Pick a tile first (1–7 or click)."); return; }
-  if(!cursor){ SFX.error(); msg("No open square next to a letter — Recall or aim elsewhere."); return; }
+  if(!cursor){ SFX.error(); msg("No square left that this word could still reach the board from — Recall and start again."); return; }
   placeAt(cursor.r, cursor.c); renderAll();
 }
 function clickCell(r,c){
@@ -523,7 +564,7 @@ function clickCell(r,c){
   if(board[r][c]) return;                 // committed tile — immovable
   if(held==null){ SFX.error(); msg("Pick a rack tile first (click or 1–7)."); return; }
   if(!validTargets().some(t=>t.r===r&&t.c===c)){   // click is held to the same single-line targets as the cursor
-    SFX.error(); msg("That square would break the line — place onto a highlighted square, continuing the tiles you're laying.", true); return;
+    SFX.error(); msg("Too far from the board, or off the line you're laying — drop onto a highlighted square.", true); return;
   }
   placeAt(r,c); renderAll();
 }
@@ -615,7 +656,7 @@ function esc(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','
 
 function renderBoard(){
   const b=$('board'); b.innerHTML='';
-  const targetKeys = held!=null ? new Set(validTargets().map(t=>t.r+","+t.c)) : null;
+  const targetKeys = held!=null ? new Map(validTargets().map(t=>[t.r+","+t.c, t.near])) : null;
   const selTok = held!=null ? (rack.find(t=>t.id===held)||{}).tok : null;
   for(let r=0;r<N;r++) for(let c=0;c<N;c++){
     const d=document.createElement('div'), key=r+","+c;
@@ -629,6 +670,7 @@ function renderBoard(){
       else if(pm) d.innerHTML='<span class="pm">'+pm+'</span>';
       if(targetKeys && targetKeys.has(key)){
         d.classList.add('target');
+        if(!targetKeys.get(key)) d.classList.add('far');   // reachable, but not itself against the board
         if(cursor && cursor.r===r && cursor.c===c){
           d.classList.add('cursor');
           if(selTok) d.insertAdjacentHTML('beforeend','<span class="ghosttok ipa">'+esc(selTok)+'</span>');
@@ -656,7 +698,7 @@ function renderStatus(){
   if(!pending.size){
     if(held!=null) s.innerHTML = cursor
       ? 'Tile selected — <b>← ↑ ↓ → / Tab</b> move the cursor, <b>Enter / Space</b> to place.'
-      : 'No open square next to a letter yet — the first tile goes on the ★ center.';
+      : 'No square this rack could reach the board from — the first word goes across the ★ center.';
     else s.textContent='';
     s.className='status no'; $('lay').disabled=true; $('recall').disabled=true; return;
   }

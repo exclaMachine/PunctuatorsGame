@@ -52,13 +52,24 @@ semordnilaps). Not yet integrated into `inklings.html` proper.
 - **Placement UX** — two ways, both share `pending`/`evaluateTurn` **and the same single-line target set**
   (`validTargets`), so click and keyboard obey identical rules:
   - **Single-line targeting** (`validTargets`) keeps a turn's tiles on one contiguous line as you lay them,
-    instead of letting each tile land next to any unrelated word: *no tile placed yet* → the ★ center on an
-    empty board, else any empty cell touching a committed tile (the play must connect somewhere); *one tile
-    placed* → its four empty orthogonal neighbors (the second tile locks the axis); *two+ tiles placed* → the
-    axis is fixed, so only the empty cell extending **each end** (skipping over committed tiles, which may
-    bridge the line, per real Scrabble) plus any empty **interior gap** between placed tiles (so a picked-up
-    middle tile can be refilled). Full legality (single line, no gaps, every run a real word) is still
-    re-checked at ✓ Play.
+    instead of letting each tile land next to any unrelated word: *no tile placed yet* → **every empty square
+    your rack can still reach the board from** (see reach-based targeting below); *one tile placed* → its four
+    empty orthogonal neighbors (the second tile locks the axis), plus that line's extensions if an abutting
+    committed tile already set the axis; *two+ tiles placed* → the axis is fixed, so only the empty cell
+    extending **each end** (skipping over committed tiles, which may bridge the line, per real Scrabble) plus
+    any empty **interior gap** between placed tiles (so a picked-up middle tile can be refilled). Full legality
+    (single line, no gaps, every run a real word) is still re-checked at ✓ Play.
+  - **Reach-based targeting** (`isHook`/`canStillHook`, BUILT 2026-08-14) — it's the **play** that must connect
+    to the board, not the tile you happen to lay first, so the reach is bounded by **how many tiles you hold**:
+    with 7 in hand you may start 6 squares out in open space and hook the board with your last one (the far end
+    of your word butting against, or bridging over, what's already there). A **hook** (`isHook`) is the ★ center
+    on an empty board, else any empty square orthogonally touching a committed tile; `canStillHook(cells,dr,dc,
+    remaining)` walks outward from both ends of the line you're building and asks whether a hook is within
+    `remaining` **empty** squares (committed tiles inside the span bridge for free and cost no tile). Every
+    candidate square — first tile *and* later ones — is dropped unless the play can still reach a hook with the
+    tiles left after it, so you can never strand yourself in a spot ✓ Play would reject for not connecting.
+    The board shows the two tiers: squares that hook on their own keep the solid blue outline, reach-only
+    squares get a faint one (`.cell.target.far`, `near` flag on each target).
   - *Click:* click a rack tile to hold it (gold), click a **highlighted** target cell to drop it (a click on
     any other empty cell is rejected with a hint), click a pending tile to pick it back up. Vowels tinted.
   - *Keyboard (select → aim → place):* `1`–`7` (or a click) **select** a rack tile; a **cursor** then only
@@ -146,6 +157,13 @@ Implemented as **`wordplayFor(pron)`** → `null | {kind:'pal'|'sem', bonus, mir
 - *(none currently)*
 
 ## Fixed
+- **First tile forced to touch the board (fixed 2026-08-14).** `validTargets` required the *first* tile of a
+  turn to be the ★ center (empty board) or a square orthogonally touching a committed tile — but Scrabble
+  requires the **play** to connect, not the tile you lay first, so a word starting several squares out and
+  hooking the board with its last phoneme was unplaceable. Targets are now **reach-based** (`isHook`/
+  `canStillHook`): reach = how many tiles you hold, committed tiles bridge for free, and every candidate
+  (first and later) is pruned unless the play can still hook with the tiles remaining after it. Two-tier
+  highlight distinguishes hooking squares from reach-only ones.
 - **Single-line targeting too strict right after the first tile connects (fixed 2026-08-09).** When your
   first placed tile of a turn lands next to an existing **committed** letter, `validTargets` used to offer
   only that tile's four neighbors, so you couldn't continue the existing word's line (e.g. place `x` left of
