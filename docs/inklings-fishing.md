@@ -253,6 +253,12 @@ Caught sounds are a **supply**, not a dead collection:
 - **Poetry phoneme engine (poetry §3):** poetry consumes phonemes at **word** granularity (rhyme keys,
   syllable counts). Fishing is the **raw-phoneme** counterpart — the same `data/pronunciations.json` /
   IPA-vowel-set machinery, one level lower. Building the phoneme engine once serves both.
+- **The Sound Board (IPA Scrabble) — PLANNED 2026-08-14, not built.** The first sink that actually **spends**
+  caught sounds: an endless phoneme-crossword folded into Inklings whose rack is drawn from
+  `state.phonicon`, where **laying a tile destroys it** (`count` is the tile stock, not just a tally). Full
+  plan in [`ipa-scrabble.md`](ipa-scrabble.md) §10. Two knock-ons for this doc when it lands: `count` becomes
+  a **spendable** number (the ×N badge of §3.2), and the board pays **ink + Word Hoard words** — so the loop
+  is fish → board → ink even though fishing itself still pays only sounds (§8.1 amended, see §10.7).
 - **(Open) a fishing-native use** — whether the Phonicon *also* powers something fishing-only (a sound-based
   cosmetic, a "perfect rhyme lure", etc.) is a §8 open question. v1's job is just to **fill the Phonicon**.
 

@@ -7,7 +7,8 @@ a play is valid when the phoneme sequence you lay matches **some real word's pro
 **Status:** **BUILT 2026-08-08** — standalone `ipa-scrabble.html`, launched from Inklings' DEV badge.
 Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 15×15 board game** with
 **play-off-others** (below), and on **2026-08-14** gained **sound-wordplay bonuses** (phonetic palindromes &
-semordnilaps). Not yet integrated into `inklings.html` proper.
+semordnilaps). Not yet integrated into `inklings.html` proper — **§10 is the planned production build**
+(fold into Inklings, endless board, tiles spent from your fished Phonicon). **Plan only, nothing built.**
 
 ## Design decisions (settled with the dev)
 - **Spell by sound.** Validity = the laid phoneme string is a real word's IPA (not a spelling). Homophones
@@ -173,7 +174,169 @@ Implemented as **`wordplayFor(pron)`** → `null | {kind:'pal'|'sem', bonus, mir
 
 ## Not built / deferred
 - **AI opponent** (currently solo score-attack), **wildcard/blank tiles**, turn timer.
-- Persistence (high score, saved games) — none yet; each load is a fresh bag.
-- In-Inklings integration (a room/screen sharing the bench UI), reward hookup (ink/décor), and the
-  **fishing/Phonicon tile source** + poetry phoneme engine tie-in.
+- Persistence (high score, saved games) — none yet in the bench; **§10 M4 adds the persistent board** in
+  Inklings.
+- In-Inklings integration, reward hookup (ink/dex) and the **fishing/Phonicon tile source** — all now
+  **planned in detail in §10** (not built). Poetry phoneme-engine tie-in still unplanned.
 - Difficulty tuning of value thresholds and bag size once play-tested.
+
+---
+
+# 10. Production build — the endless Sound Board in Inklings (PLANNED 2026-08-14, not built)
+
+The bench proved the engine; this is the plan to make it a **real Inklings system**. Two changes carry all
+the weight:
+
+1. **Tiles are the sounds you fished.** The bag is gone — your rack is drawn from `state.phonicon`, and
+   **laying a tile spends it forever**. Fishing finally has a sink, and the board finally has an economy.
+2. **The board never ends.** One persistent, ever-growing crossword you extend a word or two at a time,
+   day after day, with a **chain multiplier** you protect. No games, no final score, no reset.
+
+## 10.1 Decisions (settled with the dev, 2026-08-14)
+
+| # | Fork | Decision |
+| - | ---- | -------- |
+| 1 | Where it lives | **Folded into `inklings.html`** as a toolbar-opened overlay (like 🔉 Fish Phoneme). A **world bench** (walk up + `E`) is wanted later — build the overlay so only the *launcher* changes. |
+| 2 | Tile source | **Consumable stock.** The rack draws from `state.phonicon`; committed tiles are **destroyed**. |
+| 3 | Dex counts | **One number** — `state.phonicon[ipa].count` *is* the tile stock, and it goes down when you play. |
+| 4 | Leftovers | **Only tiles you actually lay are spent.** Drawing/holding/trading costs no tiles. |
+| 5 | Board shape | **Endless & persistent.** Panels are added as you reach the edge; nothing resets. |
+| 6 | Stuck | **Player presses 🌱 New patch** — the next word may be laid anywhere free. No engine search; being wrong is the player's call. |
+| 7 | Chain | **A multiplier on each play**, +0.1 per connected play. A new patch drops it to ×1.0. |
+| 8 | Chain life | **Persists across days** — it's part of the board, so a long chain is a weeks-long thing you're protecting. |
+| 9 | Rack | **Random draw of 7** from stock, weighted by counts. **♻ Trade costs ink** — a couple, escalating with each trade the same day. |
+| 10 | Premiums | Standard **DL/TL/DW/TW** on every panel, **plus articulatory squares** (below) — the board teaches articulation the way the fishing water does. |
+| 11 | Payout | **Ink + words into the Word Hoard**, per play (there is no game end to pay out at). |
+
+**Open (dev to confirm during the build):**
+- **Name.** "IPA Scrabble" is a dev codename. In-game it wants an Inklings name — *the Sound Board*,
+  *the Sound Loom*, *the Soundwright's Bench*. Placeholder in this plan: **the Sound Board**.
+- **Zero stock.** Proposed: a card whose count hits 0 **stays revealed at ×0** ("caught · out of stock"), so
+  `X/40 caught` never goes down. The alternative — re-locking to `???` — would make the collection genuinely
+  destructible. Building the ×0 version unless told otherwise.
+- **Homophone logging.** A pronunciation maps to several spellings; proposed: ink only the **shortest example**
+  (`PRON_WORDS`) into the Hoard, not the whole homophone set (playing `/t u/` shouldn't hand you two·too·to).
+
+## 10.2 The endless board
+
+**Premiums are a pure function of position, so the board needs no panel state at all.** A panel is 15×15;
+`premiumAt(r,c)` indexes the standard symmetric layout by `((r%15+15)%15, (c%15+15)%15)`, which makes the grid
+infinite in all four directions by construction. "Adding a board when you reach the edge" is therefore purely
+**viewport work** — there is nothing to allocate.
+
+- **★ centre** exists only once, at absolute `(7,7)` (panel 0's middle) — the anchor for the very first play.
+- **Board state** is sparse: `{ tiles: {"r,c": ipa}, minR, maxR, minC, maxC, chain, mult, score, patches }`.
+  Bounds are only used to size the view and to know where the frontier is.
+- **Placement logic ports nearly unchanged.** `runAt` / `cellTile` / `evaluateTurn` / `validTargets` /
+  `isHook` / `canStillHook` only ever walk neighbours — swapping the fixed array for the sparse map plus a
+  "is this square within the explored region + 1 panel" bound is the whole change.
+- **Viewport.** The overlay renders a window onto the infinite grid (~15×15 desktop, ~9–11 wide on a phone),
+  panning with the keyboard cursor at the edges, drag on touch, and a **⌖ recentre** button that jumps to the
+  frontier of your last play. The `1`–`7` select → cursor → `Enter` flow is untouched.
+
+### Articulatory squares (decision #10)
+
+The unique-to-this-game premiums, reusing the `place`/`manner`/`voice`/`backness`/`height` fields the fishing
+mode already authored in `data/phonemes.json` (§9.3 of `inklings-fishing.md`) — so a square pays only for a
+**kind of sound**, and learning where they are is learning the chart:
+
+| Square | Pays | Scores for |
+| ------ | ---- | ---------- |
+| ◆ **VOWEL** | ×3 letter | any vowel/diphthong tile |
+| ≈ **FRICATIVE** | ×3 letter | `f v s z ʃ ʒ θ ð h` |
+| 🔊 **VOICED** | ×2 letter | `b d ɡ v z ʒ ð m n ŋ l ɹ j w` |
+
+Placement: a small deterministic set per panel (seeded off the panel coords via the existing `mulberry32`, so
+it is stable forever without being stored), replacing a few of that panel's ordinary premium squares rather
+than adding to them. A tile that doesn't match scores its face value there — the square is a bonus to aim at,
+never a penalty. Rejected for v1 (kept in the back pocket): a **minimal-pair** square, a **mirror** square
+doubling the palindrome/semordnilap bonus, a **rare-sound** square.
+
+## 10.3 The tile economy
+
+- **Stock = `state.phonicon[ipa].count`.** Drawing a rack does **not** touch it; `✓ Play` decrements each
+  laid tile by 1. Everything else (rack leftovers, recall, trade, closing the overlay) returns to stock
+  because it never left.
+- **Two symbol aliases are required** (measured against the real data):
+  - `data/ipa-pronunciations.json` uses **`ɡ` (U+0261 script g)**; `data/phonemes.json` uses **ASCII `g`**.
+    One alias map, applied when a caught sound becomes a tile.
+  - **`ʌ` never appears in the pronunciation data at all** (CMU's `AH` collapsed to `ə`), so a caught `ʌ`
+    would be an unplayable trophy. Alias **`ʌ` → `ə` tiles**, with a note on the card.
+- **Rack** = 7, drawn randomly from stock weighted by count (a sound you hold ×4 is 4× as likely). Fewer than
+  7 owned sounds = a shorter rack; the board still opens.
+- **♻ Trade** rerolls the rack: costs **2 ink** the first time each day, **+2 per further trade that day**
+  (2·4·6…), tracked as `{tradeDay, tradeCount}` on the board state. No tiles are lost. Can't afford it → the
+  button dims with the price shown.
+- **Empty state.** Fewer than ~2 usable sounds → the overlay shows "go fishing" rather than a dead board.
+  There is deliberately **no minimum-stock gate** beyond that: an endless board means you play when you can.
+
+**Pacing sanity check** (why consumption works here): the map is 5×5 screens, `FISH_SCREEN_CHANCE=0.4`, 1 spot
+(35% → 2) per fishing screen, one catch each, hard daily reset — so **a thorough day's fishing yields ~12–14
+phonemes** and a casual day a handful. That is one or two words a day on the board, which is exactly the
+cadence the endless-board design wants.
+
+## 10.4 Scoring, the chain, and payout
+
+- **Per play:** `runs scored with premiums (incl. articulatory) + BINGO + wordplay bonuses`, then the whole
+  total is **multiplied by the chain** and rounded.
+- **Chain:** starts ×1.0, **+0.1 per connected play**, no cap (decision #7/#8 — dev chose the uncapped,
+  persists-across-days form; if late-game totals get silly, the growth step and a soft cap are the tuning
+  knobs). Shown as `chain ×7 (×1.7)` in the board's statbar.
+- **🌱 New patch** — the button that lets the next word be laid anywhere free (no hook required, exactly like
+  an opening move). Costs the chain: back to ×1.0, `patches++`. Labelled with what it costs at press time.
+- **Ink:** `floor(playScore / 10)` per play, under a **daily ink cap** (first pass: 40/day) so a huge chain
+  can't print currency. Numbers are tuning.
+- **Word Hoard:** each valid run's example word is inked into the dex on commit, cross-checked against
+  Inklings' own dictionary (`data/dictionary.json`) so the board can't grant words the rest of the game
+  doesn't know. Words already collected simply don't re-pay.
+- **No high score / no game over.** The board's permanent `score` accumulates forever; the statbar carries
+  score · chain · words · ↔ wordplay · patches.
+
+## 10.5 Where the code goes
+
+- **A `/* SOUND BOARD */` block in `inklings.html`**, overlay `#soundboard`, opened by a non-contextual
+  toolbar entry (`tb-board`) + touch button (`tc-board`), joining every overlay guard (movement, `canBeHurt`,
+  hints, `syncTouchUI`, `closeAnyDialog`, `musicDialogueOpen`) exactly as `#phonicon` does. ~700 lines ported
+  from the bench into a 9.9k-line file.
+- **`data/ipa-pronunciations.json` (1.4 MB) is lazy-loaded on first open**, mirroring the curator's
+  `wordnet-relations.json` lazy-load — the field-play path must not pay for it.
+- **SFX** map onto Inklings' existing engine; the bench's palindrome/semordnilap mirrored-arpeggio cues are
+  worth porting as new entries rather than dropping.
+- **`ipa-scrabble.html` stays** as the standalone engine bench (random bag, free play, DEV badge) — it is much
+  faster to iterate placement/scoring rules there. Policy: the bench is the sandbox, Inklings is production,
+  and changes are ported deliberately in one direction. Expect drift otherwise; note it in both docs when it
+  happens.
+- **Save `v11` → `v12`**, additive: `board` joins `snapshot`/`applySnapshot` + Export/Import; old saves get an
+  empty board. `state.phonicon` already persists and needs no shape change (its `count` just became meaningful).
+
+## 10.6 Build order (each shippable)
+
+1. **M1 — Data & stock plumbing (no UI).** Lazy pronunciation fetch inside Inklings, the `ɡ`/`g` + `ʌ`→`ə`
+   alias map, stock read/spend helpers over `state.phonicon`, weighted rack draw. Parse-check only.
+2. **M2 — Endless board model.** Sparse tile map + bounds, `premiumAt(r,c)` (standard layout + articulatory
+   squares), port `runAt`/`evaluateTurn`/`validTargets`/`canStillHook` onto it. Still headless.
+3. **M3 — The overlay.** `#soundboard`, toolbar/touch launch, guards, viewport + pan + ⌖ recentre, rack from
+   stock, click + keyboard placement, live per-run status. Playable, no economy yet.
+4. **M4 — Economy & persistence.** Consumption on commit, chain multiplier + 🌱 New patch, ink-priced trade,
+   ink payout + Word Hoard logging, board in the save (v12).
+5. **M5 — Teaching & polish.** Articulatory-square explainer (and a pointer from the Fish Phoneme Guide tab —
+   same chart, second use), chain/patch UI feel, SFX, empty state, first-word celebration through the shared
+   queue.
+6. **Later — the world bench.** Swap the toolbar launcher for a placeable/fixed bench object (`tileInFront()`
+   + `E`), per decision #1. The overlay itself doesn't change.
+
+## 10.7 Conflicts & considerations
+
+1. **This amends fishing's reward-routing rule.** `inklings-fishing.md` §8.1 says fishing pays **sounds only**
+   and must not drift into ink. It still doesn't — but the Sound Board now converts sounds → ink + words, so
+   the effective loop is fish → board → ink. That's the dev's call (decision #11) and is recorded here rather
+   than left as a silent contradiction; the fishing doc's §3.3 sink list gains the board.
+2. **Consumption makes the Phonicon a currency.** Its "coverage-honest X/40" promise (fishing §3.2) survives
+   only under the ×0-stays-revealed rule (§10.1 open item). Decide before M4.
+3. **One-way spend, no refunds.** There is no un-play; a committed word is permanent on an endless board. That
+   is the point, but it means `✓ Play` deserves a confirm affordance for expensive tiles (an 8–10pt rare).
+4. **The `ʌ` alias is user-visible.** A player who fishes `ʌ` and finds `ə` tiles needs the card to say so.
+5. **Chain persistence + no cap** is the one number most likely to need retuning after play; keep the growth
+   step and cap as named constants from M4.
+6. **Viewport on a phone.** An infinite board in a retro-pixel overlay is the real UX risk of this plan —
+   M3 should be judged on the phone, not the desktop.
