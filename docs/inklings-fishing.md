@@ -233,7 +233,8 @@ teaching table**, reusable by the Sound Garden later.
   `{ "ʃ": {count, first}, "θ": {...} }`. Persists forever like `dex` / `resources` / `bestiary`.
 - **A Fish Phoneme view** — a grid of the phonemes, caught ones revealed (sound-fish glyph + symbol + name +
   romanization + hint word + a **catch-count badge** `×N` pinned in the card's top-right corner — you can
-  catch the same sound repeatedly across spots/days and the tally shows there). Uncaught ones are locked `???`
+  catch the same sound repeatedly across spots/days and the tally shows there; once the Sound Board can spend
+  it (§3.3), a card at 0 stays revealed and reads **"out of stock"**). Uncaught ones are locked `???`
   slots. (Card content is top-aligned with head-room above the glyph so the fish never pokes over the top
   border.) Mirror the **bestiary** reveal pattern
   (`dexView`-style gating) and its overlay chrome. Opened from the toolbar / a touch button. **Two tabs**
@@ -253,12 +254,15 @@ Caught sounds are a **supply**, not a dead collection:
 - **Poetry phoneme engine (poetry §3):** poetry consumes phonemes at **word** granularity (rhyme keys,
   syllable counts). Fishing is the **raw-phoneme** counterpart — the same `data/pronunciations.json` /
   IPA-vowel-set machinery, one level lower. Building the phoneme engine once serves both.
-- **The Sound Board (IPA Scrabble) — PLANNED 2026-08-14, not built.** The first sink that actually **spends**
-  caught sounds: an endless phoneme-crossword folded into Inklings whose rack is drawn from
+- **The Sound Board (IPA Scrabble) — PLANNED 2026-08-14; M1 BUILT 2026-08-15.** The first sink that actually
+  **spends** caught sounds: an endless phoneme-crossword folded into Inklings whose rack is drawn from
   `state.phonicon`, where **laying a tile destroys it** (`count` is the tile stock, not just a tally). Full
-  plan in [`ipa-scrabble.md`](ipa-scrabble.md) §10. Two knock-ons for this doc when it lands: `count` becomes
-  a **spendable** number (the ×N badge of §3.2), and the board pays **ink + Word Hoard words** — so the loop
-  is fish → board → ink even though fishing itself still pays only sounds (§8.1 amended, see §10.7).
+  plan in [`ipa-scrabble.md`](ipa-scrabble.md) §10. **M1 (headless plumbing) is in `inklings.html`** — the
+  lazy pronunciation load, the `g`→`ɡ` / `ʌ`→`ə` tile aliases, and stock read/draw/spend helpers over
+  `state.phonicon`; **nothing spends until M4**, so today's counts still only go up. Two knock-ons for this
+  doc: `count` becomes a **spendable** number (the ×N badge of §3.2, which reads **"out of stock"** at 0
+  rather than re-locking, so `X/40 caught` can't go down), and the board pays **ink + Word Hoard words** — so
+  the loop is fish → board → ink even though fishing itself still pays only sounds (§8.1 amended, see §10.7).
 - **(Open) a fishing-native use** — whether the Phonicon *also* powers something fishing-only (a sound-based
   cosmetic, a "perfect rhyme lure", etc.) is a §8 open question. v1's job is just to **fill the Phonicon**.
 

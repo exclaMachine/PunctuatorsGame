@@ -7916,17 +7916,140 @@ function renderPhonicon(){
     const rec=state.phonicon && state.phonicon[p.ipa];
     // Locked slots show a GENERIC silhouette (fishGlyph(null)) so the specific creature stays a mystery.
     if(!rec) return `<div class="phon-card locked"><div class="phon-fish">${fishGlyph(null,{silhouette:true})}</div><div class="phon-sym">?</div><div class="phon-lock">???</div></div>`;
+    // The count is also the Sound Board's tile stock (docs/ipa-scrabble.md §10.3), so it can reach 0 once
+    // tiles are spent: the card stays REVEALED and reads "out of stock" rather than re-locking, so the
+    // Phonicon's coverage-honest X/40 can never go down.
+    const n=(rec.count==null?1:rec.count), times=n>0?`×${n}`:`out of stock`;
     return `<div class="phon-card">`+
       `<div class="phon-head"><span class="phon-fish">${fishGlyph(p)}</span><span class="phon-sym">/${esc(p.ipa)}/</span></div>`+
       (p.fish?`<div class="phon-name">${esc(p.fish)}</div>`:``)+
       `<div class="phon-roman">“${esc(p.roman)}”</div>`+
       `<div class="phon-word">as in <b>${esc(p.hintWord)}</b></div>`+
       `<button class="phon-play" data-ipa="${esc(p.ipa)}" title="Hear /${esc(p.ipa)}/" aria-label="Hear /${esc(p.ipa)}/">▶</button>`+
-      `<div class="phon-times">×${rec.count||1}</div></div>`;
+      `<div class="phon-times">${times}</div></div>`;
   }).join("");
   // ▶ hears the caught sound (docs/inklings-fishing.md §7 playback layer). Delegated once per render.
   grid.querySelectorAll(".phon-play").forEach(btn=>{ btn.onclick=e=>{ e.stopPropagation();
     PhonemeAudio.play(PHONEMES_BY_IPA[btn.getAttribute("data-ipa")]); }; });
+}
+
+/* ---------- THE SOUND BOARD — M1: data & stock plumbing (docs/ipa-scrabble.md §10) ------------------
+   The production build of the ipa-scrabble.html bench: an endless crossword you spell BY SOUND, whose
+   tiles are the phonemes you fished. M1 is headless on purpose — the lazy lexicon load, the two symbol
+   aliases the two data files disagree on, and read/draw/spend helpers over state.phonicon (whose `count`
+   IS the tile stock). Nothing spends yet; the board model is M2, the overlay M3, the economy M4. */
+let SB_PRONS=null;          // the raw word -> "ɪ p ə" map (kept for M4's Word Hoard cross-check)
+let SB_VALID=null;          // Set of every pronunciation string — a play is legal iff its run is in here
+let SB_WORDS=null;          // pron -> shortest example spelling (what gets shown / inked)
+let SB_TILE=null;           // board token -> {val, pct, vowel} — point values derived from real frequency
+let _sbFailed=false, _sbPromise=null;
+const SB_RACK_SIZE=7;
+/* The pronunciation data (CMU-derived) and the phoneme inventory (data/phonemes.json) disagree on two
+   symbols, so a caught sound is aliased on its way to becoming a tile (§10.3):
+     · the prons use script ɡ (U+0261), the inventory ASCII g — same sound, different codepoint;
+     · ʌ occurs in ZERO of the 49,947 pronunciations (CMU folds AH into ə), so a caught ʌ would be an
+       unplayable trophy — it yields ə tiles instead. That's user-visible; the card must say so (§10.7.4). */
+const SB_ALIAS={ "g":"ɡ", "ʌ":"ə" };
+function sbToken(ipa){ return SB_ALIAS[ipa]||ipa; }
+const SB_VOWELS=new Set(["i","ɪ","ɛ","æ","ə","ɑ","ɔ","ʊ","u","ɝ","eɪ","aɪ","ɔɪ","oʊ","aʊ"]);
+// Tile value by rarity — a Scrabble-like spread, but earned from this lexicon's own phoneme frequency
+// rather than hardcoded, so ə/n/t/ɪ are 1s and ɔɪ/ð/ʒ are 10s.
+function sbValueForPct(p){
+  if(p>=4) return 1; if(p>=2) return 2; if(p>=1.2) return 3;
+  if(p>=0.8) return 4; if(p>=0.5) return 5; if(p>=0.2) return 8; return 10;
+}
+// data/ipa-pronunciations.json is 1.4 MB, so it's lazy-loaded on first board open (the curator's
+// wordnet-relations.json pattern) — field play must not pay for it. Resolves to null on failure, and a
+// later attempt retries rather than staying broken.
+function loadPronunciations(){
+  if(SB_VALID) return Promise.resolve(SB_VALID);
+  if(_sbPromise) return _sbPromise;
+  _sbFailed=false;
+  _sbPromise = fetch("data/ipa-pronunciations.json").then(r=>r.ok?r.json():Promise.reject()).then(j=>{
+    sbBuildLexicon(j);
+    return SB_VALID;
+  }).catch(()=>{
+    _sbFailed=true; _sbPromise=null;
+    console.warn("Inklings: couldn't load data/ipa-pronunciations.json — the Sound Board is unavailable.");
+    return null;
+  });
+  return _sbPromise;
+}
+// One pass over the dictionary builds all three tables: the validity Set, the shortest example spelling
+// per pronunciation (homophones collapse — /t u/ is one entry, displayed as "to"), and the token
+// frequency the tile values come from.
+function sbBuildLexicon(data){
+  SB_PRONS=data; SB_VALID=new Set(); SB_WORDS=new Map(); SB_TILE=Object.create(null);
+  const freq=Object.create(null); let total=0;
+  for(const w in data){
+    const pron=(data[w]||"").trim(); if(!pron) continue;
+    SB_VALID.add(pron);
+    const clean=w.replace(/_/g," "), prev=SB_WORDS.get(pron);
+    if(!prev || clean.length<prev.length || (clean.length===prev.length && clean<prev)) SB_WORDS.set(pron, clean);
+    for(const t of pron.split(" ")){ if(t){ freq[t]=(freq[t]||0)+1; total++; } }
+  }
+  for(const t in freq){
+    const pct=100*freq[t]/total;
+    SB_TILE[t]={ val:sbValueForPct(pct), pct, vowel:SB_VOWELS.has(t) };
+  }
+}
+function sbIsWord(pron){ return !!(SB_VALID && SB_VALID.has(pron)); }
+function sbExample(pron){ return (SB_WORDS && SB_WORDS.get(pron)) || null; }
+
+/* ── Stock (§10.3) ───────────────────────────────────────────────────────────────────────────────
+   state.phonicon[ipa].count IS the tile stock — one number, no parallel ledger. Drawing a rack does
+   NOT touch it (leftovers, recall and trade cost nothing because the tiles never left); only committing
+   a play spends, via sbSpend, which M4 wires to ✓ Play. A count that hits 0 stays revealed ("caught ·
+   out of stock") so the Phonicon's X/40 coverage number can never go down. */
+function sbStock(ipa){ const e=state.phonicon&&state.phonicon[ipa]; return e?(e.count==null?1:e.count):0; }
+// Every owned sound that still has tiles left, aliased to the board token it plays as.
+function sbStockList(){
+  const out=[]; if(!state.phonicon) return out;
+  for(const ipa in state.phonicon){
+    const n=sbStock(ipa); if(n<=0) continue;
+    const tok=sbToken(ipa);
+    if(SB_TILE && !SB_TILE[tok]) continue;        // a symbol no pronunciation uses — can't be a tile
+    out.push({ ipa, tok, n });
+  }
+  return out;
+}
+function sbStockTotal(){ let n=0; for(const s of sbStockList()) n+=s.n; return n; }
+function sbDistinctPlayable(){ const seen=new Set(); for(const s of sbStockList()) seen.add(s.tok); return seen.size; }
+let _sbTileSeq=0;
+// A tile remembers the inventory symbol it came FROM (`ipa`) as well as the token it plays AS (`tok`),
+// so spending an aliased ə tile debits the ʌ (or ə) card it was actually drawn from.
+function sbMkTile(ipa){
+  const tok=sbToken(ipa), m=(SB_TILE&&SB_TILE[tok])||{val:1};
+  return { id:++_sbTileSeq, ipa, tok, val:m.val, vowel:SB_VOWELS.has(tok) };
+}
+// Draw up to `want` tiles at random from stock, weighted by count (a sound held ×4 is 4× as likely),
+// and without replacement against the stock — `held` (tiles already in hand) is reserved first, so a
+// rack can never hold more copies of a sound than you own. Fewer than 7 owned = a shorter rack.
+function sbDrawRack(want, held){
+  want=(want==null?SB_RACK_SIZE:want);
+  const left=Object.create(null);
+  for(const s of sbStockList()) left[s.ipa]=s.n;
+  for(const t of (held||[])) if(left[t.ipa]!=null) left[t.ipa]--;
+  const out=[];
+  while(out.length<want){
+    let total=0; for(const k in left) if(left[k]>0) total+=left[k];
+    if(!total) break;                                   // stock exhausted — short rack, board still opens
+    let r=Math.random()*total, pick=null;
+    for(const k in left){ if(left[k]<=0) continue; r-=left[k]; if(r<=0){ pick=k; break; } }
+    if(pick==null) break;
+    left[pick]--; out.push(sbMkTile(pick));
+  }
+  return out;
+}
+// Spend committed tiles: one-way, no refunds (§10.7.3). Returns how many were actually debited.
+function sbSpend(tiles){
+  let n=0;
+  for(const t of (tiles||[])){
+    const e=state.phonicon&&state.phonicon[t.ipa]; if(!e) continue;
+    const c=(e.count==null?1:e.count); if(c<=0) continue;
+    e.count=c-1; n++;
+  }
+  return n;
 }
 
 /* ---------- THE ATLAS (the library globe → the world board — docs/inklings-atlas.md §4) --------------

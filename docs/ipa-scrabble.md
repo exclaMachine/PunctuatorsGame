@@ -7,8 +7,8 @@ a play is valid when the phoneme sequence you lay matches **some real word's pro
 **Status:** **BUILT 2026-08-08** — standalone `ipa-scrabble.html`, launched from Inklings' DEV badge.
 Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 15×15 board game** with
 **play-off-others** (below), and on **2026-08-14** gained **sound-wordplay bonuses** (phonetic palindromes &
-semordnilaps). Not yet integrated into `inklings.html` proper — **§10 is the planned production build**
-(fold into Inklings, endless board, tiles spent from your fished Phonicon). **Plan only, nothing built.**
+semordnilaps). **§10 is the production build** in `inklings.html` (endless board, tiles spent from your fished
+Phonicon) — **M1 (data & stock plumbing) BUILT 2026-08-15**; M2–M5 planned.
 
 ## Design decisions (settled with the dev)
 - **Spell by sound.** Validity = the laid phoneme string is a real word's IPA (not a spelling). Homophones
@@ -211,9 +211,10 @@ the weight:
 **Open (dev to confirm during the build):**
 - **Name.** "IPA Scrabble" is a dev codename. In-game it wants an Inklings name — *the Sound Board*,
   *the Sound Loom*, *the Soundwright's Bench*. Placeholder in this plan: **the Sound Board**.
-- **Zero stock.** Proposed: a card whose count hits 0 **stays revealed at ×0** ("caught · out of stock"), so
-  `X/40 caught` never goes down. The alternative — re-locking to `???` — would make the collection genuinely
-  destructible. Building the ×0 version unless told otherwise.
+- ~~**Zero stock.**~~ **Settled in M1:** a card whose count hits 0 **stays revealed** and its Phonicon card
+  reads **"out of stock"** instead of `×N`, so `X/40 caught` never goes down (the alternative — re-locking to
+  `???` — would make the collection genuinely destructible). `recordPhonemeCatch` still treats it as a repeat,
+  so re-fishing that sound restocks it rather than re-announcing a first catch.
 - **Homophone logging.** A pronunciation maps to several spellings; proposed: ink only the **shortest example**
   (`PRON_WORDS`) into the Hoard, not the whole homophone set (playing `/t u/` shouldn't hand you two·too·to).
 
@@ -311,8 +312,7 @@ cadence the endless-board design wants.
 
 ## 10.6 Build order (each shippable)
 
-1. **M1 — Data & stock plumbing (no UI).** Lazy pronunciation fetch inside Inklings, the `ɡ`/`g` + `ʌ`→`ə`
-   alias map, stock read/spend helpers over `state.phonicon`, weighted rack draw. Parse-check only.
+1. **M1 — Data & stock plumbing (no UI). BUILT 2026-08-15.** See §10.8.
 2. **M2 — Endless board model.** Sparse tile map + bounds, `premiumAt(r,c)` (standard layout + articulatory
    squares), port `runAt`/`evaluateTurn`/`validTargets`/`canStillHook` onto it. Still headless.
 3. **M3 — The overlay.** `#soundboard`, toolbar/touch launch, guards, viewport + pan + ⌖ recentre, rack from
@@ -340,3 +340,34 @@ cadence the endless-board design wants.
    step and cap as named constants from M4.
 6. **Viewport on a phone.** An infinite board in a retro-pixel overlay is the real UX risk of this plan —
    M3 should be judged on the phone, not the desktop.
+
+## 10.8 M1 — Data & stock plumbing (BUILT 2026-08-15)
+
+Headless: a `/* THE SOUND BOARD — M1 */` block in `inklings.html` (just above the Atlas block), plus one
+line in `renderPhonicon`. No overlay, no board, and **nothing spends yet** — `sbSpend` exists but M4 is what
+calls it. Verify in the console with `loadPronunciations().then(()=>console.log(sbDrawRack(7)))` (needs http
+serving, like the rest of the game's data).
+
+- **Lexicon (lazy).** `loadPronunciations()` fetches `data/ipa-pronunciations.json` **once, on demand** (the
+  curator's `wordnet-relations.json` pattern — 1.4 MB must not land on the field-play path); it caches the
+  promise, resolves `null` on failure, and clears the promise so a later attempt retries. `sbBuildLexicon`
+  makes one pass over the dictionary and builds all three tables together: `SB_VALID` (the pronunciation Set
+  a run is judged against), `SB_WORDS` (pron → **shortest** example spelling, so homophones collapse to one
+  display word), and `SB_TILE` (token → `{val, pct, vowel}`, values from `sbValueForPct` over this lexicon's
+  **own** measured frequency, not a hardcoded table). Accessors: `sbIsWord(pron)` / `sbExample(pron)`.
+  `SB_PRONS` keeps the raw map for M4's Word Hoard cross-check.
+- **The two aliases** (`SB_ALIAS` / `sbToken`), both verified against the shipped data rather than assumed:
+  `g`→`ɡ` (inventory ASCII vs the prons' U+0261) and `ʌ`→`ə` (**`ʌ` occurs in 0 of the 49,947 pronunciations**
+  — CMU folds `AH` into `ə`). Checked both directions: all **40** inventory sounds map onto playable tokens,
+  and all **39** data tokens are reachable by fishing — no dead tiles, no unfishable tile.
+- **Stock over `state.phonicon`** (one number, no parallel ledger): `sbStock(ipa)`, `sbStockList()` (owned
+  sounds with tiles left, each carrying the token it plays as), `sbStockTotal()`, `sbDistinctPlayable()` (for
+  M3's "go fishing" empty state), and `sbSpend(tiles)` (one-way debit, returns how many landed).
+- **Weighted rack draw.** `sbDrawRack(want, held)` draws up to 7 weighted by count (held ×4 = 4× as likely)
+  and **without replacement against the stock**, reserving `held` first, so a rack can never show more copies
+  of a sound than you own; fewer than 7 owned just yields a shorter rack. It deliberately **does not touch
+  the counts** — drawing, holding, recalling and trading are free (decision #4). A tile carries both the
+  inventory symbol it came **from** (`ipa`) and the token it plays **as** (`tok`), so spending an aliased `ə`
+  tile debits the `ʌ` card it was actually drawn from.
+- **Phonicon card at zero:** `×N` becomes **"out of stock"** at 0 (the §10.1 rule) — the only visible change
+  in M1, and unreachable until M4 spends.
