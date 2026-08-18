@@ -8,7 +8,8 @@ a play is valid when the phoneme sequence you lay matches **some real word's pro
 Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 15×15 board game** with
 **play-off-others** (below), and on **2026-08-14** gained **sound-wordplay bonuses** (phonetic palindromes &
 semordnilaps). **§10 is the production build** in `inklings.html` (endless board, tiles spent from your fished
-Phonicon) — **M1 (data & stock plumbing) BUILT 2026-08-15**; M2–M5 planned.
+Phonicon) — **M1 (data & stock plumbing) BUILT 2026-08-15**, **M2 (the endless board model) BUILT 2026-08-17**;
+M3–M5 planned.
 
 ## Design decisions (settled with the dev)
 - **Spell by sound.** Validity = the laid phoneme string is a real word's IPA (not a spelling). Homophones
@@ -313,8 +314,7 @@ cadence the endless-board design wants.
 ## 10.6 Build order (each shippable)
 
 1. **M1 — Data & stock plumbing (no UI). BUILT 2026-08-15.** See §10.8.
-2. **M2 — Endless board model.** Sparse tile map + bounds, `premiumAt(r,c)` (standard layout + articulatory
-   squares), port `runAt`/`evaluateTurn`/`validTargets`/`canStillHook` onto it. Still headless.
+2. **M2 — Endless board model. BUILT 2026-08-17.** See §10.9.
 3. **M3 — The overlay.** `#soundboard`, toolbar/touch launch, guards, viewport + pan + ⌖ recentre, rack from
    stock, click + keyboard placement, live per-run status. Playable, no economy yet.
 4. **M4 — Economy & persistence.** Consumption on commit, chain multiplier + 🌱 New patch, ink-priced trade,
@@ -343,7 +343,7 @@ cadence the endless-board design wants.
 
 ## 10.8 M1 — Data & stock plumbing (BUILT 2026-08-15)
 
-Headless: a `/* THE SOUND BOARD — M1 */` block in `inklings.html` (just above the Atlas block), plus one
+Headless: a `/* THE SOUND BOARD — M1 */` block in `inklings.html` (above the M2 block and the Atlas), plus one
 line in `renderPhonicon`. No overlay, no board, and **nothing spends yet** — `sbSpend` exists but M4 is what
 calls it. Verify in the console with `loadPronunciations().then(()=>console.log(sbDrawRack(7)))` (needs http
 serving, like the rest of the game's data).
@@ -371,3 +371,39 @@ serving, like the rest of the game's data).
   tile debits the `ʌ` card it was actually drawn from.
 - **Phonicon card at zero:** `×N` becomes **"out of stock"** at 0 (the §10.1 rule) — the only visible change
   in M1, and unreachable until M4 spends.
+
+## 10.9 M2 — The endless board model (BUILT 2026-08-17)
+
+Still headless: a second `/* THE SOUND BOARD — M2 */` block in `inklings.html`, directly under M1. No overlay,
+nothing spends, nothing persists. What exists now is a complete, playable-by-console board engine.
+
+- **Premiums are a pure function of position.** One 15×15 `SB_PREMIUM` table (standard Scrabble layout, centre
+  = DW) read at `(r mod 15, c mod 15)` by **`sbPremiumAt(r,c)`** — so the grid is infinite in all four
+  directions *by construction*, with no panel to allocate, store or save. The **★ exists exactly once**, at
+  absolute `(7,7)`.
+- **Articulatory squares** (§10.2) resolve in the same call: `sbArtPanel(pr,pc)` seeds `mulberry32(hash2(pr,pc))`,
+  shuffles that panel's **letter-premium squares** (DL/TL only — word multipliers and the ★ are never touched)
+  and converts **6 of them, two per kind** (`◆ VOWEL ×3 · ≈ FRICATIVE ×3 · 🔊 VOICED ×2`). Deterministic
+  forever, memoised per panel, never stored. **`sbArtPays`** reads the *same* `data/phonemes.json` fields
+  fishing authored (`manner`/`voice`), so the two modes can't disagree about what a fricative is; ◆ falls back
+  to the tile's own vowel flag so it still works if that file failed to load. A non-matching tile scores face
+  value — the squares are targets, never penalties.
+- **Board state** is sparse on `state.soundboard`: `{tiles:{"r,c":tile}, count, minR..maxC, score, chain,
+  patches, words, wordplay, patchFree, tradeDay, tradeCount}` (`sbNewBoard`/`sbBoard`). Bounds only size the
+  view and bound the walks; `sbInb` = **explored region + one panel** of frontier. It deliberately **does not
+  join `snapshot()` yet** — the save stays `v11` until M4.
+- **The engine ported onto it:** `sbCellTile`/`sbRunAt`/`sbScoreCells`/`sbWordplayFor`/`sbEvaluateTurn`/
+  `sbValidTargets`/`sbIsHook`/`sbCanStillHook`, plus turn state (`sbRack`, `sbPending`, `sbFillRack`,
+  `sbRecall`) and **`sbCommitPlacement()`** — which writes tiles into the map and grows the bounds, the
+  *structural* half of a play; M4 layers spend/chain/ink/Hoard on top. `sbEvaluateTurn` also returns
+  `mult`/`final` (the chain multiplier applied and rounded) so M3 can preview what M4 will pay.
+- **One thing couldn't be ported literally.** The bench finds first-tile targets by scanning all 225 squares
+  and testing each with `canStillHook` — on an endless board that cost grows with the *area* you've explored.
+  **`sbReachFromHooks(budget)`** enumerates the identical set backwards, walking outward from each hook
+  (`sbHooks()`, derived from the tile map) up to `budget` empty squares, bridging committed tiles for free.
+  Same relation, read from the other end; the cost is now board **tiles**, not board **area**. Later tiles in a
+  turn still use the bench's candidate-then-`sbCanStillHook` filter, where the candidate set is tiny.
+- **`patchFree`** (the flag M4's 🌱 New patch sets) is honoured throughout: every free square hooks, the
+  connect-to-the-board check is skipped, and first-tile targets become the whole in-bounds region.
+
+Verify in the console (needs http serving): `loadPronunciations().then(()=>{ sbFillRack(); console.log(sbRack.map(t=>t.tok), sbValidTargets().length); })` — on a fresh board the targets are the ★ and everything within reach of it.

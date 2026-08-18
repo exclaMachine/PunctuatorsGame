@@ -8052,6 +8052,351 @@ function sbSpend(tiles){
   return n;
 }
 
+/* ---------- THE SOUND BOARD — M2: the endless board model (docs/ipa-scrabble.md §10.2) ---------------
+   Still headless. Two ideas carry the endless board:
+   1. PREMIUMS ARE A PURE FUNCTION OF POSITION — sbPremiumAt(r,c) reads the standard 15×15 Scrabble layout
+      at (r mod 15, c mod 15), so the grid is infinite in all four directions BY CONSTRUCTION: there are no
+      panels to allocate, store or save, and "extend the board" is viewport work (M3).
+   2. THE BOARD IS A SPARSE MAP — tiles keyed "r,c", plus bounds used only to size the view and to bound
+      the reach walks. The ★ centre exists exactly once, at absolute (7,7).
+   Everything else is the bench engine (ipa-scrabble.html) ported onto those two — runAt / validTargets /
+   canStillHook / evaluateTurn and the wordplay bonuses — plus the articulatory squares, which are new here.
+   Nothing spends, pays out or persists yet: the overlay is M3, the economy and save v12 are M4. */
+const SB_PANEL=15, SB_CENTER=7;    // panel size · the single ★, at absolute (7,7)
+const SB_PAD=SB_PANEL;             // how far past the explored edge play may reach — one panel of frontier
+const SB_BINGO=50;                 // all 7 tiles in one play
+/* Sound-wordplay bonuses, as tuned on the bench: palindromes scale with length because the long ones are
+   vanishingly rare, semordnilaps stay a small flat nod because they're ~10× more common. */
+const SB_PAL_PER_PHONEME=10, SB_SEM_BONUS=10, SB_WORDPLAY_MIN=3;
+const SB_CHAIN_STEP=0.1;           // +0.1× per connected play, uncapped (§10.4) — M4 is what grows it
+const SB_DIRS4=[[-1,0],[1,0],[0,-1],[0,1]];
+
+/* The standard Scrabble premium layout, built once — read modulo the panel, this single table IS the
+   infinite board's premium map. */
+const SB_PREMIUM=Array.from({length:SB_PANEL},()=>Array(SB_PANEL).fill(""));
+{
+  const P={
+    TW:[[0,0],[0,7],[0,14],[7,0],[7,14],[14,0],[14,7],[14,14]],
+    DW:[[1,1],[2,2],[3,3],[4,4],[10,10],[11,11],[12,12],[13,13],[1,13],[2,12],[3,11],[4,10],[10,4],[11,3],[12,2],[13,1]],
+    TL:[[1,5],[1,9],[5,1],[5,5],[5,9],[5,13],[9,1],[9,5],[9,9],[9,13],[13,5],[13,9]],
+    DL:[[0,3],[0,11],[2,6],[2,8],[3,0],[3,7],[3,14],[6,2],[6,6],[6,8],[6,12],[7,3],[7,11],[8,2],[8,6],[8,8],[8,12],[11,0],[11,7],[11,14],[12,6],[12,8],[14,3],[14,11]]
+  };
+  for(const k in P) for(const [r,c] of P[k]) SB_PREMIUM[r][c]=k;
+  SB_PREMIUM[SB_CENTER][SB_CENTER]="DW";      // the ★ doubles the opening word
+}
+
+/* Articulatory squares (§10.2) — this board's own premium, and the reason it teaches: the square pays for
+   a KIND of sound, not a particular tile, so learning where they are is learning the same chart the
+   fishing water uses. They REPLACE a few of each panel's ordinary LETTER premiums (never a word premium,
+   never the ★, so a panel's word multipliers are untouched), picked from a seed made of the panel's own
+   coordinates — deterministic forever, so nothing about them is ever stored. A tile that doesn't match
+   simply scores its face value: these are targets to aim at, never penalties. */
+const SB_ART={ VOWEL:{mult:3,sym:"◆",label:"VOWEL"}, FRIC:{mult:3,sym:"≈",label:"FRICATIVE"}, VOICED:{mult:2,sym:"🔊",label:"VOICED"} };
+const SB_ART_ORDER=["VOWEL","FRIC","VOICED","VOWEL","FRIC","VOICED"];   // 6 per panel, two of each kind
+const SB_LETTER_SQUARES=(()=>{ const a=[];
+  for(let r=0;r<SB_PANEL;r++) for(let c=0;c<SB_PANEL;c++){ const p=SB_PREMIUM[r][c]; if(p==="DL"||p==="TL") a.push(r+","+c); }
+  return a; })();
+const _sbArtPanels=new Map();      // panel key -> {"lr,lc": kind} (memo only; regenerable from the seed)
+function sbArtPanel(pr,pc){
+  const key=pr+","+pc; let m=_sbArtPanels.get(key); if(m) return m;
+  m=Object.create(null);
+  const rng=mulberry32((hash2(pr,pc)^0x50acb0a)>>>0), pool=SB_LETTER_SQUARES.slice();
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); const t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
+  for(let i=0;i<SB_ART_ORDER.length && i<pool.length;i++) m[pool[i]]=SB_ART_ORDER[i];
+  _sbArtPanels.set(key,m); return m;
+}
+// "" | "DL" | "TL" | "DW" | "TW" | "VOWEL" | "FRIC" | "VOICED" — everything the square is, in one string.
+function sbPremiumAt(r,c){
+  const pr=Math.floor(r/SB_PANEL), pc=Math.floor(c/SB_PANEL), lr=r-pr*SB_PANEL, lc=c-pc*SB_PANEL;
+  return sbArtPanel(pr,pc)[lr+","+lc] || SB_PREMIUM[lr][lc];
+}
+/* Does a tile satisfy an articulatory square? Read off the SAME data fishing authored (data/phonemes.json
+   §9: type/place/manner/voice), so the two modes can never disagree about what a fricative is. Vowels fall
+   back to the tile's own flag, so ◆ still works if phonemes.json failed to load. */
+let _sbFeat=null;
+function sbFeatureTable(){
+  if(_sbFeat) return _sbFeat;
+  if(!PHONEMES) return null;                    // not fetched yet — callers degrade to face value
+  _sbFeat=Object.create(null);
+  for(const p of PHONEMES){ const t=sbToken(p.ipa); if(!_sbFeat[t]) _sbFeat[t]=p; }
+  return _sbFeat;
+}
+function sbArtPays(kind, tile){
+  if(kind==="VOWEL") return !!tile.vowel;
+  const f=sbFeatureTable(); const p=f&&f[tile.tok]; if(!p) return false;
+  if(kind==="FRIC") return p.manner==="fricative";
+  if(kind==="VOICED") return p.voice==="voiced";
+  return false;
+}
+
+/* ── Board state (§10.2) ─────────────────────────────────────────────────────────────────────────────
+   Sparse: only the squares you've actually filled. Bounds track the explored region so the view can be
+   sized and the reach walks bounded; they start collapsed on the ★ so an empty board still has a frontier.
+   Lives on `state.soundboard`, but it does NOT join snapshot() until M4 (save v11 → v12). */
+function sbNewBoard(){
+  return { tiles:Object.create(null), count:0,
+           minR:SB_CENTER, maxR:SB_CENTER, minC:SB_CENTER, maxC:SB_CENTER,
+           score:0, chain:0, patches:0, words:0, wordplay:0,
+           patchFree:false,               // 🌱 New patch armed: the next play needn't hook the board (M4's button)
+           tradeDay:"", tradeCount:0 };   // ink-priced ♻ Trade, escalating within a day (M4)
+}
+function sbBoard(){ if(!state.soundboard) state.soundboard=sbNewBoard(); return state.soundboard; }
+function sbMult(){ return 1 + SB_CHAIN_STEP*sbBoard().chain; }         // chain 7 → ×1.7
+function sbInb(r,c){                                                    // the playable region: explored + one panel
+  const b=sbBoard();
+  return r>=b.minR-SB_PAD && r<=b.maxR+SB_PAD && c>=b.minC-SB_PAD && c<=b.maxC+SB_PAD;
+}
+function sbCommitted(r,c){ return !!sbBoard().tiles[r+","+c]; }
+
+/* ── This turn (the rack + what you've laid but not played) ───────────────────────────────────────── */
+let sbRack=[];                     // tiles in hand, drawn from stock (sbDrawRack) — drawing costs nothing
+let sbPending=new Map();           // "r,c" -> tile: laid this turn, still pickupable
+function sbCellTile(r,c){ const k=r+","+c; return sbPending.get(k) || sbBoard().tiles[k] || null; }
+function sbFillRack(){             // top the rack back up to 7 from stock, reserving what's already out
+  const out=sbRack.concat([...sbPending.values()]), want=SB_RACK_SIZE-out.length;
+  if(want>0) sbRack=sbRack.concat(sbDrawRack(want, out));
+  return sbRack;
+}
+function sbRecall(){ for(const [,t] of sbPending) sbRack.push(t); sbPending.clear(); }
+function sbClearTurn(){ sbPending.clear(); sbRack=[]; }
+
+/* A "hook": the empty square a play has to cover (the very first play) or sit against (every later one).
+   On an empty board that's the ★ itself; afterwards any empty square orthogonally touching a COMMITTED
+   tile — your own pending tiles hook nothing. With 🌱 New patch armed every free square hooks, which is
+   exactly what "lay the next word anywhere" means. */
+function sbIsHook(r,c){
+  const b=sbBoard();
+  if(b.tiles[r+","+c] || !sbInb(r,c)) return false;
+  if(b.count===0) return r===SB_CENTER && c===SB_CENTER;
+  if(b.patchFree) return true;
+  return sbCommitted(r-1,c)||sbCommitted(r+1,c)||sbCommitted(r,c-1)||sbCommitted(r,c+1);
+}
+// Every hook on the board, walked off the sparse map (so this costs tiles, not area).
+function sbHooks(){
+  const b=sbBoard(); if(b.count===0) return [{r:SB_CENTER,c:SB_CENTER}];
+  const out=[], seen=new Set();
+  for(const k in b.tiles){
+    const i=k.indexOf(","), r=+k.slice(0,i), c=+k.slice(i+1);
+    for(const [dr,dc] of SB_DIRS4){
+      const rr=r+dr, cc=c+dc, kk=rr+","+cc;
+      if(b.tiles[kk] || seen.has(kk) || !sbInb(rr,cc)) continue;
+      seen.add(kk); out.push({r:rr,c:cc});
+    }
+  }
+  return out;
+}
+/* Could a play that currently occupies `cells` (one line along (dr,dc)) still reach a hook with
+   `remaining` tiles left in hand? Committed tiles inside the span bridge the line for free, so only the
+   empty squares you'd have to fill count against the budget. */
+function sbCanStillHook(cells, dr, dc, remaining){
+  if(sbBoard().patchFree) return true;
+  for(const p of cells) if(sbIsHook(p.r,p.c)) return true;
+  const s=cells.slice().sort((a,b)=>(a.r-b.r)+(a.c-b.c));
+  const lo=s[0], hi=s[s.length-1];
+  for(const [er,ec,sdr,sdc] of [[lo.r,lo.c,-dr,-dc],[hi.r,hi.c,dr,dc]]){
+    let r=er+sdr, c=ec+sdc, used=0;
+    while(sbInb(r,c) && used<remaining){
+      if(sbCommitted(r,c)){ r+=sdr; c+=sdc; continue; }     // bridge a committed tile for free
+      used++;
+      if(sbIsHook(r,c)) return true;
+      r+=sdr; c+=sdc;
+    }
+  }
+  return false;
+}
+/* First tile of a turn: every empty square the play could still reach the board from, given how many
+   tiles you hold. On an endless board the bench's "scan the whole grid and test each square" is the one
+   thing that can't be ported literally — it grows with the area you've explored — so the same set is
+   enumerated FROM THE HOOKS OUTWARD instead, which costs board-tiles rather than board-area. It's the
+   identical relation read backwards: a square is reachable iff the closed span between it and some hook
+   along one axis needs no more than `budget` tiles (committed tiles inside the span are free). */
+function sbReachFromHooks(budget){
+  const out=new Map();
+  const push=(r,c)=>{ const k=r+","+c; if(!out.has(k)) out.set(k,{r,c,near:sbIsHook(r,c)}); };
+  for(const h of sbHooks()){
+    push(h.r,h.c);                                           // the hook itself: one tile covers it
+    for(const [dr,dc] of SB_DIRS4){
+      let r=h.r+dr, c=h.c+dc, used=1;                        // 1 = the hook, which the play must also fill
+      while(sbInb(r,c)){
+        if(sbCommitted(r,c)){ r+=dr; c+=dc; continue; }       // bridged for free
+        if(++used>budget) break;
+        push(r,c); r+=dr; c+=dc;
+      }
+    }
+  }
+  return [...out.values()];
+}
+/* Valid squares to lay onto this turn — keeps the play a single contiguous line (real Scrabble) and only
+   offers squares it could still finish legally from. It's the PLAY that must connect, not the tile you
+   happen to lay first, so reach is bounded by how many tiles you hold: with 7 in hand you may start six
+   squares out and hook the board with your last phoneme.
+   - Nothing laid yet: every square within reach of a hook (above), or anywhere free after 🌱 New patch.
+   - One tile laid: its four empty neighbours (the second tile locks the axis), plus — if it already abuts
+     a committed tile along an axis — that line's extensions, bridging over committed tiles.
+   - Two+ laid: the axis is fixed; the empty square extending each end (bridging committed tiles) plus any
+     empty interior gap, so a picked-up middle tile can be refilled.
+   Candidates are then dropped unless the play can still reach a hook with the tiles left after them, so
+   you can never strand yourself. Full legality is re-checked at ✓ Play.
+   -> [{r,c,near}]  (near = hooks on its own; M3 draws those solid and the reach-only ones faint) */
+function sbValidTargets(){
+  const b=sbBoard(), budget=sbRack.length;
+  if(!budget) return [];
+  const out=[], push=(r,c)=>{ if(!out.some(t=>t.r===r&&t.c===c)) out.push({r,c,near:sbIsHook(r,c)}); };
+  if(sbPending.size===0){
+    if(!b.patchFree) return sbReachFromHooks(budget);
+    for(let r=b.minR-SB_PAD;r<=b.maxR+SB_PAD;r++)            // a fresh patch: anywhere free in the region
+      for(let c=b.minC-SB_PAD;c<=b.maxC+SB_PAD;c++) if(!sbCellTile(r,c)) push(r,c);
+    return out;
+  }
+  const keys=[...sbPending.keys()].map(k=>k.split(",").map(Number));
+  const cells=keys.map(([r,c])=>({r,c}));
+  const cand=[];                                             // [{r,c,dr,dc}] — square + the axis it would set
+  if(keys.length===1){
+    const [r,c]=keys[0];
+    const add=(rr,cc,dr,dc)=>{ if(sbInb(rr,cc) && !sbCellTile(rr,cc)) cand.push({r:rr,c:cc,dr,dc}); };
+    for(const [dr,dc] of SB_DIRS4) add(r+dr,c+dc,Math.abs(dr),Math.abs(dc));   // four neighbours (a perpendicular word may start)
+    for(const [dr,dc] of [[1,0],[0,1]]){                     // abutting a committed tile sets the axis: offer its line
+      if(sbCellTile(r-dr,c-dc) || sbCellTile(r+dr,c+dc)){
+        for(const [sdr,sdc] of [[-dr,-dc],[dr,dc]]){
+          let rr=r+sdr, cc=c+sdc;
+          while(sbInb(rr,cc) && sbCommitted(rr,cc)){ rr+=sdr; cc+=sdc; }       // skip over committed (bridge) tiles
+          add(rr,cc,dr,dc);
+        }
+      }
+    }
+  } else {
+    const sameRow=keys.every(([r])=>r===keys[0][0]);         // axis fixed by what's already laid
+    const dr=sameRow?0:1, dc=sameRow?1:0;
+    keys.sort((a,b)=>(a[0]-b[0])+(a[1]-b[1]));
+    const lo=keys[0], hi=keys[keys.length-1];
+    for(let r=lo[0]+dr,c=lo[1]+dc; !(r===hi[0]&&c===hi[1]); r+=dr,c+=dc)        // interior gaps
+      if(!sbCellTile(r,c)) cand.push({r,c,dr,dc});
+    for(const [er,ec,sdr,sdc] of [[lo[0],lo[1],-dr,-dc],[hi[0],hi[1],dr,dc]]){  // extend each end
+      let r=er+sdr, c=ec+sdc;
+      while(sbInb(r,c) && sbCommitted(r,c)){ r+=sdr; c+=sdc; }
+      if(sbInb(r,c) && !sbCellTile(r,c)) cand.push({r,c,dr,dc});
+    }
+  }
+  for(const t of cand)                                       // drop dead ends: ✓ Play must stay reachable
+    if(sbCanStillHook(cells.concat({r:t.r,c:t.c}), t.dr, t.dc, budget-1)) push(t.r,t.c);
+  return out;
+}
+
+/* ── Runs, scoring, and the turn ─────────────────────────────────────────────────────────────────── */
+function sbRunAt(r,c,dr,dc){        // maximal contiguous filled run through (r,c)
+  if(!sbCellTile(r,c)) return [];
+  let sr=r, sc=c;
+  while(sbCellTile(sr-dr,sc-dc)){ sr-=dr; sc-=dc; }
+  const cells=[]; let cr=sr, cc=sc;
+  while(sbCellTile(cr,cc)){ cells.push({ r:cr, c:cc, tile:sbCellTile(cr,cc), isNew:sbPending.has(cr+","+cc) }); cr+=dr; cc+=dc; }
+  return cells;
+}
+/* Sound-wordplay bonus on a run that already validated as a real pronunciation. Both tests run live
+   against SB_VALID, so no extra data file loads — data/ipa-palindromes.json and the semordnilap files stay
+   build-time artifacts. The floor drops the one-phoneme accidents (/aɪ/, /u/) and the cheap two-phoneme
+   mirrors (/p ɑ/ pa ↔ /ɑ p/ op) that would otherwise pay out on throwaway glue tiles.
+   -> null | {kind:'pal'|'sem', bonus, mirror?} */
+function sbWordplayFor(pron){
+  const toks=pron.split(" ");
+  if(toks.length<SB_WORDPLAY_MIN) return null;
+  const rev=toks.slice().reverse().join(" ");
+  if(rev===pron) return { kind:"pal", bonus:toks.length*SB_PAL_PER_PHONEME };
+  if(sbIsWord(rev)) return { kind:"sem", bonus:SB_SEM_BONUS, mirror:sbExample(rev)||"?" };
+  return null;
+}
+// Premiums count only for tiles laid THIS turn; articulatory squares are letter multipliers that pay only
+// when the tile matches, and score face value otherwise.
+function sbScoreCells(cells){
+  let sum=0, wm=1;
+  for(const cell of cells){
+    let tv=cell.tile.val;
+    if(cell.isNew){
+      const p=sbPremiumAt(cell.r,cell.c);
+      if(p==="DL") tv*=2;
+      else if(p==="TL") tv*=3;
+      else if(p==="DW") wm*=2;
+      else if(p==="TW") wm*=3;
+      else if(SB_ART[p] && sbArtPays(p,cell.tile)) tv*=SB_ART[p].mult;
+    }
+    sum+=tv;
+  }
+  return sum*wm;
+}
+/* Evaluate what's currently laid: single line, no gaps, hooks the board (or covers the ★ / a fresh patch),
+   every run it forms is a real word's sound. `total` is the raw play; `final` applies the chain multiplier
+   M4 pays out on.
+   -> {ok, error, words:[{pron,word,valid,pts,wp}], total, bingo, mult, final} */
+function sbEvaluateTurn(){
+  const none={ ok:false, error:"", words:[], total:0, bingo:false, mult:sbMult(), final:0 };
+  const bad=(error)=>Object.assign({}, none, {error});
+  if(!SB_VALID) return bad("The word list is still loading…");
+  const placed=[...sbPending.entries()].map(([k,tile])=>{ const [r,c]=k.split(",").map(Number); return {r,c,tile}; });
+  if(!placed.length) return none;
+
+  const b=sbBoard();
+  const rows=new Set(placed.map(p=>p.r)), cols=new Set(placed.map(p=>p.c));
+  const single=placed.length===1;
+  let horiz=rows.size===1;
+  const vert=cols.size===1;
+  if(!horiz && !vert) return bad("Tiles must line up in one row or column.");
+
+  let mainCells;                                        // main axis + contiguity
+  if(single){
+    const h=sbRunAt(placed[0].r,placed[0].c,0,1), v=sbRunAt(placed[0].r,placed[0].c,1,0);
+    horiz=h.length>=v.length; mainCells=horiz?h:v;
+  } else {
+    horiz=rows.size===1;                                // multi: the line direction is unambiguous
+    const fixed=horiz?placed[0].r:placed[0].c;
+    const idx=placed.map(p=>horiz?p.c:p.r);
+    const lo=Math.min(...idx), hi=Math.max(...idx);
+    for(let i=lo;i<=hi;i++){ const rr=horiz?fixed:i, cc=horiz?i:fixed; if(!sbCellTile(rr,cc)) return bad("No gaps allowed in your word."); }
+    mainCells=sbRunAt(placed[0].r,placed[0].c, horiz?0:1, horiz?1:0);
+  }
+
+  const words=[];                                       // main run + each perpendicular cross run
+  if(mainCells.length>=2) words.push(mainCells);
+  const cdr=horiz?1:0, cdc=horiz?0:1;
+  for(const p of placed){ const cross=sbRunAt(p.r,p.c,cdr,cdc); if(cross.length>=2) words.push(cross); }
+  if(!words.length) return bad("A play must form a word of 2+ tiles.");
+
+  if(b.count===0){
+    if(!words.some(w=>w.some(c=>c.r===SB_CENTER && c.c===SB_CENTER))) return bad("The first word must cross the ★ centre.");
+  } else if(!b.patchFree){
+    if(!words.some(w=>w.some(c=>!c.isNew))) return bad("Your play must connect to a word already on the board.");
+  }
+
+  const out=[]; let total=0, allValid=true;
+  for(const cells of words){
+    const pron=cells.map(c=>c.tile.tok).join(" ");
+    const valid=sbIsWord(pron);
+    const pts=valid?sbScoreCells(cells):0;
+    const wp=valid?sbWordplayFor(pron):null;            // a flat add, like BINGO — premiums never multiply it
+    if(valid) total+=pts+(wp?wp.bonus:0); else allValid=false;
+    out.push({ pron, word:sbExample(pron)||"?", valid, pts, wp });
+  }
+  const bingo=allValid && placed.length===SB_RACK_SIZE;
+  if(bingo) total+=SB_BINGO;
+  const mult=sbMult();
+  return { ok:allValid, error: allValid?"":"Some run isn't a real word's sound.", words:out, total, bingo,
+           mult, final:Math.round(total*mult) };
+}
+/* Write the laid tiles into the board and grow its bounds — the structural half of a play. The economy
+   half (spending the tiles, the chain, ink and Word Hoard payout) is M4, which calls this last. */
+function sbCommitPlacement(){
+  const b=sbBoard(), laid=[];
+  for(const [k,t] of sbPending){
+    const i=k.indexOf(","), r=+k.slice(0,i), c=+k.slice(i+1);
+    b.tiles[k]={ tok:t.tok, ipa:t.ipa, val:t.val, vowel:t.vowel };
+    b.count++;
+    b.minR=Math.min(b.minR,r); b.maxR=Math.max(b.maxR,r);
+    b.minC=Math.min(b.minC,c); b.maxC=Math.max(b.maxC,c);
+    laid.push(t);
+  }
+  sbPending.clear();
+  b.patchFree=false;                                    // a patch is spent by the play that uses it
+  return laid;
+}
+
 /* ---------- THE ATLAS (the library globe → the world board — docs/inklings-atlas.md §4) --------------
    A flat equirectangular board drawn from data/atlas-world.json: four layers (countries, seas & oceans,
    lakes, mountain peaks) over a 240×96 raster of public-domain Natural Earth. Flat, not a rendered sphere,
