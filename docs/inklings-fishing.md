@@ -254,12 +254,14 @@ Caught sounds are a **supply**, not a dead collection:
 - **Poetry phoneme engine (poetry §3):** poetry consumes phonemes at **word** granularity (rhyme keys,
   syllable counts). Fishing is the **raw-phoneme** counterpart — the same `data/pronunciations.json` /
   IPA-vowel-set machinery, one level lower. Building the phoneme engine once serves both.
-- **The Sound Board (IPA Scrabble) — PLANNED 2026-08-14; M1 BUILT 2026-08-15.** The first sink that actually
-  **spends** caught sounds: an endless phoneme-crossword folded into Inklings whose rack is drawn from
-  `state.phonicon`, where **laying a tile destroys it** (`count` is the tile stock, not just a tally). Full
-  plan in [`ipa-scrabble.md`](ipa-scrabble.md) §10. **M1 (headless plumbing) is in `inklings.html`** — the
-  lazy pronunciation load, the `g`→`ɡ` / `ʌ`→`ə` tile aliases, and stock read/draw/spend helpers over
-  `state.phonicon`; **nothing spends until M4**, so today's counts still only go up. Two knock-ons for this
+- **The Sound Board (IPA Scrabble) — PLANNED 2026-08-14; M1–M3 BUILT (M1 2026-08-15, M2–M3 2026-08-17).** The
+  first sink that actually **spends** caught sounds: an endless phoneme-crossword folded into Inklings whose
+  rack is drawn from `state.phonicon`, where **laying a tile destroys it** (`count` is the tile stock, not
+  just a tally). Full plan in [`ipa-scrabble.md`](ipa-scrabble.md) §10. **It is playable in `inklings.html`
+  now** (toolbar 🔡) — M1 the headless plumbing (lazy pronunciation load, the `g`→`ɡ` / `ʌ`→`ə` tile aliases,
+  stock read/draw/spend helpers over `state.phonicon`), M2 the endless board model, M3 the overlay itself;
+  **nothing spends until M4**, so today's counts still only go up and the rack is dealt from stock without
+  debiting it. Two knock-ons for this
   doc: `count` becomes a **spendable** number (the ×N badge of §3.2, which reads **"out of stock"** at 0
   rather than re-locking, so `X/40 caught` can't go down), and the board pays **ink + Word Hoard words** — so
   the loop is fish → board → ink even though fishing itself still pays only sounds (§8.1 amended, see §10.7).

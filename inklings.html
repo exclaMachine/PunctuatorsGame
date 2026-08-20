@@ -253,6 +253,80 @@
     #phonicon .book{height:auto;max-height:92vh;overflow:auto;display:block}
     .phon-grid{grid-template-columns:repeat(3,1fr)}
   }
+  /* ---- The Sound Board — the endless phoneme crossword (docs/ipa-scrabble.md §10) ----
+     A WINDOW onto an infinite grid: premiums are a pure function of position, so there is no board to
+     size or store and panning is the only way it "grows". The viewport shrink-wraps a whole number of
+     cells (sbLayout picks how many), so nothing ever renders a half square. ---- */
+  #soundboard{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);align-items:center;
+    justify-content:center;padding:18px;z-index:7}
+  #soundboard.open{display:flex}
+  #soundboard .book{position:relative;display:flex;flex-direction:column;max-width:740px;width:100%;
+    height:min(660px,94vh);overflow:hidden}
+  #soundboard .book>h1{flex:none;margin-right:40px;margin-bottom:8px}
+  .sb-stats{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;flex:none;
+    font-family:var(--disp);font-size:8px;color:var(--ink-soft);margin-bottom:7px}
+  .sb-stats b{color:var(--gold);font-size:10px;margin-left:3px}
+  .sb-stats .sb-stock{margin-left:auto}
+  .sb-stats .sb-stock b{color:var(--inkblue)}
+  .sb-view{position:relative;flex:none;align-self:center;background:var(--edge);padding:1px;
+    border:3px solid var(--edge);box-shadow:3px 3px 0 rgba(0,0,0,.3);
+    touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+  .sb-view.dragging{cursor:grabbing}
+  .sb-grid{display:grid;gap:1px}
+  .sb-cell{background:#e7dcc0;border:1px solid #c3b489;position:relative;line-height:1;color:var(--ink);
+    display:flex;align-items:center;justify-content:center;font-family:var(--read);overflow:hidden}
+  .sb-cell .pm{font-family:var(--disp);font-size:6px;letter-spacing:0;text-align:center}
+  .sb-cell.TW{background:#e3b3b3} .sb-cell.TW .pm{color:#7a2a2a}
+  .sb-cell.DW{background:#efd7b0} .sb-cell.DW .pm{color:#8a6a1a}
+  .sb-cell.TL{background:#b9c0dd} .sb-cell.TL .pm{color:#2a3560}
+  .sb-cell.DL{background:#c6d6b9} .sb-cell.DL .pm{color:#3a5a2a}
+  /* This board's own premiums, deliberately more saturated than the four Scrabble pastels because these
+     are the ones that teach: ◆ any vowel · ≈ any fricative · 🔊 any voiced sound (§10.2). */
+  .sb-cell.VOWEL{background:#d5c2ea}  .sb-cell.VOWEL .pm{color:#4a2a6a;font-size:11px}
+  .sb-cell.FRIC{background:#a9d6cf}   .sb-cell.FRIC .pm{color:#1e5049;font-size:12px}
+  .sb-cell.VOICED{background:#f2c07f} .sb-cell.VOICED .pm{color:#6a3a10;font-size:9px}
+  .sb-cell.star{background:var(--gold)} .sb-cell.star .pm{color:#2a2540;font-size:11px}
+  .sb-cell.out{background:#cfc7b2;border-color:#b6ad96}   /* past the frontier — nothing may be laid here */
+  .sb-cell.out .pm{opacity:.45}
+  .sb-cell.tile{background:#f3ead2;border:2px solid var(--edge)}
+  .sb-cell.tile.pend{background:#f7e9c2;border-color:var(--gold);cursor:pointer}
+  .sb-cell .gl{font-size:16px} .sb-cell.tile.vow .gl{color:var(--violet)}
+  .sb-cell .tv{position:absolute;right:1px;bottom:0;font-family:var(--disp);font-size:6px;color:#7a6f52}
+  .sb-cell.target{box-shadow:inset 0 0 0 2px rgba(47,109,240,.55);cursor:pointer}
+  /* reach-only: legal only because the rest of your rack can carry the word back to the board */
+  .sb-cell.target.far{box-shadow:inset 0 0 0 2px rgba(47,109,240,.17)}
+  .sb-cell.cursor{box-shadow:inset 0 0 0 3px #2f6df0;z-index:2;animation:sbcur 1s ease-in-out infinite}
+  @keyframes sbcur{50%{box-shadow:inset 0 0 0 3px #86a9ff}}
+  .sb-cell .ghost{position:absolute;font-size:17px;color:#2f6df0;opacity:.6}
+  .sb-status{flex:none;min-height:22px;margin-top:7px;font-family:var(--read);font-size:16px;
+    line-height:1.25;color:var(--ink-soft)}
+  .sb-status.ok{color:var(--moss)} .sb-status.err{color:#9a3b2e}
+  .sb-status b{color:var(--ink)}
+  .sb-status .w{margin-right:9px;white-space:nowrap}
+  .sb-status .w.bad{color:#9a3b2e} .sb-status .w.good{color:var(--moss)}
+  .sb-status .wp{color:var(--gold)}      /* palindrome / semordnilap preview, before you commit */
+  .sb-rack{flex:none;display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:7px;padding:6px;
+    background:var(--paper-2);border:2px solid var(--edge);min-height:52px}
+  .sb-rt{position:relative;width:44px;height:46px;flex:0 0 auto;background:var(--paper);
+    border:2px solid var(--edge);box-shadow:2px 2px 0 rgba(0,0,0,.3);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-family:var(--read);font-size:22px;color:var(--ink)}
+  .sb-rt.vow{color:var(--violet)}
+  .sb-rt.sel{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),2px 2px 0 rgba(0,0,0,.3);
+    transform:translateY(-3px)}
+  .sb-rt .slot{position:absolute;left:2px;top:1px;font-family:var(--disp);font-size:6px;color:#9a8f74}
+  .sb-rt .val{position:absolute;right:2px;bottom:1px;font-family:var(--disp);font-size:6px;color:#7a6f52}
+  .sb-empty{font-family:var(--read);font-size:15px;color:var(--ink-soft)}
+  .sb-legend{flex:none;font-family:var(--disp);font-size:7px;color:#9a8f74;line-height:1.7;margin:6px 0 0}
+  .sb-legend b{color:var(--inkblue)}
+  #soundboard .btn-row{margin-top:8px}
+  #soundboard .btn-row button{font-size:8px;padding:7px 9px}
+  .sb-msg{flex:none;font-family:var(--read);font-size:15px;color:var(--moss);min-height:18px;margin-top:5px}
+  .sb-msg.err{color:#9a3b2e}
+  @media(max-width:560px){
+    #soundboard .book{height:auto;max-height:94vh;overflow:auto;display:block}
+    .sb-legend{display:none}             /* keyboard-only hints; touch selects by tap and pans by drag */
+    .sb-rt{width:38px;height:40px;font-size:19px}
+  }
   /* ---- Equipment (paper-doll slots + owned/craft panel) ---- */
   #equipment{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
     align-items:center;justify-content:center;padding:18px;z-index:7}
@@ -1022,6 +1096,7 @@
     <button class="tb-btn" id="tb-home" style="display:none"><span class="tb-ico">🏡</span><span>Home</span></button>
     <button class="tb-btn" id="tb-dex"><span class="tb-ico">🐾</span><span>Bestiary</span><b>B</b></button>
     <button class="tb-btn" id="tb-phonicon"><span class="tb-ico">🔉</span><span>Fish Phoneme</span></button>
+    <button class="tb-btn" id="tb-board"><span class="tb-ico">🔡</span><span>Sound Board</span></button>
     <button class="tb-btn" id="tb-feats"><span class="tb-ico">✦</span><span>Feats</span><b>C</b></button>
     <button class="tb-btn" id="tb-gear"><span class="tb-ico">🎒</span><span>Equipment</span><b>G</b></button>
     <button class="tb-btn" id="tb-apothecary"><span class="tb-ico">⚗️</span><span>Apothecary</span><b>P</b></button>
@@ -1447,6 +1522,31 @@
       </div>
     </div>
 
+    <!-- The Sound Board: an endless crossword you spell BY SOUND, whose tiles are the phonemes you've
+         fished (state.phonicon is the bag). Premiums repeat every 15 squares, so the grid is infinite and
+         the viewport is the only thing that ever "extends" it. See docs/ipa-scrabble.md §10. -->
+    <div id="soundboard">
+      <div class="book">
+        <button class="close-x" id="sb-close" aria-label="Close the Sound Board" title="Close">✕</button>
+        <h1>The Sound Board <span class="dex-count" id="sb-count"></span></h1>
+        <div class="sb-stats" id="sb-stats"></div>
+        <div class="sb-view" id="sb-view"><div class="sb-grid" id="sb-grid"></div></div>
+        <div class="sb-status" id="sb-status"></div>
+        <div class="sb-rack" id="sb-rack"></div>
+        <p class="sb-legend"><b>1–7 / click</b> pick a tile · <b>← ↑ ↓ →</b> aim (pan the board when
+          nothing's picked) · <b>Tab</b> next square · <b>Enter</b> place / play · <b>Backspace</b> undo ·
+          <b>Esc</b> back out · <b>C</b> recentre</p>
+        <div class="btn-row">
+          <button class="primary" id="sb-play">✓ Play</button>
+          <button id="sb-recall">↩ Recall</button>
+          <button id="sb-shuffle">⇄ Shuffle</button>
+          <button id="sb-trade">♻ Trade</button>
+          <button class="ghost" id="sb-center">⌖ Recentre</button>
+        </div>
+        <div class="sb-msg" id="sb-msg"></div>
+      </div>
+    </div>
+
     <!-- Interactable obstacle (river) mad-lib: fill the blank with a collected verb -->
     <div id="obstacle">
       <div class="book" style="max-width:470px">
@@ -1601,6 +1701,7 @@
           <span><b>Shift</b></span><span>Slide — a quick forward lunge (once unlocked; tap SLIDE)</span>
           <span><b>1</b> / <b>2</b> / <b>3</b></span><span>Drink a Size / Speed / Reveal potion (or tap its HUD button)</span>
           <span><b>↑ ↓ ← →</b> / <b>[</b> <b>]</b> / <b>1</b>–<b>7</b></span><span>On the <b>Atlas</b> board only: arrows (or WASD) step to the neighbouring country, sea, lake or peak; <b>[</b>/<b>]</b> sweep one layer west to east (or tap <b>◀ ▶</b>); <b>1</b>–<b>7</b> frame the World and the six continents</span>
+          <span><b>1</b>–<b>7</b> / <b>↑ ↓ ← →</b> / <b>Enter</b></span><span>On the <b>Sound Board</b> only: <b>1</b>–<b>7</b> pick a phoneme tile, the arrows aim it (and pan the board when nothing's picked), <b>Tab</b> hops to the next legal square, <b>Enter</b> lays it — then <b>Enter</b> again plays the word. <b>Backspace</b> undoes, <b>C</b> recentres</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
           <span><b>Esc</b></span><span>Close any panel</span>
         </div>
@@ -1632,6 +1733,15 @@
           collection. You can travel the board without the mouse: the <b>arrow keys</b> step to the neighbouring
           place the way a map reads, <b>[</b> and <b>]</b> (or the <b>◀ ▶</b> buttons) sweep one layer west to
           east, and <b>1</b>–<b>7</b> frame the World and each continent.</p>
+          <p><b>The Sound Board (🔡).</b> A crossword you spell <b>by sound, not by letters</b>. The tiles are the
+          <b>phonemes you've fished</b> — your Fish Phoneme collection <i>is</i> the bag — and a play counts when the
+          line of phonemes you lay matches some real word's <b>pronunciation</b>: <i>/t u/</i> is two, too <i>and</i> to,
+          because they sound the same. Like Scrabble, every run your tiles form (the word itself <i>and</i> each
+          crossing word) has to be a real sound, and the premium squares multiply — plus three of this board's own:
+          <b>◆</b> pays triple for any <b>vowel</b>, <b>≈</b> triple for any <b>fricative</b> (the hissing sounds),
+          <b>🔊</b> double for any <b>voiced</b> one. The board <b>never ends and never resets</b>: it's one
+          crossword you add a word or two to, drifting outward forever, so drag it (or use the arrow keys) to look
+          around and <b>⌖ Recentre</b> to come home.</p>
           <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground — walk over it to collect (the <b>Magnet</b> feat later makes drops drift to you) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
           <p><b>Feats (<b>C</b>).</b> Collecting <b>verbs</b> levels you up along word-count milestones per category (1, then every few — bigger categories space rewards out further). Rewards interleave passive boosts and abilities: <b>Motion</b> → move speed + <b>Slide</b>; <b>Competition</b> → attack + <b>Finisher</b>/<b>Combo</b>; <b>Perception</b> → <b>Divine</b> (a daily letter peek in the library) + <b>Treasure Sense</b> (drops glint); <b>Possession</b> → satchel space + <b>Magnet</b>; <b>Body</b> → max hearts + <b>Second Wind</b> (recover a heart when you stay out of combat). More verb categories arrive later.</p>
         </div>
@@ -1666,6 +1776,7 @@
           <button class="tc-btn util ico" id="tc-help" aria-label="Controls">?</button>
           <button class="tc-btn util ico" id="tc-dex" aria-label="Bestiary">🐾</button>
           <button class="tc-btn util ico" id="tc-phonicon" aria-label="Fish Phoneme">🔉</button>
+          <button class="tc-btn util ico" id="tc-board" aria-label="Sound Board">🔡</button>
           <button class="tc-btn util ico" id="tc-stats" aria-label="Feats">✦</button>
           <button class="tc-btn util ico" id="tc-gear" aria-label="Equipment">🎒</button>
           <button class="tc-btn util ico" id="tc-apothecary" aria-label="Apothecary">⚗️</button>
@@ -2744,7 +2855,7 @@ const state = {
                                 // The flagpole picker reads this as its authority. docs/inklings-atlas.md §6.2
   atlasContinents:{},           // "Europe:50" -> day-string a continent milestone was paid out (one-time, auto-
                                 // granted at 25/50/100% of that continent's own spellable names). §6.3
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false, fishing:false, phoniconOpen:false, atlasOpen:false, flagpickOpen:false,
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false, fishing:false, phoniconOpen:false, soundboardOpen:false, atlasOpen:false, flagpickOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -3397,6 +3508,10 @@ addEventListener("keydown",e=>{
     if(k==="escape"||k==="tab"){ e.preventDefault(); if(phonTab==="guide") phonShowTab("sounds"); else closePhonicon(); }   // step back from the Guide tab first
     return;
   }
+  if(state.soundboardOpen){   // Sound Board: its own select → aim → place keyboard (see sbKey), plus panning
+    sbKey(e);
+    return;
+  }
   if(state.flagpickOpen){   // Flagpole picker: modal over the room (and over decorate mode) — Esc/Tab/E close
     if(k==="escape"||k==="tab"||k==="e"){ e.preventDefault(); closeFlagPicker(); }
     return;
@@ -3811,7 +3926,7 @@ function update(dt){
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.atlasOpen && !state.flagpickOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -3897,7 +4012,7 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.atlasOpen && !state.flagpickOpen && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -3946,7 +4061,7 @@ function update(dt){
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.atlasOpen && !state.flagpickOpen;
   if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else if(hintReady && nearFishSpot()){ hint.textContent="Press E to cast a line"; hint.classList.add("show"); }
@@ -3968,7 +4083,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -3993,7 +4108,7 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !place.active && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation;
+  const hintReady=!IS_TOUCH && !place.active && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation;
   if(hintReady && poleInFront()>=0){ hint.textContent="Press E to raise a flag"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
@@ -7883,7 +7998,7 @@ function openFishingPreview(){
    catch count), uncaught ones are locked ??? — the bestiary reveal pattern, but coverage-honest (the target
    is the whole 40-phoneme set, so 100% is reachable). Read-only view over state.phonicon; opened from the
    toolbar / a touch button (not contextual — always available like the Bestiary). */
-function phonHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen||state.apothecaryOpen||state.heraldOpen||state.pigpensOpen||state.fishing; }
+function phonHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen||state.apothecaryOpen||state.heraldOpen||state.pigpensOpen||state.fishing||state.soundboardOpen; }
 let phonTab="sounds";   // Fish Phoneme tab: "sounds" (the reveal grid) | "guide" (the IPA primer)
 // Toggle the Sounds grid vs the phonetic-alphabet Guide (mirrors cuShowTab / the Apothecary guide tab).
 function phonShowTab(t){
@@ -8395,6 +8510,410 @@ function sbCommitPlacement(){
   sbPending.clear();
   b.patchFree=false;                                    // a patch is spent by the play that uses it
   return laid;
+}
+
+/* ---------- THE SOUND BOARD — M3: the overlay (docs/ipa-scrabble.md §10.5–10.6) ----------------------
+   M1 built the stock, M2 the endless board model; M3 is the first thing a player can see or touch. It is
+   deliberately still ECONOMY-FREE: ✓ Play commits the word to the board and the board's own score/word
+   counters move, but nothing is debited from the Phonicon, the chain never grows, no ink or Word Hoard
+   entry is paid, and none of it is saved. All of that is M4 (with save v11 → v12).
+   The one problem the overlay has that the bench didn't: an INFINITE grid inside a small panel. The
+   answer is a VIEWPORT — a whole number of fixed-size cells, panned by drag, by the aim cursor walking
+   off the edge, or by ⌖ Recentre. Because sbPremiumAt is a pure function of position, panning somewhere
+   new allocates nothing: the window simply asks a different range of coordinates what they are. */
+const SB_CELL_PX=32, SB_CELL_PX_SM=24;   // px per square: desktop / phone
+const SB_MIN_SOUNDS=2;                   // below this the overlay says "go fishing" rather than deal a dead rack
+let sbCell=SB_CELL_PX;
+let sbView={ r0:SB_CENTER-7, c0:SB_CENTER-7, rows:15, cols:15 };   // top-left cell of the window + its size
+let sbHeld=null;        // id of the selected rack tile (null = nothing picked up)
+let sbCursor=null;      // {r,c} aim cursor — exists only while a tile is held
+let sbLastCell=null;    // where the last tile landed (seeds the next cursor)
+let sbFocus=null;       // centre of the last committed play — where ⌖ Recentre jumps to
+let sbStack=[];         // pending keys in the order laid, for Backspace undo
+let sbTargets=null;     // sbValidTargets() memoised for one render pass (recomputed whenever a tile moves)
+
+/* ── The viewport ─────────────────────────────────────────────────────────────────────────────────── */
+// How many cells fit. Deliberately computed from the window rather than measured off the flexed panel:
+// the mobile breakpoint turns the book into a plain scrolling block, where measuring would read 0.
+function sbLayout(){
+  const grid=document.getElementById("sb-grid"); if(!grid) return;
+  const phone=innerWidth<=560;
+  sbCell=phone?SB_CELL_PX_SM:SB_CELL_PX;
+  const availW=Math.min(740, innerWidth-36)-44;                       // the book's max-width, less its padding
+  const availH=Math.min(innerHeight*0.94, 660)-(phone?290:270);       // the rest of the panel: stats, status, rack, buttons
+  sbView.cols=Math.max(7, Math.min(19, Math.floor(availW/(sbCell+1))));
+  sbView.rows=Math.max(6, Math.min(19, Math.floor(Math.max(150,availH)/(sbCell+1))));
+  grid.style.gridTemplateColumns=`repeat(${sbView.cols},${sbCell}px)`;
+  grid.style.gridAutoRows=sbCell+"px";
+  sbClampView();
+}
+// Keep the window near the playable region (explored + one panel of frontier) so panning can't strand you
+// in featureless void. When the region is smaller than the window the range inverts, which is fine — it
+// just becomes a little slack either side of a centred board.
+function sbClampView(){
+  const b=sbBoard();
+  const fit=(v,a,z)=>Math.max(Math.min(a,z), Math.min(Math.max(a,z), v));
+  sbView.r0=fit(sbView.r0, b.maxR+SB_PAD+1-sbView.rows, b.minR-SB_PAD);
+  sbView.c0=fit(sbView.c0, b.maxC+SB_PAD+1-sbView.cols, b.minC-SB_PAD);
+}
+function sbCenterOn(r,c){
+  sbView.r0=r-Math.floor(sbView.rows/2);
+  sbView.c0=c-Math.floor(sbView.cols/2);
+  sbClampView();
+}
+// Where ⌖ (and opening the board) looks: your last play, else the middle of what you've built, else the ★.
+function sbHome(){
+  if(sbFocus) return sbFocus;
+  const b=sbBoard();
+  if(b.count) return { r:Math.round((b.minR+b.maxR)/2), c:Math.round((b.minC+b.maxC)/2) };
+  return { r:SB_CENTER, c:SB_CENTER };
+}
+function sbViewMid(){ return { r:sbView.r0+Math.floor(sbView.rows/2), c:sbView.c0+Math.floor(sbView.cols/2) }; }
+// Scroll the smallest amount that brings (r,c) back inside the window with a one-cell margin.
+function sbEnsureVisible(r,c){
+  const m=1;
+  if(r<sbView.r0+m) sbView.r0=r-m; else if(r>sbView.r0+sbView.rows-1-m) sbView.r0=r-sbView.rows+1+m;
+  if(c<sbView.c0+m) sbView.c0=c-m; else if(c>sbView.c0+sbView.cols-1-m) sbView.c0=c-sbView.cols+1+m;
+  sbClampView();
+}
+function sbPan(dr,dc){ sbView.r0+=dr; sbView.c0+=dc; sbClampView(); sbRenderBoard(); }
+
+/* ── Open / close ─────────────────────────────────────────────────────────────────────────────────── */
+function openSoundBoard(){
+  if(state.soundboardOpen) return;
+  state.soundboardOpen=true;
+  document.getElementById("soundboard").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  sbRecall();                          // defensive — closing already returns an unplayed turn to the rack
+  sbHeld=null; sbCursor=null; sbStack=[];
+  sbLayout();
+  const h=sbHome(); sbCenterOn(h.r,h.c);
+  sbMsg("");
+  sbRenderAll();                       // draws the "unrolling the word list…" state if the lexicon isn't in yet
+  SFX.play("click");
+  // 1.4 MB, fetched once, only ever from here (§10.5) — the field-play path must not pay for it.
+  loadPronunciations().then(()=>{
+    if(!state.soundboardOpen) return;
+    if(SB_VALID) sbFillRack();
+    sbRenderAll();
+  });
+}
+function closeSoundBoard(){
+  state.soundboardOpen=false;
+  document.getElementById("soundboard").classList.remove("open");
+  document.getElementById("sound-btn").style.display="";
+  sbRecall();                          // an unplayed turn goes back to the rack rather than half-lying on the board
+  sbStack=[]; sbHeld=null; sbCursor=null;
+}
+function sbMsg(text, err){
+  const m=document.getElementById("sb-msg"); if(!m) return;
+  m.textContent=text||""; m.className="sb-msg"+(err?" err":"");
+}
+
+/* ── Rendering ────────────────────────────────────────────────────────────────────────────────────── */
+function sbRenderAll(){
+  sbTargets = sbHeld!=null ? sbValidTargets() : null;
+  sbRenderStats(); sbRenderBoard(); sbRenderRack(); sbRenderStatus();
+}
+function sbRenderStats(){
+  const b=sbBoard();
+  const cnt=document.getElementById("sb-count");
+  if(cnt) cnt.textContent = b.count ? `· ${b.count} tiles laid` : "· a fresh board";
+  const el=document.getElementById("sb-stats"); if(!el) return;
+  el.innerHTML =
+    `<span>SCORE<b>${b.score}</b></span>`+
+    `<span>WORDS<b>${b.words}</b></span>`+
+    `<span>↔ WORDPLAY<b>${b.wordplay}</b></span>`+
+    `<span>CHAIN<b>×${sbMult().toFixed(1)}</b></span>`+
+    `<span>PATCHES<b>${b.patches}</b></span>`+
+    `<span class="sb-stock">STOCK<b>${sbStockTotal()}</b></span>`;
+}
+// One pass over the window. Everything a square knows — its premium, whether it's a legal target, whether
+// it's past the frontier — is asked per coordinate, so there is no board array to walk.
+function sbRenderBoard(){
+  const grid=document.getElementById("sb-grid"); if(!grid) return;
+  const tmap = sbTargets ? new Map(sbTargets.map(t=>[t.r+","+t.c, t.near])) : null;
+  const sel = sbHeld!=null ? sbRack.find(t=>t.id===sbHeld) : null;
+  const out=[];
+  for(let i=0;i<sbView.rows;i++) for(let j=0;j<sbView.cols;j++){
+    const r=sbView.r0+i, c=sbView.c0+j, key=r+","+c;
+    const t=sbCellTile(r,c);
+    let cls="sb-cell", inner="";
+    if(t){
+      cls+=" tile"+(sbPending.has(key)?" pend":"")+(t.vowel?" vow":"");
+      inner=`<span class="gl">${esc(t.tok)}</span><span class="tv">${t.val}</span>`;
+    } else {
+      const p=sbPremiumAt(r,c);
+      if(r===SB_CENTER && c===SB_CENTER){ cls+=" star"; inner='<span class="pm">★</span>'; }
+      else if(p){ cls+=" "+p; inner=`<span class="pm">${SB_ART[p]?SB_ART[p].sym:p}</span>`; }
+      if(!sbInb(r,c)) cls+=" out";
+      if(tmap && tmap.has(key)){
+        cls+=" target"+(tmap.get(key)?"":" far");     // solid = hooks the board on its own; faint = reach-only
+        if(sbCursor && sbCursor.r===r && sbCursor.c===c){
+          cls+=" cursor";
+          if(sel) inner+=`<span class="ghost">${esc(sel.tok)}</span>`;
+        }
+      }
+    }
+    out.push(`<div class="${cls}"></div>`);
+  }
+  grid.innerHTML=out.join("");
+}
+function sbRenderRack(){
+  const el=document.getElementById("sb-rack"); if(!el) return;
+  if(!sbRack.length){
+    el.innerHTML = !SB_VALID ? `<span class="sb-empty">…</span>`
+      : sbDistinctPlayable()<SB_MIN_SOUNDS
+        ? `<span class="sb-empty">Your Phonicon is nearly bare. Go and fish a few more sounds 🎣 — the board waits.</span>`
+        : `<span class="sb-empty">Rack empty.</span>`;
+    return;
+  }
+  el.innerHTML=sbRack.map((t,i)=>{
+    // A tile carries the symbol it was fished as AND the token it plays as; when they differ (the ʌ→ə and
+    // g→ɡ aliases, §10.3) the tooltip says so rather than letting the rack silently rename your catch.
+    const alias = t.ipa!==t.tok ? ` title="fished as /${esc(t.ipa)}/ · plays as /${esc(t.tok)}/"` : "";
+    return `<div class="sb-rt${t.vowel?" vow":""}${sbHeld===t.id?" sel":""}" data-tile="${t.id}"${alias}>`+
+      `<span class="slot">${i+1}</span>${esc(t.tok)}<span class="val">${t.val}</span></div>`;
+  }).join("");
+}
+function sbRenderStatus(){
+  const s=document.getElementById("sb-status"), play=document.getElementById("sb-play"),
+        rec=document.getElementById("sb-recall"), sh=document.getElementById("sb-shuffle"),
+        tr=document.getElementById("sb-trade");
+  if(!s) return;
+  const dis=(b,v)=>{ if(b) b.disabled=v; };
+  if(!SB_VALID){                       // the lexicon is the whole rulebook — nothing is playable without it
+    s.className="sb-status"+(_sbFailed?" err":"");
+    s.textContent=_sbFailed ? "The word list didn't load. Like the dictionary, it's fetched — the game has to be served over http."
+                            : "Unrolling the word list…";
+    dis(play,true); dis(rec,true); dis(sh,true); dis(tr,true); return;
+  }
+  if(sbDistinctPlayable()<SB_MIN_SOUNDS && !sbPending.size){   // the "go fishing" empty state (§10.3)
+    s.className="sb-status";
+    s.innerHTML="The bag is your Phonicon, and it's nearly empty — go and hook a few more sounds 🎣.";
+    dis(play,true); dis(rec,true); dis(sh,true); dis(tr,true); return;
+  }
+  dis(sh,!sbRack.length); dis(tr,!(sbRack.length||sbPending.size));
+  dis(rec,!sbPending.size);
+  if(!sbPending.size){
+    s.className="sb-status";
+    s.innerHTML = sbHeld!=null
+      ? (sbCursor ? 'Aim with <b>← ↑ ↓ →</b>, then <b>Enter</b> to lay it — or tap a highlighted square.'
+                  : 'No square this rack could still reach the board from.')
+      : (sbBoard().count ? 'Pick a tile and hook it onto a word already on the board.'
+                         : 'Your first word goes across the ★ — pick a tile to begin.');
+    dis(play,true); return;
+  }
+  const ev=sbEvaluateTurn();
+  if(ev.words.length){
+    s.className="sb-status "+(ev.ok?"ok":"err");
+    s.innerHTML = ev.words.map(w=>`<span class="w ${w.valid?"good":"bad"}">/${esc(w.pron)}/ `+
+      (w.valid ? `<b>${esc(w.word)}</b> +${w.pts}`+(w.wp?`<span class="wp"> ${w.wp.kind==="pal"?"↔ palindrome":"⇄ "+esc(w.wp.mirror)} +${w.wp.bonus}</span>`:"")
+               : "✗")+`</span>`).join("") +
+      (ev.ok ? `<b>= ${ev.final}${ev.bingo?" · BINGO +50":""}</b>` : "");
+  } else { s.className="sb-status err"; s.textContent=ev.error||""; }
+  dis(play,!ev.ok);
+}
+
+/* ── Picking up, aiming, laying ───────────────────────────────────────────────────────────────────── */
+function sbNearestTarget(targets, ref){
+  if(!targets || !targets.length) return null;
+  if(!ref) return targets[0];
+  let best=targets[0], bd=Infinity;
+  for(const t of targets){ const d=Math.abs(t.r-ref.r)+Math.abs(t.c-ref.c); if(d<bd){ bd=d; best=t; } }
+  return best;
+}
+function sbSelect(id){
+  if(sbHeld===id){ sbHeld=null; sbCursor=null; }
+  else {
+    sbHeld=id;
+    sbTargets=sbValidTargets();
+    sbCursor=sbNearestTarget(sbTargets, sbLastCell||sbViewMid());   // aim near whatever you're looking at
+    if(sbCursor) sbEnsureVisible(sbCursor.r,sbCursor.c);
+  }
+  SFX.play("click");
+  sbRenderAll();
+}
+function sbMoveCursor(dr,dc){          // step to the nearest valid square in the pressed direction
+  const targets=sbValidTargets(); if(!targets.length){ sbCursor=null; return; }
+  if(!sbCursor){ sbCursor=sbNearestTarget(targets, sbLastCell||sbViewMid()); }
+  else {
+    let best=null, bs=Infinity;
+    for(const t of targets){
+      const prog=(t.r-sbCursor.r)*dr + (t.c-sbCursor.c)*dc;    // progress along the pressed direction
+      if(prog<=0) continue;
+      const perp = dr ? Math.abs(t.c-sbCursor.c) : Math.abs(t.r-sbCursor.r);
+      const sc=prog+perp*4;                                     // prefer the same row/column, then the nearest
+      if(sc<bs){ bs=sc; best=t; }
+    }
+    if(best) sbCursor=best;                                     // nothing that way → stay put
+  }
+  if(sbCursor) sbEnsureVisible(sbCursor.r,sbCursor.c);
+}
+function sbCycleCursor(step){          // Tab / Shift-Tab: walk the valid squares in reading order
+  // Sorted, because the targets come back in hook-outward order — Tab should feel like reading the board.
+  const targets=sbValidTargets().sort((a,b)=> (a.r-b.r) || (a.c-b.c));
+  if(!targets.length){ sbCursor=null; return; }
+  let i=targets.findIndex(t=>sbCursor && t.r===sbCursor.r && t.c===sbCursor.c);
+  i=(i + (i<0 ? (step>0?0:targets.length-1) : step) + targets.length) % targets.length;
+  sbCursor=targets[i];
+  sbEnsureVisible(sbCursor.r,sbCursor.c);
+}
+function sbPlaceAt(r,c){
+  const i=sbRack.findIndex(t=>t.id===sbHeld); if(i<0) return false;
+  const key=r+","+c;
+  sbPending.set(key, sbRack[i]); sbRack.splice(i,1);
+  sbStack.push(key); sbLastCell={r,c}; sbHeld=null; sbCursor=null;
+  return true;
+}
+function sbPickUp(key){
+  if(!sbPending.has(key)) return false;
+  sbRack.push(sbPending.get(key)); sbPending.delete(key);
+  sbStack=sbStack.filter(k=>k!==key);
+  return true;
+}
+function sbClickCell(r,c){
+  const key=r+","+c;
+  if(sbPending.has(key)){                       // tap one of this turn's tiles to take it back
+    sbPickUp(key);
+    if(sbHeld!=null) sbCursor=sbNearestTarget(sbValidTargets(), {r,c});
+    SFX.play("click"); sbRenderAll(); return;
+  }
+  if(sbCommitted(r,c)) return;                  // a laid word is permanent (§10.7.3)
+  if(sbHeld==null){ sbMsg("Pick a tile from the rack first.", true); return; }
+  if(!sbValidTargets().some(t=>t.r===r&&t.c===c)){
+    SFX.play("invalid");
+    sbMsg("Too far from the board, or off the line you're laying — drop onto a highlighted square.", true);
+    return;
+  }
+  sbPlaceAt(r,c); sbMsg(""); SFX.play("click"); sbRenderAll();
+}
+function sbDoRecall(){
+  if(!sbPending.size) return;
+  sbRecall(); sbStack=[]; sbHeld=null; sbCursor=null; sbLastCell=null;
+  SFX.play("click"); sbMsg(""); sbRenderAll();
+}
+function sbShuffleRack(){
+  for(let i=sbRack.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=sbRack[i]; sbRack[i]=sbRack[j]; sbRack[j]=t; }
+  SFX.play("click"); sbRenderAll();
+}
+// Free in M3. M4 prices it in ink (2, then +2 per further trade the same day — the tradeDay/tradeCount
+// fields sbNewBoard already carries). No tiles are lost either way: drawing never touched the stock.
+function sbTradeRack(){
+  sbRecall(); sbStack=[]; sbRack=[]; sbHeld=null; sbCursor=null; sbLastCell=null;
+  sbFillRack();
+  SFX.play("click"); sbMsg("Traded for a fresh rack."); sbRenderAll();
+}
+/* Name the wordplay in plain language — half the reward is learning the word (ported from the bench). */
+function sbWordplayBanner(w){
+  return w.wp.kind==="pal"
+    ? `↔ PALINDROME! ${w.word} sounds the same backwards — +${w.wp.bonus}`
+    : `⇄ SEMORDNILAP! ${w.word} backwards is ${w.wp.mirror} — +${w.wp.bonus}`;
+}
+function sbPlay(){
+  const ev=sbEvaluateTurn();
+  if(!ev.ok){ SFX.play("invalid"); sbMsg(ev.error||"Not a legal play.", true); return; }
+  const b=sbBoard(), wps=ev.words.filter(w=>w.wp);
+  let sr=0, sc=0;                                       // remember the play's centre for ⌖ before it commits
+  for(const k of sbPending.keys()){ const i=k.indexOf(","); sr+=+k.slice(0,i); sc+=+k.slice(i+1); }
+  sbFocus={ r:Math.round(sr/sbPending.size), c:Math.round(sc/sbPending.size) };
+  sbCommitPlacement();                                  // M4 wraps this with sbSpend + the chain + ink + the Hoard
+  b.score+=ev.final; b.words+=ev.words.length; b.wordplay+=wps.length;
+  sbStack=[]; sbHeld=null; sbCursor=null; sbLastCell=null;
+  sbFillRack();
+  SFX.play(ev.bingo?"unlockbig":"newword");
+  sbMsg(wps.map(sbWordplayBanner).concat(`Laid for +${ev.final}${ev.bingo?" (BINGO!)":""}.`).join("   "));
+  sbRenderAll();
+}
+
+/* ── Keyboard: select → aim → place (the bench's flow, plus panning) ───────────────────────────────── */
+const SB_ARROWS={ arrowup:[-1,0], arrowdown:[1,0], arrowleft:[0,-1], arrowright:[0,1],
+                  w:[-1,0], s:[1,0], a:[0,-1], d:[0,1] };
+function sbKey(e){
+  if(e.ctrlKey||e.metaKey||e.altKey) return;     // leave the browser's own shortcuts alone (Ctrl-A isn't "pan west")
+  const k=e.key.toLowerCase();
+  if(k==="escape"){                              // back out one layer at a time: aim → placement → the board
+    e.preventDefault();
+    if(sbHeld!=null||sbCursor){ sbHeld=null; sbCursor=null; sbRenderAll(); }
+    else if(sbPending.size) sbDoRecall();
+    else closeSoundBoard();
+    return;
+  }
+  if(k==="tab"){                                 // Tab cycles the aim while a tile is held; otherwise it closes,
+    e.preventDefault();                          // the way Tab closes every other Inklings overlay
+    if(sbHeld!=null){ sbCycleCursor(e.shiftKey?-1:1); sbRenderAll(); } else closeSoundBoard();
+    return;
+  }
+  if(/^[1-7]$/.test(k)){
+    e.preventDefault();
+    const t=sbRack[+k-1];
+    if(!t) sbMsg("No tile in slot "+k+".", true); else { sbMsg(""); sbSelect(t.id); }
+    return;
+  }
+  if(SB_ARROWS[k]){                              // aim while holding a tile, otherwise pan the window
+    e.preventDefault();
+    const [dr,dc]=SB_ARROWS[k];
+    if(sbHeld!=null){ sbMoveCursor(dr,dc); sbRenderAll(); } else sbPan(dr,dc);
+    return;
+  }
+  if(k==="enter"||k===" "){
+    e.preventDefault();
+    if(sbHeld!=null){
+      if(!sbCursor){ SFX.play("invalid"); sbMsg("No square left that this word could reach the board from — Recall and start again.", true); return; }
+      sbPlaceAt(sbCursor.r,sbCursor.c); sbMsg(""); SFX.play("click"); sbRenderAll();
+    } else if(sbPending.size) sbPlay();          // nothing in hand → Enter is ✓ Play
+    return;
+  }
+  if(k==="backspace"){                           // undo the last tile laid this turn
+    e.preventDefault();
+    for(let i=sbStack.length-1;i>=0;i--){
+      const key=sbStack[i];
+      if(!sbPending.has(key)) continue;
+      const j=key.indexOf(","), r=+key.slice(0,j), c=+key.slice(j+1);
+      sbPickUp(key);
+      if(sbHeld!=null) sbCursor=sbNearestTarget(sbValidTargets(), {r,c});
+      SFX.play("click"); sbRenderAll(); break;
+    }
+    return;
+  }
+  if(k==="c"){ e.preventDefault(); const h=sbHome(); sbCenterOn(h.r,h.c); sbRenderBoard(); return; }
+}
+
+/* ── Pointer: tap a square to lay, drag anywhere on the board to pan ───────────────────────────────── */
+let _sbDrag=null;
+// Which cell is under the pointer, worked out from the viewport rect — so the grid needs no per-cell
+// listeners and a re-render (which replaces every div) can never orphan one.
+function sbCellFromEvent(e){
+  const view=document.getElementById("sb-view"); if(!view) return null;
+  const rc=view.getBoundingClientRect(), off=4;              // 3px border + 1px grid padding
+  const j=Math.floor((e.clientX-rc.left-off)/(sbCell+1)), i=Math.floor((e.clientY-rc.top-off)/(sbCell+1));
+  if(i<0||j<0||i>=sbView.rows||j>=sbView.cols) return null;
+  return { r:sbView.r0+i, c:sbView.c0+j };
+}
+function sbWireBoardPointer(){
+  const view=document.getElementById("sb-view"); if(!view) return;
+  view.addEventListener("pointerdown",e=>{
+    if(!state.soundboardOpen) return;
+    e.preventDefault();
+    _sbDrag={ x:e.clientX, y:e.clientY, r0:sbView.r0, c0:sbView.c0, moved:false };
+    if(view.setPointerCapture) view.setPointerCapture(e.pointerId);
+  });
+  view.addEventListener("pointermove",e=>{
+    if(!_sbDrag) return;
+    const dx=e.clientX-_sbDrag.x, dy=e.clientY-_sbDrag.y;
+    if(!_sbDrag.moved && Math.hypot(dx,dy)<7) return;         // a small wobble is still a tap
+    _sbDrag.moved=true; view.classList.add("dragging");
+    const c0=_sbDrag.c0-Math.round(dx/(sbCell+1)), r0=_sbDrag.r0-Math.round(dy/(sbCell+1));
+    if(r0!==sbView.r0 || c0!==sbView.c0){ sbView.r0=r0; sbView.c0=c0; sbClampView(); sbRenderBoard(); }
+  });
+  const end=e=>{
+    if(!_sbDrag) return;
+    const dragged=_sbDrag.moved; _sbDrag=null; view.classList.remove("dragging");
+    if(dragged) return;                                        // a pan, not a placement
+    const cell=sbCellFromEvent(e); if(cell) sbClickCell(cell.r,cell.c);
+  };
+  view.addEventListener("pointerup",end);
+  view.addEventListener("pointercancel",()=>{ _sbDrag=null; view.classList.remove("dragging"); });
 }
 
 /* ---------- THE ATLAS (the library globe → the world board — docs/inklings-atlas.md §4) --------------
@@ -9821,6 +10340,7 @@ function closeAnyDialog(){
   if(state.pigpensOpen) closePigpens();
   if(state.fishing) closeFishing();
   if(state.phoniconOpen) closePhonicon();
+  if(state.soundboardOpen) closeSoundBoard();
   if(state.atlasOpen) closeAtlas();
   if(state.flagpickOpen) closeFlagPicker();
   if(state.heraldOpen) closeHerald();
@@ -9845,6 +10365,7 @@ _wireTb("tb-home",()=>{ if(state.started){ closeAnyDialog(); teleportHome(); } }
 _wireTb("tb-words",()=> tbSwitch("overlay", openOverlay, nearLibraryDesk));   // Wordsmithy: desk-only (like the touch SMITHY button)
 _wireTb("tb-dex",()=> tbSwitch("bestiaryOpen", openBestiary));
 _wireTb("tb-phonicon",()=> tbSwitch("phoniconOpen", openPhonicon));
+_wireTb("tb-board",()=> tbSwitch("soundboardOpen", openSoundBoard));   // Sound Board: non-contextual (a world bench comes later — §10.6)
 _wireTb("tb-feats",()=> tbSwitch("statsOpen", openStats));
 _wireTb("tb-gear",()=> tbSwitch("equipOpen", openEquip));
 _wireTb("tb-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
@@ -9884,6 +10405,22 @@ document.getElementById("ap-close").onclick=()=>{ closeApothecary(); SFX.play("c
 document.getElementById("apothecary").onclick=e=>{ if(e.target.id==="apothecary") closeApothecary(); };  // tap backdrop to close
 document.getElementById("fish-close").onclick=()=>{ closeFishing(); SFX.play("click"); };
 document.getElementById("fishing").onclick=e=>{ if(e.target.id==="fishing") closeFishing(); };  // tap backdrop to close
+// ── The Sound Board (docs/ipa-scrabble.md §10.5). The board itself is driven by one pointer handler on
+// the viewport (sbWireBoardPointer) and one delegated tap on the rack, so re-rendering never re-binds.
+document.getElementById("sb-close").onclick=()=>{ closeSoundBoard(); SFX.play("click"); };
+document.getElementById("soundboard").onclick=e=>{ if(e.target.id==="soundboard") closeSoundBoard(); };  // tap backdrop to close
+document.getElementById("sb-play").onclick=sbPlay;
+document.getElementById("sb-recall").onclick=sbDoRecall;
+document.getElementById("sb-shuffle").onclick=sbShuffleRack;
+document.getElementById("sb-trade").onclick=sbTradeRack;
+document.getElementById("sb-center").onclick=()=>{ const h=sbHome(); sbCenterOn(h.r,h.c); SFX.play("click"); sbRenderBoard(); };
+document.getElementById("sb-rack").onclick=e=>{
+  const el=e.target.closest(".sb-rt"); if(el) sbSelect(+el.dataset.tile);
+};
+sbWireBoardPointer();
+// A rotated phone or a resized window changes how many cells fit; keep the view centred on what you were
+// looking at rather than snapping back to the ★.
+addEventListener("resize",()=>{ if(!state.soundboardOpen) return; const mid=sbViewMid(); sbLayout(); sbCenterOn(mid.r,mid.c); sbRenderBoard(); });
 document.getElementById("phon-close").onclick=()=>{ closePhonicon(); SFX.play("click"); };
 document.querySelectorAll("#phonicon .hb-tab").forEach(t=>t.onclick=()=>{ phonShowTab(t.dataset.phontab); SFX.play("click"); });
 document.getElementById("phonicon").onclick=e=>{ if(e.target.id==="phonicon") closePhonicon(); };  // tap backdrop to close
@@ -9909,7 +10446,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -9987,6 +10524,7 @@ if(IS_TOUCH){
   tap("tc-flag",()=>{ const i=poleInFront(); if(i>=0) openFlagPicker(i); });                        // library: a faced flagpole → its flag picker
   tap("tc-dex",()=> tbSwitch("bestiaryOpen", openBestiary));
   tap("tc-phonicon",()=> tbSwitch("phoniconOpen", openPhonicon));
+  tap("tc-board",()=> tbSwitch("soundboardOpen", openSoundBoard));
   tap("tc-stats",()=> tbSwitch("statsOpen", openStats));
   tap("tc-gear",()=> tbSwitch("equipOpen", openEquip));
   tap("tc-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
@@ -10322,7 +10860,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen || state.pigpensOpen || state.fishing || state.phoniconOpen || state.atlasOpen || state.flagpickOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen || state.pigpensOpen || state.fishing || state.phoniconOpen || state.soundboardOpen || state.atlasOpen || state.flagpickOpen); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)

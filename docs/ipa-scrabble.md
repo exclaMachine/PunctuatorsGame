@@ -8,8 +8,8 @@ a play is valid when the phoneme sequence you lay matches **some real word's pro
 Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 15×15 board game** with
 **play-off-others** (below), and on **2026-08-14** gained **sound-wordplay bonuses** (phonetic palindromes &
 semordnilaps). **§10 is the production build** in `inklings.html` (endless board, tiles spent from your fished
-Phonicon) — **M1 (data & stock plumbing) BUILT 2026-08-15**, **M2 (the endless board model) BUILT 2026-08-17**;
-M3–M5 planned.
+Phonicon) — **M1 (data & stock plumbing) BUILT 2026-08-15**, **M2 (the endless board model) BUILT 2026-08-17**,
+**M3 (the overlay — it's playable in Inklings now) BUILT 2026-08-17**; M4–M5 planned.
 
 ## Design decisions (settled with the dev)
 - **Spell by sound.** Validity = the laid phoneme string is a real word's IPA (not a spelling). Homophones
@@ -210,8 +210,9 @@ the weight:
 | 11 | Payout | **Ink + words into the Word Hoard**, per play (there is no game end to pay out at). |
 
 **Open (dev to confirm during the build):**
-- **Name.** "IPA Scrabble" is a dev codename. In-game it wants an Inklings name — *the Sound Board*,
-  *the Sound Loom*, *the Soundwright's Bench*. Placeholder in this plan: **the Sound Board**.
+- ~~**Name.**~~ **Settled in M3 (dev's pick): "the Sound Board."** "IPA Scrabble" stays the dev codename for
+  the bench file and this doc; every player-facing surface — toolbar `🔡 Sound Board`, the panel's title, the
+  Controls entry — says **the Sound Board**. (*Sound Loom* / *Soundwright's Bench* were the runners-up.)
 - ~~**Zero stock.**~~ **Settled in M1:** a card whose count hits 0 **stays revealed** and its Phonicon card
   reads **"out of stock"** instead of `×N`, so `X/40 caught` never goes down (the alternative — re-locking to
   `???` — would make the collection genuinely destructible). `recordPhonemeCatch` still treats it as a repeat,
@@ -315,8 +316,7 @@ cadence the endless-board design wants.
 
 1. **M1 — Data & stock plumbing (no UI). BUILT 2026-08-15.** See §10.8.
 2. **M2 — Endless board model. BUILT 2026-08-17.** See §10.9.
-3. **M3 — The overlay.** `#soundboard`, toolbar/touch launch, guards, viewport + pan + ⌖ recentre, rack from
-   stock, click + keyboard placement, live per-run status. Playable, no economy yet.
+3. **M3 — The overlay. BUILT 2026-08-17.** See §10.10.
 4. **M4 — Economy & persistence.** Consumption on commit, chain multiplier + 🌱 New patch, ink-priced trade,
    ink payout + Word Hoard logging, board in the save (v12).
 5. **M5 — Teaching & polish.** Articulatory-square explainer (and a pointer from the Fish Phoneme Guide tab —
@@ -339,7 +339,9 @@ cadence the endless-board design wants.
 5. **Chain persistence + no cap** is the one number most likely to need retuning after play; keep the growth
    step and cap as named constants from M4.
 6. **Viewport on a phone.** An infinite board in a retro-pixel overlay is the real UX risk of this plan —
-   M3 should be judged on the phone, not the desktop.
+   M3 should be judged on the phone, not the desktop. **Built and still unjudged:** M3's phone window is
+   24 px cells, ~11 wide (§10.10), driven by tap-to-place and drag-to-pan. If it reads badly in the hand,
+   the knobs are `SB_CELL_PX_SM` and the `availH` reserve in `sbLayout`.
 
 ## 10.8 M1 — Data & stock plumbing (BUILT 2026-08-15)
 
@@ -405,5 +407,43 @@ nothing spends, nothing persists. What exists now is a complete, playable-by-con
   turn still use the bench's candidate-then-`sbCanStillHook` filter, where the candidate set is tiny.
 - **`patchFree`** (the flag M4's 🌱 New patch sets) is honoured throughout: every free square hooks, the
   connect-to-the-board check is skipped, and first-tile targets become the whole in-bounds region.
+
+## 10.10 M3 — The overlay (BUILT 2026-08-17)
+
+The board is now playable inside Inklings. A third `/* THE SOUND BOARD — M3 */` block, the `#soundboard`
+overlay markup + CSS, and the usual launcher/guard wiring. Still **economy-free by design**: ✓ Play commits
+the word and moves the board's own score/word counters, but **nothing is debited from the Phonicon, the chain
+never grows, no ink or Word Hoard entry is paid, and none of it is saved** — that's M4 (save v11 → v12).
+
+- **The viewport is the whole M3 problem.** An infinite grid has to live in a small panel, so the overlay
+  renders a **window** of `sbView={r0,c0,rows,cols}` and asks each coordinate what it is. `sbLayout()` sizes it
+  from the window (**32 px cells desktop / 24 px phone**, ≤19 either way) rather than measuring the panel —
+  the mobile breakpoint turns the book into a plain scrolling block, where measuring reads 0. Panning is
+  **drag anywhere on the board**, **arrow keys when no tile is picked**, the aim cursor pushing the edge
+  (`sbEnsureVisible`), or **⌖ Recentre** / `C` (`sbHome()` = your last play, else the middle of what you've
+  built, else the ★). `sbClampView()` keeps the window against the playable region (explored + one panel), so
+  you can't pan off into featureless void; squares past the frontier render dimmed (`.sb-cell.out`).
+  Nothing is allocated by panning — that's what "premiums are a pure function of position" buys.
+- **The bench's select → aim → place flow, unchanged.** `1`–`7`/tap picks a rack tile, arrows aim the cursor
+  over valid squares only, `Tab` hops to the next one (sorted into reading order, since the targets arrive
+  hook-outward), `Enter` lays it, `Enter` again plays, `Backspace` undoes, `Esc` backs out one layer at a time
+  (aim → placement → close). Targets are drawn in the M2 two tiers: **solid** where the square hooks the board
+  on its own, **faint** where it's legal only because the rest of your rack can carry the word back.
+- **One pointer handler, not 225.** The board is re-rendered wholesale on every change, so per-cell listeners
+  would be re-bound constantly; instead `sbCellFromEvent` works the cell out from the viewport rect, and a
+  single pointerdown/move/up on `#sb-view` decides tap-to-place vs drag-to-pan (7 px of travel = a drag).
+- **Live per-run status,** ported from the bench: each run the placement forms, its example word and points,
+  the **gold wordplay preview** before you commit, and the running `= total` that gates ✓ Play.
+- **♻ Trade is free in M3** (dev's call, so a phone test can't dead-end on an unplayable rack); M4 prices it in
+  ink using the `tradeDay`/`tradeCount` fields `sbNewBoard` already carries. Nothing is lost either way —
+  drawing never touched the stock. **🌱 New patch** stays M4, with the chain it costs.
+- **Empty state (§10.3):** below `SB_MIN_SOUNDS`=2 distinct playable sounds the overlay says *go fishing*
+  rather than dealing a dead rack. A rack tile whose fished symbol differs from the token it plays as (the
+  `ʌ`→`ə` / `g`→`ɡ` aliases) says so in its tooltip (§10.7.4).
+- **Launcher & guards:** a non-contextual toolbar row (`tb-board`, 🔡) + touch button (`tc-board`), through
+  `tbSwitch` like every other dialog, plus `state.soundboardOpen` added to all six play guards (movement,
+  `canBeHurt`, the two hint gates, `syncTouchUI`, `musicDialogueOpen`) and to `closeAnyDialog`. The **world
+  bench** (§10.6 "Later") changes only this launcher. The Controls panel gained a Sound Board paragraph and a
+  key row; the **articulatory-square explainer** and the pointer from the Fish Phoneme Guide are still M5.
 
 Verify in the console (needs http serving): `loadPronunciations().then(()=>{ sbFillRack(); console.log(sbRack.map(t=>t.tok), sbValidTargets().length); })` — on a fresh board the targets are the ★ and everything within reach of it.
