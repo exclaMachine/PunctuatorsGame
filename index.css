@@ -23,13 +23,26 @@ html, body {
      margin: 250px 60px 60px 60px;
 }
 
+  /* Spans the viewport (left/right 0) so the title centres on any width; the
+     font floors/ceilings at the old 3rem so desktop is unchanged. */
   .shine{
     top: 80px;
+    left: 0;
+    right: 0;
     font-weight: bold;
-    font-size: 300%;
-    margin: 50px;
+    font-size: clamp(1.75rem, 9vw, 3rem);
+    line-height: 1.15;
+    margin: 50px 0;
+    padding: 0 16px;
     position: fixed;
+    text-align: center;
+    /* The box is viewport-wide now, so it must not eat clicks meant for the
+       chrome underneath it. */
+    pointer-events: none;
   }
+
+  /* Keeps "The Game" together — the title breaks before it, never inside it. */
+  .title-tail { white-space: nowrap; }
 
   .shine {
     background: #222 -webkit-gradient(linear, left top, right top, from(#222), to(#222), color-stop(0.5, #fff)) 0 0 no-repeat;
