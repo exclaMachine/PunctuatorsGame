@@ -3,7 +3,8 @@
 **Status: M1 (the data) BUILT 2026-08-22 — `build-ladders.py` + `ladderPOJO.js`. M2–M4 (free play) planned,
 no game code yet. Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5
 data layer BUILT the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
-`build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.**
+`build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.
+Phase 3 — Word Race (§12) specced 2026-08-22, nothing built; its Deep Dive companion (§12.4) is tentative.**
 
 Two new heroes for `punctuators.html` / `index.js` who climb the **is-a-kind-of** hierarchy of a word:
 
@@ -287,8 +288,8 @@ At module load, iterate it once (~30k children, a few ms) to build `ladderUp = {
 - **chain for a word** = walk `ladderUp` to the top; the rung below is `ladderDown[word].split(" ")[0]`.
 - **Round-trip is correct by construction** — up is literally the inverse of down, so `dog → mammal → dog`
   can never desync. *(Verified on the built file: 0 mismatches, 0 cycles, longest chain 6.)*
-- The sibling list branching hyponyms (§13) and several §12 ideas need is now the **shipped** form, not the
-  derived one.
+- The sibling list branching hyponyms (§14) and several §12–13 ideas need is now the **shipped** form, not
+  the derived one.
 - Nothing is lost by shipping down: a capstone with children is a key, and a capstone *without* children had
   no ladder in either direction and was dropped at build time.
 - Both parents and the children inside each string are ordered **most-common-first**, so Keen Arrow's first
@@ -623,7 +624,7 @@ where the shown word is the clue. **2of12.txt cannot fix it** (measured: it admi
   into its span).
 - **The span** is the free-play span plus a goal: `data-ladder`, `data-rung`, **`data-goal`**.
 - **A hit moves ±1 rung along the authored chain.** No ambiguity in either direction — because the chain is
-  fixed data, Keen Arrow never has to choose among `dog`'s 33 children (contrast §13, branching hyponyms).
+  fixed data, Keen Arrow never has to choose among `dog`'s 33 children (contrast §14, branching hyponyms).
 - **Landing on the goal locks the word**: green ✔ flare, a lock chime, and the span's `id` is cleared so
   neither hero targets it again. A stray shot can't knock a solved word loose, and the remaining targets
   stay obvious.
@@ -700,12 +701,209 @@ How-to-Play modal copy (`updateCharacterModal`, `index.js:458`).
 
 ---
 
-## 12. Other mechanics for these two
+## 12. Phase 3 — Word Race (the traversal daily) & Deep Dive
+
+**Word Race specced 2026-08-22, not built. Deep Dive (§12.4) tentative. Both assume M2–M4 (free play) have
+shipped — they reuse the two heroes and the rung animations whole.**
+
+§11 shifts words inside an authored sentence. This phase throws the sentence away: **the player *is* a
+word**, and play is travelling the hierarchy itself. Two modes share one engine — a daily route-finding
+race (**committed**, §12.3) and a 60-second specificity sprint (**tentative**, §12.4).
+
+### 12.1 What the shipped data forces
+
+Four measurements taken against the built `ladderPOJO.js` *before* designing anything. Each one closes off
+an option that looks obvious on paper.
+
+**It is a forest of 1,003 trees, not a graph.** Every word has at most one parent, so the map is disjoint:
+`poodle → hammer` has no route at all, and neither does `tulip → oak` (`tulip > plant`, but
+`oak > wood > material` — the §11.4 sense trap, still biting). **Any A-to-B mode must draw both endpoints
+from one tree.** The 12 largest hold most of the usable mass:
+
+```
+person 4,407 · animal 1,597 · material 1,102 · action 1,016 · quality 962 · knowledge 921
+plant 898 · food 873 · location 543 · trait 532 · feeling 449 · clothing 417
+```
+
+**Depth caps at 5.** Rungs from the root: 1,002 · 11,017 · 11,180 · 5,523 · 1,613 · **210**. Only **32 of
+the 1,003 trees are even five tall**. So "how deep can you get" is a five-move ceiling, and a deep-dive
+mode cannot be one long descent — it has to be *repeated* short ones (§12.4).
+
+**84% of words are leaves** (25,708 of 30,545). A random start word is a dead end downward, and 1,002 of
+them are dead ends upward. The usable start pool is the **3,835 words with both a parent and a child** —
+**1,715** if you want ≥3 children to choose from.
+
+**Branching is too wide to draw.** Median 2 children, but `person` has 805, `fish` 221, `animal` 170,
+`bird` 125. A "shoot one of the children shown" UI can only ever show a subset — and if that subset is
+guaranteed to contain the route to the target, the UI is telegraphing the answer. **This is why typing is
+the primary input here rather than a preference**, and it is the one place this phase departs from
+§13.1's "typing isn't what Punctuators does". The shootable field survives as *easy mode* (§12.2).
+
+### 12.2 The shared traversal engine
+
+**Type to summon, shoot to travel.** The word you occupy sits centre screen. Typing is how you *name* a
+destination; shooting is still how you *go* there, so the game stays a shooter and both heroes keep a job:
+
+| | |
+| --- | --- |
+| **Going up** | One parent, always. No typing — General Ization shoots the word floating above you. |
+| **Going down** | Type a candidate. If it's valid it spawns as a floating span; **Keen Arrow shoots it** and you travel. |
+| **Input box** | The existing sentence box at the top of `punctuators.html` is **repurposed** as the move box rather than hidden (§11.6 hides it). Almost no new UI. |
+| **A move** | = one shot. Shots are the score in §12.3, rungs are the score in §12.4. |
+
+**Descendants count, and they jump.** A player at `dog` types `beagle`, which is not one of `dog`'s 33
+children — it's a grandchild through `hound`. Rejecting that would be both infuriating and *false*.
+So **any true descendant is accepted, and you travel straight to it**, crossing every rung in between.
+Measured on the obvious guesses:
+
+| Typed at | Result |
+| -------- | ------ |
+| `dog` | `dachshund` `bulldog` `retriever` are children · `beagle > hound` `greyhound > hound` `collie > sheepdog` are grandchildren |
+| `bird` | `ostrich` `toucan` are children · `robin > thrush` `penguin > seabird` `duck > waterfowl` `canary > finch` `flamingo > wader` are grandchildren |
+
+Without descendant acceptance, seven of those ten sensible answers get rejected. With it, they all work
+**and** knowing the deeper word is rewarded — typing `beagle` from `dog` is worth two rungs for one shot.
+That is the expert lane, and it costs nothing to build (`isDescendant` is a walk up the parent map).
+
+**Three kinds of "no", and they must sound different.** Lumping them together is what makes a typing game
+feel broken:
+
+| Rejection | Example | Feedback |
+| --------- | ------- | -------- |
+| **Wrong direction** | `mammal` typed at `dog` | "that's *broader* — switch to General" (teaches the mechanic) |
+| **Not a kind of it** | `cat` typed at `dog` | the buzz + a clank |
+| **Not in my book** | `labrador`, `chihuahua`, `pit bull`, `SUV`, `palm` | a *distinct*, apologetic note — the word is real, the data just lacks it. Never costs the player anything. |
+
+That third row is not hypothetical: five of the thirty guesses probed were absent from the data entirely.
+It must never read as "you were wrong".
+
+**The sense trap again — and the one data change this phase wants.** §11.4 killed phrase words whose
+ladder follows the wrong sense. Free-typed input drags the same problem in through the front door, because
+the player's sense and the data's sense diverge in *both* directions:
+
+```
+oak maple birch redwood → wood → material     (typed at `tree`: rejected, and the rejection is a lie)
+rose → bush              chicken → meat        boxer → fighter → person       racer → animal
+```
+
+A player who types `oak` under `tree` is right, and the game says no. The fix is a build-time addition:
+**`build-ladders.py` emits a second, answer-checking-only map** — call it `ladderAlt` — holding each word's
+*other* surviving parents from its *other* senses (`oak: tree wood`, `rose: flower bush`,
+`chicken: bird meat`). A typed answer is accepted if it reaches the current word through the main map **or**
+through an alt edge; the climb itself never uses it, so ladders stay single-sensed and unambiguous.
+Generous *and* truthful — the game can even say "yes — and an oak is also a kind of wood."
+**This is the one prerequisite in this phase that is data work, not game code**, and it is a prerequisite
+for typing, not for §11. See §12.7.
+
+**Easy mode = the decoy field.** Instead of typing, eight words float below you: some true children, some
+decoys pulled from a sibling branch (`corgi husky pug mackerel`). Shoot a true one to travel, a decoy to
+lose time. Same engine, menu instead of recall — the version that works for a young player, and the one
+that keeps the mode playable if typing coverage disappoints.
+
+### 12.3 Word Race — the daily
+
+> **Today: `poodle` ⟶ `salmon`. Par 5.**
+> `poodle` →(General) `dog` → `mammal` → `animal` →(Keen, type "fish") `fish` → type "salmon" ✔
+
+Get from the start word to the target word in as few moves as possible. It is WikiRace for taxonomy, and
+the route *is* the lesson: you cannot reach `salmon` from `poodle` without noticing that the only thing
+they share is being animals, and that how far up you must climb is exactly how unrelated two things are.
+
+- **Par = the single-rung path through the lowest common ancestor**, computed at load from the up-map.
+  Across all 6.4M familiar same-tree pairs the par distribution peaks right where a daily wants it —
+  1:6.7k · 2:294k · 3:972k · **4:1.63M · 5:1.70M · 6:1.15M** · 7:490k · 8:121k · 9:15k · 10:704.
+  Beating par is possible via a descendant jump; par is a target, not a floor.
+- **Pair selection is positional, not seeded** — same reasoning as §11.7. A generated-then-frozen
+  `racePairs` array in `phrasePOJO.js`'s sibling file, indexed `daysSince(EPOCH) % N`, so yesterday's race
+  never changes and there is no RNG to keep in sync.
+- **The pool** is words in `2of12.txt` with depth ≥1 and no underscore — **18,863** of them, since a daily
+  must never open on `frail` or `annelid`. Both endpoints in the same tree, par 4–6 on weekdays, 7+ on
+  Sunday. Sample pairs from the real data: `poodle→salmon` 5 · `taxi→canoe` 5 · `sandal→bonnet` 6 ·
+  `owl→shark` 4 · `cottage→villa` 2 · `hammer→shovel` 2.
+- **No fail state and no clock** (§11.2's decision, applied again). Moves are the score. A **detour** — a
+  move that doesn't reduce distance-to-target — is the share stat, exactly as §11.6's wasted shot.
+- **Hints, late and taxonomic.** After 3 detours, reveal the target's **root** ("you're heading for
+  something in ANIMAL"). After 3 more, reveal the **lowest common ancestor**. Both are real information
+  about the hierarchy, so the hint teaches rather than just rescuing.
+- **🔎 Give up** reveals the shortest route and closes the day with ❌ (§11.6).
+- **Storage** mirrors §11.7 field-for-field: `punctuators.raceDaily` = `{date, solved, moves, detours,
+  gaveUp}`, `punctuators.raceStats` = `{played, streak, maxStreak, lastSolved, dist}`.
+- **Share.** Unlike §11.7 this one **names the endpoints** — they're given to every player at the start,
+  so they aren't the spoiler. The *route* is the answer, and the squares don't reveal it:
+
+  ```
+  🪜 Punctuators — Word Race 2026-08-22
+  poodle ⟶ salmon · Par 5
+  🟩🟩🟩🟥🟩🟩
+  6 moves · 🔥 Streak 4
+  ```
+
+### 12.4 Deep Dive — 60 seconds (tentative)
+
+Keen Arrow's solo mode: start at a root (`animal`), type your way down as fast as you can, 60 seconds.
+
+**The depth ceiling shapes it.** With a maximum of five rungs below any root, one dive is over in five
+moves — so the score cannot be "how deep did you get". It is **total rungs descended**, and reaching a leaf
+**banks the dive and drops you on a fresh root**. The game is how many clean dives you can chain, and a
+multi-rung jump (`animal` → type `beagle` = 3 rungs, one shot) is how an expert goes fast. Recall depth
+converts directly into score.
+
+**General Ization is probably absent here** — no up, no Switch Character, which is precisely what §14 wants
+for Keen's personality: the specificity hero, alone, in the one mode that only goes down. Tentative because
+that also throws away half the pair, which may be the wrong trade for a two-hero mode.
+
+Open, if it graduates: whether the 60s is one clock or per-dive; whether a leaf pays a bonus; whether easy
+mode (§12.2) is the whole mode for younger players.
+
+### 12.5 Wiring checklist
+
+| File | Change |
+| ---- | ------ |
+| `build-ladders.py` | `--alt` — emit `ladderAlt`, the answer-checking-only alternate-sense map (§12.2). **Data prerequisite for typing.** |
+| `ladderPOJO.js` | gains `ladderAlt` alongside `ladderDown` (size impact unmeasured — see §12.7) |
+| `racePOJO.js` | **new, generated** — the frozen daily pair list (§12.3) |
+| `ladderRace.js` | **new** — the traversal engine: position, `isDescendant`, `parFor` (LCA), the three rejection classes, the decoy generator |
+| `utils/utils.js` | `case "wordRace":`; suppress `protectedArticles` + `spoonerism` as §11.6 does |
+| `punctuators.html` | the `<option value="wordRace">`; the race card; the move box repurposing the sentence input |
+| `index.js` | race branch in the `removePuncButton` handler; travel on collision; daily + stats + share; the hint ladder |
+| `index.css` | the race card, the target banner, the summoned-word span, the win/share card |
+| `CLAUDE.md` | the Punctuators row per milestone |
+
+### 12.6 Milestones
+
+**M9 — the engine.** `ladderAlt` in the build, `ladderRace.js`, type-to-summon + shoot-to-travel, the three
+rejections, descendant jumps. Playable against a hardcoded pair, no daily, no chrome.
+
+**M10 — the daily.** `racePOJO.js`, selection, lock, stats/streak, share, give-up, the hint ladder.
+
+**M11 — the feel.** Race card, target banner, the travel animation reusing M4's, easy mode's decoy field,
+the How-to-Play copy.
+
+**Deep Dive is unscheduled** (§12.4) — it needs M9 only, so it can be prototyped any time after it.
+
+### 12.7 Open questions
+
+- **Is `ladderAlt` worth its bytes?** Unmeasured. It is a prerequisite for typing feeling fair (§12.2), but
+  if it lands anywhere near `ladderDown`'s 337 KB the answer changes to a curated accept-list for the few
+  hundred words a daily can actually reach. **Measure before committing.**
+- **Does the field layout work?** Free play positions spans as a rendered *sentence*. A traversal screen
+  wants a parent above / summoned word below arrangement, and how `index.js` lays out and hit-tests spans
+  hasn't been read yet. This is the main code-side unknown in the phase, and it applies to §11 too.
+- **Typed input vs. the shooter's own keyboard.** The game already reads keys for movement. The move box
+  needs focus rules that don't fight it — probably "typing focuses the box, Space/Enter fires".
+- **One `<option>` or two?** Word Race and Deep Dive are one engine and two goals. Recommending two
+  options, matching §11.2's "its own `<option>`, no branching inside another mode".
+
+---
+
+## 13. Other mechanics for these two
 
 A parking lot. **Nothing here is committed or scheduled**, and none of it needs new data — every idea below
-runs on `ladderPOJO.js` as built. ★ marks the three worth building first.
+runs on `ladderPOJO.js` as built. ★ marks the three worth building first. *(The traversal ideas that used to
+sit here were promoted to §12 on 2026-08-22 and now have a spec; three of the survivors below —
+Ladder Golf, Kinship, Category speed round — would reuse §12.2's engine and §12.3's LCA `parFor` outright.)*
 
-### 12.1 In Punctuators
+### 13.1 In Punctuators
 
 **★ The Bureaucrat's Draft.** The inversion of §11, and the one with a real writing lesson in it. The player
 types their own vivid sentence; **General Ization is the villain**, climbing it into corporate mush —
@@ -736,7 +934,7 @@ best friend.* The player types the answer rather than shooting it. Worth noting 
 **worse** version of §11 for this game — typing isn't what Punctuators does — but it's the right shape if
 the sayings corpus ever wants a non-shooter home.
 
-### 12.2 In Inklings
+### 13.2 In Inklings
 
 **★ The Specificity Range.** General and Keen as a **two-NPC bench** in the world, running a call-and-response
 drill on the desk that already exists: General says *"name me something broader than `poodle`"*, Keen says
@@ -760,7 +958,7 @@ Range drill above; the Poetrees forest (`docs/inklings-poetry.md`) already estab
 is *bring me a kind of `tool`*, and any valid hyponym you can spell counts. Same lookup as the Range, wrapped
 in the daily pattern.
 
-### 12.3 Cross-game, cheap
+### 13.3 Cross-game, cheap
 
 **A Critter Hunt clue atom.** Critter Hunt's clues are real facts, and *"the culprit is a kind of mammal"* is
 a real fact the ladder already knows. It slots into `atomsFor` as a new ref type alongside habitat and
@@ -779,7 +977,7 @@ which cuts both ways: it wants its own page, not a Punctuators mode.
 
 ---
 
-## 13. Deferred
+## 14. Deferred
 
 - **Verbs.** `run → jog / sprint`, `walk → travel`. WordNet keeps these in a separate
   namespace (`vhyper` = broader action, `tropo` = troponyms, "a particular way of doing it") which
