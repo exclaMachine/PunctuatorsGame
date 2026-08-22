@@ -1,6 +1,8 @@
 # Punctuators — General Ization & Keen Arrow (the Word Ladder)
 
-**Status: M1 (the data) BUILT 2026-08-22 — `build-ladders.py` + `ladderPOJO.js`. M2–M4 planned, no game code yet.**
+**Status: M1 (the data) BUILT 2026-08-22 — `build-ladders.py` + `ladderPOJO.js`. M2–M4 (free play) planned,
+no game code yet. Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; its corpus
+`phrases-source.txt` drafted the same day (108 sayings) and awaiting the dev's sense-prune. Not built.**
 
 Two new heroes for `punctuators.html` / `index.js` who climb the **is-a-kind-of** hierarchy of a word:
 
@@ -284,7 +286,8 @@ At module load, iterate it once (~30k children, a few ms) to build `ladderUp = {
 - **chain for a word** = walk `ladderUp` to the top; the rung below is `ladderDown[word].split(" ")[0]`.
 - **Round-trip is correct by construction** — up is literally the inverse of down, so `dog → mammal → dog`
   can never desync. *(Verified on the built file: 0 mismatches, 0 cycles, longest chain 6.)*
-- The sibling list Phase 3 (§12) and several §11 ideas need is now the **shipped** form, not the derived one.
+- The sibling list branching hyponyms (§13) and several §12 ideas need is now the **shipped** form, not the
+  derived one.
 - Nothing is lost by shipping down: a capstone with children is a key, and a capstone *without* children had
   no ladder in either direction and was dropped at build time.
 - Both parents and the children inside each string are ordered **most-common-first**, so Keen Arrow's first
@@ -447,6 +450,9 @@ branch, up/down movement, capstone behavior. Playable with placeholder art and n
 **M4 — the feel.** Animations, SFX, the rung strip, final art, the How-to-Play / character modal copy
 (`updateCharacterModal`, `index.js:458`, already has a per-mode template pattern to follow).
 
+**M5–M8 — Restore the Phrase**, the puzzle mode. Specced separately in §11.9; it builds on M4, so nothing
+there starts before free play is playable.
+
 ---
 
 ## 10. Open question
@@ -458,60 +464,297 @@ says nothing about words). Easy to change any time before M4 — it's one `<opti
 
 ---
 
-## 11. Other mechanics to explore
+## 11. Phase 2 — Restore the Phrase (the puzzle mode)
 
-§§1–10 describe **free play** — climb any word, no goal, no win state (which is how every Punctuators
-wordplay mode works today, see §1). That is the right shape for v1, but the ladder is unusual among the
-modes in that it has an obvious **puzzle** shape too, and this section is the parking lot for that.
-Nothing here is committed or scheduled.
+**Specced 2026-08-22. Not built. Assumes M2–M4 (free play) have shipped — it reuses that engine whole.**
 
-### 11.1 Restore the famous phrase (dev's idea, 2026-08-22)
+§§1–10 describe **free play**: climb any word, no goal, no win state, which is how every Punctuators
+wordplay mode works today (§1). The ladder is unusual among the modes in that it also has an obvious
+**puzzle** shape, and this is it.
 
-Show a well-known phrase with one or more words already **shifted along the ladder**, and the player has
-to shoot it back:
+### 11.1 What it is
+
+Show a well-known saying with one or more words already **shifted along the ladder**. Shoot it back:
 
 > **A canine is a person's best friend.**
 > → Keen Arrow on `canine` → `dog` · Keen Arrow on `person` → `man`
 > → **A dog is a man's best friend.** ✔
 
-Why this one is worth taking seriously:
+Why it earns its keep:
 
-- **It gives Punctuators its first wordplay mode with a real win state.** Every mode today is
-  open-ended sandbox; here there is a correct answer, so the "triumphant trumpets" ending
-  (`gameSfx.end`, `index.js:548`) finally applies outside the punctuation game.
-- **It teaches the direction, not just the relation.** Free play lets you wander; this forces the player
-  to notice that `canine` is *too broad* and needs narrowing — the actual skill.
-- **It's a natural daily puzzle.** One phrase a day, shareable, in the shape of the daily games elsewhere
-  in this repo.
-- **It reuses the whole v1 engine.** Same span, same `data-ladder`, same two heroes. What's new is a
-  phrase corpus, a target state to compare against, and a win check.
+- **Punctuators' first wordplay mode with a real win state.** Every mode today is an open-ended sandbox,
+  so the "triumphant trumpets" ending (`gameSfx.end`, fired at `index.js:1698`) has never applied outside
+  the punctuation game. Here there is a correct answer.
+- **It teaches the direction, not just the relation.** Free play lets you wander. Here you must notice
+  that `canine` is *too broad* and needs narrowing — that judgment is the actual skill.
+- **It reuses the whole v1 engine.** Same span, same `data-ladder`, same two heroes, same animations.
+  What's new: a phrase corpus, a goal rung to compare against, a win check, and the daily chrome.
 
-Open questions if it's ever picked up: where the phrases come from (hand-written list? the Inklings
-snowclone/cliché frames in `data/excla-scenarios.json` and the Cliché Codex are adjacent prior art);
-whether the scrambling is authored per phrase or generated by walking the ladder N steps; how many words
-get shifted; whether a wrong rung is punished or just... not right yet.
+### 11.2 The four decisions (locked 2026-08-22)
 
-### 11.2 Unfilled
+| Fork | Decision |
+| ---- | -------- |
+| **Corpus** | **Authored phrase list, generated-then-frozen shifts.** A human marks which words may shift; `build-ladders.py --phrases` computes the shift and bakes `phrasePOJO.js`. Nothing is generated at runtime, so no ugly puzzle ever reaches a player. |
+| **Framing** | **Daily headline + endless practice**, with practice behind a single `PRACTICE_ENABLED` constant. The destination is **daily-only**; practice exists so the dev can playtest without waiting a day. Route *every* practice affordance through that flag so switching it off is a one-line change, not a refactor. |
+| **Fail state** | **None.** Climb freely in both directions until it's right. **Wasted shots are the score** and the share stat — the same skill signal Critter Hunt uses (`dailyMisses`). |
+| **Entry** | **Its own `<option>`** — `Restore the Phrase`, next to `General & Specific`. Picking it hides the text box and shows the puzzle card. No branching inside free play. |
 
-Deliberately left open — the dev wants room to invent more here. Some directions the data already
-supports for free, noted so they aren't re-derived later:
+### 11.3 The corpus
 
-- **Odd one out.** Three words from one branch and one from another (`corgi, poodle, pug, salmon`) —
-  shoot the intruder. `ladderDown[parent]` (§3.3) hands you the sibling sets.
-- **Meet in the middle.** Two words, one ladder each; climb both until they land on the same rung
-  (`poodle` and `salmon` meet at `animal`). Teaches that hierarchies converge.
-- **Category speed round.** General Ization names a category, the player shoots words in the sentence
-  that belong to it.
+`phrases-source.txt` at repo root — the only file that ever needs editing to add puzzles.
+**Drafted 2026-08-22: 108 phrases, 149 braced words. Awaiting the dev's prune.**
+
+```
+A {dog} is a {man}'s best friend. | English proverb, 1789
+#~ ↕ dog       broader: mammal → animal    narrower: puppy hound terrier cur spaniel pug …+27
+#~ ↕ man       broader: person             narrower: guy sir gentleman stiff bachelor beau …+29
+```
+
+- **Braces mark the words that may shift.** The script never picks targets on its own — see §11.4 for why
+  that is not optional. `{{double braces}}` = shift 2 rungs instead of 1 (a harder day).
+- **`#~` lines are machine-written and regenerated by every `--phrases` run**, showing what the built ladder
+  *actually* does with that word. Humans edit the phrase line; the build rewrites the annotation beneath it.
+  This is what turns the sense-check (§11.4) from research into a read: the evidence sits under the phrase.
+  `↕` shifts both ways · `↑` broader only · `↓` narrower only. A `#~ !` line flags a collision risk.
+- **Public-domain sayings only.** Proverbs, idioms, fables, scripture, Shakespeare. No song lyrics, no
+  modern quotations, no ad slogans.
+- **Append-only.** New phrases go at the bottom; the daily index is positional (§11.7).
+- **Distribution in the draft:** 109 braced words shift both ways, 17 are broader-only, 23 narrower-only.
+  Words with only one direction still make fine puzzles — they just constrain which hero solves them, which
+  is why the direction-mix rule (§11.5) is per-phrase and not per-word.
+
+### 11.4 The sense trap — vetting is the real work
+
+Probed against the built `ladderPOJO.js` on 65 idiom nouns. The ladders are good, **but a word's ladder
+follows its own globally-best sense, which is often not the sense the saying uses**:
+
+| In the saying | What the ladder says | Damage |
+| ------------- | -------------------- | ------ |
+| `chicken` (don't count your ~s) | `chicken → meat → food` | the *meat* sense — the puzzle would broaden a live bird into lunch |
+| `needle` (~ in a haystack) | `needle → leaf` | the *pine* needle |
+| `iceberg` (tip of the ~) | `iceberg → lettuce → greens → vegetable` | yes, really |
+| `heart` (a ~ of gold) | `heart → suspicion → notion → idea` | the organ isn't the best sense |
+| `court` (the ball is in your ~) | `court → gathering` | the court of *law* |
+| `cake` (piece of ~) | `cake → block` | technically right, reads as nonsense |
+| `evil` (root of all ~) | `evil → transgression` | the countable-act sense |
+
+So: **a phrase word is shiftable only when its ladder sense is the sense the phrase uses**, and no
+automated check can tell. That is the whole reason for braces in §11.3 — the human eyeballs the chain and
+marks the survivors. `build-ladders.py --phrases` regenerates the `#~` annotation under every phrase so the
+eyeballing is a read, not a lookup.
+
+All seven of the above were caught by drafting the corpus against the real data and are **already excluded**
+from `phrases-source.txt` — five of them by dropping the whole saying, since the trapped word *was* the
+saying's best target.
+
+**A free-play finding fell out of the same probe.** Some taxonomy jargon still slips through
+`BANNED_RUNGS`: `cow → cattle → bovine → ruminant`, `elephant → pachyderm → mammal`, `smoke → aerosol →
+cloud`, `barrel → tube → conduit`. Harmless-ish in free play, glaring in a puzzle where the rung is the
+answer. Add these to `BANNED_RUNGS` and re-run — cheap, and it improves M2–M4 too.
+
+### 11.5 The build step — `build-ladders.py --phrases`
+
+Reads `phrases-source.txt` + the already-built ladder maps, emits `phrasePOJO.js` (a `.js` module at repo
+root for the same reason as `ladderPOJO.js`, §3.3):
+
+```js
+// phrasePOJO.js — AUTO-GENERATED by build-ladders.py --phrases. Do not hand-edit.
+export const ladderPhrases = [
+  {
+    show: "A canine is a person's best friend.",   // what the player sees
+    say:  "A dog is a man's best friend.",          // the win reveal
+    origin: "English proverb, 1789",
+    fix: [
+      { i: 1, chain: ["dog", "canine", "mammal", "animal"], at: 1, goal: 0 },
+      { i: 4, chain: ["man", "person"],                     at: 1, goal: 0 },
+    ],
+  },
+];
+```
+
+- `i` = token index in `show`, so the wrapper marks exactly those words and leaves the rest alone.
+- `chain` is **most specific → most general** (§2.2), `at` the shown rung, `goal` the answer.
+- **Direction mix.** When a phrase has ≥2 marked words, shift **at least one up and one down**, so the
+  player must use both heroes and Switch Character. That requirement *is* the lesson; a puzzle solvable
+  with one hero teaches half of it.
+- **Distance** is 1 rung by default; `{{word}}` in the source means 2 (a harder day). **Par** = Σ distances.
+- **Build-time fixups** to `show`: `a`↔`an` agreement (`A dog` → **An** `animal`), plural re-inflection
+  (§3.4), and case (§2.3).
+- **Build-time verification**, all fatal: every `fix` round-trips (walking `at`→`goal` reproduces `say`);
+  no shifted word collides with another word already in the phrase (a puzzle showing `animal` twice is
+  ambiguous); every chain rung exists in `ladderPOJO.js`; `say` matches the source line with braces stripped.
+
+### 11.6 In-game rules
+
+- **The team is exactly General + Keen.** `protectedArticles` and `spoonerism()` are both **suppressed** in
+  this mode (`utils/utils.js:99` and `:136` — the latter already has an `anagrams` exclusion to copy). Art
+  and Foon rewriting the phrase the player is trying to match would be actively confusing, and plain-text
+  articles are what makes the live `a`/`an` fix trivial (`articleFunc.js` swallows the following character
+  into its span).
+- **The span** is the free-play span plus a goal: `data-ladder`, `data-rung`, **`data-goal`**.
+- **A hit moves ±1 rung along the authored chain.** No ambiguity in either direction — because the chain is
+  fixed data, Keen Arrow never has to choose among `dog`'s 33 children (contrast §13, branching hyponyms).
+- **Landing on the goal locks the word**: green ✔ flare, a lock chime, and the span's `id` is cleared so
+  neither hero targets it again. A stray shot can't knock a solved word loose, and the remaining targets
+  stay obvious.
+- **Chain ends** behave as free play (capstone / clank, §2.3) — you can overshoot past the goal but never
+  off the ladder.
+- **After every rung change**, re-apply `matchCase`, the plural rule (§3.4), and `fixArticleBefore(span)`.
+- **Wasted shot** = one that does not reduce `|rung − goal|`. That is the score.
+- **Hint, late and quiet:** after **3 wasted shots on the same word**, that word's rung strip (§2.4) shows
+  an arrow toward its goal. Nothing before that.
+- **🔎 Give up** reveals the saying and closes the day with a ❌ result (streak breaks). A daily lock with
+  no exit for a stuck player is worse than a recorded loss.
+- **Win** = every word locked. The phrase settles to plain text, `gameSfx.end` plays, and the win card shows
+  the saying, its `origin`, the result, and the share button.
+
+### 11.7 Daily, storage, share
+
+- **Selection is positional, not seeded.** `dayIndex = daysSince(EPOCH)`, phrase = `ladderPhrases[dayIndex %
+  N]`. Since the corpus is append-only (§11.3), yesterday's puzzle never changes, and there's no RNG to keep
+  in sync — simpler than Critter Hunt's `mulberry32` path, which needs seeding only because it *generates*.
+- `localStorage["punctuators.ladderDaily"]` = `{date, solved, shots, wasted, gaveUp}` (the lock);
+  `localStorage["punctuators.ladderStats"]` = `{played, streak, maxStreak, lastSolved, dist}`. Field names
+  deliberately mirror `critterhunt.stats` so the stat/streak code reads the same in both games.
+- **Share** — spoiler-free, names no word, one group per shifted word, `❌` per wasted shot then `🟩`:
+
+  ```
+  🪜 Punctuators — Restore the Phrase 2026-08-22
+  Par 3 · 5 shots
+  🟩 · ❌🟩 · ❌🟩
+  🔥 Streak 4
+  ```
+
+  Clipboard API with a textarea fallback, as `copyShare()` in `critter-hunt.html`.
+- **Practice records nothing** — no stats, no lock, no share (the rule Critter Hunt's boss mode already uses).
+
+### 11.8 Wiring checklist
+
+| File | Change |
+| ---- | ------ |
+| `phrases-source.txt` | **new — DRAFTED 2026-08-22**, awaiting the prune — the authored corpus (§11.3) |
+| `build-ladders.py` | `--phrases` mode + the five build-time checks (§11.5) |
+| `phrasePOJO.js` | **new, generated** — `ladderPhrases` (§11.5) |
+| `ladderFunc.js` | `wrapPhrase(entry)` — wraps only the `fix` token indices; reuses the free-play span builder |
+| `utils/utils.js` | `case "ladderPuzzle":` in `addSpansAndIdsForWordPlay`; **suppress** `protectedArticles` + `spoonerism` for it |
+| `punctuators.html` | the `<option value="ladderPuzzle">`; the puzzle card markup that replaces the text box |
+| `index.js` | puzzle branch in the `removePuncButton` handler (~:386, which today hard-requires `initialTypedSentence.value`); goal/lock check in the collision block; win card; daily + stats + share; `PRACTICE_ENABLED` |
+| `index.css` | `.ladder-locked` ✔ flare, the puzzle card, the win/share card |
+| `CLAUDE.md` | the Punctuators row per milestone |
+
+### 11.9 Milestones
+
+**M5 — the corpus + build.** `phrases-source.txt` **drafted 2026-08-22** (108 phrases, 149 braced words,
+every brace checked against the built ladder) — **the dev's prune is the open step**. Then `--phrases`,
+`phrasePOJO.js`, the five checks, and the `BANNED_RUNGS` cleanup from §11.4. Gate: every surviving puzzle's
+shifted words read right *in the sense the saying means* (§11.4). Ships nothing playable.
+
+**M6 — the mode, headless-ish.** The `<option>`, `wrapPhrase`, article/Foon suppression, goal + lock + win
+check. Playable against a hardcoded phrase, no daily, no share, no card.
+
+**M7 — the daily.** Selection, the lock, stats/streak, the share string, the practice flag.
+
+**M8 — the feel.** Win card with the saying + origin, the ✔ lock flare, the late hint, give-up, the
+How-to-Play modal copy (`updateCharacterModal`, `index.js:458`).
+
+### 11.10 Open questions
+
+- ~~Who writes the 100 phrases?~~ **Settled 2026-08-22** — drafted for the dev to prune (§11.3).
+- **Does a solved word lock?** Recommending yes (§11.6). The alternative — stays climbable — is more
+  sandbox-consistent but lets a stray shot undo progress with no upside.
+- **Label.** `Restore the Phrase` is the recommendation. `The Saying Machine` and `Say It Again` were also
+  considered; both hide the mechanic.
+- **Does the win card teach the origin?** Costs one authored field per phrase and makes the mode
+  incidentally educational about the sayings themselves. Recommending yes, since it's free at authoring time.
 
 ---
 
-## 12. Deferred
+## 12. Other mechanics for these two
 
-- **Phase 2 — verbs.** `run → jog / sprint`, `walk → travel`. WordNet keeps these in a separate
+A parking lot. **Nothing here is committed or scheduled**, and none of it needs new data — every idea below
+runs on `ladderPOJO.js` as built. ★ marks the three worth building first.
+
+### 12.1 In Punctuators
+
+**★ The Bureaucrat's Draft.** The inversion of §11, and the one with a real writing lesson in it. The player
+types their own vivid sentence; **General Ization is the villain**, climbing it into corporate mush —
+*The cop drove a squad car* → *A person operated a vehicle*. A **specificity meter** falls as it climbs, and
+Keen Arrow's job is to sharpen it back down. Teaches "prefer the concrete noun" better than any rule ever
+written, and it needs no corpus at all: any sentence works. Cheap after M2–M4 (a meter + a reversed goal).
+
+**★ Ladder Golf — make two words meet.** Two words in the sentence, one hero each, and the goal is to land
+them on the same rung in the fewest shots: `poodle` and `salmon` meet at `animal`; `poodle` and `terrier`
+meet one rung up at `dog`. Teaches that hierarchies *converge*, and that how far up you must go is exactly
+how unrelated two things are. Par = the lowest common ancestor depth, computable at load from the up-map.
+
+**Category speed round.** General names a category (`animal`), and the player shoots every word in the
+sentence that is a kind of it, against a clock. `isKindOf(word, cat)` is a walk up the parent map — a
+five-line function. The most arcade-native idea here; the shooter already is a timing game.
+
+**Odd one out.** Four words from `ladderDown[parent]` with one intruder from another branch (`corgi, poodle,
+pug, salmon`) — shoot the intruder. The sibling sets ship as the raw data (§3.3), so the generator is a
+one-liner. Works as a quickfire round inside another mode rather than a mode of its own.
+
+**The Hydra of Generality.** Arcade survival: words in the sentence **drift upward on a timer**, one rung
+every few seconds, and if one reaches its capstone it "vanishes into abstraction" and is lost. Keen Arrow
+shoots them back down; General is unusable, which makes it the one mode where Switch Character is a mistake.
+Pure tension, no corpus, and it makes the ladder legible as a *slope*.
+
+**Redacted sayings.** §11 with the words removed instead of shifted: *A ___ (animal) is a ___ (person)'s
+best friend.* The player types the answer rather than shooting it. Worth noting mostly to say it's a
+**worse** version of §11 for this game — typing isn't what Punctuators does — but it's the right shape if
+the sayings corpus ever wants a non-shooter home.
+
+### 12.2 In Inklings
+
+**★ The Specificity Range.** General and Keen as a **two-NPC bench** in the world, running a call-and-response
+drill on the desk that already exists: General says *"name me something broader than `poodle`"*, Keen says
+*"name me a kind of `bird`"*, and you **spell the answer at the spelling desk** using letters you've hunted.
+The answer check is one lookup in `ladderUp` / `ladderDown` — and because Keen accepts *any* of a parent's
+children, the puzzle is generous by construction (`bird` has dozens of right answers). Pays ink. This is the
+cheapest way to get the two characters into Inklings: no combat, no new UI pattern, one prompt generator over
+a file that already exists.
+
+**Shelving the Nouns wing.** The Wordhoard's Nouns wing is already category-organised
+(`data/noun-books.json`), but the ladder gives it a *true* is-a hierarchy: a collected word could be shelved
+under its parent, and completing a parent's shelf (`dog`: 33 children) becomes a real collection goal in the
+existing librarian-grant pattern (`docs/inklings-collections.md`). Note the risk: 4,837 parents is a lot of
+shelves, so this needs a curated subset, not the whole map.
+
+**The Kindred Tree.** A placeable piece of décor (`docs/inklings-placement.md`) that grows a visible branch
+per word you've laddered — the taxonomy as a physical thing in the cozy square. Pure cosmetic payoff for the
+Range drill above; the Poetrees forest (`docs/inklings-poetry.md`) already establishes tree-as-progress art.
+
+**"A kind of" hunts.** The daily-quest shape Inklings already uses for the Atlas capital letter: today's hunt
+is *bring me a kind of `tool`*, and any valid hyponym you can spell counts. Same lookup as the Range, wrapped
+in the daily pattern.
+
+### 12.3 Cross-game, cheap
+
+**A Critter Hunt clue atom.** Critter Hunt's clues are real facts, and *"the culprit is a kind of mammal"* is
+a real fact the ladder already knows. It slots into `atomsFor` as a new ref type alongside habitat and
+Hornbostel–Sachs family, and it deduces exactly like the others. Smallest possible use of this data in a
+shipped game.
+
+**Snowclone slot constraints.** Mad Libris' snowclone frames could constrain a slot to *a kind of animal*
+rather than any noun (`docs/inklings-snowclones.md`), which is a one-function change (`isKindOf`) and makes
+coined sayings land far more often.
+
+**Kinship — a standalone daily.** Guess the mystery word; each guess reports **how far up you must climb
+before your guess and the target share a rung**. `salmon` vs `poodle` → 2 (both `animal`); `terrier` vs
+`poodle` → 1. It's Contexto with a real hierarchy instead of an embedding, so the feedback is *explainable* —
+you can always see why. The strongest pure-daily idea here, and the one least like the rest of the site,
+which cuts both ways: it wants its own page, not a Punctuators mode.
+
+---
+
+## 13. Deferred
+
+- **Verbs.** `run → jog / sprint`, `walk → travel`. WordNet keeps these in a separate
   namespace (`vhyper` = broader action, `tropo` = troponyms, "a particular way of doing it") which
   `build_dictionary.py:122/127` already extracts, and `_best_verb_sense` (`build_dictionary.py:253`) already
   disambiguates. Same heroes, same mechanic, a second parent map. Held back so the noun mechanic ships clean.
-- **Phase 3 — branching hyponyms.** `dog` has **33** children in the built data (`puppy hound terrier cur
+- **Branching hyponyms.** `dog` has **33** children in the built data (`puppy hound terrier cur
   spaniel pug mutt pooch husky … poodle …`, commonness-ordered). Today Keen Arrow takes the first one.
   Later: repeated shots at the bottom rung **cycle the siblings** — and since §3.3 ships `ladderDown`
   directly, that list is already the raw data, no derivation needed. This is where Keen Arrow gets a real
