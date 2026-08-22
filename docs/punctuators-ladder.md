@@ -1,6 +1,6 @@
 # Punctuators — General Ization & Keen Arrow (the Word Ladder)
 
-**Status: PLANNED (2026-08-22). No code written yet.**
+**Status: M1 (the data) BUILT 2026-08-22 — `build-ladders.py` + `ladderPOJO.js`. M2–M4 planned, no game code yet.**
 
 Two new heroes for `punctuators.html` / `index.js` who climb the **is-a-kind-of** hierarchy of a word:
 
@@ -121,15 +121,39 @@ cat  → hyper: ["feline","felid","man","woman","gossip","gossipmonger",…]
 So the ladder ships as a **prebuilt, sense-disambiguated file** produced by a re-runnable offline script —
 the same pattern as `build-ambigram-pojo.js` → `AmbigramPOJO.js`.
 
-### 3.2 `build-ladders.py`
+### 3.2 `build-ladders.py` — BUILT
 
-Python, not JS, because the sense disambiguation needs NLTK's WordNet — and **`build_dictionary.py`
-already solves this exact problem** and its helper can be reused nearly verbatim:
+Python, not JS, because the sense disambiguation needs NLTK's WordNet, and **`build_dictionary.py`
+already solves the neighbouring problem**. Its `_best_noun_sense(w)` (`build_dictionary.py:231`) was the
+starting point; two of its three ideas survived contact with real output, and one had to be inverted.
 
-- **`_best_noun_sense(w)`** (`build_dictionary.py:231`) picks the sense a player most likely means, by
-  `_SENSE_RANK` (prefer concrete categories: animal/plant/food/artifact over abstract) then SemCor
-  `lemma.count()` then WordNet's own sense order. This is what kills `tree → actor` and `dog → sausage`.
-- Climb with `synset.hypernyms()[0]` from that one sense only — never the flattened multi-sense list.
+**Sense scoring is count-first, not rank-first — a deliberate deviation from the plan.**
+`build_dictionary.py` sorts by `_SENSE_RANK` (concrete categories over abstract) and breaks ties on SemCor
+`lemma.count()`. That's right for Inklings, which *shelves* a word under a category. A ladder **asserts**
+the relation, so a wrong sense states a falsehood, and rank-first produced four of them immediately:
+
+```
+king → checker      (king.n.08, the draughts piece, is noun.artifact = rank 7)
+soldier → insect    (the soldier ANT is noun.animal = rank 9)
+drum → fish         (drum.n.06, the fish)
+jacket → peel       (jacket.n.04, the skin of a baked potato, is noun.food)
+```
+
+Ordering it the other way — real corpus evidence first, `_SENSE_RANK` only as a tiebreak among senses with
+**no** evidence — fixed all four and, as a bonus, removed two hand-overrides the plan would have needed
+(`water` stopped being a food, `book` became a publication). Measured on a 24-word probe it won 8 cases and
+lost 2 (`plant` → the factory, `seal` → sealing wax), both pinned in a two-entry **`SENSE_OVERRIDE`**.
+
+**Climb breadth-first over every hypernym branch, not `hypernyms()[0]`.** WordNet routinely lists a dud
+branch first, so following one arm blindly either buries the good rung or lands on a silly one:
+
+```
+dog             → [canine, domestic_animal]   → [0] hides `mammal` four hops down the canine arm
+wheeled_vehicle → [container, vehicle]        → [0] gives "a car is a kind of container"
+```
+
+Nearest qualifying rung wins; ties at the same depth go to the more common word, which is exactly what
+picks `vehicle` over `container`.
 
 Pipeline per word:
 
@@ -137,23 +161,40 @@ Pipeline per word:
    **`enable1.txt`**, and whose best sense is **not a proper-noun instance**
    (`syn.instance_hypernyms()` — drops Bach, US state codes, …).
 
-   **Why `enable1.txt` and not `2of12.txt`** (measured against the shipped data): enable1 yields
-   **34,880** eligible nouns of which **32,302** have a rung, versus 2of12's **22,604 / 21,486** — about
-   50% more of a typed sentence lights up. The cost is small and known: 2,181 words in 2of12 are absent
-   from enable1 (it's a Scrabble list, so no hyphens/apostrophes/proper nouns), against ~12k gained.
-   `2of12.txt` keeps a smaller job in the rung filter below.
-2. Walk up from the best sense, keeping a rung only if it **passes the commonness filter** (below).
+   **Why `enable1.txt` and not `2of12.txt`** (measured before the rung filters, on raw WordNet
+   hyper/hypo): enable1 yields **~34.9k** eligible nouns of which **~32.3k** have a rung, versus 2of12's
+   **22,604 / 21,486** — about 50% more of a typed sentence lights up. The cost is small and known: 2,181
+   words in 2of12 are absent from enable1 (it's a Scrabble list, so no hyphens/apostrophes/proper nouns),
+   against ~12k gained. `2of12.txt` keeps a smaller job in the rung filter below.
+
+   *As actually built, after every filter in this section:* **34,673** eligible, **30,545** with a ladder
+   (§3.3).
+2. Walk up from the best sense, keeping a rung only if it **passes the commonness filter** (below) *and*
+   is **sense-coherent** (next bullet block).
 3. **Stop at a `TOP_STOPS` word** — a hand-written allowlist of familiar category words. This is what makes
    every ladder end somewhere a kid recognizes instead of at `physical_entity`:
 
    ```
    animal  plant  tree  flower  bird  fish  insect  food  drink  person  body  place
    building  vehicle  machine  tool  clothing  container  furniture  instrument  toy
-   game  weapon  material  liquid  color  shape  number  time  feeling  action  idea  thing
+   game  weapon  material  liquid  color  shape  number  time  feeling  action  idea
    ```
 
-   If no allowlisted top is reachable within the depth cap, use the last rung that passed the filter.
-4. Cap total chain length at **6 rungs**.
+   Two changes from the plan, both from real output:
+
+   - **`thing` was dropped.** It is the one entry that teaches nothing ("a stream is a kind of thing"), and
+     WordNet's `thing.n.12` sits directly above several common branches, so it was swallowing them.
+   - **Reaching a top-stop narrows the climb rather than ending it** — from there, only *another* top-stop
+     can be a rung. That buys `oak → tree → plant` instead of stopping dead at `tree`.
+
+   A second small list, **`MID_RUNGS`**, holds familiar *middle* categories (`mammal`, `fruit`, `garment`,
+   `footwear`, …) that WordNet buries under jargon. One of these beats a top-stop **only** when it would
+   otherwise not appear at all — which is precisely what recovers `dog → mammal → animal` from `dog →
+   animal`, without ever making `poodle` skip `dog`.
+4. Cap total chain length at **6 rungs** — but cut the **highest edge that doesn't lead to a top-stop**.
+   In a parent map a chain's length is a property of its *shared tail*, so a naive "cut at rung 6" deletes
+   `mammal → animal` for everyone and leaves `dog → mammal` dangling at a nonsense capstone. Spending the
+   cut on jargon instead cost 22 nodes on the real build.
 
 **Commonness filter** — a *separate, stricter* gate than eligibility. Being allowed to *type* a word (step
 1) is not the same as being allowed to *appear as a rung*, because rungs are what the game asserts a word
@@ -169,58 +210,97 @@ placental, vertebrate, chordate, craniate`). A rung qualifies when it is:
   `eutherian, craniate, passerine, salmonid, ratite, carinate, tracheophyte` outright. But it is only a
   signal, not a gate: it happily admits `canine, carnivore, placental, vertebrate, chordate, angiosperm`,
   so `BANNED_RUNGS` and the count threshold do the real work. A rung outside 2of12 needs a higher count to
-  qualify. Both thresholds get tuned against real output in M1.
+  qualify (`MIN_COUNT_RARE = 2`; a 2of12 word or a top-stop needs none).
 
-Target result: `poodle → dog → mammal → animal`, not `poodle → dog → canine → carnivore → placental →
-mammal → vertebrate → chordate → animal → organism → living_thing → whole → object → physical_entity →
-entity`.
+**Sense coherence — the condition that turned out to be load-bearing, and wasn't in the plan.** The shipped
+map is word→word, but a *word* carries its own best sense, and it is usually not the synset it was just
+named for. The chain then derails exactly one rung later:
 
-### 3.3 Shipped format — one map, inverted at load
+```
+mountain → natural_elevation, whose lemma is `elevation`
+          …but `elevation`'s own best sense is an architectural DRAWING
+          → mountain → elevation → plan → drawing
+mansion  → lemma `hall`, whose own best sense is a CORRIDOR
+          → castle → hall → corridor → passageway → passage
+```
 
-Coverage is not the constraint; quality is. Real numbers from the shipped data: **34,880** words are both
-in `enable1.txt` and a ≥3-letter noun in `dictionary.json`, and **32,302** of those have at least one
-hyper/hypo rung. After the §3.2 filters that will shrink, but there is plenty to work with.
+So a rung must be a word whose **own** best sense *is* the synset it was chosen for. Then walking the map
+is walking a real hypernym path. It costs coverage, and that is the right trade: **a missing ladder is
+invisible, a wrong one teaches a lie.** A relaxed second pass buys some coverage back for words left with
+nothing, waiving coherence for `TOP_STOPS`/`MID_RUNGS` only — those can't derail a chain, and it is what
+rescues `guitar → instrument` (parent synset `musical_instrument.n.01`, but the bare word `instrument`
+resolves to "a device that requires skill" — different synset, same thing to a player). It fired 551 times.
 
-Storing full chains per word is wasteful (~800 KB — `poodle,dog,mammal,animal` would be stored again for
-`dog` and again for `mammal`). Ship **only the parent map** and rebuild the rest at load:
+Last, a four-entry **`PARENT_OVERRIDE`** for WordNet failures no filter can see: `water → liquid`
+(`water.n.01` is filed as a binary *compound*), `hammer → tool` (`hammer.n.01` is the part of a *gunlock*),
+`mountain → place`, `pencil → tool` (its only parent is `writing_implement`, which has no one-word lemma).
+
+Target result reached: **`poodle → dog → mammal → animal`**, not `poodle → dog → canine → carnivore →
+placental → mammal → vertebrate → chordate → animal → organism → living_thing → whole → object →
+physical_entity → entity`.
+
+**M1 gate — the spot-check list, as built:**
+
+```
+poodle → dog → mammal → animal      chair → furniture           king   → sovereign → ruler → person
+dog    → mammal → animal            pizza → food                jacket → coat → garment → clothing
+tree   → plant                      river → stream → water → liquid
+car    → vehicle                    shoe  → footwear → clothing  apple  → fruit
+bird   → animal                     teacher → educator → person  book   → publication
+castle → mansion → house → building shirt → garment → clothing   cheese → food
+```
+
+### 3.3 Shipped format — the DOWN map, inverted at load
+
+Coverage is not the constraint; quality is. As built: **34,673** words are eligible to be typed (§3.2 step
+1) and **30,545** of them ended up with a ladder in at least one direction, across **4,837** distinct
+parents. Chain lengths: 1 rung 1,002 · 2 rungs 11,017 · 3 rungs 11,180 · 4 rungs 5,523 · 5 rungs 1,613 ·
+6 rungs 210.
+
+Storing full chains per word is wasteful (`poodle,dog,mammal,animal` would be stored again for `dog` and
+again for `mammal`). Ship **one relation map** and rebuild the other direction at load. The plan said ship
+`ladderUp` and derive down; **the build ships `ladderDown` and derives up**, because the sizes are not close:
+
+| encoding | raw | gzipped |
+| -------- | --- | ------- |
+| pretty `ladderUp`, one entry per line | 694 KB | 223 KB |
+| minified `ladderUp` | 571 KB | 212 KB |
+| **`ladderDown`, children space-joined** | **337 KB** | **145 KB** |
+
+Down wins because 30,545 edges collapse onto 4,837 parents, so a child costs `len(word) + 1` inside a
+shared string instead of repeating its parent plus JSON punctuation on its own line.
 
 ```js
 // ladderPOJO.js — AUTO-GENERATED by build-ladders.py from WordNet. Do not hand-edit.
-export const ladderUp = {
-  poodle: "dog",
-  dog: "mammal",
-  mammal: "animal",
-  animal: null,      // a TOP_STOPS capstone
+export const ladderDown = {
+  dog: "puppy hound terrier cur spaniel pug mutt pooch husky corgi poodle …",
+  mammal: "dog cat horse …",
   …
 };
 ```
 
-At module load, iterate `ladderUp` once (~22k entries, ~2 ms) to build the inverse index
-`ladderDown = {parent: [children…]}`, ordered by the commonness the build script already computed. Then:
+At module load, iterate it once (~30k children, a few ms) to build `ladderUp = {child: parent}`. Then:
 
-- **chain for a word** = walk `ladderUp` to the top, walk `ladderDown[word][0]` once for the rung below.
-- **Round-trip is correct by construction** — down is literally the inverse of up, so
-  `dog → mammal → dog` can never desync.
-- The sibling list `ladderDown[parent]` comes free, which is what Phase 3 (§12) and several of the
-  ideas in §11 need.
+- **chain for a word** = walk `ladderUp` to the top; the rung below is `ladderDown[word].split(" ")[0]`.
+- **Round-trip is correct by construction** — up is literally the inverse of down, so `dog → mammal → dog`
+  can never desync. *(Verified on the built file: 0 mismatches, 0 cycles, longest chain 6.)*
+- The sibling list Phase 3 (§12) and several §11 ideas need is now the **shipped** form, not the derived one.
+- Nothing is lost by shipping down: a capstone with children is a key, and a capstone *without* children had
+  no ladder in either direction and was dropped at build time.
+- Both parents and the children inside each string are ordered **most-common-first**, so Keen Arrow's first
+  pick down is the word a player would actually think of. Costs zero bytes.
 
 **A `.js` module at repo root, not `data/*.json`** — a deliberate deviation from the `data/` convention,
 for two reasons: (a) every Punctuators data set already ships this way (`AmbigramPOJO.js` 67 KB,
 `alphabeticalNeighbors.js` 51 KB, `anagrams.js` 97 KB) and (b) a `fetch` would force the currently-synchronous
 `hasLadders`/`wrapLadders`/`removePuncButton` path to go async.
 
-**Size is the open risk, and moving to `enable1.txt` made it worse.** At ~32k eligible words the raw
-parent map lands around **400–500 KB** — right at the edge. Two things decide it at M1:
-
-- The §3.2 rung filters remove words that never get a qualifying parent, so the real count will be lower
-  than 32k. How much lower is not knowable until the script runs.
-- GitHub Pages serves gzipped, and a map of short repeated English words compresses hard — expect the
-  actual transfer to be roughly a third of the on-disk size.
-
-**Decide at M1 on real output**, since the game already imports `anagrams.js` (97 KB) on every load and
-this would be several times that. If the built file is uncomfortably large, fall back to
-`data/ladders.json` fetched on mode select, with an `await` in the button handler — about five lines, and
-it keeps the cost off every visitor who never picks this mode.
+**Size — the plan's open risk, now decided.** 337 KB raw / ~145 KB over the wire, against the 400–500 KB the
+plan feared. That is ~3.5× `anagrams.js`, which the game already imports on every load. **Verdict: ship it
+as a static import**, and revisit only if load time is felt in practice. The escape hatch the plan named is
+still there and still cheap — move it to `data/ladders.json`, fetch on mode select, `await` in the button
+handler — but it buys ~145 KB at the cost of making three synchronous functions async, so it isn't worth
+taking pre-emptively.
 
 ### 3.4 Inflections
 
@@ -272,15 +352,15 @@ Character flips directly between them.
 
 | File | Change |
 | ---- | ------ |
-| `build-ladders.py` | **new** — the offline build (§3.2) |
-| `ladderPOJO.js` | **new, generated** — `ladderUp` map (§3.3) |
+| `build-ladders.py` | **new — BUILT** — the offline build (§3.2). `--spot [words…]` rebuilds only the check list in seconds; `--why <word>` prints one raw WordNet climb with a verdict per candidate; `--check` does the full pass without writing |
+| `ladderPOJO.js` | **new, generated — BUILT** — `ladderDown` map, 337 KB (§3.3) |
 | `ladderFunc.js` | **new** — `wrapLadders(sentence)` + `hasLadders(sentence)`, mirroring `AmbigramFunc.js:643/676` |
 | `SpanPlaceholder.js` | `export const protectedLadders = withSpanPlaceholders(wrapLadders);` |
 | `utils/utils.js` | `case "ladder":` in `addSpansAndIdsForWordPlay` (~:124); `targetId` in `heroToTheRescue` (:207) |
 | `punctuators.html` | the `<option>` (~:71). *(The custom dropdown at :157 enumerates `sel.options` automatically — no extra work.)* |
 | `index.js` | import `hasLadders`; guard branch in the `removePuncButton` handler (~:417); `GeneralIzation` + `KeenArrow` classes; instances + `availableHeroArray`; `targetId` in the collision gate (:1664); the ladder branch in the collision chain; SFX (§7); lift `matchCase` (:1843) to module scope |
 | `index.css` | `.izo-widen`, `.keen-narrow`, `.ladder-capstone`, the rung strip (§6) |
-| `CLAUDE.md` | the Punctuators row (added 2026-08-22, marked PLANNED) flips to **BUILT** per milestone |
+| `CLAUDE.md` | the Punctuators row flips to **BUILT** per milestone — done for M1, still to do for M2–M4 |
 
 **Guard message**, matching the existing three at `index.js:403–423`:
 
@@ -350,14 +430,16 @@ glance.
 
 ## 9. Milestones
 
-**M1 — the data.** `build-ladders.py` + generated `ladderPOJO.js`. Iterate `BANNED_RUNGS` /
-`TOP_STOPS` / the count threshold against real output until ladders read cleanly for a spot-check list of
-~50 common nouns. Ships nothing playable. *Gate: eyeball `poodle`, `dog`, `tree`, `car`, `bird`, `chair`,
-`pizza`, `river`, `shoe`, `teacher`.*
+**M1 — the data. BUILT 2026-08-22.** `build-ladders.py` + generated `ladderPOJO.js` (30,545 words,
+4,837 parents, 337 KB). Gate met — all ten check words read cleanly, plus ~40 more (§3.2). Ships nothing
+playable. The tuning knobs that did the work: `BANNED_RUNGS`, `TOP_STOPS`, `MID_RUNGS`, `MIN_COUNT_RARE`,
+and the two hand tables `PARENT_OVERRIDE` (4 entries) / `SENSE_OVERRIDE` (2). Re-run the script after
+touching any of them.
 
 **M2 — the mode, headless.** `ladderFunc.js` (`wrapLadders` / `hasLadders`), `SpanPlaceholder` +
 `utils.js` wiring, the `<option>`, the guard message. Words visibly mark up in the sentence. Nothing shoots
-them yet.
+them yet. **Start here:** invert `ladderDown` to `ladderUp` once at module load (§3.3), then `data-ladder`
+is a walk over the two maps.
 
 **M3 — the heroes.** The `targetId` split (§4), both hero classes, `availableHeroArray`, the collision
 branch, up/down movement, capstone behavior. Playable with placeholder art and no polish.
@@ -429,10 +511,11 @@ supports for free, noted so they aren't re-derived later:
   namespace (`vhyper` = broader action, `tropo` = troponyms, "a particular way of doing it") which
   `build_dictionary.py:122/127` already extracts, and `_best_verb_sense` (`build_dictionary.py:253`) already
   disambiguates. Same heroes, same mechanic, a second parent map. Held back so the noun mechanic ships clean.
-- **Phase 3 — branching hyponyms.** `dog` has 18 children (poodle, pug, corgi, …). Today Keen Arrow takes
-  the single canonical one. Later: repeated shots at the bottom rung **cycle the siblings**, which
-  `ladderDown[parent]` (§3.3) already provides for free. This is where Keen Arrow gets a real personality —
-  the specificity hero who can always get *more* specific.
+- **Phase 3 — branching hyponyms.** `dog` has **33** children in the built data (`puppy hound terrier cur
+  spaniel pug mutt pooch husky … poodle …`, commonness-ordered). Today Keen Arrow takes the first one.
+  Later: repeated shots at the bottom rung **cycle the siblings** — and since §3.3 ships `ladderDown`
+  directly, that list is already the raw data, no derivation needed. This is where Keen Arrow gets a real
+  personality: the specificity hero who can always get *more* specific.
 - **Adjectives.** WordNet has no adjective hierarchy (only `sim`/`ant`), so there is no ladder to climb.
   Out of scope, permanently.
 - **A base `docs/punctuators.md`.** The game itself is undocumented; §1 here is a partial stand-in.
