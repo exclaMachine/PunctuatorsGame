@@ -19,36 +19,53 @@ flattens every sense of a word together, so it thinks tree→actor (Herbert Beer
 dog→sausage. `_best_noun_sense` picks the one sense a player means, and we climb only that.
 It started as build_dictionary.py's copy but had to be re-ordered — see the note on it below.
 
+Also builds the PUZZLE corpus for the Restore the Phrase mode (docs §11.5):
+
+  phrases-source.txt  ->  phrasePOJO.js   export const ladderPhrases = [ {show, say, fix…}, … ]
+
 USAGE
   pip install nltk
   python3 build-ladders.py                  # downloads WordNet to a temp dir, writes ladderPOJO.js
   python3 build-ladders.py --check          # full pass + the spot-check report, but no write
   python3 build-ladders.py --spot [word …]  # ladders for the spot list (+ any extra words), in seconds
   python3 build-ladders.py --why dog        # one raw WordNet climb, with a verdict per candidate
+  python3 build-ladders.py --phrases        # phrases-source.txt -> phrasePOJO.js (+ rewrites the #~ notes)
+  python3 build-ladders.py --phrases --check   # same, reported but written nowhere
 The tuning loop is --spot to iterate, --why when a word surprises you, then a bare run to ship.
+
+--phrases needs NO WordNet: it reads the already-generated ladderPOJO.js, so a puzzle can never
+assert a rung the game doesn't have, and the prune-then-rebuild loop costs a second, not a minute.
 """
 
 import json
 import os
+import re
 import sys
 import tempfile
 
-# --- WordNet to a TEMP location so we never commit the raw DB (same as build_dictionary.py) ---
-TMP_NLTK = os.path.join(tempfile.gettempdir(), "inklings_nltk_data")
-os.makedirs(TMP_NLTK, exist_ok=True)
-os.environ["NLTK_DATA"] = TMP_NLTK
-
-import nltk
-nltk.data.path.insert(0, TMP_NLTK)
-for pkg in ("wordnet", "omw-1.4"):
-    try:
-        nltk.download(pkg, download_dir=TMP_NLTK, quiet=True)
-    except Exception as e:
-        print(f"warn: could not download {pkg}: {e}")
-
-from nltk.corpus import wordnet as wn
-
 OUT_FILE = "ladderPOJO.js"
+PHRASE_SRC = "phrases-source.txt"
+PHRASE_OUT = "phrasePOJO.js"
+
+# The phrase build works off the shipped map (see the module docstring), so skip the WordNet
+# download and the three corpora entirely — none of the code it reaches touches them.
+PHRASES_ONLY = "--phrases" in sys.argv
+
+if not PHRASES_ONLY:
+    # --- WordNet to a TEMP location so we never commit the raw DB (same as build_dictionary.py) ---
+    TMP_NLTK = os.path.join(tempfile.gettempdir(), "inklings_nltk_data")
+    os.makedirs(TMP_NLTK, exist_ok=True)
+    os.environ["NLTK_DATA"] = TMP_NLTK
+
+    import nltk
+    nltk.data.path.insert(0, TMP_NLTK)
+    for pkg in ("wordnet", "omw-1.4"):
+        try:
+            nltk.download(pkg, download_dir=TMP_NLTK, quiet=True)
+        except Exception as e:
+            print(f"warn: could not download {pkg}: {e}")
+
+    from nltk.corpus import wordnet as wn
 
 # ----------------------------------------------------------------------------
 # Tuning knobs (docs §3.2). All three were tuned against real output in M1.
@@ -205,12 +222,13 @@ def load_wordlist(path):
         return {ln.strip().lower() for ln in f if ln.strip()}
 
 
-print("loading dictionary.json / enable1.txt / 2of12.txt …")
-DICT = json.load(open("data/dictionary.json", encoding="utf-8"))
-ENABLE1 = load_wordlist("enable1.txt")
-COMMON = {w.split("%")[0] for w in load_wordlist("2of12.txt")}   # 2of12 tags some entries with %
+if not PHRASES_ONLY:
+    print("loading dictionary.json / enable1.txt / 2of12.txt …")
+    DICT = json.load(open("data/dictionary.json", encoding="utf-8"))
+    ENABLE1 = load_wordlist("enable1.txt")
+    COMMON = {w.split("%")[0] for w in load_wordlist("2of12.txt")}   # 2of12 tags some entries with %
 
-DICT_NOUNS = {w for w, e in DICT.items() if "noun" in (e.get("pos") or [])}
+    DICT_NOUNS = {w for w, e in DICT.items() if "noun" in (e.get("pos") or [])}
 
 
 def semcor_count(word):
@@ -504,6 +522,396 @@ def write_js(up):
           f"{os.path.getsize(OUT_FILE) / 1024:.0f} KB")
 
 
+# ============================================================================
+# --phrases: the Restore the Phrase corpus (docs §11.3–§11.5)
+# ============================================================================
+# phrases-source.txt is hand-authored; {braces} mark the words a puzzle may shift. This pass
+# decides HOW each braced word shifts, bakes the result into phrasePOJO.js, and rewrites the `#~`
+# annotation lines under every phrase so the dev's sense-check (docs §11.4) is a read.
+#
+# It reads the SHIPPED ladderPOJO.js rather than climbing WordNet again. That is the point: a
+# puzzle asserts the same rungs the game will walk, so the two can't disagree, and re-running after
+# a prune is instant.
+
+# Plurals whose rung form the naive rule would get wrong. Only rungs matter here (the source word
+# is looked up through data/inflections.json), so this list stays short.
+IRREGULAR_PLURAL = {
+    "person": "people", "man": "men", "woman": "women", "child": "children",
+    "mouse": "mice", "goose": "geese", "foot": "feet", "tooth": "teeth", "ox": "oxen",
+}
+
+
+class PhraseError(Exception):
+    """A fault the dev has to fix in phrases-source.txt. Fatal — see docs §11.5."""
+
+
+def load_ladder_js(path=OUT_FILE):
+    """Parse the generated ladderPOJO.js back into (up, down). We generate the file, so its shape
+    is known exactly: one `  parent: "child child …",` line per entry."""
+    if not os.path.exists(path):
+        raise PhraseError(f"{path} not found — run a bare `python3 build-ladders.py` first")
+    down, up = {}, {}
+    for line in open(path, encoding="utf-8"):
+        m = re.match(r'\s*([a-z_]+): "(.*)",\s*$', line)
+        if not m:
+            continue
+        parent, kids = m.group(1), m.group(2).split()
+        down[parent] = kids
+        for k in kids:
+            up.setdefault(k, parent)
+    if not down:
+        raise PhraseError(f"parsed no entries out of {path} — has its format changed?")
+    return up, down
+
+
+def load_inflections():
+    with open("data/inflections.json", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def lemma_of(word, up, down, infl):
+    """The ladder key for a written word, plus whether it was written plural."""
+    w = word.lower()
+    if w in up or w in down:
+        return w, False                      # `eggs` and `cards` are keys in their own right
+    base = infl.get(w)
+    if base and (base in up or base in down):
+        return base, True
+    for suffix, repl in (("ies", "y"), ("es", ""), ("s", "")):
+        if w.endswith(suffix):
+            cand = w[: -len(suffix)] + repl
+            if cand in up or cand in down:
+                return cand, True
+    return w, False
+
+
+def pluralize(word):
+    if word in IRREGULAR_PLURAL:
+        return IRREGULAR_PLURAL[word]
+    if word.endswith(("s", "x", "z", "ch", "sh")):
+        return word + "es"
+    if word.endswith("y") and word[-2:-1] not in "aeiou":
+        return word[:-1] + "ies"
+    return word + "s"
+
+
+def match_case(src, word):
+    return word[:1].upper() + word[1:] if src[:1].isupper() else word
+
+
+def surface(rung, mark):
+    """Render a rung the way the phrase wrote its word: plural if it was, capitalised if it was."""
+    return match_case(mark["written"], pluralize(rung) if mark["plural"] else rung)
+
+
+def bare(token):
+    """The word inside a token, minus punctuation and any possessive — for collision checks."""
+    return re.sub(r"[^a-z]", "", token.lower().replace("'s", ""))
+
+
+def fix_article(tokens, i):
+    """a/an agreement for the token before index i. Done here at build time AND live in-game after
+    every rung change (docs §11.6) — `A dog` has to become `An animal` and back."""
+    if i == 0:
+        return
+    prev = tokens[i - 1]
+    if prev.lower() not in ("a", "an"):
+        return
+    word = re.sub(r"^[^A-Za-z]*", "", tokens[i])
+    art = "an" if word[:1].lower() in "aeiou" else "a"
+    tokens[i - 1] = match_case(prev, art)
+
+
+def climb_up(word, up, n):
+    out, cur = [], word
+    for _ in range(n):
+        cur = up.get(cur)
+        if not cur:
+            break
+        out.append(cur)
+    return out
+
+
+def pick_child(word, down, pin=None):
+    """The narrower rung to use in a puzzle — the pinned one if the author named it.
+
+    ladderPOJO orders children most-common-first, but `commonness()` scores the WORD, not its noun
+    sense, so one that is common as something else floats to the front: basket → `frail`,
+    worm → `annelid`, mouth → `yap`. Harmless in free play, where the player chose to climb down and
+    any true hyponym is a fair answer; wrong in a puzzle, where the shown word IS the clue.
+
+    2of12.txt can't fix this — it admits frail, annelid, yap and ocelot alike, being a word list
+    rather than a sense list. Nothing available at build time can, which is the same wall §11.4 hit.
+    So the author pins it: `{basket>hamper}` picks the child, exactly as braces pick the word."""
+    kids = down.get(word) or []
+    if pin:
+        return pin if pin in kids else None
+    return kids[0] if kids else None
+
+
+def climb_down(word, down, n, pin=None):
+    """n rungs narrower, taking the pinned (first step only) or most familiar child each step."""
+    out, cur = [], word
+    for step in range(n):
+        cur = pick_child(cur, down, pin if step == 0 else None)
+        if not cur:
+            break
+        out.append(cur)
+    return out
+
+
+def full_up_chain(word, up):
+    return [word] + climb_up(word, up, 12)
+
+
+def plan_phrase(text, origin, up, down, infl):
+    """Turn one authored line into a puzzle entry. Raises PhraseError on anything the dev must fix.
+
+    Direction mix (docs §11.5): a phrase with two or more braced words shifts at least one word up
+    and one down whenever the words allow it, so the player has to use both heroes and Switch
+    Character. That requirement IS the lesson — a puzzle solvable with one hero teaches half of it.
+    """
+    tokens, marks = [], []
+    for i, tok in enumerate(text.split(" ")):
+        m = re.search(r"\{(\{?)([A-Za-z']+)(?:>([a-z]+))?([\^+]*)\}?\}", tok)
+        if m:
+            marks.append({"i": i, "written": m.group(2), "rungs": 2 if m.group(1) else 1,
+                          "pin": m.group(3), "force": "up" if "^" in m.group(4) else None,
+                          "plus": "+" in m.group(4)})
+            tok = tok.replace(m.group(0), m.group(2))
+        tokens.append(tok)
+    if not marks:
+        raise PhraseError("no {braced} word — brace one or delete the line")
+
+    for mk in marks:
+        word, plural = lemma_of(mk["written"], up, down, infl)
+        # `+` is for nouns that don't change in the plural, where nothing in the writing says which
+        # one is meant: "plenty of {fish+}" is plural but "a {fish} out of water" is not, and the
+        # rungs have to follow ("plenty of sharks", "a shark out of water").
+        plural = plural or mk["plus"]
+        mk.update(word=word, plural=plural,
+                  can_up=len(climb_up(word, up, mk["rungs"])) == mk["rungs"],
+                  can_down=len(climb_down(word, down, mk["rungs"], mk["pin"])) == mk["rungs"])
+        if mk["pin"] and not mk["can_down"]:
+            kids = " ".join((down.get(word) or [])[:12]) or "(none)"
+            raise PhraseError(f'"{word}>{mk["pin"]}" — {mk["pin"]} is not a kind of {word}. '
+                              f"Pick from: {kids}")
+        if mk["force"] == "up" and not mk["can_up"]:
+            raise PhraseError(f'"{mk["written"]}^" can\'t broaden — it has no rung above it')
+        if not (mk["can_up"] or mk["can_down"]):
+            raise PhraseError(f'"{mk["written"]}" has no ladder {mk["rungs"]} rung(s) either way '
+                              f"— drop its braces")
+
+    # Assign directions: an author's pin or ^ settles it, then words with only one available
+    # direction take it, then the flexible ones fill in whichever side is still missing.
+    for mk in marks:
+        mk["dir"] = ("down" if mk["pin"] else mk["force"] or
+                     ("up" if not mk["can_down"] else "down" if not mk["can_up"] else None))
+    for mk in [m for m in marks if m["dir"] is None]:
+        used = [m["dir"] for m in marks if m["dir"]]
+        mk["dir"] = ("up" if "up" not in used else
+                     "down" if "down" not in used else
+                     "up" if used.count("up") <= used.count("down") else "down")
+
+    def shifted(mk, direction):
+        path = (climb_up(mk["word"], up, mk["rungs"]) if direction == "up"
+                else climb_down(mk["word"], down, mk["rungs"], mk["pin"]))
+        return path[-1] if len(path) == mk["rungs"] else None
+
+    # Collisions: the shown word must not already appear in the phrase, and two shifted words must
+    # not land on the same thing. `The {pot} calling the kettle black` broadens instead of narrowing
+    # for exactly this reason — pot's first child IS kettle.
+    taken = {bare(t) for j, t in enumerate(tokens) if j not in [m["i"] for m in marks]}
+    taken |= {mk["word"] for mk in marks}
+    notes = []
+    for mk in marks:
+        # An author's pin or ^ is not second-guessed: it gets its one direction and nothing else.
+        tries = ((mk["dir"],) if (mk["pin"] or mk["force"])
+                 else (mk["dir"], "down" if mk["dir"] == "up" else "up"))
+        for direction in tries:
+            if not mk["can_up" if direction == "up" else "can_down"]:
+                continue
+            word = shifted(mk, direction)
+            if word and word not in taken:
+                mk["dir"], mk["shown"] = direction, word
+                taken.add(word)
+                break
+        else:
+            mk["shown"] = None
+            notes.append(f'"{mk["written"]}" left unshifted — every shift collided with a word '
+                         f"already in the phrase")
+    marks = [mk for mk in marks if mk["shown"]]
+    if not marks:
+        raise PhraseError("every braced word collided — brace a different word or delete the line")
+
+    say = " ".join(tokens)
+    show_tokens = list(tokens)
+    fix = []
+    for mk in marks:
+        show_tokens[mk["i"]] = tokens[mk["i"]].replace(mk["written"], surface(mk["shown"], mk))
+        fix_article(show_tokens, mk["i"])
+        if mk["dir"] == "up":
+            chain = full_up_chain(mk["word"], up)
+            at, goal = mk["rungs"], 0
+        else:
+            kids = climb_down(mk["word"], down, mk["rungs"], mk["pin"])
+            chain = list(reversed(kids)) + full_up_chain(mk["word"], up)
+            at, goal = 0, mk["rungs"]
+        entry = {"i": mk["i"], "at": at, "goal": goal, "chain": chain}
+        if mk["plural"]:
+            entry["plu"] = True
+        if mk["written"][:1].isupper():
+            entry["cap"] = True
+        fix.append(entry)
+
+    show = " ".join(show_tokens)
+    return {"show": show, "say": say, "origin": origin, "fix": fix,
+            "_marks": marks, "_notes": notes}
+
+
+def verify_phrase(p, up, down):
+    """The build-time checks of docs §11.5. All fatal — a bad puzzle must never reach a player."""
+    for f, mk in zip(p["fix"], p["_marks"]):
+        chain = f["chain"]
+        if not (0 <= f["at"] < len(chain) and 0 <= f["goal"] < len(chain)):
+            raise PhraseError(f"rung index out of range for {mk['written']}")
+        if chain[f["goal"]] != mk["word"]:
+            raise PhraseError(f"round-trip failed: chain[{f['goal']}] is "
+                              f"{chain[f['goal']]}, not {mk['word']}")
+        if chain[f["at"]] != mk["shown"]:
+            raise PhraseError(f"shown rung mismatch for {mk['written']}")
+        for a, b in zip(chain, chain[1:]):          # every edge must exist in the shipped map
+            if up.get(a) != b:
+                raise PhraseError(f"chain edge {a} → {b} is not in {OUT_FILE}")
+        if surface(mk["shown"], mk) not in p["show"].split(" ")[f["i"]]:
+            raise PhraseError(f"token {f['i']} doesn't hold the shifted word for {mk['written']}")
+    shown = [surface(mk["shown"], mk).lower() for mk in p["_marks"]]
+    if len(set(shown)) != len(shown):
+        raise PhraseError(f"two braced words both became {shown}")
+    if p["show"] == p["say"]:
+        raise PhraseError("nothing actually shifted — the puzzle would start solved")
+
+
+def read_phrase_source(path=PHRASE_SRC):
+    """Split the source into the dev's lines and ours. `#~` lines are ours and are regenerated, so
+    they're dropped on read (with the blank line that follows a phrase block)."""
+    if not os.path.exists(path):
+        raise PhraseError(f"{path} not found")
+    items, prev_ours = [], False
+    for line in open(path, encoding="utf-8"):
+        line = line.rstrip("\n")
+        if line.startswith("#~"):
+            prev_ours = True
+            continue
+        if not line.strip() and prev_ours:
+            continue
+        prev_ours = False
+        if line.strip() and not line.lstrip().startswith("#"):
+            text, _, origin = line.partition("|")
+            items.append(("phrase", text.strip(), origin.strip()))
+            prev_ours = True
+        else:
+            items.append(("raw", line, None))
+    return items
+
+
+def annotate(p, up, down):
+    """The `#~` block under one phrase: what the ladder holds for each braced word, and what the
+    build decided to show. The `=` line is the one the dev prunes against — it is the puzzle."""
+    out = []
+    for mk in p["_marks"]:
+        arrow = "↕" if mk["can_up"] and mk["can_down"] else "↑" if mk["can_up"] else "↓"
+        ups = climb_up(mk["word"], up, 12)
+        kids = down.get(mk["word"], [])
+        shown_kids = " ".join(kids[:6]) + (f" …+{len(kids) - 6}" if len(kids) > 6 else "")
+        out.append(f'#~ {arrow} {mk["written"]:<9} broader: {" → ".join(ups) or "—":<34} '
+                   f'narrower: {shown_kids or "—"}')
+    moves = ", ".join(f'{mk["written"]} {"←broader" if mk["dir"] == "up" else "→narrower"}'
+                      for mk in p["_marks"])
+    out.append(f'#~ = {p["show"]}   [{moves}]')
+    for n in p["_notes"]:
+        out.append(f"#~ ! {n}")
+    return out
+
+
+def js_str(s):
+    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def write_phrase_js(phrases):
+    lines = [
+        "// phrasePOJO.js — AUTO-GENERATED by `build-ladders.py --phrases`. Do not hand-edit.",
+        "// Edit phrases-source.txt and re-run. Design: docs/punctuators-ladder.md §11.",
+        "//   show  what the player is given, with words already shifted along the ladder",
+        "//   say   the saying restored — what winning looks like",
+        "//   fix   one per shifted word: i = index into show.split(' '), chain = the rungs it may",
+        "//         walk (most specific first), at = where it starts, goal = where it belongs.",
+        "//         plu/cap mean re-pluralise / re-capitalise a rung when the word moves.",
+        "export const ladderPhrases = [",
+    ]
+    for p in phrases:
+        fixes = ", ".join(
+            "{ i: %d, at: %d, goal: %d, chain: [%s]%s%s }" % (
+                f["i"], f["at"], f["goal"], ", ".join(js_str(c) for c in f["chain"]),
+                ", plu: true" if f.get("plu") else "", ", cap: true" if f.get("cap") else "")
+            for f in p["fix"])
+        lines.append("  { show: %s," % js_str(p["show"]))
+        lines.append("    say:  %s," % js_str(p["say"]))
+        lines.append("    origin: %s," % js_str(p["origin"]))
+        lines.append("    fix: [%s] }," % fixes)
+    lines += ["];", ""]
+    with open(PHRASE_OUT, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    print(f"wrote {PHRASE_OUT}: {len(phrases)} puzzles, "
+          f"{os.path.getsize(PHRASE_OUT) / 1024:.0f} KB")
+
+
+def build_phrases(write=True):
+    up, down = load_ladder_js()
+    infl = load_inflections()
+    items = read_phrase_source()
+    out_lines, phrases, errors = [], [], []
+
+    for kind, text, origin in items:
+        if kind == "raw":
+            out_lines.append(text)
+            continue
+        try:
+            p = plan_phrase(text, origin, up, down, infl)
+            verify_phrase(p, up, down)
+        except PhraseError as e:
+            errors.append(f"  {text}\n      -> {e}")
+            out_lines += [f"{text} | {origin}" if origin else text, f"#~ ✗ {e}", ""]
+            continue
+        phrases.append(p)
+        out_lines += [f"{text} | {origin}" if origin else text, *annotate(p, up, down), ""]
+
+    if errors:
+        print(f"\n{len(errors)} phrase(s) need fixing in {PHRASE_SRC}:")
+        print("\n".join(errors))
+
+    notes = sum(len(p["_notes"]) for p in phrases)
+    moved = sum(len(p["fix"]) for p in phrases)
+    ups = sum(1 for p in phrases for f in p["fix"] if f["goal"] == 0)
+    mixed = sum(1 for p in phrases
+                if len({f["goal"] == 0 for f in p["fix"]}) > 1)
+    print(f"\n{len(phrases)} puzzles · {moved} shifted words "
+          f"({ups} broadened, {moved - ups} narrowed) · "
+          f"{mixed} need both heroes · {notes} collision note(s)")
+    print("\nsample:")
+    for p in phrases[:8]:
+        print(f'  {p["show"]}\n      -> {p["say"]}')
+
+    if write:
+        with open(PHRASE_SRC, "w", encoding="utf-8") as f:
+            f.write("\n".join(out_lines).rstrip("\n") + "\n")
+        print(f"\nrewrote {PHRASE_SRC} annotations")
+        write_phrase_js(phrases)
+    else:
+        print(f"\n--check: nothing written")
+    return 1 if errors else 0
+
+
 SPOT_CHECK = ["poodle", "dog", "tree", "car", "bird", "chair", "pizza", "river", "shoe", "teacher",
               "cat", "salmon", "rose", "hammer", "guitar", "castle", "sandwich", "bee", "shirt",
               "mountain", "doctor", "hat", "spoon", "truck", "wolf", "apple", "book", "cheese"]
@@ -539,6 +947,12 @@ def spot_only():
 
 
 if __name__ == "__main__":
+    if PHRASES_ONLY:
+        try:
+            sys.exit(build_phrases(write="--check" not in sys.argv))
+        except PhraseError as e:
+            print(f"error: {e}")
+            sys.exit(1)
     if "--spot" in sys.argv:
         up = spot_only()
         for w in SPOT_CHECK + sys.argv[sys.argv.index("--spot") + 1:]:

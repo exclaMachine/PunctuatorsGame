@@ -1,24 +1,42 @@
 # phrases-source.txt — the corpus for Punctuators' "Restore the Phrase" mode.
 # Design: docs/punctuators-ladder.md §11.3–§11.5.  Draft 2026-08-22, awaiting the dev's prune.
 #
+# BUILD    python3 build-ladders.py --phrases           writes phrasePOJO.js, rewrites the '#~'
+#          python3 build-ladders.py --phrases --check   report only, writes nothing
+#
 # FORMAT   One saying per line:   <phrase with {braces}> | <origin>
 #          {braces} mark the words the puzzle is ALLOWED to shift along the ladder.
 #          Everything else on the line is left alone.
-#          {{double braces}} mean shift 2 rungs instead of 1 (a harder day). None used yet.
+#
+#          {word}            the build picks the direction and the rung
+#          {word>child}      narrow to THIS child — use it when the build's pick is obscure
+#                            (basket → "frail"); a wrong child errors and lists the real ones
+#          {word^}           broaden — never narrow this one
+#          {word+}           the word is plural though it doesn't look it, so shift it plural
+#                            ("plenty of {fish+}" -> sharks, but "a {fish} out of water" -> shark)
+#          {{word}}          shift 2 rungs instead of 1 (a harder day). None used yet.
 #
 # LINES    '#'  a comment you wrote.   '#~' an annotation the build wrote — see below.
 #
 # YOUR JOB IS TO PRUNE, NOT TO RESEARCH.  Under each phrase, '#~' shows what the built
 # ladder ACTUALLY does with that word — the rung above it and the rungs below it, taken
-# live from ladderPOJO.js.  Read it and ask one question:
+# live from ladderPOJO.js — and then, on the '=' line, THE PUZZLE IT MADE.  Read that line
+# and ask one question:
 #
-#     Is that the sense THIS saying means?
+#     Would a player see that and think "oh, it's <the saying>"?
 #
-# If yes, leave the braces.  If no, delete the braces (keep the phrase — an unbraced word
-# is simply never shifted).  If a phrase has no braces left, delete the whole line.
-# This is the one judgment no script can make; see the doc §11.4 for why.
+# If yes, leave it.  If the shifted word is the wrong SENSE of the word, delete its braces
+# (keep the phrase — an unbraced word is simply never shifted).  If it's the right sense but
+# an obscure rung, pin a better one with >child.  If a phrase has no braces left, delete the
+# whole line.  This is the one judgment no script can make; see the doc §11.4 for why.
 #
 #   ↕ = the word can shift both ways      ↑ = broader only      ↓ = narrower only
+#   = = the generated puzzle              ! = something the build had to work around
+#
+# Known rough edges the build can't see, all fixable from this file:
+#   a mass noun shifting to a count noun ("Don't play with bonfire" wants "a bonfire")
+#   a plural-only key broadening to a singular ("A building of meld" <- {cards})
+#   an obscure child the ordering floated to the front ({basket} -> frail) — pin it with >child
 #
 # Already dropped in drafting, as examples of the trap:
 #   "Don't count your chickens"      chicken → MEAT → food   (the saying means the bird)
@@ -33,367 +51,472 @@
 A {dog} is a {man}'s best friend. | English proverb, 1789
 #~ ↕ dog       broader: mammal → animal                    narrower: puppy hound terrier cur spaniel pug …+27
 #~ ↕ man       broader: person                             narrower: guy sir gentleman stiff bachelor beau …+29
+#~ = A mammal is a guy's best friend.   [dog ←broader, man →narrower]
 
-The early {bird} catches the {worm}. | Camden's Remains, 1636
+The early {bird>owl} catches the {worm^}. | Camden's Remains, 1636
 #~ ↕ bird      broader: animal                             narrower: vulture owl pigeon hawk crow poultry …+119
 #~ ↕ worm      broader: animal                             narrower: annelid nematode flatworm roundworm woodworm helminth …+7
-#~ ! two braced words share the parent "animal" — the build must not broaden both (§11.5 collision check)
+#~ = The early owl catches the animal.   [bird →narrower, worm ←broader]
 
-Don't put all your {eggs} in one {basket}. | Cervantes, Don Quixote, 1605
+Don't put all your {eggs} in one {basket>breadbasket}. | Cervantes, Don Quixote, 1605
 #~ ↑ eggs      broader: food                               narrower: —
 #~ ↕ basket    broader: container                          narrower: frail creel breadbasket skep punnet
+#~ = Don't put all your food in one breadbasket.   [eggs ←broader, basket →narrower]
 
 Too many {cooks} spoil the {broth}. | English proverb, 1575
 #~ ↕ cooks     broader: person                             narrower: chef salter
 #~ ↑ broth     broader: soup → food                        narrower: —
+#~ = Too many chefs spoil the soup.   [cooks →narrower, broth ←broader]
 
 A {bird} in the {hand} is worth two in the {bush}. | Medieval proverb
 #~ ↕ bird      broader: animal                             narrower: vulture owl pigeon hawk crow poultry …+119
 #~ ↓ hand      broader: —                                  narrower: fist maulers
 #~ ↕ bush      broader: plant                              narrower: rose lilac yucca sagebrush periwinkle honeysuckle …+143
+#~ = An animal in the fist is worth two in the plant.   [bird ←broader, hand →narrower, bush ←broader]
 
-When the {cat}'s away, the {mice} will play. | English proverb, 1607
+When the {cat>tabby}'s away, the {mice} will play. | English proverb, 1607
 #~ ↕ cat       broader: mammal → animal                    narrower: ocelot tom puss puma lynx tabby …+11
 #~ ↑ mice      broader: mammal → animal                    narrower: —
-#~ ! two braced words share the parent "mammal" — the build must not broaden both (§11.5 collision check)
+#~ = When the tabby's away, the mammals will play.   [cat →narrower, mice ←broader]
 
 You can lead a {horse} to {water}, but you can't make him drink. | English proverb, 1175
 #~ ↕ horse     broader: mammal → animal                    narrower: mount pony mare gelding nag roan …+15
 #~ ↕ water     broader: liquid                             narrower: sea stream ocean bay lake inlet …+24
+#~ = You can lead a mammal to sea, but you can't make him drink.   [horse ←broader, water →narrower]
 
-Don't look a gift {horse} in the {mouth}. | St. Jerome, c. 400
+Don't look a gift {horse} in the {mouth>maw}. | St. Jerome, c. 400
 #~ ↕ horse     broader: mammal → animal                    narrower: mount pony mare gelding nag roan …+15
 #~ ↕ mouth     broader: orifice                            narrower: yap maw gob gobs
+#~ = Don't look a gift mammal in the maw.   [horse ←broader, mouth →narrower]
 
 The {pen} is mightier than the {sword}. | Bulwer-Lytton, 1839
 #~ ↓ pen       broader: —                                  narrower: sharpie ballpoint
 #~ ↕ sword     broader: weapon → instrument                narrower: scimitar cutlass epee sabre saber rapier …+3
+#~ = The sharpie is mightier than the weapon.   [pen →narrower, sword ←broader]
 
 A rolling {stone} gathers no moss. | Publilius Syrus, 1st c. BC
 #~ ↓ stone     broader: —                                  narrower: pebble boulder calculus tor impost cobble …+23
+#~ = A rolling pebble gathers no moss.   [stone →narrower]
 
 People who live in glass {houses} shouldn't throw {stones}. | Chaucer, 1385
 #~ ↕ houses    broader: building                           narrower: cottage farmhouse manse parsonage boardinghouse villa …+18
 #~ ↓ stones    broader: —                                  narrower: pebble boulder calculus tor impost cobble …+23
+#~ = People who live in glass buildings shouldn't throw pebbles.   [houses ←broader, stones →narrower]
 
 The {apple} never falls far from the {tree}. | German proverb
 #~ ↕ apple     broader: fruit                              narrower: delicious prima
 #~ ↕ tree      broader: plant                              narrower: willow sloe beech elm ginkgo sapling …+101
+#~ = The fruit never falls far from the willow.   [apple ←broader, tree →narrower]
 
 Don't judge a {book} by its cover. | English proverb, 1860
 #~ ↕ book      broader: publication                        narrower: catalog pamphlet directory encyclopedia tome yearly …+23
+#~ = Don't judge a publication by its cover.   [book ←broader]
 
 Curiosity killed the {cat}. | Ben Jonson, 1598
 #~ ↕ cat       broader: mammal → animal                    narrower: ocelot tom puss puma lynx tabby …+11
+#~ = Curiosity killed the mammal.   [cat ←broader]
 
 Let sleeping {dogs} lie. | Chaucer, 1374
 #~ ↕ dogs      broader: mammal → animal                    narrower: puppy hound terrier cur spaniel pug …+27
+#~ = Let sleeping mammals lie.   [dogs ←broader]
 
 Barking {dogs} seldom bite. | Latin proverb
 #~ ↕ dogs      broader: mammal → animal                    narrower: puppy hound terrier cur spaniel pug …+27
+#~ = Barking mammals seldom bite.   [dogs ←broader]
 
 Every {dog} has his day. | Erasmus, 1545
 #~ ↕ dog       broader: mammal → animal                    narrower: puppy hound terrier cur spaniel pug …+27
+#~ = Every mammal has his day.   [dog ←broader]
 
 A {wolf} in {sheep}'s clothing. | Aesop
 #~ ↕ wolf      broader: mammal → animal                    narrower: coyote
 #~ ↕ sheep     broader: ruminant                           narrower: ram ewe merino karakul caracul bellwether …+3
+#~ = A mammal in ram's clothing.   [wolf ←broader, sheep →narrower]
 
 {Birds} of a {feather} flock together. | William Turner, 1545
 #~ ↕ Birds     broader: animal                             narrower: vulture owl pigeon hawk crow poultry …+119
 #~ ↕ feather   broader: material                           narrower: down scapular pinion hackle hackles
+#~ = Animals of a down flock together.   [Birds ←broader, feather →narrower]
 
 Kill two {birds} with one {stone}. | English proverb, 1600s
 #~ ↕ birds     broader: animal                             narrower: vulture owl pigeon hawk crow poultry …+119
 #~ ↓ stone     broader: —                                  narrower: pebble boulder calculus tor impost cobble …+23
+#~ = Kill two animals with one pebble.   [birds ←broader, stone →narrower]
 
 The squeaky {wheel} gets the grease. | American proverb
 #~ ↕ wheel     broader: machine                            narrower: gear cartwheel rowel roulette cogwheel waterwheel …+3
+#~ = The squeaky machine gets the grease.   [wheel ←broader]
 
 Strike while the {iron} is hot. | Chaucer, 1386
 #~ ↕ iron      broader: metal                              narrower: spiegel spiegeleisen
+#~ = Strike while the metal is hot.   [iron ←broader]
 
 A {stitch} in time saves nine. | English proverb, 1732
 #~ ↕ stitch    broader: stitchery → needlework             narrower: picot baste quilting hemstitch tacking basting …+7
+#~ = A stitchery in time saves nine.   [stitch ←broader]
 
 {Beggars} can't be choosers. | John Heywood, 1546
 #~ ↕ Beggars   broader: pauper → unfortunate → person      narrower: mooch cadger moocher scrounger panhandler sannyasi …+1
+#~ = Paupers can't be choosers.   [Beggars ←broader]
 
 The {grass} is always greener on the other side of the {fence}. | English proverb
 #~ ↕ grass     broader: plant                              narrower: corn oat wheat maize chess cheat …+35
 #~ ↕ fence     broader: barrier → obstruction              narrower: hedge paling hedgerow backstop
+#~ = The plant is always greener on the other side of the hedge.   [grass ←broader, fence →narrower]
 
 Blood is thicker than {water}. | German proverb, 1180
 #~ ↕ water     broader: liquid                             narrower: sea stream ocean bay lake inlet …+24
+#~ = Blood is thicker than liquid.   [water ←broader]
 
 Necessity is the {mother} of invention. | Attributed to Plato
 #~ ↕ mother    broader: parent → progenitor → ancestor     narrower: mama mamma mommy mom momma supermom …+2
+#~ = Necessity is the parent of invention.   [mother ←broader]
 
 The {road} to hell is paved with good intentions. | Saint Bernard, 1150
 #~ ↓ road      broader: —                                  narrower: highway roadway driveway thoroughfare shortcut byway …+10
+#~ = The highway to hell is paved with good intentions.   [road →narrower]
 
 A chain is only as strong as its weakest {link}. | Thomas Reid, 1786
 #~ ↑ link      broader: fastener → constraint              narrower: —
+#~ = A chain is only as strong as its weakest fastener.   [link ←broader]
 
 {Money} doesn't grow on {trees}. | English proverb
 #~ ↕ Money     broader: standard                           narrower: fund appropriation kale pelf lucre boodle …+7
 #~ ↕ trees     broader: plant                              narrower: willow sloe beech elm ginkgo sapling …+101
+#~ = Standard doesn't grow on willows.   [Money ←broader, trees →narrower]
 
 The love of {money} is the root of all evil. | 1 Timothy 6:10
 #~ ↕ money     broader: standard                           narrower: fund appropriation kale pelf lucre boodle …+7
+#~ = The love of standard is the root of all evil.   [money ←broader]
 
 Time is {money}. | Benjamin Franklin, 1748
 #~ ↕ money     broader: standard                           narrower: fund appropriation kale pelf lucre boodle …+7
+#~ = Time is standard.   [money ←broader]
 
 A {fool} and his {money} are soon parted. | Thomas Tusser, 1573
 #~ ↕ fool      broader: simpleton → person                 narrower: jackass clown buffoon goof bozo fathead …+4
 #~ ↕ money     broader: standard                           narrower: fund appropriation kale pelf lucre boodle …+7
+#~ = A simpleton and his fund are soon parted.   [fool ←broader, money →narrower]
 
 Two {heads} are better than one. | John Heywood, 1546
 #~ ↓ heads     broader: —                                  narrower: noggin
+#~ = Two noggins are better than one.   [heads →narrower]
 
 An {apple} a day keeps the {doctor} away. | Welsh proverb, 1866
 #~ ↕ apple     broader: fruit                              narrower: delicious prima
 #~ ↕ doctor    broader: caregiver → person                 narrower: quack surgeon psychiatrist pathologist vet gynecologist …+43
+#~ = A fruit a day keeps the quack away.   [apple ←broader, doctor →narrower]
 
 Half a {loaf} is better than none. | John Heywood, 1546
 #~ ↕ loaf      broader: bread → food                       narrower: meatloaf
+#~ = Half a bread is better than none.   [loaf ←broader]
 
 Don't bite the {hand} that feeds you. | Edmund Burke, 1770
 #~ ↓ hand      broader: —                                  narrower: fist maulers
+#~ = Don't bite the fist that feeds you.   [hand →narrower]
 
 A {picture} is worth a thousand words. | American saying, 1911
 #~ ↕ picture   broader: representation                     narrower: collage portrait inset sonogram montage graphic …+8
+#~ = A representation is worth a thousand words.   [picture ←broader]
 
 {Beauty} is in the eye of the beholder. | Margaret Wolfe Hungerford, 1878
 #~ ↕ Beauty    broader: appearance → quality               narrower: charm loveliness glamor prettiness glamour cuteness …+13
+#~ = Appearance is in the eye of the beholder.   [Beauty ←broader]
 
 Out of the frying {pan} and into the {fire}. | John Heywood, 1546
 #~ ↕ pan       broader: cookware → utensil                 narrower: wok skillet saucepan frypan
 #~ ↓ fire      broader: —                                  narrower: bonfire campfire smudge smolder smoulder conflagration …+1
+#~ = Out of the frying cookware and into the bonfire.   [pan ←broader, fire →narrower]
 
 Where there's smoke, there's {fire}. | English proverb
 #~ ↓ fire      broader: —                                  narrower: bonfire campfire smudge smolder smoulder conflagration …+1
+#~ = Where there's smoke, there's bonfire.   [fire →narrower]
 
 Don't play with {fire}. | English saying
 #~ ↓ fire      broader: —                                  narrower: bonfire campfire smudge smolder smoulder conflagration …+1
+#~ = Don't play with bonfire.   [fire →narrower]
 
 A watched {pot} never boils. | Attributed to Benjamin Franklin
 #~ ↕ pot       broader: cookware → utensil                 narrower: kettle coffeepot teapot samovar caldron stockpot …+2
+#~ = A watched cookware never boils.   [pot ←broader]
 
 The {pot} calling the kettle black. | Cervantes, Don Quixote, 1605
 #~ ↕ pot       broader: cookware → utensil                 narrower: kettle coffeepot teapot samovar caldron stockpot …+2
+#~ = The cookware calling the kettle black.   [pot ←broader]
 
 Too many irons in the {fire}. | English proverb, 1540
 #~ ↓ fire      broader: —                                  narrower: bonfire campfire smudge smolder smoulder conflagration …+1
+#~ = Too many irons in the bonfire.   [fire →narrower]
 
 A {leopard} cannot change his spots. | Jeremiah 13:23
 #~ ↕ leopard   broader: mammal → animal                    narrower: leopardess
+#~ = A mammal cannot change his spots.   [leopard ←broader]
 
 You can't teach an old {dog} new tricks. | John Fitzherbert, 1534
 #~ ↕ dog       broader: mammal → animal                    narrower: puppy hound terrier cur spaniel pug …+27
+#~ = You can't teach an old mammal new tricks.   [dog ←broader]
 
 Every {rose} has its thorn. | English proverb
 #~ ↕ rose      broader: bush → plant                       narrower: briar eglantine sweetbrier sweetbriar
+#~ = Every bush has its thorn.   [rose ←broader]
 
 Nip it in the {bud}. | Beaumont and Fletcher, 1606
 #~ ↕ bud       broader: blossom                            narrower: rosebud
+#~ = Nip it in the blossom.   [bud ←broader]
 
 The {apple} of my eye. | Deuteronomy 32:10
 #~ ↕ apple     broader: fruit                              narrower: delicious prima
+#~ = The fruit of my eye.   [apple ←broader]
 
 A {snake} in the {grass}. | Virgil, Eclogues
 #~ ↕ snake     broader: reptile → animal                   narrower: viper mamba cobra blacksnake constrictor krait …+4
 #~ ↕ grass     broader: plant                              narrower: corn oat wheat maize chess cheat …+35
+#~ = A reptile in the corn.   [snake ←broader, grass →narrower]
 
 Hold your {horses}. | American saying, 1844
 #~ ↕ horses    broader: mammal → animal                    narrower: mount pony mare gelding nag roan …+15
+#~ = Hold your mammals.   [horses ←broader]
 
 Straight from the {horse}'s {mouth}. | Racing slang, 1900s
 #~ ↕ horse     broader: mammal → animal                    narrower: mount pony mare gelding nag roan …+15
 #~ ↕ mouth     broader: orifice                            narrower: yap maw gob gobs
+#~ = Straight from the mammal's yap.   [horse ←broader, mouth →narrower]
 
 Don't put the {cart} before the {horse}. | English proverb, 1520
 #~ ↕ cart      broader: wagon → vehicle                    narrower: oxcart dray tumbril tumbrel ricksha dogcart …+3
 #~ ↕ horse     broader: mammal → animal                    narrower: mount pony mare gelding nag roan …+15
+#~ = Don't put the wagon before the mount.   [cart ←broader, horse →narrower]
 
 Close the {barn} {door} after the {horse} has bolted. | English proverb, 1350
 #~ ↕ barn      broader: building                           narrower: byre cowshed
 #~ ↕ door      broader: barrier → obstruction              narrower: batwing
 #~ ↕ horse     broader: mammal → animal                    narrower: mount pony mare gelding nag roan …+15
+#~ = Close the building batwing after the mammal has bolted.   [barn ←broader, door →narrower, horse ←broader]
 
 The {tail} wagging the {dog}. | American saying, 1872
 #~ ↕ tail      broader: outgrowth                          narrower: bob fluke bobtail scut oxtail uropygium
 #~ ↕ dog       broader: mammal → animal                    narrower: puppy hound terrier cur spaniel pug …+27
+#~ = The outgrowth wagging the puppy.   [tail ←broader, dog →narrower]
 
 A {fish} out of {water}. | Chaucer, 1483
 #~ ↕ fish      broader: animal                             narrower: shark salmon bluefish lox gar eel …+215
 #~ ↕ water     broader: liquid                             narrower: sea stream ocean bay lake inlet …+24
+#~ = An animal out of sea.   [fish ←broader, water →narrower]
 
-There are plenty of {fish} in the {sea}. | English saying
+There are plenty of {fish+} in the {sea}. | English saying
 #~ ↕ fish      broader: animal                             narrower: shark salmon bluefish lox gar eel …+215
 #~ ↑ sea       broader: water → liquid                     narrower: —
+#~ = There are plenty of sharks in the water.   [fish →narrower, sea ←broader]
 
-Like shooting {fish} in a barrel. | American saying
+Like shooting {fish+} in a barrel. | American saying
 #~ ↕ fish      broader: animal                             narrower: shark salmon bluefish lox gar eel …+215
+#~ = Like shooting animals in a barrel.   [fish ←broader]
 
 A drop in the {bucket}. | Isaiah 40:15
 #~ ↑ bucket    broader: container                          narrower: —
+#~ = A drop in the container.   [bucket ←broader]
 
 Spill the {beans}. | American saying, 1919
 #~ ↕ beans     broader: vegetable → food                   narrower: soybean soya haricot frijole flageolet
+#~ = Spill the vegetables.   [beans ←broader]
 
 The {cream} always rises to the top. | English proverb
 #~ ↑ cream     broader: elite → people                     narrower: —
+#~ = The elite always rises to the top.   [cream ←broader]
 
 Cool as a {cucumber}. | John Gay, 1732
 #~ ↑ cucumber  broader: vegetable → food                   narrower: —
+#~ = Cool as a vegetable.   [cucumber ←broader]
 
 That's the way the {cookie} crumbles. | American saying, 1950s
 #~ ↕ cookie    broader: food                               narrower: brownie macaroon shortbread ladyfinger gingersnap teacake
+#~ = That's the way the food crumbles.   [cookie ←broader]
 
 Bring home the {bacon}. | American saying, 1906
 #~ ↑ bacon     broader: meat → food                        narrower: —
+#~ = Bring home the meat.   [bacon ←broader]
 
 Have a {finger} in every {pie}. | Shakespeare, Henry VIII
 #~ ↕ finger    broader: digit → extremity                  narrower: thumb forefinger pinky pinkie pollex
 #~ ↕ pie       broader: food                               narrower: tart pasty
+#~ = Have a digit in every tart.   [finger ←broader, pie →narrower]
 
-Comparing {apples} and {oranges}. | English saying
+Comparing {apples^} and {oranges^}. | English saying
 #~ ↕ apples    broader: fruit                              narrower: delicious prima
 #~ ↑ oranges   broader: citrus → fruit                     narrower: —
+#~ = Comparing fruits and citruses.   [apples ←broader, oranges ←broader]
 
 One bad {apple} spoils the bunch. | English proverb, 1340
 #~ ↕ apple     broader: fruit                              narrower: delicious prima
+#~ = One bad fruit spoils the bunch.   [apple ←broader]
 
 The {salt} of the earth. | Matthew 5:13
 #~ ↕ salt      broader: material                           narrower: phosphate iodide fluoride silicate carbonate tartar …+42
+#~ = The material of the earth.   [salt ←broader]
 
 Worth its weight in {gold}. | Roman proverb
 #~ ↑ gold      broader: valuable → assets                  narrower: —
+#~ = Worth its weight in valuable.   [gold ←broader]
 
 All that glitters is not {gold}. | Shakespeare, Merchant of Venice, 1596
 #~ ↑ gold      broader: valuable → assets                  narrower: —
+#~ = All that glitters is not valuable.   [gold ←broader]
 
 It's raining {cats} and {dogs}. | Jonathan Swift, 1738
 #~ ↕ cats      broader: mammal → animal                    narrower: ocelot tom puss puma lynx tabby …+11
 #~ ↕ dogs      broader: mammal → animal                    narrower: puppy hound terrier cur spaniel pug …+27
-#~ ! two braced words share the parent "mammal" — the build must not broaden both (§11.5 collision check)
+#~ = It's raining mammals and puppies.   [cats ←broader, dogs →narrower]
 
 The calm before the {storm}. | English saying
 #~ ↓ storm     broader: —                                  narrower: blizzard windstorm snowstorm hailstorm firestorm northeaster …+1
+#~ = The calm before the blizzard.   [storm →narrower]
 
 Break the {ice}. | Erasmus, 1523
 #~ ↕ ice       broader: crystal                            narrower: frost icicle rime hoarfrost hailstone hoar
+#~ = Break the crystal.   [ice ←broader]
 
 Skating on thin {ice}. | Ralph Waldo Emerson, 1841
 #~ ↕ ice       broader: crystal                            narrower: frost icicle rime hoarfrost hailstone hoar
+#~ = Skating on thin crystal.   [ice ←broader]
 
 A chip off the old {block}. | English proverb, 1621
 #~ ↓ block     broader: —                                  narrower: dice die slab cake chock anvil …+8
+#~ = A chip off the old dice.   [block →narrower]
 
 Burn the midnight {oil}. | Francis Quarles, 1635
 #~ ↕ oil       broader: lipid → molecule                   narrower: grease tallow crude attar blubber petroleum …+4
+#~ = Burn the midnight lipid.   [oil ←broader]
 
 Cross that {bridge} when you come to it. | Longfellow, 1851
 #~ ↓ bridge    broader: —                                  narrower: footbridge viaduct overpass drawbridge flyover
+#~ = Cross that footbridge when you come to it.   [bridge →narrower]
 
 {Water} under the {bridge}. | English saying
 #~ ↕ Water     broader: liquid                             narrower: sea stream ocean bay lake inlet …+24
 #~ ↓ bridge    broader: —                                  narrower: footbridge viaduct overpass drawbridge flyover
+#~ = Liquid under the footbridge.   [Water ←broader, bridge →narrower]
 
 Miss the {boat}. | English saying, 1920s
 #~ ↕ boat      broader: vessel → vehicle                   narrower: skiff barge gig towboat steamboat yawl …+25
+#~ = Miss the vessel.   [boat ←broader]
 
 We're all in the same {boat}. | English saying
 #~ ↕ boat      broader: vessel → vehicle                   narrower: skiff barge gig towboat steamboat yawl …+25
+#~ = We're all in the same vessel.   [boat ←broader]
 
 When one {door} closes, another opens. | Cervantes, 1615
 #~ ↕ door      broader: barrier → obstruction              narrower: batwing
+#~ = When one barrier closes, another opens.   [door ←broader]
 
 Can't see the {forest} for the {trees}. | John Heywood, 1546
 #~ ↑ forest    broader: vegetation                         narrower: —
 #~ ↕ trees     broader: plant                              narrower: willow sloe beech elm ginkgo sapling …+101
+#~ = Can't see the vegetation for the willows.   [forest ←broader, trees →narrower]
 
 Barking up the wrong {tree}. | American saying, 1832
 #~ ↕ tree      broader: plant                              narrower: willow sloe beech elm ginkgo sapling …+101
+#~ = Barking up the wrong plant.   [tree ←broader]
 
 A needle in a {haystack}. | Thomas More, 1532
 #~ ↕ haystack  broader: stack → pile                       narrower: haycock
+#~ = A needle in a stack.   [haystack ←broader]
 
 Hit the {nail} on the {head}. | English proverb, 1438
 #~ ↕ nail      broader: fastener → constraint              narrower: brad tack clout hobnail doornail
 #~ ↓ head      broader: —                                  narrower: noggin
+#~ = Hit the fastener on the noggin.   [nail ←broader, head →narrower]
 
 A hard {nut} to crack. | English saying, 1737
 #~ ↕ nut       broader: seed → fruit                       narrower: walnut cob pecan peanut goober cashew …+16
+#~ = A hard seed to crack.   [nut ←broader]
 
 The world is your {oyster}. | Shakespeare, Merry Wives of Windsor
 #~ ↑ oyster    broader: animal                             narrower: —
+#~ = The world is your animal.   [oyster ←broader]
 
 Cast the first {stone}. | John 8:7
 #~ ↓ stone     broader: —                                  narrower: pebble boulder calculus tor impost cobble …+23
+#~ = Cast the first pebble.   [stone →narrower]
 
 Two {peas} in a {pod}. | English saying, 1600s
 #~ ↕ peas      broader: vegetable → food                   narrower: dahl
 #~ ↕ pod       broader: husk                               narrower: peasecod
+#~ = Two vegetables in a peasecod.   [peas ←broader, pod →narrower]
 
 Like a {moth} to a {flame}. | English saying
 #~ ↕ moth      broader: insect → animal                    narrower: miller cinnabar egger eggar tussur tusser …+14
 #~ ↕ flame     broader: combustion → oxidation → reaction → action narrower: blaze blazing
+#~ = Like an insect to a blaze.   [moth ←broader, flame →narrower]
 
 Busy as a {bee}. | Chaucer, 1386
 #~ ↕ bee       broader: insect → animal                    narrower: bumblebee honeybee drone
+#~ = Busy as an insect.   [bee ←broader]
 
 A {fly} on the {wall}. | American saying, 1921
 #~ ↕ fly       broader: insect → animal                    narrower: tsetse blowfly housefly tzetze botfly glossina
 #~ ↕ wall      broader: partition                          narrower: gable parapet wainscoting wainscotting
+#~ = An insect on the gable.   [fly ←broader, wall →narrower]
 
 He wouldn't hurt a {fly}. | English saying
 #~ ↕ fly       broader: insect → animal                    narrower: tsetse blowfly housefly tzetze botfly glossina
+#~ = He wouldn't hurt an insect.   [fly ←broader]
 
 The {lion}'s share. | Aesop
 #~ ↕ lion      broader: mammal → animal                    narrower: lioness
+#~ = The mammal's share.   [lion ←broader]
 
 An {elephant} never forgets. | English saying
 #~ ↕ elephant  broader: pachyderm → mammal → animal        narrower: mammoth
+#~ = A pachyderm never forgets.   [elephant ←broader]
 
 The {elephant} in the {room}. | Ivan Krylov, 1814
 #~ ↕ elephant  broader: pachyderm → mammal → animal        narrower: mammoth
 #~ ↓ room      broader: —                                  narrower: kitchen bedroom bar stall parlor lobby …+65
+#~ = The pachyderm in the kitchen.   [elephant ←broader, room →narrower]
 
 {Monkey} see, monkey do. | American saying, 1920s
 #~ ↕ Monkey    broader: mammal → animal                    narrower: howler baboon macaque marmoset titi vervet …+12
+#~ = Mammal see, monkey do.   [Monkey ←broader]
 
 Throw a {wrench} in the works. | American saying
 #~ ↑ wrench    broader: tool                               narrower: —
+#~ = Throw a tool in the works.   [wrench ←broader]
 
 The {ball} is in your court. | English saying
 #~ ↓ ball      broader: —                                  narrower: shooter softball handball racquetball taw punchball
+#~ = The shooter is in your court.   [ball →narrower]
 
 Keep your eye on the {ball}. | English saying
 #~ ↓ ball      broader: —                                  narrower: shooter softball handball racquetball taw punchball
+#~ = Keep your eye on the shooter.   [ball →narrower]
 
 A {house} of {cards}. | English saying, 1645
 #~ ↕ house     broader: building                           narrower: cottage farmhouse manse parsonage boardinghouse villa …+18
 #~ ↕ cards     broader: game                               narrower: meld faro whist euchre canasta auction …+11
+#~ = A building of meld.   [house ←broader, cards →narrower]
 
 A {man}'s home is his {castle}. | Edward Coke, 1628
 #~ ↕ man       broader: person                             narrower: guy sir gentleman stiff bachelor beau …+29
 #~ ↑ castle    broader: mansion → house → building         narrower: —
+#~ = A guy's home is his mansion.   [man →narrower, castle ←broader]
 
 Familiarity breeds {contempt}. | Aesop
 #~ ↑ contempt  broader: feeling                            narrower: —
+#~ = Familiarity breeds feeling.   [contempt ←broader]
 
 Honesty is the best {policy}. | Edwin Sandys, 1599
 #~ ↕ policy    broader: program → idea                     narrower: activism obscurantism centralism ultramontanism
+#~ = Honesty is the best program.   [policy ←broader]
 
 Laughter is the best {medicine}. | Proverbs 17:22
 #~ ↕ medicine  broader: science                            narrower: urology virology podiatry oncology midwifery dentistry …+37
+#~ = Laughter is the best science.   [medicine ←broader]
 
 {Music} soothes the savage beast. | William Congreve, 1697
 #~ ↓ Music     broader: —                                  narrower: section tune melody refrain opus overture …+39
+#~ = Section soothes the savage beast.   [Music →narrower]
 
 {Variety} is the {spice} of life. | William Cowper, 1785
 #~ ↓ Variety   broader: —                                  narrower: hodgepodge melange farrago mishmash gallimaufry waveband
 #~ ↕ spice     broader: preservative → material            narrower: stacte
+#~ = Hodgepodge is the preservative of life.   [Variety →narrower, spice ←broader]
