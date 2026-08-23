@@ -4,7 +4,9 @@
 no game code yet. Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5
 data layer BUILT the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
 `build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.
-Phase 3 — Word Race (§12) specced 2026-08-22, nothing built; its Deep Dive companion (§12.4) is tentative.**
+Phase 3 — Word Race (§12) specced 2026-08-22, nothing built; its Deep Dive companion (§12.4) is tentative.
+Phase 4 — the Tree of Kinds progress map (§13) specced 2026-08-22, nothing built; it needs M3 only, and it
+promotes branching hyponyms out of §15 as its prerequisite (§13.7).**
 
 Two new heroes for `punctuators.html` / `index.js` who climb the **is-a-kind-of** hierarchy of a word:
 
@@ -288,7 +290,7 @@ At module load, iterate it once (~30k children, a few ms) to build `ladderUp = {
 - **chain for a word** = walk `ladderUp` to the top; the rung below is `ladderDown[word].split(" ")[0]`.
 - **Round-trip is correct by construction** — up is literally the inverse of down, so `dog → mammal → dog`
   can never desync. *(Verified on the built file: 0 mismatches, 0 cycles, longest chain 6.)*
-- The sibling list branching hyponyms (§14) and several §12–13 ideas need is now the **shipped** form, not
+- The sibling list branching hyponyms (§15) and several §12–14 ideas need is now the **shipped** form, not
   the derived one.
 - Nothing is lost by shipping down: a capstone with children is a key, and a capstone *without* children had
   no ladder in either direction and was dropped at build time.
@@ -624,7 +626,7 @@ where the shown word is the clue. **2of12.txt cannot fix it** (measured: it admi
   into its span).
 - **The span** is the free-play span plus a goal: `data-ladder`, `data-rung`, **`data-goal`**.
 - **A hit moves ±1 rung along the authored chain.** No ambiguity in either direction — because the chain is
-  fixed data, Keen Arrow never has to choose among `dog`'s 33 children (contrast §14, branching hyponyms).
+  fixed data, Keen Arrow never has to choose among `dog`'s 33 children (contrast §15, branching hyponyms).
 - **Landing on the goal locks the word**: green ✔ flare, a lock chime, and the span's `id` is cleared so
   neither hero targets it again. A stray shot can't knock a solved word loose, and the remaining targets
   stay obvious.
@@ -737,7 +739,7 @@ them are dead ends upward. The usable start pool is the **3,835 words with both 
 `bird` 125. A "shoot one of the children shown" UI can only ever show a subset — and if that subset is
 guaranteed to contain the route to the target, the UI is telegraphing the answer. **This is why typing is
 the primary input here rather than a preference**, and it is the one place this phase departs from
-§13.1's "typing isn't what Punctuators does". The shootable field survives as *easy mode* (§12.2).
+§14.1's "typing isn't what Punctuators does". The shootable field survives as *easy mode* (§12.2).
 
 ### 12.2 The shared traversal engine
 
@@ -848,7 +850,7 @@ moves — so the score cannot be "how deep did you get". It is **total rungs des
 multi-rung jump (`animal` → type `beagle` = 3 rungs, one shot) is how an expert goes fast. Recall depth
 converts directly into score.
 
-**General Ization is probably absent here** — no up, no Switch Character, which is precisely what §14 wants
+**General Ization is probably absent here** — no up, no Switch Character, which is precisely what §15 wants
 for Keen's personality: the specificity hero, alone, in the one mode that only goes down. Tentative because
 that also throws away half the pair, which may be the wrong trade for a two-hero mode.
 
@@ -896,14 +898,196 @@ the How-to-Play copy.
 
 ---
 
-## 13. Other mechanics for these two
+## 13. Phase 4 — The Tree of Kinds (the progress map)
+
+**Specced 2026-08-22, not built.** Unlike §§11–12 this is not a mode — it is a **viewer** that sits over
+whichever mode you're playing, and it is the first thing in this family that spans all of them.
+
+### 13.1 What it is
+
+One panel over the game showing **the whole hierarchy at once, drawn as nested circles**: 1,002 trees in a
+field, each holding its children, five levels deep. Every word you have ever landed on — in free play, in
+Restore the Phrase, in Word Race — is **lit**. Everything else is drawn but dark. You pan and zoom it like a
+map, and zooming out far enough turns your progress into a picture.
+
+It is the Inklings Wordhoard's job (a place where collected words accumulate and *look* like something)
+done against a structure the Wordhoard doesn't have: a true is-a hierarchy. Filling it in is the reward
+loop free play has never had — §1 notes wordplay modes have no win state, and this doesn't add one; it adds
+something better suited to a sandbox, which is **an accumulating record**.
+
+### 13.2 The three decisions (locked 2026-08-22)
+
+| Fork | Decision |
+| ---- | -------- |
+| **Fog** | **Skeleton visible, fringe fogged.** The 4,837 **internal** words (anything with children) are always drawn *and named* — they are the map's coastline. The 25,708 **leaves** are drawn as anonymous buds with a count on their cluster (`dog +33`) until you land on one. You can always see how much is left and where, and you can never read an answer off it. |
+| **Completion** | **Per-parent shelves.** Each parent is a set: `dog 7/33`, `bird 12/125`. Mirrors the Nouns-wing shelf pattern (`docs/inklings-collections.md`) and gives ~4,800 small goals instead of one impossible one. |
+| **Home** | **An overlay in `punctuators.html`**, openable from every ladder mode, filled by all of them, one shared `localStorage` record. The map is the spine that ties §§2–12 together rather than a side feature. |
+
+### 13.3 What the shipped data forces
+
+Measured against the built `ladderPOJO.js` before designing anything, the same discipline as §12.1.
+
+| Measurement | Consequence |
+| ----------- | ----------- |
+| **It is a forest, not a graph** — 1,002 trees, one parent per word | **No edge crossings are possible.** A containment layout is exact rather than an approximation, and there is no force simulation, no relayout, no settling. |
+| **Depth caps at 5** (1,002 · 11,017 · 11,180 · 5,523 · 1,613 · 210) | Nesting is **at most 5 deep**. No recursion guard, no infinite drill-down, and a fixed, tiny LOD ladder. |
+| **4,837 internal nodes vs 25,708 leaves** (84% leaves) | The internal/leaf split *is* the fog rule (§13.2) — it isn't an invented threshold, it's the shape of the data. The named skeleton is 4,837 labels, of which **4,809 are in `2of12.txt`**, so the coastline is almost entirely familiar words. |
+| **89% of shelves hold ≤10 children**; median 2, mean 6.1; only **65** hold >50 | Shelf completion is genuinely reachable. Distribution: 1,449 shelves of 2–3 · 595 of 4–5 · 641 of 6–10 · 302 of 11–20 · 162 of 21–50 · 65 of 51+. |
+| **The widest ring is `person`'s 1,529 nodes at depth 2** (`animal` 728, `material` 596, `plant` 474) | A layout that gives each node **equal angle** dies here — 0.24° per node. Area must follow **subtree size**, which containment gives for free (§13.4). |
+| **19,861 of 30,545 words are in `2of12.txt`** | ~10,700 nodes are obscure enough that a player will realistically never type them (`frail`, `annelid`, and the rest of §11.5's problem children). **Shelf milestones must key off fractions, not perfection** — a 100%-only reward would be unwinnable on exactly the shelves that are most interesting. |
+| **Children ship commonness-ordered** (§3.3) | The layout is a **pure function of the shipped file**. Same coordinates on every machine, every session, forever — no layout data to generate, ship, or version. Zero new bytes. |
+
+### 13.4 The layout — nested circles, static, pure pan/zoom
+
+**One virtual coordinate space, computed once at module load, never recomputed.** A circle per word; a
+node's children are packed inside it; the 1,002 roots are packed into the field. Radius follows
+`√(subtree size)`, so `person` (4,415 words) is physically the biggest thing on the map and a shrub tree is
+a speck — which is true, and is the thing a hierarchy diagram usually fails to say.
+
+Packing is a **deterministic golden-angle spiral**, not an optimal circle pack: place children outward at
+the golden angle with radius from the running area sum. ~20 lines, no library, and identical output every
+run. Optimal packing would look ~15% tighter and is not worth a dependency.
+
+**Pure pan/zoom — one transform, no wedge remapping.** Because area already follows subtree size, zooming
+*is* drilling down; there is no separate "enter this node" mode and nothing animates into a new layout. The
+viewport model is the one Inklings' Sound Board already uses for its endless board (`sbView` + `sbClampView`
++ drag-to-pan + a recentre key) and should be lifted from it rather than reinvented.
+
+**LOD, three tiers, and the zoomed-out view is the payoff:**
+
+| Screen radius | Drawn as |
+| ------------- | -------- |
+| **< 3 px** | **One dot, coloured by the subtree's lit fraction.** Children are not drawn at all. |
+| **3–20 px** | The circle plus its children as dots. Internal nodes get a label only if it fits. |
+| **> 20 px** | Circle, label, children, and the shelf counter (`dog 7/33`). |
+
+That first tier is the feature, not a compromise: zoomed all the way out, the map is a **heat map of your
+own progress** — a branch you've worked reads warm, an untouched one stays dark, and you can see at a
+glance that you've explored `clothing` and never touched `knowledge`. At a 1000 px viewport the whole
+forest gives roughly **3–5 px per leaf** after packing gaps, so 30,545 nodes really do fit on one screen as
+legible texture.
+
+Draw cost is bounded by the LOD, not by the corpus: the < 3 px tier collapses whole subtrees to a dot, so a
+full-forest frame draws a few thousand shapes, not 30,545. Hit-testing walks the same static tree
+top-down — no spatial index needed, since containment means one child can hold the point.
+
+**Fallback if the packing reads badly:** a radial node-link tree with wedge-zoom (click a node, its wedge
+becomes the full circle). Better at showing *lineage*, worse at showing *proportion*, and it gives up pure
+pan/zoom. Try circles first.
+
+### 13.5 Fog rules
+
+- **The layout is static and complete from the first launch.** Nothing appears or moves as you play; what
+  changes is **lit vs dark** and **named vs anonymous**. That is what makes the map worth revisiting — the
+  same picture, further filled — and it removes an entire class of bug (positions can never drift).
+- **Internal nodes are always named.** They are the coastline; without them the map is unnavigable and the
+  fog is just a blank page.
+- **Leaves are anonymous buds** until visited. A shelf shows its lit children by name and its dark ones as
+  plain dots, with the remainder as a count (`+26`).
+- **A visited word lights permanently** and keeps its name. Visiting is landing on a rung in any mode —
+  including the rungs you pass *through* on a §12.2 descendant jump, which cross real rungs and should pay
+  for all of them.
+
+### 13.6 Shelves
+
+- A shelf is `ladderDown[parent]` and its progress is `lit / total`, derived from the visited set at render
+  time. **Nothing about shelves is stored** — the visited set is the only state.
+- **Milestones at 25 / 50 / 100%**, matching the Atlas continent milestones (`docs/inklings-atlas.md`) and
+  keyed off fractions for the reason in §13.3 (a third of the corpus is effectively untypeable).
+- **A completed shelf turns gold** and its parent stays gold when zoomed past, so a filled region is
+  visible from orbit.
+- **What a milestone pays is an open question (§13.12)** — Punctuators has no currency, and inventing one
+  for this is scope creep. The honest v1 is cosmetic: the gold ring, a shelf counter in the panel header,
+  and a line in the share string.
+
+### 13.7 The prerequisite — free play alone cannot fill a shelf
+
+This is the finding that changes the build order. **Keen Arrow takes the first child of a parent** (§15,
+Deferred: branching hyponyms). So in free play, `dog`'s shelf can never read better than **1/33** no matter
+how many times you climb it — the map would be structurally unfillable in the mode most people play.
+
+Three ways in, and the map needs at least one:
+
+| Source | Fills shelves? |
+| ------ | -------------- |
+| **Free play as it stands** | **No** — first child only, so every shelf caps at 1. |
+| **Sibling cycling** (§15, currently deferred) | **Yes** — repeated shots at the bottom rung walk the sibling list, which is the shipped `ladderDown` string verbatim (§3.3). |
+| **Word Race** (§12.2) | **Yes** — typing summons any descendant, so the Race fills shelves as a side effect of being played. |
+
+**Recommendation: promote sibling cycling out of §15 and ship it with the map**, as M12's prerequisite. It
+is a small change to the collision branch, it is the thing that gives Keen Arrow the personality §15 already
+wants for him, and without it the map's central metric is dead on arrival in free play.
+
+### 13.8 Dailies and spoilers
+
+The fog rule keeps leaf *names* hidden, but the named skeleton is a routing atlas, and **Word Race is a
+routing game** (§12.3). A player with the map open is reading the answer rather than recalling it.
+
+- **The map button is disabled while a daily run is in progress** (Restore the Phrase and Word Race alike),
+  and says why. This is the same instinct as §11.6's "hint, late and quiet".
+- **Finishing a daily opens it, and draws your route on it** — the path you actually took, detours and all,
+  overlaid on the path you could have taken. That turns the lock into a reward and makes the post-game
+  screen teach the thing the mode is about: how far up two words make you climb.
+- Free play never locks the map.
+
+### 13.9 Storage and share
+
+- `localStorage["punctuators.ladderMap"]` = `{v:1, seen:[…]}` — a flat array of visited words, nothing
+  derived. At a realistic few hundred to few thousand words that is **5–54 KB**; even the absurd case of
+  visiting all 30,545 is **~335 KB**, comfortably inside the quota, so no bitset or index encoding is
+  needed. Plain words also stay debuggable and survive a corpus rebuild that renumbers nothing.
+- **A corpus rebuild is safe by construction**: a word dropped from `ladderPOJO.js` simply stops being
+  drawn, and a word added arrives dark. No migration.
+- **Share** (optional, §13.12): spoiler-free by nature, since it names no word —
+  `🌳 Tree of Kinds · 1,204 words · 42 shelves · ANIMAL 31%`.
+
+### 13.10 Wiring checklist
+
+| File | Change |
+| ---- | ------ |
+| `ladderMap.js` | **new** — the layout (`packForest()`, one pass at load), the LOD draw, pan/zoom/hit-test, shelf math. No new data file. |
+| `index.js` | mark-visited on every rung landing (all three modes, including passed-through rungs on a §12.2 jump); the panel open/close + the daily-run guard (§13.8); sibling cycling in the collision branch (§13.7) |
+| `punctuators.html` | the map button + the overlay markup (the `#overlay` / `.modal` pattern at `:120`/`:18` is the closest existing shape) |
+| `index.css` | the panel, the canvas, the gold shelf state, the breadcrumb/header |
+| `CLAUDE.md` | the Punctuators row per milestone |
+
+### 13.11 Milestones
+
+**M12 — the map, static.** `ladderMap.js` layout + LOD draw + pan/zoom, plus **sibling cycling** (§13.7) and
+mark-visited wiring. Opens, draws the whole forest, lights what you've climbed. No shelves, no chrome.
+
+**M13 — the fill.** Fog rules, shelf counters and the 25/50/100% milestones, the gold state, storage.
+
+**M14 — the feel.** The daily-run guard and the post-game route overlay (§13.8), the share string, labels
+and breadcrumb polish, the How-to-Play copy.
+
+M12 needs M3 (the heroes) only — it does **not** wait on §11 or §12, and shipping it right after free play is
+what gives free play a reason to be replayed.
+
+### 13.12 Open questions
+
+- **The name.** `The Tree of Kinds` is the recommendation — it echoes the "is a kind of" phrasing used
+  throughout this doc and is kid-legible. `The Kindsmap`, `The Great Chain` (accurate, and a real historical
+  joke, but obscure) and `The Atlas of Kinds` (collides with Inklings' Atlas) were the alternatives.
+- **What a shelf milestone pays.** Cosmetic-only is the honest v1 (§13.6). The alternative is that this is
+  where Punctuators finally gets a light meta-layer, which is a much bigger conversation than a map.
+- **Are the 810 shrub trees drawn?** They are 8% of the words and half the visual clutter of the forest
+  view. Options: draw them all (honest), pack them into a labelled "scrubland" at the rim, or hide trees
+  under 5 nodes behind a toggle. Recommending draw-them-all until it's seen on screen.
+- **Does it belong in Inklings too?** §14.2's **Kindred Tree** décor is the same idea as a physical object
+  in the cozy square, and §14.2's Specificity Range would fill it. Shared `localStorage` across two games on
+  one origin is possible but has never been done here — worth a deliberate decision rather than a drift.
+
+---
+
+## 14. Other mechanics for these two
 
 A parking lot. **Nothing here is committed or scheduled**, and none of it needs new data — every idea below
 runs on `ladderPOJO.js` as built. ★ marks the three worth building first. *(The traversal ideas that used to
 sit here were promoted to §12 on 2026-08-22 and now have a spec; three of the survivors below —
 Ladder Golf, Kinship, Category speed round — would reuse §12.2's engine and §12.3's LCA `parFor` outright.)*
 
-### 13.1 In Punctuators
+### 14.1 In Punctuators
 
 **★ The Bureaucrat's Draft.** The inversion of §11, and the one with a real writing lesson in it. The player
 types their own vivid sentence; **General Ization is the villain**, climbing it into corporate mush —
@@ -934,7 +1118,7 @@ best friend.* The player types the answer rather than shooting it. Worth noting 
 **worse** version of §11 for this game — typing isn't what Punctuators does — but it's the right shape if
 the sayings corpus ever wants a non-shooter home.
 
-### 13.2 In Inklings
+### 14.2 In Inklings
 
 **★ The Specificity Range.** General and Keen as a **two-NPC bench** in the world, running a call-and-response
 drill on the desk that already exists: General says *"name me something broader than `poodle`"*, Keen says
@@ -958,7 +1142,7 @@ Range drill above; the Poetrees forest (`docs/inklings-poetry.md`) already estab
 is *bring me a kind of `tool`*, and any valid hyponym you can spell counts. Same lookup as the Range, wrapped
 in the daily pattern.
 
-### 13.3 Cross-game, cheap
+### 14.3 Cross-game, cheap
 
 **A Critter Hunt clue atom.** Critter Hunt's clues are real facts, and *"the culprit is a kind of mammal"* is
 a real fact the ladder already knows. It slots into `atomsFor` as a new ref type alongside habitat and
@@ -977,7 +1161,7 @@ which cuts both ways: it wants its own page, not a Punctuators mode.
 
 ---
 
-## 14. Deferred
+## 15. Deferred
 
 - **Verbs.** `run → jog / sprint`, `walk → travel`. WordNet keeps these in a separate
   namespace (`vhyper` = broader action, `tropo` = troponyms, "a particular way of doing it") which
@@ -987,7 +1171,9 @@ which cuts both ways: it wants its own page, not a Punctuators mode.
   spaniel pug mutt pooch husky … poodle …`, commonness-ordered). Today Keen Arrow takes the first one.
   Later: repeated shots at the bottom rung **cycle the siblings** — and since §3.3 ships `ladderDown`
   directly, that list is already the raw data, no derivation needed. This is where Keen Arrow gets a real
-  personality: the specificity hero who can always get *more* specific.
+  personality: the specificity hero who can always get *more* specific. **§13.7 asks for this to be
+  promoted** — without it, free play can only ever reveal one child per parent, so the map's shelves are
+  unfillable in the mode most people play.
 - **Adjectives.** WordNet has no adjective hierarchy (only `sim`/`ant`), so there is no ladder to climb.
   Out of scope, permanently.
 - **A base `docs/punctuators.md`.** The game itself is undocumented; §1 here is a partial stand-in.
