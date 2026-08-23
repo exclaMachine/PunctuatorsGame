@@ -1074,6 +1074,111 @@ span[data-hint] {
   }
 }
 
+/* ── §2.5 the shelf fan ────────────────────────────────────────────────────────────────────────────
+   position:fixed on <body>, deliberately NOT inside the word: the span rewrites its own textContent
+   on the next landing (which would wipe a child element), and anything in normal flow would reflow
+   the sentence and move every other word's hit rectangle. Coordinates are written by index.js from
+   the word's getBoundingClientRect(), which is the same viewport space the projectile is tested in. */
+.shelf-fan {
+  position: fixed;
+  z-index: 5;
+  /* The projectile is the only thing that "clicks" these — a stray tap must fall through to the
+     canvas, or moving the hero would fight the row. */
+  pointer-events: none;
+  text-align: center;
+  font-family: "Palanquin", sans-serif;
+  animation: shelf-fan-in 200ms ease-out;
+}
+
+.shelf-fan-row {
+  display: flex;
+  gap: 0.45em;
+  justify-content: center;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
+.shelf-child {
+  font-size: 22px;
+  padding: 0 0.15em;
+  color: whitesmoke;
+  text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
+}
+
+/* A branch keeps going, a bud is the end of the line. One tick is enough — the rung strip says the
+   same thing in full once you land on it. */
+.shelf-child.branch::after {
+  content: "▾";
+  font-size: 0.5em;
+  vertical-align: 0.3em;
+  margin-left: 0.15em;
+  opacity: 0.7;
+}
+
+.shelf-fan-caption {
+  margin-top: 0.4em;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #d0d0d0;
+  text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
+}
+
+/* The gap between the word and the row — height matches SHELF_FAN_DROP in index.js. */
+.shelf-fan-lines {
+  position: absolute;
+  left: 0;
+  top: -30px;
+  overflow: visible;
+}
+
+.shelf-fan-lines line {
+  stroke: var(--ladder-color, whitesmoke);
+  stroke-width: 2;
+  opacity: 0.85;
+  /* Dash length is set per line in JS, since each one is a different length. */
+  animation: shelf-line-draw 260ms ease-out forwards;
+}
+
+@keyframes shelf-fan-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shelf-line-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .shelf-child {
+    font-size: 15px;
+  }
+
+  .shelf-fan-caption {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-fan {
+    animation: none;
+  }
+
+  /* Not `animation: none` alone — the lines are drawn with a full dash offset, so killing the
+     animation without clearing it would leave them invisible rather than instant. */
+  .shelf-fan-lines line {
+    animation: none;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
 /* ── THE TREE OF KINDS — the ladder progress map (docs/punctuators-ladder.md §13) ──────────────────
    A full-window panel rather than a .modal: .modal is capped at 500px and centred by transform,
    and a map wants every pixel. The canvas is deliberately given a flex box to fill and is sized in

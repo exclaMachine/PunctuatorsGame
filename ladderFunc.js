@@ -107,6 +107,75 @@ export function ladderRungStrip(word) {
   return "▲".repeat(up) + "●" + "▼".repeat(ladderDepthBelow(word));
 }
 
+/* ── The shelf (§2.5) ─────────────────────────────────────────────────────────────────────────── */
+
+/* Fill `out` from `pool` up to `target` words, unvisited first and then visited, both in the shipped
+   familiarity order. `out` is never longer than SHELF_FAN_MAX, so the includes() scan beats a Set. */
+function fillUnvisitedFirst(out, pool, target, seen) {
+  for (const w of pool) {
+    if (out.length >= target) return;
+    if (!seen(w)) out.push(w);
+  }
+  for (const w of pool) {
+    if (out.length >= target) return;
+    if (!out.includes(w)) out.push(w);
+  }
+}
+
+/**
+ * The row of words to fan out beneath `word`, or null when there is nowhere to go (a clank).
+ *   width — how many slots fit on screen; index.js measures it per draw
+ *   seen  — (w) => has the player landed on w before? (ladderMapHas — passed in rather than imported
+ *           so this file stays independent of the map)
+ * Returns { kind: "children"|"siblings", under, items: [{word, branch}], hidden, total }.
+ *
+ * Why the tiers (all measured on the built corpus): the median shelf holds 2 children and 80% hold
+ * ≤6, so most shelves simply fit. The words people actually type are the tail — dog 33, tree 107,
+ * fish 221, person 805 — and the cut that tames it is that only 13% of children are themselves
+ * parents (dog 33→8, fish 221→8). That cut cannot stand alone, though: 69.8% of parents have NO
+ * branch-children at all, and neither do 134 of the 719 shelves wider than 8. So branches lead, buds
+ * top up, and the rest is fogged by count rather than named (§13.5).
+ */
+export function shelfFor(word, width, seen = () => false) {
+  if (!DOWN) return null;
+
+  // A leaf has no narrower kinds, so the shelf it belongs to is its parent's. This is what turns
+  // §13.7's sideways step from a mystery word-swap into a visible walk along a named shelf.
+  let kind = "children";
+  let under = word;
+  let list = DOWN.get(word);
+  if (!list || !list.length) {
+    const parent = UP.get(word);
+    const siblings = parent && DOWN.get(parent);
+    if (!siblings || siblings.length < 2) return null; // nothing narrower, nowhere sideways
+    kind = "siblings";
+    under = parent;
+    list = siblings.filter((w) => w !== word);
+  }
+
+  const total = list.length;
+  const items = [];
+  if (total <= width) {
+    items.push(...list);
+  } else {
+    const branches = list.filter((w) => DOWN.has(w));
+    const buds = list.filter((w) => !DOWN.has(w));
+    // The last slot is always a bud when the shelf has any. Without that reservation the 25 buds
+    // under `dog` are unreachable no matter how often you play, and §13.7's whole reason for
+    // existing — that replaying fills a wide shelf — breaks again.
+    fillUnvisitedFirst(items, branches, buds.length ? width - 1 : width, seen);
+    fillUnvisitedFirst(items, buds, width, seen);
+  }
+
+  return {
+    kind,
+    under,
+    items: items.map((w) => ({ word: w, branch: DOWN.has(w) })),
+    hidden: total - items.length,
+    total,
+  };
+}
+
 /* ── Case and plurals (§2.3, §3.4) ────────────────────────────────────────────────────────────── */
 
 /* Betar's matchCase (index.js) copies capitals position-by-position, which only works because an

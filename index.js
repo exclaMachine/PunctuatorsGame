@@ -24,10 +24,10 @@ import {
   loadLadders,
   hasLadders,
   ladderParentOf,
-  ladderChildrenOf,
   ladderChainFor,
   ladderRungStrip,
   renderRung,
+  shelfFor,
 } from "./ladderFunc.js";
 //import { swapWord } from "./spoonerismFunc.js";
 const canvas = document.getElementById("background");
@@ -379,29 +379,159 @@ function animateHomophoneShiver(span, nextWord, nextIndex) {
   setTimeout(settle, dur + 40);
 }
 
-/* ── General & Specific: one hit, one rung ────────────────────────────────────────────────────────
-   docs/punctuators-ladder.md §2.3 (the rules), §2.4 (the rung strip), §13.7 (why Keen Arrow sweeps).
+/* ── §2.5 THE SHELF FAN ───────────────────────────────────────────────────────────────────────────
+   docs/punctuators-ladder.md §2.5. Keen Arrow's hit no longer swaps the word behind your back — it
+   fans the word's narrower kinds out beneath it as a row of shootable words, and you pick one by
+   walking under it and firing. The descent was always deterministic (unvisited-first, §13.7), but it
+   READ as random: two siblings carry an identical rung strip and share one flare, so a sideways hop
+   looked exactly like a narrowing. The unvisited-first rule survives intact — it now chooses the
+   row's contents instead of choosing for you, so the Tree of Kinds still steers the game (§13.7).
 
-   The path down is decided shot by shot rather than baked into the span, because Keen Arrow taking a
-   parent's first child forever is exactly what §13.7 measured as making the Tree of Kinds
-   structurally unfillable — `dog`'s shelf could never read better than 1/33 in the mode most people
-   play. Two rules fix that:
+   Horizontal is forced, not chosen. Projectiles fly straight up with no aiming (velocity {x:0,y:-10},
+   see shoot()), so a word's x-range IS its selectability; a vertical stack or an arc cannot be aimed
+   at, because you would always hit whatever sits lowest.
 
-     * at a word that HAS narrower kinds, he picks one you have not landed on yet;
-     * at a word that has none — the bottom rung — he steps sideways to the next unvisited sibling,
-       which is the shipped ladderDown string walked in order (§15's "cycle the siblings").
+   Three things here are load-bearing:
 
-   "Unvisited" reads the map's own record, so the Tree of Kinds is not just a scoreboard: it steers
-   Keen Arrow toward what you have not seen. Once a shelf is entirely lit this falls back to plain
-   positional cycling, so the word still moves and the walk just goes round again. */
-function nextUnvisitedRung(list, current) {
-  const start = list.indexOf(current);
-  for (let i = 1; i <= list.length; i++) {
-    const candidate = list[(start + i) % list.length];
-    if (candidate !== current && !ladderMapHas(candidate)) return candidate;
-  }
-  return start === -1 ? list[0] : list[(start + 1) % list.length];
+   1. The row lives in <body> as position:fixed, NOT inside the .word-ladder span. Inside, the span's
+      own `textContent = …` on the next landing would wipe it, and anything in normal flow would
+      reflow the sentence and move every OTHER word's hit rectangle — the same reason §2.4's rung
+      strip is an absolutely positioned ::after.
+   2. nodeArr is filled once, by the MutationObserver in waitForElement, which then DISCONNECTS. A
+      span created after the sentence renders is never collision-tested, so each child is pushed in by
+      hand — and spliced back out on close, because a detached node's getBoundingClientRect() is all
+      zeros and would otherwise leave a phantom hit box parked in the top-left corner eating shots.
+   3. Children carry id = LADDER_ID so the existing collision gate matches them unchanged; the branch
+      splits on data-ladder-child, so there is still one ladder path through animate(), not two. */
+
+const SHELF_FAN_MAX = 7; // wider than this stops reading as a set at a glance
+const SHELF_FAN_MIN = 3; // narrower than this is not a choice
+const SHELF_FAN_DROP = 30; // px of branch-line between the word and the row, clear of the rung strip
+
+let shelfFan = null; // { el, host, children: [span] } — at most one open at a time
+
+/* Measured per draw rather than assumed: #output is 300% on a desktop and 30px on a phone, so the
+   same row is ~11 words wide in one and ~5 in the other. */
+function shelfFanWidth() {
+  const em = parseFloat(getComputedStyle(out1).fontSize) || 48;
+  const slot = em * 0.45 * 4.6; // a child renders at 0.45em; ~7 characters of advance plus its gap
+  const fits = Math.floor((window.innerWidth - 32) / slot);
+  return Math.max(SHELF_FAN_MIN, Math.min(SHELF_FAN_MAX, fits));
 }
+
+/* §6: the branch lines draw outward from the word as the fan opens — "here are the many" — and the
+   lens snap then plays on the child you shoot. Lengths differ per line, so the dash length is set
+   per element and CSS animates the offset to zero. */
+function drawShelfFanLines(el, wordRect, children) {
+  const box = el.getBoundingClientRect();
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("class", "shelf-fan-lines");
+  svg.setAttribute("width", box.width);
+  svg.setAttribute("height", SHELF_FAN_DROP);
+  svg.setAttribute("viewBox", `0 0 ${box.width} ${SHELF_FAN_DROP}`);
+
+  const fromX = wordRect.left + wordRect.width / 2 - box.left;
+  for (const kid of children) {
+    const k = kid.getBoundingClientRect();
+    const toX = k.left + k.width / 2 - box.left;
+    const line = document.createElementNS(NS, "line");
+    line.setAttribute("x1", fromX);
+    line.setAttribute("y1", 0);
+    line.setAttribute("x2", toX);
+    line.setAttribute("y2", SHELF_FAN_DROP);
+    const len = Math.hypot(toX - fromX, SHELF_FAN_DROP);
+    line.style.strokeDasharray = len;
+    line.style.strokeDashoffset = len;
+    svg.appendChild(line);
+  }
+  el.appendChild(svg);
+}
+
+/** Open the shelf beneath `span`. Returns false when there is nothing to show — that is a clank. */
+function openShelfFan(span, hero) {
+  closeShelfFan();
+
+  const word = span.getAttribute("data-ladder-word");
+  if (!word) return false;
+  const shelf = shelfFor(word, shelfFanWidth(), ladderMapHas);
+  if (!shelf) return false;
+
+  const el = document.createElement("div");
+  el.className = "shelf-fan";
+  el.style.setProperty("--ladder-color", hero.characterColor);
+
+  const row = document.createElement("div");
+  row.className = "shelf-fan-row";
+  const children = [];
+  for (const item of shelf.items) {
+    const kid = document.createElement("span");
+    kid.id = LADDER_ID; // the collision gate matches on id …
+    kid.dataset.ladderChild = "1"; // … and the ladder branch splits on this
+    kid.dataset.word = item.word;
+    kid.className = "shelf-child" + (item.branch ? " branch" : "");
+    kid.textContent = item.word;
+    row.appendChild(kid);
+    children.push(kid);
+  }
+  el.appendChild(row);
+
+  const caption = document.createElement("div");
+  caption.className = "shelf-fan-caption";
+  // §13.5's fog rule: the count is honest about how much shelf is left, but the names stay hidden,
+  // because a printed leaf name is a readable answer.
+  caption.textContent =
+    (shelf.kind === "siblings"
+      ? `other kinds of ${shelf.under}`
+      : `kinds of ${shelf.under}`) +
+    (shelf.hidden > 0 ? ` · +${shelf.hidden} more` : "");
+  el.appendChild(caption);
+
+  // Pinned to the left edge before measuring: the row is shrink-to-fit, so measuring it at its
+  // static position would let a cramped origin wrap what should be one line.
+  el.style.left = "0px";
+  document.body.appendChild(el);
+
+  const rect = span.getBoundingClientRect();
+  el.style.top = `${rect.bottom + SHELF_FAN_DROP}px`;
+  const w = el.offsetWidth;
+  el.style.left = `${Math.max(
+    8,
+    Math.min(window.innerWidth - w - 8, rect.left + rect.width / 2 - w / 2),
+  )}px`;
+
+  drawShelfFanLines(el, rect, children);
+
+  for (const kid of children) nodeArr.push(kid); // see note 2 above
+  shelfFan = { el, host: span, children };
+
+  // The shot has to register on the word itself too, or opening the fan reads as something that
+  // happened next to the word rather than to it. M4's §6 animation replaces this placeholder pulse.
+  flashLadder(span, hero, "ladder-move");
+  return true;
+}
+
+function closeShelfFan() {
+  if (!shelfFan) return;
+  // Splice, don't merely detach: a removed node's rect is all zeros, so a leftover entry would keep
+  // matching shots fired near the left edge for the rest of the round (note 2).
+  //
+  // This can run mid-iteration of animate()'s nodeArr.forEach, which sounds like the classic
+  // mutate-while-iterating bug and isn't: the children are always pushed as a contiguous tail, so
+  // removing them either ends the walk early (when the shot hit a child, and everything before it
+  // has already been visited) or trims only the tail (when the shot hit a sentence word). Either
+  // way nothing still on the board is skipped.
+  for (const kid of shelfFan.children) {
+    const i = nodeArr.indexOf(kid);
+    if (i !== -1) nodeArr.splice(i, 1);
+  }
+  shelfFan.el.remove();
+  shelfFan = null;
+}
+
+/* The fan is anchored to a viewport rectangle that a resize invalidates, and nothing else re-measures
+   it — so drop it and let the next shot redraw. */
+window.addEventListener("resize", closeShelfFan);
 
 /* A flare in the hero's own colour. M4 replaces the two move cases with §6's real animations — the
    camera pulling back for General, the lens snapping in for Keen — but the no-move case is already
@@ -414,60 +544,81 @@ function flashLadder(span, hero, className) {
   setTimeout(() => span.classList.remove(className), 620);
 }
 
+/* Move the word to `rung` and leave the span consistent. Shared by both directions: General reaches
+   it with the parent, Keen with whichever child you shot out of the fan. */
+function landOnRung(span, rung, hero) {
+  const original = span.getAttribute("data-ladder-orig") || span.textContent;
+  const plural = span.getAttribute("data-ladder-plural") === "1";
+
+  span.setAttribute("data-ladder-word", rung);
+  span.textContent = renderRung(rung, original, plural);
+
+  // Recomputed, not carried: a sideways step lands on a different chain, so a data-ladder frozen at
+  // wrap time would start lying the moment Keen Arrow moves along a shelf.
+  const chain = ladderChainFor(rung);
+  span.setAttribute("data-ladder", chain.join(","));
+  span.setAttribute("data-rung", String(chain.indexOf(rung)));
+  span.setAttribute("data-rung-strip", ladderRungStrip(rung));
+
+  span.style.color = hero.characterColor;
+  span.style.textShadow =
+    "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
+  ladderMapVisit(rung);
+  flashLadder(span, hero, "ladder-move");
+}
+
+/* One ladder action per shot, for two reasons. A projectile is not spliced out until a
+   setTimeout(…, 0), so without a latch it registers on the same span in consecutive frames; and with
+   §2.5's fan the row sits directly in the flight path, so a single shot would otherwise pick a child
+   and then go on to climb the word standing behind it. */
+function claimLadderShot(projectile) {
+  if (!projectile) return true;
+  if (projectile.ladderDone) return false;
+  projectile.ladderDone = true;
+  return true;
+}
+
 function climbLadder(span, hero, projectile) {
-  // One projectile, one rung per word. Without this a single shot can register on the same span in
-  // consecutive frames, because the projectile is not spliced out until a setTimeout(…, 0).
-  if (projectile) {
-    if (!projectile.ladderHits) projectile.ladderHits = new Set();
-    if (projectile.ladderHits.has(span)) return;
-    projectile.ladderHits.add(span);
-  }
+  if (!claimLadderShot(projectile)) return;
 
   const current = span.getAttribute("data-ladder-word");
   if (!current) return;
-  const original = span.getAttribute("data-ladder-orig") || span.textContent;
-  const plural = span.getAttribute("data-ladder-plural") === "1";
 
   // Standing on a rung counts as landing on it, so the word you typed lights the first time you
   // shoot it — even on a shot that cannot move (§13.6).
   ladderMapVisit(current);
   span.setAttribute("data-rung-strip", ladderRungStrip(current));
 
-  let next = null;
   if (hero.ladderDirection === "up") {
-    next = ladderParentOf(current); // null at the capstone
-  } else {
-    const kids = ladderChildrenOf(current);
-    if (kids && kids.length) {
-      next = nextUnvisitedRung(kids, current);
-    } else {
-      const siblings = ladderChildrenOf(ladderParentOf(current));
-      if (siblings && siblings.length > 1)
-        next = nextUnvisitedRung(siblings, current);
+    // Broadening has no shelf to offer, and a row of narrower kinds is noise when the goal is to
+    // zoom out — so General closes any open fan (§2.5.2).
+    closeShelfFan();
+    const next = ladderParentOf(current);
+    if (!next) {
+      flashLadder(span, hero, "ladder-capstone"); // the capstone: `animal` IS the answer
+      return;
     }
-  }
-
-  if (!next) {
-    // Capstone (nothing broader) or clank (nothing narrower, and nowhere sideways).
-    flashLadder(span, hero, "ladder-capstone");
+    landOnRung(span, next, hero);
     return;
   }
 
-  span.setAttribute("data-ladder-word", next);
-  span.textContent = renderRung(next, original, plural);
+  // Keen Arrow shows the shelf rather than choosing from it. A clank is now "no shelf at all" —
+  // nothing narrower and no siblings either, which is exactly where the old sweep also gave up.
+  if (!openShelfFan(span, hero)) flashLadder(span, hero, "ladder-capstone");
+}
 
-  // Recomputed, not carried: a sideways step lands on a different chain, so a data-ladder frozen at
-  // wrap time would start lying the moment Keen Arrow cycles a shelf.
-  const chain = ladderChainFor(next);
-  span.setAttribute("data-ladder", chain.join(","));
-  span.setAttribute("data-rung", String(chain.indexOf(next)));
-  span.setAttribute("data-rung-strip", ladderRungStrip(next));
+/* Shooting one of the fanned words. The word becomes that rung and the fan re-opens on it, so a run
+   of shots reads as a descent rather than as a sequence of unrelated swaps. */
+function pickRung(kid, hero, projectile) {
+  if (!claimLadderShot(projectile)) return;
+  // Guard against a child left over from a fan that has already closed.
+  if (!shelfFan || !shelfFan.children.includes(kid)) return;
 
-  span.style.color = hero.characterColor;
-  span.style.textShadow =
-    "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
-  ladderMapVisit(next);
-  flashLadder(span, hero, "ladder-move");
+  const host = shelfFan.host;
+  const rung = kid.dataset.word;
+  closeShelfFan();
+  landOnRung(host, rung, hero);
+  openShelfFan(host, hero);
 }
 
 const buttonSounds = {
@@ -494,6 +645,7 @@ let dropDownSelection = "";
 
 removePuncButton.addEventListener("click", async () => {
   buttonSounds.clicky.play();
+  closeShelfFan(); // a new sentence invalidates any shelf left open over the old one
   if (!initialTypedSentence.value) {
     return (errorMessage.innerText = "Field cannot be blank");
   }
@@ -1863,6 +2015,17 @@ function animate() {
   projectiles.forEach((projectile, index) => {
     if (nodeArr) {
       nodeArr.forEach((punctuationSymbol) => {
+        // A node detached from the document reports an all-zero rect, which the tests below read as
+        // a hit box parked in the top-left corner — so it silently eats shots fired near the left
+        // edge. nodeArr held only the sentence's own spans until §2.5's fan started adding and
+        // removing targets mid-round, which is what makes this reachable.
+        if (!punctuationSymbol.isConnected) return;
+        // One ladder action per shot (§2.5). Picking a word out of the fan closes that row and opens
+        // the next one inside the same call, and forEach walks to the length it captured at the
+        // start — so those fresh targets sit at indices it is still going to visit, in this very
+        // frame. Without the latch the shot would register twice and splice itself out of
+        // `projectiles` twice, taking an unrelated shot with it. Undefined in every other mode.
+        if (projectile.ladderDone) return;
         //tried to do this for left and right parenthesis, might need to come back to it
         // if (punctuationSymbol.className.includes(player.symbol)) {
         // targetId, not symbol — the ladder heroes share one span id (§4). Identical for everyone else.
@@ -2114,8 +2277,14 @@ function animate() {
                   );
                 }
               } else if (punctuationSymbol.id === LADDER_ID) {
-                // Both ladder heroes land here; hero.ladderDirection is the only difference.
-                climbLadder(punctuationSymbol, player, projectile);
+                // Both ladder heroes land here; hero.ladderDirection is the only difference. The
+                // fan's children share the id so this gate matches them unchanged (§2.5, note 3),
+                // and the split is on the attribute rather than on a second collision branch.
+                if (punctuationSymbol.dataset.ladderChild) {
+                  pickRung(punctuationSymbol, player, projectile);
+                } else {
+                  climbLadder(punctuationSymbol, player, projectile);
+                }
               } else if (punctuationSymbol.id === spacel.symbol) {
                 if (punctuationSymbol.hasAttribute("data-splitwords")) {
                   const [firstWord, secondWord] =
@@ -2500,6 +2669,10 @@ function switchToNextHero() {
 
   // Only one hero to choose from — nothing to animate.
   if (next === current) return;
+
+  // Switching is what flips broaden ↔ narrow (§4), so an open shelf belongs to the hero leaving
+  // (§2.5.2). General has no shelf to show, and Keen redraws his on the next hit.
+  closeShelfFan();
 
   isSwitching = true;
 
