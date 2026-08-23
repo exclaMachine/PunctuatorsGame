@@ -14,6 +14,10 @@ import { shakeAndBorderizeArticle } from "./articleFunc.js";
 import { hasAmbigrams } from "./AmbigramFunc.js";
 import { hasAnagrams } from "./anagrams.js";
 import { hasHomophones } from "./HomophonesFuncs.js";
+// The Tree of Kinds — the ladder progress map (docs/punctuators-ladder.md §13). Only the wiring is
+// imported here; ladderPOJO.js (337 KB) is fetched by the map itself, on first open.
+// M3's collision branch is what will call ladderMapVisit() on every rung landing.
+import { initLadderMap } from "./ladderMap.js";
 //import { swapWord } from "./spoonerismFunc.js";
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
@@ -528,6 +532,10 @@ let closeModal = (modal) => {
   modal.classList.remove("active");
   overlay.classList.remove("active");
 };
+
+// Wires the 🌳 button and the map's own pan/zoom/keys. Cheap — it touches no word data until the
+// panel is actually opened. (M14 adds the daily-run guard that hides the button mid-puzzle, §13.8.)
+initLadderMap();
 
 //TODO Make a button to do alphabet work similar to addSpansAndIdsForWordPlay
 

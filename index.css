@@ -1002,3 +1002,134 @@ span[data-hint] {
     rgba(255, 220, 150, 0) 70%
   );
 }
+
+/* ── THE TREE OF KINDS — the ladder progress map (docs/punctuators-ladder.md §13) ──────────────────
+   A full-window panel rather than a .modal: .modal is capped at 500px and centred by transform,
+   and a map wants every pixel. The canvas is deliberately given a flex box to fill and is sized in
+   JS off its own LAYOUT box (clientWidth/Height × devicePixelRatio — not getBoundingClientRect,
+   which reports 0×0 while the panel's show transform is mid-flight), so nothing here sets its
+   width/height. */
+.tree-btn {
+  top: 100px;
+  right: 20px;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+}
+
+.tree-map {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  flex-direction: column;
+  background: #14111f;
+  /* Same show/hide idiom as .modal — scale, not display:none, so it can transition. The panel keeps
+     its layout box either way, which is what lets the canvas be measured before it is ever shown. */
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease-in-out, transform 0ms linear 180ms;
+}
+
+.tree-map.on {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 180ms ease-in-out, transform 0ms linear 0ms;
+}
+
+.tree-map__bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #2e2947;
+  color: #cfc8ea;
+  font-family: 'Palanquin', sans-serif;
+  flex: 0 0 auto;
+}
+
+.tree-map__title {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #ffd45e;
+}
+
+/* Pushes the two buttons to the right edge and lets a long stat line ellipsize on a phone. */
+.tree-map__stat {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.85rem;
+  color: #9d94bd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-map__btn {
+  flex: 0 0 auto;
+  cursor: pointer;
+  border: 1px solid #3d3760;
+  border-radius: 6px;
+  background: #221d38;
+  color: #cfc8ea;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 5px 11px;
+}
+
+.tree-map__btn:hover {
+  background: #2f2850;
+}
+
+.tree-map canvas {
+  flex: 1 1 auto;
+  display: block;
+  width: 100%;
+  min-height: 0;
+  /* The canvas is the pan surface, so the browser must not claim the gesture first. */
+  touch-action: none;
+  cursor: grab;
+}
+
+.tree-map canvas.dragging {
+  cursor: grabbing;
+}
+
+/* Floats over the canvas rather than taking layout, so identifying a word never reflows the map. */
+.tree-map__readout {
+  position: absolute;
+  left: 14px;
+  bottom: 38px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: rgba(20, 17, 31, 0.88);
+  border: 1px solid #3d3760;
+  color: #ffe6a3;
+  font-family: 'Palanquin', sans-serif;
+  font-size: 0.9rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease-in-out;
+}
+
+.tree-map__readout.on {
+  opacity: 1;
+}
+
+.tree-map__hint {
+  flex: 0 0 auto;
+  padding: 6px 14px 8px;
+  color: #6f6790;
+  font-family: 'Palanquin', sans-serif;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .tree-btn { top: 96px; right: 12px; font-size: 0.85rem; }
+  .tree-map__title { font-size: 1rem; }
+  .tree-map__stat { font-size: 0.75rem; }
+  .tree-map__hint { font-size: 0.68rem; }
+}

@@ -5,8 +5,10 @@ no game code yet. Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four
 data layer BUILT the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
 `build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.
 Phase 3 — Word Race (§12) specced 2026-08-22, nothing built; its Deep Dive companion (§12.4) is tentative.
-Phase 4 — the Tree of Kinds progress map (§13) specced 2026-08-22, nothing built; it needs M3 only, and it
-promotes branching hyponyms out of §15 as its prerequisite (§13.7).**
+Phase 4 — the Tree of Kinds progress map (§13) specced 2026-08-22; **its M12 map half BUILT 2026-08-23**
+(`ladderMap.js` + the overlay — layout, LOD draw, pan/zoom/hit-test, the visited set and its storage),
+openable and drawable today. M12's other half, **sibling cycling, is still unbuilt because it needs M3's
+heroes**, which do not exist — see §13.11.**
 
 Two new heroes for `punctuators.html` / `index.js` who climb the **is-a-kind-of** hierarchy of a word:
 
@@ -717,7 +719,7 @@ race (**committed**, §12.3) and a 60-second specificity sprint (**tentative**, 
 Four measurements taken against the built `ladderPOJO.js` *before* designing anything. Each one closes off
 an option that looks obvious on paper.
 
-**It is a forest of 1,003 trees, not a graph.** Every word has at most one parent, so the map is disjoint:
+**It is a forest of 1,002 trees, not a graph.** Every word has at most one parent, so the map is disjoint:
 `poodle → hammer` has no route at all, and neither does `tulip → oak` (`tulip > plant`, but
 `oak > wood > material` — the §11.4 sense trap, still biting). **Any A-to-B mode must draw both endpoints
 from one tree.** The 12 largest hold most of the usable mass:
@@ -728,7 +730,7 @@ plant 898 · food 873 · location 543 · trait 532 · feeling 449 · clothing 41
 ```
 
 **Depth caps at 5.** Rungs from the root: 1,002 · 11,017 · 11,180 · 5,523 · 1,613 · **210**. Only **32 of
-the 1,003 trees are even five tall**. So "how deep can you get" is a five-move ceiling, and a deep-dive
+the 1,002 trees are even five tall**. So "how deep can you get" is a five-move ceiling, and a deep-dive
 mode cannot be one long descent — it has to be *repeated* short ones (§12.4).
 
 **84% of words are leaves** (25,708 of 30,545). A random start word is a dead end downward, and 1,002 of
@@ -929,7 +931,8 @@ Measured against the built `ladderPOJO.js` before designing anything, the same d
 
 | Measurement | Consequence |
 | ----------- | ----------- |
-| **It is a forest, not a graph** — 1,002 trees, one parent per word | **No edge crossings are possible.** A containment layout is exact rather than an approximation, and there is no force simulation, no relayout, no settling. |
+| **It is a forest, not a graph** — 1,002 trees, one parent per word | **No edge crossings are possible.** A containment layout is exact rather than an approximation, and there is no force simulation, no relayout, no settling. *(Re-verified at build time with a `Map`: exactly 0 words have two parents.)* |
+| **`constructor` and `prototype` are real words in the corpus** (children of `person` and `concept`) | **Nothing keyed by word may be a plain object.** A `{}` lookup reports a parent for words that have none, which silently invents a multi-parent edge and corrupts every subtree size downstream — it is what made the first measurement pass claim a multi-parent collision that does not exist. `ladderMap.js` uses `Map`/`Set` throughout; **`ladderFunc.js` and `ladderRace.js` will need the same care.** |
 | **Depth caps at 5** (1,002 · 11,017 · 11,180 · 5,523 · 1,613 · 210) | Nesting is **at most 5 deep**. No recursion guard, no infinite drill-down, and a fixed, tiny LOD ladder. |
 | **4,837 internal nodes vs 25,708 leaves** (84% leaves) | The internal/leaf split *is* the fog rule (§13.2) — it isn't an invented threshold, it's the shape of the data. The named skeleton is 4,837 labels, of which **4,809 are in `2of12.txt`**, so the coastline is almost entirely familiar words. |
 | **89% of shelves hold ≤10 children**; median 2, mean 6.1; only **65** hold >50 | Shelf completion is genuinely reachable. Distribution: 1,449 shelves of 2–3 · 595 of 4–5 · 641 of 6–10 · 302 of 11–20 · 162 of 21–50 · 65 of 51+. |
@@ -939,14 +942,40 @@ Measured against the built `ladderPOJO.js` before designing anything, the same d
 
 ### 13.4 The layout — nested circles, static, pure pan/zoom
 
-**One virtual coordinate space, computed once at module load, never recomputed.** A circle per word; a
+**One virtual coordinate space, computed once on first open, never recomputed.** A circle per word; a
 node's children are packed inside it; the 1,002 roots are packed into the field. Radius follows
 `√(subtree size)`, so `person` (4,415 words) is physically the biggest thing on the map and a shrub tree is
 a speck — which is true, and is the thing a hierarchy diagram usually fails to say.
 
-Packing is a **deterministic golden-angle spiral**, not an optimal circle pack: place children outward at
-the golden angle with radius from the running area sum. ~20 lines, no library, and identical output every
-run. Optimal packing would look ~15% tighter and is not worth a dependency.
+**Packing — the plan's golden-angle spiral was built, measured, and replaced.** The spiral was chosen here
+on the grounds that "optimal packing would look ~15% tighter and is not worth a dependency". Built, that
+estimate was wrong by an order of magnitude, because looseness **compounds through five levels of
+nesting**: ~47% fill in the root field × 36–51% on the mid-size shelves × again at every level below left
+the whole forest at radius **811** with only **4.65%** of the field covered by leaf area. At a 900 px
+viewport that is **0.54 px per leaf** — and §13.4's actual payoff, the zoomed-out heat map, was an
+invisible haze rather than legible texture.
+
+So the shipped pack is **front-chain placement** (Wang et al., the algorithm behind d3's pack layout),
+reimplemented inline in `ladderMap.js` — an *algorithm*, not a dependency, so the repo's vanilla/no-build
+rule is untouched, and fully deterministic, so §13.3's "same coordinates on every machine, forever" still
+holds with still no layout file to ship. Enclosing circles come from Badoiu–Clarkson rather than exact
+Welzl: four times less code to save a rounding error. Measured, both at `PAD` 1.02:
+
+| | golden-angle spiral | front-chain |
+| --- | --- | --- |
+| forest radius | 811 | **271** |
+| leaf area fill | 4.65% | **41.5%** |
+| leaf at a 900 px viewport | 0.54 px | **1.61 px** |
+| root-field fill | 47% | **78%** |
+
+Verified alongside: **0 sibling overlaps and 0 children escaping their parent** across all 30,545 nodes,
+and **0 coordinate drift** on a rebuild. Build cost 0.1–0.3 s, paid once on first open.
+
+**`PAD` is the other knob and it was tuned, not guessed.** The median shelf holds 2 children, so the ring
+of air between a parent's hull and its outermost child binds on half the map: 1.05 → 34.1% fill, 1.02 →
+41.5%, 1.01 → 43.9% but with no visible gap left between a parent's stroke and its contents. Shipped at
+**1.02**. Each parent also rotates its whole arrangement by a hash of its own name, so shelves don't all
+point the same way and the field reads as flowers rather than moiré — free, and still pure.
 
 **Pure pan/zoom — one transform, no wedge remapping.** Because area already follows subtree size, zooming
 *is* drilling down; there is no separate "enter this node" mode and nothing animates into a new layout. The
@@ -964,12 +993,19 @@ viewport model is the one Inklings' Sound Board already uses for its endless boa
 That first tier is the feature, not a compromise: zoomed all the way out, the map is a **heat map of your
 own progress** — a branch you've worked reads warm, an untouched one stays dark, and you can see at a
 glance that you've explored `clothing` and never touched `knowledge`. At a 1000 px viewport the whole
-forest gives roughly **3–5 px per leaf** after packing gaps, so 30,545 nodes really do fit on one screen as
-legible texture.
+forest gives **~3.6 px of diameter per leaf** (1.79 px radius, measured), so 30,545 nodes really do fit on
+one screen as legible texture — which is exactly the number the front-chain pack above had to buy.
 
-Draw cost is bounded by the LOD, not by the corpus: the < 3 px tier collapses whole subtrees to a dot, so a
-full-forest frame draws a few thousand shapes, not 30,545. Hit-testing walks the same static tree
-top-down — no spatial index needed, since containment means one child can hold the point.
+**Draw cost is bounded at both ends of the zoom, but by two different things — and the plan only had one
+of them.** Zoomed *in*, viewport culling plus the < 3 px tier (which collapses a subtree to a dot and stops
+recursing) keep a frame small, as planned. Zoomed all the way *out* they do not: the pack is now tight
+enough that a leaf is ~1.6 px while its parent is well above the threshold, so a fit-scale frame really
+does visit **28,976 of the 30,545 nodes** — the plan's "a few thousand shapes, not 30,545" is wrong in
+exactly the case it was written for. What makes that frame cheap instead is **batching**: every dot is
+queued by ramp colour and flushed as at most **33 `fill()` calls**, not 29,000. Hit-testing walks the same
+static tree top-down — no spatial index needed, since containment means one child can hold the point — and
+it stops where the *draw* stops, so a collapsed subtree reads out as itself rather than as whichever
+invisible leaf the pixel covers.
 
 **Fallback if the packing reads badly:** a radial node-link tree with wedge-zoom (click a node, its wedge
 becomes the full circle). Better at showing *lineage*, worse at showing *proportion*, and it gives up pure
@@ -1045,18 +1081,44 @@ routing game** (§12.3). A player with the map open is reading the answer rather
 
 | File | Change |
 | ---- | ------ |
-| `ladderMap.js` | **new** — the layout (`packForest()`, one pass at load), the LOD draw, pan/zoom/hit-test, shelf math. No new data file. |
-| `index.js` | mark-visited on every rung landing (all three modes, including passed-through rungs on a §12.2 jump); the panel open/close + the daily-run guard (§13.8); sibling cycling in the collision branch (§13.7) |
-| `punctuators.html` | the map button + the overlay markup (the `#overlay` / `.modal` pattern at `:120`/`:18` is the closest existing shape) |
-| `index.css` | the panel, the canvas, the gold shelf state, the breadcrumb/header |
+| `ladderMap.js` | **new — BUILT 2026-08-23** — `buildForest()`/`packForest()` (one pass on first open), the LOD draw, pan/zoom/hit-test, the visited set + storage, and the `ladderMapVisit()` seam. No new data file. Shelf math is M13. |
+| `index.js` | **BUILT:** `import { initLadderMap }` + the one call that wires the button. **Still to do:** mark-visited on every rung landing (all three modes, including passed-through rungs on a §12.2 jump) — needs M3; the daily-run guard (§13.8) — M14; sibling cycling in the collision branch (§13.7) — needs M3 |
+| `punctuators.html` | **BUILT** — the 🌳 button + the overlay markup. *Not* a `.modal`: that pattern is capped at 500 px and centred by transform, and a map wants the whole window |
+| `index.css` | **BUILT** — the panel, the bar, the canvas, the hover readout. The gold shelf state is M13 |
 | `CLAUDE.md` | the Punctuators row per milestone |
 
 ### 13.11 Milestones
 
-**M12 — the map, static.** `ladderMap.js` layout + LOD draw + pan/zoom, plus **sibling cycling** (§13.7) and
-mark-visited wiring. Opens, draws the whole forest, lights what you've climbed. No shelves, no chrome.
+**M12 — the map, static. HALF BUILT 2026-08-23.**
 
-**M13 — the fill.** Fog rules, shelf counters and the 25/50/100% milestones, the gold state, storage.
+**Built:** `ladderMap.js` — the forest build, the front-chain pack (§13.4), the three-tier LOD draw,
+pan/zoom/hit-test, the visited set and its `localStorage` record, and the `ladderMapVisit(word)` /
+`ladderMapVisitAll(words)` seam. Plus the 🌳 button, the overlay markup and its CSS, and the one
+`initLadderMap()` call in `index.js`. It opens, draws all 30,545 words, and lights whatever is in the
+visited set. Three deviations from the spec, each with its reason recorded above or below:
+
+- **The pack is front-chain, not the golden-angle spiral** — §13.4, measured and replaced.
+- **`ladderPOJO.js` is loaded by a dynamic `import()` on first open, not statically.** §3.3 settled on a
+  static import so that `hasLadders`/`wrapLadders` could stay synchronous; nothing on the map's path is
+  synchronous, so the map defers all 337 KB until the panel is actually opened. §3.3's decision still
+  stands for M2's wrapper functions.
+- **The fog rule (§13.5) is in already**, though it was scheduled for M13 — it is `if (internal ||
+  visited)` around the label, and shipping an intermediate that prints every leaf name would spoil
+  answers that M13 would then have to take back.
+
+**Not built, and blocked: sibling cycling (§13.7).** It is a change to the collision branch of `animate()`,
+and there is no ladder collision branch — **M2, M3 and M4 have no game code at all** (`grep -i ladder`
+over `index.js` / `utils/utils.js` / `punctuators.html` / `SpanPlaceholder.js` returns nothing). So the
+map ships fillable but unfilled: **nothing calls `ladderMapVisit()` yet**. `?mapseed=N` lights a
+deterministic, session-only sample (never written to storage) so the drawing can be checked meanwhile,
+and `?map=1` opens the panel on load.
+
+**M12's remaining half therefore moves behind M3**, which is where §13.11 already put it — the ordering
+note below was right, it just hadn't been acted on: the map's *viewer* turned out to be fully independent
+of the heroes, while its *filling* is not.
+
+**M13 — the fill.** Shelf counters and the 25/50/100% milestones, the gold state. (Fog rules and storage
+landed in M12.)
 
 **M14 — the feel.** The daily-run guard and the post-game route overlay (§13.8), the share string, labels
 and breadcrumb polish, the How-to-Play copy.

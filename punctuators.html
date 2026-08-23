@@ -119,6 +119,23 @@
     <input class="go-away" type="button" id="hint-button" value="Hint">
     <div id="overlay"></div>
 
+    <!-- THE TREE OF KINDS — the ladder progress map (docs/punctuators-ladder.md §13).
+         A viewer, not a mode: it draws the whole is-a-kind-of forest and lights every word you have
+         landed on. Deliberately NOT a .modal — it wants the whole window, and .modal caps at 500px.
+         Drawn by ladderMap.js; the canvas is sized in JS from its own box. -->
+    <button id="tree-map-btn" class="btn tree-btn">🌳 Tree of Kinds</button>
+    <div class="tree-map" id="tree-map" aria-hidden="true">
+        <div class="tree-map__bar">
+            <div class="tree-map__title">The Tree of Kinds</div>
+            <div class="tree-map__stat" id="tree-map-stat"></div>
+            <button class="tree-map__btn" id="tree-map-home" title="Recentre (C)">&#8982;</button>
+            <button class="tree-map__btn" id="tree-map-close" title="Close (Esc)">&times;</button>
+        </div>
+        <canvas id="tree-map-canvas"></canvas>
+        <div class="tree-map__readout" id="tree-map-readout"></div>
+        <div class="tree-map__hint">drag to pan · scroll or +/&minus; to zoom · C recentre · Esc close</div>
+    </div>
+
     <footer  id="footer">
         <div>
             ©2018-2026 Ty Rickers
