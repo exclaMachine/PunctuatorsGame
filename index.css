@@ -1003,6 +1003,77 @@ span[data-hint] {
   );
 }
 
+/* ── GENERAL & SPECIFIC — the word ladder (docs/punctuators-ladder.md §2) ──────────────────────────
+   position:relative is what lets the rung strip hang below the word without joining the line box:
+   an absolutely positioned ::after contributes nothing to layout, so the sentence never reflows and
+   the span's hit rectangle — which is what the projectile is tested against — stays the word itself. */
+.word-ladder {
+  position: relative;
+  /* inline-block, not inline: an inline box cannot be scaled, so .ladder-move would be a no-op.
+     Each word is its own box, so the sentence still wraps at the spaces between them. */
+  display: inline-block;
+}
+
+/* ▲ per rung above · ● you are here · ▼ per level of narrower kinds below. Written by index.js on
+   the first landing, so an untouched sentence shows nothing (§2.4). */
+.word-ladder[data-rung-strip]::after {
+  content: attr(data-rung-strip);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  text-align: center;
+  font-size: 0.32em;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  color: #7a7a7a;
+  text-shadow: none;
+  pointer-events: none;
+}
+
+/* Placeholder feedback until M4 brings §6's real animations — General's camera pull-back and Keen's
+   lens snap. A move pulses in the hero's colour; the no-move case flares harder and holds, because
+   at the top of the ladder there is nothing broader and that is the answer, not a miss. */
+.ladder-move {
+  animation: ladder-move 620ms ease-out;
+}
+
+.ladder-capstone {
+  animation: ladder-capstone 620ms ease-out;
+}
+
+@keyframes ladder-move {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes ladder-capstone {
+  0% {
+    text-shadow: none;
+  }
+  35% {
+    text-shadow: 0 0 12px var(--ladder-color, gold),
+      0 0 24px var(--ladder-color, gold);
+  }
+  100% {
+    text-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ladder-move,
+  .ladder-capstone {
+    animation: none;
+  }
+}
+
 /* ── THE TREE OF KINDS — the ladder progress map (docs/punctuators-ladder.md §13) ──────────────────
    A full-window panel rather than a .modal: .modal is capped at 500px and centred by transform,
    and a map wants every pixel. The canvas is deliberately given a flex box to fill and is sized in

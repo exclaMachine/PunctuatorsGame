@@ -6,6 +6,7 @@ import { wrapHomophones } from "./HomophonesFuncs.js";
 import { wrapAnagrams } from "./anagrams.js";
 import { wrapAlphabetNeighbors } from "./alphabeticalNeighbors.js";
 import { wrapAbjads } from "./onlyConsonants.js";
+import { wrapLadders } from "./ladderFunc.js";
 
 export const applySpanPlaceholders = (text) => {
   let placeholders = [];
@@ -52,6 +53,10 @@ export const protectedAlphabetNeighbors = withSpanPlaceholders(
 );
 
 export const protectedAbjads = withSpanPlaceholders(wrapAbjads);
+
+// General & Specific. wrapLadders is a no-op until loadLadders() has resolved, so index.js awaits
+// the corpus before starting a ladder round (docs/punctuators-ladder.md §3.3).
+export const protectedLadders = withSpanPlaceholders(wrapLadders);
 
 // // Usage:
 // let result = protectedSpoonerism(sentence);

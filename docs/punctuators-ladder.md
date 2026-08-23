@@ -1,14 +1,16 @@
 # Punctuators — General Ization & Keen Arrow (the Word Ladder)
 
-**Status: M1 (the data) BUILT 2026-08-22 — `build-ladders.py` + `ladderPOJO.js`. M2–M4 (free play) planned,
-no game code yet. Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5
-data layer BUILT the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
+**Status: free play is PLAYABLE. M1 (the data) BUILT 2026-08-22 — `build-ladders.py` + `ladderPOJO.js`.
+**M2 (the mode) + M3 (the heroes) BUILT 2026-08-23** — `ladderFunc.js`, the `General & Specific` option,
+both heroes sharing one span via `targetId`, up/down movement, capstone/clank, and §2.4's rung strip
+(pulled forward from M4). **M12's sibling-cycling half landed with them**, so the Tree of Kinds now fills
+as you play. M4 (§6 animations, §7 SFX, final art, modal copy) is what's left of free play.
+Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5 data layer BUILT
+the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
 `build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.
 Phase 3 — Word Race (§12) specced 2026-08-22, nothing built; its Deep Dive companion (§12.4) is tentative.
-Phase 4 — the Tree of Kinds progress map (§13) specced 2026-08-22; **its M12 map half BUILT 2026-08-23**
-(`ladderMap.js` + the overlay — layout, LOD draw, pan/zoom/hit-test, the visited set and its storage),
-openable and drawable today. M12's other half, **sibling cycling, is still unbuilt because it needs M3's
-heroes**, which do not exist — see §13.11.**
+Phase 4 — the Tree of Kinds progress map (§13) specced 2026-08-22, **M12 BUILT 2026-08-23** across two
+sessions (`ladderMap.js` + the overlay, then the fill). M13 (shelf counters + milestones) is next.**
 
 Two new heroes for `punctuators.html` / `index.js` who climb the **is-a-kind-of** hierarchy of a word:
 
@@ -76,21 +78,27 @@ Two more things that are true of wordplay modes and matter here:
 
 Label reasoning: `Word Ladder` is taken by the classic cat→cot→cog puzzle (and Betar's Alphabet Slots is
 already the closest thing to it), so it would mislead. `General & Specific` names the mechanic in
-kid-language and echoes General Ization's name. **See §10 — the label is the one thing worth a second
-opinion before M1.**
+kid-language and echoes General Ization's name. **Confirmed and shipped 2026-08-23** (§10 closed).
 
 ### 2.2 The span
 
 One span shape serves both heroes:
 
 ```html
-<span id="Ization Ladder" data-ladder="poodle,dog,mammal,animal" data-rung="1" class="word-1">dog</span>
+<span id="Ization Ladder" class="word-ladder"
+      data-ladder="poodle,dog,mammal,animal" data-rung="1"
+      data-ladder-word="dog" data-ladder-orig="Dogs" data-ladder-plural="1">Dogs</span>
 ```
 
 - `data-ladder` — the full chain, **most specific → most general**, left to right.
 - `data-rung` — the index currently shown. Set at wrap time to the position of the player's own word.
 - The player's word is normally **mid-chain**, so both heroes have somewhere to go from the first shot.
   A chain always tries to include **one rung below** the typed word for exactly this reason (§3.3).
+- **`data-ladder-word` is the authoritative state, added in M2** — the lowercase rung actually shown.
+  Sibling cycling (§13.7) means the path down is decided shot by shot, so `data-ladder`/`data-rung`
+  are *recomputed on every landing* rather than walked as a fixed strip; frozen at wrap time they would
+  start lying the moment Keen Arrow steps sideways. `data-ladder-orig` keeps the typed token (case and
+  plural are re-applied from it, never from the previous rung, so errors can't accumulate).
 
 ### 2.3 Rules on a hit
 
@@ -101,15 +109,21 @@ One span shape serves both heroes:
 | **Repeatable** | A word never locks. Climb up, climb back down, climb up again. |
 | **At the top rung** | No move. **Capstone flourish**: the word flares, a `★` beat plays, the ladder holds. |
 | **At the bottom rung** | Same, mirrored (a "clank" — the arrow can't cut finer). |
-| **Case** | The typed word's capitalization is re-applied to each rung (rungs are stored lowercase). Reuse Betar's `matchCase` helper (`index.js:1843`) — lift it to module scope. |
+| **Case** | The typed word's capitalization is re-applied to each rung (rungs are stored lowercase). **Not** Betar's `matchCase`, as planned: that copies capitals *position by position*, which only works because an alphabet neighbour is the same length as its word. `applyLadderCase` copies the **shape** instead — ALL CAPS stays all caps, Leading cap stays leading. |
 | **Plurals** | If the typed word was a plural (`dogs`), the chain is built from the lemma and each rung is re-pluralized. v1 uses a naive `+s`/`+es` rule and only for regular plurals; irregulars (`mice`) are wrapped at the lemma and displayed as-is. See §3.4. |
 
-### 2.4 Rung indicator (recommended)
+### 2.4 Rung indicator — BUILT (pulled forward from M4)
 
-On first hit, a small rung strip appears under the word — `▲ ● ▼ ▼` — showing where you are and how far
-the ladder runs in each direction. This is the piece that makes it *read* as a hierarchy rather than as
-random word-swapping, which is the whole educational payload. Styled in `index.css` next to the existing
-`.reel` / `span[data-hint]` rules.
+On first hit, a small rung strip appears under the word — `▲▲●▼` — showing where you are and how far
+the ladder runs in each direction (`▲` per rung above · `●` here · `▼` per level of narrower kinds
+below). This is the piece that makes it *read* as a hierarchy rather than as random word-swapping,
+which is the whole educational payload, so it shipped with M3 rather than waiting for polish.
+
+It is `content: attr(data-rung-strip)` on an **absolutely positioned `::after`**, which is what keeps it
+out of the line box: the sentence never reflows, and the span's hit rectangle — the thing the projectile
+is tested against — stays the word itself. `.word-ladder` is `inline-block` for the same reason the
+strip needs a positioned parent, and because an inline box cannot be scaled, so the move flare would
+otherwise be a silent no-op.
 
 ---
 
@@ -300,29 +314,39 @@ At module load, iterate it once (~30k children, a few ms) to build `ladderUp = {
   pick down is the word a player would actually think of. Costs zero bytes.
 
 **A `.js` module at repo root, not `data/*.json`** — a deliberate deviation from the `data/` convention,
-for two reasons: (a) every Punctuators data set already ships this way (`AmbigramPOJO.js` 67 KB,
-`alphabeticalNeighbors.js` 51 KB, `anagrams.js` 97 KB) and (b) a `fetch` would force the currently-synchronous
-`hasLadders`/`wrapLadders`/`removePuncButton` path to go async.
+because every Punctuators data set already ships this way (`AmbigramPOJO.js` 67 KB,
+`alphabeticalNeighbors.js` 51 KB, `anagrams.js` 97 KB).
 
-**Size — the plan's open risk, now decided.** 337 KB raw / ~145 KB over the wire, against the 400–500 KB the
-plan feared. That is ~3.5× `anagrams.js`, which the game already imports on every load. **Verdict: ship it
-as a static import**, and revisit only if load time is felt in practice. The escape hatch the plan named is
-still there and still cheap — move it to `data/ladders.json`, fetch on mode select, `await` in the button
-handler — but it buys ~145 KB at the cost of making three synchronous functions async, so it isn't worth
-taking pre-emptively.
+**Size — 337 KB raw / ~145 KB over the wire**, against the 400–500 KB the plan feared. That is ~3.5×
+`anagrams.js`, which the game already imports on every load.
+
+**Loaded lazily, not statically — reversed at M2 (2026-08-23).** The static-import decision existed only
+to keep `hasLadders`/`wrapLadders` synchronous, but M12 had already made the point moot from the other
+side: `ladderMap.js` defers the same file to a dynamic `import()` on first open, so a static import here
+would have made *every* visitor to `punctuators.html` pay 337 KB whether or not they ever picked the mode.
+`loadLadders()` now does the `import()` and the one `removePuncButton` handler `await`s it before starting
+a ladder round. Both callers share one cached module instance, so the file is fetched at most once.
+The three wrapper functions **stayed synchronous** — the `await` moved out to the click handler, which is
+the only place that ever needed it.
 
 ### 3.4 Inflections
 
-`data/inflections.json` (28,953 entries, already built) maps `dogs → dog`, `mice → mouse`, `ran → run`.
-The ladder wrapper consults it so a typed plural still lights up. Rungs are re-pluralized with a naive
-`+s`/`+es`; irregular plurals fall back to lemma display (`mice` wraps, shows `mouse` on the first climb).
-Not perfect, cheap, and the failure mode is a correct word rather than a broken one.
+**As built, `data/inflections.json` is not used.** The plan had the wrapper consult it (28,953 entries,
+`dogs → dog`, `mice → mouse`) so a typed plural still lights up — but it is a `fetch`, and the whole point
+of §3.3's lazy-import decision is that the mode carries exactly one data file. Two rules replace it,
+both synchronous and both in `ladderFunc.js`: `singularize` (`-ies → y`, `-sses/-shes/-ches/-xes/-zes`,
+bare `-s`) to find the lemma, and `pluralizeRung` to put each new rung back into the plural.
+
+Irregulars (`mice`, `geese`, `children`) simply don't match, so those words never light up. That is the
+right failure: **a word that doesn't light is invisible, a word displayed wrong is a lie** — the same
+trade §3.2 makes for sense coherence. Revisit only if a real sentence feels dead because of it.
 
 ---
 
-## 4. The engine change: one span, two heroes
+## 4. The engine change: one span, two heroes — BUILT 2026-08-23
 
-**This is the only structural change to existing code**, and it is small.
+**This is the only structural change to existing code**, and it is small. It went in exactly as specced:
+four one-line edits, `ladderDirection` the only addition, and all 23 existing heroes behave identically.
 
 Today a span can belong to exactly one hero — `heroToTheRescue` keeps heroes by
 `hero.symbol === span.id` (`utils/utils.js:207`) and the collision block gates on
@@ -339,10 +363,12 @@ Split the hero's **display name** from its **target id**:
 2. **Subclasses override it** after `super(...)`:
    ```js
    class GeneralIzation extends Hero {
-     constructor() { super(…, "General Ization (Hypernym)", …); this.targetId = "Ization Ladder"; }
+     constructor() { super(…, "General Ization (Broader)", …); this.targetId = LADDER_ID;
+                     this.ladderDirection = "up"; }
    }
    class KeenArrow extends Hero {
-     constructor() { super(…, "Keen Arrow (Hyponym)", …); this.targetId = "Ization Ladder"; }
+     constructor() { super(…, "Keen Arrow (Narrower)", …); this.targetId = LADDER_ID;
+                     this.ladderDirection = "down"; }
    }
    ```
 3. **`heroToTheRescue`** (`utils/utils.js:207`): `value.symbol === …id` → `(value.targetId ?? value.symbol) === …id`
@@ -363,13 +389,13 @@ Character flips directly between them.
 | ---- | ------ |
 | `build-ladders.py` | **new — BUILT** — the offline build (§3.2). `--spot [words…]` rebuilds only the check list in seconds; `--why <word>` prints one raw WordNet climb with a verdict per candidate; `--check` does the full pass without writing |
 | `ladderPOJO.js` | **new, generated — BUILT** — `ladderDown` map, 337 KB (§3.3) |
-| `ladderFunc.js` | **new** — `wrapLadders(sentence)` + `hasLadders(sentence)`, mirroring `AmbigramFunc.js:643/676` |
-| `SpanPlaceholder.js` | `export const protectedLadders = withSpanPlaceholders(wrapLadders);` |
-| `utils/utils.js` | `case "ladder":` in `addSpansAndIdsForWordPlay` (~:124); `targetId` in `heroToTheRescue` (:207) |
-| `punctuators.html` | the `<option>` (~:71). *(The custom dropdown at :157 enumerates `sel.options` automatically — no extra work.)* |
-| `index.js` | import `hasLadders`; guard branch in the `removePuncButton` handler (~:417); `GeneralIzation` + `KeenArrow` classes; instances + `availableHeroArray`; `targetId` in the collision gate (:1664); the ladder branch in the collision chain; SFX (§7); lift `matchCase` (:1843) to module scope |
-| `index.css` | `.izo-widen`, `.keen-narrow`, `.ladder-capstone`, the rung strip (§6) |
-| `CLAUDE.md` | the Punctuators row flips to **BUILT** per milestone — done for M1, still to do for M2–M4 |
+| `ladderFunc.js` | **new — BUILT** — `loadLadders()` (the lazy `import()`, §3.3), `hasLadders`/`wrapLadders`, the rung lookups (`ladderParentOf`/`ladderChildrenOf`/`ladderChainFor`/`ladderDepthBelow`/`ladderRungStrip`), and case/plural (`applyLadderCase`/`renderRung`, §3.4). **Maps and Sets only** — `constructor` and `prototype` are real words in the corpus, so a plain-object lookup would invent edges (same trap as `ladderMap.js`) |
+| `SpanPlaceholder.js` | **BUILT** — `export const protectedLadders = withSpanPlaceholders(wrapLadders);` |
+| `utils/utils.js` | **BUILT** — `case "ladder":` in `addSpansAndIdsForWordPlay`; `targetId` in `heroToTheRescue` |
+| `punctuators.html` | **BUILT** — the `<option>`. *(The custom dropdown enumerates `sel.options` automatically — no extra work, as predicted.)* |
+| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`nextUnvisitedRung`/`flashLadder` and the ladder branch in the collision chain. **Still to do (M4):** §7's SFX — both heroes borrow existing mp3s for now |
+| `index.css` | **BUILT** — `.word-ladder`, the `data-rung-strip` `::after`, `.ladder-move`, `.ladder-capstone`. §6's `.izo-widen` / `.keen-narrow` are M4; `.ladder-move` is the one placeholder flare standing in for both |
+| `CLAUDE.md` | the Punctuators row flips to **BUILT** per milestone — done for M1–M3 + M12, still to do for M4 |
 
 **Guard message**, matching the existing three at `index.js:403–423`:
 
@@ -445,28 +471,46 @@ playable. The tuning knobs that did the work: `BANNED_RUNGS`, `TOP_STOPS`, `MID_
 and the two hand tables `PARENT_OVERRIDE` (4 entries) / `SENSE_OVERRIDE` (2). Re-run the script after
 touching any of them.
 
-**M2 — the mode, headless.** `ladderFunc.js` (`wrapLadders` / `hasLadders`), `SpanPlaceholder` +
-`utils.js` wiring, the `<option>`, the guard message. Words visibly mark up in the sentence. Nothing shoots
-them yet. **Start here:** invert `ladderDown` to `ladderUp` once at module load (§3.3), then `data-ladder`
-is a walk over the two maps.
+**M2 — the mode, headless. BUILT 2026-08-23.** `ladderFunc.js`, the `SpanPlaceholder` + `utils.js`
+wiring, the `<option>`, the guard message. `ladderDown` is inverted to `ladderUp` once at load, as
+planned. Two things came out differently: the corpus is **lazy-loaded** (§3.3, reversed) and
+**`data/inflections.json` is not used** (§3.4, replaced by two regular-plural rules).
 
-**M3 — the heroes.** The `targetId` split (§4), both hero classes, `availableHeroArray`, the collision
-branch, up/down movement, capstone behavior. Playable with placeholder art and no polish.
+**M3 — the heroes. BUILT 2026-08-23.** The `targetId` split (§4) went in exactly as specced — four
+one-line changes, all 23 existing heroes untouched. Both hero classes, adjacent in `availableHeroArray`,
+the collision branch, up/down movement, capstone/clank. Playable with placeholder art (`Generic.png` /
+`Arrow.png`, §8) and borrowed SFX. **§2.4's rung strip came along**, because without it the mode reads as
+random word-swapping. **§13.7's sibling cycling came along too** — see below, it changed shape.
 
-**M4 — the feel.** Animations, SFX, the rung strip, final art, the How-to-Play / character modal copy
-(`updateCharacterModal`, `index.js:458`, already has a per-mode template pattern to follow).
+**M4 — the feel.** §6's two animations, §7's five SFX, final art, the How-to-Play / character modal copy
+(`updateCharacterModal`, already has a per-mode template pattern to follow).
+
+**What playing it actually shows (measured on the built corpus).** Keen Arrow from `dog` walks
+`puppy → hound → bloodhound → beagle → basset → harrier → foxhound → wolfhound → borzoi`, then clanks —
+a leaf sweeps its shelf, a non-leaf dives. So a single pass lights ~9 words but only **2 of `dog`'s 33
+children**; it is *replaying* that fills a wide shelf, since the unvisited-first rule (§13.7) makes the
+next pass from `dog` pick `terrier` instead of `puppy` again. The map fills steadily rather than in one
+sweep, which is the shape free play wanted anyway.
+
+**The sense trap reaches free play too, mildly.** `The poodle chased a cat` lights `chased`, which is a
+real WordNet noun (`chased → victim → person`, "the chased"). §11.4 already catalogues this and rules it
+harmless here and fatal in the puzzle mode — worth remembering when M6 starts, not worth fixing now.
 
 **M5–M8 — Restore the Phrase**, the puzzle mode. Specced separately in §11.9; it builds on M4, so nothing
 there starts before free play is playable.
 
 ---
 
-## 10. Open question
+## 10. Open question — CLOSED 2026-08-23
 
-**The dropdown label.** `General & Specific` is the recommendation (§2.1). Alternatives considered and
-why they lost: `Word Ladder` (collides with the classic letter-swap puzzle, which is nearly what Betar
-does), `Hypernyms` (accurate, but the sibling modes all use plain-language labels), `Zoom` (evocative but
-says nothing about words). Easy to change any time before M4 — it's one `<option>` and one modal heading.
+**The dropdown label** is **`General & Specific`**, confirmed and shipped with M2. Alternatives and why
+they lost: `Word Ladder` (collides with the classic letter-swap puzzle, which is nearly what Betar does),
+`Hypernyms` (accurate, but the sibling modes all use plain-language labels), `Zoom` (evocative but says
+nothing about words), `Kind of a Kind`, `Broader & Narrower`.
+
+The **name tags** follow the same plain-language rule: `General Ization (Broader)` and
+`Keen Arrow (Narrower)`, not §4's illustrative `(Hypernym)`/`(Hyponym)` — the tag is player-facing text
+sitting above the controls, and it should read the way the dropdown does.
 
 ---
 
@@ -1036,23 +1080,34 @@ pan/zoom. Try circles first.
   for this is scope creep. The honest v1 is cosmetic: the gold ring, a shelf counter in the panel header,
   and a line in the share string.
 
-### 13.7 The prerequisite — free play alone cannot fill a shelf
+### 13.7 The prerequisite — free play alone cannot fill a shelf. BUILT 2026-08-23
 
-This is the finding that changes the build order. **Keen Arrow takes the first child of a parent** (§15,
-Deferred: branching hyponyms). So in free play, `dog`'s shelf can never read better than **1/33** no matter
-how many times you climb it — the map would be structurally unfillable in the mode most people play.
+This is the finding that changed the build order. **Keen Arrow taking the first child of a parent** (§15,
+Deferred: branching hyponyms) means `dog`'s shelf can never read better than **1/33** no matter how many
+times you climb it — the map would be structurally unfillable in the mode most people play.
 
 Three ways in, and the map needs at least one:
 
 | Source | Fills shelves? |
 | ------ | -------------- |
-| **Free play as it stands** | **No** — first child only, so every shelf caps at 1. |
-| **Sibling cycling** (§15, currently deferred) | **Yes** — repeated shots at the bottom rung walk the sibling list, which is the shipped `ladderDown` string verbatim (§3.3). |
+| **Free play with a first-child-only Keen Arrow** | **No** — every shelf caps at 1. |
+| **Sibling cycling** (promoted out of §15, **built with M3**) | **Yes** — a shot at the bottom rung walks the sibling list, which is the shipped `ladderDown` string verbatim (§3.3). |
 | **Word Race** (§12.2) | **Yes** — typing summons any descendant, so the Race fills shelves as a side effect of being played. |
 
-**Recommendation: promote sibling cycling out of §15 and ship it with the map**, as M12's prerequisite. It
-is a small change to the collision branch, it is the thing that gives Keen Arrow the personality §15 already
-wants for him, and without it the map's central metric is dead on arrival in free play.
+**As built, sibling cycling grew a second half.** The plan was one rule; two were needed, because a
+sideways step alone still leaves the *descent* stuck in a rut:
+
+- at a word that **has** narrower kinds, Keen Arrow picks one **you have not landed on yet**;
+- at a word that has **none** — the bottom rung — he steps sideways to the next **unvisited** sibling.
+
+Both fall back to plain positional cycling once everything on a shelf is lit, so the word always moves.
+The interesting part is where "unvisited" comes from: it reads `ladderMapHas()`, the map's own record.
+**That makes the Tree of Kinds an input to the game and not only a scoreboard** — it is what steers Keen
+Arrow toward what you have not seen, and it is why replaying a sentence is worth anything. It also means
+the two features are not merely ordered (M3 before M12's fill) but genuinely coupled.
+
+The bottom-rung clank still exists and is correct: `borzoi`'s parent `wolfhound` has exactly one child,
+so there is nothing narrower and nowhere sideways. General Ization is the way out.
 
 ### 13.8 Dailies and spoilers
 
@@ -1082,14 +1137,14 @@ routing game** (§12.3). A player with the map open is reading the answer rather
 | File | Change |
 | ---- | ------ |
 | `ladderMap.js` | **new — BUILT 2026-08-23** — `buildForest()`/`packForest()` (one pass on first open), the LOD draw, pan/zoom/hit-test, the visited set + storage, and the `ladderMapVisit()` seam. No new data file. Shelf math is M13. |
-| `index.js` | **BUILT:** `import { initLadderMap }` + the one call that wires the button. **Still to do:** mark-visited on every rung landing (all three modes, including passed-through rungs on a §12.2 jump) — needs M3; the daily-run guard (§13.8) — M14; sibling cycling in the collision branch (§13.7) — needs M3 |
+| `index.js` | **BUILT:** `initLadderMap()` + the button wiring; **and as of M3**, `ladderMapVisit()` on every rung landed on (including the one you were standing on, so the word you typed lights the first time you shoot it) plus sibling cycling in the collision branch, which reads `ladderMapHas()` back out (§13.7). **Still to do:** the daily-run guard (§13.8) — M14; passed-through rungs on a §12.2 jump — needs Word Race |
 | `punctuators.html` | **BUILT** — the 🌳 button + the overlay markup. *Not* a `.modal`: that pattern is capped at 500 px and centred by transform, and a map wants the whole window |
 | `index.css` | **BUILT** — the panel, the bar, the canvas, the hover readout. The gold shelf state is M13 |
 | `CLAUDE.md` | the Punctuators row per milestone |
 
 ### 13.11 Milestones
 
-**M12 — the map, static. HALF BUILT 2026-08-23.**
+**M12 — the map. BUILT 2026-08-23**, across two sessions: the viewer, then the fill.
 
 **Built:** `ladderMap.js` — the forest build, the front-chain pack (§13.4), the three-tier LOD draw,
 pan/zoom/hit-test, the visited set and its `localStorage` record, and the `ladderMapVisit(word)` /
@@ -1106,16 +1161,12 @@ visited set. Three deviations from the spec, each with its reason recorded above
   visited)` around the label, and shipping an intermediate that prints every leaf name would spoil
   answers that M13 would then have to take back.
 
-**Not built, and blocked: sibling cycling (§13.7).** It is a change to the collision branch of `animate()`,
-and there is no ladder collision branch — **M2, M3 and M4 have no game code at all** (`grep -i ladder`
-over `index.js` / `utils/utils.js` / `punctuators.html` / `SpanPlaceholder.js` returns nothing). So the
-map ships fillable but unfilled: **nothing calls `ladderMapVisit()` yet**. `?mapseed=N` lights a
-deterministic, session-only sample (never written to storage) so the drawing can be checked meanwhile,
-and `?map=1` opens the panel on load.
-
-**M12's remaining half therefore moves behind M3**, which is where §13.11 already put it — the ordering
-note below was right, it just hadn't been acted on: the map's *viewer* turned out to be fully independent
-of the heroes, while its *filling* is not.
+**M12's other half — sibling cycling and the fill — BUILT 2026-08-23, with M3.** It was blocked on there
+being a ladder collision branch at all; once M3 wrote one, the seam was three calls: `ladderMapVisit()` on
+both the rung you were standing on and the rung you land on, and `ladderMapHas()` back out to choose the
+next one (§13.7 — that read-back is the part the plan didn't anticipate). The map now fills from free
+play. `?mapseed=N` still lights a deterministic, session-only sample (never written to storage) for
+checking the drawing, and `?map=1` opens the panel on load.
 
 **M13 — the fill.** Shelf counters and the 25/50/100% milestones, the gold state. (Fog rules and storage
 landed in M12.)
@@ -1123,7 +1174,7 @@ landed in M12.)
 **M14 — the feel.** The daily-run guard and the post-game route overlay (§13.8), the share string, labels
 and breadcrumb polish, the How-to-Play copy.
 
-M12 needs M3 (the heroes) only — it does **not** wait on §11 or §12, and shipping it right after free play is
+M12 needed M3 (the heroes) only — it did **not** wait on §11 or §12, and shipping it alongside free play is
 what gives free play a reason to be replayed.
 
 ### 13.12 Open questions
@@ -1229,13 +1280,10 @@ which cuts both ways: it wants its own page, not a Punctuators mode.
   namespace (`vhyper` = broader action, `tropo` = troponyms, "a particular way of doing it") which
   `build_dictionary.py:122/127` already extracts, and `_best_verb_sense` (`build_dictionary.py:253`) already
   disambiguates. Same heroes, same mechanic, a second parent map. Held back so the noun mechanic ships clean.
-- **Branching hyponyms.** `dog` has **33** children in the built data (`puppy hound terrier cur
-  spaniel pug mutt pooch husky … poodle …`, commonness-ordered). Today Keen Arrow takes the first one.
-  Later: repeated shots at the bottom rung **cycle the siblings** — and since §3.3 ships `ladderDown`
-  directly, that list is already the raw data, no derivation needed. This is where Keen Arrow gets a real
-  personality: the specificity hero who can always get *more* specific. **§13.7 asks for this to be
-  promoted** — without it, free play can only ever reveal one child per parent, so the map's shelves are
-  unfillable in the mode most people play.
+- ~~**Branching hyponyms.**~~ **Promoted and BUILT 2026-08-23 with M3 — see §13.7.** `dog` has **33**
+  children in the built data, and Keen Arrow now walks them instead of taking the first forever.
 - **Adjectives.** WordNet has no adjective hierarchy (only `sim`/`ant`), so there is no ladder to climb.
   Out of scope, permanently.
 - **A base `docs/punctuators.md`.** The game itself is undocumented; §1 here is a partial stand-in.
+  A **stub** now exists at [`docs/punctuators.md`](punctuators.md) holding the base game's known issues and
+  its shared-engine footguns — it is not the doc this entry is asking for, just somewhere for them to live.

@@ -13,6 +13,7 @@ import {
   protectedAlphabetNeighbors,
   protectedAbjads,
   protectedAnagrams,
+  protectedLadders,
 } from "../SpanPlaceholder.js";
 
 const secondContractionWordHashMap = new Map();
@@ -127,6 +128,9 @@ export const addSpansAndIdsForWordPlay = (
     case "abjads":
       processed = protectedAbjads(processed);
       break;
+    case "ladder":
+      processed = protectedLadders(processed);
+      break;
     default:
       // No additional wordplay besides articles and spoonerism
       break;
@@ -170,16 +174,21 @@ export const waitForElement = (selector) => {
     }
 
     const observer = new MutationObserver((mutations) => {
-      let mutArr = mutations[0].addedNodes;
-      mutArr.forEach((el) => {
-        nodeArr.push(el);
+      // EVERY record, not just mutations[0]. Records batch per microtask checkpoint, so any other DOM
+      // write in the same task — the error message being cleared, a dropdown label being set — takes
+      // slot 0 and the sentence's own spans get silently dropped, leaving an empty team and nothing
+      // to shoot. Reading only the first record was a live bug the moment a second writer appeared.
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((el) => {
+          nodeArr.push(el);
 
-        if (
-          el.className === "hidden-punc" ||
-          el.className === "capital-black-hole" ||
-          el.id === "ApostroPharaoh (Contraction)"
-        )
-          numberOfPunctuationArray.push(el);
+          if (
+            el.className === "hidden-punc" ||
+            el.className === "capital-black-hole" ||
+            el.id === "ApostroPharaoh (Contraction)"
+          )
+            numberOfPunctuationArray.push(el);
+        });
       });
 
       if (document.querySelector(selector)) {
@@ -204,7 +213,11 @@ export const heroToTheRescue = (punctuationInSentenceArray, heroesArray) => {
         //tried to do this for left and right parenthesis, might need to come back to it
         // if (value.symbol.includes(punctuationInSentenceArray[i].id)) {
 
-        if (value.symbol === punctuationInSentenceArray[i].id) {
+        // A hero normally hits the span named after it, but General Ization and Keen Arrow SHARE one
+        // span id and differ only in direction, so match on targetId when a hero declares one
+        // (docs/punctuators-ladder.md §4). targetId defaults to symbol, so every other hero is
+        // unaffected.
+        if ((value.targetId ?? value.symbol) === punctuationInSentenceArray[i].id) {
           return value;
         }
       }

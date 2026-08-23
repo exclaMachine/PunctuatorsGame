@@ -15,9 +15,20 @@ import { hasAmbigrams } from "./AmbigramFunc.js";
 import { hasAnagrams } from "./anagrams.js";
 import { hasHomophones } from "./HomophonesFuncs.js";
 // The Tree of Kinds — the ladder progress map (docs/punctuators-ladder.md §13). Only the wiring is
-// imported here; ladderPOJO.js (337 KB) is fetched by the map itself, on first open.
-// M3's collision branch is what will call ladderMapVisit() on every rung landing.
-import { initLadderMap } from "./ladderMap.js";
+// imported here; ladderPOJO.js (337 KB) is fetched on demand, shared with the mode below.
+// The ladder collision branch calls ladderMapVisit() on every rung it lands on.
+import { initLadderMap, ladderMapVisit, ladderMapHas } from "./ladderMap.js";
+// General & Specific — the is-a-kind-of ladder (docs/punctuators-ladder.md §§2–4).
+import {
+  LADDER_ID,
+  loadLadders,
+  hasLadders,
+  ladderParentOf,
+  ladderChildrenOf,
+  ladderChainFor,
+  ladderRungStrip,
+  renderRung,
+} from "./ladderFunc.js";
 //import { swapWord } from "./spoonerismFunc.js";
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
@@ -358,11 +369,105 @@ function animateHomophoneShiver(span, nextWord, nextIndex) {
     [{ opacity: 1 }, { opacity: 0.1, offset: 0.5 }, { opacity: 1 }],
     { duration: 300, delay: dur * 0.28, easing: "ease-in-out" },
   );
-  setTimeout(() => {
-    if (wordEl.isConnected) wordEl.textContent = nextWord;
-  }, dur * 0.28 + 150);
+  setTimeout(
+    () => {
+      if (wordEl.isConnected) wordEl.textContent = nextWord;
+    },
+    dur * 0.28 + 150,
+  );
 
   setTimeout(settle, dur + 40);
+}
+
+/* ── General & Specific: one hit, one rung ────────────────────────────────────────────────────────
+   docs/punctuators-ladder.md §2.3 (the rules), §2.4 (the rung strip), §13.7 (why Keen Arrow sweeps).
+
+   The path down is decided shot by shot rather than baked into the span, because Keen Arrow taking a
+   parent's first child forever is exactly what §13.7 measured as making the Tree of Kinds
+   structurally unfillable — `dog`'s shelf could never read better than 1/33 in the mode most people
+   play. Two rules fix that:
+
+     * at a word that HAS narrower kinds, he picks one you have not landed on yet;
+     * at a word that has none — the bottom rung — he steps sideways to the next unvisited sibling,
+       which is the shipped ladderDown string walked in order (§15's "cycle the siblings").
+
+   "Unvisited" reads the map's own record, so the Tree of Kinds is not just a scoreboard: it steers
+   Keen Arrow toward what you have not seen. Once a shelf is entirely lit this falls back to plain
+   positional cycling, so the word still moves and the walk just goes round again. */
+function nextUnvisitedRung(list, current) {
+  const start = list.indexOf(current);
+  for (let i = 1; i <= list.length; i++) {
+    const candidate = list[(start + i) % list.length];
+    if (candidate !== current && !ladderMapHas(candidate)) return candidate;
+  }
+  return start === -1 ? list[0] : list[(start + 1) % list.length];
+}
+
+/* A flare in the hero's own colour. M4 replaces the two move cases with §6's real animations — the
+   camera pulling back for General, the lens snapping in for Keen — but the no-move case is already
+   what it wants to be: at the top of the ladder `animal` IS the answer, so it is a good moment. */
+function flashLadder(span, hero, className) {
+  span.style.setProperty("--ladder-color", hero.characterColor);
+  span.classList.remove("ladder-move", "ladder-capstone");
+  void span.offsetWidth; // restart the animation on a repeat hit
+  span.classList.add(className);
+  setTimeout(() => span.classList.remove(className), 620);
+}
+
+function climbLadder(span, hero, projectile) {
+  // One projectile, one rung per word. Without this a single shot can register on the same span in
+  // consecutive frames, because the projectile is not spliced out until a setTimeout(…, 0).
+  if (projectile) {
+    if (!projectile.ladderHits) projectile.ladderHits = new Set();
+    if (projectile.ladderHits.has(span)) return;
+    projectile.ladderHits.add(span);
+  }
+
+  const current = span.getAttribute("data-ladder-word");
+  if (!current) return;
+  const original = span.getAttribute("data-ladder-orig") || span.textContent;
+  const plural = span.getAttribute("data-ladder-plural") === "1";
+
+  // Standing on a rung counts as landing on it, so the word you typed lights the first time you
+  // shoot it — even on a shot that cannot move (§13.6).
+  ladderMapVisit(current);
+  span.setAttribute("data-rung-strip", ladderRungStrip(current));
+
+  let next = null;
+  if (hero.ladderDirection === "up") {
+    next = ladderParentOf(current); // null at the capstone
+  } else {
+    const kids = ladderChildrenOf(current);
+    if (kids && kids.length) {
+      next = nextUnvisitedRung(kids, current);
+    } else {
+      const siblings = ladderChildrenOf(ladderParentOf(current));
+      if (siblings && siblings.length > 1)
+        next = nextUnvisitedRung(siblings, current);
+    }
+  }
+
+  if (!next) {
+    // Capstone (nothing broader) or clank (nothing narrower, and nowhere sideways).
+    flashLadder(span, hero, "ladder-capstone");
+    return;
+  }
+
+  span.setAttribute("data-ladder-word", next);
+  span.textContent = renderRung(next, original, plural);
+
+  // Recomputed, not carried: a sideways step lands on a different chain, so a data-ladder frozen at
+  // wrap time would start lying the moment Keen Arrow cycles a shelf.
+  const chain = ladderChainFor(next);
+  span.setAttribute("data-ladder", chain.join(","));
+  span.setAttribute("data-rung", String(chain.indexOf(next)));
+  span.setAttribute("data-rung-strip", ladderRungStrip(next));
+
+  span.style.color = hero.characterColor;
+  span.style.textShadow =
+    "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
+  ladderMapVisit(next);
+  flashLadder(span, hero, "ladder-move");
 }
 
 const buttonSounds = {
@@ -387,7 +492,7 @@ canvas.height = innerHeight - 50;
 let bRightAfterSentenceIsLoaded = false;
 let dropDownSelection = "";
 
-removePuncButton.addEventListener("click", () => {
+removePuncButton.addEventListener("click", async () => {
   buttonSounds.clicky.play();
   if (!initialTypedSentence.value) {
     return (errorMessage.innerText = "Field cannot be blank");
@@ -424,6 +529,26 @@ removePuncButton.addEventListener("click", () => {
     ) {
       return (errorMessage.innerText =
         "No ambigrams found in your sentence — try different words!");
+    }
+    if (selectedOption === "ladder") {
+      // The only mode whose corpus is fetched rather than bundled. Awaiting here is what keeps
+      // hasLadders/wrapLadders synchronous everywhere else (docs/punctuators-ladder.md §3.3).
+      // #error-message is red by default, so borrow it in black: this is progress, not a fault.
+      errorMessage.style.color = "black";
+      errorMessage.innerText = "Loading the ladder…";
+      try {
+        await loadLadders();
+      } catch (e) {
+        errorMessage.style.color = "";
+        return (errorMessage.innerText =
+          "Couldn't load the ladder — try again.");
+      }
+      errorMessage.style.color = "";
+      errorMessage.innerText = "";
+      if (!hasLadders(initialTypedSentence.value)) {
+        return (errorMessage.innerText =
+          "No ladder words found in your sentence — try naming some things!");
+      }
     }
     addSpansAndIdsForWordPlay(initialTypedSentence.value, out1, selectedOption);
   }
@@ -894,6 +1019,10 @@ class Hero {
     this.heroScale = heroScale;
     this.characterColor = characterColor;
     this.symbol = symbol;
+    // Which span id this hero hits. Defaults to its own name, so nothing changes for the 23 heroes
+    // that own their span outright; the two ladder heroes override it to share one
+    // (docs/punctuators-ladder.md §4).
+    this.targetId = symbol;
     this.projectileStartPositionX = projectileStartPositionX;
     this.projectileLength = projectileLength;
     this.projectileImage = projectileImage;
@@ -1113,6 +1242,56 @@ class Betar extends Hero {
   }
   hitProjectileSound() {
     _betarHit();
+  }
+}
+
+/* General Ization & Keen Arrow — the two halves of General & Specific (docs/punctuators-ladder.md §2).
+   They are the first heroes to share a target: both answer to LADDER_ID and differ only in
+   ladderDirection, so Switch Character is what flips broaden ↔ narrow.
+
+   Art is placeholder (§8): Generic.png is literally a generic figure, and Arrow.png is the arrow.
+   Real two-frame hero art and the widening projectile are M4. projectileStartPositionX is set to
+   half the drawn width for both, because that is the value where the Projectile's spawn x and its
+   on-load x agree, so the shot doesn't jump sideways on a hero this narrow. */
+class GeneralIzation extends Hero {
+  constructor() {
+    super(
+      "./images/Generic.png",
+      0.5,
+      "General Ization (Broader)",
+      "darkolivegreen",
+      90,
+      50,
+      "./images/Ectoplasm.png",
+      "./sounds/whoosh.mp3",
+      0.2,
+      undefined,
+      undefined,
+      "./images/Generic.png",
+    );
+    this.targetId = LADDER_ID;
+    this.ladderDirection = "up";
+  }
+}
+
+class KeenArrow extends Hero {
+  constructor() {
+    super(
+      "./images/qm.png",
+      0.7,
+      "Keen Arrow (Narrower)",
+      "crimson",
+      20,
+      50,
+      "./images/Arrow.png",
+      "./sounds/featherSwish.mp3",
+      0.25,
+      undefined,
+      undefined,
+      "./images/QM2.png",
+    );
+    this.targetId = LADDER_ID;
+    this.ladderDirection = "down";
   }
 }
 
@@ -1600,6 +1779,14 @@ let allPunctuationHit = new Set();
 
 let player = new Hero("./images/Title_Page.png", 0.4);
 
+/* The heroes whose spans are actually in this sentence. Declared here rather than at the bottom of
+   the file, where it is filled: it is read by animate(), doActionOnce() and switchToNextHero(), all
+   of which can fire on the very click that starts a round — before the top-level await below has
+   resolved. As a `let` down there it was in the temporal dead zone for that first click; as an empty
+   array up here it is merely empty, which every reader already handles. */
+let elm = null;
+let chosenHeroArray = [];
+
 let apostrophe = new Apostrophantom();
 let asterisk = new MasterAsterisk();
 let comma = new CommaChameleon(100);
@@ -1623,6 +1810,8 @@ let dele = new WhiteKnight();
 let zana = new Zana();
 let roundabout = new Roundabout();
 let betar = new Betar();
+let general = new GeneralIzation();
+let keen = new KeenArrow();
 
 let availableHeroArray = [
   period,
@@ -1646,6 +1835,9 @@ let availableHeroArray = [
   dele,
   zana,
   roundabout,
+  // Adjacent on purpose: Switch Character then flips straight between broaden and narrow (§4).
+  general,
+  keen,
   article,
   foon,
 ];
@@ -1662,6 +1854,10 @@ function animate() {
   c.fillRect(0, 0, canvas.width, canvas.height);
 
   requestAnimationFrame(animate);
+  // Insurance, not logic: the loop must survive a frame with no hero. Losing it takes the canvas
+  // with it, and every mode goes blank for the rest of the session with one console line to show
+  // for it — which is precisely how the 2026-08-21 waitForElement regression presented.
+  if (!player) return;
   player.update();
 
   projectiles.forEach((projectile, index) => {
@@ -1669,7 +1865,8 @@ function animate() {
       nodeArr.forEach((punctuationSymbol) => {
         //tried to do this for left and right parenthesis, might need to come back to it
         // if (punctuationSymbol.className.includes(player.symbol)) {
-        if (punctuationSymbol.id === player.symbol) {
+        // targetId, not symbol — the ladder heroes share one span id (§4). Identical for everyone else.
+        if (punctuationSymbol.id === (player.targetId ?? player.symbol)) {
           // for Comma Chameleon. TODO refactor because only difference is projectileLength and code for when I add tongue retract
           if (
             player.symbol === comma.symbol ||
@@ -1916,6 +2113,9 @@ function animate() {
                     },
                   );
                 }
+              } else if (punctuationSymbol.id === LADDER_ID) {
+                // Both ladder heroes land here; hero.ladderDirection is the only difference.
+                climbLadder(punctuationSymbol, player, projectile);
               } else if (punctuationSymbol.id === spacel.symbol) {
                 if (punctuationSymbol.hasAttribute("data-splitwords")) {
                   const [firstWord, secondWord] =
@@ -2174,6 +2374,11 @@ animate();
 //Do not want the user to be able to move the title team page
 function doActionOnce() {
   if (bRightAfterSentenceIsLoaded) {
+    // The click that starts a round bubbles up to here in the SAME task that filled #output, so the
+    // MutationObserver that fills chosenHeroArray (a microtask) has not run yet. Leave the flag set
+    // and let the next click or keypress do the reveal, rather than spending it on an empty team —
+    // `player = undefined` is unrecoverable, since animate() then throws on every frame.
+    if (chosenHeroArray.length === 0) return;
     bRightAfterSentenceIsLoaded = false;
     //console.log("Action triggered!");
 
@@ -2446,8 +2651,15 @@ addEventListener("keydown", ({ key }) => {
   }
 });
 
-let elm = await waitForElement("span");
-let chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
+/* "#output span", not "span" — waitForElement resolves the moment its selector matches ANYTHING, and
+   the only thing that fills nodeArr is the MutationObserver it installs on the way. So a single
+   unrelated span in the static markup makes it resolve at page load with nodeArr still empty, and the
+   whole team comes back empty. That is exactly what happened on 2026-08-21: the banner's
+   <span class="title-tail">The Game</span> went in, and from then on every mode drew nothing, because
+   `player = chosenHeroArray[0]` was undefined and animate() threw on every frame.
+   Scoping the wait to the sentence's own output keeps it honest — #output is empty until a round starts. */
+elm = await waitForElement("#output span");
+chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
 
 let freeDictionaryFetchDefinition = async (word) => {
   let res = await fetch(
