@@ -9,7 +9,9 @@ words and you pick one by walking under it, so the descent stops reading as rand
 not at all**: the leaf sidestep the fan replaced was removed the same day (§13.7).
 **The How-to-Play copy BUILT 2026-08-23** — a `ladder` template in `updateCharacterModal`, whose first
 tip is the rule the fan made unguessable: shooting a word no longer moves it.
-**What's left of M4** is §6's two animations, §7's SFX and final art.
+**§6's two landing animations BUILT 2026-08-23** — General's camera pull-back and Keen's lens snap,
+plus the picked child flying out of the row into the word, and a drawn broadsword for General's
+projectile. **What's left of M4** is §7's SFX and final hero art.
 Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5 data layer BUILT
 the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
 `build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.
@@ -138,7 +140,7 @@ sweep of unvisited siblings (§13.7) — but it *played* as random word-swapping
 
 - **The sideways step was invisible.** At a leaf, `bloodhound → beagle` is not a narrowing at all, it is
   a lateral hop along a shelf. The rung strip is *identical* for two siblings (`▲▲▲●` both), and
-  `.ladder-move` is the same flare for up, down and across. The one move that isn't "more specific"
+  the placeholder flare of the day was the same for up, down and across. The one move that isn't "more specific"
   looked exactly like the ones that are. **The sidestep has since been removed outright** (§13.7) —
   drawing the row made it clear the move was buying nothing that the parent's own row doesn't.
 - **Unvisited-first makes replays diverge.** Shooting `dog` gives `puppy` today and `terrier` tomorrow.
@@ -542,8 +544,8 @@ Character flips directly between them.
 | `SpanPlaceholder.js` | **BUILT** — `export const protectedLadders = withSpanPlaceholders(wrapLadders);` |
 | `utils/utils.js` | **BUILT** — `case "ladder":` in `addSpansAndIdsForWordPlay`; `targetId` in `heroToTheRescue` |
 | `punctuators.html` | **BUILT** — the `<option>`. *(The custom dropdown enumerates `sel.options` automatically — no extra work, as predicted.)* |
-| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`landOnRung`/`flashLadder` and the ladder branch in the collision chain. **§2.5's fan BUILT** — `openShelfFan`/`closeShelfFan`/`pickRung`/`drawShelfFanLines`/`shelfFanWidth`, the `data-ladder-child` split in the ladder branch, the `nodeArr` push/splice, and two guards at the top of the collision walk (`isConnected`, `projectile.ladderDone`); closed on hero switch, new sentence and resize. **The `ladder` How-to-Play template BUILT** in `updateCharacterModal`, which now writes into `.modal--body` so the modal keeps its `×`. **Still to do (M4):** §7's SFX — both heroes borrow existing mp3s for now |
-| `index.css` | **BUILT** — `.word-ladder`, the `data-rung-strip` `::after`, `.ladder-move`, `.ladder-capstone`, and §2.5's `.shelf-fan` / `.shelf-fan-row` / `.shelf-child` / `.shelf-fan-caption` / `.shelf-fan-lines` (with the reduced-motion case that clears `stroke-dashoffset` rather than only killing the animation, or the lines would stay invisible), plus `.modal--body > .char-modal` for the How-to-Play copy. §6's `.izo-widen` / `.keen-narrow` are M4; `.ladder-move` is the one placeholder flare standing in for all of it |
+| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`landOnRung`/`flashLadder` and the ladder branch in the collision chain. **§2.5's fan BUILT** — `openShelfFan`/`closeShelfFan`/`pickRung`/`drawShelfFanLines`/`shelfFanWidth`, the `data-ladder-child` split in the ladder branch, the `nodeArr` push/splice, and two guards at the top of the collision walk (`isConnected`, `projectile.ladderDone`); closed on hero switch, new sentence and resize. **The `ladder` How-to-Play template BUILT** in `updateCharacterModal`, which now writes into `.modal--body` so the modal keeps its `×`. **§6's animations BUILT** — `animateLadderSwap` + `ladderPullBack`/`ladderLensSnap`/`flyPickedChild`, the `pulse` parameter on `openShelfFan`, and `drawBroadswordSprite()`/`GENERAL_PROJECTILE`. **Still to do (M4):** §7's SFX — both heroes borrow existing mp3s for now |
+| `index.css` | **BUILT** — `.word-ladder`, the `data-rung-strip` `::after`, `.ladder-capstone`, and §2.5's `.shelf-fan` / `.shelf-fan-row` / `.shelf-child` / `.shelf-fan-caption` / `.shelf-fan-lines` (with the reduced-motion case that clears `stroke-dashoffset` rather than only killing the animation, or the lines would stay invisible), plus `.modal--body > .char-modal` for the How-to-Play copy. **§6 BUILT** — the placeholder `.ladder-move` is gone, replaced by `.ladder-face` / `.ladder-ghost` (the two boxes a swap is built from; the keyframes themselves are WAAPI, in `index.js`), `.ladder-aperture` (the fan-open flicker) and `.shelf-child-picked` (the clone that flies into the word). `.ladder-capstone` stayed but went from `text-shadow` to `drop-shadow`, which stops it blanking the word's black outline for the length of the flare |
 | `CLAUDE.md` | the Punctuators row flips to **BUILT** per milestone — done for M1–M3 + M12, still to do for M4 |
 
 **Guard message**, matching the existing three at `index.js:403–423`:
@@ -552,29 +554,60 @@ Character flips directly between them.
 
 ---
 
-## 6. Animation
+## 6. Animation — BUILT 2026-08-23
 
-Both animations must leave the span as **plain text at the new rung** when they finish — the same
-`settle()` discipline as `animateAnagramSwirl` (`index.js:119`) — because the word has to be hittable
-again immediately.
+Both animations leave the span as **plain text at the new rung** when they finish — the same
+`settle()` discipline as `animateAnagramSwirl` — because the word has to be hittable again
+immediately.
 
-**General Ization — the camera pulls back.** The current word scales down and fades while the broader
-word fades in *larger* behind it, settling at normal size. Reads as zooming out to see the whole category.
+**The shared shape.** A swap rebuilds the span as two boxes and tears them down again:
 
-**Keen Arrow — the lens snaps in.** The current word scales up and blurs briefly, then the narrower word
-snaps into focus at normal size. Reads as picking one out of many.
+- **`.ladder-face`** — the new rung, **in flow**. It holds the span's box, so the sentence reflows
+  once (when the word's length changes) and never again for the length of the animation; everything
+  the face then does is `transform`/`filter`/`opacity`, which cost no layout.
+- **`.ladder-ghost`** — the rung being left behind, **absolutely positioned** and centred on the
+  span, so it can swell to 1.9× or shrink to a point without moving a single neighbouring word.
 
-With §2.5 the two halves of that sentence split across two moments, which is an improvement rather than
-a complication: **the branch lines draw outward** from the word when the fan opens ("here are the many"),
-and **the lens snap plays on the child you shoot** ("you picked one"). The word then takes the child's
-place and the fan re-opens on the new rung. Honour `prefers-reduced-motion` by showing the row without
-the line draw-on.
+`animateLadderSwap` branches on `hero.ladderDirection` and hands the pair to one of two keyframe
+functions. Keyframes are WAAPI (`element.animate`), as `animateAnagramSwirl` uses; `index.css` only
+sets the two boxes up.
 
-**Capstone / clank.** At either end of the chain, no swap: the word flares in the hero's
-`characterColor` and settles. This is a *good* moment, not a failure — `animal` is the answer.
+**General Ization — the camera pulls back** (`ladderPullBack`). The word you shot shrinks away to a
+point (ghost, 1 → 0.4, 380 ms) while the broader one fades in oversized behind it and settles at
+normal size (face, 1.75 → 1, 560 ms). You are not looking at a different word; you are standing
+further back from the same thing.
 
-Reduced motion: honor `prefers-reduced-motion` with a straight swap, as `animateAnagramSwirl`
-(`index.js:127`) already does.
+**Keen Arrow — the lens snaps in** (`ladderLensSnap`). The broader word swells and goes soft, as if
+the focal plane were sliding off it (ghost, 1 → 1.9 with `blur(0 → 6px)`, 320 ms), and the narrower
+one drops into focus a beat later with a hair of overshoot (face, 0.6 → 1.08 → 1 with
+`blur(7px → 0)`, 420 ms after a 110 ms delay). `fill: "backwards"` holds the face hidden through
+that beat; its last keyframe is the span's own resting state, so nothing needs holding afterwards.
+
+With §2.5 the two halves of Keen's sentence split across two moments, which turned out to be an
+improvement rather than a complication: **the branch lines draw outward** from the word when the fan
+opens ("here are the many"), and **the lens snap plays when you shoot a child** ("you picked one").
+`flyPickedChild` carries the pick between them — the child you hit flies out of the row and into the
+word, scaling up as it fades. It flies as a **fixed-position clone**, not as the real child: by then
+`closeShelfFan` has spliced the real one out of `nodeArr` (§2.5 note 2) and a second hit on it must
+be impossible.
+
+**Capstone / clank, and the fan opening.** The two moments where the word does *not* move get a glow
+rather than a movement: `.ladder-capstone` at either end of the chain (a *good* moment, not a
+failure — `animal` is the answer) and `.ladder-aperture`, a quicker flicker, when the fan opens on a
+word that stays put. Both are **`drop-shadow`, not `text-shadow`** — `landOnRung` writes the black
+outline as an inline style, and a `text-shadow` keyframe overrides it outright, blanking the outline
+for the length of the flare. A filter composes over it instead. It also keeps the aperture off
+`transform`, which a lens snap may already be using on the face underneath: `pickRung` re-opens the
+fan on the new rung in the same frame it lands on it, so it passes `openShelfFan(…, pulse = false)`
+and lets the snap be the shot's only mark on the word.
+
+**The stale-settle trap.** A second shot can land while the first swap is still in flight, and the
+first animation's `settle()` would then write its own (now old) word back over the new one. A
+sequence token on the span (`dataset.ladderSeq`) makes a superseded settle a no-op. For the same
+reason `landOnRung` reads what is on screen off `.ladder-face` when one exists, since mid-swap the
+span's own `textContent` is face and ghost run together.
+
+Reduced motion: a straight swap, as `animateAnagramSwirl` already does, and no flying clone.
 
 ---
 
@@ -610,7 +643,7 @@ while a projectile is in flight — `index.js:1718`):
 | ----- | ----- |
 | `General_1.png` / `General_2.png` | hero frames — military bearing, broad/wide silhouette |
 | `Keen_1.png` / `Keen_2.png` | hero frames — lean, archer's stance |
-| General's projectile | something that *widens* — a spreading ring or a cone |
+| General's projectile | **BUILT 2026-08-23 — a drawn broadsword.** The joke is already in the name: the *broad* blade for the hero who broadens, which beat the spec's earlier "spreading ring or cone" on legibility at 27px. `drawBroadswordSprite()` paints it once into an offscreen canvas and hands the Hero constructor a data URL, so it takes the same `Image()` path as every other projectile and **swapping it for real art is one string** — replace `GENERAL_PROJECTILE` with a filename. Drawn point-up (projectiles are never rotated) and sized so the unchanged 0.2 scale lands at ~27 px wide, the width the borrowed `Ectoplasm.png` had, which is what `projectileStartPositionX` (90) was centred against |
 | Keen's projectile | `images/Arrow.png` ✔ |
 
 `characterColor` drives the name tag and speech bubble: suggest **`darkolivegreen`** for General and
@@ -639,7 +672,7 @@ the collision branch, up/down movement, capstone/clank. Playable with placeholde
 random word-swapping. **§13.7's sibling cycling came along too**, and was then **removed the same day**
 once §2.5's fan made it redundant — see §13.7.
 
-**M4 — the feel. §2.5's shelf fan BUILT 2026-08-23; the rest outstanding.** The fan was added to this
+**M4 — the feel. §2.5's shelf fan and §6's animations BUILT 2026-08-23; §7's SFX and final art outstanding.** The fan was added to this
 milestone because playing M3 showed polish alone does not fix what it was for — Keen's descent still
 read as random, and the sideways sibling step was invisible. Being a mechanic rather than polish, it
 was the bulk of M4's work, and it is in: `shelfFor` in `ladderFunc.js`, the fan block in `index.js`
@@ -659,8 +692,15 @@ out of it, the capstone, and the 🌳 map. Two things came with it:
 - The `modal` identifier the function used was never declared — it resolved through the DOM's
   named-access-on-`window` for `id="modal"`. Now an explicit `getElementById`.
 
-**Still outstanding in M4:** §6's two animations (the fan currently reuses `.ladder-move`'s placeholder
-pulse), §7's five SFX including the new `_keenFan`, and final art.
+**§6's animations — BUILT 2026-08-23.** The camera pull-back and the lens snap, the picked child
+flying out of the row into the word, and the fan-open/capstone glows that replaced the shared
+`.ladder-move` placeholder. General's projectile came with them: a **drawn broadsword** (§8) rather
+than the spec's spreading ring, painted into an offscreen canvas and passed to the Hero constructor
+as a data URL, so real art is a one-string swap later. The one thing the build had to invent was the
+stale-settle guard — §2.5 lets a second shot land while the first swap is still in flight, which the
+spec never had to think about because the placeholder was a single class with a timer.
+
+**Still outstanding in M4:** §7's five SFX including the new `_keenFan`, and final hero art.
 
 **What playing it shows, now that the fan is in (measured on the built corpus).** A hit on `dog` opens
 `hound▾ terrier▾ cur▾ spaniel▾ corgi▾ pointer▾ puppy · kinds of dog · +26 more` — six branches and the

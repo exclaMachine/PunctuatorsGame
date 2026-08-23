@@ -1012,8 +1012,8 @@ span[data-hint] {
    the span's hit rectangle — which is what the projectile is tested against — stays the word itself. */
 .word-ladder {
   position: relative;
-  /* inline-block, not inline: an inline box cannot be scaled, so .ladder-move would be a no-op.
-     Each word is its own box, so the sentence still wraps at the spaces between them. */
+  /* inline-block, not inline: an inline box cannot be scaled, so §6's swap animations would be a
+     no-op. Each word is its own box, so the sentence still wraps at the spaces between them. */
   display: inline-block;
 }
 
@@ -1034,44 +1034,71 @@ span[data-hint] {
   pointer-events: none;
 }
 
-/* Placeholder feedback until M4 brings §6's real animations — General's camera pull-back and Keen's
-   lens snap. A move pulses in the hero's colour; the no-move case flares harder and holds, because
-   at the top of the ladder there is nothing broader and that is the answer, not a miss. */
-.ladder-move {
-  animation: ladder-move 620ms ease-out;
+/* ── §6 the landing animations ─────────────────────────────────────────────────────────────────────
+   A swap rebuilds the span as an in-flow `face` (the new rung — it holds the box, so the sentence
+   reflows once and only once) plus an absolutely positioned `ghost` (the rung being left behind, out
+   of flow so it can swell or shrink without moving anything). index.js drives the keyframes through
+   WAAPI, as animateAnagramSwirl does; these two rules only set the boxes up. */
+.ladder-face {
+  display: inline-block;
+  transform-origin: center;
+  will-change: transform, opacity, filter;
+}
+
+.ladder-ghost {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  /* Repeated inside every keyframe index.js writes — a WAAPI transform replaces this one whole. */
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  white-space: nowrap;
+  pointer-events: none;
+  will-change: transform, opacity, filter;
+}
+
+/* The two moments where the word does NOT move. The fan opening on it gets a quick aperture
+   flicker; the capstone flares harder and holds, because at the top of the ladder there is nothing
+   broader and that is the answer, not a miss.
+
+   drop-shadow, not text-shadow: landOnRung writes the black outline as an inline style, and a
+   text-shadow keyframe would override it outright — blanking the outline for the length of the
+   flare. A filter composes over it instead. It also keeps the aperture off `transform`, which a
+   lens snap may already be using on the face underneath (pickRung re-opens the fan on the new
+   rung the same frame it lands on it). */
+.ladder-aperture {
+  animation: ladder-aperture 380ms ease-out;
 }
 
 .ladder-capstone {
   animation: ladder-capstone 620ms ease-out;
 }
 
-@keyframes ladder-move {
-  0% {
-    transform: scale(1);
-  }
-  40% {
-    transform: scale(1.18);
-  }
+@keyframes ladder-aperture {
+  0%,
   100% {
-    transform: scale(1);
+    filter: none;
+  }
+  45% {
+    filter: drop-shadow(0 0 6px var(--ladder-color, gold));
   }
 }
 
 @keyframes ladder-capstone {
   0% {
-    text-shadow: none;
+    filter: none;
   }
   35% {
-    text-shadow: 0 0 12px var(--ladder-color, gold),
-      0 0 24px var(--ladder-color, gold);
+    filter: drop-shadow(0 0 8px var(--ladder-color, gold))
+      drop-shadow(0 0 16px var(--ladder-color, gold));
   }
   100% {
-    text-shadow: none;
+    filter: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ladder-move,
+  .ladder-aperture,
   .ladder-capstone {
     animation: none;
   }
@@ -1116,6 +1143,20 @@ span[data-hint] {
   vertical-align: 0.3em;
   margin-left: 0.15em;
   opacity: 0.7;
+}
+
+/* §6: the clone that flies from the row into the word. Fixed rather than in the row, because it
+   outlives the fan it came from; pointer-events:none because the real child has already been
+   spliced out of nodeArr and a second hit on it must be impossible. It keeps .shelf-child for the
+   sizing, but re-declares the font — it hangs off <body>, clear of .shelf-fan's family. */
+.shelf-child-picked {
+  position: fixed;
+  z-index: 6;
+  pointer-events: none;
+  font-family: "Palanquin", sans-serif;
+  color: var(--ladder-color, whitesmoke);
+  white-space: nowrap;
+  will-change: transform, opacity;
 }
 
 .shelf-fan-caption {

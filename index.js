@@ -451,8 +451,10 @@ function drawShelfFanLines(el, wordRect, children) {
   el.appendChild(svg);
 }
 
-/** Open the shelf beneath `span`. Returns false when there is nothing to show — that is a clank. */
-function openShelfFan(span, hero) {
+/** Open the shelf beneath `span`. Returns false when there is nothing to show — that is a clank.
+ *  `pulse` is false when a landing animation has already marked the word (§6): pickRung re-opens the
+ *  fan on the rung it just landed on, and the aperture flicker would fire on top of the lens snap. */
+function openShelfFan(span, hero, pulse = true) {
   closeShelfFan();
 
   const word = span.getAttribute("data-ladder-word");
@@ -506,8 +508,9 @@ function openShelfFan(span, hero) {
   shelfFan = { el, host: span, children };
 
   // The shot has to register on the word itself too, or opening the fan reads as something that
-  // happened next to the word rather than to it. M4's §6 animation replaces this placeholder pulse.
-  flashLadder(span, hero, "ladder-move");
+  // happened next to the word rather than to it. The fan is not a swap — the word stays put — so
+  // §6's mark here is an aperture flicker in the hero's colour rather than a movement.
+  if (pulse) flashLadder(span, hero, "ladder-aperture");
   return true;
 }
 
@@ -533,25 +536,171 @@ function closeShelfFan() {
    it — so drop it and let the next shot redraw. */
 window.addEventListener("resize", closeShelfFan);
 
-/* A flare in the hero's own colour. M4 replaces the two move cases with §6's real animations — the
-   camera pulling back for General, the lens snapping in for Keen — but the no-move case is already
-   what it wants to be: at the top of the ladder `animal` IS the answer, so it is a good moment. */
+/* A glow in the hero's own colour, for the two moments where the word does NOT move: the fan
+   opening on it, and the capstone — at the top of the ladder `animal` IS the answer, so that one is
+   a good moment, not a miss. Both are drop-shadow rather than text-shadow, so they layer over the
+   black outline landOnRung writes instead of blanking it for the length of the flare. */
 function flashLadder(span, hero, className) {
   span.style.setProperty("--ladder-color", hero.characterColor);
-  span.classList.remove("ladder-move", "ladder-capstone");
+  span.classList.remove("ladder-aperture", "ladder-capstone");
   void span.offsetWidth; // restart the animation on a repeat hit
   span.classList.add(className);
   setTimeout(() => span.classList.remove(className), 620);
 }
 
+/* §6, the landing animations. Both rebuild the span for the length of a swap as an in-flow `face`
+   (the new rung — it holds the box, so the sentence reflows once and only once) plus an absolutely
+   positioned `ghost` (the rung being left behind, out of flow so it can swell or shrink freely),
+   and both leave the span as plain text at the new rung when they finish — animateAnagramSwirl's
+   settle() discipline — because the word has to be hittable again immediately.
+
+   A sequence token guards that settle. A second shot can land while the first swap is still in
+   flight, and the stale animation must not write its old word back over the new one. */
+let ladderAnimSeq = 0;
+
+function animateLadderSwap(span, fromWord, toWord, hero) {
+  const seq = String(++ladderAnimSeq);
+  span.dataset.ladderSeq = seq;
+
+  const settle = () => {
+    if (span.dataset.ladderSeq !== seq) return; // a later shot owns the span now
+    span.textContent = toWord;
+  };
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    settle();
+    return;
+  }
+
+  span.textContent = "";
+
+  const face = document.createElement("span");
+  face.className = "ladder-face";
+  face.textContent = toWord;
+  span.appendChild(face);
+
+  const ghost = document.createElement("span");
+  ghost.className = "ladder-ghost";
+  ghost.textContent = fromWord;
+  span.appendChild(ghost);
+
+  const anims =
+    hero.ladderDirection === "up"
+      ? ladderPullBack(face, ghost)
+      : ladderLensSnap(face, ghost);
+
+  Promise.all(anims.map((a) => a.finished)).then(settle, settle);
+}
+
+/* General Ization — the camera pulls back. The word you shot shrinks away to a point while the
+   broader one fades in oversized behind it and settles at normal size: you are not looking at a
+   different word, you are standing further back from the same thing. */
+function ladderPullBack(face, ghost) {
+  return [
+    ghost.animate(
+      [
+        { transform: "translate(-50%, -50%) scale(1)", opacity: 1 },
+        { transform: "translate(-50%, -50%) scale(0.4)", opacity: 0 },
+      ],
+      { duration: 380, easing: "ease-in", fill: "forwards" },
+    ),
+    face.animate(
+      [
+        { transform: "scale(1.75)", opacity: 0 },
+        { transform: "scale(1.6)", opacity: 0.5, offset: 0.3 },
+        { transform: "scale(1)", opacity: 1 },
+      ],
+      { duration: 560, easing: "cubic-bezier(.2,.7,.3,1)", fill: "backwards" },
+    ),
+  ];
+}
+
+/* Keen Arrow — the lens snaps in. The broader word swells and goes soft, as if the focal plane were
+   sliding off it, and the narrower one drops into focus a beat later with a hair of overshoot.
+   `fill: backwards` holds the face hidden through that beat; its last keyframe is the span's own
+   resting state, so nothing needs to be held forwards afterwards. */
+function ladderLensSnap(face, ghost) {
+  return [
+    ghost.animate(
+      [
+        {
+          transform: "translate(-50%, -50%) scale(1)",
+          filter: "blur(0px)",
+          opacity: 1,
+        },
+        {
+          transform: "translate(-50%, -50%) scale(1.9)",
+          filter: "blur(6px)",
+          opacity: 0,
+        },
+      ],
+      { duration: 320, easing: "ease-out", fill: "forwards" },
+    ),
+    face.animate(
+      [
+        { transform: "scale(0.6)", filter: "blur(7px)", opacity: 0 },
+        {
+          transform: "scale(1.08)",
+          filter: "blur(0px)",
+          opacity: 1,
+          offset: 0.72,
+        },
+        { transform: "scale(1)", filter: "blur(0px)", opacity: 1 },
+      ],
+      {
+        duration: 420,
+        delay: 110,
+        easing: "cubic-bezier(.3,1.1,.5,1)",
+        fill: "backwards",
+      },
+    ),
+  ];
+}
+
+/* §6: the child you shot is pulled out of the row and into the word — "you picked one". It flies as
+   a fixed, pointer-events:none clone rather than as the real child, because closeShelfFan has
+   already spliced that one out of nodeArr (note 2) and a second hit on it must be impossible. */
+function flyPickedChild(from, to, text, color) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const clone = document.createElement("span");
+  clone.className = "shelf-child shelf-child-picked";
+  clone.textContent = text;
+  clone.style.left = `${from.left}px`;
+  clone.style.top = `${from.top}px`;
+  clone.style.setProperty("--ladder-color", color);
+  document.body.appendChild(clone);
+
+  const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+  const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+  const done = () => clone.remove();
+  clone
+    .animate(
+      [
+        { transform: "translate(0, 0) scale(1)", opacity: 1 },
+        {
+          transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(
+            1,
+          )}px) scale(1.6)`,
+          opacity: 0,
+        },
+      ],
+      { duration: 340, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" },
+    )
+    .finished.then(done, done);
+}
+
 /* Move the word to `rung` and leave the span consistent. Shared by both directions: General reaches
    it with the parent, Keen with whichever child you shot out of the fan. */
 function landOnRung(span, rung, hero) {
-  const original = span.getAttribute("data-ladder-orig") || span.textContent;
+  // A swap may still be in flight, in which case the span's own textContent is face + ghost run
+  // together and the face is the only honest reading of what is on screen.
+  const inFlight = span.querySelector(".ladder-face");
+  const shown = inFlight ? inFlight.textContent : span.textContent;
+  const original = span.getAttribute("data-ladder-orig") || shown;
   const plural = span.getAttribute("data-ladder-plural") === "1";
 
   span.setAttribute("data-ladder-word", rung);
-  span.textContent = renderRung(rung, original, plural);
 
   // Recomputed, not carried: which child you shoot out of the fan decides the path, so the chain
   // through this rung is only known once you have picked it. Frozen at wrap time it would start
@@ -565,7 +714,7 @@ function landOnRung(span, rung, hero) {
   span.style.textShadow =
     "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
   ladderMapVisit(rung);
-  flashLadder(span, hero, "ladder-move");
+  animateLadderSwap(span, shown, renderRung(rung, original, plural), hero);
 }
 
 /* One ladder action per shot, for two reasons. A projectile is not spliced out until a
@@ -617,9 +766,17 @@ function pickRung(kid, hero, projectile) {
 
   const host = shelfFan.host;
   const rung = kid.dataset.word;
+  // Measured before the row goes: a detached node's rect is all zeros (note 2).
+  const kidRect = kid.getBoundingClientRect();
+  const kidText = kid.textContent;
+
   closeShelfFan();
   landOnRung(host, rung, hero);
-  openShelfFan(host, hero);
+  // After the landing, not before — the face carries the new word's width the moment it is built,
+  // so the word is already the size the clone should be flying into.
+  flyPickedChild(kidRect, host.getBoundingClientRect(), kidText, hero.characterColor);
+  // No aperture flicker: the lens snap landOnRung just started is this shot's mark on the word.
+  openShelfFan(host, hero, false);
 }
 
 const buttonSounds = {
@@ -1448,10 +1605,109 @@ class Betar extends Hero {
    They are the first heroes to share a target: both answer to LADDER_ID and differ only in
    ladderDirection, so Switch Character is what flips broaden ↔ narrow.
 
-   Art is placeholder (§8): Generic.png is literally a generic figure, and Arrow.png is the arrow.
-   Real two-frame hero art and the widening projectile are M4. projectileStartPositionX is set to
-   half the drawn width for both, because that is the value where the Projectile's spawn x and its
-   on-load x agree, so the shot doesn't jump sideways on a hero this narrow. */
+   Hero art is still placeholder (§8): Generic.png is literally a generic figure, and Arrow.png is
+   the arrow. Real two-frame hero art is what's left of M4; both projectiles are final.
+   projectileStartPositionX is set to half the drawn width for both, because that is the value where
+   the Projectile's spawn x and its on-load x agree, so the shot doesn't jump sideways on a hero this
+   narrow. */
+/* General Ization's projectile: a BROADsword, because the joke is already in the name — the broad
+   blade for the hero who broadens (§8).
+
+   Drawn once into an offscreen canvas and handed to the Hero constructor as a data URL, so it takes
+   exactly the same Image() path as every other projectile and swapping it for real art is one
+   string: replace GENERAL_PROJECTILE below with "./images/Broadsword.png". Nothing else knows how
+   the pixels were made.
+
+   Point-up, because projectiles fly straight up and are never rotated (velocity {x:0,y:-10}), and
+   sized so that at the constructor's unchanged 0.2 scale it lands at ~27px wide — the width the
+   borrowed Ectoplasm.png had, which is what projectileStartPositionX (90) was centred against. */
+const SWORD_W = 136;
+const SWORD_H = 460;
+
+function drawBroadswordSprite() {
+  const cv = document.createElement("canvas");
+  cv.width = SWORD_W;
+  cv.height = SWORD_H;
+  const g = cv.getContext("2d");
+  const mid = SWORD_W / 2;
+
+  // Everything is outlined in near-black: the canvas behind it is painted white every frame, so a
+  // steel blade with no outline would simply disappear.
+  g.lineJoin = "round";
+  g.strokeStyle = "#14170f";
+  g.lineWidth = 5;
+
+  // The blade. Broad and near-parallel down its length, taking its taper only near the point.
+  const steel = g.createLinearGradient(mid - 37, 0, mid + 37, 0);
+  steel.addColorStop(0, "#f4f7f8");
+  steel.addColorStop(0.42, "#cbd3d8");
+  steel.addColorStop(0.5, "#eef2f4"); // the fuller's highlight, down the centre line
+  steel.addColorStop(0.58, "#9fa9b1");
+  steel.addColorStop(1, "#79838b");
+  g.beginPath();
+  g.moveTo(mid, 10);
+  g.lineTo(mid + 34, 88);
+  g.lineTo(mid + 37, 296);
+  g.lineTo(mid - 37, 296);
+  g.lineTo(mid - 34, 88);
+  g.closePath();
+  g.fillStyle = steel;
+  g.fill();
+  g.stroke();
+
+  // The fuller — the groove down the middle. Two thin strokes read better than a filled band once
+  // the whole sprite is scaled to 27px wide.
+  g.lineWidth = 3;
+  g.strokeStyle = "rgba(20, 23, 15, 0.35)";
+  g.beginPath();
+  g.moveTo(mid - 9, 96);
+  g.lineTo(mid - 9, 286);
+  g.moveTo(mid + 9, 96);
+  g.lineTo(mid + 9, 286);
+  g.stroke();
+
+  // The crossguard, flaring down and out to quillon tips.
+  g.lineWidth = 5;
+  g.strokeStyle = "#14170f";
+  g.beginPath();
+  g.moveTo(10, 300);
+  g.lineTo(SWORD_W - 10, 300);
+  g.lineTo(SWORD_W - 22, 334);
+  g.lineTo(22, 334);
+  g.closePath();
+  g.fillStyle = "darkolivegreen";
+  g.fill();
+  g.stroke();
+
+  // The grip, wrapped in leather.
+  g.beginPath();
+  g.rect(mid - 13, 334, 26, 78);
+  g.fillStyle = "#3b3226";
+  g.fill();
+  g.stroke();
+  g.lineWidth = 3;
+  g.strokeStyle = "rgba(240, 236, 220, 0.3)";
+  g.beginPath();
+  for (let y = 348; y < 412; y += 16) {
+    g.moveTo(mid - 12, y);
+    g.lineTo(mid + 12, y - 5);
+  }
+  g.stroke();
+  g.lineWidth = 5;
+  g.strokeStyle = "#14170f";
+
+  // The pommel.
+  g.beginPath();
+  g.arc(mid, 424, 22, 0, Math.PI * 2);
+  g.fillStyle = "#6b8e23"; // olivedrab — the guard's colour, lifted so the pommel reads as round
+  g.fill();
+  g.stroke();
+
+  return cv.toDataURL("image/png");
+}
+
+const GENERAL_PROJECTILE = drawBroadswordSprite();
+
 class GeneralIzation extends Hero {
   constructor() {
     super(
@@ -1461,7 +1717,7 @@ class GeneralIzation extends Hero {
       "darkolivegreen",
       90,
       50,
-      "./images/Ectoplasm.png",
+      GENERAL_PROJECTILE,
       "./sounds/whoosh.mp3",
       0.2,
       undefined,
