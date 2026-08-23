@@ -4,7 +4,9 @@
 **M2 (the mode) + M3 (the heroes) BUILT 2026-08-23** — `ladderFunc.js`, the `General & Specific` option,
 both heroes sharing one span via `targetId`, up/down movement, capstone/clank, and §2.4's rung strip
 (pulled forward from M4). **M12's sibling-cycling half landed with them**, so the Tree of Kinds now fills
-as you play. M4 (§6 animations, §7 SFX, final art, modal copy) is what's left of free play.
+as you play. **M4 is what's left of free play**, and it is no longer only polish: it carries §2.5's
+**shelf fan** (specced 2026-08-23 — Keen's descent still reads as random, because two siblings share an
+identical rung strip and one flare) alongside §6's animations, §7's SFX, final art and the modal copy.
 Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5 data layer BUILT
 the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
 `build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.
@@ -124,6 +126,128 @@ out of the line box: the sentence never reflows, and the span's hit rectangle �
 is tested against — stays the word itself. `.word-ladder` is `inline-block` for the same reason the
 strip needs a positioned parent, and because an inline box cannot be scaled, so the move flare would
 otherwise be a silent no-op.
+
+### 2.5 The shelf fan — SPECCED 2026-08-23, not built (lands with M4)
+
+**The problem.** Keen Arrow's descent is fully deterministic — first unvisited child, then a sideways
+sweep of unvisited siblings (§13.7) — but it *plays* as random word-swapping, which is the one thing
+§2.4 was supposed to prevent. Three reasons, measured against the built corpus:
+
+- **The sideways step is invisible.** At a leaf, `bloodhound → beagle` is not a narrowing at all, it is
+  a lateral hop along a shelf. The rung strip is *identical* for two siblings (`▲▲▲●` both), and
+  `.ladder-move` is the same flare for up, down and across. The one move that isn't "more specific"
+  looks exactly like the ones that are.
+- **Unvisited-first makes replays diverge.** Shooting `dog` gives `puppy` today and `terrier` tomorrow.
+  That is deliberate and load-bearing, but from the player's chair it is an unexplained change.
+- **No agency.** Which of `dog`'s 33 children you get is chosen *for* you; the only input is "shoot".
+
+**The fix: make the shelf visible and let the player pick by aiming.** Keen's hit fans the word's
+narrower kinds out as a row of shootable words beneath it, joined by branch lines. You walk under the
+one you want and shoot it.
+
+```
+       The  dog  chased the cat
+            ╱╱│╲╲
+ hound terrier spaniel corgi pointer
+   ▲      ▲      ▲      ▲      ▲
+        · · · +25 more kinds · · ·
+                 🏹
+```
+
+**Why a horizontal row, and not a tree or an arc.** Projectiles fly **straight up with no aiming**
+(`velocity: {x: 0, y: -10}`, `index.js:2438`); the hero walks left/right and fires vertically. So a
+word's **x-range is its selectability** — a horizontal row is the only layout where "pick that one" is
+expressible in the verbs the game already has. A vertical stack or an arc cannot be aimed at: you hit
+whatever is lowest, which is the current problem with extra steps.
+
+#### 2.5.1 What goes in the row
+
+Shelf widths are wildly uneven, and the words people actually type sit in the bad tail:
+
+| | |
+| --- | --- |
+| Median shelf | **2 children**; 71% of parents have ≤4, 80% ≤6, 91% ≤12 |
+| The tail | 65 parents hold >50. `cat` 17 · `car` 24 · `dog` 33 · `flower` 63 · `tree` 107 · `bird` 125 · `fish` 221 · `food` 239 · `person` 805 |
+| Branch vs bud | Only **13%** of children (3,835 of 29,543) are themselves parents. Keeping just those: `dog` 33→8 · `tree` 107→5 · `fish` 221→8 · `flower` 63→7 · `tool` 67→6 · `car` 24→2 |
+
+The branch/bud cut is the one that makes wide shelves drawable, but it **cannot be the whole rule**:
+**69.8% of parents (3,378) have zero branch-children**, including 134 of the 719 shelves wider than 8.
+So the row is filled in tiers:
+
+1. **Shelf fits the row** (the common case, ~80% of parents) — show every child. No filtering, no fog.
+2. **Shelf overflows** — take **branch-children first**, in the shipped familiarity order, unvisited
+   first among equals (`nextUnvisitedRung`'s existing rule, generalised to pick N instead of 1).
+3. **Top up with buds** if the branches don't fill the row — which is the 134-shelf case above, and
+   also every shelf whose branch list is short.
+4. **Fog the remainder** as `+N more kinds` — a label, not a target. This is §13.5's fog rule reused:
+   you always see how much shelf is left, but leaf names are never printed where they could be read as
+   an answer.
+
+**Reachability — the rotating bud slot.** Rules 2–4 alone would make 25 of `dog`'s 33 children
+permanently unreachable in free play, which re-breaks exactly what §13.7 fixed. So **the last slot in
+the row is always a bud**, drawn unvisited-first. Over repeated plays the whole shelf comes through,
+and replaying keeps the value §13.7 gave it. (Branch lists exceed the row width only 56 times in the
+whole corpus — `person`:176, `action`:79, `quality`:77 — so branch rotation is the rare path, but it
+uses the same unvisited-first draw.)
+
+**At a leaf, the fan shows siblings, labelled as such.** `bloodhound` has no children, so the row is
+*other kinds of hound*, drawn under a visibly different header. This is the half of the feature that
+answers the original complaint: the lateral move stops being a mystery word-swap and becomes a
+deliberate step along a named shelf.
+
+**Row capacity is measured, not constant.** At the desktop `#output` size (300%, ~48px) a child at
+`0.45em` averages ~85px plus gap, so ~11 fit across a 1200px viewport; on a phone (`#output` 30px)
+it's ~5. Compute the fit from the container width at draw time — as `sbLayout` does in Inklings —
+**capped at 7 and floored at 3**, because a row wider than 7 stops reading as a set at a glance and
+one narrower than 3 isn't a choice.
+
+#### 2.5.2 Interaction rules
+
+| | |
+| --- | --- |
+| **Opens** | Keen Arrow hits the word and it has somewhere to go (children, or siblings at a leaf). |
+| **The word is behind the fan** | The row hangs below the word, i.e. *in the flight path*. While the fan is open the children are what you can hit; the parent is shielded. This falls out of the geometry rather than needing a rule. |
+| **Shots through the gaps** | Pass between children and carry on upward to whatever word is above — which may be the parent (re-fans, harmless) or a neighbouring sentence word. Collision is per-span rect, so this is free and correct. |
+| **Closes** | A child is shot (the word becomes that child and the fan re-opens on the new rung, if it has one); or Switch Character; or the round ends. |
+| **General Ization** | Broadening has no shelf to show, so **he never fans**. Switching to him closes an open fan — a row of narrower kinds is noise when the goal is to zoom out. |
+| **Landing** | Shooting a child is a landing: `ladderMapVisit`, rung strip, hero-colour recolour, and §6's Keen animation, exactly as `climbLadder` does today. |
+| **Reduced motion** | The fan appears without the branch-line draw-on, per `prefers-reduced-motion`, same as `animateAnagramSwirl`. |
+
+#### 2.5.3 Three footguns this will hit
+
+1. **`nodeArr` is filled once and the observer then disconnects** (`utils/utils.js:170`). Spans created
+   after the sentence renders — which is every fan child — **never become targets**. They must be
+   pushed into `nodeArr` explicitly. It is an exported array, so `nodeArr.push()` from `index.js`
+   works; the binding is read-only, the array is not.
+2. **They must be spliced back out when the fan closes.** A removed node's
+   `getBoundingClientRect()` returns all zeros, so a stale entry becomes a phantom hit-box pinned to
+   the top-left corner that swallows shots for the rest of the round.
+3. **The fan must not join the line box.** Same discipline as §2.4's rung strip: absolutely positioned
+   off the `.word-ladder` span, so the sentence never reflows and the parent's hit rectangle stays the
+   word itself. A fan that reflows the sentence moves every *other* word's target box on the first hit.
+
+Route the children through the collision branch that already exists rather than a second one: give
+them `id = LADDER_ID` so `punctuationSymbol.id === (player.targetId ?? player.symbol)` matches, and
+branch inside on a `data-ladder-child` attribute — `climbLadder` for the word, a new `pickRung` for a
+child.
+
+#### 2.5.4 Scope
+
+**Easy mode only.** The typed-answer hard mode discussed alongside this is **not** in scope here: it
+is the same input model as §12.2's Word Race (*type to summon, shoot to travel*, any true descendant
+accepted), and building it means writing that traversal engine early. Deferred deliberately so the fan
+ships as feel work rather than as a new engine. The two are compatible by design — type-to-filter over
+an open fan is the natural bridge when M9 arrives.
+
+#### 2.5.5 Open questions
+
+- **Does the fog count get a face?** Spec says `+25 more kinds` is a label. Making it *shootable* (a
+  re-roll of the bud slot) would be one line and would let a player dig deliberately, at the cost of
+  the fan gaining a control that isn't a word.
+- **Does the fan persist between shots or re-draw on each landing?** Re-drawing is simpler and matches
+  "the path is chosen shot by shot"; persisting reads calmer.
+- **Do branch and bud look different?** They mean different things ("keeps going" vs "end of the
+  line"), and the rung strip already encodes it per-word — possibly enough without a second treatment.
 
 ---
 
@@ -393,8 +517,8 @@ Character flips directly between them.
 | `SpanPlaceholder.js` | **BUILT** — `export const protectedLadders = withSpanPlaceholders(wrapLadders);` |
 | `utils/utils.js` | **BUILT** — `case "ladder":` in `addSpansAndIdsForWordPlay`; `targetId` in `heroToTheRescue` |
 | `punctuators.html` | **BUILT** — the `<option>`. *(The custom dropdown enumerates `sel.options` automatically — no extra work, as predicted.)* |
-| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`nextUnvisitedRung`/`flashLadder` and the ladder branch in the collision chain. **Still to do (M4):** §7's SFX — both heroes borrow existing mp3s for now |
-| `index.css` | **BUILT** — `.word-ladder`, the `data-rung-strip` `::after`, `.ladder-move`, `.ladder-capstone`. §6's `.izo-widen` / `.keen-narrow` are M4; `.ladder-move` is the one placeholder flare standing in for both |
+| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`nextUnvisitedRung`/`flashLadder` and the ladder branch in the collision chain. **Still to do (M4):** §7's SFX — both heroes borrow existing mp3s for now — and §2.5's fan (`openShelfFan`/`closeShelfFan`/`pickRung`, the `data-ladder-child` split in the collision branch, and the `nodeArr` push/splice) |
+| `index.css` | **BUILT** — `.word-ladder`, the `data-rung-strip` `::after`, `.ladder-move`, `.ladder-capstone`. §6's `.izo-widen` / `.keen-narrow` are M4; `.ladder-move` is the one placeholder flare standing in for both. §2.5's `.shelf-fan` is M4 too |
 | `CLAUDE.md` | the Punctuators row flips to **BUILT** per milestone — done for M1–M3 + M12, still to do for M4 |
 
 **Guard message**, matching the existing three at `index.js:403–423`:
@@ -415,6 +539,12 @@ word fades in *larger* behind it, settling at normal size. Reads as zooming out 
 **Keen Arrow — the lens snaps in.** The current word scales up and blurs briefly, then the narrower word
 snaps into focus at normal size. Reads as picking one out of many.
 
+With §2.5 the two halves of that sentence split across two moments, which is an improvement rather than
+a complication: **the branch lines draw outward** from the word when the fan opens ("here are the many"),
+and **the lens snap plays on the child you shoot** ("you picked one"). The word then takes the child's
+place and the fan re-opens on the new rung. Honour `prefers-reduced-motion` by showing the row without
+the line draw-on.
+
 **Capstone / clank.** At either end of the chain, no swap: the word flares in the hero's
 `characterColor` and settles. This is a *good* moment, not a failure — `animal` is the answer.
 
@@ -434,6 +564,7 @@ every other hero's `_xxxShoot` / `_xxxHit` pair.
 | `_izoHit` | a **descending, widening** low pad — the pull-back |
 | `_keenShoot` | `_noise` bow-thrum + a fast rising blip — the loosed arrow |
 | `_keenHit` | a sharp high tick — the arrow landing on one thing |
+| `_keenFan` | §2.5's fan opening — a quick fanned-out flutter of ticks, one per child drawn, so the row's *size* is audible before you read it |
 | capstone | a short `★` chime, shared by both ends of the ladder |
 
 ---
@@ -483,7 +614,11 @@ the collision branch, up/down movement, capstone/clank. Playable with placeholde
 random word-swapping. **§13.7's sibling cycling came along too** — see below, it changed shape.
 
 **M4 — the feel.** §6's two animations, §7's five SFX, final art, the How-to-Play / character modal copy
-(`updateCharacterModal`, already has a per-mode template pattern to follow).
+(`updateCharacterModal`, already has a per-mode template pattern to follow), **plus §2.5's shelf fan** —
+added to this milestone on 2026-08-23 because playing M3 showed that polish alone does not fix the
+complaint it was meant to fix: Keen's descent still reads as random, and the sideways sibling step is
+invisible. The fan is a mechanic rather than polish, so it is the bulk of M4's work; the typed-answer
+hard mode was explicitly held back to §12 (see §2.5.4).
 
 **What playing it actually shows (measured on the built corpus).** Keen Arrow from `dog` walks
 `puppy → hound → bloodhound → beagle → basset → harrier → foxhound → wolfhound → borzoi`, then clanks —
@@ -1108,6 +1243,13 @@ the two features are not merely ordered (M3 before M12's fill) but genuinely cou
 
 The bottom-rung clank still exists and is correct: `borzoi`'s parent `wolfhound` has exactly one child,
 so there is nothing narrower and nowhere sideways. General Ization is the way out.
+
+**What playing it then showed, and what §2.5 does about it.** Sibling cycling fills shelves, but it is
+*invisible*: two siblings carry an identical rung strip and share one `.ladder-move` flare, so a lateral
+hop is indistinguishable from a narrowing, and the mode reads as random word-swapping — the exact charge
+§2.4 was meant to answer. §2.5's shelf fan keeps this rule and **shows** it: the unvisited-first draw
+becomes the row's contents instead of a hidden pick, and at a leaf the row is explicitly *other kinds of
+hound*. The map stays an input to the game; it just stops being a secret one.
 
 ### 13.8 Dailies and spoilers
 
