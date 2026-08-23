@@ -875,6 +875,9 @@ span[data-hint] {
     font-size: 14px;
   }
 
+  /* updateCharacterModal writes into .modal--body, which brings its own padding. */
+  .modal--body > .char-modal { padding: 0; }
+
   .char-modal h2 {
     margin: 0 0 8px;
     font-size: 1.1rem;

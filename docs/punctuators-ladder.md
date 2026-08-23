@@ -7,7 +7,9 @@ both heroes sharing one span via `targetId`, up/down movement, capstone/clank, a
 **§2.5's shelf fan BUILT 2026-08-23** — Keen Arrow draws the word's narrower kinds as a row of shootable
 words and you pick one by walking under it, so the descent stops reading as random. He **goes down or
 not at all**: the leaf sidestep the fan replaced was removed the same day (§13.7).
-**What's left of M4** is §6's two animations, §7's SFX, final art and the modal copy.
+**The How-to-Play copy BUILT 2026-08-23** — a `ladder` template in `updateCharacterModal`, whose first
+tip is the rule the fan made unguessable: shooting a word no longer moves it.
+**What's left of M4** is §6's two animations, §7's SFX and final art.
 Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5 data layer BUILT
 the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
 `build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.
@@ -540,8 +542,8 @@ Character flips directly between them.
 | `SpanPlaceholder.js` | **BUILT** — `export const protectedLadders = withSpanPlaceholders(wrapLadders);` |
 | `utils/utils.js` | **BUILT** — `case "ladder":` in `addSpansAndIdsForWordPlay`; `targetId` in `heroToTheRescue` |
 | `punctuators.html` | **BUILT** — the `<option>`. *(The custom dropdown enumerates `sel.options` automatically — no extra work, as predicted.)* |
-| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`landOnRung`/`flashLadder` and the ladder branch in the collision chain. **§2.5's fan BUILT** — `openShelfFan`/`closeShelfFan`/`pickRung`/`drawShelfFanLines`/`shelfFanWidth`, the `data-ladder-child` split in the ladder branch, the `nodeArr` push/splice, and two guards at the top of the collision walk (`isConnected`, `projectile.ladderDone`); closed on hero switch, new sentence and resize. **Still to do (M4):** §7's SFX — both heroes borrow existing mp3s for now |
-| `index.css` | **BUILT** — `.word-ladder`, the `data-rung-strip` `::after`, `.ladder-move`, `.ladder-capstone`, and §2.5's `.shelf-fan` / `.shelf-fan-row` / `.shelf-child` / `.shelf-fan-caption` / `.shelf-fan-lines` (with the reduced-motion case that clears `stroke-dashoffset` rather than only killing the animation, or the lines would stay invisible). §6's `.izo-widen` / `.keen-narrow` are M4; `.ladder-move` is the one placeholder flare standing in for all of it |
+| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`landOnRung`/`flashLadder` and the ladder branch in the collision chain. **§2.5's fan BUILT** — `openShelfFan`/`closeShelfFan`/`pickRung`/`drawShelfFanLines`/`shelfFanWidth`, the `data-ladder-child` split in the ladder branch, the `nodeArr` push/splice, and two guards at the top of the collision walk (`isConnected`, `projectile.ladderDone`); closed on hero switch, new sentence and resize. **The `ladder` How-to-Play template BUILT** in `updateCharacterModal`, which now writes into `.modal--body` so the modal keeps its `×`. **Still to do (M4):** §7's SFX — both heroes borrow existing mp3s for now |
+| `index.css` | **BUILT** — `.word-ladder`, the `data-rung-strip` `::after`, `.ladder-move`, `.ladder-capstone`, and §2.5's `.shelf-fan` / `.shelf-fan-row` / `.shelf-child` / `.shelf-fan-caption` / `.shelf-fan-lines` (with the reduced-motion case that clears `stroke-dashoffset` rather than only killing the animation, or the lines would stay invisible), plus `.modal--body > .char-modal` for the How-to-Play copy. §6's `.izo-widen` / `.keen-narrow` are M4; `.ladder-move` is the one placeholder flare standing in for all of it |
 | `CLAUDE.md` | the Punctuators row flips to **BUILT** per milestone — done for M1–M3 + M12, still to do for M4 |
 
 **Guard message**, matching the existing three at `index.js:403–423`:
@@ -644,10 +646,21 @@ was the bulk of M4's work, and it is in: `shelfFor` in `ladderFunc.js`, the fan 
 (`openShelfFan`/`closeShelfFan`/`pickRung`/`landOnRung`), `.shelf-fan` in `index.css`. The typed-answer
 hard mode stayed out, in §12 (see §2.5.4).
 
+**The How-to-Play copy — BUILT 2026-08-23.** A `ladder` entry in `updateCharacterModal`'s `templates`,
+following Betar's pattern (lead → worked example → tips), shown on the existing **How to Play** button,
+which stays on screen through a round. It leads with the one rule the fan made unguessable — *Keen
+Arrow doesn't move the word* — and then glosses only things already on screen: the `▾` branch marker,
+§2.4's rung strip, the `+N more` fog count and why replaying changes the row, the clank and the route
+out of it, the capstone, and the 🌳 map. Two things came with it:
+
+- **It writes into `.modal--body`, not the whole `#modal`.** The original replaced the modal's entire
+  `innerHTML`, taking the header and its `×` with it — so Betar's modal was closable only by clicking
+  the overlay. Fixed for both modes; `.modal--body > .char-modal` drops the now-doubled padding.
+- The `modal` identifier the function used was never declared — it resolved through the DOM's
+  named-access-on-`window` for `id="modal"`. Now an explicit `getElementById`.
+
 **Still outstanding in M4:** §6's two animations (the fan currently reuses `.ladder-move`'s placeholder
-pulse), §7's five SFX including the new `_keenFan`, final art, and the How-to-Play / character modal
-copy (`updateCharacterModal`, already has a per-mode template pattern to follow) — which now has to
-explain the fan, since shooting a word no longer moves it.
+pulse), §7's five SFX including the new `_keenFan`, and final art.
 
 **What playing it shows, now that the fan is in (measured on the built corpus).** A hit on `dog` opens
 `hound▾ terrier▾ cur▾ spaniel▾ corgi▾ pointer▾ puppy · kinds of dog · +26 more` — six branches and the

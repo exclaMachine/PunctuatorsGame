@@ -724,6 +724,8 @@ removePuncButton.addEventListener("click", async () => {
 
   if (dropDownSelection === "alphabetNeighbors") {
     updateCharacterModal("alphabetNeighbors");
+  } else if (dropDownSelection === "ladder") {
+    updateCharacterModal("ladder");
   }
   // else if (dropDownSelection === "rounded") {
   //   updateCharacterModal("rounded");
@@ -760,9 +762,53 @@ function updateCharacterModal(selection) {
       </ul>
     </div>
   `,
+
+    // docs/punctuators-ladder.md §9 (M4). The load-bearing sentence is the first tip: since §2.5's
+    // fan, shooting a word no longer moves it, which is the one rule a player cannot infer from
+    // watching. Everything else here is a gloss on something already on screen — the rung strip, the
+    // ▾, the fog count, the clank, the capstone.
+    ladder: `
+    <div class="char-modal">
+      <h2>General &amp; Specific — General Ization &amp; Keen Arrow</h2>
+      <p class="lead">
+        Every naming word sits somewhere on a <strong>kind-of ladder</strong>: a <code>poodle</code>
+        is a kind of <code>dog</code>, a dog is a kind of <code>mammal</code>, a mammal is a kind of
+        <code>animal</code>. These two heroes move a word along that ladder, and
+        <strong>Switch Character</strong> is what picks the direction.
+      </p>
+
+      <div class="example">
+        <div>General</div>
+        <div><code>dog</code> → <code>mammal</code><small>one shot, one rung broader</small></div>
+        <div>Keen Arrow</div>
+        <div><code>hound▾</code> <code>terrier▾</code> <code>corgi</code> …<small>fans out the kinds of dog</small></div>
+        <div>Shoot one</div>
+        <div><code>dog</code> → <code>terrier</code><small>one rung narrower</small></div>
+      </div>
+
+      <ul class="tips">
+        <li><strong>Keen Arrow doesn't move the word.</strong> Hitting it fans the narrower kinds out
+          underneath — walk under the one you want and shoot <em>it</em>. A <code>▾</code> means that
+          kind has kinds of its own, so you can keep going down.</li>
+        <li>The little strip under a word is the ladder itself: <code>▲</code> a rung broader,
+          <code>●</code> you are here, <code>▼</code> a level of narrower kinds still below.</li>
+        <li><code>+25 more</code> means the shelf is wider than the row. Play the word again and
+          different kinds come up — that's how you work through a big family.</li>
+        <li>A word with nothing narrower <strong>clanks</strong>. Broaden it with General Ization and
+          narrow again: a word's neighbours are the other kinds on its parent's row.</li>
+        <li>At the top of the ladder the word <strong>flares and stays</strong>.
+          <code>animal</code> is the answer, not a miss.</li>
+        <li>Every word you land on lights up in the <strong>🌳 Tree of Kinds</strong>.</li>
+      </ul>
+    </div>
+  `,
   };
 
-  modal.innerHTML =
+  // Write into the body, not the whole modal: the header carries the × close button, and replacing
+  // it left the modal closable only by clicking the overlay.
+  const box = document.getElementById("modal");
+  if (!box) return;
+  (box.querySelector(".modal--body") ?? box).innerHTML =
     templates[selection] ??
     `
   <div class="char-modal">
