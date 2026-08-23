@@ -2471,6 +2471,13 @@ function restingY(hero) {
   return canvas.height - hero.height + 20;
 }
 
+// The same horizontal range the arrow keys allow — a hero may hang half its
+// width off either edge. Used when a hero inherits another's spot, so a wide
+// hero taking over from a narrow one can't land somewhere unwalkable.
+function clampHeroX(x, hero) {
+  return Math.min(Math.max(x, -hero.width / 2), canvas.width - hero.width / 2);
+}
+
 // Slide the current hero down off the bottom of the screen, swap in the next
 // hero, then slide it up from the bottom into its resting position.
 function switchToNextHero() {
@@ -2510,7 +2517,12 @@ function switchToNextHero() {
     player = next;
     nameTag.innerText = player.symbol;
     root.style.setProperty("--color", player.characterColor);
-    player.position.x = canvas.width / 2 - player.width / 2;
+    // The incoming hero takes over the outgoing hero's spot rather than
+    // recentring, and it's the *centre* that's carried: heroes differ hugely in
+    // width (Keen Arrow 40px, Betar 320) and the projectile spawns off the
+    // hero's centre, so matching centres keeps the switch under your aim.
+    const centreX = current.position.x + current.width / 2;
+    player.position.x = clampHeroX(centreX - player.width / 2, player);
     player.position.y = canvas.height;
     requestAnimationFrame(slideIn);
   };
