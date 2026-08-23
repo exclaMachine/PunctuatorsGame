@@ -11,7 +11,7 @@ not at all**: the leaf sidestep the fan replaced was removed the same day (§13.
 tip is the rule the fan made unguessable: shooting a word no longer moves it.
 **§6's two landing animations BUILT 2026-08-23** — General's camera pull-back and Keen's lens snap,
 plus the picked child flying out of the row into the word, and a drawn broadsword for General's
-projectile. **What's left of M4** is §7's SFX and final hero art.
+projectile. **§7's six SFX BUILT 2026-08-23** too. **All that's left of M4 is final hero art.**
 Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5 data layer BUILT
 the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
 `build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.
@@ -544,7 +544,7 @@ Character flips directly between them.
 | `SpanPlaceholder.js` | **BUILT** — `export const protectedLadders = withSpanPlaceholders(wrapLadders);` |
 | `utils/utils.js` | **BUILT** — `case "ladder":` in `addSpansAndIdsForWordPlay`; `targetId` in `heroToTheRescue` |
 | `punctuators.html` | **BUILT** — the `<option>`. *(The custom dropdown enumerates `sel.options` automatically — no extra work, as predicted.)* |
-| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`landOnRung`/`flashLadder` and the ladder branch in the collision chain. **§2.5's fan BUILT** — `openShelfFan`/`closeShelfFan`/`pickRung`/`drawShelfFanLines`/`shelfFanWidth`, the `data-ladder-child` split in the ladder branch, the `nodeArr` push/splice, and two guards at the top of the collision walk (`isConnected`, `projectile.ladderDone`); closed on hero switch, new sentence and resize. **The `ladder` How-to-Play template BUILT** in `updateCharacterModal`, which now writes into `.modal--body` so the modal keeps its `×`. **§6's animations BUILT** — `animateLadderSwap` + `ladderPullBack`/`ladderLensSnap`/`flyPickedChild`, the `pulse` parameter on `openShelfFan`, and `drawBroadswordSprite()`/`GENERAL_PROJECTILE`. **Still to do (M4):** §7's SFX — both heroes borrow existing mp3s for now |
+| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`landOnRung`/`flashLadder` and the ladder branch in the collision chain. **§2.5's fan BUILT** — `openShelfFan`/`closeShelfFan`/`pickRung`/`drawShelfFanLines`/`shelfFanWidth`, the `data-ladder-child` split in the ladder branch, the `nodeArr` push/splice, and two guards at the top of the collision walk (`isConnected`, `projectile.ladderDone`); closed on hero switch, new sentence and resize. **The `ladder` How-to-Play template BUILT** in `updateCharacterModal`, which now writes into `.modal--body` so the modal keeps its `×`. **§6's animations BUILT** — `animateLadderSwap` + `ladderPullBack`/`ladderLensSnap`/`flyPickedChild`, the `pulse` parameter on `openShelfFan`, and `drawBroadswordSprite()`/`GENERAL_PROJECTILE`. **§7's SFX BUILT** — `_izoShoot`/`_izoHit`/`_keenShoot`/`_keenHit`/`_keenFan`/`_ladderCapstone` beside the other heroes' synth pairs, played from the ladder branch rather than from the generic hit call site (both heroes' `hitProjectileSound()` is silent), and the borrowed mp3s dropped from both constructors. **Still to do (M4):** nothing but real hero art |
 | `index.css` | **BUILT** — `.word-ladder`, the `data-rung-strip` `::after`, `.ladder-capstone`, and §2.5's `.shelf-fan` / `.shelf-fan-row` / `.shelf-child` / `.shelf-fan-caption` / `.shelf-fan-lines` (with the reduced-motion case that clears `stroke-dashoffset` rather than only killing the animation, or the lines would stay invisible), plus `.modal--body > .char-modal` for the How-to-Play copy. **§6 BUILT** — the placeholder `.ladder-move` is gone, replaced by `.ladder-face` / `.ladder-ghost` (the two boxes a swap is built from; the keyframes themselves are WAAPI, in `index.js`), `.ladder-aperture` (the fan-open flicker) and `.shelf-child-picked` (the clone that flies into the word). `.ladder-capstone` stayed but went from `text-shadow` to `drop-shadow`, which stops it blanking the word's black outline for the length of the flare |
 | `CLAUDE.md` | the Punctuators row flips to **BUILT** per milestone — done for M1–M3 + M12, still to do for M4 |
 
@@ -611,19 +611,32 @@ Reduced motion: a straight swap, as `animateAnagramSwirl` already does, and no f
 
 ---
 
-## 7. Sound
+## 7. Sound — BUILT 2026-08-23
 
-Use the existing Web Audio kit (`_tone` / `_noise`, `index.js:566/583`) — no new assets, consistent with
-every other hero's `_xxxShoot` / `_xxxHit` pair.
+Built on the existing Web Audio kit (`_tone` / `_noise`) — no new assets, consistent with every other
+hero's `_xxxShoot` / `_xxxHit` pair.
 
 | | |
 | --- | --- |
-| `_izoShoot` | a bugle-ish rising third — a general's call |
-| `_izoHit` | a **descending, widening** low pad — the pull-back |
-| `_keenShoot` | `_noise` bow-thrum + a fast rising blip — the loosed arrow |
-| `_keenHit` | a sharp high tick — the arrow landing on one thing |
-| `_keenFan` | §2.5's fan opening — a quick fanned-out flutter of ticks, one per child drawn, so the row's *size* is audible before you read it |
-| capstone | a short `★` chime, shared by both ends of the ladder |
+| `_izoShoot` | a bugle-ish rising third — a general's call. G4→B4 in `square` over an octave-down `triangle` body; the harmonic series is most of why a bugle call reads as military |
+| `_izoHit` | a **descending, widening** low pad — the pull-back. Two voices start together and pull *apart* as they fall, so the interval widens on the way down: the same gesture `ladderPullBack` makes with the word. A 2 Hz detune leaves a slow beat under it, which keeps a low pad from sounding like one flat organ note |
+| `_keenShoot` | `_noise` bow-thrum + a fast rising blip — the loosed arrow. A high-Q band down at 220 Hz thrums rather than hisses |
+| `_keenHit` | a sharp high tick — the arrow landing on one thing. 45 ms, the shortest cue in the game |
+| `_keenFan` | §2.5's fan opening — a flutter of ticks, one per child drawn, so the row's *size* is audible before you read it: a three-word shelf and a seven-word shelf are different sounds. Pitch climbs across the row the way the eye travels it. Takes a `delay`, used when the fan re-opens straight after a landing so `_keenHit` speaks first |
+| `_ladderCapstone` | a short `★` chime — a bright major triad, shared by both ends of the ladder. It must not sound like a buzzer: `animal` IS the answer, and a leaf having no kinds is a fact about the word rather than a miss |
+
+**Six cues, not the usual two, and that changed where they are played from.** Every other hero's hit
+means one thing, so the generic `player.hitProjectileSound()` call site works. A ladder hit means one
+of four — a rung climbed, a shelf fanned open, or either end of the chain reached — and *which* is
+only known inside the handler. So both hero classes override `hitProjectileSound()` to **silence**,
+and the ladder branch plays the outcome's own cue: `landOnRung` picks `_izoHit`/`_keenHit` off
+`ladderDirection`, `openShelfFan` plays `_keenFan(children.length)`, and `climbLadder` plays
+`_ladderCapstone` at both dead ends. `shootProjectileSound()` stays conventional. The borrowed
+`whoosh.mp3` / `featherSwish.mp3` were dropped from both constructors, matching how every other
+synth hero (Ambigrambador, Sergeant Colon, …) passes `undefined` there.
+
+`openShelfFan`'s `pulse` flag turned out to carry the audio timing too: it is false exactly when a
+landing just happened, which is exactly when the flutter should wait a beat for the hit tick.
 
 ---
 
@@ -672,7 +685,7 @@ the collision branch, up/down movement, capstone/clank. Playable with placeholde
 random word-swapping. **§13.7's sibling cycling came along too**, and was then **removed the same day**
 once §2.5's fan made it redundant — see §13.7.
 
-**M4 — the feel. §2.5's shelf fan and §6's animations BUILT 2026-08-23; §7's SFX and final art outstanding.** The fan was added to this
+**M4 — the feel. §2.5's shelf fan, §6's animations and §7's SFX all BUILT 2026-08-23; final hero art outstanding.** The fan was added to this
 milestone because playing M3 showed polish alone does not fix what it was for — Keen's descent still
 read as random, and the sideways sibling step was invisible. Being a mechanic rather than polish, it
 was the bulk of M4's work, and it is in: `shelfFor` in `ladderFunc.js`, the fan block in `index.js`
@@ -700,7 +713,12 @@ as a data URL, so real art is a one-string swap later. The one thing the build h
 stale-settle guard — §2.5 lets a second shot land while the first swap is still in flight, which the
 spec never had to think about because the placeholder was a single class with a timer.
 
-**Still outstanding in M4:** §7's five SFX including the new `_keenFan`, and final hero art.
+**§7's SFX — BUILT 2026-08-23.** All six, on the existing `_tone`/`_noise` kit. The one thing the
+build had to decide was *where they play from*: six cues across four outcomes don't fit the generic
+one-hit-one-sound call site every other hero uses, so both ladder heroes' `hitProjectileSound()` is
+silent and the handlers own the audio (§7).
+
+**Still outstanding in M4:** final hero art, and nothing else.
 
 **What playing it shows, now that the fan is in (measured on the built corpus).** A hit on `dog` opens
 `hound▾ terrier▾ cur▾ spaniel▾ corgi▾ pointer▾ puppy · kinds of dog · +26 more` — six branches and the

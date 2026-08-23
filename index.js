@@ -511,6 +511,9 @@ function openShelfFan(span, hero, pulse = true) {
   // happened next to the word rather than to it. The fan is not a swap — the word stays put — so
   // §6's mark here is an aperture flicker in the hero's colour rather than a movement.
   if (pulse) flashLadder(span, hero, "ladder-aperture");
+  // §7. `pulse` is false exactly when a landing just happened, which is also exactly when the
+  // flutter should wait a beat for _keenHit's tick.
+  _keenFan(children.length, pulse ? 0 : 0.07);
   return true;
 }
 
@@ -714,6 +717,10 @@ function landOnRung(span, rung, hero) {
   span.style.textShadow =
     "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
   ladderMapVisit(rung);
+  // §7. The landing sound is the direction's, not the hero's generic hit — see the note on the two
+  // hero classes for why hitProjectileSound() is silent for these two.
+  if (hero.ladderDirection === "up") _izoHit();
+  else _keenHit();
   animateLadderSwap(span, shown, renderRung(rung, original, plural), hero);
 }
 
@@ -746,6 +753,7 @@ function climbLadder(span, hero, projectile) {
     const next = ladderParentOf(current);
     if (!next) {
       flashLadder(span, hero, "ladder-capstone"); // the capstone: `animal` IS the answer
+      _ladderCapstone();
       return;
     }
     landOnRung(span, next, hero);
@@ -754,7 +762,10 @@ function climbLadder(span, hero, projectile) {
 
   // Keen Arrow shows the shelf rather than choosing from it, and goes down or not at all — a clank
   // means simply "this word has no narrower kinds". General Ization is the way out of one.
-  if (!openShelfFan(span, hero)) flashLadder(span, hero, "ladder-capstone");
+  if (!openShelfFan(span, hero)) {
+    flashLadder(span, hero, "ladder-capstone");
+    _ladderCapstone(); // the same chime as the top: a leaf having no kinds is a fact, not a miss
+  }
 }
 
 /* Shooting one of the fanned words. The word becomes that rung and the fan re-opens on it, so a run
@@ -1270,6 +1281,60 @@ function _knightHit() {
   _noise(0.07, 0.38, 3500, 2);
 }
 
+/* General Ization & Keen Arrow — the word ladder (docs/punctuators-ladder.md §7).
+   Six cues rather than the usual two, because a ladder hit has four outcomes, not one: you moved a
+   rung, you opened a shelf, or you reached an end. Which one happened is only known inside the
+   handler, so the two heroes' hitProjectileSound() are deliberately silent and the ladder branch
+   plays its own landing sound — see the note on their classes. */
+
+// A bugle can only sound the harmonic series, which is most of why a bugle call reads as military.
+// Two notes rising a third, over an octave-down body: a general calling the wider view.
+function _izoShoot() {
+  _tone(392, "square", 0.12, 0.14);
+  _tone(494, "square", 0.26, 0.16, null, 0.1);
+  _tone(196, "triangle", 0.34, 0.09, null, 0.1);
+}
+
+// The pull-back, as sound: two voices start together and pull APART as they fall, so the interval
+// widens on the way down — the same gesture ladderPullBack makes with the word. The 2 Hz detune
+// leaves a slow beat under it, which keeps a low pad from sounding like one flat organ note.
+function _izoHit() {
+  _tone(240, "sine", 0.55, 0.2, 110);
+  _tone(238, "triangle", 0.6, 0.14, 74);
+  _tone(120, "sine", 0.5, 0.12, 55, 0.06);
+}
+
+// Bowstring, then the arrow off it: a high-Q band of noise down at 220 thrums rather than hisses.
+function _keenShoot() {
+  _noise(0.12, 0.3, 220, 8);
+  _tone(500, "sine", 0.09, 0.16, 1400);
+}
+
+// Landing on one thing, and nothing either side of it — the shortest cue in the game.
+function _keenHit() {
+  _tone(2200, "square", 0.045, 0.16, 1500);
+  _noise(0.05, 0.22, 3200, 2);
+}
+
+/* §2.5's fan opening: one tick per child drawn, so the row's SIZE is audible before it is readable —
+   a three-word shelf and a seven-word shelf are different sounds. Pitch climbs across the row the
+   way the eye travels it. `delay` offsets the whole flutter when the fan is re-opening straight
+   after a landing, so _keenHit's tick gets to speak first. */
+function _keenFan(n, delay = 0) {
+  for (let i = 0; i < n; i++) {
+    _tone(900 + i * 110, "triangle", 0.05, 0.11, null, delay + i * 0.035);
+    _noise(0.03, 0.06, 2600, 3, delay + i * 0.035);
+  }
+}
+
+// Both ends of the ladder, shared: a bright major triad, because `animal` IS the answer and a leaf
+// having no kinds is a fact about the word, not a miss. It must not sound like a buzzer.
+function _ladderCapstone() {
+  [784, 1047, 1319].forEach((f, i) =>
+    _tone(f, "sine", 0.5, 0.16, null, i * 0.06),
+  );
+}
+
 // Zana — quick insertion pop (shoot) / click (hit)
 function _zanaShoot() {
   _tone(900, "sine", 0.06, 0.45, 200);
@@ -1718,7 +1783,7 @@ class GeneralIzation extends Hero {
       90,
       50,
       GENERAL_PROJECTILE,
-      "./sounds/whoosh.mp3",
+      undefined,
       0.2,
       undefined,
       undefined,
@@ -1727,6 +1792,14 @@ class GeneralIzation extends Hero {
     this.targetId = LADDER_ID;
     this.ladderDirection = "up";
   }
+  shootProjectileSound() {
+    _izoShoot();
+  }
+  /* Deliberately silent (§7). Every other hero's hit means one thing, so playing it from the
+     generic call site works; a ladder hit means one of four — a rung climbed, a shelf fanned open,
+     or either end of the chain reached — and only the handler knows which. landOnRung and
+     climbLadder play the outcome's own cue instead. */
+  hitProjectileSound() {}
 }
 
 class KeenArrow extends Hero {
@@ -1739,7 +1812,7 @@ class KeenArrow extends Hero {
       20,
       50,
       "./images/Arrow.png",
-      "./sounds/featherSwish.mp3",
+      undefined,
       0.25,
       undefined,
       undefined,
@@ -1748,6 +1821,10 @@ class KeenArrow extends Hero {
     this.targetId = LADDER_ID;
     this.ladderDirection = "down";
   }
+  shootProjectileSound() {
+    _keenShoot();
+  }
+  hitProjectileSound() {} // silent for the same reason as General's — see there
 }
 
 class CommaChameleon extends Hero {
