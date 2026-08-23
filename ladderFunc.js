@@ -1,5 +1,5 @@
 /* ladderFunc.js — General Ization & Keen Arrow, the "is a kind of" ladder.
-   docs/punctuators-ladder.md §§2–4 (the mode, the span, the data) and §13.7 (sibling cycling).
+   docs/punctuators-ladder.md §§2–4 (the mode, the span, the data) and §2.5 (the shelf fan).
 
    This module owns the WORD side of the mode: loading the corpus, deciding which words in a sentence
    can climb, wrapping them, and answering "what is one rung up / down from here". index.js owns the
@@ -123,11 +123,17 @@ function fillUnvisitedFirst(out, pool, target, seen) {
 }
 
 /**
- * The row of words to fan out beneath `word`, or null when there is nowhere to go (a clank).
+ * The row of narrower kinds to fan out beneath `word`, or null at a leaf — which is a clank.
  *   width — how many slots fit on screen; index.js measures it per draw
  *   seen  — (w) => has the player landed on w before? (ladderMapHas — passed in rather than imported
  *           so this file stays independent of the map)
- * Returns { kind: "children"|"siblings", under, items: [{word, branch}], hidden, total }.
+ * Returns { items: [{word, branch}], hidden, total }.
+ *
+ * Children only, never siblings: Keen Arrow goes down or nowhere (§2.3). A row of siblings would
+ * make one hero's one action mean two different things — narrow, or shuffle along the shelf you are
+ * already on — and the two are indistinguishable once drawn. The sideways move still exists, it just
+ * costs the honest route: broaden to the parent with General, then narrow again, where the parent's
+ * own row IS the sibling list. §13.7 is unaffected, because shelves fill from the parent's row.
  *
  * Why the tiers (all measured on the built corpus): the median shelf holds 2 children and 80% hold
  * ≤6, so most shelves simply fit. The words people actually type are the tail — dog 33, tree 107,
@@ -139,19 +145,8 @@ function fillUnvisitedFirst(out, pool, target, seen) {
 export function shelfFor(word, width, seen = () => false) {
   if (!DOWN) return null;
 
-  // A leaf has no narrower kinds, so the shelf it belongs to is its parent's. This is what turns
-  // §13.7's sideways step from a mystery word-swap into a visible walk along a named shelf.
-  let kind = "children";
-  let under = word;
-  let list = DOWN.get(word);
-  if (!list || !list.length) {
-    const parent = UP.get(word);
-    const siblings = parent && DOWN.get(parent);
-    if (!siblings || siblings.length < 2) return null; // nothing narrower, nowhere sideways
-    kind = "siblings";
-    under = parent;
-    list = siblings.filter((w) => w !== word);
-  }
+  const list = DOWN.get(word);
+  if (!list || !list.length) return null; // a leaf: nothing narrower, and no sidestep on offer
 
   const total = list.length;
   const items = [];
@@ -168,8 +163,6 @@ export function shelfFor(word, width, seen = () => false) {
   }
 
   return {
-    kind,
-    under,
     items: items.map((w) => ({ word: w, branch: DOWN.has(w) })),
     hidden: total - items.length,
     total,
@@ -231,9 +224,10 @@ export const hasLadders = (sentence) => {
 };
 
 /* One span shape serves both heroes (§2.2). data-ladder-word is the authoritative state — the rung
-   currently shown — because sibling cycling means the path down is decided shot by shot rather than
-   baked in at wrap time. data-ladder / data-rung still hold the chain running through that rung, but
-   index.js recomputes them on every landing so they never go stale under a sideways step. */
+   currently shown — because the player picks the path out of the shelf fan (§2.5), so the way down is
+   decided shot by shot rather than baked in at wrap time. data-ladder / data-rung still hold the
+   chain running through that rung, but index.js recomputes them on every landing so they never go
+   stale once a descent takes anything but the first child. */
 export const wrapLadders = (sentence) => {
   if (!DOWN) return sentence;
 

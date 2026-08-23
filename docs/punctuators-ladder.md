@@ -3,9 +3,10 @@
 **Status: free play is PLAYABLE. M1 (the data) BUILT 2026-08-22 — `build-ladders.py` + `ladderPOJO.js`.
 **M2 (the mode) + M3 (the heroes) BUILT 2026-08-23** — `ladderFunc.js`, the `General & Specific` option,
 both heroes sharing one span via `targetId`, up/down movement, capstone/clank, and §2.4's rung strip
-(pulled forward from M4). **M12's sibling-cycling half landed with them**, so the Tree of Kinds now fills
-as you play. **§2.5's shelf fan BUILT 2026-08-23** — Keen Arrow now draws the word's narrower kinds as a
-row of shootable words and you pick one by walking under it, so the descent stops reading as random.
+(pulled forward from M4). **M12's fill landed with them**, so the Tree of Kinds fills as you play.
+**§2.5's shelf fan BUILT 2026-08-23** — Keen Arrow draws the word's narrower kinds as a row of shootable
+words and you pick one by walking under it, so the descent stops reading as random. He **goes down or
+not at all**: the leaf sidestep the fan replaced was removed the same day (§13.7).
 **What's left of M4** is §6's two animations, §7's SFX, final art and the modal copy.
 Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5 data layer BUILT
 the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
@@ -107,10 +108,10 @@ One span shape serves both heroes:
 | | |
 | --- | --- |
 | **General Ization hits** | `rung + 1` (right, broader) |
-| **Keen Arrow hits** | Opens the word's shelf (§2.5) rather than moving it. The word moves when you shoot one of the fanned words — `rung − 1` if you picked a child, sideways along the shelf if the word was a leaf. |
+| **Keen Arrow hits** | Opens the word's shelf (§2.5) rather than moving it. The word moves to `rung − 1` when you shoot one of the fanned words. **Down or not at all** — he never steps sideways; see §13.7. |
 | **Repeatable** | A word never locks. Climb up, climb back down, climb up again. |
 | **At the top rung** | No move. **Capstone flourish**: the word flares, a `★` beat plays, the ladder holds. |
-| **At the bottom rung** | Same, mirrored (a "clank" — the arrow can't cut finer). Since §2.5, this means *no shelf at all*: no narrower kinds **and** no siblings to walk to. |
+| **At the bottom rung** | Same, mirrored (a "clank" — the arrow can't cut finer). Since §2.5 this means exactly one thing: the word has no narrower kinds. To reach its neighbours, broaden to the parent with General and narrow again — the parent's row *is* the sibling list. |
 | **Case** | The typed word's capitalization is re-applied to each rung (rungs are stored lowercase). **Not** Betar's `matchCase`, as planned: that copies capitals *position by position*, which only works because an alphabet neighbour is the same length as its word. `applyLadderCase` copies the **shape** instead — ALL CAPS stays all caps, Leading cap stays leading. |
 | **Plurals** | If the typed word was a plural (`dogs`), the chain is built from the lemma and each rung is re-pluralized. v1 uses a naive `+s`/`+es` rule and only for regular plurals; irregulars (`mice`) are wrapped at the lemma and displayed as-is. See §3.4. |
 
@@ -129,14 +130,15 @@ otherwise be a silent no-op.
 
 ### 2.5 The shelf fan — BUILT 2026-08-23
 
-**The problem.** Keen Arrow's descent is fully deterministic — first unvisited child, then a sideways
-sweep of unvisited siblings (§13.7) — but it *plays* as random word-swapping, which is the one thing
+**The problem.** Keen Arrow's descent was fully deterministic — first unvisited child, then a sideways
+sweep of unvisited siblings (§13.7) — but it *played* as random word-swapping, which is the one thing
 §2.4 was supposed to prevent. Three reasons, measured against the built corpus:
 
-- **The sideways step is invisible.** At a leaf, `bloodhound → beagle` is not a narrowing at all, it is
+- **The sideways step was invisible.** At a leaf, `bloodhound → beagle` is not a narrowing at all, it is
   a lateral hop along a shelf. The rung strip is *identical* for two siblings (`▲▲▲●` both), and
   `.ladder-move` is the same flare for up, down and across. The one move that isn't "more specific"
-  looks exactly like the ones that are.
+  looked exactly like the ones that are. **The sidestep has since been removed outright** (§13.7) —
+  drawing the row made it clear the move was buying nothing that the parent's own row doesn't.
 - **Unvisited-first makes replays diverge.** Shooting `dog` gives `puppy` today and `terrier` tomorrow.
   That is deliberate and load-bearing, but from the player's chair it is an unexplained change.
 - **No agency.** Which of `dog`'s 33 children you get is chosen *for* you; the only input is "shoot".
@@ -190,10 +192,12 @@ and replaying keeps the value §13.7 gave it. (Branch lists exceed the row width
 whole corpus — `person`:176, `action`:79, `quality`:77 — so branch rotation is the rare path, but it
 uses the same unvisited-first draw.)
 
-**At a leaf, the fan shows siblings, labelled as such.** `bloodhound` has no children, so the row is
-*other kinds of hound*, drawn under a visibly different header. This is the half of the feature that
-answers the original complaint: the lateral move stops being a mystery word-swap and becomes a
-deliberate step along a named shelf.
+**At a leaf there is no row — that is a clank.** `shelfFor` returns children or nothing; it never falls
+back to siblings, because **Keen Arrow goes down or not at all** (§2.3). A sibling row would make one
+hero's one action mean two different things, narrow or shuffle sideways, and once drawn the two are
+indistinguishable. The sideways move is still reachable and now reads as what it is: broaden to the
+parent with General, then narrow again, where the parent's row *is* the sibling list. See §13.7 for why
+this does not re-open the unfillable-map problem that sibling cycling was built to solve.
 
 **Row capacity is measured, not constant.** At the desktop `#output` size (300%, ~48px) a child at
 `0.45em` averages ~85px plus gap, so ~11 fit across a 1200px viewport; on a phone (`#output` 30px)
@@ -205,7 +209,7 @@ one narrower than 3 isn't a choice.
 
 | | |
 | --- | --- |
-| **Opens** | Keen Arrow hits the word and it has somewhere to go (children, or siblings at a leaf). |
+| **Opens** | Keen Arrow hits a word that has narrower kinds. A leaf has none, so it clanks instead. |
 | **The word is behind the fan** | The row hangs below the word, i.e. *in the flight path*. While the fan is open the children are what you can hit; the parent is shielded. This falls out of the geometry rather than needing a rule. |
 | **Shots through the gaps** | Pass between children and carry on upward to whatever word is above — which may be the parent (re-fans, harmless) or a neighbouring sentence word. Collision is per-span rect, so this is free and correct. |
 | **Closes** | A child is shot (the word becomes that child and the fan re-opens on the new rung, if it has one); or Switch Character; or the round ends. |
@@ -630,7 +634,8 @@ planned. Two things came out differently: the corpus is **lazy-loaded** (§3.3, 
 one-line changes, all 23 existing heroes untouched. Both hero classes, adjacent in `availableHeroArray`,
 the collision branch, up/down movement, capstone/clank. Playable with placeholder art (`Generic.png` /
 `Arrow.png`, §8) and borrowed SFX. **§2.4's rung strip came along**, because without it the mode reads as
-random word-swapping. **§13.7's sibling cycling came along too** — see below, it changed shape.
+random word-swapping. **§13.7's sibling cycling came along too**, and was then **removed the same day**
+once §2.5's fan made it redundant — see §13.7.
 
 **M4 — the feel. §2.5's shelf fan BUILT 2026-08-23; the rest outstanding.** The fan was added to this
 milestone because playing M3 showed polish alone does not fix what it was for — Keen's descent still
@@ -649,10 +654,12 @@ explain the fan, since shooting a word no longer moves it.
 one rotating bud slot. Play it again with those lit and the row re-draws as
 `watchdog▾ sheepdog▾ hound▾ terrier▾ cur▾ spaniel▾ pug`, and again for `mutt`: the shelf comes through a
 few words at a time, so **replaying is still what fills a wide shelf**, exactly as §13.7 intended — the
-difference is that you can now see it happening and choose within it. A leaf shows its shelf instead of
-hopping along it invisibly: `bloodhound` opens `other kinds of hound` (`wolfhound▾ greyhound▾ beagle
-basset harrier foxhound redbone · +6 more`). The clank survives where it should — `borzoi`'s parent
-`wolfhound` has exactly one child, so there is no row to draw and General Ization is the way out.
+difference is that you can now see it happening and choose within it.
+
+A leaf clanks, because Keen Arrow goes **down or not at all** (§13.7). The round trip is the point:
+`bloodhound` clanks, General broadens it to `hound`, and `hound`'s row is
+`wolfhound▾ greyhound▾ bloodhound beagle basset harrier foxhound · +7 more` — the siblings, reached by
+a route that shows why they are siblings.
 
 **The sense trap reaches free play too, mildly.** `The poodle chased a cat` lights `chased`, which is a
 real WordNet noun (`chased → victim → person`, "the chased"). §11.4 already catalogues this and rules it
@@ -1253,32 +1260,31 @@ Three ways in, and the map needs at least one:
 | Source | Fills shelves? |
 | ------ | -------------- |
 | **Free play with a first-child-only Keen Arrow** | **No** — every shelf caps at 1. |
-| **Sibling cycling** (promoted out of §15, **built with M3**) | **Yes** — a shot at the bottom rung walks the sibling list, which is the shipped `ladderDown` string verbatim (§3.3). |
+| ~~**Sibling cycling**~~ (built with M3, **removed 2026-08-23** — see below) | Yes, but it is no longer how this happens. |
+| **§2.5's shelf fan** (the answer as it stands) | **Yes** — the row *is* the shelf, so a parent's whole child list is reachable by picking from it, and the rotating bud slot brings the rest through on replays. |
 | **Word Race** (§12.2) | **Yes** — typing summons any descendant, so the Race fills shelves as a side effect of being played. |
 
-**As built, sibling cycling grew a second half.** The plan was one rule; two were needed, because a
-sideways step alone still leaves the *descent* stuck in a rut:
+**The unvisited-first rule is what survives, and it is the part that matters.** Keen Arrow's row is
+drawn **unvisited first**, and "unvisited" reads `ladderMapHas()`, the map's own record. **That makes
+the Tree of Kinds an input to the game and not only a scoreboard** — it steers the row toward what you
+have not seen, and it is why replaying a sentence is worth anything. The two features are not merely
+ordered (M3 before M12's fill) but genuinely coupled.
 
-- at a word that **has** narrower kinds, Keen Arrow picks one **you have not landed on yet**;
-- at a word that has **none** — the bottom rung — he steps sideways to the next **unvisited** sibling.
+**Sibling cycling — the leaf sidestep — was removed on 2026-08-23, and the fan is why it could be.**
+It was built to solve this section's problem back when Keen had to move *somewhere* or do nothing, and
+it did so by giving one hero's one action two meanings: narrow, or shuffle along the shelf you are
+already standing on. Once the row is drawn, those two are indistinguishable on screen, and shelves fill
+from the **parent's** row anyway — so the sidestep was buying nothing and costing clarity. Keen Arrow
+now **goes down or not at all**.
 
-Both fall back to plain positional cycling once everything on a shelf is lit, so the word always moves.
-The interesting part is where "unvisited" comes from: it reads `ladderMapHas()`, the map's own record.
-**That makes the Tree of Kinds an input to the game and not only a scoreboard** — it is what steers Keen
-Arrow toward what you have not seen, and it is why replaying a sentence is worth anything. It also means
-the two features are not merely ordered (M3 before M12's fill) but genuinely coupled.
+The sideways move still exists; it just costs the honest route. `bloodhound` clanks, General Ization
+broadens it to `hound`, and `hound`'s own row **is** the sibling list — `wolfhound▾ greyhound▾
+bloodhound beagle basset harrier foxhound · +7 more`. Two deliberate shots instead of one ambiguous
+one, and the up-then-down shape is the hierarchy teaching itself.
 
-The bottom-rung clank still exists and is correct: `borzoi`'s parent `wolfhound` has exactly one child,
-so there is nothing narrower and nowhere sideways. General Ization is the way out.
-
-**What playing it then showed, and what §2.5 did about it — BUILT 2026-08-23.** Sibling cycling fills
-shelves, but it was *invisible*: two siblings carry an identical rung strip and shared one
-`.ladder-move` flare, so a lateral hop was indistinguishable from a narrowing and the mode read as
-random word-swapping — the exact charge §2.4 was meant to answer. The shelf fan keeps this rule and
-**shows** it: the unvisited-first draw now chooses the row's *contents* rather than the player's move
-(the code moved from `nextUnvisitedRung` in `index.js` into `shelfFor` in `ladderFunc.js`), and at a
-leaf the row is explicitly captioned *other kinds of hound*. The map stays an input to the game; it
-just stopped being a secret one.
+The bottom-rung clank is now simply "this word has no narrower kinds", which is 84% of the corpus by
+count but far less in practice, since the words people type are usually mid-chain. `borzoi` still
+clanks for the same reason it always did.
 
 ### 13.8 Dailies and spoilers
 
@@ -1308,7 +1314,7 @@ routing game** (§12.3). A player with the map open is reading the answer rather
 | File | Change |
 | ---- | ------ |
 | `ladderMap.js` | **new — BUILT 2026-08-23** — `buildForest()`/`packForest()` (one pass on first open), the LOD draw, pan/zoom/hit-test, the visited set + storage, and the `ladderMapVisit()` seam. No new data file. Shelf math is M13. |
-| `index.js` | **BUILT:** `initLadderMap()` + the button wiring; **and as of M3**, `ladderMapVisit()` on every rung landed on (including the one you were standing on, so the word you typed lights the first time you shoot it) plus sibling cycling in the collision branch, which reads `ladderMapHas()` back out (§13.7). **Still to do:** the daily-run guard (§13.8) — M14; passed-through rungs on a §12.2 jump — needs Word Race |
+| `index.js` | **BUILT:** `initLadderMap()` + the button wiring; **and as of M3**, `ladderMapVisit()` on every rung landed on (including the one you were standing on, so the word you typed lights the first time you shoot it). The `ladderMapHas()` read-back that steers the game (§13.7) now lives in `ladderFunc.js`'s `shelfFor`, where it orders the shelf fan's row. **Still to do:** the daily-run guard (§13.8) — M14; passed-through rungs on a §12.2 jump — needs Word Race |
 | `punctuators.html` | **BUILT** — the 🌳 button + the overlay markup. *Not* a `.modal`: that pattern is capped at 500 px and centred by transform, and a map wants the whole window |
 | `index.css` | **BUILT** — the panel, the bar, the canvas, the hover readout. The gold shelf state is M13 |
 | `CLAUDE.md` | the Punctuators row per milestone |
@@ -1332,10 +1338,11 @@ visited set. Three deviations from the spec, each with its reason recorded above
   visited)` around the label, and shipping an intermediate that prints every leaf name would spoil
   answers that M13 would then have to take back.
 
-**M12's other half — sibling cycling and the fill — BUILT 2026-08-23, with M3.** It was blocked on there
-being a ladder collision branch at all; once M3 wrote one, the seam was three calls: `ladderMapVisit()` on
-both the rung you were standing on and the rung you land on, and `ladderMapHas()` back out to choose the
-next one (§13.7 — that read-back is the part the plan didn't anticipate). The map now fills from free
+**M12's other half — the fill — BUILT 2026-08-23, with M3.** It was blocked on there being a ladder
+collision branch at all; once M3 wrote one, the seam was three calls: `ladderMapVisit()` on both the rung
+you were standing on and the rung you land on, and `ladderMapHas()` back out to order what Keen offers
+next (§13.7 — that read-back is the part the plan didn't anticipate; it shipped as sibling cycling, and
+survived that mechanic's removal by moving into `shelfFor`'s row ordering). The map now fills from free
 play. `?mapseed=N` still lights a deterministic, session-only sample (never written to storage) for
 checking the drawing, and `?map=1` opens the panel on load.
 

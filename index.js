@@ -386,6 +386,9 @@ function animateHomophoneShiver(span, nextWord, nextIndex) {
    READ as random: two siblings carry an identical rung strip and share one flare, so a sideways hop
    looked exactly like a narrowing. The unvisited-first rule survives intact — it now chooses the
    row's contents instead of choosing for you, so the Tree of Kinds still steers the game (§13.7).
+   The leaf sidestep itself is gone: Keen Arrow goes DOWN OR NOT AT ALL, and the sideways move is
+   reached by broadening to the parent and narrowing again, where the parent's row is the sibling
+   list. Drawing the row is what made that possible — shelves fill from the parent either way.
 
    Horizontal is forced, not chosen. Projectiles fly straight up with no aiming (velocity {x:0,y:-10},
    see shoot()), so a word's x-range IS its selectability; a vertical stack or an arc cannot be aimed
@@ -481,10 +484,7 @@ function openShelfFan(span, hero) {
   // §13.5's fog rule: the count is honest about how much shelf is left, but the names stay hidden,
   // because a printed leaf name is a readable answer.
   caption.textContent =
-    (shelf.kind === "siblings"
-      ? `other kinds of ${shelf.under}`
-      : `kinds of ${shelf.under}`) +
-    (shelf.hidden > 0 ? ` · +${shelf.hidden} more` : "");
+    `kinds of ${word}` + (shelf.hidden > 0 ? ` · +${shelf.hidden} more` : "");
   el.appendChild(caption);
 
   // Pinned to the left edge before measuring: the row is shrink-to-fit, so measuring it at its
@@ -553,8 +553,9 @@ function landOnRung(span, rung, hero) {
   span.setAttribute("data-ladder-word", rung);
   span.textContent = renderRung(rung, original, plural);
 
-  // Recomputed, not carried: a sideways step lands on a different chain, so a data-ladder frozen at
-  // wrap time would start lying the moment Keen Arrow moves along a shelf.
+  // Recomputed, not carried: which child you shoot out of the fan decides the path, so the chain
+  // through this rung is only known once you have picked it. Frozen at wrap time it would start
+  // lying on the first descent that took anything but the first child.
   const chain = ladderChainFor(rung);
   span.setAttribute("data-ladder", chain.join(","));
   span.setAttribute("data-rung", String(chain.indexOf(rung)));
@@ -602,8 +603,8 @@ function climbLadder(span, hero, projectile) {
     return;
   }
 
-  // Keen Arrow shows the shelf rather than choosing from it. A clank is now "no shelf at all" —
-  // nothing narrower and no siblings either, which is exactly where the old sweep also gave up.
+  // Keen Arrow shows the shelf rather than choosing from it, and goes down or not at all — a clank
+  // means simply "this word has no narrower kinds". General Ization is the way out of one.
   if (!openShelfFan(span, hero)) flashLadder(span, hero, "ladder-capstone");
 }
 
