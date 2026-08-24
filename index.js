@@ -915,25 +915,78 @@ function updateRaceField() {
   setRaceSpan(raceEls.up, race.up(), "— the top —");
   setRaceSpan(raceEls.here, race.at, race.at);
   setRaceSpan(raceEls.down, raceSummoned, "type a narrower kind");
-  paintRaceBanner();
+  paintRaceGoal();
 }
 
-/* The status line. Deliberately thin in M9 — it says where you're going, what par is and what
-   you've spent, and nothing else; §12.3's stats, streak and share are M10's. */
-function paintRaceBanner() {
-  const bar = document.getElementById("race-banner");
-  if (!bar || !race) return;
-  const bits = [
-    `<strong>${race.start}</strong> ⟶ <strong>${race.target}</strong>`,
-    `Par ${race.par}`,
-    `${race.moves} move${race.moves === 1 ? "" : "s"}`,
-  ];
+/* ── THE GOAL DISPLAY (§12.8, Note 1) ─────────────────────────────────────────────────────────────
+
+   The destination has to be on screen or the mode is unplayable: a traversal game whose target
+   isn't visible is indistinguishable from aimless word-climbing, which is exactly how the first
+   play of M9 read. The predecessor (#race-banner) painted its line correctly and was simply never
+   seen — it was the only in-flow element on a page whose other siblings are all absolute or fixed,
+   so it landed under the fixed title. It is retired here rather than repositioned: two places
+   showing race state is one too many, so this display absorbs par, moves and detours as well.
+
+   It lives in #input-container because that is fixed, always in view, and where the player just
+   clicked Pow!. Chosen from the dropdown, it REPLACES the sentence box — the box has no job before
+   a race starts, and an empty text field reads as "type your sentence here", the exact wrong
+   instruction. Once the race is running the box returns beneath it as the move box (§12.2), so the
+   route stays on screen for the whole run.
+*/
+const raceGoal = document.getElementById("race-goal");
+const inputContainer = document.getElementById("input-container");
+
+/* One route line, two states. `sub` is the second line: the instruction before the run, the score
+   during it. Written as HTML because both lines carry markup. */
+function drawRaceGoal(start, target, sub, solved = false) {
+  if (!raceGoal) return;
+  raceGoal.innerHTML =
+    `<span class="race-goal-route">` +
+    `<strong class="race-goal-from">${start}</strong> ⟶ ` +
+    `<strong class="race-goal-to">${target}</strong></span>` +
+    `<span class="race-goal-sub">${sub}</span>`;
+  raceGoal.classList.toggle("solved", solved);
+  inputContainer?.classList.add("race-on");
+}
+
+function clearRaceGoal() {
+  if (!raceGoal) return;
+  raceGoal.innerHTML = "";
+  raceGoal.classList.remove("solved");
+  inputContainer?.classList.remove("race-on");
+}
+
+/* Before Pow!: the pair is known without the corpus, but par is not — it comes from createRace —
+   so the second line carries the rule instead of the score. */
+function previewRaceGoal() {
+  drawRaceGoal(
+    RACE_PAIR.start,
+    RACE_PAIR.target,
+    "Travel from one word to the other in as few moves as you can.",
+  );
+}
+
+/* During the run. Deliberately thin in M9 — where you're going, what par is and what you've spent,
+   and nothing else; §12.3's stats, streak and share are M10's. */
+function paintRaceGoal() {
+  if (!race) return;
+  const bits = [`Par ${race.par}`, `${race.moves} move${race.moves === 1 ? "" : "s"}`];
   if (race.detours) bits.push(`${race.detours} detour${race.detours === 1 ? "" : "s"}`);
   const hint = race.hint();
   if (hint) bits.push(hint);
-  bar.innerHTML = bits.join(" · ");
-  bar.classList.toggle("solved", race.solved);
+  drawRaceGoal(race.start, race.target, bits.join(" · "), race.solved);
 }
+
+/* The swap happens on SELECTION, not on Pow!. Both the native <select> and the custom dropdown that
+   covers it end up here — the dropdown dispatches a change event after setting sel.value. */
+wordPlayOptions.addEventListener("change", () => {
+  if (raceActive()) return; // mid-run the dropdown is hidden; nothing to swap
+  const isRace = wordPlayOptions.value === "wordRace";
+  initialTypedSentence.classList.toggle("go-away", isRace);
+  errorMessage.innerText = ""; // a leftover "Field cannot be blank" is about the old mode
+  if (isRace) previewRaceGoal();
+  else clearRaceGoal();
+});
 
 function raceSay(text, tone = "") {
   errorMessage.style.color = tone;
@@ -1164,6 +1217,10 @@ removePuncButton.addEventListener("click", async () => {
     typingLink,
   );
   if (selectedOption === "wordRace") {
+    // The box was hidden the moment Word Race was picked (§12.8 Note 1) and comes back here with a
+    // new job: the run is under way, so there is finally something to type. The goal display stays
+    // above it, now carrying par and moves.
+    initialTypedSentence.classList.remove("go-away");
     initialTypedSentence.value = "";
     initialTypedSentence.placeholder = "name a narrower kind, then press Enter";
     initialTypedSentence.disabled = false;

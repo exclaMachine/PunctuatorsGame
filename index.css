@@ -1338,28 +1338,68 @@ span[data-hint] {
   letter-spacing: 0.02em;
 }
 
-#race-banner {
-  font-family: "Palanquin", sans-serif;
-  font-size: 14px;
-  text-align: center;
-  color: #2a2a2a;
-  padding: 6px 10px;
-  min-height: 0;
+/* The goal display (§12.8 Note 1). It sits inside #input-container, which is a flex ROW on desktop,
+   so the full-width basis is what puts it on its own line ABOVE the box/dropdown/button rather than
+   beside them. That needs wrapping, and the wrap is switched on by a class JS adds only in a race
+   rather than living on #input-container unconditionally: on a narrowish desktop the row is already
+   a hair wider than its 70% container, so wrapping by default would drop the Pow! button onto a
+   second line in every mode. :empty then keeps the element out of the flow the rest of the time. */
+#input-container.race-on {
+  flex-wrap: wrap;
 }
 
-#race-banner:empty {
+#race-goal {
+  flex: 0 0 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: "Palanquin", sans-serif;
+  text-align: center;
+  color: #2a2a2a;
+  padding: 4px 10px 8px;
+}
+
+#race-goal:empty {
   display: none;
 }
 
-#race-banner.solved {
+.race-goal-route {
+  font-size: 22px;
+  letter-spacing: 0.01em;
+}
+
+/* The two words carry the colours their heroes already wear on the field, so "where you are" and
+   "where you're going" read the same in the goal line as they do in the race column. */
+.race-goal-route .race-goal-from {
+  color: crimson;
+}
+
+.race-goal-route .race-goal-to {
+  color: darkolivegreen;
+}
+
+.race-goal-sub {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+#race-goal.solved {
   color: #7a5c00;
+}
+
+#race-goal.solved .race-goal-sub {
   font-weight: 700;
+  opacity: 1;
 }
 
 @media screen and (max-width: 480px) {
-  #race-banner {
+  .race-goal-route {
+    font-size: 18px;
+  }
+
+  .race-goal-sub {
     font-size: 11px;
-    padding: 4px 6px;
   }
 }
 

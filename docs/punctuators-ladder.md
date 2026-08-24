@@ -19,7 +19,9 @@ Phase 3 — Word Race (§12) specced 2026-08-22, **M9 (the engine) BUILT 2026-08
 worked on**: `ladderRace.js`, the `--alt` build pass and its `ladderAltPOJO.js`, type-to-summon +
 shoot-to-travel against a hardcoded pair (`poodle ⟶ salmon`, par 5). Its `<option>` needs `?dev=1`, and
 **the next work is §12.8's play-test fix list, not M10** — the first play found the mode never tells the
-player where they are going. Its Deep Dive companion (§12.4) is tentative.
+player where they are going. **Note 1 of that list is BUILT 2026-08-24**: picking Word Race now replaces
+the sentence box with the route itself (`poodle ⟶ salmon`), which returns as the move box under it once
+*Pow!* starts the run; the never-visible `#race-banner` is retired. Its Deep Dive companion (§12.4) is tentative.
 Phase 4 — the Tree of Kinds progress map (§13) specced 2026-08-22, **M12 BUILT 2026-08-23** across two
 sessions (`ladderMap.js` + the overlay, then the fill). **M13 (the fill) BUILT 2026-08-23** — the shelf
 is now a first-class number on both sides: a gold arc + counter on the map, `7/33 found` in the fan's
@@ -1013,7 +1015,7 @@ How-to-Play modal copy (`updateCharacterModal`, `index.js:458`).
 
 **Word Race specced 2026-08-22. M9 (the engine) BUILT 2026-08-24; the `<option>` is DEV-ONLY behind
 `?dev=1` while it is worked on. Development is ACTIVE, but the next work is §12.8's fix list — the dev's
-play-test notes — not M10. Deep Dive (§12.4) still tentative. Both assume M2–M4 (free play) have shipped
+play-test notes, of which **Note 1 (the goal display) is BUILT 2026-08-24** — not M10. Deep Dive (§12.4) still tentative. Both assume M2–M4 (free play) have shipped
 — they reuse the two heroes and the rung animations whole.**
 
 §11 shifts words inside an authored sentence. This phase throws the sentence away: **the player *is* a
@@ -1241,9 +1243,9 @@ mode (§12.2) is the whole mode for younger players.
 | `racePOJO.js` | **new, generated** — the frozen daily pair list (§12.3). **M10.** |
 | `ladderRace.js` | **new — BUILT 2026-08-24 (M9)** — the traversal engine: `ancestorsOf`/`rootOf`/`depthOf`/`sameTree`, `lowestCommonAncestor`, `parFor`, `descentFrom` (main + one alt hop), `classifyGuess` → the five `GUESS` classes, `decoysFor`, `raceFieldHTML`, and `createRace()` holding the run. Borrows `ladderFunc.js`'s already-loaded corpus rather than parsing a second copy; `Map`/`Set` throughout. |
 | `utils/utils.js` | **BUILT** — `case "wordRace":` (the field arrives pre-marked, so nothing to wrap); `protectedArticles` and `spoonerism` both suppressed, as §11.6 does. |
-| `punctuators.html` | **BUILT, DEV-ONLY** — the `<option value="wordRace" data-dev>` (stripped from the dropdown unless `?dev=1`, see M9) and `#race-banner`. The move box is the existing sentence input, kept on screen rather than sent away. The win card is M11. |
-| `index.js` | **BUILT (M9)** — the race block (field binding, the move box, the three rejections, `raceTravel`, `raceShootUp`/`raceShootDown`), `GeneralIzationRace`/`KeenArrowRace`, two collision branches, the race branch in the `removePuncButton` handler. **Still M10/M11:** daily + stats + share, the hint ladder's chrome, and one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's race to open the map")` on daily start, `ladderMapUnlock()` on finish — the map is a routing atlas and this is the mode it would solve. |
-| `index.css` | **BUILT** — `#output.race-mode`, the three `.race-word` spans, `#race-banner`. The win/share card is M11. |
+| `punctuators.html` | **BUILT, DEV-ONLY** — the `<option value="wordRace" data-dev>` (stripped from the dropdown unless `?dev=1`, see M9) and `#race-goal` inside `#input-container` (§12.8 Note 1; it replaced `#race-banner`, which was never visible). The move box is the existing sentence input, hidden when the mode is picked and brought back by *Pow!*. The win card is M11. |
+| `index.js` | **BUILT (M9)** — the race block (field binding, the move box, the three rejections, `raceTravel`, `raceShootUp`/`raceShootDown`), `GeneralIzationRace`/`KeenArrowRace`, two collision branches, the race branch in the `removePuncButton` handler, and the goal display (`drawRaceGoal`/`previewRaceGoal`/`paintRaceGoal`/`clearRaceGoal` + the `wordPlayOptions` `change` listener that swaps box for goal, §12.8 Note 1). **Still M10/M11:** daily + stats + share, the hint ladder's chrome, and one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's race to open the map")` on daily start, `ladderMapUnlock()` on finish — the map is a routing atlas and this is the mode it would solve. |
+| `index.css` | **BUILT** — `#output.race-mode`, the three `.race-word` spans, `#race-goal` + `#input-container.race-on` (§12.8 Note 1). The win/share card is M11. |
 | `CLAUDE.md` | the Punctuators row per milestone |
 
 ### 12.6 Milestones
@@ -1254,7 +1256,8 @@ and is stripped from the dropdown unless the page is opened with `?dev=1` (the g
 `sel.options` — hiding the `<option>` with CSS would leave its generated `.custom-select-option` on
 screen). The gate is a work-in-progress guard, not a shelving: **the next work on this phase is §12.8's
 fix list**, which came out of the first play of M9 and starts with the fact that the mode never told the
-player where they were going.
+player where they were going — **its Note 1 is BUILT 2026-08-24** (the goal display replacing the edit
+box), the rest of the list is still open.
 
 `--alt` in the build → `ladderAltPOJO.js`, `ladderRace.js`,
 type-to-summon + shoot-to-travel, the three rejections, descendant jumps. Playable against the hardcoded
@@ -1327,9 +1330,9 @@ route is this mode's artifact, so it cannot be built before the mode is).
 
 ### 12.8 Play-test notes — the fix list
 
-**Opened 2026-08-24 after the first play of M9.** The dev's notes from playing it, recorded here and
-**deliberately not acted on** — this section is the queue, not a changelog. More notes are expected before
-any of it is built. M9 stays **dev-only** (`?dev=1`) while the list is worked through.
+**Opened 2026-08-24 after the first play of M9.** The dev's notes from playing it. **Note 1 is BUILT
+(2026-08-24)**; the rest of the list is still the queue, and more notes are expected. M9 stays
+**dev-only** (`?dev=1`) while the list is worked through.
 
 #### The finding that opened it: the goal is never communicated
 
@@ -1340,39 +1343,74 @@ gap, and it is worth stating plainly because the same symptom would otherwise re
 send the mode back to the drawing board: *a traversal game whose destination isn't on screen is
 indistinguishable from aimless word-climbing.*
 
-**Root cause, found in the markup rather than the logic.** `#race-banner` — which carries
-`poodle ⟶ salmon · Par 5` — is painted correctly by `paintRaceBanner()` on every move. It is just **the
+**Root cause, found in the markup rather than the logic.** `#race-banner` — which carried
+`poodle ⟶ salmon · Par 5` — was painted correctly by `paintRaceBanner()` on every move. It was just **the
 only in-flow element among out-of-flow siblings**: `#sentence-container` is `position: absolute`,
 `#input-container` is `position: fixed`, and the title `.shine` is `position: fixed; top: 80px`. So the
-banner lands in normal document flow at the top of `<body>` — *underneath the fixed title* — and is
-effectively invisible. It was never seen, so the goal was never seen.
+banner landed in normal document flow at the top of `<body>` — *underneath the fixed title* — and was
+effectively invisible. It was never seen, so the goal was never seen. It was **not** fixed in place,
+because the dev's first note supersedes it entirely:
 
-This is a layout bug with a one-line fix, but **it should not be fixed on its own**, because the dev's
-first note supersedes it entirely:
-
-#### Note 1 — replace the edit box with the start and target words
+#### Note 1 — replace the edit box with the start and target words. BUILT 2026-08-24
 
 > *"When the Word Race is selected the edit box should be replaced with the word start and ending word."*
 
-When Word Race is chosen, the sentence input should give way to a display of **the start word and the
-ending word**, rather than the box simply sitting there as it does now.
+**As built:** picking Word Race in the dropdown hides the sentence box and paints `#race-goal` in its
+place — the route (`poodle ⟶ salmon`, each word in its hero's colour) over a second line carrying the
+rule. Pressing *Pow!* brings the box back beneath it as the move box, and the second line switches to
+`Par 5 · 2 moves · …`. **`#race-banner` is retired**, its markup, CSS and `paintRaceBanner()` gone.
 
-Why this is the right shape and not just a cosmetic preference, worth keeping when it is built:
+Why this shape, and worth keeping:
 
 - **It puts the goal where the player is already looking.** `#input-container` is `position: fixed` and is
   the last thing the player interacted with — they clicked *Pow!* there a moment ago. It is the one region
-  of the screen guaranteed to be in view, which is precisely what `#race-banner` is not.
+  of the screen guaranteed to be in view, which is precisely what `#race-banner` was not.
 - **It gives the box's space a job at the only moment the box has none.** M9 repurposes the sentence input
   as the move box (§12.2), but that is a *mid-run* role; at the moment the race starts there is nothing to
   type yet, and an empty text field reads as "type your sentence here" — the exact wrong instruction.
-- **It very likely retires `#race-banner`.** Two places showing race state is one too many; the start/target
-  display should absorb par, moves and detours, and the banner should go. Decide that when building, but do
-  not build both.
+- **The two coexist once the run starts** — the open question in this note, settled the way it leaned: the
+  display above, the box below. The destination is worth keeping on screen for the whole run, since its
+  absence is what caused this note. So the display absorbs par, moves and detours and the banner goes;
+  two places showing race state would have been one too many.
 
-**Open within this note, for whenever it is picked up:** whether the move box returns in place of the
-display once the run is under way (the player still has to type to summon), or whether the two coexist —
-the display above, the box below. The second is probably right, since the destination is worth keeping on
-screen for the whole run, and it is the thing whose absence caused this note.
+**The one thing that isn't a one-liner:** the display is a full-width flex item inside a flex *row*, so it
+needs `flex-wrap`, and the wrap is switched on by a `.race-on` class rather than living on
+`#input-container` unconditionally — on a narrowish desktop the row is already a hair wider than its 70%
+container, so wrapping by default would drop the *Pow!* button onto a second line **in every mode**.
+`#race-goal:empty { display: none }` keeps it out of the flow the rest of the time.
+
+**The swap fires on the `change` event**, which covers both the native `<select>` and the custom dropdown
+that hides it (the dropdown dispatches `change` after setting `sel.value`), and it is guarded by
+`raceActive()` — mid-run the dropdown is hidden, so there is nothing to swap.
+
+#### Note 2 — the "type a narrower kind" slot should stay hidden until Keen Arrow has shot. NOT BUILT
+
+> *"The 'type a narrower word' should only appear after Keen Arrow shoots the word. Otherwise it should
+> stay hidden."*
+
+**Recorded 2026-08-24, deliberately not acted on.** Today `.race-down` is always on screen: with nothing
+summoned it renders its placeholder — the faint italic `type a narrower kind` (`setRaceSpan`'s
+`race-none` state, `updateRaceField` in `index.js`). §12.2 chose that on the grounds that an empty slot
+holding its place stops the other two words shifting under the player's aim. The dev's play says the cost
+of that is worse than the benefit: the prompt is on screen from the first frame, before Keen Arrow is even
+the active hero, so it reads as an instruction for *right now* when the first move is usually General's.
+
+**Ambiguity to resolve before building — what "after Keen Arrow shoots" means.** Two readings, and they
+are different features:
+
+1. **After Keen Arrow is selected** (Switch Character brings him up) — the slot appears when the hero who
+   can use it is the one in play. This is the reading that matches "otherwise it should stay hidden",
+   since Keen has nothing to shoot *until* a word is summoned, which makes reading 2 circular.
+2. **After Keen Arrow's shot travels** — i.e. the slot only ever shows once a descent has happened, and
+   the prompt is a "keep going" cue rather than a "start here" one.
+
+Reading 1 is the likely intent. Ask before building.
+
+**What it touches when it is:** `setRaceSpan`/`updateRaceField` (the placeholder branch), and whatever
+signal says which hero is active — the race field would have to repaint on Switch Character, which it
+currently does not. Worth checking at the same time whether the layout shift §12.2 was avoiding actually
+bites, now that the goal display (Note 1) anchors the eye at the bottom of the screen rather than the
+field itself.
 
 #### Still to come
 
