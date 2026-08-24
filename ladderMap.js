@@ -1,4 +1,5 @@
-/* ladderMap.js — THE TREE OF KINDS (docs/punctuators-ladder.md §13) — M12 the map, M13 the fill.
+/* ladderMap.js — THE TREE OF KINDS (docs/punctuators-ladder.md §13) — M12 the map, M13 the fill,
+ * M14 the feel.
  *
  * A viewer, not a mode. It draws the WHOLE is-a-kind-of hierarchy at once as nested circles —
  * 1,002 trees, 30,545 words, five levels deep — and lights every word you have ever landed on.
@@ -26,7 +27,15 @@
  * line in the readout and the panel's second headline number, all derived in relight() and none of
  * it stored. The 25/50/100% milestones themselves are announced in play rather than here, because
  * that is where they are earned: index.js's noteShelfProgress reads the same numbers off
- * ladderFunc's shelfProgress(). The daily-run guard and the post-game route overlay are M14.
+ * ladderFunc's shelfProgress().
+ *
+ * M14 (§13.13) adds the four things that make it read rather than merely draw: the ANCESTRY
+ * BREADCRUMB in the readout (one hop was the least useful hop — the picture already shows it), the
+ * spoiler-free SHARE STRING, the map's own HELP CARD, and the DAILY-RUN GUARD. The guard ships with
+ * NO CALLER on purpose: it is map-side work, so writing it here means §11/§12 add one line rather
+ * than a feature (?maplock= proves it out until then). M14's other half — the post-game route
+ * overlay — left for §12's M11, because a route is the racing mode's artifact and there is nothing
+ * to draw without it.
  *
  * THE SEAM FOR THE HEROES: ladderMapVisit(word) / ladderMapVisitAll(words). Nothing calls them yet —
  * M3's collision branch does, on every rung landing, including the rungs a §12.2 descendant jump
@@ -72,6 +81,8 @@ const SEEN = new Set(); // lowercase words; the ONLY persisted state (§13.6 —
 let seenLoaded = false;
 let litDirty = true; // LIT needs recomputing before the next draw
 let ephemeral = false; // ?mapseed sample — never written back to storage
+let helpSeen = false; // §13.13.4 — the first-open card has been dismissed once. Same record as SEEN.
+let lockReason = ""; // §13.13.3 — non-empty while a daily run owns the map. No caller yet.
 
 function loadSeen() {
   if (seenLoaded) return;
@@ -81,6 +92,10 @@ function loadSeen() {
     if (!raw) return;
     const rec = JSON.parse(raw);
     if (rec && Array.isArray(rec.seen)) for (const w of rec.seen) SEEN.add(w);
+    // M14's help flag rides along in the SAME record with no version bump: the reader above only
+    // ever asks for rec.seen, so an older build ignores this field and this one treats a missing
+    // field as "not seen yet". Nothing to migrate in either direction (§13.13.4).
+    if (rec && rec.help) helpSeen = true;
   } catch (e) {
     /* a corrupt record is not worth losing the game over — start the map empty */
   }
@@ -94,7 +109,7 @@ function saveSeen() {
     try {
       localStorage.setItem(
         STORE_KEY,
-        JSON.stringify({ v: 1, seen: [...SEEN] })
+        JSON.stringify({ v: 1, seen: [...SEEN], help: helpSeen ? 1 : 0 })
       );
     } catch (e) {
       /* quota or private mode — the map still works for this session */
@@ -241,6 +256,7 @@ function relight() {
     LIT[i] = l;
     KLIT[i] = shelf;
   }
+  readShown = -2; // the numbers under the pointer just changed; let the next move rebuild the line
 }
 
 /* A finished shelf: every one of this word's own kinds lit. Leaves have no shelf and are never
@@ -673,6 +689,12 @@ function drawNode(i, s) {
 
   // Internal words are the map's coastline and are ALWAYS named (§13.5) — without them the map is
   // unnavigable. Leaf names stay fogged until visited, so an answer can never be read off it.
+  //
+  // KNOWN ISSUE (2026-08-24, §13.5) — except it can, and this is where. A word whose whole branch is
+  // ONE child is a leaf with a tail, not coastline, and naming it just prints an answer: `kinsman
+  // 0/4` hands you `brother`, `nephew` and `uncle` because each has a single child, leaving only the
+  // true leaf `brethren` fogged. 1,623 of the 4,837 internal words (33.6%) are single-child parents.
+  // The fix is to fog them like buds until visited — see §13.5 for what it does to the breadcrumb.
   if (rs >= LABEL_PX) labelQueue.push(i, cx, cy, rs, 0);
 
   for (let k = 0; k < kids.length; k++) drawNode(kids[k], s);
@@ -774,7 +796,12 @@ function hit(px, py) {
 let elMap = null,
   elStat = null,
   elRead = null,
+  elShare = null,
+  elHelp = null,
+  elBtn = null,
   mapOpen = false;
+let shareTimer = null,
+  lockTimer = null;
 
 // draw() runs on every pan frame; the count almost never changes, so don't touch the DOM unless it
 // does — which is also what makes the 30k-node shelf sweep below free in practice.
@@ -786,6 +813,17 @@ function paintStat() {
   // Two headline numbers, because they say opposite things. The word count is the honest scale of
   // the corpus and will never be finished. Shelves are the metric that CAN be (§13.6), so they are
   // what the panel actually keeps score with.
+  const { done, parents } = countShelves();
+  const n = (v) => v.toLocaleString();
+  elStat.textContent =
+    `${n(SEEN.size)} of ${n(WORDS.length)} words lit · ${pct}% · ` +
+    `${n(done)} of ${n(parents)} shelves filled`;
+}
+
+/* One sweep of the 4,837 parents. Shared by the panel's headline and the share string so the two can
+   never disagree, and cheap enough that neither has to cache it (the statShown guard above already
+   keeps it off the draw path). */
+function countShelves() {
   let done = 0,
     parents = 0;
   for (let i = 0; i < WORDS.length; i++) {
@@ -793,32 +831,214 @@ function paintStat() {
     parents++;
     if (KLIT[i] === KIDS[i].length) done++;
   }
-  const n = (v) => v.toLocaleString();
-  elStat.textContent =
-    `${n(SEEN.size)} of ${n(WORDS.length)} words lit · ${pct}% · ` +
-    `${n(done)} of ${n(parents)} shelves filled`;
+  return { done, parents };
 }
 
+/* ── §13.13.2 The share string ────────────────────────────────────────────────────────────────── */
+const SHARE_MIN_TREE = 50; // a tree has to be this big to be worth bragging about — see below
+
+/* The best-filled tree of real size: the highest LIT FRACTION among the 88 roots holding ≥50 nodes,
+   tie-broken by lit count.
+ *
+ * Not simply the most-lit tree, which is the obvious reading of §13.9's `ANIMAL 31%`: `person` is
+ * 4,415 nodes — 14% of the whole corpus — so it would win for very nearly every player, and a share
+ * stat that never moves as you play and never differs between two people is not a stat. The ≥50
+ * floor is what stops the other failure: 465 of the 1,002 roots hold fewer than five words, and a
+ * two-node shrub at 100% would otherwise take the slot every time. */
+function bestTree() {
+  let best = -1,
+    bestFrac = 0;
+  for (let k = 0; k < ROOTS.length; k++) {
+    const i = ROOTS[k];
+    if (SIZE[i] < SHARE_MIN_TREE || !LIT[i]) continue;
+    const frac = LIT[i] / SIZE[i];
+    if (frac > bestFrac || (frac === bestFrac && best !== -1 && LIT[i] > LIT[best])) {
+      best = i;
+      bestFrac = frac;
+    }
+  }
+  return best;
+}
+
+/* Spoiler-free by construction: it names at most one ROOT, and a root has children, so it is an
+   internal word — §13.5's fog rule cannot be broken by it. It can never print a leaf. */
+export function shareText() {
+  if (!built) return "";
+  if (litDirty) relight();
+  const n = (v) => v.toLocaleString();
+  const { done } = countShelves();
+  const parts = [
+    "🌳 Tree of Kinds",
+    `${n(SEEN.size)} word${SEEN.size === 1 ? "" : "s"}`,
+    `${n(done)} shel${done === 1 ? "f" : "ves"}`,
+  ];
+  const b = bestTree();
+  if (b !== -1)
+    parts.push(
+      `${WORDS[b].replace(/_/g, " ").toUpperCase()} ${Math.round(
+        (LIT[b] / SIZE[b]) * 100
+      )}%`
+    );
+  return parts.join(" · ");
+}
+
+/* Clipboard API with the textarea fallback, the same shape as Critter Hunt's copyShare
+   (critter-hunt.html:1092) — execCommand is what still works in a file:// or an older WebView. */
+function copyShare() {
+  const txt = shareText();
+  if (!txt) return;
+  const done = (ok) => {
+    if (!elShare) return;
+    elShare.classList.add("ok");
+    elShare.textContent = ok ? "Copied" : "Copy failed";
+    clearTimeout(shareTimer);
+    shareTimer = setTimeout(() => {
+      elShare.classList.remove("ok");
+      elShare.textContent = "📋";
+    }, 1600);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(txt).then(
+      () => done(true),
+      () => done(fallbackCopy(txt))
+    );
+  else done(fallbackCopy(txt));
+}
+
+function fallbackCopy(txt) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = txt;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+/* §13.13.1 — the chain of ever-broader words above `i`, root first. Depth caps at 5 in the shipped
+   corpus (measured; the deepest real path is six words, `immorality › … › sanctimoniousness`), so
+   this needs no truncation logic. The spin guard is belt-and-braces: the forest is a tree by
+   construction, so a cycle would mean the build is broken, not that the walk is. */
+function ancestry(i) {
+  const path = [];
+  for (let c = i; c !== -1 && path.length < 12; c = PARENT[c]) path.push(c);
+  return path.reverse();
+}
+
+const esc = (s) =>
+  s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const say = (i) => esc(WORDS[i].replace(/_/g, " "));
+
+/* Rebuilt only when the hovered node changes. readout() runs on every pointermove, and M14 turned
+   it from one textContent write into a built string — the same guard paintStat() already uses. */
+let readShown = -2;
+
 function readout(i) {
-  if (!elRead) return;
+  if (!elRead || i === readShown) return;
+  readShown = i;
   if (i < 0) {
     elRead.textContent = "";
     elRead.classList.remove("on");
     return;
   }
-  const w = WORDS[i].replace(/_/g, " ");
-  const p = PARENT[i];
-  const named = KIDS[i] || SEEN.has(WORDS[i]); // a fogged leaf keeps its name to itself (§13.5)
-  const lit = SEEN.has(WORDS[i]) ? "lit" : "not yet";
-  const kin = p === -1 ? "a root of the forest" : `a kind of ${WORDS[p].replace(/_/g, " ")}`;
+  // §13.13.1. One hop — `a kind of mammal` — was the least useful hop, because the picture already
+  // draws `dog` inside `mammal`. What it cannot show at a readable zoom is where you are in the
+  // whole hierarchy, so the readout carries the entire chain, broad → narrow: the direction the
+  // ladder reads in play (General walks left, Keen walks right).
+  //
+  // IT CAN NEVER NEED REDACTING. Every ancestor has a child by definition, so every ancestor is an
+  // internal word, and §13.5 names all of those. Only the hovered word itself can be fogged.
+  const path = ancestry(i);
+  const named = KIDS[i] || SEEN.has(WORDS[i]);
+  const crumbs = path
+    .slice(0, -1)
+    .map((a) => `<span class="tree-map__crumb">${say(a)}</span>`)
+    .join("<i>›</i>");
+  const here = `<span class="tree-map__here">${
+    named ? say(i) : "an unvisited kind"
+  }</span>`;
+
+  const bits = [];
+  if (named) bits.push(SEEN.has(WORDS[i]) ? "lit" : "not yet");
   // The exact shelf, for the word under the pointer — the arc's number, spelled out (§13.6).
-  const shelf = KIDS[i]
-    ? ` · ${KLIT[i]}/${KIDS[i].length} kinds` + (shelfDone(i) ? " ★" : "")
-    : "";
-  elRead.textContent = named
-    ? `${w} — ${kin} · ${lit}${shelf}`
-    : `an unvisited kind of ${p === -1 ? "?" : WORDS[p].replace(/_/g, " ")}`;
+  if (KIDS[i])
+    bits.push(`${KLIT[i]}/${KIDS[i].length} kinds${shelfDone(i) ? " ★" : ""}`);
+  if (path.length === 1) bits.push("a root of the forest");
+
+  elRead.innerHTML =
+    (crumbs ? crumbs + "<i>›</i>" : "") +
+    here +
+    (bits.length
+      ? `<span class="tree-map__meta"> · ${bits.join(" · ")}</span>`
+      : "");
   elRead.classList.add("on");
+}
+
+/* ── §13.13.3 The daily-run guard ─────────────────────────────────────────────────────────────── */
+/* NOTHING CALLS THESE YET, on purpose. §13.8 wants the map shut while a daily is in progress — the
+   named skeleton is a routing atlas, and Word Race is a routing game, so a player with it open is
+   reading the answer instead of recalling it. Neither daily exists (§11 M6–M8, §12 M9–M11), but the
+   LOCK is map-side work: writing it here means each daily adds one line on start and one on finish
+   (see §11.8 / §12.5) rather than learning this file. `?maplock=<reason>` proves it out until then.
+   Free play never locks (§13.8). The other half of §13.8 — drawing your route on the map afterwards
+   — is NOT map-side: a route is the racing mode's own artifact, so it went to §12's M11. */
+export function ladderMapLock(reason) {
+  lockReason = String(reason || "the map is closed right now");
+  if (mapOpen) closeLadderMap(); // a lock can arrive while it is already open
+  paintLock();
+}
+
+export function ladderMapUnlock() {
+  lockReason = "";
+  paintLock();
+}
+
+export function isLadderMapLocked() {
+  return !!lockReason;
+}
+
+function paintLock() {
+  if (!elBtn) return;
+  clearTimeout(lockTimer);
+  elBtn.classList.toggle("locked", !!lockReason);
+  elBtn.setAttribute("aria-disabled", lockReason ? "true" : "false");
+  elBtn.title = lockReason || "";
+  elBtn.textContent = lockReason ? "🔒 Tree of Kinds" : "🌳 Tree of Kinds";
+}
+
+/* §13.8 asks for "disabled, and says why". A dead button says nothing, so clicking a locked one
+   swaps its own label for the reason and puts itself back a couple of seconds later. */
+function refuse() {
+  if (!elBtn) return;
+  elBtn.textContent = `🔒 ${lockReason}`;
+  clearTimeout(lockTimer);
+  lockTimer = setTimeout(paintLock, 2400);
+}
+
+/* ── §13.13.4 The map's own How-to-Play ───────────────────────────────────────────────────────── */
+/* The ladder hero modal ends with one sentence about the map, which is the right place to MENTION
+   it and the wrong place to explain it — you read that modal before you have ever opened the panel.
+   So the four things you cannot infer from looking at the picture are said over the picture, once,
+   the first time it opens. The `?` in the bar brings it back. */
+function showHelp() {
+  if (!elHelp) return;
+  elHelp.classList.add("on");
+  elHelp.setAttribute("aria-hidden", "false");
+}
+
+function dismissHelp() {
+  if (!elHelp) return;
+  elHelp.classList.remove("on");
+  elHelp.setAttribute("aria-hidden", "true");
+  if (helpSeen) return;
+  helpSeen = true;
+  saveSeen();
 }
 
 /* ── Wiring ───────────────────────────────────────────────────────────────────────────────────── */
@@ -833,11 +1053,13 @@ export function closeLadderMap() {
   mapOpen = false;
   elMap.classList.remove("on");
   elMap.setAttribute("aria-hidden", "true");
+  dismissHelp();
   readout(-1);
 }
 
 export async function openLadderMap() {
   if (!elMap || mapOpen) return;
+  if (lockReason) return refuse(); // §13.13.3
   loadSeen();
   mapOpen = true;
   elMap.classList.add("on");
@@ -863,6 +1085,7 @@ export async function openLadderMap() {
   }
   resize();
   home();
+  if (!helpSeen) showHelp(); // §13.13.4 — once, then only from the ? button
 }
 
 function wirePointer() {
@@ -957,8 +1180,14 @@ function wireKeys() {
       };
       if (k === "Escape") {
         eat();
-        closeLadderMap();
+        // A layer at a time, the way the shelf fan's Esc works: the help card first, the panel next.
+        if (elHelp && elHelp.classList.contains("on")) dismissHelp();
+        else closeLadderMap();
         return;
+      }
+      if (k === "?" && elHelp) {
+        eat();
+        return elHelp.classList.contains("on") ? dismissHelp() : showHelp();
       }
       if (k === "c" || k === "C") {
         eat();
@@ -1031,17 +1260,28 @@ export function initLadderMap() {
   ctx = cnv.getContext("2d");
   elStat = document.getElementById("tree-map-stat");
   elRead = document.getElementById("tree-map-readout");
+  elShare = document.getElementById("tree-map-share");
+  elHelp = document.getElementById("tree-map-help");
+  elBtn = document.getElementById("tree-map-btn");
 
-  document
-    .getElementById("tree-map-btn")
-    ?.addEventListener("click", openLadderMap);
+  elBtn?.addEventListener("click", openLadderMap);
   document
     .getElementById("tree-map-close")
     ?.addEventListener("click", closeLadderMap);
   document.getElementById("tree-map-home")?.addEventListener("click", home);
+  elShare?.addEventListener("click", copyShare);
+  document.getElementById("tree-map-helpbtn")?.addEventListener("click", showHelp);
+  document
+    .getElementById("tree-map-helpok")
+    ?.addEventListener("click", dismissHelp);
   window.addEventListener("resize", () => mapOpen && resize());
   wirePointer();
   wireKeys();
   loadSeen();
-  if (new URLSearchParams(location.search).has("map")) openLadderMap();
+
+  const q = new URLSearchParams(location.search);
+  // Dev only, and the only way to exercise §13.13.3 until a daily exists to call ladderMapLock().
+  const lk = q.get("maplock");
+  if (lk !== null) ladderMapLock(lk || "finish today's puzzle to open the map");
+  if (q.has("map")) openLadderMap();
 }

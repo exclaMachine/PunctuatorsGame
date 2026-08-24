@@ -1034,7 +1034,8 @@ function updateCharacterModal(selection) {
           <code>animal</code> is the answer, not a miss.</li>
         <li><code>7/33 found</code> is your shelf: how many of that word's kinds you have ever landed
           on. Fill a quarter, a half, or all of it and it says so — and the shelf turns gold on the
-          <strong>🌳 Tree of Kinds</strong>, where every word you land on lights up.</li>
+          <strong>🌳 Tree of Kinds</strong>, where every word you land on lights up. The map explains
+          itself when you open it; press <code>?</code> in there to read it again.</li>
       </ul>
     </div>
   `,

@@ -131,12 +131,28 @@
         <div class="tree-map__bar">
             <div class="tree-map__title">The Tree of Kinds</div>
             <div class="tree-map__stat" id="tree-map-stat"></div>
+            <button class="tree-map__btn" id="tree-map-share" title="Copy your progress (spoiler-free)">&#128203;</button>
+            <button class="tree-map__btn" id="tree-map-helpbtn" title="What am I looking at? (?)">?</button>
             <button class="tree-map__btn" id="tree-map-home" title="Recentre (C)">&#8982;</button>
             <button class="tree-map__btn" id="tree-map-close" title="Close (Esc)">&times;</button>
         </div>
         <canvas id="tree-map-canvas"></canvas>
         <div class="tree-map__readout" id="tree-map-readout"></div>
-        <div class="tree-map__hint">drag to pan · scroll or +/&minus; to zoom · C recentre · Esc close<span class="tree-map__key">gold ring = kinds you've found · a full ring is a filled shelf</span></div>
+
+        <!-- §13.13.4 — shown once on first open, then only from the ? button. Four things you can't
+             infer from the picture; the controls stay in the hint line below. -->
+        <div class="tree-map__help" id="tree-map-help" aria-hidden="true">
+            <h3>What am I looking at?</h3>
+            <ul>
+                <li>Every word General Ization and Keen Arrow know is here, drawn once and never rearranged. A circle holds its own kinds <em>inside</em> it.</li>
+                <li>The <strong>named</strong> circles are the words that have kinds of their own. The nameless buds are the far ends of the ladder &mdash; one lights <em>and takes its name</em> the first time you land on it.</li>
+                <li>The <strong>gold ring</strong> is that word's shelf: how many of its kinds you've found. A full ring is a filled shelf.</li>
+                <li>Nothing here is spent or unlocked. It fills as you play, and it keeps filling in every ladder mode.</li>
+            </ul>
+            <button class="tree-map__helpok" id="tree-map-helpok">Got it</button>
+        </div>
+
+        <div class="tree-map__hint">drag to pan · scroll or +/&minus; to zoom · C recentre · ? help · Esc close<span class="tree-map__key">gold ring = kinds you've found · a full ring is a filled shelf</span></div>
     </div>
 
     <footer  id="footer">

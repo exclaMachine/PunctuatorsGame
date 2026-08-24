@@ -19,8 +19,14 @@ Phase 3 — Word Race (§12) specced 2026-08-22, nothing built; its Deep Dive co
 Phase 4 — the Tree of Kinds progress map (§13) specced 2026-08-22, **M12 BUILT 2026-08-23** across two
 sessions (`ladderMap.js` + the overlay, then the fill). **M13 (the fill) BUILT 2026-08-23** — the shelf
 is now a first-class number on both sides: a gold arc + counter on the map, `7/33 found` in the fan's
-caption, and 25/50/100% milestones announced **in play**, where they are earned. M14 (the daily-run
-guard + the post-game route overlay) is what remains of the map.**
+caption, and 25/50/100% milestones announced **in play**, where they are earned. **M14 — the feel —
+BUILT 2026-08-23 (§13.13)**: two of its four items turned out to be blocked on dailies that do not exist,
+so it shipped the ancestry breadcrumb, the spoiler-free share string, the map's own help card and a
+**dormant** daily-run guard (`ladderMapLock`/`ladderMapUnlock`, no caller, `?maplock=` to exercise it),
+and the post-game route overlay moved out to §12's M11. **The Tree of Kinds is complete**, with one
+**known issue found in play 2026-08-24 and not yet fixed**: §13.5's internal-vs-leaf fog rule names
+single-child parents, so `kinsman 0/4` reads out three of its four answers (`brother`, `nephew`, `uncle`).
+See §13.5.
 
 Two new heroes for `punctuators.html` / `index.js` who climb the **is-a-kind-of** hierarchy of a word:
 
@@ -967,7 +973,7 @@ where the shown word is the clue. **2of12.txt cannot fix it** (measured: it admi
 | `ladderFunc.js` | `wrapPhrase(entry)` — wraps only the `fix` token indices; reuses the free-play span builder |
 | `utils/utils.js` | `case "ladderPuzzle":` in `addSpansAndIdsForWordPlay`; **suppress** `protectedArticles` + `spoonerism` for it |
 | `punctuators.html` | the `<option value="ladderPuzzle">`; the puzzle card markup that replaces the text box |
-| `index.js` | puzzle branch in the `removePuncButton` handler (~:386, which today hard-requires `initialTypedSentence.value`); goal/lock check in the collision block; win card; daily + stats + share; `PRACTICE_ENABLED` |
+| `index.js` | puzzle branch in the `removePuncButton` handler (~:386, which today hard-requires `initialTypedSentence.value`); goal/lock check in the collision block; win card; daily + stats + share; `PRACTICE_ENABLED`. **Plus one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's puzzle to open the map")` on daily start, `ladderMapUnlock()` on finish. Practice never locks.** |
 | `index.css` | `.ladder-locked` ✔ flare, the puzzle card, the win/share card |
 | `CLAUDE.md` | the Punctuators row per milestone |
 
@@ -1163,7 +1169,7 @@ mode (§12.2) is the whole mode for younger players.
 | `ladderRace.js` | **new** — the traversal engine: position, `isDescendant`, `parFor` (LCA), the three rejection classes, the decoy generator |
 | `utils/utils.js` | `case "wordRace":`; suppress `protectedArticles` + `spoonerism` as §11.6 does |
 | `punctuators.html` | the `<option value="wordRace">`; the race card; the move box repurposing the sentence input |
-| `index.js` | race branch in the `removePuncButton` handler; travel on collision; daily + stats + share; the hint ladder |
+| `index.js` | race branch in the `removePuncButton` handler; travel on collision; daily + stats + share; the hint ladder. **Plus one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's race to open the map")` on daily start, `ladderMapUnlock()` on finish — the map is a routing atlas and this is the mode it would solve.** |
 | `index.css` | the race card, the target banner, the summoned-word span, the win/share card |
 | `CLAUDE.md` | the Punctuators row per milestone |
 
@@ -1175,7 +1181,8 @@ rejections, descendant jumps. Playable against a hardcoded pair, no daily, no ch
 **M10 — the daily.** `racePOJO.js`, selection, lock, stats/streak, share, give-up, the hint ladder.
 
 **M11 — the feel.** Race card, target banner, the travel animation reusing M4's, easy mode's decoy field,
-the How-to-Play copy.
+the How-to-Play copy — **and the post-game route overlay** (§13.8, moved here from M14 on 2026-08-23: the
+route is this mode's artifact, so it cannot be built before the mode is).
 
 **Deep Dive is unscheduled** (§12.4) — it needs M9 only, so it can be prototyped any time after it.
 
@@ -1322,6 +1329,41 @@ pan/zoom. Try circles first.
   including the rungs you pass *through* on a §12.2 descendant jump, which cross real rungs and should pay
   for all of them.
 
+#### KNOWN ISSUE — the internal/leaf rule leaks answers. Found 2026-08-24, not yet fixed
+
+**Reported from play:** open `kinsman 0/4` and the map has already told you three of the four answers.
+Its children are `brother, nephew, uncle, brethren` — and `brother 0/1`, `nephew 0/1` and `uncle 0/1` are
+all **named**, because each happens to have exactly one child of its own and the rule above names every
+internal word. Only `brethren`, the true leaf, is fogged. You can read the shelf off the picture and go
+shoot it.
+
+The rule was chosen on the theory that internal words are the **coastline** — the named skeleton you
+navigate by. That holds for `animal` or `dog`. It does not hold for a word whose entire "branch" is one
+child: that is a leaf with a tail, and naming it is just printing an answer.
+
+**Measured, and the number is one we already know:** **1,623 of the 4,837 internal words (33.6%) have
+exactly one child** — the very same third that forced M13's `SHELF_MILESTONE_MIN` floor (§13.6). Across the
+map, **3,835 child names are readable** off unvisited shelves, and **1,367 of those (36%) are single-child
+parents**; **1,459 shelves leak at least one name** this way.
+
+**The dev's rule:** a word with only one kind should not be visible — it draws as an anonymous bud like a
+leaf, and takes its name the first time you land on it. That would fog 1,367 of the 3,835 readable names
+and make `kinsman` a genuine 0/4.
+
+**What the fix has to decide, because M14 leaned on the current rule:**
+
+- **The breadcrumb's best property was that it can never need redacting** (§13.13.1) — every ancestor has a
+  child, so every ancestor is internal, so every ancestor is named. A hidden single-child parent breaks
+  that: hovering `stepbrother` would want `kinsman › ? › stepbrother`. The likely answer is that an
+  ancestor of a word you have *reached* is no longer a spoiler and stays named, but that is a decision, not
+  a detail.
+- **Only the name hides, never the circle.** Containment is the layout; a bud that stops being drawn would
+  move nothing but would lose its children.
+- **It costs a third of the coastline** (1,623 of 4,837 named nodes). Whether the map is still navigable
+  with those gone is a look-at-it question, and it is related to the shrub-trees question below.
+- **The share string is unaffected** — it names only roots, and a root has children by definition
+  (verified: 0 of 1,002 are leaves), but a root *could* be a single-child parent, so check that too.
+
 ### 13.6 Shelves — BUILT 2026-08-23 (M13)
 
 - A shelf is `ladderDown[parent]` and its progress is `lit / total`, derived from the visited set at render
@@ -1407,6 +1449,12 @@ routing game** (§12.3). A player with the map open is reading the answer rather
   screen teach the thing the mode is about: how far up two words make you climb.
 - Free play never locks the map.
 
+**Amended 2026-08-23 (§13.13):** these two halves were scheduled together in M14 and have been split. The
+**lock is map-side** and ships dormant with M14 — `ladderMapLock(reason)`/`ladderMapUnlock()`, so a daily
+adds one line rather than a feature. The **route overlay is not map-side**: a route is the racing mode's
+own artifact, and with no §12 engine there is nothing to draw, so it leaves M14 and goes to whichever
+daily ships first (§12 recommended — a restore has no path, only a shot count).
+
 ### 13.9 Storage and share
 
 - `localStorage["punctuators.ladderMap"]` = `{v:1, seen:[…]}` — a flat array of visited words, nothing
@@ -1422,7 +1470,7 @@ routing game** (§12.3). A player with the map open is reading the answer rather
 
 | File | Change |
 | ---- | ------ |
-| `ladderMap.js` | **new — BUILT 2026-08-23** — `buildForest()`/`packForest()` (one pass on first open), the LOD draw, pan/zoom/hit-test, the visited set + storage, and the `ladderMapVisit()` seam. No new data file. **M13 BUILT** — `SELFLIT`/`KLIT` + `shelfDone()` in `relight()`, the gold arc in `drawNode`, the `7/33` counter in `drawLabels`, the done-shelf gold at tier 1, the shelf line in `readout()` and the shelves-filled number in `paintStat()` |
+| `ladderMap.js` | **new — BUILT 2026-08-23** — `buildForest()`/`packForest()` (one pass on first open), the LOD draw, pan/zoom/hit-test, the visited set + storage, and the `ladderMapVisit()` seam. No new data file. **M13 BUILT** — `SELFLIT`/`KLIT` + `shelfDone()` in `relight()`, the gold arc in `drawNode`, the `7/33` counter in `drawLabels`, the done-shelf gold at tier 1, the shelf line in `readout()` and the shelves-filled number in `paintStat()`. **M14 BUILT** — the ancestry breadcrumb, the share string, the help card and the dormant daily-run guard; see §13.13.5 |
 | `ladderFunc.js` | **M13 BUILT** — `shelfProgress()` (lit/total against a passed-in `seen`, same independence-from-the-map discipline as `shelfFor`), `SHELF_MILESTONES` and `shelfMilestoneCrossed()` with its measured `SHELF_MILESTONE_MIN = 5` floor (§13.6) |
 | `index.js` | **BUILT:** `initLadderMap()` + the button wiring; **and as of M3**, `ladderMapVisit()` on every rung landed on (including the one you were standing on, so the word you typed lights the first time you shoot it). The `ladderMapHas()` read-back that steers the game (§13.7) now lives in `ladderFunc.js`'s `shelfFor`, where it orders the shelf fan's row. **M13 BUILT** — `noteShelfProgress()` (hung off `ladderMapVisit`'s newly-lit return in both `landOnRung` and `climbLadder`), `showShelfMilestone()`/`clearShelfMilestone()`, the `7/33 found` term in the fan caption, `_shelfMilestone()` (§7) and the How-to-Play tip. **Still to do:** the daily-run guard (§13.8) — M14; passed-through rungs on a §12.2 jump — needs Word Race |
 | `punctuators.html` | **BUILT** — the 🌳 button + the overlay markup. *Not* a `.modal`: that pattern is capped at 500 px and centred by transform, and a map wants the whole window. **M13** added the `.tree-map__key` legend line under the controls hint |
@@ -1472,8 +1520,14 @@ The **arc** turned out to be the load-bearing half of the display and the writte
 one, which is the reverse of how §13.4's LOD tiers describe it: the counter only exists above 20 px, and
 most of the map is spent below that.
 
-**M14 — the feel.** The daily-run guard and the post-game route overlay (§13.8), the share string, labels
-and breadcrumb polish, the How-to-Play copy.
+**M14 — the feel. BUILT 2026-08-23, see §13.13.** Two of its four items turned out to be blocked on
+dailies that do not exist, so M14 shipped the half that isn't: the breadcrumb, the share string, the map's
+own help card, and the daily-run guard **built dormant** with no caller. The post-game route overlay moved
+out of M14 entirely — a route is the racing mode's artifact, so it belongs to whichever daily ships first
+(§12's M11). Two things the build corrected in this plan, both from checking against the shipped corpus:
+the worked example used a `canine` rung that `MID_RUNGS` collapses away (`dog`'s real parent is `mammal`,
+and that collapsing is *why* a path is six words at worst), and the share string needed pluralising —
+`1 shelves` is what a share string must never say.
 
 M12 needed M3 (the heroes) only — it did **not** wait on §11 or §12, and shipping it alongside free play is
 what gives free play a reason to be replayed.
@@ -1487,12 +1541,147 @@ what gives free play a reason to be replayed.
   (§13.6): a gold banner, a chime, a gold arc and a counter. Nothing is spent or earned. The alternative —
   that this is where Punctuators finally gets a light meta-layer — is still open, and is a much bigger
   conversation than a map; nothing built for M13 forecloses it.
+- **Single-child parents are named, and that leaks answers — KNOWN ISSUE, see §13.5.** `kinsman 0/4` shows
+  you `brother`, `nephew` and `uncle` for free. The dev's rule: a word with only one kind draws as an
+  anonymous bud. Not yet fixed; the open part is what it does to the breadcrumb's no-redaction property.
 - **Are the 810 shrub trees drawn?** They are 8% of the words and half the visual clutter of the forest
   view. Options: draw them all (honest), pack them into a labelled "scrubland" at the rim, or hide trees
   under 5 nodes behind a toggle. Recommending draw-them-all until it's seen on screen.
 - **Does it belong in Inklings too?** §14.2's **Kindred Tree** décor is the same idea as a physical object
   in the cozy square, and §14.2's Specificity Range would fill it. Shared `localStorage` across two games on
   one origin is possible but has never been done here — worth a deliberate decision rather than a drift.
+
+### 13.13 M14 — the feel. BUILT 2026-08-23
+
+M14 was written as four items. Two of them are **blocked, not deferred by choice**: §13.8's daily-run guard
+and post-game route overlay both assume a daily, and neither §11 (Restore the Phrase, M6–M8) nor §12 (Word
+Race, M9–M11) has any game code. So M14 split:
+
+| Item | M14 |
+| ---- | --- |
+| The breadcrumb (§13.13.1) | **BUILT.** Free play needs it as much as a daily does. |
+| The share string (§13.13.2) | **BUILT.** The numbers already existed; only the sentence was missing. |
+| The map's help card (§13.13.4) | **BUILT.** The map had no help of its own — one tip inside the *hero* modal was all there was. |
+| The daily-run guard (§13.13.3) | **BUILT DORMANT.** The lock is map-side work, and writing it now means §11/§12 add one line rather than a feature. Exercised by `?maplock=`. |
+| The post-game route overlay | **Out of M14.** A route is the racing mode's artifact and there is nothing to draw. It went to §12's M11 — an amendment to §13.8, recorded there. |
+
+Nothing here touches the layout, the pack, the LOD tiers or the storage format, so nothing in M14 can move
+a circle or lose a lit word.
+
+#### 13.13.1 The breadcrumb — the whole path, not just the parent
+
+Today the readout under the pointer names one hop: `dog — a kind of mammal · lit · 7/33 kinds`. One hop is
+the least useful hop, because it is the one the picture already shows — `dog` is drawn *inside* `mammal`.
+What the picture cannot show at a readable zoom is where the pointer sits in the whole hierarchy, which is
+the thing the mode is about.
+
+**The breadcrumb is the full chain to the root, broad → narrow**, in the readout, replacing the `a kind
+of …` clause:
+
+```
+animal › mammal › dog   · lit · 7/33 kinds
+```
+
+(That is the real chain: `build-ladders.py`'s `MID_RUNGS` collapses WordNet's `chordate`/`vertebrate`/
+`carnivore`/`canine` away, which is why a path is six words at worst rather than a dozen.)
+
+- **Broad-first**, because that is the direction the ladder reads in play: General walks left, Keen walks
+  right. The specific word — the one that changes as you move the pointer — lands at the end.
+- **It can never be redacted.** Every ancestor has a child by definition, so every ancestor is an internal
+  word, and §13.5 names all of those. Only the hovered word itself can be fogged, which the existing
+  `named` branch already handles; a fogged bud reads `animal › mammal › dog › an unvisited kind`.
+- **Measured, so the box has to change.** Depth caps at 5, so a path is at most **6 words** — no truncation
+  logic is needed. But the longest real one is **92 characters** (`immorality › unrighteousness ›
+  dishonesty › untruthfulness › insincerity › sanctimoniousness`) and the readout is today a single
+  `white-space` default line pinned bottom-left. It gets a `max-width` and is allowed to **wrap to two
+  lines**; the ancestors render dimmer than the word itself so the line still resolves at a glance.
+- It is a DOM node, not canvas, so this is spans and CSS — no change to `drawLabels`.
+- **As built, it needed a memo.** `readout()` fires on every `pointermove`, and M14 turned it from one
+  `textContent` write into a built HTML string. A `readShown` index guard — the same trick `paintStat()`
+  already uses for its 30k-node sweep — rebuilds only when the hovered node actually changes. `relight()`
+  resets it, since a word lighting changes the numbers on the line under the pointer.
+
+**"Labels polish" resolves to this and nothing else.** The canvas labels were reviewed and left alone: the
+name-plus-`7/33` pair at tier 3 is already what §13.6 wanted, and the tier below it is deliberately mute.
+
+#### 13.13.2 The share string
+
+§13.9 sketched `🌳 Tree of Kinds · 1,204 words · 42 shelves · ANIMAL 31%`. Two of those three numbers are
+already computed every time `paintStat()` runs. The third needs a decision.
+
+**Which tree gets named?** Not the one with the most lit words: `person` is **4,415 nodes, 14% of the whole
+corpus**, so it would win for nearly every player and the term would neither move as you play nor differ
+between two people — which is the entire job of a share stat. Instead: **the best-filled tree of real
+size** — the highest lit *fraction* among the **88 roots holding ≥50 nodes**, tie-broken by lit count. The
+≥50 floor is what stops a two-node shrub at 100% from taking the slot (465 roots have fewer than 5 nodes).
+The term is omitted entirely until something is lit.
+
+- **Spoiler-free by construction, and this was verified rather than assumed.** It names exactly one root;
+  a root is a word with no parent, which means it appears in `ladderDown` only as a *key*, which means it
+  has children — **measured: 0 of the 1,002 roots are leaves**. So §13.5's fog rule cannot be broken by it.
+- **Where:** a `📋` button in the map bar, between ⌖ and ×. Clipboard API with the textarea fallback, the
+  same shape as Critter Hunt's `copyShare` (`critter-hunt.html:1092`); the button confirms by swapping its
+  own label for a beat.
+- **Cost:** the 30,545-node shelf sweep already runs in `paintStat()`, and the root scan is 1,002 entries.
+  Both happen on click. Nothing is added to the draw path.
+
+#### 13.13.3 The daily-run guard — built dormant, one caller away
+
+`ladderMapLock(reason)` / `ladderMapUnlock()` out of `ladderMap.js`. While locked:
+
+- `openLadderMap()` refuses, and **a map already open closes** — a lock can arrive mid-session.
+- The 🌳 button goes `aria-disabled`, dims, takes a 🔒, and carries the reason as its `title`. Clicking it
+  **says why** rather than doing nothing: the label swaps to the reason for a couple of seconds. §13.8 asks
+  for "disabled, and says why", and a dead button says nothing.
+- Free play never calls it (§13.8).
+
+**Verifiable today without a daily:** `?maplock=<reason>` locks it at load, which is enough to see the
+button state, the refusal and the close-on-lock. The production callers are one line each — §11 M7 and §12
+M10, on daily start and daily finish — and both wiring tables now say so.
+
+Building it dormant is a deliberate exception to not shipping unused code, on the grounds that it is
+*map-side* work: it belongs to the file M14 is already in, and leaving it out means the first daily has to
+learn the map's internals to add it.
+
+#### 13.13.4 The map's own How-to-Play
+
+The map has no help. `index.js`'s `ladder` template ends with one sentence about it, which is the right
+place to *mention* it and the wrong place to explain it, since you read that modal before you have ever
+opened the panel.
+
+**A first-open card over the canvas**, dismissed by a button, plus a `?` in the bar to bring it back. Four
+things, all of them things you cannot infer from looking:
+
+1. Every word the two heroes know is on this map, drawn once and never rearranged. A circle holds its own
+   kinds inside it.
+2. The named circles are the words that have kinds of their own. The nameless buds are the far ends of the
+   ladder — one lights **and takes its name** the first time you land on it.
+3. The gold ring is that word's shelf: how many of its kinds you have found. A full ring is a filled shelf.
+4. Nothing here is spent or unlocked. It fills as you play, and it keeps filling across every ladder mode.
+
+Plus the controls, which already live in the hint line and stay there.
+
+**Storage costs nothing:** `loadSeen()` reads only `rec.seen`, so a `help:1` field can be added to the
+existing `{v:1, seen:[…]}` record with **no version bump and no migration** in either direction — an older
+build ignores it, and this one treats a missing field as "not seen yet".
+
+#### 13.13.5 Wiring
+
+| File | Change |
+| ---- | ------ |
+| `ladderMap.js` | **BUILT** — `ancestry(i)` + the rewritten `readout()` (now HTML, so a `readShown` memo keeps it off every pointermove — the guard `paintStat()` already used); `shareText()`/`bestTree()`/`copyShare()` + `countShelves()` extracted so the panel headline and the share string can never disagree; `ladderMapLock()`/`ladderMapUnlock()`/`isLadderMapLocked()` + the refusal in `openLadderMap()`; `showHelp()`/`dismissHelp()` and the `help` flag in `loadSeen`/`saveSeen`; `?maplock=` alongside `?mapseed=`/`?map=`; `Esc` backs out a layer at a time and `?` toggles the card |
+| `punctuators.html` | **BUILT** — the `📋` and `?` buttons in `.tree-map__bar`, the help-card markup, `? help` added to the hint line |
+| `index.css` | **BUILT** — `.tree-map__readout` gets a `max-width` and wraps (measured: 92 chars); `.tree-map__crumb`/`__here`/`__meta` for the dim-vs-gold split; `.tree-map__help` + `.tree-map__helpok`; `.tree-map__btn.ok` for the copy confirm; `.tree-btn.locked`; a phone case for the now four-button bar |
+| `index.js` | **nothing** — the guard has no caller until §11/§12, which is the point |
+| §11.8, §12.5 | **BUILT (as doc)** — the one-line `ladderMapLock()` call each daily owes on start/finish is recorded in both wiring tables |
+| `CLAUDE.md` | **BUILT** — the Punctuators row |
+
+#### 13.13.6 Open
+
+- **Does the share carry a link?** Every other share string in the repo (Critter Hunt) is bare text. Left
+  bare here too, on the same reasoning, but a URL is the obvious thing a first share request will want.
+- **The route overlay's home.** Recommended: §12 (Word Race), because a race *is* a route and §11's
+  restore has no path to draw — only a count of shots. That would make §11's finish open the map plain.
 
 ---
 

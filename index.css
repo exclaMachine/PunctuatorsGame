@@ -1299,6 +1299,15 @@ span[data-hint] {
   font-size: 1rem;
 }
 
+/* §13.13.3 — the daily-run guard. Disabled, and it SAYS WHY: the click handler swaps this label for
+   the reason for a couple of seconds, so the button has to survive getting much wider. Nothing calls
+   the lock yet; ?maplock= is how it is exercised. */
+.tree-btn.locked {
+  opacity: 0.5;
+  filter: grayscale(0.7);
+  cursor: not-allowed;
+}
+
 .tree-map {
   position: fixed;
   inset: 0;
@@ -1379,11 +1388,16 @@ span[data-hint] {
   cursor: grabbing;
 }
 
-/* Floats over the canvas rather than taking layout, so identifying a word never reflows the map. */
+/* Floats over the canvas rather than taking layout, so identifying a word never reflows the map.
+   §13.13.1 — this holds a whole ancestry chain now, not one hop. Depth caps at 5, so it is at most
+   six words, but the longest real path measures 92 characters (`immorality › unrighteousness ›
+   dishonesty › untruthfulness › insincerity › sanctimoniousness`) — hence a max-width and two
+   lines rather than the single unwrapped line this used to be. */
 .tree-map__readout {
   position: absolute;
   left: 14px;
   bottom: 38px;
+  max-width: min(56ch, calc(100% - 28px));
   padding: 5px 10px;
   border-radius: 6px;
   background: rgba(20, 17, 31, 0.88);
@@ -1391,6 +1405,7 @@ span[data-hint] {
   color: #ffe6a3;
   font-family: 'Palanquin', sans-serif;
   font-size: 0.9rem;
+  line-height: 1.4;
   pointer-events: none;
   opacity: 0;
   transition: opacity 120ms ease-in-out;
@@ -1398,6 +1413,27 @@ span[data-hint] {
 
 .tree-map__readout.on {
   opacity: 1;
+}
+
+/* The ancestors read as context, the hovered word as the subject — otherwise six equally-bright
+   words is a list rather than a path. */
+.tree-map__crumb {
+  color: #9d94bd;
+}
+
+.tree-map__readout i {
+  font-style: normal;
+  color: #6f6790;
+  padding: 0 4px;
+}
+
+.tree-map__here {
+  color: #ffd45e;
+  font-weight: 700;
+}
+
+.tree-map__meta {
+  color: #9d94bd;
 }
 
 .tree-map__hint {
@@ -1416,9 +1452,92 @@ span[data-hint] {
   color: #a98f4a;
 }
 
+/* §13.13.2 — the share button confirms in place. It has to be allowed to grow, since "Copied" is
+   six characters where the icon is one. */
+.tree-map__btn.ok {
+  font-size: 0.8rem;
+  color: #ffd45e;
+  border-color: #a98f4a;
+}
+
+/* §13.13.4 — the first-open card. It sits OVER the canvas rather than replacing it, so the thing
+   being explained is visible behind the explanation. */
+.tree-map__help {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  width: min(460px, calc(100% - 32px));
+  max-height: calc(100% - 120px);
+  overflow-y: auto;
+  padding: 18px 20px 16px;
+  border-radius: 10px;
+  border: 1px solid #3d3760;
+  background: rgba(20, 17, 31, 0.97);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  color: #cfc8ea;
+  font-family: 'Palanquin', sans-serif;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
+}
+
+.tree-map__help.on {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+
+.tree-map__help h3 {
+  margin: 0 0 10px;
+  color: #ffd45e;
+  font-size: 1.1rem;
+}
+
+.tree-map__help ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.tree-map__help li + li {
+  margin-top: 8px;
+}
+
+.tree-map__help strong {
+  color: #ffe6a3;
+}
+
+.tree-map__helpok {
+  display: block;
+  margin: 14px 0 0 auto;
+  cursor: pointer;
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid #3d3760;
+  background: #221d38;
+  color: #cfc8ea;
+  font-family: 'Palanquin', sans-serif;
+  font-size: 0.9rem;
+}
+
+.tree-map__helpok:hover {
+  background: #2d2749;
+}
+
 @media (max-width: 560px) {
   .tree-btn { top: 96px; right: 12px; font-size: 0.85rem; }
   .tree-map__title { font-size: 1rem; }
   .tree-map__stat { font-size: 0.75rem; }
   .tree-map__hint { font-size: 0.68rem; }
+  /* Four buttons plus a stat line is more than a phone bar can hold at full size. */
+  .tree-map__bar { gap: 8px; padding: 8px 10px; }
+  .tree-map__btn { font-size: 0.95rem; }
+  .tree-map__readout { font-size: 0.8rem; max-width: calc(100% - 24px); }
+  .tree-map__help { font-size: 0.95rem; padding: 14px 16px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tree-map__help { transition: none; }
 }
