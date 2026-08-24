@@ -31,6 +31,18 @@ import {
   shelfProgress,
   shelfMilestoneCrossed,
 } from "./ladderFunc.js";
+// Word Race — the same two heroes, but the player IS a word (docs/punctuators-ladder.md §12).
+// ladderAltPOJO.js (98 KB) rides along with the main corpus and is fetched only by this mode.
+import {
+  RACE_UP_ID,
+  RACE_DOWN_ID,
+  GUESS,
+  loadRace,
+  classifyGuess,
+  createRace,
+  raceFieldHTML,
+  ancestorsOf,
+} from "./ladderRace.js";
 //import { swapWord } from "./spoonerismFunc.js";
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
@@ -855,6 +867,183 @@ function pickRung(kid, hero, projectile) {
   openShelfFan(host, hero, false);
 }
 
+/* ── WORD RACE (docs/punctuators-ladder.md §12) ───────────────────────────────────────────────────
+
+   Type to summon, shoot to travel. Going UP needs no typing — there is only ever one parent, so
+   General shoots the rung floating above you. Going DOWN is where the typing lives: name a narrower
+   kind, it spawns beneath you, and Keen Arrow shoots it to travel there.
+
+   Why typing at all, when no other Punctuators mode asks for it (§14.1): branching is simply too
+   wide to draw. `person` has 805 children, `fish` 221 — a "shoot one of the children shown" field
+   can only ever show a subset, and if that subset is guaranteed to contain the route, it telegraphs
+   the answer. The shootable field survives as easy mode instead (decoysFor in ladderRace.js).
+
+   M9 is the engine only: one hardcoded pair, no daily, no stats, no share, no route overlay. The
+   daily and its map lock are M10, the win card and easy mode are M11.
+*/
+
+// The doc's own worked example (§12.3), par 5. M10 replaces this with the frozen daily pair list.
+const RACE_PAIR = { start: "poodle", target: "salmon" };
+
+let race = null; // the run in progress, from createRace()
+let raceEls = null; // {up, here, down} — resolved once after the field renders, then rewritten in place
+let raceSummoned = ""; // the word currently sitting in Keen's slot, "" when empty
+
+function raceActive() {
+  return race !== null;
+}
+
+/* The three spans are built once and only ever rewritten, never replaced — see raceFieldHTML for
+   why that matters to nodeArr. This resolves them after the initial render. */
+function bindRaceField() {
+  raceEls = {
+    up: out1.querySelector(".race-up"),
+    here: out1.querySelector(".race-here"),
+    down: out1.querySelector(".race-down"),
+  };
+  return !!(raceEls.up && raceEls.here && raceEls.down);
+}
+
+function setRaceSpan(el, word, placeholder) {
+  el.dataset.raceWord = word || "";
+  el.textContent = word || placeholder;
+  el.classList.toggle("race-none", !word);
+}
+
+function updateRaceField() {
+  if (!raceEls) return;
+  setRaceSpan(raceEls.up, race.up(), "— the top —");
+  setRaceSpan(raceEls.here, race.at, race.at);
+  setRaceSpan(raceEls.down, raceSummoned, "type a narrower kind");
+  paintRaceBanner();
+}
+
+/* The status line. Deliberately thin in M9 — it says where you're going, what par is and what
+   you've spent, and nothing else; §12.3's stats, streak and share are M10's. */
+function paintRaceBanner() {
+  const bar = document.getElementById("race-banner");
+  if (!bar || !race) return;
+  const bits = [
+    `<strong>${race.start}</strong> ⟶ <strong>${race.target}</strong>`,
+    `Par ${race.par}`,
+    `${race.moves} move${race.moves === 1 ? "" : "s"}`,
+  ];
+  if (race.detours) bits.push(`${race.detours} detour${race.detours === 1 ? "" : "s"}`);
+  const hint = race.hint();
+  if (hint) bits.push(hint);
+  bar.innerHTML = bits.join(" · ");
+  bar.classList.toggle("solved", race.solved);
+}
+
+function raceSay(text, tone = "") {
+  errorMessage.style.color = tone;
+  errorMessage.innerText = text;
+}
+
+/* Three kinds of "no", and they must sound different (§12.2) — lumping them together is what makes
+   a typing game feel broken. The third is not the player's fault at all: the word is real, the data
+   just lacks it, so it costs nothing and must never read as "you were wrong". */
+function summonFromMoveBox() {
+  if (!raceActive() || race.solved) return;
+  const typed = initialTypedSentence.value;
+  if (!typed.trim()) return;
+
+  const verdict = classifyGuess(typed, race.at);
+  switch (verdict.kind) {
+    case GUESS.OK:
+      raceSummoned = verdict.word;
+      updateRaceField();
+      raceSay(
+        verdict.via === "alt"
+          ? `yes — and ${verdict.word} is also a kind of ${ancestorsOf(verdict.word)[0]}. Shoot it with Keen Arrow.`
+          : `${verdict.word} — shoot it with Keen Arrow.`,
+        "black",
+      );
+      initialTypedSentence.value = "";
+      break;
+    case GUESS.BROADER:
+      raceSay(`${verdict.word} is BROADER than ${race.at} — switch to General Ization and shoot upward.`);
+      break;
+    case GUESS.SAME:
+      raceSay(`you're standing on ${verdict.word}.`);
+      break;
+    case GUESS.UNRELATED:
+      raceSay(`${verdict.word} isn't a kind of ${race.at}.`);
+      break;
+    default:
+      // Apologetic on purpose: five of the thirty guesses §12.2 probed were simply absent.
+      raceSay(`${verdict.word || "that"} isn't in my book — try another word. (No cost.)`);
+      break;
+  }
+}
+
+/* Landing. A descendant jump crosses every rung between, so `beagle` from `dog` is two rungs for
+   one shot — and each of them lights on the Tree of Kinds, which §13 fills from every ladder mode
+   alike. Only the rungs actually travelled light: the map is a record of where you have been. */
+function raceTravel(word, hero) {
+  const before = race.at;
+
+  // The rungs this move actually passes through. Going up that is just the parent; going down it is
+  // every ancestor of the landing word that sits BELOW where we stood, nearest-first, plus the word
+  // itself — so `beagle` from `dog` lights `hound` on the way. A jump taken through an alt edge
+  // (§12.2) has no such intermediates: `tree` is nowhere in oak's main chain, indexOf returns -1,
+  // and the move correctly lights only the word landed on.
+  const above = ancestorsOf(word);
+  const stop = above.indexOf(before);
+  const crossed =
+    hero.ladderDirection === "up" || stop === -1
+      ? [word]
+      : [...above.slice(0, stop), word];
+
+  const { detour, solved } = race.travelTo(word);
+  raceSummoned = "";
+  for (const w of crossed) ladderMapVisit(w);
+
+  if (hero.ladderDirection === "up") _izoHit();
+  else _keenHit();
+  updateRaceField();
+
+  if (solved) {
+    _ladderCapstone();
+    raceSay(
+      `✔ ${race.target} — ${race.moves} moves against par ${race.par}` +
+        (race.detours ? `, ${race.detours} detour${race.detours === 1 ? "" : "s"}` : ""),
+      "black",
+    );
+    initialTypedSentence.disabled = true;
+  } else if (detour) {
+    raceSay(`${word} — that's not closer.`);
+  } else {
+    raceSay("");
+  }
+}
+
+/* Keen's target. An empty slot is a clank rather than a rejection: nothing has been named yet. */
+function raceShootDown(span, hero, projectile) {
+  if (!claimLadderShot(projectile) || !raceActive() || race.solved) return;
+  const word = span.dataset.raceWord;
+  if (!word) {
+    flashLadder(span, hero, "ladder-capstone");
+    _ladderCapstone();
+    raceSay("name a narrower kind first — type it in the box.");
+    return;
+  }
+  raceTravel(word, hero);
+}
+
+/* General's target. At a root there is nothing above, which is the capstone, not a miss. */
+function raceShootUp(span, hero, projectile) {
+  if (!claimLadderShot(projectile) || !raceActive() || race.solved) return;
+  const word = span.dataset.raceWord;
+  if (!word) {
+    flashLadder(span, hero, "ladder-capstone");
+    _ladderCapstone();
+    raceSay(`${race.at} is the top of its tree — nothing is broader.`);
+    return;
+  }
+  raceTravel(word, hero);
+}
+
 const buttonSounds = {
   clicky: new Howl({
     src: ["./sounds/click.mp3"],
@@ -881,7 +1070,9 @@ removePuncButton.addEventListener("click", async () => {
   buttonSounds.clicky.play();
   closeShelfFan(); // a new sentence invalidates any shelf left open over the old one
   clearShelfMilestone(); // …and any banner still hanging over where a word used to be
-  if (!initialTypedSentence.value) {
+  // Word Race is the one mode that starts with an empty box, because the box isn't a sentence here
+  // — it is the move box the player types destinations into once the race is running (§12.2).
+  if (!initialTypedSentence.value && wordPlayOptions.value !== "wordRace") {
     return (errorMessage.innerText = "Field cannot be blank");
   }
 
@@ -937,17 +1128,48 @@ removePuncButton.addEventListener("click", async () => {
           "No ladder words found in your sentence — try naming some things!");
       }
     }
-    addSpansAndIdsForWordPlay(initialTypedSentence.value, out1, selectedOption);
+    if (selectedOption === "wordRace") {
+      // Same lazy corpus as the ladder, plus ladderAltPOJO.js — the answer-checking map that makes
+      // typing fair (§12.2). Only this mode fetches it, which is why it ships as its own file.
+      errorMessage.style.color = "black";
+      errorMessage.innerText = "Loading the race…";
+      try {
+        await loadRace();
+      } catch (e) {
+        errorMessage.style.color = "";
+        return (errorMessage.innerText = "Couldn't load the race — try again.");
+      }
+      errorMessage.style.color = "";
+      errorMessage.innerText = "";
+      race = createRace(RACE_PAIR);
+      raceSummoned = "";
+      ladderMapVisit(race.at); // where you start counts as somewhere you've been (§13)
+      // The column layout goes on #output, not on a wrapper span — see raceFieldHTML for why a
+      // wrapper would empty the team.
+      out1.classList.add("race-mode");
+      addSpansAndIdsForWordPlay(raceFieldHTML(race), out1, selectedOption);
+    } else {
+      addSpansAndIdsForWordPlay(initialTypedSentence.value, out1, selectedOption);
+    }
   }
   mySong.stop();
+  // Everything goes away except, in a race, the sentence box — which becomes the move box and has
+  // to stay on screen and usable for the whole run (§12.2).
   setClassName(
     "go-away",
-    initialTypedSentence,
+    ...(selectedOption === "wordRace" ? [] : [initialTypedSentence]),
     removePuncButton,
     startBanner,
     wordPlayOptions,
     typingLink,
   );
+  if (selectedOption === "wordRace") {
+    initialTypedSentence.value = "";
+    initialTypedSentence.placeholder = "name a narrower kind, then press Enter";
+    initialTypedSentence.disabled = false;
+    if (bindRaceField()) updateRaceField();
+    initialTypedSentence.focus();
+  }
 
   // The native <select> is hidden by CSS and replaced by a custom dropdown
   // (.custom-select-wrapper, built in index.html). Hiding the select alone
@@ -967,8 +1189,18 @@ removePuncButton.addEventListener("click", async () => {
 
   setClassName("grid-container", characterControls);
 
-  errorMessage.innerText = "";
+  // A race writes its own status into #error-message as you play, so clearing it here would wipe
+  // the line that just told the player where they're going.
+  if (selectedOption !== "wordRace") errorMessage.innerText = "";
   bRightAfterSentenceIsLoaded = true;
+});
+
+/* The move box (§12.2). Enter summons; the keydown guard added to the movement handler is what
+   keeps `a`/`d`/the arrows from walking the hero while the player types the word. */
+initialTypedSentence.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" || !raceActive()) return;
+  event.preventDefault();
+  summonFromMoveBox();
 });
 
 //const modal = document.querySelector(button.dataset.modalTarget);
@@ -1915,6 +2147,28 @@ class KeenArrow extends Hero {
   hitProjectileSound() {} // silent for the same reason as General's — see there
 }
 
+/* The same two heroes again, for Word Race (§12.2). Only the target id differs, so these subclass
+   rather than repeat: art, colours, projectiles and all six SFX come along unchanged.
+
+   They need to be separate INSTANCES because a race puts two different words on the field at once
+   and each hero must only be able to hit its own — General the rung above, Keen the word you
+   summoned. In free play the two share one id, because there both heroes act on the same word.
+   heroToTheRescue builds the team from the ids actually present, so the race pair never joins a
+   free-play team and the free-play pair never joins a race. */
+class GeneralIzationRace extends GeneralIzation {
+  constructor() {
+    super();
+    this.targetId = RACE_UP_ID;
+  }
+}
+
+class KeenArrowRace extends KeenArrow {
+  constructor() {
+    super();
+    this.targetId = RACE_DOWN_ID;
+  }
+}
+
 class CommaChameleon extends Hero {
   constructor(projectileLength) {
     super(
@@ -2432,6 +2686,8 @@ let roundabout = new Roundabout();
 let betar = new Betar();
 let general = new GeneralIzation();
 let keen = new KeenArrow();
+let generalRace = new GeneralIzationRace();
+let keenRace = new KeenArrowRace();
 
 let availableHeroArray = [
   period,
@@ -2458,6 +2714,9 @@ let availableHeroArray = [
   // Adjacent on purpose: Switch Character then flips straight between broaden and narrow (§4).
   general,
   keen,
+  // The Word Race pair, adjacent for the same reason (§12.2).
+  generalRace,
+  keenRace,
   article,
   foon,
 ];
@@ -2753,6 +3012,13 @@ function animate() {
                 } else {
                   climbLadder(punctuationSymbol, player, projectile);
                 }
+              } else if (punctuationSymbol.id === RACE_UP_ID) {
+                // Word Race splits the two heroes across two ids instead of sharing one (§12.2), so
+                // the gate above has already decided which hero this is — General can only ever
+                // reach the rung above, Keen only the word you summoned.
+                raceShootUp(punctuationSymbol, player, projectile);
+              } else if (punctuationSymbol.id === RACE_DOWN_ID) {
+                raceShootDown(punctuationSymbol, player, projectile);
               } else if (punctuationSymbol.id === spacel.symbol) {
                 if (punctuationSymbol.hasAttribute("data-splitwords")) {
                   const [firstWord, secondWord] =
@@ -3243,7 +3509,20 @@ hintButton.addEventListener("pointerdown", (e) => {
   }
 });
 
-addEventListener("keydown", ({ key }) => {
+/* Word Race keeps the sentence box on screen and repurposes it as the move box (§12.2), so for the
+   first time the player can be typing while a hero is on the field — and `a`, `d` and the arrows
+   would otherwise walk and fire the hero as they wrote. Harmless in every other mode, where the box
+   is sent away the moment a round starts. */
+function isTypingTarget(el) {
+  return (
+    !!el &&
+    (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)
+  );
+}
+
+addEventListener("keydown", (event) => {
+  if (isTypingTarget(event.target)) return;
+  const { key } = event;
   switch (key) {
     case "a":
     case "ArrowLeft":

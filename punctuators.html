@@ -59,6 +59,17 @@
         <label for="contraction-check">Contractions</label><br>
     </div> -->
 
+    <!-- WORD RACE status line (docs/punctuators-ladder.md §12.3): where you're going, par, and what
+         you've spent. Empty and invisible until a race starts.
+
+         KNOWN BROKEN, and deliberately not patched here — see doc §12.8. It is painted correctly on
+         every move but is the only IN-FLOW element among out-of-flow siblings (#sentence-container is
+         absolute, #input-container fixed, .shine fixed at top:80px), so it lands under the fixed title
+         and is never seen. That is why the first play of M9 read as a game with no goal. The fix is
+         §12.8's Note 1 — the start/target display replacing the edit box — which likely retires this
+         element rather than repositioning it, so don't fix the two separately. -->
+    <div id="race-banner"></div>
+
     <div id="sentence-container">
         <h1 id="output"></h1>
         <!-- <h1 id="moving-sentence">here<span id="hidden-punc" class="p">.</span> is a sentence<span id="hidden-punc" class="p">.</span></h1> -->
@@ -82,6 +93,12 @@
             <!-- General Ization broadens a word, Keen Arrow narrows it; Switch Character flips the
                  direction. Every word you land on lights up in the Tree of Kinds. -->
             <option value="ladder">General &amp; Specific</option>
+            <!-- The same two heroes, but the sentence is gone and the player IS a word: travel from
+                 one word to another across the hierarchy in as few moves as possible. Its own
+                 option, not a toggle inside General & Specific (docs/punctuators-ladder.md §12.7).
+                 DEV-ONLY (data-dev) while it is worked on — see the gate in the script below; open
+                 with ?dev=1 to see it. Next up is doc §12.8's play-test fix list. -->
+            <option value="wordRace" data-dev>Word Race</option>
           </select>
         <input type="button" id="punc-button" value="Pow! Wordplay">
        <!-- In #input-container on your main page -->
@@ -173,6 +190,21 @@
       (function () {
         const sel = document.getElementById('wordPlayOptions');
         if (!sel) return;
+
+        /* DEV-ONLY MODES. Word Race (docs/punctuators-ladder.md §12) is built but not shipped —
+           it needs more play-testing before it goes in front of anyone. Open the page with
+           ?dev=1 to get it back.
+
+           The option is REMOVED here rather than hidden with CSS, and it has to happen before the
+           custom dropdown is built below, because that dropdown is generated from sel.options —
+           hiding the <option> would leave its generated .custom-select-option on screen. Removing
+           it also keeps it out of keyboard selection on the underlying <select>. */
+        const DEV = new URLSearchParams(location.search).has('dev');
+        if (!DEV) {
+          Array.from(sel.options)
+            .filter(o => o.dataset.dev !== undefined)
+            .forEach(o => o.remove());
+        }
 
         // Wrap the hidden select
         const wrapper = document.createElement('div');

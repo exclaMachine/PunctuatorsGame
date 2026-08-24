@@ -15,7 +15,11 @@ projectile. **§7's six SFX BUILT 2026-08-23** too. **All that's left of M4 is f
 Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5 data layer BUILT
 the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
 `build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.
-Phase 3 — Word Race (§12) specced 2026-08-22, nothing built; its Deep Dive companion (§12.4) is tentative.
+Phase 3 — Word Race (§12) specced 2026-08-22, **M9 (the engine) BUILT 2026-08-24, DEV-ONLY while it is
+worked on**: `ladderRace.js`, the `--alt` build pass and its `ladderAltPOJO.js`, type-to-summon +
+shoot-to-travel against a hardcoded pair (`poodle ⟶ salmon`, par 5). Its `<option>` needs `?dev=1`, and
+**the next work is §12.8's play-test fix list, not M10** — the first play found the mode never tells the
+player where they are going. Its Deep Dive companion (§12.4) is tentative.
 Phase 4 — the Tree of Kinds progress map (§13) specced 2026-08-22, **M12 BUILT 2026-08-23** across two
 sessions (`ladderMap.js` + the overlay, then the fill). **M13 (the fill) BUILT 2026-08-23** — the shelf
 is now a first-class number on both sides: a gold arc + counter on the map, `7/33 found` in the fan's
@@ -1007,8 +1011,10 @@ How-to-Play modal copy (`updateCharacterModal`, `index.js:458`).
 
 ## 12. Phase 3 — Word Race (the traversal daily) & Deep Dive
 
-**Word Race specced 2026-08-22, not built. Deep Dive (§12.4) tentative. Both assume M2–M4 (free play) have
-shipped — they reuse the two heroes and the rung animations whole.**
+**Word Race specced 2026-08-22. M9 (the engine) BUILT 2026-08-24; the `<option>` is DEV-ONLY behind
+`?dev=1` while it is worked on. Development is ACTIVE, but the next work is §12.8's fix list — the dev's
+play-test notes — not M10. Deep Dive (§12.4) still tentative. Both assume M2–M4 (free play) have shipped
+— they reuse the two heroes and the rung animations whole.**
 
 §11 shifts words inside an authored sentence. This phase throws the sentence away: **the player *is* a
 word**, and play is travelling the hierarchy itself. Two modes share one engine — a daily route-finding
@@ -1099,6 +1105,73 @@ Generous *and* truthful — the game can even say "yes — and an oak is also a 
 **This is the one prerequisite in this phase that is data work, not game code**, and it is a prerequisite
 for typing, not for §11. See §12.7.
 
+#### `ladderAlt` — measured, then built. BUILT 2026-08-24 (M9)
+
+§12.7 said *measure before committing*, so it was measured before a line of engine code was written.
+Emitted in `ladderDown`'s own parent→children shape, the first cut came to **158 KB raw / 65 KB gzipped**
+— 47% of `ladderDown`'s size, well under the "if it lands anywhere near 337 KB the answer changes"
+threshold. It fixed **5 of the 9** probe guesses that the main map currently rejects (`oak` `maple`
+`birch` at `tree`, `chicken` at `bird`, `tuna` at `fish`), leaving 22 that already worked.
+
+**The prune §12.7 floated as the cheaper alternative was measured and rejected.** Keeping only edges
+with *both ends in `2of12.txt`* — the same familiarity floor §12.3 puts on the daily pool — saved just
+**9%** (143 KB) while losing coverage. Alt edges are already overwhelmingly between familiar words, so
+the second concept bought nothing.
+
+**What the measurement did change is the content, and it is the part worth remembering.** The first cut
+was half junk, because WordNet files two very different things under "another sense":
+
+```
+a second view of the SAME thing   oak.n.01 the tree (c=3) / oak.n.02 the wood (c=1)      KEEP
+                                  chicken the bird (c=16) / chicken the meat (c=10)      KEEP
+a metaphor, or a slur             dog.n.01 the animal (c=42) / frump.n.01 a person (c=0) DROP
+                                  plant (c=63) / a person planted in an audience (c=0)   DROP
+```
+
+Unfiltered, the map cheerfully asserted that a **dog, a cow, a snake and a plant are all kinds of
+PERSON**, and `action` (389 children), `person` (219) and `knowledge` (185) were the widest shelves on
+it — every one an obscure or figurative reading nobody types. The discriminator is that the junk pairs a
+*dominant* best sense with a **zero-evidence** alt sense, while the real ones keep a real share of the
+word's corpus count. So an alt sense must carry **≥20% of the word's best-sense count**
+(`ALT_MIN_SHARE`), a share rather than a floor because the pair is what matters: 0.2 keeps every good
+probe (lowest, `orange`, is 0.25) and drops every bad one (highest, `way`→`action`, is 0.10). A word
+whose senses *all* have zero evidence keeps its edges — there's no reason to prefer its main sense
+either, which is how `_best_noun_sense` already treats that case.
+
+Filtered: **98 KB raw / 41 KB gzipped, 5,827 words / 7,538 edges** — 38% smaller than the first cut,
+with **identical acceptance on all 31 probes** and the lies gone.
+
+**It ships as its own file, `ladderAltPOJO.js`, not folded into `ladderPOJO.js`** — a deliberate
+departure from §12.5's wiring table. Free play, Restore the Phrase and the Tree of Kinds all read the
+main corpus and none of them want this, so only the race pays the 98 KB, and it is already behind a
+lazy import.
+
+#### The four `ladderAlt` cannot fix — a second, harder class. FOUND 2026-08-24
+
+Diagnosing the probes alt *didn't* fix turned up a failure this section had folded into the sense trap
+but which is a different thing entirely, and **unfixable by any amount of alt data**: some relations a
+player is certain of **do not exist anywhere in WordNet, in any sense**.
+
+```
+tulip   → plant  (bulbous_plant → liliaceous_plant)   `flower` is NOWHERE above it
+rose    → shrub                                        `flower` is NOWHERE above it
+redwood → wood   (also sequoia → cypress)              `tree`   is NOWHERE above it
+racer   → animal | car | snake | driver                every sense is a real thing, none is a person
+```
+
+A tulip is not a kind of flower in WordNet — it is a bulbous plant, and `flower.n.01` sits on a different
+branch. So `oak`-at-`tree` (fixed by alt: a real second sense exists) and `tulip`-at-`flower` (unfixable:
+no sense of tulip is under flower) look identical to the player and are completely different to the data.
+
+This does **not** block the mode, and needs no new data — it lands in the existing **"not a kind of it"**
+rejection, which is honest as far as the corpus goes. It matters for two things downstream:
+**§12.3's pair selection must never sit a target one hop from a hole like this** (a race whose last move
+is "type a kind of flower" is unwinnable for a player who reaches for `tulip` or `rose` first), and it is
+the strongest argument for **easy mode's decoy field** being more than a concession to younger players —
+a field of real children can't be argued with. If it ever needs a real fix, the shape is a small hand
+table (`FLOWER_ALSO = tulip rose …`), not a generated map; nothing was authored now because the size of
+the problem is unmeasured beyond these four.
+
 **Easy mode = the decoy field.** Instead of typing, eight words float below you: some true children, some
 decoys pulled from a sibling branch (`corgi husky pug mackerel`). Shoot a true one to travel, a decoy to
 lose time. Same engine, menu instead of recall — the version that works for a young player, and the one
@@ -1163,20 +1236,65 @@ mode (§12.2) is the whole mode for younger players.
 
 | File | Change |
 | ---- | ------ |
-| `build-ladders.py` | `--alt` — emit `ladderAlt`, the answer-checking-only alternate-sense map (§12.2). **Data prerequisite for typing.** |
-| `ladderPOJO.js` | gains `ladderAlt` alongside `ladderDown` (size impact unmeasured — see §12.7) |
-| `racePOJO.js` | **new, generated** — the frozen daily pair list (§12.3) |
-| `ladderRace.js` | **new** — the traversal engine: position, `isDescendant`, `parFor` (LCA), the three rejection classes, the decoy generator |
-| `utils/utils.js` | `case "wordRace":`; suppress `protectedArticles` + `spoonerism` as §11.6 does |
-| `punctuators.html` | the `<option value="wordRace">`; the race card; the move box repurposing the sentence input |
-| `index.js` | race branch in the `removePuncButton` handler; travel on collision; daily + stats + share; the hint ladder. **Plus one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's race to open the map")` on daily start, `ladderMapUnlock()` on finish — the map is a routing atlas and this is the mode it would solve.** |
-| `index.css` | the race card, the target banner, the summoned-word span, the win/share card |
+| `build-ladders.py` | **`--alt` BUILT 2026-08-24** — emits `ladderAltPOJO.js` (§12.2). Reads the shipped `ladderPOJO.js` like `--phrases` (so an alt edge can never name a rung the game lacks) but *does* need WordNet, since the point of it is the senses the main map threw away. `climb_from` was split out of `parent_of` so both passes share one copy of the BFS climb. |
+| `ladderAltPOJO.js` | **new, generated — BUILT 2026-08-24**, 98 KB / 41 KB gzipped. **Its own file, not folded into `ladderPOJO.js`** as this table originally planned — only the race wants it (§12.2). |
+| `racePOJO.js` | **new, generated** — the frozen daily pair list (§12.3). **M10.** |
+| `ladderRace.js` | **new — BUILT 2026-08-24 (M9)** — the traversal engine: `ancestorsOf`/`rootOf`/`depthOf`/`sameTree`, `lowestCommonAncestor`, `parFor`, `descentFrom` (main + one alt hop), `classifyGuess` → the five `GUESS` classes, `decoysFor`, `raceFieldHTML`, and `createRace()` holding the run. Borrows `ladderFunc.js`'s already-loaded corpus rather than parsing a second copy; `Map`/`Set` throughout. |
+| `utils/utils.js` | **BUILT** — `case "wordRace":` (the field arrives pre-marked, so nothing to wrap); `protectedArticles` and `spoonerism` both suppressed, as §11.6 does. |
+| `punctuators.html` | **BUILT, DEV-ONLY** — the `<option value="wordRace" data-dev>` (stripped from the dropdown unless `?dev=1`, see M9) and `#race-banner`. The move box is the existing sentence input, kept on screen rather than sent away. The win card is M11. |
+| `index.js` | **BUILT (M9)** — the race block (field binding, the move box, the three rejections, `raceTravel`, `raceShootUp`/`raceShootDown`), `GeneralIzationRace`/`KeenArrowRace`, two collision branches, the race branch in the `removePuncButton` handler. **Still M10/M11:** daily + stats + share, the hint ladder's chrome, and one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's race to open the map")` on daily start, `ladderMapUnlock()` on finish — the map is a routing atlas and this is the mode it would solve. |
+| `index.css` | **BUILT** — `#output.race-mode`, the three `.race-word` spans, `#race-banner`. The win/share card is M11. |
 | `CLAUDE.md` | the Punctuators row per milestone |
 
 ### 12.6 Milestones
 
-**M9 — the engine.** `ladderAlt` in the build, `ladderRace.js`, type-to-summon + shoot-to-travel, the three
-rejections, descendant jumps. Playable against a hardcoded pair, no daily, no chrome.
+**M9 — the engine. BUILT 2026-08-24, and DEV-ONLY from the same day.** The `<option>` carries `data-dev`
+and is stripped from the dropdown unless the page is opened with `?dev=1` (the gate is in
+`punctuators.html`'s dropdown IIFE, and has to run *before* the custom dropdown is generated from
+`sel.options` — hiding the `<option>` with CSS would leave its generated `.custom-select-option` on
+screen). The gate is a work-in-progress guard, not a shelving: **the next work on this phase is §12.8's
+fix list**, which came out of the first play of M9 and starts with the fact that the mode never told the
+player where they were going.
+
+`--alt` in the build → `ladderAltPOJO.js`, `ladderRace.js`,
+type-to-summon + shoot-to-travel, the three rejections, descendant jumps. Playable against the hardcoded
+`poodle ⟶ salmon` (par 5), no daily, no chrome. **Verified against this doc's own numbers:** all six
+sample pairs in §12.3 compute the par printed there (5·5·6·4·2·2), and the guess classes behave —
+`beagle`@`dog` = 2 rungs via main, `oak`@`tree` = 1 rung via alt, `mammal`@`dog` = broader,
+`cat`@`dog` = unrelated, `chihuahua`@`dog` = unknown.
+
+Five things came out differently from the spec:
+
+- **`ladderAlt` ships as its own file and gained a quality filter** — measured first, as §12.7 demanded.
+  See §12.2's `ladderAlt` subsection: 98 KB, the both-ends-in-`2of12` prune rejected, `ALT_MIN_SHARE`
+  added because the unfiltered map asserted that dogs and cows are kinds of person.
+- **The heroes are two extra instances, not two new classes.** `GeneralIzationRace`/`KeenArrowRace`
+  subclass the free-play pair and change only `targetId`, so art, colours, the broadsword and all six
+  SFX come along untouched.
+- **The race splits the heroes across TWO span ids** (`RACE_UP_ID`/`RACE_DOWN_ID`) where free play has
+  them share one (§4). A race puts two different words on the field at once and each hero must reach
+  only its own; the existing `id === (targetId ?? symbol)` gate then does the separation for free, with
+  no new collision code. In free play both heroes act on the same word, which is why sharing is right
+  there and wrong here.
+- **The field needed no `nodeArr` bookkeeping at all**, unlike §2.5's fan. Three spans rendered once
+  through the normal path and thereafter only *rewritten* (textContent + dataset) are never detached, so
+  there is nothing to push, nothing to splice, and no all-zero-rect phantom to guard against.
+- **A fifth rejection class was needed:** `GUESS.SAME`, for typing the word you are standing on. §12.2's
+  three are about words that are elsewhere; this one is about a word that is nowhere to go.
+
+**The footgun this milestone hit — a wrapper span empties the team.** The field was first written as
+three spans inside one `.race-field` container, for the column layout. That is the same white-screen
+failure as the two footguns already on record: **a `MutationRecord`'s `addedNodes` lists only the nodes
+inserted *directly* into the observed parent**, never the descendants of an added node, so `nodeArr`
+would have received the wrapper alone — the two shootable words invisible to collision,
+`heroToTheRescue` returning an empty team, `player` undefined, `animate()` throwing every frame. The
+three spans are now **top-level siblings** and the column lives on `#output.race-mode`. Caught before
+the browser saw it, and now commented at `raceFieldHTML`.
+
+**One fix that reaches every mode:** the global `keydown` handler that walks and fires the hero had **no
+target check**, which was harmless only because every other mode sends the input box away when a round
+starts. Word Race keeps it (it *is* the move box), so `a`, `d` and the arrows would have driven the hero
+while the player typed. It now ignores events from an `input`/`textarea`/`contenteditable`.
 
 **M10 — the daily.** `racePOJO.js`, selection, lock, stats/streak, share, give-up, the hint ladder.
 
@@ -1188,16 +1306,79 @@ route is this mode's artifact, so it cannot be built before the mode is).
 
 ### 12.7 Open questions
 
-- **Is `ladderAlt` worth its bytes?** Unmeasured. It is a prerequisite for typing feeling fair (§12.2), but
-  if it lands anywhere near `ladderDown`'s 337 KB the answer changes to a curated accept-list for the few
-  hundred words a daily can actually reach. **Measure before committing.**
-- **Does the field layout work?** Free play positions spans as a rendered *sentence*. A traversal screen
-  wants a parent above / summoned word below arrangement, and how `index.js` lays out and hit-tests spans
-  hasn't been read yet. This is the main code-side unknown in the phase, and it applies to §11 too.
-- **Typed input vs. the shooter's own keyboard.** The game already reads keys for movement. The move box
-  needs focus rules that don't fight it — probably "typing focuses the box, Space/Enter fires".
+- ~~**Is `ladderAlt` worth its bytes?**~~ **CLOSED 2026-08-24 — yes, at 98 KB in its own file.** Measured
+  before any engine code (§12.2's `ladderAlt` subsection): 47% of `ladderDown` at first cut, 29% after the
+  `ALT_MIN_SHARE` filter, fixing 5 of 9 lying rejections. The curated accept-list alternative wasn't needed;
+  the both-ends-in-`2of12` prune was measured and rejected at 9% savings.
+- ~~**Does the field layout work?**~~ **CLOSED 2026-08-24.** A traversal screen turned out to be *easier*
+  than the sentence, not harder: three fixed spans, rewritten in place, no absolute positioning and no
+  `nodeArr` bookkeeping (see M9's notes). The one trap was the wrapper span, also recorded there.
+- ~~**Typed input vs. the shooter's own keyboard.**~~ **CLOSED 2026-08-24** — Enter summons from the box,
+  and the movement handler now ignores keystrokes aimed at an input. The predicted "Space/Enter fires" rule
+  wasn't needed: ↑ still fires, because the box no longer competes for the arrows.
+- **New, from M9 (§12.2): the relations WordNet simply lacks.** `tulip`/`rose` are not under `flower`,
+  `redwood` is not under `tree`, in any sense — so no alt data can fix them. It doesn't block the mode
+  (they land in "not a kind of it"), but **§12.3's pair selection must not put a target one hop from a
+  hole like this**, and the size of the problem beyond those four is unmeasured.
 - **One `<option>` or two?** Word Race and Deep Dive are one engine and two goals. Recommending two
   options, matching §11.2's "its own `<option>`, no branching inside another mode".
+
+---
+
+### 12.8 Play-test notes — the fix list
+
+**Opened 2026-08-24 after the first play of M9.** The dev's notes from playing it, recorded here and
+**deliberately not acted on** — this section is the queue, not a changelog. More notes are expected before
+any of it is built. M9 stays **dev-only** (`?dev=1`) while the list is worked through.
+
+#### The finding that opened it: the goal is never communicated
+
+The dev played M9 and reported it as *not the game they thought we were making* — they expected "get from
+one word to another in the fewest moves", **which is exactly what §12.3 specs and what M9 built**. Nothing
+about the mechanic was wrong. **The player was simply never told to head for `salmon`.** That is the whole
+gap, and it is worth stating plainly because the same symptom would otherwise read as a design failure and
+send the mode back to the drawing board: *a traversal game whose destination isn't on screen is
+indistinguishable from aimless word-climbing.*
+
+**Root cause, found in the markup rather than the logic.** `#race-banner` — which carries
+`poodle ⟶ salmon · Par 5` — is painted correctly by `paintRaceBanner()` on every move. It is just **the
+only in-flow element among out-of-flow siblings**: `#sentence-container` is `position: absolute`,
+`#input-container` is `position: fixed`, and the title `.shine` is `position: fixed; top: 80px`. So the
+banner lands in normal document flow at the top of `<body>` — *underneath the fixed title* — and is
+effectively invisible. It was never seen, so the goal was never seen.
+
+This is a layout bug with a one-line fix, but **it should not be fixed on its own**, because the dev's
+first note supersedes it entirely:
+
+#### Note 1 — replace the edit box with the start and target words
+
+> *"When the Word Race is selected the edit box should be replaced with the word start and ending word."*
+
+When Word Race is chosen, the sentence input should give way to a display of **the start word and the
+ending word**, rather than the box simply sitting there as it does now.
+
+Why this is the right shape and not just a cosmetic preference, worth keeping when it is built:
+
+- **It puts the goal where the player is already looking.** `#input-container` is `position: fixed` and is
+  the last thing the player interacted with — they clicked *Pow!* there a moment ago. It is the one region
+  of the screen guaranteed to be in view, which is precisely what `#race-banner` is not.
+- **It gives the box's space a job at the only moment the box has none.** M9 repurposes the sentence input
+  as the move box (§12.2), but that is a *mid-run* role; at the moment the race starts there is nothing to
+  type yet, and an empty text field reads as "type your sentence here" — the exact wrong instruction.
+- **It very likely retires `#race-banner`.** Two places showing race state is one too many; the start/target
+  display should absorb par, moves and detours, and the banner should go. Decide that when building, but do
+  not build both.
+
+**Open within this note, for whenever it is picked up:** whether the move box returns in place of the
+display once the run is under way (the player still has to type to summon), or whether the two coexist —
+the display above, the box below. The second is probably right, since the destination is worth keeping on
+screen for the whole run, and it is the thing whose absence caused this note.
+
+#### Still to come
+
+The dev has more notes. Nothing in this section is scheduled against M10 or M11 yet; when the list is
+complete it should be triaged into them, and this section pruned to whatever rationale is still load-bearing
+(per the repo's lean-docs rule — git holds the history).
 
 ---
 

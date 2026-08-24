@@ -23,6 +23,10 @@ Also builds the PUZZLE corpus for the Restore the Phrase mode (docs §11.5):
 
   phrases-source.txt  ->  phrasePOJO.js   export const ladderPhrases = [ {show, say, fix…}, … ]
 
+…and the ANSWER-CHECKING map for the Word Race mode (docs §12.2):
+
+  ladderAltPOJO.js   export const ladderAlt = { tree: "oak maple birch …", … }
+
 USAGE
   pip install nltk
   python3 build-ladders.py                  # downloads WordNet to a temp dir, writes ladderPOJO.js
@@ -31,10 +35,14 @@ USAGE
   python3 build-ladders.py --why dog        # one raw WordNet climb, with a verdict per candidate
   python3 build-ladders.py --phrases        # phrases-source.txt -> phrasePOJO.js (+ rewrites the #~ notes)
   python3 build-ladders.py --phrases --check   # same, reported but written nowhere
+  python3 build-ladders.py --alt            # ladderPOJO.js -> ladderAltPOJO.js (needs WordNet)
+  python3 build-ladders.py --alt --check    # same, reported but written nowhere
 The tuning loop is --spot to iterate, --why when a word surprises you, then a bare run to ship.
 
 --phrases needs NO WordNet: it reads the already-generated ladderPOJO.js, so a puzzle can never
 assert a rung the game doesn't have, and the prune-then-rebuild loop costs a second, not a minute.
+--alt reads that same shipped file for the same reason, but DOES need WordNet, because the whole
+point of it is the senses the shipped map threw away.
 """
 
 import json
@@ -46,6 +54,7 @@ import tempfile
 OUT_FILE = "ladderPOJO.js"
 PHRASE_SRC = "phrases-source.txt"
 PHRASE_OUT = "phrasePOJO.js"
+ALT_OUT = "ladderAltPOJO.js"
 
 # The phrase build works off the shipped map (see the module docstring), so skip the WordNet
 # download and the three corpora entirely — none of the code it reaches touches them.
@@ -315,7 +324,16 @@ def parent_of(word, verbose=False, relaxed=False):
     """
     if word in PARENT_OVERRIDE:
         return PARENT_OVERRIDE[word]
-    syn = _best_noun_sense(word)
+    return climb_from(word, _best_noun_sense(word), verbose=verbose, relaxed=relaxed)
+
+
+def climb_from(word, syn, verbose=False, relaxed=False):
+    """parent_of's climb, but from a GIVEN synset rather than the word's best sense.
+
+    Split out for --alt (docs §12.2), which needs exactly this walk run against the senses the
+    shipped map discarded. Everything about the climb — breadth-first, nearest-rung-wins, the two
+    top-stop overrides — is described on parent_of, and lives here so there is only one copy of it.
+    """
     if syn is None or syn.instance_hypernyms():
         return None
     at_top = word in TOP_STOPS
@@ -912,6 +930,143 @@ def build_phrases(write=True):
     return 1 if errors else 0
 
 
+# ============================================================================
+# --alt: the Word Race answer-checking map (docs §12.2, §12.7)
+# ============================================================================
+# A ladder follows ONE sense, which is what keeps a climb truthful — but a player typing a word
+# brings their own sense with them, and the two diverge in both directions:
+#
+#     oak maple birch -> wood -> material     (typed at `tree`: rejected, and the rejection is a lie)
+#     chicken -> meat        tuna -> food        rose -> bush
+#
+# So: every word's OTHER surviving parents, from its OTHER senses. Used ONLY to check a typed
+# answer — the climb itself never touches it, so ladders stay single-sensed and unambiguous, and
+# the game can even say "yes — and an oak is also a kind of wood."
+#
+# It ships as its OWN FILE rather than joining ladderPOJO.js (a departure from docs §12.5, decided
+# on the measurement below): free play, Restore the Phrase and the Tree of Kinds all read the main
+# corpus and none of them want this, so only the race pays for it.
+#
+# MEASURED on the built corpus: 8,480 words carry an alt edge (27.8%), 14,152 edges, 158 KB raw /
+# 65 KB gzipped — 47% of ladderDown's size. Pruning it to "both ends in 2of12.txt", the curated cut
+# §12.7 floated as the cheaper alternative, saves only 9% and loses coverage, so it isn't worth the
+# second concept: alt edges are already overwhelmingly between familiar words.
+
+# How much of a word's corpus evidence an ALTERNATE sense has to carry before the game will accept
+# an answer through it. This is the filter that separates the two things WordNet files together:
+#
+#   a second view of the SAME thing   oak.n.01 the tree (c=3) / oak.n.02 the wood (c=1)      KEEP
+#                                     chicken the bird (c=16) / chicken the meat (c=10)      KEEP
+#   a metaphor or a slur              dog.n.01 the animal (c=42) / frump.n.01 a person (c=0) DROP
+#                                     plant (c=63) / a person planted in an audience (c=0)   DROP
+#
+# Without it the map cheerfully asserts that a dog, a cow, a snake and a plant are all kinds of
+# PERSON, and `action`, `knowledge` and `quality` become the widest shelves on it — every one of
+# them an obscure or figurative reading no player means when they type the word.
+#
+# A share rather than a floor, because the pair is what matters, not the absolute number: 0.2 keeps
+# every probe in the good column above (lowest, orange, is 0.25) and drops every one in the bad
+# column (highest, `way`→action, is 0.10). A word whose senses ALL have zero evidence keeps its alt
+# edges — there is no reason to prefer its main sense either, which is exactly how
+# _best_noun_sense already treats that case.
+ALT_MIN_SHARE = 0.2
+
+
+def _lemma_count(syn, word):
+    return next((l.count() for l in syn.lemmas() if l.name() == word), 0)
+
+
+def alt_parents_of(word, up, words):
+    """`word`'s parents from senses other than its best one — minus anything already reachable.
+
+    Five filters, each of which would otherwise put a lie or a loop in the map:
+      - the word must really be a lemma of the sense (WordNet lists synsets a word only relates to);
+      - the sense must carry its share of the word's corpus evidence (see ALT_MIN_SHARE);
+      - a rung already on the main up-chain adds nothing, since the walk finds it anyway;
+      - a rung the shipped map has no node for is unreachable, so it could never be the position
+        a player is standing on;
+      - an edge whose target sits BELOW the word in the main map would close a cycle.
+    """
+    best = _best_noun_sense(word)
+    if best is None:
+        return []
+    best_count = _lemma_count(best, word)
+
+    def chain_from(w):
+        out, cur, guard = [], up.get(w), 0
+        while cur and guard < 12:
+            out.append(cur)
+            cur = up.get(cur)
+            guard += 1
+        return out
+
+    known = set(chain_from(word)) | {word}
+    out = []
+    for syn in wn.synsets(word, pos="n"):
+        if syn is best or syn.instance_hypernyms():
+            continue
+        if not any(l.name() == word for l in syn.lemmas()):
+            continue
+        if best_count and _lemma_count(syn, word) / best_count < ALT_MIN_SHARE:
+            continue
+        p = climb_from(word, syn) or climb_from(word, syn, relaxed=True)
+        if not p or p == word or p in known or p in out or p not in words:
+            continue
+        if word in chain_from(p):
+            continue
+        out.append(p)
+    return sorted(out, key=commonness, reverse=True)
+
+
+def build_alt(write=True):
+    up, down = load_ladder_js()
+    words = set(up) | set(down)
+    print(f"read {OUT_FILE}: {len(down)} parents / {len(words)} words")
+
+    alt = {}
+    for i, w in enumerate(sorted(words)):
+        if i and i % 5000 == 0:
+            print(f"  … {i}/{len(words)}")
+        ps = alt_parents_of(w, up, words)
+        if ps:
+            alt[w] = ps
+    edges = sum(len(v) for v in alt.values())
+    print(f"alt: {len(alt)} words carry an alt edge ({len(alt) / len(words) * 100:.1f}%), "
+          f"{edges} edges")
+
+    # Emitted in ladderDown's own shape — parent -> its children — for the same reason ladderDown
+    # is: the edges collapse onto far fewer parents, so a child costs len(word)+1 inside a shared
+    # string. The game inverts it at load, exactly as it does the main map.
+    altdown = {}
+    for w, ps in alt.items():
+        for p in ps:
+            altdown.setdefault(p, []).append(w)
+    lines = [
+        "// ladderAltPOJO.js — AUTO-GENERATED by build-ladders.py --alt from WordNet. Do not hand-edit.",
+        "// ANSWER-CHECKING ONLY (docs/punctuators-ladder.md §12.2). A kind of thing -> the narrower",
+        "// kinds of it that the MAIN ladder sends somewhere else, because their everyday sense and",
+        "// their best sense differ:  tree: \"oak maple birch …\"  while ladderDown puts those under wood.",
+        "// Word Race accepts a typed word that reaches its target through ladderDown OR through one",
+        "// of these edges. The climb itself must never read this file — ladders stay single-sensed.",
+        "export const ladderAlt = {",
+    ]
+    for p in sorted(altdown, key=lambda w: (commonness(w), w), reverse=True):
+        kids = sorted(altdown[p], key=lambda w: (commonness(w), w), reverse=True)
+        lines.append(f'  {p}: "{" ".join(kids)}",')
+    lines.append("};")
+    lines.append("")
+    blob = "\n".join(lines)
+
+    if not write:
+        print(f"--check: {len(altdown)} parents, {len(blob) / 1024:.0f} KB, nothing written")
+        return 0
+    with open(ALT_OUT, "w", encoding="utf-8") as f:
+        f.write(blob)
+    print(f"wrote {ALT_OUT}: {len(altdown)} parents / {edges} edges, "
+          f"{os.path.getsize(ALT_OUT) / 1024:.0f} KB")
+    return 0
+
+
 SPOT_CHECK = ["poodle", "dog", "tree", "car", "bird", "chair", "pizza", "river", "shoe", "teacher",
               "cat", "salmon", "rose", "hammer", "guitar", "castle", "sandwich", "bee", "shirt",
               "mountain", "doctor", "hat", "spoon", "truck", "wolf", "apple", "book", "cheese"]
@@ -950,6 +1105,12 @@ if __name__ == "__main__":
     if PHRASES_ONLY:
         try:
             sys.exit(build_phrases(write="--check" not in sys.argv))
+        except PhraseError as e:
+            print(f"error: {e}")
+            sys.exit(1)
+    if "--alt" in sys.argv:
+        try:
+            sys.exit(build_alt(write="--check" not in sys.argv))
         except PhraseError as e:
             print(f"error: {e}")
             sys.exit(1)

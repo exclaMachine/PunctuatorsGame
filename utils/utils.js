@@ -97,7 +97,11 @@ export const addSpansAndIdsForWordPlay = (
     //RemoveVowels(typedString);
   }
 
-  let processed = protectedArticles(typedString); // Always apply articles first
+  // Word Race is the one mode with no sentence: index.js hands in a field of three words it built
+  // itself (docs/punctuators-ladder.md §12.2), so there are no articles to fix and nothing for Art
+  // the Tickler to do. Rewriting the field would only corrupt the spans the race is about to drive.
+  let processed =
+    mode === "wordRace" ? typedString : protectedArticles(typedString);
 
   // Apply transformation based on selected mode
   switch (mode) {
@@ -131,13 +135,18 @@ export const addSpansAndIdsForWordPlay = (
     case "ladder":
       processed = protectedLadders(processed);
       break;
+    case "wordRace":
+      // Already marked up by ladderRace.js's raceFieldHTML — nothing to wrap.
+      break;
     default:
       // No additional wordplay besides articles and spoonerism
       break;
   }
 
-  // Apply spoonerism (Foon) last — but never in anagram mode
-  let final = mode === "anagrams" ? processed : spoonerism(processed);
+  // Apply spoonerism (Foon) last — but never in anagram mode, and never in Word Race, where Foon
+  // swapping the heads of the three field words would rewrite the very words being raced between.
+  let final =
+    mode === "anagrams" || mode === "wordRace" ? processed : spoonerism(processed);
 
   // Split and render to output
   let newString = final.split("");

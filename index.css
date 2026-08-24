@@ -1285,6 +1285,84 @@ span[data-hint] {
   }
 }
 
+/* ── WORD RACE — the traversal mode (docs/punctuators-ladder.md §12) ───────────────────────────────
+   Three words in a column: the rung above (General's target), where you stand, and the word you
+   summoned (Keen's target). Vertical rather than the shelf fan's row because the two ends belong to
+   DIFFERENT heroes and are separated by id, so they never compete for the same shot — the fan's
+   words all belong to Keen, which is why that one has to spread across x to be selectable.
+
+   No absolute positioning here, and nothing pushed into nodeArr: the field is three spans rendered
+   once through the normal path and then only ever rewritten in place (see raceFieldHTML).
+
+   The column lives on #output itself rather than on a wrapper span, because a wrapper would be the
+   only node the MutationObserver records and the shootable words would never reach nodeArr — see
+   the comment on raceFieldHTML. index.js adds .race-mode when a race starts. */
+#output.race-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12em;
+  line-height: 1.05;
+}
+
+.race-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* The two shootable ends carry the hero's own colour, so which word belongs to which hero is
+   readable before either is fired at. */
+.race-up {
+  color: darkolivegreen;
+  font-size: 0.62em;
+}
+
+.race-down {
+  color: crimson;
+  font-size: 0.62em;
+}
+
+/* Where you stand: the biggest word on screen, and deliberately NOT shootable — it carries no id,
+   so no hero's collision gate can ever match it. */
+.race-here {
+  font-size: 1em;
+}
+
+/* An end with nothing on it — the top of a tree, or a slot with nothing summoned yet. It stays on
+   screen holding its place and saying what it wants, rather than vanishing and moving the other
+   two words around under the player's aim. */
+.race-word.race-none {
+  opacity: 0.42;
+  font-style: italic;
+  font-size: 0.34em;
+  letter-spacing: 0.02em;
+}
+
+#race-banner {
+  font-family: "Palanquin", sans-serif;
+  font-size: 14px;
+  text-align: center;
+  color: #2a2a2a;
+  padding: 6px 10px;
+  min-height: 0;
+}
+
+#race-banner:empty {
+  display: none;
+}
+
+#race-banner.solved {
+  color: #7a5c00;
+  font-weight: 700;
+}
+
+@media screen and (max-width: 480px) {
+  #race-banner {
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+}
+
 /* ── THE TREE OF KINDS — the ladder progress map (docs/punctuators-ladder.md §13) ──────────────────
    A full-window panel rather than a .modal: .modal is capped at 500px and centred by transform,
    and a map wants every pixel. The canvas is deliberately given a flex box to fill and is sized in
