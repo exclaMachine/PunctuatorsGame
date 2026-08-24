@@ -1167,6 +1167,56 @@ span[data-hint] {
   text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
 }
 
+/* §13.6: a finished shelf goes gold, the same signal the map uses for a full ring. */
+.shelf-fan-caption.done {
+  color: #ffd45e;
+}
+
+/* §13.6's milestone banner. ABOVE the word — the fan owns the space below, and the shot that
+   completes a shelf is usually the same shot that opens the next one, so both are on screen at
+   once. Fixed and pointer-events:none for the same reasons the fan is: it must not reflow the
+   sentence, and it must not swallow a tap meant for the canvas. */
+.shelf-milestone {
+  position: fixed;
+  z-index: 7;
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 4px 11px;
+  border-radius: 6px;
+  border: 1px solid #8a6a1e;
+  background: rgba(20, 17, 31, 0.92);
+  color: #ffd45e;
+  font-family: "Palanquin", sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  animation: shelf-milestone-in 260ms ease-out, shelf-milestone-out 400ms ease-in 2s forwards;
+}
+
+/* 100%: brighter, and it holds a beat longer than the two partial milestones. */
+.shelf-milestone.complete {
+  border-color: #ffd45e;
+  color: #fff3cd;
+  box-shadow: 0 0 14px rgba(255, 212, 94, 0.45);
+}
+
+@keyframes shelf-milestone-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shelf-milestone-out {
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
 /* The gap between the word and the row — height matches SHELF_FAN_DROP in index.js. */
 .shelf-fan-lines {
   position: absolute;
@@ -1208,6 +1258,11 @@ span[data-hint] {
   .shelf-fan-caption {
     font-size: 10px;
   }
+
+  .shelf-milestone {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1220,6 +1275,13 @@ span[data-hint] {
   .shelf-fan-lines line {
     animation: none;
     stroke-dashoffset: 0 !important;
+  }
+
+  /* Same trap as the lines: the banner's second animation ends at opacity 0 with fill:forwards, so
+     dropping both would be fine, but dropping only the motion must not leave the fade behind. It is
+     removed from the DOM on a timer either way. */
+  .shelf-milestone {
+    animation: none;
   }
 }
 
@@ -1345,6 +1407,13 @@ span[data-hint] {
   font-family: 'Palanquin', sans-serif;
   font-size: 0.78rem;
   text-align: center;
+}
+
+/* The legend for §13.6's arc, on its own line so the controls above it stay one glance. Gold,
+   because the thing it is explaining is the only gold on the map. */
+.tree-map__key {
+  display: block;
+  color: #a98f4a;
 }
 
 @media (max-width: 560px) {

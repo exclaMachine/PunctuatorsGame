@@ -169,6 +169,53 @@ export function shelfFor(word, width, seen = () => false) {
   };
 }
 
+/* ── Shelf progress and its milestones (§13.6) ────────────────────────────────────────────────── */
+
+/* A shelf is a parent's own list of narrower kinds, and its progress is lit/total — DERIVED at the
+   moment it is asked for, never stored. The map's visited set is the only state either side of this
+   file keeps, which is what makes a corpus rebuild safe: a shelf that gains a child simply gets
+   longer, and nothing has to be migrated.
+ *
+ * Milestones are keyed off the FRACTION rather than a count, for §13.3's reason: shelves run from 1
+ * child to 805, so any fixed count is either unreachable on most of the map or instant on the rest. */
+export const SHELF_MILESTONES = [
+  { f: 0.25, tier: 1, label: "a quarter of them" },
+  { f: 0.5, tier: 2, label: "half of them" },
+  { f: 1, tier: 3, label: "every kind" },
+];
+
+/* A milestone that one shot can reach is not a milestone, and without a floor a third of the map
+   would fire "every kind" on a single arrow: MEASURED on the built corpus, 1,623 of the 4,837
+   shelves (33.6%) hold exactly one child, and 3,421 (70.7%) hold four or fewer. Requiring that the
+   FIRST lit child not already cross 25% — 1/total < 0.25 — puts the floor at five, which leaves
+   1,416 shelves able to announce. The rest still count, still turn gold on the map, and simply
+   don't interrupt play to say so. */
+export const SHELF_MILESTONE_MIN = 5;
+
+/** {lit, total} for a word's shelf, or null if it has no kinds. `seen` is the map's ladderMapHas,
+ *  passed in rather than imported so this file stays independent of the map (as shelfFor does). */
+export function shelfProgress(word, seen) {
+  const list = DOWN && DOWN.get(word);
+  if (!list || !list.length) return null;
+  let lit = 0;
+  for (const w of list) if (seen(w)) lit++;
+  return { lit, total: list.length };
+}
+
+/** The milestone a shelf's `lit`-th child just crossed, or null. Highest first, because on a narrow
+ *  shelf one arrival can cross two at once — on a 5-shelf the 5th child crosses both 50% and 100%,
+ *  and the honest thing to announce is that it is finished. */
+export function shelfMilestoneCrossed(lit, total) {
+  if (!total || total < SHELF_MILESTONE_MIN || lit < 1) return null;
+  const now = lit / total;
+  const before = (lit - 1) / total;
+  for (let i = SHELF_MILESTONES.length - 1; i >= 0; i--) {
+    const m = SHELF_MILESTONES[i];
+    if (now >= m.f && before < m.f) return m;
+  }
+  return null;
+}
+
 /* ── Case and plurals (§2.3, §3.4) ────────────────────────────────────────────────────────────── */
 
 /* Betar's matchCase (index.js) copies capitals position-by-position, which only works because an

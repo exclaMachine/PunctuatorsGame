@@ -28,6 +28,8 @@ import {
   ladderRungStrip,
   renderRung,
   shelfFor,
+  shelfProgress,
+  shelfMilestoneCrossed,
 } from "./ladderFunc.js";
 //import { swapWord } from "./spoonerismFunc.js";
 const canvas = document.getElementById("background");
@@ -483,10 +485,16 @@ function openShelfFan(span, hero, pulse = true) {
 
   const caption = document.createElement("div");
   caption.className = "shelf-fan-caption";
-  // §13.5's fog rule: the count is honest about how much shelf is left, but the names stay hidden,
-  // because a printed leaf name is a readable answer.
-  caption.textContent =
-    `kinds of ${word}` + (shelf.hidden > 0 ? ` · +${shelf.hidden} more` : "");
+  // Two different counts, deliberately both here (§13.5, §13.6). `7/33 found` is how much of this
+  // shelf you have ever lit — the map's number, brought to where you are playing. `+26 more` is how
+  // much of it didn't fit on the row: honest about what is left, but never naming it, because a
+  // printed leaf name is a readable answer.
+  const prog = shelfProgress(word, ladderMapHas);
+  const bits = [`kinds of ${word}`];
+  if (prog) bits.push(`${prog.lit}/${prog.total} found`);
+  if (shelf.hidden > 0) bits.push(`+${shelf.hidden} more`);
+  caption.textContent = bits.join(" · ");
+  if (prog && prog.lit === prog.total) caption.classList.add("done"); // a finished shelf goes gold
   el.appendChild(caption);
 
   // Pinned to the left edge before measuring: the row is shrink-to-fit, so measuring it at its
@@ -535,9 +543,62 @@ function closeShelfFan() {
   shelfFan = null;
 }
 
+/* ── Shelf milestones (§13.6) ─────────────────────────────────────────────────────────────────── */
+
+/* The map's own metric, announced where it is earned. A shelf's progress is derived, so nothing here
+   is stored — the banner is a reading of the visited set at the moment a word lit, and re-lighting
+   the same word can never fire it twice because ladderMapVisit only returns true the first time.
+ *
+ * Above the word rather than below it: §2.5's fan owns the space underneath, and the two can be on
+ * screen together — completing a shelf is exactly the shot that opens the next one. */
+let shelfToast = null;
+
+function clearShelfMilestone() {
+  if (!shelfToast) return;
+  clearTimeout(shelfToast.t);
+  shelfToast.el.remove();
+  shelfToast = null;
+}
+
+function showShelfMilestone(span, word, prog, ms) {
+  clearShelfMilestone();
+  const el = document.createElement("div");
+  el.className = "shelf-milestone" + (ms.tier === 3 ? " complete" : "");
+  el.textContent = `★ ${prog.lit} of ${prog.total} kinds of ${word} · ${ms.label}`;
+  // Same measure-then-place order as the fan: pinned left so a shrink-to-fit box is measured at
+  // full width rather than wrapped by a cramped origin.
+  el.style.left = "0px";
+  document.body.appendChild(el);
+  const rect = span.getBoundingClientRect();
+  const w = el.offsetWidth;
+  el.style.left = `${Math.max(
+    8,
+    Math.min(window.innerWidth - w - 8, rect.left + rect.width / 2 - w / 2),
+  )}px`;
+  el.style.top = `${Math.max(4, rect.top - el.offsetHeight - SHELF_FAN_DROP)}px`;
+  shelfToast = { el, t: setTimeout(clearShelfMilestone, 2400) };
+}
+
+/* Called only when ladderMapVisit reported a word NEWLY lit. A word's arrival advances its PARENT's
+   shelf, not its own — the shelf you were picking from is the one that just got fuller. */
+function noteShelfProgress(span, word) {
+  const parent = ladderParentOf(word);
+  if (!parent) return;
+  const prog = shelfProgress(parent, ladderMapHas);
+  if (!prog) return;
+  const ms = shelfMilestoneCrossed(prog.lit, prog.total);
+  if (!ms) return;
+  showShelfMilestone(span, parent, prog, ms);
+  // A beat behind the landing cue, which is playing on the same shot.
+  _shelfMilestone(ms.tier, 0.16);
+}
+
 /* The fan is anchored to a viewport rectangle that a resize invalidates, and nothing else re-measures
-   it — so drop it and let the next shot redraw. */
-window.addEventListener("resize", closeShelfFan);
+   it — so drop it and let the next shot redraw. The banner is anchored the same way. */
+window.addEventListener("resize", () => {
+  closeShelfFan();
+  clearShelfMilestone();
+});
 
 /* A glow in the hero's own colour, for the two moments where the word does NOT move: the fan
    opening on it, and the capstone — at the top of the ladder `animal` IS the answer, so that one is
@@ -716,12 +777,15 @@ function landOnRung(span, rung, hero) {
   span.style.color = hero.characterColor;
   span.style.textShadow =
     "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
-  ladderMapVisit(rung);
+  const newlyLit = ladderMapVisit(rung);
   // §7. The landing sound is the direction's, not the hero's generic hit — see the note on the two
   // hero classes for why hitProjectileSound() is silent for these two.
   if (hero.ladderDirection === "up") _izoHit();
   else _keenHit();
   animateLadderSwap(span, shown, renderRung(rung, original, plural), hero);
+  // After the swap, not before: the face carries the new word's width the moment it is built, so the
+  // banner is measured against the box the word actually ends up holding.
+  if (newlyLit) noteShelfProgress(span, rung);
 }
 
 /* One ladder action per shot, for two reasons. A projectile is not spliced out until a
@@ -742,8 +806,9 @@ function climbLadder(span, hero, projectile) {
   if (!current) return;
 
   // Standing on a rung counts as landing on it, so the word you typed lights the first time you
-  // shoot it — even on a shot that cannot move (§13.6).
-  ladderMapVisit(current);
+  // shoot it — even on a shot that cannot move (§13.6). A word typed straight out of a wide shelf
+  // can therefore be the one that crosses a milestone, before it has moved anywhere.
+  if (ladderMapVisit(current)) noteShelfProgress(span, current);
   span.setAttribute("data-rung-strip", ladderRungStrip(current));
 
   if (hero.ladderDirection === "up") {
@@ -815,6 +880,7 @@ let dropDownSelection = "";
 removePuncButton.addEventListener("click", async () => {
   buttonSounds.clicky.play();
   closeShelfFan(); // a new sentence invalidates any shelf left open over the old one
+  clearShelfMilestone(); // …and any banner still hanging over where a word used to be
   if (!initialTypedSentence.value) {
     return (errorMessage.innerText = "Field cannot be blank");
   }
@@ -966,7 +1032,9 @@ function updateCharacterModal(selection) {
           narrow again: a word's neighbours are the other kinds on its parent's row.</li>
         <li>At the top of the ladder the word <strong>flares and stays</strong>.
           <code>animal</code> is the answer, not a miss.</li>
-        <li>Every word you land on lights up in the <strong>🌳 Tree of Kinds</strong>.</li>
+        <li><code>7/33 found</code> is your shelf: how many of that word's kinds you have ever landed
+          on. Fill a quarter, a half, or all of it and it says so — and the shelf turns gold on the
+          <strong>🌳 Tree of Kinds</strong>, where every word you land on lights up.</li>
       </ul>
     </div>
   `,
@@ -1333,6 +1401,25 @@ function _ladderCapstone() {
   [784, 1047, 1319].forEach((f, i) =>
     _tone(f, "sine", 0.5, 0.16, null, i * 0.06),
   );
+}
+
+/* §13.6's shelf milestone — the seventh ladder cue, and the only one that isn't about the shot. It
+   has to sit clear of the six above, all of which are the hero's: this one belongs to the MAP, so it
+   is a bell rather than a bugle or a bowstring, and it climbs where the others fall. Three rising
+   notes for a quarter, four for a half, and at 100% the same run capped by the octave, which is the
+   only place in the game two cues ring together. `delay` keeps it a beat behind the landing sound
+   playing on the same shot. */
+function _shelfMilestone(tier, delay = 0) {
+  const run = [784, 988, 1175, 1568]; // G B D G — a major triad closing on its own octave
+  const n = tier === 1 ? 3 : 4;
+  for (let i = 0; i < n; i++)
+    _tone(run[i], "triangle", 0.3, 0.13, null, delay + i * 0.075);
+  if (tier === 3) {
+    // The finished shelf: a second voice underneath, so completion is audibly different in kind and
+    // not merely one note longer than a half.
+    _tone(392, "sine", 0.75, 0.13, null, delay + 0.075);
+    _tone(2349, "sine", 0.5, 0.07, null, delay + 0.3);
+  }
 }
 
 // Zana — quick insertion pop (shoot) / click (hit)

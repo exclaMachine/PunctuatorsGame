@@ -17,7 +17,10 @@ the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's
 `build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.
 Phase 3 — Word Race (§12) specced 2026-08-22, nothing built; its Deep Dive companion (§12.4) is tentative.
 Phase 4 — the Tree of Kinds progress map (§13) specced 2026-08-22, **M12 BUILT 2026-08-23** across two
-sessions (`ladderMap.js` + the overlay, then the fill). M13 (shelf counters + milestones) is next.**
+sessions (`ladderMap.js` + the overlay, then the fill). **M13 (the fill) BUILT 2026-08-23** — the shelf
+is now a first-class number on both sides: a gold arc + counter on the map, `7/33 found` in the fan's
+caption, and 25/50/100% milestones announced **in play**, where they are earned. M14 (the daily-run
+guard + the post-game route overlay) is what remains of the map.**
 
 Two new heroes for `punctuators.html` / `index.js` who climb the **is-a-kind-of** hierarchy of a word:
 
@@ -637,6 +640,13 @@ synth hero (Ambigrambador, Sergeant Colon, …) passes `undefined` there.
 
 `openShelfFan`'s `pulse` flag turned out to carry the audio timing too: it is false exactly when a
 landing just happened, which is exactly when the flutter should wait a beat for the hit tick.
+
+**A seventh cue arrived with M13**, and it is the only one that isn't the hero's: `_shelfMilestone(tier)`
+belongs to the **map** (§13.6), so it deliberately sits clear of the six above — a bell rather than a
+bugle or a bowstring, and it **climbs** where the others fall. Three rising notes for a quarter, four for
+a half, and at 100% the same run under a sustained low voice and a high cap, so a finished shelf is
+different *in kind* rather than one note longer than a half. It takes a `delay` for the same reason
+`_keenFan` does: the landing cue is playing on the same shot and should speak first.
 
 ---
 
@@ -1270,9 +1280,13 @@ viewport model is the one Inklings' Sound Board already uses for its endless boa
 
 | Screen radius | Drawn as |
 | ------------- | -------- |
-| **< 3 px** | **One dot, coloured by the subtree's lit fraction.** Children are not drawn at all. |
-| **3–20 px** | The circle plus its children as dots. Internal nodes get a label only if it fits. |
-| **> 20 px** | Circle, label, children, and the shelf counter (`dog 7/33`). |
+| **< 3 px** | **One dot, coloured by the subtree's lit fraction** — or gold outright if its shelf is filled (§13.6). Children are not drawn at all. |
+| **3–20 px** | The circle, its shelf arc, and its children as dots. Internal nodes get a label only if it fits. |
+| **> 20 px** | Circle, arc, label, children, and the written shelf counter (`dog 7/33`). |
+
+**M13 note:** the **arc** (added to every circle, both middle tiers) carries the shelf metric, not the
+written counter — most of the map is spent between 3 and 20 px, where `7/33` does not fit and a ring
+still reads.
 
 That first tier is the feature, not a compromise: zoomed all the way out, the map is a **heat map of your
 own progress** — a branch you've worked reads warm, an untouched one stays dark, and you can see at a
@@ -1308,17 +1322,41 @@ pan/zoom. Try circles first.
   including the rungs you pass *through* on a §12.2 descendant jump, which cross real rungs and should pay
   for all of them.
 
-### 13.6 Shelves
+### 13.6 Shelves — BUILT 2026-08-23 (M13)
 
 - A shelf is `ladderDown[parent]` and its progress is `lit / total`, derived from the visited set at render
-  time. **Nothing about shelves is stored** — the visited set is the only state.
+  time. **Nothing about shelves is stored** — the visited set is the only state. On the map both counts fall
+  out of one post-order pass in `relight()`: `LIT` (whole subtree, which colours the heat map) and the new
+  **`KLIT`** (this word's own children — the shelf). `SELFLIT` exists because `LIT` cannot be asked whether
+  one particular word is lit; it is a total, so a parent with lit descendants and a dark name reads
+  identically to one with a lit name. Post-order means the shelf count costs **one Set lookup per node**.
 - **Milestones at 25 / 50 / 100%**, matching the Atlas continent milestones (`docs/inklings-atlas.md`) and
   keyed off fractions for the reason in §13.3 (a third of the corpus is effectively untypeable).
+- **A shelf needs ≥5 children to announce a milestone** (`SHELF_MILESTONE_MIN`). This is the one thing the
+  build had to add, and it is a measurement, not a taste call: **1,623 of the 4,837 shelves (33.6%) hold
+  exactly one child** and 70.7% hold four or fewer, so the unguarded rule fires *"every kind!"* on a single
+  arrow for a third of the map, which devalues the gold everywhere else. The floor is derived rather than
+  picked — a milestone one shot can reach is not a milestone, so require `1/total < 0.25`, giving **5**.
+  1,416 shelves can announce; the rest still count, still turn gold, and simply don't interrupt play.
+  Each qualifying shelf fires **at most three times ever** (`dog`'s 33 at the 9th, 17th and 33rd).
 - **A completed shelf turns gold** and its parent stays gold when zoomed past, so a filled region is
-  visible from orbit.
-- **What a milestone pays is an open question (§13.12)** — Punctuators has no currency, and inventing one
-  for this is scope creep. The honest v1 is cosmetic: the gold ring, a shelf counter in the panel header,
-  and a line in the share string.
+  visible from orbit — at tier 1 a done shelf takes the top of the existing ramp, so "done" costs a bucket
+  index rather than a colour and the 33-`fill()` batching is untouched.
+- **The arc is the part that carries the metric**, not the counter. Most of the map lives between 3 and
+  20 px, where there is no room to write `7/33` but plenty to read a ring: each parent's own stroke gets a
+  gold arc from twelve o'clock covering `KLIT/children`, so a full ring reads as a finished shelf from
+  across the forest. The written counter joins it at label zoom, along with a line in the hover readout and
+  a second headline number in the panel bar (`… · 42 of 4,837 shelves filled`).
+- **What a milestone pays stayed cosmetic (§13.12), but *where* it is announced changed.** The plan had
+  the milestone as a thing you discover next time you open the panel; a milestone nobody sees at the moment
+  they earn it is barely a milestone, so it is announced **in play** — a gold banner above the word
+  (`★ 9 of 33 kinds of dog · a quarter of them`) plus a seventh SFX (§7). The map is where it is *recorded*,
+  and the fan's caption carries the running count (`kinds of dog · 7/33 found · +26 more`) so the number is
+  in front of you while you play rather than only in the panel.
+- **The banner goes ABOVE the word** because §2.5's fan owns the space below, and the two are on screen
+  together constantly: the shot that fills a shelf is usually the same shot that opens the next one.
+- **Nothing can fire twice.** `ladderMapVisit()` already returns true only the first time a word lights, so
+  the milestone check hangs off that return value and re-shooting a lit word is silent.
 
 ### 13.7 The prerequisite — free play alone cannot fill a shelf. BUILT 2026-08-23
 
@@ -1384,10 +1422,11 @@ routing game** (§12.3). A player with the map open is reading the answer rather
 
 | File | Change |
 | ---- | ------ |
-| `ladderMap.js` | **new — BUILT 2026-08-23** — `buildForest()`/`packForest()` (one pass on first open), the LOD draw, pan/zoom/hit-test, the visited set + storage, and the `ladderMapVisit()` seam. No new data file. Shelf math is M13. |
-| `index.js` | **BUILT:** `initLadderMap()` + the button wiring; **and as of M3**, `ladderMapVisit()` on every rung landed on (including the one you were standing on, so the word you typed lights the first time you shoot it). The `ladderMapHas()` read-back that steers the game (§13.7) now lives in `ladderFunc.js`'s `shelfFor`, where it orders the shelf fan's row. **Still to do:** the daily-run guard (§13.8) — M14; passed-through rungs on a §12.2 jump — needs Word Race |
-| `punctuators.html` | **BUILT** — the 🌳 button + the overlay markup. *Not* a `.modal`: that pattern is capped at 500 px and centred by transform, and a map wants the whole window |
-| `index.css` | **BUILT** — the panel, the bar, the canvas, the hover readout. The gold shelf state is M13 |
+| `ladderMap.js` | **new — BUILT 2026-08-23** — `buildForest()`/`packForest()` (one pass on first open), the LOD draw, pan/zoom/hit-test, the visited set + storage, and the `ladderMapVisit()` seam. No new data file. **M13 BUILT** — `SELFLIT`/`KLIT` + `shelfDone()` in `relight()`, the gold arc in `drawNode`, the `7/33` counter in `drawLabels`, the done-shelf gold at tier 1, the shelf line in `readout()` and the shelves-filled number in `paintStat()` |
+| `ladderFunc.js` | **M13 BUILT** — `shelfProgress()` (lit/total against a passed-in `seen`, same independence-from-the-map discipline as `shelfFor`), `SHELF_MILESTONES` and `shelfMilestoneCrossed()` with its measured `SHELF_MILESTONE_MIN = 5` floor (§13.6) |
+| `index.js` | **BUILT:** `initLadderMap()` + the button wiring; **and as of M3**, `ladderMapVisit()` on every rung landed on (including the one you were standing on, so the word you typed lights the first time you shoot it). The `ladderMapHas()` read-back that steers the game (§13.7) now lives in `ladderFunc.js`'s `shelfFor`, where it orders the shelf fan's row. **M13 BUILT** — `noteShelfProgress()` (hung off `ladderMapVisit`'s newly-lit return in both `landOnRung` and `climbLadder`), `showShelfMilestone()`/`clearShelfMilestone()`, the `7/33 found` term in the fan caption, `_shelfMilestone()` (§7) and the How-to-Play tip. **Still to do:** the daily-run guard (§13.8) — M14; passed-through rungs on a §12.2 jump — needs Word Race |
+| `punctuators.html` | **BUILT** — the 🌳 button + the overlay markup. *Not* a `.modal`: that pattern is capped at 500 px and centred by transform, and a map wants the whole window. **M13** added the `.tree-map__key` legend line under the controls hint |
+| `index.css` | **BUILT** — the panel, the bar, the canvas, the hover readout. **M13 BUILT** — `.shelf-milestone` (+ `.complete`) and its two keyframes, `.shelf-fan-caption.done`, `.tree-map__key`, and the phone + reduced-motion cases for the banner |
 | `CLAUDE.md` | the Punctuators row per milestone |
 
 ### 13.11 Milestones
@@ -1417,8 +1456,21 @@ survived that mechanic's removal by moving into `shelfFor`'s row ordering). The 
 play. `?mapseed=N` still lights a deterministic, session-only sample (never written to storage) for
 checking the drawing, and `?map=1` opens the panel on load.
 
-**M13 — the fill.** Shelf counters and the 25/50/100% milestones, the gold state. (Fog rules and storage
-landed in M12.)
+**M13 — the fill. BUILT 2026-08-23.** Shelf counters, the 25/50/100% milestones and the gold state. (Fog
+rules and storage landed in M12.) Two things came out differently from the plan, both recorded in §13.6:
+
+- **The milestone is announced in play, not on the map.** The plan's cosmetic v1 was the gold ring, a
+  counter in the panel header and a line in the share string — all of which are things you find later. A
+  milestone nobody sees at the moment they earn it is barely a milestone, so it fires where the shot lands:
+  a gold banner above the word plus §7's seventh cue. The map still records it; it is no longer the only
+  place it exists. The fan's caption carries the running `7/33 found` for the same reason.
+- **Milestones needed a floor, and the corpus set it at five.** 33.6% of shelves hold exactly one child,
+  so the unguarded rule congratulates you on completing a "shelf" on a third of all first shots. Requiring
+  that one arrival cannot already cross 25% derives the floor rather than picking it.
+
+The **arc** turned out to be the load-bearing half of the display and the written counter the secondary
+one, which is the reverse of how §13.4's LOD tiers describe it: the counter only exists above 20 px, and
+most of the map is spent below that.
 
 **M14 — the feel.** The daily-run guard and the post-game route overlay (§13.8), the share string, labels
 and breadcrumb polish, the How-to-Play copy.
@@ -1431,8 +1483,10 @@ what gives free play a reason to be replayed.
 - **The name.** `The Tree of Kinds` is the recommendation — it echoes the "is a kind of" phrasing used
   throughout this doc and is kid-legible. `The Kindsmap`, `The Great Chain` (accurate, and a real historical
   joke, but obscure) and `The Atlas of Kinds` (collides with Inklings' Atlas) were the alternatives.
-- **What a shelf milestone pays.** Cosmetic-only is the honest v1 (§13.6). The alternative is that this is
-  where Punctuators finally gets a light meta-layer, which is a much bigger conversation than a map.
+- ~~**What a shelf milestone pays.**~~ **Settled 2026-08-23 with M13 — cosmetic, but announced in play**
+  (§13.6): a gold banner, a chime, a gold arc and a counter. Nothing is spent or earned. The alternative —
+  that this is where Punctuators finally gets a light meta-layer — is still open, and is a much bigger
+  conversation than a map; nothing built for M13 forecloses it.
 - **Are the 810 shrub trees drawn?** They are 8% of the words and half the visual clutter of the forest
   view. Options: draw them all (honest), pack them into a labelled "scrubland" at the rim, or hide trees
   under 5 nodes behind a toggle. Recommending draw-them-all until it's seen on screen.

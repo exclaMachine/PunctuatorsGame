@@ -1,4 +1,4 @@
-/* ladderMap.js — THE TREE OF KINDS (docs/punctuators-ladder.md §13) — M12: the map, static.
+/* ladderMap.js — THE TREE OF KINDS (docs/punctuators-ladder.md §13) — M12 the map, M13 the fill.
  *
  * A viewer, not a mode. It draws the WHOLE is-a-kind-of hierarchy at once as nested circles —
  * 1,002 trees, 30,545 words, five levels deep — and lights every word you have ever landed on.
@@ -21,9 +21,12 @@
  *     of the 30,545 nodes. What saves that frame is batching — every dot is queued by ramp colour
  *     and flushed as at most 33 fill() calls, not 29,000.
  *
- * M12 scope: layout, LOD draw, pan/zoom/hit-test, the visited set and its storage. Shelf counters,
- * the 25/50/100% milestones and the gold state are M13; the daily-run guard and the post-game route
- * overlay are M14.
+ * M12: layout, LOD draw, pan/zoom/hit-test, the visited set and its storage. M13 adds the SHELF —
+ * lit/total of one word's own kinds — as an arc on every circle, a counter beside every label, a
+ * line in the readout and the panel's second headline number, all derived in relight() and none of
+ * it stored. The 25/50/100% milestones themselves are announced in play rather than here, because
+ * that is where they are earned: index.js's noteShelfProgress reads the same numbers off
+ * ladderFunc's shelfProgress(). The daily-run guard and the post-game route overlay are M14.
  *
  * THE SEAM FOR THE HEROES: ladderMapVisit(word) / ladderMapVisitAll(words). Nothing calls them yet —
  * M3's collision branch does, on every rung landing, including the rungs a §12.2 descendant jump
@@ -54,6 +57,8 @@ let KIDS = null; // idx -> Int32Array of child indices (null for a leaf)
 let PARENT = null; // Int32Array, -1 for a root
 let SIZE = null; // Int32Array, subtree node count including self
 let LIT = null; // Int32Array, visited words in the subtree including self (derived, see relight)
+let SELFLIT = null; // Uint8Array, 1 if this exact word is visited — LIT can't be asked, it's a total
+let KLIT = null; // Int32Array, visited DIRECT children: the shelf numerator (§13.6, derived)
 let POST = null; // Int32Array, a post-order traversal — lets SIZE/LIT be one reverse loop
 let X = null,
   Y = null,
@@ -197,6 +202,8 @@ function buildForest(ladderDown) {
     SIZE[i] = s;
   }
   LIT = new Int32Array(n);
+  SELFLIT = new Uint8Array(n);
+  KLIT = new Int32Array(n);
 
   X = new Float64Array(n);
   Y = new Float64Array(n);
@@ -205,19 +212,42 @@ function buildForest(ladderDown) {
   built = true;
 }
 
-/* Recompute lit-per-subtree. One reverse pass over the post-order — a few ms over 30k nodes, run
-   only when the visited set has changed and the map is about to draw. Shelves are derived from
-   this and from SIZE, which is why nothing about them is stored (§13.6). */
+/* Recompute lit-per-subtree AND lit-per-shelf. One pass over the post-order — a few ms over 30k
+   nodes, run only when the visited set has changed and the map is about to draw. Both numbers are
+   derived here and stored nowhere, which is why a corpus rebuild needs no migration (§13.6).
+ *
+ * The two counts answer different questions and the map draws both: LIT is the whole subtree, which
+ * colours the zoomed-out heat map, while KLIT is this word's OWN list of kinds — the shelf, and the
+ * thing that can actually be finished (§13.6: 89% of shelves hold ≤10 children, so unlike the
+ * uncompletable 30,545-word whole it is a real goal). SELFLIT exists because LIT cannot be asked
+ * whether a particular word is lit — it is a total, so a parent with lit descendants and a dark
+ * name looks identical to one with a lit name. Post-order means every child is stamped before its
+ * parent reads it, so the shelf count costs one Set lookup per node, not two. */
 function relight() {
   if (!built) return;
   litDirty = false;
   for (let j = 0; j < POST.length; j++) {
     const i = POST[j];
-    let l = SEEN.has(WORDS[i]) ? 1 : 0;
+    const self = SEEN.has(WORDS[i]) ? 1 : 0;
+    SELFLIT[i] = self;
+    let l = self;
+    let shelf = 0;
     const kids = KIDS[i];
-    if (kids) for (let k = 0; k < kids.length; k++) l += LIT[kids[k]];
+    if (kids)
+      for (let k = 0; k < kids.length; k++) {
+        l += LIT[kids[k]];
+        shelf += SELFLIT[kids[k]];
+      }
     LIT[i] = l;
+    KLIT[i] = shelf;
   }
+}
+
+/* A finished shelf: every one of this word's own kinds lit. Leaves have no shelf and are never
+   "done" — a bud is lit or dark, which is a different statement. */
+function shelfDone(i) {
+  const kids = KIDS[i];
+  return !!kids && KLIT[i] === kids.length;
 }
 
 /* ── The pack ─────────────────────────────────────────────────────────────────────────────────── */
@@ -502,6 +532,8 @@ const heatDim = (i) => RAMP_DIM[rampIdx(i)];
 
 const C_LEAF_DARK = "#332e4d";
 const C_LEAF_LIT = "#ffd45e";
+const C_SHELF = "#ffd45e"; // the shelf arc and a finished counter — the same gold as a lit bud
+const C_SHELF_DIM = "#a99ad6"; // an unfinished shelf counter, quieter than the word above it
 const C_LABEL = "#cfc8ea";
 const C_LABEL_LIT = "#ffe6a3";
 const C_BG = "#14111f";
@@ -596,7 +628,11 @@ function drawNode(i, s) {
   if (rs < DOT_PX) {
     // Tier 1 — one dot for the whole subtree, coloured by how much of it you have lit. Recursion
     // stops here, which is what bounds a frame by zoom instead of by the size of the corpus.
-    const b = dots[rampIdx(i)];
+    //
+    // §13.6: a finished shelf takes the top of the ramp even when its grandchildren are dark, so a
+    // filled region stays gold when you zoom past it. The ramp's own end is already this gold, so
+    // "done" costs a bucket index rather than a colour, and the batching still holds.
+    const b = dots[shelfDone(i) ? RAMP_N - 1 : rampIdx(i)];
     b.push(cx, cy, Math.max(0.5, rs));
     return;
   }
@@ -620,6 +656,20 @@ function drawNode(i, s) {
   ctx.arc(cx, cy, rs, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
+
+  // §13.6's shelf progress, drawn ON the circle's own stroke: a gold arc covering lit/total of this
+  // word's kinds, clockwise from twelve o'clock. It lives here rather than only in the label because
+  // most of the map is between 3 and 20 px, where there is no room to write "7/33" but plenty to
+  // read an arc — and a full ring is a finished shelf, legible at a glance from across the forest.
+  // Only shelves you have started cost anything to draw; early on almost none do.
+  if (KLIT[i] > 0) {
+    const a0 = -Math.PI / 2;
+    ctx.strokeStyle = C_SHELF;
+    ctx.lineWidth = Math.max(1, Math.min(2.8, rs * 0.12));
+    ctx.beginPath();
+    ctx.arc(cx, cy, rs, a0, a0 + (KLIT[i] / kids.length) * Math.PI * 2);
+    ctx.stroke();
+  }
 
   // Internal words are the map's coastline and are ALWAYS named (§13.5) — without them the map is
   // unnavigable. Leaf names stay fogged until visited, so an answer can never be read off it.
@@ -663,6 +713,19 @@ function drawLabels() {
     const y = isLeaf || rs < 46 ? cy : cy - rs + size * 0.9;
     ctx.fillStyle = LIT[i] ? C_LABEL_LIT : C_LABEL;
     ctx.fillText(text, cx, y);
+
+    // §13.6's shelf counter, under the name: `dog 7/33`. Only at label zoom, where the arc has
+    // already said roughly the same thing and there is finally room to say it exactly. It names no
+    // leaf, so it is fog-safe (§13.5) — it counts them without listing them.
+    if (!isLeaf) {
+      const csize = Math.max(9, size * 0.7);
+      ctx.font = `600 ${csize}px Palanquin, sans-serif`;
+      const count = `${KLIT[i]}/${KIDS[i].length}`;
+      if (ctx.measureText(count).width <= rs * 1.6) {
+        ctx.fillStyle = shelfDone(i) ? C_SHELF : C_SHELF_DIM;
+        ctx.fillText(count, cx, y + csize * 1.2);
+      }
+    }
   }
   ctx.shadowBlur = 0;
   labelQueue.length = 0;
@@ -713,13 +776,27 @@ let elMap = null,
   elRead = null,
   mapOpen = false;
 
-// draw() runs on every pan frame; the count almost never changes, so don't touch the DOM unless it does.
+// draw() runs on every pan frame; the count almost never changes, so don't touch the DOM unless it
+// does — which is also what makes the 30k-node shelf sweep below free in practice.
 let statShown = -1;
 function paintStat() {
   if (!elStat || SEEN.size === statShown) return;
   statShown = SEEN.size;
   const pct = ((SEEN.size / WORDS.length) * 100).toFixed(1);
-  elStat.textContent = `${SEEN.size.toLocaleString()} of ${WORDS.length.toLocaleString()} words lit · ${pct}%`;
+  // Two headline numbers, because they say opposite things. The word count is the honest scale of
+  // the corpus and will never be finished. Shelves are the metric that CAN be (§13.6), so they are
+  // what the panel actually keeps score with.
+  let done = 0,
+    parents = 0;
+  for (let i = 0; i < WORDS.length; i++) {
+    if (!KIDS[i]) continue;
+    parents++;
+    if (KLIT[i] === KIDS[i].length) done++;
+  }
+  const n = (v) => v.toLocaleString();
+  elStat.textContent =
+    `${n(SEEN.size)} of ${n(WORDS.length)} words lit · ${pct}% · ` +
+    `${n(done)} of ${n(parents)} shelves filled`;
 }
 
 function readout(i) {
@@ -734,8 +811,12 @@ function readout(i) {
   const named = KIDS[i] || SEEN.has(WORDS[i]); // a fogged leaf keeps its name to itself (§13.5)
   const lit = SEEN.has(WORDS[i]) ? "lit" : "not yet";
   const kin = p === -1 ? "a root of the forest" : `a kind of ${WORDS[p].replace(/_/g, " ")}`;
+  // The exact shelf, for the word under the pointer — the arc's number, spelled out (§13.6).
+  const shelf = KIDS[i]
+    ? ` · ${KLIT[i]}/${KIDS[i].length} kinds` + (shelfDone(i) ? " ★" : "")
+    : "";
   elRead.textContent = named
-    ? `${w} — ${kin} · ${lit}`
+    ? `${w} — ${kin} · ${lit}${shelf}`
     : `an unvisited kind of ${p === -1 ? "?" : WORDS[p].replace(/_/g, " ")}`;
   elRead.classList.add("on");
 }
