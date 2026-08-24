@@ -23,10 +23,10 @@ caption, and 25/50/100% milestones announced **in play**, where they are earned.
 BUILT 2026-08-23 (§13.13)**: two of its four items turned out to be blocked on dailies that do not exist,
 so it shipped the ancestry breadcrumb, the spoiler-free share string, the map's own help card and a
 **dormant** daily-run guard (`ladderMapLock`/`ladderMapUnlock`, no caller, `?maplock=` to exercise it),
-and the post-game route overlay moved out to §12's M11. **The Tree of Kinds is complete**, with one
-**known issue found in play 2026-08-24 and not yet fixed**: §13.5's internal-vs-leaf fog rule names
-single-child parents, so `kinsman 0/4` reads out three of its four answers (`brother`, `nephew`, `uncle`).
-See §13.5.
+and the post-game route overlay moved out to §12's M11. **The Tree of Kinds is complete.** One fog leak
+found in play and **FIXED 2026-08-24**: §13.5's rule named every *internal* word, which handed over
+`kinsman 0/4`'s `brother`, `nephew` and `uncle` — **skeleton now means two or more kinds**, and the
+breadcrumb's "can never be redacted" property went with it (§13.5, §13.13.1).
 
 Two new heroes for `punctuators.html` / `index.js` who climb the **is-a-kind-of** hierarchy of a word:
 
@@ -1321,15 +1321,16 @@ pan/zoom. Try circles first.
 - **The layout is static and complete from the first launch.** Nothing appears or moves as you play; what
   changes is **lit vs dark** and **named vs anonymous**. That is what makes the map worth revisiting — the
   same picture, further filled — and it removes an entire class of bug (positions can never drift).
-- **Internal nodes are always named.** They are the coastline; without them the map is unnavigable and the
-  fog is just a blank page.
+- **Skeleton nodes are always named.** They are the coastline; without them the map is unnavigable and the
+  fog is just a blank page. **Skeleton means a word with two or more kinds** — not merely "internal", which
+  is what this said until 2026-08-24 and which leaked answers; see below.
 - **Leaves are anonymous buds** until visited. A shelf shows its lit children by name and its dark ones as
   plain dots, with the remainder as a count (`+26`).
 - **A visited word lights permanently** and keeps its name. Visiting is landing on a rung in any mode —
   including the rungs you pass *through* on a §12.2 descendant jump, which cross real rungs and should pay
   for all of them.
 
-#### KNOWN ISSUE — the internal/leaf rule leaks answers. Found 2026-08-24, not yet fixed
+#### Skeleton means TWO OR MORE KINDS — found in play and FIXED 2026-08-24
 
 **Reported from play:** open `kinsman 0/4` and the map has already told you three of the four answers.
 Its children are `brother, nephew, uncle, brethren` — and `brother 0/1`, `nephew 0/1` and `uncle 0/1` are
@@ -1346,23 +1347,35 @@ exactly one child** — the very same third that forced M13's `SHELF_MILESTONE_M
 map, **3,835 child names are readable** off unvisited shelves, and **1,367 of those (36%) are single-child
 parents**; **1,459 shelves leak at least one name** this way.
 
-**The dev's rule:** a word with only one kind should not be visible — it draws as an anonymous bud like a
-leaf, and takes its name the first time you land on it. That would fog 1,367 of the 3,835 readable names
-and make `kinsman` a genuine 0/4.
+**The rule, as fixed:** **skeleton means two or more kinds.** A word with exactly one kind draws its
+circle and its shelf arc like anything else but carries **no name and no counter** until you land on it —
+it is fogged exactly like a bud. Verified after the change: `kinsman 0/4` fogs all four children, and the
+readable-name count drops **3,835 → 2,468**. The 2,468 that remain are multi-child parents; those are
+§13.2's trade, not a bug.
 
-**What the fix has to decide, because M14 leaned on the current rule:**
+**It is one predicate now**, `isNamed(i) = isSkeleton(i) || visited`, used by every place that can print a
+word — the canvas labels, the hover readout, the breadcrumb and the share string. It used to be spelled
+inline as `KIDS[i] || visited` in two of those places, which is how the hole stayed invisible.
+
+Four things the fix had to settle:
 
 - **The breadcrumb's best property was that it can never need redacting** (§13.13.1) — every ancestor has a
-  child, so every ancestor is internal, so every ancestor is named. A hidden single-child parent breaks
-  that: hovering `stepbrother` would want `kinsman › ? › stepbrother`. The likely answer is that an
-  ancestor of a word you have *reached* is no longer a spoiler and stays named, but that is a decision, not
-  a detail.
-- **Only the name hides, never the circle.** Containment is the layout; a bud that stops being drawn would
-  move nothing but would lose its children.
-- **It costs a third of the coastline** (1,623 of 4,837 named nodes). Whether the map is still navigable
-  with those gone is a look-at-it question, and it is related to the shrub-trees question below.
-- **The share string is unaffected** — it names only roots, and a root has children by definition
-  (verified: 0 of 1,002 are leaves), but a root *could* be a single-child parent, so check that too.
+  child, so every ancestor was internal, so every ancestor was named. This takes that away, and
+  `kinsman › brother › an unvisited kind` would hand over the exact name the map just stopped printing. So
+  a fogged ancestor is fogged in the breadcrumb too, drawn as a dim `•` that keeps its place in the chain
+  — **unless the hovered word's own name is on screen**, in which case you can type that word and broaden
+  from it, so everything above it is at most one General Ization shot away. Naming a chain you can already
+  walk is not a spoiler. Measured: **1,829 of the 30,545 words** now have a hidden rung in their
+  breadcrumb, and it reappears the moment you reach the word below it.
+- **Only the name hides, never the circle.** Containment *is* the layout; a word that stopped being drawn
+  would take its children with it. The shelf arc still turns on a fogged word — an arc spells nothing.
+- **It costs a third of the coastline** (1,623 of 4,837 named nodes), and **256 of the 1,002 roots go
+  anonymous** — but every one of those is a shrub: the largest is 13 nodes, and the largest fogged word
+  anywhere is `specie` at 19. So no navigable region loses its label. This overlaps the shrub-trees
+  question below; whether the rim now reads as clutter is the thing to look at.
+- **The share string was already safe, and is now safe by construction.** It names only roots, and
+  **0 of the 88 roots in its ≥50-node pool are single-child parents** — but `bestTree()` gained an
+  `isNamed()` guard anyway, so a corpus rebuild cannot make the share print a word the map is fogging.
 
 ### 13.6 Shelves — BUILT 2026-08-23 (M13)
 
@@ -1541,9 +1554,9 @@ what gives free play a reason to be replayed.
   (§13.6): a gold banner, a chime, a gold arc and a counter. Nothing is spent or earned. The alternative —
   that this is where Punctuators finally gets a light meta-layer — is still open, and is a much bigger
   conversation than a map; nothing built for M13 forecloses it.
-- **Single-child parents are named, and that leaks answers — KNOWN ISSUE, see §13.5.** `kinsman 0/4` shows
-  you `brother`, `nephew` and `uncle` for free. The dev's rule: a word with only one kind draws as an
-  anonymous bud. Not yet fixed; the open part is what it does to the breadcrumb's no-redaction property.
+- ~~**Single-child parents are named, and that leaks answers.**~~ **FIXED 2026-08-24 — skeleton now means
+  two or more kinds** (§13.5). Worth re-reading next to the shrub question below: it also took the names
+  off 256 of the 1,002 roots, all of them shrubs.
 - **Are the 810 shrub trees drawn?** They are 8% of the words and half the visual clutter of the forest
   view. Options: draw them all (honest), pack them into a labelled "scrubland" at the rim, or hide trees
   under 5 nodes behind a toggle. Recommending draw-them-all until it's seen on screen.
@@ -1587,9 +1600,11 @@ animal › mammal › dog   · lit · 7/33 kinds
 
 - **Broad-first**, because that is the direction the ladder reads in play: General walks left, Keen walks
   right. The specific word — the one that changes as you move the pointer — lands at the end.
-- **It can never be redacted.** Every ancestor has a child by definition, so every ancestor is an internal
-  word, and §13.5 names all of those. Only the hovered word itself can be fogged, which the existing
-  `named` branch already handles; a fogged bud reads `animal › mammal › dog › an unvisited kind`.
+- ~~**It can never be redacted.**~~ **Superseded 2026-08-24.** The claim was that every ancestor has a
+  child, so every ancestor is internal, so §13.5 names all of them — true of the fog rule as M14 found it,
+  and false the moment that rule was tightened to exclude single-child parents (§13.5). A fogged ancestor
+  now renders as a dim `•` holding its place, unless the hovered word's own name is on screen. A fogged
+  bud still reads `animal › mammal › dog › an unvisited kind`.
 - **Measured, so the box has to change.** Depth caps at 5, so a path is at most **6 words** — no truncation
   logic is needed. But the longest real one is **92 characters** (`immorality › unrighteousness ›
   dishonesty › untruthfulness › insincerity › sanctimoniousness`) and the readout is today a single
@@ -1669,9 +1684,9 @@ build ignores it, and this one treats a missing field as "not seen yet".
 
 | File | Change |
 | ---- | ------ |
-| `ladderMap.js` | **BUILT** — `ancestry(i)` + the rewritten `readout()` (now HTML, so a `readShown` memo keeps it off every pointermove — the guard `paintStat()` already used); `shareText()`/`bestTree()`/`copyShare()` + `countShelves()` extracted so the panel headline and the share string can never disagree; `ladderMapLock()`/`ladderMapUnlock()`/`isLadderMapLocked()` + the refusal in `openLadderMap()`; `showHelp()`/`dismissHelp()` and the `help` flag in `loadSeen`/`saveSeen`; `?maplock=` alongside `?mapseed=`/`?map=`; `Esc` backs out a layer at a time and `?` toggles the card |
+| `ladderMap.js` | **BUILT** — `ancestry(i)` + the rewritten `readout()` (now HTML, so a `readShown` memo keeps it off every pointermove — the guard `paintStat()` already used); `shareText()`/`bestTree()`/`copyShare()` + `countShelves()` extracted so the panel headline and the share string can never disagree; `ladderMapLock()`/`ladderMapUnlock()`/`isLadderMapLocked()` + the refusal in `openLadderMap()`; `showHelp()`/`dismissHelp()` and the `help` flag in `loadSeen`/`saveSeen`; `?maplock=` alongside `?mapseed=`/`?map=`; `Esc` backs out a layer at a time and `?` toggles the card. **Fog fix 2026-08-24** — `SKELETON_MIN_KINDS`/`isSkeleton()`/`isNamed()` as the single fog predicate, applied at the label queue, the readout, the breadcrumb's per-ancestor branch and `bestTree()` |
 | `punctuators.html` | **BUILT** — the `📋` and `?` buttons in `.tree-map__bar`, the help-card markup, `? help` added to the hint line |
-| `index.css` | **BUILT** — `.tree-map__readout` gets a `max-width` and wraps (measured: 92 chars); `.tree-map__crumb`/`__here`/`__meta` for the dim-vs-gold split; `.tree-map__help` + `.tree-map__helpok`; `.tree-map__btn.ok` for the copy confirm; `.tree-btn.locked`; a phone case for the now four-button bar |
+| `index.css` | **BUILT** — `.tree-map__readout` gets a `max-width` and wraps (measured: 92 chars); `.tree-map__crumb`/`__here`/`__meta` for the dim-vs-gold split, plus `__fog` for a redacted rung (2026-08-24); `.tree-map__help` + `.tree-map__helpok`; `.tree-map__btn.ok` for the copy confirm; `.tree-btn.locked`; a phone case for the now four-button bar |
 | `index.js` | **nothing** — the guard has no caller until §11/§12, which is the point |
 | §11.8, §12.5 | **BUILT (as doc)** — the one-line `ladderMapLock()` call each daily owes on start/finish is recorded in both wiring tables |
 | `CLAUDE.md` | **BUILT** — the Punctuators row |

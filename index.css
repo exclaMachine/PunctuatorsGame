@@ -1421,6 +1421,12 @@ span[data-hint] {
   color: #9d94bd;
 }
 
+/* A rung of the path that §13.5 is fogging. It keeps its place in the chain — you should see that
+   there IS a step there — without giving up the name. */
+.tree-map__fog {
+  color: #55507a;
+}
+
 .tree-map__readout i {
   font-style: normal;
   color: #6f6790;

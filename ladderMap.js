@@ -266,6 +266,35 @@ function shelfDone(i) {
   return !!kids && KLIT[i] === kids.length;
 }
 
+/* ── §13.5 The fog rule ───────────────────────────────────────────────────────────────────────── */
+/* MAY THIS WORD'S NAME BE ON SCREEN? One predicate, used by every place that can print a word: the
+   canvas labels, the hover readout, the breadcrumb and the share string. It used to be spelled
+   inline as `KIDS[i] || visited`, and that spelling had a hole.
+ *
+ * The locked decision (§13.2) is skeleton visible, fringe fogged: you always see how much is left,
+ * but you can never read an answer off the map. `internal` was the stand-in for "skeleton", on the
+ * theory that a word with kinds of its own is coastline you navigate by. True of `animal`, of `dog`.
+ * FALSE OF A WORD WHOSE ENTIRE BRANCH IS ONE CHILD — that is a leaf with a tail, and naming it just
+ * prints an answer. Found in play 2026-08-24: `kinsman 0/4` handed over `brother`, `nephew` and
+ * `uncle` (one child each), fogging only `brethren`, the one true leaf. Three of four answers, free.
+ *
+ * So skeleton means TWO OR MORE KINDS. Measured against the shipped corpus: 1,623 of the 4,837
+ * internal words (33.6%) are single-child parents — the same third that set M13's milestone floor,
+ * for the same underlying reason — and fogging them removes 1,367 of the 3,835 names that were
+ * readable off unvisited shelves (36%), taking `kinsman` to a genuine 0/4. The other 2,468 are
+ * multi-child parents and stay named: that is §13.2's trade, not a bug.
+ *
+ * ONLY THE NAME HIDES, NEVER THE CIRCLE. Containment is the layout — a word that stopped being drawn
+ * would take its children with it. A fogged parent draws exactly like a bud, and its shelf arc still
+ * turns (an arc spells nothing). */
+const SKELETON_MIN_KINDS = 2;
+
+const isSkeleton = (i) => !!KIDS[i] && KIDS[i].length >= SKELETON_MIN_KINDS;
+
+/* SEEN rather than SELFLIT on purpose: SELFLIT is only true after a relight(), and this is called
+   from the pointer handlers as well as the draw. */
+const isNamed = (i) => isSkeleton(i) || SEEN.has(WORDS[i]);
+
 /* ── The pack ─────────────────────────────────────────────────────────────────────────────────── */
 /* Children go inside their parent, so a parent's radius is whatever its children's arrangement
    needs — computed bottom-up, never forced.
@@ -687,15 +716,11 @@ function drawNode(i, s) {
     ctx.stroke();
   }
 
-  // Internal words are the map's coastline and are ALWAYS named (§13.5) — without them the map is
-  // unnavigable. Leaf names stay fogged until visited, so an answer can never be read off it.
-  //
-  // KNOWN ISSUE (2026-08-24, §13.5) — except it can, and this is where. A word whose whole branch is
-  // ONE child is a leaf with a tail, not coastline, and naming it just prints an answer: `kinsman
-  // 0/4` hands you `brother`, `nephew` and `uncle` because each has a single child, leaving only the
-  // true leaf `brethren` fogged. 1,623 of the 4,837 internal words (33.6%) are single-child parents.
-  // The fix is to fog them like buds until visited — see §13.5 for what it does to the breadcrumb.
-  if (rs >= LABEL_PX) labelQueue.push(i, cx, cy, rs, 0);
+  // The skeleton is the map's coastline and is ALWAYS named (§13.5) — without it the map is
+  // unnavigable. Everything else stays fogged until visited, so an answer can never be read off it.
+  // isNamed() is what decides, and a single-child parent is NOT skeleton: it draws its circle and
+  // its arc like anything else, but no name and no shelf counter until you land on it.
+  if (rs >= LABEL_PX && isNamed(i)) labelQueue.push(i, cx, cy, rs, 0);
 
   for (let k = 0; k < kids.length; k++) drawNode(kids[k], s);
 }
@@ -850,7 +875,11 @@ function bestTree() {
     bestFrac = 0;
   for (let k = 0; k < ROOTS.length; k++) {
     const i = ROOTS[k];
-    if (SIZE[i] < SHARE_MIN_TREE || !LIT[i]) continue;
+    // isNamed, not just size: the share must never print a word the map is fogging. Measured, no
+    // root in this pool is a single-child parent (256 of the 1,002 roots are, but all are tiny —
+    // the largest is 13 nodes), so this changes nothing today. It makes it hold by construction
+    // rather than by measurement, which is what a corpus rebuild needs.
+    if (SIZE[i] < SHARE_MIN_TREE || !LIT[i] || !isNamed(i)) continue;
     const frac = LIT[i] / SIZE[i];
     if (frac > bestFrac || (frac === bestFrac && best !== -1 && LIT[i] > LIT[best])) {
       best = i;
@@ -952,13 +981,22 @@ function readout(i) {
   // whole hierarchy, so the readout carries the entire chain, broad → narrow: the direction the
   // ladder reads in play (General walks left, Keen walks right).
   //
-  // IT CAN NEVER NEED REDACTING. Every ancestor has a child by definition, so every ancestor is an
-  // internal word, and §13.5 names all of those. Only the hovered word itself can be fogged.
+  // A CHAIN ABOVE A WORD YOU HAVE REACHED IS NOT A SPOILER. M14 shipped this line believing no
+  // ancestor could ever need redacting — every ancestor has a child, so every ancestor was named.
+  // Tightening the fog rule (§13.5) took that away: an ancestor can now be a fogged single-child
+  // parent, and `kinsman › brother › an unvisited kind` would hand over the very name the map just
+  // stopped printing. So a fogged ancestor is fogged here too — UNLESS the hovered word's own name
+  // is on screen, in which case you can type that word and broaden from it, so everything above it
+  // is at most one General Ization shot away. Naming a chain you can already walk is not a spoiler.
   const path = ancestry(i);
-  const named = KIDS[i] || SEEN.has(WORDS[i]);
+  const named = isNamed(i);
   const crumbs = path
     .slice(0, -1)
-    .map((a) => `<span class="tree-map__crumb">${say(a)}</span>`)
+    .map((a) =>
+      named || isNamed(a)
+        ? `<span class="tree-map__crumb">${say(a)}</span>`
+        : `<span class="tree-map__crumb tree-map__fog">•</span>`
+    )
     .join("<i>›</i>");
   const here = `<span class="tree-map__here">${
     named ? say(i) : "an unvisited kind"
