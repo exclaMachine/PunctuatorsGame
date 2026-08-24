@@ -1322,15 +1322,23 @@ span[data-hint] {
   font-size: 0.62em;
 }
 
-/* Where you stand: the biggest word on screen, and deliberately NOT shootable — it carries no id,
-   so no hero's collision gate can ever match it. */
+/* Where you stand: the biggest word on screen. It is shootable, but only by Keen and only while
+   nothing is summoned — his shot on it is the ask that opens the move box (§12.8 Note 2). index.js
+   moves his id here and away again; this file just draws it. */
 .race-here {
   font-size: 1em;
 }
 
-/* An end with nothing on it — the top of a tree, or a slot with nothing summoned yet. It stays on
-   screen holding its place and saying what it wants, rather than vanishing and moving the other
-   two words around under the player's aim. */
+/* The summoned slot when there is nothing in it. `display: none` has to be spelled out because
+   .race-word above sets display: inline-block, which outranks the UA rule for [hidden]. Hiding the
+   LAST item of a top-anchored column moves nothing above it, so the two words the player is aiming
+   at stay put — which was §12.2's reason for keeping a placeholder here in the first place. */
+.race-word[hidden] {
+  display: none;
+}
+
+/* An end with nothing on it — today only the top of a tree. It stays on screen holding its place
+   and saying so, rather than vanishing and moving the other words around under the player's aim. */
 .race-word.race-none {
   opacity: 0.42;
   font-style: italic;

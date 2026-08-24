@@ -42,6 +42,7 @@ export const RACE_DOWN_ID = "Keen Race Down";
 const ALT_HOPS = 1;
 
 let ALT = null; // Map<child, string[]> — a word's other-sense parents, inverted from the shipped down-map
+let ALT_PARENTS = null; // Set<word> — the same map's keys, i.e. every word something alt-descends from
 let loadingAlt = null;
 
 export function raceReady() {
@@ -57,7 +58,9 @@ export function loadRace() {
       loadLadders(),
       import("./ladderAltPOJO.js").then(({ ladderAlt }) => {
         const alt = new Map();
+        const parents = new Set();
         for (const parent of Object.keys(ladderAlt)) {
+          parents.add(parent);
           for (const kid of ladderAlt[parent].split(" ")) {
             const list = alt.get(kid);
             if (list) list.push(parent);
@@ -65,6 +68,7 @@ export function loadRace() {
           }
         }
         ALT = alt;
+        ALT_PARENTS = parents;
       }),
     ]).then(() => undefined);
   return loadingAlt;
@@ -160,6 +164,22 @@ export function descentFrom(word, of) {
   return null;
 }
 
+/**
+ * Is there anything at all below `word` — i.e. can the player descend from here?
+ *
+ * Asked BEFORE the player types, because Keen's shot on the word you're standing on is what opens
+ * the move box (§12.8 Note 2) and offering a box on a word with nothing under it would be asking
+ * for an answer that cannot exist. The alt map has to be consulted too, not just the main one: a
+ * word can be a main-map leaf and still have alt children (`tree`'s only route to `oak` is an alt
+ * edge), so `ladderChildrenOf` alone would clank on a word the player could in fact descend from.
+ * ALT is keyed child → parents, hence the parents-only Set built alongside it.
+ */
+export function canDescend(word) {
+  const kids = ladderChildrenOf(word);
+  if (kids && kids.length) return true;
+  return !!(ALT_PARENTS && ALT_PARENTS.has(word));
+}
+
 /* The three kinds of "no", and they must sound different (§12.2). Lumping them together is what
    makes a typing game feel broken — and the third one is not the player's fault at all, so it must
    never read as "you were wrong": five of the thirty guesses probed were simply absent from the
@@ -250,19 +270,28 @@ export function decoysFor(word, size = 8) {
  * that the `#output span` and `mutations[0]` footguns produce (docs/punctuators-ladder.md, the
  * shared-engine footguns). The column layout lives on #output.race-mode instead.
  *
- * The middle word carries NO id, because you never shoot where you already stand. The other two
- * carry one each so animate()'s existing `id === (targetId ?? symbol)` gate keeps each hero to its
- * own target — General can only hit the rung above, Keen only the word you summoned. Free play
- * shares one id between the heroes (§4) because there both act on the same word; here they don't.
+ * General's id never moves: the rung above is his target and nothing else. KEEN'S id MOVES between
+ * the middle span and the bottom one, because his shot means two things in sequence (§12.8 Note 2)
+ * — with nothing summoned he shoots the word you are STANDING on, which opens the move box and asks
+ * for a kind; once you have named one he shoots that instead, and travelling there is the move. The
+ * bottom span therefore starts empty, id-less and `hidden`, and only exists on screen while it
+ * holds a summoned word. index.js owns the swap (updateRaceField).
+ *
+ * The id has to be on a span from the FIRST render even so, or heroToTheRescue — which builds the
+ * team once, from the ids present — leaves Keen Arrow out of the race entirely. That is why it
+ * starts on the middle word rather than on the hidden slot.
+ *
+ * Two ids, not one shared between the heroes as free play does (§4), because a race puts two
+ * different words on the field at once and animate()'s existing `id === (targetId ?? symbol)` gate
+ * then keeps each hero to its own with no new collision code.
  */
 export function raceFieldHTML(race) {
   const up = race.up();
   return (
     `<span id="${RACE_UP_ID}" class="race-word race-up${up ? "" : " race-none"}"` +
     ` data-race-word="${up || ""}">${up || "— the top —"}</span>` +
-    `<span class="race-word race-here" data-race-word="${race.at}">${race.at}</span>` +
-    `<span id="${RACE_DOWN_ID}" class="race-word race-down race-none" data-race-word="">` +
-    `type a narrower kind</span>`
+    `<span id="${RACE_DOWN_ID}" class="race-word race-here" data-race-word="${race.at}">${race.at}</span>` +
+    `<span class="race-word race-down" data-race-word="" hidden></span>`
   );
 }
 

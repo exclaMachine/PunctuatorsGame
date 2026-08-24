@@ -39,6 +39,7 @@ import {
   GUESS,
   loadRace,
   classifyGuess,
+  canDescend,
   createRace,
   raceFieldHTML,
   ancestorsOf,
@@ -869,9 +870,16 @@ function pickRung(kid, hero, projectile) {
 
 /* ── WORD RACE (docs/punctuators-ladder.md §12) ───────────────────────────────────────────────────
 
-   Type to summon, shoot to travel. Going UP needs no typing — there is only ever one parent, so
-   General shoots the rung floating above you. Going DOWN is where the typing lives: name a narrower
-   kind, it spawns beneath you, and Keen Arrow shoots it to travel there.
+   Shoot to ask, type to summon, shoot to travel. Going UP needs no typing — there is only ever one
+   parent, so General shoots the rung floating above you. Going DOWN takes two of Keen's shots and a
+   word: the first shot lands on the word you are STANDING on and is the ask — it opens the move box
+   and names what it wants ("a kind of dog?") — then what you type spawns beneath you, and a second
+   shot travels there (§12.8 Note 2).
+
+   That first shot is why the move box is not simply on screen for the whole run. A text box sitting
+   open from the first frame reads as an instruction for right now, and the first move of a race is
+   usually General's; asking for it with a shot means the box only ever appears at the moment there
+   is something to type, and it appears because the player did something.
 
    Why typing at all, when no other Punctuators mode asks for it (§14.1): branching is simply too
    wide to draw. `person` has 805 children, `fish` 221 — a "shoot one of the children shown" field
@@ -888,6 +896,7 @@ const RACE_PAIR = { start: "poodle", target: "salmon" };
 let race = null; // the run in progress, from createRace()
 let raceEls = null; // {up, here, down} — resolved once after the field renders, then rewritten in place
 let raceSummoned = ""; // the word currently sitting in Keen's slot, "" when empty
+let raceArmed = false; // Keen has struck the word you stand on: the move box is open, awaiting a kind
 
 function raceActive() {
   return race !== null;
@@ -910,12 +919,39 @@ function setRaceSpan(el, word, placeholder) {
   el.classList.toggle("race-none", !word);
 }
 
+/* Keen's target is wherever his next shot should land, and that is one of two spans (see
+   raceFieldHTML). Moving the id rather than giving both spans one keeps animate()'s gate the sole
+   arbiter — there is never a frame in which two spans could answer to the same hero. */
+function aimKeenAt(el) {
+  for (const other of [raceEls.here, raceEls.down]) {
+    if (other !== el) other.removeAttribute("id");
+  }
+  el.id = RACE_DOWN_ID;
+}
+
 function updateRaceField() {
   if (!raceEls) return;
   setRaceSpan(raceEls.up, race.up(), "— the top —");
   setRaceSpan(raceEls.here, race.at, race.at);
-  setRaceSpan(raceEls.down, raceSummoned, "type a narrower kind");
+  // The slot below is not a standing invitation: it exists only while it holds a word you named,
+  // and is off the screen entirely the rest of the time (§12.8 Note 2). Hiding the last item of a
+  // centred column moves nothing above it, so §12.2's worry about the field shifting under the
+  // player's aim doesn't apply.
+  setRaceSpan(raceEls.down, raceSummoned, "");
+  raceEls.down.hidden = !raceSummoned;
+  aimKeenAt(raceSummoned ? raceEls.down : raceEls.here);
+  paintMoveBox();
   paintRaceGoal();
+}
+
+/* The move box is open exactly while Keen is waiting for a word: from his shot on the current word
+   until the move that shot pays for. It stays up (blurred) after a summon rather than closing, so a
+   misheard guess can be replaced without spending another shot to reopen it. */
+function paintMoveBox() {
+  if (!raceActive()) return;
+  const open = raceArmed && !race.solved;
+  initialTypedSentence.classList.toggle("go-away", !open);
+  if (open) initialTypedSentence.placeholder = `a kind of ${race.at}…`;
 }
 
 /* ── THE GOAL DISPLAY (§12.8, Note 1) ─────────────────────────────────────────────────────────────
@@ -930,8 +966,8 @@ function updateRaceField() {
    It lives in #input-container because that is fixed, always in view, and where the player just
    clicked Pow!. Chosen from the dropdown, it REPLACES the sentence box — the box has no job before
    a race starts, and an empty text field reads as "type your sentence here", the exact wrong
-   instruction. Once the race is running the box returns beneath it as the move box (§12.2), so the
-   route stays on screen for the whole run.
+   instruction. The box returns beneath it as the move box only when Keen Arrow asks for a word
+   (§12.8 Note 2), so the route — not the box — is what stays on screen for the whole run.
 */
 const raceGoal = document.getElementById("race-goal");
 const inputContainer = document.getElementById("input-container");
@@ -1013,6 +1049,10 @@ function summonFromMoveBox() {
         "black",
       );
       initialTypedSentence.value = "";
+      // Hand the keyboard back. The global movement handler ignores keystrokes aimed at an input,
+      // so leaving focus in the box would mean the shot the message just asked for could not be
+      // fired without clicking away first.
+      initialTypedSentence.blur();
       break;
     case GUESS.BROADER:
       raceSay(`${verdict.word} is BROADER than ${race.at} — switch to General Ization and shoot upward.`);
@@ -1050,6 +1090,7 @@ function raceTravel(word, hero) {
 
   const { detour, solved } = race.travelTo(word);
   raceSummoned = "";
+  raceArmed = false; // a new word to stand on: Keen has to ask again before the box comes back
   for (const w of crossed) ladderMapVisit(w);
 
   if (hero.ladderDirection === "up") _izoHit();
@@ -1071,17 +1112,34 @@ function raceTravel(word, hero) {
   }
 }
 
-/* Keen's target. An empty slot is a clank rather than a rejection: nothing has been named yet. */
+/* Keen's shot, which means one of two things depending on which span his id is currently on
+   (raceFieldHTML). On the word you're standing on it is the ASK — it opens the move box; on the
+   word you summoned it is the MOVE. Split on the span rather than on emptiness, because the word
+   you're standing on is never empty and would otherwise read as a destination. */
 function raceShootDown(span, hero, projectile) {
   if (!claimLadderShot(projectile) || !raceActive() || race.solved) return;
+  if (span === raceEls?.here) return raceAskForKind(span, hero);
   const word = span.dataset.raceWord;
-  if (!word) {
+  if (!word) return; // unreachable: the slot is hidden and id-less until it holds a word
+  raceTravel(word, hero);
+}
+
+/* The ask. A word with nothing beneath it clanks instead — the capstone, the same sound General
+   gets at the top of a tree, because "there is nothing narrower" is a fact about the hierarchy and
+   not a miss. Opening a box for an answer that cannot exist would be the worse failure. */
+function raceAskForKind(span, hero) {
+  if (!canDescend(race.at)) {
     flashLadder(span, hero, "ladder-capstone");
     _ladderCapstone();
-    raceSay("name a narrower kind first — type it in the box.");
+    raceSay(`nothing is a kind of ${race.at} — go broader with General Ization.`);
     return;
   }
-  raceTravel(word, hero);
+  raceArmed = true;
+  flashLadder(span, hero, "ladder-aperture");
+  _keenHit();
+  paintMoveBox();
+  initialTypedSentence.focus();
+  raceSay(`a kind of ${race.at}? Type it and press Enter.`, "black");
 }
 
 /* General's target. At a root there is nothing above, which is the capstone, not a miss. */
@@ -1196,6 +1254,7 @@ removePuncButton.addEventListener("click", async () => {
       errorMessage.innerText = "";
       race = createRace(RACE_PAIR);
       raceSummoned = "";
+      raceArmed = false;
       ladderMapVisit(race.at); // where you start counts as somewhere you've been (§13)
       // The column layout goes on #output, not on a wrapper span — see raceFieldHTML for why a
       // wrapper would empty the team.
@@ -1206,8 +1265,9 @@ removePuncButton.addEventListener("click", async () => {
     }
   }
   mySong.stop();
-  // Everything goes away except, in a race, the sentence box — which becomes the move box and has
-  // to stay on screen and usable for the whole run (§12.2).
+  // Everything goes away. The sentence box is left out of the list in a race not because it stays
+  // on screen — it doesn't — but because its visibility is Keen's to control from here on, and
+  // paintMoveBox below owns the class either way (§12.8 Note 2).
   setClassName(
     "go-away",
     ...(selectedOption === "wordRace" ? [] : [initialTypedSentence]),
@@ -1217,15 +1277,19 @@ removePuncButton.addEventListener("click", async () => {
     typingLink,
   );
   if (selectedOption === "wordRace") {
-    // The box was hidden the moment Word Race was picked (§12.8 Note 1) and comes back here with a
-    // new job: the run is under way, so there is finally something to type. The goal display stays
-    // above it, now carrying par and moves.
-    initialTypedSentence.classList.remove("go-away");
+    // The box was hidden the moment Word Race was picked (§12.8 Note 1) and STAYS hidden through
+    // the start of the run: it comes back only when Keen Arrow shoots the word you're standing on
+    // and asks for a kind (§12.8 Note 2). updateRaceField paints it shut here, which also covers
+    // the case where the change handler never ran (a browser restoring the dropdown on reload).
     initialTypedSentence.value = "";
-    initialTypedSentence.placeholder = "name a narrower kind, then press Enter";
     initialTypedSentence.disabled = false;
     if (bindRaceField()) updateRaceField();
-    initialTypedSentence.focus();
+    // With the box gone there is nothing on screen saying how to move, so the status line opens the
+    // run by naming both directions. Every message after this one is written by play.
+    raceSay(
+      "General Ization shoots the word above to broaden — Keen Arrow shoots your own word to narrow it.",
+      "black",
+    );
   }
 
   // The native <select> is hidden by CSS and replaced by a custom dropdown
