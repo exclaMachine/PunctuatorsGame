@@ -88,10 +88,14 @@ Two more things that are true of wordplay modes and matter here:
 - **Wordplay modes have no win state.** `numberOfPunctuationArray` (`utils/utils.js:177`) only collects
   `hidden-punc` / `capital-black-hole` / contraction spans, so the "you found them all" ending never fires
   in a wordplay mode. Free play, no scoring — which is exactly why a *repeatable, climbable* ladder fits.
-- **`protectedArticles` is always applied first, and `spoonerism()` last** (`utils/utils.js:99` and `:136`).
-  So Art the Tickler and The Foon may join the team alongside the ladder heroes. `spoonerism()` does its own
-  span-protection pass internally (`spoonerismFunc.js:10`), so it **skips words already wrapped** — ladder
-  spans are safe from Foon. No suppression needed; this is the same coexistence every other mode has.
+- **`protectedArticles` is applied first and `spoonerism()` last in every other mode** (`utils/utils.js`),
+  which would let Art the Tickler and The Foon join the team alongside the ladder heroes. **Both are
+  suppressed in all three ladder modes** (dev's call, 2026-08-25 — the `ladderMode` flag in
+  `addSpansAndIdsForWordPlay`, which free play now shares with Word Race and Restore the Phrase): the mode
+  is one word changing along the hierarchy, and a third and fourth hero rewriting the same sentence is
+  noise on top of that. Not a safety fix — `spoonerism()` protects wrapped words already — but it takes the
+  article with it, so `landOnRung` makes the `a dog` → `an animal` text-node edit itself (`fixArticleBefore`,
+  §11.6), which is now shared by free play and the puzzle.
 
 ---
 
@@ -562,7 +566,7 @@ Character flips directly between them.
 | `ladderPOJO.js` | **new, generated — BUILT** — `ladderDown` map, 337 KB (§3.3) |
 | `ladderFunc.js` | **new — BUILT** — `loadLadders()` (the lazy `import()`, §3.3), `hasLadders`/`wrapLadders`, the rung lookups (`ladderParentOf`/`ladderChildrenOf`/`ladderChainFor`/`ladderDepthBelow`/`ladderRungStrip`), case/plural (`applyLadderCase`/`renderRung`, §3.4), and **`shelfFor` (§2.5.1)** — the tiered row, which is where the unvisited-first rule now lives. **Maps and Sets only** — `constructor` and `prototype` are real words in the corpus, so a plain-object lookup would invent edges (same trap as `ladderMap.js`) |
 | `SpanPlaceholder.js` | **BUILT** — `export const protectedLadders = withSpanPlaceholders(wrapLadders);` |
-| `utils/utils.js` | **BUILT** — `case "ladder":` in `addSpansAndIdsForWordPlay`; `targetId` in `heroToTheRescue` |
+| `utils/utils.js` | **BUILT** — `case "ladder":` in `addSpansAndIdsForWordPlay`; `targetId` in `heroToTheRescue`; **2026-08-25** free play joined the `ladderMode` flag, so Art the Tickler and The Foon are suppressed here too (§1) |
 | `punctuators.html` | **BUILT** — the `<option>`. *(The custom dropdown enumerates `sel.options` automatically — no extra work, as predicted.)* |
 | `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`landOnRung`/`flashLadder` and the ladder branch in the collision chain. **§2.5's fan BUILT** — `openShelfFan`/`closeShelfFan`/`pickRung`/`drawShelfFanLines`/`shelfFanWidth`, the `data-ladder-child` split in the ladder branch, the `nodeArr` push/splice, and two guards at the top of the collision walk (`isConnected`, `projectile.ladderDone`); closed on hero switch, new sentence and resize. **The `ladder` How-to-Play template BUILT** in `updateCharacterModal`, which now writes into `.modal--body` so the modal keeps its `×`. **§6's animations BUILT** — `animateLadderSwap` + `ladderPullBack`/`ladderLensSnap`/`flyPickedChild`, the `pulse` parameter on `openShelfFan`, and `drawBroadswordSprite()`/`GENERAL_PROJECTILE`. **§7's SFX BUILT** — `_izoShoot`/`_izoHit`/`_keenShoot`/`_keenHit`/`_keenFan`/`_ladderCapstone` beside the other heroes' synth pairs, played from the ladder branch rather than from the generic hit call site (both heroes' `hitProjectileSound()` is silent), and the borrowed mp3s dropped from both constructors. **§8's hero art BUILT 2026-08-25** — `Ization.png` / `KeenArrow.png` in both hero slots of each constructor (no attack frame yet), with `heroScale` and `projectileStartPositionX` re-derived from the new files. **Still to do (M4):** nothing but a second (attack) frame per hero |
 | `index.css` | **BUILT** — `.word-ladder`, the `data-rung-strip` `::after`, `.ladder-capstone`, and §2.5's `.shelf-fan` / `.shelf-fan-row` / `.shelf-child` / `.shelf-fan-caption` / `.shelf-fan-lines` (with the reduced-motion case that clears `stroke-dashoffset` rather than only killing the animation, or the lines would stay invisible), plus `.modal--body > .char-modal` for the How-to-Play copy. **§6 BUILT** — the placeholder `.ladder-move` is gone, replaced by `.ladder-face` / `.ladder-ghost` (the two boxes a swap is built from; the keyframes themselves are WAAPI, in `index.js`), `.ladder-aperture` (the fan-open flicker) and `.shelf-child-picked` (the clone that flies into the word). `.ladder-capstone` stayed but went from `text-shadow` to `drop-shadow`, which stops it blanking the word's black outline for the length of the flare |
@@ -952,8 +956,8 @@ where the shown word is the clue. **2of12.txt cannot fix it** (measured: it admi
 ### 11.6 In-game rules
 
 - **The team is exactly General + Keen.** `protectedArticles` and `spoonerism()` are both **suppressed** in
-  this mode (`utils/utils.js:99` and `:136` — the latter already has an `anagrams` exclusion to copy). Art
-  and Foon rewriting the phrase the player is trying to match would be actively confusing, and plain-text
+  this mode — and, since 2026-08-25, in every ladder mode (the shared `ladderMode` flag in `utils/utils.js`;
+  §1). Art and Foon rewriting the phrase the player is trying to match would be actively confusing, and plain-text
   articles are what makes the live `a`/`an` fix trivial (`articleFunc.js` swallows the following character
   into its span).
 - **The span** is *literally* the free-play span (`data-ladder`, `data-rung`, `data-ladder-word`,
@@ -1029,7 +1033,7 @@ where the shown word is the clue. **2of12.txt cannot fix it** (measured: it admi
 | `phrasePOJO.js` | **new, generated — BUILT 2026-08-22** — `ladderPhrases`, 108 puzzles / 24 KB (§11.5) |
 | `ladderPhrase.js` | **new — BUILT 2026-08-24.** §11.8 originally put `wrapPhrase` in `ladderFunc.js`; the puzzle needs a lazy corpus load, a phrase pick, the goal arithmetic and a run object as well, which is `ladderRace.js`'s shape, so it got `ladderRace.js`'s treatment: its own module. Exports `loadPhrases`/`pickPhrase`/`wrapPhrase`/`createPuzzle`/`nextRungToward`/`phraseSurface` |
 | `ladderFunc.js` | **BUILT** — `shelfFor` gained an optional **`pin`** (§11.6). Free play passes none |
-| `utils/utils.js` | **BUILT** — `case "ladderPuzzle":` in `addSpansAndIdsForWordPlay` (a no-op: `wrapPhrase` needs the whole puzzle, not a bare string, so it runs in `index.js` first, as Word Race's field does); `protectedArticles` + `spoonerism` suppressed via the shared `preMarked` flag |
+| `utils/utils.js` | **BUILT** — `case "ladderPuzzle":` in `addSpansAndIdsForWordPlay` (a no-op: `wrapPhrase` needs the whole puzzle, not a bare string, so it runs in `index.js` first, as Word Race's field does); `protectedArticles` + `spoonerism` suppressed via the shared `ladderMode` flag (renamed from `preMarked` on 2026-08-25, when free play joined it — free play is *not* pre-marked, it just wants the same two heroes gone) |
 | `punctuators.html` | **BUILT** — `<option value="ladderPuzzle" data-dev>Restore the Phrase</option>`, dev-gated exactly as Word Race is (§12.8). The puzzle card that replaces the text box is M8 |
 | `index.js` | **M6 BUILT** — the `ladderPuzzle` branch in the `removePuncButton` handler, `NO_SENTENCE_MODES` (the box is hidden for this mode and Word Race alike), the run state + `phrasePinFor`/`notePhraseLanding`/`lockPhraseWord`/`phraseWin`/`fixArticleBefore`, `_phraseLock`, and the two hooks in the free-play path (`openShelfFan`'s pin, `landOnRung`'s scorer). **Still M7/M8:** win card, daily + stats + share, `PRACTICE_ENABLED`, the late hint, give-up, `updateCharacterModal("ladderPuzzle")`. **Plus one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's puzzle to open the map")` on daily start, `ladderMapUnlock()` on finish — M7, since there is no daily to lock against yet. Practice never locks.** |
 | `index.css` | **BUILT** — `.phrase-word` (the dotted mark), `.ladder-locked` + its ✔ flare, `#output.phrase-mode`/`.phrase-solved`. The puzzle card and the win/share card are M8 |

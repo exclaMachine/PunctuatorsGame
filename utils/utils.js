@@ -97,15 +97,19 @@ export const addSpansAndIdsForWordPlay = (
     //RemoveVowels(typedString);
   }
 
-  // Two ladder modes hand in markup they built themselves and want it left alone.
+  // EVERY ladder mode runs without Art the Tickler and the Foon — the ladder heroes own the field
+  // and a third or fourth hero rewriting the same words muddies what the mode is teaching.
   //
-  // Word Race has no sentence at all: index.js builds a field of three words (§12.2), so there are
-  // no articles to fix and nothing for Art the Tickler to do. Restore the Phrase (§11.6) does have
-  // a sentence, and suppresses articles ON PURPOSE — the puzzle is to match a known saying, so a
-  // hero rewriting it would be actively confusing, and plain-text articles are what make the live
-  // `A dog` → `An animal` fix a text-node edit rather than a span surgery.
-  const preMarked = mode === "wordRace" || mode === "ladderPuzzle";
-  let processed = preMarked ? typedString : protectedArticles(typedString);
+  // Word Race has no sentence at all: index.js builds a field of three words (§12.2), so there is
+  // nothing for either to do. Restore the Phrase (§11.6) does have a sentence, and suppresses
+  // articles ON PURPOSE — the puzzle is to match a known saying, so a hero rewriting it would be
+  // actively confusing, and plain-text articles are what make the live `A dog` → `An animal` fix a
+  // text-node edit rather than a span surgery. Free play (General & Specific) suppresses them for
+  // the same reason the other two do: the whole mode is one word changing along the hierarchy, and
+  // an article or a swapped word-head is noise on top of that.
+  const ladderMode =
+    mode === "ladder" || mode === "wordRace" || mode === "ladderPuzzle";
+  let processed = ladderMode ? typedString : protectedArticles(typedString);
 
   // Apply transformation based on selected mode
   switch (mode) {
@@ -152,12 +156,13 @@ export const addSpansAndIdsForWordPlay = (
       break;
   }
 
-  // Apply spoonerism (Foon) last — but never in anagram mode, and never in either ladder mode that
-  // builds its own field: Foon swapping the heads of the three Word Race words would rewrite the
-  // very words being raced between, and in Restore the Phrase he'd be scrambling the saying the
-  // player is trying to put back (§11.6).
+  // Apply spoonerism (Foon) last — but never in anagram mode, and never in any ladder mode: Foon
+  // swapping the heads of the three Word Race words would rewrite the very words being raced
+  // between, in Restore the Phrase he'd be scrambling the saying the player is trying to put back
+  // (§11.6), and in free play he'd be swapping the head off a word that is about to be replaced by
+  // a rung anyway — including, since he runs after protectedLadders, straight into a ladder span.
   let final =
-    mode === "anagrams" || preMarked ? processed : spoonerism(processed);
+    mode === "anagrams" || ladderMode ? processed : spoonerism(processed);
 
   // Split and render to output
   let newString = final.split("");

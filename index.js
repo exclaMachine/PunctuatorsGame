@@ -814,7 +814,14 @@ function landOnRung(span, rung, hero) {
   // hero classes for why hitProjectileSound() is silent for these two.
   if (hero.ladderDirection === "up") _izoHit();
   else _keenHit();
-  animateLadderSwap(span, shown, renderRung(rung, original, plural), hero);
+  // `a dog` → `an animal`, live. Art the Tickler is suppressed in every ladder mode, so the article
+  // in front of a word that just changed is plain text that nothing else will fix — the same
+  // text-node edit Restore the Phrase makes (§11.6), now that free play has no hero to do it either.
+  // Harmless to run twice: notePhraseLanding below makes the same call in the puzzle, and the second
+  // one finds the article already right and returns.
+  const surface = renderRung(rung, original, plural);
+  fixArticleBefore(span, surface);
+  animateLadderSwap(span, shown, surface, hero);
   // After the swap, not before: the face carries the new word's width the moment it is built, so the
   // banner is measured against the box the word actually ends up holding.
   if (newlyLit) noteShelfProgress(span, rung);
