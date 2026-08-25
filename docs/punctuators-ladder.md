@@ -11,7 +11,8 @@ not at all**: the leaf sidestep the fan replaced was removed the same day (§13.
 tip is the rule the fan made unguessable: shooting a word no longer moves it.
 **§6's two landing animations BUILT 2026-08-23** — General's camera pull-back and Keen's lens snap,
 plus the picked child flying out of the row into the word, and a drawn broadsword for General's
-projectile. **§7's six SFX BUILT 2026-08-23** too. **All that's left of M4 is final hero art.**
+projectile. **§7's six SFX BUILT 2026-08-23** too, and **§8's hero art BUILT 2026-08-25** —
+`Ization.png` / `KeenArrow.png`, with no attack frame yet, so **M4 is complete** bar that second pose.
 Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5 data layer BUILT
 the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
 `build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). **M6 (the mode) BUILT
@@ -563,7 +564,7 @@ Character flips directly between them.
 | `SpanPlaceholder.js` | **BUILT** — `export const protectedLadders = withSpanPlaceholders(wrapLadders);` |
 | `utils/utils.js` | **BUILT** — `case "ladder":` in `addSpansAndIdsForWordPlay`; `targetId` in `heroToTheRescue` |
 | `punctuators.html` | **BUILT** — the `<option>`. *(The custom dropdown enumerates `sel.options` automatically — no extra work, as predicted.)* |
-| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`landOnRung`/`flashLadder` and the ladder branch in the collision chain. **§2.5's fan BUILT** — `openShelfFan`/`closeShelfFan`/`pickRung`/`drawShelfFanLines`/`shelfFanWidth`, the `data-ladder-child` split in the ladder branch, the `nodeArr` push/splice, and two guards at the top of the collision walk (`isConnected`, `projectile.ladderDone`); closed on hero switch, new sentence and resize. **The `ladder` How-to-Play template BUILT** in `updateCharacterModal`, which now writes into `.modal--body` so the modal keeps its `×`. **§6's animations BUILT** — `animateLadderSwap` + `ladderPullBack`/`ladderLensSnap`/`flyPickedChild`, the `pulse` parameter on `openShelfFan`, and `drawBroadswordSprite()`/`GENERAL_PROJECTILE`. **§7's SFX BUILT** — `_izoShoot`/`_izoHit`/`_keenShoot`/`_keenHit`/`_keenFan`/`_ladderCapstone` beside the other heroes' synth pairs, played from the ladder branch rather than from the generic hit call site (both heroes' `hitProjectileSound()` is silent), and the borrowed mp3s dropped from both constructors. **Still to do (M4):** nothing but real hero art |
+| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`landOnRung`/`flashLadder` and the ladder branch in the collision chain. **§2.5's fan BUILT** — `openShelfFan`/`closeShelfFan`/`pickRung`/`drawShelfFanLines`/`shelfFanWidth`, the `data-ladder-child` split in the ladder branch, the `nodeArr` push/splice, and two guards at the top of the collision walk (`isConnected`, `projectile.ladderDone`); closed on hero switch, new sentence and resize. **The `ladder` How-to-Play template BUILT** in `updateCharacterModal`, which now writes into `.modal--body` so the modal keeps its `×`. **§6's animations BUILT** — `animateLadderSwap` + `ladderPullBack`/`ladderLensSnap`/`flyPickedChild`, the `pulse` parameter on `openShelfFan`, and `drawBroadswordSprite()`/`GENERAL_PROJECTILE`. **§7's SFX BUILT** — `_izoShoot`/`_izoHit`/`_keenShoot`/`_keenHit`/`_keenFan`/`_ladderCapstone` beside the other heroes' synth pairs, played from the ladder branch rather than from the generic hit call site (both heroes' `hitProjectileSound()` is silent), and the borrowed mp3s dropped from both constructors. **§8's hero art BUILT 2026-08-25** — `Ization.png` / `KeenArrow.png` in both hero slots of each constructor (no attack frame yet), with `heroScale` and `projectileStartPositionX` re-derived from the new files. **Still to do (M4):** nothing but a second (attack) frame per hero |
 | `index.css` | **BUILT** — `.word-ladder`, the `data-rung-strip` `::after`, `.ladder-capstone`, and §2.5's `.shelf-fan` / `.shelf-fan-row` / `.shelf-child` / `.shelf-fan-caption` / `.shelf-fan-lines` (with the reduced-motion case that clears `stroke-dashoffset` rather than only killing the animation, or the lines would stay invisible), plus `.modal--body > .char-modal` for the How-to-Play copy. **§6 BUILT** — the placeholder `.ladder-move` is gone, replaced by `.ladder-face` / `.ladder-ghost` (the two boxes a swap is built from; the keyframes themselves are WAAPI, in `index.js`), `.ladder-aperture` (the fan-open flicker) and `.shelf-child-picked` (the clone that flies into the word). `.ladder-capstone` stayed but went from `text-shadow` to `drop-shadow`, which stops it blanking the word's black outline for the length of the flare |
 | `CLAUDE.md` | the Punctuators row flips to **BUILT** per milestone — done for M1–M3 + M12, still to do for M4 |
 
@@ -668,20 +669,29 @@ different *in kind* rather than one note longer than a half. It takes a `delay` 
 
 ## 8. Art
 
-Two existing assets look ready to press into service:
+**Hero art BUILT 2026-08-25.** `images/Ization.png` (a black silhouette of an armoured figure, broadsword
+raised — the projectile's joke drawn into the hero) and `images/KeenArrow.png` (a purple archer, braid and
+crossbow) replace the placeholders the mode shipped on: `Generic.png` for General and, for Keen, Question
+Markswoman's own `qm.png`/`QM2.png`, which made the two heroes identical on screen.
 
-- **`images/Arrow.png`** — a blue arrow. Reads immediately as **Keen Arrow's projectile**.
-- **`images/Generic.png`** — a black silhouette of a figure, hands on hips. Whether it's a leftover
-  placeholder or not, "generic" is literally the joke — usable as **General Ization** as-is, or as the
-  base for a proper drawing.
+**No attack frame yet**, so `secondHeroImage` is the same file as `heroImage` for both — the hero just
+doesn't change pose while a shot is in flight. Dropping a second frame in later is a one-string change per
+hero; nothing else knows the two slots hold the same picture.
 
-Still needed, following the two-frame convention every hero uses (`heroImage` + `secondHeroImage`, shown
+Two numbers in the constructors are derived from the art and have to be re-derived if it is replaced:
+
+| Number | General | Keen | Why |
+| ------ | ------- | ---- | --- |
+| `heroScale` | `0.45` | `0.45` | Tuned on screen by the dev, and shared — but note the two are **not** the same size on the canvas, because the files are: both are 800 × 1045 frames, and the **figure inside** is 798 × 875 for General against 442 × 663 for Keen, so the same scale draws ~359 × 394 and ~199 × 298. Keen being the smaller of the pair is the choice; equalising them would mean giving each hero its own scale. Both figures are bottom-anchored in their frame, which is what `restingY()`'s `canvas.height - height + 20` assumes |
+| `projectileStartPositionX` | `180` | `180` | **Half the drawn width, and it has to be** — so it moves whenever `heroScale` does (this pair went 120/160 → 180/180 when the scales were tuned to 0.45, before the mode was ever played with the new art). The shoot handlers spawn at `position.x + width - projectileStartPositionX`, while the `Projectile`'s own `onload` rewrites it to `position.x + projectileStartPositionX` — the two agree at the midpoint and nowhere else, so any other value makes the shot jump sideways the instant the image loads. Free here: both figures are centred on the frame's midline anyway — General by his bounding box, Keen by his **crossbow** (his bbox leans right because of the skirt and quiver, but the bow the bolt actually leaves from is centred at x ≈ 399 of 800) |
+
+Still open, following the two-frame convention every hero uses (`heroImage` + `secondHeroImage`, shown
 while a projectile is in flight — `index.js:1718`):
 
 | Asset | Notes |
 | ----- | ----- |
-| `General_1.png` / `General_2.png` | hero frames — military bearing, broad/wide silhouette |
-| `Keen_1.png` / `Keen_2.png` | hero frames — lean, archer's stance |
+| General's attack frame | second pose, e.g. the sword swung down |
+| Keen's attack frame | second pose, e.g. the crossbow loosed |
 | General's projectile | **BUILT 2026-08-23 — a drawn broadsword.** The joke is already in the name: the *broad* blade for the hero who broadens, which beat the spec's earlier "spreading ring or cone" on legibility at 27px. `drawBroadswordSprite()` paints it once into an offscreen canvas and hands the Hero constructor a data URL, so it takes the same `Image()` path as every other projectile and **swapping it for real art is one string** — replace `GENERAL_PROJECTILE` with a filename. Drawn point-up (projectiles are never rotated) and sized so the unchanged 0.2 scale lands at ~27 px wide, the width the borrowed `Ectoplasm.png` had, which is what `projectileStartPositionX` (90) was centred against |
 | Keen's projectile | `images/Arrow.png` ✔ |
 
@@ -706,12 +716,15 @@ planned. Two things came out differently: the corpus is **lazy-loaded** (§3.3, 
 
 **M3 — the heroes. BUILT 2026-08-23.** The `targetId` split (§4) went in exactly as specced — four
 one-line changes, all 23 existing heroes untouched. Both hero classes, adjacent in `availableHeroArray`,
-the collision branch, up/down movement, capstone/clank. Playable with placeholder art (`Generic.png` /
-`Arrow.png`, §8) and borrowed SFX. **§2.4's rung strip came along**, because without it the mode reads as
+the collision branch, up/down movement, capstone/clank. Shipped playable on placeholder art
+(`Generic.png` for General, Question Markswoman's `qm.png` for Keen — real art replaced both on
+2026-08-25, §8) and borrowed SFX. **§2.4's rung strip came along**, because without it the mode reads as
 random word-swapping. **§13.7's sibling cycling came along too**, and was then **removed the same day**
 once §2.5's fan made it redundant — see §13.7.
 
-**M4 — the feel. §2.5's shelf fan, §6's animations and §7's SFX all BUILT 2026-08-23; final hero art outstanding.** The fan was added to this
+**M4 — the feel. COMPLETE. §2.5's shelf fan, §6's animations and §7's SFX all BUILT 2026-08-23; the hero
+art BUILT 2026-08-25 (§8), leaving only a second attack frame per hero, which is art the mode can ship
+without.** The fan was added to this
 milestone because playing M3 showed polish alone does not fix what it was for — Keen's descent still
 read as random, and the sideways sibling step was invisible. Being a mechanic rather than polish, it
 was the bulk of M4's work, and it is in: `shelfFor` in `ladderFunc.js`, the fan block in `index.js`
@@ -744,7 +757,11 @@ build had to decide was *where they play from*: six cues across four outcomes do
 one-hit-one-sound call site every other hero uses, so both ladder heroes' `hitProjectileSound()` is
 silent and the handlers own the audio (§7).
 
-**Still outstanding in M4:** final hero art, and nothing else.
+**§8's hero art — BUILT 2026-08-25.** `Ization.png` / `KeenArrow.png`, no attack frame yet (both slots
+hold the same file). The scale and `projectileStartPositionX` numbers each hero now carries are derived
+from the art, not chosen — see the table in §8 before swapping either file.
+
+**Still outstanding in M4:** a second (attack) frame per hero, and nothing else.
 
 **What playing it shows, now that the fan is in (measured on the built corpus).** A hit on `dog` opens
 `hound▾ terrier▾ cur▾ spaniel▾ corgi▾ pointer▾ puppy · kinds of dog · +26 more` — six branches and the

@@ -488,7 +488,12 @@ function openShelfFan(span, hero, pulse = true) {
   // shelves run far wider than the row (`food` has 239 children, `eggs` is the 164th), so the next
   // rung toward the goal is pinned into the row and the row re-sorted so it doesn't sit in a
   // tell-tale slot. Free play pins nothing and is untouched (§11.6, shelfFor's `pin`).
-  const shelf = shelfFor(word, shelfFanWidth(), ladderMapHas, phrasePinFor(span, word));
+  const shelf = shelfFor(
+    word,
+    shelfFanWidth(),
+    ladderMapHas,
+    phrasePinFor(span, word),
+  );
   if (!shelf) return false;
 
   const el = document.createElement("div");
@@ -880,7 +885,12 @@ function pickRung(kid, hero, projectile) {
   landOnRung(host, rung, hero);
   // After the landing, not before — the face carries the new word's width the moment it is built,
   // so the word is already the size the clone should be flying into.
-  flyPickedChild(kidRect, host.getBoundingClientRect(), kidText, hero.characterColor);
+  flyPickedChild(
+    kidRect,
+    host.getBoundingClientRect(),
+    kidText,
+    hero.characterColor,
+  );
   // No aperture flicker: the lens snap landOnRung just started is this shot's mark on the word.
   openShelfFan(host, hero, false);
 }
@@ -1023,8 +1033,12 @@ function previewRaceGoal() {
    and nothing else; §12.3's stats, streak and share are M10's. */
 function paintRaceGoal() {
   if (!race) return;
-  const bits = [`Par ${race.par}`, `${race.moves} move${race.moves === 1 ? "" : "s"}`];
-  if (race.detours) bits.push(`${race.detours} detour${race.detours === 1 ? "" : "s"}`);
+  const bits = [
+    `Par ${race.par}`,
+    `${race.moves} move${race.moves === 1 ? "" : "s"}`,
+  ];
+  if (race.detours)
+    bits.push(`${race.detours} detour${race.detours === 1 ? "" : "s"}`);
   const hint = race.hint();
   if (hint) bits.push(hint);
   drawRaceGoal(race.start, race.target, bits.join(" · "), race.solved);
@@ -1046,7 +1060,10 @@ wordPlayOptions.addEventListener("change", () => {
   if (mode === "ladderPuzzle") {
     // Word Race paints its destination into #race-goal in the box's place; this mode has nothing to
     // show before Pow! (the saying is dealt then), so it says what the button is about to do.
-    phraseSay("Press Pow! for a saying with its words shifted along the ladder.", "black");
+    phraseSay(
+      "Press Pow! for a saying with its words shifted along the ladder.",
+      "black",
+    );
   }
 });
 
@@ -1081,7 +1098,9 @@ function summonFromMoveBox() {
       initialTypedSentence.blur();
       break;
     case GUESS.BROADER:
-      raceSay(`${verdict.word} is BROADER than ${race.at} — switch to General Ization and shoot upward.`);
+      raceSay(
+        `${verdict.word} is BROADER than ${race.at} — switch to General Ization and shoot upward.`,
+      );
       break;
     case GUESS.SAME:
       raceSay(`you're standing on ${verdict.word}.`);
@@ -1091,7 +1110,9 @@ function summonFromMoveBox() {
       break;
     default:
       // Apologetic on purpose: five of the thirty guesses §12.2 probed were simply absent.
-      raceSay(`${verdict.word || "that"} isn't in my book — try another word. (No cost.)`);
+      raceSay(
+        `${verdict.word || "that"} isn't in my book — try another word. (No cost.)`,
+      );
       break;
   }
 }
@@ -1127,7 +1148,9 @@ function raceTravel(word, hero) {
     _ladderCapstone();
     raceSay(
       `✔ ${race.target} — ${race.moves} moves against par ${race.par}` +
-        (race.detours ? `, ${race.detours} detour${race.detours === 1 ? "" : "s"}` : ""),
+        (race.detours
+          ? `, ${race.detours} detour${race.detours === 1 ? "" : "s"}`
+          : ""),
       "black",
     );
     initialTypedSentence.disabled = true;
@@ -1157,7 +1180,9 @@ function raceAskForKind(span, hero) {
   if (!canDescend(race.at)) {
     flashLadder(span, hero, "ladder-capstone");
     _ladderCapstone();
-    raceSay(`nothing is a kind of ${race.at} — go broader with General Ization.`);
+    raceSay(
+      `nothing is a kind of ${race.at} — go broader with General Ization.`,
+    );
     return;
   }
   raceArmed = true;
@@ -1252,7 +1277,9 @@ function fixArticleBefore(span, surface) {
   const m = node.textContent.match(/(^|[\s("'])([Aa]n?)(\s+)$/);
   if (!m) return;
   const want = /^[aeiou]/i.test(surface) ? "an" : "a";
-  const cased = /^[A-Z]/.test(m[2]) ? want[0].toUpperCase() + want.slice(1) : want;
+  const cased = /^[A-Z]/.test(m[2])
+    ? want[0].toUpperCase() + want.slice(1)
+    : want;
   if (cased === m[2]) return;
   const tail = m[2].length + m[3].length;
   node.textContent = node.textContent.slice(0, -tail) + cased + m[3];
@@ -1333,7 +1360,10 @@ removePuncButton.addEventListener("click", async () => {
   clearShelfMilestone(); // …and any banner still hanging over where a word used to be
   // Two ladder modes bring their own words and so start with an empty box: Word Race repurposes it
   // as the move box (§12.2), and Restore the Phrase deals a saying from the corpus (§11.3).
-  if (!initialTypedSentence.value && !NO_SENTENCE_MODES.has(wordPlayOptions.value)) {
+  if (
+    !initialTypedSentence.value &&
+    !NO_SENTENCE_MODES.has(wordPlayOptions.value)
+  ) {
     return (errorMessage.innerText = "Field cannot be blank");
   }
 
@@ -1419,7 +1449,8 @@ removePuncButton.addEventListener("click", async () => {
         await loadPhrases();
       } catch (e) {
         errorMessage.style.color = "";
-        return (errorMessage.innerText = "Couldn't load the sayings — try again.");
+        return (errorMessage.innerText =
+          "Couldn't load the sayings — try again.");
       }
       errorMessage.style.color = "";
       errorMessage.innerText = "";
@@ -1429,7 +1460,11 @@ removePuncButton.addEventListener("click", async () => {
       out1.classList.add("phrase-mode");
       addSpansAndIdsForWordPlay(wrapPhrase(phrase.entry), out1, selectedOption);
     } else {
-      addSpansAndIdsForWordPlay(initialTypedSentence.value, out1, selectedOption);
+      addSpansAndIdsForWordPlay(
+        initialTypedSentence.value,
+        out1,
+        selectedOption,
+      );
     }
   }
   mySong.stop();
@@ -2303,11 +2338,24 @@ class Betar extends Hero {
    They are the first heroes to share a target: both answer to LADDER_ID and differ only in
    ladderDirection, so Switch Character is what flips broaden ↔ narrow.
 
-   Hero art is still placeholder (§8): Generic.png is literally a generic figure, and Arrow.png is
-   the arrow. Real two-frame hero art is what's left of M4; both projectiles are final.
-   projectileStartPositionX is set to half the drawn width for both, because that is the value where
-   the Projectile's spawn x and its on-load x agree, so the shot doesn't jump sideways on a hero this
-   narrow. */
+   Real hero art landed 2026-08-25 (§8): Ization.png and KeenArrow.png replace the borrowed
+   Generic.png / qm.png placeholders. There is no attack frame yet, so secondHeroImage is the same
+   file — the hero simply doesn't change pose while a shot is in flight, which is what every other
+   hero uses that second slot for. Both projectiles are final.
+
+   Two numbers here are derived from the art and have to move with it:
+
+   - heroScale is 0.45 for both (dev's call, tuned on screen). The files are the same 800×1045 but
+     the FIGURE inside the frame is not — General fills it (bbox 798×875), Keen doesn't (442×663) —
+     so a shared scale deliberately draws Keen the smaller of the pair: ~359×394 against ~199×298.
+     Both figures are bottom-anchored in their frame, which is what restingY's
+     `canvas.height - height + 20` assumes.
+   - projectileStartPositionX MUST be half the drawn width. The shoot handlers spawn a projectile at
+     `position.x + width - projectileStartPositionX` while the Projectile's own onload rewrites it to
+     `position.x + projectileStartPositionX`; those two agree at, and only at, the midpoint, so any
+     other value makes the shot jump sideways the moment the image loads. It costs nothing here
+     because both figures are centred on the frame's midline anyway — General by his bbox, Keen by
+     his crossbow (his bbox leans right, but the bow the bolt leaves from does not). */
 /* General Ization's projectile: a BROADsword, because the joke is already in the name — the broad
    blade for the hero who broadens (§8).
 
@@ -2409,18 +2457,18 @@ const GENERAL_PROJECTILE = drawBroadswordSprite();
 class GeneralIzation extends Hero {
   constructor() {
     super(
-      "./images/Generic.png",
-      0.5,
+      "./images/Ization.png",
+      0.45, // 800 × 1045 → 360 × 470 drawn
       "General Ization (Broader)",
       "darkolivegreen",
-      90,
+      180, // half the drawn width — see the note above the class
       50,
       GENERAL_PROJECTILE,
       undefined,
       0.2,
       undefined,
       undefined,
-      "./images/Generic.png",
+      "./images/Ization.png", // no attack frame yet
     );
     this.targetId = LADDER_ID;
     this.ladderDirection = "up";
@@ -2438,18 +2486,18 @@ class GeneralIzation extends Hero {
 class KeenArrow extends Hero {
   constructor() {
     super(
-      "./images/qm.png",
-      0.7,
+      "./images/KeenArrow.png",
+      0.45, // 800 × 1045 → 360 × 470 drawn; the figure inside it is narrower than General's
       "Keen Arrow (Narrower)",
       "crimson",
-      20,
+      180, // half the drawn width — see the note above General's class
       50,
       "./images/Arrow.png",
       undefined,
       0.25,
       undefined,
       undefined,
-      "./images/QM2.png",
+      "./images/KeenArrow.png", // no attack frame yet
     );
     this.targetId = LADDER_ID;
     this.ladderDirection = "down";
@@ -3829,7 +3877,9 @@ hintButton.addEventListener("pointerdown", (e) => {
 function isTypingTarget(el) {
   return (
     !!el &&
-    (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)
+    (el.tagName === "INPUT" ||
+      el.tagName === "TEXTAREA" ||
+      el.isContentEditable)
   );
 }
 
