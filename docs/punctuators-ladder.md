@@ -14,7 +14,9 @@ plus the picked child flying out of the row into the word, and a drawn broadswor
 projectile. **§7's six SFX BUILT 2026-08-23** too. **All that's left of M4 is final hero art.**
 Phase 2 — Restore the Phrase (§11) specced 2026-08-22, four decisions locked; **its M5 data layer BUILT
 the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's sense-prune),
-`build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). M6–M8 are the game code.
+`build-ladders.py --phrases`, and the generated `phrasePOJO.js` (108 puzzles). **M6 (the mode) BUILT
+2026-08-24 and PLAYABLE, dev-only behind `?dev=1`** — `ladderPhrase.js`, the `ladderPuzzle` `<option>`,
+and goal/lock/win over the free-play span. M7 (the daily) and M8 (the feel) remain.
 Phase 3 — Word Race (§12) specced 2026-08-22, **M9 (the engine) BUILT 2026-08-24, DEV-ONLY while it is
 worked on**: `ladderRace.js`, the `--alt` build pass and its `ladderAltPOJO.js`, type-to-summon +
 shoot-to-travel against a hardcoded pair (`poodle ⟶ salmon`, par 5). Its `<option>` needs `?dev=1`, and
@@ -758,10 +760,11 @@ a route that shows why they are siblings.
 
 **The sense trap reaches free play too, mildly.** `The poodle chased a cat` lights `chased`, which is a
 real WordNet noun (`chased → victim → person`, "the chased"). §11.4 already catalogues this and rules it
-harmless here and fatal in the puzzle mode — worth remembering when M6 starts, not worth fixing now.
+harmless here and fatal in the puzzle mode — which is why the puzzle's shiftable words are hand-marked
+rather than found, not something free play has to fix.
 
 **M5–M8 — Restore the Phrase**, the puzzle mode. Specced separately in §11.9; it builds on M4, so nothing
-there starts before free play is playable.
+there started before free play was playable. **M5 and M6 are BUILT** (2026-08-22 / 2026-08-24).
 
 ---
 
@@ -780,7 +783,9 @@ sitting above the controls, and it should read the way the dropdown does.
 
 ## 11. Phase 2 — Restore the Phrase (the puzzle mode)
 
-**Specced 2026-08-22. Not built. Assumes M2–M4 (free play) have shipped — it reuses that engine whole.**
+**Specced 2026-08-22. M5 (the corpus + build) BUILT 2026-08-22; M6 (the mode) BUILT 2026-08-24, dev-only
+behind `?dev=1` while it is played in. M7 (the daily) and M8 (the feel) remain.** It reuses free play's
+engine whole — the same span, the same two heroes, the same shelf fan and landing animations.
 
 §§1–10 describe **free play**: climb any word, no goal, no win state, which is how every Punctuators
 wordplay mode works today (§1). The ladder is unusual among the modes in that it also has an obvious
@@ -934,16 +939,43 @@ where the shown word is the clue. **2of12.txt cannot fix it** (measured: it admi
   and Foon rewriting the phrase the player is trying to match would be actively confusing, and plain-text
   articles are what makes the live `a`/`an` fix trivial (`articleFunc.js` swallows the following character
   into its span).
-- **The span** is the free-play span plus a goal: `data-ladder`, `data-rung`, **`data-goal`**.
-- **A hit moves ±1 rung along the authored chain.** No ambiguity in either direction — because the chain is
-  fixed data, Keen Arrow never has to choose among `dog`'s 33 children (contrast §15, branching hyponyms).
-- **Landing on the goal locks the word**: green ✔ flare, a lock chime, and the span's `id` is cleared so
-  neither hero targets it again. A stray shot can't knock a solved word loose, and the remaining targets
-  stay obvious.
+- **The span** is *literally* the free-play span (`data-ladder`, `data-rung`, `data-ladder-word`,
+  `data-ladder-orig`) plus two attributes: **`data-phrase-slot`** (which shifted word this is) and
+  **`data-phrase-goal`** (where it belongs). That is what lets `climbLadder`, the shelf fan and both
+  §6 animations drive the puzzle with **no second path through the collision block** — the whole mode
+  hangs off two hooks in the existing one, a pin for the fan and a scorer on the landing.
+- ~~**A hit moves ±1 rung along the authored chain.**~~ **AMENDED 2026-08-24 — Keen Arrow fans, as he does
+  in free play** (dev's call, on the understanding that it reverts to the fixed chain if it plays too hard).
+  This bullet was written before §2.5 shipped and assumed the chain was a rail: because it was fixed data,
+  Keen would never have to choose among `dog`'s 33 children. With the fan he shows the word's **real**
+  children and the player can pick one that walks **off** the authored chain — so the chain became a
+  **score-keeper, not a rail**: distance to the goal is measured on the live hierarchy (`rungsBetween` =
+  the LCA path, borrowed from §12's `parFor`), and General broadening back up is the way home. A wander
+  costs moves and is never a dead end.
+  - **The fan must be able to show the answer**, or narrowing can't solve the puzzle at all: shelves run far
+    wider than the row — `food` has 239 children and `eggs` is the **164th** — and **MEASURED: 77 of the 97
+    narrowing steps in the 108 puzzles pass through a shelf wider than a 7-slot fan**. So `shelfFor` gained a
+    **`pin`** (free play passes none and is untouched): the next rung toward the goal displaces the row's
+    last word and the row is re-sorted into the corpus's own familiarity order, so the answer never sits in
+    a tell-tale slot.
+  - **A finding for the play-test, not a bug:** with the row in familiarity order the answer is the row's
+    **first word 48% of the time** (47 of 97 steps; last 21%). That is the data, not the pin — sayings use
+    the most familiar kind of a thing, and that word is exactly what the corpus sorts to the front.
+- **Landing on the goal locks the word**: green ✔ flare, a lock chime (`_phraseLock`, the eighth ladder cue
+  — a latch, distinct from the capstone, which means an *end* rather than an answer), and the span's `id` is
+  cleared so neither hero targets it again. A stray shot can't knock a solved word loose, the remaining
+  targets stay obvious, and the Hint button lights only what's left, for free.
 - **Chain ends** behave as free play (capstone / clank, §2.3) — you can overshoot past the goal but never
   off the ladder.
-- **After every rung change**, re-apply `matchCase`, the plural rule (§3.4), and `fixArticleBefore(span)`.
-- **Wasted shot** = one that does not reduce `|rung − goal|`. That is the score.
+- **After every rung change**, re-apply case and the plural rule (§3.4) — both already handled by free play's
+  `renderRung`, since `data-ladder-orig`/`data-ladder-plural` carry the build's `cap`/`plu` — and
+  `fixArticleBefore(span)`, which is a **text-node edit**: with Art suppressed the articles are plain text, so
+  `A dog` → `An animal` is rewriting the word in front of the span. Spelling, not phonetics (`an hour` would
+  come out wrong) — the same trade the build makes, and no corpus phrase shifts a word into one.
+- ~~**Wasted shot** = one that does not reduce `|rung − goal|`.~~ **AMENDED with the fan: a wasted MOVE** — a
+  *landing* that doesn't close the distance. The fan makes a descent two shots (open the row, then pick from
+  it), and §12.8 already settled that the extra shot is free: moves are the score, not shots. Same skill
+  signal either way.
 - **Hint, late and quiet:** after **3 wasted shots on the same word**, that word's rung strip (§2.4) shows
   an arrow toward its goal. Nothing before that.
 - **🔎 Give up** reveals the saying and closes the day with a ❌ result (streak breaks). A daily lock with
@@ -978,11 +1010,12 @@ where the shown word is the clue. **2of12.txt cannot fix it** (measured: it admi
 | `phrases-source.txt` | **new — DRAFTED 2026-08-22**, awaiting the prune — the authored corpus (§11.3) |
 | `build-ladders.py` | **`--phrases` BUILT 2026-08-22** — the planner, the checks, the `#~` rewrite (§11.5) |
 | `phrasePOJO.js` | **new, generated — BUILT 2026-08-22** — `ladderPhrases`, 108 puzzles / 24 KB (§11.5) |
-| `ladderFunc.js` | `wrapPhrase(entry)` — wraps only the `fix` token indices; reuses the free-play span builder |
-| `utils/utils.js` | `case "ladderPuzzle":` in `addSpansAndIdsForWordPlay`; **suppress** `protectedArticles` + `spoonerism` for it |
-| `punctuators.html` | the `<option value="ladderPuzzle">`; the puzzle card markup that replaces the text box |
-| `index.js` | puzzle branch in the `removePuncButton` handler (~:386, which today hard-requires `initialTypedSentence.value`); goal/lock check in the collision block; win card; daily + stats + share; `PRACTICE_ENABLED`. **Plus one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's puzzle to open the map")` on daily start, `ladderMapUnlock()` on finish. Practice never locks.** |
-| `index.css` | `.ladder-locked` ✔ flare, the puzzle card, the win/share card |
+| `ladderPhrase.js` | **new — BUILT 2026-08-24.** §11.8 originally put `wrapPhrase` in `ladderFunc.js`; the puzzle needs a lazy corpus load, a phrase pick, the goal arithmetic and a run object as well, which is `ladderRace.js`'s shape, so it got `ladderRace.js`'s treatment: its own module. Exports `loadPhrases`/`pickPhrase`/`wrapPhrase`/`createPuzzle`/`nextRungToward`/`phraseSurface` |
+| `ladderFunc.js` | **BUILT** — `shelfFor` gained an optional **`pin`** (§11.6). Free play passes none |
+| `utils/utils.js` | **BUILT** — `case "ladderPuzzle":` in `addSpansAndIdsForWordPlay` (a no-op: `wrapPhrase` needs the whole puzzle, not a bare string, so it runs in `index.js` first, as Word Race's field does); `protectedArticles` + `spoonerism` suppressed via the shared `preMarked` flag |
+| `punctuators.html` | **BUILT** — `<option value="ladderPuzzle" data-dev>Restore the Phrase</option>`, dev-gated exactly as Word Race is (§12.8). The puzzle card that replaces the text box is M8 |
+| `index.js` | **M6 BUILT** — the `ladderPuzzle` branch in the `removePuncButton` handler, `NO_SENTENCE_MODES` (the box is hidden for this mode and Word Race alike), the run state + `phrasePinFor`/`notePhraseLanding`/`lockPhraseWord`/`phraseWin`/`fixArticleBefore`, `_phraseLock`, and the two hooks in the free-play path (`openShelfFan`'s pin, `landOnRung`'s scorer). **Still M7/M8:** win card, daily + stats + share, `PRACTICE_ENABLED`, the late hint, give-up, `updateCharacterModal("ladderPuzzle")`. **Plus one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's puzzle to open the map")` on daily start, `ladderMapUnlock()` on finish — M7, since there is no daily to lock against yet. Practice never locks.** |
+| `index.css` | **BUILT** — `.phrase-word` (the dotted mark), `.ladder-locked` + its ✔ flare, `#output.phrase-mode`/`.phrase-solved`. The puzzle card and the win/share card are M8 |
 | `CLAUDE.md` | the Punctuators row per milestone |
 
 ### 11.9 Milestones
@@ -993,8 +1026,20 @@ where the shown word is the clue. **2of12.txt cannot fix it** (measured: it admi
 sense-prune, reading the `#~ =` line under each phrase, and the `BANNED_RUNGS` cleanup from §11.4. Gate:
 every surviving puzzle reads right *in the sense the saying means*. Ships nothing playable.
 
-**M6 — the mode, headless-ish.** The `<option>`, `wrapPhrase`, article/Foon suppression, goal + lock + win
-check. Playable against a hardcoded phrase, no daily, no share, no card.
+**M6 — the mode. BUILT 2026-08-24, DEV-ONLY** (`data-dev` on the `<option>`, the gate Word Race already
+uses) while it is played in. The `<option>`, `ladderPhrase.js`, article/Foon suppression, goal + lock + win
+check. Playable, and it **deals a different puzzle every Pow!** rather than the hardcoded one this milestone
+originally planned — M6 *is* the practice path (§11.2), and sweeping the corpus at random is how the phrases
+still wanting the sense-prune get found. No daily, no stats, no share, no card.
+
+Three things settled by building it, all recorded above: **Keen fans** rather than walking the authored
+chain, which turns the chain into a score-keeper and forces `shelfFor`'s **pin** (§11.6); a **wasted move**,
+not a wasted shot, is the score; and the mode reuses the free-play span outright, so there is **no second
+ladder path through `animate()`** — two hooks in the existing one carry the whole puzzle.
+
+Verified against the shipped pair before any of it ran in a browser: all **149** braced words wrap, all
+**108** puzzles solve by landing every goal, every narrowing step's answer survives into a 7-slot fan, and
+the live-hierarchy distance agrees with the authored chain distance on every fix.
 
 **M7 — the daily.** Selection, the lock, stats/streak, the share string, the practice flag.
 
@@ -1004,10 +1049,15 @@ How-to-Play modal copy (`updateCharacterModal`, `index.js:458`).
 ### 11.10 Open questions
 
 - ~~Who writes the 100 phrases?~~ **Settled 2026-08-22** — drafted for the dev to prune (§11.3).
-- **Does a solved word lock?** Recommending yes (§11.6). The alternative — stays climbable — is more
-  sandbox-consistent but lets a stray shot undo progress with no upside.
-- **Label.** `Restore the Phrase` is the recommendation. `The Saying Machine` and `Say It Again` were also
-  considered; both hide the mechanic.
+- ~~Does a solved word lock?~~ **Settled 2026-08-24 — yes, built that way** (§11.6): the `id` is cleared, so
+  a stray shot can't undo progress and the Hint button lights only what's left.
+- **Does the fan stay?** Open until M6 has been played. It went in on the dev's call ("try the fan, and if
+  it's too difficult go to the fixed data"). What to watch for: a wide shelf where the answer is one of seven
+  plausible siblings is a *guess* rather than a judgment, which would be the wrong skill — §11.1's lesson is
+  noticing the **direction**, not identifying the exact kind. Reverting means dropping the pin and having
+  Keen call `landOnRung` with `nextRungToward` directly; nothing else in the mode depends on it.
+- ~~**Label.**~~ **Settled 2026-08-24 — shipped as `Restore the Phrase`.** `The Saying Machine` and `Say It
+  Again` were also considered; both hide the mechanic.
 - **Does the win card teach the origin?** Costs one authored field per phrase and makes the mode
   incidentally educational about the sayings themselves. Recommending yes, since it's free at authoring time.
 
@@ -1825,8 +1875,8 @@ what gives free play a reason to be replayed.
 ### 13.13 M14 — the feel. BUILT 2026-08-23
 
 M14 was written as four items. Two of them are **blocked, not deferred by choice**: §13.8's daily-run guard
-and post-game route overlay both assume a daily, and neither §11 (Restore the Phrase, M6–M8) nor §12 (Word
-Race, M9–M11) has any game code. So M14 split:
+and post-game route overlay both assume a **daily**, and neither §11 (Restore the Phrase) nor §12 (Word
+Race) has one — both now have game code, but their daily layers are M7 and M10 respectively. So M14 split:
 
 | Item | M14 |
 | ---- | --- |

@@ -127,6 +127,10 @@ function fillUnvisitedFirst(out, pool, target, seen) {
  *   width — how many slots fit on screen; index.js measures it per draw
  *   seen  — (w) => has the player landed on w before? (ladderMapHas — passed in rather than imported
  *           so this file stays independent of the map)
+ *   pin   — a child that MUST appear in the row, or null. Free play never pins; Restore the Phrase
+ *           (§11) always pins the next rung toward the goal, because a puzzle whose answer the fan
+ *           cannot show is unsolvable — `food` has 239 children and `eggs` sits at index 164, and 77
+ *           of the 108 puzzles' narrowing steps pass through a shelf wider than the row.
  * Returns { items: [{word, branch}], hidden, total }.
  *
  * Children only, never siblings: Keen Arrow goes down or nowhere (§2.3). A row of siblings would
@@ -142,14 +146,14 @@ function fillUnvisitedFirst(out, pool, target, seen) {
  * branch-children at all, and neither do 134 of the 719 shelves wider than 8. So branches lead, buds
  * top up, and the rest is fogged by count rather than named (§13.5).
  */
-export function shelfFor(word, width, seen = () => false) {
+export function shelfFor(word, width, seen = () => false, pin = null) {
   if (!DOWN) return null;
 
   const list = DOWN.get(word);
   if (!list || !list.length) return null; // a leaf: nothing narrower, and no sidestep on offer
 
   const total = list.length;
-  const items = [];
+  let items = [];
   if (total <= width) {
     items.push(...list);
   } else {
@@ -160,6 +164,15 @@ export function shelfFor(word, width, seen = () => false) {
     // existing — that replaying fills a wide shelf — breaks again.
     fillUnvisitedFirst(items, branches, buds.length ? width - 1 : width, seen);
     fillUnvisitedFirst(items, buds, width, seen);
+  }
+
+  // The pin displaces the row's last word rather than extending it — the width is what fits on
+  // screen, not a preference. Then the row is re-sorted into the corpus's own order, so the pinned
+  // word doesn't sit in a tell-tale slot: a puzzle whose answer is always last would be no puzzle.
+  if (pin && list.includes(pin) && !items.includes(pin)) {
+    if (items.length >= width) items.pop();
+    items.push(pin);
+    items = list.filter((w) => items.includes(w));
   }
 
   return {

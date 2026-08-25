@@ -1285,6 +1285,55 @@ span[data-hint] {
   }
 }
 
+/* ── RESTORE THE PHRASE — the puzzle mode (docs/punctuators-ladder.md §11) ─────────────────────────
+   The shifted words are ordinary .word-ladder spans, so everything above already styles them; all
+   this section adds is the two states free play has no use for.
+
+   A shifted word is marked before it is shot — a dotted underline in the ladder's own grey — because
+   the puzzle is unreadable otherwise: an untouched sentence gives no sign which of its words is out
+   of place, and hunting for that is not the lesson (noticing which DIRECTION is). */
+/* A saying is a whole sentence and usually wraps, and every shifted word in it hangs a rung strip
+   below its own line box — so the lines need room the free-play one-liner doesn't. */
+#output.phrase-mode {
+  line-height: 1.35;
+}
+
+.phrase-word {
+  border-bottom: 0.06em dotted #9a9a9a;
+}
+
+/* Home. The green is the one colour no hero owns, so a locked word plainly isn't General's or
+   Keen's any more — it is the saying's. The id is gone by now, so it is also unshootable. */
+.ladder-locked {
+  color: #2f7d32;
+  border-bottom-color: transparent;
+  animation: phrase-lock 620ms ease-out;
+}
+
+@keyframes phrase-lock {
+  0% {
+    filter: none;
+  }
+  35% {
+    filter: drop-shadow(0 0 8px #4caf50) drop-shadow(0 0 18px #4caf50);
+  }
+  100% {
+    filter: none;
+  }
+}
+
+/* Solved: the phrase settles to plain text, marks and all (§11.6). The saying is the prize. */
+#output.phrase-solved .phrase-word {
+  border-bottom: none;
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ladder-locked {
+    animation: none;
+  }
+}
+
 /* ── WORD RACE — the traversal mode (docs/punctuators-ladder.md §12) ───────────────────────────────
    Three words in a column: the rung above (General's target), where you stand, and the word you
    summoned (Keen's target). Vertical rather than the shelf fan's row because the two ends belong to

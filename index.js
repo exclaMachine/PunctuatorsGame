@@ -44,6 +44,16 @@ import {
   raceFieldHTML,
   ancestorsOf,
 } from "./ladderRace.js";
+// Restore the Phrase — the ladder's puzzle mode (docs/punctuators-ladder.md §11). phrasePOJO.js
+// (24 KB) rides along with the main corpus and is fetched only by this mode.
+import {
+  loadPhrases,
+  pickPhrase,
+  wrapPhrase,
+  createPuzzle,
+  nextRungToward,
+  phraseSurface,
+} from "./ladderPhrase.js";
 //import { swapWord } from "./spoonerismFunc.js";
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
@@ -474,7 +484,11 @@ function openShelfFan(span, hero, pulse = true) {
 
   const word = span.getAttribute("data-ladder-word");
   if (!word) return false;
-  const shelf = shelfFor(word, shelfFanWidth(), ladderMapHas);
+  // In a puzzle the row must be able to contain the answer, or narrowing simply cannot solve it:
+  // shelves run far wider than the row (`food` has 239 children, `eggs` is the 164th), so the next
+  // rung toward the goal is pinned into the row and the row re-sorted so it doesn't sit in a
+  // tell-tale slot. Free play pins nothing and is untouched (§11.6, shelfFor's `pin`).
+  const shelf = shelfFor(word, shelfFanWidth(), ladderMapHas, phrasePinFor(span, word));
   if (!shelf) return false;
 
   const el = document.createElement("div");
@@ -799,6 +813,9 @@ function landOnRung(span, rung, hero) {
   // After the swap, not before: the face carries the new word's width the moment it is built, so the
   // banner is measured against the box the word actually ends up holding.
   if (newlyLit) noteShelfProgress(span, rung);
+  // Restore the Phrase scores the landing and locks the word if it has come home (§11.6). A no-op
+  // in free play, which is why the puzzle needs no branch of its own through climbLadder.
+  notePhraseLanding(span, rung);
 }
 
 /* One ladder action per shot, for two reasons. A projectile is not spliced out until a
@@ -1013,15 +1030,24 @@ function paintRaceGoal() {
   drawRaceGoal(race.start, race.target, bits.join(" · "), race.solved);
 }
 
+/* The two modes that bring their own words, so the sentence box has no job in either (§12.8 Note 1,
+   §11.6). An empty text field reads as "type your sentence here", the exact wrong instruction. */
+const NO_SENTENCE_MODES = new Set(["wordRace", "ladderPuzzle"]);
+
 /* The swap happens on SELECTION, not on Pow!. Both the native <select> and the custom dropdown that
    covers it end up here — the dropdown dispatches a change event after setting sel.value. */
 wordPlayOptions.addEventListener("change", () => {
-  if (raceActive()) return; // mid-run the dropdown is hidden; nothing to swap
-  const isRace = wordPlayOptions.value === "wordRace";
-  initialTypedSentence.classList.toggle("go-away", isRace);
+  if (raceActive() || phraseActive()) return; // mid-run the dropdown is hidden; nothing to swap
+  const mode = wordPlayOptions.value;
+  initialTypedSentence.classList.toggle("go-away", NO_SENTENCE_MODES.has(mode));
   errorMessage.innerText = ""; // a leftover "Field cannot be blank" is about the old mode
-  if (isRace) previewRaceGoal();
+  if (mode === "wordRace") previewRaceGoal();
   else clearRaceGoal();
+  if (mode === "ladderPuzzle") {
+    // Word Race paints its destination into #race-goal in the box's place; this mode has nothing to
+    // show before Pow! (the saying is dealt then), so it says what the button is about to do.
+    phraseSay("Press Pow! for a saying with its words shifted along the ladder.", "black");
+  }
 });
 
 function raceSay(text, tone = "") {
@@ -1155,6 +1181,130 @@ function raceShootUp(span, hero, projectile) {
   raceTravel(word, hero);
 }
 
+/* ── RESTORE THE PHRASE (docs/punctuators-ladder.md §11) ──────────────────────────────────────────
+   A famous saying arrives with some of its words already shifted along the ladder — *A mammal is a
+   guy's best friend* — and the puzzle is shooting them back. The ladder's first mode with a right
+   answer.
+
+   There is deliberately NO second path through the collision block for this mode. wrapPhrase writes
+   ordinary free-play ladder spans, so climbLadder, the shelf fan and both landing animations drive
+   the puzzle unchanged; everything below hangs off two hooks in that existing path — a pin for the
+   fan, and a scorer on the landing.
+
+   Two things are worth knowing:
+
+   1. THE AUTHORED CHAIN IS NOT A RAIL. §11.6 was written before §2.5's fan and assumed a hit walks
+      the authored chain by ±1. With the fan, Keen shows the word's REAL children and you may pick
+      one that leaves the chain, so distance is measured on the live hierarchy and General
+      broadening back up is the way home. Wandering costs moves; it is never a dead end.
+   2. THE FAN MUST BE ABLE TO SHOW THE ANSWER. Shelves run far wider than the row, so the next rung
+      toward the goal is pinned into it (phrasePinFor → shelfFor's `pin`). Without that, 77 of the
+      97 narrowing steps across the 108 puzzles would be unsolvable rather than merely hard. */
+
+let phrase = null; // the puzzle in progress, from createPuzzle()
+let phraseSpans = []; // its shiftable words, in fix order — resolved once after the field renders
+
+function phraseActive() {
+  return phrase !== null;
+}
+
+/** The child of `word` the fan must include, or null — outside a puzzle, and once a word is home. */
+function phrasePinFor(span, word) {
+  if (!phraseActive()) return null;
+  const n = Number(span.dataset.phraseSlot);
+  const slot = phrase.slots[n];
+  if (!slot || slot.locked) return null;
+  return nextRungToward(word, slot.goal);
+}
+
+/* The spans are addressed by data-phrase-slot, so this only has to find them in document order —
+   which is fix order, since wrapPhrase numbers them as it walks the sentence. */
+function bindPhraseSlots() {
+  phraseSpans = Array.from(out1.querySelectorAll("[data-phrase-slot]"));
+  return phraseSpans.length === phrase.slots.length;
+}
+
+function phraseSay(text, tone = "") {
+  errorMessage.style.color = tone;
+  errorMessage.innerText = text;
+}
+
+/* Wasted moves are the score (§11.2) and nothing else is, so the line stays short: how much of the
+   saying is home, what it has cost, and — only when there is one — what the last shot did wrong. */
+function paintPhraseStatus(result) {
+  if (!phraseActive()) return;
+  const bits = [
+    `${phrase.locked} of ${phrase.slots.length} restored`,
+    `${phrase.moves} move${phrase.moves === 1 ? "" : "s"}`,
+  ];
+  if (phrase.wasted) bits.push(`${phrase.wasted} wasted`);
+  const note = result && result.wasted ? " · that one went the wrong way" : "";
+  phraseSay(bits.join(" · ") + note, result && result.wasted ? "" : "black");
+}
+
+/* `A dog` → `An animal`, live (§11.6). The articles are plain text in this mode — Art the Tickler is
+   suppressed precisely so this is a text-node edit — so the fix is to rewrite the word sitting in
+   front of the span. Spelling, not phonetics: `an hour` and `a university` come out wrong, which is
+   the same trade the build makes, and no phrase in the corpus shifts a word into one. */
+function fixArticleBefore(span, surface) {
+  const node = span.previousSibling;
+  if (!node || node.nodeType !== Node.TEXT_NODE) return;
+  const m = node.textContent.match(/(^|[\s("'])([Aa]n?)(\s+)$/);
+  if (!m) return;
+  const want = /^[aeiou]/i.test(surface) ? "an" : "a";
+  const cased = /^[A-Z]/.test(m[2]) ? want[0].toUpperCase() + want.slice(1) : want;
+  if (cased === m[2]) return;
+  const tail = m[2].length + m[3].length;
+  node.textContent = node.textContent.slice(0, -tail) + cased + m[3];
+}
+
+/* A word that has come home is done: the id goes, so neither hero can target it again and a stray
+   shot can't knock it loose, and the remaining targets stay obvious (§11.6). */
+function lockPhraseWord(span) {
+  if (shelfFan && shelfFan.host === span) closeShelfFan();
+  span.removeAttribute("id");
+  span.removeAttribute("data-rung-strip");
+  span.style.color = ""; // the lock's green is the class's, not the hero who happened to land it
+  span.classList.add("ladder-locked");
+  _phraseLock();
+}
+
+/* Every word home. The phrase settles to plain text — the saying is the prize, not the heroes'
+   colours — and the trumpets that have only ever fired for the punctuation game fire here, because
+   this is the first wordplay mode that can be finished (§11.1). The win CARD is M8. */
+function phraseWin() {
+  closeShelfFan();
+  clearShelfMilestone();
+  for (const span of phraseSpans) {
+    span.classList.remove("ladder-locked");
+    span.style.color = "";
+    span.style.textShadow = "";
+    span.removeAttribute("data-rung-strip");
+  }
+  out1.classList.add("phrase-solved");
+  refreshButton.classList.remove("go-away");
+  gameSfx.end.play();
+  phraseSay(
+    `✔ ${phrase.entry.say} — ${phrase.entry.origin} · ${phrase.moves} move` +
+      `${phrase.moves === 1 ? "" : "s"}, ` +
+      (phrase.wasted ? `${phrase.wasted} wasted` : "none wasted"),
+    "black",
+  );
+}
+
+/* The scorer, called from landOnRung on every landing in every mode — a no-op outside a puzzle. */
+function notePhraseLanding(span, rung) {
+  if (!phraseActive() || phrase.solved) return;
+  const n = Number(span.dataset.phraseSlot);
+  if (!Number.isInteger(n)) return; // a free-play word, or one of the fan's children
+  const result = phrase.landOn(n, rung);
+  if (!result) return;
+  fixArticleBefore(span, phraseSurface(phrase.entry.fix[n], rung));
+  if (result.locked) lockPhraseWord(span);
+  if (phrase.solved) phraseWin();
+  else paintPhraseStatus(result);
+}
+
 const buttonSounds = {
   clicky: new Howl({
     src: ["./sounds/click.mp3"],
@@ -1181,9 +1331,9 @@ removePuncButton.addEventListener("click", async () => {
   buttonSounds.clicky.play();
   closeShelfFan(); // a new sentence invalidates any shelf left open over the old one
   clearShelfMilestone(); // …and any banner still hanging over where a word used to be
-  // Word Race is the one mode that starts with an empty box, because the box isn't a sentence here
-  // — it is the move box the player types destinations into once the race is running (§12.2).
-  if (!initialTypedSentence.value && wordPlayOptions.value !== "wordRace") {
+  // Two ladder modes bring their own words and so start with an empty box: Word Race repurposes it
+  // as the move box (§12.2), and Restore the Phrase deals a saying from the corpus (§11.3).
+  if (!initialTypedSentence.value && !NO_SENTENCE_MODES.has(wordPlayOptions.value)) {
     return (errorMessage.innerText = "Field cannot be blank");
   }
 
@@ -1260,6 +1410,24 @@ removePuncButton.addEventListener("click", async () => {
       // wrapper would empty the team.
       out1.classList.add("race-mode");
       addSpansAndIdsForWordPlay(raceFieldHTML(race), out1, selectedOption);
+    } else if (selectedOption === "ladderPuzzle") {
+      // The ladder corpus again, plus the 24 KB of authored puzzles. Both are fetched only by the
+      // modes that need them (§11.5, §3.3).
+      errorMessage.style.color = "black";
+      errorMessage.innerText = "Dealing a saying…";
+      try {
+        await loadPhrases();
+      } catch (e) {
+        errorMessage.style.color = "";
+        return (errorMessage.innerText = "Couldn't load the sayings — try again.");
+      }
+      errorMessage.style.color = "";
+      errorMessage.innerText = "";
+      // A different puzzle every round: M6 is practice, and sweeping the corpus is how the phrases
+      // still wanting a sense-prune get found. The daily's positional pick is M7 (§11.7).
+      phrase = createPuzzle(pickPhrase());
+      out1.classList.add("phrase-mode");
+      addSpansAndIdsForWordPlay(wrapPhrase(phrase.entry), out1, selectedOption);
     } else {
       addSpansAndIdsForWordPlay(initialTypedSentence.value, out1, selectedOption);
     }
@@ -1292,6 +1460,20 @@ removePuncButton.addEventListener("click", async () => {
     );
   }
 
+  if (selectedOption === "ladderPuzzle") {
+    // The status line has to open the run, because nothing else on screen says what the sentence in
+    // front of you is — it reads as an ordinary sentence until you're told a word is out of place.
+    // §12.8's lesson, in the one place this mode has to put it until M8's card.
+    if (bindPhraseSlots()) {
+      phraseSay(
+        `This saying has ${phrase.slots.length} word${
+          phrase.slots.length === 1 ? "" : "s"
+        } in the wrong place on the ladder — shoot them back. General Ization broadens, Keen Arrow narrows.`,
+        "black",
+      );
+    }
+  }
+
   // The native <select> is hidden by CSS and replaced by a custom dropdown
   // (.custom-select-wrapper, built in index.html). Hiding the select alone
   // leaves the visible wrapper on screen, so hide the wrapper too. Use
@@ -1310,9 +1492,9 @@ removePuncButton.addEventListener("click", async () => {
 
   setClassName("grid-container", characterControls);
 
-  // A race writes its own status into #error-message as you play, so clearing it here would wipe
-  // the line that just told the player where they're going.
-  if (selectedOption !== "wordRace") errorMessage.innerText = "";
+  // Both word-supplying modes write their own status into #error-message as you play, so clearing
+  // it here would wipe the line that just told the player what they're looking at.
+  if (!NO_SENTENCE_MODES.has(selectedOption)) errorMessage.innerText = "";
   bRightAfterSentenceIsLoaded = true;
 });
 
@@ -1774,6 +1956,16 @@ function _shelfMilestone(tier, delay = 0) {
     _tone(392, "sine", 0.75, 0.13, null, delay + 0.075);
     _tone(2349, "sine", 0.5, 0.07, null, delay + 0.3);
   }
+}
+
+/* §11.6's lock — the eighth ladder cue, and the only one that means "this is right". It has to be
+   distinct from the capstone (which is an END, not an answer) and from the map's milestone bell, so
+   it is a latch: a short click, then a note dropping a fourth onto its home and staying there. */
+function _phraseLock() {
+  _noise(0.04, 0.2, 1800, 3);
+  _tone(1175, "sine", 0.14, 0.13); // D6
+  _tone(784, "sine", 0.36, 0.16, null, 0.07); // settling onto G5
+  _tone(392, "triangle", 0.42, 0.09, null, 0.07); // and its octave below, for weight
 }
 
 // Zana — quick insertion pop (shoot) / click (hit)
