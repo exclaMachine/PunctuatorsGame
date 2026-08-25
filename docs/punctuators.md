@@ -34,6 +34,33 @@ baked into placement — worth remembering if this area is touched again.
 
 ---
 
+## The sentence is centred on screen
+
+**BUILT 2026-08-25**, CSS only (`#output` in `index.css`), and it applies to **every** mode. `#output` is
+`position: fixed` with `margin: 50px` and had no `left`/`right`, so the box **shrink-wrapped its text** and
+always began ~50 px from the left edge: a two-word sentence sat in the far-left corner and the hero had to
+walk the whole width to reach it. `left: 0; right: 0` stretch the box across the viewport (the side margins
+still hold the text clear of the edges, so the readable width is unchanged) and `text-align: center` does
+the rest.
+
+Three things about it that were decisions, not defaults:
+
+- **Every line centres individually**, not the block as a unit — a short wrapped last line stays under the
+  middle instead of being stranded at the left margin. Aiming is per-word, so it's each line that has to
+  be near the centre, not the paragraph.
+- **Horizontal only.** `top: 110px` stays: the gap between the sentence and the hero at the bottom *is* the
+  projectile's flight time, and it's also the room the shelf fan hangs in.
+- **The phone override needs its own `max-width`.** The 480 px rule drops the side margins to 10 px, and a
+  stretched `left/right: 0` box with a `max-width` *narrower* than its margins allow is over-constrained —
+  the browser discards `right`, which would leave the box (and the centred text in it) 40 px left of the
+  screen's middle. Both numbers have to move together.
+
+Nothing in JS reads `#output`'s geometry, and everything that draws off the sentence — the shelf fan, the
+rung strips, the swap ghosts, the Foon's swoop direction — measures live `getBoundingClientRect()`s, so all
+of it followed the text without a change.
+
+---
+
 ## Shared-engine footguns
 
 Both were live bugs on 2026-08-23, both fail **silently**, and both are easy to reintroduce.

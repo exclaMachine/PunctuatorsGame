@@ -396,6 +396,19 @@ footer > div {
         margin: 50px;
         position: fixed;
         top: 110px; /* below nav (44px) + buttons (~64px) */
+        /* The sentence is CENTRED on the screen, horizontally only. A fixed box with no left/right
+           shrink-wraps its text, so a two-word sentence used to sit in the far-left corner and the
+           hero had to walk the whole width to reach it. left/right: 0 stretch the box across the
+           viewport (the 50px side margins still hold the text clear of the edges, so the readable
+           width is unchanged) and text-align centres every line INDIVIDUALLY — a short wrapped last
+           line stays under the middle instead of being stranded at the left margin, which is the
+           whole point: any word, on any line, is a short walk from where the hero starts.
+           Vertically it stays put: the gap between top: 110px and the hero at the bottom IS the
+           projectile's flight time. Every mode inherits this; Word Race's column (.race-mode below)
+           already centred itself and now centres on the screen rather than inside a shrunk box. */
+        left: 0;
+        right: 0;
+        text-align: center;
         max-width: calc(100vw - 100px); /* stay within viewport (100px = 50px margin each side) */
         overflow-wrap: break-word;
         color: whitesmoke;
@@ -638,6 +651,11 @@ footer > div {
                 color: whitesmoke;
                 text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
                 margin: 50px 10px 10px 10px;
+                /* Must track the 10px side margins above. The stretched left/right: 0 box is
+                   over-constrained by a max-width narrower than margins allow — the browser drops
+                   `right`, so the box (and the centred text inside it) would sit 40px left of the
+                   screen's middle on a phone. */
+                max-width: calc(100vw - 20px);
             }
     }
 
