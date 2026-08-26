@@ -1079,9 +1079,10 @@ function raceSay(text, tone = "") {
   errorMessage.innerText = text;
 }
 
-/* Three kinds of "no", and they must sound different (§12.2) — lumping them together is what makes
-   a typing game feel broken. The third is not the player's fault at all: the word is real, the data
-   just lacks it, so it costs nothing and must never read as "you were wrong". */
+/* The kinds of "no", and they must sound different (§12.2) — lumping them together is what makes a
+   typing game feel broken. Two of them aren't the player's fault: UNKNOWN (the word is real, the
+   data just lacks it) and DEEPER (the word really IS a kind of where you stand, just not the next
+   rung down), so both concede before they refuse and neither reads as "you were wrong". */
 function summonFromMoveBox() {
   if (!raceActive() || race.solved) return;
   const typed = initialTypedSentence.value;
@@ -1104,6 +1105,14 @@ function summonFromMoveBox() {
       // fired without clicking away first.
       initialTypedSentence.blur();
       break;
+    // True, but too far down. Naming the rungs it skips would hand over the answer, so the message
+    // says only HOW FAR — real information about the hierarchy, in the same spirit as race.hint().
+    case GUESS.DEEPER:
+      raceSay(
+        `${verdict.word} is a kind of ${race.at}, but ${verdict.rungs} rungs down — ` +
+          `one rung at a time. What comes between?`,
+      );
+      break;
     case GUESS.BROADER:
       raceSay(
         `${verdict.word} is BROADER than ${race.at} — switch to General Ization and shoot upward.`,
@@ -1124,28 +1133,15 @@ function summonFromMoveBox() {
   }
 }
 
-/* Landing. A descendant jump crosses every rung between, so `beagle` from `dog` is two rungs for
-   one shot — and each of them lights on the Tree of Kinds, which §13 fills from every ladder mode
-   alike. Only the rungs actually travelled light: the map is a record of where you have been. */
+/* Landing. A move is exactly one rung in either direction (§12.2 — no skipping), so the word landed
+   on is the whole of what this move crossed, and it lights on the Tree of Kinds, which §13 fills
+   from every ladder mode alike. Only the rungs actually travelled light: the map is a record of
+   where you have been, which is why this lights the landing word and nothing above it. */
 function raceTravel(word, hero) {
-  const before = race.at;
-
-  // The rungs this move actually passes through. Going up that is just the parent; going down it is
-  // every ancestor of the landing word that sits BELOW where we stood, nearest-first, plus the word
-  // itself — so `beagle` from `dog` lights `hound` on the way. A jump taken through an alt edge
-  // (§12.2) has no such intermediates: `tree` is nowhere in oak's main chain, indexOf returns -1,
-  // and the move correctly lights only the word landed on.
-  const above = ancestorsOf(word);
-  const stop = above.indexOf(before);
-  const crossed =
-    hero.ladderDirection === "up" || stop === -1
-      ? [word]
-      : [...above.slice(0, stop), word];
-
   const { detour, solved } = race.travelTo(word);
   raceSummoned = "";
   raceArmed = false; // a new word to stand on: Keen has to ask again before the box comes back
-  for (const w of crossed) ladderMapVisit(w);
+  ladderMapVisit(word);
 
   if (hero.ladderDirection === "up") _izoHit();
   else _keenHit();

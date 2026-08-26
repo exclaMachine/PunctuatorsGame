@@ -266,7 +266,7 @@ child.
 #### 2.5.4 Scope
 
 **Easy mode only.** The typed-answer hard mode discussed alongside this is **not** in scope here: it
-is the same input model as §12.2's Word Race (*type to summon, shoot to travel*, any true descendant
+is the same input model as §12.2's Word Race (*type to summon, shoot to travel*, the named child
 accepted), and building it means writing that traversal engine early. Deferred deliberately so the fan
 ships as feel work rather than as a new engine. The two are compatible by design — type-to-filter over
 an open fan is the natural bridge when M9 arrives.
@@ -1137,31 +1137,45 @@ destination; shooting is still how you *go* there, so the game stays a shooter a
 | **Input box** | The existing sentence box at the top of `punctuators.html` is **repurposed** as the move box rather than hidden (§11.6 hides it). Almost no new UI. Since §12.8 Note 2 it is on screen only between Keen's two shots. |
 | **A move** | = one shot. Shots are the score in §12.3, rungs are the score in §12.4. |
 
-**Descendants count, and they jump.** A player at `dog` types `beagle`, which is not one of `dog`'s 33
-children — it's a grandchild through `hound`. Rejecting that would be both infuriating and *false*.
-So **any true descendant is accepted, and you travel straight to it**, crossing every rung in between.
-Measured on the obvious guesses:
+**ONE RUNG AT A TIME — no skipping. REVERSED 2026-08-25 (dev's call).** M9 shipped the opposite rule
+(*descendants count, and they jump*): any true descendant was accepted and you travelled straight to it,
+crossing every rung in between, so `beagle` typed at `dog` was two rungs for one shot and knowing the
+deeper word was the expert lane. **It is now a rejection.** At `animal` you may type `fish`; typing
+`salmon` skips the rung that *is* the lesson — that a salmon is a fish before it is an animal — and a
+route race whose whole point is "how far up you must climb is exactly how unrelated two things are"
+cannot let the player teleport past the rungs that measure it. Two things fall out of it:
+
+- **Par becomes a floor, not a target.** With jumps, an expert could finish under par; a move is now
+  exactly one rung in either direction, so par is the best possible score and the whole spread above it
+  is detours. (§12.3's par bullet said otherwise until this change.)
+- **A deep descendant is its own kind of "no"** (below), not `unrelated` — the word really *is* a kind of
+  where you stand, and saying otherwise would be the same lie the alt map exists to prevent.
+
+What the jump rule was protecting against is still real, and is now what the rejection has to handle
+gracefully. Measured on the obvious guesses:
 
 | Typed at | Result |
 | -------- | ------ |
 | `dog` | `dachshund` `bulldog` `retriever` are children · `beagle > hound` `greyhound > hound` `collie > sheepdog` are grandchildren |
 | `bird` | `ostrich` `toucan` are children · `robin > thrush` `penguin > seabird` `duck > waterfowl` `canary > finch` `flamingo > wader` are grandchildren |
 
-Without descendant acceptance, seven of those ten sensible answers get rejected. With it, they all work
-**and** knowing the deeper word is rewarded — typing `beagle` from `dog` is worth two rungs for one shot.
-That is the expert lane, and it costs nothing to build (`isDescendant` is a walk up the parent map).
+So **seven of those ten sensible answers now bounce** — which is precisely why the bounce concedes first
+(*"a beagle is a kind of dog, but 2 rungs down"*) and why it may not name the rungs it skips: `hound` is
+the answer, and printing it is the same fog leak §13.5 fixed on the map.
 
-**Three kinds of "no", and they must sound different.** Lumping them together is what makes a typing game
+**Four kinds of "no", and they must sound different.** Lumping them together is what makes a typing game
 feel broken:
 
 | Rejection | Example | Feedback |
 | --------- | ------- | -------- |
+| **Too deep** | `beagle` typed at `dog` | concede, then refuse: "a kind of `dog`, but 2 rungs down — one rung at a time. What comes between?" The rung *count* is honest information about the hierarchy (like `race.hint()`); the rung *names* are the answer, so they stay fogged. |
 | **Wrong direction** | `mammal` typed at `dog` | "that's *broader* — switch to General" (teaches the mechanic) |
 | **Not a kind of it** | `cat` typed at `dog` | the buzz + a clank |
 | **Not in my book** | `labrador`, `chihuahua`, `pit bull`, `SUV`, `palm` | a *distinct*, apologetic note — the word is real, the data just lacks it. Never costs the player anything. |
 
-That third row is not hypothetical: five of the thirty guesses probed were absent from the data entirely.
-It must never read as "you were wrong".
+That last row is not hypothetical: five of the thirty guesses probed were absent from the data entirely.
+It must never read as "you were wrong" — and neither must the first, for the opposite reason: there the
+player was *right*, just early.
 
 **The sense trap again — and the one data change this phase wants.** §11.4 killed phrase words whose
 ladder follows the wrong sense. Free-typed input drags the same problem in through the front door, because
@@ -1177,6 +1191,8 @@ A player who types `oak` under `tree` is right, and the game says no. The fix is
 *other* surviving parents from its *other* senses (`oak: tree wood`, `rose: flower bush`,
 `chicken: bird meat`). A typed answer is accepted if it reaches the current word through the main map **or**
 through an alt edge; the climb itself never uses it, so ladders stay single-sensed and unambiguous.
+(Under the one-rung rule above, that means a *direct* alt child — which all five probe fixes are:
+`oak`/`maple`/`birch` sit directly under `tree`, `chicken` under `bird`, `tuna` under `fish`.)
 Generous *and* truthful — the game can even say "yes — and an oak is also a kind of wood."
 **This is the one prerequisite in this phase that is data work, not game code**, and it is a prerequisite
 for typing, not for §11. See §12.7.
@@ -1265,7 +1281,9 @@ they share is being animals, and that how far up you must climb is exactly how u
 - **Par = the single-rung path through the lowest common ancestor**, computed at load from the up-map.
   Across all 6.4M familiar same-tree pairs the par distribution peaks right where a daily wants it —
   1:6.7k · 2:294k · 3:972k · **4:1.63M · 5:1.70M · 6:1.15M** · 7:490k · 8:121k · 9:15k · 10:704.
-  Beating par is possible via a descendant jump; par is a target, not a floor.
+  Par is a **floor**, not a target: since the one-rung rule replaced the descendant jump (§12.2,
+  2026-08-25) a move is exactly one rung, so par is the best score anyone can post and everything
+  above it is detours.
 - **Pair selection is positional, not seeded** — same reasoning as §11.7. A generated-then-frozen
   `racePairs` array in `phrasePOJO.js`'s sibling file, indexed `daysSince(EPOCH) % N`, so yesterday's race
   never changes and there is no RNG to keep in sync.
@@ -1297,9 +1315,10 @@ Keen Arrow's solo mode: start at a root (`animal`), type your way down as fast a
 
 **The depth ceiling shapes it.** With a maximum of five rungs below any root, one dive is over in five
 moves — so the score cannot be "how deep did you get". It is **total rungs descended**, and reaching a leaf
-**banks the dive and drops you on a fresh root**. The game is how many clean dives you can chain, and a
-multi-rung jump (`animal` → type `beagle` = 3 rungs, one shot) is how an expert goes fast. Recall depth
-converts directly into score.
+**banks the dive and drops you on a fresh root**. The game is how many clean dives you can chain.
+*(This originally leaned on the multi-rung jump — `animal` → type `beagle` = 3 rungs, one shot — as the
+expert lane. §12.2's one-rung rule removed it, so if this mode graduates its speed lane has to be recall
+*breadth* under the clock, not depth: naming each rung fast, not skipping rungs.)*
 
 **General Ization is probably absent here** — no up, no Switch Character, which is precisely what §15 wants
 for Keen's personality: the specificity hero, alone, in the one mode that only goes down. Tentative because
@@ -1335,11 +1354,12 @@ edit box; the edit box then returning only when Keen Arrow shoots the word you s
 are expected.
 
 `--alt` in the build → `ladderAltPOJO.js`, `ladderRace.js`,
-type-to-summon + shoot-to-travel, the three rejections, descendant jumps. Playable against the hardcoded
+type-to-summon + shoot-to-travel, the rejections, descendant jumps *(reversed to the one-rung rule on
+2026-08-25 — §12.2)*. Playable against the hardcoded
 `poodle ⟶ salmon` (par 5), no daily, no chrome. **Verified against this doc's own numbers:** all six
 sample pairs in §12.3 compute the par printed there (5·5·6·4·2·2), and the guess classes behave —
-`beagle`@`dog` = 2 rungs via main, `oak`@`tree` = 1 rung via alt, `mammal`@`dog` = broader,
-`cat`@`dog` = unrelated, `chihuahua`@`dog` = unknown.
+`hound`@`dog` = 1 rung via main, `beagle`@`dog` = 2 rungs, so *too deep*, `oak`@`tree` = 1 rung via alt,
+`mammal`@`dog` = broader, `cat`@`dog` = unrelated, `chihuahua`@`dog` = unknown.
 
 Five things came out differently from the spec:
 
@@ -1408,7 +1428,7 @@ route is this mode's artifact, so it cannot be built before the mode is).
 ### 12.8 Play-test notes — the fix list
 
 **Opened 2026-08-24 after the first play of M9.** The dev's notes from playing it. **Notes 1 and 2 are
-BUILT (2026-08-24)**; more notes are expected. M9 stays **dev-only** (`?dev=1`) while the list is worked
+BUILT (2026-08-24), Note 3 BUILT (2026-08-25)**; more notes are expected. M9 stays **dev-only** (`?dev=1`) while the list is worked
 through.
 
 #### The finding that opened it: the goal is never communicated
@@ -1521,6 +1541,32 @@ above it. `.race-word[hidden]` needs its `display: none` spelled out — `.race-
 to move at all, so the status line opens the race by naming both directions: *"General Ization shoots the
 word above to broaden — Keen Arrow shoots your own word to narrow it."* Every message after that one is
 written by play.
+
+#### Note 3 — you can't skip a rung. BUILT 2026-08-25
+
+> *"I want it so you can't skip a word when typing a specific word in the text box. For instance if you
+> have `animal` you can type `salmon`, skipping over `fish`. You should have to type `fish` first."*
+
+**This reverses M9's descendant-jump rule** — the rationale, the fallout and the four rejection classes
+now live in §12.2, since it is a rule of the traversal engine and not a note about the UI. In short: a
+move is one rung, par becomes a floor rather than a target, and a true-but-deep descendant gets its own
+concede-then-refuse message that names **how far** but never **what's between** (`hound` is the answer).
+
+**As built** — three touches, no new state:
+
+- `classifyGuess` (`ladderRace.js`) splits the old `GUESS.OK` on `rungs === 1`, adding **`GUESS.DEEPER`**.
+  `descentFrom` is unchanged and still reports the *true* rung count, because that count is what the new
+  message says; only what the race *accepts* narrowed.
+- `summonFromMoveBox` (`index.js`) gains the `DEEPER` arm.
+- `raceTravel` loses its passed-through-rungs walk (`ancestorsOf(word).slice(0, indexOf(before))`), which
+  is now provably always empty — a down-move's landing word has `before` as its direct parent, and an alt
+  move has no main-map intermediates at all. It lights the one word it lands on. §13.4's bullet and
+  §13.10's task list both referred to those crossed rungs and were updated with it.
+
+**The five alt-map probe fixes all survive** (`oak`/`maple`/`birch`@`tree`, `chicken`@`bird`, `tuna`@`fish`)
+— every one is a *direct* alt child, so the one-rung gate never touches them. What the gate does bounce is
+the seven-of-ten grandchildren §12.2 measured, which is the cost the dev accepted and the reason the
+message concedes before it refuses.
 
 #### Still to come
 
@@ -1655,9 +1701,10 @@ pan/zoom. Try circles first.
   is what this said until 2026-08-24 and which leaked answers; see below.
 - **Leaves are anonymous buds** until visited. A shelf shows its lit children by name and its dark ones as
   plain dots, with the remainder as a count (`+26`).
-- **A visited word lights permanently** and keeps its name. Visiting is landing on a rung in any mode —
-  including the rungs you pass *through* on a §12.2 descendant jump, which cross real rungs and should pay
-  for all of them.
+- **A visited word lights permanently** and keeps its name. Visiting is landing on a rung in any mode.
+  (This used to add "including the rungs you pass *through* on a §12.2 descendant jump" — since the
+  one-rung rule replaced the jump on 2026-08-25 there are no passed-through rungs; a Word Race move
+  lights exactly the word landed on.)
 
 #### Skeleton means TWO OR MORE KINDS — found in play and FIXED 2026-08-24
 
@@ -1755,7 +1802,7 @@ Three ways in, and the map needs at least one:
 | **Free play with a first-child-only Keen Arrow** | **No** — every shelf caps at 1. |
 | ~~**Sibling cycling**~~ (built with M3, **removed 2026-08-23** — see below) | Yes, but it is no longer how this happens. |
 | **§2.5's shelf fan** (the answer as it stands) | **Yes** — the row *is* the shelf, so a parent's whole child list is reachable by picking from it, and the rotating bud slot brings the rest through on replays. |
-| **Word Race** (§12.2) | **Yes** — typing summons any descendant, so the Race fills shelves as a side effect of being played. |
+| **Word Race** (§12.2) | **Yes** — typing summons any *child* (one rung, since 2026-08-25), and which child is the player's free choice, so the Race fills shelves as a side effect of being played. |
 
 **The unvisited-first rule is what survives, and it is the part that matters.** Keen Arrow's row is
 drawn **unvisited first**, and "unvisited" reads `ladderMapHas()`, the map's own record. **That makes
@@ -1814,7 +1861,7 @@ daily ships first (§12 recommended — a restore has no path, only a shot count
 | ---- | ------ |
 | `ladderMap.js` | **new — BUILT 2026-08-23** — `buildForest()`/`packForest()` (one pass on first open), the LOD draw, pan/zoom/hit-test, the visited set + storage, and the `ladderMapVisit()` seam. No new data file. **M13 BUILT** — `SELFLIT`/`KLIT` + `shelfDone()` in `relight()`, the gold arc in `drawNode`, the `7/33` counter in `drawLabels`, the done-shelf gold at tier 1, the shelf line in `readout()` and the shelves-filled number in `paintStat()`. **M14 BUILT** — the ancestry breadcrumb, the share string, the help card and the dormant daily-run guard; see §13.13.5 |
 | `ladderFunc.js` | **M13 BUILT** — `shelfProgress()` (lit/total against a passed-in `seen`, same independence-from-the-map discipline as `shelfFor`), `SHELF_MILESTONES` and `shelfMilestoneCrossed()` with its measured `SHELF_MILESTONE_MIN = 5` floor (§13.6) |
-| `index.js` | **BUILT:** `initLadderMap()` + the button wiring; **and as of M3**, `ladderMapVisit()` on every rung landed on (including the one you were standing on, so the word you typed lights the first time you shoot it). The `ladderMapHas()` read-back that steers the game (§13.7) now lives in `ladderFunc.js`'s `shelfFor`, where it orders the shelf fan's row. **M13 BUILT** — `noteShelfProgress()` (hung off `ladderMapVisit`'s newly-lit return in both `landOnRung` and `climbLadder`), `showShelfMilestone()`/`clearShelfMilestone()`, the `7/33 found` term in the fan caption, `_shelfMilestone()` (§7) and the How-to-Play tip. **Still to do:** the daily-run guard (§13.8) — M14; passed-through rungs on a §12.2 jump — needs Word Race |
+| `index.js` | **BUILT:** `initLadderMap()` + the button wiring; **and as of M3**, `ladderMapVisit()` on every rung landed on (including the one you were standing on, so the word you typed lights the first time you shoot it). The `ladderMapHas()` read-back that steers the game (§13.7) now lives in `ladderFunc.js`'s `shelfFor`, where it orders the shelf fan's row. **M13 BUILT** — `noteShelfProgress()` (hung off `ladderMapVisit`'s newly-lit return in both `landOnRung` and `climbLadder`), `showShelfMilestone()`/`clearShelfMilestone()`, the `7/33 found` term in the fan caption, `_shelfMilestone()` (§7) and the How-to-Play tip. **Still to do:** the daily-run guard (§13.8) — M14. *(Passed-through rungs on a §12.2 jump is no longer a task: the jump is gone as of 2026-08-25, and Word Race's `raceTravel` lights the one word it lands on.)* |
 | `punctuators.html` | **BUILT** — the 🌳 button + the overlay markup. *Not* a `.modal`: that pattern is capped at 500 px and centred by transform, and a map wants the whole window. **M13** added the `.tree-map__key` legend line under the controls hint |
 | `index.css` | **BUILT** — the panel, the bar, the canvas, the hover readout. **M13 BUILT** — `.shelf-milestone` (+ `.complete`) and its two keyframes, `.shelf-fan-caption.done`, `.tree-map__key`, and the phone + reduced-motion cases for the banner |
 | `CLAUDE.md` | the Punctuators row per milestone |

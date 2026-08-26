@@ -141,11 +141,9 @@ function mainDescent(word, of) {
  * Is `word` a kind of `of`, and how many rungs down is it?
  * Returns {rungs, via} — via is "main" or "alt" — or null when it isn't one at all.
  *
- * Descendants count and they JUMP (§12.2). A player at `dog` types `beagle`, which is a grandchild
- * through `hound`, not one of dog's 33 children. Rejecting that would be both infuriating and
- * false, so any true descendant is accepted and travels every rung it crosses in one shot —
- * measured, without this seven of ten sensible guesses get rejected. That is also the expert lane:
- * knowing the deeper word is worth two rungs for one move.
+ * This reports the TRUE relation, not what the race accepts. A deep descendant still answers with
+ * its real rung count, because that count is what the "too deep" rejection tells the player
+ * (classifyGuess, GUESS.DEEPER) — the race itself only ever travels one rung at a time (§12.2).
  */
 export function descentFrom(word, of) {
   if (word === of) return null;
@@ -180,12 +178,14 @@ export function canDescend(word) {
   return !!(ALT_PARENTS && ALT_PARENTS.has(word));
 }
 
-/* The three kinds of "no", and they must sound different (§12.2). Lumping them together is what
-   makes a typing game feel broken — and the third one is not the player's fault at all, so it must
-   never read as "you were wrong": five of the thirty guesses probed were simply absent from the
-   data. */
+/* The kinds of "no", and they must sound different (§12.2). Lumping them together is what makes a
+   typing game feel broken — and UNKNOWN is not the player's fault at all, so it must never read as
+   "you were wrong": five of the thirty guesses probed were simply absent from the data. DEEPER is
+   the same shape of not-your-fault: the word IS a kind of where you stand, just further down than
+   one step, so the message has to concede that before it refuses. */
 export const GUESS = {
-  OK: "ok", // a true descendant — travel
+  OK: "ok", // the rung immediately below you — travel
+  DEEPER: "deeper", // a true descendant, but more than one rung down (§12.2, no skipping)
   BROADER: "broader", // an ancestor: right word, wrong hero
   UNRELATED: "unrelated", // in the book, but not a kind of where you stand
   UNKNOWN: "unknown", // not in the book at all — apologise, charge nothing
@@ -194,7 +194,12 @@ export const GUESS = {
 
 /**
  * Classify a typed word against the word the player currently occupies.
- * Returns {kind, word, rungs, via} — `rungs` and `via` only on GUESS.OK.
+ * Returns {kind, word, rungs, via} — `rungs` and `via` only on GUESS.OK and GUESS.DEEPER.
+ *
+ * ONE RUNG AT A TIME (§12.2). At `animal` you may type `fish`, not `salmon` — naming the deeper
+ * word skips the rung that is the whole lesson (that salmon is a fish before it is an animal), so
+ * a true-but-deep descendant is its own rejection rather than a two-rung shortcut. It reverses M9's
+ * descendant-jump rule, which accepted any descendant and travelled every rung it crossed.
  */
 export function classifyGuess(typed, current) {
   const word = String(typed || "")
@@ -205,7 +210,13 @@ export function classifyGuess(typed, current) {
   if (word === current) return { kind: GUESS.SAME, word };
 
   const down = descentFrom(word, current);
-  if (down) return { kind: GUESS.OK, word, rungs: down.rungs, via: down.via };
+  if (down)
+    return {
+      kind: down.rungs === 1 ? GUESS.OK : GUESS.DEEPER,
+      word,
+      rungs: down.rungs,
+      via: down.via,
+    };
 
   // Ancestor: the player named a real rung but reached for the wrong hero. Worth its own message,
   // because saying so teaches the mechanic rather than just refusing.
