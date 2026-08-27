@@ -46,16 +46,17 @@ let ALT_PARENTS = null; // Set<word> — the same map's keys, i.e. every word so
 let loadingAlt = null;
 
 export function raceReady() {
-  return laddersReady() && ALT !== null;
+  return laddersReady() && ALT !== null && PAIRS !== null;
 }
 
-/** Load both corpora. Idempotent, and safe to call from several places at once. */
+/** Load all three corpora. Idempotent, and safe to call from several places at once. */
 export function loadRace() {
   if (raceReady()) return Promise.resolve();
   loadingAlt =
     loadingAlt ||
     Promise.all([
       loadLadders(),
+      loadRacePairs(),
       import("./ladderAltPOJO.js").then(({ ladderAlt }) => {
         const alt = new Map();
         const parents = new Set();
@@ -72,6 +73,61 @@ export function loadRace() {
       }),
     ]).then(() => undefined);
   return loadingAlt;
+}
+
+/* ── The pair pool (§12.3) ────────────────────────────────────────────────────────────────────
+ *
+ * racePOJO.js is the frozen daily list — [start, target, par] each, hand-kept in
+ * race-pairs-source.txt and validated by `build-ladders.py --pairs`. It is 7 KB against
+ * ladderPOJO.js's 337 KB and ladderAltPOJO.js's 98 KB, which is why it loads SEPARATELY as well as
+ * inside loadRace: the goal display has to name today's route the moment the mode is picked from
+ * the dropdown, long before Pow! pulls the corpora down (§12.8 Note 1 — a race whose destination
+ * isn't on screen reads as the wrong game entirely). Par rides along in the file for the same
+ * reason; createRace recomputes it from the live map, and the build guarantees the two agree.
+ */
+
+let PAIRS = null;
+let loadingPairs = null;
+
+export function loadRacePairs() {
+  if (PAIRS) return Promise.resolve();
+  loadingPairs =
+    loadingPairs ||
+    import("./racePOJO.js").then(({ racePairs }) => {
+      PAIRS = racePairs;
+    });
+  return loadingPairs;
+}
+
+export function racePairCount() {
+  return PAIRS ? PAIRS.length : 0;
+}
+
+/* Whole days since 2026-01-01 by the player's OWN clock. Built from the local Y/M/D rather than
+   from the raw epoch millisecond so a timezone can't hand someone yesterday's race — the same
+   local-date rule Critter Hunt's daily uses. */
+const RACE_EPOCH = Date.UTC(2026, 0, 1);
+
+export function raceDayIndex(when = new Date()) {
+  const local = Date.UTC(when.getFullYear(), when.getMonth(), when.getDate());
+  return Math.floor((local - RACE_EPOCH) / 86400000);
+}
+
+/**
+ * One pair as `{start, target, par}`, or null before racePOJO.js lands.
+ *
+ * Positional, not seeded (§12.3, and §11.7 before it): the day indexes the frozen list directly,
+ * so yesterday's race never changes and there is no RNG to keep in sync between the goal display
+ * and the run. Pass no index for the practice pick — a random pair, which is what the mode deals
+ * while it is dev-only; the daily is `pickRacePair(raceDayIndex())` and needs nothing else.
+ */
+export function pickRacePair(index) {
+  if (!PAIRS || !PAIRS.length) return null;
+  const i = Number.isInteger(index)
+    ? ((index % PAIRS.length) + PAIRS.length) % PAIRS.length
+    : Math.floor(Math.random() * PAIRS.length);
+  const [start, target, par] = PAIRS[i];
+  return { start, target, par, index: i };
 }
 
 /* ── Walking the tree ─────────────────────────────────────────────────────────────────────────── */

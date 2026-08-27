@@ -38,6 +38,9 @@ import {
   RACE_DOWN_ID,
   GUESS,
   loadRace,
+  loadRacePairs,
+  pickRacePair,
+  raceDayIndex,
   classifyGuess,
   canDescend,
   createRace,
@@ -924,8 +927,42 @@ function pickRung(kid, hero, projectile) {
    daily and its map lock are M10, the win card and easy mode are M11.
 */
 
-// The doc's own worked example (§12.3), par 5. M10 replaces this with the frozen daily pair list.
-const RACE_PAIR = { start: "poodle", target: "salmon" };
+/* ── WHICH PAIR (§12.3) ───────────────────────────────────────────────────────────────────────
+ *
+ * The pool is racePOJO.js — 239 hand-kept pairs, frozen, each with its par baked in. Two ways to
+ * draw from it, one flag apart:
+ *
+ *   PRACTICE  a random pair every Pow!, which is how the mode runs while it is dev-only. Replaying
+ *             is the point: 239 pairs is 34 weeks of dailies, and sweeping them at random is how
+ *             the ones still wanting a prune get found. (§11's M6 deals its sayings the same way,
+ *             for the same reason.)
+ *   DAILY     pickRacePair(raceDayIndex()) — positional, so everyone gets the same race that day
+ *             and yesterday's never changes. Flip RACE_DAILY and it is live; the rest of M10 (the
+ *             lock, the stats, the share, and the map's ladderMapLock/Unlock pair) hangs off that.
+ *
+ * `?race=N` forces one pair by index for testing, and beats both.
+ */
+const RACE_DAILY = false;
+const RACE_INDEX_PARAM = new URLSearchParams(location.search).get("race");
+
+let racePair = null; // {start, target, par, index} — the pair the goal display is promising
+
+/* Draw the next pair. `keep` is for the goal display, which must not re-roll what Pow! is about to
+   deal — the destination on screen has to be the one you then race to. */
+function chooseRacePair(keep = false) {
+  if (keep && racePair) return racePair;
+  // Guarded against RACE_INDEX_PARAM being null, which Number() turns into a perfectly valid 0 —
+  // that would pin every visitor to the first pair in the list forever.
+  const forced =
+    RACE_INDEX_PARAM === null ? NaN : Number.parseInt(RACE_INDEX_PARAM, 10);
+  const index = Number.isInteger(forced)
+    ? forced
+    : RACE_DAILY
+      ? raceDayIndex()
+      : undefined; // undefined = the practice pick, a random pair
+  racePair = pickRacePair(index);
+  return racePair;
+}
 
 let race = null; // the run in progress, from createRace()
 let raceEls = null; // {up, here, down} — resolved once after the field renders, then rewritten in place
@@ -1026,14 +1063,28 @@ function clearRaceGoal() {
   inputContainer?.classList.remove("race-on");
 }
 
-/* Before Pow!: the pair is known without the corpus, but par is not — it comes from createRace —
-   so the second line carries the rule instead of the score. */
-function previewRaceGoal() {
-  drawRaceGoal(
-    RACE_PAIR.start,
-    RACE_PAIR.target,
-    "Travel from one word to the other in as few moves as you can.",
-  );
+/* Before Pow!. racePOJO.js is 7 KB against the corpus's 337, so the pair — and its baked par — can
+   be on screen the instant the mode is picked, while the ladder itself is still unfetched. Drawn
+   twice on purpose: once immediately with whatever is already loaded, then again when the pool
+   lands, because the display is what makes the mode legible and an empty box in its place for two
+   seconds is the very failure §12.8 opened with. */
+async function previewRaceGoal(reroll = false) {
+  const rule = "Travel from one word to the other in as few moves as you can.";
+  const paint = (pair) =>
+    pair
+      ? drawRaceGoal(pair.start, pair.target, `Par ${pair.par} · ${rule}`)
+      : drawRaceGoal("…", "…", rule);
+  paint(chooseRacePair(!reroll));
+  try {
+    await loadRacePairs();
+  } catch (e) {
+    return drawRaceGoal("…", "…", "Couldn't load the races — try again.");
+  }
+  // Still the right mode? A slow fetch must not repaint over a dropdown change made meanwhile.
+  if (wordPlayOptions.value !== "wordRace" || raceActive()) return;
+  // `keep` from here on: the first draw may have had nothing to show, but once a pair is on screen
+  // it is a promise about the race Pow! is going to deal, and re-rolling underneath it breaks that.
+  paint(chooseRacePair(true));
 }
 
 /* During the run. Deliberately thin in M9 — where you're going, what par is and what you've spent,
@@ -1062,7 +1113,10 @@ wordPlayOptions.addEventListener("change", () => {
   const mode = wordPlayOptions.value;
   initialTypedSentence.classList.toggle("go-away", NO_SENTENCE_MODES.has(mode));
   errorMessage.innerText = ""; // a leftover "Field cannot be blank" is about the old mode
-  if (mode === "wordRace") previewRaceGoal();
+  // Re-roll on every selection: picking the mode again is the one gesture that plainly means
+  // "deal me another", and while the mode is practice-only (RACE_DAILY) that is how you sweep the
+  // pool. Under the daily it is a no-op — the index is the date either way.
+  if (mode === "wordRace") previewRaceGoal(true);
   else clearRaceGoal();
   if (mode === "ladderPuzzle") {
     // Word Race paints its destination into #race-goal in the box's place; this mode has nothing to
@@ -1424,7 +1478,7 @@ removePuncButton.addEventListener("click", async () => {
     }
     if (selectedOption === "wordRace") {
       // Same lazy corpus as the ladder, plus ladderAltPOJO.js — the answer-checking map that makes
-      // typing fair (§12.2). Only this mode fetches it, which is why it ships as its own file.
+      // typing fair (§12.2) — plus racePOJO.js, the frozen pair pool (§12.3).
       errorMessage.style.color = "black";
       errorMessage.innerText = "Loading the race…";
       try {
@@ -1435,7 +1489,11 @@ removePuncButton.addEventListener("click", async () => {
       }
       errorMessage.style.color = "";
       errorMessage.innerText = "";
-      race = createRace(RACE_PAIR);
+      // `keep`: run the pair the goal display has been promising since the dropdown changed. It is
+      // only ever null if racePOJO.js failed to parse, which loadRace would already have thrown on.
+      const pair = chooseRacePair(true);
+      if (!pair) return (errorMessage.innerText = "No races to run — try again.");
+      race = createRace(pair);
       raceSummoned = "";
       raceArmed = false;
       ladderMapVisit(race.at); // where you start counts as somewhere you've been (§13)

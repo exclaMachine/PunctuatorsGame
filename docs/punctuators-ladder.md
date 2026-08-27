@@ -20,8 +20,12 @@ the same day** — `phrases-source.txt` (108 drafted sayings, awaiting the dev's
 and goal/lock/win over the free-play span. M7 (the daily) and M8 (the feel) remain.
 Phase 3 — Word Race (§12) specced 2026-08-22, **M9 (the engine) BUILT 2026-08-24, DEV-ONLY while it is
 worked on**: `ladderRace.js`, the `--alt` build pass and its `ladderAltPOJO.js`, type-to-summon +
-shoot-to-travel against a hardcoded pair (`poodle ⟶ salmon`, par 5). Its `<option>` needs `?dev=1`, and
-**the next work is §12.8's play-test fix list, not M10** — the first play found the mode never tells the
+shoot-to-travel. Its `<option>` needs `?dev=1`. **M10's PAIR POOL is BUILT 2026-08-26** — the hardcoded
+`poodle ⟶ salmon` gave way to `race-pairs-source.txt` + `build-ladders.py --pairs` → `racePOJO.js`, 239
+hand-kept pairs across 12 trees, par 4–6, dealt at random per Pow! with `RACE_DAILY = false` the one
+flag between that and the positional daily (§12.3); the spec's "18,863 words in `2of12.txt`" pool and
+its harder-Sunday band were both measured and reversed. §12.8's play-test fix list is otherwise still
+the live work — the first play found the mode never tells the
 player where they are going. **Notes 1 and 2 of that list are BUILT 2026-08-24**: picking Word Race now
 replaces the sentence box with the route itself (`poodle ⟶ salmon`, the never-visible `#race-banner`
 retired), and the box comes back beneath it only when **Keen Arrow shoots the word you're standing on** —
@@ -1086,10 +1090,11 @@ How-to-Play modal copy (`updateCharacterModal`, `index.js:458`).
 
 ## 12. Phase 3 — Word Race (the traversal daily) & Deep Dive
 
-**Word Race specced 2026-08-22. M9 (the engine) BUILT 2026-08-24; the `<option>` is DEV-ONLY behind
-`?dev=1` while it is worked on. Development is ACTIVE, but the next work is §12.8's fix list — the dev's
-play-test notes, of which **Notes 1 (the goal display) and 2 (the move box behind Keen's shot) are BUILT
-2026-08-24** — not M10. Deep Dive (§12.4) still tentative. Both assume M2–M4 (free play) have shipped
+**Word Race specced 2026-08-22. M9 (the engine) BUILT 2026-08-24 and M10's PAIR POOL BUILT 2026-08-26
+(239 pairs, random per Pow!, one flag from the daily — §12.3); the `<option>` is DEV-ONLY behind
+`?dev=1` while it is worked on. Development is ACTIVE, and the remaining work is §12.8's fix list — the
+dev's play-test notes, of which **Notes 1 (the goal display), 2 (the move box behind Keen's shot) and 3
+(one rung at a time) are BUILT** — plus the rest of M10's daily layer. Deep Dive (§12.4) still tentative. Both assume M2–M4 (free play) have shipped
 — they reuse the two heroes and the rung animations whole.**
 
 §11 shifts words inside an authored sentence. This phase throws the sentence away: **the player *is* a
@@ -1284,13 +1289,17 @@ they share is being animals, and that how far up you must climb is exactly how u
   Par is a **floor**, not a target: since the one-rung rule replaced the descendant jump (§12.2,
   2026-08-25) a move is exactly one rung, so par is the best score anyone can post and everything
   above it is detours.
-- **Pair selection is positional, not seeded** — same reasoning as §11.7. A generated-then-frozen
-  `racePairs` array in `phrasePOJO.js`'s sibling file, indexed `daysSince(EPOCH) % N`, so yesterday's race
-  never changes and there is no RNG to keep in sync.
-- **The pool** is words in `2of12.txt` with depth ≥1 and no underscore — **18,863** of them, since a daily
-  must never open on `frail` or `annelid`. Both endpoints in the same tree, par 4–6 on weekdays, 7+ on
-  Sunday. Sample pairs from the real data: `poodle→salmon` 5 · `taxi→canoe` 5 · `sandal→bonnet` 6 ·
-  `owl→shark` 4 · `cottage→villa` 2 · `hammer→shovel` 2.
+- **Pair selection is positional, not seeded** — same reasoning as §11.7. A frozen `racePairs` array in
+  `racePOJO.js`, indexed `daysSince(EPOCH) % N`, so yesterday's race never changes and there is no RNG
+  to keep in sync. **BUILT 2026-08-26** — see *The pool, as built* below; the mode currently draws from
+  it at **random per Pow!**, one `RACE_DAILY` flag away from the positional pick.
+- ~~**The pool** is words in `2of12.txt` with depth ≥1 and no underscore — **18,863** of them.~~
+  **REVERSED 2026-08-26 when it was measured against the real corpus:** that filter is far too loose for
+  a daily. It deals `thole ⟶ menorah`, `pectin ⟶ pepsin`, `percolator ⟶ majolica`, `peroration ⟶
+  televangelism` — all four are in `2of12.txt`, which is the problem. A route-familiarity filter barely
+  helps (98% of same-tree pairs already pass it) because the junk is *inside* 2of12. Sunday's harder
+  band went with it: in the concrete trees, par 7+ is 750 of 96,000 candidates and skews to the obscure
+  end (`sitter ⟶ bumblebee`, `wherry ⟶ turboprop`), so **par 4–6 every day**.
 - **No fail state and no clock** (§11.2's decision, applied again). Moves are the score. A **detour** — a
   move that doesn't reduce distance-to-target — is the share stat, exactly as §11.6's wasted shot.
 - **Hints, late and taxonomic.** After 3 detours, reveal the target's **root** ("you're heading for
@@ -1308,6 +1317,57 @@ they share is being animals, and that how far up you must climb is exactly how u
   🟩🟩🟩🟥🟩🟩
   6 moves · 🔥 Streak 4
   ```
+
+#### The pool, as built. BUILT 2026-08-26
+
+**239 hand-kept pairs across 12 trees**, `race-pairs-source.txt` → `racePOJO.js` (7 KB) via
+`build-ladders.py --pairs`. 34 weeks of dailies, and the file is append-friendly: the daily indexes it
+positionally, so growing it at the end never moves a race that has already been played.
+
+**Why a source file rather than pure generation.** The last mile of pair quality is a judgement no
+signal in this repo can make. `poodle`, `canoe`, `villa` and `beagle` all carry a SemCor count of
+**zero** — and so do `zwieback`, `demijohn`, `wain` and `thole`. Every automatic filter that keeps the
+second set out keeps the first set out too. So the dev prunes, exactly as §11.4 has them prune the
+phrase senses, and `--suggest N` does the machine half: it appends candidates that clear every filter
+that *can* be automated, annotated with their route, for the dev to delete from.
+
+**What the build enforces** (so a bad line can't reach the game):
+
+| Rule | Why |
+| ---- | --- |
+| Both endpoints in the ladder, neither a root | a root can't be climbed out of, and nothing narrows to it |
+| Same tree | the forest is 1,002 disjoint trees (§12.1) — `tulip ⟶ oak` has no route at all |
+| Par 4–6 | below 4 is a sibling hop, above 6 needs obscure rungs (measured above) |
+| **Every rung on the DOWN leg in `2of12.txt`** | asymmetric on purpose: the descent is the half the player **types**, while General climbs with no input at all, so an odd rung going up costs nothing and an odd rung coming down is a race you cannot finish |
+| No duplicates | the daily is positional, so a repeat is a repeated day |
+
+**What `--suggest` adds on top**, for proposing only: a **concrete-tree allowlist** (animal, plant,
+fruit, food, vehicle, tool, instrument, clothing, container, building, music, cloth, machine,
+furniture, weapon, alcohol, decoration, ruminant, flavoring, boat, bird) and a SemCor floor of 2 on
+every *internal* rung. The allowlist is what separates a race from a vocabulary quiz: all six of this
+section's sample pairs live in those trees, and the abstract half of the forest — `quality`,
+`knowledge`, `action`, `feeling`, `trait` — is where `clericalism ⟶ monetarism` comes from. `person`
+(4,415 nodes) and `location` are left out despite being concrete in principle, because their subtrees
+are mostly roles and regions, which race badly. **A hand-authored pair outside the allowlist is still
+honoured** — the list steers suggestions, it does not gate the build.
+
+**Ordering is a feature, not cosmetics.** `racePOJO.js` round-robins the validated list across trees
+before writing, because the daily indexes it positionally — the file's order *is* the calendar, and
+shipped in authoring order a week of animals would be followed by a week of boats. Measured after the
+round-robin: **26 of 238 consecutive days share a tree**, all in the tail where only the largest tree
+(`animal`, 65 pairs) is left. It is deterministic, so the order of everything already in the file is
+untouched when the list grows.
+
+**Words deliberately kept out**, recorded at the top of the source file: `dolphin` (WordNet files it
+under FISH), `peacock` (under BUTTERFLY — the moth, not the bird), `seal`, `bat`, `drill`, `crane`,
+`fly` as a start word. Each names two different things, and the route would read as a bug rather than
+as a fact about the hierarchy. This is §11.4's sense trap in its Word Race form.
+
+**One tree is in the pool *because* it surprises people.** WordNet's `instrument` is "a device that
+requires skill", so `violin` and `dagger` are siblings under it — `clock ⟶ flute` (par 4, via
+`timepiece → instrument → woodwind`) and `bullet ⟶ violin` are true, legal, and exactly the "how far
+up you must climb is how unrelated two things are" lesson the mode is for. Twelve of the 239 are
+these.
 
 ### 12.4 Deep Dive — 60 seconds (tentative)
 
@@ -1333,11 +1393,13 @@ mode (§12.2) is the whole mode for younger players.
 | ---- | ------ |
 | `build-ladders.py` | **`--alt` BUILT 2026-08-24** — emits `ladderAltPOJO.js` (§12.2). Reads the shipped `ladderPOJO.js` like `--phrases` (so an alt edge can never name a rung the game lacks) but *does* need WordNet, since the point of it is the senses the main map threw away. `climb_from` was split out of `parent_of` so both passes share one copy of the BFS climb. |
 | `ladderAltPOJO.js` | **new, generated — BUILT 2026-08-24**, 98 KB / 41 KB gzipped. **Its own file, not folded into `ladderPOJO.js`** as this table originally planned — only the race wants it (§12.2). |
-| `racePOJO.js` | **new, generated** — the frozen daily pair list (§12.3). **M10.** |
-| `ladderRace.js` | **new — BUILT 2026-08-24 (M9)** — the traversal engine: `ancestorsOf`/`rootOf`/`depthOf`/`sameTree`, `lowestCommonAncestor`, `parFor`, `descentFrom` (main + one alt hop), `classifyGuess` → the five `GUESS` classes, `canDescend` (§12.8 Note 2 — main children *or* an alt child, from the parents-only `Set` built beside `ALT`), `decoysFor`, `raceFieldHTML` (the bottom slot starts empty/`hidden`/id-less and `RACE_DOWN_ID` starts on the middle word), and `createRace()` holding the run. Borrows `ladderFunc.js`'s already-loaded corpus rather than parsing a second copy; `Map`/`Set` throughout. |
+| `race-pairs-source.txt` | **new, authored — BUILT 2026-08-26.** 239 hand-kept `start target` lines, machine-annotated with par + route under each (`#~`, regenerated every run) so the prune is a read. Same shape as `phrases-source.txt`, for the same reason (§12.3, *The pool, as built*). |
+| `racePOJO.js` | **new, generated — BUILT 2026-08-26**, 7 KB. `[start, target, par]` per entry, round-robined across trees so the positional daily changes subject day to day. Par is baked so the goal display can name it before the 337 KB corpus lands; `createRace` recomputes it from the live map and the build guarantees they agree. |
+| `build-ladders.py` (`--pairs`) | **BUILT 2026-08-26.** `race-pairs-source.txt` → `racePOJO.js`, reading the shipped `ladderPOJO.js` like `--phrases` — **no WordNet**, ~1 s, so the prune-then-rebuild loop is instant. `--pairs --suggest N` is the exception and does need SemCor, since proposing candidates is a familiarity judgement. The WordNet gate became `NO_WORDNET` (was `PHRASES_ONLY`) and 2of12 now loads on its own, since `--pairs` wants the commonness floor but none of the heavier corpora. |
+| `ladderRace.js` | **+ the pool, 2026-08-26** — `loadRacePairs`/`racePairCount`/`raceDayIndex`/`pickRacePair`. `racePOJO.js` loads **separately as well as inside `loadRace`**, because the goal display has to name today's route the moment the mode is picked, long before Pow! pulls 435 KB of corpora down (§12.8 Note 1). `raceDayIndex` counts whole days from 2026-01-01 by the player's **local** Y/M/D, not the raw epoch millisecond, so a timezone can't hand someone yesterday's race. **BUILT 2026-08-24 (M9)** — the traversal engine: `ancestorsOf`/`rootOf`/`depthOf`/`sameTree`, `lowestCommonAncestor`, `parFor`, `descentFrom` (main + one alt hop), `classifyGuess` → the five `GUESS` classes, `canDescend` (§12.8 Note 2 — main children *or* an alt child, from the parents-only `Set` built beside `ALT`), `decoysFor`, `raceFieldHTML` (the bottom slot starts empty/`hidden`/id-less and `RACE_DOWN_ID` starts on the middle word), and `createRace()` holding the run. Borrows `ladderFunc.js`'s already-loaded corpus rather than parsing a second copy; `Map`/`Set` throughout. |
 | `utils/utils.js` | **BUILT** — `case "wordRace":` (the field arrives pre-marked, so nothing to wrap); `protectedArticles` and `spoonerism` both suppressed, as §11.6 does. |
 | `punctuators.html` | **BUILT, DEV-ONLY** — the `<option value="wordRace" data-dev>` (stripped from the dropdown unless `?dev=1`, see M9) and `#race-goal` inside `#input-container` (§12.8 Note 1; it replaced `#race-banner`, which was never visible). The move box is the existing sentence input, hidden when the mode is picked and, since §12.8 Note 2, kept hidden until Keen Arrow asks for a word. The win card is M11. |
-| `index.js` | **BUILT (M9)** — the race block (field binding, the move box, the three rejections, `raceTravel`, `raceShootUp`/`raceShootDown`), `GeneralIzationRace`/`KeenArrowRace`, two collision branches, the race branch in the `removePuncButton` handler, the goal display (`drawRaceGoal`/`previewRaceGoal`/`paintRaceGoal`/`clearRaceGoal` + the `wordPlayOptions` `change` listener that swaps box for goal, §12.8 Note 1), and Keen's two-meaning shot (`raceArmed`, `aimKeenAt`, `paintMoveBox`, `raceAskForKind`, §12.8 Note 2). **Still M10/M11:** daily + stats + share, the hint ladder's chrome, and one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's race to open the map")` on daily start, `ladderMapUnlock()` on finish — the map is a routing atlas and this is the mode it would solve. |
+| `index.js` | **BUILT (M9)** — the race block (field binding, the move box, the three rejections, `raceTravel`, `raceShootUp`/`raceShootDown`), `GeneralIzationRace`/`KeenArrowRace`, two collision branches, the race branch in the `removePuncButton` handler, the goal display (`drawRaceGoal`/`previewRaceGoal`/`paintRaceGoal`/`clearRaceGoal` + the `wordPlayOptions` `change` listener that swaps box for goal, §12.8 Note 1), and Keen's two-meaning shot (`raceArmed`, `aimKeenAt`, `paintMoveBox`, `raceAskForKind`, §12.8 Note 2). **+ the pair pick, 2026-08-26** — `RACE_DAILY` (false while the mode is practice-only), `chooseRacePair(keep)` and `racePair`, the `?race=N` index override, and `previewRaceGoal` gone `async` so it can paint the route from the 7 KB pool and then name par. Two things the flow needs: **selecting the mode re-rolls, Pow! keeps** — the display is a promise about the race you are about to run, so only the dropdown gesture means "deal me another" — and `?race` is read with an explicit null check, because `Number(null)` is a perfectly valid `0` that would pin every visitor to the first pair forever. **Still M10/M11:** the `RACE_DAILY` flip and the lock + stats + share behind it, the hint ladder's chrome, and one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's race to open the map")` on daily start, `ladderMapUnlock()` on finish — the map is a routing atlas and this is the mode it would solve. |
 | `index.css` | **BUILT** — `#output.race-mode`, the three `.race-word` spans, `.race-word[hidden]` (§12.8 Note 2), `#race-goal` + `#input-container.race-on` (§12.8 Note 1). The win/share card is M11. |
 | `CLAUDE.md` | the Punctuators row per milestone |
 
@@ -1356,7 +1418,8 @@ are expected.
 `--alt` in the build → `ladderAltPOJO.js`, `ladderRace.js`,
 type-to-summon + shoot-to-travel, the rejections, descendant jumps *(reversed to the one-rung rule on
 2026-08-25 — §12.2)*. Playable against the hardcoded
-`poodle ⟶ salmon` (par 5), no daily, no chrome. **Verified against this doc's own numbers:** all six
+`poodle ⟶ salmon` (par 5) *(replaced by the 239-pair pool on 2026-08-26 — M10)*, no daily, no chrome.
+**Verified against this doc's own numbers:** all six
 sample pairs in §12.3 compute the par printed there (5·5·6·4·2·2), and the guess classes behave —
 `hound`@`dog` = 1 rung via main, `beagle`@`dog` = 2 rungs, so *too deep*, `oak`@`tree` = 1 rung via alt,
 `mammal`@`dog` = broader, `cat`@`dog` = unrelated, `chihuahua`@`dog` = unknown.
@@ -1396,7 +1459,16 @@ while the player typed. It now ignores events from an `input`/`textarea`/`conten
 is the other half of the same problem: the guard stops typing from *moving* the hero, and blurring the
 box after a summon stops the focused box from *swallowing* the shot.
 
-**M10 — the daily.** `racePOJO.js`, selection, lock, stats/streak, share, give-up, the hint ladder.
+**M10 — the daily. THE POOL IS BUILT 2026-08-26; the daily layer around it remains.**
+`race-pairs-source.txt` + `build-ladders.py --pairs` → `racePOJO.js` (239 pairs, 12 trees, par 4:159
+5:72 6:8), `loadRacePairs`/`raceDayIndex`/`pickRacePair`, and the pick wired through the goal display
+and Pow!. **The mode deals a random pair per Pow! and re-rolls whenever you pick it in the dropdown** —
+practice, as §11's M6 does, because 239 pairs is 34 weeks and sweeping them at random is how the ones
+still wanting a prune get found. `RACE_DAILY = false` in `index.js` is the single flag; flipping it
+swaps the random pick for `pickRacePair(raceDayIndex())` and nothing else changes. `?race=N` forces one
+pair by index and beats both. **Still to do:** the lock, stats/streak, share, give-up, the hint ladder's
+chrome, and the map's `ladderMapLock`/`ladderMapUnlock` pair. Three findings that changed the spec —
+the 2of12 pool, Sunday's harder band, and the source-file decision — are recorded in §12.3.
 
 **M11 — the feel.** Race card, target banner, the travel animation reusing M4's, easy mode's decoy field,
 the How-to-Play copy — **and the post-game route overlay** (§13.8, moved here from M14 on 2026-08-23: the
@@ -1420,6 +1492,14 @@ route is this mode's artifact, so it cannot be built before the mode is).
   `redwood` is not under `tree`, in any sense — so no alt data can fix them. It doesn't block the mode
   (they land in "not a kind of it"), but **§12.3's pair selection must not put a target one hop from a
   hole like this**, and the size of the problem beyond those four is unmeasured.
+  **Partly addressed by the pool, 2026-08-26, and honestly still open.** Every pair's own down leg is
+  validated rung by rung, so the authored route is always walkable — you can never be handed a race
+  whose last move is impossible. What is *not* fixed is the tempting wrong turn beside it: the pool's
+  plant races end at `rose`/`tulip`/`violet`/`orchid`, whose real parents are `bush`/`plant`/`viola`, so
+  a player standing on `plant` who types `flower` takes a legal step into a branch the target isn't
+  under. That costs a detour and General walks it back — a cost, not a dead end — but it is the one
+  place in the shipped pool where the data will feel wrong. Whether to drop those targets or leave them
+  is a judgement for the first real play of the daily.
 - **One `<option>` or two?** Word Race and Deep Dive are one engine and two goals. Recommending two
   options, matching §11.2's "its own `<option>`, no branching inside another mode".
 

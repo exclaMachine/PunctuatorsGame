@@ -1,0 +1,758 @@
+# race-pairs-source.txt — the Word Race daily pair pool.
+# Design: docs/punctuators-ladder.md §12.3. Build: `python3 build-ladders.py --pairs`.
+#
+# One `start target` per line. Everything else is computed: the build reads the SHIPPED
+# ladderPOJO.js, works out par and the route through the two words' lowest common ancestor, and
+# freezes the survivors into racePOJO.js. A `#~` line under each pair is the build's own note —
+# it is regenerated on every run, so edit the pair line and leave the note alone.
+#
+# WHAT MAKES A GOOD PAIR, and why this file is hand-kept:
+#   1. Both endpoints are words a player has actually met. This is the whole reason the file
+#      exists — no frequency signal in this repo separates `poodle` from `zwieback` (both score
+#      zero in SemCor), so a human decides. `--suggest N` does the machine half and appends
+#      candidates that clear every filter that CAN be automated; delete the ones you wouldn't ship.
+#   2. Every rung on the way DOWN is typeable. The build enforces this (2of12.txt) because the
+#      descent is the half the player types; the climb up needs no input, so an odd rung there is
+#      free and is not checked.
+#   3. Par lands in 4–6. Enforced. Par is a floor, not a target (§12.2 — one rung per move), so
+#      it is the best score anyone can post.
+#   4. The two words are worth meeting in the middle. The route is the lesson: how far up you must
+#      climb is exactly how unrelated two things are, so the fun is in a pair that FEELS close and
+#      isn't, or feels distant and isn't.
+#
+# WORDS DELIBERATELY KEPT OUT, because WordNet's sense is not the player's:
+#   dolphin (filed under FISH), peacock (under BUTTERFLY, not bird), seal, bat, drill, crane, fly
+#   as a start word — each names two different things and the route would look like a bug.
+#
+# The order here is not the order shipped — racePOJO.js round-robins the list across trees so the
+# daily, which indexes it positionally, changes subject from one day to the next.
+
+# ── animal: across the great divisions ───────────────────────────────────────────────────────
+poodle salmon
+#~ par 5 · animal · poodle → dog → mammal → animal → fish → salmon
+
+owl shark
+#~ par 4 · animal · owl → bird → animal → fish → shark
+
+rabbit eagle
+#~ par 4 · animal · rabbit → mammal → animal → bird → eagle
+
+squirrel trout
+#~ par 4 · animal · squirrel → mammal → animal → fish → trout
+
+wolf sparrow
+#~ par 4 · animal · wolf → mammal → animal → bird → sparrow
+
+fox crow
+#~ par 4 · animal · fox → mammal → animal → bird → crow
+
+tiger raven
+#~ par 4 · animal · tiger → mammal → animal → bird → raven
+
+monkey swan
+#~ par 4 · animal · monkey → mammal → animal → bird → swan
+
+elephant ant
+#~ par 5 · animal · elephant → pachyderm → mammal → animal → insect → ant
+
+horse butterfly
+#~ par 4 · animal · horse → mammal → animal → insect → butterfly
+
+camel beetle
+#~ par 4 · animal · camel → mammal → animal → insect → beetle
+
+mouse hawk
+#~ par 4 · animal · mouse → mammal → animal → bird → hawk
+
+rat pigeon
+#~ par 4 · animal · rat → mammal → animal → bird → pigeon
+
+lion goldfish
+#~ par 4 · animal · lion → mammal → animal → fish → goldfish
+
+bear cricket
+#~ par 4 · animal · bear → mammal → animal → insect → cricket
+
+otter moth
+#~ par 4 · animal · otter → mammal → animal → insect → moth
+
+badger wasp
+#~ par 4 · animal · badger → mammal → animal → insect → wasp
+
+donkey hawk
+#~ par 4 · animal · donkey → mammal → animal → bird → hawk
+
+ostrich cat
+#~ par 4 · animal · ostrich → bird → animal → mammal → cat
+
+parrot dog
+#~ par 4 · animal · parrot → bird → animal → mammal → dog
+
+eel eagle
+#~ par 4 · animal · eel → fish → animal → bird → eagle
+
+minnow hawk
+#~ par 4 · animal · minnow → fish → animal → bird → hawk
+
+eel owl
+#~ par 4 · animal · eel → fish → animal → bird → owl
+
+minnow raven
+#~ par 4 · animal · minnow → fish → animal → bird → raven
+
+grasshopper cat
+#~ par 4 · animal · grasshopper → insect → animal → mammal → cat
+
+mosquito dog
+#~ par 4 · animal · mosquito → insect → animal → mammal → dog
+
+flea horse
+#~ par 4 · animal · flea → insect → animal → mammal → horse
+
+beetle salmon
+#~ par 4 · animal · beetle → insect → animal → fish → salmon
+
+butterfly trout
+#~ par 4 · animal · butterfly → insect → animal → fish → trout
+
+ant shark
+#~ par 4 · animal · ant → insect → animal → fish → shark
+
+bee crow
+#~ par 4 · animal · bee → insect → animal → bird → crow
+
+moth rabbit
+#~ par 4 · animal · moth → insect → animal → mammal → rabbit
+
+cricket monkey
+#~ par 4 · animal · cricket → insect → animal → mammal → monkey
+
+wasp mouse
+#~ par 4 · animal · wasp → insect → animal → mammal → mouse
+
+sparrow tiger
+#~ par 4 · animal · sparrow → bird → animal → mammal → tiger
+
+crow lion
+#~ par 4 · animal · crow → bird → animal → mammal → lion
+
+hawk wolf
+#~ par 4 · animal · hawk → bird → animal → mammal → wolf
+
+raven fox
+#~ par 4 · animal · raven → bird → animal → mammal → fox
+
+eagle rat
+#~ par 4 · animal · eagle → bird → animal → mammal → rat
+
+swan squirrel
+#~ par 4 · animal · swan → bird → animal → mammal → squirrel
+
+pigeon camel
+#~ par 4 · animal · pigeon → bird → animal → mammal → camel
+
+trout elephant
+#~ par 5 · animal · trout → fish → animal → mammal → pachyderm → elephant
+
+# ── animal: down one more rung ───────────────────────────────────────────────────────────────
+salmon puppy
+#~ par 5 · animal · salmon → fish → animal → mammal → dog → puppy
+
+shark pony
+#~ par 5 · animal · shark → fish → animal → mammal → horse → pony
+
+raven pig
+#~ par 5 · animal · raven → bird → animal → mammal → swine → pig
+
+trout robin
+#~ par 5 · animal · trout → fish → animal → bird → thrush → robin
+
+ant duck
+#~ par 5 · animal · ant → insect → animal → bird → waterfowl → duck
+
+bee goose
+#~ par 5 · animal · bee → insect → animal → bird → waterfowl → goose
+
+butterfly turkey
+#~ par 5 · animal · butterfly → insect → animal → bird → poultry → turkey
+
+cricket robin
+#~ par 5 · animal · cricket → insect → animal → bird → thrush → robin
+
+moth canary
+#~ par 5 · animal · moth → insect → animal → bird → finch → canary
+
+wasp stork
+#~ par 5 · animal · wasp → insect → animal → bird → wader → stork
+
+beetle penguin
+#~ par 5 · animal · beetle → insect → animal → bird → seabird → penguin
+
+mouse gull
+#~ par 5 · animal · mouse → mammal → animal → bird → seabird → gull
+
+squirrel pelican
+#~ par 5 · animal · squirrel → mammal → animal → bird → seabird → pelican
+
+rabbit hen
+#~ par 5 · animal · rabbit → mammal → animal → bird → poultry → hen
+
+fox goose
+#~ par 5 · animal · fox → mammal → animal → bird → waterfowl → goose
+
+wolf turkey
+#~ par 5 · animal · wolf → mammal → animal → bird → poultry → turkey
+
+crow puppy
+#~ par 5 · animal · crow → bird → animal → mammal → dog → puppy
+
+sparrow pony
+#~ par 5 · animal · sparrow → bird → animal → mammal → horse → pony
+
+owl elephant
+#~ par 5 · animal · owl → bird → animal → mammal → pachyderm → elephant
+
+hawk pig
+#~ par 5 · animal · hawk → bird → animal → mammal → swine → pig
+
+salmon hen
+#~ par 5 · animal · salmon → fish → animal → bird → poultry → hen
+
+tiger duck
+#~ par 5 · animal · tiger → mammal → animal → bird → waterfowl → duck
+
+lion goose
+#~ par 5 · animal · lion → mammal → animal → bird → waterfowl → goose
+
+# ── vehicle: land, water, air ────────────────────────────────────────────────────────────────
+taxi canoe
+#~ par 5 · vehicle · taxi → car → vehicle → vessel → boat → canoe
+
+truck ferry
+#~ par 4 · vehicle · truck → vehicle → vessel → boat → ferry
+
+tractor rowboat
+#~ par 4 · vehicle · tractor → vehicle → vessel → boat → rowboat
+
+bicycle tugboat
+#~ par 4 · vehicle · bicycle → vehicle → vessel → boat → tugboat
+
+motorcycle steamboat
+#~ par 4 · vehicle · motorcycle → vehicle → vessel → boat → steamboat
+
+wagon dinghy
+#~ par 4 · vehicle · wagon → vehicle → vessel → boat → dinghy
+
+sled tugboat
+#~ par 4 · vehicle · sled → vehicle → vessel → boat → tugboat
+
+van barge
+#~ par 4 · vehicle · van → vehicle → vessel → boat → barge
+
+car rowboat
+#~ par 4 · vehicle · car → vehicle → vessel → boat → rowboat
+
+jeep ship
+#~ par 4 · vehicle · jeep → car → vehicle → vessel → ship
+
+cart helicopter
+#~ par 4 · vehicle · cart → wagon → vehicle → aircraft → helicopter
+
+canoe rocket
+#~ par 4 · vehicle · canoe → boat → vessel → vehicle → rocket
+
+ferry tractor
+#~ par 4 · vehicle · ferry → boat → vessel → vehicle → tractor
+
+barge bicycle
+#~ par 4 · vehicle · barge → boat → vessel → vehicle → bicycle
+
+tugboat van
+#~ par 4 · vehicle · tugboat → boat → vessel → vehicle → van
+
+rowboat sled
+#~ par 4 · vehicle · rowboat → boat → vessel → vehicle → sled
+
+yacht taxi
+#~ par 4 · vehicle · yacht → vessel → vehicle → car → taxi
+
+ship jeep
+#~ par 4 · vehicle · ship → vessel → vehicle → car → jeep
+
+airplane boat
+#~ par 4 · vehicle · airplane → aircraft → vehicle → vessel → boat
+
+balloon sailboat
+#~ par 4 · vehicle · balloon → aircraft → vehicle → vessel → sailboat
+
+glider ship
+#~ par 4 · vehicle · glider → aircraft → vehicle → vessel → ship
+
+helicopter taxi
+#~ par 4 · vehicle · helicopter → aircraft → vehicle → car → taxi
+
+jet truck
+#~ par 4 · vehicle · jet → plane → aircraft → vehicle → truck
+
+plane yacht
+#~ par 4 · vehicle · plane → aircraft → vehicle → vessel → yacht
+
+airliner car
+#~ par 4 · vehicle · airliner → plane → aircraft → vehicle → car
+
+rocket steamboat
+#~ par 4 · vehicle · rocket → vehicle → vessel → boat → steamboat
+
+boat glider
+#~ par 4 · vehicle · boat → vessel → vehicle → aircraft → glider
+
+sailboat submarine
+#~ par 4 · vehicle · sailboat → vessel → ship → warship → submarine
+
+kayak yacht
+#~ par 4 · vehicle · kayak → canoe → boat → vessel → yacht
+
+submarine wagon
+#~ par 5 · vehicle · submarine → warship → ship → vessel → vehicle → wagon
+
+canoe helicopter
+#~ par 5 · vehicle · canoe → boat → vessel → vehicle → aircraft → helicopter
+
+ferry plane
+#~ par 5 · vehicle · ferry → boat → vessel → vehicle → aircraft → plane
+
+truck kayak
+#~ par 5 · vehicle · truck → vehicle → vessel → boat → canoe → kayak
+
+jeep submarine
+#~ par 6 · vehicle · jeep → car → vehicle → vessel → ship → warship → submarine
+
+taxi kayak
+#~ par 6 · vehicle · taxi → car → vehicle → vessel → boat → canoe → kayak
+
+airplane tugboat
+#~ par 5 · vehicle · airplane → aircraft → vehicle → vessel → boat → tugboat
+
+balloon canoe
+#~ par 5 · vehicle · balloon → aircraft → vehicle → vessel → boat → canoe
+
+jet steamboat
+#~ par 6 · vehicle · jet → plane → aircraft → vehicle → vessel → boat → steamboat
+
+# ── clothing ─────────────────────────────────────────────────────────────────────────────────
+sandal bonnet
+#~ par 6 · clothing · sandal → shoe → footwear → clothing → headgear → hat → bonnet
+
+sneaker beret
+#~ par 6 · clothing · sneaker → shoe → footwear → clothing → headgear → cap → beret
+
+boot turban
+#~ par 4 · clothing · boot → footwear → clothing → headgear → turban
+
+moccasin cap
+#~ par 5 · clothing · moccasin → shoe → footwear → clothing → headgear → cap
+
+sandal turban
+#~ par 5 · clothing · sandal → shoe → footwear → clothing → headgear → turban
+
+slipper hat
+#~ par 4 · clothing · slipper → footwear → clothing → headgear → hat
+
+hat sneaker
+#~ par 5 · clothing · hat → headgear → clothing → footwear → shoe → sneaker
+
+cap sandal
+#~ par 5 · clothing · cap → headgear → clothing → footwear → shoe → sandal
+
+beret shirt
+#~ par 5 · clothing · beret → cap → headgear → clothing → garment → shirt
+
+bonnet coat
+#~ par 5 · clothing · bonnet → hat → headgear → clothing → garment → coat
+
+turban sweater
+#~ par 4 · clothing · turban → headgear → clothing → garment → sweater
+
+veil boot
+#~ par 4 · clothing · veil → garment → clothing → footwear → boot
+
+scarf shoe
+#~ par 4 · clothing · scarf → garment → clothing → footwear → shoe
+
+sweater slipper
+#~ par 4 · clothing · sweater → garment → clothing → footwear → slipper
+
+robe sandal
+#~ par 5 · clothing · robe → garment → clothing → footwear → shoe → sandal
+
+gown jacket
+#~ par 5 · clothing · gown → dress → clothing → garment → coat → jacket
+
+coat moccasin
+#~ par 5 · clothing · coat → garment → clothing → footwear → shoe → moccasin
+
+shirt sneaker
+#~ par 5 · clothing · shirt → garment → clothing → footwear → shoe → sneaker
+
+jacket turban
+#~ par 5 · clothing · jacket → coat → garment → clothing → headgear → turban
+
+sandal scarf
+#~ par 5 · clothing · sandal → shoe → footwear → clothing → garment → scarf
+
+boot jacket
+#~ par 5 · clothing · boot → footwear → clothing → garment → coat → jacket
+
+gown sneaker
+#~ par 5 · clothing · gown → dress → clothing → footwear → shoe → sneaker
+
+beret jacket
+#~ par 6 · clothing · beret → cap → headgear → clothing → garment → coat → jacket
+
+bonnet sandal
+#~ par 6 · clothing · bonnet → hat → headgear → clothing → footwear → shoe → sandal
+
+jacket moccasin
+#~ par 6 · clothing · jacket → coat → garment → clothing → footwear → shoe → moccasin
+
+# ── food ─────────────────────────────────────────────────────────────────────────────────────
+bacon toast
+#~ par 4 · food · bacon → meat → food → bread → toast
+
+biscuit ham
+#~ par 4 · food · biscuit → bread → food → meat → ham
+
+toast sausage
+#~ par 4 · food · toast → bread → food → meat → sausage
+
+sausage biscuit
+#~ par 4 · food · sausage → meat → food → bread → biscuit
+
+ham coffee
+#~ par 4 · food · ham → meat → food → beverage → coffee
+
+bread candy
+#~ par 4 · food · bread → food → goody → confection → candy
+
+butter candy
+#~ par 4 · food · butter → food → goody → confection → candy
+
+steak coffee
+#~ par 4 · food · steak → meat → food → beverage → coffee
+
+pork milk
+#~ par 4 · food · pork → meat → food → beverage → milk
+
+chicken tea
+#~ par 4 · food · chicken → meat → food → beverage → tea
+
+sardine biscuit
+#~ par 4 · food · sardine → seafood → food → bread → biscuit
+
+tuna toast
+#~ par 4 · food · tuna → seafood → food → bread → toast
+
+cod bacon
+#~ par 4 · food · cod → seafood → food → meat → bacon
+
+herring steak
+#~ par 4 · food · herring → seafood → food → meat → steak
+
+carp ham
+#~ par 4 · food · carp → seafood → food → meat → ham
+
+milk sausage
+#~ par 4 · food · milk → beverage → food → meat → sausage
+
+coffee cod
+#~ par 4 · food · coffee → beverage → food → seafood → cod
+
+tea tuna
+#~ par 4 · food · tea → beverage → food → seafood → tuna
+
+cider pork
+#~ par 4 · food · cider → beverage → food → meat → pork
+
+jelly bacon
+#~ par 4 · food · jelly → goody → food → meat → bacon
+
+# ── fruit & nut ──────────────────────────────────────────────────────────────────────────────
+walnut currant
+#~ par 5 · fruit · walnut → nut → seed → fruit → berry → currant
+
+peanut raspberry
+#~ par 5 · fruit · peanut → nut → seed → fruit → berry → raspberry
+
+chestnut strawberry
+#~ par 5 · fruit · chestnut → nut → seed → fruit → berry → strawberry
+
+chestnut raspberry
+#~ par 5 · fruit · chestnut → nut → seed → fruit → berry → raspberry
+
+currant walnut
+#~ par 5 · fruit · currant → berry → fruit → seed → nut → walnut
+
+raspberry peanut
+#~ par 5 · fruit · raspberry → berry → fruit → seed → nut → peanut
+
+strawberry chestnut
+#~ par 5 · fruit · strawberry → berry → fruit → seed → nut → chestnut
+
+lemon walnut
+#~ par 5 · fruit · lemon → citrus → fruit → seed → nut → walnut
+
+orange peanut
+#~ par 5 · fruit · orange → citrus → fruit → seed → nut → peanut
+
+blackberry walnut
+#~ par 5 · fruit · blackberry → berry → fruit → seed → nut → walnut
+
+blueberry chestnut
+#~ par 5 · fruit · blueberry → berry → fruit → seed → nut → chestnut
+
+chestnut lemon
+#~ par 5 · fruit · chestnut → nut → seed → fruit → citrus → lemon
+
+peanut strawberry
+#~ par 5 · fruit · peanut → nut → seed → fruit → berry → strawberry
+
+# ── plant ────────────────────────────────────────────────────────────────────────────────────
+cedar tulip
+#~ par 4 · plant · cedar → conifer → tree → plant → tulip
+
+elm rose
+#~ par 4 · plant · elm → tree → plant → bush → rose
+
+willow orchid
+#~ par 4 · plant · willow → tree → plant → flower → orchid
+
+holly violet
+#~ par 4 · plant · holly → tree → plant → viola → violet
+
+daisy willow
+#~ par 4 · plant · daisy → flower → plant → tree → willow
+
+rose violet
+#~ par 4 · plant · rose → bush → plant → viola → violet
+
+ivy orchid
+#~ par 4 · plant · ivy → vine → plant → flower → orchid
+
+carnation elm
+#~ par 4 · plant · carnation → flower → plant → tree → elm
+
+dahlia rose
+#~ par 4 · plant · dahlia → flower → plant → bush → rose
+
+orchid willow
+#~ par 4 · plant · orchid → flower → plant → tree → willow
+
+pine tulip
+#~ par 4 · plant · pine → conifer → tree → plant → tulip
+
+cedar lily
+#~ par 4 · plant · cedar → conifer → tree → plant → lily
+
+bush pine
+#~ par 4 · plant · bush → plant → tree → conifer → pine
+
+fern pine
+#~ par 4 · plant · fern → plant → tree → conifer → pine
+
+grass pine
+#~ par 4 · plant · grass → plant → tree → conifer → pine
+
+iris pine
+#~ par 4 · plant · iris → plant → tree → conifer → pine
+
+lily pine
+#~ par 4 · plant · lily → plant → tree → conifer → pine
+
+cedar rose
+#~ par 5 · plant · cedar → conifer → tree → plant → bush → rose
+
+pine violet
+#~ par 5 · plant · pine → conifer → tree → plant → viola → violet
+
+daisy pine
+#~ par 5 · plant · daisy → flower → plant → tree → conifer → pine
+
+ivy pine
+#~ par 5 · plant · ivy → vine → plant → tree → conifer → pine
+
+carnation cedar
+#~ par 5 · plant · carnation → flower → plant → tree → conifer → cedar
+
+# ── building ─────────────────────────────────────────────────────────────────────────────────
+barn castle
+#~ par 4 · building · barn → building → house → mansion → castle
+
+cottage inn
+#~ par 4 · building · cottage → house → building → hotel → inn
+
+castle cathedral
+#~ par 4 · building · castle → mansion → house → building → cathedral
+
+bungalow shed
+#~ par 4 · building · bungalow → house → building → outbuilding → shed
+
+inn mansion
+#~ par 4 · building · inn → hotel → building → house → mansion
+
+palace restaurant
+#~ par 4 · building · palace → mansion → house → building → restaurant
+
+cathedral palace
+#~ par 4 · building · cathedral → building → house → mansion → palace
+
+chapel palace
+#~ par 4 · building · chapel → building → house → mansion → palace
+
+mansion shed
+#~ par 4 · building · mansion → house → building → outbuilding → shed
+
+castle temple
+#~ par 4 · building · castle → mansion → house → building → temple
+
+hotel palace
+#~ par 4 · building · hotel → building → house → mansion → palace
+
+shed villa
+#~ par 4 · building · shed → outbuilding → building → house → villa
+
+castle inn
+#~ par 5 · building · castle → mansion → house → building → hotel → inn
+
+inn palace
+#~ par 5 · building · inn → hotel → building → house → mansion → palace
+
+palace shed
+#~ par 5 · building · palace → mansion → house → building → outbuilding → shed
+
+# ── container ────────────────────────────────────────────────────────────────────────────────
+crate jug
+#~ par 4 · container · crate → box → container → bottle → jug
+
+crate pouch
+#~ par 4 · container · crate → box → container → bag → pouch
+
+jug sack
+#~ par 4 · container · jug → bottle → container → bag → sack
+
+suitcase tray
+#~ par 4 · container · suitcase → luggage → container → receptacle → tray
+
+pouch suitcase
+#~ par 4 · container · pouch → bag → container → luggage → suitcase
+
+sack tray
+#~ par 4 · container · sack → bag → container → receptacle → tray
+
+jug tray
+#~ par 4 · container · jug → bottle → container → receptacle → tray
+
+crate suitcase
+#~ par 4 · container · crate → box → container → luggage → suitcase
+
+pouch tray
+#~ par 4 · container · pouch → bag → container → receptacle → tray
+
+sack suitcase
+#~ par 4 · container · sack → bag → container → luggage → suitcase
+
+# ── drink ────────────────────────────────────────────────────────────────────────────────────
+beer brandy
+#~ par 4 · alcohol · beer → brew → alcohol → liquor → brandy
+
+beer champagne
+#~ par 4 · alcohol · beer → brew → alcohol → wine → champagne
+
+champagne whiskey
+#~ par 4 · alcohol · champagne → wine → alcohol → liquor → whiskey
+
+brandy champagne
+#~ par 4 · alcohol · brandy → liquor → alcohol → wine → champagne
+
+champagne gin
+#~ par 4 · alcohol · champagne → wine → alcohol → liquor → gin
+
+beer rum
+#~ par 4 · alcohol · beer → brew → alcohol → liquor → rum
+
+champagne vodka
+#~ par 4 · alcohol · champagne → wine → alcohol → liquor → vodka
+
+beer whiskey
+#~ par 4 · alcohol · beer → brew → alcohol → liquor → whiskey
+
+# ── music ────────────────────────────────────────────────────────────────────────────────────
+hymn tune
+#~ par 4 · music · hymn → song → opus → music → tune
+
+ballad tune
+#~ par 4 · music · ballad → song → opus → music → tune
+
+anthem tune
+#~ par 4 · music · anthem → song → opus → music → tune
+
+lullaby tune
+#~ par 4 · music · lullaby → song → opus → music → tune
+
+opera song
+#~ par 4 · music · opera → classical → music → opus → song
+
+hymn opera
+#~ par 5 · music · hymn → song → opus → music → classical → opera
+
+ballad opera
+#~ par 5 · music · ballad → song → opus → music → classical → opera
+
+lullaby opera
+#~ par 5 · music · lullaby → song → opus → music → classical → opera
+
+# ── the tree that surprises everyone: an instrument is a device ──────────────────────────────
+clock flute
+#~ par 4 · instrument · clock → timepiece → instrument → woodwind → flute
+
+flute sword
+#~ par 4 · instrument · flute → woodwind → instrument → weapon → sword
+
+dagger flute
+#~ par 4 · instrument · dagger → weapon → instrument → woodwind → flute
+
+clock dagger
+#~ par 4 · instrument · clock → timepiece → instrument → weapon → dagger
+
+bullet violin
+#~ par 4 · instrument · bullet → projectile → weapon → instrument → violin
+
+bullet drum
+#~ par 4 · instrument · bullet → projectile → weapon → instrument → drum
+
+banjo bullet
+#~ par 4 · instrument · banjo → instrument → weapon → projectile → bullet
+
+clock gun
+#~ par 4 · instrument · clock → timepiece → instrument → weapon → gun
+
+flute spear
+#~ par 4 · instrument · flute → woodwind → instrument → weapon → spear
+
+bullet trumpet
+#~ par 4 · instrument · bullet → projectile → weapon → instrument → trumpet
+
+bullet guitar
+#~ par 4 · instrument · bullet → projectile → weapon → instrument → guitar
+
+bullet flute
+#~ par 5 · instrument · bullet → projectile → weapon → instrument → woodwind → flute
+
+# ── cattle & kin ─────────────────────────────────────────────────────────────────────────────
+cow deer
+#~ par 4 · ruminant · cow → cattle → bovine → ruminant → deer
+
+cow goat
+#~ par 4 · ruminant · cow → cattle → bovine → ruminant → goat
+
+cow sheep
+#~ par 4 · ruminant · cow → cattle → bovine → ruminant → sheep

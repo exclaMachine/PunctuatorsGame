@@ -27,6 +27,10 @@ Also builds the PUZZLE corpus for the Restore the Phrase mode (docs §11.5):
 
   ladderAltPOJO.js   export const ladderAlt = { tree: "oak maple birch …", … }
 
+…and that mode's DAILY PAIR POOL (docs §12.3):
+
+  race-pairs-source.txt  ->  racePOJO.js   export const racePairs = [ ["poodle","salmon",5], … ]
+
 USAGE
   pip install nltk
   python3 build-ladders.py                  # downloads WordNet to a temp dir, writes ladderPOJO.js
@@ -37,10 +41,15 @@ USAGE
   python3 build-ladders.py --phrases --check   # same, reported but written nowhere
   python3 build-ladders.py --alt            # ladderPOJO.js -> ladderAltPOJO.js (needs WordNet)
   python3 build-ladders.py --alt --check    # same, reported but written nowhere
+  python3 build-ladders.py --pairs          # race-pairs-source.txt -> racePOJO.js (+ the #~ notes)
+  python3 build-ladders.py --pairs --check     # same, reported but written nowhere
+  python3 build-ladders.py --pairs --suggest 40   # …and append 40 fresh candidates to prune
 The tuning loop is --spot to iterate, --why when a word surprises you, then a bare run to ship.
 
 --phrases needs NO WordNet: it reads the already-generated ladderPOJO.js, so a puzzle can never
 assert a rung the game doesn't have, and the prune-then-rebuild loop costs a second, not a minute.
+--pairs is the same, for the same reason — except with --suggest, which proposes new pairs and so
+needs SemCor to judge familiarity.
 --alt reads that same shipped file for the same reason, but DOES need WordNet, because the whole
 point of it is the senses the shipped map threw away.
 """
@@ -55,12 +64,21 @@ OUT_FILE = "ladderPOJO.js"
 PHRASE_SRC = "phrases-source.txt"
 PHRASE_OUT = "phrasePOJO.js"
 ALT_OUT = "ladderAltPOJO.js"
+RACE_SRC = "race-pairs-source.txt"
+RACE_OUT = "racePOJO.js"
 
 # The phrase build works off the shipped map (see the module docstring), so skip the WordNet
 # download and the three corpora entirely — none of the code it reaches touches them.
 PHRASES_ONLY = "--phrases" in sys.argv
 
-if not PHRASES_ONLY:
+# --pairs is the same: validating and freezing an authored pair list needs only the shipped ladder
+# and 2of12.txt. Its --suggest companion is the exception — proposing candidates is a familiarity
+# judgement and that is exactly what SemCor is for — so only that path pays the download.
+PAIRS_ONLY = "--pairs" in sys.argv and "--suggest" not in sys.argv
+
+NO_WORDNET = PHRASES_ONLY or PAIRS_ONLY
+
+if not NO_WORDNET:
     # --- WordNet to a TEMP location so we never commit the raw DB (same as build_dictionary.py) ---
     TMP_NLTK = os.path.join(tempfile.gettempdir(), "inklings_nltk_data")
     os.makedirs(TMP_NLTK, exist_ok=True)
@@ -232,10 +250,13 @@ def load_wordlist(path):
 
 
 if not PHRASES_ONLY:
+    # --pairs wants the commonness floor but none of the heavier corpora, so 2of12 loads on its own.
+    COMMON = {w.split("%")[0] for w in load_wordlist("2of12.txt")}   # 2of12 tags some entries with %
+
+if not NO_WORDNET:
     print("loading dictionary.json / enable1.txt / 2of12.txt …")
     DICT = json.load(open("data/dictionary.json", encoding="utf-8"))
     ENABLE1 = load_wordlist("enable1.txt")
-    COMMON = {w.split("%")[0] for w in load_wordlist("2of12.txt")}   # 2of12 tags some entries with %
 
     DICT_NOUNS = {w for w, e in DICT.items() if "noun" in (e.get("pos") or [])}
 
@@ -1067,6 +1088,299 @@ def build_alt(write=True):
     return 0
 
 
+# ============================================================================
+# --pairs: the Word Race daily pair pool (docs/punctuators-ladder.md §12.3, M10)
+# ============================================================================
+# race-pairs-source.txt is hand-authored — one `start target` per line — and this pass validates
+# each pair against the SHIPPED ladder, computes its par and route, and freezes the survivors into
+# racePOJO.js. Same contract as --phrases: reading the shipped map is what stops a daily asserting
+# a rung the game doesn't have, and it means no WordNet and a one-second rebuild.
+#
+# WHY A SOURCE FILE AND NOT PURE GENERATION. §12.3 specced the pool as "words in 2of12.txt with
+# depth ≥ 1" — 18,863 of them — and measured against the real corpus that is far too loose for a
+# daily: it deals `thole ⟶ menorah`, `pectin ⟶ pepsin`, `percolator ⟶ majolica`. Filtering harder
+# helps but cannot finish the job, because the last mile is a judgement no signal in this repo can
+# make: `poodle`, `canoe` and `villa` carry a SemCor count of 0, and so do `zwieback`, `demijohn`
+# and `wain`. So the dev prunes, exactly as §11.4 has them prune the phrase senses, and --suggest
+# below does the machine half — proposing candidates that clear every filter we CAN automate.
+
+RACE_PAR_MIN, RACE_PAR_MAX = 4, 6
+
+# The trees a daily may be drawn from. Concrete things only: all six of §12.3's own sample pairs
+# live here, and the abstract half of the forest (quality, knowledge, action, feeling, trait…) is
+# where `clericalism ⟶ monetarism` comes from. `person` and `location` are deliberately absent —
+# they are concrete enough in principle but their subtrees are mostly roles and regions, which race
+# badly. Suggestion-time only: a hand-authored pair outside these trees is still honoured.
+RACE_ROOTS = {
+    "animal", "plant", "fruit", "food", "vehicle", "tool", "instrument", "clothing",
+    "container", "building", "music", "cloth", "machine", "furniture", "weapon", "alcohol",
+    "decoration", "ruminant", "flavoring", "boat", "bird",
+}
+
+# --suggest's two familiarity floors. An INTERNAL rung is a category (dog, mammal, animal, fish) and
+# SemCor covers those well, so it gets the real floor; an ENDPOINT is usually a leaf, where SemCor
+# is mostly zeros, so a leading child of a well-known parent is allowed through and the dev decides.
+RACE_RUNG_SEM = 2
+RACE_END_RANK = 15
+RACE_END_PARENT_SEM = 5
+
+
+class RaceError(Exception):
+    """A fault the dev has to fix in race-pairs-source.txt. Fatal — same contract as PhraseError."""
+
+
+def race_ancestors(word, up):
+    """Every rung above `word`, nearest first. Mirrors ladderRace.js's ancestorsOf exactly."""
+    out, w = [], word
+    for _ in range(12):
+        p = up.get(w)
+        if not p:
+            break
+        out.append(p)
+        w = p
+    return out
+
+
+def race_root(word, up):
+    anc = race_ancestors(word, up)
+    return anc[-1] if anc else word
+
+
+def race_lca(a, b, up):
+    if a == b:
+        return a
+    upset = {a, *race_ancestors(a, up)}
+    if b in upset:
+        return b
+    for w in race_ancestors(b, up):
+        if w in upset:
+            return w
+    return None
+
+
+def race_route(a, b, up):
+    """The single-rung path a ⟶ b through their LCA — the route the player is racing to find.
+    Its length is par, so this is `parFor` and `bestRoute` in one, kept identical to ladderRace.js."""
+    lca = race_lca(a, b, up)
+    if not lca:
+        return None
+    up_leg = [a, *race_ancestors(a, up)]
+    down_leg = [b, *race_ancestors(b, up)]
+    return up_leg[: up_leg.index(lca) + 1] + down_leg[: down_leg.index(lca)][::-1]
+
+
+def check_pair(start, target, up, down):
+    """Validate one authored pair and return its route. Raises RaceError with the reason it fails.
+
+    The down leg is checked word by word because that is the half the player has to TYPE: General
+    shoots upward with no input at all, so an obscure rung on the way up costs nothing, while an
+    obscure rung on the way down is a race you cannot finish. Asymmetric on purpose."""
+    for w in (start, target):
+        if w not in up and w not in down:
+            raise RaceError(f"{w} is not in the ladder")
+    if start == target:
+        raise RaceError("start and target are the same word")
+    if start not in up:
+        raise RaceError(f"{start} is a root — a race has to be able to climb out of it")
+    if target not in up:
+        raise RaceError(f"{target} is a root — nothing narrows to it")
+    route = race_route(start, target, up)
+    if route is None:
+        raise RaceError(f"{start} and {target} are in different trees — no route exists")
+    par = len(route) - 1
+    if not RACE_PAR_MIN <= par <= RACE_PAR_MAX:
+        raise RaceError(f"par {par} is outside {RACE_PAR_MIN}–{RACE_PAR_MAX}")
+    lca = race_lca(start, target, up)
+    descent = route[route.index(lca) + 1:]
+    unfamiliar = [w for w in descent if w not in COMMON]
+    if unfamiliar:
+        raise RaceError(f"the player must type {', '.join(unfamiliar)} — not in 2of12.txt")
+    return route
+
+
+def read_race_source(path=RACE_SRC):
+    """Same split as read_phrase_source: `#~` lines are ours and are regenerated on every run."""
+    if not os.path.exists(path):
+        raise RaceError(f"{path} not found")
+    items, prev_ours = [], False
+    for line in open(path, encoding="utf-8"):
+        line = line.rstrip("\n")
+        if line.startswith("#~"):
+            prev_ours = True
+            continue
+        if not line.strip() and prev_ours:
+            continue
+        prev_ours = False
+        if line.strip() and not line.lstrip().startswith("#"):
+            parts = line.split()
+            items.append(("pair", parts))
+            prev_ours = True
+        else:
+            items.append(("raw", line))
+    return items
+
+
+def interleave_by_tree(pairs, up):
+    """Round-robin the frozen list across trees.
+
+    The daily is `daysSince(EPOCH) % N` (§12.3), so the file's ORDER is the calendar: ship it in
+    authoring order and a week of animals is followed by a week of boats. Round-robining by root
+    means consecutive days change subject, and it is deterministic, so yesterday's race still never
+    moves when the list grows at the end."""
+    buckets = {}
+    for p in pairs:
+        buckets.setdefault(race_root(p["start"], up), []).append(p)
+    order = sorted(buckets, key=lambda r: (-len(buckets[r]), r))
+    out = []
+    while any(buckets[r] for r in order):
+        for r in order:
+            if buckets[r]:
+                out.append(buckets[r].pop(0))
+    return out
+
+
+def write_race_js(pairs):
+    lines = [
+        "// racePOJO.js — AUTO-GENERATED by `build-ladders.py --pairs`. Do not hand-edit.",
+        "// Edit race-pairs-source.txt and re-run. Design: docs/punctuators-ladder.md §12.3.",
+        "//   [start, target, par] — par is the single-rung path through the two words' lowest",
+        "//   common ancestor, and since a move is exactly one rung (§12.2) it is the best score",
+        "//   anyone can post. It is baked so the goal display can name it before the 337 KB",
+        "//   corpus has loaded; ladderRace.js recomputes it from the live map either way.",
+        "// Ordered by round-robin over trees, because the daily indexes this list positionally —",
+        "// the order IS the calendar, so consecutive days must change subject.",
+        "export const racePairs = [",
+    ]
+    for p in pairs:
+        lines.append(f'  ["{p["start"]}", "{p["target"]}", {p["par"]}],')
+    lines += ["];", ""]
+    with open(RACE_OUT, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    print(f"wrote {RACE_OUT}: {len(pairs)} pairs, {os.path.getsize(RACE_OUT) / 1024:.0f} KB "
+          f"({len(pairs) / 7:.0f} weeks of dailies)")
+
+
+def suggest_pairs(up, down, want, existing):
+    """Propose candidate pairs for the dev to paste-and-prune. Needs WordNet (see NO_WORDNET).
+
+    Everything here is a filter the machine CAN apply: a concrete tree, a familiar route, a par in
+    band. What it cannot apply is whether the endpoints are words a player has ever met, which is
+    why these are suggestions and not output."""
+    import random
+
+    crank = {}
+    for parent, kids in down.items():
+        for i, k in enumerate(kids):
+            crank.setdefault(k, i)
+
+    def endpoint_ok(w):
+        if w not in COMMON or "_" in w or w not in up:
+            return False
+        if semcor_count(w) >= 1:
+            return True
+        # SemCor is a small hand-tagged corpus, so most concrete leaves score 0 — `poodle` included.
+        # A leading child of a well-known parent is the escape hatch; it lets junk through too,
+        # which is the dev's half of the job.
+        return crank.get(w, 999) < RACE_END_RANK and semcor_count(up[w]) >= RACE_END_PARENT_SEM
+
+    def rung_ok(w):
+        return w in COMMON and semcor_count(w) >= RACE_RUNG_SEM
+
+    by_root = {}
+    for w in set(up) | set(down):
+        r = race_root(w, up)
+        if r in RACE_ROOTS and endpoint_ok(w):
+            by_root.setdefault(r, []).append(w)
+    roots = sorted(by_root)
+    print(f"suggest: {sum(len(v) for v in by_root.values())} endpoints across {len(roots)} trees")
+
+    rng = random.Random(0)          # deterministic: re-running --suggest proposes the same order
+    found, seen = [], set(existing)
+    for _ in range(400000):
+        if len(found) >= want:
+            break
+        lst = by_root[rng.choice(roots)]
+        if len(lst) < 2:
+            continue
+        a, b = rng.sample(lst, 2)
+        if (a, b) in seen or (b, a) in seen:
+            continue
+        route = race_route(a, b, up)
+        if not route or not RACE_PAR_MIN <= len(route) - 1 <= RACE_PAR_MAX:
+            continue
+        if not all(rung_ok(w) for w in route[1:-1]):
+            continue
+        seen.add((a, b))
+        found.append((a, b, route))
+    return found
+
+
+def build_pairs(write=True):
+    up, down = load_ladder_js()
+    items = read_race_source()
+    out_lines, pairs, errors, seen = [], [], [], set()
+
+    for kind, payload in items:
+        if kind == "raw":
+            out_lines.append(payload)
+            continue
+        if len(payload) != 2:
+            errors.append(f"  {' '.join(payload)}\n      -> expected exactly two words")
+            out_lines += [" ".join(payload), "#~ ✗ expected exactly two words: `start target`", ""]
+            continue
+        start, target = payload[0].lower(), payload[1].lower()
+        try:
+            if (start, target) in seen:
+                raise RaceError("duplicate pair")
+            route = check_pair(start, target, up, down)
+        except RaceError as e:
+            errors.append(f"  {start} {target}\n      -> {e}")
+            out_lines += [f"{start} {target}", f"#~ ✗ {e}", ""]
+            continue
+        seen.add((start, target))
+        par = len(route) - 1
+        pairs.append({"start": start, "target": target, "par": par,
+                      "route": route, "root": race_root(start, up)})
+        out_lines += [f"{start} {target}",
+                      f"#~ par {par} · {race_root(start, up)} · {' → '.join(route)}", ""]
+
+    if errors:
+        print(f"\n{len(errors)} pair(s) need fixing in {RACE_SRC}:")
+        print("\n".join(errors))
+
+    if "--suggest" in sys.argv:
+        i = sys.argv.index("--suggest")
+        want = int(sys.argv[i + 1]) if len(sys.argv) > i + 1 and sys.argv[i + 1].isdigit() else 40
+        found = suggest_pairs(up, down, want, seen)
+        print(f"\n{len(found)} suggestion(s) appended to {RACE_SRC} — prune, then re-run --pairs:")
+        for a, b, route in found:
+            print(f"  {a} {b}   par {len(route) - 1}   {' → '.join(route)}")
+        if write and found:
+            out_lines += ["", "# ── suggested by --suggest; delete the ones you wouldn't ship ──"]
+            for a, b, route in found:
+                out_lines += [f"{a} {b}", f"#~ ? par {len(route) - 1} · {' → '.join(route)}", ""]
+
+    pairs = interleave_by_tree(pairs, up)
+    by_par = {}
+    for p in pairs:
+        by_par[p["par"]] = by_par.get(p["par"], 0) + 1
+    trees = len({p["root"] for p in pairs})
+    print(f"\n{len(pairs)} pairs · {trees} trees · par " +
+          " ".join(f"{k}:{by_par[k]}" for k in sorted(by_par)))
+    print("\nsample:")
+    for p in pairs[:8]:
+        print(f'  {p["start"]} ⟶ {p["target"]}  par {p["par"]}   {" → ".join(p["route"])}')
+
+    if write:
+        with open(RACE_SRC, "w", encoding="utf-8") as f:
+            f.write("\n".join(out_lines).rstrip("\n") + "\n")
+        print(f"\nrewrote {RACE_SRC} annotations")
+        write_race_js(pairs)
+    else:
+        print("\n--check: nothing written")
+    return 1 if errors else 0
+
+
 SPOT_CHECK = ["poodle", "dog", "tree", "car", "bird", "chair", "pizza", "river", "shoe", "teacher",
               "cat", "salmon", "rose", "hammer", "guitar", "castle", "sandwich", "bee", "shirt",
               "mountain", "doctor", "hat", "spoon", "truck", "wolf", "apple", "book", "cheese"]
@@ -1106,6 +1420,12 @@ if __name__ == "__main__":
         try:
             sys.exit(build_phrases(write="--check" not in sys.argv))
         except PhraseError as e:
+            print(f"error: {e}")
+            sys.exit(1)
+    if "--pairs" in sys.argv:
+        try:
+            sys.exit(build_pairs(write="--check" not in sys.argv))
+        except (RaceError, PhraseError) as e:
             print(f"error: {e}")
             sys.exit(1)
     if "--alt" in sys.argv:
