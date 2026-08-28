@@ -7,8 +7,9 @@ both heroes sharing one span via `targetId`, up/down movement, capstone/clank, a
 **§2.5's shelf fan BUILT 2026-08-23** — Keen Arrow draws the word's narrower kinds as a row of shootable
 words and you pick one by walking under it, so the descent stops reading as random. He **goes down or
 not at all**: the leaf sidestep the fan replaced was removed the same day (§13.7).
-**The How-to-Play copy BUILT 2026-08-23** — a `ladder` template in `updateCharacterModal`, whose first
-tip is the rule the fan made unguessable: shooting a word no longer moves it.
+**The How-to-Play copy BUILT 2026-08-23** — a `ladder` card whose first tip is the rule the fan made
+unguessable: shooting a word no longer moves it. (It moved into `modeHelp.js` on 2026-08-28, when every
+dropdown mode got a card of its own — see `punctuators.md`.)
 **§6's two landing animations BUILT 2026-08-23** — General's camera pull-back and Keen's lens snap,
 plus the picked child flying out of the row into the word, and a drawn broadsword for General's
 projectile. **§7's six SFX BUILT 2026-08-23** too, and **§8's hero art BUILT 2026-08-25** —
@@ -572,7 +573,7 @@ Character flips directly between them.
 | `SpanPlaceholder.js` | **BUILT** — `export const protectedLadders = withSpanPlaceholders(wrapLadders);` |
 | `utils/utils.js` | **BUILT** — `case "ladder":` in `addSpansAndIdsForWordPlay`; `targetId` in `heroToTheRescue`; **2026-08-25** free play joined the `ladderMode` flag, so Art the Tickler and The Foon are suppressed here too (§1) |
 | `punctuators.html` | **BUILT** — the `<option>`. *(The custom dropdown enumerates `sel.options` automatically — no extra work, as predicted.)* |
-| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`landOnRung`/`flashLadder` and the ladder branch in the collision chain. **§2.5's fan BUILT** — `openShelfFan`/`closeShelfFan`/`pickRung`/`drawShelfFanLines`/`shelfFanWidth`, the `data-ladder-child` split in the ladder branch, the `nodeArr` push/splice, and two guards at the top of the collision walk (`isConnected`, `projectile.ladderDone`); closed on hero switch, new sentence and resize. **The `ladder` How-to-Play template BUILT** in `updateCharacterModal`, which now writes into `.modal--body` so the modal keeps its `×`. **§6's animations BUILT** — `animateLadderSwap` + `ladderPullBack`/`ladderLensSnap`/`flyPickedChild`, the `pulse` parameter on `openShelfFan`, and `drawBroadswordSprite()`/`GENERAL_PROJECTILE`. **§7's SFX BUILT** — `_izoShoot`/`_izoHit`/`_keenShoot`/`_keenHit`/`_keenFan`/`_ladderCapstone` beside the other heroes' synth pairs, played from the ladder branch rather than from the generic hit call site (both heroes' `hitProjectileSound()` is silent), and the borrowed mp3s dropped from both constructors. **§8's hero art BUILT 2026-08-25** — `Ization.png` / `KeenArrow.png` in both hero slots of each constructor (no attack frame yet), with `heroScale` and `projectileStartPositionX` re-derived from the new files. **Projectile spawn points FIXED 2026-08-27** — a `projectileAnchor` property on `Hero` (default `null`) plus a single `Hero.projectileSpawn()` that the two shoot handlers and `Projectile`'s `onload` all call, and an anchor on each ladder hero; un-anchored heroes keep their exact previous arithmetic. **Still to do (M4):** nothing but a second (attack) frame per hero |
+| `index.js` | **BUILT** — `await loadLadders()` + the guard in the `removePuncButton` handler (now `async`); `GeneralIzation` + `KeenArrow`; instances adjacent in `availableHeroArray`; `targetId` in the `Hero` constructor and the collision gate; `climbLadder`/`landOnRung`/`flashLadder` and the ladder branch in the collision chain. **§2.5's fan BUILT** — `openShelfFan`/`closeShelfFan`/`pickRung`/`drawShelfFanLines`/`shelfFanWidth`, the `data-ladder-child` split in the ladder branch, the `nodeArr` push/splice, and two guards at the top of the collision walk (`isConnected`, `projectile.ladderDone`); closed on hero switch, new sentence and resize. **The `ladder` How-to-Play card BUILT** (in `modeHelp.js` since 2026-08-28), written into `.modal--body` so the modal keeps its `×`. **§6's animations BUILT** — `animateLadderSwap` + `ladderPullBack`/`ladderLensSnap`/`flyPickedChild`, the `pulse` parameter on `openShelfFan`, and `drawBroadswordSprite()`/`GENERAL_PROJECTILE`. **§7's SFX BUILT** — `_izoShoot`/`_izoHit`/`_keenShoot`/`_keenHit`/`_keenFan`/`_ladderCapstone` beside the other heroes' synth pairs, played from the ladder branch rather than from the generic hit call site (both heroes' `hitProjectileSound()` is silent), and the borrowed mp3s dropped from both constructors. **§8's hero art BUILT 2026-08-25** — `Ization.png` / `KeenArrow.png` in both hero slots of each constructor (no attack frame yet), with `heroScale` and `projectileStartPositionX` re-derived from the new files. **Projectile spawn points FIXED 2026-08-27** — a `projectileAnchor` property on `Hero` (default `null`) plus a single `Hero.projectileSpawn()` that the two shoot handlers and `Projectile`'s `onload` all call, and an anchor on each ladder hero; un-anchored heroes keep their exact previous arithmetic. **Still to do (M4):** nothing but a second (attack) frame per hero |
 | `index.css` | **BUILT** — `.word-ladder`, the `data-rung-strip` `::after`, `.ladder-capstone`, and §2.5's `.shelf-fan` / `.shelf-fan-row` / `.shelf-child` / `.shelf-fan-caption` / `.shelf-fan-lines` (with the reduced-motion case that clears `stroke-dashoffset` rather than only killing the animation, or the lines would stay invisible), plus `.modal--body > .char-modal` for the How-to-Play copy. **§6 BUILT** — the placeholder `.ladder-move` is gone, replaced by `.ladder-face` / `.ladder-ghost` (the two boxes a swap is built from; the keyframes themselves are WAAPI, in `index.js`), `.ladder-aperture` (the fan-open flicker) and `.shelf-child-picked` (the clone that flies into the word). `.ladder-capstone` stayed but went from `text-shadow` to `drop-shadow`, which stops it blanking the word's black outline for the length of the flare |
 | `CLAUDE.md` | the Punctuators row flips to **BUILT** per milestone — done for M1–M3 + M12, still to do for M4 |
 
@@ -740,8 +741,8 @@ was the bulk of M4's work, and it is in: `shelfFor` in `ladderFunc.js`, the fan 
 (`openShelfFan`/`closeShelfFan`/`pickRung`/`landOnRung`), `.shelf-fan` in `index.css`. The typed-answer
 hard mode stayed out, in §12 (see §2.5.4).
 
-**The How-to-Play copy — BUILT 2026-08-23.** A `ladder` entry in `updateCharacterModal`'s `templates`,
-following Betar's pattern (lead → worked example → tips), shown on the existing **How to Play** button,
+**The How-to-Play copy — BUILT 2026-08-23.** A `ladder` card following Betar's pattern (lead → worked
+example → tips), shown on the existing **How to Play** button,
 which stays on screen through a round. It leads with the one rule the fan made unguessable — *Keen
 Arrow doesn't move the word* — and then glosses only things already on screen: the `▾` branch marker,
 §2.4's rung strip, the `+N more` fog count and why replaying changes the row, the clank and the route
@@ -752,6 +753,13 @@ out of it, the capstone, and the 🌳 map. Two things came with it:
   the overlay. Fixed for both modes; `.modal--body > .char-modal` drops the now-doubled padding.
 - The `modal` identifier the function used was never declared — it resolved through the DOM's
   named-access-on-`window` for `id="modal"`. Now an explicit `getElementById`.
+
+**Relocated 2026-08-28.** All twelve dropdown modes have a card now, so the copy left
+`updateCharacterModal`'s inline `templates` object for its own module **`modeHelp.js`**, and the swap
+fires on **dropdown selection** rather than at Pow!. Two consequences for this card: its `<h2>` is gone
+(the mode's name is written into the modal *header* instead), and the shared footer — hint button,
+Switch Character, the win — is appended to it automatically. Details in
+[`punctuators.md`](punctuators.md).
 
 **§6's animations — BUILT 2026-08-23.** The camera pull-back and the lens snap, the picked child
 flying out of the row into the word, and the fan-open/capstone glows that replaced the shared
@@ -1054,7 +1062,7 @@ where the shown word is the clue. **2of12.txt cannot fix it** (measured: it admi
 | `ladderFunc.js` | **BUILT** — `shelfFor` gained an optional **`pin`** (§11.6). Free play passes none |
 | `utils/utils.js` | **BUILT** — `case "ladderPuzzle":` in `addSpansAndIdsForWordPlay` (a no-op: `wrapPhrase` needs the whole puzzle, not a bare string, so it runs in `index.js` first, as Word Race's field does); `protectedArticles` + `spoonerism` suppressed via the shared `ladderMode` flag (renamed from `preMarked` on 2026-08-25, when free play joined it — free play is *not* pre-marked, it just wants the same two heroes gone) |
 | `punctuators.html` | **BUILT** — `<option value="ladderPuzzle" data-dev>Restore the Phrase</option>`, dev-gated exactly as Word Race is (§12.8). The puzzle card that replaces the text box is M8 |
-| `index.js` | **M6 BUILT** — the `ladderPuzzle` branch in the `removePuncButton` handler, `NO_SENTENCE_MODES` (the box is hidden for this mode and Word Race alike), the run state + `phrasePinFor`/`notePhraseLanding`/`lockPhraseWord`/`phraseWin`/`fixArticleBefore`, `_phraseLock`, and the two hooks in the free-play path (`openShelfFan`'s pin, `landOnRung`'s scorer). **Still M7/M8:** win card, daily + stats + share, `PRACTICE_ENABLED`, the late hint, give-up, `updateCharacterModal("ladderPuzzle")`. **Plus one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's puzzle to open the map")` on daily start, `ladderMapUnlock()` on finish — M7, since there is no daily to lock against yet. Practice never locks.** |
+| `index.js` | **M6 BUILT** — the `ladderPuzzle` branch in the `removePuncButton` handler, `NO_SENTENCE_MODES` (the box is hidden for this mode and Word Race alike), the run state + `phrasePinFor`/`notePhraseLanding`/`lockPhraseWord`/`phraseWin`/`fixArticleBefore`, `_phraseLock`, and the two hooks in the free-play path (`openShelfFan`'s pin, `landOnRung`'s scorer). **Still M7/M8:** win card, daily + stats + share, `PRACTICE_ENABLED`, the late hint, give-up. *(The How-to-Play card is BUILT 2026-08-28 — `ladderPuzzle` in `modeHelp.js`, swapped in when the mode is picked.)* **Plus one line each way for the map (§13.8/§13.13.3): `ladderMapLock("finish today's puzzle to open the map")` on daily start, `ladderMapUnlock()` on finish — M7, since there is no daily to lock against yet. Practice never locks.** |
 | `index.css` | **BUILT** — `.phrase-word` (the dotted mark), `.ladder-locked` + its ✔ flare, `#output.phrase-mode`/`.phrase-solved`. The puzzle card and the win/share card are M8 |
 | `CLAUDE.md` | the Punctuators row per milestone |
 
@@ -1083,8 +1091,9 @@ the live-hierarchy distance agrees with the authored chain distance on every fix
 
 **M7 — the daily.** Selection, the lock, stats/streak, the share string, the practice flag.
 
-**M8 — the feel.** Win card with the saying + origin, the ✔ lock flare, the late hint, give-up, the
-How-to-Play modal copy (`updateCharacterModal`, `index.js:458`).
+**M8 — the feel.** Win card with the saying + origin, the ✔ lock flare, the late hint, give-up.
+*(The How-to-Play copy came early — BUILT 2026-08-28 as the `ladderPuzzle` card in `modeHelp.js`, when
+every dropdown mode got one.)*
 
 ### 11.10 Open questions
 
@@ -1485,9 +1494,10 @@ pair by index and beats both. **Still to do:** the lock, stats/streak, share, gi
 chrome, and the map's `ladderMapLock`/`ladderMapUnlock` pair. Three findings that changed the spec —
 the 2of12 pool, Sunday's harder band, and the source-file decision — are recorded in §12.3.
 
-**M11 — the feel.** Race card, target banner, the travel animation reusing M4's, easy mode's decoy field,
-the How-to-Play copy — **and the post-game route overlay** (§13.8, moved here from M14 on 2026-08-23: the
-route is this mode's artifact, so it cannot be built before the mode is).
+**M11 — the feel.** Race card, target banner, the travel animation reusing M4's, easy mode's decoy field
+— **and the post-game route overlay** (§13.8, moved here from M14 on 2026-08-23: the
+route is this mode's artifact, so it cannot be built before the mode is). *(The How-to-Play copy came
+early — BUILT 2026-08-28 as the `wordRace` card in `modeHelp.js`, when every dropdown mode got one.)*
 
 **Deep Dive is unscheduled** (§12.4) — it needs M9 only, so it can be prototyped any time after it.
 

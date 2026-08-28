@@ -690,9 +690,13 @@ footer > div {
     .modal__title {
         font-size: 1.25rem;
         font-weight: bold;
+        /* The title is now the mode's name, so it varies in length — keep it off the × and let the
+           long ones wrap rather than squeeze the button. */
+        padding-right: 10px;
     }
 
     .modal__close-button {
+        flex: 0 0 auto;
         cursor: pointer;
         border: none;
         outline: none;
@@ -896,11 +900,6 @@ span[data-hint] {
   /* updateCharacterModal writes into .modal--body, which brings its own padding. */
   .modal--body > .char-modal { padding: 0; }
 
-  .char-modal h2 {
-    margin: 0 0 8px;
-    font-size: 1.1rem;
-  }
-
   .char-modal .lead {
     margin: 0 0 12px;
     opacity: 0.9;
@@ -934,6 +933,21 @@ span[data-hint] {
   }
 
   .char-modal .tips li { margin: 4px 0; }
+
+  /* The rules that belong to the engine rather than to any one mode (hint button, Switch Character,
+     the win). Dimmed and ruled off so it reads as a footer, not as another tip. */
+  .char-modal .shared-rules {
+    margin: 14px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+    font-size: 0.9em;
+    opacity: 0.75;
+  }
+
+  /* The front-door punctuation card is the original prose, not a lead/example/tips card — it only
+     borrows .char-modal for the padding rule above. */
+  .char-modal--plain ul { padding-left: 18px; }
+  .char-modal--plain li { margin: 4px 0; }
 
 #typing-game-link { display: none;}
 

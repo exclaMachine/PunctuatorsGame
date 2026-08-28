@@ -181,6 +181,43 @@ of it followed the text without a change.
 
 ---
 
+## The How-to-Play modal is per-mode (`modeHelp.js`)
+
+**BUILT 2026-08-28.** The single **How to Play** button opens one modal (`#modal` in
+`punctuators.html`), and until now it held one fixed two-player *shoot the punctuation back in* blurb —
+the right text for exactly one of the twelve dropdown modes. `updateCharacterModal()` existed but was
+called only at Pow! and only for `alphabetNeighbors` and `ladder`, so a player who picked Homophones was
+told to shoot punctuation.
+
+Every mode now has a card. The copy is **data, not logic**, so it lives in its own module
+`modeHelp.js` (`MODE_HELP`, keyed by the `<option>` value, plus `modeHelpFor(mode)`); `index.js` keeps
+only the wiring. Four things about it were decisions:
+
+- **It swaps on selection, not at Pow!** — the dropdown's `change` handler calls
+  `updateCharacterModal(mode)`, so the rules are readable while you are still choosing what to play.
+  That handler covers both the native `<select>` and the custom dropdown (which dispatches a `change`
+  after setting `sel.value`). The Pow! path still calls it unconditionally as a backstop, and there is
+  one call at load for the case where a browser restores a non-default selection on reload.
+- **The mode's name goes in the modal *header*** (`.modal__title`), which is why no card carries an
+  `<h2>` of its own — the two cards that predate this (Betar, the ladder) had theirs removed rather
+  than print the name twice.
+- **A shared footer** (`.shared-rules`) is appended to every card except the punctuation one: the hint
+  button, Switch Character, and the win. Those rules belong to the engine rather than to any one mode,
+  and before this they lived *only* in the punctuation blurb — so replacing that blurb would have lost
+  them.
+- **The punctuation card keeps its original text verbatim** and is the fallback for an unknown mode. It
+  takes no footer, because its own list already says all three things.
+
+Still writing into `.modal--body`, never the whole `#modal` — the header carries the `×`, and replacing
+it leaves the modal closable only by clicking the overlay.
+
+Examples in the cards are **real**: each pair is one the mode's own data file actually contains
+(`bop`→`dog` from `AmbigramFunc.js`, `abut`→`about` from `oneMoreCharacterWordsWithSpan.js`, `ADD`→`ROD`
+from `roundedLetterPairs`, `zookeeper`→`zoo keeper`, `aback`→`back`, …). If a data file is regenerated
+and an example word disappears from it, the card is stale.
+
+---
+
 ## Shared-engine footguns
 
 Both were live bugs on 2026-08-23, both fail **silently**, and both are easy to reintroduce.

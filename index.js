@@ -14,6 +14,9 @@ import { shakeAndBorderizeArticle } from "./articleFunc.js";
 import { hasAmbigrams } from "./AmbigramFunc.js";
 import { hasAnagrams } from "./anagrams.js";
 import { hasHomophones } from "./HomophonesFuncs.js";
+// The How-to-Play card for the mode you have picked (one per <option>) — swapped in on selection,
+// not at Pow!, so the rules are readable while you are still choosing what to play.
+import { modeHelpFor } from "./modeHelp.js";
 // The Tree of Kinds — the ladder progress map (docs/punctuators-ladder.md §13). Only the wiring is
 // imported here; ladderPOJO.js (337 KB) is fetched on demand, shared with the mode below.
 // The ladder collision branch calls ladderMapVisit() on every rung it lands on.
@@ -1111,6 +1114,9 @@ const NO_SENTENCE_MODES = new Set(["wordRace", "ladderPuzzle"]);
 wordPlayOptions.addEventListener("change", () => {
   if (raceActive() || phraseActive()) return; // mid-run the dropdown is hidden; nothing to swap
   const mode = wordPlayOptions.value;
+  // The card for the mode you just picked, before Pow! — an empty modal saying "shoot the
+  // punctuation back in" is the wrong instruction for eleven of the twelve modes.
+  updateCharacterModal(mode);
   initialTypedSentence.classList.toggle("go-away", NO_SENTENCE_MODES.has(mode));
   errorMessage.innerText = ""; // a leftover "Field cannot be blank" is about the old mode
   // Re-roll on every selection: picking the mode again is the one gesture that plainly means
@@ -1577,14 +1583,10 @@ removePuncButton.addEventListener("click", async () => {
   const selectWrapper = wordPlayOptions.closest(".custom-select-wrapper");
   if (selectWrapper) selectWrapper.classList.add("go-away");
 
-  if (dropDownSelection === "alphabetNeighbors") {
-    updateCharacterModal("alphabetNeighbors");
-  } else if (dropDownSelection === "ladder") {
-    updateCharacterModal("ladder");
-  }
-  // else if (dropDownSelection === "rounded") {
-  //   updateCharacterModal("rounded");
-  // }
+  // Every mode has a card now (modeHelp.js). The dropdown's change handler has normally already
+  // swapped it in; this covers the case where it never fired — a browser restoring the selection on
+  // reload, or a mode set some other way.
+  updateCharacterModal(dropDownSelection);
 
   setClassName("grid-container", characterControls);
 
@@ -1604,86 +1606,19 @@ initialTypedSentence.addEventListener("keydown", (event) => {
 
 //const modal = document.querySelector(button.dataset.modalTarget);
 
+/* Swap the How-to-Play modal to the card for `selection` (a dropdown <option> value). The copy for
+   all twelve modes lives in modeHelp.js; here is only the wiring.
+
+   Two things to keep: the mode's name goes in the HEADER, so no card carries an <h2> of its own and
+   nothing is printed twice — and the body is written into .modal--body, NOT the whole #modal, which
+   would eat the header and its × (this modal is otherwise closable only by clicking the overlay). */
 function updateCharacterModal(selection) {
-  const templates = {
-    alphabetNeighbors: `
-    <div class="char-modal">
-      <h2>Betar — Alphabet Slots</h2>
-      <p class="lead">
-        An alphabet neighbor is the letter directly before or after a letter in the alphabet
-        (with wrap-around: <code>a</code> ↔ <code>z</code>). Betar spins one letter to a neighbor
-        to form a real word.
-      </p>
-
-      <div class="example">
-        <div>Start</div><code>timer</code>
-        <div>Hit #1</div><code>tiler</code><small>(m → l)</small>
-      </div>
-
-      <ul class="tips">
-        <li>Only one letter changes per hit.</li>
-        <li>Neighbors wrap: <code>a</code> ↔ <code>z</code>.</li>
-        <li>Words alternate: original → neighbor → original → next neighbor…</li>
-      </ul>
-    </div>
-  `,
-
-    // docs/punctuators-ladder.md §9 (M4). The load-bearing sentence is the first tip: since §2.5's
-    // fan, shooting a word no longer moves it, which is the one rule a player cannot infer from
-    // watching. Everything else here is a gloss on something already on screen — the rung strip, the
-    // ▾, the fog count, the clank, the capstone.
-    ladder: `
-    <div class="char-modal">
-      <h2>General &amp; Specific — General Ization &amp; Keen Arrow</h2>
-      <p class="lead">
-        Every naming word sits somewhere on a <strong>kind-of ladder</strong>: a <code>poodle</code>
-        is a kind of <code>dog</code>, a dog is a kind of <code>mammal</code>, a mammal is a kind of
-        <code>animal</code>. These two heroes move a word along that ladder, and
-        <strong>Switch Character</strong> is what picks the direction.
-      </p>
-
-      <div class="example">
-        <div>General</div>
-        <div><code>dog</code> → <code>mammal</code><small>one shot, one rung broader</small></div>
-        <div>Keen Arrow</div>
-        <div><code>hound▾</code> <code>terrier▾</code> <code>corgi</code> …<small>fans out the kinds of dog</small></div>
-        <div>Shoot one</div>
-        <div><code>dog</code> → <code>terrier</code><small>one rung narrower</small></div>
-      </div>
-
-      <ul class="tips">
-        <li><strong>Keen Arrow doesn't move the word.</strong> Hitting it fans the narrower kinds out
-          underneath — walk under the one you want and shoot <em>it</em>. A <code>▾</code> means that
-          kind has kinds of its own, so you can keep going down.</li>
-        <li>The little strip under a word is the ladder itself: <code>▲</code> a rung broader,
-          <code>●</code> you are here, <code>▼</code> a level of narrower kinds still below.</li>
-        <li><code>+25 more</code> means the shelf is wider than the row. Play the word again and
-          different kinds come up — that's how you work through a big family.</li>
-        <li>A word with nothing narrower <strong>clanks</strong>. Broaden it with General Ization and
-          narrow again: a word's neighbours are the other kinds on its parent's row.</li>
-        <li>At the top of the ladder the word <strong>flares and stays</strong>.
-          <code>animal</code> is the answer, not a miss.</li>
-        <li><code>7/33 found</code> is your shelf: how many of that word's kinds you have ever landed
-          on. Fill a quarter, a half, or all of it and it says so — and the shelf turns gold on the
-          <strong>🌳 Tree of Kinds</strong>, where every word you land on lights up. The map explains
-          itself when you open it; press <code>?</code> in there to read it again.</li>
-      </ul>
-    </div>
-  `,
-  };
-
-  // Write into the body, not the whole modal: the header carries the × close button, and replacing
-  // it left the modal closable only by clicking the overlay.
   const box = document.getElementById("modal");
   if (!box) return;
-  (box.querySelector(".modal--body") ?? box).innerHTML =
-    templates[selection] ??
-    `
-  <div class="char-modal">
-    <h2>Character Info</h2>
-    <p class="lead">Details for this character will appear here.</p>
-  </div>
-`;
+  const help = modeHelpFor(selection);
+  const title = box.querySelector(".modal__title");
+  if (title) title.textContent = help.title;
+  (box.querySelector(".modal--body") ?? box).innerHTML = help.body;
 }
 
 openModalButtons.forEach((button) => {
@@ -1724,6 +1659,10 @@ let closeModal = (modal) => {
   modal.classList.remove("active");
   overlay.classList.remove("active");
 };
+
+// The modal ships with the punctuation card in punctuators.html, which matches the dropdown's
+// default — but a browser can restore a different selection on reload, so say it out loud.
+updateCharacterModal(wordPlayOptions.value);
 
 // Wires the 🌳 button and the map's own pan/zoom/keys. Cheap — it touches no word data until the
 // panel is actually opened. (M14 adds the daily-run guard that hides the button mid-puzzle, §13.8.)
