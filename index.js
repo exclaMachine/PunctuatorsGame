@@ -2182,6 +2182,11 @@ class Hero {
     this.projectileSoundVolume = projectileSoundVolume;
     this.secondHeroImage = secondHeroImage;
     this.projectileHitSound = projectileHitSound;
+    /* Where a shot leaves this hero, as an offset from the TOP-LEFT OF ITS IMAGE FRAME, or null to
+       keep the historical behaviour (see projectileSpawn below). Only a hero whose weapon is not at
+       the top of its frame needs one — which is any hero drawn with air above its head, since the
+       frame is bottom-anchored by restingY and the spare pixels all pile up at the top. */
+    this.projectileAnchor = null;
 
     this.sfx = {
       shoot: this.projectileShootSound
@@ -2230,6 +2235,27 @@ class Hero {
         };
       };
     }
+  }
+
+  /* The single source of truth for where a projectile is born.
+     Default = exactly what the two shoot handlers did inline for years: x on the frame's midline
+     (see the projectileStartPositionX note above GeneralIzation for why that expression and
+     Projectile's own onload only agree there), y at the TOP OF THE IMAGE FRAME.
+     That default is a lie for any hero whose art leaves empty space above its head: KeenArrow.png
+     is 800x1045 but the figure only occupies (232,382)-(674,1045), so the frame top sits ~172px
+     above her head and her arrow was spawning from mid-air. projectileAnchor overrides both axes
+     with a straight offset instead, which is the only way to put a shot on the drawn weapon. */
+  projectileSpawn() {
+    if (this.projectileAnchor) {
+      return {
+        x: this.position.x + this.projectileAnchor.x,
+        y: this.position.y + this.projectileAnchor.y,
+      };
+    }
+    return {
+      x: this.position.x + this.width - this.projectileStartPositionX,
+      y: this.position.y,
+    };
   }
 
   shootProjectileSound() {
@@ -2411,12 +2437,18 @@ class Betar extends Hero {
      so a shared scale deliberately draws Keen the smaller of the pair: ~359×394 against ~199×298.
      Both figures are bottom-anchored in their frame, which is what restingY's
      `canvas.height - height + 20` assumes.
-   - projectileStartPositionX MUST be half the drawn width. The shoot handlers spawn a projectile at
-     `position.x + width - projectileStartPositionX` while the Projectile's own onload rewrites it to
-     `position.x + projectileStartPositionX`; those two agree at, and only at, the midpoint, so any
-     other value makes the shot jump sideways the moment the image loads. It costs nothing here
-     because both figures are centred on the frame's midline anyway — General by his bbox, Keen by
-     his crossbow (his bbox leans right, but the bow the bolt leaves from does not). */
+   - projectileAnchor, not projectileStartPositionX, is what places their shots (2026-08-27). The
+     default spawn is the top-left of the IMAGE FRAME, and both frames are bottom-anchored with all
+     their spare pixels above the figure's head — 382 source px of it for Keen — so her arrow was
+     launching from empty sky a fifth of the canvas above the crossbow. Each anchor is measured off
+     the art's own alpha and has to be re-measured if the art changes; both are one line, in the
+     constructors below. projectileStartPositionX (180) is now inert for these two, kept only
+     because the constructor takes it positionally.
+     The rule it used to carry still binds every OTHER hero: without an anchor the shoot handlers
+     spawn at `position.x + width - projectileStartPositionX` while Projectile's onload rewrites to
+     `position.x + projectileStartPositionX`, and those agree at, and only at, half the drawn width.
+     Anchoring makes the two sites compute the same point by construction, which is what frees
+     General's sword to fly from his raised blade off to the right rather than from his midline. */
 /* General Ization's projectile: a BROADsword, because the joke is already in the name — the broad
    blade for the hero who broadens (§8).
 
@@ -2533,6 +2565,10 @@ class GeneralIzation extends Hero {
     );
     this.targetId = LADDER_ID;
     this.ladderDirection = "up";
+    /* The broadsword leaves the blade he is already holding (see the anchor note above this class).
+       Ization.png's sword tip is at source (704, 170); x0.45 that is (317, 77) inside the drawn
+       frame, and the sprite is 27px wide at its 0.2 scale, so half of that comes back off the x. */
+    this.projectileAnchor = { x: 303, y: 76 };
   }
   shootProjectileSound() {
     _izoShoot();
@@ -2562,6 +2598,11 @@ class KeenArrow extends Hero {
     );
     this.targetId = LADDER_ID;
     this.ladderDirection = "down";
+    /* The bolt leaves the crossbow, not the top of the frame — this is the whole reason
+       projectileAnchor exists. KeenArrow.png's loaded bolt tips out at source (393, 470); x0.45
+       that is (177, 212) inside the drawn frame, less half the arrow's 14px drawn width. Without
+       it the shot started 211px higher, in the empty air the bottom-anchored frame leaves overhead. */
+    this.projectileAnchor = { x: 170, y: 211 };
   }
   shootProjectileSound() {
     _keenShoot();
@@ -3015,10 +3056,16 @@ class Projectile {
       this.projImage = projImage;
       this.width = projImage.width * scale;
       this.height = projImage.height * scale;
-      this.position = {
-        x: player.position.x + player.projectileStartPositionX,
-        y: player.position.y,
-      };
+      /* Re-placed on load because the true drawn size is only known now. An anchored hero gets the
+         same answer here as the shoot handler did, so nothing moves; an un-anchored one keeps the
+         historical `+ projectileStartPositionX`, which is why that number has to be half the drawn
+         width for the two not to disagree. */
+      this.position = player.projectileAnchor
+        ? player.projectileSpawn()
+        : {
+            x: player.position.x + player.projectileStartPositionX,
+            y: player.position.y,
+          };
     };
   }
 
@@ -3756,10 +3803,7 @@ shootButton.addEventListener("pointerdown", (e) => {
   if (player === comma || player === hashtag) {
     projectiles.push(
       new CommaTongue({
-        position: {
-          x: player.position.x + player.width - player.projectileStartPositionX,
-          y: player.position.y,
-        },
+        position: player.projectileSpawn(),
         velocity: {
           x: 0,
           y: -10,
@@ -3769,10 +3813,7 @@ shootButton.addEventListener("pointerdown", (e) => {
   } else if (player.characterColor !== undefined) {
     projectiles.push(
       new Projectile({
-        position: {
-          x: player.position.x + player.width - player.projectileStartPositionX,
-          y: player.position.y,
-        },
+        position: player.projectileSpawn(),
         velocity: {
           x: 0,
           y: -10,
@@ -3974,13 +4015,7 @@ addEventListener("keydown", (event) => {
       if (player === comma || player === hashtag) {
         projectiles.push(
           new CommaTongue({
-            position: {
-              x:
-                player.position.x +
-                player.width -
-                player.projectileStartPositionX,
-              y: player.position.y,
-            },
+            position: player.projectileSpawn(),
             velocity: {
               x: 0,
               y: -10,
@@ -3990,13 +4025,7 @@ addEventListener("keydown", (event) => {
       } else if (player.characterColor !== undefined) {
         projectiles.push(
           new Projectile({
-            position: {
-              x:
-                player.position.x +
-                player.width -
-                player.projectileStartPositionX,
-              y: player.position.y,
-            },
+            position: player.projectileSpawn(),
             velocity: {
               x: 0,
               y: -10,

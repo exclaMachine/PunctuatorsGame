@@ -29,8 +29,27 @@ The new placement is clamped by **`clampHeroX()`**, which repeats the bounds the
 may hang half its width off either edge), so a wide hero inheriting a narrow one's edge position can't land
 somewhere the player could never have walked to.
 
-`restingY()`'s `+ 20` and the per-hero `projectileStartPositionX` are the two other places a hero's size is
-baked into placement — worth remembering if this area is touched again.
+`restingY()`'s `+ 20`, the per-hero `projectileStartPositionX` and the per-hero `projectileAnchor` are the
+other places a hero's size is baked into placement — worth remembering if this area is touched again.
+
+---
+
+## Where a shot is born (`Hero.projectileSpawn`)
+
+**FIXED 2026-08-27.** A projectile used to be positioned inline at four call sites (both shoot handlers,
+twice each) plus a fifth rewrite inside `Projectile`'s `onload`, all spelling out
+`player.position.y` — **the top of the hero's image frame**, which is only the hero's weapon if the art
+fills its frame. Since `restingY()` bottom-anchors that frame, any empty pixels an artist leaves above the
+figure become dead space the shot launches from: Keen Arrow's figure occupies `(232, 382)–(674, 1045)` of
+an 800 × 1045 file, so her arrow started 211 px above her crossbow.
+
+All five sites now call **`Hero.projectileSpawn()`**. A hero may set **`projectileAnchor = {x, y}`** — an
+offset from the top-left of its own frame, measured off the art — and the spawn point becomes that;
+otherwise the method returns exactly what each site computed before, **including the long-standing
+disagreement between them** (`+ width - projectileStartPositionX` in the handlers vs
+`+ projectileStartPositionX` in `onload`, which agree only at half the drawn width). That is deliberate:
+un-anchored heroes had to stay bit-for-bit identical, and only the two ladder heroes are anchored so far.
+Anchoring a hero also retires that footgun for it, since both branches then compute the same point.
 
 ---
 
