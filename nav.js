@@ -35,12 +35,13 @@
       children: [
         // Book 1 (Question Markswoman) is DISABLED while the book is enrolled in
         // Amazon KDP Select, which requires digital exclusivity. The Dropbox link
-        // below must also be REVOKED at Dropbox - hiding the menu entry does not
-        // take the file down. To restore after the term ends, re-share the PDF and
-        // paste the NEW url (Dropbox issues a fresh token; the old one is dead).
+        // old Dropbox link must also be REVOKED at Dropbox - hiding the menu entry
+        // does not take the file down. The url has been stripped below since a
+        // revoked link is dead for good; to restore after the term ends, re-share
+        // the PDF and paste the freshly issued url in its place.
         // {
         //   label: "Question Markswoman (Book 1)",
-        //   href: "https://www.dropbox.com/scl/fo/0kx2ztlbq95ioxnfifew9/AGYTaJ0ALODy-SidG3yS6Y0/rescaled%20Punctuators%20Question%20Quest%20copy%202.pdf?rlkey=hje8gtuguop92sjyqtrj7yu9h&st=82b298t2&dl=0",
+        //   href: "",
         // },
         {
           label: "Exclamachine (Book 2)",
