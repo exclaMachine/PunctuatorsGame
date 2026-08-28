@@ -3042,6 +3042,10 @@ class Projectile {
   constructor({ position, velocity }) {
     this.position = position;
     this.velocity = velocity;
+    /* Who fired it. A shot outlives the hero's turn on stage now (it finishes its flight after a
+       Switch Character), so "is a shot of MINE in the air?" — the question the attack pose and
+       Semicolonel's vanishing act both ask — can only be answered by the projectile itself. */
+    this.owner = player;
     this.width = 3;
     this.height = player.projectileLength;
     this.projectileImage = player.projectileImage;
@@ -3093,6 +3097,7 @@ class CommaTongue {
   constructor({ position, velocity }) {
     this.position = position;
     this.velocity = velocity;
+    this.owner = player;
     this.width = 5;
     this.height = player.projectileLength;
     this.startYPosition = -40;
@@ -3194,6 +3199,33 @@ const projectiles = [];
 
 const PROJECTILE_HIT_MARGIN_OF_ERROR = 5;
 
+/* Whether a shot was in flight on the previous frame — the only thing that decides which of a
+   hero's two poses gets drawn. Read at the top of animate(), written at the bottom. */
+let heroWasFiring = false;
+
+/* Has this shot left the top of the screen? A CommaTongue grows out of the hero instead of
+   travelling, so it is done when its tip clears the edge; everything else when its whole body has. */
+function projectileIsGone(projectile) {
+  return projectile instanceof CommaTongue
+    ? projectile.position.y <= 0
+    : projectile.position.y + projectile.height <= 0;
+}
+
+/* Take a shot out of play. Removal is BY IDENTITY and deferred by a frame — never
+   `projectiles.splice(index, 1)` on the index the collision walk happened to be holding, which goes
+   stale the moment anything else retires in the same frame and then removes an unrelated shot. The
+   `spent` flag is what the flight pass below reads, so a shot that has already landed is not also
+   flown on; the setTimeout is the original trick that stops the projectile visibly blinking out at
+   the instant it lands. */
+function retireProjectile(projectile) {
+  if (projectile.spent) return;
+  projectile.spent = true;
+  setTimeout(() => {
+    const at = projectiles.indexOf(projectile);
+    if (at !== -1) projectiles.splice(at, 1);
+  }, 0);
+}
+
 function animate() {
   //this creates an animation loop
 
@@ -3206,9 +3238,38 @@ function animate() {
   // with it, and every mode goes blank for the rest of the session with one console line to show
   // for it — which is precisely how the 2026-08-21 waitForElement regression presented.
   if (!player) return;
-  player.update();
+  /* One hero draw per frame, chosen here rather than inside the projectile loop. The old code asked
+     per-projectile and repainted the canvas white each time, which erased every projectile already
+     drawn in that frame — so firing again rubbed out the shot still in the air, and only the newest
+     one was ever visible. Full Stop never showed it only because it passes no secondHeroImage and
+     so skipped the repaint entirely.
 
-  projectiles.forEach((projectile, index) => {
+     Three cases, not two. `secondHeroImage` is overloaded: usually it is a second pose, but for the
+     heroes who ARE their own projectile — Semicolonel and Apostrophantom — it is the string
+     "white", which never loads as an image (so `image2` stays undefined and `update2()` is a
+     no-op). Their whole effect was the wipe with nothing redrawn over it: the hero leaves the
+     bottom of the screen because he is the thing flying at the word. So while one of their shots is
+     up, the right answer is to draw NO hero at all — which the wipe at the top of the frame already
+     did for us.
+
+     `heroWasFiring` is last frame's answer (the projectile pass below sets it), which keeps the
+     pose tied to a shot that is actually being flown rather than to `projectiles.length` — a
+     projectile whose target span has gone (an id cleared by a solved ladder word, say) is never
+     flown and never spliced, and would otherwise strand the hero off-screen forever. One frame of
+     lag, invisible at 60fps. */
+  if (!heroWasFiring) {
+    player.update();
+  } else if (player.secondHeroImage === "white") {
+    // He launched himself — nothing to draw at the bottom until the shot lands or leaves.
+  } else if (player.image2) {
+    player.update2();
+  } else {
+    player.update();
+  }
+  let firingThisFrame = false;
+  for (const projectile of projectiles) projectile.flownThisFrame = false;
+
+  projectiles.forEach((projectile) => {
     if (nodeArr) {
       nodeArr.forEach((punctuationSymbol) => {
         // A node detached from the document reports an all-zero rect, which the tests below read as
@@ -3219,8 +3280,10 @@ function animate() {
         // One ladder action per shot (§2.5). Picking a word out of the fan closes that row and opens
         // the next one inside the same call, and forEach walks to the length it captured at the
         // start — so those fresh targets sit at indices it is still going to visit, in this very
-        // frame. Without the latch the shot would register twice and splice itself out of
-        // `projectiles` twice, taking an unrelated shot with it. Undefined in every other mode.
+        // frame, and without the latch the shot would register a second ladder action against one
+        // of them. (The retirement half of that old footgun is gone: retireProjectile is idempotent
+        // and removes by identity, so a double retire can no longer take an unrelated shot with it.)
+        // Undefined in every other mode.
         if (projectile.ladderDone) return;
         //tried to do this for left and right parenthesis, might need to come back to it
         // if (punctuationSymbol.className.includes(player.symbol)) {
@@ -3266,24 +3329,21 @@ function animate() {
                 //need to change the velocity of the y to +1. this could make the tongue retract. Maybe later
                 // console.log("proj", projectiles);
                 player.hitProjectileSound();
-                // projectiles[index].velocity.y = 1;
-                projectiles.splice(index, 1);
+                // projectile.velocity.y = 1;
+                retireProjectile(projectile);
                 punctuationSymbol.classList.remove("hidden-punc");
                 punctuationSymbol.style.color = `${player.characterColor}`;
                 punctuationSymbol.style.textShadow =
                   "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
               }, 0);
             } else if (projectile.position.y <= 0) {
-              setTimeout(() => {
-                // projectiles[index].velocity.y = 1;
-                projectiles.splice(index, 1);
-              }, 0);
+              retireProjectile(projectile);
             } else {
-              if (player.secondHeroImage) {
-                c.fillStyle = "white";
-                c.fillRect(0, 0, canvas.width, canvas.height);
-                player.update2();
+              // Just move it — the attack pose is decided once, at the top of the frame.
+              if (player.secondHeroImage && projectile.owner === player) {
+                firingThisFrame = true;
               }
+              projectile.flownThisFrame = true;
               projectile.update();
             }
           } else {
@@ -3678,7 +3738,7 @@ function animate() {
                 gameSfx.end.play();
               }
               setTimeout(() => {
-                projectiles.splice(index, 1);
+                retireProjectile(projectile);
                 player.hitProjectileSound();
 
                 if (player.symbol === asterisk.symbol) {
@@ -3719,16 +3779,13 @@ function animate() {
               }
               //Garbage collection for when the projectile goes off the screen. Settimeout prevents flashing of projectile
             } else if (projectile.position.y + projectile.height <= 0) {
-              setTimeout(() => {
-                projectiles.splice(index, 1);
-              }, 0);
+              retireProjectile(projectile);
             } else {
-              //hero disappears otherwise.
-              if (player.secondHeroImage) {
-                c.fillStyle = "white";
-                c.fillRect(0, 0, canvas.width, canvas.height);
-                player.update2();
+              // Just move it — the attack pose is decided once, at the top of the frame.
+              if (player.secondHeroImage && projectile.owner === player) {
+                firingThisFrame = true;
               }
+              projectile.flownThisFrame = true;
               projectile.update();
             }
           }
@@ -3736,6 +3793,24 @@ function animate() {
       });
     }
   });
+
+  /* Flight belongs to the shot, not to whoever is currently selected. Everything above runs for a
+     projectile only while a span matching the SELECTED hero is on screen, so switching characters
+     left the outgoing hero's shots frozen in the array — neither moved nor collected — and the next
+     switch resumed the whole backlog on one frame, which is what read as a crowd of Semicolonels
+     suddenly flying off. Anything the collision walk did not handle this frame finishes its flight
+     here and retires off the top of the screen. Deliberately does NOT set firingThisFrame: a stray
+     shot from a hero who has left the stage must not hold the current one in its attack pose. */
+  for (const projectile of projectiles) {
+    if (projectile.spent || projectile.flownThisFrame) continue;
+    if (projectileIsGone(projectile)) {
+      retireProjectile(projectile);
+      continue;
+    }
+    projectile.update();
+  }
+
+  heroWasFiring = firingThisFrame;
 }
 
 //mySong.play();

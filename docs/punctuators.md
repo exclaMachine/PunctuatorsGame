@@ -53,6 +53,88 @@ Anchoring a hero also retires that footgun for it, since both branches then comp
 
 ---
 
+## Projectiles in flight (`animate()`'s projectile pass)
+
+**FIXED 2026-08-28.** Three separate faults, one shared cause: the projectile loop was doing the hero's
+drawing and the array's bookkeeping as well as its own job.
+
+### A second shot erased the first
+
+Each in-flight projectile ran this, per frame, inside the collision walk:
+
+```js
+if (player.secondHeroImage) {
+  c.fillStyle = "white";
+  c.fillRect(0, 0, canvas.width, canvas.height);   // the WHOLE canvas
+  player.update2();
+}
+projectile.update();
+```
+
+With two shots up, the first drew itself and the second then blanked the canvas before drawing — so the
+earlier shot vanished while still travelling and still able to hit. **Full Stop was immune only because it
+passes no `secondHeroImage`**, which is why its laser was the one that always looked right; every hero with
+a second frame had the bug.
+
+The hero is now drawn **once per frame**, at the top of `animate()`, and the projectile branches only move
+projectiles. Which pose is drawn comes from **`heroWasFiring`**, written at the end of the previous frame —
+deliberately not `projectiles.length`, because a projectile whose target span has gone (an `id` cleared by a
+solved Restore-the-Phrase word, say) is never flown and never collected, and would pin the pose forever.
+
+### `secondHeroImage: "white"` is a sentinel, not an image
+
+Semicolonel and Apostrophantom pass the string `"white"`. It never loads (`image2.src = "white"` 404s), so
+`image2` stays undefined and `update2()` is a no-op — **their entire effect was the wipe with nothing
+redrawn over it.** They don't fire a projectile so much as fire *themselves*, so while their shot is up the
+correct hero drawing is **none at all**. The pose decision is three-way for that reason:
+
+| state | drawn |
+| ----- | ----- |
+| not firing | `player.update()` |
+| firing, `secondHeroImage === "white"` | nothing — he launched himself |
+| firing, real `image2` | `player.update2()` |
+
+The Hero constructor's `if (this.heroImage === "white")` branch tests the **wrong property** and is dead
+code; the sentinel it was meant to catch is on `secondHeroImage`. Left alone — the sentinel is handled in
+`animate()` now — but don't mistake that branch for the mechanism.
+
+### Retirement is by identity; flight is not the selected hero's business
+
+`projectiles.splice(index, 1)` on the index the collision walk was holding went stale as soon as anything
+else retired in the same frame, and then removed an unrelated shot. All four sites now call
+**`retireProjectile(projectile)`** — idempotent, `indexOf`-based, still deferred a frame (that `setTimeout`
+is what stops a shot blinking out at the instant it lands).
+
+And because everything in the collision walk is gated on `punctuationSymbol.id === player.targetId`, a shot
+was only moved *and only collected* while a span belonging to the **selected** hero was on screen. Switching
+characters therefore froze the outgoing hero's shots in the array, and the next switch resumed the whole
+backlog on a single frame — a crowd of Semicolonels suddenly flying off at once. A **flight pass** after the
+collision walk now finishes anything the walk didn't handle and retires it off the top of the screen.
+
+`projectile.owner` (set at construction) is what makes that safe: a shot outlives its hero's turn on stage
+now, so *"is one of my shots in the air?"* — the question the attack pose and Semicolonel's vanishing act
+both ask — can only be answered by the projectile. Without it a stray shot would hold whichever hero you
+switched to in its attack pose, or hide them.
+
+### KNOWN BUG, not fixed: a shot hits the *selected* hero's targets, not its owner's
+
+A projectile is hit-tested inside a loop gated on the **current** `player`, and the whole branch body reads
+`player.characterColor`, `player.symbol`, `player.hitProjectileSound()` and so on. So a Semicolonel shot
+still in the air when you press Switch Character will be tested against **Sergeant Colon's** spans, and can
+reveal a colon in Sarge's colour with Sarge's hit sound.
+
+This predates the 2026-08-28 work — it was simply invisible, because the old canvas wipe drew only the
+newest shot, so you never saw a stray one land. Letting shots finish their flight made it reachable in
+practice. Deliberately left unfixed 2026-08-28.
+
+The fix is not a one-liner, which is why it was deferred: `projectile.owner` already records who fired, but
+the gate and the *entire* collision body would have to read the owner instead of `player`, and every mode's
+branch inside that body (ladder, ambigram, homophone, anagram, Betar, article, asterisk…) assumes the two
+are the same hero. Doing it properly means threading the owner through the whole block, not swapping one
+comparison.
+
+---
+
 ## The sentence is centred on screen
 
 **BUILT 2026-08-25**, CSS only (`#output` in `index.css`), and it applies to **every** mode. `#output` is
