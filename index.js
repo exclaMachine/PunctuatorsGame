@@ -3045,10 +3045,11 @@ class Projectile {
     /* Who fired it. A shot outlives the hero's turn on stage now (it finishes its flight after a
        Switch Character), so "is a shot of MINE in the air?" — the question the attack pose and
        Semicolonel's vanishing act both ask — can only be answered by the projectile itself. */
-    this.owner = player;
+    const owner = player;
+    this.owner = owner;
     this.width = 3;
-    this.height = player.projectileLength;
-    this.projectileImage = player.projectileImage;
+    this.height = owner.projectileLength;
+    this.projectileImage = owner.projectileImage;
 
     const projImage = new Image();
 
@@ -3056,19 +3057,23 @@ class Projectile {
 
     projImage.onload = () => {
       //   const scale = 0.2;
-      const scale = player.projectileScale;
+      const scale = owner.projectileScale;
       this.projImage = projImage;
       this.width = projImage.width * scale;
       this.height = projImage.height * scale;
       /* Re-placed on load because the true drawn size is only known now. An anchored hero gets the
          same answer here as the shoot handler did, so nothing moves; an un-anchored one keeps the
          historical `+ projectileStartPositionX`, which is why that number has to be half the drawn
-         width for the two not to disagree. */
-      this.position = player.projectileAnchor
-        ? player.projectileSpawn()
+         width for the two not to disagree.
+
+         `owner`, never the global `player`: this callback is async, so on the first shot with an
+         uncached image it can land after a Switch Character — and reading `player` then re-placed
+         the shot at the INCOMING hero's muzzle, mid-flight. */
+      this.position = owner.projectileAnchor
+        ? owner.projectileSpawn()
         : {
-            x: player.position.x + player.projectileStartPositionX,
-            y: player.position.y,
+            x: owner.position.x + owner.projectileStartPositionX,
+            y: owner.position.y,
           };
     };
   }
@@ -3099,7 +3104,7 @@ class CommaTongue {
     this.velocity = velocity;
     this.owner = player;
     this.width = 5;
-    this.height = player.projectileLength;
+    this.height = this.owner.projectileLength;
     this.startYPosition = -40;
   }
 
@@ -3270,6 +3275,13 @@ function animate() {
   for (const projectile of projectiles) projectile.flownThisFrame = false;
 
   projectiles.forEach((projectile) => {
+    /* Every test and every effect below belongs to the hero that FIRED this shot, not to whoever
+       is selected right now. A shot outlives its hero's turn on stage (it finishes its flight
+       across a Switch Character), so reading the global `player` here meant a Semicolonel shot
+       still in the air when you switched was hit-tested against Sergeant Colon's spans and
+       revealed a colon in Sarge's colour with Sarge's sound. `owner` is set at construction; the
+       fallback is for anything that somehow predates it. */
+    const shooter = projectile.owner ?? player;
     if (nodeArr) {
       nodeArr.forEach((punctuationSymbol) => {
         // A node detached from the document reports an all-zero rect, which the tests below read as
@@ -3288,14 +3300,14 @@ function animate() {
         //tried to do this for left and right parenthesis, might need to come back to it
         // if (punctuationSymbol.className.includes(player.symbol)) {
         // targetId, not symbol — the ladder heroes share one span id (§4). Identical for everyone else.
-        if (punctuationSymbol.id === (player.targetId ?? player.symbol)) {
+        if (punctuationSymbol.id === (shooter.targetId ?? shooter.symbol)) {
           // for Comma Chameleon. TODO refactor because only difference is projectileLength and code for when I add tongue retract
           if (
-            player.symbol === comma.symbol ||
-            player.symbol === hashtag.symbol
+            shooter.symbol === comma.symbol ||
+            shooter.symbol === hashtag.symbol
           ) {
             if (
-              projectile.position.y - player.projectileLength <=
+              projectile.position.y - shooter.projectileLength <=
                 punctuationSymbol.getBoundingClientRect().y &&
               projectile.position.x + projectile.width >=
                 punctuationSymbol.getBoundingClientRect().left -
@@ -3320,7 +3332,7 @@ function animate() {
                   "--speech-bubble-triangle",
                   projectile.position.x,
                 );
-                root.style.setProperty("--color", player.characterColor);
+                root.style.setProperty("--color", shooter.characterColor);
                 ENDING_REACHED = true;
                 gameSfx.end.play();
               }
@@ -3328,11 +3340,11 @@ function animate() {
               setTimeout(() => {
                 //need to change the velocity of the y to +1. this could make the tongue retract. Maybe later
                 // console.log("proj", projectiles);
-                player.hitProjectileSound();
+                shooter.hitProjectileSound();
                 // projectile.velocity.y = 1;
                 retireProjectile(projectile);
                 punctuationSymbol.classList.remove("hidden-punc");
-                punctuationSymbol.style.color = `${player.characterColor}`;
+                punctuationSymbol.style.color = `${shooter.characterColor}`;
                 punctuationSymbol.style.textShadow =
                   "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
               }, 0);
@@ -3340,7 +3352,7 @@ function animate() {
               retireProjectile(projectile);
             } else {
               // Just move it — the attack pose is decided once, at the top of the frame.
-              if (player.secondHeroImage && projectile.owner === player) {
+              if (shooter === player && shooter.secondHeroImage) {
                 firingThisFrame = true;
               }
               projectile.flownThisFrame = true;
@@ -3537,17 +3549,17 @@ function animate() {
                 // fan's children share the id so this gate matches them unchanged (§2.5, note 3),
                 // and the split is on the attribute rather than on a second collision branch.
                 if (punctuationSymbol.dataset.ladderChild) {
-                  pickRung(punctuationSymbol, player, projectile);
+                  pickRung(punctuationSymbol, shooter, projectile);
                 } else {
-                  climbLadder(punctuationSymbol, player, projectile);
+                  climbLadder(punctuationSymbol, shooter, projectile);
                 }
               } else if (punctuationSymbol.id === RACE_UP_ID) {
                 // Word Race splits the two heroes across two ids instead of sharing one (§12.2), so
                 // the gate above has already decided which hero this is — General can only ever
                 // reach the rung above, Keen only the word you summoned.
-                raceShootUp(punctuationSymbol, player, projectile);
+                raceShootUp(punctuationSymbol, shooter, projectile);
               } else if (punctuationSymbol.id === RACE_DOWN_ID) {
-                raceShootDown(punctuationSymbol, player, projectile);
+                raceShootDown(punctuationSymbol, shooter, projectile);
               } else if (punctuationSymbol.id === spacel.symbol) {
                 if (punctuationSymbol.hasAttribute("data-splitwords")) {
                   const [firstWord, secondWord] =
@@ -3716,7 +3728,7 @@ function animate() {
 
                 _animateRoundabout(punctuationSymbol, currentWord, roundedWord);
               } else {
-                punctuationSymbol.style.color = `${player.characterColor}`;
+                punctuationSymbol.style.color = `${shooter.characterColor}`;
                 punctuationSymbol.style.textShadow =
                   "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
               }
@@ -3733,15 +3745,15 @@ function animate() {
                   "--speech-bubble-triangle",
                   projectile.position.x,
                 );
-                root.style.setProperty("--color", player.characterColor);
+                root.style.setProperty("--color", shooter.characterColor);
                 ENDING_REACHED = true;
                 gameSfx.end.play();
               }
               setTimeout(() => {
                 retireProjectile(projectile);
-                player.hitProjectileSound();
+                shooter.hitProjectileSound();
 
-                if (player.symbol === asterisk.symbol) {
+                if (shooter.symbol === asterisk.symbol) {
                   if (punctuationSymbol.previousSibling === null) return;
                   let words = punctuationSymbol.previousSibling.data.split(" ");
                   let capital =
@@ -3761,10 +3773,10 @@ function animate() {
                 punctuationSymbol.classList.remove("hidden-punc");
               }, 0);
 
-              if (player.symbol === anacontraction.symbol) {
+              if (shooter.symbol === anacontraction.symbol) {
                 shortenContraction(punctuationSymbol);
               }
-              if (player.symbol === article.symbol) {
+              if (shooter.symbol === article.symbol) {
                 const currentText = punctuationSymbol.textContent;
                 const alternateText =
                   punctuationSymbol.getAttribute("data-alternate");
@@ -3782,7 +3794,7 @@ function animate() {
               retireProjectile(projectile);
             } else {
               // Just move it — the attack pose is decided once, at the top of the frame.
-              if (player.secondHeroImage && projectile.owner === player) {
+              if (shooter === player && shooter.secondHeroImage) {
                 firingThisFrame = true;
               }
               projectile.flownThisFrame = true;
@@ -3925,12 +3937,11 @@ function switchToNextHero() {
   if (chosenHeroArray.length === 0) return;
   if (isSwitching) return;
 
-  //This code will make it so the tongue doesn't stay on the screen if comma chameleon is switched out. All other projectiles will stay though
-  if (
-    projectiles.length &&
-    projectiles[0]?.constructor?.name === "CommaTongue"
-  ) {
-    projectiles.length = 0;
+  // A tongue grows out of Comma Chameleon rather than travelling, so it has to go when he does —
+  // but only the tongues. This used to test projectiles[0] and then empty the whole array, which
+  // took every other hero's in-flight shot with it the moment a tongue happened to be first.
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    if (projectiles[i] instanceof CommaTongue) projectiles.splice(i, 1);
   }
 
   const current = player;

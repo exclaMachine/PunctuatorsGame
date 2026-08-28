@@ -105,7 +105,7 @@ else retired in the same frame, and then removed an unrelated shot. All four sit
 **`retireProjectile(projectile)`** — idempotent, `indexOf`-based, still deferred a frame (that `setTimeout`
 is what stops a shot blinking out at the instant it lands).
 
-And because everything in the collision walk is gated on `punctuationSymbol.id === player.targetId`, a shot
+And because everything in the collision walk is gated on the target id of a hero — `player`'s at the time, `shooter`'s since the fix below — a shot
 was only moved *and only collected* while a span belonging to the **selected** hero was on screen. Switching
 characters therefore froze the outgoing hero's shots in the array, and the next switch resumed the whole
 backlog on a single frame — a crowd of Semicolonels suddenly flying off at once. A **flight pass** after the
@@ -116,22 +116,41 @@ now, so *"is one of my shots in the air?"* — the question the attack pose and 
 both ask — can only be answered by the projectile. Without it a stray shot would hold whichever hero you
 switched to in its attack pose, or hide them.
 
-### KNOWN BUG, not fixed: a shot hits the *selected* hero's targets, not its owner's
+### A shot is hit-tested against its owner's targets
 
-A projectile is hit-tested inside a loop gated on the **current** `player`, and the whole branch body reads
-`player.characterColor`, `player.symbol`, `player.hitProjectileSound()` and so on. So a Semicolonel shot
-still in the air when you press Switch Character will be tested against **Sergeant Colon's** spans, and can
-reveal a colon in Sarge's colour with Sarge's hit sound.
+**FIXED 2026-08-28**, on top of the same day's projectile pass. A projectile was hit-tested inside a loop
+gated on the **current** `player`, and the whole branch body read `player.characterColor`, `player.symbol`,
+`player.hitProjectileSound()` and so on — so a Semicolonel shot still in the air when you pressed Switch
+Character was tested against **Sergeant Colon's** spans, and revealed a colon in Sarge's colour with Sarge's
+hit sound. It predates the flight pass; letting shots finish their flight is what made it reachable.
 
-This predates the 2026-08-28 work — it was simply invisible, because the old canvas wipe drew only the
-newest shot, so you never saw a stray one land. Letting shots finish their flight made it reachable in
-practice. Deliberately left unfixed 2026-08-28.
+The whole block now reads **`shooter`** — one binding at the top of the projectile loop,
+`projectile.owner ?? player` — instead of the global. That is the gate
+(`punctuationSymbol.id === (shooter.targetId ?? shooter.symbol)`), the reveal colour, the hit sound, the
+tongue's reach, the `symbol` tests the asterisk/article/contraction branches make, and the `hero` argument
+handed to `climbLadder` / `pickRung` / `raceShootUp` / `raceShootDown`. Those four already took the hero as
+a parameter and never touched the global, so the ladder modes came along for free — and a General shot
+crossing a switch to Keen now still **broadens**, rather than opening a fan because the selected hero
+changed direction underneath it.
 
-The fix is not a one-liner, which is why it was deferred: `projectile.owner` already records who fired, but
-the gate and the *entire* collision body would have to read the owner instead of `player`, and every mode's
-branch inside that body (ladder, ambigram, homophone, anagram, Betar, article, asterisk…) assumes the two
-are the same hero. Doing it properly means threading the owner through the whole block, not swapping one
-comparison.
+Two consequences worth knowing:
+
+- The collision walk now runs for shots whose owner is **not** selected, which is the point — those shots
+  find their own spans. The flight pass is still needed, and still only finishes what the walk didn't (a
+  shot whose target span has gone).
+- `firingThisFrame` is the one place that deliberately still asks about `player`:
+  `shooter === player && shooter.secondHeroImage`. The attack pose and Semicolonel's vanishing act belong to
+  the hero on stage, so a stray shot from a departed hero must not hold the current one in a pose.
+
+Two smaller cases of the same "the global `player` isn't who fired" mistake went with it:
+
+- **`Projectile`'s `onload` re-placement.** It read `player` in an *async* callback, so on the first shot
+  with an uncached image the load could land after a switch and re-place the shot at the **incoming**
+  hero's muzzle, mid-flight. The constructor now captures `const owner = player` and the callback uses it.
+- **Comma Chameleon's tongue on switch.** The comment said "All other projectiles will stay though", but
+  the code tested `projectiles[0]` and then did `projectiles.length = 0` — emptying the array and killing
+  every other hero's in-flight shot whenever a tongue happened to be first. It now splices out the
+  `CommaTongue`s and leaves the rest alone.
 
 ---
 
