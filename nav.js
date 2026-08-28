@@ -33,10 +33,15 @@
       label: "Read Free",
       // Free graphic-novel PDFs hosted on Dropbox.
       children: [
-        {
-          label: "Question Markswoman (Book 1)",
-          href: "https://www.dropbox.com/scl/fo/0kx2ztlbq95ioxnfifew9/AGYTaJ0ALODy-SidG3yS6Y0/rescaled%20Punctuators%20Question%20Quest%20copy%202.pdf?rlkey=hje8gtuguop92sjyqtrj7yu9h&st=82b298t2&dl=0",
-        },
+        // Book 1 (Question Markswoman) is DISABLED while the book is enrolled in
+        // Amazon KDP Select, which requires digital exclusivity. The Dropbox link
+        // below must also be REVOKED at Dropbox - hiding the menu entry does not
+        // take the file down. To restore after the term ends, re-share the PDF and
+        // paste the NEW url (Dropbox issues a fresh token; the old one is dead).
+        // {
+        //   label: "Question Markswoman (Book 1)",
+        //   href: "https://www.dropbox.com/scl/fo/0kx2ztlbq95ioxnfifew9/AGYTaJ0ALODy-SidG3yS6Y0/rescaled%20Punctuators%20Question%20Quest%20copy%202.pdf?rlkey=hje8gtuguop92sjyqtrj7yu9h&st=82b298t2&dl=0",
+        // },
         {
           label: "Exclamachine (Book 2)",
           href: "https://www.dropbox.com/scl/fi/u5lk0v1h4loxopy5j3ekw/Exclamachine.pdf?rlkey=ifv7oxkr48mart3r9wgbjqt5c&st=rvqhht6a&dl=0",
