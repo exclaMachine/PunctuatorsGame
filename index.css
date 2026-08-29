@@ -784,7 +784,10 @@ footer > div {
         border-left: 1px solid black;
         border-right: 20px solid transparent;
         border-top: 20px solid var(--color);
-        bottom: -20;
+        /* px, not a bare `-20`: unitless lengths are dropped at parse time, so the tail used to
+           fall back to bottom:auto and sit INSIDE the bubble on the last line of text — invisible,
+           being the bubble's own colour. Its left is aimed per-frame from JS (aimSpeechTail). */
+        bottom: -20px;
     }
 
     .speech-bubble span {

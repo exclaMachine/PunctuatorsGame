@@ -200,6 +200,54 @@ the win sounds like the rest of the game and loads nothing.
 
 ---
 
+## The win bubble's tail points at the hero (`aimSpeechTail`)
+
+**FIXED 2026-08-28.** The win message is styled as a speech bubble (`changeTextToSpeechBubble` adds
+`.speech-bubble` to `#ending_message_1`) and its `::after` is a triangle meant to hang off the bottom
+edge and point at the mouth of the hero who won. It never did. Three independent faults stacked:
+
+- **The custom property was set without a unit.**
+  `root.style.setProperty("--speech-bubble-triangle", projectile.position.x)` stores a bare number, so
+  `left: var(--speech-bubble-triangle)` substituted to `left: 412` — **invalid at computed-value time**,
+  which resolves `left` to `auto` with no warning. The `:root` fallback of `20px` never applied either:
+  the variable *is* set, just to garbage. With `left` and `right` both `auto` the absolutely-positioned
+  pseudo-element fell back to its **static position** — the end of the last line of message text — which
+  is why the tail appeared to wander with the wording and the window width rather than sit anywhere in
+  particular. It had been that way since the bubble was added.
+- **`bottom: -20` in the CSS was unitless too**, and unitless lengths are dropped at *parse* time, so
+  `bottom` was `auto` as well. The tail therefore sat **inside** the bubble on the last text line, where,
+  being `border-top: 20px solid var(--color)` — the bubble's own background colour — it was all but
+  invisible bar its 1px black edge.
+- **The value was in the wrong coordinate space.** `left` on the `::after` is measured from
+  `.speech-bubble`'s padding box, but `projectile.position.x` is a canvas x, and
+  `#ending-message-container` is `position:absolute; margin:10%`, so the bubble's left edge sits a tenth
+  of the viewport in. Even a correct `px` value would have been off by that much.
+
+`aimSpeechTail()` replaces the two `setProperty` calls in `animate()`'s two punctuation-win branches and
+is then called **once per frame** while `ENDING_REACHED`. Four things about it are load-bearing:
+
+- **It re-aims every frame** because nothing freezes the game at the win — `ENDING_REACHED` only gates
+  the message, so the player is free to keep walking and a tail pinned once would detach immediately.
+- **It follows the hero who fired the winning shot**, not whoever is on stage now, because the bubble is
+  painted in that hero's colour (`shooter.characterColor`) and a tail pointing at a different-coloured
+  hero is worse than a stale one. A later Switch Character moves the outgoing hero only in `y`, so their
+  `x` — all the tail reads — stays put.
+- **It aims at the hero's centre, not the muzzle.** The old code used the projectile's x, which is the
+  weapon; for the anchored ladder heroes that is General's raised sword tip and Keen's crossbow, neither
+  of which is where a voice comes from.
+- **It clamps to the bubble.** The bubble is shrink-to-fit and centred, so a hero near either screen edge
+  is outside its span entirely and an unclamped `left` would float the triangle off the box it belongs
+  to — the second way to get a detached tail. Clamped, it slides to the edge and stops, still pointing
+  the right way.
+
+Hero x is only a page x after shifting by the canvas box (`getBoundingClientRect().left + clientLeft` —
+the canvas carries a 2px border) and scaling by `clientWidth / canvas.width`.
+
+`phraseWin()` is unaffected: Restore the Phrase writes its win line to `errorMessage` via `phraseSay`,
+not to the bubble.
+
+---
+
 ## The How-to-Play modal is per-mode (`modeHelp.js`)
 
 **BUILT 2026-08-28.** The single **How to Play** button opens one modal (`#modal` in

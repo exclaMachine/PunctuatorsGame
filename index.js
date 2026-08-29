@@ -3209,6 +3209,51 @@ function retireProjectile(projectile) {
   }, 0);
 }
 
+/* THE SPEECH-BUBBLE TAIL
+   The win message is the winning hero speaking, so the tail has to point at that hero — and since
+   ENDING_REACHED only gates the message, the player can keep walking after the win, so the tail is
+   aimed every frame rather than once.
+
+   Three things it has to get right, and all three used to be wrong:
+   - It must carry a UNIT. `setProperty("--speech-bubble-triangle", projectile.position.x)` stores a
+     bare number, so `left: var(--speech-bubble-triangle)` substituted to `left: 412` — invalid at
+     computed-value time, which silently resolves left to `auto`. The tail then took its static
+     position (the end of the last line of message text) and appeared to wander with the wording and
+     the window width. The :root fallback never helped: the variable IS set, just to garbage.
+   - It must be in the BUBBLE's coordinate space. `left` on the ::after is measured from
+     .speech-bubble's padding box, not the canvas, and #ending-message-container's 10% margin puts
+     that box a tenth of the viewport in.
+   - It must be CLAMPED to the bubble. The bubble is shrink-to-fit and centred, so a hero standing
+     near either screen edge is outside it entirely and an honest left would float the tail off the
+     box it is supposed to be attached to. Clamping keeps it glued and still pointing the right way.
+
+   It follows the hero who FIRED the winning shot, not whoever is on stage now, because the bubble
+   is painted in that hero's colour. A Switch Character afterwards only moves the outgoing hero in
+   y, so their x stays put and the tail stays sensible. */
+const SPEECH_TAIL_WIDTH = 21; // the ::after's 1px left border + its 20px right border
+const SPEECH_TAIL_APEX = 1; // the point of the triangle sits just inside its left edge
+let speechTailHero = null;
+
+function aimSpeechTail() {
+  if (!speechTailHero) return;
+  const bubble = endingMessage1.getBoundingClientRect();
+  if (!bubble.width) return;
+  // The canvas has its own border and is laid out in flow, so hero x is only a page x after
+  // shifting by the canvas box and scaling by whatever the browser actually drew it at.
+  const box = canvas.getBoundingClientRect();
+  const scale = canvas.width ? canvas.clientWidth / canvas.width : 1;
+  const mouthX =
+    box.left +
+    canvas.clientLeft +
+    (speechTailHero.position.x + speechTailHero.width / 2) * scale;
+  const x = mouthX - bubble.left - SPEECH_TAIL_APEX;
+  const limit = Math.max(bubble.width - SPEECH_TAIL_WIDTH, 0);
+  root.style.setProperty(
+    "--speech-bubble-triangle",
+    `${Math.min(Math.max(x, 0), limit)}px`,
+  );
+}
+
 function animate() {
   //this creates an animation loop
 
@@ -3217,6 +3262,8 @@ function animate() {
   c.fillRect(0, 0, canvas.width, canvas.height);
 
   requestAnimationFrame(animate);
+  // Re-aimed every frame: the hero is free to walk once the bubble is up (see aimSpeechTail).
+  if (ENDING_REACHED) aimSpeechTail();
   // Insurance, not logic: the loop must survive a frame with no hero. Losing it takes the canvas
   // with it, and every mode goes blank for the rest of the session with one console line to show
   // for it — which is precisely how the 2026-08-21 waitForElement regression presented.
@@ -3306,11 +3353,9 @@ function animate() {
                 changeTextToSpeechBubble(speechLineForWin, endingMessage1);
 
                 refreshButton.classList.remove("go-away");
-                root.style.setProperty(
-                  "--speech-bubble-triangle",
-                  projectile.position.x,
-                );
                 root.style.setProperty("--color", shooter.characterColor);
+                speechTailHero = shooter;
+                aimSpeechTail();
                 ENDING_REACHED = true;
                 gameSfx.end.play();
               }
@@ -3719,11 +3764,9 @@ function animate() {
                 // console.log("All Punctuation Hit!");
                 changeTextToSpeechBubble(speechLineForWin, endingMessage1);
                 refreshButton.classList.remove("go-away");
-                root.style.setProperty(
-                  "--speech-bubble-triangle",
-                  projectile.position.x,
-                );
                 root.style.setProperty("--color", shooter.characterColor);
+                speechTailHero = shooter;
+                aimSpeechTail();
                 ENDING_REACHED = true;
                 gameSfx.end.play();
               }
