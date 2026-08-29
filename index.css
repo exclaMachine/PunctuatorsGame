@@ -1959,3 +1959,36 @@ span[data-hint] {
         transition: none;
     }
 }
+
+/* ── AFFIX ALIENS — the marker (docs/punctuators-affixes.md §5.1) ──────────────────────────────────
+   The live end of a word is marked BEFORE you shoot it: un·helpful. That marker is what makes §5's
+   one-shared-span-id decision free — all four heroes answer to the same id, so the only way to know
+   which character has something to do here is to be able to see which end is live.
+
+   COLOUR AND BORDER ONLY. No padding, no font-size, no letter-spacing, nothing that moves a glyph:
+   the span's hit rectangle is what the player aims a projectile at, and a marker that changes
+   metrics would shift the target under the shot. Same constraint that made the ladder's rung strip
+   an absolutely-positioned ::after rather than part of the line box. */
+.affix-word {
+    position: relative;
+    /* inline-block for the same reason as .word-ladder: an inline box can't be scaled, so §7's
+       swap animations would be a no-op on one. Each word is still its own box, so the sentence
+       wraps at the spaces between words exactly as before. */
+    display: inline-block;
+}
+
+.afx {
+    font-style: normal; /* it's an <i> only because a nested <span> would join nodeArr — see affixFunc.js */
+    border-bottom: 0.06em dashed #8a6fb0;
+    color: #6d4f96;
+}
+
+/* The two ends read differently at a glance — the Grand Prefixer arrives in front of the word,
+   Sufferix brings up the rear — so the underline sits on the side each character comes from. */
+.afx-pre {
+    border-bottom-style: dashed;
+}
+
+.afx-suf {
+    border-bottom-style: dotted;
+}

@@ -14,6 +14,9 @@ import { shakeAndBorderizeArticle } from "./articleFunc.js";
 import { hasAmbigrams } from "./AmbigramFunc.js";
 import { hasAnagrams } from "./anagrams.js";
 import { hasHomophones } from "./HomophonesFuncs.js";
+// Affix Aliens — the Grand Prefixer & Sufferix (docs/punctuators-affixes.md). No corpus and no
+// build step: the tables in affixData.js are the whole data layer, so this is a plain static import.
+import { hasAffixes } from "./affixFunc.js";
 // The How-to-Play card for the mode you have picked (one per <option>) — swapped in on selection,
 // not at Pow!, so the rules are readable while you are still choosing what to play.
 import { modeHelpFor } from "./modeHelp.js";
@@ -1468,6 +1471,13 @@ removePuncButton.addEventListener("click", async () => {
       return (errorMessage.innerText =
         "No ambigrams found in your sentence — try different words!");
     }
+    if (selectedOption === "affixes" && !hasAffixes(initialTypedSentence.value)) {
+      // Measured (docs/punctuators-affixes.md §2): half of all common words carry an affix, so this
+      // essentially never fires. It exists because every other wordplay mode has one, and because
+      // "essentially never" is not never — `I ate a big red one` has nothing to shoot.
+      return (errorMessage.innerText =
+        "No prefixes or suffixes found in your sentence — try some longer words!");
+    }
     if (selectedOption === "ladder") {
       // The only mode whose corpus is fetched rather than bundled. Awaiting here is what keeps
       // hasLadders/wrapLadders synchronous everywhere else (docs/punctuators-ladder.md §3.3).
@@ -1603,6 +1613,15 @@ removePuncButton.addEventListener("click", async () => {
   // Both word-supplying modes write their own status into #error-message as you play, so clearing
   // it here would wipe the line that just told the player what they're looking at.
   if (!NO_SENTENCE_MODES.has(selectedOption)) errorMessage.innerText = "";
+  // M2 marks the words and stops there. The four heroes are M3, so nothing answers to the "affix"
+  // span id yet, heroToTheRescue comes back empty, and doActionOnce leaves the title-page hero on
+  // screen rather than assembling a team — which reads as broken unless the round says so out loud.
+  // Delete this block with M3. #error-message is red by default; this is progress, not a fault.
+  if (selectedOption === "affixes") {
+    errorMessage.style.color = "black";
+    errorMessage.innerText =
+      "Affix Aliens M2 — the live prefixes and suffixes are marked. The Grand Prefixer and Sufferix arrive in M3.";
+  }
   bRightAfterSentenceIsLoaded = true;
 });
 

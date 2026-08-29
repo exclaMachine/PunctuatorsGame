@@ -105,6 +105,13 @@
                  there is no daily, no share and no win card yet, and the phrase corpus still wants
                  its sense-prune. Open with ?dev=1. -->
             <option value="ladderPuzzle" data-dev>Restore the Phrase</option>
+            <!-- The Grand Prefixer and Sufferix, aliens who speak an English drifted at the edges:
+                 shoot a word and its prefix or suffix is replaced by an EQUAL one (same meaning,
+                 alien spelling — unhappy → nonhappy) or its OPPOSITE (hopeful → hopeless). Nothing
+                 checks that the stem is a real word, on purpose: the misfires are the mode
+                 (docs/punctuators-affixes.md §1.1). DEV-ONLY (data-dev) while it is built — M1 the
+                 tables and M2 the mark-up are in; the four heroes are M3, so nothing shoots yet. -->
+            <option value="affixes" data-dev>Affix Aliens</option>
           </select>
         <input type="button" id="punc-button" value="Pow! Wordplay">
        <!-- In #input-container on your main page -->

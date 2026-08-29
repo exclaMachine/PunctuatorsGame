@@ -7,6 +7,7 @@ import { wrapAnagrams } from "./anagrams.js";
 import { wrapAlphabetNeighbors } from "./alphabeticalNeighbors.js";
 import { wrapAbjads } from "./onlyConsonants.js";
 import { wrapLadders } from "./ladderFunc.js";
+import { wrapAffixes } from "./affixFunc.js";
 
 export const applySpanPlaceholders = (text) => {
   let placeholders = [];
@@ -57,6 +58,11 @@ export const protectedAbjads = withSpanPlaceholders(wrapAbjads);
 // General & Specific. wrapLadders is a no-op until loadLadders() has resolved, so index.js awaits
 // the corpus before starting a ladder round (docs/punctuators-ladder.md §3.3).
 export const protectedLadders = withSpanPlaceholders(wrapLadders);
+
+// Affix Aliens. wrapAffixes needs no corpus at all — detection is startsWith/endsWith over the
+// hand-written tables in affixData.js (docs/punctuators-affixes.md §3) — so unlike the ladder it is
+// ready the moment the module loads.
+export const protectedAffixes = withSpanPlaceholders(wrapAffixes);
 
 // // Usage:
 // let result = protectedSpoonerism(sentence);

@@ -14,6 +14,7 @@ import {
   protectedAbjads,
   protectedAnagrams,
   protectedLadders,
+  protectedAffixes,
 } from "../SpanPlaceholder.js";
 
 const secondContractionWordHashMap = new Map();
@@ -97,19 +98,27 @@ export const addSpansAndIdsForWordPlay = (
     //RemoveVowels(typedString);
   }
 
-  // EVERY ladder mode runs without Art the Tickler and the Foon — the ladder heroes own the field
-  // and a third or fourth hero rewriting the same words muddies what the mode is teaching.
+  // SOME MODES OWN THE WORDS THEMSELVES, and in those Art the Tickler and the Foon stay home — a
+  // third or fourth hero rewriting the same words muddies what the mode is teaching.
   //
-  // Word Race has no sentence at all: index.js builds a field of three words (§12.2), so there is
-  // nothing for either to do. Restore the Phrase (§11.6) does have a sentence, and suppresses
-  // articles ON PURPOSE — the puzzle is to match a known saying, so a hero rewriting it would be
-  // actively confusing, and plain-text articles are what make the live `A dog` → `An animal` fix a
-  // text-node edit rather than a span surgery. Free play (General & Specific) suppresses them for
-  // the same reason the other two do: the whole mode is one word changing along the hierarchy, and
-  // an article or a swapped word-head is noise on top of that.
-  const ladderMode =
-    mode === "ladder" || mode === "wordRace" || mode === "ladderPuzzle";
-  let processed = ladderMode ? typedString : protectedArticles(typedString);
+  // The three ladder modes: Word Race has no sentence at all (index.js builds a field of three
+  // words, §12.2), so there is nothing for either to do. Restore the Phrase (§11.6) does have a
+  // sentence and suppresses articles ON PURPOSE — the puzzle is to match a known saying, so a hero
+  // rewriting it would be actively confusing, and plain-text articles are what make the live
+  // `A dog` → `An animal` fix a text-node edit rather than span surgery. Free play (General &
+  // Specific) suppresses them for the same reason: the whole mode is one word changing along the
+  // hierarchy, and an article or a swapped word-head is noise on top of that.
+  //
+  // Affix Aliens joins them (docs/punctuators-affixes.md §6.5) and needs it more than any of them:
+  // the Foon swaps word HEADS, which is literally the Grand Prefixer's job, and he runs after the
+  // protected* pass so he would swap straight into an affix span. Art goes for the ladder's reason —
+  // `an unhappy man → a nonhappy man` is fixArticleBefore's job now.
+  const heroManagedWords =
+    mode === "ladder" ||
+    mode === "wordRace" ||
+    mode === "ladderPuzzle" ||
+    mode === "affixes";
+  let processed = heroManagedWords ? typedString : protectedArticles(typedString);
 
   // Apply transformation based on selected mode
   switch (mode) {
@@ -143,6 +152,9 @@ export const addSpansAndIdsForWordPlay = (
     case "ladder":
       processed = protectedLadders(processed);
       break;
+    case "affixes":
+      processed = protectedAffixes(processed);
+      break;
     case "wordRace":
       // Already marked up by ladderRace.js's raceFieldHTML — nothing to wrap.
       break;
@@ -156,13 +168,14 @@ export const addSpansAndIdsForWordPlay = (
       break;
   }
 
-  // Apply spoonerism (Foon) last — but never in anagram mode, and never in any ladder mode: Foon
+  // Apply spoonerism (Foon) last — but never in anagram mode, and never in a hero-managed one: Foon
   // swapping the heads of the three Word Race words would rewrite the very words being raced
   // between, in Restore the Phrase he'd be scrambling the saying the player is trying to put back
-  // (§11.6), and in free play he'd be swapping the head off a word that is about to be replaced by
-  // a rung anyway — including, since he runs after protectedLadders, straight into a ladder span.
+  // (§11.6), in free play he'd be swapping the head off a word that is about to be replaced by a
+  // rung anyway — including, since he runs after protectedLadders, straight into a ladder span —
+  // and in Affix Aliens he'd be doing the Grand Prefixer's job badly, into an affix span.
   let final =
-    mode === "anagrams" || ladderMode ? processed : spoonerism(processed);
+    mode === "anagrams" || heroManagedWords ? processed : spoonerism(processed);
 
   // Split and render to output
   let newString = final.split("");

@@ -1,6 +1,7 @@
 # Punctuators — The Grand Prefixer & Sufferix (Affix Aliens)
 
-**Status: SPECCED 2026-08-29. Nothing built. DEV-ONLY when it is** — see §1.2.
+**Status: SPECCED 2026-08-29. M1 (the tables) + M2 (the mode) BUILT 2026-08-29 — the sentence marks
+up, nothing shoots yet. DEV-ONLY** (`?dev=1`) — see §1.2.
 
 A wordplay mode where words keep their meaning but change their *pieces*. Two characters, four hero
 entries, one span set. Inspired by the Swamp Thing "Pog" issue, whose aliens speak an English that has
@@ -109,7 +110,7 @@ Affixes inside a group are **equal** (interchangeable in meaning). Groups are pa
 
 | Group | Prefixes | Opposite group |
 | --- | --- | --- |
-| `NOT` | un in im il ir non dis a an | *(strip — see §3.3)* |
+| `NOT` | un non dis in a an im il ir | *(strip — see §3.3)* |
 | `BEFORE` | pre ante fore pro | `AFTER` |
 | `AFTER` | post | `BEFORE` |
 | `AGAIN` | re | `UNDO` |
@@ -122,10 +123,10 @@ Affixes inside a group are **equal** (interchangeable in meaning). Groups are pa
 | `BELOW` | sub hypo under infra | `BEYOND` |
 | `OUT` | ex exo out e | `INTO` |
 | `INTO` | intra endo en em | `OUT` |
-| `HALF` | semi hemi demi | *(strip)* |
+| `HALF` | semi hemi demi | `TWO` |
 | `MANY` | multi poly | `ONE` |
 | `ONE` | mono uni | `MANY` |
-| `TWO` | bi di duo twi | — |
+| `TWO` | bi di duo twi | `HALF` |
 | `SMALL` | micro mini | `LARGE` |
 | `LARGE` | macro mega maxi grand | `SMALL` |
 | `SELF` | auto self | — |
@@ -137,7 +138,7 @@ Affixes inside a group are **equal** (interchangeable in meaning). Groups are pa
 
 | Group | Suffixes | Opposite group |
 | --- | --- | --- |
-| `AGENT` | er or ist ant ent eer ian ster ard | `PATIENT` |
+| `AGENT` | er ist or ian eer ster ant ent ard | `PATIENT` |
 | `PATIENT` | ee | `AGENT` |
 | `QUALITY` | ness ity hood ship dom tude cy ance ence ism | — |
 | `FULL_OF` | ful ous ose some ive | `WITHOUT` |
@@ -158,12 +159,11 @@ articulate before playing.
 
 ### 3.3 Strip is a legitimate opposite
 
-Two groups have no opposing affix because **removing them is the opposite**: `NOT` and `HALF`.
-`unhappy → happy` is the single most legible move in the mode and needs no partner table. So the Opposite
-shot resolves as:
+`NOT` has no opposing affix because **removing it is the opposite**. `unhappy → happy` is the single
+most legible move in the mode and needs no partner table. So the Opposite shot resolves as:
 
 1. If the group has an opposite group, swap to a member of it.
-2. Else if the group is in `STRIPPABLE` (`NOT`, `HALF`), delete the affix.
+2. Else if the group is in `STRIPPABLE` (`NOT` alone) delete the affix.
 3. Else clank (§6.3).
 
 **`AGAIN` was strippable in the first draft and is not any more (dev's call, 2026-08-29):** the opposite of
@@ -172,6 +172,17 @@ shot resolves as:
 teaches something, where `rewrite → write` only removes. `UNDO` is a one-member group existing purely to be
 `AGAIN`'s partner, and the pairing runs both ways, so `deactivate → reactivate` works too. The cost is that
 `rewrite → dewrite` now comes out alien rather than English, which is the mode's normal register anyway.
+
+**`HALF` was strippable in the first draft and is not any more, and `TWO` gained a partner in the same
+call (dev's, 2026-08-29):** the two groups are each other's opposite. Doubling and halving invert each
+other, so the pair is honest where a strip was not — `semicircle → circle` reads as a deletion rather
+than an inversion, and `bicycle` had no opposite shot at all and simply clanked. `NOT` is now the only
+strippable group anywhere in the tables.
+
+**Measured, and the payout is the same shape as `de-`/`re-`'s:** the calendar words swap clean across
+in `2of12` in both directions — `biannual ↔ semiannual`, `bimonthly ↔ semimonthly`,
+`biweekly ↔ semiweekly`, `biyearly ↔ semiyearly` — plus the one-way joke `seminary → binary`
+(`binary` itself reads as `bin`+`ary` under §3.5's longest-affix rule, so it does not swap back).
 
 **Measured, and it argues for the change:** `de-` is a heavy producer of §1.1's accidental real words,
 because `de-` and `re-` both sit on Latin stems all over English. Every one of these lands in `2of12`:
@@ -202,9 +213,19 @@ funny.
 ### 3.5 Matching rules
 
 - **Longest affix wins** — check `hyper` before `hy`, `ness` before `ess`. Sort each list by length
-  descending once at module load.
+  descending once at module load. (Ties keep table order, which only ever decides between two
+  different strings of the same length — never between two readings of the same one, since §3.4's
+  one-group rule is enforced by `assertAffixTables()`.)
+- **Order inside a group is the cycling order**, so the most legible member leads: `NOT` runs
+  `un non dis in a an im il ir`, with the assimilated `im-`/`il-`/`ir-` last because they only ever
+  attach before m/l/r and read as noise anywhere else. `unhappy` shot three times gives
+  `nonhappy → dishappy → inhappy`.
 - **Minimum stem 3 characters**, so `under` yields `der` (allowed) but `ends` does not yield `s`.
 - **Minimum word length 5**, which keeps `use`, `over`, `into` out entirely.
+- **A word carrying both ends must keep a stem between them.** `unless` reads as `un`+`less` with
+  nothing in the middle, so when the two affixes leave fewer than 3 letters between them only the
+  **longer** one survives, and a tie goes to the **prefix** — the Grand Prefixer arrives first, in
+  the word and in the roster. (`unless → inless`, and `binary` keeps `-ary` over `bi-`.)
 - The swap **never picks the affix already there**, and picks deterministically per shot from the group in
   order, cycling on repeat shots — so shooting `unhappy` three times walks `nonhappy → imhappy → dishappy`.
   This is the ladder's sibling-cycling idea, which was removed there but is right here: repetition is how
@@ -272,9 +293,15 @@ This is the ladder's §4 mechanism (`Hero.targetId`, which defaults to `symbol` 
 untouched) used as intended, and it needs no new machinery at all.
 
 ```html
-<span id="affix" data-pre="un" data-pre-group="NOT" data-suf="ful" data-suf-group="FULL_OF"
-      data-word="unhelpful"><i class="afx afx-pre">un</i>help<i class="afx afx-suf">ful</i></span>
+<span id="affix" class="affix-word" data-word="unhelpful" data-stem="help"
+      data-pre="un" data-pre-group="NOT" data-suf="ful" data-suf-group="FULL_OF"
+      ><i class="afx afx-pre">un</i>help<i class="afx afx-suf">ful</i></span>
 ```
+
+As built (`affixSpanHTML`): the data attributes are lowercase — the tables are — but the **display is
+sliced out of the original token**, so `Unhappy` keeps its capital and only the lookup is normalised.
+The whole span is a function of a bare token and nothing else, which is what lets M3 rebuild it after
+a swap by calling the same function.
 
 **Why not separate ids per shape** (`affixPre` / `affixSuf` / `affixBoth`): a hero's `targetId` is a single
 string, so answering to two ids would mean adding a `targetIds` set to `Hero` — new machinery for no gain.
@@ -387,8 +414,8 @@ one hit has more than one outcome and the generic one-hit-one-sound call site ca
 
 | | What | Notes |
 | --- | --- | --- |
-| **M1** | `affixData.js` — the two group tables, opposites, strippables, longest-first sorting, `detect(word)` / `swapEqual` / `swapOpposite` | Pure data + pure functions. No wordlist, no build step, no DOM. |
-| **M2** | The mode — an `affixes` `<option>` **carrying `data-dev`** (§1.2), `affixFunc.js` (`hasAffixes` / `wrapAffixes`), `protectedAffixes` in `SpanPlaceholder.js`, a `case "affixes"` in `addSpansAndIdsForWordPlay`, §6.5's suppression | Sentence marks up; nothing shoots yet. |
+| **M1** | **BUILT 2026-08-29** — `affixData.js`: the two group tables, mirrored opposite pairs, `STRIPPABLE`, longest-first sorting, `detect(word)` and one `swapAffix(word, end, op, turn)` covering equal/opposite/strip (a clank is a `null`, not an error) | Pure data + pure functions. No wordlist, no build step, no DOM, no imports. `assertAffixTables()` ships with it — it catches the one edit that fails silently, the same string in two groups. |
+| **M2** | **BUILT 2026-08-29** — the `affixes` `<option>` carrying `data-dev` (§1.2), `affixFunc.js` (`AFFIX_ID` / `hasAffixes` / `wrapAffixes` / `affixSpanHTML` / `applyAffixCase`), `protectedAffixes` in `SpanPlaceholder.js`, `case "affixes"` in `addSpansAndIdsForWordPlay`, §6.5's suppression (the `ladderMode` flag renamed `heroManagedWords`), the `.afx` marker CSS, and the no-matches guard in `index.js` | Sentence marks up; nothing shoots yet. With no hero answering to the `affix` id, `heroToTheRescue` returns an empty team and `doActionOnce` leaves the title-page hero on screen — which reads as broken, so the round says so in `#error-message`. **That one message is M3's to delete.** |
 | **M3** | The four heroes — two drawn projectiles as data URLs, four entries adjacent in `availableHeroArray`, `targetId = "affix"` on all four, the collision branch in `animate()` | Playable. Placeholder art for the two characters. |
 | **M4** | The feel — §7's animations, §8's six cues (provisional), `modeHelp.js` card, `modeArt.js` card, `fixArticleBefore` wiring | Shippable, still dev-only. |
 | **M4.5** | Drop `data-dev` from the `<option>` | The dev's call, once they are happy with it. One attribute. |
@@ -401,20 +428,26 @@ M1–M4 is the shipping unit.
 
 ## 10. Wiring checklist
 
-- `punctuators.html` — one `<option value="affixes" data-dev>Affix Aliens</option>`, plus the strip in the
-  dropdown IIFE **before** the custom dropdown is generated from `sel.options` (§1.2)
-- `affixData.js` — new, the tables (§3)
-- `affixFunc.js` — new, `hasAffixes` / `wrapAffixes` / the swap resolution (§6)
-- `SpanPlaceholder.js` — `protectedAffixes`
-- `utils/utils.js` — `case "affixes"` in `addSpansAndIdsForWordPlay`; extend the Foon/Art suppression
-  guard and its comment block (§6.5)
-- `index.js` — four hero classes, four instances adjacent in `availableHeroArray`, the collision branch,
-  the two `draw*Sprite` projectile builders, six SFX on the `_tone` kit
-- `index.css` — `.afx` markers (colour/border only, §5.1), affix swap animation classes
-- `modeHelp.js` — a card keyed `affixes`; examples must be real output of the shipped tables
-- `modeArt.js` — a card keyed `affixes`; glyph candidate `un-` over `-less`, or `=` over `↔`
-- `CLAUDE.md` — the Punctuators row
-- `docs/punctuators.md` — a pointer to this file
+- `punctuators.html` — **BUILT** — one `<option value="affixes" data-dev>Affix Aliens</option>`. The
+  dropdown IIFE's `data-dev` strip is generic and already ran before the custom dropdown is built
+  (§1.2), so the option needed no code there at all
+- `affixData.js` — **BUILT** — the tables and the swap (§3, §6)
+- `affixFunc.js` — **BUILT** — `AFFIX_ID` / `hasAffixes` / `wrapAffixes` / `affixSpanHTML`, plus
+  `applyAffixCase`, which is the ladder's `applyLadderCase` re-exported rather than rewritten
+- `SpanPlaceholder.js` — **BUILT** — `protectedAffixes`
+- `utils/utils.js` — **BUILT** — `case "affixes"` in `addSpansAndIdsForWordPlay`; the Foon/Art
+  suppression flag renamed `ladderMode` → `heroManagedWords` and its comment block extended (§6.5)
+- `index.js` — **M2 BUILT** (the `hasAffixes` guard and the M3 placeholder message). Still M3: four
+  hero classes, four instances adjacent in `availableHeroArray`, the collision branch, the two
+  `draw*Sprite` projectile builders, six SFX on the `_tone` kit
+- `index.css` — **M2 BUILT** — `.affix-word` (inline-block, as `.word-ladder` is, so §7's animations
+  can scale it) and the `.afx` markers (colour/border only, §5.1). Still M4: the swap animations
+- `modeHelp.js` — **still M4** — a card keyed `affixes`; examples must be real output of the shipped
+  tables. Until then the mode falls back to the punctuation card, as an unknown mode does
+- `modeArt.js` — **still M4** — a card keyed `affixes`; glyph candidate `un-` over `-less`, or `=`
+  over `↔`. Same fallback until then
+- `CLAUDE.md` — **BUILT** — the Punctuators row
+- `docs/punctuators.md` — **BUILT** — a pointer to this file
 
 ---
 

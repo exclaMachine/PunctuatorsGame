@@ -9,8 +9,8 @@ wordplay mode lives in [`punctuators-ladder.md` §1](punctuators-ladder.md) — 
 Per-mode planning docs live alongside this one:
 [`punctuators-ladder.md`](punctuators-ladder.md) (General Ization & Keen Arrow, plus Restore the Phrase,
 Word Race and the Tree of Kinds) and
-[`punctuators-affixes.md`](punctuators-affixes.md) (The Grand Prefixer & Sufferix — **specced, nothing
-built**).
+[`punctuators-affixes.md`](punctuators-affixes.md) (The Grand Prefixer & Sufferix — **M1 the tables and
+M2 the mark-up built, dev-only; the four heroes are M3**).
 
 ---
 
