@@ -285,6 +285,54 @@ and an example word disappears from it, the card is stale.
 
 ---
 
+## The mode picture (`modeArt.js`)
+
+**BUILT 2026-08-29, placeholder art.** Picking a mode in the dropdown changed nothing you could *see*
+until you pressed Pow! — the same white field whatever you chose, with the mode's identity readable
+only inside the How-to-Play modal. `#mode-art` is the picture that answers *what did I just pick?*: a
+card in the empty band under the sentence box, swapped on selection and cleared when the round starts.
+
+Same shape as `modeHelp.js`, deliberately: the content is **data, not logic**, so it lives in its own
+module (`MODE_ART` keyed by the `<option>` value, `modeArtFor(mode)`, `renderModeArt(mode)`), and
+`index.js` keeps the wiring only — `paintModeArt()` beside `updateCharacterModal()` in the dropdown's
+`change` handler and at load, `hideModeArt()` at Pow!. An unknown mode falls back to the punctuation
+card, same as `modeHelpFor`.
+
+Four things worth knowing:
+
+- **The glyphs are placeholders with a one-line exit.** Every entry is a big typographic mark standing
+  in for a sprite (`!?`, `^`, `≈`, `␣`, `▲●▼`, …). When the art arrives, an entry grows
+  `sprite: "./images/Foo.png"` and `renderModeArt` prefers it and drops the glyph — that is the whole
+  migration, one line per mode, and modes can go over **one at a time**. `.mode-art__figure` is a fixed
+  height so every card is the same size whatever its glyph, which is also the box a sprite fills.
+- **It must be positioned, not in flow.** `#sentence-container` and `#input-container` are both out of
+  flow, so an in-flow element between them paints *under* the fixed title and is never seen — exactly
+  what happened to Word Race's `#race-banner` (`docs/punctuators-ladder.md` §12.8). It is `position:
+  fixed`, which also gets it above the canvas for free: the canvas is a **static** element, so any
+  positioned box paints over it. It stays below the modal (`z-index: 10`) and the overlay, both of
+  which must cover it, and takes `pointer-events: none` so it can't eat a click.
+- **It has to be ranked against `#input-container`, and that container is where the fix goes.** As
+  shipped both were on `z-index: auto` and the card is later in the DOM, so it painted over the open
+  dropdown and you couldn't choose another mode. Raising `.custom-select-dropdown` does **not** fix
+  it — it already carries `z-index: 2000`, but `#input-container` is `position: fixed`, which creates
+  a stacking context of its own in Chrome and Safari, so that 2000 is confined inside the row and only
+  the row's own rank counts against the card. `#input-container` is now `z-index: 1` and `.mode-art`
+  an explicit `z-index: 0`. Deliberately small numbers: the modal (10) and the Tree of Kinds (5000)
+  must still cover the input row.
+- **It hides at Pow!, and only after every validation branch has had its say.** The heroes and their
+  shots are drawn on the canvas *beneath* this element, so anything left here paints on top of the
+  game — but `hideModeArt()` sits after the "field cannot be blank" / "no anagrams found" / corpus-load
+  returns, so a rejected sentence leaves the picture up. The card stays in the DOM (the CSS fades it),
+  and `paintModeArt()` clears `is-gone` as **insurance, not a live path** — Pow! hides the dropdown
+  along with the picture, so today the only route back to a mode change is a reload. If the dropdown
+  ever survives a round, repainting a card that is still faded out is the bug that would follow.
+- **Only Ambigrambador flips.** `flip: true` draws a second, 180°-rotated copy of the glyph beneath it
+  (`bop` over `dog`), because that mode's symbol *is* a rotation. Nothing else uses it.
+
+Examples in the cards are **real**, same rule and same staleness risk as `modeHelp.js` above.
+
+---
+
 ## Shared-engine footguns
 
 Both were live bugs on 2026-08-23, both fail **silently**, and both are easy to reintroduce.

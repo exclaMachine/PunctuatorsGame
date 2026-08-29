@@ -127,6 +127,13 @@
         <!-- <input type="button" id="create-sentence-button" value="Create a sentence for me!"> -->
     </div>
 
+    <!-- THE MODE PICTURE. Filled by modeArt.js (one card per <option>) and swapped by index.js the
+         moment the dropdown changes, so picking a mode changes something you can see before Pow!.
+         It fades out when the round actually starts — the heroes and their shots are drawn on the
+         canvas BELOW this element, so anything left here would paint on top of the game.
+         Placeholder glyphs for now; a card grows a `sprite` in modeArt.js and the glyph goes. -->
+    <div id="mode-art" class="mode-art" aria-hidden="true"></div>
+
     <div id="ending-message-container">
         <h3 id="ending_message_1"></h3>
     </div>

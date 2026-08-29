@@ -17,6 +17,9 @@ import { hasHomophones } from "./HomophonesFuncs.js";
 // The How-to-Play card for the mode you have picked (one per <option>) — swapped in on selection,
 // not at Pow!, so the rules are readable while you are still choosing what to play.
 import { modeHelpFor } from "./modeHelp.js";
+// The centre-of-screen picture for the mode you have picked (one card per <option>), swapped in on
+// selection alongside the How-to-Play card and cleared when the round starts.
+import { renderModeArt } from "./modeArt.js";
 // The Tree of Kinds — the ladder progress map (docs/punctuators-ladder.md §13). Only the wiring is
 // imported here; ladderPOJO.js (337 KB) is fetched on demand, shared with the mode below.
 // The ladder collision branch calls ladderMapVisit() on every rung it lands on.
@@ -1117,6 +1120,9 @@ wordPlayOptions.addEventListener("change", () => {
   // The card for the mode you just picked, before Pow! — an empty modal saying "shoot the
   // punctuation back in" is the wrong instruction for eleven of the twelve modes.
   updateCharacterModal(mode);
+  // …and the picture in the middle of the screen, which is the half of that answer you get without
+  // opening anything.
+  paintModeArt(mode);
   initialTypedSentence.classList.toggle("go-away", NO_SENTENCE_MODES.has(mode));
   errorMessage.innerText = ""; // a leftover "Field cannot be blank" is about the old mode
   // Re-roll on every selection: picking the mode again is the one gesture that plainly means
@@ -1535,6 +1541,10 @@ removePuncButton.addEventListener("click", async () => {
     }
   }
   mySong.stop();
+  // The round is starting, so the mode picture clears the field: it is a DOM element ABOVE the
+  // canvas the heroes and their shots are drawn on, and every early return before this point has
+  // already had its chance to reject the sentence and leave the picture up.
+  hideModeArt();
   // Everything goes away. The sentence box is left out of the list in a race not because it stays
   // on screen — it doesn't — but because its visibility is Keen's to control from here on, and
   // paintMoveBox below owns the class either way (§12.8 Note 2).
@@ -1621,6 +1631,26 @@ function updateCharacterModal(selection) {
   (box.querySelector(".modal--body") ?? box).innerHTML = help.body;
 }
 
+/* The mode picture (modeArt.js). Same two rules as the How-to-Play card above: it is swapped on
+   SELECTION rather than at Pow!, and an unknown mode falls back to the punctuation card.
+
+   It also clears `is-gone`, which is insurance rather than a path anyone can walk today: Pow! hides
+   the dropdown along with the picture, so the only way back to a mode change is a reload. If the
+   dropdown ever survives a round, repainting a card that is still faded out would be the bug. */
+function paintModeArt(selection) {
+  const box = document.getElementById("mode-art");
+  if (!box) return;
+  box.innerHTML = renderModeArt(selection);
+  box.classList.remove("is-gone");
+}
+
+/* Pow!, once the round is actually starting. Called after every validation branch has had its say,
+   so a blank field or a sentence with no anagrams leaves the picture where it is. The card stays in
+   the DOM (the CSS fades it), which is what lets a win screen's dropdown change bring it back. */
+function hideModeArt() {
+  document.getElementById("mode-art")?.classList.add("is-gone");
+}
+
 openModalButtons.forEach((button) => {
   button.addEventListener("click", () => {
     buttonSounds.clicky.play();
@@ -1663,6 +1693,9 @@ let closeModal = (modal) => {
 // The modal ships with the punctuation card in punctuators.html, which matches the dropdown's
 // default — but a browser can restore a different selection on reload, so say it out loud.
 updateCharacterModal(wordPlayOptions.value);
+// Same again for the picture — the page ships with an empty #mode-art, so this first call is what
+// puts the default mode's card on screen at all.
+paintModeArt(wordPlayOptions.value);
 
 // Wires the 🌳 button and the map's own pan/zoom/keys. Cheap — it touches no word data until the
 // panel is actually opened. (M14 adds the daily-run guard that hides the button mid-puzzle, §13.8.)

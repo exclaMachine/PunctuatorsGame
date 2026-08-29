@@ -21,6 +21,14 @@ html, body {
     width: 70%;
     position: fixed;
      margin: 250px 60px 60px 60px;
+    /* Ranked above the mode picture (#mode-art, z-index 0), which sits below this row and comes
+       later in the DOM — so with both on `auto` the card painted over the open dropdown and there
+       was no way to pick a different mode. Raising .custom-select-dropdown does NOT fix it: this
+       box is position: fixed, which creates a stacking context of its own in Chrome and Safari, so
+       the panel's z-index: 2000 is confined inside it and only this container's own rank counts.
+       Deliberately 1, not something large: the modal (10) and the Tree of Kinds (5000) must still
+       cover this row. */
+    z-index: 1;
 }
 
   /* Spans the viewport (left/right 0) so the title centres on any width; the
@@ -1813,4 +1821,141 @@ span[data-hint] {
     0%   { opacity: 0; transform: scale(1.6); }
     40%  { opacity: 1; }
     100% { opacity: 1; transform: scale(1); }
+}
+
+
+/* THE MODE PICTURE (modeArt.js) ------------------------------------------------------------------
+   The showpiece in the empty band under the sentence box: pick a mode in the dropdown and its card
+   appears here, so choosing changes something you can see before Pow!. It is a placeholder frame
+   holding one big glyph per mode until the sprites land — the frame is the box a sprite drops into,
+   so nothing here moves when the art arrives.
+
+   Positioned (fixed) rather than in flow, for two reasons: #sentence-container and #input-container
+   are both out of flow, so an in-flow element between them paints under the fixed title (the same
+   trap that made the Word Race banner invisible, docs/punctuators-ladder.md §12.8); and the canvas
+   is a static element, so any positioned box paints above it. It is ranked below #input-container
+   (see the z-index note there), and below the modal (10) and the overlay, all of which cover it. */
+.mode-art {
+    position: fixed;
+    left: 50%;
+    top: 56%;
+    transform: translate(-50%, -50%);
+    /* The picture is scenery: nothing in it is clickable, and it must never eat a click meant for
+       the chrome underneath. */
+    pointer-events: none;
+    /* Spelled out rather than left on `auto` because it is load-bearing: #input-container is ranked
+       1 so its open dropdown lands ABOVE this card. Everything else the card must stay under (the
+       modal at 10, the overlay, the map at 5000) is higher again. */
+    z-index: 0;
+    transition: opacity 320ms ease, transform 320ms ease;
+}
+
+/* Pow! clears the field — the heroes and their shots are drawn on the canvas BENEATH this element,
+   so anything still here would paint over the game. Added by index.js only once the round has
+   actually started, never on a rejected sentence. */
+.mode-art.is-gone {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.94);
+}
+
+.mode-art__card {
+    width: min(340px, 84vw);
+    background: white;
+    border: 3px solid var(--mode-accent, blueviolet);
+    border-radius: 12px;
+    /* Hard offset shadow, no blur — the same chunky block the rest of the game's chrome uses. */
+    box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    text-align: center;
+    font-family: 'Palanquin', sans-serif;
+}
+
+/* The picture half. A fixed height so every mode's card is the same size whatever its glyph, and so
+   a sprite has a known box to fill. */
+.mode-art__figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    height: 132px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(0, 0, 0, 0.04) 100%);
+}
+
+.mode-art__glyph {
+    font-size: 58px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--mode-accent, blueviolet);
+    /* The glyph is standing in for art, so give it the outline the game's own lettering has. */
+    text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
+}
+
+/* Only Ambigrambador asks for this: a second copy of the word, turned over, which IS the mode. */
+.mode-art__glyph--flip {
+    transform: rotate(180deg);
+    opacity: 0.55;
+    font-size: 44px;
+}
+
+/* What a mode's sprite will draw into once modeArt.js grows a `sprite` path. */
+.mode-art__sprite {
+    max-width: 100%;
+    max-height: 100%;
+    image-rendering: auto;
+}
+
+.mode-art__band {
+    border-top: 3px solid var(--mode-accent, blueviolet);
+    padding: 8px 10px 10px;
+}
+
+.mode-art__name {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--mode-accent, blueviolet);
+}
+
+.mode-art__example {
+    font-family: monospace;
+    font-size: 13px;
+    margin-top: 4px;
+    color: #333;
+}
+
+.mode-art__tease {
+    font-size: 12px;
+    margin-top: 4px;
+    color: #555;
+    line-height: 1.3;
+}
+
+/* On a phone #input-container becomes a column, so the box above is taller and the picture has to
+   sit lower and smaller to stay clear of it. */
+@media screen and (max-width: 480px) {
+    .mode-art {
+        top: 66%;
+    }
+
+    .mode-art__figure {
+        height: 96px;
+    }
+
+    .mode-art__glyph {
+        font-size: 42px;
+    }
+
+    .mode-art__glyph--flip {
+        font-size: 32px;
+    }
+
+    .mode-art__tease {
+        display: none; /* the name and the example carry it; the tease is the first thing to go */
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mode-art {
+        transition: none;
+    }
 }
