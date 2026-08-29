@@ -1,7 +1,7 @@
 # Punctuators — The Grand Prefixer & Sufferix (Affix Aliens)
 
-**Status: SPECCED 2026-08-29. M1 (the tables) + M2 (the mode) BUILT 2026-08-29 — the sentence marks
-up, nothing shoots yet. DEV-ONLY** (`?dev=1`) — see §1.2.
+**Status: SPECCED 2026-08-29. M1 (the tables) + M2 (the mode) + M3 (the four heroes) BUILT
+2026-08-29 — IT IS PLAYABLE. DEV-ONLY** (`?dev=1`) — see §1.2. M4 (the feel) remains.
 
 A wordplay mode where words keep their meaning but change their *pieces*. Two characters, four hero
 entries, one span set. Inspired by the Swamp Thing "Pog" issue, whose aliens speak an English that has
@@ -272,8 +272,27 @@ broadsword rather than a "spreading ring"). Two shapes, two colours:
 - **Reversal bolt** — one bar with an arrowhead at each end pointing outward. Reads as `↔`. "Opposite."
 
 Character is carried by **colour**, operation by **shape**, so a player learns four shots from two facts.
-Both can be drawn into an offscreen canvas and handed to the `Hero` constructor as a **data URL**, the way
-`drawBroadswordSprite()` does — so swapping in real art later is a one-string change.
+
+**BUILT 2026-08-29** as `drawEqualsBoltSprite(color)` / `drawReversalBoltSprite(color)` — both drawn into
+an offscreen canvas and handed to the `Hero` constructor as a **data URL**, the way
+`drawBroadswordSprite()` does, so swapping in real art later is a one-string change. Four sprites, two
+shapes × two colours. The Equals bolt is deliberately **two masses** where the Reversal bolt is **one**, so
+at the 28 px they are actually drawn at the pair separates on *count* rather than on detail. `roundRect`
+was wanted for the bars and is not used: it only landed in Safari 16.4, and the radius is invisible at
+28 px anyway.
+
+**The two characters are drawn the same way** (`drawAlienSprite({color, side, lean})` → the data URL
+*and* the muzzle in source pixels). Placeholder art, but not `Generic.png` twice: the ladder shipped M3
+with General and Keen wearing the same placeholder and they were indistinguishable on screen, and here
+the whole interface is knowing which of four heroes is on stage. One figure, mirrored by `side` and
+posture-shifted by `lean` — the Prefixer leaning into the sentence with his antenna swept forward, Sufferix
+leaning away with hers trailing. Colours: **`#c2410c`** warm/forward for him, **`#4c1d95`** cool/trailing
+for her.
+
+Drawing the art is also what supplies the `projectileAnchor`. A hero with no anchor spawns its shot at the
+top of its image **frame**, which is the weapon only when the figure fills that frame — the bug that had
+Keen Arrow's bolt launching from empty sky. `drawAlienSprite` returns the muzzle it drew, so the anchor is
+**measured, not guessed**: `muzzle × heroScale`, less half the bolt's drawn width on the x.
 
 ### 4.4 Bench (not being built, kept because they are good)
 
@@ -300,8 +319,15 @@ untouched) used as intended, and it needs no new machinery at all.
 
 As built (`affixSpanHTML`): the data attributes are lowercase — the tables are — but the **display is
 sliced out of the original token**, so `Unhappy` keeps its capital and only the lookup is normalised.
-The whole span is a function of a bare token and nothing else, which is what lets M3 rebuild it after
-a swap by calling the same function.
+The whole span is a function of a bare token and nothing else, which is what lets a shot rebuild it after
+a swap.
+
+**As built (M3), that rebuild is `updateAffixSpan(span, token)`** rather than a second call to
+`affixSpanHTML` — a shot has to rewrite a span that already exists, and re-creating the element would take
+it out of `nodeArr` (the observer runs once and then disconnects, so a replaced node is a target that no
+longer exists). The two share one `affixInnerHTML` builder, so the wrap-time span and the post-shot span
+can never draw the same word differently. The data attributes are **recomputed, not patched**, because the
+new spelling can carry a different affix at the other end or none at all.
 
 **Why not separate ids per shape** (`affixPre` / `affixSuf` / `affixBoth`): a hero's `targetId` is a single
 string, so answering to two ids would mean adding a `targetIds` set to `Hero` — new machinery for no gain.
@@ -391,6 +417,11 @@ shots are routine, not an edge case.
 **Not load-bearing (dev, 2026-08-29): this is a sketch to build against and expected to be tuned in play,
 not a spec to implement faithfully.** Nothing else in the doc depends on it.
 
+**Four of the six BUILT 2026-08-29, pulled forward into M3 by the dev's call** — the two *outcome* pairs
+(`_affixSwap`, which covers equal and opposite off one shape, plus `_affixStrip` and `_affixClank`) —
+because a clank with no cue at all is literally nothing: the bolt lands, the word does not change, and the
+mode reads as broken rather than as informative. The two **shoot** cues stay M4.
+
 On the existing `_tone` / `_noise` kit — no new assets, matching every hero cue in the game.
 
 The design encodes the linguistics, which is the point of the mode:
@@ -404,9 +435,10 @@ The design encodes the linguistics, which is the point of the mode:
 - **Strip** is a descending drop with nothing after it — the affix falling off.
 - **Clank** is one flat, short, unloaded tick. Not a buzzer (§6.3).
 
-Six cues total. Following the ladder's precedent, the four ladder heroes **override
-`hitProjectileSound()` to silence** and the affix collision branch plays the outcome's own cue, because
-one hit has more than one outcome and the generic one-hit-one-sound call site cannot express that.
+Six cues total. Following the ladder's precedent, all four affix heroes **override
+`hitProjectileSound()` to silence** (on the shared `AffixAlien` base) and `shootAffix` plays the outcome's
+own cue, because one hit has four outcomes — equal, opposite, strip, clank — and the generic
+one-hit-one-sound call site cannot express that.
 
 ---
 
@@ -416,8 +448,8 @@ one hit has more than one outcome and the generic one-hit-one-sound call site ca
 | --- | --- | --- |
 | **M1** | **BUILT 2026-08-29** — `affixData.js`: the two group tables, mirrored opposite pairs, `STRIPPABLE`, longest-first sorting, `detect(word)` and one `swapAffix(word, end, op, turn)` covering equal/opposite/strip (a clank is a `null`, not an error) | Pure data + pure functions. No wordlist, no build step, no DOM, no imports. `assertAffixTables()` ships with it — it catches the one edit that fails silently, the same string in two groups. |
 | **M2** | **BUILT 2026-08-29** — the `affixes` `<option>` carrying `data-dev` (§1.2), `affixFunc.js` (`AFFIX_ID` / `hasAffixes` / `wrapAffixes` / `affixSpanHTML` / `applyAffixCase`), `protectedAffixes` in `SpanPlaceholder.js`, `case "affixes"` in `addSpansAndIdsForWordPlay`, §6.5's suppression (the `ladderMode` flag renamed `heroManagedWords`), the `.afx` marker CSS, and the no-matches guard in `index.js` | Sentence marks up; nothing shoots yet. With no hero answering to the `affix` id, `heroToTheRescue` returns an empty team and `doActionOnce` leaves the title-page hero on screen — which reads as broken, so the round says so in `#error-message`. **That one message is M3's to delete.** |
-| **M3** | The four heroes — two drawn projectiles as data URLs, four entries adjacent in `availableHeroArray`, `targetId = "affix"` on all four, the collision branch in `animate()` | Playable. Placeholder art for the two characters. |
-| **M4** | The feel — §7's animations, §8's six cues (provisional), `modeHelp.js` card, `modeArt.js` card, `fixArticleBefore` wiring | Shippable, still dev-only. |
+| **M3** | **BUILT 2026-08-29 — PLAYABLE.** The four heroes: one `AffixAlien` base + four thin subclasses, `targetId = AFFIX_ID` on all four, adjacent in `availableHeroArray`; **four drawn projectiles** (2 shapes × 2 colours) and **two drawn characters**, all data URLs (§4.3); `updateAffixSpan` in `affixFunc.js` (§5); `shootAffix` + `claimAffixShot` + `flashAffixClank` and the `AFFIX_ID` collision branch in `index.js`; four of §8's cues pulled forward; the `.affix-clank` flash in `index.css`; M2's placeholder message deleted | The turn counter that walks a group (§3.5) lives on the span as `data-afx-<end>-<op>` — **per end AND per operation**, so the equal bolt's cycle is not disturbed by a reversal shot at the same word in between. |
+| **M4** | The feel — §7's animations, §8's two remaining (shoot) cues, `modeHelp.js` card, `modeArt.js` card, `fixArticleBefore` wiring (§6.4) | Shippable, still dev-only. |
 | **M4.5** | Drop `data-dev` from the `<option>` | The dev's call, once they are happy with it. One attribute. |
 | **M5** | *Deferred by the dev 2026-08-29* — the real-word layer: stem check against `enable1`, jackpot chime when a swap lands in `2of12`, a distinct fumble cue when the stem is not a word | The tiers exist in §2; the policy is fully loose until this lands. |
 | **M6** | *Parked* — "Restore the alien message": the game shows a Pog-speak sentence and you shoot it back into English. Real win state, needs a validity checker and a puzzle source | Precedent is Restore the Phrase (§11 of the ladder doc). |
@@ -437,11 +469,20 @@ M1–M4 is the shipping unit.
 - `SpanPlaceholder.js` — **BUILT** — `protectedAffixes`
 - `utils/utils.js` — **BUILT** — `case "affixes"` in `addSpansAndIdsForWordPlay`; the Foon/Art
   suppression flag renamed `ladderMode` → `heroManagedWords` and its comment block extended (§6.5)
-- `index.js` — **M2 BUILT** (the `hasAffixes` guard and the M3 placeholder message). Still M3: four
-  hero classes, four instances adjacent in `availableHeroArray`, the collision branch, the two
-  `draw*Sprite` projectile builders, six SFX on the `_tone` kit
-- `index.css` — **M2 BUILT** — `.affix-word` (inline-block, as `.word-ladder` is, so §7's animations
-  can scale it) and the `.afx` markers (colour/border only, §5.1). Still M4: the swap animations
+- `affixFunc.js` — **M3 BUILT** — `updateAffixSpan` (§5), sharing one `affixInnerHTML` builder with
+  `affixSpanHTML`
+- `index.js` — **M3 BUILT** — `drawEqualsBoltSprite` / `drawReversalBoltSprite` / `drawAlienSprite`,
+  the `AffixAlien` base and its four subclasses, the four instances adjacent in
+  `availableHeroArray`, the `AFFIX_ID` collision branch, `shootAffix` / `claimAffixShot` /
+  `flashAffixClank`, and `_affixSwap` / `_affixStrip` / `_affixClank` on the `_tone` kit. The M2
+  placeholder message is gone. Still M4: the two shoot cues, §7's animations, `fixArticleBefore`
+- `index.css` — **M3 BUILT** — `.affix-clank` (drop-shadow, deliberately grey rather than the hero's
+  colour, so a clank cannot read as a hit), on top of M2's `.affix-word` (inline-block, as
+  `.word-ladder` is, so §7's animations can scale it) and the `.afx` markers (colour/border only,
+  §5.1). Still M4: the swap animations
+- `affix-sprite-preview.html` — **M3, dev scratch** — renders the placeholder sprites at game size by
+  fetching `index.js` and slicing the block between two markers, so it can never drift from what the
+  game draws. Delete whenever
 - `modeHelp.js` — **still M4** — a card keyed `affixes`; examples must be real output of the shipped
   tables. Until then the mode falls back to the punctuation card, as an unknown mode does
 - `modeArt.js` — **still M4** — a card keyed `affixes`; glyph candidate `un-` over `-less`, or `=`
@@ -458,8 +499,9 @@ M1–M4 is the shipping unit.
 2. **Does the Prefixer shoot the front of the word and Sufferix the back?** Projectiles fly straight up
    and cannot be aimed, so a word's x-range is its whole hit box — sub-word aiming is not possible without
    splitting the word into two spans, which §5 rejected. Currently both heroes hit anywhere on the word
-   and the *character* decides which end changes. Worth a play-test: if it reads as arbitrary, the fix is
-   the `.afx` marker being louder, not a second span.
+   and the *character* decides which end changes. Worth a play-test — **now possible, M3 is
+   playable**: if it reads as arbitrary, the fix is the `.afx` marker being louder (M4 can tint the two
+   markers in the two heroes' own colours), not a second span.
 3. **Should repeated shots cycle the group, or pick at random?** §3.5 says cycle. Random would make the
    alien inconsistent, which is truer to the premise but harder to learn from.
 4. **A "Lexicon of Pog"** — keeping every alien word you coin, the way the Word Hoard and the Tree of

@@ -1,0 +1,88 @@
+<!doctype html>
+<!-- Dev-only scratch page: renders the Affix Aliens placeholder sprites at game size.
+     It does NOT copy the drawing code — it fetches index.js and slices the block between the two
+     markers below, so what you see is exactly what the game draws. Delete whenever. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Affix Aliens — placeholder sprite preview</title>
+    <style>
+      body { background: #fff; font-family: system-ui, sans-serif; margin: 24px; color: #222; }
+      .row { display: flex; gap: 40px; align-items: flex-end; flex-wrap: wrap; }
+      figure { margin: 0; text-align: center; }
+      figcaption { font-size: 13px; margin-top: 8px; }
+      canvas { image-rendering: auto; }
+      .bolts img { display: block; margin: 0 auto 6px; }
+      h2 { font-size: 15px; margin: 28px 0 10px; }
+      #err { color: crimson; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1 style="font-size: 18px">Affix Aliens — placeholder art, at game size</h1>
+    <div id="err"></div>
+    <h2>Heroes (drawn at heroScale 0.5, the size they appear on the canvas)</h2>
+    <div class="row" id="heroes"></div>
+    <h2>Projectiles (drawn at projectileScale 0.2 = 28px, and again at 4× to see the shape)</h2>
+    <div class="row bolts" id="bolts"></div>
+    <script type="module">
+      const src = await (await fetch("./index.js")).text();
+      const from = src.indexOf("const AFFIX_HERO_SCALE");
+      const to = src.indexOf("// The Grand Prefixer leans INTO the sentence");
+      if (from < 0 || to < 0) {
+        document.getElementById("err").textContent =
+          "Couldn't find the sprite block in index.js — the markers moved.";
+      } else {
+        const mod = await import(
+          URL.createObjectURL(
+            new Blob(
+              [
+                src.slice(from, to) +
+                  "\nexport { drawAlienSprite, drawEqualsBoltSprite, drawReversalBoltSprite," +
+                  " PREFIXER_COLOR, SUFFERIX_COLOR, AFFIX_HERO_SCALE };",
+              ],
+              { type: "text/javascript" },
+            ),
+          )
+        );
+
+        const heroes = document.getElementById("heroes");
+        for (const [name, cfg] of [
+          ["The Grand Prefixer", { color: mod.PREFIXER_COLOR, side: 1, lean: 10 }],
+          ["Sufferix", { color: mod.SUFFERIX_COLOR, side: -1, lean: -8 }],
+        ]) {
+          const art = mod.drawAlienSprite(cfg);
+          const fig = document.createElement("figure");
+          const img = new Image();
+          img.src = art.src;
+          img.onload = () => {
+            img.width = img.naturalWidth * mod.AFFIX_HERO_SCALE;
+          };
+          const cap = document.createElement("figcaption");
+          cap.textContent = `${name} — muzzle (${art.muzzle.x}, ${art.muzzle.y})`;
+          fig.append(img, cap);
+          heroes.append(fig);
+        }
+
+        const bolts = document.getElementById("bolts");
+        for (const [name, url] of [
+          ["Prefixer =", mod.drawEqualsBoltSprite(mod.PREFIXER_COLOR)],
+          ["Prefixer ↔", mod.drawReversalBoltSprite(mod.PREFIXER_COLOR)],
+          ["Sufferix =", mod.drawEqualsBoltSprite(mod.SUFFERIX_COLOR)],
+          ["Sufferix ↔", mod.drawReversalBoltSprite(mod.SUFFERIX_COLOR)],
+        ]) {
+          const fig = document.createElement("figure");
+          const small = new Image();
+          small.src = url;
+          small.width = 28;
+          const big = new Image();
+          big.src = url;
+          big.width = 112;
+          const cap = document.createElement("figcaption");
+          cap.textContent = name;
+          fig.append(small, big, cap);
+          bolts.append(fig);
+        }
+      }
+    </script>
+  </body>
+</html>

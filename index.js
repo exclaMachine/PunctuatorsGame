@@ -15,8 +15,14 @@ import { hasAmbigrams } from "./AmbigramFunc.js";
 import { hasAnagrams } from "./anagrams.js";
 import { hasHomophones } from "./HomophonesFuncs.js";
 // Affix Aliens — the Grand Prefixer & Sufferix (docs/punctuators-affixes.md). No corpus and no
-// build step: the tables in affixData.js are the whole data layer, so this is a plain static import.
-import { hasAffixes } from "./affixFunc.js";
+// build step: the tables in affixData.js are the whole data layer, so these are plain static imports.
+import {
+  AFFIX_ID,
+  hasAffixes,
+  applyAffixCase,
+  updateAffixSpan,
+} from "./affixFunc.js";
+import { EQUAL, OPPOSITE, PRE, SUF, swapAffix } from "./affixData.js";
 // The How-to-Play card for the mode you have picked (one per <option>) — swapped in on selection,
 // not at Pow!, so the rules are readable while you are still choosing what to play.
 import { modeHelpFor } from "./modeHelp.js";
@@ -914,6 +920,81 @@ function pickRung(kid, hero, projectile) {
   openShelfFan(host, hero, false);
 }
 
+/* ── AFFIX ALIENS (docs/punctuators-affixes.md §6) ────────────────────────────────────────────────
+
+   One span, four heroes. Everything that decides what a shot does lives on the SHOOTER — which end
+   of the word it owns (affixEnd) and whether it keeps the meaning or inverts it (affixOp) — so the
+   collision branch hands this the hero and nothing else.
+
+   `shooter`, never the global `player`: all four heroes answer to the same id and switching between
+   them mid-flight is the NORMAL way to play this mode, so a bolt that outlives its hero's turn on
+   stage still has to resolve as the loadout that fired it. (The owner fix of 2026-08-28; see the
+   note at the top of the collision loop.) */
+
+/* One affix action per shot, for the reason claimLadderShot exists: a projectile is not spliced out
+   of `projectiles` until a setTimeout(…, 0), and two affixed words can sit close enough that the
+   5px hit margin overlaps both — so without a latch a single bolt could change two words, or the
+   same word twice. */
+function claimAffixShot(projectile) {
+  if (!projectile) return true;
+  if (projectile.affixDone) return false;
+  projectile.affixDone = true;
+  return true;
+}
+
+/* The clank (§6.3), and the one moment the word does NOT change. Deliberately colourless: the hero's
+   own colour is what a landed shot writes, so a clank borrowing it would read as a hit. drop-shadow
+   rather than text-shadow for the ladder's reason — it layers over the black outline instead of
+   blanking it for the length of the flare. */
+function flashAffixClank(span) {
+  span.classList.remove("affix-clank");
+  void span.offsetWidth; // restart the animation on a repeat shot
+  span.classList.add("affix-clank");
+  setTimeout(() => span.classList.remove("affix-clank"), 460);
+}
+
+function shootAffix(span, hero, projectile) {
+  if (!claimAffixShot(projectile)) return;
+
+  const end = hero.affixEnd;
+  const op = hero.affixOp;
+  // The word as it is ON SCREEN, which is the only reading that carries its case: data-word is
+  // lowercase because the tables are, and the display is sliced out of the original token.
+  const shown = span.textContent;
+
+  /* How far this word's end has walked its group (§3.5). Kept per end AND per operation, because
+     the two are separate cycles — shooting the equal bolt three times should walk three members of
+     the group whether or not the reversal bolt has been fired at the same word in between. */
+  const turnAttr = `data-afx-${end}-${op}`;
+  const turn = Number(span.getAttribute(turnAttr)) || 0;
+
+  const swap = swapAffix(shown, end, op, turn);
+  if (!swap) {
+    // Nothing on this character's end, or an affix whose group has neither an opposite nor a strip.
+    // A fact about the word, not a mistake — which is why the cue is a tick and not a buzzer.
+    flashAffixClank(span);
+    _affixClank();
+    return;
+  }
+
+  span.setAttribute(turnAttr, String(turn + 1));
+
+  // Case is copied by SHAPE, not position: affixes differ in length from the ones they replace, so
+  // `Unhappy` -> `Nonhappy` and `UNHAPPY` -> `NONHAPPY`, and nothing is copied letter by letter.
+  const surface = applyAffixCase(shown, swap.result);
+
+  // A redraw, never a lock (§6.6): the span keeps its id and its data attributes are recomputed
+  // from the new spelling, so `unhappy -> nonhappy -> imhappy` keeps going for as long as you shoot.
+  updateAffixSpan(span, surface);
+
+  span.style.color = hero.characterColor;
+  span.style.textShadow =
+    "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
+
+  if (swap.kind === "strip") _affixStrip();
+  else _affixSwap(hero, swap.kind);
+}
+
 /* ── WORD RACE (docs/punctuators-ladder.md §12) ───────────────────────────────────────────────────
 
    Shoot to ask, type to summon, shoot to travel. Going UP needs no typing — there is only ever one
@@ -1613,15 +1694,6 @@ removePuncButton.addEventListener("click", async () => {
   // Both word-supplying modes write their own status into #error-message as you play, so clearing
   // it here would wipe the line that just told the player what they're looking at.
   if (!NO_SENTENCE_MODES.has(selectedOption)) errorMessage.innerText = "";
-  // M2 marks the words and stops there. The four heroes are M3, so nothing answers to the "affix"
-  // span id yet, heroToTheRescue comes back empty, and doActionOnce leaves the title-page hero on
-  // screen rather than assembling a team — which reads as broken unless the round says so out loud.
-  // Delete this block with M3. #error-message is red by default; this is progress, not a fault.
-  if (selectedOption === "affixes") {
-    errorMessage.style.color = "black";
-    errorMessage.innerText =
-      "Affix Aliens M2 — the live prefixes and suffixes are marked. The Grand Prefixer and Sufferix arrive in M3.";
-  }
   bRightAfterSentenceIsLoaded = true;
 });
 
@@ -2055,6 +2127,47 @@ function _phraseLock() {
   _tone(1175, "sine", 0.14, 0.13); // D6
   _tone(784, "sine", 0.36, 0.16, null, 0.07); // settling onto G5
   _tone(392, "triangle", 0.42, 0.09, null, 0.07); // and its octave below, for weight
+}
+
+/* ── AFFIX ALIENS — the outcome cues (docs/punctuators-affixes.md §8) ─────────────────────────────
+   PROVISIONAL by the dev's own note: a sketch to play against, not a spec. Four of the six here,
+   pulled forward from M4 because a clank with no cue at all is literally nothing — the shot lands,
+   the word doesn't change, and the mode reads as broken. The two SHOOT cues stay M4.
+
+   The design encodes the linguistics, which is the point of the mode. One melodic shape: EQUAL
+   plays it transposed (the same tune in another key — same meaning, alien spelling) and OPPOSITE
+   plays it inverted (every rise becomes a fall). And the character's place in the WORD becomes its
+   place in TIME — the Grand Prefixer accents before the beat, Sufferix after it — which is the
+   cheapest way to make four cues tell each other apart on the existing kit. */
+const _afxHz = (semitonesFromA4) => 440 * Math.pow(2, semitonesFromA4 / 12);
+
+function _affixSwap(hero, kind) {
+  const pre = hero.affixEnd === PRE;
+  // The two characters sit in different registers, so colour separates them before the rhythm does.
+  const root = pre ? 3 : -9;
+  const shape = kind === "opposite" ? [0, -3, -7] : [0, 3, 7];
+  const beat = 0.07;
+  // The Prefixer's three notes are pushed back to leave room for a pickup in front of them;
+  // Sufferix's start on the beat and leave room for a tail behind them.
+  const t0 = pre ? beat : 0;
+  shape.forEach((n, i) =>
+    _tone(_afxHz(root + n), "triangle", 0.16, 0.13, null, t0 + i * beat),
+  );
+  if (pre) _tone(_afxHz(root - 12), "sine", 0.06, 0.08, null, 0);
+  else _tone(_afxHz(root + shape[2] + 12), "sine", 0.06, 0.08, null, t0 + 3 * beat);
+}
+
+// The affix falling off (§3.3's strip) — one drop, and nothing after it.
+function _affixStrip() {
+  _tone(660, "triangle", 0.3, 0.16, 180);
+  _noise(0.09, 0.12, 700, 2, 0.05);
+}
+
+// §6.3: NOT a buzzer. `hopeful` genuinely has no prefix, so a Prefixer shot on it is a fact, not a
+// mistake — the same reasoning that made the ladder's capstone a chord. One flat, unloaded tick.
+function _affixClank() {
+  _noise(0.05, 0.14, 420, 1.2);
+  _tone(196, "square", 0.07, 0.07);
 }
 
 /* THE WIN — the one cue that is not a hero's and not a single event: it is the whole sentence
@@ -2666,6 +2779,328 @@ class KeenArrowRace extends KeenArrow {
   constructor() {
     super();
     this.targetId = RACE_DOWN_ID;
+  }
+}
+
+/* ── AFFIX ALIENS — the cast (docs/punctuators-affixes.md §4) ─────────────────────────────────────
+   Two characters, FOUR hero entries: the Grand Prefixer and Sufferix each carry an Equals bolt and
+   a Reversal bolt. That is the Full Stop pattern — one character in two loadouts, adjacent in
+   availableHeroArray so Switch Character steps between them — and here it does the work an aiming
+   control would do in a game that had one, since projectiles fly straight up and cannot be aimed.
+
+   All four set targetId = AFFIX_ID and answer to the SAME span (§5). Character is carried by
+   COLOUR, operation by SHAPE, so a player learns four shots from two facts.
+
+   Every pixel below is drawn into an offscreen canvas and handed to the Hero constructor as a data
+   URL — drawBroadswordSprite()'s trick, for the same reason: the placeholder takes the identical
+   Image() path real art would, so swapping in a PNG later is one string per sprite and nothing else
+   in the game knows how the pixels were made. */
+
+const AFFIX_HERO_SCALE = 0.5;
+const AFFIX_BOLT_SRC = 140; // the bolt canvases are square
+const AFFIX_BOLT_SCALE = 0.2; // → 28px drawn, the width every other projectile lands near
+const AFFIX_BOLT_PX = AFFIX_BOLT_SRC * AFFIX_BOLT_SCALE;
+
+const PREFIXER_COLOR = "#c2410c"; // warm, forward — he arrives before the meaning does
+const SUFFERIX_COLOR = "#4c1d95"; // cool, trailing — she is what is left at the end
+
+/* The Equals bolt: two short parallel bars. Reads as `=` at any size. "Same meaning." */
+function drawEqualsBoltSprite(color) {
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = AFFIX_BOLT_SRC;
+  const g = cv.getContext("2d");
+  // Outlined in near-black like every other sprite here: the canvas behind is repainted white every
+  // frame, so an unoutlined bolt in a light colour would simply not be there.
+  g.lineJoin = "round";
+  g.strokeStyle = "#14170f";
+  g.lineWidth = 8;
+  g.fillStyle = color;
+  // Plain rects, not roundRect: that method only landed in Safari 16.4 and this repo runs on
+  // whatever the player has. At 28px drawn, the corner radius would not have been visible anyway.
+  for (const y of [30, 82]) {
+    g.beginPath();
+    g.rect(18, y, 104, 28);
+    g.fill();
+    g.stroke();
+  }
+  return cv.toDataURL("image/png");
+}
+
+/* The Reversal bolt: one bar with an arrowhead at each end, pointing outward. Reads as `↔`.
+   "Opposite." Deliberately ONE mass where the Equals bolt is two, so the pair separates at 28px on
+   count rather than on detail. */
+function drawReversalBoltSprite(color) {
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = AFFIX_BOLT_SRC;
+  const g = cv.getContext("2d");
+  const mid = AFFIX_BOLT_SRC / 2;
+  g.lineJoin = "round";
+  g.strokeStyle = "#14170f";
+  g.lineWidth = 8;
+  g.fillStyle = color;
+  g.beginPath();
+  g.moveTo(10, mid); // the left head
+  g.lineTo(48, mid - 40);
+  g.lineTo(48, mid - 15);
+  g.lineTo(92, mid - 15); // the shaft
+  g.lineTo(92, mid - 40);
+  g.lineTo(130, mid); // the right head
+  g.lineTo(92, mid + 40);
+  g.lineTo(92, mid + 15);
+  g.lineTo(48, mid + 15);
+  g.lineTo(48, mid + 40);
+  g.closePath();
+  g.fill();
+  g.stroke();
+  return cv.toDataURL("image/png");
+}
+
+/* The two aliens, from one drawing. They are the same species and read as a pair; what separates
+   them is which side everything sweeps to and which way they lean — the Prefixer out in front,
+   announcing, and Sufferix bringing up the rear (§4.1, §4.2).
+
+   Returns the data URL AND the muzzle in SOURCE pixels, because the hero's projectileAnchor has to
+   be measured off the art rather than guessed: without one a shot spawns at the top of the image
+   FRAME, which is only the weapon when the figure fills its frame (the bug that had Keen Arrow's
+   bolt launching from empty sky). Drawing the art means we know the number instead of measuring it. */
+const ALIEN_W = 320;
+const ALIEN_H = 460;
+
+function drawAlienSprite({ color, side, lean }) {
+  const cv = document.createElement("canvas");
+  cv.width = ALIEN_W;
+  cv.height = ALIEN_H;
+  const g = cv.getContext("2d");
+  const cx = ALIEN_W / 2;
+  const hx = cx + lean * side; // the head and shoulders lean; the feet stay planted
+
+  g.lineJoin = "round";
+  g.lineCap = "round";
+  g.strokeStyle = "#14170f";
+
+  const dark = "#14170f";
+  // A flat wash plus one lighter face is enough shading at this size; anything finer is lost.
+  const lit = "rgba(255,255,255,0.22)";
+
+  // Legs and feet.
+  g.lineWidth = 20;
+  g.strokeStyle = dark;
+  for (const s of [-1, 1]) {
+    g.beginPath();
+    g.moveTo(cx + s * 24, 300);
+    g.quadraticCurveTo(cx + s * 36, 370, cx + s * 30, 424);
+    g.stroke();
+  }
+  g.lineWidth = 8;
+  for (const s of [-1, 1]) {
+    g.beginPath();
+    g.ellipse(cx + s * 30 + s * 10, 432, 30, 14, 0, 0, Math.PI * 2);
+    g.fillStyle = color;
+    g.fill();
+    g.stroke();
+  }
+
+  // The far arm, hanging. Drawn before the torso so it sits behind it.
+  g.lineWidth = 18;
+  g.strokeStyle = dark;
+  g.beginPath();
+  g.moveTo(hx - side * 40, 210);
+  g.quadraticCurveTo(hx - side * 74, 250, hx - side * 62, 300);
+  g.stroke();
+
+  // The torso — a tapered ovoid, shoulders wider than hips.
+  g.lineWidth = 8;
+  g.beginPath();
+  g.moveTo(hx - 52, 196);
+  g.quadraticCurveTo(hx - 62, 268, cx - 30, 306);
+  g.lineTo(cx + 30, 306);
+  g.quadraticCurveTo(hx + 62, 268, hx + 52, 196);
+  g.quadraticCurveTo(hx, 172, hx - 52, 196);
+  g.closePath();
+  g.fillStyle = color;
+  g.fill();
+  g.stroke();
+  g.beginPath();
+  g.moveTo(hx - 30, 200);
+  g.quadraticCurveTo(hx - 40, 260, cx - 18, 300);
+  g.lineTo(cx - 2, 300);
+  g.quadraticCurveTo(hx - 18, 250, hx - 8, 198);
+  g.closePath();
+  g.fillStyle = lit;
+  g.fill();
+
+  // The near arm, raised, holding the bolt emitter overhead — a herald's posture for him, the last
+  // word for her, and in both cases the only place a straight-up shot can honestly come from.
+  const handX = hx + side * 86;
+  const handY = 118;
+  g.lineWidth = 18;
+  g.strokeStyle = dark;
+  g.beginPath();
+  g.moveTo(hx + side * 44, 206);
+  g.quadraticCurveTo(hx + side * 88, 190, handX, handY);
+  g.stroke();
+
+  // The emitter: a short rod, its tip the muzzle.
+  const muzzle = { x: handX + side * 4, y: 26 };
+  g.lineWidth = 8;
+  g.beginPath();
+  g.moveTo(handX, handY + 6);
+  g.lineTo(muzzle.x, muzzle.y);
+  g.strokeStyle = dark;
+  g.lineWidth = 22;
+  g.stroke();
+  g.strokeStyle = color;
+  g.lineWidth = 12;
+  g.stroke();
+  g.beginPath();
+  g.ellipse(muzzle.x, muzzle.y + 6, 16, 12, 0, 0, Math.PI * 2);
+  g.fillStyle = color;
+  g.fill();
+  g.lineWidth = 6;
+  g.strokeStyle = dark;
+  g.stroke();
+
+  // The head — a big ovoid, wider at the crown.
+  g.lineWidth = 8;
+  g.beginPath();
+  g.ellipse(hx, 118, 62, 76, 0, 0, Math.PI * 2);
+  g.fillStyle = color;
+  g.fill();
+  g.stroke();
+  g.beginPath();
+  g.ellipse(hx - 22, 104, 26, 44, -0.2, 0, Math.PI * 2);
+  g.fillStyle = lit;
+  g.fill();
+
+  // Eyes: two big almonds, tilted toward the side the character faces.
+  g.fillStyle = dark;
+  for (const s of [-1, 1]) {
+    g.beginPath();
+    g.ellipse(hx + s * 26, 122, 20, 13, s * side * 0.45, 0, Math.PI * 2);
+    g.fill();
+  }
+  g.fillStyle = "rgba(255,255,255,0.85)";
+  for (const s of [-1, 1]) {
+    g.beginPath();
+    g.ellipse(hx + s * 26 + side * 6, 118, 5, 4, 0, 0, Math.PI * 2);
+    g.fill();
+  }
+
+  // The antenna, swept the way the character travels: forward for the herald, trailing for the one
+  // who comes after. It is the fastest read on which of the two is on stage.
+  g.lineWidth = 9;
+  g.strokeStyle = dark;
+  // Kept short on purpose: the raised arm is on the same side, so a longer sweep would put the bulb
+  // through the emitter rod.
+  g.beginPath();
+  g.moveTo(hx - side * 6, 46);
+  g.quadraticCurveTo(hx + side * 26, 16, hx + side * 46, 30);
+  g.stroke();
+  g.beginPath();
+  g.arc(hx + side * 46, 30, 11, 0, Math.PI * 2);
+  g.fillStyle = color;
+  g.fill();
+  g.stroke();
+
+  return { src: cv.toDataURL("image/png"), muzzle };
+}
+
+// The Grand Prefixer leans INTO the sentence, Sufferix away from it — a `lean` of 0 would leave the
+// two mirror images of each other, which is a weaker read than a posture.
+const PREFIXER_ART = drawAlienSprite({ color: PREFIXER_COLOR, side: 1, lean: 10 });
+const SUFFERIX_ART = drawAlienSprite({ color: SUFFERIX_COLOR, side: -1, lean: -8 });
+
+const PREFIXER_EQUALS = drawEqualsBoltSprite(PREFIXER_COLOR);
+const PREFIXER_REVERSAL = drawReversalBoltSprite(PREFIXER_COLOR);
+const SUFFERIX_EQUALS = drawEqualsBoltSprite(SUFFERIX_COLOR);
+const SUFFERIX_REVERSAL = drawReversalBoltSprite(SUFFERIX_COLOR);
+
+/* One base class, because the four entries genuinely differ only in data: which end of the word the
+   character owns, which operation the loadout performs, and what the bolt looks like. */
+class AffixAlien extends Hero {
+  constructor({ art, color, symbol, projectile, end, op }) {
+    super(
+      art.src,
+      AFFIX_HERO_SCALE,
+      symbol,
+      color,
+      0, // inert: projectileAnchor below owns the spawn point outright
+      50,
+      projectile,
+      undefined,
+      AFFIX_BOLT_SCALE,
+      undefined,
+      undefined,
+      art.src, // no attack frame yet
+    );
+    // §5: one span id, four heroes. The hero with nothing to do on a particular word clanks, which
+    // is the lesson that `hopeful` has no prefix.
+    this.targetId = AFFIX_ID;
+    this.affixEnd = end;
+    this.affixOp = op;
+    // Measured off the art rather than guessed, which is the point of drawing it: the muzzle is the
+    // tip of the emitter the figure is holding, in source pixels, scaled into the drawn frame, less
+    // half the bolt's own width so the shot leaves centred on the rod.
+    this.projectileAnchor = {
+      x: art.muzzle.x * AFFIX_HERO_SCALE - AFFIX_BOLT_PX / 2,
+      y: art.muzzle.y * AFFIX_HERO_SCALE,
+    };
+  }
+  /* Silent, for the ladder's reason (§8): one affix hit has four outcomes — an equal swap, an
+     opposite swap, a strip, and a clank — and the generic one-hit-one-sound call site cannot say
+     which. shootAffix plays the outcome's own cue instead. */
+  hitProjectileSound() {}
+}
+
+class GrandPrefixerEqual extends AffixAlien {
+  constructor() {
+    super({
+      art: PREFIXER_ART,
+      color: PREFIXER_COLOR,
+      symbol: "The Grand Prefixer =",
+      projectile: PREFIXER_EQUALS,
+      end: PRE,
+      op: EQUAL,
+    });
+  }
+}
+
+class GrandPrefixerOpposite extends AffixAlien {
+  constructor() {
+    super({
+      art: PREFIXER_ART,
+      color: PREFIXER_COLOR,
+      symbol: "The Grand Prefixer ↔",
+      projectile: PREFIXER_REVERSAL,
+      end: PRE,
+      op: OPPOSITE,
+    });
+  }
+}
+
+class SufferixEqual extends AffixAlien {
+  constructor() {
+    super({
+      art: SUFFERIX_ART,
+      color: SUFFERIX_COLOR,
+      symbol: "Sufferix =",
+      projectile: SUFFERIX_EQUALS,
+      end: SUF,
+      op: EQUAL,
+    });
+  }
+}
+
+class SufferixOpposite extends AffixAlien {
+  constructor() {
+    super({
+      art: SUFFERIX_ART,
+      color: SUFFERIX_COLOR,
+      symbol: "Sufferix ↔",
+      projectile: SUFFERIX_REVERSAL,
+      end: SUF,
+      op: OPPOSITE,
+    });
   }
 }
 
@@ -3482,6 +3917,10 @@ let general = new GeneralIzation();
 let keen = new KeenArrow();
 let generalRace = new GeneralIzationRace();
 let keenRace = new KeenArrowRace();
+let prefixerEqual = new GrandPrefixerEqual();
+let prefixerOpposite = new GrandPrefixerOpposite();
+let sufferixEqual = new SufferixEqual();
+let sufferixOpposite = new SufferixOpposite();
 
 let availableHeroArray = [
   period,
@@ -3514,6 +3953,14 @@ let availableHeroArray = [
   // The Word Race pair, adjacent for the same reason (§12.2).
   generalRace,
   keenRace,
+  /* All four Affix Aliens adjacent, in this order, so Switch Character walks Prefixer= →
+     Prefixer↔ → Sufferix= → Sufferix↔ (affixes §4). Adjacency IS the interface here: the four
+     share one span id, so switching is the only way to choose which end of the word changes and
+     whether it keeps its meaning. */
+  prefixerEqual,
+  prefixerOpposite,
+  sufferixEqual,
+  sufferixOpposite,
   article,
   foon,
 ];
@@ -3948,6 +4395,11 @@ function animate() {
                 } else {
                   climbLadder(punctuationSymbol, shooter, projectile);
                 }
+              } else if (punctuationSymbol.id === AFFIX_ID) {
+                // All four Affix Aliens land here (§5): one span id, and the shooter's own
+                // affixEnd/affixOp decide which end of the word changes and how. The gate above has
+                // already matched on targetId, so nothing here needs to know which hero it is.
+                shootAffix(punctuationSymbol, shooter, projectile);
               } else if (punctuationSymbol.id === RACE_UP_ID) {
                 // Word Race splits the two heroes across two ids instead of sharing one (§12.2), so
                 // the gate above has already decided which hero this is — General can only ever

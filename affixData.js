@@ -1,9 +1,9 @@
 /* affixData.js — The Grand Prefixer & Sufferix, the tables and the swap.
    docs/punctuators-affixes.md §3 (the data) and §6 (the rules on a hit).
 
-   M1: pure data + pure functions. No wordlist, no build step, no DOM, no imports. affixFunc.js owns
-   the sentence side (which words are marked, what the span looks like); index.js will own the hero
-   side (who shot it, what it looks like when it changes).
+   Pure data + pure functions. No wordlist, no build step, no DOM, no imports. affixFunc.js owns the
+   sentence side (which words are marked, what the span looks like); index.js owns the hero side
+   (who shot it, and what it looks like when it changes).
 
    Two things about this file are load-bearing:
 

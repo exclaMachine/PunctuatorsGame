@@ -1992,3 +1992,29 @@ span[data-hint] {
 .afx-suf {
     border-bottom-style: dotted;
 }
+
+/* The clank (§6.3) — the one shot that changes nothing. A grey shudder of light, NOT the hero's
+   colour: a landed shot writes that colour into the word, so a clank borrowing it would read as a
+   hit on a word that had simply refused to change. drop-shadow rather than text-shadow, the
+   ladder's rule, so the flare layers over the black outline instead of blanking it. */
+.affix-clank {
+    animation: affix-clank 460ms ease-out;
+}
+
+@keyframes affix-clank {
+    0% {
+        filter: none;
+    }
+    30% {
+        filter: drop-shadow(0 0 7px rgba(120, 120, 130, 0.95));
+    }
+    100% {
+        filter: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .affix-clank {
+        animation: none;
+    }
+}
