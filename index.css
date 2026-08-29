@@ -1757,3 +1757,60 @@ span[data-hint] {
 @media (prefers-reduced-motion: reduce) {
   .tree-map__help { transition: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   THE INTERROBANG — the fused mark left by the Excla Machine / Question Markswoman combo
+   (docs/punctuators.md, "The Interrobang").
+
+   Drawn as a superimposed ? and ! in the two heroes' own colours rather than as U+203D: the
+   sentence is set in Palanquin, which has no interrobang glyph, so the real character would
+   silently fall back to a system font and sit in the line in the wrong typeface. The colours
+   are written inline by interrobangLanding() so the heroes stay the single source of them.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+.ib-stack {
+    position: relative;
+    display: inline-block;
+}
+
+/* The ? stays in flow and holds the box, so the sentence reflows exactly once. */
+.ib-stack .ib-e {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* ! is much narrower than ?, so it is CENTRED over it — left-aligning the two would read as a
+       typo rather than as one mark. */
+    text-align: center;
+    pointer-events: none;
+}
+
+.ib-stack .ib-q,
+.ib-stack .ib-e {
+    /* The same outline every revealed mark in the game wears. */
+    text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
+}
+
+/* A gold flare on the mark the fused shot actually struck. On .ib-stack rather than the
+   punctuation span itself, because that span is inline and transform does nothing to an inline
+   box — .ib-stack is already inline-block for the superimposing. */
+.ib-land {
+    animation: ib-flare 700ms ease-out 1;
+}
+
+@keyframes ib-flare {
+    0%   { transform: scale(1);    filter: drop-shadow(0 0 0 gold); }
+    30%  { transform: scale(1.35); filter: drop-shadow(0 0 14px gold); }
+    100% { transform: scale(1);    filter: drop-shadow(0 0 0 gold); }
+}
+
+/* A quieter one on the mark it absorbed, so it is clear why a mark nobody shot at just lit up. */
+.ib-absorbed {
+    display: inline-block; /* see .ib-land — an inline box cannot be scaled */
+    animation: ib-absorb 700ms ease-out 1;
+}
+
+@keyframes ib-absorb {
+    0%   { opacity: 0; transform: scale(1.6); }
+    40%  { opacity: 1; }
+    100% { opacity: 1; transform: scale(1); }
+}

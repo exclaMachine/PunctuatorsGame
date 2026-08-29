@@ -2165,6 +2165,13 @@ class Hero {
        the top of its frame needs one — which is any hero drawn with air above its head, since the
        frame is bottom-anchored by restingY and the spare pixels all pile up at the top. */
     this.projectileAnchor = null;
+    /* How fast this hero's shot climbs, in px per frame. Was hardcoded as `y: -10` at all four
+       shoot sites; it lives here now so a hero can have a speed of its own. 10 is what every hero
+       has always used, so only the two that set it are changed by this existing at all — and
+       CommaTongue reads the same number to grow by, which is why comma and hashtag must keep the
+       default. The Interrobang combo is the reason there is a difference to express: the arrow has
+       to be able to catch the belt (see docs/punctuators.md, "The Interrobang"). */
+    this.projectileSpeed = 10;
 
     this.sfx = {
       shoot: this.projectileShootSound
@@ -2676,6 +2683,262 @@ class DrHyphenol extends Hero {
   }
 }
 
+/* ════════════════════════════════════════════════════════════════════════════════════════════════
+   THE INTERROBANG — a hidden two-hero combo (docs/punctuators.md, "The Interrobang")
+
+   Throw Excla Machine's belt, hit Switch Character, and put Question Markswoman's arrow through the
+   hoop before it clears the top of the screen: the two shots fuse into one interrobang, which lands
+   on the next ! or ? it reaches and resolves BOTH marks at once.
+
+   It needs almost no new machinery, because four things the engine already does happen to line up —
+   none of them built for this:
+
+     - switchToNextHero() carries the outgoing hero's CENTRE to the incoming one, so the arrow
+       launches up the belt's column by itself. Projectiles fly straight up and cannot be aimed, so
+       without that rule the combo would be impossible rather than merely hard; with it, the only
+       skill is timing.
+     - Collision is gated on span id, so Excla's belt flies straight past a ? and keeps climbing.
+       Nothing has to be suppressed to let it travel over the target.
+     - EM_Belt.png is literally a hoop (194x111) and Arrow.png an arrow, so the fused sprite is two
+       images the game already ships, composited. No new art.
+     - ! and ? spans exist only in the ordinary punctuation round, so every other mode is untouched
+       by construction: no <option>, no data file, no wrap* function, no mode gate.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* On a 750px-tall canvas with the sentence's first line at y~160. What matters is not either number
+   but the CLOSING speed, `ARROW_SPEED - BELT_SPEED`: that is what decides how long the player has to
+   press shoot after throwing the hoop, and it has to survive the ~17 frames the Switch animation
+   costs before they can even press it.
+
+   At 22px a frame the window is ~1.6s, which is generous enough that the combo lands even if you
+   hesitate over the Switch. Rejected on the way here: 14 (belt 4 / arrow 18) gave ~0.92s and played
+   tighter than it measured; 13 gave ~0.62s, tight enough that the egg would go unfound; and the very
+   first guess of belt 6 / arrow 16 had the two meeting LEVEL with the sentence, with no room left
+   for the fused shot to travel at all.
+
+   Retune HERE — nothing else in the game knows these numbers. Widening the gap is nearly free on
+   Markswoman's side (an arrow reading as fast is in character) and expensive on Excla's, since his
+   belt has to stay slow enough to catch but quick enough that an ordinary round is not a wait. */
+const BELT_SPEED = 4;
+const ARROW_SPEED = 26;
+
+/* The belt and the arrow, fused. A class of its own rather than flags on Projectile, because its
+   draw() is bespoke — and it is the only shot in the game that answers to two different marks. */
+class InterrobangShot {
+  constructor({ belt, arrow }) {
+    // Born where the hoop is, travelling at the arrow's speed: the arrow is what carries it home.
+    this.position = { x: belt.position.x, y: belt.position.y };
+    this.velocity = { x: 0, y: -ARROW_SPEED };
+    /* She fired the shot that completed it, so the win bubble takes her colour and her attack pose
+       holds while it flies. It has to be a REAL hero either way, not a stand-in object:
+       aimSpeechTail() reads speechTailHero.position and .width off whatever wins the game. */
+    this.owner = question;
+    /* The one thing about this shot the collision gate cannot get from its owner — it answers to
+       BOTH marks. The gate consults targetIds only when a projectile carries one, so no other shot
+       in the game is affected by this field existing. */
+    this.targetIds = new Set([exclamation.symbol, question.symbol]);
+    /* Its landing plays _interrobang() itself, so the generic per-hit cue at the shared call site
+       must not also fire — the same split the ladder heroes use, for the same reason (a hit that
+       means something particular cannot be sounded by a call site that does not know that). */
+    this.silentHit = true;
+
+    this.beltImage = belt.projImage;
+    this.arrowImage = arrow.projImage;
+    this.beltWidth = belt.width;
+    this.beltHeight = belt.height;
+    this.arrowWidth = arrow.width;
+    this.arrowHeight = arrow.height;
+
+    /* Hit box: the hoop's width and the arrow's height, fed through the SAME collision expression
+       as every other shot (its historical `position.y - height` quirk included, so the fused shot
+       registers no earlier or later than the two that made it). The belt is what the player aimed,
+       so the belt's width is what catches the mark. */
+    this.width = this.beltWidth;
+    this.height = this.arrowHeight;
+  }
+
+  /* Threaded, not stacked. The hoop is drawn as a ring seen from slightly above, so an arrow coming
+     up through the hole passes IN FRONT of the far (top) rim and BEHIND the near (bottom) one —
+     which is three source-cropped drawImage calls in that order, and reads as genuinely through. */
+  draw() {
+    if (!this.beltImage || !this.arrowImage) return;
+    const half = this.beltHeight / 2;
+    const srcW = this.beltImage.width;
+    const srcH = this.beltImage.height;
+    const srcHalf = srcH / 2;
+
+    // Far rim — behind the shaft.
+    c.drawImage(
+      this.beltImage,
+      0,
+      0,
+      srcW,
+      srcHalf,
+      this.position.x,
+      this.position.y,
+      this.beltWidth,
+      half,
+    );
+
+    // The arrow, centred in the hole and poking out top and bottom.
+    c.drawImage(
+      this.arrowImage,
+      this.position.x + this.beltWidth / 2 - this.arrowWidth / 2,
+      this.position.y + half - this.arrowHeight / 2,
+      this.arrowWidth,
+      this.arrowHeight,
+    );
+
+    // Near rim — in front of the shaft, which is what sells the threading.
+    c.drawImage(
+      this.beltImage,
+      0,
+      srcHalf,
+      srcW,
+      srcH - srcHalf,
+      this.position.x,
+      this.position.y + half,
+      this.beltWidth,
+      this.beltHeight - half,
+    );
+  }
+
+  update() {
+    this.draw();
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
+  }
+}
+
+/* Take a shot out of play IMMEDIATELY, unlike retireProjectile's deferred splice. That deferral
+   exists to stop a landing shot visibly blinking out; nothing blinks here, because the fused shot
+   takes both their places in the very same frame. Doing it now is also what keeps a belt that has
+   just been consumed from still registering a hit further down this frame's collision walk, which
+   the deferred path would allow. Still by identity, never by a held index. */
+function consumeShot(projectile) {
+  projectile.spent = true;
+  const at = projectiles.indexOf(projectile);
+  if (at !== -1) projectiles.splice(at, 1);
+}
+
+/* Does this arrow go THROUGH this hoop, rather than merely overlap it? */
+function threadsTheHoop(belt, arrow) {
+  const tip = arrow.position.y;
+  const tail = arrow.position.y + arrow.height;
+  const ringTop = belt.position.y;
+  const ringBottom = belt.position.y + belt.height;
+  // The tip has reached the ring, and the arrow has not already gone by.
+  if (tip > ringBottom || tail < ringTop) return false;
+  /* And the shaft's centre is inside the hoop's span — centre-in-hoop rather than a plain rect
+     overlap, so grazing the rim does not count. Still forgiving: 97px of hoop against an 11px
+     arrow. And the vertical window cannot be stepped over at any sane tuning — the shots overlap for
+     (belt height + arrow height) = ~121px of RELATIVE travel, which even at the current 22px a frame
+     of closing speed is five frames of chances to notice. */
+  const shaft = arrow.position.x + arrow.width / 2;
+  return shaft >= belt.position.x && shaft <= belt.position.x + belt.width;
+}
+
+/* Run once a frame, BEFORE the collision walk, so a shot is never both fused and flown. */
+function checkInterrobangFusion() {
+  const belts = [];
+  const arrows = [];
+  for (const p of projectiles) {
+    // No projImage means the sprite has not loaded, so width/height are still the placeholder
+    // guesses — and an InterrobangShot has none at all, which is what keeps this from re-fusing.
+    if (p.spent || !p.projImage) continue;
+    if (p.owner === exclamation) belts.push(p);
+    else if (p.owner === question) arrows.push(p);
+  }
+  if (!belts.length || !arrows.length) return;
+
+  for (const belt of belts) {
+    for (const arrow of arrows) {
+      if (belt.spent || arrow.spent) continue;
+      if (!threadsTheHoop(belt, arrow)) continue;
+      consumeShot(belt);
+      consumeShot(arrow);
+      projectiles.push(new InterrobangShot({ belt, arrow }));
+      _interrobangFuse();
+      return; // one thread per frame is plenty
+    }
+  }
+}
+
+/* The mark of the other kind nearest the one just struck, ignoring any already resolved. Horizontal
+   distance, because the shot arrived up a column and "the one it was nearest to" is the reading a
+   player will make. Null when every partner is already hit — the fusion still lands, it just has
+   nothing left to absorb. */
+function nearestUnhitPartner(span) {
+  const wanted =
+    span.id === exclamation.symbol ? question.symbol : exclamation.symbol;
+  const from = span.getBoundingClientRect().left;
+  let best = null;
+  let bestGap = Infinity;
+  for (const node of nodeArr) {
+    if (!node.isConnected || node.id !== wanted) continue;
+    if (allPunctuationHit.has(node)) continue;
+    const gap = Math.abs(node.getBoundingClientRect().left - from);
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = node;
+    }
+  }
+  return best;
+}
+
+/* The payoff. The struck mark becomes the two heroes' marks superimposed, and its opposite number
+   is absorbed into it — revealed in its own hero's colour and counted as hit, so the combo really
+   does resolve two marks with one shot. The shared win check that follows the branch chain sees
+   both, so a sentence finished this way wins normally. */
+function interrobangLanding(span, projectile) {
+  projectile.interrobangDone = true;
+  span.dataset.interrobang = "1";
+
+  /* Stacked spans, not U+203D. The sentence is set in Palanquin, which has no interrobang glyph, so
+     the real character would silently fall back to a system font and sit in the line in the wrong
+     typeface. Superimposing the two heroes' own marks renders everywhere, matches the line — and
+     puts the joke on screen, which one borrowed glyph would not. */
+  span.innerHTML =
+    `<span class="ib-stack ib-land">` +
+    `<span class="ib-q" style="color:${question.characterColor}">?</span>` +
+    `<span class="ib-e" style="color:${exclamation.characterColor}">!</span>` +
+    `</span>`;
+
+  const partner = nearestUnhitPartner(span);
+  if (partner) {
+    const owner = partner.id === exclamation.symbol ? exclamation : question;
+    partner.classList.remove("hidden-punc");
+    partner.style.color = owner.characterColor;
+    partner.style.textShadow =
+      "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
+    partner.classList.add("ib-absorbed");
+    allPunctuationHit.add(partner);
+  }
+
+  _interrobang();
+}
+
+/* The arrow going through the hoop — a ring struck in passing. Deliberately short and bright, and
+   deliberately NOT the landing cue: it is the only signal that the trick came off, a beat before
+   the shot lands, and the player needs to hear that the two shots became one. */
+function _interrobangFuse() {
+  _noise(0.06, 0.3, 2600, 6);
+  _tone(1760, "sine", 0.35, 0.26, null, 0.01);
+  _tone(2637, "sine", 0.28, 0.14, null, 0.03);
+}
+
+/* The landing: the two heroes' own hit cues fused. Her thwack (_questionHit) lands first and his
+   bell (_exclaHit) rings out under it, so it reads as the ring being struck rather than as two
+   sounds at once, with a fifth on top for the one glyph the two marks became. Same _tone/_noise kit
+   as every other hero cue in this file — no new assets. */
+function _interrobang() {
+  _noise(0.09, 0.48, 750, 5);
+  _tone(170, "triangle", 0.14, 0.32, 58);
+  _tone(1047, "sine", 0.7, 0.34, null, 0.05);
+  _tone(1319, "sine", 0.5, 0.2, null, 0.07);
+  _tone(1568, "sine", 0.55, 0.14, null, 0.1);
+}
+
 class ExclaMachine extends Hero {
   constructor() {
     super(
@@ -2692,6 +2955,12 @@ class ExclaMachine extends Hero {
       undefined,
       "./images/EM_Belt2.png",
     );
+    /* A lobbed hoop, not a bullet. Slow enough that Question Markswoman's arrow can catch it and
+       thread it before it reaches the sentence — the whole Interrobang combo hangs off the GAP
+       between this number and hers, not on either one alone (see the note on ARROW_SPEED for the
+       windows each gap buys). It costs Excla's ordinary shot ~0.57s → ~1.4s to reach the sentence,
+       which is the point of a thrown belt, and is the one change ordinary play feels. */
+    this.projectileSpeed = BELT_SPEED;
   }
   hitProjectileSound() {
     _exclaHit();
@@ -2839,6 +3108,8 @@ class QuestionMarkswoman extends Hero {
       undefined,
       "./images/QM2.png",
     );
+    // A snap, against Excla's lob — the other half of the Interrobang combo's closing speed.
+    this.projectileSpeed = ARROW_SPEED;
   }
   hitProjectileSound() {
     _questionHit();
@@ -3087,7 +3358,9 @@ class CommaTongue {
   }
 
   draw() {
-    c.fillStyle = "pink";
+    // The hero's own colour, not a hardcoded pink — OctoThwarter fires this same class and his
+    // spray paint is turquoise.
+    c.fillStyle = this.owner.characterColor;
     c.fillRect(
       this.position.x,
       this.position.y + this.startYPosition,
@@ -3096,10 +3369,22 @@ class CommaTongue {
     );
   }
 
+  /* The tip of the tongue as it is DRAWN. Kept here so the collision test and fillRect can never
+     drift apart: the test used to read `position.y - owner.projectileLength` (100) against a tip
+     drawn at `position.y - 40`, so a lick registered a hit 60px before it looked like one. */
+  tipY() {
+    return this.position.y + this.startYPosition;
+  }
+
   update() {
+    /* A tongue grows out of her mouth rather than travelling, so its base belongs wherever she is
+       NOW — not wherever she stood when she fired. Nothing used to re-read the hero, so `position.x`
+       was written once at construction and the whole column stayed put while she walked away from
+       her own tongue. Re-anchoring every frame makes walking mid-lick a sideways sweep, which is
+       both the fix and the only aim-after-firing move any hero has. */
+    this.position.x = this.owner.projectileSpawn().x;
     this.draw();
     this.height -= this.velocity.y;
-    this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
   }
 }
@@ -3153,8 +3438,11 @@ let availableHeroArray = [
   comma,
   parenthesis,
   semicolon,
-  question,
+  // Adjacent, and in THIS order on purpose: Switch Character steps Excla -> Markswoman, which is
+  // the order the Interrobang combo is performed in (throw the hoop, then thread it). Ordering also
+  // decides the starting hero, so a sentence with a ! and no earlier mark now opens on Excla.
   exclamation,
+  question,
   apostrophe,
   quotes,
   hyphen,
@@ -3299,6 +3587,12 @@ function animate() {
   let firingThisFrame = false;
   for (const projectile of projectiles) projectile.flownThisFrame = false;
 
+  /* Before the collision walk, never during it: an arrow that threads the hoop this frame replaces
+     both shots with one, and doing that mid-walk would leave the walk holding shots that are no
+     longer in the array. Costs a scan of a handful of projectiles and does nothing at all unless a
+     belt and an arrow are in the air together. */
+  checkInterrobangFusion();
+
   projectiles.forEach((projectile) => {
     /* Every test and every effect below belongs to the hero that FIRED this shot, not to whoever
        is selected right now. A shot outlives its hero's turn on stage (it finishes its flight
@@ -3322,18 +3616,31 @@ function animate() {
         // and removes by identity, so a double retire can no longer take an unrelated shot with it.)
         // Undefined in every other mode.
         if (projectile.ladderDone) return;
+        /* The same latch, for the same reason, one combo along: a fused interrobang answers to BOTH
+           marks, so with an unhit ! and an unhit ? still on screen the walk would otherwise reach
+           the second one in this very frame and land the shot twice. */
+        if (projectile.interrobangDone) return;
         //tried to do this for left and right parenthesis, might need to come back to it
         // if (punctuationSymbol.className.includes(player.symbol)) {
-        // targetId, not symbol — the ladder heroes share one span id (§4). Identical for everyone else.
-        if (punctuationSymbol.id === (shooter.targetId ?? shooter.symbol)) {
-          // for Comma Chameleon. TODO refactor because only difference is projectileLength and code for when I add tongue retract
+        /* targetId, not symbol — the ladder heroes share one span id (§4). Identical for everyone
+           else, except the one shot that answers to two marks rather than one: a fused interrobang
+           carries its own `targetIds` set, and nothing else in the game has that field. */
+        const wantedIds = projectile.targetIds;
+        if (
+          wantedIds
+            ? wantedIds.has(punctuationSymbol.id)
+            : punctuationSymbol.id === (shooter.targetId ?? shooter.symbol)
+        ) {
+          /* Comma Chameleon and HashTagger, whose shot is a CommaTongue that grows out of the
+             hero instead of travelling — so the only difference from the branch below is that the
+             tip is asked for (tipY) rather than derived from the shot's own height.
+             TODO refactor once the tongue retracts. */
           if (
             shooter.symbol === comma.symbol ||
             shooter.symbol === hashtag.symbol
           ) {
             if (
-              projectile.position.y - shooter.projectileLength <=
-                punctuationSymbol.getBoundingClientRect().y &&
+              projectile.tipY() <= punctuationSymbol.getBoundingClientRect().y &&
               projectile.position.x + projectile.width >=
                 punctuationSymbol.getBoundingClientRect().left -
                   PROJECTILE_HIT_MARGIN_OF_ERROR &&
@@ -3378,8 +3685,15 @@ function animate() {
               if (shooter === player && shooter.secondHeroImage) {
                 firingThisFrame = true;
               }
-              projectile.flownThisFrame = true;
-              projectile.update();
+              /* ONCE per frame. This walk is nodeArr x projectiles, so a shot is offered every
+                 span that matches it — and a sentence with two commas in it therefore moved Comma
+                 Chameleon's tongue twice a frame, at double speed. Long-standing and easy to miss
+                 (it reads as "shots are faster in busy sentences"), but a fused interrobang answers
+                 to two whole marks at once, so the measured speeds above depend on the guard. */
+              if (!projectile.flownThisFrame) {
+                projectile.flownThisFrame = true;
+                projectile.update();
+              }
             }
           } else {
             if (
@@ -3394,7 +3708,13 @@ function animate() {
                   PROJECTILE_HIT_MARGIN_OF_ERROR
             ) {
               // console.log("hit!");
-              if (punctuationSymbol.id == capitalize.symbol) {
+              /* First in the chain, because it is the only branch that can arrive at either of two
+                 different marks and has to win over whatever that mark would normally do. Guarded
+                 on the span as well as the shot, so a mark can only be turned into an interrobang
+                 once however many fused shots reach it. */
+              if (projectile.targetIds && !punctuationSymbol.dataset.interrobang) {
+                interrobangLanding(punctuationSymbol, projectile);
+              } else if (punctuationSymbol.id == capitalize.symbol) {
                 setClassName("blackhole-expand", punctuationSymbol);
 
                 setTimeout(() => {
@@ -3772,7 +4092,11 @@ function animate() {
               }
               setTimeout(() => {
                 retireProjectile(projectile);
-                shooter.hitProjectileSound();
+                /* A shot whose landing means something particular sounds it from its own handler
+                   and silences the generic cue — the ladder heroes do this by overriding
+                   hitProjectileSound(), which a fused interrobang cannot, since its owner is
+                   Markswoman and her ordinary hits must still thwack. */
+                if (!projectile.silentHit) shooter.hitProjectileSound();
 
                 if (shooter.symbol === asterisk.symbol) {
                   if (punctuationSymbol.previousSibling === null) return;
@@ -3818,8 +4142,15 @@ function animate() {
               if (shooter === player && shooter.secondHeroImage) {
                 firingThisFrame = true;
               }
-              projectile.flownThisFrame = true;
-              projectile.update();
+              /* ONCE per frame. This walk is nodeArr x projectiles, so a shot is offered every
+                 span that matches it — and a sentence with two commas in it therefore moved Comma
+                 Chameleon's tongue twice a frame, at double speed. Long-standing and easy to miss
+                 (it reads as "shots are faster in busy sentences"), but a fused interrobang answers
+                 to two whole marks at once, so the measured speeds above depend on the guard. */
+              if (!projectile.flownThisFrame) {
+                projectile.flownThisFrame = true;
+                projectile.update();
+              }
             }
           }
         }
@@ -3914,7 +4245,7 @@ shootButton.addEventListener("pointerdown", (e) => {
         position: player.projectileSpawn(),
         velocity: {
           x: 0,
-          y: -10,
+          y: -player.projectileSpeed,
         },
       }),
     );
@@ -3924,7 +4255,7 @@ shootButton.addEventListener("pointerdown", (e) => {
         position: player.projectileSpawn(),
         velocity: {
           x: 0,
-          y: -10,
+          y: -player.projectileSpeed,
         },
       }),
     );
@@ -4125,7 +4456,7 @@ addEventListener("keydown", (event) => {
             position: player.projectileSpawn(),
             velocity: {
               x: 0,
-              y: -10,
+              y: -player.projectileSpeed,
             },
           }),
         );
@@ -4135,7 +4466,7 @@ addEventListener("keydown", (event) => {
             position: player.projectileSpawn(),
             velocity: {
               x: 0,
-              y: -10,
+              y: -player.projectileSpeed,
             },
           }),
         );

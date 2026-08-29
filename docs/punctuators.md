@@ -317,3 +317,201 @@ A side effect worth knowing: with those guards the first hero now appears on you
 keypress, as the code always intended. Before `3941ac8` that assignment threw a temporal-dead-zone
 `ReferenceError`, and you had to press **Switch Character** to see anyone — which is presumably why the
 name tag still says to.
+
+---
+
+## The Interrobang — a hidden two-hero combo
+
+**BUILT 2026-08-29.**
+
+An easter egg, not a mode: it needs no `<option>`, no data file and no `wrap*` function. It exists only in
+the ordinary punctuation round, and only when the typed sentence contains **both a `!` and a `?`**.
+
+**The trick.** Excla Machine throws his belt. Before it clears the top of the screen, Question Markswoman
+threads an **arrow through the hoop**. The two shots fuse into a single interrobang projectile, which
+lands on the next `!` or `?` it reaches and resolves **both** marks at once.
+
+### Why it works with almost no new machinery
+
+Four properties of the existing engine do most of the job, and none of them were built for this:
+
+- **Same column is free.** `switchToNextHero()`'s `slideOut` already carries the outgoing hero's *centre*
+  to the incoming one (`index.js:4016`, and the section above). Throw the belt → Switch → shoot, and the
+  arrow launches up the exact column the belt is climbing. That matters because projectiles fly straight up
+  (`velocity {x: 0, y: -10}`) and cannot be aimed — without the centre-carry rule the combo would be
+  unhittable, and with it the *only* skill is timing.
+- **The belt already ignores question marks.** Collision is gated on
+  `punctuationSymbol.id === shooter.targetId` (`index.js:3340`), so Excla's belt flies straight past a `?`
+  span and keeps climbing. Nothing has to be suppressed to let it travel over the target.
+- **The art is already right.** `EM_Belt.png` is literally a **hoop** (194 × 111, drawn at scale 0.5 →
+  97 × 55) and `Arrow.png` is an arrow (57 × 331 at 0.2 → 11 × 66). An arrow threaded through a thrown ring
+  is a composite of two sprites the game already ships. **No new art.**
+- **The mode needs no gate.** `!` and `?` spans only exist in the punctuation round, so every other mode is
+  untouched by construction.
+
+### The four decisions (settled 2026-08-29)
+
+1. **Two birds, one shot.** The fused projectile hits whichever mark it reaches first and counts **both**
+   the `?` and the `!` as hit. The trick genuinely saves a shot, and it works in either column rather than
+   only over the `?`.
+2. **The speed change is permanent, for both heroes.** Excla's belt becomes a slow lob, Markswoman's arrow
+   a fast snap, in every sentence. The alternative — changing speed only when both marks are present —
+   makes a hero feel different depending on the sentence, which reads as a bug. See *Tuning* below; this is
+   the biggest gameplay change in the feature and the one most worth vetoing on review.
+3. **The mark is drawn as stacked spans, not `‽`.** The game's font is **Palanquin**, which almost
+   certainly has no U+203D glyph — the browser would silently fall back to a system font and the mark would
+   sit in the sentence in the wrong typeface. Instead a blue `?` and a yellow `!` are superimposed in the
+   game's own font, each in its hero's colour. It renders everywhere, matches the line, and the joke is
+   *visible*: the two heroes' marks literally on top of each other.
+4. **Sound and sprite only.** A fused cue, the arrow-through-hoop sprite, a glow on the landing. No burst,
+   no banner, no `localStorage`, no How-to-Play mention. Discovered, never explained.
+
+### Hero order
+
+`availableHeroArray` (`index.js:3163`) currently reads `… semicolon, question, exclamation, …`. Swap the
+two so **Excla comes first**: Switch Character then steps Excla → Markswoman, which is the order the combo
+is performed in. Ordering also decides the starting hero (`player = chosenHeroArray[0]`), so a sentence
+with a `!` and no earlier-ordered mark now opens on Excla instead of Markswoman — the only side effect, and
+a harmless one.
+
+### Projectile speed
+
+Speed is hardcoded as `y: -10` at **four** sites — both shoot handlers, twice each (`index.js:3931`,
+`3941`, `4142`, `4152`). Add **`Hero.projectileSpeed`**, defaulting to `10`, and have all four read
+`player.projectileSpeed`. Every hero but these two is then bit-for-bit unchanged, `CommaTongue` included
+(it derives its growth from the same `velocity.y`, and comma/hashtag keep the default).
+
+**Tuning: belt 4, arrow 26.** What matters is neither number but the **closing speed**
+(`ARROW_SPEED - BELT_SPEED`) — that is what decides how long the player has to press shoot, and it has to
+survive the ~17 frames the Switch animation costs before they can even press it. On a 1440 × 800 desktop
+(`canvas.height = innerHeight - 50 = 750`), with the sentence's first line at y ≈ 160:
+
+| | height | `restingY` | shot spawns at |
+| --- | --- | --- | --- |
+| Excla Machine (0.6 × 447) | 268 | 502 | y = 502 |
+| Question Markswoman (0.7 × 447) | 313 | 457 | y = 457 |
+
+The arrow starts **45 px above** where the belt started, a small free head start. Solving for the frame `F`
+at which the arrow must be fired for the two to meet *before* the belt reaches the sentence:
+
+- **belt 4 / arrow 26 → closing 22 px/frame → ≈ 1.6 s** to press shoot once the Switch animation
+  (`SWITCH_SLIDE_SPEED = 32`) is paid for. Shipped: generous enough that the combo lands even if you
+  hesitate over the Switch.
+- belt 4 / arrow 18 → closing 14 → ≈ 0.92 s. Shipped first, and **played tighter than it measured** —
+  widened on the first play-test.
+- belt 5 / arrow 18 → closing 13 → ≈ 0.62 s. Tight enough that the egg would go unfound.
+- belt 6 / arrow 16 (the first guess) → the fusion happens level with the sentence, leaving no room for
+  the fused shot to travel at all. Rejected.
+
+Widening the gap is nearly free on Markswoman's side — an arrow reading as fast is *in character* — and
+expensive on Excla's, whose belt has to stay slow enough to catch but quick enough that an ordinary round
+isn't a wait. So the arrow is the knob to turn.
+
+The cost is that Excla's ordinary shot slows from ≈ 0.57 s to ≈ 1.4 s to reach the sentence. He throws a
+belt, so a lob reads honestly — and `whoosh.mp3` already suits it — but it is a real change to a core hero.
+Both numbers live as named constants so this is one edit to re-tune.
+
+### Detecting the thread
+
+A small pass in `animate()`, **before** the collision walk, scanning `projectiles` for one live belt
+(`owner === exclamation`) and one live arrow (`owner === question`). O(n²) over a handful of shots.
+
+Fuse on the first frame where **the arrow's tip has entered the hoop and the arrow's centre is inside it**:
+
+```
+arrow.position.y            <= belt.position.y + belt.height   // tip has reached the ring
+arrow.position.y + height   >= belt.position.y                 // and hasn't already passed it
+arrowCentreX within [belt.position.x, belt.position.x + belt.width]
+```
+
+Centre-in-hoop rather than a plain rect overlap, so the shot has to go *through* the ring rather than graze
+it. The window is still forgiving — the hoop is 97 px wide and the arrow 11 — and vertically it cannot be
+stepped over at any sane tuning: the two overlap for `belt height + arrow height` ≈ 121 px of **relative**
+travel, five frames' worth even at the current 22 px/frame of closing speed.
+
+Both shots then `retireProjectile()` and one **`InterrobangShot`** is pushed in their place, at the belt's
+position, travelling at the arrow's speed.
+
+### The fused shot
+
+A small class of its own rather than flags on `Projectile`, because its `draw()` is bespoke:
+
+- **Sprite.** Draw the arrow, then the belt over it, then re-draw *just the arrow's top slice* (a
+  source-cropped `drawImage`) above the ring. Three calls, and the shaft genuinely reads as passing through
+  the hole with the tip poking out the top.
+- **Hit box.** The belt's width (97) and the arrow's height, fed through the **same** collision expression
+  every other shot uses — including its historical `position.y - height` quirk, which registers a hit a
+  shot's height early. The belt is what the player aimed, so the belt's width is what catches the mark.
+- **Two targets.** The collision gate takes an optional **`projectile.targetIds`** (a `Set`); when present
+  it is consulted instead of the owner's single `targetId`. One line, and every other shot is unaffected:
+
+  ```js
+  const wants = projectile.targetIds;
+  if (wants ? wants.has(span.id) : span.id === (shooter.targetId ?? shooter.symbol)) { … }
+  ```
+
+### The landing
+
+A new branch at the **top** of the collision chain (before the `capitalize` test), guarded by a
+`data-interrobang` attribute so it can only fire once per span:
+
+1. **The struck span** becomes the stacked mark — a `.ib-stack` wrapper holding a `.ib-q` (`?`, in
+   `question.characterColor`) and a `.ib-e` (`!`, in `exclamation.characterColor`) positioned on top of each
+   other, both carrying the game's existing black outline (`1px 0 0 #000, …`). CSS goes in `index.css`.
+2. **The partner mark** — the nearest *unhit* span of the other id, by horizontal distance from the shot —
+   is revealed in **its own hero's colour** with a short absorbed-pulse, and added to `allPunctuationHit`.
+   It reveals as its ordinary `!` or `?` rather than a second stacked mark: decision 1 was "two birds, one
+   shot", not "both spans transform". If no unhit partner is left the fusion still lands and simply
+   resolves its own span.
+3. **`allPunctuationHit`** therefore gains both spans before the shared win check that follows the chain,
+   so a sentence finished by the combo wins normally and the bubble takes the fused shot's colour.
+4. **`_interrobang()`**, an eighth-of-its-kind cue on the existing `_tone`/`_noise` kit — Excla's bell ding
+   (`_exclaHit`: 1047 + 1319 Hz sine) and Markswoman's thwack (`_questionHit`: a 750 Hz noise burst + a
+   falling 170 Hz triangle) sounded *together*, the thwack landing a beat first so the bell reads as the
+   ring being struck. No new assets, matching every other hero cue in the file.
+
+### What the build added to the spec
+
+- **Two cues, not one.** `_interrobangFuse()` fires the instant the arrow threads the hoop — a short bright
+  ring — and `_interrobang()` fires on the landing. The spec had only the landing, but the fuse is the
+  *only* signal the trick came off, and it happens a beat before anything else confirms it.
+- **`consumeShot()` rather than `retireProjectile()`** for the two shots being fused. Retirement defers its
+  splice by a frame so a landing shot doesn't visibly blink out; nothing blinks here, because the fused
+  shot takes both their places in the same frame — and deferring would leave a just-consumed belt in the
+  array to still register a hit further down the same collision walk.
+- **A `silentHit` flag** read at the shared `shooter.hitProjectileSound()` call site. The ladder heroes
+  solve the same problem by overriding `hitProjectileSound()` to silence, which a fused interrobang can't:
+  its owner is Markswoman, and her ordinary hits must still thwack.
+- **`.ib-land` sits on the inner `.ib-stack`**, not on the punctuation span. That span is `inline`, and
+  `transform` does nothing to an inline box; `.ib-stack` is already `inline-block` for the superimposing.
+
+### The pre-existing bug this uncovered: a shot moved once per matching span
+
+The collision walk is `projectiles × nodeArr`, and the "just move it" branch sat inside the span loop — so
+a projectile was moved **once for every span that matched it**. A sentence with two commas moved Comma
+Chameleon's tongue at double speed, three question marks tripled Markswoman's arrow, and so on. It has been
+there all along and reads as *"shots are faster in busy sentences"*, which is why nobody chased it.
+
+It surfaced here because a fused interrobang answers to **two whole marks at once**, so the measured belt/
+arrow speeds above would have been meaningless. Both flight sites now guard on `flownThisFrame` (already
+reset at the top of every frame, and already the flag the post-walk flight pass reads) before moving:
+
+```js
+if (!projectile.flownThisFrame) {
+  projectile.flownThisFrame = true;
+  projectile.update();
+}
+```
+
+**This changes existing play**: shots in punctuation-heavy sentences now travel at their honest speed rather
+than a multiple of it. That is the fix, but it is a visible one and worth knowing about if a round suddenly
+feels slower than it used to.
+
+### Still open
+
+- **Whether the hoop should spin as it lobs.** Cheap (a `rotate` around the sprite's centre in
+  `InterrobangShot.draw()` and in the belt's own flight), sells the throw, and would make threading it feel
+  like a skill shot. Deliberately left out — polish, and easier to judge once the combo has been played.
+- **What the partner mark does.** Shipped as specced: revealed in its own hero's colour, absorbed-pulse,
+  counted as hit. The alternative — removing it from the sentence outright, since an interrobang genuinely
+  *is* both marks — is more correct typographically but risks reading as a bug when a character vanishes.
