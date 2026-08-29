@@ -6,6 +6,12 @@ wordplay mode lives in [`punctuators-ladder.md` §1](punctuators-ladder.md) — 
 `animate()`'s collision block. This file holds what a session needs to know *before* touching `index.js` /
 `utils/utils.js`, until someone writes the real thing.
 
+Per-mode planning docs live alongside this one:
+[`punctuators-ladder.md`](punctuators-ladder.md) (General Ization & Keen Arrow, plus Restore the Phrase,
+Word Race and the Tree of Kinds) and
+[`punctuators-affixes.md`](punctuators-affixes.md) (The Grand Prefixer & Sufferix — **specced, nothing
+built**).
+
 ---
 
 ## Hero placement across a switch
