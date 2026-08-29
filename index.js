@@ -1360,7 +1360,7 @@ function lockPhraseWord(span) {
 }
 
 /* Every word home. The phrase settles to plain text — the saying is the prize, not the heroes'
-   colours — and the trumpets that have only ever fired for the punctuation game fire here, because
+   colours — and the win cue that has only ever fired for the punctuation game fires here, because
    this is the first wordplay mode that can be finished (§11.1). The win CARD is M8. */
 function phraseWin() {
   closeShelfFan();
@@ -1683,10 +1683,12 @@ initLadderMap();
 // setClassName("grid-container", characterControls);
 // });
 
+/* The win cue for every mode. It used to be a stock trumpet sample; it is now `_victoryTune()`,
+   written on the same _tone/_noise kit as every hero cue, so the game's biggest moment is in the
+   game's own voice (and costs no asset load). The `.play()` shape is kept so the three call sites
+   are untouched. */
 const gameSfx = {
-  end: new Howl({
-    src: ["./sounds/success-fanfare-trumpets.mp3"],
-  }),
+  end: { play: () => _victoryTune() },
 };
 
 let mySong = new Howl({
@@ -2001,6 +2003,43 @@ function _phraseLock() {
   _tone(1175, "sine", 0.14, 0.13); // D6
   _tone(784, "sine", 0.36, 0.16, null, 0.07); // settling onto G5
   _tone(392, "triangle", 0.42, 0.09, null, 0.07); // and its octave below, for weight
+}
+
+/* THE WIN — the one cue that is not a hero's and not a single event: it is the whole sentence
+   finished, so it is the longest thing in the kit and the only one with real harmony under it.
+   Four gestures, all in C major: a three-note pickup running up the tonic triad, an ARRIVAL on the
+   octave with the chord and a bass note opening underneath it (plus a soft noise swell, the nearest
+   this kit gets to a cymbal), a scalar lift back up the scale, and a final octave landing left
+   ringing with two sparkles over the top. It resolves onto the tonic at both landings, which is
+   what makes it read as *finished* rather than as one more thing happening. */
+function _victoryTune() {
+  // 1. Pickup — C5 E5 G5, fast, so the arrival has something to arrive from.
+  [523, 659, 784].forEach((f, i) =>
+    _tone(f, "triangle", 0.11, 0.14, null, i * 0.085),
+  );
+
+  // 2. Arrival on C6, with the chord and the bass opening under it.
+  _tone(1047, "triangle", 0.45, 0.18, null, 0.28);
+  _tone(262, "sine", 1.3, 0.1, null, 0.28); // C4
+  _tone(330, "sine", 1.3, 0.08, null, 0.28); // E4
+  _tone(392, "sine", 1.3, 0.09, null, 0.28); // G4
+  _tone(131, "triangle", 1.3, 0.12, null, 0.28); // C3, the weight
+  _noise(0.3, 0.09, 4000, 1, 0.28);
+
+  // 3. The lift — G5 A5 B5 walking back up to the top note.
+  [784, 880, 988].forEach((f, i) =>
+    _tone(f, "triangle", 0.1, 0.13, null, 0.8 + i * 0.08),
+  );
+
+  // 4. The landing, left ringing: the octave, the chord again, and two sparkles above it.
+  _tone(1047, "triangle", 0.9, 0.18, null, 1.06);
+  _tone(523, "triangle", 0.9, 0.12, null, 1.06);
+  _tone(659, "sine", 0.85, 0.08, null, 1.06);
+  _tone(784, "sine", 0.85, 0.09, null, 1.06);
+  _tone(131, "sine", 1.1, 0.12, null, 1.06);
+  _noise(0.25, 0.07, 6000, 1, 1.06);
+  _tone(2093, "sine", 0.2, 0.07, null, 1.1);
+  _tone(3136, "sine", 0.22, 0.05, null, 1.22);
 }
 
 // Zana — quick insertion pop (shoot) / click (hit)

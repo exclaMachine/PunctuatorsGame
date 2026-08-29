@@ -181,6 +181,25 @@ of it followed the text without a change.
 
 ---
 
+## The win cue is synth, not a sample (`_victoryTune`)
+
+**BUILT 2026-08-28.** `gameSfx.end` was a `Howl` over `sounds/success-fanfare-trumpets.mp3` — a stock
+trumpet sample, the only borrowed sound left at the game's biggest moment, while every hero cue is
+synthesised in-file on the `_tone`/`_noise` kit. It is now `_victoryTune()`, written on that same kit, so
+the win sounds like the rest of the game and loads nothing.
+
+- **The `.play()` shape is kept** (`end: { play: () => _victoryTune() }`), so all three call sites —
+  the punctuation win's two branches in `animate()` and `phraseWin()` — are untouched.
+- **The mp3 stays in `sounds/`**: `IPA-fan-game/ipaFan.js` still plays it.
+- **Four gestures in C major, ~2.3 s**: a three-note pickup up the tonic triad, an ARRIVAL on the octave
+  with the chord and a C3 bass opening underneath (plus a short noise swell, the nearest this kit gets to
+  a cymbal), a scalar lift G–A–B, then a final octave landing left ringing under two sparkles. It resolves
+  onto the tonic at *both* landings — that is what makes it read as finished rather than as one more event.
+  It is the longest cue in the file and the only one with sustained harmony, which is how it stays clearly
+  above the eight ladder cues and every hero hit.
+
+---
+
 ## The How-to-Play modal is per-mode (`modeHelp.js`)
 
 **BUILT 2026-08-28.** The single **How to Play** button opens one modal (`#modal` in

@@ -850,7 +850,7 @@ Show a well-known saying with one or more words already **shifted along the ladd
 Why it earns its keep:
 
 - **Punctuators' first wordplay mode with a real win state.** Every mode today is an open-ended sandbox,
-  so the "triumphant trumpets" ending (`gameSfx.end`, fired at `index.js:1698`) has never applied outside
+  so the triumphant ending cue (`gameSfx.end` → `_victoryTune()`) has never applied outside
   the punctuation game. Here there is a correct answer.
 - **It teaches the direction, not just the relation.** Free play lets you wander. Here you must notice
   that `canine` is *too broad* and needs narrowing — that judgment is the actual skill.
