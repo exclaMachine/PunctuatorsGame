@@ -54,6 +54,17 @@ export const MODE_ART = {
     accent: "#2E86AB",
   },
 
+  // The glyph is the article toggle because it is the half you can draw; the caption carries the
+  // Foon. The example runs both heroes over the same three words, exactly as the How-to-Play card
+  // does — and it is real: `the` sees a consonant next and becomes `a`, and big/dog trade heads.
+  articlesSpoonerisms: {
+    glyph: "a/the",
+    name: "Articles & Spoonerisms — Art the Tickler & the Foon",
+    tease: "Tickle the little words. Trade the heads off the big ones.",
+    example: "the big dog → a dig bog",
+    accent: "#2E7D32",
+  },
+
   caret: {
     glyph: "^",
     name: "Caret — Zana",

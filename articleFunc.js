@@ -44,3 +44,10 @@ export const highlightAndClassifyArticles = (str) => {
 // const inputString = "A cat and an owl sat on the roof. The apple is sweet.";
 // const outputString = highlightAndClassifyArticles(inputString);
 // console.log(outputString);
+
+/* Is there anything here for Art the Tickler to shoot?
+
+   The same alternation as highlightAndClassifyArticles' own regex, minus the capture groups — if
+   this says yes, that function wraps at least one span, which is the only thing the guard is
+   promising. Kept next to the wrapper so the two can't drift apart. */
+export const hasArticles = (str) => /\b(the|an|a)\b/i.test(str);

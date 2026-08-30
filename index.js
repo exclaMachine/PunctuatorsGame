@@ -10,10 +10,17 @@ import {
   secondContractionWordSet,
 } from "./utils/contractionFunc.js";
 import { textRevealSpeeds, changeTextToSpeechBubble } from "./speechbubble.js";
-import { shakeAndBorderizeArticle } from "./articleFunc.js";
+import { shakeAndBorderizeArticle, hasArticles } from "./articleFunc.js";
+import { hasSpoonerisms } from "./spoonerismFunc.js";
 import { hasAmbigrams } from "./AmbigramFunc.js";
 import { hasAnagrams } from "./anagrams.js";
 import { hasHomophones } from "./HomophonesFuncs.js";
+// The rest of the "is there anything here to shoot?" tests. Each lives beside the wrapper it
+// speaks for, so the two can't drift; the table that uses them is WORDPLAY_GUARDS, below.
+import { hasCaretWords, hasRoundedWords } from "./CaretFunc.js";
+import { hasSplitWords } from "./splitWords.js";
+import { hasWiteOutWords } from "./DeleFunc.js";
+import { hasAlphabetNeighbors } from "./alphabeticalNeighbors.js";
 // Affix Aliens — the Grand Prefixer & Sufferix (docs/punctuators-affixes.md). No corpus and no
 // build step: the tables in affixData.js are the whole data layer, so these are plain static imports.
 import {
@@ -832,9 +839,9 @@ function landOnRung(span, rung, hero) {
   // hero classes for why hitProjectileSound() is silent for these two.
   if (hero.ladderDirection === "up") _izoHit();
   else _keenHit();
-  // `a dog` → `an animal`, live. Art the Tickler is suppressed in every ladder mode, so the article
-  // in front of a word that just changed is plain text that nothing else will fix — the same
-  // text-node edit Restore the Phrase makes (§11.6), now that free play has no hero to do it either.
+  // `a dog` → `an animal`, live. Art the Tickler only appears in his own mode, so the article in
+  // front of a word that just changed is plain text that nothing else will fix — the same text-node
+  // edit Restore the Phrase makes (§11.6).
   // Harmless to run twice: notePhraseLanding below makes the same call in the puzzle, and the second
   // one finds the article already right and returns.
   const surface = renderRung(rung, original, plural);
@@ -1192,6 +1199,76 @@ function paintRaceGoal() {
   drawRaceGoal(race.start, race.target, bits.join(" · "), race.solved);
 }
 
+/* A ROUND WITH NOTHING TO SHOOT DOES NOT START.
+
+   Every mode whose targets come out of a dictionary gets a test here — asked of the raw sentence,
+   before anything is marked up or hidden — plus the sentence it prints when the answer is no. The
+   message names the mode's own mechanic, because "nothing found" tells the player nothing about
+   what to type instead.
+
+   This used to be four modes' worth of hand-written `if` blocks, and the other five had no test at
+   all. They didn't need one: Art the Tickler and the Foon ran in EVERY wordplay mode, so an English
+   sentence always had an article or a pair of word-heads to shoot even when the mode's own
+   dictionary matched nothing. That insurance is what this table replaces (see utils.js) — and it is
+   the reason the five untested modes could not simply be left alone.
+
+   Not in the table, on purpose:
+   - removePunc, guarded by PUNC_REGEX just above — a character-class test, not a dictionary one.
+   - ladder / wordRace / ladderPuzzle, whose corpora are fetched: their guards have to await the
+     load first, so they stay where they are, below.
+   - abjads, which is commented out of the dropdown.
+
+   Each `has` is exported next to the wrapper it speaks for, so a dictionary rebuild moves both. */
+const WORDPLAY_GUARDS = {
+  anagrams: {
+    has: hasAnagrams,
+    nope: "No anagrams found in your sentence — try different words!",
+  },
+  homophones: {
+    has: hasHomophones,
+    nope: "No homophones found in your sentence — try different words!",
+  },
+  ambigrams: {
+    has: hasAmbigrams,
+    nope: "No ambigrams found in your sentence — try different words!",
+  },
+  // Two heroes, one mode, so either one having work is enough — the team is built from the spans
+  // that end up on the field, so a sentence with articles and no swappable pair simply fields Art
+  // alone. hasSpoonerisms wants TWO word-heads, not one: a lone cluster is a span you can hit that
+  // has nothing to trade with.
+  articlesSpoonerisms: {
+    has: (s) => hasArticles(s) || hasSpoonerisms(s),
+    nope: "No articles, and no two words to swap heads between — try `the big dog`!",
+  },
+  caret: {
+    has: hasCaretWords,
+    nope: "No word here grows by one letter — try a longer sentence!",
+  },
+  rounded: {
+    has: hasRoundedWords,
+    nope: "No round letters to spin here — try different words!",
+  },
+  split: {
+    has: hasSplitWords,
+    nope: "No word here splits into two — try a longer word!",
+  },
+  whiteOut: {
+    has: hasWiteOutWords,
+    nope: "No word here loses a letter and stays a word — try different words!",
+  },
+  alphabetNeighbors: {
+    has: hasAlphabetNeighbors,
+    nope: "No word here has an alphabet neighbour — try different words!",
+  },
+  // Measured (docs/punctuators-affixes.md §2): half of all common words carry an affix, so this
+  // essentially never fires. It is here because "essentially never" is not never — `I ate a big red
+  // one` has nothing to shoot.
+  affixes: {
+    has: hasAffixes,
+    nope: "No prefixes or suffixes found in your sentence — try some longer words!",
+  },
+};
+
 /* The two modes that bring their own words, so the sentence box has no job in either (§12.8 Note 1,
    §11.6). An empty text field reads as "type your sentence here", the exact wrong instruction. */
 const NO_SENTENCE_MODES = new Set(["wordRace", "ladderPuzzle"]);
@@ -1420,10 +1497,10 @@ function paintPhraseStatus(result) {
   phraseSay(bits.join(" · ") + note, result && result.wasted ? "" : "black");
 }
 
-/* `A dog` → `An animal`, live (§11.6). The articles are plain text in this mode — Art the Tickler is
-   suppressed precisely so this is a text-node edit — so the fix is to rewrite the word sitting in
-   front of the span. Spelling, not phonetics: `an hour` and `a university` come out wrong, which is
-   the same trade the build makes, and no phrase in the corpus shifts a word into one. */
+/* `A dog` → `An animal`, live (§11.6). Articles are plain text everywhere except Art the Tickler's
+   own mode, so the fix is to rewrite the word sitting in front of the span. Spelling, not
+   phonetics: `an hour` and `a university` come out wrong, which is the same trade the build makes,
+   and no phrase in the corpus shifts a word into one. */
 function fixArticleBefore(span, surface) {
   const node = span.previousSibling;
   if (!node || node.nodeType !== Node.TEXT_NODE) return;
@@ -1531,34 +1608,11 @@ removePuncButton.addEventListener("click", async () => {
     }
     let punctuated = addSpansAndIds(initialTypedSentence.value, out1);
   } else {
-    if (
-      selectedOption === "anagrams" &&
-      !hasAnagrams(initialTypedSentence.value)
-    ) {
-      return (errorMessage.innerText =
-        "No anagrams found in your sentence — try different words!");
+    const guard = WORDPLAY_GUARDS[selectedOption];
+    if (guard && !guard.has(initialTypedSentence.value)) {
+      return (errorMessage.innerText = guard.nope);
     }
-    if (
-      selectedOption === "homophones" &&
-      !hasHomophones(initialTypedSentence.value)
-    ) {
-      return (errorMessage.innerText =
-        "No homophones found in your sentence — try different words!");
-    }
-    if (
-      selectedOption === "ambigrams" &&
-      !hasAmbigrams(initialTypedSentence.value)
-    ) {
-      return (errorMessage.innerText =
-        "No ambigrams found in your sentence — try different words!");
-    }
-    if (selectedOption === "affixes" && !hasAffixes(initialTypedSentence.value)) {
-      // Measured (docs/punctuators-affixes.md §2): half of all common words carry an affix, so this
-      // essentially never fires. It exists because every other wordplay mode has one, and because
-      // "essentially never" is not never — `I ate a big red one` has nothing to shoot.
-      return (errorMessage.innerText =
-        "No prefixes or suffixes found in your sentence — try some longer words!");
-    }
+
     if (selectedOption === "ladder") {
       // The only mode whose corpus is fetched rather than bundled. Awaiting here is what keeps
       // hasLadders/wrapLadders synchronous everywhere else (docs/punctuators-ladder.md §3.3).

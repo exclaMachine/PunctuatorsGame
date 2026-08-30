@@ -16075,14 +16075,24 @@ export const splitWords = {
   zoology: '<span id="Space-el" data-splitwords="zoo logy">zoology</span>',
 };
 
+/* See CaretFunc.js's entryFor: a bare `dict[word]` answers for `constructor`, which is an ordinary
+   English word, with Object's own constructor function. */
+const entryFor = (dict, word) =>
+  Object.prototype.hasOwnProperty.call(dict, word) ? dict[word] : undefined;
+
 export const wrapSplitWords = (sentence) => {
   const words = sentence.split(/\b/); // Splitting by word boundary
 
   const splitted = words.map((word) => {
-    if (splitWords[word]) {
-      return splitWords[word];
+    const entry = entryFor(splitWords, word);
+    if (entry) {
+      return entry;
     }
     return word;
   });
   return splitted.join("");
 };
+
+/* Spacel's guard — the same \b split and the same exact-token lookup as the wrapper above. */
+export const hasSplitWords = (sentence) =>
+  sentence.split(/\b/).some((word) => entryFor(splitWords, word));

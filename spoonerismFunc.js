@@ -69,3 +69,18 @@ export const spoonerism = (sentence) => {
 
   return result;
 };
+
+/* Is there anything here for the Foon to swap?
+
+   TWO targets, not one: a spoonerism is a trade between two words, so a lone wrapped cluster is a
+   span you can shoot at and nothing happens. The count is taken off the real output rather than
+   re-deriving the eligibility rules above — the cheap re-implementation is exactly the kind that
+   goes stale the first time BANNED_SUBSTRINGS or the "q"/"the" exclusions change.
+
+   Called on the RAW sentence, while the game spoonerises the article-wrapped one. That is the same
+   answer by construction: the only words protectedArticles hides are `a`, `an` and `the`, and the
+   loop above already refuses all three (two are vowel-initial, "the" is excluded by name). The
+   eligibleWordCount gate can only make the wrapped count LOWER, and it only bites when there is a
+   single non-article word — which cannot reach two targets either way. */
+export const hasSpoonerisms = (sentence) =>
+  (spoonerism(sentence).match(/id="The Foon \(Spoonerism\)"/g) || []).length >= 2;

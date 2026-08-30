@@ -9,8 +9,8 @@ wordplay mode lives in [`punctuators-ladder.md` §1](punctuators-ladder.md) — 
 Per-mode planning docs live alongside this one:
 [`punctuators-ladder.md`](punctuators-ladder.md) (General Ization & Keen Arrow, plus Restore the Phrase,
 Word Race and the Tree of Kinds) and
-[`punctuators-affixes.md`](punctuators-affixes.md) (The Grand Prefixer & Sufferix — **M1 the tables and
-M2 the mark-up built, dev-only; the four heroes are M3**).
+[`punctuators-affixes.md`](punctuators-affixes.md) (The Grand Prefixer & Sufferix — **M1 the tables, M2 the
+mark-up and M3 the four heroes built, dev-only; M4 is the feel**).
 
 ---
 
@@ -336,6 +336,86 @@ Four things worth knowing:
   (`bop` over `dog`), because that mode's symbol *is* a rotation. Nothing else uses it.
 
 Examples in the cards are **real**, same rule and same staleness risk as `modeHelp.js` above.
+
+---
+
+## Art the Tickler & the Foon have their own mode, and every mode has a guard
+
+**BUILT 2026-08-30.** Two changes that only make sense together.
+
+### What was wrong
+
+`addSpansAndIdsForWordPlay` used to wrap **articles** and run the **spoonerism** pass in *every* wordplay
+mode, on top of whatever the mode itself had marked. That was never a design decision — it was insurance.
+Most modes find their targets by looking words up in a shipped dictionary, and a sentence
+whose words aren't in that dictionary produces **no spans at all** — which is not a graceful failure but
+the empty-team white screen (see *Shared-engine footguns*, below: no spans → no team → `player` undefined →
+`animate()` throws every frame). Art the Tickler and the Foon were the floor under that: almost any English
+sentence has an article, or two words whose heads can trade, so *something* was always shootable.
+
+The price was that two heroes turned up in a mode that had nothing to do with them and rewrote the same
+words the mode was trying to teach about. It also aged badly: the three ladder modes and Affix Aliens each
+had to opt *out* by name, through a growing flag (`preMarked` → `ladderMode` → `heroManagedWords`), and the
+newest of them opted out because the Foon was swapping word-heads straight into the Grand Prefixer's affix
+spans.
+
+### What replaced it
+
+- **`utils/utils.js`** now runs `protectedArticles` and `spoonerism` for exactly one mode value,
+  `articlesSpoonerisms`. The opt-out flag is gone — there is nothing left to opt out of. The two passes
+  still **bracket** the mode switch rather than sitting inside it, in their historical order: articles wrap
+  first so the Foon's own placeholder pass hides them from him.
+- **`index.js`'s `WORDPLAY_GUARDS`** is the insurance now. One table, keyed by `<option>` value, holding a
+  `has()` predicate and the sentence to print when it says no. The Pow! handler consults it once, and a
+  mode with nothing to shoot **refuses to start** and says what to type instead.
+
+Four modes already had a hand-written guard (Anagrams, Homophones, Ambigrams, Affix Aliens); those moved
+into the table verbatim. **Five had none** — Caret, Rounded, Split, White Out, Alphabet Slots — which is
+precisely the set that was relying on the floor.
+
+Not in the table, on purpose: `removePunc` (guarded by `PUNC_REGEX`, a character-class test rather than a
+dictionary one), the three ladder modes (their guards must `await` a fetched corpus first, so they stay
+inline below the table), and `abjads` (commented out of the dropdown).
+
+### The new mode
+
+One `<option>`, `articlesSpoonerisms` — **"Articles & Spoonerisms"** — fielding both heroes, with
+*Switch Character* stepping between them. It takes both heroes rather than one each because neither is a
+whole mode on its own, and because they are the same idea twice: change the **small** parts of a sentence.
+Its guard passes if **either** hero has work, and the team is built from the spans that reach the field, so
+a sentence with articles and no swappable pair simply fields Art alone.
+
+`hasSpoonerisms` requires **two** wrapped word-heads, not one. A spoonerism is a trade, so a lone cluster is
+a span you can hit that has nothing to swap with — the mode would start and then do nothing.
+
+It gets a `modeHelp.js` card and a `modeArt.js` picture like every other mode. Both use the same worked
+example, `the big dog → a dig bog`, which is real on both halves: `the` sees a consonant next so it toggles
+to `a`, and `big`/`dog` hand over their `b` and `d`.
+
+### Where each `has()` lives, and the trap that came with them
+
+Each predicate is exported **beside the wrapper it speaks for** — `hasCaretWords`/`hasRoundedWords` in
+`CaretFunc.js`, `hasSplitWords` in `splitWords.js`, `hasWiteOutWords` in `DeleFunc.js`,
+`hasAlphabetNeighbors` in `alphabeticalNeighbors.js`, `hasArticles` in `articleFunc.js`, `hasSpoonerisms` in
+`spoonerismFunc.js` — so a dictionary rebuild moves the wrapper and its guard together. A guard that splits
+on a different boundary, or folds case differently, would let a round start with nothing to shoot, which is
+the exact failure it exists to prevent. (`wrapAlphabetNeighbors` is the only one that lower-cases, and its
+guard lower-cases too.)
+
+Writing them surfaced a **live bug in four of the five wrappers**: they looked up `dict[word]` on a plain
+object, so `dict["constructor"]` answered with `Object`'s own constructor — a truthy *function* — for any
+dictionary that didn't happen to own that key. `constructor` is an ordinary English word, and typing it
+would have spliced the function's source code into the sentence. This is the **same trap the Tree of Kinds
+hit from the other side** and answered with `Map`/`Set` ([`punctuators-ladder.md` §13](punctuators-ladder.md));
+here the dictionaries are generated files, so all five wrappers and all five guards now go through a local
+`entryFor(dict, word)` that tests own-property first. (`splitWords` was safe by luck: `constructor` is a real
+key in it — `construct or`.)
+
+`hasSpoonerisms` is the one guard that doesn't re-implement its wrapper's rules: it **runs** `spoonerism()`
+and counts the spans, because the eligibility rules (banned substrings, the `q` and `the` exclusions, the
+consonant-cluster walk) are exactly the kind that go stale in a copy. It is asked of the *raw* sentence
+while the game spoonerises the article-wrapped one, which is the same answer by construction — the only
+words `protectedArticles` hides are `a`, `an` and `the`, all three of which the Foon already refuses.
 
 ---
 

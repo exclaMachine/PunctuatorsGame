@@ -1,7 +1,7 @@
 /* How-to-Play copy, one card per dropdown mode.
  *
  * The modal used to hold one fixed two-player punctuation blurb, which is the wrong text for the
- * eleven wordplay modes sharing the same engine — a player who picks Homophones and opens How to
+ * wordplay modes sharing the same engine — a player who picks Homophones and opens How to
  * Play was told to shoot punctuation back into a sentence. Each mode now brings its own card, and
  * index.js's updateCharacterModal() swaps it in the moment the mode is picked in the dropdown (not
  * at Pow!), so the rules are readable while you are still deciding what to play.
@@ -93,6 +93,43 @@ export const MODE_HELP = {
         <li>The letters float loose and settle into the next anagram.</li>
         <li>Keep shooting to cycle through every anagram a word has, then back to the start.</li>
         <li>Count the letters before and after — they always match.</li>
+      </ul>
+    </div>
+  `,
+  },
+
+  /* Two heroes and two mechanics in one card, so it leads with what they have in common — both of
+     them change the SMALL parts of a sentence rather than a whole word — and then takes them one at
+     a time. The worked example runs both on the same three words, which is the fastest way to show
+     that Switch Character is how you get from one to the other.
+
+     No hero names in the title: "Articles & Spoonerisms — Art the Tickler & the Foon" is far too
+     long for the 500 px header, the same reason the three ladder modes leave theirs out. */
+  articlesSpoonerisms: {
+    title: "Articles & Spoonerisms",
+    body: `
+    <div class="char-modal">
+      <p class="lead">
+        Two heroes share this mode, and both go after the <strong>small parts</strong> of a sentence.
+        <strong>Art the Tickler</strong> tickles an article — <code>a</code>, <code>an</code>,
+        <code>the</code> — until it turns into the other one. <strong>The Foon</strong> trades the
+        <strong>heads</strong> off two words, which is what a spoonerism is.
+      </p>
+
+      <div class="example">
+        <div>Start</div><code>the big dog</code>
+        <div>Art hits <code>the</code></div><code>a big dog</code>
+        <div>Foon hits <code>big</code>, then <code>dog</code></div><code>a dig bog</code>
+      </div>
+
+      <ul class="tips">
+        <li>The Foon needs <strong>two</strong> words: his first shot picks one up, his second
+          trades it with the word he hits. A single shot does nothing on its own.</li>
+        <li>He only takes the consonants at the front — <code>big</code> hands over its
+          <code>b</code>, <code>strong</code> hands over the whole <code>str</code>.</li>
+        <li>Art knows the rule you do: <code>a</code> before a consonant, <code>an</code> before a
+          vowel, so what <code>the</code> becomes depends on the word after it.</li>
+        <li>Switch Character is how you get from one hero to the other.</li>
       </ul>
     </div>
   `,

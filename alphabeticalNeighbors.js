@@ -2380,13 +2380,18 @@ const alphabeticalNeighbors = {
   zip: ["yip"],
 };
 
+/* See CaretFunc.js's entryFor: a bare `dict[word]` answers for `constructor`, which is an ordinary
+   English word, with Object's own constructor function. */
+const entryFor = (dict, word) =>
+  Object.prototype.hasOwnProperty.call(dict, word) ? dict[word] : undefined;
+
 export const wrapAlphabetNeighbors = (sentence) => {
   const words = sentence.split(/\b/); // word boundaries like punctuation, spaces
 
   const wrapped = words.map((word) => {
-    const lower = word.toLowerCase();
-    if (alphabeticalNeighbors[lower]) {
-      const alternatives = [word, ...alphabeticalNeighbors[lower]];
+    const neighbors = entryFor(alphabeticalNeighbors, word.toLowerCase());
+    if (neighbors) {
+      const alternatives = [word, ...neighbors];
       return `<span style="font-family: monospace" id="Betar (Alphabet Slots)" data-alphabetical-neighbors="${alternatives.join(
         ",",
       )}" class="word-0">${word}</span>`;
@@ -2398,3 +2403,10 @@ export const wrapAlphabetNeighbors = (sentence) => {
 };
 
 //export default data;
+
+/* Betar's guard. Unlike the other four dictionaries this one IS case-folded by its wrapper, so the
+   guard folds too — otherwise `Ball` would start a round Betar can't play. */
+export const hasAlphabetNeighbors = (sentence) =>
+  sentence
+    .split(/\b/)
+    .some((word) => entryFor(alphabeticalNeighbors, word.toLowerCase()));

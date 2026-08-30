@@ -378,12 +378,15 @@ ladder already built **`fixArticleBefore`** for exactly this (`a dog → an anim
 This is a real reuse win and the main reason the Prefixer's swap is not just a `textContent` write.
 
 ### 6.5 Suppressions
-**Foon (spoonerism) must be off in this mode.** He swaps word heads, which is the Grand Prefixer's entire
-job, and he runs after the `protected*` pass so he would swap straight into an affix span. **Art the
-Tickler must be off** too, since §6.4 takes over article handling. `utils.js` already has this exact
-guard for the three ladder modes — the `ladderMode` flag becomes a broader `heroManagedWords` flag, or
-gains `|| mode === "affixes"`. Rename in the same change; the comment block above it explains the
-reasoning and must be updated with it.
+**MOOT SINCE 2026-08-30 — nothing to suppress any more.** Art the Tickler and the Foon were moved into
+their own `articlesSpoonerisms` mode and the opt-out flag was deleted, so no mode inherits them
+([`punctuators.md`](punctuators.md)). §6.4's article handling is still this mode's own job.
+
+*As originally specced, and as built on 2026-08-29:* the Foon had to be off here because he swaps word
+heads, which is the Grand Prefixer's entire job, and he ran after the `protected*` pass so he would have
+swapped straight into an affix span; Art had to be off because §6.4 takes over article handling. `utils.js`
+already had that guard for the three ladder modes, so M2 renamed its `ladderMode` flag to
+`heroManagedWords` and added `affixes` to it. That flag is now gone.
 
 ### 6.6 No re-lock
 A swapped word stays a target — its span keeps its id and its data attributes are recomputed from the new
@@ -447,7 +450,7 @@ one-hit-one-sound call site cannot express that.
 | | What | Notes |
 | --- | --- | --- |
 | **M1** | **BUILT 2026-08-29** — `affixData.js`: the two group tables, mirrored opposite pairs, `STRIPPABLE`, longest-first sorting, `detect(word)` and one `swapAffix(word, end, op, turn)` covering equal/opposite/strip (a clank is a `null`, not an error) | Pure data + pure functions. No wordlist, no build step, no DOM, no imports. `assertAffixTables()` ships with it — it catches the one edit that fails silently, the same string in two groups. |
-| **M2** | **BUILT 2026-08-29** — the `affixes` `<option>` carrying `data-dev` (§1.2), `affixFunc.js` (`AFFIX_ID` / `hasAffixes` / `wrapAffixes` / `affixSpanHTML` / `applyAffixCase`), `protectedAffixes` in `SpanPlaceholder.js`, `case "affixes"` in `addSpansAndIdsForWordPlay`, §6.5's suppression (the `ladderMode` flag renamed `heroManagedWords`), the `.afx` marker CSS, and the no-matches guard in `index.js` | Sentence marks up; nothing shoots yet. With no hero answering to the `affix` id, `heroToTheRescue` returns an empty team and `doActionOnce` leaves the title-page hero on screen — which reads as broken, so the round says so in `#error-message`. **That one message is M3's to delete.** |
+| **M2** | **BUILT 2026-08-29** — the `affixes` `<option>` carrying `data-dev` (§1.2), `affixFunc.js` (`AFFIX_ID` / `hasAffixes` / `wrapAffixes` / `affixSpanHTML` / `applyAffixCase`), `protectedAffixes` in `SpanPlaceholder.js`, `case "affixes"` in `addSpansAndIdsForWordPlay`, §6.5's suppression (the `ladderMode` flag renamed `heroManagedWords`; **flag since removed 2026-08-30**), the `.afx` marker CSS, and the no-matches guard in `index.js` | Sentence marks up; nothing shoots yet. With no hero answering to the `affix` id, `heroToTheRescue` returns an empty team and `doActionOnce` leaves the title-page hero on screen — which reads as broken, so the round says so in `#error-message`. **That one message is M3's to delete.** |
 | **M3** | **BUILT 2026-08-29 — PLAYABLE.** The four heroes: one `AffixAlien` base + four thin subclasses, `targetId = AFFIX_ID` on all four, adjacent in `availableHeroArray`; **four drawn projectiles** (2 shapes × 2 colours) and **two drawn characters**, all data URLs (§4.3); `updateAffixSpan` in `affixFunc.js` (§5); `shootAffix` + `claimAffixShot` + `flashAffixClank` and the `AFFIX_ID` collision branch in `index.js`; four of §8's cues pulled forward; the `.affix-clank` flash in `index.css`; M2's placeholder message deleted | The turn counter that walks a group (§3.5) lives on the span as `data-afx-<end>-<op>` — **per end AND per operation**, so the equal bolt's cycle is not disturbed by a reversal shot at the same word in between. |
 | **M4** | The feel — §7's animations, §8's two remaining (shoot) cues, `modeHelp.js` card, `modeArt.js` card, `fixArticleBefore` wiring (§6.4) | Shippable, still dev-only. |
 | **M4.5** | Drop `data-dev` from the `<option>` | The dev's call, once they are happy with it. One attribute. |
@@ -467,8 +470,9 @@ M1–M4 is the shipping unit.
 - `affixFunc.js` — **BUILT** — `AFFIX_ID` / `hasAffixes` / `wrapAffixes` / `affixSpanHTML`, plus
   `applyAffixCase`, which is the ladder's `applyLadderCase` re-exported rather than rewritten
 - `SpanPlaceholder.js` — **BUILT** — `protectedAffixes`
-- `utils/utils.js` — **BUILT** — `case "affixes"` in `addSpansAndIdsForWordPlay`; the Foon/Art
-  suppression flag renamed `ladderMode` → `heroManagedWords` and its comment block extended (§6.5)
+- `utils/utils.js` — **BUILT** — `case "affixes"` in `addSpansAndIdsForWordPlay`. *(The Foon/Art
+  suppression flag renamed `ladderMode` → `heroManagedWords` here on 2026-08-29 was **removed 2026-08-30**
+  — those two heroes now have a mode of their own and appear in no other; §6.5.)*
 - `affixFunc.js` — **M3 BUILT** — `updateAffixSpan` (§5), sharing one `affixInnerHTML` builder with
   `affixSpanHTML`
 - `index.js` — **M3 BUILT** — `drawEqualsBoltSprite` / `drawReversalBoltSprite` / `drawAlienSprite`,
