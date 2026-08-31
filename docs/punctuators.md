@@ -234,13 +234,62 @@ Two beats, deliberately separate:
 1. **The eating** — each doomed letter is wrapped in its own `<i class="cx-eat">`, coloured in her
    lightgreen at first contact so you can read what she is about to take, and goes to `opacity: 0` in
    turn. **Its box keeps its width.** Nothing moves yet.
-2. **The contraction** — once she is clear, the eaten boxes collapse (`font-size: 0`), the space span
-   shrinks, and the apostrophe grows into the hole, all on one 0.32 s beat set by `CLOSE_MS`. The collapse
-   is deferred one `requestAnimationFrame` after the letters are made transparent, or the word visibly
-   shuffles sideways while you can still read it.
+2. **The contraction** — once she is clear, the eaten boxes collapse (`font-size: 0`) and the space span
+   shrinks. The collapse is deferred one `requestAnimationFrame` after the letters are made transparent,
+   or the word visibly shuffles sideways while you can still read it. This is *the squash*, below.
 
-**This second beat is on purpose the plain one.** The letters coming together is the fun part and it has
-not been designed yet — see *Still to do* below.
+### The squash
+
+Beat 1 is hers. Beat 2 belongs to the two words. The gap accelerates shut (`COLLAPSE_MS`, 260 ms, on a
+hard ease-in, so the halves are still gaining speed when they meet) and then the finished word is
+**squeezed**: the letters compress toward each other and stretch taller off the line (0.80 × 1.18 at
+141 ms after the impact — fast in, because it is a collision), spring back **wider and shorter** than
+they started (1.08 × 0.94), take a smaller counter-swing, and settle. `SNAP_MS` is 640 ms, and it is
+long on purpose — a deformation the eye has to *read* needs about twice the time a mere impact needs to
+register. Squash and stretch, and the pun made visible: a contraction contracts.
+
+**All of it is one transform on one box.** The alternatives all deform the word through *layout* —
+`letter-spacing`, margins, per-letter `font-size` — and every one of them changes the line's width;
+`#output` centres **every line individually**, so any of them slides the whole sentence sideways on the
+impact. A transform affects nothing outside the element it is on, so the problem cannot arise.
+
+That box is `.cx-union`, and it exists only for the length of beat 2. The first of the two words is plain
+text with no element of its own, so `wrapUnion` walks back from the space to the previous space (which is
+also what picks up the separate `W` span of `Will` when Full Stop's capital has taken it) and moves
+everything from there to the eaten span inside one `inline-block` `<i>`, whose `transform-origin` is its
+bottom so the letters stretch **up** off the line rather than in both directions. `finish` takes it apart
+again and `normalize()`s the parent: Master Asterisk reads the word in front of him with
+`previousSibling.data`, which an element answers with `undefined` and a half-merged text node answers
+with half a word — the same reason the `will` stem holder goes back to being text.
+
+**It is wrapped before anything is asked to move.** Wrapping means taking the nodes out of the line and
+putting them back, which resets any transition running on them; the eaten letters' fade is long finished
+by the time `close` runs, but the collapse has not started yet and must not be reset.
+
+The apostrophe is not there at all until the halves collide — it is what they knock loose, popping out
+past full size and settling back (`MARK_FRAMES`). Its **width**, though, grows over the approach on the
+same curve as everything else that is closing, so the box has stopped resizing before the squash starts:
+a box still changing size while it is being deformed reads as a glitch. So what you see is a `scale`, not
+the font-size — it sits *inside* the squashing box and must not change that box's width. Its animation
+carries `fill: "backwards"` because `.cx-show` (its resting state, which it must be left in when the
+animation ends) goes on up front; without it, the class landing early would flash a full-size apostrophe
+before the collision.
+
+### The cartouche
+
+A cartouche is the ring Egyptian writing draws around a name, which is exactly the claim this beat has to
+make: **these two words are one word now.** `sealCartouche` hangs off the squash's `onfinish` — the seal
+follows the union, and measuring there keeps the ring off mid-deformation geometry — and
+draws a gold pill around the finished word (stroke-dash, so it draws *itself*, both ends meeting at the
+top centre), lays the tie bar across its right end a beat later the way a seal is pressed after the ring,
+holds, fades, and removes itself.
+
+It measures the `.cx-union` box, which is exactly the two words and is still in the sentence at that
+moment (`finish` unwraps 40 ms later). **Where it sits:** it is absolutely positioned inside `#output` and never joins the
+line box (the ladder rung strip's rule), so it cannot reflow the sentence it is drawn on; `#output` is
+`position: fixed` with no border or padding, so it *is* the containing block and its client rect is the
+origin — which also means the ring dies with the sentence the moment `#output` is rewritten. A
+contraction that wrapped across two lines gets no ring.
 
 ### `will not` → `won't`
 
@@ -250,12 +299,14 @@ shot, and its `i` **turns into an `o`** rather than being eaten (`w` · *i→o* 
 `"ill"` when the W has already been taken by Full Stop's capital span, so **`Will not` works too** — which
 makes the whole case one node swap into an `<i class="cx-stem">` holder. The `i` is the only letter that
 is transformed rather than collapsed, so it is the only one that is `inline-block`; its text is swapped at
-the halfway point of a 0.3 s `rotateX` flip, where it is edge-on and there is nothing to see.
+the halfway point of a 0.3 s `rotateX` flip, where it is edge-on and there is nothing to see. The flip
+carries an `animation-delay` that lands that halfway point **on the impact**: `will` does not lose its i,
+it turns over into the o of `won't` at the moment the two halves meet.
 
 The holder is turned **back into a plain text node** when the animation finishes, because Master Asterisk
 finds the word in front of him with `previousSibling.data`, which an element answers with `undefined`.
 
-### Five things not to undo
+### Six things not to undo
 
 - **The eaten span stays in the sentence, keeping its id.** It is not replaced by text the way the old
   code replaced it. The collision branch has to keep matching it for the rest of her flight, because that
@@ -267,6 +318,9 @@ finds the word in front of him with `previousSibling.data`, which an element ans
   all `.shrink-space` has ever done — whereas `inline-block` re-spaces the whole word the instant the
   letters are wrapped, before anything has been eaten.
 - **Inner markers are `<i>`, never a nested `<span>`**, the affix mode's rule.
+- **Beat 2 deforms by transform, never by layout.** The moment the squeeze is expressed as width —
+  `letter-spacing`, margins, font-size — it changes the line's width, and a centred line that changes
+  width drags the whole sentence sideways on the impact.
 - **`projectileAnchor: { x: 28, y: 277 }` is measured, not guessed.** Both PNGs are 800 × 2000 with the
   figure drawn in part of the frame (hero `y 1030–2000, x 6–782`; shot `y 159–1931, x 121–782`), which at
   scales 0.3 and 0.2 puts her standing centre 118 px into her frame against the flying body's 90 px, and
@@ -274,10 +328,10 @@ finds the word in front of him with `previousSibling.data`, which an element ans
 
 ### Still to do
 
-- **The contraction itself.** Beat 2 is currently an honest collapse and nothing more. The ideas on the
-  table: the finished word **squashing horizontally and springing back** at the moment of union (the pun
-  made visible, and one keyframe); a gold **cartouche** drawing itself round the new word for a beat,
-  which asserts *these two words are one word now*; the apostrophe landing as a **shed fang**.
+- **The apostrophe as a shed fang.** The third idea from beat 2's original list, and the one not taken:
+  the mark dropping in point-down like a fang she has shed into the gap. It fights the rule the whole
+  animation is built on — the mark stands exactly where the eaten letters were — so it would have to
+  arrive *at* that spot rather than travel to it.
 - **Her unused art.** `images/Anacontractshine.png` (her crowned head, standing) and
   `images/AnacontractshineEat.png` (**the head on a long 335 × 1630 neck, the crown doubling as an open
   jaw**) are referenced nowhere. They were drawn for a strike where the head leaves the body — which is

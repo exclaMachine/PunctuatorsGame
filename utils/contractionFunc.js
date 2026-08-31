@@ -205,10 +205,22 @@ const CONTRACTION_PLAN = new Map([
 // All the letters are gone by three-quarters of her pass over the word, so the last one leaves with
 // her still on top of it rather than at the instant she clears.
 const EAT_WINDOW = 0.75;
-// How long the gap takes to shut once she is clear. Independent of her flight — she leaves the top
-// of the screen about 0.12s after clearing the word and the span she ate stays in the sentence
-// either way (see the collision branch in index.js for why it must).
-const CLOSE_MS = 380;
+
+/* Beat 2, the union. It is independent of her flight — she leaves the top of the screen about 0.12s
+   after clearing the word, and the span she ate stays in the sentence either way (see the collision
+   branch in index.js for why it must).
+
+   THE APPROACH. How long the gap takes to shut once she is clear. MUST MATCH the font-size
+   transitions on .cx-eat and .shrink-space in index.css, which ease IN — the two words are still
+   gaining speed when they meet. */
+const COLLAPSE_MS = 260;
+/* THE SQUASH. The whole finished word compresses, springs back wide, and settles. Long on purpose:
+   a deformation the eye has to READ needs about twice the time an impact needs to register. */
+const SNAP_MS = 640;
+// The `will` -> `wo` flip, matching the cx-morph keyframes in index.css.
+const MORPH_MS = 300;
+// When the stem holder can safely go back to being a plain text node.
+const CLOSE_MS = COLLAPSE_MS + SNAP_MS + 40;
 const OUTLINE = "1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000";
 
 const eating = new WeakMap();
@@ -281,6 +293,7 @@ const begin = (span, color) => {
     space,
     stem,
     eaten,
+    box: null, // the .cx-union wrapper, built at the start of beat 2
     gone: 0,
     phase: "eating",
     top: box.top,
@@ -295,27 +308,231 @@ const finish = (state) => {
   if (state.stem?.holder.isConnected) {
     state.stem.holder.replaceWith(document.createTextNode(state.stem.text));
   }
+  unwrapUnion(state.box);
+};
+
+/* ─── BEAT 2: THE SQUASH ────────────────────────────────────────────────────────────────────────
+   The eating is beat 1 and it is hers. The union is beat 2 and it belongs to the two words: the gap
+   accelerates shut, and then the finished word is SQUEEZED — the letters compress toward each other
+   and stretch taller off the line, spring back wider and shorter than they started, and settle.
+   Squash and stretch, the oldest trick there is, and the pun made visible: a contraction contracts.
+   The apostrophe pops out of the same moment (see MARK_FRAMES). Then she seals it — THE CARTOUCHE.
+
+   ALL OF IT IS ONE TRANSFORM ON ONE BOX. Anything that deformed the word through layout instead —
+   letter-spacing, margins, per-letter font-size — changes the line's width, and #output centres
+   every line INDIVIDUALLY, so the whole sentence would slide sideways on the impact. A transform
+   affects nothing outside the element it is on, so the problem cannot arise. That is also why the
+   apostrophe takes its full width during the APPROACH (invisible, scaled to nothing) and only pops
+   with a transform: growing it for real at the impact would resize the box mid-squash.
+
+   The box is `.cx-union`, built by wrapUnion() below, and it is the only reason the first word
+   deforms too — it is plain text and has no element of its own. */
+const SQUASH_FRAMES = [
+  { transform: "scale(1, 1)", easing: "ease-in" },
+  // Squeezed: narrow and tall. Arrived at fast, because it is a collision.
+  { transform: "scale(0.80, 1.18)", offset: 0.22, easing: "ease-out" },
+  // Sprung back the other way: wide and short.
+  { transform: "scale(1.08, 0.94)", offset: 0.52, easing: "ease-in-out" },
+  // A smaller counter-swing, which is what stops it reading as a bounce and starts it reading as
+  // something with weight coming to rest.
+  { transform: "scale(0.975, 1.02)", offset: 0.78, easing: "ease-in-out" },
+  { transform: "scale(1, 1)" },
+];
+
+/* The mark is not there at all until the two halves collide — it is what they knock loose. Scale,
+   not font-size: it is inside the squashing box and must not change its width. */
+const MARK_FRAMES = [
+  { transform: "scale(0)", opacity: 0, easing: "ease-out" },
+  { transform: "scale(1.35)", opacity: 1, offset: 0.45, easing: "ease-in-out" },
+  { transform: "scale(0.92)", offset: 0.72 },
+  { transform: "scale(1)" },
+];
+const MARK_MS = 340;
+
+/* The union — both words and the gap between them — as ONE element, so the squash is a single
+   transform on a single box rather than N letters that would each have to be measured and moved.
+   Only the second word is an element to begin with; the first is plain text, so the wrapper is
+   built by walking back from the space to the previous space (or the start of the sentence) and
+   moving everything from there up to the span inside it. That walk is also what picks up the
+   separate `W` span of `Will` when Full Stop's capital has taken it.
+
+   It is taken apart again in finish(). Master Asterisk reads the word in front of him with
+   `previousSibling.data`, which an element answers with undefined — the same reason the `will` stem
+   holder goes back to being a text node, and the reason this is not left in the sentence. */
+const wrapUnion = (span, space) => {
+  const parent = span.parentNode;
+  if (!parent) return null;
+
+  let first = span;
+  let node = space && space.previousSibling;
+  while (node && !(node.nodeType === 1 && node.classList.contains("space"))) {
+    first = node;
+    node = node.previousSibling;
+  }
+
+  const box = document.createElement("i");
+  box.className = "cx-union";
+  parent.insertBefore(box, first);
+  let n = first;
+  while (n) {
+    // Read the sibling BEFORE the move — appendChild is what takes it out of the line.
+    const next = n.nextSibling;
+    const last = n === span;
+    box.appendChild(n);
+    if (last) break;
+    n = next;
+  }
+  return box;
+};
+
+const unwrapUnion = (box) => {
+  if (!box || !box.isConnected) return;
+  const parent = box.parentNode;
+  while (box.firstChild) parent.insertBefore(box.firstChild, box);
+  parent.removeChild(box);
+  // The two words are one word now, so their text should be one text node too, or Master Asterisk
+  // finds only the half of it that used to be the second word.
+  parent.normalize();
+};
+
+const squash = (state) => {
+  const mark = state.span.querySelector(".cx-mark");
+  /* .cx-show is the mark's resting state — full width, visible, untransformed — and it goes on now,
+     at the START of the approach, so the hole the letters leave is already the right size and the
+     box has stopped resizing by the time the squash begins. What keeps it invisible until the
+     impact is `fill: "backwards"` on its animation, which holds scale(0) all through the delay. */
+  if (mark) mark.classList.add("cx-show");
+  if (!state.box || !state.box.animate) return;
+
+  if (mark && mark.animate) {
+    mark.animate(MARK_FRAMES, {
+      duration: MARK_MS,
+      delay: COLLAPSE_MS,
+      fill: "backwards",
+    });
+  }
+  const hit = state.box.animate(SQUASH_FRAMES, {
+    duration: SNAP_MS,
+    delay: COLLAPSE_MS,
+  });
+  // The seal follows the union, and hanging it off the end of the spring means the ring is measured
+  // with the word back at its resting size rather than mid-deformation.
+  hit.onfinish = () => sealCartouche(state);
+};
+
+/* ─── THE CARTOUCHE ─────────────────────────────────────────────────────────────────────────────
+   A cartouche is the ring Egyptian writing draws around a name, which is exactly the claim this
+   beat has to make: THESE TWO WORDS ARE ONE WORD NOW. It draws itself round the finished word in
+   gold, holds, and fades.
+
+   It is absolutely positioned inside #output and never joins the line box (the ladder rung strip's
+   rule), so it cannot reflow the sentence it is drawn on. #output is `position: fixed` with no
+   border or padding, so it is the containing block and its client rect IS the origin — which also
+   means the ring dies with the sentence the moment #output is rewritten. */
+const GOLD_DRAW_MS = 420;
+const GOLD_TIE_MS = 200;
+const GOLD_HOLD_MS = 280;
+const GOLD_FADE_MS = 320;
+
+const sealCartouche = (state) => {
+  const out = state.span.closest("#output");
+  if (!out || !state.box) return;
+  const word = state.span.getBoundingClientRect();
+  const rect = state.box.getBoundingClientRect();
+  // A contraction that wrapped across two lines has no ring worth drawing round it.
+  if (!rect.width || rect.height > word.height * 1.6) return;
+
+  const em = parseFloat(getComputedStyle(state.span).fontSize) || 16;
+  const padX = em * 0.3;
+  const padY = em * 0.1;
+  const sw = Math.max(1.5, em * 0.05);
+  const w = rect.width + padX * 2;
+  const h = rect.height + padY * 2;
+  const x0 = sw / 2;
+  const x1 = w - sw / 2;
+  const y0 = sw / 2;
+  const y1 = h - sw / 2;
+  const r = Math.min((y1 - y0) / 2, (x1 - x0) / 2);
+  const cx = w / 2;
+  /* Measured, not asked for: getTotalLength() on a basic shape is SVG2 and patchy, and a pill's
+     perimeter is two straight sides and two semicircles. The path starts at top centre and closes
+     there, so the two ends of the stroke meet in the middle of the top edge. */
+  const ring = 2 * (x1 - x0) - 4 * r + 2 * Math.PI * r;
+  const tieX = x1 - r * 0.5;
+  const tie = y1 - y0 + sw * 2;
+
+  const box = document.createElement("div");
+  box.className = "cx-cartouche";
+  const host = out.getBoundingClientRect();
+  box.style.left = `${rect.left - host.left - padX}px`;
+  box.style.top = `${rect.top - host.top - padY}px`;
+  box.style.width = `${w}px`;
+  box.style.height = `${h}px`;
+  box.innerHTML =
+    `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" fill="none" ` +
+    `stroke="currentColor" stroke-width="${sw}" stroke-linecap="round">` +
+    `<path class="cx-ring" d="M ${cx} ${y0} L ${x1 - r} ${y0} ` +
+    `A ${r} ${r} 0 0 1 ${x1 - r} ${y1} L ${x0 + r} ${y1} ` +
+    `A ${r} ${r} 0 0 1 ${x0 + r} ${y0} Z" ` +
+    `stroke-dasharray="${ring}" stroke-dashoffset="${ring}"/>` +
+    `<line class="cx-tie" x1="${tieX}" y1="${y0 - sw}" x2="${tieX}" y2="${y1 + sw}" ` +
+    `stroke-dasharray="${tie}" stroke-dashoffset="${tie}"/>` +
+    `</svg>`;
+  out.appendChild(box);
+
+  const ringEl = box.querySelector(".cx-ring");
+  const tieEl = box.querySelector(".cx-tie");
+  if (!box.animate) {
+    ringEl.setAttribute("stroke-dashoffset", "0");
+    tieEl.setAttribute("stroke-dashoffset", "0");
+    setTimeout(() => box.remove(), GOLD_DRAW_MS + GOLD_HOLD_MS + GOLD_FADE_MS);
+    return;
+  }
+  ringEl.animate(
+    [{ strokeDashoffset: `${ring}` }, { strokeDashoffset: "0" }],
+    { duration: GOLD_DRAW_MS, easing: "ease-out", fill: "forwards" },
+  );
+  // The tie goes on last, the way a seal is pressed after the ring is drawn.
+  tieEl.animate([{ strokeDashoffset: `${tie}` }, { strokeDashoffset: "0" }], {
+    duration: GOLD_TIE_MS,
+    delay: GOLD_DRAW_MS * 0.72,
+    easing: "ease-out",
+    fill: "forwards",
+  });
+  box.animate([{ opacity: 1 }, { opacity: 0 }], {
+    duration: GOLD_FADE_MS,
+    delay: GOLD_DRAW_MS + GOLD_TIE_MS + GOLD_HOLD_MS,
+    fill: "forwards",
+  }).onfinish = () => box.remove();
 };
 
 const close = (state) => {
   state.phase = "closing";
+  /* Before anything is asked to move. Wrapping means taking the nodes out of the line and putting
+     them back in, which resets any transition running on them — the eaten letters' fade is long
+     finished by now, but the collapse below has not started, and must not. */
+  state.box = wrapUnion(state.span, state.space);
   state.eaten.forEach((el) => el.classList.add("cx-gone"));
   /* Next frame, not this one: the letters have to be TRANSPARENT before their boxes start
      collapsing, or the word visibly shuffles sideways while you can still read it. */
   requestAnimationFrame(() => {
     state.eaten.forEach((el) => el.classList.add("cx-collapse"));
-    state.span.querySelector(".cx-mark")?.classList.add("cx-show");
     if (state.space) state.space.className = "shrink-space";
 
     const morph = state.stem?.holder.querySelector(".cx-morph");
     if (morph) {
+      /* Delayed so the flip is edge-on — nothing to see, which is where the text is swapped — at
+         the exact moment the two halves meet: `will` does not lose its i, it turns over into the o
+         of `won't` on the impact. */
+      const lead = Math.max(0, COLLAPSE_MS - MORPH_MS / 2);
+      morph.style.animationDelay = `${lead}ms`;
       morph.classList.add("cx-morphing");
-      // Swapped halfway, where the flip has the letter edge-on and there is nothing to see: `will`
-      // does not lose its i, it turns over into the o of `won't`.
       setTimeout(() => {
         morph.textContent = "o";
-      }, 150);
+      }, lead + MORPH_MS / 2);
     }
+
+    squash(state);
   });
   setTimeout(() => finish(state), CLOSE_MS);
 };

@@ -91,12 +91,16 @@ html, body {
 
    The letters stay `inline`. A font-size transition collapses an inline box perfectly well — it is
    all .shrink-space has ever done — whereas inline-block would re-space the whole word the instant
-   the letters were wrapped, before anything had been eaten. */
+   the letters were wrapped, before anything had been eaten. The three things below that ARE
+   inline-block (.cx-morph, .cx-mark, .cx-union) are the three that carry a transform, which needs
+   a box; none of them is one of the eaten letters. */
 .shrink-space {
     /* Was a flat 1s, which finished long after everything else and left the two words drifting
-       together on their own, well after the apostrophe had appeared. It is one beat of the
-       contraction now, and the beat is set by CLOSE_MS in utils/contractionFunc.js. */
-    transition: font-size 0.32s ease-in;
+       together on their own, well after the apostrophe had appeared. It is the APPROACH now, and
+       the timing is COLLAPSE_MS in utils/contractionFunc.js — change one, change the other.
+       The curve is the point: it eases in hard, so the two words are still gaining speed at the
+       moment they meet and the squash that follows reads as a collision rather than a settle. */
+    transition: font-size 0.26s cubic-bezier(0.5, 0, 0.9, 0.35);
     font-size: 0;
 }
 
@@ -109,7 +113,10 @@ html, body {
 }
 
 .cx-eat {
-    transition: opacity 0.18s ease-out, font-size 0.32s ease-in;
+    /* The font-size half must match .shrink-space above (and COLLAPSE_MS): the eaten boxes and the
+       gap between the two words are the same closing distance seen from two places. */
+    transition: opacity 0.18s ease-out,
+                font-size 0.26s cubic-bezier(0.5, 0, 0.9, 0.35);
 }
 
 .cx-eat.cx-gone {
@@ -121,11 +128,21 @@ html, body {
 }
 
 /* The apostrophe is in the word from the moment she reaches it, collapsed to nothing, so that at
-   the end it grows into the exact hole the eaten letters leave. */
+   the end it stands in the exact hole the eaten letters leave.
+
+   Its WIDTH grows over the approach, on the same curve as everything else that is closing, so that
+   the hole stops changing size before the squash starts — a box that is still resizing while it is
+   being deformed reads as a glitch. What you SEE is a transform: MARK_FRAMES keeps it scaled to
+   nothing until the two halves collide and then pops it out past full size, knocked loose by the
+   impact. It has to be a transform and not the font-size, because it sits inside the squashing
+   union box and must not change that box's width mid-squash. */
 .cx-mark {
+    display: inline-block; /* a transform needs a box */
+    transform: scale(0);
+    transform-origin: 50% 100%;
     font-size: 0;
     opacity: 0;
-    transition: font-size 0.32s ease-out, opacity 0.32s ease-out;
+    transition: font-size 0.26s cubic-bezier(0.5, 0, 0.9, 0.35);
 }
 
 .cx-mark.cx-show {
@@ -133,10 +150,11 @@ html, body {
        depending on a keyword resolving to something a transition can interpolate from 0. */
     font-size: 1em;
     opacity: 1;
+    transform: none;
 }
 
-/* `will` -> `wo`: the i is not eaten, it turns over. inline-block on this one alone, because it is
-   the only letter that is transformed. */
+/* `will` -> `wo`: the i is not eaten, it turns over. inline-block because it is transformed, and it
+   is the only letter of the WORD that is (the apostrophe below and the union box are the others). */
 .cx-morph {
     display: inline-block;
 }
@@ -147,7 +165,35 @@ html, body {
 }
 
 .cx-morphing {
+    /* 0.3s is MORPH_MS in utils/contractionFunc.js, which also sets the animation-delay that lands
+       the edge-on half of this flip on the impact. */
     animation: cx-morph 0.3s ease-in-out;
+}
+
+/* THE UNION — both words and the closed gap between them, wrapped in one box for the length of
+   beat 2 so the squash can be a single transform (see BEAT 2: THE SQUASH in contractionFunc.js).
+   inline-block because a transform needs a box; the origin is the bottom, so the letters stretch
+   UP off the line when they are squeezed together rather than growing in both directions. */
+.cx-union {
+    display: inline-block;
+    transform-origin: 50% 100%;
+    font-style: normal;
+}
+
+/* THE CARTOUCHE — the gold ring Egyptian writing draws around a name, drawn around the finished
+   word for a beat: these two words are one word now. Absolutely positioned inside #output so it
+   never joins the line box and cannot reflow the sentence it is drawn on (the ladder rung strip's
+   rule); built and animated in sealCartouche(). */
+.cx-cartouche {
+    position: absolute;
+    pointer-events: none;
+    color: #e3b23c;
+    filter: drop-shadow(0 0 6px rgba(227, 178, 60, 0.55));
+}
+
+.cx-cartouche svg {
+    display: block;
+    overflow: visible;
 }
 
 span[data-alternate="a"] {
