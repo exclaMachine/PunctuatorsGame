@@ -6,7 +6,7 @@ import { heroToTheRescue } from "./utils/utils.js";
 import { setClassName } from "./utils/utils.js";
 import { createRandomMadLibSentence } from "./SentenceFunc.js";
 import {
-  shortenContraction,
+  swallowContraction,
   secondContractionWordSet,
 } from "./utils/contractionFunc.js";
 import { textRevealSpeeds, changeTextToSpeechBubble } from "./speechbubble.js";
@@ -2552,6 +2552,16 @@ class AnacontractShine extends Hero {
       "white",
       "./sounds/projectile-hit/ana-eat.mp3",
     );
+    /* Measured off the two PNGs, not guessed (docs/punctuators.md, "Where a shot is born"). Both
+       files are 800 x 2000 with the figure drawn in part of that frame: the hero art's body sits at
+       y 1030-2000, x 6-782, and the shot's at y 159-1931, x 121-782. At their scales (0.3 and 0.2)
+       that puts her standing body's centre 118px into her frame and the flying body's centre 90px
+       into its own, and her standing shoulders 309px down against the shot's 32px — so the shot
+       leaves from x + 28, y + 277 and she takes off from exactly where she was standing, aimed
+       where the player aimed. Unanchored she launched 277px above her own head and 78px to the
+       right of it, which matters more for her than for anyone else: she is not firing a bullet,
+       she IS the bullet, and the hero is erased for as long as it is up. */
+    this.projectileAnchor = { x: 28, y: 277 };
   }
   shootProjectileSound() {
     _anaShoot();
@@ -4248,6 +4258,67 @@ function animate() {
                 projectile.update();
               }
             }
+          } else if (shooter.symbol === anacontraction.symbol) {
+            /* SHE FLIES THROUGH. Every other hero's shot stops at the word it hits; hers is her —
+               `secondHeroImage: "white"`, so no hero is drawn at the bottom while it is up — and
+               she carries on off the top of the screen, eating the letters as she crosses them. So
+               this branch never retires the shot: the flight pass at the end of animate() picks it
+               up and lets it leave.
+
+               Its geometry is her own, too. The shared test below asks whether
+               `position.y - height` has reached the word, which for a 400px-tall body fires a full
+               body-length early — she "ate" the word from the middle of the screen and vanished
+               there, nowhere near the sentence, which is what the whole eating read as. Hers asks
+               when her leading edge actually arrives, and then keeps handing her position to
+               swallowContraction for as long as she is over the word, which is what makes the
+               letters go one at a time as she passes rather than all at once on contact.
+
+               See docs/punctuators.md, "ApostroPharaoh eats the letters". */
+            const wordBox = punctuationSymbol.getBoundingClientRect();
+            const passTop = projectile.position.y;
+            const passBottom = passTop + projectile.height;
+            if (
+              passTop <= wordBox.bottom &&
+              projectile.position.x + projectile.width >=
+                wordBox.left - PROJECTILE_HIT_MARGIN_OF_ERROR &&
+              projectile.position.x <=
+                wordBox.right + PROJECTILE_HIT_MARGIN_OF_ERROR
+            ) {
+              // First contact only. The cue and the win check belong to the moment she reaches the
+              // word, not to every frame she spends crossing it.
+              if (!punctuationSymbol.dataset.eaten) {
+                punctuationSymbol.dataset.eaten = "true";
+                shooter.hitProjectileSound();
+                allPunctuationHit.add(punctuationSymbol);
+                if (
+                  allPunctuationHit.size === numberOfPunctuationArray.length &&
+                  ENDING_REACHED === false
+                ) {
+                  changeTextToSpeechBubble(speechLineForWin, endingMessage1);
+                  refreshButton.classList.remove("go-away");
+                  root.style.setProperty("--color", shooter.characterColor);
+                  speechTailHero = shooter;
+                  aimSpeechTail();
+                  ENDING_REACHED = true;
+                  gameSfx.end.play();
+                }
+              }
+              swallowContraction(
+                punctuationSymbol,
+                passTop,
+                passBottom,
+                shooter.characterColor,
+              );
+            }
+            /* Her shot is her body, so the hero must not also be drawn at the bottom while it is up
+               — and unlike every other hero that has to hold on the frames she is ON the word as
+               well as the frames she is climbing towards it, because she does not land. Which is
+               also why the eaten span keeps its id and stays in the sentence: lose it and this
+               branch stops running mid-flight, and a second ApostroPharaoh appears at the bottom
+               while the first is still on screen. */
+            if (shooter === player && shooter.secondHeroImage) {
+              firingThisFrame = true;
+            }
           } else {
             if (
               //need to go through this more. Should be able to do .bottom but something up with padding
@@ -4676,9 +4747,6 @@ function animate() {
                 punctuationSymbol.classList.remove("hidden-punc");
               }, 0);
 
-              if (shooter.symbol === anacontraction.symbol) {
-                shortenContraction(punctuationSymbol);
-              }
               if (shooter.symbol === article.symbol) {
                 const currentText = punctuationSymbol.textContent;
                 const alternateText =

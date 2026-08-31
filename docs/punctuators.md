@@ -54,7 +54,8 @@ offset from the top-left of its own frame, measured off the art — and the spaw
 otherwise the method returns exactly what each site computed before, **including the long-standing
 disagreement between them** (`+ width - projectileStartPositionX` in the handlers vs
 `+ projectileStartPositionX` in `onload`, which agree only at half the drawn width). That is deliberate:
-un-anchored heroes had to stay bit-for-bit identical, and only the two ladder heroes are anchored so far.
+un-anchored heroes had to stay bit-for-bit identical. Three heroes are anchored so far: the two ladder
+heroes, and ApostroPharaoh (see *ApostroPharaoh eats the letters*), whose shot is her own body.
 Anchoring a hero also retires that footgun for it, since both branches then compute the same point.
 
 ---
@@ -157,6 +158,133 @@ Two smaller cases of the same "the global `player` isn't who fired" mistake went
   the code tested `projectiles[0]` and then did `projectiles.length = 0` — emptying the array and killing
   every other hero's in-flight shot whenever a tongue happened to be first. It now splices out the
   `CommaTongue`s and leaves the rest alone.
+
+---
+
+## ApostroPharaoh eats the letters
+
+**BUILT 2026-08-31.** She is the game's only contraction hero — shoot `not` in *did not* and it becomes
+`didn't` — and she is wired through `addSpansAndIds`, the ordinary punctuation round, not through a
+wordplay mode. So she has no `<option>`, no `modeHelp.js` card and no `modeArt.js` picture: her word is a
+bonus target sitting in the sentence alongside the punctuation. The mark-up is
+`wrapContractionWithSpan` in `utils/contractionFunc.js` (`<span id="ApostroPharaoh (Contraction)"
+class="not">not</span>`, the class being the word itself); everything below is the same file.
+
+### What it used to do
+
+Nothing you could see. The whole effect was two statements in the same tick: the space span in front of
+the word got `.shrink-space` (font-size to 0 over a flat, uneased **1 second**) and the word's
+`outerHTML` was overwritten with the contracted spelling. The letters did not go anywhere — they were
+simply not there on the next frame, the apostrophe arrived before the two words had started closing up,
+and the gap then drifted shut on its own long after the shot was over.
+
+Three separate faults sat underneath that, and all three read as the same complaint — *she just
+disappears*:
+
+- **She "hit" the word from the middle of the screen.** The shared vertical test is
+  `projectile.position.y - projectile.height <= word.top`, which is only "the shot has reached the word"
+  when the shot is small. Hers is her own body: an 800 × 2000 PNG at scale 0.2, so **400 px tall**, and
+  the test therefore fired a full body-length early. She was retired, and vanished, nowhere near the
+  sentence.
+- **She launched from empty sky.** Her hero art has the figure at `y 1030–2000` of its 2000 px frame and
+  `restingY` bottom-anchors that frame, so the top ~309 px (at scale 0.3) is air — and an un-anchored
+  shot is born at the frame's top. She took off 277 px above her own head, and 78 px to the right of it.
+  This is exactly the bug `projectileAnchor` was added for (see *Where a shot is born*), and it matters
+  more for her than for anyone else, because `secondHeroImage: "white"` erases the hero while her shot is
+  up: she is not firing a bullet, she **is** the bullet, so a shot in the wrong place is *she* teleported.
+- **`will not` threw.** The `won't` special case wrote over the stem's text node and then set
+  `node.outerHTML = "t"`, detaching the node — and fell straight through into the `switch`, whose `not`
+  case immediately did `node.previousSibling.className = …` on a node that no longer had a
+  `previousSibling`. A TypeError every time, out of `animate()`, on the one contraction with a joke in it.
+
+### The rule the animation is built on
+
+**The apostrophe stands exactly where the eaten letters were.** Every case is the same shape — a head
+that survives, the run of letters she takes, a tail — which is why the mark can be put into the DOM at the
+very start, collapsed to nothing, and simply *grown into the hole the letters leave*. No measuring, no
+absolute positioning, no second pass to place it.
+
+| word | head | eaten | tail |
+| ---- | ---- | ----- | ---- |
+| `have` | | **ha** | `'ve` |
+| `would` | | **woul** | `'d` |
+| `is` / `has` / `us` | | **i** / **ha** / **u** | `'s` |
+| `shall` / `will` | | **sha** / **wi** | `'ll` |
+| `not` | `n` | **o** | `'t` |
+| `am` / `are` | | **a** | `'m` / `'re` |
+
+That is `CONTRACTION_PLAN`, and it is the only place the spellings live now — the old `switch` of
+`outerHTML` strings is gone. (It also carried one typo worth not reproducing: the `had`/`would` case
+emitted a **left** curly quote `‘`, where every other case emitted a straight `'`.)
+
+### How it runs
+
+**She flies through.** Her shot is never retired at the word; it carries on and off the top of the screen
+and the flight pass at the end of `animate()` collects it. The letters go **while she is crossing them**,
+which is why nothing in the eating is on a timer: `index.js`'s collision branch hands
+`swallowContraction(span, passTop, passBottom, colour)` the top and bottom of her body every frame, and
+how much of the word is gone is a pure function of how far she has crossed it — 0 when her leading edge
+touches the word's bottom, 1 when her trailing edge clears its top, with the letters spread over the
+first `EAT_WINDOW` (0.75) of that so the last one leaves with her still on top of the word rather than at
+the instant she leaves it. The pass is ~46 frames, so a four-letter word like `woul` loses one letter
+about every 140 ms.
+
+Two beats, deliberately separate:
+
+1. **The eating** — each doomed letter is wrapped in its own `<i class="cx-eat">`, coloured in her
+   lightgreen at first contact so you can read what she is about to take, and goes to `opacity: 0` in
+   turn. **Its box keeps its width.** Nothing moves yet.
+2. **The contraction** — once she is clear, the eaten boxes collapse (`font-size: 0`), the space span
+   shrinks, and the apostrophe grows into the hole, all on one 0.32 s beat set by `CLOSE_MS`. The collapse
+   is deferred one `requestAnimationFrame` after the letters are made transparent, or the word visibly
+   shuffles sideways while you can still read it.
+
+**This second beat is on purpose the plain one.** The letters coming together is the fun part and it has
+not been designed yet — see *Still to do* below.
+
+### `will not` → `won't`
+
+The one irregular: the stem changes as well, so she takes letters out of the word **before** the one you
+shot, and its `i` **turns into an `o`** rather than being eaten (`w` · *i→o* · ~~ll~~ + `n` · ~~o~~ ·
+`'` · `t`). Every letter involved sits in the single text node in front of the space — `"will"`, or just
+`"ill"` when the W has already been taken by Full Stop's capital span, so **`Will not` works too** — which
+makes the whole case one node swap into an `<i class="cx-stem">` holder. The `i` is the only letter that
+is transformed rather than collapsed, so it is the only one that is `inline-block`; its text is swapped at
+the halfway point of a 0.3 s `rotateX` flip, where it is edge-on and there is nothing to see.
+
+The holder is turned **back into a plain text node** when the animation finishes, because Master Asterisk
+finds the word in front of him with `previousSibling.data`, which an element answers with `undefined`.
+
+### Five things not to undo
+
+- **The eaten span stays in the sentence, keeping its id.** It is not replaced by text the way the old
+  code replaced it. The collision branch has to keep matching it for the rest of her flight, because that
+  branch is what sets `firingThisFrame` — lose the target mid-flight and the hero is drawn at the bottom
+  of the screen again while her body is still climbing past the sentence, i.e. **two of her**.
+- **Its `class` is cleared at first contact** (to `cx-eaten`), because the hint button underlines any span
+  whose class is still one of the contractable words, and an eaten word has nothing left to point at.
+- **The letters stay `inline`.** A `font-size` transition collapses an inline box perfectly well — that is
+  all `.shrink-space` has ever done — whereas `inline-block` re-spaces the whole word the instant the
+  letters are wrapped, before anything has been eaten.
+- **Inner markers are `<i>`, never a nested `<span>`**, the affix mode's rule.
+- **`projectileAnchor: { x: 28, y: 277 }` is measured, not guessed.** Both PNGs are 800 × 2000 with the
+  figure drawn in part of the frame (hero `y 1030–2000, x 6–782`; shot `y 159–1931, x 121–782`), which at
+  scales 0.3 and 0.2 puts her standing centre 118 px into her frame against the flying body's 90 px, and
+  her standing shoulders 309 px down against the shot's 32 px.
+
+### Still to do
+
+- **The contraction itself.** Beat 2 is currently an honest collapse and nothing more. The ideas on the
+  table: the finished word **squashing horizontally and springing back** at the moment of union (the pun
+  made visible, and one keyframe); a gold **cartouche** drawing itself round the new word for a beat,
+  which asserts *these two words are one word now*; the apostrophe landing as a **shed fang**.
+- **Her unused art.** `images/Anacontractshine.png` (her crowned head, standing) and
+  `images/AnacontractshineEat.png` (**the head on a long 335 × 1630 neck, the crown doubling as an open
+  jaw**) are referenced nowhere. They were drawn for a strike where the head leaves the body — which is
+  what `Eat2` and `Eat3`, both **headless** torsos, are the other half of. Her shot could become the head
+  with the neck drawn as a canvas Bézier back down to the body, and a swallowed bulge could travel down
+  it with the eaten letter drawn inside.
+- **A second attack pose.** She has none; `secondHeroImage` is the `"white"` sentinel.
 
 ---
 

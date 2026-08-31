@@ -86,9 +86,68 @@ html, body {
     margin-top: 40px;
 }
 
+/* THE CONTRACTION — ApostroPharaoh flies THROUGH the word and the letters go as she crosses them,
+   then the gap shuts behind her. See docs/punctuators.md, "ApostroPharaoh eats the letters".
+
+   The letters stay `inline`. A font-size transition collapses an inline box perfectly well — it is
+   all .shrink-space has ever done — whereas inline-block would re-space the whole word the instant
+   the letters were wrapped, before anything had been eaten. */
 .shrink-space {
-    transition: font-size 1s;
+    /* Was a flat 1s, which finished long after everything else and left the two words drifting
+       together on their own, well after the apostrophe had appeared. It is one beat of the
+       contraction now, and the beat is set by CLOSE_MS in utils/contractionFunc.js. */
+    transition: font-size 0.32s ease-in;
     font-size: 0;
+}
+
+/* They are <i> only because a nested <span> in the sentence is a marker other passes have to be
+   protected from (the affix mode's rule) — nothing here is meant to be italic. */
+.cx-keep,
+.cx-eat,
+.cx-mark {
+    font-style: normal;
+}
+
+.cx-eat {
+    transition: opacity 0.18s ease-out, font-size 0.32s ease-in;
+}
+
+.cx-eat.cx-gone {
+    opacity: 0;
+}
+
+.cx-eat.cx-collapse {
+    font-size: 0;
+}
+
+/* The apostrophe is in the word from the moment she reaches it, collapsed to nothing, so that at
+   the end it grows into the exact hole the eaten letters leave. */
+.cx-mark {
+    font-size: 0;
+    opacity: 0;
+    transition: font-size 0.32s ease-out, opacity 0.32s ease-out;
+}
+
+.cx-mark.cx-show {
+    /* 1em, not inherit: for font-size an em is the PARENT's size, so it is the same number without
+       depending on a keyword resolving to something a transition can interpolate from 0. */
+    font-size: 1em;
+    opacity: 1;
+}
+
+/* `will` -> `wo`: the i is not eaten, it turns over. inline-block on this one alone, because it is
+   the only letter that is transformed. */
+.cx-morph {
+    display: inline-block;
+}
+
+@keyframes cx-morph {
+    0%, 100% { transform: rotateX(0deg); }
+    50%      { transform: rotateX(90deg); }
+}
+
+.cx-morphing {
+    animation: cx-morph 0.3s ease-in-out;
 }
 
 span[data-alternate="a"] {
