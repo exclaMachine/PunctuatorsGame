@@ -1,7 +1,7 @@
 {
   "_doc": "Phonetic semordnilaps (EXACT) — word pairs where one's phoneme sequence is the exact reverse of the other's (e.g. dervish<->shivered, cats<->stack). Built by build-phonetic-wordplay.js.",
   "source": "enable1.txt words × text-to-ipa ipadict.txt pronunciations; symbols in IPA-fan-game/ipa_words.js convention",
-  "generated": "2026-08-07",
+  "generated": "2026-08-31",
   "count": 658,
   "pairs": [
     {

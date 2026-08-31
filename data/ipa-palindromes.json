@@ -1,7 +1,7 @@
 {
   "_doc": "Phonetic palindromes — words whose phoneme sequence reads the same reversed (compared by token). Built by build-phonetic-wordplay.js.",
   "source": "enable1.txt words × text-to-ipa ipadict.txt pronunciations; symbols in IPA-fan-game/ipa_words.js convention",
-  "generated": "2026-08-07",
+  "generated": "2026-08-31",
   "count": 94,
   "palindromes": [
     {

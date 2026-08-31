@@ -115,10 +115,20 @@ IPA game, `typing.html`, etc.). Those have no `docs/` entry yet — read the fil
   Sound-Collective entry per animal; a boss-return animal reward grants the same. **Deferred:** routing one-shot animals
   through the true `{drum}`/`DRUM_VOICES` lane (they play as fixed-pitch VOICES for now); campaign decks stay curated
   (animals are Free-Play only). Same http-serving requirement.
-- **Phonetic palindromes / semordnilaps (for the IPA fan game).** `build-phonetic-wordplay.js` (repo root,
+- **Phonetic palindromes / semordnilaps / anagrams (for the IPA fan game).** `build-phonetic-wordplay.js` (repo root,
   `node build-phonetic-wordplay.js` to regenerate) scans **enable1.txt** words × **text-to-ipa** pronunciations
   (`text-to-ipa-master/lib/ipadict.txt`, CMU→IPA), tokenises by phoneme (diphthongs/affricates atomic), and
-  converts symbols to **IPA-fan-game/ipa_words.js convention** (ə ɝ tʃ dʒ eɪ oʊ aɪ aʊ ɔɪ ɡ). Emits three files:
+  converts symbols to **IPA-fan-game/ipa_words.js convention** (ə ɝ tʃ dʒ eɪ oʊ aɪ aʊ ɔɪ ɡ). Emits five files:
   `data/ipa-palindromes.json` (sound reads same reversed — 94), `data/ipa-semordnilaps-exact.json` (phoneme-exact
   reversal pairs incl. `-s` reversals — 658), `data/ipa-semordnilaps-loose.json` (loose-only pairs after merging
-  near-equiv vowels {i,ɪ}{u,ʊ}{ə,ɝ}{ɑ,ɔ}, disjoint from exact — 371). **Data only; not yet wired into any game.**
+  near-equiv vowels {i,ɪ}{u,ʊ}{ə,ɝ}{ɑ,ɔ}, disjoint from exact — 371), plus (added 2026-08-31)
+  `data/ipa-anagrams-exact.json` (**2,221 sets** / 4,769 sounds / 5,301 words — same phoneme multiset, different
+  order: `across`·`chorus`·`orcas`·`raucous`, `consultation`⇄`constellation`) and
+  `data/ipa-anagrams-loose.json` (**1,678 loose-only sets** under the same vowel merge, disjoint by membership).
+  **The anagram sets are STACKED BY SOUND, not flat** — each entry in a set's `sounds` array is one distinct
+  phoneme sequence carrying every spelling of it (`cats`/`kats` are ONE entry), so a set is kept only when it holds
+  ≥2 sequences; a group whose words all sound alike is a homophone list, not an anagram (938 of the 3,159 raw
+  exact groups are exactly that, which is why the set count is 2,221 rather than 3,159). A loose entry gains an
+  `exact` array naming the real pronunciations the merge folded together (`tucks`/`turks`/`tux`). Set sizes: 1,954
+  pairs, 225 triples, 42 larger, topping out at `/k s t æ/` with 10 sounds / 13 spellings. **Data only; not yet
+  wired into any game** (IPA Scrabble / the Sound Board is the candidate, undecided).

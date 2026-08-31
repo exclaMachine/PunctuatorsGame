@@ -1,7 +1,7 @@
 {
   "_doc": "Phonetic semordnilaps (LOOSE-only) — reversal pairs found ONLY after merging near-equivalent vowels {i,ɪ}{u,ʊ}{ə,ɝ}{ɑ,ɔ}; excludes anything already in ipa-semordnilaps-exact.json. looseKey shows the merged form. Built by build-phonetic-wordplay.js.",
   "source": "enable1.txt words × text-to-ipa ipadict.txt pronunciations; symbols in IPA-fan-game/ipa_words.js convention",
-  "generated": "2026-08-07",
+  "generated": "2026-08-31",
   "count": 371,
   "pairs": [
     {
