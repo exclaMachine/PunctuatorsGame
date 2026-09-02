@@ -212,6 +212,15 @@
 
     <canvas id="background" style="border: 2px black solid"></canvas>
 
+    <!-- FOREGROUND. The game canvas above is wiped to OPAQUE WHITE every frame (animate()), so it
+         can never be raised above #output — the sentence would vanish behind it. This second canvas
+         is transparent (cleared, not filled) and stacked above the sentence, and a hero whose
+         `drawOverText` is set draws its shot here instead: ApostroPharaoh does not stop at the word,
+         she flies THROUGH it eating the letters, and passing behind them read as her disappearing
+         into the line. Sized and positioned in JS off the background canvas's own rect so the two
+         share one coordinate space; pointer-events: none so it is never in the way. -->
+    <canvas id="foreground"></canvas>
+
     <script>
       (function () {
         const sel = document.getElementById('wordPlayOptions');

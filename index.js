@@ -82,6 +82,32 @@ import {
 //import { swapWord } from "./spoonerismFunc.js";
 const canvas = document.getElementById("background");
 const c = canvas.getContext("2d");
+
+/* THE FOREGROUND LAYER. `c` is wiped to opaque white every frame, which is both how the previous
+   frame is erased and why that canvas can never sit above the sentence — the white would cover
+   #output. A hero that has to pass IN FRONT of the letters therefore draws its shot on `fg`
+   instead: a second canvas, stacked above #output in CSS and CLEARED rather than filled, so it is
+   transparent everywhere nothing is drawn. Today that is ApostroPharaoh alone (see
+   `drawOverText` on Hero) — she does not stop at the word, she flies through it eating the
+   letters, and doing that behind them read as her vanishing into the line rather than crossing it.
+   The two canvases are kept in one coordinate space by syncForegroundCanvas(), so a projectile
+   changing layers needs no offset. */
+const fgCanvas = document.getElementById("foreground");
+const fg = fgCanvas.getContext("2d");
+
+/* Match the overlay to the game canvas exactly: same bitmap size, and a fixed box laid over the
+   rect the game canvas actually occupies (it is a static block with a 2px border, so its drawing
+   surface does not start at the viewport origin). Measured rather than derived, so the two agree
+   however the page around them is laid out. */
+function syncForegroundCanvas() {
+  const box = canvas.getBoundingClientRect();
+  fgCanvas.width = canvas.width;
+  fgCanvas.height = canvas.height;
+  fgCanvas.style.left = `${box.left + canvas.clientLeft}px`;
+  fgCanvas.style.top = `${box.top + canvas.clientTop}px`;
+  fgCanvas.style.width = `${canvas.width}px`;
+  fgCanvas.style.height = `${canvas.height}px`;
+}
 // const period = document.getElementById("first");
 
 let root = document.documentElement;
@@ -655,6 +681,8 @@ function noteShelfProgress(span, word) {
 window.addEventListener("resize", () => {
   closeShelfFan();
   clearShelfMilestone();
+  // The overlay is a fixed box laid over a static canvas; a resize moves the one it is tracking.
+  syncForegroundCanvas();
 });
 
 /* A glow in the hero's own colour, for the two moments where the word does NOT move: the fan
@@ -1579,6 +1607,7 @@ refreshButton.addEventListener("click", () => {
 //number accounts for the padding and height of the inputs. Need to fix for when that goes away
 canvas.width = innerWidth - 4;
 canvas.height = innerHeight - 50;
+syncForegroundCanvas();
 
 //When the sentence is first loaded it shows the team. We set this to True and then any button pressed will just bring up first character
 let bRightAfterSentenceIsLoaded = false;
@@ -2562,6 +2591,13 @@ class AnacontractShine extends Hero {
        right of it, which matters more for her than for anyone else: she is not firing a bullet,
        she IS the bullet, and the hero is erased for as long as it is up. */
     this.projectileAnchor = { x: 28, y: 277 };
+    /* SHE TRAVELS OVER THE LETTERS. Alone among the heroes her shot does not stop at the word — it
+       flies through it, eating the letters as it crosses (see the anacontraction branch in
+       animate()) — so it is the one shot whose depth against the sentence is readable, and drawn on
+       the ordinary canvas it passed BEHIND the line and read as vanishing into it rather than
+       crossing it. `drawOverText` moves it to the foreground canvas, which is stacked above
+       #output. Nothing else about the shot changes: the two canvases share one coordinate space. */
+    this.drawOverText = true;
   }
   shootProjectileSound() {
     _anaShoot();
@@ -3850,6 +3886,9 @@ class Projectile {
     this.width = 3;
     this.height = owner.projectileLength;
     this.projectileImage = owner.projectileImage;
+    // Off the OWNER, not the global `player`: a shot outlives its hero's turn on stage, and it must
+    // keep flying on the layer it launched on after a Switch Character.
+    this.overText = owner.drawOverText === true;
 
     const projImage = new Image();
 
@@ -3880,7 +3919,11 @@ class Projectile {
 
   draw() {
     if (this.projImage) {
-      c.drawImage(
+      /* Which LAYER this shot lives on, decided once by the hero who fired it. Every ordinary shot
+         stops at the word it hits, so passing behind the letters is never visible; ApostroPharaoh's
+         carries on through them, and behind the line she read as disappearing into it. */
+      const ctx = this.overText ? fg : c;
+      ctx.drawImage(
         this.projImage,
         this.position.x,
         this.position.y,
@@ -4111,6 +4154,9 @@ function animate() {
   //Need this or else there will be multiple Full Stops
   c.fillStyle = "white";
   c.fillRect(0, 0, canvas.width, canvas.height);
+  // CLEARED, not filled — the overlay sits above the sentence, so anything opaque here would hide
+  // the very letters the shot drawn on it is supposed to be crossing.
+  fg.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
 
   requestAnimationFrame(animate);
   // Re-aimed every frame: the hero is free to walk once the bubble is up (see aimSpeechTail).

@@ -306,7 +306,52 @@ it turns over into the o of `won't` at the moment the two halves meet.
 The holder is turned **back into a plain text node** when the animation finishes, because Master Asterisk
 finds the word in front of him with `previousSibling.data`, which an element answers with `undefined`.
 
-### Six things not to undo
+### She travels over the letters (the foreground canvas)
+
+**BUILT 2026-09-01.** She passed *behind* the sentence, which read as her disappearing into the line
+rather than crossing it — the one shot in the game whose depth against the text is visible at all, since
+every other hero's is retired *at* the word it hits.
+
+It is not a `z-index` on the game canvas, which is the obvious fix and is impossible. `animate()` opens
+every frame with
+
+```js
+c.fillStyle = "white";
+c.fillRect(0, 0, canvas.width, canvas.height);
+```
+
+— that fill **is** how the previous frame is erased, so the canvas is opaque by construction. Raise it
+above `#output` (which is `position: fixed`, and therefore already paints over the static canvas) and the
+whole sentence vanishes behind white.
+
+So there is a second canvas. `#foreground` is stacked above the sentence in CSS and **cleared** rather
+than filled, so it is transparent everywhere nothing is drawn, and `Projectile.draw()` picks its context
+from `this.overText`:
+
+```js
+const ctx = this.overText ? fg : c;
+```
+
+Four things worth keeping:
+
+- **The flag is a `Hero` property, `drawOverText`,** set on `AnacontractShine` alone. The other heroes
+  gain nothing from it — their shots stop at the word, so they are never seen against the letters.
+- **It is captured from `owner`, not the global `player`,** in the `Projectile` constructor. Same reason
+  as everything else in *A shot is hit-tested against its owner's targets*: her shot outlives a Switch
+  Character and has to keep flying on the layer it launched on.
+- **`syncForegroundCanvas()` measures rather than derives.** The overlay copies the game canvas's bitmap
+  size and is laid over its *measured* rect (`getBoundingClientRect().left + clientLeft`, skipping the
+  2 px border — the same arithmetic `aimSpeechTail` needs). The two therefore share one coordinate space
+  and a projectile changing layers needs no offset. Called where the game canvas is sized, and on resize.
+- **`z-index: 2` and `pointer-events: none`.** 2 clears `#output` (auto) and `#input-container` (1);
+  it stays under the modal (10), the Tree of Kinds (5000) and the site nav (`nav.js`, 99999), so she
+  crosses the sentence but never the chrome. A full-viewport overlay must not eat clicks on the row
+  underneath it — nothing is ever aimed at the canvas, movement being keyboard-only.
+
+She does now also pass over `.shine`, the title, which has no `z-index` and sits at `top: 80px` just
+above the sentence at `110px`. Left that way deliberately; a `z-index` on `.shine` reverses it.
+
+### Seven things not to undo
 
 - **The eaten span stays in the sentence, keeping its id.** It is not replaced by text the way the old
   code replaced it. The collision branch has to keep matching it for the rest of her flight, because that
@@ -321,6 +366,8 @@ finds the word in front of him with `previousSibling.data`, which an element ans
 - **Beat 2 deforms by transform, never by layout.** The moment the squeeze is expressed as width —
   `letter-spacing`, margins, font-size — it changes the line's width, and a centred line that changes
   width drags the whole sentence sideways on the impact.
+- **Her shot is drawn on `#foreground`, not on the game canvas.** See the section above: the game canvas
+  is wiped opaque, so a shot that has to cross the letters cannot live on it.
 - **`projectileAnchor: { x: 28, y: 277 }` is measured, not guessed.** Both PNGs are 800 × 2000 with the
   figure drawn in part of the frame (hero `y 1030–2000, x 6–782`; shot `y 159–1931, x 121–782`), which at
   scales 0.3 and 0.2 puts her standing centre 118 px into her frame against the flying body's 90 px, and

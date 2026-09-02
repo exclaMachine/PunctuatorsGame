@@ -2123,3 +2123,19 @@ span[data-hint] {
         animation: none;
     }
 }
+
+/* THE FOREGROUND CANVAS — the layer ApostroPharaoh flies on.
+   The main #background canvas is filled opaque white at the top of every frame, which is what
+   erases the previous frame; that makes raising it above the sentence impossible (the white would
+   cover #output). So a shot that has to pass IN FRONT of the letters is drawn here instead, on a
+   canvas that is cleared rather than painted and therefore transparent everywhere nothing is drawn.
+   Its box is set in JS from the background canvas's bounding rect (syncForegroundCanvas), so the
+   two share one coordinate space and a projectile needs no offset to move between them.
+   z-index 2 clears #output (auto) and #input-container (1) while staying under the modal (10) and
+   the Tree of Kinds (5000); pointer-events: none keeps a full-viewport overlay from swallowing
+   clicks on the row underneath it. */
+#foreground {
+    position: fixed;
+    pointer-events: none;
+    z-index: 2;
+}
