@@ -266,7 +266,6 @@
   .sb-stats{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;flex:none;
     font-family:var(--disp);font-size:8px;color:var(--ink-soft);margin-bottom:7px}
   .sb-stats b{color:var(--gold);font-size:10px;margin-left:3px}
-  .sb-stats .sb-stock{margin-left:auto}
   .sb-stats .sb-stock b{color:var(--inkblue)}
   .sb-view{position:relative;flex:none;align-self:center;background:var(--edge);padding:1px;
     border:3px solid var(--edge);box-shadow:3px 3px 0 rgba(0,0,0,.3);
@@ -322,6 +321,12 @@
   #soundboard .btn-row button{font-size:8px;padding:7px 9px}
   .sb-msg{flex:none;font-family:var(--read);font-size:15px;color:var(--moss);min-height:18px;margin-top:5px}
   .sb-msg.err{color:#9a3b2e}
+  .sb-stats .sb-ink{margin-left:auto} .sb-stats .sb-ink b{color:var(--moss)}
+  .sb-stats .sb-stock{margin-left:10px}
+  /* The board's confirm card — over the whole overlay, not inside its .book (a clipped flex column). */
+  #sb-confirm{position:absolute;inset:0;display:none;background:rgba(21,19,28,.9);
+    align-items:center;justify-content:center;padding:18px;z-index:11}
+  #sb-confirm.open{display:flex}
   @media(max-width:560px){
     #soundboard .book{height:auto;max-height:94vh;overflow:auto;display:block}
     .sb-legend{display:none}             /* keyboard-only hints; touch selects by tap and pans by drag */
@@ -1535,15 +1540,31 @@
         <div class="sb-rack" id="sb-rack"></div>
         <p class="sb-legend"><b>1–7 / click</b> pick a tile · <b>← ↑ ↓ →</b> aim (pan the board when
           nothing's picked) · <b>Tab</b> next square · <b>Enter</b> place / play · <b>Backspace</b> undo ·
-          <b>Esc</b> back out · <b>C</b> recentre</p>
+          <b>Esc</b> back out · <b>C</b> recentre · <b>H</b> rack idea</p>
         <div class="btn-row">
           <button class="primary" id="sb-play">✓ Play</button>
           <button id="sb-recall">↩ Recall</button>
           <button id="sb-shuffle">⇄ Shuffle</button>
+          <button id="sb-hint">💡 Rack idea</button>
           <button id="sb-trade">♻ Trade</button>
+          <button id="sb-patch">🌱 New patch</button>
           <button class="ghost" id="sb-center">⌖ Recentre</button>
         </div>
         <div class="sb-msg" id="sb-msg"></div>
+      </div>
+      <!-- One confirm card for both of the board's irreversible presses: laying the last copy of a sound,
+           and breaking the chain for a fresh patch. Outside .book (a flex column with overflow:hidden). -->
+      <div id="sb-confirm">
+        <div class="book" style="max-width:400px">
+          <div class="reveal" style="text-align:center">
+            <div id="sb-confirm-title" style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase"></div>
+            <div class="note" id="sb-confirm-msg" style="margin-top:8px"></div>
+            <div class="btn-row" style="margin-top:16px;justify-content:center;gap:10px">
+              <button class="primary" id="sb-confirm-yes">Lay it</button>
+              <button id="sb-confirm-no">Not yet</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1701,7 +1722,7 @@
           <span><b>Shift</b></span><span>Slide — a quick forward lunge (once unlocked; tap SLIDE)</span>
           <span><b>1</b> / <b>2</b> / <b>3</b></span><span>Drink a Size / Speed / Reveal potion (or tap its HUD button)</span>
           <span><b>↑ ↓ ← →</b> / <b>[</b> <b>]</b> / <b>1</b>–<b>7</b></span><span>On the <b>Atlas</b> board only: arrows (or WASD) step to the neighbouring country, sea, lake or peak; <b>[</b>/<b>]</b> sweep one layer west to east (or tap <b>◀ ▶</b>); <b>1</b>–<b>7</b> frame the World and the six continents</span>
-          <span><b>1</b>–<b>7</b> / <b>↑ ↓ ← →</b> / <b>Enter</b></span><span>On the <b>Sound Board</b> only: <b>1</b>–<b>7</b> pick a phoneme tile, the arrows aim it (and pan the board when nothing's picked), <b>Tab</b> hops to the next legal square, <b>Enter</b> lays it — then <b>Enter</b> again plays the word. <b>Backspace</b> undoes, <b>C</b> recentres</span>
+          <span><b>1</b>–<b>7</b> / <b>↑ ↓ ← →</b> / <b>Enter</b></span><span>On the <b>Sound Board</b> only: <b>1</b>–<b>7</b> pick a phoneme tile, the arrows aim it (and pan the board when nothing's picked), <b>Tab</b> hops to the next legal square, <b>Enter</b> lays it — then <b>Enter</b> again plays the word. <b>Backspace</b> undoes, <b>C</b> recentres, <b>H</b> asks the rack for an idea</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
           <span><b>Esc</b></span><span>Close any panel</span>
         </div>
@@ -1741,7 +1762,12 @@
           <b>◆</b> pays triple for any <b>vowel</b>, <b>≈</b> triple for any <b>fricative</b> (the hissing sounds),
           <b>🔊</b> double for any <b>voiced</b> one. The board <b>never ends and never resets</b>: it's one
           crossword you add a word or two to, drifting outward forever, so drag it (or use the arrow keys) to look
-          around and <b>⌖ Recentre</b> to come home.</p>
+          around and <b>⌖ Recentre</b> to come home. Laying a tile <b>spends it</b> — that sound comes off your
+          Phonicon for good, which is what fishing is <i>for</i>. Each play pays <b>ink</b> (a tenth of its score,
+          up to 40 a day) and inks any word it spells into your <b>Word Hoard</b>, and every play you hook onto the
+          last adds <b>+0.1×</b> to the multiplier. When you'd rather start somewhere fresh, <b>🌱 New patch</b>
+          lets the next word go anywhere free — at the cost of the whole chain — and <b>♻ Trade</b> buys a new rack
+          for a little ink.</p>
           <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground — walk over it to collect (the <b>Magnet</b> feat later makes drops drift to you) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
           <p><b>Feats (<b>C</b>).</b> Collecting <b>verbs</b> levels you up along word-count milestones per category (1, then every few — bigger categories space rewards out further). Rewards interleave passive boosts and abilities: <b>Motion</b> → move speed + <b>Slide</b>; <b>Competition</b> → attack + <b>Finisher</b>/<b>Combo</b>; <b>Perception</b> → <b>Divine</b> (a daily letter peek in the library) + <b>Treasure Sense</b> (drops glint); <b>Possession</b> → satchel space + <b>Magnet</b>; <b>Body</b> → max hearts + <b>Second Wind</b> (recover a heart when you stay out of combat). More verb categories arrive later.</p>
         </div>
@@ -8052,7 +8078,7 @@ function renderPhonicon(){
    The production build of the ipa-scrabble.html bench: an endless crossword you spell BY SOUND, whose
    tiles are the phonemes you fished. M1 is headless on purpose — the lazy lexicon load, the two symbol
    aliases the two data files disagree on, and read/draw/spend helpers over state.phonicon (whose `count`
-   IS the tile stock). Nothing spends yet; the board model is M2, the overlay M3, the economy M4. */
+   IS the tile stock). The board model is M2, the overlay M3, the economy and the save M4. */
 let SB_PRONS=null;          // the raw word -> "ɪ p ə" map (kept for M4's Word Hoard cross-check)
 let SB_VALID=null;          // Set of every pronunciation string — a play is legal iff its run is in here
 let SB_WORDS=null;          // pron -> shortest example spelling (what gets shown / inked)
@@ -8114,7 +8140,7 @@ function sbExample(pron){ return (SB_WORDS && SB_WORDS.get(pron)) || null; }
 /* ── Stock (§10.3) ───────────────────────────────────────────────────────────────────────────────
    state.phonicon[ipa].count IS the tile stock — one number, no parallel ledger. Drawing a rack does
    NOT touch it (leftovers, recall and trade cost nothing because the tiles never left); only committing
-   a play spends, via sbSpend, which M4 wires to ✓ Play. A count that hits 0 stays revealed ("caught ·
+   a play spends, via sbSpend, which ✓ Play calls (M4). A count that hits 0 stays revealed ("caught ·
    out of stock") so the Phonicon's X/40 coverage number can never go down. */
 function sbStock(ipa){ const e=state.phonicon&&state.phonicon[ipa]; return e?(e.count==null?1:e.count):0; }
 // Every owned sound that still has tiles left, aliased to the board token it plays as.
@@ -8129,7 +8155,6 @@ function sbStockList(){
   return out;
 }
 function sbStockTotal(){ let n=0; for(const s of sbStockList()) n+=s.n; return n; }
-function sbDistinctPlayable(){ const seen=new Set(); for(const s of sbStockList()) seen.add(s.tok); return seen.size; }
 let _sbTileSeq=0;
 // A tile remembers the inventory symbol it came FROM (`ipa`) as well as the token it plays AS (`tok`),
 // so spending an aliased ə tile debits the ʌ (or ə) card it was actually drawn from.
@@ -8176,14 +8201,14 @@ function sbSpend(tiles){
       the reach walks. The ★ centre exists exactly once, at absolute (7,7).
    Everything else is the bench engine (ipa-scrabble.html) ported onto those two — runAt / validTargets /
    canStillHook / evaluateTurn and the wordplay bonuses — plus the articulatory squares, which are new here.
-   Nothing spends, pays out or persists yet: the overlay is M3, the economy and save v12 are M4. */
+   Nothing here spends, pays out or persists — the overlay is M3, the economy and save v12 M4. */
 const SB_PANEL=15, SB_CENTER=7;    // panel size · the single ★, at absolute (7,7)
 const SB_PAD=SB_PANEL;             // how far past the explored edge play may reach — one panel of frontier
 const SB_BINGO=50;                 // all 7 tiles in one play
 /* Sound-wordplay bonuses, as tuned on the bench: palindromes scale with length because the long ones are
    vanishingly rare, semordnilaps stay a small flat nod because they're ~10× more common. */
 const SB_PAL_PER_PHONEME=10, SB_SEM_BONUS=10, SB_WORDPLAY_MIN=3;
-const SB_CHAIN_STEP=0.1;           // +0.1× per connected play, uncapped (§10.4) — M4 is what grows it
+const SB_CHAIN_STEP=0.1;           // +0.1× per play since the last patch, uncapped (§10.4) — sbCommitPlay grows it
 const SB_DIRS4=[[-1,0],[1,0],[0,-1],[0,1]];
 
 /* The standard Scrabble premium layout, built once — read modulo the panel, this single table IS the
@@ -8247,13 +8272,15 @@ function sbArtPays(kind, tile){
 /* ── Board state (§10.2) ─────────────────────────────────────────────────────────────────────────────
    Sparse: only the squares you've actually filled. Bounds track the explored region so the view can be
    sized and the reach walks bounded; they start collapsed on the ★ so an empty board still has a frontier.
-   Lives on `state.soundboard`, but it does NOT join snapshot() until M4 (save v11 → v12). */
+   Lives on `state.soundboard`, and joins snapshot() as of save v12 (restored via M4's sbAdoptBoard). */
 function sbNewBoard(){
   return { tiles:Object.create(null), count:0,
            minR:SB_CENTER, maxR:SB_CENTER, minC:SB_CENTER, maxC:SB_CENTER,
            score:0, chain:0, patches:0, words:0, wordplay:0,
-           patchFree:false,               // 🌱 New patch armed: the next play needn't hook the board (M4's button)
-           tradeDay:"", tradeCount:0 };   // ink-priced ♻ Trade, escalating within a day (M4)
+           patchFree:false,               // 🌱 New patch armed: the next play needn't hook the board (§10.4)
+           tradeDay:"", tradeCount:0,     // ink-priced ♻ Trade, escalating within a day
+           inkDay:"", inkToday:0,         // the daily ink cap, so a long chain can't print currency
+           hoard:0 };                     // words this board has inked into the Word Hoard (a lifetime tally)
 }
 function sbBoard(){ if(!state.soundboard) state.soundboard=sbNewBoard(); return state.soundboard; }
 function sbMult(){ return 1 + SB_CHAIN_STEP*sbBoard().chain; }         // chain 7 → ×1.7
@@ -8267,9 +8294,28 @@ function sbCommitted(r,c){ return !!sbBoard().tiles[r+","+c]; }
 let sbRack=[];                     // tiles in hand, drawn from stock (sbDrawRack) — drawing costs nothing
 let sbPending=new Map();           // "r,c" -> tile: laid this turn, still pickupable
 function sbCellTile(r,c){ const k=r+","+c; return sbPending.get(k) || sbBoard().tiles[k] || null; }
-function sbFillRack(){             // top the rack back up to 7 from stock, reserving what's already out
-  const out=sbRack.concat([...sbPending.values()]), want=SB_RACK_SIZE-out.length;
-  if(want>0) sbRack=sbRack.concat(sbDrawRack(want, out));
+const SB_DEAL_TRIES=24;            // redraws before falling back to sbSeedRack (measured: median 1, worst 8)
+/* Top the rack back up to 7 from stock, reserving what's already out — and, for a FRESH rack, deal until
+   it can actually spell something (§the stock guard, in M4). Drawing costs nothing, so a redraw is free;
+   what it buys is that ♻ Trade never has to be paid to undo a bad shuffle.
+   The guarantee is the rack spelling a word ON ITS OWN, which is stricter than the real rule once tiles
+   are down (a lone /s/ can extend /k æ t/). That's deliberate: it's a floor, never a ceiling, it needs no
+   placement search, and on an empty board or a fresh patch it IS the rule, since that play must stand
+   alone. A mid-turn top-up (tiles already laid) just draws — the turn in progress is the player's. */
+function sbFillRack(){
+  const held=[...sbPending.values()], keep=sbRack.slice();
+  const want=SB_RACK_SIZE-keep.length-held.length;
+  if(want<=0) return sbRack;
+  if(held.length || !SB_VALID){ sbRack=keep.concat(sbDrawRack(want, keep.concat(held))); return sbRack; }
+  // A dead stock can't be redrawn out of — spending your last vowel on a play can reach this — so don't
+  // spin 24 times over it. The gate (sbRenderStatus) is what explains the board instead.
+  if(!sbStockCanSpell()){ sbRack=keep.concat(sbDrawRack(want, keep)); return sbRack; }
+  for(let i=0;i<SB_DEAL_TRIES;i++){
+    sbRack=keep.concat(sbDrawRack(want, keep));      // kept tiles are reserved, so leftovers never change
+    if(sbFindRackWord()) return sbRack;
+  }
+  const seeded=sbSeedRack();
+  if(seeded) sbRack=seeded;
   return sbRack;
 }
 function sbRecall(){ for(const [,t] of sbPending) sbRack.push(t); sbPending.clear(); }
@@ -8439,7 +8485,7 @@ function sbScoreCells(cells){
 }
 /* Evaluate what's currently laid: single line, no gaps, hooks the board (or covers the ★ / a fresh patch),
    every run it forms is a real word's sound. `total` is the raw play; `final` applies the chain multiplier
-   M4 pays out on.
+   sbCommitPlay pays out on.
    -> {ok, error, words:[{pron,word,valid,pts,wp}], total, bingo, mult, final} */
 function sbEvaluateTurn(){
   const none={ ok:false, error:"", words:[], total:0, bingo:false, mult:sbMult(), final:0 };
@@ -8496,7 +8542,8 @@ function sbEvaluateTurn(){
            mult, final:Math.round(total*mult) };
 }
 /* Write the laid tiles into the board and grow its bounds — the structural half of a play. The economy
-   half (spending the tiles, the chain, ink and Word Hoard payout) is M4, which calls this last. */
+   half — spending the tiles, the chain, ink and the Word Hoard payout — is M4's sbCommitPlay, which
+   calls this and then debits what it returns. */
 function sbCommitPlacement(){
   const b=sbBoard(), laid=[];
   for(const [k,t] of sbPending){
@@ -8513,16 +8560,14 @@ function sbCommitPlacement(){
 }
 
 /* ---------- THE SOUND BOARD — M3: the overlay (docs/ipa-scrabble.md §10.5–10.6) ----------------------
-   M1 built the stock, M2 the endless board model; M3 is the first thing a player can see or touch. It is
-   deliberately still ECONOMY-FREE: ✓ Play commits the word to the board and the board's own score/word
-   counters move, but nothing is debited from the Phonicon, the chain never grows, no ink or Word Hoard
-   entry is paid, and none of it is saved. All of that is M4 (with save v11 → v12).
+   M1 built the stock, M2 the endless board model; M3 is the first thing a player can see or touch — the
+   viewport, the select → aim → place flow, and the live per-run status. What it costs and pays is M4's
+   (sbCommitPlay / sbNewPatch / sbTradeRack, below), which also puts the board in the save.
    The one problem the overlay has that the bench didn't: an INFINITE grid inside a small panel. The
    answer is a VIEWPORT — a whole number of fixed-size cells, panned by drag, by the aim cursor walking
    off the edge, or by ⌖ Recentre. Because sbPremiumAt is a pure function of position, panning somewhere
    new allocates nothing: the window simply asks a different range of coordinates what they are. */
 const SB_CELL_PX=32, SB_CELL_PX_SM=24;   // px per square: desktop / phone
-const SB_MIN_SOUNDS=2;                   // below this the overlay says "go fishing" rather than deal a dead rack
 let sbCell=SB_CELL_PX;
 let sbView={ r0:SB_CENTER-7, c0:SB_CENTER-7, rows:15, cols:15 };   // top-left cell of the window + its size
 let sbHeld=null;        // id of the selected rack tile (null = nothing picked up)
@@ -8540,7 +8585,9 @@ function sbLayout(){
   const phone=innerWidth<=560;
   sbCell=phone?SB_CELL_PX_SM:SB_CELL_PX;
   const availW=Math.min(740, innerWidth-36)-44;                       // the book's max-width, less its padding
-  const availH=Math.min(innerHeight*0.94, 660)-(phone?290:270);       // the rest of the panel: stats, status, rack, buttons
+  // The rest of the panel: stats, status, rack, legend and the button block — which wraps to TWO rows now
+  // that there are seven buttons and ♻ Trade's label grows with its price. Reserve for the taller case.
+  const availH=Math.min(innerHeight*0.94, 660)-(phone?320:302);
   sbView.cols=Math.max(7, Math.min(19, Math.floor(availW/(sbCell+1))));
   sbView.rows=Math.max(6, Math.min(19, Math.floor(Math.max(150,availH)/(sbCell+1))));
   grid.style.gridTemplateColumns=`repeat(${sbView.cols},${sbCell}px)`;
@@ -8592,7 +8639,9 @@ function openSoundBoard(){
   sbRenderAll();                       // draws the "unrolling the word list…" state if the lexicon isn't in yet
   SFX.play("click");
   // 1.4 MB, fetched once, only ever from here (§10.5) — the field-play path must not pay for it.
-  loadPronunciations().then(()=>{
+  // dictReady rode along from startup and is almost certainly already in hand; awaiting it here is what
+  // guarantees M4's Word Hoard cross-check (sbLogWords) can never silently skip a play's words.
+  Promise.all([loadPronunciations(), dictReady]).then(()=>{
     if(!state.soundboardOpen) return;
     if(SB_VALID) sbFillRack();
     sbRenderAll();
@@ -8617,6 +8666,7 @@ function sbRenderAll(){
 }
 function sbRenderStats(){
   const b=sbBoard();
+  sbInkRoom();                     // rolls the day-scoped ink counter over before it's read (M4)
   const cnt=document.getElementById("sb-count");
   if(cnt) cnt.textContent = b.count ? `· ${b.count} tiles laid` : "· a fresh board";
   const el=document.getElementById("sb-stats"); if(!el) return;
@@ -8624,8 +8674,9 @@ function sbRenderStats(){
     `<span>SCORE<b>${b.score}</b></span>`+
     `<span>WORDS<b>${b.words}</b></span>`+
     `<span>↔ WORDPLAY<b>${b.wordplay}</b></span>`+
-    `<span>CHAIN<b>×${sbMult().toFixed(1)}</b></span>`+
+    `<span title="+0.1 per play, back to ×1.0 on a new patch">CHAIN<b>×${sbMult().toFixed(1)}</b></span>`+
     `<span>PATCHES<b>${b.patches}</b></span>`+
+    `<span class="sb-ink" title="A play pays a tenth of its score in ink, up to ${SB_INK_CAP} a day.">INK TODAY<b>${b.inkToday}/${SB_INK_CAP}</b></span>`+
     `<span class="sb-stock">STOCK<b>${sbStockTotal()}</b></span>`;
 }
 // One pass over the window. Everything a square knows — its premium, whether it's a legal target, whether
@@ -8663,8 +8714,8 @@ function sbRenderRack(){
   const el=document.getElementById("sb-rack"); if(!el) return;
   if(!sbRack.length){
     el.innerHTML = !SB_VALID ? `<span class="sb-empty">…</span>`
-      : sbDistinctPlayable()<SB_MIN_SOUNDS
-        ? `<span class="sb-empty">Your Phonicon is nearly bare. Go and fish a few more sounds 🎣 — the board waits.</span>`
+      : !sbStockCanSpell()
+        ? `<span class="sb-empty">${sbStockGap()}</span>`
         : `<span class="sb-empty">Rack empty.</span>`;
     return;
   }
@@ -8679,21 +8730,31 @@ function sbRenderRack(){
 function sbRenderStatus(){
   const s=document.getElementById("sb-status"), play=document.getElementById("sb-play"),
         rec=document.getElementById("sb-recall"), sh=document.getElementById("sb-shuffle"),
-        tr=document.getElementById("sb-trade");
+        tr=document.getElementById("sb-trade"), pa=document.getElementById("sb-patch"),
+        hi=document.getElementById("sb-hint");
   if(!s) return;
   const dis=(b,v)=>{ if(b) b.disabled=v; };
+  const bd=sbBoard(), cost=sbTradeCost();
+  // Both economy buttons say what they cost at press time — a dimmed button with no price is a dead end.
+  if(tr) tr.textContent=`♻ Trade · ${cost} ink`;
+  if(pa) pa.textContent = bd.patchFree ? "🌱 Patch armed" : "🌱 New patch";
   if(!SB_VALID){                       // the lexicon is the whole rulebook — nothing is playable without it
     s.className="sb-status"+(_sbFailed?" err":"");
     s.textContent=_sbFailed ? "The word list didn't load. Like the dictionary, it's fetched — the game has to be served over http."
                             : "Unrolling the word list…";
-    dis(play,true); dis(rec,true); dis(sh,true); dis(tr,true); return;
+    dis(play,true); dis(rec,true); dis(sh,true); dis(tr,true); dis(pa,true); dis(hi,true); return;
   }
-  if(sbDistinctPlayable()<SB_MIN_SOUNDS && !sbPending.size){   // the "go fishing" empty state (§10.3)
+  // The stock guard: a board you cannot play is never opened onto, and ♻ Trade in particular is locked so
+  // it can't charge ink to re-roll a pool that has no word in it (the dev's 2026-09-06 dead end).
+  if(!sbStockCanSpell() && !sbPending.size){
     s.className="sb-status";
-    s.innerHTML="The bag is your Phonicon, and it's nearly empty — go and hook a few more sounds 🎣.";
-    dis(play,true); dis(rec,true); dis(sh,true); dis(tr,true); return;
+    s.innerHTML=sbStockGap();
+    dis(play,true); dis(rec,true); dis(sh,true); dis(tr,true); dis(pa,true); dis(hi,true); return;
   }
-  dis(sh,!sbRack.length); dis(tr,!(sbRack.length||sbPending.size));
+  dis(sh,!sbRack.length); dis(hi,!sbRack.length);
+  dis(tr, !(sbRack.length||sbPending.size) || state.ink<cost);
+  // Nothing to break away FROM on an empty board — the first word has to cross the ★ regardless.
+  dis(pa, bd.patchFree || !bd.count);
   dis(rec,!sbPending.size);
   if(!sbPending.size){
     s.className="sb-status";
@@ -8710,7 +8771,7 @@ function sbRenderStatus(){
     s.innerHTML = ev.words.map(w=>`<span class="w ${w.valid?"good":"bad"}">/${esc(w.pron)}/ `+
       (w.valid ? `<b>${esc(w.word)}</b> +${w.pts}`+(w.wp?`<span class="wp"> ${w.wp.kind==="pal"?"↔ palindrome":"⇄ "+esc(w.wp.mirror)} +${w.wp.bonus}</span>`:"")
                : "✗")+`</span>`).join("") +
-      (ev.ok ? `<b>= ${ev.final}${ev.bingo?" · BINGO +50":""}</b>` : "");
+      (ev.ok ? `<b>= ${ev.final}${ev.mult>1?` (×${ev.mult.toFixed(1)})`:""}${ev.bingo?" · BINGO +50":""}</b>` : "");
   } else { s.className="sb-status err"; s.textContent=ev.error||""; }
   dis(play,!ev.ok);
 }
@@ -8797,33 +8858,58 @@ function sbShuffleRack(){
   for(let i=sbRack.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=sbRack[i]; sbRack[i]=sbRack[j]; sbRack[j]=t; }
   SFX.play("click"); sbRenderAll();
 }
-// Free in M3. M4 prices it in ink (2, then +2 per further trade the same day — the tradeDay/tradeCount
-// fields sbNewBoard already carries). No tiles are lost either way: drawing never touched the stock.
-function sbTradeRack(){
-  sbRecall(); sbStack=[]; sbRack=[]; sbHeld=null; sbCursor=null; sbLastCell=null;
-  sbFillRack();
-  SFX.play("click"); sbMsg("Traded for a fresh rack."); sbRenderAll();
+/* 💡 Rack idea — ported verbatim from the bench (findRackWord/combos/permHit), which M3's port had simply
+   left behind. It searches THE RACK ONLY: every subset, longest first, every permutation of it, asking the
+   lexicon whether that sequence is a real word's sound. It deliberately knows nothing about the board —
+   hence the label. On an empty board or a fresh patch that's a complete answer; on a crowded one it names a
+   word you may still not be able to hook or cross cleanly, which "Rack idea" is exactly the promise not to
+   make. Worst case on a full rack is ~13.7k Set lookups (Σ C(7,k)·k!), and it returns on the first hit.
+   Kept faithful to the bench on purpose — that file is the sandbox and this is production, so the two are
+   ported one way and drift is worth avoiding (§10.5). */
+function sbCombos(n,k){
+  const out=[], cur=[];
+  (function rec(s){ if(cur.length===k){ out.push(cur.slice()); return; }
+    for(let i=s;i<n;i++){ cur.push(i); rec(i+1); cur.pop(); } })(0);
+  return out;
 }
+function sbPermHit(arr){
+  let res=null; const used=Array(arr.length).fill(false), cur=[];
+  (function rec(){ if(res) return;
+    if(cur.length===arr.length){ const p=cur.join(" "); if(sbIsWord(p)) res={ pron:p, word:sbExample(p) }; return; }
+    for(let i=0;i<arr.length;i++){
+      if(used[i]) continue;
+      if(i>0 && arr[i]===arr[i-1] && !used[i-1]) continue;    // skip a duplicate branch within a run of equal tokens
+      used[i]=true; cur.push(arr[i]); rec(); used[i]=false; cur.pop();
+      if(res) return;
+    } })();
+  return res;
+}
+function sbFindRackWord(){
+  const toks=sbRack.map(t=>t.tok), n=toks.length;
+  for(let size=n; size>=2; size--)                            // longest first — the best idea, not the first
+    for(const combo of sbCombos(n,size)){
+      const hit=sbPermHit(combo.map(i=>toks[i]));
+      if(hit) return hit;
+    }
+  return null;
+}
+function sbRackIdea(){
+  if(!SB_VALID || !sbRack.length) return;
+  const h=sbFindRackWord();
+  if(h){
+    SFX.play("capture");
+    sbMsg(`💡 Your rack could spell /${h.pron}/${h.word?` — ${h.word}`:""}.`);
+  } else {
+    SFX.play("invalid");
+    sbMsg(`No word hides in this rack — ♻ Trade buys a fresh one for ${sbTradeCost()} ink.`, true);
+  }
+}
+// ♻ Trade and ✓ Play both cost something now — both live in the M4 block below.
 /* Name the wordplay in plain language — half the reward is learning the word (ported from the bench). */
 function sbWordplayBanner(w){
   return w.wp.kind==="pal"
     ? `↔ PALINDROME! ${w.word} sounds the same backwards — +${w.wp.bonus}`
     : `⇄ SEMORDNILAP! ${w.word} backwards is ${w.wp.mirror} — +${w.wp.bonus}`;
-}
-function sbPlay(){
-  const ev=sbEvaluateTurn();
-  if(!ev.ok){ SFX.play("invalid"); sbMsg(ev.error||"Not a legal play.", true); return; }
-  const b=sbBoard(), wps=ev.words.filter(w=>w.wp);
-  let sr=0, sc=0;                                       // remember the play's centre for ⌖ before it commits
-  for(const k of sbPending.keys()){ const i=k.indexOf(","); sr+=+k.slice(0,i); sc+=+k.slice(i+1); }
-  sbFocus={ r:Math.round(sr/sbPending.size), c:Math.round(sc/sbPending.size) };
-  sbCommitPlacement();                                  // M4 wraps this with sbSpend + the chain + ink + the Hoard
-  b.score+=ev.final; b.words+=ev.words.length; b.wordplay+=wps.length;
-  sbStack=[]; sbHeld=null; sbCursor=null; sbLastCell=null;
-  sbFillRack();
-  SFX.play(ev.bingo?"unlockbig":"newword");
-  sbMsg(wps.map(sbWordplayBanner).concat(`Laid for +${ev.final}${ev.bingo?" (BINGO!)":""}.`).join("   "));
-  sbRenderAll();
 }
 
 /* ── Keyboard: select → aim → place (the bench's flow, plus panning) ───────────────────────────────── */
@@ -8832,6 +8918,20 @@ const SB_ARROWS={ arrowup:[-1,0], arrowdown:[1,0], arrowleft:[0,-1], arrowright:
 function sbKey(e){
   if(e.ctrlKey||e.metaKey||e.altKey) return;     // leave the browser's own shortcuts alone (Ctrl-A isn't "pan west")
   const k=e.key.toLowerCase();
+  // A board word can unlock a letter, and #unlockmodal opens OVER the board (z-index 10 to its 7). The
+  // global handler's branch for it sits BELOW this one, so the keys have to be handed over here.
+  const um=document.getElementById("unlockmodal");
+  if(um && um.classList.contains("open")){
+    e.preventDefault();
+    if(k==="enter"||k==="escape"||k===" ") closeUnlockModal();
+    return;
+  }
+  if(_sbConfirm){                                // M4's confirm card owns the keyboard while it's up, or
+    e.preventDefault();                          // Enter would answer the question AND play a word behind it
+    if(k==="enter"||k===" ") sbConfirmYes();
+    else if(k==="escape"||k==="backspace") sbCloseConfirm();
+    return;
+  }
   if(k==="escape"){                              // back out one layer at a time: aim → placement → the board
     e.preventDefault();
     if(sbHeld!=null||sbCursor){ sbHeld=null; sbCursor=null; sbRenderAll(); }
@@ -8877,6 +8977,7 @@ function sbKey(e){
     return;
   }
   if(k==="c"){ e.preventDefault(); const h=sbHome(); sbCenterOn(h.r,h.c); sbRenderBoard(); return; }
+  if(k==="h"){ e.preventDefault(); sbRackIdea(); return; }
 }
 
 /* ── Pointer: tap a square to lay, drag anywhere on the board to pan ───────────────────────────────── */
@@ -8914,6 +9015,344 @@ function sbWireBoardPointer(){
   };
   view.addEventListener("pointerup",end);
   view.addEventListener("pointercancel",()=>{ _sbDrag=null; view.classList.remove("dragging"); });
+}
+
+/* ---------- THE SOUND BOARD — M4: the economy & the save (docs/ipa-scrabble.md §10.3–10.4) -----------
+   M3 could be played, but it neither cost nor paid anything. M4 is what closes the loop: laying a tile
+   spends it out of the Phonicon FOR GOOD, a play pays ink and can ink its word into the Word Hoard, the
+   chain multiplier grows and 🌱 New patch trades it away, ♻ Trade costs ink, and the board finally
+   persists (save v11 → v12). The effective loop becomes fish → board → ink (§10.7.1).
+   The one rule that shapes the rest: A COMMITTED WORD IS PERMANENT — there is no un-play on an endless
+   board — so the only thing ✓ Play stops to ask about is the spend it can't undo: laying your LAST copy
+   of a sound, which is what takes a Phonicon card to "out of stock" (§10.7.3). */
+const SB_INK_PER=10;        // 1 ink per this many points of a play's FINAL (chain-multiplied) score
+const SB_INK_CAP=40;        // …capped per day, so a weeks-long chain can't print currency (§10.4)
+const SB_TRADE_COST=2;      // ♻ Trade: 2 ink the first time each day…
+const SB_TRADE_STEP=2;      // …then +2 for every further trade that day (2 · 4 · 6 …)
+
+/* The two day-scoped counters (ink paid out, trades bought) roll over LAZILY rather than through a
+   day-change hook: the board may sit unopened for a week, so asking "is this still today?" at the point
+   of use gives the same answer with no clock to wire up and nothing to miss on a rollover. */
+function sbInkRoom(){
+  const b=sbBoard();
+  if(b.inkDay!==state.day){ b.inkDay=state.day; b.inkToday=0; }
+  return Math.max(0, SB_INK_CAP-b.inkToday);
+}
+function sbTradeCost(){
+  const b=sbBoard();
+  return SB_TRADE_COST + SB_TRADE_STEP*(b.tradeDay===state.day ? b.tradeCount : 0);
+}
+/* Which sounds would committing this turn take to zero? Grouped by the INVENTORY symbol (`ipa`), never
+   the board token, because it's the Phonicon card that goes out of stock — an aliased ə tile debits the
+   ʌ card it was actually drawn from (§10.3). */
+function sbLastCopies(){
+  const want=Object.create(null), out=[];
+  for(const [,t] of sbPending) want[t.ipa]=(want[t.ipa]||0)+1;
+  for(const ipa in want) if(want[ipa]>=sbStock(ipa)) out.push(ipa);
+  return out;
+}
+
+/* ── The Word Hoard payout (dev's call, 2026-09-05) ───────────────────────────────────────────────────
+   A word the board spells joins state.dex and NOTHING MORE: it counts toward wordsCollected(), so it
+   moves the letter-unlock ladder, puts a spine in the Nouns wing and can trip a seed grant — but it pays
+   no noun ink, brews no potion and advances no verb/adjective ladder. Those are the desk's rewards for
+   spelling a word out of letters you hunted; the board pays in its own currency instead. The board is a
+   second front door into the collection, not a second desk.
+   A play whose sound is real but that the game's own dictionary can't place still scores and still pays
+   ink — the sound is real, and rejecting the play would fail it for a reason the board's own word list
+   says is fine — it simply can't be inked: the curator, the Nouns wing and the mad-libs have nothing to
+   do with a word carrying no definition and no part of speech.
+   ONE SOUND GRANTS ONE WORD (§10.1's homophone rule): a run pays its single canonical spelling, never the
+   homophone set — playing /t u/ must not hand you two AND too AND to. But the run's DISPLAY word is the
+   shortest spelling outright, which for a homophone set is usually the function word (to, for, be) and
+   those are exactly what WordNet leaves out — so grant the shortest spelling THE HOARD ACTUALLY KNOWS.
+   That's still one fixed word per pronunciation, chosen the same way every time, so a sound can never be
+   farmed for a second spelling later.
+   -> {added:[word], unknown:[pron]} */
+// pron -> every spelling of it, in one pass over the raw lexicon. Built per play rather than kept: 50k
+// iterations is nothing beside a board re-render, and an always-resident inverted index is 50k strings.
+function sbSpellingsFor(prons){
+  const want=new Set(prons), out=new Map();
+  if(!SB_PRONS) return out;
+  for(const w in SB_PRONS){
+    const p=SB_PRONS[w];
+    if(!want.has(p)) continue;
+    const list=out.get(p) || (out.set(p,[]), out.get(p));
+    list.push(w.replace(/_/g," ").toLowerCase());
+  }
+  // Shortest first, ties alphabetical — the same rule SB_WORDS picks its display word by, so the two
+  // agree whenever the shortest spelling happens to be one the dictionary holds.
+  for(const [,list] of out) list.sort((a,b)=> a.length-b.length || (a<b?-1:a>b?1:0));
+  return out;
+}
+function sbLogWords(ev){
+  const added=[], unknown=[];
+  if(!DICT) return { added, unknown };        // loaded at startup; openSoundBoard awaits it before dealing
+  const valid=ev.words.filter(w=>w.valid);
+  const spell=sbSpellingsFor(valid.map(w=>w.pron));
+  const seen=new Set();
+  for(const w of valid){
+    if(seen.has(w.pron)) continue;            // the main run and a cross run can be the same sound
+    seen.add(w.pron);
+    const known=(spell.get(w.pron)||[]).find(sp=>localLookup(sp).ok);   // inflections resolve to their lemma
+    if(!known){ unknown.push(w.word||w.pron); continue; }
+    if(state.dex[known]) continue;            // already collected — re-spelling never re-pays (§10.4)
+    const r=localLookup(known);
+    state.dex[known]={ def:r.def, found:Date.now(), pos:r.pos };
+    added.push(known);
+  }
+  return { added, unknown };
+}
+// Record the play's words and fire the collection-side effects a new word is entitled to (above).
+function sbGrantWords(ev){
+  const before=unlockedLetters();
+  const res=sbLogWords(ev);
+  if(res.added.length){
+    sbBoard().hoard+=res.added.length;
+    if(LIBRARY) LIBRARY.bg=null;              // a new word may add a spine to the Nouns wing → rebake
+    renderDex();
+    checkSeedGrants();                        // early word-milestone seed packets for the garden
+    const newly=[...unlockedLetters()].filter(l=>!before.has(l));
+    if(newly.length){
+      spawnBonusLetter(newly[0]);             // put one of the new letters on the home map
+      _clearedDay=null;                       // …which reopens the "all captured" banner
+      queueCelebration(()=>showUnlockModal(newly));   // #unlockmodal is z-index 10, over the board's 7
+      nextCelebration();
+    }
+  }
+  return res;
+}
+
+/* ── ✓ Play, for real ─────────────────────────────────────────────────────────────────────────────── */
+function sbPlay(){
+  const ev=sbEvaluateTurn();
+  if(!ev.ok){ SFX.play("invalid"); sbMsg(ev.error||"Not a legal play.", true); return; }
+  const last=sbLastCopies();
+  if(!last.length){ sbCommitPlay(); return; }
+  const many=last.length>1, names=last.map(i=>"/"+i+"/").join(", ");
+  sbConfirm(many?"Your last copies":"Your last copy",
+    `This play lays your last ${names}. ${many?"Those cards":"That card"} will read “out of stock” in your `+
+    `Phonicon until you fish ${many?"more":"another"} — and a word on the board can never be taken back.`,
+    "Lay it", sbCommitPlay);
+}
+/* The whole play: commit the tiles, spend them, grow the chain, pay ink, ink the words. Deliberately
+   re-evaluates rather than trusting an `ev` computed before a confirm dialog — nothing can change the
+   board while that dialog is up, but the stale-snapshot bug is the kind that only appears later. */
+function sbCommitPlay(){
+  const ev=sbEvaluateTurn();
+  if(!ev.ok){ SFX.play("invalid"); sbMsg(ev.error||"Not a legal play.", true); return; }
+  const b=sbBoard(), wps=ev.words.filter(w=>w.wp);
+  let sr=0, sc=0;                                       // the play's centre, for ⌖ — taken before it commits
+  for(const k of sbPending.keys()){ const i=k.indexOf(","); sr+=+k.slice(0,i); sc+=+k.slice(i+1); }
+  sbFocus={ r:Math.round(sr/sbPending.size), c:Math.round(sc/sbPending.size) };
+
+  const laid=sbCommitPlacement();                       // M2's structural half: tiles in, bounds grown
+  sbSpend(laid);                                        // …and the half that costs — those tiles are gone
+  b.score+=ev.final; b.words+=ev.words.length; b.wordplay+=wps.length;
+  // The chain counts PLAYS SINCE THE LAST PATCH: this play scored at the multiplier that was in force,
+  // and now extends the chain (or, straight after a patch, starts the new one at 1).
+  b.chain++;
+
+  const earned=Math.floor(ev.final/SB_INK_PER), gain=Math.min(earned, sbInkRoom());
+  if(gain>0){ state.ink+=gain; b.inkToday+=gain; }
+  const hoard=sbGrantWords(ev);
+
+  sbStack=[]; sbHeld=null; sbCursor=null; sbLastCell=null;
+  sbFillRack();
+  updateRewardHud(); scheduleSave();
+  if(state.phoniconOpen) renderPhonicon();              // a card may have just gone "out of stock"
+  SFX.play(ev.bingo?"unlockbig":"newword");
+
+  const parts=wps.map(sbWordplayBanner);
+  parts.push(`Laid for +${ev.final}`+(ev.mult>1?` (×${ev.mult.toFixed(1)} chain)`:"")+(ev.bingo?" · BINGO!":"")+".");
+  if(gain>0) parts.push(`+${gain} ink`+(gain<earned?" — today’s ink cap":""));
+  else if(earned>0) parts.push("No ink — today’s cap is spent.");
+  if(hoard.added.length) parts.push(`📖 ${hoard.added.join(", ")} → the Word Hoard.`);
+  // Capped at one named example: the message line is the last child of a fixed-height, clipped column.
+  if(hoard.unknown.length===1) parts.push(`“${hoard.unknown[0]}” — a real sound, but not one the Hoard has a word for.`);
+  else if(hoard.unknown.length>1) parts.push(`${hoard.unknown.length} real sounds the Hoard has no word for.`);
+  sbMsg(parts.join("   "));
+  sbRenderAll();
+}
+
+/* ── 🌱 New patch (decision #6) ────────────────────────────────────────────────────────────────────────
+   The way out of a board you can no longer hook onto. There is deliberately no engine search for "are you
+   actually stuck" — being stuck is the player's call. It costs the chain and nothing else: back to ×1.0,
+   and the next play may be laid anywhere free. Arming persists, so arming it and closing the board can't
+   quietly refund the chain; it's spent by the play that uses it (sbCommitPlacement clears patchFree). */
+function sbNewPatch(){
+  const b=sbBoard();
+  if(b.patchFree || !b.count) return;
+  const doIt=()=>{
+    if(sbPending.size) sbDoRecall();     // whatever's laid out was aimed under the old rules
+    b.patchFree=true; b.patches++; b.chain=0;
+    sbHeld=null; sbCursor=null;
+    SFX.play("click"); scheduleSave();
+    sbMsg("🌱 A fresh patch — lay your next word anywhere free. The chain is back to ×1.0.");
+    sbRenderAll();
+  };
+  if(b.chain>0) sbConfirm("Break the chain?",
+    `Your next word could go anywhere free — but the ${b.chain} play${b.chain===1?"":"s"} you’ve chained `+
+    `(×${sbMult().toFixed(1)}) drop back to ×1.0, and you can’t get them back.`,
+    "🌱 New patch", doIt);
+  else doIt();
+}
+
+/* ── ♻ Trade, priced (decision #9) ────────────────────────────────────────────────────────────────────
+   Free in M3 so a phone test couldn't dead-end on an unplayable rack; now 2 ink, +2 per further trade the
+   same day. No tiles are lost either way — drawing never touched the stock (decision #4), so this buys a
+   re-roll, not tiles. */
+function sbTradeRack(){
+  const b=sbBoard(), cost=sbTradeCost();
+  if(state.ink<cost){
+    SFX.play("invalid");
+    sbMsg(`A fresh rack costs ${cost} ink — you have ${state.ink}.`, true);
+    return;
+  }
+  state.ink-=cost;
+  if(b.tradeDay!==state.day){ b.tradeDay=state.day; b.tradeCount=0; }
+  b.tradeCount++;
+  sbRecall(); sbStack=[]; sbRack=[]; sbHeld=null; sbCursor=null; sbLastCell=null;
+  sbFillRack();
+  updateRewardHud(); scheduleSave();
+  SFX.play("click");
+  sbMsg(`A fresh rack — −${cost} ink. The next trade today costs ${sbTradeCost()}.`);
+  sbRenderAll();
+}
+
+/* ── The confirm card ─────────────────────────────────────────────────────────────────────────────────
+   One small dialog serving both irreversible presses (the last copy of a sound, and breaking the chain).
+   It sits above #soundboard rather than inside its .book, which is a flex column with overflow:hidden.
+   While it's up it owns the keyboard: sbKey returns early, so Enter/Esc answer the question instead of
+   playing a word behind it. */
+let _sbConfirm=null;
+function sbConfirm(title, body, yes, onYes){
+  _sbConfirm=onYes;
+  document.getElementById("sb-confirm-title").textContent=title;
+  document.getElementById("sb-confirm-msg").textContent=body;
+  document.getElementById("sb-confirm-yes").textContent=yes;
+  document.getElementById("sb-confirm").classList.add("open");
+  SFX.play("known");
+}
+function sbCloseConfirm(){ _sbConfirm=null; document.getElementById("sb-confirm").classList.remove("open"); }
+function sbConfirmYes(){ const fn=_sbConfirm; sbCloseConfirm(); if(fn) fn(); }
+
+/* ── The stock guard: never open onto a board you can't play (2026-09-06) ─────────────────────────────
+   A dev play-test hit the dead end this exists to stop: a rack that could spell nothing, and ♻ Trade —
+   which M4 had just started charging for — re-rolling from the same doomed pool for ink, forever. There
+   are two separate failure modes and they need two separate fixes.
+
+   MODE 1, the stock itself is dead: no arrangement of what you own spells anything, so no amount of
+   trading can help. The old gate was `sbDistinctPlayable() < 2`, a COUNT used as a proxy for viability —
+   and measured against the real data it is wrong most of the time at its own threshold: at 2 distinct
+   sounds 74.7% of stocks can spell nothing, at 3 it's 42%, at 4 17%, and it only reaches 0% around ten.
+   So the count is gone and the exact question is asked exactly (`sbStockCanSpell`). The dominant cause is
+   no vowel at all — 3.0 of the 3.7% of dead stocks at six distinct sounds — which is no accident, since
+   every English pronunciation has one, and it's what `sbStockGap` leads with.
+
+   MODE 2, the stock is fine but the DRAW was unlucky: 3.6–11.2% of random 7-tile racks spell nothing.
+   Trading fixes that, but it shouldn't cost ink to undo a bad shuffle, so `sbFillRack` now deals until the
+   rack holds a word. Measured cost: median 1 redraw, 90th percentile 1, worst case 8. */
+let SB_SORTED=null;         // pron strings, shortest first — built on the first viability check, then kept
+function sbSortedProns(){
+  if(SB_SORTED) return SB_SORTED;
+  if(!SB_VALID) return null;
+  // A 1-phoneme pron has no space and can never be a legal play (2+ tiles), so it's filtered out here.
+  // Sorting by STRING length is a cheap stand-in for token count (tokens are 1–2 chars plus separators)
+  // and is what makes the common case exit in a few hundred tests instead of scanning 48k.
+  SB_SORTED=[...SB_VALID].filter(p=>p.indexOf(" ")>0).sort((a,b)=>a.length-b.length);
+  return SB_SORTED;
+}
+/* Can the stock spell ANY word at all? Walks the pronunciations shortest-first and returns the first whose
+   multiset fits inside the stock — so a viable stock answers almost immediately and only a genuinely dead
+   one pays the full scan, which is exactly the case that has to be certain rather than fast. Memoised on a
+   signature of the stock, so the per-render gate doesn't re-ask; the signature self-invalidates the moment
+   a tile is spent or a sound is fished. -> the pron, or null */
+let _sbViable=null, _sbViableSig=null;
+function sbStockSig(){ return sbStockList().map(s=>s.tok+":"+s.n).sort().join(","); }
+function sbStockCanSpell(){
+  const list=sbSortedProns(); if(!list) return null;
+  const sig=sbStockSig();
+  if(sig===_sbViableSig) return _sbViable;
+  const have=Object.create(null);
+  for(const s of sbStockList()) have[s.tok]=(have[s.tok]||0)+s.n;
+  let hit=null;
+  for(const pron of list){
+    const need=Object.create(null); let ok=true;
+    for(const t of pron.split(" ")){
+      const n=(need[t]=(need[t]||0)+1);
+      if(n>(have[t]||0)){ ok=false; break; }
+    }
+    if(ok){ hit=pron; break; }
+  }
+  _sbViableSig=sig; _sbViable=hit;
+  return hit;
+}
+// The two commonest vowels (by this lexicon's own frequency) that you DON'T already hold — named as a
+// direction to fish in, not as an answer to the board.
+function sbSuggestVowels(){
+  if(!SB_TILE) return [];
+  const own=new Set(sbStockList().map(s=>s.tok)), out=[];
+  for(const t in SB_TILE) if(SB_VOWELS.has(t) && !own.has(t)) out.push(t);
+  return out.sort((a,b)=>SB_TILE[b].pct-SB_TILE[a].pct).slice(0,2);
+}
+/* Why can't it spell anything? NAME THE GAP, NEVER THE ANSWER (dev's call): the rule that's missing, in
+   the game's own vocabulary, so a blocked board teaches instead of stonewalling. */
+function sbStockGap(){
+  const list=sbStockList();
+  if(!list.length) return "Your Phonicon is empty. Go and hook a few sounds 🎣 — the board opens as soon as they spell something.";
+  if(!list.some(s=>SB_VOWELS.has(s.tok))){
+    const sug=sbSuggestVowels();
+    return "Nothing you've caught spells a word yet. <b>Every word's sound needs a vowel</b> — and you haven't hooked one."+
+           (sug.length ? ` Try the shallows for <b>/${sug.join("/</b> or <b>/")}/</b>.` : "");
+  }
+  return "Nothing you've caught spells a word <i>yet</i> — the sounds you hold don't meet in any real word. A few more from the pond will open it 🎣.";
+}
+/* Last resort behind sbFillRack's redraws: build the rack around a word the stock is KNOWN to be able to
+   spell. It re-deals whole, discarding leftovers — normally the wrong thing to do to a player's tiles, but
+   it is only ever reached after every random deal has failed, which the measurement says is vanishingly
+   rare, and the alternative is handing back the dead rack this whole section exists to prevent. */
+function sbSeedRack(){
+  const pron=sbStockCanSpell(); if(!pron) return null;
+  const toks=pron.split(" ");
+  if(toks.length>SB_RACK_SIZE) return null;
+  const left=Object.create(null), stock=sbStockList();
+  for(const s of stock) left[s.ipa]=s.n;
+  const seed=[];
+  for(const t of toks){
+    const from=stock.find(s=>s.tok===t && left[s.ipa]>0);
+    if(!from) return null;
+    left[from.ipa]--; seed.push(sbMkTile(from.ipa));
+  }
+  return seed.concat(sbDrawRack(SB_RACK_SIZE-seed.length, seed));
+}
+
+/* ── The save (v11 → v12) ─────────────────────────────────────────────────────────────────────────────
+   Rebuilt onto a fresh sbNewBoard rather than trusted wholesale: the tile map comes back from JSON
+   carrying Object's prototype, and the count and bounds are RE-DERIVED from the tiles themselves, so a
+   truncated or hand-edited save can't leave the reach walks (sbInb / sbReachFromHooks) looking at a
+   region that holds nothing. Any field a save predates keeps its default. */
+function sbAdoptBoard(d){
+  const b=sbNewBoard(), t=d.tiles;
+  if(t && typeof t==="object"){
+    for(const k in t){
+      if(!Object.prototype.hasOwnProperty.call(t,k)) continue;
+      const m=/^(-?\d+),(-?\d+)$/.exec(k), v=t[k];
+      if(!m || !v || typeof v!=="object" || typeof v.tok!=="string") continue;
+      const r=+m[1], c=+m[2];
+      b.tiles[k]={ tok:v.tok, ipa:(typeof v.ipa==="string"?v.ipa:v.tok), val:(+v.val||1), vowel:!!v.vowel };
+      if(!b.count){ b.minR=b.maxR=r; b.minC=b.maxC=c; }
+      else { b.minR=Math.min(b.minR,r); b.maxR=Math.max(b.maxR,r);
+             b.minC=Math.min(b.minC,c); b.maxC=Math.max(b.maxC,c); }
+      b.count++;
+    }
+  }
+  for(const k of ["score","chain","patches","words","wordplay","inkToday","hoard","tradeCount"])
+    if(typeof d[k]==="number" && isFinite(d[k])) b[k]=Math.max(0, Math.floor(d[k]));
+  if(typeof d.tradeDay==="string") b.tradeDay=d.tradeDay;
+  if(typeof d.inkDay==="string") b.inkDay=d.inkDay;
+  b.patchFree=!!d.patchFree;
+  return b;
 }
 
 /* ---------- THE ATLAS (the library globe → the world board — docs/inklings-atlas.md §4) --------------
@@ -10073,7 +10512,7 @@ function renderMaterials(){
 // Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
-  return { v:11, day:state.day, inv:state.inv, caps:state.caps, dex:state.dex,
+  return { v:12, day:state.day, inv:state.inv, caps:state.caps, dex:state.dex,
            atlas:state.atlas, atlasFlags:state.atlasFlags, atlasContinents:state.atlasContinents,
            decorOwned:state.decorOwned, placed:state.placed, bundles:state.bundles,
            bagCap:state.bagCap, captured:[...state.captured], fishedSpots:[...state.fishedSpots], bonus:state.bonus,
@@ -10086,7 +10525,8 @@ function snapshot(){
            inkClearedDay:state.inkClearedDay, inkedDay:state.inkedDay, printsDay:state.printsDay,
            equip:state.equip, gear:state.gear, gearSeq:state.gearSeq, blazonShield:state.blazonShield, garden:state.garden,
            seeds:state.seeds, season:state.season, seedGrants:state.seedGrants, gardenQuiz:state.gardenQuiz,
-           pigpens:state.pigpens, pigpenHard:state.pigpenHard };
+           pigpens:state.pigpens, pigpenHard:state.pigpenHard,
+           soundboard:state.soundboard };   // v12: the Sound Board — a sparse tile map + its economy counters
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -10140,6 +10580,10 @@ function applySnapshot(d){
   if(typeof d.season==="string") state.season=d.season;
   if(Array.isArray(d.seedGrants)) state.seedGrants=d.seedGrants;
   if(typeof d.gardenQuiz==="boolean") state.gardenQuiz=d.gardenQuiz;
+  // The Sound Board (save v12) — an endless crossword, so it persists whole, like the collection. Old
+  // saves simply have none and get a fresh board on first open; sbAdoptBoard re-derives the count and
+  // bounds from the tiles rather than trusting the saved numbers.
+  if(d.soundboard && typeof d.soundboard==="object") state.soundboard=sbAdoptBoard(d.soundboard);
   if(d.pigpens && typeof d.pigpens==="object") state.pigpens=d.pigpens;  // Pig Pens (pigpenInit re-validates/versions the shape)
   if(typeof d.pigpenHard==="boolean") state.pigpenHard=d.pigpenHard;
   if(d.decorOwned && typeof d.decorOwned==="object") state.decorOwned=d.decorOwned;   // earned-unplaced décor (persist)
@@ -10412,7 +10856,11 @@ document.getElementById("soundboard").onclick=e=>{ if(e.target.id==="soundboard"
 document.getElementById("sb-play").onclick=sbPlay;
 document.getElementById("sb-recall").onclick=sbDoRecall;
 document.getElementById("sb-shuffle").onclick=sbShuffleRack;
+document.getElementById("sb-hint").onclick=sbRackIdea;
 document.getElementById("sb-trade").onclick=sbTradeRack;
+document.getElementById("sb-patch").onclick=sbNewPatch;
+document.getElementById("sb-confirm-yes").onclick=sbConfirmYes;
+document.getElementById("sb-confirm-no").onclick=()=>{ sbCloseConfirm(); SFX.play("click"); };
 document.getElementById("sb-center").onclick=()=>{ const h=sbHome(); sbCenterOn(h.r,h.c); SFX.play("click"); sbRenderBoard(); };
 document.getElementById("sb-rack").onclick=e=>{
   const el=e.target.closest(".sb-rt"); if(el) sbSelect(+el.dataset.tile);

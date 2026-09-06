@@ -9,7 +9,10 @@ Shipped as a **rack word-builder MVP**, then upgraded the same day to a **full 1
 **play-off-others** (below), and on **2026-08-14** gained **sound-wordplay bonuses** (phonetic palindromes &
 semordnilaps). **§10 is the production build** in `inklings.html` (endless board, tiles spent from your fished
 Phonicon) — **M1 (data & stock plumbing) BUILT 2026-08-15**, **M2 (the endless board model) BUILT 2026-08-17**,
-**M3 (the overlay — it's playable in Inklings now) BUILT 2026-08-17**; M4–M5 planned.
+**M3 (the overlay — it's playable in Inklings now) BUILT 2026-08-17**; **M4 (the economy & the save)
+BUILT 2026-09-05 — the loop is closed**. Then two fixes from playing it: **💡 Rack idea ported from the
+bench 2026-09-06 (§10.12)** and **the stock guard 2026-09-06 (§10.13)**, which stops the board ever opening
+onto a rack that can spell nothing. M5 planned.
 
 ## Design decisions (settled with the dev)
 - **Spell by sound.** Validity = the laid phoneme string is a real word's IPA (not a spelling). Homophones
@@ -175,15 +178,17 @@ Implemented as **`wordplayFor(pron)`** → `null | {kind:'pal'|'sem', bonus, mir
 
 ## Not built / deferred
 - **AI opponent** (currently solo score-attack), **wildcard/blank tiles**, turn timer.
-- Persistence (high score, saved games) — none yet in the bench; **§10 M4 adds the persistent board** in
-  Inklings.
-- In-Inklings integration, reward hookup (ink/dex) and the **fishing/Phonicon tile source** — all now
-  **planned in detail in §10** (not built). Poetry phoneme-engine tie-in still unplanned.
+- Persistence (high score, saved games) — none yet in the bench; **§10 M4 BUILT the persistent board** in
+  Inklings (save v12).
+- ~~In-Inklings integration, reward hookup (ink/dex) and the **fishing/Phonicon tile source**~~ — **all
+  BUILT in Inklings, §10 M1–M4.** Poetry phoneme-engine tie-in still unplanned.
+- ~~**💡 Rack idea has not been ported to the Sound Board.**~~ **PORTED 2026-09-05 — see §10.12.** The gap
+  existed because M3's port simply didn't include it and nothing here flagged it.
 - Difficulty tuning of value thresholds and bag size once play-tested.
 
 ---
 
-# 10. Production build — the endless Sound Board in Inklings (PLANNED 2026-08-14, not built)
+# 10. Production build — the endless Sound Board in Inklings (PLANNED 2026-08-14; M1–M4 BUILT)
 
 The bench proved the engine; this is the plan to make it a **real Inklings system**. Two changes carry all
 the weight:
@@ -217,8 +222,13 @@ the weight:
   reads **"out of stock"** instead of `×N`, so `X/40 caught` never goes down (the alternative — re-locking to
   `???` — would make the collection genuinely destructible). `recordPhonemeCatch` still treats it as a repeat,
   so re-fishing that sound restocks it rather than re-announcing a first catch.
-- **Homophone logging.** A pronunciation maps to several spellings; proposed: ink only the **shortest example**
-  (`PRON_WORDS`) into the Hoard, not the whole homophone set (playing `/t u/` shouldn't hand you two·too·to).
+- ~~**Homophone logging.**~~ **Settled in M4 (2026-09-05): one sound grants one word.** A run inks a single
+  canonical spelling, never the homophone set — but *not* the shortest spelling outright, which for a
+  homophone set is usually the function word (`to`, `for`, `be`) and those are exactly what WordNet leaves
+  out, so the grant would almost never fire. It's the **shortest spelling the Hoard actually knows**
+  (`sbSpellingsFor` + `localLookup`), which is still one fixed word per pronunciation chosen the same way
+  every time, so a sound can never be farmed for a second spelling later. The run's *display* word stays
+  `SB_WORDS`'s shortest, so a `/t u/` play reads `to +6` and inks `too`.
 
 ## 10.2 The endless board
 
@@ -270,7 +280,9 @@ doubling the palindrome/semordnilap bonus, a **rare-sound** square.
 - **♻ Trade** rerolls the rack: costs **2 ink** the first time each day, **+2 per further trade that day**
   (2·4·6…), tracked as `{tradeDay, tradeCount}` on the board state. No tiles are lost. Can't afford it → the
   button dims with the price shown.
-- **Empty state.** Fewer than ~2 usable sounds → the overlay shows "go fishing" rather than a dead board.
+- **Empty state.** ~~Fewer than ~2 usable sounds~~ → **REVISED 2026-09-06 (§10.13): a distinct-sound count
+  is the wrong test** — at 2 distinct sounds 74.7% of stocks can spell nothing. The gate is now the exact
+  question (`sbStockCanSpell`), and the blocked state names the gap.
   There is deliberately **no minimum-stock gate** beyond that: an endless board means you play when you can.
 
 **Pacing sanity check** (why consumption works here): the map is 5×5 screens, `FISH_SCREEN_CHANCE=0.4`, 1 spot
@@ -317,11 +329,12 @@ cadence the endless-board design wants.
 1. **M1 — Data & stock plumbing (no UI). BUILT 2026-08-15.** See §10.8.
 2. **M2 — Endless board model. BUILT 2026-08-17.** See §10.9.
 3. **M3 — The overlay. BUILT 2026-08-17.** See §10.10.
-4. **M4 — Economy & persistence.** Consumption on commit, chain multiplier + 🌱 New patch, ink-priced trade,
-   ink payout + Word Hoard logging, board in the save (v12).
+4. **M4 — Economy & persistence. BUILT 2026-09-05.** See §10.11. Consumption on commit, chain multiplier
+   + 🌱 New patch, ink-priced trade, ink payout + Word Hoard logging, board in the save (v12).
 5. **M5 — Teaching & polish.** Articulatory-square explainer (and a pointer from the Fish Phoneme Guide tab —
-   same chart, second use), chain/patch UI feel, SFX, empty state, first-word celebration through the shared
-   queue.
+   same chart, second use), chain/patch UI feel, the wordplay SFX, first-word celebration through the shared
+   queue. *(The **empty state** left M5 early — §10.13 rebuilt it as the stock guard, since it had to be a
+   real viability gate rather than polish. 💡 Rack idea came early too — §10.12.)*
 6. **Later — the world bench.** Swap the toolbar launcher for a placeable/fixed bench object (`tileInFront()`
    + `E`), per decision #1. The overlay itself doesn't change.
 
@@ -332,12 +345,17 @@ cadence the endless-board design wants.
    the effective loop is fish → board → ink. That's the dev's call (decision #11) and is recorded here rather
    than left as a silent contradiction; the fishing doc's §3.3 sink list gains the board.
 2. **Consumption makes the Phonicon a currency.** Its "coverage-honest X/40" promise (fishing §3.2) survives
-   only under the ×0-stays-revealed rule (§10.1 open item). Decide before M4.
-3. **One-way spend, no refunds.** There is no un-play; a committed word is permanent on an endless board. That
-   is the point, but it means `✓ Play` deserves a confirm affordance for expensive tiles (an 8–10pt rare).
+   only under the ×0-stays-revealed rule, which M1 built and M4 is the first thing that can actually reach.
+3. **One-way spend, no refunds.** There is no un-play; a committed word is permanent on an endless board.
+   **Settled in M4:** `✓ Play` confirms, but not on a tile's *value* — the irreversible thing isn't the
+   points, it's dropping a sound to **zero stock**, which takes its Phonicon card to "out of stock" until
+   you fish another. So the confirm fires when a play lays your **last copy** of a sound (`sbLastCopies`)
+   and is silent otherwise, so ordinary play never nags. The same card asks before 🌱 New patch breaks a
+   chain.
 4. **The `ʌ` alias is user-visible.** A player who fishes `ʌ` and finds `ə` tiles needs the card to say so.
-5. **Chain persistence + no cap** is the one number most likely to need retuning after play; keep the growth
-   step and cap as named constants from M4.
+5. **Chain persistence + no cap** is the one number most likely to need retuning after play. Named
+   constants as of M4: `SB_CHAIN_STEP` (0.1), `SB_INK_PER` (10), `SB_INK_CAP` (40/day), `SB_TRADE_COST`
+   (2) and `SB_TRADE_STEP` (2).
 6. **Viewport on a phone.** An infinite board in a retro-pixel overlay is the real UX risk of this plan —
    M3 should be judged on the phone, not the desktop. **Built and still unjudged:** M3's phone window is
    24 px cells, ~11 wide (§10.10), driven by tap-to-place and drag-to-pan. If it reads badly in the hand,
@@ -363,8 +381,9 @@ serving, like the rest of the game's data).
   — CMU folds `AH` into `ə`). Checked both directions: all **40** inventory sounds map onto playable tokens,
   and all **39** data tokens are reachable by fishing — no dead tiles, no unfishable tile.
 - **Stock over `state.phonicon`** (one number, no parallel ledger): `sbStock(ipa)`, `sbStockList()` (owned
-  sounds with tiles left, each carrying the token it plays as), `sbStockTotal()`, `sbDistinctPlayable()` (for
-  M3's "go fishing" empty state), and `sbSpend(tiles)` (one-way debit, returns how many landed).
+  sounds with tiles left, each carrying the token it plays as), `sbStockTotal()` and `sbSpend(tiles)`
+  (one-way debit, returns how many landed). *(`sbDistinctPlayable()` shipped here as M3's empty-state gate
+  and was **deleted 2026-09-06** — see §10.13, the count was the wrong question.)*
 - **Weighted rack draw.** `sbDrawRack(want, held)` draws up to 7 weighted by count (held ×4 = 4× as likely)
   and **without replacement against the stock**, reserving `held` first, so a rack can never show more copies
   of a sound than you own; fewer than 7 owned just yields a shorter rack. It deliberately **does not touch
@@ -437,8 +456,9 @@ never grows, no ink or Word Hoard entry is paid, and none of it is saved** — t
 - **♻ Trade is free in M3** (dev's call, so a phone test can't dead-end on an unplayable rack); M4 prices it in
   ink using the `tradeDay`/`tradeCount` fields `sbNewBoard` already carries. Nothing is lost either way —
   drawing never touched the stock. **🌱 New patch** stays M4, with the chain it costs.
-- **Empty state (§10.3):** below `SB_MIN_SOUNDS`=2 distinct playable sounds the overlay says *go fishing*
-  rather than dealing a dead rack. A rack tile whose fished symbol differs from the token it plays as (the
+- **Empty state (§10.3):** as shipped in M3, below `SB_MIN_SOUNDS`=2 distinct playable sounds the overlay
+  said *go fishing* rather than dealing a dead rack — **superseded 2026-09-06 by §10.13's exact viability
+  gate; `SB_MIN_SOUNDS` is gone.** A rack tile whose fished symbol differs from the token it plays as (the
   `ʌ`→`ə` / `g`→`ɡ` aliases) says so in its tooltip (§10.7.4).
 - **Launcher & guards:** a non-contextual toolbar row (`tb-board`, 🔡) + touch button (`tc-board`), through
   `tbSwitch` like every other dialog, plus `state.soundboardOpen` added to all six play guards (movement,
@@ -447,3 +467,208 @@ never grows, no ink or Word Hoard entry is paid, and none of it is saved** — t
   key row; the **articulatory-square explainer** and the pointer from the Fish Phoneme Guide are still M5.
 
 Verify in the console (needs http serving): `loadPronunciations().then(()=>{ sbFillRack(); console.log(sbRack.map(t=>t.tok), sbValidTargets().length); })` — on a fresh board the targets are the ★ and everything within reach of it.
+
+## 10.11 M4 — The economy & the save (BUILT 2026-09-05)
+
+The loop is closed. M1 built the stock, M2 the board model, M3 the overlay you could play but that neither
+cost nor paid anything. M4 is a fourth `/* THE SOUND BOARD — M4 */` block plus a 🌱 button, a confirm card
+and the save bump: **laying a tile spends it out of the Phonicon for good**, a play pays **ink** and can ink
+its word into the **Word Hoard**, the **chain** grows and 🌱 New patch trades it away, **♻ Trade costs ink**,
+and the board **persists** (save `v11` → `v12`). Fishing's reward-routing rule is now amended in practice as
+well as on paper (§10.7.1): the effective loop is **fish → board → ink**.
+
+### What a ✓ Play now does
+
+`sbPlay` → (confirm, if needed) → `sbCommitPlay`, in this order:
+
+1. **`sbCommitPlacement()`** — M2's structural half, unchanged: tiles into the sparse map, bounds grown.
+2. **`sbSpend(laid)`** — the half that costs. `state.phonicon[ipa].count` goes down by one per tile laid,
+   and only tiles actually laid (decision #4: drawing, holding, recalling and trading are free because the
+   tiles never left the stock). A tile debits **the card it was drawn from**, not the token it played as, so
+   an aliased `ə` tile takes it out of the `ʌ` card (§10.3).
+3. **Chain** — `b.chain++`. The chain counts **plays since the last patch**: this play scored at the
+   multiplier that was in force, and now extends the chain (or, straight after a patch, starts the new one
+   at 1). So the play *on* a fresh patch is always ×1.0, and the next is ×1.1.
+4. **Ink** — `floor(final / SB_INK_PER)`, clipped by what's left of `SB_INK_CAP` today. Both day-scoped
+   counters (`inkDay`/`inkToday`, `tradeDay`/`tradeCount`) **roll over lazily**, asked at the point of use
+   rather than reset by a day-change hook — the board may sit unopened for a week, and there is no clock to
+   wire up or miss.
+5. **The Word Hoard** — `sbGrantWords` (below).
+
+The message line then reports all of it in one go: the wordplay banners, the score with its chain, the ink
+(and "today's ink cap" when it was clipped), and what went into the Hoard.
+
+### The Word Hoard payout — dex entry and nothing more (dev's call, 2026-09-05)
+
+The fork was how deep the board reaches into the collection, given that `commitSpell` fires a whole reward
+chain at the desk. **Decided: the board is a second front door into the collection, not a second desk.** A
+word it spells joins `state.dex` and therefore counts toward `wordsCollected()` — so it moves the
+**letter-unlock ladder**, puts a spine in the **Nouns wing** and can trip a **seed grant** — but it pays **no
+noun ink, brews no potion and advances no verb or adjective ladder**. Those are the desk's rewards for
+spelling a word out of letters you hunted; the board pays in its own currency instead.
+
+Two rules fall out of it:
+
+- **A play the dictionary can't place still scores and still pays ink.** The board judges a run against the
+  49,947-word pronunciation lexicon; `data/dictionary.json` is a different, smaller list. Rejecting the play
+  would fail it for a reason the board's own word list says is fine — so it stands, and simply isn't inked
+  (the curator, the Nouns wing and the mad-libs have nothing to do with a word carrying no definition and no
+  part of speech). The status line says so by name.
+- **One sound grants one word.** §10.1's homophone rule, but *not* by inking `SB_WORDS`'s shortest spelling:
+  for a homophone set the shortest is usually the function word (`to`, `for`, `be`) and those are exactly
+  what WordNet leaves out, so the grant would almost never fire. `sbSpellingsFor` inverts the raw lexicon for
+  the play's own pronunciations (one pass, built per play rather than kept resident — 50k iterations is
+  nothing beside a board re-render, an always-resident index is 50k strings) and the grant is the **shortest
+  spelling `localLookup` accepts**. Still one fixed word per pronunciation, chosen the same way every time,
+  so a sound can never be farmed for a second spelling later. A `/t u/` play reads `to +6` and inks `too`.
+
+A new word can unlock a letter, and `#unlockmodal` opens **over** the board (z-index 10 to its 7). The global
+keydown handler's branch for that modal sits *below* the Sound Board's, so `sbKey` hands the keys over
+itself — otherwise the notice could only be dismissed with the mouse.
+
+### 🌱 New patch, and ♻ Trade priced
+
+- **🌱 New patch** (decision #6) is the way out of a board you can no longer hook onto, with deliberately **no
+  engine search** for whether you're really stuck — that's the player's call. It costs the chain and nothing
+  else: `chain=0`, `patches++`, `patchFree=true`, and the next play may be laid anywhere free. Arming
+  **persists**, so arming it and closing the board can't quietly refund the chain; the play that uses it
+  spends it (`sbCommitPlacement` already cleared `patchFree`). Disabled while armed, and on an empty board,
+  where the first word has to cross the ★ regardless.
+- **♻ Trade** was free in M3 so a phone test couldn't dead-end on an unplayable rack. Now 2 ink, **+2 per
+  further trade the same day**. It buys a re-roll, not tiles — nothing is lost either way. The button carries
+  its live price (`♻ Trade · 4 ink`) and dims when you can't afford it, because a dimmed button with no price
+  is a dead end.
+
+### The confirm card
+
+One small dialog (`#sb-confirm`, above the overlay rather than inside its clipped flex `.book`) serves both
+irreversible presses. **It fires on the last copy of a sound, not on an expensive tile** — §10.7.3 floated
+value-based, but the irreversible thing isn't the points, it's dropping a sound to zero stock and reading
+"out of stock" on its Phonicon card until you fish another. Ordinary play never sees it. While it's up it
+**owns the keyboard**: `sbKey` returns early, so Enter answers the question instead of also playing a word
+behind it.
+
+### The save (v11 → v12)
+
+`state.soundboard` joins `snapshot()`/`applySnapshot` (and therefore Export/Import, which go through the same
+function). Old saves have none and get a fresh board on first open. Restore goes through **`sbAdoptBoard`**,
+which rebuilds onto a fresh `sbNewBoard` rather than trusting the saved object wholesale: the tile map comes
+back from JSON carrying `Object`'s prototype, keys are re-checked against `r,c`, and **`count` and the bounds
+are re-derived from the tiles themselves** — so a truncated or hand-edited save can't leave the reach walks
+(`sbInb`/`sbReachFromHooks`) looking at a region that holds nothing. Fields a save predates keep their
+defaults. `sbNewBoard` gained `inkDay`/`inkToday` and a lifetime `hoard` tally alongside M2's `tradeDay`/
+`tradeCount`.
+
+### Statbar & Controls
+
+The statbar gained **INK TODAY `n/40`** (a cap nobody can see is baffling when it bites), the chain readout
+got a tooltip, and the live total in the status line names the multiplier it will be paid at
+(`= 42 (×1.4)`). The Controls panel's Sound Board paragraph now says that laying a tile spends it, what a
+play pays, and what 🌱/♻ cost — the spend being the single biggest fact a player needs before their first
+word.
+
+### Still M5
+
+The articulatory-square explainer + the Fish Phoneme Guide pointer, chain/patch UI feel, the ported
+palindrome/semordnilap SFX, and the first-word celebration through the shared queue. Two M5 items landed
+early instead: **💡 Rack idea** (§10.12) and the **empty state**, which §10.13 rebuilt as a real viability
+gate rather than the polish M5 had it down as.
+
+## 10.12 💡 Rack idea — ported from the bench (BUILT 2026-09-05)
+
+**A gap, not a removal.** The bench has had a `💡 Rack idea` button since it shipped (`findRackWord` /
+`combos` / `permHit` / `hint`); M3's port to Inklings simply didn't include it, and nothing in §10 flagged
+the omission, so it went missing without ever being decided against. `git log -S findRackWord --
+inklings.html` is empty — it had never existed there. Now ported.
+
+**It searches the rack only, and says so.** Every subset of your rack, **longest first**, then every
+permutation of that subset, asked of the lexicon: is this sequence a real word's sound? First hit wins.
+Worst case on a full rack is Σ C(7,k)·k! ≈ **13.7k Set lookups**, which is nothing.
+
+The fork the endless board creates, and the decision: the bench is a standalone rack game, so "your rack
+could spell /f ɪ ʃ/" is a *complete* answer there. Here a word also has to hook the board and form valid
+cross-runs. **Decided (dev, 2026-09-05): port it as-is and let the label carry the caveat** — "Rack idea"
+promises a rack fact, not a placement. On an empty board or a fresh patch it's exactly right; on a crowded
+one it may name a word you can't place, which is the honest failure for a hint that deliberately knows
+nothing about the board. A **placement-aware** hint (words × hooks × axis × offset, cross-run validated,
+squares flashed) was considered and rejected for now: real engine work, slow on a dense board, and it stops
+being a nudge and becomes the answer.
+
+**Kept faithful to the bench on purpose.** Only the seams changed (`sbRack`, `sbIsWord`, `sbExample`,
+`sbMsg`); the search is verbatim, including `permHit`'s adjacent-duplicate skip — which is only *partially*
+effective on unsorted input but is correct, and sorting to sharpen it would be exactly the kind of drift
+§10.5's one-way port policy exists to avoid. SFX reuses the existing `capture` cue (a short rising blip)
+rather than adding one; the ported wordplay cues remain M5.
+
+Wired as `sbRackIdea`, the `💡 Rack idea` button between ⇄ Shuffle and ♻ Trade, and the **`H`** key beside
+`C` for recentre. Disabled with an empty rack or an unloaded lexicon. The "no word hides in this rack"
+message names ♻ Trade's **live ink price**, so the dead end points at the thing that costs money.
+
+**One layout consequence:** seven buttons plus ♻ Trade's price-bearing label wrap the button block to two
+rows, so `sbLayout`'s `availH` reserve went 270 → 302 desktop / 290 → 320 phone. The grid gives back one
+cell row; without it the board overflows the clipped, fixed-height `.book`.
+
+## 10.13 The stock guard — never open onto a board you can't play (BUILT 2026-09-06)
+
+**Found by playing M4.** The dev hit a rack that could spell nothing — and ♻ Trade, which M4 had just
+started charging for, re-rolled from the same doomed pool for ink, over and over. The board could take your
+currency and give you nothing back. There are **two separate failure modes** here and they need two
+separate fixes; conflating them is why the original guard was useless.
+
+### Mode 1 — the stock itself is dead
+
+No arrangement of what you own spells anything, so **no amount of trading can ever help**. The M3 gate was
+`sbDistinctPlayable() < SB_MIN_SOUNDS` (=2) — a *count* standing in for viability. Measured against the
+shipped lexicon, that proxy is wrong most of the time **at its own threshold**:
+
+| distinct sounds owned | 2 | 3 | 4 | 5 | 6 | 8 | 10+ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| stocks that can spell **nothing** | **74.7%** | 42.0% | 17.0% | 11.3% | 3.7% | 1.3% | 0.0% |
+
+So `SB_MIN_SOUNDS` waved through three-quarters of the dead stocks it was the only defence against, and
+`sbDistinctPlayable` is deleted with it. The gate is now the exact question, asked exactly:
+**`sbStockCanSpell()`** walks the pronunciations **shortest-first** and returns the first whose multiset
+fits inside the stock. Measured in node against the real file: **0.018 ms** on a viable stock (it exits in
+the first handful of tests) and **43 ms** for the full scan a genuinely dead stock forces — which is
+exactly the case that has to be *certain* rather than fast, and is why the result is **memoised on a
+signature of the stock** rather than re-asked by every render. A dead stock can't change without fishing or
+spending, and the signature self-invalidates on both. The index (`sbSortedProns`, 48,355 prons, sorted by
+string length as a cheap stand-in for token count) is built once, lazily, in 19 ms.
+
+**Naming the gap, not the answer** (dev's call). `sbStockGap()` diagnoses and says it in the game's own
+vocabulary, so a blocked board teaches instead of stonewalling. The dominant cause is **no vowel at all** —
+70% of sampled dead stocks — which is no accident, since every English pronunciation has one; that branch
+also names the two commonest vowels *you don't hold* (by the lexicon's own frequency, via `SB_TILE.pct`) as
+a direction to fish in. An empty Phonicon and a has-vowels-but-still-dead stock get their own wording.
+Deliberately **not** built: naming a specific sound that would unblock you, which turns fishing into a
+fetch-quest.
+
+### Mode 2 — the stock is fine, the draw was unlucky
+
+**3.6–11.2%** of random 7-tile racks from a viable stock spell nothing. ♻ Trade does fix that, but it should
+never cost ink to undo a bad shuffle. **`sbFillRack` now deals until the rack holds a word** — drawing has
+always been free (decision #4), so a redraw costs nothing. Measured: **median 1 redraw, 90th percentile 1,
+worst case 8**; `SB_DEAL_TRIES` is 24.
+
+Three things about the guarantee:
+
+- **It requires the rack to spell a word ON ITS OWN**, which is stricter than the real rule once tiles are
+  down (a lone `/s/` can extend `/k æ t/`). Deliberate, and the dev's call: it's a **floor, never a
+  ceiling**, it reuses `sbFindRackWord` and needs no placement search, and on an empty board or a fresh
+  patch it *is* the rule, since that play must stand alone. Over-strictness is invisible — it only ever
+  redraws a rack you'd have found awkward anyway.
+- **Kept tiles are never silently swapped.** A redraw reserves the leftovers and re-rolls only the new
+  tiles, so the guarantee never reaches into a hand you're holding. A **mid-turn top-up** (tiles already
+  laid) skips the guarantee entirely — the turn in progress is the player's.
+- **`sbSeedRack` is the last resort behind the redraws**: build the rack around the word `sbStockCanSpell`
+  already proved the stock can make. It re-deals whole, discarding leftovers — normally the wrong thing to
+  do to someone's tiles, but it is only reachable after every random deal has failed, which the measurement
+  says is vanishingly rare, and the alternative is handing back the dead rack this section exists to
+  prevent. `sbFillRack` also short-circuits on a dead stock rather than spinning 24 times over it (spending
+  your last vowel on a play can reach that).
+
+### What the player sees
+
+A stock that can't spell anything **opens the board and explains it** rather than dimming a toolbar button
+— a dead button says nothing, the same principle as the Tree of Kinds' lock. Every control is disabled,
+**♻ Trade included**, so the ink sink is shut off at the source.
