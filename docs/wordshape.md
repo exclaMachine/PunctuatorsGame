@@ -1,7 +1,7 @@
 # Wordshape — draw the word with the word
 
-Status: **SPECCED 2026-09-07. Nothing built.** This document is the plan agreed with the dev in the
-brainstorm session; read it before writing any code. Milestones are §9.
+Status: **SPECCED 2026-09-07.** **M1's drawing tool is BUILT (`wordshape-draw.html`, 2026-09-07) — the ten
+targets are still to be drawn.** Milestones are §9; what M1 actually shipped is §11.
 
 **The pitch:** you are given a word and a simple line drawing of that word's meaning. You draw the picture
 using **only the letters of the word** — position and rotate `c`, `a` and `t` until they trace out a cat.
@@ -289,7 +289,7 @@ Each milestone is independently checkable. Nothing here is a big-bang.
 
 | M | What | Ships |
 |---|---|---|
-| **M1** | **The drawing tool + the ten targets.** `wordshape-draw.html` — draw polylines with the mouse, undo, optional snap, export normalized JSON. Dev uses it to make the ten drawings → `data/wordshape-targets.json` (polylines + word + authored budget + threshold). | Nothing playable. A tool and a data file. |
+| **M1** | **The drawing tool + the ten targets.** **Tool BUILT 2026-09-07 (§11); the ten drawings are the dev's to make** → `data/wordshape-targets.json`. | Nothing playable. A tool, then a data file. |
 | **M2** | **The alphabet.** §6 route A or B → `data/wordshape-alphabet.json`, lowercase monoline polylines, plus a preview page rendering all 26 at game size. | The brush set exists. |
 | **M3** | **The scorer, headless.** Chamfer DT, resampling, fidelity/coverage/F₂, the uncovered-run hint. Verified with a `?dev=1` heat-map overlay and a few hand-placed letters. | The percentage is real and honest. |
 | **M4** | **The bench — the playable MVP.** `wordshape.html`: the ten-word menu, the stamp gesture, three sizes, the budget, the live %, the use-every-letter gate, the pass threshold, the hint button. | **This is the MVP.** |
@@ -322,7 +322,68 @@ Inklings' save without bloating it.
 
 ---
 
-## 11. Open questions
+## 11. M1 as built — `wordshape-draw.html` (2026-09-07)
+
+A standalone dev tool at the repo root, vanilla and single-file like everything else here, styled to match
+`emoji-pixelizer.html`. It is not linked from anywhere and ships no game code.
+
+### 11.1 The output contract
+
+This is the part M3 and M4 depend on, so it is fixed here rather than discovered later:
+
+```json
+{ "v": 1, "targets": [ { "word": "cat", "budget": 16, "threshold": 0.7,
+                         "len": 3.42, "strokes": [ [[x,y],[x,y], …], … ] } ] }
+```
+
+- **Coordinates are normalised into the [0,1] square, aspect preserved, centred, with a `MARGIN` of 0.06** —
+  the longer side fills `1 − 2·MARGIN` and the shorter is centred against it. Never stretched to fill, or a
+  cat would export the wrong shape. *(Verified: 2:1 stays 2:1, both axes centre, every point lands inside
+  [0,1], and a degenerate single-point stroke doesn't divide by zero.)*
+- **`threshold` exports as a 0–1 fraction** while the UI edits whole percents; import accepts either.
+- **`len`** is total normalised polyline length, carried so M3/M4 can sanity-check a target without
+  re-walking it.
+- Targets with no strokes or no word are **skipped on export**, and the message says how many.
+
+### 11.2 What it does
+
+- **Three tools** — freehand drag, click-to-place polyline (rubber-banded, finished with `Enter`,
+  double-click or right-click), and click-a-stroke-to-delete erase with hover highlight.
+- **Freehand is simplified on release** by Ramer–Douglas–Peucker at a tunable epsilon, after raw
+  `pointermove` has already been decimated at 1.5 px. Both are needed: raw pointer data is hundreds of noisy
+  points per stroke, and shipping it would bloat the data file for no visible gain.
+- **A reference image** can be dropped or pasted and is drawn faint behind the canvas for tracing. It is
+  **held in memory only** — never exported, never autosaved — because a base64 photo would blow the
+  `localStorage` budget that the strokes actually need. Losing it to a refresh is cheap; losing an hour of
+  drawing is not.
+- **Autosave** to `localStorage` on every change, seeded on first run with §4's ten words already queued.
+- Grid, snap, undo/redo, per-target word/budget/threshold fields, JSON download / clipboard / import, and
+  drag-drop of either an image or a `.json` anywhere on the page.
+
+### 11.3 The two features that exist to de-risk M4
+
+M1's real hazard is that **a target drawn without the brush set in mind can be unwinnable, and nothing would
+reveal that until M4**. Two readouts push that discovery earlier:
+
+- **A suggested budget**, from total ink length ÷ average glyph length × 1.35 slack, flagged in red past 30 —
+  a target needing more letters than that is too detailed to trace by hand. **The glyph length is a guess
+  until M2** (the alphabet doesn't exist yet), so it's exposed as a slider and labelled as such in the UI;
+  re-tune it once the glyphs are real.
+- **A play-size preview** rendering the *normalised* result at 200 px — which both validates the export
+  framing visually and catches fine detail that reads at 640 px and vanishes at play size.
+
+Neither is a substitute for actually placing letters. The letter-fit check can't exist before M2.
+
+### 11.4 One thing not to re-break
+
+`snapshot()` must be called **before** a mutation, never after. History holds the state to go *back to*, so
+snapshotting after the fact stores the change itself and the first undo becomes a silent no-op. This was
+written the wrong way round first and caught before shipping; `changed()` deliberately does not touch
+history so that every mutation site has to say so explicitly.
+
+---
+
+## 12. Open questions
 
 - **The Hershey licence** (§6). Settle it in M2; route B is the answer if it's murky.
 - **`TOL` and the thresholds** are guesses until M4 is playable. Expect all three to move.

@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wordshape Draw — author the target line art</title>
+<style>
+  /* Same bundled pixel font the other dev tools use (SIL OFL 1.1). Needs http serving (Live Server);
+     falls back to a mono stack over file://. */
+  @font-face{font-family:'Pixelify';src:url('fonts/PixelifySans-latin.woff2') format('woff2');font-weight:400 700;font-display:swap}
+
+  :root{
+    --bg:#e9dfca; --panel:#fffdf6; --cell:#fbf7ee; --ink:#2b2620; --muted:#857a68;
+    --edge:#3f362a; --line:#d8cebb; --accent:#2f7d63; --accent2:#b5532a; --warn:#a8341f;
+    --pix:'Pixelify',ui-monospace,Menlo,Consolas,monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
+    --sh:4px 4px 0 var(--edge); --sh2:3px 3px 0 var(--edge);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  body.drag{outline:5px dashed var(--accent);outline-offset:-10px}
+  .page{max-width:1280px;margin:0 auto;padding:20px 20px 70px;display:flex;flex-direction:column;gap:16px}
+
+  .top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .brand{font-family:var(--pix);font-size:13px;letter-spacing:1.5px;color:var(--accent2)}
+  h1{font-family:var(--pix);font-weight:700;font-size:clamp(22px,4vw,32px);line-height:1.1;letter-spacing:.5px;margin:4px 0 0;width:100%}
+  .lede{max-width:76ch;color:var(--muted);font-size:14.5px;margin:6px 0 0}
+  .lede b{color:var(--ink)}
+
+  .btn{font-family:var(--pix);font-size:13px;letter-spacing:.5px;cursor:pointer;border:3px solid var(--edge);
+    background:var(--panel);color:var(--ink);box-shadow:var(--sh2);padding:8px 13px;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{background:#fff}
+  .btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--edge)}
+  .btn.go{background:var(--accent);color:#fff}
+  .btn.on{background:var(--accent);color:#fff}
+  .btn.danger:hover{background:#fde8e2;color:var(--warn)}
+  .btn.sm{font-size:11px;padding:5px 9px;border-width:2px;box-shadow:2px 2px 0 var(--edge)}
+  .btn[disabled]{opacity:.4;cursor:not-allowed;box-shadow:none;transform:none}
+
+  .panel{background:var(--panel);border:3px solid var(--edge);box-shadow:var(--sh);padding:14px 16px}
+  .panelttl{font-family:var(--pix);font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+
+  .layout{display:grid;grid-template-columns:196px minmax(0,1fr) 232px;gap:16px;align-items:start}
+  @media (max-width:1100px){ .layout{grid-template-columns:1fr} }
+
+  /* target list */
+  .tlist{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:auto}
+  .titem{display:flex;align-items:center;gap:8px;border:2px solid var(--edge);background:var(--cell);
+    padding:6px 8px;cursor:pointer;font-family:var(--pix);font-size:13px;letter-spacing:.5px}
+  .titem:hover{background:#fff}
+  .titem.sel{background:var(--accent);color:#fff}
+  .titem .dot{width:9px;height:9px;border:2px solid currentColor;flex:none}
+  .titem .dot.has{background:currentColor}
+  .titem .n{margin-left:auto;font-size:11px;opacity:.7;font-variant-numeric:tabular-nums}
+
+  /* canvas */
+  .stage{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .wrap{position:relative;line-height:0;border:3px solid var(--edge);box-shadow:var(--sh);background:#fff}
+  canvas#pad{display:block;touch-action:none;cursor:crosshair;max-width:100%;height:auto}
+  canvas#pad.erase{cursor:cell}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center}
+  .sep{width:3px;align-self:stretch;background:var(--line)}
+
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field .lab{font-family:var(--pix);font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink)}
+  input[type=text],input[type=number]{font:15px var(--sans);border:3px solid var(--edge);background:var(--cell);color:var(--ink);padding:6px 9px;width:100%}
+  input:focus-visible{outline:3px solid var(--accent2);outline-offset:2px}
+  .row{display:flex;gap:10px}
+  .row>*{flex:1}
+
+  .ctrl{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+  .ctrl .lab{font-family:var(--pix);font-size:11px;letter-spacing:.6px;text-transform:uppercase;display:flex;justify-content:space-between;gap:10px}
+  .ctrl .val{color:var(--accent);font-variant-numeric:tabular-nums}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;background:var(--cell);border:2px solid var(--edge);cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--accent);border:2px solid var(--edge);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;background:var(--accent);border:2px solid var(--edge);cursor:pointer;border-radius:0}
+  .toggle{display:flex;align-items:center;gap:9px;font-family:var(--pix);font-size:12px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;user-select:none;margin-bottom:8px}
+  .toggle input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+
+  /* stats */
+  .stat{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:3px 0;border-bottom:1px dashed var(--line)}
+  .stat:last-child{border-bottom:0}
+  .stat b{font-variant-numeric:tabular-nums;font-family:var(--pix);font-weight:400;letter-spacing:.5px}
+  .stat.flag b{color:var(--warn)}
+  #preview{border:3px solid var(--edge);background:#fff;display:block;margin:0 auto;max-width:100%;height:auto}
+  .cap{font-size:12px;color:var(--muted);margin:8px 0 0;text-align:center}
+
+  .note{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+  .note code{background:var(--cell);border:1px solid var(--line);padding:1px 4px;font-size:12px}
+  textarea{width:100%;min-height:110px;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;border:3px solid var(--edge);
+    background:var(--cell);color:var(--ink);padding:9px;resize:vertical}
+  .msg{font-family:var(--pix);font-size:12px;letter-spacing:.5px;color:var(--accent);min-height:18px;margin-top:8px}
+  .msg.bad{color:var(--warn)}
+  .keys{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin-top:10px}
+  kbd{font-family:var(--pix);font-size:11px;border:2px solid var(--edge);background:var(--cell);color:var(--ink);padding:1px 5px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="top">
+    <span class="brand">WORDSHAPE · M1</span>
+    <h1>Draw the targets</h1>
+    <p class="lede">Author the line art the player traces with letters. Every drawing is stored as
+      <b>centreline polylines</b> — there is no stroke width in the data, only paths, because that is what the
+      scorer compares letters against. Draw <b>for the brush set</b>: a target is only fair if the word's own
+      letters can plausibly cover it. Export to <code style="font-size:12px">data/wordshape-targets.json</code>.</p>
+  </header>
+
+  <div class="layout">
+
+    <!-- ---------- target list ---------- -->
+    <section class="panel">
+      <p class="panelttl">Targets</p>
+      <div class="tlist" id="tlist"></div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn sm" id="tadd">+ Word</button>
+        <button class="btn sm danger" id="tdel">Delete</button>
+      </div>
+      <p class="note">The ten words from the plan are queued up. <kbd>[</kbd> <kbd>]</kbd> step between them.</p>
+    </section>
+
+    <!-- ---------- canvas ---------- -->
+    <section class="stage">
+      <div class="toolbar">
+        <button class="btn" id="t-free">✎ Freehand</button>
+        <button class="btn" id="t-poly">⟋ Polyline</button>
+        <button class="btn" id="t-erase">⌫ Erase</button>
+        <span class="sep"></span>
+        <button class="btn sm" id="undo">↶ Undo</button>
+        <button class="btn sm" id="redo">↷ Redo</button>
+        <button class="btn sm danger" id="clear">Clear</button>
+      </div>
+
+      <div class="wrap"><canvas id="pad" width="640" height="640"></canvas></div>
+
+      <div class="toolbar">
+        <label class="toggle" style="margin:0"><input type="checkbox" id="grid" checked> Grid</label>
+        <label class="toggle" style="margin:0"><input type="checkbox" id="snap"> Snap</label>
+        <span class="sep"></span>
+        <button class="btn sm" id="refbtn">🖼 Reference…</button>
+        <button class="btn sm" id="refclear" disabled>Clear ref</button>
+        <input type="file" id="reffile" accept="image/*" hidden>
+      </div>
+      <p class="cap" id="padhint">Drag to draw a freehand stroke.</p>
+    </section>
+
+    <!-- ---------- right rail ---------- -->
+    <section class="panel">
+      <p class="panelttl">This target</p>
+      <div class="field" style="margin-bottom:10px">
+        <span class="lab">Word</span>
+        <input type="text" id="word" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <div class="field"><span class="lab">Budget</span><input type="number" id="budget" min="1" max="99" step="1"></div>
+        <div class="field"><span class="lab">Pass %</span><input type="number" id="thresh" min="10" max="99" step="1"></div>
+      </div>
+      <button class="btn sm" id="usebudget" style="width:100%;justify-content:center">Use suggested budget</button>
+
+      <p class="panelttl" style="margin-top:18px">Measurements</p>
+      <div class="stat"><span>Strokes</span><b id="s-strokes">0</b></div>
+      <div class="stat"><span>Points</span><b id="s-points">0</b></div>
+      <div class="stat"><span>Ink length</span><b id="s-len">0.00</b></div>
+      <div class="stat" id="s-sugrow"><span>Suggested budget</span><b id="s-sug">—</b></div>
+
+      <div class="ctrl" style="margin-top:14px">
+        <span class="lab">Avg glyph length <span class="val" id="v-glyph">0.22</span></span>
+        <input type="range" id="glyphlen" min="0.10" max="0.40" step="0.01" value="0.22">
+      </div>
+      <p class="note" style="margin-top:-4px">A <b>guess until M2</b> — the alphabet doesn't exist yet, so the
+        suggested budget is only as good as this number. Re-tune it once the glyphs are real.</p>
+
+      <p class="panelttl" style="margin-top:18px">At play size</p>
+      <canvas id="preview" width="200" height="200"></canvas>
+      <p class="cap">Exactly what exports: normalised, centred, margin applied.</p>
+
+      <div class="ctrl" style="margin-top:14px">
+        <span class="lab">Simplify <span class="val" id="v-eps">2.0</span></span>
+        <input type="range" id="eps" min="0.5" max="6" step="0.5" value="2">
+      </div>
+      <p class="note" style="margin-top:-4px">Applied to freehand strokes as you finish them. Higher = fewer points.</p>
+    </section>
+  </div>
+
+  <!-- ---------- export ---------- -->
+  <section class="panel">
+    <p class="panelttl">Export &amp; import</p>
+    <div class="toolbar" style="justify-content:flex-start">
+      <button class="btn go" id="download">⬇ Download wordshape-targets.json</button>
+      <button class="btn" id="copy">📋 Copy JSON</button>
+      <span class="sep"></span>
+      <button class="btn" id="importbtn">⬆ Import JSON…</button>
+      <input type="file" id="importfile" accept="application/json,.json" hidden>
+      <button class="btn sm" id="showjson">Show JSON</button>
+    </div>
+    <div class="msg" id="msg"></div>
+    <textarea id="json" hidden spellcheck="false"></textarea>
+    <p class="note">Everything autosaves to <code>localStorage</code> as you draw, so a refresh is safe — but a
+      <b>reference image is held in memory only</b> and won't survive one. Drop a <code>.json</code> or an image
+      anywhere on the page. Empty targets are skipped on export.</p>
+    <div class="keys">
+      <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> tools</span>
+      <span><kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> undo</span>
+      <span><kbd>⇧</kbd>+<kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> redo</span>
+      <span><kbd>Enter</kbd> finish polyline</span>
+      <span><kbd>Esc</kbd> cancel polyline</span>
+      <span><kbd>[</kbd><kbd>]</kbd> prev / next word</span>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ * Wordshape — M1 target drawing tool.
+ *
+ * Output contract (consumed by M3's scorer and M4's bench):
+ *   { v:1, targets:[ { word, budget, threshold, len, strokes:[ [[x,y],…], … ] } ] }
+ * Coordinates are normalised into the [0,1] square, ASPECT PRESERVED and centred
+ * with a margin — never stretched to fill, or a cat would come out the wrong shape.
+ * `len` is total normalised polyline length, carried so M3/M4 can sanity-check a
+ * target without re-walking it.
+ * ------------------------------------------------------------------ */
+
+const FIELD   = 640;      // canvas logical units (drawing space, pre-normalisation)
+const MARGIN  = 0.06;     // fraction of the unit square left empty on export
+const STORE   = "wordshape.draw.v1";
+const HIST_MAX = 60;
+
+/* The ten words from docs/wordshape.md §4, in its difficulty order. */
+const SEED = ["cup","sun","cat","dog","owl","ant","pig","bee","fox","key"];
+
+const $ = id => document.getElementById(id);
+
+/* ---------------- state ---------------- */
+let targets = [];
+let cur = 0;
+let tool = "free";                 // free | poly | erase
+let draft = null;                  // in-progress stroke (array of [x,y])
+let cursor = null;                 // last pointer position, for the polyline rubber band
+let hover = -1;                    // stroke index under the cursor, erase tool only
+let refImg = null;                 // reference image, memory only — never exported, never saved
+let history = [], future = [];
+let msgTimer = 0;
+
+const pad = $("pad"), ctx = pad.getContext("2d");
+const pre = $("preview"), pctx = pre.getContext("2d");
+
+/* ---------------- geometry helpers ---------------- */
+
+const dist = (a,b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
+
+/** Distance from p to SEGMENT ab (not the infinite line — safer on closed shapes). */
+function segDist(p, a, b){
+  const vx = b[0]-a[0], vy = b[1]-a[1];
+  const L2 = vx*vx + vy*vy;
+  if (L2 === 0) return dist(p, a);
+  let t = ((p[0]-a[0])*vx + (p[1]-a[1])*vy) / L2;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  return Math.hypot(p[0] - (a[0]+t*vx), p[1] - (a[1]+t*vy));
+}
+
+/** Ramer–Douglas–Peucker. Freehand input is hundreds of noisy points; this is what
+ *  keeps the shipped data small without visibly changing the drawing. */
+function rdp(pts, eps){
+  if (pts.length < 3) return pts.slice();
+  let maxD = -1, idx = 0;
+  const a = pts[0], b = pts[pts.length-1];
+  for (let i = 1; i < pts.length-1; i++){
+    const d = segDist(pts[i], a, b);
+    if (d > maxD){ maxD = d; idx = i; }
+  }
+  if (maxD > eps){
+    const L = rdp(pts.slice(0, idx+1), eps);
+    const R = rdp(pts.slice(idx), eps);
+    return L.slice(0, -1).concat(R);
+  }
+  return [a, b];
+}
+
+const strokeLen = s => { let t = 0; for (let i=1;i<s.length;i++) t += dist(s[i-1], s[i]); return t; };
+const inkLen    = ss => ss.reduce((t,s) => t + strokeLen(s), 0);
+
+/** Bounding box over every point of every stroke. */
+function bbox(ss){
+  let x0=Infinity, y0=Infinity, x1=-Infinity, y1=-Infinity;
+  for (const s of ss) for (const p of s){
+    if (p[0]<x0) x0=p[0]; if (p[0]>x1) x1=p[0];
+    if (p[1]<y0) y0=p[1]; if (p[1]>y1) y1=p[1];
+  }
+  return {x0,y0,x1,y1,w:x1-x0,h:y1-y0};
+}
+
+/** Fit strokes into the [0,1] square: uniform scale (aspect preserved), centred, margin applied. */
+function normalize(ss){
+  if (!ss.length) return [];
+  const b = bbox(ss);
+  const span = Math.max(b.w, b.h) || 1;
+  const k = (1 - 2*MARGIN) / span;
+  const ox = 0.5 - (b.x0 + b.w/2) * k;
+  const oy = 0.5 - (b.y0 + b.h/2) * k;
+  const r = v => Math.round(v * 1e4) / 1e4;
+  return ss.map(s => s.map(p => [r(p[0]*k + ox), r(p[1]*k + oy)]));
+}
+
+/* ---------------- targets ---------------- */
+
+const blank = word => ({ word, budget: 14, threshold: 70, strokes: [] });
+const T = () => targets[cur];
+
+function load(){
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw){
+      const o = JSON.parse(raw);
+      if (Array.isArray(o.targets) && o.targets.length){
+        targets = o.targets.map(t => ({
+          word: String(t.word || "").trim(),
+          budget: +t.budget || 14,
+          threshold: +t.threshold || 70,
+          strokes: Array.isArray(t.strokes) ? t.strokes : []
+        }));
+        cur = Math.min(+o.cur || 0, targets.length - 1);
+        return;
+      }
+    }
+  } catch(e){ /* corrupt store — fall through to the seed */ }
+  targets = SEED.map(blank);
+  cur = 0;
+}
+
+let saveTimer = 0;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try { localStorage.setItem(STORE, JSON.stringify({ v:1, cur, targets })); }
+    catch(e){ flash("Autosave failed — storage full?", true); }
+  }, 250);
+}
+
+/* ---------------- history ---------------- */
+/* Snapshots of the whole target array. Heavier than a per-stroke diff, but the
+   drawings are small once simplified and it makes undo cover target edits too. */
+
+function snapshot(){
+  history.push(JSON.stringify(targets));
+  if (history.length > HIST_MAX) history.shift();
+  future.length = 0;
+  syncHistBtns();
+}
+function restore(from, to){
+  if (!from.length) return;
+  to.push(JSON.stringify(targets));
+  targets = JSON.parse(from.pop());
+  if (cur >= targets.length) cur = targets.length - 1;
+  draft = null;
+  changed();
+  syncHistBtns();
+}
+const syncHistBtns = () => { $("undo").disabled = !history.length; $("redo").disabled = !future.length; };
+
+/* ---------------- rendering ---------------- */
+
+function fitCanvas(){
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  pad.width = FIELD * dpr; pad.height = FIELD * dpr;
+  pad.style.width = "min(640px, 100%)"; pad.style.height = "auto";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function drawPath(c, s, close){
+  c.beginPath();
+  c.moveTo(s[0][0], s[0][1]);
+  for (let i = 1; i < s.length; i++) c.lineTo(s[i][0], s[i][1]);
+  if (close) c.closePath();
+  c.stroke();
+}
+
+function render(){
+  const t = T();
+  ctx.clearRect(0, 0, FIELD, FIELD);
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, FIELD, FIELD);
+
+  if (refImg){
+    const k = Math.min(FIELD / refImg.width, FIELD / refImg.height);
+    const w = refImg.width * k, h = refImg.height * k;
+    ctx.globalAlpha = 0.30;
+    ctx.drawImage(refImg, (FIELD-w)/2, (FIELD-h)/2, w, h);
+    ctx.globalAlpha = 1;
+  }
+
+  if ($("grid").checked){
+    const step = FIELD / 16;
+    ctx.strokeStyle = "#e8e0d0"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 1; i < 16; i++){
+      const v = i * step;
+      ctx.moveTo(v, 0); ctx.lineTo(v, FIELD);
+      ctx.moveTo(0, v); ctx.lineTo(FIELD, v);
+    }
+    ctx.stroke();
+    /* The export margin — anything outside it gets scaled in anyway, but seeing the
+       frame stops the dev composing right up to the edge. */
+    ctx.strokeStyle = "#d8cebb"; ctx.setLineDash([6,6]);
+    ctx.strokeRect(FIELD*MARGIN, FIELD*MARGIN, FIELD*(1-2*MARGIN), FIELD*(1-2*MARGIN));
+    ctx.setLineDash([]);
+  }
+
+  ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  t.strokes.forEach((s, i) => {
+    if (s.length < 2) return;
+    ctx.strokeStyle = (i === hover && tool === "erase") ? "#a8341f" : "#2b2620";
+    ctx.lineWidth  = (i === hover && tool === "erase") ? 6 : 3;
+    drawPath(ctx, s);
+  });
+
+  if (draft && draft.length){
+    ctx.strokeStyle = "#2f7d63"; ctx.lineWidth = 3;
+    if (draft.length > 1) drawPath(ctx, draft);
+    if (tool === "poly"){
+      /* rubber band to the cursor + the vertices placed so far */
+      if (cursor){
+        ctx.setLineDash([5,5]);
+        ctx.beginPath();
+        ctx.moveTo(draft[draft.length-1][0], draft[draft.length-1][1]);
+        ctx.lineTo(cursor[0], cursor[1]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.fillStyle = "#2f7d63";
+      for (const p of draft){ ctx.beginPath(); ctx.arc(p[0], p[1], 4, 0, 7); ctx.fill(); }
+    }
+  }
+}
+
+function renderPreview(){
+  const ss = normalize(T().strokes);
+  const S = pre.width;
+  pctx.clearRect(0, 0, S, S);
+  pctx.fillStyle = "#fff"; pctx.fillRect(0, 0, S, S);
+  pctx.strokeStyle = "#2b2620"; pctx.lineWidth = 1.4; pctx.lineCap = "round"; pctx.lineJoin = "round";
+  for (const s of ss){
+    if (s.length < 2) continue;
+    pctx.beginPath();
+    pctx.moveTo(s[0][0]*S, s[0][1]*S);
+    for (let i = 1; i < s.length; i++) pctx.lineTo(s[i][0]*S, s[i][1]*S);
+    pctx.stroke();
+  }
+}
+
+/* ---------------- panels ---------------- */
+
+function renderList(){
+  const el = $("tlist");
+  el.innerHTML = "";
+  targets.forEach((t, i) => {
+    const d = document.createElement("div");
+    d.className = "titem" + (i === cur ? " sel" : "");
+    d.innerHTML = '<span class="dot' + (t.strokes.length ? " has" : "") + '"></span>' +
+                  '<span>' + (t.word || "—") + '</span>' +
+                  '<span class="n">' + (t.strokes.length || "") + '</span>';
+    d.onclick = () => { cur = i; draft = null; changed(); };
+    el.appendChild(d);
+  });
+}
+
+function updateStats(){
+  const t = T();
+  const ss = normalize(t.strokes);
+  const pts = t.strokes.reduce((n,s) => n + s.length, 0);
+  const len = inkLen(ss);
+
+  $("s-strokes").textContent = t.strokes.length;
+  $("s-points").textContent  = pts;
+  $("s-len").textContent     = len.toFixed(2);
+
+  const glyph = +$("glyphlen").value;
+  const sug = len ? Math.max(4, Math.ceil(len / glyph * 1.35)) : 0;
+  $("s-sug").textContent = sug || "—";
+  /* A budget this large means the drawing is too detailed to be traced by hand with
+     letters — better to find that out here than at M4. */
+  $("s-sugrow").classList.toggle("flag", sug > 30);
+  $("usebudget").disabled = !sug;
+  $("usebudget").dataset.v = sug;
+}
+
+function syncFields(){
+  const t = T();
+  $("word").value   = t.word;
+  $("budget").value = t.budget;
+  $("thresh").value = t.threshold;
+}
+
+/** One call after any mutation: redraw every panel and autosave.
+ *  It deliberately does NOT touch history — `snapshot()` must be called BEFORE a
+ *  mutation, so the stack holds the state to go back TO. Snapshotting after the fact
+ *  stores the change itself and the first undo is a no-op. */
+function changed(){
+  renderList(); syncFields(); updateStats(); render(); renderPreview(); save();
+}
+
+function flash(text, bad){
+  const m = $("msg");
+  m.textContent = text;
+  m.className = "msg" + (bad ? " bad" : "");
+  clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => { m.textContent = ""; }, 3200);
+}
+
+/* ---------------- pointer ---------------- */
+
+function pt(e){
+  const r = pad.getBoundingClientRect();
+  let x = (e.clientX - r.left) * (FIELD / r.width);
+  let y = (e.clientY - r.top)  * (FIELD / r.height);
+  if ($("snap").checked){ const g = FIELD / 32; x = Math.round(x/g)*g; y = Math.round(y/g)*g; }
+  return [Math.max(0, Math.min(FIELD, x)), Math.max(0, Math.min(FIELD, y))];
+}
+
+function nearestStroke(p){
+  let best = -1, bd = 10;
+  T().strokes.forEach((s, i) => {
+    for (let k = 1; k < s.length; k++){
+      const d = segDist(p, s[k-1], s[k]);
+      if (d < bd){ bd = d; best = i; }
+    }
+  });
+  return best;
+}
+
+pad.addEventListener("pointerdown", e => {
+  const p = pt(e);
+  if (tool === "erase"){
+    const i = nearestStroke(p);
+    if (i >= 0){ snapshot(); T().strokes.splice(i, 1); hover = -1; changed(); }
+    return;
+  }
+  if (tool === "free"){
+    pad.setPointerCapture(e.pointerId);
+    draft = [p];
+    render();
+    return;
+  }
+  /* polyline: each press drops a vertex */
+  if (!draft) draft = [];
+  draft.push(p);
+  render();
+});
+
+pad.addEventListener("pointermove", e => {
+  cursor = pt(e);
+  if (tool === "erase"){
+    const i = nearestStroke(cursor);
+    if (i !== hover){ hover = i; render(); }
+    return;
+  }
+  if (tool === "free" && draft){
+    /* Decimate on the way in — raw pointermove is noisy and dense; RDP then does the
+       real work on release. */
+    if (dist(cursor, draft[draft.length-1]) > 1.5){ draft.push(cursor); render(); }
+    return;
+  }
+  if (tool === "poly" && draft) render();
+});
+
+pad.addEventListener("pointerup", e => {
+  if (tool !== "free" || !draft) return;
+  try { pad.releasePointerCapture(e.pointerId); } catch(err){}
+  const s = rdp(draft, +$("eps").value);
+  draft = null;
+  if (s.length >= 2 && strokeLen(s) > 4){ snapshot(); T().strokes.push(s); changed(); }
+  else render();          /* a stray click isn't a stroke */
+});
+
+pad.addEventListener("pointerleave", () => { if (hover !== -1){ hover = -1; render(); } });
+pad.addEventListener("dblclick", e => { e.preventDefault(); finishPoly(); });
+pad.addEventListener("contextmenu", e => { if (tool === "poly" && draft){ e.preventDefault(); finishPoly(); } });
+
+function finishPoly(){
+  if (!draft) return;
+  /* A double-click lands two near-identical vertices — drop the duplicate rather than
+     shipping a zero-length segment. */
+  const s = [];
+  for (const p of draft) if (!s.length || dist(p, s[s.length-1]) > 3) s.push(p);
+  draft = null;
+  if (s.length >= 2){ snapshot(); T().strokes.push(s); changed(); }
+  else render();
+}
+
+/* ---------------- tools & controls ---------------- */
+
+const HINTS = {
+  free:  "Drag to draw a freehand stroke.",
+  poly:  "Click to place vertices · Enter, double-click or right-click to finish · Esc cancels.",
+  erase: "Click a stroke to delete it."
+};
+function setTool(t){
+  if (draft && tool === "poly") finishPoly();
+  tool = t;
+  for (const k of ["free","poly","erase"]) $("t-" + k).classList.toggle("on", k === t);
+  pad.classList.toggle("erase", t === "erase");
+  $("padhint").textContent = HINTS[t];
+  hover = -1;
+  render();
+}
+$("t-free").onclick  = () => setTool("free");
+$("t-poly").onclick  = () => setTool("poly");
+$("t-erase").onclick = () => setTool("erase");
+
+$("undo").onclick = () => restore(history, future);
+$("redo").onclick = () => restore(future, history);
+$("clear").onclick = () => {
+  if (!T().strokes.length) return;
+  if (!confirm('Clear every stroke on "' + (T().word || "this target") + '"?')) return;
+  snapshot(); T().strokes = []; draft = null; changed();
+};
+
+$("tadd").onclick = () => {
+  const w = (prompt("Word for the new target:", "") || "").trim().toLowerCase();
+  if (!w) return;
+  snapshot(); targets.push(blank(w)); cur = targets.length - 1; changed();
+};
+$("tdel").onclick = () => {
+  if (targets.length < 2) return flash("Keep at least one target.", true);
+  if (!confirm('Delete "' + (T().word || "this target") + '" and its drawing?')) return;
+  snapshot(); targets.splice(cur, 1); cur = Math.max(0, cur - 1); changed();
+};
+
+$("word").oninput   = e => { T().word = e.target.value.trim().toLowerCase(); renderList(); save(); };
+$("budget").oninput = e => { T().budget = Math.max(1, +e.target.value || 1); save(); };
+$("thresh").oninput = e => { T().threshold = Math.max(10, Math.min(99, +e.target.value || 70)); save(); };
+$("usebudget").onclick = () => { const v = +$("usebudget").dataset.v; if (v){ T().budget = v; syncFields(); save(); } };
+
+$("glyphlen").oninput = e => { $("v-glyph").textContent = (+e.target.value).toFixed(2); updateStats(); };
+$("eps").oninput      = e => { $("v-eps").textContent   = (+e.target.value).toFixed(1); };
+$("grid").onchange = render;
+
+/* ---------------- reference image (memory only) ---------------- */
+
+function useImage(file){
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => { refImg = img; $("refclear").disabled = false; render(); flash("Reference loaded — it is never exported or saved."); URL.revokeObjectURL(url); };
+  img.onerror = () => { flash("Could not read that image.", true); URL.revokeObjectURL(url); };
+  img.src = url;
+}
+$("refbtn").onclick   = () => $("reffile").click();
+$("reffile").onchange = e => { const f = e.target.files[0]; if (f) useImage(f); e.target.value = ""; };
+$("refclear").onclick = () => { refImg = null; $("refclear").disabled = true; render(); };
+
+/* ---------------- export / import ---------------- */
+
+function build(){
+  const out = [], skipped = [];
+  for (const t of targets){
+    if (!t.strokes.length || !t.word){ skipped.push(t.word || "(unnamed)"); continue; }
+    const ss = normalize(t.strokes);
+    out.push({
+      word: t.word,
+      budget: t.budget,
+      threshold: +(t.threshold / 100).toFixed(2),
+      len: +inkLen(ss).toFixed(3),
+      strokes: ss
+    });
+  }
+  return { json: { v:1, targets: out }, skipped };
+}
+const jsonText = () => JSON.stringify(build().json, null, 1);
+
+$("download").onclick = () => {
+  const { json, skipped } = build();
+  if (!json.targets.length) return flash("Nothing to export — draw something first.", true);
+  const blob = new Blob([JSON.stringify(json, null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "wordshape-targets.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  flash("Exported " + json.targets.length + " target(s)" + (skipped.length ? " · skipped " + skipped.length + " empty" : "") + " → put it in data/");
+};
+
+$("copy").onclick = async () => {
+  const { json, skipped } = build();
+  if (!json.targets.length) return flash("Nothing to copy yet.", true);
+  const text = JSON.stringify(json, null, 1);
+  try { await navigator.clipboard.writeText(text); flash("Copied " + json.targets.length + " target(s)" + (skipped.length ? " · skipped " + skipped.length + " empty" : "")); }
+  catch(e){ $("json").hidden = false; $("json").value = text; $("json").select(); flash("Clipboard blocked — copy from the box.", true); }
+};
+
+$("showjson").onclick = () => {
+  const box = $("json");
+  box.hidden = !box.hidden;
+  if (!box.hidden) box.value = jsonText();
+};
+
+function importJSON(text){
+  let o;
+  try { o = JSON.parse(text); } catch(e){ return flash("That isn't valid JSON.", true); }
+  const list = Array.isArray(o) ? o : o.targets;
+  if (!Array.isArray(list) || !list.length) return flash("No targets found in that file.", true);
+  snapshot();
+  targets = list.map(t => ({
+    word: String(t.word || "").trim(),
+    budget: +t.budget || 14,
+    /* Accept either the 0–1 export form or a raw percentage. */
+    threshold: t.threshold > 1 ? +t.threshold : Math.round((+t.threshold || 0.7) * 100),
+    strokes: (t.strokes || []).map(s => s.map(p => [p[0]*FIELD, p[1]*FIELD]))
+  }));
+  cur = 0;
+  changed();
+  flash("Imported " + targets.length + " target(s).");
+}
+$("importbtn").onclick   = () => $("importfile").click();
+$("importfile").onchange = e => { const f = e.target.files[0]; if (f) f.text().then(importJSON); e.target.value = ""; };
+
+/* ---------------- drag & drop anywhere ---------------- */
+
+["dragenter","dragover"].forEach(k => document.addEventListener(k, e => { e.preventDefault(); document.body.classList.add("drag"); }));
+["dragleave","drop"].forEach(k => document.addEventListener(k, e => { e.preventDefault(); if (k === "drop" || e.target === document.documentElement) document.body.classList.remove("drag"); }));
+document.addEventListener("drop", e => {
+  const f = e.dataTransfer.files[0];
+  if (!f) return;
+  if (f.type.startsWith("image/")) useImage(f);
+  else if (/\.json$/i.test(f.name) || f.type === "application/json") f.text().then(importJSON);
+  else flash("Drop an image to trace, or a .json to import.", true);
+});
+document.addEventListener("paste", e => {
+  const it = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith("image/"));
+  if (it) useImage(it.getAsFile());
+});
+
+/* ---------------- keys ---------------- */
+
+document.addEventListener("keydown", e => {
+  const el = document.activeElement;
+  if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;   // never steal typing
+
+  const meta = e.metaKey || e.ctrlKey;
+  if (meta && e.key.toLowerCase() === "z"){
+    e.preventDefault();
+    e.shiftKey ? restore(future, history) : restore(history, future);
+    return;
+  }
+  if (e.key === "1") setTool("free");
+  else if (e.key === "2") setTool("poly");
+  else if (e.key === "3") setTool("erase");
+  else if (e.key === "Enter" && tool === "poly") finishPoly();
+  else if (e.key === "Escape"){ draft = null; render(); }
+  else if (e.key === "[" && cur > 0){ cur--; draft = null; changed(); }
+  else if (e.key === "]" && cur < targets.length - 1){ cur++; draft = null; changed(); }
+});
+
+addEventListener("resize", () => { fitCanvas(); render(); });
+
+/* ---------------- go ---------------- */
+load();
+fitCanvas();
+setTool("free");
+changed();
+syncHistBtns();
+})();
+</script>
+</body>
+</html>
