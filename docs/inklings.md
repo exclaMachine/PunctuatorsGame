@@ -35,6 +35,14 @@
 > **counterchange**, with the **rule of tincture** as a hard agreement constraint), rare **scroll drops** for
 > a separate term vocabulary, and the layered emblazon renderer. Read before building the shield.
 >
+> **Planning the capture verb / typography?** See [`inklings-typography.md`](inklings-typography.md) — the
+> **Scriptorium** (SPECCED, nothing built): letter-creatures stop being hit and start being **traced**
+> stroke-by-stroke (*inklings are caught, beasts are fought*), and what you collect is **the letter in a
+> typeface**. One shared skeleton alphabet + a stamped **nib** yields every face, because stroke contrast is
+> a record of the tool — which makes the pruned **Vox-ATypI** classification tree and the nib data the same
+> information. Faces are collection-only; no face is hand-drawn (PD/OFL fonts supply specimens + field
+> glyphs). **Read §9 before touching `doAttack`** — it amends this file's core loop and hunting section.
+>
 > **Planning story companions?** See [`inklings-companions.md`](inklings-companions.md) — the **combat/bonus
 > buddies** (authored book characters — Suede, Swifty, Johnny — that follow the player), the agreed v1
 > (silent, one equipped at a time via a new **Equipment slot**, **passive bonus**, unlocked by **themed

@@ -194,7 +194,7 @@ single-stroke drawing scores the letter's thickness as error.
 
 Two routes, in order of preference:
 
-**A. Hershey fonts** *(originally preferred, pending a licence check — see the BUILT note below)* — A. V. Hershey's 1967 vector fonts for the US
+**A. Hershey fonts** *(originally preferred; **licence ANSWERED 2026-09-11 — public domain, attribution-only**, see §12)* — A. V. Hershey's 1967 vector fonts for the US
 National Bureau of Standards. Every glyph is literally a list of polylines, which is exactly the data
 structure we need, and they come in **Roman Simplex / Duplex / Complex, Script, Gothic English / German /
 Italian, Greek, Cyrillic**. That variety is the **font-unlock ladder for free — and mechanically meaningful,
@@ -216,9 +216,10 @@ same job, and M1's whole hazard is that a target may not be coverable by the let
 had to exist there anyway, and once they do the alphabet is simply what they are made of. It is 26 lowercase
 glyphs in em units (y down: ascender 0.02 · x-height top 0.24 · baseline 0.72 · descender 0.96), curves
 sampled from arcs rather than stored as points so a shape can be nudged by changing one number, exported by
-the tool as `data/wordshape-alphabet.json`. Route A is **not foreclosed** — the licence question is still
-open and Hershey's Script/Gothic variants are still the cheapest font-unlock ladder; this just means the MVP
-is no longer blocked on the answer.
+the tool as `data/wordshape-alphabet.json`. Route A is **not foreclosed** — Hershey is **public domain**
+(§12) and its Script/Gothic variants are still the cheapest font-unlock ladder; this just means the MVP was
+never blocked on the answer. One caveat found when the licence was settled: Duplex/Complex/Triplex fake their
+weight with **parallel strokes**, so they are usable as *looks* but not as skeletons.
 
 Either way the MVP ships **one font, lowercase only**, as `data/wordshape-alphabet.json` — a few KB.
 
@@ -431,8 +432,13 @@ movement, not on pointerdown**, so a click that only selects doesn't fill the un
 
 ## 12. Open questions
 
-- **The Hershey licence** (§6). No longer blocking — route B shipped 2026-09-08 — but still worth settling,
-  since Hershey's Script/Gothic variants are the cheapest version of §8's font-unlock ladder.
+- ~~**The Hershey licence** (§6)~~ **ANSWERED 2026-09-11** (while speccing
+  [`inklings-typography.md`](inklings-typography.md) §4, which needs the same answer): the Hershey fonts are
+  **public domain** — A. V. Hershey at the US Naval Weapons Laboratory, with the NIST distribution asking
+  only for credit to Hershey and a note of any modifications. So §8's font-unlock ladder may use
+  Script/Gothic-English/Gothic-German freely with a credits entry. One caveat found with it:
+  Duplex/Complex/Triplex fake their weight with **parallel strokes**, so they are usable as *looks* and
+  useless as skeletons — take weight from a nib instead (that doc's §3).
 - **The glyph shapes themselves** (§11.5) are a first pass, drawn to be legible and unfussy. Expect the dev
   to tune them once real targets are traced against them; the `a` is single-storey and the `s` is the one
   glyph placed by hand rather than swept from arcs.
