@@ -91,6 +91,16 @@
     background:var(--cell);color:var(--ink);padding:9px;resize:vertical}
   .msg{font-family:var(--pix);font-size:12px;letter-spacing:.5px;color:var(--accent);min-height:18px;margin-top:8px}
   .msg.bad{color:var(--warn)}
+  /* guide letters */
+  .lpick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;min-height:30px}
+  .lchip{font-family:var(--pix);font-size:16px;cursor:pointer;border:2px solid var(--edge);background:var(--cell);
+    color:var(--ink);box-shadow:2px 2px 0 var(--edge);padding:3px 10px;display:inline-flex;align-items:baseline;gap:5px}
+  .lchip:hover{background:#fff}
+  .lchip.on{background:var(--accent2);color:#fff}
+  .lchip .c{font-size:10px;opacity:.75;font-variant-numeric:tabular-nums}
+  .lpick .hint{font-size:12.5px;color:var(--muted)}
+  #abc{border:3px solid var(--edge);background:#fff;display:block;width:100%;height:auto;margin-top:10px}
+
   .keys{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin-top:10px}
   kbd{font-family:var(--pix);font-size:11px;border:2px solid var(--edge);background:var(--cell);color:var(--ink);padding:1px 5px}
 </style>
@@ -104,7 +114,8 @@
     <p class="lede">Author the line art the player traces with letters. Every drawing is stored as
       <b>centreline polylines</b> — there is no stroke width in the data, only paths, because that is what the
       scorer compares letters against. Draw <b>for the brush set</b>: a target is only fair if the word's own
-      letters can plausibly cover it. Export to <code style="font-size:12px">data/wordshape-targets.json</code>.</p>
+      letters can plausibly cover it &mdash; so stamp the word's <b>guide letters</b> down first and trace them.
+      Export to <code style="font-size:12px">data/wordshape-targets.json</code>.</p>
   </header>
 
   <div class="layout">
@@ -126,6 +137,7 @@
         <button class="btn" id="t-free">✎ Freehand</button>
         <button class="btn" id="t-poly">⟋ Polyline</button>
         <button class="btn" id="t-erase">⌫ Erase</button>
+        <button class="btn" id="t-letters">🅰 Letters</button>
         <span class="sep"></span>
         <button class="btn sm" id="undo">↶ Undo</button>
         <button class="btn sm" id="redo">↷ Redo</button>
@@ -137,11 +149,13 @@
       <div class="toolbar">
         <label class="toggle" style="margin:0"><input type="checkbox" id="grid" checked> Grid</label>
         <label class="toggle" style="margin:0"><input type="checkbox" id="snap"> Snap</label>
+        <label class="toggle" style="margin:0"><input type="checkbox" id="guides" checked> Guides</label>
         <span class="sep"></span>
         <button class="btn sm" id="refbtn">🖼 Reference…</button>
         <button class="btn sm" id="refclear" disabled>Clear ref</button>
         <input type="file" id="reffile" accept="image/*" hidden>
       </div>
+      <div class="lpick" id="lpick"></div>
       <p class="cap" id="padhint">Drag to draw a freehand stroke.</p>
     </section>
 
@@ -162,14 +176,10 @@
       <div class="stat"><span>Strokes</span><b id="s-strokes">0</b></div>
       <div class="stat"><span>Points</span><b id="s-points">0</b></div>
       <div class="stat"><span>Ink length</span><b id="s-len">0.00</b></div>
+      <div class="stat"><span>Guide letters</span><b id="s-letters">0</b></div>
+      <div class="stat"><span>Avg glyph length</span><b id="s-glyph">—</b></div>
       <div class="stat" id="s-sugrow"><span>Suggested budget</span><b id="s-sug">—</b></div>
-
-      <div class="ctrl" style="margin-top:14px">
-        <span class="lab">Avg glyph length <span class="val" id="v-glyph">0.22</span></span>
-        <input type="range" id="glyphlen" min="0.10" max="0.40" step="0.01" value="0.22">
-      </div>
-      <p class="note" style="margin-top:-4px">A <b>guess until M2</b> — the alphabet doesn't exist yet, so the
-        suggested budget is only as good as this number. Re-tune it once the glyphs are real.</p>
+      <p class="cap" id="s-sugnote" style="margin-top:6px"></p>
 
       <p class="panelttl" style="margin-top:18px">At play size</p>
       <canvas id="preview" width="200" height="200"></canvas>
@@ -193,14 +203,23 @@
       <button class="btn" id="importbtn">⬆ Import JSON…</button>
       <input type="file" id="importfile" accept="application/json,.json" hidden>
       <button class="btn sm" id="showjson">Show JSON</button>
+      <span class="sep"></span>
+      <button class="btn" id="dlabc">⬇ wordshape-alphabet.json</button>
+      <button class="btn sm" id="showabc">Show alphabet</button>
     </div>
+    <canvas id="abc" width="1040" height="180" hidden></canvas>
     <div class="msg" id="msg"></div>
     <textarea id="json" hidden spellcheck="false"></textarea>
     <p class="note">Everything autosaves to <code>localStorage</code> as you draw, so a refresh is safe — but a
       <b>reference image is held in memory only</b> and won't survive one. Drop a <code>.json</code> or an image
-      anywhere on the page. Empty targets are skipped on export.</p>
+      anywhere on the page. Empty targets are skipped on export. <b>Guide letters are never exported</b> — they
+      are scaffolding, not target data — so they survive a refresh but not a round-trip through a downloaded file.</p>
     <div class="keys">
-      <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> tools</span>
+      <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> tools</span>
+      <span><kbd>a</kbd>–<kbd>z</kbd> arm that letter</span>
+      <span><kbd>[</kbd><kbd>]</kbd> rotate 15° <i>(a letter selected)</i></span>
+      <span><kbd>-</kbd><kbd>=</kbd> letter size</span>
+      <span><kbd>⌫</kbd> delete letter</span>
       <span><kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> undo</span>
       <span><kbd>⇧</kbd>+<kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> redo</span>
       <span><kbd>Enter</kbd> finish polyline</span>
@@ -233,6 +252,99 @@ const HIST_MAX = 60;
 /* The ten words from docs/wordshape.md §4, in its difficulty order. */
 const SEED = ["cup","sun","cat","dog","owl","ant","pig","bee","fox","key"];
 
+/* The three letter sizes the game offers (decision: three fixed steps, not free scale).
+   Each is an EM HEIGHT AS A FRACTION OF THE UNIT SQUARE — i.e. of the space the player
+   sees after a target is normalised — so a glyph's length in export units is simply its
+   em length times its size, independent of how big the drawing happens to be here. */
+const SIZES = [0.22, 0.32, 0.46];
+const SIZE_NAME = ["S","M","L"];
+
+/* ------------------------------------------------------------------ *
+ * THE ALPHABET — §6 route B (the hand-drawn monoline), brought forward from M2.
+ *
+ * These are the guide letters you trace, and they are the same KIND of data as a
+ * target: centreline polylines, no outlines, no font rasterizing anywhere. Drawn in
+ * em units, y down: ascender 0.02 · x-height top 0.24 · baseline 0.72 · descender 0.96.
+ * Curves are sampled from arcs rather than stored as points so the data stays readable
+ * and a shape can be nudged by changing one number.
+ * ------------------------------------------------------------------ */
+const GLYPHS = (() => {
+  /* Angles in degrees. Canvas y grows DOWNWARD, so a=0 is right, 90 is BELOW,
+     180 left, 270 above — increasing a sweeps clockwise on screen. */
+  const A = (cx, cy, r, a0, a1, steps) => {
+    const n = steps || Math.max(4, Math.round(Math.abs(a1 - a0) / 12));
+    const o = [];
+    for (let i = 0; i <= n; i++){
+      const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180;
+      o.push([cx + r*Math.cos(a), cy + r*Math.sin(a)]);
+    }
+    return o;
+  };
+  /* Concatenate part-paths into one polyline, dropping the duplicated seam point. */
+  const J = (...parts) => {
+    const o = [];
+    for (const part of parts) for (const q of part)
+      if (!o.length || Math.hypot(q[0]-o[o.length-1][0], q[1]-o[o.length-1][1]) > 1e-6) o.push(q);
+    return o;
+  };
+  const dot = (x, y) => A(x, y, 0.045, 0, 360, 10);
+
+  const raw = {
+    a: [0.60, [ A(0.30,0.48,0.24,0,360), [[0.54,0.24],[0.54,0.72]] ]],
+    b: [0.60, [ [[0.06,0.02],[0.06,0.72]], A(0.30,0.48,0.24,0,360) ]],
+    c: [0.58, [ A(0.30,0.48,0.24,-55,-305) ]],
+    d: [0.60, [ A(0.30,0.48,0.24,0,360), [[0.54,0.02],[0.54,0.72]] ]],
+    /* one stroke: the bar left-to-right, then up and over and round — the way a hand draws it */
+    e: [0.58, [ J([[0.06,0.48],[0.54,0.48]], A(0.30,0.48,0.24,0,-305)) ]],
+    f: [0.62, [ J([[0.44,0.72],[0.44,0.21]], A(0.25,0.21,0.19,0,-135)), [[0.08,0.30],[0.60,0.30]] ]],
+    g: [0.60, [ A(0.30,0.48,0.24,0,360), J([[0.54,0.24],[0.54,0.80]], A(0.38,0.80,0.16,0,140)) ]],
+    h: [0.60, [ [[0.06,0.02],[0.06,0.72]], J(A(0.30,0.48,0.24,180,360), [[0.54,0.72]]) ]],
+    i: [0.22, [ [[0.10,0.24],[0.10,0.72]], dot(0.10,0.09) ]],
+    j: [0.46, [ J([[0.34,0.24],[0.34,0.80]], A(0.18,0.80,0.16,0,140)), dot(0.34,0.09) ]],
+    k: [0.54, [ [[0.06,0.02],[0.06,0.72]], [[0.50,0.24],[0.06,0.52]], [[0.22,0.415],[0.50,0.72]] ]],
+    l: [0.24, [ [[0.10,0.02],[0.10,0.72]] ]],
+    m: [0.84, [ [[0.06,0.24],[0.06,0.72]],
+                J(A(0.24,0.44,0.18,180,360), [[0.42,0.72]]),
+                J(A(0.60,0.44,0.18,180,360), [[0.78,0.72]]) ]],
+    n: [0.60, [ [[0.06,0.24],[0.06,0.72]], J(A(0.30,0.48,0.24,180,360), [[0.54,0.72]]) ]],
+    o: [0.60, [ A(0.30,0.48,0.24,0,360) ]],
+    p: [0.60, [ [[0.06,0.24],[0.06,0.96]], A(0.30,0.48,0.24,0,360) ]],
+    q: [0.60, [ A(0.30,0.48,0.24,0,360), [[0.54,0.24],[0.54,0.96]] ]],
+    r: [0.46, [ [[0.06,0.24],[0.06,0.72]], A(0.28,0.46,0.22,180,315) ]],
+    /* the one glyph placed by hand — two tangent arcs never quite make a readable s */
+    s: [0.56, [ [[0.48,0.31],[0.42,0.26],[0.32,0.24],[0.20,0.26],[0.13,0.32],[0.13,0.40],[0.19,0.45],
+                 [0.30,0.48],[0.41,0.51],[0.47,0.56],[0.47,0.64],[0.40,0.70],[0.29,0.72],[0.18,0.70],[0.11,0.65]] ]],
+    t: [0.50, [ [[0.28,0.06],[0.28,0.72]], [[0.08,0.24],[0.48,0.24]] ]],
+    u: [0.60, [ J([[0.06,0.24],[0.06,0.48]], A(0.30,0.48,0.24,180,0), [[0.54,0.24]]) ]],
+    v: [0.60, [ [[0.06,0.24],[0.30,0.72],[0.54,0.24]] ]],
+    w: [0.84, [ [[0.06,0.24],[0.24,0.72],[0.42,0.34],[0.60,0.72],[0.78,0.24]] ]],
+    x: [0.60, [ [[0.06,0.24],[0.54,0.72]], [[0.54,0.24],[0.06,0.72]] ]],
+    y: [0.62, [ [[0.06,0.24],[0.31,0.69]], [[0.56,0.24],[0.20,0.96]] ]],
+    z: [0.60, [ [[0.08,0.24],[0.52,0.24],[0.08,0.72],[0.52,0.72]] ]]
+  };
+
+  /* A Map, never a plain object: glyphs are looked up by a character taken from stored
+     data, and `constructor` on a bare object answers with a truthy function. Same trap
+     the Tree of Kinds hit. */
+  const out = new Map();
+  for (const ch of Object.keys(raw)){
+    const [w, strokes] = raw[ch];
+    let x0=Infinity, y0=Infinity, x1=-Infinity, y1=-Infinity, len=0;
+    for (const st of strokes) for (let i=0;i<st.length;i++){
+      const q = st[i];
+      if (q[0]<x0) x0=q[0]; if (q[0]>x1) x1=q[0];
+      if (q[1]<y0) y0=q[1]; if (q[1]>y1) y1=q[1];
+      if (i) len += Math.hypot(q[0]-st[i-1][0], q[1]-st[i-1][1]);
+    }
+    /* cx/cy is the glyph's own visual centre — a stamp rotates about what you see,
+       not about a baseline origin that may sit outside the ink. */
+    out.set(ch, { w, strokes, len, cx:(x0+x1)/2, cy:(y0+y1)/2 });
+  }
+  return out;
+})();
+
+const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+
 const $ = id => document.getElementById(id);
 
 /* ---------------- state ---------------- */
@@ -245,6 +357,11 @@ let hover = -1;                    // stroke index under the cursor, erase tool 
 let refImg = null;                 // reference image, memory only — never exported, never saved
 let history = [], future = [];
 let msgTimer = 0;
+let armed = "";                    // the letter the Letters tool will stamp next
+let sel = -1;                      // selected guide letter on the current target
+let hoverL = -1;                   // guide letter under the cursor, Letters tool only
+let stamp = null;                  // in-progress stamp: press placed it, drag is setting its angle
+let dragL = null;                  // in-progress move of a placed letter
 
 const pad = $("pad"), ctx = pad.getContext("2d");
 const pre = $("preview"), pctx = pre.getContext("2d");
@@ -306,9 +423,63 @@ function normalize(ss){
   return ss.map(s => s.map(p => [r(p[0]*k + ox), r(p[1]*k + oy)]));
 }
 
+/* ---------------- guide letters ---------------- */
+
+/** Field units per 1.0 of unit-square space.
+ *
+ *  This is the whole reason the guides are trustworthy. `normalize()` maps the drawing's
+ *  LONGEST SIDE onto (1 - 2*MARGIN) of the unit square, so how big a letter looks next to
+ *  the art depends on that side, not on the canvas. Scale the guides by the same factor
+ *  and a letter on this canvas is exactly the letter the player will get. Before any
+ *  stroke exists there is no bbox to measure, so assume the drawing will fill the frame. */
+let uScale = 0;                    // memo, cleared by changed() — strokes only move there
+function unitScale(){
+  if (uScale) return uScale;
+  const t = T();
+  if (!t.strokes.length) return (uScale = FIELD);
+  const b = bbox(t.strokes);
+  const span = Math.max(b.w, b.h, FIELD * 0.25);   // a lone dot must not blow the guides up
+  return (uScale = span / (1 - 2*MARGIN));
+}
+
+/** A placed letter's polylines, in field coordinates. */
+function letterStrokes(L){
+  const g = GLYPHS.get(L.ch);
+  if (!g) return [];
+  const k = SIZES[L.size] * unitScale();
+  const ca = Math.cos(L.a), sa = Math.sin(L.a);
+  return g.strokes.map(st => st.map(q => {
+    const x = (q[0] - g.cx) * k, y = (q[1] - g.cy) * k;
+    return [L.x + x*ca - y*sa, L.y + x*sa + y*ca];
+  }));
+}
+
+/** Topmost placed letter within `tol` of p, or -1. Walked backwards so the last one
+ *  stamped — the one drawn on top — is the one you grab. */
+function letterAt(p, tol){
+  const ls = T().letters;
+  const lim = tol || 12;
+  for (let i = ls.length - 1; i >= 0; i--){
+    for (const st of letterStrokes(ls[i]))
+      for (let k = 1; k < st.length; k++)
+        if (segDist(p, st[k-1], st[k]) < lim) return i;
+  }
+  return -1;
+}
+
+/** The distinct letters of the current word that the alphabet can draw. */
+function wordLetters(){
+  const out = [];
+  for (const ch of (T().word || "").toLowerCase())
+    if (GLYPHS.has(ch) && !out.includes(ch)) out.push(ch);
+  return out;
+}
+
+const selLetter = () => (sel >= 0 && sel < T().letters.length) ? T().letters[sel] : null;
+
 /* ---------------- targets ---------------- */
 
-const blank = word => ({ word, budget: 14, threshold: 70, strokes: [] });
+const blank = word => ({ word, budget: 14, threshold: 70, strokes: [], letters: [] });
 const T = () => targets[cur];
 
 function load(){
@@ -321,7 +492,8 @@ function load(){
           word: String(t.word || "").trim(),
           budget: +t.budget || 14,
           threshold: +t.threshold || 70,
-          strokes: Array.isArray(t.strokes) ? t.strokes : []
+          strokes: Array.isArray(t.strokes) ? t.strokes : [],
+          letters: Array.isArray(t.letters) ? t.letters.filter(L => GLYPHS.has(L.ch)) : []
         }));
         cur = Math.min(+o.cur || 0, targets.length - 1);
         return;
@@ -356,7 +528,7 @@ function restore(from, to){
   to.push(JSON.stringify(targets));
   targets = JSON.parse(from.pop());
   if (cur >= targets.length) cur = targets.length - 1;
-  draft = null;
+  draft = null; sel = -1; stamp = null; dragL = null;
   changed();
   syncHistBtns();
 }
@@ -409,7 +581,33 @@ function render(){
     ctx.setLineDash([]);
   }
 
-  ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+
+  /* Guides go UNDER the target ink — they are what you trace over, so black must win. */
+  if ($("guides").checked){
+    t.letters.forEach((L, i) => {
+      const on   = (i === sel    && tool === "letters");
+      const near = (i === hoverL && tool === "letters" && !on);
+      ctx.strokeStyle = on ? "#b5532a" : near ? "rgba(181,83,42,.6)" : "rgba(47,125,99,.5)";
+      ctx.lineWidth = on ? 3.5 : 2.5;
+      for (const st of letterStrokes(L)) if (st.length > 1) drawPath(ctx, st);
+      if (on){
+        /* the anchor, plus a stub along the baseline so the rotation is readable */
+        const r = SIZES[L.size] * unitScale() * 0.42;
+        ctx.strokeStyle = "#b5532a"; ctx.lineWidth = 1.5;
+        ctx.setLineDash([4,4]);
+        ctx.beginPath();
+        ctx.moveTo(L.x, L.y);
+        ctx.lineTo(L.x + Math.cos(L.a)*r, L.y + Math.sin(L.a)*r);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#b5532a";
+        ctx.beginPath(); ctx.arc(L.x, L.y, 4, 0, 7); ctx.fill();
+      }
+    });
+  }
+
+  ctx.lineWidth = 3;
   t.strokes.forEach((s, i) => {
     if (s.length < 2) return;
     ctx.strokeStyle = (i === hover && tool === "erase") ? "#a8341f" : "#2b2620";
@@ -462,9 +660,40 @@ function renderList(){
     d.innerHTML = '<span class="dot' + (t.strokes.length ? " has" : "") + '"></span>' +
                   '<span>' + (t.word || "—") + '</span>' +
                   '<span class="n">' + (t.strokes.length || "") + '</span>';
-    d.onclick = () => { cur = i; draft = null; changed(); };
+    d.onclick = () => setCur(i);
     el.appendChild(d);
   });
+}
+
+/** The word's own letters as arm-able chips, with how many of each are down.
+ *  Re-derived every time, so retyping the word re-stocks the brush set. */
+function renderPicker(){
+  const el = $("lpick");
+  const letters = wordLetters();
+  el.innerHTML = "";
+  if (!letters.length){
+    el.innerHTML = '<span class="hint">Name the target and its letters become your brush set.</span>';
+    armed = "";
+    return;
+  }
+  if (!letters.includes(armed)) armed = letters[0];
+  const counts = new Map();
+  for (const L of T().letters) counts.set(L.ch, (counts.get(L.ch) || 0) + 1);
+  for (const ch of letters){
+    const b = document.createElement("button");
+    b.className = "lchip" + (ch === armed ? " on" : "");
+    b.innerHTML = ch + '<span class="c">' + (counts.get(ch) || 0) + "</span>";
+    b.title = "Stamp " + ch + "  (key: " + ch + ")";
+    b.onclick = () => { armed = ch; setTool("letters"); renderPicker(); };
+    el.appendChild(b);
+  }
+  const rule = document.createElement("span");
+  rule.className = "hint";
+  const L = selLetter();
+  rule.textContent = L ? ("selected: " + L.ch + " · " + SIZE_NAME[L.size] + " · " +
+                          Math.round(L.a * 180 / Math.PI) + "°")
+                       : "press to stamp · drag out to set the angle";
+  el.appendChild(rule);
 }
 
 function updateStats(){
@@ -472,16 +701,35 @@ function updateStats(){
   const ss = normalize(t.strokes);
   const pts = t.strokes.reduce((n,s) => n + s.length, 0);
   const len = inkLen(ss);
+  const placed = t.letters.length;
 
   $("s-strokes").textContent = t.strokes.length;
   $("s-points").textContent  = pts;
   $("s-len").textContent     = len.toFixed(2);
+  $("s-letters").textContent = placed;
 
-  const glyph = +$("glyphlen").value;
-  const sug = len ? Math.max(4, Math.ceil(len / glyph * 1.35)) : 0;
+  /* Glyph length in EXPORT units: SIZES are em fractions of the unit square, which is
+     the space the player works in, so it is just em length x size — no dependence on
+     the drawing's own extent. Measured off the real alphabet, not guessed. */
+  const pool = placed ? t.letters.map(L => GLYPHS.get(L.ch).len * SIZES[L.size])
+                      : wordLetters().map(ch => GLYPHS.get(ch).len * SIZES[1]);
+  const avg = pool.length ? pool.reduce((a,b) => a+b, 0) / pool.length : 0;
+  $("s-glyph").textContent = avg ? avg.toFixed(3) : "—";
+
+  /* Once a guide layout exists the COUNT is the budget: you have just shown, by hand,
+     that this many letters cover the drawing. Only before that does the length estimate
+     have a job — and a budget this large means the drawing is too detailed to be traced
+     with letters at all, which is better learnt here than at M4. */
+  let sug = 0, why = "";
+  if (placed){
+    sug = Math.ceil(placed * 1.15);
+    why = "From your guide layout: " + placed + " letters + slack.";
+  } else if (len && avg){
+    sug = Math.max(4, Math.ceil(len / avg * 1.35));
+    why = "From ink length ÷ measured glyph length. Stamp the guides for a real answer.";
+  }
   $("s-sug").textContent = sug || "—";
-  /* A budget this large means the drawing is too detailed to be traced by hand with
-     letters — better to find that out here than at M4. */
+  $("s-sugnote").textContent = why;
   $("s-sugrow").classList.toggle("flag", sug > 30);
   $("usebudget").disabled = !sug;
   $("usebudget").dataset.v = sug;
@@ -499,7 +747,16 @@ function syncFields(){
  *  mutation, so the stack holds the state to go back TO. Snapshotting after the fact
  *  stores the change itself and the first undo is a no-op. */
 function changed(){
-  renderList(); syncFields(); updateStats(); render(); renderPreview(); save();
+  uScale = 0;
+  if (sel >= T().letters.length) sel = -1;
+  renderList(); syncFields(); renderPicker(); updateStats(); render(); renderPreview(); save();
+}
+
+/** Switch targets. The selection and any in-progress gesture belong to the old one. */
+function setCur(i){
+  cur = i;
+  draft = null; sel = -1; hoverL = -1; stamp = null; dragL = null;
+  changed();
 }
 
 function flash(text, bad){
@@ -533,6 +790,26 @@ function nearestStroke(p){
 
 pad.addEventListener("pointerdown", e => {
   const p = pt(e);
+  if (tool === "letters"){
+    const hit = letterAt(p);
+    if (hit >= 0){
+      /* Grab an existing letter. The snapshot waits for the first actual movement, so a
+         click that only selects doesn't fill the undo stack with no-ops. */
+      sel = hit;
+      dragL = { id: hit, dx: T().letters[hit].x - p[0], dy: T().letters[hit].y - p[1], moved: false };
+      pad.setPointerCapture(e.pointerId);
+      changed();
+      return;
+    }
+    if (!armed) return flash("Give this target a word first — its letters are the brushes.", true);
+    snapshot();
+    T().letters.push({ ch: armed, x: p[0], y: p[1], a: 0, size: 1 });
+    sel = T().letters.length - 1;
+    stamp = { ox: p[0], oy: p[1] };
+    pad.setPointerCapture(e.pointerId);
+    changed();
+    return;
+  }
   if (tool === "erase"){
     const i = nearestStroke(p);
     if (i >= 0){ snapshot(); T().strokes.splice(i, 1); hover = -1; changed(); }
@@ -552,6 +829,27 @@ pad.addEventListener("pointerdown", e => {
 
 pad.addEventListener("pointermove", e => {
   cursor = pt(e);
+  if (tool === "letters"){
+    if (stamp){
+      /* Drag out from where you pressed to set the angle — the player's stamp gesture.
+         Under the dead zone it stays upright, so a plain tap is a plain letter. */
+      const L = T().letters[sel];
+      const dx = cursor[0] - stamp.ox, dy = cursor[1] - stamp.oy;
+      L.a = Math.hypot(dx, dy) > 8 ? Math.atan2(dy, dx) : 0;
+      render(); renderPicker();
+      return;
+    }
+    if (dragL){
+      if (!dragL.moved){ snapshot(); dragL.moved = true; }   // snapshot BEFORE the first move
+      const L = T().letters[dragL.id];
+      L.x = cursor[0] + dragL.dx; L.y = cursor[1] + dragL.dy;
+      render();
+      return;
+    }
+    const i = letterAt(cursor);
+    if (i !== hoverL){ hoverL = i; render(); }
+    return;
+  }
   if (tool === "erase"){
     const i = nearestStroke(cursor);
     if (i !== hover){ hover = i; render(); }
@@ -567,6 +865,13 @@ pad.addEventListener("pointermove", e => {
 });
 
 pad.addEventListener("pointerup", e => {
+  if (tool === "letters"){
+    if (!stamp && !dragL) return;
+    try { pad.releasePointerCapture(e.pointerId); } catch(err){}
+    stamp = null; dragL = null;
+    changed();
+    return;
+  }
   if (tool !== "free" || !draft) return;
   try { pad.releasePointerCapture(e.pointerId); } catch(err){}
   const s = rdp(draft, +$("eps").value);
@@ -575,7 +880,9 @@ pad.addEventListener("pointerup", e => {
   else render();          /* a stray click isn't a stroke */
 });
 
-pad.addEventListener("pointerleave", () => { if (hover !== -1){ hover = -1; render(); } });
+pad.addEventListener("pointerleave", () => {
+  if (hover !== -1 || hoverL !== -1){ hover = -1; hoverL = -1; render(); }
+});
 pad.addEventListener("dblclick", e => { e.preventDefault(); finishPoly(); });
 pad.addEventListener("contextmenu", e => { if (tool === "poly" && draft){ e.preventDefault(); finishPoly(); } });
 
@@ -593,50 +900,64 @@ function finishPoly(){
 /* ---------------- tools & controls ---------------- */
 
 const HINTS = {
-  free:  "Drag to draw a freehand stroke.",
-  poly:  "Click to place vertices · Enter, double-click or right-click to finish · Esc cancels.",
-  erase: "Click a stroke to delete it."
+  free:    "Drag to draw a freehand stroke.",
+  poly:    "Click to place vertices · Enter, double-click or right-click to finish · Esc cancels.",
+  erase:   "Click a stroke to delete it.",
+  letters: "Press to stamp the armed letter, drag out to angle it · click one to select · " +
+           "[ ] rotate · - = size · ⌫ delete · Esc deselect."
 };
 function setTool(t){
   if (draft && tool === "poly") finishPoly();
   tool = t;
-  for (const k of ["free","poly","erase"]) $("t-" + k).classList.toggle("on", k === t);
+  for (const k of ["free","poly","erase","letters"]) $("t-" + k).classList.toggle("on", k === t);
   pad.classList.toggle("erase", t === "erase");
   $("padhint").textContent = HINTS[t];
-  hover = -1;
+  hover = -1; hoverL = -1;
+  if (t !== "letters"){ sel = -1; stamp = null; dragL = null; }
+  renderPicker();
   render();
 }
-$("t-free").onclick  = () => setTool("free");
-$("t-poly").onclick  = () => setTool("poly");
-$("t-erase").onclick = () => setTool("erase");
+$("t-free").onclick    = () => setTool("free");
+$("t-poly").onclick    = () => setTool("poly");
+$("t-erase").onclick   = () => setTool("erase");
+$("t-letters").onclick = () => setTool("letters");
 
 $("undo").onclick = () => restore(history, future);
 $("redo").onclick = () => restore(future, history);
 $("clear").onclick = () => {
-  if (!T().strokes.length) return;
-  if (!confirm('Clear every stroke on "' + (T().word || "this target") + '"?')) return;
-  snapshot(); T().strokes = []; draft = null; changed();
+  const t = T();
+  if (!t.strokes.length && !t.letters.length) return;
+  /* Two separate layers, so two separate clears — wiping a guide layout you spent ten
+     minutes on because you wanted to redraw one line would be the worst button here. */
+  const what = tool === "letters" && t.letters.length ? "letters" : "strokes";
+  const n = what === "letters" ? t.letters.length : t.strokes.length;
+  if (!n) return flash("Nothing to clear on that layer.", true);
+  if (!confirm("Clear all " + n + " " + what + ' on "' + (t.word || "this target") + '"?')) return;
+  snapshot();
+  if (what === "letters"){ t.letters = []; sel = -1; } else { t.strokes = []; }
+  draft = null;
+  changed();
 };
 
 $("tadd").onclick = () => {
   const w = (prompt("Word for the new target:", "") || "").trim().toLowerCase();
   if (!w) return;
-  snapshot(); targets.push(blank(w)); cur = targets.length - 1; changed();
+  snapshot(); targets.push(blank(w)); setCur(targets.length - 1);
 };
 $("tdel").onclick = () => {
   if (targets.length < 2) return flash("Keep at least one target.", true);
   if (!confirm('Delete "' + (T().word || "this target") + '" and its drawing?')) return;
-  snapshot(); targets.splice(cur, 1); cur = Math.max(0, cur - 1); changed();
+  snapshot(); targets.splice(cur, 1); setCur(Math.max(0, cur - 1));
 };
 
-$("word").oninput   = e => { T().word = e.target.value.trim().toLowerCase(); renderList(); save(); };
+$("word").oninput   = e => { T().word = e.target.value.trim().toLowerCase(); renderList(); renderPicker(); updateStats(); save(); };
 $("budget").oninput = e => { T().budget = Math.max(1, +e.target.value || 1); save(); };
 $("thresh").oninput = e => { T().threshold = Math.max(10, Math.min(99, +e.target.value || 70)); save(); };
 $("usebudget").onclick = () => { const v = +$("usebudget").dataset.v; if (v){ T().budget = v; syncFields(); save(); } };
 
-$("glyphlen").oninput = e => { $("v-glyph").textContent = (+e.target.value).toFixed(2); updateStats(); };
-$("eps").oninput      = e => { $("v-eps").textContent   = (+e.target.value).toFixed(1); };
-$("grid").onchange = render;
+$("eps").oninput   = e => { $("v-eps").textContent = (+e.target.value).toFixed(1); };
+$("grid").onchange   = render;
+$("guides").onchange = render;
 
 /* ---------------- reference image (memory only) ---------------- */
 
@@ -707,14 +1028,77 @@ function importJSON(text){
     budget: +t.budget || 14,
     /* Accept either the 0–1 export form or a raw percentage. */
     threshold: t.threshold > 1 ? +t.threshold : Math.round((+t.threshold || 0.7) * 100),
-    strokes: (t.strokes || []).map(s => s.map(p => [p[0]*FIELD, p[1]*FIELD]))
+    strokes: (t.strokes || []).map(s => s.map(p => [p[0]*FIELD, p[1]*FIELD])),
+    /* Exports carry no guide letters, but accept them if some other file does. */
+    letters: Array.isArray(t.letters) ? t.letters.filter(L => GLYPHS.has(L.ch)) : []
   }));
-  cur = 0;
-  changed();
+  setCur(0);
   flash("Imported " + targets.length + " target(s).");
 }
 $("importbtn").onclick   = () => $("importfile").click();
 $("importfile").onchange = e => { const f = e.target.files[0]; if (f) f.text().then(importJSON); e.target.value = ""; };
+
+/* ---------------- the alphabet ---------------- */
+
+/** All 26 at a readable size — the M2 preview page, folded in here so the shapes can be
+ *  judged (and tuned) in the same place they're used. */
+function renderAlphabet(){
+  const c = $("abc"), g = c.getContext("2d");
+  const cols = 13, rows = Math.ceil(ALPHABET.length / cols);
+  const cw = c.width / cols, ch = c.height / rows;
+  g.clearRect(0, 0, c.width, c.height);
+  g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+  g.strokeStyle = "#2b2620"; g.lineWidth = 2; g.lineCap = "round"; g.lineJoin = "round";
+  ALPHABET.split("").forEach((letter, i) => {
+    const gl = GLYPHS.get(letter);
+    const k = Math.min(cw, ch) * 0.62;
+    const ox = (i % cols) * cw + cw/2, oy = ((i / cols) | 0) * ch + ch/2;
+    for (const st of gl.strokes){
+      g.beginPath();
+      st.forEach((q, j) => {
+        const x = ox + (q[0] - gl.cx) * k, y = oy + (q[1] - gl.cy) * k;
+        j ? g.lineTo(x, y) : g.moveTo(x, y);
+      });
+      g.stroke();
+    }
+  });
+}
+
+/** The same glyphs M4 will load — exported flat, so the guide you traced and the brush
+ *  the player gets are one file, not two hands. */
+function alphabetJSON(){
+  const r = v => Math.round(v * 1e4) / 1e4;
+  const glyphs = {};
+  for (const letter of ALPHABET){
+    const gl = GLYPHS.get(letter);
+    glyphs[letter] = {
+      w: gl.w,
+      len: +gl.len.toFixed(3),
+      strokes: gl.strokes.map(st => st.map(q => [r(q[0]), r(q[1])]))
+    };
+  }
+  return {
+    v: 1,
+    units: "em, y down · ascender 0.02 · x-height top 0.24 · baseline 0.72 · descender 0.96",
+    sizes: SIZES,
+    glyphs
+  };
+}
+
+$("showabc").onclick = () => {
+  const c = $("abc");
+  c.hidden = !c.hidden;
+  if (!c.hidden) renderAlphabet();
+};
+$("dlabc").onclick = () => {
+  const blob = new Blob([JSON.stringify(alphabetJSON(), null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "wordshape-alphabet.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  flash("Exported 26 glyphs → put it in data/");
+};
 
 /* ---------------- drag & drop anywhere ---------------- */
 
@@ -744,13 +1128,32 @@ document.addEventListener("keydown", e => {
     e.shiftKey ? restore(future, history) : restore(history, future);
     return;
   }
+  /* A selected guide letter takes [ ] - = ⌫ for itself. [ and ] otherwise still step
+     targets, which is what they have always done — the hint line says which is live. */
+  const L = selLetter();
+  if (L && tool === "letters"){
+    const rot = Math.PI / 12;                                  // 15°
+    if (e.key === "["){ snapshot(); L.a -= rot; changed(); return; }
+    if (e.key === "]"){ snapshot(); L.a += rot; changed(); return; }
+    if (e.key === "-" || e.key === "_"){ snapshot(); L.size = Math.max(0, L.size - 1); changed(); return; }
+    if (e.key === "=" || e.key === "+"){ snapshot(); L.size = Math.min(SIZES.length - 1, L.size + 1); changed(); return; }
+    if (e.key === "Backspace" || e.key === "Delete"){
+      e.preventDefault(); snapshot(); T().letters.splice(sel, 1); sel = -1; changed(); return;
+    }
+  }
+
   if (e.key === "1") setTool("free");
   else if (e.key === "2") setTool("poly");
   else if (e.key === "3") setTool("erase");
+  else if (e.key === "4") setTool("letters");
   else if (e.key === "Enter" && tool === "poly") finishPoly();
-  else if (e.key === "Escape"){ draft = null; render(); }
-  else if (e.key === "[" && cur > 0){ cur--; draft = null; changed(); }
-  else if (e.key === "]" && cur < targets.length - 1){ cur++; draft = null; changed(); }
+  else if (e.key === "Escape"){ draft = null; sel = -1; changed(); }
+  else if (e.key === "[" && cur > 0) setCur(cur - 1);
+  else if (e.key === "]" && cur < targets.length - 1) setCur(cur + 1);
+  else if (/^[a-z]$/.test(e.key) && wordLetters().includes(e.key)){
+    /* Arm a brush by typing it — the fastest way to work when a word has three. */
+    armed = e.key; setTool("letters"); renderPicker();
+  }
 });
 
 addEventListener("resize", () => { fitCanvas(); render(); });

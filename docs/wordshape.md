@@ -1,7 +1,8 @@
 # Wordshape — draw the word with the word
 
-Status: **SPECCED 2026-09-07.** **M1's drawing tool is BUILT (`wordshape-draw.html`, 2026-09-07) — the ten
-targets are still to be drawn.** Milestones are §9; what M1 actually shipped is §11.
+Status: **SPECCED 2026-09-07.** **M1's drawing tool is BUILT (`wordshape-draw.html`, 2026-09-07), and with
+its guide-letter layer (2026-09-08) so is a first pass at M2's alphabet — the ten targets are still to be
+drawn.** Milestones are §9; what M1 actually shipped is §11.
 
 **The pitch:** you are given a word and a simple line drawing of that word's meaning. You draw the picture
 using **only the letters of the word** — position and rotate `c`, `a` and `t` until they trace out a cat.
@@ -193,7 +194,7 @@ single-stroke drawing scores the letter's thickness as error.
 
 Two routes, in order of preference:
 
-**A. Hershey fonts** *(preferred, pending a licence check)* — A. V. Hershey's 1967 vector fonts for the US
+**A. Hershey fonts** *(originally preferred, pending a licence check — see the BUILT note below)* — A. V. Hershey's 1967 vector fonts for the US
 National Bureau of Standards. Every glyph is literally a list of polylines, which is exactly the data
 structure we need, and they come in **Roman Simplex / Duplex / Complex, Script, Gothic English / German /
 Italian, Greek, Cyrillic**. That variety is the **font-unlock ladder for free — and mechanically meaningful,
@@ -205,10 +206,19 @@ redistributions carry a "may not be sold" note added by later packagers**. Verif
 copy we pull before bundling it, and record provenance in the repo the way `sounds/CREDITS.md` and
 `data/critter-credits.json` already do.
 
-**B. Hand-drawn monoline alphabet** *(fallback, and possibly better)* — 26 lowercase glyphs drawn in the
+**B. Hand-drawn monoline alphabet** *(fallback, and the one that shipped)* — 26 lowercase glyphs drawn in the
 same M1 tool used for the targets. It's an afternoon's work, sidesteps the licence question entirely, and
 gives total control over the brush shapes — which matters, because the game is *about* those shapes. The
 cost is that the font-unlock ladder then has to be drawn rather than downloaded.
+
+**BUILT 2026-09-08: route B, inside the M1 tool** (§11.5). Drawing targets and drawing the alphabet are the
+same job, and M1's whole hazard is that a target may not be coverable by the letters — so the guide letters
+had to exist there anyway, and once they do the alphabet is simply what they are made of. It is 26 lowercase
+glyphs in em units (y down: ascender 0.02 · x-height top 0.24 · baseline 0.72 · descender 0.96), curves
+sampled from arcs rather than stored as points so a shape can be nudged by changing one number, exported by
+the tool as `data/wordshape-alphabet.json`. Route A is **not foreclosed** — the licence question is still
+open and Hershey's Script/Gothic variants are still the cheapest font-unlock ladder; this just means the MVP
+is no longer blocked on the answer.
 
 Either way the MVP ships **one font, lowercase only**, as `data/wordshape-alphabet.json` — a few KB.
 
@@ -289,8 +299,8 @@ Each milestone is independently checkable. Nothing here is a big-bang.
 
 | M | What | Ships |
 |---|---|---|
-| **M1** | **The drawing tool + the ten targets.** **Tool BUILT 2026-09-07 (§11); the ten drawings are the dev's to make** → `data/wordshape-targets.json`. | Nothing playable. A tool, then a data file. |
-| **M2** | **The alphabet.** §6 route A or B → `data/wordshape-alphabet.json`, lowercase monoline polylines, plus a preview page rendering all 26 at game size. | The brush set exists. |
+| **M1** | **The drawing tool + the ten targets.** **Tool BUILT 2026-09-07 (§11), guide letters BUILT 2026-09-08 (§11.5); the ten drawings are the dev's to make** → `data/wordshape-targets.json`. | Nothing playable. A tool, then a data file. |
+| **M2** | **The alphabet.** §6 route B **BUILT 2026-09-08 as a first pass inside the M1 tool** (§11.5) — 26 monoline polyline glyphs, an all-26 preview strip and a `⬇ wordshape-alphabet.json` export. What remains of M2 is the **licence call on route A** and the dev's tuning pass over the shapes. | The brush set exists. |
 | **M3** | **The scorer, headless.** Chamfer DT, resampling, fidelity/coverage/F₂, the uncovered-run hint. Verified with a `?dev=1` heat-map overlay and a few hand-placed letters. | The percentage is real and honest. |
 | **M4** | **The bench — the playable MVP.** `wordshape.html`: the ten-word menu, the stamp gesture, three sizes, the budget, the live %, the use-every-letter gate, the pass threshold, the hint button. | **This is the MVP.** |
 | **M5** | **Feel.** Placement/snap/pass cues on the repo's existing procedural `_tone`/`_noise` kit (no audio assets), the settle animation on placement, the guide-brightens reveal on a pass. | It feels like a game. |
@@ -322,7 +332,7 @@ Inklings' save without bloating it.
 
 ---
 
-## 11. M1 as built — `wordshape-draw.html` (2026-09-07)
+## 11. M1 as built — `wordshape-draw.html` (2026-09-07, guide letters 2026-09-08)
 
 A standalone dev tool at the repo root, vanilla and single-file like everything else here, styled to match
 `emoji-pixelizer.html`. It is not linked from anywhere and ships no game code.
@@ -366,13 +376,13 @@ M1's real hazard is that **a target drawn without the brush set in mind can be u
 reveal that until M4**. Two readouts push that discovery earlier:
 
 - **A suggested budget**, from total ink length ÷ average glyph length × 1.35 slack, flagged in red past 30 —
-  a target needing more letters than that is too detailed to trace by hand. **The glyph length is a guess
-  until M2** (the alphabet doesn't exist yet), so it's exposed as a slider and labelled as such in the UI;
-  re-tune it once the glyphs are real.
+  a target needing more letters than that is too detailed to trace by hand. The glyph length was a **slider
+  and a labelled guess** while the alphabet didn't exist; since §11.5 it is **measured off the real glyphs**
+  and the slider is gone.
 - **A play-size preview** rendering the *normalised* result at 200 px — which both validates the export
   framing visually and catches fine detail that reads at 640 px and vanishes at play size.
 
-Neither is a substitute for actually placing letters. The letter-fit check can't exist before M2.
+Neither was a substitute for actually placing letters, which is why §11.5 now does that too.
 
 ### 11.4 One thing not to re-break
 
@@ -381,11 +391,51 @@ snapshotting after the fact stores the change itself and the first undo becomes 
 written the wrong way round first and caught before shipping; `changed()` deliberately does not touch
 history so that every mutation site has to say so explicitly.
 
+### 11.5 Guide letters — BUILT 2026-09-08
+
+A **Letters tool** (`4`) stamps the current word's own glyphs onto the canvas as a faint layer *under* the
+target ink, so a target is drawn **by tracing the brushes that must cover it**. This is the letter-fit check
+§11.3 said couldn't exist before M2 — and building it is what brought the alphabet forward (§6).
+
+- **Guide-only, and never exported.** The layer is scaffolding, not target data, so `build()` doesn't emit
+  it and the `{word,budget,threshold,len,strokes}` contract is untouched. Unlike the reference image it
+  **does** autosave (per target, as `letters:[{ch,x,y,a,size}]` — a few dozen bytes, not a base64 photo), so
+  it survives a refresh but not a round-trip through a downloaded file.
+- **The player's own gesture**: press to place, drag out to set the angle, three fixed sizes — not a free
+  transform. Authoring under the constraints the player plays under is the entire point; a layout built with
+  continuous scale could be one the player can't reach.
+- **A brush chip per distinct letter of the word**, restocked whenever the word is retyped, each showing how
+  many are down. Typing the letter arms it.
+- `[` / `]` **rotate 15° while a letter is selected**, and otherwise still step targets. The one overloaded
+  key pair in the tool; the hint line under the canvas says which is live.
+- **The guides are scaled by the drawing, not by the canvas.** `normalize()` maps the drawing's *longest
+  side* onto `1 - 2·MARGIN` of the unit square, so how big a letter is next to the art depends on that side.
+  Scaling the guides by the same factor (`span / (1 - 2·MARGIN)`) makes a letter here exactly the letter the
+  player gets; without it the guides would be honest only on a target that happened to fill the frame. Before
+  any stroke exists there is no bbox, so it assumes the drawing will fill it.
+- **Once a layout exists, the letter count *is* the suggested budget** (+15% slack), and it displaces the
+  length estimate — because you have just shown by hand that this many letters cover the drawing, which is
+  the thing the estimate was only ever approximating.
+- **Clear is per-layer** (letters if the Letters tool is active and any are down, else strokes). Wiping a
+  ten-minute guide layout because you wanted to redraw one line would be the worst button in the tool.
+
+Also here: an **all-26 preview strip** and a `⬇ wordshape-alphabet.json` export, so the guide traced in M1
+and the brush handed to M4 are one file rather than two hands.
+
+Two implementation notes worth keeping. The glyph table is a **`Map`, never a plain object** — it is looked
+up by a character taken from stored data, and `constructor` on a bare object answers with a truthy function
+(the same trap the Tree of Kinds hit). And a drag on an existing letter **snapshots on the first actual
+movement, not on pointerdown**, so a click that only selects doesn't fill the undo stack with no-ops.
+
 ---
 
 ## 12. Open questions
 
-- **The Hershey licence** (§6). Settle it in M2; route B is the answer if it's murky.
+- **The Hershey licence** (§6). No longer blocking — route B shipped 2026-09-08 — but still worth settling,
+  since Hershey's Script/Gothic variants are the cheapest version of §8's font-unlock ladder.
+- **The glyph shapes themselves** (§11.5) are a first pass, drawn to be legible and unfussy. Expect the dev
+  to tune them once real targets are traced against them; the `a` is single-storey and the `s` is the one
+  glyph placed by hand rather than swept from arcs.
 - **`TOL` and the thresholds** are guesses until M4 is playable. Expect all three to move.
 - **Does the score need to be hidden until commit?** Decision #6 says live, but if wiggle-optimizing turns
   out to dominate play it's a one-line change.
