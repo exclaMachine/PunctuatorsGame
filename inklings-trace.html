@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inklings Trace Bench — the nib engine &amp; the stroke scorer</title>
+<style>
+  /* Same bundled pixel font + palette as wordshape-draw.html, the sibling dev tool (SIL OFL 1.1).
+     Needs http serving (Live Server) — it fetches the glyph alphabet; falls back to a mono stack
+     over file://. */
+  @font-face{font-family:'Pixelify';src:url('fonts/PixelifySans-latin.woff2') format('woff2');font-weight:400 700;font-display:swap}
+
+  :root{
+    --bg:#e9dfca; --panel:#fffdf6; --cell:#fbf7ee; --ink:#2b2620; --muted:#857a68;
+    --edge:#3f362a; --line:#d8cebb; --accent:#2f7d63; --accent2:#b5532a; --warn:#a8341f;
+    --pix:'Pixelify',ui-monospace,Menlo,Consolas,monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
+    --sh:4px 4px 0 var(--edge); --sh2:3px 3px 0 var(--edge);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  .page{max-width:1280px;margin:0 auto;padding:20px 20px 70px;display:flex;flex-direction:column;gap:16px}
+
+  .top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .brand{font-family:var(--pix);font-size:13px;letter-spacing:1.5px;color:var(--accent2)}
+  h1{font-family:var(--pix);font-weight:700;font-size:clamp(20px,4vw,29px);line-height:1.1;letter-spacing:.5px;margin:4px 0 0;width:100%}
+  .lede{max-width:80ch;color:var(--muted);font-size:14.5px;margin:6px 0 0}
+  .lede b{color:var(--ink)}
+  .lede code{font-family:var(--pix);font-size:12px;background:var(--cell);border:1px solid var(--line);padding:1px 4px}
+
+  .btn{font-family:var(--pix);font-size:13px;letter-spacing:.5px;cursor:pointer;border:3px solid var(--edge);
+    background:var(--panel);color:var(--ink);box-shadow:var(--sh2);padding:8px 13px;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{background:#fff}
+  .btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--edge)}
+  .btn.go{background:var(--accent);color:#fff}
+  .btn.on{background:var(--accent);color:#fff}
+  .btn.sm{font-size:11px;padding:5px 9px;border-width:2px;box-shadow:2px 2px 0 var(--edge)}
+  .btn[disabled]{opacity:.4;cursor:not-allowed;box-shadow:none;transform:none}
+
+  .panel{background:var(--panel);border:3px solid var(--edge);box-shadow:var(--sh);padding:14px 16px}
+  .panel h2{font-family:var(--pix);font-size:12px;letter-spacing:1px;margin:0 0 10px;color:var(--accent2);text-transform:uppercase}
+  .panel + .panel{margin-top:14px}
+
+  .work{display:grid;grid-template-columns:minmax(320px,1fr) 340px;gap:16px;align-items:start}
+  @media (max-width:900px){ .work{grid-template-columns:1fr} }
+
+  #pad{display:block;width:100%;aspect-ratio:1/1;background:var(--cell);border:3px solid var(--edge);
+    box-shadow:var(--sh);touch-action:none;cursor:crosshair}
+
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row + .row{margin-top:10px}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{font-family:var(--pix);font-size:13px;cursor:pointer;border:2px solid var(--edge);background:var(--cell);
+    color:var(--ink);padding:4px 7px;min-width:26px;text-align:center;box-shadow:2px 2px 0 var(--edge)}
+  .chip:hover{background:#fff}
+  .chip.on{background:var(--accent);color:#fff}
+  .chip.done{border-color:var(--accent);color:var(--accent)}
+  .chip.nib{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:5px 8px;text-align:left}
+  .chip.nib small{font-family:var(--sans);font-size:10.5px;opacity:.7;letter-spacing:0}
+  .chip.nib.on small{opacity:.9}
+
+  .grades{font-family:var(--pix);font-size:12px;display:flex;flex-direction:column;gap:6px}
+  .grade{display:flex;justify-content:space-between;gap:10px;background:var(--cell);border:2px solid var(--line);padding:5px 8px}
+  .big{font-family:var(--pix);font-size:30px;letter-spacing:1px;line-height:1}
+  .sub{font-size:12px;color:var(--muted);font-family:var(--sans)}
+  .tag{font-family:var(--pix);font-size:11px;border:2px solid var(--edge);padding:3px 6px;display:inline-block}
+  .tag.ok{background:var(--accent);color:#fff}
+  .tag.no{background:#fde8e2;color:var(--warn)}
+  .tag.best{background:#f6e7bc}
+
+  .sl{display:grid;grid-template-columns:1fr 52px;gap:8px;align-items:center;font-size:13px}
+  .sl label{color:var(--muted)}
+  .sl b{font-family:var(--pix);font-size:12px;text-align:right}
+  .sl input[type=range]{grid-column:1/-1;width:100%;margin:0}
+  .hint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+  .keys{font-family:var(--pix);font-size:11px;color:var(--muted);letter-spacing:.3px}
+
+  .strip{display:flex;flex-wrap:wrap;gap:10px}
+  .spec{border:2px solid var(--line);background:var(--cell);padding:5px;text-align:center}
+  .spec canvas{display:block;image-rendering:auto}
+  .spec span{font-family:var(--pix);font-size:9.5px;color:var(--muted);display:block;margin-top:3px;letter-spacing:.3px}
+  .spec.on{border-color:var(--accent)}
+  #msg{font-family:var(--pix);font-size:12px;min-height:18px;letter-spacing:.3px}
+  #msg.bad{color:var(--warn)}
+  #msg.good{color:var(--accent)}
+  .err{background:#fde8e2;border:3px solid var(--warn);padding:12px 14px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="top">
+    <div class="brand">INKLINGS · DEV BENCH</div>
+    <h1>Trace Bench — the nib engine &amp; the stroke scorer</h1>
+    <p class="lede">
+      M1 of <b>the Scriptorium</b> (<code>docs/inklings-typography.md</code>). Trace the letter stroke by
+      stroke; the grade is per-stroke fidelity against the authored skeleton, and the ink is a <b>nib stamped
+      along your path</b> — which is the whole claim of §3: <b>stroke contrast is a record of the tool</b>, so
+      one skeleton plus a pen gives you a typeface. Glyphs come from Wordshape's authored alphabet
+      (<code>data/wordshape-alphabet.json</code> if present, else sliced live out of
+      <code>wordshape-draw.html</code> so the two can't drift).
+    </p>
+  </div>
+
+  <div id="boot" class="panel err" hidden></div>
+
+  <div class="work">
+    <div>
+      <canvas id="pad"></canvas>
+      <div class="panel" style="margin-top:14px">
+        <div class="row">
+          <button class="btn go" id="b-redo">↺ Redo letter <span class="keys">⌫</span></button>
+          <button class="btn" id="b-hint">👻 Ghost stroke <span class="keys">/</span></button>
+          <button class="btn" id="b-next">Next letter → <span class="keys">Enter</span></button>
+          <span class="keys">· a–z picks a letter · 1–9 picks a nib</span>
+          <span id="msg"></span>
+        </div>
+        <div class="row">
+          <button class="btn sm" id="t-guide">Guide: on</button>
+          <button class="btn sm" id="t-metrics">Metrics: off</button>
+          <button class="btn sm" id="t-raw">Raw path: off</button>
+          <button class="btn sm" id="t-skel">Skeleton: off</button>
+        </div>
+        <p class="hint">
+          Press and drag to write one stroke at a time, in the order a hand would. The numbered dot is where
+          the next stroke starts. A stroke that starts too far off, or runs backwards, is refused and shows
+          you the ghost — that's §5.2's gates, not a difficulty setting.
+        </p>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>Grade</h2>
+        <div class="row" style="align-items:flex-end;gap:12px">
+          <div>
+            <div class="big" id="g-total">—</div>
+            <div class="sub" id="g-sub">no strokes yet</div>
+          </div>
+          <div style="margin-left:auto;text-align:right">
+            <span class="tag best" id="g-best">best —</span><br>
+            <span class="tag" id="g-face" style="margin-top:5px">face —</span>
+          </div>
+        </div>
+        <div class="grades" id="g-list" style="margin-top:10px"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Nib <span class="keys">1–9</span></h2>
+        <div class="chips" id="nibs"></div>
+        <p class="hint" id="nib-note"></p>
+      </div>
+
+      <div class="panel">
+        <h2>Letter <span class="keys">[ ]</span></h2>
+        <div class="chips" id="letters"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Tuning</h2>
+        <div id="sliders"></div>
+        <p class="hint">
+          <b>Snap</b> is the one to argue about: Duolingo snaps hard to the ideal, but §7's album shows
+          <i>your</i> traced glyph, so a hard snap would make every player's album identical. This blends
+          your path toward the ideal by snap × fidelity — your hand stays visible, the jitter doesn't.
+        </p>
+      </div>
+
+      <div class="panel">
+        <h2>Same letter, every nib</h2>
+        <div class="strip" id="strip-nibs"></div>
+        <p class="hint">The §3 test: does <i>broad-45</i> read as blackletter and <i>pointed-didone</i> as a
+          didone, from the pen alone? Click one to equip it.</p>
+      </div>
+
+      <div class="panel">
+        <h2>This nib, a–z <button class="btn sm" id="b-abc" style="float:right">draw</button></h2>
+        <div class="strip" id="strip-abc"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===========================================================================
+   THE TRACE BENCH — M1 of docs/inklings-typography.md
+   Two engines live here and nothing else: the NIB (§3) and the per-stroke
+   SCORER (§5.2), plus the feel knobs (§5.3). No faces, no fonts, no album —
+   M2 brings the typefaces and M3 folds the overlay into inklings.html.
+   =========================================================================== */
+const $ = id => document.getElementById(id);
+
+/* ---------------------------------------------------------------- glyph data
+   Prefer data/wordshape-alphabet.json (the tool's own export). If it isn't
+   there yet, slice the GLYPHS block straight out of wordshape-draw.html and
+   run it — the affix-sprite-preview.html trick, so the bench can never trace
+   a stale copy of the alphabet. */
+async function loadGlyphs(){
+  try{
+    const r = await fetch("data/wordshape-alphabet.json", {cache:"no-store"});
+    if(r.ok){
+      const j = await r.json();
+      const m = new Map();
+      for(const [ch, g] of Object.entries(j.glyphs || {})) m.set(ch, withBounds(ch, g.w, g.strokes));
+      if(m.size) return {glyphs:m, src:"data/wordshape-alphabet.json"};
+    }
+  }catch(e){ /* fall through to the slice */ }
+
+  const r = await fetch("wordshape-draw.html", {cache:"no-store"});
+  if(!r.ok) throw new Error("couldn't read wordshape-draw.html (HTTP " + r.status + ")");
+  const src = await r.text();
+  const m = /const GLYPHS\s*=\s*(\(\(\)\s*=>\s*\{[\s\S]*?\n\}\)\(\);)/.exec(src);
+  if(!m) throw new Error("couldn't find the GLYPHS block in wordshape-draw.html");
+  const table = new Function("return " + m[1].replace(/;\s*$/, ""))();
+  const out = new Map();
+  for(const [ch, g] of table) out.set(ch, withBounds(ch, g.w, g.strokes));
+  return {glyphs:out, src:"wordshape-draw.html (sliced live)"};
+}
+/* One shape for a glyph however it arrived: em-unit strokes + the measurements
+   the renderer and the scorer both want. */
+function withBounds(ch, w, strokes){
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity, len=0;
+  const lens = [];
+  for(const st of strokes){
+    let L=0;
+    for(let i=0;i<st.length;i++){
+      const q=st[i];
+      if(q[0]<x0)x0=q[0]; if(q[0]>x1)x1=q[0];
+      if(q[1]<y0)y0=q[1]; if(q[1]>y1)y1=q[1];
+      if(i) L += Math.hypot(q[0]-st[i-1][0], q[1]-st[i-1][1]);
+    }
+    lens.push(L); len += L;
+  }
+  return { ch, w, strokes, lens, len, x0, y0, x1, y1 };
+}
+
+/* --------------------------------------------------------------------- nibs
+   §3's three types are not cosmetic variants — each one produces the stress
+   model a whole Vox branch is classified by. Widths are em, angles degrees.
+   M2 lifts this table to data/nibs.json; it lives inline while the numbers
+   are still being argued with. */
+const NIBS = [
+  { id:"round-mono",   name:"Round monoline",  type:"round",   w:0.055, h:0.055,            group:"Lineal — grotesque / geometric" },
+  { id:"round-bold",   name:"Round, bold",     type:"round",   w:0.085, h:0.085,            group:"Lineal — bold (§10: bold is a wider nib)" },
+  { id:"round-slab",   name:"Round, slab",     type:"round",   w:0.062, h:0.062,            group:"Mechanistic (terminals are §3's later knob)" },
+  { id:"broad-10",     name:"Broad, flat 10°", type:"broad",   w:0.150, h:0.034, angle:10,  group:"Uncial / Insular" },
+  { id:"broad-20",     name:"Broad 20°",       type:"broad",   w:0.135, h:0.030, angle:20,  group:"Garalde (Aldine)" },
+  { id:"broad-30",     name:"Broad 30°",       type:"broad",   w:0.150, h:0.032, angle:30,  group:"Humanist (Venetian)" },
+  { id:"broad-45",     name:"Broad, steep 45°",type:"broad",   w:0.160, h:0.028, angle:45,  group:"Blackletter (Textura)" },
+  { id:"pointed-tran", name:"Pointed",         type:"pointed", w:0.100, h:0.024, pow:1.0,   group:"Transitional (Réale)" },
+  { id:"pointed-dido", name:"Pointed, flexed", type:"pointed", w:0.130, h:0.013, pow:1.7,   group:"Didone" },
+  { id:"pointed-scri", name:"Pointed, script", type:"pointed", w:0.090, h:0.020, pow:1.2,   group:"Script" }
+];
+
+/* ------------------------------------------------------------------- tuning
+   Every number the feel depends on, in one place, with a slider each. */
+const T = {
+  startTol: 0.14,   // em — how far from the stroke's start you may begin
+  falloff:  0.13,   // em — mean error that scores 0; smaller = stricter
+  snap:     0.65,   // 0..1 — how far an accepted stroke is pulled to the ideal
+  faceTh:   0.72,   // grade at/above which the face would be earned (M3 decides for real)
+  dirGate:  1,      // refuse a stroke that runs backwards
+  nibScale: 1.0,    // scales every nib's width, for arguing about weight globally
+  smooth:   2       // moving-average window on the raw pointer path
+};
+const SLIDERS = [
+  ["startTol","Start tolerance (em)",0.02,0.40,0.01],
+  ["falloff","Error falloff (em)",0.04,0.30,0.01],
+  ["snap","Snap to ideal",0,1,0.05],
+  ["faceTh","Face threshold",0.3,0.95,0.01],
+  ["nibScale","Nib weight ×",0.5,2,0.05],
+  ["smooth","Path smoothing",0,6,1]
+];
+
+const N_SAMPLES = 32;     // §5.2: resample both paths to N points by arc length
+const STAMP_STEP = 0.006; // em between nib stamps
+const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+const BEST_KEY = "inklings.trace.best.v1";
+
+/* ------------------------------------------------------------------- state */
+let GLYPHS = null;
+let cur = "a", nib = NIBS[4];
+let done = [];            // [{pts (em), fidelity}] — accepted strokes
+let raw = null;           // the stroke in progress, em coords
+let ghost = null;         // {i, t} ghost-stroke animation
+let msgT = 0;
+let best = (()=>{ try{ return JSON.parse(localStorage.getItem(BEST_KEY)) || {}; }catch(e){ return {}; } })();
+const show = { guide:true, metrics:false, raw:false, skel:false };
+
+const pad = $("pad"), ctx = pad.getContext("2d");
+let PX = 0;               // css px of the square pad
+const PAD_M = 0.10;       // margin as a fraction of the pad
+
+/* ------------------------------------------------------- geometry helpers */
+const lerp = (a,b,t) => a + (b-a)*t;
+function polyLen(pts){ let L=0; for(let i=1;i<pts.length;i++) L+=Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]); return L; }
+/* N points spaced evenly along a polyline by arc length. Both the user's
+   stroke and the ideal go through this so the comparison is point-for-point. */
+function resample(pts, n){
+  if(pts.length === 1) return new Array(n).fill([pts[0][0], pts[0][1]]);
+  const L = polyLen(pts);
+  if(L === 0) return new Array(n).fill([pts[0][0], pts[0][1]]);
+  const step = L/(n-1), out = [pts[0].slice()];
+  let i = 1, acc = 0, prev = pts[0];
+  while(out.length < n && i < pts.length){
+    const seg = Math.hypot(pts[i][0]-prev[0], pts[i][1]-prev[1]);
+    if(acc + seg >= step - 1e-12){
+      const t = (step - acc)/seg;
+      const q = [lerp(prev[0],pts[i][0],t), lerp(prev[1],pts[i][1],t)];
+      out.push(q); prev = q; acc = 0;
+    } else { acc += seg; prev = pts[i]; i++; }
+  }
+  while(out.length < n) out.push(pts[pts.length-1].slice());
+  return out;
+}
+/* Points spaced every `step` em — the nib's stamp positions. */
+function resampleByStep(pts, step){
+  const L = polyLen(pts);
+  return resample(pts, Math.max(2, Math.round(L/step)+1));
+}
+function smoothPath(pts, k){
+  if(k < 1 || pts.length < 3) return pts;
+  const out = [];
+  for(let i=0;i<pts.length;i++){
+    let sx=0, sy=0, n=0;
+    for(let j=Math.max(0,i-k); j<=Math.min(pts.length-1,i+k); j++){ sx+=pts[j][0]; sy+=pts[j][1]; n++; }
+    out.push([sx/n, sy/n]);
+  }
+  out[0] = pts[0]; out[out.length-1] = pts[pts.length-1];   // keep the ends honest
+  return out;
+}
+
+/* ------------------------------------------------------------- the mapping
+   em → pad px. The glyph is centred on its own width, so a narrow `i` and a
+   wide `w` both sit in the middle. */
+function emScale(){ return PX * (1 - 2*PAD_M); }
+function origin(g){
+  const e = emScale();
+  return [ (PX - g.w*e)/2, PX*PAD_M ];
+}
+function toPx(g, q){ const e = emScale(), [ox,oy] = origin(g); return [ox + q[0]*e, oy + q[1]*e]; }
+function toEm(g, x, y){ const e = emScale(), [ox,oy] = origin(g); return [(x-ox)/e, (y-oy)/e]; }
+
+/* ----------------------------------------------------------- the nib (§3)
+   Stamp the nib along the path. The pen angle is ABSOLUTE, never relative to
+   the direction of travel — that is the entire mechanism: a broad nib writes
+   thick across its edge and thin along it, so the contrast falls out of the
+   shape of the stroke rather than being drawn on. */
+function stampStroke(c, g, pts, theNib, col, em, ox, oy, alpha){
+  if(!pts || !pts.length) return;
+  const s = theNib.w*em*T.nibScale, h = (theNib.h||theNib.w)*em*T.nibScale;
+  const samples = pts.length < 2 ? [pts[0], pts[0]] : resampleByStep(pts, STAMP_STEP);
+  c.save();
+  c.globalAlpha = alpha == null ? 1 : alpha;
+  c.fillStyle = col;
+
+  if(theNib.type === "pointed"){
+    /* Pressure on the downstroke: a pointed nib spreads as the travel turns
+       vertical, which is exactly where a didone puts its weight. Widths are
+       smoothed so a wobble doesn't read as a bead on the line. */
+    const wd = [];
+    for(let i=0;i<samples.length;i++){
+      const a = samples[Math.max(0,i-1)], b = samples[Math.min(samples.length-1,i+1)];
+      const dx = b[0]-a[0], dy = b[1]-a[1], L = Math.hypot(dx,dy) || 1;
+      const vert = Math.abs(dy/L);
+      wd.push(h + (s-h)*Math.pow(vert, theNib.pow || 1.3));
+    }
+    const sm = [];
+    for(let i=0;i<wd.length;i++){
+      let t=0, n=0;
+      for(let j=Math.max(0,i-3); j<=Math.min(wd.length-1,i+3); j++){ t+=wd[j]; n++; }
+      sm.push(t/n);
+    }
+    for(let i=0;i<samples.length;i++){
+      const [x,y] = samples[i];
+      c.beginPath(); c.arc(ox + x*em, oy + y*em, Math.max(0.4, sm[i]/2), 0, 6.2832); c.fill();
+    }
+  } else if(theNib.type === "broad"){
+    const a = -(theNib.angle||0) * Math.PI/180;   // y grows down, so negate to tilt the edge up-right
+    for(const [x,y] of samples){
+      c.save(); c.translate(ox + x*em, oy + y*em); c.rotate(a);
+      c.fillRect(-s/2, -h/2, s, h);
+      c.restore();
+    }
+  } else {
+    for(const [x,y] of samples){
+      c.beginPath(); c.arc(ox + x*em, oy + y*em, Math.max(0.4, s/2), 0, 6.2832); c.fill();
+    }
+  }
+  c.restore();
+}
+
+/* ------------------------------------------------------- the scorer (§5.2)
+   Not Wordshape's chamfer field — that one is order-blind by design. This
+   asks the three questions a trace raises: did you start in the right place,
+   did you go the right way, and how close did you stay? */
+function scoreStroke(user, ideal){
+  const u = smoothPath(user, T.smooth|0);
+  const startErr = Math.hypot(u[0][0]-ideal[0][0], u[0][1]-ideal[0][1]);
+  /* Direction: compare where each path ENDED UP relative to where it began.
+     A closed-ish glyph (o, a's bowl) has a tiny net vector, so fall back to
+     comparing against the reversed ideal and take whichever fits better. */
+  const fwd = meanErr(resample(u, N_SAMPLES), resample(ideal, N_SAMPLES));
+  const rev = meanErr(resample(u, N_SAMPLES), resample(ideal.slice().reverse(), N_SAMPLES));
+  const backwards = rev < fwd - 1e-6;
+  const err = Math.min(fwd, rev);
+  const fidelity = Math.max(0, Math.min(1, 1 - err/T.falloff));
+  return {
+    ok: startErr <= T.startTol && !(T.dirGate && backwards),
+    why: startErr > T.startTol ? "start" : (backwards ? "backwards" : null),
+    startErr, err, fidelity, backwards, path:u
+  };
+}
+function meanErr(a, b){
+  let t = 0;
+  for(let i=0;i<a.length;i++) t += Math.hypot(a[i][0]-b[i][0], a[i][1]-b[i][1]);
+  return t/a.length;
+}
+/* §5.3's partial snap: pull the traced points toward the ideal by snap ×
+   fidelity. A clean stroke lands on the line; a scruffy one stays scruffy,
+   so the album keeps showing a hand rather than a font. */
+function snapped(user, ideal, fidelity){
+  const n = Math.max(N_SAMPLES, Math.min(160, Math.round(polyLen(ideal)/0.01)));
+  const u = resample(user, n), v = resample(ideal, n);
+  const fwdBetter = meanErr(u, v) <= meanErr(u, resample(ideal.slice().reverse(), n));
+  const target = fwdBetter ? v : resample(ideal.slice().reverse(), n);
+  const t = Math.max(0, Math.min(1, T.snap * fidelity));
+  return u.map((q,i) => [lerp(q[0], target[i][0], t), lerp(q[1], target[i][1], t)]);
+}
+
+/* ------------------------------------------------------------------ render */
+function sizePad(){
+  const r = pad.getBoundingClientRect();
+  PX = Math.max(200, Math.round(r.width));
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  pad.width = Math.round(PX*dpr); pad.height = Math.round(PX*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  draw();
+}
+function draw(){
+  const g = GLYPHS.get(cur);
+  ctx.clearRect(0,0,PX,PX);
+  ctx.fillStyle = "#fbf7ee"; ctx.fillRect(0,0,PX,PX);
+  const e = emScale(), [ox,oy] = origin(g);
+
+  if(show.metrics){
+    /* The alphabet's own units, drawn: ascender, x-height, baseline, descender. */
+    ctx.strokeStyle = "#e4d9c3"; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+    ctx.font = "10px ui-monospace, monospace"; ctx.fillStyle = "#c3b697";
+    for(const [y,label] of [[0.02,"asc"],[0.24,"x"],[0.72,"base"],[0.96,"desc"]]){
+      const py = oy + y*e;
+      ctx.beginPath(); ctx.moveTo(PX*0.04, py); ctx.lineTo(PX*0.96, py); ctx.stroke();
+      ctx.fillText(label, PX*0.04, py-3);
+    }
+    ctx.setLineDash([]);
+  }
+
+  /* The guide: the strokes you have left, dotted, plus the numbered start dot
+     of the next one. Never an animation until you have tried (§5.3). */
+  if(show.guide){
+    ctx.setLineDash([5,6]); ctx.lineWidth = Math.max(1.5, e*0.012); ctx.lineCap = "round";
+    for(let i=done.length;i<g.strokes.length;i++){
+      ctx.strokeStyle = i === done.length ? "#bcae90" : "#ddd3bd";
+      strokePath(ctx, g, g.strokes[i]);
+    }
+    ctx.setLineDash([]);
+  }
+  if(show.skel){
+    ctx.setLineDash([]); ctx.strokeStyle = "#2f7d63"; ctx.lineWidth = 1.25;
+    for(const st of g.strokes) strokePath(ctx, g, st);
+  }
+
+  /* Accepted strokes, inked with the nib. */
+  for(const d of done) stampStroke(ctx, g, d.pts, nib, "#2b2620", e, ox, oy, 1);
+
+  /* The stroke in progress — the nib, live, so the pen is legible as you move. */
+  if(raw && raw.length > 1) stampStroke(ctx, g, raw, nib, "#6f6550", e, ox, oy, 0.85);
+  if(show.raw && raw && raw.length > 1){
+    ctx.strokeStyle = "#b5532a"; ctx.lineWidth = 1; ctx.setLineDash([]);
+    strokePath(ctx, g, raw);
+  }
+  if(show.raw) for(const d of done){
+    ctx.strokeStyle = "rgba(181,83,42,.5)"; ctx.lineWidth = 1;
+    strokePath(ctx, g, d.pts);
+  }
+
+  /* The ghost: the ideal stroke drawn head to tail, after a refusal or on G. */
+  if(ghost){
+    const full = resampleByStep(g.strokes[ghost.i], 0.004);
+    const part = full.slice(0, Math.max(2, Math.round(full.length * ghost.t)));
+    if(part.length > 1){
+      ctx.strokeStyle = "rgba(47,125,99,.85)"; ctx.lineWidth = Math.max(2, e*0.02); ctx.lineCap="round";
+      strokePath(ctx, g, part);
+      const [hx,hy] = toPx(g, part[part.length-1]);
+      ctx.fillStyle = "#2f7d63"; ctx.beginPath(); ctx.arc(hx,hy, Math.max(3,e*0.018), 0, 6.2832); ctx.fill();
+    }
+  }
+
+  /* Where the next stroke starts, numbered — the stroke-order readout. */
+  if(done.length < g.strokes.length && !raw){
+    const st = g.strokes[done.length];
+    const [sx,sy] = toPx(g, st[0]);
+    const r = Math.max(7, e*0.035);
+    ctx.fillStyle = "#2f7d63"; ctx.beginPath(); ctx.arc(sx,sy,r,0,6.2832); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = "bold " + Math.round(r*1.25) + "px ui-monospace, monospace";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(String(done.length+1), sx, sy+1);
+    ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
+  }
+}
+function strokePath(c, g, pts){
+  c.beginPath();
+  for(let i=0;i<pts.length;i++){ const [x,y] = toPx(g, pts[i]); i ? c.lineTo(x,y) : c.moveTo(x,y); }
+  c.stroke();
+}
+
+/* -------------------------------------------------------------------- input */
+let drawing = false;
+pad.addEventListener("pointerdown", ev => {
+  if(!GLYPHS) return;
+  const g = GLYPHS.get(cur);
+  if(done.length >= g.strokes.length) return;            // letter finished; R or Enter
+  pad.setPointerCapture(ev.pointerId);
+  drawing = true; ghost = null;
+  raw = [ptEm(ev)];
+  draw();
+});
+pad.addEventListener("pointermove", ev => {
+  if(!drawing) return;
+  const q = ptEm(ev), last = raw[raw.length-1];
+  if(Math.hypot(q[0]-last[0], q[1]-last[1]) > 0.004) raw.push(q);   // decimate the raw move stream
+  draw();
+});
+function endStroke(){
+  if(!drawing) return;
+  drawing = false;
+  const g = GLYPHS.get(cur);
+  if(!raw || raw.length < 2 || polyLen(raw) < 0.03){ raw = null; say("too short — press and drag", "bad"); draw(); return; }
+  const ideal = g.strokes[done.length];
+  const r = scoreStroke(raw, ideal);
+  if(!r.ok){
+    say(r.why === "start" ? "start on the numbered dot" : "that stroke runs backwards", "bad");
+    ghost = {i: done.length, t: 0}; raw = null; animateGhost(); draw(); return;
+  }
+  done.push({ pts: snapped(r.path, ideal, r.fidelity), fidelity: r.fidelity, err: r.err });
+  raw = null;
+  if(done.length === g.strokes.length) finishLetter();
+  else say("stroke " + done.length + " · " + pct(r.fidelity), "good");
+  paintGrades(); draw();
+}
+pad.addEventListener("pointerup", endStroke);
+pad.addEventListener("pointercancel", () => { drawing=false; raw=null; draw(); });
+const ptEm = ev => {
+  const r = pad.getBoundingClientRect();
+  return toEm(GLYPHS.get(cur), ev.clientX - r.left, ev.clientY - r.top);
+};
+
+function finishLetter(){
+  const grade = gradeNow();
+  const key = cur + "|" + nib.id;
+  const prev = best[key] || 0;
+  if(grade > prev){
+    best[key] = grade;
+    try{ localStorage.setItem(BEST_KEY, JSON.stringify(best)); }catch(e){}
+    say("NEW BEST · " + pct(grade) + (prev ? " (was " + pct(prev) + ")" : ""), "good");
+  } else {
+    say(pct(grade) + " · best stands at " + pct(prev), null);
+  }
+  paintLetters();
+}
+function gradeNow(){
+  if(!done.length) return 0;
+  return done.reduce((t,d) => t + d.fidelity, 0) / done.length;
+}
+const pct = v => Math.round(v*100) + "%";
+
+function animateGhost(){
+  const t0 = performance.now(), dur = 620;
+  (function step(now){
+    if(!ghost) return;
+    ghost.t = Math.min(1, (now - t0)/dur);
+    draw();
+    if(ghost.t < 1) requestAnimationFrame(step);
+    else setTimeout(() => { ghost = null; draw(); }, 420);
+  })(t0);
+}
+
+/* --------------------------------------------------------------------- UI */
+function say(t, cls){ const m = $("msg"); m.textContent = t || ""; m.className = cls || ""; }
+function resetLetter(){ done = []; raw = null; ghost = null; say(""); paintGrades(); draw(); }
+
+function paintGrades(){
+  const g = GLYPHS.get(cur);
+  const complete = done.length === g.strokes.length;
+  $("g-total").textContent = done.length ? pct(gradeNow()) : "—";
+  $("g-sub").textContent = done.length
+    ? (complete ? "complete · " + done.length + " stroke" + (done.length>1?"s":"") : done.length + " of " + g.strokes.length + " strokes")
+    : g.strokes.length + " stroke" + (g.strokes.length>1?"s":"") + " to write";
+  const b = best[cur + "|" + nib.id];
+  $("g-best").textContent = b ? "best " + pct(b) : "best —";
+  const face = $("g-face");
+  if(!complete){ face.className = "tag"; face.textContent = "face —"; }
+  else if(gradeNow() >= T.faceTh){ face.className = "tag ok"; face.textContent = "face earned"; }
+  else { face.className = "tag no"; face.textContent = "below " + pct(T.faceTh); }
+  $("g-list").innerHTML = done.map((d,i) =>
+    '<div class="grade"><span>stroke ' + (i+1) + '</span><span>' + pct(d.fidelity) +
+    ' <span style="color:var(--muted)">· err ' + d.err.toFixed(3) + 'em</span></span></div>').join("");
+}
+
+function paintLetters(){
+  $("letters").innerHTML = "";
+  for(const ch of ALPHABET){
+    const b = document.createElement("button");
+    b.className = "chip" + (ch === cur ? " on" : "") + (best[ch + "|" + nib.id] ? " done" : "");
+    b.textContent = ch;
+    b.title = best[ch + "|" + nib.id] ? "best " + pct(best[ch + "|" + nib.id]) + " with this nib" : "";
+    b.onclick = () => { cur = ch; resetLetter(); paintLetters(); paintNibStrip(); };
+    $("letters").appendChild(b);
+  }
+}
+function paintNibs(){
+  $("nibs").innerHTML = "";
+  NIBS.forEach((n, i) => {
+    const b = document.createElement("button");
+    b.className = "chip nib" + (n.id === nib.id ? " on" : "");
+    b.innerHTML = (i<9 ? (i+1) + " " : "") + n.name + "<small>" + n.group + "</small>";
+    b.onclick = () => setNib(n);
+    $("nibs").appendChild(b);
+  });
+  $("nib-note").textContent = nib.type === "broad"
+    ? "A fixed edge at " + nib.angle + "°: thick across the edge, thin along it — angled stress, and the thin strokes all run parallel."
+    : nib.type === "pointed"
+    ? "Width follows how vertical the travel is, so the weight lands on downstrokes — vertical stress, hairline horizontals."
+    : "One width in every direction. No stress at all, which is the whole of Lineal.";
+}
+function setNib(n){ nib = n; paintNibs(); paintGrades(); paintLetters(); paintNibStrip(); draw(); }
+
+/* A mini specimen: one glyph, one nib, ideal strokes — no input involved. */
+function miniSpec(c, ch, theNib, size){
+  const g = GLYPHS.get(ch); if(!g) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  c.width = Math.round(size*dpr); c.height = Math.round(size*dpr);
+  c.style.width = size + "px"; c.style.height = size + "px";
+  const k = c.getContext("2d");
+  k.setTransform(dpr,0,0,dpr,0,0);
+  k.fillStyle = "#fbf7ee"; k.fillRect(0,0,size,size);
+  const e = size*0.78, ox = (size - g.w*e)/2, oy = size*0.11;
+  for(const st of g.strokes) stampStroke(k, g, st, theNib, "#2b2620", e, ox, oy, 1);
+}
+function paintNibStrip(){
+  const host = $("strip-nibs"); host.innerHTML = "";
+  for(const n of NIBS){
+    const d = document.createElement("div");
+    d.className = "spec" + (n.id === nib.id ? " on" : "");
+    const c = document.createElement("canvas");
+    d.appendChild(c);
+    const s = document.createElement("span"); s.textContent = n.id; d.appendChild(s);
+    d.title = n.name + " — " + n.group;
+    d.onclick = () => setNib(n);
+    host.appendChild(d);
+    miniSpec(c, cur, n, 62);
+  }
+}
+function paintAbc(){
+  const host = $("strip-abc"); host.innerHTML = "";
+  for(const ch of ALPHABET){
+    const d = document.createElement("div");
+    d.className = "spec";
+    const c = document.createElement("canvas"); d.appendChild(c);
+    d.onclick = () => { cur = ch; resetLetter(); paintLetters(); paintNibStrip(); };
+    host.appendChild(d);
+    miniSpec(c, ch, nib, 44);
+  }
+}
+
+function paintSliders(){
+  const host = $("sliders"); host.innerHTML = "";
+  for(const [key,label,min,max,step] of SLIDERS){
+    const wrap = document.createElement("div");
+    wrap.className = "sl"; wrap.style.marginBottom = "9px";
+    wrap.innerHTML = '<label>' + label + '</label><b id="v-'+key+'">' + T[key] + '</b>';
+    const r = document.createElement("input");
+    r.type = "range"; r.min = min; r.max = max; r.step = step; r.value = T[key];
+    r.oninput = () => {
+      T[key] = +r.value;
+      $("v-"+key).textContent = T[key];
+      if(key === "nibScale"){ paintNibStrip(); }
+      paintGrades(); draw();
+    };
+    wrap.appendChild(r);
+    host.appendChild(wrap);
+  }
+  const dir = document.createElement("button");
+  dir.className = "btn sm"; dir.textContent = "Direction gate: on";
+  dir.onclick = () => { T.dirGate = T.dirGate ? 0 : 1; dir.textContent = "Direction gate: " + (T.dirGate?"on":"off"); dir.classList.toggle("on", !!T.dirGate); };
+  dir.classList.add("on");
+  host.appendChild(dir);
+}
+
+/* ---------------------------------------------------------------- wiring */
+$("b-redo").onclick = () => { resetLetter(); say("redo", null); };
+$("b-next").onclick = () => nextLetter(1);
+$("b-hint").onclick = () => {
+  const g = GLYPHS.get(cur);
+  if(done.length >= g.strokes.length) return;
+  ghost = {i: done.length, t: 0}; animateGhost();
+};
+$("b-abc").onclick = () => paintAbc();
+function toggle(id, key, label){
+  $(id).onclick = () => {
+    show[key] = !show[key];
+    $(id).textContent = label + ": " + (show[key] ? "on" : "off");
+    $(id).classList.toggle("on", show[key]);
+    draw();
+  };
+  $(id).classList.toggle("on", show[key]);
+  $(id).textContent = label + ": " + (show[key] ? "on" : "off");
+}
+function nextLetter(d){
+  const i = ALPHABET.indexOf(cur);
+  cur = ALPHABET[(i + d + 26) % 26];
+  resetLetter(); paintLetters(); paintNibStrip();
+}
+addEventListener("keydown", ev => {
+  if(!GLYPHS) return;
+  if(ev.key === "[" ) { nextLetter(-1); return; }
+  if(ev.key === "]" ) { nextLetter(1); return; }
+  if(ev.key === "Enter"){ nextLetter(1); return; }
+  /* Redo/ghost can't be letter keys: every a–z key selects that letter. */
+  if(ev.key === "Backspace"){ ev.preventDefault(); resetLetter(); return; }
+  if(ev.key === "/" || ev.key === "?"){ ev.preventDefault(); $("b-hint").click(); return; }
+  if(ev.key >= "1" && ev.key <= "9"){ const n = NIBS[+ev.key - 1]; if(n) setNib(n); return; }
+  if(/^[a-z]$/.test(ev.key)){ cur = ev.key; resetLetter(); paintLetters(); paintNibStrip(); }
+});
+addEventListener("resize", sizePad);
+
+/* ------------------------------------------------------------------- boot */
+(async () => {
+  try{
+    const r = await loadGlyphs();
+    GLYPHS = r.glyphs;
+    if(!GLYPHS.has(cur)) cur = [...GLYPHS.keys()][0];
+    document.querySelector(".lede").insertAdjacentHTML("beforeend",
+      ' <b>' + GLYPHS.size + ' glyphs</b> loaded from <code>' + r.src + '</code>.');
+    paintNibs(); paintLetters(); paintSliders(); paintNibStrip();
+    toggle("t-guide","guide","Guide"); toggle("t-metrics","metrics","Metrics");
+    toggle("t-raw","raw","Raw path"); toggle("t-skel","skel","Skeleton");
+    sizePad(); paintGrades();
+  }catch(e){
+    const b = $("boot");
+    b.hidden = false;
+    b.innerHTML = "<b>Couldn't load the alphabet.</b> " + String(e.message || e) +
+      "<br>This bench fetches its glyphs, so it needs <b>http serving</b> (Live Server) — " +
+      "<code>file://</code> blocks the read. Export <code>wordshape-alphabet.json</code> from " +
+      "<code>wordshape-draw.html</code> into <code>data/</code> to skip the live slice.";
+  }
+})();
+</script>
+</body>
+</html>

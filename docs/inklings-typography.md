@@ -1,6 +1,7 @@
 # Inklings — The Scriptorium: letter tracing & typeface collecting
 
-**Status: PLANNED (specced 2026-09-11). Nothing here is built.**
+**Status: SPECCED 2026-09-11. M1 (the nib engine + the stroke scorer) is BUILT in the standalone bench
+`inklings-trace.html` — see §11. Nothing is in `inklings.html` yet; the capture verb is unchanged in game.**
 
 This doc covers two things that are really one thing:
 
@@ -205,9 +206,12 @@ Wordshape's field stays useful as an optional whole-glyph check at the end, and 
 
 ### 5.3 Feel (most of the work)
 
-- **Snap.** Once a stroke is good enough, the ink lands on the ideal path rather than on the player's
-  wobble. This is Duolingo's load-bearing trick: it makes a competent result feel like *your* competence.
-  Tune the threshold generously on touch.
+- **Snap — partial, not Duolingo's hard snap** (settled building M1). Duolingo lands every accepted stroke
+  exactly on the ideal, which is the right call when the glyph is a means to an end. Here it isn't: §7's album
+  shows **your** traced glyph, so a hard snap would make every player's album byte-identical and the
+  collection would be a tick-list wearing a drawing. The bench therefore blends the traced points toward the
+  ideal by **snap × fidelity** — a clean stroke lands on the line, a scruffy one stays scruffy, and the jitter
+  of a finger goes either way. Default 0.65, and it is the knob most worth arguing about on a phone.
 - **Ghost hint.** After a failed stroke, animate the ideal stroke once, head to tail. Never show the
   animation before the first attempt — that is a demo, not a game.
 - **One stroke at a time**, with the completed strokes staying inked, so the glyph builds.
@@ -233,7 +237,46 @@ subsystem's own curve, not word count):
 A **`?` peek** is always available and always costs the same thing: it names the pen and **forfeits the
 face for that capture**. You still get the letter. (No ink price — the cost is already the interesting one.)
 
-### 5.5 Outcomes
+### 5.5 KNOWN DEFECT — the authored stroke directions are backwards (found playing M1, 2026-09-11)
+
+**Not yet fixed, deliberately. Fix before M3 folds the overlay into the game.** The bench works; the
+alphabet it traces is wrong, in two separate ways, and the bench is what made them visible.
+
+**(a) Every closed bowl starts at 3 o'clock and runs clockwise.** Seven glyphs share one expression in
+`wordshape-draw.html`'s `raw` table — `a b d g o p q` all use `A(0.30,0.48,0.24, 0, 360)`, which begins at
+`(0.54, 0.48)` (the rightmost point) and **increases**, i.e. sweeps clockwise on screen and travels *down*
+first. No hand writes an `o` that way: the natural motion starts up near 12–1 o'clock and goes
+**counter-clockwise**. The dev's reading of `a` is the exception worth preserving — a single-storey `a` *does*
+begin near the right — but it still has to turn counter-clockwise from there.
+
+The give-away that this is an oversight rather than a choice: **`c` and `e` are already correct**
+(`A(…,-55,-305)` and `A(…,0,-305)` — decreasing, so counter-clockwise). The open curves go the natural way
+and the closed bowls go the other, which no deliberate scheme would do.
+
+**(b) `f` is mirrored.** `f: J([[0.44,0.72],[0.44,0.21]], A(0.25,0.21,0.19, 0, -135))` — the arc's centre
+(`x 0.25`) sits to the **left** of the stem (`x 0.44`), so the hook sweeps from `x 0.44` out to `x 0.116`:
+the top curve points left, where an `f`'s hook must point right. The fix is a centre at about
+`stem x + r` with the sweep mirrored. The same stroke also runs **baseline → ascender** (`0.72 → 0.21`),
+i.e. bottom-to-top, where an `f` is written from the top of the hook downward.
+
+**Why it matters more than it looks.** Direction is not decoration here — §5.2's gate *refuses* a stroke
+that runs against the ideal. So as it stands the bench **rejects the natural motion and rewards the
+unnatural one**, and a game shipped on this data would actively teach the wrong hand. That is the one thing
+this feature must not do.
+
+**Why nothing caught it earlier:** Wordshape's scorer is an order-blind chamfer field (§5.2) — stroke
+direction is *invisible* to it, and the glyphs score identically either way. Tracing is the first consumer
+that can see direction at all, so M1 was always going to be where this surfaced.
+
+**Scope when it is fixed:** the bowl expression is shared by seven letters, so one edit moves all of them,
+but the **start angle wants a per-letter pass** — `b`/`d`/`p`/`q` bowls attach to a stem and should begin
+where the hand leaves it, not at a uniform clock position. Expect to re-read the whole `raw` table with the
+same eye rather than patching these nine; `g`'s bowl and `p`'s were not on the dev's list but carry the
+identical defect, which is a fair warning about the rest. The fix is **data only** — no engine change, since
+the scorer reads direction off the polyline — and it belongs in `wordshape-draw.html`, the alphabet's home
+(see [`wordshape.md`](wordshape.md) §12).
+
+### 5.6 Outcomes
 
 | | Letter | Face |
 | --- | --- | --- |
@@ -411,10 +454,38 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
 
 ## 11. Milestones
 
-- **M1 — the nib engine + the per-stroke scorer, in a bench.** A standalone `inklings-trace.html` (the
-  `ipa-scrabble.html` → Sound Board pattern, and Wordshape's own): load `data/wordshape-alphabet.json`, pick
-  a nib, trace a letter, see the stamped stroke and the grade. All of §3 and §5.2–5.3 live here, where the
-  feel can be tuned without 748 KB in the way.
+- **M1 — the nib engine + the per-stroke scorer, in a bench. BUILT 2026-09-11** — `inklings-trace.html`
+  (the `ipa-scrabble.html` → Sound Board pattern, and Wordshape's own), styled off `wordshape-draw.html` so
+  the two dev tools read as a pair. What's in it:
+  - **The nib (§3)** — `stampStroke` walks the path every `STAMP_STEP` (0.006 em) and stamps the pen:
+    `round` a circle, `broad` a **rotated rect at an absolute pen angle** (negated, since canvas y grows
+    down, so a positive angle tilts the edge up-right as a calligrapher writes it), `pointed` a circle whose
+    radius follows `|dy|^pow` so the weight lands on downstrokes. The contrast is never drawn on — it falls
+    out of the shape, which is the claim. Ten nibs inline across the three types (M2 lifts them to
+    `data/nibs.json`).
+  - **The scorer (§5.2)** — `resample` to 32 points by arc length, mean point-to-point error in em, a soft
+    `1 - err/falloff` fidelity, and the two gates: start within `startTol` of the numbered dot, and a
+    direction check that compares forward against the reversed ideal (a near-closed bowl has almost no net
+    travel vector, so comparing whole resampled paths is the version that works). A refused stroke costs
+    nothing and plays the ghost.
+  - **Two specimen strips that test the design, not the code** — the current letter in *every* nib (does
+    `broad-45` read as blackletter and `pointed-dido` as a didone, from the pen alone?) and the whole a–z in
+    the equipped nib. Both are ideal strokes with no input involved, so they're the cheapest possible answer
+    to "is §3 true".
+  - **Personal bests** (decision #8) per `letter|nib` in `localStorage`, with the `was 82%` delta, so the
+    hi-score feel is playable now rather than at M4.
+  - The tuning sliders (start tolerance, falloff, snap, face threshold, nib weight, path smoothing, and the
+    direction gate as a toggle), the metrics overlay drawing the alphabet's own ascender/x-height/baseline/
+    descender lines, and the stroke-order readout (the next stroke's start, numbered).
+  - **Glyphs: `data/wordshape-alphabet.json` if present, else the `GLYPHS` block sliced live out of
+    `wordshape-draw.html`** and run — the `affix-sprite-preview.html` trick, so the bench can't trace a stale
+    copy of the alphabet. Verified: the slice yields all 26. The bench therefore needs **http serving**
+    (Live Server), like every other fetching page here.
+  - Deliberately absent: fonts, faces and the album (M2/M4), and §5.4's guidance ladder, which is game-side
+    and has nothing to stand on until M3.
+  - **Playing it immediately found a data defect, not a code one** — the authored alphabet's closed bowls all
+    run clockwise from 3 o'clock and `f` is mirrored. See **§5.5**; it is noted and *not* fixed, and it must be
+    fixed before M3.
 - **M2 — the faces.** `data/typefaces.json` (group, date, origin, nib, font file, plate notes),
   `data/nibs.json`, the §4.1 shortlist licence-checked and subset into `fonts/` with its licence texts, and
   the nib↔group mapping that makes §5.4's guidance possible.

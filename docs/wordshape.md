@@ -442,6 +442,19 @@ movement, not on pointerdown**, so a click that only selects doesn't fill the un
 - **The glyph shapes themselves** (§11.5) are a first pass, drawn to be legible and unfussy. Expect the dev
   to tune them once real targets are traced against them; the `a` is single-storey and the `s` is the one
   glyph placed by hand rather than swept from arcs.
+- **STROKE DIRECTIONS ARE WRONG in nine glyphs** (found 2026-09-11 by Inklings' trace bench; noted, **not yet
+  fixed**). `a b d g o p q` all share `A(0.30,0.48,0.24, 0, 360)`, which starts at the **rightmost** point and
+  **increases** — clockwise on screen, travelling down first — where a hand rounds a bowl
+  **counter-clockwise** from near 12–1 o'clock (`a` may start near the right, but still turns
+  counter-clockwise). `c` and `e` are already correct (`-55,-305` / `0,-305`, decreasing), so the table is
+  internally inconsistent: open curves natural, closed bowls reversed. Separately, **`f` is mirrored** — its
+  arc centre (`x 0.25`) is left of the stem (`x 0.44`), so the hook points left instead of right, and the stem
+  is drawn baseline→ascender rather than top-down. **Wordshape itself cannot see any of this** (its scorer is
+  an order-blind chamfer field, so direction is invisible and the targets score identically either way) —
+  which is why it survived, and why the fix is owed to
+  [`inklings-typography.md`](inklings-typography.md) §5.5, whose direction gate *refuses* the natural motion
+  until this is corrected. Data only, no engine change, and the start angle wants a **per-letter** pass since
+  `b`/`d`/`p`/`q` bowls should begin where the hand leaves the stem.
 - **`TOL` and the thresholds** are guesses until M4 is playable. Expect all three to move.
 - **Does the score need to be hidden until commit?** Decision #6 says live, but if wiggle-optimizing turns
   out to dominate play it's a one-line change.
