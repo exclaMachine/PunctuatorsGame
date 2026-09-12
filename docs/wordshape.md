@@ -223,6 +223,15 @@ weight with **parallel strokes**, so they are usable as *looks* but not as skele
 
 Either way the MVP ships **one font, lowercase only**, as `data/wordshape-alphabet.json` — a few KB.
 
+**Capitals are the alphabet's next pass, and Inklings asks for them first.** The Scriptorium's capture verb
+is tracing, so a capital inkling with no skeleton has nothing to trace — a blocker on its M3, specced in
+[`inklings-typography.md`](inklings-typography.md) §10. The 26 majuscules get authored **here, in this same
+tool**, into the same exported file under upper-case keys (the glyph table is a `Map`, so `"A"` is a free
+key), and they need one new metric line — **cap height at y ≈ 0.07**, below the 0.02 ascender, since a
+capital is shorter than an `l` in virtually every real face. Wordshape itself gains a brush set twice the
+size, which by §0's reframe makes every word *easier*, so whether capitals join the player's palette is a
+difficulty decision for §8's ladder, not a data one.
+
 ---
 
 ## 7. Saving, sharing, and the second score

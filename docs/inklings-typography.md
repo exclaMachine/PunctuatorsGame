@@ -1,8 +1,9 @@
 # Inklings — The Scriptorium: letter tracing & typeface collecting
 
 **Status: SPECCED 2026-09-11. M1 (the nib engine + the stroke scorer) and M2 (the faces) are BUILT in the
-standalone bench `inklings-trace.html` — see §11. Nothing is in `inklings.html` yet; the capture verb is
-unchanged in game.**
+standalone bench `inklings-trace.html` — see §12. Nothing is in `inklings.html` yet; the capture verb is
+unchanged in game. The skeleton alphabet is **lowercase only**, which makes capitals a blocker on M3 rather
+than an extra — see §10.**
 
 This doc covers two things that are really one thing:
 
@@ -57,7 +58,7 @@ That is how type historians actually read letterforms — infer the tool from th
 5. **Faces are grouped like WordNet groups words** — and the taxonomy already exists: a pruned
    **Vox-ATypI** tree, where every group *is* a pen (§6). The grouping is the teaching.
 6. **Italics and bold are later** — and they are a **style axis**, not more faces, so §7's data shape
-   leaves room for them now and §10 spends nothing on them yet.
+   leaves room for them now and §11 spends nothing on them yet.
 7. **Failing a trace never costs you the day.** Retry freely. A daily no-respawn map makes permanent loss
    far too punishing, and letters are the economy.
 8. **A cell keeps your personal best; there is no re-trace button.** The album stores the best grade ever
@@ -119,7 +120,7 @@ letters rather than in the tool. That is the §3 engine being truthful rather th
 it is the reason the nib file names groups *and* the group file names nibs: the bench asserts the two agree
 at boot (`indexFaces`), so an edit to one that forgets the other fails loudly instead of rendering a wrong
 label. `price` is the §7 ink gate; a nib with an empty `groups` (`round-bold`) writes no face and is in the
-file only so §10's *bold is a wider nib* claim is visible in the bench before the style axis exists.
+file only so §11's *bold is a wider nib* claim is visible in the bench before the style axis exists.
 
 ---
 
@@ -170,7 +171,7 @@ beside its licence text. The two leaves the spec left open are closed:
 | Uncial / Insular | **Uncial Antiqua** | `UncialAntiqua-latin.woff2` | 19.6 KB |
 | Script | **Pinyon Script** | `PinyonScript-latin.woff2` | 28.1 KB |
 
-- **Uncial Antiqua** (Tom Murphy 7) answers §12's open question 2 — Junicode was the lead but isn't on
+- **Uncial Antiqua** (Tom Murphy 7) answers §13's open question 2 — Junicode was the lead but isn't on
   Google Fonts, so it has no ready latin subset, and Uncial Antiqua is a truer uncial anyway: round
   majuscules from a near-flat pen, and no case distinction, which is a lesson of its own.
 - **Pinyon Script** replaces §4's "Hershey Script" for the *specimen* slot. Hershey is still the right
@@ -317,7 +318,7 @@ draws its arm inward and its leg outward, `s` starts at the top right, and every
 descender already ran top-down. `g`'s and `j`'s tails already hooked the right way.
 
 **The fix reaches the bench for free**: `data/wordshape-alphabet.json` does not exist yet, so
-`inklings-trace.html` slices the `GLYPHS` block live out of `wordshape-draw.html` (§11) and picks the
+`inklings-trace.html` slices the `GLYPHS` block live out of `wordshape-draw.html` (§12) and picks the
 corrected table up on reload. Re-export the JSON only after the dev's shape-tuning pass, or it will pin a
 stale alphabet.
 
@@ -391,7 +392,8 @@ artifact for it is the thing the trade already has: a **type specimen sheet**.
 - **Milestones** at 25/50/100% of a face's 26 letters, and a bigger one per completed **group**, paying
   **ink + décor** exactly like the atlas's continents. The décor writes itself: a **framed specimen sheet**
   for the Wordhoard, through the existing placement primitive
-  ([`inklings-placement.md`](inklings-placement.md)).
+  ([`inklings-placement.md`](inklings-placement.md)). **Capitals get their own fraction, not a bigger
+  denominator** — see §10.5, where folding them in would silently un-fire a milestone that has already paid.
 - **Nibs are the progression gate.** You buy or craft a nib at the Stall with ink, and a face whose nib you
   don't own is uncatchable-as-a-face (the letter is always catchable). That reuses the shop and gives ink a
   new sink without inventing an economy.
@@ -404,7 +406,8 @@ state.nibs  = ["round-mono", "broad-30", …]           // owned
 state.nib   = "broad-30"                              // equipped
 ```
 
-Faces are persistent and uncapped, like `state.caps` — never day-scoped.
+Faces are persistent and uncapped, like `state.caps` — never day-scoped. The letter key is a **character**,
+so `"A"` and `"a"` are already separate cells and capitals (§10) need no migration.
 
 **A cell keeps the PATH, not only the grade** — amended while building M2, and it follows from this
 section's own first bullet: *a filled cell shows your traced glyph, not the font's*, which is impossible if
@@ -438,7 +441,8 @@ album is a record of your hand and not a list of scores.
   the face; the skeleton you trace is shared. That division is what makes nib-only v1 honest.
 - **Capitals** keep their own rules verbatim — they bank in `state.caps`, uncapped, bypassing the satchel —
   and they are the natural home for the faces whose **capitals are the lesson** (Roman inscriptional
-  capitals, blackletter's ornate majuscules).
+  capitals, blackletter's ornate majuscules). **The skeleton has no capitals yet, which makes this a blocker
+  rather than an extra — see §10.**
 - **A starter face.** Early game must not demand classification, so the first face is **the bare monoline
   skeleton itself** — "the hand you already write in" — with the round nib owned from the start. Faces then
   unlock on a curve, the way capitals do at `LOWER_DONE_AT`. v1's tracing *is* the tutorial; the collection
@@ -464,13 +468,13 @@ moves to the trace's success path — and it is easy to move one of these and fo
 
 | Today, in `doAttack` | After |
 | --- | --- |
-| `if(full && !isUpper(c.letter))` satchel block | moves to the **trace-open** check, capital bypass verbatim |
+| `if(full && !isUpper(c.letter))` satchel block | moves to the **trace-open** check, capital bypass verbatim — and the same check carries §10.2's `isUpper` fallback until the capital skeleton exists |
 | `state.caps` / `state.inv` grant | trace success |
 | `state.fx.push({text:"+"+letter})` | trace success |
 | `state.bonus` filter (an unlocked bonus letter) | trace success |
 | `state.captured.add(c.id)` | trace success — **this is what makes the day's map honest** |
 | `recordBestiary("inkling")` | trace success |
-| `SFX.play("capture")` | trace success, plus new cues (§11) |
+| `SFX.play("capture")` | trace success, plus new cues (§12) |
 | `maybeNotifyCleared()` | trace success — the all-cleared banner/chime hangs off this call site |
 
 Also:
@@ -490,7 +494,158 @@ Also:
 
 ---
 
-## 10. Italics and bold (designed for, not built)
+## 10. Capitals: the second alphabet
+
+**Status: not built — and not merely missing. M3 turns it into a blocker.**
+
+### 10.1 The finding
+
+**We do not have capitals.** The skeleton is 26 glyphs, `a`–`z` (`wordshape-draw.html`'s `GLYPHS`, the
+table §5.5 fixed the directions of, exported as `data/wordshape-alphabet.json`). A capital inkling has
+nothing to trace.
+
+Everything *around* the skeleton already handles them, which is why this is a small milestone rather than a
+second feature:
+
+- **The specimens already carry capitals.** `fetch-typeface-fonts.sh` subsets each face to
+  `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz` — all **52** letters, on purpose — so the plate,
+  the four-cell specimen strip and the field glyph can already draw `A` in all eleven faces today. No font
+  work, no refetch.
+- **The save shape already holds them.** §7's `state.faces[faceId][letter]` is keyed by *character*, so
+  `"A"` and `"a"` are already different cells. Capitals cost **no save migration and no version bump** —
+  they are keys that have never been written.
+- **The glyph table is a `Map`**, keyed by character in both games, so `"A"` is a free key there too.
+
+The whole missing artifact is **26 capital skeletons**.
+
+### 10.2 Why M3 can't ship without a decision here
+
+Capitals are not a hypothetical letter class — they are live game content:
+
+| Today, in `inklings.html` | |
+| --- | --- |
+| `isUpper(l)` (`:1902`) | the class exists at the type level |
+| `state.caps[C]++`, uncapped, **bypassing the satchel** (`:3813`–`3819`) | a full satchel never blocks one |
+| `capUnlockAt(i)` after `LOWER_DONE_AT` (`:1917`–`:1925`) | they unlock one at a time, deep into the game |
+| `w *= (0.35 + dist*0.5)` (`:2915`) | rare, and skewed far from home |
+| the hoe's `UPPER_DROP_CHANCE` bank (`:7455`) | a second source |
+| the Atlas's **daily capital letter** ([`inklings-atlas.md`](inklings-atlas.md)) | a capital you go and *hunt* |
+
+§9 moves the entire letter branch of `doAttack` onto the trace's success path. So on the day M3 ships, a
+capital inkling opens a trace pad with **no glyph in it**, and the atlas's daily hunt dead-ends. That is not
+a polish item; it is the feature removing content the game already has.
+
+**M3's obligation, whichever way the rest of this section is built:** either the capital skeleton exists by
+then, or **capitals keep the old verb — hit to catch — until it does.** Recommended: the interim, written as
+one explicit `isUpper` branch on the *trace-open* check (not scattered through the success path), so the
+fallback is a single condition and deleting it is most of this milestone's wiring.
+
+### 10.3 Why capitals are the best content in the feature, not a chore
+
+Minuscules are **Carolingian** — a pen, on parchment, 9th century. Capitals are **Roman inscriptional** —
+a flat brush, then a chisel, on stone, 1st century. Eight hundred years and a different tool apart, which is
+*why* a capital is not a big lowercase. That is this feature's own thesis — **the tool makes the
+letterform** — told a second time at a scale the player can't miss, because the two alphabets sit next to
+each other inside every single word.
+
+Two things fall out that a player can feel while tracing and cannot read off a page:
+
+- **A Roman capital's serifs are the brush's entry and exit**, not decoration added afterwards.
+- **Classical capitals are a width system.** O/Q are circles, H/N/A/V are near-square, E/F/L/S/B are narrow,
+  M/W are wide. Trajan's alphabet is that system; minuscules are far more uniform in width. Tracing is the
+  one interface that teaches proportion by making you *travel* it.
+
+### 10.4 The skeleton (the build unit)
+
+- **One capital skeleton, 26 glyphs, authored in the Wordshape drawing tool** exactly as the lowercase were,
+  exported into **the same `data/wordshape-alphabet.json`** under upper-case keys. One alphabet file, both
+  games, one place to fix a glyph — §5.1's rule, unchanged.
+- **It is a cheaper pass than the lowercase one, and countably so.** Fifteen capitals are *straight lines
+  only* — `A E F H I K L M N T V W X Y Z` — against eleven that carry an arc (`B C D G J O P Q R S U`), and
+  the arcs are mostly one shape reused: `B P R` share an upper bowl, `C G O Q` share a ring, `D` is that
+  ring's right half, `U` a half-ring, `J` a hook. Only `S` is unique. Compare `a`–`z`, where nearly every
+  letter carries a curve of its own.
+- **A new metric line: cap height.** The em already names ascender `0.02`, x-height top `0.24`, baseline
+  `0.72`, descender `0.96`. A capital stands on the baseline and reaches **cap height, which sits *below*
+  the ascender in virtually every real face** (≈0.70 em against ≈0.75). Against this alphabet's 0.70
+  ascender reach that is ≈0.65, i.e. **y ≈ 0.07** — so `l` visibly overshoots `L`, as it should. The bench's
+  metrics overlay gains a fifth line (`inklings-trace.html:559`).
+  **This is the most visible possible thing to get wrong**: capitals drawn up to the ascender make every
+  face look broken in the four-cell specimen, because the real font beside them has a true cap height.
+- **Direction is data here too** (§5.5). The same rule, applied: stems run top→bottom; `O` runs
+  counter-clockwise from 2 o'clock like `o`; `A` is left diagonal, right diagonal, then the bar; `E` is the
+  stem then three bars top→bottom. Authoring capitals without the direction rule in hand would repeat
+  exactly the defect §5.5 had to go back and fix.
+
+### 10.5 What a capital cell is
+
+- **The album gains a case toggle, not a doubled grid.** The view stays 26×11; an `Aa` switch flips which
+  alphabet you are looking at. A 52-row grid would be unreadable on a phone and would misstate the goal —
+  these are two collections, not one long one.
+- **Milestones get their own track, and this is the migration trap.** Fold capitals into §7's *25/50/100% of
+  a face's 26 letters* and a player who has already 100%'d Garalde **drops to 50% the moment the update
+  lands**, un-firing a milestone that has already paid out ink and décor. So a face carries **two
+  fractions** — 26 minuscules, 26 majuscules — plus a third, larger **completed face** milestone at both.
+  The same rule then applies upward to §6's group milestones.
+- **The plate shows both.** Anatomy callouts are per-letter already (`{term,letter,note}` in
+  `data/typefaces.json`), so a capital-only term — *the inscriptional serif*, *cap height*, the width
+  classes — is a new callout row and nothing more.
+
+### 10.6 The faces, honestly
+
+Three of the eleven have no clean Roman-capital story, and saying so *is* the teaching:
+
+- **Uncial has no case at all.** `data/typefaces.json`'s plate already says this, and §4.1 chose Uncial
+  Antiqua partly for it. Its "capitals" **are** its letterforms: trace the same skeleton, and the album shows
+  `A` and `a` as the same drawing. Don't special-case Uncial *out* — special-case it *in*, with the plate
+  naming the result. It is the cheapest option and the correct one.
+- **Blackletter capitals are a different alphabet.** Textura majuscules are ornate, built from bowed strokes
+  and hairline flourishes; they are not the Roman skeleton under a 45° pen, and under nib-only v1 they come
+  out Lombardic-ish rather than correct. **Ship them on the shared skeleton and say so on the plate**, and
+  park a true blackletter majuscule skeleton next to §11's true italic — it is the same category of thing: a
+  second skeleton, which is the lesson.
+- **Script capitals** are swash and joined. The pointed nib does most of the work and the shared skeleton is
+  a fair approximation — lower risk than blackletter, and worth a plate line either way.
+
+### 10.7 The nib, and what capitals add to the shop
+
+- **Capitals need no new nib to ship.** Roman capitals were laid out with a flat brush at a **shallow angle**
+  (≈0–15°), which is why their stress is near-vertical and their serifs are entry and exit marks — that is
+  `broad-10` / `broad-20` territory, nibs the uncial and garalde faces already use.
+- **But they are the natural home of one.** A **flat pen at 0°** — the signwriter's brush — is a one-line
+  addition to `data/nibs.json` that produces a visibly Trajan-ish capital and a visibly *wrong* minuscule.
+  That pairing is the cleanest demonstration in the whole feature that a tool and an alphabet belong to each
+  other, and it costs a row of data.
+- **No new stamper.** The chisel is not a pen, and modelling one would break nib-only v1 for the sake of one
+  alphabet. Parked.
+
+### 10.8 How a capital reaches the world — unchanged
+
+Capitals already roll rare, skew far from home and unlock one at a time late in the game. So capital tracing
+is **end-game content with no new gating** — §8's "faces unlock on a curve" is already in the code, for
+capitals specifically. Two consequences worth naming:
+
+- Because `state.caps` bypasses the satchel, a capital trace can **never** be blocked by a full satchel, so
+  §9's gate keeps its `!isUpper(c.letter)` verbatim — the table row that is easiest to "tidy away" is
+  load-bearing.
+- §8's line that capitals *"are the natural home for the faces whose capitals are the lesson"* is now
+  concrete: the Roman-capital faces and the inscriptional plate copy are where a capital hunt pays off.
+
+### 10.9 What it costs
+
+| | |
+| --- | --- |
+| 26 glyphs in the Wordshape tool | the dev's hand; the 15 straight-only ones are quick |
+| One metric line + one constant | cap height, in the alphabet and the bench overlay |
+| A case toggle in the album | one control, no new view |
+| A second fraction per face | the milestone code, and the migration trap in §10.5 |
+| New fetches | **none** |
+| Save version bump | **none** |
+| Font work | **none** — all 52 letters already ship |
+
+---
+
+## 11. Italics and bold (designed for, not built)
 
 The dev wants these "down the road". They are cheap *if* §7's data shape leaves room now, so:
 
@@ -506,7 +661,7 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
 
 ---
 
-## 11. Milestones
+## 12. Milestones
 
 - **M1 — the nib engine + the per-stroke scorer, in a bench. BUILT 2026-09-11** — `inklings-trace.html`
   (the `ipa-scrabble.html` → Sound Board pattern, and Wordshape's own), styled off `wordshape-draw.html` so
@@ -568,11 +723,16 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
 - **M3 — fold into `inklings.html`.** The trace overlay replaces the letter branch of `doAttack` (§9), field
   glyphs draw in their face with the `Alpha.png` fallback, the six guards, save v12 → v13, the starter face
   and the nib shop entries. **The loop closes here** — this is the milestone after which the game plays
-  differently.
+  differently. **It must also answer §10.2**: the skeleton is lowercase-only, so either M7 lands first or
+  capitals keep the hit-to-catch verb behind one explicit `isUpper` branch on the trace-open check.
 - **M4 — the Scriptorium.** The album, the per-face plate with anatomy callouts, the 25/50/100% milestones
   paying ink + décor, the framed-specimen décor item.
 - **M5 — the Tree of Faces.** The classification map (Tree-of-Kinds pattern) + group milestones.
-- **M6 — italics & bold** (§10).
+- **M6 — italics & bold** (§11).
+- **M7 — capitals** (§10). Independent of M4–M6 and landable any time after M3 — but M3 owes it the fallback
+  above either way. Mostly a data milestone: 26 capital skeletons authored in the Wordshape tool into the
+  same `data/wordshape-alphabet.json`, a cap-height metric line, an `Aa` toggle on the album and a second
+  fraction per face. No new fetches, no save bump, no font work.
 
 Sound is **provisional** and nothing depends on it: a nib scratch per stroke whose pitch tracks stroke
 length, a pen-lift tick between strokes, and a distinct chime for *face earned* that must not sound like
@@ -580,7 +740,7 @@ the existing `capture` (the letter and the face are two different wins).
 
 ---
 
-## 12. Open questions
+## 13. Open questions
 
 1. **Does a wrong-nib capture tell you so?** Naming the right pen after the fact teaches fastest but
    removes the reason to look. Leaning: say only *that* it was the wrong pen, never which.
@@ -593,5 +753,11 @@ the existing `capture` (the letter and the face are two different wins).
    "right kind of pen, wrong flex" as the same smudge. It may be truer to accept any pointed nib for a
    pointed face and let the *look* be the feedback — the didone and the script nibs produce visibly
    different pages, which is the lesson either way.
-5. **Is a personal best worth showing anywhere but the album?** A tiny `new best` float on the capture is
+5. **Does the flat 0° "signwriter" nib ship with the capitals** (§10.7), or stay parked? It is one row of
+   `data/nibs.json` and it is the clearest single demonstration that a tool and an alphabet belong together
+   — but it is also a nib that makes one of the two alphabets look wrong on purpose.
+6. **Does a true blackletter majuscule skeleton ever get drawn** (§10.6), alongside the true italic, or do
+   the plates simply tell the truth about the approximation? Both are "a second skeleton", which §11 argues
+   is the lesson rather than the cost.
+7. **Is a personal best worth showing anywhere but the album?** A tiny `new best` float on the capture is
    nearly free; a per-face average on the plate edges toward a report card.
