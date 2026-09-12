@@ -442,19 +442,32 @@ movement, not on pointerdown**, so a click that only selects doesn't fill the un
 - **The glyph shapes themselves** (§11.5) are a first pass, drawn to be legible and unfussy. Expect the dev
   to tune them once real targets are traced against them; the `a` is single-storey and the `s` is the one
   glyph placed by hand rather than swept from arcs.
-- **STROKE DIRECTIONS ARE WRONG in nine glyphs** (found 2026-09-11 by Inklings' trace bench; noted, **not yet
-  fixed**). `a b d g o p q` all share `A(0.30,0.48,0.24, 0, 360)`, which starts at the **rightmost** point and
-  **increases** — clockwise on screen, travelling down first — where a hand rounds a bowl
-  **counter-clockwise** from near 12–1 o'clock (`a` may start near the right, but still turns
-  counter-clockwise). `c` and `e` are already correct (`-55,-305` / `0,-305`, decreasing), so the table is
-  internally inconsistent: open curves natural, closed bowls reversed. Separately, **`f` is mirrored** — its
-  arc centre (`x 0.25`) is left of the stem (`x 0.44`), so the hook points left instead of right, and the stem
-  is drawn baseline→ascender rather than top-down. **Wordshape itself cannot see any of this** (its scorer is
-  an order-blind chamfer field, so direction is invisible and the targets score identically either way) —
-  which is why it survived, and why the fix is owed to
-  [`inklings-typography.md`](inklings-typography.md) §5.5, whose direction gate *refuses* the natural motion
-  until this is corrected. Data only, no engine change, and the start angle wants a **per-letter** pass since
-  `b`/`d`/`p`/`q` bowls should begin where the hand leaves the stem.
+- ~~**Stroke directions are wrong in nine glyphs**~~ **FIXED 2026-09-11** (found the same day by Inklings'
+  trace bench). `a b d g o p q` all shared `A(0.30,0.48,0.24, 0, 360)`, which starts at the **rightmost**
+  point and **increases** — clockwise on screen, travelling down first — where a hand rounds a bowl
+  **counter-clockwise**; and **`f` was mirrored**, its arc centre (`x 0.25`) sitting left of the stem
+  (`x 0.44`) so the hook pointed left, drawn baseline→ascender rather than from the hook's tip down.
+  `c` and `e` were already correct (`-55,-305` / `0,-305`, decreasing), which is what gave the oversight
+  away: open curves natural, closed bowls reversed.
+  **Wordshape itself cannot see any of this** — its scorer is an order-blind chamfer field, so direction is
+  invisible and the targets score identically either way, which is why it survived to be found by the first
+  consumer that reads order ([`inklings-typography.md`](inklings-typography.md) §5.5, whose direction gate
+  *refused* the natural motion). Data only, no engine change, and the start angle took the **per-letter**
+  pass the note asked for. As fixed, with the convention now written into the table:
+  - a bowl that meets a stem **starts and ends at the stem** — angle `0` for the right-stemmed `a`/`d`/`g`/`q`,
+    `180` for the left-stemmed `b`/`p`; a free `o` starts at 2 o'clock like `c` (`-55`).
+  - bowls run **counter-clockwise** (`0,-360`) — **except `b` and `p`** (`180,540`, clockwise), because their
+    bowl is drawn *after* the stem and the hand leaves the stem at 9 o'clock and pushes right and over. That
+    asymmetry is the whole reason the start angle needed a per-letter pass rather than one shared edit.
+  - `f` is now one stroke from the hook's tip down into the stem (`A(0.43,0.21,0.15, 315,180)` + the stem
+    `0.21 → 0.72`), hook to the right, with the stem at `x 0.28` and the crossbar `0.06 → 0.50` so the glyph
+    still sits inside its `0.62` advance.
+  - the `i`/`j` dots went counter-clockwise too, so nothing in the alphabet runs clockwise except those two
+    stem-attached bowls.
+  Re-reading the rest of the table with the same eye found **nothing else wrong**: the `h`/`m`/`n`/`r`
+  shoulders correctly run left→over→right (clockwise, `180,360`), `u` correctly runs left→under→right
+  (`180,0`), `e` starts at its bar, `k` draws its arm inward and its leg outward, and every stem, diagonal
+  and descender already ran top-down.
 - **`TOL` and the thresholds** are guesses until M4 is playable. Expect all three to move.
 - **Does the score need to be hidden until commit?** Decision #6 says live, but if wiggle-optimizing turns
   out to dominate play it's a one-line change.

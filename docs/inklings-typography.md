@@ -237,44 +237,60 @@ subsystem's own curve, not word count):
 A **`?` peek** is always available and always costs the same thing: it names the pen and **forfeits the
 face for that capture**. You still get the letter. (No ink price — the cost is already the interesting one.)
 
-### 5.5 KNOWN DEFECT — the authored stroke directions are backwards (found playing M1, 2026-09-11)
+### 5.5 FIXED — the authored stroke directions were backwards (found playing M1, fixed 2026-09-11)
 
-**Not yet fixed, deliberately. Fix before M3 folds the overlay into the game.** The bench works; the
-alphabet it traces is wrong, in two separate ways, and the bench is what made them visible.
+**Fixed the same day, in `wordshape-draw.html`'s `raw` table. Data only — no engine change, since the
+scorer reads direction off the polyline.** The bench worked; the alphabet it traced was wrong, in two
+separate ways, and the bench is what made them visible.
 
-**(a) Every closed bowl starts at 3 o'clock and runs clockwise.** Seven glyphs share one expression in
-`wordshape-draw.html`'s `raw` table — `a b d g o p q` all use `A(0.30,0.48,0.24, 0, 360)`, which begins at
-`(0.54, 0.48)` (the rightmost point) and **increases**, i.e. sweeps clockwise on screen and travels *down*
-first. No hand writes an `o` that way: the natural motion starts up near 12–1 o'clock and goes
-**counter-clockwise**. The dev's reading of `a` is the exception worth preserving — a single-storey `a` *does*
-begin near the right — but it still has to turn counter-clockwise from there.
+**(a) Every closed bowl started at 3 o'clock and ran clockwise.** Seven glyphs shared one expression —
+`a b d g o p q` all used `A(0.30,0.48,0.24, 0, 360)`, which begins at `(0.54, 0.48)` (the rightmost point)
+and **increases**, i.e. sweeps clockwise on screen and travels *down* first. No hand writes an `o` that way.
+The give-away that it was an oversight rather than a choice: **`c` and `e` were already correct**
+(`A(…,-55,-305)` and `A(…,0,-305)` — decreasing, so counter-clockwise). The open curves went the natural way
+and the closed bowls went the other, which no deliberate scheme would do.
 
-The give-away that this is an oversight rather than a choice: **`c` and `e` are already correct**
-(`A(…,-55,-305)` and `A(…,0,-305)` — decreasing, so counter-clockwise). The open curves go the natural way
-and the closed bowls go the other, which no deliberate scheme would do.
+**(b) `f` was mirrored.** `f: J([[0.44,0.72],[0.44,0.21]], A(0.25,0.21,0.19, 0, -135))` — the arc's centre
+(`x 0.25`) sat to the **left** of the stem (`x 0.44`), so the hook swept out to `x 0.116`: the top curve
+pointed left, where an `f`'s hook must point right. The same stroke also ran **baseline → ascender**
+(`0.72 → 0.21`), where an `f` is written from the top of the hook downward.
 
-**(b) `f` is mirrored.** `f: J([[0.44,0.72],[0.44,0.21]], A(0.25,0.21,0.19, 0, -135))` — the arc's centre
-(`x 0.25`) sits to the **left** of the stem (`x 0.44`), so the hook sweeps from `x 0.44` out to `x 0.116`:
-the top curve points left, where an `f`'s hook must point right. The fix is a centre at about
-`stem x + r` with the sweep mirrored. The same stroke also runs **baseline → ascender** (`0.72 → 0.21`),
-i.e. bottom-to-top, where an `f` is written from the top of the hook downward.
-
-**Why it matters more than it looks.** Direction is not decoration here — §5.2's gate *refuses* a stroke
-that runs against the ideal. So as it stands the bench **rejects the natural motion and rewards the
-unnatural one**, and a game shipped on this data would actively teach the wrong hand. That is the one thing
-this feature must not do.
+**Why it mattered more than it looked.** Direction is not decoration here — §5.2's gate *refuses* a stroke
+that runs against the ideal. So as it stood the bench **rejected the natural motion and rewarded the
+unnatural one**, and a game shipped on that data would actively teach the wrong hand.
 
 **Why nothing caught it earlier:** Wordshape's scorer is an order-blind chamfer field (§5.2) — stroke
 direction is *invisible* to it, and the glyphs score identically either way. Tracing is the first consumer
 that can see direction at all, so M1 was always going to be where this surfaced.
 
-**Scope when it is fixed:** the bowl expression is shared by seven letters, so one edit moves all of them,
-but the **start angle wants a per-letter pass** — `b`/`d`/`p`/`q` bowls attach to a stem and should begin
-where the hand leaves it, not at a uniform clock position. Expect to re-read the whole `raw` table with the
-same eye rather than patching these nine; `g`'s bowl and `p`'s were not on the dev's list but carry the
-identical defect, which is a fair warning about the rest. The fix is **data only** — no engine change, since
-the scorer reads direction off the polyline — and it belongs in `wordshape-draw.html`, the alphabet's home
-(see [`wordshape.md`](wordshape.md) §12).
+**As fixed.** The convention is now written into the table above the glyphs, because it is the one property
+of this data that nothing in Wordshape can check:
+
+- **A bowl that meets a stem starts and ends AT the stem** — angle `0` for the right-stemmed `a`/`d`/`g`/`q`,
+  `180` for the left-stemmed `b`/`p`. A free `o` starts at 2 o'clock (`-55`), like `c`. This is what the note
+  meant by wanting a per-letter start angle rather than one shared edit.
+- **Bowls run counter-clockwise** (`0,-360`) — **except `b` and `p`** (`180,540`, clockwise). Their bowl is
+  drawn *after* the stem, and the hand leaves the stem at 9 o'clock and pushes right and over. That
+  asymmetry is the real reason the seven letters could not share one expression: the direction of a bowl
+  follows which side of it the stem is on.
+- **`a` keeps the dev's reading** — a single-storey `a` does begin near the right, and angle `0` *is* the
+  right. It simply turns counter-clockwise from there now.
+- **`f` is one stroke from the hook's tip down into the stem** — `A(0.43,0.21,0.15, 315,180)` then the stem
+  `0.21 → 0.72` — hook to the right, with the stem moved to `x 0.28` and the crossbar to `0.06 → 0.50` so
+  the mirrored hook still sits inside the glyph's `0.62` advance.
+- **The `i`/`j` dots turned counter-clockwise too**, so nothing in the alphabet runs clockwise except those
+  two stem-attached bowls.
+
+**Re-reading the rest of the table with the same eye found nothing else wrong**, which was the other half
+of the job: the `h`/`m`/`n`/`r` shoulders correctly run left→over→right (clockwise, `180,360`), `u`
+correctly runs left→under→right (`180,0`), `e` starts at its bar and sweeps counter-clockwise from it, `k`
+draws its arm inward and its leg outward, `s` starts at the top right, and every stem, diagonal and
+descender already ran top-down. `g`'s and `j`'s tails already hooked the right way.
+
+**The fix reaches the bench for free**: `data/wordshape-alphabet.json` does not exist yet, so
+`inklings-trace.html` slices the `GLYPHS` block live out of `wordshape-draw.html` (§11) and picks the
+corrected table up on reload. Re-export the JSON only after the dev's shape-tuning pass, or it will pin a
+stale alphabet.
 
 ### 5.6 Outcomes
 
@@ -484,8 +500,8 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
   - Deliberately absent: fonts, faces and the album (M2/M4), and §5.4's guidance ladder, which is game-side
     and has nothing to stand on until M3.
   - **Playing it immediately found a data defect, not a code one** — the authored alphabet's closed bowls all
-    run clockwise from 3 o'clock and `f` is mirrored. See **§5.5**; it is noted and *not* fixed, and it must be
-    fixed before M3.
+    ran clockwise from 3 o'clock and `f` was mirrored. **Fixed 2026-09-11** in `wordshape-draw.html`; see
+    **§5.5**. The bench needs no change — it slices the table live.
 - **M2 — the faces.** `data/typefaces.json` (group, date, origin, nib, font file, plate notes),
   `data/nibs.json`, the §4.1 shortlist licence-checked and subset into `fonts/` with its licence texts, and
   the nib↔group mapping that makes §5.4's guidance possible.

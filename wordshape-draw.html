@@ -287,17 +287,29 @@ const GLYPHS = (() => {
       if (!o.length || Math.hypot(q[0]-o[o.length-1][0], q[1]-o[o.length-1][1]) > 1e-6) o.push(q);
     return o;
   };
-  const dot = (x, y) => A(x, y, 0.045, 0, 360, 10);
+  /* DIRECTION IS DATA. The trace bench scores a stroke against the ideal's
+     ORDER, so a bowl written the wrong way round teaches the wrong hand (an
+     order-blind chamfer scorer can't see this, which is why it went unnoticed
+     until inklings-trace.html). The rule, and the only two exceptions to it:
+       · closed bowls run COUNTER-CLOCKWISE (decreasing angle) — a c d e g o q —
+         because that is the way a hand rounds an o;
+       · b and p run CLOCKWISE, because their bowl is drawn AFTER the stem and
+         the hand leaves the stem at 9 o'clock and pushes right and over;
+       · a bowl that meets a stem starts and ends AT the stem (angle 0 for the
+         right-stemmed a/d/g/q, 180 for the left-stemmed b/p); a free o starts
+         at 2 o'clock, like c. */
+  const dot = (x, y) => A(x, y, 0.045, 0, -360, 10);
 
   const raw = {
-    a: [0.60, [ A(0.30,0.48,0.24,0,360), [[0.54,0.24],[0.54,0.72]] ]],
-    b: [0.60, [ [[0.06,0.02],[0.06,0.72]], A(0.30,0.48,0.24,0,360) ]],
+    a: [0.60, [ A(0.30,0.48,0.24,0,-360), [[0.54,0.24],[0.54,0.72]] ]],
+    b: [0.60, [ [[0.06,0.02],[0.06,0.72]], A(0.30,0.48,0.24,180,540) ]],
     c: [0.58, [ A(0.30,0.48,0.24,-55,-305) ]],
-    d: [0.60, [ A(0.30,0.48,0.24,0,360), [[0.54,0.02],[0.54,0.72]] ]],
+    d: [0.60, [ A(0.30,0.48,0.24,0,-360), [[0.54,0.02],[0.54,0.72]] ]],
     /* one stroke: the bar left-to-right, then up and over and round — the way a hand draws it */
     e: [0.58, [ J([[0.06,0.48],[0.54,0.48]], A(0.30,0.48,0.24,0,-305)) ]],
-    f: [0.62, [ J([[0.44,0.72],[0.44,0.21]], A(0.25,0.21,0.19,0,-135)), [[0.08,0.30],[0.60,0.30]] ]],
-    g: [0.60, [ A(0.30,0.48,0.24,0,360), J([[0.54,0.24],[0.54,0.80]], A(0.38,0.80,0.16,0,140)) ]],
+    /* the hook points RIGHT and is written from its tip down into the stem */
+    f: [0.62, [ J(A(0.43,0.21,0.15,315,180), [[0.28,0.21],[0.28,0.72]]), [[0.06,0.30],[0.50,0.30]] ]],
+    g: [0.60, [ A(0.30,0.48,0.24,0,-360), J([[0.54,0.24],[0.54,0.80]], A(0.38,0.80,0.16,0,140)) ]],
     h: [0.60, [ [[0.06,0.02],[0.06,0.72]], J(A(0.30,0.48,0.24,180,360), [[0.54,0.72]]) ]],
     i: [0.22, [ [[0.10,0.24],[0.10,0.72]], dot(0.10,0.09) ]],
     j: [0.46, [ J([[0.34,0.24],[0.34,0.80]], A(0.18,0.80,0.16,0,140)), dot(0.34,0.09) ]],
@@ -307,9 +319,9 @@ const GLYPHS = (() => {
                 J(A(0.24,0.44,0.18,180,360), [[0.42,0.72]]),
                 J(A(0.60,0.44,0.18,180,360), [[0.78,0.72]]) ]],
     n: [0.60, [ [[0.06,0.24],[0.06,0.72]], J(A(0.30,0.48,0.24,180,360), [[0.54,0.72]]) ]],
-    o: [0.60, [ A(0.30,0.48,0.24,0,360) ]],
-    p: [0.60, [ [[0.06,0.24],[0.06,0.96]], A(0.30,0.48,0.24,0,360) ]],
-    q: [0.60, [ A(0.30,0.48,0.24,0,360), [[0.54,0.24],[0.54,0.96]] ]],
+    o: [0.60, [ A(0.30,0.48,0.24,-55,-415) ]],
+    p: [0.60, [ [[0.06,0.24],[0.06,0.96]], A(0.30,0.48,0.24,180,540) ]],
+    q: [0.60, [ A(0.30,0.48,0.24,0,-360), [[0.54,0.24],[0.54,0.96]] ]],
     r: [0.46, [ [[0.06,0.24],[0.06,0.72]], A(0.28,0.46,0.22,180,315) ]],
     /* the one glyph placed by hand — two tangent arcs never quite make a readable s */
     s: [0.56, [ [[0.48,0.31],[0.42,0.26],[0.32,0.24],[0.20,0.26],[0.13,0.32],[0.13,0.40],[0.19,0.45],
