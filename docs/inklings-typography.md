@@ -1,7 +1,8 @@
 # Inklings — The Scriptorium: letter tracing & typeface collecting
 
-**Status: SPECCED 2026-09-11. M1 (the nib engine + the stroke scorer) is BUILT in the standalone bench
-`inklings-trace.html` — see §11. Nothing is in `inklings.html` yet; the capture verb is unchanged in game.**
+**Status: SPECCED 2026-09-11. M1 (the nib engine + the stroke scorer) and M2 (the faces) are BUILT in the
+standalone bench `inklings-trace.html` — see §11. Nothing is in `inklings.html` yet; the capture verb is
+unchanged in game.**
 
 This doc covers two things that are really one thing:
 
@@ -102,14 +103,23 @@ the wrong terminals. That is fine, because:
 - and a later `terminal:` knob can stamp a slab or bracketed serif at stroke ends — a short perpendicular
   stroke at each endpoint, which is the next cheapest thing after the nib. **Not v1.**
 
-**Nib data shape** (`data/nibs.json`, hand-written, ~12 entries):
+**Nib data shape** (`data/nibs.json`, hand-written, 10 entries as built):
 
 ```json
-{ "id":"broad-30", "name":"Broad quill", "type":"broad",
-  "w":0.16, "h":0.035, "angle":30, "group":"garalde" }
+{ "id":"broad-30", "name":"Broad 30°", "type":"broad",
+  "w":0.150, "h":0.032, "angle":30, "price":120, "groups":["humanist"] }
 ```
 
-Widths are in **em units**, matching the skeleton alphabet's coordinate space (§5.1).
+Widths are in **em units**, matching the skeleton alphabet's coordinate space (§5.1). `groups` is a **list**,
+not the single string this section first sketched, because of one honest consequence: **`round-mono` writes
+all three Lineal leaves.** A monoline has no stress to vary, so the sans branch is not a pen distinction at
+all — grotesque, geometric and humanist sans are told apart by *proportion*, which the shared skeleton
+cannot express either. The three faces are therefore one pick, and the album's difficulty there lives in the
+letters rather than in the tool. That is the §3 engine being truthful rather than a gap to paper over, and
+it is the reason the nib file names groups *and* the group file names nibs: the bench asserts the two agree
+at boot (`indexFaces`), so an edit to one that forgets the other fails loudly instead of rendering a wrong
+label. `price` is the §7 ink gate; a nib with an empty `groups` (`round-bold`) writes no face and is in the
+file only so §10's *bold is a wider nib* claim is visible in the bench before the style axis exists.
 
 ---
 
@@ -141,23 +151,36 @@ asks only that you credit Hershey and note modifications). They ship Simplex, Sc
 skeleton source. One caveat: Duplex/Complex/Triplex fake weight with parallel strokes, so they are fine as
 looks and useless as skeletons.
 
-### 4.1 Font shortlist (each needs a licence check + the dev's eye before it ships)
+### 4.1 The faces, as shipped (M2, 2026-09-12)
 
-One font per classification leaf, all PD or OFL:
+One face per classification leaf, every one OFL, fetched by **`./fetch-typeface-fonts.sh`** into `fonts/`
+beside its licence text. The two leaves the spec left open are closed:
 
-| Leaf | Candidate | Licence |
-| --- | --- | --- |
-| Humanist (Venetian) | Cardo / Junicode | OFL |
-| Garalde | EB Garamond | OFL |
-| Transitional | Libre Baskerville | OFL |
-| Didone | Libre Bodoni / Cormorant | OFL |
-| Mechanistic (slab) | Bitter / Zilla Slab | OFL |
-| Grotesque | Archivo / URW Nimbus Sans | OFL / AGPL+exception |
-| Geometric | Jost* (a Futura revival) | OFL |
-| Humanist sans | Source Sans / Open Sans | OFL |
-| Blackletter (Textura) | UnifrakturMaguntia | OFL |
-| Uncial / Insular | TBD — Junicode's medieval set is the lead | OFL |
-| Script | Hershey Script | PD |
+| Leaf | Face | File | Bytes |
+| --- | --- | --- | --- |
+| Humanist (Venetian) | Cardo | `fonts/Cardo-latin.woff2` | 15.5 KB |
+| Garalde | EB Garamond | `EBGaramond-latin.woff2` | 23.8 KB |
+| Transitional | Libre Baskerville | `LibreBaskerville-latin.woff2` | 20.1 KB |
+| Didone | Libre Bodoni | `LibreBodoni-latin.woff2` | 15.7 KB |
+| Mechanistic (slab) | Bitter | `Bitter-latin.woff2` | 18.5 KB |
+| Grotesque | Archivo | `Archivo-latin.woff2` | 14.6 KB |
+| Geometric | Jost* | `Jost-latin.woff2` | 9.4 KB |
+| Humanist sans | Open Sans | `OpenSans-latin.woff2` | 13.5 KB |
+| Blackletter (Textura) | UnifrakturMaguntia | `UnifrakturMaguntia-latin.woff2` | 22.4 KB |
+| Uncial / Insular | **Uncial Antiqua** | `UncialAntiqua-latin.woff2` | 19.6 KB |
+| Script | **Pinyon Script** | `PinyonScript-latin.woff2` | 28.1 KB |
+
+- **Uncial Antiqua** (Tom Murphy 7) answers §12's open question 2 — Junicode was the lead but isn't on
+  Google Fonts, so it has no ready latin subset, and Uncial Antiqua is a truer uncial anyway: round
+  majuscules from a near-flat pen, and no case distinction, which is a lesson of its own.
+- **Pinyon Script** replaces §4's "Hershey Script" for the *specimen* slot. Hershey is still the right
+  answer for a second **skeleton** (it is polylines, which is what a skeleton must be), but a specimen has
+  to be a real font file, and a 19th-century engraved roundhand shows the pointed pen's swell-and-release
+  far better than Hershey's monoline script does.
+- **Weight, as built: 201 KB for all eleven** — Google's own latin subsets, which is the zero-tooling path.
+  The script cuts each to the 52 Latin letters (the doc's ~5 KB/face, ~70 KB total) **if `pyftsubset` is on
+  PATH**, so `pip install fonttools brotli` then a re-run shrinks them with no script change. Nothing in
+  the game behaves differently either way.
 
 **Conventions to follow** (the repo already does this): the woff2 plus its licence text side by side in
 `fonts/`, as `fonts/PixelifySans-latin.woff2` + `fonts/PixelifySans-OFL.txt` already do, and a credits
@@ -236,6 +259,12 @@ subsystem's own curve, not word count):
 
 A **`?` peek** is always available and always costs the same thing: it names the pen and **forfeits the
 face for that capture**. You still get the letter. (No ink price — the cost is already the interesting one.)
+
+**Built in the bench at M2**, all three rungs reachable by button so each can be looked at, with the rung
+the album *would* put you on shown beside them (`< 2 faces → named`, `< 5 → cued`, else cold). The cued
+rung's stress mark is drawn from the nib and nothing else: a broad pen's own edge angle, a pointed pen's
+horizontal (the direction it writes thin), and for a round pen **no tick at all** — the absence is the cue,
+and it says *sans* as loudly as an angle says *blackletter*.
 
 ### 5.5 FIXED — the authored stroke directions were backwards (found playing M1, fixed 2026-09-11)
 
@@ -370,12 +399,21 @@ artifact for it is the thing the trade already has: a **type specimen sheet**.
 **Save shape** (`state` additions; the Sound Board took v12, so this is **v12 → v13**):
 
 ```js
-state.faces = { "<faceId>": { "<letter>": grade } }   // best grade per cell
+state.faces = { "<faceId>": { "<letter>": { g: grade, s: strokes } } }
 state.nibs  = ["round-mono", "broad-30", …]           // owned
 state.nib   = "broad-30"                              // equipped
 ```
 
 Faces are persistent and uncapped, like `state.caps` — never day-scoped.
+
+**A cell keeps the PATH, not only the grade** — amended while building M2, and it follows from this
+section's own first bullet: *a filled cell shows your traced glyph, not the font's*, which is impossible if
+all a cell holds is a number. So the album stores the accepted strokes, **resampled to 16 points per stroke
+and rounded to 3 dp**, which is all a 150 px album cell can resolve; raw pointer paths are ~5× the bytes for
+a picture that size. Budget: ~320 bytes a cell, so a hypothetical complete 26×11 album is **~92 KB** — real,
+but the same order as the atlas, and it is the only version of the album that is worth owning. It also
+interacts with decision #8 exactly as it should: beating a cell's best **replaces the drawing**, so the
+album is a record of your hand and not a list of scores.
 
 ---
 
@@ -477,8 +515,8 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
     `round` a circle, `broad` a **rotated rect at an absolute pen angle** (negated, since canvas y grows
     down, so a positive angle tilts the edge up-right as a calligrapher writes it), `pointed` a circle whose
     radius follows `|dy|^pow` so the weight lands on downstrokes. The contrast is never drawn on — it falls
-    out of the shape, which is the claim. Ten nibs inline across the three types (M2 lifts them to
-    `data/nibs.json`).
+    out of the shape, which is the claim. Ten nibs across the three types, **inline at M1 and lifted to
+    `data/nibs.json` by M2**.
   - **The scorer (§5.2)** — `resample` to 32 points by arc length, mean point-to-point error in em, a soft
     `1 - err/falloff` fidelity, and the two gates: start within `startTol` of the numbered dot, and a
     direction check that compares forward against the reversed ideal (a near-closed bowl has almost no net
@@ -497,14 +535,36 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
     `wordshape-draw.html`** and run — the `affix-sprite-preview.html` trick, so the bench can't trace a stale
     copy of the alphabet. Verified: the slice yields all 26. The bench therefore needs **http serving**
     (Live Server), like every other fetching page here.
-  - Deliberately absent: fonts, faces and the album (M2/M4), and §5.4's guidance ladder, which is game-side
-    and has nothing to stand on until M3.
+  - Deliberately absent at M1: fonts, faces, the album and §5.4's ladder — **all four arrived with M2**,
+    below, except the album's milestones and plates, which stay M4.
   - **Playing it immediately found a data defect, not a code one** — the authored alphabet's closed bowls all
     ran clockwise from 3 o'clock and `f` was mirrored. **Fixed 2026-09-11** in `wordshape-draw.html`; see
     **§5.5**. The bench needs no change — it slices the table live.
-- **M2 — the faces.** `data/typefaces.json` (group, date, origin, nib, font file, plate notes),
-  `data/nibs.json`, the §4.1 shortlist licence-checked and subset into `fonts/` with its licence texts, and
-  the nib↔group mapping that makes §5.4's guidance possible.
+- **M2 — the faces. BUILT 2026-09-12.** Four data artifacts and the bench layer that proves they work:
+  - **`data/nibs.json`** — the ten nibs lifted out of the bench, **with no inline fallback left behind**. A
+    second copy is exactly the drift the live glyph slice exists to prevent, and the bench already needs
+    http serving, so a missing file is an error panel rather than a silently stale table.
+  - **`data/typefaces.json`** — the pruned Vox-ATypI tree (15 group rows, 12 leaves) plus **12 faces**: the
+    eleven §4.1 leaves and the **starter skeleton face** (§8), which is the one face whose specimen is not a
+    font. Each face carries group, nib, date, origin, font file, CSS family, licence, credit, a **plate**
+    paragraph and **anatomy callouts** (`{term, letter, note}`) — the teaching copy §7's plate needs,
+    authored now and *positioned* at M4. Faces keep their **real font names**: §4's pun-a-new-name advice
+    applies only to a face we would have to redraw to ship, and "Garamond" is the teaching payload.
+  - **`fonts/` + `fetch-typeface-fonts.sh`** — eleven OFL faces and their licence texts (§4.1, as shipped).
+  - **The nib↔group mapping**, stated from both ends and **asserted at boot** — see §3's `groups` note and
+    the Lineal consequence it records.
+  - **In the bench:** a face picker grouped by the tree, §5.4's **named / cued / cold** ladder with the `?`
+    peek (`0`), and the payoff — **four specimen cells at one em on one baseline**: the real font, the
+    skeleton in that face's own nib, your hand in the pen you equipped, and the album cell if you have ever
+    earned one. That is §3's claim laid out to be judged rather than argued about. §5.6's verdict table is
+    live with it (right pen / right pen mis-set / wrong type), and the plate's anatomy list is clickable —
+    each callout jumps the pad to the letter that shows the term.
+  - **Two things the build settled.** The real font is drawn at the skeleton's own em with its baseline on
+    the skeleton's baseline (0.72 em), so it is a **true overlay** and the x-height differences you see
+    between two faces are the faces' — that is also exactly the call M3's field glyph makes. And §5.6's
+    **smudge multiplier must stay high enough that a clean trace with a mis-set pen can still clear
+    `faceTh`**: the first number tried (0.7 against a 0.72 threshold) made "smudged grade" mean *no face at
+    all*, which is a second silent refusal rather than the worse grade the table promises. Default 0.85.
 - **M3 — fold into `inklings.html`.** The trace overlay replaces the letter branch of `doAttack` (§9), field
   glyphs draw in their face with the `Alpha.png` fallback, the six guards, save v12 → v13, the starter face
   and the nib shop entries. **The loop closes here** — this is the milestone after which the game plays
@@ -524,8 +584,14 @@ the existing `capture` (the letter and the face are two different wins).
 
 1. **Does a wrong-nib capture tell you so?** Naming the right pen after the fact teaches fastest but
    removes the reason to look. Leaning: say only *that* it was the wrong pen, never which.
-2. **Uncial's font** (§4.1) is the one leaf without a clear candidate.
+2. ~~**Uncial's font** (§4.1) is the one leaf without a clear candidate.~~ **Answered by M2: Uncial
+   Antiqua** (OFL). Junicode was the lead but isn't on Google Fonts, so it has no ready latin subset.
 3. **Does the Wordshape bench grow a stroke-order readout + nib preview**, so one tool authors both games'
    glyphs? Cheap, and it is where the skeletons live.
-4. **Is a personal best worth showing anywhere but the album?** A tiny `new best` float on the capture is
+4. **Does a mis-set pen of the RIGHT type deserve its own verdict at all?** §5.6 gives a broad nib an
+   angle tolerance, which is measurable; for round and pointed nibs there is no second unit, so M2 grades
+   "right kind of pen, wrong flex" as the same smudge. It may be truer to accept any pointed nib for a
+   pointed face and let the *look* be the feedback — the didone and the script nibs produce visibly
+   different pages, which is the lesson either way.
+5. **Is a personal best worth showing anywhere but the album?** A tiny `new best` float on the capture is
    nearly free; a per-face average on the plate edges toward a report card.

@@ -80,6 +80,28 @@
   .spec canvas{display:block;image-rendering:auto}
   .spec span{font-family:var(--pix);font-size:9.5px;color:var(--muted);display:block;margin-top:3px;letter-spacing:.3px}
   .spec.on{border-color:var(--accent)}
+
+  /* M2 — the face layer: the picker, the plate, the specimen comparison. */
+  .faces{display:flex;flex-direction:column;gap:5px}
+  .fgroup{font-family:var(--pix);font-size:9.5px;letter-spacing:.9px;color:var(--accent2);text-transform:uppercase;margin-top:5px}
+  .face{font-family:var(--pix);font-size:12px;cursor:pointer;border:2px solid var(--edge);background:var(--cell);
+    color:var(--ink);padding:5px 8px;text-align:left;box-shadow:2px 2px 0 var(--edge);display:flex;gap:8px;align-items:baseline;width:100%}
+  .face:hover{background:#fff}
+  .face.on{background:var(--accent);color:#fff}
+  .face small{font-family:var(--sans);font-size:10.5px;opacity:.68;letter-spacing:0;margin-left:auto;white-space:nowrap}
+  .face.on small{opacity:.9}
+  .face.locked{opacity:.55}
+  .cmp{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
+  .cmp figure{margin:0;text-align:center}
+  .cmp canvas{display:block;background:var(--cell);border:2px solid var(--line)}
+  .cmp figure.key canvas{border-color:var(--accent)}
+  .cmp figcaption{font-family:var(--pix);font-size:9.5px;color:var(--muted);margin-top:4px;letter-spacing:.3px;max-width:150px}
+  .plate{font-size:13px;margin:10px 0 0;max-width:74ch}
+  .plate .meta{font-family:var(--pix);font-size:11px;letter-spacing:.4px;color:var(--accent2);display:block;margin-bottom:3px}
+  .anat{font-size:12.5px;color:var(--muted);margin:7px 0 0;padding-left:17px}
+  .anat li{margin-bottom:3px}
+  .anat b{color:var(--ink);font-family:var(--pix);font-size:11px;letter-spacing:.3px}
+  .rung{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
   #msg{font-family:var(--pix);font-size:12px;min-height:18px;letter-spacing:.3px}
   #msg.bad{color:var(--warn)}
   #msg.good{color:var(--accent)}
@@ -93,12 +115,19 @@
     <div class="brand">INKLINGS · DEV BENCH</div>
     <h1>Trace Bench — the nib engine &amp; the stroke scorer</h1>
     <p class="lede">
-      M1 of <b>the Scriptorium</b> (<code>docs/inklings-typography.md</code>). Trace the letter stroke by
+      M1 + M2 of <b>the Scriptorium</b> (<code>docs/inklings-typography.md</code>). Trace the letter stroke by
       stroke; the grade is per-stroke fidelity against the authored skeleton, and the ink is a <b>nib stamped
       along your path</b> — which is the whole claim of §3: <b>stroke contrast is a record of the tool</b>, so
       one skeleton plus a pen gives you a typeface. Glyphs come from Wordshape's authored alphabet
       (<code>data/wordshape-alphabet.json</code> if present, else sliced live out of
       <code>wordshape-draw.html</code> so the two can't drift).
+    </p>
+    <p class="lede">
+      <b>M2 adds the faces.</b> <code>data/nibs.json</code> and <code>data/typefaces.json</code> now hold the
+      pens and the pruned Vox-ATypI tree, and <code>fonts/</code> holds one OFL face per classification leaf —
+      so the specimen you compare your trace against is a <b>genuine typeface</b>, not our approximation. Pick a
+      face, pick the pen you think wrote it, and the three cells below the pad are §3's whole argument side by
+      side: the real font, the skeleton in that face's own nib, and your hand.
     </p>
   </div>
 
@@ -126,6 +155,22 @@
           the next stroke starts. A stroke that starts too far off, or runs backwards, is refused and shows
           you the ghost — that's §5.2's gates, not a difficulty setting.
         </p>
+        <div class="row rung" style="border-top:2px dashed var(--line);padding-top:10px">
+          <span class="keys">GUIDANCE §5.4</span>
+          <button class="btn sm" id="r-named">Named</button>
+          <button class="btn sm" id="r-cued">Cued</button>
+          <button class="btn sm" id="r-cold">Cold</button>
+          <button class="btn sm" id="b-peek">? peek <span class="keys">0</span></button>
+          <span class="keys" id="rung-auto"></span>
+        </div>
+        <p class="hint" id="rung-note"></p>
+      </div>
+
+      <div class="panel" style="margin-top:14px">
+        <h2>Specimen — the §3 test</h2>
+        <div class="cmp" id="cmp"></div>
+        <div class="plate" id="plate"></div>
+        <ul class="anat" id="anat"></ul>
       </div>
     </div>
 
@@ -143,6 +188,14 @@
           </div>
         </div>
         <div class="grades" id="g-list" style="margin-top:10px"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Face <span class="keys">, .</span></h2>
+        <div class="faces" id="faces"></div>
+        <p class="hint">One face per pruned Vox-ATypI leaf (§6), and <b>every group is a pen</b> — which is why
+          this list and the nib list are the same information twice. A face whose nib you'd have to buy shows
+          its price; the bench never locks you out of one.</p>
       </div>
 
       <div class="panel">
@@ -183,10 +236,12 @@
 
 <script>
 /* ===========================================================================
-   THE TRACE BENCH — M1 of docs/inklings-typography.md
-   Two engines live here and nothing else: the NIB (§3) and the per-stroke
-   SCORER (§5.2), plus the feel knobs (§5.3). No faces, no fonts, no album —
-   M2 brings the typefaces and M3 folds the overlay into inklings.html.
+   THE TRACE BENCH — M1 + M2 of docs/inklings-typography.md
+   M1's two engines: the NIB (§3) and the per-stroke SCORER (§5.2), plus the
+   feel knobs (§5.3). M2's face layer on top: data/nibs.json, the pruned Vox
+   tree and the eleven OFL specimens in data/typefaces.json, §5.4's guidance
+   ladder and the four-cell specimen comparison. The album's plates and
+   milestones are M4; M3 folds the overlay into inklings.html.
    =========================================================================== */
 const $ = id => document.getElementById(id);
 
@@ -236,21 +291,59 @@ function withBounds(ch, w, strokes){
 
 /* --------------------------------------------------------------------- nibs
    §3's three types are not cosmetic variants — each one produces the stress
-   model a whole Vox branch is classified by. Widths are em, angles degrees.
-   M2 lifts this table to data/nibs.json; it lives inline while the numbers
-   are still being argued with. */
-const NIBS = [
-  { id:"round-mono",   name:"Round monoline",  type:"round",   w:0.055, h:0.055,            group:"Lineal — grotesque / geometric" },
-  { id:"round-bold",   name:"Round, bold",     type:"round",   w:0.085, h:0.085,            group:"Lineal — bold (§10: bold is a wider nib)" },
-  { id:"round-slab",   name:"Round, slab",     type:"round",   w:0.062, h:0.062,            group:"Mechanistic (terminals are §3's later knob)" },
-  { id:"broad-10",     name:"Broad, flat 10°", type:"broad",   w:0.150, h:0.034, angle:10,  group:"Uncial / Insular" },
-  { id:"broad-20",     name:"Broad 20°",       type:"broad",   w:0.135, h:0.030, angle:20,  group:"Garalde (Aldine)" },
-  { id:"broad-30",     name:"Broad 30°",       type:"broad",   w:0.150, h:0.032, angle:30,  group:"Humanist (Venetian)" },
-  { id:"broad-45",     name:"Broad, steep 45°",type:"broad",   w:0.160, h:0.028, angle:45,  group:"Blackletter (Textura)" },
-  { id:"pointed-tran", name:"Pointed",         type:"pointed", w:0.100, h:0.024, pow:1.0,   group:"Transitional (Réale)" },
-  { id:"pointed-dido", name:"Pointed, flexed", type:"pointed", w:0.130, h:0.013, pow:1.7,   group:"Didone" },
-  { id:"pointed-scri", name:"Pointed, script", type:"pointed", w:0.090, h:0.020, pow:1.2,   group:"Script" }
-];
+   model a whole Vox branch is classified by. M2 lifted the table OUT of here
+   into data/nibs.json, deliberately with no inline fallback: a second copy is
+   exactly the drift the live glyph slice exists to avoid, and the bench
+   already needs http serving. */
+async function loadJson(path){
+  const r = await fetch(path, {cache:"no-store"});
+  if(!r.ok) throw new Error("couldn't read " + path + " (HTTP " + r.status + ")");
+  return r.json();
+}
+
+/* -------------------------------------------------------------- the faces
+   data/typefaces.json: the pruned Vox-ATypI tree (§6) plus one face per leaf.
+   The face names the nib that wrote it, and the group names the same nib —
+   so the mapping §5.4's guidance needs is already in the data twice over and
+   is asserted, not assumed, at boot. */
+function indexFaces(t){
+  const groups = new Map(t.groups.map(g => [g.id, g]));
+  const faces  = t.faces;
+  for(const f of faces){
+    const g = groups.get(f.group);
+    if(!g) throw new Error("face " + f.id + " names a group that isn't in the tree: " + f.group);
+    if(g.nib !== f.nib) throw new Error("face " + f.id + " wants nib " + f.nib + " but its group says " + g.nib);
+    if(!NIBBY.has(f.nib)) throw new Error("face " + f.id + " wants nib " + f.nib + ", which isn't in data/nibs.json");
+  }
+  for(const g of t.groups) if(g.nib && !NIBBY.has(g.nib))
+    throw new Error("group " + g.id + " wants nib " + g.nib + ", which isn't in data/nibs.json");
+  return {groups, faces};
+}
+/* The path broad → narrow, for the plate's heading: "Classical › Garalde". */
+function groupPath(id){
+  const out = [];
+  for(let g = GROUPS.get(id); g; g = g.parent ? GROUPS.get(g.parent) : null) out.unshift(g.name);
+  return out.join(" › ");
+}
+
+/* §4's weight note in practice: load a face's woff2 with the FontFace API, not
+   CSS, and only the faces actually being looked at — in game that's one subset
+   per screen. A face that won't load falls back to the skeleton, which is the
+   Alpha.png fallback's analogue here: degrade to today's art, never to tofu. */
+const fontState = new Map();   // faceId → "ok" | "fail"
+async function loadFaceFont(f){
+  if(!f.font) return "ok";                       // the skeleton IS its own specimen
+  if(fontState.has(f.id)) return fontState.get(f.id);
+  try{
+    const ff = new FontFace(f.family, "url(" + f.font + ") format('woff2')");
+    await ff.load();
+    document.fonts.add(ff);
+    fontState.set(f.id, "ok");
+  }catch(e){
+    fontState.set(f.id, "fail");
+  }
+  return fontState.get(f.id);
+}
 
 /* ------------------------------------------------------------------- tuning
    Every number the feel depends on, in one place, with a slider each. */
@@ -261,7 +354,11 @@ const T = {
   faceTh:   0.72,   // grade at/above which the face would be earned (M3 decides for real)
   dirGate:  1,      // refuse a stroke that runs backwards
   nibScale: 1.0,    // scales every nib's width, for arguing about weight globally
-  smooth:   2       // moving-average window on the raw pointer path
+  smooth:   2,      // moving-average window on the raw pointer path
+  angleTol: 8,      // §5.6 — degrees of pen angle you may be off before the face smudges
+  smudge:   0.85    // §5.6's smudge. Must stay high enough that a CLEAN trace with a
+                    // mis-set pen can still clear faceTh — a smudge is a worse grade,
+                    // not a silent second refusal (0.7 x 1.0 < 0.72 would be exactly that).
 };
 const SLIDERS = [
   ["startTol","Start tolerance (em)",0.02,0.40,0.01],
@@ -269,22 +366,34 @@ const SLIDERS = [
   ["snap","Snap to ideal",0,1,0.05],
   ["faceTh","Face threshold",0.3,0.95,0.01],
   ["nibScale","Nib weight ×",0.5,2,0.05],
-  ["smooth","Path smoothing",0,6,1]
+  ["smooth","Path smoothing",0,6,1],
+  ["angleTol","Pen-angle tolerance (°)",0,45,1],
+  ["smudge","Smudged grade ×",0.2,1,0.05]
 ];
 
 const N_SAMPLES = 32;     // §5.2: resample both paths to N points by arc length
 const STAMP_STEP = 0.006; // em between nib stamps
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 const BEST_KEY = "inklings.trace.best.v1";
+/* Two records on purpose. `best` is the BENCH's own per-nib tuning log (does
+   this letter score better with a flatter pen?); `album` is §7's actual save
+   shape — best grade per face × letter, written only when the face is EARNED,
+   so it is the thing M3/M4 inherit rather than a bench artifact. */
+const ALBUM_KEY = "inklings.trace.album.v1";
 
 /* ------------------------------------------------------------------- state */
 let GLYPHS = null;
-let cur = "a", nib = NIBS[4];
+let NIBS = [], NIBBY = new Map();      // data/nibs.json
+let FACES = [], GROUPS = new Map();    // data/typefaces.json
+let cur = "a", nib = null, face = null;
+let rung = "named";                    // §5.4 — "named" | "cued" | "cold"
+let peeked = false;                    // the ? peek forfeits the face for this capture
 let done = [];            // [{pts (em), fidelity}] — accepted strokes
 let raw = null;           // the stroke in progress, em coords
 let ghost = null;         // {i, t} ghost-stroke animation
 let msgT = 0;
-let best = (()=>{ try{ return JSON.parse(localStorage.getItem(BEST_KEY)) || {}; }catch(e){ return {}; } })();
+let best  = (()=>{ try{ return JSON.parse(localStorage.getItem(BEST_KEY))  || {}; }catch(e){ return {}; } })();
+let album = (()=>{ try{ return JSON.parse(localStorage.getItem(ALBUM_KEY)) || {}; }catch(e){ return {}; } })();
 const show = { guide:true, metrics:false, raw:false, skel:false };
 
 const pad = $("pad"), ctx = pad.getContext("2d");
@@ -496,6 +605,32 @@ function draw(){
     }
   }
 
+  /* §5.4 rung 2 — the stress mark. The thick/thin axis as an angle tick: for a
+     broad pen the nib's own edge, for a pointed one the vertical it puts its
+     weight on, and for a round one NOTHING, which is the cue that says sans. */
+  if(rung === "cued" && face){
+    const want = rightNib(face);
+    const cx = PX*0.90, cy = PX*0.10, r = Math.max(12, e*0.06);
+    ctx.save();
+    ctx.strokeStyle = "#b5532a"; ctx.lineWidth = 2; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.2832); ctx.strokeStyle = "#e0d4bb"; ctx.stroke();
+    if(want.type !== "round"){
+      /* The tick shows where the pen writes THIN — parallel to the nib's edge
+         for a broad pen, horizontal for a pointed one. */
+      const deg = want.type === "broad" ? -(want.angle||0) : 0;
+      const a = deg * Math.PI/180;
+      ctx.strokeStyle = "#b5532a"; ctx.lineWidth = Math.max(3, r*0.28);
+      ctx.beginPath();
+      ctx.moveTo(cx - Math.cos(a)*r*0.8, cy - Math.sin(a)*r*0.8);
+      ctx.lineTo(cx + Math.cos(a)*r*0.8, cy + Math.sin(a)*r*0.8);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = "#b5532a";
+      ctx.beginPath(); ctx.arc(cx, cy, r*0.34, 0, 6.2832); ctx.fill();
+    }
+    ctx.restore();
+  }
+
   /* Where the next stroke starts, numbered — the stroke-order readout. */
   if(done.length < g.strokes.length && !raw){
     const st = g.strokes[done.length];
@@ -546,7 +681,7 @@ function endStroke(){
   raw = null;
   if(done.length === g.strokes.length) finishLetter();
   else say("stroke " + done.length + " · " + pct(r.fidelity), "good");
-  paintGrades(); draw();
+  paintGrades(); paintSpecimen(); draw();
 }
 pad.addEventListener("pointerup", endStroke);
 pad.addEventListener("pointercancel", () => { drawing=false; raw=null; draw(); });
@@ -562,11 +697,31 @@ function finishLetter(){
   if(grade > prev){
     best[key] = grade;
     try{ localStorage.setItem(BEST_KEY, JSON.stringify(best)); }catch(e){}
-    say("NEW BEST · " + pct(grade) + (prev ? " (was " + pct(prev) + ")" : ""), "good");
-  } else {
-    say(pct(grade) + " · best stands at " + pct(prev), null);
   }
-  paintLetters();
+  /* The letter is earned either way (§5.6). The FACE is what the pen and the
+     peek can cost you, and the album only ever hears about a cell it keeps. */
+  const fg = faceGrade();
+  const v = nibVerdict();
+  const cellPrev = ((album[face.id] || {})[cur] || {}).g || 0;
+  let line;
+  if(fg >= T.faceTh && fg > cellPrev){
+    (album[face.id] = album[face.id] || {})[cur] = { g: fg, s: albumStrokes() };
+    try{ localStorage.setItem(ALBUM_KEY, JSON.stringify(album)); }catch(e){}
+    line = "letter ✓ · " + face.name + " " + pct(fg) + (cellPrev ? " (was " + pct(cellPrev) + ")" : " — new cell");
+    say(line, "good");
+  } else if(fg >= T.faceTh){
+    say("letter ✓ · " + pct(fg) + " · this cell stands at " + pct(cellPrev), null);
+  } else {
+    say("letter ✓ · no face — " + (peeked ? "peeked" : v.rank === "wrong" ? v.label : pct(fg) + " is under " + pct(T.faceTh)), "bad");
+  }
+  paintLetters(); paintFaces(); paintSpecimen();
+}
+/* What the album keeps of a trace: the accepted strokes, resampled to a fixed
+   16 points and rounded to 3 dp. A cell that stored the raw pointer path would
+   be ~5x the bytes for a glyph 150 px wide, and the album never draws it
+   larger than that. */
+function albumStrokes(){
+  return done.map(d => resample(d.pts, 16).map(q => [+q[0].toFixed(3), +q[1].toFixed(3)]));
 }
 function gradeNow(){
   if(!done.length) return 0;
@@ -585,9 +740,212 @@ function animateGhost(){
   })(t0);
 }
 
+/* ================================================= the face layer (M2, §5.4/§5.6)
+   The nib you PICK is judged against the nib the face was written with. Three
+   outcomes, and the letter is never one of them — §5.6's rule is that the
+   economy must not stall on a typography lesson. */
+function rightNib(f){ return f ? (NIBBY.get(f.nib) || null) : null; }
+function nibVerdict(){
+  const want = rightNib(face);
+  if(!want) return {rank:"right", label:"right pen", mult:1};
+  if(nib.id === want.id) return {rank:"right", label:"right pen", mult:1};
+  if(nib.type !== want.type) return {rank:"wrong", label:"wrong pen — the look is wrong", mult:0};
+  /* Right type, wrong setting. For a broad nib that is a measurable angle; for
+     the other two it's weight/flex, so fall back to a graded miss rather than
+     inventing a second unit. */
+  const d = Math.abs((nib.angle||0) - (want.angle||0));
+  if(want.type === "broad" && d > T.angleTol) return {rank:"smudge", label:"right pen, " + Math.round(d) + "° off — smudged", mult:T.smudge};
+  if(want.type !== "broad" && nib.id !== want.id) return {rank:"smudge", label:"right kind of pen, wrong flex — smudged", mult:T.smudge};
+  return {rank:"right", label:"right pen", mult:1};
+}
+/* The face's grade for this capture: the trace, times what the pen cost it,
+   and zero if the ? peek was taken (decision: the peek always costs the face
+   and never the letter). */
+function faceGrade(){
+  if(peeked) return 0;
+  return gradeNow() * nibVerdict().mult;
+}
+
+function setFace(f, quiet){
+  face = f;
+  if(rung === "named"){ const w = rightNib(f); if(w) nib = w; }
+  peeked = false;
+  loadFaceFont(f).then(() => { paintFaces(); paintSpecimen(); draw(); });
+  paintFaces(); paintNibs(); paintPlate(); paintSpecimen(); paintGrades(); paintLetters(); paintNibStrip(); draw();
+  if(!quiet) say(rungLine(), null);
+}
+function stepFace(d){
+  if(!face) return;
+  const i = FACES.indexOf(face);
+  setFace(FACES[(i + d + FACES.length) % FACES.length]);
+}
+function setRung(r){
+  rung = r;
+  for(const [id,key] of [["r-named","named"],["r-cued","cued"],["r-cold","cold"]])
+    $(id).classList.toggle("on", rung === key);
+  const w0 = rightNib(face);
+  if(rung === "named" && w0) nib = w0;
+  $("rung-note").textContent =
+    rung === "named" ? "Rung 1 — the game equips the right pen and names it. Pure tracing; no classification asked for yet."
+  : rung === "cued"  ? "Rung 2 — yours to pick, but the creature carries a stress mark: the thick/thin axis drawn as an angle tick beside the glyph (a round pen has no axis to draw, which is the cue)."
+  :                    "Rung 3 — the letterform only. The Scriptorium is the reference you go and consult.";
+  paintNibs(); paintGrades(); paintFaces(); draw();
+  say(rungLine(), null);
+}
+function rungLine(){
+  if(!face) return "";
+  const w = rightNib(face);
+  if(rung === "named") return face.name + " — " + w.name.toLowerCase() + (w.angle != null ? ", " + w.angle + "°" : "");
+  if(rung === "cued")  return face.name + " — read the stress mark";
+  return face.name + " — cold";
+}
+function peek(){
+  const w = rightNib(face);
+  if(!w) return;
+  peeked = true;
+  say("peek: " + w.name.toLowerCase() + (w.angle != null ? ", " + w.angle + "°" : "") + " — the face is forfeit, the letter isn't", "bad");
+  paintGrades();
+}
+/* How many faces you'd hold in game, and therefore which rung §5.4 would put
+   you on. Shown rather than enforced — the bench wants all three reachable. */
+function faceCount(){ return Object.keys(album).length; }
+function autoRung(){ const n = faceCount(); return n < 2 ? "named" : n < 5 ? "cued" : "cold"; }
+
+function paintFaces(){
+  const host = $("faces"); host.innerHTML = "";
+  let lastTop = null;
+  for(const f of FACES){
+    const g = GROUPS.get(f.group);
+    const top = g.parent ? GROUPS.get(g.parent).name : g.name;
+    if(top !== lastTop){
+      const h = document.createElement("div"); h.className = "fgroup"; h.textContent = top;
+      host.appendChild(h); lastTop = top;
+    }
+    const n = NIBBY.get(f.nib);
+    const cells = Object.keys(album[f.id] || {}).length;
+    const b = document.createElement("button");
+    b.className = "face" + (face && f.id === face.id ? " on" : "");
+    b.innerHTML = "<span>" + g.name.replace(/ \(.*\)/, "") + "</span><small>" +
+      (cells ? cells + "/26 · " : "") + n.name.toLowerCase() +
+      (fontState.get(f.id) === "fail" ? " · font missing" : "") + "</small>";
+    b.title = f.name + " — " + (f.date || "") + (n.price ? " · nib " + n.price + " ink" : "");
+    b.onclick = () => setFace(f);
+    host.appendChild(b);
+  }
+  $("rung-auto").textContent = "· " + faceCount() + " face" + (faceCount()===1?"":"s") +
+    " in the album → §5.4 would say " + autoRung();
+}
+
+function paintPlate(){
+  $("plate").innerHTML =
+    '<span class="meta">' + groupPath(face.group) + " · " + face.name +
+    (face.date ? " · " + face.date : "") + '</span>' +
+    (face.origin ? "<i>" + face.origin + "</i><br>" : "") + (face.plate || "");
+  $("anat").innerHTML = (face.anatomy || []).map(a =>
+    "<li><b>" + a.term + "</b> <span style='font-family:var(--pix)'>(" + a.letter + ")</span> — " + a.note +
+    ' <a href="#" data-ch="' + a.letter + '" style="color:var(--accent)">show</a></li>').join("");
+  for(const a of $("anat").querySelectorAll("a")) a.onclick = ev => {
+    ev.preventDefault(); cur = a.dataset.ch; resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen();
+  };
+}
+
+/* ---------------------------------------------------------- the §3 test, drawn
+   Three cells at the same em, on the same baseline: the real font, the skeleton
+   in the face's OWN nib, and your trace. If §3 is true, cell 2 belongs to the
+   same family as cell 1 — and cell 3 is the one the album keeps. */
+const SPEC_PX = 150;
+function specCanvas(caption, key){
+  const fig = document.createElement("figure");
+  if(key) fig.className = "key";
+  const c = document.createElement("canvas");
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  c.width = Math.round(SPEC_PX*dpr); c.height = Math.round(SPEC_PX*dpr);
+  c.style.width = SPEC_PX + "px"; c.style.height = SPEC_PX + "px";
+  c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);
+  fig.appendChild(c);
+  const cap = document.createElement("figcaption"); cap.innerHTML = caption;
+  fig.appendChild(cap);
+  return {fig, c};
+}
+/* The real font at the skeleton's own em, with its baseline on the skeleton's
+   baseline (0.72 em) — a true overlay, so the x-height difference you see
+   between two faces is the faces' and not the drawing's. This is also exactly
+   the call M3's field glyph makes. */
+function drawFontGlyph(k, ch, f, em, ox, oy){
+  if(!f.family || fontState.get(f.id) !== "ok") return false;
+  k.save();
+  k.fillStyle = "#2b2620";
+  k.font = em + "px '" + f.family + "', serif";
+  k.textAlign = "center"; k.textBaseline = "alphabetic";
+  k.fillText(ch, ox, oy + 0.72*em);
+  k.restore();
+  return true;
+}
+function paintSpecimen(){
+  if(!face || !GLYPHS) return;
+  const host = $("cmp"); host.innerHTML = "";
+  const g = GLYPHS.get(cur);
+  const want = rightNib(face);
+  const em = SPEC_PX*0.62, ox = SPEC_PX/2, oy = SPEC_PX*0.12;
+  const gox = (SPEC_PX - g.w*em)/2;
+
+  /* 1 — the genuine face (or, for the skeleton face, the skeleton itself). */
+  const a = specCanvas("the real face<br><b>" + face.name + "</b>");
+  const ka = a.c.getContext("2d");
+  ka.fillStyle = "#fbf7ee"; ka.fillRect(0,0,SPEC_PX,SPEC_PX);
+  if(!drawFontGlyph(ka, cur, face, em, ox, oy)){
+    for(const st of g.strokes) stampStroke(ka, g, st, want, "#2b2620", em, gox, oy, 1);
+    a.fig.querySelector("figcaption").innerHTML = face.font
+      ? "font missing — showing the pen<br><b>" + face.name + "</b>"
+      : "the skeleton, in the round pen<br><b>" + face.name + "</b>";
+  }
+  host.appendChild(a.fig);
+
+  /* 2 — the skeleton stamped with the face's own nib: §3's claim, isolated. */
+  const b = specCanvas("the skeleton in <b>" + want.name.toLowerCase() + "</b>" +
+    (want.angle != null ? " at " + want.angle + "°" : ""), true);
+  const kb = b.c.getContext("2d");
+  kb.fillStyle = "#fbf7ee"; kb.fillRect(0,0,SPEC_PX,SPEC_PX);
+  for(const st of g.strokes) stampStroke(kb, g, st, want, "#2b2620", em, gox, oy, 1);
+  host.appendChild(b.fig);
+
+  /* 3 — your hand, in the pen you actually equipped. */
+  const v = nibVerdict();
+  const c3 = specCanvas(done.length
+      ? "your hand · " + nib.name.toLowerCase() + "<br>" + (peeked ? "<b>peeked — face forfeit</b>" : "<b>" + v.label + "</b>")
+      : "your hand — trace it<br><b>" + nib.name.toLowerCase() + "</b>");
+  const kc = c3.c.getContext("2d");
+  kc.fillStyle = "#fbf7ee"; kc.fillRect(0,0,SPEC_PX,SPEC_PX);
+  if(done.length){
+    for(const d of done) stampStroke(kc, g, d.pts, nib, "#2b2620", em, gox, oy, 1);
+  } else {
+    kc.setLineDash([4,5]); kc.strokeStyle = "#ddd3bd"; kc.lineWidth = 1.5;
+    for(const st of g.strokes){
+      kc.beginPath();
+      st.forEach((q,i) => { const x = gox + q[0]*em, y = oy + q[1]*em; i ? kc.lineTo(x,y) : kc.moveTo(x,y); });
+      kc.stroke();
+    }
+    kc.setLineDash([]);
+  }
+  host.appendChild(c3.fig);
+
+  /* 4 — the album cell: the best trace ever scored on this face × letter, drawn
+     from the POINTS it was traced with. §7 says a filled cell shows your glyph
+     and not the font's, which is only possible if the cell keeps the path — see
+     the save-shape note in §7. */
+  const cell = (album[face.id] || {})[cur];
+  if(cell != null){
+    const d = specCanvas("album best<br><b>" + pct(cell.g) + "</b>");
+    const kd = d.c.getContext("2d");
+    kd.fillStyle = "#f6f1e4"; kd.fillRect(0,0,SPEC_PX,SPEC_PX);
+    for(const st of (cell.s || [])) stampStroke(kd, g, st, want, "#2b2620", em, gox, oy, 1);
+    host.appendChild(d.fig);
+  }
+}
+
 /* --------------------------------------------------------------------- UI */
 function say(t, cls){ const m = $("msg"); m.textContent = t || ""; m.className = cls || ""; }
-function resetLetter(){ done = []; raw = null; ghost = null; say(""); paintGrades(); draw(); }
+function resetLetter(){ done = []; raw = null; ghost = null; peeked = false; say(""); paintGrades(); paintSpecimen(); draw(); }
 
 function paintGrades(){
   const g = GLYPHS.get(cur);
@@ -596,12 +954,17 @@ function paintGrades(){
   $("g-sub").textContent = done.length
     ? (complete ? "complete · " + done.length + " stroke" + (done.length>1?"s":"") : done.length + " of " + g.strokes.length + " strokes")
     : g.strokes.length + " stroke" + (g.strokes.length>1?"s":"") + " to write";
+  const cell = ((album[(face||{}).id] || {})[cur] || {}).g;
   const b = best[cur + "|" + nib.id];
-  $("g-best").textContent = b ? "best " + pct(b) : "best —";
-  const face = $("g-face");
-  if(!complete){ face.className = "tag"; face.textContent = "face —"; }
-  else if(gradeNow() >= T.faceTh){ face.className = "tag ok"; face.textContent = "face earned"; }
-  else { face.className = "tag no"; face.textContent = "below " + pct(T.faceTh); }
+  $("g-best").textContent = cell ? "cell " + pct(cell) : b ? "pen best " + pct(b) : "best —";
+  /* The face tag is the §5.6 table, live: the letter is never at stake, only
+     the face, and the pen you picked is half of it. */
+  const tag = $("g-face"), v = nibVerdict();
+  if(peeked){ tag.className = "tag no"; tag.textContent = "face forfeit · peeked"; }
+  else if(v.rank === "wrong"){ tag.className = "tag no"; tag.textContent = "wrong pen · no face"; }
+  else if(!complete){ tag.className = "tag"; tag.textContent = v.rank === "smudge" ? "face: smudged" : "face —"; }
+  else if(faceGrade() >= T.faceTh){ tag.className = "tag ok"; tag.textContent = (v.rank === "smudge" ? "smudged " : "face ") + pct(faceGrade()); }
+  else { tag.className = "tag no"; tag.textContent = pct(faceGrade()) + " · under " + pct(T.faceTh); }
   $("g-list").innerHTML = done.map((d,i) =>
     '<div class="grade"><span>stroke ' + (i+1) + '</span><span>' + pct(d.fidelity) +
     ' <span style="color:var(--muted)">· err ' + d.err.toFixed(3) + 'em</span></span></div>').join("");
@@ -614,16 +977,26 @@ function paintLetters(){
     b.className = "chip" + (ch === cur ? " on" : "") + (best[ch + "|" + nib.id] ? " done" : "");
     b.textContent = ch;
     b.title = best[ch + "|" + nib.id] ? "best " + pct(best[ch + "|" + nib.id]) + " with this nib" : "";
-    b.onclick = () => { cur = ch; resetLetter(); paintLetters(); paintNibStrip(); };
+    b.onclick = () => { cur = ch; resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen(); };
     $("letters").appendChild(b);
   }
 }
+/* A nib's subtitle is the leaves it writes, read back out of the tree — the
+   nib file names groups and the group file names nibs, so neither is the
+   single source and a mismatch is caught at boot instead of read as a label. */
+function nibGroupsLabel(n){
+  const names = (n.groups || []).map(id => (GROUPS.get(id) || {}).name || id);
+  if(!names.length) return n.note ? "no face — §10 demo" : "—";
+  return names.join(" · ");
+}
 function paintNibs(){
   $("nibs").innerHTML = "";
+  const want = face ? rightNib(face) : null;
   NIBS.forEach((n, i) => {
     const b = document.createElement("button");
     b.className = "chip nib" + (n.id === nib.id ? " on" : "");
-    b.innerHTML = (i<9 ? (i+1) + " " : "") + n.name + "<small>" + n.group + "</small>";
+    const flag = (want && n.id === want.id && rung === "named") ? " ✓" : "";
+    b.innerHTML = (i<9 ? (i+1) + " " : "") + n.name + flag + "<small>" + nibGroupsLabel(n) + "</small>";
     b.onclick = () => setNib(n);
     $("nibs").appendChild(b);
   });
@@ -633,7 +1006,7 @@ function paintNibs(){
     ? "Width follows how vertical the travel is, so the weight lands on downstrokes — vertical stress, hairline horizontals."
     : "One width in every direction. No stress at all, which is the whole of Lineal.";
 }
-function setNib(n){ nib = n; paintNibs(); paintGrades(); paintLetters(); paintNibStrip(); draw(); }
+function setNib(n){ nib = n; paintNibs(); paintGrades(); paintLetters(); paintNibStrip(); paintSpecimen(); draw(); }
 
 /* A mini specimen: one glyph, one nib, ideal strokes — no input involved. */
 function miniSpec(c, ch, theNib, size){
@@ -667,7 +1040,7 @@ function paintAbc(){
     const d = document.createElement("div");
     d.className = "spec";
     const c = document.createElement("canvas"); d.appendChild(c);
-    d.onclick = () => { cur = ch; resetLetter(); paintLetters(); paintNibStrip(); };
+    d.onclick = () => { cur = ch; resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen(); };
     host.appendChild(d);
     miniSpec(c, ch, nib, 44);
   }
@@ -706,6 +1079,10 @@ $("b-hint").onclick = () => {
   ghost = {i: done.length, t: 0}; animateGhost();
 };
 $("b-abc").onclick = () => paintAbc();
+$("r-named").onclick = () => setRung("named");
+$("r-cued").onclick  = () => setRung("cued");
+$("r-cold").onclick  = () => setRung("cold");
+$("b-peek").onclick  = () => peek();
 function toggle(id, key, label){
   $(id).onclick = () => {
     show[key] = !show[key];
@@ -719,40 +1096,63 @@ function toggle(id, key, label){
 function nextLetter(d){
   const i = ALPHABET.indexOf(cur);
   cur = ALPHABET[(i + d + 26) % 26];
-  resetLetter(); paintLetters(); paintNibStrip();
+  resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen();
 }
 addEventListener("keydown", ev => {
   if(!GLYPHS) return;
   if(ev.key === "[" ) { nextLetter(-1); return; }
   if(ev.key === "]" ) { nextLetter(1); return; }
+  /* Faces can't take a letter key — every a–z key selects that letter. */
+  if(ev.key === "," ) { stepFace(-1); return; }
+  if(ev.key === "." ) { stepFace(1); return; }
+  if(ev.key === "0" ) { peek(); return; }
   if(ev.key === "Enter"){ nextLetter(1); return; }
   /* Redo/ghost can't be letter keys: every a–z key selects that letter. */
   if(ev.key === "Backspace"){ ev.preventDefault(); resetLetter(); return; }
   if(ev.key === "/" || ev.key === "?"){ ev.preventDefault(); $("b-hint").click(); return; }
   if(ev.key >= "1" && ev.key <= "9"){ const n = NIBS[+ev.key - 1]; if(n) setNib(n); return; }
-  if(/^[a-z]$/.test(ev.key)){ cur = ev.key; resetLetter(); paintLetters(); paintNibStrip(); }
+  if(/^[a-z]$/.test(ev.key)){ cur = ev.key; resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen(); }
 });
 addEventListener("resize", sizePad);
 
 /* ------------------------------------------------------------------- boot */
 (async () => {
   try{
-    const r = await loadGlyphs();
+    const [r, nj, tj] = await Promise.all([
+      loadGlyphs(), loadJson("data/nibs.json"), loadJson("data/typefaces.json")
+    ]);
     GLYPHS = r.glyphs;
     if(!GLYPHS.has(cur)) cur = [...GLYPHS.keys()][0];
-    document.querySelector(".lede").insertAdjacentHTML("beforeend",
+
+    NIBS = nj.nibs; NIBBY = new Map(NIBS.map(n => [n.id, n]));
+    const t = indexFaces(tj);
+    GROUPS = t.groups; FACES = t.faces;
+
+    document.querySelectorAll(".lede")[0].insertAdjacentHTML("beforeend",
       ' <b>' + GLYPHS.size + ' glyphs</b> loaded from <code>' + r.src + '</code>.');
+    document.querySelectorAll(".lede")[1].insertAdjacentHTML("beforeend",
+      ' <b>' + NIBS.length + ' nibs</b>, <b>' + FACES.length + ' faces</b> over ' +
+      FACES.filter(f => f.font).length + ' font files.');
+
+    nib = NIBBY.get("broad-30") || NIBS[0];
     paintNibs(); paintLetters(); paintSliders(); paintNibStrip();
     toggle("t-guide","guide","Guide"); toggle("t-metrics","metrics","Metrics");
     toggle("t-raw","raw","Raw path"); toggle("t-skel","skel","Skeleton");
-    sizePad(); paintGrades();
+    sizePad();
+    /* The starter face first (§8: early game must not demand classification),
+       THEN the rung the album would put you on — the rung equips the face's own
+       pen, so it has to know the face. */
+    setFace(FACES.find(f => f.starter) || FACES[0], true);
+    setRung(autoRung());
+    paintGrades();
+    say(rungLine(), null);
   }catch(e){
     const b = $("boot");
     b.hidden = false;
-    b.innerHTML = "<b>Couldn't load the alphabet.</b> " + String(e.message || e) +
-      "<br>This bench fetches its glyphs, so it needs <b>http serving</b> (Live Server) — " +
-      "<code>file://</code> blocks the read. Export <code>wordshape-alphabet.json</code> from " +
-      "<code>wordshape-draw.html</code> into <code>data/</code> to skip the live slice.";
+    b.innerHTML = "<b>Couldn't load the bench's data.</b> " + String(e.message || e) +
+      "<br>It fetches the alphabet, <code>data/nibs.json</code> and <code>data/typefaces.json</code>, so it " +
+      "needs <b>http serving</b> (Live Server) — <code>file://</code> blocks the reads. The faces' woff2 files " +
+      "come from <code>./fetch-typeface-fonts.sh</code>; without them the specimen falls back to the pen.";
   }
 })();
 </script>

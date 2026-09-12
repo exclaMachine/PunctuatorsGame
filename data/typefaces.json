@@ -1,0 +1,230 @@
+{
+  "v": 1,
+  "note": "The Scriptorium's faces and the tree that groups them (docs/inklings-typography.md §6, §7). The taxonomy is Vox-ATypI (Maximilien Vox 1954, adopted by ATypI 1962), PRUNED: Vox's Glyphic and Graphic are grab-bags and Gaelic / Non-Latin are a tail a Latin skeleton can't teach — ATypI itself deprecated the scheme in 2021, partly for that Latin-centrism. This is a teaching simplification and should keep saying so, the way the ladder corpus's rungs do. Every group is a PEN, which is why data/nibs.json and this tree are one body of information seen twice.",
+  "faceNames": "Faces carry their REAL font names. §4's pun-a-new-name advice applies only to a face we would have to redraw to ship (Papyrus — the blocker there is the file and the trademark, never the letterforms); everything here is OFL and shipped honestly, and 'Garamond' IS the teaching payload.",
+  "groups": [
+    { "id": "classical",     "name": "Classical",             "parent": null,        "note": "Faces whose forms still remember a pen." },
+    { "id": "humanist",      "name": "Humanist (Venetian)",   "parent": "classical", "nib": "broad-30",     "stress": "heavy angled", "tell": "the slanted bar on the e" },
+    { "id": "garalde",       "name": "Garalde (Aldine)",      "parent": "classical", "nib": "broad-20",     "stress": "angled",       "tell": "a horizontal e-bar over an angled stress" },
+    { "id": "transitional",  "name": "Transitional (Réale)",  "parent": "classical", "nib": "pointed-tran", "stress": "turning vertical", "tell": "sharper, more open forms than a Garalde" },
+    { "id": "didone",        "name": "Didone",                "parent": "classical", "nib": "pointed-dido", "stress": "vertical",     "tell": "hairline horizontals against fat stems" },
+    { "id": "mechanistic",   "name": "Mechanistic (slab)",    "parent": null,        "nib": "round-slab",   "stress": "none",         "tell": "monoline with slab terminals" },
+    { "id": "lineal",        "name": "Lineal (sans)",         "parent": null,        "note": "One pen for the whole branch — a monoline has no stress to vary, so these three leaves are told apart by PROPORTION, not by tool." },
+    { "id": "grotesque",     "name": "Grotesque",             "parent": "lineal",    "nib": "round-mono",   "stress": "none",         "tell": "monoline, closed apertures, a slight optical contrast" },
+    { "id": "geometric",     "name": "Geometric",             "parent": "lineal",    "nib": "round-mono",   "stress": "none",         "tell": "compass-and-ruler forms, a near-circular o" },
+    { "id": "humanist-sans", "name": "Humanist sans",         "parent": "lineal",    "nib": "round-mono",   "stress": "none",         "tell": "calligraphic proportions with no contrast" },
+    { "id": "calligraphic",  "name": "Calligraphic",          "parent": null,        "note": "Faces that are still handwriting." },
+    { "id": "blackletter",   "name": "Blackletter (Textura)", "parent": "calligraphic", "nib": "broad-45",  "stress": "steep angled", "tell": "broken curves, a woven page" },
+    { "id": "uncial",        "name": "Uncial / Insular",      "parent": "calligraphic", "nib": "broad-10",  "stress": "flat-pen angled", "tell": "round majuscule forms, thick horizontals" },
+    { "id": "script",        "name": "Script",                "parent": "calligraphic", "nib": "pointed-scri", "stress": "vertical, joined", "tell": "entry and exit strokes that want to connect" },
+    { "id": "skeleton",      "name": "The bare hand",         "parent": null,        "nib": "round-mono",   "stress": "none",         "tell": "no tool at all — the skeleton itself" }
+  ],
+  "faces": [
+    {
+      "id": "skeleton",
+      "name": "The Bare Hand",
+      "group": "skeleton",
+      "nib": "round-mono",
+      "date": "yours",
+      "origin": "the alphabet as a set of bones, before any pen touched it",
+      "font": null,
+      "family": null,
+      "starter": true,
+      "plate": "The face you start with, and the only one whose specimen is not a font: it is the shared skeleton (data/wordshape-alphabet.json) drawn with the round pen. Everything else in the album is this same skeleton wearing a tool.",
+      "anatomy": [
+        { "term": "stroke order", "letter": "e", "note": "One stroke: the bar left to right, then up and over and round — the way a hand draws it, which is why the skeleton could be traced at all." },
+        { "term": "x-height",     "letter": "x", "note": "The height of the lowercase body. Every face in the album shares this skeleton's x-height, so the differences you see are the pen's." }
+      ]
+    },
+    {
+      "id": "cardo",
+      "name": "Cardo",
+      "group": "humanist",
+      "nib": "broad-30",
+      "date": "1990s, after Venetian types of the 1470s",
+      "origin": "David J. Perry, after Nicolas Jenson's Venice",
+      "font": "fonts/Cardo-latin.woff2",
+      "family": "Cardo",
+      "licence": "OFL-1.1",
+      "credit": "Cardo — David J. Perry (fonts/Cardo-OFL.txt)",
+      "plate": "The first roman types cut in Venice copied a humanist scribe's broad pen held steeply, and the giveaway survived into every revival: the bar of the e runs uphill, because a steep pen cannot draw it flat.",
+      "anatomy": [
+        { "term": "stress axis", "letter": "o", "note": "Draw a line through the two thin points of the o: on a humanist face it leans a long way left of vertical. That angle IS the pen's angle." },
+        { "term": "slanted e-bar", "letter": "e", "note": "The one-glance test for a Venetian face." },
+        { "term": "aperture", "letter": "c", "note": "Wide and open — the terminals stay far apart." }
+      ]
+    },
+    {
+      "id": "ebgaramond",
+      "name": "EB Garamond",
+      "group": "garalde",
+      "nib": "broad-20",
+      "date": "2011 revival of types cut in the 1530s–40s",
+      "origin": "Octavio Pardo, after Claude Garamond, Paris",
+      "font": "fonts/EBGaramond-latin.woff2",
+      "family": "EB Garamond",
+      "licence": "OFL-1.1",
+      "credit": "EB Garamond — Georg Duffner & Octavio Pardo (fonts/EBGaramond-OFL.txt)",
+      "plate": "The pen has dropped a few degrees from the Venetian angle and the e-bar has come level — but the stress is still angled, and the whole face is still a record of a quill. This is the face most books you have read are descended from.",
+      "anatomy": [
+        { "term": "stress axis", "letter": "o", "note": "Still leaning, but less than a humanist's: the pen is flatter." },
+        { "term": "level e-bar", "letter": "e", "note": "The difference between a Garalde and a Venetian, in one stroke." },
+        { "term": "bracketed serif", "letter": "n", "note": "The serif joins the stem on a curve, the way a pen leaves a stroke. A nib cannot draw this — it is a finishing gesture, which is why your traced glyph has the right stress and the wrong terminals." }
+      ]
+    },
+    {
+      "id": "librebaskerville",
+      "name": "Libre Baskerville",
+      "group": "transitional",
+      "nib": "pointed-tran",
+      "date": "2012 revival of types of the 1750s",
+      "origin": "Impallari Type, after John Baskerville, Birmingham",
+      "font": "fonts/LibreBaskerville-latin.woff2",
+      "family": "Libre Baskerville",
+      "licence": "OFL-1.1",
+      "credit": "Libre Baskerville — Pablo Impallari & Rodrigo Fuenzalida (fonts/LibreBaskerville-OFL.txt)",
+      "plate": "The hinge of the whole classification. Baskerville's smoother paper and sharper impression let the contrast rise and the stress stand up straight — the broad pen is being abandoned mid-face for the engraver's point.",
+      "anatomy": [
+        { "term": "stress axis", "letter": "o", "note": "Nearly vertical now. Compare it against the Garalde's o on the same plate: that rotation is a century of printing technology." },
+        { "term": "contrast", "letter": "d", "note": "Thick stems, thin bowls — further apart than a Garalde's, not yet a Didone's." }
+      ]
+    },
+    {
+      "id": "librebodoni",
+      "name": "Libre Bodoni",
+      "group": "didone",
+      "nib": "pointed-dido",
+      "date": "2013 revival of types of the 1790s",
+      "origin": "Impallari Type, after Giambattista Bodoni, Parma",
+      "font": "fonts/LibreBodoni-latin.woff2",
+      "family": "Libre Bodoni",
+      "licence": "OFL-1.1",
+      "credit": "Libre Bodoni — Pablo Impallari, Rodrigo Fuenzalida & Danilo de Marco (fonts/LibreBodoni-OFL.txt)",
+      "plate": "The end of the road the Transitional started down: stress dead vertical, horizontals reduced to hairlines, serifs flat and unbracketed. Nothing here remembers a quill — it remembers a burin.",
+      "anatomy": [
+        { "term": "hairline", "letter": "o", "note": "The thinnest part of a Didone is thinner than anything a broad nib can produce, which is the argument for the pointed pen in one picture." },
+        { "term": "unbracketed serif", "letter": "l", "note": "The serif meets the stem at a right angle, with no curve easing in." },
+        { "term": "vertical stress", "letter": "b", "note": "Bowl thin at top and bottom, thick at the sides — pressure on the downstroke and nowhere else." }
+      ]
+    },
+    {
+      "id": "bitter",
+      "name": "Bitter",
+      "group": "mechanistic",
+      "nib": "round-slab",
+      "date": "2011, in a tradition from the 1810s",
+      "origin": "Sol Matas — a slab serif for screens",
+      "font": "fonts/Bitter-latin.woff2",
+      "family": "Bitter",
+      "licence": "OFL-1.1",
+      "credit": "Bitter — Sol Matas (fonts/Bitter-OFL.txt)",
+      "plate": "Nineteenth-century advertising needed letters that shouted, so the contrast was thrown away and the serifs were fattened into slabs. A slab is a monoline face wearing heavy terminals — which is why its pen here is a round one.",
+      "anatomy": [
+        { "term": "slab terminal", "letter": "t", "note": "A rectangular block, the same weight as the stem. The nib cannot draw this: a later terminal knob will stamp it at the stroke ends." },
+        { "term": "monoline", "letter": "o", "note": "No stress to find — every part of the bowl is the same width, so there is no axis to draw." }
+      ]
+    },
+    {
+      "id": "archivo",
+      "name": "Archivo",
+      "group": "grotesque",
+      "nib": "round-mono",
+      "date": "2018, in a tradition from the 1890s",
+      "origin": "Omnibus-Type, after the grotesques of Berthold and Stephenson Blake",
+      "font": "fonts/Archivo-latin.woff2",
+      "family": "Archivo",
+      "licence": "OFL-1.1",
+      "credit": "Archivo — Omnibus-Type (fonts/Archivo-OFL.txt)",
+      "plate": "The first sans serifs were called grotesques because a letter without serifs looked monstrous. They are monoline and a little grudging about it — apertures close up, the terminals cut off horizontally.",
+      "anatomy": [
+        { "term": "closed aperture", "letter": "c", "note": "The terminals curl in toward each other. This, not the pen, is what separates the three sans leaves." },
+        { "term": "horizontal terminal", "letter": "s", "note": "Cut flat, at right angles to the stroke." }
+      ]
+    },
+    {
+      "id": "jost",
+      "name": "Jost*",
+      "group": "geometric",
+      "nib": "round-mono",
+      "date": "2018 revival of a 1920s design",
+      "origin": "Owen Earl, after Jakob Erbar and the Bauhaus turn",
+      "font": "fonts/Jost-latin.woff2",
+      "family": "Jost",
+      "licence": "OFL-1.1",
+      "credit": "Jost* — Owen Earl / indestructible type* (fonts/Jost-OFL.txt)",
+      "plate": "A sans built out of the compass and the ruler rather than out of a hand: the o is a circle, the a loses its second storey, and the alphabet stops pretending it was written.",
+      "anatomy": [
+        { "term": "circular bowl", "letter": "o", "note": "As near a true circle as a readable face allows." },
+        { "term": "single-storey a", "letter": "a", "note": "A geometric decision, not an italic one — worth knowing before §10's style axis, where a single-storey a is the mark of a TRUE italic." }
+      ]
+    },
+    {
+      "id": "opensans",
+      "name": "Open Sans",
+      "group": "humanist-sans",
+      "nib": "round-mono",
+      "date": "2010",
+      "origin": "Steve Matteson — an upright humanist sans",
+      "font": "fonts/OpenSans-latin.woff2",
+      "family": "Open Sans",
+      "licence": "OFL-1.1",
+      "credit": "Open Sans — Steve Matteson (fonts/OpenSans-OFL.txt)",
+      "plate": "Take the proportions of a Garalde — the wide o, the open c, the varying letter widths — and remove every trace of the pen. A humanist sans is a monoline face with a scribe's skeleton, which is exactly what your traced glyph always is.",
+      "anatomy": [
+        { "term": "open aperture", "letter": "c", "note": "The terminals stay apart, unlike a grotesque's." },
+        { "term": "varying widths", "letter": "e", "note": "Compare the width of e against o: a geometric face would make them nearly equal." }
+      ]
+    },
+    {
+      "id": "unifrakturmaguntia",
+      "name": "UnifrakturMaguntia",
+      "group": "blackletter",
+      "nib": "broad-45",
+      "date": "2010s, after a textura of the 1500s",
+      "origin": "j. 'mach' wust, from Peter Wiegel's Berthold Mainzer Fraktur",
+      "font": "fonts/UnifrakturMaguntia-latin.woff2",
+      "family": "UnifrakturMaguntia",
+      "licence": "OFL-1.1",
+      "credit": "UnifrakturMaguntia — j. 'mach' wust / Peter Wiegel (fonts/UnifrakturMaguntia-OFL.txt)",
+      "plate": "The same broad pen as a Garalde, held far steeper and lifted more often. At 45° a curve cannot be drawn in one sweep, so it is BROKEN into angled strokes — the black woven page that gave blackletter its name.",
+      "anatomy": [
+        { "term": "broken curve", "letter": "o", "note": "Not a bowl but four straight strokes. The pen angle made the decision, not the designer." },
+        { "term": "steep stress", "letter": "n", "note": "Thin where travel runs along the nib's edge — at 45° that is the diagonal, so the hairlines run corner to corner." }
+      ]
+    },
+    {
+      "id": "uncialantiqua",
+      "name": "Uncial Antiqua",
+      "group": "uncial",
+      "nib": "broad-10",
+      "date": "2011, after uncial hands of the 4th–8th centuries",
+      "origin": "Tom Murphy 7, after late-Roman and insular book hands",
+      "font": "fonts/UncialAntiqua-latin.woff2",
+      "family": "Uncial Antiqua",
+      "licence": "OFL-1.1",
+      "credit": "Uncial Antiqua — Tom Murphy 7 (fonts/UncialAntiqua-OFL.txt)",
+      "plate": "The opposite extreme from blackletter with the same tool: the pen laid almost flat. Horizontals go thick, verticals go thin, and the letters swell into the round majuscule forms of a Gospel book. Uncial is also where the case distinction has not happened yet — these are neither capitals nor lowercase.",
+      "anatomy": [
+        { "term": "flat-pen stress", "letter": "o", "note": "Thin at the sides and thick top and bottom — the reverse of a Didone, from a pen instead of a point." },
+        { "term": "round forms", "letter": "d", "note": "A flat pen rewards the arc and punishes the corner, so the hand rounds everything." }
+      ]
+    },
+    {
+      "id": "pinyonscript",
+      "name": "Pinyon Script",
+      "group": "script",
+      "nib": "pointed-scri",
+      "date": "2011, after 19th-century roundhand",
+      "origin": "Sorkin Type, after engraved copperplate hands",
+      "font": "fonts/PinyonScript-latin.woff2",
+      "family": "Pinyon Script",
+      "licence": "OFL-1.1",
+      "credit": "Pinyon Script — Sorkin Type / Eben Sorkin (fonts/PinyonScript-OFL.txt)",
+      "plate": "A pointed flexible pen, never lifted: the same tool as a Didone doing the opposite job. Pressure on the downstroke swells the stem, the release runs out to a hairline, and the hairline carries on into the next letter.",
+      "anatomy": [
+        { "term": "swell and release", "letter": "l", "note": "Heavy coming down, hairline going up. One stroke, two weights — the pointed pen in a single gesture." },
+        { "term": "entry and exit strokes", "letter": "n", "note": "The hairlines that reach out of both sides to join the neighbours. The skeleton has none, so a traced script is the one face that visibly wants something the shared bones cannot give — which is §10's argument that a true italic is a SECOND skeleton." }
+      ]
+    }
+  ]
+}

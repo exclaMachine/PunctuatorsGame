@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "note": "The Scriptorium's pens (docs/inklings-typography.md §3). A nib is not a cosmetic variant: each type produces the stress model a whole Vox-ATypI branch is CLASSIFIED by, so this table and data/typefaces.json's tree are the same information seen twice. Widths are em units, matching data/wordshape-alphabet.json's coordinate space; angles are degrees, ABSOLUTE (the pen angle a calligrapher holds, never tangent-relative — tangent-relative makes every stroke the same width and erases the lesson).",
+  "types": {
+    "round": "Constant width, w == h. No contrast at all, which is the whole of Lineal (sans) and, with terminals added later, Mechanistic.",
+    "broad": "A rect of w x h held at a fixed absolute angle. Thick across the edge, thin along it — the ANGLED stress of the Humanist, Garalde and Calligraphic branches.",
+    "pointed": "A flexible point that spreads under pressure, and pressure falls on the downstroke: width follows |dy|^pow. VERTICAL stress, hairline horizontals — Transitional, Didone, Script."
+  },
+  "nibs": [
+    { "id": "round-mono",   "name": "Round monoline",   "type": "round",   "w": 0.055, "h": 0.055,               "price": 0,   "groups": ["skeleton", "grotesque", "geometric", "humanist-sans"], "note": "Owned from the start — the hand you already write in. One pen serves all three Lineal leaves, because a monoline HAS no contrast: the sans branch is not a pen distinction, which is itself the lesson." },
+    { "id": "round-slab",   "name": "Round, slab",      "type": "round",   "w": 0.062, "h": 0.062,               "price": 90,  "groups": ["mechanistic"], "note": "Monoline like the sans pens; what makes a slab a slab is the TERMINAL, which is §3's later knob and not a nib property." },
+    { "id": "broad-10",     "name": "Broad, flat 10°",  "type": "broad",   "w": 0.150, "h": 0.034, "angle": 10,  "price": 150, "groups": ["uncial"], "note": "The flat pen of the insular scribes — nearly horizontal, so horizontals go thick and the forms go round." },
+    { "id": "broad-20",     "name": "Broad 20°",        "type": "broad",   "w": 0.135, "h": 0.030, "angle": 20,  "price": 120, "groups": ["garalde"] },
+    { "id": "broad-30",     "name": "Broad 30°",        "type": "broad",   "w": 0.150, "h": 0.032, "angle": 30,  "price": 120, "groups": ["humanist"], "note": "The steeper humanist pen — the one that slants the e-bar." },
+    { "id": "broad-45",     "name": "Broad, steep 45°", "type": "broad",   "w": 0.160, "h": 0.028, "angle": 45,  "price": 200, "groups": ["blackletter"] },
+    { "id": "pointed-tran", "name": "Pointed",          "type": "pointed", "w": 0.100, "h": 0.024, "pow": 1.0,   "price": 150, "groups": ["transitional"], "note": "The pen mid-turn: stress turning vertical, but the contrast still moderate." },
+    { "id": "pointed-dido", "name": "Pointed, flexed",  "type": "pointed", "w": 0.130, "h": 0.013, "pow": 1.7,   "price": 240, "groups": ["didone"], "note": "Maximum flex — fat stems, hairline horizontals. The engraver's answer to the quill." },
+    { "id": "pointed-scri", "name": "Pointed, script",  "type": "pointed", "w": 0.090, "h": 0.020, "pow": 1.2,   "price": 200, "groups": ["script"] },
+    { "id": "round-bold",   "name": "Round, bold",      "type": "round",   "w": 0.085, "h": 0.085,               "price": 60,  "groups": [], "note": "No face of its own. Here because §10's claim — BOLD IS A WIDER NIB — should be visible in the bench before the style axis is ever built." }
+  ]
+}
