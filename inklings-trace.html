@@ -115,7 +115,7 @@
     <div class="brand">INKLINGS · DEV BENCH</div>
     <h1>Trace Bench — the nib engine &amp; the stroke scorer</h1>
     <p class="lede">
-      M1 + M2 of <b>the Scriptorium</b> (<code>docs/inklings-typography.md</code>). Trace the letter stroke by
+      M1 + M2 + M7 of <b>the Scriptorium</b> (<code>docs/inklings-typography.md</code>). Trace the letter stroke by
       stroke; the grade is per-stroke fidelity against the authored skeleton, and the ink is a <b>nib stamped
       along your path</b> — which is the whole claim of §3: <b>stroke contrast is a record of the tool</b>, so
       one skeleton plus a pen gives you a typeface. Glyphs come from Wordshape's authored alphabet
@@ -129,6 +129,14 @@
       face, pick the pen you think wrote it, and the three cells below the pad are §3's whole argument side by
       side: the real font, the skeleton in that face's own nib, and your hand.
     </p>
+    <p class="lede">
+      <b>M7 adds the capitals</b> (§10) — a <i>second alphabet</i>, not more letters. Roman inscriptional
+      capitals were laid out with a flat brush and cut with a chisel eight centuries before the Carolingian
+      pen wrote the minuscules, which is why a capital is not a big lowercase: it stops at <b>cap height,
+      below the ascender</b>, and its widths are a system (O a circle, E narrow, M wide). Switch with
+      <b>A–Z</b> or shift+key. Each face keeps <b>two fractions</b>, not one of 52 — and <b>Uncial has no
+      case at all</b>, so its A really is its a.
+    </p>
   </div>
 
   <div id="boot" class="panel err" hidden></div>
@@ -141,7 +149,7 @@
           <button class="btn go" id="b-redo">↺ Redo letter <span class="keys">⌫</span></button>
           <button class="btn" id="b-hint">👻 Ghost stroke <span class="keys">/</span></button>
           <button class="btn" id="b-next">Next letter → <span class="keys">Enter</span></button>
-          <span class="keys">· a–z picks a letter · 1–9 picks a nib</span>
+          <span class="keys">· a–z picks a letter, shift+key its capital · 1–9 picks a nib</span>
           <span id="msg"></span>
         </div>
         <div class="row">
@@ -205,7 +213,12 @@
       </div>
 
       <div class="panel">
-        <h2>Letter <span class="keys">[ ]</span></h2>
+        <h2>Letter <span class="keys">[ ] · shift+key</span></h2>
+        <div class="row" style="margin-bottom:8px">
+          <button class="btn sm" id="c-lower">a–z</button>
+          <button class="btn sm" id="c-upper">A–Z</button>
+          <span class="keys" id="case-note"></span>
+        </div>
         <div class="chips" id="letters"></div>
       </div>
 
@@ -227,7 +240,7 @@
       </div>
 
       <div class="panel">
-        <h2>This nib, a–z <button class="btn sm" id="b-abc" style="float:right">draw</button></h2>
+        <h2>This nib, <span id="abc-ttl">a–z</span> <button class="btn sm" id="b-abc" style="float:right">draw</button></h2>
         <div class="strip" id="strip-abc"></div>
       </div>
     </div>
@@ -236,12 +249,14 @@
 
 <script>
 /* ===========================================================================
-   THE TRACE BENCH — M1 + M2 of docs/inklings-typography.md
+   THE TRACE BENCH — M1 + M2 + M7 of docs/inklings-typography.md
    M1's two engines: the NIB (§3) and the per-stroke SCORER (§5.2), plus the
    feel knobs (§5.3). M2's face layer on top: data/nibs.json, the pruned Vox
    tree and the eleven OFL specimens in data/typefaces.json, §5.4's guidance
-   ladder and the four-cell specimen comparison. The album's plates and
-   milestones are M4; M3 folds the overlay into inklings.html.
+   ladder and the four-cell specimen comparison. M7's CAPITALS (§10) through
+   all of it: 52 glyphs, a cap-height metric line, the Aa case layer and two
+   fractions per face. The album's plates and milestones are M4; M3 folds the
+   overlay into inklings.html.
    =========================================================================== */
 const $ = id => document.getElementById(id);
 
@@ -374,6 +389,7 @@ const SLIDERS = [
 const N_SAMPLES = 32;     // §5.2: resample both paths to N points by arc length
 const STAMP_STEP = 0.006; // em between nib stamps
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+const CAPITALS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const BEST_KEY = "inklings.trace.best.v1";
 /* Two records on purpose. `best` is the BENCH's own per-nib tuning log (does
    this letter score better with a flatter pen?); `album` is §7's actual save
@@ -386,6 +402,7 @@ let GLYPHS = null;
 let NIBS = [], NIBBY = new Map();      // data/nibs.json
 let FACES = [], GROUPS = new Map();    // data/typefaces.json
 let cur = "a", nib = null, face = null;
+let caseUp = false;                    // §10.5 — an Aa toggle, never a 52-row grid
 let rung = "named";                    // §5.4 — "named" | "cued" | "cold"
 let peeked = false;                    // the ? peek forfeits the face for this capture
 let done = [];            // [{pts (em), fidelity}] — accepted strokes
@@ -399,6 +416,30 @@ const show = { guide:true, metrics:false, raw:false, skel:false };
 const pad = $("pad"), ctx = pad.getContext("2d");
 let PX = 0;               // css px of the square pad
 const PAD_M = 0.10;       // margin as a fraction of the pad
+
+/* ----------------------------------------------------------- case (§10)
+   Capitals are a second alphabet, not more letters: a separate 26 chips, a
+   separate fraction per face, and one Aa switch between them. The one face
+   that breaks the symmetry is UNCIAL, which predates the two-case alphabet
+   entirely — §10.6's call is to special-case it IN rather than out, so its A
+   and a really are one drawing and one album cell, and the plate says why. */
+const isUp = ch => ch >= "A" && ch <= "Z";
+const letters = () => caseUp ? CAPITALS : ALPHABET;
+/* The character this face actually draws and files a cell under. */
+const faceChar = (ch, f) => ((f || face) && (f || face).unicase && isUp(ch)) ? ch.toLowerCase() : ch;
+const glyphFor = ch => GLYPHS.get(faceChar(ch)) || GLYPHS.get(ch);
+const curGlyph = () => glyphFor(cur);
+const cellKey = () => faceChar(cur);
+/* Both fractions, and the migration trap §10.5 names: a face's minuscules and
+   its majuscules are counted SEPARATELY, or a player who has already 100%'d a
+   face drops to 50% the day capitals land and a milestone that has paid out
+   un-fires. A unicase face has one set of 26 cells that counts for both. */
+function faceCells(f){
+  const cells = album[(f || {}).id] || {};
+  let lo = 0, up = 0;
+  for(const k of Object.keys(cells)) (isUp(k) ? (up++) : (lo++));
+  return (f && f.unicase) ? {lo, up: lo, unicase: true} : {lo, up, unicase: false};
+}
 
 /* ------------------------------------------------------- geometry helpers */
 const lerp = (a,b,t) => a + (b-a)*t;
@@ -547,7 +588,7 @@ function sizePad(){
   draw();
 }
 function draw(){
-  const g = GLYPHS.get(cur);
+  const g = curGlyph();
   ctx.clearRect(0,0,PX,PX);
   ctx.fillStyle = "#fbf7ee"; ctx.fillRect(0,0,PX,PX);
   const e = emScale(), [ox,oy] = origin(g);
@@ -556,7 +597,10 @@ function draw(){
     /* The alphabet's own units, drawn: ascender, x-height, baseline, descender. */
     ctx.strokeStyle = "#e4d9c3"; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
     ctx.font = "10px ui-monospace, monospace"; ctx.fillStyle = "#c3b697";
-    for(const [y,label] of [[0.02,"asc"],[0.24,"x"],[0.72,"base"],[0.96,"desc"]]){
+    /* Five lines, not four: CAP HEIGHT sits BELOW the ascender (§10.4), which
+       is why an l overshoots an L. Draw caps to the ascender instead and every
+       face looks broken beside the real font in the specimen. */
+    for(const [y,label] of [[0.02,"asc"],[0.07,"cap"],[0.24,"x"],[0.72,"base"],[0.96,"desc"]]){
       const py = oy + y*e;
       ctx.beginPath(); ctx.moveTo(PX*0.04, py); ctx.lineTo(PX*0.96, py); ctx.stroke();
       ctx.fillText(label, PX*0.04, py-3);
@@ -653,7 +697,7 @@ function strokePath(c, g, pts){
 let drawing = false;
 pad.addEventListener("pointerdown", ev => {
   if(!GLYPHS) return;
-  const g = GLYPHS.get(cur);
+  const g = curGlyph();
   if(done.length >= g.strokes.length) return;            // letter finished; R or Enter
   pad.setPointerCapture(ev.pointerId);
   drawing = true; ghost = null;
@@ -669,7 +713,7 @@ pad.addEventListener("pointermove", ev => {
 function endStroke(){
   if(!drawing) return;
   drawing = false;
-  const g = GLYPHS.get(cur);
+  const g = curGlyph();
   if(!raw || raw.length < 2 || polyLen(raw) < 0.03){ raw = null; say("too short — press and drag", "bad"); draw(); return; }
   const ideal = g.strokes[done.length];
   const r = scoreStroke(raw, ideal);
@@ -687,12 +731,12 @@ pad.addEventListener("pointerup", endStroke);
 pad.addEventListener("pointercancel", () => { drawing=false; raw=null; draw(); });
 const ptEm = ev => {
   const r = pad.getBoundingClientRect();
-  return toEm(GLYPHS.get(cur), ev.clientX - r.left, ev.clientY - r.top);
+  return toEm(curGlyph(), ev.clientX - r.left, ev.clientY - r.top);
 };
 
 function finishLetter(){
   const grade = gradeNow();
-  const key = cur + "|" + nib.id;
+  const key = cellKey() + "|" + nib.id;
   const prev = best[key] || 0;
   if(grade > prev){
     best[key] = grade;
@@ -702,10 +746,10 @@ function finishLetter(){
      peek can cost you, and the album only ever hears about a cell it keeps. */
   const fg = faceGrade();
   const v = nibVerdict();
-  const cellPrev = ((album[face.id] || {})[cur] || {}).g || 0;
+  const cellPrev = ((album[face.id] || {})[cellKey()] || {}).g || 0;
   let line;
   if(fg >= T.faceTh && fg > cellPrev){
-    (album[face.id] = album[face.id] || {})[cur] = { g: fg, s: albumStrokes() };
+    (album[face.id] = album[face.id] || {})[cellKey()] = { g: fg, s: albumStrokes() };
     try{ localStorage.setItem(ALBUM_KEY, JSON.stringify(album)); }catch(e){}
     line = "letter ✓ · " + face.name + " " + pct(fg) + (cellPrev ? " (was " + pct(cellPrev) + ")" : " — new cell");
     say(line, "good");
@@ -822,13 +866,19 @@ function paintFaces(){
       host.appendChild(h); lastTop = top;
     }
     const n = NIBBY.get(f.nib);
-    const cells = Object.keys(album[f.id] || {}).length;
+    const fr = faceCells(f);
     const b = document.createElement("button");
     b.className = "face" + (face && f.id === face.id ? " on" : "");
+    /* Two fractions, never one of 52 (§10.5): a face's minuscules and its
+       majuscules are separate collections and separate milestone tracks. */
+    const count = fr.unicase ? (fr.lo ? fr.lo + "/26 · " : "")
+                             : ((fr.lo || fr.up) ? fr.lo + "a·" + fr.up + "A · " : "");
     b.innerHTML = "<span>" + g.name.replace(/ \(.*\)/, "") + "</span><small>" +
-      (cells ? cells + "/26 · " : "") + n.name.toLowerCase() +
+      count + n.name.toLowerCase() +
       (fontState.get(f.id) === "fail" ? " · font missing" : "") + "</small>";
-    b.title = f.name + " — " + (f.date || "") + (n.price ? " · nib " + n.price + " ink" : "");
+    b.title = f.name + " — " + (f.date || "") + (n.price ? " · nib " + n.price + " ink" : "") +
+      (fr.unicase ? " · unicase: " + fr.lo + " of 26 letters"
+                  : " · " + fr.lo + " of 26 minuscules, " + fr.up + " of 26 majuscules");
     b.onclick = () => setFace(f);
     host.appendChild(b);
   }
@@ -837,15 +887,20 @@ function paintFaces(){
 }
 
 function paintPlate(){
+  /* §10.5: the capitals copy is a paragraph on the same plate, not a second
+     plate — and it appears when a capital is what you are looking at. A
+     unicase face shows it always, because its A is the reason. */
+  const showCaps = face.caps && (caseUp || face.unicase);
   $("plate").innerHTML =
     '<span class="meta">' + groupPath(face.group) + " · " + face.name +
     (face.date ? " · " + face.date : "") + '</span>' +
-    (face.origin ? "<i>" + face.origin + "</i><br>" : "") + (face.plate || "");
+    (face.origin ? "<i>" + face.origin + "</i><br>" : "") + (face.plate || "") +
+    (showCaps ? '<br><br><span class="meta">Capitals</span>' + face.caps : "");
   $("anat").innerHTML = (face.anatomy || []).map(a =>
     "<li><b>" + a.term + "</b> <span style='font-family:var(--pix)'>(" + a.letter + ")</span> — " + a.note +
     ' <a href="#" data-ch="' + a.letter + '" style="color:var(--accent)">show</a></li>').join("");
   for(const a of $("anat").querySelectorAll("a")) a.onclick = ev => {
-    ev.preventDefault(); cur = a.dataset.ch; resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen();
+    ev.preventDefault(); setLetter(a.dataset.ch);
   };
 }
 
@@ -884,7 +939,7 @@ function drawFontGlyph(k, ch, f, em, ox, oy){
 function paintSpecimen(){
   if(!face || !GLYPHS) return;
   const host = $("cmp"); host.innerHTML = "";
-  const g = GLYPHS.get(cur);
+  const g = curGlyph();
   const want = rightNib(face);
   const em = SPEC_PX*0.62, ox = SPEC_PX/2, oy = SPEC_PX*0.12;
   const gox = (SPEC_PX - g.w*em)/2;
@@ -893,7 +948,7 @@ function paintSpecimen(){
   const a = specCanvas("the real face<br><b>" + face.name + "</b>");
   const ka = a.c.getContext("2d");
   ka.fillStyle = "#fbf7ee"; ka.fillRect(0,0,SPEC_PX,SPEC_PX);
-  if(!drawFontGlyph(ka, cur, face, em, ox, oy)){
+  if(!drawFontGlyph(ka, faceChar(cur), face, em, ox, oy)){
     for(const st of g.strokes) stampStroke(ka, g, st, want, "#2b2620", em, gox, oy, 1);
     a.fig.querySelector("figcaption").innerHTML = face.font
       ? "font missing — showing the pen<br><b>" + face.name + "</b>"
@@ -933,7 +988,7 @@ function paintSpecimen(){
      from the POINTS it was traced with. §7 says a filled cell shows your glyph
      and not the font's, which is only possible if the cell keeps the path — see
      the save-shape note in §7. */
-  const cell = (album[face.id] || {})[cur];
+  const cell = (album[face.id] || {})[cellKey()];
   if(cell != null){
     const d = specCanvas("album best<br><b>" + pct(cell.g) + "</b>");
     const kd = d.c.getContext("2d");
@@ -948,14 +1003,14 @@ function say(t, cls){ const m = $("msg"); m.textContent = t || ""; m.className =
 function resetLetter(){ done = []; raw = null; ghost = null; peeked = false; say(""); paintGrades(); paintSpecimen(); draw(); }
 
 function paintGrades(){
-  const g = GLYPHS.get(cur);
+  const g = curGlyph();
   const complete = done.length === g.strokes.length;
   $("g-total").textContent = done.length ? pct(gradeNow()) : "—";
   $("g-sub").textContent = done.length
     ? (complete ? "complete · " + done.length + " stroke" + (done.length>1?"s":"") : done.length + " of " + g.strokes.length + " strokes")
     : g.strokes.length + " stroke" + (g.strokes.length>1?"s":"") + " to write";
-  const cell = ((album[(face||{}).id] || {})[cur] || {}).g;
-  const b = best[cur + "|" + nib.id];
+  const cell = ((album[(face||{}).id] || {})[cellKey()] || {}).g;
+  const b = best[cellKey() + "|" + nib.id];
   $("g-best").textContent = cell ? "cell " + pct(cell) : b ? "pen best " + pct(b) : "best —";
   /* The face tag is the §5.6 table, live: the letter is never at stake, only
      the face, and the pen you picked is half of it. */
@@ -972,14 +1027,40 @@ function paintGrades(){
 
 function paintLetters(){
   $("letters").innerHTML = "";
-  for(const ch of ALPHABET){
+  const uni = !!(face && face.unicase);
+  for(const ch of letters()){
+    const k = faceChar(ch), bk = best[k + "|" + nib.id];
     const b = document.createElement("button");
-    b.className = "chip" + (ch === cur ? " on" : "") + (best[ch + "|" + nib.id] ? " done" : "");
+    b.className = "chip" + (ch === cur ? " on" : "") + (bk ? " done" : "");
     b.textContent = ch;
-    b.title = best[ch + "|" + nib.id] ? "best " + pct(best[ch + "|" + nib.id]) + " with this nib" : "";
-    b.onclick = () => { cur = ch; resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen(); };
+    b.title = (uni && isUp(ch) ? ch + " is drawn as " + k + " — this face has no case. " : "") +
+              (bk ? "best " + pct(bk) + " with this nib" : "");
+    b.onclick = () => setLetter(ch);
     $("letters").appendChild(b);
   }
+  $("c-lower").classList.toggle("on", !caseUp);
+  $("c-upper").classList.toggle("on", caseUp);
+  const fr = faceCells(face);
+  $("case-note").textContent = uni
+    ? "· unicase face — A is a"
+    : "· " + fr.lo + "/26 aa · " + fr.up + "/26 AA in " + ((face||{}).name || "this face");
+}
+/* One way in for every letter change — the chips, the strips, the anatomy
+   links and the keyboard — so nothing can set `cur` without also setting the
+   case the picker is showing. */
+function setLetter(ch){
+  if(!GLYPHS.has(ch) && !GLYPHS.has(ch.toLowerCase())) return;
+  caseUp = isUp(ch);
+  cur = ch;
+  resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen();
+  if(face) paintPlate();
+  if(face && face.unicase && isUp(ch))
+    say(ch + " and " + ch.toLowerCase() + " are one drawing — " + face.name + " has no case", null);
+}
+function setCase(up){
+  if(caseUp === up) return;
+  caseUp = up;
+  setLetter(up ? cur.toUpperCase() : cur.toLowerCase());
 }
 /* A nib's subtitle is the leaves it writes, read back out of the tree — the
    nib file names groups and the group file names nibs, so neither is the
@@ -1010,7 +1091,7 @@ function setNib(n){ nib = n; paintNibs(); paintGrades(); paintLetters(); paintNi
 
 /* A mini specimen: one glyph, one nib, ideal strokes — no input involved. */
 function miniSpec(c, ch, theNib, size){
-  const g = GLYPHS.get(ch); if(!g) return;
+  const g = glyphFor(ch); if(!g) return;
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   c.width = Math.round(size*dpr); c.height = Math.round(size*dpr);
   c.style.width = size + "px"; c.style.height = size + "px";
@@ -1028,7 +1109,7 @@ function paintNibStrip(){
     const c = document.createElement("canvas");
     d.appendChild(c);
     const s = document.createElement("span"); s.textContent = n.id; d.appendChild(s);
-    d.title = n.name + " — " + n.group;
+    d.title = n.name + " — " + nibGroupsLabel(n);
     d.onclick = () => setNib(n);
     host.appendChild(d);
     miniSpec(c, cur, n, 62);
@@ -1036,14 +1117,15 @@ function paintNibStrip(){
 }
 function paintAbc(){
   const host = $("strip-abc"); host.innerHTML = "";
-  for(const ch of ALPHABET){
+  for(const ch of letters()){
     const d = document.createElement("div");
     d.className = "spec";
     const c = document.createElement("canvas"); d.appendChild(c);
-    d.onclick = () => { cur = ch; resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen(); };
+    d.onclick = () => setLetter(ch);
     host.appendChild(d);
     miniSpec(c, ch, nib, 44);
   }
+  $("abc-ttl").textContent = caseUp ? "A–Z" : "a–z";
 }
 
 function paintSliders(){
@@ -1074,11 +1156,13 @@ function paintSliders(){
 $("b-redo").onclick = () => { resetLetter(); say("redo", null); };
 $("b-next").onclick = () => nextLetter(1);
 $("b-hint").onclick = () => {
-  const g = GLYPHS.get(cur);
+  const g = curGlyph();
   if(done.length >= g.strokes.length) return;
   ghost = {i: done.length, t: 0}; animateGhost();
 };
 $("b-abc").onclick = () => paintAbc();
+$("c-lower").onclick = () => setCase(false);
+$("c-upper").onclick = () => setCase(true);
 $("r-named").onclick = () => setRung("named");
 $("r-cued").onclick  = () => setRung("cued");
 $("r-cold").onclick  = () => setRung("cold");
@@ -1093,10 +1177,10 @@ function toggle(id, key, label){
   $(id).classList.toggle("on", show[key]);
   $(id).textContent = label + ": " + (show[key] ? "on" : "off");
 }
+/* [ and ] walk the case you are in; the Aa switch is how you cross. */
 function nextLetter(d){
-  const i = ALPHABET.indexOf(cur);
-  cur = ALPHABET[(i + d + 26) % 26];
-  resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen();
+  const set = letters(), i = set.indexOf(cur);
+  setLetter(set[(i + d + 26) % 26]);
 }
 addEventListener("keydown", ev => {
   if(!GLYPHS) return;
@@ -1111,7 +1195,10 @@ addEventListener("keydown", ev => {
   if(ev.key === "Backspace"){ ev.preventDefault(); resetLetter(); return; }
   if(ev.key === "/" || ev.key === "?"){ ev.preventDefault(); $("b-hint").click(); return; }
   if(ev.key >= "1" && ev.key <= "9"){ const n = NIBS[+ev.key - 1]; if(n) setNib(n); return; }
-  if(/^[a-z]$/.test(ev.key)){ cur = ev.key; resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen(); }
+  /* A plain letter key picks in the case you are in; shift+letter jumps to the
+     capital (and a bare capital, from caps lock, does the same). */
+  if(/^[a-z]$/.test(ev.key)){ setLetter(caseUp ? ev.key.toUpperCase() : ev.key); return; }
+  if(/^[A-Z]$/.test(ev.key)){ setLetter(ev.key); }
 });
 addEventListener("resize", sizePad);
 

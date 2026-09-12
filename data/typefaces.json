@@ -1,6 +1,7 @@
 {
   "v": 1,
   "note": "The Scriptorium's faces and the tree that groups them (docs/inklings-typography.md §6, §7). The taxonomy is Vox-ATypI (Maximilien Vox 1954, adopted by ATypI 1962), PRUNED: Vox's Glyphic and Graphic are grab-bags and Gaelic / Non-Latin are a tail a Latin skeleton can't teach — ATypI itself deprecated the scheme in 2021, partly for that Latin-centrism. This is a teaching simplification and should keep saying so, the way the ladder corpus's rungs do. Every group is a PEN, which is why data/nibs.json and this tree are one body of information seen twice.",
+  "capitals": "M7 (§10). Every face carries a `caps` paragraph — the plate shows it while an uppercase letter is selected — and `unicase: true` marks a face with no case distinction, whose A and a are one drawing and ONE album cell. Anatomy callouts are keyed by CHARACTER, so a capital-only term is simply a row naming an uppercase letter. A face keeps TWO fractions, 26 minuscules and 26 majuscules, never one of 52: folding them would drop a 100%-complete face to 50% on update and un-fire a milestone that had already paid.",
   "faceNames": "Faces carry their REAL font names. §4's pun-a-new-name advice applies only to a face we would have to redraw to ship (Papyrus — the blocker there is the file and the trademark, never the letterforms); everything here is OFL and shipped honestly, and 'Garamond' IS the teaching payload.",
   "groups": [
     { "id": "classical",     "name": "Classical",             "parent": null,        "note": "Faces whose forms still remember a pen." },
@@ -31,9 +32,12 @@
       "family": null,
       "starter": true,
       "plate": "The face you start with, and the only one whose specimen is not a font: it is the shared skeleton (data/wordshape-alphabet.json) drawn with the round pen. Everything else in the album is this same skeleton wearing a tool.",
+      "caps": "The capitals are the same bones under the same round pen — but they were never a pen's alphabet at all. A Roman capital was laid out with a flat brush and cut with a chisel some eight hundred years before the minuscule existed, which is why it is not a big lowercase: it stops short of the ascender at cap height, and its widths are a SYSTEM. O and Q are circles, E F L B P S are narrow, M and W are wide, I is a stem. You can read that in a book; you can only feel it by travelling it.",
       "anatomy": [
         { "term": "stroke order", "letter": "e", "note": "One stroke: the bar left to right, then up and over and round — the way a hand draws it, which is why the skeleton could be traced at all." },
-        { "term": "x-height",     "letter": "x", "note": "The height of the lowercase body. Every face in the album shares this skeleton's x-height, so the differences you see are the pen's." }
+        { "term": "x-height",     "letter": "x", "note": "The height of the lowercase body. Every face in the album shares this skeleton's x-height, so the differences you see are the pen's." },
+        { "term": "cap height", "letter": "H", "note": "A capital stands on the baseline and stops BELOW the ascender. Trace an H, then an l: the l overshoots it. Drawing capitals up to the ascender is the most visible possible error there is against a real font." },
+        { "term": "the width system", "letter": "O", "note": "O is a circle, E is narrow, M is wide — classical proportion is a set of width classes, not one column. Trace O, E and M in a row and you have travelled it." }
       ]
     },
     {
@@ -48,10 +52,12 @@
       "licence": "OFL-1.1",
       "credit": "Cardo — David J. Perry (fonts/Cardo-OFL.txt)",
       "plate": "The first roman types cut in Venice copied a humanist scribe's broad pen held steeply, and the giveaway survived into every revival: the bar of the e runs uphill, because a steep pen cannot draw it flat.",
+      "caps": "Jenson took his capitals off Roman stone, not off a scribe, and set them beside a pen's minuscules. That pairing is what a roman typeface IS — two alphabets from different centuries taught to share a page.",
       "anatomy": [
         { "term": "stress axis", "letter": "o", "note": "Draw a line through the two thin points of the o: on a humanist face it leans a long way left of vertical. That angle IS the pen's angle." },
         { "term": "slanted e-bar", "letter": "e", "note": "The one-glance test for a Venetian face." },
-        { "term": "aperture", "letter": "c", "note": "Wide and open — the terminals stay far apart." }
+        { "term": "aperture", "letter": "c", "note": "Wide and open — the terminals stay far apart." },
+        { "term": "inscriptional serif", "letter": "E", "note": "Not decoration added at the end: it is the flat brush entering and leaving the stroke, and the chisel followed the brush. Trace an E with the flat 0° nib and watch it appear on its own." }
       ]
     },
     {
@@ -66,6 +72,7 @@
       "licence": "OFL-1.1",
       "credit": "EB Garamond — Georg Duffner & Octavio Pardo (fonts/EBGaramond-OFL.txt)",
       "plate": "The pen has dropped a few degrees from the Venetian angle and the e-bar has come level — but the stress is still angled, and the whole face is still a record of a quill. This is the face most books you have read are descended from.",
+      "caps": "Garamond's capitals stop a little below his ascenders so a capital never crowds the line above. That small mercy of the Aldine page is exactly why cap height is a metric line of its own and not just the ascender.",
       "anatomy": [
         { "term": "stress axis", "letter": "o", "note": "Still leaning, but less than a humanist's: the pen is flatter." },
         { "term": "level e-bar", "letter": "e", "note": "The difference between a Garalde and a Venetian, in one stroke." },
@@ -84,6 +91,7 @@
       "licence": "OFL-1.1",
       "credit": "Libre Baskerville — Pablo Impallari & Rodrigo Fuenzalida (fonts/LibreBaskerville-OFL.txt)",
       "plate": "The hinge of the whole classification. Baskerville's smoother paper and sharper impression let the contrast rise and the stress stand up straight — the broad pen is being abandoned mid-face for the engraver's point.",
+      "caps": "Baskerville's capitals are wider and more even than a Venetian's, and their stress has turned vertical along with the lowercase — the pen leaving the alphabet, the engraver arriving.",
       "anatomy": [
         { "term": "stress axis", "letter": "o", "note": "Nearly vertical now. Compare it against the Garalde's o on the same plate: that rotation is a century of printing technology." },
         { "term": "contrast", "letter": "d", "note": "Thick stems, thin bowls — further apart than a Garalde's, not yet a Didone's." }
@@ -101,10 +109,12 @@
       "licence": "OFL-1.1",
       "credit": "Libre Bodoni — Pablo Impallari, Rodrigo Fuenzalida & Danilo de Marco (fonts/LibreBodoni-OFL.txt)",
       "plate": "The end of the road the Transitional started down: stress dead vertical, horizontals reduced to hairlines, serifs flat and unbracketed. Nothing here remembers a quill — it remembers a burin.",
+      "caps": "The extreme case: fat vertical stems, hairline flat serifs, and no bracket at all between the two. Trace an E with the flexed pointed nib and watch the arms very nearly disappear.",
       "anatomy": [
         { "term": "hairline", "letter": "o", "note": "The thinnest part of a Didone is thinner than anything a broad nib can produce, which is the argument for the pointed pen in one picture." },
         { "term": "unbracketed serif", "letter": "l", "note": "The serif meets the stem at a right angle, with no curve easing in." },
-        { "term": "vertical stress", "letter": "b", "note": "Bowl thin at top and bottom, thick at the sides — pressure on the downstroke and nowhere else." }
+        { "term": "vertical stress", "letter": "b", "note": "Bowl thin at top and bottom, thick at the sides — pressure on the downstroke and nowhere else." },
+        { "term": "unbracketed serif", "letter": "E", "note": "The hairline arm meets the fat stem at a right angle with no curve between them. On a garalde that join is a bracket; here it is a corner." }
       ]
     },
     {
@@ -119,6 +129,7 @@
       "licence": "OFL-1.1",
       "credit": "Bitter — Sol Matas (fonts/Bitter-OFL.txt)",
       "plate": "Nineteenth-century advertising needed letters that shouted, so the contrast was thrown away and the serifs were fattened into slabs. A slab is a monoline face wearing heavy terminals — which is why its pen here is a round one.",
+      "caps": "Slab capitals are the Roman width system with the serifs squared off. The widths survive the industrial revolution even where the modelling doesn't.",
       "anatomy": [
         { "term": "slab terminal", "letter": "t", "note": "A rectangular block, the same weight as the stem. The nib cannot draw this: a later terminal knob will stamp it at the stroke ends." },
         { "term": "monoline", "letter": "o", "note": "No stress to find — every part of the bowl is the same width, so there is no axis to draw." }
@@ -136,9 +147,11 @@
       "licence": "OFL-1.1",
       "credit": "Archivo — Omnibus-Type (fonts/Archivo-OFL.txt)",
       "plate": "The first sans serifs were called grotesques because a letter without serifs looked monstrous. They are monoline and a little grudging about it — apertures close up, the terminals cut off horizontally.",
+      "caps": "A grotesque pulls the classical widths toward each other — its O is no longer a circle and its E is no longer narrow. That evening-out is a good part of why a sans looks like a sans.",
       "anatomy": [
         { "term": "closed aperture", "letter": "c", "note": "The terminals curl in toward each other. This, not the pen, is what separates the three sans leaves." },
-        { "term": "horizontal terminal", "letter": "s", "note": "Cut flat, at right angles to the stroke." }
+        { "term": "horizontal terminal", "letter": "s", "note": "Cut flat, at right angles to the stroke." },
+        { "term": "even capital widths", "letter": "E", "note": "Set E beside O in this face and then in Cardo. The grotesque has narrowed the O and widened the E toward one shared width." }
       ]
     },
     {
@@ -153,6 +166,7 @@
       "licence": "OFL-1.1",
       "credit": "Jost* — Owen Earl / indestructible type* (fonts/Jost-OFL.txt)",
       "plate": "A sans built out of the compass and the ruler rather than out of a hand: the o is a circle, the a loses its second storey, and the alphabet stops pretending it was written.",
+      "caps": "A geometric sans goes the other way and makes the O an actual circle again: Bauhaus arithmetic arriving at the Roman answer from the opposite end.",
       "anatomy": [
         { "term": "circular bowl", "letter": "o", "note": "As near a true circle as a readable face allows." },
         { "term": "single-storey a", "letter": "a", "note": "A geometric decision, not an italic one — worth knowing before §10's style axis, where a single-storey a is the mark of a TRUE italic." }
@@ -170,6 +184,7 @@
       "licence": "OFL-1.1",
       "credit": "Open Sans — Steve Matteson (fonts/OpenSans-OFL.txt)",
       "plate": "Take the proportions of a Garalde — the wide o, the open c, the varying letter widths — and remove every trace of the pen. A humanist sans is a monoline face with a scribe's skeleton, which is exactly what your traced glyph always is.",
+      "caps": "Humanist sans capitals keep the classical proportions the grotesques flattened — wide O, narrow E — which is most of why they hold up in a long line of text.",
       "anatomy": [
         { "term": "open aperture", "letter": "c", "note": "The terminals stay apart, unlike a grotesque's." },
         { "term": "varying widths", "letter": "e", "note": "Compare the width of e against o: a geometric face would make them nearly equal." }
@@ -187,6 +202,7 @@
       "licence": "OFL-1.1",
       "credit": "UnifrakturMaguntia — j. 'mach' wust / Peter Wiegel (fonts/UnifrakturMaguntia-OFL.txt)",
       "plate": "The same broad pen as a Garalde, held far steeper and lifted more often. At 45° a curve cannot be drawn in one sweep, so it is BROKEN into angled strokes — the black woven page that gave blackletter its name.",
+      "caps": "Told straight (§10.6): a Textura majuscule is a DIFFERENT ALPHABET. The real ones are bowed and doubled and hung with hairline flourishes, built from nothing like the Roman skeleton. What you trace here is the shared skeleton under a 45° pen, which comes out Lombardic rather than correct. A true blackletter majuscule skeleton is parked beside the true italic — both are a second drawing, and that is the lesson rather than the excuse.",
       "anatomy": [
         { "term": "broken curve", "letter": "o", "note": "Not a bowl but four straight strokes. The pen angle made the decision, not the designer." },
         { "term": "steep stress", "letter": "n", "note": "Thin where travel runs along the nib's edge — at 45° that is the diagonal, so the hairlines run corner to corner." }
@@ -203,10 +219,13 @@
       "family": "Uncial Antiqua",
       "licence": "OFL-1.1",
       "credit": "Uncial Antiqua — Tom Murphy 7 (fonts/UncialAntiqua-OFL.txt)",
+      "unicase": true,
       "plate": "The opposite extreme from blackletter with the same tool: the pen laid almost flat. Horizontals go thick, verticals go thin, and the letters swell into the round majuscule forms of a Gospel book. Uncial is also where the case distinction has not happened yet — these are neither capitals nor lowercase.",
+      "caps": "Uncial has no case at all. It is older than the split — the majuscule/minuscule distinction was invented after it — so A and a are one letter and one drawing. The pad hands you the single skeleton either way, and the album's two cells are one cell.",
       "anatomy": [
         { "term": "flat-pen stress", "letter": "o", "note": "Thin at the sides and thick top and bottom — the reverse of a Didone, from a pen instead of a point." },
-        { "term": "round forms", "letter": "d", "note": "A flat pen rewards the arc and punishes the corner, so the hand rounds everything." }
+        { "term": "round forms", "letter": "d", "note": "A flat pen rewards the arc and punishes the corner, so the hand rounds everything." },
+        { "term": "no case", "letter": "A", "note": "Pick A and the pad still gives you a. Not a shortcut — uncial predates the two-case alphabet, so there is no capital to draw." }
       ]
     },
     {
@@ -221,6 +240,7 @@
       "licence": "OFL-1.1",
       "credit": "Pinyon Script — Sorkin Type / Eben Sorkin (fonts/PinyonScript-OFL.txt)",
       "plate": "A pointed flexible pen, never lifted: the same tool as a Didone doing the opposite job. Pressure on the downstroke swells the stem, the release runs out to a hairline, and the hairline carries on into the next letter.",
+      "caps": "Script capitals are swash: a flourish entering, a flourish leaving, and the letter in between. The pointed nib does most of that work and the shared skeleton gets you a fair engraved capital — but not the swash, which is a flourish and not a letterform.",
       "anatomy": [
         { "term": "swell and release", "letter": "l", "note": "Heavy coming down, hairline going up. One stroke, two weights — the pointed pen in a single gesture." },
         { "term": "entry and exit strokes", "letter": "n", "note": "The hairlines that reach out of both sides to join the neighbours. The skeleton has none, so a traced script is the one face that visibly wants something the shared bones cannot give — which is §10's argument that a true italic is a SECOND skeleton." }

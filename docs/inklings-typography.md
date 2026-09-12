@@ -1,9 +1,9 @@
 # Inklings — The Scriptorium: letter tracing & typeface collecting
 
-**Status: SPECCED 2026-09-11. M1 (the nib engine + the stroke scorer) and M2 (the faces) are BUILT in the
-standalone bench `inklings-trace.html` — see §12. Nothing is in `inklings.html` yet; the capture verb is
-unchanged in game. The skeleton alphabet is **lowercase only**, which makes capitals a blocker on M3 rather
-than an extra — see §10.**
+**Status: SPECCED 2026-09-11. M1 (the nib engine + the stroke scorer), M2 (the faces) and M7 (the capitals)
+are BUILT in the standalone bench `inklings-trace.html` — see §12. Nothing is in `inklings.html` yet; the
+capture verb is unchanged in game. The skeleton alphabet now covers all **52 letters** (M7, 2026-09-12), so
+capitals are no longer a blocker on M3 — see §10.**
 
 This doc covers two things that are really one thing:
 
@@ -441,8 +441,9 @@ album is a record of your hand and not a list of scores.
   the face; the skeleton you trace is shared. That division is what makes nib-only v1 honest.
 - **Capitals** keep their own rules verbatim — they bank in `state.caps`, uncapped, bypassing the satchel —
   and they are the natural home for the faces whose **capitals are the lesson** (Roman inscriptional
-  capitals, blackletter's ornate majuscules). **The skeleton has no capitals yet, which makes this a blocker
-  rather than an extra — see §10.**
+  capitals, blackletter's ornate majuscules). **The skeleton covers them since M7 (§10), so M3 inherits a
+  trace pad that works for all 52 letters** — but the satchel gate still keeps its `!isUpper(c.letter)`,
+  which is load-bearing for its own reason (§10.8).
 - **A starter face.** Early game must not demand classification, so the first face is **the bare monoline
   skeleton itself** — "the hand you already write in" — with the round nib owned from the start. Faces then
   unlock on a curve, the way capitals do at `LOWER_DONE_AT`. v1's tracing *is* the tutorial; the collection
@@ -496,7 +497,9 @@ Also:
 
 ## 10. Capitals: the second alphabet
 
-**Status: not built — and not merely missing. M3 turns it into a blocker.**
+**Status: BUILT 2026-09-12 as M7** — the skeleton, the metric line, the case layer in the bench, the
+second fraction and the plate copy. Everything below stands as specced; what the build changed or settled
+is recorded in **§10.10**. M3 no longer owes the fallback in §10.2, because the capitals landed first.
 
 ### 10.1 The finding
 
@@ -540,6 +543,10 @@ then, or **capitals keep the old verb — hit to catch — until it does.** Reco
 one explicit `isUpper` branch on the *trace-open* check (not scattered through the success path), so the
 fallback is a single condition and deleting it is most of this milestone's wiring.
 
+**RESOLVED 2026-09-12: the skeleton exists, so M3 owes nothing.** M7 shipped ahead of M3, which is the
+better order — the fallback branch never has to be written, and therefore never has to be found and
+deleted later.
+
 ### 10.3 Why capitals are the best content in the feature, not a chore
 
 Minuscules are **Carolingian** — a pen, on parchment, 9th century. Capitals are **Roman inscriptional** —
@@ -569,7 +576,7 @@ Two things fall out that a player can feel while tracing and cannot read off a p
   `0.72`, descender `0.96`. A capital stands on the baseline and reaches **cap height, which sits *below*
   the ascender in virtually every real face** (≈0.70 em against ≈0.75). Against this alphabet's 0.70
   ascender reach that is ≈0.65, i.e. **y ≈ 0.07** — so `l` visibly overshoots `L`, as it should. The bench's
-  metrics overlay gains a fifth line (`inklings-trace.html:559`).
+  metrics overlay gains a fifth line — **built**, and the `cap` line is drawn between `asc` and `x`.
   **This is the most visible possible thing to get wrong**: capitals drawn up to the ascender make every
   face look broken in the four-cell specimen, because the real font beside them has a true cap height.
 - **Direction is data here too** (§5.5). The same rule, applied: stems run top→bottom; `O` runs
@@ -642,6 +649,57 @@ capitals specifically. Two consequences worth naming:
 | New fetches | **none** |
 | Save version bump | **none** |
 | Font work | **none** — all 52 letters already ship |
+
+### 10.10 As built (2026-09-12)
+
+Everything in §10.9's cost table came in at the estimate: no new fetches, no save bump, no font work. Two
+notes on scope before the findings. The 26 glyphs were **authored directly into the `GLYPHS` table** in the
+same arc-and-point style as a–z rather than mouse-drawn — the table *is* the tool's output format, and the
+shapes stay the dev's to tune in `wordshape-draw.html` afterwards. And §10.5's `Aa` toggle landed on **the
+bench's letter picker**, because the album itself is M4; when the album is built it inherits the switch, the
+`faceCells()` fractions and the `unicase` flag rather than inventing them.
+
+What the build found or settled:
+
+- **The 52 glyphs live in one table, and the capitals needed a tool the minuscules didn't.** An x-height
+  bowl is near-circular, so `A()` (a circular arc) was enough for a–z. A capital bowl is half a cap height
+  tall and *wider* than that, so **`EL()`, an elliptical arc, was added beside it** and B D P R U are drawn
+  with two radii. `C G O Q` stayed true circles, which is the width system's own claim.
+- **The direction rule generalised without amendment.** Stems top→bottom, bars left→right, the free ring
+  (`C G O Q`) counter-clockwise from 2 o'clock like `o`, and **`B D P R` clockwise** — the capital form of
+  §5.5's `b`/`p` exception, and for the identical reason: the bowl is drawn *after* the stem, so the hand
+  leaves the stem and pushes right and over. Verified by signed area on all 26, not by eye.
+- **The sweep direction is a live trap, and it bit.** `A(…,270,90)` reads as "top to bottom round the
+  right", but the helper interpolates from `a0` to `a1`, and 90 is *less* than 270 — so the first four
+  bowls swept counter-clockwise out through **negative x**, i.e. off the left of the glyph. The rule is the
+  one the minuscules already followed (`b` is `180,540`): **to sweep clockwise you must count upward**, so
+  it is `270,450`. Caught by a bounds check, which is why one exists.
+- **Cap height verified as a number, not a look.** All 26 start at exactly `y 0.07` and land on `0.72`, and
+  `Q`'s tail is the only thing below the baseline. Rendered against the metric lines, `l` visibly overshoots
+  `L` — which is §10.4's whole point and the thing the four-cell specimen would have exposed.
+- **The widths came out as a system, and it is legible as a list**: `I` 0.24 · `J` 0.46 · `F` 0.50 ·
+  `E L` 0.52 · `B P S` 0.53 · `Z` 0.58 · `R Y T` 0.62 · `A H K V X` 0.64 · `N U` 0.66 · `D` 0.70 ·
+  `M` 0.76 · `C G O Q` 0.77 · `W` 0.86. Against a–z, which sits between 0.22 and 0.84 with most letters at
+  0.60, that spread *is* the lesson.
+- **The alphabet preview had to change to show any of this.** `renderAlphabet()` centred each glyph on its
+  own ink, which hides exactly the two things capitals exist to teach; it now draws a row on **one baseline
+  at each glyph's own advance width**, so cap height and the width system are visible in the one place the
+  shapes get judged.
+- **§13 #5 answered: the flat 0° signwriter nib ships.** One row in `data/nibs.json`, `groups: []` (the
+  `round-bold` precedent — a nib with no face, present because the point it makes should be visible before
+  the thing it argues for is built), inserted *before* `round-bold` so the `1`–`9` keys still reach the nine
+  face-bearing pens. Rendered, it does what §10.7 promised: fat stems, hairline bars that read as the
+  entry-and-exit marks a Roman serif *is*, and a visibly wrong minuscule with the same pen.
+- **`unicase` is a face flag, not a special case in the code.** Uncial gets `"unicase": true` and one
+  helper, `faceChar(ch)`, folds `A` onto `a` for the glyph, the album cell **and** the per-nib best — so
+  §10.6's "A and a are the same drawing" is true of the save shape and not just the plate. Its face row
+  shows one fraction of 26; every other face shows two.
+- **The two fractions are computed, the milestones are still M4.** `faceCells(f)` returns `{lo, up}` and the
+  face list shows `7a·3A`. M4 must read both and never their sum — §10.5's migration trap is a comment on
+  that function, where the code that would get it wrong will be.
+- **The capitals copy is a paragraph on the existing plate**, shown while an uppercase letter is selected
+  (always, for a unicase face), plus six capital-only anatomy callouts. Callouts were already keyed by
+  character, so `{term:"cap height", letter:"H"}` needed no new shape — exactly as §10.5 predicted.
 
 ---
 
@@ -723,16 +781,24 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
 - **M3 — fold into `inklings.html`.** The trace overlay replaces the letter branch of `doAttack` (§9), field
   glyphs draw in their face with the `Alpha.png` fallback, the six guards, save v12 → v13, the starter face
   and the nib shop entries. **The loop closes here** — this is the milestone after which the game plays
-  differently. **It must also answer §10.2**: the skeleton is lowercase-only, so either M7 lands first or
-  capitals keep the hit-to-catch verb behind one explicit `isUpper` branch on the trace-open check.
+  differently. **§10.2 is already answered**: M7 landed first, so the skeleton covers all 52 letters and
+  M3 needs no `isUpper` fallback on the trace-open check. It still needs `!isUpper(c.letter)` on the
+  *satchel* gate (§10.8) — that row is load-bearing for a different reason.
 - **M4 — the Scriptorium.** The album, the per-face plate with anatomy callouts, the 25/50/100% milestones
   paying ink + décor, the framed-specimen décor item.
 - **M5 — the Tree of Faces.** The classification map (Tree-of-Kinds pattern) + group milestones.
 - **M6 — italics & bold** (§11).
-- **M7 — capitals** (§10). Independent of M4–M6 and landable any time after M3 — but M3 owes it the fallback
-  above either way. Mostly a data milestone: 26 capital skeletons authored in the Wordshape tool into the
-  same `data/wordshape-alphabet.json`, a cap-height metric line, an `Aa` toggle on the album and a second
-  fraction per face. No new fetches, no save bump, no font work.
+- **M7 — capitals** (§10). **BUILT 2026-09-12 — and it landed BEFORE M3, which cancels the fallback M3
+  owed it.** As built: **26 capital skeletons** in `wordshape-draw.html`'s shared `GLYPHS` table (52 glyphs
+  now, exported by the same `⬇ wordshape-alphabet.json` button and sliced live by the bench, so both games
+  still read one alphabet), a new **elliptical-arc helper** the minuscules never needed, the **cap-height
+  metric line at 0.07** in the alphabet's units string and as the bench's fifth overlay line, an **`Aa`
+  case layer** in the bench (a–z / A–Z chips, `[` `]` walking the case you are in, shift+key crossing, the
+  nib strip and the whole-alphabet strip following), **two fractions per face** via `faceCells()`, a
+  **`caps` plate paragraph plus six capital anatomy callouts** in `data/typefaces.json`, **`unicase: true`**
+  on Uncial Antiqua folding its `A` onto its `a` for glyph, cell and best alike, and the **flat 0°
+  signwriter nib** (§13 #5, answered: it ships). No new fetches, no save bump, no font work — the fonts
+  already subset all 52. Full build notes in **§10.10**.
 
 Sound is **provisional** and nothing depends on it: a nib scratch per stroke whose pitch tracks stroke
 length, a pen-lift tick between strokes, and a distinct chime for *face earned* that must not sound like
@@ -753,9 +819,9 @@ the existing `capture` (the letter and the face are two different wins).
    "right kind of pen, wrong flex" as the same smudge. It may be truer to accept any pointed nib for a
    pointed face and let the *look* be the feedback — the didone and the script nibs produce visibly
    different pages, which is the lesson either way.
-5. **Does the flat 0° "signwriter" nib ship with the capitals** (§10.7), or stay parked? It is one row of
-   `data/nibs.json` and it is the clearest single demonstration that a tool and an alphabet belong together
-   — but it is also a nib that makes one of the two alphabets look wrong on purpose.
+5. ~~**Does the flat 0° "signwriter" nib ship with the capitals** (§10.7), or stay parked?~~ **Answered by
+   M7: it ships** (`broad-flat`, `groups: []`). It makes one of the two alphabets look wrong on purpose,
+   and that is the demonstration, not a defect.
 6. **Does a true blackletter majuscule skeleton ever get drawn** (§10.6), alongside the true italic, or do
    the plates simply tell the truth about the approximation? Both are "a second skeleton", which §11 argues
    is the lesson rather than the cost.

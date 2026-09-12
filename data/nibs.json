@@ -16,6 +16,7 @@
     { "id": "pointed-tran", "name": "Pointed",          "type": "pointed", "w": 0.100, "h": 0.024, "pow": 1.0,   "price": 150, "groups": ["transitional"], "note": "The pen mid-turn: stress turning vertical, but the contrast still moderate." },
     { "id": "pointed-dido", "name": "Pointed, flexed",  "type": "pointed", "w": 0.130, "h": 0.013, "pow": 1.7,   "price": 240, "groups": ["didone"], "note": "Maximum flex — fat stems, hairline horizontals. The engraver's answer to the quill." },
     { "id": "pointed-scri", "name": "Pointed, script",  "type": "pointed", "w": 0.090, "h": 0.020, "pow": 1.2,   "price": 200, "groups": ["script"] },
+    { "id": "broad-flat",   "name": "Broad, flat 0\u00b0",   "type": "broad",   "w": 0.150, "h": 0.032, "angle": 0,   "price": 80,  "groups": [], "note": "No face of its own \u2014 \u00a710.7's demo, and the clearest single argument in the feature that a tool and an alphabet belong to each other. The signwriter's brush held level: on a capital it puts the weight on the stems and turns the horizontals into entry and exit marks, which IS the Roman inscriptional serif; on a minuscule the same pen is visibly wrong. Try it on A\u2013Z, then on a\u2013z." },
     { "id": "round-bold",   "name": "Round, bold",      "type": "round",   "w": 0.085, "h": 0.085,               "price": 60,  "groups": [], "note": "No face of its own. Here because §10's claim — BOLD IS A WIDER NIB — should be visible in the bench before the style axis is ever built." }
   ]
 }

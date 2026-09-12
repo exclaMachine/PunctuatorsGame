@@ -2,7 +2,8 @@
 
 Status: **SPECCED 2026-09-07.** **M1's drawing tool is BUILT (`wordshape-draw.html`, 2026-09-07), and with
 its guide-letter layer (2026-09-08) so is a first pass at M2's alphabet — the ten targets are still to be
-drawn.** Milestones are §9; what M1 actually shipped is §11.
+drawn.** The alphabet **grew to 52 glyphs on 2026-09-12**, when Inklings' Scriptorium needed the capitals
+(§6). Milestones are §9; what M1 actually shipped is §11.
 
 **The pitch:** you are given a word and a simple line drawing of that word's meaning. You draw the picture
 using **only the letters of the word** — position and rotate `c`, `a` and `t` until they trace out a cat.
@@ -214,23 +215,38 @@ cost is that the font-unlock ladder then has to be drawn rather than downloaded.
 **BUILT 2026-09-08: route B, inside the M1 tool** (§11.5). Drawing targets and drawing the alphabet are the
 same job, and M1's whole hazard is that a target may not be coverable by the letters — so the guide letters
 had to exist there anyway, and once they do the alphabet is simply what they are made of. It is 26 lowercase
-glyphs in em units (y down: ascender 0.02 · x-height top 0.24 · baseline 0.72 · descender 0.96), curves
+glyphs in em units (y down: ascender 0.02 · x-height top 0.24 · baseline 0.72 · descender 0.96 — plus **cap
+height 0.07** since the capitals joined them on 2026-09-12, below), curves
 sampled from arcs rather than stored as points so a shape can be nudged by changing one number, exported by
 the tool as `data/wordshape-alphabet.json`. Route A is **not foreclosed** — Hershey is **public domain**
 (§12) and its Script/Gothic variants are still the cheapest font-unlock ladder; this just means the MVP was
 never blocked on the answer. One caveat found when the licence was settled: Duplex/Complex/Triplex fake their
 weight with **parallel strokes**, so they are usable as *looks* but not as skeletons.
 
-Either way the MVP ships **one font, lowercase only**, as `data/wordshape-alphabet.json` — a few KB.
+Either way the MVP ships **one font**, as `data/wordshape-alphabet.json` — a few KB.
 
-**Capitals are the alphabet's next pass, and Inklings asks for them first.** The Scriptorium's capture verb
-is tracing, so a capital inkling with no skeleton has nothing to trace — a blocker on its M3, specced in
-[`inklings-typography.md`](inklings-typography.md) §10. The 26 majuscules get authored **here, in this same
-tool**, into the same exported file under upper-case keys (the glyph table is a `Map`, so `"A"` is a free
-key), and they need one new metric line — **cap height at y ≈ 0.07**, below the 0.02 ascender, since a
-capital is shorter than an `l` in virtually every real face. Wordshape itself gains a brush set twice the
-size, which by §0's reframe makes every word *easier*, so whether capitals join the player's palette is a
-difficulty decision for §8's ladder, not a data one.
+**Capitals BUILT 2026-09-12 — the table is now 52 glyphs.** Inklings asked for them first: the Scriptorium's
+capture verb is tracing, so a capital inkling with no skeleton had nothing to trace, and the majuscules
+landed as its **M7** ([`inklings-typography.md`](inklings-typography.md) §10, §10.10). They live **here**,
+in this tool's `GLYPHS` table under upper-case keys (it is a `Map`, so `"A"` is a free key), and go out
+through the same `⬇ wordshape-alphabet.json` export. Three things came with them:
+
+- **A fifth metric line — cap height at y 0.07**, below the 0.02 ascender, because a capital is shorter than
+  an `l` in virtually every real face. It is in the units string the export carries.
+- **An elliptical-arc helper `EL()` beside `A()`.** An x-height bowl is near-circular so circles were enough
+  for a–z; a capital bowl is half a cap height tall and *wider* than that, so `B D P R U` need two radii
+  (`C G O Q` stayed true circles — that is the width system's own claim). **Watch the sweep direction**:
+  `A()`/`EL()` interpolate from `a0` to `a1`, so a clockwise sweep must count *upward* — `270,450`, never
+  `270,90`, which sweeps the other way out through negative x. That mistake shipped once and was caught by
+  a bounds check.
+- **The preview strip now draws a row on one baseline at each glyph's own advance width**, instead of
+  centring each glyph on its own ink. Centring hides the two things capitals exist to teach — cap height,
+  and the classical width system (`I` 0.24 … `O` 0.77 … `W` 0.86) — in the one place the shapes get judged.
+
+**Wordshape itself is unaffected today**: `wordLetters()` lower-cases the target word, so a target's brush
+set is still its lowercase letters only. The tool gains a brush set twice the size *available*, which by
+§0's reframe would make every word *easier* — so whether capitals join the player's palette is a difficulty
+decision for §8's ladder, not a data one.
 
 ---
 
@@ -310,7 +326,7 @@ Each milestone is independently checkable. Nothing here is a big-bang.
 | M | What | Ships |
 |---|---|---|
 | **M1** | **The drawing tool + the ten targets.** **Tool BUILT 2026-09-07 (§11), guide letters BUILT 2026-09-08 (§11.5); the ten drawings are the dev's to make** → `data/wordshape-targets.json`. | Nothing playable. A tool, then a data file. |
-| **M2** | **The alphabet.** §6 route B **BUILT 2026-09-08 as a first pass inside the M1 tool** (§11.5) — 26 monoline polyline glyphs, an all-26 preview strip and a `⬇ wordshape-alphabet.json` export. What remains of M2 is the **licence call on route A** and the dev's tuning pass over the shapes. | The brush set exists. |
+| **M2** | **The alphabet.** §6 route B **BUILT 2026-09-08 as a first pass inside the M1 tool** (§11.5) — monoline polyline glyphs, a preview strip and a `⬇ wordshape-alphabet.json` export; **capitals added 2026-09-12** for Inklings' M7, so the table is **52 glyphs** with a cap-height metric line. What remains of M2 is the **licence call on route A** and the dev's tuning pass over the shapes. | The brush set exists. |
 | **M3** | **The scorer, headless.** Chamfer DT, resampling, fidelity/coverage/F₂, the uncovered-run hint. Verified with a `?dev=1` heat-map overlay and a few hand-placed letters. | The percentage is real and honest. |
 | **M4** | **The bench — the playable MVP.** `wordshape.html`: the ten-word menu, the stamp gesture, three sizes, the budget, the live %, the use-every-letter gate, the pass threshold, the hint button. | **This is the MVP.** |
 | **M5** | **Feel.** Placement/snap/pass cues on the repo's existing procedural `_tone`/`_noise` kit (no audio assets), the settle animation on placement, the guide-brightens reveal on a pass. | It feels like a game. |
@@ -429,7 +445,7 @@ target ink, so a target is drawn **by tracing the brushes that must cover it**. 
 - **Clear is per-layer** (letters if the Letters tool is active and any are down, else strokes). Wiping a
   ten-minute guide layout because you wanted to redraw one line would be the worst button in the tool.
 
-Also here: an **all-26 preview strip** and a `⬇ wordshape-alphabet.json` export, so the guide traced in M1
+Also here: a **whole-alphabet preview strip** (52 glyphs since 2026-09-12, drawn on a shared baseline) and a `⬇ wordshape-alphabet.json` export, so the guide traced in M1
 and the brush handed to M4 are one file rather than two hands.
 
 Two implementation notes worth keeping. The glyph table is a **`Map`, never a plain object** — it is looked

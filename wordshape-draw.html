@@ -207,7 +207,7 @@
       <button class="btn" id="dlabc">⬇ wordshape-alphabet.json</button>
       <button class="btn sm" id="showabc">Show alphabet</button>
     </div>
-    <canvas id="abc" width="1040" height="180" hidden></canvas>
+    <canvas id="abc" width="1040" height="360" hidden></canvas>
     <div class="msg" id="msg"></div>
     <textarea id="json" hidden spellcheck="false"></textarea>
     <p class="note">Everything autosaves to <code>localStorage</code> as you draw, so a refresh is safe — but a
@@ -264,9 +264,12 @@ const SIZE_NAME = ["S","M","L"];
  *
  * These are the guide letters you trace, and they are the same KIND of data as a
  * target: centreline polylines, no outlines, no font rasterizing anywhere. Drawn in
- * em units, y down: ascender 0.02 · x-height top 0.24 · baseline 0.72 · descender 0.96.
- * Curves are sampled from arcs rather than stored as points so the data stays readable
- * and a shape can be nudged by changing one number.
+ * em units, y down: ascender 0.02 · CAP HEIGHT 0.07 · x-height top 0.24 · baseline 0.72
+ * · descender 0.96. Curves are swept from arcs rather than stored as points so the data
+ * stays readable and a shape can be nudged by changing one number.
+ *
+ * 52 glyphs: a–z (Carolingian, a pen) and A–Z (Roman inscriptional, a brush and a
+ * chisel). Cap height sits BELOW the ascender on purpose — see the capitals block.
  * ------------------------------------------------------------------ */
 const GLYPHS = (() => {
   /* Angles in degrees. Canvas y grows DOWNWARD, so a=0 is right, 90 is BELOW,
@@ -277,6 +280,18 @@ const GLYPHS = (() => {
     for (let i = 0; i <= n; i++){
       const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180;
       o.push([cx + r*Math.cos(a), cy + r*Math.sin(a)]);
+    }
+    return o;
+  };
+  /* The same sweep on an ELLIPSE. The minuscule bowls are near-circular at
+     x-height so A() was enough for them; a capital bowl is half a cap height
+     tall and wider than that, so B D P R U genuinely need two radii. */
+  const EL = (cx, cy, rx, ry, a0, a1, steps) => {
+    const n = steps || Math.max(6, Math.round(Math.abs(a1 - a0) / 10));
+    const o = [];
+    for (let i = 0; i <= n; i++){
+      const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180;
+      o.push([cx + rx*Math.cos(a), cy + ry*Math.sin(a)]);
     }
     return o;
   };
@@ -332,7 +347,63 @@ const GLYPHS = (() => {
     w: [0.84, [ [[0.06,0.24],[0.24,0.72],[0.42,0.34],[0.60,0.72],[0.78,0.24]] ]],
     x: [0.60, [ [[0.06,0.24],[0.54,0.72]], [[0.54,0.24],[0.06,0.72]] ]],
     y: [0.62, [ [[0.06,0.24],[0.31,0.69]], [[0.56,0.24],[0.20,0.96]] ]],
-    z: [0.60, [ [[0.08,0.24],[0.52,0.24],[0.08,0.72],[0.52,0.72]] ]]
+    z: [0.60, [ [[0.08,0.24],[0.52,0.24],[0.08,0.72],[0.52,0.72]] ]],
+
+    /* ---- CAPITALS: the second alphabet (docs/inklings-typography.md §10) ----
+       A different tool, eight centuries earlier. Minuscules are Carolingian —
+       a pen, on parchment. Capitals are Roman inscriptional — a flat brush,
+       then a chisel, on stone — which is WHY a capital is not a big lowercase.
+       Two properties here are load-bearing and must not be tidied away:
+         · CAP HEIGHT IS 0.07, not the ascender's 0.02. A capital is shorter
+           than an `l` in virtually every real face, so `l` should visibly
+           overshoot `L`. Drawing caps to the ascender is the most visible
+           possible error against the real font in a specimen.
+         · THE WIDTHS ARE A SYSTEM, not a uniform column: C G O Q are circles
+           (0.77), M W wide, E F L B P S narrow, A H K V X near square, I a
+           stem. Classical proportion is the one thing you can only learn by
+           travelling it, which is exactly what tracing is.
+       Direction obeys the same rule as the minuscules (see above): stems run
+       top->bottom, bars left->right, a free ring runs counter-clockwise from
+       2 o'clock like `o`, and a bowl drawn AFTER its stem leaves the stem and
+       pushes right and over — clockwise — which is B D P R, the capital form
+       of the b/p exception. */
+    A: [0.64, [ [[0.32,0.07],[0.06,0.72]], [[0.32,0.07],[0.58,0.72]], [[0.128,0.55],[0.512,0.55]] ]],
+    B: [0.53, [ [[0.06,0.07],[0.06,0.72]],
+                J([[0.06,0.07],[0.20,0.07]], EL(0.20,0.2325,0.24,0.1625,270,450), [[0.06,0.395]]),
+                J([[0.06,0.395],[0.20,0.395]], EL(0.20,0.5575,0.27,0.1625,270,450), [[0.06,0.72]]) ]],
+    C: [0.77, [ A(0.385,0.395,0.325,-55,-305) ]],
+    D: [0.70, [ [[0.06,0.07],[0.06,0.72]],
+                J([[0.06,0.07],[0.16,0.07]], EL(0.16,0.395,0.44,0.325,270,450), [[0.06,0.72]]) ]],
+    E: [0.52, [ [[0.06,0.07],[0.06,0.72]], [[0.06,0.07],[0.44,0.07]],
+                [[0.06,0.395],[0.38,0.395]], [[0.06,0.72],[0.46,0.72]] ]],
+    F: [0.50, [ [[0.06,0.07],[0.06,0.72]], [[0.06,0.07],[0.44,0.07]], [[0.06,0.395],[0.38,0.395]] ]],
+    /* the ring, then up the spur and in — the bar is the end of the same stroke */
+    G: [0.77, [ J(A(0.385,0.395,0.325,-55,-305), [[0.5715,0.40],[0.42,0.40]]) ]],
+    H: [0.64, [ [[0.06,0.07],[0.06,0.72]], [[0.52,0.07],[0.52,0.72]], [[0.06,0.395],[0.52,0.395]] ]],
+    I: [0.24, [ [[0.12,0.07],[0.12,0.72]] ]],
+    J: [0.46, [ J([[0.36,0.07],[0.36,0.58]], A(0.22,0.58,0.14,0,140)) ]],
+    K: [0.64, [ [[0.06,0.07],[0.06,0.72]], [[0.54,0.07],[0.06,0.44]], [[0.22,0.317],[0.56,0.72]] ]],
+    L: [0.52, [ [[0.06,0.07],[0.06,0.72]], [[0.06,0.72],[0.46,0.72]] ]],
+    M: [0.76, [ [[0.06,0.07],[0.06,0.72]], [[0.06,0.07],[0.35,0.72],[0.64,0.07]], [[0.64,0.07],[0.64,0.72]] ]],
+    N: [0.66, [ [[0.06,0.07],[0.06,0.72]], [[0.06,0.07],[0.54,0.72]], [[0.54,0.07],[0.54,0.72]] ]],
+    O: [0.77, [ A(0.385,0.395,0.325,-55,-415) ]],
+    P: [0.53, [ [[0.06,0.07],[0.06,0.72]],
+                J([[0.06,0.07],[0.20,0.07]], EL(0.20,0.2725,0.27,0.2025,270,450), [[0.06,0.475]]) ]],
+    Q: [0.77, [ A(0.385,0.395,0.325,-55,-415), [[0.42,0.58],[0.72,0.86]] ]],
+    R: [0.62, [ [[0.06,0.07],[0.06,0.72]],
+                J([[0.06,0.07],[0.19,0.07]], EL(0.19,0.2625,0.26,0.1925,270,450), [[0.06,0.455]]),
+                [[0.16,0.455],[0.56,0.72]] ]],
+    /* the one capital with no shared part, placed by hand like its minuscule */
+    S: [0.53, [ [[0.467,0.165],[0.401,0.097],[0.291,0.07],[0.159,0.097],[0.082,0.178],[0.082,0.287],
+                 [0.148,0.354],[0.269,0.395],[0.390,0.436],[0.456,0.503],[0.456,0.612],[0.379,0.693],
+                 [0.258,0.72],[0.137,0.693],[0.06,0.625]] ]],
+    T: [0.62, [ [[0.31,0.07],[0.31,0.72]], [[0.06,0.07],[0.56,0.07]] ]],
+    U: [0.66, [ J([[0.06,0.07],[0.06,0.47]], EL(0.30,0.47,0.24,0.25,180,0), [[0.54,0.07]]) ]],
+    V: [0.64, [ [[0.06,0.07],[0.32,0.72],[0.58,0.07]] ]],
+    W: [0.86, [ [[0.06,0.07],[0.245,0.72],[0.42,0.10],[0.595,0.72],[0.78,0.07]] ]],
+    X: [0.64, [ [[0.06,0.07],[0.56,0.72]], [[0.56,0.07],[0.06,0.72]] ]],
+    Y: [0.62, [ [[0.06,0.07],[0.31,0.40]], [[0.56,0.07],[0.31,0.40],[0.31,0.72]] ]],
+    Z: [0.58, [ [[0.06,0.07],[0.52,0.07],[0.06,0.72],[0.52,0.72]] ]]
   };
 
   /* A Map, never a plain object: glyphs are looked up by a character taken from stored
@@ -355,7 +426,9 @@ const GLYPHS = (() => {
   return out;
 })();
 
-const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+const ALPHABET  = "abcdefghijklmnopqrstuvwxyz";
+const CAPITALS  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const ALL_GLYPHS = ALPHABET + CAPITALS;
 
 const $ = id => document.getElementById(id);
 
@@ -1056,19 +1129,28 @@ $("importfile").onchange = e => { const f = e.target.files[0]; if (f) f.text().t
  *  judged (and tuned) in the same place they're used. */
 function renderAlphabet(){
   const c = $("abc"), g = c.getContext("2d");
-  const cols = 13, rows = Math.ceil(ALPHABET.length / cols);
+  const cols = 13, rows = Math.ceil(ALL_GLYPHS.length / cols);
   const cw = c.width / cols, ch = c.height / rows;
   g.clearRect(0, 0, c.width, c.height);
   g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
-  g.strokeStyle = "#2b2620"; g.lineWidth = 2; g.lineCap = "round"; g.lineJoin = "round";
-  ALPHABET.split("").forEach((letter, i) => {
+  /* Every glyph in a row sits on ONE baseline at its own advance width, rather
+     than being centred on its own ink — otherwise the two things the capitals
+     exist to teach (cap height below the ascender, and the classical width
+     system) are the two things the preview hides. */
+  const k = ch * 0.92;
+  ALL_GLYPHS.split("").forEach((letter, i) => {
     const gl = GLYPHS.get(letter);
-    const k = Math.min(cw, ch) * 0.62;
-    const ox = (i % cols) * cw + cw/2, oy = ((i / cols) | 0) * ch + ch/2;
+    const col = i % cols, row = (i / cols) | 0;
+    const ox = col * cw + (cw - gl.w * k) / 2, oy = row * ch + ch * 0.04;
+    g.strokeStyle = "#e8e2d4"; g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(col * cw + 2, oy + 0.72 * k); g.lineTo(col * cw + cw - 2, oy + 0.72 * k);
+    g.stroke();
+    g.strokeStyle = "#2b2620"; g.lineWidth = 2; g.lineCap = "round"; g.lineJoin = "round";
     for (const st of gl.strokes){
       g.beginPath();
       st.forEach((q, j) => {
-        const x = ox + (q[0] - gl.cx) * k, y = oy + (q[1] - gl.cy) * k;
+        const x = ox + q[0] * k, y = oy + q[1] * k;
         j ? g.lineTo(x, y) : g.moveTo(x, y);
       });
       g.stroke();
@@ -1081,7 +1163,7 @@ function renderAlphabet(){
 function alphabetJSON(){
   const r = v => Math.round(v * 1e4) / 1e4;
   const glyphs = {};
-  for (const letter of ALPHABET){
+  for (const letter of ALL_GLYPHS){
     const gl = GLYPHS.get(letter);
     glyphs[letter] = {
       w: gl.w,
@@ -1091,7 +1173,7 @@ function alphabetJSON(){
   }
   return {
     v: 1,
-    units: "em, y down · ascender 0.02 · x-height top 0.24 · baseline 0.72 · descender 0.96",
+    units: "em, y down · ascender 0.02 · cap height 0.07 · x-height top 0.24 · baseline 0.72 · descender 0.96",
     sizes: SIZES,
     glyphs
   };
@@ -1109,7 +1191,7 @@ $("dlabc").onclick = () => {
   a.download = "wordshape-alphabet.json";
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  flash("Exported 26 glyphs → put it in data/");
+  flash("Exported " + ALL_GLYPHS.length + " glyphs (a–z + A–Z) → put it in data/");
 };
 
 /* ---------------- drag & drop anywhere ---------------- */
