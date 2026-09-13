@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inklings Trace Bench — the nib engine &amp; the stroke scorer</title>
+<title>Inklings Trace Bench — the nib engine &amp; the font scorer</title>
 <style>
   /* Same bundled pixel font + palette as wordshape-draw.html, the sibling dev tool (SIL OFL 1.1).
      Needs http serving (Live Server) — it fetches the glyph alphabet; falls back to a mono stack
@@ -113,21 +113,32 @@
 
   <div class="top">
     <div class="brand">INKLINGS · DEV BENCH</div>
-    <h1>Trace Bench — the nib engine &amp; the stroke scorer</h1>
+    <h1>Trace Bench — the nib engine &amp; the font scorer</h1>
     <p class="lede">
-      M1 + M2 + M7 of <b>the Scriptorium</b> (<code>docs/inklings-typography.md</code>). Trace the letter stroke by
-      stroke; the grade is per-stroke fidelity against the authored skeleton, and the ink is a <b>nib stamped
-      along your path</b> — which is the whole claim of §3: <b>stroke contrast is a record of the tool</b>, so
-      one skeleton plus a pen gives you a typeface. Glyphs come from Wordshape's authored alphabet
+      M1 + M2 + M2.5 + M7 of <b>the Scriptorium</b> (<code>docs/inklings-typography.md</code>). Trace the letter
+      stroke by stroke; the ink is a <b>nib stamped along your path</b> — §3's claim that
+      <b>stroke contrast is a record of the tool</b>. Glyphs come from Wordshape's authored alphabet
       (<code>data/wordshape-alphabet.json</code> if present, else sliced live out of
       <code>wordshape-draw.html</code> so the two can't drift).
     </p>
     <p class="lede">
+      <b>M2.5 moves the ground under the grade (§5.7).</b> You are no longer scored against the skeleton — you
+      are scored against <b>the real typeface</b>, so your <code>a</code> in Blackletter has to look like a
+      blackletter <code>a</code>. The skeleton drops back to being the <b>guide and the stroke order</b>, the
+      one thing a font file can't supply (fonts ship outlines, not strokes); the face's own glyph is ghosted
+      under the pad; and the grade is a <b>chamfer distance field</b> over your stamped ink: <b>coverage</b>
+      (how much of the letter you filled) and <b>fidelity</b> (how much of your ink landed on it), combined as
+      F-beta with coverage weighted 2:1 (which is beta = &radic;2 — see the Tuning panel). The payoff is that
+      <b>the nib stops being a lookup and becomes the
+      only way to pass</b> — too thin and you can't fill the letter, too fat and your ink spills off it, wrong
+      angle and both fail. There is no verdict table, no smudge and no angle tolerance any more.
+    </p>
+    <p class="lede">
       <b>M2 adds the faces.</b> <code>data/nibs.json</code> and <code>data/typefaces.json</code> now hold the
       pens and the pruned Vox-ATypI tree, and <code>fonts/</code> holds one OFL face per classification leaf —
-      so the specimen you compare your trace against is a <b>genuine typeface</b>, not our approximation. Pick a
-      face, pick the pen you think wrote it, and the three cells below the pad are §3's whole argument side by
-      side: the real font, the skeleton in that face's own nib, and your hand.
+      so the thing you are scored against is a <b>genuine typeface</b>, not our approximation. Pick a face,
+      pick the pen you think wrote it, and the cells below the pad are the argument side by side: the target,
+      the skeleton in that face's own nib, your ink drawn <i>on</i> the target, and the album cell.
     </p>
     <p class="lede">
       <b>M7 adds the capitals</b> (§10) — a <i>second alphabet</i>, not more letters. Roman inscriptional
@@ -153,15 +164,18 @@
           <span id="msg"></span>
         </div>
         <div class="row">
-          <button class="btn sm" id="t-guide">Guide: on</button>
+          <button class="btn sm" id="t-ghost">Face ghost: on</button>
+          <button class="btn sm" id="t-guide">Stroke order: on</button>
           <button class="btn sm" id="t-metrics">Metrics: off</button>
           <button class="btn sm" id="t-raw">Raw path: off</button>
           <button class="btn sm" id="t-skel">Skeleton: off</button>
         </div>
         <p class="hint">
-          Press and drag to write one stroke at a time, in the order a hand would. The numbered dot is where
-          the next stroke starts. A stroke that starts too far off, or runs backwards, is refused and shows
-          you the ghost — that's §5.2's gates, not a difficulty setting.
+          Press and drag to write one stroke at a time, in the order a hand would, following the <b>ghosted
+          letter</b> — that ghost is literally the mask you're scored against. The numbered dot is where the
+          next stroke starts. A stroke that runs <b>backwards</b> is refused and shows you the ghost (§5.2's
+          gate, and the handwriting lesson); starting off the dot is now only a note, because the skeleton's
+          start is the wrong place to stand for a face whose letterform genuinely differs.
         </p>
         <div class="row rung" style="border-top:2px dashed var(--line);padding-top:10px">
           <span class="keys">GUIDANCE §5.4</span>
@@ -175,7 +189,7 @@
       </div>
 
       <div class="panel" style="margin-top:14px">
-        <h2>Specimen — the §3 test</h2>
+        <h2>Specimen — the §3 test, and the §5.7 fit</h2>
         <div class="cmp" id="cmp"></div>
         <div class="plate" id="plate"></div>
         <ul class="anat" id="anat"></ul>
@@ -226,9 +240,16 @@
         <h2>Tuning</h2>
         <div id="sliders"></div>
         <p class="hint">
-          <b>Snap</b> is the one to argue about: Duolingo snaps hard to the ideal, but §7's album shows
-          <i>your</i> traced glyph, so a hard snap would make every player's album identical. This blends
-          your path toward the ideal by snap × fidelity — your hand stays visible, the jitter doesn't.
+          <b>Off-the-letter falloff</b> and <b>coverage tolerance</b> are the two to argue about — between them
+          they decide whether a single stamped nib can fill a Didone's hairlines or a blackletter's sharp
+          corners at all, which is the one way §5.7 could fail. <b>F-beta</b> weights coverage by beta
+          <i>squared</i>, so the default <b>1.41</b> is the 2:1 the doc asks for. Push it to 2 (i.e. 4:1) and
+          you can <b>scribble over the ghost and earn the face</b> — measured, against the 0.72 threshold:
+          clean trace 0.90 / too-fat pen 0.78 / <b>scribble 0.77</b>. At 1.41 those read 0.90 / 0.69 /
+          <b>0.66</b>, so only the trace passes. Pull it to 1 and coverage stops outweighing fidelity at all,
+          and a small cautious mark starts to look attractive.
+          <b>§5.3's snap is gone</b> — it pulled strokes toward the skeleton, which is no longer the target, so
+          snapping now would drag your ink off the letter. A scruffy stroke stays scruffy (doc §13 #8).
         </p>
       </div>
 
@@ -236,7 +257,8 @@
         <h2>Same letter, every nib</h2>
         <div class="strip" id="strip-nibs"></div>
         <p class="hint">The §3 test: does <i>broad-45</i> read as blackletter and <i>pointed-didone</i> as a
-          didone, from the pen alone? Click one to equip it.</p>
+          didone, from the pen alone? Click one to equip it. Since §5.7 this strip is also the pen-shopping
+          view — the one whose ink looks most like the target is the one that will score.</p>
       </div>
 
       <div class="panel">
@@ -249,11 +271,14 @@
 
 <script>
 /* ===========================================================================
-   THE TRACE BENCH — M1 + M2 + M7 of docs/inklings-typography.md
-   M1's two engines: the NIB (§3) and the per-stroke SCORER (§5.2), plus the
-   feel knobs (§5.3). M2's face layer on top: data/nibs.json, the pruned Vox
-   tree and the eleven OFL specimens in data/typefaces.json, §5.4's guidance
-   ladder and the four-cell specimen comparison. M7's CAPITALS (§10) through
+   THE TRACE BENCH — M1 + M2 + M2.5 + M7 of docs/inklings-typography.md
+   M1's NIB engine (§3) and the per-stroke GATES (§5.2). M2's face layer:
+   data/nibs.json, the pruned Vox tree and the eleven OFL specimens in
+   data/typefaces.json, §5.4's guidance ladder and the specimen comparison.
+   M2.5 (§5.7) then moved the GRADE off the skeleton and onto the real
+   typeface — a chamfer field over your stamped ink, coverage + fidelity — so
+   what M1 called "the scorer" is now only the gates, and the nib stopped being
+   a lookup and became the only way to pass. M7's CAPITALS (§10) run through
    all of it: 52 glyphs, a cap-height metric line, the Aa case layer and two
    fractions per face. The album's plates and milestones are M4; M3 folds the
    overlay into inklings.html.
@@ -363,27 +388,28 @@ async function loadFaceFont(f){
 /* ------------------------------------------------------------------- tuning
    Every number the feel depends on, in one place, with a slider each. */
 const T = {
-  startTol: 0.14,   // em — how far from the stroke's start you may begin
-  falloff:  0.13,   // em — mean error that scores 0; smaller = stricter
-  snap:     0.65,   // 0..1 — how far an accepted stroke is pulled to the ideal
-  faceTh:   0.72,   // grade at/above which the face would be earned (M3 decides for real)
-  dirGate:  1,      // refuse a stroke that runs backwards
+  startTol: 0.14,   // em — how far off the numbered dot you may begin. ADVISORY since §5.7:
+                    // the skeleton's start is the wrong place to stand for a divergent face.
+  falloff:  0.05,   // em — mean distance of your ink FROM THE LETTER that scores 0 fidelity
+  covTol:   0.020,  // em — how close your ink must come to a bit of the letter to have covered it
+  fBeta:    1.414,  // §5.7 — F-beta. The weight on coverage is beta SQUARED, so "coverage
+                    // outweighs fidelity 2:1" is beta = sqrt(2), NOT beta = 2 (which is 4:1).
+                    // Measured: at 4:1 a SCRIBBLE over the ghost scores 0.77 and earns the
+                    // face; at 2:1 it scores 0.66 and a clean trace still scores 0.90.
+  faceTh:   0.72,   // grade at/above which the face is earned (M3 decides for real)
+  dirGate:  1,      // refuse a stroke that runs backwards — the handwriting lesson, and all
+                    // that survives of scoring against the skeleton
   nibScale: 1.0,    // scales every nib's width, for arguing about weight globally
-  smooth:   2,      // moving-average window on the raw pointer path
-  angleTol: 8,      // §5.6 — degrees of pen angle you may be off before the face smudges
-  smudge:   0.85    // §5.6's smudge. Must stay high enough that a CLEAN trace with a
-                    // mis-set pen can still clear faceTh — a smudge is a worse grade,
-                    // not a silent second refusal (0.7 x 1.0 < 0.72 would be exactly that).
+  smooth:   2       // moving-average window on the raw pointer path
 };
 const SLIDERS = [
-  ["startTol","Start tolerance (em)",0.02,0.40,0.01],
-  ["falloff","Error falloff (em)",0.04,0.30,0.01],
-  ["snap","Snap to ideal",0,1,0.05],
+  ["falloff","Off-the-letter falloff (em)",0.01,0.20,0.005],
+  ["covTol","Coverage tolerance (em)",0.004,0.08,0.002],
+  ["fBeta","F-beta (coverage weight)",0.5,4,0.1],
   ["faceTh","Face threshold",0.3,0.95,0.01],
   ["nibScale","Nib weight ×",0.5,2,0.05],
-  ["smooth","Path smoothing",0,6,1],
-  ["angleTol","Pen-angle tolerance (°)",0,45,1],
-  ["smudge","Smudged grade ×",0.2,1,0.05]
+  ["startTol","Start tolerance (em, advisory)",0.02,0.40,0.01],
+  ["smooth","Path smoothing",0,6,1]
 ];
 
 const N_SAMPLES = 32;     // §5.2: resample both paths to N points by arc length
@@ -411,7 +437,7 @@ let ghost = null;         // {i, t} ghost-stroke animation
 let msgT = 0;
 let best  = (()=>{ try{ return JSON.parse(localStorage.getItem(BEST_KEY))  || {}; }catch(e){ return {}; } })();
 let album = (()=>{ try{ return JSON.parse(localStorage.getItem(ALBUM_KEY)) || {}; }catch(e){ return {}; } })();
-const show = { guide:true, metrics:false, raw:false, skel:false };
+const show = { ghost:true, guide:true, metrics:false, raw:false, skel:false };
 
 const pad = $("pad"), ctx = pad.getContext("2d");
 let PX = 0;               // css px of the square pad
@@ -540,10 +566,18 @@ function stampStroke(c, g, pts, theNib, col, em, ox, oy, alpha){
   c.restore();
 }
 
-/* ------------------------------------------------------- the scorer (§5.2)
-   Not Wordshape's chamfer field — that one is order-blind by design. This
-   asks the three questions a trace raises: did you start in the right place,
-   did you go the right way, and how close did you stay? */
+/* --------------------------------------------- the per-stroke GATES (§5.2)
+   All that survives of scoring against the skeleton, and the reason §5.5's
+   direction fix is still load-bearing. §5.7 moved the GRADE to the font, so
+   this no longer answers "how good was it" — only "may this stroke stand".
+
+   Direction and order are refusals: they are the handwriting lesson, and the
+   check compares whole resampled paths (a near-closed bowl has almost no net
+   travel vector). The START point is now ADVISORY — it was measured against
+   the skeleton's start, which for a face whose letterform genuinely differs is
+   the wrong place to make someone stand. `fidelity` here is kept as a bench
+   diagnostic: it says how far you wandered from the skeleton, which is worth
+   seeing for a divergent face and feeds nothing. */
 function scoreStroke(user, ideal){
   const u = smoothPath(user, T.smooth|0);
   const startErr = Math.hypot(u[0][0]-ideal[0][0], u[0][1]-ideal[0][1]);
@@ -556,8 +590,9 @@ function scoreStroke(user, ideal){
   const err = Math.min(fwd, rev);
   const fidelity = Math.max(0, Math.min(1, 1 - err/T.falloff));
   return {
-    ok: startErr <= T.startTol && !(T.dirGate && backwards),
-    why: startErr > T.startTol ? "start" : (backwards ? "backwards" : null),
+    ok: !(T.dirGate && backwards),
+    why: backwards ? "backwards" : null,
+    offStart: startErr > T.startTol,
     startErr, err, fidelity, backwards, path:u
   };
 }
@@ -566,17 +601,191 @@ function meanErr(a, b){
   for(let i=0;i<a.length;i++) t += Math.hypot(a[i][0]-b[i][0], a[i][1]-b[i][1]);
   return t/a.length;
 }
-/* §5.3's partial snap: pull the traced points toward the ideal by snap ×
-   fidelity. A clean stroke lands on the line; a scruffy one stays scruffy,
-   so the album keeps showing a hand rather than a font. */
-function snapped(user, ideal, fidelity){
-  const n = Math.max(N_SAMPLES, Math.min(160, Math.round(polyLen(ideal)/0.01)));
-  const u = resample(user, n), v = resample(ideal, n);
-  const fwdBetter = meanErr(u, v) <= meanErr(u, resample(ideal.slice().reverse(), n));
-  const target = fwdBetter ? v : resample(ideal.slice().reverse(), n);
-  const t = Math.max(0, Math.min(1, T.snap * fidelity));
-  return u.map((q,i) => [lerp(q[0], target[i][0], t), lerp(q[1], target[i][1], t)]);
+/* ============================================ THE FONT SCORER (M2.5, §5.7)
+   The amendment in one line: the grade no longer compares your PATH to the
+   skeleton, it compares your INK to the real typeface. So a blackletter `a`
+   has to look like a blackletter `a`, and the skeleton drops back to being the
+   guide and the stroke order — the one thing a font file cannot supply, since
+   fonts ship outlines, not strokes.
+
+   Two numbers, both measured on one 256² grid:
+     fidelity — how much of YOUR ink landed on the letter
+     coverage — how much of the LETTER you managed to fill
+   combined as F-beta so coverage outweighs fidelity 2:1 (Wordshape's own
+   finding: weight fidelity too highly and the optimal play is a small cautious
+   mark). Note the exponent — F-beta weights coverage by beta SQUARED, so 2:1 is
+   beta = sqrt(2). Wordshape's doc said "F2", which is 4:1, and at 4:1 you can
+   scribble over the ghost and earn the face. Fixed in both docs.
+
+   And the property the whole amendment turns on: fidelity punishes a pen that
+   is too FAT, coverage punishes one that is too THIN, and a wrong angle fails
+   both — so the nib stops being a lookup table and becomes the only way to
+   pass. §5.6's verdict table, its smudge multiplier and its angle tolerance
+   are gone; nothing grades the pen, the letter does. */
+const DT_N = 256;                       // grid side. The pad is a scaled copy of it.
+const gridEm = () => DT_N * (1 - 2*PAD_M);
+const gridOx = g => (DT_N - g.w*gridEm())/2;
+const gridOy = () => DT_N * PAD_M;
+
+function maskCanvas(){
+  const c = document.createElement("canvas");
+  c.width = c.height = DT_N;
+  return c;
 }
+const tgtCv = maskCanvas(), tgtG = tgtCv.getContext("2d", {willReadFrequently:true});
+const inkCv = maskCanvas(), inkG = inkCv.getContext("2d", {willReadFrequently:true});
+
+/* Two-pass chamfer distance transform, 3-4 weights, returned in GRID PIXELS.
+   `mask` is 1 where there is ink; every other cell gets its distance to the
+   nearest ink. This is the piece docs/wordshape.md §M3 specced and never got
+   built — Wordshape inherits it from here. */
+const DT_BIG = 1e7;
+function chamferDT(mask, out){
+  const D = out || new Float32Array(DT_N*DT_N);
+  for(let i=0;i<D.length;i++) D[i] = mask[i] ? 0 : DT_BIG;
+  for(let y=0;y<DT_N;y++) for(let x=0;x<DT_N;x++){
+    const i = y*DT_N + x; let d = D[i]; if(d === 0) continue;
+    if(y > 0){
+      if(x > 0)        d = Math.min(d, D[i-DT_N-1] + 4);
+                       d = Math.min(d, D[i-DT_N]   + 3);
+      if(x < DT_N-1)   d = Math.min(d, D[i-DT_N+1] + 4);
+    }
+    if(x > 0)          d = Math.min(d, D[i-1] + 3);
+    D[i] = d;
+  }
+  for(let y=DT_N-1;y>=0;y--) for(let x=DT_N-1;x>=0;x--){
+    const i = y*DT_N + x; let d = D[i]; if(d === 0) continue;
+    if(y < DT_N-1){
+      if(x < DT_N-1)   d = Math.min(d, D[i+DT_N+1] + 4);
+                       d = Math.min(d, D[i+DT_N]   + 3);
+      if(x > 0)        d = Math.min(d, D[i+DT_N-1] + 4);
+    }
+    if(x < DT_N-1)     d = Math.min(d, D[i+1] + 3);
+    D[i] = d;
+  }
+  for(let i=0;i<D.length;i++) D[i] /= 3;    // 3-4 weights → grid px
+  return D;
+}
+function maskOf(g2){
+  const d = g2.getImageData(0,0,DT_N,DT_N).data;
+  const m = new Uint8Array(DT_N*DT_N);
+  let n = 0;
+  for(let i=0;i<m.length;i++) if(d[i*4+3] > 100){ m[i] = 1; n++; }
+  return {mask:m, n};
+}
+
+/* The target, drawn — the real font if it loaded and actually has this glyph,
+   else the skeleton in the face's own pen. ONE function, so the ghost you
+   trace under the pad and the mask you are scored against can never be two
+   different shapes. `useFont` is decided once, by targetFor(), and passed in.
+
+   The font is set at the skeleton's own em with its baseline on the skeleton's
+   baseline (0.72 em) and centred on the skeleton's centre, so the two overlay
+   truly and the x-height difference you see is the face's. */
+function drawFaceGlyph(c, g, f, ch, useFont, em, ox, oy, col, alpha){
+  c.save();
+  c.globalAlpha = alpha == null ? 1 : alpha;
+  c.fillStyle = col;
+  if(useFont){
+    c.font = em + "px '" + f.family + "', serif";
+    c.textAlign = "center"; c.textBaseline = "alphabetic";
+    c.fillText(ch, ox + g.w*em/2, oy + 0.72*em);
+    c.restore();
+    return;
+  }
+  c.restore();
+  for(const st of g.strokes) stampStroke(c, g, st, rightNib(f) || nib, col, em, ox, oy, alpha);
+}
+
+function faceFamilyLive(f){
+  try{ return document.fonts.check("16px '" + f.family + "'"); }
+  catch(e){ return true; }        // no support for the check: trust fontState rather than refuse the face
+}
+
+/* The scoring target for this face × letter, cached. The key carries the font's
+   load state, so a face whose woff2 arrives later re-derives itself instead of
+   scoring you forever against the fallback. */
+let _target = null;
+function targetFor(){
+  if(!face || !GLYPHS) return null;
+  const g = curGlyph(), ch = faceChar(cur);
+  const key = face.id + "|" + ch + "|" + (fontState.get(face.id) || "-") + "|" + T.nibScale;
+  if(_target && _target.key === key) return _target;
+
+  const em = gridEm(), ox = gridOx(g), oy = gridOy();
+  /* `fontState` only says the FontFace resolved; it does not say that the family
+     name in typefaces.json is the one the file actually registers. A mismatch
+     makes ctx.font fall back to `serif` SILENTLY — which under M2 only made the
+     specimen wrong, but now would score you against Times and call it Garamond.
+     document.fonts.check is the cheap authority on it. */
+  let useFont = !!(face.family && fontState.get(face.id) === "ok" && faceFamilyLive(face));
+  tgtG.clearRect(0,0,DT_N,DT_N);
+  if(useFont){
+    drawFaceGlyph(tgtG, g, face, ch, true, em, ox, oy, "#000", 1);
+    /* A subset that doesn't carry this character renders nothing (or tofu that
+       the alpha test still sees). An EMPTY raster is the honest signal, and it
+       falls back the way §8's field glyph does — to the pen, never to tofu. */
+    if(!maskOf(tgtG).n){ useFont = false; tgtG.clearRect(0,0,DT_N,DT_N); }
+  }
+  if(!useFont) drawFaceGlyph(tgtG, g, face, ch, false, em, ox, oy, "#000", 1);
+
+  const {mask, n} = maskOf(tgtG);
+  const ink = new Int32Array(n);
+  for(let i=0, k=0; i<mask.length; i++) if(mask[i]) ink[k++] = i;
+  _target = { key, mask, n, ink, D: chamferDT(mask), useFont,
+              src: useFont ? face.name
+                 : face.font ? face.name + " — " + (fontState.get(face.id) === "ok"
+                     ? "family name doesn't match the file, showing the pen"
+                     : "font missing, showing the pen")
+                 : face.name + " — the skeleton is its own specimen" };
+  return _target;
+}
+function invalidateTarget(){ _target = null; _score = null; }
+
+/* Your ink, rasterized into the same grid with the pen you equipped — literally
+   the pixels you can see, so the thing measured and the thing drawn cannot
+   drift apart. */
+const _inkDT = new Float32Array(DT_N*DT_N);
+function inkMaskOf(g, strokes, theNib){
+  inkG.clearRect(0,0,DT_N,DT_N);
+  const em = gridEm(), ox = gridOx(g), oy = gridOy();
+  for(const pts of strokes) stampStroke(inkG, g, pts, theNib, "#000", em, ox, oy, 1);
+  return maskOf(inkG);
+}
+
+let _score = null, _scoreKey = "";
+function scoreNow(){
+  if(!done.length || !face || !GLYPHS) return null;
+  const key = face.id + "|" + cur + "|" + nib.id + "|" + done.length + "|" +
+              T.falloff + "|" + T.covTol + "|" + T.fBeta + "|" + T.nibScale;
+  if(_score && _scoreKey === key) return _score;
+  const t = targetFor(); if(!t || !t.n) return null;
+  const g = curGlyph();
+  const ink = inkMaskOf(g, done.map(d => d.pts), nib);
+  if(!ink.n) return null;
+
+  /* Fidelity — how far your ink strays from the letter. A pen that is too fat
+     spills outside it, which is what stops the fattest nib brute-forcing a face. */
+  let sum = 0;
+  for(let i=0;i<ink.mask.length;i++) if(ink.mask[i]) sum += t.D[i];
+  const errEm = (sum/ink.n) / gridEm();
+  const fid = Math.max(0, Math.min(1, 1 - errEm/T.falloff));
+
+  /* Coverage — how much of the letter you actually filled. A pen that is too
+     thin cannot fill a blackletter bowl however neatly you trace it. */
+  chamferDT(ink.mask, _inkDT);
+  const tolPx = T.covTol * gridEm();
+  let hit = 0;
+  for(let k=0;k<t.ink.length;k++) if(_inkDT[t.ink[k]] <= tolPx) hit++;
+  const cov = hit / t.n;
+
+  const b2 = T.fBeta*T.fBeta;
+  const f2 = (b2*fid + cov) > 0 ? (1+b2)*fid*cov/(b2*fid + cov) : 0;
+  _scoreKey = key;
+  _score = { fid, cov, f2, errEm, src:t.src, useFont:t.useFont };
+  return _score;
+}
+
 
 /* ------------------------------------------------------------------ render */
 function sizePad(){
@@ -608,8 +817,22 @@ function draw(){
     ctx.setLineDash([]);
   }
 
-  /* The guide: the strokes you have left, dotted, plus the numbered start dot
-     of the next one. Never an animation until you have tried (§5.3). */
+  /* §5.7's guide: the FACE'S OWN GLYPH, ghosted, because that is now the shape
+     you are scored against — the same call drawFaceGlyph makes for the mask, so
+     what you trace and what you are measured on cannot be two different things.
+     This is what a real tracing sheet looks like, and it costs nothing: the
+     glyph is already being rasterized for the scorer. It carries the three
+     faces whose skeletons genuinely differ (Blackletter's broken curves,
+     Uncial's round majuscules, Script's joined forms), where the skeleton can
+     only offer a suggested stroke order. */
+  if(show.ghost && face){
+    const t = targetFor();
+    if(t) drawFaceGlyph(ctx, g, face, faceChar(cur), t.useFont, e, ox, oy, "#e9dfc8", 1);
+  }
+
+  /* The stroke order on top: the strokes you have left, dotted, plus the
+     numbered start dot of the next one. Never an animation until you have
+     tried (§5.3). */
   if(show.guide){
     ctx.setLineDash([5,6]); ctx.lineWidth = Math.max(1.5, e*0.012); ctx.lineCap = "round";
     for(let i=done.length;i<g.strokes.length;i++){
@@ -718,13 +941,21 @@ function endStroke(){
   const ideal = g.strokes[done.length];
   const r = scoreStroke(raw, ideal);
   if(!r.ok){
-    say(r.why === "start" ? "start on the numbered dot" : "that stroke runs backwards", "bad");
+    say("that stroke runs backwards", "bad");
     ghost = {i: done.length, t: 0}; raw = null; animateGhost(); draw(); return;
   }
-  done.push({ pts: snapped(r.path, ideal, r.fidelity), fidelity: r.fidelity, err: r.err });
+  /* §5.7: the stroke is kept AS DRAWN. The old partial snap pulled it toward
+     the skeleton, which is no longer the shape being scored — snapping now
+     would drag your ink off the letter. smoothPath (inside scoreStroke) still
+     takes the pointer jitter out, and it moves the stroke toward nothing. */
+  done.push({ pts: r.path, fidelity: r.fidelity, err: r.err, offStart: r.offStart });
   raw = null;
   if(done.length === g.strokes.length) finishLetter();
-  else say("stroke " + done.length + " · " + pct(r.fidelity), "good");
+  else {
+    const sc = scoreNow();
+    say("stroke " + done.length + (sc ? " · " + pct(sc.cov) + " of the letter filled" : "") +
+        (r.offStart ? " · (you started well off the dot)" : ""), "good");
+  }
   paintGrades(); paintSpecimen(); draw();
 }
 pad.addEventListener("pointerup", endStroke);
@@ -745,18 +976,16 @@ function finishLetter(){
   /* The letter is earned either way (§5.6). The FACE is what the pen and the
      peek can cost you, and the album only ever hears about a cell it keeps. */
   const fg = faceGrade();
-  const v = nibVerdict();
+  const sc = scoreNow();
   const cellPrev = ((album[face.id] || {})[cellKey()] || {}).g || 0;
-  let line;
   if(fg >= T.faceTh && fg > cellPrev){
     (album[face.id] = album[face.id] || {})[cellKey()] = { g: fg, s: albumStrokes() };
     try{ localStorage.setItem(ALBUM_KEY, JSON.stringify(album)); }catch(e){}
-    line = "letter ✓ · " + face.name + " " + pct(fg) + (cellPrev ? " (was " + pct(cellPrev) + ")" : " — new cell");
-    say(line, "good");
+    say("letter ✓ · " + face.name + " " + pct(fg) + (cellPrev ? " (was " + pct(cellPrev) + ")" : " — new cell"), "good");
   } else if(fg >= T.faceTh){
     say("letter ✓ · " + pct(fg) + " · this cell stands at " + pct(cellPrev), null);
   } else {
-    say("letter ✓ · no face — " + (peeked ? "peeked" : v.rank === "wrong" ? v.label : pct(fg) + " is under " + pct(T.faceTh)), "bad");
+    say("letter ✓ · no face — " + missReason(sc), "bad");
   }
   paintLetters(); paintFaces(); paintSpecimen();
 }
@@ -767,9 +996,19 @@ function finishLetter(){
 function albumStrokes(){
   return done.map(d => resample(d.pts, 16).map(q => [+q[0].toFixed(3), +q[1].toFixed(3)]));
 }
-function gradeNow(){
-  if(!done.length) return 0;
-  return done.reduce((t,d) => t + d.fidelity, 0) / done.length;
+function gradeNow(){ const s = scoreNow(); return s ? s.f2 : 0; }
+/* §5.7's whole payoff, said out loud: when a trace misses, the two halves fail
+   for OPPOSITE reasons, and which one failed is the pen advice. Coverage short
+   = your pen is too thin for this face. Fidelity short = it is too fat, or held
+   at the wrong angle, and your ink is spilling off the letter. Neither ever
+   names the pen you should have picked (§13 #1) — it names what went wrong, in
+   the only vocabulary that is actually on screen. */
+function missReason(s){
+  if(peeked) return "peeked";
+  if(!s) return "nothing drawn";
+  if(s.cov < s.fid) return "the letter isn't filled — " + pct(s.cov) + " covered. A wider pen?";
+  if(s.fid < s.cov) return "your ink strays off the letter — " + pct(s.fid) + " of it landed. A narrower pen, or a different angle?";
+  return pct(s.f2) + " is under " + pct(T.faceTh);
 }
 const pct = v => Math.round(v*100) + "%";
 
@@ -789,32 +1028,22 @@ function animateGhost(){
    outcomes, and the letter is never one of them — §5.6's rule is that the
    economy must not stall on a typography lesson. */
 function rightNib(f){ return f ? (NIBBY.get(f.nib) || null) : null; }
-function nibVerdict(){
-  const want = rightNib(face);
-  if(!want) return {rank:"right", label:"right pen", mult:1};
-  if(nib.id === want.id) return {rank:"right", label:"right pen", mult:1};
-  if(nib.type !== want.type) return {rank:"wrong", label:"wrong pen — the look is wrong", mult:0};
-  /* Right type, wrong setting. For a broad nib that is a measurable angle; for
-     the other two it's weight/flex, so fall back to a graded miss rather than
-     inventing a second unit. */
-  const d = Math.abs((nib.angle||0) - (want.angle||0));
-  if(want.type === "broad" && d > T.angleTol) return {rank:"smudge", label:"right pen, " + Math.round(d) + "° off — smudged", mult:T.smudge};
-  if(want.type !== "broad" && nib.id !== want.id) return {rank:"smudge", label:"right kind of pen, wrong flex — smudged", mult:T.smudge};
-  return {rank:"right", label:"right pen", mult:1};
-}
-/* The face's grade for this capture: the trace, times what the pen cost it,
-   and zero if the ? peek was taken (decision: the peek always costs the face
-   and never the letter). */
-function faceGrade(){
-  if(peeked) return 0;
-  return gradeNow() * nibVerdict().mult;
-}
+/* §5.7 DELETED nibVerdict(), T.smudge and T.angleTol. There is no longer a
+   table that says what a wrong pen costs you, because the letter itself says
+   it: ink from the wrong pen does not fit the shape, and the same two numbers
+   that grade a clean trace grade a mis-penned one. The pen is not scored — it
+   is the only way to score. */
+function faceGrade(){ return peeked ? 0 : gradeNow(); }
 
 function setFace(f, quiet){
   face = f;
+  invalidateTarget();
   if(rung === "named"){ const w = rightNib(f); if(w) nib = w; }
   peeked = false;
-  loadFaceFont(f).then(() => { paintFaces(); paintSpecimen(); draw(); });
+  /* The woff2 can land after the first draw, and the key targetFor() caches on
+     carries the load state — so the target re-derives itself instead of scoring
+     you forever against the fallback pen. */
+  loadFaceFont(f).then(() => { invalidateTarget(); paintFaces(); paintGrades(); paintSpecimen(); draw(); });
   paintFaces(); paintNibs(); paintPlate(); paintSpecimen(); paintGrades(); paintLetters(); paintNibStrip(); draw();
   if(!quiet) say(rungLine(), null);
 }
@@ -944,8 +1173,10 @@ function paintSpecimen(){
   const em = SPEC_PX*0.62, ox = SPEC_PX/2, oy = SPEC_PX*0.12;
   const gox = (SPEC_PX - g.w*em)/2;
 
-  /* 1 — the genuine face (or, for the skeleton face, the skeleton itself). */
-  const a = specCanvas("the real face<br><b>" + face.name + "</b>");
+  /* 1 — the genuine face. Since §5.7 this is not a reference picture any more:
+     it IS the mask you are scored against, which is why cell 3 now draws it
+     underneath your ink. */
+  const a = specCanvas("the target<br><b>" + face.name + "</b>");
   const ka = a.c.getContext("2d");
   ka.fillStyle = "#fbf7ee"; ka.fillRect(0,0,SPEC_PX,SPEC_PX);
   if(!drawFontGlyph(ka, faceChar(cur), face, em, ox, oy)){
@@ -964,15 +1195,21 @@ function paintSpecimen(){
   for(const st of g.strokes) stampStroke(kb, g, st, want, "#2b2620", em, gox, oy, 1);
   host.appendChild(b.fig);
 
-  /* 3 — your hand, in the pen you actually equipped. */
-  const v = nibVerdict();
+  /* 3 — your ink ON the target. This is the read-out that says whether M2.5
+     worked: the letter is drawn underneath in pale ink and your strokes on top,
+     so coverage (pale showing through) and fidelity (dark spilling past the
+     edge) are both readable at a glance instead of inferred from two numbers. */
+  const sc = scoreNow();
   const c3 = specCanvas(done.length
-      ? "your hand · " + nib.name.toLowerCase() + "<br>" + (peeked ? "<b>peeked — face forfeit</b>" : "<b>" + v.label + "</b>")
+      ? "your ink on the target<br>" + (peeked ? "<b>peeked — face forfeit</b>"
+          : "<b>" + pct(sc ? sc.cov : 0) + " filled · " + pct(sc ? sc.fid : 0) + " on it</b>")
       : "your hand — trace it<br><b>" + nib.name.toLowerCase() + "</b>");
   const kc = c3.c.getContext("2d");
   kc.fillStyle = "#fbf7ee"; kc.fillRect(0,0,SPEC_PX,SPEC_PX);
   if(done.length){
-    for(const d of done) stampStroke(kc, g, d.pts, nib, "#2b2620", em, gox, oy, 1);
+    const t = targetFor();
+    if(t) drawFaceGlyph(kc, g, face, faceChar(cur), t.useFont, em, gox, oy, "#e2d6ba", 1);
+    for(const d of done) stampStroke(kc, g, d.pts, nib, "rgba(43,38,32,.86)", em, gox, oy, 1);
   } else {
     kc.setLineDash([4,5]); kc.strokeStyle = "#ddd3bd"; kc.lineWidth = 1.5;
     for(const st of g.strokes){
@@ -1012,17 +1249,29 @@ function paintGrades(){
   const cell = ((album[(face||{}).id] || {})[cellKey()] || {}).g;
   const b = best[cellKey() + "|" + nib.id];
   $("g-best").textContent = cell ? "cell " + pct(cell) : b ? "pen best " + pct(b) : "best —";
-  /* The face tag is the §5.6 table, live: the letter is never at stake, only
-     the face, and the pen you picked is half of it. */
-  const tag = $("g-face"), v = nibVerdict();
+  const sc = scoreNow();
+  const tag = $("g-face");
   if(peeked){ tag.className = "tag no"; tag.textContent = "face forfeit · peeked"; }
-  else if(v.rank === "wrong"){ tag.className = "tag no"; tag.textContent = "wrong pen · no face"; }
-  else if(!complete){ tag.className = "tag"; tag.textContent = v.rank === "smudge" ? "face: smudged" : "face —"; }
-  else if(faceGrade() >= T.faceTh){ tag.className = "tag ok"; tag.textContent = (v.rank === "smudge" ? "smudged " : "face ") + pct(faceGrade()); }
+  else if(!complete || !sc){ tag.className = "tag"; tag.textContent = "face —"; }
+  else if(faceGrade() >= T.faceTh){ tag.className = "tag ok"; tag.textContent = "face " + pct(faceGrade()); }
   else { tag.className = "tag no"; tag.textContent = pct(faceGrade()) + " · under " + pct(T.faceTh); }
-  $("g-list").innerHTML = done.map((d,i) =>
-    '<div class="grade"><span>stroke ' + (i+1) + '</span><span>' + pct(d.fidelity) +
-    ' <span style="color:var(--muted)">· err ' + d.err.toFixed(3) + 'em</span></span></div>').join("");
+
+  /* The two halves, separately, because the SPLIT is the pen advice (§5.7) —
+     a single combined number cannot tell you whether your pen was too thin or
+     too fat, and that is the only thing worth knowing when a face is refused.
+     The per-stroke rows are kept as a bench diagnostic and are greyed to say
+     so: they measure your wander from the SKELETON, and feed nothing. */
+  $("g-list").innerHTML =
+    (sc
+      ? '<div class="grade"><span>coverage <span style="color:var(--muted)">· how much of the letter you filled</span></span><span>' + pct(sc.cov) + '</span></div>' +
+        '<div class="grade"><span>fidelity <span style="color:var(--muted)">· how much of your ink landed on it</span></span><span>' + pct(sc.fid) + '</span></div>' +
+        '<div class="grade"><span>F' + T.fBeta + ' <span style="color:var(--muted)">· coverage weighted ' + (T.fBeta*T.fBeta) + ':1</span></span><span>' + pct(sc.f2) + '</span></div>' +
+        '<div class="grade"><span style="color:var(--muted)">target</span><span style="color:var(--muted)">' + sc.src + '</span></div>'
+      : '') +
+    done.map((d,i) =>
+      '<div class="grade" style="opacity:.55"><span style="color:var(--muted)">stroke ' + (i+1) +
+      ' vs skeleton</span><span style="color:var(--muted)">' + pct(d.fidelity) +
+      ' · ' + d.err.toFixed(3) + 'em' + (d.offStart ? ' · off-start' : '') + '</span></div>').join("");
 }
 
 function paintLetters(){
@@ -1052,6 +1301,7 @@ function setLetter(ch){
   if(!GLYPHS.has(ch) && !GLYPHS.has(ch.toLowerCase())) return;
   caseUp = isUp(ch);
   cur = ch;
+  invalidateTarget();
   resetLetter(); paintLetters(); paintNibStrip(); paintSpecimen();
   if(face) paintPlate();
   if(face && face.unicase && isUp(ch))
@@ -1087,7 +1337,7 @@ function paintNibs(){
     ? "Width follows how vertical the travel is, so the weight lands on downstrokes — vertical stress, hairline horizontals."
     : "One width in every direction. No stress at all, which is the whole of Lineal.";
 }
-function setNib(n){ nib = n; paintNibs(); paintGrades(); paintLetters(); paintNibStrip(); paintSpecimen(); draw(); }
+function setNib(n){ nib = n; _score = null; paintNibs(); paintGrades(); paintLetters(); paintNibStrip(); paintSpecimen(); draw(); }
 
 /* A mini specimen: one glyph, one nib, ideal strokes — no input involved. */
 function miniSpec(c, ch, theNib, size){
@@ -1223,7 +1473,8 @@ addEventListener("resize", sizePad);
 
     nib = NIBBY.get("broad-30") || NIBS[0];
     paintNibs(); paintLetters(); paintSliders(); paintNibStrip();
-    toggle("t-guide","guide","Guide"); toggle("t-metrics","metrics","Metrics");
+    toggle("t-ghost","ghost","Face ghost"); toggle("t-guide","guide","Stroke order");
+    toggle("t-metrics","metrics","Metrics");
     toggle("t-raw","raw","Raw path"); toggle("t-skel","skel","Skeleton");
     sizePad();
     /* The starter face first (§8: early game must not demand classification),

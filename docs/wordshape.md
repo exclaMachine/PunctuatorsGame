@@ -92,10 +92,10 @@ place one perfect `t` and stop. So:
 - **Coverage** *(recall)* — what fraction of **the drawing's lines** has your ink near it. *Did you draw the
   whole cat?*
 
-**Score = F₂** — the weighted harmonic mean favouring coverage 2:1 (decision #7):
+**Score = F_β with β = √2** — the weighted harmonic mean favouring coverage 2:1 (decision #7). **Corrected 2026-09-12**: this line used to say *F₂*, i.e. `b = 2`, which contradicts the 2:1 it claims in the same sentence — F-beta weights recall by **β², so 2:1 is β = √2 and β = 2 is 4:1**. Found building Inklings' M2.5, which is where this scorer actually got written ([`inklings-typography.md`](inklings-typography.md) §5.7): at 4:1 a scribble that covers the target and strays badly still scores 0.77, which is a pass at any sane threshold. The *intent* in decision #7 — "filling the drawing counts about twice what staying on the lines does" — was always right; only the β was wrong.
 
 ```
-F_beta = (1 + b^2) * P * R / (b^2 * P + R)     with b = 2, P = fidelity, R = coverage
+F_beta = (1 + b^2) * P * R / (b^2 * P + R)     with b = sqrt(2), P = fidelity, R = coverage
 ```
 
 ### 3.2 How they're computed

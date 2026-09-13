@@ -5,6 +5,13 @@ are BUILT in the standalone bench `inklings-trace.html` — see §12. Nothing is
 capture verb is unchanged in game. The skeleton alphabet now covers all **52 letters** (M7, 2026-09-12), so
 capitals are no longer a blocker on M3 — see §10.**
 
+**AMENDED 2026-09-12 (§5.7) and BUILT the same day as M2.5 in the bench: a trace is graded against the REAL
+TYPEFACE, not against the shared skeleton.** Your `a` in Blackletter has to look like a blackletter `a`.
+Nothing new is drawn and no new data file appears — the skeleton drops back to being the guide and the
+stroke order, and the grade becomes a chamfer score of your ink against the face's own font. The nib stops
+being a lookup and becomes the only way to pass (too thin and you can't fill the letter, too fat and your
+ink spills outside it). **This inserts M2.5 — the font scorer, in the bench — ahead of M3.**
+
 This doc covers two things that are really one thing:
 
 1. **How you capture an inkling** — you stop hitting it and **write it**, tracing the letter stroke by
@@ -90,6 +97,11 @@ types cover the entire classification spine:
 | `round` | constant, w == h | none (monoline) | Lineal (all), Mechanistic |
 | `broad` | rect of `w`×`h` held at a **fixed absolute `angle`** | angled — thin where travel is parallel to the edge | Humanist, Garalde, Blackletter, Uncial |
 | `pointed` | width scales with how vertical the travel is (pressure on the downstroke) | vertical — hairline horizontals | Transitional, Didone, Script |
+
+**§5.7 changed what the nib is FOR.** It was the thing that *produced* the face (trace one skeleton, stamp a
+pen, get a Garalde). It is now the tool your ink has to be made with in order to *fill* the face's real
+letterform — which is the same physics doing more work, and it is measured rather than asserted. Everything
+below about how a nib stamps is unchanged.
 
 Stamping is the cheap, physically honest renderer: sample the traced path, stamp the nib quad at each
 sample at its **pen angle** (absolute, *not* tangent-relative — tangent-relative is the mistake that makes
@@ -215,10 +227,11 @@ needed it. The hard data problem is already solved for the one skeleton set v1 n
 and **both games load it**. One alphabet, one stroke order, one place to fix a glyph. (The alternative —
 Inklings keeping its own copy so the two can drift — buys nothing; they want the same letters.)
 
-### 5.2 Scoring (per stroke, which is *not* Wordshape's scorer)
+### 5.2 Scoring (per stroke) — **the GRADE here is superseded by §5.7; the GATES survive**
 
-Wordshape's chamfer field asks "is ink near the lines" and is order-blind by design. Tracing needs order,
-direction and start point, and is the simpler check of the two:
+Read this with §5.7 beside it. The per-stroke gates below are still what a trace has to pass, and §5.5's
+direction fix is what feeds them. The *grade*, though, no longer comes from this comparison at all — it
+comes from the real font. What follows is the skeleton half:
 
 - Resample the player's stroke and the ideal stroke to **N points by arc length** (N ≈ 32).
 - **Fidelity** = mean point-to-point distance, normalised by the em.
@@ -226,11 +239,14 @@ direction and start point, and is the simpler check of the two:
   ideal's; strokes completed **in order**, none skipped.
 - The letter's grade is the mean of its strokes' fidelities.
 
-Wordshape's field stays useful as an optional whole-glyph check at the end, and for nothing else.
+…and the last bullet is exactly the one §5.7 reverses: the letter's grade is now a whole-glyph chamfer
+score against the face's own font, and the mean of stroke fidelities is not used for anything.
 
 ### 5.3 Feel (most of the work)
 
-- **Snap — partial, not Duolingo's hard snap** (settled building M1). Duolingo lands every accepted stroke
+- **Snap — DROPPED by §5.7** (it pulled strokes toward the skeleton, which is no longer the target).
+  Kept here because the reasoning still governs whatever replaces it. Originally: **partial, not Duolingo's
+  hard snap** (settled building M1). Duolingo lands every accepted stroke
   exactly on the ideal, which is the right call when the glyph is a means to an end. Here it isn't: §7's album
   shows **your** traced glyph, so a hard snap would make every player's album byte-identical and the
   collection would be a tick-list wearing a drawing. The bench therefore blends the traced points toward the
@@ -257,6 +273,10 @@ subsystem's own curve, not word count):
 2. **Cued.** The nib is yours to pick, but the creature carries a small **stress mark** — the thick/thin
    axis drawn as an angle tick — so the tool is inferable from a visual cue.
 3. **Cold.** The letterform only. The Scriptorium (§7) is the reference you go and consult.
+
+**§5.7 sharpens all three rungs rather than changing them.** Because the pen is now what makes your ink
+fit the letter, a wrong pick fails *visibly, while you are still drawing* — so rung 3 teaches by letting you
+feel the mistake rather than by announcing it afterwards.
 
 A **`?` peek** is always available and always costs the same thing: it names the pen and **forfeits the
 face for that capture**. You still get the letter. (No ink price — the cost is already the interesting one.)
@@ -324,16 +344,98 @@ stale alphabet.
 
 ### 5.6 Outcomes
 
+**Rewritten by §5.7** — every row below is now a *measurement*, not a lookup. There is no `nibVerdict`,
+no `smudge` and no `angleTol`: the pen's effect on the grade is whatever the chamfer field says it is.
+
 | | Letter | Face |
 | --- | --- | --- |
-| Right nib, clean trace | ✅ | ✅ at grade |
-| Right nib, sloppy trace | ✅ | ✅ at a lower grade, or below `FACE_TH` nothing |
-| Wrong nib type | ✅ | ❌ — the look is wrong |
-| Right type, angle off by > `ANGLE_TOL` | ✅ | smudged grade |
+| Right pen, ink fills the letter | ✅ | ✅ at grade |
+| Right pen, ragged trace | ✅ | ✅ lower, or below `FACE_TH` nothing |
+| Pen too thin for the face | ✅ | ❌ — coverage collapses, and you watch it fail as you draw |
+| Pen too fat, or held at the wrong angle | ✅ | ❌ or a poor grade — ink outside the letter is measured |
+| `?` peek taken | ✅ | ❌ — forfeit, unchanged |
 | Abandoned mid-trace | ❌ (creature stays) | ❌ |
 
 **The letter is earned at any grade** once the strokes are done. The economy must never stall on a
 typography lesson.
+
+---
+
+### 5.7 AMENDED — the target is the real typeface, not the skeleton (dev's call, 2026-09-12)
+
+The reversal in one sentence: **§5.2 scored your path against the shared skeleton; the grade now scores
+your INK against the real font's glyph.** Your `a` in Blackletter has to look like a blackletter `a`, not
+like the skeleton written with a steeper pen.
+
+**Nothing new is drawn, and no new data file appears.** Decision #4 stands, the 52-glyph skeleton stands,
+the ten nibs, the twelve faces, the album, the capitals and the milestones are all untouched. The only
+thing that changes is what the number means.
+
+**What the skeleton is for now.** Stroke order and direction — the one thing a font file cannot supply,
+because fonts ship **outlines, not strokes**. It says how many strokes, where each one begins and which way
+it runs. It is no longer the thing you are judged against, which is also why §5.5's direction fix stays
+load-bearing: the gate it feeds is all that survives of skeleton-scoring.
+
+**What the guide is now.** The face's own glyph, ghosted under the pad, with the skeleton's numbered start
+dots on top. It costs nothing — the glyph is already being rasterized for the scorer — and it is what a real
+tracing sheet looks like. It matters most for the three faces whose skeletons genuinely differ
+(Blackletter's broken curves and straight-sided bowls, Uncial's round majuscule forms, Script's joined
+single-storey letters); for the other nine the skeleton and the font agree closely enough that the ghost
+just sharpens it.
+
+**The scorer — Wordshape's chamfer field, which §5.2 explicitly ruled out.** That ruling was right about
+tracing *needing* order and wrong about where the grade comes from; the chamfer field is exactly the tool
+for *is this ink the right shape*, and it needs no stroke data for the target at all:
+
+- Rasterize the face's glyph at the pad's em into a 256² mask; two-pass chamfer DT → `Dface`.
+- Rasterize the player's **stamped ink** into the same grid — literally the pixels they can see, read back
+  off an offscreen canvas, so the thing measured and the thing drawn cannot disagree.
+- **Fidelity** = how much of your ink landed on the letter: mean `Dface` over your ink pixels.
+- **Coverage** = how much of the letter you filled: the fraction of the font's ink within tolerance of yours.
+- Combine as **F-beta with coverage outweighing fidelity 2:1** — Wordshape's own finding, and for the same
+  reason: weight fidelity too highly and the optimal play is a small cautious mark. **That is β = √2, not
+  F₂**; see the correction under M2.5 in §12, which is a real trap and not a rounding quibble.
+
+**The property that makes this better than what it replaces.** The nib stops being a lookup and becomes the
+only way through:
+
+> **Fidelity punishes a pen that is too fat. Coverage punishes one that is too thin. A wrong angle fails
+> both.**
+
+A round monoline pen physically cannot fill a blackletter `a` — the ink is too thin and coverage collapses.
+The fattest pen in the shop cannot brute-force it either, because ink outside the letter is measured. Only
+the right pen at the right angle satisfies both at once, which turns §3's thesis — *stroke contrast is a
+record of the tool* — from something the game asserts into something it measures.
+
+So **§5.6's verdict table is retired**: no `nibVerdict` lookup, no `smudge` multiplier, no `angleTol`. It
+also **answers §13's open questions 1 and 4** — a wrong pen tells you it is wrong by visibly failing to fill
+the letter *while you are still drawing*, which is the "let the look be the feedback" that #4 already
+leaned toward, and it never has to name the pen you should have picked.
+
+**What has to be dropped: §5.3's snap.** It pulled an accepted stroke toward the *skeleton*, which under
+this scheme drags your ink away from the shape being scored. Only `smoothPath` survives — it cleans pointer
+jitter without moving the stroke toward anything. This is a real loss of feel, not a free simplification: a
+scruffy stroke now stays scruffy, and whether anything replaces it is an open question below.
+
+**What has to be loosened: §5.2's start gate.** It measured your start against the *skeleton's* start,
+which for a divergent face is the wrong place to stand. Direction and order stay — they are the handwriting
+lesson, and the direction check compares whole resampled paths, so it is tolerant of a stroke that bulges
+somewhere the skeleton doesn't. The start-point gate becomes advisory rather than a refusal.
+
+**And the grade decouples from stroke count.** The skeleton suggests a sequence and gates each stroke's
+direction; the grade is the chamfer score of **all your ink together**, taken once the glyph is done. That
+is precisely what lets one shared skeleton drive a face whose real stroke count is different, and it is the
+reason this amendment does not quietly become the 572-drawing per-face-skeleton plan.
+
+**The starter face needs no special case.** The skeleton face's "font" is the skeleton, so its target mask
+is the skeleton stamped with the round nib — the same code path, one branch already present for it in the
+bench's specimen cell.
+
+**Cost, honestly.** The scorer itself is small (~50 lines; `wordshape.md` §M3 specced it and it was never
+built, so this is where it finally gets written, and Wordshape inherits it). But every threshold in the
+bench's `T` block is now measuring a different quantity, and the *feel* of a trace changes completely — so
+it is built and tuned in `inklings-trace.html` before it goes anywhere near the game. That inserts **M2.5**
+ahead of M3; see §12.
 
 ---
 
@@ -778,12 +880,74 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
     **smudge multiplier must stay high enough that a clean trace with a mis-set pen can still clear
     `faceTh`**: the first number tried (0.7 against a 0.72 threshold) made "smudged grade" mean *no face at
     all*, which is a second silent refusal rather than the worse grade the table promises. Default 0.85.
+- **M2.5 — the font scorer, in the bench. BUILT 2026-09-12** (added by §5.7's amendment, and it had to land
+  before M3 because it changes what every tuning number means). In `inklings-trace.html`:
+  - **The chamfer distance transform** (`wordshape.md` §M3's, finally written — Wordshape inherits it):
+    rasterize the face's glyph into a 256² mask, two-pass DT, cache per face × letter × pad size.
+  - **The player's ink read back off an offscreen canvas**, stamped with the same nib at the same transform,
+    so the thing measured and the thing drawn are the same pixels.
+  - **Fidelity + coverage → F₂**, coverage weighted 2:1, graded on the whole glyph when the last stroke
+    lands rather than per stroke.
+  - **The guide becomes the ghosted font glyph** with the skeleton's numbered start dots on top.
+  - **Deletions**: `nibVerdict`, `smudge`, `angleTol`, and §5.3's snap. The start-point gate goes advisory;
+    the direction and order gates stay.
+  - **New sliders** for whatever the F₂ weighting and the coverage tolerance turn out to want, because every
+    existing number in `T` is now measuring a different quantity.
+  - The four-cell specimen strip is the read-out that says whether this worked: cell 1 (the real face) is now
+    literally the scoring target, so cell 3 either sits on top of it or visibly doesn't.
+
+  **As built**, with the three things the build settled:
+
+  (a) **The grade panel shows coverage and fidelity SEPARATELY, and that split is the pen advice.** A single
+  combined number cannot tell you whether your pen was too thin or too fat, which is the only thing worth
+  knowing when a face is refused — so `missReason()` reads the two against each other and says *the letter
+  isn't filled — a wider pen?* or *your ink strays off the letter — a narrower pen, or a different angle?*.
+  It never names the pen you should have picked, which is how **§13 #1 stays answered** rather than quietly
+  reopened by the more helpful message.
+
+  (b) **Specimen cell 3 draws your ink ON the target** — the letter underneath in pale ink, your strokes over
+  it — because that is the one picture that makes both halves legible at a glance: pale showing through is
+  missing coverage, dark spilling past the edge is missing fidelity. Two numbers can say it; only the
+  drawing shows *where*.
+
+  (c) **The β was wrong, and it opened a scribble exploit.** F-beta weights recall by **β²**, so "coverage
+  outweighs fidelity 2:1" is **β = √2 ≈ 1.414**; writing it as **F₂ means β = 2, which is 4:1**. The error
+  came from [`wordshape.md`](wordshape.md) §3, which says *F₂* and *2:1* in the same sentence, and §5.7
+  above inherited it. Measured against the 0.72 face threshold:
+
+  | | β = 2 (4:1) | β = √2 (2:1) |
+  | --- | --- | --- |
+  | clean trace (fid .90 / cov .90) | 0.90 ✅ | 0.90 ✅ |
+  | too-thin pen (.95 / .35) | 0.40 ❌ | 0.45 ❌ |
+  | too-fat pen (.45 / .95) | 0.78 ✅ **wrong** | 0.69 ❌ |
+  | **scribble over the ghost** (.40 / 1.0) | **0.77 ✅ wrong** | 0.66 ❌ |
+
+  So at 4:1 you can ignore the pen entirely, scrub ink across the ghosted letter and earn the face — which
+  would have been the first thing anyone did, and it would have read as the whole amendment failing rather
+  than as one wrong exponent. At 2:1 only the trace passes and both wrong pens are refused. **`wordshape.md`
+  is corrected too**, since that scorer is the same one and it is not built there yet — the intent in its
+  decision #7 ("filling the drawing counts about twice what staying on the lines does") was always right,
+  only the β was wrong. The bench keeps the slider across 0.5–4 with the measured numbers written under it,
+  because this is exactly the knob a play-test should be able to disprove.
+
+  One hole closed while wiring it: `fontState` only records that the `FontFace` **resolved**, not that the
+  `family` string in `typefaces.json` is the name the file actually registers — and a mismatch makes
+  `ctx.font` fall back to **`serif` silently**. Under M2 that only made a specimen cell wrong; now it would
+  score you against Times and label it Garamond. `document.fonts.check()` is the cheap authority, so the
+  target consults it and the read-out distinguishes *font missing* from *family name doesn't match the file*.
+
+  Also verified numerically rather than by eye: the 3-4 chamfer transform agrees with a brute-force
+  euclidean distance to **1.6 px worst case on a 64² grid** (mean 0.43), which is the expected ~3% for those
+  weights and far inside anything the grade can notice.
 - **M3 — fold into `inklings.html`.** The trace overlay replaces the letter branch of `doAttack` (§9), field
   glyphs draw in their face with the `Alpha.png` fallback, the six guards, save v12 → v13, the starter face
   and the nib shop entries. **The loop closes here** — this is the milestone after which the game plays
   differently. **§10.2 is already answered**: M7 landed first, so the skeleton covers all 52 letters and
   M3 needs no `isUpper` fallback on the trace-open check. It still needs `!isUpper(c.letter)` on the
-  *satchel* gate (§10.8) — that row is load-bearing for a different reason.
+  *satchel* gate (§10.8) — that row is load-bearing for a different reason. It also needs
+  `data/wordshape-alphabet.json` to actually exist: the bench slices `wordshape-draw.html` live, which the
+  shipped game cannot do, so the tool's own `⬇` export (or a one-command headless re-run of the same slice)
+  lands that file in `data/` — **no drawing, just the 52 glyphs that are already authored**.
 - **M4 — the Scriptorium.** The album, the per-face plate with anatomy callouts, the 25/50/100% milestones
   paying ink + décor, the framed-specimen décor item.
 - **M5 — the Tree of Faces.** The classification map (Tree-of-Kinds pattern) + group milestones.
@@ -808,17 +972,15 @@ the existing `capture` (the letter and the face are two different wins).
 
 ## 13. Open questions
 
-1. **Does a wrong-nib capture tell you so?** Naming the right pen after the fact teaches fastest but
-   removes the reason to look. Leaning: say only *that* it was the wrong pen, never which.
+1. ~~**Does a wrong-nib capture tell you so?**~~ **Answered by §5.7**: it tells you *while you draw*, by
+   visibly failing to fill the letter, and it never names the pen you should have picked.
 2. ~~**Uncial's font** (§4.1) is the one leaf without a clear candidate.~~ **Answered by M2: Uncial
    Antiqua** (OFL). Junicode was the lead but isn't on Google Fonts, so it has no ready latin subset.
 3. **Does the Wordshape bench grow a stroke-order readout + nib preview**, so one tool authors both games'
    glyphs? Cheap, and it is where the skeletons live.
-4. **Does a mis-set pen of the RIGHT type deserve its own verdict at all?** §5.6 gives a broad nib an
-   angle tolerance, which is measurable; for round and pointed nibs there is no second unit, so M2 grades
-   "right kind of pen, wrong flex" as the same smudge. It may be truer to accept any pointed nib for a
-   pointed face and let the *look* be the feedback — the didone and the script nibs produce visibly
-   different pages, which is the lesson either way.
+4. ~~**Does a mis-set pen of the RIGHT type deserve its own verdict at all?**~~ **Answered by §5.7**, the
+   way this question was already leaning: there are no verdicts left. The look *is* the feedback, and a
+   pen that is close but not right scores close but not right, with no second unit invented for it.
 5. ~~**Does the flat 0° "signwriter" nib ship with the capitals** (§10.7), or stay parked?~~ **Answered by
    M7: it ships** (`broad-flat`, `groups: []`). It makes one of the two alphabets look wrong on purpose,
    and that is the demonstration, not a defect.
@@ -827,3 +989,12 @@ the existing `capture` (the letter and the face are two different wins).
    is the lesson rather than the cost.
 7. **Is a personal best worth showing anywhere but the album?** A tiny `new best` float on the capture is
    nearly free; a per-face average on the plate edges toward a report card.
+8. **Does anything replace §5.3's snap?** §5.7 had to drop it (it pulled toward the skeleton), so a scruffy
+   stroke now stays scruffy. A light pull toward the font's own medial axis is the obvious candidate and is
+   probably more machinery than the feel is worth. **Decide on the bench at M2.5, with the slider at 0.**
+9. **Is the ghosted font glyph too generous a guide?** It is the right default — tracing needs something to
+   trace — but *hiding it* is suddenly the cheapest difficulty rung the feature has, and it lines up exactly
+   with §5.4's cold rung. Parked until the ladder is played.
+10. **Do the three divergent faces (Blackletter, Uncial, Script) eventually earn their own skeleton?** This
+   is #6 asked from the other side, and §5.7 makes it visible rather than urgent: the ghost carries the
+   shape, so the only thing the shared skeleton gets wrong for them is the suggested stroke *order*.
