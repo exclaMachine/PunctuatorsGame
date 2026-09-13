@@ -5225,12 +5225,10 @@ function drawGlyph(letter, cx, cy, size, amt){
   return true;
 }
 function drawCreature(c){
-  // The creature wears the SCREEN'S FACE (docs/inklings-typography.md §8) — drawn with the real font
-  // once that face's woff2 resolves, so the stress you have to read is visible before you commit to a
-  // pen. It falls back to the hand-drawn Alpha.png glyph until then, and the skeleton face has no font
-  // at all, so the starter hand stays the sheet for good. Never tofu.
+  // The inkling in the field is ALWAYS the hand-drawn Alpha.png glyph — its own sprite. The screen's
+  // face (docs/inklings-typography.md §8) is a property of the SCREEN, not of the creature's art, and
+  // it is revealed only once the trace pad opens (the ghost, the specimen and the mask all draw it).
   const amt=flashAmt(c), size = 44 * (c.flash>0 ? 1.18 : 1);   // brief pop + white flash on hit
-  if(drawFaceLetter(c.letter, c.x, c.y, size, amt)){ drawHpPips(c, c.y-30); return; }
   if(!drawGlyph(c.letter, c.x, c.y, size, amt)){
     // text fallback if the sheet hasn't loaded / letter isn't on it (flashes white too)
     ctx.fillStyle = amt>0 ? "#ffffff" : "#211E1A";
@@ -10836,7 +10834,7 @@ let _trFaceMemo = {k:null, f:null};
 function trScreenFace(sc){
   if(!TR_READY || !sc) return null;
   const memoK = sc.sx+","+sc.sy+"|"+state.daySeed;
-  if(_trFaceMemo.k === memoK) return _trFaceMemo.f;      // asked once per creature per frame by drawFaceLetter
+  if(_trFaceMemo.k === memoK) return _trFaceMemo.f;      // one entry: the screen being drawn/opened
   const f = trRollScreenFace(sc);
   _trFaceMemo = {k:memoK, f};
   return f;
@@ -11577,24 +11575,6 @@ function trWrapText(s, x, y, w, lh){
     else line = line ? line+" "+word : word;
   }
   if(line) ctx.fillText(line, x, y+n*lh);
-}
-
-/* ---- the field glyph (§8) ----------------------------------------------------------------- */
-/* The creature shows you the FACE; the skeleton you trace is shared. That division is what makes
-   nib-only v1 honest. Drawn with the real font once its woff2 resolves, falling back to the Alpha.png
-   frame until then — and the skeleton face has no font, so it stays the hand-drawn sheet for good. */
-function drawFaceLetter(letter, cx, cy, size, amt){
-  if(!TR_READY || state.room) return false;
-  const f=trScreenFace(curScreen());
-  if(!f || !trFontLive(f)) return false;
-  ctx.save();
-  ctx.font = Math.round(size*0.96)+"px '"+f.family+"', serif";
-  ctx.textAlign="center"; ctx.textBaseline="middle";
-  ctx.fillStyle="#211E1A";
-  ctx.fillText(trFaceChar(letter, f), cx, cy);
-  if(amt>0){ ctx.globalAlpha=Math.max(0,Math.min(1,amt)); ctx.fillStyle="#ffffff"; ctx.fillText(trFaceChar(letter, f), cx, cy); }
-  ctx.restore();
-  return true;
 }
 
 /* ---- the pen rack at the Stall (§7: nibs are the ink sink, not a lock) --------------------- */

@@ -566,9 +566,12 @@ album is a record of your hand and not a list of scores.
   prefetch the four neighbours, fall back to the `Alpha.png` stamp until it resolves. **BUILT exactly so**
   (`trPrefetchFaces`, on `goScreen` and at `startGame`).
 - **Rarity multiplies for free.** A `q` in blackletter is rare twice over, with no new tuning table.
-- **The field glyph is drawn with the real font** — `ctx.font` with the loaded face, falling back to the
-  `Alpha.png` frame (`SPRITESHEET.letterToFrame`, `drawGlyphTo`) until it resolves. The creature shows you
-  the face; the skeleton you trace is shared. That division is what makes nib-only v1 honest.
+- **The field glyph is the SPRITE, not the face** (REVERSED 2026-09-13, dev's call — M3 shipped it the
+  other way). The inkling in the field is always the hand-drawn `Alpha.png` glyph; the face is a property
+  of the **screen**, not of the creature's art, and it is revealed only when the trace pad opens (where the
+  ghost, the `§14.3` specimen and the scoring mask all draw it). The screen still rolls a face, still
+  prefetches its subset, and the guess you make is still made on entry — it is just not made by overwriting
+  the creature's own sprite with a `ctx.font` letter.
 - **Capitals** keep their own rules verbatim — they bank in `state.caps`, uncapped, bypassing the satchel —
   and they are the natural home for the faces whose **capitals are the lesson** (Roman inscriptional
   capitals, blackletter's ornate majuscules). **The skeleton covers them since M7 (§10), so M3 inherits a
@@ -663,7 +666,7 @@ second feature:
 
 - **The specimens already carry capitals.** `fetch-typeface-fonts.sh` subsets each face to
   `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz` — all **52** letters, on purpose — so the plate,
-  the four-cell specimen strip and the field glyph can already draw `A` in all eleven faces today. No font
+  the four-cell specimen strip and the pad's ghost can already draw `A` in all eleven faces today. No font
   work, no refetch.
 - **The save shape already holds them.** §7's `state.faces[faceId][letter]` is keyed by *character*, so
   `"A"` and `"a"` are already different cells. Capitals cost **no save migration and no version bump** —
@@ -927,7 +930,7 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
     each callout jumps the pad to the letter that shows the term.
   - **Two things the build settled.** The real font is drawn at the skeleton's own em with its baseline on
     the skeleton's baseline (0.72 em), so it is a **true overlay** and the x-height differences you see
-    between two faces are the faces' — that is also exactly the call M3's field glyph makes. And §5.6's
+    between two faces are the faces' — the same call the pad's ghost and specimen make. And §5.6's
     **smudge multiplier must stay high enough that a clean trace with a mis-set pen can still clear
     `faceTh`**: the first number tried (0.7 against a 0.72 threshold) made "smudged grade" mean *no face at
     all*, which is a second silent refusal rather than the worse grade the table promises. Default 0.85.
@@ -1025,9 +1028,9 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
     **Home (0,0) is always the bare skeleton** — the guaranteed home inkling is the tutorial, and it should
     never be the day you meet Textura.
   - **Fonts load per screen** (`trPrefetchFaces` on `goScreen` + at `startGame`: this screen and its four
-    neighbours), which is the whole reason §8 made the face a property of the screen. The field glyph draws
-    in the real face once its woff2 resolves and falls back to the `Alpha.png` frame until then — and the
-    skeleton face has no font, so the starter hand stays the hand-drawn sheet for good. Never tofu.
+    neighbours), which is the whole reason §8 made the face a property of the screen. (M3 also drew the
+    **field glyph** in the real face; that was **reversed 2026-09-13** — see §8 — and the creature keeps its
+    `Alpha.png` sprite, the face appearing first inside the pad.)
   - **§10.2 was already answered** by M7 landing first, so no `isUpper` fallback was ever written. The
     *satchel* gate does keep its `!isUpper(c.letter)`, moved verbatim onto the trace-**open** check (§10.8).
   - **A missing data file must never cost you a letter.** If any of the three JSONs fails to fetch, or a
