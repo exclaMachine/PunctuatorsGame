@@ -6,10 +6,12 @@ is BUILT in `inklings.html` 2026-09-12, so THE LOOP IS CLOSED and the game plays
 are no longer hit, they are written. See §12. M4 (the Scriptorium album), M5 (the Tree of Faces) and M6
 (italics & bold) remain.**
 
-**First play, 2026-09-13 → §14 is the fix list.** One bug fixed (the pad layer was clipping at half height),
-and **three changes to what the feature does, two of them reversals**: the `?` peek is **cut** (the whole
-letter simply shows), the pad gains a small **specimen of the target letter in its face**, and the trace
-**opens on a SWING, not `E`**. Read §14 before touching §5.4 or §9 — both are now partly history.
+**First play, 2026-09-13 → §14 was the fix list, and ALL FOUR ARE NOW BUILT.** One bug fixed (the pad layer
+was clipping at half height), and **three changes to what the feature does, two of them reversals**: the
+`?` peek is **cut** (the whole letter simply shows), the pad gained a small **specimen of the target letter
+in its face** (upper-right, replacing §5.4's cued stress tick), and the trace **opens on a SWING, not `E`**
+(`E`, the touch WRITE button and the field prompt all still work). Read §14 before touching §5.4 or §9 —
+both are now partly history.
 
 **AMENDED 2026-09-12 (§5.7) and BUILT the same day as M2.5 in the bench: a trace is graded against the REAL
 TYPEFACE, not against the shared skeleton.** Your `a` in Blackletter has to look like a blackletter `a`.
@@ -995,6 +997,10 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
     because the whole point of §1 is that a swing aimed at a beast can no longer cost you a letter, and
     over keeping the knockback, which would leave a swing meaning two things. `CREATURE_HP` is now
     vestigial for letters (comments updated at its declaration, at `equipBonuses` and at `ATTACK_STEP`).
+    **REVERSED 2026-09-13 — §14.4: a swing OPENS the pad**, and the toast is gone with it. The knockback
+    argument stands (a swing still means one thing, because the pad opens only when the swing connected
+    with nothing else); what fell was the objection about costing you a letter, which §1 had already
+    removed by construction.
   - **The pad is in-world, all on canvas** (§5.3, confirmed by the dev over a DOM overlay): the field dims,
     a parchment card is drawn **centred on the creature** — so you really do trace over the inkling's own
     position — carrying the face name, its branch of the tree, the pad, the pen rack and the status line.
@@ -1026,9 +1032,10 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
   - **Save v12 → v13**: `state.faces` (the album), `state.nibs` (pens owned) and `state.nib` (equipped) join
     `snapshot`/`applySnapshot`, hence Export/Import. Old saves start where everyone does, with the round
     monoline, and `round-mono` is re-inserted if a save somehow lacks it — the free pen can't be lost.
-  - **Played 2026-09-13, and it found four things — see §14.** One was a real bug (the cached pad layer
-    clipped at half height, because a fresh canvas defaults to 300x150 and `TR_PAD_PX` is 300, so testing
-    the width alone passes); the other three change the feature and are the next pass.
+  - **Played 2026-09-13, and it found four things — see §14, all four now BUILT.** One was a real bug (the
+    cached pad layer clipped at half height, because a fresh canvas defaults to 300x150 and `TR_PAD_PX` is
+    300, so testing the width alone passes); the other three changed the feature — the `?` peek cut, a
+    specimen of the target letter added upper-right, and the trace opening on a SWING rather than `E`.
   - Still M4's, and deliberately not built here: the album view. The cells accumulate (grade + the 16-point
     strokes that earned them) with nothing yet to look at but a toast naming the face, the grade and the
     fraction — **the two fractions shown separately and never summed** (§10.5), which is `trFaceCells`
@@ -1091,9 +1098,9 @@ sound like one. The per-stroke scratch whose pitch tracks stroke length is still
 
 ## 14. M3 play-test fix list (opened 2026-09-13, after the first play)
 
-Four findings from playing M3. **One is fixed; the other three are the next pass**, and all three are
-changes to what the feature *does*, not polish — two of them reverse decisions this doc argued for, which is
-the point of playing it.
+Four findings from playing M3. **All four are now BUILT (2026-09-13).** Three of them are changes to what
+the feature *does*, not polish — two reverse decisions this doc argued for, which is the point of playing
+it.
 
 ### 14.1 FIXED — only the top half of the letter was visible
 
@@ -1105,22 +1112,23 @@ stayed 150. The layer clipped at exactly half the pad, which is why the symptom 
 testing both dimensions. Worth remembering as a general trap: *any* size check against a fresh canvas must
 not test width alone, because 300 is a value a layout can legitimately want.
 
-### 14.2 The `?` peek is CUT — the whole letter simply shows (dev's call)
+### 14.2 BUILT — the `?` peek is CUT; the whole letter simply shows (dev's call)
 
 The dev's words: *"I don't even want a peek anyway, I just want the whole letter to show."* And he is right
 that the peek was answering a question the ghost had already answered — §5.7 put the face's own glyph under
 the pad, so the letterform is *always* on screen; the peek was a holdover from the M1 world where the target
 was the shared skeleton and the face was a guess you made blind.
 
-What to delete: `trPeek`, `trace.peeked`, the `0` key, the header's `0 = ? peek` / `PEEKED` label, the
-forfeit branch in `trFinishLetter`, and the `peeked` arm of `trMissReason`. **What this costs, and the next
-pass has to decide it rather than discover it:** §5.4's three-rung ladder loses its escape hatch, so on the
+Deleted: `trPeek`, `trace.peeked`, the `0` key, the header's `0 = ? peek` / `PEEKED` label, the
+forfeit branch in `trFinishLetter`, the `peeked` arm of `trMissReason`, and the Controls-panel key row that
+described it. **What this costs, decided rather than discovered:** §5.4's three-rung ladder loses its
+escape hatch, so on the
 **cold** rung a player facing a face they can't classify has no way out but to guess and re-meet the
 inkling. That is probably fine — a wrong pen still earns the letter, and §8.1 says duplicates are the point
 — but it means the ladder's top rung is now genuinely cold, and §13 #9's "is the ghost too generous a guide"
 becomes the *only* remaining difficulty knob.
 
-### 14.3 Show the END GOAL on the pad — the letter as it should look, in its face
+### 14.3 BUILT — the END GOAL on the pad: the letter as it should look, in its face
 
 The dev asks for the target rendered small, **upper-right corner** suggested: *"if letter is a b in
 blackletter then show that in a smaller screen."* This is the bench's four-cell specimen strip finally
@@ -1129,11 +1137,21 @@ because `trDrawFaceGlyph` already draws exactly this and the raster already exis
 
 Two things to get right. It must be drawn by **the same `trDrawFaceGlyph` call as the ghost and the mask**,
 or the game acquires a third shape that can disagree with the other two. And it should sit where the
-**cued-rung stress mark** currently sits (`trace.x + trace.px - 26, trace.y + 26`), so those two need a
-layout decision between them — the thumbnail arguably *replaces* the stress tick, since a small true
-specimen shows the thick/thin axis better than an angle mark does.
+**cued-rung stress mark** currently sits, so those two need a layout decision between them — the thumbnail
+arguably *replaces* the stress tick, since a small true specimen shows the thick/thin axis better than an
+angle mark does.
 
-### 14.4 A SWING opens the trace, not `E` — reversing §9 and the M3 build
+**As built:** a 52 px bordered cell at the pad's upper-right (`trace.x + trace.px - 52 - 6, trace.y + 6`),
+drawn by `trSpecimen()` through the same `trDrawFaceGlyph`, with the `useFont` flag taken straight off
+`trTargetFor()` so the specimen and the scoring mask fall back to the pen together. It **does replace the
+stress tick** — that whole `trace.rung === "cued"` drawing branch is gone, and the cued rung's opening line
+now says *read the specimen's thick/thin* rather than *read the stress mark*. Two decisions the build
+settled: it is **cached in its own tiny offscreen canvas** keyed `face|char|font state` and blitted, because
+without a woff2 `trDrawFaceGlyph` stamps the pen — hundreds of fills, the exact thing §12's pad layer exists
+to keep off the 60 fps path; and it is blitted **after** the live stroke, so your own ink can never cover
+the thing you are aiming at.
+
+### 14.4 BUILT — a SWING opens the trace, not `E`; reversing §9 and the M3 build
 
 The dev's words: *"I do want this screen to just activate on a swing rather than pressing the 'e' key.
 Pressing 'e' is just not intuitive."* This reverses both §9's recommendation and the fork answered while
@@ -1146,9 +1164,15 @@ which costs nothing, since a trace is free to abandon and the creature stays. Th
 objection than the one `E` was defending against, and the dev's is the better read: swinging at the thing is
 what the game has trained you to do.
 
-What to change: `doAttack`'s letter branch calls `openTrace(c)` on the first inkling in range instead of
-setting `swungAtInkling`; the one-time *"inklings are caught, not fought"* toast and `_inklingHintShown` go;
-`inklingInFront()` stays (the touch **WRITE** button and the `E` prompt both use it, and keeping `E` working
-as a second way in costs one line). Two details not to lose: the swing still plays its cue and still runs
-its cooldown, so a whiff is a whiff; and the satchel gate lives in `openTrace`, so a full satchel must still
-refuse *and say so* rather than opening a pad that can't pay out.
+**As built:** `doAttack`'s letter branch records the first inkling the swing passed through and
+`openTrace`s it **after the walk** (opening mid-loop would close dialogs and freeze the field while the
+collision walk is still running); the one-time *"inklings are caught, not fought"* toast and
+`_inklingHintShown` are gone; `inklingInFront()` stays, so `E`, the touch **WRITE** button and the field
+prompt (now *"Swing (or E) to write this letter"*) all still work. The swing still plays its cue and still
+spends its cooldown, so a whiff is a whiff, and the satchel gate is untouched in `openTrace`.
+
+One decision the build made that the note left open: **a swing does one thing at a time.** The pad opens
+only if the swing connected with *nothing else* (`swungAtInkling && !hitAny`) — if it hit a beast it was a
+fight. That is strictly better than the note's "the worst it can do is open a pad you leave with `Esc`":
+mid-combat swings never interrupt themselves, and the inkling standing beside a beast is still reachable
+with `E` or by finishing the beast first.

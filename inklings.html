@@ -1734,7 +1734,7 @@
           <span><b>1</b> / <b>2</b> / <b>3</b></span><span>Drink a Size / Speed / Reveal potion (or tap its HUD button)</span>
           <span><b>↑ ↓ ← →</b> / <b>[</b> <b>]</b> / <b>1</b>–<b>7</b></span><span>On the <b>Atlas</b> board only: arrows (or WASD) step to the neighbouring country, sea, lake or peak; <b>[</b>/<b>]</b> sweep one layer west to east (or tap <b>◀ ▶</b>); <b>1</b>–<b>7</b> frame the World and the six continents</span>
           <span><b>1</b>–<b>7</b> / <b>↑ ↓ ← →</b> / <b>Enter</b></span><span>On the <b>Sound Board</b> only: <b>1</b>–<b>7</b> pick a phoneme tile, the arrows aim it (and pan the board when nothing's picked), <b>Tab</b> hops to the next legal square, <b>Enter</b> lays it — then <b>Enter</b> again plays the word. <b>Backspace</b> undoes, <b>C</b> recentres, <b>H</b> asks the rack for an idea</span>
-          <span><b>1</b>–<b>9</b> / <b>0</b> / <b>G</b></span><span>While <b>writing an inkling</b>: <b>1</b>–<b>9</b> pick a pen, <b>0</b> peeks (it names the pen and forfeits the typeface, never the letter), <b>Backspace</b> undoes a stroke, <b>R</b> starts the letter again, <b>G</b> shows the next stroke, <b>Esc</b> walks away</span>
+          <span><b>1</b>–<b>9</b> / <b>G</b></span><span>While <b>writing an inkling</b>: <b>1</b>–<b>9</b> pick a pen, <b>Backspace</b> undoes a stroke, <b>R</b> starts the letter again, <b>G</b> shows the next stroke, <b>Esc</b> walks away</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
           <span><b>Esc</b></span><span>Close any panel</span>
         </div>
@@ -3584,7 +3584,7 @@ addEventListener("keydown",e=>{
     sbKey(e);
     return;
   }
-  if(state.tracing){   // The Scriptorium's trace pad: 1–9 pick a pen, 0 peeks, Backspace/R undo, G ghosts, Esc leaves
+  if(state.tracing){   // The Scriptorium's trace pad: 1–9 pick a pen, Backspace/R undo, G ghosts, Esc leaves
     trKey(e);
     return;
   }
@@ -3828,7 +3828,7 @@ function tryUseBench(){
     else { const sh=nearLibraryShelf(); if(sh) openShelfView(sh); }   // a bookshelf → its books
     return;
   }
-  const ink=inklingInFront();                  // an inkling you're facing → write it (docs/inklings-typography.md §9)
+  const ink=inklingInFront();                  // an inkling you're facing → write it (a swing does this too, §14.4)
   if(ink) openTrace(ink);
   else if(nearShop()) openShop();              // outdoor home: shop or the house (library)
   else if(nearHouse()) enterLibrary();
@@ -3836,7 +3836,6 @@ function tryUseBench(){
 }
 
 /* ---------- COMBAT ---------------------------------------- */
-let _inklingHintShown=false;   // the one-time "inklings are caught, not fought" nudge (session-scoped)
 function doAttack(){
   if(trans || state.room) return;   // no attacking mid screen-slide or inside the library
   const p=state.player; if(p.atkCd>0) return;
@@ -3848,7 +3847,7 @@ function doAttack(){
   const range=(ATTACK.range + (eb.reach||0))*(state.buffs.size>0?SIZE_MULT:1);   // weapon reach, then size potion multiplies
   const dmg=attackDmg();                                       // base + attack perk + current combo bonus
   const fin=state.perks && state.perks.finisher;
-  let hitAny=false, swungAtInkling=false;
+  let hitAny=false, swungAtInkling=null;   // the first inkling the swing passed through (§14.4)
   for(let i=sc.creatures.length-1;i>=0;i--){
     const c=sc.creatures[i];
     const dx=c.x-p.x, dy=c.y-p.y, d=Math.hypot(dx,dy);
@@ -3863,13 +3862,14 @@ function doAttack(){
       continue;
     }
     // Letter-creature: INKLINGS ARE CAUGHT, BEASTS ARE FOUGHT (docs/inklings-typography.md §1). A swing
-    // passes straight through one — no damage, no knockback, nothing to lose — because a letter is now
-    // captured by WRITING it (press E; see openTrace). That is what retires the accidental-letter-kill
-    // case entirely: there is no longer any way for a swing aimed at a beast to cost you a letter.
+    // does it no damage and no knockback — it OPENS THE TRACE PAD (§14.4: swinging at the thing is what
+    // the game has trained you to do, and `E` was only ever defending against the accidental letter-kill,
+    // which is gone by construction now that nothing can damage an inkling). Deferred until after the
+    // walk, because openTrace closes dialogs and freezes the field mid-loop.
     // The whole of this branch's old body — the satchel gate, the grant, the fx, state.captured,
     // recordBestiary, the capture cue and maybeNotifyCleared — lives on the trace's success path now
     // (trGrantLetter / trFinishLetter), and §9's table is the map of where each row went.
-    swungAtInkling = true;
+    if(!swungAtInkling) swungAtInkling = c;
   }
   // Combo (competition perk): a swing that connects ramps up; a whiff resets it.
   if(state.perks && state.perks.combo){
@@ -3877,15 +3877,13 @@ function doAttack(){
       if(combo.count>1) state.fx.push({x:p.x, y:p.y-42, text:"combo ×"+combo.count, life:0.6, color:"#c89b3c"}); }
     else combo.count=0;
   }
-  // (The satchel gate moved with the letter branch: it is now the trace-OPEN check, capital bypass
-  // verbatim — §9's table, and §10.8 on why that !isUpper is load-bearing.)
-  // Said once, ever: a swing at an inkling now does nothing, and the player has to be told why rather
-  // than left swinging at something that used to pop.
-  if(swungAtInkling && !hitAny && !_inklingHintShown){
-    _inklingHintShown=true;
-    showToast("Inklings are caught, not fought — press E to write it.");
-  }
   maybeNotifyCleared();
+  // (The satchel gate moved with the letter branch: it lives in openTrace, capital bypass verbatim —
+  // §9's table, and §10.8 on why that !isUpper is load-bearing, so a full satchel still refuses here.)
+  // A swing does ONE thing: if it connected with a beast it was a fight, and only an otherwise-empty
+  // swing writes the inkling it passed through. The swing itself still played its cue and still spent
+  // its cooldown above, so a whiff is a whiff either way.
+  if(swungAtInkling && !hitAny) openTrace(swungAtInkling);
 }
 // Slide (motion perk): a quick forward lunge on Shift / the SLIDE touch button. Field only.
 function startSlide(){
@@ -4138,7 +4136,7 @@ function update(dt){
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
   const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.atlasOpen && !state.flagpickOpen;
-  if(hintReady && inklingInFront()){ hint.textContent="Press E to write this letter"; hint.classList.add("show"); }
+  if(hintReady && inklingInFront()){ hint.textContent="Swing (or E) to write this letter"; hint.classList.add("show"); }
   else if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
   else if(hintReady && nearFishSpot()){ hint.textContent="Press E to cast a line"; hint.classList.add("show"); }
@@ -10567,8 +10565,8 @@ function renderMaterials(){
 
 /* ==================== THE SCRIPTORIUM (docs/inklings-typography.md — M3) ====================
    INKLINGS ARE CAUGHT; BEASTS ARE FOUGHT. A letter-creature is no longer hit until it pops — you
-   press E at it and WRITE it, tracing the skeleton stroke by stroke with a pen of your choosing, and
-   what you collect is the letter AND the letter in a typeface.
+   swing at it (or press E) and WRITE it, tracing the skeleton stroke by stroke with a pen of your
+   choosing, and what you collect is the letter AND the letter in a typeface.
 
    The whole engine below is the standalone bench `inklings-trace.html` (M1 + M2 + M2.5) ported in.
    Read docs/inklings-typography.md §5 and §9 before touching it; the four load-bearing facts are:
@@ -10581,7 +10579,7 @@ function renderMaterials(){
    · The SKELETON is the guide and the stroke ORDER — the one thing a font file cannot supply, since
      fonts ship outlines, not strokes. Its direction gate is all that survives of skeleton scoring.
    · The LETTER is earned at any grade (§5.6). The economy must never stall on a typography lesson.
-     Only the FACE cell is what a wrong pen or the ? peek can cost you.
+     Only the FACE cell is what a wrong pen can cost you.
    · A face is COLLECTION ONLY. A traced `q` is a plain `q` on the bench — same satchel slot, same
      spelling, same dictionary.
 
@@ -10956,8 +10954,7 @@ function trScoreNow(){
 /* When a trace misses, the two halves fail for OPPOSITE reasons, and which one failed IS the pen advice.
    It never names the pen you should have picked (§13 #1) — it names what went wrong, in the only
    vocabulary that is on screen. */
-function trMissReason(s, peeked){
-  if(peeked) return "you peeked — the letter's yours, the face isn't";
+function trMissReason(s){
   if(!s) return "nothing drawn";
   if(s.cov < s.fid) return "the letter isn't filled — "+trPct(s.cov)+" covered. A wider pen?";
   if(s.fid < s.cov) return "your ink strays off the letter — "+trPct(s.fid)+" of it landed. A narrower pen, or a different angle?";
@@ -10968,7 +10965,7 @@ const trPct = v => Math.round(v*100)+"%";
 /* ---- the trace session -------------------------------------------------------------------- */
 const trace = {
   on:false, c:null, sc:null, face:null, glyph:null, letter:null, nib:"round-mono",
-  done:[], raw:null, ghost:null, peeked:false, drawing:false,
+  done:[], raw:null, ghost:null, drawing:false,
   msg:"", msgCls:"", rung:"named",
   px:0, x:0, y:0, top:0, h:0      // pad geometry in canvas coordinates
 };
@@ -10985,8 +10982,8 @@ function trToPx(q){ const e=trEmScale(), [ox,oy]=trOrigin(); return [ox+q[0]*e, 
 function trToEm(x,y){ const e=trEmScale(), [ox,oy]=trOrigin(); return [(x-ox)/e, (y-oy)/e]; }
 
 /* The nearest inkling you're facing, or null — the same tileInFront idiom as every other "interact with
-   this thing" in the game. Opening on the ACTION key rather than a swing is what retires the accidental
-   letter-kill case entirely (§9). */
+   this thing" in the game. A SWING is the way in (§14.4); this is what `E`, the touch WRITE button and
+   the field prompt all ask, and keeping `E` alive as a second door costs one line. */
 function inklingInFront(){
   if(trans || state.room || !state.started) return null;
   const p=state.player, sc=curScreen();
@@ -11024,7 +11021,7 @@ function openTrace(c){
   closeAnyDialog();
   state.tracing = true;
   trace.on=true; trace.c=c; trace.sc=sc; trace.face=face; trace.glyph=glyph; trace.letter=c.letter;
-  trace.done=[]; trace.raw=null; trace.ghost=null; trace.peeked=false; trace.drawing=false;
+  trace.done=[]; trace.raw=null; trace.ghost=null; trace.drawing=false;
   trace.rung = trRung();
   // §5.4 rung 1 — the game names the pen and equips it, IF you own it. If you don't, it still names it
   // and says so: the ladder stays honest and the shop is the answer, rather than a silent wrong pen.
@@ -11042,7 +11039,7 @@ function trOpeningLine(){
   const f=trace.face, want=TR_NIBBY.get(f.nib), owned=want && (state.nibs||[]).indexOf(want.id)>=0;
   if(trace.rung==="named") return owned ? "Written with a "+want.name.toLowerCase()+" — that pen's in your hand. Esc leaves."
                                         : "Written with a "+want.name.toLowerCase()+" — a pen you don't own yet. Esc leaves.";
-  if(trace.rung==="cued")  return "Read the stress mark, then pick your pen. Esc leaves.";
+  if(trace.rung==="cued")  return "Read the specimen's thick/thin, then pick your pen. Esc leaves.";
   return "Read the letterform. Pick your pen. Esc leaves.";
 }
 /* The fallback path, and the reason it exists: if the Scriptorium's data can't be fetched (file://, a
@@ -11094,7 +11091,7 @@ function trAlbumStrokes(){
 }
 function trFinishLetter(){
   const s=trScoreNow();
-  const grade = trace.peeked ? 0 : (s ? s.f2 : 0);
+  const grade = s ? s.f2 : 0;
   const f=trace.face, cell=trFaceChar(trace.letter, f);
   const prev = (((state.faces||{})[f.id]||{})[cell]||{}).g || 0;
   let earned=false, beat=false;
@@ -11102,7 +11099,7 @@ function trFinishLetter(){
     (state.faces[f.id] = state.faces[f.id] || {})[cell] = { g:+grade.toFixed(4), s:trAlbumStrokes() };
     earned=true; beat = prev>0;
   }
-  const c=trace.c, sc=trace.sc, peeked=trace.peeked;
+  const c=trace.c, sc=trace.sc;
   closeTrace();
   trGrantLetter(c, sc);          // the letter is earned at ANY grade (§5.6)
   if(earned){
@@ -11118,7 +11115,7 @@ function trFinishLetter(){
   } else if(grade >= TR_FACE_TH){
     showToast(f.name+" "+cell+" — "+trPct(grade)+"; your cell stands at "+trPct(prev));
   } else {
-    showToast("+"+c.letter+" · no face — "+trMissReason(s, peeked));
+    showToast("+"+c.letter+" · no face — "+trMissReason(s));
   }
 }
 
@@ -11188,20 +11185,10 @@ function trSetNib(n){
   trSay(n.name+(n.type==="broad" ? " · held at "+(n.angle||0)+"°" : ""), null);
   SFX.play("click"); scheduleSave();
 }
-/* §5.4's ? peek: it names the pen and forfeits the face for this capture. You still get the letter, and
-   there is no ink price — the cost is already the interesting one. */
-function trPeek(){
-  if(trace.peeked) return;
-  const want=TR_NIBBY.get(trace.face.nib);
-  trace.peeked=true;
-  trSay("it's a "+(want?want.name.toLowerCase():"—")+" — the face is forfeit, the letter isn't", "bad");
-  SFX.play("known");
-}
 function trKey(e){
   const k=e.key.toLowerCase();
   e.preventDefault();
   if(k==="escape"||k==="tab"||k==="e"){ closeTrace(); return; }
-  if(k==="0"){ trPeek(); return; }
   if(k>="1" && k<="9"){ const n=trOwnedNibs()[+k-1]; if(n) trSetNib(n); return; }
   if(k==="backspace"){                        // undo the last accepted stroke
     if(trace.done.length){ trace.done.pop(); _trScore=null; trSay("stroke undone", null); }
@@ -11246,16 +11233,13 @@ function drawTrace(){
   ctx.fillStyle="#26233a";            ctx.fillRect(trace.x-4, trace.top-4, trace.px+8, trace.h+8);
   ctx.fillStyle="#efe7d4";            ctx.fillRect(trace.x, trace.top, trace.px, trace.h);
 
-  /* header — the face, its branch of the tree, and the peek */
+  /* header — the face and its branch of the tree (§14.2 cut the peek: §5.7's ghost already puts the
+     letterform on screen, so there was nothing left for a peek to reveal but the pen's name) */
   ctx.textBaseline="middle"; ctx.textAlign="left";
   ctx.fillStyle="#3b4a7a"; ctx.font="8px 'Press Start 2P', monospace";
   ctx.fillText(trace.face.name.toUpperCase(), trace.x+6, trace.top+11);
   ctx.fillStyle="#7a6f58"; ctx.font="7px 'Press Start 2P', monospace";
   ctx.fillText(trGroupPath(trace.face.group), trace.x+6, trace.top+23);
-  ctx.textAlign="right";
-  ctx.fillStyle = trace.peeked ? "#b5532a" : "#7a6f58";
-  ctx.fillText(trace.peeked ? "PEEKED" : "0 = ? peek", trace.x+trace.px-6, trace.top+11);
-  ctx.textAlign="left";
 
   /* The pad's static ink — parchment, the metric lines, the ghosted face glyph, the dotted stroke order,
      the strokes already accepted and the numbered start dot — is built ONCE into an offscreen layer and
@@ -11281,25 +11265,12 @@ function drawTrace(){
     if(trace.ghost.t>=1 && performance.now()-trace.ghost.t0 > 1040) trace.ghost=null;
   }
 
-  /* §5.4 rung 2 — the stress mark. The thick/thin axis as an angle tick: for a broad pen the nib's own
-     edge, for a pointed one the horizontal it writes thin along, and for a ROUND one nothing at all —
-     the absence is the cue, and it says "sans" as loudly as an angle says "blackletter". */
-  if(trace.rung==="cued"){
-    const want=TR_NIBBY.get(trace.face.nib);
-    if(want){
-      const cx=trace.x+trace.px-26, cy=trace.y+26, r=13;
-      ctx.strokeStyle="#e0d4bb"; ctx.lineWidth=2;
-      ctx.beginPath(); ctx.arc(cx,cy,r,0,6.2832); ctx.stroke();
-      if(want.type!=="round"){
-        const a = (want.type==="broad" ? -(want.angle||0) : 0)*Math.PI/180;
-        ctx.strokeStyle="#b5532a"; ctx.lineWidth=4;
-        ctx.beginPath();
-        ctx.moveTo(cx-Math.cos(a)*r*0.8, cy-Math.sin(a)*r*0.8);
-        ctx.lineTo(cx+Math.cos(a)*r*0.8, cy+Math.sin(a)*r*0.8);
-        ctx.stroke();
-      } else { ctx.fillStyle="#b5532a"; ctx.beginPath(); ctx.arc(cx,cy,r*0.34,0,6.2832); ctx.fill(); }
-    }
-  }
+  /* §14.3 — the END GOAL, upper-right: the letter as it should look, in this face. The bench's
+     four-cell specimen strip cut to the one cell that matters while you are drawing, and it sits where
+     §5.4's cued stress tick used to — it REPLACES that tick, because a small true specimen shows the
+     thick/thin axis better than an angle mark can. Blitted from a cache, drawn ON TOP of the live
+     stroke so your own ink can never cover the thing you are aiming at. */
+  ctx.drawImage(trSpecimen(), trace.x + trace.px - TR_SPEC - 6, trace.y + 6);
 
   /* the pen rack — owned nibs only; the wrong pen is a worse grade, never a locked door */
   const rk=trRackGeom();
@@ -11342,6 +11313,30 @@ function trStrokePathTo(c, pts, e, ox, oy){
   for(let i=0;i<pts.length;i++){ const x=ox+pts[i][0]*e, y=oy+pts[i][1]*e; i ? c.lineTo(x,y) : c.moveTo(x,y); }
   c.stroke();
 }
+/* §14.3's specimen: this letter in this face, small, cached. Drawn by the SAME trDrawFaceGlyph call as
+   the ghost under the pad and the mask you are scored against — three drawings of one shape would be
+   three shapes that can disagree. Cached because without a woff2 it falls back to stamping the pen,
+   which is hundreds of fills and must not happen 60 times a second. */
+const TR_SPEC = 52;
+let _trSpecCv=null, _trSpecG=null, _trSpecKey="";
+function trSpecimen(){
+  const g=trace.glyph, f=trace.face, ch=trFaceChar(trace.letter, f);
+  const t=trTargetFor();
+  const k = f.id+"|"+ch+"|"+(t&&t.useFont?"f":"p");
+  if(!_trSpecCv){ _trSpecCv=document.createElement("canvas"); _trSpecG=_trSpecCv.getContext("2d"); }
+  if(_trSpecCv.width!==TR_SPEC || _trSpecCv.height!==TR_SPEC){   // both dimensions, always (§14.1)
+    _trSpecCv.width=_trSpecCv.height=TR_SPEC; _trSpecKey="";
+  }
+  if(_trSpecKey===k) return _trSpecCv;
+  _trSpecKey=k;
+  const c=_trSpecG, em=TR_SPEC*0.72, ox=(TR_SPEC - g.w*em)/2, oy=(TR_SPEC - 0.96*em)/2;
+  c.clearRect(0,0,TR_SPEC,TR_SPEC);
+  c.fillStyle="#fbf7ee"; c.fillRect(0,0,TR_SPEC,TR_SPEC);
+  c.strokeStyle="#bcae90"; c.lineWidth=1; c.strokeRect(0.5,0.5,TR_SPEC-1,TR_SPEC-1);
+  trDrawFaceGlyph(c, g, f, ch, !!(t&&t.useFont), em, ox, oy, "#3b4a7a", 1);
+  return _trSpecCv;
+}
+
 /* The pad's static ink, in pad-local coordinates. Rebuilt only when the key below changes — which is
    once per accepted stroke, once per pen, and once when a late woff2 turns the ghost from the pen into
    the real face. Everything here would otherwise be re-stamped 60 times a second for no reason. */
