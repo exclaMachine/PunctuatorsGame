@@ -8706,7 +8706,7 @@ function sbRenderBoard(){
         }
       }
     }
-    out.push(`<div class="${cls}"></div>`);
+    out.push(`<div class="${cls}">${inner}</div>`);
   }
   grid.innerHTML=out.join("");
 }
