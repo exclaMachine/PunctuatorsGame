@@ -29,6 +29,12 @@
   }
   canvas{display:block;width:100%;height:auto;image-rendering:pixelated;
     border:3px solid #000;background:#d8cba8;box-shadow:6px 6px 0 rgba(0,0,0,.55)}
+  /* While the Scriptorium's pad is open the game canvas IS a drawing surface, so the browser must not
+     read a drag on it as a page scroll: on a phone it claimed the gesture, fired pointercancel and the
+     stroke died mid-letter. touch-action can't be toggled once a gesture has begun, but the pad always
+     opens before you touch it, so the class is on in time. Only while tracing — the rest of the time a
+     drag on the canvas should still scroll the page. */
+  #cv.tracing{touch-action:none}
   /* Décor tray — Stardew-style hotbar of all owned decorations, docked at the bottom while placing.
      Hidden unless placement mode is active (JS toggles #decorbar.open). Click a slot to hold that item;
      the ✋ slot holds nothing = pick-up mode. Click a room tile to place/swap/pick up. docs/inklings-placement.md */
@@ -11134,6 +11140,7 @@ function openTrace(c){
   trInvalidateTarget();
   trLayout();
   trLoadFont(face);
+  cv.classList.add("tracing");        // see #cv.tracing: stops a phone stealing the stroke as a scroll
   trSay(trOpeningLine(), null);
   SFX.play("click");
 }
@@ -11155,6 +11162,7 @@ function closeTrace(){
   if(!trace.on) return;
   trace.on=false; state.tracing=false;
   trace.c=null; trace.sc=null; trace.done=[]; trace.raw=null; trace.ghost=null; trace.drawing=false;
+  cv.classList.remove("tracing");
   trInvalidateTarget();
   syncTouchUI();
 }
@@ -11289,7 +11297,15 @@ function trEndStroke(ev){
         (r.offStart ? " · you started well off the dot" : ""), "good");
 }
 cv.addEventListener("pointerup", trEndStroke, true);
-cv.addEventListener("pointercancel", ()=>{ if(trace.on){ trace.drawing=false; trace.raw=null; } }, true);
+/* A cancel is the system taking the gesture away (a second finger, a browser gesture). The stroke is
+   dropped rather than scored — half a stroke is not the stroke — but it says so, or a vanished stroke
+   reads as the pad being broken. */
+cv.addEventListener("pointercancel", ()=>{
+  if(!trace.on) return;
+  const was=trace.drawing;
+  trace.drawing=false; trace.raw=null;
+  if(was) trSay("stroke interrupted — draw it again", "bad");
+}, true);
 
 function trSetNib(n){
   if((state.nibs||[]).indexOf(n.id)<0) return;

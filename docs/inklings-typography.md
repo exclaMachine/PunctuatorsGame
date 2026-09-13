@@ -1302,3 +1302,31 @@ gates, `canBeHurt`, both `hintReady`s, `syncTouchUI`, `phonHideSound`, `musicDia
   again, which is what makes a duplicate worth catching.
 - **The Tree of Faces is still M5.** The plate names its branch (`trGroupPath`) and the group milestone is
   reserved; the map itself is the next milestone's work.
+
+## 16. Mobile: the phone stole the stroke (FIXED 2026-09-13)
+
+Found by playing M3/M4 on a phone: a drag on the pad **scrolled the page** instead of drawing, and the
+stroke never landed.
+
+The cause is `touch-action`, not the pad's own input code. The trace's three listeners sit on `#cv` and
+already call `preventDefault()`, but that is too late — a touch gesture's meaning is decided by the CSS
+`touch-action` of the element the touch starts on, *before* any handler runs. The shared `canvas{…}` rule
+sets none, so the default `auto` let the browser claim the drag as a page pan; the moment it did, it took
+the pointer away and fired **`pointercancel`**, which the trace handled by silently dropping the stroke.
+That is why it read as "the pad does nothing" rather than "the page scrolled".
+
+Fixed with **`#cv.tracing{touch-action:none}`**, the class added in `openTrace` and removed in
+`closeTrace`. Three things about that shape:
+
+- It is **scoped to the trace**, not put on `canvas{}` or on `#cv` permanently. The game canvas is a
+  picture the rest of the time and a drag on it should still scroll the page — the phone layout puts the
+  touch controls in a band below it. Only while the pad is open is the canvas a drawing surface.
+- **A class toggled at open time is early enough**, even though `touch-action` cannot change the meaning
+  of a gesture already under way: the pad is always opened by a different input (a swing, the WRITE
+  button, `E`) before the finger that draws ever lands.
+- It also disables double-tap zoom and pinch **on the canvas only** while tracing, which is wanted — the
+  page has no `user-scalable=no`, so both were live over the pad.
+
+`pointercancel` now also **says** the stroke was interrupted instead of dropping it in silence. The stroke
+is still discarded (half a stroke is not the stroke), but a cancel can still arrive from a second finger or
+a system gesture, and a stroke that vanishes with no message reads as the pad being broken.
