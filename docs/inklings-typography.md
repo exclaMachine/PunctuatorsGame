@@ -4,8 +4,9 @@
 scorer) and M7 (the capitals) are BUILT in the standalone bench `inklings-trace.html`; **M3 — the fold-in —
 is BUILT in `inklings.html` 2026-09-12, so THE LOOP IS CLOSED and the game plays differently**: inklings
 are no longer hit, they are written. **M4 — the Scriptorium album, its plates and its milestones — is BUILT
-2026-09-13 (§15), so the cells now have somewhere to be looked at.** See §12. M5 (the Tree of Faces) and M6
-(italics & bold) remain.**
+2026-09-13 (§15), so the cells now have somewhere to be looked at, and **M5 — the Tree of Faces and the
+group milestones — is BUILT 2026-09-13 (§17)**, which gives the album its other axis.** See §12. M6
+(italics & bold) remains.**
 
 **First play, 2026-09-13 → §14 was the fix list, and ALL FOUR ARE NOW BUILT.** One bug fixed (the pad layer
 was clipping at half height), and **three changes to what the feature does, two of them reversals**: the
@@ -515,7 +516,8 @@ artifact for it is the thing the trade already has: a **type specimen sheet**.
   ([`inklings-placement.md`](inklings-placement.md)). **Capitals get their own fraction, not a bigger
   denominator** — see §10.5, where folding them in would silently un-fire a milestone that has already paid.
   **BUILT at M4** (§15.3): 15/35/80 ink per rung per case, and a **completed face** — every track at 100% —
-  pays 200 ink **plus** the framed specimen. The group milestone stays M5, with the tree.
+  pays 200 ink **plus** the framed specimen. **The group milestone is BUILT at M5** (§17.6): a branch pays
+  once, when every face under it is complete, 150 ink × its faces plus a Printer's Type Case.
 - **Nibs are bought at the Stall with ink** — the shop reused, a new ink sink, no new economy.
   **AMENDED 2026-09-12 (dev's call, building M3): a nib is not a GATE.** This bullet used to say a face
   whose nib you don't own is *uncatchable-as-a-face*; it isn't. Every face is traceable with any pen you
@@ -1052,7 +1054,7 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
   callout anchors are **derived from the glyph's own geometry** rather than authored per callout, and an
   empty cell shows **the face's own letter, ghosted**, so the grid is a specimen sheet before it is a
   checklist.
-- **M5 — the Tree of Faces. SPECCED 2026-09-13 — see §17.** The classification map + group
+- **M5 — the Tree of Faces. BUILT 2026-09-13 — see §17, and §17.9 for what the build added.** The classification map + group
   milestones, as a **third view of the Scriptorium** (a 🌳/▦ toggle in M4's own bar) showing **one
   letter across all twelve faces, arranged by kinship** — the axis the album's per-face sheet cannot
   give. Rows are DOM with one canvas per leaf, **not** the Tree of Kinds' circle pack (12 leaves fit a
@@ -1309,8 +1311,8 @@ gates, `canBeHurt`, both `hintReady`s, `syncTouchUI`, `phonHideSound`, `musicDia
   per cell is the honest version.
 - **No re-trace button.** §8.1 is the whole design — you beat a cell by meeting that letter in that face
   again, which is what makes a duplicate worth catching.
-- **The Tree of Faces is still M5.** The plate names its branch (`trGroupPath`) and the group milestone is
-  reserved; the map itself is the next milestone's work.
+- **The Tree of Faces was left to M5.** The plate named its branch (`trGroupPath`) and the group milestone
+  was reserved; both landed the same day, in §17.
 
 ## 16. Mobile: the phone stole the stroke (FIXED 2026-09-13)
 
@@ -1342,11 +1344,11 @@ a system gesture, and a stroke that vanishes with no message reads as the pad be
 
 ---
 
-## 17. M5 — the Tree of Faces (SPECCED 2026-09-13)
+## 17. M5 — the Tree of Faces (SPECCED 2026-09-13 · **BUILT 2026-09-13**)
 
 The classification map and the group milestones. Four forks were put to the dev before a line was
 written; all four took the recommendation, and the reasons are recorded below rather than the choices
-alone.
+alone. §17.9 records what the build added to the spec.
 
 ### 17.1 What it is for — the album cannot give you this picture
 
@@ -1485,3 +1487,36 @@ Inside the M4 block: `alRenderTree`, `alDrawCell` (extracted from `alDrawSheet`,
 `alStepLetter`, the view toggle in `renderAlbum`/`alShowGrid`, and `alRefreshFace` learning to redraw a
 tree leaf as well as a strip when a late woff2 lands. Outside it: two buttons in the `#album` markup,
 their CSS, one `DECOR` entry, and one line in the album's key handler.
+
+### 17.9 As built (2026-09-13)
+
+The spec shipped as written. `alDrawCell(c, f, ch, x, y, size, useFont, pen)` is the one place that
+knows how a cell looks, called by the sheet's 26-cell loop, the plate's, and `alDrawTreeLeaf` — the two
+trailing arguments exist only so the sheet need not ask `document.fonts.check` twenty-six times, and are
+derived when omitted. A leaf canvas is a flat 56 px (`AL_LEAF_PX`) drawn at `devicePixelRatio`, and the
+gold bar on it is still that **cell's grade**, exactly as §17.3 requires; the face's fraction rides the
+row as text beside M4's `alRungsHTML` pips.
+
+`trGroupFaces(gid)` walks the parent chain to a fixed point rather than recursing (the tree is three
+levels, so a `Set` that grows until it stops is the honest shape), and `trBranches()` is the one place
+that decides what a *branch* is — a top-level group holding `TR_GROUP_DONE.min` (= 2) or more faces.
+Measured against the shipped `typefaces.json`: **Classical 4 faces → 600 ink, Lineal 3 → 450,
+Calligraphic 3 → 450**, with Mechanistic and the bare hand correctly paying no branch rung, which is the
+table in §17.6 arrived at from the data instead of asserted.
+
+**Three things the build added**, none of them reversals:
+
+- **A letter stepper in the bar** (`◀ a ▶`, shown only on the tree). `[`/`]` are the spec'd control, but
+  the panel opens from a touch button too and the tree would otherwise be stuck on `a` on a phone.
+- **A branch header carries `done/total` faces**, not just the ★ pip. A fraction is what every other
+  node in this feature has, and it is the one number on the row that cannot be confused with a grade.
+- **Top-level leaf rows lose the indent and the connector** (`.al-leaf.top`), because Mechanistic and
+  the bare hand hang off nothing, and the skeleton's face name is suppressed where it merely repeats
+  its group's.
+
+`T` toggles the view; `[`/`]` step the compared letter **only** when the tree is up and no plate is open,
+and keep stepping faces otherwise. Switching view closes whatever plate is open (the tree is a second way
+*into* the album, not a second album), and `← All faces` returns to whichever view you arrived from
+because `alShowGrid` never touches `album.view`. No save bump: `"classical:group:done"` fits the key
+space `state.faceMiles` took at v14, and `claimAlbumMilestones()` already ran on album open, so a save
+that has already finished a branch settles itself on the first open.

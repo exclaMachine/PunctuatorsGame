@@ -275,6 +275,8 @@
     box-shadow:2px 2px 0 rgba(0,0,0,.25)}
   .al-back:hover{background:var(--gold);color:#26233a}
   .al-case{display:flex;gap:4px;margin-left:auto}
+  /* the bar's left-hand groups sit next to the back button; only #al-case is pushed to the right edge */
+  #al-view,#al-letter{margin-left:0}
   .al-chip{font-family:var(--disp);font-size:8px;cursor:pointer;background:var(--paper-2);
     border:2px solid var(--edge);color:var(--ink-soft);padding:5px 9px;box-shadow:2px 2px 0 rgba(0,0,0,.25)}
   .al-chip.on{background:var(--gold);color:#26233a}
@@ -310,9 +312,34 @@
   .al-note{font-family:var(--read);font-size:12px;color:var(--ink);line-height:1.25}
   .al-yours{font-family:var(--read);font-size:11px;color:var(--moss);font-style:italic;display:block;margin-top:4px}
   .al-sub{font-family:var(--read);font-size:13px;color:var(--ink-soft);margin:0 0 8px}
+  /* the Tree of Faces (§17) — indented DOM rows, one small canvas per leaf. Only the letterform needs a
+     canvas; text, hit-testing, wrapping and the phone layout all come free. */
+  .al-branch{border-top:2px solid var(--line);padding:6px 0 8px}
+  .al-branch:first-child{border-top:none}
+  .al-bhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding:2px 0 6px}
+  .al-bname{font-family:var(--disp);font-size:9px;text-transform:uppercase;color:var(--ink)}
+  .al-bhead.paid .al-bname{color:var(--gold)}
+  .al-bnote{font-family:var(--read);font-size:12px;color:var(--ink-soft);flex:1;min-width:120px}
+  .al-bfrac{font-family:var(--disp);font-size:8px;color:var(--gold);margin-left:auto}
+  .al-leaf{display:flex;align-items:center;gap:10px;padding:5px 0 5px 14px;
+    border-left:2px solid var(--line);margin-left:6px}
+  .al-leaf.top{border-left:none;margin-left:0;padding-left:0}
+  .al-leaf.click{cursor:pointer}
+  .al-leaf.click:hover .al-name{color:var(--gold)}
+  .al-leafcv{flex:none;background:var(--paper-2);box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .al-leaf-txt{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
+  .al-leaf-sub{font-family:var(--read);font-size:12px;color:var(--ink-soft);line-height:1.25}
+  .al-pen{font-family:var(--read);font-size:11px;color:var(--ink-soft)}
+  .al-owned{color:var(--moss)}
+  .al-leaf-right{flex:none;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .al-leaf-right .al-frac{margin-left:0}
+  .al-leaf-right .al-rungs{margin-left:0;flex-wrap:wrap;justify-content:flex-end}
   @media(max-width:560px){
     #album .book{height:auto;max-height:92vh;overflow:auto;display:block}
     .al-cals{grid-template-columns:1fr}
+    .al-leaf{flex-wrap:wrap;padding-left:8px}
+    .al-leaf-right{width:100%;align-items:flex-start;text-align:left}
+    .al-leaf-right .al-rungs{justify-content:flex-start}
   }
   /* ---- The Sound Board — the endless phoneme crossword (docs/ipa-scrabble.md §10) ----
      A WINDOW onto an infinite grid: premiums are a pure function of position, so there is no board to
@@ -1603,20 +1630,32 @@
     <!-- The Scriptorium album (docs/inklings-typography.md §7): a type specimen sheet of your own hand.
          26 letters x 12 faces, one strip per face; a filled cell shows the strokes YOU traced, an empty one
          the face's own glyph, ghosted, so the grid is a specimen sheet before it is a checklist. Clicking a
-         face opens its PLATE — the anatomy of that typeface called out on your letterforms. -->
+         face opens its PLATE — the anatomy of that typeface called out on your letterforms. A 🌳 Tree
+         toggle (§17) turns the same panel into the other axis: ONE letter across all twelve faces,
+         arranged by kinship, which is the comparison the per-face sheet cannot show. -->
     <div id="album">
       <div class="book">
         <button class="close-x" id="al-close" aria-label="Close the Scriptorium" title="Close">✕</button>
         <h1 id="al-title">The Scriptorium <span class="dex-count" id="al-count"></span></h1>
         <div class="al-bar">
           <button class="al-back" id="al-back">← All faces</button>
+          <div class="al-case" id="al-view">
+            <button class="al-chip" data-alview="sheet">▦ Sheet</button>
+            <button class="al-chip" data-alview="tree">🌳 Tree</button>
+          </div>
+          <div class="al-case" id="al-letter" style="display:none">
+            <button class="al-chip" id="al-letter-prev">◀</button>
+            <button class="al-chip on" id="al-letter-now">a</button>
+            <button class="al-chip" id="al-letter-next">▶</button>
+          </div>
           <div class="al-case" id="al-case">
             <button class="al-chip" data-alcase="lo">a–z</button>
             <button class="al-chip" data-alcase="up">A–Z</button>
           </div>
         </div>
         <div class="al-scroll" id="al-scroll"></div>
-        <p class="al-legend"><b>A</b> swap case · <b>[</b> <b>]</b> step faces · click a face for its plate · <b>Esc</b> back</p>
+        <p class="al-legend"><b>A</b> swap case · <b>T</b> sheet / tree · <b>[</b> <b>]</b> step faces
+          (the compared letter, on the tree) · click a face for its plate · <b>Esc</b> back</p>
       </div>
     </div>
 
@@ -1817,7 +1856,7 @@
           <span><b>↑ ↓ ← →</b> / <b>[</b> <b>]</b> / <b>1</b>–<b>7</b></span><span>On the <b>Atlas</b> board only: arrows (or WASD) step to the neighbouring country, sea, lake or peak; <b>[</b>/<b>]</b> sweep one layer west to east (or tap <b>◀ ▶</b>); <b>1</b>–<b>7</b> frame the World and the six continents</span>
           <span><b>1</b>–<b>7</b> / <b>↑ ↓ ← →</b> / <b>Enter</b></span><span>On the <b>Sound Board</b> only: <b>1</b>–<b>7</b> pick a phoneme tile, the arrows aim it (and pan the board when nothing's picked), <b>Tab</b> hops to the next legal square, <b>Enter</b> lays it — then <b>Enter</b> again plays the word. <b>Backspace</b> undoes, <b>C</b> recentres, <b>H</b> asks the rack for an idea</span>
           <span><b>1</b>–<b>9</b> / <b>G</b></span><span>While <b>writing an inkling</b>: <b>1</b>–<b>9</b> pick a pen, <b>Backspace</b> undoes a stroke, <b>R</b> starts the letter again, <b>G</b> shows the next stroke, <b>Esc</b> walks away</span>
-          <span><b>A</b> / <b>[</b> <b>]</b></span><span>In the <b>Scriptorium</b> (📜) only: <b>A</b> swaps the album between <b>a–z</b> and <b>A–Z</b>, <b>[</b>/<b>]</b> step from one face's plate to the next, <b>Esc</b> backs a plate out to all the faces</span>
+          <span><b>A</b> / <b>T</b> / <b>[</b> <b>]</b></span><span>In the <b>Scriptorium</b> (📜) only: <b>A</b> swaps the album between <b>a–z</b> and <b>A–Z</b>, <b>T</b> swaps the sheet for the <b>Tree of Faces</b>, <b>[</b>/<b>]</b> step from one face's plate to the next (on the tree, the letter being compared), <b>Esc</b> backs a plate out to all the faces</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
           <span><b>Esc</b></span><span>Close any panel</span>
         </div>
@@ -1868,7 +1907,11 @@
           are a <i>separate</i> collection, not a longer one — and click a face for its <b>plate</b>: where it comes
           from, and its anatomy called out on <i>your</i> letterforms. A cell keeps your <b>best ever</b> grade, so
           meeting a letter you already own is still worth writing. Filling a quarter, a half and all of a face's
-          alphabet pays <b>ink</b>; finishing a face outright pays a <b>framed specimen</b> for the Wordhoard.</p>
+          alphabet pays <b>ink</b>; finishing a face outright pays a <b>framed specimen</b> for the Wordhoard.
+          Press <b>T</b> for the <b>Tree of Faces</b>: the same letter in <i>every</i> hand, arranged by kinship —
+          the view the per-face sheet can't give you, since you can only see that a Didone's stress is vertical by
+          putting it next to a Garalde's. Every row names the <b>pen</b> that face wants and what it costs at the
+          Stall, and completing every face on a whole branch pays a <b>printer's type case</b>.</p>
           <p><b>The Sound Board (🔡).</b> A crossword you spell <b>by sound, not by letters</b>. The tiles are the
           <b>phonemes you've fished</b> — your Fish Phoneme collection <i>is</i> the bag — and a play counts when the
           line of phonemes you lay matches some real word's <b>pronunciation</b>: <i>/t u/</i> is two, too <i>and</i> to,
@@ -3186,7 +3229,10 @@ const DECOR = {
   // twelve: unlike the flagpole, nothing here picks WHICH face it shows, because DECOR is a static
   // registry read by applySnapshot before the lazy typefaces.json has landed — a per-face id would be
   // dropped as unknown on every load. Assignment, flagpole-style, is a later refinement.
-  specimen:{name:"Framed Specimen", emoji:"🖼️", solid:false }
+  specimen:{name:"Framed Specimen", emoji:"🖼️", solid:false },
+  // The Tree of Faces' branch trophy (§17.6). Generic for the same reason the specimen is: three
+  // branches earn three copies of ONE object, never a per-branch id DECOR would have to know about.
+  typecase:{name:"Printer's Type Case", emoji:"🖨️", solid:true }
 };
 // Session-only placement UI: `held` = the décor id being held (a string), or null = the ✋ "pick-up" hand.
 // Targeting is the tile IN FRONT of the character (tileInFront), confirmed with Space / the tray's Place button.
@@ -3691,8 +3737,10 @@ addEventListener("keydown",e=>{
   if(state.albumOpen){   // The Scriptorium album: Aa toggles case, [ ] step faces, Esc backs a plate out to the grid
     if(k==="escape"||k==="tab"){ e.preventDefault(); if(album.face){ alShowGrid(); } else closeAlbum(); }
     else if(k==="a"){ e.preventDefault(); alSetCase(!album.upper); }
-    else if(k==="["||k===","){ e.preventDefault(); alStepFace(-1); }
-    else if(k==="]"||k==="."){ e.preventDefault(); alStepFace(1); }
+    else if(k==="t"){ e.preventDefault(); alSetView(album.view==="tree"?"sheet":"tree"); }
+    // On the tree no face is selected, so [ ] step the compared LETTER instead (§17.2).
+    else if(k==="["||k===","){ e.preventDefault(); (!album.face && album.view==="tree") ? alStepLetter(-1) : alStepFace(-1); }
+    else if(k==="]"||k==="."){ e.preventDefault(); (!album.face && album.view==="tree") ? alStepLetter(1) : alStepFace(1); }
     return;
   }
   if(state.flagpickOpen){   // Flagpole picker: modal over the room (and over decorate mode) — Esc/Tab/E close
@@ -11615,6 +11663,12 @@ const TR_MILE_TIERS=[
   { key:"100", pct:1,    ink:80, label:"every letter of" }
 ];
 const TR_FACE_DONE={ ink:200, decor:"specimen" };
+/* §17.6: a BRANCH of the tree pays once, when every face under it is complete — ink scaling with how
+   many faces that took, so a four-face trophy beats a three-face one without a second table. Counting
+   completed FACES rather than cells is what keeps §10.5's never-sum-the-cases rule out of it entirely:
+   a face is complete or it isn't. A branch of ONE is the face you were already paid for at ★, so the
+   floor is two (the Tree of Kinds' own shelf-milestone floor, arriving for the same reason). */
+const TR_GROUP_DONE={ ink:150, decor:"typecase", min:2 };
 const TR_LETTERS="abcdefghijklmnopqrstuvwxyz";
 /* A face's tracks. Uncial is unicase (§10.6): its A and its a are one drawing and one cell, so it has
    ONE track — folding it back into two would pay it twice for the same 26 traces. */
@@ -11625,6 +11679,22 @@ function trFaceTracks(f){
                       { c:"up", n:cells.up, total:26, name:"capitals" }];
 }
 function trFaceComplete(f){ return trFaceTracks(f).every(t=>t.n>=t.total); }
+/* Every face under a group, however deep — `classical` reaches its four leaves' faces, `mechanistic`
+   reaches its own one. The tree is three levels at most, so this is a walk, not a traversal. */
+function trGroupFaces(gid){
+  const under=new Set([gid]);
+  let grew=true;
+  while(grew){ grew=false;
+    for(const [id,g] of TR_GROUPS) if(g.parent && under.has(g.parent) && !under.has(id)){ under.add(id); grew=true; } }
+  return TR_FACES.filter(f=>under.has(f.group));
+}
+function trBranches(){   // the top-level groups that hold two or more faces, in the file's own order
+  const out=[];
+  for(const [id,g] of TR_GROUPS){ if(g.parent) continue;
+    const fs=trGroupFaces(id); if(fs.length>=TR_GROUP_DONE.min) out.push({ g, faces:fs }); }
+  return out;
+}
+function trGroupComplete(gid){ const fs=trGroupFaces(gid); return fs.length>0 && fs.every(trFaceComplete); }
 function trMileNeed(t){ return Math.max(1, Math.ceil(26*t.pct)); }
 function trMilePaid(fid, c, key){ return !!(state.faceMiles||{})[fid+":"+c+":"+key]; }
 /* Pay out every rung newly reached, across every face. Called on the trace's success path AND on album
@@ -11651,10 +11721,22 @@ function claimAlbumMilestones(){
       got.push({ f, track:null, t:null, ink:TR_FACE_DONE.ink, decor:TR_FACE_DONE.decor });
     }
   }
+  // §17.6's branches. The key space state.faceMiles took at v14 is "<id>:<track>:<rung>", so a group
+  // rung is "classical:group:done" and needs no new field and no save bump — v14 stands.
+  for(const {g, faces} of trBranches()){
+    const kg=g.id+":group:done";
+    if(state.faceMiles[kg] || !faces.every(trFaceComplete)) continue;
+    state.faceMiles[kg]=state.day;
+    const ink=TR_GROUP_DONE.ink*faces.length;
+    state.ink+=ink;
+    state.decorOwned[TR_GROUP_DONE.decor]=(state.decorOwned[TR_GROUP_DONE.decor]||0)+1;
+    got.push({ f:null, group:g, track:null, t:null, ink, decor:TR_GROUP_DONE.decor });
+  }
   if(got.length){ updateRewardHud(); scheduleSave(); }
   return got;
 }
 function trMileToast(g){
+  if(g.group) return `${g.group.name} — every face on the branch is COMPLETE. +${g.ink} ink · ${DECOR[TR_GROUP_DONE.decor].name}`;
   return g.track ? `${g.f.name} — ${g.t.label} its ${g.track.name} inked! +${g.ink} ink`
                  : `${g.f.name} — the face is COMPLETE. +${g.ink} ink · ${DECOR[TR_FACE_DONE.decor].name}`;
 }
@@ -11663,7 +11745,7 @@ function trMileToast(g){
 /* Session-only view state: which face's plate is open (null = the grid of all faces) and which case you
    are looking at. §10.5's call was a case TOGGLE, never a 52-row grid — two collections, not one long
    one, and 52 columns is unreadable on a phone besides. */
-const album = { face:null, upper:false };
+const album = { face:null, upper:false, view:"sheet", letter:"a" };
 const AL_CELL_MIN=8;      // the floor a cell may shrink to; 26 columns is the specimen sheet's own line and never wraps
 function openAlbum(){
   if(state.albumOpen) return;
@@ -11699,6 +11781,19 @@ function alSetCase(up){
   if(album.upper===!!up) return;
   album.upper=!!up; SFX.play("click"); renderAlbum();
 }
+/* §17.2: the tree is a third VIEW of the same panel, so switching to it leaves whatever plate is open —
+   it is a second way into the album, not a second album. */
+function alSetView(v){
+  if(album.view===v && !album.face) return;
+  album.view=v; album.face=null; SFX.play("click"); renderAlbum();
+}
+/* On the tree no face is selected, so [ ] have nothing to step — stepping the compared LETTER is
+   exactly what you want to do while twelve faces are showing you the same one. */
+function alStepLetter(d){
+  const i=TR_LETTERS.indexOf(album.letter);
+  album.letter = TR_LETTERS.charAt(((i<0?0:i)+d+26)%26);
+  SFX.play("click"); renderAlbum();
+}
 function alStepFace(d){
   if(!TR_READY || !TR_FACES.length) return;
   const i = album.face ? TR_FACES.findIndex(f=>f.id===album.face) : -1;
@@ -11724,6 +11819,10 @@ function renderAlbum(){
     ' <span class="dex-count" id="al-count"></span>';
   const chips=document.querySelectorAll("#al-case .al-chip");
   chips.forEach(b=>b.classList.toggle("on", (b.getAttribute("data-alcase")==="up")===album.upper));
+  document.querySelectorAll("#al-view .al-chip").forEach(b=>
+    b.classList.toggle("on", !f && b.getAttribute("data-alview")===album.view));
+  document.getElementById("al-letter").style.display = (!f && album.view==="tree") ? "" : "none";
+  document.getElementById("al-letter-now").textContent = album.upper ? album.letter.toUpperCase() : album.letter;
   if(!TR_READY){
     document.getElementById("al-count").textContent="";
     scroll.innerHTML='<p class="al-sub">'+(TR_FAILED
@@ -11736,7 +11835,8 @@ function renderAlbum(){
   for(const fc of TR_FACES){ const t=trFaceTracks(fc).find(t=>t.c===(alCaseFor(fc)?"up":"lo")) || trFaceTracks(fc)[0];
     n+=t.n; tot+=t.total; }
   document.getElementById("al-count").textContent = `· ${n} of ${tot} ${album.upper?"capital":"minuscule"} cells`;
-  f ? alRenderPlate(scroll, f) : alRenderGrid(scroll);
+  f ? alRenderPlate(scroll, f)
+    : (album.view==="tree" ? alRenderTree(scroll) : alRenderGrid(scroll));
 }
 
 /* ---- the grid: one strip per face --------------------------------------------------------- */
@@ -11770,6 +11870,11 @@ function alRenderGrid(scroll){
 function alRefreshFace(f){
   if(!state.albumOpen || !f) return;
   if(album.face===f.id){ renderAlbum(); return; }
+  if(album.view==="tree"){
+    const leaf=document.querySelector('[data-altree="'+f.id+'"]');
+    if(leaf) alDrawTreeLeaf(leaf, f);
+    return;
+  }
   const cv=document.querySelector('[data-alstrip="'+f.id+'"]');
   if(cv) alDrawSheet(cv, f, 26);
 }
@@ -11790,6 +11895,32 @@ function alDrawRuler(cv){
   const ls=TR_LETTERS.split("");
   for(let i=0;i<26;i++) c.fillText(album.upper?ls[i].toUpperCase():ls[i], i*cell+cell/2, h/2+1);
 }
+/* ONE cell, wherever it is drawn — the sheet, the plate and the tree's leaves all come through here.
+   Two copies of "how a cell looks" is precisely the drift that would let the tree and the sheet disagree
+   about your own handwriting. `useFont`/`pen` are passed in by the sheet's 26-cell loop only so it need
+   not ask document.fonts 26 times; omitted, they are derived. */
+function alDrawCell(c, f, ch, x, y, size, useFont, pen){
+  if(useFont===undefined) useFont=trFontLive(f);
+  if(pen===undefined) pen=TR_NIBBY.get(f.nib);
+  const rec=alCell(f, trFaceChar(ch,f));
+  c.fillStyle = rec ? "#fbf7ee" : "#f2ecdd";
+  c.fillRect(x, y, size-1, size-1);
+  const g=trGlyphFor(ch, f);
+  if(!g) return;
+  const em=size*0.8, ox=x+(size-g.w*em)/2, oy=y+size*0.1;
+  if(rec){
+    // YOUR hand, in the pen that earned the cell (older cells predate the stored nib and fall back to
+    // the face's own, which is the pen they were almost certainly drawn with).
+    const nib=TR_NIBBY.get(rec.n) || pen;
+    for(const st of rec.s) trStampTo(c, st, nib, "#2b2620", em, ox, oy, 1);
+    // the grade, as a bar along the bottom of the cell — a percentage is unreadable at 20 px, a length
+    // is not, and the album is meant to show a hand improving. ONE gold bar, ONE meaning: on a tree leaf
+    // this is still THIS CELL'S grade, never the face's fraction (§17.3).
+    c.fillStyle="#c89b3c"; c.fillRect(x, y+size-3, Math.round((size-1)*Math.min(1,rec.g||0)), 2);
+  } else {
+    trDrawFaceGlyph(c, g, f, trFaceChar(ch,f), useFont, em, ox, oy, "#ddd3bd", 1);
+  }
+}
 /* A face's cells, `cols` to a row. The whole sheet is ONE canvas rather than 26 elements: the cells are
    drawings, not controls, and a single canvas redraws in one call when the font lands. */
 function alDrawSheet(cv, f, cols){
@@ -11805,28 +11936,90 @@ function alDrawSheet(cv, f, cols){
   c.setTransform(dpr,0,0,dpr,0,0);
   c.clearRect(0,0,w,h);
   const useFont=trFontLive(f), letters=alLetters(f), pen=TR_NIBBY.get(f.nib);
-  for(let i=0;i<26;i++){
-    const ch=letters[i], x=(i%cols)*cell, y=Math.floor(i/cols)*cell;
-    const rec=alCell(f, trFaceChar(ch,f));
-    c.fillStyle = rec ? "#fbf7ee" : "#f2ecdd";
-    c.fillRect(x, y, cell-1, cell-1);
-    const g=trGlyphFor(ch, f);
-    if(g){
-      const em=cell*0.8, ox=x+(cell-g.w*em)/2, oy=y+cell*0.1;
-      if(rec){
-        // YOUR hand, in the pen that earned the cell (older cells predate the stored nib and fall back
-        // to the face's own, which is the pen they were almost certainly drawn with).
-        const nib=TR_NIBBY.get(rec.n) || pen;
-        for(const st of rec.s) trStampTo(c, st, nib, "#2b2620", em, ox, oy, 1);
-        // the grade, as a bar along the bottom of the cell — a percentage is unreadable at 20 px, a
-        // length is not, and the album is meant to show a hand improving.
-        c.fillStyle="#c89b3c"; c.fillRect(x, y+cell-3, Math.round((cell-1)*Math.min(1,rec.g||0)), 2);
-      } else {
-        trDrawFaceGlyph(c, g, f, trFaceChar(ch,f), useFont, em, ox, oy, "#ddd3bd", 1);
-      }
-    }
-  }
+  for(let i=0;i<26;i++)
+    alDrawCell(c, f, letters[i], (i%cols)*cell, Math.floor(i/cols)*cell, cell, useFont, pen);
   c.strokeStyle="#26233a"; c.lineWidth=2; c.strokeRect(1,1,w-2,h-2);   // the frame, last, so no cell paints over it
+}
+
+/* ---- the Tree of Faces (§17) -------------------------------------------------------------- */
+/* M4's sheet is 26 letters x ONE face. The tree is ONE letter x twelve faces arranged by kinship —
+   the other axis of the same grid, and the axis the sheet cannot give you: you cannot see that a
+   Didone's stress is vertical by looking at a Didone, only by looking at its o next to a Garalde's.
+   It is DOM rows with one small canvas per leaf, deliberately NOT the Tree of Kinds' circle pack —
+   that pack exists because 30,545 nodes fit on a screen no other way, and this is twelve leaves three
+   deep. What M5 reuses from it is its RULES (a named skeleton, a fraction per node, branch milestones),
+   not its geometry. */
+const AL_LEAF_PX=56;
+function alPenHTML(f){
+  const n=TR_NIBBY.get(f.nib);
+  if(!n) return "";
+  const owned=(state.nibs||[]).indexOf(n.id)>=0;
+  // A reference panel names the pen and its price; it never sells one. The Stall stays the one shop
+  // front (§17.5), so there is no buy button and no affordability logic here.
+  return `<span class="al-pen">${esc(n.name)} · ${owned?'<b class="al-owned">\u2713 owned</b>':esc(n.price+" ink at the Stall")}</span>`;
+}
+function alLeafHTML(f, g, top){
+  const bits=[];
+  if(g && g.stress && g.stress!=="none") bits.push(esc(g.stress)+" stress");
+  if(g && g.tell) bits.push(esc(g.tell));
+  if(f.unicase) bits.push("no case at all — its A and its a are one drawing");
+  const t=trFaceTracks(f).find(t=>t.c===(alCaseFor(f)?"up":"lo")) || trFaceTracks(f)[0];
+  // the skeleton's face and its group share a name; printing it twice says nothing
+  const sub=(g && g.name.toLowerCase()===f.name.toLowerCase()) ? bits.join(" · ")
+                                                               : esc(f.name)+(bits.length?" — "+bits.join(" · "):"");
+  return `<div class="al-leaf${top?" top":""} click" data-altface="${esc(f.id)}">`+
+    `<canvas class="al-leafcv" data-altree="${esc(f.id)}"></canvas>`+
+    `<div class="al-leaf-txt"><span class="al-name">${esc(g?g.name:f.name)}</span>`+
+    `<span class="al-leaf-sub">${sub}</span>`+
+    alPenHTML(f)+`</div>`+
+    `<div class="al-leaf-right"><span class="al-frac">${t.n}/${t.total} ${esc(t.name)}</span>`+
+    alRungsHTML(f)+`</div></div>`;
+}
+function alRenderTree(scroll){
+  const ch=album.letter;
+  let html=`<p class="al-sub">The same letter in every hand, arranged by kinship — <b>${esc(album.upper?ch.toUpperCase():ch)}</b>. `+
+    `<b>[</b> <b>]</b> step the letter; click a face for its plate.</p><div class="al-tree">`;
+  for(const [gid,g] of TR_GROUPS){
+    if(g.parent) continue;
+    const kids=[...TR_GROUPS.values()].filter(k=>k.parent===gid);
+    if(!kids.length){                       // Mechanistic and the bare hand: a top-level row with its own face
+      const own=TR_FACES.find(x=>x.group===gid);
+      if(own) html+=`<div class="al-branch">`+alLeafHTML(own, g, true)+`</div>`;
+      continue;
+    }
+    const faces=trGroupFaces(gid), done=faces.filter(trFaceComplete).length;
+    const paid=!!(state.faceMiles||{})[gid+":group:done"];
+    const pays=faces.length>=TR_GROUP_DONE.min;
+    html+=`<div class="al-branch"><div class="al-bhead${paid?" paid":""}">`+
+      `<span class="al-bname">${esc(g.name)}</span>`+
+      (g.note?`<span class="al-bnote">${esc(g.note)}</span>`:"")+
+      `<span class="al-bfrac">${done}/${faces.length} faces</span>`+
+      (pays?`<span class="al-rungs"><span class="al-rung${paid?" paid":""}" title="every face on this branch — ${TR_GROUP_DONE.ink*faces.length} ink and a ${esc(DECOR[TR_GROUP_DONE.decor].name)}">\u2605</span></span>`:"")+
+      `</div>`;
+    for(const k of kids){
+      const leaf=TR_FACES.find(x=>x.group===k.id);
+      if(leaf) html+=alLeafHTML(leaf, k);
+    }
+    html+=`</div>`;
+  }
+  scroll.innerHTML = html+`</div>`;
+  scroll.querySelectorAll("[data-altface]").forEach(el=>{
+    el.onclick=()=>alShowFace(TR_FACEBY.get(el.getAttribute("data-altface")));
+  });
+  scroll.querySelectorAll("[data-altree]").forEach(cv=>
+    alDrawTreeLeaf(cv, TR_FACEBY.get(cv.getAttribute("data-altree"))));
+}
+/* A leaf is an album CELL under the identical two rules — your strokes in the pen that earned them, or
+   the face's own glyph ghosted — by the identical call (§17.3). */
+function alDrawTreeLeaf(cv, f){
+  if(!cv || !f) return;
+  const px=AL_LEAF_PX, dpr=Math.min(2, window.devicePixelRatio||1);
+  cv.style.width=px+"px"; cv.style.height=px+"px";
+  if(cv.width!==Math.round(px*dpr) || cv.height!==Math.round(px*dpr)){ cv.width=cv.height=Math.round(px*dpr); }
+  const c=cv.getContext("2d");
+  c.setTransform(dpr,0,0,dpr,0,0);
+  c.clearRect(0,0,px,px);
+  alDrawCell(c, f, alCaseFor(f) ? album.letter.toUpperCase() : album.letter, 0, 0, px);
 }
 
 /* ---- the plate ---------------------------------------------------------------------------- */
@@ -12289,6 +12482,13 @@ document.getElementById("al-back").onclick=alShowGrid;
 document.querySelectorAll("#al-case .al-chip").forEach(b=>{
   b.onclick=()=>alSetCase(b.getAttribute("data-alcase")==="up");
 });
+document.querySelectorAll("#al-view .al-chip").forEach(b=>{
+  b.onclick=()=>alSetView(b.getAttribute("data-alview"));
+});
+// The tree's compared letter also needs a tap target: the panel opens from a touch button too, and
+// without these the tree would be stuck on `a` on a phone.
+document.getElementById("al-letter-prev").onclick=()=>alStepLetter(-1);
+document.getElementById("al-letter-next").onclick=()=>alStepLetter(1);
 // The strips are sized off the panel's width, so a resize has to redraw them (a canvas keeps its bitmap).
 addEventListener("resize",()=>{ if(state.albumOpen) renderAlbum(); });
 
