@@ -1052,7 +1052,16 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
   callout anchors are **derived from the glyph's own geometry** rather than authored per callout, and an
   empty cell shows **the face's own letter, ghosted**, so the grid is a specimen sheet before it is a
   checklist.
-- **M5 — the Tree of Faces.** The classification map (Tree-of-Kinds pattern) + group milestones.
+- **M5 — the Tree of Faces. SPECCED 2026-09-13 — see §17.** The classification map + group
+  milestones, as a **third view of the Scriptorium** (a 🌳/▦ toggle in M4's own bar) showing **one
+  letter across all twelve faces, arranged by kinship** — the axis the album's per-face sheet cannot
+  give. Rows are DOM with one canvas per leaf, **not** the Tree of Kinds' circle pack (12 leaves fit a
+  list; the pack exists for 30,545 nodes). Every row names its **pen** and whether you own it, which is
+  where §3's "the tree and `nibs.json` are one table seen twice" finally becomes visible. A **branch
+  pays once, when every face under it is complete** — counting completed faces keeps §10.5's
+  never-sum-the-cases rule out of it — at 150 ink × its faces plus a Printer's Type Case, floored at
+  branches of two or more faces. **No save bump**: `state.faceMiles`' key space already fits
+  `"classical:group:done"`.
 - **M6 — italics & bold** (§11).
 - **M7 — capitals** (§10). **BUILT 2026-09-12 — and it landed BEFORE M3, which cancels the fallback M3
   owed it.** As built: **26 capital skeletons** in `wordshape-draw.html`'s shared `GLYPHS` table (52 glyphs
@@ -1330,3 +1339,149 @@ Fixed with **`#cv.tracing{touch-action:none}`**, the class added in `openTrace` 
 `pointercancel` now also **says** the stroke was interrupted instead of dropping it in silence. The stroke
 is still discarded (half a stroke is not the stroke), but a cancel can still arrive from a second finger or
 a system gesture, and a stroke that vanishes with no message reads as the pad being broken.
+
+---
+
+## 17. M5 — the Tree of Faces (SPECCED 2026-09-13)
+
+The classification map and the group milestones. Four forks were put to the dev before a line was
+written; all four took the recommendation, and the reasons are recorded below rather than the choices
+alone.
+
+### 17.1 What it is for — the album cannot give you this picture
+
+M4's sheet is **26 letters × one face**. The tree is **one letter × twelve faces, arranged by kinship**,
+which is not a re-skin of the sheet but the other axis of the same grid — and it is how type
+classification is actually taught: you cannot see that a Didone's stress is vertical by looking at a
+Didone, only by looking at a Didone's `o` next to a Garalde's. So the tree is the **comparison specimen
+sheet**, and §3's whole claim (*stroke contrast is a record of the tool*) is finally laid out in one
+picture to be agreed or disagreed with.
+
+It is also where the feature's other half-stated claim becomes legible: **the tree and `data/nibs.json`
+are one table seen twice** (§3, §6). A branch row names its pen; Lineal's three leaves visibly share one,
+which is the honest consequence M2 recorded and could not show anywhere until now.
+
+### 17.2 Where it lives — a third view of the Scriptorium, not a second panel
+
+A **`🌳 Tree` / `▦ Sheet` toggle** in the album's existing `.al-bar`. Same 📜 button, same panel, same
+guard flag, same case chips, same fonts (`alAfterLoad` already loads all twelve woff2s). Clicking a leaf
+opens the **M4 plate** — so the tree is a second way *into* the album rather than a second album, and
+`al-back` returns to whichever view you arrived from.
+
+Rejected: its own toolbar button and `state.treeOpen`, which would duplicate the case toggle, the font
+loading and the plate link, and add a twelfth toolbar button for a view that is twelve rows long.
+
+View state is session-only, beside `album.face`:
+
+```js
+const album = { face:null, upper:false, view:"sheet", letter:"a" };   // view + letter are new
+```
+
+Keys, extending §15.5's list: **`T`** toggles sheet/tree, and **`[`/`]` step the compared LETTER while
+the tree is up** — on the tree no face is selected, so those two keys currently do nothing there, and
+stepping the letter is exactly what you want to do while comparing. On a plate they keep stepping faces.
+
+### 17.3 What a leaf draws
+
+**A cell is a cell everywhere in this feature.** A leaf draws the chosen letter under the same two rules
+as an album cell (§15.2), by the same two calls:
+
+- **filled** → *your* strokes, stamped with the nib that earned them (`trStampTo`, `rec.n` falling back
+  to `f.nib`), with the **gold bar = that cell's grade**;
+- **empty** → the face's own glyph, **ghosted** (`trDrawFaceGlyph`), so the tree is a specimen sheet
+  before it is a checklist, exactly like the grid.
+
+**One gold bar, one meaning.** The obvious temptation is to make the leaf's bar carry the *face's*
+fraction; it must not, because the identical shape already means *this cell's grade* two views away. The
+face's fraction rides the row as text (`7/26 minuscules`) beside M4's existing rung pips
+(`alRungsHTML`), which are already built and already say more than a bar could.
+
+Case follows the existing chips through `alCaseFor(f)`, so **Uncial folds** (its row shows the same
+drawing under either chip and its caption says why), and the letter is resolved per face with
+`trFaceChar`.
+
+**The per-cell drawing code moves into one function.** `alDrawSheet`'s inner loop becomes
+`alDrawCell(c, f, ch, x, y, size)` and both views call it. Two copies of "how a cell looks" is precisely
+the drift that would let the tree and the sheet disagree about your own handwriting.
+
+### 17.4 The shape on screen — DOM rows, one canvas per leaf
+
+**Not the nested-circle pack.** [`punctuators-ladder.md`](punctuators-ladder.md) §13's front-chain pack
+exists because 30,545 nodes will not fit on a screen any other way; **this tree is 12 leaves, 3 deep, and
+fits in a list**. Drawing circles here would be the pattern using us. What M5 genuinely reuses from the
+Tree of Kinds is its *rules* — a named skeleton, a progress fraction on every node, milestones keyed to a
+branch — not its geometry.
+
+So: indented **DOM rows** with CSS connectors, and **one small canvas per leaf** (twelve, against the
+sheet's twelve strips) — because only the letterform needs a canvas. Text, hit-testing, wrapping and the
+phone layout all come free, and a leaf row is a real `click` element like `.al-face` already is.
+
+```
+Classical                          broad pen · faces that still remember a pen
+ ├ Humanist (Venetian)   [a]  broad 30° ✓ owned      7/26 · l25 l50 l100 u25 …
+ ├ Garalde (Aldine)      [a]  broad 20° ✓ owned     26/26 · ★
+ ├ Transitional (Réale)  [a]  pointed · 150 ink      0/26
+ └ Didone                [a]  pointed · 240 ink      0/26
+Mechanistic (slab)       [a]  round  · 90 ink        3/26
+Lineal (sans)                      one pen, three leaves — told apart by PROPORTION
+ ├ Grotesque             [a]  round monoline ✓      26/26 · ★
+ …
+```
+
+Each **branch header** carries the group's own authored copy — `note`, and for a leaf row its `stress`
+and `tell`. Those three fields have been sitting in `data/typefaces.json` since M2 **unused by any
+view**; the tree is what they were written for.
+
+### 17.5 The pen on every row — and no shop inside the album
+
+A leaf names its nib and its state: **`✓ owned`**, or **`240 ink at the Stall`** when it isn't. Read
+straight off `TR_NIBBY` and `state.nibs`; no affordability logic, no buy button, no second shop front in
+a reference panel. The Stall stays the one place a pen is bought (§7), and the tree's job is to tell you
+*which* pen a branch is asking for and roughly what it costs to raise your ceiling there.
+
+It also makes §3's recorded honesty visible without a paragraph: **Lineal's three leaves show the same
+pen**, because a monoline has no stress to vary, and the branch note already says so.
+
+### 17.6 Group milestones — a branch pays once, for completed FACES
+
+| rung | condition | pays |
+| --- | --- | --- |
+| **the branch** | every face under it complete | **150 ink × its faces** + a Printer's Type Case |
+
+Counting **completed faces** rather than cells is what keeps §10.5 out of this entirely: a face is
+complete or it isn't (`trFaceComplete`, which already reads both tracks and never sums them), so a branch
+milestone never has to decide whether to add minuscules to capitals. Classical pays 600, Lineal and
+Calligraphic 450 — the ink scales with the branch so a four-face trophy is worth more than a three-face
+one without a second table.
+
+**Only branches of two or more faces pay.** Mechanistic and the skeleton are top-level rows with a single
+face each, and a "branch" of one is the face you were already paid 200 ink for at §15.3's ★. This is the
+Tree of Kinds' own shelf-milestone floor arriving for the same reason it did there.
+
+**No save bump.** The key space `state.faceMiles` took at v14 is `"<id>:<track>:<rung>"`, so a group rung
+is `"classical:group:done"` and needs no new field, no migration and no version — v14 stands. Payment
+rides `claimAlbumMilestones()`, which already runs both on a trace's success path and on album open, so a
+branch completed by a trace pays in the same breath as the letter, and a pre-M5 save that has already
+finished a branch settles on first open. `trMileToast` grows one case.
+
+A paid branch header goes gold and takes a ★ pip, in M4's `al-rung` idiom.
+
+### 17.7 What M5 deliberately will not do
+
+- **No nested-circle map** (§17.4).
+- **No buying inside the album** (§17.5).
+- **No per-branch décor id.** One generic `DECOR.typecase` (🖨️ Printer's Type Case), for exactly the
+  reason §15.3 gives for the framed specimen: `applySnapshot` filters `state.placed` through `DECOR` long
+  before the lazy `typefaces.json` lands, so a generated per-branch id is dropped as unknown on every
+  load. Three branches earn three copies of one object.
+- **No new fetches and no new data.** `typefaces.json`, `nibs.json`, the alphabet and all twelve woff2s
+  are already loaded by the time the album is open.
+- **No italic/bold axis** — that is M6 (§11), and the tree is where it will eventually hang.
+
+### 17.8 The surface it touches
+
+Inside the M4 block: `alRenderTree`, `alDrawCell` (extracted from `alDrawSheet`, which then calls it),
+`trGroupFaces`/`trGroupComplete`, one loop in `claimAlbumMilestones`, one case in `trMileToast`,
+`alStepLetter`, the view toggle in `renderAlbum`/`alShowGrid`, and `alRefreshFace` learning to redraw a
+tree leaf as well as a strip when a late woff2 lands. Outside it: two buttons in the `#album` markup,
+their CSS, one `DECOR` entry, and one line in the album's key handler.
