@@ -1,9 +1,15 @@
 # Inklings — The Scriptorium: letter tracing & typeface collecting
 
-**Status: SPECCED 2026-09-11. M1 (the nib engine + the stroke scorer), M2 (the faces) and M7 (the capitals)
-are BUILT in the standalone bench `inklings-trace.html` — see §12. Nothing is in `inklings.html` yet; the
-capture verb is unchanged in game. The skeleton alphabet now covers all **52 letters** (M7, 2026-09-12), so
-capitals are no longer a blocker on M3 — see §10.**
+**Status: SPECCED 2026-09-11. M1 (the nib engine + the stroke scorer), M2 (the faces), M2.5 (the font
+scorer) and M7 (the capitals) are BUILT in the standalone bench `inklings-trace.html`; **M3 — the fold-in —
+is BUILT in `inklings.html` 2026-09-12, so THE LOOP IS CLOSED and the game plays differently**: inklings
+are no longer hit, they are written. See §12. M4 (the Scriptorium album), M5 (the Tree of Faces) and M6
+(italics & bold) remain.**
+
+**First play, 2026-09-13 → §14 is the fix list.** One bug fixed (the pad layer was clipping at half height),
+and **three changes to what the feature does, two of them reversals**: the `?` peek is **cut** (the whole
+letter simply shows), the pad gains a small **specimen of the target letter in its face**, and the trace
+**opens on a SWING, not `E`**. Read §14 before touching §5.4 or §9 — both are now partly history.
 
 **AMENDED 2026-09-12 (§5.7) and BUILT the same day as M2.5 in the bench: a trace is graded against the REAL
 TYPEFACE, not against the shared skeleton.** Your `a` in Blackletter has to look like a blackletter `a`.
@@ -256,7 +262,13 @@ score against the face's own font, and the mean of stroke fidelities is not used
   animation before the first attempt — that is a demo, not a game.
 - **One stroke at a time**, with the completed strokes staying inked, so the glyph builds.
 - **In-world, not a modal.** The field already freezes creatures while a dialog is open; trace over the
-  creature's own position. A full-screen overlay for a one-second gesture is churn.
+  creature's own position. A full-screen overlay for a one-second gesture is churn. **Confirmed by the dev
+  at M3 and BUILT that way**, over the alternative of a `.book` overlay like every other bench — even
+  though M2/M2.5 had since added chrome this bullet didn't anticipate (the face name, the pen rack, the
+  peek, the coverage read-out). All of it is drawn **on the game canvas**, in a parchment card centred on
+  the creature and clamped to the screen, so the dim field and the inkling underneath stay part of the
+  picture. The cost is that the pad has to be cheap to redraw at 60 fps — see §12's M3 on the cached
+  layer, which is the only real complication the choice created.
 - **Touch is the better input** (a finger drag is the real gesture); on desktop the player is standing
   still, so a mouse drag on the canvas is free.
 - Budget: a `l` is a flick, a `g` is two strokes and a real motion. **Sub-two-seconds for common letters**
@@ -280,6 +292,9 @@ feel the mistake rather than by announcing it afterwards.
 
 A **`?` peek** is always available and always costs the same thing: it names the pen and **forfeits the
 face for that capture**. You still get the letter. (No ink price — the cost is already the interesting one.)
+**CUT 2026-09-13 — see §14.2.** It was answering a question §5.7 had already answered: the face's own glyph
+is ghosted under the pad, so the letterform is always on screen. Built in M3, removed in the next pass; the
+consequence for this ladder's **cold** rung is recorded there.
 
 **Built in the bench at M2**, all three rungs reachable by button so each can be looked at, with the rung
 the album *would* put you on shown beside them (`< 2 faces → named`, `< 5 → cued`, else cold). The cued
@@ -496,9 +511,14 @@ artifact for it is the thing the trade already has: a **type specimen sheet**.
   for the Wordhoard, through the existing placement primitive
   ([`inklings-placement.md`](inklings-placement.md)). **Capitals get their own fraction, not a bigger
   denominator** — see §10.5, where folding them in would silently un-fire a milestone that has already paid.
-- **Nibs are the progression gate.** You buy or craft a nib at the Stall with ink, and a face whose nib you
-  don't own is uncatchable-as-a-face (the letter is always catchable). That reuses the shop and gives ink a
-  new sink without inventing an economy.
+- **Nibs are bought at the Stall with ink** — the shop reused, a new ink sink, no new economy.
+  **AMENDED 2026-09-12 (dev's call, building M3): a nib is not a GATE.** This bullet used to say a face
+  whose nib you don't own is *uncatchable-as-a-face*; it isn't. Every face is traceable with any pen you
+  own — the wrong pen simply cannot score well enough to fill the cell, because §5.7 already measures
+  exactly that (too thin and coverage collapses, too fat and fidelity does). So the flag was doing, badly
+  and invisibly, a job the grade does honestly and in front of you. The consequence is better than the
+  rule it replaces: ink buys you a **higher ceiling**, not an unlocked door, and a player can always go
+  and *see* what a better pen would buy them by trying the wrong one and watching it fail.
 
 **Save shape** (`state` additions; the Sound Board took v12, so this is **v12 → v13**):
 
@@ -536,7 +556,8 @@ album is a record of your hand and not a list of scores.
   and it lets the screen wear its hand in its own chrome (a specimen mark in the corner, or the paper stock)
   — optional, and easy to overdo.
 - **Font loading gets easy.** One face per screen means one subset per screen: load on screen entry,
-  prefetch the four neighbours, fall back to the `Alpha.png` stamp until it resolves.
+  prefetch the four neighbours, fall back to the `Alpha.png` stamp until it resolves. **BUILT exactly so**
+  (`trPrefetchFaces`, on `goScreen` and at `startGame`).
 - **Rarity multiplies for free.** A `q` in blackletter is rare twice over, with no new tuning table.
 - **The field glyph is drawn with the real font** — `ctx.font` with the loaded face, falling back to the
   `Alpha.png` frame (`SPRITESHEET.letterToFrame`, `drawGlyphTo`) until it resolves. The creature shows you
@@ -547,9 +568,15 @@ album is a record of your hand and not a list of scores.
   trace pad that works for all 52 letters** — but the satchel gate still keeps its `!isUpper(c.letter)`,
   which is load-bearing for its own reason (§10.8).
 - **A starter face.** Early game must not demand classification, so the first face is **the bare monoline
-  skeleton itself** — "the hand you already write in" — with the round nib owned from the start. Faces then
-  unlock on a curve, the way capitals do at `LOWER_DONE_AT`. v1's tracing *is* the tutorial; the collection
-  opens later.
+  skeleton itself** — "the hand you already write in" — with the round nib owned from the start. v1's
+  tracing *is* the tutorial; the collection opens later.
+  **AS BUILT (M3), and this replaced the "faces unlock on a curve like `LOWER_DONE_AT`" line that used to
+  end this bullet: there is no unlock curve, because two things the game already has make one unnecessary.**
+  (a) The distance weighting above *is* the curve — near home 73% of screens wear one of the four monoline
+  faces the free pen writes, falling to 50% at the frontier (measured). (b) §7's amendment means an unowned
+  pen is a low grade, not a locked door, so a rare face met early is a letter you still catch and a cell you
+  don't yet fill — which is the right kind of "come back for this". **Home (0,0) is hard-coded to the
+  skeleton** so the one guaranteed home inkling is always the tutorial one.
 
 ---
 
@@ -566,8 +593,10 @@ offers practice, so the pressure to re-roll the map away from a face you already
 
 ## 9. What this changes in the existing code
 
-The letter branch of `doAttack` (`inklings.html:3813`–`3830`) is the whole surface. Everything it does
-moves to the trace's success path — and it is easy to move one of these and forget another:
+**DONE — M3, 2026-09-12.** Every row below has moved; the table stands as the map of *where each one went*,
+which is worth keeping because these are exactly the rows a later edit could quietly drop. `doAttack`'s
+letter branch is now three lines of comment and a `swungAtInkling = true`, and the whole right-hand column
+lives in `trGrantLetter` / `trFinishLetter`, except the satchel gate, which is the trace-**open** check.
 
 | Today, in `doAttack` | After |
 | --- | --- |
@@ -583,17 +612,30 @@ moves to the trace's success path — and it is easy to move one of these and fo
 Also:
 
 - **Opening the trace**: the action key near the creature, reusing the `E`-to-use-bench / `tileInFront`
-  idiom, **not** a swing. Recommended over a swing because it is the same gesture as every other "interact
-  with this thing" in the game, and it retires the accidental-letter-kill case entirely.
-- `CREATURE_HP = 1` becomes cube/resource-only; the comments at `inklings.html:1889` and the `ATTACK_STEP`
-  comment at `:2609` both name it and go stale.
-- **Six overlay guards**, the same six the Sound Board had to join (`:3537`'s key handler, `:3955`, `:4041`
-  `canBeHurt`, `:4090` `hintReady`, `:4112`, plus `closeAnyDialog`) — a new `state.tracing` must be added to
-  all of them. This is the edit that gets half-done.
+  idiom, **not** a swing. It is the same gesture as every other "interact with this thing" in the game, and
+  it retires the accidental-letter-kill case entirely. As built, `inklingInFront()` is checked **first** in
+  `tryUseBench` — before the shop and the house — because it is the specific and far commoner interaction,
+  and a swing at an inkling now does nothing but say so once.
+  **REVERSED 2026-09-13 — see §14.4: a SWING opens the trace.** `E` was defending against the accidental
+  letter-kill, and that case is already gone by construction once nothing can damage an inkling — so the
+  worst a stray swing can now do is open a pad you leave with `Esc`, which costs nothing.
+- `CREATURE_HP = 1` becomes cube/resource-only — **done**: it is vestigial for letters (kept only so the
+  shared creature shape stays uniform), and the three comments that named it were rewritten.
+- **The overlay guards**, the same ones the Sound Board had to join — a new `state.tracing` in all of them.
+  This is the edit that gets half-done, so as built it was done by walking **every** guard list that names
+  `state.soundboardOpen` — the field movement gate, `canBeHurt`, both `hintReady`s, `updateLibrary`'s
+  movement gate, `syncTouchUI`, `phonHideSound` and `musicDialogueOpen` — plus its own early branch in the
+  key handler and a line in `closeAnyDialog`. **Three of the matches were NOT guard lists** and were put
+  back: two `if(!state.soundboardOpen) return;` inside Sound Board callbacks and its resize handler are the
+  board asking *am I open?*, not a list of dialogs to stand clear of, and a blanket replace inverts them.
+  Adding `state.tracing` to `canBeHurt` is what freezes the creatures while the pad is up, which §5.3
+  assumed without saying.
 - The `competition` stat ladder's attack rungs stop touching letter capture (they barely did — `CREATURE_HP`
   is 1). No migration, but the stats panel copy may need a word.
 - `data/wordshape-alphabet.json`, `data/nibs.json`, `data/typefaces.json` and the `fonts/` subsets are new
-  fetches — all local files, consistent with the existing data-file exception.
+  fetches — all local files, consistent with the existing data-file exception. The three JSONs are fetched
+  once at `startGame`; the fonts arrive one screen at a time. **If any of it fails, the letter is still
+  caught** (`trPlainCatch`) — a missing file must never make the economy unplayable.
 
 ---
 
@@ -939,15 +981,58 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
   Also verified numerically rather than by eye: the 3-4 chamfer transform agrees with a brute-force
   euclidean distance to **1.6 px worst case on a 64² grid** (mean 0.43), which is the expected ~3% for those
   weights and far inside anything the grade can notice.
-- **M3 — fold into `inklings.html`.** The trace overlay replaces the letter branch of `doAttack` (§9), field
-  glyphs draw in their face with the `Alpha.png` fallback, the six guards, save v12 → v13, the starter face
-  and the nib shop entries. **The loop closes here** — this is the milestone after which the game plays
-  differently. **§10.2 is already answered**: M7 landed first, so the skeleton covers all 52 letters and
-  M3 needs no `isUpper` fallback on the trace-open check. It still needs `!isUpper(c.letter)` on the
-  *satchel* gate (§10.8) — that row is load-bearing for a different reason. It also needs
-  `data/wordshape-alphabet.json` to actually exist: the bench slices `wordshape-draw.html` live, which the
-  shipped game cannot do, so the tool's own `⬇` export (or a one-command headless re-run of the same slice)
-  lands that file in `data/` — **no drawing, just the 52 glyphs that are already authored**.
+- **M3 — fold into `inklings.html`. BUILT 2026-09-12. THE LOOP IS CLOSED** — this is the milestone after
+  which the game plays differently. One `/* THE SCRIPTORIUM */` block holds the whole ported engine (M1's
+  nib + gates, M2's faces, M2.5's chamfer scorer), and the surface it touches outside that block is small:
+  `doAttack`'s letter branch, `tryUseBench`, `drawCreature`, `render`, the guards, the shop and the save.
+  - **`data/wordshape-alphabet.json` now exists**, emitted by a new repo-root **`build-wordshape-alphabet.js`**
+    — the headless equivalent of the tool's own `⬇` button (same slice of `wordshape-draw.html`'s `GLYPHS`
+    block, same `alphabetJSON()` shape, 52 glyphs / 38 KB). The bench can slice a dev tool live; the shipped
+    game cannot, and a hand-copied table is exactly the drift that slice exists to prevent — so the file is
+    **generated, never edited**, and re-running the script is one command after any glyph change.
+  - **A swing passes THROUGH an inkling** (dev's call): no damage, no knockback, plus a one-time toast
+    *"Inklings are caught, not fought — press E to write it."* Chosen over letting a swing open the pad,
+    because the whole point of §1 is that a swing aimed at a beast can no longer cost you a letter, and
+    over keeping the knockback, which would leave a swing meaning two things. `CREATURE_HP` is now
+    vestigial for letters (comments updated at its declaration, at `equipBonuses` and at `ATTACK_STEP`).
+  - **The pad is in-world, all on canvas** (§5.3, confirmed by the dev over a DOM overlay): the field dims,
+    a parchment card is drawn **centred on the creature** — so you really do trace over the inkling's own
+    position — carrying the face name, its branch of the tree, the pad, the pen rack and the status line.
+    Pointer input is three capture-phase listeners on `#cv`; a tap outside the card leaves.
+  - **The one thing the port could not do naively is redraw.** The bench redraws on demand; the game draws
+    at 60 fps, and stamping a nib is a few hundred `fill`s per stroke. So the pad's **static ink** (the
+    parchment, the metric lines, the ghosted face glyph, the dotted stroke order, every accepted stroke and
+    the numbered start dot) is built once into an offscreen layer keyed on
+    `face|letter|nib|strokes done|font state|size|drawing?` and blitted; **only the stroke in your hand is
+    live**. That key rebuilds twice per stroke and never per frame.
+  - **The face a screen wears** is `mulberry32(hash2(sx,sy) ^ daySeed ^ salt)` over §8's weighting, and
+    **a face's rarity is its PEN'S PRICE** — `data/nibs.json` already ranks the pens and the ranking is the
+    right one, so no second table was invented. Measured: near home **73%** of screens wear one of the four
+    monoline faces (the free pen), falling to **50%** at the frontier, with blackletter 2.8% → 5.3%.
+    **Home (0,0) is always the bare skeleton** — the guaranteed home inkling is the tutorial, and it should
+    never be the day you meet Textura.
+  - **Fonts load per screen** (`trPrefetchFaces` on `goScreen` + at `startGame`: this screen and its four
+    neighbours), which is the whole reason §8 made the face a property of the screen. The field glyph draws
+    in the real face once its woff2 resolves and falls back to the `Alpha.png` frame until then — and the
+    skeleton face has no font, so the starter hand stays the hand-drawn sheet for good. Never tofu.
+  - **§10.2 was already answered** by M7 landing first, so no `isUpper` fallback was ever written. The
+    *satchel* gate does keep its `!isUpper(c.letter)`, moved verbatim onto the trace-**open** check (§10.8).
+  - **A missing data file must never cost you a letter.** If any of the three JSONs fails to fetch, or a
+    letter somehow has no skeleton, `trPlainCatch` grants it the way `doAttack` used to and says nothing
+    about faces. One bad deploy cannot make the economy unplayable.
+  - **Guards**: `state.tracing` joined every list that names `state.soundboardOpen` (nine of them, plus
+    `closeAnyDialog`, `phonHideSound` and `syncTouchUI`) — which also freezes the creatures, since
+    `canBeHurt` is what moves them. Touch gets a contextual **WRITE** button beside CAST.
+  - **Save v12 → v13**: `state.faces` (the album), `state.nibs` (pens owned) and `state.nib` (equipped) join
+    `snapshot`/`applySnapshot`, hence Export/Import. Old saves start where everyone does, with the round
+    monoline, and `round-mono` is re-inserted if a save somehow lacks it — the free pen can't be lost.
+  - **Played 2026-09-13, and it found four things — see §14.** One was a real bug (the cached pad layer
+    clipped at half height, because a fresh canvas defaults to 300x150 and `TR_PAD_PX` is 300, so testing
+    the width alone passes); the other three change the feature and are the next pass.
+  - Still M4's, and deliberately not built here: the album view. The cells accumulate (grade + the 16-point
+    strokes that earned them) with nothing yet to look at but a toast naming the face, the grade and the
+    fraction — **the two fractions shown separately and never summed** (§10.5), which is `trFaceCells`
+    earning its keep in M3 rather than waiting.
 - **M4 — the Scriptorium.** The album, the per-face plate with anatomy callouts, the 25/50/100% milestones
   paying ink + décor, the framed-specimen décor item.
 - **M5 — the Tree of Faces.** The classification map (Tree-of-Kinds pattern) + group milestones.
@@ -964,9 +1049,10 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
   signwriter nib** (§13 #5, answered: it ships). No new fetches, no save bump, no font work — the fonts
   already subset all 52. Full build notes in **§10.10**.
 
-Sound is **provisional** and nothing depends on it: a nib scratch per stroke whose pitch tracks stroke
-length, a pen-lift tick between strokes, and a distinct chime for *face earned* that must not sound like
-the existing `capture` (the letter and the face are two different wins).
+Sound is **provisional** and nothing depends on it. **M3 shipped two of the three** on the game's existing
+`tone`/`seq` kit, no assets: a **pen-lift tick** on each accepted stroke, and a **`facewon` chime** that
+deliberately *climbs* where `capture` falls — the letter and the face are two different wins and must not
+sound like one. The per-stroke scratch whose pitch tracks stroke length is still unbuilt.
 
 ---
 
@@ -987,8 +1073,10 @@ the existing `capture` (the letter and the face are two different wins).
 6. **Does a true blackletter majuscule skeleton ever get drawn** (§10.6), alongside the true italic, or do
    the plates simply tell the truth about the approximation? Both are "a second skeleton", which §11 argues
    is the lesson rather than the cost.
-7. **Is a personal best worth showing anywhere but the album?** A tiny `new best` float on the capture is
-   nearly free; a per-face average on the plate edges toward a report card.
+7. ~~**Is a personal best worth showing anywhere but the album?**~~ **Answered by building M3, the way this
+   leaned**: the capture floats the face and the grade over the creature and toasts `(was 82%)` when you beat
+   a cell, plus the face's own fraction. It cost nothing and it is the only feedback the album gives until
+   M4. A per-face *average* on the plate is still the thing to resist — that is a report card.
 8. **Does anything replace §5.3's snap?** §5.7 had to drop it (it pulled toward the skeleton), so a scruffy
    stroke now stays scruffy. A light pull toward the font's own medial axis is the obvious candidate and is
    probably more machinery than the feel is worth. **Decide on the bench at M2.5, with the slider at 0.**
@@ -998,3 +1086,69 @@ the existing `capture` (the letter and the face are two different wins).
 10. **Do the three divergent faces (Blackletter, Uncial, Script) eventually earn their own skeleton?** This
    is #6 asked from the other side, and §5.7 makes it visible rather than urgent: the ghost carries the
    shape, so the only thing the shared skeleton gets wrong for them is the suggested stroke *order*.
+
+---
+
+## 14. M3 play-test fix list (opened 2026-09-13, after the first play)
+
+Four findings from playing M3. **One is fixed; the other three are the next pass**, and all three are
+changes to what the feature *does*, not polish — two of them reverse decisions this doc argued for, which is
+the point of playing it.
+
+### 14.1 FIXED — only the top half of the letter was visible
+
+Not a geometry bug and not the data: the skeleton occupies y 34.8→260.4 in a 300 px pad, and the real font
+at the same em reaches y ≈ 22.8 at its tallest, so everything was comfortably inside. The cause was §12's own
+cached pad layer: **a fresh `<canvas>` defaults to 300 × 150**, `TR_PAD_PX` is **300**, and the guard tested
+`_trPadCv.width !== px` — which is **false on the very first call**, so the height was never assigned and
+stayed 150. The layer clipped at exactly half the pad, which is why the symptom was so clean. Fixed by
+testing both dimensions. Worth remembering as a general trap: *any* size check against a fresh canvas must
+not test width alone, because 300 is a value a layout can legitimately want.
+
+### 14.2 The `?` peek is CUT — the whole letter simply shows (dev's call)
+
+The dev's words: *"I don't even want a peek anyway, I just want the whole letter to show."* And he is right
+that the peek was answering a question the ghost had already answered — §5.7 put the face's own glyph under
+the pad, so the letterform is *always* on screen; the peek was a holdover from the M1 world where the target
+was the shared skeleton and the face was a guess you made blind.
+
+What to delete: `trPeek`, `trace.peeked`, the `0` key, the header's `0 = ? peek` / `PEEKED` label, the
+forfeit branch in `trFinishLetter`, and the `peeked` arm of `trMissReason`. **What this costs, and the next
+pass has to decide it rather than discover it:** §5.4's three-rung ladder loses its escape hatch, so on the
+**cold** rung a player facing a face they can't classify has no way out but to guess and re-meet the
+inkling. That is probably fine — a wrong pen still earns the letter, and §8.1 says duplicates are the point
+— but it means the ladder's top rung is now genuinely cold, and §13 #9's "is the ghost too generous a guide"
+becomes the *only* remaining difficulty knob.
+
+### 14.3 Show the END GOAL on the pad — the letter as it should look, in its face
+
+The dev asks for the target rendered small, **upper-right corner** suggested: *"if letter is a b in
+blackletter then show that in a smaller screen."* This is the bench's four-cell specimen strip finally
+reaching the game, cut down to the one cell that matters while you are drawing — and it is nearly free,
+because `trDrawFaceGlyph` already draws exactly this and the raster already exists as the scoring target.
+
+Two things to get right. It must be drawn by **the same `trDrawFaceGlyph` call as the ghost and the mask**,
+or the game acquires a third shape that can disagree with the other two. And it should sit where the
+**cued-rung stress mark** currently sits (`trace.x + trace.px - 26, trace.y + 26`), so those two need a
+layout decision between them — the thumbnail arguably *replaces* the stress tick, since a small true
+specimen shows the thick/thin axis better than an angle mark does.
+
+### 14.4 A SWING opens the trace, not `E` — reversing §9 and the M3 build
+
+The dev's words: *"I do want this screen to just activate on a swing rather than pressing the 'e' key.
+Pressing 'e' is just not intuitive."* This reverses both §9's recommendation and the fork answered while
+building M3 (where a swing was made to pass through with a one-time toast). Take it as settled.
+
+The reason §9 wanted `E` was to retire the accidental-letter-kill case, and that reason is **already gone by
+construction**: a swing can no longer kill an inkling, because nothing damages one any more. So the worst a
+stray swing at a beast standing beside an inkling can now do is *open a pad you can leave with `Esc`* —
+which costs nothing, since a trace is free to abandon and the creature stays. That is a much smaller
+objection than the one `E` was defending against, and the dev's is the better read: swinging at the thing is
+what the game has trained you to do.
+
+What to change: `doAttack`'s letter branch calls `openTrace(c)` on the first inkling in range instead of
+setting `swungAtInkling`; the one-time *"inklings are caught, not fought"* toast and `_inklingHintShown` go;
+`inklingInFront()` stays (the touch **WRITE** button and the `E` prompt both use it, and keeping `E` working
+as a second way in costs one line). Two details not to lose: the swing still plays its cue and still runs
+its cooldown, so a whiff is a whiff; and the satchel gate lives in `openTrace`, so a full satchel must still
+refuse *and say so* rather than opening a pad that can't pay out.

@@ -67,7 +67,7 @@ This single loop is the whole game. Everything else is a layer on top of it.
 ```
 Home base (writing desk + library)
       → enter a field screen ("book")
-      → hunt letter-creatures, attack to make them drop a letter
+      → hunt letter-creatures, WRITE one to catch it (trace its letter — inklings-typography.md)
       → collect letters into your inventory
       → walk back to the home base + enter the library
       → spell a word at the desk
@@ -729,9 +729,13 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   (`MAP_RADIUS`, currently 3×3; walls at the world edge), regenerated each real calendar day; walk-off-edge
   travel between screens with a smooth **screen-slide** transition; explored-area minimap (resets daily) — in the right desktop side panel / top mobile HUD band, with a
   translucent bottom-right on-canvas fallback on narrow desktop windows.
-- Attack-based combat (no bump-to-collect); **letter-creatures** (`kind:"letter"`) are captured in a
-  **single hit** (`CREATURE_HP = 1`) and drop their letter. The satchel holds a capped number of letters
-  (`state.bagCap`, starts at 10); when full, **letter capture** is blocked (you can still fight cubes).
+- Attack-based combat (no bump-to-collect) — but **inklings are caught, beasts are fought**
+  ([`inklings-typography.md`](inklings-typography.md), BUILT 2026-09-12 as M3). A swing damages only
+  cubes and resource-creatures; it passes straight **through** a **letter-creature** (`kind:"letter"`),
+  which you capture by pressing **E** at it and **tracing its letter** on an in-world pad. `CREATURE_HP`
+  is vestigial for letters — nothing damages them, which retires the accidental-letter-kill case. The
+  satchel holds a capped number of letters (`state.bagCap`, starts at 10); when full, the **trace won't
+  open** for a lowercase letter (capitals bypass it — they bank in `state.caps`, uncapped).
 - **Letters are now rare** — `letterScatter(rng)` gives a thin, even scatter (usually 0, sometimes 1–2
   per screen) so finding one feels good; the WOTD's guaranteed pinned letters (`Math.max(scatter,guar)`)
   still ensure the daily word is makeable. `screenCreatureCount`/`dayTotalCreatures` (the "all letters
