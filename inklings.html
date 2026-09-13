@@ -253,6 +253,61 @@
     #phonicon .book{height:auto;max-height:92vh;overflow:auto;display:block}
     .phon-grid{grid-template-columns:repeat(3,1fr)}
   }
+  /* ---- The Scriptorium album (docs/inklings-typography.md §7) — a type specimen sheet of your own
+     hand. One STRIP per face rather than a 26-column table: a row of tiny canvases would be 312 elements
+     and a squeezed one on a phone, where a single canvas per face draws the same thing at whatever width
+     the panel happens to be and re-renders in one call when a late woff2 lands. ---- */
+  #album{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
+    align-items:center;justify-content:center;padding:18px;z-index:7}
+  #album.open{display:flex}
+  #album .book{position:relative;display:flex;flex-direction:column;height:min(640px,92vh);
+    overflow:hidden;max-width:760px;width:100%}
+  #album .book>h1,#album .book>.al-bar,#album .book>.al-legend{flex:none}
+  .al-bar{display:flex;align-items:center;gap:10px;margin:4px 0 8px}
+  .al-back{font-family:var(--disp);font-size:8px;text-transform:uppercase;cursor:pointer;
+    background:var(--paper-2);border:2px solid var(--edge);color:var(--ink);padding:5px 9px;
+    box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .al-back:hover{background:var(--gold);color:#26233a}
+  .al-case{display:flex;gap:4px;margin-left:auto}
+  .al-chip{font-family:var(--disp);font-size:8px;cursor:pointer;background:var(--paper-2);
+    border:2px solid var(--edge);color:var(--ink-soft);padding:5px 9px;box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  .al-chip.on{background:var(--gold);color:#26233a}
+  .al-scroll{flex:1;min-height:0;overflow-y:auto;padding-right:4px}
+  .al-legend{font-family:var(--read);font-size:12px;color:var(--ink-soft);margin:8px 0 0}
+  .al-face{border-top:2px solid var(--line);padding:8px 0 10px}
+  .al-face:first-child{border-top:none}
+  .al-face.click{cursor:pointer}
+  .al-face.click:hover .al-name{color:var(--gold)}
+  .al-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+  .al-name{font-family:var(--disp);font-size:9px;text-transform:uppercase;color:var(--ink)}
+  .al-group{font-family:var(--read);font-size:12px;color:var(--ink-soft)}
+  .al-frac{font-family:var(--disp);font-size:8px;color:var(--gold);margin-left:auto}
+  .al-rungs{display:inline-flex;gap:3px;margin-left:8px}
+  .al-rung{font-family:var(--disp);font-size:7px;line-height:1;padding:2px 4px;border:1px solid var(--edge);
+    color:#4a4560;background:var(--paper-2)}
+  .al-rung.paid{background:var(--gold);color:#26233a}
+  /* No CSS border: the frame is drawn INSIDE the canvas, so the element's clientWidth/Height are exactly
+     the bitmap's and a cell can't be squashed by a border the drawing code doesn't know about. */
+  .al-strip{display:block;width:100%;background:var(--paper-2);box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+  /* the plate */
+  .al-meta{font-family:var(--read);font-size:13px;color:var(--ink-soft);margin:0 0 8px}
+  .al-meta b{color:var(--ink)}
+  .al-plate-txt{font-family:var(--read);font-size:14px;color:var(--ink);line-height:1.3;margin:0 0 10px}
+  .al-cals{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:4px}
+  .al-cal{background:var(--paper-2);border:2px solid var(--edge);box-shadow:2px 2px 0 rgba(0,0,0,.25);
+    padding:8px;display:flex;gap:8px}
+  /* no border, for the reason .al-strip has none: a border-box border shrinks the content box and the
+     bitmap would be drawn into a slightly different rectangle than the one it is stretched across. */
+  .al-cal canvas{flex:none;background:var(--paper)}
+  .al-cal-txt{min-width:0}
+  .al-term{font-family:var(--disp);font-size:8px;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:4px}
+  .al-note{font-family:var(--read);font-size:12px;color:var(--ink);line-height:1.25}
+  .al-yours{font-family:var(--read);font-size:11px;color:var(--moss);font-style:italic;display:block;margin-top:4px}
+  .al-sub{font-family:var(--read);font-size:13px;color:var(--ink-soft);margin:0 0 8px}
+  @media(max-width:560px){
+    #album .book{height:auto;max-height:92vh;overflow:auto;display:block}
+    .al-cals{grid-template-columns:1fr}
+  }
   /* ---- The Sound Board — the endless phoneme crossword (docs/ipa-scrabble.md §10) ----
      A WINDOW onto an infinite grid: premiums are a pure function of position, so there is no board to
      size or store and panning is the only way it "grows". The viewport shrink-wraps a whole number of
@@ -1102,6 +1157,7 @@
     <button class="tb-btn" id="tb-dex"><span class="tb-ico">🐾</span><span>Bestiary</span><b>B</b></button>
     <button class="tb-btn" id="tb-phonicon"><span class="tb-ico">🔉</span><span>Fish Phoneme</span></button>
     <button class="tb-btn" id="tb-board"><span class="tb-ico">🔡</span><span>Sound Board</span></button>
+    <button class="tb-btn" id="tb-album"><span class="tb-ico">📜</span><span>Scriptorium</span></button>
     <button class="tb-btn" id="tb-feats"><span class="tb-ico">✦</span><span>Feats</span><b>C</b></button>
     <button class="tb-btn" id="tb-gear"><span class="tb-ico">🎒</span><span>Equipment</span><b>G</b></button>
     <button class="tb-btn" id="tb-apothecary"><span class="tb-ico">⚗️</span><span>Apothecary</span><b>P</b></button>
@@ -1538,6 +1594,26 @@
       </div>
     </div>
 
+    <!-- The Scriptorium album (docs/inklings-typography.md §7): a type specimen sheet of your own hand.
+         26 letters x 12 faces, one strip per face; a filled cell shows the strokes YOU traced, an empty one
+         the face's own glyph, ghosted, so the grid is a specimen sheet before it is a checklist. Clicking a
+         face opens its PLATE — the anatomy of that typeface called out on your letterforms. -->
+    <div id="album">
+      <div class="book">
+        <button class="close-x" id="al-close" aria-label="Close the Scriptorium" title="Close">✕</button>
+        <h1 id="al-title">The Scriptorium <span class="dex-count" id="al-count"></span></h1>
+        <div class="al-bar">
+          <button class="al-back" id="al-back">← All faces</button>
+          <div class="al-case" id="al-case">
+            <button class="al-chip" data-alcase="lo">a–z</button>
+            <button class="al-chip" data-alcase="up">A–Z</button>
+          </div>
+        </div>
+        <div class="al-scroll" id="al-scroll"></div>
+        <p class="al-legend"><b>A</b> swap case · <b>[</b> <b>]</b> step faces · click a face for its plate · <b>Esc</b> back</p>
+      </div>
+    </div>
+
     <!-- The Sound Board: an endless crossword you spell BY SOUND, whose tiles are the phonemes you've
          fished (state.phonicon is the bag). Premiums repeat every 15 squares, so the grid is infinite and
          the viewport is the only thing that ever "extends" it. See docs/ipa-scrabble.md §10. -->
@@ -1735,6 +1811,7 @@
           <span><b>↑ ↓ ← →</b> / <b>[</b> <b>]</b> / <b>1</b>–<b>7</b></span><span>On the <b>Atlas</b> board only: arrows (or WASD) step to the neighbouring country, sea, lake or peak; <b>[</b>/<b>]</b> sweep one layer west to east (or tap <b>◀ ▶</b>); <b>1</b>–<b>7</b> frame the World and the six continents</span>
           <span><b>1</b>–<b>7</b> / <b>↑ ↓ ← →</b> / <b>Enter</b></span><span>On the <b>Sound Board</b> only: <b>1</b>–<b>7</b> pick a phoneme tile, the arrows aim it (and pan the board when nothing's picked), <b>Tab</b> hops to the next legal square, <b>Enter</b> lays it — then <b>Enter</b> again plays the word. <b>Backspace</b> undoes, <b>C</b> recentres, <b>H</b> asks the rack for an idea</span>
           <span><b>1</b>–<b>9</b> / <b>G</b></span><span>While <b>writing an inkling</b>: <b>1</b>–<b>9</b> pick a pen, <b>Backspace</b> undoes a stroke, <b>R</b> starts the letter again, <b>G</b> shows the next stroke, <b>Esc</b> walks away</span>
+          <span><b>A</b> / <b>[</b> <b>]</b></span><span>In the <b>Scriptorium</b> (📜) only: <b>A</b> swaps the album between <b>a–z</b> and <b>A–Z</b>, <b>[</b>/<b>]</b> step from one face's plate to the next, <b>Esc</b> backs a plate out to all the faces</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
           <span><b>Esc</b></span><span>Close any panel</span>
         </div>
@@ -1766,9 +1843,9 @@
           collection. You can travel the board without the mouse: the <b>arrow keys</b> step to the neighbouring
           place the way a map reads, <b>[</b> and <b>]</b> (or the <b>◀ ▶</b> buttons) sweep one layer west to
           east, and <b>1</b>–<b>7</b> frame the World and each continent.</p>
-          <p><b>Writing inklings (the Scriptorium).</b> <b>Inklings are caught; beasts are fought.</b> You no
-          longer swing at a letter-creature — you stand at it, press <b>E</b>, and <b>write the letter</b>,
-          stroke by stroke, following the numbered dots. Every inkling on a screen is wearing a real
+          <p><b>Writing inklings (the Scriptorium).</b> <b>Inklings are caught; beasts are fought.</b> A swing
+          passes straight through a letter-creature; to take it you <b>write the letter</b>, stroke by stroke,
+          following the numbered dots — swing at it, or stand at it and press <b>E</b>, and the pad opens. Every inkling on a screen is wearing a real
           <b>typeface</b>, and the ghosted letter under your pen is that typeface's own — so what you are
           judged on is whether your ink <i>fills that letter</i>. That is what the <b>pens</b> are for. A
           typeface's thick-and-thin is a record of the tool that wrote it: a broad nib held at an angle
@@ -1776,9 +1853,16 @@
           round one has no contrast at all — which is the whole of sans-serif. So <b>pick the pen that
           wrote this face</b>: too thin and you can't fill the letter, too fat and your ink spills outside
           it. <b>You always get the letter, whatever you pick</b> — only the typeface is at stake, and a
-          botched trace costs you nothing but another go. Press <b>0</b> to be told the pen, at the price
-          of the typeface. New pens are bought with ink at the <b>Stall</b>, and one face per screen means
-          a letter in a face you want becomes somewhere to <i>walk</i>.</p>
+          botched trace costs you nothing but another go. New pens are bought with ink at the <b>Stall</b>,
+          and one face per screen means a letter in a face you want becomes somewhere to <i>walk</i>.</p>
+          <p><b>The Scriptorium (📜).</b> Your album — a <b>type specimen sheet of your own hand</b>. Every face
+          gets a row of 26 cells: a cell you've earned shows <b>the letter you actually drew</b> (with a gold bar
+          for its grade), an empty one shows that face's own letter, ghosted, so you can see what you're hunting
+          in the hand you'll have to hunt it in. Press <b>A</b> to swap between <b>a–z</b> and <b>A–Z</b> — capitals
+          are a <i>separate</i> collection, not a longer one — and click a face for its <b>plate</b>: where it comes
+          from, and its anatomy called out on <i>your</i> letterforms. A cell keeps your <b>best ever</b> grade, so
+          meeting a letter you already own is still worth writing. Filling a quarter, a half and all of a face's
+          alphabet pays <b>ink</b>; finishing a face outright pays a <b>framed specimen</b> for the Wordhoard.</p>
           <p><b>The Sound Board (🔡).</b> A crossword you spell <b>by sound, not by letters</b>. The tiles are the
           <b>phonemes you've fished</b> — your Fish Phoneme collection <i>is</i> the bag — and a play counts when the
           line of phonemes you lay matches some real word's <b>pronunciation</b>: <i>/t u/</i> is two, too <i>and</i> to,
@@ -1828,6 +1912,7 @@
           <button class="tc-btn util ico" id="tc-dex" aria-label="Bestiary">🐾</button>
           <button class="tc-btn util ico" id="tc-phonicon" aria-label="Fish Phoneme">🔉</button>
           <button class="tc-btn util ico" id="tc-board" aria-label="Sound Board">🔡</button>
+          <button class="tc-btn util ico" id="tc-album" aria-label="Scriptorium">📜</button>
           <button class="tc-btn util ico" id="tc-stats" aria-label="Feats">✦</button>
           <button class="tc-btn util ico" id="tc-gear" aria-label="Equipment">🎒</button>
           <button class="tc-btn util ico" id="tc-apothecary" aria-label="Apothecary">⚗️</button>
@@ -2917,10 +3002,13 @@ const state = {
   // faces, keyed by CHARACTER so "A" and "a" are already separate cells and capitals needed no migration.
   // A cell keeps the best grade ever scored there AND the strokes that scored it, because a filled cell
   // shows YOUR traced glyph. Persistent and uncapped, like state.caps — never day-scoped. (persist)
-  faces:{},                     // faceId -> { letter: {g: grade, s: [[x,y]x16, ...]} }
+  faces:{},                     // faceId -> { letter: {g: grade, s: [[x,y]x16, ...], n: nibId} }
   nibs:["round-mono"],          // pens owned. The round monoline is the hand you already write in, free.
   nib:"round-mono",             // the pen last equipped
-  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false, fishing:false, phoniconOpen:false, soundboardOpen:false, atlasOpen:false, flagpickOpen:false, tracing:false,
+  faceMiles:{},                 // "garalde:lo:50" -> day-string an album milestone was paid out (one-time, auto-
+                                // granted like the Atlas's continents). The two CASES are separate tracks and
+                                // are never summed — §10.5's migration trap. (persist)
+  started:false, overlay:false, help:false, shop:false, madlibs:false, bestiaryOpen:false, shelfview:false, curation:false, statsOpen:false, apothecaryOpen:false, obstacle:false, equipOpen:false, gardenOpen:false, heraldOpen:false, pigpensOpen:false, fishing:false, phoniconOpen:false, soundboardOpen:false, atlasOpen:false, flagpickOpen:false, tracing:false, albumOpen:false,
   room:null                     // null = field/home world; "library" = inside the Library room (session-only, not saved)
 };
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>state.inv[c]=0);
@@ -3086,7 +3174,13 @@ const DECOR = {
   // has 196 faces and the picker scales to any future atlas. Bought with ink at the Stall; the flags
   // themselves are unbuyable (state.atlasFlags — you earn them by pairing a country with its capital).
   flagpole:{name:"Flagpole",       emoji:"🏳️", solid:true, pole:true },
-  atlasmap:{name:"Framed Map",     emoji:"🗺️", solid:false }   // the 100%-of-a-continent trophy
+  atlasmap:{name:"Framed Map",     emoji:"🗺️", solid:false },  // the 100%-of-a-continent trophy
+  // ── Scriptorium rewards (docs/inklings-typography.md §7) ─────────────────────────────────────
+  // The framed specimen sheet, paid for completing a face's album. One generic piece rather than
+  // twelve: unlike the flagpole, nothing here picks WHICH face it shows, because DECOR is a static
+  // registry read by applySnapshot before the lazy typefaces.json has landed — a per-face id would be
+  // dropped as unknown on every load. Assignment, flagpole-style, is a later refinement.
+  specimen:{name:"Framed Specimen", emoji:"🖼️", solid:false }
 };
 // Session-only placement UI: `held` = the décor id being held (a string), or null = the ✋ "pick-up" hand.
 // Targeting is the tile IN FRONT of the character (tileInFront), confirmed with Space / the tray's Place button.
@@ -3588,6 +3682,13 @@ addEventListener("keydown",e=>{
     trKey(e);
     return;
   }
+  if(state.albumOpen){   // The Scriptorium album: Aa toggles case, [ ] step faces, Esc backs a plate out to the grid
+    if(k==="escape"||k==="tab"){ e.preventDefault(); if(album.face){ alShowGrid(); } else closeAlbum(); }
+    else if(k==="a"){ e.preventDefault(); alSetCase(!album.upper); }
+    else if(k==="["||k===","){ e.preventDefault(); alStepFace(-1); }
+    else if(k==="]"||k==="."){ e.preventDefault(); alStepFace(1); }
+    return;
+  }
   if(state.flagpickOpen){   // Flagpole picker: modal over the room (and over decorate mode) — Esc/Tab/E close
     if(k==="escape"||k==="tab"||k==="e"){ e.preventDefault(); closeFlagPicker(); }
     return;
@@ -4000,7 +4101,7 @@ function update(dt){
   // screen-slide transition: advance it and freeze gameplay until it finishes (player glides in idle)
   if(trans){ trans.t+=dt; if(trans.t>=trans.dur) trans=null; }
 
-  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.atlasOpen && !state.flagpickOpen && state.started){
+  if(!trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.albumOpen && !state.atlasOpen && !state.flagpickOpen && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -4086,7 +4187,7 @@ function update(dt){
   }
 
   // creatures (no respawn — once taken today they're gone until tomorrow's map). Frozen mid-slide.
-  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.atlasOpen && !state.flagpickOpen && state.started;
+  const canBeHurt = !trans && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.albumOpen && !state.atlasOpen && !state.flagpickOpen && state.started;
   if(!trans) for(const c of sc.creatures){
     if(c.flash>0) c.flash-=dt;
     if(c.kind==="resource"){ updateResourceCreature(c, sc, p, dt, canBeHurt); continue; }
@@ -4135,7 +4236,7 @@ function update(dt){
 
   // shop/house hint — keyboard only (touch uses the contextual SHOP/LIB buttons instead of an E prompt)
   const hint=document.getElementById("hint");
-  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.atlasOpen && !state.flagpickOpen;
+  const hintReady = !IS_TOUCH && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.albumOpen && !state.atlasOpen && !state.flagpickOpen;
   if(hintReady && inklingInFront()){ hint.textContent="Swing (or E) to write this letter"; hint.classList.add("show"); }
   else if(hintReady && nearHouse()){ hint.textContent="Press E to enter the Wordhoard"; hint.classList.add("show"); }
   else if(hintReady && nearShop()){ hint.textContent="Press E to visit the shop"; hint.classList.add("show"); }
@@ -4158,7 +4259,7 @@ function update(dt){
 // collision (canStand against the library grid). Step onto the entrance mat to return home.
 function updateLibrary(p, dt){
   const sc=LIBRARY.screen;
-  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation && state.started){
+  if(!state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.albumOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation && state.started){
     let mx=0,my=0;
     if(keys["arrowup"]||keys["w"]) my-=1;
     if(keys["arrowdown"]||keys["s"]) my+=1;
@@ -4183,7 +4284,7 @@ function updateLibrary(p, dt){
   else p.healT=0;
   // interaction hint (keyboard only — touch uses the contextual DESK/BOOK buttons)
   const hint=document.getElementById("hint");
-  const hintReady=!IS_TOUCH && !place.active && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation;
+  const hintReady=!IS_TOUCH && !place.active && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.albumOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation;
   if(hintReady && poleInFront()>=0){ hint.textContent="Press E to raise a flag"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryDesk()){ hint.textContent="Press E to use the Wordsmithy"; hint.classList.add("show"); }
   else if(hintReady && nearLibraryBook()){ hint.textContent="Press E to open Mad Libris"; hint.classList.add("show"); }
@@ -8079,7 +8180,7 @@ function openFishingPreview(){
    catch count), uncaught ones are locked ??? — the bestiary reveal pattern, but coverage-honest (the target
    is the whole 40-phoneme set, so 100% is reachable). Read-only view over state.phonicon; opened from the
    toolbar / a touch button (not contextual — always available like the Bestiary). */
-function phonHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen||state.apothecaryOpen||state.heraldOpen||state.pigpensOpen||state.fishing||state.soundboardOpen||state.tracing; }
+function phonHideSound(){ return state.overlay||state.shop||state.madlibs||state.bestiaryOpen||state.shelfview||state.curation||state.statsOpen||state.equipOpen||state.gardenOpen||state.apothecaryOpen||state.heraldOpen||state.pigpensOpen||state.fishing||state.soundboardOpen||state.tracing||state.albumOpen; }
 let phonTab="sounds";   // Fish Phoneme tab: "sounds" (the reveal grid) | "guide" (the IPA primer)
 // Toggle the Sounds grid vs the phonetic-alphabet Guide (mirrors cuShowTab / the Apothecary guide tab).
 function phonShowTab(t){
@@ -10723,7 +10824,8 @@ function trGroupPath(id){
 }
 /* Both fractions, never their sum (§10.5's migration trap): a face's minuscules and its majuscules are
    counted SEPARATELY, or a player who has already 100%'d a face drops to 50% the day capitals land and
-   a milestone that has already paid out un-fires. M4's milestones must read both and never add them. */
+   a milestone that has already paid out un-fires. M4's milestones read both and never add them — see
+   trFaceTracks, the one place that decides how many tracks a face has, so the sum is never available. */
 function trFaceCells(f){
   const cells = (state.faces||{})[(f||{}).id] || {};
   let lo=0, up=0;
@@ -11096,9 +11198,12 @@ function trFinishLetter(){
   const prev = (((state.faces||{})[f.id]||{})[cell]||{}).g || 0;
   let earned=false, beat=false;
   if(grade >= TR_FACE_TH && grade > prev){
-    (state.faces[f.id] = state.faces[f.id] || {})[cell] = { g:+grade.toFixed(4), s:trAlbumStrokes() };
+    // The cell keeps the pen as well as the path, so the album can redraw your hand with the nib that
+    // actually made it. Cells written before M4 have no `n` and fall back to the face's own pen.
+    (state.faces[f.id] = state.faces[f.id] || {})[cell] = { g:+grade.toFixed(4), s:trAlbumStrokes(), n:trace.nib };
     earned=true; beat = prev>0;
   }
+  const miles = earned ? claimAlbumMilestones() : [];   // §7's rungs, paid in the same breath as the trace
   const c=trace.c, sc=trace.sc;
   closeTrace();
   trGrantLetter(c, sc);          // the letter is earned at ANY grade (§5.6)
@@ -11112,6 +11217,13 @@ function trFinishLetter(){
              : isUpper(cell) ? " of 26 capitals" : " of 26 minuscules";
     showToast((beat ? f.name+" "+cell+" — "+trPct(grade)+" (was "+trPct(prev)+")"
                     : f.name+" "+cell+" — a new cell at "+trPct(grade))+" · "+n+of);
+    // One toast, biggest first (the Atlas's rule): a milestone outranks the cell that crossed it, so it
+    // lands a beat later rather than being lost under it.
+    if(miles.length){
+      const big=miles[miles.length-1];      // the completed face, if this trace finished one, else the last rung
+      SFX.play(big.decor ? "unlockbig" : "unlock");
+      setTimeout(()=>showToast(trMileToast(big)), 1500);
+    }
   } else if(grade >= TR_FACE_TH){
     showToast(f.name+" "+cell+" — "+trPct(grade)+"; your cell stands at "+trPct(prev));
   } else {
@@ -11463,11 +11575,341 @@ function buyNib(){
   updateShop(); updateRewardHud(); scheduleSave();
 }
 
+
+/* ==================== M4 — THE SCRIPTORIUM (docs/inklings-typography.md §7) ====================
+   The album, the per-face plate, and the milestones. M3 filled cells with nothing to look at but a
+   toast; this is the thing they were for.
+
+   Three rules the code has to keep, all of them §7's or §10.5's:
+   · A filled cell shows YOUR traced glyph — which is why a cell stores the strokes and not just a
+     number, and why nothing here ever draws the font in a cell you have earned.
+   · The two CASES are two collections and are NEVER summed. A face carries a minuscule fraction and a
+     capital one; adding them is the migration trap that would drop a 100%-complete face to 50%.
+   · An empty cell shows the FACE'S OWN glyph, ghosted, so the grid is a specimen sheet before it is a
+     checklist: you can see what you are hunting, in the hand you will have to hunt it in. */
+
+/* ---- milestones (§7, §10.5) --------------------------------------------------------------- */
+/* Auto-granted in the same breath as the trace that crossed them, exactly like the Atlas's continents
+   (claimContinents) — there is no counter to walk to, and the reward should land with the letter. The
+   décor lands only on a COMPLETED FACE rather than at every 100%, because a rung per case would mint up
+   to 24 framed specimens; the ink carries the smaller rungs. */
+const TR_MILE_TIERS=[
+  { key:"25",  pct:0.25, ink:15, label:"a quarter of" },
+  { key:"50",  pct:0.5,  ink:35, label:"half of" },
+  { key:"100", pct:1,    ink:80, label:"every letter of" }
+];
+const TR_FACE_DONE={ ink:200, decor:"specimen" };
+const TR_LETTERS="abcdefghijklmnopqrstuvwxyz";
+/* A face's tracks. Uncial is unicase (§10.6): its A and its a are one drawing and one cell, so it has
+   ONE track — folding it back into two would pay it twice for the same 26 traces. */
+function trFaceTracks(f){
+  const cells=trFaceCells(f);
+  return f.unicase ? [{ c:"lo", n:cells.lo, total:26, name:"letters" }]
+                   : [{ c:"lo", n:cells.lo, total:26, name:"minuscules" },
+                      { c:"up", n:cells.up, total:26, name:"capitals" }];
+}
+function trFaceComplete(f){ return trFaceTracks(f).every(t=>t.n>=t.total); }
+function trMileNeed(t){ return Math.max(1, Math.ceil(26*t.pct)); }
+function trMilePaid(fid, c, key){ return !!(state.faceMiles||{})[fid+":"+c+":"+key]; }
+/* Pay out every rung newly reached, across every face. Called on the trace's success path AND on album
+   open — the second is what settles a save made before M4 (or an import), whose cells crossed rungs that
+   were never paid; the Atlas does the same thing for the same reason. */
+function claimAlbumMilestones(){
+  const got=[];
+  if(!TR_READY) return got;
+  for(const f of TR_FACES){
+    for(const tr of trFaceTracks(f)){
+      for(const t of TR_MILE_TIERS){
+        const k=f.id+":"+tr.c+":"+t.key;
+        if(state.faceMiles[k] || tr.n < trMileNeed(t)) continue;
+        state.faceMiles[k]=state.day;
+        state.ink+=t.ink;
+        got.push({ f, track:tr, t, ink:t.ink, decor:null });
+      }
+    }
+    const kf=f.id+":face:done";
+    if(!state.faceMiles[kf] && trFaceComplete(f)){
+      state.faceMiles[kf]=state.day;
+      state.ink+=TR_FACE_DONE.ink;
+      state.decorOwned[TR_FACE_DONE.decor]=(state.decorOwned[TR_FACE_DONE.decor]||0)+1;
+      got.push({ f, track:null, t:null, ink:TR_FACE_DONE.ink, decor:TR_FACE_DONE.decor });
+    }
+  }
+  if(got.length){ updateRewardHud(); scheduleSave(); }
+  return got;
+}
+function trMileToast(g){
+  return g.track ? `${g.f.name} — ${g.t.label} its ${g.track.name} inked! +${g.ink} ink`
+                 : `${g.f.name} — the face is COMPLETE. +${g.ink} ink · ${DECOR[TR_FACE_DONE.decor].name}`;
+}
+
+/* ---- the album ---------------------------------------------------------------------------- */
+/* Session-only view state: which face's plate is open (null = the grid of all faces) and which case you
+   are looking at. §10.5's call was a case TOGGLE, never a 52-row grid — two collections, not one long
+   one, and 52 columns is unreadable on a phone besides. */
+const album = { face:null, upper:false };
+const AL_CELL_MIN=8;      // the floor a cell may shrink to; 26 columns is the specimen sheet's own line and never wraps
+function openAlbum(){
+  if(state.albumOpen) return;
+  state.albumOpen=true;
+  album.face=null;
+  document.getElementById("album").classList.add("open");
+  document.getElementById("sound-btn").style.display="none";
+  SFX.play("click");
+  if(!TR_READY && !TR_FAILED) trLoad().then(()=>{ if(state.albumOpen){ alAfterLoad(); } });
+  else alAfterLoad();
+  renderAlbum();
+}
+function alAfterLoad(){
+  if(!TR_READY) return;
+  // Every face's woff2, so an empty cell can be ghosted in the hand it belongs to. One subset per face,
+  // ~200 KB for all eleven — the same files the field already prefetches per screen, so mostly cached.
+  for(const f of TR_FACES) trLoadFont(f).then(()=>{ if(state.albumOpen) alRefreshFace(f); });
+  const got=claimAlbumMilestones();     // a pre-M4 save may already have crossed rungs nobody was paid for
+  if(got.length) SFX.play("unlock");
+  if(got.length) showToast(got.length===1 ? trMileToast(got[0])
+                                          : got.length+" Scriptorium milestones settled · +"+got.reduce((n,g)=>n+g.ink,0)+" ink");
+  renderAlbum();
+}
+function closeAlbum(){
+  state.albumOpen=false;
+  album.face=null;
+  document.getElementById("album").classList.remove("open");
+  document.getElementById("sound-btn").style.display = phonHideSound()?"none":"";
+}
+function alShowGrid(){ if(!album.face) return; album.face=null; SFX.play("click"); renderAlbum(); }
+function alShowFace(f){ album.face=f?f.id:null; SFX.play("click"); renderAlbum(); }
+function alSetCase(up){
+  if(album.upper===!!up) return;
+  album.upper=!!up; SFX.play("click"); renderAlbum();
+}
+function alStepFace(d){
+  if(!TR_READY || !TR_FACES.length) return;
+  const i = album.face ? TR_FACES.findIndex(f=>f.id===album.face) : -1;
+  if(i<0) return;                                   // on the grid, [ ] mean nothing — the whole list is already up
+  album.face = TR_FACES[(i+d+TR_FACES.length)%TR_FACES.length].id;
+  SFX.play("click"); renderAlbum();
+}
+function alFace(){ return album.face ? TR_FACEBY.get(album.face) : null; }
+/* The case a face's cells are keyed by. Uncial folds A onto a everywhere (trFaceChar), so its album is
+   always the lowercase one however the toggle is set — the plate says why. */
+function alCaseFor(f){ return (f && f.unicase) ? false : album.upper; }
+function alLetters(f){
+  const up=alCaseFor(f);
+  return TR_LETTERS.split("").map(c=>up?c.toUpperCase():c);
+}
+function alCell(f, ch){ return ((state.faces||{})[f.id]||{})[ch] || null; }
+
+function renderAlbum(){
+  const scroll=document.getElementById("al-scroll"); if(!scroll) return;
+  const f=alFace();
+  document.getElementById("al-back").style.display = f ? "" : "none";
+  document.getElementById("al-title").innerHTML = (f ? esc(f.name) : "The Scriptorium")+
+    ' <span class="dex-count" id="al-count"></span>';
+  const chips=document.querySelectorAll("#al-case .al-chip");
+  chips.forEach(b=>b.classList.toggle("on", (b.getAttribute("data-alcase")==="up")===album.upper));
+  if(!TR_READY){
+    document.getElementById("al-count").textContent="";
+    scroll.innerHTML='<p class="al-sub">'+(TR_FAILED
+      ? "The Scriptorium's data didn't load, so there's no album to show. (The letters themselves are safe — an inkling is still caught.)"
+      : "Opening the specimen book…")+'</p>';
+    return;
+  }
+  // The header count is per CASE, matching what the toggle is showing — never a sum of the two (§10.5).
+  let n=0, tot=0;
+  for(const fc of TR_FACES){ const t=trFaceTracks(fc).find(t=>t.c===(alCaseFor(fc)?"up":"lo")) || trFaceTracks(fc)[0];
+    n+=t.n; tot+=t.total; }
+  document.getElementById("al-count").textContent = `· ${n} of ${tot} ${album.upper?"capital":"minuscule"} cells`;
+  f ? alRenderPlate(scroll, f) : alRenderGrid(scroll);
+}
+
+/* ---- the grid: one strip per face --------------------------------------------------------- */
+function alFracHTML(f){
+  return trFaceTracks(f).map(t=>`${t.n}/${t.total} ${t.name}`).join(" · ");
+}
+function alRungsHTML(f){
+  const out=trFaceTracks(f).map(t=>TR_MILE_TIERS.map(m=>
+    `<span class="al-rung${trMilePaid(f.id,t.c,m.key)?" paid":""}" title="${m.key}% of this face's ${t.name}">${t.name.charAt(0)}${m.key}</span>`).join(""));
+  out.push(`<span class="al-rung${trMilePaid(f.id,"face","done")?" paid":""}" title="the whole face">★</span>`);
+  return `<span class="al-rungs">${out.join("")}</span>`;
+}
+function alRenderGrid(scroll){
+  const ruler='<canvas class="al-strip" id="al-ruler" style="box-shadow:none;position:sticky;top:0;z-index:2"></canvas>';
+  scroll.innerHTML = ruler + TR_FACES.map(f=>
+    `<div class="al-face click" data-alface="${esc(f.id)}">
+       <div class="al-head"><span class="al-name">${esc(f.name)}</span>`+
+       `<span class="al-group">${esc(trGroupPath(f.group))}</span>`+
+       `<span class="al-frac">${esc(alFracHTML(f))}</span></div>`+
+       `<canvas class="al-strip" data-alstrip="${esc(f.id)}"></canvas>
+     </div>`).join("");
+  scroll.querySelectorAll("[data-alface]").forEach(el=>{
+    el.onclick=()=>alShowFace(TR_FACEBY.get(el.getAttribute("data-alface")));
+  });
+  alDrawRuler(scroll.querySelector("#al-ruler"));
+  scroll.querySelectorAll("[data-alstrip]").forEach(cv=>
+    alDrawSheet(cv, TR_FACEBY.get(cv.getAttribute("data-alstrip")), 26));
+}
+/* One face's strip redrawn in place — used when a late woff2 turns its empty cells from the pen into
+   the real face, without rebuilding the panel under the player's scroll position. */
+function alRefreshFace(f){
+  if(!state.albumOpen || !f) return;
+  if(album.face===f.id){ renderAlbum(); return; }
+  const cv=document.querySelector('[data-alstrip="'+f.id+'"]');
+  if(cv) alDrawSheet(cv, f, 26);
+}
+/* The a–z (or A–Z) ruler above the strips, in the panel's own pixel font — the specimen sheet's column
+   heads. Sticky, so it survives the scroll down the twelve faces. */
+function alDrawRuler(cv){
+  if(!cv) return;
+  const w=Math.round(cv.clientWidth)||520, cell=Math.max(AL_CELL_MIN, Math.floor(w/26)), h=14;
+  const dpr=Math.min(2, window.devicePixelRatio||1);
+  cv.style.height=h+"px";
+  if(cv.width!==Math.round(w*dpr) || cv.height!==Math.round(h*dpr)){ cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); }
+  const c=cv.getContext("2d");
+  c.setTransform(dpr,0,0,dpr,0,0);
+  c.clearRect(0,0,w,h);
+  c.fillStyle="#efe7d4"; c.fillRect(0,0,w,h);
+  c.fillStyle="#7a6f58"; c.font="7px 'Press Start 2P', monospace";
+  c.textAlign="center"; c.textBaseline="middle";
+  const ls=TR_LETTERS.split("");
+  for(let i=0;i<26;i++) c.fillText(album.upper?ls[i].toUpperCase():ls[i], i*cell+cell/2, h/2+1);
+}
+/* A face's cells, `cols` to a row. The whole sheet is ONE canvas rather than 26 elements: the cells are
+   drawings, not controls, and a single canvas redraws in one call when the font lands. */
+function alDrawSheet(cv, f, cols){
+  if(!cv || !f) return;
+  const g0=TR_GLYPHS;
+  if(!g0) return;
+  const w=Math.round(cv.clientWidth)||520;
+  const cell=Math.max(AL_CELL_MIN, Math.floor(w/cols)), rows=Math.ceil(26/cols), h=cell*rows;
+  const dpr=Math.min(2, window.devicePixelRatio||1);
+  cv.style.height=h+"px";
+  if(cv.width!==Math.round(w*dpr) || cv.height!==Math.round(h*dpr)){ cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); }
+  const c=cv.getContext("2d");
+  c.setTransform(dpr,0,0,dpr,0,0);
+  c.clearRect(0,0,w,h);
+  const useFont=trFontLive(f), letters=alLetters(f), pen=TR_NIBBY.get(f.nib);
+  for(let i=0;i<26;i++){
+    const ch=letters[i], x=(i%cols)*cell, y=Math.floor(i/cols)*cell;
+    const rec=alCell(f, trFaceChar(ch,f));
+    c.fillStyle = rec ? "#fbf7ee" : "#f2ecdd";
+    c.fillRect(x, y, cell-1, cell-1);
+    const g=trGlyphFor(ch, f);
+    if(g){
+      const em=cell*0.8, ox=x+(cell-g.w*em)/2, oy=y+cell*0.1;
+      if(rec){
+        // YOUR hand, in the pen that earned the cell (older cells predate the stored nib and fall back
+        // to the face's own, which is the pen they were almost certainly drawn with).
+        const nib=TR_NIBBY.get(rec.n) || pen;
+        for(const st of rec.s) trStampTo(c, st, nib, "#2b2620", em, ox, oy, 1);
+        // the grade, as a bar along the bottom of the cell — a percentage is unreadable at 20 px, a
+        // length is not, and the album is meant to show a hand improving.
+        c.fillStyle="#c89b3c"; c.fillRect(x, y+cell-3, Math.round((cell-1)*Math.min(1,rec.g||0)), 2);
+      } else {
+        trDrawFaceGlyph(c, g, f, trFaceChar(ch,f), useFont, em, ox, oy, "#ddd3bd", 1);
+      }
+    }
+  }
+  c.strokeStyle="#26233a"; c.lineWidth=2; c.strokeRect(1,1,w-2,h-2);   // the frame, last, so no cell paints over it
+}
+
+/* ---- the plate ---------------------------------------------------------------------------- */
+function alRenderPlate(scroll, f){
+  const meta=[];
+  if(f.date) meta.push("<b>"+esc(f.date)+"</b>");
+  if(f.origin) meta.push(esc(f.origin));
+  const nib=TR_NIBBY.get(f.nib);
+  if(nib) meta.push("written with a <b>"+esc(nib.name.toLowerCase())+"</b>");
+  const caps = f.caps ? `<p class="al-plate-txt">${esc(f.caps)}</p>` : "";
+  const credit = f.credit ? `<p class="al-meta">${esc(f.credit)}</p>` : "";
+  scroll.innerHTML =
+    `<p class="al-meta">${esc(trGroupPath(f.group))}${meta.length?" · "+meta.join(" · "):""}</p>`+
+    `<p class="al-meta"><b>${esc(alFracHTML(f))}</b>${alRungsHTML(f)}</p>`+
+    `<canvas class="al-strip" id="al-sheet"></canvas>`+
+    (f.unicase ? `<p class="al-sub">This face has no case: its A and its a are the same drawing, so it keeps one album of 26.</p>` : "")+
+    `<p class="al-plate-txt" style="margin-top:10px">${esc(f.plate||"")}</p>`+
+    caps+
+    `<div class="al-cals" id="al-cals"></div>`+
+    credit;
+  alDrawSheet(document.getElementById("al-sheet"), f, 13);   // 13 to a row = cells twice the grid's size
+  const cals=document.getElementById("al-cals");
+  const list=f.anatomy||[];
+  if(!list.length){ cals.innerHTML='<p class="al-sub">No anatomy is called out on this face yet.</p>'; return; }
+  cals.innerHTML = list.map((a,i)=>{
+    const rec=alCell(f, trFaceChar(a.letter,f));
+    return `<div class="al-cal"><canvas width="96" height="96" data-alcal="${i}"></canvas>`+
+      `<div class="al-cal-txt"><span class="al-term">${esc(a.term)}</span>`+
+      `<span class="al-note">${esc(a.note||"")}</span>`+
+      `<span class="al-yours">${rec ? "your hand, "+trPct(rec.g||0) : "shown in the face's own hand — you haven't traced this letter yet"}</span>`+
+      `</div></div>`;
+  }).join("");
+  cals.querySelectorAll("[data-alcal]").forEach(cv=>alDrawCallout(cv, f, list[+cv.getAttribute("data-alcal")]));
+}
+/* §7's "anatomy terms called out on the letterforms you personally traced". The anchor is DERIVED from
+   the glyph's own geometry per term rather than authored per callout — 31 hand-placed coordinates would
+   be a second thing to keep true of every new face, and the skeleton already knows where its bowl, its
+   stems and its metric lines are. A term with no rule simply gets no leader line; it never gets a wrong
+   one. */
+function trCalloutAnchor(term, g){
+  const t=String(term||"").toLowerCase();
+  const midX=(g.x0+g.x1)/2, midY=(g.y0+g.y1)/2;
+  if(/x-height/.test(t)) return [midX, 0.24];
+  if(/cap height/.test(t)) return [midX, 0.07];
+  if(/aperture/.test(t)){                                   // the GAP: where the longest stroke's two ends face each other
+    let best=g.strokes[0], L=-1;
+    g.strokes.forEach((st,i)=>{ if(g.lens[i]>L){ L=g.lens[i]; best=st; } });
+    return [ (best[0][0]+best[best.length-1][0])/2, (best[0][1]+best[best.length-1][1])/2 ];
+  }
+  if(/bar/.test(t)){                                        // an e-bar: a little way along the first stroke
+    const st=g.strokes[0], q=st[Math.min(st.length-1, Math.max(1, Math.round(st.length*0.15)))];
+    return [q[0], q[1]];
+  }
+  // Stroke WIDTH terms point at the side of the letter, where a pen's thick and thin are widest apart.
+  // This has to be tested before the width-of-the-LETTER terms below, or "varying widths" reads as one.
+  if(/stress|contrast|hairline|monoline|flat-pen|varying width/.test(t)) return [g.x0, midY];
+  if(/serif|terminal|entry|exit|swell|release/.test(t)){     // a stroke END — where the pen enters and leaves
+    let p=null;
+    for(const st of g.strokes) for(const q of [st[0], st[st.length-1]]) if(!p || q[1]>p[1]) p=q;
+    return p ? [p[0], p[1]] : null;
+  }
+  if(/bowl|round|curve|circular|width/.test(t)) return [g.x1, midY];
+  return null;
+}
+const AL_CAL_PX=96;
+function alDrawCallout(cv, f, a){
+  if(!cv || !a) return;
+  const ch=trFaceChar(a.letter, f), g=trGlyphFor(a.letter, f);
+  const px=AL_CAL_PX, dpr=Math.min(2, window.devicePixelRatio||1);
+  cv.style.width=px+"px"; cv.style.height=px+"px";
+  if(cv.width!==Math.round(px*dpr)){ cv.width=cv.height=Math.round(px*dpr); }
+  const c=cv.getContext("2d");
+  c.setTransform(dpr,0,0,dpr,0,0);
+  c.clearRect(0,0,px,px);
+  c.fillStyle="#fbf7ee"; c.fillRect(0,0,px,px);
+  if(!g) return;
+  const em=px*0.8, ox=(px-g.w*em)/2, oy=px*0.1;
+  const rec=alCell(f, ch);
+  if(rec){
+    trDrawFaceGlyph(c, g, f, ch, trFontLive(f), em, ox, oy, "#ece3ce", 1);   // the face, faint, under your own ink
+    const nib=TR_NIBBY.get(rec.n) || TR_NIBBY.get(f.nib);
+    for(const st of rec.s) trStampTo(c, st, nib, "#2b2620", em, ox, oy, 1);
+  } else {
+    trDrawFaceGlyph(c, g, f, ch, trFontLive(f), em, ox, oy, "#5a5142", 1);
+  }
+  const at=trCalloutAnchor(a.term, g);
+  if(!at) return;
+  const x=ox+at[0]*em, y=oy+at[1]*em;
+  const left = x < px/2;                       // the leader exits on the side the anchor is nearer, and so points AT it
+  c.strokeStyle="#c89b3c"; c.lineWidth=1.5;
+  c.beginPath(); c.moveTo(x, y); c.lineTo(left?1:px-1, y); c.stroke();
+  c.fillStyle="#c89b3c"; c.beginPath(); c.arc(x, y, 2.6, 0, 6.2832); c.fill();
+}
+
 /* ---------- SAVE STATE (shared by autosave + file backup) ----------------- */
 // Plain, JSON/clone-safe snapshot. The map itself is never saved (it's regenerated from the date). Only
 // the collection persists forever; the satchel and today's captures are day-scoped (Wordle-style).
 function snapshot(){
-  return { v:13, day:state.day, inv:state.inv, caps:state.caps, dex:state.dex,
+  return { v:14, day:state.day, inv:state.inv, caps:state.caps, dex:state.dex,
            atlas:state.atlas, atlasFlags:state.atlasFlags, atlasContinents:state.atlasContinents,
            decorOwned:state.decorOwned, placed:state.placed, bundles:state.bundles,
            bagCap:state.bagCap, captured:[...state.captured], fishedSpots:[...state.fishedSpots], bonus:state.bonus,
@@ -11482,7 +11924,8 @@ function snapshot(){
            seeds:state.seeds, season:state.season, seedGrants:state.seedGrants, gardenQuiz:state.gardenQuiz,
            pigpens:state.pigpens, pigpenHard:state.pigpenHard,
            soundboard:state.soundboard,     // v12: the Sound Board — a sparse tile map + its economy counters
-           faces:state.faces, nibs:state.nibs, nib:state.nib };   // v13: the Scriptorium — the album, the pens owned, the pen equipped
+           faces:state.faces, nibs:state.nibs, nib:state.nib,     // v13: the Scriptorium — the album, the pens owned, the pen equipped
+           faceMiles:state.faceMiles };                           // v14: album milestones already paid (one per face, per case, per rung)
 }
 function applySnapshot(d){
   if(!d || typeof d!=="object") return false;
@@ -11546,6 +11989,10 @@ function applySnapshot(d){
   if(Array.isArray(d.nibs) && d.nibs.length) state.nibs=d.nibs.slice();
   if(state.nibs.indexOf("round-mono")<0) state.nibs.unshift("round-mono");   // the free pen can never be lost
   if(typeof d.nib==="string" && state.nibs.indexOf(d.nib)>=0) state.nib=d.nib;
+  // v14: album milestones already paid. A save from before M4 has none, so a player who had already
+  // filled cells is paid for them the first time the album opens (trClaimAlbum runs on open as well as
+  // on a trace) rather than silently skipped — the atlas does the same for imported saves.
+  if(d.faceMiles && typeof d.faceMiles==="object") state.faceMiles=d.faceMiles;
   if(d.pigpens && typeof d.pigpens==="object") state.pigpens=d.pigpens;  // Pig Pens (pigpenInit re-validates/versions the shape)
   if(typeof d.pigpenHard==="boolean") state.pigpenHard=d.pigpenHard;
   if(d.decorOwned && typeof d.decorOwned==="object") state.decorOwned=d.decorOwned;   // earned-unplaced décor (persist)
@@ -11753,6 +12200,7 @@ function closeAnyDialog(){
   if(state.phoniconOpen) closePhonicon();
   if(state.soundboardOpen) closeSoundBoard();
   if(state.tracing) closeTrace();
+  if(state.albumOpen) closeAlbum();
   if(state.atlasOpen) closeAtlas();
   if(state.flagpickOpen) closeFlagPicker();
   if(state.heraldOpen) closeHerald();
@@ -11778,6 +12226,7 @@ _wireTb("tb-words",()=> tbSwitch("overlay", openOverlay, nearLibraryDesk));   //
 _wireTb("tb-dex",()=> tbSwitch("bestiaryOpen", openBestiary));
 _wireTb("tb-phonicon",()=> tbSwitch("phoniconOpen", openPhonicon));
 _wireTb("tb-board",()=> tbSwitch("soundboardOpen", openSoundBoard));   // Sound Board: non-contextual (a world bench comes later — §10.6)
+_wireTb("tb-album",()=> tbSwitch("albumOpen", openAlbum));             // The Scriptorium: non-contextual for now — a library desk is a later launcher-only change
 _wireTb("tb-feats",()=> tbSwitch("statsOpen", openStats));
 _wireTb("tb-gear",()=> tbSwitch("equipOpen", openEquip));
 _wireTb("tb-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
@@ -11817,6 +12266,16 @@ document.getElementById("ap-close").onclick=()=>{ closeApothecary(); SFX.play("c
 document.getElementById("apothecary").onclick=e=>{ if(e.target.id==="apothecary") closeApothecary(); };  // tap backdrop to close
 document.getElementById("fish-close").onclick=()=>{ closeFishing(); SFX.play("click"); };
 document.getElementById("fishing").onclick=e=>{ if(e.target.id==="fishing") closeFishing(); };  // tap backdrop to close
+// ── The Scriptorium album (docs/inklings-typography.md §7). Everything inside the scroll area is
+// rebuilt by renderAlbum, so only the chrome is wired once here.
+document.getElementById("al-close").onclick=()=>{ closeAlbum(); SFX.play("click"); };
+document.getElementById("al-back").onclick=alShowGrid;
+document.querySelectorAll("#al-case .al-chip").forEach(b=>{
+  b.onclick=()=>alSetCase(b.getAttribute("data-alcase")==="up");
+});
+// The strips are sized off the panel's width, so a resize has to redraw them (a canvas keeps its bitmap).
+addEventListener("resize",()=>{ if(state.albumOpen) renderAlbum(); });
+
 // ── The Sound Board (docs/ipa-scrabble.md §10.5). The board itself is driven by one pointer handler on
 // the viewport (sbWireBoardPointer) and one delegated tap on the rack, so re-rendering never re-binds.
 document.getElementById("sb-close").onclick=()=>{ closeSoundBoard(); SFX.play("click"); };
@@ -11862,7 +12321,7 @@ const touchEl = document.getElementById("touch");
 let touchLive = false;
 // Show the on-screen pad/buttons only on touch devices and only during active play.
 function syncTouchUI(){
-  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation;
+  const live = IS_TOUCH && state.started && !state.overlay && !state.help && !state.shop && !state.madlibs && !state.bestiaryOpen && !state.statsOpen && !state.apothecaryOpen && !state.obstacle && !state.equipOpen && !state.gardenOpen && !state.heraldOpen && !state.pigpensOpen && !state.fishing && !state.phoniconOpen && !state.soundboardOpen && !state.tracing && !state.albumOpen && !state.atlasOpen && !state.flagpickOpen && !state.shelfview && !state.curation;
   if(live!==touchLive){
     touchLive = live;
     touchEl.classList.toggle("live", live);
@@ -11943,6 +12402,7 @@ if(IS_TOUCH){
   tap("tc-dex",()=> tbSwitch("bestiaryOpen", openBestiary));
   tap("tc-phonicon",()=> tbSwitch("phoniconOpen", openPhonicon));
   tap("tc-board",()=> tbSwitch("soundboardOpen", openSoundBoard));
+  tap("tc-album",()=> tbSwitch("albumOpen", openAlbum));
   tap("tc-stats",()=> tbSwitch("statsOpen", openStats));
   tap("tc-gear",()=> tbSwitch("equipOpen", openEquip));
   tap("tc-apothecary",()=> tbSwitch("apothecaryOpen", openApothecary));
@@ -12279,7 +12739,7 @@ function musicRunning() {
   } catch (e) { return false; }
 }
 function musicDialogueOpen() {
-  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen || state.pigpensOpen || state.fishing || state.phoniconOpen || state.soundboardOpen || state.tracing || state.atlasOpen || state.flagpickOpen); } catch (e) { return false; }
+  try { return !!(state.overlay || state.help || state.shop || state.madlibs || state.bestiaryOpen || state.shelfview || state.curation || state.statsOpen || state.apothecaryOpen || state.obstacle || state.equipOpen || state.gardenOpen || state.heraldOpen || state.pigpensOpen || state.fishing || state.phoniconOpen || state.soundboardOpen || state.tracing || state.albumOpen || state.atlasOpen || state.flagpickOpen); } catch (e) { return false; }
 }
 function musicInWordhoard() { try { return state.room === "library"; } catch (e) { return false; } }
 function themeFade(theme, to) {   // smooth ~120ms master-gain ramp (avoids clicks)

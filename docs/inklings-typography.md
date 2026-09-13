@@ -3,7 +3,8 @@
 **Status: SPECCED 2026-09-11. M1 (the nib engine + the stroke scorer), M2 (the faces), M2.5 (the font
 scorer) and M7 (the capitals) are BUILT in the standalone bench `inklings-trace.html`; **M3 — the fold-in —
 is BUILT in `inklings.html` 2026-09-12, so THE LOOP IS CLOSED and the game plays differently**: inklings
-are no longer hit, they are written. See §12. M4 (the Scriptorium album), M5 (the Tree of Faces) and M6
+are no longer hit, they are written. **M4 — the Scriptorium album, its plates and its milestones — is BUILT
+2026-09-13 (§15), so the cells now have somewhere to be looked at.** See §12. M5 (the Tree of Faces) and M6
 (italics & bold) remain.**
 
 **First play, 2026-09-13 → §14 was the fix list, and ALL FOUR ARE NOW BUILT.** One bug fixed (the pad layer
@@ -513,6 +514,8 @@ artifact for it is the thing the trade already has: a **type specimen sheet**.
   for the Wordhoard, through the existing placement primitive
   ([`inklings-placement.md`](inklings-placement.md)). **Capitals get their own fraction, not a bigger
   denominator** — see §10.5, where folding them in would silently un-fire a milestone that has already paid.
+  **BUILT at M4** (§15.3): 15/35/80 ink per rung per case, and a **completed face** — every track at 100% —
+  pays 200 ink **plus** the framed specimen. The group milestone stays M5, with the tree.
 - **Nibs are bought at the Stall with ink** — the shop reused, a new ink sink, no new economy.
   **AMENDED 2026-09-12 (dev's call, building M3): a nib is not a GATE.** This bullet used to say a face
   whose nib you don't own is *uncatchable-as-a-face*; it isn't. Every face is traceable with any pen you
@@ -802,8 +805,8 @@ Everything in §10.9's cost table came in at the estimate: no new fetches, no sa
 notes on scope before the findings. The 26 glyphs were **authored directly into the `GLYPHS` table** in the
 same arc-and-point style as a–z rather than mouse-drawn — the table *is* the tool's output format, and the
 shapes stay the dev's to tune in `wordshape-draw.html` afterwards. And §10.5's `Aa` toggle landed on **the
-bench's letter picker**, because the album itself is M4; when the album is built it inherits the switch, the
-`faceCells()` fractions and the `unicase` flag rather than inventing them.
+bench's letter picker**, because the album itself is M4; **as built (§15) the album inherited all three** —
+the switch, the `faceCells()` fractions and the `unicase` flag — rather than inventing them.
 
 What the build found or settled:
 
@@ -840,9 +843,10 @@ What the build found or settled:
   helper, `faceChar(ch)`, folds `A` onto `a` for the glyph, the album cell **and** the per-nib best — so
   §10.6's "A and a are the same drawing" is true of the save shape and not just the plate. Its face row
   shows one fraction of 26; every other face shows two.
-- **The two fractions are computed, the milestones are still M4.** `faceCells(f)` returns `{lo, up}` and the
-  face list shows `7a·3A`. M4 must read both and never their sum — §10.5's migration trap is a comment on
-  that function, where the code that would get it wrong will be.
+- **The two fractions are computed, the milestones were M4.** `faceCells(f)` returns `{lo, up}` and the
+  face list shows `7a·3A`. M4 had to read both and never their sum — §10.5's migration trap is a comment on
+  that function, where the code that would get it wrong would be. **BUILT (§15.3): `trFaceTracks(f)` is the
+  one place that decides how many tracks a face has, so the sum is never available to get wrong.**
 - **The capitals copy is a paragraph on the existing plate**, shown while an uppercase letter is selected
   (always, for a unicase face), plus six capital-only anatomy callouts. Callouts were already keyed by
   character, so `{term:"cap height", letter:"H"}` needed no new shape — exactly as §10.5 predicted.
@@ -907,7 +911,8 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
     eleven §4.1 leaves and the **starter skeleton face** (§8), which is the one face whose specimen is not a
     font. Each face carries group, nib, date, origin, font file, CSS family, licence, credit, a **plate**
     paragraph and **anatomy callouts** (`{term, letter, note}`) — the teaching copy §7's plate needs,
-    authored now and *positioned* at M4. Faces keep their **real font names**: §4's pun-a-new-name advice
+    authored now and *positioned* at M4 (**done — §15.4 derives each anchor from the glyph's own geometry
+    rather than authoring a coordinate per callout**). Faces keep their **real font names**: §4's pun-a-new-name advice
     applies only to a face we would have to redraw to ship, and "Garamond" is the teaching payload.
   - **`fonts/` + `fetch-typeface-fonts.sh`** — eleven OFL faces and their licence texts (§4.1, as shipped).
   - **The nib↔group mapping**, stated from both ends and **asserted at boot** — see §3's `groups` note and
@@ -1036,12 +1041,17 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
     cached pad layer clipped at half height, because a fresh canvas defaults to 300x150 and `TR_PAD_PX` is
     300, so testing the width alone passes); the other three changed the feature — the `?` peek cut, a
     specimen of the target letter added upper-right, and the trace opening on a SWING rather than `E`.
-  - Still M4's, and deliberately not built here: the album view. The cells accumulate (grade + the 16-point
+  - Left to M4, and deliberately not built here: the album view (**built the next day — §15**). The cells
+    accumulate (grade + the 16-point
     strokes that earned them) with nothing yet to look at but a toast naming the face, the grade and the
     fraction — **the two fractions shown separately and never summed** (§10.5), which is `trFaceCells`
     earning its keep in M3 rather than waiting.
-- **M4 — the Scriptorium.** The album, the per-face plate with anatomy callouts, the 25/50/100% milestones
-  paying ink + décor, the framed-specimen décor item.
+- **M4 — the Scriptorium. BUILT 2026-09-13** — the album, the per-face plate with anatomy callouts, the
+  25/50/100% milestones paying ink + décor, and the framed-specimen décor item. Full build notes in
+  **§15**; the short version is that the album is **one canvas strip per face** rather than 312 cells, the
+  callout anchors are **derived from the glyph's own geometry** rather than authored per callout, and an
+  empty cell shows **the face's own letter, ghosted**, so the grid is a specimen sheet before it is a
+  checklist.
 - **M5 — the Tree of Faces.** The classification map (Tree-of-Kinds pattern) + group milestones.
 - **M6 — italics & bold** (§11).
 - **M7 — capitals** (§10). **BUILT 2026-09-12 — and it landed BEFORE M3, which cancels the fallback M3
@@ -1176,3 +1186,119 @@ only if the swing connected with *nothing else* (`swungAtInkling && !hitAny`) �
 fight. That is strictly better than the note's "the worst it can do is open a pad you leave with `Esc`":
 mid-combat swings never interrupt themselves, and the inkling standing beside a beast is still reachable
 with `E` or by finishing the beast first.
+
+---
+
+## 15. M4 — the Scriptorium album (BUILT 2026-09-13)
+
+The album, the plate and the milestones. Everything below is in `inklings.html` under
+`/* ==================== M4 — THE SCRIPTORIUM ====================` plus the `#album` panel and its CSS;
+nothing else in the feature moved, and the trace itself is untouched apart from **one new field on a
+cell** (§15.1) and **one call** on its success path.
+
+### 15.1 What a cell holds now
+
+`state.faces[faceId][letter] = { g, s, n }` — the grade, the 16-point strokes (M2's call), and **`n`, the
+nib that earned it**, added here. The album redraws your hand with the pen that actually made it rather
+than with the face's own; a cell written before M4 has no `n` and falls back to `f.nib`, which is the pen
+it was almost certainly drawn with anyway. One field, no migration, and it is the difference between the
+album showing *your* trace and showing an idealised one.
+
+### 15.2 The grid: one canvas per face, not 312 cells
+
+Twelve **strips**, 26 cells each, one `<canvas>` per face, with a sticky `a–z` ruler above them. The
+alternative — a cell per element — is 312 nodes, 312 layout boxes, and a row that squeezes on a phone; a
+strip is one `clientWidth` read and one redraw when a late woff2 lands (`alRefreshFace`, which redraws that
+face alone rather than rebuilding the panel under your scroll position).
+
+- **A filled cell draws your strokes**, stamped with the cell's nib, plus a **gold bar along the bottom
+  whose length is the grade** — a percentage is unreadable at 20 px and a length is not, and §7's whole
+  argument for grading is that the album records a hand improving.
+- **An empty cell draws the face's own glyph, ghosted** (the dev's call). It costs nothing — `trDrawFaceGlyph`
+  already draws exactly this — and it makes the grid a **specimen sheet before it is a checklist**: you can
+  see what you are hunting, in the hand you will have to hunt it in.
+- **26 columns never wrap.** A line of a–z *is* the specimen sheet's own unit. On a narrow phone the cells
+  get small (≈11 px) rather than wrapping to two rows, because a wrapped row would need a second ruler and
+  the plate (13 columns, so double-size cells) is where you go for detail anyway.
+- **No CSS border on a strip** — the frame is stroked inside the canvas, last, after the cells. With
+  `box-sizing:border-box` a CSS border eats into `clientHeight`, so the bitmap and the box would disagree
+  and every cell would be squashed by a couple of pixels for no visible reason.
+
+### 15.3 Milestones
+
+Auto-granted like the Atlas's continents (`claimContinents` is the model, down to the shape of the toast),
+because the trigger is a trace and the reward should land in the same breath as the letter:
+
+| rung | per track | pays |
+| --- | --- | --- |
+| 25% | 7 of 26 | 15 ink |
+| 50% | 13 of 26 | 35 ink |
+| 100% | 26 of 26 | 80 ink |
+| **the face** | every track at 100% | **200 ink + a Framed Specimen** |
+
+Three decisions worth keeping:
+
+- **The décor lands on the completed FACE, not on every 100%.** A rung per case would mint up to 24 framed
+  specimens; the ink carries the smaller rungs and the trophy stays a trophy.
+- **The two cases are two tracks and are never summed**, here as everywhere (§10.5). `trFaceTracks(f)`
+  is the single place that decides how many tracks a face has — and it is also where **Uncial's unicase
+  rule pays for itself**: one track, not two, or the face would be paid twice for the same 26 traces.
+- **`claimAlbumMilestones()` runs on album OPEN as well as on a trace.** A save made before M4 has filled
+  cells that crossed rungs nobody was ever paid for; settling them on first open is what the Atlas does for
+  imported saves, and the toast says how many and how much rather than firing twelve in a row.
+
+Save **v13 → v14**: `state.faceMiles` (`"garalde:lo:50"` → the day it paid) joins `snapshot`/
+`applySnapshot`, hence Export/Import. The **Framed Specimen** is one generic `DECOR.specimen`, *not* a
+per-face id — `applySnapshot` filters `state.placed` through `DECOR[o.id]` at load, long before the lazy
+`typefaces.json` has landed, so a generated per-face entry would be dropped as unknown on every single
+load. The flagpole's "one object, N faces, assignment on the placed instance" pattern is the right later
+refinement and is recorded as such.
+
+### 15.4 The plate, and where the callout anchors come from
+
+A face's plate is its group path, date, origin, pen, both fractions with their milestone rungs, a
+double-size sheet (13 columns), the authored `plate` and `caps` paragraphs, the anatomy callouts, and the
+font credit. The callouts are the part that needed a decision, because §4.1 authored them as
+`{term, letter, note}` and left *positioning* to M4.
+
+**The anchors are derived from the glyph's own geometry, not authored per callout.** Thirty-one hand-placed
+coordinates would be a second thing to keep true of every new face and every skeleton edit, and the skeleton
+already knows where its bowl, its stems, its stroke ends and its metric lines are. `trCalloutAnchor(term, g)`
+reads the term for what it is asking about:
+
+| the term mentions | the anchor |
+| --- | --- |
+| x-height / cap height | that metric line, at the glyph's mid-x |
+| aperture | the midpoint between the two ends of the longest stroke — literally the gap |
+| bar | a little way along the first stroke (the `e`-bar is where the hand starts) |
+| stress, contrast, hairline, monoline, flat-pen, *varying* widths | the glyph's left extreme at mid-height, where thick and thin are furthest apart |
+| serif, terminal, entry/exit, swell/release | the **lowest stroke end** — where a pen enters and leaves the line |
+| bowl, round, curve, circular, width | the glyph's right extreme at mid-height |
+
+Order matters in exactly one place: **stroke-width terms are tested before letter-width terms**, or
+*varying widths* reads as a claim about the letter's width rather than the pen's. A term with no rule gets
+its caption and **no leader line** — it never gets a wrong one. The leader exits toward the nearer side, so
+it points *at* the feature rather than across the letter, and the drawing under it is **your traced glyph
+over the face's own, ghosted** when you own the cell, and the face's own in full when you don't (captioned
+honestly: *shown in the face's own hand — you haven't traced this letter yet*).
+
+### 15.5 Where it opens from
+
+A **toolbar button (📜 Scriptorium)** and its touch twin, non-contextual — the Sound Board's own precedent,
+and a **library desk is a later launcher-only change** (the dev's call: toolbar now, desk later). The album
+is a reference you want mid-hunt — *do I already own `k` in Didone?* — which is an argument the Atlas's
+globe-only rule doesn't have to answer.
+
+`state.albumOpen` joined every guard list that names `state.soundboardOpen`/`state.tracing` (both movement
+gates, `canBeHurt`, both `hintReady`s, `syncTouchUI`, `phonHideSound`, `musicDialogueOpen`), plus
+`closeAnyDialog` and its own key-handler branch: **`A`** swaps case, **`[`/`]`** step faces from a plate,
+**`Esc`** backs a plate out to the grid and then closes.
+
+### 15.6 What M4 deliberately did not do
+
+- **No per-face average on a plate.** §13 #7's answer stands: that is a report card, and the personal best
+  per cell is the honest version.
+- **No re-trace button.** §8.1 is the whole design — you beat a cell by meeting that letter in that face
+  again, which is what makes a duplicate worth catching.
+- **The Tree of Faces is still M5.** The plate names its branch (`trGroupPath`) and the group milestone is
+  reserved; the map itself is the next milestone's work.
