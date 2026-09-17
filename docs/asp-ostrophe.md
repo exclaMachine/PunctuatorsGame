@@ -1,11 +1,14 @@
-# Asp-ostrophe — the snake that eats letters and feeds the tide
+# Apostropharaoh — the snake that eats letters and feeds the tide
+
+*(File and codename stay `asp-ostrophe`. **Name settled 2026-09-17**, §13 #5.)*
 
 Status: **SPECCED 2026-09-16. PIVOTED 2026-09-16** from whole-word contractions to loose letters (§1a).
 **M1 — the strike — BUILT 2026-09-16** as `asp-ostrophe.html`, and it survives the pivot untouched: the
 shaft, the dash, body-as-wall and Apep are the same game. **M2 — the rack — BUILT 2026-09-16**: letters in
 the shaft, the rack on her body, capacity, overflow, the fall, the landed block and Apep eating it — the
-debt half of the loop, playable and unwinnable on purpose. Milestones §12; what M1 settled §12.1, what M2
-settled §12.2; open questions §13.
+debt half of the loop, playable and unwinnable on purpose. **The goal — §14, restore the alphabet — is
+SPECCED TENTATIVE 2026-09-17**, and **M3's input model is SETTLED with it at §15**. Milestones §12; what M1
+settled §12.1, what M2 settled §12.2; open questions §13.
 
 **The pitch:** you are ApostroPharaoh, the contraction hero from Punctuators, as an asp in a neon tomb.
 Loose letters lie on the ledges. You **strike** down a lane and swallow what you cross — but you can only
@@ -83,9 +86,12 @@ blocked game constantly needs. Death comes from Apep, never from touching yourse
 way is open, and queues for the end of the strike if it isn't. Full commitment with the control kept.
 
 **Two currencies, one thing on each: everything internal runs on DISTANCE travelled; Apep alone runs on
-TIME.** That separation is what makes §6 possible at all — you can stop and stand still to spell a word,
-and it costs you nothing but the seconds Apep spends climbing while you do it. *That* is the balance the
-game is made of.
+TIME.** That separation is what makes §6 possible at all: spelling costs you nothing but the seconds Apep
+spends climbing while you do it. *That* is the balance the game is made of.
+
+**AMENDED 2026-09-17 (§15): spelling is not a pause.** This paragraph originally read *you can stop and
+stand still to spell a word* — but she cannot stop (above), and a game that halts for a word puzzle is two
+games glued together. You type while climbing; Apep never waits.
 
 ---
 
@@ -190,6 +196,9 @@ requires more climbing.
 
 ### 6.3 Input
 
+**Settled in full at §15 (2026-09-17)** — typing never pauses the game, touch spells in the rack bar, and
+the chips carry a dim / lit / ringed-gold prefix state. What follows is the shape §15 builds on.
+
 **Desktop.** Arrows steer. Letter keys pick that letter out of the rack (greying it as it's used), `Enter`
 commits, `Backspace` un-picks the last, `Esc` clears. The word forms in front of you and lights up when
 it's real. **WASD is gone** — you cannot bind `A`/`S`/`D` to steering in a game where you type, and `R` can
@@ -279,12 +288,13 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
 |---|---|---|
 | **M1** | **The shaft and the strike** — **BUILT 2026-09-16** | Grid, dash-until-blocked, the trailing body, body-as-wall, procedural shaft, Apep rising, death, restart. No letters at all. Prove the movement before anything else is built on it. §12.1. |
 | **M2** | **The rack** — **BUILT 2026-09-16** | Letter tiles in the shaft, eating, letters drawn on her body, capacity, overflow, the fall, the landed block, Apep eating it and speeding up, plus the deliberate spit (§1a #11) and the rack bar (§1a #12). **Still no spelling** — this milestone is the debt half of the loop on its own, and it should already be a tense (if unwinnable) game. §12.2. |
-| **M3** | **The word** | `enable1.txt`, typing and tapping, the commit, scoring, Apep pushed back. **This closes the loop.** |
+| **M3** | **The word** | `enable1.txt`, typing and tapping, the commit, scoring, Apep pushed back. Input model settled at **§15** — typing never pauses, touch spells in M2's rack bar, chips run dim/lit/gold off a prefix check. **This closes the loop.** |
 | **M4** | **The feel** | Pixel pass, her sprite through the pixelizer, neon/bloom/scanlines, the procedural SFX kit, and the three moments that need their own cue: the swallow, the drop, the word. |
 | **M5** | **The easter egg** | §7 — contraction spellings, the cartouche, the apostrophe gate and passing through yourself. |
 | **M6** | **Masks and hazards** | §9, §10. |
-| **M7** | **The run** | Capacity upgrades, stats, the spoiler-free share string (Critter Hunt's `copyShare` shape). |
-| — | *(parked)* Authored tomb levels with star goals; **the whole-word contraction game** (§1) as a separate mode if it ever wants to exist. |
+| **M7** | **The run** | Capacity upgrades, stats, the spoiler-free share string (Critter Hunt's `copyShare` shape). **This is the fallback meta-layer**: if §14 ships, capacity 7→8→9 moves to its alphabet milestones (§14.6) and is not earned twice. |
+| **M8+** | **The 26 tombs** — *tentative*, §14 | The alphabet's own origins as the goal: a tomb per letter, claimed by spelling its ancestor word (`OX` → A, `WATER` → M), the Wall as hub and collection, décor plus four milestone upgrades. **Not a prerequisite for anything above** — if it is dropped, M1–M4 and §7 are still a complete game. |
+| — | *(parked)* **The whole-word contraction game** (§1) as a separate mode if it ever wants to exist. |
 
 ### 12.1 What M1 settled
 
@@ -365,5 +375,157 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
    makes it easier, not harder. Watch it in M3, when a word finally makes the droppings worth something.
 4. **Does the rack refuse duplicates of a letter you already hold?** Almost certainly not, but doubled
    letters are where a 7-rack goes dead, and §4.2's 2% is the number to watch.
-5. **The name.** *Asp-ostrophe* still fits — she is an asp, and §7 is where the apostrophe lives. But the
-   apostrophe is no longer the economy, so *The Tomb of the Asp* and *Apostropharaoh* are back on the table.
+5. ~~**The name.**~~ **ANSWERED 2026-09-17 — the game is _Apostropharaoh_.** It names the character
+   rather than the mechanic, which is the right call once §14 makes the alphabet the point: the apostrophe
+   is an easter egg (§7) and the asp is a costume, but *she* is the draw and she is the one restoring the
+   alphabet. The file, the codename and this doc's filename stay `asp-ostrophe` — renaming a shipped path
+   buys nothing and the repo is served flat.
+
+---
+
+## 14. The goal — restore the alphabet (TENTATIVE, 2026-09-17)
+
+**Status: tentative by the dev's call.** This is the shape the game is aiming at, not a commitment. M3
+still closes the loop on its own and nothing below is a prerequisite for it. If §14 is dropped, M1–M4 plus
+§7 remain a complete arcade game and §12's M7 is still the fallback meta-layer.
+
+### 14.1 The problem it answers
+
+After M3 the game is a complete arcade loop with **no reason to play it twice**: the entire meta-game is
+one integer in `localStorage` called `best`. Every other game in this repo has an answer to *what am I
+doing across sessions* — Inklings has the dex and the collections, Critter Hunt has the daily and the
+streak, Mujicians has the campaign, Punctuators has the Tree of Kinds. This has a high score.
+
+There is a second gap under it. Every game here teaches something specific, and this one currently teaches
+**anagramming under time pressure** — which is real, but it is the Sound Board's payload already, it is a
+side effect of the mechanic rather than a subject, and it leaves the Egyptian setting doing no work at all.
+The tomb is a skin.
+
+### 14.2 The payload
+
+**The letters we use descend from Egyptian hieroglyphs**, by way of proto-Sinaitic and Phoenician, and most
+of them are still recognisable pictures of the thing they were named after. That is a real, bounded (26),
+genuinely surprising body of knowledge that runs straight through the setting this game already has.
+
+| | ancestor | | ancestor |
+|---|---|---|---|
+| **A** | *aleph*, an ox head — rotate `A` 180° and it is still one | **M** | *mem*, water |
+| **B** | *beth*, a house | **N** | *nun*, **a snake** |
+| **D** | *daleth*, a door | **O** | *ayin*, an eye |
+| **H** | *heth*, a fence | **P** | *pe*, a mouth |
+| **K** | *kaph*, a palm | **R** | *resh*, a head |
+| **L** | *lamed*, a goad | **S** | *shin*, a tooth |
+
+The player is a snake and **N *is* a snake.** That is the alphabet's own biography, not a pun we invented.
+
+**It does not overlap Inklings' Scriptorium.** That feature is about *the tool that made the shape* — nibs,
+stroke contrast, typefaces. This is about *the origin of the shape* — pictograms. Siblings, not duplicates,
+and worth keeping visibly distinct if both ship.
+
+**Some etymologies are contested** (*gimel* camel vs throwing stick; *samekh*, *qoph*, *sadhe* are all
+argued). The repo's standard is real data, so a contested letter must say so in its own words rather than
+assert one version as fact — and where there is a choice, take the reading that is most drawable and most
+spellable.
+
+### 14.3 The structure
+
+**26 letter-tombs.** A tomb is a shaft — the thing M1 and M2 already built — so this costs almost nothing
+structurally. What a tomb adds is a top and a key.
+
+- **You PASS a tomb by escaping it** (reaching the top, ahead of Apep).
+- **You EARN the letter by spelling its ancestor word** on the way: `OX` claims A, `EYE` claims O,
+  `MOUTH` claims P, `WATER` claims M, `SNAKE` claims N. **The picture on the wall is the password** — which
+  turns the fact into a verb instead of a codex entry, and is discoverable by a player who is paying
+  attention rather than being told.
+- **Passing without the key is not a failure.** You escaped; you just did not claim the letter. The tomb is
+  replayable, so a tomb is never a hard block and the alphabet is never gated behind one bad rack.
+- **A tomb is themed to its own ancestor.** The tomb of M floods. The tomb of N is thick with snakes. The
+  tomb of O is watched.
+
+**The endless shaft survives unchanged** as the arcade layer — same code, no top, no key — and stays the
+default so the game still opens into something playable in five seconds.
+
+### 14.4 The feasibility problem, and the fix
+
+**Spelling a SPECIFIC word is far harder than spelling ANY word**, and it would be easy to build this
+without noticing. §4.2's 97.8% is *can this rack make something*; holding `W A T E R` in seven slots at
+once is a different and much rarer event. Unfixed, most tombs would be unclaimable and the feature would
+read as broken.
+
+**The tomb seeds its own shaft toward its key word.** The tomb of M drops `W A T E R` tiles well above
+their Scrabble weight. Two things fall out of that, both good:
+
+- It is also the **teaching mechanism** — you keep finding the same five letters and start to guess why,
+  which is the moment the feature is built for.
+- Holding five of your seven slots on the key means you will be **one letter short and overflow-dropping
+  the `R`**, which is precisely the drama §5 exists to create. The key word and the core tension are the
+  same event.
+
+**The key word is exempt from §1a #7's three-letter minimum**, or `OX` cannot be the key for A. It is not
+an ordinary scoring word; it is the tomb's lock.
+
+### 14.5 The Wall — hub, collection and reward in one screen
+
+One screen showing all 26 letters. A dark letter is a tomb you have not claimed; a claimed one shows its
+pictogram and its descent (hieroglyph → proto-Sinaitic → Phoenician → Greek → Latin). That single artifact
+is the **tomb select**, the **collection**, and the place restored décor is displayed — so the reward for a
+tomb is visible in the same screen you choose the next one from.
+
+**Tombs are freely chosen, not gated** — you can enter any of the 26 from the start. The tomb of **N** is
+the natural opener (she is a snake, in the snake's own tomb) but nothing enforces it.
+
+### 14.6 What a restored letter pays
+
+The dev's call: **cosmetic, plus upgrades kept very small.** 26 stacking upgrades would make the endgame
+play nothing like the opening and leave the last tombs trivial, so the weight is split:
+
+- **Per letter (×26, tiny):** the pictogram becomes a **placeable decoration** on the Wall (Inklings' décor
+  pattern), and **that letter scores double when spelled**. A restored letter is a letter that works
+  properly again, which is the theme paying the mechanic. It is self-scaling — restoring `E` matters more
+  than restoring `Q` because you hold more `E`s — and no single one is felt on its own.
+- **Per milestone (×4, real):** at **25 / 50 / 75 / 100%** of the alphabet — the repo's own milestone
+  pattern, used by the Atlas's continents and the Scriptorium's album. Capacity 7 → 8 → 9 lives here
+  (§4.2 caps it at 9), and 100% is the completion payoff. Four real upgrades across a whole alphabet is
+  slow enough that a tomb never becomes free.
+
+### 14.7 Open details
+
+- **Six letters have no Egyptian ancestor.** `J U V W Y` are Latin/Greek additions and `C`/`G` both split
+  from *gimel*. That is a fact worth teaching rather than a hole to paper over — those are **newer tombs**
+  and should say so. What their key word is (`W` = the double `U`?) is unsolved.
+- **Which word claims a contested letter**, given 14.2's honesty rule.
+- **Whether the tomb's seeded letters are visible as such** — a player who notices the bias is being taught;
+  one who does not just finds the tomb generous.
+- **Whether the endless shaft and the tombs share the `best` record** or keep separate ones.
+
+---
+
+## 15. M3's input model — settled 2026-09-17
+
+**Typing does not pause anything.** Apep keeps climbing, the strike keeps striking, you type mid-climb and
+commit on `Enter`. The alternative — standing still to spell, as §3 describes — was rejected as the thing
+most likely to make this read as *an action game that stops for a word puzzle*; Tomb of the Mask never asks
+you to stop, and one game beats two glued together.
+
+**On touch, spelling lives in the rack bar** — which is why §1a #12 put it under the canvas in M2 rather
+than overlaid. Steering is a swipe **on the canvas**; spelling is a tap **on the bar**. Two regions, two
+thumbs, no gesture conflict, and the bar M2 already built gains behaviour instead of a new widget being
+invented for it.
+
+**The chips carry three states, and the middle one is the whole design:**
+
+| state | meaning |
+|---|---|
+| **dim** | this letter cannot extend what you have typed into any real word |
+| **lit** | it keeps you on a live prefix |
+| **ringed gold** | committing right now makes a word |
+
+The gold ring is a signal §6.3 already required (*"lights up when it's real"*); it has simply moved onto the
+chips. The lit/dim split is a **prefix check against `enable1`, not a solver** — it refuses dead ends
+without ever naming the word, which is the line this has to walk. **Desktop gets the identical affordance**
+(impossible keys grey out), so the two platforms teach the same thing rather than diverging.
+
+**The known exploit, and why it is acceptable:** you can tap only lit chips and stumble into short words
+without solving anything. Score and Apep-push scale with **length**, so mashing survives and never wins —
+and in a real-time game where the pressure is supposed to come from Apep rather than from the dictionary,
+forgiving input is the right failure.
