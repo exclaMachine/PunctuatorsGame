@@ -27,7 +27,7 @@ The Punctuators shoot on to a sentence of your creation to add back the removed 
 9. Apostrophantom
 10. Master Asterisk
 11. Ms. Hyphen
-12. Apostropharaoh
+12. ApostroPharaoh
 13. The Foon
 14. Ambigrambador
 15. Art the Tickler

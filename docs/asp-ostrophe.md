@@ -1,4 +1,4 @@
-# Apostropharaoh — the snake that eats letters and feeds the tide
+# ApostroPharaoh — the snake that eats letters and feeds the tide
 
 *(File and codename stay `asp-ostrophe`. **Name settled 2026-09-17**, §13 #5.)*
 
@@ -375,7 +375,7 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
    makes it easier, not harder. Watch it in M3, when a word finally makes the droppings worth something.
 4. **Does the rack refuse duplicates of a letter you already hold?** Almost certainly not, but doubled
    letters are where a 7-rack goes dead, and §4.2's 2% is the number to watch.
-5. ~~**The name.**~~ **ANSWERED 2026-09-17 — the game is _Apostropharaoh_.** It names the character
+5. ~~**The name.**~~ **ANSWERED 2026-09-17 — the game is _ApostroPharaoh_.** It names the character
    rather than the mechanic, which is the right call once §14 makes the alphabet the point: the apostrophe
    is an easter egg (§7) and the asp is a costume, but *she* is the draw and she is the one restoring the
    alphabet. The file, the codename and this doc's filename stay `asp-ostrophe` — renaming a shipped path
