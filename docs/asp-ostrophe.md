@@ -2,8 +2,10 @@
 
 Status: **SPECCED 2026-09-16. PIVOTED 2026-09-16** from whole-word contractions to loose letters (§1a).
 **M1 — the strike — BUILT 2026-09-16** as `asp-ostrophe.html`, and it survives the pivot untouched: the
-shaft, the dash, body-as-wall and Apep are the same game. Milestones §12; what M1 settled §12.1; open
-questions §13.
+shaft, the dash, body-as-wall and Apep are the same game. **M2 — the rack — BUILT 2026-09-16**: letters in
+the shaft, the rack on her body, capacity, overflow, the fall, the landed block and Apep eating it — the
+debt half of the loop, playable and unwinnable on purpose. Milestones §12; what M1 settled §12.1, what M2
+settled §12.2; open questions §13.
 
 **The pitch:** you are ApostroPharaoh, the contraction hero from Punctuators, as an asp in a neon tomb.
 Loose letters lie on the ledges. You **strike** down a lane and swallow what you cross — but you can only
@@ -47,6 +49,9 @@ The whole-word version is parked in §13 as a possible second mode, not deleted 
 | 8 | **A word pushes Apep back down** | The tide becomes a live readout of how well you're spelling: poop raises it, words lower it. Self-limiting with no artificial cap, because **letters only exist further up the shaft** — farming requires climbing. |
 | 9 | **Arrows steer, letter keys type. WASD is retired.** | Unavoidable: you cannot bind `A`, `S` and `D` to steering in a game where you type. §6.3. |
 | 10 | **Contractions become an easter egg that mints an apostrophe gate** | §7. It's the one idea from the first draft too good to lose, and it survives better as a reward than as the economy. |
+| 11 | **The deliberate spit ships in M2**, not M3 | §13 #2, settled. Without spelling there is otherwise no agency over the rack at all — you eat, you overflow, you die — and the spit is precisely what turns overflow from an accident into the *placement* decision §5 is built to teach. Costed slightly worse than overflowing, and visibly: Apep **lurches** up at once, on top of the same block he will eventually eat. |
+| 12 | **A rack bar under the shaft, as well as letters on her body** | Her body is still the rack (§4.1) — but a segment is ~24 px on a phone, and the bar is where the count and the about-to-drop warning are actually legible. It is also exactly where M3's tap-to-spell has to live, so M3 adds behaviour to a widget that already exists rather than inventing one. **Stacked below the canvas, never overlaid** — Apep arrives from the bottom of the shaft, so a strip floating over it would hide the one thing you most need to see. |
+| 13 | **Letters rest ON LEDGES** — the empty tile directly above stone — with a minority floating | §1's "loose letters lie on the ledges", taken literally. It makes a ledge a *destination* rather than scenery, and pairs every letter with a natural stopping point, which a slide-until-blocked game constantly needs. A few float in open air so a long vertical strike can still pay. |
 
 ---
 
@@ -84,7 +89,7 @@ game is made of.
 
 ---
 
-## 4. The rack
+## 4. The rack — BUILT (M2)
 
 ### 4.1 Holding
 
@@ -95,6 +100,30 @@ furthest from your face, which is exactly where you can read it.
 Holding is never free: more letters means a longer snake, and a longer snake is harder to drive through a
 shaft and blocks more of its own lanes. It is also more wall to stop against, so the cost is never simply
 bad.
+
+As built, `BASE` is **4** — a head and three of neck — so she is 4 long empty and **11 long with a full
+rack**, which is a big enough swing that you can feel the geometry change as you eat. The rack occupies
+the segments from the neck back, ending at the tail tip, so the letter about to drop really is the one on
+the end that falls off.
+
+**TO CHANGE (dev's note, 2026-09-17): the letters should fill her ENTIRE length except the head.** Playing
+M2, the three blank neck segments read as spare room — and spare room is exactly the wrong thing for a
+body to be showing at the moment a letter falls out of it. If every segment behind the head is a letter,
+then a full snake is *visibly* a full snake, and the drop explains itself: **there is nowhere left to put
+one.** That makes the body the honest readout §4.1 claims it is, rather than a rack with padding on the
+front of it.
+
+Mechanically that is `BASE` 1 — head only — so she is **1 long empty and 8 long with a full rack**. Two
+knock-ons to settle when it is built:
+
+- **She gets very short when empty**, and body-as-wall (§3) is the rule the whole game stands on: a
+  one-tile snake has no body to coil against, so the early game loses its stopping points until the
+  first few letters arrive. That may be correct — you are *meant* to want letters — but it is the thing
+  to watch first, and the fallback if it plays badly is `BASE` 2 (head plus one), which keeps the reading
+  ("every segment you can see a letter on is a letter") while leaving her something to turn against.
+- **The overflow beat gets shorter to read.** At `BASE` 4 the doomed letter is the 8th of 11 segments; at
+  `BASE` 1 it is the 8th of 8, i.e. the literal tail tip. That is better for legibility and it means the
+  drop animation and the segment it leaves from are the same tile, which they currently only nearly are.
 
 ### 4.2 Why capacity 7
 
@@ -121,7 +150,7 @@ game rather than a hard one.
 
 ---
 
-## 5. The drop, and the tide
+## 5. The drop, and the tide — BUILT (M2)
 
 An overflowed letter falls out of her tail, down the shaft, until it hits a ledge, a block or Apep himself.
 Where it stops, it becomes a **solid block** — the scarab from the first draft, kept, because a game about
@@ -132,7 +161,9 @@ stopping against things wants more things to stop against.
   have bought time on. **Where you overflow matters as much as whether you overflow.**
 - Until then it is furniture — a block in your way, or a stopping point you can use.
 - **You can re-eat it** if you get there before he does. Diving back down the shaft toward the tide to
-  reclaim a letter you fumbled is the riskiest move in the game and should pay like it.
+  reclaim a letter you fumbled is the riskiest move in the game and should pay like it. **As built, the
+  block being solid IS how you re-eat it**: a strike into one stops there and takes the letter back — one
+  move, two outcomes, no extra verb (§12.2).
 - Enough of them and you wall yourself in, which is a death entirely of your own making and entirely
   visible on the way to happening.
 
@@ -168,7 +199,14 @@ only stay the restart key because it's read while you're dead.
 a ✓ to commit. Same everything else.
 
 The overflow moment needs telegraphing in both: the tail letter pulses when the rack is full, with a beat
-of grace before it goes.
+of grace before it goes. **As built there are two states, not one** — *full* (a warning pulse on the
+oldest letter, on her body and in the rack bar) and *over* (that letter flashes hard for
+`OVERFLOW_GRACE` = 300 ms and then leaves). The beat is deliberately long enough for M3 to be able to
+snatch the letter back inside it by spelling with it.
+
+**M2's spit is bound to `X`, which M3 must move.** It is the only free letter key today and it will not be
+free the moment letters mean *pick that letter out of the rack* — so when M3 lands, the spit becomes the
+✕ button plus something that isn't a letter (the touch path already works and needs no change).
 
 ---
 
@@ -240,7 +278,7 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
 | | | |
 |---|---|---|
 | **M1** | **The shaft and the strike** — **BUILT 2026-09-16** | Grid, dash-until-blocked, the trailing body, body-as-wall, procedural shaft, Apep rising, death, restart. No letters at all. Prove the movement before anything else is built on it. §12.1. |
-| **M2** | **The rack** | Letter tiles in the shaft, eating, letters drawn on her body, capacity, overflow, the fall, the landed block, Apep eating it and speeding up. **Still no spelling** — this milestone is the debt half of the loop on its own, and it should already be a tense (if unwinnable) game. |
+| **M2** | **The rack** — **BUILT 2026-09-16** | Letter tiles in the shaft, eating, letters drawn on her body, capacity, overflow, the fall, the landed block, Apep eating it and speeding up, plus the deliberate spit (§1a #11) and the rack bar (§1a #12). **Still no spelling** — this milestone is the debt half of the loop on its own, and it should already be a tense (if unwinnable) game. §12.2. |
 | **M3** | **The word** | `enable1.txt`, typing and tapping, the commit, scoring, Apep pushed back. **This closes the loop.** |
 | **M4** | **The feel** | Pixel pass, her sprite through the pixelizer, neon/bloom/scanlines, the procedural SFX kit, and the three moments that need their own cue: the swallow, the drop, the word. |
 | **M5** | **The easter egg** | §7 — contraction spellings, the cartouche, the apostrophe gate and passing through yourself. |
@@ -269,16 +307,62 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
 
 ---
 
+### 12.2 What M2 settled
+
+- **A landed block is solid, and being stopped by it is how you take it back.** §13 #3 asked whether a
+  dropped letter should be re-eatable; the answer is yes, and it needed no new verb — the strike that
+  stops against it consumes it. One consequence worth keeping: you therefore cannot wall yourself in with
+  blocks you are *willing to eat*, so "walled in" now means *surrounded by letters you can't afford*,
+  which is a better version of the same death.
+- **"Blocked" and "aimable" are two different questions**, and conflating them makes a landed letter
+  unreachable — the strike must stop against a block but you must still be allowed to point at one.
+  `blocked()` (stone + body + blocks) governs stopping; `aimable()` (stone + body only) governs turning.
+- **The rack rides `body[BASE_LEN + i]`**, so it ends at the tail tip, which is where the drop physically
+  comes out. The cost is that while she is growing, `body.length` is a step short of `BASE_LEN + held`
+  and the letter she just ate has no segment yet — the rack bar has it the same frame, which is half of
+  why the bar exists.
+- **The landing row is computed once, at drop time, not tested per frame.** Testing as it falls lets a
+  letter sink half into a ledge before the test fires; scanning down the column at the moment it leaves
+  her costs nothing, because the shaft below is already generated.
+- **The rack bar's height is measured, not predicted.** It carries a safe-area inset at the bottom of a
+  phone, and guessing that number puts Apep's arrival under the home indicator.
+- **Steering fires on `pointermove`, not `pointerup`.** At 44 ms a tile you are usually mid-strike when
+  you decide to turn, so requiring a lift loses the corner; once a swipe registers its origin resets, so
+  one finger can chain a second direction without leaving the glass. That is what makes §3's deliberate
+  coiling performable on a phone at all.
+- **The spit's cost is visible or it is not a cost.** The doc's "slightly worse rate than overflow" was
+  first drafted as Apep gaining extra speed from a spat block — invisible, and therefore indistinguishable
+  from free. As built he **lurches** half a row immediately, on top of the same deferred block: you can
+  see the price, you pay it anyway, and what you buy is choosing *where* the letter lands.
+- **Letters use Scrabble's distribution**, which is English frequency already weighted and already
+  legible: a player who has seen a Scrabble rack knows what a `Q` costs before this game tells them.
+- **Density measures at 0.336 letters per row** (`P_LEDGE_1` 0.85 / `P_LEDGE_2` 0.40 / `P_FLOAT` 0.09,
+  over 80,000 generated rows) — about **8** on a desktop screen and **10** on a phone. You only eat what
+  is in the lane you strike down, so a full rack is roughly a screen and a half of climbing if you are
+  taking them and considerably longer if you are dodging. Those three constants are the tuning knob if
+  M3 shows the tide rising too fast or too slow.
+- **Not in M2, on purpose:** audio (still M4), and any scoring. M2 has no score because it has no win —
+  `HEIGHT` and `APEP FED` are the whole readout, and the second one is the debt made into a number.
+- **Found by playing it, not yet fixed:** the three blank neck segments should go — the letters should
+  fill her whole length bar the head, so that a full snake *looks* full and the drop explains itself.
+  Written up in §4.1.
+
+---
+
 ## 13. Open questions
 
 1. **Does a word push Apep down, or only slow him?** Pushing him down (§6.2) makes the tide a readable
    scoreboard and feels great. It also means a strong speller can hold him almost stationary, which may be
    the correct reward or may be the bug. Decide by playing M3.
-2. **Is there a deliberate spit?** A key that ejects the oldest letter on purpose, at the same cost as
-   overflowing. It's agency — dumping a `q` to make room — but it also softens the one punishment the game
-   has. Leaning yes, at a slightly worse rate than overflow.
-3. **Should a landed letter be re-eatable?** §5 says yes and it's the best risk in the design. Watch that
-   it doesn't turn into the dominant strategy (hover above the tide, farm your own droppings).
+2. ~~**Is there a deliberate spit?**~~ **ANSWERED — yes, and it shipped in M2** (§1a #11). It softens
+   nothing, because its cost is paid *in front of you*: Apep lurches half a row the instant you press it,
+   on top of the same block he will later eat. What you buy is the placement, which is the decision §5
+   exists to teach. Still to watch in M3: whether a strong speller can spit freely enough that the
+   overflow punishment stops mattering.
+3. ~~**Should a landed letter be re-eatable?**~~ **ANSWERED — yes, and the mechanism is free**: a block
+   stops your strike, and being stopped by it is what takes the letter back (§12.2). The farming worry
+   stands and is now testable: hovering above the tide to eat your own droppings is legal, and M2's spit
+   makes it easier, not harder. Watch it in M3, when a word finally makes the droppings worth something.
 4. **Does the rack refuse duplicates of a letter you already hold?** Almost certainly not, but doubled
    letters are where a 7-rack goes dead, and §4.2's 2% is the number to watch.
 5. **The name.** *Asp-ostrophe* still fits — she is an asp, and §7 is where the apostrophe lives. But the

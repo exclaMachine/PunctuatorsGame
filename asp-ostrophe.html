@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Asp-ostrophe — M1</title>
+<title>Asp-ostrophe — M2</title>
 <style>
 /* Pixelify Sans — SIL OFL 1.1, bundled locally (fonts/PixelifySans-latin.woff2 + PixelifySans-OFL.txt),
    the same face Critter Hunt uses. Chrome only; nothing here is body copy. */
@@ -13,7 +13,9 @@
   --neon:#2de1ff;      /* the tomb's cold light — walls, chrome */
   --snake:#d8ff4a;     /* her head */
   --apep:#ff5426;      /* the thing below */
+  --gold:#ffc84a;      /* letters: the cartouche ring (§11) */
   --ink:#05070c;
+  --slot:34px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -24,7 +26,12 @@ body{
   font-family:'Pixelify','Courier New',monospace;
   color:#cfeaf5; touch-action:none; user-select:none; -webkit-user-select:none;
 }
-#wrap{position:relative}
+/* The shaft and the rack bar are stacked, never overlaid: Apep arrives from the
+   bottom of the canvas, so a strip floating over it would hide the one thing
+   you most need to see. sizeCanvas() measures the bar and gives the canvas
+   whatever is left. */
+#wrap{display:flex; flex-direction:column}
+#stage{position:relative}
 /* touch-action:none so a swipe on the shaft is a strike and never a page pan.
    The page has no user-scalable=no fallback to lean on — the meta tag above sets it. */
 canvas{display:block; touch-action:none; background:#05070c}
@@ -39,8 +46,43 @@ canvas{display:block; touch-action:none; background:#05070c}
 #hud .k{color:#5b7f93; font-size:11px; margin-right:4px}
 #hud .v{color:var(--neon)}
 #hud .sp{flex:1}
-#hud .dev{color:#7a6a3f; font-size:11px}
-#hud .dev .v{color:#c8a94e}
+#hud .fed{color:#8a4030; font-size:11px}
+#hud .fed .v{color:var(--apep)}
+
+/* ── the rack bar (§4.1, and the tap surface M3's spelling will inherit) ── */
+#rackbar{
+  display:flex; align-items:center; gap:6px;
+  padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+  background:#080d14; border-top:1px solid #16303d;
+}
+#slots{display:flex; gap:5px; flex:1; justify-content:flex-start}
+.slot{
+  width:var(--slot); height:var(--slot); flex:0 1 var(--slot); min-width:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:calc(var(--slot) * .58); line-height:1;
+  color:#243a46; border:1px solid #16303d; background:#0a121a;
+}
+.slot.full{
+  color:#1a1205; background:var(--gold); border-color:#ffe08a;
+  box-shadow:0 0 10px rgba(255,200,74,.35);
+}
+/* Full rack: the letter about to go pulses, which is §6.3's beat of grace. */
+.slot.warn{animation:warn 1s ease-in-out infinite}
+/* Over capacity: it is already leaving. */
+.slot.doom{
+  color:#fff1e2; background:var(--apep); border-color:#ff9a72;
+  animation:doom .17s steps(2) infinite;
+}
+@keyframes warn{0%,100%{box-shadow:0 0 10px rgba(255,200,74,.35)}50%{box-shadow:0 0 18px rgba(255,120,60,.95)}}
+@keyframes doom{0%{opacity:1}100%{opacity:.35}}
+#spit{
+  width:var(--slot); height:var(--slot); flex:0 0 var(--slot);
+  font-family:inherit; font-size:calc(var(--slot) * .46); line-height:1;
+  color:var(--apep); background:#170a08; border:1px solid #58201a;
+  cursor:pointer; padding:0; touch-action:manipulation;
+}
+#spit:disabled{color:#2e2320; border-color:#221512; cursor:default}
+#spit:not(:disabled):active{background:var(--apep); color:#170a08}
 
 /* ── overlays ────────────────────────────────────────────────────────── */
 .ov{
@@ -61,8 +103,9 @@ canvas{display:block; touch-action:none; background:#05070c}
 .ov h2{margin:0; font-size:19px; color:var(--apep); letter-spacing:.05em;
   text-shadow:0 0 16px rgba(255,84,38,.5)}
 .ov .sub{color:#5b7f93; font-size:12px; letter-spacing:.14em; margin-top:-4px}
-.ov p{margin:2px 0; font-size:13px; color:#9fc4d4; line-height:1.55; max-width:30ch}
+.ov p{margin:2px 0; font-size:13px; color:#9fc4d4; line-height:1.55; max-width:32ch}
 .ov .big{font-size:26px; color:var(--neon); text-shadow:0 0 14px rgba(45,225,255,.5)}
+.ov .gold{color:var(--gold)}
 .ov .go{
   margin-top:10px; font-size:14px; color:var(--snake); letter-spacing:.1em;
   animation:pulse 1.25s ease-in-out infinite;
@@ -76,60 +119,78 @@ kbd{
 </head>
 <body>
 <div id="wrap">
-  <canvas id="cv"></canvas>
+  <div id="stage">
+    <canvas id="cv"></canvas>
 
-  <div id="hud">
-    <span><span class="k">HEIGHT</span><span class="v" id="h-height">0</span></span>
-    <span><span class="k">BEST</span><span class="v" id="h-best">0</span></span>
-    <span class="sp"></span>
-    <span class="dev"><span class="k">LEN</span><span class="v" id="h-len">7</span></span>
+    <div id="hud">
+      <span><span class="k">HEIGHT</span><span class="v" id="h-height">0</span></span>
+      <span><span class="k">BEST</span><span class="v" id="h-best">0</span></span>
+      <span class="sp"></span>
+      <span class="fed"><span class="k">APEP FED</span><span class="v" id="h-fed">0</span></span>
+    </div>
+
+    <div class="ov" id="ov-start">
+      <h1>ASP<span class="b">'</span>OSTROPHE</h1>
+      <div class="sub">M2 · THE RACK</div>
+      <p>Flick a direction and you <b>strike</b> — sliding until something stops you, swallowing every <span class="gold">letter</span> you cross.</p>
+      <p><b>Your body is the rack.</b> Every letter you hold is a segment, newest at your neck, oldest at your tail.</p>
+      <p>Hold more than <b>seven</b> and the oldest <b>falls out of your tail</b>. It lands as a block — and Apep eats it and climbs faster, for good.</p>
+      <p>You cannot spell yet. This one you only lose.</p>
+      <div class="go">SWIPE &nbsp;·&nbsp; <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> &nbsp;·&nbsp; <kbd>X</kbd> SPIT</div>
+    </div>
+
+    <div class="ov" id="ov-dead" hidden>
+      <h2>APEP TOOK YOU</h2>
+      <div class="big" id="d-height">0</div>
+      <div class="sub">ROWS CLIMBED</div>
+      <p id="d-fed"></p>
+      <p id="d-best"></p>
+      <div class="go">TAP &nbsp;·&nbsp; <kbd>R</kbd> &nbsp;TO DIVE AGAIN</div>
+    </div>
   </div>
 
-  <div class="ov" id="ov-start">
-    <h1>ASP<span class="b">'</span>OSTROPHE</h1>
-    <div class="sub">M1 · THE STRIKE</div>
-    <p>You are an asp in a neon tomb. Flick a direction and you <b>strike</b> — sliding until something stops you.</p>
-    <p><b>Your own body is a wall you stop against, not a death.</b> Coil to build the ledges you need.</p>
-    <p>Apep rises from below the moment you move. He does not stop.</p>
-    <div class="go">SWIPE &nbsp;·&nbsp; <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></div>
-  </div>
-
-  <div class="ov" id="ov-dead" hidden>
-    <h2>APEP TOOK YOU</h2>
-    <div class="big" id="d-height">0</div>
-    <div class="sub">ROWS CLIMBED</div>
-    <p id="d-best"></p>
-    <div class="go">TAP &nbsp;·&nbsp; <kbd>R</kbd> &nbsp;TO DIVE AGAIN</div>
+  <div id="rackbar">
+    <button id="spit" type="button" title="Spit the oldest letter (X)" aria-label="Spit the oldest letter">✕</button>
+    <div id="slots"></div>
   </div>
 </div>
 
 <script>
 "use strict";
 /* ─────────────────────────────────────────────────────────────────────────
-   ASP-OSTROPHE — M1: the strike.
+   ASP-OSTROPHE — M2: the rack.
 
-   Design doc: docs/asp-ostrophe.md. This milestone deliberately contains NO
-   LETTERS: no rack, no overflow, no dropped blocks, no spelling. M1 exists
-   to answer one question — does dashing around a shaft ahead of a rising
-   doom feel good? Everything else is built on top of this movement, so if
-   the movement is wrong nothing above it can save it.
+   Design doc: docs/asp-ostrophe.md. M1 built the strike; M2 adds the DEBT
+   half of the loop and nothing else. Letters lie in the shaft, she swallows
+   what she crosses, they ride her body as segments, and going over capacity
+   drops the oldest out of her tail to land as a block that Apep eats and
+   speeds up on. There is still NO SPELLING (M3) — this milestone is meant to
+   be a tense game you can only ever lose, which is exactly what makes the
+   word worth having when it arrives.
 
-   (The doc pivoted after this file was written — the game eats loose LETTERS
-   and you spell words with them, rather than eating whole words and pairing
-   them into contractions. None of that reaches this milestone: the shaft,
-   the strike, body-as-wall and Apep are the same game either way, which is
-   the point of having built the movement on its own first.)
+   The rules from the doc this file exists to prove:
+     · §4.1 her body IS the rack. Length is BASE_LEN + held, letters are drawn
+            on the segments, and eating makes her longer — so holding letters
+            costs you manoeuvrability before it costs you anything else.
+     · §5   overflow is DEFERRED fuel. The letter falls, lands, and waits;
+            Apep collects it when he gets there. So *where* you overflow
+            matters as much as whether you overflow, and that geometry is the
+            whole decision M2 has to offer.
+     · §3   everything internal runs on DISTANCE; Apep alone runs on TIME.
+            Unchanged from M1 and still the balance the game is made of.
 
-   The two rules from the doc that this file exists to prove:
-     · §3  your own body is a wall you STOP AGAINST, not a death. Coiling is
-           how you build stopping points — which is also what will make the
-           apostrophe gate (§7, an easter egg) worth having.
-     · §3  everything internal runs on DISTANCE travelled; Apep alone runs
-           on TIME. Standing still is therefore free but never safe — which
-           is the whole balance once spelling arrives, since a word is spelt
-           standing still. In M1 there is no internal state yet, so what you
-           can feel is the other half: nothing in the shaft moves until you
-           do.
+   Settled with the dev for M2 (doc §13 #2, §6.3, §1):
+     · The deliberate SPIT ships here. Without spelling there is otherwise no
+       agency over the rack at all, and the spit is what turns overflow from
+       an accident into a placement decision. It is costed slightly worse
+       than overflowing: Apep LURCHES up immediately (SPIT_LURCH) on top of
+       the same deferred block.
+     · A rack bar under the shaft, as well as letters on her body. Her body is
+       still the rack, but on a phone a segment is ~24px; the bar is where the
+       count and the about-to-drop warning are actually legible, and it is
+       exactly where M3's tap-to-spell has to live anyway.
+     · Letters rest ON LEDGES (the empty tile above stone), with a minority
+       floating, so a ledge is a destination rather than scenery.
    ───────────────────────────────────────────────────────────────────────── */
 
 /* ── constants ───────────────────────────────────────────────────────── */
@@ -138,13 +199,52 @@ const EMPTY = 0, WALL = 1;
 const DASH_MS  = 44;     // ms per tile while striking
 const BEDROCK  = -2;     // rows below this are solid, so a downward dash always lands
 const MAX_LAG  = 22;     // rows Apep will ever fall behind your best height (§ he catches up)
-const LEN_MIN  = 3, LEN_MAX = 40;
 const STORE    = "aspostrophe.stats";
+
+/* The rack (§4). CAP is 7 because a frequency-weighted 7-rack can spell
+   something 97.8% of the time and falls off a cliff below 5 (§4.2) — M3 is
+   what cashes that in, but the number has to be right from the start or the
+   body length M2 teaches you to drive is the wrong body length. */
+const CAP       = 7;
+/* TO CHANGE (doc §4.1): this wants to be 1, so the letters fill her ENTIRE
+   length except the head — the three blank neck segments read as spare room,
+   which is the wrong thing for a body to show at the moment a letter falls
+   out of it. Watch body-as-wall (§3) when it moves: a one-tile empty snake
+   has nothing to coil against. */
+const BASE_LEN  = 4;     // head + 3 of neck, so she is 4 long empty and 11 full
+const OVERFLOW_GRACE = 300;   // ms the doomed letter flashes before it leaves (§6.3)
+const FED_BONUS = 0.085; // rows/sec Apep gains, permanently, per letter eaten
+const SPIT_LURCH = 0.5;  // rows Apep jumps at once when you spit on purpose
+
+/* The fall (§5). Accelerating, so a drop down an open shaft is visibly
+   worse than a drop onto a ledge two rows below you. */
+const FALL_V0 = 7, FALL_ACC = 34, FALL_VMAX = 26;
+
+/* Letter placement. Tuned so a screen holds roughly half a dozen letters:
+   dense enough that climbing means eating, sparse enough that a route can
+   deliberately avoid one. */
+const LETTER_MIN_ROW = 3;      // keep the spawn tile and its lane clean
+const P_LEDGE_1 = 0.85, P_LEDGE_2 = 0.40, P_FLOAT = 0.09;
+
+/* Scrabble's distribution, which is English frequency already weighted and
+   already legible — a player who has seen a Scrabble rack knows what a Q
+   costs before this game tells them. */
+const LETTER_FREQ = {
+  a:9, b:2, c:2, d:4, e:12, f:2, g:3, h:2, i:9, j:1, k:1, l:4, m:2,
+  n:6, o:8, p:2, q:1, r:6, s:4, t:6, u:4, v:2, w:2, x:1, y:2, z:1
+};
+const LETTER_BAG = (function(){
+  const bag = [];
+  for (const ch in LETTER_FREQ) for (let i = 0; i < LETTER_FREQ[ch]; i++) bag.push(ch.toUpperCase());
+  return bag;
+})();
 
 /* r increases UPWARD. Screen y is inverted in screenY(). Doing it this way
    round means "climb" is "r goes up", the shaft generator only ever appends,
    and height is simply the largest r reached. */
 const UP = {dc:0, dr:1}, DOWN = {dc:0, dr:-1}, LEFT = {dc:-1, dr:0}, RIGHT = {dc:1, dr:0};
+
+const key = (c, r) => c + "," + r;
 
 /* ── query params (bench affordances) ────────────────────────────────── */
 const QS = new URLSearchParams(location.search);
@@ -153,6 +253,7 @@ const SEED_PARAM = QS.has("seed") ? (parseInt(QS.get("seed"), 10) | 0) : null;
 /* ── canvas ──────────────────────────────────────────────────────────── */
 const cv = document.getElementById("cv");
 const ctx = cv.getContext("2d");
+const elRackbar = document.getElementById("rackbar");
 let W = 0, H = 0, TILE = 0, dpr = 1;
 let vignette = null, scanPat = null;
 
@@ -164,7 +265,16 @@ function sizeCanvas(){
   const availW = Math.min(window.innerWidth, 520);
   TILE = Math.max(16, Math.floor(availW / SHAFT_W));
   W = TILE * SHAFT_W;
-  H = Math.max(360, window.innerHeight);
+
+  /* The rack bar is sized off the tile so the two read as one game, then
+     MEASURED rather than predicted — it carries a safe-area inset at the
+     bottom of a phone and guessing that number would put Apep's arrival
+     under the home indicator. */
+  const slot = Math.max(26, Math.min(44, Math.round(TILE * 1.25)));
+  document.documentElement.style.setProperty("--slot", slot + "px");
+  const rackH = Math.ceil(elRackbar.getBoundingClientRect().height) || (slot + 16);
+
+  H = Math.max(300, window.innerHeight - rackH);
   cv.width  = Math.round(W * dpr);
   cv.height = Math.round(H * dpr);
   cv.style.width  = W + "px";
@@ -200,19 +310,23 @@ function mulberry32(a){
 /* ── the shaft ───────────────────────────────────────────────────────── */
 /* Rows are generated lazily upward and cached in a Map keyed by r, so the
    shaft is endless by construction and nothing needs storing but the rows
-   you have actually seen. */
-let rows = new Map(), genR = -1, nextFeature = 0, rnd = Math.random, seed = 0;
+   you have actually seen. Loose letters are generated WITH the row and live
+   in their own Map, because a letter is not terrain: you pass through it. */
+let rows = new Map(), letters = new Map(), genR = -1, nextFeature = 0, rnd = Math.random, seed = 0;
 
 function resetShaft(s){
   seed = s;
   rnd = mulberry32(s);
   rows = new Map();
+  letters = new Map();
   const solid = () => { const a = new Uint8Array(SHAFT_W); a.fill(WALL); return a; };
   rows.set(-2, solid());
   rows.set(-1, solid());          // the floor she starts on
   genR = -1;
   nextFeature = 5;                // a few clear rows before the first ledge
 }
+
+function rollLetter(){ return LETTER_BAG[(rnd() * LETTER_BAG.length) | 0]; }
 
 function genRow(r){
   const row = new Uint8Array(SHAFT_W);
@@ -221,6 +335,38 @@ function genRow(r){
     nextFeature = r + 3 + (rnd() * 4 | 0);   // never two features back to back
   }
   rows.set(r, row);
+  if (r >= LETTER_MIN_ROW) placeLetters(row, r);
+}
+
+/* Letters rest on ledges — the empty tile directly above stone — which is
+   what makes a ledge somewhere to go rather than something in the way, and
+   pairs every letter with a natural stopping point. A minority float in open
+   air so a long vertical strike can still pay. Generation is strictly upward,
+   so row r-1 is always already built and can be read for free. */
+function placeLetters(row, r){
+  const below = rows.get(r - 1);
+  const cands = [];
+  if (below) for (let c = 0; c < SHAFT_W; c++){
+    if (row[c] === EMPTY && below[c] === WALL) cands.push(c);
+  }
+  let placed = 0;
+  if (cands.length && rnd() < P_LEDGE_1){
+    const c = cands.splice((rnd() * cands.length) | 0, 1)[0];
+    letters.set(key(c, r), rollLetter());
+    placed++;
+  }
+  if (cands.length && placed && rnd() < P_LEDGE_2){
+    const c = cands.splice((rnd() * cands.length) | 0, 1)[0];
+    letters.set(key(c, r), rollLetter());
+    placed++;
+  }
+  if (!placed && rnd() < P_FLOAT){
+    const open = [];
+    for (let c = 0; c < SHAFT_W; c++){
+      if (row[c] === EMPTY && below && below[c] === EMPTY) open.push(c);
+    }
+    if (open.length) letters.set(key(open[(rnd() * open.length) | 0], r), rollLetter());
+  }
 }
 
 function placeFeature(row){
@@ -276,10 +422,21 @@ function cellAt(c, r){
 }
 
 /* ── the snake ───────────────────────────────────────────────────────── */
-let body = [], len = 7, dir = null, queued = null, dashAcc = 0;
+let body = [], dir = null, queued = null, dashAcc = 0;
 let alive = true, started = false, height = 0, best = 0;
-let apepR = 0, apepSpd = 0;
+let apepR = 0, apepSpd = 0, apepFed = 0;
 let shake = 0, spark = null, lastDir = UP;
+
+/* The rack: newest first, so rack[rack.length-1] is the one about to go. It
+   is a RACK and not a queue (§1a #6) — order decides only which letter you
+   lose next, never what M3 will let you spell. */
+let rack = [], doomT = 0;
+/* Dropped letters. `falling` are in the air, `blocks` have landed and are
+   solid: furniture you stop against, a letter you can re-eat, and Apep's
+   dinner, in that order of who gets there first (§5). */
+let falling = [], blocks = new Map();
+
+const curLen = () => BASE_LEN + rack.length;
 
 function loadBest(){
   try { best = (JSON.parse(localStorage.getItem(STORE) || "{}").best) | 0; }
@@ -292,32 +449,43 @@ function saveBest(){
 function reset(){
   resetShaft(SEED_PARAM !== null ? SEED_PARAM : (Math.random() * 1e9) | 0);
   const c0 = SHAFT_W >> 1;
+  rack = []; doomT = 0;
+  falling = []; blocks = new Map();
   body = [];
   /* Stacked on the start tile — she unfurls as she moves, which is the
      standard snake trick and saves inventing a spawn pose. */
-  for (let i = 0; i < len; i++) body.push({ c: c0, r: 0 });
+  for (let i = 0; i < curLen(); i++) body.push({ c: c0, r: 0 });
   dir = null; queued = null; dashAcc = 0;
   alive = true; started = false; height = 0;
-  apepR = -14; apepSpd = 0;
+  apepR = -14; apepSpd = 0; apepFed = 0;
   shake = 0; spark = null; lastDir = UP;
   camR = -6; camInit = false;
   embers.length = 0;
+  rackSig = null;
   document.getElementById("ov-dead").hidden = true;
+  renderRack();
 }
 
-/* A tile is blocked by stone, by the shaft's sides, or by her own body —
-   and blocked means STOP, never die (§3). The tail is excluded because it
-   vacates on the same step, exactly as in classic snake. */
-function blocked(c, r){
-  if (cellAt(c, r) === WALL) return true;
-  const last = body.length >= len ? body.length - 1 : body.length;
+function wallAt(c, r){ return cellAt(c, r) === WALL; }
+function blockAt(c, r){ return blocks.has(key(c, r)); }
+
+/* Her own body is a wall she STOPS against, never a death (§3). The tail is
+   excluded because it vacates on the same step, exactly as in classic snake. */
+function bodyAt(c, r){
+  const last = body.length >= curLen() ? body.length - 1 : body.length;
   for (let i = 0; i < last; i++) if (body[i].c === c && body[i].r === r) return true;
   return false;
 }
 
+/* Two different questions, and conflating them is what would make a landed
+   letter unreachable. A block STOPS her (blocked) but she may still AIM at
+   it, because striking into one is how you re-eat it (§5). */
+function blocked(c, r){ return wallAt(c, r) || blockAt(c, r) || bodyAt(c, r); }
+function aimable(c, r){ return !wallAt(c, r) && !bodyAt(c, r); }
+
 function tryDir(d){
   const h = body[0];
-  if (blocked(h.c + d.dc, h.r + d.dr)) return false;
+  if (!aimable(h.c + d.dc, h.r + d.dr)) return false;
   dir = d; lastDir = d;
   dashAcc = DASH_MS;      // step on the very next frame, so a flick feels instant
   return true;
@@ -333,48 +501,130 @@ function setDir(d){
   if (!tryDir(d)) queued = d;
 }
 
+function endStrike(c, r){
+  dir = null;
+  shake = 3.2;
+  spark = { c: c, r: r, t: 1 };
+  if (queued){ const q = queued; queued = null; tryDir(q); }
+}
+
 function step(){
   const h = body[0];
   const nc = h.c + dir.dc, nr = h.r + dir.dr;
-  if (blocked(nc, nr)){
-    dir = null;
-    shake = 3.2;
-    spark = { c: nc, r: nr, t: 1 };
-    if (queued){ const q = queued; queued = null; tryDir(q); }
+
+  /* A landed letter is solid, so it stops the strike — and being stopped by
+     it is how you take it back. One move, two outcomes, no extra verb. */
+  if (blockAt(nc, nr)){
+    const b = blocks.get(key(nc, nr));
+    blocks.delete(key(nc, nr));
+    eat(b.ch);
+    endStrike(nc, nr);
     return;
   }
+  if (wallAt(nc, nr) || bodyAt(nc, nr)){ endStrike(nc, nr); return; }
+
   body.unshift({ c: nc, r: nr });
-  while (body.length > len) body.pop();
+  while (body.length > curLen()) body.pop();
   if (nr > height) height = nr;
+
+  const lk = key(nc, nr);
+  if (letters.has(lk)){ const ch = letters.get(lk); letters.delete(lk); eat(ch); }
 }
 
-function die(){
-  alive = false; dir = null; queued = null;
-  if (height > best){ best = height; saveBest(); }
-  document.getElementById("d-height").textContent = height;
-  document.getElementById("d-best").textContent = "BEST " + best;
-  document.getElementById("ov-dead").hidden = false;
+/* ── the rack ────────────────────────────────────────────────────────── */
+function eat(ch){
+  rack.unshift({ ch: ch });
+  /* She grows by one, from the tail, on her next step — body.length is now
+     short of curLen() so nothing pops. Over capacity, the oldest is doomed
+     but not yet gone: §6.3's beat of grace, and the same beat M3's spelling
+     will be able to snatch it back inside. */
+  if (rack.length > CAP && doomT <= 0) doomT = OVERFLOW_GRACE;
+}
+
+/* The tail tip, which is where a dropped letter physically comes out. While
+   she is growing the body can still be short of curLen(), so take whatever
+   the last real segment is. */
+function tailTip(){ return body[body.length - 1] || body[0]; }
+
+function dropOldest(spat){
+  if (!rack.length) return;
+  const o = rack.pop();
+  const t = tailTip();
+  /* Precompute the landing row. Scanning once at drop time rather than
+     testing every frame means a letter can never sink half into a ledge,
+     and the shaft below is already generated so it costs nothing. */
+  let rr = t.r - 1;
+  while (rr > BEDROCK && !wallAt(t.c, rr) && !blockAt(t.c, rr)) rr--;
+  falling.push({ ch: o.ch, c: t.c, r: t.r, land: rr + 1, v: FALL_V0, spat: !!spat });
+  while (body.length > curLen()) body.pop();
+  if (rack.length <= CAP) doomT = 0;
+}
+
+/* §13 #2. The spit is the only agency M2 has over the rack, and it is what
+   turns overflow from an accident into a placement decision — dump the Q over
+   a high ledge and Apep is a long time reaching it. It is costed slightly
+   worse than overflowing, and visibly so: he LURCHES up at once, on top of
+   the same block he will eventually eat. */
+function spit(){
+  if (!alive || !started || !rack.length) return;
+  dropOldest(true);
+  apepR += SPIT_LURCH;
+  shake = Math.max(shake, 4);
+}
+
+function updateFalling(dt){
+  for (let i = falling.length - 1; i >= 0; i--){
+    const f = falling[i];
+    f.v = Math.min(FALL_VMAX, f.v + FALL_ACC * dt / 1000);
+    f.r -= f.v * dt / 1000;
+    if (f.r <= apepR){ falling.splice(i, 1); feedApep(); continue; }
+    if (f.r <= f.land){
+      /* Another letter may have taken the spot while this one was in the
+         air, so walk up to the first free tile rather than stacking two in
+         one cell. */
+      let rr = f.land, guard = 0;
+      while ((blockAt(f.c, rr) || wallAt(f.c, rr)) && guard++ < 48) rr++;
+      blocks.set(key(f.c, rr), { ch: f.ch, c: f.c, r: rr, spat: f.spat });
+      falling.splice(i, 1);
+    }
+  }
 }
 
 /* ── Apep ────────────────────────────────────────────────────────────── */
 const embers = [];
 
+function feedApep(){
+  apepFed++;
+  shake = Math.max(shake, 5);
+  for (let i = 0; i < 12; i++){
+    embers.push({ x: Math.random() * W, y: 0, v: 40 + Math.random() * 90, a: 1, s: 1 + Math.random() * 3 });
+  }
+}
+
 function updateApep(dt){
   if (!started || !alive) return;
-  /* TIME, and nothing else in the game runs on it (§3). He accelerates
-     with your height so the shaft never settles. */
-  apepSpd = 0.62 + Math.min(height * 0.006, 2.9);
+  /* TIME, and nothing else in the game runs on it (§3). He accelerates with
+     your height so the shaft never settles, PLUS everything he has eaten —
+     permanently, which is why a dropped letter is a debt and not a fine. */
+  apepSpd = 0.62 + Math.min(height * 0.006, 2.9) + apepFed * FED_BONUS;
   apepR += apepSpd * dt / 1000;
   /* He is rubber-banded to your BEST height, not your current row: outclimb
      him and he still arrives, and a dive back down the shaft is a dive back
      toward him. Without this a good run leaves him behind for good and the
      mode has no clock at all. */
   if (height - apepR > MAX_LAG) apepR = height - MAX_LAG;
+
+  /* Anything he has reached, he eats. */
+  if (blocks.size){
+    for (const [k, b] of blocks){
+      if (b.r <= apepR + 0.35){ blocks.delete(k); feedApep(); }
+    }
+  }
   if (body[0].r <= apepR) die();
 }
 
 function updateEmbers(dt){
-  if (embers.length < 26 && Math.random() < 0.6){
+  if (embers.length < 40 && Math.random() < 0.6){
     embers.push({ x: Math.random() * W, y: 0, v: 22 + Math.random() * 46, a: 1, s: 1 + Math.random() * 2 });
   }
   for (let i = embers.length - 1; i >= 0; i--){
@@ -383,6 +633,16 @@ function updateEmbers(dt){
     e.a -= dt / 1500;
     if (e.a <= 0) embers.splice(i, 1);
   }
+}
+
+function die(){
+  alive = false; dir = null; queued = null;
+  if (height > best){ best = height; saveBest(); }
+  document.getElementById("d-height").textContent = height;
+  document.getElementById("d-fed").textContent =
+    apepFed ? "HE ATE " + apepFed + " OF YOUR LETTERS" : "HE ATE NOTHING OF YOURS";
+  document.getElementById("d-best").textContent = "BEST " + best;
+  document.getElementById("ov-dead").hidden = false;
 }
 
 /* ── camera ──────────────────────────────────────────────────────────── */
@@ -408,6 +668,8 @@ function lerpCol(t){
   const b = Math.round(74 + (63 - 74) * t);
   return "rgb(" + r + "," + g + "," + b + ")";
 }
+
+function glyphFont(px){ return "bold " + Math.round(px) + "px Pixelify, 'Courier New', monospace"; }
 
 function draw(now){
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -450,13 +712,100 @@ function draw(now){
     }
   }
 
+  drawShaftLetters(rBot, rTop, now);
   drawSnake(now);
+  drawFalling();
   drawSpark();
   drawApep(now);
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = vignette; ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = scanPat;  ctx.fillRect(0, 0, W, H);
+}
+
+/* A loose letter is an OPEN cartouche — a gold ring you fly straight through.
+   A landed one is a FILLED stone box, which is the same visual grammar the
+   walls already use for "this stops you". The two must never be confusable:
+   one is free and one ends your strike. (Egyptian writing really did ring a
+   name in an oval with a tie bar, so the capsule is historically right rather
+   than a UI box — §11. ctx.ellipse, never roundRect: Safari 16.4+.) */
+function drawShaftLetters(rBot, rTop, now){
+  const pulse = 0.72 + 0.28 * Math.sin(now * 0.004);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = glyphFont(TILE * 0.52);
+
+  for (let r = rBot; r <= rTop; r++){
+    const y = screenY(r);
+    if (y > H || y + TILE < 0) continue;
+    for (let c = 0; c < SHAFT_W; c++){
+      const lk = key(c, r);
+      const loose = letters.get(lk);
+      const block = blocks.get(lk);
+      if (!loose && !block) continue;
+      const x = screenX(c);
+      if (block) drawBlock(x, y, block.ch);
+      else drawCartouche(x, y, loose, pulse);
+    }
+  }
+}
+
+function drawCartouche(x, y, ch, pulse){
+  const cx = x + TILE / 2, cy = y + TILE / 2;
+  ctx.save();
+  ctx.globalAlpha = pulse;
+  ctx.shadowColor = "#ffc84a";
+  ctx.shadowBlur = 10;
+  ctx.strokeStyle = "#ffc84a";
+  ctx.lineWidth = Math.max(1.5, TILE * 0.07);
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, TILE * 0.30, TILE * 0.40, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  // the tie bar, across the foot of the ring
+  ctx.fillStyle = "#ffc84a";
+  ctx.fillRect(cx - TILE * 0.13, cy + TILE * 0.38, TILE * 0.26, Math.max(1.5, TILE * 0.07));
+  ctx.fillStyle = "#ffe9b0";
+  ctx.fillText(ch, cx, cy + TILE * 0.02);
+  ctx.restore();
+}
+
+function drawBlock(x, y, ch){
+  ctx.save();
+  ctx.fillStyle = "#2a1c06";
+  ctx.fillRect(x, y, TILE, TILE);
+  ctx.strokeStyle = "#ffc84a";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, TILE - 2, TILE - 2);
+  ctx.shadowColor = "#ffc84a";
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = "#ffd98a";
+  ctx.fillText(ch, x + TILE / 2, y + TILE / 2 + TILE * 0.02);
+  ctx.restore();
+}
+
+function drawFalling(){
+  if (!falling.length) return;
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = glyphFont(TILE * 0.52);
+  for (let i = 0; i < falling.length; i++){
+    const f = falling[i];
+    const x = screenX(f.c), y = screenY(f.r);
+    if (y > H + TILE || y + TILE < -TILE) continue;
+    // a streak behind it, so the acceleration is visible rather than inferred
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = "#ffc84a";
+    ctx.fillRect(x + TILE * 0.36, y - TILE * 0.55, TILE * 0.28, TILE * 0.6);
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = "#ff9a3a";
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = "#2a1c06";
+    ctx.fillRect(x + TILE * 0.18, y + TILE * 0.14, TILE * 0.64, TILE * 0.72);
+    ctx.fillStyle = "#ffd98a";
+    ctx.fillText(f.ch, x + TILE / 2, y + TILE / 2 + TILE * 0.02);
+  }
+  ctx.restore();
 }
 
 function drawSnake(now){
@@ -479,6 +828,8 @@ function drawSnake(now){
       );
     }
   }
+
+  drawRackOnBody(now);
 
   const h = body[0];
   const hx = screenX(h.c), hy = screenY(h.r);
@@ -503,6 +854,49 @@ function drawSnake(now){
     ctx.fillRect(cx - off / 2 - eye / 2, cy - eye / 2, eye, eye);
     ctx.fillRect(cx + off / 2 - eye / 2, cy - eye / 2, eye, eye);
   }
+}
+
+/* §4.1: rack[i] rides body segment BASE_LEN + i, so the newest sits just
+   behind her neck and every older one is pushed one segment further back as
+   she eats — the letter about to drop is therefore always the one furthest
+   from her face, which is exactly where it is easiest to read. rack ends at
+   body[curLen()-1], the tail tip, which is where the drop comes out.
+
+   While she is still growing, body.length can be short of curLen() for a
+   step, so the newest letter has no segment yet. Nothing is drawn for it —
+   the rack bar has it the same frame, which is half of why the bar exists. */
+function drawRackOnBody(now){
+  if (!rack.length) return;
+  const doomFlash = doomT > 0 && Math.floor(now / 90) % 2 === 0;
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = glyphFont(TILE * 0.5);
+  for (let i = 0; i < rack.length; i++){
+    const bi = BASE_LEN + i;
+    if (bi >= body.length) continue;
+    const s = body[bi];
+    const x = screenX(s.c), y = screenY(s.r);
+    if (y > H + TILE || y + TILE < -TILE) continue;
+    const oldest = i === rack.length - 1;
+    const doomed = oldest && rack.length > CAP;
+    if (doomed){
+      ctx.fillStyle = doomFlash ? "#ff5426" : "#ffc84a";
+      ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
+    } else if (oldest && rack.length === CAP){
+      // full but not yet over: the warning, matching the bar's pulsing slot
+      ctx.strokeStyle = "#ff8a4a";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 3, y + 3, TILE - 6, TILE - 6);
+    } else {
+      ctx.strokeStyle = "rgba(255,200,74,.75)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 3.5, y + 3.5, TILE - 7, TILE - 7);
+    }
+    ctx.fillStyle = doomed ? "#2a0d04" : "#12200a";
+    ctx.fillText(rack[i].ch, x + TILE / 2, y + TILE / 2 + TILE * 0.02);
+  }
+  ctx.restore();
 }
 
 function drawSpark(){
@@ -555,18 +949,52 @@ function drawApep(now){
   ctx.globalAlpha = 1;
 }
 
-/* ── HUD ─────────────────────────────────────────────────────────────── */
+/* ── HUD & rack bar ──────────────────────────────────────────────────── */
 const elHeight = document.getElementById("h-height");
 const elBest   = document.getElementById("h-best");
-const elLen    = document.getElementById("h-len");
-let hudCache = "";
+const elFed    = document.getElementById("h-fed");
+const elSlots  = document.getElementById("slots");
+const elSpit   = document.getElementById("spit");
+let hudCache = "", rackSig = null;
+
 function drawHUD(){
-  const key = height + "|" + best + "|" + len;
-  if (key === hudCache) return;
-  hudCache = key;
+  const k = height + "|" + best + "|" + apepFed;
+  if (k === hudCache) return;
+  hudCache = k;
   elHeight.textContent = height;
   elBest.textContent = best;
-  elLen.textContent = len;
+  elFed.textContent = apepFed;
+}
+
+/* Oldest on the LEFT, right next to the ✕ that ejects it, so the button never
+   has to say which letter it means. When the rack is over capacity an EXTRA
+   slot appears on the left holding the doomed letter — it is visibly the one
+   that does not fit, which is a better explanation than any label. */
+function renderRack(){
+  const n = Math.max(CAP, rack.length);
+  const sig = rack.map(o => o.ch).join("") + "|" + n + "|" + (rack.length > CAP ? "d" : rack.length === CAP ? "w" : "");
+  if (sig === rackSig) return;
+  rackSig = sig;
+
+  while (elSlots.children.length > n) elSlots.removeChild(elSlots.lastChild);
+  while (elSlots.children.length < n){
+    const d = document.createElement("div");
+    d.className = "slot";
+    elSlots.appendChild(d);
+  }
+  for (let i = 0; i < n; i++){
+    const idx = rack.length - 1 - i;          // left-to-right is oldest-to-newest
+    const el = elSlots.children[i];
+    const has = idx >= 0;
+    el.textContent = has ? rack[idx].ch : "";
+    let cls = "slot" + (has ? " full" : "");
+    if (has && idx === rack.length - 1){
+      if (rack.length > CAP) cls += " doom";
+      else if (rack.length === CAP) cls += " warn";
+    }
+    el.className = cls;
+  }
+  elSpit.disabled = rack.length === 0;
 }
 
 /* ── loop ────────────────────────────────────────────────────────────── */
@@ -581,6 +1009,15 @@ function frame(now){
     dashAcc += dt;
     while (dashAcc >= DASH_MS && dir){ dashAcc -= DASH_MS; step(); }
   }
+  if (alive && doomT > 0){
+    doomT -= dt;
+    if (doomT <= 0){
+      dropOldest(false);
+      // still over capacity (she ate twice inside one beat) — run the beat again
+      if (rack.length > CAP) doomT = OVERFLOW_GRACE;
+    }
+  }
+  updateFalling(dt);
   updateApep(dt);
   updateEmbers(dt);
   updateCamera(dt);
@@ -589,45 +1026,53 @@ function frame(now){
 
   draw(now);
   drawHUD();
+  renderRack();
   requestAnimationFrame(frame);
 }
 
 /* ── input ───────────────────────────────────────────────────────────── */
-const KEYS = {
-  ArrowUp: UP, KeyW: UP, ArrowDown: DOWN, KeyS: DOWN,
-  ArrowLeft: LEFT, KeyA: LEFT, ArrowRight: RIGHT, KeyD: RIGHT
-};
+/* WASD is retired (§1a #9): M3 binds every letter key to the rack, so A, S
+   and D cannot also be directions. Arrows only. */
+const KEYS = { ArrowUp: UP, ArrowDown: DOWN, ArrowLeft: LEFT, ArrowRight: RIGHT };
 window.addEventListener("keydown", e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const d = KEYS[e.code];
   if (d){ e.preventDefault(); setDir(d); return; }
+  if (e.code === "KeyX"){ e.preventDefault(); spit(); return; }
   if (e.code === "KeyR"){ e.preventDefault(); reset(); return; }
-  /* Bench control, not a mechanic: M2 grows her by the letters she holds.
-     Being able
-     to feel body-as-wall at length 4 and at length 30 is the whole reason
-     M1 exists, so the length is a knob here rather than an invented rule. */
-  if (e.code === "BracketRight" || e.code === "Equal"){
-    len = Math.min(LEN_MAX, len + 1); return;
-  }
-  if (e.code === "BracketLeft" || e.code === "Minus"){
-    len = Math.max(LEN_MIN, len - 1);
-    while (body.length > len) body.pop();
-    return;
-  }
 });
 
-let touchStart = null;
+elSpit.addEventListener("click", e => { e.preventDefault(); spit(); });
+
+/* Steering fires on MOVE, not on lift: at 44ms a tile you are often mid-strike
+   when you decide to turn, and having to complete a lift first loses the
+   corner. Once a swipe registers, its origin resets so the same finger can
+   chain a second direction without leaving the glass — which is what makes
+   the deliberate coiling of §3 performable on a phone at all. */
+const SWIPE = 22;
+let touchStart = null, swiped = false;
 cv.addEventListener("pointerdown", e => {
+  if (!alive){ reset(); touchStart = null; return; }
   touchStart = { x: e.clientX, y: e.clientY };
-  if (!alive){ reset(); touchStart = null; }
+  swiped = false;
 });
-cv.addEventListener("pointerup", e => {
+cv.addEventListener("pointermove", e => {
   if (!touchStart) return;
   const dx = e.clientX - touchStart.x, dy = e.clientY - touchStart.y;
-  touchStart = null;
-  if (Math.abs(dx) < 16 && Math.abs(dy) < 16) return;
+  if (Math.abs(dx) < SWIPE && Math.abs(dy) < SWIPE) return;
   if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? RIGHT : LEFT);
   else setDir(dy > 0 ? DOWN : UP);      // a downward swipe is downward in the shaft
+  touchStart = { x: e.clientX, y: e.clientY };
+  swiped = true;
+});
+cv.addEventListener("pointerup", e => {
+  if (!touchStart){ touchStart = null; return; }
+  const dx = e.clientX - touchStart.x, dy = e.clientY - touchStart.y;
+  touchStart = null;
+  if (swiped) return;
+  if (Math.abs(dx) < SWIPE && Math.abs(dy) < SWIPE) return;   // a tap steers nothing
+  if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? RIGHT : LEFT);
+  else setDir(dy > 0 ? DOWN : UP);
 });
 cv.addEventListener("pointercancel", () => { touchStart = null; });
 
@@ -635,9 +1080,12 @@ window.addEventListener("resize", () => { sizeCanvas(); });
 
 /* ── boot ────────────────────────────────────────────────────────────── */
 loadBest();
-if (QS.has("len")) len = Math.max(LEN_MIN, Math.min(LEN_MAX, parseInt(QS.get("len"), 10) || 7));
 sizeCanvas();
 reset();
+/* The letters are drawn with ctx.font, which takes the fallback face until
+   the woff2 lands — harmless, but it is one resize-free reflow away from
+   looking like a bug, so redraw the bar's metrics once it is in. */
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { rackSig = null; });
 requestAnimationFrame(frame);
 </script>
 </body>
