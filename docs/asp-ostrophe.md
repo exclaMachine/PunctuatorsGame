@@ -1,265 +1,237 @@
-# Asp-ostrophe — the snake that eats words and leaves beetles
+# Asp-ostrophe — the snake that eats letters and feeds the tide
 
-Status: **SPECCED 2026-09-16. Nothing built.** Milestones are §12; open questions §13.
+Status: **SPECCED 2026-09-16. PIVOTED 2026-09-16** from whole-word contractions to loose letters (§1a).
+**M1 — the strike — BUILT 2026-09-16** as `asp-ostrophe.html`, and it survives the pivot untouched: the
+shaft, the dash, body-as-wall and Apep are the same game. Milestones §12; what M1 settled §12.1; open
+questions §13.
 
 **The pitch:** you are ApostroPharaoh, the contraction hero from Punctuators, as an asp in a neon tomb.
-Words lie on the floor inside cartouches. You **strike** down a lane and swallow whatever you cross. Two
-words that contract — `do` + `not` — fuse inside you into `don't` and burn a **hole in your own body** you
-can dash through. Two that don't, you eventually **poop out as a scarab**, a solid block that reshapes the
-level. Below you, Apep is rising.
+Loose letters lie on the ledges. You **strike** down a lane and swallow what you cross — but you can only
+hold so many, and the moment you go over, **the oldest falls out of your tail**, drops down the shaft and
+feeds **Apep**, who is climbing after you and gets faster with every letter he eats.
 
-The character already fits: her Punctuators class is literally `AnacontractShine`, her whole move is eating
-the letters out of the middle of a phrase, and her two unused art files (`Anacontractshine.png`,
-`AnacontractshineEat.png` — 335 × 1630, a head on a long neck with the crown doubling as an open jaw) are a
-snake sprite nobody ever built a snake for.
+The only clean way to empty your mouth is to **spell a word with it**.
 
----
+> **Every letter you eat becomes either a word or fuel for the thing chasing you.**
 
-## 0. The three reframes
-
-**Movement is Tomb of the Mask's, not Snake's.** You don't crawl a tile at a time under constant pressure.
-You flick a direction and she **strikes** — sliding down the lane until something stops her, swallowing
-every cartouche she crosses. An asp strikes; it doesn't shuffle. Her body trails the exact path behind her.
-
-**Your own body is a wall you stop against, not a death.** This is the load-bearing change. Coiling is
-normally how Snake kills you; here it's how you build stopping points, because in a slide-until-blocked game
-the thing you desperately need is *something to stop against*. Death comes from traps and from Apep, never
-from touching yourself.
-
-**So a hole in your own body is the most valuable object in the game.** Everything stops your dash, which
-means a segment your head can fly *through* is gold — and the only way to mint one is to get the grammar
-right. In the earlier letter-based sketch of this game the apostrophe-gate was a nice touch. Here it's the
-entire economy.
+So the run is one continuous trade: climbing is where the letters are, but every letter you grab is a debt
+that comes due as speed unless you spend it. You are outrunning a tide you are personally feeding.
 
 ---
 
-## 1. Decisions settled with the dev (2026-09-16)
+## 1. Why letters and not contractions
+
+The first design had you eating whole words and pairing them into contractions (`do` + `not` → `don't`).
+It was thrown out for one reason: **English has about sixty contractions.** That is a closed set you'd
+exhaust in an evening, and a game whose entire vocabulary you can memorise in a week can't carry an
+endless mode.
+
+Spelling *any* word is bottomless, and the character survives intact — better, in fact, because the
+contraction becomes **the easter egg** (§7) instead of the chore. ApostroPharaoh's actual trick was never
+"pair two words"; it was **take the letters out and leave an apostrophe where they were.** §7 is that,
+exactly, and it's now a rare treat rather than the whole economy.
+
+The whole-word version is parked in §13 as a possible second mode, not deleted from the world.
+
+### 1a. Decisions settled with the dev (2026-09-16)
 
 | # | Decision | |
 |---|---|---|
-| 1 | **Whole words on the board, not letters** | You eat `do` and `not`, not `d`,`o`,`n`,`o`,`t`. Simpler to read at a glance, and it makes the unit of play a *grammar* decision rather than a spelling one. The letter version is parked as Hieroglyph mode (§13). |
-| 2 | **The digestion queue** — a swallowed word travels down her body and falls out of the tail if unpaired | Chosen over a two-slot mouth with instant resolution. It makes body length mean something (§4), and it turns the failure state into something that merely *happens* rather than something you get told off for. |
-| 3 | **A failed pair comes out as a pushable scarab** | The dev's idea, and it's the best mechanic here. §5. |
-| 4 | **Endless vertical climb first; authored tomb levels later** | The climb needs no hand-drawn chambers to be fun, so it proves the movement before anything is authored. §7. |
-| 5 | **Two currencies, one thing on each: everything internal runs on DISTANCE, Apep runs on TIME** | §3.3. This is the rule the whole economy balances on — stated once so nothing drifts. |
-| 6 | **Standalone `asp-ostrophe.html`** | Different engine from Punctuators; there is no `wrap*` mode shape that fits a maze game. Repo convention (one self-contained file, vanilla, no build step). |
-| 7 | **Neon-on-black chunky pixel, Tomb of the Mask's look** | §10. Her existing painted art goes through the repo's own `emoji-pixelizer.html` to get there. |
-| 8 | **Procedural SFX, no audio assets** | Punctuators' `_tone`/`_noise` kit pattern, rebuilt in-file. Works from `file://`, matches the 8-bit look, and the repo's sample-quality bar (real recordings or nothing) means a borrowed clip would be the wrong call anyway. |
-| 9 | **Easy mode = any two lumps may fuse; normal = adjacent only** | The one difficulty knob that changes the *thinking* rather than the speed. |
-| 10 | **Name: Asp-ostrophe** | An asp is the Egyptian snake; one word carries snake + apostrophe + Egypt. ApostroPharaoh stays the character's name. Open (§13). |
+| 1 | **Letters on the board, not words** | §1. |
+| 2 | **Her body IS the rack** — length = a base plus every letter held, letters drawn on the segments, newest at the head | Keeps the best idea from the first draft (*her body is her inventory, drawn on the board*) and gives holding letters a **driving** cost on top of the overflow risk. Spelling visibly shortens her, which changes your own wall geometry mid-route. |
+| 3 | **Overflow drops the OLDEST letter**, out of the tail | FIFO, and physically right — it comes out the far end. It also makes the letter nearest your tail the one you most want to spend, which is a live decision every turn rather than a rule. |
+| 4 | **A dropped letter falls until it lands, becomes a block, and Apep eats it when he reaches it** | §5. Deferred fuel: the punishment is certain (so it stays legible) but *when* it lands on him depends on where in the shaft you overflowed. Geometry matters without the feedback getting muddy. |
+| 5 | **Capacity 7 to start, upgradeable toward 9** | **Measured** (§4.2): a frequency-weighted 7-rack can spell *something* 97.8% of the time and a 4+ letter word 94.9%. Below 5 it falls off a cliff. 7 is also the Scrabble rack, which is a free bit of legibility. |
+| 6 | **The rack is a RACK, not a sequence** — letters may be used in any order | An anagram problem, not a queue-order problem. Queue order decides only *which letter you lose next*, never what you can spell. |
+| 7 | **`enable1.txt` is the dictionary; minimum word length 3** | Repo standard — enable1 for eligibility, `2of12.txt` only ever as a commonness signal. Lazy-loaded (1.7 MB), so it needs http serving. |
+| 8 | **A word pushes Apep back down** | The tide becomes a live readout of how well you're spelling: poop raises it, words lower it. Self-limiting with no artificial cap, because **letters only exist further up the shaft** — farming requires climbing. |
+| 9 | **Arrows steer, letter keys type. WASD is retired.** | Unavoidable: you cannot bind `A`, `S` and `D` to steering in a game where you type. §6.3. |
+| 10 | **Contractions become an easter egg that mints an apostrophe gate** | §7. It's the one idea from the first draft too good to lose, and it survives better as a reward than as the economy. |
 
 ---
 
 ## 2. The play loop
 
-1. You sit still in a neon shaft. Nothing moves until you do.
-2. Flick a direction. She **strikes** down that lane, eating every word cartouche she crosses, until a wall,
-   a stone, a scarab or her own body stops her.
-3. Each word she swallows enters her head as a **lump** — a body segment with the word written on it.
-4. Two lumps that contract **fuse**: the letters burn off, and where they were sits one **apostrophe gate**
-   — a segment of her body that is not solid.
-5. A lump that reaches her tail without a partner **drops out as a scarab** onto the tile the tail vacates.
-6. Apep rises from the bottom of the shaft on a clock that does not care what you are doing.
-7. You climb. The gates you minted are how you cut back through your own coil when the route demands it.
+1. Nothing in the shaft moves until you do.
+2. Flick a direction. She **strikes** down that lane until a wall, a block or her own body stops her,
+   swallowing every letter she crosses.
+3. Swallowed letters ride her body, newest behind the head, oldest at the tail. Her body grows by one per
+   letter held.
+4. Hold more than your capacity and **the oldest drops out of the tail**, falls down the shaft, and lands
+   as a block. Apep eats it when he gets there and climbs faster for it.
+5. **Spell a word** from the letters you're holding — type it, or tap them. The letters leave cleanly, she
+   shortens, you score, and Apep is pushed back down.
+6. Climb. The letters are only ever above you.
 
 ---
 
-## 3. The strike
+## 3. The strike — BUILT
 
-### 3.1 The grid
+A tile grid in a vertical shaft, 15 columns wide. A flick sends her sliding one tile at a time until the
+next tile is blocked; her body trails the path exactly.
 
-A tile grid, camera on the shaft. She occupies tiles; her body is the trail of tiles her head has visited,
-`L` of them.
+**Your own body is a wall you stop against, not a death.** This is the load-bearing rule of the whole game:
+coiling is normally how snake kills you, and here it is how you build the stopping points a slide-until-
+blocked game constantly needs. Death comes from Apep, never from touching yourself.
 
-A flick (arrow keys / WASD / swipe) sets a direction. She advances one tile per dash-tick until the **next**
-tile that way is blocked. Blocking: shaft walls, stone, scarabs, **her own body except at a gate**. Not
-blocking: word cartouches (eaten and passed through), glyph dots (collected), hazards (they kill), gates
-(passed through).
+**She cannot stop — she can only turn.** A direction pressed mid-strike takes effect immediately if that
+way is open, and queues for the end of the strike if it isn't. Full commitment with the control kept.
 
-Between dashes **nothing moves** — not her body, not the digestion tract. Standing still is free. The only
-thing that ever costs you is travelling.
-
-### 3.2 The body follows
-
-Standard snake trail: the head claims a tile, the tail vacates one, length held constant unless something
-changed it. Length changes in exactly four places:
-
-| Event | Δ length |
-|---|---|
-| Collect a glyph dot | **+1**, permanent |
-| Swallow a word (a lump enters at the head) | **+1** while held |
-| Two lumps fuse into a gate | **−1** (two lumps → one gate) |
-| A lump drops out of the tail | **−1** (and a scarab appears) |
-
-So **her body is her inventory, drawn on the board.** Her length at any moment reads as *how much am I
-holding, and how much room do I have to hold more*.
-
-### 3.3 Distance and time
-
-Everything internal — digestion, gate expiry — advances **one step per tile travelled**. Apep advances
-**per second**. Nothing else in the game runs on a clock.
-
-That separation is the whole balance. Because internal state is on distance, you can stop and think, and a
-long pointless dash is a real cost (it pushes your held words toward the tail and ages your gates). Because
-Apep is on time, stopping to think is never free either. Two pressures that never collapse into each other.
+**Two currencies, one thing on each: everything internal runs on DISTANCE travelled; Apep alone runs on
+TIME.** That separation is what makes §6 possible at all — you can stop and stand still to spell a word,
+and it costs you nothing but the seconds Apep spends climbing while you do it. *That* is the balance the
+game is made of.
 
 ---
 
-## 4. The digestion tract — the core
+## 4. The rack
 
 ### 4.1 Holding
 
-A swallowed word is a lump sitting in her body at the position it entered. As she travels, the trail shifts
-and the lump moves one step toward the tail per tile. Reach the tail and it's out (§5).
+Her length is `BASE + held`. Each held letter is a body segment with the letter drawn on it, newest nearest
+the head, and as you eat more they march toward the tail — so the letter about to drop is always the one
+furthest from your face, which is exactly where you can read it.
 
-So **the length of her body is the length of her buffer**, in tiles of travel. Glyph dots are the only way
-to grow it, which is what makes the dots a real decision rather than free points:
+Holding is never free: more letters means a longer snake, and a longer snake is harder to drive through a
+shaft and blocks more of its own lanes. It is also more wall to stop against, so the cost is never simply
+bad.
 
-> **A longer snake plans better and drives worse.** More tract means more time to go find the partner for
-> that `should` you grabbed on a whim. It also means more of you clogging the shaft — though more of you is
-> also more wall to bounce off, so the cost is never simply bad.
+### 4.2 Why capacity 7
 
-### 4.2 Fusing
+Measured against `enable1.txt`, over frequency-weighted random racks — the share that can spell **any** word
+at each minimum length:
 
-On normal difficulty, two **adjacent** lumps fuse when they form a valid contraction, in body order — which
-is the order she ate them, head-most first. `do` then `not` gives `don't`; `not` then `do` gives nothing and
-both will eventually drop.
+| rack | ≥3 letters | ≥4 | ≥5 |
+|---|---|---|---|
+| 4 | 79.9% | 41.2% | 0.0% |
+| 5 | 90.9% | 73.8% | 23.5% |
+| 6 | 95.9% | 88.5% | 57.5% |
+| **7** | **97.8%** | **94.9%** | 80.7% |
+| 8 | 99.3% | 97.7% | 91.1% |
+| 9 | 99.8% | 99.0% | 96.4% |
 
-Order coming out of the spatial layout for free is the nicest thing about this design: which end of a
-corridor you enter from decides what you spell.
+So a full rack is unspellable about **2% of the time** — rare enough to need no special handling, which is
+worth stating next to the Sound Board's opposite finding (74.7% of stocks dead at *its* threshold, which is
+why that game needed `sbStockCanSpell`). Here the honest answer to a dead rack is that you overflow, the
+tide rises, and you carry on. That is the game working, not the game failing.
 
-On easy, **any** two lumps in the tract may fuse regardless of position or order.
-
-### 4.3 The gate
-
-A fusion replaces the two lumps with one **apostrophe gate** — a body segment drawn as a bright notch, which
-her head may pass straight through instead of stopping against.
-
-A gate is a segment like any other, so it drifts toward the tail as she travels and **expires when it falls
-off the end**. Same currency as digestion, same rule, no second timer: a gate lives as long as the tract
-behind it, and collecting dots extends every gate you're carrying.
-
-Risk flagged: a gate that moves with the body may be fiddly to aim a dash through. §13 #1 holds the fallback
-(a spendable token instead), but the spatial version is the reason the movement model was chosen, so it
-ships first and gets play-tested before anything is softened.
+The cliff below 5 is the reason capacity **starts** at 7 rather than starting small and upgrading up to it:
+a starting rack of 4 would fail to make even a three-letter word one time in five, which reads as a broken
+game rather than a hard one.
 
 ---
 
-## 5. Scarabs — the droppings
+## 5. The drop, and the tide
 
-Egypt's beetle rolls a ball across the sky, so what she leaves behind is a scarab, and a scarab **rolls**.
+An overflowed letter falls out of her tail, down the shaft, until it hits a ledge, a block or Apep himself.
+Where it stops, it becomes a **solid block** — the scarab from the first draft, kept, because a game about
+stopping against things wants more things to stop against.
 
-- A lump reaching the tail drops as a solid block on the tile the tail just vacated.
-- **The two failed words stay written on it.** The level fills with a readable record of your mistakes,
-  which is funny, and is also a grammar lesson lying on the floor where you have to walk around it.
-- **Dash into one and it rolls a lane**, a tile at a time, until it hits something — she follows behind it.
-- Which makes scarabs **tools, not just litter**: push one into place to build a stopping point exactly
-  where the next dash needs one, plug a dart-trap hole, wall off a corridor. An expert will deliberately
-  swallow a garbage pair to manufacture a block. The failure state is also the crafting system.
-- **In the climb this matters double.** Going *up* a shaft, the thing you need is something above you to
-  stop against. Your own bad grammar builds the staircase you climb. It also clutters the shaft you're
-  climbing, and enough of them will seal you in — which is the sloppiness fail, entirely self-inflicted and
-  entirely visible.
-
----
-
-## 6. The word set
-
-Tiles are common words; the pairs are the real contractions of English.
-
-**Verb + `not`** — `do does did is are was were has have had can could would should will must` + `not`
-(→ `don't doesn't didn't isn't aren't wasn't weren't hasn't haven't hadn't can't couldn't wouldn't
-shouldn't won't mustn't`).
-
-**Pronoun + verb** — `I you he she it we they` + `am is are have has had will would`
-(→ `I'm you're he's she's it's we're they're I've you've we've they've I'll you'll she'll they'll I'd
-you'd he'd she'd we'd they'd`).
-
-**Openers** — `there here that what who` + `is` (→ `there's here's that's what's who's`).
-
-**Modal + `have`** — `would should could must` + `have` (→ `would've should've could've must've`).
-
-**The odd one out** — `let` + `us` → `let's`.
-
-### 6.1 The cases worth building on purpose
-
-| Tile pair | Why it's in |
-|---|---|
-| `will` + `not` → **`won't`** | The irregular — a letter actually *changes* rather than vanishing. Make it the golden pair, worth several times a regular one, with its own sound. |
-| `can` + `not` → `can't`, **and a lone `cannot` tile** | Both are legitimate English. A decoy that is not actually a mistake. |
-| `shall` + `not` → **`shan't`** | Two letters gone and a vowel shift. Rare, so score it high. |
-| `am` + `not` → **`ain't`** | Scores huge, and then something disapproves. The repo has a Prescriptivist's Gauntlet; it would be rude not to. |
-| **Decoy tiles: `its` `your` `their` `there` `whose` `lets`** | They pair with nothing and always poop. This is the single most-taught apostrophe rule in English — `it's` vs `its` — delivered as a beetle with your mistake written on it. |
-
-The decoys are the whole pedagogy. Nothing is explained; you just learn which words are bait because bait
-clutters your shaft.
+- **Apep eats it when he reaches it**, and climbs faster for good. So a letter dropped high in an open
+  shaft is a debt that falls due almost immediately; one dropped onto a ledge far above him is a debt you
+  have bought time on. **Where you overflow matters as much as whether you overflow.**
+- Until then it is furniture — a block in your way, or a stopping point you can use.
+- **You can re-eat it** if you get there before he does. Diving back down the shaft toward the tide to
+  reclaim a letter you fumbled is the riskiest move in the game and should pay like it.
+- Enough of them and you wall yourself in, which is a death entirely of your own making and entirely
+  visible on the way to happening.
 
 ---
 
-## 7. The climb (built first)
+## 6. Spelling
 
-A procedurally generated vertical shaft. Ledges, pillars and gaps give the dash things to stop against;
-cartouches and glyph dots are strewn on the ledges; the camera follows her up and never back down.
+### 6.1 What counts
 
-**Apep**, the serpent of chaos who swallows the sun, rises from the bottom on a clock that accelerates. A
-snake game whose doom is a bigger snake is too good to pass up, and he gives the mode its only real-time
-pressure (§3.3). Touching him ends the run.
+`enable1.txt`, lazy-loaded on first run, minimum three letters, letters usable in any order. `2of12.txt`
+membership is a *commonness* signal only — it may colour the score or the celebration, never eligibility.
 
-Run scoring: height climbed, contractions banked (weighted, `won't` and `shan't` paying most), and a **chain
-multiplier** for fusions inside a few seconds of each other — `couldn't` → `wouldn't` → `shouldn't` is a real
-run and should feel like one.
+Score scales with length; rare letters (`j q x z`) should pay extra, because they are the ones that clog a
+rack and a player needs a reason to be pleased rather than annoyed to see one.
 
-A run ends with a spoiler-free emoji share string in the repo's usual shape (Critter Hunt's `copyShare`
-pattern), and stats in `localStorage["aspostrophe.stats"]`.
+### 6.2 What it does
+
+The letters leave her body cleanly — no drop, no fuel — she shortens, and **Apep is pushed back down** by
+an amount that scales with the word. The tide's position is therefore a running scoreboard of how well you
+have been spelling, readable at a glance without a single number.
+
+There is no farming exploit to design around: letters exist only further up the shaft, so more spelling
+requires more climbing.
+
+### 6.3 Input
+
+**Desktop.** Arrows steer. Letter keys pick that letter out of the rack (greying it as it's used), `Enter`
+commits, `Backspace` un-picks the last, `Esc` clears. The word forms in front of you and lights up when
+it's real. **WASD is gone** — you cannot bind `A`/`S`/`D` to steering in a game where you type, and `R` can
+only stay the restart key because it's read while you're dead.
+
+**Touch.** Swipe to steer; tap letters on her body (or on a rack strip along the bottom) to pick them, tap
+a ✓ to commit. Same everything else.
+
+The overflow moment needs telegraphing in both: the tail letter pulses when the rack is full, with a beat
+of grace before it goes.
 
 ---
 
-## 8. Masks
+## 7. The easter egg — she supplies the apostrophe
 
-Tomb of the Mask's collectible, made Egyptian. Found in the shaft, one at a time, timed.
+You never hold an apostrophe. You don't need to: **spell the letters of a contraction without it and she
+puts it back where it belongs.** `dont` → `don't`. `wont` → `won't`. `cant`, `isnt`, `youre`, `theyre`,
+`ive`, `couldnt`.
+
+This is ApostroPharaoh's actual move — take the letters out, stand an apostrophe exactly where they were —
+and it is the reason the character is in this game at all.
+
+**The joke is that half of them are already real words.** `well`, `shell`, `hell`, `cant`, `wont`, `its`,
+`were`, `ill` all score as ordinary words *and* trip the egg. So the payoff can fire on a word you spelled
+completely by accident, which is the best possible way for an easter egg to announce itself.
+
+**It pays an apostrophe gate.** The gate is a body segment that is **not solid** — the one place your own
+head can dash straight *through* yourself. In a game where everything stops your strike, a hole in the wall
+is the most valuable object there is, and it expires by drifting to the tail and falling off. It was the
+centre of the first design; it is much better as a rare reward you can't plan around.
+
+Plus the gold cartouche flourish from Punctuators, and a sound nothing else makes.
+
+---
+
+## 8. Apep
+
+He rises on a clock that accelerates with your height, **plus** everything he has eaten. He is
+rubber-banded to your **best** height, not your current row (22 rows), so out-climbing him never shakes him
+off and diving back down is diving toward him.
+
+A snake game whose doom is a bigger snake was too good to pass up: Apep is the serpent of chaos who
+swallows the sun, which makes him the right shape and the right appetite.
+
+---
+
+## 9. Masks
+
+Tomb of the Mask's collectible, made Egyptian. Timed, one at a time, found in the shaft.
 
 | Mask | Effect |
 |---|---|
-| **Anubis** | Pass through your own body *anywhere*, briefly — a universal apostrophe. |
-| **Thoth**, the scribe | Lights up every pair currently on screen that actually contracts. Always on in easy mode. |
+| **Anubis** | Pass through your own body anywhere — a universal apostrophe. |
+| **Thoth**, the scribe | Names a word your current rack can spell. |
 | **Bastet** | One free death. (Also: do not hit the cats.) |
-| **Khepri** | Your next dropping is a bomb instead of a block — clears a 3 × 3. |
-| **Sobek** | Chew through stone for a few seconds. |
+| **Khepri** | Overflow costs nothing while it lasts — drops vanish instead of landing. |
+| **Sobek** | Chew through stone. |
 
----
+## 10. Hazards
 
-## 9. Hazards
+Lane-based, so they read instantly in a game about lanes: dart holes firing across corridors on a
+telegraphed beat, timed spike tiles, patrolling mummies, swinging blades. Sacred cats that must not be hit.
 
-All lane-based, so they read instantly in a game about lanes: dart holes firing across corridors on a
-telegraphed beat, timed spike tiles, patrolling mummies, swinging blades across a gap. Sacred cats that
-wander and must not be touched.
+## 11. Art
 
----
+Neon-on-black chunky pixel with bloom and scanlines — Tomb of the Mask's look, achievable in canvas and
+free glow for hieroglyphs. Letter tiles are drawn as **cartouches**: Egyptian writing genuinely ringed
+names in an oval with a tie bar, so a letter in a capsule is historically right rather than a UI box, and
+it's the same gold ring the Punctuators version draws around a finished contraction.
 
-## 10. Art
-
-Neon-on-black chunky pixel with bloom and scanlines — Tomb of the Mask's look, which is very achievable in
-canvas and makes hieroglyphs glow for free.
-
-**Word tiles are drawn as cartouches.** Egyptian writing genuinely ringed royal names in an oval with a tie
-bar; a word in a capsule is historically right rather than just a UI box, and it's the same gold ring the
-Punctuators version already draws around a finished contraction.
-
-Her four existing PNGs are painted, not pixel, so they'll fight the look. The repo already has the fix:
-**`emoji-pixelizer.html`** (Critter Hunt's dev tool, repo root) takes dropped image files as well as emoji
-and bakes a posterized pixel sprite at a chosen grid. Run `Anacontractshine.png` (the crowned head) and
-`AnacontractshineEat.png` (the long neck, jaw open) through it and she's in style with a pipeline that
-already exists.
-
----
-
-## 11. Stars (for the later level mode)
-
-Three per chamber, and they should be about *how* you played rather than whether you finished:
-
-- **Clear the wall** — an inscription along the top has gaps where contractions belong; fill every one.
-- **Clean tomb** — finish having dropped zero scarabs.
-- **Chain** — three fusions inside the chain window.
+Her four existing PNGs are painted, not pixel, and will fight the look. The repo already has the fix:
+**`emoji-pixelizer.html`** (Critter Hunt's dev tool) takes dropped image files as well as emoji and bakes a
+posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png` through it.
 
 ---
 
@@ -267,29 +239,47 @@ Three per chamber, and they should be about *how* you played rather than whether
 
 | | | |
 |---|---|---|
-| **M1** | **The shaft and the strike** | Grid, dash-until-blocked, the trailing body, body-as-wall, procedural shaft, Apep rising, death and restart. **No words at all.** The point is to prove the movement is fun before anything grammatical exists — if the dash doesn't feel good, nothing above it saves it. |
-| **M2** | **The tract** | Word cartouches, swallowing, the digestion queue, fusion, the apostrophe gate, scarab drops and pushing, glyph dots. This is the game. |
-| **M3** | **The feel** | The pixel pass, her sprite through the pixelizer, the neon/bloom/scanline treatment, the procedural SFX kit, screen shake, the fusion and the poop both needing their own cue. |
-| **M4** | **Masks and hazards** | §8 and §9. |
-| **M5** | **The run** | Chain multiplier, scoring weights, stats, the share string. |
-| **M6** | *(parked)* Authored tomb levels + the star goals (§11). |
-| **M7** | *(parked)* **Hieroglyph mode** — the same tomb with words spelled out letter by letter, eaten as runs, where approach direction decides whether you swallow `not` or `ton`. The original sketch for this game, set aside as a second mode rather than lost. |
+| **M1** | **The shaft and the strike** — **BUILT 2026-09-16** | Grid, dash-until-blocked, the trailing body, body-as-wall, procedural shaft, Apep rising, death, restart. No letters at all. Prove the movement before anything else is built on it. §12.1. |
+| **M2** | **The rack** | Letter tiles in the shaft, eating, letters drawn on her body, capacity, overflow, the fall, the landed block, Apep eating it and speeding up. **Still no spelling** — this milestone is the debt half of the loop on its own, and it should already be a tense (if unwinnable) game. |
+| **M3** | **The word** | `enable1.txt`, typing and tapping, the commit, scoring, Apep pushed back. **This closes the loop.** |
+| **M4** | **The feel** | Pixel pass, her sprite through the pixelizer, neon/bloom/scanlines, the procedural SFX kit, and the three moments that need their own cue: the swallow, the drop, the word. |
+| **M5** | **The easter egg** | §7 — contraction spellings, the cartouche, the apostrophe gate and passing through yourself. |
+| **M6** | **Masks and hazards** | §9, §10. |
+| **M7** | **The run** | Capacity upgrades, stats, the spoiler-free share string (Critter Hunt's `copyShare` shape). |
+| — | *(parked)* Authored tomb levels with star goals; **the whole-word contraction game** (§1) as a separate mode if it ever wants to exist. |
+
+### 12.1 What M1 settled
+
+- **She cannot stop — she can only turn.** The one real feel question. Committing to a slide until a wall
+  stops you is the Tomb of the Mask rule, but with no mid-strike turn the deliberate coiling §3 depends on
+  is impossible to perform. Turning-but-never-halting keeps the commitment and buys back the control.
+- **Apep is rubber-banded to your BEST height, not your current row** (22 rows). Without it a good climb
+  leaves him behind permanently and there is no clock; with it, a dive back down the shaft is a dive back
+  toward him — which §5 now depends on, since reclaiming a dropped letter is exactly that dive.
+- **Length is a bench knob in M1** (`[` / `]`), not a mechanic. M2 replaces it with the rack, which is what
+  the knob exists to let you feel in advance: body-as-wall at length 4 versus length 30.
+- **Climbability is guaranteed at the row, not by a solver.** Every generated feature leaves a gap by
+  construction, plus a sweep that reopens any row that came out solid. Much cheaper to make a dead shaft
+  impossible than to detect one.
+- **Two traps worth not re-hitting.** `roundRect` is Safari 16.4+ and the dev machine is Monterey, so
+  everything rounded is a plain `fillRect`. And the overlays need `pointer-events: none` — they are
+  full-size divs over the canvas, so the death screen was swallowing the very tap its own copy asked for.
+- **Not in M1, on purpose:** audio. The kit is M4, and a strike cue is a real part of whether movement
+  feels good — so if it plays flat, try that before changing `DASH_MS` (44) or Apep's ramp.
 
 ---
 
 ## 13. Open questions
 
-1. **Is the gate a body segment or a spendable token?** Shipping as a segment (§4.3) because the spatial
-   version is why the movement model was chosen. If aiming a dash through a moving notch turns out to be
-   miserable in M2, the fallback is a token: contract, then your next dash ignores your own body entirely.
-   Easier to use, much less interesting. Decide with hands on it, not before.
-2. **Does she cling to walls?** Tomb of the Mask lets you stick to and travel along them, and she's a snake,
-   so it's in character and it would let her stop mid-lane. It's also a second movement verb on top of an
-   already-novel one. Parked for M1's play-test.
-3. **Is there a cap on lumps held**, or is it purely however many fit in the tract? Purely length-driven is
-   the cleaner rule and the one §4 assumes.
-4. **Does an expiring gate shed as a fang?** The one unbuilt ApostroPharaoh idea in `punctuators.md` is the
-   apostrophe as a shed fang. A gate falling off the tail could drop as a pickup that re-mints a gate at the
-   head. Charming, and it softens gate expiry — possibly too much.
-5. **The name.** *Asp-ostrophe* is the recommendation. *The Serpent's Cartouche* and *Apostropharaoh* are
-   the alternatives.
+1. **Does a word push Apep down, or only slow him?** Pushing him down (§6.2) makes the tide a readable
+   scoreboard and feels great. It also means a strong speller can hold him almost stationary, which may be
+   the correct reward or may be the bug. Decide by playing M3.
+2. **Is there a deliberate spit?** A key that ejects the oldest letter on purpose, at the same cost as
+   overflowing. It's agency — dumping a `q` to make room — but it also softens the one punishment the game
+   has. Leaning yes, at a slightly worse rate than overflow.
+3. **Should a landed letter be re-eatable?** §5 says yes and it's the best risk in the design. Watch that
+   it doesn't turn into the dominant strategy (hover above the tide, farm your own droppings).
+4. **Does the rack refuse duplicates of a letter you already hold?** Almost certainly not, but doubled
+   letters are where a 7-rack goes dead, and §4.2's 2% is the number to watch.
+5. **The name.** *Asp-ostrophe* still fits — she is an asp, and §7 is where the apostrophe lives. But the
+   apostrophe is no longer the economy, so *The Tomb of the Asp* and *Apostropharaoh* are back on the table.

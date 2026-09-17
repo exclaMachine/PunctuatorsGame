@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Asp-ostrophe — M1</title>
+<style>
+/* Pixelify Sans — SIL OFL 1.1, bundled locally (fonts/PixelifySans-latin.woff2 + PixelifySans-OFL.txt),
+   the same face Critter Hunt uses. Chrome only; nothing here is body copy. */
+@font-face{font-family:'Pixelify';src:url('fonts/PixelifySans-latin.woff2') format('woff2');font-weight:400 700;font-display:swap}
+
+:root{
+  --neon:#2de1ff;      /* the tomb's cold light — walls, chrome */
+  --snake:#d8ff4a;     /* her head */
+  --apep:#ff5426;      /* the thing below */
+  --ink:#05070c;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh;
+  background:var(--ink); overflow:hidden; overscroll-behavior:none;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Pixelify','Courier New',monospace;
+  color:#cfeaf5; touch-action:none; user-select:none; -webkit-user-select:none;
+}
+#wrap{position:relative}
+/* touch-action:none so a swipe on the shaft is a strike and never a page pan.
+   The page has no user-scalable=no fallback to lean on — the meta tag above sets it. */
+canvas{display:block; touch-action:none; background:#05070c}
+
+/* ── HUD ─────────────────────────────────────────────────────────────── */
+#hud{
+  position:absolute; top:0; left:0; right:0; padding:8px 10px;
+  display:flex; gap:14px; align-items:baseline; pointer-events:none;
+  font-size:15px; letter-spacing:.06em;
+  text-shadow:0 0 8px rgba(45,225,255,.55);
+}
+#hud .k{color:#5b7f93; font-size:11px; margin-right:4px}
+#hud .v{color:var(--neon)}
+#hud .sp{flex:1}
+#hud .dev{color:#7a6a3f; font-size:11px}
+#hud .dev .v{color:#c8a94e}
+
+/* ── overlays ────────────────────────────────────────────────────────── */
+.ov{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:10px; text-align:center;
+  padding:24px; background:rgba(5,7,12,.82); backdrop-filter:blur(2px);
+  /* No overlay here holds a control, and both of them invite a tap that has to
+     reach the canvas underneath (swipe to begin, tap to restart). Without this
+     the death screen swallows its own instruction. */
+  pointer-events:none;
+}
+.ov[hidden]{display:none}
+.ov h1{
+  margin:0; font-size:34px; letter-spacing:.04em; color:var(--snake);
+  text-shadow:0 0 18px rgba(216,255,74,.55);
+}
+.ov h1 .b{color:var(--apep); text-shadow:0 0 18px rgba(255,84,38,.6)}
+.ov h2{margin:0; font-size:19px; color:var(--apep); letter-spacing:.05em;
+  text-shadow:0 0 16px rgba(255,84,38,.5)}
+.ov .sub{color:#5b7f93; font-size:12px; letter-spacing:.14em; margin-top:-4px}
+.ov p{margin:2px 0; font-size:13px; color:#9fc4d4; line-height:1.55; max-width:30ch}
+.ov .big{font-size:26px; color:var(--neon); text-shadow:0 0 14px rgba(45,225,255,.5)}
+.ov .go{
+  margin-top:10px; font-size:14px; color:var(--snake); letter-spacing:.1em;
+  animation:pulse 1.25s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+kbd{
+  font-family:inherit; font-size:12px; border:1px solid #2a4a59; border-radius:0;
+  padding:1px 5px; color:var(--neon); background:rgba(45,225,255,.07);
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv"></canvas>
+
+  <div id="hud">
+    <span><span class="k">HEIGHT</span><span class="v" id="h-height">0</span></span>
+    <span><span class="k">BEST</span><span class="v" id="h-best">0</span></span>
+    <span class="sp"></span>
+    <span class="dev"><span class="k">LEN</span><span class="v" id="h-len">7</span></span>
+  </div>
+
+  <div class="ov" id="ov-start">
+    <h1>ASP<span class="b">'</span>OSTROPHE</h1>
+    <div class="sub">M1 · THE STRIKE</div>
+    <p>You are an asp in a neon tomb. Flick a direction and you <b>strike</b> — sliding until something stops you.</p>
+    <p><b>Your own body is a wall you stop against, not a death.</b> Coil to build the ledges you need.</p>
+    <p>Apep rises from below the moment you move. He does not stop.</p>
+    <div class="go">SWIPE &nbsp;·&nbsp; <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></div>
+  </div>
+
+  <div class="ov" id="ov-dead" hidden>
+    <h2>APEP TOOK YOU</h2>
+    <div class="big" id="d-height">0</div>
+    <div class="sub">ROWS CLIMBED</div>
+    <p id="d-best"></p>
+    <div class="go">TAP &nbsp;·&nbsp; <kbd>R</kbd> &nbsp;TO DIVE AGAIN</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ─────────────────────────────────────────────────────────────────────────
+   ASP-OSTROPHE — M1: the strike.
+
+   Design doc: docs/asp-ostrophe.md. This milestone deliberately contains NO
+   LETTERS: no rack, no overflow, no dropped blocks, no spelling. M1 exists
+   to answer one question — does dashing around a shaft ahead of a rising
+   doom feel good? Everything else is built on top of this movement, so if
+   the movement is wrong nothing above it can save it.
+
+   (The doc pivoted after this file was written — the game eats loose LETTERS
+   and you spell words with them, rather than eating whole words and pairing
+   them into contractions. None of that reaches this milestone: the shaft,
+   the strike, body-as-wall and Apep are the same game either way, which is
+   the point of having built the movement on its own first.)
+
+   The two rules from the doc that this file exists to prove:
+     · §3  your own body is a wall you STOP AGAINST, not a death. Coiling is
+           how you build stopping points — which is also what will make the
+           apostrophe gate (§7, an easter egg) worth having.
+     · §3  everything internal runs on DISTANCE travelled; Apep alone runs
+           on TIME. Standing still is therefore free but never safe — which
+           is the whole balance once spelling arrives, since a word is spelt
+           standing still. In M1 there is no internal state yet, so what you
+           can feel is the other half: nothing in the shaft moves until you
+           do.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── constants ───────────────────────────────────────────────────────── */
+const SHAFT_W  = 15;     // columns; the shaft's side walls are implicit at -1 and SHAFT_W
+const EMPTY = 0, WALL = 1;
+const DASH_MS  = 44;     // ms per tile while striking
+const BEDROCK  = -2;     // rows below this are solid, so a downward dash always lands
+const MAX_LAG  = 22;     // rows Apep will ever fall behind your best height (§ he catches up)
+const LEN_MIN  = 3, LEN_MAX = 40;
+const STORE    = "aspostrophe.stats";
+
+/* r increases UPWARD. Screen y is inverted in screenY(). Doing it this way
+   round means "climb" is "r goes up", the shaft generator only ever appends,
+   and height is simply the largest r reached. */
+const UP = {dc:0, dr:1}, DOWN = {dc:0, dr:-1}, LEFT = {dc:-1, dr:0}, RIGHT = {dc:1, dr:0};
+
+/* ── query params (bench affordances) ────────────────────────────────── */
+const QS = new URLSearchParams(location.search);
+const SEED_PARAM = QS.has("seed") ? (parseInt(QS.get("seed"), 10) | 0) : null;
+
+/* ── canvas ──────────────────────────────────────────────────────────── */
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+let W = 0, H = 0, TILE = 0, dpr = 1;
+let vignette = null, scanPat = null;
+
+function sizeCanvas(){
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  /* Portrait, capped on desktop so the shaft stays a shaft. TILE is floored
+     and the canvas is then sized to an exact number of columns, so there is
+     never a sliver of a 16th column at the right edge. */
+  const availW = Math.min(window.innerWidth, 520);
+  TILE = Math.max(16, Math.floor(availW / SHAFT_W));
+  W = TILE * SHAFT_W;
+  H = Math.max(360, window.innerHeight);
+  cv.width  = Math.round(W * dpr);
+  cv.height = Math.round(H * dpr);
+  cv.style.width  = W + "px";
+  cv.style.height = H + "px";
+  buildOverlays();
+}
+
+/* Both of these are pure functions of the canvas size, so they're cached on
+   resize rather than rebuilt 60 times a second. */
+function buildOverlays(){
+  vignette = ctx.createRadialGradient(W/2, H*0.45, Math.min(W,H)*0.25, W/2, H*0.45, Math.max(W,H)*0.75);
+  vignette.addColorStop(0, "rgba(0,0,0,0)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.62)");
+
+  const sc = document.createElement("canvas");
+  sc.width = 1; sc.height = 3;
+  const sx = sc.getContext("2d");
+  sx.fillStyle = "rgba(0,0,0,0.20)";
+  sx.fillRect(0, 0, 1, 1);
+  scanPat = ctx.createPattern(sc, "repeat");
+}
+
+/* ── RNG ─────────────────────────────────────────────────────────────── */
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ── the shaft ───────────────────────────────────────────────────────── */
+/* Rows are generated lazily upward and cached in a Map keyed by r, so the
+   shaft is endless by construction and nothing needs storing but the rows
+   you have actually seen. */
+let rows = new Map(), genR = -1, nextFeature = 0, rnd = Math.random, seed = 0;
+
+function resetShaft(s){
+  seed = s;
+  rnd = mulberry32(s);
+  rows = new Map();
+  const solid = () => { const a = new Uint8Array(SHAFT_W); a.fill(WALL); return a; };
+  rows.set(-2, solid());
+  rows.set(-1, solid());          // the floor she starts on
+  genR = -1;
+  nextFeature = 5;                // a few clear rows before the first ledge
+}
+
+function genRow(r){
+  const row = new Uint8Array(SHAFT_W);
+  if (r >= nextFeature){
+    placeFeature(row);
+    nextFeature = r + 3 + (rnd() * 4 | 0);   // never two features back to back
+  }
+  rows.set(r, row);
+}
+
+function placeFeature(row){
+  const t = rnd();
+  if (t < 0.42){
+    /* A full ledge with one gap — the workhorse. Always leaves a way through,
+       which is the whole of the climbability guarantee: a ledge you cannot
+       pass would be a dead shaft. */
+    const gw = 2 + (rnd() * 2 | 0);
+    const g  = (rnd() * (SHAFT_W - gw + 1)) | 0;
+    for (let c = 0; c < SHAFT_W; c++) if (c < g || c >= g + gw) row[c] = WALL;
+  } else if (t < 0.66){
+    /* A half ledge off one wall: something to stop against without closing
+       the row, which is what makes a long sideways strike worth taking. */
+    const len = 4 + (rnd() * 6 | 0);
+    if (rnd() < 0.5) for (let c = 0; c < len; c++) row[c] = WALL;
+    else             for (let c = SHAFT_W - len; c < SHAFT_W; c++) row[c] = WALL;
+  } else if (t < 0.85){
+    const a = 2 + (rnd() * 4 | 0), b = 2 + (rnd() * 4 | 0);
+    for (let c = 0; c < a; c++) row[c] = WALL;
+    for (let c = SHAFT_W - b; c < SHAFT_W; c++) row[c] = WALL;
+    if (rnd() < 0.5){                                  // a floating middle block
+      const m = (SHAFT_W >> 1) - 1 + ((rnd() * 3 | 0) - 1);
+      for (let c = m; c < m + 2; c++) if (c >= 0 && c < SHAFT_W) row[c] = WALL;
+    }
+  } else {
+    const n = 1 + (rnd() * 3 | 0);                     // scattered pillars
+    for (let i = 0; i < n; i++){
+      const c = (rnd() * SHAFT_W) | 0;
+      row[c] = WALL;
+      if (rnd() < 0.5 && c + 1 < SHAFT_W) row[c + 1] = WALL;
+    }
+  }
+  /* Belt and braces: a feature that happened to fill the row would be a wall
+     across the shaft with no way up. */
+  let open = 0;
+  for (let c = 0; c < SHAFT_W; c++) if (row[c] === EMPTY) open++;
+  if (open === 0){
+    const g = (rnd() * (SHAFT_W - 2)) | 0;
+    row[g] = EMPTY; row[g + 1] = EMPTY;
+  }
+}
+
+function ensureUpTo(r){
+  while (genR < r){ genR++; genRow(genR); }
+}
+
+function cellAt(c, r){
+  if (c < 0 || c >= SHAFT_W) return WALL;   // the shaft's own sides
+  if (r <= BEDROCK) return WALL;
+  ensureUpTo(r);
+  return rows.get(r)[c];
+}
+
+/* ── the snake ───────────────────────────────────────────────────────── */
+let body = [], len = 7, dir = null, queued = null, dashAcc = 0;
+let alive = true, started = false, height = 0, best = 0;
+let apepR = 0, apepSpd = 0;
+let shake = 0, spark = null, lastDir = UP;
+
+function loadBest(){
+  try { best = (JSON.parse(localStorage.getItem(STORE) || "{}").best) | 0; }
+  catch (e) { best = 0; }
+}
+function saveBest(){
+  try { localStorage.setItem(STORE, JSON.stringify({ best: best })); } catch (e) {}
+}
+
+function reset(){
+  resetShaft(SEED_PARAM !== null ? SEED_PARAM : (Math.random() * 1e9) | 0);
+  const c0 = SHAFT_W >> 1;
+  body = [];
+  /* Stacked on the start tile — she unfurls as she moves, which is the
+     standard snake trick and saves inventing a spawn pose. */
+  for (let i = 0; i < len; i++) body.push({ c: c0, r: 0 });
+  dir = null; queued = null; dashAcc = 0;
+  alive = true; started = false; height = 0;
+  apepR = -14; apepSpd = 0;
+  shake = 0; spark = null; lastDir = UP;
+  camR = -6; camInit = false;
+  embers.length = 0;
+  document.getElementById("ov-dead").hidden = true;
+}
+
+/* A tile is blocked by stone, by the shaft's sides, or by her own body —
+   and blocked means STOP, never die (§3). The tail is excluded because it
+   vacates on the same step, exactly as in classic snake. */
+function blocked(c, r){
+  if (cellAt(c, r) === WALL) return true;
+  const last = body.length >= len ? body.length - 1 : body.length;
+  for (let i = 0; i < last; i++) if (body[i].c === c && body[i].r === r) return true;
+  return false;
+}
+
+function tryDir(d){
+  const h = body[0];
+  if (blocked(h.c + d.dc, h.r + d.dr)) return false;
+  dir = d; lastDir = d;
+  dashAcc = DASH_MS;      // step on the very next frame, so a flick feels instant
+  return true;
+}
+
+function setDir(d){
+  if (!alive) return;
+  if (!started){ started = true; document.getElementById("ov-start").hidden = true; }
+  /* A direction that is open turns her immediately, mid-strike and all. She
+     can never stop, only turn — which keeps the commitment of a slide while
+     staying responsive enough to coil on purpose. Anything blocked is queued
+     for the moment the current strike ends. */
+  if (!tryDir(d)) queued = d;
+}
+
+function step(){
+  const h = body[0];
+  const nc = h.c + dir.dc, nr = h.r + dir.dr;
+  if (blocked(nc, nr)){
+    dir = null;
+    shake = 3.2;
+    spark = { c: nc, r: nr, t: 1 };
+    if (queued){ const q = queued; queued = null; tryDir(q); }
+    return;
+  }
+  body.unshift({ c: nc, r: nr });
+  while (body.length > len) body.pop();
+  if (nr > height) height = nr;
+}
+
+function die(){
+  alive = false; dir = null; queued = null;
+  if (height > best){ best = height; saveBest(); }
+  document.getElementById("d-height").textContent = height;
+  document.getElementById("d-best").textContent = "BEST " + best;
+  document.getElementById("ov-dead").hidden = false;
+}
+
+/* ── Apep ────────────────────────────────────────────────────────────── */
+const embers = [];
+
+function updateApep(dt){
+  if (!started || !alive) return;
+  /* TIME, and nothing else in the game runs on it (§3). He accelerates
+     with your height so the shaft never settles. */
+  apepSpd = 0.62 + Math.min(height * 0.006, 2.9);
+  apepR += apepSpd * dt / 1000;
+  /* He is rubber-banded to your BEST height, not your current row: outclimb
+     him and he still arrives, and a dive back down the shaft is a dive back
+     toward him. Without this a good run leaves him behind for good and the
+     mode has no clock at all. */
+  if (height - apepR > MAX_LAG) apepR = height - MAX_LAG;
+  if (body[0].r <= apepR) die();
+}
+
+function updateEmbers(dt){
+  if (embers.length < 26 && Math.random() < 0.6){
+    embers.push({ x: Math.random() * W, y: 0, v: 22 + Math.random() * 46, a: 1, s: 1 + Math.random() * 2 });
+  }
+  for (let i = embers.length - 1; i >= 0; i--){
+    const e = embers[i];
+    e.y -= e.v * dt / 1000;
+    e.a -= dt / 1500;
+    if (e.a <= 0) embers.splice(i, 1);
+  }
+}
+
+/* ── camera ──────────────────────────────────────────────────────────── */
+let camR = -6, camInit = false;
+
+function updateCamera(dt){
+  const visRows = H / TILE;
+  const target = body[0].r - visRows * 0.38;   // she rides a little below centre
+  if (!camInit){ camR = target; camInit = true; }
+  else camR += (target - camR) * Math.min(1, dt / 90);
+  camR = Math.min(camR, body[0].r - 2);
+  camR = Math.max(camR, body[0].r - visRows + 3);
+}
+
+const screenX = c => c * TILE;
+const screenY = r => H - (r - camR + 1) * TILE;   // top edge of row r
+
+/* ── draw ────────────────────────────────────────────────────────────── */
+function lerpCol(t){
+  // head → tail: hot lime to a cold, dim green
+  const r = Math.round(216 + (44 - 216) * t);
+  const g = Math.round(255 + (122 - 255) * t);
+  const b = Math.round(74 + (63 - 74) * t);
+  return "rgb(" + r + "," + g + "," + b + ")";
+}
+
+function draw(now){
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (shake > 0.05){
+    ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+  }
+
+  ctx.fillStyle = "#05070c";
+  ctx.fillRect(-8, -8, W + 16, H + 16);
+
+  const rTop = Math.ceil(camR + H / TILE) + 1;
+  const rBot = Math.floor(camR) - 1;
+  ensureUpTo(rTop);
+
+  /* Background: a very dim column grid so the lanes read even where the
+     shaft is empty — in a game about lanes you want to see the lanes. */
+  ctx.strokeStyle = "rgba(45,225,255,0.045)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let c = 1; c < SHAFT_W; c++){ ctx.moveTo(c * TILE + 0.5, 0); ctx.lineTo(c * TILE + 0.5, H); }
+  ctx.stroke();
+
+  /* Walls. Neon reads as a bright thin edge on a dark fill, so the glow is
+     an edge stroke plus a hot cap on any face with open air above it —
+     no per-tile shadowBlur, which would cost far too much at this tile count. */
+  for (let r = rBot; r <= rTop; r++){
+    const y = screenY(r);
+    if (y > H || y + TILE < 0) continue;
+    for (let c = 0; c < SHAFT_W; c++){
+      if (cellAt(c, r) !== WALL) continue;
+      const x = screenX(c);
+      ctx.fillStyle = "#0b1a24";
+      ctx.fillRect(x, y, TILE, TILE);
+      ctx.strokeStyle = "rgba(45,225,255,0.30)";
+      ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
+      if (cellAt(c, r + 1) !== WALL){
+        ctx.fillStyle = "#2de1ff";
+        ctx.fillRect(x, y, TILE, 2);
+      }
+    }
+  }
+
+  drawSnake(now);
+  drawSpark();
+  drawApep(now);
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = vignette; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = scanPat;  ctx.fillRect(0, 0, W, H);
+}
+
+function drawSnake(now){
+  const n = body.length;
+  /* Tail first so the head lands on top, and a connector rect across each
+     joint so the inset segments read as one body rather than a dotted line. */
+  for (let i = n - 1; i >= 0; i--){
+    const s = body[i];
+    const t = n > 1 ? i / (n - 1) : 0;
+    const x = screenX(s.c), y = screenY(s.r);
+    if (y > H + TILE || y + TILE < -TILE) continue;
+    ctx.fillStyle = lerpCol(t);
+    ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
+    const p = body[i - 1];
+    if (p && Math.abs(p.c - s.c) + Math.abs(p.r - s.r) === 1){
+      const px = screenX(p.c), py = screenY(p.r);
+      ctx.fillRect(
+        Math.min(x, px) + 2, Math.min(y, py) + 2,
+        (x === px ? TILE - 4 : TILE + 4), (y === py ? TILE - 4 : TILE + 4)
+      );
+    }
+  }
+
+  const h = body[0];
+  const hx = screenX(h.c), hy = screenY(h.r);
+  ctx.save();
+  ctx.shadowColor = "#d8ff4a";
+  ctx.shadowBlur = 16;
+  ctx.fillStyle = "#eaff7a";
+  ctx.fillRect(hx + 1, hy + 1, TILE - 2, TILE - 2);
+  ctx.restore();
+
+  // eyes, pushed toward whichever way she last struck
+  const d = dir || lastDir;
+  const ex = d.dc * TILE * 0.16, ey = -d.dr * TILE * 0.16;
+  const off = TILE * 0.26;
+  ctx.fillStyle = "#08130a";
+  const cx = hx + TILE / 2 + ex, cy = hy + TILE / 2 + ey;
+  const eye = Math.max(2, TILE * 0.11);
+  if (d.dc !== 0){
+    ctx.fillRect(cx - eye / 2, cy - off / 2 - eye / 2, eye, eye);
+    ctx.fillRect(cx - eye / 2, cy + off / 2 - eye / 2, eye, eye);
+  } else {
+    ctx.fillRect(cx - off / 2 - eye / 2, cy - eye / 2, eye, eye);
+    ctx.fillRect(cx + off / 2 - eye / 2, cy - eye / 2, eye, eye);
+  }
+}
+
+function drawSpark(){
+  if (!spark) return;
+  const x = screenX(spark.c), y = screenY(spark.r);
+  ctx.save();
+  ctx.globalAlpha = spark.t * 0.8;
+  ctx.shadowColor = "#2de1ff"; ctx.shadowBlur = 18;
+  ctx.fillStyle = "#bff4ff";
+  ctx.fillRect(x + 1, y + 1, TILE - 2, TILE - 2);
+  ctx.restore();
+}
+
+function drawApep(now){
+  const yl = screenY(apepR);
+  if (yl > H + TILE) return;
+
+  /* A toothed maw rather than a flat line of lava: he is a serpent, and the
+     crest wobbling on its own clock is the only thing on screen that moves
+     while you stand still — which is exactly the point being made. */
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, H + 4);
+  ctx.lineTo(0, yl);
+  const teeth = 9, stepW = W / teeth;
+  for (let i = 0; i < teeth; i++){
+    const x0 = i * stepW;
+    const wob = Math.sin(now * 0.003 + i * 1.7) * 4;
+    ctx.lineTo(x0 + stepW * 0.5, yl - TILE * 0.55 - wob);
+    ctx.lineTo(x0 + stepW, yl + wob * 0.3);
+  }
+  ctx.lineTo(W, H + 4);
+  ctx.closePath();
+  ctx.fillStyle = "#1c0309";
+  ctx.fill();
+  ctx.shadowColor = "#ff3a1e"; ctx.shadowBlur = 16;
+  ctx.strokeStyle = "#ff5426"; ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = "#0d0206";
+  ctx.fillRect(0, yl + TILE * 0.5, W, Math.max(0, H - yl));
+
+  for (let i = 0; i < embers.length; i++){
+    const e = embers[i];
+    ctx.globalAlpha = Math.max(0, e.a) * 0.8;
+    ctx.fillStyle = "#ff7a3a";
+    ctx.fillRect(e.x, yl + e.y, e.s, e.s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ── HUD ─────────────────────────────────────────────────────────────── */
+const elHeight = document.getElementById("h-height");
+const elBest   = document.getElementById("h-best");
+const elLen    = document.getElementById("h-len");
+let hudCache = "";
+function drawHUD(){
+  const key = height + "|" + best + "|" + len;
+  if (key === hudCache) return;
+  hudCache = key;
+  elHeight.textContent = height;
+  elBest.textContent = best;
+  elLen.textContent = len;
+}
+
+/* ── loop ────────────────────────────────────────────────────────────── */
+let last = 0;
+function frame(now){
+  if (!last) last = now;
+  let dt = now - last;
+  last = now;
+  if (dt > 100) dt = 100;      // a backgrounded tab must not teleport Apep
+
+  if (alive && dir){
+    dashAcc += dt;
+    while (dashAcc >= DASH_MS && dir){ dashAcc -= DASH_MS; step(); }
+  }
+  updateApep(dt);
+  updateEmbers(dt);
+  updateCamera(dt);
+  if (shake > 0) shake = Math.max(0, shake - dt / 45);
+  if (spark){ spark.t -= dt / 180; if (spark.t <= 0) spark = null; }
+
+  draw(now);
+  drawHUD();
+  requestAnimationFrame(frame);
+}
+
+/* ── input ───────────────────────────────────────────────────────────── */
+const KEYS = {
+  ArrowUp: UP, KeyW: UP, ArrowDown: DOWN, KeyS: DOWN,
+  ArrowLeft: LEFT, KeyA: LEFT, ArrowRight: RIGHT, KeyD: RIGHT
+};
+window.addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const d = KEYS[e.code];
+  if (d){ e.preventDefault(); setDir(d); return; }
+  if (e.code === "KeyR"){ e.preventDefault(); reset(); return; }
+  /* Bench control, not a mechanic: M2 grows her by the letters she holds.
+     Being able
+     to feel body-as-wall at length 4 and at length 30 is the whole reason
+     M1 exists, so the length is a knob here rather than an invented rule. */
+  if (e.code === "BracketRight" || e.code === "Equal"){
+    len = Math.min(LEN_MAX, len + 1); return;
+  }
+  if (e.code === "BracketLeft" || e.code === "Minus"){
+    len = Math.max(LEN_MIN, len - 1);
+    while (body.length > len) body.pop();
+    return;
+  }
+});
+
+let touchStart = null;
+cv.addEventListener("pointerdown", e => {
+  touchStart = { x: e.clientX, y: e.clientY };
+  if (!alive){ reset(); touchStart = null; }
+});
+cv.addEventListener("pointerup", e => {
+  if (!touchStart) return;
+  const dx = e.clientX - touchStart.x, dy = e.clientY - touchStart.y;
+  touchStart = null;
+  if (Math.abs(dx) < 16 && Math.abs(dy) < 16) return;
+  if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? RIGHT : LEFT);
+  else setDir(dy > 0 ? DOWN : UP);      // a downward swipe is downward in the shaft
+});
+cv.addEventListener("pointercancel", () => { touchStart = null; });
+
+window.addEventListener("resize", () => { sizeCanvas(); });
+
+/* ── boot ────────────────────────────────────────────────────────────── */
+loadBest();
+if (QS.has("len")) len = Math.max(LEN_MIN, Math.min(LEN_MAX, parseInt(QS.get("len"), 10) || 7));
+sizeCanvas();
+reset();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
