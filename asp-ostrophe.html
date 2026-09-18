@@ -24,7 +24,13 @@ body{
   background:var(--ink); overflow:hidden; overscroll-behavior:none;
   display:flex; align-items:center; justify-content:center;
   font-family:'Pixelify','Courier New',monospace;
-  color:#cfeaf5; touch-action:none; user-select:none; -webkit-user-select:none;
+  color:#cfeaf5; user-select:none; -webkit-user-select:none;
+  /* manipulation, NOT none. Two jobs: it kills double-tap-to-zoom (the rack
+     bar is tapped repeatedly to spell, which iOS reads as a zoom gesture),
+     and it leaves pinch alive OUTSIDE the shaft as the escape hatch — with
+     touch-action:none here there was no gesture left that could zoom back
+     out, so a stray double-tap stranded the player zoomed in. */
+  touch-action:manipulation;
 }
 /* The shaft and the rack bar are stacked, never overlaid: Apep arrives from the
    bottom of the canvas, so a strip floating over it would hide the one thing
@@ -32,8 +38,10 @@ body{
    whatever is left. */
 #wrap{display:flex; flex-direction:column}
 #stage{position:relative}
-/* touch-action:none so a swipe on the shaft is a strike and never a page pan.
-   The page has no user-scalable=no fallback to lean on — the meta tag above sets it. */
+/* The canvas is the ONE element that keeps touch-action:none, so a swipe on the
+   shaft is a strike and never a page pan or a zoom. Everything else is
+   manipulation (see body), which is what leaves a pinch available to undo a
+   zoom the player never asked for. */
 canvas{display:block; touch-action:none; background:#05070c}
 
 /* ── HUD ─────────────────────────────────────────────────────────────── */
@@ -56,13 +64,16 @@ canvas{display:block; touch-action:none; background:#05070c}
    Two regions, two thumbs, no gesture conflict — which is the whole reason
    §1a #12 stacked the bar UNDER the shaft in M2 rather than overlaying it.
    M3 gives that widget behaviour instead of inventing a second one. */
+/* touch-action:manipulation on the bar is load-bearing, not tidiness: spelling
+   is a burst of taps in one small region, which is exactly the shape of a
+   double-tap, and a zoomed-in phone cannot be played. It is set on the bar so
+   every chip and button inherits it through the hit-test walk. */
 #rackbar{
-  display:flex; flex-direction:column; gap:5px;
+  display:flex; flex-direction:column; gap:5px; touch-action:manipulation;
   padding:6px 8px calc(6px + env(safe-area-inset-bottom));
   background:#080d14; border-top:1px solid #16303d;
 }
-#wordrow,#slotrow{display:flex; align-items:stretch; gap:5px}
-#wordrow{height:calc(var(--slot) * .80)}
+#wordrow{display:flex; align-items:stretch; gap:5px; height:var(--slot)}
 
 #word{
   flex:1; min-width:0; display:flex; align-items:center; gap:2px;
@@ -82,13 +93,16 @@ canvas{display:block; touch-action:none; background:#05070c}
 #word .ph.load{color:#6b5a2a}
 #word .l{cursor:pointer}
 
-#commit,#spit{
+/* A WIDE, WORD-LABELLED RECTANGLE, never a glyph in a square. The ✓ it
+   replaced was the same size and shape as a letter chip, so the one control
+   that commits a word read as decoration and the game looked like it had no
+   confirm at all. */
+#commit{
   font-family:inherit; line-height:1; padding:0; cursor:pointer;
   touch-action:manipulation; border-radius:0;
-}
-#commit{
-  flex:0 0 calc(var(--slot) * 1.6); font-size:calc(var(--slot) * .44);
-  color:#243a46; background:#0a121a; border:1px solid #16303d;
+  flex:0 0 calc(var(--slot) * 2.9); font-size:calc(var(--slot) * .40);
+  letter-spacing:.14em; font-weight:700;
+  color:#3d5a68; background:#0a121a; border:1px solid #16303d;
 }
 #commit.on{
   color:#1a1205; background:var(--gold); border-color:#ffe08a;
@@ -96,7 +110,7 @@ canvas{display:block; touch-action:none; background:#05070c}
 }
 #commit:disabled{cursor:default}
 
-#slots{display:flex; gap:5px; flex:1; justify-content:flex-start}
+#slots{display:flex; gap:5px; justify-content:flex-start}
 .slot{
   width:var(--slot); height:var(--slot); flex:0 1 var(--slot); min-width:0;
   display:flex; align-items:center; justify-content:center;
@@ -131,14 +145,6 @@ canvas{display:block; touch-action:none; background:#05070c}
 }
 @keyframes warn{0%,100%{box-shadow:0 0 10px rgba(255,200,74,.35)}50%{box-shadow:0 0 18px rgba(255,120,60,.95)}}
 @keyframes doom{0%{opacity:1}100%{opacity:.35}}
-#spit{
-  width:var(--slot); height:var(--slot); flex:0 0 var(--slot);
-  font-size:calc(var(--slot) * .46);
-  color:var(--apep); background:#170a08; border:1px solid #58201a;
-}
-#spit:disabled{color:#2e2320; border-color:#221512; cursor:default}
-#spit:not(:disabled):active{background:var(--apep); color:#170a08}
-
 /* ── overlays ────────────────────────────────────────────────────────── */
 .ov{
   position:absolute; inset:0; display:flex; flex-direction:column;
@@ -192,7 +198,7 @@ kbd{
       <p><b>Your body is the rack.</b> Every letter you hold is a segment, newest at your neck, oldest at your tail.</p>
       <p>Hold more than <b>seven</b> and the oldest <b>falls out of your tail</b>. It lands as a block — and Apep eats it and climbs faster, for good.</p>
       <p><b>Spell a word</b> with what you hold and the letters leave cleanly, you score, and <span style="color:var(--apep)">Apep is pushed back down</span>. Nothing pauses while you do it.</p>
-      <div class="go">SWIPE &nbsp;·&nbsp; <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd><br>TYPE OR TAP TO SPELL &nbsp;·&nbsp; <kbd>↵</kbd> WORD &nbsp;·&nbsp; <kbd>⌦</kbd> SPIT</div>
+      <div class="go">SWIPE &nbsp;·&nbsp; <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd><br>TYPE OR TAP TO SPELL &nbsp;·&nbsp; <kbd>↵</kbd> ENTER</div>
     </div>
 
     <div class="ov" id="ov-dead" hidden>
@@ -209,12 +215,9 @@ kbd{
   <div id="rackbar">
     <div id="wordrow">
       <div id="word" title="Tap a letter to take it back"></div>
-      <button id="commit" type="button" disabled title="Spell it (Enter)" aria-label="Spell the word">✓</button>
+      <button id="commit" type="button" disabled title="Spell the word (Enter)" aria-label="Spell the word">ENTER</button>
     </div>
-    <div id="slotrow">
-      <button id="spit" type="button" title="Spit the oldest letter (Delete)" aria-label="Spit the oldest letter">✕</button>
-      <div id="slots"></div>
-    </div>
+    <div id="slots"></div>
   </div>
 </div>
 
@@ -704,11 +707,18 @@ function dropOldest(spat){
   if (rack.length <= CAP) doomT = 0;
 }
 
-/* §13 #2. The spit was M2's only agency over the rack; with M3's spelling it
-   is the deliberate way to place a letter you cannot spend — dump the Q over
-   a high ledge and Apep is a long time reaching it. It is costed slightly
-   worse than overflowing, and visibly so: he LURCHES up at once, on top of
-   the same block he will eventually eat. */
+/* §13 #2. PARKED 2026-09-18 (dev's call) and deliberately left standing with
+   no caller: the ✕ button and the Delete/"-" binding are gone, because a
+   slot-sized ✕ sitting in the letter row read as a letter and was the control
+   people pressed when they meant to commit a word. The mechanic itself may
+   come back, and reviving it is one button plus one key branch — so the rule
+   it encodes stays written down here rather than in git.
+
+   It was M2's only agency over the rack; with M3's spelling it is the
+   deliberate way to place a letter you cannot spend — dump the Q over a high
+   ledge and Apep is a long time reaching it. It is costed slightly worse than
+   overflowing, and visibly so: he LURCHES up at once, on top of the same
+   block he will eventually eat. */
 function spit(){
   if (!alive || !started || !rack.length) return;
   dropOldest(true);
@@ -1214,7 +1224,6 @@ const elHeight = document.getElementById("h-height");
 const elBest   = document.getElementById("h-best");
 const elFed    = document.getElementById("h-fed");
 const elSlots  = document.getElementById("slots");
-const elSpit   = document.getElementById("spit");
 const elWord   = document.getElementById("word");
 const elCommit = document.getElementById("commit");
 let hudCache = "", barSig = null;
@@ -1245,10 +1254,10 @@ function chipState(w, ch){
   return isLive(n) ? "lit" : "dim";
 }
 
-/* Oldest on the LEFT, right next to the ✕ that ejects it, so the button never
-   has to say which letter it means. When the rack is over capacity an EXTRA
-   slot appears on the left holding the doomed letter — it is visibly the one
-   that does not fit, which is a better explanation than any label. */
+/* Oldest on the LEFT, so the row reads in the order the letters will leave
+   in. When the rack is over capacity an EXTRA slot appears on the left holding
+   the doomed letter — it is visibly the one that does not fit, which is a
+   better explanation than any label. */
 function renderBar(){
   const n = Math.max(CAP, rack.length);
   const w = currentWord();
@@ -1284,8 +1293,6 @@ function renderBar(){
     }
     el.className = cls;
   }
-  elSpit.disabled = rack.length === 0;
-
   /* The word, letter by letter, because each one is its own tap target: tap a
      letter to take exactly that one back. */
   const real = isWord(w);
@@ -1355,9 +1362,8 @@ function frame(now){
 /* WASD is retired (§1a #9): every letter key means "pick that letter out of
    the rack", so A, S and D cannot also be directions. Arrows only.
 
-   Two keys had to move for the same reason. X was M2's spit and is now just a
-   letter, so the spit is Delete or "-" plus the ✕ button it always had. And R
-   restarts ONLY while you are dead — alive, it is the letter R. */
+   R restarts ONLY while you are dead — alive, it is the letter R. (X was M2's
+   spit key and is now just a letter; the spit itself is parked, see spit().) */
 const KEYS = { ArrowUp: UP, ArrowDown: DOWN, ArrowLeft: LEFT, ArrowRight: RIGHT };
 window.addEventListener("keydown", e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1369,9 +1375,6 @@ window.addEventListener("keydown", e => {
     return;
   }
 
-  if (e.code === "Delete" || e.code === "Minus" || e.code === "NumpadSubtract"){
-    e.preventDefault(); spit(); return;
-  }
   if (e.code === "Enter" || e.code === "NumpadEnter"){ e.preventDefault(); commitWord(); return; }
   if (e.code === "Backspace"){ e.preventDefault(); unpickLast(); return; }
   if (e.code === "Escape"){ e.preventDefault(); clearPicks(); return; }
@@ -1384,7 +1387,6 @@ window.addEventListener("keydown", e => {
   }
 });
 
-elSpit.addEventListener("click", e => { e.preventDefault(); spit(); });
 elCommit.addEventListener("click", e => { e.preventDefault(); commitWord(); });
 
 /* Delegated, because the chips are rebuilt whenever the rack or the word

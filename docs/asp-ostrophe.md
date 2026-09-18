@@ -54,7 +54,7 @@ The whole-word version is parked in §13 as a possible second mode, not deleted 
 | 8 | **A word pushes Apep back down** | The tide becomes a live readout of how well you're spelling: poop raises it, words lower it. Self-limiting with no artificial cap, because **letters only exist further up the shaft** — farming requires climbing. |
 | 9 | **Arrows steer, letter keys type. WASD is retired.** | Unavoidable: you cannot bind `A`, `S` and `D` to steering in a game where you type. §6.3. |
 | 10 | **Contractions become an easter egg that mints an apostrophe gate** | §7. It's the one idea from the first draft too good to lose, and it survives better as a reward than as the economy. |
-| 11 | **The deliberate spit ships in M2**, not M3 | §13 #2, settled. Without spelling there is otherwise no agency over the rack at all — you eat, you overflow, you die — and the spit is precisely what turns overflow from an accident into the *placement* decision §5 is built to teach. Costed slightly worse than overflowing, and visibly: Apep **lurches** up at once, on top of the same block he will eventually eat. |
+| 11 | **The deliberate spit ships in M2**, not M3 — **PARKED 2026-09-18, §16.2** | §13 #2, settled. Without spelling there is otherwise no agency over the rack at all — you eat, you overflow, you die — and the spit is precisely what turns overflow from an accident into the *placement* decision §5 is built to teach. Costed slightly worse than overflowing, and visibly: Apep **lurches** up at once, on top of the same block he will eventually eat. |
 | 12 | **A rack bar under the shaft, as well as letters on her body** | Her body is still the rack (§4.1) — but a segment is ~24 px on a phone, and the bar is where the count and the about-to-drop warning are actually legible. It is also exactly where M3's tap-to-spell has to live, so M3 adds behaviour to a widget that already exists rather than inventing one. **Stacked below the canvas, never overlaid** — Apep arrives from the bottom of the shaft, so a strip floating over it would hide the one thing you most need to see. |
 | 13 | **Letters rest ON LEDGES** — the empty tile directly above stone — with a minority floating | §1's "loose letters lie on the ledges", taken literally. It makes a ledge a *destination* rather than scenery, and pairs every letter with a natural stopping point, which a slide-until-blocked game constantly needs. A few float in open air so a long vertical strike can still pay. |
 
@@ -213,7 +213,8 @@ it's real. **WASD is gone** — you cannot bind `A`/`S`/`D` to steering in a gam
 only stay the restart key because it's read while you're dead.
 
 **Touch.** Swipe to steer; tap letters on her body (or on a rack strip along the bottom) to pick them, tap
-a ✓ to commit. Same everything else.
+a commit button. Same everything else. **The commit button is a wide `ENTER` rectangle** — see §16, where
+the first phone test found that a slot-sized `✓` reads as a letter chip rather than a control.
 
 The overflow moment needs telegraphing in both: the tail letter pulses when the rack is full, with a beat
 of grace before it goes. **As built there are two states, not one** — *full* (a warning pulse on the
@@ -222,9 +223,9 @@ oldest letter, on her body and in the rack bar) and *over* (that letter flashes 
 snatch the letter back inside it by spelling with it.
 
 **M2's spit was bound to `X`, and M3 moved it** — the moment letters mean *pick that letter out of the
-rack*, no letter key is free. As built the spit is the ✕ button plus **`Delete`** and **`-`**, and `R`
-restarts **only while you are dead** (alive, it is the letter R); `Enter` also restarts from the death
-screen. The touch path needed no change.
+rack*, no letter key is free — and then **§16 parked the spit altogether (2026-09-18)**, removing the ✕
+button and the `Delete`/`-` bindings. `R` restarts **only while you are dead** (alive, it is the letter R);
+`Enter` also restarts from the death screen.
 
 **A typed letter takes the OLDEST unpicked copy of it.** `rack[length-1]` is the one about to fall, so
 spelling with a doubled letter always spends the one you are closest to losing — which is what makes the
@@ -300,7 +301,7 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
 | | | |
 |---|---|---|
 | **M1** | **The shaft and the strike** — **BUILT 2026-09-16** | Grid, dash-until-blocked, the trailing body, body-as-wall, procedural shaft, Apep rising, death, restart. No letters at all. Prove the movement before anything else is built on it. §12.1. |
-| **M2** | **The rack** — **BUILT 2026-09-16** | Letter tiles in the shaft, eating, letters drawn on her body, capacity, overflow, the fall, the landed block, Apep eating it and speeding up, plus the deliberate spit (§1a #11) and the rack bar (§1a #12). **Still no spelling** — this milestone is the debt half of the loop on its own, and it should already be a tense (if unwinnable) game. §12.2. |
+| **M2** | **The rack** — **BUILT 2026-09-16** | Letter tiles in the shaft, eating, letters drawn on her body, capacity, overflow, the fall, the landed block, Apep eating it and speeding up, plus the deliberate spit (§1a #11 — parked out of the UI in §16.2) and the rack bar (§1a #12). **Still no spelling** — this milestone is the debt half of the loop on its own, and it should already be a tense (if unwinnable) game. §12.2. |
 | **M3** | **The word** — **BUILT 2026-09-17** | `enable1.txt`, typing and tapping, the commit, scoring, Apep pushed back, and §15's dim/lit/gold chips off a prefix check. Typing never pauses anything. `BASE_LEN` 4 → 1 rode along (§4.1). **The loop is closed.** §12.3. |
 | **M4** | **The feel** | Pixel pass, her sprite through the pixelizer, neon/bloom/scanlines, the procedural SFX kit, and the three moments that need their own cue: the swallow, the drop, the word. |
 | **M5** | **The easter egg** | §7 — contraction spellings, the cartouche, the apostrophe gate and passing through yourself. |
@@ -413,15 +414,18 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
    speller holds him at arm's length and no further — he can never be held *almost stationary*, and the
    reprieve is worth most when he is closest. What is left to decide by playing is only whether
    `PUSH_BASE`/`PUSH_PER` (1.0 / 1.1 rows) are generous enough to be worth the seconds they cost.
-2. ~~**Is there a deliberate spit?**~~ **ANSWERED — yes, and it shipped in M2** (§1a #11). It softens
-   nothing, because its cost is paid *in front of you*: Apep lurches half a row the instant you press it,
-   on top of the same block he will later eat. What you buy is the placement, which is the decision §5
-   exists to teach. **Still to watch now M3 is in:** whether a strong speller can spit freely enough
-   that the overflow punishment stops mattering.
+2. ~~**Is there a deliberate spit?**~~ **ANSWERED — it shipped in M2, and was PARKED 2026-09-18** (§16,
+   dev's call). Its cost was paid *in front of you* — Apep lurches half a row the instant you press it, on
+   top of the same block he will later eat — and what you bought was the placement, which is the decision
+   §5 exists to teach. It came out because the *button* was the problem, not the mechanic: a slot-sized ✕
+   in the letter row read as a letter, and was the control people pressed when they meant to commit a
+   word. `spit()` is left standing in the file with no caller so reviving it is one button and one key
+   branch. **If it comes back, the thing to watch is unchanged:** whether a strong speller can spit freely
+   enough that the overflow punishment stops mattering.
 3. ~~**Should a landed letter be re-eatable?**~~ **ANSWERED — yes, and the mechanism is free**: a block
    stops your strike, and being stopped by it is what takes the letter back (§12.2). The farming worry
-   stands and is now testable: hovering above the tide to eat your own droppings is legal, and M2's spit
-   makes it easier, not harder. **Still to watch now M3 is in**, since a word is what finally makes the
+   stands and is now testable: hovering above the tide to eat your own droppings is legal, and the spit
+   made it easier rather than harder — one more reason its return is not free. **Still to watch now M3 is in**, since a word is what finally makes the
    droppings worth something.
 4. **Does the rack refuse duplicates of a letter you already hold?** Almost certainly not, but doubled
    letters are where a 7-rack goes dead, and §4.2's 2% is the number to watch.
@@ -579,3 +583,51 @@ without ever naming the word, which is the line this has to walk. **Desktop gets
 without solving anything. Score and Apep-push scale with **length**, so mashing survives and never wins —
 and in a real-time game where the pressure is supposed to come from Apep rather than from the dictionary,
 forgiving input is the right failure.
+
+
+## 16. The first phone test — fixed 2026-09-18
+
+Two findings, one a bug and one a design failure, both in the rack bar and both invisible on a desktop.
+
+### 16.1 Tapping the chips zoomed the phone in, with no way back out
+
+**Spelling is a burst of taps in one small region, which is exactly the shape of a double-tap** — so iOS
+zoomed, and the player was stranded there. The cause was a gap and its own guard working against each
+other:
+
+- `#rackbar` and `.slot` declared **no `touch-action`**, so the browser kept double-tap-to-zoom over the
+  one widget the game asks you to tap repeatedly. (`#commit`/`#spit` already carried `manipulation`; the
+  chips are plain `div`s and were missed.)
+- `body` carried **`touch-action:none`**, which killed the pinch that would have undone it. The zoom-in
+  was reachable and the zoom-out was not.
+
+Fixed by setting **`touch-action:manipulation` on `#rackbar`** (inherited through the hit-test walk by
+every chip and button under it) and **relaxing `body` from `none` to `manipulation`**. **The canvas alone
+keeps `none`**, which is the only place it is load-bearing: a swipe on the shaft must be a strike and
+never a pan. `user-scalable=no` stays on the meta tag — Android honours it and can no longer zoom at all;
+iOS has ignored it since iOS 10, so there a pinch outside the shaft remains as the escape hatch.
+
+**The general rule:** `touch-action:none` on `<body>` is not a free safety net. It removes the recovery
+gesture along with the unwanted one, so it belongs on the element that actually owns a gesture — here, the
+canvas — and the rest of the page wants `manipulation`.
+
+### 16.2 The ✓ read as decoration and the ✕ read as a letter
+
+The report was *there is no way to confirm a word*, when there had been a commit button all along. Both
+controls were the size and shape of a letter chip, which is what the eye had just been trained to read as
+*a letter*:
+
+- The **`✓` commit** was a `1.6`-slot square, dim until the word was real, sitting at the end of the word
+  strip — so the one control that closes the loop looked like part of the frame.
+- The **`✕` spit** was exactly one slot square, in dark colours, sitting in the letter row next to the
+  chips — and empty slots are dark squares too, so it read as an empty slot. It was the button people
+  pressed when they meant to commit.
+
+**Fixed (dev's calls):** the commit became a **wide `ENTER` rectangle**, word-labelled rather than a glyph,
+dim-but-readable when inactive and gold when the word is real; and **the spit was removed from the UI
+entirely** (§13 #2), leaving the letter row nothing but letters. The word row is now a full slot tall, so
+`ENTER` is a real tap target rather than a 24 px sliver.
+
+**The label is `ENTER`, not `SPELL`.** It names the key, and the keyboard and the button then say the same
+word — worth more here than naming the action, which the word strip beside it is already doing by lighting
+up gold.
