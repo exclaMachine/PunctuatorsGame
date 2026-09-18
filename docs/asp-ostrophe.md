@@ -8,7 +8,8 @@ shaft, the dash, body-as-wall and Apep are the same game. **M2 — the rack — 
 the shaft, the rack on her body, capacity, overflow, the fall, the landed block and Apep eating it — the
 debt half of the loop, playable and unwinnable on purpose. **M3 — the word — BUILT 2026-09-17, so THE LOOP
 IS CLOSED**: `enable1.txt`, typing and tapping, §15's dim/lit/gold chips, the commit, the score and Apep
-pushed back down — plus §4.1's standing change, `BASE_LEN` 4 → **1**. **The goal — §14, restore the
+pushed back down — plus §4.1's standing change, `BASE_LEN` 4 → **1**, since **REVISED 2026-09-18 to a
+FIXED body** (head + one slot per capacity point, empty slots drawn as sockets; §4.1). **The goal — §14, restore the
 alphabet — is SPECCED TENTATIVE 2026-09-17**. Milestones §12; what M1 settled §12.1, M2 §12.2, M3 §12.3;
 open questions §13.
 
@@ -45,7 +46,7 @@ The whole-word version is parked in §13 as a possible second mode, not deleted 
 | # | Decision | |
 |---|---|---|
 | 1 | **Letters on the board, not words** | §1. |
-| 2 | **Her body IS the rack** — length = a base plus every letter held, letters drawn on the segments, newest at the head | Keeps the best idea from the first draft (*her body is her inventory, drawn on the board*) and gives holding letters a **driving** cost on top of the overflow risk. Spelling visibly shortens her, which changes your own wall geometry mid-route. |
+| 2 | **Her body IS the rack** — a **fixed** length of head + one slot per capacity point, letters drawn on the slots, newest at the head, unfilled slots drawn as sockets | Keeps the best idea from the first draft (*her body is her inventory, drawn on the board*). It shipped as `base + held` so that holding also cost manoeuvrability; **revised 2026-09-18 (§4.1)** because body-as-wall is the load-bearing rule and the wall must not resize every time you eat or spell. |
 | 3 | **Overflow drops the OLDEST letter**, out of the tail | FIFO, and physically right — it comes out the far end. It also makes the letter nearest your tail the one you most want to spend, which is a live decision every turn rather than a rule. |
 | 4 | **A dropped letter falls until it lands, becomes a block, and Apep eats it when he reaches it** | §5. Deferred fuel: the punishment is certain (so it stays legible) but *when* it lands on him depends on where in the shaft you overflowed. Geometry matters without the feedback getting muddy. |
 | 5 | **Capacity 7 to start, upgradeable toward 9** | **Measured** (§4.2): a frequency-weighted 7-rack can spell *something* 97.8% of the time and a 4+ letter word 94.9%. Below 5 it falls off a cliff. 7 is also the Scrabble rack, which is a free bit of legibility. |
@@ -69,8 +70,8 @@ The whole-word version is parked in §13 as a possible second mode, not deleted 
    letter held.
 4. Hold more than your capacity and **the oldest drops out of the tail**, falls down the shaft, and lands
    as a block. Apep eats it when he gets there and climbs faster for it.
-5. **Spell a word** from the letters you're holding — type it, or tap them. The letters leave cleanly, she
-   shortens, you score, and Apep is pushed back down.
+5. **Spell a word** from the letters you're holding — type it, or tap them. The letters leave cleanly, the
+   slots they were in empty, you score, and Apep is pushed back down.
 6. Climb. The letters are only ever above you.
 
 ---
@@ -101,28 +102,31 @@ games glued together. You type while climbing; Apep never waits.
 
 ### 4.1 Holding
 
-Her length is `BASE + held`. Each held letter is a body segment with the letter drawn on it, newest nearest
-the head, and as you eat more they march toward the tail — so the letter about to drop is always the one
-furthest from your face, which is exactly where you can read it.
+**Her length is FIXED** at `BODY_LEN` = `BASE` + `CAP` = **8** — the head plus one **slot** per capacity
+point — and the letters *fill* it rather than extending it. Each held letter is a slot with the letter
+drawn on it, newest nearest the head, and as you eat more they march toward the tail — so the letter about
+to drop is always the one furthest from your face, which is exactly where you can read it. A slot you have
+not filled is drawn as an **empty socket**: darker than the body, unmistakably not a letter, so a row of
+them reads as *room*. A full snake is therefore visibly full and the drop explains itself — **there is
+nowhere left to put one** — without the body ever having to change size to say so.
 
-Holding is never free: more letters means a longer snake, and a longer snake is harder to drive through a
-shaft and blocks more of its own lanes. It is also more wall to stop against, so the cost is never simply
-bad.
+**Why fixed, revised 2026-09-18 (dev's call).** The earlier rule (`BASE + held`, so 1 long empty and 8
+long full) made holding cost manoeuvrability directly, but it put the cost on the wrong thing:
+**body-as-wall (§3) is the rule the whole game stands on**, and under a growing body the wall you coil
+against resized every time you ate or spelled a word. The opening of a run had no body at all to turn
+against, and the one piece of level geometry the player authors moved under them at exactly the moments
+they were thinking about something else. A constant body is a constant tool; the rack's cost lives where
+it is legible — the sockets filling up, and the overflow.
 
-`BASE` is **1** as of M3 — head only — so she is **1 long empty and 8 long with a full rack**, and every
-segment behind her head is a letter. M2 shipped `BASE` 4 and playing it found the fault: three blank neck
-segments read as *spare room*, which is exactly the wrong thing for a body to be showing at the moment a
-letter falls out of it. With the padding gone a full snake is *visibly* a full snake and the drop explains
-itself — **there is nowhere left to put one** — which makes the body the honest readout this section
-claims it is. It also puts the doomed letter on the literal tail tip, so the drop and the segment it
-leaves from are the same tile rather than nearly the same tile.
+What this gives up, and is worth stating: spending a word no longer shortens her, so the wall geometry is
+no longer a thing you can spend. The only length change left is the single over-capacity segment during
+`OVERFLOW_GRACE` — which still puts the doomed letter on the literal tail tip, so the drop and the segment
+it leaves from are the same tile.
 
-**The thing to watch is body-as-wall (§3)**, the rule the whole game stands on: a one-tile snake has no
-body to coil against, so the opening of a run loses its stopping points until the first few letters
-arrive. That may be correct — you are *meant* to want letters — and M3's spelling now also shortens her
-back toward it on purpose. If it plays badly the doc's fallback is `BASE` **2** (head plus one), which
-keeps the reading ("every segment you can see a letter on is a letter") while leaving her something to
-turn against.
+The history, since it is the argument's other end: M2 shipped `BASE` 4 with the rack short of it, and
+three blank *neck* segments read as spare room — the wrong thing for a body to show at the moment a letter
+falls out of it. M3 cut `BASE` to 1 to fix that. The fixed body keeps the reading M3 bought (every unfilled
+space is visibly a space waiting for a letter) while putting the neck padding back to work as capacity.
 
 ### 4.2 Why capacity 7
 
@@ -185,7 +189,7 @@ exploit survivable: `CAT` 15, `SNAKE` 45, `JINXED` 126, `ZIGZAG` 156.
 
 ### 6.2 What it does
 
-The letters leave her body cleanly — no drop, no fuel — she shortens, and **Apep is pushed back down** by
+The letters leave her body cleanly — no drop, no fuel — their slots empty, and **Apep is pushed back down** by
 an amount that scales with the word. The tide's position is therefore a running scoreboard of how well you
 have been spelling, readable at a glance without a single number.
 
@@ -196,8 +200,8 @@ partly clawed back when he is already far below. That is the honest answer to §
 holds him at arm's length and no further, and the reprieve is worth most at exactly the moment it is
 needed most.
 
-**She shortens on the spot**, not on her next step: the whole point of the rack being her body is that
-spending it changes your own wall geometry where you can watch it happen.
+**The slots empty on the spot.** Since §4.1's fixed body she does not shorten at all — the only thing a
+commit can trim is the single over-capacity segment, and it goes now rather than on her next step.
 
 There is no farming exploit to design around: letters exist only further up the shaft, so more spelling
 requires more climbing.
@@ -302,7 +306,7 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
 |---|---|---|
 | **M1** | **The shaft and the strike** — **BUILT 2026-09-16** | Grid, dash-until-blocked, the trailing body, body-as-wall, procedural shaft, Apep rising, death, restart. No letters at all. Prove the movement before anything else is built on it. §12.1. |
 | **M2** | **The rack** — **BUILT 2026-09-16** | Letter tiles in the shaft, eating, letters drawn on her body, capacity, overflow, the fall, the landed block, Apep eating it and speeding up, plus the deliberate spit (§1a #11 — parked out of the UI in §16.2) and the rack bar (§1a #12). **Still no spelling** — this milestone is the debt half of the loop on its own, and it should already be a tense (if unwinnable) game. §12.2. |
-| **M3** | **The word** — **BUILT 2026-09-17** | `enable1.txt`, typing and tapping, the commit, scoring, Apep pushed back, and §15's dim/lit/gold chips off a prefix check. Typing never pauses anything. `BASE_LEN` 4 → 1 rode along (§4.1). **The loop is closed.** §12.3. |
+| **M3** | **The word** — **BUILT 2026-09-17** | `enable1.txt`, typing and tapping, the commit, scoring, Apep pushed back, and §15's dim/lit/gold chips off a prefix check. Typing never pauses anything. `BASE_LEN` 4 → 1 rode along (§4.1), since revised again to a fixed `BODY_LEN`. **The loop is closed.** §12.3. |
 | **M4** | **The feel** | Pixel pass, her sprite through the pixelizer, neon/bloom/scanlines, the procedural SFX kit, and the three moments that need their own cue: the swallow, the drop, the word. |
 | **M5** | **The easter egg** | §7 — contraction spellings, the cartouche, the apostrophe gate and passing through yourself. |
 | **M6** | **Masks and hazards** | §9, §10. |
@@ -341,9 +345,9 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
 - **"Blocked" and "aimable" are two different questions**, and conflating them makes a landed letter
   unreachable — the strike must stop against a block but you must still be allowed to point at one.
   `blocked()` (stone + body + blocks) governs stopping; `aimable()` (stone + body only) governs turning.
-- **The rack rides `body[BASE_LEN + i]`**, so it ends at the tail tip, which is where the drop physically
-  comes out. The cost is that while she is growing, `body.length` is a step short of `BASE_LEN + held`
-  and the letter she just ate has no segment yet — the rack bar has it the same frame, which is half of
+- **The rack rides `body[BASE_LEN + i]`**, and the last filled slot is where the drop physically comes
+  out. Since the fixed-body change the only case where a letter has no segment yet is the over-capacity
+  one, while she grows the extra segment for it — the rack bar has it the same frame, which is half of
   why the bar exists.
 - **The landing row is computed once, at drop time, not tested per frame.** Testing as it falls lets a
   letter sink half into a ledge before the test fires; scanning down the column at the moment it leaves

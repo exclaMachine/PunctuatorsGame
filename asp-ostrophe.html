@@ -197,7 +197,7 @@ kbd{
       <h1>APOSTRO<span class="b">P</span>HARAOH</h1>
       <div class="sub">M3 · THE WORD</div>
       <p>Flick a direction and you <b>strike</b> — sliding until something stops you, swallowing every <span class="gold">letter</span> you cross.</p>
-      <p><b>Your body is the rack.</b> Every letter you hold is a segment, newest at your neck, oldest at your tail.</p>
+      <p><b>Your body is the rack.</b> Every segment behind your head is a slot — letters fill from the neck back, and the oldest rides your tail.</p>
       <p>Hold more than <b>seven</b> and the oldest <b>falls out of your tail</b>. It lands as a block — and Apep eats it and climbs faster, for good.</p>
       <p><b>Spell a word</b> with what you hold and the letters leave cleanly, you score, and <span style="color:var(--apep)">Apep is pushed back down</span>. Nothing pauses while you do it.</p>
       <div class="go">SWIPE &nbsp;·&nbsp; <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd><br>TYPE OR TAP TO SPELL &nbsp;·&nbsp; <kbd>↵</kbd> ENTER</div>
@@ -237,12 +237,13 @@ kbd{
             which is exactly what makes spelling cost something. Typing does
             not pause the game (§15): the strike keeps striking and he keeps
             climbing while you think.
-     · §4.1 her body IS the rack. As of M3, BASE_LEN is 1 — the letters fill
-            her ENTIRE length except the head, so a full snake is visibly a
-            full snake and the drop explains itself: there is nowhere left to
-            put one. (M2 shipped BASE_LEN 4 and the three blank neck segments
-            read as spare room, which is the wrong thing for a body to show at
-            the moment a letter falls out of it.)
+     · §4.1 her body IS the rack, at a FIXED length: head plus one slot per
+            capacity point (BODY_LEN = 8). Letters fill from the neck back and
+            shift as she eats; an unfilled slot is drawn as an empty socket,
+            so a full snake is visibly full and the drop explains itself —
+            there is nowhere left to put one. Fixed rather than growing
+            because body-as-wall (§3) is the rule the game stands on, and the
+            wall you coil against must not resize every time you eat.
      · §6.1 enable1.txt, minimum three letters, letters usable in any order.
             2of12 membership is a commonness signal only and is not loaded.
      · §15  the chips carry THREE states, and the middle one is the design:
@@ -265,11 +266,17 @@ const STORE    = "aspostrophe.stats";
    what cashes that in, but the number has to be right from the start or the
    body length M2 teaches you to drive is the wrong body length. */
 const CAP       = 7;
-/* §4.1, changed for M3 on the dev's call: every segment behind the head is a
-   letter, so a full rack is a visibly full snake. The thing to watch is
-   body-as-wall (§3) — a one-tile empty snake has nothing to coil against, and
-   the doc's fallback if that plays badly is 2 (head plus one). */
-const BASE_LEN  = 1;     // head only, so she is 1 long empty and 8 long full
+/* §4.1, revised on the dev's call: her length is FIXED and the letters fill
+   it. BASE_LEN is the head and every other segment is a rack SLOT — empty
+   ones drawn as sockets — so eating shifts letters back along a body that
+   never changes size, and a full rack is a visibly full snake with no socket
+   left. Fixed rather than growing because body-as-wall (§3) is the rule the
+   whole game stands on: a snake whose length tracked the rack had nothing to
+   coil against at the start of a run and changed its own wall geometry every
+   time you ate or spelled, which is the one piece of level geometry the
+   player authors and it should not move under them. */
+const BASE_LEN  = 1;             // the head
+const BODY_LEN  = BASE_LEN + CAP;   // 8: head plus one slot per held letter
 const OVERFLOW_GRACE = 300;   // ms the doomed letter flashes before it leaves (§6.3)
 const FED_BONUS = 0.085; // rows/sec Apep gains, permanently, per letter eaten
 const SPIT_LURCH = 0.5;  // rows Apep jumps at once when you spit on purpose
@@ -574,7 +581,10 @@ let score = 0, bestScore = 0;
    dinner, in that order of who gets there first (§5). */
 let falling = [], blocks = new Map();
 
-const curLen = () => BASE_LEN + rack.length;
+/* Fixed at BODY_LEN, except for the single over-capacity letter living out
+   OVERFLOW_GRACE — it rides a segment of its own so that the drop still comes
+   out of the tail tip rather than out of the middle of her. */
+const curLen = () => Math.max(BODY_LEN, BASE_LEN + rack.length);
 
 /* BEST is the best SCORE as of M3 — spelling is what the run is about now,
    and it is the number §14's tombs would later sit on. Best height is kept
@@ -765,8 +775,9 @@ function togglePick(id){
 function unpickLast(){ if (picked.length){ picked.pop(); barSig = null; } }
 function clearPicks(){ if (picked.length){ picked.length = 0; barSig = null; } }
 
-/* §6.2. The letters leave cleanly — no drop, no fuel — she shortens on the
-   spot, and Apep is shoved back down by an amount that scales with length.
+/* §6.2. The letters leave cleanly — no drop, no fuel — the slots they were
+   in empty, and Apep is shoved back down by an amount that scales with
+   length.
    Nothing about this pauses the game (§15): she is still mid-strike and he is
    still climbing while you commit. */
 function commitWord(){
@@ -786,9 +797,9 @@ function commitWord(){
   for (let i = idx.length - 1; i >= 0; i--) rack.splice(idx[i], 1);
   picked.length = 0;
 
-  /* She shortens NOW rather than on her next step — the point of the rack
-     being her body is that spending it changes your wall geometry where you
-     can see it happen. */
+  /* Spending letters no longer shortens her — the body is fixed (§4.1) and
+     the slots simply empty. This only ever trims the extra over-capacity
+     segment, and it does so NOW rather than on her next step. */
   while (body.length > curLen() && body.length > 1) body.pop();
   if (rack.length <= CAP) doomT = 0;
 
@@ -1097,25 +1108,40 @@ function drawSnake(now){
 /* §4.1: rack[i] rides body segment BASE_LEN + i, so the newest sits just
    behind her neck and every older one is pushed one segment further back as
    she eats — the letter about to drop is therefore always the one furthest
-   from her face, which is exactly where it is easiest to read. rack ends at
-   body[curLen()-1], the tail tip, which is where the drop comes out.
+   from her face, which is exactly where it is easiest to read. The body is a
+   fixed BODY_LEN, so a slot she has not filled yet is drawn as an empty
+   SOCKET: you can read how much room is left off her body without counting,
+   and the drop explains itself because there is visibly nowhere left to put
+   one. The last filled slot is the tail tip, which is where the drop comes
+   out.
 
-   While she is still growing, body.length can be short of curLen() for a
-   step, so the newest letter has no segment yet. Nothing is drawn for it —
-   the rack bar has it the same frame, which is half of why the bar exists. */
+   The one segment past BODY_LEN belongs to the over-capacity letter; while
+   she is still growing into it, body.length can be a step short and that
+   letter has no segment yet. Nothing is drawn for it — the rack bar has it
+   the same frame, which is half of why the bar exists. */
 function drawRackOnBody(now){
-  if (!rack.length) return;
   const doomFlash = doomT > 0 && Math.floor(now / 90) % 2 === 0;
+  const slots = Math.max(CAP, rack.length);
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.font = glyphFont(TILE * 0.5);
-  for (let i = 0; i < rack.length; i++){
+  for (let i = 0; i < slots; i++){
     const bi = BASE_LEN + i;
     if (bi >= body.length) continue;
     const s = body[bi];
     const x = screenX(s.c), y = screenY(s.r);
     if (y > H + TILE || y + TILE < -TILE) continue;
+    if (i >= rack.length){
+      /* An empty socket: darker than the body and unmistakably not a letter,
+         so the row of them reads as room and never as something to spell.
+         Opaque, not an alpha wash — at the start of a run the whole body is
+         stacked on one tile and seven translucent squares would compound
+         into a black hole. */
+      ctx.fillStyle = "#0d2a10";
+      ctx.fillRect(x + 5, y + 5, TILE - 10, TILE - 10);
+      continue;
+    }
     const oldest = i === rack.length - 1;
     const doomed = oldest && rack.length > CAP;
     const inWord = picked.indexOf(rack[i].id) >= 0;
