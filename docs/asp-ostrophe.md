@@ -6,9 +6,11 @@ Status: **SPECCED 2026-09-16. PIVOTED 2026-09-16** from whole-word contractions 
 **M1 — the strike — BUILT 2026-09-16** as `asp-ostrophe.html`, and it survives the pivot untouched: the
 shaft, the dash, body-as-wall and Apep are the same game. **M2 — the rack — BUILT 2026-09-16**: letters in
 the shaft, the rack on her body, capacity, overflow, the fall, the landed block and Apep eating it — the
-debt half of the loop, playable and unwinnable on purpose. **The goal — §14, restore the alphabet — is
-SPECCED TENTATIVE 2026-09-17**, and **M3's input model is SETTLED with it at §15**. Milestones §12; what M1
-settled §12.1, what M2 settled §12.2; open questions §13.
+debt half of the loop, playable and unwinnable on purpose. **M3 — the word — BUILT 2026-09-17, so THE LOOP
+IS CLOSED**: `enable1.txt`, typing and tapping, §15's dim/lit/gold chips, the commit, the score and Apep
+pushed back down — plus §4.1's standing change, `BASE_LEN` 4 → **1**. **The goal — §14, restore the
+alphabet — is SPECCED TENTATIVE 2026-09-17**. Milestones §12; what M1 settled §12.1, M2 §12.2, M3 §12.3;
+open questions §13.
 
 **The pitch:** you are ApostroPharaoh, the contraction hero from Punctuators, as an asp in a neon tomb.
 Loose letters lie on the ledges. You **strike** down a lane and swallow what you cross — but you can only
@@ -107,29 +109,20 @@ Holding is never free: more letters means a longer snake, and a longer snake is 
 shaft and blocks more of its own lanes. It is also more wall to stop against, so the cost is never simply
 bad.
 
-As built, `BASE` is **4** — a head and three of neck — so she is 4 long empty and **11 long with a full
-rack**, which is a big enough swing that you can feel the geometry change as you eat. The rack occupies
-the segments from the neck back, ending at the tail tip, so the letter about to drop really is the one on
-the end that falls off.
+`BASE` is **1** as of M3 — head only — so she is **1 long empty and 8 long with a full rack**, and every
+segment behind her head is a letter. M2 shipped `BASE` 4 and playing it found the fault: three blank neck
+segments read as *spare room*, which is exactly the wrong thing for a body to be showing at the moment a
+letter falls out of it. With the padding gone a full snake is *visibly* a full snake and the drop explains
+itself — **there is nowhere left to put one** — which makes the body the honest readout this section
+claims it is. It also puts the doomed letter on the literal tail tip, so the drop and the segment it
+leaves from are the same tile rather than nearly the same tile.
 
-**TO CHANGE (dev's note, 2026-09-17): the letters should fill her ENTIRE length except the head.** Playing
-M2, the three blank neck segments read as spare room — and spare room is exactly the wrong thing for a
-body to be showing at the moment a letter falls out of it. If every segment behind the head is a letter,
-then a full snake is *visibly* a full snake, and the drop explains itself: **there is nowhere left to put
-one.** That makes the body the honest readout §4.1 claims it is, rather than a rack with padding on the
-front of it.
-
-Mechanically that is `BASE` 1 — head only — so she is **1 long empty and 8 long with a full rack**. Two
-knock-ons to settle when it is built:
-
-- **She gets very short when empty**, and body-as-wall (§3) is the rule the whole game stands on: a
-  one-tile snake has no body to coil against, so the early game loses its stopping points until the
-  first few letters arrive. That may be correct — you are *meant* to want letters — but it is the thing
-  to watch first, and the fallback if it plays badly is `BASE` 2 (head plus one), which keeps the reading
-  ("every segment you can see a letter on is a letter") while leaving her something to turn against.
-- **The overflow beat gets shorter to read.** At `BASE` 4 the doomed letter is the 8th of 11 segments; at
-  `BASE` 1 it is the 8th of 8, i.e. the literal tail tip. That is better for legibility and it means the
-  drop animation and the segment it leaves from are the same tile, which they currently only nearly are.
+**The thing to watch is body-as-wall (§3)**, the rule the whole game stands on: a one-tile snake has no
+body to coil against, so the opening of a run loses its stopping points until the first few letters
+arrive. That may be correct — you are *meant* to want letters — and M3's spelling now also shortens her
+back toward it on purpose. If it plays badly the doc's fallback is `BASE` **2** (head plus one), which
+keeps the reading ("every segment you can see a letter on is a letter") while leaving her something to
+turn against.
 
 ### 4.2 Why capacity 7
 
@@ -175,21 +168,36 @@ stopping against things wants more things to stop against.
 
 ---
 
-## 6. Spelling
+## 6. Spelling — BUILT (M3)
 
 ### 6.1 What counts
 
 `enable1.txt`, lazy-loaded on first run, minimum three letters, letters usable in any order. `2of12.txt`
 membership is a *commonness* signal only — it may colour the score or the celebration, never eligibility.
 
-Score scales with length; rare letters (`j q x z`) should pay extra, because they are the ones that clog a
-rack and a player needs a reason to be pleased rather than annoyed to see one.
+Score scales with length; rare letters (`j q x z`) pay extra, because they are the ones that clog a rack
+and a player needs a reason to be pleased rather than annoyed to see one.
+
+**As built: `sum of Scrabble letter values × word length`** — Scrabble's values to go with the Scrabble
+distribution the letters are already drawn from (§12.2), so the two halves of the game read off one table
+a player may already know. Length is by far the stronger term, which is what makes §15's mash-the-lit-chips
+exploit survivable: `CAT` 15, `SNAKE` 45, `JINXED` 126, `ZIGZAG` 156.
 
 ### 6.2 What it does
 
 The letters leave her body cleanly — no drop, no fuel — she shortens, and **Apep is pushed back down** by
 an amount that scales with the word. The tide's position is therefore a running scoreboard of how well you
 have been spelling, readable at a glance without a single number.
+
+**As built: `1.0 + 1.1 × (length − 3)` rows**, so a three-letter word buys 1 row and a seven-letter word
+4.4. The push is **not uncapped, and nothing new was written to cap it**: `updateApep` already re-clamps
+him to `height − MAX_LAG` on the same frame, so a shove only ever fully lands when he is close and is
+partly clawed back when he is already far below. That is the honest answer to §13 #1 — a strong speller
+holds him at arm's length and no further, and the reprieve is worth most at exactly the moment it is
+needed most.
+
+**She shortens on the spot**, not on her next step: the whole point of the rack being her body is that
+spending it changes your own wall geometry where you can watch it happen.
 
 There is no farming exploit to design around: letters exist only further up the shaft, so more spelling
 requires more climbing.
@@ -213,9 +221,14 @@ oldest letter, on her body and in the rack bar) and *over* (that letter flashes 
 `OVERFLOW_GRACE` = 300 ms and then leaves). The beat is deliberately long enough for M3 to be able to
 snatch the letter back inside it by spelling with it.
 
-**M2's spit is bound to `X`, which M3 must move.** It is the only free letter key today and it will not be
-free the moment letters mean *pick that letter out of the rack* — so when M3 lands, the spit becomes the
-✕ button plus something that isn't a letter (the touch path already works and needs no change).
+**M2's spit was bound to `X`, and M3 moved it** — the moment letters mean *pick that letter out of the
+rack*, no letter key is free. As built the spit is the ✕ button plus **`Delete`** and **`-`**, and `R`
+restarts **only while you are dead** (alive, it is the letter R); `Enter` also restarts from the death
+screen. The touch path needed no change.
+
+**A typed letter takes the OLDEST unpicked copy of it.** `rack[length-1]` is the one about to fall, so
+spelling with a doubled letter always spends the one you are closest to losing — which is what makes the
+`OVERFLOW_GRACE` beat above genuinely long enough to snatch the doomed letter back.
 
 ---
 
@@ -288,7 +301,7 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
 |---|---|---|
 | **M1** | **The shaft and the strike** — **BUILT 2026-09-16** | Grid, dash-until-blocked, the trailing body, body-as-wall, procedural shaft, Apep rising, death, restart. No letters at all. Prove the movement before anything else is built on it. §12.1. |
 | **M2** | **The rack** — **BUILT 2026-09-16** | Letter tiles in the shaft, eating, letters drawn on her body, capacity, overflow, the fall, the landed block, Apep eating it and speeding up, plus the deliberate spit (§1a #11) and the rack bar (§1a #12). **Still no spelling** — this milestone is the debt half of the loop on its own, and it should already be a tense (if unwinnable) game. §12.2. |
-| **M3** | **The word** | `enable1.txt`, typing and tapping, the commit, scoring, Apep pushed back. Input model settled at **§15** — typing never pauses, touch spells in M2's rack bar, chips run dim/lit/gold off a prefix check. **This closes the loop.** |
+| **M3** | **The word** — **BUILT 2026-09-17** | `enable1.txt`, typing and tapping, the commit, scoring, Apep pushed back, and §15's dim/lit/gold chips off a prefix check. Typing never pauses anything. `BASE_LEN` 4 → 1 rode along (§4.1). **The loop is closed.** §12.3. |
 | **M4** | **The feel** | Pixel pass, her sprite through the pixelizer, neon/bloom/scanlines, the procedural SFX kit, and the three moments that need their own cue: the swallow, the drop, the word. |
 | **M5** | **The easter egg** | §7 — contraction spellings, the cartouche, the apostrophe gate and passing through yourself. |
 | **M6** | **Masks and hazards** | §9, §10. |
@@ -359,20 +372,57 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
 
 ---
 
+### 12.3 What M3 settled
+
+- **Two Sets, not a trie, and the second one is the feature.** `VALID` answers *is this a word*;
+  `PREFIX` answers *could this still become one*, which is §15's whole lit/dim split. Keeping them apart
+  is what keeps this a prefix check rather than a solver — it can refuse a dead end without ever naming
+  the word on the other side of it.
+- **The dictionary is filtered to words that fit a rack** (`length ≤ CAP`), because a word longer than
+  your capacity can never be spelled and lighting a chip toward one would be a lie. Measured: enable1's
+  172k words become **51,916** and the prefix set **91,290**, built in **55 ms** — so it is fetched in the
+  background at boot rather than on first keypress, and it is long since in by the time you have letters.
+  Words of 2 are kept in `VALID` but gated out at commit, so §14.4's tomb keys (`OX` claims A) need no
+  second parse to exist.
+- **All 26 letters are a live prefix**, verified, so nothing is dim before you have typed anything — dim
+  only ever appears mid-word, which is exactly when it means something.
+- **A picked letter is tracked by a stable ID, never by its rack index.** Eating unshifts onto the rack
+  and would shift every index under a half-typed word — a bug that only shows up when you eat mid-spell,
+  i.e. constantly. Which also makes the converse cheap: if the letter that drops was spoken for by the
+  word you are building, the word loses it too, because a word holding a letter you no longer have is the
+  one state the bar must never show.
+- **A typed letter takes the OLDEST unpicked copy** (§6.3), so a doubled letter always spends the one
+  nearest the tail. That is what makes `OVERFLOW_GRACE` a real window rather than a decoration.
+- **The push needed no cap of its own.** `updateApep`'s existing `height − MAX_LAG` rubber band already
+  clamps it on the same frame, which answers §13 #1 without a new number: a word is worth most when he is
+  close and is partly clawed back when he is already far below.
+- **Her body and the bar must never disagree**, so a letter claimed by the word wears the chrome colour
+  (neon) on the segment *and* in the chip, distinct from gold (held) and orange (doomed). The rack is her
+  body; two readouts of one thing that can contradict each other are worse than one.
+- **The word lands on the canvas as well as in the bar.** You are watching the shaft, and a score that
+  only ever appears under your thumbs is a score you never see.
+- **Not in M3, on purpose:** audio (still M4), `2of12.txt` (a commonness signal the score does not yet
+  spend), and the easter egg (§7, M5).
+
+---
+
 ## 13. Open questions
 
-1. **Does a word push Apep down, or only slow him?** Pushing him down (§6.2) makes the tide a readable
-   scoreboard and feels great. It also means a strong speller can hold him almost stationary, which may be
-   the correct reward or may be the bug. Decide by playing M3.
+1. **Does a word push Apep down, or only slow him?** **Built as a push** (§6.2), and the worry answered
+   itself: `MAX_LAG`'s rubber band already clamps him back to `height − 22` on the same frame, so a strong
+   speller holds him at arm's length and no further — he can never be held *almost stationary*, and the
+   reprieve is worth most when he is closest. What is left to decide by playing is only whether
+   `PUSH_BASE`/`PUSH_PER` (1.0 / 1.1 rows) are generous enough to be worth the seconds they cost.
 2. ~~**Is there a deliberate spit?**~~ **ANSWERED — yes, and it shipped in M2** (§1a #11). It softens
    nothing, because its cost is paid *in front of you*: Apep lurches half a row the instant you press it,
    on top of the same block he will later eat. What you buy is the placement, which is the decision §5
-   exists to teach. Still to watch in M3: whether a strong speller can spit freely enough that the
-   overflow punishment stops mattering.
+   exists to teach. **Still to watch now M3 is in:** whether a strong speller can spit freely enough
+   that the overflow punishment stops mattering.
 3. ~~**Should a landed letter be re-eatable?**~~ **ANSWERED — yes, and the mechanism is free**: a block
    stops your strike, and being stopped by it is what takes the letter back (§12.2). The farming worry
    stands and is now testable: hovering above the tide to eat your own droppings is legal, and M2's spit
-   makes it easier, not harder. Watch it in M3, when a word finally makes the droppings worth something.
+   makes it easier, not harder. **Still to watch now M3 is in**, since a word is what finally makes the
+   droppings worth something.
 4. **Does the rack refuse duplicates of a letter you already hold?** Almost certainly not, but doubled
    letters are where a 7-rack goes dead, and §4.2's 2% is the number to watch.
 5. ~~**The name.**~~ **ANSWERED 2026-09-17 — the game is _ApostroPharaoh_.** It names the character

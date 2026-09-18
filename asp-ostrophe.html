@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>ApostroPharaoh — M2</title>
+<title>ApostroPharaoh — M3</title>
 <style>
 /* Pixelify Sans — SIL OFL 1.1, bundled locally (fonts/PixelifySans-latin.woff2 + PixelifySans-OFL.txt),
    the same face Critter Hunt uses. Chrome only; nothing here is body copy. */
@@ -46,15 +46,56 @@ canvas{display:block; touch-action:none; background:#05070c}
 #hud .k{color:#5b7f93; font-size:11px; margin-right:4px}
 #hud .v{color:var(--neon)}
 #hud .sp{flex:1}
+#hud .sm{font-size:12px}
+#hud .sm .v{color:#7fb8cc}
 #hud .fed{color:#8a4030; font-size:11px}
 #hud .fed .v{color:var(--apep)}
 
-/* ── the rack bar (§4.1, and the tap surface M3's spelling will inherit) ── */
+/* ── the rack bar — the rack, and the place a word is built ──────────── */
+/* §15: steering is a swipe on the CANVAS, spelling is a tap on the BAR.
+   Two regions, two thumbs, no gesture conflict — which is the whole reason
+   §1a #12 stacked the bar UNDER the shaft in M2 rather than overlaying it.
+   M3 gives that widget behaviour instead of inventing a second one. */
 #rackbar{
-  display:flex; align-items:center; gap:6px;
-  padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; gap:5px;
+  padding:6px 8px calc(6px + env(safe-area-inset-bottom));
   background:#080d14; border-top:1px solid #16303d;
 }
+#wordrow,#slotrow{display:flex; align-items:stretch; gap:5px}
+#wordrow{height:calc(var(--slot) * .80)}
+
+#word{
+  flex:1; min-width:0; display:flex; align-items:center; gap:2px;
+  padding:0 7px; border:1px solid #16303d; background:#0a121a;
+  font-size:calc(var(--slot) * .50); line-height:1; letter-spacing:.12em;
+  color:var(--neon); overflow:hidden; white-space:nowrap;
+}
+/* It lights up when it's real — §6.3's original signal, kept on the word as
+   well as on the chips that can complete it (§15). */
+#word.real{
+  color:#1a1205; background:var(--gold); border-color:#ffe08a;
+  text-shadow:none; box-shadow:0 0 14px rgba(255,200,74,.45);
+}
+#word.bad{animation:bad .26s steps(2) 2}
+@keyframes bad{0%{background:#2a0c06}100%{background:#0a121a}}
+#word .ph{font-size:calc(var(--slot) * .27); letter-spacing:.16em; color:#2f5665}
+#word .ph.load{color:#6b5a2a}
+#word .l{cursor:pointer}
+
+#commit,#spit{
+  font-family:inherit; line-height:1; padding:0; cursor:pointer;
+  touch-action:manipulation; border-radius:0;
+}
+#commit{
+  flex:0 0 calc(var(--slot) * 1.6); font-size:calc(var(--slot) * .44);
+  color:#243a46; background:#0a121a; border:1px solid #16303d;
+}
+#commit.on{
+  color:#1a1205; background:var(--gold); border-color:#ffe08a;
+  box-shadow:0 0 12px rgba(255,200,74,.4);
+}
+#commit:disabled{cursor:default}
+
 #slots{display:flex; gap:5px; flex:1; justify-content:flex-start}
 .slot{
   width:var(--slot); height:var(--slot); flex:0 1 var(--slot); min-width:0;
@@ -64,11 +105,26 @@ canvas{display:block; touch-action:none; background:#05070c}
 }
 .slot.full{
   color:#1a1205; background:var(--gold); border-color:#ffe08a;
-  box-shadow:0 0 10px rgba(255,200,74,.35);
+  box-shadow:0 0 10px rgba(255,200,74,.35); cursor:pointer;
+}
+/* §15's three states. DIM is the one that does the teaching: it refuses a
+   dead end without ever naming the word, which is the line this has to walk.
+   It is a prefix check against enable1, never a solver. */
+.slot.dim{opacity:.26; box-shadow:none}
+.slot.gold{
+  border-color:#fff4cf;
+  box-shadow:0 0 6px rgba(255,255,255,.6), 0 0 20px rgba(255,200,74,.85);
+}
+/* Picked: spoken for by the word being built, so it wears the chrome colour
+   rather than the letter colour. Tap it again to take it back. */
+.slot.used{
+  color:var(--neon); background:#0c1d26; border-color:var(--neon);
+  box-shadow:inset 0 0 0 1px rgba(45,225,255,.25); opacity:1;
 }
 /* Full rack: the letter about to go pulses, which is §6.3's beat of grace. */
 .slot.warn{animation:warn 1s ease-in-out infinite}
-/* Over capacity: it is already leaving. */
+/* Over capacity: it is already leaving — but M3 can still snatch it back
+   inside the beat by spelling with it. */
 .slot.doom{
   color:#fff1e2; background:var(--apep); border-color:#ff9a72;
   animation:doom .17s steps(2) infinite;
@@ -77,9 +133,8 @@ canvas{display:block; touch-action:none; background:#05070c}
 @keyframes doom{0%{opacity:1}100%{opacity:.35}}
 #spit{
   width:var(--slot); height:var(--slot); flex:0 0 var(--slot);
-  font-family:inherit; font-size:calc(var(--slot) * .46); line-height:1;
+  font-size:calc(var(--slot) * .46);
   color:var(--apep); background:#170a08; border:1px solid #58201a;
-  cursor:pointer; padding:0; touch-action:manipulation;
 }
 #spit:disabled{color:#2e2320; border-color:#221512; cursor:default}
 #spit:not(:disabled):active{background:var(--apep); color:#170a08}
@@ -123,26 +178,28 @@ kbd{
     <canvas id="cv"></canvas>
 
     <div id="hud">
-      <span><span class="k">HEIGHT</span><span class="v" id="h-height">0</span></span>
-      <span><span class="k">BEST</span><span class="v" id="h-best">0</span></span>
+      <span><span class="k">SCORE</span><span class="v" id="h-score">0</span></span>
+      <span class="sm"><span class="k">HEIGHT</span><span class="v" id="h-height">0</span></span>
+      <span class="sm"><span class="k">BEST</span><span class="v" id="h-best">0</span></span>
       <span class="sp"></span>
       <span class="fed"><span class="k">APEP FED</span><span class="v" id="h-fed">0</span></span>
     </div>
 
     <div class="ov" id="ov-start">
       <h1>APOSTRO<span class="b">P</span>HARAOH</h1>
-      <div class="sub">M2 · THE RACK</div>
+      <div class="sub">M3 · THE WORD</div>
       <p>Flick a direction and you <b>strike</b> — sliding until something stops you, swallowing every <span class="gold">letter</span> you cross.</p>
       <p><b>Your body is the rack.</b> Every letter you hold is a segment, newest at your neck, oldest at your tail.</p>
       <p>Hold more than <b>seven</b> and the oldest <b>falls out of your tail</b>. It lands as a block — and Apep eats it and climbs faster, for good.</p>
-      <p>You cannot spell yet. This one you only lose.</p>
-      <div class="go">SWIPE &nbsp;·&nbsp; <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> &nbsp;·&nbsp; <kbd>X</kbd> SPIT</div>
+      <p><b>Spell a word</b> with what you hold and the letters leave cleanly, you score, and <span style="color:var(--apep)">Apep is pushed back down</span>. Nothing pauses while you do it.</p>
+      <div class="go">SWIPE &nbsp;·&nbsp; <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd><br>TYPE OR TAP TO SPELL &nbsp;·&nbsp; <kbd>↵</kbd> WORD &nbsp;·&nbsp; <kbd>⌦</kbd> SPIT</div>
     </div>
 
     <div class="ov" id="ov-dead" hidden>
       <h2>APEP TOOK YOU</h2>
-      <div class="big" id="d-height">0</div>
-      <div class="sub">ROWS CLIMBED</div>
+      <div class="big" id="d-score">0</div>
+      <div class="sub">SCORE</div>
+      <p id="d-run"></p>
       <p id="d-fed"></p>
       <p id="d-best"></p>
       <div class="go">TAP &nbsp;·&nbsp; <kbd>R</kbd> &nbsp;TO DIVE AGAIN</div>
@@ -150,49 +207,46 @@ kbd{
   </div>
 
   <div id="rackbar">
-    <button id="spit" type="button" title="Spit the oldest letter (X)" aria-label="Spit the oldest letter">✕</button>
-    <div id="slots"></div>
+    <div id="wordrow">
+      <div id="word" title="Tap a letter to take it back"></div>
+      <button id="commit" type="button" disabled title="Spell it (Enter)" aria-label="Spell the word">✓</button>
+    </div>
+    <div id="slotrow">
+      <button id="spit" type="button" title="Spit the oldest letter (Delete)" aria-label="Spit the oldest letter">✕</button>
+      <div id="slots"></div>
+    </div>
   </div>
 </div>
 
 <script>
 "use strict";
 /* ─────────────────────────────────────────────────────────────────────────
-   APOSTROPHARAOH (codename asp-ostrophe) — M2: the rack.
+   APOSTROPHARAOH (codename asp-ostrophe) — M3: the word. THE LOOP IS CLOSED.
 
-   Design doc: docs/asp-ostrophe.md. M1 built the strike; M2 adds the DEBT
-   half of the loop and nothing else. Letters lie in the shaft, she swallows
-   what she crosses, they ride her body as segments, and going over capacity
-   drops the oldest out of her tail to land as a block that Apep eats and
-   speeds up on. There is still NO SPELLING (M3) — this milestone is meant to
-   be a tense game you can only ever lose, which is exactly what makes the
-   word worth having when it arrives.
+   Design doc: docs/asp-ostrophe.md. M1 built the strike, M2 the debt half of
+   the loop — letters ride her body and the overflow feeds Apep. M3 adds the
+   only clean way to empty your mouth: SPELL A WORD WITH IT. The letters leave
+   without falling, you score, and Apep is pushed back down.
 
-   The rules from the doc this file exists to prove:
-     · §4.1 her body IS the rack. Length is BASE_LEN + held, letters are drawn
-            on the segments, and eating makes her longer — so holding letters
-            costs you manoeuvrability before it costs you anything else.
-     · §5   overflow is DEFERRED fuel. The letter falls, lands, and waits;
-            Apep collects it when he gets there. So *where* you overflow
-            matters as much as whether you overflow, and that geometry is the
-            whole decision M2 has to offer.
-     · §3   everything internal runs on DISTANCE; Apep alone runs on TIME.
-            Unchanged from M1 and still the balance the game is made of.
-
-   Settled with the dev for M2 (doc §13 #2, §6.3, §1):
-     · The deliberate SPIT ships here. Without spelling there is otherwise no
-       agency over the rack at all, and the spit is what turns overflow from
-       an accident into a placement decision. It is costed slightly worse
-       than overflowing: Apep LURCHES up immediately (SPIT_LURCH) on top of
-       the same deferred block.
-     · A rack bar under the shaft, as well as letters on her body. Her body is
-       still the rack, but on a phone a segment is ~24px; the bar is where the
-       count and the about-to-drop warning are actually legible, and it is
-       exactly where M3's tap-to-spell has to live anyway.
-     · Letters rest ON LEDGES (the empty tile above stone), with a minority
-       floating, so a ledge is a destination rather than scenery.
-   ───────────────────────────────────────────────────────────────────────── */
-
+     · §3   everything internal runs on DISTANCE; Apep alone runs on TIME —
+            which is exactly what makes spelling cost something. Typing does
+            not pause the game (§15): the strike keeps striking and he keeps
+            climbing while you think.
+     · §4.1 her body IS the rack. As of M3, BASE_LEN is 1 — the letters fill
+            her ENTIRE length except the head, so a full snake is visibly a
+            full snake and the drop explains itself: there is nowhere left to
+            put one. (M2 shipped BASE_LEN 4 and the three blank neck segments
+            read as spare room, which is the wrong thing for a body to show at
+            the moment a letter falls out of it.)
+     · §6.1 enable1.txt, minimum three letters, letters usable in any order.
+            2of12 membership is a commonness signal only and is not loaded.
+     · §15  the chips carry THREE states, and the middle one is the design:
+            dim (this letter extends into no real word) / lit (still a live
+            prefix) / gold (picking it completes a word right now). It is a
+            PREFIX CHECK, never a solver — it refuses dead ends without ever
+            naming the word.
+     · §15  touch spells in the rack bar, steering swipes on the canvas. Two
+            regions, two thumbs, no gesture conflict.
 /* ── constants ───────────────────────────────────────────────────────── */
 const SHAFT_W  = 15;     // columns; the shaft's side walls are implicit at -1 and SHAFT_W
 const EMPTY = 0, WALL = 1;
@@ -206,12 +260,11 @@ const STORE    = "aspostrophe.stats";
    what cashes that in, but the number has to be right from the start or the
    body length M2 teaches you to drive is the wrong body length. */
 const CAP       = 7;
-/* TO CHANGE (doc §4.1): this wants to be 1, so the letters fill her ENTIRE
-   length except the head — the three blank neck segments read as spare room,
-   which is the wrong thing for a body to show at the moment a letter falls
-   out of it. Watch body-as-wall (§3) when it moves: a one-tile empty snake
-   has nothing to coil against. */
-const BASE_LEN  = 4;     // head + 3 of neck, so she is 4 long empty and 11 full
+/* §4.1, changed for M3 on the dev's call: every segment behind the head is a
+   letter, so a full rack is a visibly full snake. The thing to watch is
+   body-as-wall (§3) — a one-tile empty snake has nothing to coil against, and
+   the doc's fallback if that plays badly is 2 (head plus one). */
+const BASE_LEN  = 1;     // head only, so she is 1 long empty and 8 long full
 const OVERFLOW_GRACE = 300;   // ms the doomed letter flashes before it leaves (§6.3)
 const FED_BONUS = 0.085; // rows/sec Apep gains, permanently, per letter eaten
 const SPIT_LURCH = 0.5;  // rows Apep jumps at once when you spit on purpose
@@ -219,6 +272,35 @@ const SPIT_LURCH = 0.5;  // rows Apep jumps at once when you spit on purpose
 /* The fall (§5). Accelerating, so a drop down an open shaft is visibly
    worse than a drop onto a ledge two rows below you. */
 const FALL_V0 = 7, FALL_ACC = 34, FALL_VMAX = 26;
+
+/* The word (§6). enable1 is the dictionary and 2of12 is not loaded at all —
+   it is a commonness signal only and nothing in M3 spends it. MAX_WORD tracks
+   CAP because a word longer than your rack can never be spelled, so lighting
+   a chip toward one would be a lie; when §14.6's capacity upgrades land, this
+   follows CAP and the dictionary is rebuilt. Words of 2 are kept in VALID but
+   never committable — §14.4's tomb keys (OX claims A) are exempt from the
+   minimum, and that exemption should not need a second parse to exist. */
+const DICT_URL  = "enable1.txt";
+const MIN_WORD  = 3;
+const MAX_WORD  = CAP;
+
+/* Scrabble's values, to go with Scrabble's distribution (§12.2): the letters
+   that clog a rack are the ones you want to be pleased rather than annoyed to
+   see, and a player who has seen a Scrabble rack already knows which those
+   are. Score is the sum of the values TIMES the length, so length is by far
+   the stronger term — which is what makes §15's tap-only-lit-chips exploit
+   survivable: mashing finds three-letter words and never wins on them. */
+const LETTER_VALUE = {
+  A:1, B:3, C:3, D:2, E:1, F:4, G:2, H:4, I:1, J:8, K:5, L:1, M:3,
+  N:1, O:1, P:3, Q:10, R:1, S:1, T:1, U:1, V:4, W:4, X:8, Y:4, Z:10
+};
+
+/* How far a word shoves him back (§6.2), in rows, by length. It is NOT
+   uncapped: updateApep re-clamps him to height - MAX_LAG on the same frame,
+   so a push only ever fully lands when he is close. That is the honest answer
+   to §13 #1 — a strong speller can hold him at arm's length and no further,
+   and the reprieve is worth most at exactly the moment it is needed most. */
+const PUSH_BASE = 1.0, PUSH_PER = 1.1;
 
 /* Letter placement. Tuned so a screen holds roughly half a dozen letters:
    dense enough that climbing means eating, sparse enough that a route can
@@ -272,7 +354,7 @@ function sizeCanvas(){
      under the home indicator. */
   const slot = Math.max(26, Math.min(44, Math.round(TILE * 1.25)));
   document.documentElement.style.setProperty("--slot", slot + "px");
-  const rackH = Math.ceil(elRackbar.getBoundingClientRect().height) || (slot + 16);
+  const rackH = Math.ceil(elRackbar.getBoundingClientRect().height) || Math.round(slot * 1.85 + 20);
 
   H = Math.max(300, window.innerHeight - rackH);
   cv.width  = Math.round(W * dpr);
@@ -306,6 +388,51 @@ function mulberry32(a){
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
+
+/* ── the dictionary (§6.1) ───────────────────────────────────────────── */
+/* enable1 is 1.7 MB, so it is fetched in the background at boot rather than
+   blocking the game: you cannot spell anything until you have eaten, and by
+   then it is long since in. Needs http serving (Live Server) like every other
+   fetched data file in this repo — on file:// the bar says so rather than
+   silently refusing every word, because a missing data file must never look
+   like a broken rule.
+
+   Two Sets, not a trie. VALID answers "is this a word"; PREFIX answers "could
+   this still become one", which is §15's whole lit/dim split — and the second
+   is what keeps this a prefix check rather than a solver, so it can refuse a
+   dead end without ever naming the word on the other side of it. Filtered to
+   words that fit a rack (<= MAX_WORD), which cuts enable1's 172k words to
+   about 52k and the prefix set to about 91k. */
+let VALID = null, PREFIX = null, dictState = "loading";   // loading | ready | failed
+
+function loadDict(){
+  fetch(DICT_URL)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(txt => {
+      const valid = new Set(), pre = new Set();
+      let i = 0;
+      const n = txt.length;
+      while (i < n){
+        let j = txt.indexOf("\n", i);
+        if (j < 0) j = n;
+        let e = j;
+        if (e > i && txt.charCodeAt(e - 1) === 13) e--;       // CRLF
+        const len = e - i;
+        if (len >= 2 && len <= MAX_WORD){
+          const w = txt.slice(i, e).toUpperCase();
+          valid.add(w);
+          for (let k = 1; k <= len; k++) pre.add(w.slice(0, k));
+        }
+        i = j + 1;
+      }
+      VALID = valid; PREFIX = pre; dictState = "ready";
+      barSig = null;
+    })
+    .catch(() => { dictState = "failed"; barSig = null; });
+}
+
+const isWord   = w => !!VALID  && w.length >= MIN_WORD && VALID.has(w);
+const isLive   = w => !!PREFIX && PREFIX.has(w);
 
 /* ── the shaft ───────────────────────────────────────────────────────── */
 /* Rows are generated lazily upward and cached in a Map keyed by r, so the
@@ -430,7 +557,13 @@ let shake = 0, spark = null, lastDir = UP;
 /* The rack: newest first, so rack[rack.length-1] is the one about to go. It
    is a RACK and not a queue (§1a #6) — order decides only which letter you
    lose next, never what M3 will let you spell. */
-let rack = [], doomT = 0;
+let rack = [], doomT = 0, rackSeq = 0;
+/* The word being built, as a list of rack ENTRY IDS in the order you picked
+   them. Ids and not indices: eating unshifts onto the rack and would shift
+   every index under a half-typed word, which is the kind of bug that only
+   shows up when you eat mid-spell — i.e. constantly. */
+let picked = [], wordFlash = null;
+let score = 0, bestScore = 0;
 /* Dropped letters. `falling` are in the air, `blocks` have landed and are
    solid: furniture you stop against, a letter you can re-eat, and Apep's
    dinner, in that order of who gets there first (§5). */
@@ -438,18 +571,24 @@ let falling = [], blocks = new Map();
 
 const curLen = () => BASE_LEN + rack.length;
 
+/* BEST is the best SCORE as of M3 — spelling is what the run is about now,
+   and it is the number §14's tombs would later sit on. Best height is kept
+   beside it rather than thrown away; the M2 record reads back as `best`. */
 function loadBest(){
-  try { best = (JSON.parse(localStorage.getItem(STORE) || "{}").best) | 0; }
-  catch (e) { best = 0; }
+  try {
+    const o = JSON.parse(localStorage.getItem(STORE) || "{}");
+    best = o.best | 0; bestScore = o.bestScore | 0;
+  } catch (e) { best = 0; bestScore = 0; }
 }
 function saveBest(){
-  try { localStorage.setItem(STORE, JSON.stringify({ best: best })); } catch (e) {}
+  try { localStorage.setItem(STORE, JSON.stringify({ best: best, bestScore: bestScore })); } catch (e) {}
 }
 
 function reset(){
   resetShaft(SEED_PARAM !== null ? SEED_PARAM : (Math.random() * 1e9) | 0);
   const c0 = SHAFT_W >> 1;
-  rack = []; doomT = 0;
+  rack = []; doomT = 0; picked = []; rackSeq = 0;
+  score = 0; wordFlash = null;
   falling = []; blocks = new Map();
   body = [];
   /* Stacked on the start tile — she unfurls as she moves, which is the
@@ -461,9 +600,9 @@ function reset(){
   shake = 0; spark = null; lastDir = UP;
   camR = -6; camInit = false;
   embers.length = 0;
-  rackSig = null;
+  barSig = null; hudCache = "";
   document.getElementById("ov-dead").hidden = true;
-  renderRack();
+  renderBar();
 }
 
 function wallAt(c, r){ return cellAt(c, r) === WALL; }
@@ -533,11 +672,11 @@ function step(){
 
 /* ── the rack ────────────────────────────────────────────────────────── */
 function eat(ch){
-  rack.unshift({ ch: ch });
+  rack.unshift({ ch: ch, id: ++rackSeq });
   /* She grows by one, from the tail, on her next step — body.length is now
      short of curLen() so nothing pops. Over capacity, the oldest is doomed
-     but not yet gone: §6.3's beat of grace, and the same beat M3's spelling
-     will be able to snatch it back inside. */
+     but not yet gone: §6.3's beat of grace, and the same beat a word
+     committed now can snatch it back inside. */
   if (rack.length > CAP && doomT <= 0) doomT = OVERFLOW_GRACE;
 }
 
@@ -549,6 +688,11 @@ function tailTip(){ return body[body.length - 1] || body[0]; }
 function dropOldest(spat){
   if (!rack.length) return;
   const o = rack.pop();
+  /* If the letter that just left was spoken for by a half-built word, the
+     word loses it too — it is gone, and a word holding a letter you no longer
+     have is the one state the bar must never show. */
+  const pi = picked.indexOf(o.id);
+  if (pi >= 0){ picked.splice(pi, 1); barSig = null; }
   const t = tailTip();
   /* Precompute the landing row. Scanning once at drop time rather than
      testing every frame means a letter can never sink half into a ledge,
@@ -560,8 +704,8 @@ function dropOldest(spat){
   if (rack.length <= CAP) doomT = 0;
 }
 
-/* §13 #2. The spit is the only agency M2 has over the rack, and it is what
-   turns overflow from an accident into a placement decision — dump the Q over
+/* §13 #2. The spit was M2's only agency over the rack; with M3's spelling it
+   is the deliberate way to place a letter you cannot spend — dump the Q over
    a high ledge and Apep is a long time reaching it. It is costed slightly
    worse than overflowing, and visibly so: he LURCHES up at once, on top of
    the same block he will eventually eat. */
@@ -570,6 +714,83 @@ function spit(){
   dropOldest(true);
   apepR += SPIT_LURCH;
   shake = Math.max(shake, 4);
+}
+
+/* ── the word (§6) ───────────────────────────────────────────────────── */
+function rackById(id){
+  for (let i = 0; i < rack.length; i++) if (rack[i].id === id) return rack[i];
+  return null;
+}
+function currentWord(){
+  let w = "";
+  for (let i = 0; i < picked.length; i++){
+    const e = rackById(picked[i]);
+    if (e) w += e.ch;
+  }
+  return w;
+}
+
+/* Typing a letter takes the OLDEST unpicked copy of it — rack[length-1] is
+   the one about to fall, so spelling with a doubled letter always spends the
+   one you are closest to losing, and a word committed inside OVERFLOW_GRACE
+   really can snatch the doomed letter back (§6.3). */
+function pickLetter(ch){
+  if (!alive || !started) return false;
+  for (let i = rack.length - 1; i >= 0; i--){
+    if (rack[i].ch === ch && picked.indexOf(rack[i].id) < 0){
+      picked.push(rack[i].id); barSig = null; return true;
+    }
+  }
+  return false;
+}
+function togglePick(id){
+  if (!alive) return;
+  const i = picked.indexOf(id);
+  if (i >= 0) picked.splice(i, 1);
+  else if (rackById(id)) picked.push(id);
+  barSig = null;
+}
+function unpickLast(){ if (picked.length){ picked.pop(); barSig = null; } }
+function clearPicks(){ if (picked.length){ picked.length = 0; barSig = null; } }
+
+/* §6.2. The letters leave cleanly — no drop, no fuel — she shortens on the
+   spot, and Apep is shoved back down by an amount that scales with length.
+   Nothing about this pauses the game (§15): she is still mid-strike and he is
+   still climbing while you commit. */
+function commitWord(){
+  if (!alive || !started) return;
+  const w = currentWord();
+  if (w.length < MIN_WORD || !isWord(w)){ rejectWord(); return; }
+
+  let v = 0;
+  for (let i = 0; i < w.length; i++) v += (LETTER_VALUE[w[i]] || 1);
+  const gained = v * w.length;
+  score += gained;
+
+  /* Splice out by id, highest index first, so the removals cannot walk over
+     each other. */
+  const idx = [];
+  for (let i = 0; i < rack.length; i++) if (picked.indexOf(rack[i].id) >= 0) idx.push(i);
+  for (let i = idx.length - 1; i >= 0; i--) rack.splice(idx[i], 1);
+  picked.length = 0;
+
+  /* She shortens NOW rather than on her next step — the point of the rack
+     being her body is that spending it changes your wall geometry where you
+     can see it happen. */
+  while (body.length > curLen() && body.length > 1) body.pop();
+  if (rack.length <= CAP) doomT = 0;
+
+  apepR -= PUSH_BASE + PUSH_PER * (w.length - MIN_WORD);
+  wordFlash = { word: w, gained: gained, t: 1 };
+  shake = Math.max(shake, 3.5);
+  barSig = null;
+}
+
+function rejectWord(){
+  const el = document.getElementById("word");
+  el.classList.remove("bad");
+  void el.offsetWidth;           // restart the animation on a repeat press
+  el.classList.add("bad");
 }
 
 function updateFalling(dt){
@@ -637,11 +858,15 @@ function updateEmbers(dt){
 
 function die(){
   alive = false; dir = null; queued = null;
-  if (height > best){ best = height; saveBest(); }
-  document.getElementById("d-height").textContent = height;
+  if (height > best) best = height;
+  if (score > bestScore) bestScore = score;
+  saveBest();
+  document.getElementById("d-score").textContent = comma(score);
+  document.getElementById("d-run").textContent = height + " ROWS CLIMBED";
   document.getElementById("d-fed").textContent =
     apepFed ? "HE ATE " + apepFed + " OF YOUR LETTERS" : "HE ATE NOTHING OF YOURS";
-  document.getElementById("d-best").textContent = "BEST " + best;
+  document.getElementById("d-best").textContent =
+    "BEST " + comma(bestScore) + " · " + best + " ROWS";
   document.getElementById("ov-dead").hidden = false;
 }
 
@@ -717,6 +942,7 @@ function draw(now){
   drawFalling();
   drawSpark();
   drawApep(now);
+  drawWordFlash();
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = vignette; ctx.fillRect(0, 0, W, H);
@@ -880,7 +1106,17 @@ function drawRackOnBody(now){
     if (y > H + TILE || y + TILE < -TILE) continue;
     const oldest = i === rack.length - 1;
     const doomed = oldest && rack.length > CAP;
-    if (doomed){
+    const inWord = picked.indexOf(rack[i].id) >= 0;
+    if (inWord && !doomed){
+      /* Spoken for by the word being built, so it wears the chrome colour
+         rather than the letter colour — the same distinction the bar makes,
+         because her body is the rack and the two must never disagree. */
+      ctx.fillStyle = "#0c2530";
+      ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
+      ctx.strokeStyle = "#2de1ff";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 3, y + 3, TILE - 6, TILE - 6);
+    } else if (doomed){
       ctx.fillStyle = doomFlash ? "#ff5426" : "#ffc84a";
       ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
     } else if (oldest && rack.length === CAP){
@@ -893,9 +1129,32 @@ function drawRackOnBody(now){
       ctx.lineWidth = 1;
       ctx.strokeRect(x + 3.5, y + 3.5, TILE - 7, TILE - 7);
     }
-    ctx.fillStyle = doomed ? "#2a0d04" : "#12200a";
+    ctx.fillStyle = doomed ? "#2a0d04" : inWord ? "#8ef0ff" : "#12200a";
     ctx.fillText(rack[i].ch, x + TILE / 2, y + TILE / 2 + TILE * 0.02);
   }
+  ctx.restore();
+}
+
+/* The word lands on the canvas, not only in the bar — you are watching the
+   shaft, and a score that only ever appears under your thumbs is a score you
+   never see. It rises off her head and fades. */
+function drawWordFlash(){
+  if (!wordFlash) return;
+  const h = body[0];
+  const x = screenX(h.c) + TILE / 2;
+  const y = screenY(h.r) - TILE * (0.7 + (1 - wordFlash.t) * 1.9);
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, wordFlash.t * 1.6);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "#ffc84a";
+  ctx.shadowBlur = 16;
+  ctx.fillStyle = "#ffe9b0";
+  ctx.font = glyphFont(TILE * 0.62);
+  ctx.fillText(wordFlash.word, Math.max(TILE * 2, Math.min(W - TILE * 2, x)), y);
+  ctx.fillStyle = "#d8ff4a";
+  ctx.font = glyphFont(TILE * 0.40);
+  ctx.fillText("+" + wordFlash.gained, Math.max(TILE * 2, Math.min(W - TILE * 2, x)), y + TILE * 0.62);
   ctx.restore();
 }
 
@@ -950,31 +1209,53 @@ function drawApep(now){
 }
 
 /* ── HUD & rack bar ──────────────────────────────────────────────────── */
+const elScore  = document.getElementById("h-score");
 const elHeight = document.getElementById("h-height");
 const elBest   = document.getElementById("h-best");
 const elFed    = document.getElementById("h-fed");
 const elSlots  = document.getElementById("slots");
 const elSpit   = document.getElementById("spit");
-let hudCache = "", rackSig = null;
+const elWord   = document.getElementById("word");
+const elCommit = document.getElementById("commit");
+let hudCache = "", barSig = null;
+
+const comma = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
 function drawHUD(){
-  const k = height + "|" + best + "|" + apepFed;
+  const k = score + "|" + height + "|" + bestScore + "|" + apepFed;
   if (k === hudCache) return;
   hudCache = k;
+  elScore.textContent  = comma(score);
   elHeight.textContent = height;
-  elBest.textContent = best;
-  elFed.textContent = apepFed;
+  elBest.textContent   = comma(bestScore);
+  elFed.textContent    = apepFed;
+}
+
+/* §15's three chip states, computed against the word you have typed so far:
+     dim   — prefix + this letter is not the start of any word that fits a rack
+     lit   — it keeps you on a live prefix
+     gold  — prefix + this letter IS a word, so picking it and pressing ✓ scores
+   It is a prefix lookup and nothing more. It never names the word, and it is
+   deliberately not rack-constrained — a chip can be lit toward a word you do
+   not hold the rest of, which is §15's accepted forgiveness. */
+function chipState(w, ch){
+  if (dictState !== "ready") return "";        // never lie while the dict is out
+  const n = w + ch;
+  if (isWord(n)) return "gold";
+  return isLive(n) ? "lit" : "dim";
 }
 
 /* Oldest on the LEFT, right next to the ✕ that ejects it, so the button never
    has to say which letter it means. When the rack is over capacity an EXTRA
    slot appears on the left holding the doomed letter — it is visibly the one
    that does not fit, which is a better explanation than any label. */
-function renderRack(){
+function renderBar(){
   const n = Math.max(CAP, rack.length);
-  const sig = rack.map(o => o.ch).join("") + "|" + n + "|" + (rack.length > CAP ? "d" : rack.length === CAP ? "w" : "");
-  if (sig === rackSig) return;
-  rackSig = sig;
+  const w = currentWord();
+  const sig = rack.map(o => o.ch + o.id).join(",") + "|" + picked.join(".") + "|" + n
+            + "|" + dictState + "|" + (rack.length > CAP ? "d" : rack.length === CAP ? "w" : "");
+  if (sig === barSig) return;
+  barSig = sig;
 
   while (elSlots.children.length > n) elSlots.removeChild(elSlots.lastChild);
   while (elSlots.children.length < n){
@@ -986,15 +1267,54 @@ function renderRack(){
     const idx = rack.length - 1 - i;          // left-to-right is oldest-to-newest
     const el = elSlots.children[i];
     const has = idx >= 0;
-    el.textContent = has ? rack[idx].ch : "";
+    const e = has ? rack[idx] : null;
+    el.textContent = has ? e.ch : "";
+    el.dataset.id  = has ? e.id : "";
     let cls = "slot" + (has ? " full" : "");
-    if (has && idx === rack.length - 1){
-      if (rack.length > CAP) cls += " doom";
-      else if (rack.length === CAP) cls += " warn";
+    if (has){
+      if (picked.indexOf(e.id) >= 0) cls += " used";
+      else {
+        const st = chipState(w, e.ch);
+        if (st) cls += " " + st;
+      }
+      if (idx === rack.length - 1){
+        if (rack.length > CAP) cls += " doom";
+        else if (rack.length === CAP) cls += " warn";
+      }
     }
     el.className = cls;
   }
   elSpit.disabled = rack.length === 0;
+
+  /* The word, letter by letter, because each one is its own tap target: tap a
+     letter to take exactly that one back. */
+  const real = isWord(w);
+  if (!w.length){
+    elWord.innerHTML = dictState === "ready"
+      ? '<span class="ph">TYPE OR TAP TO SPELL</span>'
+      : dictState === "loading"
+        ? '<span class="ph load">DICTIONARY LOADING…</span>'
+        : '<span class="ph load">DICTIONARY OFFLINE — SERVE OVER HTTP</span>';
+  } else {
+    let html = "";
+    for (let i = 0; i < picked.length; i++){
+      const e = rackById(picked[i]);
+      if (e) html += '<span class="l" data-i="' + i + '">' + e.ch + '</span>';
+    }
+    /* The note stays visible once you have picked letters too, or a real word
+       refused by a dictionary that has not landed reads as a broken rule —
+       which is exactly what the repo's "a missing data file must never cost
+       you anything silently" habit exists to prevent. */
+    if (dictState !== "ready"){
+      html += '<span class="ph load">&nbsp;&nbsp;'
+            + (dictState === "loading" ? "DICTIONARY LOADING…" : "DICTIONARY OFFLINE")
+            + '</span>';
+    }
+    elWord.innerHTML = html;
+  }
+  elWord.classList.toggle("real", real);
+  elCommit.disabled = !real;
+  elCommit.classList.toggle("on", real);
 }
 
 /* ── loop ────────────────────────────────────────────────────────────── */
@@ -1023,26 +1343,66 @@ function frame(now){
   updateCamera(dt);
   if (shake > 0) shake = Math.max(0, shake - dt / 45);
   if (spark){ spark.t -= dt / 180; if (spark.t <= 0) spark = null; }
+  if (wordFlash){ wordFlash.t -= dt / 900; if (wordFlash.t <= 0) wordFlash = null; }
 
   draw(now);
   drawHUD();
-  renderRack();
+  renderBar();
   requestAnimationFrame(frame);
 }
 
 /* ── input ───────────────────────────────────────────────────────────── */
-/* WASD is retired (§1a #9): M3 binds every letter key to the rack, so A, S
-   and D cannot also be directions. Arrows only. */
+/* WASD is retired (§1a #9): every letter key means "pick that letter out of
+   the rack", so A, S and D cannot also be directions. Arrows only.
+
+   Two keys had to move for the same reason. X was M2's spit and is now just a
+   letter, so the spit is Delete or "-" plus the ✕ button it always had. And R
+   restarts ONLY while you are dead — alive, it is the letter R. */
 const KEYS = { ArrowUp: UP, ArrowDown: DOWN, ArrowLeft: LEFT, ArrowRight: RIGHT };
 window.addEventListener("keydown", e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const d = KEYS[e.code];
   if (d){ e.preventDefault(); setDir(d); return; }
-  if (e.code === "KeyX"){ e.preventDefault(); spit(); return; }
-  if (e.code === "KeyR"){ e.preventDefault(); reset(); return; }
+
+  if (!alive){
+    if (e.key === "r" || e.key === "R" || e.code === "Enter"){ e.preventDefault(); reset(); }
+    return;
+  }
+
+  if (e.code === "Delete" || e.code === "Minus" || e.code === "NumpadSubtract"){
+    e.preventDefault(); spit(); return;
+  }
+  if (e.code === "Enter" || e.code === "NumpadEnter"){ e.preventDefault(); commitWord(); return; }
+  if (e.code === "Backspace"){ e.preventDefault(); unpickLast(); return; }
+  if (e.code === "Escape"){ e.preventDefault(); clearPicks(); return; }
+
+  /* e.key, not e.code, so a non-QWERTY layout types the letter it is printed
+     with rather than the letter QWERTY would have there. */
+  if (/^[a-z]$/i.test(e.key)){
+    e.preventDefault();
+    if (!pickLetter(e.key.toUpperCase())) rejectWord();
+  }
 });
 
 elSpit.addEventListener("click", e => { e.preventDefault(); spit(); });
+elCommit.addEventListener("click", e => { e.preventDefault(); commitWord(); });
+
+/* Delegated, because the chips are rebuilt whenever the rack or the word
+   changes and per-chip listeners would leak with them. Tapping a held letter
+   picks it; tapping one already in the word takes it back. */
+elSlots.addEventListener("pointerdown", e => {
+  const el = e.target.closest(".slot");
+  if (!el || !el.dataset.id) return;
+  e.preventDefault();
+  togglePick(+el.dataset.id);
+});
+elWord.addEventListener("pointerdown", e => {
+  const el = e.target.closest(".l");
+  if (!el) return;
+  e.preventDefault();
+  picked.splice(+el.dataset.i, 1);
+  barSig = null;
+});
 
 /* Steering fires on MOVE, not on lift: at 44ms a tile you are often mid-strike
    when you decide to turn, and having to complete a lift first loses the
@@ -1080,12 +1440,13 @@ window.addEventListener("resize", () => { sizeCanvas(); });
 
 /* ── boot ────────────────────────────────────────────────────────────── */
 loadBest();
+loadDict();
 sizeCanvas();
 reset();
 /* The letters are drawn with ctx.font, which takes the fallback face until
    the woff2 lands — harmless, but it is one resize-free reflow away from
    looking like a bug, so redraw the bar's metrics once it is in. */
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { rackSig = null; });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { barSig = null; });
 requestAnimationFrame(frame);
 </script>
 </body>
