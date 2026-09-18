@@ -64,10 +64,11 @@ canvas{display:block; touch-action:none; background:#05070c}
    Two regions, two thumbs, no gesture conflict — which is the whole reason
    §1a #12 stacked the bar UNDER the shaft in M2 rather than overlaying it.
    M3 gives that widget behaviour instead of inventing a second one. */
-/* touch-action:manipulation on the bar is load-bearing, not tidiness: spelling
-   is a burst of taps in one small region, which is exactly the shape of a
-   double-tap, and a zoomed-in phone cannot be played. It is set on the bar so
-   every chip and button inherits it through the hit-test walk. */
+/* touch-action:manipulation is the FIRST of two defences and not a sufficient
+   one — see the touchend guard in the input section, which is what actually
+   fixed the phone. It is declared on the bar and again on the chips because
+   WebKit honours it inconsistently on a plain div and not at all before
+   Safari 13, and a browser that does honour it should never reach the guard. */
 #rackbar{
   display:flex; flex-direction:column; gap:5px; touch-action:manipulation;
   padding:6px 8px calc(6px + env(safe-area-inset-bottom));
@@ -116,6 +117,7 @@ canvas{display:block; touch-action:none; background:#05070c}
   display:flex; align-items:center; justify-content:center;
   font-size:calc(var(--slot) * .58); line-height:1;
   color:#243a46; border:1px solid #16303d; background:#0a121a;
+  touch-action:manipulation;
 }
 .slot.full{
   color:#1a1205; background:var(--gold); border-color:#ffe08a;
@@ -1387,7 +1389,44 @@ window.addEventListener("keydown", e => {
   }
 });
 
-elCommit.addEventListener("click", e => { e.preventDefault(); commitWord(); });
+/* Commit acts on POINTERDOWN, not click, because the touchend guard below
+   cancels the click that a quick second tap would have produced. The click
+   listener stays for keyboard activation only (Space/Enter on a focused
+   button fires a click with no pointerdown in front of it) and stands down
+   when a pointer just did the job. */
+let commitByPointer = -1e9;
+elCommit.addEventListener("pointerdown", e => {
+  if (elCommit.disabled) return;
+  e.preventDefault();
+  commitByPointer = performance.now();
+  commitWord();
+});
+elCommit.addEventListener("click", e => {
+  e.preventDefault();
+  if (performance.now() - commitByPointer < 700) return;
+  commitWord();
+});
+
+/* THE DOUBLE-TAP ZOOM, PROPERLY (2026-09-18, second pass). touch-action:
+   manipulation above SHOULD be the whole story and on a current Safari it is,
+   but it is a no-op before Safari 13 and unreliable on a non-interactive
+   element even after it — and picking two adjacent letters is two taps a few
+   pixels and a few hundred ms apart, which IS a double-tap as far as the
+   phone is concerned. So the second tap of any pair inside the bar has its
+   default cancelled, which is the thing the zoom hangs off.
+
+   Nothing is lost by it: every control in this bar acts on pointerdown, so a
+   tap has already counted by the time touchend arrives and the click it
+   suppresses was doing no work. It is scoped to the BAR — the canvas has its
+   own touch-action:none, and the rest of the page keeps the pinch that undoes
+   a zoom, which is the escape hatch this whole fix exists to preserve. */
+const DBLTAP_MS = 500;
+let lastBarTap = -1e9;
+elRackbar.addEventListener("touchend", e => {
+  const now = performance.now();
+  if (now - lastBarTap < DBLTAP_MS && e.cancelable) e.preventDefault();
+  lastBarTap = now;
+}, { passive: false });
 
 /* Delegated, because the chips are rebuilt whenever the rack or the word
    changes and per-chip listeners would leak with them. Tapping a held letter

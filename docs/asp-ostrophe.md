@@ -601,15 +601,30 @@ other:
 - `body` carried **`touch-action:none`**, which killed the pinch that would have undone it. The zoom-in
   was reachable and the zoom-out was not.
 
-Fixed by setting **`touch-action:manipulation` on `#rackbar`** (inherited through the hit-test walk by
-every chip and button under it) and **relaxing `body` from `none` to `manipulation`**. **The canvas alone
-keeps `none`**, which is the only place it is load-bearing: a swipe on the shaft must be a strike and
-never a pan. `user-scalable=no` stays on the meta tag — Android honours it and can no longer zoom at all;
-iOS has ignored it since iOS 10, so there a pinch outside the shaft remains as the escape hatch.
+The first pass set **`touch-action:manipulation` on `#rackbar`** and relaxed **`body` from `none` to
+`manipulation`**, leaving **the canvas alone on `none`** — the only place it is load-bearing, since a
+swipe on the shaft must be a strike and never a pan. `user-scalable=no` stays on the meta tag: Android
+honours it and can no longer zoom at all; iOS has ignored it since iOS 10, so there a pinch outside the
+shaft remains as the escape hatch.
 
-**The general rule:** `touch-action:none` on `<body>` is not a free safety net. It removes the recovery
-gesture along with the unwanted one, so it belongs on the element that actually owns a gesture — here, the
-canvas — and the rest of the page wants `manipulation`.
+**That was not enough, and the second pass is the one that fixed the phone.** `touch-action:manipulation`
+is a **no-op before Safari 13 and unreliable on a non-interactive element even after it** — the chips are
+plain `div`s — so the zoom survived, and picking two *adjacent* letters is two taps a few pixels and a few
+hundred ms apart, which is a double-tap as far as the phone is concerned. The fix that does not depend on
+the browser honouring anything: **the second tap of any pair inside the bar has its `touchend` default
+cancelled** (`DBLTAP_MS` = 500), which is the event the zoom actually hangs off.
+
+**It is free because every control in the bar already acts on `pointerdown`** — a tap has counted by the
+time `touchend` arrives, and the click being suppressed was doing no work. The one control that *was* on
+`click`, the commit button, **moved to `pointerdown`** to join them, keeping a `click` listener for
+keyboard activation alone (a focused button answers Space with a click and no pointerdown in front of it)
+that stands down when a pointer just did the job. The guard is scoped to the bar, so the pinch escape
+hatch is untouched.
+
+**Two general rules, one per pass.** `touch-action:none` on `<body>` is not a free safety net — it removes
+the recovery gesture along with the unwanted one, so it belongs on the element that actually owns a
+gesture. And **`touch-action:manipulation` is a hint, not a guarantee**: on a control you cannot afford to
+have zoom out from under the player, cancel the second tap yourself and make sure nothing needs the click.
 
 ### 16.2 The ✓ read as decoration and the ✕ read as a letter
 
