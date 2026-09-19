@@ -307,7 +307,7 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
 | **M1** | **The shaft and the strike** — **BUILT 2026-09-16** | Grid, dash-until-blocked, the trailing body, body-as-wall, procedural shaft, Apep rising, death, restart. No letters at all. Prove the movement before anything else is built on it. §12.1. |
 | **M2** | **The rack** — **BUILT 2026-09-16** | Letter tiles in the shaft, eating, letters drawn on her body, capacity, overflow, the fall, the landed block, Apep eating it and speeding up, plus the deliberate spit (§1a #11 — parked out of the UI in §16.2) and the rack bar (§1a #12). **Still no spelling** — this milestone is the debt half of the loop on its own, and it should already be a tense (if unwinnable) game. §12.2. |
 | **M3** | **The word** — **BUILT 2026-09-17** | `enable1.txt`, typing and tapping, the commit, scoring, Apep pushed back, and §15's dim/lit/gold chips off a prefix check. Typing never pauses anything. `BASE_LEN` 4 → 1 rode along (§4.1), since revised again to a fixed `BODY_LEN`. **The loop is closed.** §12.3. |
-| **M4** | **The feel** | Pixel pass, her sprite through the pixelizer, neon/bloom/scanlines, the procedural SFX kit, and the three moments that need their own cue: the swallow, the drop, the word. |
+| **M4** | **The feel** — **audio BUILT 2026-09-18**, §17 | The procedural SFX kit is in: two palettes split down the loop's own seam (tomb below, arcade above), a pitch ladder on the swallow so a filling rack tightens audibly, a commit arpeggio that scales with **length**, and Apep's proximity drone — his first non-visual presence. **Still to do:** the pixel pass, her sprite through the pixelizer, neon/bloom/scanlines. |
 | **M5** | **The easter egg** | §7 — contraction spellings, the cartouche, the apostrophe gate and passing through yourself. |
 | **M6** | **Masks and hazards** | §9, §10. |
 | **M7** | **The run** | Capacity upgrades, stats, the spoiler-free share string (Critter Hunt's `copyShare` shape). **This is the fallback meta-layer**: if §14 ships, capacity 7→8→9 moves to its alphabet milestones (§14.6) and is not earned twice. |
@@ -331,7 +331,8 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
   everything rounded is a plain `fillRect`. And the overlays need `pointer-events: none` — they are
   full-size divs over the canvas, so the death screen was swallowing the very tap its own copy asked for.
 - **Not in M1, on purpose:** audio. The kit is M4, and a strike cue is a real part of whether movement
-  feels good — so if it plays flat, try that before changing `DASH_MS` (44) or Apep's ramp.
+  feels good — so if it plays flat, try that before changing `DASH_MS` (44) or Apep's ramp. **The kit is in
+  as of 2026-09-18 (§17), so that advice is now live: the strike cue is the first thing to reach for.**
 
 ---
 
@@ -369,7 +370,7 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
   is in the lane you strike down, so a full rack is roughly a screen and a half of climbing if you are
   taking them and considerably longer if you are dodging. Those three constants are the tuning knob if
   M3 shows the tide rising too fast or too slow.
-- **Not in M2, on purpose:** audio (still M4), and any scoring. M2 has no score because it has no win —
+- **Not in M2, on purpose:** audio (M4, BUILT 2026-09-18 — §17), and any scoring. M2 has no score because it has no win —
   `HEIGHT` and `APEP FED` are the whole readout, and the second one is the debt made into a number.
 - **Found by playing it, not yet fixed:** the three blank neck segments should go — the letters should
   fill her whole length bar the head, so that a full snake *looks* full and the drop explains itself.
@@ -406,7 +407,7 @@ posterized pixel sprite. Run `Anacontractshine.png` and `AnacontractshineEat.png
   body; two readouts of one thing that can contradict each other are worse than one.
 - **The word lands on the canvas as well as in the bar.** You are watching the shaft, and a score that
   only ever appears under your thumbs is a score you never see.
-- **Not in M3, on purpose:** audio (still M4), `2of12.txt` (a commonness signal the score does not yet
+- **Not in M3, on purpose:** audio (M4, BUILT 2026-09-18 — §17), `2of12.txt` (a commonness signal the score does not yet
   spend), and the easter egg (§7, M5).
 
 ---
@@ -650,3 +651,84 @@ entirely** (§13 #2), leaving the letter row nothing but letters. The word row i
 **The label is `ENTER`, not `SPELL`.** It names the key, and the keyboard and the button then say the same
 word — worth more here than naming the action, which the word strip beside it is already doing by lighting
 up gold.
+
+---
+
+## 17. The sound — BUILT 2026-09-18 (M4's audio half)
+
+Procedural WebAudio, no assets, in a `SFX` block near the top of the file — the repo's usual tone/noise
+kit. It is the one part of the game that needs no data file, so it works on `file://` where the dictionary
+does not.
+
+### 17.1 Two palettes, and the split is the design
+
+Everything that happens **below you** is **tomb**: sub bass and filtered noise, no pitch you could hum —
+the strike's rush, the thunk, the letter falling out of your tail, Apep's gulp, the death. Everything you
+**do with a letter** is **arcade**: square-wave blips on a minor pentatonic — the swallow, each pick, the
+word, the record.
+
+The reason is §2: the loop has two halves, debt and spelling, and they are the same tiles and the same
+snake seen two ways. Splitting the palette down that line means **you can hear which half you are in**,
+and a drop is the one event that crosses over — a gold pitched glide (yours) falling into tomb noise
+(his).
+
+One scale for the whole arcade half, a minor pentatonic, because three ladders (the swallow, the pick, the
+word) have to agree with each other and a pentatonic has no interval that can come out wrong.
+
+### 17.2 The cues
+
+| Moment | Palette | What it is | Why it is that |
+|---|---|---|---|
+| Strike | tomb | 160 ms airy noise sweep; **up** sweeps up, **down** sweeps down, lateral flat | Fires more often than anything else, so it is short and quiet — and following the direction is what makes a *turn* audible rather than just a start |
+| Strike ends | tomb | Sub thud + a dry low noise burst | Carries the same beat as `shake`; stone, because that is what stopped you |
+| First strike of a run | tomb | A low 0.9 s gong with a slow noise swell | The tomb noticing. Replaces a title-screen cue, which there is no room for |
+| Swallow | arcade | One blip, **pitched by how full the rack now is** | The mouth filling up becomes audible: the seventh letter is the highest note in the game, which is the drop warning you one beat early |
+| Rack hits 7 | arcade | A souring two-note at the top of the ladder | The `warn` flash, as sound |
+| Over capacity | arcade | Two rising ticks across `OVERFLOW_GRACE` | A 300 ms fuse; the drop lands on the third beat you are already expecting |
+| Letter drops | tomb+ | A pitched glide **down**, 660 → 120 Hz, with a noise tail | The one cue that crosses palettes: your gold leaving you and heading for him |
+| It lands | tomb | Dry click + a small thud | It is furniture now |
+| Apep eats it | tomb | A swelling low-passed roar + two detuned sub saws | Deliberately the worst sound in the game short of dying: a fed letter is a permanent debt, not a fine |
+| Re-eating a block | arcade | The ordinary swallow plus one bright ping | Taking a letter *back off the floor* should not sound the same as finding one |
+| Pick a letter | arcade | A tick up the ladder by position in the word | A long word audibly climbs while you build it |
+| Unpick | arcade | The tick, falling | — |
+| The word goes gold | arcade | Two-note ping | §15's gold chip state, as a sound: *what you hold is a word now* |
+| Commit | arcade | An ascending arpeggio **one note per letter**, then a downward sweep under it; 6+ letters add an octave flourish | The payoff scales with **length, not points**, because length is the stronger term in the score (§12.3) — a six-letter word has to sound better than two threes, or the audio teaches §15's mash-the-lit-chips exploit. The downward sweep is Apep being pushed back: the tide's own gesture, reversed |
+| Refused | arcade | A dull descending pair | Not harsh — a refusal is information, and the dim chips already said it |
+| Death | tomb | 1.2 s: two detuned saws falling to 30 Hz, a noise sweep down, a sub under it | The drone is cut on the same frame so the roar has the field |
+| A new best | arcade | Three rising notes, 0.85 s in | Under the tail of the roar, and **arcade** — the record belongs to the spelling half |
+
+### 17.3 Apep gets the only continuous voice
+
+He is the game's one clock (§3, §8) and until now he was purely visual: you had to look down to know. So
+he has a **drone** — two detuned sawtooths through a low-pass with a tremolo — whose gain, cutoff, pitch
+and tremolo rate all follow **the gap between her head and him**, and it is silent beyond 12 rows.
+
+Three details that matter:
+
+- The gain is the **square** of nearness, so he is genuinely quiet until he is genuinely close. A bed you
+  can always hear is a bed you stop hearing.
+- It measures the gap to **her head, not to `height`** — so a dive back down the shaft to reclaim a
+  dropped letter is audibly a dive toward him, which is exactly what §8's rubber band makes it.
+- Every parameter moves through `setTargetAtTime`, so a word that shoves him six rows down fades rather
+  than clicking. It is built once with the context and left running at gain 0, which is cheaper and
+  smoother than starting and stopping oscillators as he closes.
+
+### 17.4 What the build settled
+
+- **A held arrow key would machine-gun the strike cue.** `keydown` auto-repeats, and `tryDir` re-arms a
+  strike it is already running, so the cue is skipped when the direction is the one already going. The
+  general shape: a cue on a function that input repeat can re-enter needs to know whether anything
+  actually changed.
+- **The mute button has no key binding, and cannot have one** — every letter key picks a rack letter
+  (§15) and the arrows steer, which leaves nothing spare. It is a 🔊 in the HUD's top-right, the only
+  control on the canvas side of the game, so it has to opt back into the pointer events `#hud` gives up.
+  The flag rides the **existing** `aspostrophe.stats` record, no second key and no version bump.
+- **A cue never creates the AudioContext.** Only one capture-phase listener per input route does, because
+  autoplay policy refuses a context built anywhere else, and a kit that half-starts is worse than a silent
+  one.
+- **One compressor for the whole kit.** A strike, a swallow, a landing, a gulp and the drone can all land
+  inside one frame, and with a sub-bass palette the clipped sum sounds like a broken speaker rather than
+  like loud.
+
+**Still M4:** the pixel pass — her sprite through `emoji-pixelizer.html`, the neon/bloom/scanline
+treatment. Nothing in §17 depends on it or is depended on by it.

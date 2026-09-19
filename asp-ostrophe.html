@@ -58,6 +58,16 @@ canvas{display:block; touch-action:none; background:#05070c}
 #hud .sm .v{color:#7fb8cc}
 #hud .fed{color:#8a4030; font-size:11px}
 #hud .fed .v{color:var(--apep)}
+/* The only control on the canvas side, so it has to opt back into pointer
+   events that #hud gives up — and it has NO key binding, because every letter
+   key is a rack letter (§17.4) and the arrows steer. */
+#hud #mute{
+  pointer-events:auto; touch-action:manipulation; cursor:pointer;
+  font-family:inherit; font-size:14px; line-height:1; padding:2px 5px;
+  border:1px solid #1d3f4e; border-radius:0; background:rgba(45,225,255,.06);
+  color:var(--neon); opacity:.75;
+}
+#hud #mute.off{opacity:.4; color:#4d6e7d}
 
 /* ── the rack bar — the rack, and the place a word is built ──────────── */
 /* §15: steering is a swipe on the CANVAS, spelling is a tap on the BAR.
@@ -191,6 +201,7 @@ kbd{
       <span class="sm"><span class="k">BEST</span><span class="v" id="h-best">0</span></span>
       <span class="sp"></span>
       <span class="fed"><span class="k">APEP FED</span><span class="v" id="h-fed">0</span></span>
+      <button id="mute" type="button" title="Sound on/off" aria-label="Sound on/off">&#128266;</button>
     </div>
 
     <div class="ov" id="ov-start">
@@ -401,6 +412,272 @@ function mulberry32(a){
   };
 }
 
+/* ── the sound (§17) ─────────────────────────────────────────────────── */
+/* Procedural WebAudio, no assets — the repo's usual tone/noise kit, and it is
+   the one data-free part of the game, so it works on file:// where the
+   dictionary does not.
+
+   TWO PALETTES, and the split IS the design (§17.1). Everything that happens
+   BELOW you — the strike's rush, the thunk, the drop, Apep's gulp, the death —
+   is TOMB: sub bass and filtered noise, no pitch you could hum. Everything you
+   DO with a letter — swallow, pick, spell, score — is ARCADE: square blips on
+   a minor pentatonic. The two halves of the loop, debt and spelling, are then
+   audibly different and you can hear which one you are in without looking.
+
+   Apep also gets the only CONTINUOUS voice (§17.3): a drone that fades in when
+   he is close and tightens in pitch and tremolo as he arrives. He is the game's
+   one clock and until now he was purely visual — you had to look down to know.
+
+   A cue never creates the context: only ensure(), called from a real input
+   gesture, does that. Autoplay policy would refuse anything else, and a kit
+   that half-starts is worse than a silent one. */
+const SFX = (function(){
+  const MASTER = 0.5;
+  const DRONE_RANGE = 12;        // rows of gap beyond which he is silent
+  /* A minor pentatonic: the scale with no interval that can come out wrong, so
+     the eat ladder, the pick ladder and the word arpeggio are one instrument in
+     three registers rather than three tunes that have to agree. */
+  const PENT = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24];
+  const hz = (semi, base) => base * Math.pow(2, semi / 12);
+  const step = (arr, i) => arr[Math.max(0, Math.min(arr.length - 1, i))];
+
+  let ac = null, master = null, nbuf = null, muted = false, dr = null;
+
+  function build(){
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    master = ac.createGain();
+    master.gain.value = muted ? 0 : MASTER;
+    /* One compressor for the whole kit. A strike, a swallow, a landing, a gulp
+       and the drone can all land inside one frame — the sum clips without it,
+       and clipping in a game with a sub-bass palette sounds like a blown
+       speaker rather than like loud. */
+    const comp = ac.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.knee.value = 12; comp.ratio.value = 5;
+    master.connect(comp); comp.connect(ac.destination);
+
+    /* Two seconds of white noise, made once: every impact, rush, hiss and roar
+       in the kit is this one buffer through a different filter. */
+    nbuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+    const d = nbuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+
+    buildDrone();
+  }
+
+  /* Built with the context and left running for the life of the page: its gain
+     is 0 whenever he is far, which is cheaper and far smoother than starting
+     and stopping oscillators as he closes. */
+  function buildDrone(){
+    const g = ac.createGain(); g.gain.value = 0;
+    const trem = ac.createGain(); trem.gain.value = 0.62;
+    const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 150; lp.Q.value = 6;
+    const o1 = ac.createOscillator(); o1.type = "sawtooth"; o1.frequency.value = 40;
+    const o2 = ac.createOscillator(); o2.type = "sawtooth"; o2.frequency.value = 40 * 1.013;
+    const lfo = ac.createOscillator(); lfo.type = "sine"; lfo.frequency.value = 1.5;
+    const amt = ac.createGain(); amt.gain.value = 0.34;
+    o1.connect(lp); o2.connect(lp); lp.connect(trem); trem.connect(g); g.connect(master);
+    lfo.connect(amt); amt.connect(trem.gain);
+    o1.start(); o2.start(); lfo.start();
+    dr = { g: g, lp: lp, o1: o1, o2: o2, lfo: lfo };
+  }
+
+  function ensure(){
+    if (!ac){
+      try { build(); } catch (e) { ac = null; return; }
+    }
+    if (ac.state === "suspended") ac.resume();
+  }
+  const on = () => !!ac && !muted;
+
+  /* The two primitives; every cue below is a handful of calls to these with
+     different numbers. `dly` delays the cue, `a` is its attack, `d` its whole
+     length, `to` sweeps the pitch (tone) or the filter (noise) across it. */
+  function tone(o){
+    if (!on()) return;
+    const t = ac.currentTime + (o.dly || 0), d = o.d || 0.12;
+    const osc = ac.createOscillator();
+    osc.type = o.w || "square";
+    osc.frequency.setValueAtTime(o.f, t);
+    if (o.to) osc.frequency.exponentialRampToValueAtTime(Math.max(18, o.to), t + d);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(o.g == null ? 0.16 : o.g, t + Math.min(d * 0.4, o.a || 0.006));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    osc.connect(g);
+    if (o.lp){
+      const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = o.lp;
+      g.connect(f); f.connect(master);
+    } else g.connect(master);
+    osc.start(t); osc.stop(t + d + 0.03);
+  }
+
+  function noise(o){
+    if (!on()) return;
+    const t = ac.currentTime + (o.dly || 0), d = o.d || 0.12;
+    const src = ac.createBufferSource(); src.buffer = nbuf;
+    const f = ac.createBiquadFilter();
+    f.type = o.w || "bandpass";
+    f.frequency.setValueAtTime(o.f, t);
+    if (o.to) f.frequency.exponentialRampToValueAtTime(Math.max(30, o.to), t + d);
+    f.Q.value = o.q == null ? 1 : o.q;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(o.g == null ? 0.14 : o.g, t + Math.min(d * 0.4, o.a || 0.005));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    src.connect(f); f.connect(g); g.connect(master);
+    /* Start somewhere random in the buffer (it is 2 s long and no cue is over
+       1 s), or every strike and every landing would play the same slice of the
+       same noise and a run would sound like a loop. */
+    src.start(t, Math.random()); src.stop(t + d + 0.03);
+  }
+
+  /* ── TOMB: the shaft, the tide, the loss ───────────────────────────── */
+
+  /* The cue that fires most often by far, so it is short, quiet and airy — and
+     its sweep follows the direction you flicked, which is what makes a TURN
+     audible rather than just a start. */
+  function strike(vert){
+    const a = vert > 0 ? 520 : vert < 0 ? 1000 : 760;
+    const b = vert > 0 ? 1600 : vert < 0 ? 340 : 620;
+    noise({ f: a, to: b, d: 0.16, g: 0.07, q: 0.7 });
+  }
+  /* Stone, at the end of every strike. It carries the same beat as `shake`. */
+  function thunk(){
+    tone({ f: 120, to: 54, d: 0.14, g: 0.2, w: "triangle", lp: 400 });
+    noise({ f: 260, to: 120, d: 0.1, g: 0.1, q: 0.6, w: "lowpass" });
+  }
+  /* The first strike of a run: the tomb noticing. */
+  function wake(){
+    tone({ f: 58, d: 0.9, g: 0.2, w: "sine" });
+    tone({ f: 87, d: 0.7, g: 0.07, w: "triangle", dly: 0.02 });
+    noise({ f: 200, to: 900, d: 0.6, g: 0.035, q: 0.7, a: 0.3 });
+  }
+  /* A letter leaving her tail (§5) — gold falling away from you, so it is the
+     one tomb cue with a pitch, and the pitch goes DOWN. */
+  function drop(){
+    tone({ f: 660, to: 120, d: 0.4, g: 0.12, w: "triangle" });
+    noise({ f: 1400, to: 300, d: 0.35, g: 0.05, q: 1.4 });
+  }
+  /* It lands as furniture: dry, short, no pitch. */
+  function land(){
+    noise({ f: 1500, d: 0.05, g: 0.12, q: 2.2 });
+    tone({ f: 90, to: 60, d: 0.1, g: 0.13, w: "sine" });
+  }
+  /* He eats it, permanently (§5). The worst sound in the game short of dying,
+     and it has to be — it is a debt, not a fine. */
+  function gulp(){
+    noise({ f: 90, to: 700, d: 0.26, g: 0.15, q: 0.8, w: "lowpass", a: 0.12 });
+    tone({ f: 70, to: 38, d: 0.36, g: 0.22, w: "sawtooth", lp: 220 });
+    tone({ f: 105, to: 52, d: 0.3, g: 0.09, w: "square", lp: 180, dly: 0.03 });
+  }
+  function death(){
+    silence();
+    tone({ f: 150, to: 30, d: 1.1, g: 0.24, w: "sawtooth", lp: 420, a: 0.05 });
+    tone({ f: 152, to: 31, d: 1.1, g: 0.18, w: "sawtooth", lp: 380, a: 0.05, dly: 0.01 });
+    noise({ f: 1200, to: 80, d: 1.0, g: 0.13, q: 0.5 });
+    tone({ f: 44, d: 1.25, g: 0.2, w: "sine", dly: 0.05, a: 0.08 });
+  }
+  /* A new best, under the tail of the roar: three notes, arcade, because the
+     record belongs to the spelling half of the game. */
+  function best(){
+    [0, 7, 12].forEach((s, i) =>
+      tone({ f: hz(s, 440), d: 0.22, g: 0.1, w: "triangle", dly: 0.85 + i * 0.13 }));
+  }
+
+  /* ── ARCADE: the letters and the word ─────────────────────────────── */
+
+  /* A swallow climbs the ladder with how full your mouth is, so a filling rack
+     tightens audibly and the seventh letter is the highest note in the game —
+     which is the drop announcing itself one beat early. */
+  function eat(n){
+    const s = step(PENT, n - 1);
+    tone({ f: hz(s, 330), d: 0.085, g: 0.15 });
+    tone({ f: hz(s + 12, 330), d: 0.05, g: 0.05, w: "triangle", dly: 0.02 });
+  }
+  /* Full but not yet over: the top of the ladder, souring. */
+  function full(){
+    tone({ f: hz(10, 220), to: hz(9, 220), d: 0.15, g: 0.12, w: "triangle" });
+    noise({ f: 900, to: 400, d: 0.18, g: 0.05, q: 1.2, dly: 0.04 });
+  }
+  /* OVERFLOW_GRACE is 300 ms, so the fuse is two rising ticks and the drop
+     lands on the third beat you are expecting. */
+  function doom(){
+    noise({ f: 1800, d: 0.04, g: 0.1, q: 3 });
+    noise({ f: 2500, d: 0.04, g: 0.1, q: 3, dly: 0.15 });
+  }
+  /* Re-eating a landed block: the ordinary swallow plus one bright ping, since
+     taking a letter BACK off the floor deserves to sound different from
+     finding one. */
+  function reclaim(){ tone({ f: hz(19, 440), d: 0.09, g: 0.07, w: "triangle", dly: 0.03 }); }
+  /* Building a word walks the same ladder a register up, so a long word
+     audibly climbs as you pick it. */
+  function pick(n){ tone({ f: hz(step(PENT, n - 1), 440), d: 0.05, g: 0.09 }); }
+  function unpick(n){ tone({ f: hz(step(PENT, n), 440), to: hz(0, 330), d: 0.07, g: 0.07, w: "triangle" }); }
+  /* §15's gold state, as a sound: what you hold IS a word now. */
+  function ready(){
+    tone({ f: hz(12, 440), d: 0.06, g: 0.08, w: "triangle" });
+    tone({ f: hz(19, 440), d: 0.08, g: 0.055, w: "triangle", dly: 0.05 });
+  }
+  function reject(){
+    tone({ f: 190, to: 150, d: 0.1, g: 0.11 });
+    noise({ f: 300, d: 0.12, g: 0.06, q: 0.8, w: "lowpass", dly: 0.04 });
+  }
+  /* The payoff, and it scales with LENGTH and not with points, because length
+     is by far the stronger term in the score (§12.3): a six-letter word has to
+     sound better than two threes, or the audio is teaching the exploit. Under
+     the arpeggio, a downward sweep — the tide going back down, which is the
+     other half of what a word buys. */
+  function word(len){
+    const n = Math.max(3, Math.min(PENT.length, len + 1));
+    for (let i = 0; i < n; i++){
+      tone({ f: hz(PENT[i], 330), d: 0.13, g: 0.13, dly: i * 0.055 });
+      tone({ f: hz(PENT[i] + 12, 330), d: 0.09, g: 0.04, w: "triangle", dly: i * 0.055 + 0.01 });
+    }
+    const end = n * 0.055;
+    tone({ f: 150, to: 44, d: 0.5, g: 0.16, w: "sawtooth", lp: 300, dly: end });
+    if (len >= 6){
+      tone({ f: hz(24, 330), d: 0.2, g: 0.1, w: "triangle", dly: end + 0.04 });
+      tone({ f: hz(31, 330), d: 0.3, g: 0.08, w: "triangle", dly: end + 0.15 });
+    }
+  }
+
+  /* ── the drone (§17.3) ─────────────────────────────────────────────── */
+  /* Called every frame with the gap in rows between her head and him. Squared,
+     so he is genuinely quiet until he is genuinely close; every parameter moves
+     through setTargetAtTime, so a push that teleports him 6 rows down still
+     fades rather than clicking. */
+  function apep(gap){
+    if (!ac || !dr) return;
+    const t = ac.currentTime;
+    let near = 1 - gap / DRONE_RANGE;
+    if (!(near > 0)) near = 0;                 // catches NaN as well as far
+    if (near > 1) near = 1;
+    const f = 40 + near * 22;
+    dr.g.gain.setTargetAtTime(near * near * 0.2, t, 0.18);
+    dr.lp.frequency.setTargetAtTime(150 + near * 560, t, 0.25);
+    dr.lfo.frequency.setTargetAtTime(1.5 + near * 8, t, 0.25);
+    dr.o1.frequency.setTargetAtTime(f, t, 0.3);
+    dr.o2.frequency.setTargetAtTime(f * 1.013, t, 0.3);
+  }
+  function silence(){ if (ac && dr) dr.g.gain.setTargetAtTime(0, ac.currentTime, 0.08); }
+
+  /* Mute pulls the master to 0 rather than tearing the graph down, so the
+     drone's state survives a toggle and nothing has to be rebuilt. */
+  function setMuted(m){
+    muted = !!m;
+    if (master) master.gain.setTargetAtTime(muted ? 0 : MASTER, ac.currentTime, 0.03);
+  }
+
+  return {
+    ensure: ensure, setMuted: setMuted, isMuted: () => muted,
+    strike: strike, thunk: thunk, wake: wake, drop: drop, land: land,
+    gulp: gulp, death: death, best: best,
+    eat: eat, full: full, doom: doom, reclaim: reclaim,
+    pick: pick, unpick: unpick, ready: ready, reject: reject, word: word,
+    apep: apep, silence: silence
+  };
+})();
+
 /* ── the dictionary (§6.1) ───────────────────────────────────────────── */
 /* enable1 is 1.7 MB, so it is fetched in the background at boot rather than
    blocking the game: you cannot spell anything until you have eaten, and by
@@ -593,10 +870,16 @@ function loadBest(){
   try {
     const o = JSON.parse(localStorage.getItem(STORE) || "{}");
     best = o.best | 0; bestScore = o.bestScore | 0;
+    /* The sound flag rides the same record rather than a second key: loadBest
+       only ever asks for the fields it knows, so nothing needs a version. */
+    SFX.setMuted(!!o.mute);
   } catch (e) { best = 0; bestScore = 0; }
 }
 function saveBest(){
-  try { localStorage.setItem(STORE, JSON.stringify({ best: best, bestScore: bestScore })); } catch (e) {}
+  try {
+    localStorage.setItem(STORE, JSON.stringify(
+      { best: best, bestScore: bestScore, mute: SFX.isMuted() }));
+  } catch (e) {}
 }
 
 function reset(){
@@ -616,6 +899,7 @@ function reset(){
   camR = -6; camInit = false;
   embers.length = 0;
   barSig = null; hudCache = "";
+  SFX.silence();
   document.getElementById("ov-dead").hidden = true;
   renderBar();
 }
@@ -640,14 +924,21 @@ function aimable(c, r){ return !wallAt(c, r) && !bodyAt(c, r); }
 function tryDir(d){
   const h = body[0];
   if (!aimable(h.c + d.dc, h.r + d.dr)) return false;
+  const same = dir === d;
   dir = d; lastDir = d;
   dashAcc = DASH_MS;      // step on the very next frame, so a flick feels instant
+  /* The rush follows the direction, so a turn is audible and not just a start
+     (§17.2) — fired here rather than in setDir because a queued turn taking
+     effect at the end of a strike is a strike too. Skipped when the direction
+     is the one already running, or a held arrow key's auto-repeat machine-guns
+     the cue at the keyboard's repeat rate. */
+  if (!same) SFX.strike(d.dr);
   return true;
 }
 
 function setDir(d){
   if (!alive) return;
-  if (!started){ started = true; document.getElementById("ov-start").hidden = true; }
+  if (!started){ started = true; document.getElementById("ov-start").hidden = true; SFX.wake(); }
   /* A direction that is open turns her immediately, mid-strike and all. She
      can never stop, only turn — which keeps the commitment of a slide while
      staying responsive enough to coil on purpose. Anything blocked is queued
@@ -659,6 +950,7 @@ function endStrike(c, r){
   dir = null;
   shake = 3.2;
   spark = { c: c, r: r, t: 1 };
+  SFX.thunk();
   if (queued){ const q = queued; queued = null; tryDir(q); }
 }
 
@@ -672,6 +964,7 @@ function step(){
     const b = blocks.get(key(nc, nr));
     blocks.delete(key(nc, nr));
     eat(b.ch);
+    SFX.reclaim();
     endStrike(nc, nr);
     return;
   }
@@ -688,11 +981,15 @@ function step(){
 /* ── the rack ────────────────────────────────────────────────────────── */
 function eat(ch){
   rack.unshift({ ch: ch, id: ++rackSeq });
+  /* The ladder climbs with how full she is (§17.2), so the mouth filling up is
+     audible and the seventh letter warns you one beat before the fuse. */
+  SFX.eat(rack.length);
+  if (rack.length === CAP) SFX.full();
   /* She grows by one, from the tail, on her next step — body.length is now
      short of curLen() so nothing pops. Over capacity, the oldest is doomed
      but not yet gone: §6.3's beat of grace, and the same beat a word
      committed now can snatch it back inside. */
-  if (rack.length > CAP && doomT <= 0) doomT = OVERFLOW_GRACE;
+  if (rack.length > CAP && doomT <= 0){ doomT = OVERFLOW_GRACE; SFX.doom(); }
 }
 
 /* The tail tip, which is where a dropped letter physically comes out. While
@@ -715,6 +1012,7 @@ function dropOldest(spat){
   let rr = t.r - 1;
   while (rr > BEDROCK && !wallAt(t.c, rr) && !blockAt(t.c, rr)) rr--;
   falling.push({ ch: o.ch, c: t.c, r: t.r, land: rr + 1, v: FALL_V0, spat: !!spat });
+  SFX.drop();
   while (body.length > curLen()) body.pop();
   if (rack.length <= CAP) doomT = 0;
 }
@@ -760,7 +1058,7 @@ function pickLetter(ch){
   if (!alive || !started) return false;
   for (let i = rack.length - 1; i >= 0; i--){
     if (rack[i].ch === ch && picked.indexOf(rack[i].id) < 0){
-      picked.push(rack[i].id); barSig = null; return true;
+      picked.push(rack[i].id); barSig = null; SFX.pick(picked.length); return true;
     }
   }
   return false;
@@ -768,12 +1066,12 @@ function pickLetter(ch){
 function togglePick(id){
   if (!alive) return;
   const i = picked.indexOf(id);
-  if (i >= 0) picked.splice(i, 1);
-  else if (rackById(id)) picked.push(id);
+  if (i >= 0){ picked.splice(i, 1); SFX.unpick(picked.length); }
+  else if (rackById(id)){ picked.push(id); SFX.pick(picked.length); }
   barSig = null;
 }
-function unpickLast(){ if (picked.length){ picked.pop(); barSig = null; } }
-function clearPicks(){ if (picked.length){ picked.length = 0; barSig = null; } }
+function unpickLast(){ if (picked.length){ picked.pop(); SFX.unpick(picked.length); barSig = null; } }
+function clearPicks(){ if (picked.length){ picked.length = 0; SFX.unpick(0); barSig = null; } }
 
 /* §6.2. The letters leave cleanly — no drop, no fuel — the slots they were
    in empty, and Apep is shoved back down by an amount that scales with
@@ -805,11 +1103,13 @@ function commitWord(){
 
   apepR -= PUSH_BASE + PUSH_PER * (w.length - MIN_WORD);
   wordFlash = { word: w, gained: gained, t: 1 };
+  SFX.word(w.length);
   shake = Math.max(shake, 3.5);
   barSig = null;
 }
 
 function rejectWord(){
+  SFX.reject();
   const el = document.getElementById("word");
   el.classList.remove("bad");
   void el.offsetWidth;           // restart the animation on a repeat press
@@ -829,6 +1129,7 @@ function updateFalling(dt){
       let rr = f.land, guard = 0;
       while ((blockAt(f.c, rr) || wallAt(f.c, rr)) && guard++ < 48) rr++;
       blocks.set(key(f.c, rr), { ch: f.ch, c: f.c, r: rr, spat: f.spat });
+      SFX.land();
       falling.splice(i, 1);
     }
   }
@@ -840,6 +1141,7 @@ const embers = [];
 function feedApep(){
   apepFed++;
   shake = Math.max(shake, 5);
+  SFX.gulp();
   for (let i = 0; i < 12; i++){
     embers.push({ x: Math.random() * W, y: 0, v: 40 + Math.random() * 90, a: 1, s: 1 + Math.random() * 3 });
   }
@@ -881,7 +1183,11 @@ function updateEmbers(dt){
 
 function die(){
   alive = false; dir = null; queued = null;
+  SFX.death();
   if (height > best) best = height;
+  /* The flourish is claimed BEFORE bestScore is updated, or every run beats
+     itself. It plays under the tail of the roar (§17.2). */
+  if (score > bestScore && score > 0) SFX.best();
   if (score > bestScore) bestScore = score;
   saveBest();
   document.getElementById("d-score").textContent = comma(score);
@@ -1254,7 +1560,7 @@ const elFed    = document.getElementById("h-fed");
 const elSlots  = document.getElementById("slots");
 const elWord   = document.getElementById("word");
 const elCommit = document.getElementById("commit");
-let hudCache = "", barSig = null;
+let hudCache = "", barSig = null, lastReal = false;
 
 const comma = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
@@ -1347,6 +1653,12 @@ function renderBar(){
     }
     elWord.innerHTML = html;
   }
+  /* §15's gold state, as a sound. It fires here because this is the one place
+     `real` is computed, and renderBar's signature guard means this body only
+     runs when the rack or the word actually changed — never 60 times a
+     second. */
+  if (real && !lastReal && started) SFX.ready();
+  lastReal = real;
   elWord.classList.toggle("real", real);
   elCommit.disabled = !real;
   elCommit.classList.toggle("on", real);
@@ -1369,7 +1681,7 @@ function frame(now){
     if (doomT <= 0){
       dropOldest(false);
       // still over capacity (she ate twice inside one beat) — run the beat again
-      if (rack.length > CAP) doomT = OVERFLOW_GRACE;
+      if (rack.length > CAP){ doomT = OVERFLOW_GRACE; SFX.doom(); }
     }
   }
   updateFalling(dt);
@@ -1379,6 +1691,10 @@ function frame(now){
   if (shake > 0) shake = Math.max(0, shake - dt / 45);
   if (spark){ spark.t -= dt / 180; if (spark.t <= 0) spark = null; }
   if (wordFlash){ wordFlash.t -= dt / 900; if (wordFlash.t <= 0) wordFlash = null; }
+  /* The gap between her HEAD and him, which is what the drone measures — not
+     `height`, because a dive back down the shaft is a dive toward him and it
+     should be audible as one. */
+  SFX.apep(alive && started ? body[0].r - apepR : 99);
 
   draw(now);
   drawHUD();
@@ -1387,6 +1703,28 @@ function frame(now){
 }
 
 /* ── input ───────────────────────────────────────────────────────────── */
+/* An AudioContext can only be created inside a real gesture, so every route
+   into the game opens it — the first swipe, the first key, the first tap on the
+   bar — in the capture phase, ahead of the handler that will want a cue. */
+window.addEventListener("pointerdown", () => SFX.ensure(), true);
+window.addEventListener("keydown", () => SFX.ensure(), true);
+
+/* No key binding, on purpose (§17.4): every letter key picks a rack letter and
+   the arrows steer, so there is no spare key to mute with. */
+const elMute = document.getElementById("mute");
+function paintMute(){
+  const off = SFX.isMuted();
+  elMute.textContent = off ? "\uD83D\uDD07" : "\uD83D\uDD0A";
+  elMute.classList.toggle("off", off);
+}
+elMute.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  SFX.ensure();
+  SFX.setMuted(!SFX.isMuted());
+  paintMute();
+  saveBest();
+});
+
 /* WASD is retired (§1a #9): every letter key means "pick that letter out of
    the rack", so A, S and D cannot also be directions. Arrows only.
 
@@ -1507,6 +1845,7 @@ window.addEventListener("resize", () => { sizeCanvas(); });
 
 /* ── boot ────────────────────────────────────────────────────────────── */
 loadBest();
+paintMute();
 loadDict();
 sizeCanvas();
 reset();
