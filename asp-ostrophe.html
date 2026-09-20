@@ -56,10 +56,15 @@ canvas{display:block; touch-action:none; background:#05070c}
 #hud .sp{flex:1}
 #hud .sm{font-size:12px}
 #hud .sm .v{color:#7fb8cc}
+/* §18: which difficulty is running, so a player mid-run always knows which
+   rules they are under. It wears HER colour in SPIRIT, because the rule that
+   changed is the rule about her body. */
+#hud .mode{font-size:11px; letter-spacing:.12em; color:#5b7f93}
+#hud .mode.spirit{color:var(--snake); text-shadow:0 0 8px rgba(216,255,74,.5)}
 #hud .fed{color:#8a4030; font-size:11px}
 #hud .fed .v{color:var(--apep)}
-/* The only control on the canvas side, so it has to opt back into pointer
-   events that #hud gives up — and it has NO key binding, because every letter
+/* A control on the canvas side (§18's difficulty chips are the others), so it
+   has to opt back into pointer events that #hud gives up — and it has NO key binding, because every letter
    key is a rack letter (§17.4) and the arrows steer. */
 #hud #mute{
   pointer-events:auto; touch-action:manipulation; cursor:pointer;
@@ -162,9 +167,11 @@ canvas{display:block; touch-action:none; background:#05070c}
   position:absolute; inset:0; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:10px; text-align:center;
   padding:24px; background:rgba(5,7,12,.82); backdrop-filter:blur(2px);
-  /* No overlay here holds a control, and both of them invite a tap that has to
-     reach the canvas underneath (swipe to begin, tap to restart). Without this
-     the death screen swallows its own instruction. */
+  /* Both overlays invite a tap that has to reach the canvas underneath (swipe
+     to begin, tap to restart) — without this the death screen swallows its own
+     instruction. AMENDED 2026-09-19 (§18): they DO now hold a control. The
+     difficulty chips opt back in individually below; do not delete that as
+     redundant, it is what makes them clickable at all. */
   pointer-events:none;
 }
 .ov[hidden]{display:none}
@@ -184,6 +191,36 @@ canvas{display:block; touch-action:none; background:#05070c}
   animation:pulse 1.25s ease-in-out infinite;
 }
 @keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+
+/* §18's difficulty chips — the first controls ever placed inside an overlay,
+   which is why .ov's pointer-events:none is no longer the whole story: these
+   opt back in, exactly as #hud #mute does. That is also what stops a chip tap
+   restarting the run, since restart is a pointerdown on the CANVAS and the
+   canvas never sees a pointerdown a chip has absorbed.
+
+   touch-action:manipulation because two quick mode flips are a double-tap as
+   far as a phone is concerned. The rack bar's touchend guard (§16.1) does not
+   reach here — it is scoped to #rackbar — so on an old WebKit this is the only
+   defence these have. */
+.ov .modes{
+  display:flex; gap:6px; margin-top:2px;
+  pointer-events:auto; touch-action:manipulation;
+}
+.ov .mode-chip{
+  font-family:inherit; font-size:12px; letter-spacing:.12em; cursor:pointer;
+  padding:6px 14px; border:1px solid #2a4a59; border-radius:0;
+  background:rgba(45,225,255,.05); color:#5b7f93;
+}
+.ov .mode-chip.on{
+  background:rgba(216,255,74,.12); color:var(--snake); border-color:#5c7a2a;
+  text-shadow:0 0 10px rgba(216,255,74,.5);
+}
+.ov .modehint{
+  font-size:11px; letter-spacing:.07em; color:#5b7f93;
+  /* .ov is a flex column with gap:10px, so without this the hint sits as far
+     from the chips it describes as the chips do from the paragraph above. */
+  margin-top:-6px; min-height:14px; max-width:34ch;
+}
 kbd{
   font-family:inherit; font-size:12px; border:1px solid #2a4a59; border-radius:0;
   padding:1px 5px; color:var(--neon); background:rgba(45,225,255,.07);
@@ -199,6 +236,7 @@ kbd{
       <span><span class="k">SCORE</span><span class="v" id="h-score">0</span></span>
       <span class="sm"><span class="k">HEIGHT</span><span class="v" id="h-height">0</span></span>
       <span class="sm"><span class="k">BEST</span><span class="v" id="h-best">0</span></span>
+      <span class="mode" id="h-mode">SOLID</span>
       <span class="sp"></span>
       <span class="fed"><span class="k">APEP FED</span><span class="v" id="h-fed">0</span></span>
       <button id="mute" type="button" title="Sound on/off" aria-label="Sound on/off">&#128266;</button>
@@ -211,6 +249,11 @@ kbd{
       <p><b>Your body is the rack.</b> Every segment behind your head is a slot — letters fill from the neck back, and the oldest rides your tail.</p>
       <p>Hold more than <b>seven</b> and the oldest <b>falls out of your tail</b>. It lands as a block — and Apep eats it and climbs faster, for good.</p>
       <p><b>Spell a word</b> with what you hold and the letters leave cleanly, you score, and <span style="color:var(--apep)">Apep is pushed back down</span>. Nothing pauses while you do it.</p>
+      <div class="modes">
+        <button type="button" class="mode-chip" data-phase="0">SOLID</button>
+        <button type="button" class="mode-chip" data-phase="1">SPIRIT</button>
+      </div>
+      <div class="modehint"></div>
       <div class="go">SWIPE &nbsp;·&nbsp; <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd><br>TYPE OR TAP TO SPELL &nbsp;·&nbsp; <kbd>↵</kbd> ENTER</div>
     </div>
 
@@ -221,6 +264,11 @@ kbd{
       <p id="d-run"></p>
       <p id="d-fed"></p>
       <p id="d-best"></p>
+      <div class="modes">
+        <button type="button" class="mode-chip" data-phase="0">SOLID</button>
+        <button type="button" class="mode-chip" data-phase="1">SPIRIT</button>
+      </div>
+      <div class="modehint"></div>
       <div class="go">TAP &nbsp;·&nbsp; <kbd>R</kbd> &nbsp;TO DIVE AGAIN</div>
     </div>
   </div>
@@ -254,7 +302,9 @@ kbd{
             so a full snake is visibly full and the drop explains itself —
             there is nowhere left to put one. Fixed rather than growing
             because body-as-wall (§3) is the rule the game stands on, and the
-            wall you coil against must not resize every time you eat.
+            wall you coil against must not resize every time you eat — which
+            since §18 is the rule of the SOLID difficulty, and is exactly what
+            SPIRIT is shipped to test.
      · §6.1 enable1.txt, minimum three letters, letters usable in any order.
             2of12 membership is a commonness signal only and is not loaded.
      · §15  the chips carry THREE states, and the middle one is the design:
@@ -285,7 +335,13 @@ const CAP       = 7;
    whole game stands on: a snake whose length tracked the rack had nothing to
    coil against at the start of a run and changed its own wall geometry every
    time you ate or spelled, which is the one piece of level geometry the
-   player authors and it should not move under them. */
+   player authors and it should not move under them.
+
+   §18 makes that rule the SOLID difficulty rather than the whole game, so this
+   reasoning holds only there — in SPIRIT the length is just the rack's display.
+   Nothing to undo either way, but if SPIRIT wins the friends test, rewrite this
+   rather than leaving it standing as the justification for a rule that is
+   no longer the default. */
 const BASE_LEN  = 1;             // the head
 const BODY_LEN  = BASE_LEN + CAP;   // 8: head plus one slot per held letter
 const OVERFLOW_GRACE = 300;   // ms the doomed letter flashes before it leaves (§6.3)
@@ -838,6 +894,21 @@ function cellAt(c, r){
 }
 
 /* ── the snake ───────────────────────────────────────────────────────── */
+/* §18: THE TWO DIFFICULTIES. SOLID is §3's rule — her body is a wall she
+   stops against. SPIRIT is that wall ceasing to exist: she passes straight
+   through herself and only stone and landed blocks stop her.
+
+   The whole rule is ONE predicate. bodyAt has exactly two live readers —
+   aimable (which decides whether tryDir refuses a turn) and step (which ends
+   the strike) — and they are the rule, entire. blocked() is the third reader
+   and has no callers, but it composes bodyAt so it stays consistent for free.
+
+   It is a toggle rather than a tuning because §3 calls body-as-wall the
+   load-bearing rule of the whole game and it has never been tested on anyone
+   but the dev. If SPIRIT wins, §3's central claim is wrong. */
+let phase = false;                                  // false = SOLID, true = SPIRIT
+const modeName = () => phase ? "SPIRIT" : "SOLID";
+
 let body = [], dir = null, queued = null, dashAcc = 0;
 let alive = true, started = false, height = 0, best = 0;
 let apepR = 0, apepSpd = 0, apepFed = 0;
@@ -865,21 +936,41 @@ const curLen = () => Math.max(BODY_LEN, BASE_LEN + rack.length);
 
 /* BEST is the best SCORE as of M3 — spelling is what the run is about now,
    and it is the number §14's tombs would later sit on. Best height is kept
-   beside it rather than thrown away; the M2 record reads back as `best`. */
-function loadBest(){
-  try {
-    const o = JSON.parse(localStorage.getItem(STORE) || "{}");
-    best = o.best | 0; bestScore = o.bestScore | 0;
-    /* The sound flag rides the same record rather than a second key: loadBest
-       only ever asks for the fields it knows, so nothing needs a version. */
-    SFX.setMuted(!!o.mute);
-  } catch (e) { best = 0; bestScore = 0; }
+   beside it rather than thrown away; the M2 record reads back as `best`.
+
+   §18: there is a best PER MODE, because an easy run overwriting a hard-mode
+   record makes the comparison worthless the first time a friend plays both.
+   They are FLAT SUFFIXED KEYS on the same record — `best`/`bestScore` keep
+   meaning SOLID and `bestPhase`/`bestScorePhase` are new — which is what lets
+   a save written before §18 need no migration and no version bump: every run
+   played to date was played solid, so the untouched keys already land on the
+   right mode. `best`/`bestScore` in memory are always the CURRENT mode's. */
+function readRec(){
+  try { return JSON.parse(localStorage.getItem(STORE) || "{}") || {}; }
+  catch (e) { return {}; }
 }
+function applyBests(o){
+  o = o || readRec();
+  best      = (phase ? o.bestPhase      : o.best)      | 0;
+  bestScore = (phase ? o.bestScorePhase : o.bestScore) | 0;
+}
+function loadBest(){
+  const o = readRec();
+  phase = !!o.phase;
+  /* The sound flag rides the same record rather than a second key: loadBest
+     only ever asks for the fields it knows, so nothing needs a version. */
+  SFX.setMuted(!!o.mute);
+  applyBests(o);
+}
+/* Read-modify-write, not a fresh object: a save must never drop the OTHER
+   mode's best just because this run was played in this mode. */
 function saveBest(){
-  try {
-    localStorage.setItem(STORE, JSON.stringify(
-      { best: best, bestScore: bestScore, mute: SFX.isMuted() }));
-  } catch (e) {}
+  const o = readRec();
+  o.mute = SFX.isMuted();
+  o.phase = phase;
+  if (phase){ o.bestPhase = best; o.bestScorePhase = bestScore; }
+  else      { o.best      = best; o.bestScore      = bestScore; }
+  try { localStorage.setItem(STORE, JSON.stringify(o)); } catch (e) {}
 }
 
 function reset(){
@@ -907,9 +998,18 @@ function reset(){
 function wallAt(c, r){ return cellAt(c, r) === WALL; }
 function blockAt(c, r){ return blocks.has(key(c, r)); }
 
-/* Her own body is a wall she STOPS against, never a death (§3). The tail is
-   excluded because it vacates on the same step, exactly as in classic snake. */
+/* In SOLID, her own body is a wall she STOPS against, never a death (§3). The
+   tail is excluded because it vacates on the same step, exactly as in classic
+   snake. In SPIRIT it is not a wall at all — see the branch below. Death comes
+   from Apep and only from Apep in both. */
 function bodyAt(c, r){
+  /* §18, SPIRIT: she is not a wall to herself. Everything downstream follows —
+     a turn into her own body is taken rather than queued, and a strike runs
+     through her to the next stone. Note what else it quietly fixes: at reset()
+     all eight segments are stacked on the start tile and she sheds one per
+     step, so in SOLID the most boxed-in she ever gets is the seven moves
+     before she has done anything. In SPIRIT that period does not exist. */
+  if (phase) return false;
   const last = body.length >= curLen() ? body.length - 1 : body.length;
   for (let i = 0; i < last; i++) if (body[i].c === c && body[i].r === r) return true;
   return false;
@@ -1194,8 +1294,11 @@ function die(){
   document.getElementById("d-run").textContent = height + " ROWS CLIMBED";
   document.getElementById("d-fed").textContent =
     apepFed ? "HE ATE " + apepFed + " OF YOUR LETTERS" : "HE ATE NOTHING OF YOURS";
+  /* Named, because §18 keeps a best per mode and an unlabelled record is the
+     one thing that would make two friends' scores look comparable when they
+     are not. */
   document.getElementById("d-best").textContent =
-    "BEST " + comma(bestScore) + " · " + best + " ROWS";
+    modeName() + " BEST " + comma(bestScore) + " · " + best + " ROWS";
   document.getElementById("ov-dead").hidden = false;
 }
 
@@ -1556,6 +1659,7 @@ function drawApep(now){
 const elScore  = document.getElementById("h-score");
 const elHeight = document.getElementById("h-height");
 const elBest   = document.getElementById("h-best");
+const elMode   = document.getElementById("h-mode");
 const elFed    = document.getElementById("h-fed");
 const elSlots  = document.getElementById("slots");
 const elWord   = document.getElementById("word");
@@ -1565,13 +1669,17 @@ let hudCache = "", barSig = null, lastReal = false;
 const comma = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
 function drawHUD(){
-  const k = score + "|" + height + "|" + bestScore + "|" + apepFed;
+  /* phase is in the key because BEST is the current mode's best and the tag
+     beside it changes with the mode — both are stale the instant it flips. */
+  const k = score + "|" + height + "|" + bestScore + "|" + apepFed + "|" + phase;
   if (k === hudCache) return;
   hudCache = k;
   elScore.textContent  = comma(score);
   elHeight.textContent = height;
   elBest.textContent   = comma(bestScore);
   elFed.textContent    = apepFed;
+  elMode.textContent   = modeName();
+  elMode.classList.toggle("spirit", phase);
 }
 
 /* §15's three chip states, computed against the word you have typed so far:
@@ -1725,6 +1833,64 @@ elMute.addEventListener("pointerdown", e => {
   saveBest();
 });
 
+/* §18: THE DIFFICULTY CHIPS. Between runs only — switching mid-run would make
+   a run's score a blend of both rules, which is exactly what the test is
+   trying to separate — so flipping the mode runs reset() and the mode you can
+   see is always the mode you are about to play.
+
+   In practice the DEATH screen's copy is the one that gets used: reset() hides
+   #ov-dead but never re-shows #ov-start, so after the first dive the title
+   screen is gone for the session. That is why the chips could not live only on
+   the title, and it is also why flipping from the death screen lands you on a
+   fresh shaft ready to swipe — which is what you want it to do.
+
+   No key binding (§17.4's rule stands: every letter key is a rack letter and
+   the arrows steer, so there is nothing spare). Both copies are painted from
+   one query, so neither can drift from the flag. */
+const MODE_HINT = {
+  0: "SOLID · your body is a wall you stop against",
+  1: "SPIRIT · you pass straight through yourself"
+};
+function paintMode(){
+  const want = phase ? "1" : "0";
+  document.querySelectorAll(".mode-chip").forEach(b => {
+    b.classList.toggle("on", b.dataset.phase === want);
+  });
+  document.querySelectorAll(".modehint").forEach(h => {
+    h.textContent = MODE_HINT[want];
+  });
+}
+function setPhase(p){
+  if (phase === p) return;
+  phase = p;
+  applyBests();          // BEST is the CURRENT mode's best, so it changes too
+  saveBest();            // the flag persists: a friend sets it once
+  paintMode();
+  reset();
+}
+/* pointerdown like every other control in this game, and delegated so both
+   copies are served by one listener. The chip's own pointer-events:auto is
+   what keeps this tap off the canvas underneath, where it would have been a
+   restart. */
+let modeByPointer = -1e9;
+document.addEventListener("pointerdown", e => {
+  const b = e.target.closest && e.target.closest(".mode-chip");
+  if (!b) return;
+  e.preventDefault();
+  modeByPointer = performance.now();
+  setPhase(b.dataset.phase === "1");
+});
+/* Keyboard activation only, and it stands down when a pointer just did the job
+   — the commit button's precedent (a focused button answers SPACE with a click
+   and no pointerdown in front of it). ENTER never arrives here at all: the
+   global keydown handler claims it for the word and preventDefaults it. */
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest(".mode-chip");
+  if (!b) return;
+  if (performance.now() - modeByPointer < 700) return;
+  setPhase(b.dataset.phase === "1");
+});
+
 /* WASD is retired (§1a #9): every letter key means "pick that letter out of
    the rack", so A, S and D cannot also be directions. Arrows only.
 
@@ -1846,6 +2012,7 @@ window.addEventListener("resize", () => { sizeCanvas(); });
 /* ── boot ────────────────────────────────────────────────────────────── */
 loadBest();
 paintMute();
+paintMode();
 loadDict();
 sizeCanvas();
 reset();

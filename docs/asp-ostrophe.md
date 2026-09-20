@@ -85,6 +85,11 @@ next tile is blocked; her body trails the path exactly.
 coiling is normally how snake kills you, and here it is how you build the stopping points a slide-until-
 blocked game constantly needs. Death comes from Apep, never from touching yourself.
 
+**AMENDED 2026-09-19 (§18): that rule is now the SOLID difficulty, and it has a sibling.** It had never
+been tested on anyone but the dev, and it may simply be too much wall to navigate around — so **SPIRIT**
+removes it (she passes straight through herself) and the two ship side by side to be played against each
+other. Death still comes from Apep and only from Apep, in both.
+
 **She cannot stop — she can only turn.** A direction pressed mid-strike takes effect immediately if that
 way is open, and queues for the end of the strike if it isn't. Full commitment with the control kept.
 
@@ -117,6 +122,12 @@ against resized every time you ate or spelled a word. The opening of a run had n
 against, and the one piece of level geometry the player authors moved under them at exactly the moments
 they were thinking about something else. A constant body is a constant tool; the rack's cost lives where
 it is legible — the sockets filling up, and the overflow.
+
+**AMENDED 2026-09-19 (§18):** this argument rests entirely on body-as-wall, which is now the **SOLID**
+difficulty rather than the whole game. It holds there and nowhere else — in SPIRIT a fixed length is just
+the rack's display, since there is no wall to keep constant. Nothing needs undoing, but if SPIRIT wins the
+friends test this reasoning should be rewritten rather than left standing as the justification for a rule
+the game no longer has.
 
 What this gives up, and is worth stating: spending a word no longer shortens her, so the wall geometry is
 no longer a thing you can spend. The only length change left is the single over-capacity segment during
@@ -732,3 +743,153 @@ Three details that matter:
 
 **Still M4:** the pixel pass — her sprite through `emoji-pixelizer.html`, the neon/bloom/scanline
 treatment. Nothing in §17 depends on it or is depended on by it.
+
+---
+
+## 18. Two difficulties — BUILT 2026-09-19
+
+**The finding (dev, 2026-09-19): her own body may simply be too much wall to navigate around.** §3 calls
+body-as-wall the load-bearing rule of the whole game, and it has never been tested against anyone but the
+dev. So rather than tune it by guess, it becomes **a toggle with two named modes**, shipped so friends can
+play both and say which they prefer. The point of the feature is the answer it returns: if SPIRIT wins,
+§3's central claim is wrong and the game is a different game.
+
+### 18.1 The two modes
+
+| | **SOLID** (today's rule) | **SPIRIT** (the easier one) |
+| --- | --- | --- |
+| Her body | a wall she stops against | not there at all |
+| A turn into herself | refused, and silently queued | taken, like any open tile |
+| A strike into herself | ends the strike (thunk) | passes straight through |
+| What still stops her | stone, landed blocks, her body | stone, landed blocks |
+
+Nothing else differs. Death still comes from Apep and only from Apep (§3), the rack, the drop, the tide and
+spelling are untouched, and the shaft generates identically — so a SPIRIT run and a SOLID run of the same
+seed are the same level.
+
+**Names, recommended: SOLID / SPIRIT.** Thematic without needing a gloss — the Egyptian *ka*, the spirit
+double that walks through what the body cannot, is exactly the mechanic, and a friend reads "SPIRIT: pass
+through yourself" once and never again. (Plain HARD/EASY is the fallback if the flavour gets in the way of
+the test; `KA` alone was rejected as unreadable to anyone who isn't already in the lore.)
+
+### 18.2 Why the whole-wall version and not a half-measure
+
+Two smaller versions were on the table and both were turned down for the same reason — **they would blur
+the answer the test exists to get**:
+
+- *Only the neck phases* (the 2–3 segments nearest the head) fixes the commonest frustration — turning
+  back into the tile you just laid — while a coil you built on purpose stays solid. But the rule is
+  invisible on screen unless those segments are drawn differently, and a friend who prefers it has told
+  you nothing clean about §3.
+- *Turns are never refused* (she may always aim into herself, and just stops on contact) fixes the
+  unresponsive feel — today a turn into your own body does visibly nothing — without removing the wall.
+  It is the smallest honest change, and it may simply be too small to answer the complaint.
+
+Both stay available as a third mode later if SOLID and SPIRIT split the vote rather than settling it.
+
+### 18.3 The seam is one predicate
+
+`bodyAt(c, r)` is read in exactly **two** live places — `aimable` (`asp-ostrophe.html:922`, which decides
+whether `tryDir` refuses a turn) and `step` (`:971`, which ends the strike). Both are the rule. So SPIRIT
+is `bodyAt` returning `false`, and nothing else in the movement code is touched. (`blocked()` at `:921` is
+the third reader and has **no callers** — it predates the aimable/blocked split of M2 and is dead. Leave
+it consistent with the flag anyway, or the next person to call it gets a fourth behaviour.)
+
+**Two knock-ons worth stating before they surprise someone:**
+
+- **SPIRIT also fixes the opening**, which nobody diagnosed as the same bug. At `reset()` all eight
+  segments are stacked on the start tile and she sheds one per step, so for the first seven moves she is
+  dragging a pile she cannot turn into — the most boxed-in she is ever going to be is the moment before
+  she has done anything. In SPIRIT that period does not exist.
+- **She can overlap herself**, so a segment can carry a letter you cannot see and the head can sit on top
+  of one. The renderer already draws tail-first with the head last (`drawSnake`), so this reads correctly
+  with no change; `drawRackOnBody` will stack letters under her occasionally, which is honest — the bar
+  is the authoritative readout of the rack and always has been.
+
+### 18.4 Scores stay separate
+
+**A best per mode.** An easy run must never overwrite a hard-mode record or the comparison is worthless
+the first time a friend plays both. Stored as **flat suffixed keys on the existing
+`aspostrophe.stats` record** — `best`/`bestScore` keep meaning SOLID, and `bestPhase`/`bestScorePhase`
+are new — which means **an existing save needs no migration and no version bump**: every run played to
+date was played solid, so the untouched keys already land on the correct mode. It is the same pattern the
+mute flag used (§17.4): `loadBest` only ever asks for the fields it knows.
+
+The HUD's `BEST` shows **the current mode's** best, and the mode is named beside it so a player mid-run
+always knows which rules they are under. The death screen's best line names the mode too.
+
+### 18.5 The toggle: between runs only
+
+A two-chip segmented control on **the title screen and the death screen** — the two moments when no run is
+in progress. Switching mid-run was rejected: a run's score would be a blend of both rules, which is
+precisely what the test is trying to separate. Changing the mode re-runs `reset()`, so the mode you see is
+always the mode you are about to play. The flag persists on the same record, so a friend sets it once.
+
+In practice **the death screen's copy is the one that matters** — `reset()` hides `#ov-dead` but never
+re-shows `#ov-start`, so after the first dive the title screen is gone for the session. That is correct
+(nobody wants the rules re-explained every run) and it is why the toggle cannot live only on the title.
+
+**The trap, and it is already written down in the file.** `.ov` carries `pointer-events:none` with the
+comment *"No overlay here holds a control, and both of them invite a tap that has to reach the canvas
+underneath"* — because restart is a `pointerdown` on **the canvas**, not on the overlay. This feature is
+the first control inside an overlay, so:
+
+- the chips opt back in with `pointer-events:auto` on the control alone, the mute button's exact pattern
+  (`#hud` gives up pointer events; `#hud #mute` takes them back);
+- that is also what stops a chip tap restarting the run, since the canvas never sees a pointerdown the
+  chip absorbed — the rest of the death screen still restarts on a tap, as its own copy promises;
+- **the `.ov` comment becomes a lie and must be amended in the same change**, or the next person reads it
+  and removes the `pointer-events:auto` as redundant;
+- the chips act on `pointerdown` like every other control in this game, and if they are ever moved into
+  `#rackbar` they inherit §16.1's double-tap cancel for free. On an overlay they do not, so two quick
+  mode-flips could zoom a phone — `touch-action:manipulation` on the chips, and watch it on an old Safari.
+
+No key binding (§17.4's rule stands: every letter key picks a rack letter, the arrows steer, nothing is
+spare). `R` is unaffected — it restarts only while dead, in whichever mode is set.
+
+### 18.6 What to watch, and what the result means
+
+- **The thing being measured is not "which is more fun" but which one people keep playing.** Height and
+  score in SPIRIT will be higher by construction; that is not the signal. The signal is preference, and
+  secondarily whether SPIRIT runs end in *Apep caught me* rather than *I got stuck*.
+- **SPIRIT costs the game its only authored level geometry.** §4.1 fixed her body length precisely so the
+  wall you coil against would not resize under you; if the wall is gone, that argument is spent and the
+  fixed length is just a rack display. Nothing needs undoing — but if SPIRIT wins, §4.1's reasoning should
+  be rewritten rather than left standing as a justification for a rule the game no longer has.
+- **Longer strikes, so more letters crossed per strike.** A strike only ends on stone or a block, so SPIRIT
+  eats faster, overflows sooner and feeds Apep more (§5) — it may be easier to steer and *harder* to
+  survive, which would be the most interesting possible outcome and the one to look for first.
+- **§13 #3's farming worry gets easier in SPIRIT**, since hovering over your own droppings no longer boxes
+  you in. Worth a glance if anyone starts grinding.
+
+### 18.7 As built (2026-09-19)
+
+It came in at **one predicate and some chrome**, as specced — `phase`, an early `return false` in `bodyAt`,
+and no other change anywhere in the movement code. Four things the build settled:
+
+- **`saveBest` had to become read-modify-write.** It wrote a *fresh* `{best, bestScore, mute}` object, so
+  the moment there are two modes it would drop the other mode's record on every death. It now reads the
+  record, edits its own mode's keys and writes it back — which is also what makes the no-migration claim
+  actually true rather than merely intended.
+- **`best`/`bestScore` in memory always mean the CURRENT mode's**, so `applyBests()` re-reads them when
+  the mode flips and `phase` joins `drawHUD`'s cache key — otherwise the HUD keeps showing the other
+  mode's record until the score happens to change.
+- **The chips get a `click` handler as well as `pointerdown`**, the commit button's precedent, because a
+  focused button answers SPACE with a click and no pointerdown in front of it. **ENTER never reaches them
+  at all** — the global keydown handler claims Enter for the word and `preventDefault`s it — which is
+  worth knowing before someone "fixes" the chips by adding an Enter branch.
+- **`.ov` is a flex column with `gap:10px`**, so the hint line needed a negative top margin or it sat as
+  far from the chips it describes as the chips did from the paragraph above them.
+
+**Verified by reading rather than by playing:** SPIRIT introduces no unbounded strike. Horizontal strikes
+still end at the shaft's implicit side walls, downward ones at `BEDROCK` (which exists precisely so a
+downward dash always lands), and upward ones at the next generated ledge — exactly as in SOLID, since
+nothing of hers is ever *above* her on a fresh climb. The only case SPIRIT changes is striking back into a
+coil, and that continues to the stone beyond it, which is bounded by all three.
+
+**Left alone on purpose:** `drawSnake` already draws tail-first with the head last, so an overlapping body
+reads correctly with no change, and `drawRackOnBody` will occasionally stack a letter under her — honest,
+since the bar is and always has been the authoritative readout of the rack.
+
+**Build unit:** the flag + `bodyAt` + the two bests, then the chips and the HUD tag. One sitting; nothing
+here depends on M4's pixel pass or on §14.
