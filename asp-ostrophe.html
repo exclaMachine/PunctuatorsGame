@@ -126,7 +126,13 @@ canvas{display:block; touch-action:none; background:#05070c}
 }
 #commit:disabled{cursor:default}
 
-#slots{display:flex; gap:5px; justify-content:flex-start}
+/* The height is RESERVED, not left to the children: the slot divs are created
+   by renderBar() on the first frame, which is AFTER sizeCanvas() measures the
+   bar at boot — an empty row measured 0 and the canvas was handed a slot's
+   worth of height too much, putting the letters off the bottom of the screen
+   until the window happened to be resized. The row never wraps (.slot shrinks
+   rather than wrapping), so one slot tall is its true height, full or empty. */
+#slots{display:flex; gap:5px; justify-content:flex-start; height:var(--slot)}
 .slot{
   width:var(--slot); height:var(--slot); flex:0 1 var(--slot); min-width:0;
   display:flex; align-items:center; justify-content:center;
@@ -430,12 +436,17 @@ function sizeCanvas(){
   /* The rack bar is sized off the tile so the two read as one game, then
      MEASURED rather than predicted — it carries a safe-area inset at the
      bottom of a phone and guessing that number would put Apep's arrival
-     under the home indicator. */
+     under the home indicator. The measurement is only honest because #slots
+     reserves its height in CSS (§19): its children are built on the first
+     frame, i.e. after this runs. */
   const slot = Math.max(26, Math.min(44, Math.round(TILE * 1.25)));
   document.documentElement.style.setProperty("--slot", slot + "px");
   const rackH = Math.ceil(elRackbar.getBoundingClientRect().height) || Math.round(slot * 1.85 + 20);
 
-  H = Math.max(300, window.innerHeight - rackH);
+  /* A small floor only: the rack bar is not optional chrome — it is where a
+     word is built — so on a short window the shaft gives up height rather than
+     pushing the bar out of a fixed, overflow-hidden body. */
+  H = Math.max(160, window.innerHeight - rackH);
   cv.width  = Math.round(W * dpr);
   cv.height = Math.round(H * dpr);
   cv.style.width  = W + "px";

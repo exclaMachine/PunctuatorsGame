@@ -893,3 +893,24 @@ since the bar is and always has been the authoritative readout of the rack.
 
 **Build unit:** the flag + `bodyAt` + the two bests, then the chips and the HUD tag. One sitting; nothing
 here depends on M4's pixel pass or on §14.
+
+## 19. The letter row was off the bottom of the screen — fixed 2026-09-20
+
+**The rack bar measured itself a slot short at boot.** `sizeCanvas()` gives the canvas whatever the bar
+does not need (§1a #12 stacks them, never overlays), and it measures the bar rather than predicting it —
+but the slot divs are created by `renderBar()` on the *first frame*, so at boot `#slots` was an empty flex
+row measuring **0**. The canvas got one slot's height too much, and in a fixed, `overflow:hidden` body
+that pushed the letter row clean off the bottom, where it stayed until a window resize happened to
+re-measure.
+
+**Fix: the row RESERVES its height in CSS** (`#slots{height:var(--slot)}`) rather than deriving it from
+children that do not exist yet. It never wraps (`.slot` shrinks instead), so one slot tall is its true
+height whether it holds 0, 7 or the 8th doomed letter — which is what makes the reservation exact and not
+a guess.
+
+**The general rule:** a measured element must be measurable *before* the thing that fills it runs, or the
+measurement is of a layout no player ever sees.
+
+Also lowered `sizeCanvas`'s canvas-height floor from 300 to 160: the bar is not optional chrome — it is
+where a word is built — so on a short window the shaft gives up height rather than the bar being pushed
+out of a body that cannot scroll.
