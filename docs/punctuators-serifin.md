@@ -1,7 +1,7 @@
 # Punctuators — Serifin (Strokes)
 
-**Status: SPECCED 2026-10-18. Nothing built.** M1 the table → M2 the mode → M3 the hero → M4 the
-feel is the shipping unit (§10). **DEV-ONLY** (`?dev=1`) when it lands — see §1.3.
+**Status: M1 the table and M2 the mark-up BUILT 2026-10-18** — a sentence marks up and nothing
+fields the shot yet. M3 the hero → M4 the feel remain (§10). **DEV-ONLY** (`?dev=1`) — see §1.3.
 
 A wordplay mode where a word keeps its *letters' bones* and changes what they are. Serifin draws one
 extra stroke onto a letter and it becomes a different letter — and because she only ever draws where
@@ -30,9 +30,15 @@ adopt   o → e   adept          cut   u → o   cot
 brown   o → a   brawn          sun   u → o   son
 night   n → m   might          will  l → t   wilt
 bottle  o → a   battle         will  l → d   wild
-colour  l → b   ?              color o → e   colon
 acorn   c → d   adorn          shore o → a   share
+color   r → n   colon          art   r → n   ant
+hand    h → b   band          eve   v → y   eye
 ```
+
+(Checked against the shipped table, which is where the last two rows came from: `i → j` has only
+**two** entries in the whole corpus — `fiord → fjord` and `iamb → jamb` — and `v → y` five. The
+mode's weight really is on `o l c n r u`. `colour` is not a source word at all: it is absent from
+`2of12.txt`, which is the first of §2.1's two holes.)
 
 **No fail state, no puzzle, no daily.** Free play, like Ambigrams and Anagrams. The win is the
 sentence you end up with.
@@ -97,6 +103,13 @@ and those are made almost entirely of `o l c n r u` — `the`, `dog`, `cat`, `on
 `put`, `cut`, `sun`, `will`, `long`, `night`. The guard (§11) exists for the real misses, not as a
 routine occurrence.
 
+**All four numbers reproduced exactly on the build (2026-10-18)** — `build-serifin-pojo.js` prints
+them, so the table's tuning surface is checkable rather than asserted — bar the sentence sample,
+whose twelve sentences were never written down. The script now carries twelve of its own and scores
+**9 of 12** on the recognisable tier (10 of 12 with `SERIFIN_OBSCURE` on, which is what that flag
+buys: one sentence in twelve and 7 more marked words). Two of the three misses are §2.1, not the
+table. So the guard (§11) is for a real and not especially rare miss, which is why it names words.
+
 Per mapping, over the whole corpus:
 
 ```
@@ -107,6 +120,27 @@ o→p  41   o→d  27   o→g  23   o→b  21   v→y  18   i→j   4   o→q   
 
 `o→a` and `o→e` carry a fifth of the mode between them, which is why §7's font decision is not
 cosmetic: if `o → a` does not read as one stroke on screen, the mode's best row is a lie.
+
+### 2.1 `2of12.txt` is a LEMMA list, and it costs the mode at both ends
+
+Found building M1, and it is the one thing about the data worth knowing. 2of12 holds **39,584 plain
+a–z words and only 3,794 of them end in `s`** — `dogs`, `cats`, `cups`, `jumps`, `walked` are all
+absent, while `lines` and `runs` are in because they are listed in their own right. The §2
+measurements were taken against exactly this, so nothing above is wrong; but the list being lemmas
+bites in both directions:
+
+- **As the source list**, an inflected word in a typed sentence is usually not a key at all, so
+  `the cats sat on the mats` marks nothing even though `cats → oats` is a real swap into a real
+  word. The ladder hit the equivalent hole and answered it with naive `singularize`/`pluralize`
+  rules — **and that does not transfer here**, because re-pluralizing the *result* needs a fresh
+  validity check the POJO cannot answer (it holds results only for its own keys). The honest fix is
+  to generate from `enable1` as the source side too, trading file size for coverage.
+- **As the result tier**, `limes`, `tines` and `dines` are ordinary English words marked obscure and
+  hidden, because 2of12 lacks the plural. §3.4's "recognisable" tier is therefore conservative in a
+  lopsided way: it hides good plural results rather than bad words.
+
+Left exactly as specced for now — the tier rule is what §2 measured, and changing either end changes
+what the mode does. It is the first thing to revisit if free play reads as too thin.
 
 ---
 
@@ -166,8 +200,10 @@ the house pattern (Zana, Roundabout and Betar all ship a generated POJO):
 export default { "adopt": "2a 2e", "cat": "0o 0e", "cut": "0o 1o", … };
 ```
 
-One entry per source word; the value is a space-joined list of `<index><letter>` swaps. **42 KB raw
-/ 12 KB gzipped.** Lazy `import()` on first use, the pattern `ladderPOJO.js` set.
+One entry per source word; the value is a space-joined list of `<index><letter>` swaps, starred when
+the result is `enable1`-only (§3.4). **Measured as built: 2,995 entries, 56 KB raw / 14 KB gzipped**
+(the 42/12 above was the pre-build estimate). Lazy `import()` on first use, the pattern
+`ladderPOJO.js` set.
 
 `build-serifin-pojo.js` runs offline (`node build-serifin-pojo.js`), reads `2of12.txt` for sources
 and `enable1.txt` for results, and holds the §3.1 table as its only tuning surface. It is the whole
@@ -192,10 +228,12 @@ promote individual words in the source table the way `race-pairs-source.txt` is 
    (§12.3), and in wordplay modes a typed capital stays capital (only the punctuation round
    lowercases them).
 2. **Minimum word length 2.** `a → o` and `i → j` as whole words are noise.
-3. **Lookups go through `entryFor`, never `dict[word]`.** `constructor` is an ordinary English word
-   and a bare lookup on a plain object answers it with `Object`'s constructor — a truthy function.
-   The same trap the Tree of Kinds answered with `Map`/`Set` and `CaretFunc.js` answers with an
-   own-property test; use `CaretFunc.js`'s, since this is a generated file too.
+3. **Never `dict[word]`.** `constructor` is an ordinary English word — verified present in both
+   `2of12.txt` and `enable1.txt` — and a bare lookup on a plain object answers it with `Object`'s
+   constructor, a truthy function. **As built the table is a `Map`** (the Tree of Kinds' answer)
+   rather than `CaretFunc.js`'s own-property `entryFor` as this rule originally said: the compact
+   POJO strings are parsed into a structure at load time anyway, so the Map costs nothing and the
+   guarantee does not depend on every future lookup remembering.
 4. **The candidate list is fixed at wrap time** and read from the word as typed — see §6.1.
 
 ---
@@ -267,7 +305,9 @@ The shelf fan's remedy applies unchanged: **push them in by hand.** One seam in 
 the team:
 
 ```js
-if (mode === "serifin") nodeArr.push(...outputSentence.querySelectorAll(".sf-letter"));
+// index.js, at the bottom, straight after `elm = await waitForElement("#output span");`
+if (dropDownSelection === "serifin")
+  nodeArr.push(...out1.querySelectorAll(".sf-letter"));
 ```
 
 The collision walk's existing `isConnected` guard covers the rest.
@@ -451,8 +491,8 @@ hit has three outcomes and the generic one-hit-one-sound call site cannot say wh
 
 | | |
 | --- | --- |
-| **M1 — the table** | `build-serifin-pojo.js` + `serifinPOJO.js`. Offline, verifiable on its own: the §2 numbers must reproduce. |
-| **M2 — the mode** | `serifinFunc.js` (`SERIFIN_ID`, `hasSerifinWords`, `wrapSerifin`, `serifinSwap`), `protectedSerifin` in `SpanPlaceholder.js`, the `<option>`, the guard, the `nodeArr` push, the frozen boxes, **and the font** — the letterform claim has to be true from the first playable build. Nothing to shoot yet. |
+| **M1 — the table** | ✅ **BUILT 2026-10-18.** `build-serifin-pojo.js` + `serifinPOJO.js`. Offline and verifiable on its own: the §2 numbers reproduce. |
+| **M2 — the mode** | ✅ **BUILT 2026-10-18.** `serifinFunc.js`, `protectedSerifin`, the `<option>`, the guard, the `nodeArr` push, the frozen boxes, **and the font**. Nothing to shoot yet. |
 | **M3 — the hero** | `Serifin` + her two drawn sprites, the collision branch, the swap, the cycle, the clank, `fixArticleBefore`. **Playable.** The glyph swaps with a flash; no drawn stroke yet. |
 | **M4 — the feel** | §8's `STROKE` path table and the draw-on animation, §9's three cues, the `modeHelp.js` card and the `modeArt.js` picture. |
 
@@ -460,24 +500,52 @@ M3 is the line worth holding: everything through it is mechanism, everything in 
 mode is *for*. Do not reorder them — a drawn stroke over a mode that does not yet cycle correctly
 teaches the wrong rule beautifully.
 
+### 10.1 As built (M1 + M2)
+
+Four things the build settled or departed from, and nothing else is worth repeating out of the diff.
+
+**The table is a `Map`, not `entryFor`.** §3.5 rule 3 asked for `CaretFunc.js`'s own-property test
+on the grounds that this is a generated file like the others. It is a `Map` instead — the ladder's
+answer to the same trap — because the compact POJO strings have to be parsed into a structure at
+load time anyway, so the Map is free and the guarantee is stronger than a discipline every future
+lookup has to remember. The trap is real and was verified, not assumed: **`constructor` and
+`prototype` are both entries in `2of12.txt` and in `enable1.txt`.**
+
+**The guard loads the corpus, which no other `WORDPLAY_GUARDS` entry does.** `hasSerifinWords`
+answers "no" to everything until the table has landed, and the generic guard check in the Pow!
+handler runs *before* the ladder's own `await`. So `loadSerifin()` is awaited at the top of that
+`else` branch, ahead of the table lookup — the ladder solves the same problem the other way round
+(an inline check after its await) because its guard was never a table entry. §11's row stands.
+
+**M2 lands with no hero, deliberately.** Nothing answers to `SERIFIN_ID` until M3, so the team comes
+back empty and the title-page hero stays on screen. That is survivable rather than fatal because
+`doActionOnce()` returns early on an empty team instead of leaving `player` undefined and `animate()`
+throwing every frame — the Affix Aliens shipped their own M2 this way. One placeholder line in
+`#error-message` says so, written *after* the handler's own clear, and M3 deletes it.
+
+**The cards are still M4, so picking the mode shows the punctuation card.** `modeHelpFor` and
+`renderModeArt` both fall back to it for an unknown mode — the exact complaint those modules were
+built to fix — but the mode is behind `?dev=1`, so only the dev sees the wrong card, and the Affix
+Aliens have been in that state since August.
+
 ---
 
 ## 11. Wiring checklist
 
 | file | change |
 | --- | --- |
-| `build-serifin-pojo.js` | **new.** Offline generator; holds the §3.1 table and the §3.4 tier flag. |
-| `serifinPOJO.js` | **new, generated.** 42 KB. Never hand-edited. |
-| `serifinFunc.js` | **new.** `SERIFIN_ID`, `hasSerifinWords`, `wrapSerifin`, `serifinSwap`, `serifinCandidates`, `freezeLetterBoxes`. Lazy-imports the POJO. |
-| `SpanPlaceholder.js` | `export const protectedSerifin = withSpanPlaceholders(wrapSerifin);` |
-| `utils/utils.js` | `case "serifin":` in `addSpansAndIdsForWordPlay`'s switch. **No `heroManagedWords` change** (§6.5). |
-| `punctuators.html` | `<option value="serifin" data-dev>Serifin's Strokes</option>`, stripped in the dropdown IIFE **before** the custom dropdown is generated (§1.3). |
-| `index.js` | the `WORDPLAY_GUARDS` entry; the `nodeArr` push after `waitForElement` and before `heroToTheRescue` (§5.1); `drawStrokeBoltSprite`/`drawSerifinSprite`; `class Serifin`; the instance + its place in `availableHeroArray`; the collision branch; `shootSerifin`; `claimSerifinShot`; `flashSerifinClank`; the three SFX. |
-| `index.css` | `@font-face` for Jost; `#output.serifin-mode`; `.sf-word`; `.sf-letter`; `.sf-clank`; `.sf-stroke` (the SVG overlay). |
+| `build-serifin-pojo.js` | ✅ **new.** Offline generator; holds the §3.1 table, the §3.4 tier flag and the §2 checks. |
+| `serifinPOJO.js` | ✅ **new, generated.** 2,995 entries, 56 KB. Never hand-edited. |
+| `serifinFunc.js` | ✅ **new.** `SERIFIN_ID`, `SERIFIN_OBSCURE`, `loadSerifin`, `serifinReady`, `hasSerifinWords`, `wrapSerifin`, `serifinCandidates`, `serifinCycle`, `serifinSwap`, `serifinWordNow`, `freezeLetterBoxes`. Lazy-imports the POJO. |
+| `SpanPlaceholder.js` | ✅ `export const protectedSerifin = withSpanPlaceholders(wrapSerifin);` |
+| `utils/utils.js` | ✅ `case "serifin":` in `addSpansAndIdsForWordPlay`'s switch. **No `heroManagedWords` change** (§6.5). |
+| `punctuators.html` | ✅ `<option value="serifin" data-dev>Serifin's Strokes</option>`, stripped in the dropdown IIFE **before** the custom dropdown is generated (§1.3). |
+| `index.js` | ✅ the `WORDPLAY_GUARDS` entry + the `loadSerifin()` await in front of it (§10.1); the `serifin-mode` class and the `freezeLetterBoxes` call at Pow!; the `nodeArr` push after `waitForElement` and before `heroToTheRescue` (§5.1). **M3:** `drawStrokeBoltSprite`/`drawSerifinSprite`; `class Serifin`; the instance + its place in `availableHeroArray`; the collision branch; `shootSerifin`; `claimSerifinShot`; `flashSerifinClank`; the three SFX. |
+| `index.css` | ✅ `@font-face` for Jost; `#output.serifin-mode`; `.sf-word`; `.sf-letter`; `.sf-clank`; `.sf-stroke` (the SVG overlay, waiting on M4's paths). |
 | `modeHelp.js` | the card (M4). Its worked example must be real in the shipped POJO — regenerating the table can leave it stale. |
 | `modeArt.js` | the card (M4). Glyph: an `l` with its crossbar arriving. |
 | `docs/punctuators.md` | a line in the cast, once it is playable. |
-| `CLAUDE.md` | the Punctuators row's doc list. |
+| `CLAUDE.md` | ✅ the Punctuators row's doc list. |
 
 The guard:
 
@@ -548,3 +616,12 @@ the repo's one alphabet.
    Letters are narrow; a near miss and a pass-through will feel identical, and silence may read as
    the mode being broken — the same complaint that pulled three of the Affix Aliens' cues forward out
    of M4.
+6. **Does the table want a blocklist?** Found scanning the built POJO (2026-10-18) and **not acted
+   on**, because it changes what the mode does. The dictionary gate (§1.2) guarantees a real word,
+   not a word you want on screen: `hitch → bitch`, `lick → dick`, `rope → rape`, `fog → fag`,
+   `sox → sex`, `slab → stab`, `lie → die`, `lead → dead`. **22 results** land in a modest scan of
+   the obvious set, four or five of them genuinely unpleasant. It matters more here than in any
+   other mode for two reasons: the result is the *payoff*, read out loud, and Punctuators' own How
+   to Play pitches the game as a classroom tool. The fix is cheap and belongs in the build, not the
+   runtime — a `BLOCK` set beside `ADD` in `build-serifin-pojo.js`, so the shipped table simply has
+   no such entry and nothing at play time has to know. The question is only whose list it is.

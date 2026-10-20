@@ -15,6 +15,7 @@ import {
   protectedAnagrams,
   protectedLadders,
   protectedAffixes,
+  protectedSerifin,
 } from "../SpanPlaceholder.js";
 
 const secondContractionWordHashMap = new Map();
@@ -147,6 +148,13 @@ export const addSpansAndIdsForWordPlay = (
       break;
     case "affixes":
       processed = protectedAffixes(processed);
+      break;
+    case "serifin":
+      // Marks LETTERS, not words — one span per shootable letter, each inside an <i class="sf-word">
+      // so the word can't break across lines (docs/punctuators-serifin.md §5.1). Those spans are
+      // descendants of the wrapper, so the observer in waitForElement never sees them: index.js
+      // pushes them into nodeArr by hand after the sentence renders.
+      processed = protectedSerifin(processed);
       break;
     case "wordRace":
       // Already marked up by ladderRace.js's raceFieldHTML — nothing to wrap.

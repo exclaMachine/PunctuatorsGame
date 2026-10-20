@@ -8,6 +8,7 @@ import { wrapAlphabetNeighbors } from "./alphabeticalNeighbors.js";
 import { wrapAbjads } from "./onlyConsonants.js";
 import { wrapLadders } from "./ladderFunc.js";
 import { wrapAffixes } from "./affixFunc.js";
+import { wrapSerifin } from "./serifinFunc.js";
 
 export const applySpanPlaceholders = (text) => {
   let placeholders = [];
@@ -63,6 +64,11 @@ export const protectedLadders = withSpanPlaceholders(wrapLadders);
 // hand-written tables in affixData.js (docs/punctuators-affixes.md §3) — so unlike the ladder it is
 // ready the moment the module loads.
 export const protectedAffixes = withSpanPlaceholders(wrapAffixes);
+
+// Serifin's Strokes. Like the ladder and unlike the aliens, wrapSerifin is a no-op until
+// loadSerifin() has resolved — the stroke table is a generated 56 KB file fetched on demand — so
+// index.js awaits the table before starting a round (docs/punctuators-serifin.md §3.3).
+export const protectedSerifin = withSpanPlaceholders(wrapSerifin);
 
 // // Usage:
 // let result = protectedSpoonerism(sentence);

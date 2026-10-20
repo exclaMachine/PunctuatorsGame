@@ -2139,3 +2139,105 @@ span[data-hint] {
     pointer-events: none;
     z-index: 2;
 }
+
+/* ── SERIFIN'S STROKES (docs/punctuators-serifin.md §5, §7) ──────────────────────────────────────
+
+   THE MODE WEARS ITS OWN FACE, and that is not cosmetic. The sentence is normally Palanquin, whose
+   `a` is DOUBLE-STOREY — a bowl, a stem and an arched top — so `o → a` in Palanquin is two strokes,
+   not one. `o → a` is 769 swaps, the single biggest row in the table, so shipping the mode in
+   Palanquin would make its best claim a lie on screen.
+
+   Jost* is a Futura line: single-storey `a`, single-storey `g`, a plain tail-less `l`, a circular
+   `o`, monoline arches on `n m r`, `u` open at the top. Every row of the stroke table is literally
+   true in it. The file is already in the repo — fetched for Inklings' Scriptorium as its geometric
+   Vox leaf (OFL, credited in fonts/Jost-OFL.txt and data/typefaces.json) — so nothing new is
+   downloaded and no licence question is reopened. Precedent for a mode owning its face: Betar's
+   Alphabet Slots sets font-family: monospace inline on every span it wraps.
+
+   It is Google's FULL latin subset (9.4 KB), not the Scriptorium's 52-letter cut, because the
+   sentence needs the space, comma and full stop too. If fetch-typeface-fonts.sh is ever re-run with
+   pyftsubset on PATH it will shrink to letters only and this mode's punctuation will silently fall
+   back to Palanquin mid-line — the fix is a second GLYPHS entry in that script, not a second copy
+   of the font. */
+@font-face {
+    font-family: 'Jost';
+    src: url('./fonts/Jost-latin.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    /* swap, not block: the sentence must be readable immediately. freezeLetterBoxes() waits on
+       document.fonts.ready before measuring, so the swap can't leave a box frozen to the wrong
+       metric (§5.2). */
+    font-display: swap;
+}
+
+/* Higher specificity than #output, so the two in-media-query #output rules that re-declare
+   font-family (the 480px and 1280px breakpoints) can't take the face back on a phone. */
+#output.serifin-mode {
+    font-family: 'Jost', 'Palanquin', sans-serif;
+}
+
+/* The word around the live letters. It exists for ONE reason: white-space: nowrap. Each letter is
+   an inline-block (below) and inline-level boxes can break between each other, so without a nowrap
+   container a long word would split mid-word on a narrow window. An <i>, never a nested <span> —
+   a span inside #output is the engine's oldest footgun (waitForElement waits on `#output span` and
+   fills nodeArr from addedNodes, which never lists descendants), so it is an <i> and index.js
+   pushes the letters in by hand. font-style: normal because <i> is a hook here, not an italic. */
+.sf-word {
+    white-space: nowrap;
+    font-style: normal;
+}
+
+/* THE SHOOTABLE LETTER. Three properties and all three are load-bearing.
+
+   inline-block + a WIDTH SET IN JS: #output centres every line INDIVIDUALLY, so any width change
+   anywhere in a line slides the whole line sideways, and `l` and `t` are not the same width. The
+   box is frozen at wrap time to the widest glyph the letter can ever show (freezeLetterBoxes), so a
+   swap repaints inside a box that never changes. ApostroPharaoh's squash was built around the same
+   rule; the width arrives from JS because only JS can measure a glyph.
+
+   text-align: center so a narrow glyph sits in the middle of a box sized for a wide one.
+
+   border-bottom, not text-decoration: the underline is the mode's whole affordance — nothing else
+   on screen says *this `o`, not that one* — and it has to sit clear of the glyph's descenders
+   rather than through them. Proofreader's red, the colour of the mark-up pen she is holding. */
+.sf-letter {
+    display: inline-block;
+    text-align: center;
+    border-bottom: 0.06em solid #be123c;
+}
+
+/* The clank (§6.2) — the shot that changes nothing, on a letter whose cycle has nowhere to go. A
+   grey shudder of light, NEVER her own colour: her colour is what a landed stroke writes, so a
+   clank borrowing it would read as a hit on a letter that had simply refused to change. drop-shadow
+   rather than text-shadow (the ladder's rule), so the flare layers over the glyph's black outline
+   instead of blanking it for the length of the flare. */
+.sf-clank {
+    animation: sf-clank 460ms ease-out;
+}
+
+@keyframes sf-clank {
+    0% {
+        filter: none;
+    }
+    30% {
+        filter: drop-shadow(0 0 7px rgba(120, 120, 130, 0.95));
+    }
+    100% {
+        filter: none;
+    }
+}
+
+/* The drawn stroke (§8, M4). An absolutely positioned SVG inside #output, laid over the letter's
+   frozen — therefore known — box: the cartouche's rule, never join the line box, so it can neither
+   reflow the sentence nor be clipped by it, and it dies when #output is rewritten. */
+.sf-stroke {
+    position: absolute;
+    pointer-events: none;
+    overflow: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sf-clank {
+        animation: none;
+    }
+}

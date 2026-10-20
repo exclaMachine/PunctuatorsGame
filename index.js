@@ -30,6 +30,15 @@ import {
   updateAffixSpan,
 } from "./affixFunc.js";
 import { EQUAL, OPPOSITE, PRE, SUF, swapAffix } from "./affixData.js";
+// Serifin's Strokes — one extra stroke turns a LETTER into another letter
+// (docs/punctuators-serifin.md). serifinPOJO.js (56 KB) is the only data, fetched on demand by the
+// one mode that wants it, which is why loadSerifin() has to run before the guard that reads it.
+import {
+  SERIFIN_ID,
+  loadSerifin,
+  hasSerifinWords,
+  freezeLetterBoxes,
+} from "./serifinFunc.js";
 // The How-to-Play card for the mode you have picked (one per <option>) — swapped in on selection,
 // not at Pow!, so the rules are readable while you are still choosing what to play.
 import { modeHelpFor } from "./modeHelp.js";
@@ -1295,6 +1304,15 @@ const WORDPLAY_GUARDS = {
     has: hasAffixes,
     nope: "No prefixes or suffixes found in your sentence — try some longer words!",
   },
+  // Measured (docs/punctuators-serifin.md §2): only 7.6% of common words have a stroke-add that
+  // lands on a real word, but over sentences people actually TYPE it is nearly always several —
+  // real English is carried by short frequent words made almost entirely of `o l c n r u`. So this
+  // guard is for the real misses, not a routine occurrence, and it names three words rather than
+  // shrugging. hasSerifinWords is false until the table has loaded; see the await below.
+  serifin: {
+    has: hasSerifinWords,
+    nope: "No letter here grows by one stroke — try `adopt`, `cut` or `night`!",
+  },
 };
 
 /* The two modes that bring their own words, so the sentence box has no job in either (§12.8 Note 1,
@@ -1637,6 +1655,26 @@ removePuncButton.addEventListener("click", async () => {
     }
     let punctuated = addSpansAndIds(initialTypedSentence.value, out1);
   } else {
+    // Serifin's guard READS a generated file that is fetched on demand, so unlike every other entry
+    // in WORDPLAY_GUARDS the table has to be in hand before the check — hasSerifinWords answers
+    // "no" to everything until it is. The ladder has the same problem and solves it the other way
+    // round (an inline check after its own await); this mode's guard is an ordinary table entry, so
+    // the await moves up here instead. #error-message is red by default, so borrow it in black:
+    // this is progress, not a fault.
+    if (selectedOption === "serifin") {
+      errorMessage.style.color = "black";
+      errorMessage.innerText = "Sharpening the nib…";
+      try {
+        await loadSerifin();
+      } catch (e) {
+        errorMessage.style.color = "";
+        return (errorMessage.innerText =
+          "Couldn't load Serifin's strokes — try again.");
+      }
+      errorMessage.style.color = "";
+      errorMessage.innerText = "";
+    }
+
     const guard = WORDPLAY_GUARDS[selectedOption];
     if (guard && !guard.has(initialTypedSentence.value)) {
       return (errorMessage.innerText = guard.nope);
@@ -1707,11 +1745,18 @@ removePuncButton.addEventListener("click", async () => {
       out1.classList.add("phrase-mode");
       addSpansAndIdsForWordPlay(wrapPhrase(phrase.entry), out1, selectedOption);
     } else {
+      // The face goes on BEFORE the sentence is written, so the first paint is already Jost* and
+      // the player never sees the letterforms the mode's own table is false about (§7).
+      if (selectedOption === "serifin") out1.classList.add("serifin-mode");
       addSpansAndIdsForWordPlay(
         initialTypedSentence.value,
         out1,
         selectedOption,
       );
+      // Fire and forget: freezeLetterBoxes awaits document.fonts.ready itself, and the widths only
+      // have to be in place before the first SWAP, which is seconds away. Awaiting it here would
+      // hold the round's start on a font fetch (§5.2).
+      if (selectedOption === "serifin") freezeLetterBoxes(out1);
     }
   }
   mySong.stop();
@@ -1777,6 +1822,16 @@ removePuncButton.addEventListener("click", async () => {
   // Both word-supplying modes write their own status into #error-message as you play, so clearing
   // it here would wipe the line that just told the player what they're looking at.
   if (!NO_SENTENCE_MODES.has(selectedOption)) errorMessage.innerText = "";
+  // M2 LANDS WITHOUT A HERO. Nothing answers to SERIFIN_ID until M3, so the team comes back empty
+  // and the title-page hero stays on screen — survivable, because doActionOnce() returns early on an
+  // empty team rather than leaving `player` undefined and animate() throwing on every frame (the
+  // affix mode shipped its own M2 exactly this way). This line goes last because the clear above
+  // would wipe it; M3 deletes it.
+  if (selectedOption === "serifin") {
+    errorMessage.style.color = "black";
+    errorMessage.innerText =
+      "The letters Serifin can reach are underlined in red. She arrives in M3 — nothing fields the shot yet.";
+  }
   bRightAfterSentenceIsLoaded = true;
 });
 
@@ -5154,6 +5209,15 @@ addEventListener("keydown", (event) => {
    `player = chosenHeroArray[0]` was undefined and animate() threw on every frame.
    Scoping the wait to the sentence's own output keeps it honest — #output is empty until a round starts. */
 elm = await waitForElement("#output span");
+/* SERIFIN'S LETTERS ARE PUSHED IN BY HAND (docs/punctuators-serifin.md §5.1). waitForElement's
+   observer reports a mutation's addedNodes, which lists only DIRECTLY inserted nodes and never
+   their descendants — so `#output.innerHTML = …` puts only the top-level children of #output into
+   nodeArr, and every .sf-letter inside an <i class="sf-word"> wrapper is invisible to collision.
+   The wrapper is not optional (it is what keeps a word from breaking mid-word, §5.1), so this is
+   the shelf fan's remedy applied unchanged: push them in here, after the sentence has rendered and
+   before the team is built. The collision walk's existing isConnected guard covers the rest. */
+if (dropDownSelection === "serifin")
+  nodeArr.push(...out1.querySelectorAll(".sf-letter"));
 chosenHeroArray = heroToTheRescue(nodeArr, availableHeroArray);
 
 let freeDictionaryFetchDefinition = async (word) => {
