@@ -10,7 +10,11 @@ Per-mode planning docs live alongside this one:
 [`punctuators-ladder.md`](punctuators-ladder.md) (General Ization & Keen Arrow, plus Restore the Phrase,
 Word Race and the Tree of Kinds) and
 [`punctuators-affixes.md`](punctuators-affixes.md) (The Grand Prefixer & Sufferix — **M1 the tables, M2 the
-mark-up and M3 the four heroes built, dev-only; M4 is the feel**).
+mark-up and M3 the four heroes built, dev-only; M4 is the feel**) and
+[`punctuators-serifin.md`](punctuators-serifin.md) (Serifin — she adds **one stroke to a LETTER** and it
+becomes another letter, `adopt → adapt`; **M1 the table, M2 the mark-up and M3 the hero built, dev-only —
+playable; M4 is the drawn stroke**). Serifin is the only mode whose targets are single letters rather than
+words, and the only one that changes the sentence's typeface (Jost\*, so `o → a` really is one stroke).
 
 ---
 

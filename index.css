@@ -2170,7 +2170,15 @@ span[data-hint] {
     font-display: swap;
 }
 
-/* Higher specificity than #output, so the two in-media-query #output rules that re-declare
+/* ANY REPLACEMENT FACE MUST HAVE A SINGLE-STOREY `a` (doc §7.1). A single-storey `a` is a bowl with
+   a straight stem down its right side — an `o` with ONE LINE ADDED ON THE RIGHT, which is exactly
+   what the mode claims is happening and is its biggest row (o → a, 769 swaps). A double-storey `a`
+   (Palanquin's, Helvetica's, Times') has a smaller bowl under an arched hood and is two strokes and
+   a redrawn bowl, so the animation M4 draws would be a lie. The test on any candidate: set `o` and
+   `a` side by side and check you can get from one to the other by adding one stroke. Also wanted:
+   a plain tail-less `l` (l → t is a crossbar), a `u` open at the top, a circular `c`.
+
+   Higher specificity than #output, so the two in-media-query #output rules that re-declare
    font-family (the 480px and 1280px breakpoints) can't take the face back on a phone. */
 #output.serifin-mode {
     font-family: 'Jost', 'Palanquin', sans-serif;
@@ -2206,7 +2214,19 @@ span[data-hint] {
     border-bottom: 0.06em solid #be123c;
 }
 
-/* The clank (§6.2) — the shot that changes nothing, on a letter whose cycle has nowhere to go. A
+/* A live letter in a word that has already moved. ONE STROKE PER WORD AT A TIME: 9.2% of the
+   table's source words carry two live letters, and shooting both leaves a non-word more often than
+   not (`car` -> `oar` and `car` -> `can` are both real; `oan` is not), so a letter off its original
+   deadens its siblings until it cycles home. They then look exactly like a letter that was never a
+   target, which is also how they behave — the shot passes straight through.
+
+   border-bottom-COLOR, never `border-bottom: none`: the border is part of the box, so removing it
+   would shorten the letter and move the line. §5.2's whole rule.*/
+.sf-letter.sf-dead {
+    border-bottom-color: transparent;
+}
+
+/* The clank (§6.3) — the shot that changes nothing, on a letter whose cycle has nowhere to go. A
    grey shudder of light, NEVER her own colour: her colour is what a landed stroke writes, so a
    clank borrowing it would read as a hit on a letter that had simply refused to change. drop-shadow
    rather than text-shadow (the ladder's rule), so the flare layers over the glyph's black outline
@@ -2227,6 +2247,43 @@ span[data-hint] {
     }
 }
 
+/* THE SWAP (§6.1) — the new letter arriving. M3's stand-in for §8's drawn stroke, and the same
+   last beat that animation ends on: the glyph lands in her red and settles back into the
+   sentence's ink, "so the new letter absorbs the mark that made it".
+
+   The letter is NOT left coloured, which is where this mode parts company with the affix aliens
+   and the ladder — both of which paint the changed word in the hero's colour and leave it there.
+   The joke of this mode is that the sentence stays ordinary English (`i adapt a cat and a dog`),
+   and a permanently red letter would be the game pointing at its own punchline. The red underline
+   already says which letters are live; it never said which ones have moved.
+
+   Animating `color` rather than a filter, because here the mark IS the glyph — there is no
+   separate thing to light up until M4 draws one. The colour arrives as --sf-ink, written onto the
+   span by the hero who fired (the fallback below is the same red): Sans, who takes a stroke away,
+   is the planned second character on this span and would otherwise need this rule found and
+   changed. */
+.sf-swap {
+    animation: sf-swap 520ms ease-out;
+}
+
+@keyframes sf-swap {
+    0% {
+        color: var(--sf-ink, #be123c);
+        filter: drop-shadow(0 0 6px rgba(190, 18, 60, 0.75));
+    }
+    45% {
+        color: var(--sf-ink, #be123c);
+        filter: none;
+    }
+    100% {
+        /* whitesmoke spelled out, not `inherit`: #output sets the sentence's ink and nothing else
+           in this mode touches it, and a named colour in a keyframe can't be mis-resolved. If the
+           sentence's colour ever moves, this moves with it. */
+        color: whitesmoke;
+        filter: none;
+    }
+}
+
 /* The drawn stroke (§8, M4). An absolutely positioned SVG inside #output, laid over the letter's
    frozen — therefore known — box: the cartouche's rule, never join the line box, so it can neither
    reflow the sentence nor be clipped by it, and it dies when #output is rewritten. */
@@ -2237,7 +2294,8 @@ span[data-hint] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .sf-clank {
+    .sf-clank,
+    .sf-swap {
         animation: none;
     }
 }

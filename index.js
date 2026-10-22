@@ -35,9 +35,13 @@ import { EQUAL, OPPOSITE, PRE, SUF, swapAffix } from "./affixData.js";
 // one mode that wants it, which is why loadSerifin() has to run before the guard that reads it.
 import {
   SERIFIN_ID,
+  SF_WORD_CLASS,
+  SF_LETTER_CLASS,
   loadSerifin,
   hasSerifinWords,
   freezeLetterBoxes,
+  serifinSwap,
+  serifinWordNow,
 } from "./serifinFunc.js";
 // The How-to-Play card for the mode you have picked (one per <option>) — swapped in on selection,
 // not at Pow!, so the rules are readable while you are still choosing what to play.
@@ -1039,6 +1043,126 @@ function shootAffix(span, hero, projectile) {
   else _affixSwap(hero, swap.kind);
 }
 
+/* ── SERIFIN'S STROKES (docs/punctuators-serifin.md §6) ──────────────────────────────────────────
+
+   One hero, one span id, one action: a letter grows by one stroke and becomes another letter. The
+   whole mode's difference from every other wordplay hero is that THE TARGET IS A LETTER — the span
+   is one glyph wide — and everything awkward about the markup (the <i> wrapper, the hand-pushed
+   nodeArr entries, the frozen widths) is the price of that, because projectiles fly straight up and
+   cannot be aimed, so a shot's x-position is the only selector the engine has. You walk her under
+   THE `o` IN `adopt`.
+
+   `shooter`, never the global `player`, for the 2026-08-28 owner fix's reason: a bolt in the air
+   across a Switch Character still has to resolve as the hero who fired it. She is alone in her mode
+   today, so the two readings agree — but Sans (§12.2) is the planned second character on this same
+   span, and she would land here reading the same table backwards. */
+
+/* One stroke per shot, and here it matters more than anywhere else it is used. The latch exists
+   because a projectile is not spliced out of `projectiles` until a setTimeout(…, 0) — and ADJACENT
+   LETTERS ARE FAR CLOSER TOGETHER THAN ADJACENT WORDS: at the sentence's play size two neighbouring
+   letter boxes are ~30px apart against a 5px hit margin, so without this one bolt could land on two
+   of them. Same shape as claimLadderShot/claimAffixShot (§6.4). */
+function claimSerifinShot(projectile) {
+  if (!projectile) return true;
+  if (projectile.serifinDone) return false;
+  projectile.serifinDone = true;
+  return true;
+}
+
+/* The clank (§6.3) — a letter whose cycle has nowhere to go. Grey, NEVER her own colour: her colour
+   is what a landed stroke writes, so a clank borrowing it would read as a hit on a letter that had
+   simply refused to change. Rare in practice, because a dead letter is not a target at all and the
+   shot passes straight through it. */
+function flashSerifinClank(span) {
+  span.classList.remove("sf-clank");
+  void span.offsetWidth; // restart the animation on a repeat shot
+  span.classList.add("sf-clank");
+  setTimeout(() => span.classList.remove("sf-clank"), 460);
+}
+
+/* The swap, M3's stand-in for the drawn stroke (§8). The new glyph arrives in proofreader's red and
+   settles back into the sentence's ink — which is M4's last beat already, minus the stroke that
+   draws it: §8 step 3 has the drawn mark fade from red into the ink "so the new letter absorbs the
+   mark that made it", and the letter itself is never left coloured. That is why this mode does NOT
+   do what the affix aliens and the ladder do and paint the changed word in the hero's colour: the
+   joke is that the sentence stays ordinary English (`i adapt a cat`), and a permanently red letter
+   would be the game pointing at its own punchline. */
+function flashSerifinSwap(span, ink) {
+  span.classList.remove("sf-swap");
+  void span.offsetWidth;
+  // The flash colour comes off the SHOOTER, not out of the stylesheet. It is her red either way
+  // today — but Sans is the planned second character on this same span (§4.3), and a hard-coded
+  // red in the keyframes would be one more place to find when she arrives. The CSS carries the
+  // same value as its var() fallback, so a span that somehow never gets the property still flashes.
+  span.style.setProperty("--sf-ink", ink);
+  span.classList.add("sf-swap");
+  setTimeout(() => span.classList.remove("sf-swap"), 520);
+}
+
+/* ONE STROKE PER WORD AT A TIME (§6.2, the dev's call 2026-10-20), and it exists to keep §1's premise
+   true: she only ever draws where a real word is left, so the sentence stays English.
+
+   9.2% of the table's common-tier source words carry TWO live letters — `car` offers both its `c`
+   and its `r`, and each is a real word on its own (`oar`, `can`). But §6.1's cycle is computed from
+   the word AS TYPED, so nothing in the letter's own state knows the word has moved underneath it,
+   and shooting both gives `oan`. Measured across all 171 such words: of the 262 reachable
+   two-letter combinations, 52.7% are not words.
+
+   So a letter that has walked off its original deadens its siblings — id removed, so the collision
+   gate skips them and a shot passes straight through exactly as it does over a letter that was
+   never a target — and cycling it home brings them back. The alternative that fixes it by
+   construction is chaining (§13 #1), which recomputes candidates from the glyph now on screen and
+   would unfreeze the live-letter set mid-round, which §5.1's hand-pushed nodeArr and §5.2's frozen
+   boxes both assume is static.
+
+   The box is untouched: .sf-dead hides the underline by turning it TRANSPARENT rather than removing
+   the border, because border-bottom is part of the box and dropping it would move the line. */
+function lockSerifinSiblings(word, span, locked) {
+  for (const other of word.querySelectorAll("." + SF_LETTER_CLASS)) {
+    if (other === span) continue;
+    if (locked) {
+      other.removeAttribute("id");
+      other.classList.add("sf-dead");
+    } else {
+      // One shared id for every live letter (§4.2), so restoring it is a constant, not a stash.
+      other.id = SERIFIN_ID;
+      other.classList.remove("sf-dead");
+    }
+  }
+}
+
+function shootSerifin(span, hero, projectile) {
+  if (!claimSerifinShot(projectile)) return;
+
+  // CYCLING, NOT CHAINING (§6.1): the cycle was computed once at wrap time from the word as typed,
+  // so `adopt`'s `o` walks o -> a -> e -> o and BOTH of its words are reachable. serifinSwap owns
+  // the state on the span and hands back the glyph; writing the DOM is deliberately left here, so
+  // M4's animation can draw the stroke before the letter changes under it.
+  const next = serifinSwap(span);
+  if (!next) {
+    flashSerifinClank(span);
+    _serifinClank();
+    return;
+  }
+
+  span.textContent = next.letter;
+  flashSerifinSwap(span, hero.characterColor);
+
+  /* `a cat` -> `an oat`, and `an apple` -> `am apple`. The ladder's own fix, unchanged, but asked of
+     the WRAPPER rather than the letter: the article is a text node in front of the whole word, and
+     the letter span's previousSibling is whatever part of the word sits to its left. serifinWordNow
+     reads the new spelling off the DOM — the letters are the only authority once a swap lands — and
+     keeps data-sf-word in step with it on the way past. */
+  const word = span.closest("." + SF_WORD_CLASS);
+  if (word) {
+    // Away from the original locks the rest of the word; home again unlocks it (see above).
+    lockSerifinSiblings(word, span, next.turn !== 0);
+    fixArticleBefore(word, serifinWordNow(word));
+  }
+
+  _serifinDraw(next.wrapped);
+}
+
 /* ── WORD RACE (docs/punctuators-ladder.md §12) ───────────────────────────────────────────────────
 
    Shoot to ask, type to summon, shoot to travel. Going UP needs no typing — there is only ever one
@@ -1822,15 +1946,13 @@ removePuncButton.addEventListener("click", async () => {
   // Both word-supplying modes write their own status into #error-message as you play, so clearing
   // it here would wipe the line that just told the player what they're looking at.
   if (!NO_SENTENCE_MODES.has(selectedOption)) errorMessage.innerText = "";
-  // M2 LANDS WITHOUT A HERO. Nothing answers to SERIFIN_ID until M3, so the team comes back empty
-  // and the title-page hero stays on screen — survivable, because doActionOnce() returns early on an
-  // empty team rather than leaving `player` undefined and animate() throwing on every frame (the
-  // affix mode shipped its own M2 exactly this way). This line goes last because the clear above
-  // would wipe it; M3 deletes it.
+  // M3: Serifin fields the shot now, so the M2 placeholder line is gone. The underline is still the
+  // mode's whole affordance, so it is worth saying once — written last, because the clear above
+  // would wipe it.
   if (selectedOption === "serifin") {
     errorMessage.style.color = "black";
     errorMessage.innerText =
-      "The letters Serifin can reach are underlined in red. She arrives in M3 — nothing fields the shot yet.";
+      "Serifin can reach the letters underlined in red. Stand under one and shoot.";
   }
   bRightAfterSentenceIsLoaded = true;
 });
@@ -2306,6 +2428,46 @@ function _affixStrip() {
 function _affixClank() {
   _noise(0.05, 0.14, 420, 1.2);
   _tone(196, "square", 0.07, 0.07);
+}
+
+/* ── SERIFIN — the three cues (docs/punctuators-serifin.md §9) ───────────────────────────────────
+   PROVISIONAL, like the aliens' above: a sketch to play against. Nothing depends on these being
+   right, and all three are on the existing _tone/_noise kit, which is how every synth hero in the
+   game is scored.
+
+   The idea behind them is that she is a PEN, not a weapon: the cue that matters is the middle one,
+   and it has to last as long as the stroke does rather than being an impact. */
+
+// The nib leaving the paper — a short scrape with the pitch falling away under it.
+function _serifinShoot() {
+  _noise(0.11, 0.17, 2400, 6);
+  _tone(880, "triangle", 0.1, 0.07, 420);
+}
+
+/* THE STROKE BEING DRAWN, and the one cue that carries the mode. It is ~220ms of band-passed scrape
+   rising slightly in cutoff — the sound of a nib travelling — landing on a bright two-note tick at
+   the moment the glyph changes. An impact would say "hit"; this says "drawn", which is the whole
+   difference between this hero and every other one.
+
+   `wrapped` is the cycle coming home (§6.1): the letter is back to the one you typed, so the second
+   note falls to the first's own octave below instead of rising off it. The cycle returning is a
+   fact about the letter, not a failure — Betar's Alphabet Slots does the same and the player has
+   met the rule — so it is a different ending, never a buzzer. */
+function _serifinDraw(wrapped = false) {
+  // Three overlapping bands walking upward: one _noise is a scrape, three staggered are a travel.
+  _noise(0.1, 0.1, 1600, 9, 0.0);
+  _noise(0.1, 0.1, 2200, 9, 0.07);
+  _noise(0.1, 0.09, 3000, 9, 0.14);
+  // The tick as the glyph lands, at the end of the travel rather than at the start of it.
+  _tone(1319, "triangle", 0.1, 0.12, null, 0.2); // E6
+  _tone(wrapped ? 659 : 1976, "sine", 0.18, 0.1, null, 0.26); // E5 home, or B6 away
+}
+
+// §6.3's clank: deliberately the shortest cue in her set, and a fact rather than a mistake — the
+// ladder's capstone reasoning. A nib tapping paper and leaving nothing.
+function _serifinClank() {
+  _noise(0.045, 0.13, 520, 1.4);
+  _tone(220, "square", 0.06, 0.06);
 }
 
 /* THE WIN — the one cue that is not a hero's and not a single event: it is the whole sentence
@@ -3259,6 +3421,107 @@ class SufferixOpposite extends AffixAlien {
   }
 }
 
+/* ── SERIFIN (docs/punctuators-serifin.md §4) ────────────────────────────────────────────────────
+   A graffitist of letterforms working in proofreader's red — the colour of a mark-up pen, which is
+   what she is doing to your sentence. Her name is the joke and the lesson together: a SERIF *is* an
+   added stroke, the mark a broad pen leaves entering and leaving a letter. She is what happens when
+   that habit gets out of hand.
+
+   One hero, one bolt, one span id, so no targetId override: Hero.targetId already defaults to
+   `symbol`, and her symbol IS the span id. Sans — the sans-serif villain who takes a stroke away,
+   reading the same table backwards with Switch Character flipping the direction — is the planned
+   second character on this same span (§4.3, §12.2), which is the whole reason shootSerifin reads
+   the shooter rather than the global player. */
+
+const SERIFIN_COLOR = "#be123c"; // proofreader's red
+const SERIFIN_HERO_SCALE = 0.45; // 800 x 1045 -> 360 x 470 drawn, the ladder pair's size
+/* THE BOLT CANVAS IS NOT SQUARE, and that is an aiming decision rather than a drawing one. A
+   projectile's hit box is its DRAWN FRAME (the collision walk tests position.x against
+   position.x + width), and this mode's targets are single letters ~30px wide with a 5px margin
+   either side — so the 140x140 canvas every other drawn sprite here uses would give a 28px-wide
+   shot that overlaps two adjacent live letters at once and always resolves to the left-hand one.
+   `cut` offers both its `c` and its `u`, so that is not a corner case. 80x140 at the same 0.2
+   keeps a 16px frame: narrow enough to pick a letter, and the right shape for a pen stroke anyway. */
+const SERIFIN_BOLT_W = 80;
+const SERIFIN_BOLT_H = 140;
+const SERIFIN_BOLT_SCALE = 0.2; // -> 16 x 28 drawn
+const SERIFIN_BOLT_PX = SERIFIN_BOLT_W * SERIFIN_BOLT_SCALE;
+
+/* HER SHOT IS THE STROKE (§4.2): a short tapered bar, thick in the middle and drawn to a point at
+   both ends — the shape a pen makes in one pass, and the thing that is about to be added to a
+   letter. Vertical, because projectiles climb and a stroke lying on its side would read as a dash.
+
+   Drawn into an offscreen canvas and handed to the Hero constructor as a data URL, which is
+   drawBroadswordSprite()'s and the aliens' trick: the drawn bolt takes the identical Image() path
+   real art would, so swapping in a PNG later is one string and nothing else in the game knows how
+   the pixels were made. */
+function drawStrokeBoltSprite(color) {
+  const cv = document.createElement("canvas");
+  cv.width = SERIFIN_BOLT_W;
+  cv.height = SERIFIN_BOLT_H;
+  const g = cv.getContext("2d");
+  const mid = SERIFIN_BOLT_W / 2;
+  const top = 8;
+  const bot = SERIFIN_BOLT_H - 8;
+  const bulge = 26; // the control-point offset; the belly comes out at about three quarters of it
+
+  g.lineJoin = "round";
+  // Outlined in near-black like every other sprite here: the canvas behind is repainted opaque
+  // white every frame, so an unoutlined bolt in a light colour would simply not be there.
+  g.strokeStyle = "#14170f";
+  // Thinner than the aliens' 8: the outline is round-joined, and at 7 it blunted the two points
+  // the whole shape is about. A stroke that is not tapered is a dash.
+  g.lineWidth = 5;
+  g.fillStyle = color;
+  g.beginPath();
+  g.moveTo(mid, top); // the entry point
+  g.bezierCurveTo(mid + bulge, top + 38, mid + bulge, bot - 38, mid, bot); // down the right
+  g.bezierCurveTo(mid - bulge, bot - 38, mid - bulge, top + 38, mid, top); // back up the left
+  g.closePath();
+  g.fill();
+  g.stroke();
+  return cv.toDataURL("image/png");
+}
+
+const SERIFIN_BOLT = drawStrokeBoltSprite(SERIFIN_COLOR);
+
+class Serifin extends Hero {
+  constructor() {
+    super(
+      "./images/Serifin_Start.png",
+      SERIFIN_HERO_SCALE,
+      SERIFIN_ID,
+      SERIFIN_COLOR,
+      0, // inert: projectileAnchor below owns the spawn point outright
+      50,
+      SERIFIN_BOLT,
+      undefined,
+      SERIFIN_BOLT_SCALE,
+      undefined,
+      undefined,
+      "./images/Serifin_2.png", // the attack frame: the brush swept down through the stroke
+    );
+    /* MEASURED OFF THE ART, never guessed — the rule projectileAnchor exists for. The nib of the
+       raised brush in Serifin_Start.png tips out at source (632, 94) in an 800x1045 frame; x0.45
+       that is (284, 42) inside the drawn frame, and half the bolt's own 16px drawn width comes back
+       off the x so the stroke leaves centred on the nib rather than beside it. The default spawn —
+       the top of the image FRAME, on its midline — would put her shot in empty sky and halfway
+       across the canvas from the brush, which is exactly the bug that had Keen Arrow's bolt
+       launching from 211px of nothing. */
+    this.projectileAnchor = {
+      x: 632 * SERIFIN_HERO_SCALE - SERIFIN_BOLT_PX / 2,
+      y: 94 * SERIFIN_HERO_SCALE,
+    };
+  }
+  shootProjectileSound() {
+    _serifinShoot();
+  }
+  /* Silent, for the ladder's and the aliens' reason (§9): one hit here has two outcomes — a stroke
+     drawn, or a letter with nowhere left in its cycle to go — and the generic one-hit-one-sound
+     call site cannot say which. shootSerifin plays the outcome's own cue instead. */
+  hitProjectileSound() {}
+}
+
 class CommaChameleon extends Hero {
   constructor(projectileLength) {
     super(
@@ -4083,6 +4346,7 @@ let prefixerEqual = new GrandPrefixerEqual();
 let prefixerOpposite = new GrandPrefixerOpposite();
 let sufferixEqual = new SufferixEqual();
 let sufferixOpposite = new SufferixOpposite();
+let serifin = new Serifin();
 
 let availableHeroArray = [
   period,
@@ -4123,6 +4387,10 @@ let availableHeroArray = [
   prefixerOpposite,
   sufferixEqual,
   sufferixOpposite,
+  /* Alone, for now. Sans — who takes a stroke away — would sit next to her for the aliens' reason
+     when she exists (§4.3), and Switch Character would then flip the direction the way it does for
+     General and Keen. Until then nothing in the mode switches, so the position is free. */
+  serifin,
   article,
   foon,
 ];
@@ -4280,6 +4548,13 @@ function animate() {
         // and removes by identity, so a double retire can no longer take an unrelated shot with it.)
         // Undefined in every other mode.
         if (projectile.ladderDone) return;
+        /* The same latch again, and here the margins make it necessary rather than merely tidy:
+           Serifin's targets are single LETTERS, so two of them sit ~30px apart against this walk's
+           5px hit margin and one bolt can match both in the same frame. shootSerifin's own
+           claimSerifinShot already refuses the second swap — this stops the second letter being
+           marked hit and retired against a shot that never touched it. Undefined in every other
+           mode. */
+        if (projectile.serifinDone) return;
         /* The same latch, for the same reason, one combo along: a fused interrobang answers to BOTH
            marks, so with an unhit ! and an unhit ? still on screen the walk would otherwise reach
            the second one in this very frame and land the shot twice. */
@@ -4626,6 +4901,12 @@ function animate() {
                 // affixEnd/affixOp decide which end of the word changes and how. The gate above has
                 // already matched on targetId, so nothing here needs to know which hero it is.
                 shootAffix(punctuationSymbol, shooter, projectile);
+              } else if (punctuationSymbol.id === SERIFIN_ID) {
+                // One hero, one span id (§4.2) — but the span is ONE LETTER wide, which is the
+                // only thing that makes this mode different from every other wordplay hero here.
+                // The latch inside matters more than anywhere else it is used: two adjacent letter
+                // boxes are ~30px apart against this walk's 5px hit margin.
+                shootSerifin(punctuationSymbol, shooter, projectile);
               } else if (punctuationSymbol.id === RACE_UP_ID) {
                 // Word Race splits the two heroes across two ids instead of sharing one (§12.2), so
                 // the gate above has already decided which hero this is — General can only ever

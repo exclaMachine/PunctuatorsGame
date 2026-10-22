@@ -118,7 +118,7 @@ export const SF_LETTER_CLASS = "sf-letter";
 /* One target word. `data-sf` is the candidate list, `data-sf-from` the letter as typed and
    `data-sf-turn` where in the cycle we are — 0 being the original, so the authoritative state is
    (from, candidates, turn) and the glyph on screen is derivable from it rather than the other way
-   round. The wrapper carries data-sf-word so §6.4's fixArticleBefore has a whole word to read. */
+   round. The wrapper carries data-sf-word so §6.5's fixArticleBefore has a whole word to read. */
 const serifinWordHTML = (token, live) => {
   let html = "";
   let at = 0;
@@ -135,7 +135,7 @@ const serifinWordHTML = (token, live) => {
 };
 
 /** Mark every letter in the sentence that grows by one stroke. A dead letter is plain text and a
- *  shot passes straight through it (§6.2) — the red underline on the live ones is the mode's whole
+ *  shot passes straight through it (§6.3) — the red underline on the live ones is the mode's whole
  *  affordance, since nothing else on screen says *this `o`, not that one*. */
 export const wrapSerifin = (sentence) => {
   if (!SWAPS) return sentence;
@@ -172,7 +172,7 @@ export const serifinCycle = (span) => {
  */
 export const serifinSwap = (span) => {
   const cycle = serifinCycle(span);
-  if (cycle.length < 2) return null; // nothing to cycle through: that is a clank (§6.2)
+  if (cycle.length < 2) return null; // nothing to cycle through: that is a clank (§6.3)
   const turn = (Number(span.getAttribute("data-sf-turn")) || 0) + 1;
   const at = turn % cycle.length;
   span.setAttribute("data-sf-turn", String(at));

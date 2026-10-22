@@ -1,7 +1,8 @@
 # Punctuators — Serifin (Strokes)
 
-**Status: M1 the table and M2 the mark-up BUILT 2026-10-18** — a sentence marks up and nothing
-fields the shot yet. M3 the hero → M4 the feel remain (§10). **DEV-ONLY** (`?dev=1`) — see §1.3.
+**Status: M1 the table, M2 the mark-up BUILT 2026-10-18; M3 the hero BUILT 2026-10-20 — THE MODE
+IS PLAYABLE.** Shoot a letter and the stroke lands: the glyph swaps with a red flash, no drawn
+stroke yet. M4 the feel remains (§10). **DEV-ONLY** (`?dev=1`) — see §1.3.
 
 A wordplay mode where a word keeps its *letters' bones* and changes what they are. Serifin draws one
 extra stroke onto a letter and it becomes a different letter — and because she only ever draws where
@@ -35,7 +36,9 @@ color   r → n   colon          art   r → n   ant
 hand    h → b   band          eve   v → y   eye
 ```
 
-(Checked against the shipped table, which is where the last two rows came from: `i → j` has only
+(The mode sets its own typeface for the first row's sake: `o → a` is one stroke only in a face with
+a **single-storey `a`**, which Palanquin's is not — see §7 and the rule in §7.1. Checked against the
+shipped table, which is where the last two rows came from: `i → j` has only
 **two** entries in the whole corpus — `fiord → fjord` and `iamb → jamb` — and `v → y` five. The
 mode's weight really is on `o l c n r u`. `colour` is not a source word at all: it is absent from
 `2of12.txt`, which is the first of §2.1's two holes.)
@@ -256,12 +259,17 @@ Her projectile **is the stroke**: a short tapered bar, thick in the middle and d
 both ends, the shape a pen makes in one pass. Drawn into an offscreen canvas and handed to the Hero
 constructor as a **data URL** — `drawBroadswordSprite()`'s and the Affix Aliens' trick, so the
 placeholder takes the identical `Image()` path real art will, and swapping in a PNG later is one
-string.
+string. **Its canvas is 80 × 140, not square, and that is an aiming decision** — see §10.2.
 
-Her own sprite is drawn the same way (`drawSerifinSprite()`), holding a nib pen. The function
-**returns the muzzle it drew**, in source pixels, and that becomes her `projectileAnchor` — measured,
-never guessed. Keen Arrow's bolt launching from 211 px of empty sky is the bug this prevents, and it
-only stays prevented if the sprite function keeps owning the number.
+Her own sprite was specced to be drawn the same way (`drawSerifinSprite()`), holding a nib pen, with
+the function **returning the muzzle it drew** so that `projectileAnchor` was measured and never
+guessed — Keen Arrow's bolt launching from 211 px of empty sky being the bug that prevents. **The
+dev's art landed before M3 did**, so the function was never written and the rule applies to the
+PNGs instead: the nib is measured off the art's own alpha (§10.2), not estimated by eye.
+
+**AS BUILT:** `images/Serifin_Start.png` (resting, the brush raised) and `images/Serifin_2.png`
+(attack, the brush swept down through the stroke), both 800 × 1045 — the ladder pair's frame, hence
+the same `heroScale 0.45`.
 
 One hero, one bolt, one span id, so no `targetId` override is needed: `Hero.targetId` already
 defaults to `symbol`, and `symbol` is the span id. **`"Serifin ✎"`.**
@@ -340,7 +348,9 @@ A live letter carries a **thin red underline** in Serifin's own colour (`.sf-let
 `border-bottom`, not `text-decoration`, so it sits clear of the glyph's descenders). You can see
 which letters she can reach before walking to one, and dead letters in a target word are plain text.
 The underline is the mode's whole affordance — there is nothing else on screen that says *this `o`,
-not that one*.
+not that one*. It is therefore also how §6.2 says *not this one, for now*: a live letter in a word
+that has already moved loses the underline (`.sf-dead`) until the moved letter cycles home, so it
+looks exactly like what it then is — not a target.
 
 ---
 
@@ -360,7 +370,33 @@ candidate is reachable, keeps the live-letter set and the frozen boxes static fo
 (§5.2), and is the rule **Betar's Alphabet Slots already uses** — including its return to the
 original — so it is a rule the player has met. Chaining is §13 #1.
 
-### 6.2 The clank
+### 6.2 One stroke per word at a time
+
+**The dev's call, 2026-10-20, and it exists to keep §1's premise true.** She only ever draws where
+a real word is left — so the sentence has to stay English.
+
+**9.2% of the table's common-tier source words carry two live letters.** `car` offers both its `c`
+and its `r`, and each is a real word on its own (`oar`, `can`). But §6.1's cycle is computed from
+the word *as typed*, so nothing in a letter's own state knows the word has moved underneath it, and
+shooting both gives `oan`. **Measured across all 171 such words: of the 262 reachable two-letter
+combinations, 52.7% are not words.** It is reachable rather than theoretical, because adjacent live
+letters are exactly what a player is tempted to shoot in sequence.
+
+So a letter that has walked off its original **deadens its siblings** in that word — `id` removed,
+so the collision gate skips them and a shot passes straight through exactly as it does over a letter
+that was never a target — and **cycling it home brings them back**. A multi-letter word becomes a
+choice instead of a pile-up.
+
+Two details. The siblings are deadened by `.sf-dead`, which turns the underline **transparent**
+rather than removing the border: `border-bottom` is part of the box, so dropping it would shorten
+the letter and move the line (§5.2's whole rule). And restoring the `id` is a constant, not a stash,
+because every live letter shares one id (§4.2).
+
+The alternative that fixes this by construction is **chaining** (§13 #1) — recompute candidates from
+the glyph now on screen and the word is always real — but it unfreezes the live-letter set mid-round,
+which §5.1's hand-pushed `nodeArr` and §5.2's frozen boxes both assume is static.
+
+### 6.3 The clank
 
 A letter with a single candidate that is already showing, or a shot landing on a letter whose list
 has run out, **clanks**: a grey `drop-shadow` flash (never her own colour — her colour is what a
@@ -371,21 +407,21 @@ layers over the glyph's black outline instead of blanking it for the length of t
 In practice the clank is rare: dead letters are not targets at all, and the shot simply passes
 through them.
 
-### 6.3 One action per shot
+### 6.4 One action per shot
 
 The latch `claimSerifinShot(projectile)`, exactly `claimAffixShot`/`claimLadderShot`: a projectile is
 not spliced out of `projectiles` until a `setTimeout(…, 0)`, and **adjacent letters are far closer
 together than adjacent words** — at 300% two neighbouring letter boxes are ~30 px apart and the hit
 margin is 5 px. Without the latch one stroke could land on two letters.
 
-### 6.4 Articles
+### 6.5 Articles
 
 `a cat → a oat` is wrong, and `an apple → am apple` is right (and funny). Reuse the ladder's
 **`fixArticleBefore`** on the word's wrapper after each swap — it already solves `a dog → an animal`
 and the affix mode's `an unhappy → a nonhappy`. It needs the word's new spelling, which is
 `data-sf-word` rebuilt from the wrapper's `textContent`, not the letter span alone.
 
-### 6.5 Suppressions
+### 6.6 Suppressions
 
 **None needed.** Art the Tickler and the Foon run in `articlesSpoonerisms` only, so the
 `heroManagedWords` flag in `utils/utils.js` is untouched by this mode. Worth stating because every
@@ -394,6 +430,10 @@ ladder-family mode has had to join that flag and this one does not.
 ---
 
 ## 7. The font — the mode wears Jost\*, and that is already in the repo
+
+> **The rule, if you read nothing else here: the face must have a SINGLE-STOREY `a`** — a bowl with
+> a straight stem on its right, so that `o → a` really is *one line added on the right*. Any
+> replacement face has to pass that test. §7.1.
 
 The sentence is set in **Palanquin**, whose `a` is **double-storey**: a bowl, a stem *and* an arched
 top. `o → a` in Palanquin is two strokes, not one — and `o → a` is 769 swaps, the single biggest row
@@ -427,6 +467,30 @@ Two details:
 - The `@font-face` is declared once in `index.css` with `font-display: swap`, and §5.2's width
   measurement **must run after `document.fonts.ready`** or every box is frozen to a Palanquin
   metric.
+
+### 7.1 THE RULE ANY FACE THIS MODE WEARS MUST PASS: a SINGLE-STOREY `a`
+
+Stated separately because it is a **standing constraint on every future change to this rule**, not a
+one-off reason for picking Jost\*. If the face is ever swapped — for a nicer sans, for a webfont
+that loads faster, for a face that matches the rest of the site — **the replacement must have a
+single-storey `a`, or the mode breaks.**
+
+A single-storey `a` is a bowl with a stem down its right side — an **`o` with one line added on the
+right**. That is literally the mode's biggest claim: `o → a` is **769 swaps, more than any other row
+in the table** (§2), and the animation M4 draws for it is one vertical stroke. In a double-storey
+`a` — Palanquin's, Helvetica's, Times' — the bowl is smaller, the stem curves over into an arched
+hood above it, and the shape is at best two strokes and a redrawn bowl. Shoot the `o` in `adopt`
+under a double-storey face and what you watch is not the thing the mode says is happening.
+
+The quick test on any candidate face: **set `o` and `a` next to each other and see whether you can
+get from one to the other by adding a single stroke and changing nothing else.** If you can't, the
+face is wrong for this mode however good it looks. The same check applies to `l → t` (the crossbar
+needs a plain, tail-less `l`), `u → o` (the `u` must be open at the top, not a bowl with a stem) and
+`c → o` (a circular `c`, so closing it gives a circular `o`); `a` is the one that carries a fifth of
+the corpus, so it is the one worth naming in a heading.
+
+Jost\* passes all four, which is why it is the face — not because it was already in `fonts/`, which
+is only what made it free.
 
 ---
 
@@ -480,6 +544,10 @@ game is scored. Nothing depends on these being right.
 - **`_serifinDraw()`** — the one that matters, and it must *last as long as the stroke does* (~220 ms)
   rather than being an impact: a band-passed noise scrape rising slightly in cutoff, landing on a
   bright two-note tick as the glyph swaps. The sound of the stroke being drawn, not of a hit.
+  **As built it takes one argument, `wrapped`** — the cycle coming home (§6.1), where the second note
+  falls to the first's octave below instead of rising off it. A return to the letter you typed is a
+  fact about the letter, not a failure (Betar's rule, which the player has met), so it is a different
+  ending and never a buzzer. Three staggered `_noise` bands make the travel; one is only a scrape.
 - **`_serifinClank()`** — a 45 ms dull tick, deliberately the shortest cue in her set.
 
 Serifin **overrides `hitProjectileSound()` to silence**, for the ladder's and the aliens' reason: one
@@ -493,7 +561,7 @@ hit has three outcomes and the generic one-hit-one-sound call site cannot say wh
 | --- | --- |
 | **M1 — the table** | ✅ **BUILT 2026-10-18.** `build-serifin-pojo.js` + `serifinPOJO.js`. Offline and verifiable on its own: the §2 numbers reproduce. |
 | **M2 — the mode** | ✅ **BUILT 2026-10-18.** `serifinFunc.js`, `protectedSerifin`, the `<option>`, the guard, the `nodeArr` push, the frozen boxes, **and the font**. Nothing to shoot yet. |
-| **M3 — the hero** | `Serifin` + her two drawn sprites, the collision branch, the swap, the cycle, the clank, `fixArticleBefore`. **Playable.** The glyph swaps with a flash; no drawn stroke yet. |
+| **M3 — the hero** | ✅ **BUILT 2026-10-20.** `Serifin` on the dev's own art, her drawn bolt, the collision branch, the swap, the cycle, §6.2's one-stroke-per-word rule, the clank, `fixArticleBefore`, three cues. **Playable.** The glyph swaps with a red flash; no drawn stroke yet. |
 | **M4 — the feel** | §8's `STROKE` path table and the draw-on animation, §9's three cues, the `modeHelp.js` card and the `modeArt.js` picture. |
 
 M3 is the line worth holding: everything through it is mechanism, everything in M4 is the thing the
@@ -517,16 +585,60 @@ handler runs *before* the ladder's own `await`. So `loadSerifin()` is awaited at
 `else` branch, ahead of the table lookup — the ladder solves the same problem the other way round
 (an inline check after its await) because its guard was never a table entry. §11's row stands.
 
-**M2 lands with no hero, deliberately.** Nothing answers to `SERIFIN_ID` until M3, so the team comes
-back empty and the title-page hero stays on screen. That is survivable rather than fatal because
-`doActionOnce()` returns early on an empty team instead of leaving `player` undefined and `animate()`
-throwing every frame — the Affix Aliens shipped their own M2 this way. One placeholder line in
-`#error-message` says so, written *after* the handler's own clear, and M3 deletes it.
+**M2 landed with no hero, deliberately**, and the engine fact that made that safe is worth keeping
+now that M3 has filled the hole: a mode whose span id no hero answers to builds an **empty team**,
+and that is survivable rather than fatal only because `doActionOnce()` returns early on an empty
+team instead of leaving `player` undefined and `animate()` throwing every frame. The Affix Aliens
+shipped their own M2 the same way. M2's placeholder line in `#error-message` is gone; what replaced
+it is the one line naming the red underline, still written *after* the handler's own clear, which
+would otherwise wipe it.
 
 **The cards are still M4, so picking the mode shows the punctuation card.** `modeHelpFor` and
 `renderModeArt` both fall back to it for an unknown mode — the exact complaint those modules were
 built to fix — but the mode is behind `?dev=1`, so only the dev sees the wrong card, and the Affix
 Aliens have been in that state since August.
+
+### 10.2 As built (M3)
+
+**She is not a drawn placeholder.** The dev supplied `images/Serifin_Start.png` and
+`images/Serifin_2.png` — the same 800 × 1045 frame as the ladder pair, so `heroScale 0.45` — which
+retires §4.2's `drawSerifinSprite()` before it was ever written. Only the **bolt** is drawn
+(`drawStrokeBoltSprite`), and §4.2's rule about the sprite function owning the muzzle number
+transfers to the art: the raised brush's nib in the resting frame tips out at source **(632, 94)**,
+measured off the alpha, and that × 0.45 less half the bolt's drawn width *is* the
+`projectileAnchor`. The two frames are resting / attack in the ordinary way — `secondHeroImage`,
+drawn while a shot is up.
+
+**The bolt canvas is 80 × 140, not square, and that is an aiming decision.** Every other drawn
+sprite here uses 140 × 140 at `projectileScale 0.2` → a 28 px shot. But a projectile's hit box **is
+its drawn frame**, and this mode's targets are single letters ~30 px wide with a 5 px margin either
+side — so a 28 px bolt overlaps two adjacent live letters at once and always resolves to the
+left-hand one, and `cut` offers both its `c` and its `u`, so that is not a corner case. 80 × 140
+keeps a **16 px** frame: narrow enough to pick a letter, and the right shape for a pen stroke
+anyway. The outline is `lineWidth 5` rather than the aliens' 8 because at 7 the round join blunted
+the two points the whole shape is about.
+
+**`projectile.serifinDone` joins the collision walk's early-outs**, beside `ladderDone` and
+`interrobangDone`. `claimSerifinShot` inside the handler already refuses the second swap (§6.4) —
+this stops the *second* letter being marked hit and retired against a shot that never changed it,
+and it is the same 30 px-against-5 px margin that makes the latch necessary in the first place.
+
+**The swap flash takes its colour from the SHOOTER, not the stylesheet.** `--sf-ink` is written onto
+the span by `flashSerifinSwap` and read by the `sf-swap` keyframes (with the same red as the
+`var()` fallback). It is her red either way today; Sans (§4.3) is the planned second character on
+this same span, and a hard-coded red in the keyframes would be one more place to find.
+
+**The letter is NOT left coloured**, which is where this mode parts company with the Affix Aliens
+and the ladder — both of which paint the changed word in the hero's colour and leave it there. §8
+step 3 already said so (the drawn mark fades *into* the ink), and the reason is §1: the joke is that
+the sentence stays ordinary English, and a permanently red letter is the game pointing at its own
+punchline. The red underline says which letters are live; it never said which ones have moved.
+
+**The clank is effectively unreachable, and that is correct.** `serifinSwap` returns `null` only
+when the cycle holds fewer than two entries, and `wrapSerifin` never emits a span with no
+candidates — so §6.3's flash and cue are a guard, not a routine outcome, exactly as that section
+predicted. §13 #5 (a cue for a shot through a *dead* letter) is the live version of the same
+question and is untouched.
 
 ---
 
@@ -538,10 +650,11 @@ Aliens have been in that state since August.
 | `serifinPOJO.js` | ✅ **new, generated.** 2,995 entries, 56 KB. Never hand-edited. |
 | `serifinFunc.js` | ✅ **new.** `SERIFIN_ID`, `SERIFIN_OBSCURE`, `loadSerifin`, `serifinReady`, `hasSerifinWords`, `wrapSerifin`, `serifinCandidates`, `serifinCycle`, `serifinSwap`, `serifinWordNow`, `freezeLetterBoxes`. Lazy-imports the POJO. |
 | `SpanPlaceholder.js` | ✅ `export const protectedSerifin = withSpanPlaceholders(wrapSerifin);` |
-| `utils/utils.js` | ✅ `case "serifin":` in `addSpansAndIdsForWordPlay`'s switch. **No `heroManagedWords` change** (§6.5). |
+| `utils/utils.js` | ✅ `case "serifin":` in `addSpansAndIdsForWordPlay`'s switch. **No `heroManagedWords` change** (§6.6). |
 | `punctuators.html` | ✅ `<option value="serifin" data-dev>Serifin's Strokes</option>`, stripped in the dropdown IIFE **before** the custom dropdown is generated (§1.3). |
-| `index.js` | ✅ the `WORDPLAY_GUARDS` entry + the `loadSerifin()` await in front of it (§10.1); the `serifin-mode` class and the `freezeLetterBoxes` call at Pow!; the `nodeArr` push after `waitForElement` and before `heroToTheRescue` (§5.1). **M3:** `drawStrokeBoltSprite`/`drawSerifinSprite`; `class Serifin`; the instance + its place in `availableHeroArray`; the collision branch; `shootSerifin`; `claimSerifinShot`; `flashSerifinClank`; the three SFX. |
-| `index.css` | ✅ `@font-face` for Jost; `#output.serifin-mode`; `.sf-word`; `.sf-letter`; `.sf-clank`; `.sf-stroke` (the SVG overlay, waiting on M4's paths). |
+| `index.js` | ✅ the `WORDPLAY_GUARDS` entry + the `loadSerifin()` await in front of it (§10.1); the `serifin-mode` class and the `freezeLetterBoxes` call at Pow!; the `nodeArr` push after `waitForElement` and before `heroToTheRescue` (§5.1). ✅ **M3:** `drawStrokeBoltSprite`; `class Serifin` + the instance + its place in `availableHeroArray`; the collision branch + `projectile.serifinDone`'s early-out; `shootSerifin`; `claimSerifinShot`; `lockSerifinSiblings`; `flashSerifinClank`/`flashSerifinSwap`; the three SFX. `drawSerifinSprite` was never written — the dev's art landed first (§10.2). |
+| `images/Serifin_Start.png`, `images/Serifin_2.png` | ✅ **new (the dev's).** Resting and attack, 800 × 1045 like the ladder pair. |
+| `index.css` | ✅ `@font-face` for Jost; `#output.serifin-mode`; `.sf-word`; `.sf-letter`; `.sf-clank`; ✅ **M3:** `.sf-swap` (+ `--sf-ink`), `.sf-dead`. `.sf-stroke` (the SVG overlay) still waits on M4's paths. |
 | `modeHelp.js` | the card (M4). Its worked example must be real in the shipped POJO — regenerating the table can leave it stale. |
 | `modeArt.js` | the card (M4). Glyph: an `l` with its crossbar arriving. |
 | `docs/punctuators.md` | a line in the cast, once it is playable. |
@@ -604,6 +717,10 @@ the repo's one alphabet.
    surprising mode and the more alive one. It could be a later toggle — but it would unfreeze the
    live-letter set mid-round, which §5.1's hand-pushed `nodeArr` and §5.2's frozen boxes both assume
    is static. Not a small change; a deliberate one.
+   **M3 took the pressure off it.** The one thing cycling got *wrong* rather than merely less lively
+   was the two-live-letter word (`car → oan`), which chaining fixes by construction — and §6.2 now
+   fixes it without touching the frozen set, by deadening the siblings instead. What is left for
+   chaining is only the thing it was always wanted for, which is reach.
 2. **The mode's name.** `Serifin's Strokes` matches `Affix Aliens` in naming the character. `Strokes`
    alone matches `Caret`, `Rounded`, `Split`. The dropdown is currently split between the two
    conventions.
@@ -611,8 +728,11 @@ the repo's one alphabet.
    mark them differently — a dotted underline — so `over → oyer` is available and labelled as the
    obscure word it is. That is a vocabulary feature hiding inside a letterform mode; probably no.
 4. **Her colour.** Proofreader's red (`#be123c`) is the argument in §4.1, and red is the one colour
-   in this game that can read as *error*. Wet-ink teal is the alternative.
-5. **Does a shot through a dead letter deserve a cue?** §6.2 says the shot passes through in silence.
+   in this game that can read as *error*. Wet-ink teal is the alternative. **Cheap to change since
+   M3:** the hero's `characterColor` is the only source — the swap flash reads it through `--sf-ink`
+   (§10.2) and the bolt is drawn from it — leaving `.sf-letter`'s underline and the `var()` fallback
+   as the two literals.
+5. **Does a shot through a dead letter deserve a cue?** §6.3 says the shot passes through in silence.
    Letters are narrow; a near miss and a pass-through will feel identical, and silence may read as
    the mode being broken — the same complaint that pulled three of the Affix Aliens' cues forward out
    of M4.
