@@ -24,6 +24,11 @@
  *   accent  optional CSS colour for the glyph and the frame. Defaults to the site's blueviolet.
  *   flip    optional: draw a second, 180°-rotated copy of the glyph beneath it. Only Ambigrambador
  *           wants it, and it is the one mode whose symbol IS a rotation.
+ *   face    optional font stack for the glyph and the example. Only Serifin's Strokes wants it, and
+ *           it is not a style preference: that mode wears Jost* in play because `o → a` is one
+ *           stroke only in a face with a SINGLE-STOREY `a` (docs/punctuators-serifin.md §7.1), so a
+ *           card showing its letterforms in Palanquin would make the picture a lie about the mode.
+ *           Arrives as --mode-face on the card; .mode-art__glyph and .mode-art__example read it.
  */
 
 const VIOLET = "blueviolet"; // the site's own --color; the default for anything not listed below
@@ -113,6 +118,18 @@ export const MODE_ART = {
     accent: "#B8860B",
   },
 
+  /* docs/punctuators-serifin.md §8. The glyph is the mode's own smallest true claim — `l` plus one
+     crossbar is `t` — and it is set in the face the mode actually plays in, which is the point of
+     `face` above. The example is real in the shipped serifinPOJO.js. */
+  serifin: {
+    glyph: "l→t",
+    name: "Serifin's Strokes — Serifin",
+    tease: "One extra stroke on a letter, and it is a different letter.",
+    example: "adopt → adapt",
+    accent: "#be123c", // proofreader's red, the colour of the pen she is holding
+    face: "'Jost', 'Palanquin', sans-serif",
+  },
+
   // The three ladder modes share the gold of the Tree of Kinds (docs/punctuators-ladder.md §13) —
   // they are one hierarchy played three ways, and the picture should say so before the words do.
   ladder: {
@@ -161,8 +178,10 @@ export function renderModeArt(mode) {
         ? `<div class="mode-art__glyph mode-art__glyph--flip" aria-hidden="true">${art.glyph}</div>`
         : "");
 
+  const face = art.face ? `;--mode-face:${art.face}` : "";
+
   return `
-    <div class="mode-art__card" style="--mode-accent:${accent}">
+    <div class="mode-art__card" style="--mode-accent:${accent}${face}">
       <div class="mode-art__figure">${figure}</div>
       <div class="mode-art__band">
         <div class="mode-art__name">${art.name}</div>

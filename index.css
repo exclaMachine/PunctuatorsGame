@@ -1994,6 +1994,10 @@ span[data-hint] {
     color: var(--mode-accent, blueviolet);
     /* The glyph is standing in for art, so give it the outline the game's own lettering has. */
     text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
+    /* --mode-face is set by modeArt.js for the one mode whose glyph IS a letterform claim: Serifin
+       plays in Jost* because `o → a` is one stroke only in a face with a single-storey `a`
+       (docs/punctuators-serifin.md §7.1), so her card has to show the same letters the game will. */
+    font-family: var(--mode-face, inherit);
 }
 
 /* Only Ambigrambador asks for this: a second copy of the word, turned over, which IS the mode. */
@@ -2022,7 +2026,8 @@ span[data-hint] {
 }
 
 .mode-art__example {
-    font-family: monospace;
+    /* monospace unless the entry names a face — see --mode-face on .mode-art__glyph above. */
+    font-family: var(--mode-face, monospace);
     font-size: 13px;
     margin-top: 4px;
     color: #333;
@@ -2247,9 +2252,11 @@ span[data-hint] {
     }
 }
 
-/* THE SWAP (§6.1) — the new letter arriving. M3's stand-in for §8's drawn stroke, and the same
-   last beat that animation ends on: the glyph lands in her red and settles back into the
-   sentence's ink, "so the new letter absorbs the mark that made it".
+/* THE SWAP (§6.1) — the new letter arriving, and §8's third and last beat: the glyph lands in her
+   red and settles back into the sentence's ink, "so the new letter absorbs the mark that made it",
+   while the drawn stroke above it fades the same way at the same moment. It was M3's whole
+   stand-in for the stroke and it survived M4 unchanged, because the beat it plays was always the
+   END of the animation rather than a substitute for it.
 
    The letter is NOT left coloured, which is where this mode parts company with the affix aliens
    and the ladder — both of which paint the changed word in the hero's colour and leave it there.
@@ -2284,9 +2291,20 @@ span[data-hint] {
     }
 }
 
-/* The drawn stroke (§8, M4). An absolutely positioned SVG inside #output, laid over the letter's
-   frozen — therefore known — box: the cartouche's rule, never join the line box, so it can neither
-   reflow the sentence nor be clipped by it, and it dies when #output is rewritten. */
+/* THE DRAWN STROKE (§8) — the payoff of the whole mode. An absolutely positioned SVG inside
+   #output, laid over the letter's frozen — therefore known — box: the cartouche's rule, never join
+   the line box, so it can neither reflow the sentence nor be clipped by it, and it dies when
+   #output is rewritten. #output is `position: fixed` with no border or padding, so its client rect
+   IS the origin; serifinFunc.js sets left/top/width/height and the path.
+
+   overflow: visible is load-bearing, not tidiness. An SVG root clips to its viewBox by default, and
+   the box here is the LETTER's box — so an ascender (`o → b`), a descender (`o → p`, `i → j`) or
+   the extra arch of a wider result (`n → m`) is drawn outside it and would otherwise be cut off at
+   exactly the end a stroke is most readable from.
+
+   Appended after the sentence's own text and therefore painted over it, which is what makes the
+   mark read as ink laid ON the letter rather than under it. Reduced motion is handled in JS (the
+   stroke is skipped and the letter simply swaps), so there is nothing to switch off here. */
 .sf-stroke {
     position: absolute;
     pointer-events: none;

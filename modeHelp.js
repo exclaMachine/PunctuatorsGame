@@ -357,6 +357,59 @@ export const MODE_HELP = {
   `,
   },
 
+  /* docs/punctuators-serifin.md §8, §1.1. Dev-only (?dev=1) while the mode is built.
+
+     The load-bearing sentence is the first tip, and it is the one rule no other card in this file
+     has ever had to state: YOU SHOOT A LETTER, NOT A WORD. Every other mode's target is a word, so
+     a player arriving here aims at the middle of `adopt` and hits whatever happens to be there.
+     The underline is the only thing on screen that says *this `o`, not that one*, so it is glossed
+     second — and the cycle is third, because `adopt` making BOTH `adapt` and `adept` is the reason
+     the mode cycles rather than chains (§6.1) and it is the thing players ask about first.
+
+     Every pair below is real in the shipped serifinPOJO.js (checked: adopt o→a/o→e, cut c→o/u→o,
+     night n→m, will l→t/l→d, hand h→b) — regenerating the table can leave them stale. */
+  serifin: {
+    title: "Serifin's Strokes",
+    body: `
+    <div class="char-modal">
+      <p class="lead">
+        A <strong>serif</strong> is an added stroke — the mark a broad pen leaves entering and
+        leaving a letter. Serifin draws <strong>one extra stroke</strong> onto a letter and it
+        becomes a different letter, and she only ever draws where a <strong>real word</strong> is
+        left behind. An <code>o</code> with a line down its right side is an <code>a</code>.
+      </p>
+
+      <div class="example">
+        <div>Start</div><div><code>i adopt a cat</code></div>
+        <div>Shoot the <code>o</code></div>
+        <div><code>i adapt a cat</code><small>(o → a)</small></div>
+        <div>Again</div><div><code>i adept a cat</code><small>(o → e)</small></div>
+        <div>Also</div>
+        <div><code>cut</code> → <code>out</code> · <code>night</code> → <code>might</code> ·
+          <code>will</code> → <code>wilt</code></div>
+      </div>
+
+      <ul class="tips">
+        <li><strong>You shoot a letter, not a word.</strong> Walk Serifin until she is under the one
+          letter you want and shoot <em>it</em> — the shot goes straight up, so where she stands is
+          the whole aim.</li>
+        <li>The letters she can reach are <strong>underlined in red</strong>. Everything else in the
+          word is ordinary text and her stroke passes straight through it.</li>
+        <li>Keep shooting one letter to cycle through <em>all</em> of its letters and back to the
+          one you typed: <code>adopt</code> → <code>adapt</code> → <code>adept</code> →
+          <code>adopt</code>.</li>
+        <li><strong>One stroke per word at a time.</strong> While a word is changed its other
+          letters go quiet — shoot the changed one back to the letter you typed and they wake up
+          again. (Otherwise <code>car</code> → <code>oar</code> → <code>oan</code>, and
+          <code>oan</code> is not a word.)</li>
+        <li>The sentence is set in a different typeface in this mode, and that is on purpose: you
+          need an <code>a</code> that is a bowl with a straight stem, or <code>o → a</code> would
+          not be one stroke at all.</li>
+      </ul>
+    </div>
+  `,
+  },
+
   // docs/punctuators-ladder.md §11. Also dev-only (?dev=1) while the phrase corpus is pruned.
   ladderPuzzle: {
     title: "Restore the Phrase",

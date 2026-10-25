@@ -235,3 +235,415 @@ export async function freezeLetterBoxes(container) {
     span.style.width = `${Math.ceil(max * 100) / 100}px`;
   }
 }
+
+/* ── THE DRAWN STROKE (§8) ────────────────────────────────────────────────────────────────────────
+
+   The payoff of the whole mode: a pen draws the one stroke on, and the glyph becomes the other
+   letter under it. This is also where §3.2's prune pays — every mapping that survived the table is
+   one continuous stroke, so there is a path to draw for each of them and the animation can show
+   exactly what the table claims.
+
+   DEPARTURE FROM §8, STATED BECAUSE THE DOC SPECCED IT THE OTHER WAY. §8 asked for a table of SVG
+   path STRINGS "in the letter box's own em units" (`"o>a": "M .86 .28 V .78"`). It is a table of
+   FUNCTIONS of the measured glyph instead, and the reason is the mode's own claim: the stroke has
+   to land exactly where the letterform grows, and a fixed 0–1 em path cannot be right for both a
+   0.07 em `l` stem and a 0.52 em `o` bowl in a face whose metrics the table does not know. An
+   authored constant would also quietly become a lie the moment §7's face is swapped — which §7.1
+   says is allowed, provided the `a` stays single-storey. So the geometry is MEASURED, the same rule
+   that gave projectileAnchor its number and freezeLetterBoxes its widths, and every entry below
+   reads as a sentence about the letterform rather than as four magic numbers.
+
+   What each function gets (all in CSS px, in the letter span's own box, y down):
+
+     em             the font size
+     sw             the pen's weight — MEASURED as the ink width of an `l`, i.e. the face's own stem
+     base, xh       the baseline and the x-height line
+     band, mid      the x-height band's height and its middle
+     asc, desc      the TO glyph's own ink top and bottom (an ascender / a descender when it has
+                    one, the x-height line / the baseline when it does not)
+     from, to       {l, r, c} — each glyph's ink left, right and centre, where it actually sits in
+                    the frozen box
+
+   A mapping with no entry, or an entry that cannot be drawn at this size, returns null and the
+   letter swaps with the red flash and no stroke — §8's honest degrade, which is also exactly what
+   M3 shipped. NEVER a wrong stroke.
+
+   WHY THE TO GLYPH'S INK BOX IS USED FOR THE NEW PART. A stem, a bar or a bowl that the result has
+   and the original does not belongs to the RESULT, so it is positioned off the result's own ink
+   (`o → a` puts the stem at the `a`'s right edge, not at a guess from the `o`'s). Where the stroke
+   continues something already on screen — `u → o` closing the u's two stems, `h → b` closing the
+   h's foot, `n → m` adding an arch beside the n's — it is anchored on the FROM glyph instead,
+   because that is the ink it has to meet.
+
+   WHICH END OF A STROKE IS ALLOWED TO BE WRONG, because one of them has to be. Both glyphs are
+   centred in the SAME frozen box (§5.2), so a narrow original in a box sized for a wide result does
+   not sit where the result's corresponding part will — an `l` centred in a box as wide as `b` has
+   its stem ~0.2 em right of where the `b`'s stem lands, and an `n` in an `m`-wide box the same. The
+   stroke therefore meets the ink that is on screen NOW at one end and the result's own ink at the
+   other, and the far end is the one anchored on the result: a bowl's outer edge, an arch's second
+   leg, the end of a tail — the parts standing in empty space, where the eye has nothing to compare
+   them against and a misplacement would be the only thing visible. The near end sits on the
+   original's ink, so it is right while it is drawn and shifts only when the glyph swaps under it —
+   which happens as the mark is already fading, the one window in the beat where a hair of mismatch
+   reads as the mark dissolving rather than as a misdraw. */
+
+const n2 = (v) => Math.round(v * 100) / 100;
+const vline = (x, y1, y2) => `M ${n2(x)} ${n2(y1)} V ${n2(y2)}`;
+const hline = (y, x1, x2) => `M ${n2(x1)} ${n2(y)} H ${n2(x2)}`;
+
+/* A half-ellipse hung off a vertical chord: both ends on the same x, bulging `dx` to one side. This
+   is what a bowl added to a stem IS — the pen leaves the stem, sweeps round and comes back to it —
+   and drawing it top-to-bottom is the direction the hand goes. Sweep 1 bulges right in SVG's y-down
+   space, 0 bulges left. */
+const bowl = (x, yTop, yBot, dx) =>
+  `M ${n2(x)} ${n2(yTop)} A ${n2(Math.abs(dx))} ${n2((yBot - yTop) / 2)} 0 0 ` +
+  `${dx > 0 ? 1 : 0} ${n2(x)} ${n2(yBot)}`;
+
+/* An arch: a semicircle over the top from one stem to the next, then straight down to the baseline.
+   `l → h` and `n → m` are the same gesture at two different widths. */
+const arch = (xFrom, xTo, g) => {
+  const r = (xTo - xFrom) / 2;
+  if (r <= 0.5) return null; // no room for a shoulder at this size
+  return (
+    `M ${n2(xFrom)} ${n2(g.xh + r)} A ${n2(r)} ${n2(r)} 0 0 1 ` +
+    `${n2(xTo)} ${n2(g.xh + r)} L ${n2(xTo)} ${n2(g.base)}`
+  );
+};
+
+/* A descending tail: down from a stem and hooked left, which is what `j` and `g` both end in. The
+   hook's REACH is clamped to the result's own ink left, which is what keeps one helper honest for
+   two very different letters — a `j`'s hook IS the glyph's left extent, so it runs the whole way,
+   while a `g`'s stops around the middle of the bowl it hangs off and `to.l` is nowhere near it. The
+   first version reached a flat 1.5 × the corner radius and sent `j`'s hook a full stem width
+   outside its own box. */
+const tail = (x, yFrom, g) => {
+  const r = Math.min(g.em * 0.15, (g.desc - yFrom) * 0.7);
+  if (r <= 0.5) return null;
+  const end = Math.max(g.to.l + g.sw / 2, x - r * 1.2);
+  return (
+    `M ${n2(x)} ${n2(yFrom)} V ${n2(g.desc - r)} ` +
+    `Q ${n2(x)} ${n2(g.desc)} ${n2(end)} ${n2(g.desc)}`
+  );
+};
+
+/* The 21 strokes — one per surviving row of §3.1's table, keyed `from>to`. */
+const STROKE = new Map(
+  Object.entries({
+    /* c — a ring open on the right. Everything added to it either closes that aperture or hangs a
+       stem off it, and the stem closes it on the way past, which is why `c → a` is one stroke. */
+    "c>o": (g) => {
+      // The missing right arc of the ring, from the upper terminal round to the lower one.
+      const rx = (g.to.r - g.to.l) / 2 - g.sw / 2;
+      const ry = g.band / 2 - g.sw / 2;
+      if (rx <= 0.5 || ry <= 0.5) return null;
+      const APERTURE = (38 * Math.PI) / 180; // where a geometric `c` leaves off, near 1 o'clock
+      const x = g.to.c + rx * Math.cos(APERTURE);
+      const dy = ry * Math.sin(APERTURE);
+      return (
+        `M ${n2(x)} ${n2(g.mid - dy)} A ${n2(rx)} ${n2(ry)} 0 0 1 ` +
+        `${n2(x)} ${n2(g.mid + dy)}`
+      );
+    },
+    "c>a": (g) => vline(g.to.r - g.sw / 2, g.xh, g.base), // the a's own right stem
+    "c>d": (g) => vline(g.to.r - g.sw / 2, g.asc, g.base), // the same stem, ascending
+    "c>e": (g) => hline(g.mid, g.to.l, g.to.r), // the bar across the middle
+
+    /* h → b: the right leg's foot carried back to the stem along the baseline. Bowed a little so it
+       reads as a pen closing a shape rather than as an underline — .sf-letter's own red border sits
+       below the descender, well clear, but a flat red line between the feet would still invite the
+       comparison. Lifted half a stem off the baseline, where the bowl's own edge would be. */
+    "h>b": (g) => {
+      const y = g.base - g.sw / 2;
+      const x1 = g.from.r - g.sw / 2;
+      const x2 = g.from.l + g.sw / 2;
+      return (
+        `M ${n2(x1)} ${n2(y)} Q ${n2((x1 + x2) / 2)} ${n2(y + g.sw * 0.7)} ` +
+        `${n2(x2)} ${n2(y)}`
+      );
+    },
+
+    "i>j": (g) => tail(g.from.c, g.base, g), // the dot stays; the stem grows a tail
+
+    /* l — a bare ascending stem, and the richest row in the table: four letters are that stem plus
+       one more thing. The stem is already on screen, so each stroke is anchored on it. */
+    "l>t": (g) => hline(g.xh, g.to.l, g.to.r), // the crossbar, at the x-height line
+    "l>b": (g) => bowl(g.from.c, g.xh, g.base, g.to.r - g.sw / 2 - g.from.c),
+    "l>d": (g) => bowl(g.from.c, g.xh, g.base, g.to.l + g.sw / 2 - g.from.c),
+    "l>h": (g) => arch(g.from.c, g.to.r - g.sw / 2, g),
+
+    /* n → m: one more arch, and the only row where the result is much wider than the original —
+       `m` is the widest letter in the lowercase. The new shoulder starts on the n's own right leg
+       and lands on the m's. */
+    "n>m": (g) => arch(g.from.r - g.sw / 2, g.to.r - g.sw / 2, g),
+
+    /* o — a closed ring, and the biggest source letter in the table by a long way (§2): seven
+       letters are a ring plus one stroke. `o → a` alone is 769 swaps, which is the whole reason the
+       mode wears a face with a single-storey `a` (§7.1) — in a double-storey face this one line
+       would be a lie. */
+    "o>a": (g) => vline(g.to.r - g.sw / 2, g.xh, g.base), // the stem down the right side
+    "o>e": (g) => hline(g.mid, g.to.l, g.to.r), // the bar across
+    "o>b": (g) => vline(g.to.l + g.sw / 2, g.asc, g.base), // ascender, left
+    "o>d": (g) => vline(g.to.r - g.sw / 2, g.asc, g.base), // ascender, right
+    "o>p": (g) => vline(g.to.l + g.sw / 2, g.xh, g.desc), // descender, left
+    "o>q": (g) => vline(g.to.r - g.sw / 2, g.xh, g.desc), // descender, right
+    // Single-storey only, and flagged as such in the build script: in a two-storey `g` this is a
+    // second bowl, which is not one stroke and the row would have to go (§3.2).
+    "o>g": (g) => tail(g.to.r - g.sw / 2, g.xh, g),
+
+    /* r → n: the shoulder stops in mid-air; carry it down to the baseline and it is an arch. Drawn
+       as one curve leaving the r's own terminal and bending down onto the n's right leg, rather
+       than as a detached vertical — the stroke is a continuation, so it has to start where the ink
+       already ends. */
+    "r>n": (g) => {
+      const yTop = g.xh + g.band * 0.26;
+      const x1 = g.from.r - g.sw / 2;
+      const x2 = g.to.r - g.sw / 2;
+      if (x2 <= x1 + 0.5) return vline(x1, yTop, g.base);
+      return `M ${n2(x1)} ${n2(yTop)} Q ${n2(x2)} ${n2(yTop)} ${n2(x2)} ${n2(g.base)}`;
+    },
+
+    /* u → o: close the top. A shallow bow rather than a flat bar — the two stems are being joined
+       over the counter, and the apex of the bow is the ring's own top at the x-height line. */
+    "u>o": (g) => {
+      const y = g.xh + g.sw / 2;
+      const x1 = g.from.l + g.sw / 2;
+      const x2 = g.from.r - g.sw / 2;
+      if (x2 <= x1 + 0.5) return null;
+      return (
+        `M ${n2(x1)} ${n2(y)} Q ${n2((x1 + x2) / 2)} ${n2(y - g.sw * 1.2)} ` +
+        `${n2(x2)} ${n2(y)}`
+      );
+    },
+
+    "v>y": (g) => vline(g.from.c, g.base, g.desc), // the tail, straight down off the vertex
+  }),
+);
+
+/* ── Measuring the glyph the stroke has to land on ────────────────────────────────────────────── */
+
+/* Ink boxes come off the same offscreen canvas freezeLetterBoxes already uses, cached per
+   font+character because a round asks for the same handful of glyphs over and over.
+
+   THE FACE'S LOAD STATE IS PART OF THE KEY. Jost* arrives on `font-display: swap`, so a measurement
+   taken before the woff2 lands is a Palanquin metric — and a cache that could not tell the two
+   apart would go on scoring every stroke of the round against the fallback. The Scriptorium's own
+   font scorer hit exactly this and answered it the same way (docs/inklings-typography.md §M2.5). */
+const inkCache = new Map();
+
+function glyphInk(font, ch) {
+  let loaded = true;
+  try {
+    loaded = !document.fonts || !document.fonts.check || document.fonts.check(font);
+  } catch (e) {
+    /* A font string the UA won't parse: treat it as settled rather than re-measuring forever. */
+  }
+  const key = `${font}|${loaded ? 1 : 0}|${ch}`;
+  const hit = inkCache.get(key);
+  if (hit !== undefined) return hit;
+
+  measureCanvas = measureCanvas || document.createElement("canvas");
+  const ctx = measureCanvas.getContext("2d");
+  ctx.font = font;
+  const m = ctx.measureText(ch);
+  // TextMetrics' actual* fields are what make any of this possible. Without them there is no ink
+  // box, so there is no stroke — the letter still swaps, it just swaps bare (§8's degrade).
+  const ink =
+    typeof m.actualBoundingBoxAscent === "number" &&
+    typeof m.actualBoundingBoxRight === "number"
+      ? {
+          adv: m.width,
+          // actualBoundingBoxLeft measures LEFTWARD from the alignment point, so it is negative for
+          // a glyph with the usual positive left side bearing. Negate it to get an offset.
+          left: -(m.actualBoundingBoxLeft || 0),
+          right: m.actualBoundingBoxRight,
+          top: m.actualBoundingBoxAscent, // above the baseline
+          bottom: m.actualBoundingBoxDescent || 0, // below it
+        }
+      : null;
+  inkCache.set(key, ink);
+  return ink;
+}
+
+/* The baseline, MEASURED rather than derived from the font's ascent and half-leading. A zero-sized
+   inline-block on `vertical-align: baseline` has its bottom margin edge ON the baseline (it has no
+   line boxes of its own, so that is the rule), which makes its top the baseline to the pixel. It
+   adds no width and no height, so the line box and the centred glyph are untouched, and it is gone
+   again before anything else reads the span. */
+function baselineY(span) {
+  const probe = document.createElement("i");
+  probe.style.cssText =
+    "display:inline-block;width:0;height:0;vertical-align:baseline;";
+  span.appendChild(probe);
+  const y = probe.getBoundingClientRect().top;
+  probe.remove();
+  return y;
+}
+
+function strokeGeometry(span, from, to) {
+  const cs = getComputedStyle(span);
+  const font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const em = parseFloat(cs.fontSize) || 16;
+
+  const fi = glyphInk(font, from);
+  const ti = glyphInk(font, to);
+  const xi = glyphInk(font, "x"); // the x-height line, straight off the face
+  const li = glyphInk(font, "l"); // the face's own stem width — the pen's weight
+  if (!fi || !ti || !xi || !li) return null;
+
+  const rect = span.getBoundingClientRect();
+  const bb = parseFloat(cs.borderBottomWidth) || 0;
+  const w = rect.width;
+  const h = Math.max(1, rect.height - bb); // the content box; the red underline sits outside it
+  const base = baselineY(span) - rect.top;
+  if (!isFinite(base) || base <= 0 || base > h + em) return null;
+
+  // text-align: center, so each glyph's advance box is centred in the frozen width (§5.2).
+  const place = (ink) => {
+    const x0 = (w - ink.adv) / 2;
+    return { l: x0 + ink.left, r: x0 + ink.right, c: x0 + ink.adv / 2 };
+  };
+
+  const xh = base - xi.top;
+  const band = base - xh;
+  if (band <= 1) return null;
+  const sw = Math.min(em * 0.16, Math.max(em * 0.04, li.right - li.left));
+
+  return {
+    em,
+    sw,
+    w,
+    h,
+    base,
+    xh,
+    band,
+    mid: (base + xh) / 2,
+    // An ascender/descender only where the RESULT actually has one: `o → a` must not reach for an
+    // ascender it hasn't got, and `o → e` must not dip below the baseline.
+    asc: base - Math.max(ti.top, xi.top),
+    desc: base + Math.max(ti.bottom, 0),
+    from: place(fi),
+    to: place(ti),
+  };
+}
+
+/* ── Drawing it (§8's three beats) ────────────────────────────────────────────────────────────── */
+
+export const SF_DRAW_MS = 220; // the stroke travelling
+export const SF_FADE_MS = 200; // the mark settling into the sentence's ink
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+/* One stroke in the air per letter. Shots land ~1.4s apart so this is a guard rather than a live
+   path, but a second bolt can arrive mid-draw and two marks on one glyph read as a glitch. WeakMap
+   because #output is rewritten wholesale on a new sentence and these nodes go with it. */
+const inFlight = new WeakMap();
+
+const reducedMotion = () => {
+  try {
+    return !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  } catch (e) {
+    return false;
+  }
+};
+
+/**
+ * Draw the stroke that turns `from` into `to` over the letter in `span`, then call `onSwap` to let
+ * the caller write the new glyph under it and fade the mark into the ink.
+ *
+ * Returns TRUE when it has taken responsibility for calling `onSwap` (after SF_DRAW_MS), and FALSE
+ * when there is nothing to draw — no path for this mapping, no TextMetrics to measure with, reduced
+ * motion — in which case the caller swaps immediately and the mode behaves exactly as M3 shipped.
+ * There is no third outcome and never a wrong stroke (§8).
+ *
+ * The SVG is absolutely positioned inside #output and never joins the line box — the cartouche's
+ * rule — so it can neither reflow the sentence it is drawn on nor be clipped by it, and it dies
+ * with the sentence the moment #output is rewritten. #output is `position: fixed` with no border or
+ * padding, so its client rect IS the origin.
+ */
+export function drawSerifinStroke(span, from, to, ink, onSwap) {
+  const build = STROKE.get(`${from}>${to}`);
+  const out = span.closest && span.closest("#output");
+  if (!build || !out || reducedMotion()) return false;
+
+  const g = strokeGeometry(span, from, to);
+  if (!g) return false;
+  let d = null;
+  try {
+    d = build(g);
+  } catch (e) {
+    d = null;
+  }
+  if (!d) return false;
+
+  inFlight.get(span)?.remove();
+
+  const host = out.getBoundingClientRect();
+  const rect = span.getBoundingClientRect();
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("class", "sf-stroke");
+  svg.setAttribute("width", String(g.w));
+  svg.setAttribute("height", String(g.h));
+  svg.setAttribute("viewBox", `0 0 ${n2(g.w)} ${n2(g.h)}`);
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("aria-hidden", "true");
+  svg.style.left = `${rect.left - host.left}px`;
+  svg.style.top = `${rect.top - host.top}px`;
+
+  const path = document.createElementNS(SVG_NS, "path");
+  path.setAttribute("d", d);
+  path.setAttribute("stroke", ink);
+  path.setAttribute("stroke-width", String(n2(g.sw)));
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  svg.appendChild(path);
+  out.appendChild(svg);
+  inFlight.set(span, svg);
+
+  const drop = () => {
+    svg.remove();
+    if (inFlight.get(span) === svg) inFlight.delete(span);
+  };
+  let swapped = false;
+  const swap = () => {
+    if (swapped) return;
+    swapped = true;
+    onSwap();
+  };
+
+  const len = path.getTotalLength ? path.getTotalLength() : 0;
+  if (!len || !path.animate) {
+    // No WAAPI, or a path whose length can't be had: show the stroke whole rather than not at all.
+    setTimeout(() => {
+      swap();
+      svg.style.transition = `opacity ${SF_FADE_MS}ms ease-in`;
+      svg.style.opacity = "0";
+      setTimeout(drop, SF_FADE_MS + 60);
+    }, SF_DRAW_MS);
+    return true;
+  }
+
+  path.style.strokeDasharray = `${len}`;
+  const draw = path.animate(
+    [{ strokeDashoffset: `${len}` }, { strokeDashoffset: "0" }],
+    { duration: SF_DRAW_MS, easing: "ease-out", fill: "forwards" },
+  );
+  draw.onfinish = () => {
+    swap();
+    // Beat 3: the mark fades from her red into the sentence's own ink, so the new letter absorbs
+    // the stroke that made it. The letter itself is never left coloured (§10.2).
+    const fade = path.animate(
+      [
+        { stroke: ink, opacity: 1 },
+        { stroke: "whitesmoke", opacity: 0 },
+      ],
+      { duration: SF_FADE_MS, easing: "ease-in", fill: "forwards" },
+    );
+    fade.onfinish = drop;
+  };
+  /* The swap is the one thing in the beat that MUST happen: a stroke that fails to finish would
+     otherwise leave the letter permanently unchanged against a shot that hit it. An animation can
+     be cancelled (a reflow, a tab going to sleep), so the timer is the floor under onfinish and
+     `swapped` makes whichever arrives first the only one that counts. */
+  setTimeout(swap, SF_DRAW_MS + 90);
+  setTimeout(drop, SF_DRAW_MS + SF_FADE_MS + 500);
+  return true;
+}

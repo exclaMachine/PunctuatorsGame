@@ -1,8 +1,9 @@
 # Punctuators — Serifin (Strokes)
 
-**Status: M1 the table, M2 the mark-up BUILT 2026-10-18; M3 the hero BUILT 2026-10-20 — THE MODE
-IS PLAYABLE.** Shoot a letter and the stroke lands: the glyph swaps with a red flash, no drawn
-stroke yet. M4 the feel remains (§10). **DEV-ONLY** (`?dev=1`) — see §1.3.
+**Status: M1 the table, M2 the mark-up BUILT 2026-10-18; M3 the hero BUILT 2026-10-20; M4 the feel
+BUILT 2026-10-22 — THE MODE IS COMPLETE.** Shoot a letter and a pen draws the one stroke on, in her
+red, and the glyph becomes the other letter under it (§8, §10.3). The How-to-Play card and the mode
+picture landed with it. **DEV-ONLY** (`?dev=1`) — see §1.3.
 
 A wordplay mode where a word keeps its *letters' bones* and changes what they are. Serifin draws one
 extra stroke onto a letter and it becomes a different letter — and because she only ever draws where
@@ -496,24 +497,61 @@ is only what made it free.
 
 ## 8. Animation — the stroke is drawn on
 
-The payoff of the whole mode is watching a pen add the stroke. This is where the §3.2 prune pays:
-every surviving mapping has a stroke that can be *drawn*, so there is a path to animate.
+**BUILT 2026-10-22 as M4** (§10.3). The payoff of the whole mode is watching a pen add the stroke.
+This is where the §3.2 prune pays: every surviving mapping has a stroke that can be *drawn*, so
+there is a path to animate.
 
-A small hand-authored table of **SVG paths in the letter box's own em units** — one per mapping,
-~22 entries, keyed `"o>a"`, `"l>t"`, `"c>o"` — laid over the glyph:
+One table of **21 strokes, one per surviving row of §3.1**, keyed `"o>a"`, `"l>t"`, `"c>o"`, laid
+over the glyph.
+
+**As specced, the table held SVG path STRINGS in the letter box's own em units**
+(`"o>a": "M .86 .28 V .78"`). **As built it holds FUNCTIONS of the measured glyph**, and the reason
+is the mode's own claim: the stroke has to land exactly where the letterform grows, and a fixed
+0–1 em path cannot be right for both a 0.07 em `l` stem and a 0.52 em `o` bowl in a face whose
+metrics the table does not know. An authored constant would also quietly become a lie the moment
+§7's face is swapped — which §7.1 permits, provided the `a` stays single-storey. So the geometry is
+**measured**, the rule that gave `projectileAnchor` its number and `freezeLetterBoxes` its widths,
+and each entry reads as a sentence about the letterform rather than as four magic numbers:
 
 ```js
-const STROKE = {
-  "l>t": "M .08 .46 H .92",            // the crossbar
-  "o>a": "M .86 .28 V .78",            // the stem down the right side
-  "o>e": "M .12 .50 H .88",            // the bar across
-  "c>o": "M .80 .26 A .34 .34 0 0 1 .80 .74", // close the ring
-  "u>o": "M .14 .30 A .36 .30 0 0 1 .86 .30", // close the top
-  …
-};
+"o>a": (g) => vline(g.to.r - g.sw / 2, g.xh, g.base),   // the stem down the right side
+"l>t": (g) => hline(g.xh, g.to.l, g.to.r),              // the crossbar, at the x-height line
+"l>b": (g) => bowl(g.from.c, g.xh, g.base, g.to.r - g.sw / 2 - g.from.c),
+"n>m": (g) => arch(g.from.r - g.sw / 2, g.to.r - g.sw / 2, g),
+"i>j": (g) => tail(g.from.c, g.base, g),
 ```
 
-The beat, ~420 ms total:
+What `g` carries, all in CSS px inside the letter's own box: `base` and `xh` (the baseline and the
+x-height line, the baseline **measured** off a zero-sized `vertical-align: baseline` probe rather
+than derived from the font's ascent and half-leading), `band`/`mid`, `asc`/`desc` (the **result's**
+own ink top and bottom, so `o → a` never reaches for an ascender it hasn't got and `o → e` never
+dips below the baseline), `from`/`to` as `{l, r, c}` ink boxes, and **`sw`, the pen's weight,
+measured as the ink width of an `l`** — the face's own stem, so the drawn stroke is as heavy as the
+letter it joins. Five helpers (`vline`, `hline`, `bowl`, `arch`, `tail`) carry the shapes that
+repeat.
+
+### 8.1 Which end of a stroke is allowed to be wrong
+
+One of them has to be, and this is the one thing in M4 worth knowing before changing it.
+
+Both glyphs are centred in the **same frozen box** (§5.2), so a narrow original in a box sized for a
+wide result does not sit where the result's corresponding part will: an `l` centred in a box as wide
+as `b` has its stem ~0.2 em right of where the `b`'s stem lands, and an `n` in an `m`-wide box the
+same. Measured on the shipped geometry, that is a ~10 px error at the sentence's 300% play size.
+
+So each stroke meets the ink that is **on screen now** at one end and the **result's own ink** at
+the other, and the far end is the one anchored on the result — a bowl's outer edge, an arch's second
+leg, the end of a tail: the parts standing in empty space, where the eye has nothing to compare them
+against and a misplacement would be the only thing visible. The near end sits on the original's ink,
+so it is right for the whole time it is being drawn and shifts only when the glyph swaps under it —
+which happens as the mark is already fading, the one window in the beat where a hair of mismatch
+reads as the mark dissolving rather than as a misdraw.
+
+The other way round — anchoring both ends on the original — draws a correct-width bowl ending 11 px
+outside the glyph that replaces it, which is the same error moved to the half of the stroke that is
+on its own against white.
+
+### 8.2 The beat, ~420 ms total
 
 1. The bolt lands. An **absolutely positioned SVG inside `#output`**, sized and placed over the
    letter's (frozen, therefore known) box — the cartouche's rule: *never join the line box*, so it
@@ -523,9 +561,21 @@ The beat, ~420 ms total:
 3. The glyph **swaps** under it, and the drawn stroke fades from red into the sentence's ink over
    ~200 ms, so the new letter absorbs the mark that made it.
 
-Degrades honestly: with no entry in `STROKE` the letter swaps with a red flash and no drawn stroke —
-never a wrong stroke. That is also the M3 build (§10): the mode is playable before a single path is
-authored.
+`drawSerifinStroke` returns **true when it has taken responsibility for the swap** and false when
+there is nothing to draw — no path for this mapping, no `TextMetrics.actual*` to measure with,
+`prefers-reduced-motion` — in which case the caller swaps immediately and the mode behaves exactly
+as M3 shipped. There is no third outcome and **never a wrong stroke**: M3 *was* the degrade, so it
+was shipping and tested long before a path existed.
+
+**The swap is the one beat that must not be allowed to fail.** An animation can be cancelled — a
+reflow, a tab going to sleep — and a stroke that never finishes would otherwise leave the letter
+permanently unchanged against a shot that hit it. So a timer at `SF_DRAW_MS + 90` sits under
+`onfinish` as a floor, and a `swapped` latch makes whichever arrives first the only one that counts.
+
+Also: **one stroke in the air per letter.** Shots land ~1.4 s apart so a second bolt mid-draw is a
+guard rather than a live path, but two marks on one glyph read as a glitch, so a new stroke removes
+the previous one (a `WeakMap`, since `#output` is rewritten wholesale on a new sentence and these
+nodes go with it).
 
 **Later, not now:** the shared Scriptorium alphabet (`data/wordshape-alphabet.json`) defines all 52
 glyphs as actual polyline strokes, so `t` minus `l` *is* the crossbar, computable rather than
@@ -553,6 +603,15 @@ game is scored. Nothing depends on these being right.
 Serifin **overrides `hitProjectileSound()` to silence**, for the ladder's and the aliens' reason: one
 hit has three outcomes and the generic one-hit-one-sound call site cannot say which.
 
+**M4 moved `_serifinDraw`'s call site, and it was always wrong where M3 put it.** The cue is three
+staggered noise bands making ~220 ms of travel with its two-note tick scheduled at **+0.20 s** —
+i.e. it was authored for this animation's timing all along — and M3 played it *after* the swap,
+which put the tick a whole beat late and made the travel read as a tail on the hit rather than as
+the stroke being drawn. It now fires when the stroke **starts**, which is what §9 asked for in the
+first place ("it must last as long as the stroke does rather than being an impact") and needed no
+change to the cue itself. Worth keeping because the general shape recurs: **a cue written for an
+animation that does not exist yet will sound wrong in a way that looks like the cue's fault.**
+
 ---
 
 ## 10. Milestones
@@ -562,11 +621,13 @@ hit has three outcomes and the generic one-hit-one-sound call site cannot say wh
 | **M1 — the table** | ✅ **BUILT 2026-10-18.** `build-serifin-pojo.js` + `serifinPOJO.js`. Offline and verifiable on its own: the §2 numbers reproduce. |
 | **M2 — the mode** | ✅ **BUILT 2026-10-18.** `serifinFunc.js`, `protectedSerifin`, the `<option>`, the guard, the `nodeArr` push, the frozen boxes, **and the font**. Nothing to shoot yet. |
 | **M3 — the hero** | ✅ **BUILT 2026-10-20.** `Serifin` on the dev's own art, her drawn bolt, the collision branch, the swap, the cycle, §6.2's one-stroke-per-word rule, the clank, `fixArticleBefore`, three cues. **Playable.** The glyph swaps with a red flash; no drawn stroke yet. |
-| **M4 — the feel** | §8's `STROKE` path table and the draw-on animation, §9's three cues, the `modeHelp.js` card and the `modeArt.js` picture. |
+| **M4 — the feel** | ✅ **BUILT 2026-10-22.** §8's 21 strokes and the draw-on animation, §9's cue moved to the start of the draw, the `modeHelp.js` card and the `modeArt.js` picture. §9's three cues themselves had already come forward into M3. **The mode is complete.** |
 
-M3 is the line worth holding: everything through it is mechanism, everything in M4 is the thing the
-mode is *for*. Do not reorder them — a drawn stroke over a mode that does not yet cycle correctly
-teaches the wrong rule beautifully.
+M3 was the line worth holding: everything through it is mechanism, everything in M4 is the thing the
+mode is *for*. They were not reordered — a drawn stroke over a mode that does not yet cycle
+correctly teaches the wrong rule beautifully — and the payoff was that M3's bare swap turned out to
+be M4's own degrade path (§8.2), so the fallback was in play for two days before the thing it falls
+back from existed.
 
 ### 10.1 As built (M1 + M2)
 
@@ -593,10 +654,10 @@ shipped their own M2 the same way. M2's placeholder line in `#error-message` is 
 it is the one line naming the red underline, still written *after* the handler's own clear, which
 would otherwise wipe it.
 
-**The cards are still M4, so picking the mode shows the punctuation card.** `modeHelpFor` and
+**The cards were still M4, so picking the mode showed the punctuation card.** `modeHelpFor` and
 `renderModeArt` both fall back to it for an unknown mode — the exact complaint those modules were
-built to fix — but the mode is behind `?dev=1`, so only the dev sees the wrong card, and the Affix
-Aliens have been in that state since August.
+built to fix — but the mode is behind `?dev=1`, so only the dev saw the wrong card. **Fixed in M4**
+(§10.3); the Affix Aliens have been in that state since August and still are.
 
 ### 10.2 As built (M3)
 
@@ -640,6 +701,47 @@ candidates — so §6.3's flash and cue are a guard, not a routine outcome, exac
 predicted. §13 #5 (a cue for a shot through a *dead* letter) is the live version of the same
 question and is untouched.
 
+### 10.3 As built (M4)
+
+Five things the build settled, and §8.1 is the one to read first.
+
+**The `STROKE` table is functions, not path strings** — §8's own reasoning, recorded there rather
+than here because it changes what the section specifies.
+
+**The pen's weight is measured, not chosen.** `sw` is the ink width of an `l` in the face that is
+actually rendering, which *is* the stem of the letter the stroke is joining — so the mark reads as
+the same pen, and a heavier or lighter face needs no constant found and changed. Clamped to
+0.04–0.16 em against a face with no `l` worth measuring.
+
+**The baseline is measured too, off a probe rather than off the font's metrics.** A zero-sized
+`inline-block` on `vertical-align: baseline` has its bottom margin edge *on* the baseline (it has no
+line boxes of its own, so that is the rule), which makes its top the baseline to the pixel. The
+alternative was half-leading arithmetic over `fontBoundingBoxAscent/Descent` and the span's content
+height, which is three numbers that can each be wrong instead of one DOM read. The probe adds no
+width and no height, so the line box and the centred glyph are untouched, and it is gone again
+before anything else reads the span.
+
+**The ink cache is keyed on the face's LOAD STATE.** Jost\* arrives on `font-display: swap`, so a
+measurement taken before the woff2 lands is a Palanquin metric — and a cache that could not tell the
+two apart would go on drawing every stroke of the round against the fallback. The Scriptorium's font
+scorer hit exactly this and answered it the same way
+([`inklings-typography.md`](inklings-typography.md) M2.5).
+
+**`.sf-stroke` needs `overflow: visible`, and it is load-bearing rather than tidiness.** An SVG root
+clips to its viewBox, and the box here is the *letter's* box — so an ascender (`o → b`), a descender
+(`o → p`, `i → j`) or the extra arch of a wider result (`n → m`) is drawn outside it and would be
+cut off at exactly the end a stroke is most readable from. The rule was already in the stylesheet
+from M2, written blind; this is what it was for.
+
+**The cards:** the `modeArt.js` entry needed **one new optional field, `face`**, and it is not a
+style preference. The mode plays in Jost\* because `o → a` is one stroke only in a face with a
+single-storey `a` (§7.1) — so a card showing `l→t` and `adopt → adapt` in Palanquin would make the
+*picture of the mode* a lie about the mode, which is the one thing a mode picture cannot be. It
+arrives as `--mode-face` on the card and `.mode-art__glyph` / `.mode-art__example` read it; every
+other mode is untouched. The How-to-Play card leads with the rule no other card in that file has
+ever had to state — **you shoot a letter, not a word** — because a player arriving from any other
+mode aims at the middle of a word and hits whatever happens to be there.
+
 ---
 
 ## 11. Wiring checklist
@@ -648,16 +750,16 @@ question and is untouched.
 | --- | --- |
 | `build-serifin-pojo.js` | ✅ **new.** Offline generator; holds the §3.1 table, the §3.4 tier flag and the §2 checks. |
 | `serifinPOJO.js` | ✅ **new, generated.** 2,995 entries, 56 KB. Never hand-edited. |
-| `serifinFunc.js` | ✅ **new.** `SERIFIN_ID`, `SERIFIN_OBSCURE`, `loadSerifin`, `serifinReady`, `hasSerifinWords`, `wrapSerifin`, `serifinCandidates`, `serifinCycle`, `serifinSwap`, `serifinWordNow`, `freezeLetterBoxes`. Lazy-imports the POJO. |
+| `serifinFunc.js` | ✅ **new.** `SERIFIN_ID`, `SERIFIN_OBSCURE`, `loadSerifin`, `serifinReady`, `hasSerifinWords`, `wrapSerifin`, `serifinCandidates`, `serifinCycle`, `serifinSwap`, `serifinWordNow`, `freezeLetterBoxes`. Lazy-imports the POJO. ✅ **M4:** the `STROKE` table of 21 strokes + its five shape helpers, `glyphInk`/`baselineY`/`strokeGeometry` (the measuring), and `drawSerifinStroke` + `SF_DRAW_MS`/`SF_FADE_MS`. The stroke lives here and not in `index.js` because it is sentence-side work — letterforms and measurement, the same job as `freezeLetterBoxes`, sharing its offscreen canvas. |
 | `SpanPlaceholder.js` | ✅ `export const protectedSerifin = withSpanPlaceholders(wrapSerifin);` |
 | `utils/utils.js` | ✅ `case "serifin":` in `addSpansAndIdsForWordPlay`'s switch. **No `heroManagedWords` change** (§6.6). |
 | `punctuators.html` | ✅ `<option value="serifin" data-dev>Serifin's Strokes</option>`, stripped in the dropdown IIFE **before** the custom dropdown is generated (§1.3). |
-| `index.js` | ✅ the `WORDPLAY_GUARDS` entry + the `loadSerifin()` await in front of it (§10.1); the `serifin-mode` class and the `freezeLetterBoxes` call at Pow!; the `nodeArr` push after `waitForElement` and before `heroToTheRescue` (§5.1). ✅ **M3:** `drawStrokeBoltSprite`; `class Serifin` + the instance + its place in `availableHeroArray`; the collision branch + `projectile.serifinDone`'s early-out; `shootSerifin`; `claimSerifinShot`; `lockSerifinSiblings`; `flashSerifinClank`/`flashSerifinSwap`; the three SFX. `drawSerifinSprite` was never written — the dev's art landed first (§10.2). |
+| `index.js` | ✅ the `WORDPLAY_GUARDS` entry + the `loadSerifin()` await in front of it (§10.1); the `serifin-mode` class and the `freezeLetterBoxes` call at Pow!; the `nodeArr` push after `waitForElement` and before `heroToTheRescue` (§5.1). ✅ **M3:** `drawStrokeBoltSprite`; `class Serifin` + the instance + its place in `availableHeroArray`; the collision branch + `projectile.serifinDone`'s early-out; `shootSerifin`; `claimSerifinShot`; `lockSerifinSiblings`; `flashSerifinClank`/`flashSerifinSwap`; the three SFX. `drawSerifinSprite` was never written — the dev's art landed first (§10.2). ✅ **M4:** `shootSerifin` splits its DOM writes into a `land()` the animation calls, reads the on-screen glyph as `from` before `serifinSwap` moves the state, and plays `_serifinDraw` at the START of the draw rather than after the swap (§9). |
 | `images/Serifin_Start.png`, `images/Serifin_2.png` | ✅ **new (the dev's).** Resting and attack, 800 × 1045 like the ladder pair. |
-| `index.css` | ✅ `@font-face` for Jost; `#output.serifin-mode`; `.sf-word`; `.sf-letter`; `.sf-clank`; ✅ **M3:** `.sf-swap` (+ `--sf-ink`), `.sf-dead`. `.sf-stroke` (the SVG overlay) still waits on M4's paths. |
-| `modeHelp.js` | the card (M4). Its worked example must be real in the shipped POJO — regenerating the table can leave it stale. |
-| `modeArt.js` | the card (M4). Glyph: an `l` with its crossbar arriving. |
-| `docs/punctuators.md` | a line in the cast, once it is playable. |
+| `index.css` | ✅ `@font-face` for Jost; `#output.serifin-mode`; `.sf-word`; `.sf-letter`; `.sf-clank`; ✅ **M3:** `.sf-swap` (+ `--sf-ink`), `.sf-dead`. ✅ **M4:** `.sf-stroke` is in use at last (it shipped with M2, written blind — its `overflow: visible` is what lets an ascender or a descender out of the letter's box, §10.3); `--mode-face` read by `.mode-art__glyph` and `.mode-art__example`. |
+| `modeHelp.js` | ✅ **M4.** The card. Leads with *you shoot a letter, not a word* — the one rule no other card in the file has had to state. Every pair in it is real in the shipped POJO (`adopt` o→a/o→e, `cut` c→o, `night` n→m, `will` l→t); regenerating the table can leave them stale. |
+| `modeArt.js` | ✅ **M4.** The card, glyph `l→t` — an `l` with its crossbar arriving, which is the mode's smallest true claim. Plus the one new optional field, **`face`**, so the picture is set in the typeface the mode actually plays in (§10.3) — Serifin is its only user. |
+| `docs/punctuators.md` | ✅ the line in the cast. |
 | `CLAUDE.md` | ✅ the Punctuators row's doc list. |
 
 The guard:
@@ -730,8 +832,9 @@ the repo's one alphabet.
 4. **Her colour.** Proofreader's red (`#be123c`) is the argument in §4.1, and red is the one colour
    in this game that can read as *error*. Wet-ink teal is the alternative. **Cheap to change since
    M3:** the hero's `characterColor` is the only source — the swap flash reads it through `--sf-ink`
-   (§10.2) and the bolt is drawn from it — leaving `.sf-letter`'s underline and the `var()` fallback
-   as the two literals.
+   (§10.2), the bolt is drawn from it and M4's drawn stroke is painted in it — leaving three
+   literals: `.sf-letter`'s underline, the `sf-swap` keyframes' `var()` fallback, and the
+   `modeArt.js` entry's `accent`.
 5. **Does a shot through a dead letter deserve a cue?** §6.3 says the shot passes through in silence.
    Letters are narrow; a near miss and a pass-through will feel identical, and silence may read as
    the mode being broken — the same complaint that pulled three of the Affix Aliens' cues forward out

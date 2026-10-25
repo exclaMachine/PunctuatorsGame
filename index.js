@@ -42,6 +42,7 @@ import {
   freezeLetterBoxes,
   serifinSwap,
   serifinWordNow,
+  drawSerifinStroke,
 } from "./serifinFunc.js";
 // The How-to-Play card for the mode you have picked (one per <option>) — swapped in on selection,
 // not at Pow!, so the rules are readable while you are still choosing what to play.
@@ -1134,10 +1135,16 @@ function lockSerifinSiblings(word, span, locked) {
 function shootSerifin(span, hero, projectile) {
   if (!claimSerifinShot(projectile)) return;
 
+  // The glyph on screen RIGHT NOW, read before the state moves: serifinSwap advances the cycle but
+  // deliberately leaves the DOM alone, so this is the only moment the `from` letter is knowable —
+  // and §8's stroke is a fact about the pair (`o>a` is a stem, `o>e` is a bar), not about the
+  // candidate list.
+  const from = span.textContent;
+
   // CYCLING, NOT CHAINING (§6.1): the cycle was computed once at wrap time from the word as typed,
   // so `adopt`'s `o` walks o -> a -> e -> o and BOTH of its words are reachable. serifinSwap owns
-  // the state on the span and hands back the glyph; writing the DOM is deliberately left here, so
-  // M4's animation can draw the stroke before the letter changes under it.
+  // the state on the span and hands back the glyph; writing the DOM is left to `land` below, so the
+  // stroke can be drawn on before the letter changes under it.
   const next = serifinSwap(span);
   if (!next) {
     flashSerifinClank(span);
@@ -1145,22 +1152,37 @@ function shootSerifin(span, hero, projectile) {
     return;
   }
 
-  span.textContent = next.letter;
-  flashSerifinSwap(span, hero.characterColor);
-
-  /* `a cat` -> `an oat`, and `an apple` -> `am apple`. The ladder's own fix, unchanged, but asked of
-     the WRAPPER rather than the letter: the article is a text node in front of the whole word, and
-     the letter span's previousSibling is whatever part of the word sits to its left. serifinWordNow
-     reads the new spelling off the DOM — the letters are the only authority once a swap lands — and
-     keeps data-sf-word in step with it on the way past. */
-  const word = span.closest("." + SF_WORD_CLASS);
-  if (word) {
-    // Away from the original locks the rest of the word; home again unlocks it (see above).
-    lockSerifinSiblings(word, span, next.turn !== 0);
-    fixArticleBefore(word, serifinWordNow(word));
-  }
-
+  /* THE CUE FIRES WITH THE STROKE, NOT WITH THE SWAP, and it always should have: _serifinDraw is
+     three staggered noise bands making ~220ms of travel with its two-note tick scheduled at +0.20s
+     — i.e. it was written for M4's timing all along, and M3 played it after the swap, which put the
+     tick a whole beat late and made the travel sound like a tail. §9: "it must last as long as the
+     stroke does rather than being an impact". */
   _serifinDraw(next.wrapped);
+
+  /* The glyph changing, plus everything that depends on the word's new spelling. Called by the
+     animation at the end of the draw (§8 beat 3), or straight away when there is no stroke to
+     draw — a mapping with no path, no TextMetrics to measure with, or reduced motion. */
+  const land = () => {
+    span.textContent = next.letter;
+    flashSerifinSwap(span, hero.characterColor);
+
+    /* `a cat` -> `an oat`, and `an apple` -> `am apple`. The ladder's own fix, unchanged, but asked
+       of the WRAPPER rather than the letter: the article is a text node in front of the whole word,
+       and the letter span's previousSibling is whatever part of the word sits to its left.
+       serifinWordNow reads the new spelling off the DOM — the letters are the only authority once a
+       swap lands — and keeps data-sf-word in step with it on the way past. */
+    const word = span.closest("." + SF_WORD_CLASS);
+    if (word) {
+      // Away from the original locks the rest of the word; home again unlocks it (see above).
+      lockSerifinSiblings(word, span, next.turn !== 0);
+      fixArticleBefore(word, serifinWordNow(word));
+    }
+  };
+
+  // §8: the pen draws the one stroke on, and the glyph becomes the other letter under it. Returns
+  // false when there is nothing to draw, and then the mode behaves exactly as M3 shipped — a red
+  // flash and the new letter. Never a wrong stroke.
+  if (!drawSerifinStroke(span, from, next.letter, hero.characterColor, land)) land();
 }
 
 /* ── WORD RACE (docs/punctuators-ladder.md §12) ───────────────────────────────────────────────────
