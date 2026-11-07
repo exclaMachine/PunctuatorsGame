@@ -13,9 +13,10 @@ Word Race and the Tree of Kinds) and
 mark-up and M3 the four heroes built, dev-only; M4 is the feel**) and
 [`punctuators-serifin.md`](punctuators-serifin.md) (Serifin — she adds **one stroke to a LETTER** and it
 becomes another letter, `adopt → adapt`; **M1–M4 all built, dev-only — the mode is COMPLETE**: shoot a
-letter and a pen draws the one stroke on in her red, and the glyph becomes the other letter under it).
-Serifin is the only mode whose targets are single letters rather than words, and the only one that changes
-the sentence's typeface (Jost\*, so `o → a` really is one stroke).
+letter and a pen draws the one stroke on in her red, and the glyph becomes the other letter under it;
+**M5, a second pass at the stroke table, is planned and not built**). Serifin is the only mode whose
+targets are single letters rather than words, and the only one that changes the sentence's typeface
+(Jost\*, so `o → a` really is one stroke).
 
 ---
 
