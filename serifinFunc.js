@@ -290,6 +290,13 @@ export async function freezeLetterBoxes(container) {
 const n2 = (v) => Math.round(v * 100) / 100;
 const vline = (x, y1, y2) => `M ${n2(x)} ${n2(y1)} V ${n2(y2)}`;
 const hline = (y, x1, x2) => `M ${n2(x1)} ${n2(y)} H ${n2(x2)}`;
+const line = (x1, y1, x2, y2) => `M ${n2(x1)} ${n2(y1)} L ${n2(x2)} ${n2(y2)}`;
+
+/* Where a geometric `k`'s arm and leg meet the stem, as a fraction of the x-height band BELOW the
+   x-height line. Jost puts that waist at 0.27 em of a 0.46 em band — a hair above the middle, and
+   also exactly where the `h`'s shoulder leaves its own stem, which coincidence is the whole of
+   `h → k`. One constant for both k rows, because it is one fact about the letter. */
+const K_WAIST = 0.41;
 
 /* A half-ellipse hung off a vertical chord: both ends on the same x, bulging `dx` to one side. This
    is what a bowl added to a stem IS — the pen leaves the stem, sweeps round and comes back to it —
@@ -326,7 +333,7 @@ const tail = (x, yFrom, g) => {
   );
 };
 
-/* The 21 strokes — one per surviving row of §3.1's table, keyed `from>to`. */
+/* The 27 strokes — one per surviving row of §3.1's table, keyed `from>to`. */
 const STROKE = new Map(
   Object.entries({
     /* c — a ring open on the right. Everything added to it either closes that aperture or hangs a
@@ -362,7 +369,27 @@ const STROKE = new Map(
       );
     },
 
+    /* h → k: the h's shoulder and leg ARE the k's lower leg, so the only thing missing is the
+       upper arm — one straight diagonal out of the junction where the shoulder leaves the stem,
+       up and out to the right, with nothing removed. Drawn OUT of the stem rather than into it, so
+       the arm visibly sprouts from ink that is already on screen, and the far end lands on the k's
+       own right edge at the x-height, where a geometric k's arm terminates. You watch a straight
+       arm arrive on the h's curved leg and then the font's real `k` lands under it — §8 beat 3,
+       the same licence every row in this table draws on. */
+    "h>k": (g) => line(g.from.l + g.sw / 2, g.xh + g.band * K_WAIST, g.to.r - g.sw / 2, g.xh),
+
     "i>j": (g) => tail(g.from.c, g.base, g), // the dot stays; the stem grows a tail
+
+    /* i → l: join the stem to the tittle. The gap is real and visible — Jost leaves 0.135 em of it
+       between the stem's top and the dot — so the stroke FILLS it and the dot is absorbed rather
+       than deleted: nothing is erased, and nothing is lengthened either, which is what makes this
+       the cleanest addition in the table and the shortest stroke in it. It runs past the dot to
+       `asc`, the l's OWN ink top, since the l stands taller than the i's tittle. The two stems
+       land on the same x in the frozen box (the `i` is the widest letter in its own cycle, so it
+       sets the box), making this the one entry whose BOTH ends are right. FALSE in a face whose
+       `i` has a foot serif — the serif would survive into a letter that must not have one, which
+       is why that is now a standing constraint on the face (§7.1) and not a note about this row. */
+    "i>l": (g) => vline(g.from.c, g.xh, g.asc),
 
     /* l — a bare ascending stem, and the richest row in the table: four letters are that stem plus
        one more thing. The stem is already on screen, so each stroke is anchored on it. */
@@ -370,6 +397,21 @@ const STROKE = new Map(
     "l>b": (g) => bowl(g.from.c, g.xh, g.base, g.to.r - g.sw / 2 - g.from.c),
     "l>d": (g) => bowl(g.from.c, g.xh, g.base, g.to.l + g.sw / 2 - g.from.c),
     "l>h": (g) => arch(g.from.c, g.to.r - g.sw / 2, g),
+    /* l → k: one motion that touches the stem once on the way through — in from the arm's top
+       terminal, down to the waist, out again to the leg's foot. Two segments, no lift, which is
+       why it is a row at all: §3.2 cut it counting SEGMENTS and §13 #7 settled the test as the
+       PEN. Both ends stand in empty space and are anchored on the k's own right edge, where a
+       misplacement would be the only visible thing; the stem it passes through is the ink that is
+       already there. The honest neighbour of `h → k`, since an h's ascender IS an l. */
+    "l>k": (g) => {
+      const xj = g.from.c; // the l's stem, which is the k's
+      const x = g.to.r - g.sw / 2;
+      if (x <= xj + 1) return null;
+      return (
+        `M ${n2(x)} ${n2(g.xh)} L ${n2(xj)} ${n2(g.xh + g.band * K_WAIST)} ` +
+        `L ${n2(x)} ${n2(g.base)}`
+      );
+    },
 
     /* n → m: one more arch, and the only row where the result is much wider than the original —
        `m` is the widest letter in the lowercase. The new shoulder starts on the n's own right leg
@@ -402,6 +444,29 @@ const STROKE = new Map(
       return `M ${n2(x1)} ${n2(yTop)} Q ${n2(x2)} ${n2(yTop)} ${n2(x2)} ${n2(g.base)}`;
     },
 
+    /* r → m: the shoulder stops in mid-air, so carry it down to the baseline and straight on over
+       a second arch — which is how a hand writes an `m`, and is the whole argument for the row.
+       ONE subpath with no moveto in it: the `V` back up the leg just drawn RETRACES ink already
+       laid, so the dash animation puts no new mark on screen while the pen returns, which is what
+       the hand's own retrace looks like. The m's middle stem is its ink centre and its third stem
+       is its right edge, so both legs are the RESULT's own; the first one leans left, because a
+       centred `r` in an `m`-wide box sits ~0.29 em right of where the m's stem lands — the widest
+       such gap in the table (§8.1), and it leans the way the glyph is about to move. This is the
+       row to DROP first if that reads badly, never a reason to unfreeze the box (§5.2). */
+    "r>m": (g) => {
+      const x1 = g.from.r - g.sw / 2; // the r's own terminal, stopped in mid-air
+      const x2 = g.to.c; // the m's middle stem is its centre
+      const x3 = g.to.r - g.sw / 2; // and its third is its right edge
+      const r = (x3 - x2) / 2;
+      if (r <= 0.5) return arch(x1, x3, g); // no room for two shoulders at this size: draw one
+      const yTop = g.xh + g.band * 0.26; // where the r's terminal sits — r>n's own number
+      return (
+        `M ${n2(x1)} ${n2(yTop)} Q ${n2(x2)} ${n2(yTop)} ${n2(x2)} ${n2(g.base)} ` +
+        `V ${n2(g.xh + r)} A ${n2(r)} ${n2(r)} 0 0 1 ${n2(x3)} ${n2(g.xh + r)} ` +
+        `L ${n2(x3)} ${n2(g.base)}`
+      );
+    },
+
     /* u → o: close the top. A shallow bow rather than a flat bar — the two stems are being joined
        over the counter, and the apex of the bow is the ring's own top at the x-height line. */
     "u>o": (g) => {
@@ -415,7 +480,51 @@ const STROKE = new Map(
       );
     },
 
+    /* u → a: close the top — and in THIS face that makes an `a`, not an `o`. Jost's `u` carries a
+       straight right stem running the full x-height up from the baseline (measured off the woff2:
+       x 370–450, y 0–460 of 1000 upem), and that stem already IS the single-storey `a`'s, so one
+       stroke over the top leaves a bowl with a round left side and a straight right one, which is
+       the `a` exactly. The hood lifts off the left stem's top, crests a hair ABOVE the x-height —
+       a geometric `a`'s apex overshoots, 470 against 460 — and comes down VERTICALLY onto the
+       right stem BELOW its top, which is the entire difference from `u>o`'s flat bow and worth
+       drawing the two side by side for. §13 #8, settled by measuring the glyph rather than
+       reasoning about Futura's conventions; in a face whose `u` is a continuous curve up the right
+       with no stem, this row is false and `u>o` is the true one. */
+    "u>a": (g) => {
+      const x1 = g.from.l + g.sw / 2; // the u's left stem
+      const x2 = g.from.r - g.sw / 2; // and its right, which is the a's
+      if (x2 <= x1 + 1) return null;
+      const dx = x2 - x1;
+      return (
+        `M ${n2(x1)} ${n2(g.xh)} C ${n2(x1 + dx * 0.42)} ${n2(g.xh - g.sw * 0.7)} ` +
+        `${n2(x2)} ${n2(g.xh - g.sw * 0.2)} ${n2(x2)} ${n2(g.xh + g.band * 0.29)}`
+      );
+    },
+
     "v>y": (g) => vline(g.from.c, g.base, g.desc), // the tail, straight down off the vertex
+
+    /* v → w: carry the zigzag on. The pen is already standing at the v's top-right terminal, so it
+       goes down to a second vertex and back up — one unbroken motion, two segments, no lift, which
+       is what §3.2's "two more strokes" was counting wrongly. The vertex sits at `desc`, the w's
+       own ink bottom, because a pointed vertex overshoots the baseline (Jost: 0.035 em) and a new
+       `v` stopping dead on the line would be the one visibly wrong thing about it.
+
+       MEASURED, AND THE ROW'S OWN WEAKNESS: a `w` is only 0.23 em wider than a `v`, and a centred
+       `v` spends half of that on each side, so the added half has ~0.115 em of slack — at a 40 px
+       em it is 4.6 px wide against a 3.2 px pen, i.e. a narrow hairpin rather than a second `v`.
+       That is not a drawing error, it is the frozen box (§5.2): a `w` is not a `v` plus a `v`, and
+       its middle peak lands where the centred v's VERTEX was. The shipped `n → m` arch is the same
+       scale of small (2.55 px radius at 40 px), so this may read fine — but if either reads badly
+       the fix is to drop the ROW, never to unfreeze the box. */
+    "v>w": (g) => {
+      const x1 = g.from.r - g.sw / 2; // the v's own right terminal
+      const x3 = g.to.r - g.sw / 2; // the w's
+      if (x3 <= x1 + 1) return null;
+      return (
+        `M ${n2(x1)} ${n2(g.xh)} L ${n2((x1 + x3) / 2)} ${n2(g.desc)} ` +
+        `L ${n2(x3)} ${n2(g.xh)}`
+      );
+    },
   }),
 );
 

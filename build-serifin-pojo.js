@@ -5,40 +5,68 @@
 // available are files (2of12.txt 389 KB, enable1.txt 1.7 MB). Pre-computing the answer is both
 // smaller than shipping a lexicon and the house pattern — Zana, Roundabout, Betar, the ladder and
 // the race all ship a generated POJO beside a hand-kept source of truth. Here the source of truth
-// is the ADD table below: ~20 lines, no build input, and the whole of the mode.
+// is the ADD table below: ~25 lines, no build input, and the whole of the mode — plus the
+// BLOCK set beside it, which is the only thing in here that is about taste rather than letterforms.
 //
 // Writes serifinPOJO.js and prints the §2 measurements, which must reproduce.
 
 const fs = require("fs");
 
-/* ── The stroke table (§3.1) ───────────────────────────────────────────────────────────────────
-   The rule for membership is ONE CONTINUOUS STROKE OF A PEN, added to the glyph as drawn in the
-   mode's own face — Jost* (§7), a Futura line: single-storey `a`, single-storey `g`, a plain
-   tail-less `l`, a circular `o`, monoline arches on `n m r`, `u` open at the top. Every row below
+/* ── The stroke table (§3.1) ─────────────────────────────────────────────────
+   The rule for membership is ONE UNBROKEN MOTION OF THE PEN — the hand does not lift — added to
+   the glyph as drawn in the mode's own face: Jost* (§7), a Futura line with a single-storey `a`, a
+   single-storey `g`, a plain tail-less `l`, a circular `o`, monoline arches on `n m r`, a `u` open
+   at the top with a straight full-height right stem, and an `i` with no foot serif. Every row below
    is literally true in that face and several of them are false in Palanquin, which is why the mode
    changes the typeface rather than the table.
 
-   §3.2 records what was CUT and why it matters that it was: `n → h` (lengthens a stem, doesn't add
-   one), `r → p` (two strokes), `t → f` (curves the stem, adds nothing), `l → k` (two diagonals),
-   `v → w` (two more strokes), `e → g` (not a stroke relation at all). That is 878 transformations
-   given up, ~18% of the mode, to keep the claim true — and the payoff is §8: every mapping that
-   survives has a stroke that can be DRAWN, so the animation can show the pen doing exactly what
-   this table says.
+   THE RULE IS THE PEN, NOT THE SEGMENT (§13 #7, settled 2026-11-07). A row may cost two segments
+   so long as it is one continuous motion with no lift: `v → w` is one zigzag, `r → m` is how a
+   hand writes an `m`, `l → k` touches the stem once on the way through. All three were cut by the
+   first pass on a SEGMENT count and are readmitted here — see §3.2, which now reads against this
+   rule rather than against the one it was written under.
+
+   §3.2 records what stays CUT and why it matters that it does: `n → h` and `r → p` EXTEND existing
+   ink rather than adding to it, `t → f` MODIFIES a stroke (it curves the stem's top and adds
+   nothing), and `e → g` is not a stroke relation at all. The payoff is §8: every mapping that
+   survives has a stroke that can be DRAWN, so the animation shows the pen doing exactly what this
+   table says.
 
    `o → g` is the one row kept on a judgement call: it is one descending stroke only in a
    SINGLE-STOREY g, which Jost* has. If the mode's face ever changes to one with a two-storey g,
-   that row is a second bowl and must go. */
+   that row is a second bowl and must go.
+
+   CANDIDATE ORDER IS DATA, NOT FORMATTING (§8.3). The game reads a stroke's `from` off the glyph
+   ON SCREEN, so consecutive candidates that are themselves one stroke apart draw a chain for free:
+   `u: ["o", "a"]` is what makes `bout → boot → boat` play as two drawn shots, and reversing those
+   two hands the player the strokes in the wrong order. */
 const ADD = {
   c: ["o", "a", "d", "e"],                // close the ring · right stem (x-height / ascending) · crossbar
-  h: ["b"],                               // close the foot
-  i: ["j"],                               // add the tail
-  l: ["t", "b", "d", "h"],                // crossbar · bowl right · bowl left · arch
+  h: ["b", "k"],                          // close the foot · the upper arm, out of the shoulder's junction
+  i: ["j", "l"],                          // add the tail · join the stem to the tittle, absorbing it
+  l: ["t", "b", "d", "h", "k"],           // crossbar · bowl right · bowl left · arch · arm in, leg out
   n: ["m"],                               // one more arch
   o: ["a", "b", "d", "e", "p", "q", "g"], // stem · ascender · descender · crossbar · below the line
-  r: ["n"],                               // carry the shoulder down to the baseline
-  u: ["o"],                               // close the top
-  v: ["y"],                               // add the tail
+  r: ["n", "m"],                          // carry the shoulder down · and on over a second arch
+  u: ["o", "a"],                          // close the top — ORDER IS LOAD-BEARING, see above
+  v: ["y", "w"],                          // add the tail · carry the zigzag on
 };
+
+/* ── The blocklist (§13 #6, settled 2026-11-07) ──────────────────────────────────────
+   The dictionary gate guarantees a real word, not a word you want on screen — and here the result
+   is the PAYOFF, read out loud, in a game whose own How to Play pitches it for a classroom. So a
+   result on this list is simply not generated, and nothing at play time has to know.
+
+   RESULT WORDS, not pairs: a word on this list can never be a payoff however it was reached, which
+   is why `rope → rape`, `roper → raper` and `ropes → rapes` all go on one entry. The two worst
+   finds were on rows that have been SHIPPED since M1 — `curt → cunt` on `r → n` and the three
+   `rope` swaps on `o → a`, the biggest row in the table — so this was overdue before M5 proposed
+   anything. The line is the dev's (2026-11-07) and it is deliberately short: the merely coarse and
+   the merely grim stay in play, because blocking `deal → dead` or `late → hate` would remove
+   ordinary English for tone. */
+const BLOCK = new Set([
+  "bitch", "boner", "cunt", "dick", "dike", "fag", "fanny", "hooker", "rape", "raper", "rapes",
+]);
 
 /* §3.5 rule 2: a two-letter minimum. `a → o` and `i → j` as whole words are noise. */
 const MIN_LEN = 2;
@@ -62,6 +90,8 @@ const VALID = new Set(readList("enable1.txt")); // the eligibility gate for resu
    `the → tho`, `long → hong`. Memory's rule is "enable1 for eligibility, 2of12 as a commonness
    signal only", but here the result is READ OUT LOUD by the player as the payoff, so eligibility is
    not the whole question. Both tiers are emitted and marked; the mode lights one of them. */
+const blocked = new Set(); // word>result pairs the BLOCK set refused, counted in the print-out
+
 function swapsFor(word) {
   const out = [];
   if (word.length < MIN_LEN) return out;
@@ -73,6 +103,10 @@ function swapsFor(word) {
       if (to === chars[i]) continue;
       const result = word.slice(0, i) + to + word.slice(i + 1);
       if (!VALID.has(result)) continue;
+      if (BLOCK.has(result)) {
+        blocked.add(`${word}>${result}`);
+        continue;
+      }
       out.push({ i, to, obscure: !COMMON.has(result) });
     }
   }
@@ -128,6 +162,7 @@ console.log(`words with >=1 stroke-add into a real word: ${keys.length} (${pct(k
 console.log(`total transformations:                      ${total}`);
 console.log(`  ...whose result is also in 2of12:         ${recognisable}`);
 console.log(`  ...enable1 only (starred, hidden in v1):  ${total - recognisable}`);
+console.log(`refused by the BLOCK set (§13 #6):          ${blocked.size}`);
 
 console.log("\nper mapping, over the whole corpus:");
 const ranked = [...perMapping.entries()].sort((a, b) => b[1] - a[1]);

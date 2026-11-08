@@ -5,16 +5,21 @@ BUILT 2026-10-22 — THE MODE IS COMPLETE.** Shoot a letter and a pen draws the 
 red, and the glyph becomes the other letter under it (§8, §10.3). The How-to-Play card and the mode
 picture landed with it. **DEV-ONLY** (`?dev=1`) — see §1.3.
 
-**M5 — a second pass at the stroke table — PLANNED 2026-10-25, AMENDED 2026-11-07, NOT BUILT**
-(§3.6 the design, §10.4 the plan). Five more rows off the same nine source letters —
-`h → k` · `i → l` · `u → a` · `r → m` · `v → w` — and **all five are true**: the first pass wrote
-`h → k` and `i → l` up as impossible and the dev corrected both (§3.6.2), the error being a test of
-*shape identity* where the rule is about the **pen's motion** and the glyph swap does the rest.
-Blocked on three answers, none of them large: whether the one-stroke test counts the *pen* or the
-*segment* (§13 #7, which now decides only how many rows land at once), whether the face's `u` makes
-`u → o` or `u → a` the one-stroke row (§13 #8 — a question about **Jost\***, answered by looking at
-it, §7.1), and §13 #6's blocklist, which `h → k` turns from a matter of taste into a prerequisite
-because it brings `hill → kill` with it.
+**M5 — a second pass at the stroke table — BUILT 2026-11-07** (§3.6 the rows, §3.7 the blocklist,
+§10.4/§10.5 as built). **Six** more rows off the same nine source letters, taking the table from 21
+to 27 — `h → k` · `i → l` · `u → a` · `r → m` · `v → w` · `l → k` — each with its own drawn stroke.
+All three of the questions it was blocked on are answered and written once: the one-stroke test is
+**the pen, not the segment** (§13 #7), which is what admitted the last three rows; the face's `u`
+decides `u → o` vs `u → a` and **Jost\*'s own outlines say `u → a`** (§13 #8, §7.1 — measured out of
+the woff2, and the reverse of what was expected, so **both** rows shipped with the `o` first); and
+§13 #6's blocklist is in, eleven result words long, where the finding was that it was **overdue
+rather than due** — twelve of the thirteen pairs it refuses come from rows live since M1.
+
+**⚠ `serifinPOJO.js` is NOT yet regenerated** (the dev's call to defer the data pass), so every new
+row is inert until `node build-serifin-pojo.js` runs. A dry run says what it will emit: **3,588
+source words (9.1%) · 5,033 transformations · 2,979 recognisable · 13 refused · 68.3 KB.** After
+that, two small things remain (§10.4 stage 3/4): a browser look at `r`'s and `v`'s widened boxes,
+and `air → aim` into the How-to-Play card.
 
 A wordplay mode where a word keeps its *letters' bones* and changes what they are. Serifin draws one
 extra stroke onto a letter and it becomes a different letter — and because she only ever draws where
@@ -48,13 +53,14 @@ color   r → n   colon          art   r → n   ant
 hand    h → b   band          eve   v → y   eye
 ```
 
-Five more rows are proposed and not built (§3.6), two of which the dev had to correct me on — an
-`h` grows a straight arm into a `k` (`ash → ask`, `cash → cask`) and an `i` joins up with its own
-tittle to become an `l` (`ail → all`, `bail → ball`):
+Six more rows landed with M5 (§3.6), two of which the dev had to correct me on — an `h` grows a
+straight arm into a `k` (`ash → ask`, `cash → cask`) and an `i` joins up with its own tittle to
+become an `l` (`ail → all`, `bail → ball`):
 
 ```
 ash     h → k   ask           air   r → m   aim
 ail     i → l   all           eve   v → w   ewe
+ball    l → k   balk          bull  l → k   bulk
 bout    u → o   boot  → u → a boat    (the same u, two shots — §3.6.3)
 ```
 
@@ -135,15 +141,21 @@ whose twelve sentences were never written down. The script now carries twelve of
 buys: one sentence in twelve and 7 more marked words). Two of the three misses are §2.1, not the
 table. So the guard (§11) is for a real and not especially rare miss, which is why it names words.
 
-Per mapping, over the whole corpus:
+**Re-measured on the M5 table (2026-11-07), which is what the script prints today.** The six new
+rows of §3.6 and the eleven-word `BLOCK` set of §3.7 move the headline to **3,588 words (9.1%) ·
+5,033 transformations · 2,979 recognisable · 13 refused**, and the sentence sample from 26 marked
+words to 27 — which is §3.6.1's whole point, that these rows are worth having for individual
+payoffs and not as a density fix. Per mapping, over the whole corpus:
 
 ```
-o→a 769   o→e 506   r→n 409   l→t 376   l→d 310   u→o 302   l→h 230
-c→d 204   l→b 195   h→b 168   n→m 167   c→a  83   c→e  51   c→o  42
-o→p  41   o→d  27   o→g  23   o→b  21   v→y  18   i→j   4   o→q   2
+o→a 765   o→e 506   u→a 475   r→n 407   l→t 376   l→d 308   u→o 302
+r→m 272   l→h 229   c→d 204   l→b 194   n→m 167   h→b 166   l→k 153
+h→k 106   c→a  83   c→e  51   v→w  51   c→o  42   o→p  41   i→l  40
+o→d  27   o→g  23   o→b  21   v→y  18   i→j   4   o→q   2
 ```
 
-`o→a` and `o→e` carry a fifth of the mode between them, which is why §7's font decision is not
+The four rows whose count *fell* are the blocklist, not a table change (`o→a` 769 → 765, `r→n` 409 →
+407, `h→b` 168 → 166, `l→d` 310 → 308). `o→a` and `o→e` carry a quarter of the mode between them, which is why §7's font decision is not
 cosmetic: if `o → a` does not read as one stroke on screen, the mode's best row is a lie.
 
 ### 2.1 `2of12.txt` is a LEMMA list, and it costs the mode at both ends
@@ -173,52 +185,62 @@ what the mode does. It is the first thing to revisit if free play reads as too t
 
 ### 3.1 The stroke table
 
-Hand-written, ~20 lines, no build input. The rule for membership is **one continuous stroke of a
-pen, added to the glyph as drawn in the mode's own face** (§7):
+Hand-written, ~25 lines, no build input. The rule for membership is **one unbroken motion of the
+pen — the hand does not lift — added to the glyph as drawn in the mode's own face** (§7):
 
 ```js
 const ADD = {
-  c: ["o", "a", "d", "e"],              // close the ring · add a right stem (x-height / ascending) · crossbar
-  h: ["b"],                             // close the foot
-  i: ["j"],                             // add the tail
-  l: ["t", "b", "d", "h"],              // crossbar · bowl right · bowl left · arch
-  n: ["m"],                             // one more arch
-  o: ["a", "b", "d", "e", "p", "q", "g"], // stem · ascender · descender · crossbar
-  r: ["n"],                             // carry the shoulder down to the baseline
-  u: ["o"],                             // close the top
-  v: ["y"],                             // add the tail
+  c: ["o", "a", "d", "e"],                // close the ring · right stem (x-height / ascending) · crossbar
+  h: ["b", "k"],                          // close the foot · the upper arm, out of the shoulder's junction
+  i: ["j", "l"],                          // add the tail · join the stem to the tittle, absorbing it
+  l: ["t", "b", "d", "h", "k"],           // crossbar · bowl right · bowl left · arch · arm in, leg out
+  n: ["m"],                               // one more arch
+  o: ["a", "b", "d", "e", "p", "q", "g"], // stem · ascender · descender · crossbar · below the line
+  r: ["n", "m"],                          // carry the shoulder down · and on over a second arch
+  u: ["o", "a"],                          // close the top — ORDER IS LOAD-BEARING, see below
+  v: ["y", "w"],                          // add the tail · carry the zigzag on
 };
 ```
 
-Nine source letters, 21 rows. The table is the whole mode — everything else is a lookup or a
-drawing. **§3.6 proposes five more rows off the same nine letters** (not built, and blocked on
-§13 #7); §3.2 is what was cut and why, two entries of which §3.6 reopens.
+Nine source letters, **27 rows** (21 through M4; §3.6's six landed 2026-11-07). The table is the
+whole mode — everything else is a lookup or a drawing. §3.2 is what stays cut and why; §3.7 is the
+blocklist, the one filter in the build that is about taste rather than letterforms.
+
+**THE TEST IS THE PEN, NOT THE SEGMENT** (§13 #7, settled 2026-11-07). A row may cost two segments
+so long as it is one continuous motion with no lift — `v → w` is one zigzag, `r → m` is how a hand
+writes an `m`, `l → k` touches the stem once on the way through. All three were cut by the first
+pass on a *segment* count, and §3.2 now reads against the rule §3.1 always stated.
+
+**CANDIDATE ORDER IS DATA, NOT FORMATTING** (§8.3). The game reads a stroke's `from` off the glyph
+**on screen**, so consecutive candidates that are themselves one stroke apart draw a chain for
+free: `u: ["o", "a"]` is what makes `bout → boot → boat` play as two drawn shots, and reversing
+those two hands the player the strokes in the wrong order.
 
 ### 3.2 What was cut, and why it matters that it was
 
-The first draft of the table was bigger and scored better. These rows were removed because they are
-not *one stroke*, and a mode that teaches letter anatomy cannot be approximately right about it:
+The first draft of the table was bigger and scored better. These rows stay out because they are not
+*one motion of the pen*, and a mode that teaches letter anatomy cannot be approximately right about
+it:
 
 | cut | swaps lost | why |
 | --- | --- | --- |
-| `n → h` | 112 | lengthens the left stem — that is extending a stroke, not adding one |
-| `r → p` | 223 | needs the stem extended *and* the bowl closed: two |
-| `t → f` | 231 | curves the top of the stem; nothing is added |
-| `l → k` | 153 | two diagonals |
-| `v → w` | 51 | a second `v` is two more strokes |
+| `t → f` | 231 | **modifies** a stroke — it curves the top of the stem and adds nothing |
+| `r → p` | 223 | **extends** the stem *and* closes the bowl: two acts, and one of them is not an addition |
+| `n → h` | 112 | **extends** the left stem — that is lengthening a stroke, not adding one |
 | `e → g` | 108 | not a stroke relation at all |
 
-That is **878 transformations given up, ~18% of the mode**, to keep the claim true. The payoff is
+That is **674 transformations given up, ~12% of the mode**, to keep the claim true. The payoff is
 §8: every mapping that survives has a *drawable* stroke, so the animation can show the pen doing
 exactly what the table says.
 
-**Two of those six rows are REOPENED by §3.6 (2026-10-25), and the reason is that this table counted
-the wrong thing.** §3.1's rule is *one continuous stroke of a **pen***; the column above counts
-**segments**. `v → w` ("two more strokes") and `l → k` ("two diagonals") are each one unbroken pen
-motion with no lift, so they fail the test as applied and pass the test as written. The other four
-stay cut under either reading — `n → h` and `r → p` **extend** existing ink, `t → f` **modifies** a
-stroke, `e → g` is not a stroke relation — which is why the fork is worth settling rather than
-assuming (§13 #7). Nothing here changes until it is.
+**Two more rows were cut here and have since been readmitted, and the reason is that this table
+originally counted the wrong thing.** `v → w` ("two more strokes") and `l → k` ("two diagonals")
+were each judged on a **segment** count, where §3.1's rule has always been *one continuous motion
+of a pen*: both are one unbroken motion with no lift, so they failed the test as applied and passed
+the test as written. §13 #7 settled it as the pen on 2026-11-07 and they shipped with M5 (§3.6),
+along with `r → m`, which the first draft never proposed. The four above stay cut under either
+reading, which is what makes them a different kind of refusal — **extending or modifying existing
+ink is not adding to it**, and no answer to the pen-or-segment question touches that.
 
 `o → g` is the one row kept on a judgement call — it is one descending stroke only in a **single-
 storey** `g`, which the mode's face has (§7). In a two-storey `g` it is a second bowl and the row
@@ -236,8 +258,9 @@ export default { "adopt": "2a 2e", "cat": "0o 0e", "cut": "0o 1o", … };
 ```
 
 One entry per source word; the value is a space-joined list of `<index><letter>` swaps, starred when
-the result is `enable1`-only (§3.4). **Measured as built: 2,995 entries, 56 KB raw / 14 KB gzipped**
-(the 42/12 above was the pre-build estimate). Lazy `import()` on first use, the pattern
+the result is `enable1`-only (§3.4). **Measured as shipped: 2,995 entries, 56 KB raw / 14 KB gzipped**
+— still the file on disk, since M5's rows are not regenerated yet; its dry run says 3,588 entries /
+68.3 KB (§10.4). The 42/12 above was the pre-build estimate. Lazy `import()` on first use, the pattern
 `ladderPOJO.js` set.
 
 `build-serifin-pojo.js` runs offline (`node build-serifin-pojo.js`), reads `2of12.txt` for sources
@@ -252,7 +275,8 @@ is **read out loud by the player as the payoff**, so eligibility is not the whol
 land as a dud.
 
 So the build emits **both tiers** and marks them (`*` = `enable1` only), and the mode lights only
-the `2of12` tier in v1 (`SERIFIN_OBSCURE = false`). That is 2,349 of the 3,948 swaps — still 12/12
+the `2of12` tier in v1 (`SERIFIN_OBSCURE = false`). That is 2,349 of the 3,948 swaps at M4 (2,979 of
+5,033 on M5's table) — still 12/12
 on the sentence sample. Flipping the flag opens the long tail without a rebuild, and the dev can
 promote individual words in the source table the way `race-pairs-source.txt` is pruned.
 
@@ -271,32 +295,33 @@ promote individual words in the source table the way `race-pairs-source.txt` is 
    guarantee does not depend on every future lookup remembering.
 4. **The candidate list is fixed at wrap time** and read from the word as typed — see §6.1.
 
-### 3.6 Proposed: five more rows (the dev's list, 2026-10-25) — NOT BUILT
+### 3.6 Six more rows — BUILT 2026-11-07 as M5
 
-> **`h → k` · `i → l` · `u → a` · `r → m` · `v → w`**
+> **`h → k` · `i → l` · `u → a` · `r → m` · `v → w` · `l → k`**
 
-All five hang off **source letters the table already has**, so this adds no new letter to §3.1's
-nine — it takes the table from **21 rows to 26**, or 27 with `l → k` (§3.6.4). The plan is M5
-(§10.4); nothing below is in the shipped `ADD` table or `serifinPOJO.js` yet.
+All six hang off **source letters the table already had**, so M5 added no new letter to §3.1's
+nine — it took the table from **21 rows to 27**. Five are the dev's own list (2026-10-25); the
+sixth, `l → k`, came in with §13 #7's answer and is the one the list did not name.
 
-**Amended 2026-11-07.** The first pass (2026-10-25) judged `h → k` and `i → l` impossible; the dev
-gave the construction for each and both are **single straight strokes** — §3.6.2, which is also
-where the reasoning error is recorded, because it is the kind that will recur. The same message
-raised the better question about the `u`, which §3.6.3 is.
+**The reasoning error worth keeping (§3.6.2).** The first pass wrote `h → k` and `i → l` up as
+impossible, and both are single straight strokes. It had tested **shape identity** — is `h` plus a
+stroke the same picture as a `k`? — where the mode's rule is about the **pen's motion**, and §8
+beat 3 already settles the rest: the glyph **swaps to the font's own letter** under the fading mark.
+So a row only has to name one stroke a hand could add that accounts for the result.
 
 #### 3.6.1 What they are worth
 
-Measured 2026-10-25 against the same inputs the build script uses (`2of12.txt` sources ×
-`enable1.txt` results), so these numbers sit alongside §2's rather than replacing them:
+Measured 2026-10-25 and reproduced exactly on the build (2026-11-07), against the same inputs the
+script uses (`2of12.txt` sources × `enable1.txt` results):
 
-| | shipped | + five | delta |
+| | M4 | + the six | as built (with §3.7) |
 | --- | --- | --- | --- |
-| source words with ≥1 stroke-add | 2,995 (7.6%) | **3,549 (9.0%)** | +554 |
-| transformations | 3,948 | **4,893** | +945 (+24%) |
-| …recognisable (result in `2of12`) | 2,349 | **2,914** | +565 (+24%) |
-| `serifinPOJO.js` body | 55.5 KB | **66.6 KB** | +20% |
-| words carrying 2+ live letters (§6.2) | 9.2% | **10.8%** | +1.6 pt |
-| **sentences with something to shoot** | **9 of 12** | **9 of 12** | **+1 marked word, total** |
+| source words with ≥1 stroke-add | 2,995 (7.6%) | 3,591 (9.1%) | **3,588 (9.1%)** |
+| transformations | 3,948 | 5,046 | **5,033** |
+| …recognisable (result in `2of12`) | 2,349 | 2,991 | **2,979** |
+| `serifinPOJO.js` body | 55.5 KB | — | **68.3 KB** (+23%) |
+| words carrying 2+ live letters (§6.2) | 9.2% | **10.8%** | 10.8% |
+| **sentences with something to shoot** | **9 of 12** | **9 of 12** | **9 of 12** (26 → 27 marked words) |
 
 Per row, recognisable / total:
 
@@ -308,9 +333,9 @@ v→w   27 /  51   cover→cower   eve→ewe       lover→lower  mover→mower
 i→l   24 /  40   ail→all       bail→ball     boil→boll   chili→chill
 ```
 
-**`u → a` would be the third biggest row in the whole table** (476, behind only `o → a` 769 and
-`o → e` 506) and `r → m` the eighth. The other three are tail rows — `v → w` ties `c → e`, and
-`i → l` sits between `o → p` and `o → d`.
+**`u → a` is the third biggest row in the whole table** (475 as built, behind only `o → a` 765 and
+`o → e` 506) and `r → m` the eighth. `l → k` lands fourteenth at 153. The other three are tail rows
+— `v → w` ties `c → e`, and `i → l` sits between `o → p` and `o → d`.
 
 **And the number that matters did not move.** §2's own warning is that the 7.6% is the wrong figure
 to read and the sentence sample is the right one — and the five rows add **one** marked word across
@@ -320,34 +345,25 @@ for making the mode denser**: `air → aim`, `cover → cower`, `abuse → abase
 better payoffs than anything the table currently offers on those letters, which is a real reason,
 just not the reason the delta column looks like.
 
-#### 3.6.2 All five are true — corrected 2026-11-07 by the dev
+#### 3.6.2 What each stroke is
 
-**Two of these were written up as impossible on 2026-10-25 and that was wrong.** The error was
-testing *shape identity* — is `h` plus a stroke the same picture as a `k`? — when the mode's own
-rule is about the **pen's motion**, and §8 beat 3 already settles the rest: the glyph **swaps to the
-font's own letter** under the fading mark. So a row only has to name one stroke a hand could add
-that accounts for the result. Under that test, which is the test §3.1 always stated, all five hold.
+Each row's `STROKE` entry is named in §10.5; this is the claim each one makes about the letterform.
 
-| row | verdict | the stroke |
+| row | shape | the stroke |
 | --- | --- | --- |
-| **`u → a`** | ✅ one arc — but see §3.6.3, it may be the **wrong row to add** | One arc from the top of the left stem, over and down onto the right stem below its top: the bowl closes and the stem's head shows. Depends on the face's `u` having a straight right side, which is the same fact §3.6.3 turns on. |
-| **`r → m`** | ✅ one pen motion, two segments | Carry the shoulder down to the baseline, back up over and down again — how an `m` is written, and how the Scriptorium's own skeleton authors it. Needs §13 #7 answered *pen*. |
-| **`v → w`** | ✅ one pen motion, two segments — and §3.2 cut it | The pen is already at the `v`'s top right; continue down and up. One unbroken zigzag, no lift. §3.2's "two more strokes" is a segment count. Needs §13 #7 answered *pen*. |
-| **`h → k`** | ✅ **one straight segment — the cleanest row of the five** | The dev's construction: **the `h`'s shoulder and leg ARE the `k`'s lower leg**, and what is missing is the upper arm — one straight diagonal from the junction where the shoulder leaves the stem, up and out to the right. Nothing is removed. The dev's own note is that the result "would look kind of weird with a curved leg", which is exactly right and exactly survivable: you watch a straight arm arrive on a curved-legged `k`, and then the font's real `k` lands under it. Passes the *segment* test too. |
-| **`i → l`** | ✅ **one short segment, and the most legible animation in the table** | The dev's construction: **connect the stem to the tittle.** The gap between the `i`'s stem top and its dot is real and visible, so the added stroke fills it and the dot is *absorbed* into the stem rather than deleted — nothing is erased, which is what my "removes the dot" objection got wrong. Nor does it lengthen a stroke (the `n → h` objection): it adds a new one in a gap between two existing marks, which is the cleanest kind of addition there is. The dev's caveat is the right one to record — **in a face whose `i` has a foot serif it is false**, because the serif survives into a letter that should not have one, which is why this row is a constraint on the face (§7.1) and not just on the table. Passes the *segment* test. |
+| **`h → k`** | one straight segment | **The `h`'s shoulder and leg ARE the `k`'s lower leg**, so what is missing is the upper arm — one straight diagonal from the junction where the shoulder leaves the stem, up and out to the right. Nothing is removed. The dev's own note is that the result "would look kind of weird with a curved leg", which is exactly right and exactly survivable: you watch a straight arm arrive on the `h`'s curved leg, and then the font's real `k` lands under it. The cleanest row of the six, and the one with no open question behind it. |
+| **`i → l`** | one short segment | **Connect the stem to the tittle.** The gap is real and visible — Jost leaves 0.135 em of it between the stem's top at the x-height and the dot's underside — so the stroke *fills* it and the dot is **absorbed** rather than deleted: nothing is erased, and nothing is lengthened either (the `n → h` objection does not apply, because this adds a stroke in a gap between two existing marks). It runs on past the dot to the `l`'s own ink top, since the `l` stands taller than the tittle. **False in a face whose `i` has a foot serif** — the serif would survive into a letter that must not have one — which is why that is now a standing constraint on the face (§7.1) and not a note about this row. |
+| **`u → a`** | one cubic | One arc from the top of the left stem, over the top and down **vertically** onto the right stem **below** its top: the bowl closes and the stem's head shows. Depends on the face's `u` having a straight right side, which §3.6.3 measured and which is the entire difference from `u>o`'s flat bow. |
+| **`l → k`** | two segments, no lift | In from the arm's top terminal, down to the waist, out again to the leg's foot — one motion touching the stem once on the way through. Both ends stand in empty space on the `k`'s own right edge; the stem it passes through is the ink already there. |
+| **`r → m`** | two moves, one subpath | Carry the shoulder down to the baseline, back **up the leg just drawn** and on over a second arch — which is how a hand writes an `m`, and how the Scriptorium's own skeleton authors it. The retrace lays no new ink, so the dash animation shows the pen returning as a pause rather than a mark. |
+| **`v → w`** | two segments, no lift | The pen is already standing at the `v`'s top-right terminal; continue down to a second vertex and back up. One unbroken zigzag. §3.2's "two more strokes" was a segment count. |
 
-So `h` and `i` are **not** exhausted, which is what the 2026-10-25 pass claimed. Each has a second
-growth, both of them single straight strokes, and the two of them are the only rows in the whole
-proposal that need no help from §13 #7.
+#### 3.6.3 `u → o → a` — SETTLED 2026-11-07 by measuring the glyph
 
-#### 3.6.3 `u → o → a`: the dev's route, and why it may be a FACE decision rather than a row
+Both rows shipped, **`o` first**, and the measurement that decided it is below.
 
-The dev's preference is to **keep `u → o`** and reach the `a` as a second step — `u → o → a`, with
-the `a` single-storey — rather than add a direct `u → a`. Two things make that more interesting than
-a preference.
-
-**First, the two rows cannot both be one stroke in the same face**, and which one is true is decided
-by a single detail of the `u`:
+**The two rows cannot both be one stroke in the same face**, and which one is true is decided by a
+single detail of the `u`:
 
 - If the face's `u` has a **straight right side rising the full x-height**, the `u` already *holds*
   the single-storey `a`'s stem, so closing the top gives an **`a`** — and `u → o` is the weaker
@@ -355,10 +371,14 @@ by a single detail of the `u`:
 - If the face's `u` is a **continuous curve up the right with no straight stem** — the dev's "no
   bottom-right stem" — then closing the top gives an **`o`**, and the `a` needs a second stroke.
 
-Jost\* is a Futura line, where the `u` is conventionally two verticals joined by a semicircle, which
-points at `u → a`. **But that is a thing to look at, not to deduce**, and it is now §7.1's fifth
-test. The dev's route is the better design *if the face supports it*, because it makes a two-stroke
-journey into two acts instead of drawing two strokes on one shot.
+**Measured, not deduced** (§7.1's fifth test, answered by decoding `fonts/Jost-latin.woff2`):
+Jost\*'s `u` is a **straight rectangular stem on the right, x 370–450, running the full height from
+baseline y 0 to x-height y 460** of a 1000 upem — flat-topped, no spur — against an `a` whose own
+stem is x 341–421 from y 0 up to the arc junction at ~330. So **closing the `u`'s top in this face
+makes an `a`**, and the shipped `u → o` is the weaker claim: Jost's `o` is a true circle (35–511 ×
+−10–470, no straight side anywhere), so the ring a closed `u` leaves has a straight right side the
+`o` has not got. That is the reverse of what the dev hoped, and it is survivable for the same reason
+`h → k` is — §8 beat 3 swaps in the font's own letter under the fading mark.
 
 **Second — and this is the part worth keeping — the route already works, and the code already draws
 it.** M4's `shootSerifin` reads the stroke's `from` as **the glyph on screen**, not the cycle's
@@ -376,34 +396,34 @@ or the player gets the two strokes in the wrong order.
 **But the chain only covers 31% of the row.** Measured: of `u → a`'s 476 transformations, **147**
 have a real intermediate `o` word so the cycle can offer the middle rung (79 with all three words
 common), and **329 (69%) do not** — `abuse → abase` has no `abose`, `begun → began` no `begon`,
-`bluster → blaster` no `bloster`. Those are reachable only as a direct one-shot `u → a`, needing its
-own stroke. So the fork is a real one and it is the dev's to make:
+`bluster → blaster` no `bloster`. Those are reachable only as a direct one-shot `u → a`.
 
-- **Both rows, `o` first** — the journey is two shots where the language allows it and one shot
-  where it does not. Keeps all 476 and needs a `u>a` stroke for the 329.
-- **`u → o` only** — every shot is honestly one stroke, and the 329 words simply are not targets on
-  their `u`. Costs the single biggest row of the five proposals and needs no new stroke at all.
+**So both rows shipped**: the journey is two drawn shots where the language allows it (`bout → boot
+→ boat`) and one honest `u>a` stroke where it does not (`abuse → abase`). The alternative — `u → o`
+only, every shot honestly one stroke, the 329 words simply not targets on their `u` — is the purist
+reading of the dev's own point, and it generalises into something larger: *offer a candidate only
+where every step to it is itself one stroke on a real word*, which is §13 #1's chaining arrived at
+from the opposite direction. It would have cost the third-biggest row in the table.
 
-The second is the purist reading of the dev's own point, and it generalises into something larger:
-*offer a candidate only where every step to it is itself one stroke on a real word* — which is
-§13 #1's chaining, arrived at from the opposite direction.
+#### 3.6.4 The pen-or-segment fork — SETTLED as the PEN, 2026-11-07
 
-#### 3.6.4 The pen-or-segment fork, and what each answer now buys
+§13 #7 decided only **how many of the six landed at once**, since all of them are real either way:
 
-With all five rows true, §13 #7's fork stops being about *which rows are real* and becomes only
-about **how many land at once**:
-
-| | rows M5 would add |
+| | rows |
 | --- | --- |
-| **segment** (one arc or one line) | `u → a` (or just `u → o`, §3.6.3) · **`h → k`** · **`i → l`** |
-| **pen** (the hand does not lift) | those, plus `r → m` · `v → w` · **`l → k`** |
+| **segment** (one arc or one line) | `u → a` · `h → k` · `i → l` |
+| **pen** (the hand does not lift) — *the answer* | those, plus `r → m` · `v → w` · **`l → k`** |
 
-**`l → k` (153) is the row the dev's list did not name and must not be left out by accident** — the
-arm comes in to the stem and the leg goes out from it, one continuous motion touching the stem once,
-which is `v → w`'s argument exactly. It is also the honest neighbour of `h → k`: the `h`'s own
+**`l → k` (153) is the row the dev's list did not name and would have been left out by accident** —
+the arm comes in to the stem and the leg goes out from it, one continuous motion touching the stem
+once, which is `v → w`'s argument exactly. It is also the honest neighbour of `h → k`: the `h`'s own
 ascender *is* an `l`, so a face that can draw one can draw the other.
 
-Three of §3.2's six cuts stay cut under either answer, for reasons neither reading touches:
+The pen reads as the truer rule for a mode about *how a hand makes a letter* — a `w` really is one
+zigzag, an `m` really is one motion — and §3.1, §3.2 and the build script's header were rewritten
+against it in the same change, so the doc never holds both tests at once.
+
+Four of §3.2's six cuts stay cut under either answer, for reasons neither reading touches:
 
 - `n → h` (112) and `r → p` (223) — both **extend** existing ink, which is a different act from
   adding to it. (This was also my objection to `i → l`, and it was wrong there because that stroke
@@ -411,39 +431,68 @@ Three of §3.2's six cuts stay cut under either answer, for reasons neither read
 - `t → f` (231) — **modifies** a stroke (curves the stem's top); nothing is added.
 - `e → g` (108) — not a stroke relation at all.
 
-So the fork still has to be settled first and written **once**, because the doc holds both answers
-and the visible symptom of keeping both would be a table shipping `v → w` while still citing "two
-more strokes" as the reason `l → k` is absent. Either answer is defensible; 26 rows judged by two
-rules is not.
-
-It costs nothing in §8, which is the test §3.2 set for itself: `u → a` is one arc, `h → k` and
-`i → l` are single straight lines, `r → m` is `arch()` twice in one path, `v → w` and `l → k` are
-polylines. **Every row on the table above is drawable**, so the prune's whole purpose survives.
+It cost nothing in §8, which is the test §3.2 set for itself: `u → a` is one cubic, `h → k` and
+`i → l` are single straight lines, `r → m` is a shoulder and an arch in one subpath, `v → w` and
+`l → k` are polylines. **Every row in the table is drawable**, so the prune's whole purpose
+survives.
 
 #### 3.6.5 What the rows cost elsewhere
 
-Three knock-ons, none of them blocking, all of them cheaper to know now than to find in play:
-
-- **The frozen box gets wider, and this is the one to look at in a browser first.**
+- **The frozen box gets wider, and this is the one thing a parse-check cannot see.**
   `freezeLetterBoxes` sizes a letter's box to the widest glyph its cycle can show (§5.2), and
-  `r` gains `m` while `v` gains `w` — **the two widest letters in the lowercase**. So a live `r` in
-  `air` stops sitting in an `n`-wide box and starts sitting in an `m`-wide one, with roughly a third
-  of an em of air either side of a narrow glyph. Nothing *moves* (that is what freezing prevents),
-  but the sentence gets visibly gappy around those letters, and §8.1's near-end error grows with the
-  same gap. The two straight-stroke rows are free here: `h → k` adds nothing wider than the `b` that
-  cycle already holds, and `i → l` adds the **narrowest** letter in the alphabet to the cycle of the
-  second narrowest.
+  `r` gains `m` while `v` gains `w` — **the two widest letters in the lowercase**. Measured off
+  Jost's own advance widths, in em: `r`'s box goes **0.525 → 0.780 (+0.26)** and `v`'s **0.440 →
+  0.680 (+0.24)**, so a live `r` sits in a box 0.44 em wider than its own glyph. Nothing *moves*
+  (that is what freezing prevents), but the sentence gets gappy around those two letters and §8.1's
+  near-end error grows with the same gap. **The other four rows are free, measured**: `k` (0.440) is
+  narrower than the `b` (0.570) that `h`'s cycle already holds and than the `h` (0.525) that `l`'s
+  does; `l` (0.230) is narrower than the `i` (0.260) that sets its own box; and `a` (0.481) is
+  narrower than the `o` (0.546) already in `u`'s cycle. So `h → k`, `i → l`, `l → k` and `u → a`
+  change no box at all. **If the gap reads badly the fix is to drop the ROW, never to unfreeze the
+  box** — that is §5.2, and the line would slide on every swap.
 - **§6.2 takes more load.** Words with two or more live letters go 9.2% → 10.8%. The deadening rule
   already handles them and needs no change; it just fires more often, so it is worth re-reading
   whether a word that goes quiet reads as *not yet* rather than as *broken*.
-- **§13 #6's blocklist gains four candidates, and `h → k` being real makes this the bullet that
-  actually blocks.** They are `hill → kill`, `stub → stab`, `darn → damn`, `bur → bum`. Three are
-  mild. `hill → kill` is not, in a game whose own How to Play pitches it for a classroom — and the
-  2026-10-25 pass waved it through on the grounds that it came from a row that "cannot be built
-  anyway", which §3.6.2 has since retracted. **So `h → k` cannot land before §13 #6 does.** The fix
-  is unchanged and cheap: a `BLOCK` set beside `ADD` in the build script, so the shipped table
-  simply lacks the entry and nothing at play time has to know. The question was only ever whose list
-  it is, and `h → k` is what makes it due.
+- **§13 #6's blocklist became due, and it turned out to be overdue** — see §3.7. The four
+  candidates these rows were expected to bring (`hill → kill`, `stub → stab`, `darn → damn`,
+  `bur → bum`) are all in the end *allowed* by the dev's line; the thirteen pairs the shipped
+  `BLOCK` set actually refuses are **twelve from rows that have been live since M1** and one from a
+  new row (`funny → fanny` on `u → a`). So M5 is what made the question get asked, not what made it
+  necessary.
+
+### 3.7 The blocklist — BUILT 2026-11-07 (§13 #6)
+
+The dictionary gate (§1.2) guarantees a **real** word, not a word you want on screen — and here the
+result is the **payoff, read out loud**, in a game whose own How to Play pitches it as a classroom
+tool. So `build-serifin-pojo.js` carries a `BLOCK` set beside `ADD`, the shipped table simply has no
+such entry, and nothing at play time has to know.
+
+```js
+const BLOCK = new Set([
+  "bitch", "boner", "cunt", "dick", "dike", "fag", "fanny", "hooker", "rape", "raper", "rapes",
+]);
+```
+
+Three things about it.
+
+**It is a set of RESULT WORDS, not of pairs.** A word on the list can never be a payoff however it
+was reached, which is why `rope → rape`, `roper → raper` and `ropes → rapes` all ride one entry. A
+pair-level block is available if a particular source word is ever worth keeping, and nothing here
+needs it.
+
+**The scan is what makes it checkable, and the finding was that this was overdue before M5 proposed
+anything.** Against a 169-word candidate list over the full 27-row table, 67 pairs flag; the dev's
+line refuses **13**, and **12 of those come from rows that have shipped since M1** — `curt → cunt`
+on `r → n` and the three `rope` swaps on `o → a`, the biggest row in the table. Only `funny → fanny`
+comes from a new row. The build prints the count, so the number is visible on every regeneration.
+
+**The line is deliberately short, and it is the dev's** (2026-11-07). The merely coarse and the
+merely grim stay in play — `crop → crap`, `fort → fart`, `darn → damn`, `such → suck`, `slit → shit`,
+`lit → tit`, `sox → sex`, `hill → kill` — because the next tier out starts removing ordinary English
+for tone (`deal → dead`, `late → hate`, `lane → lame`, `rut → nut`, `woe → wee`), and a mode whose
+whole subject is letterforms should not be quietly editing the language's vocabulary. Where the line
+sits is a judgement that can move; that it is one line in one generated file is what makes moving it
+cheap.
 
 ---
 
@@ -483,7 +532,8 @@ defaults to `symbol`, and `symbol` is the span id. **`"Serifin ✎"`.**
 ### 4.3 Parked: the one who takes a stroke away
 
 The inverse map is free — invert §3.1 and `adorn → acorn`, `night → right`, `adapt → adopt`,
-`the → tho`. Measured, it is slightly *richer* than the add map (7.8% of common words vs 7.6%), and
+`the → tho`. Measured **against M4's 21-row table** it is slightly *richer* than the add map (7.8%
+of common words vs 7.6%) — a figure M5's six rows have not been re-measured against, and
 a second character would make Switch Character meaningful in the mode (the General & Keen and
 Prefixer & Sufferix pattern).
 
@@ -699,19 +749,29 @@ Jost\* passes all four, which is why it is the face — not because it was alrea
 is only what made it free.
 
 **Two more tests, added 2026-11-07 by §3.6 — and unlike the four above these DECIDE ROWS rather than
-confirming them.** They are the first case of the face choosing what the table may hold:
+confirming them.** They are the first case of the face choosing what the table may hold. Both were
+answered by **decoding `fonts/Jost-latin.woff2` and reading the outlines** rather than by reasoning
+about Futura's conventions, which is the same rule that gave `projectileAnchor` its number and
+`freezeLetterBoxes` its widths; coordinates below are in the font's own 1000 upem.
 
 - **What is the `u`'s right side?** A straight stem rising the full x-height means the `u` already
   holds the single-storey `a`'s stem, so closing its top gives an **`a`** and `u → o` is the weaker
   claim. A continuous curve with no straight stem means closing the top gives an **`o`** and the `a`
-  needs a second stroke. **Both rows cannot be one stroke in the same face**, and the dev's
-  preferred route (`u → o → a`, §3.6.3) is the one that needs the curve. Jost\* being a Futura line
-  points at the stem reading, but *look at it* — this is the one test on this list that cannot be
-  settled by knowing the face's pedigree.
+  needs a second stroke. **Both rows cannot be one stroke in the same face.**
+  **MEASURED: Jost\*'s `u` has the stem** — `x 370–450, y 0–460`, a flat-topped rectangle from the
+  baseline to the x-height, against an `a` whose stem is `x 341–421` from `y 0` to the arc junction
+  at ~330 and an `o` that is a true circle (`35–511 × −10–470`). So `u → a` is this face's one-stroke
+  row and `u → o` is the weaker one — the reverse of what the dev hoped, and **both shipped anyway**
+  (§3.6.3), the `o` first, because §8 beat 3's swap-to-the-font's-own-letter is the same licence
+  `h → k` lives on.
 - **Does the `i` have a foot serif?** `i → l` connects the stem to the tittle (§3.6.2), and a foot
   serif survives that stroke into a letter that should not have one. The dev's own note: *"in this
-  font that I am typing in now, it is untrue because of the bottom serif."* Sans-serif faces pass
-  by construction, so Jost\* does — but a serif face would have to give up the row, not fudge it.
+  font that I am typing in now, it is untrue because of the bottom serif."* Sans-serif faces pass by
+  construction — a serif face would have to give up the row, not fudge it.
+  **MEASURED: Jost\*'s `i` is two contours, a plain 4-point rectangle stem (`x 90–170, y 0–460`) and
+  a round tittle (`y 595–705`)**, so there is no serif and the gap the stroke fills is a real
+  0.135 em. Its `l` is likewise a bare 4-point rectangle to `y 780`, which is also §7.1's third test
+  passing by measurement rather than by eye.
 
 ---
 
@@ -721,8 +781,8 @@ confirming them.** They are the first case of the face choosing what the table m
 This is where the §3.2 prune pays: every surviving mapping has a stroke that can be *drawn*, so
 there is a path to animate.
 
-One table of **21 strokes, one per surviving row of §3.1**, keyed `"o>a"`, `"l>t"`, `"c>o"`, laid
-over the glyph.
+One table of **one stroke per surviving row of §3.1** — 21 at M4, **27 since M5** (§10.5) — keyed
+`"o>a"`, `"l>t"`, `"c>o"`, laid over the glyph.
 
 **As specced, the table held SVG path STRINGS in the letter box's own em units**
 (`"o>a": "M .86 .28 V .78"`). **As built it holds FUNCTIONS of the measured glyph**, and the reason
@@ -805,15 +865,16 @@ and much larger piece of work. §12.4.
 
 ### 8.3 How often a shot actually draws a stroke — 48%, and the rest is correct
 
-Measured 2026-11-07, counting every step of every cycle the table can produce (8,915 of them). It
-was not measured when M4 shipped and it is worth having, because the headline reads worse than the
-truth:
+Measured 2026-11-07, counting every step of every cycle the table can produce. It was not measured
+when M4 shipped and it is worth having, because the headline reads worse than the truth. The figures
+below are the **M5 table as built** (9,106 steps); M4's 21-row table gave 46/46/8 over 7,256 steps,
+so **six more rows moved the split by two points and nothing else**:
 
 | | | |
 | --- | --- | --- |
-| the step is a table row, so a stroke is drawn | **4,257** | 48% |
-| the cycle's **wrap home** — no stroke, and there can never be one | **4,022** | 45% |
-| a **lateral** between two candidates — likewise | **636** | 7% |
+| the step is a table row, so a stroke is drawn | **4,339** | 48% |
+| the cycle's **wrap home** — no stroke, and there can never be one | **4,073** | 45% |
+| a **lateral** between two candidates — likewise | **694** | 8% |
 
 **The 45% is the cycle returning to the letter you typed** (§6.1), and that step *takes a stroke
 away*: `adapt → adopt` is an `a` losing its stem. Serifin's table cannot hold it by definition —
@@ -826,7 +887,7 @@ The 7% are **laterals** — a cycle like `l`'s `[l, t, b, d, h]` stepping `t →
 off and another on, so neither character can draw it alone. Two things follow. The first is that
 **candidate order decides whether a lateral is drawable**: where one candidate is itself one stroke
 from the next, ordering them adjacently turns the lateral into a drawn chain, which is exactly what
-`ADD.u = ["o", "a"]` buys in §3.6.3 and what `ADD.c = ["o", "a", …]` already buys today
+`ADD.u = ["o", "a"]` now buys (§3.6.3) and what `ADD.c = ["o", "a", …]` already bought
 (`cat → oat` draws `c>o`, then `oat → eat` draws `o>e`). The second is that the gain is small —
 `o`'s candidates are all `o>` rows and nothing is a row *from* `a`, so a cycle picks up at most one
 extra drawn step. Worth ordering for, not worth a milestone.
@@ -874,7 +935,7 @@ animation that does not exist yet will sound wrong in a way that looks like the 
 | **M2 — the mode** | ✅ **BUILT 2026-10-18.** `serifinFunc.js`, `protectedSerifin`, the `<option>`, the guard, the `nodeArr` push, the frozen boxes, **and the font**. Nothing to shoot yet. |
 | **M3 — the hero** | ✅ **BUILT 2026-10-20.** `Serifin` on the dev's own art, her drawn bolt, the collision branch, the swap, the cycle, §6.2's one-stroke-per-word rule, the clank, `fixArticleBefore`, three cues. **Playable.** The glyph swaps with a red flash; no drawn stroke yet. |
 | **M4 — the feel** | ✅ **BUILT 2026-10-22.** §8's 21 strokes and the draw-on animation, §9's cue moved to the start of the draw, the `modeHelp.js` card and the `modeArt.js` picture. §9's three cues themselves had already come forward into M3. **The mode is complete.** |
-| **M5 — the second pass at the table** | **PLANNED 2026-10-25, §10.4.** §3.6's new rows, the one-stroke test written once (§13 #7), the strokes that draw them, and §13 #6's blocklist. Table work only — no new mechanic, no new file, no save state. |
+| **M5 — the second pass at the table** | ✅ **BUILT 2026-11-07, §10.4/§10.5.** §3.6's six new rows (21 → 27), the one-stroke test settled as the **pen** and written once (§13 #7), the six strokes that draw them, and §3.7's blocklist. Table work only — no new mechanic, no new file, no save state. **`serifinPOJO.js` deliberately not regenerated yet**, so the rows are inert until the build runs. |
 
 M3 was the line worth holding: everything through it is mechanism, everything in M4 is the thing the
 mode is *for*. They were not reordered — a drawn stroke over a mode that does not yet cycle
@@ -995,92 +1056,88 @@ other mode is untouched. The How-to-Play card leads with the rule no other card 
 ever had to state — **you shoot a letter, not a word** — because a player arriving from any other
 mode aims at the middle of a word and hits whatever happens to be there.
 
-### 10.4 M5 — the plan
+### 10.4 M5 — the stroke table's second pass (BUILT 2026-11-07, bar the regeneration)
 
-§3.6 is the design; this is the order to build it in. The whole of M5 is **table work**: no new
-mechanic, no new data file, no save state, nothing the player has to learn. That is what makes it
-safe to do in one pass — and also what makes it easy to do in the wrong order, because the data
-lands long before anything can draw it.
+Six rows, a blocklist and six strokes. The whole of M5 is **table work** — no new mechanic, no new
+data file, no save state, nothing the player has to learn — which is what made it safe to do in one
+pass and also what made the order matter, because the data lands long before anything can draw it.
 
-**Stage 0 — settle two questions first, in a sentence each, before touching the table.**
+**Stage 0 — the two questions, answered.** §13 #7 settled as the **PEN**, which is what admits
+`r → m`, `v → w` and `l → k` (§3.6.4); §13 #8 settled by **decoding the woff2 and reading Jost's
+own `u`** rather than by reasoning about Futura (§3.6.3, §7.1), which answered *against* the dev's
+preference and landed both rows with the `o` first. §13 #6's line is the dev's and is §3.7. All
+three are written into §3.1's rule, §3.2's cut table and the build script's header in this same
+change, so the doc never holds two tests at once.
 
-*§13 #7, the pen or the segment.* It no longer decides which rows are real (§3.6.2 — all five are),
-only how many land: **segment** gives `u → a`, `h → k` and `i → l`; **pen** adds `r → m`, `v → w`
-and **`l → k` (153)**, which the dev's list did not name and which must not be left out by accident.
-Write the answer into §3.1's rule line and rewrite §3.2's cut table against it in the same edit, so
-the doc never holds both tests at once.
+**Stage 1 — the data.** `ADD` goes to 27 rows and `BLOCK` lands beside it in
+`build-serifin-pojo.js`, which now also prints the refusal count. **`serifinPOJO.js` is deliberately
+NOT regenerated** (the dev's call — the data pass comes later), so the file on disk is still M4's
+2,995 entries and every new row is inert until `node build-serifin-pojo.js` runs. A **dry run**
+(`fs.writeFileSync` stubbed) confirms what it will emit: **3,588 words (9.1%) · 5,033
+transformations · 2,979 recognisable · 13 refused · 68.3 KB**, and the sentence sample at **9 of 12,
+27 marked words** against M4's 26 — §3.6.1's table arrived at from the build rather than asserted.
 
-*§13 #8, `u → o` or `u → a`.* This one is answered by **looking at Jost\*'s `u`**, not by reasoning
-(§7.1's new fifth test): a straight right side means `u → a` is the one-stroke row, a continuous
-curve means `u → o` is and the dev's `u → o → a` route is available. Do the same for `i → l` and the
-`i`'s foot serif, which Jost\* passes by construction but which is now a standing constraint on the
-face rather than a one-off.
+**Stage 2 — the strokes.** Six `STROKE` entries in `serifinFunc.js` (§10.5), all of them functions
+of the measured glyph like the twenty-one before them, plus one `line()` helper and one `K_WAIST`
+constant. Without these the new rows degrade to M3's bare red flash, which is exactly what a
+half-built M5 would look like: more words marked, no stroke on the new ones.
 
-**Stage 1 — the data, and §13 #6's blocklist is no longer optional.** Add the agreed rows to `ADD`
-in `build-serifin-pojo.js`, **add the `BLOCK` set beside it in the same edit**, re-run (`node
-build-serifin-pojo.js`, ~1 s), and check the printed measurements against §3.6.1's table.
-`h → k` brings **`hill → kill`** with it (§3.6.5), so that row cannot ship before the block does —
-this is the one ordering constraint inside M5 that is not a matter of taste.
+**Stage 3 — look at the widths, and this is the one thing still outstanding.** §3.6.5 now carries
+the numbers instead of an estimate: `r`'s frozen box grows **+0.26 em** and `v`'s **+0.24 em**,
+while `h → k`, `i → l`, `l → k` and `u → a` change no box at all. So the browser look is only
+needed for those two letters, and the fallback is to **drop the row**, never to unfreeze the box
+(§5.2). `v → w` carries a second measured caveat in its own code comment: a `w` is only 0.23 em
+wider than a `v`, so the added half has ~0.115 em of slack and draws as a narrow hairpin — the
+same scale of small as the shipped `n → m` arch, which is the reason to look rather than to assume.
 
-**Candidate ORDER is part of the data, not formatting.** §8.3: M4 reads a stroke's `from` off the
-glyph on screen, so a cycle whose consecutive candidates are themselves one stroke apart draws a
-chain for free. `ADD.u = ["o", "a"]` — in that order — is what makes the dev's `u → o → a` journey
-play as two drawn shots; reversed, the player gets the two strokes backwards.
-
-Three things ride along in the same commit or they go stale: the script's own header comment repeats
-§3.2's cut list verbatim (`v → w` "two more strokes") and would be left contradicting the rule it
-cites; §2's per-mapping block is a 21-row figure; and the script's twelve-sentence sample is the
-thing that says whether the density claim moved, so its print-out is the acceptance test, not a
-formality.
-
-**Stage 2 — the strokes, or the rows are invisible.** Every new row needs a `STROKE` entry in
-`serifinFunc.js` or it degrades to M3's bare red flash (§8.2) — which works, and is exactly how a
-half-built M5 would look: more words marked, no stroke drawn on the new ones. Four entries, all on
-the existing helpers:
-
-```js
-"h>k": `M … L …` — ONE straight diagonal, from the junction where the h's shoulder
-       leaves the stem, up and out to the right. The cleanest entry in the whole table
-       and the one to build first, since it needs no new helper and no §13 #7 answer
-"i>l": vline(from.c, xh, asc) — the gap between the i's stem top and its tittle, with
-       `asc` being the `l`'s own ink top, so the stroke runs through the dot and absorbs
-       it. The shortest stroke in the table and the most legible animation in it
-"u>a": one arc from the left stem's top, over, onto the right stem BELOW its top — the
-       difference from the shipped "u>o" is only where it lands, which is the whole
-       claim, and it is worth drawing them side by side for that reason. NOT NEEDED if
-       §13 #8 settles on `u → o` plus the chain
-"r>m": arch() twice in one path — the existing helper already emits `A … L …`, so two
-       arches concatenate into one `d` and the dash animation draws them as one motion,
-       which IS the argument for the row
-"v>w": `M … L … L …`, continuing the v's own zigzag from its top-right terminal
-"l>k": `M … L …` in to the stem at mid-height, `L …` out to the baseline — if §13 #7
-       readmits it
-```
-
-**Stage 3 — look at it, and look at the widths first.** §3.6.5's first bullet is the only change
-here that a parse-check cannot see: `r`'s cycle gains `m` and `v`'s gains `w`, the two widest
-lowercase letters, so those letters' frozen boxes grow by roughly a third of an em and the sentence
-gets gappy around them. If that reads badly the fallback is **not** to unfreeze the box (that is
-§5.2, and the line would slide on every swap) — it is to drop the row, which is why `r → m` and
-`v → w` are worth landing *last*. `h → k` and `i → l` are free of this and can go first: `h`'s cycle
-already holds a `b`, and `i → l` adds the narrowest letter in the alphabet to the cycle of the
-second narrowest.
-
-**Stage 4 — the cards.** `modeHelp.js`'s worked examples must still be real in the regenerated POJO
-(they are chosen from `adopt`/`cut`/`night`/`will`, none of which the new rows touch, so this is a
-check rather than an edit) and the "Also" row is where a new row would earn its place — `air → aim`
-is the clearest one-stroke example in the whole table and a better third example than `night →
-might`. `modeArt.js`'s glyph stays `l→t`.
-
-**Build order, then.** `h → k` (behind the blocklist) and `i → l` first — single straight strokes,
-no §13 #7 answer needed, no width cost. Then the `u` decision. Then `r → m` and `v → w` last, where
-dropping one costs nothing already built.
+**Stage 4 — the cards, and one of them must wait for the regeneration.** `modeHelp.js`'s worked
+examples (`adopt` o→a/o→e, `cut` c→o, `night` n→m, `will` l→t) are all still real in the dry run, so
+no edit is due. **`air → aim` is the clearest one-stroke example in the whole table and would be a
+better third example than `night → might` — but it cannot go in the card until `serifinPOJO.js` is
+regenerated**, or the card names a swap the shipped table does not have, which is the one failure
+mode that file's own comment warns about. `modeArt.js`'s glyph stays `l→t`.
 
 **What M5 is not.** It is not a density fix — §3.6.1 measures the sentence sample as unmoved, so
 anyone reaching for these rows to make free play feel fuller is reaching for the wrong lever and
 §2.1 (`2of12` being a lemma list) is the right one. It is not a licence to revisit `n → h`,
-`r → p`, `t → f` or `e → g`, all of which stay cut under either test. And it must not grow into
-§12.3's capitals, which are a second table and a different tool.
+`r → p`, `t → f` or `e → g`, all of which stay cut under either test (§3.2). And it must not grow
+into §12.3's capitals, which are a second table and a different tool.
+
+### 10.5 As built (M5)
+
+**`build-serifin-pojo.js`** — `ADD` at 27 rows with the candidate-order note on `u`; the `BLOCK`
+set (§3.7) gated inside `swapsFor` with a `blocked` set so the count can be printed; the header
+comment rewritten against the **pen** rule, since it repeated §3.2's segment-counted cut list
+verbatim and would otherwise contradict the rule it cites.
+
+**`serifinFunc.js`** — six `STROKE` entries, and the one thing worth reading before changing them is
+which end of each is anchored on the result (§8.1):
+
+| entry | it says |
+| --- | --- |
+| `h>k` | `line(from.l + sw/2, xh + band·K_WAIST, to.r − sw/2, xh)` — out of the stem at the waist, up and right to where a geometric `k`'s arm terminates. Drawn *out of* existing ink so the arm sprouts rather than arriving. |
+| `i>l` | `vline(from.c, xh, asc)` — the shortest stroke in the table, and **the only entry whose both ends are right**: the `i` is the widest letter in its own cycle so it sets the box, and the two stems land on the same x. |
+| `l>k` | a three-point polyline, arm top → waist → leg foot, both ends on the `k`'s right edge and the stem it crosses the ink already there. |
+| `r>m` | the `r>n` shoulder, then **`V` back up the leg just drawn** and on over an arch — one subpath, no moveto, so the retrace lays no new ink and the dash animation reads it as the pen returning. The m's middle stem is its ink centre and its third is its right edge, so both legs are the result's own. |
+| `u>a` | one cubic: off the left stem's top, cresting ~0.024 em above the x-height at 40% across (a geometric `a`'s apex overshoots), landing **vertically** on the right stem 0.29 of the band below its top. The vertical landing is the whole difference from `u>o`'s flat bow. |
+| `v>w` | a three-point polyline off the `v`'s own right terminal, its vertex at `desc` because a pointed vertex overshoots the baseline. |
+
+Two shared pieces came with them: a **`line()`** helper beside `vline`/`hline`, and **`K_WAIST`
+(0.41 of the x-height band, below the x-height line)** — one constant for both `k` rows, because it
+is one fact about the letter: Jost puts the waist at `y 270` of a 460 x-height, which is also
+exactly where the `h`'s shoulder leaves its own stem, and *that* coincidence is the whole of
+`h → k`.
+
+**Verified before it ever ran in a browser**, by slicing the helper block and the `STROKE` table out
+of `serifinFunc.js` (the `affix-sprite-preview.html` trick) and running every one of the 27 entries
+against geometry built from the real Jost outlines at a 40 px em: every path stays inside its
+letter's box bar the known descenders, every new path's anchors land on the stem/terminal/edge the
+comment claims, and `u>a`'s crest was **re-weighted after the first attempt measured as a ramp
+rather than a hood** (its control points had the crest at 20% across and 0.6 px of lift; it is now
+40% and ~1 px). That slice is a throwaway, not a repo file — there is no test rig here.
+
+**Still to do, in order:** `node build-serifin-pojo.js`, then the §3.6.5 width look at `r` and `v`
+in a browser, then `air → aim` into `modeHelp.js`'s "Also" row.
 
 ---
 
@@ -1088,16 +1145,16 @@ anyone reaching for these rows to make free play feel fuller is reaching for the
 
 | file | change |
 | --- | --- |
-| `build-serifin-pojo.js` | ✅ **new.** Offline generator; holds the §3.1 table, the §3.4 tier flag and the §2 checks. **M5 (§10.4):** the new `ADD` rows, §13 #6's `BLOCK` set, and its own header comment — which repeats §3.2's cut list verbatim and would be left contradicting the rule it cites. |
-| `serifinPOJO.js` | ✅ **new, generated.** 2,995 entries, 56 KB. Never hand-edited. **M5:** ~3,549 entries / 67 KB if all five rows land (§3.6.1). |
-| `serifinFunc.js` | ✅ **new.** `SERIFIN_ID`, `SERIFIN_OBSCURE`, `loadSerifin`, `serifinReady`, `hasSerifinWords`, `wrapSerifin`, `serifinCandidates`, `serifinCycle`, `serifinSwap`, `serifinWordNow`, `freezeLetterBoxes`. Lazy-imports the POJO. ✅ **M4:** the `STROKE` table of 21 strokes + its five shape helpers, `glyphInk`/`baselineY`/`strokeGeometry` (the measuring), and `drawSerifinStroke` + `SF_DRAW_MS`/`SF_FADE_MS`. The stroke lives here and not in `index.js` because it is sentence-side work — letterforms and measurement, the same job as `freezeLetterBoxes`, sharing its offscreen canvas. |
+| `build-serifin-pojo.js` | ✅ **new.** Offline generator; holds the §3.1 table, the §3.4 tier flag and the §2 checks. ✅ **M5:** `ADD` at 27 rows, §3.7's `BLOCK` set + its refusal count, and the header comment rewritten against the **pen** rule (it repeated §3.2's segment-counted cut list verbatim). |
+| `serifinPOJO.js` | ✅ **new, generated.** Never hand-edited. **⚠ STILL M4's 2,995 entries / 56 KB — M5's rows are inert until `node build-serifin-pojo.js` runs** (the dev's call to defer the data pass). The dry run says 3,588 entries / 68.3 KB (§10.4). |
+| `serifinFunc.js` | ✅ **new.** `SERIFIN_ID`, `SERIFIN_OBSCURE`, `loadSerifin`, `serifinReady`, `hasSerifinWords`, `wrapSerifin`, `serifinCandidates`, `serifinCycle`, `serifinSwap`, `serifinWordNow`, `freezeLetterBoxes`. Lazy-imports the POJO. ✅ **M5:** six more `STROKE` entries (`h>k`, `i>l`, `l>k`, `r>m`, `u>a`, `v>w`), a `line()` helper and the `K_WAIST` constant (§10.5). ✅ **M4:** the `STROKE` table of 21 strokes + its five shape helpers, `glyphInk`/`baselineY`/`strokeGeometry` (the measuring), and `drawSerifinStroke` + `SF_DRAW_MS`/`SF_FADE_MS`. The stroke lives here and not in `index.js` because it is sentence-side work — letterforms and measurement, the same job as `freezeLetterBoxes`, sharing its offscreen canvas. |
 | `SpanPlaceholder.js` | ✅ `export const protectedSerifin = withSpanPlaceholders(wrapSerifin);` |
 | `utils/utils.js` | ✅ `case "serifin":` in `addSpansAndIdsForWordPlay`'s switch. **No `heroManagedWords` change** (§6.6). |
 | `punctuators.html` | ✅ `<option value="serifin" data-dev>Serifin's Strokes</option>`, stripped in the dropdown IIFE **before** the custom dropdown is generated (§1.3). |
 | `index.js` | ✅ the `WORDPLAY_GUARDS` entry + the `loadSerifin()` await in front of it (§10.1); the `serifin-mode` class and the `freezeLetterBoxes` call at Pow!; the `nodeArr` push after `waitForElement` and before `heroToTheRescue` (§5.1). ✅ **M3:** `drawStrokeBoltSprite`; `class Serifin` + the instance + its place in `availableHeroArray`; the collision branch + `projectile.serifinDone`'s early-out; `shootSerifin`; `claimSerifinShot`; `lockSerifinSiblings`; `flashSerifinClank`/`flashSerifinSwap`; the three SFX. `drawSerifinSprite` was never written — the dev's art landed first (§10.2). ✅ **M4:** `shootSerifin` splits its DOM writes into a `land()` the animation calls, reads the on-screen glyph as `from` before `serifinSwap` moves the state, and plays `_serifinDraw` at the START of the draw rather than after the swap (§9). |
 | `images/Serifin_Start.png`, `images/Serifin_2.png` | ✅ **new (the dev's).** Resting and attack, 800 × 1045 like the ladder pair. |
 | `index.css` | ✅ `@font-face` for Jost; `#output.serifin-mode`; `.sf-word`; `.sf-letter`; `.sf-clank`; ✅ **M3:** `.sf-swap` (+ `--sf-ink`), `.sf-dead`. ✅ **M4:** `.sf-stroke` is in use at last (it shipped with M2, written blind — its `overflow: visible` is what lets an ascender or a descender out of the letter's box, §10.3); `--mode-face` read by `.mode-art__glyph` and `.mode-art__example`. |
-| `modeHelp.js` | ✅ **M4.** The card. Leads with *you shoot a letter, not a word* — the one rule no other card in the file has had to state. Every pair in it is real in the shipped POJO (`adopt` o→a/o→e, `cut` c→o, `night` n→m, `will` l→t); regenerating the table can leave them stale. |
+| `modeHelp.js` | ✅ **M4.** The card. Leads with *you shoot a letter, not a word* — the one rule no other card in the file has had to state. Every pair in it is real in the shipped POJO (`adopt` o→a/o→e, `cut` c→o, `night` n→m, `will` l→t) **and in M5's dry run**, so no edit was due; regenerating the table can leave them stale. **Pending the regeneration:** `air → aim` into the "Also" row (§10.4 stage 4) — it cannot go in before the rebuild or the card names a swap the shipped table lacks. |
 | `modeArt.js` | ✅ **M4.** The card, glyph `l→t` — an `l` with its crossbar arriving, which is the mode's smallest true claim. Plus the one new optional field, **`face`**, so the picture is set in the typeface the mode actually plays in (§10.3) — Serifin is its only user. |
 | `docs/punctuators.md` | ✅ the line in the cast. |
 | `CLAUDE.md` | ✅ the Punctuators row's doc list. |
@@ -1169,8 +1226,10 @@ the repo's one alphabet.
    candidate list draws `u>o` then `o>a` with no mechanic at all (§8.3). But it only reaches 31% of
    `u → a`, because the other 69% have no real intermediate. The purist version of the dev's own
    point — *offer a candidate only where every step to it is one stroke on a real word* — IS
-   chaining, and it would cost 329 transformations on that row alone. So the question is now
-   "cycling, chaining, or **ordered** cycling?", and the third is what shipped by accident.
+   chaining, and it would cost 329 transformations on that row alone. **Settled for the `u` on
+   2026-11-07: both rows shipped with the `o` first, i.e. ordered cycling** (§3.6.3). So the
+   question is now "cycling, chaining, or **ordered** cycling?", and the third is what shipped by
+   accident and is now shipped on purpose.
 2. **The mode's name.** `Serifin's Strokes` matches `Affix Aliens` in naming the character. `Strokes`
    alone matches `Caret`, `Rounded`, `Split`. The dropdown is currently split between the two
    conventions.
@@ -1187,31 +1246,32 @@ the repo's one alphabet.
    Letters are narrow; a near miss and a pass-through will feel identical, and silence may read as
    the mode being broken — the same complaint that pulled three of the Affix Aliens' cues forward out
    of M4.
-6. **Does the table want a blocklist?** Found scanning the built POJO (2026-10-18) and **not acted
-   on**, because it changes what the mode does. The dictionary gate (§1.2) guarantees a real word,
-   not a word you want on screen: `hitch → bitch`, `lick → dick`, `rope → rape`, `fog → fag`,
-   `sox → sex`, `slab → stab`, `lie → die`, `lead → dead`. **22 results** land in a modest scan of
-   the obvious set, four or five of them genuinely unpleasant. It matters more here than in any
-   other mode for two reasons: the result is the *payoff*, read out loud, and Punctuators' own How
-   to Play pitches the game as a classroom tool. The fix is cheap and belongs in the build, not the
-   runtime — a `BLOCK` set beside `ADD` in `build-serifin-pojo.js`, so the shipped table simply has
-   no such entry and nothing at play time has to know. The question is only whose list it is.
-   **§3.6's proposed rows add four more** — `hill → kill`, `stub → stab`, `darn → damn`,
-   `bur → bum` — and since §3.6.2 established that `h → k` is buildable after all, **`hill → kill`
-   is live and this question now BLOCKS a row** rather than merely waiting on taste. `h → k` cannot
-   land before the `BLOCK` set does (§10.4 stage 1).
-7. **Is the one-stroke test the PEN or the SEGMENT?** Raised by §3.6 (2026-10-25) and **blocking
-   M5** — §10.4 stage 0 is to answer it, because the doc currently contains both answers. §3.1's
-   rule says *one continuous stroke of a pen*; §3.2's cut table counts segments. Since §3.6.2
-   (2026-11-07) this no longer decides which rows are *real* — all five of the dev's are — only how
-   many land: **segment** gives `u → a`, `h → k` and `i → l`, all single arcs or lines; **pen** adds
-   `r → m`, `v → w` and `l → k`. Pen reads as the truer rule for a mode about *how a hand makes a
-   letter* (a `w` really is one zigzag, an `m` really is one motion) and costs nothing in §8, where
-   every row is drawable either way. Either is defensible; holding both is not, and the visible
-   symptom of holding both would be a table shipping `v → w` while still citing "two more strokes"
-   as the reason `l → k` is absent.
-8. **`u → o` or `u → a`?** §3.6.3, and it is a question about the **face** before it is one about
-   the table: both cannot be one stroke in the same `u`, and §7.1's new fifth test is what answers
-   it. The dev's preference is `u → o` kept and the `a` reached as a second shot, which is the
-   better design where the face supports it — so the thing to do is look at Jost\*'s `u` before
-   deciding, not reason about Futura's conventions.
+6. ~~**Does the table want a blocklist?**~~ **ANSWERED AND BUILT 2026-11-07 — §3.7.** The
+   dictionary gate (§1.2) guarantees a real word, not a word you want on screen, and here the
+   result is the payoff, read out loud, in a game pitched for a classroom. The question was only
+   ever *whose list it is*, and the line is the dev's: eleven result words refused in the build
+   (`bitch boner cunt dick dike fag fanny hooker rape raper rapes`), the merely coarse and the
+   merely grim left in play. **The finding was that it was overdue rather than due** — 12 of the 13
+   pairs it refuses come from rows that have shipped since M1, including `curt → cunt` on `r → n`
+   and three `rope` swaps on `o → a`, the biggest row in the table. Only `funny → fanny` comes
+   from one of M5's new rows, and `hill → kill` — the pair that was supposed to make this block
+   `h → k` — is in the end allowed.
+7. ~~**Is the one-stroke test the PEN or the SEGMENT?**~~ **ANSWERED 2026-11-07: the PEN.** §3.1's
+   rule always said *one continuous stroke of a pen*; §3.2's cut table had been counting segments,
+   and the visible symptom of holding both would have been a table shipping `v → w` while still
+   citing "two more strokes" as the reason `l → k` was absent. The pen reads as the truer rule for
+   a mode about *how a hand makes a letter* — a `w` really is one zigzag, an `m` really is one
+   motion — and it costs nothing in §8, where every row is drawable either way. It admitted
+   `r → m`, `v → w` and `l → k`; §3.1, §3.2, §3.6.4 and the build script's header were all
+   rewritten against it in the same change. **`n → h`, `r → p`, `t → f` and `e → g` stay cut**,
+   because extending or modifying existing ink is not adding to it, and no answer to this question
+   touches that.
+8. ~~**`u → o` or `u → a`?**~~ **ANSWERED 2026-11-07 by measuring the glyph, and BOTH SHIPPED with
+   the `o` first.** §7.1's fifth test was the right way in, and the answer came out against the
+   dev's preference: Jost\*'s `u` carries a **straight right stem running the full x-height from the
+   baseline** (`x 370–450, y 0–460` of 1000 upem), which is already the single-storey `a`'s stem, so
+   one stroke over its top makes an `a` and `u → o` is the weaker claim. Both rows landed anyway
+   (§3.6.3) — the chain `bout → boot → boat` draws itself where the middle word is real, which is
+   only **31%** of the row, and the other 329 transformations need the direct `u>a` stroke. The
+   purist alternative (`u → o` only) is §13 #1's chaining arrived at from the opposite direction and
+   would have cost the third-biggest row in the table.
