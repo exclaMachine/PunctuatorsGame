@@ -14,7 +14,8 @@ const fs = require("fs");
 
 /* ── The stroke table (§3.1) ─────────────────────────────────────────────────
    The rule for membership is ONE UNBROKEN MOTION OF THE PEN — the hand does not lift — added to
-   the glyph as drawn in the mode's own face: Jost* (§7), a Futura line with a single-storey `a`, a
+   the glyph as drawn in the mode's own face: Questrial (§7), a Century Gothic line with a true
+   single-storey `a` — an `o` with one stem down the right, measured same-width and same-bowl; a
    single-storey `g`, a plain tail-less `l`, a circular `o`, monoline arches on `n m r`, a `u` open
    at the top with a straight full-height right stem, and an `i` with no foot serif. Every row below
    is literally true in that face and several of them are false in Palanquin, which is why the mode
@@ -33,7 +34,7 @@ const fs = require("fs");
    table says.
 
    `o → g` is the one row kept on a judgement call: it is one descending stroke only in a
-   SINGLE-STOREY g, which Jost* has. If the mode's face ever changes to one with a two-storey g,
+   SINGLE-STOREY g, which Questrial has. If the mode's face ever changes to one with a two-storey g,
    that row is a second bowl and must go.
 
    CANDIDATE ORDER IS DATA, NOT FORMATTING (§8.3). The game reads a stroke's `from` off the glyph

@@ -1995,7 +1995,7 @@ span[data-hint] {
     /* The glyph is standing in for art, so give it the outline the game's own lettering has. */
     text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
     /* --mode-face is set by modeArt.js for the one mode whose glyph IS a letterform claim: Serifin
-       plays in Jost* because `o → a` is one stroke only in a face with a single-storey `a`
+       plays in Questrial because `o → a` is one stroke only in a face with a single-storey `a`
        (docs/punctuators-serifin.md §7.1), so her card has to show the same letters the game will. */
     font-family: var(--mode-face, inherit);
 }
@@ -2152,22 +2152,31 @@ span[data-hint] {
    not one. `o → a` is 769 swaps, the single biggest row in the table, so shipping the mode in
    Palanquin would make its best claim a lie on screen.
 
-   Jost* is a Futura line: single-storey `a`, single-storey `g`, a plain tail-less `l`, a circular
-   `o`, monoline arches on `n m r`, `u` open at the top. Every row of the stroke table is literally
-   true in it. The file is already in the repo — fetched for Inklings' Scriptorium as its geometric
-   Vox leaf (OFL, credited in fonts/Jost-OFL.txt and data/typefaces.json) — so nothing new is
-   downloaded and no licence question is reopened. Precedent for a mode owning its face: Betar's
-   Alphabet Slots sets font-family: monospace inline on every span it wraps.
+   THE FACE IS QUESTRIAL (2026-11-08), AND IT REPLACED JOST* BECAUSE JOST* FAILED THIS VERY RULE.
+   §7 shipped claiming Jost* had a single-storey `a`. It does not: its `a` is a hood over a gap
+   over a separate lower bowl, measured 16.0% off the `o`'s left profile and only 0.821 of its
+   width. §13 #8's measuring pass read the `a`'s BOUNDING BOX and its stem and never tested for the
+   hood, so the mode has been drawing a stroke and then swapping to a shape that is not the one it
+   drew — the exact failure this section exists to prevent. Questrial is the Century Gothic line,
+   and it is the fix measured rather than asserted: its `a` is the SAME WIDTH as its `o` (ratio
+   1.000), its left bowl differs from the `o`'s by 0.1% of the `o`'s width, and its right edge is
+   at x 530 where the `o`'s is at x 530 — the `a` IS the `o` with one line down the right, which is
+   what the mode says is happening. OFL, credited in fonts/Questrial-OFL.txt. Precedent for a mode
+   owning its face: Betar's Alphabet Slots sets font-family: monospace inline on every span.
 
-   It is Google's FULL latin subset (9.4 KB), not the Scriptorium's 52-letter cut, because the
-   sentence needs the space, comma and full stop too. If fetch-typeface-fonts.sh is ever re-run with
-   pyftsubset on PATH it will shrink to letters only and this mode's punctuation will silently fall
-   back to Palanquin mid-line — the fix is a second GLYPHS entry in that script, not a second copy
-   of the font. */
+   It is Google's FULL latin subset (14.3 KB), not a 52-letter cut, because the sentence needs the
+   space, comma and full stop too. Do NOT route this face through fetch-typeface-fonts.sh: that
+   script subsets to the Scriptorium's 52 letters when pyftsubset is on PATH, which would drop this
+   mode's punctuation to Palanquin mid-line. Questrial is not a Vox leaf and is not in that script
+   for exactly that reason. */
 @font-face {
-    font-family: 'Jost';
-    src: url('./fonts/Jost-latin.woff2') format('woff2');
-    font-weight: 100 900;
+    font-family: 'Questrial';
+    src: url('./fonts/Questrial-latin.woff2') format('woff2');
+    /* 400, stated honestly. The file Google serves for an unqualified css2 request is a single
+       static weight, so the `100 900` this rule used to declare for Jost* was a range the font
+       never had. The sentence is an <h1>, so the browser synthesises the bold either way — this
+       just stops the declaration claiming otherwise. */
+    font-weight: 400;
     font-style: normal;
     /* swap, not block: the sentence must be readable immediately. freezeLetterBoxes() waits on
        document.fonts.ready before measuring, so the swap can't leave a box frozen to the wrong
@@ -2175,18 +2184,25 @@ span[data-hint] {
     font-display: swap;
 }
 
-/* ANY REPLACEMENT FACE MUST HAVE A SINGLE-STOREY `a` (doc §7.1). A single-storey `a` is a bowl with
-   a straight stem down its right side — an `o` with ONE LINE ADDED ON THE RIGHT, which is exactly
-   what the mode claims is happening and is its biggest row (o → a, 769 swaps). A double-storey `a`
-   (Palanquin's, Helvetica's, Times') has a smaller bowl under an arched hood and is two strokes and
-   a redrawn bowl, so the animation M4 draws would be a lie. The test on any candidate: set `o` and
-   `a` side by side and check you can get from one to the other by adding one stroke. Also wanted:
-   a plain tail-less `l` (l → t is a crossbar), a `u` open at the top, a circular `c`.
+/* ANY REPLACEMENT FACE MUST HAVE A SINGLE-STOREY `a` (doc §7.1), AND THE TEST IS A MEASUREMENT,
+   NOT A LOOK. A single-storey `a` is a bowl with a straight stem down its right side — an `o` with
+   ONE LINE ADDED ON THE RIGHT, which is exactly what the mode claims and is its biggest row
+   (o → a, 769 swaps). A double-storey `a` (Palanquin's, Helvetica's, Jost*'s) has a smaller bowl
+   under an arched hood, which is two strokes and a redrawn bowl, so M4's animation would be a lie.
+
+   Jost* is in that list because it LOOKS geometric and shipped here for a year on that impression.
+   Eyeballing `o` beside `a` is what missed it. The test that catches it: scan the `a` horizontally
+   across the x-height band — a single-storey `a` crosses TWO strokes at every height (bowl wall,
+   stem), a double-storey one has a band where the only ink is the stem. Then check the `a` is the
+   `o`'s width and shares its left profile. Also wanted: a plain tail-less `l` (l → t is a
+   crossbar), an `i` with no foot serif (i → l), a `u` open at the top, a circular `c`, and a
+   single-storey `g` (o → g). Sweeping all 1,417 Google latin sans/display/handwriting faces, 372
+   pass the `a` test and 37 pass all of them.
 
    Higher specificity than #output, so the two in-media-query #output rules that re-declare
    font-family (the 480px and 1280px breakpoints) can't take the face back on a phone. */
 #output.serifin-mode {
-    font-family: 'Jost', 'Palanquin', sans-serif;
+    font-family: 'Questrial', 'Palanquin', sans-serif;
 }
 
 /* The word around the live letters. It exists for ONE reason: white-space: nowrap. Each letter is

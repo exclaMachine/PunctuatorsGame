@@ -18,7 +18,8 @@ letter and a pen draws the one stroke on in her red, and the glyph becomes the o
 `serifinPOJO.js` is deliberately not yet regenerated, so its six new rows are inert until the build
 script runs**). Serifin is the only mode whose
 targets are single letters rather than words, and the only one that changes the sentence's typeface
-(Jost\*, so `o → a` really is one stroke).
+(Questrial, so `o → a` really is one stroke — its `a` is its `o` with one stem down the right; the
+face it replaced on 2026-11-08 was not, see `punctuators-serifin.md` §7.0).
 
 ---
 

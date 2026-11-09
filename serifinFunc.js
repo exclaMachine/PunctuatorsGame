@@ -293,10 +293,18 @@ const hline = (y, x1, x2) => `M ${n2(x1)} ${n2(y)} H ${n2(x2)}`;
 const line = (x1, y1, x2, y2) => `M ${n2(x1)} ${n2(y1)} L ${n2(x2)} ${n2(y2)}`;
 
 /* Where a geometric `k`'s arm and leg meet the stem, as a fraction of the x-height band BELOW the
-   x-height line. Jost puts that waist at 0.27 em of a 0.46 em band — a hair above the middle, and
-   also exactly where the `h`'s shoulder leaves its own stem, which coincidence is the whole of
-   `h → k`. One constant for both k rows, because it is one fact about the letter. */
-const K_WAIST = 0.41;
+   x-height line. One constant for both k rows, because it is one fact about the letter — but it is
+   a fact about the FACE's letter, so it is re-measured whenever §7's face changes.
+
+   FITTED, not eyeballed: sweep the value and score how much of each drawn stroke lands inside the
+   real `k`'s outline, then take the point where `h → k` and `l → k` agree. Run against Jost* that
+   objective returns 0.42, which is the 0.41 this constant shipped with for a year — so the method
+   reproduces the original measurement and can be trusted on a new face. Run against Questrial it
+   returns 0.53 (h → k 0.785, l → k 0.784). The two rows pull in opposite directions on their own
+   — `h → k` alone wants 0.66, `l → k` alone wants 0.35 — because `l → k`'s vertex sits on the
+   l's stem, which §8.1 already says is not where the k's stem will be in the frozen box. The
+   agreement point is the honest reading of "where the arm and leg meet the stem". */
+const K_WAIST = 0.53;
 
 /* A half-ellipse hung off a vertical chord: both ends on the same x, bulging `dx` to one side. This
    is what a bowl added to a stem IS — the pen leaves the stem, sweeps round and comes back to it —
@@ -380,8 +388,9 @@ const STROKE = new Map(
 
     "i>j": (g) => tail(g.from.c, g.base, g), // the dot stays; the stem grows a tail
 
-    /* i → l: join the stem to the tittle. The gap is real and visible — Jost leaves 0.135 em of it
-       between the stem's top and the dot — so the stroke FILLS it and the dot is absorbed rather
+    /* i → l: join the stem to the tittle. The gap is real and visible — Questrial leaves 0.084 em
+       of it between the stem's top and the dot (Jost* left 0.135) — so it is FILLED and the dot is
+       absorbed rather
        than deleted: nothing is erased, and nothing is lengthened either, which is what makes this
        the cleanest addition in the table and the shortest stroke in it. It runs past the dot to
        `asc`, the l's OWN ink top, since the l stands taller than the i's tittle. The two stems
@@ -468,21 +477,30 @@ const STROKE = new Map(
     },
 
     /* u → o: close the top. A shallow bow rather than a flat bar — the two stems are being joined
-       over the counter, and the apex of the bow is the ring's own top at the x-height line. */
+       over the counter, and the apex of the bow is THE RING'S OWN TOP, measured.
+
+       It used to rise by a flat `sw * 1.2`, a number tuned to Jost*'s overshoot, and that is the
+       one row in this table that was secretly face-specific: scored against the real `o`'s ink it
+       ran 1.000 on Jost* but 0.236 on Questrial, 0.656 on Didact Gothic and 0.005 on Poppins —
+       a bow floating clear of the ring it is supposed to be completing. `g.asc` is already the
+       RESULT's own ink top (strokeGeometry measures it off the `o`, overshoot included), so the
+       apex goes there, inset half a pen so the stroke's outer edge lands on the ring rather than
+       its centre-line. A quadratic's apex is the midpoint of its endpoint and its control point,
+       hence the doubling. Measured after: Jost* 1.000 (unchanged), Questrial 0.784, Didact 0.819,
+       Poppins 0.840 — better or equal on every face, which is what a measured number buys over a
+       tuned one. */
     "u>o": (g) => {
       const y = g.xh + g.sw / 2;
       const x1 = g.from.l + g.sw / 2;
       const x2 = g.from.r - g.sw / 2;
       if (x2 <= x1 + 0.5) return null;
-      return (
-        `M ${n2(x1)} ${n2(y)} Q ${n2((x1 + x2) / 2)} ${n2(y - g.sw * 1.2)} ` +
-        `${n2(x2)} ${n2(y)}`
-      );
+      const yc = 2 * (g.asc + g.sw / 2) - y; // control point: apex on the o's own ink top
+      return `M ${n2(x1)} ${n2(y)} Q ${n2((x1 + x2) / 2)} ${n2(yc)} ${n2(x2)} ${n2(y)}`;
     },
 
-    /* u → a: close the top — and in THIS face that makes an `a`, not an `o`. Jost's `u` carries a
-       straight right stem running the full x-height up from the baseline (measured off the woff2:
-       x 370–450, y 0–460 of 1000 upem), and that stem already IS the single-storey `a`'s, so one
+    /* u → a: close the top — and in THIS face that makes an `a`, not an `o`. Questrial's `u`
+       carries a straight right stem running the full x-height up from the baseline, as Jost*'s did
+       (x 370–450, y 0–460 of 1000 upem), and that stem already IS the single-storey `a`'s, so one
        stroke over the top leaves a bowl with a round left side and a straight right one, which is
        the `a` exactly. The hood lifts off the left stem's top, crests a hair ABOVE the x-height —
        a geometric `a`'s apex overshoots, 470 against 460 — and comes down VERTICALLY onto the
@@ -506,7 +524,8 @@ const STROKE = new Map(
     /* v → w: carry the zigzag on. The pen is already standing at the v's top-right terminal, so it
        goes down to a second vertex and back up — one unbroken motion, two segments, no lift, which
        is what §3.2's "two more strokes" was counting wrongly. The vertex sits at `desc`, the w's
-       own ink bottom, because a pointed vertex overshoots the baseline (Jost: 0.035 em) and a new
+       own ink bottom, because a pointed vertex overshoots the baseline where the face gives it one
+       (Jost* 0.035 em; Questrial 0.000, so `desc` simply resolves to the baseline) and a new
        `v` stopping dead on the line would be the one visibly wrong thing about it.
 
        MEASURED, AND THE ROW'S OWN WEAKNESS: a `w` is only 0.23 em wider than a `v`, and a centred
@@ -533,7 +552,7 @@ const STROKE = new Map(
 /* Ink boxes come off the same offscreen canvas freezeLetterBoxes already uses, cached per
    font+character because a round asks for the same handful of glyphs over and over.
 
-   THE FACE'S LOAD STATE IS PART OF THE KEY. Jost* arrives on `font-display: swap`, so a measurement
+   THE FACE'S LOAD STATE IS PART OF THE KEY. Questrial arrives on `font-display: swap`, so a measurement
    taken before the woff2 lands is a Palanquin metric — and a cache that could not tell the two
    apart would go on scoring every stroke of the round against the fallback. The Scriptorium's own
    font scorer hit exactly this and answered it the same way (docs/inklings-typography.md §M2.5). */

@@ -25,7 +25,7 @@
  *   flip    optional: draw a second, 180°-rotated copy of the glyph beneath it. Only Ambigrambador
  *           wants it, and it is the one mode whose symbol IS a rotation.
  *   face    optional font stack for the glyph and the example. Only Serifin's Strokes wants it, and
- *           it is not a style preference: that mode wears Jost* in play because `o → a` is one
+ *           it is not a style preference: that mode wears Questrial in play because `o → a` is one
  *           stroke only in a face with a SINGLE-STOREY `a` (docs/punctuators-serifin.md §7.1), so a
  *           card showing its letterforms in Palanquin would make the picture a lie about the mode.
  *           Arrives as --mode-face on the card; .mode-art__glyph and .mode-art__example read it.
@@ -127,7 +127,7 @@ export const MODE_ART = {
     tease: "One extra stroke on a letter, and it is a different letter.",
     example: "adopt → adapt",
     accent: "#be123c", // proofreader's red, the colour of the pen she is holding
-    face: "'Jost', 'Palanquin', sans-serif",
+    face: "'Questrial', 'Palanquin', sans-serif",
   },
 
   // The three ladder modes share the gold of the Tree of Kinds (docs/punctuators-ladder.md §13) —

@@ -11,6 +11,23 @@ and is never renamed to look like a fresh release of the original.
 | --- | --- | --- |
 | `PixelifySans-latin.woff2` | Pixelify Sans | Critter Hunt's pixel chrome; the Wordshape + Inklings dev benches |
 
+## Mode faces
+
+A face a game mode *sets its own text in*, as opposed to a specimen it shows you. These are **not**
+in `fetch-typeface-fonts.sh`, deliberately: that script subsets to the Scriptorium's 52 letters when
+`pyftsubset` is on PATH, and a mode face has to carry the space and punctuation of a whole sentence
+or it falls back to Palanquin mid-line.
+
+| File | Face | Authors | Used by |
+| --- | --- | --- | --- |
+| `Questrial-latin.woff2` | Questrial | Joe Prince | Punctuators — Serifin's Strokes (`#output.serifin-mode`) |
+
+Questrial is there for one measured reason: its `a` is its `o` with a single stem down the right
+(same width, same bowl, same right edge), so `o → a` — the mode's biggest row — really is one
+stroke. It replaced Jost\* on 2026-11-08, which was chosen for that property and does not have it:
+Jost\*'s `a` is double-storey. The standing test any replacement must pass is
+`docs/punctuators-serifin.md` §7.1.
+
 ## The Scriptorium's specimens
 
 One face per pruned Vox-ATypI leaf (`docs/inklings-typography.md` §4.1, §6). These are **reference

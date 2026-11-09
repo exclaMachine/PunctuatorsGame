@@ -10,8 +10,9 @@ picture landed with it. **DEV-ONLY** (`?dev=1`) — see §1.3.
 to 27 — `h → k` · `i → l` · `u → a` · `r → m` · `v → w` · `l → k` — each with its own drawn stroke.
 All three of the questions it was blocked on are answered and written once: the one-stroke test is
 **the pen, not the segment** (§13 #7), which is what admitted the last three rows; the face's `u`
-decides `u → o` vs `u → a` and **Jost\*'s own outlines say `u → a`** (§13 #8, §7.1 — measured out of
-the woff2, and the reverse of what was expected, so **both** rows shipped with the `o` first); and
+decides `u → o` vs `u → a` and **the face's own outlines say `u → a`** (§13 #8, §7.1 — measured out
+of the woff2, and the reverse of what was expected, so **both** rows shipped with the `o` first;
+re-checked on Questrial 2026-11-08 and **no face in Google Fonts says otherwise**, see §7.1); and
 §13 #6's blocklist is in, eleven result words long, where the finding was that it was **overdue
 rather than due** — twelve of the thirteen pairs it refuses come from rows live since M1.
 
@@ -352,7 +353,7 @@ Each row's `STROKE` entry is named in §10.5; this is the claim each one makes a
 | row | shape | the stroke |
 | --- | --- | --- |
 | **`h → k`** | one straight segment | **The `h`'s shoulder and leg ARE the `k`'s lower leg**, so what is missing is the upper arm — one straight diagonal from the junction where the shoulder leaves the stem, up and out to the right. Nothing is removed. The dev's own note is that the result "would look kind of weird with a curved leg", which is exactly right and exactly survivable: you watch a straight arm arrive on the `h`'s curved leg, and then the font's real `k` lands under it. The cleanest row of the six, and the one with no open question behind it. |
-| **`i → l`** | one short segment | **Connect the stem to the tittle.** The gap is real and visible — Jost leaves 0.135 em of it between the stem's top at the x-height and the dot's underside — so the stroke *fills* it and the dot is **absorbed** rather than deleted: nothing is erased, and nothing is lengthened either (the `n → h` objection does not apply, because this adds a stroke in a gap between two existing marks). It runs on past the dot to the `l`'s own ink top, since the `l` stands taller than the tittle. **False in a face whose `i` has a foot serif** — the serif would survive into a letter that must not have one — which is why that is now a standing constraint on the face (§7.1) and not a note about this row. |
+| **`i → l`** | one short segment | **Connect the stem to the tittle.** The gap is real and visible — the face leaves a tenth of an em or so of it between the stem's top at the x-height and the dot's underside (Jost\* 0.135 em; Questrial likewise a plain stem and a separate tittle) — so the stroke *fills* it and the dot is **absorbed** rather than deleted: nothing is erased, and nothing is lengthened either (the `n → h` objection does not apply, because this adds a stroke in a gap between two existing marks). It runs on past the dot to the `l`'s own ink top, since the `l` stands taller than the tittle. **False in a face whose `i` has a foot serif** — the serif would survive into a letter that must not have one — which is why that is now a standing constraint on the face (§7.1) and not a note about this row. |
 | **`u → a`** | one cubic | One arc from the top of the left stem, over the top and down **vertically** onto the right stem **below** its top: the bowl closes and the stem's head shows. Depends on the face's `u` having a straight right side, which §3.6.3 measured and which is the entire difference from `u>o`'s flat bow. |
 | **`l → k`** | two segments, no lift | In from the arm's top terminal, down to the waist, out again to the leg's foot — one motion touching the stem once on the way through. Both ends stand in empty space on the `k`'s own right edge; the stem it passes through is the ink already there. |
 | **`r → m`** | two moves, one subpath | Carry the shoulder down to the baseline, back **up the leg just drawn** and on over a second arch — which is how a hand writes an `m`, and how the Scriptorium's own skeleton authors it. The retrace lays no new ink, so the dash animation shows the pen returning as a pause rather than a mark. |
@@ -371,7 +372,10 @@ single detail of the `u`:
 - If the face's `u` is a **continuous curve up the right with no straight stem** — the dev's "no
   bottom-right stem" — then closing the top gives an **`o`**, and the `a` needs a second stroke.
 
-**Measured, not deduced** (§7.1's fifth test, answered by decoding `fonts/Jost-latin.woff2`):
+**Measured, not deduced** (§7.1's fifth test, answered in 2026-11-07 by decoding the face then in
+use, `fonts/Jost-latin.woff2`. **The face changed to Questrial on 2026-11-08 (§7.0) and the answer
+did not** — Questrial's `u` has the same straight right stem, and §7.1 records that no face in the
+whole of Google Fonts would have answered differently):
 Jost\*'s `u` is a **straight rectangular stem on the right, x 370–450, running the full height from
 baseline y 0 to x-height y 460** of a 1000 upem — flat-topped, no spur — against an `a` whose own
 stem is x 341–421 from y 0 up to the arc junction at ~330. So **closing the `u`'s top in this face
@@ -441,8 +445,9 @@ survives.
 - **The frozen box gets wider, and this is the one thing a parse-check cannot see.**
   `freezeLetterBoxes` sizes a letter's box to the widest glyph its cycle can show (§5.2), and
   `r` gains `m` while `v` gains `w` — **the two widest letters in the lowercase**. Measured off
-  Jost's own advance widths, in em: `r`'s box goes **0.525 → 0.780 (+0.26)** and `v`'s **0.440 →
-  0.680 (+0.24)**, so a live `r` sits in a box 0.44 em wider than its own glyph. Nothing *moves*
+  **Questrial's** advance widths, in em (§7.0's face swap moved these): `r`'s box goes **0.566 →
+  0.868 (+0.30)** and `v`'s **0.497 → 0.746 (+0.25)**, so a live `r` sits in a box 0.52 em wider
+  than its own glyph. (Jost\*'s were +0.26 and +0.24 — the same shape of cost, slightly larger.) Nothing *moves*
   (that is what freezing prevents), but the sentence gets gappy around those two letters and §8.1's
   near-end error grows with the same gap. **The other four rows are free, measured**: `k` (0.440) is
   narrower than the `b` (0.570) that `h`'s cycle already holds and than the `h` (0.525) that `l`'s
@@ -685,11 +690,12 @@ ladder-family mode has had to join that flag and this one does not.
 
 ---
 
-## 7. The font — the mode wears Jost\*, and that is already in the repo
+## 7. The font — the mode wears Questrial
 
 > **The rule, if you read nothing else here: the face must have a SINGLE-STOREY `a`** — a bowl with
 > a straight stem on its right, so that `o → a` really is *one line added on the right*. Any
-> replacement face has to pass that test. §7.1.
+> replacement face has to pass that test, **and the test is a measurement, not a look** — §7 shipped
+> for a year on a face that fails it. §7.1.
 
 The sentence is set in **Palanquin**, whose `a` is **double-storey**: a bowl, a stem *and* an arched
 top. `o → a` in Palanquin is two strokes, not one — and `o → a` is 769 swaps, the single biggest row
@@ -700,78 +706,142 @@ turns up and the sentence is suddenly set in something else. One rule, scoped to
 Word Race's `.race-mode` is:
 
 ```css
-#output.serifin-mode { font-family: "Jost", "Palanquin", sans-serif; }
+#output.serifin-mode { font-family: "Questrial", "Palanquin", sans-serif; }
 ```
 
 Precedent for a mode owning its face already exists — Betar's Alphabet Slots sets
 `font-family: monospace` inline on every span it wraps.
 
-**The face is `fonts/Jost-latin.woff2`, already in the repo** — fetched for Inklings' Scriptorium as
-its *geometric* Vox leaf, OFL, credited in `fonts/Jost-OFL.txt` and `data/typefaces.json`
-("a sans built out of the compass and the ruler"). Nothing new is downloaded and no licence question
-is reopened. Jost\* is a Futura line: single-storey `a`, single-storey `g`, a plain `l` with no tail,
-a circular `o`, monoline arches on `n m r`, `u` open at the top. Every row of §3.1 is literally true
-in it.
+### 7.0 JOST\* WAS WRONG, AND THE FACE CHANGED 2026-11-08
+
+**This section used to say the face was Jost\*, "a Futura line: single-storey `a`". That was false.**
+Jost\*'s `a` is **double-storey** — a hood over a gap over a separate lower bowl — so for as long as
+the mode has shipped, shooting the `o` in `adopt` drew one vertical stroke and then swapped to a
+shape that is not an `o` with a vertical stroke on it. The precise failure §7 exists to prevent, in
+§7's own chosen face.
+
+**How it got through** is the useful part. §13 #8's measuring pass (2026-11-07) decoded
+`fonts/Jost-latin.woff2` and read real coordinates — but it read the `a`'s **bounding box and its
+stem**, which a double-storey `a` also has, and never asked whether anything connected them. Every
+number it recorded is correct; none of them was the question. Before that, the face was picked by
+looking at it, and Jost\* *looks* geometric.
+
+Measured against Jost\*'s own outlines, its `a` is **0.821 of the `o`'s width** and its left bowl
+profile differs from the `o`'s by **16.0% of the `o`'s width**. Those two numbers are the test
+(§7.1), and they are not close.
+
+**Questrial** is the replacement, chosen by sweeping **all 1,417** Google Fonts latin
+sans/display/handwriting faces against the whole of §7.1:
+
+| | Jost\* | **Questrial** |
+| --- | --- | --- |
+| `a` width ÷ `o` width | 0.821 | **1.000** |
+| `a` left bowl vs `o`'s | 16.0% off | **0.1% off** |
+| `a` right edge vs `o`'s | 421 vs 511 | **530 vs 530** |
+| single-storey `a` | ✗ | ✓ |
+
+The `a` **is** the `o` with one line down its right side — same width, same bowl, same right edge —
+which is what the mode says is happening. Questrial is the Century Gothic line, OFL, credited in
+`fonts/Questrial-OFL.txt`; its `c` is the roundest of the three finalists (0.93, against Poppins'
+0.92 and Didact Gothic's 0.84), which is `c → o`'s own test.
+
+**The stroke table was re-verified against the new face, not assumed** (§8.3's harness, re-run):
+mean fidelity across all 27 rows is **0.852 on Questrial** against **0.864 on Jost\***, and the only
+rows below 0.60 are the same three that were already weak on Jost\* (`u → a`, `v → y`, `v → w` — the
+last of which §3.6.5 already calls a narrow hairpin). Two constants had to move with the face, both
+recorded where they live:
+
+- **`K_WAIST` 0.41 → 0.53** (`serifinFunc.js`). Re-fitted, not guessed: sweep the value, score how
+  much of each drawn stroke lands inside the real `k`'s outline, take the point where `h → k` and
+  `l → k` agree. **Run against Jost\* that objective returns 0.42 — the 0.41 the constant shipped
+  with** — so the method reproduces the original measurement and can be trusted on a new face.
+- **`u → o`'s bow rise is now measured** rather than a flat `sw * 1.2`. That constant was tuned to
+  Jost\*'s overshoot and was the one secretly face-specific number in the table: scored against the
+  real `o`'s ink it ran 1.000 on Jost\* but **0.236 on Questrial, 0.656 on Didact Gothic, 0.005 on
+  Poppins** — a bow floating clear of the ring it is completing. The apex now goes on `g.asc`, the
+  result's own ink top, which `strokeGeometry` already measures. After: Jost\* 1.000 (unchanged),
+  Questrial 0.784, Didact 0.819, Poppins 0.840 — **better or equal on every face**, which is what a
+  measured number buys over a tuned one.
 
 Two details:
 
-- The file is **Google's full latin subset (9.4 KB), not the Scriptorium's 52-letter cut**, so it
-  carries the space, comma and full stop the sentence needs. If `fetch-typeface-fonts.sh` is ever
-  re-run with `pyftsubset` on PATH it will shrink to letters only and this mode's punctuation will
-  silently fall back to Palanquin mid-line. The fix is a second `GLYPHS` entry in that script, not a
-  second copy of the font.
-- The `@font-face` is declared once in `index.css` with `font-display: swap`, and §5.2's width
-  measurement **must run after `document.fonts.ready`** or every box is frozen to a Palanquin
-  metric.
+- The file is **Google's full latin subset (14.3 KB)**, not a 52-letter cut, so it carries the
+  space, comma and full stop the sentence needs. **Questrial is deliberately NOT in
+  `fetch-typeface-fonts.sh`**: that script subsets to the Scriptorium's 52 letters when
+  `pyftsubset` is on PATH, which would silently drop this mode's punctuation back to Palanquin
+  mid-line. Questrial is not a Vox leaf and does not belong in a script about Vox leaves. (Jost\*
+  stays in that script and in `fonts/` — the Scriptorium still teaches it as its geometric leaf,
+  where being a *specimen of Futura's line* is all it has to be, and a double-storey `a` is a fact
+  about the face rather than a fault in it.)
+- The `@font-face` is declared once in `index.css` with `font-display: swap` and **`font-weight: 400`**,
+  which is what the file actually holds. The Jost\* rule declared `100 900`; Google's unqualified
+  `css2` request serves a single static weight, so that range was never real and the `<h1>` has
+  always been browser-synthesised bold. §5.2's width measurement **must run after
+  `document.fonts.ready`** or every box is frozen to a Palanquin metric.
 
 ### 7.1 THE RULE ANY FACE THIS MODE WEARS MUST PASS: a SINGLE-STOREY `a`
 
 Stated separately because it is a **standing constraint on every future change to this rule**, not a
-one-off reason for picking Jost\*. If the face is ever swapped — for a nicer sans, for a webfont
+one-off reason for picking a face. If the face is ever swapped — for a nicer sans, for a webfont
 that loads faster, for a face that matches the rest of the site — **the replacement must have a
 single-storey `a`, or the mode breaks.**
 
 A single-storey `a` is a bowl with a stem down its right side — an **`o` with one line added on the
 right**. That is literally the mode's biggest claim: `o → a` is **769 swaps, more than any other row
 in the table** (§2), and the animation M4 draws for it is one vertical stroke. In a double-storey
-`a` — Palanquin's, Helvetica's, Times' — the bowl is smaller, the stem curves over into an arched
-hood above it, and the shape is at best two strokes and a redrawn bowl. Shoot the `o` in `adopt`
-under a double-storey face and what you watch is not the thing the mode says is happening.
+`a` — Palanquin's, Helvetica's, **Jost\*'s** — the bowl is smaller, the stem curves over into an
+arched hood above it, and the shape is at best two strokes and a redrawn bowl. Shoot the `o` in
+`adopt` under a double-storey face and what you watch is not the thing the mode says is happening.
 
-The quick test on any candidate face: **set `o` and `a` next to each other and see whether you can
-get from one to the other by adding a single stroke and changing nothing else.** If you can't, the
-face is wrong for this mode however good it looks. The same check applies to `l → t` (the crossbar
-needs a plain, tail-less `l`), `u → o` (the `u` must be open at the top, not a bowl with a stem) and
-`c → o` (a circular `c`, so closing it gives a circular `o`); `a` is the one that carries a fifth of
-the corpus, so it is the one worth naming in a heading.
+**DO NOT run this test by eye.** The doc said *"set `o` and `a` next to each other and see whether
+you can get from one to the other by adding a single stroke"*, and that is exactly the test that
+passed Jost\*, because a geometric face's double-storey `a` reads as a circle with something on it
+at a glance. Run it as two numbers instead:
 
-Jost\* passes all four, which is why it is the face — not because it was already in `fonts/`, which
-is only what made it free.
+1. **Scan the `a` horizontally across the x-height band** (say 0.25 → 0.78 of it). A single-storey
+   `a` crosses **two** strokes at every height — bowl wall, then stem. A double-storey `a` has a
+   band where the hood has ended and the bowl has not started, and the only ink is the stem: **one**
+   stroke. This single number separates the two forms cleanly over the whole of Google Fonts.
+2. **Then check the `a` really is the `o`.** Same advance width (ratio ≈ 1.00), same left bowl
+   profile (≲ 1% of the `o`'s width), same right edge. Questrial: 1.000 / 0.1% / 530 vs 530.
+   Jost\*: 0.821 / 16.0% / 421 vs 511.
 
-**Two more tests, added 2026-11-07 by §3.6 — and unlike the four above these DECIDE ROWS rather than
-confirming them.** They are the first case of the face choosing what the table may hold. Both were
-answered by **decoding `fonts/Jost-latin.woff2` and reading the outlines** rather than by reasoning
-about Futura's conventions, which is the same rule that gave `projectileAnchor` its number and
-`freezeLetterBoxes` its widths; coordinates below are in the font's own 1000 upem.
+The same discipline applies to the other rows: `l → t` (a plain, tail-less `l` — one contour),
+`i → l` (an `i` with no foot serif — two contours), `u → o` (the `u` open at the top), `c → o` (a
+circular `c`, so closing it gives a circular `o`) and `o → g` (a **single-storey `g`**). `a` is the
+one that carries a fifth of the corpus, so it is the one worth naming in a heading.
+
+**Measured over the whole library (2026-11-08):** of 1,417 Google Fonts latin sans/display/
+handwriting faces, **372 have a single-storey `a`** and **37 pass every test above** with a usable
+x-height. Questrial, Poppins and Didact Gothic are the three whose `a` is its `o` to within 0.3%.
+
+**Two more tests, added 2026-11-07 by §3.6 — and unlike the ones above these DECIDE ROWS rather than
+confirming them.** They are the first case of the face choosing what the table may hold.
 
 - **What is the `u`'s right side?** A straight stem rising the full x-height means the `u` already
   holds the single-storey `a`'s stem, so closing its top gives an **`a`** and `u → o` is the weaker
   claim. A continuous curve with no straight stem means closing the top gives an **`o`** and the `a`
   needs a second stroke. **Both rows cannot be one stroke in the same face.**
-  **MEASURED: Jost\*'s `u` has the stem** — `x 370–450, y 0–460`, a flat-topped rectangle from the
-  baseline to the x-height, against an `a` whose stem is `x 341–421` from `y 0` to the arc junction
-  at ~330 and an `o` that is a true circle (`35–511 × −10–470`). So `u → a` is this face's one-stroke
-  row and `u → o` is the weaker one — the reverse of what the dev hoped, and **both shipped anyway**
-  (§3.6.3), the `o` first, because §8 beat 3's swap-to-the-font's-own-letter is the same licence
-  `h → k` lives on.
+  **MEASURED on Questrial: the `u` has the stem**, as Jost\*'s did (Jost\*: `x 370–450, y 0–460`).
+  So `u → a` stays this face's one-stroke row and `u → o` the weaker one, and §3.6.3's shipped
+  order — the `o` first — is unchanged by the face swap.
+  **AND THAT IS NOT A COINCIDENCE, IT IS FORCED (2026-11-08).** The dev asked for a face whose `u`
+  has no stem, so that `u → o` would become the honest row. Sweeping all 1,417 faces, **there is
+  none** — not a search failure but a structural fact: the `u`'s right stem *is* the same vertical
+  stroke as the single-storey `a`'s stem, so any face that draws straight stems draws one on the
+  `u`. The only faces whose `u` right side genuinely curves are scripts and handwriting faces where
+  *every* vertical curves, and those fail test 2 above (`o → a` needs a straight stem to add). The
+  three nearest misses — Chilanka, Sour Gummy, Sniglet — turn out on inspection to be straight stems
+  with rounded terminals, which is what the flatness metric was picking up. **Do not go looking
+  again**; the answer is that `u → a` is the row this mode gets, in any face it can legally wear.
 - **Does the `i` have a foot serif?** `i → l` connects the stem to the tittle (§3.6.2), and a foot
   serif survives that stroke into a letter that should not have one. The dev's own note: *"in this
   font that I am typing in now, it is untrue because of the bottom serif."* Sans-serif faces pass by
   construction — a serif face would have to give up the row, not fudge it.
-  **MEASURED: Jost\*'s `i` is two contours, a plain 4-point rectangle stem (`x 90–170, y 0–460`) and
-  a round tittle (`y 595–705`)**, so there is no serif and the gap the stroke fills is a real
-  0.135 em. Its `l` is likewise a bare 4-point rectangle to `y 780`, which is also §7.1's third test
-  passing by measurement rather than by eye.
+  **MEASURED: Questrial's `i` is two contours**, a plain stem and a separate tittle, so there is no
+  serif and the gap the stroke fills is real; its `l` is likewise a single bare contour, which is
+  the tail-less-`l` test passing by measurement rather than by eye. (Jost\*'s were the same:
+  stem `x 90–170, y 0–460`, tittle `y 595–705`, `l` to `y 780`, a 0.135 em gap.)
 
 ---
 
@@ -1035,7 +1105,7 @@ height, which is three numbers that can each be wrong instead of one DOM read. T
 width and no height, so the line box and the centred glyph are untouched, and it is gone again
 before anything else reads the span.
 
-**The ink cache is keyed on the face's LOAD STATE.** Jost\* arrives on `font-display: swap`, so a
+**The ink cache is keyed on the face's LOAD STATE.** Questrial arrives on `font-display: swap`, so a
 measurement taken before the woff2 lands is a Palanquin metric — and a cache that could not tell the
 two apart would go on drawing every stroke of the round against the fallback. The Scriptorium's font
 scorer hit exactly this and answered it the same way
@@ -1048,7 +1118,7 @@ cut off at exactly the end a stroke is most readable from. The rule was already 
 from M2, written blind; this is what it was for.
 
 **The cards:** the `modeArt.js` entry needed **one new optional field, `face`**, and it is not a
-style preference. The mode plays in Jost\* because `o → a` is one stroke only in a face with a
+style preference. The mode plays in Questrial because `o → a` is one stroke only in a face with a
 single-storey `a` (§7.1) — so a card showing `l→t` and `adopt → adapt` in Palanquin would make the
 *picture of the mode* a lie about the mode, which is the one thing a mode picture cannot be. It
 arrives as `--mode-face` on the card and `.mode-art__glyph` / `.mode-art__example` read it; every
@@ -1122,15 +1192,19 @@ which end of each is anchored on the result (§8.1):
 | `u>a` | one cubic: off the left stem's top, cresting ~0.024 em above the x-height at 40% across (a geometric `a`'s apex overshoots), landing **vertically** on the right stem 0.29 of the band below its top. The vertical landing is the whole difference from `u>o`'s flat bow. |
 | `v>w` | a three-point polyline off the `v`'s own right terminal, its vertex at `desc` because a pointed vertex overshoots the baseline. |
 
-Two shared pieces came with them: a **`line()`** helper beside `vline`/`hline`, and **`K_WAIST`
-(0.41 of the x-height band, below the x-height line)** — one constant for both `k` rows, because it
-is one fact about the letter: Jost puts the waist at `y 270` of a 460 x-height, which is also
-exactly where the `h`'s shoulder leaves its own stem, and *that* coincidence is the whole of
-`h → k`.
+Two shared pieces came with them: a **`line()`** helper beside `vline`/`hline`, and **`K_WAIST`**
+— one constant for both `k` rows, because it is one fact about the letter, and one that belongs to
+the FACE, so §7.0's swap re-fitted it: **0.41 under Jost\*, 0.53 under Questrial.** It is fitted
+rather than eyeballed — sweep the value, score how much of each drawn stroke lands inside the real
+`k`'s outline, take the point where `h → k` and `l → k` agree — and the method is trustworthy
+because **run against Jost\* it returns 0.42, i.e. the 0.41 that shipped**. Under Jost\* the waist
+sat at `y 270` of a 460 x-height, which was also roughly where the `h`'s shoulder leaves its own
+stem, and *that* near-coincidence is the whole of `h → k`.
 
 **Verified before it ever ran in a browser**, by slicing the helper block and the `STROKE` table out
 of `serifinFunc.js` (the `affix-sprite-preview.html` trick) and running every one of the 27 entries
-against geometry built from the real Jost outlines at a 40 px em: every path stays inside its
+against geometry built from the real font outlines at a 40 px em (Jost\*'s then; **re-run against
+Questrial for §7.0's face swap, which is how `K_WAIST` and `u>o` were re-fitted**): every path stays inside its
 letter's box bar the known descenders, every new path's anchors land on the stem/terminal/edge the
 comment claims, and `u>a`'s crest was **re-weighted after the first attempt measured as a ramp
 rather than a hood** (its control points had the crest at 20% across and 0.6 px of lift; it is now
@@ -1147,13 +1221,13 @@ in a browser, then `air → aim` into `modeHelp.js`'s "Also" row.
 | --- | --- |
 | `build-serifin-pojo.js` | ✅ **new.** Offline generator; holds the §3.1 table, the §3.4 tier flag and the §2 checks. ✅ **M5:** `ADD` at 27 rows, §3.7's `BLOCK` set + its refusal count, and the header comment rewritten against the **pen** rule (it repeated §3.2's segment-counted cut list verbatim). |
 | `serifinPOJO.js` | ✅ **new, generated.** Never hand-edited. **⚠ STILL M4's 2,995 entries / 56 KB — M5's rows are inert until `node build-serifin-pojo.js` runs** (the dev's call to defer the data pass). The dry run says 3,588 entries / 68.3 KB (§10.4). |
-| `serifinFunc.js` | ✅ **new.** `SERIFIN_ID`, `SERIFIN_OBSCURE`, `loadSerifin`, `serifinReady`, `hasSerifinWords`, `wrapSerifin`, `serifinCandidates`, `serifinCycle`, `serifinSwap`, `serifinWordNow`, `freezeLetterBoxes`. Lazy-imports the POJO. ✅ **M5:** six more `STROKE` entries (`h>k`, `i>l`, `l>k`, `r>m`, `u>a`, `v>w`), a `line()` helper and the `K_WAIST` constant (§10.5). ✅ **M4:** the `STROKE` table of 21 strokes + its five shape helpers, `glyphInk`/`baselineY`/`strokeGeometry` (the measuring), and `drawSerifinStroke` + `SF_DRAW_MS`/`SF_FADE_MS`. The stroke lives here and not in `index.js` because it is sentence-side work — letterforms and measurement, the same job as `freezeLetterBoxes`, sharing its offscreen canvas. |
+| `serifinFunc.js` | ✅ **new.** `SERIFIN_ID`, `SERIFIN_OBSCURE`, `loadSerifin`, `serifinReady`, `hasSerifinWords`, `wrapSerifin`, `serifinCandidates`, `serifinCycle`, `serifinSwap`, `serifinWordNow`, `freezeLetterBoxes`. Lazy-imports the POJO. ✅ **M5:** six more `STROKE` entries (`h>k`, `i>l`, `l>k`, `r>m`, `u>a`, `v>w`), a `line()` helper and the `K_WAIST` constant (§10.5). ✅ **§7.0 (2026-11-08):** the two face-specific numbers re-fitted for Questrial — `K_WAIST` 0.41 → 0.53, and `u>o`'s bow rise changed from a flat `sw * 1.2` to the result's own measured ink top. ✅ **M4:** the `STROKE` table of 21 strokes + its five shape helpers, `glyphInk`/`baselineY`/`strokeGeometry` (the measuring), and `drawSerifinStroke` + `SF_DRAW_MS`/`SF_FADE_MS`. The stroke lives here and not in `index.js` because it is sentence-side work — letterforms and measurement, the same job as `freezeLetterBoxes`, sharing its offscreen canvas. |
 | `SpanPlaceholder.js` | ✅ `export const protectedSerifin = withSpanPlaceholders(wrapSerifin);` |
 | `utils/utils.js` | ✅ `case "serifin":` in `addSpansAndIdsForWordPlay`'s switch. **No `heroManagedWords` change** (§6.6). |
 | `punctuators.html` | ✅ `<option value="serifin" data-dev>Serifin's Strokes</option>`, stripped in the dropdown IIFE **before** the custom dropdown is generated (§1.3). |
 | `index.js` | ✅ the `WORDPLAY_GUARDS` entry + the `loadSerifin()` await in front of it (§10.1); the `serifin-mode` class and the `freezeLetterBoxes` call at Pow!; the `nodeArr` push after `waitForElement` and before `heroToTheRescue` (§5.1). ✅ **M3:** `drawStrokeBoltSprite`; `class Serifin` + the instance + its place in `availableHeroArray`; the collision branch + `projectile.serifinDone`'s early-out; `shootSerifin`; `claimSerifinShot`; `lockSerifinSiblings`; `flashSerifinClank`/`flashSerifinSwap`; the three SFX. `drawSerifinSprite` was never written — the dev's art landed first (§10.2). ✅ **M4:** `shootSerifin` splits its DOM writes into a `land()` the animation calls, reads the on-screen glyph as `from` before `serifinSwap` moves the state, and plays `_serifinDraw` at the START of the draw rather than after the swap (§9). |
 | `images/Serifin_Start.png`, `images/Serifin_2.png` | ✅ **new (the dev's).** Resting and attack, 800 × 1045 like the ladder pair. |
-| `index.css` | ✅ `@font-face` for Jost; `#output.serifin-mode`; `.sf-word`; `.sf-letter`; `.sf-clank`; ✅ **M3:** `.sf-swap` (+ `--sf-ink`), `.sf-dead`. ✅ **M4:** `.sf-stroke` is in use at last (it shipped with M2, written blind — its `overflow: visible` is what lets an ascender or a descender out of the letter's box, §10.3); `--mode-face` read by `.mode-art__glyph` and `.mode-art__example`. |
+| `index.css` | ✅ `@font-face` for **Questrial** (was Jost\* until §7.0, 2026-11-08); `#output.serifin-mode`; `.sf-word`; `.sf-letter`; `.sf-clank`; ✅ **M3:** `.sf-swap` (+ `--sf-ink`), `.sf-dead`. ✅ **M4:** `.sf-stroke` is in use at last (it shipped with M2, written blind — its `overflow: visible` is what lets an ascender or a descender out of the letter's box, §10.3); `--mode-face` read by `.mode-art__glyph` and `.mode-art__example`. |
 | `modeHelp.js` | ✅ **M4.** The card. Leads with *you shoot a letter, not a word* — the one rule no other card in the file has had to state. Every pair in it is real in the shipped POJO (`adopt` o→a/o→e, `cut` c→o, `night` n→m, `will` l→t) **and in M5's dry run**, so no edit was due; regenerating the table can leave them stale. **Pending the regeneration:** `air → aim` into the "Also" row (§10.4 stage 4) — it cannot go in before the rebuild or the card names a swap the shipped table lacks. |
 | `modeArt.js` | ✅ **M4.** The card, glyph `l→t` — an `l` with its crossbar arriving, which is the mode's smallest true claim. Plus the one new optional field, **`face`**, so the picture is set in the typeface the mode actually plays in (§10.3) — Serifin is its only user. |
 | `docs/punctuators.md` | ✅ the line in the cast. |
@@ -1270,7 +1344,11 @@ the repo's one alphabet.
    the `o` first.** §7.1's fifth test was the right way in, and the answer came out against the
    dev's preference: Jost\*'s `u` carries a **straight right stem running the full x-height from the
    baseline** (`x 370–450, y 0–460` of 1000 upem), which is already the single-storey `a`'s stem, so
-   one stroke over its top makes an `a` and `u → o` is the weaker claim. Both rows landed anyway
+   one stroke over its top makes an `a` and `u → o` is the weaker claim. **Re-asked and closed for
+   good on 2026-11-08**: the dev asked §7.0's face swap to find a stemless `u`, and a sweep of all
+   1,417 Google Fonts latin sans/display/handwriting faces found **none** that has one while still
+   passing the single-storey-`a` test — the two stems are the same stroke, so the answer is forced
+   rather than a property of Jost\* (§7.1). Both rows landed anyway
    (§3.6.3) — the chain `bout → boot → boat` draws itself where the middle word is real, which is
    only **31%** of the row, and the other 329 transformations need the direct `u>a` stroke. The
    purist alternative (`u → o` only) is §13 #1's chaining arrived at from the opposite direction and

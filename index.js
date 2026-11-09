@@ -1891,8 +1891,8 @@ removePuncButton.addEventListener("click", async () => {
       out1.classList.add("phrase-mode");
       addSpansAndIdsForWordPlay(wrapPhrase(phrase.entry), out1, selectedOption);
     } else {
-      // The face goes on BEFORE the sentence is written, so the first paint is already Jost* and
-      // the player never sees the letterforms the mode's own table is false about (§7).
+      // The face goes on BEFORE the sentence is written, so the first paint is already Questrial
+      // and the player never sees the letterforms the mode's own table is false about (§7).
       if (selectedOption === "serifin") out1.classList.add("serifin-mode");
       addSpansAndIdsForWordPlay(
         initialTypedSentence.value,
