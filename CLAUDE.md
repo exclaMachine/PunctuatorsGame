@@ -35,7 +35,7 @@ doc — never here. When a feature ships, update the status line; don't append a
   [Word Ladder / Tree of Kinds](docs/punctuators-ladder.md) (free play + map complete; Restore the
   Phrase and Word Race playable but dev-only behind `?dev=1`) ·
   [Affix Aliens](docs/punctuators-affixes.md) (M1–M3 built, dev-only; M4 the feel remains) ·
-  [Serifin — Strokes](docs/punctuators-serifin.md) (M1–M5 built, dev-only; `serifinPOJO.js` not yet
+  [Serifin — Strokes](docs/punctuators-serifin.md) (M1–M5 built, live; `serifinPOJO.js` not yet
   regenerated, so M5's six rows are inert until `node build-serifin-pojo.js` runs)
 - **ApostroPharaoh** — `asp-ostrophe.html` — Tomb-of-the-Mask-style snake: eat letters, spell words or
   they become fuel for Apep. M1–M3 + M4 audio built, SOLID/SPIRIT modes; M4 pixel pass, M5 easter egg

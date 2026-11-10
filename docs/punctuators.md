@@ -12,7 +12,7 @@ Word Race and the Tree of Kinds) and
 [`punctuators-affixes.md`](punctuators-affixes.md) (The Grand Prefixer & Sufferix — **M1 the tables, M2 the
 mark-up and M3 the four heroes built, dev-only; M4 is the feel**) and
 [`punctuators-serifin.md`](punctuators-serifin.md) (Serifin — she adds **one stroke to a LETTER** and it
-becomes another letter, `adopt → adapt`; **M1–M4 all built, dev-only — the mode is COMPLETE**: shoot a
+becomes another letter, `adopt → adapt`; **M1–M4 all built and LIVE since 2026-11-10 — the mode is COMPLETE**: shoot a
 letter and a pen draws the one stroke on in her red, and the glyph becomes the other letter under it;
 **M5, the second pass at the stroke table, is built — 27 rows and a blocklist — but
 `serifinPOJO.js` is deliberately not yet regenerated, so its six new rows are inert until the build

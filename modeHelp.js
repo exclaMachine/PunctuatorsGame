@@ -357,7 +357,7 @@ export const MODE_HELP = {
   `,
   },
 
-  /* docs/punctuators-serifin.md §8, §1.1. Dev-only (?dev=1) while the mode is built.
+  /* docs/punctuators-serifin.md §8, §1.1. Live since 2026-11-10.
 
      The load-bearing sentence is the first tip, and it is the one rule no other card in this file
      has ever had to state: YOU SHOOT A LETTER, NOT A WORD. Every other mode's target is a word, so

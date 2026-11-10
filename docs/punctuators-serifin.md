@@ -3,7 +3,7 @@
 **Status: M1 the table, M2 the mark-up BUILT 2026-10-18; M3 the hero BUILT 2026-10-20; M4 the feel
 BUILT 2026-10-22 — THE MODE IS COMPLETE.** Shoot a letter and a pen draws the one stroke on, in her
 red, and the glyph becomes the other letter under it (§8, §10.3). The How-to-Play card and the mode
-picture landed with it. **DEV-ONLY** (`?dev=1`) — see §1.3.
+picture landed with it. **LIVE since 2026-11-10** — the `data-dev` gate is off (§1.3).
 
 **M5 — a second pass at the stroke table — BUILT 2026-11-07** (§3.6 the rows, §3.7 the blocklist,
 §10.4/§10.5 as built). **Six** more rows off the same nine source letters, taking the table from 21
@@ -106,11 +106,15 @@ Gated on real words, the same sentence marks three or four letters, each one wor
 the payoff is a word you can read out loud. The measurement that made this safe is §2: real typed
 sentences nearly always contain one.
 
-### 1.3 Dev-only until the dev says otherwise
+### 1.3 Live (was dev-only until 2026-11-10)
 
-The `<option>` ships carrying **`data-dev`** and is stripped from the dropdown unless the page is
-opened with `?dev=1`. The gate must run in `punctuators.html`'s dropdown IIFE **before** the custom
-dropdown is generated from `sel.options` — hiding the `<option>` alone leaves its generated
+The `<option>` no longer carries `data-dev`, so the mode is in the dropdown for everyone. It went
+live on the M4 table: `serifinPOJO.js` is still not regenerated, so M5's six rows stay inert on the
+public site until the build script runs (see the ⚠ above).
+
+To pull it back, re-add `data-dev` to the `<option>`: `punctuators.html`'s dropdown IIFE strips
+such options unless the page is opened with `?dev=1`, and does so **before** the custom dropdown is
+generated from `sel.options` — hiding the `<option>` alone leaves its generated
 `.custom-select-option` visible (the trap Word Race and Affix Aliens both hit).
 
 ---
@@ -1238,7 +1242,7 @@ in a browser, then `air → aim` into `modeHelp.js`'s "Also" row.
 | `serifinFunc.js` | ✅ **new.** `SERIFIN_ID`, `SERIFIN_OBSCURE`, `loadSerifin`, `serifinReady`, `hasSerifinWords`, `wrapSerifin`, `serifinCandidates`, `serifinCycle`, `serifinSwap`, `serifinWordNow`, `freezeLetterBoxes`. Lazy-imports the POJO. ✅ **M5:** six more `STROKE` entries (`h>k`, `i>l`, `l>k`, `r>m`, `u>a`, `v>w`), a `line()` helper and the `K_WAIST` constant (§10.5). ✅ **§7.0 (2026-11-08):** the two face-specific numbers re-fitted for Questrial — `K_WAIST` 0.41 → 0.53, and `u>o`'s bow rise changed from a flat `sw * 1.2` to the result's own measured ink top. ✅ **M4:** the `STROKE` table of 21 strokes + its five shape helpers, `glyphInk`/`baselineY`/`strokeGeometry` (the measuring), and `drawSerifinStroke` + `SF_DRAW_MS`/`SF_FADE_MS`. The stroke lives here and not in `index.js` because it is sentence-side work — letterforms and measurement, the same job as `freezeLetterBoxes`, sharing its offscreen canvas. |
 | `SpanPlaceholder.js` | ✅ `export const protectedSerifin = withSpanPlaceholders(wrapSerifin);` |
 | `utils/utils.js` | ✅ `case "serifin":` in `addSpansAndIdsForWordPlay`'s switch. **No `heroManagedWords` change** (§6.6). |
-| `punctuators.html` | ✅ `<option value="serifin" data-dev>Serifin's Strokes</option>`, stripped in the dropdown IIFE **before** the custom dropdown is generated (§1.3). |
+| `punctuators.html` | ✅ `<option value="serifin">Serifin's Strokes</option>` — `data-dev` removed 2026-11-10, so it is live (§1.3). |
 | `index.js` | ✅ the `WORDPLAY_GUARDS` entry + the `loadSerifin()` await in front of it (§10.1); the `serifin-mode` class and the `freezeLetterBoxes` call at Pow!; the `nodeArr` push after `waitForElement` and before `heroToTheRescue` (§5.1). ✅ **M3:** `drawStrokeBoltSprite`; `class Serifin` + the instance + its place in `availableHeroArray`; the collision branch + `projectile.serifinDone`'s early-out; `shootSerifin`; `claimSerifinShot`; `lockSerifinSiblings`; `flashSerifinClank`/`flashSerifinSwap`; the three SFX. `drawSerifinSprite` was never written — the dev's art landed first (§10.2). ✅ **M4:** `shootSerifin` splits its DOM writes into a `land()` the animation calls, reads the on-screen glyph as `from` before `serifinSwap` moves the state, and plays `_serifinDraw` at the START of the draw rather than after the swap (§9). |
 | `images/Serifin_Start.png`, `images/Serifin_2.png` | ✅ **new (the dev's).** Resting and attack, 800 × 1045 like the ladder pair. |
 | `index.css` | ✅ `@font-face` for **Questrial** (was Jost\* until §7.0, 2026-11-08); `#output.serifin-mode`; `.sf-word`; `.sf-letter`; `.sf-clank`; ✅ **M3:** `.sf-swap` (+ `--sf-ink`), `.sf-dead`. ✅ **M4:** `.sf-stroke` is in use at last (it shipped with M2, written blind — its `overflow: visible` is what lets an ascender or a descender out of the letter's box, §10.3); `--mode-face` read by `.mode-art__glyph` and `.mode-art__example`. |
