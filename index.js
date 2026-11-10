@@ -1142,9 +1142,15 @@ function shootSerifin(span, hero, projectile) {
   const from = span.textContent;
 
   // CYCLING, NOT CHAINING (§6.1): the cycle was computed once at wrap time from the word as typed,
-  // so `adopt`'s `o` walks o -> a -> e -> o and BOTH of its words are reachable. serifinSwap owns
-  // the state on the span and hands back the glyph; writing the DOM is left to `land` below, so the
-  // stroke can be drawn on before the letter changes under it.
+  // so `adopt`'s `o` walks o -> a -> o -> e -> o and BOTH of its words are reachable. serifinSwap
+  // owns the state on the span and hands back the glyph; writing the DOM is left to `land` below,
+  // so the stroke can be drawn on before the letter changes under it.
+  //
+  // IT COMES HOME BETWEEN CANDIDATES, and the reason is the stroke: a shot on the `b` reverts it to
+  // the `o` rather than walking on to the `p`, because `b>p` is not an entry in the table and never
+  // can be (no ink is added). So every stroke drawn in this mode is drawn onto the letter you typed,
+  // which is the mode's whole claim. The revert itself has no path either — taking a stroke off is
+  // Sans's job (§12.2) — so it lands on M3's red flash, which is already the right degrade.
   const next = serifinSwap(span);
   if (!next) {
     flashSerifinClank(span);

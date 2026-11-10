@@ -395,8 +395,9 @@ export const MODE_HELP = {
           the whole aim.</li>
         <li>The letters she can reach are <strong>underlined in red</strong>. Everything else in the
           word is ordinary text and her stroke passes straight through it.</li>
-        <li>Keep shooting one letter to cycle through <em>all</em> of its letters and back to the
-          one you typed: <code>adopt</code> → <code>adapt</code> → <code>adept</code> →
+        <li>Keep shooting one letter to reach <em>all</em> of its letters. She draws on the letter
+          you typed and the next shot wipes it off again, so a letter with two of them goes
+          <code>adopt</code> → <code>adapt</code> → <code>adopt</code> → <code>adept</code> →
           <code>adopt</code>.</li>
         <li><strong>One stroke per word at a time.</strong> While a word is changed its other
           letters go quiet — shoot the changed one back to the letter you typed and they wake up

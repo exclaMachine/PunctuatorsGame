@@ -386,16 +386,22 @@ makes an `a`**, and the shipped `u → o` is the weaker claim: Jost's `o` is a t
 
 **Second — and this is the part worth keeping — the route already works, and the code already draws
 it.** M4's `shootSerifin` reads the stroke's `from` as **the glyph on screen**, not the cycle's
-origin. So with `ADD.u = ["o", "a"]` *in that order*, a `u` cycles `u → o → a → u` and the second
-shot looks up **`o>a`**, which is already in the `STROKE` table and is its biggest row. The chain
-draws itself with no new entry and no chaining mechanic:
+origin. So with `ADD.u = ["o", "a"]` *in that order*, a `u` reaches `boot` on the first shot and
+`boat` on the next one out, and both strokes are drawn:
 
 ```
-bout  →  boot  →  boat        shot 1 draws u>o   ·   shot 2 draws o>a
+bout  →  boot  →  bout  →  boat        shot 1 draws u>o   ·   shot 3 draws u>a
 ```
 
 That ordering is therefore **load-bearing, not incidental** — `o` must come before `a` in the list,
 or the player gets the two strokes in the wrong order.
+
+**AMENDED 2026-11-09 by §6.1's out-and-home cycle.** As written the chain was `u → o → a`, the
+second shot drawing `o>a` off the `o` on screen — one of the laterals §8.3 counted. The cycle now
+comes home between candidates, so the journey is `bout → boot → bout → boat` and the second drawn
+stroke is `u>a` rather than `o>a`: an extra shot, the same two words, and both strokes drawn onto
+the `u` that was typed. The order still decides which word you reach first; it no longer builds a
+chain, which is why `u → a` shipping as its own row (below) matters more than it looked.
 
 **But the chain only covers 31% of the row.** Measured: of `u → a`'s 476 transformations, **147**
 have a real intermediate `o` word so the cycle can offer the middle rung (79 with all three words
@@ -620,8 +626,20 @@ looks exactly like what it then is — not a target.
 ### 6.1 The swap, and the cycle
 
 A letter's candidate list is `[original, ...candidatesOf(original)]`, **computed once at wrap time
-from the word as typed**. Each hit advances `data-sf-turn` by one and wraps round, so `adopt`'s `o`
-walks `o → a → e → o → a …`.
+from the word as typed**. A letter alternates between the original and one candidate at a time, so
+`adopt`'s `o` walks `o → a → o → e → o → a …` — out to a candidate, home, out to the next. State is
+`data-sf-turn` (where it is now, 0 being the original) plus `data-sf-cand` (which candidate the next
+stroke goes out to, advanced on the way out).
+
+**Why it comes home between candidates** (the dev's call, 2026-11-09, replacing a straight
+round-robin `o → a → e → o`). A letter showing a candidate has exactly one legal move, and it is
+back: `o → b` is a stroke in the table, and `b → p` can never be one, because no ink is added
+(`b → p` is a redrawn letter, and *removing* a stroke is **Sans**'s job — §12.2). The round-robin
+therefore showed glyph swaps §8 could not animate and that the mode's own one-line claim — *she
+draws one extra stroke onto the letter you shot* — says do not exist. **Every stroke drawn is now
+drawn onto the letter you typed.** It costs one extra shot per candidate; §8.3 already measured that
+the wrap home takes no stroke and lands on M3's red flash, which is the right degrade for it. For a
+letter with a single candidate (`h`, `v`, …) nothing changes at all.
 
 **Why cycling rather than chaining.** The alternative is to recompute from the letter now on screen,
 which gives chains (`cut → out → gut`) — and costs the player every candidate they did not get
@@ -933,38 +951,34 @@ authored. That retires the hand table and makes the claim verifiable — but it 
 letter as canvas polylines rather than type for the length of the animation, which is a different
 and much larger piece of work. §12.4.
 
-### 8.3 How often a shot actually draws a stroke — 48%, and the rest is correct
+### 8.3 How often a shot actually draws a stroke — every out-step, half the shots
 
-Measured 2026-11-07, counting every step of every cycle the table can produce. It was not measured
-when M4 shipped and it is worth having, because the headline reads worse than the truth. The figures
-below are the **M5 table as built** (9,106 steps); M4's 21-row table gave 46/46/8 over 7,256 steps,
-so **six more rows moved the split by two points and nothing else**:
+**Rewritten 2026-11-09 for §6.1's out-and-home cycle, which is what settled this section.** The
+cycle now alternates original → candidate → original, so the split is exact and needs no measuring:
 
 | | | |
 | --- | --- | --- |
-| the step is a table row, so a stroke is drawn | **4,339** | 48% |
-| the cycle's **wrap home** — no stroke, and there can never be one | **4,073** | 45% |
-| a **lateral** between two candidates — likewise | **694** | 8% |
+| the step **out** to a candidate — always a table row, so a stroke is always drawn | **half** |
+| the step **home** — no stroke, and there can never be one | **half** |
+| a **lateral** between two candidates | **gone** |
 
-**The 45% is the cycle returning to the letter you typed** (§6.1), and that step *takes a stroke
-away*: `adapt → adopt` is an `a` losing its stem. Serifin's table cannot hold it by definition —
-drawing it needs the inverse table, which is **Sans** (§12.2). So the bare flash on a wrap is not a
-gap in M4, it is the one thing in the mode Serifin is not for. §9's cue already knew: `_serifinDraw`
-takes a `wrapped` argument and lets its second note *fall* where it otherwise rises, so the audio
-has been saying what the picture cannot since M3.
+**Of the steps Serifin's own table could ever cover, every one draws** — which was already the
+closing line of this section when it measured 48/45/8 over the M5 table's 9,106 round-robin steps
+(M4's 21 rows gave 46/46/8 over 7,256). The change did not improve that number; it **deleted the
+steps that were not hers**, which is why §6.1 made it.
 
-The 7% are **laterals** — a cycle like `l`'s `[l, t, b, d, h]` stepping `t → b`, which is one stroke
-off and another on, so neither character can draw it alone. Two things follow. The first is that
-**candidate order decides whether a lateral is drawable**: where one candidate is itself one stroke
-from the next, ordering them adjacently turns the lateral into a drawn chain, which is exactly what
-`ADD.u = ["o", "a"]` now buys (§3.6.3) and what `ADD.c = ["o", "a", …]` already bought
-(`cat → oat` draws `c>o`, then `oat → eat` draws `o>e`). The second is that the gain is small —
-`o`'s candidates are all `o>` rows and nothing is a row *from* `a`, so a cycle picks up at most one
-extra drawn step. Worth ordering for, not worth a milestone.
+**The half that does not draw is the cycle returning to the letter you typed**, and that step *takes
+a stroke away*: `adapt → adopt` is an `a` losing its stem. Serifin's table cannot hold it by
+definition — drawing it needs the inverse table, which is **Sans** (§12.2). So the bare flash on a
+wrap is not a gap in M4, it is the one thing in the mode Serifin is not for. §9's cue already knew:
+`_serifinDraw` takes a `wrapped` argument and lets its second note *fall* where it otherwise rises,
+so the audio has been saying what the picture cannot since M3.
 
-So the number that matters is not 48% but this: **of the steps Serifin's own table could ever cover,
-every one of them draws.** The uncovered 52% is Sans's half of the mode plus the laterals between
-two of her results.
+**The laterals are what the change removed** — a round-robin through `l`'s `[l, t, b, d, h]` stepped
+`t → b`, one stroke off and another on, so neither character could draw it alone. Coming home
+between candidates replaces every lateral with a home step plus a fresh out-step, and the out-step
+is a row by construction: `cat → oat → eat` used to draw `c>o` then the lateral `o>e`, and now runs
+`cat → oat → cat → eat`, drawing `c>o` then `c>e` — **both real rows, the same two words reached.**
 
 ---
 
@@ -1304,6 +1318,12 @@ the repo's one alphabet.
    2026-11-07: both rows shipped with the `o` first, i.e. ordered cycling** (§3.6.3). So the
    question is now "cycling, chaining, or **ordered** cycling?", and the third is what shipped by
    accident and is now shipped on purpose.
+   **ANSWERED 2026-11-09 — out-and-home cycling** (the dev's call, §6.1). A letter goes out to one
+   candidate and back before the next, which keeps the frozen geometry static like plain cycling and
+   keeps every step drawable like chaining, because an out-step is a table row by construction. It
+   takes the *reach* argument off chaining as well: the two-stroke journey §3.6.3 wanted still
+   arrives at both words (`bout → boot → bout → boat`), one shot longer, with both strokes drawn
+   onto the typed `u`. Chaining's only remaining pitch is the surprise of `cut → out → gut`.
 2. **The mode's name.** `Serifin's Strokes` matches `Affix Aliens` in naming the character. `Strokes`
    alone matches `Caret`, `Rounded`, `Split`. The dropdown is currently split between the two
    conventions.

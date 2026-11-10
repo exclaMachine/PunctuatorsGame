@@ -115,10 +115,12 @@ export const hasSerifinWords = (sentence) => {
 export const SF_WORD_CLASS = "sf-word";
 export const SF_LETTER_CLASS = "sf-letter";
 
-/* One target word. `data-sf` is the candidate list, `data-sf-from` the letter as typed and
-   `data-sf-turn` where in the cycle we are — 0 being the original, so the authoritative state is
-   (from, candidates, turn) and the glyph on screen is derivable from it rather than the other way
-   round. The wrapper carries data-sf-word so §6.5's fixArticleBefore has a whole word to read. */
+/* One target word. `data-sf` is the candidate list, `data-sf-from` the letter as typed,
+   `data-sf-turn` where in the cycle we are — 0 being the original — and `data-sf-cand` which
+   candidate the next stroke goes out to, since the cycle returns home between every one (§6.1).
+   So the authoritative state is (from, candidates, turn, cand) and the glyph on screen is derivable
+   from it rather than the other way round. The wrapper carries data-sf-word so §6.5's
+   fixArticleBefore has a whole word to read. */
 const serifinWordHTML = (token, live) => {
   let html = "";
   let at = 0;
@@ -127,6 +129,7 @@ const serifinWordHTML = (token, live) => {
     html +=
       `<span id="${SERIFIN_ID}" class="${SF_LETTER_CLASS}"` +
       ` data-sf="${letters.join(" ")}" data-sf-from="${token[i]}" data-sf-turn="0"` +
+      ` data-sf-cand="1"` +
       `>${token[i]}</span>`;
     at = i + 1;
   }
@@ -162,6 +165,13 @@ export const serifinCycle = (span) => {
  * Advance one letter and return { letter, turn, wrapped } — the glyph the span should now show.
  * CALLER WRITES THE DOM, so the animation (§8) can draw the stroke before the glyph changes.
  *
+ * OUT AND HOME, ONE CANDIDATE AT A TIME (§6.1). The cycle never walks candidate to candidate: an
+ * `o` goes o → b → o → p → o → d, so every stroke you see is a stroke Serifin could really draw
+ * onto the letter as typed. Running b → p → d instead showed two glyph swaps the stroke table has
+ * no entry for and cannot animate (a `b` does not become a `p` by adding ink), which made the
+ * mode's own claim — one extra stroke on the letter you shot — false for every hit after the first.
+ * Going home between candidates costs one extra shot each and buys back the drawn stroke.
+ *
  * CYCLING, NOT CHAINING (§6.1). The alternative is to recompute from the letter now on screen,
  * which gives chains (`cut → out → gut`) and costs the player every candidate they did not get
  * first: `adopt`'s `o` makes BOTH `adapt` and `adept`, and under chaining you are handed one of
@@ -173,10 +183,19 @@ export const serifinCycle = (span) => {
 export const serifinSwap = (span) => {
   const cycle = serifinCycle(span);
   if (cycle.length < 2) return null; // nothing to cycle through: that is a clank (§6.3)
-  const turn = (Number(span.getAttribute("data-sf-turn")) || 0) + 1;
-  const at = turn % cycle.length;
-  span.setAttribute("data-sf-turn", String(at));
-  return { letter: cycle[at], turn: at, wrapped: at === 0 };
+  const at = Number(span.getAttribute("data-sf-turn")) || 0;
+  let cand = Number(span.getAttribute("data-sf-cand")) || 1;
+  // Away from home, the only move is back — so a letter showing a candidate reverts, and a letter
+  // showing the original goes out to the next one. The candidate pointer advances on the way OUT,
+  // which is what makes a single-candidate letter (cycle.length 2) behave exactly as it always did.
+  let to = 0;
+  if (at === 0) {
+    to = cand;
+    cand = cand + 1 >= cycle.length ? 1 : cand + 1;
+  }
+  span.setAttribute("data-sf-turn", String(to));
+  span.setAttribute("data-sf-cand", String(cand));
+  return { letter: cycle[to], turn: to, wrapped: to === 0 };
 };
 
 /** The word a wrapper currently spells, read off the DOM rather than tracked — the letters are the
