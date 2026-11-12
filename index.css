@@ -636,7 +636,16 @@ footer > div {
         background: #110824;
         border: 1px solid blueviolet;
         border-radius: 6px;
-        overflow: hidden;
+        /* The page itself can't scroll (html, body { overflow: hidden }) and this row is
+           position: fixed, so a list taller than the space under the trigger used to run off the
+           bottom of a phone screen with no way to reach the rest. The panel scrolls instead.
+           max-height here is only the fallback; the script in punctuators.html sets it to the
+           real space below the trigger each time the panel opens. */
+        overflow-x: hidden;
+        overflow-y: auto;
+        max-height: 50vh;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
         z-index: 2000;
         display: none;
         box-shadow: 0 6px 20px rgba(138, 43, 226, 0.45);

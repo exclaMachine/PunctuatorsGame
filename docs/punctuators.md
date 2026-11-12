@@ -577,6 +577,20 @@ Examples in the cards are **real**, same rule and same staleness risk as `modeHe
 
 ---
 
+## The mode dropdown scrolls (`.custom-select-dropdown`)
+
+**FIXED 2026-11-11.** On a phone the list stopped at *White Out* and nothing below it could be reached.
+The page cannot scroll (`html, body { overflow: hidden }`) and `#input-container` is `position: fixed`,
+so a panel taller than the space under its trigger simply ran off the bottom of the screen — and it
+grows by a row with every mode added.
+
+The panel is now `overflow-y: auto`, and the inline script in `punctuators.html` sets its `max-height`
+to the room between the trigger and the bottom of `visualViewport` **each time it opens** (and on
+resize), because the row moves — rotation, the on-screen keyboard, Word Race's goal display. The CSS
+`max-height: 50vh` is only a fallback. It opens scrolled to the current mode.
+
+---
+
 ## Art the Tickler & the Foon have their own mode, and every mode has a guard
 
 **BUILT 2026-08-30.** Two changes that only make sense together.

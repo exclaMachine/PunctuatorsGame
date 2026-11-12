@@ -287,10 +287,32 @@
 
         wrapper.appendChild(dropdown);
 
+        /* The panel may only be as tall as the screen below the trigger — the page can't scroll
+           (html/body are overflow: hidden), so anything past the bottom edge is unreachable.
+           Measured on every open because the row moves (rotation, the keyboard, Word Race's goal
+           display); visualViewport is the part of the screen the on-screen keyboard leaves. */
+        const fitDropdown = () => {
+          if (!wrapper.classList.contains('open')) return;
+          const viewH = window.visualViewport?.height ?? window.innerHeight;
+          const room = viewH - trigger.getBoundingClientRect().bottom - 5 - 12;
+          dropdown.style.maxHeight = Math.max(120, room) + 'px';
+        };
+
         trigger.addEventListener('click', e => {
           e.stopPropagation();
           wrapper.classList.toggle('open');
+          if (!wrapper.classList.contains('open')) return;
+          fitDropdown();
+          // Open on the current mode rather than at the top of the list.
+          const current = dropdown.querySelector('.custom-select-option.selected');
+          if (current) {
+            dropdown.scrollTop =
+              current.offsetTop - (dropdown.clientHeight - current.offsetHeight) / 2;
+          }
         });
+
+        window.addEventListener('resize', fitDropdown);
+        window.visualViewport?.addEventListener('resize', fitDropdown);
 
         document.addEventListener('click', () => wrapper.classList.remove('open'));
       })();
