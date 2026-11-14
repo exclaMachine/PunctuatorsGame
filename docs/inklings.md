@@ -113,7 +113,7 @@ Use these terms consistently in code, UI, and writing:
   long-term it becomes a walkable room you fill (see roadmap).
 - **Field / books** — the screens you travel to and hunt in.
 - **Implements** — the weapon vocabulary. **Weapons now exist** as craftable gear in the Weapon slot
-  (Pencil → Reed Pen generic ladder, then the signature story weapons — Vaporl Sword, Banana, Dooter,
+  (Pencil → Reed Pen generic ladder, then the signature story weapons — Vaporl Sword, Mugger's Banana, Dooter,
   Murmerer Mirror). They add `attack`/`reach`/`haste` on top of the base `ATTACK`; each signature reserves
   an `effect` for a future special ability (inert today — stats only). See the Equipment section below.
 
@@ -702,7 +702,7 @@ satchel (bypassing the cap). A small **DEV** badge shows bottom-left when active
   - **Weapons** — the Weapon slot is now live. A **generic ladder** (**Pencil** ✏️ → **Reed Pen** 🖋️, small
     +attack/reach) gates the **signature story weapons**, each `requires:"reed-pen"` and costing **premium ink
     + rare `red-ink`/`graphite`** (red-ink drops only from the very-rare Proofreaper → true end-game):
-    **Vaporl Sword** 🗡️ (Apostrophantom's gas blade — long reach, slow; `effect:"possess"`), **Banana** 🍌
+    **Vaporl Sword** 🗡️ (Apostrophantom's gas blade — long reach, slow; `effect:"possess"`), **Mugger's Banana** 🍌
     ("surprisingly sharp…" — fast, short reach, highest raw attack), **Dooter** 🎺 and **Murmerer Mirror** 🪞
     (mirror also grants a little guard) — the last two are stat-only placeholders pending flavour/abilities.
   - All gear **persists forever** (`state.equip`/`state.gear`/`state.gearSeq`).
