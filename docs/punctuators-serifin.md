@@ -538,8 +538,8 @@ dev's art landed before M3 did**, so the function was never written and the rule
 PNGs instead: the nib is measured off the art's own alpha (§10.2), not estimated by eye.
 
 **AS BUILT:** `images/Serifin_Start.png` (resting, the brush raised) and `images/Serifin_2.png`
-(attack, the brush swept down through the stroke), both 800 × 1045 — the ladder pair's frame, hence
-the same `heroScale 0.45`.
+(attack, the brush swept down through the stroke), both 800 × 1045 — the ladder pair's frame, but drawn
+at `heroScale 0.36` (288 × 376) rather than their 0.45: at 360 px wide she filled a phone screen.
 
 One hero, one bolt, one span id, so no `targetId` override is needed: `Hero.targetId` already
 defaults to `symbol`, and `symbol` is the span id. **`"Serifin ✎"`.**
@@ -1064,11 +1064,11 @@ built to fix — but the mode is behind `?dev=1`, so only the dev saw the wrong 
 ### 10.2 As built (M3)
 
 **She is not a drawn placeholder.** The dev supplied `images/Serifin_Start.png` and
-`images/Serifin_2.png` — the same 800 × 1045 frame as the ladder pair, so `heroScale 0.45` — which
+`images/Serifin_2.png` — the same 800 × 1045 frame as the ladder pair, at `heroScale 0.36` (§4.2) — which
 retires §4.2's `drawSerifinSprite()` before it was ever written. Only the **bolt** is drawn
 (`drawStrokeBoltSprite`), and §4.2's rule about the sprite function owning the muzzle number
 transfers to the art: the raised brush's nib in the resting frame tips out at source **(632, 94)**,
-measured off the alpha, and that × 0.45 less half the bolt's drawn width *is* the
+measured off the alpha, and that × `SERIFIN_HERO_SCALE` less half the bolt's drawn width *is* the
 `projectileAnchor`. The two frames are resting / attack in the ordinary way — `secondHeroImage`,
 drawn while a shot is up.
 

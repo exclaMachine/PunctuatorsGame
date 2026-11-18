@@ -3462,7 +3462,10 @@ class SufferixOpposite extends AffixAlien {
    the shooter rather than the global player. */
 
 const SERIFIN_COLOR = "#be123c"; // proofreader's red
-const SERIFIN_HERO_SCALE = 0.45; // 800 x 1045 -> 360 x 470 drawn, the ladder pair's size
+/* 800 x 1045 -> 288 x 376 drawn. Smaller than the ladder pair's 0.45 on purpose: at 360px wide she
+   filled a phone screen edge to edge. projectileAnchor below is derived from this constant, so the
+   nib follows any change here. */
+const SERIFIN_HERO_SCALE = 0.36;
 /* THE BOLT CANVAS IS NOT SQUARE, and that is an aiming decision rather than a drawing one. A
    projectile's hit box is its DRAWN FRAME (the collision walk tests position.x against
    position.x + width), and this mode's targets are single letters ~30px wide with a 5px margin
@@ -3530,8 +3533,8 @@ class Serifin extends Hero {
       "./images/Serifin_2.png", // the attack frame: the brush swept down through the stroke
     );
     /* MEASURED OFF THE ART, never guessed — the rule projectileAnchor exists for. The nib of the
-       raised brush in Serifin_Start.png tips out at source (632, 94) in an 800x1045 frame; x0.45
-       that is (284, 42) inside the drawn frame, and half the bolt's own 16px drawn width comes back
+       raised brush in Serifin_Start.png tips out at source (632, 94) in an 800x1045 frame; x0.36
+       that is (228, 34) inside the drawn frame, and half the bolt's own 16px drawn width comes back
        off the x so the stroke leaves centred on the nib rather than beside it. The default spawn —
        the top of the image FRAME, on its midline — would put her shot in empty sky and halfway
        across the canvas from the brush, which is exactly the bug that had Keen Arrow's bolt
