@@ -452,7 +452,8 @@ are **pitched cards** in Free Play and catalogue into the Sound Collective. See 
     humpback-whale). The other 7 animals still show emoji.
   - **Instruments — 6 wired (emoji-baked):** trumpet, violin, drum, sax, bell, banjo (`sprites/instruments/`). The
     other 28 instruments, and all biomes/genres, still show emoji.
-  - **Emoji-baked sprites** are produced by **`bake-emoji-sprites.py`** (one-off tool; Pillow renders the system
+  - **Emoji-baked sprites** are produced by **`bake-emoji-sprites.py`** (`critter-hub` group — the script also
+    bakes Inklings' menu icons as `inklings-menu`; no arg bakes every group; Pillow renders the system
     emoji at the Apple Color Emoji 160px strike, premultiplies α → LANCZOS downscale to a **40² grid** → **8-level
     colour posterize** + a hard α edge → a tiny 40×40 PNG the game upscales nearest-neighbour). The recipe (grid
     40, posterize, 8 levels) is chosen interactively in **`emoji-pixelizer.html`** — a standalone dev tool (repo

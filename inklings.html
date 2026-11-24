@@ -1125,6 +1125,7 @@
     #tact .util-grid{grid-template-columns:44px 44px 44px;grid-auto-rows:44px;gap:5px}
     #tact .util{width:44px;height:44px;font-size:7px}
     #tact .util.ico{font-size:26px}
+    #tact .util.ico img.pix-ico{width:28px;height:28px}
   }
   /* ── Desktop side panels: use the pillar-box space left/right of the stage for a feature toolbar
      (left) + a persistent minimap (right). Fixed to the viewport edges so they never affect the stage
@@ -1141,6 +1142,10 @@
     background:var(--paper-2);color:var(--ink);cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.25);
     font-family:var(--disp);font-size:8px;text-align:left;line-height:1.2}
   .tb-btn .tb-ico{font-style:normal;font-size:16px;flex:none}
+  /* Menu icons are baked pixel sprites (sprites/ui/*.png, 16×16 — bake-emoji-sprites.py inklings-menu), upscaled crisp */
+  img.pix-ico{display:block;image-rendering:pixelated;image-rendering:crisp-edges;pointer-events:none}
+  .tb-btn .tb-ico img.pix-ico{width:24px;height:24px}
+  #tact .util.ico img.pix-ico{width:32px;height:32px}
   .tb-btn span{flex:1;min-width:0}
   .tb-btn b{font-family:var(--read);font-size:12px;color:var(--ink-soft);font-weight:400}
   .tb-btn:hover{background:#efe4c6}
@@ -1186,27 +1191,27 @@
   <aside id="side-left" class="sidepanel" aria-label="Menu">
     <div class="tb-title">Menu</div>
     <!-- Home/teleport button disabled for now — kept for a future teleport item/power -->
-    <button class="tb-btn" id="tb-home" style="display:none"><span class="tb-ico">🏡</span><span>Home</span></button>
-    <button class="tb-btn" id="tb-dex"><span class="tb-ico">🐾</span><span>Bestiary</span><b>B</b></button>
-    <button class="tb-btn" id="tb-phonicon"><span class="tb-ico">🔉</span><span>Fish Phoneme</span></button>
-    <button class="tb-btn" id="tb-board"><span class="tb-ico">🔡</span><span>Sound Board</span></button>
-    <button class="tb-btn" id="tb-album"><span class="tb-ico">📜</span><span>Scriptorium</span></button>
-    <button class="tb-btn" id="tb-feats"><span class="tb-ico">✦</span><span>Feats</span><b>C</b></button>
-    <button class="tb-btn" id="tb-gear"><span class="tb-ico">🎒</span><span>Equipment</span><b>G</b></button>
-    <button class="tb-btn" id="tb-apothecary"><span class="tb-ico">⚗️</span><span>Apothecary</span><b>P</b></button>
-    <button class="tb-btn" id="tb-farm"><span class="tb-ico">🌱</span><span>Garden</span><b>F</b></button>
-    <button class="tb-btn" id="tb-pigpens" style="display:none"><span class="tb-ico">🐖</span><span>Pig Pens</span><b>K</b></button>
-    <button class="tb-btn" id="tb-herald" style="display:none"><span class="tb-ico">🛡️</span><span>Herald</span><b>Y</b></button>
-    <button class="tb-btn" id="tb-help"><span class="tb-ico">❓</span><span>Help</span><b>?</b></button>
+    <button class="tb-btn" id="tb-home" style="display:none"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/home.png" alt=""></span><span>Home</span></button>
+    <button class="tb-btn" id="tb-dex"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/bestiary.png" alt=""></span><span>Bestiary</span><b>B</b></button>
+    <button class="tb-btn" id="tb-phonicon"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/phonicon.png" alt=""></span><span>Fish Phoneme</span></button>
+    <button class="tb-btn" id="tb-board"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/soundboard.png" alt=""></span><span>Sound Board</span></button>
+    <button class="tb-btn" id="tb-album"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/scriptorium.png" alt=""></span><span>Scriptorium</span></button>
+    <button class="tb-btn" id="tb-feats"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/feats.png" alt=""></span><span>Feats</span><b>C</b></button>
+    <button class="tb-btn" id="tb-gear"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/equipment.png" alt=""></span><span>Equipment</span><b>G</b></button>
+    <button class="tb-btn" id="tb-apothecary"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/apothecary.png" alt=""></span><span>Apothecary</span><b>P</b></button>
+    <button class="tb-btn" id="tb-farm"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/garden.png" alt=""></span><span>Garden</span><b>F</b></button>
+    <button class="tb-btn" id="tb-pigpens" style="display:none"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/pigpens.png" alt=""></span><span>Pig Pens</span><b>K</b></button>
+    <button class="tb-btn" id="tb-herald" style="display:none"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/herald.png" alt=""></span><span>Herald</span><b>Y</b></button>
+    <button class="tb-btn" id="tb-help"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/help.png" alt=""></span><span>Help</span><b>?</b></button>
     <div class="tb-sep">Nearby</div>
-    <button class="tb-btn dim" id="tb-shop"><span class="tb-ico">🛒</span><span>Shop</span></button>
-    <button class="tb-btn dim" id="tb-words"><span class="tb-ico">📝</span><span>Wordsmithy</span></button>
-    <button class="tb-btn dim" id="tb-book"><span class="tb-ico">📖</span><span>Mad Libris</span></button>
-    <button class="tb-btn dim" id="tb-shelf"><span class="tb-ico">📚</span><span>Shelf</span></button>
-    <button class="tb-btn dim" id="tb-curate"><span class="tb-ico">🗂️</span><span>Curator</span></button>
-    <button class="tb-btn dim" id="tb-atlas"><span class="tb-ico">🌍</span><span>Atlas</span></button>
-    <button class="tb-btn dim" id="tb-decor"><span class="tb-ico">🖼️</span><span>Decorate</span></button>
-    <button class="tb-btn dim" id="tb-fish"><span class="tb-ico">🎣</span><span>Fish</span></button>
+    <button class="tb-btn dim" id="tb-shop"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/shop.png" alt=""></span><span>Shop</span></button>
+    <button class="tb-btn dim" id="tb-words"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/wordsmithy.png" alt=""></span><span>Wordsmithy</span></button>
+    <button class="tb-btn dim" id="tb-book"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/madlibris.png" alt=""></span><span>Mad Libris</span></button>
+    <button class="tb-btn dim" id="tb-shelf"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/shelf.png" alt=""></span><span>Shelf</span></button>
+    <button class="tb-btn dim" id="tb-curate"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/curator.png" alt=""></span><span>Curator</span></button>
+    <button class="tb-btn dim" id="tb-atlas"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/atlas.png" alt=""></span><span>Atlas</span></button>
+    <button class="tb-btn dim" id="tb-decor"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/decor.png" alt=""></span><span>Decorate</span></button>
+    <button class="tb-btn dim" id="tb-fish"><span class="tb-ico"><img class="pix-ico" src="sprites/ui/fish.png" alt=""></span><span>Fish</span></button>
   </aside>
 
   <div id="stage">
@@ -1958,16 +1963,16 @@
           <!-- Home/teleport button disabled for now — kept for a future teleport item/power -->
           <button class="tc-btn util" id="tc-home" aria-label="Home to bench" style="display:none">HOME</button>
           <button class="tc-btn util ico" id="tc-help" aria-label="Controls">?</button>
-          <button class="tc-btn util ico" id="tc-dex" aria-label="Bestiary">🐾</button>
-          <button class="tc-btn util ico" id="tc-phonicon" aria-label="Fish Phoneme">🔉</button>
-          <button class="tc-btn util ico" id="tc-board" aria-label="Sound Board">🔡</button>
-          <button class="tc-btn util ico" id="tc-album" aria-label="Scriptorium">📜</button>
-          <button class="tc-btn util ico" id="tc-stats" aria-label="Feats">✦</button>
-          <button class="tc-btn util ico" id="tc-gear" aria-label="Equipment">🎒</button>
-          <button class="tc-btn util ico" id="tc-apothecary" aria-label="Apothecary">⚗️</button>
-          <button class="tc-btn util ico" id="tc-farm" aria-label="Garden">🌱</button>
-          <button class="tc-btn util ico" id="tc-herald" aria-label="Herald's Bench" style="display:none">🛡️</button>
-          <button class="tc-btn util ico" id="tc-modal" aria-label="À La Modal hint">💬</button>
+          <button class="tc-btn util ico" id="tc-dex" aria-label="Bestiary"><img class="pix-ico" src="sprites/ui/bestiary.png" alt=""></button>
+          <button class="tc-btn util ico" id="tc-phonicon" aria-label="Fish Phoneme"><img class="pix-ico" src="sprites/ui/phonicon.png" alt=""></button>
+          <button class="tc-btn util ico" id="tc-board" aria-label="Sound Board"><img class="pix-ico" src="sprites/ui/soundboard.png" alt=""></button>
+          <button class="tc-btn util ico" id="tc-album" aria-label="Scriptorium"><img class="pix-ico" src="sprites/ui/scriptorium.png" alt=""></button>
+          <button class="tc-btn util ico" id="tc-stats" aria-label="Feats"><img class="pix-ico" src="sprites/ui/feats.png" alt=""></button>
+          <button class="tc-btn util ico" id="tc-gear" aria-label="Equipment"><img class="pix-ico" src="sprites/ui/equipment.png" alt=""></button>
+          <button class="tc-btn util ico" id="tc-apothecary" aria-label="Apothecary"><img class="pix-ico" src="sprites/ui/apothecary.png" alt=""></button>
+          <button class="tc-btn util ico" id="tc-farm" aria-label="Garden"><img class="pix-ico" src="sprites/ui/garden.png" alt=""></button>
+          <button class="tc-btn util ico" id="tc-herald" aria-label="Herald's Bench" style="display:none"><img class="pix-ico" src="sprites/ui/herald.png" alt=""></button>
+          <button class="tc-btn util ico" id="tc-modal" aria-label="À La Modal hint"><img class="pix-ico" src="sprites/ui/modal.png" alt=""></button>
           <button class="tc-btn util" id="tc-slide" aria-label="Slide">SLIDE</button>
           <!-- SHOP / HOUSE (home) and DESK / BOOK (inside the library) are contextual: only shown when standing by that structure (see syncTouchUI) -->
           <button class="tc-btn util" id="tc-shop" aria-label="Open shop">SHOP</button>
@@ -1977,8 +1982,8 @@
           <button class="tc-btn util" id="tc-shelf" aria-label="Browse shelf">SHELF</button>
           <button class="tc-btn util" id="tc-curate" aria-label="Speak with the curator">CURATE</button>
           <button class="tc-btn util" id="tc-atlas" aria-label="Open the Atlas">ATLAS</button>
-          <button class="tc-btn util ico" id="tc-decor" aria-label="Decorate the Wordhoard">🖼️</button>
-          <button class="tc-btn util ico" id="tc-flag" aria-label="Raise a flag on this flagpole">🏳️</button>
+          <button class="tc-btn util ico" id="tc-decor" aria-label="Decorate the Wordhoard"><img class="pix-ico" src="sprites/ui/decor.png" alt=""></button>
+          <button class="tc-btn util ico" id="tc-flag" aria-label="Raise a flag on this flagpole"><img class="pix-ico" src="sprites/ui/flag.png" alt=""></button>
           <button class="tc-btn util" id="tc-fish" aria-label="Cast a line">CAST</button>
           <!-- Contextual: an inkling you're facing. Inklings are caught, not fought — this is the touch E. -->
           <button class="tc-btn util" id="tc-write" aria-label="Write this letter">WRITE</button>

@@ -615,6 +615,11 @@ bestiary:{id:{kills,seen}} }`. `resources` (book-binding materials) + `bestiary`
   only** — the keyboard hotkeys are unchanged and never switch dialogs (so a letter key at the Wordsmithy
   still types into the word instead of jumping to another panel). The mobile `#tact` util buttons (`tc-*`)
   now share the same `tbSwitch`/`closeAnyDialog` path; the minimap move benefits both.
+- **Menu icons are baked pixel sprites**, not live emoji: every toolbar `.tb-ico` and touch `.tc-btn.ico` shows
+  an `<img class="pix-ico">` from `sprites/ui/<name>.png` (16×16, drawn at 24px on the toolbar / 32px touch,
+  `image-rendering:pixelated`). They're baked by `python3 bake-emoji-sprites.py inklings-menu` (the
+  `INKLINGS_MENU` group; ✦ Feats is a plain glyph filled in `--ink`). New icon = add a row there, re-bake, use
+  the img. The touch `?` (help) stays a text glyph.
 - **Library layout** (`#overlay`): the panel is a fixed-size flex column so it never resizes/jumps
   as content changes. The two columns (`.cols`) are a `1fr 1fr` grid where **`.cols>div` carries
   `min-width:0`** — this is the load-bearing fix: without it a long collection entry (word +
