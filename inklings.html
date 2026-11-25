@@ -4814,7 +4814,7 @@ function render(){
   if(state.started) drawHearts();
   if(state.started && dayCleared()) drawClearedBanner();
   ALaModal.draw(ctx);   // companion on top (small follow sprite, or the large speaking sprite)
-  drawTrace();          // the trace pad, over the creature's own position (in-world, not a modal — §5.3)
+  drawTrace();          // the trace pad, over the creature's own position, centred on touch (in-world, not a modal — §5.3)
 }
 // Persistent banner shown all day once every creature has been captured — stays on screen (no fade)
 // until tomorrow's fresh map. Bottom-centre so it clears the top toasts and the bottom-right minimap.
@@ -11219,7 +11219,9 @@ function closeTrace(){
 }
 function trLayout(){
   trace.px = TR_PAD_PX;
-  const c=trace.c;
+  // On touch the card is always centred on the canvas: anchored to the creature it landed somewhere new
+  // every catch (often low, under the thumb), which reads as inconsistent on a phone. Desktop keeps §5.3.
+  const c = IS_TOUCH ? null : trace.c;
   trace.h = TR_HEAD + trace.px + trFootHeight();
   trace.x = Math.max(14, Math.min(W - trace.px - 14, (c ? c.x : W/2) - trace.px/2));
   trace.top = Math.max(10, Math.min(H - trace.h - 10, (c ? c.y : H/2) - trace.px/2 - TR_HEAD));

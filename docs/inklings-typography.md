@@ -1013,7 +1013,8 @@ The dev wants these "down the road". They are cheap *if* §7's data shape leaves
     removed by construction.
   - **The pad is in-world, all on canvas** (§5.3, confirmed by the dev over a DOM overlay): the field dims,
     a parchment card is drawn **centred on the creature** — so you really do trace over the inkling's own
-    position — carrying the face name, its branch of the tree, the pad, the pen rack and the status line.
+    position (on **touch** it is centred on the canvas instead, so it opens in the same place every
+    time) — carrying the face name, its branch of the tree, the pad, the pen rack and the status line.
     Pointer input is three capture-phase listeners on `#cv`; a tap outside the card leaves.
   - **The one thing the port could not do naively is redraw.** The bench redraws on demand; the game draws
     at 60 fps, and stamping a nib is a few hundred `fill`s per stroke. So the pad's **static ink** (the
