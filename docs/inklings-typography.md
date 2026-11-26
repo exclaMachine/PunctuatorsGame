@@ -1309,6 +1309,12 @@ gates, `canBeHurt`, both `hintReady`s, `syncTouchUI`, `phonHideSound`, `musicDia
 `closeAnyDialog` and its own key-handler branch: **`A`** swaps case, **`[`/`]`** step faces from a plate,
 **`Esc`** backs a plate out to the grid and then closes.
 
+**A `📖 Guide` view** (added 2026-11-25) sits beside `▦ Sheet` / `🌳 Tree` in `#al-view`: a static primer
+(`alRenderGuide`, borrowing the Curator's `.cu-guide` styling) for a player who opens the album cold —
+what it collects, how tracing fills it, the three nib families, how to read sheet/plate/tree, and the
+rewards. It renders before the `TR_READY` check, so it reads even when the data failed to load, and it
+hides the case chips. **`G`** toggles it; **`Esc`** on the guide steps back to the sheet before closing.
+
 ### 15.6 What M4 deliberately did not do
 
 - **No per-face average on a plate.** §13 #7's answer stands: that is a report card, and the personal best

@@ -1647,6 +1647,7 @@
           <div class="al-case" id="al-view">
             <button class="al-chip" data-alview="sheet">▦ Sheet</button>
             <button class="al-chip" data-alview="tree">🌳 Tree</button>
+            <button class="al-chip" data-alview="guide">📖 Guide</button>
           </div>
           <div class="al-case" id="al-letter" style="display:none">
             <button class="al-chip" id="al-letter-prev">◀</button>
@@ -1659,7 +1660,7 @@
           </div>
         </div>
         <div class="al-scroll" id="al-scroll"></div>
-        <p class="al-legend"><b>A</b> swap case · <b>T</b> sheet / tree · <b>[</b> <b>]</b> step faces
+        <p class="al-legend"><b>A</b> swap case · <b>T</b> sheet / tree · <b>G</b> guide · <b>[</b> <b>]</b> step faces
           (the compared letter, on the tree) · click a face for its plate · <b>Esc</b> back</p>
       </div>
     </div>
@@ -1861,7 +1862,7 @@
           <span><b>↑ ↓ ← →</b> / <b>[</b> <b>]</b> / <b>1</b>–<b>7</b></span><span>On the <b>Atlas</b> board only: arrows (or WASD) step to the neighbouring country, sea, lake or peak; <b>[</b>/<b>]</b> sweep one layer west to east (or tap <b>◀ ▶</b>); <b>1</b>–<b>7</b> frame the World and the six continents</span>
           <span><b>1</b>–<b>7</b> / <b>↑ ↓ ← →</b> / <b>Enter</b></span><span>On the <b>Sound Board</b> only: <b>1</b>–<b>7</b> pick a phoneme tile, the arrows aim it (and pan the board when nothing's picked), <b>Tab</b> hops to the next legal square, <b>Enter</b> lays it — then <b>Enter</b> again plays the word. <b>Backspace</b> undoes, <b>C</b> recentres, <b>H</b> asks the rack for an idea</span>
           <span><b>1</b>–<b>9</b> / <b>G</b></span><span>While <b>writing an inkling</b>: <b>1</b>–<b>9</b> pick a pen, <b>Backspace</b> undoes a stroke, <b>R</b> starts the letter again, <b>G</b> shows the next stroke, <b>Esc</b> walks away</span>
-          <span><b>A</b> / <b>T</b> / <b>[</b> <b>]</b></span><span>In the <b>Scriptorium</b> (📜) only: <b>A</b> swaps the album between <b>a–z</b> and <b>A–Z</b>, <b>T</b> swaps the sheet for the <b>Tree of Faces</b>, <b>[</b>/<b>]</b> step from one face's plate to the next (on the tree, the letter being compared), <b>Esc</b> backs a plate out to all the faces</span>
+          <span><b>A</b> / <b>T</b> / <b>[</b> <b>]</b></span><span>In the <b>Scriptorium</b> (📜) only: <b>A</b> swaps the album between <b>a–z</b> and <b>A–Z</b>, <b>T</b> swaps the sheet for the <b>Tree of Faces</b>, <b>G</b> opens the <b>Guide</b> (what the Scriptorium is and how to fill it), <b>[</b>/<b>]</b> step from one face's plate to the next (on the tree, the letter being compared), <b>Esc</b> backs a plate out to all the faces</span>
           <span><b>?</b></span><span>Show or hide this panel</span>
           <span><b>Esc</b></span><span>Close any panel</span>
         </div>
@@ -3740,9 +3741,10 @@ addEventListener("keydown",e=>{
     return;
   }
   if(state.albumOpen){   // The Scriptorium album: Aa toggles case, [ ] step faces, Esc backs a plate out to the grid
-    if(k==="escape"||k==="tab"){ e.preventDefault(); if(album.face){ alShowGrid(); } else closeAlbum(); }
+    if(k==="escape"||k==="tab"){ e.preventDefault(); if(album.face){ alShowGrid(); } else if(album.view==="guide"){ alSetView("sheet"); } else closeAlbum(); }
     else if(k==="a"){ e.preventDefault(); alSetCase(!album.upper); }
     else if(k==="t"){ e.preventDefault(); alSetView(album.view==="tree"?"sheet":"tree"); }
+    else if(k==="g"){ e.preventDefault(); alSetView(album.view==="guide"?"sheet":"guide"); }
     // On the tree no face is selected, so [ ] step the compared LETTER instead (§17.2).
     else if(k==="["||k===","){ e.preventDefault(); (!album.face && album.view==="tree") ? alStepLetter(-1) : alStepFace(-1); }
     else if(k==="]"||k==="."){ e.preventDefault(); (!album.face && album.view==="tree") ? alStepLetter(1) : alStepFace(1); }
@@ -11810,6 +11812,11 @@ function renderAlbum(){
     b.classList.toggle("on", !f && b.getAttribute("data-alview")===album.view));
   document.getElementById("al-letter").style.display = (!f && album.view==="tree") ? "" : "none";
   document.getElementById("al-letter-now").textContent = album.upper ? album.letter.toUpperCase() : album.letter;
+  // The Guide is static text, so it needs neither the data nor the case toggle — and it must read even
+  // when the data failed to load, which is exactly when a new player most needs telling what this is.
+  const guide = !f && album.view==="guide";
+  document.getElementById("al-case").style.display = guide ? "none" : "";
+  if(guide){ document.getElementById("al-count").textContent=""; alRenderGuide(scroll); return; }
   if(!TR_READY){
     document.getElementById("al-count").textContent="";
     scroll.innerHTML='<p class="al-sub">'+(TR_FAILED
@@ -11824,6 +11831,48 @@ function renderAlbum(){
   document.getElementById("al-count").textContent = `· ${n} of ${tot} ${album.upper?"capital":"minuscule"} cells`;
   f ? alRenderPlate(scroll, f)
     : (album.view==="tree" ? alRenderTree(scroll) : alRenderGrid(scroll));
+}
+
+/* ---- the Guide: what the Scriptorium is, for a player who opened it cold (mirrors the Curator / Apothecary /
+   Feats guide tabs, and borrows their .cu-guide styling) ---------------------------------------------- */
+function alRenderGuide(scroll){
+  scroll.innerHTML=`<div class="cu-guide">
+    <p class="cu-lead">The Scriptorium is your <b>type specimen book</b> — a collection of <b>letters in
+    typefaces</b>, written in <i>your own hand</i>. Where the library collects words, this collects the
+    <b>shapes</b> words are written in.</p>
+    <h3>How you fill it</h3>
+    <p>Every inkling (letter-creature) in the world is wearing a real <b>typeface</b>. Swing at one, or
+    stand at it and press <b>E</b>, and a tracing pad opens: <b>write the letter</b> stroke by stroke,
+    following the numbered dots. The faint letter under your pen is the typeface's own, and your grade is
+    how well your ink <b>fills that shape</b> without spilling out of it.</p>
+    <p class="cu-rule">You always catch the letter, whatever happens — only the <b>typeface</b> is at stake,
+    and a weak trace costs nothing but another try.</p>
+    <h3>Pens</h3>
+    <p>A typeface's thick-and-thin strokes are a record of the <b>pen that wrote it</b>. Pick the pen that
+    matches the face:</p>
+    <ul class="hb-gloss">
+      <li><b>Broad nib</b> — held at an angle, thick across its edge and thin along it. Old-style serifs and blackletter.</li>
+      <li><b>Pointed nib</b> — swells on the downstroke. High-contrast faces and scripts.</li>
+      <li><b>Round pen</b> — the same width every way, no contrast at all. That's the whole of sans-serif.</li>
+    </ul>
+    <p>Too thin and you can't fill the letter; too fat and you spill outside it. Buy new pens with ink at
+    the <b>Stall</b>. Each screen shows one face, so a letter in a face you want is somewhere to <i>walk</i>.</p>
+    <h3>Reading the book</h3>
+    <ul class="hb-gloss">
+      <li><b>▦ Sheet</b> — one row per typeface, a–z. A filled cell shows <b>the letter you drew</b> (its gold bar
+      is your grade); an empty cell shows that face's letter, ghosted, so you know what you're hunting.</li>
+      <li><b>A plate</b> — click a face for its page: where it comes from, and its <b>anatomy</b> (serifs,
+      stress, terminals, x-height…) called out on <i>your</i> letterforms.</li>
+      <li><b>🌳 Tree</b> — the same letter across every face, arranged as a <b>family tree</b> of type, so you can
+      see how serif, sans, script and blackletter relate.</li>
+      <li><b>a–z / A–Z</b> — capitals are a <b>separate</b> collection, not a longer one.</li>
+    </ul>
+    <h3>Rewards</h3>
+    <p>A cell keeps your <b>best ever</b> grade, so writing a letter you already own is still worth it. Filling a
+    quarter, half and all of a face's alphabet pays <b>ink</b>; completing a face outright earns a <b>framed
+    specimen</b> for the Wordhoard, and completing a whole branch of the tree earns a <b>Printer's Type Case</b>.</p>
+    <p class="cu-eg">Keys: <b>A</b> swap case · <b>T</b> sheet / tree · <b>G</b> this guide · <b>[</b> <b>]</b> step faces · <b>Esc</b> back.</p>
+  </div>`;
 }
 
 /* ---- the grid: one strip per face --------------------------------------------------------- */
