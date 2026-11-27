@@ -1052,15 +1052,33 @@
   #controls{position:absolute;inset:0;display:none;background:rgba(21,19,28,.72);
     align-items:center;justify-content:center;padding:18px;z-index:6}
   #controls.open{display:flex}
-  .ctrl-grid{display:grid;grid-template-columns:auto 1fr;gap:11px 14px;align-items:center;font-size:17px}
+  /* Controls grid: each key/action row is ruled off from the next so the list reads as rows, not a block */
+  .ctrl-grid{display:grid;grid-template-columns:auto 1fr;gap:0 14px;align-items:stretch;font-size:17px}
+  .ctrl-grid>span{padding:9px 0;border-bottom:1px dashed var(--line);line-height:1.3}
+  .ctrl-grid>span:nth-last-child(-n+2){border-bottom:none}
   .ctrl-grid span:nth-child(odd){text-align:right;color:var(--ink-soft)}
   .ctrl-grid b{display:inline-block;background:var(--paper-2);padding:3px 7px;
     border:2px solid var(--edge);font-family:var(--disp);font-size:9px;color:var(--ink)}
-  .help-note{margin-top:14px;border-top:2px solid var(--line);padding-top:12px;
-    font-family:var(--read);font-size:17px;color:var(--ink);line-height:1.25}
+  .help-note{margin-top:14px;border-top:2px solid var(--line);padding-top:4px;
+    font-family:var(--read);font-size:17px;color:var(--ink);line-height:1.3}
+  /* Help topics: one ruled-off section each so the guide doesn't read as one wall of text */
+  .help-sec{padding:12px 0 10px;border-bottom:2px solid var(--line)}
+  .help-sec:last-child{border-bottom:none}
   .help-note p{margin:0 0 6px}
+  .help-sec>p:first-child>b:first-child{font-family:var(--disp);font-size:10px;letter-spacing:1px;
+    display:block;margin-bottom:6px;color:var(--ink)}
   .help-note ul{margin:0 0 9px;padding-left:20px}
-  .help-note li{margin:2px 0}
+  .help-note li{margin:4px 0}
+  @media(max-width:560px){
+    /* Phone: stack each key above its action, so long descriptions get the full width */
+    .ctrl-grid{grid-template-columns:1fr;font-size:16px}
+    .ctrl-grid span:nth-child(odd){text-align:left;padding:10px 0 3px;border-bottom:none}
+    .ctrl-grid span:nth-child(even){padding:0 0 10px}
+    .ctrl-grid>span:last-child{border-bottom:none}
+    .ctrl-grid>span:nth-last-child(2){padding-bottom:3px}
+    .help-note{font-size:16px}
+    .help-sec{padding:14px 0 12px}
+  }
   /* NES-style title screen */
   #startcard{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
     overflow:hidden;z-index:8;image-rendering:pixelated;cursor:pointer;
@@ -1867,11 +1885,14 @@
           <span><b>Esc</b></span><span>Close any panel</span>
         </div>
         <div class="help-note">
+          <section class="help-sec">
           <p><b>Ink &amp; potions.</b> Spelling words pays off by part of speech:</p>
           <ul>
             <li>Spell a <b>noun</b> → earn <b>ink</b> (your currency, shown top-left). Spend it at the <b>Stall</b> on the home screen (walk up and press <b>E</b>, or tap <b>SHOP</b>) to grow your satchel.</li>
             <li>Spell an <b>adjective</b> → brew a <b>potion that matches its meaning</b>. Each adjective sits on a “dumbbell” — an attribute (speed, size, light) with two opposite ends: a <b>self-buff</b> you drink and an <b>antonym</b> that (soon) debuffs every beast on screen. So <i>swift</i>→Speed, <i>big</i>→Size, <i>bright</i>→Reveal; their opposites <i>slow</i>/<i>small</i>/<i>dark</i> brew the debuff potions. Potions stack in the HUD.</li>
           </ul>
+          </section>
+          <section class="help-sec">
           <p><b>Flasks (the Apothecary — <b>P</b> / ⚗️).</b> Each potion has a <b>flask</b> whose size = how many uses it holds. Collect more <b>synonyms</b> of a pole to grow its flask; spell the attribute noun (<i>speed</i>/<i>size</i>/<i>light</i>) for a bonus. A full flask can’t brew more until you drink one.</p>
           <p>Drink a self-buff potion with <b>1</b>/<b>2</b>/<b>3</b> or by tapping its HUD button — each lasts 25&nbsp;seconds:</p>
           <ul>
@@ -1880,8 +1901,14 @@
             <li><b>Reveal</b> (from <i>bright</i>) — the minimap shows the whole map and which screens still have letters.</li>
           </ul>
           <p>Rewards repeat: re-spelling a word spends its letters again and pays again.</p>
+          </section>
+          <section class="help-sec">
           <p><b>Word of the Day.</b> Each day the Wordsmithy shows a bonus word — always built from letters you've unlocked, so you can always collect what you need. Spell it once for a big ink bonus.</p>
+          </section>
+          <section class="help-sec">
           <p><b>Mad Libris.</b> The lectern right of the Wordsmithy. You start with one fable; <b>recover</b> the rest one at a time — beasts rarely drop a <b>page</b>, or <b>bind</b> the next one at the Stall with materials beasts drop. Restore a story by filling each blank with a collected word that matches the needed part of speech (noun/verb/adjective/adverb). Matching the original word earns bonus ink. A word can be used in a chapter only <b>once, ever</b> — so keep learning new ones. Finish every recovered chapter to add the book to your Wordhoard.</p>
+          </section>
+          <section class="help-sec">
           <p><b>The Atlas.</b> The <b>globe</b> in the Wordhoard, right of the lectern. It opens a world board of
           countries, seas, lakes and mountain peaks — every one of them a <b>proper noun</b>, and every proper noun
           starts with a <b>capital letter</b>. That's why a capital is <b>abroad in the world every day</b>: hunt it
@@ -1894,6 +1921,8 @@
           collection. You can travel the board without the mouse: the <b>arrow keys</b> step to the neighbouring
           place the way a map reads, <b>[</b> and <b>]</b> (or the <b>◀ ▶</b> buttons) sweep one layer west to
           east, and <b>1</b>–<b>7</b> frame the World and each continent.</p>
+          </section>
+          <section class="help-sec">
           <p><b>Writing inklings (the Scriptorium).</b> <b>Inklings are caught; beasts are fought.</b> A swing
           passes straight through a letter-creature; to take it you <b>write the letter</b>, stroke by stroke,
           following the numbered dots — swing at it, or stand at it and press <b>E</b>, and the pad opens. Every inkling on a screen is wearing a real
@@ -1906,6 +1935,8 @@
           it. <b>You always get the letter, whatever you pick</b> — only the typeface is at stake, and a
           botched trace costs you nothing but another go. New pens are bought with ink at the <b>Stall</b>,
           and one face per screen means a letter in a face you want becomes somewhere to <i>walk</i>.</p>
+          </section>
+          <section class="help-sec">
           <p><b>The Scriptorium (📜).</b> Your album — a <b>type specimen sheet of your own hand</b>. Every face
           gets a row of 26 cells: a cell you've earned shows <b>the letter you actually drew</b> (with a gold bar
           for its grade), an empty one shows that face's own letter, ghosted, so you can see what you're hunting
@@ -1918,6 +1949,8 @@
           the view the per-face sheet can't give you, since you can only see that a Didone's stress is vertical by
           putting it next to a Garalde's. Every row names the <b>pen</b> that face wants and what it costs at the
           Stall, and completing every face on a whole branch pays a <b>printer's type case</b>.</p>
+          </section>
+          <section class="help-sec">
           <p><b>The Sound Board (🔡).</b> A crossword you spell <b>by sound, not by letters</b>. The tiles are the
           <b>phonemes you've fished</b> — your Fish Phoneme collection <i>is</i> the bag — and a play counts when the
           line of phonemes you lay matches some real word's <b>pronunciation</b>: <i>/t u/</i> is two, too <i>and</i> to,
@@ -1932,8 +1965,14 @@
           last adds <b>+0.1×</b> to the multiplier. When you'd rather start somewhere fresh, <b>🌱 New patch</b>
           lets the next word go anywhere free — at the cost of the whole chain — and <b>♻ Trade</b> buys a new rack
           for a little ink.</p>
+          </section>
+          <section class="help-sec">
           <p><b>Creatures &amp; the bestiary (<b>B</b>).</b> Out in the field you'll meet more than inklings — pests, cubes, and hazards that drop <b>book-binding materials</b> (paper, glue, thread, wax, leather…). Beat one and its loot drops on the ground — walk over it to collect (the <b>Magnet</b> feat later makes drops drift to you) — but grab it before The Kindle scorches it. Cheese heals a heart. The bestiary logs every creature you've beaten and reveals more (stats, drops, lore) the more of that creature you defeat.</p>
+          </section>
+          <section class="help-sec">
           <p><b>Feats (<b>C</b>).</b> Collecting <b>verbs</b> levels you up along word-count milestones per category (1, then every few — bigger categories space rewards out further). Rewards interleave passive boosts and abilities: <b>Motion</b> → move speed + <b>Slide</b>; <b>Competition</b> → attack + <b>Finisher</b>/<b>Combo</b>; <b>Perception</b> → <b>Divine</b> (a daily letter peek in the library) + <b>Treasure Sense</b> (drops glint); <b>Possession</b> → satchel space + <b>Magnet</b>; <b>Body</b> → max hearts + <b>Second Wind</b> (recover a heart when you stay out of combat). More verb categories arrive later.</p>
+        
+          </section>
         </div>
         <div class="btn-row" style="margin-top:16px;justify-content:flex-end">
           <button class="primary" id="controls-close">Got it</button>
